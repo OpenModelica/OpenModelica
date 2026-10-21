@@ -7278,7 +7278,7 @@ QString LanguageServerPage::installedServerVersion()
 #else
   // The qmake build does not install a server and so does not define it. Keep it
   // in step with MODELICA_LS_VERSION in OMEditLIB/CMakeLists.txt.
-  return QStringLiteral("v0.3.3");
+  return QStringLiteral("v0.3.8");
 #endif
 }
 

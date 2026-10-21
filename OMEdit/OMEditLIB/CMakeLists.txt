@@ -500,7 +500,7 @@ install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Resources/nls
 #   OM_OMEDIT_BUNDLE_LANGUAGE_SERVER=OFF   ship no server at all.
 option(OM_OMEDIT_BUNDLE_LANGUAGE_SERVER
        "Install the Modelica language server with OMEdit" ON)
-set(MODELICA_LS_VERSION "0.3.5"
+set(MODELICA_LS_VERSION "0.3.8"
     CACHE STRING "modelica-language-server release to install, and the one the options page offers to download")
 set(MODELICA_LS_DIR ""
     CACHE PATH "Directory holding an already-built modelica-language-server. Installed instead of downloading a release.")
@@ -553,12 +553,12 @@ elseif(OM_OMEDIT_BUNDLE_LANGUAGE_SERVER)
   # platform; there is no universal macOS binary, so a cross build picks the
   # asset for CMAKE_SYSTEM_*, not for the host.
   #
-  # Bumping MODELICA_LS_VERSION means replacing every hash below. They are the
+  # Bumping MODELICA_LS_VERSION means checking every hash below. They are the
   # digests GitHub reports for the release assets, so they can be regenerated
   # rather than recomputed by hand:
   #
   #   gh api repos/OpenModelica/modelica-language-server/releases/tags/v<version> \
-  #     --jq '.assets[] | select(.name | test("^modelica-language-server-(linux|macos|windows)"))
+  #     --jq '.assets[] | select(.name | test("^modelica-language-server-(linux|macos|windows)|[.]wasm$"))
   #           | "\(.name)\t\(.digest)"'
   #
   # No 32-bit Linux server is published, and uname -m reads aarch64 for an armhf
@@ -568,18 +568,18 @@ elseif(OM_OMEDIT_BUNDLE_LANGUAGE_SERVER)
      AND (NOT CMAKE_SIZEOF_VOID_P OR CMAKE_SIZEOF_VOID_P EQUAL 8))
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
       set(_ls_asset "modelica-language-server-linux-arm64")
-      set(_ls_sha256 "494c90dc8e64d47953b9432bcdfe2bbfb50acf70adf4f4875e4bccebdd1ac131")
+      set(_ls_sha256 "72283179879037192c83d54083f31c1e4793cfae4f8f011a74e95f1e0184ddda")
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
       set(_ls_asset "modelica-language-server-linux-x64")
-      set(_ls_sha256 "3c0563c464f144af110c7625fb04b022ac208ecd739f70c4ede3dc0502cd8610")
+      set(_ls_sha256 "5738662e533c66c1c8a3b1ef3f83298a32e279100f3efb9a953467f730994b3d")
     endif()
   elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
       set(_ls_asset "modelica-language-server-macos-arm64")
-      set(_ls_sha256 "235e1848be90240e2648ce0d15b23b2a304d2356cb9bbf84d1f4ba19d7c3b7c2")
+      set(_ls_sha256 "0f861cffe81e41fe675dbde66edbb17e4a2d10478f881f6c0cb485ea09f8ac44")
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
       set(_ls_asset "modelica-language-server-macos-x64")
-      set(_ls_sha256 "8197f20f04d6dc7493a628f8ada4e816d7a532a557cbcda26af2e3fe93be09b6")
+      set(_ls_sha256 "25760c0b209dc39ce74302b6ec2a75844410c1da6f6dc494f1989cad7ea7f904")
     endif()
   elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     # Only a 64-bit Windows build is published. CMAKE_SIZEOF_VOID_P is empty
@@ -587,13 +587,13 @@ elseif(OM_OMEDIT_BUNDLE_LANGUAGE_SERVER)
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$"
        AND (NOT CMAKE_SIZEOF_VOID_P OR CMAKE_SIZEOF_VOID_P EQUAL 8))
       set(_ls_asset "modelica-language-server-windows-x64.exe")
-      set(_ls_sha256 "862a01e697b0a5fb4605caa18a1b57b8b690e76a5b40f06a67dd15caa36e129c")
+      set(_ls_sha256 "35be6a055f3b34f45523479edab66a931040ab4507124e1281a1ec674d5a2c10")
     endif()
   endif()
 
   # The hashes above belong to one release. Asking for another version still
   # works, unverified, rather than failing on a hash that cannot match.
-  if(NOT MODELICA_LS_VERSION STREQUAL "0.3.5")
+  if(NOT MODELICA_LS_VERSION STREQUAL "0.3.8")
     set(_ls_sha256 "")
   endif()
 
@@ -611,7 +611,7 @@ elseif(OM_OMEDIT_BUNDLE_LANGUAGE_SERVER)
     # and installed together. The WASM assets are platform independent.
     set(_ls_assets
         "${_ls_asset}|${_ls_sha256}"
-        "tree-sitter-modelica.wasm|fb9e1f0c33288fc301f50bff88bad28ebf2f79365b23482855a1a9e756c78e56"
+        "tree-sitter-modelica.wasm|a47d660022d0f654c274d253b5108756e97e8955e7252115627c4ab96e415665"
         "web-tree-sitter.wasm|c03bccdc3b448a32848f5ae327e209c982bbb0840d43eec8bc2d5759544a1ed3")
 
     # Keyed by version so bumping MODELICA_LS_VERSION re-downloads rather than
