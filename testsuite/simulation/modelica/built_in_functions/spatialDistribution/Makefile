@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+	nameClash.mos \
 	initSpatialDistribution.mos \
 	helloSpatialDistribution.mos \
 	singleOutputSpatialDistribution.mos \

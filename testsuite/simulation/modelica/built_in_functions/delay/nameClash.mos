@@ -1,0 +1,39 @@
+// name:                nameClash.mos
+// keywords:            delay
+// status:              correct
+//
+// Check if there is a name clash
+
+loadString("
+function delayZeroCrossing
+  input Integer index;
+  input Integer rindex;
+  input Real delayTime;
+  output Real x;
+algorithm
+  x := rindex;
+  annotation(Inline = false);
+end delayZeroCrossing;
+
+model M
+  Real x;
+equation
+  x = if delayZeroCrossing(1, -1, time) > 0 then 1 else 2;
+end M;"); getErrorString();
+
+simulate(M, stopTime=0.0); getErrorString();
+val(x, 0.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "M_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// endResult
