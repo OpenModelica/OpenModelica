@@ -64,6 +64,142 @@ struct dataMixedSolver
 #if !defined(OMC_MINIMAL_RUNTIME)
 #include "../../util/write_csv.h"
 
+extern int dgesv_(int *n, int *nrhs, double *a, int *lda, int *ipiv, double *b, int *ldb, int *info);
+extern double enorm_(int *n, double *x);
+
+/**
+ * @brief Damped Newton iteration with a forward difference Jacobian.
+ *
+ * Last attempt of the mixed solver after homotopy and hybrd failed, the same as
+ * newton_solve of the Rust runtime. Each step is halved until the residual norm
+ * decreases. It converges when the residual and the step are both small, a
+ * stalled step only counts when the residual is small.
+ *
+ * @param data          Runtime data struct.
+ * @param threadData    Thread data for error handling.
+ * @param nonlinsys     Pointer to non-linear system.
+ * @param x             Start values on input, last iterate on output.
+ * @return int          1 on success, 0 otherwise.
+ */
+static int solveDampedNewtonFallback(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, double* x)
+{
+  const double sqrtEps = 1.4901161193847656e-08;
+  const double lambdaMin = 9.765625e-4;
+  const int maxIter = 100;
+  RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
+  int n = (int) nonlinsys->size, nrhs = 1, info = 0, iflag = 0;
+  int i, col, iter = 0, negSteps = 0, smallSteps = 0, success = 0;
+  double h, saved, lambda, d, rowMax, s, errorF, errorFOld, scaledErrorF, deltaX, deltaXScaled, xNorm;
+  double *fvec = (double*) malloc(n*sizeof(double));
+  double *rp = (double*) malloc(n*sizeof(double));
+  double *dx = (double*) malloc(n*sizeof(double));
+  double *xNew = (double*) malloc(n*sizeof(double));
+  double *jac = (double*) malloc(n*n*sizeof(double));
+  double *lu = (double*) malloc(n*n*sizeof(double));
+  int *ipiv = (int*) malloc(n*sizeof(int));
+
+  infoStreamPrint(OMC_LOG_NLS_V, 0, "Start solving Non-Linear System %d (size %d) at time %g with damped Newton fallback", (int)nonlinsys->equationIndex, n, data->localData[0]->timeValue);
+
+  nonlinsys->residualFunc(&resUserData, x, fvec, &iflag);
+  errorF = enorm_(&n, fvec);
+  if (errorF < newtonFTol) {
+    success = 1;
+  }
+
+  while (!success) {
+    /* jacobian columns by forward differences, column major */
+    for (col=0; col<n; col++) {
+      h = sqrtEps * (fabs(x[col]) + 1.0);
+      saved = x[col];
+      x[col] = saved + h;
+      nonlinsys->residualFunc(&resUserData, x, rp, &iflag);
+      for (i=0; i<n; i++) {
+        jac[col*n + i] = (rp[i] - fvec[i]) / h;
+      }
+      x[col] = saved;
+    }
+
+    /* solve J*dx = f, x_new = x - dx */
+    memcpy(lu, jac, n*n*sizeof(double));
+    memcpy(dx, fvec, n*sizeof(double));
+    dgesv_(&n, &nrhs, lu, &n, ipiv, dx, &n, &info);
+    if (info != 0) {
+      break;
+    }
+    for (i=0; i<n; i++) {
+      xNew[i] = x[i] - dx[i];
+    }
+
+    /* damping: halve the step until the residual norm decreases */
+    nonlinsys->residualFunc(&resUserData, xNew, fvec, &iflag);
+    lambda = 1.0;
+    while (enorm_(&n, fvec) >= errorF && lambda > lambdaMin) {
+      lambda *= 0.5;
+      for (i=0; i<n; i++) {
+        xNew[i] = x[i] - lambda*dx[i];
+      }
+      nonlinsys->residualFunc(&resUserData, xNew, fvec, &iflag);
+    }
+
+    /* errors of the step and of the residual, scaled with the row maximum of the jacobian */
+    deltaX = 0.0;
+    for (i=0; i<n; i++) {
+      d = x[i] - xNew[i];
+      deltaX += d*d;
+    }
+    deltaX = sqrt(deltaX);
+    xNorm = enorm_(&n, x);
+    deltaXScaled = deltaX / (xNorm > 1.0 ? xNorm : 1.0);
+    errorFOld = errorF;
+    errorF = enorm_(&n, fvec);
+    scaledErrorF = 0.0;
+    for (i=0; i<n; i++) {
+      rowMax = 0.0;
+      for (col=0; col<n; col++) {
+        rowMax = fmax(rowMax, fabs(jac[col*n + i]));
+      }
+      s = (rowMax > 0.0 && isfinite(rowMax)) ? rowMax : (rowMax == 0.0 ? 1e-16 : 1.0);
+      scaledErrorF += (fvec[i]/s) * (fvec[i]/s);
+    }
+    scaledErrorF = sqrt(scaledErrorF);
+
+    memcpy(x, xNew, n*sizeof(double));
+
+    negSteps += errorF > 10.0*errorFOld;
+    if (negSteps > 20) {
+      break;
+    }
+    if ((errorF < newtonFTol || scaledErrorF < newtonFTol) && (deltaX < newtonXTol || deltaXScaled < newtonXTol)) {
+      success = 1;
+      break;
+    }
+    smallSteps += deltaX < 100.0*newtonXTol || deltaXScaled < 100.0*newtonXTol;
+    if (deltaX < newtonXTol || deltaXScaled < newtonXTol || smallSteps > 20) {
+      /* stalled step: only accept a small residual */
+      success = errorF < 1e3*newtonFTol || scaledErrorF < 1e3*newtonFTol;
+      break;
+    }
+    if (++iter > maxIter) {
+      break;
+    }
+  }
+
+  /* leave the model at the last iterate */
+  if (success) {
+    nonlinsys->residualFunc(&resUserData, x, fvec, &iflag);
+  }
+  infoStreamPrint(OMC_LOG_NLS_V, 0, "damped Newton fallback %s", success ? "converged" : "did not converge");
+
+  free(fvec);
+  free(rp);
+  free(dx);
+  free(xNew);
+  free(jac);
+  free(lu);
+  free(ipiv);
+  return success;
+}
+
 /*! \fn int initializeNLScsvData(DATA* data, NONLINEAR_SYSTEM_DATA* systemData)
  *
  *  This function initializes csv files for analysis propose.
@@ -1021,6 +1157,7 @@ NLS_SOLVER_STATUS solveNLS(DATA *data, threadData_t *threadData, NONLINEAR_SYSTE
   int casualTearingSet = nonlinsys->strictTearingFunctionCall != NULL;
   struct dataSolver *solverData;
   struct dataMixedSolver *mixedSolverData;
+  double *warm = NULL;
 
   /* use the selected solver for solving nonlinear system */
   switch(nonlinsys->nlsMethod)
@@ -1103,6 +1240,9 @@ NLS_SOLVER_STATUS solveNLS(DATA *data, threadData_t *threadData, NONLINEAR_SYSTE
   case NLS_MIXED:
     mixedSolverData = nonlinsys->solverData;
     nonlinsys->solverData = mixedSolverData->newtonHomotopyData;
+    /* start values of the damped Newton fallback */
+    warm = (double*) malloc(nonlinsys->size*sizeof(double));
+    nonlinsys->getIterationVars(data, warm);
 
     /* try */
     #ifndef OMC_EMCC
@@ -1125,6 +1265,13 @@ NLS_SOLVER_STATUS solveNLS(DATA *data, threadData_t *threadData, NONLINEAR_SYSTE
       solver_status = solveHybrd(data, threadData, nonlinsys);
     }
 
+    /* last attempt: damped Newton from the start values, not for a casual tearing set */
+    if (solver_status != NLS_SOLVED && !casualTearingSet) {
+      if (solveDampedNewtonFallback(data, threadData, nonlinsys, warm)) {
+        solver_status = NLS_SOLVED;
+      }
+    }
+
     /* update iteration variables of nonlinsys->nlsx */
     if (solver_status == NLS_SOLVED){
       nonlinsys->getIterationVars(data, nonlinsys->nlsx);
@@ -1135,6 +1282,7 @@ NLS_SOLVER_STATUS solveNLS(DATA *data, threadData_t *threadData, NONLINEAR_SYSTE
     #ifndef OMC_EMCC
       OMC_CATCH_INTERNAL(simulationJumpBuffer)
     #endif
+    free(warm);
     nonlinsys->solverData = mixedSolverData;
     break;
 #endif

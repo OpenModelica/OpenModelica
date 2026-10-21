@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 InfoJsonEntwined.mos \
+MomentumBalanceFittings.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

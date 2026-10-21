@@ -1,0 +1,28 @@
+// name: MomentumBalanceFittings
+// keywords: NewBackend, nonlinear, mixed solver, min, max
+// status: correct
+// suite: cSources
+//
+// The initial nonlinear system of the two adaptors with diameter_b = inf is badly
+// scaled, homotopy and hybrd of the mixed solver both fail. The damped Newton
+// fallback solves it from the start values. The bounds of rightAdaptor.m_flow
+// come from a negated alias and must not be swapped.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+buildModel(Modelica.Fluid.Examples.Explanatory.MomentumBalanceFittings);
+// the compiler warnings come from Modelica.Media and are not checked here
+clearMessages();
+system("./Modelica.Fluid.Examples.Explanatory.MomentumBalanceFittings", "MomentumBalanceFittings.log");
+abs(val(rightAdaptor.m_flow, 0.0, "Modelica.Fluid.Examples.Explanatory.MomentumBalanceFittings_res.mat") + 29.302643) < 1e-4;
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"Modelica.Fluid.Examples.Explanatory.MomentumBalanceFittings", "Modelica.Fluid.Examples.Explanatory.MomentumBalanceFittings_init.xml"}
+// true
+// 0
+// true
+// endResult
