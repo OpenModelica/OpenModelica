@@ -1403,7 +1403,22 @@ QString StringHandler::getExistingDirectory(QWidget *parent, const QString &capt
     dir_str = StringHandler::getLastOpenDirectory();
   }
 
-  QString dirName = QFileDialog::getExistingDirectory(parent, caption, dir_str, QFileDialog::ShowDirsOnly);
+  QString dirName;
+#if defined(__EMSCRIPTEN__)
+  // The browser's picker only hands over files of the local disk, never a directory
+  // to write into, so choose one of the page file system instead.
+  QFileDialog dialog(parent, caption, dir_str);
+  dialog.setOptions(QFileDialog::DontUseNativeDialog | QFileDialog::ShowDirsOnly);
+  dialog.setFileMode(QFileDialog::Directory);
+  QList<QUrl> urls = dialog.sidebarUrls();
+  urls << QUrl::fromLocalFile("/uploads") << QUrl::fromLocalFile(Utilities::tempDirectory());
+  dialog.setSidebarUrls(urls);
+  if (dialog.exec()) {
+    dirName = dialog.selectedFiles().value(0);
+  }
+#else
+  dirName = QFileDialog::getExistingDirectory(parent, caption, dir_str, QFileDialog::ShowDirsOnly);
+#endif
   if (!dirName.isEmpty()) {
     StringHandler::setLastOpenDirectory(dirName);
   }
