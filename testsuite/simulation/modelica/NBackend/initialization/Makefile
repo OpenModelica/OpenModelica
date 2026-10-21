@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+startCycleJacobian.mos \
 attributeInitParameter.mos \
 whenAlgorithmPre.mos \
 experimental_initialSimplified.mos \
