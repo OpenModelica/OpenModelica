@@ -458,9 +458,9 @@ struct Flags {
     /// C's `numberOfJEval`: `wrapper_fvec_der` counts an analytic and an FD
     /// Jacobian alike. [`solve_nls`] takes the difference over its own call.
     jac_evals: AtomicU64,
-    /// This thread's share of `STAT_NLS_ITER` / `STAT_NLS_RES`. The process-wide
-    /// counters are what the run reports; a solve's own share has to be counted
-    /// where no other task can add to it.
+    /// This thread's share of `STAT_NLS_ITER`, and C's `numberOfFEval`. The
+    /// process-wide counters are what the run reports; a solve's own share has to
+    /// be counted where no other task can add to it.
     iters: AtomicU64,
     res_evals: AtomicU64,
 }
@@ -509,7 +509,6 @@ fn nls_stat_inc(kind: u32) {
     stat_inc(kind);
     match kind {
         STAT_NLS_ITER => flags().iters.fetch_add(1, Ordering::Relaxed),
-        STAT_NLS_RES => flags().res_evals.fetch_add(1, Ordering::Relaxed),
         _ => 0,
     };
 }
@@ -2782,6 +2781,15 @@ fn note_nls_iters(n: u64) {
     flags().iters.fetch_add(n, Ordering::Relaxed);
 }
 
+/// `f` with its residual evaluations left out of C's `numberOfFEval`.
+fn uncounted<R>(n_feval: &core::cell::Cell<u64>, f: impl FnOnce() -> R) -> R {
+    let own = n_feval.get();
+    let r = f();
+    flags().res_evals.fetch_sub(n_feval.get() - own, Ordering::Relaxed);
+    n_feval.set(own);
+    r
+}
+
 /// C's `numberOfIterations`, `numberOfFEval` and `numberOfJEval` as this thread's
 /// totals; a solve's own share is the difference across it, less what a nested
 /// solve took.
@@ -4221,9 +4229,10 @@ pub fn solve_nls(
     let iter0 = flags().iters.load(Ordering::Relaxed);
     let jac0 = flags().jac_evals.load(Ordering::Relaxed);
     let mut eval = |xs: &[f64], r: &mut [f64]| {
-        nls_stat_inc(STAT_NLS_RES);
+        stat_inc(STAT_NLS_RES);
         if flags().jac_depth.load(Ordering::Relaxed) == 0 {
             n_feval.set(n_feval.get() + 1);
+            flags().res_evals.fetch_add(1, Ordering::Relaxed);
         }
         // C's generated `residualFunc`: an inf/nan iteration variable fails the
         // evaluation instead of reaching the model. Feed kinsol the nan residual
@@ -4376,9 +4385,7 @@ pub fn solve_nls(
         }
         // `updateInnerEquation` calls the residual directly rather than through
         // `wrapper_fvec`, so C does not count this evaluation.
-        let uncounted = n_feval.get();
-        eval(&nlsx_old, &mut scratch);
-        n_feval.set(uncounted);
+        uncounted(&n_feval, || eval(&nlsx_old, &mut scratch));
         if eval_threw() {
             log_assert_handled();
         }
@@ -4431,6 +4438,7 @@ pub fn solve_nls(
                         jacobian: &mut jacobian,
                     },
                 );
+                flags().res_evals.fetch_sub(n_feval.get() - feval0, Ordering::Relaxed);
                 n_feval.set(feval0);
                 flags().jac_evals.store(jac0, Ordering::Relaxed);
             }
@@ -4803,9 +4811,7 @@ pub fn solve_nls(
                     break converged;
                 }
                 state.borrow_mut().set_relation_mode(saved_rel_fresh);
-                let uncounted = n_feval.get();
-                eval(&x, &mut scratch);
-                n_feval.set(uncounted);
+                uncounted(&n_feval, || eval(&x, &mut scratch));
                 settled = true;
                 let mut rel_now = vec![0i32; rel_backup.len()];
                 state.borrow().relations(&mut rel_now);
@@ -4941,9 +4947,7 @@ pub fn solve_nls(
         load_guess(&mut x);
     } else if converged && !settled && !strict_used {
         // The other `-nls` solvers publish the solver's own answer instead.
-        let uncounted = n_feval.get();
-        eval(&x, &mut scratch);
-        n_feval.set(uncounted);
+        uncounted(&n_feval, || eval(&x, &mut scratch));
     }
     // C's `data->simulationInfo->lambda = originalLambda` closing
     // `solve_nonlinear_system` — after the last evaluation, so the torn variables
@@ -4978,9 +4982,7 @@ pub fn solve_nls(
         if saved_rel_fresh != 2 {
             state.borrow_mut().set_relation_mode(0);
         }
-        let uncounted = n_feval.get();
-        eval(&warm, &mut scratch);
-        n_feval.set(uncounted);
+        uncounted(&n_feval, || eval(&warm, &mut scratch));
         // C's equation index, +1 so nonzero still means "failed". First-writer-wins:
         // C throws out of the equation list at the first failure, never reporting a
         // later one.

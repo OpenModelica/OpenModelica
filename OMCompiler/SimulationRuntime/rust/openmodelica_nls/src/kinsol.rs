@@ -247,10 +247,10 @@ pub mod sun {
         _t2: NVector,
     ) -> c_int {
         let ud = unsafe { &mut *(user as *mut Ud) };
-        crate::note_jac_eval();
         let x = data(u, ud.n);
         let vals = unsafe { core::slice::from_raw_parts_mut(SUNSparseMatrix_Data(j), ud.nnz) };
         if ud.numeric {
+            crate::note_jac_eval();
             let fx = data(fu, ud.n);
             numeric_csc(ud, x, fx, vals);
         } else {
@@ -327,9 +327,6 @@ pub mod sun {
         /// C's `kinsolData->solved == NLS_SOLVED`: the last solve converged to the
         /// full tolerance, so [`f_scaling`](Self::f_scaling) reuses KINSOL's `J`.
         solved: bool,
-        /// `KINGetNumNonlinSolvIters` counts from `KINInit`, so a solve's own share
-        /// is the difference across it.
-        iters_seen: c_long,
         /// C's `attemptRetry`, off for gbode's systems.
         pub attempt_retry: bool,
     }
@@ -356,7 +353,6 @@ pub mod sun {
                 maxstepfactor: openmodelica_solvers::solverflags::max_step_factor(),
                 numeric_jac: false,
                 solved: false,
-                iters_seen: 0,
                 attempt_retry: true,
             };
             if s.kin.is_null()
@@ -433,11 +429,11 @@ pub mod sun {
                     put_index(SUNSparseMatrix_IndexPointers(self.j), &ud.colptr[..ud.n + 1]);
                     put_index(SUNSparseMatrix_IndexValues(self.j), &ud.rowidx[..ud.nnz]);
                 }
-                // C assembles this one through `nlsSparseSymJac`/`nlsSparseJac`, so
-                // it lands in `numberOfJEval` like any other.
-                crate::note_jac_eval();
                 let x = data(self.u, self.n);
                 if ud.numeric {
+                    // C differences this one through `nlsSparseJac`, so it lands in
+                    // `numberOfJEval` like any other.
+                    crate::note_jac_eval();
                     let mut fx = vec![0.0f64; ud.n];
                     (ud.eval)(x, &mut fx);
                     numeric_csc(ud, x, &fx, vals);
@@ -596,8 +592,7 @@ pub mod sun {
                 let flag = unsafe { KINSol(self.kin, self.u, self.strategy, self.xscale, self.fscale) };
                 let mut iters: c_long = 0;
                 unsafe { KINGetNumNonlinSolvIters(self.kin, &mut iters) };
-                crate::note_nls_iters((iters - self.iters_seen).max(0) as u64);
-                self.iters_seen = iters;
+                crate::note_nls_iters(iters.max(0) as u64);
                 // a step below the tolerance without any iteration only solves the system if the residual
                 // is small (KINGetFuncNorm is not set if no step was taken, evaluate the scaled residual)
                 let mut stalled = false;
@@ -775,7 +770,6 @@ pub mod sun {
         /// C's `B_nlsSparseSymJac` / `B_nlsSparseJac` / `B_nlsDenseJac` body. C
         /// evaluates `f(x)` itself before differencing, scaling off for the pass.
         fn jacobian(&mut self, x: &mut [f64], vals: &mut [f64]) {
-            crate::note_jac_eval();
             let scaled = self.scaling;
             if scaled {
                 self.unscale_x(x);
@@ -784,6 +778,7 @@ pub mod sun {
             match &mut self.assemble {
                 Some(assemble) => assemble(x, vals),
                 None => {
+                    crate::note_jac_eval();
                     let mut f = vec![0.0f64; self.n];
                     (self.eval)(x, &mut f);
                     b_numeric_jac(self, x, &f, vals);
@@ -1450,10 +1445,12 @@ pub fn gb_solve(req: &mut openmodelica_solvers::gbode::nls_hook::GbNlsRequest) -
     };
     let (start, nominal, kinsol, time) = (req.start, req.nominal, req.kinsol, req.time);
     let has_jacobian = req.jacobian.is_some();
-    let mut none = |_: &[f64], _: &mut [f64]| {};
-    let assemble: &mut dyn FnMut(&[f64], &mut [f64]) = match req.jacobian.as_deref_mut() {
-        Some(j) => j,
-        None => &mut none,
+    let mut jacobian = req.jacobian.as_deref_mut();
+    let mut assemble = |x: &[f64], vals: &mut [f64]| {
+        if let Some(j) = jacobian.as_mut() {
+            crate::note_jac_eval();
+            j(x, vals);
+        }
     };
     let eval: &mut dyn FnMut(&[f64], &mut [f64]) = &mut *req.eval;
     let x = &mut *req.x;
@@ -1463,7 +1460,17 @@ pub fn gb_solve(req: &mut openmodelica_solvers::gbode::nls_hook::GbNlsRequest) -
         |solver| {
             solver.attempt_retry = false;
             solver.configure(&kinsol);
-            solver.solve(start, nominal, &pat, x, u32::MAX, time, has_jacobian, eval, assemble)
+            solver.solve(
+                start,
+                nominal,
+                &pat,
+                x,
+                u32::MAX,
+                time,
+                has_jacobian,
+                eval,
+                &mut assemble,
+            )
         },
     )
 }
@@ -1487,11 +1494,16 @@ pub fn gb_b_solve(req: &mut openmodelica_solvers::gbode::nls_hook::GbNlsRequest)
         req.kinsol,
         req.time,
     );
+    let req_has_jacobian = req.jacobian.is_some();
     let eval: &mut dyn FnMut(&[f64], &mut [f64]) = &mut *req.eval;
-    let jacobian = req
-        .jacobian
-        .as_deref_mut()
-        .map(|j| j as &mut dyn FnMut(&[f64], &mut [f64]));
+    let mut jacobian = req.jacobian.as_deref_mut();
+    let mut counted = |xs: &[f64], vals: &mut [f64]| {
+        if let Some(j) = jacobian.as_mut() {
+            crate::note_jac_eval();
+            j(xs, vals);
+        }
+    };
+    let assemble = req_has_jacobian.then_some(&mut counted as &mut dyn FnMut(&[f64], &mut [f64]));
     let x = &mut *req.x;
     let last = core::cell::RefCell::new(start.to_vec());
     let mut tracked = |xs: &[f64], f: &mut [f64]| {
@@ -1515,7 +1527,7 @@ pub fn gb_b_solve(req: &mut openmodelica_solvers::gbode::nls_hook::GbNlsRequest)
                 time,
                 &mut load_guess,
                 &mut tracked,
-                jacobian,
+                assemble,
             )
         },
     )
