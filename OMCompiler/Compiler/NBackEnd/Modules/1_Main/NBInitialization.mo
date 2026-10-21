@@ -251,7 +251,8 @@ public
     input VariablePointers aliasVars;
   algorithm
     // variables only one algorithm uses are not part of the system, the init xml sets their start values
-    if not (UnorderedSet.contains(BVariable.getVarName(var), algorithm_outputs) or BVariable.isAlgorithmLocal(var)) then
+    // empty arrays have nothing to start
+    if not (UnorderedSet.contains(BVariable.getVarName(var), algorithm_outputs) or BVariable.isAlgorithmLocal(var) or BVariable.size(var) == 0) then
       () := match Pointer.access(var)
         local
           ComponentRef name, start_name;

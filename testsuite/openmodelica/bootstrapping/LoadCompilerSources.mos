@@ -77,7 +77,6 @@ if true then /* Suppress output */
     prefixPath + "FrontEnd/TypesDump.mo",
     prefixPath + "FrontEnd/UnitAbsyn.mo",
     prefixPath + "FrontEnd/UnitAbsynBuilder.mo",
-    prefixPath + "FrontEnd/UnitChecker.mo",
     prefixPath + "FrontEnd/UnitParserExt.mo",
     prefixPath + "FrontEnd/Values.mo",
     prefixPath + "FrontEnd/ValuesDump.mo",

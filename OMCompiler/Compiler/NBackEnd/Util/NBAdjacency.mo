@@ -4313,6 +4313,9 @@ public
     list<Subscript> subs;
     list<ComponentRef> scalar_matches;
     Boolean hasSetSub = false;
+    Option<Pointer<Variable>> parent_opt;
+    Pointer<Variable> parent;
+    ComponentRef parent_name;
   algorithm
     for s in ComponentRef.subscriptsAllFlat(cref) loop
       // WHOLE (":") and SLICE (e.g. "1:3") are ordinary, common range subscripts
@@ -4378,6 +4381,25 @@ public
       end for;
     else
       crefs := {};
+      // an element of a record that is an unknown as a whole (e.g. a record parameter
+      // solved by its binding) depends on the record, but cannot be solved for
+      parent_opt := BVariable.getParent(var);
+      while isSome(parent_opt) loop
+        parent := Util.getOption(parent_opt);
+        if BVariable.isArray(parent) then
+          break;
+        end if;
+        parent_name := BVariable.getVarName(parent);
+        if UnorderedMap.contains(parent_name, map) then
+          if not UnorderedMap.contains(parent_name, dep_map) then
+            UnorderedMap.add(parent_name, Dependency.create(ComponentRef.getSubscriptedType(parent_name), depth), dep_map);
+          end if;
+          Solvability.update(parent_name, Solvability.UNSOLVABLE(), sol_map);
+          crefs := {parent_name};
+          break;
+        end if;
+        parent_opt := BVariable.getParent(parent);
+      end while;
     end if;
   end collectDependenciesCref;
 

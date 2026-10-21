@@ -87,6 +87,7 @@ openmodelica_backend_main/src/InteractiveUtil.rs
 openmodelica_backend_main/src/Main.rs
 openmodelica_backend_main/src/NFApi.rs
 openmodelica_backend_main/src/OpenModelicaScriptingAPI.rs
+openmodelica_backend_main/src/ProbeTree.rs
 openmodelica_backend_main/src/Refactor.rs
 openmodelica_backend_main/src/SimCodeMain.rs
 openmodelica_backend_main/src/StaticScript.rs

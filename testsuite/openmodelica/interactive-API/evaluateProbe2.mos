@@ -1,0 +1,74 @@
+// name: evaluateProbe2
+// keywords: probe tree, CodeProber
+// status: correct
+//
+// Tests evaluateProbe with the properties of the translation of a model.
+
+writeFile("evaluateProbe2.mo", "package EQ
+  connector Pin
+    Real v;
+    flow Real i;
+  end Pin;
+  model R
+    parameter Real r = 2;
+    Pin p, n;
+  equation
+    p.v - n.v = r*p.i;
+    p.i + n.i = 0;
+  end R;
+  model V
+    Pin p, n;
+  equation
+    p.v - n.v = sin(time);
+    p.i + n.i = 0;
+  end V;
+  model G
+    Pin p;
+  equation
+    p.v = 0;
+  end G;
+  model B
+    V src;
+    R r1(r = 3), r2;
+    G gnd;
+  equation
+    connect(src.p, r1.p);
+    connect(r1.n, r2.p);
+    connect(r2.n, src.n);
+    connect(src.n, gnd.p);
+  end B;
+end EQ;
+");
+getErrorString();
+loadFile("evaluateProbe2.mo"); getErrorString();
+// The parameter r of R in the translation of B.
+print(evaluateProbe("evaluateProbe2.mo", "0.0.2.1", "simVariables", "EQ.B")); getErrorString();
+// The equation p.v - n.v = r*p.i of R: its simulation equations (their C functions are in evaluateProbe4).
+print(evaluateProbe("evaluateProbe2.mo", "0.0.2.3", "simEquations", "EQ.B")); getErrorString();
+print(evaluateProbe("evaluateProbe2.mo", "0.0.2.3", "hover", "EQ.B")); getErrorString();
+// Without a context model, the model the node is in is translated, and a package has none.
+print(evaluateProbe("evaluateProbe2.mo", "0.0.5.2.1", "flatDeclarations")); getErrorString();
+print(evaluateProbe("evaluateProbe2.mo", "0.0.5.4", "connectionEquations")); getErrorString();
+print(evaluateProbe("evaluateProbe2.mo", "0.0.5", "translationMessages")); getErrorString();
+print(evaluateProbe("evaluateProbe2.mo", "0.0.1", "simEquations")); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"node":"0.0.2.1", "property":"simVariables", "result":[{"text":"r1.r : parameter Real"}, {"text":"r2.r : parameter Real"}]}
+// ""
+// {"node":"0.0.2.3", "property":"simEquations", "result":[{"text":"eq 4 [initial, torn] r2.p.i := (src.p.v - r1.n.v) / r1.r"}, {"text":"    solved: src.p.v - r1.n.v = r1.r * r2.p.i  =>  r2.p.i = (src.p.v - r1.n.v) / r1.r"}, {"text":"    substitution: r1.r * r1.p.i  =>  r1.r * r2.p.i"}, {"text":"    substitution: r1.p.v - r1.n.v  =>  src.p.v - r1.n.v"}, {"text":"eq 5 [initial, residual] r2.r * r2.p.i - r1.n.v"}, {"text":"    simplify: r1.n.v - 0.0 = r2.r * r2.p.i  =>  r1.n.v = r2.r * r2.p.i"}, {"text":"    substitution: r2.p.v - r2.n.v  =>  r1.n.v - 0.0"}, {"text":"eq 10 [regular, torn] r1.n.v := src.p.v - r1.r * r2.p.i"}, {"text":"    solved: src.p.v - r1.n.v = r1.r * r2.p.i  =>  r1.n.v = src.p.v - r1.r * r2.p.i"}, {"text":"    substitution: r1.r * r1.p.i  =>  r1.r * r2.p.i"}, {"text":"    substitution: r1.p.v - r1.n.v  =>  src.p.v - r1.n.v"}, {"text":"eq 11 [regular, residual] r2.r * r2.p.i - r1.n.v"}, {"text":"    simplify: r1.n.v - 0.0 = r2.r * r2.p.i  =>  r1.n.v = r2.r * r2.p.i"}, {"text":"    substitution: r2.p.v - r2.n.v  =>  r1.n.v - 0.0"}]}
+// ""
+// {"node":"0.0.2.3", "property":"hover", "result":[{"text":"eq 4 [initial, torn] r2.p.i := (src.p.v - r1.n.v) / r1.r"}, {"text":"eq 5 [initial, residual] r2.r * r2.p.i - r1.n.v"}, {"text":"eq 10 [regular, torn] r1.n.v := src.p.v - r1.r * r2.p.i"}, {"text":"eq 11 [regular, residual] r2.r * r2.p.i - r1.n.v"}]}
+// ""
+// {"node":"0.0.5.2.1", "property":"flatDeclarations", "result":[{"text":"parameter Real 'r1.r' = 3.0;"}, {"text":"Real 'r1.p.v';"}, {"text":"Real 'r1.p.i';"}, {"text":"Real 'r1.n.v';"}, {"text":"Real 'r1.n.i';"}]}
+// ""
+// {"node":"0.0.5.4", "property":"connectionEquations", "result":[{"text":"'src.p.v' = 'r1.p.v';"}, {"text":"'r1.p.i' + 'src.p.i' = 0.0;"}]}
+// ""
+// {"node":"0.0.5", "property":"translationMessages", "result":[{"text":"translated EQ.B"}]}
+// ""
+// {"node":"0.0.1", "property":"simEquations", "result":[{"text":"not translated (no model to translate, give a contextModel)"}]}
+// ""
+// endResult
