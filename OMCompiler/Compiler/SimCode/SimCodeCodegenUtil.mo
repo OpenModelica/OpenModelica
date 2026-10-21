@@ -96,7 +96,15 @@ public function sortEqSystems
 algorithm
   outEqs := List.flatten(list(expandEntwined(eq) for eq in eqs));
   outEqs := List.sort(outEqs, compareEqSystems);
+  // the new backend also lists the single calls of entwined equations on their own
+  outEqs := List.sortedUnique(outEqs, equalEqSystemIndex);
 end sortEqSystems;
+
+protected function equalEqSystemIndex
+  input SimCode.SimEqSystem eq1;
+  input SimCode.SimEqSystem eq2;
+  output Boolean b = simEqSystemIndex(eq1) == simEqSystemIndex(eq2);
+end equalEqSystemIndex;
 
 protected function expandEntwined
   "expands entwined equations to their body equation systems

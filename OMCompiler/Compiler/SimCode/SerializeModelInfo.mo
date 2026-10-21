@@ -633,8 +633,7 @@ algorithm
         else {};
       end match;
       if not listEmpty(jeqs) then
-        File.write(file, ",");
-        serializeEquation(file,listHead(jeqs),section,withOperations,parent=lSystem.index,first=true,assign_type=AssignType.JACOBIAN);
+        serializeEquation(file,listHead(jeqs),section,withOperations,parent=lSystem.index,first=listEmpty(eqs),assign_type=AssignType.JACOBIAN);
         for e in listRest(jeqs) loop serializeEquation(file,e,section,withOperations,parent=lSystem.index,assign_type=AssignType.JACOBIAN); end for;
       end if;
 
@@ -859,12 +858,16 @@ algorithm
         else {};
       end match;
       if not listEmpty(jeqs) then
-        File.write(file, ",");
-        serializeEquation(file,listHead(jeqs),section,withOperations,parent=nlSystem.index,first=true,assign_type=AssignType.JACOBIAN);
+        serializeEquation(file,listHead(jeqs),section,withOperations,parent=nlSystem.index,first=listEmpty(eqs),assign_type=AssignType.JACOBIAN);
         for e in listRest(jeqs) loop serializeEquation(file,e,section,withOperations,parent=nlSystem.index,assign_type=AssignType.JACOBIAN); end for;
       end if;
 
-      File.write(file, ",\n{\"eqIndex\":");
+      // a fully torn system has no inner equations
+      if listEmpty(eqs) and listEmpty(jeqs) then
+        File.write(file, "\n{\"eqIndex\":");
+      else
+        File.write(file, ",\n{\"eqIndex\":");
+      end if;
       File.writeInt(file, nlSystem.index);
       if parent <> 0 then
         File.write(file, ",\"parent\":");
