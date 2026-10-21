@@ -89,7 +89,6 @@ protected
   constant Integer MAYBE = 2;
   constant Integer PARAM_MIN = 1 "size parameters are at least this";
   constant Integer MIN_SIZE = 2 "resizable dimensions and connect loops have at least this many elements";
-  constant Integer MAX_PIECES = 300 "pieces of one connector array before giving up";
   constant Integer MAX_ROUNDS = 50;
 
   // ---------------------------------------------------------------------------
@@ -1345,8 +1344,9 @@ protected
       end if;
     end for;
     res := uniq;
-    if listLength(res) > MAX_PIECES then
-      Error.addInternalError(getInstanceName() + ": --resizableArrays: the connection sets do not converge (shifted connections around a cycle?).", sourceInfo());
+    if listLength(res) > Flags.getConfigInt(Flags.RESIZABLE_MAX_PIECES) then
+      Error.addInternalError(getInstanceName() + ": --resizableArrays: a connector array is split into more than " + intString(Flags.getConfigInt(Flags.RESIZABLE_MAX_PIECES))
+        + " pieces (connections of many single elements, or shifted connections around a cycle).", sourceInfo());
       fail();
     end if;
   end splitPieces;
@@ -1698,12 +1698,16 @@ protected
     end SLICED;
   end SubEntry;
 
+  type VertexList = list<Integer>;
+
   uniontype Context
     record CONTEXT
       Vector<Vertex> vertices;
       UnorderedMap<String, Integer> vertexIndex;
       UnorderedMap<String, Expression> params "size parameters by name";
       UnorderedMap<String, Variable> variables;
+      UnorderedSet<String> literal "vertex keys of the connector arrays connected only with literal indices";
+      UnorderedMap<String, list<Integer>> elements "vertex key of such a connector array -> the vertices of its elements";
     end CONTEXT;
   end Context;
 
@@ -1980,6 +1984,206 @@ protected
     output String key = name + (if outside then "$outside" else "$inside");
   end vertexKey;
 
+  function literalConnectors
+    "The vertex keys of the connector arrays of literal size that are only
+     connected with literal indices, outside of for loops and if equations
+     (e.g. -d=mergeComponents collects components into arrays but keeps their
+     connections). They get a vertex for each element: connecting single
+     elements of one array vertex would split it into one piece per element."
+    input list<Equation> conns;
+    output UnorderedSet<String> literal = UnorderedSet.new(stringHashDjb2, stringEq);
+  protected
+    UnorderedSet<String> other = UnorderedSet.new(stringHashDjb2, stringEq);
+  algorithm
+    for eq in conns loop
+      () := match eq
+        case Equation.CONNECT() algorithm
+          addLiteralSide(eq.lhs, eq.source, literal, other);
+          addLiteralSide(eq.rhs, eq.source, literal, other);
+        then ();
+        else algorithm
+          Equation.apply(eq, function addOtherSides(other = other));
+        then ();
+      end match;
+    end for;
+    for key in UnorderedSet.toList(other) loop
+      UnorderedSet.remove(key, literal);
+    end for;
+  end literalConnectors;
+
+  function addLiteralSide
+    input Expression exp;
+    input DAE.ElementSource source;
+    input UnorderedSet<String> literal;
+    input UnorderedSet<String> other;
+  protected
+    ComponentRef cr = ComponentRef.fillSubscripts(Expression.toCref(exp)), conn_cr;
+    list<Subscript> subs = ComponentRef.subscriptsAllFlat(cr);
+    list<Dimension> dims;
+    String key;
+  algorithm
+    conn_cr := ComponentRef.stripSubscriptsAll(cr);
+    dims := crefDims(conn_cr);
+    key := vertexKeyOf(conn_cr, source);
+    if not listEmpty(subs) and listLength(subs) == listLength(dims)
+       and List.all(subs, isIntegerIndex) and List.all(dims, isIntegerDim) then
+      UnorderedSet.add(key, literal);
+    else
+      UnorderedSet.add(key, other);
+    end if;
+  end addLiteralSide;
+
+  function addOtherSides
+    "the connectors of a connection in a for loop or if equation"
+    input Equation eq;
+    input UnorderedSet<String> other;
+  algorithm
+    () := match eq
+      case Equation.CONNECT() algorithm
+        UnorderedSet.add(vertexKeyOf(ComponentRef.stripSubscriptsAll(Expression.toCref(eq.lhs)), eq.source), other);
+        UnorderedSet.add(vertexKeyOf(ComponentRef.stripSubscriptsAll(Expression.toCref(eq.rhs)), eq.source), other);
+      then ();
+      else ();
+    end match;
+  end addOtherSides;
+
+  function vertexKeyOf
+    "the vertex key of a connector (unsubscripted)"
+    input ComponentRef connCref;
+    input DAE.ElementSource source;
+    output String key = vertexKey(ComponentRef.toString(connCref),
+      Connector.isOutside(Connector.fromCref(connCref, ComponentRef.nodeType(connCref), source)));
+  end vertexKeyOf;
+
+  function isIntegerIndex
+    input Subscript sub;
+    output Boolean res;
+  algorithm
+    res := match sub
+      case Subscript.INDEX(index = Expression.INTEGER()) then true;
+      else false;
+    end match;
+  end isIntegerIndex;
+
+  function isIntegerDim
+    input Dimension dim;
+    output Boolean res;
+  algorithm
+    res := match dim
+      case Dimension.INTEGER() then true;
+      else false;
+    end match;
+  end isIntegerDim;
+
+  function elementKey
+    "the vertex key of an element of a connector array"
+    input String key;
+    input list<Integer> indices;
+    output String elemKey = key + "[" + stringDelimitList(list(intString(i) for i in indices), ",") + "]";
+  end elementKey;
+
+  function indexTuples
+    "all indices of an array of the given sizes, the last one fastest"
+    input list<Integer> sizes;
+    output list<list<Integer>> tuples;
+  algorithm
+    tuples := match sizes
+      local
+        Integer n;
+        list<Integer> rest;
+      case {} then {{}};
+      case n :: rest then List.flatten(list(list(i :: t for t in indexTuples(rest)) for i in 1:n));
+    end match;
+  end indexTuples;
+
+  function elementVertices
+    "the vertices of the elements of a connector array of literal size, created
+     if they do not exist: the connector array with the box of one element"
+    input ComponentRef connCref;
+    input DAE.ElementSource source;
+    input Context ctx;
+    output list<Integer> vs = {};
+  protected
+    Connector conn = Connector.fromCref(connCref, ComponentRef.nodeType(connCref), source);
+    String key = vertexKey(ComponentRef.toString(connCref), Connector.isOutside(conn)), elem_key;
+    Option<list<Integer>> ovs = UnorderedMap.get(key, ctx.elements);
+    list<Integer> sizes;
+  algorithm
+    if isSome(ovs) then
+      SOME(vs) := ovs;
+    else
+      sizes := list(Dimension.size(d) for d in crefDims(connCref));
+      for idx in indexTuples(sizes) loop
+        elem_key := elementKey(key, idx);
+        Vector.push(ctx.vertices, VERTEX(elem_key, SOME(conn), list(IV(symInt(i), symInt(i)) for i in idx)));
+        UnorderedMap.add(elem_key, Vector.size(ctx.vertices), ctx.vertexIndex);
+        vs := Vector.size(ctx.vertices) :: vs;
+      end for;
+      vs := listReverseInPlace(vs);
+      UnorderedMap.add(key, vs, ctx.elements);
+    end if;
+  end elementVertices;
+
+  function connectorVertices
+    "the vertex of a connector (unsubscripted), or the vertices of its elements"
+    input ComponentRef connCref;
+    input DAE.ElementSource source;
+    input Context ctx;
+  algorithm
+    if UnorderedSet.contains(vertexKeyOf(connCref, source), ctx.literal) then
+      elementVertices(connCref, source, ctx);
+    else
+      vertexOf(connCref, source, ctx);
+    end if;
+  end connectorVertices;
+
+  function sideVertexOf
+    "the vertex of one side of a connection: the connector array, or the
+     element of a connector array with element vertices"
+    input ComponentRef cref "with all subscripts";
+    input list<Subscript> subs;
+    input DAE.ElementSource source;
+    input Context ctx;
+    output Integer v;
+  protected
+    ComponentRef conn_cr = ComponentRef.stripSubscriptsAll(cref);
+    String key = vertexKeyOf(conn_cr, source);
+  algorithm
+    if UnorderedSet.contains(key, ctx.literal) then
+      elementVertices(conn_cr, source, ctx);
+      v := UnorderedMap.getSafe(elementKey(key, list(integerIndex(s) for s in subs)), ctx.vertexIndex, sourceInfo());
+    else
+      v := vertexOf(conn_cr, source, ctx);
+    end if;
+  end sideVertexOf;
+
+  function integerIndex
+    input Subscript sub;
+    output Integer i;
+  algorithm
+    Subscript.INDEX(index = Expression.INTEGER(value = i)) := sub;
+  end integerIndex;
+
+  function lookupConnector
+    "the vertex of a connector given with its subscripts: the connector array,
+     or the element of a connector array with element vertices"
+    input ComponentRef cref;
+    input Boolean outside;
+    input Context ctx;
+    output Option<Integer> ov;
+  protected
+    String key = vertexKey(ComponentRef.toString(ComponentRef.stripSubscriptsAll(cref)), outside);
+    list<Subscript> subs;
+  algorithm
+    ov := UnorderedMap.get(key, ctx.vertexIndex);
+    if isNone(ov) and UnorderedMap.contains(key, ctx.elements) then
+      subs := ComponentRef.subscriptsAllFlat(cref);
+      if List.all(subs, isIntegerIndex) then
+        ov := UnorderedMap.get(elementKey(key, list(integerIndex(s) for s in subs)), ctx.vertexIndex);
+      end if;
+    end if;
+  end lookupConnector;
+
   function connectSide
     input Expression exp;
     input list<String> iterNames;
@@ -1999,7 +2203,7 @@ protected
   algorithm
     cr := ComponentRef.fillSubscripts(Expression.toCref(exp));
     subs := ComponentRef.subscriptsAllFlat(cr);
-    v := vertexOf(ComponentRef.stripSubscriptsAll(cr), source, ctx);
+    v := sideVertexOf(cr, subs, source, ctx);
     box := vertexBox(ctx.vertices, v);
     if listLength(subs) <> listLength(box) then
       unsupported("the subscripts of " + Expression.toString(exp), source);
@@ -2266,6 +2470,116 @@ protected
           edge := EDGE(d, SIDE(va, ia, oa), SIDE(vb, ib, ob), source);
   end makeEdge;
 
+  function coalesceEdges
+    "Runs of connections of single elements of two one-dimensional connector
+     arrays with the same index distance, e.g. connect(r[k].n, r[k + 1].p) for
+     consecutive k, become one edge over the run as if they were connected in a
+     for loop: otherwise every connection splits off one piece of the arrays."
+    input list<Edge> edges;
+    output list<Edge> res = {};
+  protected
+    UnorderedMap<String, list<tuple<Integer, Edge>>> groups = UnorderedMap.new<PointEdges>(stringHashDjb2, stringEq);
+    list<String> keys = {};
+    list<tuple<Integer, Edge>> lst;
+    Integer va, vb, ia, ib, lo, prev;
+    Edge first;
+    String key;
+  algorithm
+    for e in edges loop
+      if isPointEdge(e) then
+        (va, ia, vb, ib) := pointEdge(e);
+        key := intString(va) + "," + intString(vb) + "," + intString(ib - ia);
+        if not UnorderedMap.contains(key, groups) then
+          keys := key :: keys;
+        end if;
+        UnorderedMap.add(key, (ia, e) :: UnorderedMap.getOrDefault(key, groups, {}), groups);
+      else
+        res := e :: res;
+      end if;
+    end for;
+
+    for k in listReverseInPlace(keys) loop
+      lst := List.sort(UnorderedMap.getSafe(k, groups, sourceInfo()), pointEdgeGt);
+      (lo, first) :: lst := lst;
+      prev := lo;
+      for tpl in lst loop
+        (ia, _) := tpl;
+        if ia <> prev + 1 then
+          res := runEdge(first, lo, prev) :: res;
+          (lo, first) := tpl;
+        end if;
+        prev := ia;
+      end for;
+      res := runEdge(first, lo, prev) :: res;
+    end for;
+    res := listReverseInPlace(res);
+  end coalesceEdges;
+
+  type PointEdges = list<tuple<Integer, Edge>>;
+
+  function isPointEdge
+    "a connection of single elements of two one-dimensional connector arrays outside of loops"
+    input Edge e;
+    output Boolean res;
+  algorithm
+    res := match e
+      local
+        Sym oa, ob;
+      case EDGE(dom = {}, a = SIDE(iters = {0}, offs = {oa}), b = SIDE(iters = {0}, offs = {ob}))
+        then isIntegerSym(oa) and isIntegerSym(ob);
+      else false;
+    end match;
+  end isPointEdge;
+
+  function isIntegerSym
+    input Sym s;
+    output Boolean res = symIsAff(s) and affIsConst(symGetAff(s));
+  end isIntegerSym;
+
+  function symInteger
+    input Sym s;
+    output Integer i;
+  algorithm
+    AFF(c = i) := symGetAff(s);
+  end symInteger;
+
+  function pointEdge
+    input Edge e;
+    output Integer va;
+    output Integer ia;
+    output Integer vb;
+    output Integer ib;
+  protected
+    Sym oa, ob;
+  algorithm
+    EDGE(a = SIDE(vertex = va, offs = {oa}), b = SIDE(vertex = vb, offs = {ob})) := e;
+    ia := symInteger(oa);
+    ib := symInteger(ob);
+  end pointEdge;
+
+  function pointEdgeGt
+    input tuple<Integer, Edge> a;
+    input tuple<Integer, Edge> b;
+    output Boolean res = Util.tuple21(a) > Util.tuple21(b);
+  end pointEdgeGt;
+
+  function runEdge
+    "the edge of the run lo..hi of point edges like first: index = iterator + offset"
+    input Edge first;
+    input Integer lo;
+    input Integer hi;
+    output Edge e;
+  protected
+    Integer va, vb, ia, ib;
+  algorithm
+    if lo == hi then
+      e := first;
+    else
+      (va, ia, vb, ib) := pointEdge(first);
+      e := EDGE({IV(symInt(lo), symInt(hi))}, SIDE(va, {1}, {symInt(0)}), SIDE(vb, {1}, {symInt(ib - ia)}), first.source);
+    end if;
+  end runEdge;
+
   function isSliced
     input SubEntry e;
     output Boolean b;
@@ -2371,15 +2685,17 @@ protected
     input list<Variable> variables;
     input Vector<Vertex> vertices;
     input UnorderedMap<String, Integer> vertexIndex;
+    input UnorderedMap<String, list<Integer>> elements "connector arrays with element vertices";
     output array<list<ConnVar>> potentials;
     output array<list<ConnVar>> flows;
     output array<list<ConnVar>> streams;
   protected
     ComponentRef c;
     Option<Integer> ov;
-    Integer v;
     Connector conn;
     Box box;
+    String key;
+    list<Integer> vs;
   algorithm
     potentials := arrayCreate(Vector.size(vertices), {});
     flows := arrayCreate(Vector.size(vertices), {});
@@ -2391,9 +2707,10 @@ protected
         c := var.name;
         while not ComponentRef.isEmpty(c) loop
           for outside in {false, true} loop
-            ov := UnorderedMap.get(vertexKey(ComponentRef.toString(c), outside), vertexIndex);
-            if isSome(ov) then
-              SOME(v) := ov;
+            key := vertexKey(ComponentRef.toString(c), outside);
+            ov := UnorderedMap.get(key, vertexIndex);
+            vs := if isSome(ov) then {Util.getOption(ov)} else UnorderedMap.getOrDefault(key, elements, {});
+            for v in vs loop
               VERTEX(conn = SOME(conn), box = box) := Vector.get(vertices, v);
               if Variable.isFlow(var) then
                 flows[v] := CONN_VAR(var.name, listLength(box), memberName(var.name, Connector.name(conn))) :: flows[v];
@@ -2402,7 +2719,7 @@ protected
               else
                 potentials[v] := CONN_VAR(var.name, listLength(box), memberName(var.name, Connector.name(conn))) :: potentials[v];
               end if;
-            end if;
+            end for;
           end for;
           c := ComponentRef.rest(c);
         end while;
@@ -3669,7 +3986,8 @@ protected
     UnorderedSet<String> prefixes;
   algorithm
     ctx := CONTEXT(Vector.new<Vertex>(), UnorderedMap.new<Integer>(stringHashDjb2, stringEq),
-      UnorderedMap.new<Expression>(stringHashDjb2, stringEq), UnorderedMap.new<Variable>(stringHashDjb2, stringEq));
+      UnorderedMap.new<Expression>(stringHashDjb2, stringEq), UnorderedMap.new<Variable>(stringHashDjb2, stringEq),
+      UnorderedSet.new(stringHashDjb2, stringEq), UnorderedMap.new<VertexList>(stringHashDjb2, stringEq));
     for var in flatModel.variables loop
       UnorderedMap.add(ComponentRef.toString(var.name), var, ctx.variables);
       obind := Binding.getExpOpt(var.binding);
@@ -4017,7 +4335,7 @@ public
     // the connector: the longest prefix that is a connector array of the sets
     c := cr;
     while not ComponentRef.isEmpty(c) loop
-      ov := UnorderedMap.get(vertexKey(ComponentRef.toString(ComponentRef.stripSubscriptsAll(c)), false), ctx.vertexIndex);
+      ov := lookupConnector(c, false, ctx);
       if isSome(ov) then
         break;
       end if;
@@ -4201,7 +4519,8 @@ public
   algorithm
     (conns, eql) := List.splitOnTrue(flatModel.equations, isConnection);
     ctx := CONTEXT(Vector.new<Vertex>(), UnorderedMap.new<Integer>(stringHashDjb2, stringEq),
-      UnorderedMap.new<Expression>(stringHashDjb2, stringEq), UnorderedMap.new<Variable>(stringHashDjb2, stringEq));
+      UnorderedMap.new<Expression>(stringHashDjb2, stringEq), UnorderedMap.new<Variable>(stringHashDjb2, stringEq),
+      literalConnectors(conns), UnorderedMap.new<VertexList>(stringHashDjb2, stringEq));
     for var in flatModel.variables loop
       UnorderedMap.add(ComponentRef.toString(var.name), var, ctx.variables);
     end for;
@@ -4211,7 +4530,7 @@ public
       if Variable.isFlow(var) then
         c := ComponentRef.rest(var.name);
         if not ComponentRef.isEmpty(c) then
-          vertexOf(c, ElementSource.createElementSource(var.info), ctx);
+          connectorVertices(c, ElementSource.createElementSource(var.info), ctx);
         end if;
       end if;
     end for;
@@ -4219,14 +4538,14 @@ public
     for eq in conns loop
       edges := collectEdges(eq, {}, {}, ctx, edges);
     end for;
-    edges := listReverseInPlace(edges);
+    edges := coalesceEdges(listReverseInPlace(edges));
 
     (sets, facts) := connectionSets(ctx.vertices, edges);
     if Flags.isSet(Flags.DUMP_SET_BASED_GRAPHS) then
       dumpSets(sets, ctx.vertices, facts);
     end if;
 
-    (potentials, flows, streams) := connectorVariables(flatModel.variables, ctx.vertices, ctx.vertexIndex);
+    (potentials, flows, streams) := connectorVariables(flatModel.variables, ctx.vertices, ctx.vertexIndex, ctx.elements);
     fixed := fixStructuralSizes(sets, ctx, flows, facts);
     flatModel.equations := listAppend(eql, generateEquations(sets, ctx.vertices, potentials, flows, streams, ctx.params, facts, fixed));
     flatModel := resolveStreams(flatModel, sets, ctx, streams, facts, fixed);

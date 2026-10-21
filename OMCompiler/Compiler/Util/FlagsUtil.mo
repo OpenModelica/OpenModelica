@@ -440,7 +440,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.FMU_NATIVE_PLATFORMS,
   Flags.TPL_OUTPUT_DIR,
   Flags.FMU_DIRECTORY,
-  Flags.TPL_INTERFACE_DIR
+  Flags.TPL_INTERFACE_DIR,
+  Flags.RESIZABLE_MAX_PIECES
 };
 
 public function new
