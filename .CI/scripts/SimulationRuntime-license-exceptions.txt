@@ -58,7 +58,6 @@ OMCompiler/Compiler/scripts/ngspicetoModelica.py
 OMCompiler/Compiler/susan_codegen/
 
 OMCompiler/Compiler/Template/AbsynDumpTpl.mo
-OMCompiler/Compiler/Template/AbsynToJulia.mo
 OMCompiler/Compiler/Template/AbsynJLDumpTpl.mo
 OMCompiler/Compiler/Template/Codegen*.mo
 OMCompiler/Compiler/Template/DAEDumpTpl.mo
@@ -66,7 +65,6 @@ OMCompiler/Compiler/Template/ExpressionDumpTpl.mo
 OMCompiler/Compiler/Template/GenerateAPIFunctionsTpl.mo
 OMCompiler/Compiler/Template/GraphMLDumpTpl.mo
 OMCompiler/Compiler/Template/GraphvizDump.mo
-OMCompiler/Compiler/Template/MMToJulia.mo
 OMCompiler/Compiler/Template/NFInstDumpTpl.mo
 OMCompiler/Compiler/Template/SCodeDumpTpl.mo
 OMCompiler/Compiler/Template/SimCodeDump.mo
@@ -79,7 +77,6 @@ OMCompiler/Compiler/Util/Autoconf.mo
 
 OMCompiler/Compiler/*.mos
 OMCompiler/Parser/*.mos
-OMCompiler/toJulia/*.mos
 
 # Dave Gamble - cJSON
 OMCompiler/Compiler/runtime/cJSON.*

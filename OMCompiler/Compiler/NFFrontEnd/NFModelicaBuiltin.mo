@@ -1679,14 +1679,6 @@ external "builtin";
 annotation(preferredView="text");
 end generateHeader;
 
-function generateJuliaHeader
-  "Generates a Julia header file for external MetaModelica functions."
-  input String fileName;
-  output Boolean success;
-external "builtin";
-annotation(preferredView="text");
-end generateJuliaHeader;
-
 function generateSeparateCode
   "Generates code for a MetaModelica package."
   input TypeName className;
@@ -6890,12 +6882,6 @@ annotation(
 (as long as the function interfaces are the same).</p>
 </html>"), preferredView="text");
 end relocateFunctions;
-
-function toJulia
-  "Translates Absyn to Julia."
-  output String res;
-external "builtin";
-end toJulia;
 
 function interactiveDumpAbsynToJL
   "Dumps the AST into a Julia representation."
