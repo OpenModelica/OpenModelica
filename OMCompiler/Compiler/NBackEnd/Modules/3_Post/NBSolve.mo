@@ -1825,7 +1825,7 @@ protected
     Expression arg, inv;
     Option<Expression> oinv = NONE();
     String name;
-    UnorderedMap<InstNode, Expression> replacements;
+    UnorderedMap<NFInstNode.InstNode, Expression> replacements;
   algorithm
     Expression.CALL(call = Call.TYPED_CALL(fn = fn, arguments = args)) := exp;
 

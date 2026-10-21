@@ -242,8 +242,8 @@ public
   function applySimpleExpViaInstNode
     "Needs to be mapped with Expression.map() to replace crefs that appear as
      arguments in function calls."
-    input output Expression exp                               "Replacement happens inside this expression";
-    input UnorderedMap<InstNode, Expression> replacements     "rules for replacements are stored inside here";
+    input output Expression exp                                       "Replacement happens inside this expression";
+    input UnorderedMap<NFInstNode.InstNode, Expression> replacements  "rules for replacements are stored inside here";
   algorithm
     exp := match exp
       local
