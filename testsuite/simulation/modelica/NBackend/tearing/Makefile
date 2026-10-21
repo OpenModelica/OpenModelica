@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 partialForIfBody.mos \
+residualScaling.mos \
 duplicatePattern.mos \
 slicedLinearSystem.mos \
 minimalTearing.mos \
