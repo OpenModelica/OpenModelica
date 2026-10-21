@@ -59,7 +59,6 @@ import UnitAbsyn;
 
 // protected imports
 protected
-import AbsynToJulia;
 import AbsynToSCode;
 import Autoconf;
 import BackendDAECreate;
@@ -3154,12 +3153,6 @@ algorithm
         b := System.relocateFunctions(str, relocatableFunctionsTuple);
       then
         Values.BOOL(b);
-
-    case ("toJulia",{})
-      algorithm
-        str := Tpl.tplString(AbsynToJulia.dumpProgram, SymbolTable.getAbsyn());
-      then
-        Values.STRING(str);
 
     case ("interactiveDumpAbsynToJL",{})
       algorithm

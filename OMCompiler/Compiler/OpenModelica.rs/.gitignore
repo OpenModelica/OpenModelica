@@ -90,7 +90,6 @@ openmodelica_backend_main/src/OpenModelicaScriptingAPI.rs
 openmodelica_backend_main/src/Refactor.rs
 openmodelica_backend_main/src/SimCodeMain.rs
 openmodelica_backend_main/src/StaticScript.rs
-openmodelica_backend_tools/src/AbsynToJulia.rs
 openmodelica_backend_tools/src/AvlTree.rs
 openmodelica_backend_tools/src/BinaryTreeInt.rs
 openmodelica_backend_tools/src/Binding.rs
@@ -101,8 +100,6 @@ openmodelica_backend_tools/src/DAEToMid.rs
 openmodelica_backend_tools/src/GenerateAPIFunctionsTpl.rs
 openmodelica_backend_tools/src/HashTableMidVar.rs
 openmodelica_backend_tools/src/LexerModelicaDiff.rs
-openmodelica_backend_tools/src/MMToJuliaKeywords.rs
-openmodelica_backend_tools/src/MMToJuliaUtil.rs
 openmodelica_backend_tools/src/MathematicaDump.rs
 openmodelica_backend_tools/src/MidToMid.rs
 openmodelica_backend_tools/src/Obfuscate.rs

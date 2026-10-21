@@ -40,22 +40,8 @@
 extern "C" {
 #endif
 
-#if !defined(OMJULIA)
-
 #include "systemimpl.h"
 #define UNBOX_OFFSET 1
-
-#else
-
-#if defined(_WIN32)
-#define DLLDirection __declspec(dllexport)
-#else
-#define DLLDirection /* nothing */
-#endif
-
-#include <julia.h>
-
-#endif
 
 #include <pthread.h>
 
@@ -80,20 +66,13 @@ typedef struct antlr_members_struct {
   long first_comment;
   void* filename_OMC;
   void* timestamp;
-#if !defined(OMJULIA)
   const char* filename_C;
   const char* filename_C_testsuiteFriendly;
-#else
-  jl_value_t* filename_C;
-  jl_value_t* filename_C_testsuiteFriendly;
-#endif
   int readonly;
   int flags;
   int langStd;
   int strict;
-#if !defined(OMJULIA)
   threadData_t *threadData;
-#endif
 } parser_members;
 
 #define PARSE_MODELICA        0
