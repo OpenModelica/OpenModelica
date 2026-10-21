@@ -1072,18 +1072,7 @@ void OptionsDialog::readMessagesSettings()
   }
   // read font family
   QTextBrowser textBrowser;
-  if (mpSettings->contains("messages/fontFamily")) {
-    // select font family item
-    int currentIndex = mpMessagesPage->getFontFamilyComboBox()->findText(mpSettings->value("messages/fontFamily").toString(), Qt::MatchExactly);
-    if (currentIndex >= 0) {
-      mpMessagesPage->getFontFamilyComboBox()->setCurrentIndex(currentIndex);
-    }
-  } else {
-    int currentIndex = mpMessagesPage->getFontFamilyComboBox()->findText(mpMessagesPage->getDefaultFontFamily(), Qt::MatchExactly);
-    if (currentIndex >= 0) {
-      mpMessagesPage->getFontFamilyComboBox()->setCurrentIndex(currentIndex);
-    }
-  }
+  mpMessagesPage->setFontFamily(mpSettings->value("messages/fontFamily").toString());
   // read font size
   if (mpSettings->contains("messages/fontSize")) {
     mpMessagesPage->getFontSizeSpinBox()->setValue(mpSettings->value("messages/fontSize").toDouble());
@@ -2634,8 +2623,8 @@ void OptionsDialog::saveMessagesSettings()
   }
   // save font
   QTextBrowser textBrowser;
-  QString fontFamily = mpMessagesPage->getFontFamilyComboBox()->currentFont().family();
-  if (fontFamily.isEmpty() || fontFamily.compare(mpMessagesPage->getDefaultFontFamily()) == 0) {
+  QString fontFamily = mpMessagesPage->getFontFamily();
+  if (fontFamily.compare(mpMessagesPage->getDefaultFontFamily()) == 0) {
     mpSettings->remove("messages/fontFamily");
   } else {
     mpSettings->setValue("messages/fontFamily", fontFamily);
@@ -5614,28 +5603,8 @@ MessagesPage::MessagesPage(OptionsDialog *pOptionsDialog)
   mpFontFamilyLabel = new Label(Helper::fontFamily);
   mpFontFamilyComboBox = new QFontComboBox;
   QTextBrowser textBrowser;
-  QFont font = textBrowser.font();
-
-  // Resolve to the real, installed family
-  QString family = QFontInfo(font).family();
-  int currentIndex = mpFontFamilyComboBox->findText(family, Qt::MatchExactly);
-
-  if (currentIndex < 0) {
-    // hidden system alias (e.g. ".AppleSystemUIFont")
-    family = QFontDatabase::systemFont(QFontDatabase::GeneralFont).family();
-    currentIndex = mpFontFamilyComboBox->findText(family, Qt::MatchExactly);
-  }
-
-  if (currentIndex < 0 && !family.isEmpty()) {
-    // the system font is a hidden alias that QFontComboBox does not list, add it so that it can be selected
-    mpFontFamilyComboBox->insertItem(0, family);
-    currentIndex = 0;
-  }
-
-  if (currentIndex >= 0) {
-    mpFontFamilyComboBox->setCurrentIndex(currentIndex);
-    mDefaultFontFamily = family;
-  }
+  mDefaultFontFamily = textBrowser.font().family();
+  setFontFamily(mDefaultFontFamily);
   // font size combobox
   mpFontSizeLabel = new Label(Helper::fontSize);
   mpFontSizeSpinBox = new DoubleSpinBox;
@@ -5684,6 +5653,35 @@ MessagesPage::MessagesPage(OptionsDialog *pOptionsDialog)
   pMainLayout->addWidget(mpGeneralGroupBox);
   pMainLayout->addWidget(mpFontColorsGroupBox);
   setLayout(pMainLayout);
+}
+
+/*!
+ * \brief MessagesPage::setFontFamily
+ * Selects the font family, or the default one if empty.
+ * Hidden system fonts, e.g., .AppleSystemUIFont on macOS, are not listed by QFontComboBox so they are set as edit text.
+ * \param family
+ */
+void MessagesPage::setFontFamily(const QString &family)
+{
+  const QString fontFamily = family.isEmpty() ? mDefaultFontFamily : family;
+  int currentIndex = mpFontFamilyComboBox->findText(fontFamily, Qt::MatchExactly);
+  if (currentIndex >= 0) {
+    mpFontFamilyComboBox->setCurrentIndex(currentIndex);
+  } else {
+    mpFontFamilyComboBox->setEditText(fontFamily);
+  }
+}
+
+/*!
+ * \brief MessagesPage::getFontFamily
+ * Returns the selected font family, or the default one if empty.
+ * Uses currentText() since Qt 5 does not update QFontComboBox::currentFont() for edit text.
+ * \return
+ */
+QString MessagesPage::getFontFamily() const
+{
+  const QString family = mpFontFamilyComboBox->currentText().trimmed();
+  return family.isEmpty() ? mDefaultFontFamily : family;
 }
 
 void MessagesPage::setNotificationPickColorButtonIcon()

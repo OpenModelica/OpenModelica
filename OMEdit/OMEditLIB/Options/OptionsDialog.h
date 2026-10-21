@@ -765,6 +765,8 @@ public:
   QCheckBox* getEnlargeMessageBrowserCheckBox() {return mpEnlargeMessageBrowserCheckBox;}
   QFontComboBox* getFontFamilyComboBox() {return mpFontFamilyComboBox;}
   QString getDefaultFontFamily() const {return mDefaultFontFamily;}
+  void setFontFamily(const QString &family);
+  QString getFontFamily() const;
   DoubleSpinBox* getFontSizeSpinBox() {return mpFontSizeSpinBox;}
   void setNotificationColor(QColor color) {mNotificaitonColor = color;}
   QColor getNotificationColor() const {return mNotificaitonColor;}
