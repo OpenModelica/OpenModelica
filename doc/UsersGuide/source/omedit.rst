@@ -572,6 +572,45 @@ Move towards the end connector and click when cursor changes to cross cursor.
   :height: 14pt
   :alt: OMEdit connect mode icon
 
+.. _omedit-class-diagram :
+
+Class Diagram
+~~~~~~~~~~~~~
+
+To see the UML class diagram of a class, right-click it in the Libraries
+Browser and choose *Class Diagram*, see :numref:`omedit-class-diagram-menu`. The diagram shows the class, the classes it
+extends and the classes it uses, with their components and modifiers, see
+:ref:`uml-diagrams`. It opens in the Class Diagram window, which has a tab for
+each class.
+
+-  *Depth* sets how many levels of used classes are shown, 0 shows only the
+   class and its base classes.
+
+-  *Show modifiers* shows or hides the modifiers and bindings.
+
+-  *Layout* arranges the classes with the class on top, with the base classes
+   on top, or in rows by inheritance.
+
+-  *Refresh* draws the diagram again, after the class was changed.
+
+-  *Save* saves the diagram as a draw.io file, which can be edited in
+   `draw.io <https://www.drawio.com>`_.
+
+.. figure :: media/omedit-class-diagram-menu.png
+  :name: omedit-class-diagram-menu
+
+  The Class Diagram entry of the Libraries Browser menu.
+
+A click on a class in the diagram opens it, and a click on a line in a class,
+e.g. a component, opens the text view of the class at the line that declares
+it, see :numref:`omedit-class-diagram-figure`.
+
+.. figure :: media/omedit-class-diagram.png
+  :name: omedit-class-diagram-figure
+
+  The class diagram of a model with a redeclared medium. A click on the
+  highlighted component opens the text view of ``R.Pipe`` at line 18.
+
 Simulating a Model
 ------------------
 
