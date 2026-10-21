@@ -3139,8 +3139,8 @@ void LibraryTreeView::showContextMenu(QPoint point)
           }
           menu.addSeparator();
           menu.addAction(mpFindUsageAction);
-#if !defined(__EMSCRIPTEN__) && !defined(OM_OMEDIT_NO_WEBENGINE)
-          // The draw.io viewer needs QtWebEngine, see ClassDiagramWidget.
+#if !defined(OM_OMEDIT_NO_WEBENGINE)
+          // The draw.io viewer needs QtWebEngine, or the browser of the web build, see ClassDiagramWidget.
           menu.addAction(mpClassDiagramAction);
 #endif
           /* If item is OpenModelica or part of it then don't show the duplicate menu item for it. */
@@ -3201,8 +3201,8 @@ void LibraryTreeView::showContextMenu(QPoint point)
           if (pLibraryTreeItem->isCRMLFile()) {
             menu.addAction(mpTranslateCRMLAction);
             menu.addAction(mpTranslateAsCRMLAction);
-#if !defined(__EMSCRIPTEN__) && !defined(OM_OMEDIT_NO_WEBENGINE)
-            // The draw.io viewer needs QtWebEngine, see ClassDiagramWidget.
+#if !defined(OM_OMEDIT_NO_WEBENGINE)
+            // The draw.io viewer needs QtWebEngine, or the browser of the web build, see ClassDiagramWidget.
             menu.addAction(mpCRMLDiagramAction);
 #endif
             menu.addSeparator();
