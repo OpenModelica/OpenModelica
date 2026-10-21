@@ -1141,6 +1141,7 @@ public
       input output SimCode.SimCodeIndices simCodeIndices;
     protected
       list<SimVar> stateVars = {}, derivativeVars = {}, algVars = {}, nonTrivialAlias = {};
+      list<SimVar> intNonTrivialAlias = {}, boolNonTrivialAlias = {}, stringNonTrivialAlias = {}, enumNonTrivialAlias = {};
       list<SimVar> discreteAlgVars = {}, intAlgVars = {}, boolAlgVars = {}, stringAlgVars = {}, enumAlgVars = {};
       list<SimVar> discreteAlgVars2 = {}, intAlgVars2 = {}, boolAlgVars2 = {}, stringAlgVars2 = {}, enumAlgVars2 = {};
       list<SimVar> discreteAlgVars3 = {}, intAlgVars3 = {}, boolAlgVars3 = {}, stringAlgVars3 = {}, enumAlgVars3 = {};
@@ -1168,7 +1169,8 @@ public
           ({derivativeVars}, simCodeIndices)                                                              := createSimVarLists(varData.derivatives, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
           ({algVars}, simCodeIndices)                                                                     := createSimVarLists(varData.algebraics, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
           ({inputVars}, simCodeIndices)                                                                   := createSimVarLists(varData.top_level_inputs, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
-          ({nonTrivialAlias}, simCodeIndices)                                                             := createSimVarLists(varData.nonTrivialAlias, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+          ({nonTrivialAlias, intNonTrivialAlias, boolNonTrivialAlias, stringNonTrivialAlias, enumNonTrivialAlias}, simCodeIndices)
+                                                                                                          := createSimVarLists(varData.nonTrivialAlias, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({discreteAlgVars, intAlgVars, boolAlgVars, stringAlgVars, enumAlgVars}, simCodeIndices)        := createSimVarLists(varData.discretes, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({discreteAlgVars2, intAlgVars2, boolAlgVars2, stringAlgVars2, enumAlgVars2}, simCodeIndices)   := createSimVarLists(varData.discrete_states, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({discreteAlgVars3, intAlgVars3, boolAlgVars3, stringAlgVars3, enumAlgVars3}, simCodeIndices)   := createSimVarLists(varData.clocked_states, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
@@ -1206,10 +1208,10 @@ public
         derivativeVars                    = derivativeVars,
         algVars                           = List.flatten({algVars, inputVars, nonTrivialAlias}),
         discreteAlgVars                   = List.flatten({discreteAlgVars, discreteAlgVars2, discreteAlgVars3}),
-        intAlgVars                        = List.flatten({intAlgVars, intAlgVars2, intAlgVars3}),
-        boolAlgVars                       = List.flatten({boolAlgVars, boolAlgVars2, boolAlgVars3}),
-        stringAlgVars                     = List.flatten({stringAlgVars, stringAlgVars2, stringAlgVars3}),
-        enumAlgVars                       = List.flatten({enumAlgVars, enumAlgVars2, enumAlgVars3}),
+        intAlgVars                        = List.flatten({intNonTrivialAlias, intAlgVars, intAlgVars2, intAlgVars3}),
+        boolAlgVars                       = List.flatten({boolNonTrivialAlias, boolAlgVars, boolAlgVars2, boolAlgVars3}),
+        stringAlgVars                     = List.flatten({stringNonTrivialAlias, stringAlgVars, stringAlgVars2, stringAlgVars3}),
+        enumAlgVars                       = List.flatten({enumNonTrivialAlias, enumAlgVars, enumAlgVars2, enumAlgVars3}),
         inputVars                         = inputVars,
         outputVars                        = outputVars,
         aliasVars                         = aliasVars,

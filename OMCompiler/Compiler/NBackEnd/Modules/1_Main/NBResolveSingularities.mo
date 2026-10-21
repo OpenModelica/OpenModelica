@@ -119,7 +119,7 @@ public
     list<Integer> marked_eqns;
     Pointer<Equation> constraint, diffed_eqn;
     list<Slice<VariablePointer>> states, dummy_states;
-    list<Pointer<Variable>> sliced_states, sliced_dummy_states, state_derivatives, dummy_derivatives = {}, dummy_slice_vars;
+    list<Pointer<Variable>> sliced_states, sliced_dummy_states, state_derivatives, dummy_derivatives = {}, dummy_slice_vars, dummy_discrete_vars, dummy_algebraic_vars;
     list<Pointer<Variable>> current_candidates, rest_candidates;
     list<Slice<EquationPointer>> constraint_eqns, matched_eqns, unmatched_eqns;
     list<Pointer<Equation>> new_eqns = {}, der_alias_eqns;
@@ -405,7 +405,10 @@ public
 
       // add all slice dummies that were added to fill equations which cannot be split
       dummy_slice_vars := list(BVariable.getVarPointer(cref, sourceInfo()) for cref in UnorderedSet.toList(dummy_slice_set));
-      varData := VarData.addTypedList(varData, dummy_slice_vars, NBVariable.VarData.VarType.ALGEBRAIC);
+      // dummies of non-real outputs (e.g. the derivative of an Integer output) are discrete
+      (dummy_discrete_vars, dummy_algebraic_vars) := List.splitOnTrue(dummy_slice_vars, BVariable.isDiscrete);
+      varData := VarData.addTypedList(varData, dummy_algebraic_vars, NBVariable.VarData.VarType.ALGEBRAIC);
+      varData := VarData.addTypedList(varData, dummy_discrete_vars, NBVariable.VarData.VarType.DISCRETE);
       variables := VariablePointers.addList(dummy_slice_vars, variables);
     else
       changed := false;
