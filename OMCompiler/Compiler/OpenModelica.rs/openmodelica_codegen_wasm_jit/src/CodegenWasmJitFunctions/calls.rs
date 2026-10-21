@@ -682,7 +682,7 @@ pub(super) fn compile_math_builtin(
         }
         // delayZeroCrossing(index, rindex, d): zeroCrossingsPre[rindex], sign-
         // flipped when a buffered event lies in the (time - d) window.
-        "delayZeroCrossing" => {
+        "$delayZeroCrossing" => {
             need_args(&argv, 3, name)?;
             if !ctx.sim()?.zc_context {
                 return Err("CodegenWasmJit: delayZeroCrossing outside a zero-crossing context");
@@ -713,7 +713,7 @@ pub(super) fn compile_math_builtin(
         // spatialDistributionZeroCrossing(index, rindex, x, positiveVelocity): flips
         // sign each time a stored discontinuity passes the operator's output edge,
         // holding `zeroCrossingsPre[rindex]` while there is none.
-        "spatialDistributionZeroCrossing" => {
+        "$spatialDistributionZeroCrossing" => {
             need_args(&argv, 4, name)?;
             if !ctx.sim()?.zc_context {
                 return Err("CodegenWasmJit: spatialDistributionZeroCrossing outside a zero-crossing context");
