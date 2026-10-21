@@ -6080,7 +6080,7 @@ algorithm
     // An array equation
     // cref = rhsexp
     case ((BackendDAE.ARRAY_EQUATION(left=e1 as DAE.CREF(cr_1, _), right=e2, source=source, attr=eqAttr)), BackendDAE.VAR(varName=cr)::_)
-    guard ComponentReferenceBasics.crefEqual(cr_1, ComponentReferenceBasics.crefStripLastSubs(cr))
+    guard isArrayCrefOf(cr_1, cr)
     algorithm
       (e1, _) := BackendDAEUtil.collateArrExp(e1, NONE());
       (e2, _) := BackendDAEUtil.collateArrExp(e2, NONE());
@@ -6091,7 +6091,7 @@ algorithm
     // An array equation
     // lhsexp = cref
     case ((BackendDAE.ARRAY_EQUATION(left=e1, right=e2 as DAE.CREF(cr_1, _), source=source, attr=eqAttr)), BackendDAE.VAR(varName=cr)::_)
-    guard ComponentReferenceBasics.crefEqual(cr_1, ComponentReferenceBasics.crefStripLastSubs(cr))
+    guard isArrayCrefOf(cr_1, cr)
     algorithm
       (e1, _) := BackendDAEUtil.collateArrExp(e1, NONE());
       (e2, _) := BackendDAEUtil.collateArrExp(e2, NONE());
@@ -6121,6 +6121,18 @@ algorithm
     then fail();
   end matchcontinue;
 end createSingleArrayEqnCode;
+
+protected function isArrayCrefOf
+  "Returns true if the array cref arrCr is the array variable of cr or a slice
+   of it that contains cr, e.g. x or x[2, :] for x[2, 3]."
+  input DAE.ComponentRef arrCr;
+  input DAE.ComponentRef cr;
+  output Boolean b;
+algorithm
+  b := ComponentReferenceBasics.crefEqual(arrCr, ComponentReferenceBasics.crefStripLastSubs(cr)) or
+       (ComponentReferenceBasics.crefEqualWithoutSubs(arrCr, cr) and
+        Expression.subscriptContain(ComponentReferenceBasics.crefSubs(cr), ComponentReferenceBasics.crefSubs(arrCr)));
+end isArrayCrefOf;
 
 protected function createSingleAlgorithmCode
   input list<BackendDAE.Equation> eqns;

@@ -20,6 +20,7 @@ ArrayReturn.mos \
 ArraySlice.mos \
 ArraySlice2.mos \
 ArraySliceAssigmentFunction.mos \
+SlicedArrayEquationLhs.mos \
 ArrayWithImplicitSubscripts.mos \
 AsubCrefExpType.mos \
 BooleanArray.mos \
