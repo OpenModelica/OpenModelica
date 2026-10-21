@@ -25,6 +25,7 @@ UnitCheck21.mos \
 UnitCheck22.mos \
 UnitCheck23.mos \
 UnitCheck24.mos \
+UnparsableDisplayUnit.mos \
 ticket3631.mos \
 
 

@@ -64,6 +64,7 @@ import Config;
 import DAEDump;
 import MetaModelica.Dangerous;
 import Error;
+import ErrorExt;
 import Expression;
 import ExpressionDump;
 import Flags;
@@ -428,6 +429,7 @@ protected
   UnitAbsyn.Unit u1, u2;
   Real factor1, factor2, offset1, offset2;
 algorithm
+  ErrorExt.setCheckpoint(getInstanceName());
   try
     UnitParserExt.initSIUnits();
     (u1, factor1, offset1) := UnitAbsynBuilder.str2unitWithScaleFactor(to, NONE());
@@ -438,6 +440,7 @@ algorithm
     converts := true;
   else
   end try;
+  ErrorExt.rollBack(getInstanceName());
 end unitConversion;
 
 public function createCrefToSimVarHT "author: unknown and marcusw
