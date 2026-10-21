@@ -471,6 +471,7 @@ public
       (function Alias.main(kind = kind),  "Alias"),
       (function simplify(init = false), "Simplify 2"), // TODO simplify in Alias only
       (removeStream,       "Remove Stream"),
+      (detectAlgorithmLocals, "Algorithm Locals"),
       (DetectStates.main,  "Detect States"),
       (Events.main,        "Events")
     };
@@ -617,6 +618,153 @@ public
       else bdae;
     end match;
   end simplify;
+
+  function detectAlgorithmLocals
+    "Protected discrete variables that only one algorithm uses (e.g. the buffers of
+    Modelica.Blocks.Math.RealFFT) are not part of the system, like the protected
+    variables of a function. The algorithm is not solved for them and does not
+    depend on them. They keep their storage and their value between invocations
+    of the algorithm, which is their pre value (MLS 11.1.2)."
+    input output BackendDAE bdae;
+  algorithm
+    bdae := match bdae
+      local
+        EqData eqData;
+        VarData varData;
+        UnorderedMap<ComponentRef, Integer> uses;
+        UnorderedSet<ComponentRef> excluded, local_set, eqn_crefs;
+        list<ComponentRef> candidates;
+        list<Pointer<Variable>> locals;
+        Pointer<Variable> var_ptr;
+        Equation eqn;
+
+      case MAIN(eqData = eqData as BEquation.EQ_DATA_SIM(), varData = varData as VarData.VAR_DATA_SIM()) algorithm
+        uses      := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+        excluded  := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+        local_set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+
+        // count the equations that use each variable and exclude variables with a pre value
+        for eqn_ptr in EquationPointers.toList(eqData.equations) loop
+          eqn := Pointer.access(eqn_ptr);
+          eqn_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+          Equation.map(eqn, function collectCrefsExp(acc = eqn_crefs));
+          for cref in UnorderedSet.toList(eqn_crefs) loop
+            UnorderedMap.addUpdate(cref, countUse, uses);
+          end for;
+          Equation.map(eqn, function collectPreCrefs(acc = excluded));
+        end for;
+        // start values of other variables must not use them
+        for v in VariablePointers.toList(varData.variables) loop
+          _ := Util.applyOption(BVariable.getStartAttribute(v), function Expression.map(func = function collectCrefsExp(acc = excluded)));
+        end for;
+
+        for eqn_ptr in EquationPointers.toList(eqData.equations) loop
+          eqn := Pointer.access(eqn_ptr);
+          () := match eqn
+            case Equation.ALGORITHM() algorithm
+              candidates := list(cref for cref guard(isAlgorithmLocalCandidate(cref, uses, excluded)) in eqn.alg.outputs);
+              // keep algorithms that would have no output in the system as they are
+              if not listEmpty(candidates) and listLength(candidates) < listLength(eqn.alg.outputs) then
+                for cref in candidates loop
+                  BVariable.setVarKind(BVariable.getVarPointer(cref, sourceInfo()), VariableKind.ALGORITHM_LOCAL());
+                  UnorderedSet.add(cref, local_set);
+                end for;
+                eqn.alg  := Equation.setAlgorithmInputsOutputs(eqn.alg);
+                eqn.size := sum(ComponentRef.size(out, false) for out in eqn.alg.outputs);
+                Pointer.update(eqn_ptr, eqn);
+              end if;
+            then ();
+            else ();
+          end match;
+        end for;
+
+        if not UnorderedSet.isEmpty(local_set) then
+          locals := list(BVariable.getVarPointer(cref, sourceInfo()) for cref in UnorderedSet.toList(local_set));
+          varData.unknowns := VariablePointers.removeList(locals, varData.unknowns);
+          varData.initials := VariablePointers.removeList(locals, varData.initials);
+          bdae.varData := varData;
+        end if;
+      then bdae;
+
+      else bdae;
+    end match;
+  end detectAlgorithmLocals;
+
+  function countUse
+    input Option<Integer> old;
+    output Integer new = Util.getOptionOrDefault(old, 0) + 1;
+  end countUse;
+
+  function isAlgorithmLocalCandidate
+    "protected discrete variable of an algorithm that no other equation, pre() or start value uses"
+    input ComponentRef cref;
+    input UnorderedMap<ComponentRef, Integer> uses;
+    input UnorderedSet<ComponentRef> excluded;
+    output Boolean b;
+  protected
+    Pointer<Variable> var_ptr;
+    Option<Expression> start;
+  algorithm
+    b := UnorderedMap.getOrDefault(cref, uses, 0) == 1 and not UnorderedSet.contains(cref, excluded)
+      and InstNode.isVar(ComponentRef.node(cref));
+    if b then
+      var_ptr := BVariable.getVarPointer(cref, sourceInfo());
+      start := BVariable.getStartAttribute(var_ptr);
+      b := BVariable.isDiscrete(var_ptr) and Variable.isProtected(Pointer.access(var_ptr))
+        and not BVariable.hasPre(var_ptr) and isNone(BVariable.getParent(var_ptr))
+        and (isNone(start) or isParameterExpression(Util.getOption(start)));
+    end if;
+  end isAlgorithmLocalCandidate;
+
+  function isParameterExpression
+    "true if the expression only uses iterators, parameters and constants. the
+    init xml sets such start values, they need no start equation"
+    input Expression exp;
+    output Boolean b;
+  protected
+    UnorderedSet<ComponentRef> crefs = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+  algorithm
+    Expression.map(exp, function collectCrefsExp(acc = crefs));
+    b := List.all(UnorderedSet.toList(crefs), isParameterCref);
+  end isParameterExpression;
+
+  function isParameterCref
+    input ComponentRef cref;
+    output Boolean b;
+  algorithm
+    b := match cref
+      case ComponentRef.CREF() guard(ComponentRef.isIterator(cref)) then true;
+      case ComponentRef.CREF() guard(InstNode.isVar(ComponentRef.node(cref)))
+        then BVariable.isParamOrConst(BVariable.getVarPointer(cref, sourceInfo()));
+      else false;
+    end match;
+  end isParameterCref;
+
+  function collectPreCrefs
+    "collects the crefs used in pre(), previous(), change() and edge()"
+    input output Expression exp;
+    input UnorderedSet<ComponentRef> acc;
+  algorithm
+    () := match exp
+      case Expression.CALL() guard(Call.isNamed(exp.call, "pre") or Call.isNamed(exp.call, "previous")
+                                  or Call.isNamed(exp.call, "change") or Call.isNamed(exp.call, "edge")) algorithm
+        Expression.map(exp, function collectCrefsExp(acc = acc));
+      then ();
+      else ();
+    end match;
+  end collectPreCrefs;
+
+  function collectCrefsExp
+    input output Expression exp;
+    input UnorderedSet<ComponentRef> acc;
+  algorithm
+    () := match exp
+      case Expression.CREF() algorithm
+        UnorderedSet.add(ComponentRef.stripSubscriptsAll(exp.cref), acc);
+      then ();
+      else ();
+    end match;
+  end collectCrefsExp;
 
   function removeStream
     // TODO this does the same as `simplify`
@@ -1976,7 +2124,8 @@ public
           VarData varData;
           EqData eqData;
           String p_ode, p_alg, p_ode_e, p_alg_e, p_clk, p_ini, p_ini_0;
-          String states, discretes, discrete_states, clocked_states, clocks, inputs;
+          String states, discretes, discrete_states, clocked_states, clocks, inputs, alg_locals;
+          VariablePointers alg_local_vars;
 
         case MAIN(varData = varData as VarData.VAR_DATA_SIM(), eqData=EqData.EQ_DATA_SIM()) algorithm
           // collect partition size info
@@ -1995,6 +2144,8 @@ public
           clocked_states  := intString(VariablePointers.scalarSize(varData.clocked_states)) + " (" + intString(VariablePointers.size(varData.clocked_states)) + ")";
           clocks          := intString(VariablePointers.scalarSize(varData.clocks)) + " (" + intString(VariablePointers.size(varData.clocks)) + ")";
           inputs          := intString(VariablePointers.scalarSize(varData.top_level_inputs)) + " (" + intString(VariablePointers.size(varData.top_level_inputs)) + ")";
+          alg_local_vars  := VariablePointers.fromList(List.filterOnTrue(VariablePointers.toList(varData.discretes), BVariable.isAlgorithmLocal));
+          alg_locals      := intString(VariablePointers.scalarSize(alg_local_vars)) + " (" + intString(VariablePointers.size(alg_local_vars)) + ")";
 
           if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
             states := states + " " + List.toString(VariablePointers.toList(varData.states), BVariable.nameString);
@@ -2006,10 +2157,12 @@ public
             discretes := discretes + " " + List.toString(VariablePointers.toList(varData.discretes), BVariable.nameString);
             clocks := clocks + " " + List.toString(VariablePointers.toList(varData.clocks), BVariable.nameString);
             inputs := inputs + " " + List.toString(VariablePointers.toList(varData.top_level_inputs), BVariable.nameString);
+            alg_locals := alg_locals + " " + List.toString(VariablePointers.toList(alg_local_vars), BVariable.nameString);
           else
             discretes := discretes + " ('-d=discreteinfo' for the list of discrete variables)";
             clocks := clocks + " ('-d=discreteinfo' for the list of clocks variables)";
             inputs := inputs + " ('-d=discreteinfo' for the list of top level inputs)";
+            alg_locals := alg_locals + " ('-d=discreteinfo' for the list of algorithm local variables)";
           end if;
 
           if  Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO) then
@@ -2036,6 +2189,7 @@ public
             + " * Number of discrete states: .................... " + discrete_states + "\n"
             + " * Number of clocked states: ..................... " + clocked_states + "\n"
             + " * Number of discrete variables: ................. " + discretes + "\n"
+            + " * Number of algorithm local variables: .......... " + alg_locals + "\n"
             + " * Number of clocks: ............................. " + clocks + "\n"
             + " * Number of top-level inputs: ................... " + inputs);
 

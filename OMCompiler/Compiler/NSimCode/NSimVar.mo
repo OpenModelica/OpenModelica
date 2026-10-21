@@ -623,6 +623,7 @@ public
         case VariableKind.PARAMETER()      then OldSimCodeVar.FIXED();
         case VariableKind.DISCRETE()       then OldSimCodeVar.DISCRETE();
         case VariableKind.DISCRETE_STATE() then OldSimCodeVar.DISCRETE();
+        case VariableKind.ALGORITHM_LOCAL() then OldSimCodeVar.DISCRETE();
         case VariableKind.CLOCKED()        then OldSimCodeVar.DISCRETE();
         case VariableKind.PREVIOUS()       then OldSimCodeVar.DISCRETE();
         else OldSimCodeVar.CONTINUOUS();
@@ -737,6 +738,7 @@ public
             isDiscrete := match varKind
               case VariableKind.DISCRETE()        then true;
               case VariableKind.DISCRETE_STATE()  then true;
+              case VariableKind.ALGORITHM_LOCAL() then true;
               case VariableKind.PREVIOUS()        then true;
               case VariableKind.PARAMETER()       then true;
               case VariableKind.CONSTANT()        then true;
@@ -872,6 +874,7 @@ public
         case VariableKind.DUMMY_DER()               then OldBackendDAE.DUMMY_DER();
         case VariableKind.DUMMY_STATE()             then OldBackendDAE.DUMMY_STATE();
         case VariableKind.DISCRETE()                then OldBackendDAE.DISCRETE();
+        case VariableKind.ALGORITHM_LOCAL()         then OldBackendDAE.DISCRETE();
         case VariableKind.DISCRETE_STATE()          then OldBackendDAE.DISCRETE(); // we don't distinguish between clocked, discrete states and discretes in the old backend. is this correct?
         case VariableKind.CLOCKED()                 then OldBackendDAE.DISCRETE(); // we don't distinguish between clocked, discrete states and discretes in the old backend. is this correct?
         case VariableKind.PREVIOUS()                then OldBackendDAE.DISCRETE();

@@ -566,8 +566,11 @@ protected
         case Statement.WHEN() algorithm
           for branch in stmt.branches loop
             (_, outputs) := Algorithm.getInputsOutputs(Util.tuple22(branch));
+            // variables only this algorithm uses keep their value without being discrete states
             for cref in outputs loop
-              UnorderedSet.add(cref, assigned);
+              if not BVariable.isAlgorithmLocalCref(cref) then
+                UnorderedSet.add(cref, assigned);
+              end if;
             end for;
           end for;
         then ();

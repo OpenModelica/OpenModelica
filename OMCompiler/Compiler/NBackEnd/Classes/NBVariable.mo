@@ -416,6 +416,7 @@ public
     b := match var.backendinfo.varKind
       case VariableKind.DISCRETE_STATE()  then false; // like parameter?
       case VariableKind.DISCRETE()        then false; // like parameter?
+      case VariableKind.ALGORITHM_LOCAL() then false;
       case VariableKind.PREVIOUS()        then false; // like parameter?
       case VariableKind.CONSTANT()        then false;
       case VariableKind.ITERATOR()        then false;
@@ -460,6 +461,26 @@ public
       else false;
     end match;
   end isDiscrete;
+
+  function isAlgorithmLocal extends checkVar;
+  algorithm
+    b := match var.backendinfo.varKind
+      case VariableKind.ALGORITHM_LOCAL() then true;
+      else false;
+    end match;
+  end isAlgorithmLocal;
+
+  function isAlgorithmLocalCref
+    "true if the cref belongs to a variable that only one algorithm uses (crefs without variable are not)"
+    input ComponentRef cref;
+    output Boolean b;
+  algorithm
+    b := match cref
+      case ComponentRef.CREF() guard InstNode.isVar(ComponentRef.node(cref))
+        then isAlgorithmLocal(PointerWeak.upgrade(InstNode.varPointer(ComponentRef.node(cref))));
+      else false;
+    end match;
+  end isAlgorithmLocalCref;
 
   function isPrevious extends checkVar;
   algorithm

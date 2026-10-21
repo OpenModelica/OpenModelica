@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+algorithmLocalBuffer.mos \
 compositeEvent.mos \
 algorithmWhenNoOutputs.mos \
 whenIfStatements.mos \
