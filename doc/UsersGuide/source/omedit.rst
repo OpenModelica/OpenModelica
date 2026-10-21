@@ -978,6 +978,46 @@ Data Reconciliation
 
 -  *Epsilon*
 
+.. _omedit-calibration :
+
+Calibrating an SSP Model
+------------------------
+
+OMSimulator can fit the parameters of an SSP model to reference data, e.g.
+measurements. The problem is a ``Calibration`` activity of the UQ layered
+standard, in a UQ file stored in the SSP: the parameters to fit with their
+initial values and bounds, the simulated variables to compare and a CSV file
+with the reference data. How the fit works and the options it reads from the UQ
+file are described in :ref:`oms3-calibration`.
+
+To calibrate an SSP model that is open in OMEdit, right-click it in the
+Libraries Browser and choose *Calibrate...*. The dialog asks for:
+
+-  *Calibration Activity* - the id of the Calibration activity. Empty means the
+   only Calibration activity of the UQ file.
+
+-  *UQ File* - the UQ file inside the SSP, e.g. ``extra/uq.xml``. Empty means the
+   UQ file the SSP references.
+
+-  *Calibrated Model* - the SSP file the calibrated model is written to, by
+   default ``<model>.calibrated.ssp`` in the working directory.
+
+*Calibrate* exports the model like *Simulate* does and runs
+``OMSimulator --calibrate`` on it. The output of OMSimulator is shown in the
+dialog while it runs, and closing the dialog stops the calibration. The
+calibrated SSP contains the fitted parameter values, as
+``<activity>_calibrated.ssv`` next to the UQ file, and the ``ResultSet`` of the
+activity with the RMSE of each observed variable.
+
+The same calibration can be run from the command line:
+
+.. code-block :: bash
+
+  OMSimulator model.ssp --calibrate cal_01 --calibrationOutput calibrated.ssp
+
+Calibration needs the Python packages numpy and scipy. *Calibrate...* is not
+available in the web version of OMEdit.
+
 .. _omedit-2d-plotting :
 
 2D Plotting
