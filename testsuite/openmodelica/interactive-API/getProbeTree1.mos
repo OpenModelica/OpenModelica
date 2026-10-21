@@ -30,7 +30,7 @@ getErrorString();
 loadFile("getProbeTree1.mo"); getErrorString();
 print(getProbeTree("getProbeTree1.mo", prettyPrint = true)); getErrorString();
 
-// A file that doesn't parse has no tree, only its errors.
+// A file that doesn't parse has no tree, only its errors (their wording is in getProbeTree2).
 writeFile("getProbeTree1b.mo", "model S
   Real x
 equation
@@ -38,7 +38,7 @@ equation
 end S;
 ");
 getErrorString();
-print(getProbeTree("getProbeTree1b.mo")); getErrorString();
+regexBool(getProbeTree("getProbeTree1b.mo"), "\"root\":null, \"errors\":\\[\\{\"severity\":\"error\", \"lineStart\":3,"); getErrorString();
 
 // Result:
 // true
@@ -792,6 +792,6 @@ print(getProbeTree("getProbeTree1b.mo")); getErrorString();
 // ""
 // true
 // ""
-// {"file":"getProbeTree1b.mo", "root":null, "errors":[{"severity":"error", "lineStart":3, "columnStart":1, "lineEnd":3, "columnEnd":1, "message":"Missing token: SEMICOLON"}]}
+// true
 // ""
 // endResult

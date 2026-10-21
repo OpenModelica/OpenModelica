@@ -48,6 +48,7 @@ DialogAnnotation.mos \
 evaluateProbe1.mos \
 evaluateProbe2.mos \
 evaluateProbe3.mos \
+evaluateProbe4.mos \
 FlagParsing.mos \
 ForStatement1.mos \
 ForStatement2.mos \
@@ -96,6 +97,7 @@ getNthConnector.mos \
 getNthConnectorIconAnnotation.mos \
 getNthImport.mos \
 getProbeTree1.mos \
+getProbeTree2.mos \
 GetReplaceableChoices1.mos \
 getSimulationOptions1.mos \
 getSimulationOptions2.mos \

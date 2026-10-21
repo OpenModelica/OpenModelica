@@ -43,11 +43,9 @@ getErrorString();
 loadFile("evaluateProbe2.mo"); getErrorString();
 // The parameter r of R in the translation of B.
 print(evaluateProbe("evaluateProbe2.mo", "0.0.2.1", "simVariables", "EQ.B")); getErrorString();
-// The equation p.v - n.v = r*p.i of R: its simulation equations and their C functions.
+// The equation p.v - n.v = r*p.i of R: its simulation equations (their C functions are in evaluateProbe4).
 print(evaluateProbe("evaluateProbe2.mo", "0.0.2.3", "simEquations", "EQ.B")); getErrorString();
 print(evaluateProbe("evaluateProbe2.mo", "0.0.2.3", "hover", "EQ.B")); getErrorString();
-regexBool(evaluateProbe("evaluateProbe2.mo", "0.0.2.3", "cCode", "EQ.B"), "void EQ_B_eqFunction_4\\(DATA \\*data, threadData_t \\*threadData\\)");
-regexBool(evaluateProbe("evaluateProbe2.mo", "0.0.2.3", "cCode", "EQ.B"), "void EQ_B_eqFunction_10\\(DATA \\*data, threadData_t \\*threadData\\)");
 // Without a context model, the model the node is in is translated, and a package has none.
 print(evaluateProbe("evaluateProbe2.mo", "0.0.5.2.1", "flatDeclarations")); getErrorString();
 print(evaluateProbe("evaluateProbe2.mo", "0.0.5.4", "connectionEquations")); getErrorString();
@@ -65,8 +63,6 @@ print(evaluateProbe("evaluateProbe2.mo", "0.0.1", "simEquations")); getErrorStri
 // ""
 // {"node":"0.0.2.3", "property":"hover", "result":[{"text":"eq 4 [initial, torn] r2.p.i := (src.p.v - r1.n.v) / r1.r"}, {"text":"eq 5 [initial, residual] r2.r * r2.p.i - r1.n.v"}, {"text":"eq 10 [regular, torn] r1.n.v := src.p.v - r1.r * r2.p.i"}, {"text":"eq 11 [regular, residual] r2.r * r2.p.i - r1.n.v"}]}
 // ""
-// true
-// true
 // {"node":"0.0.5.2.1", "property":"flatDeclarations", "result":[{"text":"parameter Real 'r1.r' = 3.0;"}, {"text":"Real 'r1.p.v';"}, {"text":"Real 'r1.p.i';"}, {"text":"Real 'r1.n.v';"}, {"text":"Real 'r1.n.i';"}]}
 // ""
 // {"node":"0.0.5.4", "property":"connectionEquations", "result":[{"text":"'src.p.v' = 'r1.p.v';"}, {"text":"'r1.p.i' + 'src.p.i' = 0.0;"}]}
