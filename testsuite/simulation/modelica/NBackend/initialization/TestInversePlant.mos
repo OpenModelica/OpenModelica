@@ -245,7 +245,7 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 //   --(65) 0 = plant.cp * plant.w * (plant.T[5] - plant.T[6]) + plant.Q[5]
 //   (50) plant.TIT := plant.T[6]
 //   (49) $FUN_1 := sqrt(plant.TIT / plant.Tnom)
-//   (48) plant.p[6] := ($FUN_1 * plant.w) / plant.Kt
+//   (48) plant.p[6] := (plant.w * $FUN_1) / plant.Kt
 //   (47) plant.TIP := plant.p[6]
 //   (46) plant.P := plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma))
 //   (45) plant.Ts := plant.Tfg[6]
@@ -265,7 +265,7 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 //   --(4) plant.TIT := plant.T[6]
 //   --(5) $FUN_1 := sqrt(plant.TIT / plant.Tnom)
 //   --(6) resizable call [index  2]
-//   --(7) plant.p[6] := ($FUN_1 * plant.w) / plant.Kt
+//   --(7) plant.p[6] := (plant.w * $FUN_1) / plant.Kt
 //   --(8) plant.TIP := plant.p[6]
 //   --(9) 0 = (0.5 * (plant.Tfg[6] + plant.Tfg[5]) - 0.5 * (plant.T[2] + plant.T[1])) * plant.G[1] - plant.Q[1]
 //   --(10) 0 = (0.5 * (plant.Tfg[5] + plant.Tfg[4]) - 0.5 * (plant.T[3] + plant.T[2])) * plant.G[2] - plant.Q[2]
@@ -324,7 +324,7 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 // Generic Calls
 // ---------------
 //   (0) [SNGL]: {{$i1 | start:5, step:-1, stop:1, size: 5}}
-// 	plant.p[$i1] = plant.p[1 + $i1] + (0.2 * plant.kf) * plant.w ^ 2.0
+// 	plant.p[$i1] = (0.2 * plant.kf) * plant.w ^ 2.0 + plant.p[1 + $i1]
 //   (1) [SNGL]: {{$i1 | start:1, step:1, stop:5, size: 5}}
 // 	plant.Q[$i1] = plant.cp * plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1])
 //   (2) [SNGL]: {{$i1 | start:1, step:1, stop:5, size: 5}}
@@ -379,7 +379,7 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 //   (35) $pDER_INI_NLS_JAC_1.plant.TIT := $SEED_INI_NLS_JAC_1.plant.T[6]
 //   (34) $pDER_INI_NLS_JAC_1.$FUN_1 := (0.5 / (plant.TIT / plant.Tnom) ^ 0.5) * (($pDER_INI_NLS_JAC_1.plant.TIT * plant.Tnom) / plant.Tnom ^ 2.0)
 //   (33) resizable call [index  0]
-//   (32) $pDER_INI_NLS_JAC_1.plant.p[6] := (($pDER_INI_NLS_JAC_1.$FUN_1 * plant.w + $FUN_1 * $SEED_INI_NLS_JAC_1.plant.w) * plant.Kt) / plant.Kt ^ 2.0
+//   (32) $pDER_INI_NLS_JAC_1.plant.p[6] := (($SEED_INI_NLS_JAC_1.plant.w * $FUN_1 + plant.w * $pDER_INI_NLS_JAC_1.$FUN_1) * plant.Kt) / plant.Kt ^ 2.0
 //   (31) $pDER_INI_NLS_JAC_1.plant.TIP := $pDER_INI_NLS_JAC_1.plant.p[6]
 //   (30) $pDER_INI_NLS_JAC_1.$RES_SIM_12_0 := ((0.5 * $SEED_INI_NLS_JAC_1.plant.Tfg[5] - 0.5 * $SEED_INI_NLS_JAC_1.plant.T[2]) * plant.G[1] + (0.5 * (plant.Tfg[6] + plant.Tfg[5]) - 0.5 * (plant.T[2] + plant.T[1])) * $pDER_INI_NLS_JAC_1.plant.G[1]) - $pDER_INI_NLS_JAC_1.plant.Q[1]
 //   (29) $pDER_INI_NLS_JAC_1.$RES_SIM_12_1 := ((0.5 * ($SEED_INI_NLS_JAC_1.plant.Tfg[5] + $SEED_INI_NLS_JAC_1.plant.Tfg[4]) - 0.5 * ($SEED_INI_NLS_JAC_1.plant.T[3] + $SEED_INI_NLS_JAC_1.plant.T[2])) * plant.G[2] + (0.5 * (plant.Tfg[5] + plant.Tfg[4]) - 0.5 * (plant.T[3] + plant.T[2])) * $pDER_INI_NLS_JAC_1.plant.G[2]) - $pDER_INI_NLS_JAC_1.plant.Q[2]
@@ -795,7 +795,7 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 // 	5: $FUN_1=sqrt(plant.TIT / plant.Tnom) [Real]
 // 	6:  (SES_RESIZABLE_ASSIGN)  call index: 2
 //
-// 	7: plant.p[6]=$FUN_1 * plant.w / plant.Kt [Real]
+// 	7: plant.p[6]=plant.w * $FUN_1 / plant.Kt [Real]
 // 	8: plant.TIP=plant.p[6] [Real]
 // 	9: (0.5 * (plant.Tfg[6] + plant.Tfg[5]) - 0.5 * (plant.T[2] + plant.T[1])) * plant.G[1] - plant.Q[1] (RESIDUAL)
 // 	10: (0.5 * (plant.Tfg[5] + plant.Tfg[4]) - 0.5 * (plant.T[3] + plant.T[2])) * plant.G[2] - plant.Q[2] (RESIDUAL)
@@ -815,7 +815,7 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 // 	34: $pDER_INI_NLS_JAC_1.$FUN_1=0.5 / (plant.TIT / plant.Tnom) ^ 0.5 * $pDER_INI_NLS_JAC_1.plant.TIT * plant.Tnom / plant.Tnom ^ 2.0 [Real]
 // 	33:  (SES_RESIZABLE_ASSIGN)  call index: 0
 //
-// 	32: $pDER_INI_NLS_JAC_1.plant.p[6]=($pDER_INI_NLS_JAC_1.$FUN_1 * plant.w + $FUN_1 * $SEED_INI_NLS_JAC_1.plant.w) * plant.Kt / plant.Kt ^ 2.0 [Real]
+// 	32: $pDER_INI_NLS_JAC_1.plant.p[6]=($SEED_INI_NLS_JAC_1.plant.w * $FUN_1 + plant.w * $pDER_INI_NLS_JAC_1.$FUN_1) * plant.Kt / plant.Kt ^ 2.0 [Real]
 // 	31: $pDER_INI_NLS_JAC_1.plant.TIP=$pDER_INI_NLS_JAC_1.plant.p[6] [Real]
 // 	30: $pDER_INI_NLS_JAC_1.$RES_SIM_12_0=(0.5 * $SEED_INI_NLS_JAC_1.plant.Tfg[5] - 0.5 * $SEED_INI_NLS_JAC_1.plant.T[2]) * plant.G[1] + (0.5 * (plant.Tfg[6] + plant.Tfg[5]) - 0.5 * (plant.T[2] + plant.T[1])) * $pDER_INI_NLS_JAC_1.plant.G[1] - $pDER_INI_NLS_JAC_1.plant.Q[1] [Real]
 // 	29: $pDER_INI_NLS_JAC_1.$RES_SIM_12_1=(0.5 * ($SEED_INI_NLS_JAC_1.plant.Tfg[5] + $SEED_INI_NLS_JAC_1.plant.Tfg[4]) - 0.5 * ($SEED_INI_NLS_JAC_1.plant.T[3] + $SEED_INI_NLS_JAC_1.plant.T[2])) * plant.G[2] + (0.5 * (plant.Tfg[5] + plant.Tfg[4]) - 0.5 * (plant.T[3] + plant.T[2])) * $pDER_INI_NLS_JAC_1.plant.G[2] - $pDER_INI_NLS_JAC_1.plant.Q[2] [Real]
@@ -921,7 +921,7 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 //
 // 50: plant.TIT=plant.T[6] [Real]
 // 49: $FUN_1=sqrt(plant.TIT / plant.Tnom) [Real]
-// 48: plant.p[6]=$FUN_1 * plant.w / plant.Kt [Real]
+// 48: plant.p[6]=plant.w * $FUN_1 / plant.Kt [Real]
 // 47: plant.TIP=plant.p[6] [Real]
 // 46: plant.P=plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) [Real]
 // 45: plant.Ts=plant.Tfg[6] [Real]
@@ -959,7 +959,7 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 // generic calls:
 // ========================================
 // single generic call 0 {$i1 in 5:-1:1}
-//   plant.p[$i1] = plant.p[1 + $i1] + 0.2 * plant.kf * plant.w ^ 2.0;
+//   plant.p[$i1] = 0.2 * plant.kf * plant.w ^ 2.0 + plant.p[1 + $i1];
 // single generic call 1 {$i1 in 1:1:5}
 //   plant.Q[$i1] = plant.cp * plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]);
 // single generic call 2 {$i1 in 1:1:5}
@@ -976,7 +976,7 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 // 	34: $pDER_INI_NLS_JAC_1.$FUN_1=0.5 / (plant.TIT / plant.Tnom) ^ 0.5 * $pDER_INI_NLS_JAC_1.plant.TIT * plant.Tnom / plant.Tnom ^ 2.0 [Real]
 // 	33:  (SES_RESIZABLE_ASSIGN)  call index: 0
 //
-// 	32: $pDER_INI_NLS_JAC_1.plant.p[6]=($pDER_INI_NLS_JAC_1.$FUN_1 * plant.w + $FUN_1 * $SEED_INI_NLS_JAC_1.plant.w) * plant.Kt / plant.Kt ^ 2.0 [Real]
+// 	32: $pDER_INI_NLS_JAC_1.plant.p[6]=($SEED_INI_NLS_JAC_1.plant.w * $FUN_1 + plant.w * $pDER_INI_NLS_JAC_1.$FUN_1) * plant.Kt / plant.Kt ^ 2.0 [Real]
 // 	31: $pDER_INI_NLS_JAC_1.plant.TIP=$pDER_INI_NLS_JAC_1.plant.p[6] [Real]
 // 	30: $pDER_INI_NLS_JAC_1.$RES_SIM_12_0=(0.5 * $SEED_INI_NLS_JAC_1.plant.Tfg[5] - 0.5 * $SEED_INI_NLS_JAC_1.plant.T[2]) * plant.G[1] + (0.5 * (plant.Tfg[6] + plant.Tfg[5]) - 0.5 * (plant.T[2] + plant.T[1])) * $pDER_INI_NLS_JAC_1.plant.G[1] - $pDER_INI_NLS_JAC_1.plant.Q[1] [Real]
 // 	29: $pDER_INI_NLS_JAC_1.$RES_SIM_12_1=(0.5 * ($SEED_INI_NLS_JAC_1.plant.Tfg[5] + $SEED_INI_NLS_JAC_1.plant.Tfg[4]) - 0.5 * ($SEED_INI_NLS_JAC_1.plant.T[3] + $SEED_INI_NLS_JAC_1.plant.T[2])) * plant.G[2] + (0.5 * (plant.Tfg[5] + plant.Tfg[4]) - 0.5 * (plant.T[3] + plant.T[2])) * $pDER_INI_NLS_JAC_1.plant.G[2] - $pDER_INI_NLS_JAC_1.plant.Q[2] [Real]
