@@ -1,0 +1,27 @@
+// name: residualScaling
+// keywords: NewBackend, tearing, residual, scaling
+// status: correct
+// suite: cSources
+//
+// The adaptors with diameter_b = inf have A_mean = 3.9e119. The torn initial
+// system keeps A_mean*(p1 - p2) - F_p as residual, which is divided by the
+// coefficient, otherwise the solvers see the jacobian as singular.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+buildModel(Modelica.Fluid.Examples.Explanatory.MomentumBalanceFittings);
+// the compiler warnings come from Modelica.Media and are not checked here
+clearMessages();
+system("./Modelica.Fluid.Examples.Explanatory.MomentumBalanceFittings", "residualScaling.log");
+abs(val(rightAdaptor.m_flow, 0.0, "Modelica.Fluid.Examples.Explanatory.MomentumBalanceFittings_res.mat") + 29.302643) < 1e-4;
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"Modelica.Fluid.Examples.Explanatory.MomentumBalanceFittings", "Modelica.Fluid.Examples.Explanatory.MomentumBalanceFittings_init.xml"}
+// true
+// 0
+// true
+// endResult

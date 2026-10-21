@@ -260,7 +260,7 @@ buildModel(AdjointJacobian4); getErrorString();
 // ### Residual Equations:
 //     [SCAL] (1) $RES_ODE_JAC_ADJ_2 = 0.25 .* $pDER_ODE_JAC_ADJ.$TMP_2 + $pDER_ODE_JAC_ADJ.y; ($RES_ODE_JAC_ADJ_2)
 // ### Inner Equations:
-//
+//     
 // BLOCK 5: Multi Strong Component (status = Solve.EXPLICIT, size = 2)
 // ---------------------------------------------------------------------
 // ### Variables:
@@ -297,7 +297,7 @@ buildModel(AdjointJacobian4); getErrorString();
 // ### Iteration Variables:
 //     [ALGB] (1) Real y
 // ### Residual Equations:
-//     [SCAL] (1) $RES_SIM_6 = -(3.0 * z + y + $FUN_1); ($RES_SIM_6)
+//     [SCAL] (1) $RES_SIM_6 = 0.3333333333333333 * (-(3.0 * z + y + $FUN_1)); ($RES_SIM_6)
 // ### Inner Equations:
 //     BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
 // --------------------------------------------------------------------
