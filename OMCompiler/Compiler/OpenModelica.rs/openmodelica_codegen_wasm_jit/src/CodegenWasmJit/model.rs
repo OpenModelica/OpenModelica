@@ -93,6 +93,7 @@ pub(super) fn build_sim_model(
         None
     };
     let (scalarized_vars, array_runs, dyn_vars) = scalarize_sim_vars(&mi.vars, size_params.as_mut())?;
+    let _array_dims = ArrayDimsScope::new(&array_runs);
     let vars = &scalarized_vars;
     let states: Vec<&SimCodeVar::SimVar> = svs(&vars.stateVars).collect();
 
@@ -1118,7 +1119,7 @@ pub(super) fn build_sim_model(
     let nls_vars = nls_systems
         .iter()
         .map(|sys| {
-            let names = lst(&sys.crefs).map(cref_display).collect::<Result<Vec<_>>>()?;
+            let names = nls_crefs(sys).iter().map(cref_display).collect::<Result<Vec<_>>>()?;
             // C's `eqn_simcode_indices` runs over the torn equations first; only
             // the `size` residual ones at the end are read back.
             let eqns: Vec<i32> = lst(&sys.eqs).map(|e| eq_index_of(e)).collect();
@@ -2053,7 +2054,7 @@ pub(super) fn build_sim_model(
             f.instruction(&we::Instruction::Call(i));
         }
         if let Some((fn_indices, _)) = &nls_wiring {
-            let sizes: Vec<u32> = nls_systems.iter().map(|s| lst(&s.crefs).count() as u32).collect();
+            let sizes: Vec<u32> = nls_systems.iter().map(|s| nls_crefs(s).len() as u32).collect();
             emit_nls_start(
                 &mut f,
                 fn_indices,

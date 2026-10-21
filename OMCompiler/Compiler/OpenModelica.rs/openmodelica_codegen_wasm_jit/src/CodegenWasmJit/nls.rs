@@ -3,6 +3,43 @@
 
 use super::*;
 
+thread_local! {
+    static ARRAY_DIMS: std::cell::RefCell<HashMap<String, Vec<u32>>> = std::cell::RefCell::new(HashMap::default());
+}
+
+/// The shapes of the array variables [`scalarize_sim_vars`] expanded, for
+/// [`nls_crefs`], while alive.
+pub(super) struct ArrayDimsScope;
+
+impl ArrayDimsScope {
+    pub(super) fn new(runs: &ArrayRuns) -> ArrayDimsScope {
+        ARRAY_DIMS.with(|d| *d.borrow_mut() = runs.values().map(|r| (r.base.clone(), r.dims.clone())).collect());
+        ArrayDimsScope
+    }
+}
+
+impl Drop for ArrayDimsScope {
+    fn drop(&mut self) {
+        ARRAY_DIMS.with(|d| d.borrow_mut().clear());
+    }
+}
+
+/// The scalar unknowns of a nonlinear system: a whole array of constant size
+/// stands for its elements, as C's `getNumElems` counts them.
+pub(crate) fn nls_crefs(nls: &SimCode::NonlinearSystem) -> Vec<metamodelica::Ref<DAE::ComponentRef>> {
+    let mut out = Vec::new();
+    for cr in lst(&nls.crefs) {
+        let dims = sim_cref_key(cr)
+            .ok()
+            .and_then(|k| ARRAY_DIMS.with(|d| d.borrow().get(&k).cloned()));
+        match dims {
+            Some(dims) => out.extend(row_major_indices(&dims).iter().map(|idx| cref_with_indices(cr, idx))),
+            None => out.push(cr.clone()),
+        }
+    }
+    out
+}
+
 /// Partition a nonlinear system's equations into the inner (torn) constraint
 /// equations and the `SES_RESIDUAL` residual expressions, and its iteration
 /// unknowns. Shared by [`collect_nls_jobs`] (which counts unknowns) and
@@ -61,7 +98,7 @@ pub(super) fn nls_parts(
             _ => inner.push(e.clone()),
         }
     }
-    let iter_vars: Vec<metamodelica::Ref<DAE::ComponentRef>> = lst(&nlsystem.crefs).cloned().collect();
+    let iter_vars = nls_crefs(nlsystem);
     if residuals.is_empty() {
         // An inverse algorithm is the system's lone equation and its own residual.
         if let [e] = inner.as_slice() {
@@ -180,7 +217,7 @@ pub(super) fn collect_nls_jobs(
                     systems.push(nlSystem.clone());
                     continue;
                 }
-                let n = lst(&nlSystem.crefs).count() as u32;
+                let n = nls_crefs(nlSystem).len() as u32;
                 let mut has_jac = nls_jac_usable(nlSystem);
                 // C's `initializeNonlinearSystemData` shape check.
                 if let Some((rows, cols)) = nls_jac_dims(nlSystem) {
@@ -263,7 +300,7 @@ pub(super) fn collect_nls_jobs(
                 }
                 hist_off += crate::CodegenWasmJitFunctions::nls_hist_bytes(n);
                 nominal_off += 8 * n;
-                for cr in lst(&nlSystem.crefs) {
+                for cr in &nls_crefs(nlSystem) {
                     let key = resolve_sim_key(cr, |k| nominal_of.contains_key(k)).ok();
                     let (nom, lo, hi) =
                         key.as_ref()
@@ -330,7 +367,7 @@ pub(super) fn nls_iteration_keys(eq_lists: &[&[metamodelica::Ref<SimCode::SimEqS
             continue;
         };
         for sys in std::iter::once(nlSystem).chain(alternativeTearing.as_ref()) {
-            for cr in lst(&sys.crefs) {
+            for cr in &nls_crefs(sys) {
                 keys.extend(sim_cref_key(cr).ok());
                 keys.extend(flat_sim_key(cr));
             }
@@ -511,7 +548,7 @@ impl DynScratch {
     /// with a numerical Jacobian; `None` for any other system.
     fn nls_job(&mut self, nls: &SimCode::NonlinearSystem, k: u32, casual: bool) -> Option<NlsJob> {
         let mut n = Sz::lit(0);
-        for cr in lst(&nls.crefs) {
+        for cr in &nls_crefs(nls) {
             n = n + sim_cref_key(cr)
                 .ok()
                 .and_then(|key| self.lens.get(&key).cloned())
