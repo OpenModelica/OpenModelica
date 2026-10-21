@@ -2338,6 +2338,17 @@ algorithm
   end match;
 end isEventConstantExp;
 
+public function isSpecialRelation
+  "Special relations that cannot yet be made continuous in the generated code."
+  input DAE.Exp rel;
+  output Boolean b;
+algorithm
+  b := match rel
+    case DAE.RELATION(exp1 = DAE.CALL(path = Absyn.IDENT("delayZeroCrossing"))) then true;
+    else false;
+  end match;
+end isSpecialRelation;
+
 public function isSimulationCodegen
   "Whether the templates are running for a simulation or an FMU rather than for
    functions on their own. Only those set the SimCode structure, and only those

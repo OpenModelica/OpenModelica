@@ -1762,6 +1762,11 @@ package SimCodeCodegenUtil
     output Boolean b;
   end isTimeEventRelation;
 
+  function isSpecialRelation
+    input DAE.Exp rel;
+    output Boolean b;
+  end isSpecialRelation;
+
   function cref2simvar
     input DAE.ComponentRef cref;
     input SimCode.SimCode simCode;
