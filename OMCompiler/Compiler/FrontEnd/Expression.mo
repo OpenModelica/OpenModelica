@@ -2917,7 +2917,7 @@ algorithm
         tp := typeof(e);
         e := match tp
           case DAE.T_REAL() then DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.T_REAL_DEFAULT),e);
-          case DAE.T_INTEGER() then DAE.BINARY(DAE.ICONST(1),DAE.DIV(DAE.T_INTEGER_DEFAULT),e);
+          case DAE.T_INTEGER() then DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.T_REAL_DEFAULT),typeCast(e,DAE.T_REAL_DEFAULT));
         end match;
       then
         e;
