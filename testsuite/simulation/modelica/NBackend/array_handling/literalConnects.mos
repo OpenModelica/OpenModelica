@@ -1,0 +1,45 @@
+// name: literalConnects
+// keywords: NewBackend, resizable, arrayConnect, connect
+// status: correct
+//
+// Many connections of single elements (literal indices) next to array
+// connections (#17368): a connector array connected only with literal indices
+// gets a vertex for each element, runs of single element connections become
+// one edge (--resizableArrays) or one for loop (-d=arrayConnect). Before, the
+// arrays were split into one piece per connection: more than 300 pieces failed
+// with --resizableArrays, -d=arrayConnect did not finish.
+
+loadModel(Modelica, {"4.0.0"}); getErrorString();
+loadFile("literalConnects.mo"); getErrorString();
+setCommandLineOptions("--newBackend --resizableArrays"); getErrorString();
+checkModel(literalConnects.Separate); getErrorString();
+checkModel(literalConnects.Same); getErrorString();
+setCommandLineOptions("--resizableArrays=false -d=arrayConnect"); getErrorString();
+checkModel(literalConnects.Separate); getErrorString();
+checkModel(literalConnects.Same); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "Check of literalConnects.Separate completed successfully.
+// Class literalConnects.Separate has 2888 equation(s) and 2888 variable(s).
+// 628 of these are trivial equation(s)."
+// ""
+// "Check of literalConnects.Same completed successfully.
+// Class literalConnects.Same has 5588 equation(s) and 5588 variable(s).
+// 8 of these are trivial equation(s)."
+// ""
+// true
+// ""
+// "Check of literalConnects.Separate completed successfully.
+// Class literalConnects.Separate has 2888 equation(s) and 2888 variable(s).
+// 10 of these are trivial equation(s)."
+// ""
+// "Check of literalConnects.Same completed successfully.
+// Class literalConnects.Same has 5588 equation(s) and 5588 variable(s).
+// 8 of these are trivial equation(s)."
+// ""
+// endResult
