@@ -628,6 +628,17 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         * skip that step and go further, unless the step ends on a time event:
         * a relation on time can switch a few ulp after the last event */
         if (solverInfo->currentStepSize < 1e-15 && syncEventStep && !data->simulationInfo->sampleActivated){
+          // terminate when stopTime is reached
+          if (simInfo->useStopTime) {
+            const double stopTol = 1e-12 * fmax(1.0, fabs(simInfo->stopTime));
+            if (simInfo->stopTime - solverInfo->currentTime <= stopTol) {
+              solverInfo->currentTime = simInfo->stopTime;
+              data->localData[0]->timeValue = simInfo->stopTime;
+              solverInfo->laststep = solverInfo->currentTime;
+              solverInfo->didEventStep = 0;
+              break;
+            }
+          }
           __currStepNo++;
           rotateRingBuffer(data->simulationData, 1);
           lookupRingBuffer(data->simulationData, (void**) data->localData);
