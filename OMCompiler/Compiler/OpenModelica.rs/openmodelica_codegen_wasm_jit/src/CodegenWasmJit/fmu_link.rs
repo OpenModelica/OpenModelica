@@ -40,7 +40,7 @@ pub(super) fn build_fmi_vrs(
     for sv in lst(&vars.outputVars) {
         let key = sim_cref_key(&sv.name)?;
         if let Some(slot) = map.vars.get(&format!("${key}_der")) {
-            out_der.insert(key, slot.off);
+            out_der.insert(key, plain_off(slot.off)?);
         }
     }
     let mut lens: HashMap<String, u32> = HashMap::default();
@@ -58,11 +58,11 @@ pub(super) fn build_fmi_vrs(
             .map_err(|_| "CodegenWasmJit: FMI3 value reference is not a number")?;
         // A real variable's start slot: an init-mode set must go to the `start`
         // attribute, not to the live slot `setAllVarsToStart` is about to rewrite.
-        let start_off = map.start_slots.get(&key).unwrap_or(0);
+        let start_off = map.start_slots.get(&key).map_or(Ok(0), plain_off)?;
         let der_off = out_der.get(&key).copied().unwrap_or(0);
         out.push(FmiVr {
             vr,
-            off: slot.off,
+            off: plain_off(slot.off)?,
             wty: slot.wty,
             negate: slot.negate,
             start_off,
@@ -84,7 +84,7 @@ pub(super) fn build_fmi_vrs(
             .map_err(|_| "CodegenWasmJit: FMI3 value reference is not a number")?;
         out.push(FmiVr {
             vr,
-            off: slot.off,
+            off: plain_off(slot.off)?,
             wty: slot.wty,
             negate: slot.negate,
             start_off: 0,
@@ -109,8 +109,8 @@ pub(super) fn build_fmi_vrs(
     });
     for k in 0..layout.n_zc {
         out.push(FmiVr {
-            vr: time_vr + 1 + k,
-            off: layout.zc_off + k * 8,
+            vr: time_vr + 1 + k as u32,
+            off: plain_off(layout.zc_off + k * 8)?,
             wty: WTy::F64,
             negate: Neg::None,
             start_off: 0,
@@ -121,12 +121,12 @@ pub(super) fn build_fmi_vrs(
     }
     let mut dae_enable_vr = 0;
     if let Some(d) = &sim_code.daeModeData {
-        dae_enable_vr = time_vr + 1 + layout.n_zc;
+        dae_enable_vr = time_vr + 1 + layout.n_zc as u32;
         for sv in lst(&d.residualVars) {
             let i = u32::try_from(sv.index).map_err(|_| "CodegenWasmJit: DAE mode residual has no index")?;
             out.push(FmiVr {
                 vr: dae_enable_vr + 1 + i,
-                off: layout.dae_res_off + i * 8,
+                off: plain_off(layout.dae_res_off + SimOff::from(i * 8))?,
                 wty: WTy::F64,
                 negate: Neg::None,
                 start_off: 0,

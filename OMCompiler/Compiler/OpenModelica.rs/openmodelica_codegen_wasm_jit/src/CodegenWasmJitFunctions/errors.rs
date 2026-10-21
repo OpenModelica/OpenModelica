@@ -33,10 +33,10 @@ pub(super) fn emit_terminate(ctx: &mut FnCtx, message: &DAE::Exp, source: &DAE::
     if mw != WTy::I32 {
         return Err("CodegenWasmJit: terminate message is not a String");
     }
-    ctx.emit(we::Instruction::I32Store(mem_arg(info_off, 2)));
+    ctx.emit(we::Instruction::I32Store(sim_mem(info_off, 2)?));
     ctx.emit(we::Instruction::LocalGet(data));
     emit_str_literal(ctx, file.as_bytes())?;
-    ctx.emit(we::Instruction::I32Store(mem_arg(info_off + 4, 2)));
+    ctx.emit(we::Instruction::I32Store(sim_mem(info_off + 4, 2)?));
     let pos = [
         info.lineNumberStart,
         info.columnNumberStart,
@@ -47,11 +47,14 @@ pub(super) fn emit_terminate(ctx: &mut FnCtx, message: &DAE::Exp, source: &DAE::
     for (i, v) in pos.iter().enumerate() {
         ctx.emit(we::Instruction::LocalGet(data));
         ctx.emit(we::Instruction::I32Const(*v));
-        ctx.emit(we::Instruction::I32Store(mem_arg(info_off + 8 + i as u32 * 4, 2)));
+        ctx.emit(we::Instruction::I32Store(sim_mem(
+            info_off + 8 + SimOff::from(i as u32 * 4),
+            2,
+        )?));
     }
     ctx.emit(we::Instruction::LocalGet(data));
     ctx.emit(we::Instruction::I32Const(1));
-    ctx.emit(we::Instruction::I32Store(mem_arg(off, 2)));
+    ctx.emit(we::Instruction::I32Store(sim_mem(off, 2)?));
     Ok(())
 }
 
@@ -101,7 +104,7 @@ pub(super) fn emit_assert(
         ctx.emit(we::Instruction::I32Const(info.lineNumberEnd));
         ctx.emit(we::Instruction::I32Const(info.columnNumberEnd));
         ctx.emit(we::Instruction::I32Const(info.isReadOnly as i32));
-        emit_initial_flag(ctx);
+        emit_initial_flag(ctx)?;
         ctx.emit(we::Instruction::Call(env_extra_index("rt_assert_warning")?));
         ctx.emit(we::Instruction::I32Const(1));
         ctx.emit(we::Instruction::GlobalSet(g));
@@ -150,7 +153,7 @@ pub(super) fn emit_assert(
     }
     emit_unlikely_if(ctx, we::BlockType::Empty);
     report_args(ctx)?;
-    emit_initial_flag(ctx);
+    emit_initial_flag(ctx)?;
     emit_sim_data_or_zero(ctx);
     ctx.emit(we::Instruction::Call(rt_index("rt_nls_assert_failed")?));
     release_heap_locals(ctx)?;
@@ -158,7 +161,7 @@ pub(super) fn emit_assert(
     ctx.emit(we::Instruction::Return);
     ctx.emit(we::Instruction::End);
     report_args(ctx)?;
-    emit_initial_flag(ctx);
+    emit_initial_flag(ctx)?;
     emit_sim_data_or_zero(ctx);
     let report = if when_body { "rt_assert_when" } else { "rt_assert" };
     ctx.emit(we::Instruction::Call(env_extra_index(report)?));
@@ -209,7 +212,7 @@ fn emit_model_error(ctx: &mut FnCtx) -> Result<()> {
                 ctx.emit(I::I32Const(0)); // line/col start+end, isReadOnly
             }
             ctx.emit(I::I32Const(0)); // no condition: never suppressed
-            emit_initial_flag(ctx);
+            emit_initial_flag(ctx)?;
             emit_sim_data_or_zero(ctx);
             Ok(())
         };
@@ -228,7 +231,7 @@ fn emit_model_error(ctx: &mut FnCtx) -> Result<()> {
         return Ok(());
     }
     emit_sim_data_or_zero(ctx);
-    emit_initial_flag(ctx);
+    emit_initial_flag(ctx)?;
     ctx.emit(I::Call(rt_index("rt_assert_common")?));
     let taken = ctx.alloc_temp(WTy::I32);
     ctx.emit(I::LocalSet(taken));
@@ -250,14 +253,15 @@ fn emit_model_error(ctx: &mut FnCtx) -> Result<()> {
 }
 
 /// 0 outside a simulation: C's `FUNCTION_CONTEXT` arm prints no header at all.
-pub(super) fn emit_initial_flag(ctx: &mut FnCtx) {
+pub(super) fn emit_initial_flag(ctx: &mut FnCtx) -> Result<()> {
     match ctx.sim.as_ref().map(|s| (s.data_local, s.initial_off)) {
         Some((data, off)) => {
             ctx.emit(we::Instruction::LocalGet(data));
-            ctx.emit(we::Instruction::I32Load(mem_arg(off, 2)));
+            ctx.emit(we::Instruction::I32Load(sim_mem(off, 2)?));
         }
         None => ctx.emit(we::Instruction::I32Const(0)),
     }
+    Ok(())
 }
 
 /// The dumped source form of `e`, for embedding in an assertion message.
@@ -269,15 +273,20 @@ pub(crate) fn dumped_exp(e: &DAE::Exp) -> Result<String> {
             return Ok(s);
         }
     }
-    Ok(Tpl::textString(ExpressionDumpTpl::dumpExp(Tpl::emptyTxt(), &e, &arcstr::literal!("\""))?)?.to_string())
+    Ok(Tpl::textString(ExpressionDumpTpl::dumpExp(
+        Tpl::emptyTxt(),
+        &e,
+        &arcstr::literal!("\""),
+    )?)?
+    .to_string())
 }
 
 /// `ExpressionDumpTpl.dumpExp` for literals, crefs, scalar arithmetic and calls
 /// of those; false for anything else.
 fn push_dumped_exp(e: &metamodelica::Ref<DAE::Exp>, modelica_output: bool, s: &mut String) -> Result<bool> {
-    use std::fmt::Write;
     use DAE::Exp as E;
     use DAE::Operator as O;
+    use std::fmt::Write;
     Ok(match &**e {
         E::ICONST { integer } => {
             let _ = write!(s, "{integer}");
@@ -302,7 +311,10 @@ fn push_dumped_exp(e: &metamodelica::Ref<DAE::Exp>, modelica_output: bool, s: &m
                 push_dumped_operand(exp2, e, false, modelica_output, s)?
             }
         }
-        E::UNARY { operator: O::UMINUS { .. }, exp } => {
+        E::UNARY {
+            operator: O::UMINUS { .. },
+            exp,
+        } => {
             s.push('-');
             push_dumped_operand(exp, e, false, modelica_output, s)?
         }
@@ -335,24 +347,32 @@ fn push_dumped_operand(
     modelica_output: bool,
     s: &mut String,
 ) -> Result<bool> {
-    use std::cmp::Ordering;
     use DAE::Exp as E;
     use DAE::Operator as O;
+    use std::cmp::Ordering;
     let paren = match &**operand {
         E::UNARY { .. } => true,
-        _ => match openmodelica_frontend_dump::ExpressionBasics::priority(&operand, lhs)?
-            .cmp(&openmodelica_frontend_dump::ExpressionBasics::priority(&operation, lhs)?)
-        {
+        _ => match openmodelica_frontend_dump::ExpressionBasics::priority(&operand, lhs)?.cmp(
+            &openmodelica_frontend_dump::ExpressionBasics::priority(&operation, lhs)?,
+        ) {
             Ordering::Greater => true,
             Ordering::Less => false,
             Ordering::Equal => match &**operand {
                 E::BINARY { operator, .. } if lhs => matches!(
                     operator,
-                    O::POW { .. } | O::POW_ARRAY_SCALAR { .. } | O::POW_SCALAR_ARRAY { .. } | O::POW_ARR { .. } | O::POW_ARR2 { .. }
+                    O::POW { .. }
+                        | O::POW_ARRAY_SCALAR { .. }
+                        | O::POW_SCALAR_ARRAY { .. }
+                        | O::POW_ARR { .. }
+                        | O::POW_ARR2 { .. }
                 ),
                 E::BINARY { operator, .. } => !matches!(
                     operator,
-                    O::ADD { .. } | O::MUL { .. } | O::ADD_ARR { .. } | O::MUL_ARRAY_SCALAR { .. } | O::ADD_ARRAY_SCALAR { .. }
+                    O::ADD { .. }
+                        | O::MUL { .. }
+                        | O::ADD_ARR { .. }
+                        | O::MUL_ARRAY_SCALAR { .. }
+                        | O::ADD_ARRAY_SCALAR { .. }
                 ),
                 E::LBINARY { .. } => false,
                 _ => !lhs,
@@ -388,11 +408,18 @@ fn push_dumped_path(path: &Absyn::Path, modelica_output: bool, s: &mut String) {
 /// `ExpressionDumpTpl.dumpCref` for crefs whose subscripts are all `:` or
 /// integer literals; false for anything else.
 fn push_dumped_cref(cr: &DAE::ComponentRef, modelica_output: bool, s: &mut String) -> bool {
-    use std::fmt::Write;
     use DAE::ComponentRef as C;
+    use std::fmt::Write;
     let (ident, subs, rest) = match cr {
-        C::CREF_IDENT { ident, subscriptLst, .. } => (ident, subscriptLst, None),
-        C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => (ident, subscriptLst, Some(componentRef)),
+        C::CREF_IDENT {
+            ident, subscriptLst, ..
+        } => (ident, subscriptLst, None),
+        C::CREF_QUAL {
+            ident,
+            subscriptLst,
+            componentRef,
+            ..
+        } => (ident, subscriptLst, Some(componentRef)),
         C::WILD => {
             s.push('_');
             return true;
@@ -469,7 +496,12 @@ pub(super) fn math_domain(name: &str) -> Option<Domain> {
 
 /// C's `daeExpCall` guard (`CodegenCFunctions.tpl`): evaluate `arg` into a temp,
 /// assert its domain, leave it on the stack for the caller's call.
-pub(super) fn emit_math_domain_guard(ctx: &mut FnCtx, name: &str, arg: &metamodelica::Ref<DAE::Exp>, d: &Domain) -> Result<()> {
+pub(super) fn emit_math_domain_guard(
+    ctx: &mut FnCtx,
+    name: &str,
+    arg: &metamodelica::Ref<DAE::Exp>,
+    d: &Domain,
+) -> Result<()> {
     use we::Instruction as I;
     let w = compile_exp(ctx, arg)?;
     coerce(ctx, w, WTy::F64);
@@ -536,7 +568,10 @@ pub(super) fn emit_nth_root(ctx: &mut FnCtx, argv: &[&metamodelica::Ref<DAE::Exp
     ctx.emit(we::Instruction::I32GtS);
     ctx.emit(we::Instruction::I32Eqz);
     emit_unlikely_if(ctx, we::BlockType::Empty);
-    emit_str_literal(ctx, format!("Model error: Second argument of nthRoot({vstr}, {nstr}) must be > 0, got ").as_bytes())?;
+    emit_str_literal(
+        ctx,
+        format!("Model error: Second argument of nthRoot({vstr}, {nstr}) must be > 0, got ").as_bytes(),
+    )?;
     ctx.emit(we::Instruction::LocalGet(nt));
     ctx.emit(we::Instruction::Call(rt_index("rt_int_string")?));
     emit_concat_owned(ctx)?;
@@ -555,7 +590,11 @@ pub(super) fn emit_nth_root(ctx: &mut FnCtx, argv: &[&metamodelica::Ref<DAE::Exp
     ctx.emit(we::Instruction::I32Or);
     ctx.emit(we::Instruction::I32Eqz);
     emit_unlikely_if(ctx, we::BlockType::Empty);
-    emit_str_literal(ctx, format!("Model error: First argument of nthRoot({vstr}, {nstr}) must be >= 0 if the second is even, got ").as_bytes())?;
+    emit_str_literal(
+        ctx,
+        format!("Model error: First argument of nthRoot({vstr}, {nstr}) must be >= 0 if the second is even, got ")
+            .as_bytes(),
+    )?;
     ctx.emit(we::Instruction::LocalGet(vt));
     ctx.emit(we::Instruction::I32Const(6)); // significant digits
     ctx.emit(we::Instruction::I32Const(0)); // minimum length
@@ -572,7 +611,9 @@ pub(super) fn emit_nth_root(ctx: &mut FnCtx, argv: &[&metamodelica::Ref<DAE::Exp
     ctx.emit(we::Instruction::LocalGet(nt));
     coerce(ctx, WTy::I32, WTy::F64);
     ctx.emit(we::Instruction::F64Div);
-    ctx.emit(we::Instruction::Call(builtin_index("pow").ok_or("CodegenWasmJit: pow builtin missing")?));
+    ctx.emit(we::Instruction::Call(
+        builtin_index("pow").ok_or("CodegenWasmJit: pow builtin missing")?,
+    ));
     ctx.emit(we::Instruction::LocalGet(vt));
     ctx.emit(we::Instruction::F64Copysign);
     Ok(SigTy::Real)

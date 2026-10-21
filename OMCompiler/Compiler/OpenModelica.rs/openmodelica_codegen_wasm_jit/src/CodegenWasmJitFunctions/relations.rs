@@ -67,7 +67,10 @@ fn compile_relation_indexed(
     use DAE::Operator as O;
     let time_event = time_event_trigger(e1, op, e2, index, asub).is_some();
     let real_ineq = operand_type_of_relation(op)? == WTy::F64
-        && matches!(op, O::LESS { .. } | O::LESSEQ { .. } | O::GREATER { .. } | O::GREATEREQ { .. })
+        && matches!(
+            op,
+            O::LESS { .. } | O::LESSEQ { .. } | O::GREATER { .. } | O::GREATEREQ { .. }
+        )
         && !time_event;
     let data = ctx.sim()?.data_local;
     // Region bases: `relations[]` (live), `relationsPre[]` (held) and the held
@@ -75,7 +78,7 @@ fn compile_relation_indexed(
     // `base + k*4`.
     let relations_off = ctx.sim()?.relations_off;
     let pre_off = ctx.sim()?.relations_pre_off;
-    let dir_off = ctx.sim()?.stored_rel_off;
+    let dir_off = plain_off(ctx.sim()?.stored_rel_off)?;
     let fresh_off = ctx.sim()?.rel_fresh_off;
     // The slot address `data + eff_index*4`. A relation inside a `for`-loop shares
     // one AST node across iterations, so its effective index is
@@ -113,13 +116,13 @@ fn compile_relation_indexed(
     }
     // Equation context: held / init-fresh / event-fresh selected on `rel_fresh`.
     ctx.emit(we::Instruction::LocalGet(data));
-    ctx.emit(we::Instruction::I32Load(mem_arg(fresh_off, 2)));
+    ctx.emit(we::Instruction::I32Load(sim_mem(fresh_off, 2)?));
     ctx.emit(we::Instruction::If(we::BlockType::Result(we::ValType::I32)));
     let v = ctx.alloc_temp(WTy::I32);
     if real_ineq {
         // rel_fresh == 2 (init): exact; else (event): hysteretic.
         ctx.emit(we::Instruction::LocalGet(data));
-        ctx.emit(we::Instruction::I32Load(mem_arg(fresh_off, 2)));
+        ctx.emit(we::Instruction::I32Load(sim_mem(fresh_off, 2)?));
         ctx.emit(we::Instruction::I32Const(2));
         ctx.emit(we::Instruction::I32Eq);
         ctx.emit(we::Instruction::If(we::BlockType::Result(we::ValType::I32)));
@@ -133,11 +136,11 @@ fn compile_relation_indexed(
     ctx.emit(we::Instruction::LocalSet(v));
     ctx.emit(we::Instruction::LocalGet(slot)); // store relations[eff] = v
     ctx.emit(we::Instruction::LocalGet(v));
-    ctx.emit(we::Instruction::I32Store(mem_arg(relations_off, 2)));
+    ctx.emit(we::Instruction::I32Store(sim_mem(relations_off, 2)?));
     ctx.emit(we::Instruction::LocalGet(v));
     ctx.emit(we::Instruction::Else);
     ctx.emit(we::Instruction::LocalGet(slot)); // held: relationsPre[eff]
-    ctx.emit(we::Instruction::I32Load(mem_arg(pre_off, 2)));
+    ctx.emit(we::Instruction::I32Load(sim_mem(pre_off, 2)?));
     ctx.emit(we::Instruction::End);
     Ok(WTy::I32)
 }
@@ -184,7 +187,7 @@ fn compile_relation_hyst(
     ctx.emit(I::LocalGet(nom));
     ctx.emit(I::F64Add);
     ctx.emit(I::LocalGet(data));
-    ctx.emit(I::F64Load(mem_arg(zctol_off, 3)));
+    ctx.emit(I::F64Load(sim_mem(zctol_off, 3)?));
     ctx.emit(I::F64Mul);
     ctx.emit(I::LocalSet(eps));
 
@@ -237,7 +240,11 @@ fn emit_hyst_cmp(ctx: &mut FnCtx, op: &DAE::Operator, diff: u32, eps: u32, dir: 
 /// Leave `max(|nominal(e1)|, |nominal(e2)|)` — the scale term of the hysteresis
 /// band — on the stack as an f64, from the same `getExpNominal` derivation C's
 /// `daeExpNominalTmp` uses.
-fn emit_relation_nominal(ctx: &mut FnCtx, e1: &metamodelica::Ref<DAE::Exp>, e2: &metamodelica::Ref<DAE::Exp>) -> Result<()> {
+fn emit_relation_nominal(
+    ctx: &mut FnCtx,
+    e1: &metamodelica::Ref<DAE::Exp>,
+    e2: &metamodelica::Ref<DAE::Exp>,
+) -> Result<()> {
     let n1 = nominal_exp(e1);
     let n2 = nominal_exp(e2);
     match (nominal_const(&n1), nominal_const(&n2)) {
@@ -271,7 +278,9 @@ pub(crate) fn time_event_trigger(
         index,
         optionExpisASUB: asub.clone(),
     });
-    openmodelica_codegen_util::SimCodeCodegenUtil::timeEventTrigger(&rel).ok().flatten()
+    openmodelica_codegen_util::SimCodeCodegenUtil::timeEventTrigger(&rel)
+        .ok()
+        .flatten()
 }
 
 fn nominal_exp(e: &metamodelica::Ref<DAE::Exp>) -> metamodelica::Ref<DAE::Exp> {
@@ -334,7 +343,10 @@ pub(super) fn compile_bool_operand(ctx: &mut FnCtx, e: &DAE::Exp) -> Result<()> 
     use DAE::Exp as E;
     let w = compile_exp(ctx, e)?;
     coerce(ctx, w, WTy::I32);
-    if !matches!(e, E::BCONST { .. } | E::RELATION { .. } | E::LBINARY { .. } | E::LUNARY { .. }) {
+    if !matches!(
+        e,
+        E::BCONST { .. } | E::RELATION { .. } | E::LBINARY { .. } | E::LUNARY { .. }
+    ) {
         ctx.emit(we::Instruction::I32Const(0));
         ctx.emit(we::Instruction::I32Ne);
     }
@@ -346,7 +358,12 @@ pub(super) fn compile_bool_operand(ctx: &mut FnCtx, e: &DAE::Exp) -> Result<()> 
 fn relation_operand_sigty(op: &DAE::Operator) -> Result<SigTy> {
     use DAE::Operator as O;
     let ty = match op {
-        O::LESS { ty } | O::LESSEQ { ty } | O::GREATER { ty } | O::GREATEREQ { ty } | O::EQUAL { ty } | O::NEQUAL { ty } => ty,
+        O::LESS { ty }
+        | O::LESSEQ { ty }
+        | O::GREATER { ty }
+        | O::GREATEREQ { ty }
+        | O::EQUAL { ty }
+        | O::NEQUAL { ty } => ty,
         _ => return Err("CodegenWasmJit: not a relational operator"),
     };
     sig_ty_quiet(ty)
@@ -479,8 +496,15 @@ pub(super) fn record_local(ctx: &FnCtx, e: &DAE::Exp) -> Option<u32> {
     if ctx.sim.is_some() {
         return None;
     }
-    let DAE::Exp::CREF { componentRef, .. } = e else { return None };
-    let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = &**componentRef else { return None };
+    let DAE::Exp::CREF { componentRef, .. } = e else {
+        return None;
+    };
+    let DAE::ComponentRef::CREF_IDENT {
+        ident, subscriptLst, ..
+    } = &**componentRef
+    else {
+        return None;
+    };
     if !subscriptLst.is_empty() {
         return None;
     }

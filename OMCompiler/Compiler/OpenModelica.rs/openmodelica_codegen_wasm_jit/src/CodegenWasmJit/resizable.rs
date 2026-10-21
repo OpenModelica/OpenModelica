@@ -34,7 +34,9 @@ impl SizeParams {
             return Ok(Sz::param(i));
         }
         let Some(sv) = self.int_params.get(key).cloned() else {
-            record_error(format!("CodegenWasmJit: the array size `{key}` is not an Integer parameter"));
+            record_error(format!(
+                "CodegenWasmJit: the array size `{key}` is not an Integer parameter"
+            ));
             return Err("CodegenWasmJit: unsupported resizable array size");
         };
         if !self.visiting.insert(key.to_string()) {
@@ -46,7 +48,11 @@ impl SizeParams {
         };
         self.visiting.remove(key);
         let i = self.params.len() as u32;
-        self.params.push(SizeParam { name: cref_display(&sv.name)?, start, off: 0 });
+        self.params.push(SizeParam {
+            name: cref_display(&sv.name)?,
+            start,
+            off: 0,
+        });
         self.keys.push(key.to_string());
         self.by_key.insert(key.to_string(), i);
         Ok(Sz::param(i))
@@ -61,7 +67,10 @@ impl SizeParams {
             E::ENUM_LITERAL { index, .. } => Sz::lit(*index as i64),
             E::CREF { componentRef, .. } => self.param(&sim_cref_key(componentRef)?)?,
             E::CAST { exp, .. } => self.sz_of_exp(exp)?,
-            E::UNARY { operator: O::UMINUS { .. }, exp } => -self.sz_of_exp(exp)?,
+            E::UNARY {
+                operator: O::UMINUS { .. },
+                exp,
+            } => -self.sz_of_exp(exp)?,
             E::BINARY { exp1, operator, exp2 } => {
                 let (a, b) = (self.sz_of_exp(exp1)?, self.sz_of_exp(exp2)?);
                 match operator {
@@ -73,7 +82,12 @@ impl SizeParams {
                 }
             }
             E::CALL { path, expLst, .. } => {
-                let name = openmodelica_frontend_dump::AbsynUtil::pathString(path.clone(), arcstr::literal!("."), true, false)?;
+                let name = openmodelica_frontend_dump::AbsynUtil::pathString(
+                    path.clone(),
+                    arcstr::literal!("."),
+                    true,
+                    false,
+                )?;
                 let args: Vec<Sz> = lst(expLst).map(|a| self.sz_of_exp(a)).collect::<Result<_>>()?;
                 match (name.as_str(), &args[..]) {
                     ("max", [a, b]) => a.clone().max(b.clone()),
@@ -118,8 +132,11 @@ impl SizeParams {
 }
 
 fn unsupported(e: &DAE::Exp) -> Result<Sz> {
-    let s = openmodelica_frontend_dump::ExpressionBasics::printExpStr(metamodelica::Ref::new(e.clone())).unwrap_or_default();
-    record_error(format!("CodegenWasmJit: the array size `{s}` is not supported for resizable arrays"));
+    let s = openmodelica_frontend_dump::ExpressionBasics::printExpStr(metamodelica::Ref::new(e.clone()))
+        .unwrap_or_default();
+    record_error(format!(
+        "CodegenWasmJit: the array size `{s}` is not supported for resizable arrays"
+    ));
     Err("CodegenWasmJit: unsupported resizable array size")
 }
 
@@ -143,12 +160,30 @@ pub(crate) fn has_symbolic_dims(vars: &SimCodeVar::SimVars) -> bool {
 
 pub(crate) fn all_var_lists(vars: &SimCodeVar::SimVars) -> [&List<metamodelica::Ref<SimCodeVar::SimVar>>; 24] {
     [
-        &vars.stateVars, &vars.derivativeVars, &vars.algVars, &vars.discreteAlgVars,
-        &vars.realOptimizeConstraintsVars, &vars.realOptimizeFinalConstraintsVars, &vars.intAlgVars,
-        &vars.boolAlgVars, &vars.inputVars, &vars.outputVars, &vars.aliasVars, &vars.intAliasVars,
-        &vars.boolAliasVars, &vars.paramVars, &vars.intParamVars, &vars.boolParamVars, &vars.stringAlgVars,
-        &vars.stringParamVars, &vars.stringAliasVars, &vars.extObjVars, &vars.constVars, &vars.intConstVars,
-        &vars.boolConstVars, &vars.stringConstVars,
+        &vars.stateVars,
+        &vars.derivativeVars,
+        &vars.algVars,
+        &vars.discreteAlgVars,
+        &vars.realOptimizeConstraintsVars,
+        &vars.realOptimizeFinalConstraintsVars,
+        &vars.intAlgVars,
+        &vars.boolAlgVars,
+        &vars.inputVars,
+        &vars.outputVars,
+        &vars.aliasVars,
+        &vars.intAliasVars,
+        &vars.boolAliasVars,
+        &vars.paramVars,
+        &vars.intParamVars,
+        &vars.boolParamVars,
+        &vars.stringAlgVars,
+        &vars.stringParamVars,
+        &vars.stringAliasVars,
+        &vars.extObjVars,
+        &vars.constVars,
+        &vars.intConstVars,
+        &vars.boolConstVars,
+        &vars.stringConstVars,
     ]
 }
 
@@ -195,7 +230,10 @@ impl DynVars {
 }
 
 /// `counts` with the runtime-sized arrays added.
-pub(crate) fn resizable_counts(c: &openmodelica_sim_meta::LayoutCounts, d: &DynVars) -> openmodelica_sim_meta::LayoutCounts<Sz> {
+pub(crate) fn resizable_counts(
+    c: &openmodelica_sim_meta::LayoutCounts,
+    d: &DynVars,
+) -> openmodelica_sim_meta::LayoutCounts<Sz> {
     let l = |v: u32| Sz::lit(v as i64);
     openmodelica_sim_meta::LayoutCounts {
         n_states: l(c.n_states) + total(&d.states),
@@ -236,92 +274,19 @@ pub(crate) const UNKNOWN_COUNT: u32 = 0x4000_0000;
 /// set to [`UNKNOWN_COUNT`].
 pub(crate) fn tagged_layout(l: &openmodelica_sim_meta::Layout<Sz>) -> Result<SimLayout> {
     use crate::CodegenWasmJitFunctions::sizes::sim_offset;
-    let n = |v: &Sz| v.as_const().map_or(UNKNOWN_COUNT, |c| c as u32);
-    let o = |v: &Sz| sim_offset(v);
-    Ok(SimLayout {
-        n_states: n(&l.n_states),
-        n_real_alg: n(&l.n_real_alg),
-        has_when: l.has_when,
-        has_homotopy: l.has_homotopy,
-        homotopy_method: l.homotopy_method,
-        has_init_lambda0: l.has_init_lambda0,
-        has_history_ops: l.has_history_ops,
-        has_old_real: l.has_old_real,
-        lambda_off: o(&l.lambda_off)?,
-        rparam_off: o(&l.rparam_off)?,
-        int_off: o(&l.int_off)?,
-        iparam_off: o(&l.iparam_off)?,
-        bool_off: o(&l.bool_off)?,
-        bparam_off: o(&l.bparam_off)?,
-        str_off: o(&l.str_off)?,
-        sparam_off: o(&l.sparam_off)?,
-        eobj_off: o(&l.eobj_off)?,
-        pre_real_off: o(&l.pre_real_off)?,
-        pre_int_off: o(&l.pre_int_off)?,
-        pre_bool_off: o(&l.pre_bool_off)?,
-        old_real_off: o(&l.old_real_off)?,
-        terminate_off: o(&l.terminate_off)?,
-        terminal_off: o(&l.terminal_off)?,
-        initial_off: o(&l.initial_off)?,
-        term_info_off: o(&l.term_info_off)?,
-        n_out_off: o(&l.n_out_off)?,
-        nls_fail_off: o(&l.nls_fail_off)?,
-        n_samples: n(&l.n_samples),
-        sample_off: o(&l.sample_off)?,
-        sample_active_off: o(&l.sample_active_off)?,
-        n_zc: n(&l.n_zc),
-        zc_off: o(&l.zc_off)?,
-        zc_pre_off: o(&l.zc_pre_off)?,
-        zc_probe_off: o(&l.zc_probe_off)?,
-        n_rel: n(&l.n_rel),
-        relations_off: o(&l.relations_off)?,
-        rel_fresh_off: o(&l.rel_fresh_off)?,
-        stored_rel_off: o(&l.stored_rel_off)?,
-        relations_pre_off: o(&l.relations_pre_off)?,
-        stateset_off: o(&l.stateset_off)?,
-        nls_jac_off: o(&l.nls_jac_off)?,
-        n_math: n(&l.n_math),
-        mathevents_off: o(&l.mathevents_off)?,
-        zctol_off: o(&l.zctol_off)?,
-        start_off: o(&l.start_off)?,
-        real_nom_off: o(&l.real_nom_off)?,
-        state_nom_off: o(&l.state_nom_off)?,
-        state_max_off: o(&l.state_max_off)?,
-        state_min_off: o(&l.state_min_off)?,
-        n_sens: n(&l.n_sens),
-        sens_off: o(&l.sens_off)?,
-        n_dae_res: n(&l.n_dae_res),
-        dae_res_off: o(&l.dae_res_off)?,
-        n_dae_aux: n(&l.n_dae_aux),
-        dae_aux_off: o(&l.dae_aux_off)?,
-        n_dae_alg: n(&l.n_dae_alg),
-        dae_alg_nom_off: o(&l.dae_alg_nom_off)?,
-        n_base_clocks: n(&l.n_base_clocks),
-        clock_off: o(&l.clock_off)?,
-        n_sub_clocks: n(&l.n_sub_clocks),
-        subclock_off: o(&l.subclock_off)?,
-        clock_fire_off: o(&l.clock_fire_off)?,
-        linz_off: o(&l.linz_off)?,
-        n_linz: n(&l.n_linz),
-        n_opt_attr: n(&l.n_opt_attr),
-        opt_min_off: o(&l.opt_min_off)?,
-        opt_max_off: o(&l.opt_max_off)?,
-        opt_nom_off: o(&l.opt_nom_off)?,
-        opt_use_nom_off: o(&l.opt_use_nom_off)?,
-        n_attr_log: n(&l.n_attr_log),
-        attr_log_off: o(&l.attr_log_off)?,
-        n_removed_init: n(&l.n_removed_init),
-        removed_init_res_off: o(&l.removed_init_res_off)?,
-        removed_init_idx_off: o(&l.removed_init_idx_off)?,
-        sym_solver: l.sym_solver,
-        inline_dt_off: o(&l.inline_dt_off)?,
-        alg_old_off: o(&l.alg_old_off)?,
-        total: o(&l.total)?,
-        real_off: o(&l.real_off)?,
-        table_off: 0,
-        n_table: 0,
-        extra_cols: 0,
-    })
+    l.try_map(
+        |v| Ok(v.as_const().map_or(UNKNOWN_COUNT, |c| c as u32).into()),
+        sim_offset,
+    )
+}
+
+/// The layout the meta records (`sizes::meta_off`).
+pub(crate) fn meta_layout(l: &SimLayout) -> Result<openmodelica_sim_meta::Layout> {
+    use crate::CodegenWasmJitFunctions::sizes::meta_off;
+    l.try_map(
+        |v| u32::try_from(*v).map_err(|_| "CodegenWasmJit: layout count out of range"),
+        |v| meta_off(*v),
+    )
 }
 
 /// Where the reals sit in the real region: the `n_fixed` constant-size ones of the
@@ -347,7 +312,11 @@ impl RealPositions {
                 idx = idx + len;
             }
         }
-        RealPositions { n_fixed, n_states, dyn_reals }
+        RealPositions {
+            n_fixed,
+            n_states,
+            dyn_reals,
+        }
     }
 
     /// The index of the `i`-th constant-size real (`all_reals` order).
@@ -364,6 +333,6 @@ impl RealPositions {
 }
 
 /// `SimData` offset of real-region-parallel slot `idx` of the region at `base`.
-pub(crate) fn at_real(base: &Sz, idx: &Sz) -> Result<u32> {
+pub(crate) fn at_real(base: &Sz, idx: &Sz) -> Result<SimOff> {
     crate::CodegenWasmJitFunctions::sizes::sim_offset(&(base.clone() + idx.clone() * 8))
 }

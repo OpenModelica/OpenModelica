@@ -33,6 +33,7 @@ resizableAliasStart.mos \
 resizablePartialLoops.mos \
 resizableLoopBlocks.mos \
 resizableConnectArrays.mos \
+resizableManySizes.mos \
 resizableInputs.mos \
 resizableAlgebraicLoops.mos \
 resizableFill.mos \

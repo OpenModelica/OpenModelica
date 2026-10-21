@@ -1,8 +1,8 @@
 //! Reading/writing model variables: scalars, slices, array/record gather and
 //! scatter, constant stores, start values.
 
-use super::*;
 use super::sizes::sz_product;
+use super::*;
 use openmodelica_sim_meta::Sz;
 
 /// Gather the contiguous sub-array `group[leading, :, …]` from `SimData` into a
@@ -37,7 +37,12 @@ fn emit_sim_slice_gather(ctx: &mut FnCtx, group: &ArrayGroup, leading: &[metamod
 
 /// Scatter a runtime array `rhs` into the contiguous sub-array
 /// `group[leading, :, …]` of `SimData` (the reverse of [`emit_sim_slice_gather`]).
-fn emit_sim_slice_scatter(ctx: &mut FnCtx, group: &ArrayGroup, leading: &[metamodelica::Ref<DAE::Exp>], rhs: RhsSource) -> Result<()> {
+fn emit_sim_slice_scatter(
+    ctx: &mut FnCtx,
+    group: &ArrayGroup,
+    leading: &[metamodelica::Ref<DAE::Exp>],
+    rhs: RhsSource,
+) -> Result<()> {
     let (_, stride) = sim_array_elem_kind_stride(group.wty);
     let trailing_total = sz_product(&group.dims[leading.len()..]);
     let h = ctx.alloc_temp(WTy::I32);
@@ -65,15 +70,19 @@ fn cref_leaf_value_type(cr: &DAE::ComponentRef) -> Result<metamodelica::Ref<DAE:
     use DAE::ComponentRef as C;
     let (identType, nsubs) = match cr {
         C::CREF_QUAL { componentRef, .. } => return cref_leaf_value_type(componentRef),
-        C::CREF_IDENT { identType, subscriptLst, .. } => {
-            (identType, (&**subscriptLst).into_iter().count())
-        }
+        C::CREF_IDENT {
+            identType,
+            subscriptLst,
+            ..
+        } => (identType, (&**subscriptLst).into_iter().count()),
         _ => return Err("CodegenWasmJit: unsupported component reference"),
     };
     let mut ty = identType.clone();
     let mut remaining = nsubs;
     while remaining > 0 {
-        let DAE::Type::T_ARRAY { ty: inner, dims } = &*ty else { break };
+        let DAE::Type::T_ARRAY { ty: inner, dims } = &*ty else {
+            break;
+        };
         let nd = (&**dims).into_iter().count();
         if remaining < nd {
             break;
@@ -93,7 +102,11 @@ fn cref_append_field(
 ) -> metamodelica::Ref<DAE::ComponentRef> {
     use DAE::ComponentRef as C;
     match cr {
-        C::CREF_IDENT { ident, identType, subscriptLst } => metamodelica::Ref::new(C::CREF_QUAL {
+        C::CREF_IDENT {
+            ident,
+            identType,
+            subscriptLst,
+        } => metamodelica::Ref::new(C::CREF_QUAL {
             ident: ident.clone(),
             identType: identType.clone(),
             subscriptLst: subscriptLst.clone(),
@@ -103,7 +116,12 @@ fn cref_append_field(
                 subscriptLst: metamodelica::nil(),
             }),
         }),
-        C::CREF_QUAL { ident, identType, subscriptLst, componentRef } => metamodelica::Ref::new(C::CREF_QUAL {
+        C::CREF_QUAL {
+            ident,
+            identType,
+            subscriptLst,
+            componentRef,
+        } => metamodelica::Ref::new(C::CREF_QUAL {
             ident: ident.clone(),
             identType: identType.clone(),
             subscriptLst: subscriptLst.clone(),
@@ -188,7 +206,7 @@ fn emit_sim_scatter_elem(
         return Err("CodegenWasmJit: assignment to negated alias");
     }
     let data = ctx.sim()?.data_local;
-    let tagged = group.elems.iter().any(|(off, _)| openmodelica_sim_meta::resize::is_dyn(*off));
+    let tagged = group.elems.iter().any(|(off, _)| sizes::is_dyn(*off));
     let dims: Vec<Sz> = group.dims.iter().map(|&d| Sz::lit(d as i64)).collect();
     emit_sim_flat_index(ctx, &dims, sub_exps)?;
     let flat = ctx.alloc_temp(WTy::I32);
@@ -205,7 +223,7 @@ fn emit_sim_scatter_elem(
         } else if tagged {
             ctx.emit_sim_addr(off)?;
         } else {
-            ctx.emit(I::I32Const(off as i32));
+            ctx.emit(I::I32Const(plain_off(off)? as i32));
         }
         if k > 0 {
             ctx.emit(I::LocalGet(flat));
@@ -240,7 +258,10 @@ pub(super) fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -
     }
     // `time` lives at offset 0 of `SimData`; `__HOM_LAMBDA` is left behind by
     // differentiating `homotopy(a, s)` (C maps it to `simulationInfo->lambda`).
-    if let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = cref {
+    if let DAE::ComponentRef::CREF_IDENT {
+        ident, subscriptLst, ..
+    } = cref
+    {
         if subscriptLst.is_empty() {
             if ident.as_str() == "time" {
                 let data = ctx.sim()?.data_local;
@@ -249,9 +270,12 @@ pub(super) fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -
                 return Ok(Some(WTy::F64));
             }
             if ident.as_str() == openmodelica_backend_types::BackendDAE::homotopyLambda {
-                let (data, lambda_off) = { let s = ctx.sim()?; (s.data_local, s.lambda_off) };
+                let (data, lambda_off) = {
+                    let s = ctx.sim()?;
+                    (s.data_local, s.lambda_off)
+                };
                 ctx.emit(we::Instruction::LocalGet(data));
-                ctx.emit(we::Instruction::F64Load(mem_arg(lambda_off, 3)));
+                ctx.emit(we::Instruction::F64Load(sim_mem(lambda_off, 3)?));
                 return Ok(Some(WTy::F64));
             }
             // A real wasm local (e.g. a `for` iterator) shadows model lookup.
@@ -263,7 +287,10 @@ pub(super) fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -
     // `$START.<cref>`: read the variable's start-attribute expression (used by
     // the initial-equation system). `$PRE.<cref>`: the value at the last event,
     // read from the mirrored pre-slot the driver refreshes at every event.
-    if let DAE::ComponentRef::CREF_QUAL { ident, componentRef, .. } = cref {
+    if let DAE::ComponentRef::CREF_QUAL {
+        ident, componentRef, ..
+    } = cref
+    {
         match ident.as_str() {
             "$START" => {
                 let key = match sim_var_key(ctx.sim()?, componentRef) {
@@ -292,9 +319,19 @@ pub(super) fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -
     let subs = cref_subs(cref);
     // Array element with a non-constant subscript (e.g. a `for`-loop iterator):
     // resolve the element address at run time instead of via a static slot key.
-    if let Some((base, sub_exps)) = if subs == CrefSubs::Other { array_ref_of(cref)? } else { None } {
+    if let Some((base, sub_exps)) = if subs == CrefSubs::Other {
+        array_ref_of(cref)?
+    } else {
+        None
+    } {
         if sub_exps.iter().any(|e| const_index_value(e).is_none()) {
-            if let Some(group) = ctx.sim()?.array_groups.get(&base).filter(|g| g.dims.len() == sub_exps.len()).cloned() {
+            if let Some(group) = ctx
+                .sim()?
+                .array_groups
+                .get(&base)
+                .filter(|g| g.dims.len() == sub_exps.len())
+                .cloned()
+            {
                 let wty = emit_sim_array_elem_addr(ctx, &group, &sub_exps)?;
                 match wty {
                     WTy::F64 => ctx.emit(we::Instruction::F64Load(mem_arg(0, 3))),
@@ -303,7 +340,13 @@ pub(super) fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -
                 emit_retain_top(ctx, group.heap)?;
                 return Ok(Some(wty));
             }
-            if let Some(group) = ctx.sim()?.scatter_groups.get(&base).filter(|g| g.dims.len() == sub_exps.len()).cloned() {
+            if let Some(group) = ctx
+                .sim()?
+                .scatter_groups
+                .get(&base)
+                .filter(|g| g.dims.len() == sub_exps.len())
+                .cloned()
+            {
                 let wty = emit_sim_scatter_elem(ctx, &group, &sub_exps, false)?;
                 emit_retain_top(ctx, group.heap)?;
                 return Ok(Some(wty));
@@ -316,8 +359,12 @@ pub(super) fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -
     // Contiguous slice `base[i,…,:]`: gather the row-major block.
     for slice in [sim_slice_of(cref)?, flat_sim_slice_of(cref)?].into_iter().flatten() {
         let (base, leading) = slice;
-        if let Some(group) =
-            ctx.sim()?.array_groups.get(&base).filter(|g| leading.len() < g.dims.len()).cloned()
+        if let Some(group) = ctx
+            .sim()?
+            .array_groups
+            .get(&base)
+            .filter(|g| leading.len() < g.dims.len())
+            .cloned()
         {
             emit_sim_slice_gather(ctx, &group, &leading)?;
             return Ok(Some(WTy::I32));
@@ -325,7 +372,10 @@ pub(super) fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -
     }
     // Any other slice (a column `[:,1]`, a strided range): gather the whole array
     // and let the runtime slice handle it.
-    for selection in [sim_array_base_subs(cref)?, flat_sim_array_base_subs(cref)?].into_iter().flatten() {
+    for selection in [sim_array_base_subs(cref)?, flat_sim_array_base_subs(cref)?]
+        .into_iter()
+        .flatten()
+    {
         let (base, subs) = selection;
         if let Some(group) = ctx.sim()?.array_groups.get(&base).cloned() {
             if subs_select_array(&subs, &group) {
@@ -388,7 +438,7 @@ fn compile_sim_scalar_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<
                 "CodegenWasmJit: simulation reference to unknown variable `{key}`{}",
                 fn_context()
             ));
-            return Err("CodegenWasmJit: simulation reference to unknown variable")
+            return Err("CodegenWasmJit: simulation reference to unknown variable");
         }
     };
     let rel = ctx.emit_sim_base(slot.off)?;
@@ -439,7 +489,10 @@ pub(super) fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef,
     // attribute *and* the live value `realVars[x] = start` (see the
     // `$START.<cref>`-LHS pattern in `_06inz`), so write both: the slot is what a
     // solver reads for its initial guess and what `LOG_SOTI` prints.
-    if let DAE::ComponentRef::CREF_QUAL { ident, componentRef, .. } = cref {
+    if let DAE::ComponentRef::CREF_QUAL {
+        ident, componentRef, ..
+    } = cref
+    {
         if ident.as_str() == "$START" {
             let start_off = sim_var_key(ctx.sim()?, componentRef)
                 .ok()
@@ -454,7 +507,14 @@ pub(super) fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef,
             let rel = ctx.emit_sim_base(off)?;
             ctx.emit(we::Instruction::LocalGet(tmp));
             ctx.emit(we::Instruction::F64Store(mem_arg(rel, 3)));
-            return compile_sim_cref_assign(ctx, componentRef, RhsSource::Temp { local: tmp, wty: WTy::F64 });
+            return compile_sim_cref_assign(
+                ctx,
+                componentRef,
+                RhsSource::Temp {
+                    local: tmp,
+                    wty: WTy::F64,
+                },
+            );
         }
         // `$PRE.x := e` targets x's pre-slot when one is registered; otherwise
         // (no pre-slot, e.g. a parameter) fall back to the live slot.
@@ -463,19 +523,38 @@ pub(super) fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef,
         }
     }
     // Plain idents that are wasm locals are handled by the normal path.
-    if let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = cref {
+    if let DAE::ComponentRef::CREF_IDENT {
+        ident, subscriptLst, ..
+    } = cref
+    {
         if subscriptLst.is_empty() && ctx.locals.contains_key(ident.as_str()) {
             return Ok(false);
         }
     }
     let subs = cref_subs(cref);
     // Array element with a non-constant subscript: store to the run-time address.
-    if let Some((base, sub_exps)) = if subs == CrefSubs::Other { array_ref_of(cref)? } else { None } {
+    if let Some((base, sub_exps)) = if subs == CrefSubs::Other {
+        array_ref_of(cref)?
+    } else {
+        None
+    } {
         if sub_exps.iter().any(|e| const_index_value(e).is_none()) {
             // Either group leaves the element's address on the stack.
-            let elem = match ctx.sim()?.array_groups.get(&base).filter(|g| g.dims.len() == sub_exps.len()).cloned() {
+            let elem = match ctx
+                .sim()?
+                .array_groups
+                .get(&base)
+                .filter(|g| g.dims.len() == sub_exps.len())
+                .cloned()
+            {
                 Some(group) => Some(emit_sim_array_elem_addr(ctx, &group, &sub_exps)?),
-                None => match ctx.sim()?.scatter_groups.get(&base).filter(|g| g.dims.len() == sub_exps.len()).cloned() {
+                None => match ctx
+                    .sim()?
+                    .scatter_groups
+                    .get(&base)
+                    .filter(|g| g.dims.len() == sub_exps.len())
+                    .cloned()
+                {
                     Some(group) => Some(emit_sim_scatter_elem(ctx, &group, &sub_exps, true)?),
                     None => None,
                 },
@@ -495,8 +574,12 @@ pub(super) fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef,
         // Contiguous slice `base[i,…,:] := arr`: scatter into the row-major block.
         for slice in [sim_slice_of(cref)?, flat_sim_slice_of(cref)?].into_iter().flatten() {
             let (base, leading) = slice;
-            if let Some(group) =
-                ctx.sim()?.array_groups.get(&base).filter(|g| leading.len() < g.dims.len()).cloned()
+            if let Some(group) = ctx
+                .sim()?
+                .array_groups
+                .get(&base)
+                .filter(|g| leading.len() < g.dims.len())
+                .cloned()
             {
                 emit_sim_slice_scatter(ctx, &group, &leading, rhs)?;
                 return Ok(true);
@@ -504,7 +587,10 @@ pub(super) fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef,
         }
         // Any other selection (`base[lo:hi] := v`, a column, a partial index): apply it
         // to a gathered copy of the whole array and scatter that back.
-        for selection in [sim_array_base_subs(cref)?, flat_sim_array_base_subs(cref)?].into_iter().flatten() {
+        for selection in [sim_array_base_subs(cref)?, flat_sim_array_base_subs(cref)?]
+            .into_iter()
+            .flatten()
+        {
             let (base, subs) = selection;
             if let Some(group) = ctx.sim()?.array_groups.get(&base).cloned() {
                 if subs_select_array(&subs, &group) {
@@ -512,7 +598,14 @@ pub(super) fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef,
                     emit_sim_array_gather(ctx, &group)?;
                     ctx.emit(we::Instruction::LocalSet(arr));
                     compile_slice_assign(ctx, arr, &subs, rhs)?;
-                    emit_sim_array_scatter(ctx, &group, RhsSource::Temp { local: arr, wty: WTy::I32 })?;
+                    emit_sim_array_scatter(
+                        ctx,
+                        &group,
+                        RhsSource::Temp {
+                            local: arr,
+                            wty: WTy::I32,
+                        },
+                    )?;
                     return Ok(true);
                 }
             }
@@ -532,7 +625,12 @@ pub(super) fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef,
                 return Ok(true);
             }
             // A zero-sized array has no variables (e.g. a `$cse` for an empty output).
-            if let DAE::ComponentRef::CREF_IDENT { identType, subscriptLst, .. } = cref {
+            if let DAE::ComponentRef::CREF_IDENT {
+                identType,
+                subscriptLst,
+                ..
+            } = cref
+            {
                 if subscriptLst.is_empty() && static_dims(identType).is_some_and(|d| d.contains(&0)) {
                     if rhs.push(ctx)? != WTy::I32 {
                         return Err("CodegenWasmJit: whole-array assignment rhs is not an array handle");
@@ -549,7 +647,7 @@ pub(super) fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef,
             crate::CodegenWasmJit::record_error(format!(
                 "CodegenWasmJit: simulation assignment to unknown variable `{key}`"
             ));
-            return Err("CodegenWasmJit: simulation assignment to unknown variable")
+            return Err("CodegenWasmJit: simulation assignment to unknown variable");
         }
     };
     if slot.negate != Neg::None {
@@ -612,13 +710,17 @@ pub(super) fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef,
 /// cannot compare at all forces reconstruction.
 fn emit_extobj_construct(
     ctx: &mut FnCtx,
-    off: u32,
+    off: SimOff,
     dtor: &str,
     args: &List<metamodelica::Ref<DAE::Exp>>,
     rhs: RhsSource,
 ) -> Result<bool> {
     use we::Instruction as I;
-    let didx = ctx.by_name.get(dtor).ok_or("CodegenWasmJit: external-object destructor was not compiled")?.index;
+    let didx = ctx
+        .by_name
+        .get(dtor)
+        .ok_or("CodegenWasmJit: external-object destructor was not compiled")?
+        .index;
     let same = ctx.alloc_temp(WTy::I32);
     let rel = ctx.emit_sim_base(off)?;
     ctx.emit(I::I32Load(mem_arg(rel, 2)));
@@ -639,7 +741,7 @@ fn emit_extobj_construct(
             }
         };
         ctx.emit(I::LocalGet(same));
-        ctx.emit(I::I32Const(off as i32));
+        ctx.emit_sim_rel(off)?;
         ctx.emit(I::I32Const(pos as i32));
         let w = compile_exp(ctx, arg)?;
         coerce(ctx, w, wty);
@@ -675,10 +777,13 @@ pub(crate) fn sim_const_store(
     ctx: &FnCtx,
     cref: &DAE::ComponentRef,
     exp: &DAE::Exp,
-) -> Result<Option<(u32, Vec<u8>)>> {
+) -> Result<Option<(SimOff, Vec<u8>)>> {
     let Some(sim) = &ctx.sim else { return Ok(None) };
     // Mirror the LHS redirections of `compile_sim_cref_assign`.
-    if let DAE::ComponentRef::CREF_QUAL { ident, componentRef, .. } = cref {
+    if let DAE::ComponentRef::CREF_QUAL {
+        ident, componentRef, ..
+    } = cref
+    {
         if ident.as_str() == "$START" {
             return sim_const_store(ctx, componentRef, exp);
         }
@@ -686,7 +791,10 @@ pub(crate) fn sim_const_store(
             return sim_const_store(ctx, componentRef, exp);
         }
     }
-    if let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = cref {
+    if let DAE::ComponentRef::CREF_IDENT {
+        ident, subscriptLst, ..
+    } = cref
+    {
         if subscriptLst.is_empty() && ctx.locals.contains_key(ident.as_str()) {
             return Ok(None);
         }
@@ -706,7 +814,9 @@ pub(crate) fn sim_const_store(
             }
         }
     }
-    let Some(slot) = sim.vars.get(&sim_var_key(sim, cref)?) else { return Ok(None) };
+    let Some(slot) = sim.vars.get(&sim_var_key(sim, cref)?) else {
+        return Ok(None);
+    };
     if slot.negate != Neg::None || slot.heap {
         return Ok(None);
     }
@@ -723,9 +833,9 @@ pub(crate) fn sim_const_store(
 /// `SimData` slots ([`emit_const_slots`]).
 pub(crate) fn emit_sim_const_stores(
     ctx: &mut FnCtx,
-    stores: &std::collections::BTreeMap<u32, Vec<u8>>,
+    stores: &std::collections::BTreeMap<SimOff, Vec<u8>>,
 ) -> Result<()> {
-    let sorted: Vec<(u32, ConstSlot)> = stores
+    let sorted: Vec<(SimOff, ConstSlot)> = stores
         .iter()
         .map(|(&off, bytes)| Ok((off, ConstSlot::from_le_bytes(bytes)?)))
         .collect::<Result<_>>()?;
@@ -746,8 +856,16 @@ impl ConstSlot {
 
     fn from_le_bytes(bytes: &[u8]) -> Result<Self> {
         match bytes.len() {
-            8 => Ok(ConstSlot::F64(u64::from_le_bytes(bytes.try_into().map_err(|_| "CodegenWasmJit: bad constant slot value")?))),
-            4 => Ok(ConstSlot::I32(i32::from_le_bytes(bytes.try_into().map_err(|_| "CodegenWasmJit: bad constant slot value")?))),
+            8 => Ok(ConstSlot::F64(u64::from_le_bytes(
+                bytes
+                    .try_into()
+                    .map_err(|_| "CodegenWasmJit: bad constant slot value")?,
+            ))),
+            4 => Ok(ConstSlot::I32(i32::from_le_bytes(
+                bytes
+                    .try_into()
+                    .map_err(|_| "CodegenWasmJit: bad constant slot value")?,
+            ))),
             _ => Err("CodegenWasmJit: constant slot value of unexpected width"),
         }
     }
@@ -779,10 +897,10 @@ impl ConstSlot {
 /// copied from a passive data segment with `memory.init`, a run of one repeated
 /// value is filled by a loop, and short groups stay individual stores. All copies
 /// of one call share a single segment.
-pub(crate) fn emit_const_slots(ctx: &mut FnCtx, stores: &[(u32, ConstSlot)]) -> Result<()> {
+pub(crate) fn emit_const_slots(ctx: &mut FnCtx, stores: &[(SimOff, ConstSlot)]) -> Result<()> {
     use we::Instruction as I;
     const FILL_MIN: usize = 16;
-    let mut deduped: Vec<(u32, ConstSlot)> = Vec::new();
+    let mut deduped: Vec<(SimOff, ConstSlot)> = Vec::new();
     let slots = if stores.windows(2).all(|w| w[0].0 < w[1].0) {
         stores
     } else {
@@ -795,13 +913,13 @@ pub(crate) fn emit_const_slots(ctx: &mut FnCtx, stores: &[(u32, ConstSlot)]) -> 
         &deduped[..]
     };
     let mut blob: Vec<u8> = Vec::new();
-    let mut copies: Vec<(u32, u32, u32)> = Vec::new();
+    let mut copies: Vec<(SimOff, u32, u32)> = Vec::new();
     let mut counter = None;
     let mut i = 0;
     while i < slots.len() {
         // Maximal adjacent group from `i`.
         let mut end = i + 1;
-        while end < slots.len() && slots[end - 1].0 + slots[end - 1].1.width() == slots[end].0 {
+        while end < slots.len() && slots[end - 1].0 + SimOff::from(slots[end - 1].1.width()) == slots[end].0 {
             end += 1;
         }
         // Fewer than four values cost less as stores than as a segment copy.
@@ -881,7 +999,7 @@ pub(crate) fn emit_const_slots(ctx: &mut FnCtx, stores: &[(u32, ConstSlot)]) -> 
 }
 
 /// Store `v` into `count` slots `stride` bytes apart from `off` (a runtime-sized array's).
-pub(crate) fn emit_fill_slots(ctx: &mut FnCtx, off: u32, count: &Sz, v: ConstSlot, stride: u32) -> Result<()> {
+pub(crate) fn emit_fill_slots(ctx: &mut FnCtx, off: SimOff, count: &Sz, v: ConstSlot, stride: u32) -> Result<()> {
     use we::Instruction as I;
     let k = ctx.alloc_temp(WTy::I32);
     let end = ctx.alloc_temp(WTy::I32);
@@ -976,7 +1094,9 @@ fn try_emit_empty_sim_array(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result
     if !dims.iter().any(|d| dim_is_zero(d)) {
         return Ok(false);
     }
-    let SigTy::Array { elem, .. } = sig_ty(&ty)? else { return Ok(false) };
+    let SigTy::Array { elem, .. } = sig_ty(&ty)? else {
+        return Ok(false);
+    };
     let obj = ctx.alloc_temp(WTy::I32);
     emit_array_alloc(ctx, obj, &elem, &dims)?;
     ctx.emit(we::Instruction::LocalGet(obj));
@@ -988,7 +1108,9 @@ fn try_emit_empty_sim_array(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result
 /// selection is boxed directly; run-time subscripts box the whole array and index
 /// or slice it at run time.
 fn try_emit_sim_array_box(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Option<WTy>> {
-    let Some((leaf_ty, leaf_subs)) = cref_leaf(cref) else { return Ok(None) };
+    let Some((leaf_ty, leaf_subs)) = cref_leaf(cref) else {
+        return Ok(None);
+    };
     let Ok(dims) = const_dims(leaf_ty) else { return Ok(None) };
     let elem = match sig_ty_quiet(array_elem_type(leaf_ty)) {
         Ok(s @ (SigTy::Real | SigTy::Int | SigTy::Bool | SigTy::Str | SigTy::Record { .. })) => s,
@@ -1064,7 +1186,11 @@ fn emit_sim_array_box(
     axes: &[(Vec<i32>, bool)],
     elem: &SigTy,
 ) -> Result<()> {
-    let out_dims: Vec<u32> = axes.iter().filter(|(_, keep)| *keep).map(|(v, _)| v.len() as u32).collect();
+    let out_dims: Vec<u32> = axes
+        .iter()
+        .filter(|(_, keep)| *keep)
+        .map(|(v, _)| v.len() as u32)
+        .collect();
     let total: u32 = out_dims.iter().product();
     let (ek, stride) = (elem.elem_kind(), sim_array_elem_kind_stride(elem.wty()).1);
     let obj = ctx.alloc_temp(WTy::I32);
@@ -1117,7 +1243,11 @@ fn cref_leaf(cr: &DAE::ComponentRef) -> Option<(&DAE::Type, &List<metamodelica::
     use DAE::ComponentRef as C;
     match cr {
         C::CREF_QUAL { componentRef, .. } => cref_leaf(componentRef),
-        C::CREF_IDENT { identType, subscriptLst, .. } => Some((identType, subscriptLst)),
+        C::CREF_IDENT {
+            identType,
+            subscriptLst,
+            ..
+        } => Some((identType, subscriptLst)),
         _ => None,
     }
 }
@@ -1138,10 +1268,19 @@ fn cref_with_leaf_subs(cr: &DAE::ComponentRef, index: &[i32]) -> metamodelica::R
             identType: identType.clone(),
             subscriptLst: index
                 .iter()
-                .map(|i| metamodelica::Ref::new(DAE::Subscript::INDEX { exp: metamodelica::Ref::new(DAE::Exp::ICONST { integer: *i }) }))
+                .map(|i| {
+                    metamodelica::Ref::new(DAE::Subscript::INDEX {
+                        exp: metamodelica::Ref::new(DAE::Exp::ICONST { integer: *i }),
+                    })
+                })
                 .collect(),
         }),
-        C::CREF_QUAL { ident, identType, subscriptLst, componentRef } => metamodelica::Ref::new(C::CREF_QUAL {
+        C::CREF_QUAL {
+            ident,
+            identType,
+            subscriptLst,
+            componentRef,
+        } => metamodelica::Ref::new(C::CREF_QUAL {
             ident: ident.clone(),
             identType: identType.clone(),
             subscriptLst: subscriptLst.clone(),
@@ -1189,7 +1328,11 @@ fn dim_is_zero(dim: &DAE::Dimension) -> bool {
 /// [`emit_sim_array_gather`] for a constant array: nothing to copy from, each
 /// element is its own literal.
 fn emit_const_array(ctx: &mut FnCtx, key: &str) -> Result<()> {
-    let group = ctx.sim()?.const_groups.get(key).ok_or("CodegenWasmJit: not a constant array")?;
+    let group = ctx
+        .sim()?
+        .const_groups
+        .get(key)
+        .ok_or("CodegenWasmJit: not a constant array")?;
     let (wty, dims, values) = (group.wty, group.dims.clone(), group.values.clone());
     let (ek, stride) = sim_array_elem_kind_stride(wty);
     let obj = ctx.alloc_temp(WTy::I32);
@@ -1279,7 +1422,14 @@ fn try_emit_sim_record_scatter(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: R
             ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
         }
         let field_cref = cref_append_field(cref, &f.name, f.ty.clone());
-        if !compile_sim_cref_assign(ctx, &field_cref, RhsSource::Temp { local: vt, wty: fty.wty() })? {
+        if !compile_sim_cref_assign(
+            ctx,
+            &field_cref,
+            RhsSource::Temp {
+                local: vt,
+                wty: fty.wty(),
+            },
+        )? {
             return Err("CodegenWasmJit: record field is not a simulation variable");
         }
     }
@@ -1385,7 +1535,12 @@ fn emit_sim_start_scalar(ctx: &mut FnCtx, key: &str) -> Result<Option<WTy>> {
 fn emit_sim_start_array_gather(ctx: &mut FnCtx, group: &ArrayGroup, base_key: &str) -> Result<()> {
     let (ek, stride) = sim_array_elem_kind_stride(group.wty);
     let ndims = group.dims.len() as u32;
-    let Some(dims) = group.dims.iter().map(|d| d.as_const().map(|c| c as u32)).collect::<Option<Vec<u32>>>() else {
+    let Some(dims) = group
+        .dims
+        .iter()
+        .map(|d| d.as_const().map(|c| c as u32))
+        .collect::<Option<Vec<u32>>>()
+    else {
         return emit_sim_dyn_start_gather(ctx, group, base_key);
     };
     let obj = ctx.alloc_temp(WTy::I32);
@@ -1424,7 +1579,10 @@ fn emit_sim_start_array_gather(ctx: &mut FnCtx, group: &ArrayGroup, base_key: &s
 /// start expression.
 fn emit_sim_dyn_start_gather(ctx: &mut FnCtx, group: &ArrayGroup, key: &str) -> Result<()> {
     if let Some((slot, _)) = ctx.sim()?.start_slots.dyn_array(key).cloned() {
-        let start = ArrayGroup { base_off: slot.0, ..group.clone() };
+        let start = ArrayGroup {
+            base_off: slot.0,
+            ..group.clone()
+        };
         return emit_sim_array_gather(ctx, &start);
     }
     match ctx.sim()?.starts.dyn_array(key).and_then(|(e, _)| e.0.first().cloned()) {

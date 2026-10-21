@@ -27,7 +27,7 @@ pub(super) fn build_removed_init_eqs_fn(
 ) -> Result<we::Function> {
     let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
     ctx.emit_removed_init_reset(layout.removed_init_idx_off)?;
-    let mut pending: BTreeMap<u32, Vec<u8>> = BTreeMap::new();
+    let mut pending: BTreeMap<SimOff, Vec<u8>> = BTreeMap::new();
     let mut index = 0u32;
     for eq in lst(&sim_code.removedInitialEquations) {
         match &**eq {
@@ -36,12 +36,7 @@ pub(super) fn build_removed_init_eqs_fn(
                     continue;
                 }
                 emit_sim_const_stores(&mut ctx, &core::mem::take(&mut pending))?;
-                ctx.emit_removed_init_residual(
-                    index,
-                    exp,
-                    layout.removed_init_res_off,
-                    layout.removed_init_idx_off,
-                )?;
+                ctx.emit_removed_init_residual(index, exp, layout.removed_init_res_off, layout.removed_init_idx_off)?;
                 index += 1;
             }
             _ => lower_unit(&mut ctx, &EqUnit::Eq(eq, None), eq_index, &mut pending)?,
@@ -166,15 +161,26 @@ pub(super) fn build_init_start_values_fn(
     literals: &mut Literals,
 ) -> Result<we::Function> {
     let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
-    let starts: Vec<(f64, u32)> = reals
+    let starts: Vec<(f64, SimOff)> = reals
         .iter()
         .enumerate()
-        .map(|(i, sv)| Ok((literal_value(&sv.initialValue).unwrap_or(0.0), at_real(&lz.start_off, &pos.fixed(i))?)))
+        .map(|(i, sv)| {
+            Ok((
+                literal_value(&sv.initialValue).unwrap_or(0.0),
+                at_real(&lz.start_off, &pos.fixed(i))?,
+            ))
+        })
         .collect::<Result<_>>()?;
-    let fills: Vec<(u32, Sz, f64)> = pos
+    let fills: Vec<(SimOff, Sz, f64)> = pos
         .dyn_reals
         .iter()
-        .map(|(dv, idx)| Ok((at_real(&lz.start_off, idx)?, dv.len(), literal_value(&dv.sv.initialValue).unwrap_or(0.0))))
+        .map(|(dv, idx)| {
+            Ok((
+                at_real(&lz.start_off, idx)?,
+                dv.len(),
+                literal_value(&dv.sv.initialValue).unwrap_or(0.0),
+            ))
+        })
         .collect::<Result<_>>()?;
     ctx.emit_init_start_values(&starts, &fills)?;
     let (locals, instrs) = ctx.finish_sim();
@@ -189,7 +195,11 @@ pub(super) fn build_init_start_values_fn(
 /// A start equation assigns `$START.<var>`, i.e. that variable's `start` attribute.
 pub(super) fn bound_attr_equations(
     sim_code: &SimCode::SimCode,
-) -> Vec<(Attr, &metamodelica::Ref<DAE::ComponentRef>, &metamodelica::Ref<DAE::Exp>)> {
+) -> Vec<(
+    Attr,
+    &metamodelica::Ref<DAE::ComponentRef>,
+    &metamodelica::Ref<DAE::Exp>,
+)> {
     let mut out = Vec::new();
     for (attr, eqs) in [
         (Attr::Min, &sim_code.minValueEquations),
@@ -230,22 +240,34 @@ pub(super) fn literal_value(exp: &Option<metamodelica::Ref<DAE::Exp>>) -> Option
 pub(super) fn build_update_bound_attrs_fn(
     sim_code: &SimCode::SimCode,
     layout: &SimLayout,
-    defaults: &[(u32, ConstSlot)],
-    dyn_defaults: &[(u32, Sz, ConstSlot, u32)],
+    defaults: &[(SimOff, ConstSlot)],
+    dyn_defaults: &[(SimOff, Sz, ConstSlot, u32)],
     attr_targets: &AttrTargetMap,
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
-    let mut attrs: Vec<(Attr, metamodelica::Ref<DAE::Exp>, AttrTargets, u32, Option<SimSlot>)> = Vec::new();
+    let mut attrs: Vec<(Attr, metamodelica::Ref<DAE::Exp>, AttrTargets, SimOff, Option<SimSlot>)> = Vec::new();
     for (i, (attr, cref, exp)) in bound_attr_equations(sim_code).into_iter().enumerate() {
-        let key = sim_cref_key(cref).ok().map(|k| k.strip_prefix("$START.").unwrap_or(&k).to_string());
-        let targets = key.as_deref().and_then(|k| attr_targets.get(k)).cloned().unwrap_or_default();
+        let key = sim_cref_key(cref)
+            .ok()
+            .map(|k| k.strip_prefix("$START.").unwrap_or(&k).to_string());
+        let targets = key
+            .as_deref()
+            .and_then(|k| attr_targets.get(k))
+            .cloned()
+            .unwrap_or_default();
         let var = match attr {
             Attr::Start => key.as_deref().and_then(|k| var_map.vars.get(k)),
             _ => None,
         };
-        attrs.push((attr, exp.clone(), targets, layout.attr_log_off + i as u32 * 8, var));
+        attrs.push((
+            attr,
+            exp.clone(),
+            targets,
+            layout.attr_log_off + SimOff::from(i as u32 * 8),
+            var,
+        ));
     }
     let sim = sim_ctx(var_map);
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
@@ -261,8 +283,8 @@ pub(super) fn build_update_bound_attrs_fn(
 /// Build `functionAttrDefaults(SimData*)`: the constant attribute defaults only, for
 /// a solver built before initialization.
 pub(super) fn build_attr_defaults_fn(
-    defaults: &[(u32, ConstSlot)],
-    dyn_defaults: &[(u32, Sz, ConstSlot, u32)],
+    defaults: &[(SimOff, ConstSlot)],
+    dyn_defaults: &[(SimOff, Sz, ConstSlot, u32)],
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
@@ -285,7 +307,10 @@ pub(super) fn build_zero_crossings_fn(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
-    let sim = SimCtx { zc_context: true, ..sim_ctx(var_map) };
+    let sim = SimCtx {
+        zc_context: true,
+        ..sim_ctx(var_map)
+    };
     let mut ctx = FnCtx::new_sim_params(sim, by_name, literals, 2);
     ctx.emit_zero_crossings(crossings, 1)?;
     let (locals, instrs) = ctx.finish_sim();
@@ -304,7 +329,10 @@ pub(super) fn build_update_relations_fn(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
-    let sim = SimCtx { zc_context: true, ..sim_ctx(var_map) };
+    let sim = SimCtx {
+        zc_context: true,
+        ..sim_ctx(var_map)
+    };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
     ctx.emit_update_relations(relations, var_map.relations_off)?;
     let (locals, instrs) = ctx.finish_sim();
@@ -340,10 +368,14 @@ pub(super) fn build_store_delayed_fn(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
-    let delayed: Vec<(i32, metamodelica::Ref<DAE::Exp>, metamodelica::Ref<DAE::Exp>, metamodelica::Ref<DAE::Exp>)> =
-        lst(&sim_code.delayedExps.delayedExps)
-            .map(|(i, (e, d, dmax))| (*i, e.clone(), d.clone(), dmax.clone()))
-            .collect();
+    let delayed: Vec<(
+        i32,
+        metamodelica::Ref<DAE::Exp>,
+        metamodelica::Ref<DAE::Exp>,
+        metamodelica::Ref<DAE::Exp>,
+    )> = lst(&sim_code.delayedExps.delayedExps)
+        .map(|(i, (e, d, dmax))| (*i, e.clone(), d.clone(), dmax.clone()))
+        .collect();
     let sim = sim_ctx(var_map);
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
     ctx.emit_store_delayed(&delayed)?;
@@ -363,7 +395,9 @@ pub(super) fn build_init_delay_fn(n_delays: u32) -> we::Function {
     f.instruction(&I::I32Const(n_delays as i32));
     f.instruction(&I::LocalGet(0)); // SimData*
     f.instruction(&I::F64Load(crate::CodegenWasmJitFunctions::mem_arg(0, 3))); // time (TIME_OFF)
-    f.instruction(&I::Call(rt_index("rt_delay_init").expect("rt_delay_init is a runtime builtin")));
+    f.instruction(&I::Call(
+        rt_index("rt_delay_init").expect("rt_delay_init is a runtime builtin"),
+    ));
     f.instruction(&I::End);
     f
 }
@@ -371,8 +405,7 @@ pub(super) fn build_init_delay_fn(n_delays: u32) -> we::Function {
 /// The model's `spatialDistribution(...)` operators, lowest index first (the
 /// backend collects them in reverse).
 fn spatial_ops(sim_code: &SimCode::SimCode) -> Vec<SimCode::SpatialDistribution> {
-    let mut ops: Vec<SimCode::SpatialDistribution> =
-        lst(&sim_code.spatialInfo.spatialDistributions).cloned().collect();
+    let mut ops: Vec<SimCode::SpatialDistribution> = lst(&sim_code.spatialInfo.spatialDistributions).cloned().collect();
     ops.sort_by_key(|sd| sd.index);
     ops
 }
