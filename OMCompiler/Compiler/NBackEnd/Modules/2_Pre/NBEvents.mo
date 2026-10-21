@@ -1573,7 +1573,7 @@ protected
           func        = function collectEvents(bucket_ptr = bucket_ptr, variables = variables, funcMap = funcMap),
           funcExp     = collector,
           funcCrefOpt = NONE(),
-          mapFunc     = Expression.mapReverse);
+          mapFunc     = Expression.fakeMap);
       then eqn;
 
       else Equation.map(eqn, collector, NONE(), Expression.fakeMap);
