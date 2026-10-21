@@ -2571,8 +2571,21 @@ algorithm
   flatModel.variables := list(evaluateBindingConnOp(c, sets, setsArray, variables, ctable) for c in flatModel.variables);
   flatModel.equations := evaluateEquationsConnOp(flatModel.equations, sets, setsArray, variables, ctable);
   flatModel.initialEquations := evaluateEquationsConnOp(flatModel.initialEquations, sets, setsArray, variables, ctable);
-  // TODO: Implement evaluation for algorithm sections.
+  flatModel.algorithms := evaluateAlgorithmsConnOp(flatModel.algorithms, sets, setsArray, variables, ctable);
+  flatModel.initialAlgorithms := evaluateAlgorithmsConnOp(flatModel.initialAlgorithms, sets, setsArray, variables, ctable);
 end evaluateConnectionOperators;
+
+function evaluateAlgorithmsConnOp
+  input output list<Algorithm> algorithms;
+  input ConnectionSets.Sets sets;
+  input array<list<Connector>> setsArray;
+  input UnorderedMap<ComponentRef, Variable> variables;
+  input CardinalityTable.Table ctable;
+algorithm
+  algorithms := Algorithm.mapExpList(algorithms,
+    function ConnectEquations.evaluateOperators(sets = sets, setsArray = setsArray,
+      variables = variables, ctable = ctable));
+end evaluateAlgorithmsConnOp;
 
 function evaluateBindingConnOp
   input output Variable var;
