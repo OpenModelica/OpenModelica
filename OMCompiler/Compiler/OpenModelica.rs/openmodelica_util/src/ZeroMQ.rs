@@ -237,8 +237,7 @@ mod tests {
     #[test]
     fn zmq_round_trip() {
         // Bind a server on a random loopback port.
-        let handle = initialize(arcstr::literal!(".test"), false, 0)
-            .expect("initialize returned None");
+        let handle = initialize(arcstr::literal!(".test"), false, 0).expect("initialize returned None");
         assert_ne!(handle, 0, "initialize reported the failure sentinel SOME(0)");
 
         // The endpoint was written to the port file; read it back the same way

@@ -12,10 +12,9 @@
 
 #![allow(non_snake_case)]
 
-
-use metamodelica::Result;
 use arcstr::ArcStr;
 use metamodelica::List;
+use metamodelica::Result;
 
 /// Shared body for the entry points that are NYI in the C runtime too:
 /// report on stderr (like the `fprintf(stderr, "NYI: ...")` there) and

@@ -43,12 +43,11 @@
  */
 #![allow(non_snake_case)]
 
-
-use metamodelica::Result;
 use arcstr::ArcStr;
+use metamodelica::Result;
 
 use metamodelica::ext::{c_atof, c_atol};
-use metamodelica::{list, List, OrderedFloat, Real};
+use metamodelica::{List, OrderedFloat, Real, list};
 
 /// Cost coefficients (m, n) for one arithmetic operation: `y = m*x + n`.
 /// Upstream `HpcOmBenchmarkExtImpl__requiredTimeForOp` returns the hardcoded
@@ -116,8 +115,13 @@ pub fn readCalcTimesFromXml(fileName: ArcStr) -> Result<List<Real>> {
     };
     // root_element() is depth 1, its element children depth 2, etc.
     for level2 in doc.root_element().children().filter(|n| n.is_element()) {
-        for equation in level2.children().filter(|n| n.is_element() && n.has_tag_name("equation")) {
-            let Some(id_attr) = equation.attribute("id") else { continue };
+        for equation in level2
+            .children()
+            .filter(|n| n.is_element() && n.has_tag_name("equation"))
+        {
+            let Some(id_attr) = equation.attribute("id") else {
+                continue;
+            };
             // strtol(id + 2): skip the fixed "eq" prefix the runtime writes.
             let id = if id_attr.len() >= 2 { c_atol(&id_attr[2..]) } else { 0 };
             // Only the first <calcinfo> counts (upstream clears
@@ -127,9 +131,7 @@ pub fn readCalcTimesFromXml(fileName: ArcStr) -> Result<List<Real>> {
                 .find(|n| n.is_element() && n.has_tag_name("calcinfo"))
             {
                 let time = calcinfo.attribute("time").map_or(-1.0, c_atof);
-                let count = calcinfo
-                    .attribute("count")
-                    .map_or(-1.0, |v| c_atol(v) as f64);
+                let count = calcinfo.attribute("count").map_or(-1.0, |v| c_atol(v) as f64);
                 res = push_block(res, id as f64, time, count);
             }
         }

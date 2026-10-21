@@ -7,17 +7,27 @@
 // `crate::NBASSCExt::ASSC_setMatrix`, etc.), so the generated `NBASSC.rs`
 // calls into this hand-written module rather than emitting `todo!()`.
 
-
-use metamodelica::{Result, Array, List};
+use metamodelica::{Array, List, Result};
 
 /// Operation recorded during Bareiss elimination, matching `ASSC_OPERATION` in ASSCEXT.h.
 enum AsscOp {
     // mode 0: pivot-update (normal Bareiss step)
-    PivotUpdate { pivot_index: i32, pivot_value: i32, update_index: i32, update_value: i32 },
+    PivotUpdate {
+        pivot_index: i32,
+        pivot_value: i32,
+        update_index: i32,
+        update_value: i32,
+    },
     // mode 1: row swap
-    SwapRows { index1: i32, index2: i32 },
+    SwapRows {
+        index1: i32,
+        index2: i32,
+    },
     // mode 2: GCD reduction
-    Gcd { index: i32, gcd_value: i32 },
+    Gcd {
+        index: i32,
+        gcd_value: i32,
+    },
 }
 
 /// Sparse matrix store: CSR triplets plus sorted per-row `(index, value)` pairs,
@@ -44,13 +54,7 @@ thread_local! {
 /// `ASSC_setMatrix(nv, ne, nz, adj, val)`: store the adjacency/value matrix in
 /// CSR form. `adj` holds 1-based column indices; we store them 0-based, mirroring
 /// the C implementation.
-pub fn ASSC_setMatrix(
-    nv: i32,
-    ne: i32,
-    nz: i32,
-    adj: Array<List<i32>>,
-    val: Array<List<i32>>,
-) {
+pub fn ASSC_setMatrix(nv: i32, ne: i32, nz: i32, adj: Array<List<i32>>, val: Array<List<i32>>) {
     let mut m = AsscMatrix {
         nv,
         ne,
@@ -88,14 +92,14 @@ pub fn ASSC_getMatrix(adj: Array<List<i32>>, val: Array<List<i32>>) {
             let row_idx = m.mapping[i];
             if !m.rows[row_idx].is_empty() {
                 // Build immutable cons lists in forward order by folding in reverse.
-                let adj_list = m.rows[row_idx].iter().rev().fold(
-                    metamodelica::nil(),
-                    |tail, &(idx, _)| metamodelica::cons(idx, tail),
-                );
-                let val_list = m.rows[row_idx].iter().rev().fold(
-                    metamodelica::nil(),
-                    |tail, &(_, v)| metamodelica::cons(v, tail),
-                );
+                let adj_list = m.rows[row_idx]
+                    .iter()
+                    .rev()
+                    .fold(metamodelica::nil(), |tail, &(idx, _)| metamodelica::cons(idx, tail));
+                let val_list = m.rows[row_idx]
+                    .iter()
+                    .rev()
+                    .fold(metamodelica::nil(), |tail, &(_, v)| metamodelica::cons(v, tail));
                 adj.borrow_mut()[i] = adj_list;
                 val.borrow_mut()[i] = val_list;
             }
@@ -195,7 +199,12 @@ pub fn ASSC_getOperations(
         let mut v4 = op_val4.borrow_mut();
         for (i, op) in ops.iter().enumerate() {
             match op {
-                AsscOp::PivotUpdate { pivot_index, pivot_value, update_index, update_value } => {
+                AsscOp::PivotUpdate {
+                    pivot_index,
+                    pivot_value,
+                    update_index,
+                    update_value,
+                } => {
                     modes[i] = 0;
                     v1[i] = *pivot_index;
                     v2[i] = *pivot_value;
