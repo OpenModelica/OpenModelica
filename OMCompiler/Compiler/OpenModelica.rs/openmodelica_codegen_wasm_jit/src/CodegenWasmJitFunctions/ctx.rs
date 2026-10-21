@@ -309,6 +309,21 @@ pub(crate) struct NlsJob {
     /// `bounds_off`, tagged offsets) rather than in the module's blocks.
     pub(crate) dyn_n: Option<u32>,
     pub(crate) bounds_off: SimOff,
+    pub(crate) dyn_pat: Option<DynPattern>,
+}
+
+/// The sparsity of a system with runtime-sized unknowns, which the runtime
+/// expands before the first solve (`rt_nls_sym_pattern`).
+#[derive(Clone, Copy)]
+pub(crate) struct DynPattern {
+    /// `built: u32 | colptr address: u32 | nnz: u32 | colours: u32 | params: [i64]`
+    /// in `SimData`.
+    pub(crate) slot: SimOff,
+    /// The encoded `SymPattern` in the pattern block.
+    pub(crate) sym_off: u32,
+    pub(crate) sym_len: u32,
+    /// How many size parameters its sizes refer to.
+    pub(crate) n_params: u32,
 }
 
 /// Per-system solver state for `n` unknowns: a count (padded to 8), C's

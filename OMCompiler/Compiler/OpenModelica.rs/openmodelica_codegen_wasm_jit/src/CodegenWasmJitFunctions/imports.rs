@@ -410,6 +410,13 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
         ],
         &[WTy::I32],
     ),
+    // Expand a runtime-sized system's sparsity: (slot, pattern, length, size
+    // parameter count, n unknowns); see `DynPattern`.
+    (
+        "rt_nls_sym_pattern",
+        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
+        &[],
+    ),
     // Dynamic tearing: the `LOG_DT` / `LOG_DT_CONS` lines C's `checkConstraints`,
     // `equationLinear` and `equation*AlternativeTearing` print. `rt_dt_local_violated`
     // also latches the failure, standing in for `residualFuncConstraints`'s return.

@@ -1690,6 +1690,25 @@ fn register_dyn(map: &mut SimVarMap, dv: &DynVar, slot: SimSlot, start_off: Opti
     add_groups(map, &key, dims, slot, (slot.pre != 0).then_some(slot.pre))
 }
 
+/// Register a Real variable of a runtime-sized system's Jacobian at `off`.
+pub(super) fn register_jac_var(map: &mut SimVarMap, key: &str, off: SimOff, dims: &[Sz]) -> Result<()> {
+    let slot = SimSlot {
+        off,
+        wty: WTy::F64,
+        negate: Neg::None,
+        heap: false,
+        pre: 0,
+    };
+    if dims.is_empty() {
+        Arc::make_mut(&mut map.vars).slots.insert(key.to_string(), slot);
+        return Ok(());
+    }
+    Arc::make_mut(&mut map.vars)
+        .slots
+        .insert_dyn_array(key.to_string(), slot, dims.to_vec());
+    add_groups(map, key, dims.to_vec(), slot, None)
+}
+
 /// Register an [`ArrayRun`] whole: its element slots start at `off`.
 fn register_run(
     map: &mut SimVarMap,

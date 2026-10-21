@@ -1,6 +1,7 @@
 //! Jacobian sparsity patterns and colorings (NLS, linear, the A matrix).
 
 use super::*;
+use openmodelica_sim_meta::sym_sparsity::{SymIter, SymPattern, SymRow, SymVar};
 
 /// A nonlinear system's Jacobian sparsity in CSC — `colptr` (`n+1`), `rowidx`
 /// (`nnz`) and the column coloring. Columns and rows are positional, as C's
@@ -624,11 +625,7 @@ pub(super) fn jac_pattern_info(jac: &SimCode::JacobianMatrix, n: usize) -> Optio
 /// The ODE Jacobian's sparsity of a resizable model, for the runtime to expand
 /// once the sizes are known. Rows and columns are the states' positions in the
 /// layout: the constant-size states in `stateVars` order, then the runtime-sized.
-pub(super) fn sym_jac_a(
-    sim_code: &SimCode::SimCode,
-    sizes: &mut SizeParams,
-) -> Option<openmodelica_sim_meta::sym_sparsity::SymPattern> {
-    use openmodelica_sim_meta::sym_sparsity::{SymIter, SymPattern, SymRow, SymVar};
+pub(super) fn sym_jac_a(sim_code: &SimCode::SimCode, sizes: &mut SizeParams) -> Option<SymPattern> {
     let jm = jac_a_matrix(sim_code)?;
     let SimCode::Sparsity::SPARSITY { rows } = &jm.sparsityMatrix else {
         return None;
@@ -644,15 +641,127 @@ pub(super) fn sym_jac_a(
             false => dynamic.push(entry),
         }
     }
-    let mut states: HashMap<String, SymVar> = HashMap::default();
+    let (states, n) = sym_vars(fixed.into_iter().chain(dynamic));
+    sym_pattern(rows, n, (&states, 2), (&states, 1), sizes)
+}
+
+/// The Jacobian of a nonlinear system with runtime-sized unknowns: its sparsity,
+/// for the runtime to expand, and where its rows and columns sit, keyed by the
+/// crefs without the Jacobian's qualifier.
+pub(super) struct SymNlsJac {
+    pub(super) pattern: SymPattern,
+    rows: HashMap<String, SymVar>,
+    cols: HashMap<String, SymVar>,
+}
+
+/// Rows are the Jacobian's results in `index` order (the residual rows),
+/// columns the `unknowns` in the order of the solver's `x`.
+pub(super) fn sym_nls_jac(
+    jm: &SimCode::JacobianMatrix,
+    unknowns: Vec<(String, Vec<Sz>)>,
+    sizes: &mut SizeParams,
+) -> Option<SymNlsJac> {
+    let SimCode::Sparsity::SPARSITY { rows } = &jm.sparsityMatrix else {
+        return None;
+    };
+    let mut results: Vec<_> = jac_listed_vars(jm)
+        .into_iter()
+        .filter(|sv| matches!(sv.varKind, BackendDAE::VarKind::JAC_VAR))
+        .collect();
+    results.sort_by_key(|sv| sv.index);
+    let mut res_vars: Vec<(String, Vec<Sz>)> = Vec::with_capacity(results.len());
+    for sv in results {
+        let key = unqualified_key(&sv.name)?;
+        if res_vars.last().is_none_or(|(k, _)| *k != key) {
+            res_vars.push((key, sizes.dims(&sv.type_).ok()?));
+        }
+    }
+    let (res_vars, _) = sym_vars(res_vars);
+    let (cols, n) = sym_vars(unknowns);
+    let pattern = sym_pattern(rows, n, (&res_vars, 1), (&cols, 1), sizes)?;
+    Some(SymNlsJac {
+        pattern,
+        rows: res_vars,
+        cols,
+    })
+}
+
+/// Where a variable of a runtime-sized system's Jacobian lives: in the seed
+/// vector or the result vector at that element, or in a region of its own.
+pub(super) enum JacPlace {
+    Seed(Sz),
+    Result(Sz),
+    Tmp,
+}
+
+/// The variables the Jacobian's equations use, with their places and
+/// dimensions; `None` when its equations cannot be lowered.
+pub(super) fn sym_nls_jac_vars(
+    jm: &metamodelica::Ref<SimCode::JacobianMatrix>,
+    jac: &SymNlsJac,
+    sizes: &mut SizeParams,
+) -> Option<Vec<(String, JacPlace, Vec<Sz>)>> {
+    use BackendDAE::VarKind as K;
+    if lst(&jm.columns)
+        .next()
+        .is_none_or(|c| lst(&c.columnEqns).next().is_none())
+        || !jac_lowerable(jm)
+    {
+        return None;
+    }
+    let mut seen = HashSet::default();
+    let mut out = Vec::new();
+    for sv in lst(&jm.seedVars).cloned().chain(jac_listed_vars(jm)) {
+        let key = sim_cref_key(&sv.name).ok()?;
+        if !seen.insert(key.clone()) {
+            continue;
+        }
+        let (place, dims) = match sv.varKind {
+            K::SEED_VAR => {
+                let v = jac.cols.get(&unqualified_key(&sv.name)?)?;
+                (JacPlace::Seed(v.base.clone()), v.dims.clone())
+            }
+            K::JAC_VAR => {
+                let v = jac.rows.get(&unqualified_key(&sv.name)?)?;
+                (JacPlace::Result(v.base.clone()), v.dims.clone())
+            }
+            K::JAC_TMP_VAR => (JacPlace::Tmp, sizes.dims(&sv.type_).ok()?),
+            _ => return None,
+        };
+        out.push((key, place, dims));
+    }
+    Some(out)
+}
+
+/// `$pDER_X.a[i].b` -> `a.b`.
+fn unqualified_key(cr: &metamodelica::Ref<DAE::ComponentRef>) -> Option<String> {
+    let var = strip_all_subs(&strip_quals(cr, 1)?)?;
+    sim_cref_key(&var).ok()
+}
+
+/// The variables laid out one after another, and their total length.
+fn sym_vars(vars: impl IntoIterator<Item = (String, Vec<Sz>)>) -> (HashMap<String, SymVar>, Sz) {
+    let mut out = HashMap::default();
     let mut at = Sz::lit(0);
-    for (key, dims) in fixed.into_iter().chain(dynamic) {
+    for (key, dims) in vars {
         let len = dims.iter().fold(Sz::lit(1), |a, d| a * d.clone());
-        states.insert(key, SymVar { base: at.clone(), dims });
+        out.insert(key, SymVar { base: at.clone(), dims });
         at = at + len;
     }
+    (out, at)
+}
+
+/// `rows` over the row and column variables, each found by the crefs' name
+/// without that many leading qualifiers.
+fn sym_pattern(
+    rows: &List<SimCode::SparsityRow>,
+    n: Sz,
+    (row_vars, row_quals): (&HashMap<String, SymVar>, usize),
+    (col_vars, col_quals): (&HashMap<String, SymVar>, usize),
+    sizes: &mut SizeParams,
+) -> Option<SymPattern> {
     let mut pat = SymPattern {
-        n: at,
+        n,
         ..Default::default()
     };
     let mut row_ids: HashMap<String, u32> = HashMap::default();
@@ -683,32 +792,30 @@ pub(super) fn sym_jac_a(
             });
         }
         let mut sym_ref = |cr: &metamodelica::Ref<DAE::ComponentRef>,
-                           strip: usize,
+                           (vars_by_key, strip): (&HashMap<String, SymVar>, usize),
                            ids: &mut HashMap<String, u32>,
                            vars: &mut Vec<SymVar>| {
-            let state = strip_quals(cr, strip)?;
-            let stripped = strip_all_subs(&state)?;
+            let var_cref = strip_quals(cr, strip)?;
+            let stripped = strip_all_subs(&var_cref)?;
             let key = sim_cref_key(&stripped).ok()?;
-            let var = states.get(&key)?;
+            let var = vars_by_key.get(&key)?;
             let id = *ids.entry(key).or_insert_with(|| {
                 vars.push(var.clone());
                 vars.len() as u32 - 1
             });
-            let subs = all_subs(&state)
+            let subs = all_subs(&var_cref)
                 .into_iter()
                 .map(|s| sym_sub(&s, &names, sizes))
                 .collect::<Option<_>>()?;
             Some(openmodelica_sim_meta::sym_sparsity::SymRef { var: id, subs })
         };
         let solved = lst(&row.solved_crefs)
-            .map(|c| sym_ref(c, 2, &mut row_ids, &mut pat.rows_vars))
+            .map(|c| sym_ref(c, (row_vars, row_quals), &mut row_ids, &mut pat.rows_vars))
             .collect::<Option<_>>()?;
         let deps = lst(&row.dependencies)
             .map(|(seed, dep, rep)| {
-                Some((
-                    sym_ref(seed, 1, &mut col_ids, &mut pat.cols_vars)?,
-                    !*rep && lst(&dep.kinds).next() == Some(&false),
-                ))
+                let seed = sym_ref(seed, (col_vars, col_quals), &mut col_ids, &mut pat.cols_vars)?;
+                Some((seed, !*rep && lst(&dep.kinds).next() == Some(&false)))
             })
             .collect::<Option<_>>()?;
         pat.rows.push(SymRow { iters, solved, deps });
@@ -770,7 +877,8 @@ fn sym_sub(
                 step: step.as_ref().map_or(Some(1), |s| const_int_exp(s))? as i64,
                 stop: affine(stop, iters, sizes)?,
             },
-            _ => return None,
+            DAE::Exp::ARRAY { .. } => return None,
+            exp => SymSub::Index(affine(exp, iters, sizes)?),
         },
     })
 }

@@ -243,7 +243,7 @@ pub fn color_columns(rows_by_col: &[Vec<u32>]) -> Vec<Vec<u32>> {
     groups
 }
 
-pub(crate) fn put(o: &mut Vec<u8>, p: &Option<SymPattern>) {
+pub fn put(o: &mut Vec<u8>, p: &Option<SymPattern>) {
     let Some(p) = p else {
         o.push(0);
         return;
@@ -308,7 +308,7 @@ pub(crate) fn put(o: &mut Vec<u8>, p: &Option<SymPattern>) {
     }
 }
 
-pub(crate) fn get(b: &[u8], p: &mut usize) -> Result<Option<SymPattern>, &'static str> {
+pub fn get(b: &[u8], p: &mut usize) -> Result<Option<SymPattern>, &'static str> {
     fn take<'a>(b: &'a [u8], p: &mut usize, n: usize) -> Result<&'a [u8], &'static str> {
         let s = b.get(*p..*p + n).ok_or("sim_meta: truncated sparsity")?;
         *p += n;

@@ -605,6 +605,7 @@ pub(super) fn build_sim_model(
             &nls_nominal_map,
             &mut attr_targets,
             &mut dyn_scratch,
+            size_params.as_mut(),
         );
     // Dynamic tearing: casual set index -> strict set index.
     let nls_strict_of = nls_strict_map(&nls_scan.iter().map(|l| l.as_slice()).collect::<Vec<_>>());
@@ -1418,6 +1419,10 @@ pub(super) fn build_sim_model(
                 &mut literals,
                 nls_jac_infos.get(&sys.index),
                 strict,
+                dyn_scratch
+                    .jacs
+                    .get(&sys.index)
+                    .zip(var_map.nls_jobs.get(&sys.index).copied()),
                 &mut pool,
                 nls_types.map(|(residual, _, _)| residual).unwrap_or_default(),
             )?;
@@ -1965,17 +1970,15 @@ pub(super) fn build_sim_model(
     // destructors, nls callbacks, initSample, zc, statesetJac,
     // lambda0, …, then the closure thunks and `start` below).
     functions.function(eqfn_type); // callExternalObjectDestructors
-    if let Some((residual_type, load_type, strict_type)) = nls_types {
-        for sys in &nls_systems {
+    if let (Some((residual_type, load_type, strict_type)), Some((fn_indices, _))) = (nls_types, &nls_wiring) {
+        for (_, _, jac, strict) in fn_indices {
             functions.function(residual_type);
             functions.function(load_type);
-            // The analytic-Jacobian callback (3 params, like the residual) is emitted
-            // and type-listed only for systems that have a usable symbolic Jacobian —
-            // matching the conditional body push in `nls_wiring`.
-            if nls_jac_infos.contains_key(&sys.index) {
+            // The analytic-Jacobian callback has the residual's 3 params.
+            if jac.is_some() {
                 functions.function(residual_type);
             }
-            if nls_strict_of.contains_key(&sys.index) {
+            if strict.is_some() {
                 functions.function(strict_type);
             }
         }

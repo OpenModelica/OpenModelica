@@ -707,6 +707,7 @@ pub(super) fn build_nls_fns(
     literals: &mut Literals,
     jac_info: Option<&NlsJacInfo>,
     strict: Option<NlsJob>,
+    dyn_jac: Option<(&DynJac, NlsJob)>,
     pool: &mut ChunkPool,
     residual_ty: u32,
 ) -> Result<(NlsResidualFn, we::Function, Option<we::Function>, Option<we::Function>)> {
@@ -776,6 +777,9 @@ pub(super) fn build_nls_fns(
     // jac(sim_data, x, jptr): column-major `n×n` analytic Jacobian, emitted only
     // when the system carries a usable symbolic Jacobian.
     let jac = match (&nlsystem.jacobianMatrix, jac_info.filter(|_| blocks.is_empty())) {
+        (Some(jm), _) if let Some((dj, job)) = dyn_jac => Some(build_dyn_jac_fn(
+            jm, dj, job, &slots, &blocks, &inner, var_map, eq_index, by_name, literals,
+        )?),
         (Some(jm), Some(info)) => {
             let col = lst(&jm.columns)
                 .next()
@@ -849,6 +853,62 @@ pub(super) fn build_nls_fns(
         })
         .transpose()?;
     Ok((residual, load, jac, strict_fn))
+}
+
+/// `jac(sim_data, x, values)` of a runtime-sized system, over its own workspace.
+#[allow(clippy::too_many_arguments)]
+fn build_dyn_jac_fn(
+    jm: &SimCode::JacobianMatrix,
+    dj: &DynJac,
+    job: NlsJob,
+    slots: &[IterSlot],
+    blocks: &[IterBlock],
+    inner: &[metamodelica::Ref<SimCode::SimEqSystem>],
+    var_map: &SimVarMap,
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Literals,
+) -> Result<we::Function> {
+    let (Some(pat), Some(n_entry)) = (job.dyn_pat, job.dyn_n) else {
+        return Err("CodegenWasmJit: a runtime-sized Jacobian without its pattern");
+    };
+    let col = lst(&jm.columns)
+        .next()
+        .ok_or("CodegenWasmJit: nonlinear-system Jacobian has no column")?;
+    let mut vm = var_map.clone();
+    for (key, off, dims) in &dj.vars {
+        register_jac_var(&mut vm, key, *off, dims)?;
+    }
+    let lower = |c: &mut FnCtx, eqs: &List<metamodelica::Ref<SimCode::SimEqSystem>>| -> Result<()> {
+        for eq in lst(eqs) {
+            lower_equation(c, eq, eq_index)?;
+        }
+        Ok(())
+    };
+    let mut ctx = FnCtx::new_sim_params(sim_ctx(&vm), by_name, literals, 3);
+    emit_nls_jac_dyn_body(
+        &mut ctx,
+        slots,
+        blocks,
+        dj.seeds,
+        dj.results,
+        pat,
+        n_entry,
+        &mut |c| {
+            for eq in inner {
+                lower_equation(c, eq, eq_index)?;
+            }
+            Ok(())
+        },
+        &mut |c| lower_with_jac_calls(c, jm, |c| lower(c, &col.constantEqns)),
+        &mut |c| lower_with_jac_calls(c, jm, |c| lower(c, &col.columnEqns)),
+    )?;
+    let (locals, instrs) = ctx.finish_sim();
+    let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
+    for i in &instrs {
+        func.instruction(i);
+    }
+    Ok(func)
 }
 
 /// A residual callback: one function, or [`ChunkPool`] positions a thunk calls in

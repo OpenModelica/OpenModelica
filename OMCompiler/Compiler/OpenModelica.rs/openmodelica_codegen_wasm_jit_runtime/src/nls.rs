@@ -1287,3 +1287,61 @@ pub extern "C" fn rt_solve_nls(
     }
     ret
 }
+
+/// The sparsity of a system with runtime-sized unknowns, expanded for this run's
+/// size parameters (at `slot + 16`) into the block [`rt_solve_nls`] reads,
+/// `colptr[n+1] ++ rowidx[nnz] ++ colorCols[n]`. Its address, `nnz` and colour
+/// count go to `slot + 4`, `slot + 8` and `slot + 12`. A pattern C's
+/// `sparsitySanityCheck` rejects leaves the system without one.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_nls_sym_pattern(slot: u32, sym: u32, sym_len: u32, n_params: u32, n: u32) {
+    use openmodelica_sim_meta::sym_sparsity;
+    unsafe { store_u32(slot, 1) };
+    let n = n as usize;
+    let bytes = unsafe { core::slice::from_raw_parts(sym as *const u8, sym_len as usize) };
+    let params: alloc::vec::Vec<i64> = (0..n_params)
+        .map(|i| unsafe { core::ptr::read_unaligned((slot + 16 + 8 * i) as *const i64) })
+        .collect();
+    let Some(cols) = sym_sparsity::get(bytes, &mut 0)
+        .ok()
+        .flatten()
+        .and_then(|p| p.expand(&params))
+        .filter(|cols| cols.len() == n && regular(cols))
+    else {
+        return;
+    };
+    let nnz: usize = cols.iter().map(|c| c.len()).sum();
+    let addr = rt_alloc((4 * (2 * n + 1 + nnz)) as u32);
+    let out = unsafe { core::slice::from_raw_parts_mut(addr as *mut u32, 2 * n + 1 + nnz) };
+    let (colptr, rest) = out.split_at_mut(n + 1);
+    let (rowidx, color_of) = rest.split_at_mut(nnz);
+    let mut k = 0;
+    for (c, rows) in cols.iter().enumerate() {
+        colptr[c] = k as u32;
+        rowidx[k..k + rows.len()].copy_from_slice(rows);
+        k += rows.len();
+    }
+    colptr[n] = nnz as u32;
+    let colors = sym_sparsity::color_columns(&cols);
+    for (color, group) in colors.iter().enumerate() {
+        for &c in group {
+            color_of[c as usize] = color as u32;
+        }
+    }
+    unsafe {
+        store_u32(slot + 4, addr);
+        store_u32(slot + 8, nnz as u32);
+        store_u32(slot + 12, colors.len() as u32);
+    }
+}
+
+/// No empty column and every row covered.
+fn regular(cols: &[alloc::vec::Vec<u32>]) -> bool {
+    let mut seen = vec![false; cols.len()];
+    for &r in cols.iter().flatten() {
+        if let Some(s) = seen.get_mut(r as usize) {
+            *s = true;
+        }
+    }
+    cols.iter().all(|c| !c.is_empty()) && seen.iter().all(|&s| s)
+}
