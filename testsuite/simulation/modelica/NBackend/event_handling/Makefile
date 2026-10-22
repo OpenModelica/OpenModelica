@@ -20,6 +20,7 @@ algorithmWhenForLoop.mos\
 mathEvents.mos\
 mathEventsFor.mos\
 relationSlotsFor.mos\
+sampleFor.mos\
 compositeRelationEvents.mos\
 noEventReduction.mos\
 infoJsonEquationOrder.mos\
