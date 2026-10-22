@@ -515,7 +515,7 @@ void printRelations(DATA *data, int stream)
 {
   long i;
 
-  if (!OMC_ACTIVE_STREAM(stream))
+  if (!OMC_ACTIVE_STREAM(stream) || data->modelData->nRelations == 0)
   {
     return;
   }
@@ -539,7 +539,7 @@ void printZeroCrossings(DATA *data, int stream)
 {
   long i;
 
-  if (!OMC_ACTIVE_STREAM(stream))
+  if (!OMC_ACTIVE_STREAM(stream) || data->modelData->nRelations == 0)
   {
     return;
   }
