@@ -110,9 +110,7 @@ val(a, 1);
 // record SimulationResult
 //     resultFile = "StateSetArrayEqFunction_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'StateSetArrayEqFunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
-//     messages = "LOG_EVENTS        | info    | status of relations at time=0
-// LOG_EVENTS        | info    | status of zero crossings at time=0
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
@@ -123,9 +121,7 @@ val(a, 1);
 // record SimulationResult
 //     resultFile = "StateSetArrayEqNoEvent_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'StateSetArrayEqNoEvent', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
-//     messages = "LOG_EVENTS        | info    | status of relations at time=0
-// LOG_EVENTS        | info    | status of zero crossings at time=0
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
@@ -136,9 +132,7 @@ val(a, 1);
 // record SimulationResult
 //     resultFile = "StateSetArrayEqNoEventFunction_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'StateSetArrayEqNoEventFunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
-//     messages = "LOG_EVENTS        | info    | status of relations at time=0
-// LOG_EVENTS        | info    | status of zero crossings at time=0
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
