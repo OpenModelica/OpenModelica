@@ -94,9 +94,9 @@ public:
   enum PlotType { PLOT, PLOTALL, PLOTPARAMETRIC, PLOTINTERACTIVE, PLOTARRAY, PLOTARRAYPARAMETRIC };
 private:
   Plot* mpPlot;
-  QCheckBox* mpLogXCheckBox;
-  QCheckBox* mpLogYCheckBox;
-  QCheckBox* mpAlignZeroCheckBox;
+  QToolButton* mpLogXButton;
+  QToolButton* mpLogYButton;
+  QToolButton* mpAlignZeroButton;
   QComboBox* mpGridComboBox;
   QToolButton* mpAutoScaleButton;
   QToolButton* mpSetupButton;
@@ -146,6 +146,7 @@ public:
 
   ~PlotWindow();
 
+  QSize sizeHint() const override;
   void setUpWidget(int toolbarIconSize);
   void initializePlot(QStringList arguments);
   void setVariablesList(QStringList variables);
@@ -176,8 +177,8 @@ public:
   void setTitle(QString title);
   void setGrid(QString grid);
   QString getGrid();
-  QCheckBox* getLogXCheckBox();
-  QCheckBox* getLogYCheckBox();
+  QToolButton* getLogXCheckBox();
+  QToolButton* getLogYCheckBox();
   QToolButton* getAutoScaleButton() { return mpAutoScaleButton; }
   QToolButton* getStartSimulationButton() { return mpStartSimulationToolButton; }
   QToolButton* getPauseSimulationButton() { return mpPauseSimulationToolButton; }
