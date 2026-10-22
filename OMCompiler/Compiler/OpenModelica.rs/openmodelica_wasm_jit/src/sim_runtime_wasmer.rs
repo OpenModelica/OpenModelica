@@ -1238,6 +1238,12 @@ impl sim_driver::SimEngine for WasmerEngine {
 // only starts it, pumps budgeted chunks, and reads the result buffers.
 // ---------------------------------------------------------------------------
 
+/// The error an `rt_sim_*` status stands for: -3 is a model error the in-wasm
+/// driver already reported, as the host driver's `ASSERT_ERR` is.
+fn inwasm_err(rc: Option<i32>, other: &'static str) -> &'static str {
+    if rc == Some(-3) { sim_driver::ASSERT_ERR } else { other }
+}
+
 /// A running in-wasm simulation. `Drop` frees the in-wasm session.
 pub struct InWasmSession {
     store: Store,
@@ -1277,16 +1283,20 @@ pub fn build_inwasm_session(
     } = instantiate_modules(model, model.meta())?;
 
     // Append N contiguous table slots and set each to the model's export funcref
-    // (null + cleared mask bit if the model doesn't export it).
+    // (null + cleared mask bit if the model doesn't export it), its `$guard` where
+    // the model has one.
     let table = wts(rt_inst.exports.get_table("__indirect_function_table"))?.clone();
     let n_slots = crate::model::INWASM_SLOT_NAMES.len() as u32;
     let fn_base = wts(table.grow(&mut store, n_slots, wasmer::Value::FuncRef(None)))?;
     let mut present_mask: u64 = 0;
+    let mut guarded_mask: u64 = 0;
     for (slot, name) in crate::model::INWASM_SLOT_NAMES.iter().enumerate() {
-        if let Ok(f) = instance.exports.get_function(name) {
+        let guard = instance.exports.get_function(&format!("{name}$guard")).ok();
+        if let Some(f) = guard.or_else(|| instance.exports.get_function(name).ok()) {
             let f = f.clone();
             wts(table.set(&mut store, fn_base + slot as u32, wasmer::Value::FuncRef(Some(f))))?;
             present_mask |= 1u64 << slot;
+            guarded_mask |= (guard.is_some() as u64) << slot;
         }
     }
 
@@ -1335,7 +1345,7 @@ pub fn build_inwasm_session(
         }
     }
 
-    let start: wasmer::TypedFunction<(u32, u32, u32, u64), i32> =
+    let start: wasmer::TypedFunction<(u32, u32, u32, u64, u64), i32> =
         wts(rt_inst.exports.get_typed_function(&store, "rt_sim_start"))?;
     let gf = |store: &Store, name: &'static str| -> std::result::Result<wasmer::TypedFunction<(), u32>, String> {
         wts(rt_inst.exports.get_typed_function(store, name))
@@ -1364,15 +1374,24 @@ pub fn build_inwasm_session(
         store,
         memory,
     };
-    let started = start.call(&mut sess.store, meta_ptr, blob.len() as u32, fn_base, present_mask);
+    let started = start.call(
+        &mut sess.store,
+        meta_ptr,
+        blob.len() as u32,
+        fn_base,
+        present_mask,
+        guarded_mask,
+    );
     match started {
         Ok(rc) if rc >= 0 => Ok(sess),
-        Ok(_) => Err("CodegenWasmJit: rt_sim_start failed".to_string()),
-        Err(e) => {
-            crate::set_engine_error_detail(format!("{e:?}"));
+        Ok(rc) if rc != -2 && rc != -3 => Err("CodegenWasmJit: rt_sim_start failed".to_string()),
+        res => {
+            if let Err(e) = &res {
+                crate::set_engine_error_detail(format!("{e:?}"));
+            }
             Err(sim_driver::enrich_trap_init(
                 &mut sess,
-                "CodegenWasmJit: in-wasm initialization failed",
+                inwasm_err(res.ok(), "CodegenWasmJit: in-wasm initialization failed"),
                 model.start_time,
             )
             .to_string())
@@ -1427,9 +1446,9 @@ impl InWasmSession {
     pub fn advance(&mut self, budget_ms: f64) -> Result<i32> {
         match self.advance.call(&mut self.store, budget_ms) {
             Ok(rc) if rc >= 0 => Ok(rc),
-            Ok(_) => Err(sim_driver::enrich_trap(
+            Ok(rc) => Err(sim_driver::enrich_trap(
                 self,
-                "CodegenWasmJit: in-wasm simulation failed",
+                inwasm_err(Some(rc), "CodegenWasmJit: in-wasm simulation failed"),
             )),
             Err(e) => {
                 crate::set_engine_error_detail(format!("{e:?}"));

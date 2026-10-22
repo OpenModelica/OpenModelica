@@ -2205,6 +2205,12 @@ impl sim_driver::SimEngine for WasmtimeEngine {
 // O(chunks) host<->wasm crossings instead of one per residual.
 // ---------------------------------------------------------------------------
 
+/// The error an `rt_sim_*` status stands for: -3 is a model error the in-wasm
+/// driver already reported, as the host driver's `ASSERT_ERR` is.
+fn inwasm_err(rc: Option<i32>, other: &'static str) -> &'static str {
+    if rc == Some(-3) { sim_driver::ASSERT_ERR } else { other }
+}
+
 /// A running in-wasm simulation. `Drop` frees the in-wasm session.
 pub struct InWasmSession {
     store: Store,
@@ -2245,17 +2251,21 @@ pub fn build_inwasm_session(
     } = instantiate_modules(model, model.meta())?;
 
     // Append N contiguous table slots and set each to the model's export funcref
-    // (null + cleared mask bit if the model doesn't export it).
+    // (null + cleared mask bit if the model doesn't export it), its `$guard` where
+    // the model has one.
     let table = rt_inst
         .get_table(&mut store, "__indirect_function_table")
         .ok_or_else(|| "CodegenWasmJit: runtime has no __indirect_function_table export")?;
     let n_slots = crate::model::INWASM_SLOT_NAMES.len() as u64;
     let fn_base = wts(table.grow(&mut store, n_slots, wasmtime::Ref::Func(None)))?;
     let mut present_mask: u64 = 0;
+    let mut guarded_mask: u64 = 0;
     for (slot, name) in crate::model::INWASM_SLOT_NAMES.iter().enumerate() {
-        if let Some(f) = instance.get_func(&mut store, name) {
+        let guard = instance.get_func(&mut store, &format!("{name}$guard"));
+        if let Some(f) = guard.or_else(|| instance.get_func(&mut store, name)) {
             wts(table.set(&mut store, fn_base + slot as u64, wasmtime::Ref::Func(Some(f))))?;
             present_mask |= 1u64 << slot;
+            guarded_mask |= (guard.is_some() as u64) << slot;
         }
     }
 
@@ -2309,7 +2319,7 @@ pub fn build_inwasm_session(
         }
     }
 
-    let start = wts(rt_inst.get_typed_func::<(u32, u32, u32, u64), i32>(&mut store, "rt_sim_start"))?;
+    let start = wts(rt_inst.get_typed_func::<(u32, u32, u32, u64, u64), i32>(&mut store, "rt_sim_start"))?;
     let gf = |store: &mut Store, name: &'static str| wts(rt_inst.get_typed_func::<(), u32>(store, name));
     // Assembled before the run starts so that an initialization `assert()`, which
     // traps out of `rt_sim_start`, is decoded through the same `SimEngine` as one
@@ -2337,16 +2347,18 @@ pub fn build_inwasm_session(
     };
     let started = start.call(
         &mut sess.store,
-        (meta_ptr, blob.len() as u32, fn_base as u32, present_mask),
+        (meta_ptr, blob.len() as u32, fn_base as u32, present_mask, guarded_mask),
     );
     match started {
         Ok(rc) if rc >= 0 => Ok(sess),
-        Ok(_) => Err("CodegenWasmJit: rt_sim_start failed".to_string()),
-        Err(e) => {
-            crate::set_engine_error_detail(format!("{e:?}"));
+        Ok(rc) if rc != -2 && rc != -3 => Err("CodegenWasmJit: rt_sim_start failed".to_string()),
+        res => {
+            if let Err(e) = &res {
+                crate::set_engine_error_detail(format!("{e:?}"));
+            }
             Err(sim_driver::enrich_trap_init(
                 &mut sess,
-                "CodegenWasmJit: in-wasm initialization failed",
+                inwasm_err(res.ok(), "CodegenWasmJit: in-wasm initialization failed"),
                 model.start_time,
             )
             .to_string())
@@ -2399,9 +2411,9 @@ impl InWasmSession {
     pub fn advance(&mut self, budget_ms: f64) -> Result<i32> {
         match self.advance.call(&mut self.store, budget_ms) {
             Ok(rc) if rc >= 0 => Ok(rc),
-            Ok(_) => Err(sim_driver::enrich_trap(
+            Ok(rc) => Err(sim_driver::enrich_trap(
                 self,
-                "CodegenWasmJit: in-wasm simulation failed",
+                inwasm_err(Some(rc), "CodegenWasmJit: in-wasm simulation failed"),
             )),
             Err(e) => {
                 crate::set_engine_error_detail(format!("{e:?}"));

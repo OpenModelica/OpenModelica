@@ -784,6 +784,18 @@ pub fn add_host_builtins(linker: &mut wasmtime::Linker<HostState>) -> Result<()>
             }
         },
     ))?;
+    wt(linker.func_wrap(
+        "env",
+        "rt_host_take_assert",
+        |mut caller: wasmtime::Caller<'_, HostState>, ptr: u32| -> i32 {
+            let Some(wasmtime::Extern::Memory(mem)) = caller.get_export("memory") else {
+                return 0;
+            };
+            let Some(pa) = take_pending_assert() else { return 0 };
+            let bytes: Vec<u8> = pa.iter().flat_map(|v| v.to_le_bytes()).collect();
+            mem.write(&mut caller, ptr as usize, &bytes).is_ok() as i32
+        },
+    ))?;
     // `-variableFilter` for a runtime that serializes its own result file: it has
     // no regex engine, so it asks here, once per variable as the file is laid out.
     // No filter installed keeps everything, so the import is always answerable.
@@ -1201,6 +1213,21 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
                     Ok(()) => n,
                     Err(_) => 0,
                 }
+            },
+        ),
+    );
+    imports.define(
+        "env",
+        "rt_host_take_assert",
+        Function::new_typed_with_env(
+            store,
+            &mem_env,
+            |mut env: wasmer::FunctionEnvMut<HostEnv>, ptr: u32| -> i32 {
+                let (data, store) = env.data_and_store_mut();
+                let Some(memory) = data.mem.clone() else { return 0 };
+                let Some(pa) = take_pending_assert() else { return 0 };
+                let bytes: Vec<u8> = pa.iter().flat_map(|v| v.to_le_bytes()).collect();
+                memory.view(&store).write(ptr as u64, &bytes).is_ok() as i32
             },
         ),
     );

@@ -501,8 +501,9 @@ pub(crate) fn set_ext_error_catch(tag: Option<u32>) {
 }
 
 thread_local! {
-    /// The tag a failed `assert()` throws, while lowering a host-free module. Unset
-    /// where a trap is the end of the run anyway, so C's `unreachable` is enough.
+    /// The tag a failed `assert()` throws, while lowering a module whose entry points
+    /// are guarded. Unset where a trap is the end of the run anyway, so C's
+    /// `unreachable` is enough.
     static ASSERT_THROW_TAG: std::cell::Cell<Option<u32>> = const { std::cell::Cell::new(None) };
 }
 
@@ -510,7 +511,7 @@ pub(crate) fn set_assert_throw_tag(tag: Option<u32>) {
     ASSERT_THROW_TAG.with(|c| c.set(tag));
 }
 
-/// End the computation the failed `assert()` was part of: a host-free module unwinds
+/// End the computation the failed `assert()` was part of: a guarded module unwinds
 /// to its `<entry>$guard`, anything else traps.
 pub(super) fn emit_assert_unwind(ctx: &mut FnCtx) {
     match ASSERT_THROW_TAG.with(|c| c.get()) {

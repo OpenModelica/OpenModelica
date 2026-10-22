@@ -699,7 +699,12 @@ pub(super) fn build_sim_model(
     // A host-free module also carries one: nothing outside it catches a trap, so a
     // failed `assert()` unwinds to the entry point it fired under instead.
     let host_free = matches!(ext_host, ExtHost::Wasm);
-    let error_tag_type = (!ext_imports.is_empty() || host_free).then_some(throw_fn_type);
+    // So does one the in-wasm driver runs, which calls the `<entry>$guard`s.
+    #[cfg(feature = "jit")]
+    let catches = host_free || super::inwasm_driver_enabled();
+    #[cfg(not(feature = "jit"))]
+    let catches = host_free;
+    let error_tag_type = (!ext_imports.is_empty() || catches).then_some(throw_fn_type);
     // `<entry>$guard`'s type: (i32 SimData) -> i32, nonzero if it threw.
     let guard_fn_type = types.len();
     types.ty().function([we::ValType::I32], [we::ValType::I32]);
@@ -818,7 +823,7 @@ pub(super) fn build_sim_model(
     // With a tag in the module, every `ext` call is lowered under a `try_table`
     // (tag index 0: the module imports none).
     crate::CodegenWasmJitFunctions::set_ext_error_catch(error_tag_type.map(|_| 0));
-    crate::CodegenWasmJitFunctions::set_assert_throw_tag(host_free.then_some(0));
+    crate::CodegenWasmJitFunctions::set_assert_throw_tag(catches.then_some(0));
     // Model functions first, in index order; poll for cancellation between them so
     // a long emit is interruptible like the frontend/backend upstream.
     let mut flat_bodies = Vec::with_capacity(flats.len());
