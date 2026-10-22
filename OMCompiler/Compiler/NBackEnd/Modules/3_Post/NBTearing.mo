@@ -58,10 +58,7 @@ protected
   // NF imports
   import Algorithm = NFAlgorithm;
   import Binding = NFBinding;
-  import Call = NFCall;
   import Expression = NFExpression;
-  import NFBuiltinFuncs;
-  import NFPrefixes.{Purity, Variability};
   import NFFunction.Function;
   import Variable = NFVariable;
   import ComponentRef = NFComponentRef;
@@ -888,7 +885,6 @@ protected
     Boolean partial_vars;
     list<list<Slice<EquationPointer>>> acc;
     UnorderedSet<VariablePointer> dummy_set = UnorderedSet.new(BVariable.hash, BVariable.equalName);
-    UnorderedSet<ComponentRef> loop_set;
   algorithm
     comp := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
@@ -911,18 +907,6 @@ protected
         strict.residual_eqns  := list(Slice.apply(eqn, function Equation.createResidual(residualCref_opt = NONE(), new = true, allowFail = false))
           for eqn in List.flatten(list(if isPartialArraySlice(eqn) or isArrayBodyFor(eqn) or (partial_vars and Equation.isSingleBodyFor(Pointer.access(Slice.getT(eqn))))
             then scalarSlices(eqn) else {eqn} for eqn in List.flatten(acc))));
-
-        // residuals with huge coefficients are scaled down, e.g. A*(p1 - p2) - F with A = 1e119
-        loop_set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-        for v in strict.iteration_vars loop
-          UnorderedSet.add(BVariable.getVarName(Slice.getT(v)), loop_set);
-        end for;
-        for i in 1:arrayLength(strict.innerEquations) loop
-          for v in StrongComponent.getVariables(strict.innerEquations[i]) loop
-            UnorderedSet.add(BVariable.getVarName(v), loop_set);
-          end for;
-        end for;
-        strict.residual_eqns := list(Slice.apply(eqn, function normalizeResidual(loop_set = loop_set)) for eqn in strict.residual_eqns);
         comp.strict := strict;
 
         if Flags.isSet(Flags.TEARING_DUMP) then
@@ -932,109 +916,6 @@ protected
       else comp;
     end match;
   end finalize;
-
-  function normalizeResidual
-    "Divides a scalar residual by the largest magnitude of the coefficients of its terms, if that is
-    larger than one. A coefficient is the scalar part of a term that does not depend on the loop,
-    e.g. A in A*(p1 - p2). The solvers are not invariant to the scaling of the residuals, a residual
-    that is 1e119 times larger than the others makes the jacobian look singular. The residual is
-    never scaled up, so it can not be divided by zero. Literal coefficients are evaluated here."
-    input output Pointer<Equation> eqn_ptr;
-    input UnorderedSet<ComponentRef> loop_set;
-  protected
-    Equation eqn = Pointer.access(eqn_ptr);
-    list<Expression> dynamic = {};
-    Expression scale, abs_c, c;
-    Real lit_max = 1.0;
-    Type ty, c_ty;
-  algorithm
-    () := match eqn
-      case Equation.SCALAR_EQUATION() guard(Type.isReal(Expression.typeOf(eqn.rhs))) algorithm
-        for c_opt in list(termCoefficient(t, loop_set) for t in additiveTerms(eqn.rhs)) loop
-          if isSome(c_opt) then
-            c := SimplifyExp.simplify(Util.getOption(c_opt));
-            c_ty := Expression.typeOf(c);
-            if Type.isScalar(c_ty) then
-              if Expression.isScalarLiteral(c) and (Type.isReal(c_ty) or Type.isInteger(c_ty)) then
-                lit_max := max(lit_max, abs(Expression.realValue(c)));
-              elseif Type.isReal(c_ty) then
-                dynamic := c :: dynamic;
-              end if;
-            end if;
-          end if;
-        end for;
-        if not (listEmpty(dynamic) and lit_max <= 1.0) then
-          ty := Expression.typeOf(eqn.rhs);
-          scale := Expression.REAL(lit_max);
-          for d in dynamic loop
-            abs_c := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.ABS_REAL, {d}, Expression.variability(d), Purity.PURE));
-            scale := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.MAX_REAL, {scale, abs_c}, Expression.variability(d), Purity.PURE));
-          end for;
-          if not listEmpty(dynamic) then
-            scale := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.NO_EVENT, {scale}, Expression.variability(scale), Purity.PURE));
-          end if;
-          // multiply with the inverse, its derivative vanishes and the jacobian stays dR * (1/scale)
-          scale := if listEmpty(dynamic) then Expression.REAL(1.0 / lit_max)
-            else Expression.BINARY(Expression.REAL(1.0), Operator.makeDiv(ty), scale);
-          eqn.rhs := Expression.BINARY(scale, Operator.makeMul(ty), eqn.rhs);
-          Pointer.update(eqn_ptr, eqn);
-        end if;
-      then ();
-      else ();
-    end match;
-  end normalizeResidual;
-
-  function additiveTerms
-    "the terms of a sum, sign is irrelevant for the scale"
-    input Expression exp;
-    output list<Expression> terms;
-  algorithm
-    terms := match exp
-      case Expression.MULTARY() guard(Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.ADDITION)
-      then List.flatten(list(additiveTerms(e) for e in listAppend(exp.arguments, exp.inv_arguments)));
-      case Expression.BINARY() guard(Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.ADDITION
-        or Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.SUBTRACTION)
-      then listAppend(additiveTerms(exp.exp1), additiveTerms(exp.exp2));
-      case Expression.UNARY() then additiveTerms(exp.exp);
-      else {exp};
-    end match;
-  end additiveTerms;
-
-  function termCoefficient
-    "the loop independent factor of a term that depends on the loop, e.g. A in A*(p1 - p2)"
-    input Expression term;
-    input UnorderedSet<ComponentRef> loop_set;
-    output Option<Expression> coeff = NONE();
-  protected
-    list<Expression> args, inv;
-  algorithm
-    // a term without loop variables is no coefficient of an unknown
-    if not Expression.contains(term, function isLoopCref(loop_set = loop_set)) then
-      return;
-    end if;
-    coeff := match term
-      case Expression.UNARY() then termCoefficient(term.exp, loop_set);
-      case Expression.MULTARY() guard(Operator.getMathClassification(term.operator) == NFOperator.MathClassification.MULTIPLICATION) algorithm
-        args := list(e for e guard(not Expression.contains(e, function isLoopCref(loop_set = loop_set))) in term.arguments);
-        inv := list(e for e guard(not Expression.contains(e, function isLoopCref(loop_set = loop_set))) in term.inv_arguments);
-      then if listEmpty(args) and listEmpty(inv) then NONE() else SOME(Expression.MULTARY(args, inv, term.operator));
-      case Expression.BINARY() guard(Operator.getMathClassification(term.operator) == NFOperator.MathClassification.MULTIPLICATION) algorithm
-        args := list(e for e guard(not Expression.contains(e, function isLoopCref(loop_set = loop_set))) in {term.exp1, term.exp2});
-      then if listEmpty(args) then NONE() else SOME(if List.hasOneElement(args) then listHead(args) else term);
-      else NONE();
-    end match;
-  end termCoefficient;
-
-  function isLoopCref
-    input Expression exp;
-    input UnorderedSet<ComponentRef> loop_set;
-    output Boolean b;
-  algorithm
-    b := match exp
-      case Expression.CREF() then UnorderedSet.contains(ComponentRef.stripSubscriptsAll(exp.cref), loop_set);
-      else false;
-    end match;
-  end isLoopCref;
 
   function numUnique
     "the number of different indices"
