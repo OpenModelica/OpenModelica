@@ -2661,6 +2661,7 @@ pub fn run_initialization_model(e: &mut dyn SimEngine, sim_data: u32, model: &Si
         Some(model),
         None,
     )?;
+    log_event_status(e, sim_data, &model.layout, omclog::EVENTS)?;
     signal_init_done();
     terminate_at_init(e, sim_data, &model.layout)
 }

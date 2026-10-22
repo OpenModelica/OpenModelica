@@ -1,0 +1,149 @@
+// Name:     StateSetArrayEq
+// keywords: index reduction, smooth, noEvent, array equation, state selection
+// status:   correct
+//
+// Index reduction of an array equation with an array valued if-expression
+// inside smooth() or noEvent(). The differentiated array equation has to be
+// scalarized, otherwise it ends up as constraint equation of a dynamic state
+// set and createResidualSetEquations fails.
+//
+// StateSetArrayEq*:         the if-expression is written in the equation.
+// StateSetArrayEq*Function: the if-expression only shows up after the backend
+//                           inlined the function, the frontend can't
+//                           scalarize it. Same as for
+//                           Modelica.Math.Vectors.normalize.
+//
+// The scalarized equations have to keep smooth() and noEvent(): with -lv=LOG_EVENTS
+// the noEvent models have no zero crossings, the smooth(0, ...) models only
+// get the one of the differentiated equation, where smooth(0, ...) is dropped.
+//
+// See https://github.com/OpenModelica/OpenModelica/issues/15432
+
+loadString("
+partial model StateSetArrayEqBase
+  Real r[2](start = {1, 0.5}, each fixed = true);
+  Real v[2](start = {0, 1}, each fixed = true);
+  Real e[2];
+  Real s, w, a;
+equation
+  der(r) = v;
+  der(v) = -r;
+  s = e[1] + 2*e[2];
+  w = der(s);
+  a = der(w);
+end StateSetArrayEqBase;
+
+model StateSetArrayEq
+  extends StateSetArrayEqBase;
+equation
+  e = smooth(0, if r[1] > 0 then r else 2*r);
+end StateSetArrayEq;
+
+model StateSetArrayEqFunction
+  extends StateSetArrayEqBase;
+  function f
+    input Real x[2];
+    output Real y[2];
+  algorithm
+    y := smooth(0, if x[1] > 0 then x else 2*x);
+    annotation(Inline = true);
+  end f;
+equation
+  e = f(r);
+end StateSetArrayEqFunction;
+
+model StateSetArrayEqNoEvent
+  extends StateSetArrayEqBase;
+equation
+  e = noEvent(if r[1] > 0 then r else 2*r);
+end StateSetArrayEqNoEvent;
+
+model StateSetArrayEqNoEventFunction
+  extends StateSetArrayEqBase;
+  function f
+    input Real x[2];
+    output Real y[2];
+  algorithm
+    y := noEvent(if x[1] > 0 then x else 2*x);
+    annotation(Inline = true);
+  end f;
+equation
+  e = f(r);
+end StateSetArrayEqNoEventFunction;
+"); getErrorString();
+
+simulate(StateSetArrayEq, simflags = "-lv=LOG_EVENTS"); getErrorString();
+val(s, 1);
+val(w, 1);
+val(a, 1);
+simulate(StateSetArrayEqFunction, simflags = "-lv=LOG_EVENTS"); getErrorString();
+val(s, 1);
+val(w, 1);
+val(a, 1);
+simulate(StateSetArrayEqNoEvent, simflags = "-lv=LOG_EVENTS"); getErrorString();
+val(s, 1);
+val(w, 1);
+val(a, 1);
+simulate(StateSetArrayEqNoEventFunction, simflags = "-lv=LOG_EVENTS"); getErrorString();
+val(s, 1);
+val(w, 1);
+val(a, 1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "StateSetArrayEq_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'StateSetArrayEq', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
+//     messages = "LOG_EVENTS        | info    | status of relations at time=0
+// |                 | |       | | [1] (pre:  true)  true = r[1] > 0.0
+// LOG_EVENTS        | info    | status of zero crossings at time=0
+// |                 | |       | | [1] (pre:  0)  1 = r[1] > 0.0
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.7635473583238657
+// -0.6023433285108966
+// -2.7635473583238657
+// record SimulationResult
+//     resultFile = "StateSetArrayEqFunction_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'StateSetArrayEqFunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
+//     messages = "LOG_EVENTS        | info    | status of relations at time=0
+// LOG_EVENTS        | info    | status of zero crossings at time=0
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.7635473583238657
+// -0.6023433285108966
+// -2.7635473583238657
+// record SimulationResult
+//     resultFile = "StateSetArrayEqNoEvent_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'StateSetArrayEqNoEvent', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
+//     messages = "LOG_EVENTS        | info    | status of relations at time=0
+// LOG_EVENTS        | info    | status of zero crossings at time=0
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.7635473583238657
+// -0.6023433285108966
+// -2.7635473583238657
+// record SimulationResult
+//     resultFile = "StateSetArrayEqNoEventFunction_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'StateSetArrayEqNoEventFunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
+//     messages = "LOG_EVENTS        | info    | status of relations at time=0
+// LOG_EVENTS        | info    | status of zero crossings at time=0
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.7635473583238657
+// -0.6023433285108966
+// -2.7635473583238657
+// endResult
