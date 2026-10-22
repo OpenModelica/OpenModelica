@@ -1,0 +1,48 @@
+// name: whenAlgorithmPreCondition
+// keywords: NewBackend, initialization, algorithm, when, pre
+// status: correct
+// suite: cSources
+// teardown_command: rm -f whenAlgorithmPreCondition_res.mat
+//
+// y is only assigned in when-statements whose conditions use pre(y). During
+// initialization y = pre(y) holds, the condition statements must not assign
+// pre(y) := y on top of that, otherwise y and pre(y) only determine each
+// other (OpenIPSL Deadband2 in WSIEG1).
+
+loadString("
+model whenAlgorithmPreCondition
+  Real u = 0.5*sin(time);
+  Real y(start = 0.1);
+  parameter Real db = 0.2;
+algorithm
+  when u < (pre(y) - db) then
+    y := u + db;
+  end when;
+  when u > (pre(y) + db) then
+    y := u - db;
+  end when;
+end whenAlgorithmPreCondition;
+"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(whenAlgorithmPreCondition, stopTime = 5); getErrorString();
+val(y, 0, "whenAlgorithmPreCondition_res.mat");
+// both events: y := u - db at u = 0.3 and y := u + db at u = -0.1
+abs(val(y, 3, "whenAlgorithmPreCondition_res.mat") - 0.1) < 1e-6;
+abs(val(y, 5, "whenAlgorithmPreCondition_res.mat") - 0.1) < 1e-6;
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "whenAlgorithmPreCondition_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'whenAlgorithmPreCondition', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.1
+// true
+// true
+// endResult
