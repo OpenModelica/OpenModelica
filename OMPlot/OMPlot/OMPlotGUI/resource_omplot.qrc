@@ -6,6 +6,9 @@
         <file>Resources/icons/pause.svg</file>
         <file>Resources/icons/auto_scale.svg</file>
         <file>Resources/icons/fit-to-diagram.svg</file>
+        <file>Resources/icons/log_x.svg</file>
+        <file>Resources/icons/log_y.svg</file>
+        <file>Resources/icons/align_zero.svg</file>
         <file>Resources/icons/save.svg</file>
         <file>Resources/icons/print.svg</file>
         <file>Resources/icons/options.svg</file>

@@ -171,6 +171,14 @@ PlotWindow::~PlotWindow()
 
 }
 
+QSize PlotWindow::sizeHint() const
+{
+  QSize hint = QMainWindow::sizeHint();
+  // Keep the main-window chrome while restoring Qwt's preferred plot size.
+  hint += mpPlot->preferredSizeAdjustment();
+  return hint;
+}
+
 void PlotWindow::setUpWidget(int toolbarIconSize)
 {
   // create an instance of qwt plot
@@ -462,23 +470,53 @@ void PlotWindow::setupToolbar(int toolbarIconSize)
   toolBar->addSeparator();
   //GRID
   mpGridComboBox = new QComboBox;
-  mpGridComboBox->addItems(QStringList() << tr("Grid") << tr("Detailed Grid") << tr("No Grid") << tr("X Grid"));
+  mpGridComboBox->addItems(QStringList() << tr("Simple") << tr("Detailed") << tr("None") << tr("X-only"));
+  mpGridComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+  mpGridComboBox->setItemData(0, tr("Major grid lines on both axes"), Qt::ToolTipRole);
+  mpGridComboBox->setItemData(1, tr("Major and minor grid lines on both axes"), Qt::ToolTipRole);
+  mpGridComboBox->setItemData(2, tr("Hide the grid"), Qt::ToolTipRole);
+  mpGridComboBox->setItemData(3, tr("Vertical grid lines only"), Qt::ToolTipRole);
+  mpGridComboBox->setToolTip(tr("Grid style:\n"
+                                "Simple: major grid lines on both axes.\n"
+                                "Detailed: major and minor grid lines on both axes.\n"
+                                "None: hide the grid.\n"
+                                "X-only: vertical grid lines only."));
   connect(mpGridComboBox, SIGNAL(currentIndexChanged(int)), SLOT(setGrid(int)));
   toolBar->addWidget(mpGridComboBox);
   toolBar->addSeparator();
   //LOG x LOG y
-  mpLogXCheckBox = new QCheckBox(tr("Log X"), this);
-  connect(mpLogXCheckBox, SIGNAL(toggled(bool)), SLOT(setLogX(bool)));
-  toolBar->addWidget(mpLogXCheckBox);
+  mpLogXButton = new QToolButton(toolBar);
+  mpLogXButton->setText(tr("Log X"));
+  mpLogXButton->setIcon(QIcon(":/Resources/icons/log_x.svg"));
+  mpLogXButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  mpLogXButton->setCheckable(true);
+  mpLogXButton->setAutoRaise(true);
+  mpLogXButton->setToolTip(tr("Logarithmic X axis"));
+  mpLogXButton->setStatusTip(mpLogXButton->toolTip());
+  connect(mpLogXButton, SIGNAL(toggled(bool)), SLOT(setLogX(bool)));
+  toolBar->addWidget(mpLogXButton);
   toolBar->addSeparator();
-  mpLogYCheckBox = new QCheckBox(tr("Log Y"), this);
-  connect(mpLogYCheckBox, SIGNAL(toggled(bool)), SLOT(setLogY(bool)));
-  toolBar->addWidget(mpLogYCheckBox);
+  mpLogYButton = new QToolButton(toolBar);
+  mpLogYButton->setText(tr("Log Y"));
+  mpLogYButton->setIcon(QIcon(":/Resources/icons/log_y.svg"));
+  mpLogYButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  mpLogYButton->setCheckable(true);
+  mpLogYButton->setAutoRaise(true);
+  mpLogYButton->setToolTip(tr("Logarithmic Y axes"));
+  mpLogYButton->setStatusTip(mpLogYButton->toolTip());
+  connect(mpLogYButton, SIGNAL(toggled(bool)), SLOT(setLogY(bool)));
+  toolBar->addWidget(mpLogYButton);
   toolBar->addSeparator();
-  mpAlignZeroCheckBox = new QCheckBox(tr("Align zero"), this);
-  mpAlignZeroCheckBox->setToolTip(tr("Align zero on left and right Y-axes"));
-  connect(mpAlignZeroCheckBox, SIGNAL(toggled(bool)), SLOT(setAlignZero(bool)));
-  toolBar->addWidget(mpAlignZeroCheckBox);
+  mpAlignZeroButton = new QToolButton(toolBar);
+  mpAlignZeroButton->setText(tr("Align zero"));
+  mpAlignZeroButton->setIcon(QIcon(":/Resources/icons/align_zero.svg"));
+  mpAlignZeroButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  mpAlignZeroButton->setCheckable(true);
+  mpAlignZeroButton->setAutoRaise(true);
+  mpAlignZeroButton->setToolTip(tr("Align zero on the left and right Y axes"));
+  mpAlignZeroButton->setStatusTip(mpAlignZeroButton->toolTip());
+  connect(mpAlignZeroButton, SIGNAL(toggled(bool)), SLOT(setAlignZero(bool)));
+  toolBar->addWidget(mpAlignZeroButton);
   toolBar->addSeparator();
   // setup
   mpSetupButton = new QToolButton(toolBar);
@@ -1197,14 +1235,14 @@ QString PlotWindow::getGrid()
   return mGridType;
 }
 
-QCheckBox* PlotWindow::getLogXCheckBox()
+QToolButton* PlotWindow::getLogXCheckBox()
 {
-  return mpLogXCheckBox;
+  return mpLogXButton;
 }
 
-QCheckBox* PlotWindow::getLogYCheckBox()
+QToolButton* PlotWindow::getLogYCheckBox()
 {
-  return mpLogYCheckBox;
+  return mpLogYButton;
 }
 
 void PlotWindow::setXRange(double min, double max)
@@ -1447,7 +1485,7 @@ void PlotWindow::fitInView()
 void PlotWindow::alignYAxisZero()
 {
   // Zero cannot be aligned on logarithmic axes or when one of the axes is hidden.
-  if (!mAlignZero || mpLogYCheckBox->isChecked() || !mpPlot->axisWidget(QwtPlot::yLeft)->isVisible()
+  if (!mAlignZero || mpLogYButton->isChecked() || !mpPlot->axisWidget(QwtPlot::yLeft)->isVisible()
       || !mpPlot->axisWidget(QwtPlot::yRight)->isVisible()) {
     return;
   }
@@ -1642,9 +1680,9 @@ void PlotWindow::setLogX(bool on)
     mpPlot->setAxisScaleEngine(QwtPlot::xBottom, new LinearScaleEngine);
   }
   mpPlot->setAxisAutoScale(QwtPlot::xBottom);
-  bool state = mpLogXCheckBox->blockSignals(true);
-  mpLogXCheckBox->setChecked(on);
-  mpLogXCheckBox->blockSignals(state);
+  bool state = mpLogXButton->blockSignals(true);
+  mpLogXButton->setChecked(on);
+  mpLogXButton->blockSignals(state);
   updatePlot();
 }
 
@@ -1664,9 +1702,9 @@ void PlotWindow::setLogY(bool on)
   }
   mpPlot->setAxisAutoScale(QwtPlot::yLeft);
   mpPlot->setAxisAutoScale(QwtPlot::yRight);
-  bool state = mpLogYCheckBox->blockSignals(true);
-  mpLogYCheckBox->setChecked(on);
-  mpLogYCheckBox->blockSignals(state);
+  bool state = mpLogYButton->blockSignals(true);
+  mpLogYButton->setChecked(on);
+  mpLogYButton->blockSignals(state);
   updatePlot();
 }
 
@@ -1679,10 +1717,10 @@ void PlotWindow::setLogY(bool on)
 void PlotWindow::setAlignZero(bool on)
 {
   mAlignZero = on;
-  if (mpAlignZeroCheckBox) {
-    const bool state = mpAlignZeroCheckBox->blockSignals(true);
-    mpAlignZeroCheckBox->setChecked(on);
-    mpAlignZeroCheckBox->blockSignals(state);
+  if (mpAlignZeroButton) {
+    const bool state = mpAlignZeroButton->blockSignals(true);
+    mpAlignZeroButton->setChecked(on);
+    mpAlignZeroButton->blockSignals(state);
   }
   updatePlot();
 }

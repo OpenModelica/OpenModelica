@@ -111,6 +111,7 @@ public:
   PlotCurve* getPlotCurve(QString nameStructure);
   void addPlotCurve(PlotCurve *pCurve);
   void removeCurve(PlotCurve *pCurve);
+  QSize preferredSizeAdjustment() const;
   QColor getUniqueColor(int index, int total);
   void setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, double verticalAxisNumbersFontSize,
       double rightVerticalAxisTitleFontSize, double rightVerticalAxisNumbersFontSize, double horizontalAxisTitleFontSize,
