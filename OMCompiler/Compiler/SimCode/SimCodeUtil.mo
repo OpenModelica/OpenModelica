@@ -12291,6 +12291,7 @@ algorithm
           SimCode.FMIDERIVATIVES(derivatives),
           contPartSimDer,
           initPartSimDer,
+          NONE() /* adjoint derivatives: the old backend never produces an FMIDERADJ jacobian */,
           SimCode.FMIDISCRETESTATES(discreteStates),
           SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns, sortedUnknownCrefs, sortedknownCrefs),
           fmi3ArrayGroups(inModelInfo, derivatives)));
@@ -12344,6 +12345,7 @@ else
           SimCode.FMIDERIVATIVES(derivatives),
           contPartSimDer,
           initPartSimDer,
+          NONE(),
           SimCode.FMIDISCRETESTATES(discreteStates),
           SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns, {}, {}),
           fmi3ArrayGroups(inModelInfo)));
@@ -13290,6 +13292,8 @@ public function createMinimalFMIModelStructure
    ContinuousStateDerivative entries an FMI 3.0 Model Exchange master cannot
    drive the integration; the InitialUnknowns are mandatory in FMI 2.0 and 3.0."
   input SimCode.ModelInfo modelInfo;
+  input Option<SimCode.JacobianMatrix> adjointPartialDerivatives = NONE()
+    "NB-generated FMIDERADJ matrix, if symbolic adjoint generation succeeded.";
   output Option<SimCode.FmiModelStructure> outStructure;
 protected
   list<SimCode.FmiUnknown> derivs, outs, initialUnknowns;
@@ -13323,6 +13327,7 @@ algorithm
     SimCode.FMIDERIVATIVES(derivs),
     NONE(),
     NONE(),
+    adjointPartialDerivatives,
     SimCode.FMIDISCRETESTATES({}),
     SimCode.FMIINITIALUNKNOWNS(initialUnknowns, {}, {}),
     fmi3ArrayGroups(modelInfo)));

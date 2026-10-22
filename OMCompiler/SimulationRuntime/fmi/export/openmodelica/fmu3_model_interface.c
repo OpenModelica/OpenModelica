@@ -880,6 +880,19 @@ ModelInstance* omcInstantiate(fmi3String instanceName, OMC_FmuType fmuType, fmi3
     }
   }
 
+  /* allocate memory for the adjoint (vector-Jacobian product) Jacobian used by
+   * fmi3GetAdjointDerivative; only present when the new backend generated it. */
+  comp->_has_jacobian_adjoint = 0;
+  comp->fmiDerJacAdj = NULL;
+  if (comp->fmuData->callback->initialPartialFMIDERADJ != NULL)
+  {
+    comp->fmiDerJacAdj = (JACOBIAN*) calloc(1, sizeof(JACOBIAN));
+    if (! comp->fmuData->callback->initialPartialFMIDERADJ(comp->fmuData, comp->threadData, comp->fmiDerJacAdj))
+    {
+      comp->_has_jacobian_adjoint = 1;
+    }
+  }
+
   // int cols = comp->fmiDerJac->sizeCols;
   // int rows = comp->fmiDerJac->sizeRows;
   // printf("\nFMIDER number of rows and colums");
@@ -993,6 +1006,20 @@ void omcFreeInstance(ModelInstance* c)
     free(comp->fmiDerJacInitialization->sparsePattern); comp->fmiDerJacInitialization->sparsePattern = NULL;
 
     free(comp->fmiDerJacInitialization); comp->fmiDerJacInitialization=NULL;
+  }
+
+  /* Free adjoint jacobian data */
+  if (comp->_has_jacobian_adjoint == 1) {
+    free(comp->fmiDerJacAdj->seedVars); comp->fmiDerJacAdj->seedVars = NULL;
+    free(comp->fmiDerJacAdj->resultVars); comp->fmiDerJacAdj->resultVars = NULL;
+    free(comp->fmiDerJacAdj->tmpVars); comp->fmiDerJacAdj->tmpVars = NULL;
+
+    free(comp->fmiDerJacAdj->sparsePattern->leadindex); comp->fmiDerJacAdj->sparsePattern->leadindex = NULL;
+    free(comp->fmiDerJacAdj->sparsePattern->index); comp->fmiDerJacAdj->sparsePattern->index = NULL;
+    free(comp->fmiDerJacAdj->sparsePattern->colorCols); comp->fmiDerJacAdj->sparsePattern->colorCols = NULL;
+    free(comp->fmiDerJacAdj->sparsePattern); comp->fmiDerJacAdj->sparsePattern = NULL;
+
+    free(comp->fmiDerJacAdj); comp->fmiDerJacAdj=NULL;
   }
 
   free(comp->states); comp->states = NULL;
@@ -2052,6 +2079,115 @@ fmi3Status omcGetDirectionalDerivative(ModelInstance* c,
     if (vrOutOfRange(comp, "omcGetDirectionalDerivative output index", idx, dependent))
       return fmi3Error;
     dvUnknown[i] = comp->fmiDerJac->resultVars[idx];
+  }
+  /***************************************/
+  return fmi3OK;
+}
+
+fmi3Status omcGetAdjointDerivative(ModelInstance* c,
+    const fmi3ValueReference vUnknown_ref[], size_t nUnknown,
+    const fmi3ValueReference vKnown_ref[] , size_t nKnown,
+    const fmi3Float64 dvUnknownSeed[], fmi3Float64 dvKnownSensitivity[])
+{
+  ModelInstance *comp = (ModelInstance *)c;
+  DATA* fmudata = (DATA *) comp->fmuData;
+  MODEL_DATA* modelData = (MODEL_DATA*) fmudata->modelData;
+  threadData_t* td = comp->threadData;
+
+  int i;
+
+  /* fmi3GetAdjointDerivative is the reverse-mode (vector-Jacobian product)
+   * counterpart of omcGetDirectionalDerivative: the axes are transposed, i.e.
+   * the seed is over the "unknowns" (state derivatives + outputs, the
+   * `dependent` axis of the forward Jacobian) and the resulting sensitivity is
+    * over the "knowns" (states + inputs + optional Real parameters, the
+    * `independent` axis of the forward Jacobian). Output states contribute
+    * identity rows separately, without participating in the reverse sweep. */
+  int independent;
+  int dependent;
+
+  if (invalidState(comp, "omcGetAdjointDerivative", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error))
+    return fmi3Error;
+  if (!comp->_has_jacobian_adjoint)
+    return unsupportedFunction(comp, "omcGetAdjointDerivative");
+
+  independent = comp->fmiDerJacAdj->sizeCols;
+  dependent = comp->fmiDerJacAdj->sizeRows;
+
+  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcGetAdjointDerivative")
+
+  if (updateIfNeeded(comp, "omcGetAdjointDerivative") != fmi3OK)
+    return fmi3Error;
+
+  if (model_state_initialization_mode == comp->state)
+  {
+    /* Adjoint derivatives during initialization are not supported yet: this
+     * would require a dedicated FMIDERINITADJ jacobian mirroring
+     * fmiDerJacInitialization, which the new backend does not generate. */
+    return unsupportedFunction(comp, "omcGetAdjointDerivative");
+  }
+
+  /***************************************/
+  /* Map both axes using the generated Jacobian indices. Only the state-output
+   * identity rows rely on the FMI convention that states precede derivatives. */
+  /* Adjoint equations accumulate into resultVars and may use tmpVars as
+   * accumulators for intermediate adjoints. Clear both on every call,
+   * otherwise successive VJPs can contaminate one another. */
+  for (i=0; i<dependent; i++) {
+    comp->fmiDerJacAdj->resultVars[i]=0;
+  }
+  if (comp->fmiDerJacAdj->sizeTmpVars > 0) {
+    memset(comp->fmiDerJacAdj->tmpVars, 0,
+        comp->fmiDerJacAdj->sizeTmpVars * sizeof(modelica_real));
+  }
+
+  /* eval constant part of jacobian */
+  if (comp->fmiDerJacAdj->constantEqns != NULL) {
+    comp->fmiDerJacAdj->constantEqns(fmudata, td, comp->fmiDerJacAdj, NULL);
+  }
+
+  /* clear out the seeds */
+  for (i=0;i<independent; i++) {
+    comp->fmiDerJacAdj->seedVars[i]=0;
+  }
+  /* the seed is supplied over the "unknowns" (derivatives/outputs) */
+  for (i=0;i<nUnknown; i++) {
+    int idx;
+    if (vUnknown_ref[i] < modelData->nStates &&
+        (int)mapOutputReference2OutputNumber(vUnknown_ref[i]) >= 0) {
+      /* An output which is itself a state has no defining equation to
+       * differentiate. Its identity contribution is added below. */
+      continue;
+    }
+    idx = mapAdjointReference2UnknownNumber(vUnknown_ref[i]);
+    if (vrOutOfRange(comp, "omcGetAdjointDerivative seed index", idx, independent))
+      return fmi3Error;
+    /* Put the supplied value in the seeds */
+    comp->fmiDerJacAdj->seedVars[idx]+=dvUnknownSeed[i];
+  }
+
+  /* Call the adjoint Jacobian evaluation function. This evaluates the whole
+   * row of the transposed Jacobian in one call, i.e. a vector-Jacobian
+   * product with the arbitrary seed supplied above. This is generated from
+   * the actual symbolic adjoint (ADJ) Jacobian by the new backend, it is NOT
+   * obtained by transposing/reusing the forward functionJacFMIDER_column
+   * code. */
+  setThreadData(comp);
+  fmudata->callback->functionJacFMIDERADJ_column(fmudata, td, comp->fmiDerJacAdj, NULL);
+  resetThreadData(comp);
+
+  /* Write results over exactly the knowns included in the generated Jacobian.
+   * Do not offset a failed input lookup: -1 + nStates can be a valid state. */
+  for (i=0;i<nKnown; i++) {
+    int idx = mapAdjointReference2KnownNumber(vKnown_ref[i]);
+    if (vrOutOfRange(comp, "omcGetAdjointDerivative sensitivity index", idx, dependent))
+      return fmi3Error;
+    dvKnownSensitivity[i] = comp->fmiDerJacAdj->resultVars[idx];
+    for (size_t j=0; j<nUnknown; j++) {
+      if (vUnknown_ref[j] < modelData->nStates && vUnknown_ref[j] == vKnown_ref[i]) {
+        dvKnownSensitivity[i] += dvUnknownSeed[j];
+      }
+    }
   }
   /***************************************/
   return fmi3OK;
@@ -3782,9 +3918,34 @@ fmi3Status fmi3GetAdjointDerivative(fmi3Instance instance, const fmi3ValueRefere
     size_t nUnknowns, const fmi3ValueReference knowns[], size_t nKnowns, const fmi3Float64 seed[],
     size_t nSeed, fmi3Float64 sensitivity[], size_t nSensitivity)
 {
-  (void)instance; (void)unknowns; (void)nUnknowns; (void)knowns; (void)nKnowns;
-  (void)seed; (void)nSeed; (void)sensitivity; (void)nSensitivity;
-  return fmi3Error;
+  ModelInstance* c = fmu3InnerComp(instance);
+  size_t i;
+  fmi3ValueReference *u, *k;
+  fmi3Status status;
+  if (!c) return fmi3Error;
+  if (nUnknowns == 0) return fmi3OK;
+  if (nullPointer(c, "fmi3GetAdjointDerivative", "unknowns", unknowns) ||
+      nullPointer(c, "fmi3GetAdjointDerivative", "knowns", knowns) ||
+      nullPointer(c, "fmi3GetAdjointDerivative", "seed", seed) ||
+      nullPointer(c, "fmi3GetAdjointDerivative", "sensitivity", sensitivity))
+    return fmi3Error;
+  /* fmi3GetAdjointDerivative is the reverse-mode (vector-Jacobian product)
+     counterpart of fmi3GetDirectionalDerivative: the FMI 3.0 spec swaps the
+     axes compared to the forward/directional case -- the seed is supplied
+     over the "unknowns" (derivatives/outputs) and the resulting sensitivity is
+     over the "knowns" (states/inputs). Recover the per-real-type value
+     reference understood by omcGetAdjointDerivative by subtracting the real
+     base-type offset. */
+  if (nSeed != nUnknowns || nSensitivity != nKnowns) return fmi3Error;
+  u = (fmi3ValueReference*) calloc(nUnknowns, sizeof(fmi3ValueReference));
+  k = (fmi3ValueReference*) calloc(nKnowns,   sizeof(fmi3ValueReference));
+  if (!u || !k) { free(u); free(k); return fmi3Error; }
+  for (i = 0; i < nUnknowns; i++) u[i] = (fmi3ValueReference)(unknowns[i] - FMI3_REAL_VR_OFFSET);
+  for (i = 0; i < nKnowns;   i++) k[i] = (fmi3ValueReference)(knowns[i]   - FMI3_REAL_VR_OFFSET);
+  status = omcGetAdjointDerivative(c, u, nUnknowns, k, nKnowns, seed, sensitivity);
+  free(u);
+  free(k);
+  return status;
 }
 
 /* ---------------------------------------------------------------------------

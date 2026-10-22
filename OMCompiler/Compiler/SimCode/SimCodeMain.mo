@@ -64,6 +64,7 @@ import AvlSetString;
 import BackendDAECreate;
 import BackendDump;
 import NBackendDAE;
+import NBJacobian;
 import BackendVariable;
 import Builtin;
 import ClockIndexes;
@@ -412,13 +413,30 @@ function generateModelCodeNewBackend
 protected
   Integer numCheckpoints;
   NSimCode.SimCode simCode;
+  NSimCode.SimCodeIndices simCodeIndices;
   SimCode.SimCode oldSimCode;
+  Option<NBackendDAE.BackendDAE> fmiAdjointBackendJacobian;
+  Option<SimCode.JacobianMatrix> fmiAdjointJacobian;
+  list<SimCode.JacobianMatrix> fmiAdjointJacobians;
 algorithm
   numCheckpoints := ErrorExt.getNumCheckpoints();
   StackOverflow.clearStacktraceMessages();
   try
     System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
-    (simCode, oldFunctionTree) := NSimCode.SimCode.create(bdae, className, fileNamePrefix, simSettingsOpt, SymbolTable.getAbsyn());
+    (simCode, oldFunctionTree, simCodeIndices) := NSimCode.SimCode.create(bdae, className, fileNamePrefix, simSettingsOpt, SymbolTable.getAbsyn());
+    () := match kind
+      case TranslateModelKind.FMU() algorithm
+        // Generate FMI derivatives only for FMU export. Keep the NB maps and
+        // final index counters until the target-specific Jacobian is included;
+        // converting to template SimCode first would lose this context.
+        fmiAdjointBackendJacobian := NBJacobian.fmiAdjoint(bdae);
+        if isSome(fmiAdjointBackendJacobian) then
+          (simCode, simCodeIndices) := NSimCode.SimCode.addJacobian(
+            Util.getOption(fmiAdjointBackendJacobian), simCode, simCodeIndices);
+        end if;
+      then ();
+      else ();
+    end match;
     if Flags.isSet(Flags.DUMP_SIMCODE) then
       print(NSimCode.SimCode.toString(simCode));
     end if;
@@ -448,10 +466,16 @@ algorithm
         oldSimCode.fullPathPrefix := Util.hashFileNamePrefix(fileNamePrefix) + ".fmutmp/sources/";
         // cref -> value reference map used by the FMU model interface templates (lookupVR).
         oldSimCode.valueReferences := SimCodeUtil.getValueReferenceMapping(oldSimCode.modelInfo);
+        // Use the same converted matrix for the C callbacks and FMI capability
+        // flags. Generation and list insertion happen in the FMU branch above,
+        // before the one-time NB SimCode conversion.
+        fmiAdjointJacobians := list(jac for jac guard(jac.matrixName == "FMIDERADJ") in oldSimCode.jacobianMatrices);
+        fmiAdjointJacobian := if listEmpty(fmiAdjointJacobians) then NONE() else SOME(listHead(fmiAdjointJacobians));
         // Minimal ModelStructure (state derivatives + outputs) so an FMI master
         // can drive Model Exchange integration. TODO: add dependencies.
-        oldSimCode.modelStructure := SimCodeUtil.createMinimalFMIModelStructure(oldSimCode.modelInfo);
-        callTargetTemplatesFMU(oldSimCode, Config.simCodeTarget(), FMI.getFMIVersionString(), fmuType, SymbolTable.getAbsyn(), kind.translateOnly);
+        oldSimCode.modelStructure := SimCodeUtil.createMinimalFMIModelStructure(oldSimCode.modelInfo, fmiAdjointJacobian);
+        //oldSimCode.modelStructure := SimCodeUtil.createMinimalFMIModelStructure(oldSimCode.modelInfo);
+        callTargetTemplatesFMU(oldSimCode, Config.simCodeTarget(), FMI.getFMIVersionString(), fmuType, SymbolTable.getAbsyn());
       then ();
       else algorithm
         callTargetTemplates(oldSimCode, Config.simCodeTarget());
@@ -2010,7 +2034,6 @@ algorithm
           then (libs, file_dir, timeSimCode, timeTemplates);
         case TranslateModelKind.FMU()
           algorithm
-
             (libs,file_dir,timeSimCode,timeTemplates) := generateModelCodeFMU(dlow, initDAE, initDAE_lambda0, fmiDer, removedInitialEquationLst, SymbolTable.getAbsyn(), className, FMI.getFMIVersionString(), kind.kind, inFileNamePrefix, kind.targetName, inSimSettingsOpt, kind.translateOnly);
           then (libs, file_dir, timeSimCode, timeTemplates);
         case TranslateModelKind.XML()

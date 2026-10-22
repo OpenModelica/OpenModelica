@@ -2105,6 +2105,40 @@ function isJacobianResultVar
     end match;
   end isBound;
 
+
+  function isReal
+    "FMI directional and adjoint derivative APIs operate only on Float64 variables."
+    extends checkVar;
+  algorithm
+    b := Type.isReal(Type.arrayElementType(var.ty));
+  end isReal;
+
+  function isRealOutput
+    "Top-level Real output eligible for the FMI derivative unknown axis."
+    extends checkVar;
+  algorithm
+    b := BVariable.isOutput(var_ptr) and isReal(var_ptr);
+  end isRealOutput;
+
+  function isResult
+    "Select only FMI unknowns as reverse-mode seeds; all other continuous
+     partial candidates remain temporary adjoints for reverse propagation."
+    extends checkVar;
+  algorithm
+    b := (BVariable.isStateDerivative(var_ptr) or BVariable.isOutput(var_ptr)) and isReal(var_ptr);
+  end isResult;
+
+  function getDerivativeOfState
+    "Return the time derivative belonging to a state variable."
+    input Pointer<Variable> stateVar;
+    output Pointer<Variable> derivativeVar;
+  protected
+    Option<Pointer<Variable>> derivativeOpt;
+  algorithm
+    (derivativeOpt, _) := BVariable.getVarDer(stateVar);
+    derivativeVar := Util.getOption(derivativeOpt);
+  end getDerivativeOfState;
+
   // ==========================================================================
   //                        Other type wrappers
   //

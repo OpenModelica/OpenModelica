@@ -987,6 +987,10 @@ pub struct OpenModelicaGeneratedFunctionCallbacks {
     pub functionJacFMIDERINIT_column: jacobianColumn_func_ptr,
     pub INDEX_JAC_FMIDERINIT: c_int,
 
+    pub initialPartialFMIDERADJ: initialAnalyticalJacobian_func_ptr,
+    pub functionJacFMIDERADJ_column: jacobianColumn_func_ptr,
+    pub INDEX_JAC_FMIDERADJ: c_int,
+
     /// Per base type, the alias table an FMI value reference resolves through:
     /// entry `vr - (nVariables + nParameters)` is the value reference this alias
     /// stands for, or `-(vr + 1)` when it stands for its negation.
