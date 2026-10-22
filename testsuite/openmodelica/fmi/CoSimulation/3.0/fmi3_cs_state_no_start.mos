@@ -1,0 +1,83 @@
+// name: fmi3_cs_state_no_start.mos
+// keywords: FMI 3.0 export CoSimulation
+// status: correct
+// teardown_command: rm -rf fmi3_cs_state_no_start.fmu fmi3_cs_state_no_start.xml fmi3_cs_state_no_start_tmp.xml fmi3_cs_state_no_start.fmutmp/ fmi3_cs_state_no_start_res.mat fmi3_cs_state_no_start_fmpy.csv fmi3_cs_state_no_start_diff.*.csv fmi3_cs_state_no_start_info.json fmi3_cs_state_no_start_*.bin
+
+// A continuous-time state without start value (fixed by an initial
+// equation) must not be exported with initial exact/approx, since FMI 3.0
+// requires a start attribute whenever initial is exact or approx. It gets
+// initial calculated instead, which strict importers such as FMPy accept.
+
+setCommandLineOptions("-d=newInst"); getErrorString();
+
+loadString("
+model fmi3_cs_state_no_start
+  Real x(start=1.0);
+  Real y;
+  output Real out1;
+initial equation
+  y = 0;
+equation
+  der(x) = -x;
+  der(y) = y + 3;
+  out1 = x + y;
+end fmi3_cs_state_no_start;
+"); getErrorString();
+
+buildModelFMU(fmi3_cs_state_no_start, version="3.0", fmuType="cs"); getErrorString();
+
+system("unzip -cqq fmi3_cs_state_no_start.fmu modelDescription.xml > fmi3_cs_state_no_start_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi3_cs_state_no_start_tmp.xml > fmi3_cs_state_no_start.xml"); getErrorString();
+readFile("fmi3_cs_state_no_start.xml"); getErrorString();
+
+// Validate the exported FMU with an independent FMI importer: simulate the
+// model in OpenModelica, co-simulate the FMU with FMPy (which strictly
+// validates modelDescription.xml on import), and check that the FMU
+// reproduces OpenModelica's own (non-FMU) simulation results.
+simulate(fmi3_cs_state_no_start, stopTime=1.0); getErrorString();
+// Which interpreter can import fmpy is a property of the machine, not of the
+// test, so rtest hands it over in FMPY_TOOL; python3 is the default. Kept as one
+// expression so the script prints nothing extra.
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py fmi3_cs_state_no_start.fmu fmi3_cs_state_no_start_fmpy.csv 1.0 x y out1"); getErrorString();
+diffSimulationResults("fmi3_cs_state_no_start_fmpy.csv", "fmi3_cs_state_no_start_res.mat", "fmi3_cs_state_no_start_diff", vars={"x","y","out1"}); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3_cs_state_no_start.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//     <Float64 name=\"time\" valueReference=\"8\" causality=\"independent\" variability=\"continuous\" description=\"Simulation time\"/>
+//     <Float64 name=\"x\" valueReference=\"0\" initial=\"exact\"  start=\"1.0\"/>
+//     <Float64 name=\"y\" valueReference=\"1\" initial=\"calculated\" />
+//     <Float64 name=\"der(x)\" valueReference=\"2\"  derivative=\"0\"/>
+//     <Float64 name=\"der(y)\" valueReference=\"3\"  derivative=\"1\"/>
+//     <Float64 name=\"der(_D_outputAlias_out1)\" valueReference=\"4\" />
+//     <Float64 name=\"_D_out1_der\" valueReference=\"5\" />
+//     <Float64 name=\"out1\" valueReference=\"7\" causality=\"output\" />
+//   </ModelVariables>
+// "
+// ""
+// record SimulationResult
+//     resultFile = "fmi3_cs_state_no_start_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'fmi3_cs_state_no_start', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// (true, {})
+// ""
+// endResult
