@@ -1262,6 +1262,7 @@ public
         list<ComponentRef> lhs_crefs;
         Algorithm alg;
         UnorderedSet<ComponentRef> kept;
+        UnorderedSet<ComponentRef> removed;
 
       // reduce the body of for equations
       case Equation.FOR_EQUATION() algorithm
@@ -1311,7 +1312,20 @@ public
           eqn.size := sum(ComponentRef.size(out, true) for out in eqn.alg.outputs);
           kept := UnorderedSet.fromList(eqn.alg.outputs, ComponentRef.hash, ComponentRef.isEqual);
           lhs_crefs := list(cref for cref guard(not UnorderedSet.contains(cref, kept)) in lhs_crefs);
-          new_eqn := eqn;
+          if not listEmpty(lhs_crefs) then
+            // cref = pre.cref replaces the pre.cref := cref statements of these outputs, otherwise
+            // both would only determine each other (OpenIPSL Deadband2)
+            removed := UnorderedSet.fromList(lhs_crefs, ComponentRef.hash, ComponentRef.isEqual);
+            stmts := list(stmt for stmt guard(not isPreOfAssignment(stmt, removed)) in stmts);
+            if listEmpty(stmts) then
+              eqn.size := 0;
+            else
+              alg.statements := stmts;
+              eqn.alg := Equation.setAlgorithmInputsOutputs(alg);
+              eqn.size := sum(ComponentRef.size(out, true) for out in eqn.alg.outputs);
+            end if;
+          end if;
+          new_eqn := if listEmpty(stmts) then Equation.DUMMY_EQUATION() else eqn;
         else
           new_eqn := Equation.DUMMY_EQUATION();
         end if;
@@ -1437,6 +1451,22 @@ public
       else {stmt};
     end match;
   end removeConditionEquation;
+
+  function isPreOfAssignment
+    "true for statements pre.cref := cref where cref is in the set."
+    input Statement stmt;
+    input UnorderedSet<ComponentRef> crefs;
+    output Boolean b;
+  algorithm
+    b := match stmt
+      local
+        ComponentRef pre, post;
+      case Statement.ASSIGNMENT(lhs = Expression.CREF(cref = pre), rhs = Expression.CREF(cref = post))
+      then BVariable.isPrevious(BVariable.getVarPointer(pre, sourceInfo()))
+        and UnorderedSet.contains(ComponentRef.stripSubscriptsAll(post), crefs);
+      else false;
+    end match;
+  end isPreOfAssignment;
 
   function findPreVars
     input output Expression exp;
