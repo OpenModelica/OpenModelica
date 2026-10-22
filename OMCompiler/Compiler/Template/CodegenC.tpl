@@ -7230,6 +7230,9 @@ match row
                 }
                 >>
               else
+                // the rows start at sc's own offset like in the single-WHOLEDIM case:
+                // scalar rows in between come from static tables and do not bump
+                // local_row_base (OpenIPSL CampusGridB, array residual after scalar ones)
                 let szInner = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &varFrees, &auxFunction)
                 let szOuter = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &varFrees, &auxFunction)
                 <<
@@ -7238,11 +7241,10 @@ match row
                   for (_wo<%k%> = 0; _wo<%k%> < (unsigned int)(<%szOuter%>); _wo<%k%>++) {
                     unsigned int _wr<%k%>;
                     for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%szInner%>); _wr<%k%>++) {
-                      unsigned int row_<%k%> = local_row_base + _wo<%k%> * (unsigned int)(<%szInner%>) + _wr<%k%>;
+                      unsigned int row_<%k%> = <%jacobianVarOffset(v, context)%> + _wo<%k%> * (unsigned int)(<%szInner%>) + _wr<%k%>;
                       <%depsWholeReduced%>
                     }
                   }
-                  local_row_base += (unsigned int)(<%szOuter%>) * (unsigned int)(<%szInner%>);
                 }
                 >>
             else ''

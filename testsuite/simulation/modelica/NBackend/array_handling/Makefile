@@ -3,6 +3,7 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 reductionSkips.mos \
 nestedForConnectRange.mos \
+sparsityMatrixResidual.mos \
 forNestedElseIf.mos \
 forSliceRowMajor.mos \
 sliceRangeSparsity.mos \
