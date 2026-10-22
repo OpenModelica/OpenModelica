@@ -65,6 +65,24 @@ simulate(Alias); getErrorString();
 // [dumprepl] Nontrivial Alias Replacements:
 // *******************************************
 //
+// =============================================
+//   [dumprepl] Post Causalization Alias Sets:
+// =============================================
+//
+// Alias Set 1:
+// **************
+// 	<No Constant/Parameter Binding>
+// 	### Set Equations:
+// 	[SCAL] (1) $DER.x = $FUN_1; ($RES_SIM_1)
+//
+// [dumprepl] Constant Replacements:
+// ***********************************
+// [dumprepl] Trivial Alias Replacements:
+// ****************************************
+// 	$FUN_1	 ==> 	$DER.x
+// [dumprepl] Nontrivial Alias Replacements:
+// *******************************************
+//
 // record SimulationResult
 //     resultFile = "Alias_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Alias', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
