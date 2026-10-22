@@ -7,6 +7,7 @@ ifNoEventCondition.mos \
 compositeEvent.mos \
 algorithmWhenNoOutputs.mos \
 whenIfStatements.mos \
+whenIfBranches.mos \
 spatialDistributionTuple.mos \
 eventSystem.mos \
 hybridSys.mos \
