@@ -543,7 +543,7 @@ protected
       case Equation.IF_EQUATION() algorithm
         collectDiscreteStatesFromWhenInIf(eqn.body, acc_discrete_states, acc_previous, scalarized);
       then ();
-      case Equation.ALGORITHM() guard(List.any(eqn.alg.statements, Statement.isWhen)) algorithm
+      case Equation.ALGORITHM() algorithm
         collectDiscreteStatesFromWhenStatements(eqn.alg.statements, acc_discrete_states, acc_previous, scalarized);
       then ();
       else ();
@@ -558,8 +558,26 @@ protected
     input Boolean scalarized;
   protected
     UnorderedSet<ComponentRef> assigned = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-    list<ComponentRef> outputs;
     Pointer<Variable> state_var;
+  algorithm
+    collectWhenStatementOutputs(statements, assigned);
+    for cref in UnorderedSet.toList(assigned) loop
+      // the function getPreVar() does all necessary collecting of information
+      // but we don't need the actual pre cref it returns
+      state_var := BVariable.getVarPointer(cref, sourceInfo());
+      BVariable.makeDiscreteStateVar(state_var);
+      getPreVar(cref, state_var, acc_previous, scalarized);
+      Pointer.update(acc_discrete_states, state_var :: Pointer.access(acc_discrete_states));
+    end for;
+  end collectDiscreteStatesFromWhenStatements;
+
+  function collectWhenStatementOutputs
+    "Collects the outputs of all when-statements, also of the ones inside of for-statements
+    (the frontend creates these for algorithms of array components)."
+    input list<Statement> statements;
+    input UnorderedSet<ComponentRef> assigned;
+  protected
+    list<ComponentRef> outputs;
   algorithm
     for stmt in statements loop
       () := match stmt
@@ -574,18 +592,13 @@ protected
             end for;
           end for;
         then ();
+        case Statement.FOR() algorithm
+          collectWhenStatementOutputs(stmt.body, assigned);
+        then ();
         else ();
       end match;
     end for;
-    for cref in UnorderedSet.toList(assigned) loop
-      // the function getPreVar() does all necessary collecting of information
-      // but we don't need the actual pre cref it returns
-      state_var := BVariable.getVarPointer(cref, sourceInfo());
-      BVariable.makeDiscreteStateVar(state_var);
-      getPreVar(cref, state_var, acc_previous, scalarized);
-      Pointer.update(acc_discrete_states, state_var :: Pointer.access(acc_discrete_states));
-    end for;
-  end collectDiscreteStatesFromWhenStatements;
+  end collectWhenStatementOutputs;
 
   function collectDiscreteStatesFromWhenBody
     "All variables on the LHS in a when equation are considered discrete."
