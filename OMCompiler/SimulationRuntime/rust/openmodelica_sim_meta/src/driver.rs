@@ -4381,28 +4381,32 @@ pub fn log_event_status(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, st
     }
     let time = format_g(read_f64(e, sim_data + TIME_OFF)?, 12);
     event_dump_store::with(|d| {
-        omclog::info!(stream, true, "status of relations at time={time}");
-        for i in 0..layout.n_rel {
-            let flag = |off: u32| {
-                if read_i32(e, sim_data + off + i * 4).unwrap_or(0) != 0 {
-                    " true"
-                } else {
-                    "false"
-                }
-            };
-            let desc = d.rel_desc.get(i as usize).map(String::as_str).unwrap_or_default();
-            let (pre, cur) = (flag(layout.relations_pre_off), flag(layout.relations_off));
-            omclog::info!(stream, false, "[{}] (pre: {pre}) {cur} = {desc}", i + 1);
+        if layout.n_rel > 0 {
+            omclog::info!(stream, true, "status of relations at time={time}");
+            for i in 0..layout.n_rel {
+                let flag = |off: u32| {
+                    if read_i32(e, sim_data + off + i * 4).unwrap_or(0) != 0 {
+                        " true"
+                    } else {
+                        "false"
+                    }
+                };
+                let desc = d.rel_desc.get(i as usize).map(String::as_str).unwrap_or_default();
+                let (pre, cur) = (flag(layout.relations_pre_off), flag(layout.relations_off));
+                omclog::info!(stream, false, "[{}] (pre: {pre}) {cur} = {desc}", i + 1);
+            }
+            omclog::close(stream);
         }
-        omclog::close(stream);
-        omclog::info!(stream, true, "status of zero crossings at time={time}");
-        for i in 0..layout.n_zc {
-            let g = |off: u32| omclog::g(read_f64(e, sim_data + off + i * 8).unwrap_or(0.0), 2, 1);
-            let desc = d.zc_desc.get(i as usize).map(String::as_str).unwrap_or_default();
-            let (pre, cur) = (g(layout.zc_pre_off), g(layout.zc_off));
-            omclog::info!(stream, false, "[{}] (pre: {pre}) {cur} = {desc}", i + 1);
+        if layout.n_zc > 0 {
+            omclog::info!(stream, true, "status of zero crossings at time={time}");
+            for i in 0..layout.n_zc {
+                let g = |off: u32| omclog::g(read_f64(e, sim_data + off + i * 8).unwrap_or(0.0), 2, 1);
+                let desc = d.zc_desc.get(i as usize).map(String::as_str).unwrap_or_default();
+                let (pre, cur) = (g(layout.zc_pre_off), g(layout.zc_off));
+                omclog::info!(stream, false, "[{}] (pre: {pre}) {cur} = {desc}", i + 1);
+            }
+            omclog::close(stream);
         }
-        omclog::close(stream);
     });
     Ok(())
 }
