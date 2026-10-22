@@ -15,7 +15,7 @@ edition = "2024"
 getrandom = "0.4"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-libc.workspace = true
+libc = "0.2"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 # Real SystemTime over the JS clock (`Date.now`) for store modification times;
