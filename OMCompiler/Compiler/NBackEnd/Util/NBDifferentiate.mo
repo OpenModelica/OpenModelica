@@ -985,7 +985,7 @@ public
       // (..., a_i,...)' = (..., a'_i, ...)
       case Expression.TUPLE_ELEMENT() algorithm
         (elem1, diffArguments) := differentiateExpression(exp.tupleExp, diffArguments);
-      then (Expression.TUPLE_ELEMENT(elem1, exp.index, exp.ty), diffArguments);
+      then (Expression.tupleElement(elem1, exp.index), diffArguments);
 
       // REC(i, ...)' = REC(i', ...)
       case Expression.RECORD_ELEMENT() algorithm
@@ -1472,6 +1472,7 @@ public
         end for;
       then Expression.makeRecord(InstNode.fullPath(node), ty, listReverse(fields));
       case Type.ARRAY() then Expression.fillType(ty, makeZero(Type.arrayElementType(ty)));
+      case Type.TUPLE() then Expression.TUPLE(ty, list(makeZero(t) for t in ty.types));
       // strings and enumerations of a record have no derivative
       case Type.STRING() then Expression.STRING("");
       case Type.ENUMERATION() then Expression.makeEnumLiteral(ty, 1);
@@ -1703,7 +1704,7 @@ public
       case Expression.CALL(call = call as Call.TYPED_CALL())
         guard(diffArguments.diffType == DifferentiationType.SIMPLE
           and not Expression.contains(exp, function isRelatedCref(name = ComponentRef.toString(ComponentRef.stripSubscriptsAll(diffArguments.diffCref)))))
-      then (Expression.makeZero(Expression.typeOf(exp)), diffArguments);
+      then (makeZero(Expression.typeOf(exp)), diffArguments);
 
       // user defined functions
       case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
