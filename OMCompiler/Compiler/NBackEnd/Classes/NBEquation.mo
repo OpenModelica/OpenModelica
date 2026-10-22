@@ -77,6 +77,7 @@ public
 
   // New Backend imports
   import DetectStates = NBDetectStates;
+  import Differentiate = NBDifferentiate;
   import NBResizable.EvalOrder;
   import Evaluation = NBEvaluation;
   import Inline = NBInline;
@@ -2036,15 +2037,15 @@ public
 
         case ARRAY_EQUATION() algorithm
           if Expression.isEqual(eq.lhs, eq.rhs) then
-            eq.lhs := Expression.makeZero(eq.ty);
-            eq.rhs := Expression.makeZero(eq.ty);
+            eq.lhs := Differentiate.makeZero(eq.ty);
+            eq.rhs := Differentiate.makeZero(eq.ty);
           end if;
         then eq;
 
         case RECORD_EQUATION() algorithm
           if Expression.isEqual(eq.lhs, eq.rhs) then
-            eq.lhs := Expression.makeZero(eq.ty);
-            eq.rhs := Expression.makeZero(eq.ty);
+            eq.lhs := Differentiate.makeZero(eq.ty);
+            eq.rhs := Differentiate.makeZero(eq.ty);
           end if;
         then eq;
 

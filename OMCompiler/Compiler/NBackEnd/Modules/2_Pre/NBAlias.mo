@@ -256,6 +256,8 @@ protected
             BVariable.setRecordVariability(var, NFPrefixes.Variability.PARAMETER);
           end for;
           alias_vars := List.flatten(list(BVariable.getRecordChildrenOrSelf(var) for var in alias_vars));
+          // nested records stay after flattening, their fields are replaced on their own
+          alias_vars := list(var for var guard(not BVariable.isRecord(var)) in alias_vars);
 
           // save new equations and compress affected arrays(some might have been removed)
           eqData.simulation := EquationPointers.compress(newEquations);
