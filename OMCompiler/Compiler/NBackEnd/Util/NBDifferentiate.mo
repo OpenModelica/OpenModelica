@@ -50,7 +50,6 @@ public
   import BuiltinFuncs = NFBuiltinFuncs;
   import Call = NFCall;
   import Class = NFClass;
-  import Restriction = NFRestriction;
   import NFClassTree.ClassTree;
   import Component = NFComponent;
   import ComponentRef = NFComponentRef;
@@ -1139,14 +1138,14 @@ public
       // differentiate time cref => 0
       case (Expression.CREF(), _, _)
         guard(ComponentRef.isTime(exp.cref))
-      then (Expression.makeZero(exp.ty), diffArguments);
+      then (makeZero(exp.ty), diffArguments);
 
       // Types: (ALL)
       // differentiate start cref => 0
       // start variables solved in an algebraic loop of the initial system are inner variables of its jacobian.
       case (Expression.CREF(), _, _)
         guard(BVariable.isStart(var_ptr) and not isJacobianUnknown(exp.cref, diffArguments))
-      then (Expression.makeZero(exp.ty), diffArguments);
+      then (makeZero(exp.ty), diffArguments);
 
       // ToDo: Records, Arrays, WILD (?)
 
@@ -1159,7 +1158,7 @@ public
       // Types: (SIMPLE)
       // D(y)/dx => 0
       case (Expression.CREF(), DifferentiationType.SIMPLE, _)
-      then (Expression.makeZero(exp.ty), diffArguments);
+      then (makeZero(exp.ty), diffArguments);
 
       // Types: (ALL)
       // Known variables, except for top level inputs have a 0-derivative.
@@ -1169,7 +1168,7 @@ public
               not (ComponentRef.isTopLevel(exp.cref) and BVariable.isInput(var_ptr))
               and not BVariable.isOptimizable(var_ptr) /* TODO? */
               and not isJacobianUnknown(exp.cref, diffArguments))
-      then (Expression.makeZero(exp.ty), diffArguments);
+      then (makeZero(exp.ty), diffArguments);
 
       // -------------------------------------
       //    Special rules for Type: TIME
@@ -1179,7 +1178,7 @@ public
       // D(discrete)/d(x) = 0
       case (Expression.CREF(), DifferentiationType.TIME, _)
         guard(BVariable.isDiscrete(var_ptr) or BVariable.isDiscreteState(var_ptr))
-      then (Expression.makeZero(exp.ty), diffArguments);
+      then (makeZero(exp.ty), diffArguments);
 
       // Types: (TIME)
       // known derivatives by state order
@@ -1466,16 +1465,16 @@ public
     list<Expression> fields = {};
   algorithm
     zero := match ty
-      case Type.COMPLEX() guard(Type.isRecord(ty) and not Restriction.isOperatorRecord(Class.restriction(InstNode.getClass(Type.complexNode(ty))))) algorithm
+      case Type.COMPLEX() guard(Type.isRecord(ty) and not Class.hasOperator("'0'", InstNode.getClass(Type.complexNode(ty)))) algorithm
         node := Type.complexNode(ty);
         for comp in Class.getComponents(InstNode.getClass(node)) loop
           fields := makeZero(InstNode.getType(comp)) :: fields;
         end for;
       then Expression.makeRecord(InstNode.fullPath(node), ty, listReverse(fields));
-      case Type.ARRAY() guard(Type.isRecord(Type.arrayElementType(ty)))
-      then Expression.fillType(ty, makeZero(Type.arrayElementType(ty)));
-      // strings of a record have no derivative
+      case Type.ARRAY() then Expression.fillType(ty, makeZero(Type.arrayElementType(ty)));
+      // strings and enumerations of a record have no derivative
       case Type.STRING() then Expression.STRING("");
+      case Type.ENUMERATION() then Expression.makeEnumLiteral(ty, 1);
       else Expression.makeZero(ty);
     end match;
   end makeZero;
@@ -1489,16 +1488,16 @@ public
     list<Expression> fields = {};
   algorithm
     one := match ty
-      case Type.COMPLEX() guard(Type.isRecord(ty) and not Restriction.isOperatorRecord(Class.restriction(InstNode.getClass(Type.complexNode(ty))))) algorithm
+      case Type.COMPLEX() guard(Type.isRecord(ty) and not Class.hasOperator("'1'", InstNode.getClass(Type.complexNode(ty)))) algorithm
         node := Type.complexNode(ty);
         for comp in Class.getComponents(InstNode.getClass(node)) loop
           fields := makeOne(InstNode.getType(comp)) :: fields;
         end for;
       then Expression.makeRecord(InstNode.fullPath(node), ty, listReverse(fields));
-      case Type.ARRAY() guard(Type.isRecord(Type.arrayElementType(ty)))
-      then Expression.fillType(ty, makeOne(Type.arrayElementType(ty)));
-      // strings of a record have no derivative
+      case Type.ARRAY() then Expression.fillType(ty, makeOne(Type.arrayElementType(ty)));
+      // strings and enumerations of a record have no derivative
       case Type.STRING() then Expression.STRING("");
+      case Type.ENUMERATION() then Expression.makeEnumLiteral(ty, 1);
       else Expression.makeOne(ty);
     end match;
   end makeOne;
