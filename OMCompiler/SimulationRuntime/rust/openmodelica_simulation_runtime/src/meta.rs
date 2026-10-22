@@ -699,7 +699,7 @@ fn jac_a_info(data: *mut DATA, layout: &Layout) -> Option<openmodelica_sim_meta:
 /// window `build_regions` maps, its results by column.
 fn jac_adj_info(data: *mut DATA, layout: &Layout, n: u32) -> Option<openmodelica_sim_meta::JacAdj> {
     let a = unsafe { crate::data::jac_adj_ptr(data).as_ref()? };
-    let sp = unsafe { a.sparsePattern.as_ref()? };
+    let sp = unsafe { a.sparsePatternT.as_ref()? };
     if a.sizeCols != n as usize || a.sizeRows != n as usize || sp.maxColors == 0 {
         return None;
     }
@@ -712,12 +712,12 @@ fn jac_adj_info(data: *mut DATA, layout: &Layout, n: u32) -> Option<openmodelica
         row_colors[color - 1].push(r as u32);
     }
     let base = crate::data::extra(layout, unsafe { &*(*data).modelData }).jac_adj;
-    let tmp = a.sizeTmpVars as u32;
+    let tmp = a.sizeTmpVarsAdj as u32;
     Some(openmodelica_sim_meta::JacAdj {
         seed_offs: (0..n).map(|k| base + k * 8).collect(),
         result_offs: (0..n).map(|k| base + (n + k) * 8).collect(),
         zero_offs: (n..2 * n + tmp).map(|k| base + k * 8).collect(),
-        has_constant: a.constColEqns.is_some(),
+        has_constant: a.constRowEqns.is_some(),
         row_colors,
     })
 }

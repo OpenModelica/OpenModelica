@@ -690,11 +690,11 @@ pub fn publish_log_streams() {
 /// C's `cscToCsr`: the same pattern by row. `colorCols` is left at the
 /// allocation's zeros -- the caller only reads `leadindex`/`index`.
 #[unsafe(no_mangle)]
-pub extern "C" fn cscToCsr(csc: *const SPARSE_PATTERN, nRows: c_uint, nCols: c_uint) -> *mut SPARSE_PATTERN {
+pub extern "C" fn cscToCsr(csc: *const SPARSE_PATTERN, nRows: c_uint) -> *mut SPARSE_PATTERN {
     let Some(csc) = (unsafe { csc.as_ref() }) else {
         return ptr::null_mut();
     };
-    let (rows, cols, nnz) = (nRows as usize, nCols as usize, csc.nnz as usize);
+    let (rows, cols, nnz) = (nRows as usize, csc.sizeCols as usize, csc.nnz as usize);
     let ap = unsafe { core::slice::from_raw_parts(csc.leadindex, cols + 1) };
     let ai = unsafe { core::slice::from_raw_parts(csc.index, nnz) };
     if ap[0] != 0 || ap[cols] as usize != nnz || ai.iter().any(|&r| r as usize >= rows) {
@@ -769,7 +769,7 @@ pub extern "C" fn computeColumnColoring(sp: *mut SPARSE_PATTERN, nRows: c_uint, 
     }
     sort_unique_sparse_pattern(sp, cols);
     let color_cols = unsafe { core::slice::from_raw_parts_mut(sp.colorCols, cols) };
-    let csr = cscToCsr(sp, nRows, nCols);
+    let csr = cscToCsr(sp, nRows);
     if csr.is_null() {
         // C's fallback: one column per color.
         for (c, slot) in color_cols.iter_mut().enumerate() {

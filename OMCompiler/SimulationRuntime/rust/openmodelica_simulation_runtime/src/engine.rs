@@ -514,17 +514,19 @@ impl SimEngine for CEngine {
             | "functionJacA_constantEqns"
             | "functionJacADJ_column"
             | "functionJacADJ_constantEqns" => {
-                let jac = match name.starts_with("functionJacADJ") {
+                let is_adjoint = name.starts_with("functionJacADJ");
+                let jac = match is_adjoint {
                     true => crate::data::jac_adj_ptr(self.rt.data),
                     false => crate::data::jac_a_ptr(self.rt.data),
                 };
                 let Some(j) = (unsafe { jac.as_ref() }) else {
                     return Ok(());
                 };
-                let f = if name.ends_with("_column") {
-                    j.evalColumn
-                } else {
-                    j.constColEqns
+                let f = match (is_adjoint, name.ends_with("_column")) {
+                    (true, true) => j.evalRow,
+                    (true, false) => j.constRowEqns,
+                    (false, true) => j.evalColumn,
+                    (false, false) => j.constColEqns,
                 };
                 let Some(f) = f else { return Ok(()) };
                 self.publish();
