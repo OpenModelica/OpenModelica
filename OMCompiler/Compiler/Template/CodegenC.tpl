@@ -6533,7 +6533,7 @@ match sparsity
     let constantEqns = (columns |> JAC_COLUMN() =>
       match constantEqns case {} then 'NULL' case _ then '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_constantEqns'
       ;separator="")
-    let evalColumn = '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column'
+    let evalColumn = if SimCodeCodegenUtil.jacobianColumnsAreEmpty(columns) then 'NULL' else '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column'
     <<
     int <%symbolName(modelNamePrefix,"initialResizableAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
     {
@@ -7616,7 +7616,7 @@ match sparsepattern
     let constantEqns = (jacobianColumn |> JAC_COLUMN() =>
       match constantEqns case {} then 'NULL' case _ then '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_constantEqns'
       ;separator="")
-    let evalColumn = '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column'
+    let evalColumn = if SimCodeCodegenUtil.jacobianColumnsAreEmpty(jacobianColumn) then 'NULL' else '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column'
     let sizeCols = listLength(seedVars)
     <<
     OMC_DISABLE_OPT

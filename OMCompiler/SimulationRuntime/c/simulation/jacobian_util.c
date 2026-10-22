@@ -969,9 +969,6 @@ SPARSE_PATTERN* getJacobianCscPattern(JACOBIAN* jac)
   if (jac == NULL) {
     return NULL;
   }
-  if (jac->sparsePattern) {
-    return jac->sparsePattern;
-  }
   if (!jac->sparsePattern && jac->sparsePatternT) {
     jac->sparsePattern = transposeSparsePattern(jac->sparsePatternT, jac->sizeCols);
   }
