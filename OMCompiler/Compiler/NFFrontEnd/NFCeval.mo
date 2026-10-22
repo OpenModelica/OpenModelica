@@ -1200,6 +1200,10 @@ function evalBinaryDiv
   output Expression exp;
 algorithm
   exp := match (exp1, exp2)
+    // first element is divided from nothing. To make sure the right typing is used
+    case (Expression.EMPTY(), _) then evalBinaryDiv(Expression.makeOne(Expression.typeOf(exp2)), exp2, target);
+    case (_, Expression.EMPTY()) then exp1;
+
     // Division by zero
     case (_, _) guard Expression.isZero(exp2)
       algorithm
@@ -1241,10 +1245,6 @@ algorithm
       then Expression.makeArray(exp2.ty,
         Array.map(exp2.elements, function evalBinaryDiv(exp1 = exp1, target = target)),
         literal = exp2.literal);
-
-    // first element is divided from nothing. To make sure the right typing is used
-    case (Expression.EMPTY(), _) then evalBinaryDiv(Expression.makeOne(Expression.typeOf(exp2)), exp2, target);
-    case (_, Expression.EMPTY()) then exp1;
 
     else
       algorithm
