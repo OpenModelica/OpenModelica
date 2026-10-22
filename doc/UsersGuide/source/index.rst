@@ -21,6 +21,8 @@ Generated on |date| at |time|
   packagemanager
   omedit
   languageserver
+  umldiagrams
+  propertyprobes
   plotting
   compiler
   solving

@@ -50,6 +50,7 @@ protected
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import NFFunction.Function;
+  import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
 
@@ -1299,6 +1300,13 @@ protected
           stripped := ComponentRef.stripSubscriptsAll(child);
           if not BVariable.checkCref(stripped, BVariable.isParamOrConst, sourceInfo()) then
             addCrefToSet(stripped, var_crefs);
+          end if;
+        end for;
+
+        // variables in subscripts (e.g. idx in y = val[idx]) are dependencies as well
+        for sub in ComponentRef.subscriptsAllFlat(exp.cref) loop
+          if (Subscript.isIndex(sub) or (Subscript.isSliced(sub) and not Subscript.isWhole(sub))) and not Subscript.isLiteral(sub) then
+            collectPartitioningCrefs(Subscript.toExp(sub), var_crefs);
           end if;
         end for;
       then exp;

@@ -282,7 +282,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFSCodeLookup.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFSCodeCheck.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/UnitAbsynBuilder.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/UnitChecker.mo
 
     # "MidCode";
     ${CMAKE_CURRENT_SOURCE_DIR}/MidCode/MidCode.mo
@@ -425,6 +424,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Parsers/SimpleModelicaParser.mo
 
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/CevalScriptOMSimulator.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Script/ProbeTree.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/Refactor.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/RewriteRules.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/Figaro.mo
@@ -433,8 +433,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/CevalScriptBackend.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/PackageManagement.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Script/MMToJuliaUtil.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Script/MMToJuliaKeywords.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/NFApi.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/Conversion.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/Obfuscate.mo
@@ -454,7 +452,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeUtilShared.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/ReduceDAE.mo
 
-    ${OMC_GENERATED_MO_DIR}/Template/AbsynToJulia.mo
     ${OMC_GENERATED_MO_DIR}/Template/AbsynJLDumpTpl.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenC.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenEmbeddedC.mo

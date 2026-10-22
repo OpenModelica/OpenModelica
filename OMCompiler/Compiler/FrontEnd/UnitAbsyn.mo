@@ -35,7 +35,6 @@
 
 encapsulated package UnitAbsyn
 
-public import DAE;
 public import MMath;
 public import HashTable;
 
@@ -74,56 +73,6 @@ uniontype Unit "A unit is either specified (including type parameters) or unspec
 end Unit;
 
 public
-uniontype UnitTerm "A unit term is either
- - a binary operation, e.g. multiplication, addition, etc.
- - an equation (equality)
- - a location with unique id
- "
-  record ADD "addition ut1+ut2"
-    UnitTerm ut1 "left";
-    UnitTerm ut2 "right";
-    DAE.Exp origExp "for proper error reporting";
-  end ADD;
-
-  record SUB "subtraction ut1-ut2"
-    UnitTerm ut1 "left";
-    UnitTerm ut2 "right";
-    DAE.Exp origExp "for proper error reporting";
-  end SUB;
-
-  record MUL "multiplication, ut1*ut2"
-    UnitTerm ut1 "left";
-    UnitTerm ut2 "right";
-    DAE.Exp origExp "for proper error reporting";
-  end MUL;
-
-  record DIV "division nominator/denominator"
-    UnitTerm ut1 "nominator";
-    UnitTerm ut2 "denominator";
-    DAE.Exp origExp "for proper error reporting";
-  end DIV;
-
-  record  EQN "equation"
-    UnitTerm ut1;
-    UnitTerm ut2;
-    DAE.Exp origExp "for proper error reporting";
-  end EQN;
-
-  record LOC "location"
-    Integer loc "location is an integer(index in vector)";
-    DAE.Exp origExp "for proper error reporting";
-  end LOC;
-
-  record POW "exponentiation"
-      UnitTerm ut1;
-      MMath.Rational exponent "ut^exponent";
-      DAE.Exp origExp "for proper error reporting";
-  end POW;
-end UnitTerm;
-
-public
-type UnitTerms = list<UnitTerm>;
-
 uniontype Store
   record STORE
     array<Option<Unit>> storeVector;
@@ -138,7 +87,6 @@ requires a mapping from variable names to locations. Unit checking can be turned
   record INSTSTORE
     Store store;
     HashTable.HashTable ht;
-    Option<UnitCheckResult> checkResult "when a check is done the result is stored here";
   end INSTSTORE;
 
   record NOSTORE "used to skip unit checking" end NOSTORE;

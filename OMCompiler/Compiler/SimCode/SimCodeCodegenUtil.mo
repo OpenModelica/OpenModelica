@@ -2344,8 +2344,8 @@ public function isSpecialRelation
   output Boolean b;
 algorithm
   b := match rel
-    case DAE.RELATION(exp1 = DAE.CALL(path = Absyn.IDENT("delayZeroCrossing"))) then true;
-    case DAE.RELATION(exp1 = DAE.CALL(path = Absyn.IDENT("spatialDistributionZeroCrossing"))) then true;
+    case DAE.RELATION(exp1 = DAE.CALL(path = Absyn.IDENT("$delayZeroCrossing"))) then true;
+    case DAE.RELATION(exp1 = DAE.CALL(path = Absyn.IDENT("$spatialDistributionZeroCrossing"))) then true;
     else false;
   end match;
 end isSpecialRelation;

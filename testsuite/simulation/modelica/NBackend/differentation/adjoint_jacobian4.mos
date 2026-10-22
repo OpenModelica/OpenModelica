@@ -59,7 +59,7 @@ buildModel(AdjointJacobian4); getErrorString();
 // ### Variable:
 // 	Real z
 // ### Equation:
-// 	[SCAL] (1) z = 0.3333333333333333 * (-(y + $FUN_1)); ($RES_SIM_6)
+// 	[SCAL] (1) z = 0.3333333333333333 * (-($FUN_1 + y)); ($RES_SIM_6)
 //
 // ############################################
 //
@@ -132,7 +132,7 @@ buildModel(AdjointJacobian4); getErrorString();
 // ### Variable:
 // 	Real z
 // ### Equation:
-// 	[SCAL] (1) z = 0.3333333333333333 * (-(y + $FUN_1)); ($RES_SIM_6)
+// 	[SCAL] (1) z = 0.3333333333333333 * (-($FUN_1 + y)); ($RES_SIM_6)
 //
 // ############################################
 //
@@ -304,7 +304,7 @@ buildModel(AdjointJacobian4); getErrorString();
 // ### Variable:
 // 	Real z
 // ### Equation:
-// 	[SCAL] (1) z = -(0.25 * y + v); ($RES_SIM_5)
+// 	[SCAL] (1) z = -(v + 0.25 * y); ($RES_SIM_5)
 //
 // ########################################
 //

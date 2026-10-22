@@ -3,11 +3,13 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 reductionSkips.mos \
 nestedForConnectRange.mos \
+sparsityMatrixResidual.mos \
 forNestedElseIf.mos \
 forSliceRowMajor.mos \
 sliceRangeSparsity.mos \
 scalarDivArray.mos \
 arrayRowScalar.mos \
+emptyArrayTupleArgument.mos \
 algorithmForSubscript.mos \
 eachScalarProduct.mos \
 ifBranchSizes.mos \
@@ -31,10 +33,13 @@ resizableOverride.mos \
 resizableOverrideDerived.mos \
 resizableAliasStart.mos \
 resizablePartialLoops.mos \
+resizableArrayJacobian.mos \
+resizableMergedJacobian.mos \
 resizableLoopBlocks.mos \
 resizableConnectArrays.mos \
 resizableManySizes.mos \
 literalConnects.mos \
+resizableSparseLoop.mos \
 resizableInputs.mos \
 resizableAlgebraicLoops.mos \
 resizableFill.mos \

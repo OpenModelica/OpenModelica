@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 AliasIntegerNonTrivial.mos \
+AliasBoundsNegated.mos \
 AliasBoundsThree.mos \
 Alias.mos \
 Alias2.mos \

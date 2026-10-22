@@ -1,0 +1,61 @@
+// name: resizableMergedJacobian
+// keywords: NewBackend resizable mergeComponents jacobian
+// status: correct
+// cflags: --newBackend --resizableArrays -d=arrayConnect,mergeComponents
+// teardown_command: rm -f resizableMergedJacobian_res.mat
+//
+// The resistors of a distribution grid (ScalableTestSuite's
+// DistributionSystemModelicaIndividual) merged into arrays: the Jacobians of the
+// systems compute those arrays in for-loops of their own.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+parts := "";
+eqs := "";
+for i in 1:5 loop
+  parts := parts + "  Modelica.Electrical.Analog.Basic.Resistor primary_" + String(i) + "(R = R_d1);\n";
+  eqs := eqs + "  connect(primary_" + String(i) + ".n, secondary_" + String(i) + "_1.p);\n";
+  if i < 5 then
+    eqs := eqs + "  connect(primary_" + String(i) + ".n, primary_" + String(i + 1) + ".p);\n";
+  end if;
+  for j in 1:5 loop
+    parts := parts + "  Modelica.Electrical.Analog.Basic.Resistor secondary_" + String(i) + "_" + String(j) + "(R = R_d2);\n"
+                   + "  Modelica.Electrical.Analog.Basic.Resistor load_" + String(i) + "_" + String(j) + "(R = R_l);\n"
+                   + "  Modelica.Electrical.Analog.Basic.Ground ground_" + String(i) + "_" + String(j) + ";\n";
+    eqs := eqs + "  connect(secondary_" + String(i) + "_" + String(j) + ".n, load_" + String(i) + "_" + String(j) + ".p);\n"
+               + "  connect(load_" + String(i) + "_" + String(j) + ".n, ground_" + String(i) + "_" + String(j) + ".p);\n";
+    if j < 5 then
+      eqs := eqs + "  connect(secondary_" + String(i) + "_" + String(j) + ".n, secondary_" + String(i) + "_" + String(j + 1) + ".p);\n";
+    end if;
+  end for;
+end for;
+loadString("model resizableMergedJacobian
+  parameter Real R_l = 1;
+  parameter Real R_d2 = R_l/50;
+  parameter Real R_d1 = R_l/1250;
+" + parts + "  Modelica.Electrical.Analog.Sources.RampVoltage V_source(V = 600, duration = 1);
+  Modelica.Electrical.Analog.Basic.Ground sourceGround;
+equation
+  connect(primary_1.p, V_source.p);
+  connect(sourceGround.p, V_source.n);
+" + eqs + "end resizableMergedJacobian;
+"); getErrorString();
+simulate(resizableMergedJacobian, stopTime = 1); getErrorString();
+abs(val(V_source.i, 1, "resizableMergedJacobian_res.mat") + 11916.123766559253) < 1e-3;
+// Result:
+// true
+// ""
+// ""
+// ""
+//
+// true
+// ""
+// record SimulationResult
+//     resultFile = "resizableMergedJacobian_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'resizableMergedJacobian', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// endResult

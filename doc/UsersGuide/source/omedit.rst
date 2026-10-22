@@ -572,6 +572,45 @@ Move towards the end connector and click when cursor changes to cross cursor.
   :height: 14pt
   :alt: OMEdit connect mode icon
 
+.. _omedit-class-diagram :
+
+Class Diagram
+~~~~~~~~~~~~~
+
+To see the UML class diagram of a class, right-click it in the Libraries
+Browser and choose *Class Diagram*, see :numref:`omedit-class-diagram-menu`. The diagram shows the class, the classes it
+extends and the classes it uses, with their components and modifiers, see
+:ref:`uml-diagrams`. It opens in the Class Diagram window, which has a tab for
+each class.
+
+-  *Depth* sets how many levels of used classes are shown, 0 shows only the
+   class and its base classes.
+
+-  *Show modifiers* shows or hides the modifiers and bindings.
+
+-  *Layout* arranges the classes with the class on top, with the base classes
+   on top, or in rows by inheritance.
+
+-  *Refresh* draws the diagram again, after the class was changed.
+
+-  *Save* saves the diagram as a draw.io file, which can be edited in
+   `draw.io <https://www.drawio.com>`_.
+
+.. figure :: media/omedit-class-diagram-menu.png
+  :name: omedit-class-diagram-menu
+
+  The Class Diagram entry of the Libraries Browser menu.
+
+A click on a class in the diagram opens it, and a click on a line in a class,
+e.g. a component, opens the text view of the class at the line that declares
+it, see :numref:`omedit-class-diagram-figure`.
+
+.. figure :: media/omedit-class-diagram.png
+  :name: omedit-class-diagram-figure
+
+  The class diagram of a model with a redeclared medium. A click on the
+  highlighted component opens the text view of ``R.Pipe`` at line 18.
+
 Simulating a Model
 ------------------
 
@@ -938,6 +977,59 @@ Data Reconciliation
 -  *Correlation Matrix Input File* - correlation matrix file.
 
 -  *Epsilon*
+
+.. _omedit-calibration :
+
+Calibrating an SSP Model
+------------------------
+
+OMSimulator can fit the parameters of an SSP model to reference data, e.g.
+measurements. The problem is a ``Calibration`` activity of the UQ layered
+standard, in a UQ file stored in the SSP: the parameters to fit with their
+initial values and bounds, the simulated variables to compare and a CSV file
+with the reference data. How the fit works and the options it reads from the UQ
+file are described in :ref:`oms3-calibration`.
+
+To calibrate an SSP model that is open in OMEdit, right-click it in the
+Libraries Browser and choose *Calibrate...*, see
+:numref:`omedit-calibrate-menu`. The dialog asks for:
+
+-  *Calibration Activity* - the id of the Calibration activity. Empty means the
+   only Calibration activity of the UQ file.
+
+-  *UQ File* - the UQ file inside the SSP, e.g. ``extra/uq.xml``. Empty means the
+   UQ file the SSP references.
+
+-  *Calibrated Model* - the SSP file the calibrated model is written to, by
+   default ``<model>.calibrated.ssp`` in the working directory.
+
+*Calibrate* exports the model like *Simulate* does and runs
+``OMSimulator --calibrate`` on it. The output of OMSimulator is shown in the
+dialog while it runs, and closing the dialog stops the calibration. The
+calibrated SSP contains the fitted parameter values, as
+``<activity>_calibrated.ssv`` next to the UQ file, and the ``ResultSet`` of the
+activity with the RMSE of each observed variable.
+
+.. figure :: media/omedit-calibrate-menu.png
+  :name: omedit-calibrate-menu
+
+  The Calibrate entry of the Libraries Browser menu of an SSP model.
+
+.. figure :: media/omedit-calibrate-dialog.png
+  :name: omedit-calibrate-dialog
+
+  The calibration of a DC motor model, an SSP with three FMUs, against noisy
+  measurements of its current and speed: the fitted parameters, the RMSE of
+  the observed variables and the calibrated SSP.
+
+The same calibration can be run from the command line:
+
+.. code-block :: bash
+
+  OMSimulator model.ssp --calibrate cal_01 --calibrationOutput calibrated.ssp
+
+Calibration needs the Python packages numpy and scipy. *Calibrate...* is not
+available in the web version of OMEdit.
 
 .. _omedit-2d-plotting :
 

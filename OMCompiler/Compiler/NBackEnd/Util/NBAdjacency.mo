@@ -4088,7 +4088,17 @@ public
         Boolean isTuple;
 
       // add a cref dependency
-      case Expression.CREF() then UnorderedSet.fromList(collectDependenciesCref(exp.cref, depth, map, dep_map, sol_map), ComponentRef.hash, ComponentRef.isEqual);
+      case Expression.CREF() algorithm
+        set := UnorderedSet.fromList(collectDependenciesCref(exp.cref, depth, map, dep_map, sol_map), ComponentRef.hash, ComponentRef.isEqual);
+        // variables in subscripts (e.g. idx in y = val[idx]) have to be known before, but cannot be solved for
+        for sub in ComponentRef.subscriptsAllFlat(exp.cref) loop
+          if (Subscript.isIndex(sub) or (Subscript.isSliced(sub) and not Subscript.isWhole(sub))) and not Subscript.isLiteral(sub) then
+            set2 := collectDependencies(Subscript.toExp(sub), depth, map, dep_map, sol_map, rep_set);
+            Solvability.updateList(UnorderedSet.toList(set2), Solvability.UNSOLVABLE(), sol_map);
+            set := UnorderedSet.union(set, set2);
+          end if;
+        end for;
+      then set;
 
       // add skips for arrays
       case Expression.ARRAY(literal = false) algorithm
@@ -4303,6 +4313,9 @@ public
     list<Subscript> subs;
     list<ComponentRef> scalar_matches;
     Boolean hasSetSub = false;
+    Option<Pointer<Variable>> parent_opt;
+    Pointer<Variable> parent;
+    ComponentRef parent_name;
   algorithm
     for s in ComponentRef.subscriptsAllFlat(cref) loop
       // WHOLE (":") and SLICE (e.g. "1:3") are ordinary, common range subscripts
@@ -4368,6 +4381,25 @@ public
       end for;
     else
       crefs := {};
+      // an element of a record that is an unknown as a whole (e.g. a record parameter
+      // solved by its binding) depends on the record, but cannot be solved for
+      parent_opt := BVariable.getParent(var);
+      while isSome(parent_opt) loop
+        parent := Util.getOption(parent_opt);
+        if BVariable.isArray(parent) then
+          break;
+        end if;
+        parent_name := BVariable.getVarName(parent);
+        if UnorderedMap.contains(parent_name, map) then
+          if not UnorderedMap.contains(parent_name, dep_map) then
+            UnorderedMap.add(parent_name, Dependency.create(ComponentRef.getSubscriptedType(parent_name), depth), dep_map);
+          end if;
+          Solvability.update(parent_name, Solvability.UNSOLVABLE(), sol_map);
+          crefs := {parent_name};
+          break;
+        end if;
+        parent_opt := BVariable.getParent(parent);
+      end while;
     end if;
   end collectDependenciesCref;
 

@@ -3,6 +3,43 @@
 
 use super::*;
 
+thread_local! {
+    static ARRAY_DIMS: std::cell::RefCell<HashMap<String, Vec<u32>>> = std::cell::RefCell::new(HashMap::default());
+}
+
+/// The shapes of the array variables [`scalarize_sim_vars`] expanded, for
+/// [`nls_crefs`], while alive.
+pub(super) struct ArrayDimsScope;
+
+impl ArrayDimsScope {
+    pub(super) fn new(runs: &ArrayRuns) -> ArrayDimsScope {
+        ARRAY_DIMS.with(|d| *d.borrow_mut() = runs.values().map(|r| (r.base.clone(), r.dims.clone())).collect());
+        ArrayDimsScope
+    }
+}
+
+impl Drop for ArrayDimsScope {
+    fn drop(&mut self) {
+        ARRAY_DIMS.with(|d| d.borrow_mut().clear());
+    }
+}
+
+/// The scalar unknowns of a nonlinear system: a whole array of constant size
+/// stands for its elements, as C's `getNumElems` counts them.
+pub(crate) fn nls_crefs(nls: &SimCode::NonlinearSystem) -> Vec<metamodelica::Ref<DAE::ComponentRef>> {
+    let mut out = Vec::new();
+    for cr in lst(&nls.crefs) {
+        let dims = sim_cref_key(cr)
+            .ok()
+            .and_then(|k| ARRAY_DIMS.with(|d| d.borrow().get(&k).cloned()));
+        match dims {
+            Some(dims) => out.extend(row_major_indices(&dims).iter().map(|idx| cref_with_indices(cr, idx))),
+            None => out.push(cr.clone()),
+        }
+    }
+    out
+}
+
 /// Partition a nonlinear system's equations into the inner (torn) constraint
 /// equations and the `SES_RESIDUAL` residual expressions, and its iteration
 /// unknowns. Shared by [`collect_nls_jobs`] (which counts unknowns) and
@@ -61,7 +98,7 @@ pub(super) fn nls_parts(
             _ => inner.push(e.clone()),
         }
     }
-    let iter_vars: Vec<metamodelica::Ref<DAE::ComponentRef>> = lst(&nlsystem.crefs).cloned().collect();
+    let iter_vars = nls_crefs(nlsystem);
     if residuals.is_empty() {
         // An inverse algorithm is the system's lone equation and its own residual.
         if let [e] = inner.as_slice() {
@@ -131,6 +168,7 @@ pub(super) fn collect_nls_jobs(
     nominal_of: &HashMap<String, (f64, f64, f64)>,
     attr_targets: &mut AttrTargetMap,
     dyn_scratch: &mut DynScratch,
+    mut sizes: Option<&mut SizeParams>,
 ) -> (
     Vec<metamodelica::Ref<SimCode::NonlinearSystem>>,
     HashMap<i32, NlsJob>,
@@ -175,12 +213,19 @@ pub(super) fn collect_nls_jobs(
                 if jobs.contains_key(&nlSystem.index) {
                     continue;
                 }
-                if let Some(job) = dyn_scratch.nls_job(nlSystem, systems.len() as u32, casual) {
+                if let Some(job) = dyn_scratch.nls_job(
+                    nlSystem,
+                    systems.len() as u32,
+                    casual,
+                    sizes.as_deref_mut(),
+                    &mut patterns,
+                    &mut pat_off,
+                ) {
                     jobs.insert(nlSystem.index, job);
                     systems.push(nlSystem.clone());
                     continue;
                 }
-                let n = lst(&nlSystem.crefs).count() as u32;
+                let n = nls_crefs(nlSystem).len() as u32;
                 let mut has_jac = nls_jac_usable(nlSystem);
                 // C's `initializeNonlinearSystemData` shape check.
                 if let Some((rows, cols)) = nls_jac_dims(nlSystem) {
@@ -256,6 +301,7 @@ pub(super) fn collect_nls_jobs(
                         casual,
                         dyn_n: None,
                         bounds_off: 0,
+                        dyn_pat: None,
                     },
                 );
                 if nnz != 0 {
@@ -263,7 +309,7 @@ pub(super) fn collect_nls_jobs(
                 }
                 hist_off += crate::CodegenWasmJitFunctions::nls_hist_bytes(n);
                 nominal_off += 8 * n;
-                for cr in lst(&nlSystem.crefs) {
+                for cr in &nls_crefs(nlSystem) {
                     let key = resolve_sim_key(cr, |k| nominal_of.contains_key(k)).ok();
                     let (nom, lo, hi) =
                         key.as_ref()
@@ -330,7 +376,7 @@ pub(super) fn nls_iteration_keys(eq_lists: &[&[metamodelica::Ref<SimCode::SimEqS
             continue;
         };
         for sys in std::iter::once(nlSystem).chain(alternativeTearing.as_ref()) {
-            for cr in lst(&sys.crefs) {
+            for cr in &nls_crefs(sys) {
                 keys.extend(sim_cref_key(cr).ok());
                 keys.extend(flat_sim_key(cr));
             }
@@ -480,43 +526,75 @@ pub(super) fn emit_nls_start(
 /// region after the layout's end (`base`), sized `size`, whose defaults `fills`
 /// writes.
 pub(crate) struct DynScratch {
-    /// Each runtime-sized real array by key, with its element count.
-    pub(crate) lens: HashMap<String, Sz>,
+    /// Each runtime-sized real array by key, with its dimensions.
+    pub(crate) dims: HashMap<String, Vec<Sz>>,
     pub(crate) base: Sz,
     pub(crate) size: Sz,
     pub(crate) fills: Vec<(SimOff, Sz, ConstSlot, u32)>,
+    /// The analytic Jacobians of the runtime-sized systems, by system index.
+    pub(crate) jacs: HashMap<i32, DynJac>,
+}
+
+/// The workspace of a runtime-sized system's analytic Jacobian.
+pub(crate) struct DynJac {
+    pub(crate) seeds: SimOff,
+    pub(crate) results: SimOff,
+    /// Each variable of the Jacobian's equations by key, where it starts and its
+    /// dimensions.
+    pub(crate) vars: Vec<(String, SimOff, Vec<Sz>)>,
 }
 
 impl DynScratch {
     pub(crate) fn new(dynv: &DynVars, base: Sz) -> Result<DynScratch> {
-        let mut lens = HashMap::default();
+        let mut dims = HashMap::default();
         for dv in dynv.states.iter().chain(&dynv.ders).chain(&dynv.real_algs()) {
-            lens.insert(sim_cref_key(&dv.sv.name)?, dv.len());
+            dims.insert(sim_cref_key(&dv.sv.name)?, dv.dims.clone());
         }
         Ok(DynScratch {
-            lens,
+            dims,
             base,
             size: Sz::lit(0),
             fills: Vec::new(),
+            jacs: HashMap::default(),
         })
     }
 
     fn take(&mut self, bytes: Sz) -> Option<SimOff> {
-        let off = crate::CodegenWasmJitFunctions::sizes::sim_offset(&(self.base.clone() + self.size.clone())).ok()?;
-        self.size = self.size.clone() + bytes;
-        Some(off)
+        crate::CodegenWasmJitFunctions::sizes::sim_offset(&self.take_sz(bytes)).ok()
     }
 
-    /// The job of a system whose unknowns include a runtime-sized array, solved
-    /// with a numerical Jacobian; `None` for any other system.
-    fn nls_job(&mut self, nls: &SimCode::NonlinearSystem, k: u32, casual: bool) -> Option<NlsJob> {
-        let mut n = Sz::lit(0);
-        for cr in lst(&nls.crefs) {
-            n = n + sim_cref_key(cr)
-                .ok()
-                .and_then(|key| self.lens.get(&key).cloned())
-                .unwrap_or(Sz::lit(1));
-        }
+    fn take_sz(&mut self, bytes: Sz) -> Sz {
+        let at = self.base.clone() + self.size.clone();
+        self.size = self.size.clone() + bytes;
+        at
+    }
+
+    /// The job of a system whose unknowns include a runtime-sized array. Where
+    /// the runtime can expand its sparsity, it is solved over it, with the
+    /// analytic Jacobian where that lowers.
+    #[allow(clippy::too_many_arguments)]
+    fn nls_job(
+        &mut self,
+        nls: &SimCode::NonlinearSystem,
+        k: u32,
+        casual: bool,
+        sizes: Option<&mut SizeParams>,
+        patterns: &mut Vec<i32>,
+        pat_off: &mut u32,
+    ) -> Option<NlsJob> {
+        let mut unknowns: Vec<(Option<String>, Vec<Sz>)> = nls_crefs(nls)
+            .iter()
+            .map(|cr| {
+                let key = sim_cref_key(cr).ok();
+                let dims = key.as_ref().and_then(|k| self.dims.get(k).cloned()).unwrap_or_default();
+                (key, dims)
+            })
+            .collect();
+        // The solver's `x`: the scalars, then the arrays (`build_nls_fns`).
+        unknowns.sort_by_key(|(_, dims)| !dims.is_empty());
+        let n = unknowns.iter().fold(Sz::lit(0), |n, (_, dims)| {
+            n + dims.iter().fold(Sz::lit(1), |a, d| a * d.clone())
+        });
         if n.is_const() {
             return None;
         }
@@ -528,21 +606,84 @@ impl DynScratch {
         self.fills.push((bounds_off, n.clone(), ConstSlot::f64(-f64::MAX), 16));
         self.fills
             .push((bounds_off + 8, n.clone(), ConstSlot::f64(f64::MAX), 16));
+        let sym = sizes.zip(nls.jacobianMatrix.as_ref()).and_then(|(sizes, jm)| {
+            let unknowns = unknowns
+                .into_iter()
+                .map(|(k, d)| Some((k?, d)))
+                .collect::<Option<Vec<_>>>()?;
+            let jac = sym_nls_jac(jm, unknowns, sizes)?;
+            let vars = sym_nls_jac_vars(jm, &jac, sizes);
+            Some((jac.pattern, vars, sizes.params.len() as u32))
+        });
+        let (dyn_pat, jac) = match sym {
+            Some((pat, vars, n_params)) => {
+                let mut bytes = Vec::new();
+                openmodelica_sim_meta::sym_sparsity::put(&mut bytes, &Some(pat));
+                let sym_len = bytes.len() as u32;
+                bytes.resize(bytes.len().next_multiple_of(4), 0);
+                patterns.extend(
+                    bytes
+                        .chunks_exact(4)
+                        .map(|w| i32::from_le_bytes([w[0], w[1], w[2], w[3]])),
+                );
+                let sym_off = *pat_off;
+                *pat_off += bytes.len() as u32;
+                let slot = self.take(Sz::lit(16 + 8 * n_params as i64))?;
+                let jac = vars.and_then(|vars| self.jac_workspace(&n, vars));
+                (
+                    Some(DynPattern {
+                        slot,
+                        sym_off,
+                        sym_len,
+                        n_params,
+                    }),
+                    jac,
+                )
+            }
+            None => (None, None),
+        };
+        let has_jac = jac.is_some();
+        if let Some(jac) = jac {
+            self.jacs.insert(nls.index, jac);
+        }
         Some(NlsJob {
             k,
             n: 0,
             eq_index: nls.index as u32,
             hist_off,
             nominal_off,
-            has_jac: false,
+            has_jac,
             mixed: nls.mixedSystem,
             nnz: 0,
             pat_off: 0,
-            sparse_default: false,
+            sparse_default: has_jac,
             homotopy_support: nls.homotopySupport,
             casual,
             dyn_n: Some(crate::CodegenWasmJitFunctions::sizes::size_entry(&n).ok()?),
             bounds_off,
+            dyn_pat,
+        })
+    }
+
+    /// The seed and result vectors of `n` elements, and a region for each other
+    /// variable.
+    fn jac_workspace(&mut self, n: &Sz, vars: Vec<(String, JacPlace, Vec<Sz>)>) -> Option<DynJac> {
+        use crate::CodegenWasmJitFunctions::sizes::sim_offset;
+        let seeds = self.take_sz(n.clone() * 8);
+        let results = self.take_sz(n.clone() * 8);
+        let mut out = Vec::with_capacity(vars.len());
+        for (key, place, dims) in vars {
+            let at = match place {
+                JacPlace::Seed(base) => seeds.clone() + base * 8,
+                JacPlace::Result(base) => results.clone() + base * 8,
+                JacPlace::Tmp => self.take_sz(dims.iter().fold(Sz::lit(8), |a, d| a * d.clone())),
+            };
+            out.push((key, sim_offset(&at).ok()?, dims));
+        }
+        Some(DynJac {
+            seeds: sim_offset(&seeds).ok()?,
+            results: sim_offset(&results).ok()?,
+            vars: out,
         })
     }
 }

@@ -61,18 +61,18 @@ simulate(SingleBeltInitialize2, stopTime=0.1, simflags="-lv=LOG_EVENTS"); getErr
 //     resultFile = "SingleBeltInitialize1_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SingleBeltInitialize1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
 //     messages = "LOG_EVENTS        | info    | status of relations at time=0
-// |                 | |       | | [1] (pre: false) false = spatialDistributionZeroCrossing(0, 0, x, true)
+// |                 | |       | | [1] (pre: false) false = $spatialDistributionZeroCrossing(0, 0, x, true)
 // LOG_EVENTS        | info    | status of zero crossings at time=0
-// |                 | |       | | [1] (pre:  0)  1 = spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
+// |                 | |       | | [1] (pre:  0)  1 = $spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_EVENTS        | info    | state event at time=3.33076252011e-17
-// |                 | |       | | [1] spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
+// |                 | |       | | [1] $spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
 // LOG_EVENTS        | info    | state event at time=0.0557
-// |                 | |       | | [1] spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
+// |                 | |       | | [1] $spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
 // LOG_EVENTS        | info    | state event at time=0.0765433
-// |                 | |       | | [1] spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
+// |                 | |       | | [1] $spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
 // LOG_EVENTS        | info    | state event at time=0.09
-// |                 | |       | | [1] spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
+// |                 | |       | | [1] $spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
@@ -81,18 +81,18 @@ simulate(SingleBeltInitialize2, stopTime=0.1, simflags="-lv=LOG_EVENTS"); getErr
 //     resultFile = "SingleBeltInitialize2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SingleBeltInitialize2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
 //     messages = "LOG_EVENTS        | info    | status of relations at time=0
-// |                 | |       | | [1] (pre: false) false = spatialDistributionZeroCrossing(0, 0, x, false)
+// |                 | |       | | [1] (pre: false) false = $spatialDistributionZeroCrossing(0, 0, x, false)
 // LOG_EVENTS        | info    | status of zero crossings at time=0
-// |                 | |       | | [1] (pre:  0)  1 = spatialDistributionZeroCrossing(0, 0, x, false) > 0.0
+// |                 | |       | | [1] (pre:  0)  1 = $spatialDistributionZeroCrossing(0, 0, x, false) > 0.0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_EVENTS        | info    | state event at time=0.01
-// |                 | |       | | [1] spatialDistributionZeroCrossing(0, 0, x, false) > 0.0
+// |                 | |       | | [1] $spatialDistributionZeroCrossing(0, 0, x, false) > 0.0
 // LOG_EVENTS        | info    | state event at time=0.0234567
-// |                 | |       | | [1] spatialDistributionZeroCrossing(0, 0, x, false) > 0.0
+// |                 | |       | | [1] $spatialDistributionZeroCrossing(0, 0, x, false) > 0.0
 // LOG_EVENTS        | info    | state event at time=0.0443
-// |                 | |       | | [1] spatialDistributionZeroCrossing(0, 0, x, false) > 0.0
+// |                 | |       | | [1] $spatialDistributionZeroCrossing(0, 0, x, false) > 0.0
 // LOG_EVENTS        | info    | state event at time=0.1
-// |                 | |       | | [1] spatialDistributionZeroCrossing(0, 0, x, false) > 0.0
+// |                 | |       | | [1] $spatialDistributionZeroCrossing(0, 0, x, false) > 0.0
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

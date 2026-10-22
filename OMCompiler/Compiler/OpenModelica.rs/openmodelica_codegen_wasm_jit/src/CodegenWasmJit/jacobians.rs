@@ -359,17 +359,46 @@ pub(super) fn build_jac_fns(
 }
 
 /// The matrix's own `generic_loop_calls` (C's `genericCall_jac_<i>`) in front of
-/// the model's.
-fn with_jac_calls(var_map: &SimVarMap, jm: &SimCode::JacobianMatrix) -> SimVarMap {
-    let mut out = var_map.clone();
-    if lst(&jm.generic_loop_calls).next().is_some() {
-        let mut calls = (*out.generic_calls).clone();
-        for c in lst(&jm.generic_loop_calls) {
-            calls.insert(generic_call_index(c), c.clone());
-        }
-        out.generic_calls = Arc::new(calls);
+/// `calls`: a Jacobian numbers its calls from 0, as the model does.
+fn jac_generic_calls(
+    calls: &Arc<HashMap<i32, SimCode::SimGenericCall>>,
+    jm: &SimCode::JacobianMatrix,
+) -> Arc<HashMap<i32, SimCode::SimGenericCall>> {
+    if lst(&jm.generic_loop_calls).next().is_none() {
+        return calls.clone();
     }
+    let mut out = (**calls).clone();
+    for c in lst(&jm.generic_loop_calls) {
+        out.insert(generic_call_index(c), c.clone());
+    }
+    Arc::new(out)
+}
+
+/// `var_map` with the matrix's generic calls in front of the model's.
+pub(super) fn with_jac_calls(var_map: &SimVarMap, jm: &SimCode::JacobianMatrix) -> SimVarMap {
+    let mut out = var_map.clone();
+    out.generic_calls = jac_generic_calls(&var_map.generic_calls, jm);
     out
+}
+
+/// `lower` a part of `jm` inside the function `ctx` builds, with the matrix's
+/// generic calls in front of the function's.
+pub(super) fn lower_with_jac_calls(
+    ctx: &mut FnCtx,
+    jm: &SimCode::JacobianMatrix,
+    lower: impl FnOnce(&mut FnCtx) -> Result<()>,
+) -> Result<()> {
+    let sim = ctx
+        .sim
+        .as_mut()
+        .ok_or("CodegenWasmJit: a Jacobian outside a simulation function")?;
+    let calls = jac_generic_calls(&sim.generic_calls, jm);
+    let saved = std::mem::replace(&mut sim.generic_calls, calls);
+    let res = lower(ctx);
+    if let Some(sim) = ctx.sim.as_mut() {
+        sim.generic_calls = saved;
+    }
+    res
 }
 
 /// Build one `linearJac<X>(SimData*)`: C's `functionJacX` loop moved into the
@@ -678,6 +707,7 @@ pub(super) fn build_nls_fns(
     literals: &mut Literals,
     jac_info: Option<&NlsJacInfo>,
     strict: Option<NlsJob>,
+    dyn_jac: Option<(&DynJac, NlsJob)>,
     pool: &mut ChunkPool,
     residual_ty: u32,
 ) -> Result<(NlsResidualFn, we::Function, Option<we::Function>, Option<we::Function>)> {
@@ -704,8 +734,13 @@ pub(super) fn build_nls_fns(
             });
             continue;
         }
-        let slot = iteration_var_slot(&vars, &var_map.start_slots, cr)?
-            .ok_or("CodegenWasmJit: nonlinear-system unknown has no slot")?;
+        let Some(slot) = iteration_var_slot(&vars, &var_map.start_slots, cr)? else {
+            record_error(format!(
+                "CodegenWasmJit: nonlinear-system unknown `{}` has no slot",
+                cref_display(cr)?
+            ));
+            return Err("CodegenWasmJit: nonlinear-system unknown has no slot");
+        };
         slots.push(slot);
     }
     let mk_sim = || sim_ctx(var_map);
@@ -742,6 +777,9 @@ pub(super) fn build_nls_fns(
     // jac(sim_data, x, jptr): column-major `n×n` analytic Jacobian, emitted only
     // when the system carries a usable symbolic Jacobian.
     let jac = match (&nlsystem.jacobianMatrix, jac_info.filter(|_| blocks.is_empty())) {
+        (Some(jm), _) if let Some((dj, job)) = dyn_jac => Some(build_dyn_jac_fn(
+            jm, dj, job, &slots, &blocks, &inner, var_map, eq_index, by_name, literals,
+        )?),
         (Some(jm), Some(info)) => {
             let col = lst(&jm.columns)
                 .next()
@@ -760,16 +798,20 @@ pub(super) fn build_nls_fns(
                 Ok(())
             };
             let mut lower_constant = |c: &mut FnCtx| -> Result<()> {
-                for eq in &constant_eqns {
-                    lower_equation(c, eq, eq_index)?;
-                }
-                Ok(())
+                lower_with_jac_calls(c, jm, |c| {
+                    for eq in &constant_eqns {
+                        lower_equation(c, eq, eq_index)?;
+                    }
+                    Ok(())
+                })
             };
             let mut lower_column = |c: &mut FnCtx| -> Result<()> {
-                for eq in &column_eqns {
-                    lower_equation(c, eq, eq_index)?;
-                }
-                Ok(())
+                lower_with_jac_calls(c, jm, |c| {
+                    for eq in &column_eqns {
+                        lower_equation(c, eq, eq_index)?;
+                    }
+                    Ok(())
+                })
             };
             // Colored CSC assembly (C's `evalJacobian`) whenever the symbolic
             // sparsity is available: `#colors` column-equation passes instead of
@@ -811,6 +853,62 @@ pub(super) fn build_nls_fns(
         })
         .transpose()?;
     Ok((residual, load, jac, strict_fn))
+}
+
+/// `jac(sim_data, x, values)` of a runtime-sized system, over its own workspace.
+#[allow(clippy::too_many_arguments)]
+fn build_dyn_jac_fn(
+    jm: &SimCode::JacobianMatrix,
+    dj: &DynJac,
+    job: NlsJob,
+    slots: &[IterSlot],
+    blocks: &[IterBlock],
+    inner: &[metamodelica::Ref<SimCode::SimEqSystem>],
+    var_map: &SimVarMap,
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Literals,
+) -> Result<we::Function> {
+    let (Some(pat), Some(n_entry)) = (job.dyn_pat, job.dyn_n) else {
+        return Err("CodegenWasmJit: a runtime-sized Jacobian without its pattern");
+    };
+    let col = lst(&jm.columns)
+        .next()
+        .ok_or("CodegenWasmJit: nonlinear-system Jacobian has no column")?;
+    let mut vm = var_map.clone();
+    for (key, off, dims) in &dj.vars {
+        register_jac_var(&mut vm, key, *off, dims)?;
+    }
+    let lower = |c: &mut FnCtx, eqs: &List<metamodelica::Ref<SimCode::SimEqSystem>>| -> Result<()> {
+        for eq in lst(eqs) {
+            lower_equation(c, eq, eq_index)?;
+        }
+        Ok(())
+    };
+    let mut ctx = FnCtx::new_sim_params(sim_ctx(&vm), by_name, literals, 3);
+    emit_nls_jac_dyn_body(
+        &mut ctx,
+        slots,
+        blocks,
+        dj.seeds,
+        dj.results,
+        pat,
+        n_entry,
+        &mut |c| {
+            for eq in inner {
+                lower_equation(c, eq, eq_index)?;
+            }
+            Ok(())
+        },
+        &mut |c| lower_with_jac_calls(c, jm, |c| lower(c, &col.constantEqns)),
+        &mut |c| lower_with_jac_calls(c, jm, |c| lower(c, &col.columnEqns)),
+    )?;
+    let (locals, instrs) = ctx.finish_sim();
+    let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
+    for i in &instrs {
+        func.instruction(i);
+    }
+    Ok(func)
 }
 
 /// A residual callback: one function, or [`ChunkPool`] positions a thunk calls in

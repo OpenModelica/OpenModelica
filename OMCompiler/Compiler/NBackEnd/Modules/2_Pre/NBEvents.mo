@@ -1552,7 +1552,7 @@ protected
         end for;
         // save all the new stuff in our algorithm
         alg.statements  := listReverse(new_stmts);
-        eqn.alg         := Algorithm.setInputsOutputs(alg);
+        eqn.alg         := Equation.setAlgorithmInputsOutputs(alg);
         eqn.size        := sum(ComponentRef.size(out, true) for out in eqn.alg.outputs);
       then eqn;
 
@@ -1573,7 +1573,7 @@ protected
           func        = function collectEvents(bucket_ptr = bucket_ptr, variables = variables, funcMap = funcMap),
           funcExp     = collector,
           funcCrefOpt = NONE(),
-          mapFunc     = Expression.mapReverse);
+          mapFunc     = Expression.fakeMap);
       then eqn;
 
       else Equation.map(eqn, collector, NONE(), Expression.fakeMap);
@@ -1793,7 +1793,7 @@ protected
       // when statements of algorithms need a plain condition variable for the edge detection
       case Equation.ALGORITHM(alg = alg) algorithm
         alg.statements := list(simplifyWhenConditionStmt(stmt, idx, cnt, vars_ptr, eqns_ptr) for stmt in alg.statements);
-        eqn.alg := Algorithm.setInputsOutputs(alg);
+        eqn.alg := Equation.setAlgorithmInputsOutputs(alg);
       then eqn;
 
       else eqn;

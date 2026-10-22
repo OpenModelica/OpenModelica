@@ -636,18 +636,7 @@ fn scalarize_var_list(
             continue;
         }
         let first = out.len();
-        for idx in row_major_indices(&dims) {
-            let mut e = (**sv).clone();
-            e.name = cref_with_indices(&sv.name, &idx);
-            e.numArrayElement = metamodelica::nil();
-            e.arrayCref = None;
-            e.aliasvar = reindex_aliasvar(&sv.aliasvar, &idx);
-            e.initialValue = index_attr(&sv.initialValue, &idx);
-            e.nominalValue = index_attr(&sv.nominalValue, &idx);
-            e.minValue = index_attr(&sv.minValue, &idx);
-            e.maxValue = index_attr(&sv.maxValue, &idx);
-            out.push(metamodelica::Ref::new(e));
-        }
+        out.extend(sim_var_elements(sv, &dims));
         if let (Some(e), Some(base)) = (out.get(first), run_base(&sv.name)) {
             runs.insert(
                 run_key(e),
@@ -660,6 +649,49 @@ fn scalarize_var_list(
         }
     }
     Ok(out.into_iter().collect::<List<metamodelica::Ref<SimCodeVar::SimVar>>>())
+}
+
+/// The row-major scalar elements of the array variable `sv` of shape `dims`.
+fn sim_var_elements(sv: &SimCodeVar::SimVar, dims: &[u32]) -> Vec<metamodelica::Ref<SimCodeVar::SimVar>> {
+    row_major_indices(dims)
+        .into_iter()
+        .map(|idx| {
+            let mut e = sv.clone();
+            e.name = cref_with_indices(&sv.name, &idx);
+            e.numArrayElement = metamodelica::nil();
+            e.arrayCref = None;
+            e.aliasvar = reindex_aliasvar(&sv.aliasvar, &idx);
+            e.initialValue = index_attr(&sv.initialValue, &idx);
+            e.nominalValue = index_attr(&sv.nominalValue, &idx);
+            e.minValue = index_attr(&sv.minValue, &idx);
+            e.maxValue = index_attr(&sv.maxValue, &idx);
+            metamodelica::Ref::new(e)
+        })
+        .collect()
+}
+
+/// A whole-array Jacobian variable (`--simCodeScalarize=false`) as its elements,
+/// numbered from its own index as C lays them out in `tmpVars`/`resultVars`; any
+/// other variable, or one sized at runtime, as itself.
+pub(super) fn jac_var_elements(
+    sv: &metamodelica::Ref<SimCodeVar::SimVar>,
+) -> Vec<metamodelica::Ref<SimCodeVar::SimVar>> {
+    let whole = matches!(&*sv.type_, DAE::Type::T_ARRAY { .. })
+        && run_base(&sv.name).is_some()
+        && !openmodelica_util::Flags::getConfigBool(openmodelica_util::Flags::SIM_CODE_SCALARIZE.clone())
+            .unwrap_or(true);
+    let dims: Option<Vec<u32>> = lst(&sv.numArrayElement).map(|d| d.trim().parse().ok()).collect();
+    match dims {
+        Some(dims) if whole && !dims.is_empty() => sim_var_elements(sv, &dims)
+            .into_iter()
+            .zip(sv.index..)
+            .map(|(mut e, index)| {
+                metamodelica::Ref::make_mut(&mut e).index = index;
+                e
+            })
+            .collect(),
+        _ => vec![sv.clone()],
+    }
 }
 
 /// The key the elements of an array variable named `cr` extend with their
@@ -1656,6 +1688,25 @@ fn register_dyn(map: &mut SimVarMap, dv: &DynVar, slot: SimSlot, start_off: Opti
         Arc::make_mut(&mut map.start_slots).insert_dyn_array(key.clone(), StartSlot(s), dims.clone());
     }
     add_groups(map, &key, dims, slot, (slot.pre != 0).then_some(slot.pre))
+}
+
+/// Register a Real variable of a runtime-sized system's Jacobian at `off`.
+pub(super) fn register_jac_var(map: &mut SimVarMap, key: &str, off: SimOff, dims: &[Sz]) -> Result<()> {
+    let slot = SimSlot {
+        off,
+        wty: WTy::F64,
+        negate: Neg::None,
+        heap: false,
+        pre: 0,
+    };
+    if dims.is_empty() {
+        Arc::make_mut(&mut map.vars).slots.insert(key.to_string(), slot);
+        return Ok(());
+    }
+    Arc::make_mut(&mut map.vars)
+        .slots
+        .insert_dyn_array(key.to_string(), slot, dims.to_vec());
+    add_groups(map, key, dims.to_vec(), slot, None)
 }
 
 /// Register an [`ArrayRun`] whole: its element slots start at `off`.

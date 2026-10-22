@@ -2076,7 +2076,7 @@ protected
 
       // if linear factor is negative => swap min and max. skip discontinuous and record types
       ty := Expression.typeOf(rhs);
-      if not Type.isContinuous(ty) or not Type.isInteger(Type.elementType(ty)) or Type.isRecord(ty) then
+      if Type.isRecord(ty) or not (Type.isContinuous(ty) or Type.isInteger(Type.elementType(ty))) then
         swap_min_max := false;
       else
         args := Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE);

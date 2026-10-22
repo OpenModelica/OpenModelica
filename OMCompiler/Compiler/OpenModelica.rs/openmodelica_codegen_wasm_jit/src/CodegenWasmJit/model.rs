@@ -93,6 +93,7 @@ pub(super) fn build_sim_model(
         None
     };
     let (scalarized_vars, array_runs, dyn_vars) = scalarize_sim_vars(&mi.vars, size_params.as_mut())?;
+    let _array_dims = ArrayDimsScope::new(&array_runs);
     let vars = &scalarized_vars;
     let states: Vec<&SimCodeVar::SimVar> = svs(&vars.stateVars).collect();
 
@@ -604,6 +605,7 @@ pub(super) fn build_sim_model(
             &nls_nominal_map,
             &mut attr_targets,
             &mut dyn_scratch,
+            size_params.as_mut(),
         );
     // Dynamic tearing: casual set index -> strict set index.
     let nls_strict_of = nls_strict_map(&nls_scan.iter().map(|l| l.as_slice()).collect::<Vec<_>>());
@@ -1118,7 +1120,7 @@ pub(super) fn build_sim_model(
     let nls_vars = nls_systems
         .iter()
         .map(|sys| {
-            let names = lst(&sys.crefs).map(cref_display).collect::<Result<Vec<_>>>()?;
+            let names = nls_crefs(sys).iter().map(cref_display).collect::<Result<Vec<_>>>()?;
             // C's `eqn_simcode_indices` runs over the torn equations first; only
             // the `size` residual ones at the end are read back.
             let eqns: Vec<i32> = lst(&sys.eqs).map(|e| eq_index_of(e)).collect();
@@ -1417,6 +1419,10 @@ pub(super) fn build_sim_model(
                 &mut literals,
                 nls_jac_infos.get(&sys.index),
                 strict,
+                dyn_scratch
+                    .jacs
+                    .get(&sys.index)
+                    .zip(var_map.nls_jobs.get(&sys.index).copied()),
                 &mut pool,
                 nls_types.map(|(residual, _, _)| residual).unwrap_or_default(),
             )?;
@@ -1964,17 +1970,15 @@ pub(super) fn build_sim_model(
     // destructors, nls callbacks, initSample, zc, statesetJac,
     // lambda0, …, then the closure thunks and `start` below).
     functions.function(eqfn_type); // callExternalObjectDestructors
-    if let Some((residual_type, load_type, strict_type)) = nls_types {
-        for sys in &nls_systems {
+    if let (Some((residual_type, load_type, strict_type)), Some((fn_indices, _))) = (nls_types, &nls_wiring) {
+        for (_, _, jac, strict) in fn_indices {
             functions.function(residual_type);
             functions.function(load_type);
-            // The analytic-Jacobian callback (3 params, like the residual) is emitted
-            // and type-listed only for systems that have a usable symbolic Jacobian —
-            // matching the conditional body push in `nls_wiring`.
-            if nls_jac_infos.contains_key(&sys.index) {
+            // The analytic-Jacobian callback has the residual's 3 params.
+            if jac.is_some() {
                 functions.function(residual_type);
             }
-            if nls_strict_of.contains_key(&sys.index) {
+            if strict.is_some() {
                 functions.function(strict_type);
             }
         }
@@ -2053,7 +2057,7 @@ pub(super) fn build_sim_model(
             f.instruction(&we::Instruction::Call(i));
         }
         if let Some((fn_indices, _)) = &nls_wiring {
-            let sizes: Vec<u32> = nls_systems.iter().map(|s| lst(&s.crefs).count() as u32).collect();
+            let sizes: Vec<u32> = nls_systems.iter().map(|s| nls_crefs(s).len() as u32).collect();
             emit_nls_start(
                 &mut f,
                 fn_indices,

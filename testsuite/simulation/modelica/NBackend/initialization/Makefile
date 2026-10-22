@@ -1,8 +1,11 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+startCycleJacobian.mos \
 attributeInitParameter.mos \
+whenAlgorithmArray.mos \
 whenAlgorithmPre.mos \
+whenAlgorithmPreCondition.mos \
 experimental_initialSimplified.mos \
 discreteCallArgument.mos \
 functionOutputStart.mos \

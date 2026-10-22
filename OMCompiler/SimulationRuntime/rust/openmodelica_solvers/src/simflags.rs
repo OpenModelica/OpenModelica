@@ -430,7 +430,7 @@ pub struct SimFlags {
 impl SimFlags {
     /// The value of a `-gb*` flag, or `None` when it was not given.
     pub fn gb_flag(&self, name: &str) -> Option<String> {
-        self.gb.iter().find(|(n, _)| n == name).map(|(_, v)| v.clone())
+        self.gb.iter().rev().find(|(n, _)| n == name).map(|(_, v)| v.clone())
     }
 
     /// Whether a value-less `-gb*` flag was given.
@@ -2085,6 +2085,12 @@ mod tests {
                 ("c".to_string(), "false".to_string())
             ]
         );
+    }
+
+    #[test]
+    fn repeated_gb_flag_keeps_the_last_value() {
+        let f = parse(&argv(&["-gbm=rungekuttaSsc", "-gbm", "radauIIA3"])).expect("parses");
+        assert_eq!(f.gb_flag("gbm").as_deref(), Some("radauIIA3"));
     }
 
     #[test]

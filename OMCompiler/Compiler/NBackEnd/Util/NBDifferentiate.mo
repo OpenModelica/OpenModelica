@@ -1143,8 +1143,9 @@ public
 
       // Types: (ALL)
       // differentiate start cref => 0
+      // start variables solved in an algebraic loop of the initial system are inner variables of its jacobian.
       case (Expression.CREF(), _, _)
-        guard(BVariable.isStart(var_ptr))
+        guard(BVariable.isStart(var_ptr) and not isJacobianUnknown(exp.cref, diffArguments))
       then (Expression.makeZero(exp.ty), diffArguments);
 
       // ToDo: Records, Arrays, WILD (?)
