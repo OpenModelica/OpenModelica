@@ -2441,7 +2441,8 @@ algorithm
       list<DAE.Exp> e1lst, e2lst;
       SimCode.SimEqSystem simeqn_complex;
       list<SimCode.SimEqSystem> eqSystlst;
-      list<tuple<DAE.Exp, DAE.Exp>> exptl;
+      list<tuple<DAE.Exp, DAE.Exp>> exptl, constPairs;
+      list<DAE.Exp> explCref;
       Absyn.Path path, rpath;
       String ident, s, s1, s2;
 
@@ -2597,7 +2598,23 @@ algorithm
       tp := Expression.typeof(inExp);
       ident := AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
       cr := ComponentReferenceBasics.makeCrefIdent("$TMP_" + ident + intString(eq_idx), tp, {});
-      crexplst := List.map1(expl, Expression.generateCrefsExpFromExp, cr);
+      // a constant output, (1.0, a) = f(x), gets its own tmp and the residual 1.0 - tmp
+      constPairs := {};
+      crexplst := {};
+      explCref := {};
+      for e in expl loop
+        if Expression.isConst(e) and Types.isRealOrSubTypeReal(Expression.typeof(e)) then
+          etmp := Expression.crefExp(ComponentReference.crefPrependIdent(cr, "$c" + intString(listLength(crexplst) + 1), {}, Expression.typeof(e)));
+          constPairs := (e, etmp) :: constPairs;
+          explCref := DAE.CREF(DAE.WILD(), Expression.typeof(e)) :: explCref;
+        else
+          etmp := Expression.generateCrefsExpFromExp(e, cr);
+          explCref := e :: explCref;
+        end if;
+        crexplst := etmp :: crexplst;
+      end for;
+      crexplst := listReverse(crexplst);
+      expl := listReverse(explCref);
       stms := DAE.STMT_TUPLE_ASSIGN(tp, crexplst, inExp1, source);
       simeqn_complex := SimCode.SES_ALGORITHM(eq_idx, {stms}, eqAttr);
       eq_idx := eq_idx + 1;
@@ -2618,11 +2635,11 @@ algorithm
       expl := List.map(crlst, Expression.crefExp);
 
       // Tuple() - tmp = 0
-      exptl := List.zip(expl, crexplst);
+      exptl := listAppend(List.zip(expl, crexplst), listReverse(constPairs));
       (eqSystlst, (eq_idx, res_idx)) := List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, (eq_idx, res_idx));
       eqSystlst := simeqn_complex::eqSystlst;
 
-      tempvars := createTempVarsforCrefs(listReverse(crexplst), tempvars);
+      tempvars := createTempVarsforCrefs(listReverse(listAppend(crexplst, List.map(constPairs, Util.tuple22))), tempvars);
     then (eqSystlst, (eq_idx, res_idx), tempvars);
 
     // failure
@@ -2828,6 +2845,18 @@ algorithm
           // Delete that cref because it is not an iteration variable!
           eqCrefs := List.deleteMemberOnTrue(cr, eqCrefs, ComponentReferenceBasics.crefEqual);
         end if;
+      then e;
+
+    // Constant, (1.0, a) = f(x): a tmp and the residual 1.0 - tmp
+    case _ guard Expression.isConst(inExp) and Types.isRealOrSubTypeReal(Expression.typeof(inExp))
+      algorithm
+        ty := Expression.typeof(inExp);
+        cr := ComponentReference.crefPrependIdent(inCrefPrefix, "$c" + intString(listLength(lhsExpLstRes) + 1), {}, ty);
+        e := Expression.makeCrefExp(cr, ty);
+
+        // Add expressions to residual lists
+        lhsExpLstRes := e :: lhsExpLstRes;
+        rhsExpLstRes := inExp :: rhsExpLstRes;
       then e;
 
     else
