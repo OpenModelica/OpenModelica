@@ -1777,9 +1777,11 @@ void OptionsDialog::saveGeneralSettings()
     mpSettings->setValue("welcomePage/view", welcomePageView);
   }
   bool showLatestNews = mpGeneralSettingsPage->getShowLatestNewsCheckBox()->isChecked();
-  int recentFilesSize = mpSettings->value("welcomePage/recentFilesSize").toInt();
+  int recentFilesSize = mpSettings->contains("welcomePage/recentFilesSize")
+      ? mpSettings->value("welcomePage/recentFilesSize").toInt()
+      : OptionsDefaults::GeneralSettings::recentFilesAndLatestNewsSize;
   int recentFilesAndLatestNewsSize = mpGeneralSettingsPage->getRecentFilesAndLatestNewsSizeSpinBox()->value();
-  if ((MainWindow::instance()->getWelcomePageWidget()->getLatestNewsFrame()->isHidden() && showLatestNews) || recentFilesSize != recentFilesAndLatestNewsSize) {
+  if (showLatestNews && (MainWindow::instance()->getWelcomePageWidget()->getLatestNewsFrame()->isHidden() || recentFilesSize != recentFilesAndLatestNewsSize)) {
     MainWindow::instance()->getWelcomePageWidget()->getLatestNewsFrame()->show();
     MainWindow::instance()->getWelcomePageWidget()->addLatestNewsListItems();
   } else if (!showLatestNews) {
