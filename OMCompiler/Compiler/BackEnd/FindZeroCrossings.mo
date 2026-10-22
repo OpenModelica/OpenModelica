@@ -961,8 +961,8 @@ end findZeroCrossings3;
 
 protected function operatorEventsSupported
   "Whether the selected target's runtime implements the event handling of the
-   stateful operators, i.e. delayZeroCrossing() and
-   spatialDistributionZeroCrossing(). Only the C and WebAssembly runtimes do."
+   stateful operators, i.e. $delayZeroCrossing() and
+   $spatialDistributionZeroCrossing(). Only the C and WebAssembly runtimes do."
   output Boolean supported;
 protected
   String target = Config.simCodeTarget();
@@ -1020,7 +1020,7 @@ algorithm
       outExp.expr := e;
     then (outExp, false, ((zeroCrossings, relations, samples, numMathFunctions), tp1, NONE()));
 
-    // delay() can trigger events which are are handled individually via the function delayZeroCrossing() > 0
+    // delay() can trigger events which are are handled individually via the function $delayZeroCrossing() > 0
     case (DAE.CALL(path=Absyn.IDENT(name="delay"), expLst={index, e, delay, delayMax}, attr = attr), ((zeroCrossings, relations, samples, numMathFunctions), tp1 as (eq_count, _, _), iters), true)
       algorithm
         // traverse relevant arguments
@@ -1028,7 +1028,7 @@ algorithm
         (delay, ((_, relations, samples, numMathFunctions), tp1, iters))                 := Expression.traverseExpTopDown(delay, collectZC, ((ZeroCrossings.new(), relations, samples, numMathFunctions), tp1, iters));
 
         // create zero crossing function
-        eres1 := DAE.CALL(Absyn.IDENT("delayZeroCrossing"), {index, DAE.ICONST(ZeroCrossings.count(relations)), delay}, attr);
+        eres1 := DAE.CALL(Absyn.IDENT("$delayZeroCrossing"), {index, DAE.ICONST(ZeroCrossings.count(relations)), delay}, attr);
         e_1 := DAE.RELATION(eres1, DAE.GREATER(DAE.T_REAL_DEFAULT) ,DAE.RCONST(0.0), ZeroCrossings.count(relations), NONE());
         zc := createZeroCrossing(eres1, {eq_count}, iters);
         (eres, relations, _) := zcIndex(e_1, relations, ZeroCrossings.count(relations), zc);
@@ -1041,7 +1041,7 @@ algorithm
 
     then (DAE.CALL(Absyn.IDENT(name="delay"), {index, e, delay, delayMax}, attr), true, ((zeroCrossings, relations, samples, numMathFunctions), tp1, iters));
 
-    // spatialDistribution() can trigger events which are handled individually via the function spatialDistributionZeroCrossing() > 0
+    // spatialDistribution() can trigger events which are handled individually via the function $spatialDistributionZeroCrossing() > 0
     case (DAE.CALL(path=Absyn.IDENT(name="spatialDistribution"), expLst = {index, in0, in1, x, dir, initPnts, initVals}, attr = attr), ((zeroCrossings, relations, samples, numMathFunctions), tp1 as (eq_count, _, _), iters), true)
       algorithm
         // traverse relevant arguments
@@ -1051,7 +1051,7 @@ algorithm
         (dir, ((_, relations, samples, numMathFunctions), tp1 as (eq_count, _, _), iters)) := Expression.traverseExpTopDown(dir, collectZC, ((ZeroCrossings.new(), relations, samples, numMathFunctions), tp1, iters));
 
         // create zero crossing function
-        eres1 := DAE.CALL(Absyn.IDENT("spatialDistributionZeroCrossing"), {index, DAE.ICONST(ZeroCrossings.count(relations)), x, dir}, attr);
+        eres1 := DAE.CALL(Absyn.IDENT("$spatialDistributionZeroCrossing"), {index, DAE.ICONST(ZeroCrossings.count(relations)), x, dir}, attr);
         e_1 := DAE.RELATION(eres1, DAE.GREATER(DAE.T_REAL_DEFAULT) ,DAE.RCONST(0.0), ZeroCrossings.count(relations), NONE());
         zc := createZeroCrossing(eres1, {eq_count}, iters);
         (eres, relations, _) := zcIndex(e_1, relations, ZeroCrossings.count(relations), zc);
@@ -1880,7 +1880,7 @@ algorithm
 end traverseStmtsForExps;
 
 public function setOperatorZeroCrossingIndices
-  "`delayZeroCrossing` and `spatialDistributionZeroCrossing` read `zeroCrossingsPre` at
+  "`$delayZeroCrossing` and `$spatialDistributionZeroCrossing` read `zeroCrossingsPre` at
    the index passed as their second argument, so it has to be the crossing's own index.
    `collectZC` cannot know it yet -- the call must exist before the crossing can be
    registered -- so it fills in the relation index; overwrite it once the list is final.
@@ -1909,11 +1909,11 @@ algorithm
     local
       DAE.Exp expr, delay, x, dir;
       DAE.CallAttributes attr;
-    case DAE.CALL(path = Absyn.IDENT("delayZeroCrossing"), expLst = {expr, _, delay}, attr = attr)
-    then DAE.CALL(Absyn.IDENT("delayZeroCrossing"), {expr, DAE.ICONST(inIndex), delay}, attr);
+    case DAE.CALL(path = Absyn.IDENT("$delayZeroCrossing"), expLst = {expr, _, delay}, attr = attr)
+    then DAE.CALL(Absyn.IDENT("$delayZeroCrossing"), {expr, DAE.ICONST(inIndex), delay}, attr);
 
-    case DAE.CALL(path = Absyn.IDENT("spatialDistributionZeroCrossing"), expLst = {expr, _, x, dir}, attr = attr)
-    then DAE.CALL(Absyn.IDENT("spatialDistributionZeroCrossing"), {expr, DAE.ICONST(inIndex), x, dir}, attr);
+    case DAE.CALL(path = Absyn.IDENT("$spatialDistributionZeroCrossing"), expLst = {expr, _, x, dir}, attr = attr)
+    then DAE.CALL(Absyn.IDENT("$spatialDistributionZeroCrossing"), {expr, DAE.ICONST(inIndex), x, dir}, attr);
 
     else inExp;
   end match;

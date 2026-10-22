@@ -7668,11 +7668,11 @@ let &sub = buffer ""
   case CALL(path=IDENT(name="sample"), expLst={ICONST(integer=index), _, _}) then
     'data->simulationInfo->samples[<%intSub(index, 1)%>]'
 
-  case CALL(path=IDENT(name="delayZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), delay}) then
+  case CALL(path=IDENT(name="$delayZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), delay}) then
     let delay_T = daeExp(delay, context, &preExp, &varDecls, &varFrees, &auxFunction)
     'delayZeroCrossing(data, threadData, <%index%>, <%rindex%>, <%delay_T%>)'
 
-  case CALL(path=IDENT(name="spatialDistributionZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), xPos, dir}) then
+  case CALL(path=IDENT(name="$spatialDistributionZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), xPos, dir}) then
     let xPos_T = daeExp(xPos, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let dir_T = daeExp(dir, context, &preExp, &varDecls, &varFrees, &auxFunction)
     'spatialDistributionZeroCrossing(data, threadData, <%index%>, <%rindex%>, <%xPos_T%>, <%dir_T%>)'
