@@ -120,6 +120,96 @@ algorithm
 end simplifyAllExpressions;
 
 // =============================================================================
+// stateAlgorithmsToEquations
+//
+// An algorithm section that assigns a state is a constraint that index
+// reduction has to differentiate, and state selection cannot handle an
+// algorithm. If every statement assigns its own variables, e.g.
+//   algorithm (x, y) := f(z); w := g(x);
+// and no variable is read before it is assigned, the section is the same as
+// the equations (x, y) = f(z); w = g(x);
+// =============================================================================
+
+public function stateAlgorithmsToEquations
+  input output BackendDAE.BackendDAE dae;
+algorithm
+  dae.eqs := list(stateAlgorithmsToEquationsSyst(syst) for syst in dae.eqs);
+end stateAlgorithmsToEquations;
+
+protected function stateAlgorithmsToEquationsSyst
+  input output BackendDAE.EqSystem syst;
+protected
+  list<BackendDAE.Equation> eqns = {}, algEqns;
+  Boolean changed = false;
+algorithm
+  for eqn in BackendEquation.equationList(syst.orderedEqs) loop
+    algEqns := algorithmToEquations(eqn, syst.orderedVars);
+    changed := changed or not listEmpty(algEqns);
+    eqns := if listEmpty(algEqns) then eqn :: eqns else List.append_reverse(algEqns, eqns);
+  end for;
+
+  if changed then
+    syst := BackendDAEUtil.clearEqSyst(BackendDAEUtil.setEqSystEqs(syst, BackendEquation.listEquation(listReverse(eqns))));
+  end if;
+end stateAlgorithmsToEquationsSyst;
+
+protected function algorithmToEquations
+  "The equations of an algorithm that assigns a state, or {} if it has to stay an algorithm."
+  input BackendDAE.Equation eqn;
+  input BackendDAE.Variables vars;
+  output list<BackendDAE.Equation> eqns = {};
+protected
+  list<DAE.Statement> stmts;
+  list<DAE.ComponentRef> assigned = {}, read = {}, lhsCrefs;
+  list<DAE.Exp> lhsExps;
+  DAE.Exp lhs, rhs;
+  Boolean assignsState = false;
+algorithm
+  stmts := match eqn
+    case BackendDAE.ALGORITHM(alg = DAE.ALGORITHM_STMTS(statementLst = stmts)) then stmts;
+    else {};
+  end match;
+
+  for stmt in stmts loop
+    (lhs, rhs, lhsExps) := match stmt
+      case DAE.STMT_ASSIGN(exp1 = lhs as DAE.CREF(), exp = rhs) then (lhs, rhs, {lhs});
+      case DAE.STMT_TUPLE_ASSIGN(expExpLst = lhsExps, exp = rhs as DAE.CALL())
+        guard List.all(lhsExps, Expression.isCref)
+        then (DAE.TUPLE(lhsExps), rhs, lhsExps);
+      else (DAE.ICONST(0), DAE.ICONST(0), {});
+    end match;
+
+    // a variable is assigned once and not read before or in its assignment
+    read := listAppend(Expression.extractUniqueCrefsFromExp(rhs), read);
+    lhsCrefs := list(Expression.expCref(e) for e guard not Expression.isWild(e) in lhsExps);
+    if listEmpty(lhsExps) or List.any(lhsCrefs, function crefsOverlapAny(crs = listAppend(assigned, read))) then
+      eqns := {};
+      return;
+    end if;
+    assigned := listAppend(lhsCrefs, assigned);
+    assignsState := assignsState or List.any(lhsCrefs, function BackendVariable.isState(inVars = vars));
+
+    eqns := BackendEquation.generateEquation(lhs, rhs, Algorithm.getStatementSource(stmt),
+              BackendEquation.getEquationAttributes(eqn)) :: eqns;
+  end for;
+
+  eqns := if assignsState then listReverse(eqns) else {};
+end algorithmToEquations;
+
+protected function crefsOverlapAny
+  "True if cr is, contains or is part of one of crs."
+  input DAE.ComponentRef cr;
+  input list<DAE.ComponentRef> crs;
+  output Boolean b = List.any(crs, function crefsOverlap(cr2 = cr));
+end crefsOverlapAny;
+
+protected function crefsOverlap
+  input DAE.ComponentRef cr1;
+  input DAE.ComponentRef cr2;
+  output Boolean b = ComponentReferenceBasics.crefPrefixOf(cr1, cr2) or ComponentReferenceBasics.crefPrefixOf(cr2, cr1);
+end crefsOverlap;
+
+// =============================================================================
 // simplifyInStream
 //
 // OM introduces $OMC$PositiveMax which can simplified using min or max attribute

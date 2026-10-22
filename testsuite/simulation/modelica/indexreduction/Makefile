@@ -8,7 +8,9 @@ MoveWithInputs.mos \
 DiscreteTupleOutput.mos \
 TupleConstraintEquation.mos \
 TupleConstraintStateSet.mos \
-TupleAssignInIf.mos
+TupleAssignInIf.mos \
+StateAlgorithm.mos \
+StateTupleAlgorithm.mos
 
 
 # test that currently fail. Move up when fixed. 

@@ -8664,6 +8664,7 @@ public function allPreOptimizationModules
     (BackendDAEOptimize.removeLocalKnownVars, "removeLocalKnownVars"),
     (CommonSubExpression.wrapFunctionCalls, "wrapFunctionCalls"),
     (SynchronousFeatures.clockPartitioning, "clockPartitioning"),
+    (BackendDAEOptimize.stateAlgorithmsToEquations, "stateAlgorithmsToEquations"),
     (IndexReduction.findStateOrder, "findStateOrder"),
     (BackendDAEOptimize.introduceDerAlias, "introduceDerAlias"),
     (DynamicOptimization.inputDerivativesForDynOpt, "inputDerivativesForDynOpt"), // only for dyn. opt.
