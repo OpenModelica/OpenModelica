@@ -1759,6 +1759,11 @@ protected
     end match;
   end collectEventsTraverse;
 
+  function isTimeOrSample
+    input Expression exp;
+    output Boolean b = Expression.isTime(exp) or isSampleCall(exp);
+  end isTimeOrSample;
+
   function isSampleCall
     input Expression exp;
     output Boolean b;
@@ -1784,7 +1789,12 @@ protected
     Expression original_exp;
     list<ComponentRef> names;
   algorithm
-    (names, _, _) := Iterator.getFrames(iter);
+    // iterators are only constant for time events, e.g. sample(t0[i], dt), not for conditions like i == 1
+    if Expression.contains(exp, isTimeOrSample) then
+      (names, _, _) := Iterator.getFrames(iter);
+    else
+      names := {};
+    end if;
     // try to create time event or composite time event
     if BackendUtil.isOnlyTimeDependent(exp, names) then
       original_exp := exp;
