@@ -156,7 +156,7 @@ impl ResultList {
             discrete: sv.isDiscrete,
             filter: filter_bits(sv) | filter_extra,
             unvarying: false,
-            enumeration: enumeration_names(&sv.type_),
+            enumeration: enumeration_type(&sv.type_),
         });
         Ok(())
     }
@@ -393,11 +393,16 @@ fn is_boolean_type(ty: &DAE::Type) -> bool {
 
 /// Literal names of an enumeration type; the stored value is the 1-based index
 /// into these.
-fn enumeration_names(ty: &DAE::Type) -> Option<Vec<String>> {
+fn enumeration_type(ty: &DAE::Type) -> Option<openmodelica_sim_meta::Enumeration> {
     match ty {
-        DAE::Type::T_ENUMERATION { names, .. } => Some(lst(names).map(|n| n.to_string()).collect()),
-        DAE::Type::T_SUBTYPE_BASIC { complexType, .. } => enumeration_names(complexType),
-        DAE::Type::T_ARRAY { ty, .. } => enumeration_names(ty),
+        DAE::Type::T_ENUMERATION { path, names, .. } => Some(openmodelica_sim_meta::Enumeration {
+            name: openmodelica_frontend_dump::AbsynUtil::pathString(path.clone(), arcstr::literal!("."), false, false)
+                .map(|s| s.to_string())
+                .unwrap_or_default(),
+            literals: lst(names).map(|n| n.to_string()).collect(),
+        }),
+        DAE::Type::T_SUBTYPE_BASIC { complexType, .. } => enumeration_type(complexType),
+        DAE::Type::T_ARRAY { ty, .. } => enumeration_type(ty),
         _ => None,
     }
 }
@@ -1107,7 +1112,7 @@ pub(super) fn build_var_map(
                     is_start: false,
                     is_bool: is_boolean_type(&sv.type_),
                     is_string: false,
-                    enum_names: enumeration_names(&sv.type_).unwrap_or_default(),
+                    enum_names: enumeration_type(&sv.type_).map(|e| e.literals).unwrap_or_default(),
                 });
             }
         }
@@ -1161,7 +1166,7 @@ pub(super) fn build_var_map(
                 discrete: sv.isDiscrete,
                 filter: filter_bits(sv),
                 unvarying: false,
-                enumeration: enumeration_names(&sv.type_),
+                enumeration: enumeration_type(&sv.type_),
             }))
         };
     // The elements of an array variable resolve through one entry per table,
@@ -1207,7 +1212,7 @@ pub(super) fn build_var_map(
                 is_start: true,
                 is_bool: is_boolean_type(&sv.type_),
                 is_string: false,
-                enum_names: enumeration_names(&sv.type_).unwrap_or_default(),
+                enum_names: enumeration_type(&sv.type_).map(|e| e.literals).unwrap_or_default(),
             });
         }
         Ok(())
@@ -1420,7 +1425,7 @@ pub(super) fn build_var_map(
                 discrete: sv.isDiscrete,
                 filter: filter_bits(sv),
                 unvarying: false,
-                enumeration: enumeration_names(&sv.type_),
+                enumeration: enumeration_type(&sv.type_),
             });
         }
     }
@@ -1476,7 +1481,7 @@ pub(super) fn build_var_map(
                         discrete: av.isDiscrete,
                         filter: filter_bits(av) | var_filter::ALIAS,
                         unvarying: false,
-                        enumeration: enumeration_names(&av.type_),
+                        enumeration: enumeration_type(&av.type_),
                     });
                 }
             }
@@ -1540,7 +1545,7 @@ pub(super) fn build_var_map(
                 discrete: av.isDiscrete,
                 filter: filter_bits(av) | var_filter::ALIAS,
                 unvarying: false,
-                enumeration: enumeration_names(&av.type_),
+                enumeration: enumeration_type(&av.type_),
             }))
         };
         results.push_at(pos, make, &mut compact, brackets)?;

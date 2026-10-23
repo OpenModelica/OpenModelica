@@ -350,6 +350,14 @@ typedef struct STATIC_REAL_DATA
   modelica_boolean time_unvarying;     /* true if the value is only computed once during initialization */
 } STATIC_REAL_DATA;
 
+/* An enumeration type: value k is literals[k-1]. */
+typedef struct ENUMERATION_TYPE
+{
+  char *name;
+  size_t nLiterals;
+  char **literals;
+} ENUMERATION_TYPE;
+
 typedef struct STATIC_INTEGER_DATA
 {
   DIMENSION_INFO dimension;
@@ -357,6 +365,7 @@ typedef struct STATIC_INTEGER_DATA
   INTEGER_ATTRIBUTE attribute;
   modelica_boolean filterOutput;       /* true if this variable should be filtered */
   modelica_boolean time_unvarying;     /* true if the value is only computed once during initialization */
+  const ENUMERATION_TYPE *enumeration; /* the declared type of an enumeration variable, NULL otherwise */
 } STATIC_INTEGER_DATA;
 
 typedef struct STATIC_BOOLEAN_DATA
@@ -720,6 +729,9 @@ typedef struct MODEL_DATA
   long ndataReconVars;
   long nSetbVars;
   long nRelatedBoundaryConditions;
+
+  size_t nEnumerationTypes;
+  ENUMERATION_TYPE *enumerationTypes;  /* of the enumeration variables, from the init XML */
 } MODEL_DATA;
 
 /**
