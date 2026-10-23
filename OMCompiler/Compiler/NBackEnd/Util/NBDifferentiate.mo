@@ -50,6 +50,7 @@ public
   import BuiltinFuncs = NFBuiltinFuncs;
   import Call = NFCall;
   import Class = NFClass;
+  import Restriction = NFRestriction;
   import NFClassTree.ClassTree;
   import Component = NFComponent;
   import ComponentRef = NFComponentRef;
@@ -1481,7 +1482,7 @@ public
   end makeZero;
 
   function makeOne
-    "Expression.makeOne, but records without a '1' operator are one field by field"
+    "Expression.makeOne, but records that are not operator records are one field by field"
     input Type ty;
     output Expression one;
   protected
@@ -1489,7 +1490,7 @@ public
     list<Expression> fields = {};
   algorithm
     one := match ty
-      case Type.COMPLEX() guard(Type.isRecord(ty) and not Class.hasOperator("'1'", InstNode.getClass(Type.complexNode(ty)))) algorithm
+      case Type.COMPLEX() guard(Type.isRecord(ty) and not Restriction.isOperatorRecord(Class.restriction(InstNode.getClass(Type.complexNode(ty))))) algorithm
         node := Type.complexNode(ty);
         for comp in Class.getComponents(InstNode.getClass(node)) loop
           fields := makeOne(InstNode.getType(comp)) :: fields;
