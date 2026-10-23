@@ -938,9 +938,19 @@ void Parameter::editClassButtonClicked()
      */
     foreach (auto *pModifier, pReplaceableConstrainedByModifier->getModifiers()) {
       Parameter *pParameter = mpElementParameters->findParameter(pModifier->getName());
+      /* Use the value of the parameter or its default value when the value is not set.
+       * Never override the modifier value with an empty value, the value is used to
+       * instantiate the class below the sub dialog.
+       * See issue #16642
+       */
       if (pParameter) {
-        // qDebug() << "pParameter->getValue()" << pParameter->getValue();
-        pModifier->setValue(pParameter->getValue());
+        QString parameterValue = pParameter->getValue();
+        if (parameterValue.isEmpty()) {
+          parameterValue = pParameter->getDefaultValue();
+        }
+        if (!parameterValue.isEmpty()) {
+          pModifier->setValue(parameterValue);
+        }
       }
     }
     // qDebug() << "replaceable constrainedby modifier" << pReplaceableConstrainedByModifier->toString();
