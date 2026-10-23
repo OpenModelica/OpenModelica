@@ -204,9 +204,12 @@ fn write_result_file(m: &meta::SimMeta, result: &driver::RunResult) -> Vec<u8> {
     let mut param_idx = 0usize;
     if m.output_format == "mat" {
         let mut matvars: Vec<MatVar> = Vec::new();
-        for (v, &keep) in m.vars.iter().zip(&keep) {
+        let descs = m.mat_descriptions();
+        let mut kept: Vec<bool> = Vec::with_capacity(m.vars.len());
+        for ((v, &keep), desc) in m.vars.iter().zip(&keep).zip(&descs) {
             // The numeric formats cannot hold a String signal or parameter.
             let keep = keep && v.ty != openmodelica_sim_meta::VarTy::String;
+            kept.push(keep);
             let is_param = matches!(v.kind, MetaKind::Param { .. });
             if is_param && keep {
                 kept_params.push(result.params.get(param_idx).copied().unwrap_or(0.0));
@@ -215,12 +218,12 @@ fn write_result_file(m: &meta::SimMeta, result: &driver::RunResult) -> Vec<u8> {
             if !keep {
                 continue;
             }
-            matvars.push(MatVar { name: &v.name, comment: &v.comment, kind: v.kind.mat(), unvarying: v.unvarying });
+            matvars.push(MatVar { name: &v.name, comment: desc, kind: v.kind.mat(), unvarying: v.unvarying });
         }
         let precision = simflags::with_flags(|f| {
             if f.single_precision { Precision::Single } else { Precision::Double }
         });
-        openmodelica_mat_writer::write_mat4(
+        let mut bytes = openmodelica_mat_writer::write_mat4(
             &matvars,
             m.start_time,
             m.stop_time,
@@ -228,7 +231,9 @@ fn write_result_file(m: &meta::SimMeta, result: &driver::RunResult) -> Vec<u8> {
             result.n_reals,
             &kept_params,
             precision,
-        )
+        );
+        openmodelica_mat_writer::write_enumerations(&mut bytes, &m.mat_enumerations(&kept));
+        bytes
     } else {
         use openmodelica_plt_writer::{Neg as PltNeg, PltKind, PltVar};
         let neg = |n: &meta::Neg| match n {

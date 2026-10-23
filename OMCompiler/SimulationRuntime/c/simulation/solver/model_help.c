@@ -1030,6 +1030,16 @@ void allocModelDataVars(MODEL_DATA* modelData, modelica_boolean allocAlias, thre
   modelData->stringParameterData = (STATIC_STRING_DATA*) omc_alloc_interface.malloc_uncollectable(modelData->nParametersStringArray * sizeof(STATIC_STRING_DATA));
   assertStreamPrint(threadData, modelData->nParametersStringArray == 0 || modelData->stringParameterData != NULL, "Out of memory");
 
+  // Enumeration types, which only read_input_xml fills
+  for (long i = 0; i < modelData->nVariablesIntegerArray; i++) {
+    modelData->integerVarsData[i].enumeration = NULL;
+  }
+  for (long i = 0; i < modelData->nParametersIntegerArray; i++) {
+    modelData->integerParameterData[i].enumeration = NULL;
+  }
+  modelData->nEnumerationTypes = 0;
+  modelData->enumerationTypes = NULL;
+
   // Sensitivity
   modelData->realSensitivityData = (STATIC_REAL_DATA*) omc_alloc_interface.malloc_uncollectable(modelData->nSensitivityVars * sizeof(STATIC_REAL_DATA));
   assertStreamPrint(threadData, modelData->nSensitivityVars == 0 || modelData->realSensitivityData != NULL, "Out of memory");
@@ -1133,6 +1143,19 @@ void freeModelDataVars(MODEL_DATA* modelData)
       freeVarInfo(&modelData->stringAlias[i].info);
     }
   }
+
+  // Enumeration types
+  for(i=0; i < modelData->nEnumerationTypes; i++) {
+    ENUMERATION_TYPE *t = &modelData->enumerationTypes[i];
+    for(size_t k = 0; k < t->nLiterals; k++) {
+      free(t->literals[k]);
+    }
+    free(t->literals);
+    free(t->name);
+  }
+  free(modelData->enumerationTypes);
+  modelData->enumerationTypes = NULL;
+  modelData->nEnumerationTypes = 0;
 
   freeModelDataVarArrays(modelData);
 }
