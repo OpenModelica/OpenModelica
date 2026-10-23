@@ -390,7 +390,7 @@ fn exp_is_half(e: &DAE::Exp) -> bool {
 fn operator_sigty(op: &DAE::Operator) -> Result<SigTy> {
     use DAE::Operator as O;
     let ty = match op {
-        O::ADD { ty } | O::SUB { ty } | O::MUL { ty } | O::DIV { ty } | O::POW { ty } | O::UMINUS { ty } => ty,
+        O::ADD { ty } | O::SUB { ty } | O::MUL { ty } | O::DIV { ty } | O::POW { ty, .. } | O::UMINUS { ty } => ty,
         // Scalar/matrix products carry the element (scalar-product) or result
         // (matrix-product) type; `sig_ty` yields the produced value's `SigTy`.
         O::MUL_SCALAR_PRODUCT { ty } | O::MUL_MATRIX_PRODUCT { ty } => ty,
@@ -406,10 +406,10 @@ fn operator_sigty(op: &DAE::Operator) -> Result<SigTy> {
         | O::SUB_SCALAR_ARRAY { ty }
         | O::DIV_ARRAY_SCALAR { ty }
         | O::DIV_SCALAR_ARRAY { ty }
-        | O::POW_ARRAY_SCALAR { ty }
-        | O::POW_SCALAR_ARRAY { ty }
+        | O::POW_ARRAY_SCALAR { ty, .. }
+        | O::POW_SCALAR_ARRAY { ty, .. }
         | O::POW_ARR { ty }
-        | O::POW_ARR2 { ty } => ty,
+        | O::POW_ARR2 { ty, .. } => ty,
         _ => return Err("CodegenWasmJit: cannot determine type of operator"),
     };
     sig_ty_quiet(ty)
@@ -600,9 +600,9 @@ pub(super) fn compile_binary(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator,
         O::MUL_MATRIX_PRODUCT { .. } => return compile_matmul(ctx, e1, e2),
         // Element-wise power: `a .^ b` (POW_ARR2), `a .^ s` (POW_ARRAY_SCALAR)
         // and `s .^ a` (POW_SCALAR_ARRAY). The per-element `pow` runs in-wasm.
-        O::POW_ARR2 { ty } => return compile_array_ew(ctx, e1, e2, OP_POW, ty),
-        O::POW_ARRAY_SCALAR { ty } => return compile_array_scalar(ctx, e1, e2, OP_POW, false, ty),
-        O::POW_SCALAR_ARRAY { ty } => return compile_array_scalar(ctx, e1, e2, OP_POW, true, ty),
+        O::POW_ARR2 { ty, .. } => return compile_array_ew(ctx, e1, e2, OP_POW, ty),
+        O::POW_ARRAY_SCALAR { ty, .. } => return compile_array_scalar(ctx, e1, e2, OP_POW, false, ty),
+        O::POW_SCALAR_ARRAY { ty, .. } => return compile_array_scalar(ctx, e1, e2, OP_POW, true, ty),
         _ => {}
     }
     // C's `daeExpBinary` reads the operator's own type only to tell a String `+`

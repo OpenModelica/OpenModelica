@@ -1314,8 +1314,8 @@ protected
     crefExp := Expression.fromCref(cref);
     ty := ComponentRef.getSubscriptedType(cref, true);
     numerator := Replacements.single(residual, crefExp, Expression.makeZero(ty));
-    mulOp := Operator.OPERATOR(ty, NFOperator.Op.MUL);
-    uminOp := Operator.OPERATOR(ty, NFOperator.Op.UMINUS);
+    mulOp := Operator.makeMul(ty);
+    uminOp := Operator.makeUMinus(ty);
     // Set eqn: cref = - f/f'
     eqn := Equation.setLHS(eqn, crefExp);
     eqn := Equation.setRHS(eqn, Expression.UNARY(uminOp, Expression.MULTARY({numerator},{derivative}, mulOp)));
@@ -1547,7 +1547,7 @@ protected
           if Expression.containsCref(exp.exp2, cref) then
             status := Status.IMPLICIT;
           else
-            inverseInstructions := Expression.BINARY(substExp, exp.operator, Expression.MULTARY({}, {exp.exp2}, Operator.OPERATOR(ty, NFOperator.Op.MUL))) :: inverseInstructions;
+            inverseInstructions := Expression.BINARY(substExp, exp.operator, Expression.MULTARY({}, {exp.exp2}, Operator.makeMul(ty))) :: inverseInstructions;
           end if;
         else
           (crefFoundInRecursion, inverseInstructions, status) := solveUniqueFindInstructions(exp.exp2, cref, crefFound, inverseInstructions);
@@ -1570,7 +1570,7 @@ protected
             purity      = NFPrefixes.Purity.PURE
             ));
             // split the instructions, s.t. only top level search for substExp/dummyCref has to be performed in applyInstruction
-            inverseInstructions := local_exp1 :: Expression.MULTARY({substExp}, {local_exp2}, Operator.OPERATOR(ty, NFOperator.Op.MUL)) :: inverseInstructions;
+            inverseInstructions := local_exp1 :: Expression.MULTARY({substExp}, {local_exp2}, Operator.makeMul(ty)) :: inverseInstructions;
           end if;
         end if;
         then ();
@@ -1657,7 +1657,7 @@ protected
             if crefFoundInRecursion then
               // case for -(f(cref)) -> -($SUBST_CREF)
               crefFound := true;
-              inverseInstructions := Expression.UNARY(Operator.OPERATOR(ty, NFOperator.Op.UMINUS), substExp) :: inverseInstructions;
+              inverseInstructions := Expression.UNARY(Operator.makeUMinus(ty), substExp) :: inverseInstructions;
             end if;
             then ();
       else algorithm
@@ -1694,7 +1694,7 @@ protected
           name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
           inverseInstructions := match name
             case "sqrt" then // sqrt(f(cref)) -> $SUBST_CREF^2
-              Expression.BINARY(substExp, Operator.OPERATOR(ty, NFOperator.Op.POW), Expression.REAL(2)) :: inverseInstructions;
+              Expression.BINARY(substExp, Operator.makePow(ty, true), Expression.REAL(2)) :: inverseInstructions;
             case "cos" then // cos(f(cref)) -> acos($SUBST_CREF)
               solveUniqueCreateSubstCall(NFBuiltinFuncs.ACOS_REAL, substExp, inverseInstructions);
             case "sin" then // sin(f(cref)) -> asin($SUBST_CREF)
@@ -1724,7 +1724,7 @@ protected
             case "log" then // log(f(cref)) -> exp($SUBST_CREF)
               solveUniqueCreateSubstCall(NFBuiltinFuncs.EXP_REAL, substExp, inverseInstructions);
             case "log10" then // log_10(f(cref)) -> 10^($SUBST_CREF)
-              Expression.BINARY(Expression.REAL(10), Operator.OPERATOR(ty, NFOperator.Op.POW), substExp) :: inverseInstructions;
+              Expression.BINARY(Expression.REAL(10), Operator.makePow(ty, false), substExp) :: inverseInstructions;
             else algorithm // fallback -> set implicit
               if Flags.isSet(Flags.DUMP_SOLVE) then
                 solveUniquePrintImplicitFallback(exp);
@@ -1771,7 +1771,7 @@ protected
             // calc inverse w.r.t first argument and append to instructions
             inverseInstructions := match name
               case "atan2" algorithm // atan2(x,y) -> x=y*tan($SUBST_CREF)
-                inverseInstructions := Expression.MULTARY({substExp, argExp2}, {}, Operator.OPERATOR(ty, NFOperator.Op.MUL)) :: inverseInstructions;
+                inverseInstructions := Expression.MULTARY({substExp, argExp2}, {}, Operator.makeMul(ty)) :: inverseInstructions;
                 then solveUniqueCreateSubstCall(NFBuiltinFuncs.TAN_REAL, substExp, inverseInstructions);
               else algorithm // fallback -> set implicit
                 if Flags.isSet(Flags.DUMP_SOLVE) then
@@ -1791,7 +1791,7 @@ protected
             // calc inverse w.r.t second argument and append to instructions
             inverseInstructions := match name
               case "atan2" algorithm // atan2(x,y) -> y=x/tan($SUBST_CREF)
-                inverseInstructions := Expression.MULTARY({argExp1}, {substExp}, Operator.OPERATOR(ty, NFOperator.Op.MUL)) :: inverseInstructions;
+                inverseInstructions := Expression.MULTARY({argExp1}, {substExp}, Operator.makeMul(ty)) :: inverseInstructions;
                 then solveUniqueCreateSubstCall(NFBuiltinFuncs.TAN_REAL, substExp, inverseInstructions);
               else algorithm // fallback -> set implicit
                 if Flags.isSet(Flags.DUMP_SOLVE) then

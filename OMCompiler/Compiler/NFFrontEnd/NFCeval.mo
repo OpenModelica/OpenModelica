@@ -971,7 +971,7 @@ algorithm
     case Op.SUB then evalBinarySub(exp1, exp2);
     case Op.MUL then evalBinaryMul(exp1, exp2);
     case Op.DIV then evalBinaryDiv(exp1, exp2, target);
-    case Op.POW then evalBinaryPow(exp1, exp2, target);
+    case Op.POW then evalBinaryPow(exp1, exp2, op.integerRHS, target);
     case Op.ADD_EW then evalBinaryAdd(exp1, exp2);
     case Op.SUB_EW then evalBinarySub(exp1, exp2);
     case Op.MUL_EW then evalBinaryMul(exp1, exp2);
@@ -989,8 +989,8 @@ algorithm
       then evalBinaryScalarArray(exp1, exp2, function evalBinaryDiv(target = target));
     case Op.DIV_ARRAY_SCALAR
       then evalBinaryArrayScalar(exp1, exp2, function evalBinaryDiv(target = target));
-    case Op.POW_SCALAR_ARRAY then evalBinaryScalarArray(exp1, exp2, function evalBinaryPow(target = target));
-    case Op.POW_ARRAY_SCALAR then evalBinaryArrayScalar(exp1, exp2, function evalBinaryPow(target = target));
+    case Op.POW_SCALAR_ARRAY then evalBinaryScalarArray(exp1, exp2, function evalBinaryPow(integerRHS = op.integerRHS, target = target));
+    case Op.POW_ARRAY_SCALAR then evalBinaryArrayScalar(exp1, exp2, function evalBinaryPow(integerRHS = op.integerRHS, target = target));
     case Op.POW_MATRIX then evalBinaryPowMatrix(exp1, exp2);
     else
       algorithm
@@ -1279,12 +1279,13 @@ end evalMultaryMulDiv;
 function evalBinaryPow
   input Expression exp1;
   input Expression exp2;
+  input Boolean integerRHS;
   input EvalTarget target;
   output Expression exp;
 algorithm
   exp := match (exp1, exp2)
     case (Expression.REAL(), Expression.REAL())
-      guard exp1.value < 0 and realInt(exp2.value) <> exp2.value
+      guard exp1.value < 0 and not integerRHS
       algorithm
         if EvalTarget.hasInfo(target) then
           Error.addSourceMessage(Error.INVALID_NEGATIVE_POW,
@@ -1300,7 +1301,7 @@ algorithm
     case (Expression.ARRAY(), Expression.ARRAY())
       guard arrayLength(exp1.elements) == arrayLength(exp2.elements)
       then Expression.makeArray(exp1.ty,
-        Array.threadMap(exp1.elements, exp2.elements, function evalBinaryPow(target = target)),
+        Array.threadMap(exp1.elements, exp2.elements, function evalBinaryPow(integerRHS = integerRHS, target = target)),
         literal = true);
 
     else

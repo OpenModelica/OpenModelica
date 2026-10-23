@@ -1086,7 +1086,7 @@ algorithm
         (resultType, Op.MUL);
   end match;
 
-  binaryExp := Expression.BINARY(e1, Operator.OPERATOR(resultType, op), e2);
+  binaryExp := Expression.BINARY(e1, Operator.OPERATOR(resultType, op, false), e2);
 
   if not valid then
     printUnresolvableTypeError(binaryExp, {type1, type2}, info);
@@ -1122,9 +1122,9 @@ algorithm
     // scalar / scalar or scalar ./ scalar
     case (false, false, _   ) then (ty1, Operator.makeDiv(ty1));
     // array / scalar or array ./ scalar
-    case (_    , false, _   ) then (ty1, Operator.OPERATOR(ty1, Op.DIV_ARRAY_SCALAR));
+    case (_    , false, _   ) then (ty1, Operator.OPERATOR(ty1, Op.DIV_ARRAY_SCALAR, false));
     // scalar ./ array
-    case (false, _    , true) then (ty2, Operator.OPERATOR(ty2, Op.DIV_SCALAR_ARRAY));
+    case (false, _    , true) then (ty2, Operator.OPERATOR(ty2, Op.DIV_SCALAR_ARRAY, false));
 
     // array ./ array
     case (true , _    , true)
@@ -1173,13 +1173,13 @@ algorithm
     valid := valid and Type.isSquareMatrix(resultType);
     valid := valid and Type.isInteger(type2);
     valid := valid and not Expression.isNegative(exp2); // invalid if we know it's negative, valid if we don't know.
-    op := Operator.OPERATOR(resultType, Op.POW_MATRIX);
+    op := Operator.OPERATOR(resultType, Op.POW_MATRIX, true);
     e2 := exp2;
   else
     // Real ^ Real
     (e2, _, mk) := matchTypes(type2, Type.REAL(), exp2, ALLOW_UNKNOWN);
     valid := valid and isCompatibleMatch(mk);
-    op := Operator.OPERATOR(resultType, Op.POW);
+    op := Operator.OPERATOR(resultType, Op.POW, Type.isInteger(type2));
   end if;
 
   binaryExp := Expression.BINARY(e1, op, e2);
@@ -1201,7 +1201,7 @@ protected
   Expression e1, e2;
   Type ty1, ty2;
   MatchKind mk;
-  Boolean valid;
+  Boolean valid, int_rhs;
   Operator op;
 algorithm
   // Exponentiation always returns a Real value, so instead of checking if the types
@@ -1210,14 +1210,15 @@ algorithm
   valid := isCompatibleMatch(mk);
   (e2, ty2, mk) := matchTypes(type2, Type.setArrayElementType(type2, Type.REAL()), exp2, ALLOW_UNKNOWN);
   valid := valid and isCompatibleMatch(mk);
+  int_rhs := Type.isInteger(Type.arrayElementType(type2));
 
   (resultType, op) := match (Type.isArray(ty1), Type.isArray(ty2))
     // scalar .^ scalar
-    case (false, false) then (ty1, Operator.makePow(ty1));
+    case (false, false) then (ty1, Operator.makePow(ty1, int_rhs));
     // array .^ scalar
-    case (_    , false) then (ty1, Operator.OPERATOR(ty1, Op.POW_ARRAY_SCALAR));
+    case (_    , false) then (ty1, Operator.OPERATOR(ty1, Op.POW_ARRAY_SCALAR, int_rhs));
     // scalar .^ array
-    case (false, _    ) then (ty2, Operator.OPERATOR(ty2, Op.POW_SCALAR_ARRAY));
+    case (false, _    ) then (ty2, Operator.OPERATOR(ty2, Op.POW_SCALAR_ARRAY, int_rhs));
     // array .^ array
     else
       algorithm
@@ -1225,7 +1226,7 @@ algorithm
         (_, _, mk) := matchArrayTypes(ty1, ty2, e1, ALLOW_UNKNOWN);
         valid := valid and isCompatibleMatch(mk);
       then
-        (ty1, Operator.makePow(ty1));
+        (ty1, Operator.makePow(ty1, int_rhs));
   end match;
 
   binaryExp := Expression.BINARY(e1, op, e2);
@@ -1248,7 +1249,7 @@ protected
   Expression e1, e2;
   Type ty1, ty2;
   MatchKind mk;
-  Boolean valid, is_arr1, is_arr2;
+  Boolean valid, is_arr1, is_arr2, int_rhs;
   Operator op;
 algorithm
   is_arr1 := Type.isArray(type1);
@@ -1274,12 +1275,14 @@ algorithm
     else false;
   end match;
 
+  int_rhs := Type.isInteger(Type.arrayElementType(type2));
+
   (resultType, op) := match (is_arr1, is_arr2)
     // array * scalar => Op.{elemOp}_ARRAY_SCALAR.
     case (true, false)
       algorithm
         resultType := Type.copyDims(type1, resultType);
-        op := Operator.makeArrayScalar(resultType, elemOp);
+        op := Operator.makeArrayScalar(resultType, elemOp, int_rhs);
       then
         (resultType, op);
 
@@ -1287,16 +1290,16 @@ algorithm
     case (false, true)
       algorithm
         resultType := Type.copyDims(type2, resultType);
-        op := Operator.makeScalarArray(resultType, elemOp);
+        op := Operator.makeScalarArray(resultType, elemOp, int_rhs);
       then
         (resultType, op);
 
     // array * array => Op.{elemOp}_EW
     case (true, true)
-      then (resultType, Operator.makeEW(Operator.OPERATOR(resultType, elemOp)));
+      then (resultType, Operator.makeEW(Operator.OPERATOR(resultType, elemOp, int_rhs)));
 
     // scalar * scalar => Op.{elemOp}
-    else (resultType, Operator.OPERATOR(resultType, elemOp));
+    else (resultType, Operator.OPERATOR(resultType, elemOp, int_rhs));
   end match;
 
   binaryExp := Expression.BINARY(e1, op, e2);

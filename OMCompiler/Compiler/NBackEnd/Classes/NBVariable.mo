@@ -1857,7 +1857,7 @@ function isJacobianResultVar
     // create variable and add optional binding
     if isSome(binding) then
       bnd := Util.getOption(binding);
-      var := fromCref(cref, NFAttributes.DEFAULT_ATTR, Binding.makeFlat(bnd, Expression.variability(bnd), NFBinding.Source.BINDING));
+      var := fromCref(cref, NFAttributes.DEFAULT_ATTR, Binding.makeFlat(bnd, Expression.variability(bnd), NFBinding.Source.BINDING, Absyn.dummyInfo));
     else
       var := fromCref(cref);
     end if;
