@@ -53,6 +53,12 @@ private slots:
    * See issue #16811.
    */
   void arrayVariables();
+  /*!
+   * \brief valueLabels
+   * Checks that the curves of a Boolean and an enumeration name their values, taken
+   * from a .mat result file, and from model_init.xml for a .csv one. See issue #14952.
+   */
+  void valueLabels();
   void cleanupTestCase();
 };
 

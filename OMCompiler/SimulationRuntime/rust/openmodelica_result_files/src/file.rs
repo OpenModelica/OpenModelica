@@ -105,6 +105,12 @@ impl ResultFile {
         self.info(var, |t, i| t.var_type(i).to_owned()).unwrap_or_else(|| "Real".to_owned())
     }
 
+    /// The literals of enumeration `var`, value `k` naming the `k`-th; `None`
+    /// unless the file has them.
+    pub fn enumeration(&self, var: &str) -> Option<Vec<String>> {
+        self.info(var, |t, i| t.enumeration(i)).flatten()
+    }
+
     pub fn is_parameter(&self, var: &str) -> bool {
         self.info(var, |t, i| t.all_info()[i].isParam).unwrap_or(false)
     }

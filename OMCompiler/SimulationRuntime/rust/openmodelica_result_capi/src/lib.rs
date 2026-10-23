@@ -222,6 +222,30 @@ pub extern "C" fn omc_result_type(r: *const omc_result, var: *const c_char) -> *
     with(r, ptr::null_mut(), |r| malloc_str(&r.file.var_type(&cstr(var))))
 }
 
+/// The literals of enumeration `var`, `*len` of them, for
+/// `omc_result_free_strings`; null unless the file has them.
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_result_enumeration(r: *const omc_result, var: *const c_char, len: *mut usize) -> *mut *mut c_char {
+    if len.is_null() {
+        return ptr::null_mut();
+    }
+    unsafe { *len = 0 };
+    with(r, ptr::null_mut(), |r| match r.file.enumeration(&cstr(var)) {
+        Some(literals) => {
+            let arr = unsafe { libc::malloc(literals.len().max(1) * size_of::<*mut c_char>()) } as *mut *mut c_char;
+            if arr.is_null() {
+                return arr;
+            }
+            for (i, l) in literals.iter().enumerate() {
+                unsafe { *arr.add(i) = malloc_str(l) };
+            }
+            unsafe { *len = literals.len() };
+            arr
+        }
+        None => ptr::null_mut(),
+    })
+}
+
 #[unsafe(no_mangle)]
 pub extern "C" fn omc_result_num_rows(r: *const omc_result) -> usize {
     with(r, 0, |r| r.file.nrows())

@@ -97,6 +97,7 @@ private:
   QToolButton* mpLogXButton;
   QToolButton* mpLogYButton;
   QToolButton* mpAlignZeroButton;
+  QToolButton* mpStackCurvesButton;
   QComboBox* mpGridComboBox;
   QToolButton* mpAutoScaleButton;
   QToolButton* mpSetupButton;
@@ -134,6 +135,7 @@ private:
   bool mTimeOutOfBounds = false;
   bool mIsInteractiveSimulation;
   bool mAlignZero = false;
+  bool mStackCurves = false;
   QString mInteractiveTreeItemOwner;
   int mInteractivePort;
   QwtSeriesData<QPointF>* mpInteractiveData;
@@ -234,6 +236,7 @@ public:
   bool getPrefixUnits() const;
   void setPrefixUnits(bool prefixUnits);
   bool getAlignZero() const { return mAlignZero; }
+  bool getStackCurves() const { return mStackCurves; }
   void checkForErrors(QStringList variables, QStringList variablesPlotted);
   Plot* getPlot();
   void receiveMessage(QStringList arguments);
@@ -265,6 +268,7 @@ public slots:
   void setLogX(bool on);
   void setLogY(bool on);
   void setAlignZero(bool on);
+  void setStackCurves(bool on);
   void setAutoScale(bool on);
   bool toggleSign(PlotCurve *pPlotCurve, bool checked);
   void setYAxisRight(PlotCurve* pPlotCurve, bool right);

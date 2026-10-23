@@ -142,8 +142,8 @@ QList<PlotCurve*> PlotPicker::curvesAtPosition(const QPoint pos, QList<int> *ind
               || pPlotCurve->mXAxisVector.size() <= nextIndex || pPlotCurve->mYAxisVector.size() <= nextIndex) {
             continue;
           }
-          QPointF previousCurvePoint(pPlotCurve->mXAxisVector.at(previousIndex), pPlotCurve->mYAxisVector.at(previousIndex));
-          QPointF nextCurvePoint(pPlotCurve->mXAxisVector.at(nextIndex), pPlotCurve->mYAxisVector.at(nextIndex));
+          QPointF previousCurvePoint = pPlotCurve->sample(previousIndex);
+          QPointF nextCurvePoint = pPlotCurve->sample(nextIndex);
           // find which point is closest to mouse point.
           qreal pseudoDistance1 = qPow(posF.x() - previousCurvePoint.x(), 2) + qPow(posF.y() - previousCurvePoint.y(), 2);
           qreal pseudoDistance2 = qPow(posF.x() - nextCurvePoint.x(), 2) + qPow(posF.y() - nextCurvePoint.y(), 2);
@@ -163,8 +163,8 @@ QList<PlotCurve*> PlotPicker::curvesAtPosition(const QPoint pos, QList<int> *ind
               || pPlotCurve->mXAxisVector.size() <= index1 || pPlotCurve->mYAxisVector.size() <= index1) {
             continue;
           }
-          QPointF curvePointA(pPlotCurve->mXAxisVector.at(index), pPlotCurve->mYAxisVector.at(index));
-          QPointF curvePointB(pPlotCurve->mXAxisVector.at(index1), pPlotCurve->mYAxisVector.at(index1));
+          QPointF curvePointA = pPlotCurve->sample(index);
+          QPointF curvePointB = pPlotCurve->sample(index1);
           if (containsPoint(posF, curvePointA, curvePointB, x, y)) {
             plotCurvesList.append(pPlotCurve);
             indexes->append(index);
@@ -201,9 +201,10 @@ QwtText PlotPicker::trackerText(const QPoint &pos) const
 
       double x = pPlotCurve->mXAxisVector.at(index);
       double y = pPlotCurve->mYAxisVector.at(index);
+      const QString yText = pPlotCurve->hasValueLabels() ? pPlotCurve->valueText(y) : QString::number(y);
 
       pPlotCurve->getPointMarker()->setYAxis(pPlotCurve->yAxis());
-      pPlotCurve->getPointMarker()->setValue(x, y);
+      pPlotCurve->getPointMarker()->setValue(x, pPlotCurve->stackedValue(y));
       pPlotCurve->getPointMarker()->setVisible(true);
 
       // ScaleDraw::getExponent is only useable when time is on x-axis
@@ -218,12 +219,12 @@ QwtText PlotPicker::trackerText(const QPoint &pos) const
         toolTip += QString("Name: <b>%1</b><br />X: <b>%2</b><br />Y: <b>%4</b><br />Filename: <b>%6</b>")
                    .arg(pPlotCurve->title().text())
                    .arg(x)
-                   .arg(y)
+                   .arg(yText)
                    .arg(pPlotCurve->getFileName());
       } else {
         toolTip += QString("Name: <b>%1</b><br />Value: <b>%2</b> at <b>%3</b> %4<br />Filename: <b>%5</b>")
                    .arg(pPlotCurve->title().text())
-                   .arg(y)
+                   .arg(yText)
                    .arg(x)
                    .arg(timeUnit)
                    .arg(pPlotCurve->getFileName());
