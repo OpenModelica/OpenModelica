@@ -10,7 +10,7 @@
 //! is 4 bytes in wasm and 8 here) the map converts, and the regions C has no
 //! home for (the driver's own scratch) fall through to a buffer this module owns.
 
-use core::ffi::{c_int, c_long, c_ulong, c_void};
+use core::ffi::{c_int, c_long, c_uint, c_ulong, c_void};
 
 use openmodelica_sim_meta::{Layout, REAL_OFF};
 
@@ -289,9 +289,7 @@ impl RtData {
             }
             Some((r, off)) => match r.backing {
                 Backing::Direct(base) => {
-                    unsafe {
-                        core::ptr::copy_nonoverlapping(base.add(off as usize), buf.as_mut_ptr(), buf.len())
-                    };
+                    unsafe { core::ptr::copy_nonoverlapping(base.add(off as usize), buf.as_mut_ptr(), buf.len()) };
                     Ok(())
                 }
                 Backing::WidenInt(base) => {
@@ -328,7 +326,10 @@ impl RtData {
                     }
                     for (k, out) in buf.chunks_exact_mut(8).enumerate() {
                         let ix = unsafe { &*rev.add(off as usize / 8 + k) };
-                        let v = unsafe { &*vars.add(ix.array_idx) }.attribute.start.real_at(ix.dim_idx, 0.0);
+                        let v = unsafe { &*vars.add(ix.array_idx) }
+                            .attribute
+                            .start
+                            .real_at(ix.dim_idx, 0.0);
                         out.copy_from_slice(&v.to_ne_bytes());
                     }
                     Ok(())
@@ -365,15 +366,16 @@ impl RtData {
         match found {
             None => {
                 let end = addr as usize + buf.len();
-                let dst = self.owned.get_mut(addr as usize..end).ok_or("SimData write out of range")?;
+                let dst = self
+                    .owned
+                    .get_mut(addr as usize..end)
+                    .ok_or("SimData write out of range")?;
                 dst.copy_from_slice(buf);
                 Ok(())
             }
             Some((backing, off)) => match backing {
                 Backing::Direct(base) => {
-                    unsafe {
-                        core::ptr::copy_nonoverlapping(buf.as_ptr(), base.add(off as usize), buf.len())
-                    };
+                    unsafe { core::ptr::copy_nonoverlapping(buf.as_ptr(), base.add(off as usize), buf.len()) };
                     Ok(())
                 }
                 Backing::WidenInt(base) => {
@@ -398,16 +400,12 @@ impl RtData {
                     }
                     Ok(())
                 }
-                Backing::BaseClocks(base) => {
-                    clock_io(buf.as_ptr() as *mut u8, buf.len(), off, false, |o| {
-                        base_clock_field(base, o)
-                    })
-                }
-                Backing::SubClocks(base) => {
-                    clock_io(buf.as_ptr() as *mut u8, buf.len(), off, false, |o| {
-                        sub_clock_field(base, o)
-                    })
-                }
+                Backing::BaseClocks(base) => clock_io(buf.as_ptr() as *mut u8, buf.len(), off, false, |o| {
+                    base_clock_field(base, o)
+                }),
+                Backing::SubClocks(base) => clock_io(buf.as_ptr() as *mut u8, buf.len(), off, false, |o| {
+                    sub_clock_field(base, o)
+                }),
                 Backing::RealStart(vars, rev) => {
                     if buf.len() % 8 != 0 || off % 8 != 0 {
                         return Err("SimData start write is not a whole number of 8-byte slots");
@@ -518,7 +516,10 @@ fn set_lv_systems(data: *mut DATA, thread_data: *mut threadData_t, list: &str) {
         *active = hit as modelica_boolean;
     }
     if let Some(i) = wanted.iter().position(|&w| w) {
-        crate::throw(thread_data, &format!("setLVSystems: {i} is not a valid equation index."));
+        crate::throw(
+            thread_data,
+            &format!("setLVSystems: {i} is not a valid equation index."),
+        );
     }
 }
 
@@ -542,10 +543,8 @@ pub fn initialize_data_struc(data: *mut DATA, _thread_data: *mut threadData_t) {
     md.nVariablesBoolean = unsafe { *si.booleanVarsIndex.add(md.nVariablesBooleanArray as usize) } as c_long;
     md.nVariablesString = unsafe { *si.stringVarsIndex.add(md.nVariablesStringArray as usize) } as c_long;
     md.nParametersReal = unsafe { *si.realParamsIndex.add(md.nParametersRealArray as usize) } as c_long;
-    md.nParametersInteger =
-        unsafe { *si.integerParamsIndex.add(md.nParametersIntegerArray as usize) } as c_long;
-    md.nParametersBoolean =
-        unsafe { *si.booleanParamsIndex.add(md.nParametersBooleanArray as usize) } as c_long;
+    md.nParametersInteger = unsafe { *si.integerParamsIndex.add(md.nParametersIntegerArray as usize) } as c_long;
+    md.nParametersBoolean = unsafe { *si.booleanParamsIndex.add(md.nParametersBooleanArray as usize) } as c_long;
     md.nParametersString = unsafe { *si.stringParamsIndex.add(md.nParametersStringArray as usize) } as c_long;
     md.nAliasReal = md.nAliasRealArray;
     md.nAliasInteger = md.nAliasIntegerArray;
@@ -584,7 +583,11 @@ pub fn initialize_data_struc(data: *mut DATA, _thread_data: *mut threadData_t) {
     si.nextSampleTimes = calloc(md.nSamples as usize);
     si.samples = calloc(md.nSamples as usize);
 
-    si.baseClocks = if md.nBaseClocks > 0 { calloc(md.nBaseClocks as usize) } else { core::ptr::null_mut() };
+    si.baseClocks = if md.nBaseClocks > 0 {
+        calloc(md.nBaseClocks as usize)
+    } else {
+        core::ptr::null_mut()
+    };
     si.intvlTimers = core::ptr::null_mut();
     // A `crate::spatial` state, allocated by `functionInitSpatialDistribution`.
     si.spatialDistributionData = core::ptr::null_mut();
@@ -705,8 +708,7 @@ pub fn initialize_data_struc(data: *mut DATA, _thread_data: *mut threadData_t) {
     si.discreteCall = 0;
     si.needToIterate = 0;
     si.simulationSuccess = 0;
-    si.maxWarnDisplays =
-        openmodelica_sim_meta::simflags::with_flags(|f| f.max_warn.unwrap_or(3)) as c_ulong;
+    si.maxWarnDisplays = openmodelica_sim_meta::simflags::with_flags(|f| f.max_warn.unwrap_or(3)) as c_ulong;
     si.solverSteps = 0.0;
     si.homotopySteps = 0;
     si.currentJacobianEval = 0;
@@ -812,8 +814,6 @@ fn free_jacobian(j: &mut JACOBIAN) {
     free(&mut j.tmpVars);
     free(&mut j.resultVars);
     crate::support::freeSparsePattern(core::mem::replace(&mut j.sparsePattern, core::ptr::null_mut()));
-    j.adjointJacobian = core::ptr::null_mut();
-    j.availability = JACOBIAN_UNKNOWN;
 }
 
 #[cfg(feature = "fmi")]
@@ -929,7 +929,12 @@ pub fn free_data_struc(data: *mut DATA, thread_data: *mut threadData_t) {
         free(p);
     }
     // The generated `read_simulation_info` and `setupDataStruc`'s `GC_strdup`s.
-    for p in [&mut si.solverMethod, &mut si.outputFormat, &mut si.variableFilter, &mut si.OPENMODELICAHOME] {
+    for p in [
+        &mut si.solverMethod,
+        &mut si.outputFormat,
+        &mut si.variableFilter,
+        &mut si.OPENMODELICAHOME,
+    ] {
         unsafe { omc_rc_release(core::mem::replace(p, core::ptr::null()) as *mut c_void) };
     }
     unsafe { omc_rc_release(core::mem::replace(&mut md.modelDataXml.fileName, core::ptr::null()) as *mut c_void) };
@@ -1028,18 +1033,11 @@ pub fn jac_a(data: *mut DATA) -> Option<&'static JACOBIAN> {
     unsafe { jac_a_ptr(data).as_ref() }
 }
 
-/// The adjoint Jacobian: the one a bidirectionally compiled JAC_A links, else
 /// `analyticJacobians[INDEX_JAC_ADJ]` once [`init_jac_a`] initialized it.
 pub fn jac_adj_ptr(data: *mut DATA) -> *mut JACOBIAN {
-    let a = match jac_a(data) {
-        Some(j) if !j.adjointJacobian.is_null() => j.adjointJacobian,
-        _ => jac_ptr(data, unsafe { (*(*data).callback).INDEX_JAC_ADJ }),
-    };
+    let a = jac_ptr(data, unsafe { (*(*data).callback).INDEX_JAC_ADJ });
     match unsafe { a.as_ref() } {
-        Some(j) if j.availability == JACOBIAN_AVAILABLE
-            && !j.seedVars.is_null()
-            && !j.resultVars.is_null()
-            && j.evalColumn.is_some() => a,
+        Some(j) if !j.seedVarsAdj.is_null() && !j.resultVarsAdj.is_null() && j.evalRow.is_some() => a,
         _ => core::ptr::null_mut(),
     }
 }
@@ -1065,27 +1063,30 @@ fn init_jac_a(data: *mut DATA, thread_data: *mut threadData_t) {
         Some(f) => (unsafe { f(data, thread_data, j) }) == 0,
         None => false,
     };
-    if !ok {
-        unsafe { (*j).availability = JACOBIAN_NOT_AVAILABLE };
-    }
-    // C's `initSymbolicOdeJacobian`: a model compiled bidirectionally initialized its
-    // adjoint along with A; one compiled with the adjoint alone only on request.
     let cb = unsafe { &*(*data).callback };
-    let adjoint_only = openmodelica_sim_meta::simflags::with_flags(|f| {
-        f.jacobian == Some(openmodelica_sim_meta::simflags::JacobianMethod::ColoredSymJacAdj)
+    let needs_adjoint = openmodelica_sim_meta::simflags::with_flags(|f| {
+        use openmodelica_sim_meta::simflags::JacobianMethod;
+        matches!(
+            f.jacobian,
+            Some(JacobianMethod::ColoredSymJacAdj | JacobianMethod::BicoloredSymJac)
+        )
     });
     let adj = jac_ptr(data, cb.INDEX_JAC_ADJ);
-    if adjoint_only && unsafe { (*j).adjointJacobian.is_null() } && !adj.is_null() {
+    if needs_adjoint && !adj.is_null() {
         let ok = match cb.initialAnalyticJacobianADJ {
             Some(f) => (unsafe { f(data, thread_data, adj) }) == 0,
             None => false,
         };
-        if !ok {
-            unsafe { (*adj).availability = JACOBIAN_NOT_AVAILABLE };
+        if ok {
+            let a = unsafe { &*adj };
+            // Coloring columns of J^T colors rows of J.
+            crate::support::computeColumnColoring(a.sparsePatternT, a.sizeCols as c_uint, a.sizeRows as c_uint);
+        } else {
+            unsafe { (*adj).evalRow = None };
         }
     }
     let words = match unsafe { jac_adj_ptr(data).as_ref() } {
-        Some(a) => (a.sizeCols + a.sizeRows + a.sizeTmpVars) as u32,
+        Some(a) => (a.sizeCols + a.sizeRows + a.sizeTmpVarsAdj) as u32,
         None => 0,
     };
     JAC_ADJ_WORDS.store(words, core::sync::atomic::Ordering::Relaxed);
@@ -1094,12 +1095,7 @@ fn init_jac_a(data: *mut DATA, thread_data: *mut threadData_t) {
 /// The flat words the Jacobian window holds: its seeds then its results.
 fn jac_a_words(data: *mut DATA) -> u32 {
     match jac_a(data) {
-        Some(j) if j.availability == JACOBIAN_AVAILABLE
-            && !j.seedVars.is_null()
-            && !j.resultVars.is_null() =>
-        {
-            (j.sizeCols + j.sizeRows) as u32
-        }
+        Some(j) if !j.seedVars.is_null() && !j.resultVars.is_null() => (j.sizeCols + j.sizeRows) as u32,
         _ => 0,
     }
 }
@@ -1114,16 +1110,17 @@ fn layout_for(
 ) -> Layout {
     // C's `homotopySupport`: whether any nonlinear system carries the operator.
     // `callback->homotopyMethod` only says *which* continuation would run.
-    let has_homotopy = (0..md.nNonLinearSystems as usize)
-        .any(|i| unsafe { (*_si.nonlinearSystemData.add(i)).homotopySupport != 0 });
+    let has_homotopy =
+        (0..md.nNonLinearSystems as usize).any(|i| unsafe { (*_si.nonlinearSystemData.add(i)).homotopySupport != 0 });
     let n_states = md.nStates as u32;
     let n_real_alg = (md.nVariablesReal - 2 * md.nStates).max(0) as u32;
-    let dae = unsafe { md.nStateSets >= 0 && !_si.daeModeData.is_null() }
-        .then(|| unsafe { &*_si.daeModeData });
+    let dae = unsafe { md.nStateSets >= 0 && !_si.daeModeData.is_null() }.then(|| unsafe { &*_si.daeModeData });
     let (n_dae_res, n_dae_aux, n_dae_alg) = match dae {
-        Some(d) if unsafe { crate::support::compiledInDAEMode } != 0 => {
-            (d.nResidualVars as u32, d.nAuxiliaryVars as u32, d.nAlgebraicDAEVars as u32)
-        }
+        Some(d) if unsafe { crate::support::compiledInDAEMode } != 0 => (
+            d.nResidualVars as u32,
+            d.nAuxiliaryVars as u32,
+            d.nAlgebraicDAEVars as u32,
+        ),
         _ => (0, 0, 0),
     };
     Layout::new(
@@ -1174,7 +1171,11 @@ fn layout_for(
 /// closure below because that one borrows the list for its whole life.
 fn direct_region(regions: &mut Vec<Region>, start: u32, bytes: u32, backing: Backing) {
     if bytes > 0 {
-        regions.push(Region { start, end: start + bytes, backing });
+        regions.push(Region {
+            start,
+            end: start + bytes,
+            backing,
+        });
     }
 }
 
@@ -1191,20 +1192,36 @@ pub fn build_regions(rt: &mut RtData) {
     let mut regions: Vec<Region> = Vec::new();
     let mut direct = |start: u32, bytes: u32, base: *mut c_void| {
         if bytes > 0 {
-            regions.push(Region { start, end: start + bytes, backing: Backing::Direct(base as *mut u8) });
+            regions.push(Region {
+                start,
+                end: start + bytes,
+                backing: Backing::Direct(base as *mut u8),
+            });
         }
     };
 
     // `time` is a field of SIMULATION_DATA, not part of `realVars`.
     direct(0, 8, &mut sd0.timeValue as *mut f64 as *mut c_void);
     direct(REAL_OFF, n_real * 8, sd0.realVars as *mut c_void);
-    direct(l.rparam_off, md.nParametersReal as u32 * 8, si.realParameter as *mut c_void);
+    direct(
+        l.rparam_off,
+        md.nParametersReal as u32 * 8,
+        si.realParameter as *mut c_void,
+    );
     direct(l.bool_off, n_bool * 4, sd0.booleanVars as *mut c_void);
-    direct(l.bparam_off, md.nParametersBoolean as u32 * 4, si.booleanParameter as *mut c_void);
+    direct(
+        l.bparam_off,
+        md.nParametersBoolean as u32 * 4,
+        si.booleanParameter as *mut c_void,
+    );
     direct(l.pre_real_off, n_real * 8, si.realVarsPre as *mut c_void);
     direct(l.pre_bool_off, n_bool * 4, si.booleanVarsPre as *mut c_void);
     direct(l.old_real_off, n_real * 8, sd1.realVars as *mut c_void);
-    direct(l.terminate_off, 4, &raw mut crate::support::terminationTerminate as *mut c_void);
+    direct(
+        l.terminate_off,
+        4,
+        &raw mut crate::support::terminationTerminate as *mut c_void,
+    );
     direct(l.terminal_off, 4, &mut si.terminal as *mut c_int as *mut c_void);
     direct(l.initial_off, 4, &mut si.initial as *mut c_int as *mut c_void);
     direct(l.lambda_off, 8, &mut si.lambda as *mut f64 as *mut c_void);
@@ -1221,23 +1238,44 @@ pub fn build_regions(rt: &mut RtData) {
     // Past the layout: C's `currentContext`, which the driver's `setContext`
     // writes and both `solve_linear_system` (`reuseMatrixJac`) and the nonlinear
     // solver's `updateInitialGuessDB` read.
-    direct(l.total + CONTEXT_OFF, 4, &mut si.currentContext as *mut c_int as *mut c_void);
+    direct(
+        l.total + CONTEXT_OFF,
+        4,
+        &mut si.currentContext as *mut c_int as *mut c_void,
+    );
     let x = extra(&l, md);
-    direct(x.input_vars, md.nInputVars.max(0) as u32 * 8, si.inputVars as *mut c_void);
-    direct(x.output_vars, md.nOutputVars.max(0) as u32 * 8, si.outputVars as *mut c_void);
-    direct(x.recon_in, md.ndataReconVars.max(0) as u32 * 8, si.datainputVars as *mut c_void);
+    direct(
+        x.input_vars,
+        md.nInputVars.max(0) as u32 * 8,
+        si.inputVars as *mut c_void,
+    );
+    direct(
+        x.output_vars,
+        md.nOutputVars.max(0) as u32 * 8,
+        si.outputVars as *mut c_void,
+    );
+    direct(
+        x.recon_in,
+        md.ndataReconVars.max(0) as u32 * 8,
+        si.datainputVars as *mut c_void,
+    );
     direct(x.recon_setc, md.nSetcVars.max(0) as u32 * 8, si.setcVars as *mut c_void);
     direct(x.recon_setb, md.nSetbVars.max(0) as u32 * 8, si.setbVars as *mut c_void);
     for (off, bytes, base) in crate::stateset::regions(rt.data, &l) {
         direct(off, bytes, base);
     }
-    direct(l.clock_fire_off, l.n_base_clocks * 4, crate::sync::fire_flags(rt.data) as *mut c_void);
+    direct(
+        l.clock_fire_off,
+        l.n_base_clocks * 4,
+        crate::sync::fire_flags(rt.data) as *mut c_void,
+    );
     if l.sym_solver > 0 {
-        direct(l.inline_dt_off, 8, unsafe { &mut (*si.inlineData).dt } as *mut f64 as *mut c_void);
-        direct(l.alg_old_off, l.n_states * 8, unsafe { (*si.inlineData).algOldVars } as *mut c_void);
+        direct(l.inline_dt_off, 8, unsafe { &mut (*si.inlineData).dt } as *mut f64
+            as *mut c_void);
+        direct(l.alg_old_off, l.n_states * 8, unsafe { (*si.inlineData).algOldVars }
+            as *mut c_void);
     }
     if let Some(j) = jac_a(rt.data)
-        && j.availability == JACOBIAN_AVAILABLE
         && !j.seedVars.is_null()
         && !j.resultVars.is_null()
     {
@@ -1250,15 +1288,27 @@ pub fn build_regions(rt: &mut RtData) {
     }
     if let Some(a) = unsafe { jac_adj_ptr(rt.data).as_ref() } {
         let (cols, rows) = ((a.sizeCols * 8) as u32, (a.sizeRows * 8) as u32);
-        direct(x.jac_adj, cols, a.seedVars.cast());
-        direct(x.jac_adj + cols, rows, a.resultVars.cast());
-        if !a.tmpVars.is_null() {
-            direct(x.jac_adj + cols + rows, (a.sizeTmpVars * 8) as u32, a.tmpVars.cast());
+        direct(x.jac_adj, rows, a.seedVarsAdj.cast());
+        direct(x.jac_adj + rows, cols, a.resultVarsAdj.cast());
+        if !a.tmpVarsAdj.is_null() {
+            direct(
+                x.jac_adj + cols + rows,
+                (a.sizeTmpVarsAdj * 8) as u32,
+                a.tmpVarsAdj.cast(),
+            );
         }
     }
     if l.n_dae_res > 0 {
-        direct(l.dae_res_off, l.n_dae_res * 8, unsafe { (*si.daeModeData).residualVars } as *mut c_void);
-        direct(l.dae_aux_off, l.n_dae_aux * 8, unsafe { (*si.daeModeData).auxiliaryVars } as *mut c_void);
+        direct(
+            l.dae_res_off,
+            l.n_dae_res * 8,
+            unsafe { (*si.daeModeData).residualVars } as *mut c_void,
+        );
+        direct(
+            l.dae_aux_off,
+            l.n_dae_aux * 8,
+            unsafe { (*si.daeModeData).auxiliaryVars } as *mut c_void,
+        );
     }
 
     for (off, bytes, base) in crate::optimization::regions(rt.data, &l) {
@@ -1315,7 +1365,11 @@ pub fn build_regions(rt: &mut RtData) {
         (l.eobj_off, md.nExtObjs as u32),
     ] {
         if count > 0 {
-            regions.push(Region { start, end: start + count * 4, backing: Backing::Opaque });
+            regions.push(Region {
+                start,
+                end: start + count * 4,
+                backing: Backing::Opaque,
+            });
         }
     }
 
@@ -1368,12 +1422,21 @@ fn array_index_maps(md: &mut MODEL_DATA, si: &mut SIMULATION_INFO) {
     si.stringAliasIndex = identity(md.nAliasStringArray);
 
     let reverse = |vars_index: *const usize, n_array: c_long| -> *mut array_index_t {
-        let total = if n_array > 0 { unsafe { *vars_index.add(n_array as usize) } } else { 0 };
+        let total = if n_array > 0 {
+            unsafe { *vars_index.add(n_array as usize) }
+        } else {
+            0
+        };
         let out: *mut array_index_t = calloc(total.max(1));
         for a in 0..n_array as usize {
             let (from, to) = unsafe { (*vars_index.add(a), *vars_index.add(a + 1)) };
             for (k, s) in (from..to).enumerate() {
-                unsafe { *out.add(s) = array_index_t { array_idx: a, dim_idx: k } };
+                unsafe {
+                    *out.add(s) = array_index_t {
+                        array_idx: a,
+                        dim_idx: k,
+                    }
+                };
             }
         }
         out

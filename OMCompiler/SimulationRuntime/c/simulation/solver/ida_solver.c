@@ -394,7 +394,6 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   if (idaData->daeMode) {
     idaData->NNZ = data->simulationInfo->daeModeData->sparsePattern->nnz;
   } else {
-    // could also be jacobian->sparsePattern->nnz but the cscPattern is the one that is actually used.
     idaData->NNZ = cscPattern->nnz;
   }
 
