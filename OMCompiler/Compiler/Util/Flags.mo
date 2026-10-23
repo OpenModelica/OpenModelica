@@ -578,6 +578,8 @@ constant DebugFlag TEARING_COST = DEBUG_FLAG(200, "tearingCost", false,
   "Dumps the estimated cost of every torn system against solving it untorn.");
 constant DebugFlag OMEDIT = DEBUG_FLAG(201, "omedit", false,
   "Set by OMEdit, so the compiler can emit output only a GUI consumes.");
+constant DebugFlag CHECK_USED_ELEMENTS_LOOKUP = DEBUG_FLAG(202, "checkUsedElementsLookup", false,
+  "Checks the classes found by the lookup of getDefUseChains and getClassDiagram against the new frontend's lookup.");
 
 public
 // CONFIGURATION FLAGS

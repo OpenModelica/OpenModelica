@@ -1,0 +1,115 @@
+// name: getDefUseChains6
+// keywords: def-use, lookup, #16964
+// status: correct
+//
+// Tests that the def-use walker finds the same classes as the lookup of the
+// new frontend (-d=checkUsedElementsLookup) for inherited classes, imports in
+// an encapsulated package, a class referring to itself, a function called
+// through a component, a class extends and classes redeclared in the modifier
+// of an extends.
+
+setCommandLineOptions("-d=checkUsedElementsLookup"); getErrorString();
+loadString("package L
+  package Types
+    type Temp = Real(unit = \"K\");
+    type Press = Real(unit = \"Pa\");
+    record Props
+      Real a = 1;
+    end Props;
+  end Types;
+
+  partial package PartialMedium
+    replaceable record FluidConstants
+      Real mw = 1;
+    end FluidConstants;
+    replaceable function h
+      input Real x;
+      output Real y = x;
+    end h;
+    constant Integer nX = 1;
+  end PartialMedium;
+
+  partial package PartialMixtureMedium
+    extends PartialMedium(redeclare replaceable record FluidConstants = Types.Props);
+    constant FluidConstants fc;
+  end PartialMixtureMedium;
+
+  package Water
+    extends PartialMedium(nX = 2);
+    redeclare function extends h
+    algorithm
+      y := 2*x;
+    end h;
+    constant FluidConstants fc;
+  end Water;
+
+  encapsulated package Enc
+    import L.Types;
+    import L.Types.{Temp, Press};
+    import P = L.Types.Press;
+    import L.Types.*;
+    model M
+      Types.Temp t;
+      Temp t2;
+      P p;
+      Props r;
+    end M;
+  end Enc;
+
+  model World
+    function gravity
+      input Real z;
+      output Real g = 9.81*z;
+    end gravity;
+  end World;
+
+  model Body
+    World world;
+    Real g = world.gravity(1);
+  end Body;
+
+  model Self
+    parameter Integer n = 1;
+    model Inner
+      Types.Temp t;
+    end Inner;
+    Inner i;
+    Self.Inner i2;
+    L.Self.Inner i3;
+  end Self;
+
+  partial model Base
+    replaceable package Medium = PartialMedium;
+    Types.Temp t0;
+  end Base;
+
+  model Derived
+    extends Base(redeclare package Medium = Water);
+    Medium.FluidConstants c;
+    Types.Press p;
+    Real y = Medium.h(1);
+  end Derived;
+end L;
+", "L.mo"); getErrorString();
+
+getDefUseChains(L, fileName = "getDefUseChains6.json"); getErrorString();
+// FluidConstants is the class redeclared in the modifier of the extends, not the inherited one.
+getDefUseChains(L.PartialMixtureMedium, fileName = "getDefUseChains6.json");
+readFile("getDefUseChains6.json"); getErrorString();
+
+deleteFile("getDefUseChains6.json");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "getDefUseChains6.json"
+// "Warning: checkUsedElementsLookup: compared 25 names, skipped 0 looked up through a replaceable class and 0 the new frontend can't look up in the class on its own
+// "
+// "getDefUseChains6.json"
+// "{\"class\":\"L.PartialMixtureMedium\", \"definitions\":[{\"name\":\"L.PartialMedium\", \"kind\":\"class\", \"restriction\":\"package\", \"file\":\"L.mo\", \"lineStart\":10, \"columnStart\":3, \"lineEnd\":19, \"columnEnd\":20, \"uses\":[{\"file\":\"L.mo\", \"lineStart\":22, \"columnStart\":5, \"lineEnd\":22, \"columnEnd\":85, \"exact\":false, \"text\":\"PartialMedium\", \"part\":1, \"in\":\"L.PartialMixtureMedium\", \"role\":\"extends\"}, {\"file\":\"L.mo\", \"lineStart\":27, \"columnStart\":5, \"lineEnd\":27, \"columnEnd\":34, \"exact\":false, \"text\":\"PartialMedium\", \"part\":1, \"in\":\"L.Water\", \"role\":\"extends\"}, {\"file\":\"L.mo\", \"lineStart\":71, \"columnStart\":17, \"lineEnd\":71, \"columnEnd\":47, \"exact\":false, \"text\":\"PartialMedium\", \"part\":1, \"in\":\"L.Base.Medium\", \"role\":\"extends\"}]}, {\"name\":\"L.PartialMedium.FluidConstants\", \"kind\":\"class\", \"restriction\":\"record\", \"file\":\"L.mo\", \"lineStart\":11, \"columnStart\":17, \"lineEnd\":13, \"columnEnd\":23, \"uses\":[{\"file\":\"L.mo\", \"lineStart\":22, \"columnStart\":5, \"lineEnd\":22, \"columnEnd\":85, \"exact\":false, \"text\":\"FluidConstants\", \"part\":1, \"in\":\"L.PartialMixtureMedium\", \"role\":\"modifier\"}, {\"file\":\"L.mo\", \"lineStart\":32, \"columnStart\":5, \"lineEnd\":32, \"columnEnd\":31, \"exact\":false, \"text\":\"FluidConstants\", \"part\":1, \"in\":\"L.Water\", \"role\":\"type\"}, {\"file\":\"L.mo\", \"lineStart\":77, \"columnStart\":5, \"lineEnd\":77, \"columnEnd\":28, \"exact\":false, \"text\":\"Medium.FluidConstants\", \"part\":2, \"in\":\"L.Derived\", \"role\":\"type\"}]}, {\"name\":\"L.PartialMixtureMedium\", \"kind\":\"class\", \"restriction\":\"package\", \"file\":\"L.mo\", \"lineStart\":21, \"columnStart\":3, \"lineEnd\":24, \"columnEnd\":27, \"uses\":[]}, {\"name\":\"L.PartialMixtureMedium.FluidConstants\", \"kind\":\"class\", \"restriction\":\"record\", \"file\":\"L.mo\", \"lineStart\":22, \"columnStart\":49, \"lineEnd\":22, \"columnEnd\":84, \"uses\":[{\"file\":\"L.mo\", \"lineStart\":23, \"columnStart\":5, \"lineEnd\":23, \"columnEnd\":31, \"exact\":false, \"text\":\"FluidConstants\", \"part\":1, \"in\":\"L.PartialMixtureMedium\", \"role\":\"type\"}]}, {\"name\":\"L.PartialMixtureMedium.fc\", \"kind\":\"component\", \"type\":\"FluidConstants\", \"file\":\"L.mo\", \"lineStart\":23, \"columnStart\":5, \"lineEnd\":23, \"columnEnd\":31, \"uses\":[]}, {\"name\":\"L.Types\", \"kind\":\"class\", \"restriction\":\"package\", \"file\":\"L.mo\", \"lineStart\":2, \"columnStart\":3, \"lineEnd\":8, \"columnEnd\":12, \"uses\":[{\"file\":\"L.mo\", \"lineStart\":22, \"columnStart\":5, \"lineEnd\":22, \"columnEnd\":85, \"exact\":false, \"text\":\"Types.Props\", \"part\":1, \"in\":\"L.PartialMixtureMedium\", \"role\":\"type\"}, {\"file\":\"L.mo\", \"lineStart\":36, \"columnStart\":5, \"lineEnd\":36, \"columnEnd\":19, \"exact\":false, \"text\":\"L.Types\", \"part\":2, \"in\":\"L.Enc\", \"role\":\"import\"}, {\"file\":\"L.mo\", \"lineStart\":37, \"columnStart\":5, \"lineEnd\":37, \"columnEnd\":33, \"exact\":false, \"text\":\"L.Types.Press\", \"part\":2, \"in\":\"L.Enc\", \"role\":\"import\"}, {\"file\":\"L.mo\", \"lineStart\":37, \"columnStart\":5, \"lineEnd\":37, \"columnEnd\":33, \"exact\":false, \"text\":\"L.Types.Temp\", \"part\":2, \"in\":\"L.Enc\", \"role\":\"import\"}, {\"file\":\"L.mo\", \"lineStart\":38, \"columnStart\":5, \"lineEnd\":38, \"columnEnd\":29, \"exact\":false, \"text\":\"L.Types.Press\", \"part\":2, \"in\":\"L.Enc\", \"role\":\"import\"}, {\"file\":\"L.mo\", \"lineStart\":39, \"columnStart\":5, \"lineEnd\":39, \"columnEnd\":21, \"exact\":false, \"text\":\"L.Types\", \"part\":2, \"in\":\"L.Enc\", \"role\":\"import\"}, {\"file\":\"L.mo\", \"lineStart\":41, \"columnStart\":7, \"lineEnd\":41, \"columnEnd\":19, \"exact\":false, \"text\":\"Types.Temp\", \"part\":1, \"in\":\"L.Enc.M\", \"role\":\"type\"}, {\"file\":\"L.mo\", \"lineStart\":63, \"columnStart\":7, \"lineEnd\":63, \"columnEnd\":19, \"exact\":false, \"text\":\"Types.Temp\", \"part\":1, \"in\":\"L.Self.Inner\", \"role\":\"type\"}, {\"file\":\"L.mo\", \"lineStart\":72, \"columnStart\":5, \"lineEnd\":72, \"columnEnd\":18, \"exact\":false, \"text\":\"Types.Temp\", \"part\":1, \"in\":\"L.Base\", \"role\":\"type\"}, {\"file\":\"L.mo\", \"lineStart\":78, \"columnStart\":5, \"lineEnd\":78, \"columnEnd\":18, \"exact\":false, \"text\":\"Types.Press\", \"part\":1, \"in\":\"L.Derived\", \"role\":\"type\"}]}, {\"name\":\"L.Types.Props\", \"kind\":\"class\", \"restriction\":\"record\", \"file\":\"L.mo\", \"lineStart\":5, \"columnStart\":5, \"lineEnd\":7, \"columnEnd\":14, \"uses\":[{\"file\":\"L.mo\", \"lineStart\":22, \"columnStart\":5, \"lineEnd\":22, \"columnEnd\":85, \"exact\":false, \"text\":\"Types.Props\", \"part\":2, \"in\":\"L.PartialMixtureMedium\", \"role\":\"type\"}, {\"file\":\"L.mo\", \"lineStart\":44, \"columnStart\":7, \"lineEnd\":44, \"columnEnd\":14, \"exact\":false, \"text\":\"Props\", \"part\":1, \"in\":\"L.Enc.M\", \"role\":\"type\"}]}], \"unresolved\":[]}"
+// "Warning: checkUsedElementsLookup: compared 25 names, skipped 0 looked up through a replaceable class and 0 the new frontend can't look up in the class on its own
+// "
+// true
+// endResult
