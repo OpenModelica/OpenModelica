@@ -4313,6 +4313,21 @@ void LibraryWidget::openTextFile(QFileInfo fileInfo, bool showProgress, bool ski
  */
 void LibraryWidget::openOMSModelFile(QFileInfo fileInfo, bool showProgress, bool skipAddRecentFile)
 {
+#if defined(__EMSCRIPTEN__)
+  // SSP files are handled by OMSimulator, which the web version does not have yet.
+  Q_UNUSED(showProgress);
+  Q_UNUSED(skipAddRecentFile);
+  QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
+  pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::information));
+  pMessageBox->setIcon(QMessageBox::Information);
+  pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+  pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileInfo.fileName())));
+  pMessageBox->setInformativeText(tr("Opening SSP files is not yet supported in the web version of OMEdit. "
+                                     "Use the desktop version of OMEdit to open %1.").arg(fileInfo.fileName()));
+  pMessageBox->setStandardButtons(QMessageBox::Ok);
+  pMessageBox->open();
+  return;
+#endif
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
   }
