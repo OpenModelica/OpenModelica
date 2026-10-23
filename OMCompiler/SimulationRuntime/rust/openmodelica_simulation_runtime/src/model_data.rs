@@ -36,6 +36,8 @@ pub struct InitXml {
     pub md: HashMap<String, String>,
     /// The `DefaultExperiment` attributes.
     pub experiment: HashMap<String, String>,
+    /// The literals of each enumeration type of `TypeDefinitions`.
+    pub enumerations: HashMap<String, Vec<String>>,
 }
 
 impl InitXml {
@@ -47,6 +49,13 @@ impl InitXml {
     }
     pub fn experiment(&self, key: &str) -> &str {
         self.experiment.get(key).map_or("", |s| s.as_str())
+    }
+    /// The enumeration type a variable declares, if it has one.
+    pub fn enumeration(&self, class_type: &str, index: usize) -> Option<openmodelica_sim_meta::Enumeration> {
+        let v = self.group(class_type).get(index)?.as_ref()?;
+        let name = v.attrs.get("declaredType")?;
+        let literals = self.enumerations.get(name)?.clone();
+        Some(openmodelica_sim_meta::Enumeration { name: name.clone(), literals })
     }
 }
 
@@ -62,12 +71,23 @@ pub fn parse_str(text: &str) -> Result<InitXml, String> {
         root.attributes().map(|a| (a.name().to_string(), a.value().to_string())).collect();
     let mut experiment = HashMap::new();
     let mut groups: HashMap<String, Vec<Option<XmlVar>>> = HashMap::new();
+    let mut enumerations = HashMap::new();
 
     for node in root.children().filter(|n| n.is_element()) {
         match node.tag_name().name() {
             "DefaultExperiment" => {
                 experiment =
                     node.attributes().map(|a| (a.name().to_string(), a.value().to_string())).collect();
+            }
+            "TypeDefinitions" => {
+                for ty in node.children().filter(|n| n.has_tag_name("SimpleType")) {
+                    let literals = ty
+                        .descendants()
+                        .filter(|n| n.has_tag_name("Item"))
+                        .map(|n| n.attribute("name").unwrap_or_default().to_string())
+                        .collect();
+                    enumerations.insert(ty.attribute("name").unwrap_or_default().to_string(), literals);
+                }
             }
             "ModelVariables" => {
                 for sv in node.children().filter(|n| n.is_element()) {
@@ -103,7 +123,7 @@ pub fn parse_str(text: &str) -> Result<InitXml, String> {
             _ => {}
         }
     }
-    Ok(InitXml { groups, md, experiment })
+    Ok(InitXml { groups, md, experiment, enumerations })
 }
 
 // ---------------------------------------------------------------------------
@@ -728,4 +748,33 @@ pub fn initialize_output_filter(md: &mut MODEL_DATA, filter: &str, cheap_aliases
         md.stringAlias,
         md.stringParameterData
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn enumeration_types_come_from_type_definitions() {
+        let xml = parse_str(
+            r#"<fmiModelDescription guid="{x}">
+  <TypeDefinitions>
+    <SimpleType name="P.Mode">
+      <Enumeration>
+        <Item name="Off" value="1"/>
+        <Item name="Heat" value="2"/>
+      </Enumeration>
+    </SimpleType>
+  </TypeDefinitions>
+  <ModelVariables>
+    <ScalarVariable name="m" classIndex="0" classType="iAlg"><Integer declaredType="P.Mode" start="1"/></ScalarVariable>
+    <ScalarVariable name="i" classIndex="1" classType="iAlg"><Integer start="1"/></ScalarVariable>
+  </ModelVariables>
+</fmiModelDescription>"#,
+        )
+        .unwrap();
+        let e = xml.enumeration("iAlg", 0).unwrap();
+        assert_eq!((e.name.as_str(), e.literals.as_slice()), ("P.Mode", &["Off".to_string(), "Heat".to_string()][..]));
+        assert!(xml.enumeration("iAlg", 1).is_none());
+    }
 }

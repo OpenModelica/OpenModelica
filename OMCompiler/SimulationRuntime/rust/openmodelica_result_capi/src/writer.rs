@@ -50,6 +50,10 @@ pub struct omc_result_signal {
     pub unvarying: c_int,
     /// FMI's `relativeQuantity` (Modelica's `absoluteValue = false`).
     pub relative_quantity: c_int,
+    /// An enumeration's type name and `n_literals` literals; null otherwise.
+    pub declared_type: *const c_char,
+    pub literals: *const *const c_char,
+    pub n_literals: c_uint,
 }
 
 struct Signal {
@@ -64,6 +68,8 @@ struct Signal {
     column: u32,
     negate: c_int,
     unvarying: bool,
+    /// The enumeration type's name and literals.
+    enumeration: Option<(String, Vec<String>)>,
 }
 
 fn cstr(p: *const c_char) -> String {
@@ -138,6 +144,12 @@ impl Signal {
             column: if s.kind == OMC_RESULT_KIND_TIME { 0 } else { s.column },
             negate: s.negate,
             unvarying: s.unvarying != 0,
+            enumeration: if s.declared_type.is_null() {
+                None
+            } else {
+                let literals = if s.literals.is_null() { &[][..] } else { unsafe { std::slice::from_raw_parts(s.literals, s.n_literals as usize) } };
+                Some((cstr(s.declared_type), literals.iter().map(|&l| cstr(l)).collect()))
+            },
         }
     }
 
@@ -157,9 +169,20 @@ impl Signal {
         }
     }
 
-    /// C's `.mat` description: `comment [unit]`.
+    /// C's `.mat` description: `comment [unit]`, with the type of a Boolean,
+    /// Integer or enumeration.
     fn mat_comment(&self) -> String {
-        if self.unit.is_empty() { self.description.clone() } else { format!("{} [{}]", self.description, self.unit) }
+        let ty = match (self.ty, &self.enumeration) {
+            (VarTy::Integer, Some((name, _))) => name.as_str(),
+            (VarTy::Integer, None) => "Integer",
+            (VarTy::Boolean, _) => "Boolean",
+            _ => "",
+        };
+        openmodelica_mat_writer::description(&self.description, &self.unit, ty)
+    }
+
+    fn literals(&self) -> Option<&[String]> {
+        self.enumeration.as_ref().map(|(_, l)| l.as_slice())
     }
 }
 
@@ -425,6 +448,9 @@ fn open_where(
                 .collect();
             let mut s = Mat4Stream::begin(&mut out, &vars, start, stop, first_row, n_cols as u32, &params, precision);
             s.set_sync(sync);
+            s.set_enumerations(openmodelica_mat_writer::enumeration_entries(
+                signals.iter().filter_map(|s| s.enumeration.as_ref().map(|(n, l)| (n.as_str(), l.as_slice()))),
+            ));
             Kind::Mat(s)
         }
         "arrow" => {
@@ -444,7 +470,7 @@ fn open_where(
                         _ => ArrowKind::Column { col: s.column, affine: s.affine() },
                     },
                     unvarying: s.unvarying,
-                    enumeration: None,
+                    enumeration: s.literals(),
                 })
                 .collect();
             let types: Vec<ColTy> = col_types.iter().map(|&t| if t == ColTy::F64 && single { ColTy::F32 } else { t }).collect();
@@ -513,7 +539,7 @@ impl Writer {
 
     fn finish(&mut self) -> bool {
         match &mut self.kind {
-            Kind::Mat(s) => s.finish(&mut self.out),
+            Kind::Mat(s) => s.close(&mut self.out),
             Kind::Arrow(s) => s.finish(&mut self.out),
             Kind::Csv(_) => {}
             Kind::Plt { rows, params } => {
@@ -646,8 +672,48 @@ mod tests {
                 column: i as u32,
                 negate: 0,
                 unvarying: false,
+                enumeration: None,
             })
             .collect()
+    }
+
+    fn contains(hay: &[u8], needle: &[u8]) -> Option<usize> {
+        hay.windows(needle.len()).position(|w| w == needle)
+    }
+
+    /// A Boolean, an Integer and an enumeration are typed in their description,
+    /// and the enumeration's literals follow `data_2`.
+    #[test]
+    fn mat_types_its_signals() {
+        let mut sigs = signals();
+        let typed = |name: &str, desc: &str, ty, column, enumeration| Signal {
+            name: name.to_owned(),
+            description: desc.to_owned(),
+            ty,
+            column,
+            discrete: true,
+            enumeration,
+            ..signals().remove(1)
+        };
+        let mode = Some(("P.Mode".to_owned(), vec!["Off".to_owned(), "Heat".to_owned(), "Cool".to_owned()]));
+        sigs.push(typed("b", "a flag", VarTy::Boolean, 2, None));
+        sigs.push(typed("i", "", VarTy::Integer, 3, None));
+        sigs.push(typed("m", "a mode", VarTy::Integer, 4, mode.clone()));
+        sigs.push(typed("ma", "alias of m", VarTy::Integer, 4, mode));
+        let types = [ColTy::F64, ColTy::F64, ColTy::Bool, ColTy::I32, ColTy::I32];
+        let path = std::env::temp_dir().join("omc_capi_mat_types.mat").to_string_lossy().into_owned();
+        let row = [0.0, 1.0, 1.0, 7.0, 2.0];
+        let mut w = open_where(&path, "mat", sigs, &types, &[], &row, 0.0, 1.0, false, 0, false).expect("open");
+        w.emit(&row);
+        assert!(w.finish());
+        let bytes = std::fs::read(&path).expect("read back");
+        let _ = std::fs::remove_file(&path);
+        for d in ["a flag [:#(type=Boolean)]", "[:#(type=Integer)]", "a mode [:#(type=P.Mode)]"] {
+            assert!(contains(&bytes, d.as_bytes()).is_some(), "{d}");
+        }
+        let entry = contains(&bytes, b"P.Mode(Off, Heat, Cool)").expect("enumerations entry");
+        assert!(contains(&bytes, b"data_2").unwrap() < contains(&bytes, b"enumerations").unwrap());
+        assert!(contains(&bytes[entry + 1..], b"P.Mode(").is_none(), "one entry per type");
     }
 
     /// The writer thread must leave byte for byte the file the direct path

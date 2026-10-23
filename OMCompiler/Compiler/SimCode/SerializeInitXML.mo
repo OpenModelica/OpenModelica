@@ -246,6 +246,8 @@ algorithm
     File.write(file, s.variableFilter);
     File.write(file, "\" />\n\n");
 
+    typeDefinitions(file, SimCodeCodegenUtil.getEnumerationTypes(simCode.modelInfo.vars));
+
     File.write(file, "  <!-- variables in the model -->\n");
     File.write(file, "  <ModelVariables>\n\n");
     modelVariables(file, simCode.modelInfo.vars);
@@ -258,6 +260,39 @@ algorithm
 end simulationInitFileReturnBool;
 
 protected
+
+function typeDefinitions
+  "Writes the literals of the enumeration types, the FMI 2.0 way, so the result
+   file can name the values of an enumeration variable."
+  input File.File file;
+  input list<SimVar> enumerationVars "one variable per enumeration type";
+protected
+  Absyn.Path path;
+  list<String> names;
+  Integer value;
+algorithm
+  if listEmpty(enumerationVars) then
+    return;
+  end if;
+  File.write(file, "  <TypeDefinitions>\n");
+  for v in enumerationVars loop
+    Type.T_ENUMERATION(path = path, names = names) := Types.arrayElementType(v.type_);
+    File.write(file, "    <SimpleType name=\"");
+    Dump.writePath(file, path, XML, initialDot=false);
+    File.write(file, "\">\n      <Enumeration>\n");
+    value := 1;
+    for name in names loop
+      File.write(file, "        <Item name=\"");
+      File.writeEscape(file, name, XML);
+      File.write(file, "\" value=\"");
+      File.writeInt(file, value);
+      File.write(file, "\"/>\n");
+      value := value + 1;
+    end for;
+    File.write(file, "      </Enumeration>\n    </SimpleType>\n");
+  end for;
+  File.write(file, "  </TypeDefinitions>\n\n");
+end typeDefinitions;
 
 function modelVariables "Generates code for ModelVariables file for FMU target."
   input File.File file;
@@ -507,9 +542,11 @@ algorithm
       scalarVariableTypeStringAttribute(file, v.displayUnit, "displayUnit");
       File.write(file, " />");
     then ();
-  case Type.T_ENUMERATION()
+  case Type.T_ENUMERATION(path = path)
     algorithm
-      File.write(file, "<Integer");
+      File.write(file, "<Integer declaredType=\"");
+      Dump.writePath(file, path, XML, initialDot=false);
+      File.write(file, "\"");
       scalarVariableTypeAttribute(file, v.initialValue, "start");
       scalarVariableTypeFixedAttribute(file, v.isFixed);
       scalarVariableTypeStringAttribute(file, v.unit, "unit");

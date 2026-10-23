@@ -1,0 +1,120 @@
+// name: ResultFileEnumeration
+// keywords: result file enumeration Boolean type init xml
+// status: correct
+// teardown_command: rm -f ResultFileEnumeration_* ResultFileEnumeration ResultFileEnumeration.c ResultFileEnumeration.exe ResultFileEnumeration.libs ResultFileEnumeration.log ResultFileEnumeration.makefile ResultFileEnumeration.o output.log
+//
+// The init XML names the enumeration type of every enumeration variable and
+// lists the literals of each type once, for scalars and for an array kept
+// whole, so the runtime can type the signals of the result file (#14952).
+
+loadString("
+model ResultFileEnumeration
+  type Mode = enumeration(Off \"switched off\", Heat, Cool);
+  type Level = enumeration(Low, High);
+  parameter Mode pm = Mode.Heat \"a parameter\";
+  Mode m(start = Mode.Off, fixed = true) \"a mode\";
+  Mode ma \"alias of m\";
+  Level lv[2] \"used only in an array\";
+  Boolean b \"a flag\";
+  Integer i \"a counter\";
+  Real x \"a real\";
+equation
+  when sample(0, 0.25) then
+    m = if pre(m) == Mode.Cool then Mode.Off else if pre(m) == Mode.Off then Mode.Heat else Mode.Cool;
+  end when;
+  ma = m;
+  lv = {if time < 0.5 then Level.Low else Level.High, Level.High};
+  b = time > 0.4;
+  i = integer(10*time);
+  x = time;
+end ResultFileEnumeration;
+"); getErrorString();
+
+simulate(ResultFileEnumeration, stopTime=1.0, numberOfIntervals=10, fileNamePrefix="ResultFileEnumeration_s"); getErrorString();
+regex(readFile("ResultFileEnumeration_s_init.xml"), "<TypeDefinitions>.*</TypeDefinitions>");
+regex(readFile("ResultFileEnumeration_s_init.xml"), "<Integer declaredType=\"Mode\" start=\"2\"");
+regex(readFile("ResultFileEnumeration_s_init.xml"), "<Integer declaredType=\"Level\"");
+{val(m, 0.3, "ResultFileEnumeration_s_res.mat"), val(ma, 0.3, "ResultFileEnumeration_s_res.mat"), val(pm, 0.3, "ResultFileEnumeration_s_res.mat"), val(lv[1], 0.9, "ResultFileEnumeration_s_res.mat"), val(b, 0.9, "ResultFileEnumeration_s_res.mat")};
+// The literals follow data_2, where the readers do not look.
+filterSimulationResults("ResultFileEnumeration_s_res.mat", "ResultFileEnumeration_f.mat", {"m", "lv[1]"}); getErrorString();
+{val(m, 0.3, "ResultFileEnumeration_f.mat"), val(lv[1], 0.9, "ResultFileEnumeration_f.mat")};
+simulate(ResultFileEnumeration, stopTime=1.0, numberOfIntervals=10, fileNamePrefix="ResultFileEnumeration_y", simflags="-mat_sync=3"); getErrorString();
+diffSimulationResults("ResultFileEnumeration_y_res.mat", "ResultFileEnumeration_s_res.mat", "ResultFileEnumeration_diff", relTol=1e-12); getErrorString();
+
+setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
+simulate(ResultFileEnumeration, stopTime=1.0, numberOfIntervals=10, fileNamePrefix="ResultFileEnumeration_a"); getErrorString();
+regex(readFile("ResultFileEnumeration_a_init.xml"), "<TypeDefinitions>.*</TypeDefinitions>");
+regex(readFile("ResultFileEnumeration_a_init.xml"), "<Dimension start=\"2\"/>[[:space:]]*<Integer declaredType=\"Level\"");
+{val(m, 0.3, "ResultFileEnumeration_a_res.mat"), val(lv[1], 0.9, "ResultFileEnumeration_a_res.mat"), val(lv[2], 0.1, "ResultFileEnumeration_a_res.mat")};
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ResultFileEnumeration_s_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ResultFileEnumeration_s', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (1, {"<TypeDefinitions>
+//     <SimpleType name=\"Level\">
+//       <Enumeration>
+//         <Item name=\"Low\" value=\"1\"/>
+//         <Item name=\"High\" value=\"2\"/>
+//       </Enumeration>
+//     </SimpleType>
+//     <SimpleType name=\"Mode\">
+//       <Enumeration>
+//         <Item name=\"Off\" value=\"1\"/>
+//         <Item name=\"Heat\" value=\"2\"/>
+//         <Item name=\"Cool\" value=\"3\"/>
+//       </Enumeration>
+//     </SimpleType>
+//   </TypeDefinitions>"})
+// (1, {"<Integer declaredType=\"Mode\" start=\"2\""})
+// (1, {"<Integer declaredType=\"Level\""})
+// {3.0, 3.0, 2.0, 2.0, 1.0}
+// true
+// ""
+// {3.0, 2.0}
+// record SimulationResult
+//     resultFile = "ResultFileEnumeration_y_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ResultFileEnumeration_y', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-mat_sync=3'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true, {})
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ResultFileEnumeration_a_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ResultFileEnumeration_a', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (1, {"<TypeDefinitions>
+//     <SimpleType name=\"Mode\">
+//       <Enumeration>
+//         <Item name=\"Off\" value=\"1\"/>
+//         <Item name=\"Heat\" value=\"2\"/>
+//         <Item name=\"Cool\" value=\"3\"/>
+//       </Enumeration>
+//     </SimpleType>
+//     <SimpleType name=\"Level\">
+//       <Enumeration>
+//         <Item name=\"Low\" value=\"1\"/>
+//         <Item name=\"High\" value=\"2\"/>
+//       </Enumeration>
+//     </SimpleType>
+//   </TypeDefinitions>"})
+// (1, {"<Dimension start=\"2\"/>
+//     <Integer declaredType=\"Level\""})
+// {3.0, 2.0, 2.0}
+// endResult

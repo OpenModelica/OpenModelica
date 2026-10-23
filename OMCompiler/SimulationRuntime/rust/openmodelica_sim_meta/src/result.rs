@@ -161,7 +161,8 @@ impl ResultStream {
         let kind = match format {
             "mat" => {
                 let kept = kept_params(meta, params, |i, _| keep_num[i]);
-                let vars = mat_vars(meta, &keep_num);
+                let descs = meta.mat_descriptions();
+                let vars = mat_vars(meta, &keep_num, &descs);
                 let mut mo = MatOut { out: &mut *out, ok: &mut ok };
                 let mut s = Mat4Stream::begin(
                     &mut mo,
@@ -174,6 +175,7 @@ impl ResultStream {
                     precision,
                 );
                 s.set_sync(sync);
+                s.set_enumerations(meta.mat_enumerations(&keep_num));
                 Kind::Mat(s)
             }
             "arrow" => {
@@ -254,7 +256,7 @@ impl ResultStream {
         match &mut self.kind {
             Kind::Mat(s) => {
                 let mut mo = MatOut { out: &mut *self.out, ok: &mut self.ok };
-                s.finish(&mut mo);
+                s.close(&mut mo);
             }
             Kind::Arrow(s) => {
                 let mut ao = ArrowOut { out: &mut *self.out, ok: &mut self.ok };
@@ -339,12 +341,14 @@ fn kept_params(meta: &SimMeta, params: &[f64], emit: impl Fn(usize, &MetaKind) -
     out
 }
 
-fn mat_vars<'a>(meta: &'a SimMeta, keep: &[bool]) -> Vec<MatVar<'a>> {
+/// The kept signals, described by `descs` ([`SimMeta::mat_descriptions`]).
+fn mat_vars<'a>(meta: &'a SimMeta, keep: &[bool], descs: &'a [String]) -> Vec<MatVar<'a>> {
     meta.vars
         .iter()
+        .zip(descs)
         .zip(keep)
         .filter(|(_, k)| **k)
-        .map(|(v, _)| MatVar { name: &v.name, comment: &v.comment, kind: v.kind.mat(), unvarying: v.unvarying })
+        .map(|((v, d), _)| MatVar { name: &v.name, comment: d, kind: v.kind.mat(), unvarying: v.unvarying })
         .collect()
 }
 
@@ -357,8 +361,11 @@ pub fn mat(
     precision: Precision,
 ) -> Vec<u8> {
     let kept = kept_params(meta, params, |i, _| keep[i]);
-    let vars = mat_vars(meta, keep);
-    openmodelica_mat_writer::write_mat4(&vars, meta.start_time, meta.stop_time, rows, n_reals, &kept, precision)
+    let descs = meta.mat_descriptions();
+    let vars = mat_vars(meta, keep, &descs);
+    let mut bytes = openmodelica_mat_writer::write_mat4(&vars, meta.start_time, meta.stop_time, rows, n_reals, &kept, precision);
+    openmodelica_mat_writer::write_enumerations(&mut bytes, &meta.mat_enumerations(keep));
+    bytes
 }
 
 /// `keep` without the String signals, for the formats that cannot hold them.
@@ -385,7 +392,7 @@ fn arrow_vars<'a>(meta: &'a SimMeta, keep: &[bool]) -> Vec<ArrowVar<'a>> {
             discrete: v.discrete,
             kind: v.kind.arrow(),
             unvarying: v.unvarying,
-            enumeration: v.enumeration.as_deref(),
+            enumeration: v.enumeration.as_ref().map(|e| e.literals.as_slice()),
         })
         .collect()
 }

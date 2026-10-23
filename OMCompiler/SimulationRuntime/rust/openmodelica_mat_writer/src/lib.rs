@@ -12,11 +12,18 @@
 //! scalar parameter values (`params`, in `MatKind::Param` order). How a signal
 //! sources its value — a result-buffer column, a parameter slot, or a literal
 //! constant — is [`MatKind`].
+//!
+//! A signal's type is tagged in its description the way Dymola does it
+//! ([`description`]), and the literals of the enumeration types follow `data_2`
+//! in an `enumerations` matrix ([`write_enumerations`]), so a reader that stops
+//! after the six standard matrices is not affected.
 
 #![cfg_attr(not(test), no_std)]
 
 extern crate alloc;
 
+use alloc::format;
+use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 
@@ -127,6 +134,9 @@ pub struct Mat4Stream {
     /// Rows between header rewrites (`-mat_sync`); 0 = only at `finish`.
     sync: usize,
     since_sync: usize,
+    /// The [`enumeration_entry`]s [`Mat4Stream::close`] appends.
+    enumerations: Vec<String>,
+    closed: bool,
 }
 
 impl Mat4Stream {
@@ -295,7 +305,7 @@ impl Mat4Stream {
         let data2_pos = head.len() as u64;
         out.write(&head);
 
-        Mat4Stream { varying, n_reals, precision, n_rows: 0, ncols_pos, data2_pos, data_info, data_1, buf: Vec::new(), sync: 0, since_sync: 0 }
+        Mat4Stream { varying, n_reals, precision, n_rows: 0, ncols_pos, data2_pos, data_info, data_1, buf: Vec::new(), sync: 0, since_sync: 0, enumerations: Vec::new(), closed: false }
     }
 
     /// Patch the `data_2` row count after every `rows` pushed rows (C's
@@ -334,6 +344,20 @@ impl Mat4Stream {
     /// Patch the `data_2` row count. Safe to call more than once.
     pub fn finish(&mut self, out: &mut dyn Out) {
         out.write_at(self.ncols_pos, &(self.n_rows as i32).to_le_bytes());
+    }
+
+    /// The enumeration types [`Mat4Stream::close`] writes after `data_2`.
+    pub fn set_enumerations(&mut self, entries: Vec<String>) {
+        self.enumerations = entries;
+    }
+
+    /// [`Mat4Stream::finish`], then the `enumerations` matrix; no rows can follow.
+    pub fn close(&mut self, out: &mut dyn Out) {
+        self.finish(out);
+        if !self.closed {
+            write_enumerations(out, &self.enumerations);
+            self.closed = true;
+        }
     }
 
     pub fn n_rows(&self) -> usize {
@@ -386,6 +410,51 @@ pub fn write_mat4(
     s.push_rows(&mut out, rows);
     s.finish(&mut out);
     out
+}
+
+/// A signal's `description` entry, Dymola's way: the comment, then the unit and
+/// the type in brackets, `comment [unit:#(type=Integer)]`. `type_name` is
+/// `Boolean`, `Integer` or the enumeration type, and empty for a Real.
+pub fn description(comment: &str, unit: &str, type_name: &str) -> String {
+    if type_name.is_empty() {
+        if unit.is_empty() { String::from(comment) } else { format!("{comment} [{unit}]") }
+    } else if comment.is_empty() {
+        format!("[{unit}:#(type={type_name})]")
+    } else {
+        format!("{comment} [{unit}:#(type={type_name})]")
+    }
+}
+
+/// One enumeration type of the `enumerations` matrix, in Modelica syntax:
+/// `P.Mode(Off, Heat, Cool)`; value `k` is the `k`-th literal.
+pub fn enumeration_entry(name: &str, literals: &[String]) -> String {
+    format!("{name}({})", literals.join(", "))
+}
+
+/// The [`enumeration_entry`] of each distinct type, in order of appearance.
+pub fn enumeration_entries<'a>(types: impl IntoIterator<Item = (&'a str, &'a [String])>) -> Vec<String> {
+    let mut names: Vec<&str> = Vec::new();
+    let mut entries = Vec::new();
+    for (name, literals) in types {
+        if !names.contains(&name) {
+            names.push(name);
+            entries.push(enumeration_entry(name, literals));
+        }
+    }
+    entries
+}
+
+/// Append the `enumerations` text matrix, one type per column; nothing when
+/// `entries` is empty. It has to follow `data_2`: readers take the first six
+/// matrices in order.
+pub fn write_enumerations(out: &mut dyn Out, entries: &[String]) {
+    if entries.is_empty() {
+        return;
+    }
+    let cols: Vec<&str> = entries.iter().map(|e| e.as_str()).collect();
+    let mut bytes = Vec::new();
+    write_char_matrix_cols(&mut bytes, "enumerations", &cols);
+    out.write(&bytes);
 }
 
 fn push_real(out: &mut Vec<u8>, v: f64, precision: Precision) {
@@ -497,6 +566,48 @@ mod tests {
     }
     fn i32s(payload: &[u8]) -> Vec<i32> {
         payload.chunks_exact(4).map(|c| i32::from_le_bytes(c.try_into().unwrap())).collect()
+    }
+
+    /// The columns of a text matrix written by `write_char_matrix_cols`.
+    fn text_cols(buf: &[u8], want: &str) -> Vec<String> {
+        let (mrows, _, payload) = find_matrix(buf, want);
+        payload.chunks_exact(mrows).map(|c| String::from_utf8_lossy(c).trim_end_matches('\0').to_string()).collect()
+    }
+
+    #[test]
+    fn descriptions_carry_the_type_like_dymola() {
+        assert_eq!(description("a real", "m", ""), "a real [m]");
+        assert_eq!(description("a real", "", ""), "a real");
+        assert_eq!(description("a flag", "", "Boolean"), "a flag [:#(type=Boolean)]");
+        assert_eq!(description("", "", "Integer"), "[:#(type=Integer)]");
+        assert_eq!(description("a count", "1/s", "Integer"), "a count [1/s:#(type=Integer)]");
+        assert_eq!(description("a mode", "", "P.Mode"), "a mode [:#(type=P.Mode)]");
+    }
+
+    /// The `enumerations` matrix comes after `data_2`, once per type, and leaves
+    /// the six standard matrices as they were.
+    #[test]
+    fn enumerations_follow_data_2() {
+        let mode: Vec<String> = ["Off", "Heat", "Cool"].map(String::from).to_vec();
+        let init: Vec<String> = ["NoInit", "SteadyState"].map(String::from).to_vec();
+        let entries = enumeration_entries([("P.Mode", mode.as_slice()), ("Init", init.as_slice()), ("P.Mode", mode.as_slice())]);
+        assert_eq!(entries, ["P.Mode(Off, Heat, Cool)", "Init(NoInit, SteadyState)"]);
+
+        let vars = [var("time", "", MatKind::Time), var("m", "[:#(type=P.Mode)]", MatKind::Column { col: 1, negate: Neg::None })];
+        let rows = [0.0, 1.0, 1.0, 3.0];
+        let plain = write_mat4(&vars, 0.0, 1.0, &rows, 2, &[], Precision::Double);
+        let mut out: Vec<u8> = Vec::new();
+        let mut s = Mat4Stream::begin(&mut out, &vars, 0.0, 1.0, &rows[..2], 2, &[], Precision::Double);
+        s.set_enumerations(entries.clone());
+        s.push_rows(&mut out, &rows);
+        s.close(&mut out);
+        s.close(&mut out);
+        assert_eq!(&out[..plain.len()], &plain[..]);
+        assert_eq!(text_cols(&out[plain.len()..], "enumerations"), entries);
+        assert_eq!(text_cols(&out, "description")[1], "[:#(type=P.Mode)]");
+        let mut none: Vec<u8> = Vec::new();
+        write_enumerations(&mut none, &[]);
+        assert!(none.is_empty());
     }
 
     /// time + one varying real state + one parameter + one constant, 3 rows.
