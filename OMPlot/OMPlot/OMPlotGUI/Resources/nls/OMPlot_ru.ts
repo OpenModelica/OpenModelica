@@ -89,6 +89,14 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Stack</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Draw each curve in a band of its own, one below the other</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Setup</source>
         <translation type="unfinished"></translation>
     </message>
