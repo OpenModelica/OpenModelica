@@ -68,6 +68,7 @@
 #include <QDrag>
 #include <QMessageBox>
 #include <QMenu>
+#include <QPushButton>
 #include <QScreen>
 
 /*!
@@ -5166,31 +5167,30 @@ bool LibraryWidget::resolveConflictWithLoadedLibraries(const QString &library, c
   /* Issue #8183
    * If the library required is already loaded with some other version.
    * Then allow the user to cancel the operation or unload everything and reload the class again.
+   * Issue #16862: Use clickedButton() instead of exec() return value for custom buttons (Qt6 change).
    */
   // clear loadModelCallback classes
   mAutoLoadedLibrariesList.clear();
 
-  QMessageBox *pMessageBox = new QMessageBox;
-  pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::error));
-  pMessageBox->setIcon(QMessageBox::Critical);
-  pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-  pMessageBox->setText(tr("The loaded class(es) <b>%1</b> uses versions of already loaded libraries which are not compatible with the required ones.<br /><br />"
-                          "<b>Cancel Operation</b> does not load class <b>%1</b> and its dependencies.<br />"
-                          "<b>Unload All & Reload %1</b> unloads all previously loaded classes and loads <b>%1</b> starting from a clean environment. "
-                          "Make sure to save your work.").arg(library));
-  pMessageBox->addButton(tr("Cancel Operation"), QMessageBox::ActionRole);
-  pMessageBox->addButton(tr("Unload all && Reload %1").arg(library), QMessageBox::ActionRole);
-  int answer = pMessageBox->exec();
-  switch (answer) {
-    case 0: // cancel operation
-    default:
-      LibraryWidget::cancelLoadingLibraries(classes);
-      return false;
-    case 1: // unload all and reload
-      MainWindow::instance()->unloadAll(true);
-      // Just return true and the calling function will load the library.
-      return true;
+  QMessageBox messageBox(MainWindow::instance());
+  messageBox.setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::error));
+  messageBox.setIcon(QMessageBox::Critical);
+  messageBox.setText(tr("The loaded class(es) <b>%1</b> uses versions of already loaded libraries which are not compatible with the required ones.<br /><br />"
+                        "<b>Cancel Operation</b> does not load class <b>%1</b> and its dependencies.<br />"
+                        "<b>Unload All & Reload %1</b> unloads all previously loaded classes and loads <b>%1</b> starting from a clean environment. "
+                        "Make sure to save your work.").arg(library));
+  QPushButton *pCancelButton = messageBox.addButton(tr("Cancel Operation"), QMessageBox::RejectRole);
+  QPushButton *pReloadButton = messageBox.addButton(tr("Unload all && Reload %1").arg(library), QMessageBox::ActionRole);
+  messageBox.setDefaultButton(pCancelButton);
+  messageBox.setEscapeButton(pCancelButton);
+  messageBox.exec();
+  if (messageBox.clickedButton() == pReloadButton) {
+    MainWindow::instance()->unloadAll(true);
+    // Just return true and the calling function will load the library.
+    return true;
   }
+  LibraryWidget::cancelLoadingLibraries(classes);
+  return false;
 }
 
 /*!
