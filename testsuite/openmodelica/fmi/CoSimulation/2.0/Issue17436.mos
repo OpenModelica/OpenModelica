@@ -1,0 +1,50 @@
+// name: Issue17436.mos
+// keywords: FMI 2.0 export CVODE
+// status: correct
+// suite: smoke
+// teardown_command: rm -rf v_source.fmu v_source.log v_source_info.json v_source_flags.json v_source.fmutmp
+//
+// A Co-Simulation FMU with CVODE has to find the SUNDIALS libraries of the
+// exporting installation, which on Windows are not where
+// CMAKE_LIBRARY_ARCHITECTURE points. Model by Antoine Vandamme.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+package voltage_source
+  model v_source
+    Modelica.Electrical.Analog.Basic.Ground ground;
+    Modelica.Electrical.Analog.Basic.Resistor resistor(R = 0.1);
+    Modelica.Electrical.Analog.Sources.ConstantVoltage constantVoltage(V = 10.0);
+    Modelica.Electrical.Analog.Sensors.VoltageSensor voltageSensor;
+    Modelica.Electrical.Analog.Sources.SignalCurrent signalCurrent;
+    input Modelica.Blocks.Interfaces.RealInput I \"[A]\";
+    output Modelica.Blocks.Interfaces.RealOutput V \"[V]\";
+  equation
+    connect(resistor.p, constantVoltage.p);
+    connect(ground.p, constantVoltage.n);
+    connect(signalCurrent.n, ground.p);
+    connect(voltageSensor.v, V);
+    connect(signalCurrent.p, resistor.n);
+    connect(voltageSensor.p, resistor.n);
+    connect(voltageSensor.n, ground.p);
+    connect(I, signalCurrent.i);
+  end v_source;
+  annotation(uses(Modelica(version = \"4.1.0\")));
+end voltage_source;
+"); getErrorString();
+
+setCommandLineOptions("--fmiFlags=s:cvode"); getErrorString();
+buildModelFMU(voltage_source.v_source, version = "2.0", fmuType = "cs", fileNamePrefix = "v_source", platforms = {"dynamic"}); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "v_source.fmu"
+// "Notification: Building FMU for platform 'dynamic' (1/1).
+// Notification: Finished FMU for platform 'dynamic' (1/1).
+// "
+// endResult

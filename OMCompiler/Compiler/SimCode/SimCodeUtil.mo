@@ -14238,7 +14238,7 @@ algorithm
   // HDF5 is there for ModelicaMatIO, which the FMU compiles from source without it.
   (locations, libraries) := getDirectoriesForDLLsFromLinkLibs(
     List.removeOnTrue(Autoconf.hdf5Libs, stringEqual, libs));
-  locations := listAppend({Settings.getInstallationDirectoryPath() + "/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc"}, locations); // zlib
+  locations := listAppend({Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc"}, locations); // zlib
   locations := listAppend({Settings.getInstallationDirectoryPath() + "/bin"}, locations);   // pthread located in OpenModelica/bin/ on Windows
   locations := List.map(locations, addDockerVol);
   // Use target_link_directories when CMake 3.13 is available and skip the find_library part
@@ -14293,7 +14293,7 @@ algorithm
     needCvode := "ON";
     // ${DOCKER_VOL_DIR} so the path also resolves inside the container when cross compiling,
     // see getCmakeLinkLibrariesCode. It is empty for a normal build.
-    cvodeDirectory := "\"${DOCKER_VOL_DIR}" + Settings.getInstallationDirectoryPath() + "/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc\"";
+    cvodeDirectory := "\"${DOCKER_VOL_DIR}" + Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc\"";
   end if;
 end getCmakeSundialsLinkCode;
 
