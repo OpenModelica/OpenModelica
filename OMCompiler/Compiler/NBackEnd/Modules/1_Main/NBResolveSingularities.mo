@@ -1149,10 +1149,12 @@ protected
         Expression start_exp;
         list<Expression> starts;
       case SOME(start_exp) guard(Type.isArray(Expression.typeOf(start_exp))) algorithm
-        starts := list(SimplifyExp.simplify(Expression.applySubscripts(list(Subscript.INDEX(Expression.INTEGER(l + 1))
-          for l in Slice.indexToLocation(idx, sizes)), start_exp, true)) for idx in dummy.indices);
-        Pointer.update(alias_var, BVariable.setStartAttribute(Pointer.access(alias_var),
-          if n == 1 then listHead(starts) else Expression.makeArray(alias_ty, listArray(starts)), true));
+        starts := list(BVariable.startElement(list(Subscript.INDEX(Expression.INTEGER(l + 1))
+          for l in Slice.indexToLocation(idx, sizes)), start_exp, Variable.typeOf(var)) for idx in dummy.indices);
+        if not List.any(starts, Expression.isEmpty) then
+          Pointer.update(alias_var, BVariable.setStartAttribute(Pointer.access(alias_var),
+            if n == 1 then listHead(starts) else Expression.makeArray(alias_ty, listArray(starts)), true));
+        end if;
       then ();
       case SOME(start_exp) algorithm
         // a scalar start value applies to all elements

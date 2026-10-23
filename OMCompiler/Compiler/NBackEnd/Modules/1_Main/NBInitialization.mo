@@ -1035,14 +1035,18 @@ public
     list<InstNode> iterators;
     list<Expression> ranges;
     list<ComponentRef> iter_crefs;
+    Integer num_whole;
   algorithm
     // make unique iterators for the new for-loop
     dims        := Type.arrayDims(ComponentRef.getSubscriptedType(name));
+    num_whole   := if num_dim == 0 then 0 else listLength(dims) - num_dim;
     dims        := if num_dim == 0 then dims else List.firstN(dims, num_dim);
     (iterators, ranges, subscripts) := Flatten.makeIterators(name, dims);
     iter_crefs  := list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators);
     iter_crefs  := list(BackendDAE.lowerIteratorCref(iter) for iter in iter_crefs);
     subscripts  := list(Subscript.mapExp(sub, BackendDAE.lowerIteratorExp) for sub in subscripts);
+    // the subscripts are innermost first, the trailing dimensions are not iterated
+    subscripts  := listAppend(List.fill(Subscript.WHOLE(), num_whole), subscripts);
     frames      := List.zip3(iter_crefs, ranges, List.fill(NONE(), listLength(iter_crefs)));
     iterator    := Iterator.fromFrames(frames);
 

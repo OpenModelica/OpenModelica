@@ -2072,6 +2072,28 @@ function isJacobianResultVar
     output Option<Expression> start =  VariableAttributes.getStartAttribute(Variable.getVariableAttributes(Pointer.access(var_ptr)));
   end getStartAttribute;
 
+  function startElement
+    "the element of a start value at the subscripts of its variable. the start value can have
+    less dimensions than the variable, e.g. {1.0 for i in 1:2} for each start = 1.0 of x[2, 3],
+    then it only has the leading dimensions. returns EMPTY() if the dimensions do not fit."
+    input list<Subscript> subs;
+    input Expression start;
+    input Type varTy;
+    output Expression exp;
+  protected
+    list<Dimension> start_dims = Type.arrayDims(Expression.typeOf(start));
+    Integer n = listLength(start_dims);
+  algorithm
+    if listLength(subs) <= n then
+      exp := SimplifyExp.simplify(Expression.applySubscripts(subs, start, true));
+    elseif listLength(subs) == Type.dimensionCount(varTy)
+      and List.isEqualOnTrue(start_dims, List.firstN(Type.arrayDims(varTy), n), Dimension.isEqual) then
+      exp := SimplifyExp.simplify(Expression.applySubscripts(List.firstN(subs, n), start, true));
+    else
+      exp := Expression.EMPTY(Type.UNKNOWN());
+    end if;
+  end startElement;
+
   function hasNonTrivialAliasBinding
     "returns true if the binding does not represent a cref, a negated cref or a constant.
      used for alias removal since only those can be stored as actual alias variables"

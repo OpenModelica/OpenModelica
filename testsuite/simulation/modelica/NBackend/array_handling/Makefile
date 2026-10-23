@@ -97,6 +97,7 @@ BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder4_Resizable.mos\
 BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder_Resizable.mos\
 BenchmarksForResizeableArrays.Resizable.FiltersInSeries_Resizable.mos \
 arrayStartSlice.mos \
+componentArraySlicedStart.mos \
 resizableConnectDeleted.mos \
 EmptyArrayInComponentArray.mos \
 

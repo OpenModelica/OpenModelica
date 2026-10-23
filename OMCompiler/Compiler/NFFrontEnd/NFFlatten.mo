@@ -1622,12 +1622,22 @@ public function flattenExp
   input output Expression exp;
   input Prefix prefix;
   input SourceInfo info;
+protected
+  ComponentRef cr;
+  Type ty;
 algorithm
   exp := match exp
     case Expression.CREF(cref = ComponentRef.CREF())
       algorithm
-        exp.cref := ComponentRef.mapExpShallow(exp.cref, function flattenExp(prefix = prefix, info = info));
-        exp.cref := flattenCref(exp.cref, prefix, info);
+        cr := ComponentRef.mapExpShallow(exp.cref, function flattenExp(prefix = prefix, info = info));
+        // split indices of the variable itself become slices, e.g. x[(1:2)[<y, 1>]] -> x[1:2]
+        if not referenceEq(cr, exp.cref) then
+          ty := ComponentRef.getSubscriptedType(cr);
+          if Type.dimensionCount(ty) > Type.dimensionCount(exp.ty) then
+            exp.ty := ty;
+          end if;
+        end if;
+        exp.cref := flattenCref(cr, prefix, info);
         exp.ty := flattenType(exp.ty, prefix, info);
       then
         // the same size parameter everywhere: in loop ranges and indices as in
