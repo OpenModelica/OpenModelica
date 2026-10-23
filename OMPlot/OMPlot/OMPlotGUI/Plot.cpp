@@ -396,6 +396,11 @@ void Plot::removeCurve(PlotCurve *pCurve)
   }
 }
 
+QSize Plot::preferredSizeAdjustment() const
+{
+  return QwtPlot::sizeHint() - QwtPlot::minimumSizeHint();
+}
+
 QColor Plot::getUniqueColor(int index, int total)
 {
   if (mColorsList.size() < total)

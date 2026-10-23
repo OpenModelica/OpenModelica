@@ -74,8 +74,8 @@ void printUsage(bool shortDescription)
     printf("    --curve-width=WIDTH        Sets the WIDTH of the curve\n");
     printf("    --filename=NAME            Sets the NAME of the file to plot\n");
     printf("    --footer=FOOTER            Sets the FOOTER of the plot window\n");
-    printf("    --grid=GRID                Sets the GRID of the plot i.e simple, detailed, none\n");
-    printf("    --legend-position=POSITION Sets the POSITION of the legend i.e left, right, top, bottom, none\n");
+    printf("    --grid=GRID                Sets the GRID of the plot i.e., simple, detailed, none, xonly\n");
+    printf("    --legend-position=POSITION Sets the POSITION of the legend i.e., left, right, top, bottom, none\n");
     printf("    --logx=[true|false]        Use log scale for the x-axis\n");
     printf("    --logy=[true|false]        Use log scale for the y-axis\n");
     printf("    --new-window=[true|false]  Create a MDI dialog in the plot-window\n");

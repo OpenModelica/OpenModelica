@@ -77,6 +77,7 @@ public
 
   // New Backend imports
   import DetectStates = NBDetectStates;
+  import Differentiate = NBDifferentiate;
   import NBResizable.EvalOrder;
   import Evaluation = NBEvaluation;
   import Inline = NBInline;
@@ -2036,15 +2037,15 @@ public
 
         case ARRAY_EQUATION() algorithm
           if Expression.isEqual(eq.lhs, eq.rhs) then
-            eq.lhs := Expression.makeZero(eq.ty);
-            eq.rhs := Expression.makeZero(eq.ty);
+            eq.lhs := Differentiate.makeZero(eq.ty);
+            eq.rhs := Differentiate.makeZero(eq.ty);
           end if;
         then eq;
 
         case RECORD_EQUATION() algorithm
           if Expression.isEqual(eq.lhs, eq.rhs) then
-            eq.lhs := Expression.makeZero(eq.ty);
-            eq.rhs := Expression.makeZero(eq.ty);
+            eq.lhs := Differentiate.makeZero(eq.ty);
+            eq.rhs := Differentiate.makeZero(eq.ty);
           end if;
         then eq;
 
@@ -4444,9 +4445,15 @@ public
             if isSome(funcCrefOpt) then
               SOME(funcCref) := funcCrefOpt;
               stateVar := funcCref(stmt.stateVar);
-              if not referenceEq(stateVar, stmt.stateVar) then
-                stmt.stateVar := stateVar;
-              end if;
+            else
+              // map the state as expression, e.g. to replace iterators in its subscripts
+              stateVar := match mapFunc(Expression.fromCref(stmt.stateVar), funcExp)
+                case Expression.CREF(cref = stateVar) then stateVar;
+                else stmt.stateVar;
+              end match;
+            end if;
+            if not referenceEq(stateVar, stmt.stateVar) then
+              stmt.stateVar := stateVar;
             end if;
             value := mapFunc(stmt.value, funcExp);
             if not referenceEq(value, stmt.value) then

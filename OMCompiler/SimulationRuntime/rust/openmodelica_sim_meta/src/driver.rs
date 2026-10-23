@@ -2661,6 +2661,7 @@ pub fn run_initialization_model(e: &mut dyn SimEngine, sim_data: u32, model: &Si
         Some(model),
         None,
     )?;
+    log_event_status(e, sim_data, &model.layout, omclog::EVENTS)?;
     signal_init_done();
     terminate_at_init(e, sim_data, &model.layout)
 }
@@ -4380,28 +4381,32 @@ pub fn log_event_status(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, st
     }
     let time = format_g(read_f64(e, sim_data + TIME_OFF)?, 12);
     event_dump_store::with(|d| {
-        omclog::info!(stream, true, "status of relations at time={time}");
-        for i in 0..layout.n_rel {
-            let flag = |off: u32| {
-                if read_i32(e, sim_data + off + i * 4).unwrap_or(0) != 0 {
-                    " true"
-                } else {
-                    "false"
-                }
-            };
-            let desc = d.rel_desc.get(i as usize).map(String::as_str).unwrap_or_default();
-            let (pre, cur) = (flag(layout.relations_pre_off), flag(layout.relations_off));
-            omclog::info!(stream, false, "[{}] (pre: {pre}) {cur} = {desc}", i + 1);
+        if layout.n_rel > 0 {
+            omclog::info!(stream, true, "status of relations at time={time}");
+            for i in 0..layout.n_rel {
+                let flag = |off: u32| {
+                    if read_i32(e, sim_data + off + i * 4).unwrap_or(0) != 0 {
+                        " true"
+                    } else {
+                        "false"
+                    }
+                };
+                let desc = d.rel_desc.get(i as usize).map(String::as_str).unwrap_or_default();
+                let (pre, cur) = (flag(layout.relations_pre_off), flag(layout.relations_off));
+                omclog::info!(stream, false, "[{}] (pre: {pre}) {cur} = {desc}", i + 1);
+            }
+            omclog::close(stream);
         }
-        omclog::close(stream);
-        omclog::info!(stream, true, "status of zero crossings at time={time}");
-        for i in 0..layout.n_zc {
-            let g = |off: u32| omclog::g(read_f64(e, sim_data + off + i * 8).unwrap_or(0.0), 2, 1);
-            let desc = d.zc_desc.get(i as usize).map(String::as_str).unwrap_or_default();
-            let (pre, cur) = (g(layout.zc_pre_off), g(layout.zc_off));
-            omclog::info!(stream, false, "[{}] (pre: {pre}) {cur} = {desc}", i + 1);
+        if layout.n_zc > 0 {
+            omclog::info!(stream, true, "status of zero crossings at time={time}");
+            for i in 0..layout.n_zc {
+                let g = |off: u32| omclog::g(read_f64(e, sim_data + off + i * 8).unwrap_or(0.0), 2, 1);
+                let desc = d.zc_desc.get(i as usize).map(String::as_str).unwrap_or_default();
+                let (pre, cur) = (g(layout.zc_pre_off), g(layout.zc_off));
+                omclog::info!(stream, false, "[{}] (pre: {pre}) {cur} = {desc}", i + 1);
+            }
+            omclog::close(stream);
         }
-        omclog::close(stream);
     });
     Ok(())
 }
@@ -5997,7 +6002,6 @@ struct IdaCtx {
     sens: SensPush,
     /// `--daeMode` only; null for an explicit ODE.
     dae: *const DaeSolve,
-    ramp: LambdaRamp,
     /// CVODE only: the point it starts from, with initialization's `y'` there.
     start: *const OdeStart,
 }
@@ -6020,37 +6024,8 @@ impl Default for IdaCtx {
             pattern: core::ptr::null(),
             sens: SensPush::default(),
             dae: core::ptr::null(),
-            ramp: LambdaRamp::default(),
             start: core::ptr::null(),
         }
-    }
-}
-
-/// C's daeMode homotopy ramp (`ida_solver.c`): where the actual DAE Jacobian is
-/// singular at the start point, `lambda` is ramped 0 → 1 over the start of the
-/// interval with the integrator step capped. Armed only after IDA fails there.
-#[cfg(sundials)]
-#[derive(Clone, Copy, Default)]
-struct LambdaRamp {
-    /// `SimData` slot of `simulationInfo->lambda`.
-    off: u32,
-    start: f64,
-    /// Ramp window; 0 until armed.
-    tramp: f64,
-    active: bool,
-}
-
-#[cfg(sundials)]
-impl LambdaRamp {
-    fn lambda_at(&self, t: f64) -> Option<f64> {
-        if !self.active || self.tramp <= 0.0 {
-            return None;
-        }
-        Some(if t < self.start + self.tramp {
-            (t - self.start) / self.tramp
-        } else {
-            1.0
-        })
     }
 }
 
@@ -8100,7 +8075,6 @@ struct IdaState {
     /// C's `restartAfterLSFail`: the one `IDAReInit` retry a failed step gets.
     restarted: bool,
     setup: IdaSetup,
-    stop_time: f64,
 }
 
 #[cfg(sundials)]
@@ -8158,7 +8132,6 @@ impl IdaState {
     ) -> Result<Progress> {
         self.ensure(e, sim_data, *t, y, yp, ctx)?;
         let ida = self.ida.as_mut().expect("built by `ensure`");
-        self.setup.finish_ramp(e, sim_data, ida, *t)?;
         unsafe { (*ctx).ida = self.setup.ctx(Some(ida)) };
         if !ida.set_user_data(ctx as *mut core::ffi::c_void) {
             return Err("##IDA## In function IDASetUserData: The ida_mem argument was NULL.");
@@ -8182,28 +8155,14 @@ impl IdaState {
                 self.work_retries += 1;
                 Progress::WorkQuota
             }
-            // C's `ida_solver_step`: one `IDAReInit` retry for a failed setup, or for
-            // the degenerate DAE start point the ramp recovers from.
-            crate::sundials::Stop::Failed(flag)
-                if !self.restarted
-                    && (flag == crate::sundials::IDA_LSETUP_FAIL || self.setup.ramp_recovers(flag, *t)) =>
-            {
-                if self.setup.ramp_recovers(flag, *t) {
-                    self.setup.arm_ramp(ida, self.stop_time);
-                    omclog::warning!(
-                        omclog::SOLVER,
-                        false,
-                        "##IDA## degenerate DAE operating point at t = {} (flag {flag}); \
-                         activating homotopy ramp",
-                        format_g(*t, 15),
-                    );
-                }
+            // C's `ida_solver_step`: one `IDAReInit` retry for a failed setup.
+            crate::sundials::Stop::Failed(crate::sundials::IDA_LSETUP_FAIL) if !self.restarted => {
                 ida.reinit(*t);
                 self.restarted = true;
                 omclog::warning!(
                     omclog::SOLVER,
                     false,
-                    "##IDA## solver failed, try once again at time = {}",
+                    "##IDA## linear solver failed try once again = {}",
                     format_g(*t, 15),
                 );
                 Progress::WorkQuota
@@ -8787,7 +8746,6 @@ impl SolverCore {
                     work_retries: 0,
                     restarted: false,
                     setup: IdaSetup::new(model)?,
-                    stop_time: model.stop_time,
                 }),
                 _ => Solver::Daskr(DaskrState::new(model, n_states, nrt, rtol, atol)),
             }
@@ -11711,7 +11669,6 @@ struct IdaSetup {
     /// `--daeMode`: the residual and the unknown vector this IDA solves over;
     /// `None` for an explicit ODE.
     dae: Option<Box<DaeSolve>>,
-    ramp: LambdaRamp,
 }
 
 /// What the DAE-mode residual and Jacobian need beyond an ODE model's: the shape of
@@ -11864,11 +11821,6 @@ impl IdaSetup {
             sens_off: layout.sens_off,
             sens_scratch: vec![0.0; n_sens],
             dae,
-            ramp: LambdaRamp {
-                off: layout.lambda_off,
-                start: model.start_time,
-                ..Default::default()
-            },
         })
     }
 
@@ -11965,51 +11917,8 @@ impl IdaSetup {
                 None => SensPush::default(),
             },
             dae: self.dae.as_deref().map_or(core::ptr::null(), |d| d as *const DaeSolve),
-            ramp: self.ramp,
             start: core::ptr::null(),
         }
-    }
-
-    /// C's `idaHomotopyRampRecovers`. The Jacobian is only singular to the accuracy
-    /// of the difference quotient, so a failed corrector counts as well as a failed
-    /// factorization.
-    fn ramp_recovers(&self, flag: core::ffi::c_int, t: f64) -> bool {
-        use crate::sundials::{IDA_CONV_FAIL, IDA_ERR_FAIL, IDA_LSETUP_FAIL};
-        self.dae.is_some()
-            && !self.ramp.active
-            && init_homotopy_steps() > 0
-            && matches!(flag, IDA_LSETUP_FAIL | IDA_CONV_FAIL | IDA_ERR_FAIL)
-            && t <= self.ramp.start
-    }
-
-    /// C's `idaActivateHomotopyRamp`.
-    fn arm_ramp(&mut self, ida: &mut crate::sundials::Ida, stop_time: f64) {
-        self.ramp.tramp = match env_var("OMC_DAE_HOMOTOPY_TRAMP").and_then(|v| v.parse().ok()) {
-            Some(v) => v,
-            None => 0.1 * (stop_time - self.ramp.start),
-        };
-        self.ramp.active = true;
-        if self.ramp.tramp > 0.0 {
-            ida.set_max_step(self.ramp.tramp / 50.0);
-        }
-    }
-
-    /// Past the ramp window: lift the step cap and pin lambda, as C does at the top
-    /// of `ida_solver_step`.
-    fn finish_ramp(
-        &mut self,
-        e: &mut dyn SimEngine,
-        sim_data: u32,
-        ida: &mut crate::sundials::Ida,
-        t: f64,
-    ) -> Result<()> {
-        if !(self.ramp.active && self.ramp.tramp > 0.0 && t >= self.ramp.start + self.ramp.tramp) {
-            return Ok(());
-        }
-        ida.set_max_step(0.0);
-        write_f64(e, sim_data + self.ramp.off, 1.0)?;
-        self.ramp.active = false;
-        Ok(())
     }
 }
 
@@ -12075,9 +11984,6 @@ unsafe fn ida_residual(ctx: &mut ResCtx, t: f64, y: *const f64, yp: *const f64, 
         e.call1("functionUpdateBoundParameters", ctx.sim_data)?;
     }
     write_time(e, ctx.sim_data, t)?;
-    if let Some(lambda) = ctx.ida.ramp.lambda_at(t) {
-        write_f64(e, ctx.sim_data + ctx.ida.ramp.off, lambda)?;
-    }
     unsafe { ida_push_unknowns(ctx, y, yp) }?;
     if let Some(d) = unsafe { ctx.ida.dae.as_ref() } {
         e.call2(MODEL_FN_DAE, ctx.sim_data, eval_stage::DYNAMIC)?;

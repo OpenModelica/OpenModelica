@@ -1786,9 +1786,6 @@ protected
       local
         ComponentRef cref;
         Expression rhs;
-        FEquation.Branch head;
-        list<FEquation.Branch> tail;
-        UnorderedMap<ComponentRef, Expression> if_map;
 
       case FEquation.TERMINATE()                                  then BEquation.TERMINATE(eq.message, eq.source) :: stmts;
       case FEquation.REINIT(cref = Expression.CREF(cref = cref))  then BEquation.REINIT(cref, eq.reinitExp, eq.source) :: stmts;
@@ -1796,17 +1793,7 @@ protected
       case FEquation.ASSERT()                                     then BEquation.ASSERT(eq.condition, eq.message, eq.level, eq.source) :: stmts;
       case FEquation.EQUALITY()                                   then BEquation.ASSIGN(eq.lhs, eq.rhs, eq.source) :: stmts;
       case FEquation.IF() algorithm
-        // create a map to collect all individual assignments. traverse in reverse to create innermost first
-        if_map := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
-        head :: tail := listReverse(eq.branches);
-        // lower the head to initialize each cref
-        lowerWhenBranchIf(head, if_map, true);
-        // lower all remaining branches and collect the if conditions
-        for branch in tail loop
-          lowerWhenBranchIf(branch, if_map, false);
-        end for;
-        // create all assignments from the collected if-expressions
-        for tpl in UnorderedMap.toList(if_map) loop
+        for tpl in lowerWhenIf(eq.branches) loop
           (cref, rhs) := tpl;
           stmts := BEquation.ASSIGN(Expression.fromCref(cref), rhs, eq.source) :: stmts;
         end for;
@@ -1822,55 +1809,169 @@ protected
     end match;
   end lowerWhenBranchStatement;
 
-  function lowerWhenBranchIf
+  function lowerWhenIf
     "inlines IF-equations to IF-expressions in WHEN-equations"
+    input list<FEquation.Branch> branches;
+    output list<tuple<ComponentRef, Expression>> assignments;
+  protected
+    list<list<tuple<ComponentRef, Expression>>> branch_assignments;
+    list<tuple<ComponentRef, Expression>> head;
+    list<Expression> conditions;
+    UnorderedMap<ComponentRef, Expression> if_map = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+    ComponentRef cref;
+    Expression rhs, condition;
+  algorithm
+    // traverse in reverse to create innermost first, the condition of the last branch is not needed
+    branch_assignments := list(lowerWhenIfBranch(branch) for branch in listReverse(branches));
+    _ :: conditions := list(lowerWhenIfCondition(branch) for branch in listReverse(branches));
+
+    // e.g. slices in one branch and the whole array in another one
+    if not List.all(branch_assignments, function sameAssignedCrefs(other = listHead(branch_assignments))) then
+      branch_assignments := splitWholeAssignments(branch_assignments);
+    end if;
+
+    head :: branch_assignments := branch_assignments;
+    for tpl in head loop
+      (cref, rhs) := tpl;
+      if UnorderedMap.contains(cref, if_map) then
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because a branch has multiple assignments for " + ComponentRef.toString(cref) + "."});
+        fail();
+      end if;
+      UnorderedMap.add(cref, rhs, if_map);
+    end for;
+
+    for a in branch_assignments loop
+      condition :: conditions := conditions;
+      if not sameAssignedCrefs(a, head) then
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the branches assign different variables:\n"
+          + assignedCrefsString(head) + "\n" + assignedCrefsString(a)});
+        fail();
+      end if;
+      for tpl in a loop
+        (cref, rhs) := tpl;
+        UnorderedMap.add(cref, Expression.IF(Expression.typeOf(rhs), condition, rhs, UnorderedMap.getSafe(cref, if_map, sourceInfo())), if_map);
+      end for;
+    end for;
+
+    assignments := UnorderedMap.toList(if_map);
+  end lowerWhenIf;
+
+  function lowerWhenIfCondition
     input FEquation.Branch branch;
-    input UnorderedMap<ComponentRef, Expression> if_map;
-    input Boolean first "allow adding new lhs crefs only if its the first observed branch";
+    output Expression condition;
+  algorithm
+    condition := match branch
+      case FEquation.BRANCH() then branch.condition;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + FEquation.Branch.toString(branch, "")});
+      then fail();
+    end match;
+  end lowerWhenIfCondition;
+
+  function lowerWhenIfBranch
+    "the assignments of an if-equation branch in a when-equation, nested if-equations are inlined"
+    input FEquation.Branch branch;
+    output list<tuple<ComponentRef, Expression>> assignments = {};
   algorithm
     () := match branch
       local
         ComponentRef cref;
-        Expression exp;
 
       case FEquation.BRANCH() algorithm
         for eq in branch.body loop
-          () := match eq
-            case FEquation.EQUALITY(lhs = Expression.CREF(cref = cref)) algorithm
-              exp := match UnorderedMap.get(cref, if_map)
-                // we update the saved cref rhs with the branch information
-                case SOME(exp) guard(not first) then Expression.IF(Expression.typeOf(exp), branch.condition, eq.rhs, exp);
-                // we create the first entry for the cref
-                case NONE() guard(first) then eq.rhs;
-                // fail cases
-                case SOME(_) algorithm
-                  Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because branch has multiple assignments for the same cref:\n" + FEquation.Branch.toString(branch, "")});
-                then fail();
-                else algorithm
-                  Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because branch equation has an assignment that is missing in other branches:\n" + FEquation.toString(eq)});
-                then fail();
-              end match;
-              // update the cref -> rhs
-              UnorderedMap.add(cref, exp, if_map);
-            then ();
+          assignments := match eq
+            case FEquation.EQUALITY(lhs = Expression.CREF(cref = cref)) then (cref, eq.rhs) :: assignments;
+            case FEquation.IF() then listAppend(listReverse(lowerWhenIf(eq.branches)), assignments);
 
             // collected into a when-algorithm by lowerWhenIfStatements
-            case FEquation.NORETCALL() then ();
-            case FEquation.ASSERT()    then ();
-            case FEquation.TERMINATE() then ();
-            case FEquation.REINIT()    then ();
+            case FEquation.NORETCALL() then assignments;
+            case FEquation.ASSERT()    then assignments;
+            case FEquation.TERMINATE() then assignments;
+            case FEquation.REINIT()    then assignments;
 
             else algorithm
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for branch equation:\n" + FEquation.toString(eq)});
             then fail();
           end match;
         end for;
+        assignments := listReverse(assignments);
       then ();
+
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + FEquation.Branch.toString(branch, "")});
       then fail();
     end match;
-  end lowerWhenBranchIf;
+  end lowerWhenIfBranch;
+
+  function assignedCrefsString
+    input list<tuple<ComponentRef, Expression>> assignments;
+    output String str = stringDelimitList(list(ComponentRef.toString(Util.tuple21(tpl)) for tpl in assignments), ", ");
+  end assignedCrefsString;
+
+  function sameAssignedCrefs
+    input list<tuple<ComponentRef, Expression>> assignments;
+    input list<tuple<ComponentRef, Expression>> other;
+    output Boolean b;
+  algorithm
+    b := listLength(assignments) == listLength(other) and
+      List.all(assignments, function isAssignedCref(assignments = other)) and
+      List.all(other, function isAssignedCref(assignments = assignments));
+  end sameAssignedCrefs;
+
+  function isAssignedCref
+    input tuple<ComponentRef, Expression> tpl;
+    input list<tuple<ComponentRef, Expression>> assignments;
+    output Boolean b = List.any(assignments, function isAssignmentOf(cref = Util.tuple21(tpl)));
+  end isAssignedCref;
+
+  function isAssignmentOf
+    input tuple<ComponentRef, Expression> tpl;
+    input ComponentRef cref;
+    output Boolean b = ComponentRef.isEqual(Util.tuple21(tpl), cref);
+  end isAssignmentOf;
+
+  function splitWholeAssignments
+    "splits assignments of a whole array into the slices other branches assign,
+    e.g. g = pre(g) into g[{1,2}] = pre(g)[{1,2}] and g[{3,4}] = pre(g)[{3,4}]"
+    input list<list<tuple<ComponentRef, Expression>>> branch_assignments;
+    output list<list<tuple<ComponentRef, Expression>>> result = {};
+  protected
+    list<ComponentRef> slices = {};
+    list<ComponentRef> cref_slices;
+    list<tuple<ComponentRef, Expression>> assignments;
+    ComponentRef cref;
+    Expression rhs;
+  algorithm
+    // slices of the last part of a cref
+    for a in branch_assignments loop
+      for tpl in a loop
+        cref := Util.tuple21(tpl);
+        if ComponentRef.hasSubscripts(cref) and not ComponentRef.hasSubscripts(ComponentRef.rest(cref))
+          and not List.isMemberOnTrue(cref, slices, ComponentRef.isEqual) then
+          slices := cref :: slices;
+        end if;
+      end for;
+    end for;
+
+    for a in branch_assignments loop
+      assignments := {};
+      for tpl in a loop
+        (cref, rhs) := tpl;
+        cref_slices := if ComponentRef.hasSubscripts(cref) then {} else
+          list(c for c guard(ComponentRef.isEqualStrip(c, cref)) in slices);
+        if not listEmpty(cref_slices) and Type.sizeOf(ComponentRef.getSubscriptedType(cref))
+            == sum(Type.sizeOf(ComponentRef.getSubscriptedType(c)) for c in cref_slices) then
+          for c in cref_slices loop
+            assignments := (c, SimplifyExp.simplify(Expression.applySubscripts(ComponentRef.getSubscripts(c), rhs))) :: assignments;
+          end for;
+        else
+          assignments := tpl :: assignments;
+        end if;
+      end for;
+      result := listReverse(assignments) :: result;
+    end for;
+    result := listReverse(result);
+  end splitWholeAssignments;
 
   public function lowerAlgorithm
     input Algorithm alg;

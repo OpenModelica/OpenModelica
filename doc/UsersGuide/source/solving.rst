@@ -216,27 +216,6 @@ with :ref:`SUNDIALS/IDA <sundials_ida>` integrator and with enabled
 :ref:`-daeMode <simflag-daeMode>` simulation flag. Both are enabled
 automatically by default, when a simulation run is started.
 
-Homotopy support in DAE mode
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-In `DAE mode` the :ref:`homotopy operator <homotopy-method>` is kept in the
-simulation residual (in ODE mode it is only used during initialization). This
-makes `DAE mode` robust against models whose *initial operating point is a
-degenerate point* of a ``homotopy(actual, simplified)`` characteristic — a
-typical example is a fan or pump that starts at zero speed and zero flow, where
-the derivative of the actual pressure characteristic vanishes and the initial
-DAE Jacobian is singular. Such models would otherwise fail at ``time = 0`` with
-``IDA_LSETUP_FAIL``.
-
-When this happens, OpenModelica automatically performs a homotopy continuation:
-the homotopy parameter :math:`\lambda` is ramped from 0 to 1 over the first part
-of the simulation interval (10% by default), so the simulation starts from the
-regularized *simplified* system and continuously transitions to the *actual*
-system once it has moved off the degenerate point. The continuation is activated
-only after a singular initial Jacobian is detected, so models that integrate
-normally are unaffected, and it removes the need for a model-level workaround
-such as giving the mover a non-zero ``m_flow_start``.
-
 
 .. _initialization :
 
@@ -475,8 +454,6 @@ which is explicit and thus ignores the imported guess value `x = 4`.
 Finally, when running model `M3`, parameters are handled like in the previous case, as well as the algebraic variables `v1` and `v2`. However,
 in this case the solution of the initial equations is skipped, so the state variable gets its initial value `x = 4` straight from the imported `initial.mat` file.
 
-
-.. _homotopy-method:
 
 Homotopy Method
 ~~~~~~~~~~~~~~~

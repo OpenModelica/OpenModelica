@@ -67,7 +67,7 @@ protected
   // Backend imports
   import BVariable = NBVariable;
   import NBEquation.Equation;
-  import NBEvents.{EventInfo, Condition, MathEvent};
+  import NBEvents.{EventInfo, Condition, MathEvent, TimeEvent};
   import NBPartition.Partition;
   import Slice = NBSlice;
   import StrongComponent = NBStrongComponent;
@@ -1509,7 +1509,7 @@ public
     algorithm
       varInfo := VAR_INFO(
         numZeroCrossings             = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)) + sum(MathEvent.numZeroCrossings(mev) for mev in eventInfo.math_lst),
-        numTimeEvents                = UnorderedSet.size(eventInfo.time_set),
+        numTimeEvents                = TimeEvent.nextIndex(eventInfo.time_set),
         numRelations                 = sum(Condition.numRelations(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
         numMathEventFunctions        = eventInfo.numberMathEvents,
         numStateVars                 = listScalarSize(vars.stateVars),

@@ -3523,7 +3523,7 @@ function plot
   input Boolean externalWindow = false "Opens the plot in a new plot window";
   input String fileName = "<default>" "The filename containing the variables. <default> will read the last simulation result";
   input String title = "" "This text will be used as the diagram title.";
-  input String grid = "simple" "Sets the grid for the plot i.e simple, detailed, none.";
+  input String grid = "simple" "Sets the grid for the plot i.e., simple, detailed, none or xonly.";
   input Boolean logX = false "Determines whether or not the horizontal axis is logarithmically scaled.";
   input Boolean logY = false "Determines whether or not the vertical axis is logarithmically scaled.";
   input String xLabel = "time" "This text will be used as the horizontal label in the diagram.";
@@ -3532,7 +3532,7 @@ function plot
   input Real yRange[2] = {0.0,0.0} "Determines the left vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Real curveWidth = 1.0 "Sets the width of the curve.";
   input Integer curveStyle = 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
-  input String legendPosition = "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
+  input String legendPosition = "top" "Sets the POSITION of the legend i.e., left, right, top, bottom, none.";
   input String footer = "" "This text will be used as the diagram footer.";
   input Boolean autoScale = true "Use auto scale while plotting.";
   input Boolean forceOMPlot = false "if true launches OMPlot and doesn't call callback function even if it is defined.";
@@ -3558,7 +3558,7 @@ function plotAll
   input Boolean externalWindow = false "Opens the plot in a new plot window";
   input String fileName = "<default>" "The filename containing the variables. <default> will read the last simulation result";
   input String title = "" "This text will be used as the diagram title.";
-  input String grid = "simple" "Sets the grid for the plot i.e simple, detailed, none.";
+  input String grid = "simple" "Sets the grid for the plot i.e., simple, detailed, none or xonly.";
   input Boolean logX = false "Determines whether or not the horizontal axis is logarithmically scaled.";
   input Boolean logY = false "Determines whether or not the vertical axis is logarithmically scaled.";
   input String xLabel = "time" "This text will be used as the horizontal label in the diagram.";
@@ -3567,7 +3567,7 @@ function plotAll
   input Real yRange[2] = {0.0,0.0} "Determines the left vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Real curveWidth = 1.0 "Sets the width of the curve.";
   input Integer curveStyle = 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
-  input String legendPosition = "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
+  input String legendPosition = "top" "Sets the POSITION of the legend i.e., left, right, top, bottom, none.";
   input String footer = "" "This text will be used as the diagram footer.";
   input Boolean autoScale = true "Use auto scale while plotting.";
   input Boolean forceOMPlot = false "if true launches OMPlot and doesn't call callback function even if it is defined.";
@@ -3596,7 +3596,7 @@ function plotParametric
   input Boolean externalWindow = false "Opens the plot in a new plot window";
   input String fileName = "<default>" "The filename containing the variables. <default> will read the last simulation result";
   input String title = "" "This text will be used as the diagram title.";
-  input String grid = "simple" "Sets the grid for the plot i.e simple, detailed, none.";
+  input String grid = "simple" "Sets the grid for the plot i.e., simple, detailed, none or xonly.";
   input Boolean logX = false "Determines whether or not the horizontal axis is logarithmically scaled.";
   input Boolean logY = false "Determines whether or not the vertical axis is logarithmically scaled.";
   input String xLabel = "" "This text will be used as the horizontal label in the diagram.";
@@ -3605,7 +3605,7 @@ function plotParametric
   input Real yRange[2] = {0.0,0.0} "Determines the left vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Real curveWidth = 1.0 "Sets the width of the curve.";
   input Integer curveStyle = 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
-  input String legendPosition = "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
+  input String legendPosition = "top" "Sets the POSITION of the legend i.e., left, right, top, bottom, none.";
   input String footer = "" "This text will be used as the diagram footer.";
   input Boolean autoScale = true "Use auto scale while plotting.";
   input Boolean forceOMPlot = false "if true launches OMPlot and doesn't call callback function even if it is defined.";
