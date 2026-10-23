@@ -741,7 +741,7 @@ algorithm
   // binding couldn't be split and was moved to an initial equation.
   if unfix then
     ty_attrs := Binding.setAttr(ty_attrs, "fixed",
-      Binding.makeFlat(Expression.BOOLEAN(false), Variability.CONSTANT, NFBinding.Source.GENERATED));
+      Binding.makeFlat(Expression.BOOLEAN(false), Variability.CONSTANT, NFBinding.Source.GENERATED, info));
   end if;
 
   // kabdelhak: add dummy backend info, will be changed to actual value in
@@ -872,7 +872,7 @@ algorithm
           max_exp_opt := eval_binding(Variable.lookupTypeAttribute("max", var));
           start_exp := Expression.makeDefaultValue(var.ty, min_exp_opt, max_exp_opt);
           var.binding := Binding.makeFlat(start_exp, Expression.variability(start_exp),
-            NFBinding.Source.GENERATED);
+            NFBinding.Source.GENERATED, var.info);
         elseif not settings.relaxedErrorChecking then
           fail();
         end if;
@@ -894,10 +894,12 @@ protected
   Variability var;
   Binding.Source bind_src;
   Integer confidence;
+  SourceInfo info;
 algorithm
   binding_exp := Binding.getTypedExp(binding);
   var := Binding.variability(binding);
   bind_src := NFBinding.Source.GENERATED;
+  info := Binding.getInfo(binding);
   confidence := Binding.confidence(binding);
 
   // Convert the expressions in the record expression into bindings.
@@ -908,12 +910,12 @@ algorithm
                // from an evaluated function call where it wasn't assigned a value.
                NFBinding.EMPTY_BINDING
              else
-               Binding.makeFlat(e, var, bind_src, confidence)
+               Binding.makeFlat(e, var, bind_src, info, confidence)
            for e in binding_exp.elements);
 
     case Expression.ARRAY()
       guard Type.isRecord(Type.arrayElementType(Expression.typeOf(binding_exp)))
-      then list(Binding.makeFlat(Expression.nthRecordElement(i, binding_exp), var, bind_src, confidence)
+      then list(Binding.makeFlat(Expression.nthRecordElement(i, binding_exp), var, bind_src, info, confidence)
                   for i in 1:arrayLength(comps));
 
     else
@@ -1234,7 +1236,7 @@ algorithm
     case Expression.SUBSCRIPTED_EXP()
       guard Subscript.isEqualList(exp.subscripts, subs)
       algorithm
-        binding := Binding.makeFlat(exp.exp, Binding.variability(binding), Binding.source(binding), Binding.confidence(binding));
+        binding := Binding.makeFlat(exp.exp, Binding.variability(binding), Binding.source(binding), Binding.getInfo(binding), Binding.confidence(binding));
         return;
       then
         ();
@@ -1263,7 +1265,7 @@ algorithm
     exp := Expression.CALL(array_call);
   end if;
 
-  binding := Binding.makeFlat(exp, Binding.variability(binding), Binding.source(binding), Binding.confidence(binding));
+  binding := Binding.makeFlat(exp, Binding.variability(binding), Binding.source(binding), Binding.getInfo(binding), Binding.confidence(binding));
 end vectorizeBinding;
 
 function fillVectorizedBinding

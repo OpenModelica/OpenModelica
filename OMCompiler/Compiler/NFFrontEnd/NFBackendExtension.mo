@@ -623,7 +623,7 @@ public
         end for;
         fixedExp := Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(ty, Expression.variability(fixedExp), NFPrefixes.Purity.PURE, fixedExp, listReverse(iterators)));
       end if;
-      fixedBinding := Binding.makeFlat(fixedExp, Variability.CONSTANT, Source.GENERATED);
+      fixedBinding := Binding.makeFlat(fixedExp, Variability.CONSTANT, Source.GENERATED, Absyn.dummyInfo);
 
       attributes := match attributes
         case VAR_ATTR_REAL() guard(overwrite or isNone(attributes.fixed)) algorithm
@@ -673,7 +673,7 @@ public
     protected
       Binding startBinding;
     algorithm
-      startBinding := Binding.makeFlat(start, Expression.variability(start), Source.GENERATED);
+      startBinding := Binding.makeFlat(start, Expression.variability(start), Source.GENERATED, Absyn.dummyInfo);
       attributes := match attributes
         case VAR_ATTR_REAL() guard(overwrite or isNone(attributes.start)) algorithm
           attributes.start := SOME(startBinding);
@@ -1709,7 +1709,7 @@ public
 
     function expToGeneratedBinding
       input Expression exp;
-      output Binding binding = Binding.makeFlat(exp, Variability.CONSTANT, Source.GENERATED);
+      output Binding binding = Binding.makeFlat(exp, Variability.CONSTANT, Source.GENERATED, Absyn.dummyInfo);
     end expToGeneratedBinding;
   end VariableAttributes;
 

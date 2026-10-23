@@ -1716,6 +1716,9 @@ uniontype Operator "Operators which are overloaded in the abstract syntax are he
 
   record POW
     Type ty;
+    Boolean integerRHS "a^b with a < 0 is only allowed if b is an Integer, but b is
+                        usually stored as a Real expression. This field keeps track
+                        of what it originally was to allow proper error checking.";
   end POW;
 
   record UMINUS
@@ -1772,10 +1775,12 @@ uniontype Operator "Operators which are overloaded in the abstract syntax are he
 
   record POW_ARRAY_SCALAR
     Type ty "type of the array" ;
+    Boolean integerRHS "See POW";
   end POW_ARRAY_SCALAR;
 
   record POW_SCALAR_ARRAY
     Type ty "type of the array" ;
+    Boolean integerRHS "See POW";
   end POW_SCALAR_ARRAY;
 
   record POW_ARR "Power of a matrix: {{1,2,3},{4,5.0,6},{7,8,9}}^2"
@@ -1784,6 +1789,7 @@ uniontype Operator "Operators which are overloaded in the abstract syntax are he
 
   record POW_ARR2 "elementwise power of arrays: {1,2,3}.^{3,2,1}"
     Type ty "type of the array";
+    Boolean integerRHS "See POW";
   end POW_ARR2;
 
   record AND

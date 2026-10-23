@@ -1898,8 +1898,8 @@ function makeVarWithStart
 algorithm
   v := makeVar(name, ty, var);
   v.typeAttributes := {
-    ("start", Binding.makeFlat(startExp, Variability.CONSTANT, NFBinding.Source.GENERATED)),
-    ("fixed", Binding.makeFlat(Expression.BOOLEAN(true), Variability.CONSTANT, NFBinding.Source.GENERATED))
+    ("start", Binding.makeFlat(startExp, Variability.CONSTANT, NFBinding.Source.GENERATED, Absyn.dummyInfo)),
+    ("fixed", Binding.makeFlat(Expression.BOOLEAN(true), Variability.CONSTANT, NFBinding.Source.GENERATED, Absyn.dummyInfo))
   };
 end makeVarWithStart;
 
@@ -1913,7 +1913,7 @@ function makeVarWithBinding
   output Variable v;
 algorithm
   v := makeVar(name, ty, var);
-  v.binding := Binding.makeFlat(bindExp, var, NFBinding.Source.GENERATED);
+  v.binding := Binding.makeFlat(bindExp, var, NFBinding.Source.GENERATED, Absyn.dummyInfo);
 end makeVarWithBinding;
 
 // ============================================================

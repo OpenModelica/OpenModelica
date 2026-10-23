@@ -228,7 +228,7 @@ public
     function addExp
       input Expression e1;
       input Expression e2;
-      output Expression res = Expression.BINARY(e1, Operator.OPERATOR(Type.INTEGER(), NFOperator.Op.ADD), e2);
+      output Expression res = Expression.BINARY(e1, Operator.OPERATOR(Type.INTEGER(), NFOperator.Op.ADD, false), e2);
     end addExp;
     function addOpt
       input Option<Integer> s1;
