@@ -6132,7 +6132,10 @@ algorithm
         (e1,_) := Expression.traverseExpBottomUp(e, replaceVarWithValue, globalKnownVars);
         (e1,_) := ExpressionSimplify.simplify(e1);
         b := not Expression.isZeroOrAlmostZero(e1, nominal);
-        b_1 := Expression.isConst(e1) or BackendVariable.isKnownAndParam(e1,globalKnownVars);
+        // A parameter with fixed = false is computed during initialization, so
+        // its value is unknown here and it can be zero.
+        b_1 := Expression.isConst(e1) or (BackendVariable.isKnownAndParam(e1,globalKnownVars)
+               and not containsParamWithoutFixedValue(e1, globalKnownVars));
       then
        if b_1 then BackendDAE.SOLVABILITY_PARAMETER(b) else BackendDAE.SOLVABILITY_LINEAR(b);
     case(_, _)
@@ -6142,6 +6145,27 @@ algorithm
         BackendDAE.SOLVABILITY_LINEAR(b);
   end match;
 end adjacencyRowEnhanced3;
+
+protected function containsParamWithoutFixedValue
+"Helper function to adjacencyRowEnhanced3. Returns true if the expression
+  contains a parameter with fixed = false."
+  input DAE.Exp exp;
+  input BackendDAE.Variables globalKnownVars;
+  output Boolean b = false;
+protected
+  list<BackendDAE.Var> vars;
+algorithm
+  for cr in Expression.extractCrefsFromExp(exp) loop
+    try
+      (vars, _) := BackendVariable.getVar(cr, globalKnownVars);
+      b := List.any(vars, BackendVariable.isParamWithoutFixedValue);
+    else
+    end try;
+    if b then
+      return;
+    end if;
+  end for;
+end containsParamWithoutFixedValue;
 
 public function replaceVarWithValue
 "Helper function to adjacencyRowEnhanced3. Traverser to replace variables(parameters) with their bind expression."
