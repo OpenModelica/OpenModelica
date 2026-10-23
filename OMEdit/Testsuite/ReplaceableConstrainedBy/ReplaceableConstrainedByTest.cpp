@@ -148,7 +148,7 @@ void ReplaceableConstrainedByTest::subDialogUsesParameterDefaultValue()
       /* The typeParam of the record must be bound to the default value of the classWithReplaceables typeParam. */
       ModelInstance::Model *pRecordModel = pRealParam1->getModelInstanceElement()->getParentModel();
       if (pRecordModel) {
-        if (ModelInstance::Element *pRecordTypeParam = pRecordModel->lookupElement("typeParam")) {
+        if (const ModelInstance::Element *pRecordTypeParam = pRecordModel->lookupElement("typeParam")) {
           typeParamBinding = pRecordTypeParam->getBinding().toQString();
         }
       }
