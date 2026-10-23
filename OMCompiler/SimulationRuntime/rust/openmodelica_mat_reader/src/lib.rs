@@ -109,6 +109,12 @@ impl ResultTable for MatReader {
     fn all_info(&self) -> &[MatVariable] {
         &self.allInfo
     }
+    fn var_type(&self, idx: usize) -> &str {
+        self.types.get(idx).copied().unwrap_or("Real")
+    }
+    fn enumeration(&self, idx: usize) -> Option<Vec<String>> {
+        self.enumeration_of.get(idx).copied().flatten().map(|e| self.enumerations[e].1.clone())
+    }
     fn params(&self) -> &[f64] {
         &self.params
     }
@@ -164,6 +170,12 @@ pub struct MatReader {
     data2: Option<Vec<f64>>,
     startTime: Option<f64>,
     stopTime: Option<f64>,
+    /// Per `allInfo` entry: the type its description is tagged with.
+    types: Vec<&'static str>,
+    /// Per `allInfo` entry: its enumeration type, an index into `enumerations`.
+    enumeration_of: Vec<Option<usize>>,
+    /// The `enumerations` matrix after data_2: each type's name and literals.
+    enumerations: Vec<(String, Vec<String>)>,
 }
 
 /// MATLAB v4 matrix header (5 little-endian u32 fields).
@@ -264,6 +276,56 @@ fn read_header(file: &mut Src) -> Result<MHeader, String> {
         imagf: g(12),
         namelen: g(16),
     })
+}
+
+/// The `X` of a Dymola type tag, `comment [unit:#(type=X)]`, in a description.
+fn description_type(descr: &str) -> Option<&str> {
+    let tags = &descr[descr.rfind('[')?..];
+    let start = tags.find(":#(type=")? + ":#(type=".len();
+    let len = tags[start..].find(')')?;
+    Some(&tags[start..start + len])
+}
+
+/// The `enumerations` text matrix that may follow data_2, one
+/// `Type(Literal1, Literal2)` entry per column. Anything else there, or nothing,
+/// gives no enumerations: the file may still be written or come from another tool.
+fn read_enumerations(file: &mut Src) -> Vec<(String, Vec<String>)> {
+    let Ok(hdr) = read_header(file) else { return Vec::new() };
+    if hdr.ty != 51 || hdr.imagf != 0 || hdr.namelen as usize != "enumerations".len() + 1 {
+        return Vec::new();
+    }
+    if !read_exact_vec(file, hdr.namelen as usize).is_ok_and(|n| n == b"enumerations\0") {
+        return Vec::new();
+    }
+    let (mrows, ncols) = (hdr.mrows as usize, hdr.ncols as usize);
+    let Ok(text) = read_exact_vec(file, mrows.saturating_mul(ncols)) else { return Vec::new() };
+    text.chunks_exact(mrows.max(1)).filter_map(|c| enumeration_entry(&fixed_str(c))).collect()
+}
+
+/// Split `P.Mode(Off, Heat, 'a, b')` into its name and literals.
+fn enumeration_entry(entry: &str) -> Option<(String, Vec<String>)> {
+    let open = entry.find('(')?;
+    let body = entry[open + 1..].strip_suffix(')')?;
+    let mut literals = Vec::new();
+    let (mut quoted, mut escaped, mut cur) = (false, false, String::new());
+    for c in body.chars() {
+        match c {
+            _ if escaped => escaped = false,
+            '\\' if quoted => escaped = true,
+            '\'' => quoted = !quoted,
+            ',' if !quoted => {
+                literals.push(cur.trim().to_string());
+                cur.clear();
+                continue;
+            }
+            _ => {}
+        }
+        cur.push(c);
+    }
+    if !cur.trim().is_empty() {
+        literals.push(cur.trim().to_string());
+    }
+    Some((entry[..open].trim().to_string(), literals))
 }
 
 /// Read `n` character elements (stored either as doubles or raw bytes).
@@ -373,6 +435,9 @@ impl MatReader {
             data2: None,
             startTime: None,
             stopTime: None,
+            types: Vec::new(),
+            enumeration_of: Vec::new(),
+            enumerations: Vec::new(),
         };
         // Parse sequentially using `file`; `reader.file` is the clone kept for
         // the lazy data_2 read.
@@ -522,10 +587,22 @@ impl MatReader {
                         reader.nvar = hdr.ncols as usize;
                     }
                     reader.var_offset = file.stream_position().map_err(|e| e.to_string())?;
-                    let _ = matrix_length; // data_2 is the final matrix; nothing follows.
+                    if file.seek(SeekFrom::Current(matrix_length as i64)).is_ok() {
+                        reader.enumerations = read_enumerations(&mut file);
+                    }
                 }
                 _ => unreachable!(),
             }
+        }
+        for v in &reader.allInfo {
+            let (ty, e) = match description_type(&v.descr) {
+                None | Some("Real" | "String" | "Clock") => ("Real", None),
+                Some("Boolean") => ("Boolean", None),
+                Some("Integer") => ("Integer", None),
+                Some(name) => ("enumeration", reader.enumerations.iter().position(|(n, _)| n == name)),
+            };
+            reader.types.push(ty);
+            reader.enumeration_of.push(e);
         }
         Ok(reader)
     }
@@ -759,4 +836,75 @@ pub fn find_closest_points(key: f64, vec: &[f64]) -> (i32, f64, i32, f64) {
     }
     let w1 = (key - vec[min as usize]) / (vec[max as usize] - vec[min as usize]);
     (max, w1, min, 1.0 - w1)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn matrix(out: &mut Vec<u8>, name: &str, ty: u32, mrows: usize, ncols: usize, data: &[u8]) {
+        for v in [ty, mrows as u32, ncols as u32, 0, name.len() as u32 + 1] {
+            out.extend_from_slice(&v.to_le_bytes());
+        }
+        out.extend_from_slice(name.as_bytes());
+        out.push(0);
+        out.extend_from_slice(data);
+    }
+
+    fn text(out: &mut Vec<u8>, name: &str, cols: &[&str]) {
+        let mrows = cols.iter().map(|c| c.len()).max().unwrap_or(0) + 1;
+        let data: Vec<u8> = cols.iter().flat_map(|c| c.bytes().chain(std::iter::repeat(0)).take(mrows)).collect();
+        matrix(out, name, 51, mrows, cols.len(), &data);
+    }
+
+    fn doubles(v: &[f64]) -> Vec<u8> {
+        v.iter().flat_map(|x| x.to_le_bytes()).collect()
+    }
+
+    /// time, a Boolean b, an enumeration m and a Real x, two rows; then the
+    /// literals when `literals` holds the `enumerations` columns.
+    fn result_file(path: &std::path::Path, literals: &[&str]) {
+        let mut out = Vec::new();
+        matrix(&mut out, "Aclass", 51, 4, 11, &{
+            let rows = ["Atrajectory", "1.1", "", "binTrans"];
+            (0..11).flat_map(|c| rows.iter().map(move |r| *r.as_bytes().get(c).unwrap_or(&0))).collect::<Vec<u8>>()
+        });
+        text(&mut out, "name", &["time", "b", "m", "x"]);
+        text(&mut out, "description", &["Simulation time [s]", "a flag [:#(type=Boolean)]", "a mode [:#(type=P.Mode)]", "a real [m]"]);
+        let info: Vec<u8> = [0, 1, 0, -1, 2, 2, 0, 0, 2, 3, 0, 0, 2, 4, 0, 0].iter().flat_map(|v: &i32| v.to_le_bytes()).collect();
+        matrix(&mut out, "dataInfo", 20, 4, 4, &info);
+        matrix(&mut out, "data_1", 0, 1, 2, &doubles(&[0.0, 1.0]));
+        matrix(&mut out, "data_2", 0, 4, 2, &doubles(&[0.0, 0.0, 1.0, 0.5, 1.0, 1.0, 3.0, 0.7]));
+        if !literals.is_empty() {
+            text(&mut out, "enumerations", literals);
+        }
+        std::fs::write(path, out).unwrap();
+    }
+
+    #[test]
+    fn types_come_from_the_description_tags() {
+        let path = std::env::temp_dir().join("omc_mat_reader_types.mat");
+        result_file(&path, &["P.Mode(Off, Heat, Cool)", "Q('a, b', c)"]);
+        let r = MatReader::open(path.to_str().unwrap()).unwrap();
+        let ty = |n: &str| r.var_type(r.find_var(n).unwrap()).to_string();
+        assert_eq!([ty("time"), ty("b"), ty("m"), ty("x")], ["Real", "Boolean", "enumeration", "Real"]);
+        assert_eq!(r.enumeration(r.find_var("m").unwrap()), Some(vec!["Off".to_string(), "Heat".to_string(), "Cool".to_string()]));
+        assert_eq!(r.enumeration(r.find_var("b").unwrap()), None);
+        assert_eq!(r.enumerations[1].1, ["'a, b'", "c"]);
+
+        // A Dymola file: the tag, no literals.
+        result_file(&path, &[]);
+        let r = MatReader::open(path.to_str().unwrap()).unwrap();
+        assert_eq!(r.var_type(r.find_var("m").unwrap()), "enumeration");
+        assert_eq!(r.enumeration(r.find_var("m").unwrap()), None);
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn description_tags() {
+        assert_eq!(description_type("a [m]"), None);
+        assert_eq!(description_type("[:#(type=Integer)]"), Some("Integer"));
+        assert_eq!(description_type("x [1/s:#(type=Integer)]"), Some("Integer"));
+        assert_eq!(description_type("[:#(type=Clock):#(clock=c.activationCount)]"), Some("Clock"));
+    }
 }

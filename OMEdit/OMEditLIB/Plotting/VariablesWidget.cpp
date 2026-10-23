@@ -81,7 +81,8 @@ namespace VariableItemData {
     INITIAL_USES,
     DEFINED_IN,
     INFOFILE,
-    EXISTINRESULTFILE
+    EXISTINRESULTFILE,
+    ENUMERATION
   };
 }
 
@@ -141,6 +142,7 @@ void VariablesTreeItem::setVariableItemData(const QVector<QVariant> &variableIte
   }
   mInfoFileName = variableItemData[VariableItemData::INFOFILE].toString();
   mExistInResultFile = variableItemData[VariableItemData::EXISTINRESULTFILE].toBool();
+  mEnumerationLiterals = variableItemData.size() > VariableItemData::ENUMERATION ? variableItemData[VariableItemData::ENUMERATION].toStringList() : QStringList();
 }
 
 /*!
@@ -151,6 +153,22 @@ void VariablesTreeItem::setVariableItemData(const QVector<QVariant> &variableIte
 QString VariablesTreeItem::getPlotVariable()
 {
   return QString(mVariableName).remove(0, mFileName.length() + 1);
+}
+
+/*!
+ * \brief VariablesTreeItem::getValueLabels
+ * The names of the values of a Boolean or an enumeration variable as model_init.xml gives them.
+ * \param pBase - the value of the first name.
+ * \return
+ */
+QStringList VariablesTreeItem::getValueLabels(int *pBase) const
+{
+  if (mType.compare(QStringLiteral("Boolean")) == 0) {
+    *pBase = 0;
+    return QStringList() << "false" << "true";
+  }
+  *pBase = 1;
+  return mEnumerationLiterals;
 }
 
 /*!
@@ -625,6 +643,7 @@ void VariablesTreeModel::parseInitXml(QXmlStreamReader &xmlReader, SimulationOpt
   bool addVariablesToList = variablesList->isEmpty();
   bool protectedVariables = simulationOptions.getProtectedVariables();
   bool ignoreHideResult = simulationOptions.getIgnoreHideResult();
+  QString enumerationType;
   /* We'll parse the XML until we reach end of it.*/
   while (!xmlReader.atEnd() && !xmlReader.hasError()) {
     /* Read next element.*/
@@ -639,6 +658,15 @@ void VariablesTreeModel::parseInitXml(QXmlStreamReader &xmlReader, SimulationOpt
        * ArrayVariable is written instead of the scalarized elements when --simCodeScalarize=false.
        * Its elements are taken from the result file, see insertVariablesItems.
        */
+      /* The literals of an enumeration type: a SimpleType of TypeDefinitions, then its Items in value order. */
+      if (xmlReader.name() == QStringLiteral("SimpleType")) {
+        enumerationType = xmlReader.attributes().value(QStringLiteral("name")).toString();
+        mEnumerationTypes.insert(enumerationType, QStringList());
+        continue;
+      } else if (xmlReader.name() == QStringLiteral("Item") && !enumerationType.isEmpty()) {
+        mEnumerationTypes[enumerationType].append(xmlReader.attributes().value(QStringLiteral("name")).toString());
+        continue;
+      }
       const bool isArrayVariable = xmlReader.name() == QStringLiteral("ArrayVariable");
       if (isArrayVariable || xmlReader.name() == QStringLiteral("ScalarVariable")) {
         ScalarVariable scalarVariable = VariablesTreeModel::parseScalarVariable(xmlReader);
@@ -790,6 +818,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   /* open the model_init.xml file for reading */
   mScalarVariablesHash.clear();
   mArrayVariablesHash.clear();
+  mEnumerationTypes.clear();
   QString initFileName, infoFileName;
   if (simulationOptions.isValid()) {
     initFileName = QString("%1_init.xml").arg(simulationOptions.getOutputFileName());
@@ -948,7 +977,8 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       QString variableToFind = fullName.mid(prefixLen);
       /* Get variable information from mat/xml */
       QString type, value, unit, displayUnit, description;
-      getVariableInformation(&matReader, variableToFind, &type, &value, &extras.changeAble, &extras.variability, &unit, &displayUnit, &description);
+      QStringList enumeration;
+      getVariableInformation(&matReader, variableToFind, &type, &value, &extras.changeAble, &extras.variability, &unit, &displayUnit, &description, &enumeration);
 
       QVector<QVariant> variableData;
       variableData << filePath << fileName << fullName << displayName;
@@ -1026,6 +1056,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
         variableExistsInResultFile = false;
       }
       variableData << variableExistsInResultFile;
+      variableData << enumeration;
 
       return variableData;
     },
@@ -1198,6 +1229,8 @@ ScalarVariable VariablesTreeModel::parseScalarVariable(QXmlStreamReader &xmlRead
           scalarVariable.unit = value.toString();
         } else if (name == QLatin1String("displayUnit")) {
           scalarVariable.displayUnit = value.toString();
+        } else if (name == QLatin1String("declaredType")) {
+          scalarVariable.declaredType = value.toString();
         }
       }
     }
@@ -1260,9 +1293,10 @@ QString VariablesTreeModel::removeSubscripts(const QString &name)
  * \param unit
  * \param displayUnit
  * \param description
+ * \param enumeration - the literals of an enumeration variable.
  */
 void VariablesTreeModel::getVariableInformation(ResultFileReader *pMatReader, QString variableToFind, QString *type, QString *value, bool *changeAble,
-                                                QString *variability, QString *unit, QString *displayUnit, QString *description)
+                                                QString *variability, QString *unit, QString *displayUnit, QString *description, QStringList *enumeration)
 {
   ScalarVariable scalarVariable = mScalarVariablesHash.value(variableToFind);
   bool found = scalarVariable.name.compare(variableToFind) == 0;
@@ -1295,6 +1329,7 @@ void VariablesTreeModel::getVariableInformation(ResultFileReader *pMatReader, QS
     *unit = scalarVariable.unit;
     *displayUnit = scalarVariable.displayUnit;
     *description = scalarVariable.description;
+    *enumeration = mEnumerationTypes.value(scalarVariable.declaredType);
   }
 }
 
@@ -2179,6 +2214,14 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           pPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList().last();
         }
         assert(pPlotCurve != pLastPlotCurve); // implies pPlotCurve != nullptr
+        // a result file without types: name the values as model_init.xml does
+        if (pPlotWindow->isPlot() && !pPlotCurve->hasValueLabels()) {
+          int base = 0;
+          const QStringList labels = pVariablesTreeItem->getValueLabels(&base);
+          if (!labels.isEmpty()) {
+            pPlotCurve->setValueLabels(labels, base);
+          }
+        }
         bool requiresUpdate = false;
         /* Ticket:15501. We could have prefix unit when we called pPlotWindow->plot(pPlotCurve); above.
           * So use it when converting since the values represent prefix + unit and not just unit.

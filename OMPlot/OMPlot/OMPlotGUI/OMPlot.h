@@ -120,6 +120,12 @@ public:
   static QString convertUnitToSymbol(const QString &displayUnit);
   static QString convertSymbolToUnit(const QString &symbol);
   static void getUnitPrefixAndExponent(double lowerBound, double upperBound, QString &unitPrefix, int &exponent);
+  QList<PlotCurve*> axisCurves(bool right) const;
+  void updateStack(bool stack);
+  void applyValueScales();
+  PlotCurve* stackedCurveAt(bool right, double value) const;
+  bool commonValueLabels(bool right, QStringList *pLabels = nullptr, int *pBase = nullptr) const;
+  bool hasValueScale(bool right) const;
 private:
   void installZoomEventFilters(QWidget *widget);
   void startZoomFromGlobalPosition(const QPoint &globalPosition, Qt::KeyboardModifiers modifiers);

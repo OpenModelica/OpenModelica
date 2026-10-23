@@ -38,6 +38,9 @@
 #include "MainWindow.h"
 #include "OMC/OMCProxy.h"
 #include "Plotting/VariablesWidget.h"
+#include "OMPlot.h"
+#include "PlotWindow.h"
+#include "PlotCurve.h"
 
 OMEDITTEST_MAIN(VariablesBrowserTest)
 
@@ -84,6 +87,68 @@ void VariablesBrowserTest::arrayVariables()
   QVERIFY(pVariablesTreeItem);
   QCOMPARE(pVariablesTreeItem->getDescription(), QString("Array of states"));
   QVERIFY(!pVariablesTreeItem->isEditable());
+}
+
+void VariablesBrowserTest::valueLabels()
+{
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+  QTemporaryDir workingDirectory;
+  QVERIFY(workingDirectory.isValid());
+  pOMCProxy->changeDirectory(workingDirectory.path());
+
+  const QString model = "model ValueLabelsTest\n"
+                        "  type Mode = enumeration(Off, Heat, Cool);\n"
+                        "  Mode m;\n"
+                        "  Boolean b;\n"
+                        "  Real x;\n"
+                        "equation\n"
+                        "  m = if time < 0.5 then Mode.Off else Mode.Cool;\n"
+                        "  b = time > 0.5;\n"
+                        "  x = time;\n"
+                        "end ValueLabelsTest;\n";
+  QVERIFY(pOMCProxy->loadString(model, "ValueLabelsTest.mo"));
+  const QStringList modeLabels = QStringList() << "Off" << "Heat" << "Cool";
+  const QStringList booleanLabels = QStringList() << "false" << "true";
+
+  // a .mat result file names the values itself
+  pOMCProxy->sendCommand("simulate(ValueLabelsTest, stopTime=1)");
+  const QString simulationResult = pOMCProxy->getResult();
+  QVERIFY2(QFile::exists(workingDirectory.filePath("ValueLabelsTest_res.mat")), qPrintable(simulationResult + pOMCProxy->getErrorString()));
+  OMPlot::PlotWindow plotWindow;
+  plotWindow.setPlotType(OMPlot::PlotWindow::PLOT);
+  plotWindow.initializeFile(workingDirectory.filePath("ValueLabelsTest_res.mat"));
+  plotWindow.setVariablesList(QStringList() << "m" << "b" << "x");
+  plotWindow.plot();
+  QHash<QString, OMPlot::PlotCurve*> curves;
+  foreach (OMPlot::PlotCurve *pPlotCurve, plotWindow.getPlot()->getPlotCurvesList()) {
+    curves.insert(pPlotCurve->getYVariable(), pPlotCurve);
+  }
+  QVERIFY(curves.contains("m") && curves.contains("b") && curves.contains("x"));
+  QCOMPARE(curves.value("m")->getValueLabels(), modeLabels);
+  QCOMPARE(curves.value("m")->getValueLabelBase(), 1);
+  QCOMPARE(curves.value("b")->getValueLabels(), booleanLabels);
+  QCOMPARE(curves.value("b")->getValueLabelBase(), 0);
+  QVERIFY(!curves.value("x")->hasValueLabels());
+  QCOMPARE(curves.value("m")->valueText(3), QString("Cool"));
+
+  // a .csv result file does not, the Variables Browser takes them from model_init.xml
+  pOMCProxy->sendCommand("simulate(ValueLabelsTest, stopTime=1, outputFormat=\"csv\")");
+  QVERIFY2(QFile::exists(workingDirectory.filePath("ValueLabelsTest_res.csv")), qPrintable(pOMCProxy->getResult() + pOMCProxy->getErrorString()));
+  VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
+  pVariablesWidget->insertVariablesItemsToTree("ValueLabelsTest_res.csv", workingDirectory.path(), QStringList(), SimulationOptions());
+  VariablesTreeModel *pVariablesTreeModel = pVariablesWidget->getVariablesTreeModel();
+  int base = -1;
+  VariablesTreeItem *pVariablesTreeItem = pVariablesTreeModel->findVariablesTreeItem("ValueLabelsTest_res.csv.m", pVariablesTreeModel->getRootVariablesTreeItem());
+  QVERIFY(pVariablesTreeItem);
+  QCOMPARE(pVariablesTreeItem->getValueLabels(&base), modeLabels);
+  QCOMPARE(base, 1);
+  pVariablesTreeItem = pVariablesTreeModel->findVariablesTreeItem("ValueLabelsTest_res.csv.b", pVariablesTreeModel->getRootVariablesTreeItem());
+  QVERIFY(pVariablesTreeItem);
+  QCOMPARE(pVariablesTreeItem->getValueLabels(&base), booleanLabels);
+  QCOMPARE(base, 0);
+  pVariablesTreeItem = pVariablesTreeModel->findVariablesTreeItem("ValueLabelsTest_res.csv.x", pVariablesTreeModel->getRootVariablesTreeItem());
+  QVERIFY(pVariablesTreeItem);
+  QVERIFY(pVariablesTreeItem->getValueLabels(&base).isEmpty());
 }
 
 void VariablesBrowserTest::cleanupTestCase()

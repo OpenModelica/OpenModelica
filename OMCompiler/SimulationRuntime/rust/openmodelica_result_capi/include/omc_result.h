@@ -96,6 +96,9 @@ char *omc_result_description(const omc_result *r, const char *var);
 char *omc_result_unit(const omc_result *r, const char *var);
 char *omc_result_display_unit(const omc_result *r, const char *var);
 char *omc_result_type(const omc_result *r, const char *var); /* Real, Integer, Boolean, String, enumeration */
+/* The literals of enumeration var (*len of them; value k names the k-th), for
+ * omc_result_free_strings(result, *len); NULL unless the file has them. */
+char **omc_result_enumeration(const omc_result *r, const char *var, size_t *len);
 
 size_t omc_result_num_rows(const omc_result *r);
 const char *omc_result_time_name(const omc_result *r);
@@ -249,6 +252,15 @@ public:
   std::string unit(const std::string &v) const { return detail::take(omc_result_unit(r_, v.c_str())); }
   std::string displayUnit(const std::string &v) const { return detail::take(omc_result_display_unit(r_, v.c_str())); }
   std::string type(const std::string &v) const { return detail::take(omc_result_type(r_, v.c_str())); }
+  /* The literals of an enumeration; empty unless the file has them. */
+  std::vector<std::string> enumeration(const std::string &v) const {
+    size_t n = 0;
+    char **p = omc_result_enumeration(r_, v.c_str(), &n);
+    if (!p) return {};
+    std::vector<std::string> out(p, p + n);
+    omc_result_free_strings(p, n);
+    return out;
+  }
 
   size_t rows() const { return omc_result_num_rows(r_); }
   std::string timeName() const { return omc_result_time_name(r_); }

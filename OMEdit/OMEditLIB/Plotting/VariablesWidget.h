@@ -70,6 +70,7 @@ public:
   QString getPlotVariable();
   QString getVariableName() {return mVariableName;}
   bool isString() const;
+  QStringList getValueLabels(int *pBase) const;
   bool isValueChanged() {return mValueChanged;}
   QString getUnit() {return mUnit;}
   QString getDisplayUnit() {return mDisplayUnit;}
@@ -135,6 +136,8 @@ private:
   QStringList mUses, mInitialUses;
   QList<IntStringPair> mDefinedIn;
   QString mInfoFileName;
+  // the literals of an enumeration, from model_init.xml
+  QStringList mEnumerationLiterals;
   bool mExistInResultFile;
 };
 
@@ -149,6 +152,7 @@ struct ScalarVariable {
   bool isProtected = false;
   bool isEncrypted = false;
   QString type;
+  QString declaredType;
   QString start;
   QString unit;
   QString displayUnit;
@@ -199,12 +203,14 @@ private:
   QHash<QString, ScalarVariable> mScalarVariablesHash;
   // ArrayVariable elements of model_init.xml, keyed by name without subscripts
   QHash<QString, ScalarVariable> mArrayVariablesHash;
+  // the literals of each enumeration type of model_init.xml
+  QHash<QString, QStringList> mEnumerationTypes;
   void filterVariableTreeItem(VariableNode *pParentVariableNode, VariablesTreeItem *pParentVariablesTreeItem);
   void insertVariablesItems(VariableNode *pParentVariableNode, VariablesTreeItem *pParentVariablesTreeItem);
   static ScalarVariable parseScalarVariable(QXmlStreamReader &xmlReader);
   static QString removeSubscripts(const QString &name);
   void getVariableInformation(ResultFileReader *pMatReader, QString variableToFind, QString *type, QString *value, bool *changeAble, QString *variability,
-                              QString *unit, QString *displayUnit, QString *description);
+                              QString *unit, QString *displayUnit, QString *description, QStringList *enumeration);
 signals:
   void itemChecked(const QModelIndex &index, qreal curveThickness, int curveStyle, int keyDown);
   void unitChanged(const QModelIndex &index);
