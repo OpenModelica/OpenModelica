@@ -435,7 +435,7 @@ algorithm
   vars := listReverseInPlace(findNonCausalConnectorVars(component, InstNode.name(component), {}));
 
   if not listEmpty(vars) then
-    Error.addStrictMessage(Error.NON_CAUSAL_BLOCK_CONNECTOR,
+    Error.addSourceMessageAndFail(Error.NON_CAUSAL_BLOCK_CONNECTOR,
       {InstNode.name(component), stringDelimitList(vars, ", ")}, InstNode.info(component));
   end if;
 end checkBlockConnector;
