@@ -7,6 +7,7 @@ fmi3_wasm_annotation_flags.mos \
 fmi3_wasm_arrays.mos \
 fmi3_wasm_daemode.mos \
 fmi3_wasm_error_reason.mos \
+fmi3_wasm_fmi2_no_platform.mos \
 fmi3_wasm_solver_absent.mos \
 fmi3_wasm_solver_libraries.mos \
 fmi3_wasm_solver_me.mos \

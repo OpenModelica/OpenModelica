@@ -1373,6 +1373,8 @@ public constant ErrorTypes.Message FMU_EXPORT_FMI_LS_DAE_DRAFT = ErrorTypes.MESS
   "The Model Exchange FMU carries a DAE formulation as fmi-ls-dae %s, implemented against the draft of %s (commit %s). fmi-ls-dae is not a released layered standard yet, so an importer written against another revision of the draft may not read the manifest.");
 public constant ErrorTypes.Message FMU_EXPORT_WASM_FMI1 = ErrorTypes.MESSAGE(7029, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "The wasm FMU export does not serve the deprecated FMI 1.0. Ask for version=\"2.0\" or version=\"3.0\", or drop \"wasm\" from platforms to export a C FMU.");
+public constant ErrorTypes.Message FMU_EXPORT_WASM_FMI2_AS_FMI3 = ErrorTypes.MESSAGE(7033, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  "No native platform was selected for the wasm FMU, so it is exported as FMI 3.0 (fmi-ls-wasm) instead of FMI 2.0. An FMI 2.0 FMU needs a native platform to load the wasm binary.");
 
 constant SourceInfo dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
 

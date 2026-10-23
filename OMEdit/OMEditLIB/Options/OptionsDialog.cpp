@@ -6515,9 +6515,11 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
 #if defined(__EMSCRIPTEN__)
   const QStringList fmuPlatforms = omcWorkerFmuPlatforms();
   pPlatformsLayout->addWidget(new Label(fmuPlatforms.isEmpty()
-                                        ? tr("Note: No native platform is available here, the FMU only contains the WebAssembly binary.")
+                                        ? tr("Note: No native platform is available here, the FMU only contains the WebAssembly binary\n"
+                                             "and is exported as FMI 3.0 (fmi-ls-wasm).")
                                         : tr("Note: The FMU always contains the WebAssembly binary.\n"
-                                             "The listed platforms have a precompiled FMU driver and are added as native binaries.")));
+                                             "The listed platforms have a precompiled FMU driver and are added as native binaries.\n"
+                                             "With no platform selected, the FMU is exported as FMI 3.0 (fmi-ls-wasm).")));
   foreach (QString platform, fmuPlatforms) {
     QCheckBox *pCheckBox = new QCheckBox(platform);
     pCheckBox->setProperty(Helper::fmuPlatformNamePropertyId, platform);
