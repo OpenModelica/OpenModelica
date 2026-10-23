@@ -4604,7 +4604,6 @@ protected function buildModelFMU
   output Values.Value outValue;
 protected
   Flags.Flag flags;
-  list<String> fmiFlags;
 algorithm
   if isProtectedContentAccess(className) then
     // if AST contains encrypted class show nothing
@@ -4612,20 +4611,14 @@ algorithm
     outValue := Values.STRING("");
   else
     flags := loadCommandLineOptionsFromModel(className);
-    // `method=` reaches the FMU only through --fmiFlags, a global: restore it by
-    // hand so one export does not pick the solver for the next. `saveFlags` will
-    // not — without __OpenModelica_commandLineOptions `flags` aliases the store.
-    fmiFlags := Flags.getConfigStringList(Flags.FMI_FLAGS);
     fmuMethodToSimulationFlag(method, isWasmFMUExport(FMUVersion, platforms));
     fmuAnnotationSimulationFlags(className, isWasmFMUExport(FMUVersion, platforms));
 
     try
       (cache, outValue) := callBuildModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
       // reset to the original flags
-      FlagsUtil.setConfigStringList(Flags.FMI_FLAGS, fmiFlags);
       FlagsUtil.saveFlags(flags);
     else
-      FlagsUtil.setConfigStringList(Flags.FMI_FLAGS, fmiFlags);
       FlagsUtil.saveFlags(flags);
       fail();
     end try;
@@ -10103,8 +10096,10 @@ protected
   String opts;
   list<String> args;
 algorithm
+  // a copy, not the flags in use: the callers change flags while translating
+  // and restore oldFlags afterwards
+  oldFlags := FlagsUtil.backupFlags();
   if Config.ignoreCommandLineOptionsAnnotation() then
-    oldFlags := FlagsUtil.loadFlags();
     return;
   end if;
 
@@ -10115,12 +10110,8 @@ algorithm
     Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
 
   if not stringEmpty(opts) then
-    // backup the current flags and apply the flags from the annotation
-    oldFlags := FlagsUtil.backupFlags();
     args := System.strtok(opts, " ");
     FlagsUtil.readArgs(args);
-  else
-    oldFlags := FlagsUtil.loadFlags();
   end if;
 end loadCommandLineOptionsFromModel;
 

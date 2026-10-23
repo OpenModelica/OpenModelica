@@ -63,7 +63,7 @@ abs(val(r.n.i[12], 0.1, "literalConnects_Same_res.mat") + 1/16) < 1e-10;
 setCommandLineOptions("--resizableArrays=false -d=arrayConnect"); getErrorString();
 checkModel(literalConnects.Separate); getErrorString();
 simulate(literalConnects.Same, stopTime = 0.1, fileNamePrefix = "literalConnects_SameAC"); getErrorString();
-abs(val(r.n.i[12], 0.1, "literalConnects_SameAC_res.mat") + 1/16) < 1e-10;
+abs(val(r[12].n.i, 0.1, "literalConnects_SameAC_res.mat") + 1/16) < 1e-10;
 // Result:
 // true
 // ""
