@@ -209,18 +209,22 @@ public
 
   function isOnlyTimeDependent
     input Expression exp;
+    input list<ComponentRef> iterators = {} "iterators of the surrounding for-equation";
     output Boolean b;
   algorithm
-    b := Expression.fold(exp, isOnlyTimeDependentFold, true);
+    b := Expression.fold(exp, function isOnlyTimeDependentFold(iterators = iterators), true);
   end isOnlyTimeDependent;
 
   function isOnlyTimeDependentFold
     input Expression exp;
+    input list<ComponentRef> iterators;
     input output Boolean b;
   algorithm
     if b then
       b := match exp
-        case Expression.CREF() then ComponentRef.isTime(exp.cref) or BVariable.checkCref(exp.cref, BVariable.isParamOrConst, sourceInfo());
+        // equation iterators are fixed for each iteration, e.g. sample(t0[i], dt)
+        case Expression.CREF() then ComponentRef.isTime(exp.cref) or List.isMemberOnTrue(exp.cref, iterators, ComponentRef.isEqual)
+          or BVariable.checkCref(exp.cref, BVariable.isParamOrConst, sourceInfo());
         else true;
       end match;
     end if;

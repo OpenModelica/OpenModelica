@@ -7668,6 +7668,11 @@ let &sub = buffer ""
   case CALL(path=IDENT(name="sample"), expLst={ICONST(integer=index), _, _}) then
     'data->simulationInfo->samples[<%intSub(index, 1)%>]'
 
+  // iterated samples, the index depends on the iterator
+  case CALL(path=IDENT(name="sample"), expLst={index, _, _}) then
+    let index_T = daeExp(index, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    'data->simulationInfo->samples[(<%index_T%>) - 1]'
+
   case CALL(path=IDENT(name="$delayZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), delay}) then
     let delay_T = daeExp(delay, context, &preExp, &varDecls, &varFrees, &auxFunction)
     'delayZeroCrossing(data, threadData, <%index%>, <%rindex%>, <%delay_T%>)'

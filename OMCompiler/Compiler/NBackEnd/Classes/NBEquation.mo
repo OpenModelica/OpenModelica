@@ -4445,9 +4445,15 @@ public
             if isSome(funcCrefOpt) then
               SOME(funcCref) := funcCrefOpt;
               stateVar := funcCref(stmt.stateVar);
-              if not referenceEq(stateVar, stmt.stateVar) then
-                stmt.stateVar := stateVar;
-              end if;
+            else
+              // map the state as expression, e.g. to replace iterators in its subscripts
+              stateVar := match mapFunc(Expression.fromCref(stmt.stateVar), funcExp)
+                case Expression.CREF(cref = stateVar) then stateVar;
+                else stmt.stateVar;
+              end match;
+            end if;
+            if not referenceEq(stateVar, stmt.stateVar) then
+              stmt.stateVar := stateVar;
             end if;
             value := mapFunc(stmt.value, funcExp);
             if not referenceEq(value, stmt.value) then

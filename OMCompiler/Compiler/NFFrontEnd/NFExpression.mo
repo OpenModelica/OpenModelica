@@ -6794,10 +6794,15 @@ public
     b := match exp
       local
         Call call;
-        Expression arg;
-      case CALL(call = call as Call.TYPED_CALL(arguments = arg :: _))
+        Expression clk;
+      case CALL(call = call as Call.TYPED_CALL(arguments = _ :: _))
       then match AbsynUtil.pathString(Function.Function.nameConsiderBuiltin(call.fn))
-        case "sample"       then not isLiteral(arg); // sample has a non clocked meaning as well
+        // sample(start, interval) is the non clocked event sample, the clocked one has a clock argument or none
+        case "sample"       then match call.arguments
+            case {_}            then true;
+            case {_, clk}       then Type.isClock(typeOf(clk));
+            else false;
+          end match;
         case "subSample"    then true;
         case "superSample"  then true;
         case "shiftSample"  then true;

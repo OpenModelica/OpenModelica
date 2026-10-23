@@ -2418,18 +2418,34 @@ template functionInitSample(list<BackendDAE.TimeEvent> timeEvents, String modelN
           let forTail = match iter
             case SOME(iter_) then (iter_ |> it => "}";separator="\n";empty)
             else ""
+          // iterated samples are stored at base + flattened iteration offset, independent of the loop order
+          let baseIndex = '<%index%>'
+          let sampleIndex = match iter
+            case SOME(_) then '<%baseIndex%> + tmp'
+            else baseIndex
+          let pos = match iter
+            case SOME(_) then 'sample_base + tmp'
+            else 'i'
+          let blockHead = match iter
+            case SOME(_) then '{ long sample_base = i;'
+            else ""
+          let blockTail = match iter
+            case SOME(_) then '}'
+            else ""
           let e1 = daeExp(startExp, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
           let e2 = daeExp(intervalExp, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
           <<
+          <%blockHead%>
           <%forHead%>
           <%preExp%>
           <%forBody%>
           /* sample <%index%> */
-          data->modelData->samplesInfo[i].index = <%index%>;
-          data->modelData->samplesInfo[i].start = <%e1%>;
-          data->modelData->samplesInfo[i].interval = <%e2%> /* (max real for single time events) */;
+          data->modelData->samplesInfo[<%pos%>].index = <%sampleIndex%>;
+          data->modelData->samplesInfo[<%pos%>].start = <%e1%>;
+          data->modelData->samplesInfo[<%pos%>].interval = <%e2%> /* (max real for single time events) */;
           i++;
           <%forTail%>
+          <%blockTail%>
           >>
         else '')
   let res = <<
