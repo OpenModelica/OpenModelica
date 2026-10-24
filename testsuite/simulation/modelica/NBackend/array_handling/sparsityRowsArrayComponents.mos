@@ -1,0 +1,28 @@
+// name: sparsityRowsArrayComponents
+// keywords: NewBackend jacobian sparsity array of components
+// status: correct
+// cflags: --newBackend
+//
+// The rows of der(c[i].x) = ... are all elements of x for each i, not one row per i.
+
+loadString("
+model sparsityRowsArrayComponents
+  model C
+    parameter Real k;
+    Real x[3](each start = 1, each fixed = true);
+  equation
+    der(x) = -k * x + {x[3], x[1], x[2]};
+  end C;
+  C c[4](k = {1, 2, 3, 4});
+end sparsityRowsArrayComponents;
+"); getErrorString();
+
+buildModel(sparsityRowsArrayComponents, stopTime = 1); getErrorString();
+system("./sparsityRowsArrayComponents -lv=LOG_SIMULATION 2>&1 | grep -q 'NNZ:  36 '");
+// Result:
+// true
+// ""
+// {"sparsityRowsArrayComponents", "sparsityRowsArrayComponents_init.xml"}
+// ""
+// 0
+// endResult

@@ -6784,12 +6784,25 @@ match row
                   >>
               else depsCodeReduced
             else depsCodeReduced
-          case WHOLEDIM() :: _ then
+          case WHOLEDIM() :: outer_rev_subs then
             match context
             case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
               match simVarFromHT(crefStripSubs(sc), jacHT)
               case SIMVAR() then
                 if not listEmpty(equation_iterators) then
+                  match allWholeSubs(outer_rev_subs)
+                  case "" then
+                    // the iterators select the element (e.g. der(c[i].x[:])), the last dimension is whole
+                    let sz = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &varFrees, &auxFunction)
+                    <<
+                    {
+                      unsigned int _wr<%k%>;
+                      for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
+                        <%depsCodeReduced%>
+                      }
+                    }
+                    >>
+                  else
                   // See the WHOLEDIM()::{WHOLEDIM()} case above for why this guard
                   // is needed and what flatIdx computes.
                   let flatIdx = <<<%(equation_iterators |> it => forIteratorBody(it, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub) ;separator="")%>0<%(equation_iterators |> it => ")" ;separator="")%>>>
@@ -7271,6 +7284,23 @@ match row
             match simVarFromHT(crefStripSubs(sc), jacHT)
             case v as SIMVAR() then
               if not listEmpty(iters) then
+                match allWholeSubs(outer_rev_subs)
+                case "" then
+                  // the iterators select the element (e.g. der(c[i].x[:])), the last dimension is whole
+                  let sz = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &varFrees, &auxFunction)
+                  let &outerPreExp = buffer ""
+                  let outer_off = indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(sc)))), outer_rev_subs, context, &outerPreExp, &varDecls, &varFrees, &auxFunction)
+                  <<
+                  {
+                    unsigned int _wr<%k%>;
+                    for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
+                      <%outerPreExp%>
+                      unsigned int row_<%k%> = <%jacobianVarOffset(v, context)%> + (unsigned int)(<%outer_off%>) * (unsigned int)(<%sz%>) + _wr<%k%>;
+                      <%depsWholeReduced%>
+                    }
+                  }
+                  >>
+                else
                 // See the WHOLEDIM()::{WHOLEDIM()} case above for why this guard is
                 // needed and what flatIdx computes.
                 let flatIdx = <<<%(iters |> it => forIteratorBody(it, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub) ;separator="")%>0<%(iters |> it => ")" ;separator="")%>>>

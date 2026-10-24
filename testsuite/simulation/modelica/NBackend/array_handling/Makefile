@@ -100,6 +100,7 @@ arrayStartSlice.mos \
 componentArraySlicedStart.mos \
 resizableConnectDeleted.mos \
 EmptyArrayInComponentArray.mos \
+sparsityRowsArrayComponents.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
