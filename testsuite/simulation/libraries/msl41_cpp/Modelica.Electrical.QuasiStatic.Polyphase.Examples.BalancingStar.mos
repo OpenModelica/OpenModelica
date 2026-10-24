@@ -1,27 +1,20 @@
 // name:     Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingStar
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library
 //
 
-// MSL 4.1.0 with the Cpp runtime: the pre-optimization module clockPartitioning
-// fails on the Complex connector equations of this model, so only test that it
-// instantiates.
-
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 packageVersion := "4.1.0";
 
-modelTestingType := OpenModelicaModelTesting.Kind.Instantiation;
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingStar);
 compareVars :=
 {
-   "voltageSource.plug_p.reference.gamma",
-   "voltageSource.voltageSource[2].pin_p.reference.gamma",
-   "voltageSource.voltageSource[3].pin_p.reference.gamma"
+   "voltageSource.plug_p.reference.gamma"
 };
 
 simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
@@ -33,11 +26,13 @@ runScript(modelTesting);getErrorString();
 // "
 // ""
 // "4.1.0"
-// OpenModelicaModelTesting.Kind.Instantiation
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingStar
-// {"voltageSource.plug_p.reference.gamma", "voltageSource.voltageSource[2].pin_p.reference.gamma", "voltageSource.voltageSource[3].pin_p.reference.gamma"}
+// {"voltageSource.plug_p.reference.gamma"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Frontend succeeded
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingStar', options = '', outputFormat = 'mat', variableFilter = 'time|voltageSource.plug_p.reference.gamma', cflags = '', simflags = ' -emit_protected'
+// Result file: Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingStar_res.mat
+// Files Equal!
 // "true
 // "
 // ""
