@@ -4571,7 +4571,7 @@ algorithm
     algorithm
       (d, dims) := List.splitLast(iDims);
       explst := listToArray3(inList,d);
-      ty := liftArrayR(inType, DAE.DIM_INTEGER(listLength(explst)));
+      ty := liftArrayR(inType, d);
       oExp := listToArray2(explst,dims,ty);
     then
       ();
@@ -11528,6 +11528,7 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Type ty;
       DAE.Dimension id, jd;
+      DAE.Dimensions dims;
       Integer i, j;
       list<DAE.Exp> expl;
       DAE.Exp e;
@@ -11544,6 +11545,14 @@ algorithm
         expl := expandExpression(inExp, expandRecord = false);
         mat := makeMatrix(expl, j);
         e := DAE.MATRIX(ty, i, mat);
+      then
+        (e, true);
+
+    case DAE.CREF(ty=ty as DAE.T_ARRAY(dims=dims as _ :: _ :: _))
+      guard Types.dimensionsKnown(ty)
+      algorithm
+        expl := expandExpression(inExp, expandRecord = false);
+        e := if listEmpty(expl) then DAE.ARRAY(ty, true, expl) else listToArray(expl, dims);
       then
         (e, true);
 
