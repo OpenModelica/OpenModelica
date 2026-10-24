@@ -1827,7 +1827,12 @@ void SimulationDialog::saveDialogGeometry()
 
 void SimulationDialog::reSimulate(SimulationOptions simulationOptions)
 {
-  createAndShowSimulationOutputWidget(simulationOptions);
+  if (simulationOptions.getTargetLanguage().compare("wasm-jit") == 0) {
+    runWasmJitSimulation(simulationOptions, QString("startTime=%1, stopTime=%2, outputFormat=\"%3\"")
+                         .arg(simulationOptions.getStartTime(), simulationOptions.getStopTime(), simulationOptions.getOutputFormat()));
+  } else {
+    createAndShowSimulationOutputWidget(simulationOptions);
+  }
 }
 
 void SimulationDialog::showAlgorithmicDebugger(SimulationOptions simulationOptions)
