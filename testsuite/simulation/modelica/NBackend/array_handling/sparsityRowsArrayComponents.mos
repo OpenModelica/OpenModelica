@@ -4,6 +4,7 @@
 // cflags: --newBackend
 //
 // The rows of der(c[i].x) = ... are all elements of x for each i, not one row per i.
+// With rows missing from the sparsity pattern DASSL takes thousands of steps.
 
 loadString("
 model sparsityRowsArrayComponents
@@ -13,16 +14,22 @@ model sparsityRowsArrayComponents
   equation
     der(x) = -k * x + {x[3], x[1], x[2]};
   end C;
-  C c[4](k = {1, 2, 3, 4});
+  C c[4](k = {1e3, 2e3, 3e3, 4e3});
 end sparsityRowsArrayComponents;
 "); getErrorString();
 
-buildModel(sparsityRowsArrayComponents, stopTime = 1); getErrorString();
-system("./sparsityRowsArrayComponents -lv=LOG_SIMULATION 2>&1 | grep -q 'NNZ:  36 '");
+echo(false);
+res := simulate(sparsityRowsArrayComponents, stopTime = 1, simflags = "-lv=LOG_STATS");
+messages := res.messages;
+echo(true);
+getErrorString();
+regexBool(messages, "The simulation finished successfully");
+regexBool(messages, " [0-9]{1,3} steps taken");
 // Result:
 // true
 // ""
-// {"sparsityRowsArrayComponents", "sparsityRowsArrayComponents_init.xml"}
+// true
 // ""
-// 0
+// true
+// true
 // endResult
