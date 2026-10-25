@@ -26,6 +26,7 @@ mslMathFFT1Test.mos \
 mslMechanicsTestProtectedVector \
 mslThermalMassesTestNB.mos \
 nameClashTest.mos \
+recordSizesTest.mos \
 functionPointerTest.mos \
 recordTupleReturnTest.mos \
 RefArrayDim2.mos \
