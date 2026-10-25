@@ -4304,11 +4304,11 @@ pub fn solve_nls(
         };
     // A dense solver over a CSC-emitting `jac`: C's `evalJacobian` with `isDense`.
     let scatter = !sparse && jac_csc;
-    let pat: &[u32] = if scatter { spec.pattern } else { &[] };
+    let pat: &[u32] = if jac_csc { spec.pattern } else { &[] };
     let colors: &[u32] = if lambda_unknown { &[] } else { spec.colors() };
     let max = || bounds.chunks_exact(2).map(|b| b[1]).collect::<alloc::vec::Vec<f64>>();
     let min = || bounds.chunks_exact(2).map(|b| b[0]).collect::<alloc::vec::Vec<f64>>();
-    let mut jaceval = |xs: &[f64], fj: &mut [f64]| {
+    let mut jaceval_layout = |xs: &[f64], fj: &mut [f64], dense: bool| {
         stat_inc(STAT_NLS_JAC);
         note_jac_eval();
         // Keep asserts recoverable here too so a probe never traps. C's
@@ -4316,7 +4316,7 @@ pub fn solve_nls(
         let saved = enter_eval();
         model.borrow_mut().jacobian(xs, &mut jacbuf);
         leave_eval(saved);
-        if scatter {
+        if jac_csc && dense {
             fj.fill(0.0);
             for c in 0..n {
                 for k in pat[c] as usize..pat[c + 1] as usize {
@@ -4426,7 +4426,9 @@ pub fn solve_nls(
                     eval(xs, r);
                     eval_threw()
                 };
-                let mut jacobian = |xs: &[f64], fj: &mut [f64]| jaceval(xs, fj);
+                // Diagnostics always consume a dense column-major Jacobian,
+                // independently of the solver selected for this system.
+                let mut jacobian = |xs: &[f64], fj: &mut [f64]| jaceval_layout(xs, fj, true);
                 newton_diagnostics::newton_diagnostics(
                     eq_index,
                     &nlsx_old,
@@ -4444,6 +4446,7 @@ pub fn solve_nls(
             }
         }
     }
+    let mut jaceval = |xs: &[f64], fj: &mut [f64]| jaceval_layout(xs, fj, scatter);
     let maxfev = n * 10000;
     // Last residual eval was at the returned `x`, so the epilogue need not repeat
     // it to leave the slots and torn variables set.
