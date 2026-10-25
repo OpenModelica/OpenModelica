@@ -35,33 +35,20 @@ end PartialBasicMachine;
 model RecordModifications2
   DC_PermanentMagnet dcpm2(wNominal = wNominal, frictionParameters = frictionParameters);
   parameter Real wNominal = 2850;
-  parameter FrictionParameters frictionParameters(PRef = 100);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
+  parameter FrictionParameters frictionParameters(PRef = 100, wRef(fixed = false));
 end RecordModifications2;
 
 // Result:
-// function FrictionParameters "Automatically generated record constructor for FrictionParameters"
-//   input Real PRef = 0.0;
-//   input Real wRef;
-//   output FrictionParameters res;
-// end FrictionParameters;
-//
-// function FrictionParameters$frictionParameters "Automatically generated record constructor for FrictionParameters$frictionParameters"
-//   input Real PRef = 0.0;
-//   input Real wRef;
-//   output FrictionParameters$frictionParameters res;
-// end FrictionParameters$frictionParameters;
-//
 // class RecordModifications2
+//   parameter Real dcpm2.wNominal = wNominal;
 //   parameter Real dcpm2.frictionParameters.PRef = frictionParameters.PRef;
 //   parameter Real dcpm2.frictionParameters.wRef = frictionParameters.wRef;
 //   Real dcpm2.friction.tau;
-//   parameter Real dcpm2.friction.frictionParameters.PRef = dcpm2.frictionParameters.PRef;
-//   parameter Real dcpm2.friction.frictionParameters.wRef = dcpm2.frictionParameters.wRef;
-//   parameter Real dcpm2.wNominal = wNominal;
+//   final parameter Real dcpm2.friction.frictionParameters.PRef = 100.0;
+//   final parameter Real dcpm2.friction.frictionParameters.wRef = dcpm2.frictionParameters.wRef;
 //   parameter Real wNominal = 2850.0;
 //   parameter Real frictionParameters.PRef = 100.0;
-//   parameter Real frictionParameters.wRef;
+//   parameter Real frictionParameters.wRef(fixed = false);
 // equation
 //   dcpm2.friction.tau = 1.0;
 // end RecordModifications2;
