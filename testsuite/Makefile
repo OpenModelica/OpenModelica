@@ -101,7 +101,6 @@ parallel.log \
 parameters.log \
 simoptions.log \
 annex60.log \
-frontEndUnitCheck.log \
 newFrontEndUnitCheck.log
 
 # Sorted by time it takes to run the tests...
@@ -495,9 +494,6 @@ simulationinitialization.log: omc-diff
 simulationqss.log: omc-diff
 	$(MAKE) -C simulation/modelica/qss -f Makefile test > $@
 	@echo $@ done
-frontEndUnitCheck.log: omc-diff
-	$(MAKE) -C simulation/modelica/unitcheck/OFunitcheck -f Makefile test > $@
-	@echo $@ done
 newFrontEndUnitCheck.log: omc-diff
 	$(MAKE) -C simulation/modelica/unitcheck -f Makefile test > $@
 	@echo $@ done
@@ -781,7 +777,6 @@ clean_g_2 :
 	$(MAKE) -C simulation/modelica/records -f Makefile clean
 	$(MAKE) -C simulation/modelica/types -f Makefile clean
 	$(MAKE) -C simulation/modelica/unitcheck -f Makefile clean
-	$(MAKE) -C simulation/modelica/unitcheck/OFunitcheck -f Makefile clean
 
 clean_g_3 :
 	$(MAKE) -C flattening/libraries/biochem -f Makefile clean

@@ -265,11 +265,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/CheckModel.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/DumpGraphviz.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/InstStateMachineUtil.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/FUnit.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/FUnitCheck.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/FHashTableCrToUnit.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/FHashTableStringToUnit.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/FHashTableUnitToString.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFEnvExtends.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFInstDump.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFInstPrefix.mo
