@@ -5940,19 +5940,6 @@ external "builtin";
 annotation(preferredView="text");
 end qualifyPath;
 
-function getDefinitions
-  "Dumps the defined packages, classes, and optionally functions to a string."
-  input Boolean addFunctions;
-  output String result;
-external "builtin";
-annotation(preferredView="text",Documentation(info="<html>
-<p>Used by org.openmodelica.corba.parser.DefinitionsCreator in the Java
-interface, which parses the string returned here. The corba in that package
-name is historical and does not imply a CORBA connection; OpenModelica no
-longer has a CORBA interface.</p>
-</html>"));
-end getDefinitions;
-
 function getDefUseChains
   input TypeName className "A class, or a component declared in a class.";
   input String fileName = "" "The file to write the JSON to, if not empty.";

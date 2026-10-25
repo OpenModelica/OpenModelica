@@ -60,7 +60,6 @@
 ./openmodelica/cruntime/optimization/benchmark/ReferenceFiles/drumBoiler.optDrumBoiler_ref.mat
 ./openmodelica/fmi/CoSimulationStandAlone/testedFMU/fmusdk1.0.2/bouncingBall.fmu
 ./openmodelica/fmi/CoSimulationStandAlone/testedFMU/fmusdk1.0.2/vanDerPol.fmu
-./openmodelica/java/dummy_test.c
 ./simulation/libraries/3rdParty/DrModelica/ReferenceFiles/ABCDsystem_ref.mat
 ./simulation/libraries/3rdParty/DrModelica/ReferenceFiles/Activate_ref.mat
 ./simulation/libraries/3rdParty/DrModelica/ReferenceFiles/AddEmpty_ref.mat

@@ -5,12 +5,10 @@ set(OMC_MMC_SOURCES
   "meta_modelica_catch.c"
   "meta_modelica_segv.c"
   "meta_modelica.c"
-  "java_interface.c"
   "meta_modelica_string_lit.c"
   "realString.c"
 )
 set(OMC_MMC_HEADERS
-  "java_interface.h"
   "meta_modelica_string_lit.h"
   "meta_modelica_string.h"
   "meta_modelica_builtin_boxptr.h"

@@ -79,7 +79,6 @@ getComponentsTestNF.mos \
 getComponentsTestOF.mos \
 getConnectorCount.mos \
 getDefinitionAt1.mos \
-getDefinitions.mos \
 getDependencyGraph1.mos \
 getDefUseChains1.mos \
 getDefUseChains2.mos \

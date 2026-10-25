@@ -3470,9 +3470,6 @@ algorithm
     case ("getDefaultComponentPrefixes", {Values.CODE(Absyn.C_TYPENAME(classpath))})
       then Interactive.getDefaultComponentPrefixes(classpath, SymbolTable.getAbsyn());
 
-    case ("getDefinitions", {Values.BOOL(b)})
-      then Interactive.getDefinitions(SymbolTable.getAbsyn(), b);
-
     case ("getDefaultOpenCLDevice", {})
       then ValuesMake.makeInteger(Config.getDefaultOpenCLDevice());
 
