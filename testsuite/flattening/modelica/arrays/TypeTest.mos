@@ -1,7 +1,6 @@
 // name:     TypeTest.mos
 // keywords: type as array of type
 // status:   correct
-// cflags: -d=-newInst
 // 
 // This is a test of:
 // type A = Real[2]; A[3] a; a should have [2][3] dimensions!
@@ -24,20 +23,8 @@ instantiateModel(TypeTestArrayBug); getErrorString();
 // ""
 // true
 // ""
-// "function Modelica.Mechanics.MultiBody.Frames.Orientation \"Automatically generated record constructor for Modelica.Mechanics.MultiBody.Frames.Orientation\"
-//   input Real[3, 3] T;
-//   input Real[3] w(quantity = \"AngularVelocity\", unit = \"rad/s\");
-//   output Orientation res;
-// end Modelica.Mechanics.MultiBody.Frames.Orientation;
-//
-// function Modelica.Mechanics.MultiBody.Frames.nullRotation \"Return orientation object that does not rotate a frame\"
-//   output Modelica.Mechanics.MultiBody.Frames.Orientation R \"Orientation object such that frame 1 and frame 2 are identical\";
-// algorithm
-//   R := Modelica.Mechanics.MultiBody.Frames.Orientation({{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}}, {0.0, 0.0, 0.0});
-// end Modelica.Mechanics.MultiBody.Frames.nullRotation;
-//
-// class TypeTest
-//   parameter Integer nPoints = 2;
+// "class TypeTest
+//   final parameter Integer nPoints = 2;
 //   Real points[1,1](quantity = \"Length\", unit = \"m\");
 //   Real points[1,2](quantity = \"Length\", unit = \"m\");
 //   Real points[1,3](quantity = \"Length\", unit = \"m\");
@@ -45,18 +32,18 @@ instantiateModel(TypeTestArrayBug); getErrorString();
 //   Real points[2,2](quantity = \"Length\", unit = \"m\");
 //   Real points[2,3](quantity = \"Length\", unit = \"m\");
 //   parameter String visPoints[1].shapeType = \"box\" \"Type of shape (box, sphere, cylinder, pipecylinder, cone, pipe, beam, gearwheel, spring, <external shape>)\";
-//   Real visPoints[1].R.T[1,1] = 1.0 \"Transformation matrix from world frame to local frame\";
-//   Real visPoints[1].R.T[1,2] = 0.0 \"Transformation matrix from world frame to local frame\";
-//   Real visPoints[1].R.T[1,3] = 0.0 \"Transformation matrix from world frame to local frame\";
-//   Real visPoints[1].R.T[2,1] = 0.0 \"Transformation matrix from world frame to local frame\";
-//   Real visPoints[1].R.T[2,2] = 1.0 \"Transformation matrix from world frame to local frame\";
-//   Real visPoints[1].R.T[2,3] = 0.0 \"Transformation matrix from world frame to local frame\";
-//   Real visPoints[1].R.T[3,1] = 0.0 \"Transformation matrix from world frame to local frame\";
-//   Real visPoints[1].R.T[3,2] = 0.0 \"Transformation matrix from world frame to local frame\";
-//   Real visPoints[1].R.T[3,3] = 1.0 \"Transformation matrix from world frame to local frame\";
-//   Real visPoints[1].R.w[1](quantity = \"AngularVelocity\", unit = \"rad/s\") = 0.0 \"Absolute angular velocity of local frame, resolved in local frame\";
-//   Real visPoints[1].R.w[2](quantity = \"AngularVelocity\", unit = \"rad/s\") = 0.0 \"Absolute angular velocity of local frame, resolved in local frame\";
-//   Real visPoints[1].R.w[3](quantity = \"AngularVelocity\", unit = \"rad/s\") = 0.0 \"Absolute angular velocity of local frame, resolved in local frame\";
+//   Real visPoints[1].R.T[1,1] \"Transformation matrix from world frame to local frame\";
+//   Real visPoints[1].R.T[1,2] \"Transformation matrix from world frame to local frame\";
+//   Real visPoints[1].R.T[1,3] \"Transformation matrix from world frame to local frame\";
+//   Real visPoints[1].R.T[2,1] \"Transformation matrix from world frame to local frame\";
+//   Real visPoints[1].R.T[2,2] \"Transformation matrix from world frame to local frame\";
+//   Real visPoints[1].R.T[2,3] \"Transformation matrix from world frame to local frame\";
+//   Real visPoints[1].R.T[3,1] \"Transformation matrix from world frame to local frame\";
+//   Real visPoints[1].R.T[3,2] \"Transformation matrix from world frame to local frame\";
+//   Real visPoints[1].R.T[3,3] \"Transformation matrix from world frame to local frame\";
+//   Real visPoints[1].R.w[1](quantity = \"AngularVelocity\", unit = \"rad/s\") \"Absolute angular velocity of local frame, resolved in local frame\";
+//   Real visPoints[1].R.w[2](quantity = \"AngularVelocity\", unit = \"rad/s\") \"Absolute angular velocity of local frame, resolved in local frame\";
+//   Real visPoints[1].R.w[3](quantity = \"AngularVelocity\", unit = \"rad/s\") \"Absolute angular velocity of local frame, resolved in local frame\";
 //   Real visPoints[1].r[1](quantity = \"Length\", unit = \"m\") \"Position vector from origin of world frame to origin of object frame, resolved in world frame\";
 //   Real visPoints[1].r[2](quantity = \"Length\", unit = \"m\") \"Position vector from origin of world frame to origin of object frame, resolved in world frame\";
 //   Real visPoints[1].r[3](quantity = \"Length\", unit = \"m\") \"Position vector from origin of world frame to origin of object frame, resolved in world frame\";
@@ -78,18 +65,18 @@ instantiateModel(TypeTestArrayBug); getErrorString();
 //   Real visPoints[1].color[3] \"Color of shape\";
 //   Real visPoints[1].specularCoefficient(min = 0.0) = 0.7 \"Reflection of ambient light (= 0: light is completely absorbed)\";
 //   parameter String visPoints[2].shapeType = \"box\" \"Type of shape (box, sphere, cylinder, pipecylinder, cone, pipe, beam, gearwheel, spring, <external shape>)\";
-//   Real visPoints[2].R.T[1,1] = 1.0 \"Transformation matrix from world frame to local frame\";
-//   Real visPoints[2].R.T[1,2] = 0.0 \"Transformation matrix from world frame to local frame\";
-//   Real visPoints[2].R.T[1,3] = 0.0 \"Transformation matrix from world frame to local frame\";
-//   Real visPoints[2].R.T[2,1] = 0.0 \"Transformation matrix from world frame to local frame\";
-//   Real visPoints[2].R.T[2,2] = 1.0 \"Transformation matrix from world frame to local frame\";
-//   Real visPoints[2].R.T[2,3] = 0.0 \"Transformation matrix from world frame to local frame\";
-//   Real visPoints[2].R.T[3,1] = 0.0 \"Transformation matrix from world frame to local frame\";
-//   Real visPoints[2].R.T[3,2] = 0.0 \"Transformation matrix from world frame to local frame\";
-//   Real visPoints[2].R.T[3,3] = 1.0 \"Transformation matrix from world frame to local frame\";
-//   Real visPoints[2].R.w[1](quantity = \"AngularVelocity\", unit = \"rad/s\") = 0.0 \"Absolute angular velocity of local frame, resolved in local frame\";
-//   Real visPoints[2].R.w[2](quantity = \"AngularVelocity\", unit = \"rad/s\") = 0.0 \"Absolute angular velocity of local frame, resolved in local frame\";
-//   Real visPoints[2].R.w[3](quantity = \"AngularVelocity\", unit = \"rad/s\") = 0.0 \"Absolute angular velocity of local frame, resolved in local frame\";
+//   Real visPoints[2].R.T[1,1] \"Transformation matrix from world frame to local frame\";
+//   Real visPoints[2].R.T[1,2] \"Transformation matrix from world frame to local frame\";
+//   Real visPoints[2].R.T[1,3] \"Transformation matrix from world frame to local frame\";
+//   Real visPoints[2].R.T[2,1] \"Transformation matrix from world frame to local frame\";
+//   Real visPoints[2].R.T[2,2] \"Transformation matrix from world frame to local frame\";
+//   Real visPoints[2].R.T[2,3] \"Transformation matrix from world frame to local frame\";
+//   Real visPoints[2].R.T[3,1] \"Transformation matrix from world frame to local frame\";
+//   Real visPoints[2].R.T[3,2] \"Transformation matrix from world frame to local frame\";
+//   Real visPoints[2].R.T[3,3] \"Transformation matrix from world frame to local frame\";
+//   Real visPoints[2].R.w[1](quantity = \"AngularVelocity\", unit = \"rad/s\") \"Absolute angular velocity of local frame, resolved in local frame\";
+//   Real visPoints[2].R.w[2](quantity = \"AngularVelocity\", unit = \"rad/s\") \"Absolute angular velocity of local frame, resolved in local frame\";
+//   Real visPoints[2].R.w[3](quantity = \"AngularVelocity\", unit = \"rad/s\") \"Absolute angular velocity of local frame, resolved in local frame\";
 //   Real visPoints[2].r[1](quantity = \"Length\", unit = \"m\") \"Position vector from origin of world frame to origin of object frame, resolved in world frame\";
 //   Real visPoints[2].r[2](quantity = \"Length\", unit = \"m\") \"Position vector from origin of world frame to origin of object frame, resolved in world frame\";
 //   Real visPoints[2].r[3](quantity = \"Length\", unit = \"m\") \"Position vector from origin of world frame to origin of object frame, resolved in world frame\";
@@ -111,12 +98,16 @@ instantiateModel(TypeTestArrayBug); getErrorString();
 //   Real visPoints[2].color[3] \"Color of shape\";
 //   Real visPoints[2].specularCoefficient(min = 0.0) = 0.7 \"Reflection of ambient light (= 0: light is completely absorbed)\";
 // equation
-//   visPoints[1].r = {points[1,1], points[1,2], points[1,3]};
+//   visPoints[1].R.T = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
+//   visPoints[1].R.w = {0.0, 0.0, 0.0};
+//   visPoints[1].r = points[1,:];
 //   visPoints[1].r_shape = {0.0, 0.0, 0.0};
 //   visPoints[1].lengthDirection = {1.0, 0.0, 0.0};
 //   visPoints[1].widthDirection = {0.0, 1.0, 0.0};
 //   visPoints[1].color = {255.0, 0.0, 0.0};
-//   visPoints[2].r = {points[2,1], points[2,2], points[2,3]};
+//   visPoints[2].R.T = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
+//   visPoints[2].R.w = {0.0, 0.0, 0.0};
+//   visPoints[2].r = points[2,:];
 //   visPoints[2].r_shape = {0.0, 0.0, 0.0};
 //   visPoints[2].lengthDirection = {1.0, 0.0, 0.0};
 //   visPoints[2].widthDirection = {0.0, 1.0, 0.0};
@@ -547,6 +538,5 @@ instantiateModel(TypeTestArrayBug); getErrorString();
 //   Real a[5,4,10,2](quantity = \"SomeQ\", unit = \"m\", nominal = 5.0);
 // end TypeTestArrayBug;
 // "
-// "[flattening/modelica/arrays/TypeTestArrayBug.mo:3:24-3:34:writable] Warning: Non-array modification '\"m\"' for array component, possibly due to missing 'each'.
-// "
+// ""
 // endResult

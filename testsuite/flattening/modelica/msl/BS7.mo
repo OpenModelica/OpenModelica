@@ -683,7 +683,7 @@ package Modelica "Modelica Standard Library"
 
        block Ramp "Generate ramp signals"
           parameter Real height[:]={1} "Heights of ramps";
-          parameter Real duration[:](min=Modelica.Constants.small)={2}
+          parameter Real duration[:](each min=Modelica.Constants.small)={2}
         "Durations of ramps";
           parameter Real offset[:]={0} "Offsets of output signals";
           parameter SI.Time startTime[:]={0}
@@ -1176,7 +1176,6 @@ model BS7
 
 equation
   connect(ramp1.outPort,der1.inPort) annotation(Line(visible=true,points={{-19.57,10.45},{11.45,12.57}}));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BS7;
 // class BS7
 // parameter Integer ramp1.nout(min = 1) = 1 "Number of outputs";
@@ -1208,34 +1207,31 @@ end BS7;
 // end BS7;
 // Result:
 // class BS7
-//   parameter Integer ramp1.nout(min = 1) = 1 "Number of outputs";
-//   parameter Integer ramp1.outPort.n = ramp1.nout "Dimension of signal vector";
-//   Real ramp1.outPort.signal[1] "Real output signals";
-//   Real ramp1.y[1];
 //   parameter Real ramp1.height[1] = 1.0 "Heights of ramps";
 //   parameter Real ramp1.duration[1](min = 1e-60) = 2.0 "Durations of ramps";
 //   parameter Real ramp1.offset[1] = 0.0 "Offsets of output signals";
 //   parameter Real ramp1.startTime[1](quantity = "Time", unit = "s") = 0.0 "Output = offset for time < startTime";
+//   final parameter Integer ramp1.nout(min = 1) = 1 "Number of outputs";
+//   final parameter Integer ramp1.outPort.n = 1 "Dimension of signal vector";
+//   Real ramp1.outPort.signal[1] "Real output signals";
+//   Real ramp1.y[1];
 //   protected parameter Real ramp1.p_height[1] = ramp1.height[1];
 //   protected parameter Real ramp1.p_duration[1] = ramp1.duration[1];
 //   protected parameter Real ramp1.p_offset[1] = ramp1.offset[1];
 //   protected parameter Real ramp1.p_startTime[1](quantity = "Time", unit = "s") = ramp1.startTime[1];
-//   parameter Integer der1.n = 1 "Number of inputs (= number of outputs)";
-//   parameter Integer der1.inPort.n = der1.n "Dimension of signal vector";
+//   final parameter Integer der1.n = 1 "Number of inputs (= number of outputs)";
+//   final parameter Integer der1.inPort.n = 1 "Dimension of signal vector";
 //   Real der1.inPort.signal[1] "Real input signals";
-//   parameter Integer der1.outPort.n = der1.n "Dimension of signal vector";
+//   final parameter Integer der1.outPort.n = 1 "Dimension of signal vector";
 //   Real der1.outPort.signal[1] "Real output signals";
 //   Real der1.y[1] "Output signals";
 //   protected Real der1.u[1] "Input signals";
 // equation
+//   ramp1.outPort.signal[1] = der1.inPort.signal[1];
 //   ramp1.outPort.signal[1] = ramp1.p_offset[1] + (if time < ramp1.p_startTime[1] then 0.0 else if time < ramp1.p_startTime[1] + ramp1.p_duration[1] then (time - ramp1.p_startTime[1]) * ramp1.p_height[1] / ramp1.p_duration[1] else ramp1.p_height[1]);
 //   ramp1.y[1] = ramp1.outPort.signal[1];
-//   der1.u = {der1.inPort.signal[1]};
+//   der1.u = der1.inPort.signal;
 //   der1.y[1] = der(der1.u[1]);
 //   der1.y[1] = der1.outPort.signal[1];
-//   assert(ramp1.outPort.n == der1.inPort.n, "automatically generated from connect");
-//   der1.inPort.signal[1] = ramp1.outPort.signal[1];
 // end BS7;
-// [flattening/modelica/msl/BS7.mo:686:38-686:66:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
-//
 // endResult
