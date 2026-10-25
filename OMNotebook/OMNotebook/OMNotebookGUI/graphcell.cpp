@@ -1524,6 +1524,7 @@ namespace IAEX {
       lst << "";              // Skip --ylabel-right 19th argument
       lst << "";              // Skip --yrange-right first value 20th argument
       lst << ""; // Skip --yrange-right second value 21st argument
+      lst << "";              // Skip --stack 22nd argument
       lst << QString(variables).split(" ", Qt::SkipEmptyParts);
       emit pGraphCell->plotVariables(lst);  // yes we need to use signal & slot since command is executed in different thread.
     }
@@ -1547,7 +1548,7 @@ namespace IAEX {
     for (int i = 0; i < 17; ++i) {
       lst << a.at(i);            // filename .. autoScale
     }
-    lst << "" << "" << "" << ""; // skip yaxis / ylabel-right / yrange-right pair
+    lst << "" << "" << "" << "" << ""; // skip yaxis / ylabel-right / yrange-right pair / stack
     lst << a.at(17).split(" ", Qt::SkipEmptyParts);  // variables
     plotVariablesSlot(lst);
   }

@@ -274,10 +274,13 @@ void PlotWindow::initializePlot(QStringList arguments)
   setYRightLabel(QString(arguments[19]));
   setYRightCustomLabel(getYRightLabel());
   setYRightRange(QString(arguments[20]).toDouble(), QString(arguments[21]).toDouble());
+  // stacked when asked to, otherwise as Plot::autoStack decides
+  mStackCurvesSet = QString(arguments[22]) == "true";
+  mStackCurves = mStackCurvesSet;
   setTimeUnit("");
   /* read variables */
   QStringList variablesToRead;
-  for(int i = 22; i < arguments.length(); i++)
+  for(int i = 23; i < arguments.length(); i++)
     variablesToRead.append(QString(arguments[i]));
 
   setVariablesList(variablesToRead);

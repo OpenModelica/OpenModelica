@@ -154,6 +154,19 @@ void VariablesBrowserTest::valueLabels()
   foreach (OMPlot::PlotCurve *pPlotCurve, discretePlotWindow.getPlot()->getPlotCurvesList()) {
     QVERIFY(!pPlotCurve->isStacked());
   }
+
+  // plot(..., stack=true) stacks any curves, as OMPlot's --stack=true passes it
+  for (bool stack : {true, false}) {
+    OMPlot::PlotWindow argumentsPlotWindow;
+    argumentsPlotWindow.initializePlot(QStringList() << "" << workingDirectory.filePath("ValueLabelsTest_res.mat") << "" << "simple" << "plot"
+                                       << "false" << "false" << "time" << "" << "0" << "0" << "0" << "0" << "1" << "1" << "top" << ""
+                                       << "true" << "" << "" << "0" << "0" << (stack ? "true" : "false") << "b" << "x");
+    QCOMPARE(argumentsPlotWindow.getStackCurves(), stack);
+    QCOMPARE(argumentsPlotWindow.getPlot()->getPlotCurvesList().size(), 2);
+    foreach (OMPlot::PlotCurve *pPlotCurve, argumentsPlotWindow.getPlot()->getPlotCurvesList()) {
+      QCOMPARE(pPlotCurve->isStacked(), stack);
+    }
+  }
 }
 
 void VariablesBrowserTest::resultFileUnits()

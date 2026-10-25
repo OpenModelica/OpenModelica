@@ -85,6 +85,7 @@ void printUsage(bool shortDescription)
     printf("    --plot                     Create a normal plot\n");
     printf("    --plotAll                  Create a normal plot containing every variable in the result-file\n");
     printf("    --plotParametric           Create a parametric plot (plot variables as functions of each other)\n");
+    printf("    --stack=[true|false]       Draw each curve in a lane of its own (by default only Boolean, Integer and enumeration curves)\n");
     printf("    --title=TITLE              Sets the TITLE of the plot window\n");
     printf("    --xlabel=LABEL             Use LABEL as the label of the x-axis\n");
     printf("    --xrange=LEFT:RIGHT        Sets the initial range of the x-axis to LEFT:RIGHT\n");
@@ -127,6 +128,7 @@ int main(int argc, char *argv[])
   QString legendPosition = "top";
   QString footer("");
   bool autoScale = true;
+  bool stack = false;
   QString yaxisID("");
   QStringList vars;
   QString filename;
@@ -190,6 +192,8 @@ int main(int argc, char *argv[])
       footer = argv[i]+9;
     } else if (strncmp(argv[i], "--auto-scale=",13) == 0) {
       CONSUME_BOOL_ARG(i,13,autoScale);
+    } else if (strncmp(argv[i], "--stack=",8) == 0) {
+      CONSUME_BOOL_ARG(i,8,stack);
     } else if (strncmp(argv[i], "--yaxis=", 8) == 0) {
       yaxisID = argv[i] + 8;
       bool digit = true;
@@ -276,6 +280,7 @@ int main(int argc, char *argv[])
   arguments.append(ylabelRight);
   arguments.append(QString::number(yrange1right, 'g', 17));
   arguments.append(QString::number(yrange2right, 'g', 17));
+  arguments.append(stack ? "true" : "false");
   arguments.append(vars);
   // create the plot application object that is used to check that only one instance of application is running
   PlotApplication app(argc, argv, "OMPlot");
