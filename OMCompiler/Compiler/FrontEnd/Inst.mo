@@ -163,7 +163,6 @@ import System;
 import SCodeDump;
 import UnitAbsynBuilder;
 import InstStateMachineUtil;
-import UnitCheck = FUnitCheck;
 
 import DAEDump; // BTH
 import ClassInfUtil;
@@ -343,7 +342,6 @@ algorithm
     case (cache,ih,cdecls as _::_,path)
       algorithm
         (outCache,outEnv,outIH,outDAElist) := instantiateClass_dispatch(cache,ih,cdecls,path,doSCodeDep,relaxedFrontEnd,clearCache);
-        outDAElist := UnitCheck.checkUnits(outDAElist,FCore.getFunctionTree(outCache));
       then
         (outCache,outEnv,outIH,outDAElist);
 

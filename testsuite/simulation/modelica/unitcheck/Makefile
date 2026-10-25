@@ -40,7 +40,6 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 Makefile \
-OFunitcheck \
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 
