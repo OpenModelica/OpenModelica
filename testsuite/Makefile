@@ -213,7 +213,7 @@ omc-diff :
 	 exit 1
 test : slow.logs fast.logs
 	@cat `ls $(FASTLOGS) $(SLOWLOGS) | sort`
-	@rm -f {flattening/modelica/asserts,flattening/modelica/algorithms-functions,flattening/modelica/arrays,flattening/modelica/others,flattening/modelica/external-functions,flattening/modelica/equations,flattening/modelica/built-in-functions,flattening/modelica/extends,flattening/modelica/operators,flattening/modelica/packages,flattening/modelica/declarations,flattening/modelica/enums,flattening/modelica/synchronous,flattening/modelica/statemachines,flattening/modelica/scoping,flattening/modelica/types,flattening/modelica/modification,flattening/modelica/connectors,flattening/modelica/blocks,flattening/modelica/streams,flattening/modelica/msl,metamodelica/meta,flattening/modelica/records,openmodelica/java,openmodelica/interactive-API,openmodelica/instance-API,flattening/modelica/mosfiles}/*.{dll,so,exe};
+	@rm -f {flattening/modelica/asserts,flattening/modelica/algorithms-functions,flattening/modelica/arrays,flattening/modelica/others,flattening/modelica/external-functions,flattening/modelica/equations,flattening/modelica/built-in-functions,flattening/modelica/extends,flattening/modelica/operators,flattening/modelica/packages,flattening/modelica/declarations,flattening/modelica/enums,flattening/modelica/synchronous,flattening/modelica/statemachines,flattening/modelica/scoping,flattening/modelica/types,flattening/modelica/modification,flattening/modelica/connectors,flattening/modelica/blocks,flattening/modelica/streams,flattening/modelica/msl,metamodelica/meta,flattening/modelica/records,openmodelica/interactive-API,openmodelica/instance-API,flattening/modelica/mosfiles}/*.{dll,so,exe};
 test-oldresult:
 	@cat `ls $(FASTLOGS) $(SLOWLOGS) | sort`
 test-oldresult-summary:
@@ -222,13 +222,12 @@ test-oldresult-summary:
 	@grep ^== test.log | grep failed | gawk '{ fail += $$2; sum += $$5 } END {printf "== Total: %d out of %d failed\n",fail,sum}'
 fast : omc-diff fast.logs
 	@cat `ls $(FASTLOGS) | sort`
-	@rm -f {flattening/modelica/asserts,flattening/modelica/algorithms-functions,flattening/modelica/arrays,flattening/modelica/others,flattening/modelica/external-functions,flattening/modelica/equations,flattening/modelica/built-in-functions,flattening/modelica/extends,flattening/modelica/operators,flattening/modelica/packages,flattening/modelica/declarations,flattening/modelica/enums,flattening/modelica/synchronous,flattening/modelica/statemachines,flattening/modelica/scoping,flattening/modelica/types,flattening/modelica/modification,flattening/modelica/connectors,flattening/modelica/blocks,flattening/modelica/streams,flattening/modelica/msl,metamodelica/meta,flattening/modelica/records,openmodelica/java}/*.{dll,so,exe};
+	@rm -f {flattening/modelica/asserts,flattening/modelica/algorithms-functions,flattening/modelica/arrays,flattening/modelica/others,flattening/modelica/external-functions,flattening/modelica/equations,flattening/modelica/built-in-functions,flattening/modelica/extends,flattening/modelica/operators,flattening/modelica/packages,flattening/modelica/declarations,flattening/modelica/enums,flattening/modelica/synchronous,flattening/modelica/statemachines,flattening/modelica/scoping,flattening/modelica/types,flattening/modelica/modification,flattening/modelica/connectors,flattening/modelica/blocks,flattening/modelica/streams,flattening/modelica/msl,metamodelica/meta,flattening/modelica/records}/*.{dll,so,exe};
 simulation: omc-diff simulation.logs
 	@cat `ls $(SIMULATIONLOGS) | sort` > simulation.log
 	@cat simulation.log
 	@grep ^== simulation.log | grep failed | gawk '{ fail += $$2; sum += $$5 } END {printf "== Total: %d out of %d failed\n",fail,sum}'
 fast.logs: $(FASTLOGS)
-# java should probably also be part of 'fast'
 slow.logs: $(SLOWLOGS)
 simulation.logs: $(SIMULATIONLOGS)
 streams.log: omc-diff
@@ -539,9 +538,6 @@ linearization.log: omc-diff
 	@echo $@ done
 modelicaML.log: omc-diff
 	$(MAKE) -C openmodelica/modelicaML -f Makefile test > $@
-	@echo $@ done
-openmodelicajava.log: omc-diff
-	$(MAKE) -C openmodelica/java -f Makefile test > $@
 	@echo $@ done
 bootstrapping.log: omc-diff
 	$(MAKE) -C openmodelica/bootstrapping -f Makefile test > $@

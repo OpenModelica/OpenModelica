@@ -119,12 +119,6 @@ OMCompiler/SimulationRuntime/c/util/libcsv.c
 OMCompiler/SimulationRuntime/c/util/tinymt64.h
 OMCompiler/SimulationRuntime/c/util/tinymt64.c
 
-# [3rd-party] Oracle / Sun Microsystems — Java Native Interface headers
-OMCompiler/SimulationRuntime/c/util/jni.h
-OMCompiler/SimulationRuntime/c/util/jni_md.h
-OMCompiler/SimulationRuntime/c/util/jni_md_solaris.h
-OMCompiler/SimulationRuntime/c/util/jni_md_windows.h
-
 # Build manifest — not a compiled runtime source file.
 OMCompiler/SimulationRuntime/c/RuntimeSources.mo
 
