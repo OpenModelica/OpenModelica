@@ -22,7 +22,9 @@ package A
     model C
       extends B.C(x=7);
     end C;
-    model E=B.C(x=6);
+    model E
+      extends B.C(x=6);
+    end E;
   end B2;
 end A;
 
@@ -43,7 +45,6 @@ end B;
 
 model Import3
   extends B.A.F;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Import3;
 
 // Result:
