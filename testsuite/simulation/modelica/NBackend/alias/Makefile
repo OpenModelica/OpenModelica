@@ -4,6 +4,7 @@ TESTFILES = \
 AliasIntegerNonTrivial.mos \
 AliasBoundsNegated.mos \
 AliasBoundsThree.mos \
+ArrayComponentAttributes.mos \
 Alias.mos \
 Alias2.mos \
 Alias_test1.mos \
