@@ -2105,7 +2105,7 @@ algorithm
     case "Integer" then evalBuiltinIntegerEnum(listHead(args));
     case "log10" then evalBuiltinLog10(listHead(args), target);
     case "log" then evalBuiltinLog(listHead(args), target);
-    case "matrix" then evalBuiltinMatrix(listHead(args));
+    case "matrix" then evalBuiltinMatrix(listHead(args), target);
     case "max" then evalBuiltinMax(args, fn);
     case "min" then evalBuiltinMin(args, fn);
     case "mod" then evalBuiltinMod(args, target);
@@ -2543,12 +2543,14 @@ end evalBuiltinLog;
 
 function evalBuiltinMatrix
   input Expression arg;
+  input EvalTarget target;
   output Expression result;
 algorithm
   result := match arg
     local
-      Integer dim_count;
+      Integer dim_count, i;
       Dimension dim1, dim2;
+      list<Dimension> dims;
       Type ty;
       array<Expression> arr;
 
@@ -2561,7 +2563,19 @@ algorithm
         elseif dim_count == 2 then
           result := arg;
         else
-          dim1 :: dim2 :: _ := Type.arrayDims(ty);
+          dim1 :: dim2 :: dims := Type.arrayDims(ty);
+          i := 3;
+
+          for dim in dims loop
+            if Dimension.size(dim) <> 1 then
+              Error.addSourceMessage(Error.INVALID_ARRAY_DIM_IN_CONVERSION_OP,
+                {String(i), "matrix", "1", Dimension.toString(dim)}, EvalTarget.getInfo(target));
+              fail();
+            end if;
+
+            i := i + 1;
+          end for;
+
           ty := Type.liftArrayLeft(Type.arrayElementType(ty), dim2);
           arr := Array.map(arg.elements, function evalBuiltinMatrix2(ty = ty));
           ty := Type.liftArrayLeft(ty, dim1);

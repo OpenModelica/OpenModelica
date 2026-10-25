@@ -7526,6 +7526,29 @@ let &sub = buffer ""
               >>
     tvar
 
+  case CALL(path=IDENT(name="matrix"), expLst={exp}, attr=CALL_ATTR(ty=ty)) then
+    let val = daeExpAsLValue(exp, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let dim = tempDecl("int", &varDecls, &varFrees)
+    let nElts = tempDecl("modelica_integer", &varDecls, &varFrees)
+    let tvardata = tempDecl("void *", &varDecls, &varFrees)
+    let szElt = 'sizeof(<%expTypeModelica(ty)%>)'
+    let ty_str = expTypeArray(ty)
+    let tvar = tempDecl(ty_str, &varDecls, &varFrees)
+    let &preExp +=
+              <<
+              for (<%dim%> = 3; <%dim%> <= <%val%>.ndims; <%dim%>++) {
+                if (size_of_dimension_base_array(<%val%>, <%dim%>) != 1) {
+                  <%raiseOrThrow()%>(threadData, "Invalid dimension %d of argument to matrix, expected dimension size 1 but got %d.", <%dim%>, (int) size_of_dimension_base_array(<%val%>, <%dim%>));
+                  break;
+                }
+              }
+              <%nElts%> = base_array_nr_of_elements(<%val%>);
+              <%tvardata%> = omc_alloc_interface.malloc(<%szElt%>*<%nElts%>);
+              memcpy(<%tvardata%>, <%val%>.data, <%szElt%>*<%nElts%>);
+              <%rcReleaseBefore(ty_str, tvar)%>simple_alloc_2d_base_array(&<%tvar%>, size_of_dimension_base_array(<%val%>, 1), size_of_dimension_base_array(<%val%>, 2), <%tvardata%>);<%\n%>
+              >>
+    tvar
+
   case CALL(path=IDENT(name="cat"), expLst=dim::arrays, attr=CALL_ATTR(ty = ty)) then
     let dim_exp = daeExp(dim, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let arrays_exp = (arrays |> array =>

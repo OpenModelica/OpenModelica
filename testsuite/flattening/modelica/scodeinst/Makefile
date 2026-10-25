@@ -600,6 +600,7 @@ FuncBuiltinLinspace.mo \
 FuncBuiltinMath.mo \
 FuncBuiltinMatrix.mo \
 FuncBuiltinMatrixWrongType1.mo \
+FuncBuiltinMatrixWrongType2.mo \
 FuncBuiltinMax.mo \
 FuncBuiltinMax2.mo \
 FuncBuiltinMin.mo \

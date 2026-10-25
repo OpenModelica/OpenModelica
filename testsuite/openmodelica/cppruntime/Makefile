@@ -7,6 +7,7 @@ WhenStatement1.mos \
 WhenTuple.mos \
 BouncingBall.mos \
 arrayCatTest.mos \
+arrayMatrixTest.mos \
 arrayOperationsTest.mos \
 arraySliceTest.mos \
 clockedAlgloopTest.mos \
