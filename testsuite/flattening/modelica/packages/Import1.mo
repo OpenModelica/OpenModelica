@@ -26,11 +26,13 @@ package A
     model C
       extends B.C(x=7);
     end C;
-    model E=B.C(x=6);
+    model E
+      extends B.C(x=6);
+    end E;
   end B2;
 end A;
 
-class Import1
+model Import1
   import A.B.*;
   import A.B2.*;
   import A.B1.C;
@@ -39,7 +41,6 @@ class Import1
   D d;
   E e;
   MyC myc;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Import1;
 
 
