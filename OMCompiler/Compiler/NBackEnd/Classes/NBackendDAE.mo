@@ -88,6 +88,7 @@ protected
   import Alias = NBAlias;
   import BackendDAE = NBackendDAE;
   import Bindings = NBBindings;
+  import DataReconciliation = NBDataReconciliation;
   import Causalize = NBCausalize;
   import DAEMode = NBDAEMode;
   import DetectStates = NBDetectStates;
@@ -433,6 +434,7 @@ public
 
   function main
     input output BackendDAE bdae;
+    input String fileNamePrefix = "";
   protected
     list<tuple<Module.wrapper, String>> preOptModules;
     list<tuple<Module.wrapper, String>> mainModules;
@@ -475,6 +477,10 @@ public
       (DetectStates.main,  "Detect States"),
       (Events.main,        "Events")
     };
+
+    if DataReconciliation.isEnabled() then
+      preOptModules := listAppend(preOptModules, {(function DataReconciliation.main(fileNamePrefix = fileNamePrefix), "Data Reconciliation")});
+    end if;
 
     // all main modules are always done in ODE mode
     mainModules := listAppend({

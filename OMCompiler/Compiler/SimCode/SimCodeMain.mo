@@ -2164,7 +2164,7 @@ algorithm
   if Flags.isSet(Flags.OPT_DAE_DUMP) then
     print(NBackendDAE.toString(bdae, "(After Lowering)"));
   end if;
-  bdae := NBackendDAE.main(bdae);
+  bdae := NBackendDAE.main(bdae, inFileNamePrefix);
   timeBackend := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
   ExecStat.execStat("backend");
   FlagsUtil.set(Flags.NF_API, nf_api);
