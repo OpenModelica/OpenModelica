@@ -216,7 +216,7 @@ fn link_with(
     let mut modules = Vec::with_capacity(libs.len());
     let mut defined: std::collections::HashSet<String> = std::collections::HashSet::new();
     for lib in libs {
-        let module = Module::from_binary(store.engine(), lib.bytes)
+        let module = crate::sim_runtime::module_from_binary(lib.bytes)
             .map_err(|e| format!("external \"C\" library `{}` is not valid wasm: {e}", lib.name))?;
         defined.extend(
             module

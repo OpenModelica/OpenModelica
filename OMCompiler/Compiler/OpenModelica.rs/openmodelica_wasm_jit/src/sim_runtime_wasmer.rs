@@ -151,14 +151,14 @@ fn runtime_cache_path() -> std::path::PathBuf {
 }
 
 fn load_or_compile_runtime() -> std::result::Result<wasmer::Module, String> {
-    let engine = sim_engine();
     // wasm has no filesystem for an on-disk AOT cache (and `temp_dir()` panics);
     // the in-memory OnceLock already caches the compiled module for the session,
     // so compile straight from the embedded bytes.
     #[cfg(target_arch = "wasm32")]
-    return wts(wasmer::Module::from_binary(engine, runtime_blob()));
+    return module_from_binary(runtime_blob()).map_err(|e| format!("wasm engine error: {e}"));
     #[cfg(not(target_arch = "wasm32"))]
     {
+        let engine = sim_engine();
         let path = runtime_cache_path();
         // Try the AOT artifact first (microseconds). `deserialize_from_file` is
         // unsafe because it trusts the artifact; it is one we produced under
@@ -191,7 +191,23 @@ fn load_or_compile_runtime() -> std::result::Result<wasmer::Module, String> {
 pub fn set_alarm(_seconds: Option<u32>) {}
 
 pub fn compile_model_module(wasm: &[u8]) -> std::result::Result<wasmer::Module, String> {
+    #[cfg(target_arch = "wasm32")]
+    return module_from_binary(wasm).map_err(|e| format!("wasm engine error: {e}"));
+    #[cfg(not(target_arch = "wasm32"))]
     wts(wasmer::Module::from_binary(sim_engine(), wasm))
+}
+
+/// wasmer-js replaces the browser's `CompileError` message with "Unknown
+/// validation error", so compile through `WebAssembly.Module` directly.
+#[cfg(target_arch = "wasm32")]
+pub(crate) fn module_from_binary(wasm: &[u8]) -> std::result::Result<wasmer::Module, String> {
+    use wasm_bindgen::JsCast;
+    match js_sys::WebAssembly::Module::new(&js_sys::Uint8Array::from(wasm).into()) {
+        Ok(m) => Ok((m, wasm).into()),
+        Err(e) => Err(e
+            .dyn_ref::<js_sys::Error>()
+            .map_or_else(|| format!("{e:?}"), |e| String::from(e.to_string()))),
+    }
 }
 
 /// Begin compiling the fixed runtime module on a background thread, once per
