@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+nlsArrayElementNominal.mos \
 reductionSkips.mos \
 nestedForConnectRange.mos \
 sparsityMatrixResidual.mos \
