@@ -87,12 +87,8 @@ void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo)
  */
 int checkForStateEvent(DATA* data, LIST *eventList)
 {
-  long i=0;
-
-  for(i=0; i<data->modelData->nZeroCrossings; i++)
+  for(long i=0; i<data->modelData->nZeroCrossings; i++)
   {
-    int *eq_indexes;
-
     // Check if sign of zero crossing changed
     if(sign(data->simulationInfo->zeroCrossings[i]) != sign(data->simulationInfo->zeroCrossingsPre[i]))
     {
@@ -421,16 +417,15 @@ int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList)
 
   for(it=listFirstNode(eventList); it; it=listNextNode(it))
   {
+    long i = *((long*) listNodeData(it));
+
     /* found event in left section */
-    if((data->simulationInfo->zeroCrossings[*((long*) listNodeData(it))] == -1 &&
-        data->simulationInfo->zeroCrossingsPre[*((long*) listNodeData(it))] == 1) ||
-       (data->simulationInfo->zeroCrossings[*((long*) listNodeData(it))] == 1 &&
-        data->simulationInfo->zeroCrossingsPre[*((long*) listNodeData(it))] == -1))
+    if(sign(data->simulationInfo->zeroCrossings[i]) != sign(data->simulationInfo->zeroCrossingsPre[i]))
     {
-      infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "%ld changed from %s to current %s",
-            *((long*) listNodeData(it)),
-            (data->simulationInfo->zeroCrossingsPre[*((long*) listNodeData(it))] > 0) ? "TRUE" : "FALSE",
-            (data->simulationInfo->zeroCrossings[*((long*) listNodeData(it))] > 0) ? "TRUE" : "FALSE");
+      infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "[%ld] changed from %g to current %g",
+            i,
+            data->simulationInfo->zeroCrossingsPre[i],
+            data->simulationInfo->zeroCrossings[i]);
       listPushFront(tmpEventList, listNodeData(it));
     }
   }
