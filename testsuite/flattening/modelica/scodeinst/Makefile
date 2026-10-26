@@ -924,6 +924,7 @@ MergeComponents6.mo \
 MergeComponents7.mo \
 MergeComponents8.mo \
 MergeComponents9.mo \
+MergeComponents10.mo \
 MinInvalidArg1.mo \
 MinInvalidArg2.mo \
 MinInvalidArg3.mo \
