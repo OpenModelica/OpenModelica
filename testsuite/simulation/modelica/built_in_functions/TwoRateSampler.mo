@@ -27,7 +27,6 @@ model TwoRateSampler
   when slowSample then                // slow sampling (5-times slower)
     y = if time<=0 then -1 else log(time);
   end when;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TwoRateSampler;
 
 

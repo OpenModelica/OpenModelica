@@ -16,7 +16,6 @@ equation
   y1 = x1 .^ x2;
   y2 = x3 .^ x4;
   y3 = x5 .^ x6;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RealPowEw;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: setExtendsModifierValue
 // keywords:
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the setExtendsModifierValue API function.
 //

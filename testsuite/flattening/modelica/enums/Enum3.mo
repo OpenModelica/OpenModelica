@@ -20,7 +20,6 @@ model Enumeration3
    Enum test;
 equation
    test = if Enum.e1 == Enum.e3 then Enum.e2 else Enum.e1;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Enumeration3;
 
 // Result:

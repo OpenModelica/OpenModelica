@@ -9,7 +9,6 @@ model Cos
   Real r;
 equation
   r = cos(45);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Cos;
 
 // Result:

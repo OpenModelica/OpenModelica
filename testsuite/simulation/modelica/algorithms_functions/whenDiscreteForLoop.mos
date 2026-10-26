@@ -2,7 +2,6 @@
 // keywords: when for loop discrete
 // status: correct
 // teardown_command: rm -rf testWhenLoop* output.log
-// cflags: -d=-newInst
 //
 //
 

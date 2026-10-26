@@ -28,7 +28,6 @@ end AssertTest;
 
 class Test6
   AssertTest assertTest;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Test6;
 
 // Result:

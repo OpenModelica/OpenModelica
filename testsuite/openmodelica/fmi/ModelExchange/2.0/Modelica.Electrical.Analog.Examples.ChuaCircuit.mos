@@ -2,7 +2,6 @@
 // keywords: simulation MSL Examples
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml ChuaCircuit.fmu ChuaCircuit_* ChuaCircuit_me_FMU.mo ChuaCircuit.libs ChuaCircuit.lib ChuaCircuit.so ChuaCircuit.dll ChuaCircuit.c ChuaCircuit.makefile documentation resources ChuaCircuit.log
-// cflags: -d=-newInst
 // Simulation Results
 // Modelica Standard Library
 //

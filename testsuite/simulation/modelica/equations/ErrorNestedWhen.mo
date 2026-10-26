@@ -14,7 +14,6 @@ equation
       y2 = sin(x);
     end when;
   end when;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ErrorNestedWhen;
 
 // class ErrorNestedWhen

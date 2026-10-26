@@ -1,6 +1,5 @@
 // name: Regular Expression Scripting
 // status: correct
-// cflags: -d=-newInst
 
 regex("abc","b");
 regexBool("abc","b");

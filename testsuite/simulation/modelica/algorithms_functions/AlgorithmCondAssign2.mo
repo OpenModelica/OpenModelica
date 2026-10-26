@@ -23,7 +23,6 @@ model CondAssignFuncCall
   Real a, b;
 equation
   (a, b) = CondAssignFunc(5);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end CondAssignFuncCall;
 
 // function CondAssignFunc

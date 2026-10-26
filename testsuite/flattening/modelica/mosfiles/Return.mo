@@ -12,5 +12,4 @@ algorithm
   outInteger := inInteger * 2;
   return;
   outInteger := inInteger * 4; // this statement is never reached
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ReturnFunc;

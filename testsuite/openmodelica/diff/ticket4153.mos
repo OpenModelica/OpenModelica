@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 // Fixes the illegal multiple annotations and merges them into one
 // Does not manage to keep formatting in a good way
 

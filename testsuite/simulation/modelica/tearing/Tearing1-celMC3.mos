@@ -1,7 +1,6 @@
 // name:      Tearing1-celMC3
 // keywords:  tearing, linear
 // status:    correct
-// cflags: -d=-newInst
 
 loadFile("Tearing1.mo"); getErrorString();
 

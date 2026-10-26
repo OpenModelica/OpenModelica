@@ -1,7 +1,7 @@
 // name: EventClock_cpp
 // keywords: synchronous clocked equations
 // status: correct
-// cflags: -d=-newInst --std=3.3
+// cflags: --std=3.3
 
 loadModel(Modelica, {"4.1.0"});getErrorString();
 loadFile("EventClock.mo");getErrorString();

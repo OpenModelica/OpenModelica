@@ -1,7 +1,6 @@
 // name:     TestMissingModifiers.mos [BUG: #3051]
 // keywords: class modification handling
 // status:   correct
-// cflags: -d=-newInst
 //
 
 loadString("

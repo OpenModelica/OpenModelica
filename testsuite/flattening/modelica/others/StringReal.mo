@@ -15,7 +15,6 @@ equation
   s2 = String(3.14159265, significantDigits = 4);
   r = 1234.5678;
   s3 = String(r);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end StringReal;
 
 // Result:

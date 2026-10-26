@@ -1,6 +1,5 @@
 // name: DeleteConnection
 // status: correct
-// cflags: -d=-newInst
 
 loadString("
   model M

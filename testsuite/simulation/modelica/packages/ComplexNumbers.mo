@@ -48,7 +48,6 @@ class ComplexUser
   equation
     z = ComplexNumbers.Multiply(a, b);
     w = ComplexNumbers.Add(a, b);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ComplexUser;
 
 // class ComplexUser

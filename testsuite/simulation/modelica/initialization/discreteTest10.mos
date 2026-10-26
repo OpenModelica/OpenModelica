@@ -3,7 +3,6 @@
 // status: correct
 // cflags:
 // teardown_command: rm -rf initializationTests.discreteTest10* _initializationTests.discreteTest10* output.log
-// cflags: -d=-newInst
 //
 //  case for when-clauses in algorithm sections
 //

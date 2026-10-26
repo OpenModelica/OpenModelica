@@ -2,7 +2,6 @@
 // keywords: fmi import co-simulation
 // status:   correct
 // teardown_command: rm -rf vanDerPol_cs_st_FMU.mo binaries sources documentation resources model.png modelDescription.xml vanDerPol.log vanDerPol_info.json output.log
-// cflags:   -d=-newInst
 //
 // The four setters of an imported FMI 1.0 Co-Simulation FMU used to be called with the
 // function's own out_Values output as an extra argument, so the runtime's fmiType parameter

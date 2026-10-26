@@ -29,7 +29,6 @@ end B;
 
 model RDCL
   B.WA w(redeclare B.BaseImpl cm);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RDCL;
 
 

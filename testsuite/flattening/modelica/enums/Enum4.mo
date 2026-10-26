@@ -19,7 +19,6 @@ model Enumeration4
    M.Enum test;
 equation
    test = if M.Enum.e1 == M.Enum.e3 then M.Enum.e2 else M.Enum.e1;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Enumeration4;
 
 // Result:

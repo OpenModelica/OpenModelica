@@ -20,7 +20,6 @@ class EquationCall
   Real px, py;
 equation
   (px, py) = PointOnCircle(1.2, 2);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EquationCall;
 
 // class EquationCall

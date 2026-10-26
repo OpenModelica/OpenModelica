@@ -2,7 +2,6 @@
 // keywords: simulation MSL Examples
 // status: correct
 // depends: Modelica.Fluid.Examples.BranchingDynamicPipes_eqs_prof.json
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

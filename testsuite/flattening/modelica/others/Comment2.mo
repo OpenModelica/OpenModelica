@@ -24,7 +24,6 @@ model Comment2 /* Another Comment */
      Again */
 equation /* Comment */
   x = 2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Comment2; /* Comment
 */
 /* Comment */
