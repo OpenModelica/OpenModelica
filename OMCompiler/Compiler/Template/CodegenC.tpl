@@ -3782,6 +3782,32 @@ template generateStaticNonlinearData(String indexName, String systemType, SimCod
   end match
 end generateStaticNonlinearData;
 
+template staticArrayElementData(ComponentRef cr)
+ "Nominal, min and max of an element of a non-scalarized real array, by its scalar index."
+::=
+  match getSimCode()
+  case SIMCODE(scalarized=false) then
+    if boolAnd(crefIsScalarWithAllConstSubs(cr), boolAnd(boolNot(listEmpty(crefSubs(crefArrayGetFirstCref(cr)))),
+               intEq(listLength(crefDims(cr)), listLength(crefSubs(crefArrayGetFirstCref(cr)))))) then
+      match cref2simvar(crefStripSubs(cr), getSimCode())
+      case SIMVAR(type_=T_REAL(__))
+      case SIMVAR(type_=T_ARRAY(ty=T_REAL(__))) then
+        if boolNot(intLt(index, 0)) then
+          let kind = match varKind case PARAM() then 'VAR_KIND_PARAMETER' else 'VAR_KIND_VARIABLE'
+          let values = match varKind case PARAM() then 'Params' else 'Vars'
+          let &preExp = buffer ""
+          let &varDecls = buffer ""
+          let &varFrees = buffer ""
+          let &auxFunction = buffer ""
+          let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(cr))), listReverse(crefSubs(crefArrayGetFirstCref(cr))), contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
+          let idx = '<%simVarIndex("real", values, index)%> + (<%offset%>)'
+          <<
+          sysData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%idx%>);
+          sysData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%idx%>);
+          sysData->max[i++]   = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%idx%>);
+          >>
+end staticArrayElementData;
+
 template generateStaticInitialData(list<ComponentRef> crefs, String indexName, String useResizableSparsity)
   "Generates initial function for nonlinear loops.
    useResizableSparsity: non-empty string = use resizable pattern init; empty = use static pattern init."
@@ -3828,12 +3854,19 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
         sysData->max[i++]   = integer_get(<%crefAttributes(cr)%>.max, 0);
         >>
       else
-        <<
-        <%cComment%>
-        sysData->nominal[i] = 1.0;
-        sysData->min[i]     = -DBL_MAX;
-        sysData->max[i++]   = DBL_MAX;
-        >>
+        let elemData = staticArrayElementData(cr)
+        if elemData then
+          <<
+          <%cComment%>
+          <%elemData%>
+          >>
+        else
+          <<
+          <%cComment%>
+          sysData->nominal[i] = 1.0;
+          sysData->min[i]     = -DBL_MAX;
+          sysData->max[i++]   = DBL_MAX;
+          >>
 
   ;separator="\n")
   let sparsityInitCall = if useResizableSparsity
