@@ -51,6 +51,10 @@
 #include "omc_ocl_common_header.h"
 #include "omc_ocl_memory_ops.h"
 
+#ifdef __cplusplus
+extern "C++" {
+#endif
+
 
 
 // Just to stick to  OpenModelica's function naming pattern
@@ -175,6 +179,10 @@ void print_array(real_array* arr);
 
 
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

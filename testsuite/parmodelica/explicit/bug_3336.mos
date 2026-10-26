@@ -1,30 +1,29 @@
 // name: bug_3336
 // status: correct
-// cflags: -d=-newInst
 
-// setGrammarParModelica();
-setCommandLineOptions("+d=noevalfunc,gen +g=ParModelica -v=1");
-
+setCommandLineOptions("-g=ParModelica"); getErrorString();
 setDefaultOpenCLDevice(0); // 0 = auto-select a device with double precision support
-getErrorString();
-
-loadFile("bug_3336.mo");
-getErrorString();
-
-x:=ParArg.Test(5);
-getErrorString();
-
-y:=ParArg.TestParArg(5);
-getErrorString();
+loadFile("bug_3336.mo"); getErrorString();
+simulate(ParArg.M, stopTime=1, numberOfIntervals=2); getErrorString();
+val(x[3], 0);
+val(y[3], 0);
+val(err, 0);
 
 // Result:
 // true
-// true
 // ""
 // true
+// true
 // ""
-// {5.0,10.0,15.0,20.0,25.0,30.0,35.0,40.0,45.0,50.0}
+// record SimulationResult
+//     resultFile = "ParArg.M_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ParArg.M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
 // ""
-// {5.0,10.0,15.0,20.0,25.0,30.0,35.0,40.0,45.0,50.0}
-// ""
+// 15.0
+// 15.0
+// 0.0
 // endResult

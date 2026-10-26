@@ -11,7 +11,7 @@ package ParSqrt
     end for;
   end f;
   
-  function test
+  impure function test
     input Real d;
     output Real result[arrayCnt];
   protected
@@ -27,4 +27,9 @@ package ParSqrt
     pResult := f(pTmp);
     result := pResult;
   end test;
+
+  model M
+    Real x[arrayCnt] = test(4);
+    Real err = max(abs(x - {sqrt(i) for i in 1:arrayCnt}));
+  end M;
 end ParSqrt;
