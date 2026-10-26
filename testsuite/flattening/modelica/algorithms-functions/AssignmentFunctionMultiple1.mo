@@ -21,7 +21,6 @@ model AssignmentFunctionMultiple1
 algorithm
   x := 2;
   (y, z) := F(x);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AssignmentFunctionMultiple1;
 
 // Result:
@@ -30,8 +29,8 @@ end AssignmentFunctionMultiple1;
 //   output Real outReal1;
 //   output Real outReal2;
 // algorithm
-//   outReal1 := 2.0 + inReal;
-//   outReal2 := 4.0 + inReal;
+//   outReal1 := inReal + 2.0;
+//   outReal2 := inReal + 4.0;
 // end F;
 //
 // class AssignmentFunctionMultiple1

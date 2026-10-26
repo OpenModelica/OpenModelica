@@ -153,7 +153,6 @@ package M1_solutions "Solutions to exercises for training M1"
 end M1_solutions;
 model M1_solutions_E03_Faculty_FacultyCall
   extends M1_solutions.E03.Faculty.FacultyCall;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end M1_solutions_E03_Faculty_FacultyCall;
 // Result:
 // function M1_solutions.E03.Faculty.faculty
@@ -173,7 +172,7 @@ end M1_solutions_E03_Faculty_FacultyCall;
 //   output Integer k = 1;
 // algorithm
 //   assert(n >= 0, "n must be larger than 0");
-//   k := if n == 0 then 1 else n * M1_solutions.E03.Faculty.faculty_rec(-1 + n);
+//   k := if n == 0 then 1 else n * M1_solutions.E03.Faculty.faculty_rec(n - 1);
 // end M1_solutions.E03.Faculty.faculty_rec;
 //
 // class M1_solutions_E03_Faculty_FacultyCall

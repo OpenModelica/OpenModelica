@@ -5,7 +5,7 @@
 //
 //
 
-class WhenStat3
+model WhenStat3
   Real x(start = 1);
   Real y1;
   Real y2;
@@ -27,7 +27,6 @@ algorithm
 equation
   der(x) = 2*x;
 
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WhenStat3;
 
 

@@ -17,7 +17,6 @@ model ElementWiseMultiplication
   Real result[3];
 equation
   result = ewm(inVector);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ElementWiseMultiplication;
 
 // Result:
@@ -37,6 +36,6 @@ end ElementWiseMultiplication;
 //   Real result[3];
 // equation
 //   inVector = {3.0, 6.0, 1.0};
-//   result = ewm({inVector[1], inVector[2], inVector[3]});
+//   result = ewm(inVector);
 // end ElementWiseMultiplication;
 // endResult

@@ -24,7 +24,6 @@ model FunctionBreak
 equation
   x = f(y);
   y = f(x);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionBreak;
 
 
@@ -35,13 +34,13 @@ end FunctionBreak;
 //   protected Integer i;
 // algorithm
 //   i := 0;
-//   a := -1.0 + y;
-//   while 0.1 * /*Real*/(i) < y loop
-//     a := 0.5 + a;
+//   a := y - 1.0;
+//   while /*Real*/(i) / 10.0 < y loop
+//     a := a + 0.5;
 //     if a > y then
 //       break;
 //     end if;
-//     i := 1 + i;
+//     i := i + 1;
 //   end while;
 // end f;
 //
