@@ -1152,6 +1152,9 @@ ReinitInvalid5.mo \
 ReinitInvalid6.mo \
 ReinitInvalid7.mo \
 ReinitInvalid8.mo \
+ResizableConstantSize.mo \
+ResizableStreamElements.mo \
+ResizableUntypedConstant.mo \
 Return1.mo \
 Return2.mo \
 Size1.mo \

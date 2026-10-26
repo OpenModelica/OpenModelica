@@ -1805,7 +1805,11 @@ protected
       obexp := Binding.getExpOpt(var.binding);
       if isSome(obexp) and Type.isInteger(var.ty) then
         SOME(bexp) := obexp;
-        // only an expression of resizable parameters, like NFFlatten.resizableDimensionAlias
+        if Expression.isInteger(bexp) and Variable.variability(var) <= Variability.CONSTANT then
+          alias := SOME(bexp);
+          return;
+        end if;
+        // only an expression of resizable parameters and constants, like NFFlatten.resizableDimensionAlias
         if not Expression.isInteger(bexp) and isAffineExp(bexp) and onlyResizableCrefs(bexp) then
           alias := SOME(bexp);
           return;
@@ -1836,7 +1840,8 @@ protected
     output Boolean b;
   algorithm
     b := match exp
-      case Expression.CREF() then not ComponentRef.isResizable(exp.cref);
+      case Expression.CREF() then not (ComponentRef.isResizable(exp.cref) or
+        ComponentRef.nodeVariability(exp.cref) <= Variability.CONSTANT);
       else false;
     end match;
   end isNonResizableCref;
@@ -4432,7 +4437,7 @@ public
     list<Integer> members, real, free;
     Integer q, c, cq, qv;
     Sym off, offq;
-    list<Subscript> qsubs = {};
+    list<Subscript> qsubs = {}, msubs;
     Boolean found, elementwise;
     Iv iv;
     Connector conn;
@@ -4497,6 +4502,11 @@ public
     end if;
     qcv := listHead(qcvs);
     exp := applyConnSubs(qcv.cref, qcv.connDims, qsubs);
+    // the subscripts of the variable inside the connector, e.g. [k] of c.s[k]
+    msubs := List.stripN(ComponentRef.subscriptsAllFlat(ComponentRef.fillSubscripts(cref)), listLength(idx));
+    if not List.all(msubs, Subscript.isWhole) then
+      exp := Expression.applySubscripts(msubs, exp);
+    end if;
     // one inside and one outside connector: inStream(c1.s) = inStream(c2.s)
     if Connector.isOutside(conn) then
       exp := inStreamExp(Expression.toCref(exp), sets, ctx, streams, facts, groups, fixed);
