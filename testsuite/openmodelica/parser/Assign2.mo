@@ -6,7 +6,6 @@
 model Assign1
 algorithm
   {x,y,z} := fn(1,2,3);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Assign1;
 
 // Result:

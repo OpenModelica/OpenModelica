@@ -12,7 +12,6 @@ model Array13
   parameter Integer m1 = size(a,1);
   parameter Integer n2 = size(b,1);
   parameter Integer m2 = size(b,2);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Array13;
 // Result:
 // class Array13

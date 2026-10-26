@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 
 loadString("package P1 model M1 end M1; end P1;", "P1");
 getErrorString();

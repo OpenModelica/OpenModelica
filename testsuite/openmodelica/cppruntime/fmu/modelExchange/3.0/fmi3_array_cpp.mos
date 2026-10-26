@@ -2,7 +2,6 @@
 // keywords: FMI 3.0 export array Cpp
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml fmi3_array_cpp.fmu fmi3_array_cpp.fmutmp fmi3_array_cpp.log fmi3_array_cpp_info.json output.log index.html
-// cflags: -d=-newInst
 //
 // #15926, FMI 3.0 export with the C++ (Cpp) simulation runtime and an array
 // variable carrying a parameter-bound nominal attribute. The FMU must build and

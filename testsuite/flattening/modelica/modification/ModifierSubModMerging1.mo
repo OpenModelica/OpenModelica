@@ -15,7 +15,6 @@ end B;
 
 model ModifierSubModMerging1
   B b(x(start = 0), x(nominal = 0));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ModifierSubModMerging1;
 
 // Result:

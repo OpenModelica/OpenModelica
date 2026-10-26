@@ -1,7 +1,6 @@
 // name:     List2
 // keywords: Lists
 // status:   correct
-// cflags: -d=-newInst
 // suite: metamodelica
 //
 // List Testing

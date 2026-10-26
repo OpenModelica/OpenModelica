@@ -14,7 +14,6 @@ equation
   a = sum(x);
   b = sum(y);
   c = sum(z);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Sum;
 
 // Result:

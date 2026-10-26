@@ -15,7 +15,6 @@ end AssertTest;
 
 class Test2
   AssertTest assertTest(lowlimit = 6, highlimit = 20);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Test2;
 
 // Result:

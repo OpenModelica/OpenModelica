@@ -1,7 +1,6 @@
 // name: Graphical-API
 // keywords: Graphical API, Parameters
 // status: correct
-// cflags: -d=-newInst
 // 
 //  Subset of the Graphical API for accessing components
 //

@@ -21,7 +21,6 @@ end C;
 class ModifyConstant3
   B b;
   C c;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ModifyConstant3;
 
 // Result:

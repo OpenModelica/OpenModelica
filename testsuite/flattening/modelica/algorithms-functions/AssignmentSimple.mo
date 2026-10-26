@@ -9,7 +9,6 @@ model AssignmentSimple
   Real x;
 algorithm
   x := 2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AssignmentSimple;
 
 // Result:

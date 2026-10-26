@@ -21,7 +21,6 @@ model WhenEquation1
       toggle=1;
       pos=pre(pos)+1;
     end when;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WhenEquation1;
 
 // class WhenEquation1

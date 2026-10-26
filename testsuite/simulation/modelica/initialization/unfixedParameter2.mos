@@ -3,7 +3,6 @@
 // status: correct
 // cflags:
 // teardown_command: rm -rf initializationTests.unfixedParameter2* _initializationTests.unfixedParameter2* output.log
-// cflags: -d=-newInst
 //
 //  case for an unfixed parameter
 //

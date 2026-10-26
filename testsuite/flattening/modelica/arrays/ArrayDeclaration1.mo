@@ -10,7 +10,6 @@ model ArrayDeclaration1
 equation
   realArray[1] = 4;
   realArray[2] = 5;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayDeclaration1;
 
 // Result:

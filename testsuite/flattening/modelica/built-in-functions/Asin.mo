@@ -9,7 +9,6 @@ model Asin
   Real r;
 equation
   r = asin(0.5);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Asin;
 
 // Result:

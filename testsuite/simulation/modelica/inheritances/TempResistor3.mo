@@ -39,7 +39,6 @@ model TempResistor3 "Temperature dependent electrical resistor"
   parameter Real Tref(unit = "degC") = 20    "Reference temperature";
   Real    Temp = 20            "Actual temperature";
 
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TempResistor3;
 
 

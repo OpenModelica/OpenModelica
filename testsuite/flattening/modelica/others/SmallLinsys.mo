@@ -11,7 +11,6 @@ equation
    der(x) + z*der(y) + der(z) = 1;
    z*der(y)-x*der(z) = 3;
    der(z)+der(x)-x*der(y) = 1;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end LinSys;
 
 // Result:

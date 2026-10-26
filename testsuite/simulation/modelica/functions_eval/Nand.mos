@@ -1,7 +1,6 @@
 // name:      Nand
 // keywords:  evalConstFunc
 // status:    correct
-// cflags: -d=-newInst
 //
 
 

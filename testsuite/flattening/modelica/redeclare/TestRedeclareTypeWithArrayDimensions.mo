@@ -24,7 +24,6 @@ end RedeclareTypeWithArrayDimensions;
 
 model TestRedeclareTypeWithArrayDimensions
   extends RedeclareTypeWithArrayDimensions.bar;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TestRedeclareTypeWithArrayDimensions;
 
 // Result:

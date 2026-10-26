@@ -1,7 +1,6 @@
 // name: #2535
 // keywords: function, array, initialization
 // status: correct
-// cflags: -d=-newInst
 
 loadString("
 within ;
