@@ -1351,6 +1351,7 @@ public
       Option<Binding> min = NONE(), max = NONE(), start = NONE(), fixed = NONE(), nominal = NONE();
       Option<StateSelect> state_select = NONE();
       Option<TearingSelect> tearing_select = NONE();
+      Option<Uncertainty> uncertainty = NONE();
     algorithm
       for attr in attrs loop
         (name, b) := attr;
@@ -1366,6 +1367,7 @@ public
           // TODO: VAR_ATTR_REAL has no field for unbounded (which should be named unbound).
           case "unbounded"      then ();
           case "unit"           algorithm unit := createAttribute(b); then ();
+          case "uncertain"      algorithm uncertainty := createUncertainty(b); then ();
 
           // The attributes should already be type checked, so we shouldn't get any
           // unknown attributes here.
@@ -1380,7 +1382,7 @@ public
 
       attributes := VariableAttributes.VAR_ATTR_REAL(
         quantity, unit, displayUnit, min, max, start, fixed, nominal,
-        state_select, tearing_select, NONE(), NONE(), NONE(), NONE(), SOME(isFinal));
+        state_select, tearing_select, uncertainty, NONE(), NONE(), NONE(), SOME(isFinal));
     end createReal;
 
     function createInt
@@ -1620,6 +1622,33 @@ public
             fail();
       end match;
     end lookupStateSelectMember;
+
+    function createUncertainty
+      input Binding binding;
+      output Option<Uncertainty> uncertainty;
+    protected
+      Expression exp = Expression.arrayFirstScalar(Binding.getTypedExp(binding));
+      String name;
+    algorithm
+      name := match exp
+        case Expression.ENUM_LITERAL() then exp.name;
+        case Expression.CREF(cref = ComponentRef.CREF()) then ComponentRef.nodeName(exp.cref);
+        else algorithm
+          Error.terminate(getInstanceName() +
+            " got invalid Uncertainty expression " + Expression.toString(exp), sourceInfo());
+        then fail();
+      end match;
+
+      uncertainty := SOME(match name
+        case "given"      then Uncertainty.GIVEN;
+        case "sought"     then Uncertainty.SOUGHT;
+        case "refine"     then Uncertainty.REFINE;
+        case "propagate"  then Uncertainty.PROPAGATE;
+        else algorithm
+          Error.terminate(getInstanceName() + " got unknown Uncertainty literal " + name, sourceInfo());
+        then fail();
+      end match);
+    end createUncertainty;
 
     function createTearingSelect
       "__OpenModelica_tearingSelect is an annotation and has to be extracted from the comment."
