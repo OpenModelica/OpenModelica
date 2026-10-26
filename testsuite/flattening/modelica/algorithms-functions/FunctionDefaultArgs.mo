@@ -23,17 +23,9 @@ equation
   res1 = set({4,5,6,7});
   res2 = set({4,3,2});
   res3 = set();
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionDefaultArgs;
 
 // Result:
-// function FunctionDefaultArgs.set
-//   input Integer[:] X = {1, 2, 3};
-//   output Integer x1;
-// algorithm
-//   x1 := X[1];
-// end FunctionDefaultArgs.set;
-//
 // class FunctionDefaultArgs
 //   constant Integer reference_X[1] = 1;
 //   constant Integer reference_X[2] = 2;

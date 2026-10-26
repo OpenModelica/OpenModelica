@@ -19,7 +19,6 @@ model FunctionEval3
   Real x;
 equation
   x = f(a);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionEval3;
 
 // function f
@@ -43,7 +42,7 @@ end FunctionEval3;
 //   input Real x;
 //   output Real y;
 // algorithm
-//   y := 2.0 + x;
+//   y := x + 2.0;
 // end f;
 //
 // class FunctionEval3

@@ -5,13 +5,12 @@
 // Test for loops in algorithms. The range is implicit.
 //
 
-class AlgorithmFor5
+model AlgorithmFor5
   Real a[4];
 algorithm
   for i loop
     a[i] := i;
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AlgorithmFor5;
 
 // Result:
