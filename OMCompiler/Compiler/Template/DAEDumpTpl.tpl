@@ -1030,7 +1030,7 @@ match stmt
     <<
     parfor <%iter%> in <%range_str%> loop
       <%alg_str%>
-    end for<%src_str%>;
+    end parfor<%src_str%>;
     >>
 end dumpParForStatement;
 

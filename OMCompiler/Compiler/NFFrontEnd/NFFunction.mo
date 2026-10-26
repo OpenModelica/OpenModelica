@@ -2742,7 +2742,9 @@ protected
           DAE.FUNCTION_ATTRIBUTES(inline_ty, generateEvents, purity, is_partial,
             DAE.FUNCTION_BUILTIN(SOME(name), has_unbox_args), DAE.FP_NON_PARALLEL(), DAE.NoReturn.RETURNS);
 
-      // Parallel function: there are some builtin functions.
+      // Parallel function: there are some builtin functions. Their results depend
+      // on the executing thread, and the parser drops the impure prefix of
+      // parallel and kernel functions.
       case SCode.FunctionRestriction.FR_PARALLEL_FUNCTION()
         algorithm
           in_params := list(InstNode.name(i) for i in inputs);
@@ -2752,7 +2754,7 @@ protected
           generateEvents := InstBasics.commentGenerateEvents(cmt);
           has_unbox_args := hasUnboxArgsAnnotation(cmt);
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, generateEvents, purity, is_partial,
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, generateEvents, DAE.Purity.IMPURE, is_partial,
             DAE.FUNCTION_BUILTIN(SOME(name), has_unbox_args), DAE.FP_PARALLEL_FUNCTION(), DAE.NoReturn.RETURNS);
 
       // Parallel function: non-builtin.
@@ -2766,7 +2768,7 @@ protected
 
       // Kernel functions: never builtin and never inlined.
       case SCode.FunctionRestriction.FR_KERNEL_FUNCTION()
-        then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(), false, purity, is_partial,
+        then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(), false, DAE.Purity.IMPURE, is_partial,
           DAE.FUNCTION_NOT_BUILTIN(), DAE.FP_KERNEL_FUNCTION(), DAE.NoReturn.RETURNS);
 
       // Normal function.

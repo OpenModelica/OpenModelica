@@ -370,7 +370,7 @@ template functionInitSynchronous(list<ClockedPartition> clockedPartitions, Strin
   void <%symbolName(modelNamePrefix,"function_initSynchronous")%>(DATA *data, threadData_t *threadData)
   {
     assertStreamPrint(threadData, data->modelData->nBaseClocks==<%listLength(clockedPartitions)%>, "Number of base clocks doesn't match number of clocks that are initialized! Code generation error!");
-    data->simulationInfo->baseClocks = calloc(<%listLength(clockedPartitions)%>, sizeof(BASECLOCK_DATA));
+    data->simulationInfo->baseClocks = (BASECLOCK_DATA*) calloc(<%listLength(clockedPartitions)%>, sizeof(BASECLOCK_DATA));
 
     <%body%>
   }
@@ -437,7 +437,7 @@ template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SimCode.S
     .isEventClock = <%isEventClock(baseClock)%>,
     .stats = (CLOCK_STATS){<%startInterval%>, 0, -1}};
   <%computeInterval%>
-  data->simulationInfo->baseClocks[<%baseClockIdx%>].subClocks = calloc(<%listLength(subPartitions)%>, sizeof(SUBCLOCK_DATA));
+  data->simulationInfo->baseClocks[<%baseClockIdx%>].subClocks = (SUBCLOCK_DATA*) calloc(<%listLength(subPartitions)%>, sizeof(SUBCLOCK_DATA));
   <%subClocksInfo%>
 
   >>
@@ -3095,7 +3095,7 @@ template generateNonLinearSystemData(NonlinearSystem system, Integer indexStrict
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].updateSize = <%if nlsResizable(nls.crefs) then 'updateSizeNLS<%nls.index%>' else 'NULL'%>;
 
       const int tmp_eqn_indices_<%nls.indexNonLinearSystem%>[<%listLength(nls.eqs)%>] = {<%nls.eqs |> eq => '<%equationIndex(eq)%>' ; separator = ", "%>};
-      nonLinearSystemData[<%nls.indexNonLinearSystem%>].eqn_simcode_indices = malloc(<%listLength(nls.eqs)%> * sizeof(int));
+      nonLinearSystemData[<%nls.indexNonLinearSystem%>].eqn_simcode_indices = (int*) malloc(<%listLength(nls.eqs)%> * sizeof(int));
       memcpy(nonLinearSystemData[<%nls.indexNonLinearSystem%>].eqn_simcode_indices, tmp_eqn_indices_<%nls.indexNonLinearSystem%>, <%listLength(nls.eqs)%> * sizeof(int));
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].torn_plus_residual_size = <%listLength(nls.eqs)%>;
       >>

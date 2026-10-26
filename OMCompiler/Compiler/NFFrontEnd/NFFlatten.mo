@@ -58,6 +58,7 @@ import Absyn;
 import Attributes = NFAttributes;
 import ComponentRef = NFComponentRef;
 import Dimension = NFDimension;
+import Config;
 import ExecStat.execStat;
 import ExpressionIterator = NFExpressionIterator;
 import Expression = NFExpression;
@@ -3594,6 +3595,10 @@ algorithm
     fn := EvalConstants.evaluateFunction(fn);
     SimplifyModel.simplifyFunction(fn);
 
+    if Config.acceptParModelicaGrammar() then
+      fn := Function.mapBody(fn, function Algorithm.map(fn = updateParForType));
+    end if;
+
     if not (Flags.isSet(Flags.NF_API) or Flags.getConfigBool(Flags.CHECK_MODEL)) then
       Function.checkUseBeforeAssign(fn);
     end if;
@@ -3700,6 +3705,20 @@ algorithm
 
   end match;
 end updateForType;
+
+function updateParForType
+  input output Statement stmt;
+algorithm
+  () := match stmt
+    case Statement.FOR(forType = Statement.ForType.PARALLEL())
+      algorithm
+        stmt.forType := updateForType(stmt.forType, stmt.body);
+      then
+        ();
+
+    else ();
+  end match;
+end updateParForType;
 
 function collectParallelVariables
   input Statement stmt;
