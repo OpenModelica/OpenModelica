@@ -182,12 +182,6 @@ protected constant DAE.Type simulationResultType_full = DAE.T_COMPLEX(ClassInf.R
   DAE.TYPES_VAR("timeTotal",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE())
   },NONE(), false);
 
-protected constant DAE.Type simulationResultType_drModelica = DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
-  DAE.TYPES_VAR("messages",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),false,NONE()),
-  DAE.TYPES_VAR("flatteningTime",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE()),
-  DAE.TYPES_VAR("simulationTime",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE())
-  },NONE(), false);
-
 //these are in reversed order than above
 protected constant list<tuple<String,Values.Value>> zeroAdditionalSimulationResultValues =
   { ("timeTotal",      Values.REAL(0.0)),
@@ -262,12 +256,6 @@ public function getSimulationResultType
 algorithm
   t := if Testsuite.isRunning() then simulationResultType_rtest else simulationResultType_full;
 end getSimulationResultType;
-
-public function getDrModelicaSimulationResultType
-  output DAE.Type t;
-algorithm
-  t := if Testsuite.isRunning() then simulationResultType_rtest else simulationResultType_drModelica;
-end getDrModelicaSimulationResultType;
 
 public function createSimulationResult
   input String resultFile;
