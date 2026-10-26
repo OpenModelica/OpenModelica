@@ -45,6 +45,10 @@ protected
 
   import BackendDAE = NBackendDAE;
   import BackendExtension = NFBackendExtension;
+  import Causalize = NBCausalize;
+  import ComponentRef = NFComponentRef;
+  import NBEquation.{Equation, EqData};
+  import StrongComponent = NBStrongComponent;
   import NFBackendExtension.Uncertainty;
   import BVariable = NBVariable;
   import NBVariable.{VariablePointers, VarData};
@@ -54,6 +58,7 @@ protected
   import Flags;
   import List;
   import SCodeUtil;
+  import StringUtil;
 
 public constant String UNDERLINE = "==========================================================================";
 
@@ -61,16 +66,23 @@ public function main extends Module.wrapper;
   input String fileNamePrefix;
 protected
   list<Pointer<Variable>> knowns, boundaryConditions;
+  list<StrongComponent> comps, bindingComps;
 algorithm
   print("\nModelInfo: " + fileNamePrefix + "\n" + UNDERLINE + "\n\n");
 
   () := match bdae
     local
       VarData varData;
-    case BackendDAE.MAIN(varData = varData as VarData.VAR_DATA_SIM()) algorithm
+      EqData eqData;
+    case BackendDAE.MAIN(varData = varData as VarData.VAR_DATA_SIM(), eqData = eqData as EqData.EQ_DATA_SIM()) algorithm
+      (_, comps) := Causalize.simple(varData.unknowns, eqData.simulation, NBPartition.Kind.ODE);
+      bindingComps := list(c for c guard(isBindingComponent(c)) in comps);
+      dumpComponents(comps, "Standard BLT of the original model");
+
       (knowns, boundaryConditions, _, _) := getVariableCategories(VariablePointers.toList(varData.unknowns));
       dumpVarList(knowns, "Variables of interest");
       dumpVarList(boundaryConditions, "Boundary conditions");
+      dumpComponents(bindingComps, "Binding equations");
     then ();
   end match;
 end main;
@@ -132,6 +144,48 @@ protected
 algorithm
   b := SCodeUtil.commentHasBooleanNamedAnnotation(var.comment, "__OpenModelica_BoundaryCondition");
 end isBoundaryCondition;
+
+protected function isBindingComponent
+  "binding equations are created by NBBindings with the residual name $RES_BND_<n>"
+  input StrongComponent comp;
+  output Boolean b;
+algorithm
+  b := match comp
+    case StrongComponent.SINGLE_COMPONENT()
+    then StringUtil.startsWith(ComponentRef.firstName(Equation.getEqnName(comp.eqn)), NBVariable.RESIDUAL_STR + "_BND_");
+    else false;
+  end match;
+end isBindingComponent;
+
+protected function dumpComponents
+  input list<StrongComponent> comps;
+  input String heading;
+protected
+  Integer i = 1;
+algorithm
+  print(heading + ":(" + intString(listLength(comps)) + ")
+" + "============================================================
+
+");
+  for comp in comps loop
+    print(intString(i) + ": " + componentString(comp) + "
+");
+    i := i + 1;
+  end for;
+  print("
+");
+end dumpComponents;
+
+protected function componentString
+  input StrongComponent comp;
+  output String str;
+algorithm
+  str := match comp
+    case StrongComponent.SINGLE_COMPONENT()
+    then ComponentRef.toString(BVariable.getVarName(comp.var)) + ": " + Equation.toString(Pointer.access(comp.eqn));
+    else StrongComponent.toString(comp);
+  end match;
+end componentString;
 
 protected function dumpVarList
   input list<Pointer<Variable>> vars;

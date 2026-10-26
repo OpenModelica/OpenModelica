@@ -465,8 +465,10 @@ public
 
     // Pre-Partitioning Modules
     // (do not change order SIMPLIFY -> ALIAS -> EVENTS -> DETECTSTATES)
-    preOptModules := {
-      (Bindings.main,      "Bindings"),
+    preOptModules := listAppend(
+      (Bindings.main,      "Bindings") ::
+      (if DataReconciliation.isEnabled() then {(function DataReconciliation.main(fileNamePrefix = fileNamePrefix), "Data Reconciliation")} else {}),
+    {
       (function FunctionAlias.main(kind = kind), "FunctionAlias"),
       (function Inline.main(inline_types = inline_types, init = false), "Early Inline"),
       (function simplify(init = false), "Simplify 1"),
@@ -476,11 +478,7 @@ public
       (detectAlgorithmLocals, "Algorithm Locals"),
       (DetectStates.main,  "Detect States"),
       (Events.main,        "Events")
-    };
-
-    if DataReconciliation.isEnabled() then
-      preOptModules := listAppend({(function DataReconciliation.main(fileNamePrefix = fileNamePrefix), "Data Reconciliation")}, preOptModules);
-    end if;
+    });
 
     // all main modules are always done in ODE mode
     mainModules := listAppend({
