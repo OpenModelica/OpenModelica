@@ -320,7 +320,7 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.REPLACE_HOMOTOPY,
   Flags.GENERATE_DYNAMIC_JACOBIAN,
   Flags.GENERATE_SYMBOLIC_LINEARIZATION,
-  Flags.INT_ENUM_CONVERSION,
+  Flags.RESIZABLE_MAX_PIECES,
   Flags.PROFILING_LEVEL,
   Flags.RESHUFFLE,
   Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM,
@@ -441,8 +441,7 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.FMU_NATIVE_PLATFORMS,
   Flags.TPL_OUTPUT_DIR,
   Flags.FMU_DIRECTORY,
-  Flags.TPL_INTERFACE_DIR,
-  Flags.RESIZABLE_MAX_PIECES
+  Flags.TPL_INTERFACE_DIR
 };
 
 public function new

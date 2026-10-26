@@ -1,7 +1,6 @@
 TEST=../../../rtest -v
 
 TESTFILES=\
-IntegerToEnumeration.mo \
 modelica_1_1_Type9.mo \
 modelica_1_1_Type10.mo \
 PredefinedTypes.mo \
