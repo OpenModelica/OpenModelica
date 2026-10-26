@@ -62,6 +62,7 @@ import SimCodeVar.{AliasVariable,Causality,SimVar};
 import Types;
 import TypesDump;
 import UnorderedMap;
+import List;
 import Util;
 import SimCodeCodegenUtil;
 
@@ -661,11 +662,38 @@ algorithm
     case Exp.BCONST() then boolString(exp.bool);
     case Exp.ENUM_LITERAL() then intString(exp.index);
     case Exp.ARRAY() guard Expression.isSimpleLiteralValue(exp, true) then stringDelimitList(list(arrayElementString(e) for e in exp.array), " ");
-    case Exp.REDUCTION() then expString(exp.expr);
+    case Exp.REDUCTION() then reductionString(exp.expr, exp.reductionInfo.exprType, listLength(exp.iterators));
     else fail();
     //else algorithm Error.addInternalError("initial value of unknown type: " + printExpStr(exp), sourceInfo()); then fail();
   end match;
 end expString;
+
+function reductionString
+  "A scalar body is written once and broadcast by the runtime, an array body
+   once per iteration."
+  input Exp body;
+  input Type ty;
+  input Integer numIterators;
+  output String str = expString(body);
+protected
+  Integer n;
+algorithm
+  if not isBroadcastValue(body) then
+    n := List.fold(list(Expression.dimensionSize(d) for d in List.firstN(Expression.arrayDimension(ty), numIterators)), intMul, 1);
+    str := stringDelimitList(List.fill(str, n), " ");
+  end if;
+end reductionString;
+
+function isBroadcastValue
+  input Exp exp;
+  output Boolean b;
+algorithm
+  b := match exp
+    case Exp.ARRAY() then false;
+    case Exp.REDUCTION() then isBroadcastValue(exp.expr);
+    else true;
+  end match;
+end isBroadcastValue;
 
 function arrayElementString
   "Like expString, but String elements are enclosed in quotes, so the values
