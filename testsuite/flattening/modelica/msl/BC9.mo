@@ -973,7 +973,6 @@ model BC9
 
 equation
   connect(constant1.outPort,secondOrder1.inPort) annotation(Line(visible=true,points={{-29.91,12.57},{-8.62,15.62}}));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BC9;
 
 // class BC9
@@ -1007,33 +1006,32 @@ end BC9;
 // end BC9;
 // Result:
 // class BC9
-//   parameter Integer secondOrder1.n = 1 "Number of inputs (= number of outputs)";
-//   parameter Integer secondOrder1.inPort.n = secondOrder1.n "Dimension of signal vector";
-//   Real secondOrder1.inPort.signal[1] "Real input signals";
-//   parameter Integer secondOrder1.outPort.n = secondOrder1.n "Dimension of signal vector";
-//   Real secondOrder1.outPort.signal[1] "Real output signals";
-//   Real secondOrder1.y[1] "Output signals";
-//   protected Real secondOrder1.u[1] "Input signals";
 //   parameter Real secondOrder1.k[1] = 1.0 "Gain";
 //   parameter Real secondOrder1.w[1] = 1.0 "Angular frequency";
 //   parameter Real secondOrder1.D[1] = 1.0 "Damping";
+//   final parameter Integer secondOrder1.n = 1 "Number of inputs (= number of outputs)";
+//   final parameter Integer secondOrder1.inPort.n = 1 "Dimension of signal vector";
+//   Real secondOrder1.inPort.signal[1] "Real input signals";
+//   final parameter Integer secondOrder1.outPort.n = 1 "Dimension of signal vector";
+//   Real secondOrder1.outPort.signal[1] "Real output signals";
+//   Real secondOrder1.y[1] "Output signals";
+//   protected Real secondOrder1.u[1] "Input signals";
 //   Real secondOrder1.yd[1] "Derivative of y";
 //   protected parameter Real secondOrder1.p_k[1] = secondOrder1.k[1];
 //   protected parameter Real secondOrder1.p_w[1] = secondOrder1.w[1];
 //   protected parameter Real secondOrder1.p_D[1] = secondOrder1.D[1];
-//   parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
-//   parameter Integer constant1.outPort.n = constant1.nout "Dimension of signal vector";
+//   parameter Real constant1.k[1] = 1.0 "Constant output values";
+//   final parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
+//   final parameter Integer constant1.outPort.n = 1 "Dimension of signal vector";
 //   Real constant1.outPort.signal[1] "Real output signals";
 //   Real constant1.y[1];
-//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 // equation
-//   secondOrder1.u = {secondOrder1.inPort.signal[1]};
+//   constant1.outPort.signal[1] = secondOrder1.inPort.signal[1];
+//   secondOrder1.u = secondOrder1.inPort.signal;
 //   der(secondOrder1.y[1]) = secondOrder1.yd[1];
-//   der(secondOrder1.yd[1]) = secondOrder1.p_w[1] * (secondOrder1.p_w[1] * (secondOrder1.p_k[1] * secondOrder1.u[1] - secondOrder1.y[1]) + (-2.0) * secondOrder1.p_D[1] * secondOrder1.yd[1]);
+//   der(secondOrder1.yd[1]) = secondOrder1.p_w[1] * (secondOrder1.p_w[1] * (secondOrder1.p_k[1] * secondOrder1.u[1] - secondOrder1.y[1]) - 2.0 * secondOrder1.p_D[1] * secondOrder1.yd[1]);
 //   secondOrder1.y[1] = secondOrder1.outPort.signal[1];
 //   constant1.outPort.signal[1] = constant1.k[1];
 //   constant1.y[1] = constant1.outPort.signal[1];
-//   assert(constant1.outPort.n == secondOrder1.inPort.n, "automatically generated from connect");
-//   constant1.outPort.signal[1] = secondOrder1.inPort.signal[1];
 // end BC9;
 // endResult
