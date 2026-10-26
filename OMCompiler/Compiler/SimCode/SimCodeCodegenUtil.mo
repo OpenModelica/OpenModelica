@@ -854,16 +854,21 @@ protected function getEnumerationTypesHelper
   input list<SimCodeVar.SimVar> inVars;
   input list<SimCodeVar.SimVar> inAccumVars;
   output list<SimCodeVar.SimVar> outVars = inAccumVars;
+protected
+  SimCodeVar.SimVar v;
 algorithm
   for var in inVars loop
     () := match var
       case SimCodeVar.SIMVAR()
         algorithm
           // Add the variable to the list if it's an enumeration variable which
-          // doesn't already exist in the list.
+          // doesn't already exist in the list. An array variable stands for its
+          // element type.
           if Types.isEnumeration(var.type_) and not
              List.exist1(outVars, enumerationTypeExists, var.type_) then
-            outVars := var :: outVars;
+            v := var;
+            v.type_ := Types.arrayElementType(var.type_);
+            outVars := v :: outVars;
           end if;
         then
           ();
@@ -878,12 +883,12 @@ protected function enumerationTypeExists
   input DAE.Type inType;
   output Boolean b;
 algorithm
-  b := match (var, inType)
+  b := match (var, Types.arrayElementType(inType))
     local
-      DAE.Type ty;
+      DAE.Type ty, ety;
 
-    case (SimCodeVar.SIMVAR(type_ = ty as DAE.T_ENUMERATION()), DAE.T_ENUMERATION())
-      then AbsynUtil.pathEqual(ty.path, inType.path);
+    case (SimCodeVar.SIMVAR(type_ = ty as DAE.T_ENUMERATION()), ety as DAE.T_ENUMERATION())
+      then AbsynUtil.pathEqual(ty.path, ety.path);
     else false;
   end match;
 end enumerationTypeExists;

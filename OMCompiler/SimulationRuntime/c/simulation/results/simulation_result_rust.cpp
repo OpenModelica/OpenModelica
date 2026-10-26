@@ -99,7 +99,7 @@ static double internString(modelica_string s)
 static void addSignals(rust_result_data *d, const char *name, const char *comment, const char *unit, const char *displayUnit,
                        int type, int kind, long column, int negate, int unvarying,
                        const DIMENSION_INFO *dimension, modelica_boolean isStateDerivative,
-                       modelica_boolean relativeQuantity = FALSE)
+                       modelica_boolean relativeQuantity = FALSE, const ENUMERATION_TYPE *enumeration = NULL)
 {
   size_t n = dimension ? dimension->scalar_length : 1;
   for (size_t i = 0; i < n; i++) {
@@ -117,6 +117,11 @@ static void addSignals(rust_result_data *d, const char *name, const char *commen
     s.negate = negate;
     s.unvarying = unvarying;
     s.relative_quantity = relativeQuantity;
+    if (enumeration) {
+      s.declared_type = enumeration->name;
+      s.literals = enumeration->literals;
+      s.n_literals = (unsigned)enumeration->nLiterals;
+    }
     d->signals.push_back(s);
   }
 }
@@ -184,7 +189,8 @@ void rust_result_init(simulation_result *self, DATA *data, threadData_t *threadD
       intColumn[start + k] = column + k;
       d->columnTypes.push_back(OMC_RESULT_TYPE_INTEGER);
     }
-    addSignals(d, v->info.name, v->info.comment, "", "", OMC_RESULT_TYPE_INTEGER, OMC_RESULT_KIND_COLUMN, column, 0, v->time_unvarying, &v->dimension, FALSE);
+    addSignals(d, v->info.name, v->info.comment, "", "", OMC_RESULT_TYPE_INTEGER, OMC_RESULT_KIND_COLUMN, column, 0, v->time_unvarying, &v->dimension, FALSE,
+               FALSE, v->enumeration);
     d->ints.push_back({start, v->dimension.scalar_length});
     column += v->dimension.scalar_length;
   }
@@ -226,7 +232,8 @@ void rust_result_init(simulation_result *self, DATA *data, threadData_t *threadD
   for (int i = 0; i < mData->nParametersIntegerArray; i++) {
     const STATIC_INTEGER_DATA *v = &mData->integerParameterData[i];
     if (v->filterOutput) continue;
-    addSignals(d, v->info.name, v->info.comment, "", "", OMC_RESULT_TYPE_INTEGER, OMC_RESULT_KIND_PARAMETER, -1, 0, 0, &v->dimension, FALSE);
+    addSignals(d, v->info.name, v->info.comment, "", "", OMC_RESULT_TYPE_INTEGER, OMC_RESULT_KIND_PARAMETER, -1, 0, 0, &v->dimension, FALSE,
+               FALSE, v->enumeration);
   }
   for (int i = 0; i < mData->nParametersBooleanArray; i++) {
     const STATIC_BOOLEAN_DATA *v = &mData->booleanParameterData[i];
@@ -281,12 +288,13 @@ void rust_result_init(simulation_result *self, DATA *data, threadData_t *threadD
     case ALIAS_TYPE_VARIABLE: {
       const STATIC_INTEGER_DATA *v = &mData->integerVarsData[a->nameID];
       addSignals(d, a->info.name, a->info.comment, "", "", OMC_RESULT_TYPE_INTEGER, OMC_RESULT_KIND_COLUMN,
-                 intColumn[sInfo->integerVarsIndex[a->nameID]], negate, v->time_unvarying, &v->dimension, FALSE);
+                 intColumn[sInfo->integerVarsIndex[a->nameID]], negate, v->time_unvarying, &v->dimension, FALSE,
+                 FALSE, v->enumeration);
       break;
     }
     case ALIAS_TYPE_PARAMETER:
       addSignals(d, a->info.name, a->info.comment, "", "", OMC_RESULT_TYPE_INTEGER, OMC_RESULT_KIND_PARAMETER, -1, negate, 0,
-                 &mData->integerParameterData[a->nameID].dimension, FALSE);
+                 &mData->integerParameterData[a->nameID].dimension, FALSE, FALSE, mData->integerParameterData[a->nameID].enumeration);
       break;
     default:
       throwStreamPrint(threadData, "rust_result_init: Unknown alias type for integer alias.");
