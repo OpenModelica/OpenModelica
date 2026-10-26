@@ -44,24 +44,108 @@ protected
   import Module = NBModule;
 
   import BackendDAE = NBackendDAE;
+  import BackendExtension = NFBackendExtension;
+  import NFBackendExtension.Uncertainty;
+  import BVariable = NBVariable;
+  import NBVariable.{VariablePointers, VarData};
+  import Variable = NFVariable;
 
   // Util
   import Flags;
   import List;
+  import SCodeUtil;
 
-public
-  constant String UNDERLINE = "==========================================================================";
+public constant String UNDERLINE = "==========================================================================";
 
-  function main extends Module.wrapper;
-    input String fileNamePrefix;
-  algorithm
-    print("\nModelInfo: " + fileNamePrefix + "\n" + UNDERLINE + "\n\n");
-  end main;
+public function main extends Module.wrapper;
+  input String fileNamePrefix;
+protected
+  list<Pointer<Variable>> knowns, boundaryConditions;
+algorithm
+  print("\nModelInfo: " + fileNamePrefix + "\n" + UNDERLINE + "\n\n");
 
-  function isEnabled
-    output Boolean b = List.isMemberOnTrue("dataReconciliation", Flags.getConfigStringList(Flags.PRE_OPT_MODULES), stringEq)
-                    or List.isMemberOnTrue("dataReconciliation", Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD), stringEq);
-  end isEnabled;
+  () := match bdae
+    local
+      VarData varData;
+    case BackendDAE.MAIN(varData = varData as VarData.VAR_DATA_SIM()) algorithm
+      (knowns, boundaryConditions, _, _) := getVariableCategories(VariablePointers.toList(varData.unknowns));
+      dumpVarList(knowns, "Variables of interest");
+      dumpVarList(boundaryConditions, "Boundary conditions");
+    then ();
+  end match;
+end main;
 
-  annotation(__OpenModelica_Interface="nbackend");
+public function isEnabled
+  output Boolean b = List.isMemberOnTrue("dataReconciliation", Flags.getConfigStringList(Flags.PRE_OPT_MODULES), stringEq)
+                  or List.isMemberOnTrue("dataReconciliation", Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD), stringEq);
+end isEnabled;
+
+protected function getVariableCategories
+  "knowns: uncertain = Uncertainty.refine
+   boundaryConditions: annotation(__OpenModelica_BoundaryCondition = true)
+   exactEquationVars: all others
+   unmeasured: uncertain = Uncertainty.propagate, can also be a boundary condition"
+  input list<Pointer<Variable>> vars;
+  output list<Pointer<Variable>> knowns = {};
+  output list<Pointer<Variable>> boundaryConditions = {};
+  output list<Pointer<Variable>> exactEquationVars = {};
+  output list<Pointer<Variable>> unmeasured = {};
+algorithm
+  for var in vars loop
+    if hasUncertainty(var, Uncertainty.REFINE) then
+      knowns := var :: knowns;
+    elseif isBoundaryCondition(var) then
+      boundaryConditions := var :: boundaryConditions;
+    else
+      exactEquationVars := var :: exactEquationVars;
+    end if;
+    if hasUncertainty(var, Uncertainty.PROPAGATE) then
+      unmeasured := var :: unmeasured;
+    end if;
+  end for;
+  knowns := listReverse(knowns);
+  boundaryConditions := listReverse(boundaryConditions);
+  exactEquationVars := listReverse(exactEquationVars);
+  unmeasured := listReverse(unmeasured);
+end getVariableCategories;
+
+protected function hasUncertainty
+  input Pointer<Variable> var_ptr;
+  input Uncertainty uncertainty;
+  output Boolean b;
+protected
+  Variable var = Pointer.access(var_ptr);
+algorithm
+  b := match BackendExtension.VariableAttributes.getUncertainty(var.backendinfo.attributes)
+    local
+      Uncertainty u;
+    case SOME(u) then u == uncertainty;
+    else false;
+  end match;
+end hasUncertainty;
+
+protected function isBoundaryCondition
+  input Pointer<Variable> var_ptr;
+  output Boolean b;
+protected
+  Variable var = Pointer.access(var_ptr);
+algorithm
+  b := SCodeUtil.commentHasBooleanNamedAnnotation(var.comment, "__OpenModelica_BoundaryCondition");
+end isBoundaryCondition;
+
+protected function dumpVarList
+  input list<Pointer<Variable>> vars;
+  input String heading;
+protected
+  Integer i = 1;
+algorithm
+  print(heading + " (" + intString(listLength(vars)) + ")\n========================================\n");
+  for var in vars loop
+    print(intString(i) + ": " + BVariable.pointerToString(var) + "\n");
+    i := i + 1;
+  end for;
+  print("\n\n");
+end dumpVarList;
+
+annotation(__OpenModelica_Interface="nbackend");
 end NBDataReconciliation;
