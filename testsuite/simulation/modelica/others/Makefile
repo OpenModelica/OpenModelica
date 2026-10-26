@@ -34,7 +34,6 @@ impureTest.mos \
 NegatedBooleanAlias.mos \
 NoLoadModel.mos \
 nonConstantIndex.mos \
-nonConstantParam.mos \
 ParameterCycle.mos \
 ParameterModel.mos \
 Pendulum.mos \

@@ -10,7 +10,6 @@ Connect6.mo \
 Connect7.mo \
 Connect8.mo \
 Connect9.mo \
-Connect12.mo \
 Connect13.mo \
 Connect14.mo \
 Connect15.mo \
