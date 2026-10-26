@@ -1,6 +1,6 @@
 // name: RecordNonPublic
 // keywords: record
-// status: correct
+// status: incorrect
 //
 // Tests the declaration and instantiation of a record
 // that has non-public components
@@ -14,18 +14,14 @@ end TestRecord;
 
 model RecordNonPublic
   TestRecord tr;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RecordNonPublic;
 
 // Result:
-// function TestRecord "Automatically generated record constructor for TestRecord"
-//   protected Integer i;
-//   output TestRecord res;
-// end TestRecord;
+// Error processing file: RecordNonPublic.mo
+// [flattening/modelica/records/RecordNonPublic.mo:12:5-12:14:writable] Error: Protected sections are not allowed in record.
 //
-// class RecordNonPublic
-//   protected Integer tr.i;
-// end RecordNonPublic;
-// Warning: Protected record member i has no binding and is not modifiable by a record constructor.
+// # Error encountered! Exiting...
+// # Please check the error message and the flags.
 //
+// Execution failed!
 // endResult
