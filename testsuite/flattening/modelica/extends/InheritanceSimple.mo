@@ -6,16 +6,15 @@
 //
 
 class A
-  parameter Real a;
+  parameter Real a(fixed = false);
 end A;
 
 class B
   extends A;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end B;
 
 // Result:
 // class B
-//   parameter Real a;
+//   parameter Real a(fixed = false);
 // end B;
 // endResult

@@ -16,7 +16,7 @@ package oclTest
     localId[g] := oclGetLocalId(1);
   end Kernel;
   
-  function test
+  impure function test
     output Integer groupId[globalSizes];
     output Integer localId[globalSizes];
   protected
@@ -34,4 +34,13 @@ package oclTest
       groupId := p_groupId;
       localId := p_localId;
   end test;
+
+  model M
+    Integer groupId[globalSizes];
+    Integer localId[globalSizes];
+    Integer err = sum(abs(groupId - {div(i - 1, localSizes) + 1 for i in 1:globalSizes}))
+                + sum(abs(localId - {mod(i - 1, localSizes) + 1 for i in 1:globalSizes}));
+  equation
+    (groupId, localId) = test();
+  end M;
 end oclTest;

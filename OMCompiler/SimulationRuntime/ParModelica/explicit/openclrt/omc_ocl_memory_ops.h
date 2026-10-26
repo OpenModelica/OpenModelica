@@ -43,6 +43,10 @@
 
 #include "omc_ocl_common_header.h"
 
+#ifdef __cplusplus
+extern "C++" {
+#endif
+
 
 extern cl_command_queue device_comm_queue;
 extern cl_context  device_context;
@@ -88,5 +92,9 @@ void ocl_copy_device_to_device(cl_mem dev_src_array, cl_mem device_dest_array, s
 //copies a double array back to host
 void ocl_copy_back_to_host(cl_mem dev_output_array, void* dest_host_array, size_t elem_sze, int nr_of_elem);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

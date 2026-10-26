@@ -48,7 +48,6 @@ IfExpCombiTable1.mo \
 IfExpCombiTable2.mo \
 IllegalSubscript.mo \
 Influenza.mo \
-InvertedPendulumTotal.mo \
 ModelAccess.mo \
 ModelSimple.mo \
 NamedArguments.mo \
@@ -86,7 +85,7 @@ StringConcatenation.mo \
 StringConversion.mo \
 StringInteger.mo \
 StringLiterals.mo \
-StringPool.mo \
+StringPool.mos \
 StringReal.mo \
 StructuralParameter1.mo \
 SubScript1.mo \

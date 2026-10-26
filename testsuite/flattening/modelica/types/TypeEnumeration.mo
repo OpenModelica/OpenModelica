@@ -11,7 +11,6 @@ model TypeEnumeration
   Enum et;
 equation
   et = Enum.test3;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TypeEnumeration;
 
 // Result:

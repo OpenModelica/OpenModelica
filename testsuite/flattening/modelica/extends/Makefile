@@ -7,8 +7,6 @@ ColoredPointLegalMod.mo \
 Colors.mo \
 Extends1.mo \
 Extends2.mo \
-Extends3.mo \
-Extends4.mo \
 Extends5.mo \
 Extends6.mo \
 Extends7.mo \

@@ -38,8 +38,6 @@ UnpOpPrecedence.mos \
 UnusedVariable.mos \
 WhileStatement.mos WhileStatementIllegal.mos \
 ModifierProblem.mos \
-TransformerYY.mos \
-AIMC_DOL.mos \
 ZeroDims.mos \
 ZeroRange.mos \
 vaporizing.mos

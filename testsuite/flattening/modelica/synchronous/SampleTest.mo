@@ -11,7 +11,6 @@ equation
   x1 = sample(1.0);
   x2 = sample(1.1, c);
   y = x1 + x2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SampleTest;
 
 // Result:

@@ -2,7 +2,6 @@
 // keywords:  tearing, linear
 // status:    correct
 // teardown_command:  rm -f Tearing1
-// cflags: -d=-newInst
 //
 // Minimal Tearing for linear loop without states.
 

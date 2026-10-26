@@ -6703,60 +6703,6 @@ algorithm
   end match for e in inExpl);
 end elabVariablenames;
 
-public function getOptionalNamedArgExpList
-  input String name;
-  input list<Absyn.NamedArg> nargs;
-  output list<DAE.Exp> out;
-algorithm
-  out := matchcontinue nargs
-    local
-      list<Absyn.Exp> absynExpList;
-      String argName;
-      list<Absyn.NamedArg> rest;
-
-    case {} then {};
-
-    case Absyn.NAMEDARG(argName = argName, argValue = Absyn.ARRAY(arrayExp = absynExpList)) :: _
-      algorithm
-        true := stringEq(name, argName);
-      then
-        absynExpListToDaeExpList(absynExpList);
-
-    case _ :: rest
-      then getOptionalNamedArgExpList(name, rest);
-
-  end matchcontinue;
-end getOptionalNamedArgExpList;
-
-protected function absynExpListToDaeExpList
-  input list<Absyn.Exp> absynExpList;
-  output list<DAE.Exp> out;
-algorithm
-  out := match absynExpList
-    local
-      list<DAE.Exp> daeExpList;
-      list<Absyn.Exp> absynRest;
-      Absyn.ComponentRef absynCr;
-      Absyn.Path absynPath;
-      DAE.ComponentRef daeCr;
-      DAE.Exp crefExp;
-
-    case {} then {};
-
-    case Absyn.CREF(componentRef = absynCr) :: absynRest
-      algorithm
-        absynPath := AbsynUtil.crefToPath(absynCr);
-        daeCr := ComponentReference.pathToCref(absynPath);
-        crefExp := Expression.crefExp(daeCr);
-        daeExpList := absynExpListToDaeExpList(absynRest);
-      then
-        crefExp :: daeExpList;
-
-    case _ :: absynRest
-      then absynExpListToDaeExpList(absynRest);
-  end match;
-end absynExpListToDaeExpList;
-
 public function getOptionalNamedArg
   "This function is used to 'elaborate' interactive functions' optional parameters,
    e.g. simulate(A.b, startTime=1), startTime is an optional parameter."

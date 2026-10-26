@@ -9,7 +9,6 @@ model Array12
   parameter Real a[2,2]={{2,1},{1.2,2.3}};
   parameter Real b[3]={1,2.4,5};
   parameter Real c[2,2]=[1,3.0;4,5.2];
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Array12;
 // Result:
 // class Array12

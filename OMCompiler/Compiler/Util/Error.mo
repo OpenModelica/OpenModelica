@@ -1008,12 +1008,6 @@ public constant ErrorTypes.Message NON_STANDARD_OPERATOR_CLASS_DIRECTORY = Error
   "classDirectory() is a non-standard operator that was replaced by Modelica.Utilities.Files.loadResource(uri) before it was added to the language specification.");
 public constant ErrorTypes.Message PACKAGE_DUPLICATE_CHILDREN = ErrorTypes.MESSAGE(540, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "The same class is defined in multiple files: %s.");
-public constant ErrorTypes.Message INTEGER_ENUMERATION_CONVERSION_WARNING = ErrorTypes.MESSAGE(541, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
-  "Integer (%s) to enumeration (%s) conversion is not valid Modelica, please use enumeration constant (%s) instead.");
-public constant ErrorTypes.Message INTEGER_ENUMERATION_OUT_OF_RANGE = ErrorTypes.MESSAGE(542, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  "The Integer to %s conversion failed, as the Integer %s is outside the range (1, ..., %s) of values corresponding to enumeration constants.");
-public constant ErrorTypes.Message INTEGER_TO_UNKNOWN_ENUMERATION = ErrorTypes.MESSAGE(543, ErrorTypes.TRANSLATION(), ErrorTypes.INTERNAL(),
-  "The Integer (%s) to enumeration conversion failed because information about the the enumeration type is missing.");
 public constant ErrorTypes.Message NORETCALL_INVALID_EXP = ErrorTypes.MESSAGE(544, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Expression %s is not a valid statement - only function calls are allowed.");
 public constant ErrorTypes.Message INVALID_FLAG_TYPE_STRINGS = ErrorTypes.MESSAGE(545, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
@@ -1373,6 +1367,8 @@ public constant ErrorTypes.Message FMU_EXPORT_FMI_LS_DAE_DRAFT = ErrorTypes.MESS
   "The Model Exchange FMU carries a DAE formulation as fmi-ls-dae %s, implemented against the draft of %s (commit %s). fmi-ls-dae is not a released layered standard yet, so an importer written against another revision of the draft may not read the manifest.");
 public constant ErrorTypes.Message FMU_EXPORT_WASM_FMI1 = ErrorTypes.MESSAGE(7029, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "The wasm FMU export does not serve the deprecated FMI 1.0. Ask for version=\"2.0\" or version=\"3.0\", or drop \"wasm\" from platforms to export a C FMU.");
+public constant ErrorTypes.Message FMU_EXPORT_WASM_FMI2_AS_FMI3 = ErrorTypes.MESSAGE(7033, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  "No native platform was selected for the wasm FMU, so it is exported as FMI 3.0 (fmi-ls-wasm) instead of FMI 2.0. An FMI 2.0 FMU needs a native platform to load the wasm binary.");
 
 constant SourceInfo dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
 

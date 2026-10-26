@@ -682,13 +682,13 @@ package Modelica "Modelica Standard Library"
 
        block Trapezoid "Generate trapezoidal signals of type Real"
           parameter Real amplitude[:]={1} "Amplitudes of trapezoids";
-          parameter SI.Time rising[:](final min=0)={0}
+          parameter SI.Time rising[:](each final min=0)={0}
         "Rising durations of trapezoids";
-          parameter SI.Time width[:](final min=0)={0.5}
+          parameter SI.Time width[:](each final min=0)={0.5}
         "Width durations of trapezoids";
-          parameter SI.Time falling[:](final min=0)={0}
+          parameter SI.Time falling[:](each final min=0)={0}
         "Falling durations of trapezoids";
-          parameter SI.Time period[:](final min=Modelica.Constants.small)={1}
+          parameter SI.Time period[:](each final min=Modelica.Constants.small)={1}
         "Time for one period";
           parameter Integer nperiod[:]={-1}
         "Number of periods (< 0 means infinite number of periods)";
@@ -1209,7 +1209,6 @@ model BS12
 
 equation
   connect(trapezoid1.outPort,der1.inPort) annotation(Line(visible=true,points={{-25.04,14.7},{-8.01,14.4}}));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BS12;
 // class BS12
 // parameter Integer trapezoid1.nout(min = 1) = 1 "Number of outputs";
@@ -1256,10 +1255,6 @@ end BS12;
 // end BS12;
 // Result:
 // class BS12
-//   parameter Integer trapezoid1.nout(min = 1) = 1 "Number of outputs";
-//   parameter Integer trapezoid1.outPort.n = trapezoid1.nout "Dimension of signal vector";
-//   Real trapezoid1.outPort.signal[1] "Real output signals";
-//   Real trapezoid1.y[1];
 //   parameter Real trapezoid1.amplitude[1] = 1.0 "Amplitudes of trapezoids";
 //   parameter Real trapezoid1.rising[1](quantity = "Time", unit = "s", min = 0.0) = 0.0 "Rising durations of trapezoids";
 //   parameter Real trapezoid1.width[1](quantity = "Time", unit = "s", min = 0.0) = 0.5 "Width durations of trapezoids";
@@ -1268,6 +1263,10 @@ end BS12;
 //   parameter Integer trapezoid1.nperiod[1] = -1 "Number of periods (< 0 means infinite number of periods)";
 //   parameter Real trapezoid1.offset[1] = 0.0 "Offsets of output signals";
 //   parameter Real trapezoid1.startTime[1](quantity = "Time", unit = "s") = 0.0 "Output = offset for time < startTime";
+//   final parameter Integer trapezoid1.nout(min = 1) = 1 "Number of outputs";
+//   final parameter Integer trapezoid1.outPort.n = 1 "Dimension of signal vector";
+//   Real trapezoid1.outPort.signal[1] "Real output signals";
+//   Real trapezoid1.y[1];
 //   protected parameter Real trapezoid1.p_amplitude[1] = trapezoid1.amplitude[1];
 //   protected parameter Real trapezoid1.T_rising[1](quantity = "Time", unit = "s") = trapezoid1.rising[1] "End time of rising phase within one period";
 //   protected parameter Real trapezoid1.T_width[1](quantity = "Time", unit = "s") = trapezoid1.T_rising[1] + trapezoid1.width[1] "End time of width phase within one period";
@@ -1278,14 +1277,15 @@ end BS12;
 //   protected Real trapezoid1.T0[1](quantity = "Time", unit = "s", start = trapezoid1.p_startTime[1]) "Start time of current period";
 //   protected Integer trapezoid1.counter[1](start = trapezoid1.nperiod[1]) "Period counter";
 //   protected Integer trapezoid1.counter2[1](start = trapezoid1.nperiod[1]);
-//   parameter Integer der1.n = 1 "Number of inputs (= number of outputs)";
-//   parameter Integer der1.inPort.n = der1.n "Dimension of signal vector";
+//   final parameter Integer der1.n = 1 "Number of inputs (= number of outputs)";
+//   final parameter Integer der1.inPort.n = 1 "Dimension of signal vector";
 //   Real der1.inPort.signal[1] "Real input signals";
-//   parameter Integer der1.outPort.n = der1.n "Dimension of signal vector";
+//   final parameter Integer der1.outPort.n = 1 "Dimension of signal vector";
 //   Real der1.outPort.signal[1] "Real output signals";
 //   Real der1.y[1] "Output signals";
 //   protected Real der1.u[1] "Input signals";
 // equation
+//   trapezoid1.outPort.signal[1] = der1.inPort.signal[1];
 //   when pre(trapezoid1.counter2[1]) <> 0 and sample(trapezoid1.p_startTime[1], trapezoid1.p_period[1]) then
 //     trapezoid1.T0[1] = time;
 //     trapezoid1.counter2[1] = pre(trapezoid1.counter[1]);
@@ -1293,15 +1293,8 @@ end BS12;
 //   end when;
 //   trapezoid1.outPort.signal[1] = trapezoid1.p_offset[1] + (if time < trapezoid1.p_startTime[1] or trapezoid1.counter2[1] == 0 or time >= trapezoid1.T0[1] + trapezoid1.T_falling[1] then 0.0 else if time < trapezoid1.T0[1] + trapezoid1.T_rising[1] then (time - trapezoid1.T0[1]) * trapezoid1.p_amplitude[1] / trapezoid1.T_rising[1] else if time < trapezoid1.T0[1] + trapezoid1.T_width[1] then trapezoid1.p_amplitude[1] else (trapezoid1.T0[1] + trapezoid1.T_falling[1] - time) * trapezoid1.p_amplitude[1] / (trapezoid1.T_falling[1] - trapezoid1.T_width[1]));
 //   trapezoid1.y[1] = trapezoid1.outPort.signal[1];
-//   der1.u = {der1.inPort.signal[1]};
+//   der1.u = der1.inPort.signal;
 //   der1.y[1] = der(der1.u[1]);
 //   der1.y[1] = der1.outPort.signal[1];
-//   assert(trapezoid1.outPort.n == der1.inPort.n, "automatically generated from connect");
-//   der1.inPort.signal[1] = trapezoid1.outPort.signal[1];
 // end BS12;
-// [flattening/modelica/msl/BS12.mo:685:45-685:50:writable] Warning: Non-array modification '0' for array component, possibly due to missing 'each'.
-// [flattening/modelica/msl/BS12.mo:687:44-687:49:writable] Warning: Non-array modification '0' for array component, possibly due to missing 'each'.
-// [flattening/modelica/msl/BS12.mo:689:46-689:51:writable] Warning: Non-array modification '0' for array component, possibly due to missing 'each'.
-// [flattening/modelica/msl/BS12.mo:691:45-691:73:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
-//
 // endResult

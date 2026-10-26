@@ -23,5 +23,4 @@ model FunctionIndirectRecursion
   Integer y1;
 equation
   y1 = facIndirect(x);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionIndirectRecursion;

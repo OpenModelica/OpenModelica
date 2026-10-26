@@ -437,7 +437,7 @@ protected
     SymbolicStarts sym_elems = {};
     Option<list<Expression>> sym_subs;
     Expression target_elem;
-    Type target_ty;
+    Type target_ty, source_ty;
   algorithm
     () := match eqn
       case Equation.FOR_EQUATION(body = {Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cref1), rhs = Expression.CREF(cref = cref2))}) algorithm
@@ -455,6 +455,7 @@ protected
           else algorithm return; then (cref1, cref2);
         end match;
         SOME(start_exp) := BVariable.getStartAttribute(BVariable.getVarPointer(source, sourceInfo()));
+        source_ty := Variable.typeOf(Pointer.access(BVariable.getVarPointer(source, sourceInfo())));
 
         // all combinations of the iterator values (only literal ranges)
         (names, ranges, maps) := Iterator.getFrames(eqn.iter);
@@ -473,11 +474,8 @@ protected
           repl := UnorderedMap.fromLists(names, list(Expression.INTEGER(v) for v in listReverse(vs)), ComponentRef.hash, ComponentRef.isEqual);
           // start value of the source element
           elem_exp := SimplifyExp.simplify(Expression.map(Expression.fromCref(source), function Replacements.applySimpleExp(replacements = repl)));
-          // the start value can have less dimensions than the variable, e.g. {1.0 for i in 1:2}
-          // for each start = 1.0 of x[2, 3]
           elem_exp := match elem_exp
-            case Expression.CREF() guard(listLength(ComponentRef.subscriptsAllFlat(elem_exp.cref)) <= Type.dimensionCount(Expression.typeOf(start_exp)))
-              then SimplifyExp.simplify(Expression.applySubscripts(ComponentRef.subscriptsAllFlat(elem_exp.cref), start_exp, true));
+            case Expression.CREF() then BVariable.startElement(ComponentRef.subscriptsAllFlat(elem_exp.cref), start_exp, source_ty);
             else Expression.EMPTY(Type.UNKNOWN());
           end match;
           if not Expression.isLiteral(elem_exp) then return; end if;
@@ -525,8 +523,8 @@ protected
           return;
         end if;
         SOME(start_exp) := BVariable.getStartAttribute(BVariable.getVarPointer(source, sourceInfo()));
-        elem_exp := SimplifyExp.simplify(Expression.applySubscripts(ComponentRef.subscriptsAllFlat(source), start_exp, true));
-        if not (Expression.isLiteral(elem_exp) or isParameterExpression(elem_exp)) then return; end if;
+        elem_exp := BVariable.startElement(ComponentRef.subscriptsAllFlat(source), start_exp, Variable.typeOf(Pointer.access(BVariable.getVarPointer(source, sourceInfo()))));
+        if Expression.isEmpty(elem_exp) or not (Expression.isLiteral(elem_exp) or isParameterExpression(elem_exp)) then return; end if;
         index := flatIndex(Expression.fromCref(target));
         if isSome(index) then
           target := ComponentRef.stripSubscriptsAll(target);

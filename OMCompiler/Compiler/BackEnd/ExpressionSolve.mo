@@ -157,6 +157,8 @@ algorithm
 
   // phi: aren't the types of e1 and e2 the same? Can we make the equation have a type?
   if (Types.isIntegerOrRealOrSubTypeOfEither(Expression.typeof(e1)) and Types.isIntegerOrRealOrSubTypeOfEither(Expression.typeof(e2))) then
+    e1 := inlineCallsWithRecordOfX(e1, varexp, SOME(shared.functionTree));
+    e2 := inlineCallsWithRecordOfX(e2, varexp, SOME(shared.functionTree));
     (e1, e2) := preprocessingSolve(e1, e2, varexp, NONE(), SOME(shared.functionTree), NONE(), 0,  false);
   end if;
 
@@ -528,6 +530,11 @@ protected
   Integer iter;
   Integer numSimplifed = 0 ;
 algorithm
+   if doInline then
+     x := inlineCallsWithRecordOfX(x, inExp3, functions);
+     y := inlineCallsWithRecordOfX(y, inExp3, functions);
+   end if;
+
    // split and sort
    (lhsX, lhsY) := preprocessingSolve5(x, inExp3,true);
    (rhsX, rhsY) := preprocessingSolve5(y, inExp3,true);
@@ -1375,6 +1382,64 @@ author: vitalij
    else (inExp, true, iT);
    end matchcontinue;
 end inlineCallX;
+
+protected function inlineCallsWithRecordOfX
+  "Inlines calls that take a record that X is a field of, e.g. f(r) when
+   solving for r.x, since X is not visible in the call otherwise."
+  input DAE.Exp inExp;
+  input DAE.Exp X;
+  input Option<AvlTreePathFunction.Tree> functions;
+  output DAE.Exp outExp;
+algorithm
+  (outExp, _) := Expression.traverseExpTopDown(inExp, inlineCallWithRecordOfX, (X, functions));
+end inlineCallsWithRecordOfX;
+
+protected function inlineCallWithRecordOfX
+  input DAE.Exp inExp;
+  input tuple<DAE.Exp, Option<AvlTreePathFunction.Tree>> inTpl;
+  output DAE.Exp outExp;
+  output Boolean cont;
+  output tuple<DAE.Exp, Option<AvlTreePathFunction.Tree>> outTpl = inTpl;
+protected
+  DAE.Exp X;
+  Option<AvlTreePathFunction.Tree> functions;
+  Boolean inlined;
+algorithm
+  (X, functions) := inTpl;
+  if Expression.isCall(inExp) and callHasRecordOfCref(inExp, X) then
+    (outExp, _, inlined) := Inline.forceInlineExp(inExp, (functions, {DAE.NORM_INLINE(), DAE.DEFAULT_INLINE()}), DAE.emptyElementSource, Ceval.cevalSimpleWithFunctionTreeReturnExp);
+    cont := not inlined;
+  else
+    outExp := inExp;
+    cont := true;
+  end if;
+end inlineCallWithRecordOfX;
+
+protected function callHasRecordOfCref
+  "Returns true if an argument of the call contains a record cref that X is a
+   field of, e.g. f(r) when solving for r.x."
+  input DAE.Exp inCall;
+  input DAE.Exp X;
+  output Boolean res = false;
+protected
+  DAE.ComponentRef cr;
+  list<DAE.Exp> args;
+algorithm
+  if not Expression.isCref(X) then
+    return;
+  end if;
+  cr := Expression.expCref(X);
+  DAE.CALL(expLst = args) := inCall;
+  for e in args loop
+    for arg_cr in Expression.extractCrefsFromExp(e) loop
+      if ComponentReferenceBasics.crefPrefixOf(arg_cr, cr) and
+         Types.isRecord(Types.arrayElementType(ComponentReference.crefLastType(arg_cr))) then
+        res := true;
+        return;
+      end if;
+    end for;
+  end for;
+end callHasRecordOfCref;
 
 protected function preprocessingSolveTmpVars
 "

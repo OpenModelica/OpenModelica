@@ -848,7 +848,7 @@ protected
     int_mul = DAE.MUL(DAE.T_INTEGER_DEFAULT),
     real_mul = DAE.MUL(DAE.T_REAL_DEFAULT),
     real_div = DAE.DIV(DAE.T_REAL_DEFAULT),
-    real_pow = DAE.POW(DAE.T_REAL_DEFAULT),
+    real_pow = DAE.POW(DAE.T_REAL_DEFAULT, true),
     int_mul_sp = DAE.MUL_SCALAR_PRODUCT(DAE.T_INTEGER_DEFAULT),
     real_mul_sp = DAE.MUL_SCALAR_PRODUCT(DAE.T_REAL_DEFAULT),
     int_mul_mp = DAE.MUL_MATRIX_PRODUCT(DAE.T_INTEGER_DEFAULT),
@@ -969,14 +969,14 @@ algorithm
 
     case Absyn.POW_EW()
       algorithm
-        realarrs := operatorReturn(DAE.POW_ARR2(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()})),
+        realarrs := operatorReturn(DAE.POW_ARR2(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}), true),
           realarrtypes, realarrtypes, realarrtypes);
         scalars := {
-          (DAE.POW(DAE.T_REAL_DEFAULT),
+          (DAE.POW(DAE.T_REAL_DEFAULT, true),
           {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT)};
-        realscalararrs := operatorReturn(DAE.POW_SCALAR_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()})),
+        realscalararrs := operatorReturn(DAE.POW_SCALAR_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}), true),
           realtypes, realarrtypes, realarrtypes);
-        realarrsscalar := operatorReturn(DAE.POW_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()})),
+        realarrsscalar := operatorReturn(DAE.POW_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}), true),
           realarrtypes, realtypes, realarrtypes);
         types := List.flatten({scalars,realscalararrs,
           realarrsscalar,realarrs});

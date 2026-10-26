@@ -7,7 +7,6 @@
 
 class ClassA
   parameter Real r1;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ClassA;
 
 class ModifierClass = ClassA(r1 = 4711.0);

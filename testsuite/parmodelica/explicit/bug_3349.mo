@@ -13,7 +13,7 @@ package ParTmp
     end for;
   end f;
   
-  function test
+  impure function test
     input Real d;
     output Real result[arrayCnt];
   protected
@@ -28,5 +28,9 @@ package ParTmp
     pResult := f(pTmp);
     result := pResult;
   end test;
-end ParTmp;
 
+  model M
+    Real x[arrayCnt] = test(4);
+    Real err = max(abs(x - {8*i for i in 1:arrayCnt}));
+  end M;
+end ParTmp;

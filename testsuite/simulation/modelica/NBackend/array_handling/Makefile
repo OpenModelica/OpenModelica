@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+nlsArrayElementNominal.mos \
 reductionSkips.mos \
 nestedForConnectRange.mos \
 sparsityMatrixResidual.mos \
@@ -97,8 +98,10 @@ BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder4_Resizable.mos\
 BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder_Resizable.mos\
 BenchmarksForResizeableArrays.Resizable.FiltersInSeries_Resizable.mos \
 arrayStartSlice.mos \
+componentArraySlicedStart.mos \
 resizableConnectDeleted.mos \
 EmptyArrayInComponentArray.mos \
+sparsityRowsArrayComponents.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

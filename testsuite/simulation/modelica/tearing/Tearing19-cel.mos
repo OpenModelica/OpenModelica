@@ -1,7 +1,6 @@
 // name:      Tearing19-cel-adv
 // keywords:  tearing
 // status:    correct
-// cflags: -d=-newInst
 //
 // -lv=-LOG_ASSERT: log() just above 1 amplifies a one-ulp difference, so which
 // trial points the Newton damping loop rejects is not reproducible across

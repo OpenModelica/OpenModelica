@@ -28,5 +28,4 @@ class myTanCall
 equation
   t = myTan(1.0);
   t1 = addTen(t);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end myTanCall;

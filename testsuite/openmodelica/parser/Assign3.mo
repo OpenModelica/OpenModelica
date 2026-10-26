@@ -6,7 +6,6 @@
 model Assign3
 algorithm
   (x,y,z) := res;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Assign3;
 
 // Result:

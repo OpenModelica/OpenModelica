@@ -157,17 +157,12 @@ openmodelica_frontend/src/FGraph.rs
 openmodelica_frontend/src/FGraphBuild.rs
 openmodelica_frontend/src/FGraphBuildEnv.rs
 openmodelica_frontend/src/FGraphDump.rs
-openmodelica_frontend/src/FHashTableCrToUnit.rs
-openmodelica_frontend/src/FHashTableStringToUnit.rs
-openmodelica_frontend/src/FHashTableUnitToString.rs
 openmodelica_frontend/src/FInst.rs
 openmodelica_frontend/src/FLookup.rs
 openmodelica_frontend/src/FMod.rs
 openmodelica_frontend/src/FNode.rs
 openmodelica_frontend/src/FResolve.rs
 openmodelica_frontend/src/FTraverse.rs
-openmodelica_frontend/src/FUnit.rs
-openmodelica_frontend/src/FUnitCheck.rs
 openmodelica_frontend/src/FVisit.rs
 openmodelica_frontend/src/Figaro.rs
 openmodelica_frontend/src/HashSet.rs

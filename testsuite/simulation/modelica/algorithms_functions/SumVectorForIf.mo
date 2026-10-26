@@ -19,7 +19,6 @@ algorithm
       sum := sum - v[i];
     end if;
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SumVector;
 
 // class SumVector

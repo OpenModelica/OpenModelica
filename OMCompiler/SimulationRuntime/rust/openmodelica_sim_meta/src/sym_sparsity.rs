@@ -163,8 +163,9 @@ impl SymPattern {
                 };
                 for sc in &row.solved {
                     let sc = bind(sc, &row_vars)?;
-                    // A trailing whole dimension of a looped residual is the loop itself.
-                    let iter_row = !iters.is_empty() && sc.dims.last().is_some_and(|(_, p)| matches!(p, Pos::All));
+                    // A whole looped residual is the loop itself, unless the iterators select its element.
+                    let iter_row =
+                        !iters.is_empty() && !sc.dims.is_empty() && sc.dims.iter().all(|(_, p)| matches!(p, Pos::All));
                     let sc_offs = match iter_row {
                         true => vec![sc.base + flat],
                         false => sc.offsets(),
@@ -447,5 +448,41 @@ mod tests {
         put(&mut b, &Some(p.clone()));
         let mut pos = 0;
         assert_eq!(get(&b, &mut pos).unwrap(), Some(p));
+    }
+
+    #[test]
+    fn component_array_rows() {
+        // der(c[i].x[:]) depends on c[i].x[:] for i in 1:N, x[3].
+        let n = Sz::param(0);
+        let var = SymVar {
+            base: Sz::lit(0),
+            dims: vec![n.clone(), Sz::lit(3)],
+        };
+        let elem = SymRef {
+            var: 0,
+            subs: vec![
+                SymSub::Index(Affine {
+                    c: Sz::lit(0),
+                    k: vec![1],
+                }),
+                SymSub::All,
+            ],
+        };
+        let p = SymPattern {
+            n: Sz::lit(6),
+            rows_vars: vec![var.clone()],
+            cols_vars: vec![var],
+            rows: vec![SymRow {
+                iters: vec![SymIter {
+                    start: Sz::lit(1),
+                    step: 1,
+                    size: n,
+                }],
+                solved: vec![elem.clone()],
+                deps: vec![(elem, false)],
+            }],
+        };
+        let cols = p.expand(&[2]).unwrap();
+        assert_eq!(cols, [vec![vec![0, 1, 2]; 3], vec![vec![3, 4, 5]; 3]].concat());
     }
 }

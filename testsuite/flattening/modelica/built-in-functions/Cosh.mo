@@ -9,7 +9,6 @@ model Cosh
   Real r;
 equation
   r = cosh(45);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Cosh;
 
 // Result:

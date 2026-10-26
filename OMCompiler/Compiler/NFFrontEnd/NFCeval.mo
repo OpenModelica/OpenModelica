@@ -910,6 +910,7 @@ function evalRangeReal
   output list<Expression> result;
 protected
   Integer steps;
+  Real last;
 algorithm
   steps := Util.realRangeSize(start, step, stop);
 
@@ -920,7 +921,8 @@ algorithm
   elseif steps == 1 then
     result := {Expression.REAL(start)};
   else
-    result := {Expression.REAL(stop)};
+    last := start + (steps - 1) * step;
+    result := {Expression.REAL(if abs(stop - last) < 1e-10 * abs(step) then stop else last)};
     for i in steps-2:-1:1 loop
       result := Expression.REAL(start + i * step) :: result;
     end for;
@@ -971,7 +973,7 @@ algorithm
     case Op.SUB then evalBinarySub(exp1, exp2);
     case Op.MUL then evalBinaryMul(exp1, exp2);
     case Op.DIV then evalBinaryDiv(exp1, exp2, target);
-    case Op.POW then evalBinaryPow(exp1, exp2, target);
+    case Op.POW then evalBinaryPow(exp1, exp2, op.integerRHS, target);
     case Op.ADD_EW then evalBinaryAdd(exp1, exp2);
     case Op.SUB_EW then evalBinarySub(exp1, exp2);
     case Op.MUL_EW then evalBinaryMul(exp1, exp2);
@@ -989,8 +991,8 @@ algorithm
       then evalBinaryScalarArray(exp1, exp2, function evalBinaryDiv(target = target));
     case Op.DIV_ARRAY_SCALAR
       then evalBinaryArrayScalar(exp1, exp2, function evalBinaryDiv(target = target));
-    case Op.POW_SCALAR_ARRAY then evalBinaryScalarArray(exp1, exp2, function evalBinaryPow(target = target));
-    case Op.POW_ARRAY_SCALAR then evalBinaryArrayScalar(exp1, exp2, function evalBinaryPow(target = target));
+    case Op.POW_SCALAR_ARRAY then evalBinaryScalarArray(exp1, exp2, function evalBinaryPow(integerRHS = op.integerRHS, target = target));
+    case Op.POW_ARRAY_SCALAR then evalBinaryArrayScalar(exp1, exp2, function evalBinaryPow(integerRHS = op.integerRHS, target = target));
     case Op.POW_MATRIX then evalBinaryPowMatrix(exp1, exp2);
     else
       algorithm
@@ -1279,12 +1281,13 @@ end evalMultaryMulDiv;
 function evalBinaryPow
   input Expression exp1;
   input Expression exp2;
+  input Boolean integerRHS;
   input EvalTarget target;
   output Expression exp;
 algorithm
   exp := match (exp1, exp2)
     case (Expression.REAL(), Expression.REAL())
-      guard exp1.value < 0 and realInt(exp2.value) <> exp2.value
+      guard exp1.value < 0 and not integerRHS
       algorithm
         if EvalTarget.hasInfo(target) then
           Error.addSourceMessage(Error.INVALID_NEGATIVE_POW,
@@ -1300,7 +1303,7 @@ algorithm
     case (Expression.ARRAY(), Expression.ARRAY())
       guard arrayLength(exp1.elements) == arrayLength(exp2.elements)
       then Expression.makeArray(exp1.ty,
-        Array.threadMap(exp1.elements, exp2.elements, function evalBinaryPow(target = target)),
+        Array.threadMap(exp1.elements, exp2.elements, function evalBinaryPow(integerRHS = integerRHS, target = target)),
         literal = true);
 
     else
@@ -2104,7 +2107,7 @@ algorithm
     case "Integer" then evalBuiltinIntegerEnum(listHead(args));
     case "log10" then evalBuiltinLog10(listHead(args), target);
     case "log" then evalBuiltinLog(listHead(args), target);
-    case "matrix" then evalBuiltinMatrix(listHead(args));
+    case "matrix" then evalBuiltinMatrix(listHead(args), target);
     case "max" then evalBuiltinMax(args, fn);
     case "min" then evalBuiltinMin(args, fn);
     case "mod" then evalBuiltinMod(args, target);
@@ -2542,12 +2545,14 @@ end evalBuiltinLog;
 
 function evalBuiltinMatrix
   input Expression arg;
+  input EvalTarget target;
   output Expression result;
 algorithm
   result := match arg
     local
-      Integer dim_count;
+      Integer dim_count, i;
       Dimension dim1, dim2;
+      list<Dimension> dims;
       Type ty;
       array<Expression> arr;
 
@@ -2560,7 +2565,19 @@ algorithm
         elseif dim_count == 2 then
           result := arg;
         else
-          dim1 :: dim2 :: _ := Type.arrayDims(ty);
+          dim1 :: dim2 :: dims := Type.arrayDims(ty);
+          i := 3;
+
+          for dim in dims loop
+            if Dimension.size(dim) <> 1 then
+              Error.addSourceMessage(Error.INVALID_ARRAY_DIM_IN_CONVERSION_OP,
+                {String(i), "matrix", "1", Dimension.toString(dim)}, EvalTarget.getInfo(target));
+              fail();
+            end if;
+
+            i := i + 1;
+          end for;
+
           ty := Type.liftArrayLeft(Type.arrayElementType(ty), dim2);
           arr := Array.map(arg.elements, function evalBuiltinMatrix2(ty = ty));
           ty := Type.liftArrayLeft(ty, dim1);

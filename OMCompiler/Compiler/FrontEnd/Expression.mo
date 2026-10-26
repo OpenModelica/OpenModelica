@@ -1177,7 +1177,7 @@ algorithm
     case DAE.SUB() then DAE.SUB(inType);
     case DAE.MUL() then DAE.MUL(inType);
     case DAE.DIV() then DAE.DIV(inType);
-    case DAE.POW() then DAE.POW(inType);
+    case DAE.POW() then DAE.POW(inType, inOp.integerRHS);
     case DAE.UMINUS() then DAE.UMINUS(inType);
     case DAE.UMINUS_ARR() then DAE.UMINUS_ARR(inType);
     case DAE.ADD_ARR() then DAE.ADD_ARR(inType);
@@ -1191,10 +1191,10 @@ algorithm
     case DAE.MUL_MATRIX_PRODUCT() then DAE.MUL_MATRIX_PRODUCT(inType);
     case DAE.DIV_ARRAY_SCALAR() then DAE.DIV_ARRAY_SCALAR(inType);
     case DAE.DIV_SCALAR_ARRAY() then DAE.DIV_SCALAR_ARRAY(inType);
-    case DAE.POW_ARRAY_SCALAR() then DAE.POW_ARRAY_SCALAR(inType);
-    case DAE.POW_SCALAR_ARRAY() then DAE.POW_SCALAR_ARRAY(inType);
+    case DAE.POW_ARRAY_SCALAR() then DAE.POW_ARRAY_SCALAR(inType, inOp.integerRHS);
+    case DAE.POW_SCALAR_ARRAY() then DAE.POW_SCALAR_ARRAY(inType, inOp.integerRHS);
     case DAE.POW_ARR() then DAE.POW_ARR(inType);
-    case DAE.POW_ARR2() then DAE.POW_ARR2(inType);
+    case DAE.POW_ARR2() then DAE.POW_ARR2(inType, inOp.integerRHS);
     case DAE.AND() then DAE.AND(inType);
     case DAE.OR() then DAE.OR(inType);
     case DAE.NOT() then DAE.NOT(inType);
@@ -1269,8 +1269,8 @@ algorithm
     case DAE.SUB_SCALAR_ARRAY() then DAE.SUB(inType);
     case DAE.DIV_ARRAY_SCALAR() then DAE.DIV(inType);
     case DAE.DIV_SCALAR_ARRAY() then DAE.DIV(inType);
-    case DAE.POW_ARRAY_SCALAR() then DAE.POW(inType);
-    case DAE.POW_SCALAR_ARRAY() then DAE.POW(inType);
+    case DAE.POW_ARRAY_SCALAR() then DAE.POW(inType, inOperator.integerRHS);
+    case DAE.POW_SCALAR_ARRAY() then DAE.POW(inType, inOperator.integerRHS);
     case DAE.UMINUS_ARR()       then DAE.UMINUS(inType);
     case DAE.ADD_ARR()          then DAE.ADD(inType);
     case DAE.SUB_ARR()          then DAE.SUB(inType);
@@ -2896,13 +2896,14 @@ algorithm
       Type tp2,tp;
       DAE.Exp e1,e2,e;
       DAE.Operator op;
+      Boolean int_rhs;
 
     // e1^e2 =>e1^(-e2)
-    case DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = tp),exp2 = e2)
+    case DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = tp, integerRHS = int_rhs),exp2 = e2)
       algorithm
         tp2 := typeof(e2);
       then
-        DAE.BINARY(e1,DAE.POW(tp),DAE.UNARY(DAE.UMINUS(tp2),e2));
+        DAE.BINARY(e1,DAE.POW(tp, int_rhs),DAE.UNARY(DAE.UMINUS(tp2),e2));
 
     // e1 / e2 = e2 / e1
     case DAE.BINARY(exp1 = e1,operator = op as DAE.DIV(),exp2 = e2)
@@ -3994,7 +3995,7 @@ algorithm
     else algorithm
       tp := typeof(e1);
       b := DAEUtil.expTypeArray(tp);
-      op := if b then DAE.POW_ARR(tp) else DAE.POW(tp);
+      op := if b then DAE.POW_ARR(tp) else DAE.POW(tp, true);
     then DAE.BINARY(e1,op,e2);
 
   end match;
@@ -4570,7 +4571,7 @@ algorithm
     algorithm
       (d, dims) := List.splitLast(iDims);
       explst := listToArray3(inList,d);
-      ty := liftArrayR(inType, DAE.DIM_INTEGER(listLength(explst)));
+      ty := liftArrayR(inType, d);
       oExp := listToArray2(explst,dims,ty);
     then
       ();
@@ -11165,7 +11166,7 @@ algorithm
     case Absyn.SUB() then DAE.SUB(ty);
     case Absyn.MUL() then DAE.MUL(ty);
     case Absyn.DIV() then DAE.DIV(ty);
-    case Absyn.POW() then DAE.POW(ty);
+    case Absyn.POW() then DAE.POW(ty, false);
     case Absyn.UMINUS() then DAE.UMINUS(ty);
     case Absyn.AND() then DAE.AND(ty);
     case Absyn.OR() then DAE.OR(ty);
@@ -11527,6 +11528,7 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Type ty;
       DAE.Dimension id, jd;
+      DAE.Dimensions dims;
       Integer i, j;
       list<DAE.Exp> expl;
       DAE.Exp e;
@@ -11543,6 +11545,14 @@ algorithm
         expl := expandExpression(inExp, expandRecord = false);
         mat := makeMatrix(expl, j);
         e := DAE.MATRIX(ty, i, mat);
+      then
+        (e, true);
+
+    case DAE.CREF(ty=ty as DAE.T_ARRAY(dims=dims as _ :: _ :: _))
+      guard Types.dimensionsKnown(ty)
+      algorithm
+        expl := expandExpression(inExp, expandRecord = false);
+        e := if listEmpty(expl) then DAE.ARRAY(ty, true, expl) else listToArray(expl, dims);
       then
         (e, true);
 

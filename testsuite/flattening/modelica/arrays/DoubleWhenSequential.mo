@@ -16,7 +16,6 @@ algorithm
   when time <= 2 then
     close := false;
   end when;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DoubleWhenSequential;
 
 

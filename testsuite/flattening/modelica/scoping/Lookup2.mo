@@ -17,7 +17,6 @@ end Lookup2Package;
 
 model Lookup2
   extends Lookup2Package.B;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Lookup2;
 
 

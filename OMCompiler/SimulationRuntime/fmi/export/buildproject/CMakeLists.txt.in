@@ -481,10 +481,11 @@ if(${NEED_CVODE})
   message(STATUS "CVODE_DIRECTORY: ${CVODE_DIRECTORY}")
   # Static libraries resolve left to right: KLU's solver needs the sparse matrix
   # and SuiteSparse's KLU, and the SUNDIALS libraries all need sundials_core.
+  # Built with MSVC or clang-cl, SUNDIALS and SuiteSparse name them <name>_static.lib.
   foreach(_om_lib sundials_nvecserial sundials_cvode sundials_sunlinsolklu sundials_sunmatrixsparse
                   sundials_core klu amd colamd btf suitesparseconfig)
     string(TOUPPER "${_om_lib}_LIBRARY" _om_var)
-    find_library(${_om_var} ${_om_lib}
+    find_library(${_om_var} NAMES ${_om_lib} ${_om_lib}_static
                  PATHS ${CVODE_DIRECTORY}
                  NO_DEFAULT_PATH
                  NO_SYSTEM_ENVIRONMENT_PATH

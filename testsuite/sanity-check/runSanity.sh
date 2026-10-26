@@ -72,7 +72,7 @@ echo "simCodeTarget: $SIM_CODE_TARGET"
 
 mkdir -p "$WORKDIR/.sanity-check/$SIM_CODE_TARGET"
 pushd "$WORKDIR/.sanity-check/$SIM_CODE_TARGET" >/dev/null
-cp "$SCRIPT_DIR/testSanity.mos" .
+cp "$SCRIPT_DIR/testSanity.mos" "$SCRIPT_DIR/testSanityCvode.mos" .
 
 # Check that a source FMU declares the sources it ships, and ships the ones it declares.
 #
@@ -166,12 +166,14 @@ if [ "$SIM_CODE_TARGET" = "Cpp" ]; then
 else
   set -x # echo on
   "$OMC" --simCodeTarget="$SIM_CODE_TARGET" --linearizationDumpLanguage=matlab testSanity.mos
+  "$OMC" --simCodeTarget="$SIM_CODE_TARGET" testSanityCvode.mos
   run_model M
   run_model M -l=1.0
   set +x # echo off
   test -f linearized_model.m || { echo "Error: Expected file linearized_model.m not found"; exit 1; }
   test -f M.fmu || { echo "Error: Expected file M.fmu (FMI 2.0) not found"; exit 1; }
   test -f M_fmi3.fmu || { echo "Error: Expected file M_fmi3.fmu (FMI 3.0) not found"; exit 1; }
+  test -f M_cvode.fmu || { echo "Error: Expected file M_cvode.fmu (FMI 2.0 CS with CVODE) not found"; exit 1; }
   check_fmu_sources M.fmu
   check_fmu_sources M_fmi3.fmu
 fi

@@ -9,7 +9,6 @@ model ArrayAddition2
 equation
   der(Stock1) = Valve1 + Valve2;
   der(Stock2) = Valve1 - Valve2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayAddition2;
 
 // Result:

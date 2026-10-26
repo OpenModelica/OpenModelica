@@ -2,7 +2,6 @@
 // keywords:  minimal tearing
 // status:    correct
 // teardown_command:  rm -f Tearing3
-// cflags: -d=-newInst
 
 
 loadFile("Tearing3.mo"); getErrorString();

@@ -1102,8 +1102,15 @@ pub struct MetaVar {
     /// C's `time_unvarying`: a `Column` computed once during initialization
     /// (a literal parameter equation), which the `.mat` stores in `data_1`.
     pub unvarying: bool,
-    /// The literals of an enumeration variable (`ty` is `Integer`).
-    pub enumeration: Option<Vec<String>>,
+    /// The type of an enumeration variable (`ty` is `Integer`).
+    pub enumeration: Option<Enumeration>,
+}
+
+/// An enumeration type: value `k` is `literals[k - 1]`.
+#[derive(Clone, PartialEq, Debug)]
+pub struct Enumeration {
+    pub name: String,
+    pub literals: Vec<String>,
 }
 
 /// An entry of [`SimMeta::vars`] standing for the elements of an array, row-major:
@@ -1798,6 +1805,41 @@ pub struct NlsVars {
     pub init_diag: bool,
 }
 
+#[cfg(feature = "mat-writer")]
+impl SimMeta {
+    /// The `.mat` description of every signal, kept or not: the comment, the unit
+    /// and a differing display unit, and the type of a Boolean, Integer or
+    /// enumeration.
+    pub fn mat_descriptions(&self) -> Vec<String> {
+        self.vars
+            .iter()
+            .map(|v| {
+                let ty = match (v.ty, &v.enumeration) {
+                    (VarTy::Integer, Some(e)) => e.name.as_str(),
+                    (VarTy::Integer, None) => "Integer",
+                    (VarTy::Boolean, _) => "Boolean",
+                    _ => "",
+                };
+                // The C+Rust runtime's comment ends in ` [unit]`, wasm-jit's does not.
+                let with_unit = format!(" [{}]", v.unit);
+                let comment = v.comment.strip_suffix(with_unit.as_str()).unwrap_or(&v.comment);
+                openmodelica_mat_writer::description(comment, &v.unit, &v.display_unit, ty)
+            })
+            .collect()
+    }
+
+    /// The `.mat`'s `enumerations` entries: the types of the kept signals.
+    pub fn mat_enumerations(&self, keep: &[bool]) -> Vec<String> {
+        openmodelica_mat_writer::enumeration_entries(
+            self.vars
+                .iter()
+                .zip(keep)
+                .filter(|(_, k)| **k)
+                .filter_map(|(v, _)| v.enumeration.as_ref().map(|e| (e.name.as_str(), e.literals.as_slice()))),
+        )
+    }
+}
+
 impl SimMeta {
     pub fn cs_method(&self) -> &str {
         if self.cs_method.is_empty() {
@@ -2320,10 +2362,11 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         o.push(v.unvarying as u8);
         match &v.enumeration {
             None => o.push(0),
-            Some(literals) => {
+            Some(e) => {
                 o.push(1);
-                put_u32(&mut o, literals.len() as u32);
-                for l in literals {
+                put_str(&mut o, &e.name);
+                put_u32(&mut o, e.literals.len() as u32);
+                for l in &e.literals {
                     put_str(&mut o, l);
                 }
             }
@@ -2822,14 +2865,13 @@ impl<'a> Reader<'a> {
         l.has_old_real = self.u8()? != 0;
         Ok(l)
     }
-    fn enumeration(&mut self) -> Result<Option<Vec<String>>, &'static str> {
+    fn enumeration(&mut self) -> Result<Option<Enumeration>, &'static str> {
         if self.u8()? == 0 {
             return Ok(None);
         }
-        (0..self.u32()?)
-            .map(|_| self.string())
-            .collect::<Result<Vec<_>, _>>()
-            .map(Some)
+        let name = self.string()?;
+        let literals = (0..self.u32()?).map(|_| self.string()).collect::<Result<Vec<_>, _>>()?;
+        Ok(Some(Enumeration { name, literals }))
     }
     fn kind(&mut self) -> Result<MetaKind, &'static str> {
         Ok(match self.u8()? {
@@ -3827,9 +3869,19 @@ mod tests {
         assert_eq!(els[4].unit, "m");
     }
 
+    fn with_enumeration(mut m: SimMeta) -> SimMeta {
+        let n = m.vars.iter_mut().find(|v| v.name == "n").unwrap();
+        n.ty = VarTy::Integer;
+        n.enumeration = Some(Enumeration {
+            name: "P.Mode".to_string(),
+            literals: vec!["Off".to_string(), "Heat".to_string()],
+        });
+        m
+    }
+
     #[test]
     fn round_trips() {
-        let m = sample();
+        let m = with_enumeration(sample());
         let blob = encode(&m);
         let back = decode(&blob).expect("decode");
         assert_eq!(m, back);
@@ -3846,6 +3898,38 @@ mod tests {
         assert_eq!(l.n_sens, 2);
         assert_eq!(l.n_row_total(), 6 + 1 + 1 + 2);
         assert_eq!(l.sens_col0(), 6 + 1 + 1);
+    }
+
+    #[cfg(feature = "mat-writer")]
+    #[test]
+    fn mat_descriptions_type_the_signals() {
+        let mut m = with_enumeration(sample());
+        m.vars[1].ty = VarTy::Boolean;
+        let d = m.mat_descriptions();
+        assert_eq!(d[0], "Time in s");
+        assert_eq!(d[1], "[:#(type=Boolean)]");
+        let n = m.vars.iter().position(|v| v.name == "n").unwrap();
+        assert_eq!(d[n], "[:#(type=P.Mode)]");
+        let mut keep = vec![true; m.vars.len()];
+        assert_eq!(m.mat_enumerations(&keep), ["P.Mode(Off, Heat)"]);
+        keep[n] = false;
+        assert!(m.mat_enumerations(&keep).is_empty());
+    }
+
+    /// The unit and a differing display unit go in the brackets, whether the
+    /// comment already ends in the unit (C+Rust) or not (wasm-jit).
+    #[test]
+    fn mat_descriptions_carry_the_units() {
+        let mut m = sample();
+        m.vars[1].ty = VarTy::Real;
+        m.vars[1].unit = "rad/s".to_string();
+        for comment in ["speed [rad/s]", "speed"] {
+            m.vars[1].comment = comment.to_string();
+            m.vars[1].display_unit = "rpm".to_string();
+            assert_eq!(m.mat_descriptions()[1], "speed [rad/s|rpm]", "{comment}");
+            m.vars[1].display_unit = String::new();
+            assert_eq!(m.mat_descriptions()[1], "speed [rad/s]", "{comment}");
+        }
     }
 
     /// The sample's `x` is protected and its alias `y` is not, so `x` rides along.

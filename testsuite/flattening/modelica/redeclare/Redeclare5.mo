@@ -19,7 +19,6 @@ end C;
 
 model D
   C c(redeclare BB d);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end D;
 
 

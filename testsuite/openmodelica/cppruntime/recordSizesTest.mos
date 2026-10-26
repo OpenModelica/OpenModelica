@@ -1,0 +1,57 @@
+// name:     recordSizesTest
+// keywords: cpp runtime, record, array #17177
+// status:   correct
+//
+// Records with the same members but different array sizes need their own
+// structs, since a Cpp record stores a fixed-size array member by value.
+
+loadString("
+model recordSizesTest
+  record State2
+    Real X[2];
+  end State2;
+
+  record State3
+    Real X[3];
+  end State3;
+
+  function make3
+    input Real t;
+    output State3 s;
+  algorithm
+    s.X := {t, 2*t, 3*t};
+  end make3;
+
+  function sum3
+    input State3 s;
+    output Real y = sum(s.X);
+  end sum3;
+
+  function sum2
+    input State2 s;
+    output Real y = sum(s.X);
+  end sum2;
+
+  Real y2 = sum2(State2({time, 2*time}));
+  Real y3 = sum3(make3(time));
+end recordSizesTest;
+"); getErrorString();
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+simulate(recordSizesTest); getErrorString();
+val(y2, 1.0);
+val(y3, 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "recordSizesTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'recordSizesTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 3.0
+// 6.0
+// endResult

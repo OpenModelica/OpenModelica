@@ -3,7 +3,6 @@
 // status: correct
 // cflags:
 // teardown_command: rm -rf initializationTests.homotopy4_solver* _initializationTests.homotopy4_solver* output.log
-// cflags: -d=-newInst
 //
 //
 

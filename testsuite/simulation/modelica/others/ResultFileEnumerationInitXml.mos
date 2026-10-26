@@ -1,0 +1,88 @@
+// name: ResultFileEnumerationInitXml
+// keywords: enumeration type init xml
+// status: correct
+// suite: cSources
+// teardown_command: rm -f ResultFileEnumerationInitXml_* ResultFileEnumerationInitXml ResultFileEnumerationInitXml.c ResultFileEnumerationInitXml.exe ResultFileEnumerationInitXml.libs ResultFileEnumerationInitXml.log ResultFileEnumerationInitXml.makefile ResultFileEnumerationInitXml.o output.log
+//
+// The init XML names the enumeration type of every enumeration variable and
+// lists the literals of each type once, for scalars and for an array kept
+// whole, so the runtime can type the signals of the result file (#14952).
+// Only the C targets write an init XML.
+
+loadString("
+model ResultFileEnumerationInitXml
+  type Mode = enumeration(Off \"switched off\", Heat, Cool);
+  type Level = enumeration(Low, High);
+  parameter Mode pm = Mode.Heat \"a parameter\";
+  Mode m(start = Mode.Off, fixed = true) \"a mode\";
+  Mode ma \"alias of m\";
+  Level lv[2] \"used only in an array\";
+  Boolean b \"a flag\";
+  Integer i \"a counter\";
+  Real x \"a real\";
+equation
+  when sample(0, 0.25) then
+    m = if pre(m) == Mode.Cool then Mode.Off else if pre(m) == Mode.Off then Mode.Heat else Mode.Cool;
+  end when;
+  ma = m;
+  lv = {if time < 0.5 then Level.Low else Level.High, Level.High};
+  b = time > 0.4;
+  i = integer(10*time);
+  x = time;
+end ResultFileEnumerationInitXml;
+"); getErrorString();
+
+buildModel(ResultFileEnumerationInitXml); getErrorString();
+regex(readFile("ResultFileEnumerationInitXml_init.xml"), "<TypeDefinitions>.*</TypeDefinitions>");
+regex(readFile("ResultFileEnumerationInitXml_init.xml"), "<Integer declaredType=\"Mode\" start=\"2\"");
+regex(readFile("ResultFileEnumerationInitXml_init.xml"), "<Integer declaredType=\"Level\"");
+
+setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
+buildModel(ResultFileEnumerationInitXml, fileNamePrefix="ResultFileEnumerationInitXml_a"); getErrorString();
+regex(readFile("ResultFileEnumerationInitXml_a_init.xml"), "<TypeDefinitions>.*</TypeDefinitions>");
+regex(readFile("ResultFileEnumerationInitXml_a_init.xml"), "<Dimension start=\"2\"/>[[:space:]]*<Integer declaredType=\"Level\"");
+
+// Result:
+// true
+// ""
+// {"ResultFileEnumerationInitXml", "ResultFileEnumerationInitXml_init.xml"}
+// ""
+// (1, {"<TypeDefinitions>
+//     <SimpleType name=\"Level\">
+//       <Enumeration>
+//         <Item name=\"Low\" value=\"1\"/>
+//         <Item name=\"High\" value=\"2\"/>
+//       </Enumeration>
+//     </SimpleType>
+//     <SimpleType name=\"Mode\">
+//       <Enumeration>
+//         <Item name=\"Off\" value=\"1\"/>
+//         <Item name=\"Heat\" value=\"2\"/>
+//         <Item name=\"Cool\" value=\"3\"/>
+//       </Enumeration>
+//     </SimpleType>
+//   </TypeDefinitions>"})
+// (1, {"<Integer declaredType=\"Mode\" start=\"2\""})
+// (1, {"<Integer declaredType=\"Level\""})
+// true
+// ""
+// {"ResultFileEnumerationInitXml_a", "ResultFileEnumerationInitXml_a_init.xml"}
+// ""
+// (1, {"<TypeDefinitions>
+//     <SimpleType name=\"Mode\">
+//       <Enumeration>
+//         <Item name=\"Off\" value=\"1\"/>
+//         <Item name=\"Heat\" value=\"2\"/>
+//         <Item name=\"Cool\" value=\"3\"/>
+//       </Enumeration>
+//     </SimpleType>
+//     <SimpleType name=\"Level\">
+//       <Enumeration>
+//         <Item name=\"Low\" value=\"1\"/>
+//         <Item name=\"High\" value=\"2\"/>
+//       </Enumeration>
+//     </SimpleType>
+//   </TypeDefinitions>"})
+// (1, {"<Dimension start=\"2\"/>
+//     <Integer declaredType=\"Level\""})
+// endResult

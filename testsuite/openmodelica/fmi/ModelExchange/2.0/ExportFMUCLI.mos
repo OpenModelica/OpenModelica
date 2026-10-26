@@ -3,7 +3,6 @@
 // status: correct
 // depends: ExportFMUCLI.mo
 // teardown_command: rm -rf ExportFMUCLI.fmu ExportFMUCLI_* export_fmu_test_*.mo export_fmu_output*.log ExportFMUCLI3.fmu ExportFMUCLI3_* ExportFMUCLI.log
-// cflags: -d=-newInst
 //
 // Tests the --export-fmu CLI option.
 

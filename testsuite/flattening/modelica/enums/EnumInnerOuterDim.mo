@@ -14,16 +14,15 @@ block Model1
 end Model1;
 
 block Model2
-  inner parameter Real[E] p1;
+  inner parameter Real[E] p1(each fixed = false);
   Model1 m1;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Model2;
 
 // Result:
 // class Model2
-//   parameter Real p1[E.A];
-//   parameter Real p1[E.B];
-//   parameter Real p1[E.C];
+//   parameter Real p1[E.A](fixed = false);
+//   parameter Real p1[E.B](fixed = false);
+//   parameter Real p1[E.C](fixed = false);
 //   parameter Real m1.p2[E.A] = p1[E.A];
 //   parameter Real m1.p2[E.B] = p1[E.B];
 //   parameter Real m1.p2[E.C] = p1[E.C];

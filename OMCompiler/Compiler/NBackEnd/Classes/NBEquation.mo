@@ -2320,11 +2320,11 @@ public
           Class cls;
 
         case SCALAR_EQUATION() algorithm
-          operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.ADD);
+          operator := Operator.makeAdd(Expression.typeOf(eqn.lhs));
         then Expression.MULTARY({eqn.rhs}, {eqn.lhs}, operator);
 
         case ARRAY_EQUATION()  algorithm
-          operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.ADD_EW);
+          operator := Operator.makeAddEW(Expression.typeOf(eqn.lhs));
         then Expression.MULTARY({eqn.rhs}, {eqn.lhs}, operator);
 
         case RECORD_EQUATION(ty = Type.COMPLEX()) algorithm
@@ -2341,7 +2341,7 @@ public
               fail();
             end if;
           end for;
-          operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.ADD);
+          operator := Operator.makeAdd(Expression.typeOf(eqn.lhs));
         then Expression.MULTARY({eqn.rhs}, {eqn.lhs}, operator);
 
         // returns innermost residual!
@@ -3142,7 +3142,7 @@ public
       (cref, exp)   := tpl;
       equality_exp  := Expression.RELATION(
         exp1      = Expression.fromCref(cref),
-        operator  = Operator.OPERATOR(ComponentRef.nodeType(cref), NFOperator.Op.NEQUAL),
+        operator  = Operator.makeNotEqual(ComponentRef.nodeType(cref)),
         exp2      = SimplifyExp.simplifyDump(exp, true, getInstanceName()),
         index     = -1
       );

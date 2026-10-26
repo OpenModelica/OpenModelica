@@ -1147,6 +1147,8 @@ protected
     list<Dimension> dims;
     Dimension dim1, dim2;
     Integer i, ndims;
+    list<Subscript> subs;
+    Boolean known = true;
     InstContext.Type arg_context = InstContext.set(context, NFInstContext.SUBEXPRESSION);
   algorithm
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
@@ -1168,22 +1170,33 @@ protected
       // matrix(A) where A is a matrix just returns A.
       callExp := arg;
     else
-      // matrix requires all but the first two dimensions to have size 1.
+      // matrix requires all but the first two dimensions to have size 1, so
+      // matrix(A) is A[:, :, 1, ..., 1]. Sizes that are not known yet are
+      // checked by the call at runtime.
       dim1 :: dim2 :: dims := dims;
       i := 3;
+      subs := {};
 
       for dim in dims loop
-        if Dimension.isKnown(dim) and Dimension.size(dim) > 1 then
+        if not Dimension.isKnown(dim) then
+          known := false;
+        elseif Dimension.size(dim) <> 1 then
           Error.addSourceMessageAndFail(Error.INVALID_ARRAY_DIM_IN_CONVERSION_OP,
             {String(i), "matrix", "1", Dimension.toString(dim)}, info);
         end if;
 
+        subs := Subscript.INDEX(Expression.INTEGER(1)) :: subs;
         i := i + 1;
       end for;
 
       ty := Type.ARRAY(Type.arrayElementType(ty), {dim1, dim2});
-      {fn} := Function.typeRefCache(fn_ref);
-      callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, purity, ty));
+
+      if known then
+        callExp := Expression.applySubscripts(Subscript.WHOLE() :: Subscript.WHOLE() :: subs, arg);
+      else
+        {fn} := Function.typeRefCache(fn_ref);
+        callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, purity, ty));
+      end if;
     end if;
   end typeMatrixCall;
 

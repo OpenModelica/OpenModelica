@@ -182,12 +182,6 @@ protected constant DAE.Type simulationResultType_full = DAE.T_COMPLEX(ClassInf.R
   DAE.TYPES_VAR("timeTotal",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE())
   },NONE(), false);
 
-protected constant DAE.Type simulationResultType_drModelica = DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
-  DAE.TYPES_VAR("messages",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),false,NONE()),
-  DAE.TYPES_VAR("flatteningTime",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE()),
-  DAE.TYPES_VAR("simulationTime",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE())
-  },NONE(), false);
-
 //these are in reversed order than above
 protected constant list<tuple<String,Values.Value>> zeroAdditionalSimulationResultValues =
   { ("timeTotal",      Values.REAL(0.0)),
@@ -262,12 +256,6 @@ public function getSimulationResultType
 algorithm
   t := if Testsuite.isRunning() then simulationResultType_rtest else simulationResultType_full;
 end getSimulationResultType;
-
-public function getDrModelicaSimulationResultType
-  output DAE.Type t;
-algorithm
-  t := if Testsuite.isRunning() then simulationResultType_rtest else simulationResultType_drModelica;
-end getDrModelicaSimulationResultType;
 
 public function createSimulationResult
   input String resultFile;
@@ -3470,9 +3458,6 @@ algorithm
     case ("getDefaultComponentPrefixes", {Values.CODE(Absyn.C_TYPENAME(classpath))})
       then Interactive.getDefaultComponentPrefixes(classpath, SymbolTable.getAbsyn());
 
-    case ("getDefinitions", {Values.BOOL(b)})
-      then Interactive.getDefinitions(SymbolTable.getAbsyn(), b);
-
     case ("getDefaultOpenCLDevice", {})
       then ValuesMake.makeInteger(Config.getDefaultOpenCLDevice());
 
@@ -4604,7 +4589,6 @@ protected function buildModelFMU
   output Values.Value outValue;
 protected
   Flags.Flag flags;
-  list<String> fmiFlags;
 algorithm
   if isProtectedContentAccess(className) then
     // if AST contains encrypted class show nothing
@@ -4612,20 +4596,14 @@ algorithm
     outValue := Values.STRING("");
   else
     flags := loadCommandLineOptionsFromModel(className);
-    // `method=` reaches the FMU only through --fmiFlags, a global: restore it by
-    // hand so one export does not pick the solver for the next. `saveFlags` will
-    // not — without __OpenModelica_commandLineOptions `flags` aliases the store.
-    fmiFlags := Flags.getConfigStringList(Flags.FMI_FLAGS);
     fmuMethodToSimulationFlag(method, isWasmFMUExport(FMUVersion, platforms));
     fmuAnnotationSimulationFlags(className, isWasmFMUExport(FMUVersion, platforms));
 
     try
       (cache, outValue) := callBuildModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
       // reset to the original flags
-      FlagsUtil.setConfigStringList(Flags.FMI_FLAGS, fmiFlags);
       FlagsUtil.saveFlags(flags);
     else
-      FlagsUtil.setConfigStringList(Flags.FMI_FLAGS, fmiFlags);
       FlagsUtil.saveFlags(flags);
       fail();
     end try;
@@ -4638,7 +4616,7 @@ public function callBuildModelFMU
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.Path className "path for the model";
-  input String FMUVersion;
+  input String inFMUVersion;
   input String inFMUType;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
@@ -4656,6 +4634,7 @@ protected
   Boolean needs3rdPartyLibs;
   Integer platformIndex, platformCount;
   String platformName;
+  String FMUVersion = inFMUVersion;
   String FMUType = inFMUType;
   // FMI 1.0 is deprecated and the wasm export does not serve it; such a request
   // is the C export's business even under the wasm simCodeTarget.
@@ -4687,6 +4666,12 @@ algorithm
     outValue := Values.STRING("");
     Error.addMessage(Error.FMU_EXPORT_WASM_FMI1, {});
     return;
+  end if;
+  // without a native binary to load it, the wasm model is only reachable as fmi-ls-wasm,
+  // which is layered on FMI 3.0
+  if wasmRequested and FMUVersion == "2.0" and listEmpty(nativePlatforms) then
+    Error.addMessage(Error.FMU_EXPORT_WASM_FMI2_AS_FMI3, {});
+    FMUVersion := "3.0";
   end if;
   if Config.simCodeTarget() == "Cpp" and FMI.isFMICSType(FMUType) then
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
@@ -8441,6 +8426,7 @@ public function collectDefUse
 protected
   SCode.Program builtin_p, annotation_p;
   Boolean nf_inst;
+  list<String> lookup_differences = {};
 algorithm
   // Only the uses are wanted from the lookups, not their messages.
   ErrorExt.setCheckpoint(getInstanceName());
@@ -8451,13 +8437,18 @@ algorithm
     (_, builtin_p) := FBuiltin.getInitialFunctions();
     annotation_p := AbsynToSCode.translateAbsyn2SCode(
       InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion()));
-    (defs, uses, unresolved) := NFUsedElements.collectUses(listReverse(paths),
+    (defs, uses, unresolved, lookup_differences) := NFUsedElements.collectUses(listReverse(paths),
       listAppend(builtin_p, program), annotation_p);
   else
   end try;
 
   FlagsUtil.set(Flags.SCODE_INST, nf_inst);
   ErrorExt.rollBack(getInstanceName());
+
+  // -d=checkUsedElementsLookup, after the rollback so that they're kept.
+  for d in lookup_differences loop
+    Error.addCompilerWarning("checkUsedElementsLookup: " + d);
+  end for;
 end collectDefUse;
 
 protected function getNestedClassPaths
@@ -10096,8 +10087,10 @@ protected
   String opts;
   list<String> args;
 algorithm
+  // a copy, not the flags in use: the callers change flags while translating
+  // and restore oldFlags afterwards
+  oldFlags := FlagsUtil.backupFlags();
   if Config.ignoreCommandLineOptionsAnnotation() then
-    oldFlags := FlagsUtil.loadFlags();
     return;
   end if;
 
@@ -10108,12 +10101,8 @@ algorithm
     Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
 
   if not stringEmpty(opts) then
-    // backup the current flags and apply the flags from the annotation
-    oldFlags := FlagsUtil.backupFlags();
     args := System.strtok(opts, " ");
     FlagsUtil.readArgs(args);
-  else
-    oldFlags := FlagsUtil.loadFlags();
   end if;
 end loadCommandLineOptionsFromModel;
 

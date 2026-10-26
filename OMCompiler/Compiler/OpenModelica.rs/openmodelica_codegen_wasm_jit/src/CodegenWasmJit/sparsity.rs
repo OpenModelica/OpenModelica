@@ -128,8 +128,8 @@ fn resizable_rows_by_col(jm: &SimCode::JacobianMatrix, n_cols: usize, n_rows: us
         for_each_iteration(&iters, |flat, bindings| {
             for sc in &solved {
                 let sc = sc.bind(bindings)?;
-                // A trailing whole dimension of a looped residual is the loop itself.
-                let iter_row = !bindings.is_empty() && sc.dims.last().is_some_and(|(_, p)| p.is_all());
+                // A whole looped residual is the loop itself, unless the iterators select its element.
+                let iter_row = !bindings.is_empty() && !sc.dims.is_empty() && sc.dims.iter().all(|(_, p)| p.is_all());
                 let sc_offs = match iter_row {
                     true => vec![slots.base(&sc.cref)? + flat],
                     false => slots.offsets(&sc)?,

@@ -17,7 +17,7 @@ end Ex;
 
 class Foo
   replaceable type T = enumeration(:);
-  annotation(__OpenModelica_commandLineOptions="-i=Ex -d=-newInst");
+  annotation(__OpenModelica_commandLineOptions="-i=Ex");
 end Foo;
 
 // Result:
