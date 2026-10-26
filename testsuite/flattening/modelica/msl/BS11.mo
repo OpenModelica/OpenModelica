@@ -1286,7 +1286,6 @@ model BS11
 
 equation
   connect(timeTable1.outPort,der1.inPort) annotation(Line(visible=true,points={{-22.91,19.87},{-11.97,19.87}}));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BS11;
 // function Modelica.Blocks.Sources.TimeTable.getInterpolationCoefficients
 // input Real[:, 2] table "Table for interpolation";
@@ -1375,7 +1374,7 @@ end BS11;
 //   end when;
 // end BS11;
 // Result:
-// function Modelica.Blocks.Sources.TimeTable.getInterpolationCoefficients "Determine interpolation coefficients and next time event"
+// function BS11.timeTable1.getInterpolationCoefficients "Determine interpolation coefficients and next time event"
 //   input Real[:, 2] table "Table for interpolation";
 //   input Real offset "y-offset";
 //   input Real startTime "time-offset";
@@ -1388,10 +1387,10 @@ end BS11;
 //   output Integer next "New lower grid index";
 //   protected Integer columns = 2 "Column to be interpolated";
 //   protected Integer ncol = 2 "Number of columns to be interpolated";
+//   protected Integer nrow = size(table, 1) "Number of table rows";
 //   protected Integer next0;
 //   protected Real tp;
 //   protected Real dt;
-//   protected Integer nrow = size(table, 1) "Number of table rows";
 // algorithm
 //   next := last;
 //   nextEvent := t - TimeEps * abs(t);
@@ -1406,12 +1405,12 @@ end BS11;
 //       b := offset + table[1,columns];
 //     else
 //       while next < nrow and tp >= table[next,1] loop
-//         next := 1 + next;
+//         next := next + 1;
 //       end while;
 //       if next < nrow then
 //         nextEvent := startTime + table[next,1];
 //       end if;
-//       next0 := -1 + next;
+//       next0 := next - 1;
 //       dt := table[next,1] - table[next0,1];
 //       if dt <= TimeEps * abs(table[next,1]) then
 //         a := 0.0;
@@ -1423,13 +1422,9 @@ end BS11;
 //     end if;
 //   end if;
 //   b := b - a * startTime;
-// end Modelica.Blocks.Sources.TimeTable.getInterpolationCoefficients;
+// end BS11.timeTable1.getInterpolationCoefficients;
 //
 // class BS11
-//   parameter Integer timeTable1.nout(min = 1) = 1 "Number of outputs";
-//   parameter Integer timeTable1.outPort.n = timeTable1.nout "Dimension of signal vector";
-//   Real timeTable1.outPort.signal[1] "Real output signals";
-//   Real timeTable1.y[1];
 //   parameter Real timeTable1.table[1,1] = 0.0 "Table matrix (time = first column)";
 //   parameter Real timeTable1.table[1,2] = 0.0 "Table matrix (time = first column)";
 //   parameter Real timeTable1.table[2,1] = 1.0 "Table matrix (time = first column)";
@@ -1438,28 +1433,31 @@ end BS11;
 //   parameter Real timeTable1.table[3,2] = 4.0 "Table matrix (time = first column)";
 //   parameter Real timeTable1.offset[1] = 0.0 "Offset of output signal";
 //   parameter Real timeTable1.startTime[1](quantity = "Time", unit = "s") = 0.0 "Output = offset for time < startTime";
+//   final parameter Integer timeTable1.nout(min = 1) = 1 "Number of outputs";
+//   final parameter Integer timeTable1.outPort.n = 1 "Dimension of signal vector";
+//   Real timeTable1.outPort.signal[1] "Real output signals";
+//   Real timeTable1.y[1];
 //   protected Real timeTable1.a "Interpolation coefficients a of actual interval (y=a*x+b)";
 //   protected Real timeTable1.b "Interpolation coefficients b of actual interval (y=a*x+b)";
 //   protected Integer timeTable1.last(start = 1) "Last used lower grid index";
 //   protected Real timeTable1.nextEvent(quantity = "Time", unit = "s", start = 0.0) "Next event instant";
-//   parameter Integer der1.n = 1 "Number of inputs (= number of outputs)";
-//   parameter Integer der1.inPort.n = der1.n "Dimension of signal vector";
+//   final parameter Integer der1.n = 1 "Number of inputs (= number of outputs)";
+//   final parameter Integer der1.inPort.n = 1 "Dimension of signal vector";
 //   Real der1.inPort.signal[1] "Real input signals";
-//   parameter Integer der1.outPort.n = der1.n "Dimension of signal vector";
+//   final parameter Integer der1.outPort.n = 1 "Dimension of signal vector";
 //   Real der1.outPort.signal[1] "Real output signals";
 //   Real der1.y[1] "Output signals";
 //   protected Real der1.u[1] "Input signals";
 // equation
+//   timeTable1.outPort.signal[1] = der1.inPort.signal[1];
 //   timeTable1.outPort.signal[1] = timeTable1.a * time + timeTable1.b;
 //   timeTable1.y[1] = timeTable1.outPort.signal[1];
-//   der1.u = {der1.inPort.signal[1]};
+//   der1.u = der1.inPort.signal;
 //   der1.y[1] = der(der1.u[1]);
 //   der1.y[1] = der1.outPort.signal[1];
-//   assert(timeTable1.outPort.n == der1.inPort.n, "automatically generated from connect");
-//   der1.inPort.signal[1] = timeTable1.outPort.signal[1];
 // algorithm
 //   when {time >= pre(timeTable1.nextEvent), initial()} then
-//     (timeTable1.a, timeTable1.b, timeTable1.nextEvent, timeTable1.last) := Modelica.Blocks.Sources.TimeTable.getInterpolationCoefficients({{timeTable1.table[1,1], timeTable1.table[1,2]}, {timeTable1.table[2,1], timeTable1.table[2,2]}, {timeTable1.table[3,1], timeTable1.table[3,2]}}, timeTable1.offset[1], timeTable1.startTime[1], time, timeTable1.last, 1e-13);
+//     (timeTable1.a, timeTable1.b, timeTable1.nextEvent, timeTable1.last) := BS11.timeTable1.getInterpolationCoefficients(timeTable1.table, timeTable1.offset[1], timeTable1.startTime[1], time, timeTable1.last, 1e-13);
 //   end when;
 // end BS11;
 // endResult

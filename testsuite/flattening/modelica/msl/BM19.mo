@@ -981,7 +981,6 @@ model BM19
 equation
   connect(constant2.outPort,product1.inPort2) annotation(Line(visible=true,points={{-35.38,-4.76},{-1.32,8.01}}));
   connect(constant1.outPort,product1.inPort1) annotation(Line(visible=true,points={{-31.43,30.52},{-4.67,22.0},{-2.54,20.79}}));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM19;
 
 // class BM19
@@ -1019,38 +1018,36 @@ end BM19;
 // end BM19;
 // Result:
 // class BM19
-//   parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
-//   parameter Integer constant1.outPort.n = constant1.nout "Dimension of signal vector";
+//   parameter Real constant1.k[1] = 1.0 "Constant output values";
+//   final parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
+//   final parameter Integer constant1.outPort.n = 1 "Dimension of signal vector";
 //   Real constant1.outPort.signal[1] "Real output signals";
 //   Real constant1.y[1];
-//   parameter Real constant1.k[1] = 1.0 "Constant output values";
-//   parameter Integer constant2.nout(min = 1) = 1 "Number of outputs";
-//   parameter Integer constant2.outPort.n = constant2.nout "Dimension of signal vector";
+//   parameter Real constant2.k[1] = 1.0 "Constant output values";
+//   final parameter Integer constant2.nout(min = 1) = 1 "Number of outputs";
+//   final parameter Integer constant2.outPort.n = 1 "Dimension of signal vector";
 //   Real constant2.outPort.signal[1] "Real output signals";
 //   Real constant2.y[1];
-//   parameter Real constant2.k[1] = 1.0 "Constant output values";
-//   parameter Integer product1.n = 1 "Dimension of input and output vectors.";
-//   parameter Integer product1.inPort1.n = product1.n "Dimension of signal vector";
+//   final parameter Integer product1.n = 1 "Dimension of input and output vectors.";
+//   final parameter Integer product1.inPort1.n = 1 "Dimension of signal vector";
 //   Real product1.inPort1.signal[1] "Real input signals";
-//   parameter Integer product1.inPort2.n = product1.n "Dimension of signal vector";
+//   final parameter Integer product1.inPort2.n = 1 "Dimension of signal vector";
 //   Real product1.inPort2.signal[1] "Real input signals";
-//   parameter Integer product1.outPort.n = product1.n "Dimension of signal vector";
+//   final parameter Integer product1.outPort.n = 1 "Dimension of signal vector";
 //   Real product1.outPort.signal[1] "Real output signals";
 //   Real product1.y[1] "Output signals";
 //   protected Real product1.u1[1] "Input signals 1";
 //   protected Real product1.u2[1] "Input signals 2";
 // equation
+//   constant2.outPort.signal[1] = product1.inPort2.signal[1];
+//   constant1.outPort.signal[1] = product1.inPort1.signal[1];
 //   constant1.outPort.signal[1] = constant1.k[1];
 //   constant1.y[1] = constant1.outPort.signal[1];
 //   constant2.outPort.signal[1] = constant2.k[1];
 //   constant2.y[1] = constant2.outPort.signal[1];
-//   product1.u1 = {product1.inPort1.signal[1]};
-//   product1.u2 = {product1.inPort2.signal[1]};
+//   product1.u1 = product1.inPort1.signal;
+//   product1.u2 = product1.inPort2.signal;
 //   product1.y[1] = product1.u1[1] * product1.u2[1];
 //   product1.y[1] = product1.outPort.signal[1];
-//   assert(constant2.outPort.n == product1.inPort2.n, "automatically generated from connect");
-//   assert(constant1.outPort.n == product1.inPort1.n, "automatically generated from connect");
-//   constant2.outPort.signal[1] = product1.inPort2.signal[1];
-//   constant1.outPort.signal[1] = product1.inPort1.signal[1];
 // end BM19;
 // endResult

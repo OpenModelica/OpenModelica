@@ -941,7 +941,6 @@ model BN1
 
 equation
   connect(constant1.outPort,deadZone1.inPort) annotation(Line(visible=true,points={{-26.56,35.08},{-8.62,32.65}}));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BN1;
 
 // class BN1
@@ -969,27 +968,26 @@ end BN1;
 // end BN1;
 // Result:
 // class BN1
-//   parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
-//   parameter Integer constant1.outPort.n = constant1.nout "Dimension of signal vector";
+//   parameter Real constant1.k[1] = 1.0 "Constant output values";
+//   final parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
+//   final parameter Integer constant1.outPort.n = 1 "Dimension of signal vector";
 //   Real constant1.outPort.signal[1] "Real output signals";
 //   Real constant1.y[1];
-//   parameter Real constant1.k[1] = 1.0 "Constant output values";
-//   parameter Integer deadZone1.n = 1 "Number of inputs (= number of outputs)";
-//   parameter Integer deadZone1.inPort.n = deadZone1.n "Dimension of signal vector";
+//   parameter Real deadZone1.uMax[1] = 1.0 "Upper limits of dead zones";
+//   parameter Real deadZone1.uMin[1](max = deadZone1.uMax[1]) = -deadZone1.uMax[1] "Lower limits of dead zones";
+//   final parameter Integer deadZone1.n = 1 "Number of inputs (= number of outputs)";
+//   final parameter Integer deadZone1.inPort.n = 1 "Dimension of signal vector";
 //   Real deadZone1.inPort.signal[1] "Real input signals";
-//   parameter Integer deadZone1.outPort.n = deadZone1.n "Dimension of signal vector";
+//   final parameter Integer deadZone1.outPort.n = 1 "Dimension of signal vector";
 //   Real deadZone1.outPort.signal[1] "Real output signals";
 //   Real deadZone1.y[1] "Output signals";
 //   protected Real deadZone1.u[1] "Input signals";
-//   parameter Real deadZone1.uMax[1] = 1.0 "Upper limits of dead zones";
-//   parameter Real deadZone1.uMin[1](max = deadZone1.uMax[1]) = -deadZone1.uMax[1] "Lower limits of dead zones";
 // equation
+//   constant1.outPort.signal[1] = deadZone1.inPort.signal[1];
 //   constant1.outPort.signal[1] = constant1.k[1];
 //   constant1.y[1] = constant1.outPort.signal[1];
-//   deadZone1.u = {deadZone1.inPort.signal[1]};
+//   deadZone1.u = deadZone1.inPort.signal;
 //   deadZone1.y[1] = if deadZone1.u[1] > deadZone1.uMax[1] then deadZone1.u[1] - deadZone1.uMax[1] else if deadZone1.u[1] < deadZone1.uMin[1] then deadZone1.u[1] - deadZone1.uMin[1] else 0.0;
 //   deadZone1.y[1] = deadZone1.outPort.signal[1];
-//   assert(constant1.outPort.n == deadZone1.inPort.n, "automatically generated from connect");
-//   constant1.outPort.signal[1] = deadZone1.inPort.signal[1];
 // end BN1;
 // endResult
