@@ -2085,14 +2085,24 @@ function isJacobianResultVar
     Integer n = listLength(start_dims);
   algorithm
     if listLength(subs) <= n then
-      exp := SimplifyExp.simplify(Expression.applySubscripts(subs, start, true));
+      exp := applySubscriptsSimplify(subs, start);
     elseif listLength(subs) == Type.dimensionCount(varTy)
       and List.isEqualOnTrue(start_dims, List.firstN(Type.arrayDims(varTy), n), Dimension.isEqual) then
-      exp := SimplifyExp.simplify(Expression.applySubscripts(List.firstN(subs, n), start, true));
+      exp := applySubscriptsSimplify(List.firstN(subs, n), start);
     else
       exp := Expression.EMPTY(Type.UNKNOWN());
     end if;
   end startElement;
+
+  function applySubscriptsSimplify
+    "one subscript at a time, so that nested array constructors are reduced"
+    input list<Subscript> subs;
+    input output Expression exp;
+  algorithm
+    for sub in subs loop
+      exp := SimplifyExp.simplify(Expression.applySubscripts({sub}, exp, true));
+    end for;
+  end applySubscriptsSimplify;
 
   function hasNonTrivialAliasBinding
     "returns true if the binding does not represent a cref, a negated cref or a constant.
