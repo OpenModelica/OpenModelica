@@ -9,7 +9,8 @@ operator record Complex
   Real re;
   Real im;
 
-  operator '*'
+  encapsulated operator '*'
+    import Complex;
     function mul
       input Complex c1;
       input Complex c2;
@@ -27,7 +28,6 @@ equation
   c1 = Complex(re=2.0,im=3.0);
   c2 = Complex(re=7.0,im=3.14);
   c3 = c1 * c2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end OperatorSimple;
 
 // Result:
@@ -53,10 +53,8 @@ end OperatorSimple;
 //   Real c3.re;
 //   Real c3.im;
 // equation
-//   c1.re = 2.0;
-//   c1.im = 3.0;
-//   c2.re = 7.0;
-//   c2.im = 3.14;
+//   c1 = Complex(2.0, 3.0);
+//   c2 = Complex(7.0, 3.14);
 //   c3 = Complex.'*'.mul(c1, c2);
 // end OperatorSimple;
 // endResult
