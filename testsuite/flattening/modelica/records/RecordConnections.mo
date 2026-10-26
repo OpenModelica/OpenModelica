@@ -1,6 +1,6 @@
 // name: RecordConnections
 // keywords: record
-// status: correct
+// status: incorrect
 //
 // Tests if records can be used in connections
 // THIS TEST SHOULD FAIL
@@ -15,20 +15,14 @@ model RecordConnections
 equation
   tr1.i = 3;
   connect(tr1.i,tr2.i);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RecordConnections;
 
 // Result:
-// function TestRecord "Automatically generated record constructor for TestRecord"
-//   input Integer i;
-//   output TestRecord res;
-// end TestRecord;
+// Error processing file: RecordConnections.mo
+// [flattening/modelica/records/RecordConnections.mo:17:3-17:23:writable] Error: tr1.i is not a valid connector.
 //
-// class RecordConnections
-//   Integer tr1.i;
-//   Integer tr2.i;
-// equation
-//   tr1.i = 3;
-//   tr1.i = tr2.i;
-// end RecordConnections;
+// # Error encountered! Exiting...
+// # Please check the error message and the flags.
+//
+// Execution failed!
 // endResult
