@@ -11,13 +11,10 @@ model EmptyAsubSliceSubscript
   Integer n = 0;
 algorithm
   arr := arr[arr[1:n]];
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EmptyAsubSliceSubscript;
 
 // Result:
 // class EmptyAsubSliceSubscript
 //   Integer n = 0;
-// algorithm
-//   arr := {}[{}[1:n]];
 // end EmptyAsubSliceSubscript;
 // endResult

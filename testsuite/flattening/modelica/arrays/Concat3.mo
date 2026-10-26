@@ -6,13 +6,12 @@
 // Drmodelica: 7.3 General Array concatenation (p. 213)
 //
 
-class Concat3
+model Concat3
   Real[2, 3] r1 = cat(1, {{1.0, 2.0, 3}}, {{4, 5, 6}});
   Real[2, 6] r2 = cat(2, r1, r1);
   Real[2, 3] r3 = cat(2, r1);
   Real[4, 3] r4 = cat(1, r1, r1);
   Real[:] r5 = cat(1, {1,2,3}, {4,time,6});
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Concat3;
 
 // Result:

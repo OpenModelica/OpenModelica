@@ -3,7 +3,7 @@
 // status:   correct
 //
 // Array multiplication
-class ArrayMult
+model ArrayMult
   Real m1[3] = {1, 2, 3} * 2;       // Elementwise mult: {2, 4, 6};
   Real m2[3] = 3 * {1, 2, 3};       // Elementwise mult: {3, 6, 9};
   Real m3 = {1, 2, 3} * {1, 2, 2};     // Scalar product:    11;
@@ -12,7 +12,6 @@ class ArrayMult
   Real m6[1] = {1, 2, 3} * [1; 2; 10];       // Matrix mult:     {35};
   Real m7[2, 2] = {{1, 2}, {3, 4}} * {{1, 2}, {2, 1}};   // Matrix mult:   {{5, 4}, {11, 10}};
   Real m8[2, 2] = [1, 2; 3, 4] * [1, 2; 2, 1];   // Matrix mult: {{5, 4}, {11, 10}};
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayMult;
 
 // Result:

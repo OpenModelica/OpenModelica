@@ -5,11 +5,10 @@
 // Addition and substraction ops applied on arrays
 //
 
-class AddSub1
+model AddSub1
   Real Add3[2, 2] = {{1, 1}, {2, 2}} + {{1, 2}, {3, 4}};
                                       // Result: {{2, 3}, {5, 6}}
   Real Sub1[3] = {1, 2, 3} - {1, 2, 0};    // Result: {0, 0, 3}
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AddSub1;
 
 // Result:

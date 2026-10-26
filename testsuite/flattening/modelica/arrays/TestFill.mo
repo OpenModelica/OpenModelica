@@ -15,7 +15,6 @@ algorithm
   y := fill(1, 5);
   n := n + 2;
   y[1:n] := fill(2, n);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end test;
 
 // Result:
@@ -29,7 +28,7 @@ end test;
 // algorithm
 //   n := 0;
 //   y := {1.0, 1.0, 1.0, 1.0, 1.0};
-//   n := 2 + n;
+//   n := n + 2;
 //   y[1:n] := fill(2.0, n);
 // end test;
 // endResult

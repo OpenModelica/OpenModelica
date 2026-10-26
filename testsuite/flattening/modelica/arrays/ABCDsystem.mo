@@ -16,14 +16,13 @@ model ABCDsystem
 equation
   der(x) = A*x + B*u;             // This will disappear since x is empty
   y = C*x + D*u;                  // Which is: y = D*u
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ABCDsystem;
 
 
 
 // Result:
 // class ABCDsystem
-//   parameter Integer n = 0;
+//   final parameter Integer n = 0;
 //   Real u[1];
 //   Real u[2];
 //   Real u[3];
