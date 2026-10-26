@@ -1049,6 +1049,7 @@ RangeTypeError1.mo \
 RangeTypeError2.mo \
 RangeTypeError3.mo \
 RealRangeBinding1.mo \
+RealRangeBinding2.mo \
 RecordBinding1.mo \
 RecordBinding2.mo \
 RecordBinding3.mo \

@@ -910,6 +910,7 @@ function evalRangeReal
   output list<Expression> result;
 protected
   Integer steps;
+  Real last;
 algorithm
   steps := Util.realRangeSize(start, step, stop);
 
@@ -920,7 +921,8 @@ algorithm
   elseif steps == 1 then
     result := {Expression.REAL(start)};
   else
-    result := {Expression.REAL(stop)};
+    last := start + (steps - 1) * step;
+    result := {Expression.REAL(if abs(stop - last) < 1e-10 * abs(step) then stop else last)};
     for i in steps-2:-1:1 loop
       result := Expression.REAL(start + i * step) :: result;
     end for;
