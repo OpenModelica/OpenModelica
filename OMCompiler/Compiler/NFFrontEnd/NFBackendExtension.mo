@@ -913,6 +913,17 @@ public
       end match;
     end getTearingSelect;
 
+    function getUncertainty
+      input VariableAttributes attributes;
+      output Option<Uncertainty> uncertainty;
+    algorithm
+      uncertainty := match attributes
+        case VAR_ATTR_REAL() then attributes.uncertainty;
+        case VAR_ATTR_INT()  then attributes.uncertainty;
+        else NONE();
+      end match;
+    end getUncertainty;
+
     function getMin
       input VariableAttributes attr;
       output Option<Expression> min;

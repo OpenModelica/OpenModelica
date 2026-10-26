@@ -479,7 +479,7 @@ public
     };
 
     if DataReconciliation.isEnabled() then
-      preOptModules := listAppend(preOptModules, {(function DataReconciliation.main(fileNamePrefix = fileNamePrefix), "Data Reconciliation")});
+      preOptModules := listAppend({(function DataReconciliation.main(fileNamePrefix = fileNamePrefix), "Data Reconciliation")}, preOptModules);
     end if;
 
     // all main modules are always done in ODE mode
