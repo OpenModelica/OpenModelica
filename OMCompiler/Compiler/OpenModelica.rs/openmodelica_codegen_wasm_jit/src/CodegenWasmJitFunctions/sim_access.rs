@@ -494,27 +494,18 @@ pub(super) fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef,
     } = cref
     {
         if ident.as_str() == "$START" {
-            let start_off = sim_var_key(ctx.sim()?, componentRef)
-                .ok()
-                .and_then(|k| ctx.sim().ok()?.start_slots.get(&k));
-            let Some(off) = start_off else {
-                return compile_sim_cref_assign(ctx, componentRef, rhs);
+            // C's `skipStartEquations`: a global homotopy computes start values only at lambda = 0.
+            let (data, skip_off) = {
+                let s = ctx.sim()?;
+                (s.data_local, s.skip_start_off)
             };
-            let w = rhs.push(ctx)?;
-            coerce(ctx, w, WTy::F64);
-            let tmp = ctx.alloc_temp(WTy::F64);
-            ctx.emit(we::Instruction::LocalSet(tmp));
-            let rel = ctx.emit_sim_base(off)?;
-            ctx.emit(we::Instruction::LocalGet(tmp));
-            ctx.emit(we::Instruction::F64Store(mem_arg(rel, 3)));
-            return compile_sim_cref_assign(
-                ctx,
-                componentRef,
-                RhsSource::Temp {
-                    local: tmp,
-                    wty: WTy::F64,
-                },
-            );
+            ctx.emit(we::Instruction::LocalGet(data));
+            ctx.emit(we::Instruction::I32Load(sim_mem(skip_off, 2)?));
+            ctx.emit(we::Instruction::I32Eqz);
+            ctx.emit(we::Instruction::If(we::BlockType::Empty));
+            let assigned = compile_sim_start_assign(ctx, componentRef, rhs)?;
+            ctx.emit(we::Instruction::End);
+            return Ok(assigned);
         }
         // `$PRE.x := e` targets x's pre-slot when one is registered; otherwise
         // (no pre-slot, e.g. a parameter) fall back to the live slot.
@@ -768,6 +759,30 @@ fn emit_extobj_construct(
     Ok(true)
 }
 
+fn compile_sim_start_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: RhsSource) -> Result<bool> {
+    let start_off = sim_var_key(ctx.sim()?, cref)
+        .ok()
+        .and_then(|k| ctx.sim().ok()?.start_slots.get(&k));
+    let Some(off) = start_off else {
+        return compile_sim_cref_assign(ctx, cref, rhs);
+    };
+    let w = rhs.push(ctx)?;
+    coerce(ctx, w, WTy::F64);
+    let tmp = ctx.alloc_temp(WTy::F64);
+    ctx.emit(we::Instruction::LocalSet(tmp));
+    let rel = ctx.emit_sim_base(off)?;
+    ctx.emit(we::Instruction::LocalGet(tmp));
+    ctx.emit(we::Instruction::F64Store(mem_arg(rel, 3)));
+    compile_sim_cref_assign(
+        ctx,
+        cref,
+        RhsSource::Temp {
+            local: tmp,
+            wty: WTy::F64,
+        },
+    )
+}
+
 /// The `SimData` slot and little-endian value bytes of an assignment
 /// `cref := <compile-time constant>` that [`compile_sim_cref_assign`] would lower
 /// to a single plain store — `None` when either side needs its general path.
@@ -784,8 +799,9 @@ pub(crate) fn sim_const_store(
         ident, componentRef, ..
     } = cref
     {
+        // Conditional on `skipStartEquations`, see `compile_sim_cref_assign`.
         if ident.as_str() == "$START" {
-            return sim_const_store(ctx, componentRef, exp);
+            return Ok(None);
         }
         if ident.as_str() == "$PRE" && !sim_pre_is_stored(ctx, cref)? {
             return sim_const_store(ctx, componentRef, exp);

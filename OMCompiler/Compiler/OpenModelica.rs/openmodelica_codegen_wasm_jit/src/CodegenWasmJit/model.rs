@@ -2662,6 +2662,7 @@ pub(crate) fn sim_ctx(var_map: &SimVarMap) -> SimCtx {
         mathevents_off: var_map.mathevents_off,
         n_mathevents: var_map.n_mathevents,
         lambda_off: var_map.lambda_off,
+        skip_start_off: var_map.skip_start_off,
         homotopy_method: var_map.homotopy_method,
         old_real: var_map.old_real,
         zctol_off: var_map.zctol_off,

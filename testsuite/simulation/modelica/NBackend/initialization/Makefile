@@ -17,6 +17,7 @@ resizableParameterBinding.mos \
 primaryParameterRecordArray.mos \
 homotopy_indirect.mos \
 homotopy_no_loop.mos \
+homotopyStartValue.mos \
 init_if_eq.mos \
 init_if_exp.mos \
 initialNoReturnCall.mos \

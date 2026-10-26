@@ -1,0 +1,44 @@
+// name: homotopyStartValue
+// keywords: NewBackend, initialization, homotopy, start
+// status: correct
+// cflags: --newBackend
+//
+// The start value equation of x may only set the initial guess before the
+// homotopy path is followed, not reset it at every lambda step.
+
+loadString("
+model homotopyStartValue
+  parameter Real x0 = -1.9;
+  Real x(start = x0);
+equation
+  0 = homotopy(x*x - 4, x - 2);
+end homotopyStartValue;
+"); getErrorString();
+
+simulate(homotopyStartValue, stopTime = 0); getErrorString();
+val(x, 0.0);
+simulate(homotopyStartValue, stopTime = 0, simflags = "-noHomotopyOnFirstTry"); getErrorString();
+val(x, 0.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "homotopyStartValue_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'homotopyStartValue', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// record SimulationResult
+//     resultFile = "homotopyStartValue_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'homotopyStartValue', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noHomotopyOnFirstTry'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -2.0
+// endResult

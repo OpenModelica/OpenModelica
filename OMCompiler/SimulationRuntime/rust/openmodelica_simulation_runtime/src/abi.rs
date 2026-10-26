@@ -711,6 +711,7 @@ pub struct SIMULATION_INFO {
 
     pub homotopySteps: c_int,
     pub lambda: f64,
+    pub skipStartEquations: modelica_boolean,
 
     pub initial: modelica_boolean,
     pub terminal: modelica_boolean,
