@@ -7,8 +7,7 @@ BS9.mo BS10.mo BS11.mo BS12.mo BS13.mo BS14.mo BS15.mo BS16.mo BS17.mo \
 BN1.mo BN2.mo BN3.mo  \
 BM1.mo BM2.mo BM3.mo BM4.mo BM5.mo BM6.mo BM7.mo BM8.mo BM9.mo BM10.mo \
 BM11.mo BM12.mo BM13.mo BM14.mo BM15.mo BM16.mo BM17.mo BM18.mo BM19.mo \
-BM20.mo BM21.mo BM22.mo BM23.mo BM24.mo BM25.mo BM26.mo BM27.mo BM28.mo \
-Gear.mo 
+BM20.mo BM21.mo BM22.mo BM23.mo BM24.mo BM25.mo BM26.mo BM27.mo BM28.mo
 
 # test that currently fail. Move up when fixed. 
 # Run make failingtest

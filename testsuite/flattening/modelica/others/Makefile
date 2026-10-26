@@ -48,7 +48,6 @@ IfExpCombiTable1.mo \
 IfExpCombiTable2.mo \
 IllegalSubscript.mo \
 Influenza.mo \
-InvertedPendulumTotal.mo \
 ModelAccess.mo \
 ModelSimple.mo \
 NamedArguments.mo \
