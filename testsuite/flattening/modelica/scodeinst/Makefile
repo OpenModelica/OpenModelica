@@ -507,9 +507,11 @@ ExtendSelf1.mo \
 ExtendSelf2.mo \
 ExtendSelf3.mo \
 ExtendsMod1.mo \
+ExtendsMod2.mo \
 ExtendsShort1.mo \
 ExtendsShort2.mo \
 ExtendsShort3.mo \
+ExtendsShort4.mo \
 ExtendsVisibility1.mo \
 ExtendsVisibility2.mo \
 ExtendsVisibility3.mo \
@@ -1238,6 +1240,8 @@ TypeDimNonType1.mo \
 TypeExtends1.mo \
 TypeExtends2.mo \
 TypeExtends3.mo \
+TypeExtends4.mo \
+TypeExtends5.mo \
 TypeMissingBaseType1.mo \
 TypenameInvalid1.mo \
 TypenameInvalid2.mo \
