@@ -1657,8 +1657,6 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
         vecCopy(solverData->n, solverData->x1, x);
       }
 
-      /* update statistics */
-      solverData->numberOfIterations += numberOfIterations;
       solverData->error_f_sqrd = error_f_sqrd;
 
       break;
@@ -1673,7 +1671,6 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     {
       solverData->info = 1;
       debugString(OMC_LOG_NLS_V, "Note: newton solver rejected last x because previous was as good");
-      solverData->numberOfIterations += numberOfIterations;
       solverData->error_f_sqrd = error_f_old;
       break;
     }
@@ -1690,9 +1687,6 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       /* debug information */
       debugString(OMC_LOG_NLS_V, "NEWTON SOLVER DID ---NOT--- CONVERGE TO A SOLUTION!!!");
       debugString(OMC_LOG_NLS_V, "******************************************************");
-
-      /* update statistics */
-      solverData->numberOfIterations += numberOfIterations;
       break;
     }
 
@@ -1729,8 +1723,6 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
         debugString(OMC_LOG_NLS_V, "NEWTON SOLVER DID ---NOT--- CONVERGE TO A SOLUTION!!!");
         debugString(OMC_LOG_NLS_V, "******************************************************");
       }
-      /* update statistics */
-      solverData->numberOfIterations += numberOfIterations;
       break;
     }
     assert = 1;
@@ -1760,6 +1752,8 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     scaleMatrixRows(solverData->n, solverData->m, solverData->fJac);
     vecCopy(n, solverData->fJac + n*n, solverData->dy0);
   }
+  /* update statistics, also of a run that failed */
+  solverData->numberOfIterations += numberOfIterations;
   return 0;
 }
 
