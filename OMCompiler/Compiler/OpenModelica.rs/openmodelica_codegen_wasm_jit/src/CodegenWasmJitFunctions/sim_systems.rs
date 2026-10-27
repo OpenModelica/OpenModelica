@@ -76,14 +76,35 @@ fn emit_residual_store(
             }
             release_temp_array(ctx, arr)?;
         }
-        _ => return Err("CodegenWasmJit: SES_LINEAR for/generic residual"),
+        NlsResidual::For {
+            iterators,
+            exp,
+            res_index,
+        } => emit_for_residual_at(ctx, iterators, exp, RowBase::Const(*res_index), &[], base, dest_off)?,
+        NlsResidual::Generic {
+            iterators,
+            scal_indices,
+            exp,
+            res_index,
+        } => emit_generic_residual(ctx, iterators, scal_indices, exp, *res_index, base, dest_off)?,
     }
     Ok(())
 }
 
-/// Rows of the residual vector, `None` if a for-residual makes it a run-time count.
+/// rows of the residual vector, or `None` for runtime-sized ranges
 pub(crate) fn residual_rows(residuals: &[NlsResidual]) -> Option<usize> {
-    residuals.iter().map(|r| r.rows()).sum()
+    residuals
+        .iter()
+        .map(|r| match r {
+            NlsResidual::For { iterators, .. } => iterators.iter().try_fold(1usize, |rows, it| {
+                let BackendDAE::SimIterator::SIM_ITERATOR_RANGE { size, .. } = it else {
+                    return None;
+                };
+                rows.checked_mul(usize::try_from(const_index_value(size)?).ok()?)
+            }),
+            _ => r.rows(),
+        })
+        .sum()
 }
 
 /// A nonlinear system residual: a scalar `SES_RESIDUAL`, a `SES_FOR_RESIDUAL`
@@ -265,7 +286,7 @@ fn emit_counted_residual_stores(ctx: &mut FnCtx, eq_index: i32, residuals: &[Nls
                 bump(ctx, 1);
             }
             NlsResidual::For { iterators, exp, .. } => {
-                emit_for_residual_at(ctx, iterators, exp, RowBase::Local(row), &[])?;
+                emit_for_residual_at(ctx, iterators, exp, RowBase::Local(row), &[], 2, 0)?;
                 ctx.emit(I::LocalGet(row));
                 ctx.emit(I::I32Const(1));
                 for it in iterators {
@@ -335,50 +356,7 @@ pub(crate) fn emit_nls_residual_store(
     all_scalar: bool,
     i: usize,
 ) -> Result<()> {
-    use we::Instruction as I;
-    match &residuals[i] {
-        NlsResidual::Scalar { exp, res_index } => {
-            let dest = if all_scalar { i as u32 } else { *res_index as u32 };
-            ctx.emit(I::LocalGet(2)); // r
-            let w = compile_exp(ctx, exp)?;
-            coerce(ctx, w, WTy::F64);
-            ctx.emit(I::F64Store(mem_arg(dest * 8, 3)));
-        }
-        NlsResidual::Array { exp, res_index, rows } => {
-            let w = compile_exp(ctx, exp)?;
-            if w != WTy::I32 {
-                return Err("CodegenWasmJit: array residual did not evaluate to an array");
-            }
-            let arr = ctx.alloc_temp(WTy::I32);
-            ctx.emit(I::LocalTee(arr));
-            ctx.emit(I::Call(rt_index("rt_array_data")?));
-            let data = ctx.alloc_temp(WTy::I32);
-            ctx.emit(I::LocalSet(data));
-            for k in 0..*rows as u32 {
-                ctx.emit(I::LocalGet(2)); // r
-                ctx.emit(I::LocalGet(data));
-                ctx.emit(I::F64Load(mem_arg(k * 8, 3)));
-                ctx.emit(I::F64Store(mem_arg((*res_index as u32 + k) * 8, 3)));
-            }
-            release_temp_array(ctx, arr)?;
-        }
-        NlsResidual::For {
-            iterators,
-            exp,
-            res_index,
-        } => {
-            emit_for_residual_at(ctx, iterators, exp, RowBase::Const(*res_index), &[])?;
-        }
-        NlsResidual::Generic {
-            iterators,
-            scal_indices,
-            exp,
-            res_index,
-        } => {
-            emit_generic_residual(ctx, iterators, scal_indices, exp, *res_index)?;
-        }
-    }
-    Ok(())
+    emit_residual_store(ctx, 2, &residuals[i], i, all_scalar, 0)
 }
 
 /// Emit a `SES_GENERIC_RESIDUAL`: `r[res_index + i] = exp` for the `i`-th flat
@@ -389,11 +367,13 @@ fn emit_generic_residual(
     scal_indices: &[i32],
     exp: &metamodelica::Ref<DAE::Exp>,
     res_index: i32,
+    base: u32,
+    dest_off: u32,
 ) -> Result<()> {
     use we::Instruction as I;
     emit_index_list_loop(ctx, iterators, scal_indices, &mut |ctx, k| {
         // addr = r + (res_index + k) * 8
-        ctx.emit(I::LocalGet(2)); // r
+        ctx.emit(I::LocalGet(base));
         ctx.emit(I::I32Const(res_index));
         ctx.emit(I::LocalGet(k));
         ctx.emit(I::I32Add);
@@ -402,7 +382,7 @@ fn emit_generic_residual(
         ctx.emit(I::I32Add);
         let w = compile_exp(ctx, exp)?;
         coerce(ctx, w, WTy::F64);
-        ctx.emit(I::F64Store(mem_arg(0, 3)));
+        ctx.emit(I::F64Store(mem_arg(dest_off, 3)));
         Ok(())
     })
 }
@@ -500,12 +480,14 @@ fn emit_for_residual_at(
     exp: &metamodelica::Ref<DAE::Exp>,
     res_index: RowBase,
     outer: &[(u32, u32)],
+    base: u32,
+    dest_off: u32,
 ) -> Result<()> {
     use we::Instruction as I;
     let Some((sim_it, rest)) = iterators.split_first() else {
         // addr = r + (res_index + flatten(outer)) * 8, outer[k] = (offset_k, size_k),
         // flatten = off_0 + size_0*(off_1 + size_1*(... + size_{n-2}*off_{n-1}))
-        ctx.emit(I::LocalGet(2)); // r
+        ctx.emit(I::LocalGet(base));
         match res_index {
             RowBase::Const(k) => ctx.emit(I::I32Const(k)),
             RowBase::Local(l) => ctx.emit(I::LocalGet(l)),
@@ -525,7 +507,7 @@ fn emit_for_residual_at(
         ctx.emit(I::I32Add); // element address
         let w = compile_exp(ctx, exp)?;
         coerce(ctx, w, WTy::F64);
-        ctx.emit(I::F64Store(mem_arg(0, 3)));
+        ctx.emit(I::F64Store(mem_arg(dest_off, 3)));
         return Ok(());
     };
     let BackendDAE::SimIterator::SIM_ITERATOR_RANGE {
@@ -579,7 +561,7 @@ fn emit_for_residual_at(
     ctx.emit(I::LocalSet(off_l));
     let mut inner = outer.to_vec();
     inner.push((off_l, size_l));
-    emit_for_residual_at(ctx, rest, exp, res_index, &inner)?;
+    emit_for_residual_at(ctx, rest, exp, res_index, &inner, base, dest_off)?;
     ctx.emit(I::LocalGet(it));
     ctx.emit(I::LocalGet(step_l));
     ctx.emit(I::I32Add);
