@@ -1,7 +1,6 @@
 // name: problem11
 // status: correct
 // teardown_command: rm -f nonlinear_system.problem4* _nonlinear_system.problem4* output.log
-// cflags: -d=-newInst
 
 loadFile("nlsTestPackage.mo"); getErrorString();
 
@@ -31,14 +30,14 @@ val(x[1],{0.0, 0.5, 1.0, 1.5, 5});
 // true
 // record SimulationResult
 //     resultFile = "nonlinear_system.problem11_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'euler', fileNamePrefix = 'nonlinear_system.problem11', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'euler', fileNamePrefix = 'nonlinear_system.problem11', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
-// {0.0,1.980033630575271,3.843762461008664,5.502132988123644,14.04466540545848}
-// {0.0,0.0,0.0,0.0,0.0}
+// {0.0, 1.9800336305752715, 3.843762461008664, 5.502132988123644, 14.044665405458481}
+// {0.0, 0.0, 0.0, 0.0, 0.0}
 // true
 // START: simplifyLoops
 // ------ Tearing ------
@@ -54,8 +53,8 @@ val(x[1],{0.0, 0.5, 1.0, 1.5, 5});
 // x[2] ^ 2.0 = b + x[1] / b + a - a * x[2] ^ 2.0--old--
 // => x[1] - b * x[2] ^ 2.0 * (1.0 + a) = ((-b) - a) * b--new--
 // update eqn[4]
-// x[3] / a = (a ^ 2.0 + b ^ 2.0) * x[2] / a + log(1.0 + time) + ((-a ^ 2.0) - b ^ 2.0) * x[1] / a + 1.0 / a + (-a) - b--old--
-// => (a ^ 2.0 + b ^ 2.0) * x[2] + ((-a ^ 2.0) - b ^ 2.0) * x[1] - x[3] = -1.0 + a ^ 2.0 + (b - log(1.0 + time)) * a--new--
+// x[3] / a = (a ^ 2.0 + b ^ 2.0) * x[2] / a + log(time + 1.0) + ((-a ^ 2.0) - b ^ 2.0) * x[1] / a + 1.0 / a - a - b--old--
+// => (a ^ 2.0 + b ^ 2.0) * x[2] + ((-a ^ 2.0) - b ^ 2.0) * x[1] - x[3] = -1.0 + a ^ 2.0 + (b - log(time + 1.0)) * a--new--
 // END: simplifyLoops
 // START: simplifyLoops
 // ------ Tearing ------
@@ -71,19 +70,19 @@ val(x[1],{0.0, 0.5, 1.0, 1.5, 5});
 // x[2] ^ 2.0 = b + x[1] / b + a - a * x[2] ^ 2.0--old--
 // => x[1] - b * x[2] ^ 2.0 * (1.0 + a) = ((-b) - a) * b--new--
 // update eqn[4]
-// x[3] / a = (a ^ 2.0 + b ^ 2.0) * x[2] / a + $cse2 + ((-a ^ 2.0) - b ^ 2.0) * x[1] / a + 1.0 / a + (-a) - b--old--
+// x[3] / a = (a ^ 2.0 + b ^ 2.0) * x[2] / a + $cse2 + ((-a ^ 2.0) - b ^ 2.0) * x[1] / a + 1.0 / a - a - b--old--
 // => (a ^ 2.0 + b ^ 2.0) * x[2] + ((-a ^ 2.0) - b ^ 2.0) * x[1] - x[3] = -1.0 + a ^ 2.0 + (b - $cse2) * a--new--
 // END: simplifyLoops
 // record SimulationResult
 //     resultFile = "nonlinear_system.problem11_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'euler', fileNamePrefix = 'nonlinear_system.problem11', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'euler', fileNamePrefix = 'nonlinear_system.problem11', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
-// {0.0,2.398081733190338e-16,4.707345624410663e-16,7.638334409421079e-16,2.122746423083299e-15}
-// {5.561552812808831,5.409227846355742,4.987172179760111,4.393026202256716,4.663465947951011}
+// {0.0, 2.7089441800853814e-16, 5.81756864903582e-16, 8.92619311798626e-16, 2.420286193682837e-15}
+// {5.561552812808831, 5.409227846355742, 4.987172179760111, 4.393026202256716, 4.6634659479510105}
 // true
 // START: simplifyLoops
 // ------ Tearing ------
@@ -101,8 +100,8 @@ val(x[1],{0.0, 0.5, 1.0, 1.5, 5});
 // __OMC__5$LOOPT = ((-b) - a) * b -- new eqn--
 // => x[1] - b * x[2] ^ 2.0 * (1.0 + a) = __OMC__5$LOOPT--new--
 // update eqn[4]
-// x[3] / a = (a ^ 2.0 + b ^ 2.0) * x[2] / a + log(1.0 + time) + ((-a ^ 2.0) - b ^ 2.0) * x[1] / a + 1.0 / a + (-a) - b--old--
-// __OMC__10$LOOPT = -1.0 + a ^ 2.0 + (b - log(1.0 + time)) * a -- new eqn--
+// x[3] / a = (a ^ 2.0 + b ^ 2.0) * x[2] / a + log(time + 1.0) + ((-a ^ 2.0) - b ^ 2.0) * x[1] / a + 1.0 / a - a - b--old--
+// __OMC__10$LOOPT = -1.0 + a ^ 2.0 + (b - log(time + 1.0)) * a -- new eqn--
 // __OMC__4$LOOPF = (-a ^ 2.0) - b ^ 2.0 -- new eqn--
 // __OMC__5$LOOPF = a ^ 2.0 + b ^ 2.0 -- new eqn--
 // => __OMC__5$LOOPF * x[2] + __OMC__4$LOOPF * x[1] - x[3] = __OMC__10$LOOPT--new--
@@ -122,7 +121,7 @@ val(x[1],{0.0, 0.5, 1.0, 1.5, 5});
 // __OMC__17$LOOPT = ((-b) - a) * b -- new eqn--
 // => x[1] - b * x[2] ^ 2.0 * (1.0 + a) = __OMC__17$LOOPT--new--
 // update eqn[4]
-// x[3] / a = (a ^ 2.0 + b ^ 2.0) * x[2] / a + $cse2 + ((-a ^ 2.0) - b ^ 2.0) * x[1] / a + 1.0 / a + (-a) - b--old--
+// x[3] / a = (a ^ 2.0 + b ^ 2.0) * x[2] / a + $cse2 + ((-a ^ 2.0) - b ^ 2.0) * x[1] / a + 1.0 / a - a - b--old--
 // __OMC__22$LOOPT = -1.0 + a ^ 2.0 + (b - $cse2) * a -- new eqn--
 // __OMC__3$LOOPF = (-a ^ 2.0) - b ^ 2.0 -- new eqn--
 // __OMC__4$LOOPF = a ^ 2.0 + b ^ 2.0 -- new eqn--
@@ -130,12 +129,12 @@ val(x[1],{0.0, 0.5, 1.0, 1.5, 5});
 // END: simplifyLoops
 // record SimulationResult
 //     resultFile = "nonlinear_system.problem11_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'euler', fileNamePrefix = 'nonlinear_system.problem11', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'euler', fileNamePrefix = 'nonlinear_system.problem11', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
-// {0.0,2.398081733190338e-16,4.707345624410663e-16,7.638334409421079e-16,2.122746423083299e-15}
-// {5.561552812808831,5.409227846355742,4.987172179760111,4.393026202256716,4.663465947951011}
+// {0.0, 2.7089441800853814e-16, 5.81756864903582e-16, 9.681144774731368e-16, 2.5579538487363543e-15}
+// {5.561552812808831, 5.409227846355742, 4.987172179760109, 4.393026202256716, 4.6634659479510105}
 // endResult

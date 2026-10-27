@@ -1,6 +1,6 @@
 package MeasureTime
 
-class A
+model A
   function f
     input Real r;
     output Real o = sin(r);

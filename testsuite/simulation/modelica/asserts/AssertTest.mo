@@ -5,7 +5,7 @@
 // Drmodelica: 8.2 Assert (p. 249)
 //
 
-class AssertTest
+model AssertTest
   parameter Real lowlimit   = -5;
   parameter Real highlimit   =  5;
   Real x = 7;
@@ -13,11 +13,11 @@ equation
   assert(x >= lowlimit and x <= highlimit, "Variable x out of limit");
 end AssertTest;
 
-class AssertTestInst
+model AssertTestInst
   AssertTest assertTest(lowlimit = -2, highlimit = 6);
 end AssertTestInst;
 
-class AssertTestDuringInst
+model AssertTestDuringInst
 equation
   assert(false, "Testing assert during instantiation");
 end AssertTestDuringInst;

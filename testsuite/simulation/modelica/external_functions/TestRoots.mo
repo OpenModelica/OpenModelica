@@ -37,7 +37,7 @@ package Modelica
       package LAPACK
         extends Modelica.Icons.Package;
 
-        function dhseqr
+        pure function dhseqr
           extends Modelica.Icons.Function;
           input Real[:, size(H, 1)] H;
           input Boolean eigenValuesOnly = true;

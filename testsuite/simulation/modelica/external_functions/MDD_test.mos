@@ -2,7 +2,6 @@
 // keywords: MDD_test
 // status:   correct
 // teardown_command: rm -rf MDD_test_*
-// cflags: -d=-newInst
 //
 //  Checks that external object aliases are recognized properly. Otherwise the system has too many equations.
 //
@@ -23,11 +22,15 @@ buildModel(MDD_test); getErrorString();
 // true
 // ""
 // {"MDD_test", "MDD_test_init.xml"}
-// "Warning: Alias equations of external objects are not Modelica compliant as in:
-//     getInteger.pkgIn.pkg = resetPointer.pkgOut[1].pkg
-//     packInt.pkgOut[1].pkg = resetPointer.pkgIn.pkg
-//     packInt.pkgIn.pkg = packager.pkgOut.pkg
+// "[Modelica_DeviceDrivers 2.2.0/Blocks/Packaging/SerialPackager.mo:98:7-105:23:writable] Warning: Pure function 'Modelica_DeviceDrivers.Blocks.Packaging.SerialPackager.Internal.DummyFunctions.resetPointer' contains a call to impure function 'Modelica_DeviceDrivers.Packaging.SerialPackager_.resetPointer'.
+// [Modelica_DeviceDrivers 2.2.0/Blocks/Packaging/SerialPackager.mo:139:5-153:23:writable] Warning: Pure function 'Modelica_DeviceDrivers.Blocks.Packaging.SerialPackager.Internal.DummyFunctions.integerBitPack' contains a call to impure function 'Modelica_DeviceDrivers.Packaging.SerialPackager_.integerBitPack'.
+// [Modelica_DeviceDrivers 2.2.0/Blocks/Packaging/SerialPackager.mo:130:7-137:16:writable] Warning: Pure function 'Modelica_DeviceDrivers.Blocks.Packaging.SerialPackager.Internal.DummyFunctions.clear' contains a call to impure function 'Modelica_DeviceDrivers.Packaging.SerialPackager_.clear'.
+// [Modelica_DeviceDrivers 2.2.0/Blocks/Packaging/SerialPackager.mo:107:7-117:21:writable] Warning: Pure function 'Modelica_DeviceDrivers.Blocks.Packaging.SerialPackager.Internal.DummyFunctions.getInteger' contains a call to impure function 'Modelica_DeviceDrivers.Packaging.SerialPackager_.getInteger'.
+// Warning: Alias equations of external objects are not Modelica compliant as in:
 //     packInt.pkgOut[1].pkg = packInt.pkgIn.pkg
 //     resetPointer.pkgOut[1].pkg = resetPointer.pkgIn.pkg
+//     resetPointer.pkgOut[1].pkg = getInteger.pkgIn.pkg
+//     packInt.pkgOut[1].pkg = resetPointer.pkgIn.pkg
+//     packager.pkgOut.pkg = packInt.pkgIn.pkg
 // "
 // endResult

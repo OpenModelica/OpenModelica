@@ -1,7 +1,6 @@
 // name:      parameterTest13
 // keywords:  parameter evaluation
 // status:    correct
-// cflags: -d=-newInst
 
 loadString("
 model parameterTest13
@@ -42,12 +41,12 @@ simulate(parameterTest13); getErrorString();
 //
 // Variables (1)
 // ========================================
-// 1: x:VARIABLE()  type: Real 
+// 1: x:VARIABLE()  type: Real
 //
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): x = /*Real*/(p1 + p2 + p3)   [dynamic |0|0|0|0|]
+// 1/1 (1): x = /*Real*/(p1) + /*Real*/(p2) + /*Real*/(p3)   [dynamic |0|0|0|0|]
 //
 //
 // no matching
@@ -59,12 +58,12 @@ simulate(parameterTest13); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (6)
 // ========================================
-// 1: p3:PARAM()  = 5  type: Integer 
-// 2: p2:PARAM()  = if b3 then p1 else p3  type: Integer 
-// 3: p1:PARAM()  = if b2 then p2 else 0  type: Integer 
-// 4: b3:PARAM()  = not b1  type: Boolean 
-// 5: b2:PARAM(final = true )  = b1  type: Boolean 
-// 6: b1:PARAM()  = true  type: Boolean 
+// 1: p3:PARAM()  = 5  type: Integer
+// 2: p2:PARAM()  = if b3 then p1 else p3  type: Integer
+// 3: p1:PARAM()  = if b2 then p2 else 0  type: Integer
+// 4: b3:PARAM()  = not b1  type: Boolean
+// 5: b2:PARAM()  = b1  type: Boolean
+// 6: b1:PARAM()  = true  type: Boolean
 //
 //
 //
@@ -73,9 +72,9 @@ simulate(parameterTest13); getErrorString();
 // START evaluating parameters:
 // ================================================================================
 // Number of parameters: 6
-// Number of parameters selected for evaluation: 2
+// Number of parameters selected for evaluation: 1
 // Selected parameters for evaluation:
-// 5,2
+// 2
 //
 // Adjacency Matrix (row: equation)
 // ========================================
@@ -102,33 +101,31 @@ simulate(parameterTest13); getErrorString();
 // ================================================================================
 //
 // All replacements:
-// Replacements: (6)
+// Replacements: (5)
 // ========================================
 // b1 -> true
-// b2 -> true
 // b3 -> false
-// p1 -> 5
+// b2 -> true
 // p3 -> 5
 // p2 -> 5
 //
 // Replacements that will be replaced in the DAE:
-// Replacements: (6)
+// Replacements: (5)
 // ========================================
 // b1 -> true
-// b2 -> true
 // b3 -> false
-// p1 -> 5
+// b2 -> true
 // p3 -> 5
 // p2 -> 5
 //
 // globalKnownVars (6)
 // ========================================
-// 1: p3:PARAM(final = true )  = 5  type: Integer 
-// 2: p2:PARAM(final = true )  = 5  type: Integer 
-// 3: p1:PARAM(final = true )  = if b2 then p2 else 0  type: Integer 
-// 4: b3:PARAM(final = true )  = not b1  type: Boolean 
-// 5: b2:PARAM(final = true )  = true  type: Boolean 
-// 6: b1:PARAM(final = true )  = true  type: Boolean 
+// 1: p3:PARAM(final = true )  = 5  type: Integer
+// 2: p2:PARAM(final = true )  = 5  type: Integer
+// 3: p1:PARAM()  = if b2 then p2 else 0  type: Integer
+// 4: b3:PARAM(final = true )  = not b1  type: Boolean
+// 5: b2:PARAM(final = true )  = b1  type: Boolean
+// 6: b1:PARAM(final = true )  = true  type: Boolean
 //
 //
 // mark: 1
@@ -151,30 +148,30 @@ simulate(parameterTest13); getErrorString();
 // Replacements: (6)
 // ========================================
 // b1 -> true
-// b2 -> true
 // b3 -> false
-// p1 -> 5
+// b2 -> true
 // p3 -> 5
 // p2 -> 5
+// p1 -> 5
 //
 // Replacements that will be replaced in the DAE:
 // Replacements: (6)
 // ========================================
 // b1 -> true
-// b2 -> true
 // b3 -> false
-// p1 -> 5
+// b2 -> true
 // p3 -> 5
 // p2 -> 5
+// p1 -> 5
 //
 // globalKnownVars (6)
 // ========================================
-// 1: p3:PARAM(final = true )  = 5  type: Integer 
-// 2: p2:PARAM(final = true )  = 5  type: Integer 
-// 3: p1:PARAM(final = true )  = 5  type: Integer 
-// 4: b3:PARAM(final = true )  = false  type: Boolean 
-// 5: b2:PARAM(final = true )  = true  type: Boolean 
-// 6: b1:PARAM(final = true )  = true  type: Boolean 
+// 1: p3:PARAM(final = true )  = 5  type: Integer
+// 2: p2:PARAM(final = true )  = 5  type: Integer
+// 3: p1:PARAM(final = true )  = 5  type: Integer
+// 4: b3:PARAM(final = true )  = false  type: Boolean
+// 5: b2:PARAM(final = true )  = true  type: Boolean
+// 6: b1:PARAM(final = true )  = true  type: Boolean
 //
 //
 // mark: 1
@@ -187,30 +184,30 @@ simulate(parameterTest13); getErrorString();
 // Replacements: (6)
 // ========================================
 // b1 -> true
-// b2 -> true
 // b3 -> false
-// p1 -> 5
+// b2 -> true
 // p3 -> 5
 // p2 -> 5
+// p1 -> 5
 //
 // Replacements that will be replaced in the DAE:
 // Replacements: (6)
 // ========================================
 // b1 -> true
-// b2 -> true
 // b3 -> false
-// p1 -> 5
+// b2 -> true
 // p3 -> 5
 // p2 -> 5
+// p1 -> 5
 //
 // globalKnownVars (6)
 // ========================================
-// 1: p3:PARAM(final = true )  = 5  type: Integer 
-// 2: p2:PARAM(final = true )  = 5  type: Integer 
-// 3: p1:PARAM(final = true )  = 5  type: Integer 
-// 4: b3:PARAM(final = true )  = false  type: Boolean 
-// 5: b2:PARAM(final = true )  = true  type: Boolean 
-// 6: b1:PARAM(final = true )  = true  type: Boolean 
+// 1: p3:PARAM(final = true )  = 5  type: Integer
+// 2: p2:PARAM(final = true )  = 5  type: Integer
+// 3: p1:PARAM(final = true )  = 5  type: Integer
+// 4: b3:PARAM(final = true )  = false  type: Boolean
+// 5: b2:PARAM(final = true )  = true  type: Boolean
+// 6: b1:PARAM(final = true )  = true  type: Boolean
 //
 //
 // mark: 1
@@ -227,7 +224,7 @@ simulate(parameterTest13); getErrorString();
 //
 // Variables (1)
 // ========================================
-// 1: x:VARIABLE()  type: Real 
+// 1: x:VARIABLE()  type: Real
 //
 //
 // Equations (1, 1)
@@ -244,12 +241,12 @@ simulate(parameterTest13); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (6)
 // ========================================
-// 1: p3:PARAM(final = true )  = 5  type: Integer 
-// 2: p2:PARAM(final = true )  = 5  type: Integer 
-// 3: p1:PARAM(final = true )  = 5  type: Integer 
-// 4: b3:PARAM(final = true )  = false  type: Boolean 
-// 5: b2:PARAM(final = true )  = true  type: Boolean 
-// 6: b1:PARAM(final = true )  = true  type: Boolean 
+// 1: p3:PARAM(final = true )  = 5  type: Integer
+// 2: p2:PARAM(final = true )  = 5  type: Integer
+// 3: p1:PARAM(final = true )  = 5  type: Integer
+// 4: b3:PARAM(final = true )  = false  type: Boolean
+// 5: b2:PARAM(final = true )  = true  type: Boolean
+// 6: b1:PARAM(final = true )  = true  type: Boolean
 //
 //
 //
@@ -258,7 +255,7 @@ simulate(parameterTest13); getErrorString();
 //
 // record SimulationResult
 //     resultFile = "parameterTest13_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'parameterTest13', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'parameterTest13', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
