@@ -4,7 +4,8 @@
 //! Options: `--me`/`--cs`, `--start`, `--stop`, `--step`, `--tolerance`,
 //! `--solver <name>` (`Solver::all`), `--input vr=expr`, `--parameter vr=value`
 //! (an array takes one expression or value per element, comma separated),
-//! `--output file.mat`, `--csv` (the trajectory on stdout), `--log`,
+//! `--output file.mat`, `--noemit` (no result file, nothing sampled), `--csv`
+//! (the trajectory on stdout), `--log`,
 //! `--difference-jacobian` (ignore what the FMU offers).
 
 use openmodelica_fmi::{Fmu, InterfaceKind};
@@ -30,6 +31,7 @@ struct Args {
     difference_jacobian: bool,
     log: bool,
     output: Option<PathBuf>,
+    noemit: bool,
     csv: bool,
     inputs: Vec<(u32, String)>,
     parameters: Vec<(u32, Vec<f64>)>,
@@ -47,6 +49,7 @@ fn parse_args() -> Result<Args, String> {
         difference_jacobian: false,
         log: false,
         output: None,
+        noemit: false,
         csv: false,
         inputs: Vec::new(),
         parameters: Vec::new(),
@@ -60,6 +63,7 @@ fn parse_args() -> Result<Args, String> {
             "--log" => a.log = true,
             "--difference-jacobian" => a.difference_jacobian = true,
             "--csv" => a.csv = true,
+            "--noemit" => a.noemit = true,
             "--start" => a.start = Some(value()?.parse().map_err(|_| "bad --start")?),
             "--stop" => a.stop = Some(value()?.parse().map_err(|_| "bad --stop")?),
             "--step" => a.step = Some(value()?.parse().map_err(|_| "bad --step")?),
@@ -110,6 +114,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     opts.solver = args.solver;
     opts.directional_derivatives = !args.difference_jacobian;
     opts.logging_on = args.log;
+    let keep_none = |_: &str| false;
+    if args.noemit {
+        opts.keep = Some(&keep_none);
+    }
     for (vr, text) in &args.inputs {
         let v = md
             .variable_by_vr(*vr)
@@ -124,7 +132,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         let v = md
             .variable_by_vr(*vr)
             .ok_or_else(|| format!("no variable has value reference {vr}"))?;
-        opts.parameters.push(Parameter { value_reference: *vr, ty: v.ty, values: values.clone() });
+        opts.parameters.push(Parameter {
+            value_reference: *vr,
+            ty: v.ty,
+            values: values.clone(),
+        });
     }
 
     // The FMU is unpacked next to itself; a native binary has to exist on disk
@@ -137,14 +149,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let (rec, summary) = match kind {
         InterfaceKind::CoSimulation => {
             let event_mode = md.interface(kind).is_some_and(|i| i.has_event_mode);
-            let mut inst = lib.instantiate_co_simulation(
-                name,
-                token,
-                resources.as_deref(),
-                args.log,
-                event_mode,
-                true,
-            )?;
+            let mut inst =
+                lib.instantiate_co_simulation(name, token, resources.as_deref(), args.log, event_mode, true)?;
             let r = cs::simulate(&mut inst as &mut dyn Fmi3CoSimulation, md, &opts)?;
             report_log(&mut inst);
             (
@@ -156,8 +162,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             )
         }
         InterfaceKind::ModelExchange => {
-            let mut inst =
-                lib.instantiate_model_exchange(name, token, resources.as_deref(), args.log)?;
+            let mut inst = lib.instantiate_model_exchange(name, token, resources.as_deref(), args.log)?;
             let r = me::simulate(&mut inst as &mut dyn Fmi3ModelExchange, md, &opts)?;
             report_log(&mut inst);
             (
@@ -186,7 +191,12 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             print!(",{}", c.name);
         }
         println!();
-        let mut columns: Vec<Vec<f64>> = rec.columns.iter().enumerate().map(|(i, _)| rec.values(i).collect()).collect();
+        let mut columns: Vec<Vec<f64>> = rec
+            .columns
+            .iter()
+            .enumerate()
+            .map(|(i, _)| rec.values(i).collect())
+            .collect();
         for (row, t) in rec.times().enumerate() {
             print!("{t}");
             for c in &mut columns {
@@ -195,11 +205,13 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             println!();
         }
     }
-    let output = args
-        .output
-        .unwrap_or_else(|| PathBuf::from(format!("{}_res.mat", md.model_name)));
-    rec.write(&output, opts.start_time, opts.stop_time, &md.units)?;
-    println!("wrote {}", output.display());
+    if !args.noemit {
+        let output = args
+            .output
+            .unwrap_or_else(|| PathBuf::from(format!("{}_res.mat", md.model_name)));
+        rec.write(&output, opts.start_time, opts.stop_time, &md.units)?;
+        println!("wrote {}", output.display());
+    }
     for (i, c) in rec.columns.iter().enumerate() {
         let last = rec.values(i).last().unwrap_or(f64::NAN);
         println!("  {} = {last}{}", c.name, c.unit.as_deref().unwrap_or(""));
