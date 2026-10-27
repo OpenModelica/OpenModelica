@@ -1,7 +1,6 @@
 // name:      Circuit4x
 // keywords:  resolveLoops
 // status:    correct
-// cflags: -d=-newInst
 //
 
 loadModel(Modelica, {"4.1.0"}); getErrorString();
@@ -18,7 +17,7 @@ simulate(Circuit4x); getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "Circuit4x_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Circuit4x', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 10000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Circuit4x', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -46,7 +45,7 @@ simulate(Circuit4x); getErrorString();
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems (#iteration vars, #inner vars, density): 1 system
-//    {(2,11,100.0%)}
+//    {(1,12,100.0%)}
 //  * Non-linear torn systems (#iteration vars, #inner vars): 0 systems
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 3
@@ -67,7 +66,7 @@ simulate(Circuit4x); getErrorString();
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems (#iteration vars, #inner vars, density): 1 system
-//    {(2,11,100.0%)}
+//    {(1,12,100.0%)}
 //  * Non-linear torn systems (#iteration vars, #inner vars): 0 systems
 // "
 // endResult
