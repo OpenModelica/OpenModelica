@@ -36,5 +36,5 @@ libloading = { version = "0.9", optional = true }
 # tied to one build and one configuration, so there can only be one.
 wasmtime = { workspace = true, optional = true, features = ["component-model", "gc", "gc-null", "gc-drc"] }
 # An FMU whose model has `external "C"` reaches libc, and libc imports WASI.
-wasmtime-wasi = { version = "48", default-features = false, optional = true, features = ["p2"] }
+wasmtime-wasi = { version = "50", default-features = false, optional = true, features = ["p2"] }
 openmodelica_ext_native = { path = "../openmodelica_ext_native", optional = true }
