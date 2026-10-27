@@ -1457,6 +1457,10 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // Modelica.Mechanics.MultiBody.Parts.Body
 // </element>
 // </classesNames>
+// <attributesValues>
+// <unit string=\"&quot;1&quot;\">
+// </unit>
+// </attributesValues>
 // </variable>
 // <variable id=\"7\" name=\"body.Q_start[2]\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Quaternion orientation object from world frame to frame_a at initial time\">
 // <bindExpression string=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T(body.R_start.T, {0.0, 0.0, 0.0, 1.0})\">
@@ -1469,6 +1473,10 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // Modelica.Mechanics.MultiBody.Parts.Body
 // </element>
 // </classesNames>
+// <attributesValues>
+// <unit string=\"&quot;1&quot;\">
+// </unit>
+// </attributesValues>
 // </variable>
 // <variable id=\"8\" name=\"body.Q_start[3]\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Quaternion orientation object from world frame to frame_a at initial time\">
 // <bindExpression string=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T(body.R_start.T, {0.0, 0.0, 0.0, 1.0})\">
@@ -1481,6 +1489,10 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // Modelica.Mechanics.MultiBody.Parts.Body
 // </element>
 // </classesNames>
+// <attributesValues>
+// <unit string=\"&quot;1&quot;\">
+// </unit>
+// </attributesValues>
 // </variable>
 // <variable id=\"9\" name=\"body.Q_start[4]\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Quaternion orientation object from world frame to frame_a at initial time\">
 // <bindExpression string=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T(body.R_start.T, {0.0, 0.0, 0.0, 1.0})\">
@@ -1493,6 +1505,10 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // Modelica.Mechanics.MultiBody.Parts.Body
 // </element>
 // </classesNames>
+// <attributesValues>
+// <unit string=\"&quot;1&quot;\">
+// </unit>
+// </attributesValues>
 // </variable>
 // <variable id=\"10\" name=\"body.R_start.w[3]\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute angular velocity of local frame, resolved in local frame\">
 // <bindExpression string=\"0.0\">
@@ -7118,6 +7134,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </element>
 // </classesNames>
 // <attributesValues>
+// <unit string=\"&quot;1&quot;\">
+// </unit>
 // <stateSelect>
 // Avoid
 // </stateSelect>
@@ -7137,6 +7155,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </element>
 // </classesNames>
 // <attributesValues>
+// <unit string=\"&quot;1&quot;\">
+// </unit>
 // <stateSelect>
 // Avoid
 // </stateSelect>
@@ -7156,6 +7176,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </element>
 // </classesNames>
 // <attributesValues>
+// <unit string=\"&quot;1&quot;\">
+// </unit>
 // <stateSelect>
 // Avoid
 // </stateSelect>
@@ -7175,6 +7197,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </element>
 // </classesNames>
 // <attributesValues>
+// <unit string=\"&quot;1&quot;\">
+// </unit>
 // <stateSelect>
 // Avoid
 // </stateSelect>
@@ -20975,8 +20999,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.to_Q\">
 // <ModelicaImplementation>function(R :: composite(record{array(Real)[3, 3] T VAR UNBOUND, array(Real)[3] w VAR UNBOUND}) * Q_guess :: array(Real)[4]) =&gt; array(Real)[4]Modelica.Mechanics.MultiBody.Frames.to_Qfunction Modelica.Mechanics.MultiBody.Frames.to_Q &quot;Return quaternion orientation object Q from orientation object R&quot;
 //   input Modelica.Mechanics.MultiBody.Frames.Orientation R &quot;Orientation object to rotate frame 1 into frame 2&quot;;
-//   input Real[4] Q_guess = {0.0, 0.0, 0.0, 1.0} &quot;Guess value for output Q (there are 2 solutions; the one closer to Q_guess is used)&quot;;
-//   output Real[4] Q &quot;Quaternions orientation object to rotate frame 1 into frame 2&quot;;
+//   input Real[4] Q_guess(unit = &quot;1&quot;) = {0.0, 0.0, 0.0, 1.0} &quot;Guess value for output Q (there are 2 solutions; the one closer to Q_guess is used)&quot;;
+//   output Real[4] Q(unit = &quot;1&quot;) &quot;Quaternions orientation object to rotate frame 1 into frame 2&quot;;
 // algorithm
 //   Q := Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T(R.T, Q_guess);
 // end Modelica.Mechanics.MultiBody.Frames.to_Q;
@@ -21013,8 +21037,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T\">
 // <ModelicaImplementation>function(T :: array(Real)[3, 3] * Q_guess :: array(Real)[4]) =&gt; array(Real)[4]Modelica.Mechanics.MultiBody.Frames.Quaternions.from_Tfunction Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T &quot;Return quaternion orientation object Q from transformation matrix T&quot;
 //   input Real[3, 3] T &quot;Transformation matrix to transform vector from frame 1 to frame 2 (v2=T*v1)&quot;;
-//   input Real[4] Q_guess = {0.0, 0.0, 0.0, 1.0} &quot;Guess value for Q (there are 2 solutions; the one close to Q_guess is used&quot;;
-//   output Real[4] Q &quot;Quaternions orientation object to rotate frame 1 into frame 2 (Q and -Q have same transformation matrix)&quot;;
+//   input Real[4] Q_guess(unit = &quot;1&quot;) = {0.0, 0.0, 0.0, 1.0} &quot;Guess value for Q (there are 2 solutions; the one close to Q_guess is used&quot;;
+//   output Real[4] Q(unit = &quot;1&quot;) &quot;Quaternions orientation object to rotate frame 1 into frame 2 (Q and -Q have same transformation matrix)&quot;;
 //   protected Real t;
 // algorithm
 //   if T[3,3] &lt; 0.0 then

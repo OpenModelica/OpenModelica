@@ -1,4 +1,4 @@
-// name: ExtendsShort2
+// name: ExtendsShort3
 // keywords:
 // status: correct
 //
