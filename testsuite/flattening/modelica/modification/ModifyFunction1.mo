@@ -10,6 +10,8 @@ function quadraticFlow
   input Real V_flow;
   output Real head;
   input Real V_flow_nominal;
+algorithm
+  head := V_flow / V_flow_nominal;
 end quadraticFlow;
 
 model Inverse
@@ -18,20 +20,21 @@ model Inverse
   Real head;
 equation
   head = flowCharacteristic(1);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Inverse;
 
 // Result:
 // function Inverse.flowCharacteristic
 //   input Real V_flow;
+//   input Real V_flow_nominal = 1.0;
 //   output Real head;
-//   input Real V_flow_nominal = V_flow_op;
+// algorithm
+//   head := V_flow / V_flow_nominal;
 // end Inverse.flowCharacteristic;
 //
 // class Inverse
 //   parameter Real V_flow_op = 1.0;
 //   Real head;
 // equation
-//   head = 0.0;
+//   head = Inverse.flowCharacteristic(1.0, V_flow_op);
 // end Inverse;
 // endResult

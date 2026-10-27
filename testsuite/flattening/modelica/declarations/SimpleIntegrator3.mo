@@ -11,12 +11,10 @@ model SimpleIntegrator3
 equation
   x.start = 2.0;
   der(x) = u;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SimpleIntegrator3;
 // Result:
 // Error processing file: SimpleIntegrator3.mo
-// [flattening/modelica/declarations/SimpleIntegrator3.mo:12:3-12:16:writable] Error: Variable x.start not found in scope SimpleIntegrator3.
-// Error: Error occurred while flattening model SimpleIntegrator3
+// [flattening/modelica/declarations/SimpleIntegrator3.mo:12:3-12:16:writable] Error: Variable start not found in scope x.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.
