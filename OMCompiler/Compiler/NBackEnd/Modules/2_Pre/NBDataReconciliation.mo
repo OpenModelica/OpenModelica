@@ -86,7 +86,10 @@ public function main extends Module.wrapper;
   input String fileNamePrefix;
 protected
   ExtractionSystem sys;
-  list<Integer> knowns, boundaryConditions, bindingEquations, ebltEquations;
+  list<Integer> knowns, boundaryConditions, bindingEquations, ebltEquations, setS;
+  list<tuple<Integer, Integer>> setB;
+  list<tuple<Integer, Pointer<Equation>, list<Integer>>> setBFailedBoundaryConditionEquations = {};
+  Boolean status;
 algorithm
   print("\nModelInfo: " + fileNamePrefix + "\n" + UNDERLINE + "\n\n");
 
@@ -112,6 +115,16 @@ algorithm
 
       ebltEquations := getEBLTEquations(sys, knowns, bindingEquations);
       dumpEquationList(sys, ebltEquations, "E-BLT: equations that compute the variables of interest");
+
+      (setBFailedBoundaryConditionEquations, setS, _, setB, status) := traverseEBLTAndExtractSetCAndSetS(
+        sys, ebltEquations, knowns, boundaryConditions, bindingEquations, setBFailedBoundaryConditionEquations);
+      if status then
+        print("\nExtraction procedure is successfully completed in iteration count: 1\n" + UNDERLINE + "\n");
+        print("\nSET_C: " + List.toString(ebltEquations, intString) + "\nSET_S: " + List.toString(setS, intString) + "\n\n");
+      else
+        print("\nExtraction procedure failed for iteration count: 1, re-running with modified model\n" + UNDERLINE + "\n");
+        print("\nSET_B: " + List.toString(setB, setBEntryString) + "\n\n");
+      end if;
     then ();
   end match;
 end main;
@@ -273,6 +286,140 @@ algorithm
   ebltEquations := listReverse(ebltEquations);
 end getEBLTEquations;
 
+protected function getVariablesAfterExtraction
+  "returns all variables occurring in the given equations"
+  input ExtractionSystem sys;
+  input list<Integer> eqns;
+  output list<Integer> vars = {};
+algorithm
+  for eqn in eqns loop
+    for var in sys.adjacency[eqn] loop
+      vars := var :: vars;
+    end for;
+  end for;
+  vars := List.unique(vars);
+end getVariablesAfterExtraction;
+
+protected function traverseEBLTAndExtractSetCAndSetS
+  "applies the extraction procedure on each equation of the E-BLT. If a procedure
+  fails, setB contains the variable of interest and the equation involving the
+  boundary condition that failed the procedure, to modify the model with."
+  input ExtractionSystem sys;
+  input list<Integer> ebltEquations;
+  input list<Integer> knowns;
+  input list<Integer> boundaryConditions;
+  input list<Integer> bindingEquations;
+  input output list<tuple<Integer, Pointer<Equation>, list<Integer>>> setBFailedBoundaryConditionEquations "(boundary condition var, equation, intermediate vars)";
+  output list<Integer> finalSetS = {};
+  output list<tuple<Integer, list<Integer>>> mappedEbltSetS = {} "(set-C eqn, set-S eqns)";
+  output list<tuple<Integer, Integer>> setB = {} "(var of interest, eqn to remove)";
+  output Boolean outStatus = false;
+protected
+  list<Integer> intermediateVars, minimalSetS, eqlistToRemove = {};
+  Boolean status;
+  Integer boundaryConditionVar;
+algorithm
+  print("\nExtracting SET-C and SET-S from E-BLT\nProcedure is applied on each equation in the E-BLT\n" + UNDERLINE);
+  for eqn in ebltEquations loop
+    intermediateVars := listReverse(List.setDifferenceOnTrue(getVariablesAfterExtraction(sys, {eqn}), knowns, intEq));
+    dumpSetSTargetEquation(sys, eqn, ">>>");
+    (minimalSetS, status, boundaryConditionVar) := extractNewMinimalSetS(sys, intermediateVars, knowns, boundaryConditions, bindingEquations, true);
+    print("\nProcedure " + (if status then "success" else "failed") + "\n");
+    mappedEbltSetS := (eqn, listReverse(minimalSetS)) :: mappedEbltSetS;
+
+    for i in minimalSetS loop
+      if not listMember(i, finalSetS) then
+        finalSetS := i :: finalSetS;
+      end if;
+    end for;
+
+    if not status then
+      // the first equation is detected as boundary condition equation
+      if listEmpty(minimalSetS) then
+        minimalSetS := {eqn};
+      end if;
+      if not listMember(listHead(minimalSetS), eqlistToRemove) then
+        eqlistToRemove := listHead(minimalSetS) :: eqlistToRemove;
+        setB := (sys.eqn_to_var[eqn], listHead(minimalSetS)) :: setB;
+        // store the failed boundary condition equations for D.2, they are removed from the modified model
+        if not List.any(setBFailedBoundaryConditionEquations, function isBoundaryConditionVar(var = boundaryConditionVar)) then
+          intermediateVars := listReverse(List.setDifferenceOnTrue(getVariablesAfterExtraction(sys, {listHead(minimalSetS)}), knowns, intEq));
+          setBFailedBoundaryConditionEquations := (boundaryConditionVar, sys.eqnArr[listHead(minimalSetS)], intermediateVars) :: setBFailedBoundaryConditionEquations;
+        end if;
+      end if;
+    end if;
+  end for;
+
+  if listEmpty(setB) then
+    outStatus := true;
+    finalSetS := listReverse(finalSetS);
+    mappedEbltSetS := listReverse(mappedEbltSetS);
+  else
+    setB := listReverse(setB);
+  end if;
+end traverseEBLTAndExtractSetCAndSetS;
+
+protected function setBEntryString
+  input tuple<Integer, Integer> entry;
+  output String str;
+protected
+  Integer var, eqn;
+algorithm
+  (var, eqn) := entry;
+  str := "(" + intString(var) + ", " + intString(eqn) + ")";
+end setBEntryString;
+
+protected function isBoundaryConditionVar
+  input tuple<Integer, Pointer<Equation>, list<Integer>> failed;
+  input Integer var;
+  output Boolean b;
+protected
+  Integer bc;
+algorithm
+  (bc, _, _) := failed;
+  b := bc == var;
+end isBoundaryConditionVar;
+
+protected function extractNewMinimalSetS
+  "constructs a minimal set-S needed to solve the intermediate variables of a set-C equation,
+  by following the matching from each intermediate variable to its equation"
+  input ExtractionSystem sys;
+  input list<Integer> unknownsInSetC;
+  input list<Integer> knowns;
+  input list<Integer> boundaryConditions;
+  input list<Integer> bindingEquations;
+  input Boolean extractSetCAndSetS  "stop at boundary conditions, only for D.1";
+  output list<Integer> minimalSetS = {};
+  output Boolean status = true;
+  output Integer boundaryConditionVar = -1;
+protected
+  list<Integer> unknowns = unknownsInSetC, rest, intermediateVars, visitedVars = {};
+  Integer var, mappedEq;
+algorithm
+  while not listEmpty(unknowns) loop
+    var :: rest := unknowns;
+    visitedVars := var :: visitedVars;
+
+    if extractSetCAndSetS and listMember(var, boundaryConditions) then
+      print("\n" + varName(sys, var) + " is a boundary condition ---> exit procedure");
+      status := false;
+      boundaryConditionVar := var;
+      break;
+    end if;
+
+    mappedEq := sys.var_to_eqn[var];
+    if not listMember(mappedEq, bindingEquations) then
+      minimalSetS := mappedEq :: minimalSetS;
+      dumpSetSTargetEquation(sys, mappedEq, "");
+    end if;
+
+    intermediateVars := List.setDifferenceOnTrue(getVariablesAfterExtraction(sys, {mappedEq}), knowns, intEq);
+    intermediateVars := List.setDifferenceOnTrue(intermediateVars, visitedVars, intEq);
+    rest := List.setDifferenceOnTrue(rest, visitedVars, intEq);
+    unknowns := List.unique(listAppend(intermediateVars, rest));
+  end while;
+end extractNewMinimalSetS;
+
 protected function varString
   "same format as BackendDump in the old backend, e.g. Q1:VARIABLE(start = 2.0 uncertain=Uncertainty.refine)  type: Real"
   input Pointer<Variable> var_ptr;
@@ -354,20 +501,34 @@ algorithm
   end for;
 end dumpMatching;
 
+protected function varName
+  input ExtractionSystem sys;
+  input Integer var;
+  output String str = if var > 0 then ComponentRef.toString(BVariable.getVarName(sys.varArr[var])) else "-";
+end varName;
+
+protected function dumpSetSTargetEquation
+  "same format as dumpSetSTargetEquations in the old backend:
+  <prefix><solved var index>: <solved var>: (<eqn>/<eqn>): (<size>): <equation>"
+  input ExtractionSystem sys;
+  input Integer eqn;
+  input String prefix;
+protected
+  Integer var = sys.eqn_to_var[eqn];
+algorithm
+  print("\n" + prefix + intString(var) + ": " + varName(sys, var) + ": (" + intString(eqn) + "/" + intString(eqn)
+    + "): (" + intString(Equation.size(sys.eqnArr[eqn])) + "): " + equationString(sys.eqnArr[eqn]));
+end dumpSetSTargetEquation;
+
 protected function dumpEquationList
-  "same format as dumpSetSVarsSolvedInfo in the old backend:
-  <solved var index>: <solved var>: (<eqn>/<eqn>): (<size>): <equation>"
+  "same format as dumpSetSVarsSolvedInfo in the old backend"
   input ExtractionSystem sys;
   input list<Integer> eqns;
   input String heading;
-protected
-  Integer var;
 algorithm
   print("\n" + heading + ":(" + intString(listLength(eqns)) + ")\n============================================================\n");
   for eqn in eqns loop
-    var := sys.eqn_to_var[eqn];
-    print("\n" + intString(var) + ": " + (if var > 0 then ComponentRef.toString(BVariable.getVarName(sys.varArr[var])) else "-")
-      + ": (" + intString(eqn) + "/" + intString(eqn) + "): (" + intString(Equation.size(sys.eqnArr[eqn])) + "): " + equationString(sys.eqnArr[eqn]));
+    dumpSetSTargetEquation(sys, eqn, "");
   end for;
   print("\n\n");
 end dumpEquationList;
