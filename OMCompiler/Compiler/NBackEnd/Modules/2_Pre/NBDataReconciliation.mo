@@ -92,6 +92,7 @@ protected
   list<Integer> knowns, boundaryConditionVars, boundaryConditions, bindingEquations, ebltEquations = {}, setC, setS = {};
   list<Integer> approximatedEquations = {}, boundaryConditionEquations;
   list<tuple<Integer, Integer>> setB;
+  list<tuple<Integer, list<Integer>>> mappedEbltSetS = {};
   list<tuple<Integer, Pointer<Equation>, list<Integer>>> setBFailedBoundaryConditionEquations = {};
   list<Pointer<Variable>> unknowns, var_lst, bc_vars;
   list<Pointer<Equation>> eqn_lst, bc_eqns;
@@ -125,7 +126,7 @@ algorithm
         sys := createSystem(var_lst, eqn_lst);
         bindingEquations := getBindingEquations(sys);
         dumpOrderedVariables(sys);
-        dumpOrderedEquations(sys, bindingEquations);
+        dumpEquationArray(sys, List.intRange(arrayLength(sys.eqnArr)), bindingEquations, "OrderedEquation");
         dumpMatching(sys);
         // the old backend lists the matching from the last variable to the first
         dumpEquationList(sys, list(sys.var_to_eqn[i] for i in arrayLength(sys.var_to_eqn):-1:1), "Standard BLT of the original model");
@@ -144,7 +145,7 @@ algorithm
         ebltEquations := getEBLTEquations(sys, knowns, bindingEquations);
         dumpEquationList(sys, ebltEquations, "E-BLT: equations that compute the variables of interest");
 
-        (setBFailedBoundaryConditionEquations, setS, _, setB, status) := traverseEBLTAndExtractSetCAndSetS(
+        (setBFailedBoundaryConditionEquations, setS, mappedEbltSetS, setB, status) := traverseEBLTAndExtractSetCAndSetS(
           sys, ebltEquations, knowns, boundaryConditions, bindingEquations, setBFailedBoundaryConditionEquations);
 
         if not status then
@@ -159,6 +160,9 @@ algorithm
       // remove approximated equations from SET-C and SET-S
       setC := List.setDifferenceOnTrue(ebltEquations, approximatedEquations, intEq);
       setS := List.setDifferenceOnTrue(setS, approximatedEquations, intEq);
+      (setC, setS) := swapComplexEquationsInSetC(sys, setC, setS, mappedEbltSetS, bindingEquations);
+      setC := List.unique(setC);
+      setS := List.unique(setS);
 
       print("\nFinal set of equations after extraction algorithm\n" + UNDERLINE + "\nSET_C: " + List.toString(setC, intString) + "\nSET_S: " + List.toString(setS, intString) + "\n\n");
     then ();
@@ -441,6 +445,50 @@ algorithm
   end for;
 end modifyModel;
 
+protected function swapComplexEquationsInSetC
+  "work around for condition-1 failed, because complex equations are detected
+  in Set-C and it should be swapped with any simple equation in Set-S with procedure = success"
+  input ExtractionSystem sys;
+  input output list<Integer> setC;
+  input output list<Integer> setS;
+  input list<tuple<Integer, list<Integer>>> mappedEbltSetS "(set-C eqn, set-S eqns)";
+  input list<Integer> bindingEquations;
+protected
+  Integer eqn;
+  list<Integer> matchedEqns, complexEquations = {}, swappedEquations = {};
+algorithm
+  for item in mappedEbltSetS loop
+    (eqn, matchedEqns) := item;
+    if isComplexEquation(sys.eqnArr[eqn]) then
+      complexEquations := eqn :: complexEquations;
+      for i in matchedEqns loop
+        if not isComplexEquation(sys.eqnArr[i]) then
+          setC := i :: List.removeOnTrue(eqn, intEq, setC);
+          setS := eqn :: List.removeOnTrue(i, intEq, setS);
+          swappedEquations := i :: swappedEquations;
+          break;
+        end if;
+      end for;
+    end if;
+  end for;
+
+  if not listEmpty(complexEquations) then
+    dumpEquationArray(sys, listReverse(complexEquations), bindingEquations, "Warning complex equation detected in Set-C");
+    dumpEquationArray(sys, listReverse(swappedEquations), bindingEquations, "Swapping Equations from Set-S");
+  end if;
+end swapComplexEquationsInSetC;
+
+protected function isComplexEquation
+  "record and tuple equations, COMPLEX_EQUATION in the old backend"
+  input Pointer<Equation> eqn;
+  output Boolean b;
+algorithm
+  b := match Pointer.access(eqn)
+    case Equation.RECORD_EQUATION() then true;
+    else false;
+  end match;
+end isComplexEquation;
+
 protected function isBoundaryConditionVar
   input tuple<Integer, Pointer<Equation>, list<Integer>> failed;
   input Integer var;
@@ -550,19 +598,24 @@ algorithm
   print("\n");
 end dumpOrderedVariables;
 
-protected function dumpOrderedEquations
+protected function dumpEquationArray
+  "same format as BackendDump.dumpEquationArray in the old backend"
   input ExtractionSystem sys;
+  input list<Integer> eqns;
   input list<Integer> bindingEquations;
+  input String heading;
 protected
-  Integer n = arrayLength(sys.eqnArr);
+  Integer i = 1;
 algorithm
-  print("\nOrderedEquation (" + intString(n) + ", " + intString(EquationPointers.scalarSize(sys.eqns)) + ")\n========================================\n");
-  for i in 1:n loop
-    print(intString(i) + "/" + intString(i) + " (" + intString(Equation.size(sys.eqnArr[i])) + "): " + equationString(sys.eqnArr[i])
-      + (if listMember(i, bindingEquations) then "   [binding]" else "   [dynamic]") + "\n");
+  print("\n" + heading + " (" + intString(listLength(eqns)) + ", " + intString(sum(Equation.size(sys.eqnArr[eqn]) for eqn in eqns))
+    + ")\n========================================\n");
+  for eqn in eqns loop
+    print(intString(i) + "/" + intString(i) + " (" + intString(Equation.size(sys.eqnArr[eqn])) + "): " + equationString(sys.eqnArr[eqn])
+      + (if listMember(eqn, bindingEquations) then "   [binding]" else "   [dynamic]") + "\n");
+    i := i + 1;
   end for;
   print("\n");
-end dumpOrderedEquations;
+end dumpEquationArray;
 
 protected function dumpEquations
   "same format as BackendDump.dumpEquationList in the old backend, nothing is printed for no equations"
