@@ -12,17 +12,10 @@ end f;
   Integer[3,3] o1,o2;
 algorithm
   (o1,o2) := f({1,2,3},3);
-  annotation(__OpenModelica_commandLineOptions="+d=nogen -d=-newInst");
+  annotation(__OpenModelica_commandLineOptions="+d=nogen");
 end Identity4;
 
 // Result:
-// function Identity4.f
-//   input Integer[3] is;
-//   input Integer s;
-//   output Integer[3, 3] o1 = {{is[1], 0, 0}, {0, is[2], 0}, {0, 0, is[3]}};
-//   output Integer[s, s] o2 = identity(s);
-// end Identity4.f;
-//
 // class Identity4
 //   Integer o1[1,1];
 //   Integer o1[1,2];

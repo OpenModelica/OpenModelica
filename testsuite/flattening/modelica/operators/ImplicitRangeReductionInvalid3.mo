@@ -7,13 +7,11 @@
 
 model ImplicitRangeReductionInvalid3
   Real x[3] = {y[i] for i};
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ImplicitRangeReductionInvalid3;
 
 // Result:
 // Error processing file: ImplicitRangeReductionInvalid3.mo
-// [flattening/modelica/operators/ImplicitRangeReductionInvalid3.mo:9:3-9:27:writable] Error: Variable y not found in scope .
-// Error: Error occurred while flattening model ImplicitRangeReductionInvalid3
+// [flattening/modelica/operators/ImplicitRangeReductionInvalid3.mo:9:3-9:27:writable] Error: Variable y[i] not found in scope ImplicitRangeReductionInvalid3.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.
