@@ -544,6 +544,13 @@ algorithm
             end if;
           then ();
 
+          case BackendDAE.REINIT(stateVar = cr, value = e) algorithm
+            if active then
+              eqn := BackendEquation.generateEquation(Expression.crefExp(cr), e, inSource, inEqAttr);
+              outEqns := eqn::outEqns;
+            end if;
+          then ();
+
           case BackendDAE.NORETCALL(exp=e, source=source) algorithm
             if active then
               //eqn := BackendEquation.generateEquation(DAE.CREF(DAE.emptyCref, DAE.T_UNKNOWN_DEFAULT), e, inSource, inEqAttr);
