@@ -8,7 +8,7 @@
 
 loadString("
 model entwinedForward
-  parameter Integer N = 3 annotation(__OpenModelica_resizable=true);
+  parameter Integer N = 3;
   Real a[N], b[N];
 equation
   a[1] = 0;
