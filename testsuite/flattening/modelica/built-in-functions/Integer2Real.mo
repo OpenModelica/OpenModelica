@@ -5,13 +5,12 @@
 // Automatic conversion from Integer to Real.
 //
 
-class Integer2Real
+model Integer2Real
   Integer n;
   Real a;
 equation
   n = 5;
   a = n / 2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Integer2Real;
 
 // Result:
@@ -20,6 +19,6 @@ end Integer2Real;
 //   Real a;
 // equation
 //   n = 5;
-//   a = 0.5 * /*Real*/(n);
+//   a = /*Real*/(n) / 2.0;
 // end Integer2Real;
 // endResult

@@ -391,6 +391,10 @@ View Menu
 
   -  *Tile Windows Vertically* - Arranges all child windows in a vertically tiled pattern.
 
+  -  *Tile Windows Matrix* - Arranges all child windows in a matrix pattern. The number of columns is chosen so that the matrix is as square as possible, e.g. 4 windows make a 2x2 grid, 6 windows make a 2x3 grid and 9 windows make a 3x3 grid.
+
+  -  *Equate & Tile Windows Matrix* - Sets the size of all child windows to the size of the active window and then arranges them in a matrix pattern without changing the sizes, so windows may superimpose when the matrix does not fit.
+
 -  *Toggle Tab/SubWindow View* - Switches between tab and sub-window view.
 
 -  *Grid Lines* - Toggle grid lines of the current model.

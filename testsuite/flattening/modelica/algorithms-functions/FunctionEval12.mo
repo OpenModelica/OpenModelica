@@ -30,24 +30,10 @@ model FunctionEval12
 equation
   res1 = myFun( {{1,2,3}});
   res2 = myFun( {{1,2,3,4,5}});
-  annotation(__OpenModelica_commandLineOptions="+d=nogen -d=-newInst");
+  annotation(__OpenModelica_commandLineOptions="+d=nogen");
 end FunctionEval12;
 
 // Result:
-// function FunctionEval12.myFun
-//   input Real[1, :] x = {{0.0, 1.0}};
-//   output Real y;
-//   protected Integer index;
-//   protected Real[1, size(x, 2)] locX;
-// algorithm
-//   index := 1;
-//   while index <= size(x, 2) loop
-//     locX[1,index] := x[1,index];
-//     index := 1 + index;
-//   end while;
-//   y := locX[1,size(x, 2)];
-// end FunctionEval12.myFun;
-//
 // class FunctionEval12
 //   Real res1;
 //   Real res2;

@@ -2,7 +2,6 @@
 // keywords: start value selection
 // status:   correct
 // teardown_command: rm -rf Package* _Package* output.log
-// cflags: -d=-newInst
 
 setCommandLineOptions({"+d=showStartOrigin"}); getErrorString();
 
@@ -19,21 +18,21 @@ instantiateModel(Package.TestMore); getErrorString();
 // true
 // ""
 // "class Package.Test
-//   Real x(start = 20.0, startOrigin = binding);
-//   Real y(start = 15.0, startOrigin = binding);
-//   Real z(start = 10.0, startOrigin = type);
+//   Real x(start = 20.0, startOrigin = confidence(1, 1));
+//   Real y(start = 15.0, startOrigin = confidence(1, 1));
+//   Real z(start = 10.0, startOrigin = typeConfidence(1));
 // equation
 //   x = y + z;
 // end Package.Test;
 // "
 // ""
 // "class Package.TestMore
-//   Real t.x(start = 20.0, startOrigin = binding);
-//   Real t.y(start = 15.0, startOrigin = binding);
-//   Real t.z(start = 10.0, startOrigin = type);
-//   Real tredeclared.x(start = 20.0, startOrigin = binding);
-//   Real tredeclared.y(start = 15.0, startOrigin = binding);
-//   Real tredeclared.z(start = 1e4, startOrigin = binding);
+//   Real t.x(start = 20.0, startOrigin = confidence(2, 2));
+//   Real t.y(start = 15.0, startOrigin = confidence(2, 2));
+//   Real t.z(start = 10.0, startOrigin = typeConfidence(2));
+//   Real tredeclared.x(start = 20.0, startOrigin = confidence(2, 2));
+//   Real tredeclared.y(start = 15.0, startOrigin = confidence(2, 2));
+//   Real tredeclared.z(start = 1e4, startOrigin = typeConfidence(1));
 // equation
 //   t.x = t.y + t.z;
 //   tredeclared.x = tredeclared.y + tredeclared.z;

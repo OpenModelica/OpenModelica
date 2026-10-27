@@ -13,7 +13,6 @@ model OuterProduct
 equation
   r1 = outerProduct({2, 1}, {3, 2});
   r2 = outerProduct(v1, v2);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end OuterProduct;
 
 // Result:
@@ -37,9 +36,6 @@ end OuterProduct;
 //   r1[1,2] = 4.0;
 //   r1[2,1] = 3.0;
 //   r1[2,2] = 2.0;
-//   r2[1,1] = v1[1] * v2[1];
-//   r2[1,2] = v1[1] * v2[2];
-//   r2[2,1] = v1[2] * v2[1];
-//   r2[2,2] = v1[2] * v2[2];
+//   r2 = promote(v1, 2) * transpose(promote(v2, 2));
 // end OuterProduct;
 // endResult

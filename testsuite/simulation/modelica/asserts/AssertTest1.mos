@@ -4,7 +4,6 @@
 // teardown_command: rm -rf Test1* output.log
 // 
 // Drmodelica: 9.1 assert (p. 298) 
-// cflags: -d=-newInst
 // 
 loadFile("AssertTest1.mo");
 

@@ -13,7 +13,6 @@ algorithm
   while y < x loop
     y := y + 1;
   end while;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end While;
 
 // Result:
@@ -23,7 +22,7 @@ end While;
 // algorithm
 //   x := 2;
 //   while y < x loop
-//     y := 1 + y;
+//     y := y + 1;
 //   end while;
 // end While;
 // endResult

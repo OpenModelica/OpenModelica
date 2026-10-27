@@ -1899,7 +1899,7 @@ algorithm
         node := ComponentRef.node(exp.cref);
         try
           binding := Component.getBinding(InstNode.component(node));
-          if Binding.isBound(binding) then
+          if Binding.isTyped(binding) then
             bexp := Binding.getTypedExp(flattenBinding(binding, prefix));
             if isInComponentArray(exp.cref) then
               // a parameter of an array of components, e.g. s.N or s[$s1].N for s[M]

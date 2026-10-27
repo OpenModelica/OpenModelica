@@ -13,17 +13,9 @@ model example
   constant  abcRec x = abcRec(1);
   parameter abcRec y = abcRec(4,p*2);
             abcRec z = abcRec(2,p);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end example;
 
 // Result:
-// function abcRec "Automatically generated record constructor for abcRec"
-//   input Integer a;
-//   input Integer b = 2;
-//   protected Integer c = 3;
-//   output abcRec res;
-// end abcRec;
-//
 // class example
 //   constant Integer p = 13;
 //   constant Integer x.a = 1;

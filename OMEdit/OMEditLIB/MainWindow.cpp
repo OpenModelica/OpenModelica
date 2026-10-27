@@ -3236,6 +3236,45 @@ void MainWindow::tileSubWindowsVertically()
 }
 
 /*!
+ * \brief MainWindow::tileSubWindowsMatrix
+ * Slot activated when mpTileWindowsMatrixAction triggered signal is raised.\n
+ * Arranges all child windows in a matrix pattern.
+ */
+void MainWindow::tileSubWindowsMatrix()
+{
+  switch (mpCentralStackedWidget->currentIndex()) {
+    case 1:
+      tileSubWindowsMatrix(mpModelWidgetContainer, true);
+      break;
+    case 2:
+      tileSubWindowsMatrix(mpPlotWindowContainer, true);
+    default:
+      break;
+  }
+}
+
+/*!
+ * \brief MainWindow::equateAndTileSubWindowsMatrix
+ * Slot activated when mpEquateAndTileWindowsMatrixAction triggered signal is raised.\n
+ * Sets the size of all child windows to the size of the active window and then
+ * arranges them in a matrix pattern without changing the equated sizes.
+ */
+void MainWindow::equateAndTileSubWindowsMatrix()
+{
+  switch (mpCentralStackedWidget->currentIndex()) {
+    case 1:
+      equateSubWindowSizes(mpModelWidgetContainer);
+      tileSubWindowsMatrix(mpModelWidgetContainer, false);
+      break;
+    case 2:
+      equateSubWindowSizes(mpPlotWindowContainer);
+      tileSubWindowsMatrix(mpPlotWindowContainer, false);
+    default:
+      break;
+  }
+}
+
+/*!
  * \brief MainWindow::toggleTabOrSubWindowView
  * Slot activated when mpToggleTabOrSubWindowView triggered signal is raised.\n
  * Toggles between tab or sub-window view mode.
@@ -4868,6 +4907,14 @@ void MainWindow::createActions()
   mpTileWindowsVerticallyAction = new QAction(tr("Tile Windows Vertically"), this);
   mpTileWindowsVerticallyAction->setStatusTip(tr("Arranges all child windows in a vertically tiled pattern"));
   connect(mpTileWindowsVerticallyAction, SIGNAL(triggered()), SLOT(tileSubWindowsVertically()));
+  // Tile windows Matrix action
+  mpTileWindowsMatrixAction = new QAction(tr("Tile Windows Matrix"), this);
+  mpTileWindowsMatrixAction->setStatusTip(tr("Arranges all child windows in a matrix pattern"));
+  connect(mpTileWindowsMatrixAction, SIGNAL(triggered()), SLOT(tileSubWindowsMatrix()));
+  // Equate windows and tile them in a matrix action
+  mpEquateAndTileWindowsMatrixAction = new QAction(tr("Equate && Tile Windows Matrix"), this);
+  mpEquateAndTileWindowsMatrixAction->setStatusTip(tr("Equates the size of all child windows to the size of active window and arranges them in a matrix pattern"));
+  connect(mpEquateAndTileWindowsMatrixAction, SIGNAL(triggered()), SLOT(equateAndTileSubWindowsMatrix()));
   // Toggle between tab or sub-window view
   mpToggleTabOrSubWindowView = new QAction(tr("Toggle Tab/Sub-window View"), this);
   mpToggleTabOrSubWindowView->setStatusTip(tr("Toggle between tab or sub-window view mode"));
@@ -5309,6 +5356,8 @@ void MainWindow::createMenus()
   pViewWindowsMenu->addAction(mpCascadeWindowsAction);
   pViewWindowsMenu->addAction(mpTileWindowsHorizontallyAction);
   pViewWindowsMenu->addAction(mpTileWindowsVerticallyAction);
+  pViewWindowsMenu->addAction(mpTileWindowsMatrixAction);
+  pViewWindowsMenu->addAction(mpEquateAndTileWindowsMatrixAction);
   pViewMenu->addAction(pViewToolbarsMenu->menuAction());
   pViewMenu->addAction(pViewWindowsMenu->menuAction());
   pViewMenu->addSeparator();
@@ -5678,6 +5727,91 @@ void MainWindow::tileSubWindows(QMdiArea *pMdiArea, bool horizontally)
       position.setY(position.y() + pSubWindow->height());
     } else {
       position.setX(position.x() + pSubWindow->width());
+    }
+  }
+}
+
+/*!
+ * \brief MainWindow::tileSubWindowsMatrix
+ * Arranges all child windows in a matrix pattern. When resize is true the tiles are resized to fill the matrix,
+ * otherwise the windows keep their sizes and may superimpose.
+ * \param pMdiArea - the subwindows parent mdi area.
+ * \param resize
+ */
+void MainWindow::tileSubWindowsMatrix(QMdiArea *pMdiArea, bool resize)
+{
+  QList<QMdiSubWindow*> subWindowsList = pMdiArea->subWindowList(QMdiArea::ActivationHistoryOrder);
+  if (subWindowsList.count() < 2) {
+    pMdiArea->tileSubWindows();
+    return;
+  }
+  // Only the visible windows are tiled.
+  QList<QMdiSubWindow*> tilesList;
+  foreach (QMdiSubWindow *pSubWindow, subWindowsList) {
+    if (pSubWindow->isVisible() && (!pSubWindow->isMinimized() || pSubWindow->isShaded())) {
+      tilesList.append(pSubWindow);
+    }
+  }
+  if (tilesList.count() < 2) {
+    pMdiArea->tileSubWindows();
+    return;
+  }
+  // Use as many columns as fit in a square grid: 4 tiles make 2x2, 6 make 2x3, 9 make 3x3 and 12 make 3x4.
+  int columns = 1;
+  while (columns * columns < tilesList.count()) {
+    ++columns;
+  }
+  const int rows = (tilesList.count() + columns - 1) / columns;
+  const int tileWidth = pMdiArea->width() / columns;
+  const int tileHeight = pMdiArea->height() / rows;
+  QPoint position(0, 0);
+  int tile = 0;
+  for (int i = tilesList.size() - 1 ; i >= 0 ; i--) {
+    QMdiSubWindow *pSubWindow = tilesList[i];
+    if (pSubWindow->isMaximized() || pSubWindow->isShaded()) {
+      pSubWindow->showNormal();
+    }
+    const int row = tile / columns;
+    const int column = tile % columns;
+    if (resize) {
+      // The tiles of the last column and row take up the space lost to the integer division.
+      const int width = qMax(pSubWindow->minimumSizeHint().width(), column == columns - 1 ? pMdiArea->width() - column * tileWidth : tileWidth);
+      const int height = qMax(pSubWindow->minimumSizeHint().height(), row == rows - 1 ? pMdiArea->height() - row * tileHeight : tileHeight);
+      pSubWindow->setGeometry(position.x(), position.y(), width, height);
+      if (column == columns - 1) {
+        position.setX(0);
+        position.setY(position.y() + height);
+      } else {
+        position.setX(position.x() + width);
+      }
+    } else {
+      // The windows keep their sizes, so they superimpose when the matrix is unfeasible.
+      pSubWindow->move(column * tileWidth, row * tileHeight);
+    }
+    tile++;
+  }
+}
+
+/*!
+ * \brief MainWindow::equateSubWindowSizes
+ * Sets the size of all child windows to the size of the active window.
+ * \param pMdiArea - the subwindows parent mdi area.
+ */
+void MainWindow::equateSubWindowSizes(QMdiArea *pMdiArea)
+{
+  QMdiSubWindow *pActiveSubWindow = pMdiArea->activeSubWindow();
+  if (!pActiveSubWindow) {
+    return;
+  }
+  // A maximized active window equates by the size it would have when restored.
+  QSize size = pActiveSubWindow->isMaximized() && !pActiveSubWindow->isShaded() ? pActiveSubWindow->normalGeometry().size() : pActiveSubWindow->size();
+  QList<QMdiSubWindow*> subWindowsList = pMdiArea->subWindowList(QMdiArea::ActivationHistoryOrder);
+  foreach (QMdiSubWindow *pSubWindow, subWindowsList) {
+    if (pSubWindow->isVisible() && (!pSubWindow->isMinimized() || pSubWindow->isShaded())) {
+      if (pSubWindow->isMaximized() || pSubWindow->isShaded()) {
+        pSubWindow->showNormal();
+      }
+      pSubWindow->resize(size);
     }
   }
 }

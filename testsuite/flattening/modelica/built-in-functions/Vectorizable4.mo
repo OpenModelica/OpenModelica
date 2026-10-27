@@ -14,7 +14,6 @@ equation
   x=der([time*1,time*2;time*3,time*4]);
   der(y)=fill(-1,2);
   der(z)=fill(-1,2,2,2);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Vectorizable4;
 
 
@@ -36,9 +35,9 @@ end Vectorizable4;
 //   Real z[2,2,2];
 // equation
 //   x[1,1] = der(time);
-//   x[1,2] = der(2.0 * time);
-//   x[2,1] = der(3.0 * time);
-//   x[2,2] = der(4.0 * time);
+//   x[1,2] = der(time * 2.0);
+//   x[2,1] = der(time * 3.0);
+//   x[2,2] = der(time * 4.0);
 //   der(y[1]) = -1.0;
 //   der(y[2]) = -1.0;
 //   der(z[1,1,1]) = -1.0;

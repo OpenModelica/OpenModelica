@@ -7,13 +7,12 @@
 // at the same point and not to the 'a' in the
 // enclosing scope.
 
-class Lookup5
+model Lookup5
   constant Real a = 3.0;
-  class B
+  model B
     Real a = -a;
   end B;
   B b;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Lookup5;
 
 // Result:

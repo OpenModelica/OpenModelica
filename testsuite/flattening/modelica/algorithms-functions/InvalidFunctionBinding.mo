@@ -17,14 +17,11 @@ end f;
 
 model InvalidFunctionBinding
   Real x = f(4);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InvalidFunctionBinding;
 
 // Result:
 // Error processing file: InvalidFunctionBinding.mo
-// [flattening/modelica/algorithms-functions/InvalidFunctionBinding.mo:13:3-13:26:writable] Error: Type mismatch in modifier of component .z, expected type Real, got modifier =true of type Boolean.
-// [flattening/modelica/algorithms-functions/InvalidFunctionBinding.mo:19:3-19:16:writable] Error: Class f not found in scope InvalidFunctionBinding (looking for a function or record).
-// Error: Error occurred while flattening model InvalidFunctionBinding
+// [flattening/modelica/algorithms-functions/InvalidFunctionBinding.mo:13:3-13:26:writable] Error: Type mismatch in binding z = true, expected subtype of Real, got type Boolean.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

@@ -11,7 +11,6 @@ model VanDerPol  "Van der Pol oscillator model"
 equation
   der(x) = y;
   der(y) = - x + lambda*(1 - x*x)*y;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end VanDerPol;
 
 // Result:
@@ -21,6 +20,6 @@ end VanDerPol;
 //   parameter Real lambda = 0.3;
 // equation
 //   der(x) = y;
-//   der(y) = lambda * (1.0 - x ^ 2.0) * y - x;
+//   der(y) = lambda * (1.0 - x * x) * y - x;
 // end VanDerPol;
 // endResult

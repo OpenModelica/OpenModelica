@@ -5,7 +5,7 @@
 // Drmodelica: 9.1 assert (p. 298)
 //
 
-class AssertTest
+model AssertTest
   parameter Real lowlimit;
   parameter Real highlimit;
   Real x = 10;
@@ -13,7 +13,7 @@ equation
   assert(x >= lowlimit and x <= highlimit, "Variable x out of limit");
 end AssertTest;
 
-class Test1
+model Test1
   AssertTest assertTest(lowlimit = 4, highlimit = 8);
 end Test1;
 

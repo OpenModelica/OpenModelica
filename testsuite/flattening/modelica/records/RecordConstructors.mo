@@ -13,7 +13,6 @@ model RecordConstructors
   TestRecord tr;
 equation
   tr = TestRecord(1);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RecordConstructors;
 
 // Result:
@@ -25,6 +24,6 @@ end RecordConstructors;
 // class RecordConstructors
 //   Integer tr.i;
 // equation
-//   tr.i = 1;
+//   tr = TestRecord(1);
 // end RecordConstructors;
 // endResult

@@ -10,7 +10,7 @@ record ColorData "Superclass of Color"
   Real green;
 end ColorData;
 
-class Color "Subclass of ColorData"
+model Color "Subclass of ColorData"
   extends ColorData;
 equation
   red + blue + green = 1;
@@ -21,7 +21,6 @@ model Colors
   Real k;
 equation
   k = c.green;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Colors;
 // Result:
 // class Colors

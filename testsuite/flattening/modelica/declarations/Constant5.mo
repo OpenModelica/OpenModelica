@@ -5,9 +5,8 @@
 //
 //
 
-class Constant5
+model Constant5
   Real x[integer(2.5)];
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Constant5;
 
 // Result:

@@ -13,15 +13,9 @@ end f;
 
 model M
   Real x[:] = f(2);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end M;
 
 // Result:
-// function f
-//   input Integer n;
-//   output Real[:] x = if n == 1 then {1.0} else {1.0, 2.0};
-// end f;
-//
 // class M
 //   Real x[1];
 //   Real x[2];

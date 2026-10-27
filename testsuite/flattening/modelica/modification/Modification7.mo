@@ -6,11 +6,11 @@
 // taken care of.
 //
 
-class Modification7
-  class A
+model Modification7
+  model A
     Real x,y;
   end A;
-  class B
+  model B
     A a;
   end B;
 
@@ -18,7 +18,6 @@ class Modification7
   //   B b(a(x = 1.0, y = 2.0))
   // This tests whether it works in the following way too.
   B b(a.x = 1.0, a.y = 2.0);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Modification7;
 
 // Result:

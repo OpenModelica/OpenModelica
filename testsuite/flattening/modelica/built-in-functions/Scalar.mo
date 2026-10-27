@@ -18,17 +18,9 @@ model Scalar
   Real r3 = scalar({{{5}}});
   Real r4 = scalar([6]);
   Real r5 = f(fill(1,3));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Scalar;
 
 // Result:
-// function Scalar.f
-//   input Real[:] rs;
-//   output Integer i;
-// algorithm
-//   i := size(rs, 1);
-// end Scalar.f;
-//
 // class Scalar
 //   Real r1 = 3.0;
 //   Real r2 = 4.0;
