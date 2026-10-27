@@ -57,7 +57,9 @@ protected
   import Variable = NFVariable;
 
   // Util
+  import DAE;
   import Error;
+  import SCode;
   import Flags;
   import List;
   import SCodeUtil;
@@ -87,7 +89,8 @@ public function main extends Module.wrapper;
   input String fileNamePrefix;
 protected
   ExtractionSystem sys;
-  list<Integer> knowns, boundaryConditions, bindingEquations, ebltEquations = {}, setS = {};
+  list<Integer> knowns, boundaryConditionVars, boundaryConditions, bindingEquations, ebltEquations = {}, setC, setS = {};
+  list<Integer> approximatedEquations = {}, boundaryConditionEquations;
   list<tuple<Integer, Integer>> setB;
   list<tuple<Integer, Pointer<Equation>, list<Integer>>> setBFailedBoundaryConditionEquations = {};
   list<Pointer<Variable>> unknowns, var_lst, bc_vars;
@@ -127,10 +130,16 @@ algorithm
         // the old backend lists the matching from the last variable to the first
         dumpEquationList(sys, list(sys.var_to_eqn[i] for i in arrayLength(sys.var_to_eqn):-1:1), "Standard BLT of the original model");
 
-        (knowns, boundaryConditions, _, _) := getVariableCategories(sys);
+        (approximatedEquations, boundaryConditionEquations) := getEquationsTaggedApproximatedOrBoundaryCondition(sys);
+
+        (knowns, boundaryConditionVars, _, _) := getVariableCategories(sys);
+        // the variables solved by equations tagged as boundary condition are boundary conditions too
+        boundaryConditions := listAppend(boundaryConditionVars, list(sys.eqn_to_var[eqn] for eqn in boundaryConditionEquations));
         dumpVarList(sys, knowns, "Variables of interest");
         dumpVarList(sys, boundaryConditions, "Boundary conditions");
         dumpEquationList(sys, bindingEquations, "Binding equations");
+        dumpEquations(sys, approximatedEquations, bindingEquations, "Approximated equations");
+        dumpEquations(sys, boundaryConditionEquations, bindingEquations, "boundary condition equations");
 
         ebltEquations := getEBLTEquations(sys, knowns, bindingEquations);
         dumpEquationList(sys, ebltEquations, "E-BLT: equations that compute the variables of interest");
@@ -146,7 +155,12 @@ algorithm
       end while;
 
       print("\nExtraction procedure is successfully completed in iteration count: " + intString(procedureCount) + "\n" + UNDERLINE + "\n");
-      print("\nFinal set of equations after extraction algorithm\n" + UNDERLINE + "\nSET_C: " + List.toString(ebltEquations, intString) + "\nSET_S: " + List.toString(setS, intString) + "\n\n");
+
+      // remove approximated equations from SET-C and SET-S
+      setC := List.setDifferenceOnTrue(ebltEquations, approximatedEquations, intEq);
+      setS := List.setDifferenceOnTrue(setS, approximatedEquations, intEq);
+
+      print("\nFinal set of equations after extraction algorithm\n" + UNDERLINE + "\nSET_C: " + List.toString(setC, intString) + "\nSET_S: " + List.toString(setS, intString) + "\n\n");
     then ();
   end match;
 end main;
@@ -291,6 +305,25 @@ algorithm
     end if;
   end for;
 end getBindingEquations;
+
+protected function getEquationsTaggedApproximatedOrBoundaryCondition
+  "returns the equations with annotation(__OpenModelica_ApproximatedEquation = true) and
+  annotation(__OpenModelica_BoundaryCondition = true), descending like in the old backend"
+  input ExtractionSystem sys;
+  output list<Integer> approximatedEquations = {};
+  output list<Integer> boundaryConditionEquations = {};
+protected
+  list<SCode.Comment> comments;
+algorithm
+  for i in 1:arrayLength(sys.eqnArr) loop
+    DAE.SOURCE(comment = comments) := Equation.getSource(Pointer.access(sys.eqnArr[i]));
+    if List.any(comments, function SCodeUtil.commentHasBooleanNamedAnnotation(annotationName = "__OpenModelica_ApproximatedEquation")) then
+      approximatedEquations := i :: approximatedEquations;
+    elseif List.any(comments, function SCodeUtil.commentHasBooleanNamedAnnotation(annotationName = "__OpenModelica_BoundaryCondition")) then
+      boundaryConditionEquations := i :: boundaryConditionEquations;
+    end if;
+  end for;
+end getEquationsTaggedApproximatedOrBoundaryCondition;
 
 protected function getEBLTEquations
   "returns the equations matched to the variables of interest, without binding equations"
@@ -530,6 +563,26 @@ algorithm
   end for;
   print("\n");
 end dumpOrderedEquations;
+
+protected function dumpEquations
+  "same format as BackendDump.dumpEquationList in the old backend, nothing is printed for no equations"
+  input ExtractionSystem sys;
+  input list<Integer> eqns;
+  input list<Integer> bindingEquations;
+  input String heading;
+protected
+  Integer i = 1;
+algorithm
+  if not listEmpty(eqns) then
+    print("\n" + heading + " (" + intString(listLength(eqns)) + ")\n========================================\n");
+    for eqn in eqns loop
+      print(intString(i) + "/" + intString(i) + " (" + intString(Equation.size(sys.eqnArr[eqn])) + "): " + equationString(sys.eqnArr[eqn])
+        + (if listMember(eqn, bindingEquations) then "   [binding]" else "   [dynamic]") + "\n");
+      i := i + 1;
+    end for;
+    print("\n");
+  end if;
+end dumpEquations;
 
 protected function dumpMatching
   input ExtractionSystem sys;
