@@ -1213,7 +1213,7 @@ algorithm
 
         // Apply the modifiers of extends nodes.
         ClassTree.mapExtends(cls_tree,
-          function modifyExtends(scope = par, context = context, instLevel = instLevel));
+          function modifyExtends(scope = par, instance = par, context = context, instLevel = instLevel));
 
         // Propagate the visibility of extends to their elements.
         ClassTree.mapExtends(cls_tree,
@@ -1480,6 +1480,7 @@ end isAliasablePackage;
 function modifyExtends
   input output InstNode extendsNode;
   input InstNode scope;
+  input InstNode instance;
   input InstContext.Type context;
   input Integer instLevel;
 protected
@@ -1497,10 +1498,17 @@ algorithm
   InstNodeType.BASE_CLASS(definition = elem) := InstNode.nodeType(extendsNode);
   ext_mod := Modifier.fromElement(elem, scope, instLevel);
   ext_mod := Modifier.merge(InstNode.getModifier(extendsNode), ext_mod);
+  ext_mod := Modifier.merge(ext_mod, derivedClassModifier(extendsNode, instLevel));
+
+  // Modifiers on a type end up as attributes of the instance, so they need to
+  // be split like the modifiers of a short type definition.
+  if Class.isBuiltin(cls) or Restriction.isType(Class.restriction(cls)) then
+    ext_mod := Modifier.propagate(ext_mod, extendsNode, instance);
+  end if;
 
   if not Class.isBuiltin(cls) then
     ClassTree.mapExtends(cls_tree,
-      function modifyExtends(scope = extendsNode, context = context, instLevel = instLevel));
+      function modifyExtends(scope = extendsNode, instance = instance, context = context, instLevel = instLevel));
 
     () := match elem
       case SCode.EXTENDS()
@@ -1528,6 +1536,26 @@ algorithm
 
   applyModifier(ext_mod, cls_tree, extendsNode, context);
 end modifyExtends;
+
+function derivedClassModifier
+  "Returns the modifiers of a chain of short class definitions, e.g. the
+   (x = 1) in model M2 = M(x = 1)."
+  input InstNode node;
+  input Integer instLevel;
+  output Modifier mod;
+algorithm
+  mod := match InstNode.getClass(node)
+    local
+      InstNode base_node;
+
+    case Class.EXPANDED_DERIVED(baseClass = base_node)
+      then Modifier.merge(
+        Modifier.fromElement(InstNode.definition(node), InstNode.parent(node), instLevel),
+        derivedClassModifier(base_node, instLevel));
+
+    else Modifier.NOMOD();
+  end match;
+end derivedClassModifier;
 
 type ExtendsVisibility = enumeration(PUBLIC, DERIVED_PROTECTED, PROTECTED);
 
