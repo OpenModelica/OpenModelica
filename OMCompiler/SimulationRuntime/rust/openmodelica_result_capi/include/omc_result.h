@@ -153,6 +153,11 @@ typedef struct omc_result_signal {
   /* FMI's relativeQuantity (Modelica absoluteValue=false): the value is a
    * difference in its unit, so a conversion scales it but adds no offset. */
   int relative_quantity;
+  /* An INTEGER signal of an enumeration type: its name and n_literals literals,
+   * value k naming literals[k-1]. NULL otherwise. */
+  const char *declared_type;
+  const char *const *literals;
+  unsigned n_literals;
 } omc_result_signal;
 
 typedef struct omc_result_writer omc_result_writer;

@@ -1,0 +1,115 @@
+// name: literalConnects
+// keywords: NewBackend resizable arrayConnect connect
+// status: correct
+// suite: cSources
+// teardown_command: rm -f literalConnects_*
+//
+// Connections of single elements (literal indices) next to array connections
+// (#17368), with the piece limit lowered from 300 to 3: Separate and Same
+// would otherwise need about 12 and 9 pieces. A connector array connected only
+// with literal indices (c) gets a vertex for each element, runs of single
+// element connections with the same index distance (r[8:16]) become one edge
+// with --resizableArrays and one for loop with -d=arrayConnect. Without runs
+// (Gaps) the array is still split into pieces.
+
+loadString("
+package literalConnects
+  import Modelica.Electrical.Analog.Basic;
+  model Separate \"c only connected with literal indices, a in a for loop\"
+    Basic.Resistor c[12](each R = 1);
+    Basic.Resistor a[3](each R = 1);
+    Modelica.Electrical.Analog.Sources.ConstantVoltage v(V = 1);
+    Basic.Ground g;
+  equation
+    connect(v.p, c[1].p); connect(v.n, g.p); connect(c[12].n, a[1].p); connect(a[3].n, g.p);
+    for i in 1:2 loop connect(a[i].n, a[i + 1].p); end for;
+    connect(c[1].n, c[2].p); connect(c[2].n, c[3].p); connect(c[3].n, c[4].p); connect(c[4].n, c[5].p);
+    connect(c[5].n, c[6].p); connect(c[6].n, c[7].p); connect(c[7].n, c[8].p); connect(c[8].n, c[9].p);
+    connect(c[9].n, c[10].p); connect(c[10].n, c[11].p); connect(c[11].n, c[12].p);
+  end Separate;
+  model Same \"r connected in a for loop and with literal indices\"
+    Basic.Resistor r[16](each R = 1);
+    Modelica.Electrical.Analog.Sources.ConstantVoltage v(V = 1);
+    Basic.Ground g;
+  equation
+    connect(v.p, r[1].p); connect(v.n, g.p); connect(r[16].n, g.p);
+    for i in 1:7 loop connect(r[i].n, r[i + 1].p); end for;
+    connect(r[8].n, r[9].p); connect(r[9].n, r[10].p); connect(r[10].n, r[11].p); connect(r[11].n, r[12].p);
+    connect(r[12].n, r[13].p); connect(r[13].n, r[14].p); connect(r[14].n, r[15].p); connect(r[15].n, r[16].p);
+  end Same;
+  model Gaps \"like Same, every other literal connection reversed: no runs\"
+    Basic.Resistor r[16](each R = 1);
+    Modelica.Electrical.Analog.Sources.ConstantVoltage v(V = 1);
+    Basic.Ground g;
+  equation
+    connect(v.p, r[1].p); connect(v.n, g.p); connect(r[16].n, g.p);
+    for i in 1:7 loop connect(r[i].n, r[i + 1].p); end for;
+    connect(r[8].n, r[9].p); connect(r[11].p, r[10].n); connect(r[10].n, r[11].p); connect(r[13].p, r[12].n);
+    connect(r[12].n, r[13].p); connect(r[15].p, r[14].n); connect(r[14].n, r[15].p); connect(r[9].n, r[10].p);
+    connect(r[11].n, r[12].p); connect(r[13].n, r[14].p); connect(r[15].n, r[16].p);
+  end Gaps;
+end literalConnects;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --resizableArrays --resizableMaxPieces=3"); getErrorString();
+checkModel(literalConnects.Separate); getErrorString();
+checkModel(literalConnects.Gaps); getErrorString();
+simulate(literalConnects.Separate, stopTime = 0.1, fileNamePrefix = "literalConnects_Separate"); getErrorString();
+// 1 V over 15 resistors of 1 Ohm
+abs(val(v.i, 0.1, "literalConnects_Separate_res.mat") + 1/15) < 1e-10;
+simulate(literalConnects.Same, stopTime = 0.1, fileNamePrefix = "literalConnects_Same"); getErrorString();
+abs(val(r.n.i[12], 0.1, "literalConnects_Same_res.mat") + 1/16) < 1e-10;
+
+setCommandLineOptions("--resizableArrays=false -d=arrayConnect"); getErrorString();
+checkModel(literalConnects.Separate); getErrorString();
+simulate(literalConnects.Same, stopTime = 0.1, fileNamePrefix = "literalConnects_SameAC"); getErrorString();
+abs(val(r[12].n.i, 0.1, "literalConnects_SameAC_res.mat") + 1/16) < 1e-10;
+// Result:
+// true
+// ""
+// true
+// ""
+// "Check of literalConnects.Separate completed successfully.
+// Class literalConnects.Separate has 143 equation(s) and 143 variable(s).
+// 32 of these are trivial equation(s)."
+// "Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package Modelica 4.1.0 due to usage.
+// "
+// ""
+// "[NFFrontEnd/NFResizableConnections.mo:0:0-0:0:writable] Error: Internal error NFResizableConnections.splitPieces: --resizableArrays: a connector array is split into more than 3 pieces (connections of many single elements, or shifted connections around a cycle).
+// "
+// record SimulationResult
+//     resultFile = "literalConnects_Separate_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'literalConnects_Separate', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// record SimulationResult
+//     resultFile = "literalConnects_Same_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'literalConnects_Same', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// true
+// ""
+// "Check of literalConnects.Separate completed successfully.
+// Class literalConnects.Separate has 143 equation(s) and 143 variable(s).
+// 10 of these are trivial equation(s)."
+// ""
+// record SimulationResult
+//     resultFile = "literalConnects_SameAC_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'literalConnects_SameAC', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// endResult

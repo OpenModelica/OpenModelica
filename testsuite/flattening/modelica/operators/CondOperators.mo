@@ -15,7 +15,6 @@ model CondOperators
   constant Boolean b7 = not false;
   constant Boolean b8 = true and false;
   constant Boolean b9 = true or false;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end CondOperators;
 
 // Result:

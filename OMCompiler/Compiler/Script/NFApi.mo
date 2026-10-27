@@ -72,6 +72,7 @@ import ConvertDAE = NFConvertDAE;
 import DAEUtil;
 import Dump;
 import EvalConstants = NFEvalConstants;
+import Error;
 import ErrorExt;
 import ExecStat.{execStat,execStatReset};
 import Flags;
@@ -97,6 +98,7 @@ import SimCodeMain;
 import SimplifyExp = NFSimplifyExp;
 import SimplifyModel = NFSimplifyModel;
 import SymbolTable;
+import System;
 import Typing = NFTyping;
 import UnitCheck = NFUnitCheck;
 import Util;
@@ -756,6 +758,44 @@ algorithm
     fail();
   end try;
 end getModelInstance;
+
+function getInstanceDiagram
+  "Returns the UML instance diagram of a model, see NFInstanceAPI.instanceDiagram,
+   or writes it to a file and returns its name."
+  input Absyn.Path classPath;
+  input String fileName;
+  input String format;
+  input Integer depth;
+  input list<String> exclude;
+  input Boolean showConnections;
+  input Boolean showProtected;
+  input Boolean expandArrays;
+  output Values.Value res;
+protected
+  String diagram;
+algorithm
+  if format <> "plantuml" and format <> "mermaid" and format <> "drawio" then
+    Error.addCompilerError("getInstanceDiagram: unknown format " + format + ", expected plantuml, mermaid or drawio.");
+    res := Values.STRING("");
+    return;
+  end if;
+
+  try
+    diagram := NFInstanceAPI.buildInstanceDiagram(SymbolTable.getAbsyn(), SOME(SymbolTable.getSCode()), classPath,
+      NFInstanceAPI.InstanceDiagramOptions.INSTANCE_DIAGRAM_OPTIONS(format, depth, exclude, showConnections, showProtected, expandArrays));
+    Inst.clearCaches();
+  else
+    Inst.clearCaches();
+    diagram := "";
+  end try;
+
+  if not stringEmpty(fileName) and not stringEmpty(diagram) then
+    System.writeFile(fileName, diagram);
+    diagram := fileName;
+  end if;
+
+  res := Values.STRING(diagram);
+end getInstanceDiagram;
 
 function getModelInstanceReference
   "Like getModelInstance, but instead of serializing the model instance to a

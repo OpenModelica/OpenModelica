@@ -2,7 +2,6 @@
 // teardown_command: rm -f Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetDriving_*.mat
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

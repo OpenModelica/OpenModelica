@@ -291,6 +291,7 @@ public
     record LOOP_ITERATION   "used in SIMCODE, iteration variables in algebraic loops" end LOOP_ITERATION;
     record LOOP_SOLVED      "used in SIMCODE, inner variables of a torn algebraic loop" end LOOP_SOLVED;
     record FRONTEND_DUMMY   "Undefined variable type. Only to be used during frontend phase." end FRONTEND_DUMMY;
+    record ALGORITHM_LOCAL  "discrete variable that only one algorithm uses, not part of the system" end ALGORITHM_LOCAL;
 
     function toString
       input VariableKind varKind;
@@ -305,6 +306,7 @@ public
         case DUMMY_STATE()        then "[DSTA]";
         case DISCRETE()           then "[DISC]";
         case DISCRETE_STATE()     then "[DISS]";
+        case ALGORITHM_LOCAL()    then "[ALOC]";
         case PREVIOUS()           then "[PRE-]";
         case CLOCK()              then "[CLCK]";
         case CLOCKED()            then "[CLKD]";
@@ -621,7 +623,7 @@ public
         end for;
         fixedExp := Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(ty, Expression.variability(fixedExp), NFPrefixes.Purity.PURE, fixedExp, listReverse(iterators)));
       end if;
-      fixedBinding := Binding.makeFlat(fixedExp, Variability.CONSTANT, Source.GENERATED);
+      fixedBinding := Binding.makeFlat(fixedExp, Variability.CONSTANT, Source.GENERATED, Absyn.dummyInfo);
 
       attributes := match attributes
         case VAR_ATTR_REAL() guard(overwrite or isNone(attributes.fixed)) algorithm
@@ -671,7 +673,7 @@ public
     protected
       Binding startBinding;
     algorithm
-      startBinding := Binding.makeFlat(start, Expression.variability(start), Source.GENERATED);
+      startBinding := Binding.makeFlat(start, Expression.variability(start), Source.GENERATED, Absyn.dummyInfo);
       attributes := match attributes
         case VAR_ATTR_REAL() guard(overwrite or isNone(attributes.start)) algorithm
           attributes.start := SOME(startBinding);
@@ -1707,7 +1709,7 @@ public
 
     function expToGeneratedBinding
       input Expression exp;
-      output Binding binding = Binding.makeFlat(exp, Variability.CONSTANT, Source.GENERATED);
+      output Binding binding = Binding.makeFlat(exp, Variability.CONSTANT, Source.GENERATED, Absyn.dummyInfo);
     end expToGeneratedBinding;
   end VariableAttributes;
 

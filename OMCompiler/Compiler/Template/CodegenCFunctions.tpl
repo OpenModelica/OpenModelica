@@ -7529,6 +7529,29 @@ let &sub = buffer ""
               >>
     tvar
 
+  case CALL(path=IDENT(name="matrix"), expLst={exp}, attr=CALL_ATTR(ty=ty)) then
+    let val = daeExpAsLValue(exp, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let dim = tempDecl("int", &varDecls, &varFrees)
+    let nElts = tempDecl("modelica_integer", &varDecls, &varFrees)
+    let tvardata = tempDecl("void *", &varDecls, &varFrees)
+    let szElt = 'sizeof(<%expTypeModelica(ty)%>)'
+    let ty_str = expTypeArray(ty)
+    let tvar = tempDecl(ty_str, &varDecls, &varFrees)
+    let &preExp +=
+              <<
+              for (<%dim%> = 3; <%dim%> <= <%val%>.ndims; <%dim%>++) {
+                if (size_of_dimension_base_array(<%val%>, <%dim%>) != 1) {
+                  <%raiseOrThrow()%>(threadData, "Invalid dimension %d of argument to matrix, expected dimension size 1 but got %d.", <%dim%>, (int) size_of_dimension_base_array(<%val%>, <%dim%>));
+                  break;
+                }
+              }
+              <%nElts%> = base_array_nr_of_elements(<%val%>);
+              <%tvardata%> = omc_alloc_interface.malloc(<%szElt%>*<%nElts%>);
+              memcpy(<%tvardata%>, <%val%>.data, <%szElt%>*<%nElts%>);
+              <%rcReleaseBefore(ty_str, tvar)%>simple_alloc_2d_base_array(&<%tvar%>, size_of_dimension_base_array(<%val%>, 1), size_of_dimension_base_array(<%val%>, 2), <%tvardata%>);<%\n%>
+              >>
+    tvar
+
   case CALL(path=IDENT(name="cat"), expLst=dim::arrays, attr=CALL_ATTR(ty = ty)) then
     let dim_exp = daeExp(dim, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let arrays_exp = (arrays |> array =>
@@ -7671,11 +7694,16 @@ let &sub = buffer ""
   case CALL(path=IDENT(name="sample"), expLst={ICONST(integer=index), _, _}) then
     'data->simulationInfo->samples[<%intSub(index, 1)%>]'
 
-  case CALL(path=IDENT(name="delayZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), delay}) then
+  // iterated samples, the index depends on the iterator
+  case CALL(path=IDENT(name="sample"), expLst={index, _, _}) then
+    let index_T = daeExp(index, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    'data->simulationInfo->samples[(<%index_T%>) - 1]'
+
+  case CALL(path=IDENT(name="$delayZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), delay}) then
     let delay_T = daeExp(delay, context, &preExp, &varDecls, &varFrees, &auxFunction)
     'delayZeroCrossing(data, threadData, <%index%>, <%rindex%>, <%delay_T%>)'
 
-  case CALL(path=IDENT(name="spatialDistributionZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), xPos, dir}) then
+  case CALL(path=IDENT(name="$spatialDistributionZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), xPos, dir}) then
     let xPos_T = daeExp(xPos, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let dir_T = daeExp(dir, context, &preExp, &varDecls, &varFrees, &auxFunction)
     'spatialDistributionZeroCrossing(data, threadData, <%index%>, <%rindex%>, <%xPos_T%>, <%dir_T%>)'
@@ -7937,10 +7965,20 @@ case ARRAY(array = array, scalar = scalar, ty = T_ARRAY(ty = t as T_COMPLEX(__))
       ;separator="\n")
   let &preExp += '<%params%><%\n%>'
   arrayVar
-case ARRAY(array={}) then
-  let arrayVar = tempDecl("base_array_t", &varDecls, &varFrees)
-  let &preExp += '<%rcReleaseBefore("base_array_t", arrayVar)%>simple_alloc_1d_base_array(&<%arrayVar%>, 0, NULL);<%\n%>'
-  arrayVar
+case ARRAY(array={}, ty=arrTy) then
+  match Expression.expDimensions(exp)
+  case dims then
+    if boolOr(listEmpty(dims), Expression.hasUnknownDims(dims)) then
+      let arrayVar = tempDecl("base_array_t", &varDecls, &varFrees)
+      let &preExp += '<%rcReleaseBefore("base_array_t", arrayVar)%>simple_alloc_1d_base_array(&<%arrayVar%>, 0, NULL);<%\n%>'
+      arrayVar
+    else
+      let arrayTypeStr = expTypeArray(arrTy)
+      let arrayVar = tempDecl(arrayTypeStr, &varDecls, &varFrees)
+      let dimsStr = (dims |> d => '(_index_t)<%dimension(d, context, &preExp, &varDecls, &varFrees, &auxFunction)%>' ;separator=", ")
+      let &preExp += '<%rcReleaseBefore(arrayTypeStr, arrayVar)%>alloc_<%arrayTypeStr%>(&<%arrayVar%>, <%listLength(dims)%>, <%dimsStr%>);<%\n%>'
+      arrayVar
+  end match
 case ARRAY(__) then
   let arrayTypeStr = expTypeArray(ty)
   let arrayVar = tempDecl(arrayTypeStr, &varDecls, &varFrees)

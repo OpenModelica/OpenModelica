@@ -98,6 +98,7 @@ BuiltinAttribute24.mo \
 BuiltinAttribute25.mo \
 BuiltinAttribute26.mo \
 BuiltinAttribute27.mo \
+BuiltinAttribute28.mo \
 BuiltinLookup1.mo \
 BuiltinTime.mo \
 BuiltinTimeSubscripted.mo \
@@ -600,6 +601,7 @@ FuncBuiltinLinspace.mo \
 FuncBuiltinMath.mo \
 FuncBuiltinMatrix.mo \
 FuncBuiltinMatrixWrongType1.mo \
+FuncBuiltinMatrixWrongType2.mo \
 FuncBuiltinMax.mo \
 FuncBuiltinMax2.mo \
 FuncBuiltinMin.mo \
@@ -922,6 +924,7 @@ MergeComponents6.mo \
 MergeComponents7.mo \
 MergeComponents8.mo \
 MergeComponents9.mo \
+MergeComponents10.mo \
 MinInvalidArg1.mo \
 MinInvalidArg2.mo \
 MinInvalidArg3.mo \
@@ -1046,6 +1049,7 @@ RangeTypeError1.mo \
 RangeTypeError2.mo \
 RangeTypeError3.mo \
 RealRangeBinding1.mo \
+RealRangeBinding2.mo \
 RecordBinding1.mo \
 RecordBinding2.mo \
 RecordBinding3.mo \
@@ -1151,6 +1155,9 @@ ReinitInvalid5.mo \
 ReinitInvalid6.mo \
 ReinitInvalid7.mo \
 ReinitInvalid8.mo \
+ResizableConstantSize.mo \
+ResizableStreamElements.mo \
+ResizableUntypedConstant.mo \
 Return1.mo \
 Return2.mo \
 Size1.mo \

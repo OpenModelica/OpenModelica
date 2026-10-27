@@ -59,7 +59,7 @@ import ErrorExt;
 import Flags;
 import Debug;
 import Array;
-import MetaModelica.Dangerous.listReverseInPlace;
+import MetaModelica.Dangerous.{listReverseInPlace, arrayGetNoBoundsChecking};
 import UnorderedMap;
 
 constant Integer MAX_CHAIN_TERMS = 32
@@ -1022,7 +1022,7 @@ algorithm
       case Op.POW then simplifyBinaryPow(exp1, op, exp2);
       case Op.POW_SCALAR_ARRAY then simplifyBinaryPow(exp1, op, exp2);
       case Op.POW_ARRAY_SCALAR then simplifyBinaryPow(exp1, op, exp2);
-      case Op.SCALAR_PRODUCT guard(Expression.isZero(exp1) or Expression.isZero(exp2)) then Expression.makeZero(op.ty);
+      case Op.SCALAR_PRODUCT then simplifyScalarProduct(exp1, op, exp2);
       else Expression.BINARY(exp1, op, exp2);
     end match;
   end if;
@@ -1158,6 +1158,41 @@ algorithm
     outExp := Expression.BINARY(exp1, op, exp2);
   end if;
 end simplifyBinaryPow;
+
+function simplifyScalarProduct
+  input Expression exp1;
+  input Operator op;
+  input Expression exp2;
+  output Expression outExp;
+algorithm
+  if Type.isEmptyArray(Expression.typeOf(exp1)) then
+    outExp := Expression.makeZero(op.ty);
+    return;
+  end if;
+
+  outExp := match (exp1, exp2)
+    // {0, x, y} * {z, 0, 0} = 0
+    case (Expression.ARRAY(), Expression.ARRAY())
+      guard arrayLength(exp1.elements) == arrayLength(exp2.elements)
+      algorithm
+        for i in 1:arrayLength(exp1.elements) loop
+          if not (Expression.isZero(arrayGetNoBoundsChecking(exp1.elements, i)) or
+                  Expression.isZero(arrayGetNoBoundsChecking(exp2.elements, i))) then
+            outExp := Expression.BINARY(exp1, op, exp2);
+            return;
+          end if;
+        end for;
+      then
+        Expression.makeZero(op.ty);
+
+    // {0, 0, 0} * x = 0 and x * {0, 0, 0} = 0
+    case (_, _)
+      guard Expression.isZero(exp1) or Expression.isZero(exp2)
+      then Expression.makeZero(op.ty);
+
+    else Expression.BINARY(exp1, op, exp2);
+  end match;
+end simplifyScalarProduct;
 
 function simplifyBinaryEW
   input Expression exp1;
@@ -1946,7 +1981,7 @@ algorithm
       exp1 := Expression.applySubscripts(subs, exp.exp1);
       subs := list(Subscript.INDEX(index = Expression.INTEGER(1)) for d in Type.arrayDims(Expression.typeOf(exp.exp2)));
       exp2 := Expression.applySubscripts(subs, exp.exp2);
-    then Expression.BINARY(exp1, Operator.OPERATOR(ty, op = NFOperator.Op.MUL), exp2);
+    then Expression.BINARY(exp1, Operator.OPERATOR(ty, NFOperator.Op.MUL, false), exp2);
     else exp;
   end match;
 end removeTrivialScalarProduct;

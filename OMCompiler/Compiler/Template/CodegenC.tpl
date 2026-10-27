@@ -370,7 +370,7 @@ template functionInitSynchronous(list<ClockedPartition> clockedPartitions, Strin
   void <%symbolName(modelNamePrefix,"function_initSynchronous")%>(DATA *data, threadData_t *threadData)
   {
     assertStreamPrint(threadData, data->modelData->nBaseClocks==<%listLength(clockedPartitions)%>, "Number of base clocks doesn't match number of clocks that are initialized! Code generation error!");
-    data->simulationInfo->baseClocks = calloc(<%listLength(clockedPartitions)%>, sizeof(BASECLOCK_DATA));
+    data->simulationInfo->baseClocks = (BASECLOCK_DATA*) calloc(<%listLength(clockedPartitions)%>, sizeof(BASECLOCK_DATA));
 
     <%body%>
   }
@@ -437,7 +437,7 @@ template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SimCode.S
     .isEventClock = <%isEventClock(baseClock)%>,
     .stats = (CLOCK_STATS){<%startInterval%>, 0, -1}};
   <%computeInterval%>
-  data->simulationInfo->baseClocks[<%baseClockIdx%>].subClocks = calloc(<%listLength(subPartitions)%>, sizeof(SUBCLOCK_DATA));
+  data->simulationInfo->baseClocks[<%baseClockIdx%>].subClocks = (SUBCLOCK_DATA*) calloc(<%listLength(subPartitions)%>, sizeof(SUBCLOCK_DATA));
   <%subClocksInfo%>
 
   >>
@@ -2418,18 +2418,34 @@ template functionInitSample(list<BackendDAE.TimeEvent> timeEvents, String modelN
           let forTail = match iter
             case SOME(iter_) then (iter_ |> it => "}";separator="\n";empty)
             else ""
+          // iterated samples are stored at base + flattened iteration offset, independent of the loop order
+          let baseIndex = '<%index%>'
+          let sampleIndex = match iter
+            case SOME(_) then '<%baseIndex%> + tmp'
+            else baseIndex
+          let pos = match iter
+            case SOME(_) then 'sample_base + tmp'
+            else 'i'
+          let blockHead = match iter
+            case SOME(_) then '{ long sample_base = i;'
+            else ""
+          let blockTail = match iter
+            case SOME(_) then '}'
+            else ""
           let e1 = daeExp(startExp, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
           let e2 = daeExp(intervalExp, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
           <<
+          <%blockHead%>
           <%forHead%>
           <%preExp%>
           <%forBody%>
           /* sample <%index%> */
-          data->modelData->samplesInfo[i].index = <%index%>;
-          data->modelData->samplesInfo[i].start = <%e1%>;
-          data->modelData->samplesInfo[i].interval = <%e2%> /* (max real for single time events) */;
+          data->modelData->samplesInfo[<%pos%>].index = <%sampleIndex%>;
+          data->modelData->samplesInfo[<%pos%>].start = <%e1%>;
+          data->modelData->samplesInfo[<%pos%>].interval = <%e2%> /* (max real for single time events) */;
           i++;
           <%forTail%>
+          <%blockTail%>
           >>
         else '')
   let res = <<
@@ -3079,7 +3095,7 @@ template generateNonLinearSystemData(NonlinearSystem system, Integer indexStrict
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].updateSize = <%if nlsResizable(nls.crefs) then 'updateSizeNLS<%nls.index%>' else 'NULL'%>;
 
       const int tmp_eqn_indices_<%nls.indexNonLinearSystem%>[<%listLength(nls.eqs)%>] = {<%nls.eqs |> eq => '<%equationIndex(eq)%>' ; separator = ", "%>};
-      nonLinearSystemData[<%nls.indexNonLinearSystem%>].eqn_simcode_indices = malloc(<%listLength(nls.eqs)%> * sizeof(int));
+      nonLinearSystemData[<%nls.indexNonLinearSystem%>].eqn_simcode_indices = (int*) malloc(<%listLength(nls.eqs)%> * sizeof(int));
       memcpy(nonLinearSystemData[<%nls.indexNonLinearSystem%>].eqn_simcode_indices, tmp_eqn_indices_<%nls.indexNonLinearSystem%>, <%listLength(nls.eqs)%> * sizeof(int));
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].torn_plus_residual_size = <%listLength(nls.eqs)%>;
       >>
@@ -3766,6 +3782,32 @@ template generateStaticNonlinearData(String indexName, String systemType, SimCod
   end match
 end generateStaticNonlinearData;
 
+template staticArrayElementData(ComponentRef cr)
+ "Nominal, min and max of an element of a non-scalarized real array, by its scalar index."
+::=
+  match getSimCode()
+  case SIMCODE(scalarized=false) then
+    if boolAnd(crefIsScalarWithAllConstSubs(cr), boolAnd(boolNot(listEmpty(crefSubs(crefArrayGetFirstCref(cr)))),
+               intEq(listLength(crefDims(cr)), listLength(crefSubs(crefArrayGetFirstCref(cr)))))) then
+      match cref2simvar(crefStripSubs(cr), getSimCode())
+      case SIMVAR(type_=T_REAL(__))
+      case SIMVAR(type_=T_ARRAY(ty=T_REAL(__))) then
+        if boolNot(intLt(index, 0)) then
+          let kind = match varKind case PARAM() then 'VAR_KIND_PARAMETER' else 'VAR_KIND_VARIABLE'
+          let values = match varKind case PARAM() then 'Params' else 'Vars'
+          let &preExp = buffer ""
+          let &varDecls = buffer ""
+          let &varFrees = buffer ""
+          let &auxFunction = buffer ""
+          let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(cr))), listReverse(crefSubs(crefArrayGetFirstCref(cr))), contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
+          let idx = '<%simVarIndex("real", values, index)%> + (<%offset%>)'
+          <<
+          sysData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%idx%>);
+          sysData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%idx%>);
+          sysData->max[i++]   = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%idx%>);
+          >>
+end staticArrayElementData;
+
 template generateStaticInitialData(list<ComponentRef> crefs, String indexName, String useResizableSparsity)
   "Generates initial function for nonlinear loops.
    useResizableSparsity: non-empty string = use resizable pattern init; empty = use static pattern init."
@@ -3812,12 +3854,19 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
         sysData->max[i++]   = integer_get(<%crefAttributes(cr)%>.max, 0);
         >>
       else
-        <<
-        <%cComment%>
-        sysData->nominal[i] = 1.0;
-        sysData->min[i]     = -DBL_MAX;
-        sysData->max[i++]   = DBL_MAX;
-        >>
+        let elemData = staticArrayElementData(cr)
+        if elemData then
+          <<
+          <%cComment%>
+          <%elemData%>
+          >>
+        else
+          <<
+          <%cComment%>
+          sysData->nominal[i] = 1.0;
+          sysData->min[i]     = -DBL_MAX;
+          sysData->max[i++]   = DBL_MAX;
+          >>
 
   ;separator="\n")
   let sparsityInitCall = if useResizableSparsity
@@ -6747,12 +6796,25 @@ match row
                   >>
               else depsCodeReduced
             else depsCodeReduced
-          case WHOLEDIM() :: _ then
+          case WHOLEDIM() :: outer_rev_subs then
             match context
             case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
               match simVarFromHT(crefStripSubs(sc), jacHT)
               case SIMVAR() then
                 if not listEmpty(equation_iterators) then
+                  match allWholeSubs(outer_rev_subs)
+                  case "" then
+                    // the iterators select the element (e.g. der(c[i].x[:])), the last dimension is whole
+                    let sz = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &varFrees, &auxFunction)
+                    <<
+                    {
+                      unsigned int _wr<%k%>;
+                      for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
+                        <%depsCodeReduced%>
+                      }
+                    }
+                    >>
+                  else
                   // See the WHOLEDIM()::{WHOLEDIM()} case above for why this guard
                   // is needed and what flatIdx computes.
                   let flatIdx = <<<%(equation_iterators |> it => forIteratorBody(it, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub) ;separator="")%>0<%(equation_iterators |> it => ")" ;separator="")%>>>
@@ -7209,6 +7271,9 @@ match row
                 }
                 >>
               else
+                // the rows start at sc's own offset like in the single-WHOLEDIM case:
+                // scalar rows in between come from static tables and do not bump
+                // local_row_base (OpenIPSL CampusGridB, array residual after scalar ones)
                 let szInner = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &varFrees, &auxFunction)
                 let szOuter = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &varFrees, &auxFunction)
                 <<
@@ -7217,11 +7282,10 @@ match row
                   for (_wo<%k%> = 0; _wo<%k%> < (unsigned int)(<%szOuter%>); _wo<%k%>++) {
                     unsigned int _wr<%k%>;
                     for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%szInner%>); _wr<%k%>++) {
-                      unsigned int row_<%k%> = local_row_base + _wo<%k%> * (unsigned int)(<%szInner%>) + _wr<%k%>;
+                      unsigned int row_<%k%> = <%jacobianVarOffset(v, context)%> + _wo<%k%> * (unsigned int)(<%szInner%>) + _wr<%k%>;
                       <%depsWholeReduced%>
                     }
                   }
-                  local_row_base += (unsigned int)(<%szOuter%>) * (unsigned int)(<%szInner%>);
                 }
                 >>
             else ''
@@ -7232,6 +7296,23 @@ match row
             match simVarFromHT(crefStripSubs(sc), jacHT)
             case v as SIMVAR() then
               if not listEmpty(iters) then
+                match allWholeSubs(outer_rev_subs)
+                case "" then
+                  // the iterators select the element (e.g. der(c[i].x[:])), the last dimension is whole
+                  let sz = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &varFrees, &auxFunction)
+                  let &outerPreExp = buffer ""
+                  let outer_off = indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(sc)))), outer_rev_subs, context, &outerPreExp, &varDecls, &varFrees, &auxFunction)
+                  <<
+                  {
+                    unsigned int _wr<%k%>;
+                    for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
+                      <%outerPreExp%>
+                      unsigned int row_<%k%> = <%jacobianVarOffset(v, context)%> + (unsigned int)(<%outer_off%>) * (unsigned int)(<%sz%>) + _wr<%k%>;
+                      <%depsWholeReduced%>
+                    }
+                  }
+                  >>
+                else
                 // See the WHOLEDIM()::{WHOLEDIM()} case above for why this guard is
                 // needed and what flatIdx computes.
                 let flatIdx = <<<%(iters |> it => forIteratorBody(it, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub) ;separator="")%>0<%(iters |> it => ")" ;separator="")%>>>

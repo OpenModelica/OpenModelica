@@ -95,8 +95,6 @@ algorithm
   assert(false, getInstanceName());
 end getSimulationResultType;
 
-function getDrModelicaSimulationResultType = getSimulationResultType;
-
 function buildSimulationOptionsFromModelExperimentAnnotation
   input Absyn.Path inModelPath;
   input String inFileNamePrefix;

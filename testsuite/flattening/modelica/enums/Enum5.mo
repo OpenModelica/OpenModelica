@@ -20,15 +20,13 @@ end P;
 model Enumeration5
    P.h t;
    P.h tt(redeclare type E=enumeration(a1, b2, c1));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Enumeration5;
 
 
 // Result:
 // Error processing file: Enum5.mo
-// [flattening/modelica/enums/Enum5.mo:14:3-14:16:writable] Error: Variable E.j not found in scope P.h$tt.
-// [flattening/modelica/enums/Enum5.mo:14:3-14:16:writable] Error: Variable hh[E.j] not found in scope P.h$tt.
-// Error: Error occurred while flattening model Enumeration5
+// [flattening/modelica/enums/Enum5.mo:22:21-22:51:writable] Notification: From here:
+// [flattening/modelica/enums/Enum5.mo:11:15-11:42:writable] Error: Redeclaration of enumeration 'E' is not a subtype of the redeclared element (use enumeration(:) for a generic replaceable enumeration).
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

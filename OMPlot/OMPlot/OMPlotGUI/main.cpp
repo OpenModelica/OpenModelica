@@ -43,6 +43,10 @@
 #include <QMessageBox>
 #include <QDir>
 
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
+
 using namespace OMPlot;
 
 #define CONSUME_BOOL_ARG(i,n,var) { \
@@ -70,8 +74,8 @@ void printUsage(bool shortDescription)
     printf("    --curve-width=WIDTH        Sets the WIDTH of the curve\n");
     printf("    --filename=NAME            Sets the NAME of the file to plot\n");
     printf("    --footer=FOOTER            Sets the FOOTER of the plot window\n");
-    printf("    --grid=GRID                Sets the GRID of the plot i.e simple, detailed, none\n");
-    printf("    --legend-position=POSITION Sets the POSITION of the legend i.e left, right, top, bottom, none\n");
+    printf("    --grid=GRID                Sets the GRID of the plot i.e., simple, detailed, none, xonly\n");
+    printf("    --legend-position=POSITION Sets the POSITION of the legend i.e., left, right, top, bottom, none\n");
     printf("    --logx=[true|false]        Use log scale for the x-axis\n");
     printf("    --logy=[true|false]        Use log scale for the y-axis\n");
     printf("    --new-window=[true|false]  Create a MDI dialog in the plot-window\n");
@@ -91,6 +95,13 @@ void printUsage(bool shortDescription)
 
 int main(int argc, char *argv[])
 {
+#ifdef Q_OS_WIN
+  /// Re-attach to the parent console (the cmd.exe that launched us)
+  if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+    freopen("CONOUT$", "w", stdout);
+    freopen("CONOUT$", "w", stderr);
+  }
+#endif // #ifdef Q_OS_WIN
   // read the arguments
   QStringList arguments;
   bool newApplication = false;

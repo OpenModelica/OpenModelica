@@ -1,13 +1,16 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+nlsArrayElementNominal.mos \
 reductionSkips.mos \
 nestedForConnectRange.mos \
+sparsityMatrixResidual.mos \
 forNestedElseIf.mos \
 forSliceRowMajor.mos \
 sliceRangeSparsity.mos \
 scalarDivArray.mos \
 arrayRowScalar.mos \
+emptyArrayTupleArgument.mos \
 algorithmForSubscript.mos \
 eachScalarProduct.mos \
 ifBranchSizes.mos \
@@ -31,8 +34,13 @@ resizableOverride.mos \
 resizableOverrideDerived.mos \
 resizableAliasStart.mos \
 resizablePartialLoops.mos \
+resizableArrayJacobian.mos \
+resizableMergedJacobian.mos \
 resizableLoopBlocks.mos \
 resizableConnectArrays.mos \
+resizableManySizes.mos \
+literalConnects.mos \
+resizableSparseLoop.mos \
 resizableInputs.mos \
 resizableAlgebraicLoops.mos \
 resizableFill.mos \
@@ -90,8 +98,10 @@ BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder4_Resizable.mos\
 BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder_Resizable.mos\
 BenchmarksForResizeableArrays.Resizable.FiltersInSeries_Resizable.mos \
 arrayStartSlice.mos \
+componentArraySlicedStart.mos \
 resizableConnectDeleted.mos \
 EmptyArrayInComponentArray.mos \
+sparsityRowsArrayComponents.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

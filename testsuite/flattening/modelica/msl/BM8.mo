@@ -1065,7 +1065,6 @@ model BM8
 
 equation
   connect(constant1.outPort,cos1.inPort) annotation(Line(visible=true,points={{-25.96,23.22},{-6.8,28.39}}));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM8;
 // function Modelica.Math.cos
 // input Real u(quantity = "Angle", unit = "rad", displayUnit = "deg");
@@ -1096,33 +1095,25 @@ end BM8;
 // constant1.outPort.signal[1] = cos1.inPort.signal[1];
 // end BM8;
 // Result:
-// function Modelica.Math.cos "cosine"
-//   input Real u(quantity = "Angle", unit = "rad", displayUnit = "deg");
-//   output Real y;
-//
-//   external "C" y = cos(u);
-// end Modelica.Math.cos;
-//
 // class BM8
-//   parameter Integer cos1.n = 1 "Number of inputs (= number of outputs)";
-//   parameter Integer cos1.inPort.n = cos1.n "Dimension of signal vector";
+//   final parameter Integer cos1.n = 1 "Number of inputs (= number of outputs)";
+//   final parameter Integer cos1.inPort.n = 1 "Dimension of signal vector";
 //   Real cos1.inPort.signal[1] "Real input signals";
-//   parameter Integer cos1.outPort.n = cos1.n "Dimension of signal vector";
+//   final parameter Integer cos1.outPort.n = 1 "Dimension of signal vector";
 //   Real cos1.outPort.signal[1] "Real output signals";
 //   Real cos1.y[1] "Output signals";
 //   protected Real cos1.u[1] "Input signals";
-//   parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
-//   parameter Integer constant1.outPort.n = constant1.nout "Dimension of signal vector";
+//   parameter Real constant1.k[1] = 1.0 "Constant output values";
+//   final parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
+//   final parameter Integer constant1.outPort.n = 1 "Dimension of signal vector";
 //   Real constant1.outPort.signal[1] "Real output signals";
 //   Real constant1.y[1];
-//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 // equation
-//   cos1.u = {cos1.inPort.signal[1]};
+//   constant1.outPort.signal[1] = cos1.inPort.signal[1];
+//   cos1.u = cos1.inPort.signal;
 //   cos1.y[1] = cos(cos1.u[1]);
 //   cos1.y[1] = cos1.outPort.signal[1];
 //   constant1.outPort.signal[1] = constant1.k[1];
 //   constant1.y[1] = constant1.outPort.signal[1];
-//   assert(constant1.outPort.n == cos1.inPort.n, "automatically generated from connect");
-//   constant1.outPort.signal[1] = cos1.inPort.signal[1];
 // end BM8;
 // endResult

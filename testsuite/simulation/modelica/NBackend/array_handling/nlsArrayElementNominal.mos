@@ -1,0 +1,46 @@
+// name: nlsArrayElementNominal
+// keywords: NewBackend array nonlinear nominal
+// status: correct
+// suite: cSources
+//
+// Nominal, min and max of non-scalarized array elements in a nonlinear system.
+
+loadString("
+model nlsArrayElementNominal
+  model C
+    Real x(start = 900, nominal = 1000, min = 0);
+    Real y(start = 2);
+    parameter Real k;
+  equation
+    x * y = k * 1000;
+    y + 1e-3 * x ^ 2 = 1100 * k;
+  end C;
+  C c[3](k = {1, 2, 3});
+end nlsArrayElementNominal;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
+simulate(nlsArrayElementNominal, stopTime = 0); getErrorString();
+regexBool(readFile("nlsArrayElementNominal_02nls.c"), "sysData->nominal\\[i\\] = getNominalFromScalarIdx\\(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, data->simulationInfo->realVarsIndex\\[[0-9]+\\] \\+ ");
+regexBool(readFile("nlsArrayElementNominal_02nls.c"), "sysData->nominal\\[i\\] = 1.0;");
+val(c.x[1], 0);
+val(c.y[3], 0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nlsArrayElementNominal_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'nlsArrayElementNominal', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// false
+// 1048.354006879009
+// 3299.999173553305
+// endResult

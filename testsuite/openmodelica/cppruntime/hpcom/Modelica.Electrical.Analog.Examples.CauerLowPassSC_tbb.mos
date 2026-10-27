@@ -1,7 +1,6 @@
 // name:     Modelica.Electrical.Analog.Examples.CauerLowPassSC_HPCOM_TBB
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 // suite: disabled
 //
 // Simulation Results 

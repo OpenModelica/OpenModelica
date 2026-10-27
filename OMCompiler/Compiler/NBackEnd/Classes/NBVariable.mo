@@ -416,6 +416,7 @@ public
     b := match var.backendinfo.varKind
       case VariableKind.DISCRETE_STATE()  then false; // like parameter?
       case VariableKind.DISCRETE()        then false; // like parameter?
+      case VariableKind.ALGORITHM_LOCAL() then false;
       case VariableKind.PREVIOUS()        then false; // like parameter?
       case VariableKind.CONSTANT()        then false;
       case VariableKind.ITERATOR()        then false;
@@ -460,6 +461,26 @@ public
       else false;
     end match;
   end isDiscrete;
+
+  function isAlgorithmLocal extends checkVar;
+  algorithm
+    b := match var.backendinfo.varKind
+      case VariableKind.ALGORITHM_LOCAL() then true;
+      else false;
+    end match;
+  end isAlgorithmLocal;
+
+  function isAlgorithmLocalCref
+    "true if the cref belongs to a variable that only one algorithm uses (crefs without variable are not)"
+    input ComponentRef cref;
+    output Boolean b;
+  algorithm
+    b := match cref
+      case ComponentRef.CREF() guard InstNode.isVar(ComponentRef.node(cref))
+        then isAlgorithmLocal(PointerWeak.upgrade(InstNode.varPointer(ComponentRef.node(cref))));
+      else false;
+    end match;
+  end isAlgorithmLocalCref;
 
   function isPrevious extends checkVar;
   algorithm
@@ -1836,7 +1857,7 @@ function isJacobianResultVar
     // create variable and add optional binding
     if isSome(binding) then
       bnd := Util.getOption(binding);
-      var := fromCref(cref, NFAttributes.DEFAULT_ATTR, Binding.makeFlat(bnd, Expression.variability(bnd), NFBinding.Source.BINDING));
+      var := fromCref(cref, NFAttributes.DEFAULT_ATTR, Binding.makeFlat(bnd, Expression.variability(bnd), NFBinding.Source.BINDING, Absyn.dummyInfo));
     else
       var := fromCref(cref);
     end if;
@@ -2050,6 +2071,38 @@ function isJacobianResultVar
     input Pointer<Variable> var_ptr;
     output Option<Expression> start =  VariableAttributes.getStartAttribute(Variable.getVariableAttributes(Pointer.access(var_ptr)));
   end getStartAttribute;
+
+  function startElement
+    "the element of a start value at the subscripts of its variable. the start value can have
+    less dimensions than the variable, e.g. {1.0 for i in 1:2} for each start = 1.0 of x[2, 3],
+    then it only has the leading dimensions. returns EMPTY() if the dimensions do not fit."
+    input list<Subscript> subs;
+    input Expression start;
+    input Type varTy;
+    output Expression exp;
+  protected
+    list<Dimension> start_dims = Type.arrayDims(Expression.typeOf(start));
+    Integer n = listLength(start_dims);
+  algorithm
+    if listLength(subs) <= n then
+      exp := applySubscriptsSimplify(subs, start);
+    elseif listLength(subs) == Type.dimensionCount(varTy)
+      and List.isEqualOnTrue(start_dims, List.firstN(Type.arrayDims(varTy), n), Dimension.isEqual) then
+      exp := applySubscriptsSimplify(List.firstN(subs, n), start);
+    else
+      exp := Expression.EMPTY(Type.UNKNOWN());
+    end if;
+  end startElement;
+
+  function applySubscriptsSimplify
+    "one subscript at a time, so that nested array constructors are reduced"
+    input list<Subscript> subs;
+    input output Expression exp;
+  algorithm
+    for sub in subs loop
+      exp := SimplifyExp.simplify(Expression.applySubscripts({sub}, exp, true));
+    end for;
+  end applySubscriptsSimplify;
 
   function hasNonTrivialAliasBinding
     "returns true if the binding does not represent a cref, a negated cref or a constant.

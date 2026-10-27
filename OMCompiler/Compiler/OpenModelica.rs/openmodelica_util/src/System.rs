@@ -552,14 +552,10 @@ pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
     // Spawn the command through the platform shell; if outFile is non-empty,
     // redirect both stdout and stderr there. Returns the child's exit code, or
     // -1 on spawn failure.
-    use std::io::Write;
     use std::process::{Command, Stdio};
     // C's `fflush(NULL)` around the call: the child writes to the same fd 1, so
     // whatever `print()` left in the buffer has to be out first.
-    let flush = || {
-        let _ = std::io::stdout().flush();
-    };
-    flush();
+    metamodelica::host_flush();
     #[cfg(windows)]
     let mut cmd = {
         use std::os::windows::process::CommandExt;
@@ -600,7 +596,7 @@ pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
         Ok(s) => s.code().unwrap_or(-1),
         Err(_) => -1,
     };
-    flush();
+    metamodelica::host_flush();
     status
 }
 
@@ -3025,9 +3021,7 @@ pub fn relocateFunctions(_fileName: ArcStr, _names: List<(ArcStr, ArcStr)>) -> b
 }
 
 pub fn fflush() {
-    use std::io::Write as _;
-    let _ = std::io::stdout().flush();
-    let _ = std::io::stderr().flush();
+    metamodelica::host_flush();
 }
 
 pub fn updateUriMapping(namesAndDirs: metamodelica::Array<ArcStr>) {
@@ -3065,12 +3059,11 @@ impl Ord for StreamType {
 }
 
 pub fn fputs(r#str: ArcStr, streamType: StreamType) -> i32 {
-    use std::io::Write as _;
-    let res = match streamType {
-        StreamType::STDOUT => std::io::stdout().write_all(r#str.as_bytes()),
-        StreamType::STDERR => std::io::stderr().write_all(r#str.as_bytes()),
+    let ok = match streamType {
+        StreamType::STDOUT => metamodelica::host_print(&r#str),
+        StreamType::STDERR => metamodelica::host_eprint(&r#str),
     };
-    if res.is_ok() { 0 } else { -1 }
+    if ok { 0 } else { -1 }
 }
 
 pub fn waitForInput() {

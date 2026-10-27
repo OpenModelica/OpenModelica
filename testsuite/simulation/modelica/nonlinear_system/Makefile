@@ -4,10 +4,12 @@ TESTFILES = \
 bug_2841.mos \
 bug_3527.mos \
 externalErrorThenThrow.mos \
+homotopyCorrectorFailure.mos \
 nanTest.mos \
 nonlinear.mos \
 nonlinear_kinsol.mos \
 kinsolSignConstraint.mos \
+kinsolStatistics.mos \
 nonlinearDelayTest.mos \
 nonlinearFailed.mos \
 nonlinearFailed_kinsol.mos \

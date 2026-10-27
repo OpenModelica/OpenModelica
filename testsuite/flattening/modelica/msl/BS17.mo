@@ -975,7 +975,6 @@ model BS17
 
 equation
   connect(booleanStep1.outPort,booleanChange1.inPort) annotation(Line(visible=true,points={{-20.48,14.7},{-2.54,10.14}}));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BS17;
 // class BS17
 // parameter Integer booleanChange1.n = 1 "Number of inputs (= number of outputs)";
@@ -999,24 +998,23 @@ end BS17;
 // end BS17;
 // Result:
 // class BS17
-//   parameter Integer booleanChange1.n = 1 "Number of inputs (= number of outputs)";
-//   parameter Integer booleanChange1.inPort.n = booleanChange1.n "Dimension of signal vector";
+//   final parameter Integer booleanChange1.n = 1 "Number of inputs (= number of outputs)";
+//   final parameter Integer booleanChange1.inPort.n = 1 "Dimension of signal vector";
 //   Boolean booleanChange1.inPort.signal[1] "Boolean input signals";
-//   parameter Integer booleanChange1.outPort.n = booleanChange1.n "Dimension of signal vector";
+//   final parameter Integer booleanChange1.outPort.n = 1 "Dimension of signal vector";
 //   Boolean booleanChange1.outPort.signal[1] "Boolean output signals";
 //   Boolean booleanChange1.y[1] "Output signals";
 //   protected Boolean booleanChange1.u[1] "Input signals";
-//   parameter Integer booleanStep1.nout(min = 1) = 1 "Number of Boolean outputs";
-//   parameter Integer booleanStep1.outPort.n = booleanStep1.nout "Dimension of signal vector";
-//   Boolean booleanStep1.outPort.signal[1] "Boolean output signals";
 //   parameter Real booleanStep1.startTime[1](quantity = "Time", unit = "s") = 0.0 "Time instants of steps";
 //   parameter Boolean booleanStep1.startValue[1] = false "Output before startTime";
+//   final parameter Integer booleanStep1.nout(min = 1) = 1 "Number of Boolean outputs";
+//   final parameter Integer booleanStep1.outPort.n = 1 "Dimension of signal vector";
+//   Boolean booleanStep1.outPort.signal[1] "Boolean output signals";
 // equation
-//   booleanChange1.u = {booleanChange1.inPort.signal[1]};
+//   booleanStep1.outPort.signal[1] = booleanChange1.inPort.signal[1];
+//   booleanChange1.u = booleanChange1.inPort.signal;
 //   booleanChange1.y[1] = change(booleanChange1.u[1]);
 //   booleanChange1.y[1] = booleanChange1.outPort.signal[1];
 //   booleanStep1.outPort.signal[1] = if time >= booleanStep1.startTime[1] then not booleanStep1.startValue[1] else booleanStep1.startValue[1];
-//   assert(booleanStep1.outPort.n == booleanChange1.inPort.n, "automatically generated from connect");
-//   booleanChange1.inPort.signal[1] = booleanStep1.outPort.signal[1];
 // end BS17;
 // endResult

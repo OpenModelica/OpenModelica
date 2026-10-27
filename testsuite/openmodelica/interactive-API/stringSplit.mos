@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 
 stringSplit("a.b..c",".");
 stringSplit("a.b.c",".");

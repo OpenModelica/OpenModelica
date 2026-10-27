@@ -1,7 +1,6 @@
 // name:     RefinedSimpleCircuitValid
 // keywords: <insert keywords here>
 // status:   correct
-// cflags: -d=-newInst
 //
 //
 // Sometimes it can be useful to allow a more general constraining type of
@@ -143,7 +142,7 @@
 //   Real comp2.n.i(quantity = "ElectricCurrent", unit = "A");
 //   Real comp2.v(quantity = "ElectricPotential", unit = "V");
 //   Real comp2.i(quantity = "ElectricCurrent", unit = "A");
-//   parameter Real comp2.L(quantity = "Inductance", unit = "H", min = 0.0) = 0.0002 "Inductance";
+//   parameter Real comp2.L(quantity = "Inductance", unit = "H", min = 0.0) = 2e-4 "Inductance";
 //   Real R3.p.v(quantity = "ElectricPotential", unit = "V");
 //   Real R3.p.i(quantity = "ElectricCurrent", unit = "A");
 //   Real R3.n.v(quantity = "ElectricPotential", unit = "V");
@@ -154,6 +153,12 @@
 //   Real R3.Temp;
 //   Real R3.RT;
 // equation
+//   comp1.p.v = R3.p.v;
+//   comp1.p.v = comp2.p.v;
+//   comp1.n.i = 0.0;
+//   R3.p.i + comp2.p.i + comp1.p.i = 0.0;
+//   comp2.n.i = 0.0;
+//   R3.n.i = 0.0;
 //   comp1.i = comp1.C * der(comp1.v);
 //   comp1.v = comp1.p.v - comp1.n.v;
 //   comp1.p.i + comp1.n.i = 0.0;
@@ -163,11 +168,5 @@
 //   comp2.p.i + comp2.n.i = 0.0;
 //   comp2.i = comp2.p.i;
 //   R3.v = R3.i * R3.R;
-//   comp1.p.i + comp2.p.i + R3.p.i = 0.0;
-//   comp1.n.i = 0.0;
-//   comp2.n.i = 0.0;
-//   R3.n.i = 0.0;
-//   R3.p.v = comp1.p.v;
-//   R3.p.v = comp2.p.v;
 // end RefinedSimpleCircuit;
 // endResult

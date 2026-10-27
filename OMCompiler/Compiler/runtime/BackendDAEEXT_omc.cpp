@@ -115,6 +115,7 @@ extern void BackendDAEEXT_vMark(int _inInteger)
 
 extern void BackendDAEEXT_setAdjacencyMatrix(modelica_integer nvars, modelica_integer neqns, modelica_integer nz, modelica_metatype adjacencymatrix)
 {
+  freePieces();
   int i=0;
   mmc_sint_t i1;
   int j=0;
@@ -141,6 +142,7 @@ extern void BackendDAEEXT_setAdjacencyMatrix(modelica_integer nvars, modelica_in
 
 extern void BackendDAEEXT_setAdjacencyMatrixFlat(modelica_integer nvars, modelica_integer neqns, modelica_integer nz, modelica_metatype start, modelica_metatype len, modelica_metatype data)
 {
+  freePieces();
   int i, j=0, k, first, n;
 
   if (col_ptrs) free(col_ptrs);
@@ -160,6 +162,68 @@ extern void BackendDAEEXT_setAdjacencyMatrixFlat(modelica_integer nvars, modelic
       }
     }
   }
+}
+
+extern void BackendDAEEXT_setAdjacencyMatrixPieces(modelica_integer nvars, modelica_integer neqns, modelica_metatype first, modelica_metatype count, modelica_metatype pstart, modelica_metatype plen, modelica_metatype data)
+{
+  /* rows are lists of pieces, every piece a range of data (all 1-based). A range
+   * used by several pieces is copied once, without its non-positive entries. */
+  int i, p, k, e, ps, pl, nids = 0, npieces = 0, cstart, clen;
+  modelica_integer ndata = MMC_HDRSLOTS(MMC_GETHDR(data));
+  int* target = (int*) malloc((ndata + 1) * sizeof(int));
+  int* tlen = (int*) malloc((ndata + 1) * sizeof(int));
+  int* srclen = (int*) malloc((ndata + 1) * sizeof(int));
+
+  freePieces();
+  if (col_ptrs) {free(col_ptrs); col_ptrs = NULL;}
+  if (col_ids) {free(col_ids); col_ids = NULL;}
+
+  for(k=0; k<=ndata; ++k) {target[k] = -1;}
+  for(i=0; i<neqns; ++i) {npieces += MMC_UNTAGFIXNUM(MMC_STRUCTDATA(count)[i]);}
+
+  pieces.row_first = (int*) malloc((neqns + 1) * sizeof(int));
+  pieces.row_count = (int*) malloc((neqns + 1) * sizeof(int));
+  pieces.piece_start = (int*) malloc((npieces + 1) * sizeof(int));
+  pieces.piece_len = (int*) malloc((npieces + 1) * sizeof(int));
+  pieces.ids = (int*) malloc((ndata + 1) * sizeof(int));
+
+  npieces = 0;
+  for(i=0; i<neqns; ++i) {
+    p = MMC_UNTAGFIXNUM(MMC_STRUCTDATA(first)[i]);
+    e = p + MMC_UNTAGFIXNUM(MMC_STRUCTDATA(count)[i]);
+    pieces.row_first[i] = npieces;
+    for(; p<e; ++p) {
+      ps = MMC_UNTAGFIXNUM(MMC_STRUCTDATA(pstart)[p-1]);
+      pl = MMC_UNTAGFIXNUM(MMC_STRUCTDATA(plen)[p-1]);
+      if (target[ps] >= 0 && srclen[ps] == pl) {
+        cstart = target[ps];
+        clen = tlen[ps];
+      } else {
+        cstart = nids;
+        for(k=ps; k<ps+pl; ++k) {
+          mmc_sint_t i1 = MMC_UNTAGFIXNUM(MMC_STRUCTDATA(data)[k-1]);
+          if (i1>0) {
+            pieces.ids[nids++] = (int)i1-1;
+          }
+        }
+        clen = nids - cstart;
+        if (target[ps] < 0) {
+          target[ps] = cstart; tlen[ps] = clen; srclen[ps] = pl;
+        }
+      }
+      if (clen > 0) {
+        pieces.piece_start[npieces] = cstart;
+        pieces.piece_len[npieces] = clen;
+        npieces++;
+      }
+    }
+    pieces.row_count[i] = npieces - pieces.row_first[i];
+  }
+  use_pieces = 1;
+
+  free(srclen);
+  free(tlen);
+  free(target);
 }
 
 extern void BackendDAEEXT_matching(modelica_integer nv, modelica_integer ne, modelica_integer matchingID, modelica_integer cheapID, modelica_real relabel_period, modelica_integer clear_match)

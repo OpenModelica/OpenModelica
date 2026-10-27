@@ -34,7 +34,6 @@ impureTest.mos \
 NegatedBooleanAlias.mos \
 NoLoadModel.mos \
 nonConstantIndex.mos \
-nonConstantParam.mos \
 ParameterCycle.mos \
 ParameterModel.mos \
 Pendulum.mos \
@@ -79,9 +78,12 @@ TestSolve15.mos \
 TestSolve16.mos \
 TestSolve17.mos \
 TestSolve18.mos \
+TestSolve19.mos \
 Ticket5129.mos \
 ResultFileArrow.mos \
 ResultFileArrowTimeAlias.mos \
+ResultFileEnumeration.mos \
+ResultFileEnumerationInitXml.mos \
 VariableFilter.mos \
 WhenReinitAlgorithm.mos \
 WhenStatement4.mos \

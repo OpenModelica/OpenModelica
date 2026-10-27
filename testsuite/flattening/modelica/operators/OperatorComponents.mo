@@ -7,7 +7,8 @@
 
 operator record Rec
   Real r;
-  operator '+'
+  encapsulated operator '+'
+    import Rec;
     function add
       input Rec r1;
       input Rec r2;
@@ -26,7 +27,6 @@ equation
   r1 = Rec(r = 2.0);
   r2 = Rec(r = 3.0);
   r3 = r1 + r2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end OperatorComplex;
 
 // Result:
@@ -49,8 +49,8 @@ end OperatorComplex;
 //   Real r2.r;
 //   Real r3.r;
 // equation
-//   r1.r = 2.0;
-//   r2.r = 3.0;
+//   r1 = Rec(2.0);
+//   r2 = Rec(3.0);
 //   r3 = Rec.'+'.add(r1, r2);
 // end OperatorComplex;
 // endResult

@@ -1,7 +1,6 @@
 // name: WithinComment
 // keywords:
 // status: incorrect
-// cflags: -d=-newInst
 //
 // Checks that the parser doesn't crash on a within-statement followed by a
 // commment and nothing else.

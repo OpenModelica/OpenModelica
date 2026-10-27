@@ -190,7 +190,7 @@ void MessageWidget::applyMessagesSettings()
   // set the output size
   mpMessagesTextBrowser->document()->setMaximumBlockCount(pMessagesPage->getOutputSizeSpinBox()->value());
   // set the font
-  QString fontFamily = pMessagesPage->getFontFamilyComboBox()->currentFont().family();
+  QString fontFamily = pMessagesPage->getFontFamily();
   double fontSize = pMessagesPage->getFontSizeSpinBox()->value();
   QFont font(fontFamily);
   font.setPointSizeF(fontSize);

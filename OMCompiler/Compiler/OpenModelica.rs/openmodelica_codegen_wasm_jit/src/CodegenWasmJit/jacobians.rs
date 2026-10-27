@@ -13,9 +13,7 @@ impl LinzPlan {
     fn sym_mask(&self) -> u8 {
         (0..4)
             .filter(|&k| {
-                self.jacs[k].is_some()
-                    && self.real_rows[k] <= self.rows[k]
-                    && self.real_cols[k] == self.cols[k]
+                self.jacs[k].is_some() && self.real_rows[k] <= self.rows[k] && self.real_cols[k] == self.cols[k]
             })
             .fold(0u8, |m, k| m | 1 << k)
     }
@@ -63,12 +61,27 @@ pub(super) fn build_linz_plan(
     let jacs = core::array::from_fn(|k| found[k].as_ref().map(|(jm, _, _)| jm.clone()));
     let real_rows = core::array::from_fn(|k| found[k].as_ref().map_or(0, |&(_, r, _)| r));
     let real_cols = core::array::from_fn(|k| found[k].as_ref().map_or(0, |&(_, _, c)| c));
-    let adj = found[0].as_ref().filter(|(a, _, _)| a.isBidirectional).and_then(|(a, _, _)| {
-        let jm = lst(&sim_code.jacobianMatrices).find(|j| j.matrixName == a.adjointMatrixName)?.clone();
-        let has_equations = lst(&jm.columns).next().is_some_and(|c| lst(&c.columnEqns).next().is_some());
-        (has_equations && jac_lowerable(&jm)).then_some(jm)
-    });
-    Ok(LinzPlan { frames, rows, cols, jacs, adj, real_rows, real_cols })
+    let adj = found[0]
+        .as_ref()
+        .filter(|(a, _, _)| a.isBidirectional)
+        .and_then(|(a, _, _)| {
+            let jm = lst(&sim_code.jacobianMatrices)
+                .find(|j| j.matrixName == a.adjointMatrixName)?
+                .clone();
+            let has_equations = lst(&jm.columns)
+                .next()
+                .is_some_and(|c| lst(&c.columnEqns).next().is_some());
+            (has_equations && jac_lowerable(&jm)).then_some(jm)
+        });
+    Ok(LinzPlan {
+        frames,
+        rows,
+        cols,
+        jacs,
+        adj,
+        real_rows,
+        real_cols,
+    })
 }
 
 /// C's `modelNamePrefix`: the linearization frames quote it as the model's
@@ -84,7 +97,7 @@ pub(super) fn build_linz_jac_infos(
     layout: &SimLayout,
     var_map: &mut SimVarMap,
 ) -> Result<(Vec<Option<LinzJacInfo>>, Option<AdjJacInfo>)> {
-    let mut cursor = layout.linz_off + plan.n_matrix_f64() * 8;
+    let mut cursor = plain_off(layout.linz_off)? + plan.n_matrix_f64() * 8;
     let mut infos = Vec::with_capacity(4);
     for (k, jm) in plan.jacs.iter().enumerate() {
         let Some(jm) = jm else {
@@ -148,14 +161,20 @@ pub(super) fn register_jac_slots(
             return Ok(None);
         }
         let off = *cursor;
-        let slot = SimSlot { off, wty: WTy::F64, negate: Neg::None, heap: false, pre: 0 };
+        let slot = SimSlot {
+            off: SimOff::from(off),
+            wty: WTy::F64,
+            negate: Neg::None,
+            heap: false,
+            pre: 0,
+        };
         registered.push((key.clone(), slot));
         Arc::make_mut(&mut var_map.vars).insert(key, slot);
         for g in array_element_keys(&sv.name)? {
             var_map.array_acc.entry(g.base).or_default().push(AccElem {
                 subs: g.subs,
                 pieces: g.pieces,
-                off,
+                off: SimOff::from(off),
                 wty: WTy::F64,
                 neg: Neg::None,
                 heap: false,
@@ -172,7 +191,9 @@ pub(super) fn register_jac_slots(
     let mut result_offs = vec![None; rows];
     let mut others = Vec::new();
     for sv in column_vars.iter() {
-        let Some(off) = insert(sv, var_map, cursor)? else { continue };
+        let Some(off) = insert(sv, var_map, cursor)? else {
+            continue;
+        };
         others.push(off);
         if matches!(sv.varKind, VarKind::JAC_VAR)
             && let Some(row) = jac_result_row(sv).filter(|&r| r < rows)
@@ -205,13 +226,17 @@ pub(super) fn build_lin_info(
     let slots = |list: &List<metamodelica::Ref<SimCodeVar::SimVar>>| -> Result<Option<Vec<LinVar>>> {
         let mut out = Vec::new();
         for sv in lst(list) {
-            let Some(slot) = var_map.vars.get(&sim_cref_key(&sv.name)?) else { return Ok(None) };
-            out.push(LinVar { off: slot.off, negate: slot.negate });
+            let Some(slot) = var_map.vars.get(&sim_cref_key(&sv.name)?) else {
+                return Ok(None);
+            };
+            out.push(LinVar {
+                off: plain_off(slot.off)?,
+                negate: slot.negate,
+            });
         }
         Ok(Some(out))
     };
-    let (Some(input_vars), Some(output_vars)) = (slots(&vars.inputVars)?, slots(&vars.outputVars)?)
-    else {
+    let (Some(input_vars), Some(output_vars)) = (slots(&vars.inputVars)?, slots(&vars.outputVars)?) else {
         return Ok(None);
     };
     Ok(Some(openmodelica_sim_meta::LinInfo {
@@ -249,9 +274,14 @@ pub(super) fn build_jac_fns(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
     adj_map: Option<&SimVarMap>,
-) -> Result<(Vec<we::Function>, [we::Function; 2], Vec<we::Function>, [we::Function; 2])> {
+) -> Result<(
+    Vec<we::Function>,
+    [we::Function; 2],
+    Vec<we::Function>,
+    [we::Function; 2],
+)> {
     let (mut linz_fns, mut jac_a_fns, mut opt_fns) = (Vec::new(), None, Vec::new());
-    let mut out_off = layout.linz_off;
+    let mut out_off = plain_off(layout.linz_off)?;
     for k in 0..4 {
         let mut built = None;
         if let (Some(jm), Some(info)) = (plan.jacs[k].clone(), infos.get(k).and_then(Option::as_ref)) {
@@ -268,10 +298,13 @@ pub(super) fn build_jac_fns(
                 }
                 let (constant, column) = optimization::jac_eqns(&jm);
                 let jm_map = with_jac_calls(var_map, &jm);
-                Ok((lin, [
-                    build_eq_fn_single(&eq_units(&constant), &jm_map, eq_index, by_name, literals)?,
-                    build_eq_fn_single(&eq_units(&column), &jm_map, eq_index, by_name, literals)?,
-                ]))
+                Ok((
+                    lin,
+                    [
+                        build_eq_fn_single(&eq_units(&constant), &jm_map, eq_index, by_name, literals)?,
+                        build_eq_fn_single(&eq_units(&column), &jm_map, eq_index, by_name, literals)?,
+                    ],
+                ))
             })();
             match attempt {
                 Ok(fns) => {
@@ -317,21 +350,55 @@ pub(super) fn build_jac_fns(
             }
         }
     }
-    Ok((linz_fns, jac_a_fns.unwrap_or_else(|| [empty_eqfn(), empty_eqfn()]), opt_fns, adj_fns))
+    Ok((
+        linz_fns,
+        jac_a_fns.unwrap_or_else(|| [empty_eqfn(), empty_eqfn()]),
+        opt_fns,
+        adj_fns,
+    ))
 }
 
 /// The matrix's own `generic_loop_calls` (C's `genericCall_jac_<i>`) in front of
-/// the model's.
-fn with_jac_calls(var_map: &SimVarMap, jm: &SimCode::JacobianMatrix) -> SimVarMap {
-    let mut out = var_map.clone();
-    if lst(&jm.generic_loop_calls).next().is_some() {
-        let mut calls = (*out.generic_calls).clone();
-        for c in lst(&jm.generic_loop_calls) {
-            calls.insert(generic_call_index(c), c.clone());
-        }
-        out.generic_calls = Arc::new(calls);
+/// `calls`: a Jacobian numbers its calls from 0, as the model does.
+fn jac_generic_calls(
+    calls: &Arc<HashMap<i32, SimCode::SimGenericCall>>,
+    jm: &SimCode::JacobianMatrix,
+) -> Arc<HashMap<i32, SimCode::SimGenericCall>> {
+    if lst(&jm.generic_loop_calls).next().is_none() {
+        return calls.clone();
     }
+    let mut out = (**calls).clone();
+    for c in lst(&jm.generic_loop_calls) {
+        out.insert(generic_call_index(c), c.clone());
+    }
+    Arc::new(out)
+}
+
+/// `var_map` with the matrix's generic calls in front of the model's.
+pub(super) fn with_jac_calls(var_map: &SimVarMap, jm: &SimCode::JacobianMatrix) -> SimVarMap {
+    let mut out = var_map.clone();
+    out.generic_calls = jac_generic_calls(&var_map.generic_calls, jm);
     out
+}
+
+/// `lower` a part of `jm` inside the function `ctx` builds, with the matrix's
+/// generic calls in front of the function's.
+pub(super) fn lower_with_jac_calls(
+    ctx: &mut FnCtx,
+    jm: &SimCode::JacobianMatrix,
+    lower: impl FnOnce(&mut FnCtx) -> Result<()>,
+) -> Result<()> {
+    let sim = ctx
+        .sim
+        .as_mut()
+        .ok_or("CodegenWasmJit: a Jacobian outside a simulation function")?;
+    let calls = jac_generic_calls(&sim.generic_calls, jm);
+    let saved = std::mem::replace(&mut sim.generic_calls, calls);
+    let res = lower(ctx);
+    if let Some(sim) = ctx.sim.as_mut() {
+        sim.generic_calls = saved;
+    }
+    res
 }
 
 /// Build one `linearJac<X>(SimData*)`: C's `functionJacX` loop moved into the
@@ -347,7 +414,9 @@ fn build_linz_jac_fn(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
-    let jm = plan.jacs[k].as_ref().ok_or("CodegenWasmJit: no linearization Jacobian")?;
+    let jm = plan.jacs[k]
+        .as_ref()
+        .ok_or("CodegenWasmJit: no linearization Jacobian")?;
     let col = lst(&jm.columns).next();
     let constant_eqns: Vec<metamodelica::Ref<SimCode::SimEqSystem>> =
         col.map(|c| lst(&c.constantEqns).cloned().collect()).unwrap_or_default();
@@ -390,7 +459,12 @@ fn lin_jac_systems(sim_code: &SimCode::SimCode) -> Vec<metamodelica::Ref<SimCode
     let mut out: Vec<metamodelica::Ref<SimCode::LinearSystem>> = Vec::new();
     let mut scan = |eqs: Vec<metamodelica::Ref<SimCode::SimEqSystem>>| {
         for e in &eqs_with_nested(&eqs) {
-            if let E::SES_LINEAR { lSystem, alternativeTearing, .. } = &**e {
+            if let E::SES_LINEAR {
+                lSystem,
+                alternativeTearing,
+                ..
+            } = &**e
+            {
                 // A dynamically torn component has two sets, each with its own Jacobian.
                 for sys in std::iter::once(lSystem).chain(alternativeTearing.iter()) {
                     if sys.tornSystem && seen.insert(sys.index) && lin_jac_usable(sys, lin_n_res(sys)) {
@@ -448,7 +522,7 @@ pub(super) fn build_lin_jac_infos(
     layout: &SimLayout,
     var_map: &mut SimVarMap,
 ) -> Result<()> {
-    let mut cursor = layout.nls_jac_off + nls_jac_scratch_f64(sim_code) * 8;
+    let mut cursor = plain_off(layout.nls_jac_off)? + nls_jac_scratch_f64(sim_code) * 8;
     for sys in lin_jac_systems(sim_code) {
         let jm = sys.jacobianMatrix.as_ref().unwrap();
         let column_vars = jac_column_vars(jm);
@@ -466,12 +540,21 @@ pub(super) fn build_lin_jac_infos(
                 continue;
             }
             let off = cursor;
-            Arc::make_mut(&mut var_map.vars).insert(key, SimSlot { off, wty: WTy::F64, negate: Neg::None, heap: false, pre: 0 });
+            Arc::make_mut(&mut var_map.vars).insert(
+                key,
+                SimSlot {
+                    off: SimOff::from(off),
+                    wty: WTy::F64,
+                    negate: Neg::None,
+                    heap: false,
+                    pre: 0,
+                },
+            );
             for g in array_element_keys(&sv.name)? {
                 var_map.array_acc.entry(g.base).or_default().push(AccElem {
                     subs: g.subs,
                     pieces: g.pieces,
-                    off,
+                    off: SimOff::from(off),
                     wty: WTy::F64,
                     neg: Neg::None,
                     heap: false,
@@ -487,12 +570,23 @@ pub(super) fn build_lin_jac_infos(
 /// Seed slots (in `seedVars`/column order) and result slots (at residual row via
 /// `jac_result_row`) for a torn-linear Jacobian, read from the slots
 /// `build_lin_jac_infos` registered. Feeds `compile_linear_system_analytic`.
-pub(super) fn lin_jac_offsets(lsystem: &SimCode::LinearSystem, vars: &SlotMap, n: usize) -> Result<(Vec<u32>, Vec<u32>)> {
+pub(super) fn lin_jac_offsets(
+    lsystem: &SimCode::LinearSystem,
+    vars: &SlotMap,
+    n: usize,
+) -> Result<(Vec<u32>, Vec<u32>)> {
     use openmodelica_backend_types::BackendDAE::VarKind;
-    let jm = lsystem.jacobianMatrix.as_ref().ok_or("CodegenWasmJit: torn-linear system has no Jacobian")?;
+    let jm = lsystem
+        .jacobianMatrix
+        .as_ref()
+        .ok_or("CodegenWasmJit: torn-linear system has no Jacobian")?;
     let lookup = |cr: &metamodelica::Ref<DAE::ComponentRef>| -> Result<u32> {
         let key = sim_cref_key(cr)?;
-        Ok(vars.get(&key).ok_or("CodegenWasmJit: torn-linear Jacobian slot not registered")?.off)
+        plain_off(
+            vars.get(&key)
+                .ok_or("CodegenWasmJit: torn-linear Jacobian slot not registered")?
+                .off,
+        )
     };
     let listed: Vec<u32> = lst(&jm.seedVars).map(|sv| lookup(&sv.name)).collect::<Result<_>>()?;
     let seed_offs = jac_seed_offs_by_column(jm, &listed, n)
@@ -500,7 +594,8 @@ pub(super) fn lin_jac_offsets(lsystem: &SimCode::LinearSystem, vars: &SlotMap, n
     let mut result_offs = vec![u32::MAX; n];
     for sv in jac_column_vars(jm).iter() {
         if matches!(sv.varKind, VarKind::JAC_VAR) {
-            let row = jac_result_row(sv).filter(|&r| r < n)
+            let row = jac_result_row(sv)
+                .filter(|&r| r < n)
                 .ok_or("CodegenWasmJit: torn-linear Jacobian result var has no row index")?;
             result_offs[row] = lookup(&sv.name)?;
         }
@@ -521,15 +616,23 @@ fn csc_accum_dep(
     dep: &mut HashMap<String, Vec<usize>>,
 ) -> Option<()> {
     use SimCode::SimEqSystem as E;
-    let E::SES_SIMPLE_ASSIGN { cref, exp, .. } = &**eq else { return None };
+    let E::SES_SIMPLE_ASSIGN { cref, exp, .. } = &**eq else {
+        return None;
+    };
     let mut s: Vec<usize> = Vec::new();
     let crefs = openmodelica_frontend_base::Expression::extractCrefsFromExp(exp.clone()).ok()?;
     for cr in &*crefs {
         let k = sim_cref_key(cr).ok()?;
         if let Some(&c) = seed_col.get(&k) {
-            if !s.contains(&c) { s.push(c); }
+            if !s.contains(&c) {
+                s.push(c);
+            }
         } else if let Some(ds) = dep.get(&k) {
-            for &c in ds { if !s.contains(&c) { s.push(c); } }
+            for &c in ds {
+                if !s.contains(&c) {
+                    s.push(c);
+                }
+            }
         }
     }
     dep.insert(sim_cref_key(cref).ok()?, s);
@@ -604,28 +707,40 @@ pub(super) fn build_nls_fns(
     literals: &mut Literals,
     jac_info: Option<&NlsJacInfo>,
     strict: Option<NlsJob>,
+    dyn_jac: Option<(&DynJac, NlsJob)>,
     pool: &mut ChunkPool,
     residual_ty: u32,
 ) -> Result<(NlsResidualFn, we::Function, Option<we::Function>, Option<we::Function>)> {
-    let _fg = crate::CodegenWasmJitFunctions::FnNameGuard::new(&format!(
-        "nonlinear system {}",
-        nlsystem.index
-    ));
+    let _fg = crate::CodegenWasmJitFunctions::FnNameGuard::new(&format!("nonlinear system {}", nlsystem.index));
     let (inner, residuals, iter_vars) = nls_parts(nlsystem)?;
     let mut slots: Vec<IterSlot> = Vec::with_capacity(iter_vars.len());
     let mut blocks: Vec<IterBlock> = Vec::new();
     let vars = SlotMap::new(var_map.vars.clone());
     for cr in &iter_vars {
         if is_homotopy_lambda(Some(cr)) {
-            slots.push(IterSlot { off: var_map.lambda_off, wty: WTy::F64 });
+            slots.push(IterSlot {
+                off: var_map.lambda_off,
+                wty: WTy::F64,
+            });
             continue;
         }
-        if let Some((slot, dims)) = sim_cref_key(cr).ok().and_then(|k| var_map.vars.slots.dyn_array(&k).cloned()) {
-            blocks.push(IterBlock { off: slot.off, len: dims.iter().fold(Sz::lit(1), |a, d| a * d.clone()) });
+        if let Some((slot, dims)) = sim_cref_key(cr)
+            .ok()
+            .and_then(|k| var_map.vars.slots.dyn_array(&k).cloned())
+        {
+            blocks.push(IterBlock {
+                off: slot.off,
+                len: dims.iter().fold(Sz::lit(1), |a, d| a * d.clone()),
+            });
             continue;
         }
-        let slot = iteration_var_slot(&vars, &var_map.start_slots, cr)?
-            .ok_or("CodegenWasmJit: nonlinear-system unknown has no slot")?;
+        let Some(slot) = iteration_var_slot(&vars, &var_map.start_slots, cr)? else {
+            record_error(format!(
+                "CodegenWasmJit: nonlinear-system unknown `{}` has no slot",
+                cref_display(cr)?
+            ));
+            return Err("CodegenWasmJit: nonlinear-system unknown has no slot");
+        };
         slots.push(slot);
     }
     let mk_sim = || sim_ctx(var_map);
@@ -640,8 +755,18 @@ pub(super) fn build_nls_fns(
 
     // residual(sim_data, x, r): 3 params.
     let residual = build_residual_fn(
-        nlsystem.index, &slots, &blocks, &residuals, &inner, strict.is_some(), var_map, eq_index, by_name,
-        literals, pool, residual_ty,
+        nlsystem.index,
+        &slots,
+        &blocks,
+        &residuals,
+        &inner,
+        strict.is_some(),
+        var_map,
+        eq_index,
+        by_name,
+        literals,
+        pool,
+        residual_ty,
     )?;
     // load(sim_data, x): 2 params.
     let load = {
@@ -652,6 +777,9 @@ pub(super) fn build_nls_fns(
     // jac(sim_data, x, jptr): column-major `n×n` analytic Jacobian, emitted only
     // when the system carries a usable symbolic Jacobian.
     let jac = match (&nlsystem.jacobianMatrix, jac_info.filter(|_| blocks.is_empty())) {
+        (Some(jm), _) if let Some((dj, job)) = dyn_jac => Some(build_dyn_jac_fn(
+            jm, dj, job, &slots, &blocks, &inner, var_map, eq_index, by_name, literals,
+        )?),
         (Some(jm), Some(info)) => {
             let col = lst(&jm.columns)
                 .next()
@@ -670,30 +798,46 @@ pub(super) fn build_nls_fns(
                 Ok(())
             };
             let mut lower_constant = |c: &mut FnCtx| -> Result<()> {
-                for eq in &constant_eqns {
-                    lower_equation(c, eq, eq_index)?;
-                }
-                Ok(())
+                lower_with_jac_calls(c, jm, |c| {
+                    for eq in &constant_eqns {
+                        lower_equation(c, eq, eq_index)?;
+                    }
+                    Ok(())
+                })
             };
             let mut lower_column = |c: &mut FnCtx| -> Result<()> {
-                for eq in &column_eqns {
-                    lower_equation(c, eq, eq_index)?;
-                }
-                Ok(())
+                lower_with_jac_calls(c, jm, |c| {
+                    for eq in &column_eqns {
+                        lower_equation(c, eq, eq_index)?;
+                    }
+                    Ok(())
+                })
             };
             // Colored CSC assembly (C's `evalJacobian`) whenever the symbolic
             // sparsity is available: `#colors` column-equation passes instead of
             // `n`, into CSC values for a sparse system or a dense `n×n` otherwise.
             match nls_jac_pattern(jm, slots.len()) {
                 Some(pat) => emit_nls_jac_csc_body(
-                    &mut ctx, &slots, &info.seed_offs, &info.result_offs,
-                    &pat.colptr, &pat.rowidx, &pat.colors,
+                    &mut ctx,
+                    &slots,
+                    &info.seed_offs,
+                    &info.result_offs,
+                    &pat.colptr,
+                    &pat.rowidx,
+                    &pat.colors,
                     !nls_use_sparse(slots.len(), pat.rowidx.len()),
-                    &mut lower_inner, &mut lower_constant, &mut lower_column,
+                    &mut lower_inner,
+                    &mut lower_constant,
+                    &mut lower_column,
                 )?,
                 None => emit_nls_jac_body(
-                    &mut ctx, &slots, &info.seed_offs, &info.result_offs,
-                    &mut lower_inner, &mut lower_constant, &mut lower_column,
+                    &mut ctx,
+                    &slots,
+                    &info.seed_offs,
+                    &info.result_offs,
+                    &mut lower_inner,
+                    &mut lower_constant,
+                    &mut lower_column,
                 )?,
             }
             Some(finish(ctx))
@@ -709,6 +853,62 @@ pub(super) fn build_nls_fns(
         })
         .transpose()?;
     Ok((residual, load, jac, strict_fn))
+}
+
+/// `jac(sim_data, x, values)` of a runtime-sized system, over its own workspace.
+#[allow(clippy::too_many_arguments)]
+fn build_dyn_jac_fn(
+    jm: &SimCode::JacobianMatrix,
+    dj: &DynJac,
+    job: NlsJob,
+    slots: &[IterSlot],
+    blocks: &[IterBlock],
+    inner: &[metamodelica::Ref<SimCode::SimEqSystem>],
+    var_map: &SimVarMap,
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Literals,
+) -> Result<we::Function> {
+    let (Some(pat), Some(n_entry)) = (job.dyn_pat, job.dyn_n) else {
+        return Err("CodegenWasmJit: a runtime-sized Jacobian without its pattern");
+    };
+    let col = lst(&jm.columns)
+        .next()
+        .ok_or("CodegenWasmJit: nonlinear-system Jacobian has no column")?;
+    let mut vm = var_map.clone();
+    for (key, off, dims) in &dj.vars {
+        register_jac_var(&mut vm, key, *off, dims)?;
+    }
+    let lower = |c: &mut FnCtx, eqs: &List<metamodelica::Ref<SimCode::SimEqSystem>>| -> Result<()> {
+        for eq in lst(eqs) {
+            lower_equation(c, eq, eq_index)?;
+        }
+        Ok(())
+    };
+    let mut ctx = FnCtx::new_sim_params(sim_ctx(&vm), by_name, literals, 3);
+    emit_nls_jac_dyn_body(
+        &mut ctx,
+        slots,
+        blocks,
+        dj.seeds,
+        dj.results,
+        pat,
+        n_entry,
+        &mut |c| {
+            for eq in inner {
+                lower_equation(c, eq, eq_index)?;
+            }
+            Ok(())
+        },
+        &mut |c| lower_with_jac_calls(c, jm, |c| lower(c, &col.constantEqns)),
+        &mut |c| lower_with_jac_calls(c, jm, |c| lower(c, &col.columnEqns)),
+    )?;
+    let (locals, instrs) = ctx.finish_sim();
+    let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
+    for i in &instrs {
+        func.instruction(i);
+    }
+    Ok(func)
 }
 
 /// A residual callback: one function, or [`ChunkPool`] positions a thunk calls in

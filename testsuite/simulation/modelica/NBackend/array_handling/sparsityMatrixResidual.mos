@@ -1,0 +1,42 @@
+// name: sparsityMatrixResidual
+// keywords: NewBackend, sparsity, jacobian, array, residual
+// status: correct
+// suite: cSources
+// teardown_command: rm -f sparsityMatrixResidual_res.mat
+//
+// The rows of a two-dimensional residual of an algebraic loop start at its own
+// offset in the sparsity pattern, also if scalar residuals come before it
+// (OpenIPSL CampusGridB). Before, they started at zero and the pattern had an
+// empty row ("Sparsity pattern ... is not regular" in the messages).
+
+loadString("
+model sparsityMatrixResidual
+  function rot
+    input Real d;
+    output Real R[2,2] = [cos(d), -sin(d); sin(d), cos(d)];
+  end rot;
+  Real a(start = 1), b(start = 1), d(start = 0.1);
+  Real w[2,1](each start = 1);
+equation
+  a + b^3 = 2 + time;
+  a*b - d = 0.5;
+  w = -rot(d) * [a; b] + [0.1*w[2,1]^2; 0.1*w[1,1]^2];
+  d = 0.1*(w[1,1] + w[2,1])^2;
+end sparsityMatrixResidual;
+"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(sparsityMatrixResidual, stopTime = 1); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "sparsityMatrixResidual_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'sparsityMatrixResidual', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

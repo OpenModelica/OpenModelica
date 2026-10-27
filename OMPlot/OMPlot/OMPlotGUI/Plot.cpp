@@ -303,18 +303,34 @@ Plot::~Plot()
 
 void Plot::fillColorsList()
 {
-  mColorsList.append(QColor(Qt::red));
-  mColorsList.append(QColor(Qt::blue));
-  mColorsList.append(QColor(85,170,0));     // Ticket #3098
-  mColorsList.append(QColor(170,85,255));   // Ticket #3098
-  mColorsList.append(QColor(Qt::magenta));
-  mColorsList.append(QColor(255, 110, 25));  // Ticket #6399
-  mColorsList.append(QColor(Qt::darkRed));
-  mColorsList.append(QColor(Qt::darkBlue));
-  mColorsList.append(QColor(Qt::darkGreen));
-  mColorsList.append(QColor(Qt::darkCyan));
-  mColorsList.append(QColor(Qt::darkMagenta));
-  mColorsList.append(QColor(Qt::darkYellow));
+  if (isDarkMode()) {
+    // Lighter variants of the light mode colors so curves stay readable on the dark canvas.
+    mColorsList.append(QColor(255, 82, 82));
+    mColorsList.append(QColor(79, 195, 247));
+    mColorsList.append(QColor(105, 240, 174));
+    mColorsList.append(QColor(186, 104, 200));
+    mColorsList.append(QColor(217, 122, 255));
+    mColorsList.append(QColor(255, 167, 38));
+    mColorsList.append(QColor(255, 138, 128));
+    mColorsList.append(QColor(144, 202, 249));
+    mColorsList.append(QColor(129, 199, 132));
+    mColorsList.append(QColor(77, 208, 225));
+    mColorsList.append(QColor(206, 147, 216));
+    mColorsList.append(QColor(255, 241, 118));
+  } else {
+    mColorsList.append(QColor(Qt::red));
+    mColorsList.append(QColor(Qt::blue));
+    mColorsList.append(QColor(85,170,0));     // Ticket #3098
+    mColorsList.append(QColor(170,85,255));   // Ticket #3098
+    mColorsList.append(QColor(Qt::magenta));
+    mColorsList.append(QColor(255, 110, 25));  // Ticket #6399
+    mColorsList.append(QColor(Qt::darkRed));
+    mColorsList.append(QColor(Qt::darkBlue));
+    mColorsList.append(QColor(Qt::darkGreen));
+    mColorsList.append(QColor(Qt::darkCyan));
+    mColorsList.append(QColor(Qt::darkMagenta));
+    mColorsList.append(QColor(Qt::darkYellow));
+  }
 }
 
 PlotWindow* Plot::getParentPlotWindow()
@@ -378,6 +394,11 @@ void Plot::removeCurve(PlotCurve *pCurve)
   if (pCurve->getPointMarker()) {
     pCurve->getPointMarker()->setVisible(false);
   }
+}
+
+QSize Plot::preferredSizeAdjustment() const
+{
+  return QwtPlot::sizeHint() - QwtPlot::minimumSizeHint();
 }
 
 QColor Plot::getUniqueColor(int index, int total)

@@ -1,0 +1,42 @@
+// name: resizableArrayJacobian
+// keywords: NewBackend resizable jacobian index reduction
+// status: correct
+// cflags: --newBackend --resizableArrays
+// teardown_command: rm -f resizableArrayJacobian_res.mat
+//
+// The index reduction leaves a linear system in the initialization whose
+// Jacobian computes the whole array der(r) (BenchmarksForResizeableArrays'
+// ArrayEquationsWithIndexReduction.ExtraEquationColoring).
+
+loadString("
+model resizableArrayJacobian
+  Real n[3];
+  Real l;
+  Real e[3];
+  Real s(start = 1, fixed = true);
+  Real r[3];
+equation
+  l = sqrt(n*n);
+  e = 2*n/l;
+  r = e*s;
+  e*der(r) = der(s) - s;
+  n = {1, 2, 2*time};
+end resizableArrayJacobian;
+"); getErrorString();
+simulate(resizableArrayJacobian, stopTime = 1.5); getErrorString();
+abs(val(s, 1.5, "resizableArrayJacobian_res.mat") - 0.6065306597126334) < 1e-5;
+abs(val(r[3], 1.5, "resizableArrayJacobian_res.mat") - 0.6065306597126334 * 6 / sqrt(14)) < 1e-5;
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "resizableArrayJacobian_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.5, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'resizableArrayJacobian', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// true
+// endResult

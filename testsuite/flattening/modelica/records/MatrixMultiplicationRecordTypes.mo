@@ -61,7 +61,6 @@ model ComplexTest
   Complex c2[3, 3] = {{c1, c1, c1}, {c1, c1, c1}, {c1, c1, c1}};
   Complex c3[3, 1] = {{c1}, {c1}, {c1}};
   Complex c4[3, 1] = c2 * c3;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ComplexTest;
 
 // Result:

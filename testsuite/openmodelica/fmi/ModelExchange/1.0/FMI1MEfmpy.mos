@@ -2,7 +2,6 @@
 // keywords: fmu export fmi 1.0 model exchange fmpy
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml *.fmu *_FMU.* *.fmutmp *.libs *.lib *.so *.dll *_res.mat *_fmpy.csv *_diff.*.csv *_info.json ExpDecay* SampleCount* Oscillator* StateEvent* DirectFeedthrough*
-// cflags: -d=-newInst
 //
 // Exports a few FMI 1.0 Model-Exchange FMUs and validates them with an
 // *independent* FMI importer (FMPy): each model is simulated both by

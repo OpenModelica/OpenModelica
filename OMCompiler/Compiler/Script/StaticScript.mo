@@ -335,13 +335,11 @@ algorithm
       FCore.Graph env;
       Absyn.ComponentRef cr,cr2;
       Boolean impl;
-      Ident cname_str,str;
+      Ident cname_str;
       DAE.Exp filenameprefix,exp_1,crefExp,outputFile,dumpExtractionSteps;
       DAE.Type recordtype;
       list<Absyn.NamedArg> args;
-      list<DAE.Exp> excludeList;
       DAE.Properties prop;
-      Integer excludeListSize;
       Absyn.Exp exp;
       FCore.Cache cache;
       DAE.Prefix pre;
@@ -375,21 +373,6 @@ algorithm
         (cache,dumpExtractionSteps) := Static.getOptionalNamedArg(cache,env,impl,"dumpSteps",DAE.T_BOOL_DEFAULT,args,DAE.BCONST(false),pre,info);
       then
         (cache,Expression.makePureBuiltinCall("modelEquationsUC",{DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),outputFile,dumpExtractionSteps},DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()));
-
-   case (cache, env, Absyn.CREF_IDENT(name = "translateModelCPP"), {Absyn.CREF(componentRef = cr)}, args, impl, pre)
-      algorithm
-        className := AbsynUtil.crefToPath(cr);
-        cname_str := AbsynUtil.pathString(className);
-        (cache,filenameprefix) := Static.getOptionalNamedArg(cache,env, impl, "fileNamePrefix",
-                                                     DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str),pre,info);
-        recordtype :=
-        DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
-        {DAE.TYPES_VAR("flatClass",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),false,NONE()),
-         DAE.TYPES_VAR("exeFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),false,NONE())},
-          NONE(), false);
-      then
-        (cache,Expression.makePureBuiltinCall("translateModelCPP",
-          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
 
     case (cache, env, Absyn.CREF_IDENT(name = "translateModelXML"), {Absyn.CREF(componentRef = cr)}, args, impl, pre)
       algorithm
@@ -428,26 +411,12 @@ algorithm
         (cache,Expression.makePureBuiltinCall("buildModel",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
          DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)}),DAE.C_VAR()));
 
-    case (cache, env, Absyn.CREF_IDENT(name = "buildModelBeast"), {Absyn.CREF()}, args, _, _)
-      algorithm
-        (cache, simulationArgs) := getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "buildModelBeast", info, NONE());
-      then
-        (cache,Expression.makePureBuiltinCall("buildModelBeast",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
-         DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)}),DAE.C_VAR()));
-
     case (cache, env, Absyn.CREF_IDENT(name = "simulate"), {Absyn.CREF()}, args, _, _) /* Fill in rest of defaults here */
       algorithm
         (cache, simulationArgs) := getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "simulate", info, NONE());
         recordtype := CevalScriptBackend.getSimulationResultType();
       then
         (cache,Expression.makePureBuiltinCall("simulate",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
-
-    case (cache, env, Absyn.CREF_IDENT(name = "simulation"), {Absyn.CREF()}, args, _, _) /* Fill in rest of defaults here */
-      algorithm
-        (cache, simulationArgs) := getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "simulation", info, NONE());
-        recordtype := CevalScriptBackend.getDrModelicaSimulationResultType();
-      then
-        (cache,Expression.makePureBuiltinCall("simulation",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
 
     case (cache, env, Absyn.CREF_IDENT(name = "linearize"), {Absyn.CREF()}, args, _, _) /* Fill in rest of defaults here */
       algorithm
@@ -482,50 +451,6 @@ algorithm
         (cache,exp_1,_) := elabExp(cache,env, exp, impl, true,pre,info);
       then
         (cache,Expression.makePureBuiltinCall("timing",{exp_1},DAE.T_REAL_DEFAULT),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()));
-
-      // MathCore-specific. Should be in MathCoreBuiltin.mo :p
-    case (cache, _, Absyn.CREF_IDENT(name = "checkExamplePackages"), {}, args, _, _)
-      algorithm
-        excludeList := Static.getOptionalNamedArgExpList("exclude", args);
-        excludeListSize := listLength(excludeList);
-      then
-        (cache,Expression.makePureBuiltinCall("checkExamplePackages",
-        {DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList)},
-        DAE.T_STRING_DEFAULT),
-        DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()));
-
-    case (cache, _, Absyn.CREF_IDENT(name = "checkExamplePackages"), {Absyn.STRING(value = str)}, args, _, _)
-      algorithm
-        excludeList := Static.getOptionalNamedArgExpList("exclude", args);
-        excludeListSize := listLength(excludeList);
-      then
-        (cache,Expression.makePureBuiltinCall("checkExamplePackages",
-        {DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList),DAE.SCONST(str)},
-        DAE.T_STRING_DEFAULT),
-        DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()));
-
-    case (cache, _, Absyn.CREF_IDENT(name = "checkExamplePackages"), {Absyn.CREF(componentRef = cr)}, args, _, _)
-      algorithm
-        className := AbsynUtil.crefToPath(cr);
-        excludeList := Static.getOptionalNamedArgExpList("exclude", args);
-        excludeListSize := listLength(excludeList);
-      then
-        (cache,Expression.makePureBuiltinCall("checkExamplePackages",
-        {DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList),
-        DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT)},
-        DAE.T_STRING_DEFAULT),
-        DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()));
-
-    case (cache, _, Absyn.CREF_IDENT(name = "checkExamplePackages"), {Absyn.CREF(componentRef = cr), Absyn.STRING(value = str)}, args, _, _)
-      algorithm
-        className := AbsynUtil.crefToPath(cr);
-        excludeList := Static.getOptionalNamedArgExpList("exclude", args);
-        excludeListSize := listLength(excludeList);
-      then
-        (cache,Expression.makePureBuiltinCall("checkExamplePackages",
-        {DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList),
-         DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),DAE.SCONST(str)},
-        DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()));
 
   end matchcontinue;
 end elabCallInteractive_work;

@@ -17,7 +17,7 @@ algorithm
   e := a * b;
 end f;
 
-class EqualityEquations
+model EqualityEquations
   Real x;
   Real y;
   Real z;
@@ -27,13 +27,11 @@ equation
   u = v;                    // Equality equations between two expressions
   (x, y, z)      = f(1.0, 2.0);        // Correct!
   (x+1, 3.0, z/y)  = f(1.0, 2.0);        // Illegal! Not a list of variables on the left hand side
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EqualityEquations;
 
 // Result:
 // Error processing file: EqualityEquations.mo
-// [flattening/modelica/equations/EqualityEquations.mo:29:3-29:33:writable] Error: Tuple assignment only allowed for tuple of component references in lhs (in (x + 1, 3.0, z/y) = f(1.0, 2.0);).
-// Error: Error occurred while flattening model EqualityEquations
+// [flattening/modelica/equations/EqualityEquations.mo:29:3-29:33:writable] Error: Tuple assignment only allowed for tuple of component references in lhs (in (x + 1.0, 3.0, z / y)).
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

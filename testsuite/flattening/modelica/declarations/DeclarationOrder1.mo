@@ -20,7 +20,6 @@ end A;
 
 model DeclarationOrder1
   A.B b;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DeclarationOrder1;
 
 // Result:

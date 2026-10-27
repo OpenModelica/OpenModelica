@@ -13,7 +13,6 @@ model ShortClassdefExtends2
 
   model D = A;
   D d;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ShortClassdefExtends2;
 
 // Result:

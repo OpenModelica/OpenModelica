@@ -49,6 +49,54 @@
 #include <QDesktopServices>
 #include <QGridLayout>
 
+#if defined(__EMSCRIPTEN__)
+#include <QEventLoop>
+#include <QTimer>
+#include <emscripten/em_js.h>
+
+#include <cstdlib>
+
+/* The web build has no Java to run the CRML compiler. The page translates instead, with
+ * crml.js, the translator of OpenModelica/CRML compiled to JavaScript (its web build),
+ * which is staged next to the page. Its translate(crml, within) returns the Modelica text,
+ * or a text starting with "ERROR " when the translation fails.
+ * The module is imported on the first translation. omedit_crml_translate_start settles
+ * Module.__omeditCRML once the translation is done.
+ */
+EM_JS(void, omedit_crml_translate_start, (const char *crml, const char *within), {
+  const st = { settled: false, result: "", error: "" };
+  Module.__omeditCRML = st;
+  const text = UTF8ToString(crml);
+  const withinName = UTF8ToString(within);
+  if (!Module.__omeditCRMLModule) {
+    Module.__omeditCRMLModule = import(new URL("crml.js", document.baseURI).href);
+  }
+  Module.__omeditCRMLModule.then((m) => {
+    try {
+      st.result = m.translate(text, withinName);
+    } catch (e) {
+      st.error = "the CRML translator failed: " + e;
+    }
+  }, (e) => {
+    // Try the import again next time.
+    Module.__omeditCRMLModule = null;
+    st.error = "could not load the CRML translator crml.js: " + e;
+  }).finally(() => { st.settled = true; });
+});
+
+EM_JS(int, omedit_crml_translate_settled, (), {
+  return (Module.__omeditCRML && Module.__omeditCRML.settled) ? 1 : 0;
+});
+
+EM_JS(char *, omedit_crml_translate_result, (), {
+  return stringToNewUTF8(Module.__omeditCRML.result);
+});
+
+EM_JS(char *, omedit_crml_translate_error, (), {
+  return stringToNewUTF8(Module.__omeditCRML.error);
+});
+#endif
+
 /*!
  * \brief CRMLTranslatorOutputWidget::CRMLTranslatorOutputWidget
  * \param crmlTranslatorOptions
@@ -147,8 +195,101 @@ void CRMLTranslatorOutputWidget::translateModel()
   args.removeAll(QString(""));
   writeTranslationOutput(QString("%1 %2\n").arg(mCRMLTranslatorOptions.getCompilerProcess()).arg(args.join(" ")), Style::messagesCommandColor());
   mpTranslationProcess->start(mCRMLTranslatorOptions.getCompilerProcess(), args);
+#elif defined(__EMSCRIPTEN__)
+  translateModelInPage();
 #endif // QT_CONFIG(process)
 }
+
+#if defined(__EMSCRIPTEN__)
+/*!
+ * \brief CRMLTranslatorOutputWidget::translateModelInPage
+ * Translates the CRML model in the page with crml.js, the web build of the CRML translator,
+ * and writes the Modelica file where the CRML compiler writes it.
+ */
+void CRMLTranslatorOutputWidget::translateModelInPage()
+{
+  mpProgressBar->setRange(0, 2);
+  mpProgressBar->setTextVisible(false);
+  const QString crmlFile = mCRMLTranslatorOptions.getCRMLFile();
+  if (mCRMLTranslatorOptions.getMode().compare(QStringLiteral("testsuite")) == 0) {
+    const QString message = tr("The CRML testsuite needs the CRML compiler, which needs Java, so it does not run in the web version.");
+    writeTranslationOutput(message, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
+    mpProgressLabel->setText(message);
+    updateMessageTab(message);
+    return;
+  }
+
+  mIsTranslationProcessRunning = true;
+  const QString progressStr = tr("CRML translator is running. Please wait for a while.");
+  mpProgressLabel->setText(progressStr);
+  updateMessageTab(progressStr);
+
+  QString error;
+  QString modelica;
+  QFile file(crmlFile);
+  if (file.open(QIODevice::ReadOnly)) {
+    const QByteArray crml = file.readAll();
+    file.close();
+    writeTranslationOutput(tr("Translating %1 with crml.js\n").arg(crmlFile), Style::messagesCommandColor());
+    omedit_crml_translate_start(crml.constData(), mCRMLTranslatorOptions.getModelicaWithin().toUtf8().constData());
+    // Wait in a nested event loop, as for the other calls into the page; the timer wakes it
+    // up, as the settling happens in JavaScript and posts nothing to Qt.
+    if (!omedit_crml_translate_settled()) {
+      QEventLoop loop;
+      QTimer poll;
+      QObject::connect(&poll, &QTimer::timeout, &loop, [&loop]() {
+        if (omedit_crml_translate_settled()) {
+          loop.quit();
+        }
+      });
+      poll.start(50);
+      while (!omedit_crml_translate_settled()) {
+        loop.exec();
+      }
+    }
+    char *rawError = omedit_crml_translate_error();
+    error = QString::fromUtf8(rawError);
+    free(rawError);
+    if (error.isEmpty()) {
+      char *rawResult = omedit_crml_translate_result();
+      modelica = QString::fromUtf8(rawResult);
+      free(rawResult);
+      if (modelica.startsWith(QStringLiteral("ERROR "))) {
+        error = modelica.mid(6);
+      }
+    }
+  } else {
+    error = GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(crmlFile);
+  }
+
+  if (error.isEmpty()) {
+    const QString fileName = generatedModelicaFile();
+    QDir().mkpath(QFileInfo(fileName).absolutePath());
+    QFile moFile(fileName);
+    if (moFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+      moFile.write(modelica.toUtf8());
+      moFile.close();
+      writeTranslationOutput(tr("Output Modelica file: %1\n").arg(fileName), OptionsDialog::instance()->getMessagesPage()->getNotificationColor());
+    } else {
+      error = tr("Could not write %1: %2").arg(fileName, moFile.errorString());
+    }
+  }
+
+  mIsTranslationProcessRunning = false;
+  if (error.isEmpty()) {
+    const QString message = translationFinishedMessage(true, QString());
+    writeTranslationOutput(message, Style::messagesCommandColor());
+    translationProcessFinishedHelper();
+    mpProgressLabel->setText(message);
+    updateMessageTab(message);
+  } else {
+    const QString message = tr("Translation of the CRML file %1 failed.").arg(crmlFile);
+    writeTranslationOutput(error + "\n" + message, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
+    mpProgressLabel->setText(message);
+    updateMessageTab(message);
+  }
+}
+#endif // __EMSCRIPTEN__
 
 /*!
  * \brief CRMLTranslatorOutputWidget::updateMessageTab
@@ -180,6 +321,25 @@ void CRMLTranslatorOutputWidget::writeTranslationOutput(QString output, QColor c
   QTextCharFormat format;
   format.setForeground(color);
   mpTranslationOutputTextBox->appendOutput(output, format);
+}
+
+/*!
+ * \brief CRMLTranslatorOutputWidget::generatedModelicaFile
+ * Returns the Modelica file the CRML compiler writes for the CRML file,
+ * <output directory>/<name>/<name>.mo.
+ */
+QString CRMLTranslatorOutputWidget::generatedModelicaFile() const
+{
+  QString outputDirectory;
+  if (mCRMLTranslatorOptions.getOutputDirectory().isEmpty()) {
+    outputDirectory = mCRMLTranslatorOptions.getWorkingDirectory() + QDir::separator() + "generated";
+  } else {
+    outputDirectory = mCRMLTranslatorOptions.getOutputDirectory();
+  }
+
+  QFileInfo fi = QFileInfo(mCRMLTranslatorOptions.getCRMLFile());
+  QString fileName = outputDirectory + QDir::separator() +  fi.baseName() + QDir::separator() + fi.baseName() + ".mo";
+  return fileName.replace("\\", "/");
 }
 
 /*!
@@ -219,16 +379,7 @@ void CRMLTranslatorOutputWidget::translationProcessFinishedHelper()
       }
     }
 
-    QString outputDirectory;
-    if (mCRMLTranslatorOptions.getOutputDirectory().isEmpty()) {
-      outputDirectory = mCRMLTranslatorOptions.getWorkingDirectory() + QDir::separator() + "generated";
-    } else {
-      outputDirectory = mCRMLTranslatorOptions.getOutputDirectory();
-    }
-
-    QFileInfo fi = QFileInfo(mCRMLTranslatorOptions.getCRMLFile());
-    QString fileName = outputDirectory + QDir::separator() +  fi.baseName() + QDir::separator() + fi.baseName() + ".mo";
-    fileName = fileName.replace("\\", "/");
+    QString fileName = generatedModelicaFile();
     pLibraryWidget->openFile(fileName, Helper::utf8, false, true);
     // now open it if we can find it in the tree!
     LibraryTreeItem *pMOLibraryTreeItem = pLibraryWidget->getLibraryTreeModel()->getLibraryTreeItemFromFile(fileName, 1);
@@ -239,6 +390,53 @@ void CRMLTranslatorOutputWidget::translationProcessFinishedHelper()
   } else {
     qDebug() << "Unknown CRML mode type.";
   }
+}
+
+/*!
+ * \brief CRMLTranslatorOutputWidget::translationFinishedMessage
+ * Returns the message shown when the translation succeeded or failed.
+ * \param success
+ * \param exitCode - the exit code of the CRML compiler, for a failure.
+ * \return
+ */
+QString CRMLTranslatorOutputWidget::translationFinishedMessage(bool success, const QString &exitCode) const
+{
+  QString messageFailed;
+  QString msgFailed = tr("Translation of the CRML file %1 failed. Exit code %2").arg(mCRMLTranslatorOptions.getCRMLFile(), exitCode);
+  QString messageSuccess;
+  QString msgSuccess = tr("Translation of CRML file %1 finished. Now loading specified CRML Modelica libraries...").arg(mCRMLTranslatorOptions.getCRMLFile());
+  if (mCRMLTranslatorOptions.getMode().compare(QStringLiteral("testsuite")) == 0) {
+    messageFailed = tr("Testsuite run in directory %1 failed. Exit code %2.").arg(mCRMLTranslatorOptions.getWorkingDirectory(), exitCode);
+    messageSuccess = tr("Testsuite run in directory %1 finished.").arg(mCRMLTranslatorOptions.getWorkingDirectory());
+  } else if (mCRMLTranslatorOptions.getMode().compare(QStringLiteral("translate")) == 0) {
+    messageFailed = msgFailed;
+    messageSuccess = msgSuccess;
+  } else if (mCRMLTranslatorOptions.getMode().compare(QStringLiteral("translateAs")) == 0) {
+    if (!mCRMLTranslatorOptions.getOutputDirectory().isEmpty() && !mCRMLTranslatorOptions.getModelicaWithin().isEmpty()) {
+      messageFailed = tr("Translation of the CRML file %1 with output directory %2 and within %3 failed. Exit code %4.").
+                      arg(mCRMLTranslatorOptions.getCRMLFile(), mCRMLTranslatorOptions.getOutputDirectory(), mCRMLTranslatorOptions.getModelicaWithin(),
+                          exitCode);
+      messageSuccess = tr("Translation of CRML file %1 with output directory %2 and within %3 finished. Now loading specified CRML Modelica libraries...").
+                       arg(mCRMLTranslatorOptions.getCRMLFile(), mCRMLTranslatorOptions.getOutputDirectory(), mCRMLTranslatorOptions.getModelicaWithin());
+    } else if (!mCRMLTranslatorOptions.getOutputDirectory().isEmpty() && mCRMLTranslatorOptions.getModelicaWithin().isEmpty()) {
+      messageFailed = tr("Translation of the CRML file %1 with output directory %2 failed. Exit code %3.").
+                      arg(mCRMLTranslatorOptions.getCRMLFile(), mCRMLTranslatorOptions.getOutputDirectory(), exitCode);
+      messageSuccess = tr("Translation of CRML file %1 with output directory %2 finished. Now loading specified CRML Modelica libraries...").
+                       arg(mCRMLTranslatorOptions.getCRMLFile(), mCRMLTranslatorOptions.getOutputDirectory());
+    } else if (mCRMLTranslatorOptions.getOutputDirectory().isEmpty() && !mCRMLTranslatorOptions.getModelicaWithin().isEmpty()) {
+      messageFailed = tr("Translation of the CRML file %1 with within %2 failed. Exit code %3.").
+                      arg(mCRMLTranslatorOptions.getCRMLFile(), mCRMLTranslatorOptions.getModelicaWithin(), exitCode);
+      messageSuccess = tr("Translation of CRML file %1 with within %2 finished. Now loading specified CRML Modelica libraries...").
+                       arg(mCRMLTranslatorOptions.getCRMLFile(), mCRMLTranslatorOptions.getModelicaWithin());
+    } else {
+      messageFailed = msgFailed;
+      messageSuccess = msgSuccess;
+    }
+  } else {
+    qDebug() << "Unknown CRML mode type.";
+  }
+
+  return success ? messageSuccess : messageFailed;
 }
 
 /*!
@@ -347,41 +545,8 @@ void CRMLTranslatorOutputWidget::translationProcessFinished(int exitCode, QProce
   mIsTranslationProcessRunning = false;
   mpCancelButton->setEnabled(false);
 
-  QString messageFailed;
-  QString msgFailed = tr("Translation of the CRML file %1 failed. Exit code %2").arg(mCRMLTranslatorOptions.getCRMLFile(), Utilities::formatExitCode(exitCode));
-  QString messageSuccess;
-  QString msgSuccess = tr("Translation of CRML file %1 finished. Now loading specified CRML Modelica libraries...").arg(mCRMLTranslatorOptions.getCRMLFile());
-  if (mCRMLTranslatorOptions.getMode().compare(QStringLiteral("testsuite")) == 0) {
-    messageFailed = tr("Testsuite run in directory %1 failed. Exit code %2.").arg(mCRMLTranslatorOptions.getWorkingDirectory(), Utilities::formatExitCode(exitCode));
-    messageSuccess = tr("Testsuite run in directory %1 finished.").arg(mCRMLTranslatorOptions.getWorkingDirectory());
-  } else if (mCRMLTranslatorOptions.getMode().compare(QStringLiteral("translate")) == 0) {
-    messageFailed = msgFailed;
-    messageSuccess = msgSuccess;
-  } else if (mCRMLTranslatorOptions.getMode().compare(QStringLiteral("translateAs")) == 0) {
-    if (!mCRMLTranslatorOptions.getOutputDirectory().isEmpty() && !mCRMLTranslatorOptions.getModelicaWithin().isEmpty()) {
-      messageFailed = tr("Translation of the CRML file %1 with output directory %2 and within %3 failed. Exit code %4.").
-                      arg(mCRMLTranslatorOptions.getCRMLFile(), mCRMLTranslatorOptions.getOutputDirectory(), mCRMLTranslatorOptions.getModelicaWithin(),
-                          Utilities::formatExitCode(exitCode));
-      messageSuccess = tr("Translation of CRML file %1 with output directory %2 and within %3 finished. Now loading specified CRML Modelica libraries...").
-                       arg(mCRMLTranslatorOptions.getCRMLFile(), mCRMLTranslatorOptions.getOutputDirectory(), mCRMLTranslatorOptions.getModelicaWithin());
-    } else if (!mCRMLTranslatorOptions.getOutputDirectory().isEmpty() && mCRMLTranslatorOptions.getModelicaWithin().isEmpty()) {
-      messageFailed = tr("Translation of the CRML file %1 with output directory %2 failed. Exit code %3.").
-                      arg(mCRMLTranslatorOptions.getCRMLFile(), mCRMLTranslatorOptions.getOutputDirectory(), Utilities::formatExitCode(exitCode));
-      messageSuccess = tr("Translation of CRML file %1 with output directory %2 finished. Now loading specified CRML Modelica libraries...").
-                       arg(mCRMLTranslatorOptions.getCRMLFile(), mCRMLTranslatorOptions.getOutputDirectory());
-    } else if (mCRMLTranslatorOptions.getOutputDirectory().isEmpty() && !mCRMLTranslatorOptions.getModelicaWithin().isEmpty()) {
-      messageFailed = tr("Translation of the CRML file %1 with within %2 failed. Exit code %3.").
-                      arg(mCRMLTranslatorOptions.getCRMLFile(), mCRMLTranslatorOptions.getModelicaWithin(), Utilities::formatExitCode(exitCode));
-      messageSuccess = tr("Translation of CRML file %1 with within %2 finished. Now loading specified CRML Modelica libraries...").
-                       arg(mCRMLTranslatorOptions.getCRMLFile(), mCRMLTranslatorOptions.getModelicaWithin());
-    } else {
-      messageFailed = msgFailed;
-      messageSuccess = msgSuccess;
-    }
-  } else {
-    qDebug() << "Unknown CRML mode type.";
-  }
-
+  const QString messageFailed = translationFinishedMessage(false, Utilities::formatExitCode(exitCode));
+  const QString messageSuccess = translationFinishedMessage(true, QString());
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     writeTranslationOutput(messageSuccess, Style::messagesCommandColor());
     translationProcessFinishedHelper();

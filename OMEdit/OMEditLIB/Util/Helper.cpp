@@ -254,6 +254,8 @@ QString Helper::findUsage;
 QString Helper::findUsageTip;
 QString Helper::classDiagram;
 QString Helper::classDiagramTip;
+QString Helper::crmlDiagram;
+QString Helper::crmlDiagramTip;
 QString Helper::duplicate;
 QString Helper::duplicateTip;
 QString Helper::unloadClass;
@@ -582,6 +584,8 @@ void Helper::initHelperVariables()
   Helper::findUsageTip = tr("Finds the usage of class");
   Helper::classDiagram = tr("Class Diagram");
   Helper::classDiagramTip = tr("Shows the UML class diagram of the class");
+  Helper::crmlDiagram = tr("CRML Diagram");
+  Helper::crmlDiagramTip = tr("Shows the class-object diagram of the CRML model");
   Helper::duplicate = tr("Duplicate");
   Helper::duplicateTip = tr("Duplicates the item");
   Helper::unloadClass = tr("Unload");

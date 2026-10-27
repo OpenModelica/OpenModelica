@@ -15,7 +15,6 @@ equation
   when sample(0, sample_interval) then
     y = x;
   end when;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Sampler;
 
 

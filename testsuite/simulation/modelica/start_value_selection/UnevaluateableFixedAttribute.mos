@@ -2,7 +2,6 @@
 // keywords: fixed
 // status:   correct
 // teardown_command: rm -rf UnevaluateableFixedAttribute_* UnevaluateableFixedAttribute UnevaluateableFixedAttribute.exe
-// cflags: -d=-newInst
 
 
 loadFile("UnevaluateableFixedAttribute.mo"); getErrorString();

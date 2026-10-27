@@ -1,0 +1,44 @@
+// name: kinsolStatistics
+// keywords: kinsol, statistics
+// status: correct
+// teardown_command: rm -f KinsolStatistics_res.mat
+//
+// C's per-system counts: KINSOL's iterations of each call, one Jacobian
+// evaluation per assembled Jacobian, and the residual evaluations KINSOL makes.
+
+loadString("
+model KinsolStatistics
+  Real x(start = 1), y(start = 2), z(start = 0.5);
+equation
+  x^2 + y^2 + z = 5 + time;
+  x*y - z^3 = 1;
+  x + y + z^2 = 3;
+end KinsolStatistics;
+"); getErrorString();
+echo(false);
+res := simulate(KinsolStatistics, stopTime = 0.002, numberOfIntervals = 2, method = "euler", simflags = "-nls=kinsol -lv=LOG_STATS_V");
+messages := res.messages;
+for line in OpenModelica.Scripting.stringSplit(messages, "\n") loop
+  if OpenModelica.Scripting.regexBool(line, "Non-linear system|number of (calls|iterations|function evaluations|jacobian evaluations)") then
+    print(line + "\n");
+  end if;
+end for;
+echo(true);
+getErrorString();
+
+// Result:
+// true
+// ""
+// |                 | |       | | Non-linear system 7 of size 2 solver statistics:
+// |                 | |       | | |  number of calls                : 1
+// |                 | |       | | |  number of iterations           : 21
+// |                 | |       | | |  number of function evaluations : 52
+// |                 | |       | | |  number of jacobian evaluations : 4
+// |                 | |       | | Non-linear system 14 of size 2 solver statistics:
+// |                 | |       | | |  number of calls                : 4
+// |                 | |       | | |  number of iterations           : 3
+// |                 | |       | | |  number of function evaluations : 7
+// |                 | |       | | |  number of jacobian evaluations : 3
+// true
+// ""
+// endResult

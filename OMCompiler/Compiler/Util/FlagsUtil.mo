@@ -261,7 +261,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.DUMP_CHECK_MODEL,
   Flags.CHECK_DEF_USE,
   Flags.TEARING_COST,
-  Flags.OMEDIT
+  Flags.OMEDIT,
+  Flags.CHECK_USED_ELEMENTS_LOOKUP
 };
 
 protected
@@ -319,7 +320,7 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.REPLACE_HOMOTOPY,
   Flags.GENERATE_DYNAMIC_JACOBIAN,
   Flags.GENERATE_SYMBOLIC_LINEARIZATION,
-  Flags.INT_ENUM_CONVERSION,
+  Flags.RESIZABLE_MAX_PIECES,
   Flags.PROFILING_LEVEL,
   Flags.RESHUFFLE,
   Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM,

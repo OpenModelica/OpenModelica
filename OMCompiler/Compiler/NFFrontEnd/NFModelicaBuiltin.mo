@@ -1679,14 +1679,6 @@ external "builtin";
 annotation(preferredView="text");
 end generateHeader;
 
-function generateJuliaHeader
-  "Generates a Julia header file for external MetaModelica functions."
-  input String fileName;
-  output Boolean success;
-external "builtin";
-annotation(preferredView="text");
-end generateJuliaHeader;
-
 function generateSeparateCode
   "Generates code for a MetaModelica package."
   input TypeName className;
@@ -3531,7 +3523,7 @@ function plot
   input Boolean externalWindow = false "Opens the plot in a new plot window";
   input String fileName = "<default>" "The filename containing the variables. <default> will read the last simulation result";
   input String title = "" "This text will be used as the diagram title.";
-  input String grid = "simple" "Sets the grid for the plot i.e simple, detailed, none.";
+  input String grid = "simple" "Sets the grid for the plot i.e., simple, detailed, none or xonly.";
   input Boolean logX = false "Determines whether or not the horizontal axis is logarithmically scaled.";
   input Boolean logY = false "Determines whether or not the vertical axis is logarithmically scaled.";
   input String xLabel = "time" "This text will be used as the horizontal label in the diagram.";
@@ -3540,7 +3532,7 @@ function plot
   input Real yRange[2] = {0.0,0.0} "Determines the left vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Real curveWidth = 1.0 "Sets the width of the curve.";
   input Integer curveStyle = 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
-  input String legendPosition = "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
+  input String legendPosition = "top" "Sets the POSITION of the legend i.e., left, right, top, bottom, none.";
   input String footer = "" "This text will be used as the diagram footer.";
   input Boolean autoScale = true "Use auto scale while plotting.";
   input Boolean forceOMPlot = false "if true launches OMPlot and doesn't call callback function even if it is defined.";
@@ -3566,7 +3558,7 @@ function plotAll
   input Boolean externalWindow = false "Opens the plot in a new plot window";
   input String fileName = "<default>" "The filename containing the variables. <default> will read the last simulation result";
   input String title = "" "This text will be used as the diagram title.";
-  input String grid = "simple" "Sets the grid for the plot i.e simple, detailed, none.";
+  input String grid = "simple" "Sets the grid for the plot i.e., simple, detailed, none or xonly.";
   input Boolean logX = false "Determines whether or not the horizontal axis is logarithmically scaled.";
   input Boolean logY = false "Determines whether or not the vertical axis is logarithmically scaled.";
   input String xLabel = "time" "This text will be used as the horizontal label in the diagram.";
@@ -3575,7 +3567,7 @@ function plotAll
   input Real yRange[2] = {0.0,0.0} "Determines the left vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Real curveWidth = 1.0 "Sets the width of the curve.";
   input Integer curveStyle = 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
-  input String legendPosition = "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
+  input String legendPosition = "top" "Sets the POSITION of the legend i.e., left, right, top, bottom, none.";
   input String footer = "" "This text will be used as the diagram footer.";
   input Boolean autoScale = true "Use auto scale while plotting.";
   input Boolean forceOMPlot = false "if true launches OMPlot and doesn't call callback function even if it is defined.";
@@ -3604,7 +3596,7 @@ function plotParametric
   input Boolean externalWindow = false "Opens the plot in a new plot window";
   input String fileName = "<default>" "The filename containing the variables. <default> will read the last simulation result";
   input String title = "" "This text will be used as the diagram title.";
-  input String grid = "simple" "Sets the grid for the plot i.e simple, detailed, none.";
+  input String grid = "simple" "Sets the grid for the plot i.e., simple, detailed, none or xonly.";
   input Boolean logX = false "Determines whether or not the horizontal axis is logarithmically scaled.";
   input Boolean logY = false "Determines whether or not the vertical axis is logarithmically scaled.";
   input String xLabel = "" "This text will be used as the horizontal label in the diagram.";
@@ -3613,7 +3605,7 @@ function plotParametric
   input Real yRange[2] = {0.0,0.0} "Determines the left vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Real curveWidth = 1.0 "Sets the width of the curve.";
   input Integer curveStyle = 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
-  input String legendPosition = "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
+  input String legendPosition = "top" "Sets the POSITION of the legend i.e., left, right, top, bottom, none.";
   input String footer = "" "This text will be used as the diagram footer.";
   input Boolean autoScale = true "Use auto scale while plotting.";
   input Boolean forceOMPlot = false "if true launches OMPlot and doesn't call callback function even if it is defined.";
@@ -5948,19 +5940,6 @@ external "builtin";
 annotation(preferredView="text");
 end qualifyPath;
 
-function getDefinitions
-  "Dumps the defined packages, classes, and optionally functions to a string."
-  input Boolean addFunctions;
-  output String result;
-external "builtin";
-annotation(preferredView="text",Documentation(info="<html>
-<p>Used by org.openmodelica.corba.parser.DefinitionsCreator in the Java
-interface, which parses the string returned here. The corba in that package
-name is historical and does not imply a CORBA connection; OpenModelica no
-longer has a CORBA interface.</p>
-</html>"));
-end getDefinitions;
-
 function getDefUseChains
   input TypeName className "A class, or a component declared in a class.";
   input String fileName = "" "The file to write the JSON to, if not empty.";
@@ -6033,6 +6012,78 @@ class is redeclared as. The uses of the definition are returned by
 </html>"));
 end getDefinitionAt;
 
+function getProbeTree
+  input String fileName "A file whose classes are loaded.";
+  input Boolean prettyPrint = false;
+  output String tree;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Returns the probe tree of a file as JSON, for property probing tools like
+<a href=\"https://github.com/lu-cs-sde/codeprober\">CodeProber</a>: the nodes of the file
+with their source spans and the names of the properties that <code>evaluateProbe</code>
+can evaluate on them.</p>
+<p>The tree is built from the file as it's parsed: the file (<code>StoredDefinition</code>),
+its classes (<code>ClassDefinition</code>), their elements (<code>ComponentDeclaration</code>,
+<code>ComponentClause</code> for several components declared together,
+<code>ExtendsClause</code>, <code>ImportClause</code>), equations (<code>Equation</code>) and
+statements (<code>Statement</code>), nested like in the source, and the names in them
+(<code>Ident</code>), declared or used, found like in <code>getDefUseChains</code>. A node has
+an <code>id</code>, the indices of the children from the root, e.g. <code>0.1.3</code>, which
+stays the same as long as the file doesn't change, its <code>kind</code>, a <code>label</code>,
+its span, its <code>properties</code> and its <code>children</code>. If the file can't be parsed,
+<code>root</code> is <code>null</code> and <code>errors</code> has the syntax errors.</p>
+</html>"));
+end getProbeTree;
+
+function evaluateProbe
+  input String fileName "A file whose classes are loaded.";
+  input String nodeId "The id of a node of getProbeTree.";
+  input String property "One of the properties of the node.";
+  input String contextModel = "" "The model translated for the simulation properties, the model the node is in if empty.";
+  input Boolean prettyPrint = false;
+  output String result;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Evaluates a property of a node of the probe tree of a file, see <code>getProbeTree</code>,
+and returns the result as JSON: a list of items, each a <code>text</code>, a <code>node</code>
+(the id of a node of the tree), a diagnostic with a <code>severity</code> (error, warning or
+info), a span and a <code>message</code>, or an <code>arrow</code> with a color, a span, the
+span it points <code>to</code> and a <code>message</code>.</p>
+<p>The properties are:</p>
+<ul>
+<li><code>text</code>, <code>hover</code>: the source of the node and what an editor shows
+when hovering it.</li>
+<li><code>errors</code>, <code>topClasses</code>, <code>contextModel</code>,
+<code>omcVersion</code> of the file: the names that couldn't be looked up and the messages of
+<code>checkModel</code> of the models in it, and its classes.</li>
+<li><code>definition</code>, <code>uses</code>, <code>useArrows</code>, <code>role</code>: what a
+name refers to and how it's used there, and the uses in the file of a class, component or
+declared name, as nodes or as arrows from the declaration.</li>
+<li><code>dependsOn</code>, <code>checkModel</code>, <code>flatModelica</code>,
+<code>modelInstance</code> of a class: the classes it uses, as in <code>getDependencyGraph</code>,
+and the results of <code>checkModel</code>, of <code>instantiateModel</code> as Base Modelica and
+of <code>getModelInstance</code>.</li>
+<li><code>simVariables</code>, <code>simEquations</code>, <code>jacobianEquations</code>,
+<code>cCode</code>, <code>translationMessages</code>, <code>flatDeclarations</code>,
+<code>connectionEquations</code>: what a class, component, equation or connect became in
+the translation of the context model: its simulation variables, the simulation equations
+with the symbolic operations done on them, the generated C functions of the equations, the
+declarations in the flat model and the equations of the flat model a connect generates.</li>
+<li><code>blt</code> of a class and <code>bltBlock</code> of an equation or statement: the blocks
+of the initial and regular equations of the translation in the order they're solved, with the
+systems of equations and their iteration variables, and the block the simulation equations of an
+equation are in, each with links to the equations of the file the equations of the block come
+from.</li>
+<li><code>stateSelection</code> of a class or component: the states of the translation, the
+variables index reduction didn't choose as states (dummy states) with the variable they're equal
+to and how, and the <code>stateSelect</code> attributes.</li>
+</ul>
+<p>The translation of the context model is kept in a directory in the temporary directory,
+named by the hash of the name and contents of the file, so it's done once for each version of
+the file.</p>
+</html>"));
+end evaluateProbe;
+
 function getClassDiagram
   input TypeName className;
   input String fileName = "" "The file to write the diagram to, if not empty.";
@@ -6073,6 +6124,44 @@ except <code>className</code> itself.
 With <code>showModifiers = false</code> the modifiers and bindings aren't shown.</p>
 </html>"));
 end getClassDiagram;
+
+function getInstanceDiagram
+  input TypeName className;
+  input String fileName = "" "The file to write the diagram to, if not empty.";
+  input String format = "plantuml" "plantuml, mermaid or drawio.";
+  input Integer depth = 1 "How many levels of components to draw as boxes of their own.";
+  input String exclude[:] = fill("", 0) "Classes and packages whose instances are left out.";
+  input Boolean showConnections = true;
+  input Boolean showProtected = false "Also show the protected elements.";
+  input Boolean expandArrays = false "A box for each element of an array of components.";
+  output String diagram "The diagram, or the file name if it was written to a file.";
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Returns a UML instance diagram of the model <code>className</code> as it is instantiated, in the
+formats of <code>getClassDiagram</code>: <a href=\"https://plantuml.com\">PlantUML</a>,
+<a href=\"https://mermaid.js.org\">Mermaid</a> or <a href=\"https://www.drawio.com\">draw.io</a>.</p>
+<p>Where <code>getClassDiagram</code> shows each class once, with the modifiers it declares, this
+shows the instances: the model, and each of its components that is an instance of a class, as
+a box of its own, e.g. <code>a1 : P.A</code>, up to <code>depth</code> levels of components. Each box
+has the parameters and constants of its instance, including the inherited ones, with the value
+they have in that instance, as written and evaluated, e.g. <code>parameter Real k = 2*p (= 6)</code>.
+The components that aren't drawn as boxes, connectors and the components below
+<code>depth</code>, are lines in the box of the instance they are in; variables aren't shown.
+Protected elements are left out, unless <code>showProtected = true</code>, which shows them marked with
+<code>-</code>.
+An array of components is one box, e.g. <code>r[10] : Resistor</code>, or with
+<code>expandArrays = true</code> a box for each of its elements, e.g. <code>r[1] : Resistor</code>,
+with the values of that element, if it has at most 100 elements and their number is known.</p>
+<p>A component is a composition of the instance it's in, labelled with its name and dimensions.
+With <code>showConnections = true</code> the connect equations are associations between the boxes
+of the components they connect, labelled with the connectors.</p>
+<p>In the draw.io file every box and line links to the line the component is declared on in its
+class, with its name, e.g. <code>modelica://P.M?lineNumber=12&amp;element=c</code>, and the box of
+the model to <code>modelica://</code> and its name.</p>
+<p>The instances of the classes in <code>exclude</code> and in the packages in <code>exclude</code>
+are left out.</p>
+</html>"));
+end getInstanceDiagram;
 
 function reverseLookup
   input TypeName name;
@@ -6852,12 +6941,6 @@ annotation(
 (as long as the function interfaces are the same).</p>
 </html>"), preferredView="text");
 end relocateFunctions;
-
-function toJulia
-  "Translates Absyn to Julia."
-  output String res;
-external "builtin";
-end toJulia;
 
 function interactiveDumpAbsynToJL
   "Dumps the AST into a Julia representation."

@@ -55,4 +55,10 @@ package ParArg
     presult := multParArg(pa,pm);
     result := presult;
   end TestParArg;
+
+  model M
+    Real x[nx] = Test(5);
+    Real y[nx] = TestParArg(5);
+    Real err = max(abs(x - {5*i for i in 1:nx})) + max(abs(y - {5*i for i in 1:nx}));
+  end M;
 end ParArg;

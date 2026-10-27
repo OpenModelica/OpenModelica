@@ -61,7 +61,6 @@ set(OMC_RUNTIME_SOURCES
     OMSimulator_omc.c
     is_utf8.c
     om_curl.c
-    om_unzip.c
     om_zip.c
     ptolemyio_omc.cpp
     SimulationResults_omc.c
@@ -95,7 +94,7 @@ target_link_libraries(omcruntime PUBLIC omc::3rd::ffi)
 target_link_libraries(omcruntime PUBLIC omc::3rd::libzmq)
 target_link_libraries(omcruntime PUBLIC omc::3rd::simdjson)
 target_link_libraries(omcruntime PUBLIC omc::3rd::zlib)
-target_link_libraries(omcruntime PUBLIC omc::3rd::FMIL::minizip)
+target_link_libraries(omcruntime PUBLIC omc::runtime_rust)
 
 if(OM_OMC_ENABLE_COLPACK)
   target_link_libraries(omcruntime PUBLIC omc::3rd::colpack)

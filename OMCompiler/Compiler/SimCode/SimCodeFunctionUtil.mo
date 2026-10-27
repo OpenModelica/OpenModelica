@@ -3077,8 +3077,9 @@ algorithm
 end aliasRecordDeclarations2;
 
 protected function variableString
-  "The member as it is laid out in the struct: an array member is an array
-   descriptor whatever its dimension sizes."
+  "The member as it is laid out in the struct. In C an array member is an
+   array descriptor whatever its dimension sizes, while the Cpp runtime uses
+   a fixed-size array type when the sizes are known."
   input SimCodeFunction.Variable var;
   output String str;
 algorithm
@@ -3086,6 +3087,8 @@ algorithm
     local
       DAE.ComponentRef name;
       DAE.Type ty;
+    case SimCodeFunction.VARIABLE(name=name, ty=ty) guard Config.simCodeTarget() == "Cpp"
+      then TypesDump.unparseType(ty) + " " + ComponentReferenceBasics.printComponentRefStr(name);
     case SimCodeFunction.VARIABLE(name=name, ty=ty)
       then TypesDump.unparseType(Types.arrayElementType(ty)) + "[" + intString(Types.numberOfDimensions(ty)) + "] " + ComponentReferenceBasics.printComponentRefStr(name);
     case SimCodeFunction.FUNCTION_PTR(name=str)

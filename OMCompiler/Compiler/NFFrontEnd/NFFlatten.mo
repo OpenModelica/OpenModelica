@@ -46,6 +46,7 @@ import Binding = NFBinding;
 import Equation = NFEquation;
 import NFFunction.Function;
 import NFInstNode.InstNode;
+import Operator = NFOperator;
   import NFInstNode;
 import Statement = NFStatement;
 import FlatModel = NFFlatModel;
@@ -57,6 +58,7 @@ import Absyn;
 import Attributes = NFAttributes;
 import ComponentRef = NFComponentRef;
 import Dimension = NFDimension;
+import Config;
 import ExecStat.execStat;
 import ExpressionIterator = NFExpressionIterator;
 import Expression = NFExpression;
@@ -392,7 +394,7 @@ algorithm
       flatModel.equations := evaluateIfWithConnects(flatModel.equations);
     end if;
 
-    if settings.arrayConnect then
+    if settings.arrayConnect and hasArrayConnections(flatModel.equations) then
       flatModel := resolveArrayConnections(flatModel, deleted_vars);
     else
       flatModel := resolveConnections(flatModel, deleted_vars, settings);
@@ -734,13 +736,13 @@ algorithm
   ty := flattenType(ty, prefix, info);
   verifyDimensions(Type.arrayDims(ty), comp_node);
   pre := Prefix.push(comp_node, ty, Type.arrayDims(ty), prefix);
-  ty_attrs := list(flattenTypeAttribute(m, prefix) for m in typeAttrs);
+  ty_attrs := list(flattenTypeAttribute(m, ty, prefix) for m in typeAttrs);
 
   // Set fixed = false for parameters that are part of a record instance whose
   // binding couldn't be split and was moved to an initial equation.
   if unfix then
     ty_attrs := Binding.setAttr(ty_attrs, "fixed",
-      Binding.makeFlat(Expression.BOOLEAN(false), Variability.CONSTANT, NFBinding.Source.GENERATED));
+      Binding.makeFlat(Expression.BOOLEAN(false), Variability.CONSTANT, NFBinding.Source.GENERATED, info));
   end if;
 
   // kabdelhak: add dummy backend info, will be changed to actual value in
@@ -775,12 +777,13 @@ end checkUnspecifiedEnumType;
 
 function flattenTypeAttribute
   input Modifier attr;
+  input Type ty;
   input Prefix prefix;
   output tuple<String, Binding> outAttr;
 protected
   Binding binding;
 algorithm
-  binding := flattenBinding(Modifier.binding(attr), prefix, isTypeAttribute = true);
+  binding := flattenBinding(Modifier.binding(attr), prefix, attributeOf = SOME(ty));
   outAttr := (Modifier.name(attr), binding);
 end flattenTypeAttribute;
 
@@ -871,7 +874,7 @@ algorithm
           max_exp_opt := eval_binding(Variable.lookupTypeAttribute("max", var));
           start_exp := Expression.makeDefaultValue(var.ty, min_exp_opt, max_exp_opt);
           var.binding := Binding.makeFlat(start_exp, Expression.variability(start_exp),
-            NFBinding.Source.GENERATED);
+            NFBinding.Source.GENERATED, var.info);
         elseif not settings.relaxedErrorChecking then
           fail();
         end if;
@@ -893,10 +896,12 @@ protected
   Variability var;
   Binding.Source bind_src;
   Integer confidence;
+  SourceInfo info;
 algorithm
   binding_exp := Binding.getTypedExp(binding);
   var := Binding.variability(binding);
   bind_src := NFBinding.Source.GENERATED;
+  info := Binding.getInfo(binding);
   confidence := Binding.confidence(binding);
 
   // Convert the expressions in the record expression into bindings.
@@ -907,12 +912,12 @@ algorithm
                // from an evaluated function call where it wasn't assigned a value.
                NFBinding.EMPTY_BINDING
              else
-               Binding.makeFlat(e, var, bind_src, confidence)
+               Binding.makeFlat(e, var, bind_src, info, confidence)
            for e in binding_exp.elements);
 
     case Expression.ARRAY()
       guard Type.isRecord(Type.arrayElementType(Expression.typeOf(binding_exp)))
-      then list(Binding.makeFlat(Expression.nthRecordElement(i, binding_exp), var, bind_src, confidence)
+      then list(Binding.makeFlat(Expression.nthRecordElement(i, binding_exp), var, bind_src, info, confidence)
                   for i in 1:arrayLength(comps));
 
     else
@@ -1233,7 +1238,7 @@ algorithm
     case Expression.SUBSCRIPTED_EXP()
       guard Subscript.isEqualList(exp.subscripts, subs)
       algorithm
-        binding := Binding.makeFlat(exp.exp, Binding.variability(binding), Binding.source(binding), Binding.confidence(binding));
+        binding := Binding.makeFlat(exp.exp, Binding.variability(binding), Binding.source(binding), Binding.getInfo(binding), Binding.confidence(binding));
         return;
       then
         ();
@@ -1262,7 +1267,7 @@ algorithm
     exp := Expression.CALL(array_call);
   end if;
 
-  binding := Binding.makeFlat(exp, Binding.variability(binding), Binding.source(binding), Binding.confidence(binding));
+  binding := Binding.makeFlat(exp, Binding.variability(binding), Binding.source(binding), Binding.getInfo(binding), Binding.confidence(binding));
 end vectorizeBinding;
 
 function fillVectorizedBinding
@@ -1575,7 +1580,7 @@ end subscriptBindingOpt;
 public function flattenBinding
   input output Binding binding;
   input Prefix prefix;
-  input Boolean isTypeAttribute = false;
+  input Option<Type> attributeOf = NONE() "The type of the variable if the binding is one of its attributes.";
 protected
   SourceInfo info;
 algorithm
@@ -1593,7 +1598,7 @@ algorithm
         binding.bindingType := flattenType(binding.bindingType, prefix, info);
         binding.isFlattened := true;
       then
-        if Prefix.isIndexed(prefix) then vectorizeBinding(binding, prefix) else binding;
+        if Prefix.isIndexed(prefix) then vectorizeBinding(fillAttributeBinding(binding, attributeOf), prefix) else binding;
 
     // CEVAL_BINDINGs are temporary bindings generated by the constant
     // evaluation and no longer needed after flattening.
@@ -1615,16 +1620,28 @@ algorithm
   end match;
 end flattenBinding;
 
+function fillAttributeBinding
+  "An each attribute covers the variable's own dimensions, inside those of the prefix."
+  input output Binding binding;
+  input Option<Type> attributeOf;
+algorithm
+  if isSome(attributeOf) then
+    binding := fillVectorizedBinding(binding, Type.copyDims(Util.getOption(attributeOf), Binding.getType(binding)));
+  end if;
+end fillAttributeBinding;
+
 public function flattenExp
   input output Expression exp;
   input Prefix prefix;
   input SourceInfo info;
+protected
+  ComponentRef cr;
 algorithm
   exp := match exp
     case Expression.CREF(cref = ComponentRef.CREF())
       algorithm
-        exp.cref := ComponentRef.mapExpShallow(exp.cref, function flattenExp(prefix = prefix, info = info));
-        exp.cref := flattenCref(exp.cref, prefix, info);
+        cr := ComponentRef.mapExpShallow(exp.cref, function flattenExp(prefix = prefix, info = info));
+        exp.cref := flattenCref(cr, prefix, info);
         exp.ty := flattenType(exp.ty, prefix, info);
       then
         // the same size parameter everywhere: in loop ranges and indices as in
@@ -1882,7 +1899,7 @@ algorithm
         node := ComponentRef.node(exp.cref);
         try
           binding := Component.getBinding(InstNode.component(node));
-          if Binding.isBound(binding) then
+          if Binding.isTyped(binding) then
             bexp := Binding.getTypedExp(flattenBinding(binding, prefix));
             if isInComponentArray(exp.cref) then
               // a parameter of an array of components, e.g. s.N or s[$s1].N for s[M]
@@ -2985,10 +3002,208 @@ algorithm
     // sizes, ranges and indices stay symbolic in the size parameters
     flatModel := ResizableConnections.resolve(flatModel);
   else
+    // runs of connections of single elements as for loops (the resizable handler does this with its edges)
+    flatModel.equations := coalesceConnects(flatModel.equations);
     flatModel := ArrayConnections.resolve(flatModel);
   end if;
   execStat(getInstanceName());
 end resolveArrayConnections;
+
+function coalesceConnects
+  "Runs of connections of single elements of one-dimensional arrays with the
+   same index distance, e.g. connect(r[k].n, r[k + 1].p) for consecutive k,
+   become one for loop: the array connection handler splits the arrays at every
+   connection of a single element."
+  input list<Equation> equations;
+  output list<Equation> outEquations = {};
+protected
+  type PointConnects = list<tuple<Integer, Integer, Equation>>;
+  UnorderedMap<String, PointConnects> groups = UnorderedMap.new<PointConnects>(stringHashDjb2, stringEq);
+  list<String> keys = {};
+  list<tuple<Integer, Integer, Equation>> lst;
+  Integer ia, ib, lo, prev;
+  Option<Integer> oia, oib;
+  Equation first;
+  String key;
+algorithm
+  for eq in equations loop
+    oia := NONE();
+    oib := NONE();
+    () := match eq
+      case Equation.CONNECT() algorithm
+        oia := singleIndex(eq.lhs);
+        oib := singleIndex(eq.rhs);
+      then ();
+      else ();
+    end match;
+    if isSome(oia) and isSome(oib) then
+      SOME(ia) := oia;
+      SOME(ib) := oib;
+      key := connectKey(eq, ib - ia);
+      if not UnorderedMap.contains(key, groups) then
+        keys := key :: keys;
+      end if;
+      UnorderedMap.add(key, (ia, ib, eq) :: UnorderedMap.getOrDefault(key, groups, {}), groups);
+    else
+      outEquations := eq :: outEquations;
+    end if;
+  end for;
+
+  for k in listReverseInPlace(keys) loop
+    lst := List.sort(UnorderedMap.getSafe(k, groups, sourceInfo()), pointConnectGt);
+    (lo, _, first) :: lst := lst;
+    prev := lo;
+    for tpl in lst loop
+      (ia, _, _) := tpl;
+      if ia <> prev + 1 then
+        outEquations := connectRun(first, lo, prev) :: outEquations;
+        (lo, _, first) := tpl;
+      end if;
+      prev := ia;
+    end for;
+    outEquations := connectRun(first, lo, prev) :: outEquations;
+  end for;
+  outEquations := listReverseInPlace(outEquations);
+end coalesceConnects;
+
+function singleIndex
+  "the index of a connector with exactly one subscript, a literal integer"
+  input Expression exp;
+  output Option<Integer> index = NONE();
+algorithm
+  index := match exp
+    local
+      Integer i;
+    case Expression.CREF() then
+      match ComponentRef.subscriptsAllFlat(exp.cref)
+        case {Subscript.INDEX(index = Expression.INTEGER(value = i))} then SOME(i);
+        else NONE();
+      end match;
+    else NONE();
+  end match;
+end singleIndex;
+
+function connectKey
+  "the connectors of a connection without subscripts and the index distance"
+  input Equation eq;
+  input Integer distance;
+  output String key;
+protected
+  Expression lhs, rhs;
+algorithm
+  Equation.CONNECT(lhs = lhs, rhs = rhs) := eq;
+  key := ComponentRef.toString(ComponentRef.stripSubscriptsAll(Expression.toCref(lhs))) + "|" +
+         ComponentRef.toString(ComponentRef.stripSubscriptsAll(Expression.toCref(rhs))) + "|" + intString(distance);
+end connectKey;
+
+function pointConnectGt
+  input tuple<Integer, Integer, Equation> a;
+  input tuple<Integer, Integer, Equation> b;
+  output Boolean res = Util.tuple31(a) > Util.tuple31(b);
+end pointConnectGt;
+
+function connectRun
+  "the connections lo..hi like first as one for loop"
+  input Equation first;
+  input Integer lo;
+  input Integer hi;
+  output Equation eq;
+protected
+  Expression lhs, rhs, iter;
+  InstNode iter_node;
+  Integer distance;
+  NFInstNode.ScopeRef scope;
+  DAE.ElementSource source;
+algorithm
+  if lo == hi then
+    eq := first;
+  else
+    Equation.CONNECT(lhs = lhs, rhs = rhs, scope = scope, source = source) := first;
+    distance := Util.getOption(singleIndex(rhs)) - Util.getOption(singleIndex(lhs));
+    iter_node := InstNode.newUniqueIterator(ElementSource.getInfo(source));
+    iter := Expression.fromCref(ComponentRef.makeIterator(iter_node, Type.INTEGER()));
+    lhs := replaceIndex(lhs, iter);
+    rhs := replaceIndex(rhs, if distance == 0 then iter
+      else Expression.BINARY(iter, Operator.makeAdd(Type.INTEGER()), Expression.INTEGER(distance)));
+    eq := Equation.FOR(iter_node, SOME(Expression.makeIntegerRange(lo, 1, hi)),
+      {Equation.CONNECT(lhs, rhs, scope, source)}, scope, source);
+  end if;
+end connectRun;
+
+function replaceIndex
+  "replaces the only subscript of a connector by the index"
+  input Expression exp;
+  input Expression index;
+  output Expression outExp;
+protected
+  ComponentRef cr;
+algorithm
+  cr := ComponentRef.mapSubscripts(Expression.toCref(exp), function replaceIndexSub(index = index));
+  outExp := Expression.fromCref(cr);
+end replaceIndex;
+
+function replaceIndexSub
+  input output Subscript sub;
+  input Expression index;
+algorithm
+  sub := Subscript.INDEX(index);
+end replaceIndexSub;
+
+function hasArrayConnections
+  "Whether the connections need the array connection handler: connections in
+   for loops or if equations, of arrays or slices, with subscripts that are not
+   literal indices or into resizable arrays. Otherwise all connections are
+   scalar (e.g. -d=mergeComponents collects components into arrays but keeps
+   their connections), the scalar connection handler gives the same equations
+   and the array handlers would split every connector array into one piece per
+   connected element."
+  input list<Equation> equations;
+  output Boolean res = false;
+algorithm
+  for eq in equations loop
+    res := match eq
+      case Equation.CONNECT() then isArrayConnectorExp(eq.lhs) or isArrayConnectorExp(eq.rhs);
+      case Equation.FOR() then Equation.containsList(eq.body, Equation.isConnect);
+      case Equation.IF() then Equation.contains(eq, Equation.isConnect);
+      else false;
+    end match;
+    if res then
+      break;
+    end if;
+  end for;
+end hasArrayConnections;
+
+function isArrayConnectorExp
+  "a connector that is not a scalar element with literal indices of fixed size arrays"
+  input Expression exp;
+  output Boolean res;
+protected
+  ComponentRef cr;
+algorithm
+  res := match exp
+    case Expression.CREF()
+      algorithm
+        res := Type.isArray(exp.ty) or not List.all(ComponentRef.subscriptsAllFlat(exp.cref), isLiteralIndex);
+        cr := exp.cref;
+        while not res and ComponentRef.isCref(cr) loop
+          res := Type.isResizable(ComponentRef.nodeType(cr));
+          cr := ComponentRef.rest(cr);
+        end while;
+      then
+        res;
+    else true;
+  end match;
+end isArrayConnectorExp;
+
+function isLiteralIndex
+  input Subscript sub;
+  output Boolean res;
+algorithm
+  res := match sub
+    case Subscript.INDEX() then Expression.isLiteral(sub.index);
+    else false;
+  end match;
+end isLiteralIndex;
 
 function removeDeletedConnects
   "Removes the connect equations with a deleted conditional connector, also
@@ -3372,6 +3587,10 @@ algorithm
     fn := EvalConstants.evaluateFunction(fn);
     SimplifyModel.simplifyFunction(fn);
 
+    if Config.acceptParModelicaGrammar() then
+      fn := Function.mapBody(fn, function Algorithm.map(fn = updateParForType));
+    end if;
+
     if not (Flags.isSet(Flags.NF_API) or Flags.getConfigBool(Flags.CHECK_MODEL)) then
       Function.checkUseBeforeAssign(fn);
     end if;
@@ -3478,6 +3697,20 @@ algorithm
 
   end match;
 end updateForType;
+
+function updateParForType
+  input output Statement stmt;
+algorithm
+  () := match stmt
+    case Statement.FOR(forType = Statement.ForType.PARALLEL())
+      algorithm
+        stmt.forType := updateForType(stmt.forType, stmt.body);
+      then
+        ();
+
+    else ();
+  end match;
+end updateParForType;
 
 function collectParallelVariables
   input Statement stmt;

@@ -1,0 +1,55 @@
+// name: tupleIntegerOutputDerivative
+// keywords: NewBackend, index reduction, tuple, integer
+// status: correct
+//
+// Differentiating (x, i) = f(...) gives a dummy for the derivative of the
+// Integer output i. The dummy is an Integer variable, not a Real one.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+model tupleIntegerOutputDerivative
+  parameter Real tabx[:] = {0, 1, 2, 3, 4, 5};
+  parameter Real taby[:] = tabx .* tabx;
+  Real x, y, xIntegrated;
+  Integer i;
+initial equation
+  xIntegrated = x;
+equation
+  (x, i) = Modelica.Math.Vectors.interpolate(tabx, taby, time);
+  y = der(x);
+  der(xIntegrated) = y;
+end tupleIntegerOutputDerivative;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+simulate(tupleIntegerOutputDerivative, stopTime = 5); getErrorString();
+abs(val(xIntegrated, 5.0) - 25.0) < 1e-3; getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "tupleIntegerOutputDerivative_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'tupleIntegerOutputDerivative', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[Modelica 4.1.0+maint.om/Math/package.mo:507:5-507:14:writable] Warning: Variable i of the generated function $fDER0.Modelica.Math.Vectors.interpolate will be initialized to 0 because it could not be proven that it is always assigned before it is used.
+// [Modelica 4.1.0+maint.om/Math/package.mo:509:5-509:12:writable] Warning: Variable x1 of the generated function $fDER0.Modelica.Math.Vectors.interpolate will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// [Modelica 4.1.0+maint.om/Math/package.mo:510:5-510:12:writable] Warning: Variable x2 of the generated function $fDER0.Modelica.Math.Vectors.interpolate will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// [Modelica 4.1.0+maint.om/Math/package.mo:511:5-511:12:writable] Warning: Variable y1 of the generated function $fDER0.Modelica.Math.Vectors.interpolate will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// [Modelica 4.1.0+maint.om/Math/package.mo:512:5-512:12:writable] Warning: Variable y2 of the generated function $fDER0.Modelica.Math.Vectors.interpolate will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// [Modelica 4.1.0+maint.om/Math/package.mo:509:5-509:12:writable] Warning: Variable $fDER_x1 of the generated function $fDER0.Modelica.Math.Vectors.interpolate will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// [Modelica 4.1.0+maint.om/Math/package.mo:510:5-510:12:writable] Warning: Variable $fDER_x2 of the generated function $fDER0.Modelica.Math.Vectors.interpolate will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// [Modelica 4.1.0+maint.om/Math/package.mo:511:5-511:12:writable] Warning: Variable $fDER_y1 of the generated function $fDER0.Modelica.Math.Vectors.interpolate will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// [Modelica 4.1.0+maint.om/Math/package.mo:512:5-512:12:writable] Warning: Variable $fDER_y2 of the generated function $fDER0.Modelica.Math.Vectors.interpolate will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// "
+// true
+// ""
+// endResult

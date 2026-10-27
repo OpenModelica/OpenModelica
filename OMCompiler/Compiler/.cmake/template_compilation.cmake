@@ -82,9 +82,6 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/AbsynDumpTpl
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/AbsynJLDumpTpl.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/AbsynDumpTV.mo)
 
-omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/AbsynToJulia.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/AbsynToJuliaTV.mo)
-
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCFunctions.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeTV.mo
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenUtil.tpl)

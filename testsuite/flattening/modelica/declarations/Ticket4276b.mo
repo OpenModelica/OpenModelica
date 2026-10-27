@@ -22,7 +22,6 @@ initial algorithm
   (a, x) := f(2);
 equation
   x = 1;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Ticket4276b;
 
 

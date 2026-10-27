@@ -5,21 +5,20 @@
 // Tests redeclarations
 //
 
-class A
+model A
   parameter Real x;
 end A;
 
-class B
+model B
   parameter Real x = 3.14, y;
 end B;
 
-class C
+model C
   replaceable A a(x = 1.0);
 end C;
 
-class D
+model D
   extends C(redeclare B a(y = 2.0));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end D;
 
 // Result:

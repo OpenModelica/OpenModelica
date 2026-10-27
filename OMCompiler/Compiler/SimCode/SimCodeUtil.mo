@@ -6080,7 +6080,7 @@ algorithm
     // An array equation
     // cref = rhsexp
     case ((BackendDAE.ARRAY_EQUATION(left=e1 as DAE.CREF(cr_1, _), right=e2, source=source, attr=eqAttr)), BackendDAE.VAR(varName=cr)::_)
-    guard ComponentReferenceBasics.crefEqual(cr_1, ComponentReferenceBasics.crefStripLastSubs(cr))
+    guard isArrayCrefOf(cr_1, cr)
     algorithm
       (e1, _) := BackendDAEUtil.collateArrExp(e1, NONE());
       (e2, _) := BackendDAEUtil.collateArrExp(e2, NONE());
@@ -6091,7 +6091,7 @@ algorithm
     // An array equation
     // lhsexp = cref
     case ((BackendDAE.ARRAY_EQUATION(left=e1, right=e2 as DAE.CREF(cr_1, _), source=source, attr=eqAttr)), BackendDAE.VAR(varName=cr)::_)
-    guard ComponentReferenceBasics.crefEqual(cr_1, ComponentReferenceBasics.crefStripLastSubs(cr))
+    guard isArrayCrefOf(cr_1, cr)
     algorithm
       (e1, _) := BackendDAEUtil.collateArrExp(e1, NONE());
       (e2, _) := BackendDAEUtil.collateArrExp(e2, NONE());
@@ -6121,6 +6121,18 @@ algorithm
     then fail();
   end matchcontinue;
 end createSingleArrayEqnCode;
+
+protected function isArrayCrefOf
+  "Returns true if the array cref arrCr is the array variable of cr or a slice
+   of it that contains cr, e.g. x or x[2, :] for x[2, 3]."
+  input DAE.ComponentRef arrCr;
+  input DAE.ComponentRef cr;
+  output Boolean b;
+algorithm
+  b := ComponentReferenceBasics.crefEqual(arrCr, ComponentReferenceBasics.crefStripLastSubs(cr)) or
+       (ComponentReferenceBasics.crefEqualWithoutSubs(arrCr, cr) and
+        Expression.subscriptContain(ComponentReferenceBasics.crefSubs(cr), ComponentReferenceBasics.crefSubs(arrCr)));
+end isArrayCrefOf;
 
 protected function createSingleAlgorithmCode
   input list<BackendDAE.Equation> eqns;
@@ -14226,7 +14238,7 @@ algorithm
   // HDF5 is there for ModelicaMatIO, which the FMU compiles from source without it.
   (locations, libraries) := getDirectoriesForDLLsFromLinkLibs(
     List.removeOnTrue(Autoconf.hdf5Libs, stringEqual, libs));
-  locations := listAppend({Settings.getInstallationDirectoryPath() + "/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc"}, locations); // zlib
+  locations := listAppend({Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc"}, locations); // zlib
   locations := listAppend({Settings.getInstallationDirectoryPath() + "/bin"}, locations);   // pthread located in OpenModelica/bin/ on Windows
   locations := List.map(locations, addDockerVol);
   // Use target_link_directories when CMake 3.13 is available and skip the find_library part
@@ -14281,7 +14293,7 @@ algorithm
     needCvode := "ON";
     // ${DOCKER_VOL_DIR} so the path also resolves inside the container when cross compiling,
     // see getCmakeLinkLibrariesCode. It is empty for a normal build.
-    cvodeDirectory := "\"${DOCKER_VOL_DIR}" + Settings.getInstallationDirectoryPath() + "/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc\"";
+    cvodeDirectory := "\"${DOCKER_VOL_DIR}" + Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc\"";
   end if;
 end getCmakeSundialsLinkCode;
 

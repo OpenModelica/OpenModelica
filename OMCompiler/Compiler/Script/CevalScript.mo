@@ -1246,16 +1246,6 @@ algorithm
     case ("generateHeader",_)
       then Values.BOOL(false);
 
-    case ("generateJuliaHeader",{Values.STRING(filename)})
-      algorithm
-        str := Tpl.tplString(Unparsing.programExternalHeaderJulia, SymbolTable.getSCode());
-        System.writeFile(filename,str);
-      then
-        Values.BOOL(true);
-
-    case ("generateJuliaHeader",_)
-      then Values.BOOL(false);
-
     case ("generateCode",{Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
         (outCache, Util.SUCCESS()) := Static.instantiateDaeFunction(outCache, env, path, false, NONE(), true);

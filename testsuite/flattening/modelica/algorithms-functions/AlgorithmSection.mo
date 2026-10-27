@@ -18,7 +18,6 @@ algorithm
   x3 := x2 + y;
 equation
   u = x1 + x2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AlgorithmSection;
 
 
@@ -34,11 +33,11 @@ end AlgorithmSection;
 //   Real x3;
 // equation
 //   u = x1 + x2;
-//   x = 2.0 * y;
+//   x = y * 2.0;
 //   z = w;
 // algorithm
 //   x1 := z + x;
-//   x2 := -5.0 + y;
+//   x2 := y - 5.0;
 //   x3 := x2 + y;
 // end AlgorithmSection;
 // endResult

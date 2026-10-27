@@ -803,9 +803,6 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   <%\t%>rm -rf binaries
   <%\t%>mkdir -p "binaries/$(PLATFORM)"
   <%\t%>mv $(MODELICA_SYSTEM_LIB)$(DLLEXT) "binaries/$(PLATFORM)/"
-  <%\t%>rm -f $(MODELICA_SYSTEM_LIB).fmu
-  <%\t%>zip -r "<%fmuTargetName%>.fmu" modelDescription.xml binaries
-  <%\t%>rm -rf binaries
 
   $(MODELICA_SYSTEM_LIB)$(DLLEXT):
   <%\t%>$(CXX) /Fe$(MODELICA_SYSTEM_LIB)$(DLLEXT) $(CALCHELPERMAINFILE) $(CFLAGS) $(LDFLAGS)
@@ -862,7 +859,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
   # simulations use -O0 by default; can be changed to e.g. -O2 or -Ofast
   SIM_OPT_LEVEL=-O0
-  # the default is ON by default, override the var from commandLine to skip the zipping of fmu  e.g. make -f ZIP_FMU=OFF
+  # ON zips the FMU, OFF also deletes the generated sources, anything else (omc
+  # passes NO) leaves both to the caller.
   ZIP_FMU = ON
   # native build or cross compilation
   ifeq ($(TARGET_TRIPLET),)

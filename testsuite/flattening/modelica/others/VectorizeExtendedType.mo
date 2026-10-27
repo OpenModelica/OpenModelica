@@ -21,7 +21,6 @@ model VectorizeExtendedType
   Real3 r2[3] = {3,2,1};
   parameter Real2 r3[2,2] = {{1,2},{3,4}};
   parameter Axis n = {0, -1, 0};
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end VectorizeExtendedType;
 
 // Result:

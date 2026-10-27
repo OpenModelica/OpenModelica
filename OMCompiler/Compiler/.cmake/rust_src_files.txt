@@ -492,6 +492,7 @@ openmodelica_util_datatypes_basic/src/unittests/mutable_tests.rs
 openmodelica_wasi/Cargo.toml
 openmodelica_wasi/src/fs.rs
 openmodelica_wasi/src/lib.rs
+openmodelica_wasi/src/stdio.rs
 openmodelica_wasi/src/wasi.rs
 openmodelica_wasi_libc/Cargo.toml
 openmodelica_wasi_libc/build.rs
@@ -517,6 +518,8 @@ openmodelica_wasm_jit/src/sim_runtime_stub.rs
 openmodelica_wasm_jit/src/sim_runtime_wasmer.rs
 openmodelica_wasm_jit/src/sim_runtime_wasmtime.rs
 openmodelica_wasm_jit/src/wasi_shim.rs
+openmodelica_zip/Cargo.toml
+openmodelica_zip/src/lib.rs
 rust-toolchain.toml
 rustfmt.toml
 susanSources.txt

@@ -8,6 +8,8 @@
 
 # GitHub Actions workflows
 /.github/workflows/ @AnHeuermann
+/.github/workflows/nightly-release.yaml @AnHeuermann @adrpo
+/.github/workflows/on-release.yaml @AnHeuermann @adrpo
 
 # Build system
 CMakeLists.txt @AnHeuermann
@@ -16,8 +18,8 @@ CMakeLists.txt @AnHeuermann
 /cmake/ @AnHeuermann
 
 # Continuous Integration / Continuous Deployment
-# /Jenkinsfile
-# /.CI/
+/Jenkinsfile @adrpo
+/.CI/ @adrpo
 
 # Compiler: frontend
 # Only the core NF files, smaller changes elsewhere get a manual review request.
@@ -27,19 +29,27 @@ CMakeLists.txt @AnHeuermann
 /OMCompiler/Compiler/NFFrontEnd/NFLookup.mo @perost
 /OMCompiler/Compiler/NFFrontEnd/NFTyping.mo @perost
 /OMCompiler/Compiler/FrontEndCpp/ @perost
-# /OMCompiler/Compiler/FrontEnd/
+/OMCompiler/Compiler/NFFrontEnd/NFClassDiagram.mo @adrpo
+/OMCompiler/Compiler/NFFrontEnd/NFDefUseChains.mo @adrpo
+/OMCompiler/Compiler/NFFrontEnd/NFUsedElements.mo @adrpo
+/OMCompiler/Compiler/FrontEnd/ @adrpo
 
 # Compiler: backend
 /OMCompiler/Compiler/NBackEnd/ @kabdelhak
 /OMCompiler/Compiler/NBackEnd/Modules/2_Pre/NBEvents.mo @kabdelhak @phannebohm
 /OMCompiler/Compiler/NBackEnd/Modules/3_Post/NBEvaluation.mo @kabdelhak @phannebohm
-# /OMCompiler/Compiler/BackEnd/
+/OMCompiler/Compiler/BackEnd/ @adrpo
 
 # Compiler: code generation
 /OMCompiler/Compiler/NSimCode/ @kabdelhak
-# /OMCompiler/Compiler/SimCode/
+/OMCompiler/Compiler/SimCode/ @adrpo
 /OMCompiler/Compiler/Template/ @sjoelund
 /OMCompiler/Compiler/Template/CodegenC.tpl @sjoelund @phannebohm
+/OMCompiler/Compiler/Template/CodegenFMU*.tpl @sjoelund @adrpo
+/OMCompiler/Compiler/Template/CodegenESP32.tpl @sjoelund @adrpo
+
+# Compiler: omc runtime (C/C++ support code of the compiler)
+/OMCompiler/Compiler/runtime/ @adrpo
 
 # Compiler: Rust
 /OMCompiler/Compiler/OpenModelica.rs/ @sjoelund
@@ -49,12 +59,13 @@ CMakeLists.txt @AnHeuermann
 
 # Compiler: scripting API
 /OMCompiler/Compiler/Script/ @perost
+/OMCompiler/Compiler/Script/CevalScriptBackend.mo @perost @adrpo
 
 # Compiler: C API
 /OMCompiler/Compiler/omcCAPI/ @AnHeuermann
 
 # C simulation runtime
-# /OMCompiler/SimulationRuntime/c/
+/OMCompiler/SimulationRuntime/c/ @adrpo
 /OMCompiler/SimulationRuntime/c/simulation/eval_dep.* @phannebohm
 /OMCompiler/SimulationRuntime/c/simulation/jacobian_util.* @phannebohm
 /OMCompiler/SimulationRuntime/c/simulation/solver/events.* @phannebohm
@@ -74,14 +85,20 @@ CMakeLists.txt @AnHeuermann
 # C++ simulation runtime
 # /OMCompiler/SimulationRuntime/cpp/
 
+# ParModelica
+/OMCompiler/SimulationRuntime/ParModelica/ @adrpo
+
 # FMI
-/OMCompiler/SimulationRuntime/fmi/ @AnHeuermann
+/OMCompiler/SimulationRuntime/fmi/ @AnHeuermann @adrpo
 
 # OMSimulator (submodule; no trailing slash so the submodule pointer itself matches)
 /OMSimulator @arun3688
 
 # OMEdit
 /OMEdit/ @adeas31
+/OMEdit/OMEditLIB/CRML/ @adeas31 @adrpo
+/OMEdit/OMEditLIB/Editors/CRMLEditor.* @adeas31 @adrpo
+/OMEdit/OMEditLIB/Modeling/ClassDiagramWidget.* @adeas31 @adrpo
 
 # OMPlot
 /OMPlot/ @adeas31

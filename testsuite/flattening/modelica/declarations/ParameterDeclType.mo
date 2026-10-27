@@ -5,9 +5,8 @@
 // Tests the parameter prefix on a regular type
 //
 
-class ParameterDeclType
+model ParameterDeclType
   parameter Real rParameter = 1.0;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ParameterDeclType;
 
 // Result:

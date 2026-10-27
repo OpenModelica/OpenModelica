@@ -67,7 +67,7 @@ protected
   // Backend imports
   import BVariable = NBVariable;
   import NBEquation.Equation;
-  import NBEvents.{EventInfo, Condition, MathEvent};
+  import NBEvents.{EventInfo, Condition, MathEvent, TimeEvent};
   import NBPartition.Partition;
   import Slice = NBSlice;
   import StrongComponent = NBStrongComponent;
@@ -623,6 +623,7 @@ public
         case VariableKind.PARAMETER()      then OldSimCodeVar.FIXED();
         case VariableKind.DISCRETE()       then OldSimCodeVar.DISCRETE();
         case VariableKind.DISCRETE_STATE() then OldSimCodeVar.DISCRETE();
+        case VariableKind.ALGORITHM_LOCAL() then OldSimCodeVar.DISCRETE();
         case VariableKind.CLOCKED()        then OldSimCodeVar.DISCRETE();
         case VariableKind.PREVIOUS()       then OldSimCodeVar.DISCRETE();
         else OldSimCodeVar.CONTINUOUS();
@@ -737,6 +738,7 @@ public
             isDiscrete := match varKind
               case VariableKind.DISCRETE()        then true;
               case VariableKind.DISCRETE_STATE()  then true;
+              case VariableKind.ALGORITHM_LOCAL() then true;
               case VariableKind.PREVIOUS()        then true;
               case VariableKind.PARAMETER()       then true;
               case VariableKind.CONSTANT()        then true;
@@ -872,6 +874,7 @@ public
         case VariableKind.DUMMY_DER()               then OldBackendDAE.DUMMY_DER();
         case VariableKind.DUMMY_STATE()             then OldBackendDAE.DUMMY_STATE();
         case VariableKind.DISCRETE()                then OldBackendDAE.DISCRETE();
+        case VariableKind.ALGORITHM_LOCAL()         then OldBackendDAE.DISCRETE();
         case VariableKind.DISCRETE_STATE()          then OldBackendDAE.DISCRETE(); // we don't distinguish between clocked, discrete states and discretes in the old backend. is this correct?
         case VariableKind.CLOCKED()                 then OldBackendDAE.DISCRETE(); // we don't distinguish between clocked, discrete states and discretes in the old backend. is this correct?
         case VariableKind.PREVIOUS()                then OldBackendDAE.DISCRETE();
@@ -1141,6 +1144,7 @@ public
       input output SimCode.SimCodeIndices simCodeIndices;
     protected
       list<SimVar> stateVars = {}, derivativeVars = {}, algVars = {}, nonTrivialAlias = {};
+      list<SimVar> intNonTrivialAlias = {}, boolNonTrivialAlias = {}, stringNonTrivialAlias = {}, enumNonTrivialAlias = {};
       list<SimVar> discreteAlgVars = {}, intAlgVars = {}, boolAlgVars = {}, stringAlgVars = {}, enumAlgVars = {};
       list<SimVar> discreteAlgVars2 = {}, intAlgVars2 = {}, boolAlgVars2 = {}, stringAlgVars2 = {}, enumAlgVars2 = {};
       list<SimVar> discreteAlgVars3 = {}, intAlgVars3 = {}, boolAlgVars3 = {}, stringAlgVars3 = {}, enumAlgVars3 = {};
@@ -1168,7 +1172,8 @@ public
           ({derivativeVars}, simCodeIndices)                                                              := createSimVarLists(varData.derivatives, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
           ({algVars}, simCodeIndices)                                                                     := createSimVarLists(varData.algebraics, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
           ({inputVars}, simCodeIndices)                                                                   := createSimVarLists(varData.top_level_inputs, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
-          ({nonTrivialAlias}, simCodeIndices)                                                             := createSimVarLists(varData.nonTrivialAlias, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+          ({nonTrivialAlias, intNonTrivialAlias, boolNonTrivialAlias, stringNonTrivialAlias, enumNonTrivialAlias}, simCodeIndices)
+                                                                                                          := createSimVarLists(varData.nonTrivialAlias, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({discreteAlgVars, intAlgVars, boolAlgVars, stringAlgVars, enumAlgVars}, simCodeIndices)        := createSimVarLists(varData.discretes, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({discreteAlgVars2, intAlgVars2, boolAlgVars2, stringAlgVars2, enumAlgVars2}, simCodeIndices)   := createSimVarLists(varData.discrete_states, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({discreteAlgVars3, intAlgVars3, boolAlgVars3, stringAlgVars3, enumAlgVars3}, simCodeIndices)   := createSimVarLists(varData.clocked_states, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
@@ -1206,10 +1211,10 @@ public
         derivativeVars                    = derivativeVars,
         algVars                           = List.flatten({algVars, inputVars, nonTrivialAlias}),
         discreteAlgVars                   = List.flatten({discreteAlgVars, discreteAlgVars2, discreteAlgVars3}),
-        intAlgVars                        = List.flatten({intAlgVars, intAlgVars2, intAlgVars3}),
-        boolAlgVars                       = List.flatten({boolAlgVars, boolAlgVars2, boolAlgVars3}),
-        stringAlgVars                     = List.flatten({stringAlgVars, stringAlgVars2, stringAlgVars3}),
-        enumAlgVars                       = List.flatten({enumAlgVars, enumAlgVars2, enumAlgVars3}),
+        intAlgVars                        = List.flatten({intNonTrivialAlias, intAlgVars, intAlgVars2, intAlgVars3}),
+        boolAlgVars                       = List.flatten({boolNonTrivialAlias, boolAlgVars, boolAlgVars2, boolAlgVars3}),
+        stringAlgVars                     = List.flatten({stringNonTrivialAlias, stringAlgVars, stringAlgVars2, stringAlgVars3}),
+        enumAlgVars                       = List.flatten({enumNonTrivialAlias, enumAlgVars, enumAlgVars2, enumAlgVars3}),
         inputVars                         = inputVars,
         outputVars                        = outputVars,
         aliasVars                         = aliasVars,
@@ -1504,7 +1509,7 @@ public
     algorithm
       varInfo := VAR_INFO(
         numZeroCrossings             = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)) + sum(MathEvent.numZeroCrossings(mev) for mev in eventInfo.math_lst),
-        numTimeEvents                = UnorderedSet.size(eventInfo.time_set),
+        numTimeEvents                = TimeEvent.nextIndex(eventInfo.time_set),
         numRelations                 = sum(Condition.numRelations(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
         numMathEventFunctions        = eventInfo.numberMathEvents,
         numStateVars                 = listScalarSize(vars.stateVars),

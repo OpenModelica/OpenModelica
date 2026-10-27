@@ -2,7 +2,6 @@
 // keywords: fmu export simulation alias
 // status: correct
 // teardown_command: rm -rf index.html model_res.mat ModelWithAlias.log ModelWithAlias_* ModelWithAlias_tmp.xml ModelWithAlias.fmu ModelWithAlias_me_systemCall.log ModelWithAlias-tmp/
-// cflags: -d=-newInst
 //
 // Export of 2.0 ME FMU with alias variables.
 // For issue https://github.com/OpenModelica/OpenModelica/issues/14513

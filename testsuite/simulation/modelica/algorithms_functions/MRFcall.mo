@@ -33,7 +33,6 @@ algorithm
   r1 := x + y;
   r2 := x * y;
   r3 := x - y;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MultipleResultsFunction;
 
 // class MRFcall

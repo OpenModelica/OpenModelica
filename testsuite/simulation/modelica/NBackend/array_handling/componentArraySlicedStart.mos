@@ -1,0 +1,41 @@
+// name: componentArraySlicedStart
+// keywords: NewBackend start slice component array
+// status: correct
+// cflags: --newBackend
+//
+// The start value X_start[1:1] of an array in a component array has one
+// dimension more than the component array.
+
+loadString("
+model C
+  parameter Real X_start[2] = {0.01, 0.99};
+  Real XiOut[1](start = X_start[1:1]);
+equation
+  der(XiOut) = -XiOut;
+end C;
+model componentArraySlicedStart
+  C vol[3];
+  Real w[2];
+equation
+  w[1] = vol[3].XiOut[1];
+  w[2] = time;
+end componentArraySlicedStart;
+"); getErrorString();
+
+simulate(componentArraySlicedStart); getErrorString();
+val(vol[1].XiOut[1], 1);
+val(w[1], 1);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "componentArraySlicedStart_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'componentArraySlicedStart', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0036794696061514766
+// 0.0036794696061514766
+// endResult

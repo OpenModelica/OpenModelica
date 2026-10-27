@@ -152,9 +152,8 @@ pub(crate) const HANDWRITTEN_TOP_PACKAGES: &[&str] = &[
     // Single `external "C"` wrapper over `runtime/om_curl.c`; hand-written
     // (using the `curl` crate) in `openmodelica_script_util/src/Curl.rs`.
     "Curl",
-    // `external "C"` wrappers over `runtime/om_unzip.c` and `om_zip.c`
-    // (minizip); hand-written (using the `zip` crate) in
-    // `openmodelica_script_util/src/Unzip.rs`.
+    // `external "C"` wrappers over `runtime/om_zip.c`; hand-written over
+    // `openmodelica_zip` in `openmodelica_script_util/src/Unzip.rs`.
     "Unzip",
     // All bodies but `statusToString` are `external "C"` wrappers over
     // `runtime/OMSimulator_omc.c`, which `dlopen`s libOMSimulator and
@@ -26830,14 +26829,11 @@ fn emit_stmt<'a>(
                 t => (r, t),
             };
             // List<T> behind `Arc` → iterate via `&*lst` (Deref<Target=List>).
-            // Array<T> = `Rc<RefCell<Vec<T>>>` → iterate via `arr.borrow().iter()`
-            //   then `.cloned()` so the loop variable owns its element instead of
-            //   borrowing through the RefCell guard for the whole body (avoids
-            //   holding a borrow across user code that may itself touch the array).
+            // Array<T> → indexed loop, emitted below.
             let r = match &range_ty {
                 Ty::List(..) if range_place.is_some() => r,
                 Ty::List(..) => format!("&*{r}"),
-                Ty::Array(..) => format!("{r}.borrow().iter().cloned().collect::<Vec<_>>()"),
+                Ty::Array(..) => r,
                 Ty::Range(..) => r,
                 // `(a..=b).step_by(..)`), so feed it straight to `for ... in`.
                 t => format!("{r} /* Unknown type for iterator {:?} */", t),
@@ -26862,7 +26858,21 @@ fn emit_stmt<'a>(
             // alive across every iteration — and any `borrow_mut()` on the same cell
             // inside the body panics. Hoist into a local first so the Ref dies at
             // the `;` before the loop runs.
-            if r.contains(".borrow(") || r.contains(".borrow_mut(") {
+            if matches!(range_ty, Ty::Array(..)) {
+                // Like arrayGet in the C code: the length is fixed on entry,
+                // but each element is read when its iteration starts.
+                let n = *fresh;
+                *fresh += 1;
+                writeln!(out, "{indent}let __range{n} = {r};").unwrap();
+                writeln!(out, "{indent}let __len{n} = __range{n}.borrow().len();").unwrap();
+                writeln!(out, "{indent}{label_prefix}for __i{n} in 0..__len{n} {{").unwrap();
+                writeln!(
+                    out,
+                    "{indent}    let mut {} = __range{n}.borrow()[__i{n}].clone();",
+                    escape_ident(var)
+                )
+                .unwrap();
+            } else if r.contains(".borrow(") || r.contains(".borrow_mut(") {
                 let n = *fresh;
                 *fresh += 1;
                 writeln!(out, "{indent}let __range{n} = {r};").unwrap();

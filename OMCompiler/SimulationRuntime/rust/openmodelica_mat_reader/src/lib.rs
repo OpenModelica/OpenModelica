@@ -357,8 +357,7 @@ impl MatReader {
     /// mirroring `omc_new_matlab4_reader`.
     pub fn open(filename: &str) -> Result<MatReader, String> {
         let mut file = fs::open_read(filename).map_err(|e| e.to_string())?;
-        const MATRIX_NAMES: [&str; 6] =
-            ["Aclass", "name", "description", "dataInfo", "data_1", "data_2"];
+        const MATRIX_NAMES: [&str; 6] = ["Aclass", "name", "description", "dataInfo", "data_1", "data_2"];
 
         let mut reader = MatReader {
             file: clone_src(&file)?,
@@ -378,26 +377,30 @@ impl MatReader {
         // the lazy data_2 read.
         let mut binTrans = true;
 
-        for i in 0..6 {
+        // The six matrices in this order; others between them (`enumerations`)
+        // are skipped.
+        let mut i = 0;
+        while i < 6 {
             let hdr = read_header(&mut file).map_err(|_| "Corrupt header (1)".to_string())?;
             if hdr.imagf > 1 {
                 return Err("Matrix uses imaginary numbers".into());
             }
-            let element_length = mat_element_length(hdr.ty as i32)
-                .ok_or("Could not determine size of matrix elements")?;
+            let element_length =
+                mat_element_length(hdr.ty as i32).ok_or("Could not determine size of matrix elements")?;
             let namelen = hdr.namelen as usize;
-            let name_bytes = read_exact_vec(&mut file, namelen)
-                .map_err(|_| "Corrupt header (2)".to_string())?;
+            let name_bytes = read_exact_vec(&mut file, namelen).map_err(|_| "Corrupt header (2)".to_string())?;
             if namelen == 0 || name_bytes[namelen - 1] != 0 {
                 return Err("Corrupt header (3)".into());
             }
             let name = String::from_utf8_lossy(&name_bytes[..namelen - 1]).into_owned();
-            let matrix_length = hdr.mrows as usize
-                * hdr.ncols as usize
-                * (1 + hdr.imagf as usize)
-                * element_length;
+            let matrix_length = hdr.mrows as usize * hdr.ncols as usize * (1 + hdr.imagf as usize) * element_length;
             if name != MATRIX_NAMES[i] {
-                return Err(format!("Matrix name mismatch: {}", MATRIX_NAMES[i]));
+                if MATRIX_NAMES.contains(&name.as_str()) {
+                    return Err(format!("Matrix name mismatch: {}", MATRIX_NAMES[i]));
+                }
+                file.seek(SeekFrom::Current(matrix_length as i64))
+                    .map_err(|_| "Corrupt header (4)".to_string())?;
+                continue;
             }
             match i {
                 0 => {
@@ -473,9 +476,7 @@ impl MatReader {
                         reader.allInfo[k].isParam = isparam_cell == 1;
                         reader.allInfo[k].index = index_cell;
                     }
-                    reader
-                        .allInfo
-                        .sort_by(|a, b| iws_cmp(&a.name, &b.name));
+                    reader.allInfo.sort_by(|a, b| iws_cmp(&a.name, &b.name));
                 }
                 4 => {
                     // data_1: parameter values (start/stop columns)
@@ -526,6 +527,7 @@ impl MatReader {
                 }
                 _ => unreachable!(),
             }
+            i += 1;
         }
         Ok(reader)
     }
@@ -759,4 +761,84 @@ pub fn find_closest_points(key: f64, vec: &[f64]) -> (i32, f64, i32, f64) {
     }
     let w1 = (key - vec[min as usize]) / (vec[max as usize] - vec[min as usize]);
     (max, w1, min, 1.0 - w1)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn matrix(out: &mut Vec<u8>, name: &str, ty: u32, mrows: usize, ncols: usize, data: &[u8]) {
+        for v in [ty, mrows as u32, ncols as u32, 0, name.len() as u32 + 1] {
+            out.extend_from_slice(&v.to_le_bytes());
+        }
+        out.extend_from_slice(name.as_bytes());
+        out.push(0);
+        out.extend_from_slice(data);
+    }
+
+    fn text(out: &mut Vec<u8>, name: &str, cols: &[&str]) {
+        let mrows = cols.iter().map(|c| c.len()).max().unwrap_or(0) + 1;
+        let data: Vec<u8> = cols
+            .iter()
+            .flat_map(|c| c.bytes().chain(std::iter::repeat(0)).take(mrows))
+            .collect();
+        matrix(out, name, 51, mrows, cols.len(), &data);
+    }
+
+    fn doubles(v: &[f64]) -> Vec<u8> {
+        v.iter().flat_map(|x| x.to_le_bytes()).collect()
+    }
+
+    /// time and x over two rows, with `extra` text matrices written right
+    /// before the matrix named by their first element.
+    fn result_file(path: &std::path::Path, extra: &[(&str, &str)]) {
+        let mut out = Vec::new();
+        let mut before = |out: &mut Vec<u8>, name: &str| {
+            for (at, extra) in extra {
+                if *at == name {
+                    text(out, extra, &["P.Mode(Off, Heat, Cool)"]);
+                }
+            }
+        };
+        before(&mut out, "Aclass");
+        let aclass: Vec<u8> = (0..11)
+            .flat_map(|c| ["Atrajectory", "1.1", "", "binTrans"].map(|r| *r.as_bytes().get(c).unwrap_or(&0)))
+            .collect();
+        matrix(&mut out, "Aclass", 51, 4, 11, &aclass);
+        before(&mut out, "name");
+        text(&mut out, "name", &["time", "x"]);
+        before(&mut out, "description");
+        text(&mut out, "description", &["Simulation time [s]", "a real"]);
+        before(&mut out, "dataInfo");
+        let info: Vec<u8> = [0, 1, 0, -1, 2, 2, 0, 0]
+            .iter()
+            .flat_map(|v: &i32| v.to_le_bytes())
+            .collect();
+        matrix(&mut out, "dataInfo", 20, 4, 2, &info);
+        before(&mut out, "data_1");
+        matrix(&mut out, "data_1", 0, 1, 2, &doubles(&[0.0, 1.0]));
+        before(&mut out, "data_2");
+        matrix(&mut out, "data_2", 0, 2, 2, &doubles(&[0.0, 5.0, 1.0, 7.0]));
+        std::fs::write(path, out).unwrap();
+    }
+
+    /// A matrix the reader does not know is skipped wherever it is; one of the
+    /// six out of its place is still an error.
+    #[test]
+    fn other_matrices_are_skipped() {
+        let path = std::env::temp_dir().join(format!("omc_mat_reader_skip_{}.mat", std::process::id()));
+        for at in ["Aclass", "description", "data_1", "data_2"] {
+            result_file(&path, &[(at, "enumerations")]);
+            let mut r = MatReader::open(path.to_str().unwrap()).unwrap_or_else(|e| panic!("before {at}: {e}"));
+            assert_eq!(r.nrows, 2, "before {at}");
+            let x = r.allInfo[r.find_var("x").unwrap()].index;
+            assert_eq!(r.read_vals(x).as_deref(), Some(&[5.0, 7.0][..]), "before {at}");
+        }
+        result_file(&path, &[("dataInfo", "data_1")]);
+        assert_eq!(
+            MatReader::open(path.to_str().unwrap()).err().as_deref(),
+            Some("Matrix name mismatch: dataInfo")
+        );
+        let _ = std::fs::remove_file(&path);
+    }
 }

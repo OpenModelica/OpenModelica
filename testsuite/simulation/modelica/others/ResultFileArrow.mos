@@ -3,7 +3,6 @@
 // status: correct
 // suite: arrow
 // teardown_command: rm -f ResultFileArrow_* ResultFileArrow ResultFileArrow.c ResultFileArrow.exe ResultFileArrow.libs ResultFileArrow.log ResultFileArrow.makefile ResultFileArrow.o output.log
-// cflags: -d=-newInst
 //
 // The Arrow result format: aliases (negated Real/Integer, logical Boolean,
 // parameter), units, discrete variables and -single, read back through the

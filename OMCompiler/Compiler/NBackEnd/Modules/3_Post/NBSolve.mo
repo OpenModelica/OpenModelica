@@ -52,6 +52,7 @@ public
   import Dimension = NFDimension;
   import Expression = NFExpression;
   import NFFunction.Function;
+  import NFInstNode.InstNode;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
   import ExpandExp = NFExpandExp;
@@ -1313,8 +1314,8 @@ protected
     crefExp := Expression.fromCref(cref);
     ty := ComponentRef.getSubscriptedType(cref, true);
     numerator := Replacements.single(residual, crefExp, Expression.makeZero(ty));
-    mulOp := Operator.OPERATOR(ty, NFOperator.Op.MUL);
-    uminOp := Operator.OPERATOR(ty, NFOperator.Op.UMINUS);
+    mulOp := Operator.makeMul(ty);
+    uminOp := Operator.makeUMinus(ty);
     // Set eqn: cref = - f/f'
     eqn := Equation.setLHS(eqn, crefExp);
     eqn := Equation.setRHS(eqn, Expression.UNARY(uminOp, Expression.MULTARY({numerator},{derivative}, mulOp)));
@@ -1441,6 +1442,11 @@ protected
       case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) guard(List.none(Call.arguments(exp.call), function solveUniqueExpressionNoCref(cref = cref))) then ();
       case Expression.CALL(call = call as Call.TYPED_REDUCTION())         guard(List.none(Call.arguments(exp.call), function solveUniqueExpressionNoCref(cref = cref))) then ();
 
+      // a function with an inverse annotation
+      case Expression.CALL(call = call as Call.TYPED_CALL()) guard(arrayLength(call.fn.inverses) > 0) algorithm
+        (crefFound, inverseInstructions, status) := solveUniqueFindInstructionsCallInverse(substExp, exp, cref, crefFound, inverseInstructions);
+        then ();
+
       // check if invertable if occurs
       case Expression.CALL(call = call as Call.TYPED_CALL()) guard(List.hasOneElement(Call.arguments(exp.call))) algorithm
         (crefFound, inverseInstructions, status) := solveUniqueFindInstructionsCallOneArg(ty, substExp, exp, cref, crefFound, inverseInstructions);
@@ -1541,7 +1547,7 @@ protected
           if Expression.containsCref(exp.exp2, cref) then
             status := Status.IMPLICIT;
           else
-            inverseInstructions := Expression.BINARY(substExp, exp.operator, Expression.MULTARY({}, {exp.exp2}, Operator.OPERATOR(ty, NFOperator.Op.MUL))) :: inverseInstructions;
+            inverseInstructions := Expression.BINARY(substExp, exp.operator, Expression.MULTARY({}, {exp.exp2}, Operator.makeMul(ty))) :: inverseInstructions;
           end if;
         else
           (crefFoundInRecursion, inverseInstructions, status) := solveUniqueFindInstructions(exp.exp2, cref, crefFound, inverseInstructions);
@@ -1564,7 +1570,7 @@ protected
             purity      = NFPrefixes.Purity.PURE
             ));
             // split the instructions, s.t. only top level search for substExp/dummyCref has to be performed in applyInstruction
-            inverseInstructions := local_exp1 :: Expression.MULTARY({substExp}, {local_exp2}, Operator.OPERATOR(ty, NFOperator.Op.MUL)) :: inverseInstructions;
+            inverseInstructions := local_exp1 :: Expression.MULTARY({substExp}, {local_exp2}, Operator.makeMul(ty)) :: inverseInstructions;
           end if;
         end if;
         then ();
@@ -1651,7 +1657,7 @@ protected
             if crefFoundInRecursion then
               // case for -(f(cref)) -> -($SUBST_CREF)
               crefFound := true;
-              inverseInstructions := Expression.UNARY(Operator.OPERATOR(ty, NFOperator.Op.UMINUS), substExp) :: inverseInstructions;
+              inverseInstructions := Expression.UNARY(Operator.makeUMinus(ty), substExp) :: inverseInstructions;
             end if;
             then ();
       else algorithm
@@ -1677,7 +1683,6 @@ protected
   algorithm
     () := match exp
       case Expression.CALL(call = call as Call.TYPED_CALL()) guard List.hasOneElement(Call.arguments(exp.call)) algorithm
-        name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
         argExp := listHead(Call.arguments(call));
         (crefFoundInRecursion, inverseInstructions, status) := solveUniqueFindInstructions(argExp, cref, crefFound, inverseInstructions);
         if status == Status.IMPLICIT then
@@ -1686,9 +1691,10 @@ protected
         if crefFoundInRecursion then
           // case for call(f(cref)) -> call^{-1}($SUBST_CREF)
           crefFound := true;
+          name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
           inverseInstructions := match name
             case "sqrt" then // sqrt(f(cref)) -> $SUBST_CREF^2
-              Expression.BINARY(substExp, Operator.OPERATOR(ty, NFOperator.Op.POW), Expression.REAL(2)) :: inverseInstructions;
+              Expression.BINARY(substExp, Operator.makePow(ty, true), Expression.REAL(2)) :: inverseInstructions;
             case "cos" then // cos(f(cref)) -> acos($SUBST_CREF)
               solveUniqueCreateSubstCall(NFBuiltinFuncs.ACOS_REAL, substExp, inverseInstructions);
             case "sin" then // sin(f(cref)) -> asin($SUBST_CREF)
@@ -1718,7 +1724,7 @@ protected
             case "log" then // log(f(cref)) -> exp($SUBST_CREF)
               solveUniqueCreateSubstCall(NFBuiltinFuncs.EXP_REAL, substExp, inverseInstructions);
             case "log10" then // log_10(f(cref)) -> 10^($SUBST_CREF)
-              Expression.BINARY(Expression.REAL(10), Operator.OPERATOR(ty, NFOperator.Op.POW), substExp) :: inverseInstructions;
+              Expression.BINARY(Expression.REAL(10), Operator.makePow(ty, false), substExp) :: inverseInstructions;
             else algorithm // fallback -> set implicit
               if Flags.isSet(Flags.DUMP_SOLVE) then
                 solveUniquePrintImplicitFallback(exp);
@@ -1765,7 +1771,7 @@ protected
             // calc inverse w.r.t first argument and append to instructions
             inverseInstructions := match name
               case "atan2" algorithm // atan2(x,y) -> x=y*tan($SUBST_CREF)
-                inverseInstructions := Expression.MULTARY({substExp, argExp2}, {}, Operator.OPERATOR(ty, NFOperator.Op.MUL)) :: inverseInstructions;
+                inverseInstructions := Expression.MULTARY({substExp, argExp2}, {}, Operator.makeMul(ty)) :: inverseInstructions;
                 then solveUniqueCreateSubstCall(NFBuiltinFuncs.TAN_REAL, substExp, inverseInstructions);
               else algorithm // fallback -> set implicit
                 if Flags.isSet(Flags.DUMP_SOLVE) then
@@ -1785,7 +1791,7 @@ protected
             // calc inverse w.r.t second argument and append to instructions
             inverseInstructions := match name
               case "atan2" algorithm // atan2(x,y) -> y=x/tan($SUBST_CREF)
-                inverseInstructions := Expression.MULTARY({argExp1}, {substExp}, Operator.OPERATOR(ty, NFOperator.Op.MUL)) :: inverseInstructions;
+                inverseInstructions := Expression.MULTARY({argExp1}, {substExp}, Operator.makeMul(ty)) :: inverseInstructions;
                 then solveUniqueCreateSubstCall(NFBuiltinFuncs.TAN_REAL, substExp, inverseInstructions);
               else algorithm // fallback -> set implicit
                 if Flags.isSet(Flags.DUMP_SOLVE) then
@@ -1802,6 +1808,90 @@ protected
         then fail();
     end match;
   end solveUniqueFindInstructionsCallTwoArgs;
+
+  function solveUniqueFindInstructionsCallInverse
+    "find instructions for a call to a function with an inverse annotation:
+     f(args) -> args[i] = inverse call with the inputs of f replaced by the arguments and its output by $SUBST_CREF"
+    input Expression substExp;
+    input Expression exp;
+    input ComponentRef cref;
+    input output Boolean crefFound;
+    input output list<Expression> inverseInstructions;
+    output Status status = Status.EXPLICIT;
+  protected
+    Function fn;
+    list<Expression> args;
+    Integer i = 0, found = 0;
+    Expression arg, inv;
+    Option<Expression> oinv = NONE();
+    String name;
+    InstNode output_node;
+    UnorderedMap<ComponentRef, Expression> replacements;
+  algorithm
+    Expression.CALL(call = Call.TYPED_CALL(fn = fn, arguments = args)) := exp;
+
+    // the cref has to occur in exactly one argument
+    arg := listHead(args); // HACK makes the Rust compiler happy
+    for a in args loop
+      i := i + 1;
+      if Expression.containsCref(a, cref) then
+        if found <> 0 then
+          if Flags.isSet(Flags.DUMP_SOLVE) then
+            solveUniquePrintImplicitFallback(exp);
+          end if;
+          status := Status.IMPLICIT;
+          return;
+        end if;
+        found := i;
+        arg := a;
+      end if;
+    end for;
+    if found == 0 then
+      return;
+    end if;
+
+    if listLength(fn.inputs) <> listLength(args) or listLength(fn.outputs) <> 1 then
+      // FIXME not sure if these can occur or what should happen in these cases
+      // probably some error or Status.IMPLICIT
+      return;
+    end if;
+
+    // search the inverse for the input that contains the cref
+    name := InstNode.name(listGet(fn.inputs, found));
+    for fnInv in fn.inverses loop
+      if ComponentRef.firstName(fnInv.inputParam) == name then
+        oinv := SOME(fnInv.inverseCall);
+        break;
+      end if;
+    end for;
+    if isNone(oinv) then
+      // there is no inverse
+      // TODO try to invert the function symbolically
+      if Flags.isSet(Flags.DUMP_SOLVE) then
+        solveUniquePrintImplicitFallback(exp);
+      end if;
+      status := Status.IMPLICIT;
+      return;
+    end if;
+
+    (true, inverseInstructions, status) := solveUniqueFindInstructions(arg, cref, crefFound, inverseInstructions);
+    if status == Status.IMPLICIT then
+      return;
+    end if;
+    crefFound := true;
+
+    replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+    // replace the output by $SUBST_CREF
+    output_node := InstNode.fromHandle(listHead(fn.outputs));
+    UnorderedMap.add(ComponentRef.fromNode(output_node, InstNode.getType(output_node)), substExp, replacements);
+    // replace the inputs by the corresponding arguments
+    for node in fn.inputs loop
+      arg :: args := args;
+      UnorderedMap.add(ComponentRef.fromNode(node, InstNode.getType(node)), arg, replacements);
+    end for;
+    inv := Expression.map(Util.getOption(oinv), function Replacements.applySimpleExp(replacements = replacements));
+    inverseInstructions := inv :: inverseInstructions;
+  end solveUniqueFindInstructionsCallInverse;
 
   function solveUniqueCreateSubstCall
     "helper to create call with substitute cref and to the instructions"
@@ -1891,25 +1981,10 @@ protected
     input Expression instruction;
   algorithm
     insertExp := match instruction
-      local
-        list<Expression> argList = {}, invargList = {};
-        Expression exp;
       case Expression.MULTARY() algorithm
-        for arg in instruction.arguments loop
-          if not Expression.isSubstitute(arg) then
-            argList := arg :: argList;
-          else
-            argList := insertExp :: argList;
-          end if;
-        end for;
-        for invarg in instruction.inv_arguments loop
-          if not Expression.isSubstitute(invarg) then
-            invargList := invarg :: invargList;
-          else
-            invargList := insertExp :: invargList;
-          end if;
-        end for;
-      then Expression.MULTARY(argList, invargList, instruction.operator);
+        instruction.arguments     := list(replaceSubstitute(arg, insertExp) for arg in instruction.arguments);
+        instruction.inv_arguments := list(replaceSubstitute(arg, insertExp) for arg in instruction.inv_arguments);
+      then instruction;
       case Expression.BINARY() algorithm
         if Expression.isSubstitute(instruction.exp1) then
           instruction.exp1 := insertExp;
@@ -1923,30 +1998,26 @@ protected
           instruction.exp := insertExp;
         end if;
       then instruction;
-      case exp as Expression.CALL() algorithm
-        () := match instruction.call
-          local Call local_call;
-          case local_call as Call.TYPED_CALL() algorithm
-            for arg in local_call.arguments loop
-              if not Expression.isSubstitute(arg) then
-                argList := arg :: argList;
-              else
-                argList := insertExp :: argList;
-              end if;
-            end for;
-            local_call.arguments := listReverse(argList);
-            exp.call := local_call;
-          then ();
-          else algorithm
-            Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " can only handle TYPED_CALL."});
-          then fail();
-        end match;
-      then exp;
+      // the substitute can be nested in the arguments of an inverse call
+      case Expression.CALL(call = Call.TYPED_CALL())
+      then Expression.map(instruction, function replaceSubstitute(insertExp = insertExp));
+      case Expression.CALL() algorithm
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " can only handle TYPED_CALL."});
+      then fail();
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for instruction: " + Expression.toString(instruction)});
       then fail();
     end match;
   end applyInstruction;
+
+  function replaceSubstitute
+    input output Expression exp;
+    input Expression insertExp;
+  algorithm
+    if Expression.isSubstitute(exp) then
+      exp := insertExp;
+    end if;
+  end replaceSubstitute;
 
   function tupleSolvable
     "checks if the tuple expression contains all variables we need to solve for. other elements

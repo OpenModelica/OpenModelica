@@ -224,6 +224,7 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
         let v = unsafe { &*md.integerVarsData.add(a) };
         let base = unsafe { *si.integerVarsIndex.add(a) };
         let (unit, display_unit, _) = units.meta("iAlg", a);
+        let enumeration = xml.enumeration("iAlg", a);
         for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, false)
             .into_iter()
             .enumerate()
@@ -242,7 +243,7 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
                 },
                 filter: filter_bits(v.filterOutput, false),
                 unvarying: v.time_unvarying != 0,
-                enumeration: None,
+                enumeration: enumeration.clone(),
             });
         }
     }
@@ -328,6 +329,7 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
         let v = unsafe { &*md.integerParameterData.add(a) };
         let base = unsafe { *si.integerParamsIndex.add(a) };
         let (unit, display_unit, _) = units.meta("iPar", a);
+        let enumeration = xml.enumeration("iPar", a);
         for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, false)
             .into_iter()
             .enumerate()
@@ -347,7 +349,7 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
                 },
                 filter: filter_bits(v.filterOutput, false),
                 unvarying: v.time_unvarying != 0,
-                enumeration: None,
+                enumeration: enumeration.clone(),
             });
         }
     }
@@ -502,6 +504,7 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
             };
             let dim = alias_dimension(md, al, kind_ix + 1);
             let (unit, display_unit, _) = units.meta(if kind_ix == 0 { "iAli" } else { "bAli" }, a);
+            let enumeration = if kind_ix == 0 { xml.enumeration("iAli", a) } else { None };
             for (k, name) in scalar_names(&cstr(al.info.name), dim, false).into_iter().enumerate() {
                 vars.push(MetaVar {
                     name,
@@ -514,7 +517,7 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
                     kind: kind(k),
                     filter: filter_bits(al.filterOutput, true),
                     unvarying: false,
-                    enumeration: None,
+                    enumeration: enumeration.clone(),
                 });
             }
         }

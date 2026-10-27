@@ -119,7 +119,7 @@ public
     list<Integer> marked_eqns;
     Pointer<Equation> constraint, diffed_eqn;
     list<Slice<VariablePointer>> states, dummy_states;
-    list<Pointer<Variable>> sliced_states, sliced_dummy_states, state_derivatives, dummy_derivatives = {}, dummy_slice_vars;
+    list<Pointer<Variable>> sliced_states, sliced_dummy_states, state_derivatives, dummy_derivatives = {}, dummy_slice_vars, dummy_discrete_vars, dummy_algebraic_vars;
     list<Pointer<Variable>> current_candidates, rest_candidates;
     list<Slice<EquationPointer>> constraint_eqns, matched_eqns, unmatched_eqns;
     list<Pointer<Equation>> new_eqns = {}, der_alias_eqns;
@@ -405,7 +405,10 @@ public
 
       // add all slice dummies that were added to fill equations which cannot be split
       dummy_slice_vars := list(BVariable.getVarPointer(cref, sourceInfo()) for cref in UnorderedSet.toList(dummy_slice_set));
-      varData := VarData.addTypedList(varData, dummy_slice_vars, NBVariable.VarData.VarType.ALGEBRAIC);
+      // dummies of non-real outputs (e.g. the derivative of an Integer output) are discrete
+      (dummy_discrete_vars, dummy_algebraic_vars) := List.splitOnTrue(dummy_slice_vars, BVariable.isDiscrete);
+      varData := VarData.addTypedList(varData, dummy_algebraic_vars, NBVariable.VarData.VarType.ALGEBRAIC);
+      varData := VarData.addTypedList(varData, dummy_discrete_vars, NBVariable.VarData.VarType.DISCRETE);
       variables := VariablePointers.addList(dummy_slice_vars, variables);
     else
       changed := false;
@@ -604,11 +607,14 @@ protected
     input Adjacency.Mapping mapping;
   protected
     array<Integer> data = Adjacency.IntMatrix.entries(m);
-    Integer first = m.start[eqn];
+    array<Integer> pstart = Adjacency.IntMatrix.pieceStarts(m);
+    array<Integer> plen = Adjacency.IntMatrix.pieceLengths(m);
   algorithm
     arrayUpdate(eqn_coloring, eqn, color);
-    for k in first:first + m.len[eqn] - 1 loop
-      fillColorVar(data[k], color, eqn_coloring, var_coloring, color_clustering, m, mT, matching, mapping);
+    for p in m.first[eqn]:m.first[eqn] + m.pieces[eqn] - 1 loop
+      for k in pstart[p]:pstart[p] + plen[p] - 1 loop
+        fillColorVar(data[k], color, eqn_coloring, var_coloring, color_clustering, m, mT, matching, mapping);
+      end for;
     end for;
   end fillColorEqn;
 
@@ -1143,10 +1149,12 @@ protected
         Expression start_exp;
         list<Expression> starts;
       case SOME(start_exp) guard(Type.isArray(Expression.typeOf(start_exp))) algorithm
-        starts := list(SimplifyExp.simplify(Expression.applySubscripts(list(Subscript.INDEX(Expression.INTEGER(l + 1))
-          for l in Slice.indexToLocation(idx, sizes)), start_exp, true)) for idx in dummy.indices);
-        Pointer.update(alias_var, BVariable.setStartAttribute(Pointer.access(alias_var),
-          if n == 1 then listHead(starts) else Expression.makeArray(alias_ty, listArray(starts)), true));
+        starts := list(BVariable.startElement(list(Subscript.INDEX(Expression.INTEGER(l + 1))
+          for l in Slice.indexToLocation(idx, sizes)), start_exp, Variable.typeOf(var)) for idx in dummy.indices);
+        if not List.any(starts, Expression.isEmpty) then
+          Pointer.update(alias_var, BVariable.setStartAttribute(Pointer.access(alias_var),
+            if n == 1 then listHead(starts) else Expression.makeArray(alias_ty, listArray(starts)), true));
+        end if;
       then ();
       case SOME(start_exp) algorithm
         // a scalar start value applies to all elements

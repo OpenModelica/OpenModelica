@@ -1913,23 +1913,23 @@ void VariablesWidget::reSimulate(SimulationOptions simulationOptions, VariablesT
   simulationOptions.setReSimulate(true);
   if (pVariablesTreeItem) {
     MainWindow::instance()->getSimulationDialog()->removeInteractiveSimulation(simulationOptions.isInteractiveSimulation(), pVariablesTreeItem->getFileName(), false);
-#if defined(__EMSCRIPTEN__)
-    // wasm-jit takes changes only via -override (it never re-reads _init.xml, which
-    // also lives in the unreachable omc worker VFS): pass the changed values that way.
-    QHash<QString, QHash<QString, QString> > changed;
-    readVariablesAndUpdateXML(pVariablesTreeItem, simulationOptions.getFullResultFileName(), &changed);
-    QStringList overrides;
-    for (auto it = changed.constBegin(); it != changed.constEnd(); ++it) {
-      overrides << QString("%1=%2").arg(it.value().value("name"), it.value().value("value"));
+    if (simulationOptions.getTargetLanguage().compare("wasm-jit") == 0) {
+      // wasm-jit has no _init.xml; it takes changes only via -override.
+      QHash<QString, QHash<QString, QString> > changed;
+      readVariablesAndUpdateXML(pVariablesTreeItem, simulationOptions.getFullResultFileName(), &changed);
+      QStringList overrides;
+      for (auto it = changed.constBegin(); it != changed.constEnd(); ++it) {
+        overrides << QString("%1=%2").arg(it.value().value("name"), it.value().value("value"));
+      }
+      if (!overrides.isEmpty()) {
+        const QString overrideFlag = QString("-override=%1").arg(overrides.join(","));
+        simulationOptions.setSimulationFlags(QStringList(simulationOptions.getSimulationFlags()) << overrideFlag);
+        // The setup dialog rebuilds the flags from its fields.
+        simulationOptions.setAdditionalSimulationFlags(QStringList({simulationOptions.getAdditionalSimulationFlags(), overrideFlag}).join(" ").trimmed());
+      }
+    } else {
+      updateInitXmlFile(pVariablesTreeItem, simulationOptions);
     }
-    if (!overrides.isEmpty()) {
-      QStringList flags = simulationOptions.getSimulationFlags();
-      flags << QString("-override=%1").arg(overrides.join(","));
-      simulationOptions.setSimulationFlags(flags);
-    }
-#else
-    updateInitXmlFile(pVariablesTreeItem, simulationOptions);
-#endif
   }
 
   if (showSetup) {

@@ -30,7 +30,6 @@ algorithm
       sum3[i, j] := v2[i] + v1[j];
     end for;
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AlgorithmForInClass;
 
 // class AlgorithmForInClass

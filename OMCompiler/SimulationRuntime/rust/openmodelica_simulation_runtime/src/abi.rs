@@ -301,12 +301,20 @@ pub struct STATIC_REAL_DATA {
 }
 
 #[repr(C)]
+pub struct ENUMERATION_TYPE {
+    pub name: *mut c_char,
+    pub nLiterals: usize,
+    pub literals: *mut *mut c_char,
+}
+
+#[repr(C)]
 pub struct STATIC_INTEGER_DATA {
     pub dimension: DIMENSION_INFO,
     pub info: VAR_INFO,
     pub attribute: INTEGER_ATTRIBUTE,
     pub filterOutput: modelica_boolean,
     pub time_unvarying: modelica_boolean,
+    pub enumeration: *const ENUMERATION_TYPE,
 }
 
 #[repr(C)]
@@ -621,6 +629,9 @@ pub struct MODEL_DATA {
     pub ndataReconVars: c_long,
     pub nSetbVars: c_long,
     pub nRelatedBoundaryConditions: c_long,
+
+    pub nEnumerationTypes: usize,
+    pub enumerationTypes: *mut ENUMERATION_TYPE,
 }
 
 #[repr(C)]

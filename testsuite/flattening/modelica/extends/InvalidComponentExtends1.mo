@@ -15,14 +15,11 @@ end M;
 model InvalidComponentExtends1
   extends m.A;
   M m;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InvalidComponentExtends1;
 
 // Result:
 // Error processing file: InvalidComponentExtends1.mo
-// [flattening/modelica/extends/InvalidComponentExtends1.mo:17:3-17:6:writable] Notification: From here:
-// [flattening/modelica/extends/InvalidComponentExtends1.mo:16:3-16:14:writable] Error: Part m of base class name m.A is not a class.
-// Error: Error occurred while flattening model InvalidComponentExtends1
+// [flattening/modelica/extends/InvalidComponentExtends1.mo:16:3-16:14:writable] Error: Base class m.A not found in scope InvalidComponentExtends1.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

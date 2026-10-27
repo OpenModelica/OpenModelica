@@ -11,7 +11,7 @@ package ParFuncTest
     annotation(Inline=true);
   end f;
 
-  function test
+  impure function test
     input Integer a;
     output Integer result[elements];
   protected
@@ -30,4 +30,10 @@ package ParFuncTest
     end parfor;
     result := pr;
   end test;
+
+  model M
+    parameter Integer a = 5;
+    Integer r[elements] = test(a + integer(time));
+    Integer err = sum(abs(r - {(a + integer(time))*i*10*i for i in 1:elements}));
+  end M;
 end ParFuncTest;

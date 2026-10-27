@@ -352,7 +352,6 @@ sub read_makefile {
   my $dir = shift;
   my $header = shift;
 
-  return if $dir eq "./openmodelica/java"; # Skip the java tests, since they don't work.
   return if($fast == 1 and $dir =~ m"/libraries/"); # Skip libraries if -f is given.
   return if($fast == 1 and $dir =~ m"/bootstrapping"); # Skip libraries if -f is given.
   return if($fast == 1 and $dir =~ m"/metamodelica"); # Skip libraries if -f is given.

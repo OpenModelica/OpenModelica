@@ -1580,10 +1580,12 @@ protected
       eqn_size[e] := listLength(eqn_rows[e]);
       for r in eqn_rows[e] loop
         row_in_loop[r] := true;
-        for p in m.start[r]:m.start[r] + m.len[r] - 1 loop
-          if not known_scal[m_data[p]] then
-            eqn_unknown[e] := eqn_unknown[e] + 1;
-          end if;
+        for piece in m.first[r]:m.first[r] + m.pieces[r] - 1 loop
+          for p in Adjacency.IntMatrix.pieceBegin(m, piece):Adjacency.IntMatrix.pieceEnd(m, piece) loop
+            if not known_scal[m_data[p]] then
+              eqn_unknown[e] := eqn_unknown[e] + 1;
+            end if;
+          end for;
         end for;
       end for;
     end for;
@@ -1702,15 +1704,17 @@ protected
     for s in start:start + size - 1 loop
       if not known_scal[s] then
         arrayUpdate(known_scal, s, true);
-        for p in mT.start[s]:mT.start[s] + mT.len[s] - 1 loop
-          r := mT_data[p];
-          if row_in_loop[r] then
-            e := mapping.eqn_StA[r];
-            arrayUpdate(eqn_unknown, e, eqn_unknown[e] - 1);
-            if eqn_unknown[e] == eqn_size[e] and eqn_step[e] == 0 then
-              fresh := e :: fresh;
+        for piece in mT.first[s]:mT.first[s] + mT.pieces[s] - 1 loop
+          for p in Adjacency.IntMatrix.pieceBegin(mT, piece):Adjacency.IntMatrix.pieceEnd(mT, piece) loop
+            r := mT_data[p];
+            if row_in_loop[r] then
+              e := mapping.eqn_StA[r];
+              arrayUpdate(eqn_unknown, e, eqn_unknown[e] - 1);
+              if eqn_unknown[e] == eqn_size[e] and eqn_step[e] == 0 then
+                fresh := e :: fresh;
+              end if;
             end if;
-          end if;
+          end for;
         end for;
       end if;
     end for;
@@ -1749,11 +1753,13 @@ protected
     if eqn_unknown[e] <> size then return; end if;
     for r in rows loop
       cnt := 0;
-      for p in m.start[r]:m.start[r] + m.len[r] - 1 loop
-        if not known_scal[m_data[p]] then
-          cnt := cnt + 1;
-          sv := m_data[p];
-        end if;
+      for piece in m.first[r]:m.first[r] + m.pieces[r] - 1 loop
+        for p in Adjacency.IntMatrix.pieceBegin(m, piece):Adjacency.IntMatrix.pieceEnd(m, piece) loop
+          if not known_scal[m_data[p]] then
+            cnt := cnt + 1;
+            sv := m_data[p];
+          end if;
+        end for;
       end for;
       if cnt <> 1 then
         units := {};
@@ -1977,14 +1983,16 @@ protected
         (start, size) := mapping.var_AtS[u];
         for s in start:start + size - 1 loop
           if not known_scal[s] then
-            for p in mT.start[s]:mT.start[s] + mT.len[s] - 1 loop
-              if row_in_loop[mT_data[p]] then
-                e := mapping.eqn_StA[mT_data[p]];
-                if eqn_step[e] == 0 and seen[e] <> u then
-                  seen[e] := u;
-                  occ := occ + 1;
+            for piece in mT.first[s]:mT.first[s] + mT.pieces[s] - 1 loop
+              for p in Adjacency.IntMatrix.pieceBegin(mT, piece):Adjacency.IntMatrix.pieceEnd(mT, piece) loop
+                if row_in_loop[mT_data[p]] then
+                  e := mapping.eqn_StA[mT_data[p]];
+                  if eqn_step[e] == 0 and seen[e] <> u then
+                    seen[e] := u;
+                    occ := occ + 1;
+                  end if;
                 end if;
-              end if;
+              end for;
             end for;
           end if;
         end for;

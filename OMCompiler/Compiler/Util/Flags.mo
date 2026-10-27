@@ -578,6 +578,8 @@ constant DebugFlag TEARING_COST = DEBUG_FLAG(200, "tearingCost", false,
   "Dumps the estimated cost of every torn system against solving it untorn.");
 constant DebugFlag OMEDIT = DEBUG_FLAG(201, "omedit", false,
   "Set by OMEdit, so the compiler can emit output only a GUI consumes.");
+constant DebugFlag CHECK_USED_ELEMENTS_LOOKUP = DEBUG_FLAG(202, "checkUsedElementsLookup", false,
+  "Checks the classes found by the lookup of getDefUseChains and getClassDiagram against the new frontend's lookup.");
 
 public
 // CONFIGURATION FLAGS
@@ -910,9 +912,9 @@ constant ConfigFlag GENERATE_DYNAMIC_JACOBIAN = CONFIG_FLAG(49, "generateDynamic
 constant ConfigFlag GENERATE_SYMBOLIC_LINEARIZATION = CONFIG_FLAG(50, "generateSymbolicLinearization",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Generates symbolic linearization matrices A,B,C,D for linear model:\n\t\t:math:`\\dot{x} = Ax + Bu`\n\t\t:math:`y = Cx + Du`");
-constant ConfigFlag INT_ENUM_CONVERSION = CONFIG_FLAG(51, "intEnumConversion",
-  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  "Allow Integer to enumeration conversion.");
+constant ConfigFlag RESIZABLE_MAX_PIECES = CONFIG_FLAG(51, "resizableMaxPieces",
+  NONE(), EXTERNAL(), INT_FLAG(300), NONE(),
+  "The number of pieces a connector array may be split into by the connections\nwith --resizableArrays before it is given up on (default 300).");
 constant ConfigFlag PROFILING_LEVEL = CONFIG_FLAG(52, "profiling",
   NONE(), EXTERNAL(), STRING_FLAG("none"), SOME(STRING_DESC_OPTION({
     ("none","Generate code without profiling"),

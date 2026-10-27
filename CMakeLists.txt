@@ -372,10 +372,12 @@ enable_testing()
 # instruments, which read OM_ENABLE_COVERAGE and OM_COVERAGE_COMPILE_OPTIONS.
 include(cmake/modules/OpenModelicaCoverage.cmake)
 
-# libomc_result, after CMAKE_INSTALL_LIBDIR is final and before its users.
+# libomc_result and libomcruntime_rust, after CMAKE_INSTALL_LIBDIR is final and before their users.
 if(NOT OM_OMC_WASM)
   include(OMCompiler/Compiler/.cmake/rust_result_reader.cmake)
   omc_result_reader_library()
+  include(OMCompiler/Compiler/.cmake/rust_omcruntime.cmake)
+  omc_runtime_rust_library()
 endif()
 
 omc_add_subdirectory(OMCompiler)

@@ -51,6 +51,9 @@
 #include "Simulation/SimulationOutputWidget.h"
 #include "ModelicaClassDialog.h"
 #include "OMS/ModelDialog.h"
+#if !defined(__EMSCRIPTEN__)
+#include "OMS/OMSCalibrationDialog.h"
+#endif
 #include "Git/GitCommands.h"
 #include "Git/CommitChangesDialog.h"
 #include "Util/ResourceCache.h"
@@ -65,6 +68,7 @@
 #include <QDrag>
 #include <QMessageBox>
 #include <QMenu>
+#include <QPushButton>
 #include <QScreen>
 
 /*!
@@ -2814,6 +2818,10 @@ void LibraryTreeView::createActions()
     mpTranslateAsCRMLAction = new QAction(QIcon(":/Resources/icons/translateAs.svg"), Helper::translateAsCRML, this);
     mpTranslateAsCRMLAction->setStatusTip(Helper::translateAsCRMLTip);
     connect(mpTranslateAsCRMLAction, SIGNAL(triggered()), SLOT(translateAsCRML()));
+    // CRML Diagram Action
+    mpCRMLDiagramAction = new QAction(Helper::crmlDiagram, this);
+    mpCRMLDiagramAction->setStatusTip(Helper::crmlDiagramTip);
+    connect(mpCRMLDiagramAction, &QAction::triggered, this, &LibraryTreeView::showCRMLDiagram);
   }
   // run Script Action
   mpRunScriptAction = new QAction(QIcon(":/Resources/icons/runScript.svg"), Helper::runScript, this);
@@ -2935,6 +2943,12 @@ void LibraryTreeView::createActions()
   mpUnloadOMSModelAction->setShortcut(QKeySequence::Delete);
   mpUnloadOMSModelAction->setStatusTip(Helper::unloadOMSModelTip);
   connect(mpUnloadOMSModelAction, SIGNAL(triggered()), SLOT(unloadOMSModel()));
+#if !defined(__EMSCRIPTEN__)
+  // calibrate OMSimulator model action
+  mpOMSCalibrateAction = new QAction(tr("Calibrate..."), this);
+  mpOMSCalibrateAction->setStatusTip(tr("Calibrates the parameters of the model against reference data"));
+  connect(mpOMSCalibrateAction, &QAction::triggered, this, &LibraryTreeView::OMSCalibrate);
+#endif
 }
 
 /*!
@@ -3126,8 +3140,8 @@ void LibraryTreeView::showContextMenu(QPoint point)
           }
           menu.addSeparator();
           menu.addAction(mpFindUsageAction);
-#if !defined(__EMSCRIPTEN__) && !defined(OM_OMEDIT_NO_WEBENGINE)
-          // The draw.io viewer needs QtWebEngine, see ClassDiagramWidget.
+#if !defined(OM_OMEDIT_NO_WEBENGINE)
+          // The draw.io viewer needs QtWebEngine, or the browser of the web build, see ClassDiagramWidget.
           menu.addAction(mpClassDiagramAction);
 #endif
           /* If item is OpenModelica or part of it then don't show the duplicate menu item for it. */
@@ -3188,6 +3202,10 @@ void LibraryTreeView::showContextMenu(QPoint point)
           if (pLibraryTreeItem->isCRMLFile()) {
             menu.addAction(mpTranslateCRMLAction);
             menu.addAction(mpTranslateAsCRMLAction);
+#if !defined(OM_OMEDIT_NO_WEBENGINE)
+            // The draw.io viewer needs QtWebEngine, or the browser of the web build, see ClassDiagramWidget.
+            menu.addAction(mpCRMLDiagramAction);
+#endif
             menu.addSeparator();
           } else if (pLibraryTreeItem->isMOSFile()) {
             menu.addAction(mpRunScriptAction);
@@ -3219,6 +3237,10 @@ void LibraryTreeView::showContextMenu(QPoint point)
             menu.addSeparator();
             menu.addAction(mpSaveAction);
             menu.addAction(mpSaveAsAction);
+#if !defined(__EMSCRIPTEN__)
+            menu.addSeparator();
+            menu.addAction(mpOMSCalibrateAction);
+#endif
             menu.addSeparator();
             menu.addAction(mpUnloadOMSModelAction);
           }
@@ -3583,6 +3605,18 @@ void LibraryTreeView::showClassDiagram()
 }
 
 /*!
+ * \brief LibraryTreeView::showCRMLDiagram
+ * Shows the class-object diagram of the selected CRML file.
+ */
+void LibraryTreeView::showCRMLDiagram()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    MainWindow::instance()->showClassDiagramWidget(pLibraryTreeItem->getNameStructure(), true);
+  }
+}
+
+/*!
  * \brief LibraryTreeView::duplicateClass
  * Opens the DuplicateClassDialog.
  */
@@ -3828,6 +3862,21 @@ void LibraryTreeView::unloadOMSModel()
   if (pLibraryTreeItem) {
     mpLibraryWidget->getLibraryTreeModel()->unloadOMSModel(pLibraryTreeItem);
   }
+}
+
+/*!
+ * \brief LibraryTreeView::OMSCalibrate
+ * Opens the calibration dialog for the selected OMSimulator model.
+ */
+void LibraryTreeView::OMSCalibrate()
+{
+#if !defined(__EMSCRIPTEN__)
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    OMSCalibrationDialog *pOMSCalibrationDialog = new OMSCalibrationDialog(pLibraryTreeItem, MainWindow::instance());
+    pOMSCalibrationDialog->show();
+  }
+#endif
 }
 
 /*!
@@ -4264,6 +4313,21 @@ void LibraryWidget::openTextFile(QFileInfo fileInfo, bool showProgress, bool ski
  */
 void LibraryWidget::openOMSModelFile(QFileInfo fileInfo, bool showProgress, bool skipAddRecentFile)
 {
+#if defined(__EMSCRIPTEN__)
+  // SSP files are handled by OMSimulator, which the web version does not have yet.
+  Q_UNUSED(showProgress);
+  Q_UNUSED(skipAddRecentFile);
+  QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
+  pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::information));
+  pMessageBox->setIcon(QMessageBox::Information);
+  pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+  pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileInfo.fileName())));
+  pMessageBox->setInformativeText(tr("Opening SSP files is not yet supported in the web version of OMEdit. "
+                                     "Use the desktop version of OMEdit to open %1.").arg(fileInfo.fileName()));
+  pMessageBox->setStandardButtons(QMessageBox::Ok);
+  pMessageBox->open();
+  return;
+#endif
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
   }
@@ -5118,31 +5182,30 @@ bool LibraryWidget::resolveConflictWithLoadedLibraries(const QString &library, c
   /* Issue #8183
    * If the library required is already loaded with some other version.
    * Then allow the user to cancel the operation or unload everything and reload the class again.
+   * Issue #16862: Use clickedButton() instead of exec() return value for custom buttons (Qt6 change).
    */
   // clear loadModelCallback classes
   mAutoLoadedLibrariesList.clear();
 
-  QMessageBox *pMessageBox = new QMessageBox;
-  pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::error));
-  pMessageBox->setIcon(QMessageBox::Critical);
-  pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-  pMessageBox->setText(tr("The loaded class(es) <b>%1</b> uses versions of already loaded libraries which are not compatible with the required ones.<br /><br />"
-                          "<b>Cancel Operation</b> does not load class <b>%1</b> and its dependencies.<br />"
-                          "<b>Unload All & Reload %1</b> unloads all previously loaded classes and loads <b>%1</b> starting from a clean environment. "
-                          "Make sure to save your work.").arg(library));
-  pMessageBox->addButton(tr("Cancel Operation"), QMessageBox::ActionRole);
-  pMessageBox->addButton(tr("Unload all && Reload %1").arg(library), QMessageBox::ActionRole);
-  int answer = pMessageBox->exec();
-  switch (answer) {
-    case 0: // cancel operation
-    default:
-      LibraryWidget::cancelLoadingLibraries(classes);
-      return false;
-    case 1: // unload all and reload
-      MainWindow::instance()->unloadAll(true);
-      // Just return true and the calling function will load the library.
-      return true;
+  QMessageBox messageBox(MainWindow::instance());
+  messageBox.setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::error));
+  messageBox.setIcon(QMessageBox::Critical);
+  messageBox.setText(tr("The loaded class(es) <b>%1</b> uses versions of already loaded libraries which are not compatible with the required ones.<br /><br />"
+                        "<b>Cancel Operation</b> does not load class <b>%1</b> and its dependencies.<br />"
+                        "<b>Unload All & Reload %1</b> unloads all previously loaded classes and loads <b>%1</b> starting from a clean environment. "
+                        "Make sure to save your work.").arg(library));
+  QPushButton *pCancelButton = messageBox.addButton(tr("Cancel Operation"), QMessageBox::RejectRole);
+  QPushButton *pReloadButton = messageBox.addButton(tr("Unload all && Reload %1").arg(library), QMessageBox::ActionRole);
+  messageBox.setDefaultButton(pCancelButton);
+  messageBox.setEscapeButton(pCancelButton);
+  messageBox.exec();
+  if (messageBox.clickedButton() == pReloadButton) {
+    MainWindow::instance()->unloadAll(true);
+    // Just return true and the calling function will load the library.
+    return true;
   }
+  LibraryWidget::cancelLoadingLibraries(classes);
+  return false;
 }
 
 /*!

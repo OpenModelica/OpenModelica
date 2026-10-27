@@ -1524,21 +1524,15 @@ public
     input Integer stop;
     output Expression rangeExp;
   protected
-    Expression start_exp, stop_exp;
     Option<Expression> step_exp;
   algorithm
-    start_exp := INTEGER(start);
-    stop_exp := INTEGER(stop);
-
-    if start == stop or
-       step == 1 and start <= stop or
-       step == -1 and start >= stop then
+    if step == 1 or start == stop then
       step_exp := NONE();
     else
       step_exp := SOME(INTEGER(step));
     end if;
 
-    rangeExp := makeRange(start_exp, step_exp, stop_exp);
+    rangeExp := makeRange(INTEGER(start), step_exp, INTEGER(stop));
   end makeIntegerRange;
 
   function getIntegerRange
@@ -6155,7 +6149,7 @@ public
           cls_tree := Class.classTree(InstNode.getClass(node));
           (node, false) := ClassTree.lookupElement(elementName, cls_tree);
           ty := InstNode.getType(node);
-          cref := ComponentRef.prefixCref(node, ty, {}, recordExp.cref);
+          cref := ComponentRef.prefixCref(recordFieldNode(node, recordExp.cref), ty, {}, recordExp.cref);
           ty := Type.liftArrayLeftList(ty, Type.arrayDims(recordExp.ty));
         then
           CREF(ty, cref);
@@ -6205,6 +6199,35 @@ public
     end match;
   end recordElement;
 
+  function recordFieldNode
+    "Returns the node of a record field. For backend record variables this is
+     the node of the child variable, otherwise the class component."
+    input InstNode fieldNode;
+    input ComponentRef recordCref;
+    output InstNode node = fieldNode;
+  protected
+    PointerWeak<Variable> var_ptr;
+    list<PointerWeak<Variable>> children;
+    InstNode child_node;
+  algorithm
+    if not (ComponentRef.isCref(recordCref) and InstNode.isVar(ComponentRef.node(recordCref))) then
+      return;
+    end if;
+    InstNode.VAR_NODE(varPointer = var_ptr) := ComponentRef.node(recordCref);
+    () := match Pointer.access(PointerWeak.upgrade(var_ptr))
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.RECORD(children = children))) algorithm
+        for child in children loop
+          child_node := ComponentRef.node(Variable.name(Pointer.access(PointerWeak.upgrade(child))));
+          if InstNode.name(child_node) == InstNode.name(fieldNode) then
+            node := child_node;
+            break;
+          end if;
+        end for;
+      then ();
+      else ();
+    end match;
+  end recordFieldNode;
+
   function nthRecordElement
     "Returns the nth field of a record expression. If the expression is an array
      it will return an array with the nth field in each array element."
@@ -6226,7 +6249,7 @@ public
           node := Type.complexNode(Type.arrayElementType(typeOf(recordExp)));
           node := Class.nthComponent(index, InstNode.getClass(node));
         then
-          fromCref(ComponentRef.prefixCref(node, InstNode.getType(node), {}, recordExp.cref));
+          fromCref(ComponentRef.prefixCref(recordFieldNode(node, recordExp.cref), InstNode.getType(node), {}, recordExp.cref));
 
       case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX()))
         guard arrayEmpty(recordExp.elements)
@@ -6771,10 +6794,15 @@ public
     b := match exp
       local
         Call call;
-        Expression arg;
-      case CALL(call = call as Call.TYPED_CALL(arguments = arg :: _))
+        Expression clk;
+      case CALL(call = call as Call.TYPED_CALL(arguments = _ :: _))
       then match AbsynUtil.pathString(Function.Function.nameConsiderBuiltin(call.fn))
-        case "sample"       then not isLiteral(arg); // sample has a non clocked meaning as well
+        // sample(start, interval) is the non clocked event sample, the clocked one has a clock argument or none
+        case "sample"       then match call.arguments
+            case {_}            then true;
+            case {_, clk}       then Type.isClock(typeOf(clk));
+            else false;
+          end match;
         case "subSample"    then true;
         case "superSample"  then true;
         case "shiftSample"  then true;

@@ -13,7 +13,6 @@ initial equation
   terminate("at initialization");
 initial algorithm
   assert(time < 0.6, "Test assert");
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Ticket4304;
 
 

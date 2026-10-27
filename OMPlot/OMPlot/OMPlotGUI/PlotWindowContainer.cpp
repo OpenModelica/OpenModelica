@@ -85,7 +85,9 @@ void PlotWindowContainer::addPlotWindow(QStringList arguments)
     pPlotWindow->setWindowTitle(QString(getUniqueName()).append(" - x(y)"));
   }
   connect(pPlotWindow, SIGNAL(closingDown()), SLOT(checkSubWindows()));
-  setActiveSubWindow(addSubWindow(pPlotWindow));
+  QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
+  pPlotWindow->resize(pPlotWindow->sizeHint());
+  setActiveSubWindow(pSubWindow);
   if (viewMode() == QMdiArea::TabbedView) {
     pPlotWindow->showMaximized();
   } else {

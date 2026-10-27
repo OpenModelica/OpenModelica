@@ -37,6 +37,10 @@
 #define CLASSDIAGRAMWIDGET_H
 
 #include <QWidget>
+#include <functional>
+#if defined(__EMSCRIPTEN__)
+#include "Modeling/WasmHtmlView.h"
+#endif
 #if defined(__EMSCRIPTEN__) || defined(OM_OMEDIT_NO_WEBENGINE)
 #include "Modeling/qtwebengine_compat.h" // see DocumentationWidget.h
 #else
@@ -73,25 +77,37 @@ class ClassDiagramWidget : public QWidget
 {
   Q_OBJECT
 public:
-  ClassDiagramWidget(const QString &className, QWidget *pParent = nullptr);
+  ClassDiagramWidget(const QString &className, bool crml = false, QWidget *pParent = nullptr);
   ~ClassDiagramWidget();
   const QString &getClassName() const {return mClassName;}
+  bool isCRML() const {return mCRML;}
 private:
   QString mClassName;
+  bool mCRML;
   QString mDiagram;
   Label *mpClassNameLabel;
+  Label *mpDepthLabel;
   QSpinBox *mpDepthSpinBox;
   QCheckBox *mpShowModifiersCheckBox;
   QComboBox *mpLayoutComboBox;
   QToolButton *mpRefreshToolButton;
   QToolButton *mpSaveAsToolButton;
+#if defined(__EMSCRIPTEN__)
+  WasmHtmlView *mpClassDiagramView;
+#else
   QWebEngineView *mpClassDiagramView;
+#endif
   QString pageFileName() const;
   QString htmlPage(const QString &diagram) const;
+  QString crmlText() const;
+  void copyScript(const QString &resource, const QString &fileName) const;
+  void runJavaScript(const QString &script, const std::function<void(const QVariant&)> &callback);
 public slots:
   void refresh();
   void saveAs();
   void openLink(const QUrl &url);
+private slots:
+  void showCRMLErrors(bool ok);
 };
 
 /*!
@@ -103,7 +119,7 @@ class ClassDiagramWindow : public QWidget
 public:
   ClassDiagramWindow();
   ~ClassDiagramWindow();
-  ClassDiagramWidget* showClassDiagram(const QString &className);
+  ClassDiagramWidget* showClassDiagram(const QString &className, bool crml = false);
 protected:
   virtual void closeEvent(QCloseEvent *pEvent) override;
 private:

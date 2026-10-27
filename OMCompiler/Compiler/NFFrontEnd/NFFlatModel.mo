@@ -759,10 +759,12 @@ public
     list<Expression> field_exps;
     Expression record_exp;
     Binding record_binding;
+    SourceInfo info;
   algorithm
     record_node := ComponentRef.node(recordName);
     record_comp := InstNode.component(record_node);
     record_ty := ComponentRef.nodeType(recordName);
+    info := InstNode.info(record_node);
 
     // Reconstruct the record instance binding if possible. If any field is
     // missing a binding we assume that the record instance didn't have a
@@ -783,11 +785,11 @@ public
     else
       field_exps := listReverseInPlace(field_exps);
       record_exp := Expression.makeRecord(InstNode.scopePath(InstNode.classScope(record_node)), record_ty, field_exps);
-      record_binding := Binding.makeFlat(record_exp, Component.variability(record_comp), NFBinding.Source.GENERATED);
+      record_binding := Binding.makeFlat(record_exp, Component.variability(record_comp), NFBinding.Source.GENERATED, info);
     end if;
 
     recordVar := Variable.VARIABLE(recordName, record_ty, record_binding, InstNode.visibility(record_node),
-      Component.getAttributes(record_comp), {}, variables, Component.comment(record_comp), InstNode.info(record_node), NFBackendExtension.DUMMY_BACKEND_INFO);
+      Component.getAttributes(record_comp), {}, variables, Component.comment(record_comp), info, NFBackendExtension.DUMMY_BACKEND_INFO);
   end reconstructRecordInstance;
 
   function typeFlatType

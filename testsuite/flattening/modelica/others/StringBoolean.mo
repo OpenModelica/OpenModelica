@@ -15,7 +15,6 @@ equation
   s2 = String(false);
   b = true;
   s3 = String(b);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end StringBoolean;
 
 // Result:

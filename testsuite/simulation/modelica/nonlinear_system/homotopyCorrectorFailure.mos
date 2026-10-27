@@ -1,0 +1,38 @@
+// name: homotopyCorrectorFailure
+// keywords: nonlinear system solver homotopy
+// status: correct
+//
+// A failed corrector step must reduce the homotopy step size instead of
+// ending the homotopy run, #17364.
+
+loadString("
+model HomotopyPlateau
+  function T_h
+    input Real h;
+    output Real T;
+  algorithm
+    T := if h < 0 then 300 + h/2000 elseif h < 400000 then 300 else 300 + (h - 400000)/1000;
+  end T_h;
+  parameter Real T_ambient = 293.15;
+  Real h(start = 614000, nominal = 1e6);
+equation
+  0 = T_h(h) - T_ambient;
+end HomotopyPlateau;
+"); getErrorString();
+
+simulate(HomotopyPlateau); getErrorString();
+val(h, 0.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "HomotopyPlateau_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'HomotopyPlateau', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -13700.0
+// endResult

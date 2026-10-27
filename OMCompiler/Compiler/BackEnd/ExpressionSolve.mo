@@ -66,7 +66,9 @@ protected import BackendDAE;
 protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendVariable;
+protected import DAEUtil;
 protected import Types;
+protected import Util;
 
 // =============================================================================
 // section for postOptModule >>solveSimpleEquations<<
@@ -155,6 +157,8 @@ algorithm
 
   // phi: aren't the types of e1 and e2 the same? Can we make the equation have a type?
   if (Types.isIntegerOrRealOrSubTypeOfEither(Expression.typeof(e1)) and Types.isIntegerOrRealOrSubTypeOfEither(Expression.typeof(e2))) then
+    e1 := inlineCallsWithRecordOfX(e1, varexp, SOME(shared.functionTree));
+    e2 := inlineCallsWithRecordOfX(e2, varexp, SOME(shared.functionTree));
     (e1, e2) := preprocessingSolve(e1, e2, varexp, NONE(), SOME(shared.functionTree), NONE(), 0,  false);
   end if;
 
@@ -526,6 +530,11 @@ protected
   Integer iter;
   Integer numSimplifed = 0 ;
 algorithm
+   if doInline then
+     x := inlineCallsWithRecordOfX(x, inExp3, functions);
+     y := inlineCallsWithRecordOfX(y, inExp3, functions);
+   end if;
+
    // split and sort
    (lhsX, lhsY) := preprocessingSolve5(x, inExp3,true);
    (rhsX, rhsY) := preprocessingSolve5(y, inExp3,true);
@@ -580,8 +589,11 @@ algorithm
        x := Expression.expSub(lhsX, rhsX);
        y := Expression.expSub(rhsY, lhsY);
      elseif doInline and inlineFun then
-       iter := iter + 50;
-       if inlineFun then
+       (x, y, con) := solveInverse(x, y, inExp3, functions);
+       if con then
+         numSimplifed := 0;
+       else
+         iter := iter + 50;
          (x,con) := solveFunCalls(x, inExp3, functions);
          inlineFun := false;
          if con then
@@ -1143,6 +1155,93 @@ algorithm
                   end matchcontinue;
 end solveFunCalls;
 
+protected function solveInverse
+"
+  x = y with x = f(args) and f having an inverse annotation for the argument
+  that contains X: args[i] = inverseCall, where the inputs of f are replaced
+  by the arguments of the call and the output of f by y.
+"
+  input output DAE.Exp x;
+  input output DAE.Exp y;
+  input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
+  input Option<AvlTreePathFunction.Tree> functions;
+  output Boolean con = false;
+protected
+  Absyn.Path path;
+  list<DAE.Exp> args, rest;
+  DAE.Function fn;
+  list<DAE.FunctionDefinition> defs;
+  list<DAE.Element> inputs;
+  DAE.ComponentRef cr, param, outCr;
+  DAE.Exp inv, arg;
+  Integer i, found;
+  Option<DAE.Exp> oinv = NONE();
+  list<tuple<DAE.ComponentRef, DAE.Exp>> repl;
+algorithm
+  try
+    DAE.CALL(path = path, expLst = args) := x;
+    SOME(fn as DAE.FUNCTION(functions = defs)) := AvlTreePathFunction.get(Util.getOption(functions), path);
+    inputs := DAEUtil.getFunctionInputVars(fn);
+    true := listLength(inputs) == listLength(args);
+    {DAE.VAR(componentRef = outCr)} := DAEUtil.getFunctionOutputVars(fn);
+    // X has to occur in exactly one argument
+    found := 0;
+    i := 0;
+    for a in args loop
+      i := i + 1;
+      if expHasCref(a, inExp3) then
+        true := found == 0;
+        found := i;
+      end if;
+    end for;
+    true := found > 0;
+    DAE.VAR(componentRef = param) := listGet(inputs, found);
+    for d in defs loop
+      oinv := match d
+        case DAE.FUNCTION_INVERSE(inputParam = cr) guard ComponentReferenceBasics.crefEqualNoStringCompare(cr, param)
+        then SOME(d.inverseCall);
+        else oinv;
+      end match;
+    end for;
+    SOME(inv) := oinv;
+    // substitute simultaneously, the arguments may contain the same names as the function variables
+    repl := {(outCr, y)};
+    rest := args;
+    for e in inputs loop
+      DAE.VAR(componentRef = cr) := e;
+      arg :: rest := rest;
+      repl := (cr, arg) :: repl;
+    end for;
+    (y, _) := Expression.traverseExpTopDown(inv, replaceFunctionCrefs, repl);
+    x := listGet(args, found);
+    con := true;
+  else
+  end try;
+end solveInverse;
+
+protected function replaceFunctionCrefs
+  input DAE.Exp inExp;
+  input list<tuple<DAE.ComponentRef, DAE.Exp>> repl;
+  output DAE.Exp outExp = inExp;
+  output Boolean cont = true;
+  output list<tuple<DAE.ComponentRef, DAE.Exp>> outRepl = repl;
+protected
+  DAE.ComponentRef cr, cr2;
+  DAE.Exp e;
+algorithm
+  if Expression.isCref(inExp) then
+    DAE.CREF(componentRef = cr) := inExp;
+    for r in repl loop
+      (cr2, e) := r;
+      if ComponentReferenceBasics.crefEqualNoStringCompare(cr, cr2) then
+        outExp := e;
+        cont := false;
+        return;
+      end if;
+    end for;
+  end if;
+end replaceFunctionCrefs;
+
 protected function removeSimpleCalls
 "
  helprer function for preprocessingSolve
@@ -1283,6 +1382,64 @@ author: vitalij
    else (inExp, true, iT);
    end matchcontinue;
 end inlineCallX;
+
+protected function inlineCallsWithRecordOfX
+  "Inlines calls that take a record that X is a field of, e.g. f(r) when
+   solving for r.x, since X is not visible in the call otherwise."
+  input DAE.Exp inExp;
+  input DAE.Exp X;
+  input Option<AvlTreePathFunction.Tree> functions;
+  output DAE.Exp outExp;
+algorithm
+  (outExp, _) := Expression.traverseExpTopDown(inExp, inlineCallWithRecordOfX, (X, functions));
+end inlineCallsWithRecordOfX;
+
+protected function inlineCallWithRecordOfX
+  input DAE.Exp inExp;
+  input tuple<DAE.Exp, Option<AvlTreePathFunction.Tree>> inTpl;
+  output DAE.Exp outExp;
+  output Boolean cont;
+  output tuple<DAE.Exp, Option<AvlTreePathFunction.Tree>> outTpl = inTpl;
+protected
+  DAE.Exp X;
+  Option<AvlTreePathFunction.Tree> functions;
+  Boolean inlined;
+algorithm
+  (X, functions) := inTpl;
+  if Expression.isCall(inExp) and callHasRecordOfCref(inExp, X) then
+    (outExp, _, inlined) := Inline.forceInlineExp(inExp, (functions, {DAE.NORM_INLINE(), DAE.DEFAULT_INLINE()}), DAE.emptyElementSource, Ceval.cevalSimpleWithFunctionTreeReturnExp);
+    cont := not inlined;
+  else
+    outExp := inExp;
+    cont := true;
+  end if;
+end inlineCallWithRecordOfX;
+
+protected function callHasRecordOfCref
+  "Returns true if an argument of the call contains a record cref that X is a
+   field of, e.g. f(r) when solving for r.x."
+  input DAE.Exp inCall;
+  input DAE.Exp X;
+  output Boolean res = false;
+protected
+  DAE.ComponentRef cr;
+  list<DAE.Exp> args;
+algorithm
+  if not Expression.isCref(X) then
+    return;
+  end if;
+  cr := Expression.expCref(X);
+  DAE.CALL(expLst = args) := inCall;
+  for e in args loop
+    for arg_cr in Expression.extractCrefsFromExp(e) loop
+      if ComponentReferenceBasics.crefPrefixOf(arg_cr, cr) and
+         Types.isRecord(Types.arrayElementType(ComponentReference.crefLastType(arg_cr))) then
+        res := true;
+        return;
+      end if;
+    end for;
+  end for;
+end callHasRecordOfCref;
 
 protected function preprocessingSolveTmpVars
 "

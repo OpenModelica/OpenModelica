@@ -1,9 +1,13 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+algorithmLocalBuffer.mos \
+subscriptDependency.mos \
+ifNoEventCondition.mos \
 compositeEvent.mos \
 algorithmWhenNoOutputs.mos \
 whenIfStatements.mos \
+whenIfBranches.mos \
 spatialDistributionTuple.mos \
 eventSystem.mos \
 hybridSys.mos \
@@ -17,6 +21,7 @@ algorithmWhenForLoop.mos\
 mathEvents.mos\
 mathEventsFor.mos\
 relationSlotsFor.mos\
+sampleFor.mos\
 compositeRelationEvents.mos\
 noEventReduction.mos\
 infoJsonEquationOrder.mos\

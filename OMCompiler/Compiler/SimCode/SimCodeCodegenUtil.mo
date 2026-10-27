@@ -64,6 +64,7 @@ import Config;
 import DAEDump;
 import MetaModelica.Dangerous;
 import Error;
+import ErrorExt;
 import Expression;
 import ExpressionDump;
 import Flags;
@@ -95,7 +96,15 @@ public function sortEqSystems
 algorithm
   outEqs := List.flatten(list(expandEntwined(eq) for eq in eqs));
   outEqs := List.sort(outEqs, compareEqSystems);
+  // the new backend also lists the single calls of entwined equations on their own
+  outEqs := List.sortedUnique(outEqs, equalEqSystemIndex);
 end sortEqSystems;
+
+protected function equalEqSystemIndex
+  input SimCode.SimEqSystem eq1;
+  input SimCode.SimEqSystem eq2;
+  output Boolean b = simEqSystemIndex(eq1) == simEqSystemIndex(eq2);
+end equalEqSystemIndex;
 
 protected function expandEntwined
   "expands entwined equations to their body equation systems
@@ -428,6 +437,7 @@ protected
   UnitAbsyn.Unit u1, u2;
   Real factor1, factor2, offset1, offset2;
 algorithm
+  ErrorExt.setCheckpoint(getInstanceName());
   try
     UnitParserExt.initSIUnits();
     (u1, factor1, offset1) := UnitAbsynBuilder.str2unitWithScaleFactor(to, NONE());
@@ -438,6 +448,7 @@ algorithm
     converts := true;
   else
   end try;
+  ErrorExt.rollBack(getInstanceName());
 end unitConversion;
 
 public function createCrefToSimVarHT "author: unknown and marcusw
@@ -843,16 +854,21 @@ protected function getEnumerationTypesHelper
   input list<SimCodeVar.SimVar> inVars;
   input list<SimCodeVar.SimVar> inAccumVars;
   output list<SimCodeVar.SimVar> outVars = inAccumVars;
+protected
+  SimCodeVar.SimVar v;
 algorithm
   for var in inVars loop
     () := match var
       case SimCodeVar.SIMVAR()
         algorithm
           // Add the variable to the list if it's an enumeration variable which
-          // doesn't already exist in the list.
+          // doesn't already exist in the list. An array variable stands for its
+          // element type.
           if Types.isEnumeration(var.type_) and not
              List.exist1(outVars, enumerationTypeExists, var.type_) then
-            outVars := var :: outVars;
+            v := var;
+            v.type_ := Types.arrayElementType(var.type_);
+            outVars := v :: outVars;
           end if;
         then
           ();
@@ -867,12 +883,12 @@ protected function enumerationTypeExists
   input DAE.Type inType;
   output Boolean b;
 algorithm
-  b := match (var, inType)
+  b := match (var, Types.arrayElementType(inType))
     local
-      DAE.Type ty;
+      DAE.Type ty, ety;
 
-    case (SimCodeVar.SIMVAR(type_ = ty as DAE.T_ENUMERATION()), DAE.T_ENUMERATION())
-      then AbsynUtil.pathEqual(ty.path, inType.path);
+    case (SimCodeVar.SIMVAR(type_ = ty as DAE.T_ENUMERATION()), ety as DAE.T_ENUMERATION())
+      then AbsynUtil.pathEqual(ty.path, ety.path);
     else false;
   end match;
 end enumerationTypeExists;

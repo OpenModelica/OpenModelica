@@ -24,7 +24,6 @@ model TestMe
   IfEquation y1(u = 1.0, uMax = 2.0, uMin = 0.0);
   IfEquation y2(u = 0.0, uMax = 2.0, uMin = 0.0);
   IfEquation y3(u = 3.0, uMax = 2.0, uMin = 0.0);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TestMe;
 
 // class TestMe

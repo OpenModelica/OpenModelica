@@ -5,11 +5,10 @@
 //  The terminal operator.
 //
 
-class Terminal1
+model Terminal1
   Boolean t;
 equation
   t=terminal();
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Terminal1;
 
 // Result:

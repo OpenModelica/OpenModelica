@@ -1,7 +1,6 @@
 // name:     DefaultComponentName 
 // keywords: API 
 // status:   correct
-// cflags: -d=-newInst
 // 
 // getDefaultComponentName and getDefaultComponentPrefixes 
 //

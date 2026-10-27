@@ -36,12 +36,16 @@
 #include "ClassDiagramWidget.h"
 #include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
+#include "Modeling/MessagesWidget.h"
 #include "Modeling/ModelWidgetContainer.h"
 #include "Options/OptionsDialog.h"
 #include "OMC/OMCProxy.h"
 #include "Util/Helper.h"
 #include "Util/Utilities.h"
 #include "Util/StringHandler.h"
+#if defined(__EMSCRIPTEN__)
+#include "OMEditGUI/wasm/WasmLocalFiles.h"
+#endif
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -51,6 +55,7 @@
 #include <QCloseEvent>
 #include <QHBoxLayout>
 #include <QIcon>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QRegularExpression>
@@ -72,7 +77,7 @@
 ClassDiagramPage::ClassDiagramPage(QObject *pParent)
   : QWebEnginePage(pParent)
 {
-  connect(this, SIGNAL(newWindowRequested(QWebEngineNewWindowRequest&)), SLOT(newWindowRequested(QWebEngineNewWindowRequest&)));
+  connect(this, &QWebEnginePage::newWindowRequested, this, &ClassDiagramPage::newWindowRequested);
 }
 
 bool ClassDiagramPage::acceptNavigationRequest(const QUrl &url, NavigationType type, bool isMainFrame)
@@ -101,14 +106,19 @@ void ClassDiagramPage::newWindowRequested(QWebEngineNewWindowRequest &request)
  * Each class has a tab of its own in the ClassDiagramWindow.
  * A click on a class opens it and a click on a line in a class, e.g. a component, opens the
  * text view of the class at the line the element is declared on.
- * \param className
+ * It shows the class-object diagram of a CRML file the same way. The diagram is made in the page,
+ * by the generator of the CRML compiler, from the submodule Resources/crml-diagram, and a
+ * click on an element opens the CRML file at the line it is defined on.
+ * \param className - the class, or the file name of the CRML file.
+ * \param crml
  */
-ClassDiagramWidget::ClassDiagramWidget(const QString &className, QWidget *pParent)
-  : QWidget(pParent), mClassName(className)
+ClassDiagramWidget::ClassDiagramWidget(const QString &className, bool crml, QWidget *pParent)
+  : QWidget(pParent), mClassName(className), mCRML(crml)
 {
   mpClassNameLabel = new Label;
   mpClassNameLabel->setElideMode(Qt::ElideMiddle);
   mpClassNameLabel->setText(className);
+  mpDepthLabel = new Label(tr("Depth:"));
   mpDepthSpinBox = new QSpinBox;
   mpDepthSpinBox->setRange(0, 10);
   mpDepthSpinBox->setValue(1);
@@ -119,29 +129,49 @@ ClassDiagramWidget::ClassDiagramWidget(const QString &className, QWidget *pParen
   mpRefreshToolButton->setIcon(QIcon(":/Resources/icons/refresh.svg"));
   mpRefreshToolButton->setToolTip(Helper::refresh);
   mpRefreshToolButton->setAutoRaise(true);
-  connect(mpRefreshToolButton, SIGNAL(clicked()), SLOT(refresh()));
+  connect(mpRefreshToolButton, &QToolButton::clicked, this, &ClassDiagramWidget::refresh);
   mpSaveAsToolButton = new QToolButton;
   mpSaveAsToolButton->setIcon(QIcon(":/Resources/icons/save.svg"));
   mpSaveAsToolButton->setToolTip(tr("Save the diagram as a draw.io file"));
   mpSaveAsToolButton->setAutoRaise(true);
-  connect(mpSaveAsToolButton, SIGNAL(clicked()), SLOT(saveAs()));
+  connect(mpSaveAsToolButton, &QToolButton::clicked, this, &ClassDiagramWidget::saveAs);
   mpLayoutComboBox = new QComboBox;
-  mpLayoutComboBox->addItem(tr("Class on top"), "north");
-  mpLayoutComboBox->addItem(tr("Base classes on top"), "south");
-  mpLayoutComboBox->addItem(tr("Rows by inheritance"), "");
+  if (mCRML) {
+    mpLayoutComboBox->addItem(tr("Instances below classes"), "");
+    mpLayoutComboBox->addItem(tr("Hierarchical"), "north");
+    // A CRML file has no used classes to follow.
+    mpDepthLabel->setVisible(false);
+    mpDepthSpinBox->setVisible(false);
+    mpShowModifiersCheckBox->setVisible(false);
+  } else {
+    mpLayoutComboBox->addItem(tr("Class on top"), "north");
+    mpLayoutComboBox->addItem(tr("Base classes on top"), "south");
+    mpLayoutComboBox->addItem(tr("Rows by inheritance"), "");
+  }
   mpLayoutComboBox->setToolTip(tr("How the classes are laid out"));
-  connect(mpLayoutComboBox, SIGNAL(currentIndexChanged(int)), SLOT(refresh()));
-  connect(mpDepthSpinBox, SIGNAL(valueChanged(int)), SLOT(refresh()));
-  connect(mpShowModifiersCheckBox, SIGNAL(toggled(bool)), SLOT(refresh()));
+  connect(mpLayoutComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ClassDiagramWidget::refresh);
+  connect(mpDepthSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &ClassDiagramWidget::refresh);
+  connect(mpShowModifiersCheckBox, &QCheckBox::toggled, this, &ClassDiagramWidget::refresh);
+#if defined(__EMSCRIPTEN__)
+  mpClassDiagramView = new WasmHtmlView(this);
+  connect(mpClassDiagramView, &WasmHtmlView::linkClicked, this, &ClassDiagramWidget::openLink);
+  if (mCRML) {
+    connect(mpClassDiagramView, &WasmHtmlView::loadFinished, this, &ClassDiagramWidget::showCRMLErrors);
+  }
+#else
   mpClassDiagramView = new QWebEngineView(this);
   ClassDiagramPage *pClassDiagramPage = new ClassDiagramPage(mpClassDiagramView);
   mpClassDiagramView->setPage(pClassDiagramPage);
-  connect(pClassDiagramPage, SIGNAL(linkClicked(QUrl)), SLOT(openLink(QUrl)));
+  connect(pClassDiagramPage, &ClassDiagramPage::linkClicked, this, &ClassDiagramWidget::openLink);
+  if (mCRML) {
+    connect(mpClassDiagramView, &QWebEngineView::loadFinished, this, &ClassDiagramWidget::showCRMLErrors);
+  }
+#endif
   // layout
   QHBoxLayout *pToolsLayout = new QHBoxLayout;
   pToolsLayout->setContentsMargins(0, 0, 0, 0);
   pToolsLayout->addWidget(mpClassNameLabel, 1);
-  pToolsLayout->addWidget(new Label(tr("Depth:")));
+  pToolsLayout->addWidget(mpDepthLabel);
   pToolsLayout->addWidget(mpDepthSpinBox);
   pToolsLayout->addWidget(mpShowModifiersCheckBox);
   pToolsLayout->addWidget(new Label(tr("Layout:")));
@@ -168,9 +198,10 @@ ClassDiagramWidget::~ClassDiagramWidget()
  */
 QString ClassDiagramWidget::pageFileName() const
 {
-  QString name = mClassName;
-  name.replace(QRegularExpression("[^A-Za-z0-9_.]"), "_");
-  return QString("%1/classdiagram-%2.html").arg(Utilities::tempDirectory(), name);
+  // A CRML file is named by its path, which is too long, and its base name may not be unique.
+  QString name = mCRML ? QString("%1-%2").arg(QFileInfo(mClassName).completeBaseName()).arg(qHash(mClassName), 0, 16) : mClassName;
+  name.replace(QRegularExpression("[^A-Za-z0-9_.-]"), "_");
+  return QString("%1/%2-%3.html").arg(Utilities::tempDirectory(), mCRML ? "crmldiagram" : "classdiagram", name);
 }
 
 /*!
@@ -182,18 +213,22 @@ void ClassDiagramWidget::refresh()
   if (mClassName.isEmpty()) {
     return;
   }
-  mDiagram = MainWindow::instance()->getOMCProxy()->getClassDiagram(mClassName, mpDepthSpinBox->value(), mpShowModifiersCheckBox->isChecked());
+  if (mCRML) {
+    // The diagram is made in the page, from the text of the file, see htmlPage.
+    mDiagram = crmlText();
+  } else {
+    mDiagram = MainWindow::instance()->getOMCProxy()->getClassDiagram(mClassName, mpDepthSpinBox->value(), mpShowModifiersCheckBox->isChecked());
+  }
   mpSaveAsToolButton->setEnabled(!mDiagram.isEmpty());
+#if defined(__EMSCRIPTEN__)
+  mpClassDiagramView->setHtml(htmlPage(mDiagram));
+#else
   /* Loaded from a file, not with setHtml, which is limited to 2 MB. A page loaded from a file
-   * can't load scripts from qrc:, so the viewer is copied next to it.
+   * can't load scripts from qrc:, so the scripts are copied next to it.
    */
-  QString viewerFileName = QString("%1/drawio-viewer-static.min.js").arg(Utilities::tempDirectory());
-  QFile viewerFile(":/Resources/drawio/viewer-static.min.js");
-  if (QFileInfo(viewerFileName).size() != viewerFile.size()) {
-    // The copy is read-only like the resource, and may be from another version.
-    QFile::setPermissions(viewerFileName, QFile::ReadOwner | QFile::WriteOwner);
-    QFile::remove(viewerFileName);
-    viewerFile.copy(viewerFileName);
+  copyScript(":/Resources/drawio/viewer-static.min.js", "drawio-viewer-static.min.js");
+  if (mCRML) {
+    copyScript(":/Resources/crml-diagram/dist/crml-diagram.min.js", "crml-diagram.min.js");
   }
   QString fileName = pageFileName();
   QFile file(fileName);
@@ -202,6 +237,58 @@ void ClassDiagramWidget::refresh()
     file.close();
     mpClassDiagramView->setUrl(QUrl::fromLocalFile(fileName));
   }
+#endif
+}
+
+/*!
+ * \brief ClassDiagramWidget::copyScript
+ * Copies a script from the resources into the temporary directory, next to the page.
+ * \param resource
+ * \param fileName
+ */
+void ClassDiagramWidget::copyScript(const QString &resource, const QString &fileName) const
+{
+  QString scriptFileName = QString("%1/%2").arg(Utilities::tempDirectory(), fileName);
+  QFile scriptFile(resource);
+  if (QFileInfo(scriptFileName).size() != scriptFile.size()) {
+    // The copy is read-only like the resource, and may be from another version.
+    QFile::setPermissions(scriptFileName, QFile::ReadOwner | QFile::WriteOwner);
+    QFile::remove(scriptFileName);
+    scriptFile.copy(scriptFileName);
+  }
+}
+
+/*!
+ * \brief ClassDiagramWidget::runJavaScript
+ * Runs a script in the page of the diagram and calls the callback with its result.
+ * \param script
+ * \param callback
+ */
+void ClassDiagramWidget::runJavaScript(const QString &script, const std::function<void(const QVariant&)> &callback)
+{
+#if defined(__EMSCRIPTEN__)
+  mpClassDiagramView->runJavaScript(script, callback);
+#else
+  mpClassDiagramView->page()->runJavaScript(script, callback);
+#endif
+}
+
+/*!
+ * \brief ClassDiagramWidget::crmlText
+ * Returns the text of the CRML file, as it is in its editor if it is open there, else as saved.
+ * \return
+ */
+QString ClassDiagramWidget::crmlText() const
+{
+  LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(mClassName);
+  if (pLibraryTreeItem && pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->getEditor()) {
+    return pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText();
+  }
+  QFile file(mClassName);
+  if (file.open(QIODevice::ReadOnly)) {
+    return QString::fromUtf8(file.readAll());
+  }
+  return QString();
 }
 
 /*!
@@ -214,15 +301,40 @@ void ClassDiagramWidget::refresh()
 QString ClassDiagramWidget::htmlPage(const QString &diagram) const
 {
   if (diagram.isEmpty()) {
+    if (mCRML) {
+      return QString("<html><body><p>%1</p></body></html>").arg(tr("The CRML file <b>%1</b> is empty or can't be read.").arg(mClassName.toHtmlEscaped()));
+    }
     return QString("<html><body><p>%1</p></body></html>").arg(tr("No class diagram of <b>%1</b>, see the Messages Browser.").arg(mClassName.toHtmlEscaped()));
   }
-  /* QUrl makes the host lowercase, so modelica://P.M would be read as modelica://p.m.
-   * With modelica:/// the class name is the path, see OMCProxy::getDocumentationAnnotation.
-   */
-  QString xml = diagram;
-  xml.replace("modelica://", "modelica:///");
+#if defined(__EMSCRIPTEN__)
+  // The page is in the browser, which has no access to the files of OMEdit.
+  const QString viewerScript = WasmHtmlView::scriptUrl(":/Resources/drawio/viewer-static.min.js");
+  const QString crmlScript = WasmHtmlView::scriptUrl(":/Resources/crml-diagram/dist/crml-diagram.min.js");
+#else
+  const QString viewerScript = "drawio-viewer-static.min.js";
+  const QString crmlScript = "crml-diagram.min.js";
+#endif
   QJsonObject config;
-  config.insert("xml", xml);
+  QString crml;
+  if (mCRML) {
+    /* The diagram of the CRML text, made with the generator of the CRML compiler, with every
+     * element linking to its line, crml:///source?lineNumber=N; the syntax errors are shown by
+     * showCRMLErrors and the diagram, for saveAs, is kept in crmlDiagramFile.
+     */
+    crml = QString(R"(
+var crml = CRMLDiagram.crmlToDrawio(%1, {link: "crml:///source"});
+window.crmlDiagramErrors = crml.errors;
+window.crmlDiagramFile = crml.xml;
+config.xml = crml.xml;
+)").arg(QString::fromUtf8(QJsonDocument(QJsonArray({diagram})).toJson(QJsonDocument::Compact)).replace("</", "<\\/").mid(1).chopped(1));
+  } else {
+    /* QUrl makes the host lowercase, so modelica://P.M would be read as modelica://p.m.
+     * With modelica:/// the class name is the path, see OMCProxy::getDocumentationAnnotation.
+     */
+    QString xml = diagram;
+    xml.replace("modelica://", "modelica:///");
+    config.insert("xml", xml);
+  }
   config.insert("nav", true);
   // At its size, scrolled, with the zoom and fit buttons; fitting a diagram into the window makes the text unreadable.
   config.insert("resize", false);
@@ -241,7 +353,7 @@ QString ClassDiagramWidget::htmlPage(const QString &diagram) const
   QString script = QString(R"(
 var config = %1;
 var direction = "%2";
-var div = document.getElementById("classdiagram");
+%3var div = document.getElementById("classdiagram");
 window.classDiagramModel = "";
 function show(cfg) {
   div.setAttribute("data-mxgraph", JSON.stringify(cfg));
@@ -262,6 +374,8 @@ if (!direction) {
       layout.intraCellSpacing = 40;
       layout.interRankCellSpacing = 70;
       layout.parallelEdgeSpacing = 12;
+      // Only the boxes are laid out, not the rows in them: a CRML class has its rows as child cells.
+      layout.traverseAncestors = false;
       layout.execute(graph.getDefaultParent());
     } finally {
       model.endUpdate();
@@ -272,12 +386,15 @@ if (!direction) {
     show(config);
   });
 }
-)").arg(json, mpLayoutComboBox->currentData().toString());
+)").arg(json, mpLayoutComboBox->currentData().toString(), crml);
   return QString("<!DOCTYPE html>\n<html><head><meta charset=\"utf-8\"/></head><body>\n"
                  "<div id=\"classdiagram\"></div>\n"
-                 "<script type=\"text/javascript\" src=\"drawio-viewer-static.min.js\"></script>\n"
-                 "<script type=\"text/javascript\">%1</script>\n"
-                 "</body></html>\n").arg(script);
+                 // The viewer loads MathJax from viewer.diagrams.net unless it is there; the diagrams have no math.
+                 "<script type=\"text/javascript\">window.MathJax = {};</script>\n"
+                 "<script type=\"text/javascript\" src=\"%1\"></script>\n"
+                 "%2"
+                 "<script type=\"text/javascript\">%3</script>\n"
+                 "</body></html>\n").arg(viewerScript, mCRML ? QString("<script type=\"text/javascript\" src=\"%1\"></script>\n").arg(crmlScript) : "", script);
 }
 
 /*!
@@ -289,26 +406,34 @@ void ClassDiagramWidget::saveAs()
   if (mDiagram.isEmpty()) {
     return;
   }
-  QString name = StringHandler::getLastWordAfterDot(mClassName);
+  QString name = mCRML ? QFileInfo(mClassName).completeBaseName() : StringHandler::getLastWordAfterDot(mClassName);
   QString fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::saveAs), NULL,
                                                     Helper::drawioFileTypes, NULL, "drawio", &name);
   if (fileName.isEmpty()) {
     return;
   }
-  // The diagram as it is laid out in the view, if it is.
-  mpClassDiagramView->page()->runJavaScript("window.classDiagramModel", [this, fileName](const QVariant &result) {
-    QString diagram = mDiagram;
-    QString model = result.toString();
+  // The diagram as it is laid out in the view, if it is; the diagram of a CRML file is made in the page.
+  runJavaScript("[window.classDiagramModel || '', window.crmlDiagramFile || '']", [this, fileName](const QVariant &result) {
+    const QVariantList results = result.toList();
+    QString model = results.value(0).toString();
+    QString diagram = mCRML ? results.value(1).toString() : mDiagram;
     int start = diagram.indexOf("<mxGraphModel");
     int end = diagram.indexOf("</mxGraphModel>");
     if (!model.isEmpty() && start >= 0 && end > start) {
       model.replace("modelica:///", "modelica://");
       diagram.replace(start, end + QString("</mxGraphModel>").length() - start, model);
     }
+    // The links to the lines of a CRML file only work in OMEdit.
+    if (mCRML) {
+      diagram.remove(QRegularExpression(" link=\"crml:///source[^\"]*\""));
+    }
     QFile file(fileName);
     if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
       file.write(diagram.toUtf8());
       file.close();
+#if defined(__EMSCRIPTEN__)
+      WasmLocalFiles::download(fileName);
+#endif
     } else {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                             GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE).arg(fileName, file.errorString()), QMessageBox::Ok);
@@ -321,11 +446,28 @@ void ClassDiagramWidget::saveAs()
  * Opens the class a link in the diagram is to, modelica:///P.M. A link of a line in a class,
  * modelica:///P.M?lineNumber=12, opens the text view at the line, or, for a component,
  * modelica:///P.M?lineNumber=12&element=c, selects the component if the class is shown in a
- * graphical view that has it. Other links are opened by the system.
+ * graphical view that has it. A link in the diagram of a CRML file, crml:///source?lineNumber=12,
+ * opens the file at the line. Other links are opened by the system.
  * \param url
  */
 void ClassDiagramWidget::openLink(const QUrl &url)
 {
+  if (mCRML && url.scheme().compare("crml") == 0) {
+    LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+    LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(mClassName);
+    if (!pLibraryTreeItem) {
+      QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                               GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(mClassName), QMessageBox::Ok);
+      return;
+    }
+    pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
+    int lineNumber = QUrlQuery(url).queryItemValue("lineNumber").toInt();
+    ModelWidget *pModelWidget = pLibraryTreeItem->getModelWidget();
+    if (lineNumber > 0 && pModelWidget && pModelWidget->getEditor()) {
+      pModelWidget->getEditor()->getPlainTextEdit()->goToLineNumber(lineNumber);
+    }
+    return;
+  }
   if (url.scheme().compare("modelica") != 0) {
     if (url.scheme().startsWith("http") || url.scheme().compare("mailto") == 0) {
       QDesktopServices::openUrl(url);
@@ -380,6 +522,29 @@ void ClassDiagramWidget::openLink(const QUrl &url)
 }
 
 /*!
+ * \brief ClassDiagramWidget::showCRMLErrors
+ * Shows the syntax errors of the CRML file, found when its diagram was made, in the Messages Browser.
+ * The diagram shows what could still be parsed.
+ * \param ok
+ */
+void ClassDiagramWidget::showCRMLErrors(bool ok)
+{
+  if (!ok) {
+    return;
+  }
+  runJavaScript("window.crmlDiagramErrors || []", [this](const QVariant &result) {
+    const QVariantList errors = result.toList();
+    for (const QVariant &error : errors) {
+      const QVariantMap map = error.toMap();
+      const int line = map.value("line").toInt();
+      const int column = map.value("column").toInt() + 1;
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, mClassName, false, line, column, line, column,
+                                                            map.value("message").toString(), Helper::syntaxKind, Helper::errorLevel));
+    }
+  });
+}
+
+/*!
  * \class ClassDiagramWindow
  * \brief The window of the class diagrams, a tab per class, see MainWindow::showClassDiagramWidget.
  * It is a window of its own and never docked in the main window: a web view docked there, or moved
@@ -396,8 +561,8 @@ ClassDiagramWindow::ClassDiagramWindow()
   mpTabWidget->setTabsClosable(true);
   mpTabWidget->setMovable(true);
   mpTabWidget->setDocumentMode(true);
-  connect(mpTabWidget, SIGNAL(tabCloseRequested(int)), SLOT(closeTab(int)));
-  connect(mpTabWidget, SIGNAL(currentChanged(int)), SLOT(currentTabChanged(int)));
+  connect(mpTabWidget, &QTabWidget::tabCloseRequested, this, &ClassDiagramWindow::closeTab);
+  connect(mpTabWidget, &QTabWidget::currentChanged, this, &ClassDiagramWindow::currentTabChanged);
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->addWidget(mpTabWidget);
@@ -425,17 +590,18 @@ ClassDiagramWindow::~ClassDiagramWindow()
 
 /*!
  * \brief ClassDiagramWindow::showClassDiagram
- * Shows the diagram of a class in a tab of its own, or the tab already showing it, with the
- * diagram got again.
- * \param className
+ * Shows the diagram of a class, or of a CRML file, in a tab of its own, or the tab already showing
+ * it, with the diagram got again.
+ * \param className - the class, or the file name of the CRML file.
+ * \param crml
  * \return
  */
-ClassDiagramWidget* ClassDiagramWindow::showClassDiagram(const QString &className)
+ClassDiagramWidget* ClassDiagramWindow::showClassDiagram(const QString &className, bool crml)
 {
   ClassDiagramWidget *pClassDiagramWidget = nullptr;
   for (int i = 0; i < mpTabWidget->count(); ++i) {
     ClassDiagramWidget *pWidget = qobject_cast<ClassDiagramWidget*>(mpTabWidget->widget(i));
-    if (pWidget && pWidget->getClassName().compare(className) == 0) {
+    if (pWidget && pWidget->isCRML() == crml && pWidget->getClassName().compare(className) == 0) {
       pClassDiagramWidget = pWidget;
       break;
     }
@@ -443,8 +609,8 @@ ClassDiagramWidget* ClassDiagramWindow::showClassDiagram(const QString &classNam
   if (pClassDiagramWidget) {
     pClassDiagramWidget->refresh();
   } else {
-    pClassDiagramWidget = new ClassDiagramWidget(className);
-    const int index = mpTabWidget->addTab(pClassDiagramWidget, StringHandler::getLastWordAfterDot(className));
+    pClassDiagramWidget = new ClassDiagramWidget(className, crml);
+    const int index = mpTabWidget->addTab(pClassDiagramWidget, crml ? QFileInfo(className).fileName() : StringHandler::getLastWordAfterDot(className));
     mpTabWidget->setTabToolTip(index, className);
   }
   mpTabWidget->setCurrentWidget(pClassDiagramWidget);
@@ -487,6 +653,11 @@ void ClassDiagramWindow::closeTab(int index)
 void ClassDiagramWindow::currentTabChanged(int index)
 {
   ClassDiagramWidget *pClassDiagramWidget = qobject_cast<ClassDiagramWidget*>(mpTabWidget->widget(index));
-  setWindowTitle(pClassDiagramWidget ? QString("%1 - %2 - %3").arg(Helper::applicationName, Helper::classDiagram, pClassDiagramWidget->getClassName())
-                                     : QString("%1 - %2").arg(Helper::applicationName, Helper::classDiagram));
+  if (!pClassDiagramWidget) {
+    setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::classDiagram));
+  } else if (pClassDiagramWidget->isCRML()) {
+    setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName, Helper::crmlDiagram, QFileInfo(pClassDiagramWidget->getClassName()).fileName()));
+  } else {
+    setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName, Helper::classDiagram, pClassDiagramWidget->getClassName()));
+  }
 }

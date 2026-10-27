@@ -7,7 +7,6 @@
 
 model RealDiv
   constant Real r = 23424.5 / 1234.78;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RealDiv;
 
 // Result:

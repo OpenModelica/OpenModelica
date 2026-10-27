@@ -4,9 +4,9 @@
 //!
 //! The generated code addresses what lies past the first resizable region through
 //! a table of i32s at [`Layout::table_off`] (its address in the header word at
-//! [`TABLE_PTR_OFF`]): entry `k` is [`Resize::table`]`[k]`. The codegen hands
-//! such addresses on as *tagged* offsets ([`dyn_off`]), which resolving turns
-//! into plain ones.
+//! [`TABLE_PTR_OFF`]): entry `k` is [`Resize::table`]`[k]`. An offset the meta
+//! holds for such an address is *tagged* ([`dyn_off`]): it names an
+//! [`Resize::offs`] pair, which resolving turns into a plain offset.
 
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
@@ -19,7 +19,7 @@ use crate::{Layout, LayoutCounts, LayoutFlags, MetaKind, SimMeta, Sz, TABLE_PTR_
 pub struct SizeParam {
     pub name: String,
     pub start: Sz,
-    /// Its Integer parameter slot, tagged.
+    /// Its Integer parameter slot, maybe tagged.
     pub off: u32,
 }
 
@@ -28,6 +28,8 @@ pub struct Resize {
     pub params: Vec<SizeParam>,
     pub counts: LayoutCounts<Sz>,
     pub table: Vec<Sz>,
+    /// What a tagged offset names: the table entry it is past, and by how much.
+    pub offs: Vec<(u32, u32)>,
     /// [`SimMeta::var_arrays`]`[i].dims`.
     pub var_dims: Vec<Vec<Sz>>,
     /// [`SotiVars::real_arrays`](crate::SotiVars)`[i].dims`.
@@ -44,37 +46,29 @@ pub struct Resize {
 }
 
 const DYN_BIT: u32 = 1 << 31;
-const REL_BITS: u32 = 20;
-const REL_MASK: u32 = (1 << REL_BITS) - 1;
-/// Table entries a tagged offset can name.
-pub const MAX_TABLE: u32 = 1 << (31 - REL_BITS);
-/// Bytes past a table entry a tagged offset can reach.
-pub const MAX_REL: u32 = REL_MASK;
 
-/// `rel` bytes past the offset table entry `entry` holds.
-pub fn dyn_off(entry: u32, rel: u32) -> u32 {
-    debug_assert!(entry < MAX_TABLE && rel <= MAX_REL);
-    DYN_BIT | (entry << REL_BITS) | rel
+/// The offset [`Resize::offs`]`[k]` describes.
+pub fn dyn_off(k: u32) -> u32 {
+    debug_assert!(k < DYN_BIT);
+    DYN_BIT | k
 }
 
-/// `(entry, rel)` of a tagged offset, `None` for a plain one.
-pub fn split_dyn(off: u32) -> Option<(u32, u32)> {
-    (off & DYN_BIT != 0).then(|| ((off & !DYN_BIT) >> REL_BITS, off & REL_MASK))
-}
-
-pub fn is_dyn(off: u32) -> bool {
-    off & DYN_BIT != 0
+fn split_dyn(off: u32) -> Option<u32> {
+    (off & DYN_BIT != 0).then_some(off & !DYN_BIT)
 }
 
 impl Resize {
     pub fn resolve_off(&self, off: u32) -> u32 {
-        resolve_off(&self.table_values, off)
+        resolve_off(&self.table_values, &self.offs, off)
     }
 }
 
-fn resolve_off(table: &[i32], off: u32) -> u32 {
+fn resolve_off(table: &[i32], offs: &[(u32, u32)], off: u32) -> u32 {
     match split_dyn(off) {
-        Some((k, rel)) => table[k as usize] as u32 + rel,
+        Some(k) => {
+            let (entry, rel) = offs[k as usize];
+            table[entry as usize] as u32 + rel
+        }
         None => off,
     }
 }
@@ -86,17 +80,26 @@ pub fn classify_slot(off: u32, wty: WTy, negate: crate::Neg, layout: &Layout) ->
         return Some(MetaKind::Column { col: 0, negate });
     }
     if off >= layout.real_off && off < layout.rparam_off {
-        return Some(MetaKind::Column { col: 1 + (off - layout.real_off) / 8, negate });
+        return Some(MetaKind::Column {
+            col: 1 + (off - layout.real_off) / 8,
+            negate,
+        });
     }
     if off >= layout.int_off && off < layout.iparam_off {
-        return Some(MetaKind::Column { col: layout.n_reals_row() + (off - layout.int_off) / 4, negate });
+        return Some(MetaKind::Column {
+            col: layout.n_reals_row() + (off - layout.int_off) / 4,
+            negate,
+        });
     }
     if off >= layout.bool_off && off < layout.bparam_off {
         let col = layout.n_reals_row() + layout.n_int_alg() + (off - layout.bool_off) / 4;
         return Some(MetaKind::Column { col, negate });
     }
     if off >= layout.str_off && off < layout.sparam_off {
-        return Some(MetaKind::Column { col: layout.str_col0() + (off - layout.str_off) / 4, negate });
+        return Some(MetaKind::Column {
+            col: layout.str_col0() + (off - layout.str_off) / 4,
+            negate,
+        });
     }
     let is_param = (off >= layout.rparam_off && off < layout.int_off)
         || (off >= layout.iparam_off && off < layout.bool_off)
@@ -117,7 +120,9 @@ impl SimMeta {
     /// Fix the sizes of a model with resizable arrays from its size parameters,
     /// `overrides` (`-override`) applied. A no-op for any other model.
     pub fn resolve_sizes(&mut self, overrides: &[(String, String)]) -> Result<(), String> {
-        let Some(params) = self.resize.as_ref().map(|r| &r.params) else { return Ok(()) };
+        let Some(params) = self.resize.as_ref().map(|r| &r.params) else {
+            return Ok(());
+        };
         let mut values: Vec<i64> = Vec::with_capacity(params.len());
         for p in params {
             let given = overrides.iter().rev().find(|(n, _)| *n == p.name);
@@ -128,7 +133,10 @@ impl SimMeta {
                 _ => p.start.eval(&values),
             };
             if v < 0 {
-                return Err(alloc::format!("The size parameter {} is {v}, an array size must not be negative", p.name));
+                return Err(alloc::format!(
+                    "The size parameter {} is {v}, an array size must not be negative",
+                    p.name
+                ));
             }
             values.push(v);
         }
@@ -152,11 +160,11 @@ impl SimMeta {
         r.table_values = r.table.iter().map(|s| s.eval(&values) as i32).collect();
         r.values = values;
         for p in &mut r.params {
-            p.off = resolve_off(&r.table_values, p.off);
+            p.off = resolve_off(&r.table_values, &r.offs, p.off);
         }
         for v in &mut self.vars {
             if let MetaKind::Param { off, wty, negate } = v.kind {
-                let abs = resolve_off(&r.table_values, off);
+                let abs = resolve_off(&r.table_values, &r.offs, off);
                 v.kind = classify_slot(abs, wty, negate, &layout).unwrap_or(MetaKind::Param { off: abs, wty, negate });
             }
         }
@@ -172,12 +180,15 @@ impl SimMeta {
             }
         }
         if let Some(p) = &r.jac_a {
-            self.jac_a = p.expand(&r.values).filter(|c| !c.is_empty()).map(|rows_by_col| crate::JacAInfo {
-                n: rows_by_col.len() as u32,
-                colors: crate::sym_sparsity::color_columns(&rows_by_col),
-                rows_by_col,
-                sym: None,
-            });
+            self.jac_a = p
+                .expand(&r.values)
+                .filter(|c| !c.is_empty())
+                .map(|rows_by_col| crate::JacAInfo {
+                    n: rows_by_col.len() as u32,
+                    colors: crate::sym_sparsity::color_columns(&rows_by_col),
+                    rows_by_col,
+                    sym: None,
+                });
         }
         self.layout = layout;
         self.resize = Some(r);
@@ -201,7 +212,11 @@ impl SimMeta {
     /// before `functionParameters`, whose loops they bound.
     pub fn size_param_writes(&self) -> Vec<(u32, i32)> {
         let Some(r) = &self.resize else { return Vec::new() };
-        r.params.iter().zip(&r.values).map(|(p, v)| (p.off, *v as i32)).collect()
+        r.params
+            .iter()
+            .zip(&r.values)
+            .map(|(p, v)| (p.off, *v as i32))
+            .collect()
     }
 }
 
@@ -230,6 +245,11 @@ pub(crate) fn put_resize(o: &mut Vec<u8>, r: &Option<Resize>) {
         s.encode(o);
     }
     put_szs(o, &r.table);
+    put_u32(o, r.offs.len() as u32);
+    for &(entry, rel) in &r.offs {
+        put_u32(o, entry);
+        put_u32(o, rel);
+    }
     for list in [&r.var_dims, &r.soti_dims] {
         put_u32(o, list.len() as u32);
         for d in list {
@@ -278,6 +298,10 @@ pub(crate) fn get_resize(b: &[u8], p: &mut usize) -> Result<Option<Resize>, &'st
     }
     let counts = counts_from(c);
     let table = szs(b, p)?;
+    let n = u32_(b, p)?;
+    let offs = (0..n)
+        .map(|_| Ok((u32_(b, p)?, u32_(b, p)?)))
+        .collect::<Result<Vec<_>, &'static str>>()?;
     let mut lists: [Vec<Vec<Sz>>; 2] = Default::default();
     for l in lists.iter_mut() {
         let n = u32_(b, p)?;
@@ -293,29 +317,109 @@ pub(crate) fn get_resize(b: &[u8], p: &mut usize) -> Result<Option<Resize>, &'st
         .to_string();
     *p += len;
     let scratch = Sz::decode(b, p)?;
-    Ok(Some(Resize { params, counts, table, var_dims, soti_dims, jac_a, var_filter, scratch, values: Vec::new(), table_values: Vec::new() }))
+    Ok(Some(Resize {
+        params,
+        counts,
+        table,
+        offs,
+        var_dims,
+        soti_dims,
+        jac_a,
+        var_filter,
+        scratch,
+        values: Vec::new(),
+        table_values: Vec::new(),
+    }))
 }
 
 const N_COUNTS: usize = 26;
 
 fn counts_fields(c: &LayoutCounts<Sz>) -> [&Sz; N_COUNTS] {
     [
-        &c.n_states, &c.n_real_alg, &c.n_real_param, &c.n_int_alg, &c.n_int_param, &c.n_bool_alg, &c.n_bool_param,
-        &c.n_str_alg, &c.n_str_param, &c.n_eobj, &c.n_samples, &c.n_zc, &c.n_rel, &c.n_stateset_f64,
-        &c.n_nlsjac_f64, &c.n_math, &c.n_sens, &c.n_dae_res, &c.n_dae_aux, &c.n_dae_alg, &c.n_base_clocks,
-        &c.n_sub_clocks, &c.n_linz, &c.n_opt_attr, &c.n_attr_log, &c.n_removed_init,
+        &c.n_states,
+        &c.n_real_alg,
+        &c.n_real_param,
+        &c.n_int_alg,
+        &c.n_int_param,
+        &c.n_bool_alg,
+        &c.n_bool_param,
+        &c.n_str_alg,
+        &c.n_str_param,
+        &c.n_eobj,
+        &c.n_samples,
+        &c.n_zc,
+        &c.n_rel,
+        &c.n_stateset_f64,
+        &c.n_nlsjac_f64,
+        &c.n_math,
+        &c.n_sens,
+        &c.n_dae_res,
+        &c.n_dae_aux,
+        &c.n_dae_alg,
+        &c.n_base_clocks,
+        &c.n_sub_clocks,
+        &c.n_linz,
+        &c.n_opt_attr,
+        &c.n_attr_log,
+        &c.n_removed_init,
     ]
 }
 
 fn counts_from(c: [Sz; N_COUNTS]) -> LayoutCounts<Sz> {
     let [
-        n_states, n_real_alg, n_real_param, n_int_alg, n_int_param, n_bool_alg, n_bool_param, n_str_alg,
-        n_str_param, n_eobj, n_samples, n_zc, n_rel, n_stateset_f64, n_nlsjac_f64, n_math, n_sens, n_dae_res,
-        n_dae_aux, n_dae_alg, n_base_clocks, n_sub_clocks, n_linz, n_opt_attr, n_attr_log, n_removed_init,
+        n_states,
+        n_real_alg,
+        n_real_param,
+        n_int_alg,
+        n_int_param,
+        n_bool_alg,
+        n_bool_param,
+        n_str_alg,
+        n_str_param,
+        n_eobj,
+        n_samples,
+        n_zc,
+        n_rel,
+        n_stateset_f64,
+        n_nlsjac_f64,
+        n_math,
+        n_sens,
+        n_dae_res,
+        n_dae_aux,
+        n_dae_alg,
+        n_base_clocks,
+        n_sub_clocks,
+        n_linz,
+        n_opt_attr,
+        n_attr_log,
+        n_removed_init,
     ] = c;
     LayoutCounts {
-        n_states, n_real_alg, n_real_param, n_int_alg, n_int_param, n_bool_alg, n_bool_param, n_str_alg,
-        n_str_param, n_eobj, n_samples, n_zc, n_rel, n_stateset_f64, n_nlsjac_f64, n_math, n_sens, n_dae_res,
-        n_dae_aux, n_dae_alg, n_base_clocks, n_sub_clocks, n_linz, n_opt_attr, n_attr_log, n_removed_init,
+        n_states,
+        n_real_alg,
+        n_real_param,
+        n_int_alg,
+        n_int_param,
+        n_bool_alg,
+        n_bool_param,
+        n_str_alg,
+        n_str_param,
+        n_eobj,
+        n_samples,
+        n_zc,
+        n_rel,
+        n_stateset_f64,
+        n_nlsjac_f64,
+        n_math,
+        n_sens,
+        n_dae_res,
+        n_dae_aux,
+        n_dae_alg,
+        n_base_clocks,
+        n_sub_clocks,
+        n_linz,
+        n_opt_attr,
+        n_attr_log,
+        n_removed_init,
     }
 }

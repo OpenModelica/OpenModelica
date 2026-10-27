@@ -41,6 +41,7 @@
 #include <QList>
 #include <QColor>
 #include <QApplication>
+#include <QStyleHints>
 
 class QRubberBand;
 
@@ -57,13 +58,22 @@ namespace OMPlot
 {
 /*!
  * \brief isDarkMode
- * True when the hosting application (OMEdit) runs in dark mode. Standalone
- * OMPlot has no such property and keeps its light, print-friendly colors.
+ * True when the hosting application runs in dark mode. OMEdit sets the
+ * "omeditDarkMode" application property (also when it forces light mode).
+ * Standalone OMPlot has no such property and follows the system color scheme.
  */
 inline bool isDarkMode()
 {
-  return qApp && qApp->property("omeditDarkMode").toBool();
+  if (qApp && qApp->property("omeditDarkMode").isValid()) {
+    return qApp->property("omeditDarkMode").toBool();
+  }
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+  return qApp && QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+#else
+  return false;
+#endif
 }
+
 class Plot : public QwtPlot
 {
   Q_OBJECT
@@ -101,6 +111,7 @@ public:
   PlotCurve* getPlotCurve(QString nameStructure);
   void addPlotCurve(PlotCurve *pCurve);
   void removeCurve(PlotCurve *pCurve);
+  QSize preferredSizeAdjustment() const;
   QColor getUniqueColor(int index, int total);
   void setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, double verticalAxisNumbersFontSize,
       double rightVerticalAxisTitleFontSize, double rightVerticalAxisNumbersFontSize, double horizontalAxisTitleFontSize,

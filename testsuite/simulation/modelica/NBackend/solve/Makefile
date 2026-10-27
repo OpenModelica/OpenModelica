@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 solveCallExp.mos \
+FunctionInverseSolve.mos \
 scalarFromArrayEquation.mos \
 scalarFromSingleElementArray.mos \
 solveCallTan.mos \

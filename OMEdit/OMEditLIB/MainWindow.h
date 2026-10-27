@@ -287,7 +287,7 @@ public:
   void createOMNotebookImageCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement, QString filePath);
   void createOMNotebookCodeCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement);
   TransformationsWidget* showTransformationsWidget(QString fileName, bool profiling, bool checkProfilingExists);
-  ClassDiagramWidget* showClassDiagramWidget(const QString &className);
+  ClassDiagramWidget* showClassDiagramWidget(const QString &className, bool crml = false);
   void findFileAndGoToLine(QString fileName, QString lineNumber);
   void printStandardOutAndErrorFilesMessages();
   static void PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char* title, const char* grid, const char* plotType, const char* logX,
