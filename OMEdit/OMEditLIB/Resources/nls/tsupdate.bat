@@ -1,1 +1,0 @@
-lupdate -noobsolete ../../OMEditLIB.pro
