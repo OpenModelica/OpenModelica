@@ -2351,6 +2351,7 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
       {
         success = NLS_SOLVED;
         /* take the solution */
+        vecCopy(homotopyData->n, homotopyData->x0, homotopyData->x);
         vecCopy(homotopyData->n, homotopyData->x, nlsData->nlsx);
         /* reset continous flag */
         data->simulationInfo->solveContinuous = 0;
