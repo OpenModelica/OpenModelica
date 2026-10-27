@@ -47,26 +47,45 @@ protected
   import BackendExtension = NFBackendExtension;
   import Causalize = NBCausalize;
   import ComponentRef = NFComponentRef;
-  import NBEquation.{Equation, EqData};
-  import StrongComponent = NBStrongComponent;
+  import NBEquation.{Equation, EqData, EquationPointers};
+  import Expression = NFExpression;
+  import NBMatching.Matching;
   import NFBackendExtension.Uncertainty;
+  import Type = NFType;
   import BVariable = NBVariable;
   import NBVariable.{VariablePointers, VarData};
   import Variable = NFVariable;
 
   // Util
+  import Error;
   import Flags;
   import List;
   import SCodeUtil;
   import StringUtil;
+  import UnorderedMap;
 
 public constant String UNDERLINE = "==========================================================================";
+
+public uniontype ExtractionSystem
+  "Index based view of the system as used by the extraction algorithm. Variables
+  and equations are numbered from 1, like orderedVars and orderedEqs in the old
+  backend."
+  record EXTRACTION_SYSTEM
+    VariablePointers vars;
+    EquationPointers eqns;
+    array<Pointer<Variable>> varArr;
+    array<Pointer<Equation>> eqnArr;
+    array<list<Integer>> adjacency  "eqn -> all variables occurring in it";
+    array<Integer> var_to_eqn;
+    array<Integer> eqn_to_var;
+  end EXTRACTION_SYSTEM;
+end ExtractionSystem;
 
 public function main extends Module.wrapper;
   input String fileNamePrefix;
 protected
-  list<Pointer<Variable>> knowns, boundaryConditions;
-  list<StrongComponent> comps, bindingComps;
+  ExtractionSystem sys;
+  list<Integer> knowns, boundaryConditions, bindingEquations, ebltEquations;
 algorithm
   print("\nModelInfo: " + fileNamePrefix + "\n" + UNDERLINE + "\n\n");
 
@@ -75,14 +94,21 @@ algorithm
       VarData varData;
       EqData eqData;
     case BackendDAE.MAIN(varData = varData as VarData.VAR_DATA_SIM(), eqData = eqData as EqData.EQ_DATA_SIM()) algorithm
-      (_, comps) := Causalize.simple(varData.unknowns, eqData.simulation, NBPartition.Kind.ODE);
-      bindingComps := list(c for c guard(isBindingComponent(c)) in comps);
-      dumpComponents(comps, "Standard BLT of the original model");
+      sys := createSystem(VariablePointers.toList(varData.unknowns), EquationPointers.toList(eqData.simulation));
+      bindingEquations := getBindingEquations(sys);
+      dumpOrderedVariables(sys);
+      dumpOrderedEquations(sys, bindingEquations);
+      dumpMatching(sys);
+      // the old backend lists the matching from the last variable to the first
+      dumpEquationList(sys, list(sys.var_to_eqn[i] for i in arrayLength(sys.var_to_eqn):-1:1), "Standard BLT of the original model");
 
-      (knowns, boundaryConditions, _, _) := getVariableCategories(VariablePointers.toList(varData.unknowns));
-      dumpVarList(knowns, "Variables of interest");
-      dumpVarList(boundaryConditions, "Boundary conditions");
-      dumpComponents(bindingComps, "Binding equations");
+      (knowns, boundaryConditions, _, _) := getVariableCategories(sys);
+      dumpVarList(sys, knowns, "Variables of interest");
+      dumpVarList(sys, boundaryConditions, "Boundary conditions");
+      dumpEquationList(sys, bindingEquations, "Binding equations");
+
+      ebltEquations := getEBLTEquations(sys, knowns, bindingEquations);
+      dumpEquationList(sys, ebltEquations, "E-BLT: equations that compute the variables of interest");
     then ();
   end match;
 end main;
@@ -92,33 +118,62 @@ public function isEnabled
                   or List.isMemberOnTrue("dataReconciliation", Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD), stringEq);
 end isEnabled;
 
+protected function createSystem
+  input list<Pointer<Variable>> var_lst;
+  input list<Pointer<Equation>> eqn_lst;
+  output ExtractionSystem sys;
+protected
+  VariablePointers vars = VariablePointers.fromList(var_lst);
+  EquationPointers eqns = EquationPointers.fromList(eqn_lst);
+  array<Pointer<Variable>> varArr = listArray(VariablePointers.toList(vars));
+  array<Pointer<Equation>> eqnArr = listArray(EquationPointers.toList(eqns));
+  array<list<Integer>> adjacency;
+  Matching matching;
+  list<ComponentRef> crefs;
+algorithm
+  // the extraction algorithm works on scalar equation and variable indices
+  if VariablePointers.scalarSize(vars) <> arrayLength(varArr) or EquationPointers.scalarSize(eqns) <> arrayLength(eqnArr) then
+    Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed, data reconciliation requires a scalarized system."});
+    fail();
+  end if;
+
+  (matching, _) := Causalize.simple(vars, eqns, NBPartition.Kind.ODE);
+
+  adjacency := arrayCreate(arrayLength(eqnArr), {});
+  for i in 1:arrayLength(eqnArr) loop
+    crefs := Equation.collectCrefs(Pointer.access(eqnArr[i]), function Equation.collectFromMap(check_map = vars.map));
+    adjacency[i] := list(UnorderedMap.getSafe(cr, vars.map, sourceInfo()) for cr in crefs);
+  end for;
+
+  sys := EXTRACTION_SYSTEM(vars, eqns, varArr, eqnArr, adjacency, matching.var_to_eqn, matching.eqn_to_var);
+end createSystem;
+
 protected function getVariableCategories
   "knowns: uncertain = Uncertainty.refine
    boundaryConditions: annotation(__OpenModelica_BoundaryCondition = true)
    exactEquationVars: all others
    unmeasured: uncertain = Uncertainty.propagate, can also be a boundary condition"
-  input list<Pointer<Variable>> vars;
-  output list<Pointer<Variable>> knowns = {};
-  output list<Pointer<Variable>> boundaryConditions = {};
-  output list<Pointer<Variable>> exactEquationVars = {};
-  output list<Pointer<Variable>> unmeasured = {};
+  input ExtractionSystem sys;
+  output list<Integer> knowns = {};
+  output list<Integer> boundaryConditions = {};
+  output list<Integer> exactEquationVars = {};
+  output list<Integer> unmeasured = {};
+protected
+  Pointer<Variable> var;
 algorithm
-  for var in vars loop
+  for i in arrayLength(sys.varArr):-1:1 loop
+    var := sys.varArr[i];
     if hasUncertainty(var, Uncertainty.REFINE) then
-      knowns := var :: knowns;
+      knowns := i :: knowns;
     elseif isBoundaryCondition(var) then
-      boundaryConditions := var :: boundaryConditions;
+      boundaryConditions := i :: boundaryConditions;
     else
-      exactEquationVars := var :: exactEquationVars;
+      exactEquationVars := i :: exactEquationVars;
     end if;
     if hasUncertainty(var, Uncertainty.PROPAGATE) then
-      unmeasured := var :: unmeasured;
+      unmeasured := i :: unmeasured;
     end if;
   end for;
-  knowns := listReverse(knowns);
-  boundaryConditions := listReverse(boundaryConditions);
-  exactEquationVars := listReverse(exactEquationVars);
-  unmeasured := listReverse(unmeasured);
 end getVariableCategories;
 
 protected function hasUncertainty
@@ -145,60 +200,148 @@ algorithm
   b := SCodeUtil.commentHasBooleanNamedAnnotation(var.comment, "__OpenModelica_BoundaryCondition");
 end isBoundaryCondition;
 
-protected function isBindingComponent
+protected function getBindingEquations
   "binding equations are created by NBBindings with the residual name $RES_BND_<n>"
-  input StrongComponent comp;
-  output Boolean b;
+  input ExtractionSystem sys;
+  output list<Integer> bindingEquations = {};
 algorithm
-  b := match comp
-    case StrongComponent.SINGLE_COMPONENT()
-    then StringUtil.startsWith(ComponentRef.firstName(Equation.getEqnName(comp.eqn)), NBVariable.RESIDUAL_STR + "_BND_");
-    else false;
-  end match;
-end isBindingComponent;
-
-protected function dumpComponents
-  input list<StrongComponent> comps;
-  input String heading;
-protected
-  Integer i = 1;
-algorithm
-  print(heading + ":(" + intString(listLength(comps)) + ")
-" + "============================================================
-
-");
-  for comp in comps loop
-    print(intString(i) + ": " + componentString(comp) + "
-");
-    i := i + 1;
+  for i in arrayLength(sys.eqnArr):-1:1 loop
+    if StringUtil.startsWith(ComponentRef.firstName(Equation.getEqnName(sys.eqnArr[i])), NBVariable.RESIDUAL_STR + "_BND_") then
+      bindingEquations := i :: bindingEquations;
+    end if;
   end for;
-  print("
-");
-end dumpComponents;
+end getBindingEquations;
 
-protected function componentString
-  input StrongComponent comp;
+protected function getEBLTEquations
+  "returns the equations matched to the variables of interest, without binding equations"
+  input ExtractionSystem sys;
+  input list<Integer> knowns;
+  input list<Integer> bindingEquations;
+  output list<Integer> ebltEquations = {};
+protected
+  Integer eqn;
+algorithm
+  for var in knowns loop
+    eqn := sys.var_to_eqn[var];
+    if eqn > 0 and not listMember(eqn, bindingEquations) then
+      ebltEquations := eqn :: ebltEquations;
+    end if;
+  end for;
+  ebltEquations := listReverse(ebltEquations);
+end getEBLTEquations;
+
+protected function varString
+  "same format as BackendDump in the old backend, e.g. Q1:VARIABLE(start = 2.0 uncertain=Uncertainty.refine)  type: Real"
+  input Pointer<Variable> var_ptr;
+  output String str;
+protected
+  Variable var = Pointer.access(var_ptr);
+  String kind, attr;
+algorithm
+  kind := match var.backendinfo.varKind
+    case BackendExtension.VariableKind.ALGEBRAIC() then "VARIABLE";
+    case BackendExtension.VariableKind.STATE()     then "STATE";
+    case BackendExtension.VariableKind.DISCRETE()  then "DISCRETE";
+    else BackendExtension.VariableKind.toString(var.backendinfo.varKind);
+  end match;
+  attr := stringDelimitList(list(s for s guard(not stringEmpty(s)) in {
+    BackendExtension.VariableAttributes.toString(var.backendinfo.attributes),
+    uncertaintyString(BackendExtension.VariableAttributes.getUncertainty(var.backendinfo.attributes))}), " ");
+  str := ComponentRef.toString(var.name) + ":" + kind + "(" + attr + ")  type: " + Type.toString(var.ty);
+end varString;
+
+protected function uncertaintyString
+  input Option<Uncertainty> uncertainty;
   output String str;
 algorithm
-  str := match comp
-    case StrongComponent.SINGLE_COMPONENT()
-    then ComponentRef.toString(BVariable.getVarName(comp.var)) + ": " + Equation.toString(Pointer.access(comp.eqn));
-    else StrongComponent.toString(comp);
+  str := match uncertainty
+    case SOME(Uncertainty.GIVEN)     then "uncertain=Uncertainty.given";
+    case SOME(Uncertainty.SOUGHT)    then "uncertain=Uncertainty.sought";
+    case SOME(Uncertainty.REFINE)    then "uncertain=Uncertainty.refine";
+    case SOME(Uncertainty.PROPAGATE) then "uncertain=Uncertainty.propagate";
+    else "";
   end match;
-end componentString;
+end uncertaintyString;
+
+protected function equationString
+  "lhs = rhs without the attributes of the new backend, like BackendDump.equationString"
+  input Pointer<Equation> eqn_ptr;
+  output String str;
+protected
+  Equation eqn = Pointer.access(eqn_ptr);
+algorithm
+  str := match (Equation.getLHS(eqn), Equation.getRHS(eqn))
+    local
+      Expression lhs, rhs;
+    case (SOME(lhs), SOME(rhs)) then Expression.toString(lhs) + " = " + Expression.toString(rhs);
+    else Equation.toString(eqn);
+  end match;
+end equationString;
+
+protected function dumpOrderedVariables
+  input ExtractionSystem sys;
+algorithm
+  print("\nOrderedVariables (" + intString(arrayLength(sys.varArr)) + ")\n========================================\n");
+  for i in 1:arrayLength(sys.varArr) loop
+    print(intString(i) + ": " + varString(sys.varArr[i]) + "\n");
+  end for;
+  print("\n");
+end dumpOrderedVariables;
+
+protected function dumpOrderedEquations
+  input ExtractionSystem sys;
+  input list<Integer> bindingEquations;
+protected
+  Integer n = arrayLength(sys.eqnArr);
+algorithm
+  print("\nOrderedEquation (" + intString(n) + ", " + intString(EquationPointers.scalarSize(sys.eqns)) + ")\n========================================\n");
+  for i in 1:n loop
+    print(intString(i) + "/" + intString(i) + " (" + intString(Equation.size(sys.eqnArr[i])) + "): " + equationString(sys.eqnArr[i])
+      + (if listMember(i, bindingEquations) then "   [binding]" else "   [dynamic]") + "\n");
+  end for;
+  print("\n");
+end dumpOrderedEquations;
+
+protected function dumpMatching
+  input ExtractionSystem sys;
+algorithm
+  print("Matching\n========================================\n" + intString(arrayLength(sys.var_to_eqn)) + " variables and equations\n");
+  for i in 1:arrayLength(sys.var_to_eqn) loop
+    print("var " + intString(i) + " is solved in eqn " + intString(sys.var_to_eqn[i]) + "\n");
+  end for;
+end dumpMatching;
+
+protected function dumpEquationList
+  "same format as dumpSetSVarsSolvedInfo in the old backend:
+  <solved var index>: <solved var>: (<eqn>/<eqn>): (<size>): <equation>"
+  input ExtractionSystem sys;
+  input list<Integer> eqns;
+  input String heading;
+protected
+  Integer var;
+algorithm
+  print("\n" + heading + ":(" + intString(listLength(eqns)) + ")\n============================================================\n");
+  for eqn in eqns loop
+    var := sys.eqn_to_var[eqn];
+    print("\n" + intString(var) + ": " + (if var > 0 then ComponentRef.toString(BVariable.getVarName(sys.varArr[var])) else "-")
+      + ": (" + intString(eqn) + "/" + intString(eqn) + "): (" + intString(Equation.size(sys.eqnArr[eqn])) + "): " + equationString(sys.eqnArr[eqn]));
+  end for;
+  print("\n\n");
+end dumpEquationList;
 
 protected function dumpVarList
-  input list<Pointer<Variable>> vars;
+  input ExtractionSystem sys;
+  input list<Integer> vars;
   input String heading;
 protected
   Integer i = 1;
 algorithm
-  print(heading + " (" + intString(listLength(vars)) + ")\n========================================\n");
+  print("\n" + heading + " (" + intString(listLength(vars)) + ")\n========================================\n");
   for var in vars loop
-    print(intString(i) + ": " + BVariable.pointerToString(var) + "\n");
+    print(intString(i) + ": " + varString(sys.varArr[var]) + "\n");
     i := i + 1;
   end for;
-  print("\n\n");
+  print("\n");
 end dumpVarList;
 
 annotation(__OpenModelica_Interface="nbackend");
