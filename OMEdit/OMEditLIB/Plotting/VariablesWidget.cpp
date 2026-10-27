@@ -1913,8 +1913,9 @@ void VariablesWidget::reSimulate(SimulationOptions simulationOptions, VariablesT
   simulationOptions.setReSimulate(true);
   if (pVariablesTreeItem) {
     MainWindow::instance()->getSimulationDialog()->removeInteractiveSimulation(simulationOptions.isInteractiveSimulation(), pVariablesTreeItem->getFileName(), false);
+    updateInitXmlFile(pVariablesTreeItem, simulationOptions);
     if (simulationOptions.getTargetLanguage().compare("wasm-jit") == 0) {
-      // wasm-jit has no _init.xml; it takes changes only via -override.
+      // wasm-jit does not read _init.xml (only the Variables Browser does); it takes changes via -override.
       QHash<QString, QHash<QString, QString> > changed;
       readVariablesAndUpdateXML(pVariablesTreeItem, simulationOptions.getFullResultFileName(), &changed);
       QStringList overrides;
@@ -1927,8 +1928,6 @@ void VariablesWidget::reSimulate(SimulationOptions simulationOptions, VariablesT
         // The setup dialog rebuilds the flags from its fields.
         simulationOptions.setAdditionalSimulationFlags(QStringList({simulationOptions.getAdditionalSimulationFlags(), overrideFlag}).join(" ").trimmed());
       }
-    } else {
-      updateInitXmlFile(pVariablesTreeItem, simulationOptions);
     }
   }
 
