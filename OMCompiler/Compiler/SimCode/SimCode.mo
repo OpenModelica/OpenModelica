@@ -478,6 +478,10 @@ uniontype SimEqSystem
     Integer index;
     list<Integer> call_order;
     list<SimEqSystem> single_calls;
+    Integer direction "0 for a fixed call order, otherwise call_order is a period with the iterator offsets";
+    list<Integer> offsets;
+    list<Integer> start_shifts "per single call: its first iteration is the start of its range plus this";
+    list<Integer> stop_shifts "per single call: its last iteration is the stop of its range minus this";
     DAE.ElementSource source;
     BackendDAE.EquationAttributes eqAttr;
   end SES_ENTWINED_ASSIGN;

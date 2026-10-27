@@ -1,0 +1,95 @@
+// name: entwinedOrderResizable
+// keywords: NewBackend entwined for-equation resizable
+// status: correct
+//
+// Entwined for-equations over resizable ranges are called in periods, in the
+// order of the iterations for every size, forward and backward.
+
+loadString("
+model entwinedForward
+  parameter Integer N = 3 annotation(__OpenModelica_resizable=true);
+  Real a[N], b[N];
+equation
+  a[1] = 0;
+  for i in 1:N loop
+    b[i] = a[i] + 1;
+  end for;
+  for i in 1:N-1 loop
+    b[i] = a[i + 1];
+  end for;
+end entwinedForward;
+
+model entwinedBackward
+  parameter Integer N = 3 annotation(__OpenModelica_resizable=true);
+  Real a[N], b[N];
+equation
+  a[N] = 0;
+  for i in 1:N loop
+    b[i] = a[i] + 1;
+  end for;
+  for i in 2:N loop
+    b[i] = a[i - 1];
+  end for;
+end entwinedBackward;
+"); getErrorString();
+setCommandLineOptions("--newBackend --resizableArrays"); getErrorString();
+
+simulate(entwinedForward, stopTime = 1); getErrorString();
+val(a[3], 1);
+val(b[3], 1);
+simulate(entwinedForward, stopTime = 1, simflags = "-override=N=6"); getErrorString();
+val(a[6], 1);
+val(b[6], 1);
+
+simulate(entwinedBackward, stopTime = 1); getErrorString();
+val(a[1], 1);
+val(b[1], 1);
+simulate(entwinedBackward, stopTime = 1, simflags = "-override=N=6"); getErrorString();
+val(a[1], 1);
+val(b[1], 1);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "entwinedForward_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'entwinedForward', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// 3.0
+// record SimulationResult
+//     resultFile = "entwinedForward_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'entwinedForward', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=N=6'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 5.0
+// 6.0
+// record SimulationResult
+//     resultFile = "entwinedBackward_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'entwinedBackward', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// 3.0
+// record SimulationResult
+//     resultFile = "entwinedBackward_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'entwinedBackward', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=N=6'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 5.0
+// 6.0
+// endResult

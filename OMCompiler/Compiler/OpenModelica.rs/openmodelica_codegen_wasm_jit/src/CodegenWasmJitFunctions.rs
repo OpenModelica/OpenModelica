@@ -249,6 +249,7 @@ pub(crate) mod shared_lits;
 mod generic_calls;
 pub(crate) use generic_calls::{
     emit_entwined_assign, emit_generic_assign, emit_index_list_loop, emit_resizable_assign,
+    emit_resizable_entwined_assign,
 };
 
 #[path = "CodegenWasmJitFunctions/sim_systems.rs"]

@@ -75,6 +75,7 @@ protected
   import NBVariable.{VariablePointer, VariablePointers};
 
   // Util imports
+  import Flags;
   import Pointer;
   import Slice = NBSlice;
   import StringUtil;
@@ -153,7 +154,140 @@ public
     RESIZABLE_COMPONENT, SINGLE_COMPONENT or MULTI_COMPONENT."
     list<StrongComponent> entwined_slices                     "one entry per distinct equation (for-loop or scalar)";
     list<tuple<Pointer<Equation>, Integer>> entwined_tpl_lst  "equation with scalar idx (0 based) - fallback scalarization";
+    Option<ResizableOrder> resizable_order                    "the call order for every size of resizable arrays";
   end ENTWINED_COMPONENT;
+
+  uniontype ResizableOrder
+    "the calls of an entwined component as periods k: every slice is called with the iterator
+    value i = direction * k + offset, in the order of the period and only if i is within the
+    bounds of the slice"
+    record RESIZABLE_ORDER
+      Integer direction                       "the step of the iterators from one period to the next";
+      list<tuple<Integer, Integer>> period    "index of the slice (0 based) and offset of each call";
+      list<tuple<Integer, Integer>> bounds    "distance of the first and last iteration of each slice to the start and stop of its range";
+    end RESIZABLE_ORDER;
+
+    function toString
+      input ResizableOrder order;
+      output String str = "direction = " + intString(order.direction)
+        + ", period = " + pairsString(order.period) + ", bounds = " + pairsString(order.bounds);
+    end toString;
+
+    function pairsString
+      input list<tuple<Integer, Integer>> pairs;
+      output String str = "{" + stringDelimitList(list("(" + intString(Util.tuple21(c)) + ", " + intString(Util.tuple22(c)) + ")" for c in pairs), ", ") + "}";
+    end pairsString;
+
+    function fromCalls
+      "the order of the scalar calls as periods, if every slice is a for-equation with a single
+      iterator over a resizable range with step 1 and the calls are periodic in the iterators"
+      input list<Integer> eqn_indices "scalar equations in call order";
+      input list<StrongComponent> slices;
+      input list<Integer> slice_eqns  "the equation of each slice";
+      input Mapping mapping;
+      output Option<ResizableOrder> order = NONE();
+    protected
+      Integer n = listLength(slices);
+      UnorderedMap<Integer, Integer> pos_map = UnorderedMap.new<Integer>(Util.id, intEq);
+      array<Integer> starts = arrayCreate(n, 0), stops = arrayCreate(n, 0), offsets = arrayCreate(n, 0);
+      array<Integer> first_i = arrayCreate(n, 0), last = arrayCreate(n, 0), rank = arrayCreate(n, -1);
+      array<Boolean> seen = arrayCreate(n, false), called = arrayCreate(n, false);
+      list<tuple<Integer, Integer, Integer>> calls = {} "period, slice and iterator value";
+      list<Integer> current = {}, longest = {};
+      Integer pos = 0, k = 0, p, i, first, dir = 0, stride, prev_k = -1, prev_rank = -1;
+      Option<tuple<Integer, Integer>> o_range;
+    algorithm
+      for tpl in List.zip(slices, slice_eqns) loop
+        o_range := match Util.tuple21(tpl)
+          local
+            StrongComponent slice;
+          case slice as RESIZABLE_COMPONENT() then range(slice.eqn);
+          case slice as SLICED_COMPONENT()    then range(slice.eqn);
+          case slice as GENERIC_COMPONENT()   then range(slice.eqn);
+          else NONE();
+        end match;
+        if isNone(o_range) then return; end if;
+        SOME((first, i)) := o_range;
+        starts[pos + 1] := first;
+        stops[pos + 1] := i;
+        UnorderedMap.add(Util.tuple22(tpl), pos, pos_map);
+        pos := pos + 1;
+      end for;
+
+      // a new period starts with the second call of a slice
+      for idx in eqn_indices loop
+        p := UnorderedMap.getSafe(mapping.eqn_StA[idx], pos_map, sourceInfo());
+        if seen[p + 1] then
+          if listLength(current) > listLength(longest) then longest := listReverse(current); end if;
+          for j in current loop seen[j + 1] := false; end for;
+          current := {};
+          k := k + 1;
+        end if;
+        seen[p + 1] := true;
+        current := p :: current;
+        (first, _) := mapping.eqn_AtS[mapping.eqn_StA[idx]];
+        i := starts[p + 1] + idx - first;
+        if called[p + 1] then
+          if dir == 0 then dir := i - last[p + 1]; end if;
+          if dir == 0 or i - last[p + 1] <> dir then return; end if;
+        else
+          first_i[p + 1] := i;
+        end if;
+        called[p + 1] := true;
+        last[p + 1] := i;
+        calls := (k, p, i) :: calls;
+      end for;
+      if listLength(current) > listLength(longest) then longest := listReverse(current); end if;
+      if listLength(longest) <> n then return; end if;
+      if dir == 0 then dir := 1; end if;
+
+      // every period follows the order of a full one and the offsets are constant
+      pos := 0;
+      for j in longest loop rank[j + 1] := pos; pos := pos + 1; end for;
+      seen := arrayCreate(n, false);
+      for c in listReverse(calls) loop
+        (k, p, i) := c;
+        if k == prev_k and rank[p + 1] <= prev_rank then return; end if;
+        (prev_k, prev_rank) := (k, rank[p + 1]);
+        if not seen[p + 1] then
+          offsets[p + 1] := i - dir * k;
+          seen[p + 1] := true;
+        elseif offsets[p + 1] <> i - dir * k then
+          return;
+        end if;
+      end for;
+
+      // iterations closer to a bound than the stride are kept apart by the offset
+      stride := intAbs(dir);
+      order := SOME(RESIZABLE_ORDER(dir, list((j, offsets[j + 1]) for j in longest), list(
+        (cutBelow(min(first_i[j], last[j]) - starts[j], stride), cutBelow(stops[j] - max(first_i[j], last[j]), stride)) for j in 1:n)));
+    end fromCalls;
+
+    function cutBelow
+      input Integer d;
+      input Integer stride;
+      output Integer r = if d < stride then 0 else d;
+    end cutBelow;
+
+    function range
+      "the start and stop (at the analysis sizes) of the only iterator of a for-equation over a
+      resizable range with step 1"
+      input Slice<EquationPointer> slice;
+      output Option<tuple<Integer, Integer>> r = NONE();
+    protected
+      Equation eqn = Pointer.access(Slice.getT(slice));
+      Iterator iter;
+    algorithm
+      r := match eqn
+        local
+          Expression range;
+        case Equation.FOR_EQUATION(iter = iter as Iterator.SINGLE(range = range as Expression.RANGE(start = Expression.INTEGER()), map = NONE()))
+          guard(Iterator.isResizable(iter) and (match range.step case NONE() then true; case SOME(Expression.INTEGER(1)) then true; else false; end match))
+          then SOME((Expression.integerValue(range.start), Expression.integerValue(range.start) + Iterator.size(iter, true) - 1));
+        else NONE();
+      end match;
+    end range;
+  end ResizableOrder;
 
   record ALGEBRAIC_LOOP
     "component for equations that have to be solved as a system."
@@ -217,6 +351,9 @@ public
       case ENTWINED_COMPONENT() algorithm
         str := StringUtil.headline_3("BLOCK" + indexStr + ": Entwined Component (status = Solve.EXPLICIT, size = " + intString(s) + ")");
         str := str + "call order: " + List.toString(list(Equation.getEqnName(Util.tuple21(e)) for e in comp.entwined_tpl_lst), ComponentRef.toString, List.Style.FLAT_CURLY_SHORT) + "\n";
+        if isSome(comp.resizable_order) then
+          str := str + "resizable order: " + ResizableOrder.toString(Util.getOption(comp.resizable_order)) + "\n";
+        end if;
         str := str + List.toString(comp.entwined_slices, function toString(index = -2), List.Style.NONE);
       then str;
 
@@ -457,6 +594,8 @@ public
     Integer eqn_arr_idx, var_arr_idx;
     Slice.IntLst scal_indices;
     list<StrongComponent> entwined_slices = {};
+    list<Integer> slice_eqns = {};
+    Option<ResizableOrder> resizable_order = NONE();
     list<tuple<Pointer<Equation>, Integer>> entwined_tpl_lst;
   algorithm
     // collect individual buckets again
@@ -484,12 +623,22 @@ public
       else
         entwined_slices := createPseudoScalar(scal_indices, eqn_to_var, mapping, vars, eqns) :: entwined_slices;
       end if;
+      slice_eqns := eqn_arr_idx :: slice_eqns;
     end for;
 
     // create scalar list for fallback
     entwined_tpl_lst := list((EquationPointers.getEqnAt(eqns, mapping.eqn_StA[idx]), idx) for idx in eqn_indices);
 
-    entwined := ENTWINED_COMPONENT(entwined_slices, entwined_tpl_lst);
+    if Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then
+      resizable_order := ResizableOrder.fromCalls(eqn_indices, entwined_slices, slice_eqns, mapping);
+      // the order of the scalar calls only holds for the analysis sizes
+      if isNone(resizable_order) and List.any(list(EquationPointers.getEqnAt(eqns, e) for e in slice_eqns), Equation.isResizable) then
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because the order of the entwined equations could not be resolved for every size of the resizable arrays:\n"
+          + stringDelimitList(list(Equation.pointerToString(EquationPointers.getEqnAt(eqns, e), "\t") for e in slice_eqns), "\n")});
+        fail();
+      end if;
+    end if;
+    entwined := ENTWINED_COMPONENT(entwined_slices, entwined_tpl_lst, resizable_order);
   end createPseudoEntwined;
 
   function createAlias
