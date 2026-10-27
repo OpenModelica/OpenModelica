@@ -12,7 +12,6 @@ equation
   e1 = E.a;
   E.b = e2;
   E.a = E.a;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EnumEquation1;
 
 // Result:
@@ -20,8 +19,8 @@ end EnumEquation1;
 //   enumeration(a, b, c) e1;
 //   enumeration(a, b, c) e2;
 // equation
-//   e1 = EnumEquation1.E.a;
-//   e2 = EnumEquation1.E.b;
-//   EnumEquation1.E.a = EnumEquation1.E.a;
+//   e1 = E.a;
+//   E.b = e2;
+//   E.a = E.a;
 // end EnumEquation1;
 // endResult

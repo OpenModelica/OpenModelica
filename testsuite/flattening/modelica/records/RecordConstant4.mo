@@ -21,34 +21,9 @@ end P;
 model RecordConstant4
   constant P.R CR = P.cr;
   constant P.R CR2[2] = P.cr2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RecordConstant4;
 
 // Result:
-// function P.R "Automatically generated record constructor for P.R"
-//   input Real r;
-//   input Real s = 1.0;
-//   input Real t;
-//   input Real u;
-//   output R res;
-// end P.R;
-//
-// function P.R$cr "Automatically generated record constructor for P.R$cr"
-//   input Real r;
-//   input Real s = 1.0;
-//   input Real t;
-//   input Real u;
-//   output R$cr res;
-// end P.R$cr;
-//
-// function P.R$cr2 "Automatically generated record constructor for P.R$cr2"
-//   input Real r;
-//   input Real s = 1.0;
-//   input Real t;
-//   input Real u;
-//   output R$cr2 res;
-// end P.R$cr2;
-//
 // class RecordConstant4
 //   constant Real CR.r = 2.0;
 //   constant Real CR.s = 1.0;

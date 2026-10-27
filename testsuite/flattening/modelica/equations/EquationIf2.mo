@@ -7,7 +7,7 @@
 // number of equations if the condition
 // is a parameter-expression.
 
-class EquationIf2
+model EquationIf2
   parameter Boolean b = false;
   Real x;
 equation
@@ -16,12 +16,11 @@ equation
   else
     x = 2.0;
   end if;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EquationIf2;
 
 // Result:
 // class EquationIf2
-//   parameter Boolean b = false;
+//   final parameter Boolean b = false;
 //   Real x;
 // equation
 //   x = 2.0;
