@@ -260,6 +260,12 @@ pub struct Layout<T = u32> {
     pub stored_rel_off: T,
     /// `relationsPre` (one i32 per relation).
     pub relations_pre_off: T,
+    /// `relationsSettled` (one i32 per relation).
+    pub rel_settled_off: T,
+    /// `relationsOutside` (one i32 per relation).
+    pub rel_outside_off: T,
+    /// `markRelationsOutside` (i32).
+    pub mark_rel_outside_off: T,
     /// Base of the state-set Jacobian scratch region (f64).
     pub stateset_off: T,
     /// Base of the nonlinear-system analytic-Jacobian scratch region (f64): the
@@ -633,6 +639,9 @@ impl<T: sizes::LayoutNum> Layout<T> {
             rel_fresh_off: z.clone(),
             stored_rel_off: z.clone(),
             relations_pre_off: z.clone(),
+            rel_settled_off: z.clone(),
+            rel_outside_off: z.clone(),
+            mark_rel_outside_off: z.clone(),
             stateset_off: z.clone(),
             nls_jac_off: z.clone(),
             n_math: z.clone(),
@@ -723,7 +732,10 @@ impl<T: sizes::LayoutNum> Layout<T> {
         self.rel_fresh_off = self.relations_off.clone() + c.n_rel.clone().times(4);
         self.stored_rel_off = self.rel_fresh_off.clone() + lit(4);
         self.relations_pre_off = self.stored_rel_off.clone() + c.n_rel.clone().times(4);
-        self.stateset_off = (self.relations_pre_off.clone() + c.n_rel.clone().times(4)).align8();
+        self.rel_settled_off = self.relations_pre_off.clone() + c.n_rel.clone().times(4);
+        self.rel_outside_off = self.rel_settled_off.clone() + c.n_rel.clone().times(4);
+        self.mark_rel_outside_off = self.rel_outside_off.clone() + c.n_rel.clone().times(4);
+        self.stateset_off = (self.mark_rel_outside_off.clone() + lit(4)).align8();
         self.nls_jac_off = self.stateset_off.clone() + c.n_stateset_f64.clone().times(8);
         self.mathevents_off = self.nls_jac_off.clone() + c.n_nlsjac_f64.clone().times(8);
         let n_math_slots = c.n_math.clone().plus_if_positive(2);
@@ -830,6 +842,9 @@ impl<T> Layout<T> {
             rel_fresh_off: off(&self.rel_fresh_off)?,
             stored_rel_off: off(&self.stored_rel_off)?,
             relations_pre_off: off(&self.relations_pre_off)?,
+            rel_settled_off: off(&self.rel_settled_off)?,
+            rel_outside_off: off(&self.rel_outside_off)?,
+            mark_rel_outside_off: off(&self.mark_rel_outside_off)?,
             stateset_off: off(&self.stateset_off)?,
             nls_jac_off: off(&self.nls_jac_off)?,
             n_math: count(&self.n_math)?,
@@ -2235,6 +2250,9 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
         l.rel_fresh_off,
         l.stored_rel_off,
         l.relations_pre_off,
+        l.rel_settled_off,
+        l.rel_outside_off,
+        l.mark_rel_outside_off,
         l.stateset_off,
         l.nls_jac_off,
         l.n_math,
@@ -2814,6 +2832,9 @@ impl<'a> Reader<'a> {
             rel_fresh_off: self.u32()?,
             stored_rel_off: self.u32()?,
             relations_pre_off: self.u32()?,
+            rel_settled_off: self.u32()?,
+            rel_outside_off: self.u32()?,
+            mark_rel_outside_off: self.u32()?,
             stateset_off: self.u32()?,
             nls_jac_off: self.u32()?,
             n_math: self.u32()?,
