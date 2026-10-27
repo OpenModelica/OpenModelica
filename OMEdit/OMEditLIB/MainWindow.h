@@ -420,6 +420,8 @@ private:
   QAction *mpCascadeWindowsAction;
   QAction *mpTileWindowsHorizontallyAction;
   QAction *mpTileWindowsVerticallyAction;
+  QAction *mpTileWindowsMatrixAction;
+  QAction *mpEquateAndTileWindowsMatrixAction;
   QAction *mpToggleTabOrSubWindowView;
   // Simulation Menu
   QAction *mpCheckModelAction;
@@ -583,6 +585,8 @@ public slots:
   void cascadeSubWindows();
   void tileSubWindowsHorizontally();
   void tileSubWindowsVertically();
+  void tileSubWindowsMatrix();
+  void equateAndTileSubWindowsMatrix();
   void toggleTabOrSubWindowView();
   void checkModel();
   void checkAllModels();
@@ -677,6 +681,8 @@ private:
   void switchToAlgorithmicDebuggingPerspective();
   void closeAllWindowsButThis(QMdiArea *pMdiArea);
   void tileSubWindows(QMdiArea *pMdiArea, bool horizontally);
+  void tileSubWindowsMatrix(QMdiArea *pMdiArea, bool resize);
+  void equateSubWindowSizes(QMdiArea *pMdiArea);
   void toolBarVisibilityChanged(const QString &toolbar, bool visible);
   MessageTab* createMessageTab(const QString &name, bool fixedTab);
   void reSimulate(bool showSetup);
