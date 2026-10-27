@@ -6972,7 +6972,7 @@ case rel as RELATION(__) then
             let tmp2 = tempDecl("modelica_real", &varDecls, &varFrees)
             let nominalTmp = daeExpNominalTmp(tmp1, tmp2, rel.exp1, rel.exp2, context, &preExp, &varDecls, &varFrees, &auxFunction)
             let &preExp += '<%nominalTmp%><%\n%>'
-            let &preExp += '<%res%> = <%rel_f%>ZC(<%e1%>, <%e2%>, <%tmp1%>, <%tmp2%>, data->simulationInfo->storedRelations[<%rel.index%>]);<%\n%>'
+            let &preExp += 'relationhysteresisZC(data, &<%res%>, <%e1%>, <%e2%>, <%tmp1%>, <%tmp2%>, <%rel.index%>, <%rel_f%>, <%rel_f%>ZC);<%\n%>'
             res
           else
             let &preExp += '<%res%> = <%rel_f%>(<%e1%>,<%e2%>);<%\n%>'
@@ -6984,7 +6984,7 @@ case rel as RELATION(__) then
             let tmp2 = tempDecl("modelica_real", &varDecls, &varFrees)
             let nominalTmp = daeExpNominalTmp(tmp1, tmp2, rel.exp1, rel.exp2, context, &preExp, &varDecls, &varFrees, &auxFunction)
             let &preExp += '<%nominalTmp%><%\n%>'
-            let &preExp += '<%res%> = <%rel_f%>ZC(<%e1%>, <%e2%>, <%tmp1%>, <%tmp2%>, data->simulationInfo->storedRelations[<%rel.index%> + (<%iterator%> - <%i%>)/<%j%>]);<%\n%>'
+            let &preExp += 'relationhysteresisZC(data, &<%res%>, <%e1%>, <%e2%>, <%tmp1%>, <%tmp2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>, <%rel_f%>, <%rel_f%>ZC);<%\n%>'
             res
           else
             let &preExp += '<%res%> = <%rel_f%>(<%e1%>,<%e2%>);<%\n%>'

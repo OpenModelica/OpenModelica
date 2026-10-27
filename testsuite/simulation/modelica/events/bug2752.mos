@@ -65,15 +65,15 @@ val(y[3], 4.0);
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // 4.0
+// 2.0
+// 6.0
+// 3.0
+// 8.0
 // 4.0
+// 4.0
+// 2.0
 // 6.0
-// 6.0
-// 8.0
+// 3.0
 // 8.0
 // 4.0
-// 4.0
-// 6.0
-// 6.0
-// 8.0
-// 8.0
 // endResult
