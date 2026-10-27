@@ -1,0 +1,84 @@
+// name:     RelationEqualOperands
+// keywords: events relations hysteresis
+// status: correct
+// teardown_command: rm -rf RelationEqualOperands_* output.log
+//
+// Relations whose operands become exactly equal switch as the operator says.
+//
+
+loadString("
+package RelationEqualOperands
+  model Touch
+    Real x = if time < 0.5 then 1 else 1 - 4*(time - 0.5);
+    Real y = smooth(0, noEvent(if x > 0 then x else 0));
+    Boolean gt = y > 0;
+    Boolean ge = y >= 0;
+    Boolean lt = y < 0;
+    Boolean le = y <= 0;
+  end Touch;
+
+  model JumpDown
+    Real u = time;
+    Real en = if time < 2 then 1 else 0;
+    discrete Real hold(start = 0, fixed = true);
+    Real y;
+  equation
+    when en <= 0 then
+      hold = u;
+    end when;
+    y = if en > 0 then u else hold;
+  end JumpDown;
+
+  model JumpUp
+    Real en = if time < 2 then -1 else 0;
+    Boolean ge = en >= 0;
+    Boolean gt = en > 0;
+    Integer n(start = 0, fixed = true);
+  equation
+    when ge then
+      n = pre(n) + 1;
+    end when;
+  end JumpUp;
+end RelationEqualOperands;
+"); getErrorString();
+
+simulate(RelationEqualOperands.Touch, stopTime = 1.0, fileNamePrefix = "RelationEqualOperands_Touch"); getErrorString();
+{val(gt, 0.74), val(gt, 0.76), val(ge, 0.76), val(lt, 0.76), val(le, 0.74), val(le, 0.76)};
+
+simulate(RelationEqualOperands.JumpDown, stopTime = 4.0, fileNamePrefix = "RelationEqualOperands_JumpDown"); getErrorString();
+{val(hold, 1.9), val(hold, 2.1), val(y, 3.0)};
+
+simulate(RelationEqualOperands.JumpUp, stopTime = 4.0, fileNamePrefix = "RelationEqualOperands_JumpUp"); getErrorString();
+{val(ge, 1.9), val(ge, 2.1), val(gt, 2.1), val(n, 3.0)};
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "RelationEqualOperands_Touch_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'RelationEqualOperands_Touch', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {1.0, 0.0, 1.0, 0.0, 0.0, 1.0}
+// record SimulationResult
+//     resultFile = "RelationEqualOperands_JumpDown_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 4.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'RelationEqualOperands_JumpDown', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {0.0, 2.0, 2.0}
+// record SimulationResult
+//     resultFile = "RelationEqualOperands_JumpUp_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 4.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'RelationEqualOperands_JumpUp', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {0.0, 1.0, 0.0, 1.0}
+// endResult
