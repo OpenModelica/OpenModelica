@@ -63,6 +63,7 @@ protected
   import SCodeUtil;
   import StringUtil;
   import UnorderedMap;
+  import UnorderedSet;
 
 public constant String UNDERLINE = "==========================================================================";
 
@@ -88,6 +89,8 @@ protected
   list<Integer> knowns, boundaryConditions, bindingEquations, ebltEquations;
 algorithm
   print("\nModelInfo: " + fileNamePrefix + "\n" + UNDERLINE + "\n\n");
+
+  bdae := setBoundaryConditionEquationsAndVars(bdae);
 
   () := match bdae
     local
@@ -117,6 +120,46 @@ public function isEnabled
   output Boolean b = List.isMemberOnTrue("dataReconciliation", Flags.getConfigStringList(Flags.PRE_OPT_MODULES), stringEq)
                   or List.isMemberOnTrue("dataReconciliation", Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD), stringEq);
 end isEnabled;
+
+protected function setBoundaryConditionEquationsAndVars
+  "Real parameters that are boundary conditions or variables of interest, e.g.
+     parameter Real x = 1 annotation(__OpenModelica_BoundaryCondition = true);
+   become algebraic variables with their binding as binding equation."
+  input output BackendDAE bdae;
+protected
+  list<Pointer<Variable>> bc_vars = {};
+  list<Pointer<Equation>> bc_eqns = {};
+  UnorderedSet<Pointer<Variable>> new_iters = UnorderedSet.new(BVariable.hash, BVariable.equalName);
+  Variable var;
+  Type ty;
+algorithm
+  bdae := match bdae
+    local
+      VarData varData;
+      EqData eqData;
+    case BackendDAE.MAIN(varData = varData as VarData.VAR_DATA_SIM(), eqData = eqData as EqData.EQ_DATA_SIM()) algorithm
+      for var_ptr in VariablePointers.toList(varData.parameters) loop
+        var := Pointer.access(var_ptr);
+        ty := Type.arrayElementType(var.ty);
+        if Type.isReal(ty) and (isBoundaryCondition(var_ptr) or hasUncertainty(var_ptr, Uncertainty.REFINE) or hasUncertainty(var_ptr, Uncertainty.PROPAGATE)) then
+          // the kind has to be set first, it decides the kind of the binding equation
+          BVariable.setVarKind(var_ptr, BackendExtension.VariableKind.ALGEBRAIC());
+          bc_eqns := Equation.generateBindingEquation(var_ptr, eqData.uniqueIndex, false, new_iters) :: bc_eqns;
+          bc_vars := var_ptr :: bc_vars;
+        elseif (Type.isInteger(ty) or Type.isBoolean(ty)) and isBoundaryCondition(var_ptr) then
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + ": Boundary Condition cannot be set on Integer or Boolean parameters: "
+            + ComponentRef.toString(var.name) + " must be Real, The extraction algorithm will fail"});
+          fail();
+        end if;
+      end for;
+
+      bc_vars := listReverse(bc_vars);
+      varData.parameters := VariablePointers.removeList(bc_vars, varData.parameters);
+      bdae.varData := VarData.addTypedList(varData, bc_vars, VarData.VarType.ALGEBRAIC);
+      bdae.eqData := EqData.addTypedList(eqData, listReverse(bc_eqns), EqData.EqType.CONTINUOUS, false);
+    then bdae;
+  end match;
+end setBoundaryConditionEquationsAndVars;
 
 protected function createSystem
   input list<Pointer<Variable>> var_lst;
