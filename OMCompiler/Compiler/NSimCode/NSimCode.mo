@@ -472,18 +472,20 @@ public
             //jacobians := jacA :: jacB :: jacC :: jacD :: jacF :: jacH :: jacAdjoint :: jacobians;
             jacobians := listReverse(jacR0 :: jacMrf :: jacLfg :: jacAdjoint :: jacH :: jacF :: jacD :: jacC :: jacB :: jacA :: jacobians);
 
-            for jac in jacobians loop
-              if isSome(jac.jac_map) then
-                vars := SimVars.addSeedAndJacobianVars(vars, UnorderedMap.toList(Util.getOption(jac.jac_map)));
-              end if;
-            end for;
-
             // jacobian blocks only from simulation jacobians
             jac_blocks := SimJacobian.getJacobiansBlocks({jacA, jacB, jacC, jacD, jacF, jacH, jacAdjoint, jacLfg, jacMrf, jacR0});
             // (jac_blocks, simCodeIndices) := SimStrongComponent.Block.fixIndices(jac_blocks, {}, simCodeIndices);
 
-            // TODO: these should be collected prior, and are the linear systems of Jacobian (inner linear to compute pDers)
-            // (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := SimStrongComponent.Block.collectAlgebraicLoopsSingle(jac_blocks, linearLoops, nonlinearLoops, jacobians, simCodeIndices, simcode_map);
+            (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := SimStrongComponent.Block.collectAlgebraicLoopsSingle(jac_blocks, linearLoops, nonlinearLoops, jacobians, simCodeIndices, simcode_map);
+
+            for jac in jacobians loop
+              if isSome(jac.jac_map) then
+                vars := SimVars.addSeedAndJacobianVars(vars, UnorderedMap.toList(Util.getOption(jac.jac_map)));
+                for var in UnorderedMap.valueList(Util.getOption(jac.jac_map)) loop
+                  UnorderedMap.tryAdd(var.name, var, simcode_map);
+                end for;
+              end if;
+            end for;
 
             // generate the generic loop calls and replace literal expressions
             generic_loop_calls  := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(simCodeIndices.generic_call_map));

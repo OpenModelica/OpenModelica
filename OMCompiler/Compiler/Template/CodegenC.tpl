@@ -2743,20 +2743,18 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
           let &auxFunction = buffer ""
           let &tmp = buffer ""
           let xlocs = (ls.vars |> var as SIMVAR() hasindex i0 => '<%cref(name, &sub)%> = xloc[<%i0%>];' ;separator="\n")
+          let jacobianName = match ls.vars case SIMVAR(matrixName=SOME(name))::_ then name else ""
           let prebody = (match ls.partOfJac
             case true then
               (ls.residual |> eq2 =>
-                functionExtraResidualsPreBodyJacobian(eq2, &tmp, modelNamePrefix)
+                functionExtraResidualsPreBodyJacobian(eq2, &tmp, modelNamePrefix, jacobianName)
               ;separator="\n")
             case false then
               (ls.residual |> eq2 =>
                 functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
               ;separator="\n")
             end match)
-          let body = (ls.residual |> eq2 hasindex i0 => match eq2
-            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes, varFreesRes, auxFunction, index, res_index)
-            case SES_FOR_RESIDUAL(__) then "case 1"
-          ;separator="\n")
+          let body = systemResiduals(ls.residual, "", &varDeclsRes, &varFreesRes, &auxFunction)
           let eqnbody =
           <<
           <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%ls.index%>).profileBlockIndex,1);' %>
@@ -2776,7 +2774,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
             <% if ls.partOfJac then
               'JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parentJacobian;'
             %>
-            JACOBIAN* jacobian = NULL;
+            JACOBIAN* jacobian = <%if ls.partOfJac then "parentJacobian" else "NULL"%>;
             <%varDeclsRes%>
             <%equation_withProfile(ls.index, eqnbody)%>
             _return: OMC_LABEL_UNUSED ;
@@ -3179,10 +3177,12 @@ template functionExtraResidualsPreBody(SimEqSystem eq, Text &eqs, String modelNa
   end match
 end functionExtraResidualsPreBody;
 
-template functionExtraResidualsPreBodyJacobian(SimEqSystem eq, Text &eqs, String modelNamePrefixStr)
+template functionExtraResidualsPreBodyJacobian(SimEqSystem eq, Text &eqs, String modelNamePrefixStr, String jacobianName)
  "Generates an equation."
 ::=
   let () = tmpTickReset(0)
+  match contextJacobian
+  case JACOBIAN_CONTEXT(jacHT=jacHT) then
   match eq
   case e as SES_RESIDUAL(__)
    then ""
@@ -3191,13 +3191,14 @@ template functionExtraResidualsPreBodyJacobian(SimEqSystem eq, Text &eqs, String
   case e as SES_GENERIC_RESIDUAL(__)
    then ""
   else
-    let &eqs += equation_impl(-1, -1, eq, contextJacobian, modelNamePrefixStr, false)
+    let &eqs += equation_impl(-1, -1, eq, createJacContext(jacobianName, jacHT), modelNamePrefixStr, false)
     <<
     /* local constraints */
     <%createLocalConstraints(eq)%>
-    <%equation_call(eq, modelNamePrefixStr, contextJacobian)%>
+    <%equation_call(eq, modelNamePrefixStr, createJacContext(jacobianName, jacHT))%>
     <%errorCheck(contextJacobian)%>
     >>
+  end match
   end match
 end functionExtraResidualsPreBodyJacobian;
 
@@ -3402,6 +3403,79 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
     ;separator="\n\n")
 end functionNonLinearResiduals;
 
+template systemResiduals(list<SimEqSystem> eqs, Text resizable,
+                         Text &varDecls, Text &varFrees, Text &innerEqns)
+::=
+  let &sub = buffer ""
+  (eqs |> eq2 hasindex i0 => match eq2
+    case SES_RESIDUAL(__) then
+      if resizable then equationResidualAt(exp, varDecls, varFrees, innerEqns, index, residualOffset(eqs, i0))
+      else equationResidual(exp, varDecls, varFrees, innerEqns, index, res_index)
+    case SES_FOR_RESIDUAL(__) then
+      let &preExp = buffer ""
+      let &auxFunction = buffer ""
+      let res_off = if resizable then residualOffset(eqs, i0) else res_index
+      let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &innerEqns)
+      let forPart = (iterators |> iterator as SIM_ITERATOR_RANGE() =>
+            let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+            let start_ = daeExp(start, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
+            let stop_ = daeExp(stop, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
+            let step_ = daeExp(step, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
+            let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator="\n")
+            <<for(int <%iter_%>=<%start_%>; <%iter_%><=<%stop_%>; <%iter_%>+=<%step_%>){
+            <%sub_iter_%>
+            >>
+          ;separator="\n")
+      let endForPart = (iterators |> iterator => "}")
+      // A plain sum of each iterator's offset (old code) only gives a bijective
+      // res[] index for a single iterator; with 2+ nested iterators it collapses
+      // most (i1,i2,...) combinations onto the same slot and never writes the
+      // rest of res[], leaving that part of the residual vector uninitialized.
+      // Flatten properly, matching how array crefs are indexed elsewhere here.
+      let indexShift = <<<%(iterators |> iterator => forIteratorBody(iterator, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction, &sub) ;separator="")%>0<%(iterators |> iterator => ")" ;separator="")%>>>
+      let assignment = (if isArrayType(typeof(exp))
+        then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_off%>+(<%indexShift%>));'
+        else '<%preExp%>res[<%res_off%>+(<%indexShift%>)] = <%expPart%>;')
+      <<
+      <% if profileAll() then 'SIM_PROF_TICK_EQ(<%index%>);' %>
+      <%forPart%>
+      <%assignment%>
+      <%endForPart%>
+      <% if profileAll() then 'SIM_PROF_ACC_EQ(<%index%>);' %>
+      >>
+    case SES_GENERIC_RESIDUAL(__) then
+      let &preExp = buffer ""
+      let &auxFunction = buffer ""
+      let idx_len = listLength(scal_indices)
+      let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &innerEqns)
+      let iter_ = (iterators |> iterator as SIM_ITERATOR_RANGE() =>
+          let iter = contextCref(name, contextOther, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+          let start_ = daeExp(start, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
+          let stop_ = daeExp(stop, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
+          let step_ = daeExp(step, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
+          let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator="\n")
+          <<
+          const int <%iter%>_size = ((<%stop_%>) - (<%start_%>)) / (<%step_%>) + 1;
+          int <%iter%>_loc = tmp % <%iter%>_size;
+          int <%iter%> = (<%step_%>) * <%iter%>_loc + (<%start_%>);
+          tmp /= <%iter%>_size;
+          <%sub_iter_%>
+          >>;separator="\n")
+      let assignment = (if isArrayType(typeof(exp))
+        then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_index%>+i_);'
+        else '<%preExp%>res[<%res_index%>+i_] = <%expPart%>;')
+      <<
+      const int idx_lst_<%res_index%>[<%idx_len%>] = {<%(scal_indices |> idx => '<%idx%>';separator=", ")%>};
+      for(int i_=0; i_<<%idx_len%>; i_++)
+      {
+        int tmp = idx_lst_<%res_index%>[i_];
+        <%iter_%>
+        <%assignment%>
+      }
+      >>
+  ;separator="\n")
+end systemResiduals;
+
 template generateNonLinearResidualFunction(NonlinearSystem system, String modelNamePrefix, Integer whichSet)
   "Generates residual function for nonlinear loops.
    whichSet = 0: Strict Set
@@ -3448,73 +3522,7 @@ match system
         <%known%>
         >>
       else
-        (nls.eqs |> eq2 hasindex i0 => match eq2
-          case SES_RESIDUAL(__) then
-            if resizable then equationResidualAt(exp, varDecls, varFrees, innerEqns, index, residualOffset(nls.eqs, i0))
-            else equationResidual(exp, varDecls, varFrees, innerEqns, index, res_index)
-          case SES_FOR_RESIDUAL(__) then
-            let &preExp = buffer ""
-            let &auxFunction = buffer ""
-            let res_off = if resizable then residualOffset(nls.eqs, i0) else res_index
-            let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &innerEqns)
-            let forPart = (iterators |> iterator as SIM_ITERATOR_RANGE() =>
-                  let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
-                  let start_ = daeExp(start, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
-                  let stop_ = daeExp(stop, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
-                  let step_ = daeExp(step, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
-                  let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator="\n")
-                  <<for(int <%iter_%>=<%start_%>; <%iter_%><=<%stop_%>; <%iter_%>+=<%step_%>){
-                  <%sub_iter_%>
-                  >>
-                ;separator="\n")
-            let endForPart = (iterators |> iterator => "}")
-            // A plain sum of each iterator's offset (old code) only gives a bijective
-            // res[] index for a single iterator; with 2+ nested iterators it collapses
-            // most (i1,i2,...) combinations onto the same slot and never writes the
-            // rest of res[], leaving that part of the residual vector uninitialized.
-            // Flatten properly, matching how array crefs are indexed elsewhere here.
-            let indexShift = <<<%(iterators |> iterator => forIteratorBody(iterator, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction, &sub) ;separator="")%>0<%(iterators |> iterator => ")" ;separator="")%>>>
-            let assignment = (if isArrayType(typeof(exp))
-              then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_off%>+(<%indexShift%>));'
-              else '<%preExp%>res[<%res_off%>+(<%indexShift%>)] = <%expPart%>;')
-            <<
-            <% if profileAll() then 'SIM_PROF_TICK_EQ(<%index%>);' %>
-            <%forPart%>
-            <%assignment%>
-            <%endForPart%>
-            <% if profileAll() then 'SIM_PROF_ACC_EQ(<%index%>);' %>
-            >>
-          case SES_GENERIC_RESIDUAL(__) then
-            let &preExp = buffer ""
-            let &auxFunction = buffer ""
-            let idx_len = listLength(scal_indices)
-            let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &innerEqns)
-            let iter_ = (iterators |> iterator as SIM_ITERATOR_RANGE() =>
-                let iter = contextCref(name, contextOther, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
-                let start_ = daeExp(start, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
-                let stop_ = daeExp(stop, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
-                let step_ = daeExp(step, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
-                let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator="\n")
-                <<
-                const int <%iter%>_size = ((<%stop_%>) - (<%start_%>)) / (<%step_%>) + 1;
-                int <%iter%>_loc = tmp % <%iter%>_size;
-                int <%iter%> = (<%step_%>) * <%iter%>_loc + (<%start_%>);
-                tmp /= <%iter%>_size;
-                <%sub_iter_%>
-                >>;separator="\n")
-            let assignment = (if isArrayType(typeof(exp))
-              then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_index%>+i_);'
-              else '<%preExp%>res[<%res_index%>+i_] = <%expPart%>;')
-            <<
-            const int idx_lst_<%res_index%>[<%idx_len%>] = {<%(scal_indices |> idx => '<%idx%>';separator=", ")%>};
-            for(int i_=0; i_<<%idx_len%>; i_++)
-            {
-              int tmp = idx_lst_<%res_index%>[i_];
-              <%iter_%>
-              <%assignment%>
-            }
-            >>
-        ;separator="\n")
+        systemResiduals(nls.eqs, resizable, &varDecls, &varFrees, &innerEqns)
     let residualFunctionHeader =
       if intEq(whichSet, 0) then
         'void residualFunc<%nls.index%>(RESIDUAL_USERDATA* userData, const double* xloc, double* res, const int* iflag)'

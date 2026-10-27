@@ -190,6 +190,7 @@ public
     output Option<Jacobian> jacobian;
   protected
     constant Module.jacobianInterface func = if Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN)
+      or listMember(Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN), {"symbolic", "symbolicadjoint", "bidirectional"})
       then jacobianSymbolic
       else jacobianNumeric;
   algorithm
@@ -622,14 +623,21 @@ protected
     input Option<Adjacency.Matrix> full;
     input UnorderedMap<Path, Function> funcMap;
     input Partition.Kind kind;
+    input String name = "";
     output Boolean updated;
   protected
+    StrongComponent original;
     Tearing strict;
     list<StrongComponent> residual_comps;
     list<VariablePointer> seed_candidates, residual_vars, inner_vars;
     constant Boolean staticAsContinuous = Partition.kindIsInitial(kind);
   algorithm
     (comp, updated) := match comp
+      case StrongComponent.ALIAS() algorithm
+        (original, updated) := compJacobian(comp.original, full, funcMap, kind, name);
+        comp.original := original;
+      then (comp, updated);
+
       // nothing to differentiate if all iteration variables are discrete (e.g. Boolean)
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict)
         guard(not List.any(list(Slice.getT(v) for v in strict.iteration_vars), function BVariable.isContinuous(staticAsContinuous = staticAsContinuous)))
@@ -664,7 +672,7 @@ protected
           // comp.implicitlyCreated components distinctly so the two numbering
           // spaces can never collide, without changing either one's actual numbers
           // (which existing reference test outputs depend on).
-          name               = Partition.Partition.kindToString(kind)
+          name               = if name <> "" then name else Partition.Partition.kindToString(kind)
                                 + (if comp.implicitlyCreated then "_NLS_IMPL_"
                                    else if comp.linear then "_LS_JAC_" else "_NLS_JAC_")
                                 + intString(comp.idx),
@@ -1175,6 +1183,8 @@ protected
 
         if not listEmpty(linResEqnPtrs) then
           loopComp := makeLinearAlgebraicLoop(lambdaPtrs, linResEqnPtrs, NONE(), mixed = false, homotopy = false);
+          (loopComp, _) := compJacobian(loopComp, NONE(), funcMap, NBPartition.Kind.JAC,
+            contextName + "_LS_JAC_" + intString(Pointer.access(idx)));
           adjointComps := loopComp :: adjointComps;
         end if;
 
