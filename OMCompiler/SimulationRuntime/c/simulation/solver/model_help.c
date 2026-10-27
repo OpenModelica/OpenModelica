@@ -185,10 +185,7 @@ void saveZeroCrossings(DATA* data, threadData_t *threadData)
  */
 void functionZeroCrossingsMarked(DATA* data, threadData_t *threadData)
 {
-  long i;
-
-  for(i=0; i<data->modelData->nRelations; i++)
-    data->simulationInfo->relationsOutside[i] = -1;
+  discardRelationsOutside(data);
   data->simulationInfo->markRelationsOutside = 1;
   data->callback->function_ZeroCrossings(data, threadData, data->simulationInfo->zeroCrossings);
   data->simulationInfo->markRelationsOutside = 0;
@@ -201,20 +198,28 @@ void functionZeroCrossingsMarked(DATA* data, threadData_t *threadData)
 void updateRelationsSettled(DATA* data)
 {
   long i;
+  /* an unfinished marked evaluation may have left marks from rejected points */
+  modelica_boolean finished = !data->simulationInfo->markRelationsOutside;
 
-  /* the marked evaluation did not finish, so its marks may come from rejected points */
-  if(data->simulationInfo->markRelationsOutside)
-  {
-    data->simulationInfo->markRelationsOutside = 0;
-    return;
-  }
-
+  data->simulationInfo->markRelationsOutside = 0;
   for(i=0; i<data->modelData->nRelations; i++)
   {
     modelica_boolean value = data->simulationInfo->storedRelations[i];
     if(data->simulationInfo->relationsSettled[i] != value)
-      data->simulationInfo->relationsSettled[i] = data->simulationInfo->relationsOutside[i] == value ? value : -1;
+      data->simulationInfo->relationsSettled[i] = finished && data->simulationInfo->relationsOutside[i] == value ? value : RELATION_NONE;
   }
+}
+
+/**
+ * @brief Forget the marks of the last marked evaluation.
+ */
+void discardRelationsOutside(DATA* data)
+{
+  long i;
+
+  for(i=0; i<data->modelData->nRelations; i++)
+    data->simulationInfo->relationsOutside[i] = RELATION_NONE;
+  data->simulationInfo->markRelationsOutside = 0;
 }
 
 /**
@@ -225,11 +230,8 @@ void resetRelationsSettled(DATA* data)
   long i;
 
   for(i=0; i<data->modelData->nRelations; i++)
-  {
-    data->simulationInfo->relationsSettled[i] = -1;
-    data->simulationInfo->relationsOutside[i] = -1;
-  }
-  data->simulationInfo->markRelationsOutside = 0;
+    data->simulationInfo->relationsSettled[i] = RELATION_NONE;
+  discardRelationsOutside(data);
 }
 
 /*! \fn copyStartValuestoInitValues

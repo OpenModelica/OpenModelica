@@ -417,6 +417,8 @@ static void retrySimulationStep(DATA* data, threadData_t *threadData, SOLVER_INF
   restoreOldValues(data);
   solverInfo->currentTime = data->localData[0]->timeValue;
   overwriteOldSimulationData(data);
+  /* the marks may come from the rejected point */
+  discardRelationsOutside(data);
   updateDiscreteSystem(data, threadData);
   if (0 == retry) {
     warningStreamPrint(OMC_LOG_STDOUT, 0, "Integrator attempt to handle a problem with a called assert.");
