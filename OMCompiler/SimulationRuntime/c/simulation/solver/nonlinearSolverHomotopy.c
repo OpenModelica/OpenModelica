@@ -2357,11 +2357,13 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
         data->simulationInfo->solveContinuous = 0;
         assert = 0;
       } else {
+        /* keep the relations at x0, also for the Jacobian, like Newton's method does */
+        if (mixedSystem)
+          memcpy(relationsPreBackup, data->simulationInfo->relations, sizeof(modelica_boolean)*data->modelData->nRelations);
+        data->simulationInfo->solveContinuous = 1;
         homotopyData->fJac_f(homotopyData, homotopyData->x0, homotopyData->fJac);
         vecCopy(homotopyData->n, homotopyData->f1, homotopyData->fJac + homotopyData->n*homotopyData->n);
         vecCopy(homotopyData->n*homotopyData->m, homotopyData->fJac, homotopyData->fJacx0);
-        if (mixedSystem)
-          memcpy(relationsPreBackup, data->simulationInfo->relations, sizeof(modelica_boolean)*data->modelData->nRelations);
         /* calculate scaling factor of residuals */
         matVecMultAbsBB(homotopyData->n, homotopyData->fJac, homotopyData->ones, homotopyData->resScaling);
         vecMakeFinite(homotopyData->n, homotopyData->resScaling);
