@@ -307,8 +307,7 @@ public
 
     function create
       input Adjacency.Matrix mat;
-      input list<SimVar> resVars;
-      input Boolean isAdjoint;
+      input list<SimVar> vars;
       output Sparsity sparsity;
     protected
       list<SparsityRow> rows;
@@ -317,11 +316,9 @@ public
         case Adjacency.SPARSITY() algorithm
           rows := SparsityRow.mergeDuplicateRows(
             list(SparsityRow.create(e, i, d, r, s) threaded for e in mat.equation_names, i in mat.equation_iterators, d in mat.dependencies, r in mat.repetitions, s in mat.solved_crefs),
-            SimVars.numScalarElems(resVars));
+            SimVars.numScalarElems(vars));
           rows := SparsityRow.mergeScalarRows(rows);
-          if not isAdjoint then
-            rows := SparsityRow.sortByResultVars(rows, resVars);
-          end if;
+          rows := SparsityRow.sortByResultVars(rows, vars);
         then SPARSITY(rows);
         case Adjacency.EMPTY() then EMPTY();
 
@@ -603,7 +600,7 @@ public
             constantEqns        = {},
             columnVars          = tmpVars,
             seedVars            = seedVars,
-            sparsityMatrix      = Sparsity.create(jacobian.sparsity, resVars, jacobian.isAdjoint),
+            sparsityMatrix      = Sparsity.create(jacobian.sparsity, if jacobian.isAdjoint then seedVars else resVars),
             generic_loop_calls  = generic_loop_calls,
             jac_map             = SOME(jac_map),
             isAdjoint           = jacobian.isAdjoint,
