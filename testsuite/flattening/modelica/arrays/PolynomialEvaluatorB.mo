@@ -19,11 +19,10 @@ equation
 end PolynomialEvaluator;
 
 
-class PolyEvaluate2
+model PolyEvaluate2
   Real p;
   PolynomialEvaluator polyeval(c = {1, 2, 3, 4}, x = time, y = p);
 
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end PolyEvaluate2;
 
 
@@ -36,7 +35,7 @@ end PolyEvaluate2;
 //   parameter Real polyeval.c[4] = 4.0;
 //   Real polyeval.x = time;
 //   Real polyeval.y = p;
-//   protected parameter Integer polyeval.n = 3;
+//   protected final parameter Integer polyeval.n = 3;
 //   protected Real polyeval.xpowers[1];
 //   protected Real polyeval.xpowers[2];
 //   protected Real polyeval.xpowers[3];

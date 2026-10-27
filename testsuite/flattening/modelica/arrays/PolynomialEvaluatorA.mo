@@ -19,13 +19,12 @@ equation
   y = c[1] * xpowers[n + 1];
 end PolynomialEvaluator;
 
-class PolyEvaluate1
+model PolyEvaluate1
   Real p;
   PolynomialEvaluator polyeval(c = {1, 2, 3, 4});
 equation
   polyeval.x = time;
   p = polyeval.y;              // p gets the result
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end PolyEvaluate1;
 
 // Result:
@@ -37,7 +36,7 @@ end PolyEvaluate1;
 //   parameter Real polyeval.c[4] = 4.0;
 //   Real polyeval.x;
 //   Real polyeval.y;
-//   protected parameter Integer polyeval.n = 3;
+//   protected final parameter Integer polyeval.n = 3;
 //   protected Real polyeval.xpowers[1];
 //   protected Real polyeval.xpowers[2];
 //   protected Real polyeval.xpowers[3];

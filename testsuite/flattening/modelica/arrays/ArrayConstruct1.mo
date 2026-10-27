@@ -7,7 +7,7 @@
 
 type Angle = Real(unit="rad"); // The type Angle is a subtype of Real
 
-class ArrayConstruct1
+model ArrayConstruct1
   Integer[3] a = {1, 2, 3}; // A 3-vector of type Integer[3]
   Real[3] b = array(1.0, 2.0, 3); // A 3-vector of type Real[3]
   Integer[2,3] c = {{11, 12, 13}, {21, 22, 23}}; // A 2x3 matrix of type Integer[2,3]
@@ -16,7 +16,6 @@ class ArrayConstruct1
   parameter Angle alpha = 2.0; // The expanded type of alpha is Real
   Real[3] f = array(alpha, 2, 3.0); // A 3-vector of type Real[3]
   Angle[3] A = {1.0, alpha, 4}; // The expanded type of A is Real[3]
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayConstruct1;
 
 // Result:
@@ -48,11 +47,11 @@ end ArrayConstruct1;
 //   Real A[3](unit = "rad");
 // equation
 //   a = {1, 2, 3};
-//   b = {1.0, 2.0, 3};
+//   b = {1.0, 2.0, 3.0};
 //   c = {{11, 12, 13}, {21, 22, 23}};
 //   d = {{{1.0, 2.0, 3.0}}};
 //   v = {1.0, 2.0, 3.0};
-//   f = {alpha, 2, 3.0};
+//   f = {alpha, 2.0, 3.0};
 //   A = {1.0, alpha, 4.0};
 // end ArrayConstruct1;
 // endResult

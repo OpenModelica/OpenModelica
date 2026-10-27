@@ -5,7 +5,7 @@
 // Drmodelica: 7.5 Array Concatenation and Slice Operations (p. 219)
 //
 
-class BlockMatrix
+model BlockMatrix
   Real[3, 3] P=[1, 2, 3; 4, 5, 6; 7, 8, 9];
   // A 3x3 matrix value
   Real[6, 6] Q;
@@ -20,7 +20,6 @@ equation
   // Lower left block
   Q[4:6, 4:6] = P;
   // Lower right block
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BlockMatrix;
 
 // Result:

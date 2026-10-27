@@ -14,7 +14,6 @@ model ArrayLogic
   Boolean nb2[:,:] = not fill(b, 2);
   Boolean ab2[:,:] = fill(b, 2) and fill(b2, 2);
   Boolean ob2[:,:] = fill(b, 2) or fill(b2, 2);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayLogic;
 
 // Result:
@@ -44,11 +43,11 @@ end ArrayLogic;
 // equation
 //   b = {false, true};
 //   b2 = {true, false};
-//   nb = not {b[1], b[2]};
-//   ab = {b[1], b[2]} and {b2[1], b2[2]};
-//   ob = {b[1], b[2]} or {b2[1], b2[2]};
-//   nb2 = not {{b[1], b[2]}, {b[1], b[2]}};
-//   ab2 = {{b[1], b[2]}, {b[1], b[2]}} and {{b2[1], b2[2]}, {b2[1], b2[2]}};
-//   ob2 = {{b[1], b[2]}, {b[1], b[2]}} or {{b2[1], b2[2]}, {b2[1], b2[2]}};
+//   nb = not b;
+//   ab = b and b2;
+//   ob = b or b2;
+//   nb2 = not {b, b};
+//   ab2 = {b and b2, b and b2};
+//   ob2 = {b or b2, b or b2};
 // end ArrayLogic;
 // endResult

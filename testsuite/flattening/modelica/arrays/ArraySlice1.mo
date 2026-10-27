@@ -5,13 +5,12 @@
 // Simple array slicing.
 //
 
-class ArraySlice1
+model ArraySlice1
   Real a[4];
 equation
   a[{1,3}] = a[{2,4}];
   a[1]=time;
   a[4]=1;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArraySlice1;
 
 // Result:

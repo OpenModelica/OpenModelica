@@ -29,17 +29,9 @@ equation
   c = callMe(a[3, :]);
 algorithm
   d := a[4, :];
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MatrixRowIndexing;
 
 // Result:
-// function callMe
-//   input Real[:] a;
-//   output Real[size(a, 1)] b;
-// algorithm
-//   b := a;
-// end callMe;
-//
 // class MatrixRowIndexing
 //   constant Real a[1,1] = 1.0;
 //   constant Real a[1,2] = 2.0;
