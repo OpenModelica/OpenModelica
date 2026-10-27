@@ -47,7 +47,7 @@ protected
   import BackendExtension = NFBackendExtension;
   import Causalize = NBCausalize;
   import ComponentRef = NFComponentRef;
-  import NBEquation.{Equation, EqData, EquationPointers};
+  import NBEquation.{Equation, EqData, EquationAttributes, EquationKind, EquationPointers, Iterator};
   import Expression = NFExpression;
   import NBMatching.Matching;
   import NFBackendExtension.Uncertainty;
@@ -64,6 +64,7 @@ protected
   import StringUtil;
   import UnorderedMap;
   import UnorderedSet;
+  import Util;
 
 public constant String UNDERLINE = "==========================================================================";
 
@@ -86,45 +87,66 @@ public function main extends Module.wrapper;
   input String fileNamePrefix;
 protected
   ExtractionSystem sys;
-  list<Integer> knowns, boundaryConditions, bindingEquations, ebltEquations, setS;
+  list<Integer> knowns, boundaryConditions, bindingEquations, ebltEquations = {}, setS = {};
   list<tuple<Integer, Integer>> setB;
   list<tuple<Integer, Pointer<Equation>, list<Integer>>> setBFailedBoundaryConditionEquations = {};
-  Boolean status;
+  list<Pointer<Variable>> unknowns, var_lst, bc_vars;
+  list<Pointer<Equation>> eqn_lst, bc_eqns;
+  Boolean status = false;
+  Integer procedureCount = 1;
 algorithm
   print("\nModelInfo: " + fileNamePrefix + "\n" + UNDERLINE + "\n\n");
-
-  bdae := setBoundaryConditionEquationsAndVars(bdae);
 
   () := match bdae
     local
       VarData varData;
       EqData eqData;
     case BackendDAE.MAIN(varData = varData as VarData.VAR_DATA_SIM(), eqData = eqData as EqData.EQ_DATA_SIM()) algorithm
-      sys := createSystem(VariablePointers.toList(varData.unknowns), EquationPointers.toList(eqData.simulation));
-      bindingEquations := getBindingEquations(sys);
-      dumpOrderedVariables(sys);
-      dumpOrderedEquations(sys, bindingEquations);
-      dumpMatching(sys);
-      // the old backend lists the matching from the last variable to the first
-      dumpEquationList(sys, list(sys.var_to_eqn[i] for i in arrayLength(sys.var_to_eqn):-1:1), "Standard BLT of the original model");
+      // the old backend stores the variables in reverse order, followed by the boundary condition
+      // parameters, whose binding equations come first
+      unknowns := listReverse(VariablePointers.toList(varData.unknowns));
+      eqn_lst := EquationPointers.toList(eqData.simulation);
+    then ();
+  end match;
 
-      (knowns, boundaryConditions, _, _) := getVariableCategories(sys);
-      dumpVarList(sys, knowns, "Variables of interest");
-      dumpVarList(sys, boundaryConditions, "Boundary conditions");
-      dumpEquationList(sys, bindingEquations, "Binding equations");
+  (bdae, bc_vars, bc_eqns) := setBoundaryConditionEquationsAndVars(bdae);
+  var_lst := listAppend(unknowns, bc_vars);
+  eqn_lst := listAppend(bc_eqns, eqn_lst);
 
-      ebltEquations := getEBLTEquations(sys, knowns, bindingEquations);
-      dumpEquationList(sys, ebltEquations, "E-BLT: equations that compute the variables of interest");
+  () := match bdae
+    local
+      EqData eqData;
+    case BackendDAE.MAIN(eqData = eqData as EqData.EQ_DATA_SIM()) algorithm
+      // run the procedure on a modified model until it succeeds
+      while not status loop
+        sys := createSystem(var_lst, eqn_lst);
+        bindingEquations := getBindingEquations(sys);
+        dumpOrderedVariables(sys);
+        dumpOrderedEquations(sys, bindingEquations);
+        dumpMatching(sys);
+        // the old backend lists the matching from the last variable to the first
+        dumpEquationList(sys, list(sys.var_to_eqn[i] for i in arrayLength(sys.var_to_eqn):-1:1), "Standard BLT of the original model");
 
-      (setBFailedBoundaryConditionEquations, setS, _, setB, status) := traverseEBLTAndExtractSetCAndSetS(
-        sys, ebltEquations, knowns, boundaryConditions, bindingEquations, setBFailedBoundaryConditionEquations);
-      if status then
-        print("\nExtraction procedure is successfully completed in iteration count: 1\n" + UNDERLINE + "\n");
-        print("\nSET_C: " + List.toString(ebltEquations, intString) + "\nSET_S: " + List.toString(setS, intString) + "\n\n");
-      else
-        print("\nExtraction procedure failed for iteration count: 1, re-running with modified model\n" + UNDERLINE + "\n");
-        print("\nSET_B: " + List.toString(setB, setBEntryString) + "\n\n");
-      end if;
+        (knowns, boundaryConditions, _, _) := getVariableCategories(sys);
+        dumpVarList(sys, knowns, "Variables of interest");
+        dumpVarList(sys, boundaryConditions, "Boundary conditions");
+        dumpEquationList(sys, bindingEquations, "Binding equations");
+
+        ebltEquations := getEBLTEquations(sys, knowns, bindingEquations);
+        dumpEquationList(sys, ebltEquations, "E-BLT: equations that compute the variables of interest");
+
+        (setBFailedBoundaryConditionEquations, setS, _, setB, status) := traverseEBLTAndExtractSetCAndSetS(
+          sys, ebltEquations, knowns, boundaryConditions, bindingEquations, setBFailedBoundaryConditionEquations);
+
+        if not status then
+          print("\nExtraction procedure failed for iteration count: " + intString(procedureCount) + ", re-running with modified model\n" + UNDERLINE + "\n");
+          eqn_lst := modifyModel(sys, setB, eqData.uniqueIndex);
+          procedureCount := procedureCount + 1;
+        end if;
+      end while;
+
+      print("\nExtraction procedure is successfully completed in iteration count: " + intString(procedureCount) + "\n" + UNDERLINE + "\n");
+      print("\nFinal set of equations after extraction algorithm\n" + UNDERLINE + "\nSET_C: " + List.toString(ebltEquations, intString) + "\nSET_S: " + List.toString(setS, intString) + "\n\n");
     then ();
   end match;
 end main;
@@ -139,9 +161,9 @@ protected function setBoundaryConditionEquationsAndVars
      parameter Real x = 1 annotation(__OpenModelica_BoundaryCondition = true);
    become algebraic variables with their binding as binding equation."
   input output BackendDAE bdae;
+  output list<Pointer<Variable>> bc_vars = {};
+  output list<Pointer<Equation>> bc_eqns = {};
 protected
-  list<Pointer<Variable>> bc_vars = {};
-  list<Pointer<Equation>> bc_eqns = {};
   UnorderedSet<Pointer<Variable>> new_iters = UnorderedSet.new(BVariable.hash, BVariable.equalName);
   Variable var;
   Type ty;
@@ -167,9 +189,10 @@ algorithm
       end for;
 
       bc_vars := listReverse(bc_vars);
+      bc_eqns := listReverse(bc_eqns);
       varData.parameters := VariablePointers.removeList(bc_vars, varData.parameters);
       bdae.varData := VarData.addTypedList(varData, bc_vars, VarData.VarType.ALGEBRAIC);
-      bdae.eqData := EqData.addTypedList(eqData, listReverse(bc_eqns), EqData.EqType.CONTINUOUS, false);
+      bdae.eqData := EqData.addTypedList(eqData, bc_eqns, EqData.EqType.CONTINUOUS, false);
     then bdae;
   end match;
 end setBoundaryConditionEquationsAndVars;
@@ -198,7 +221,8 @@ algorithm
   adjacency := arrayCreate(arrayLength(eqnArr), {});
   for i in 1:arrayLength(eqnArr) loop
     crefs := Equation.collectCrefs(Pointer.access(eqnArr[i]), function Equation.collectFromMap(check_map = vars.map));
-    adjacency[i] := list(UnorderedMap.getSafe(cr, vars.map, sourceInfo()) for cr in crefs);
+    // descending, so that the procedure visits the variables in ascending order like the old backend
+    adjacency[i] := List.sort(list(UnorderedMap.getSafe(cr, vars.map, sourceInfo()) for cr in crefs), intLt);
   end for;
 
   sys := EXTRACTION_SYSTEM(vars, eqns, varArr, eqnArr, adjacency, matching.var_to_eqn, matching.eqn_to_var);
@@ -259,9 +283,9 @@ end isBoundaryCondition;
 protected function getBindingEquations
   "binding equations are created by NBBindings with the residual name $RES_BND_<n>"
   input ExtractionSystem sys;
-  output list<Integer> bindingEquations = {};
+  output list<Integer> bindingEquations = {} "descending, like in the old backend";
 algorithm
-  for i in arrayLength(sys.eqnArr):-1:1 loop
+  for i in 1:arrayLength(sys.eqnArr) loop
     if StringUtil.startsWith(ComponentRef.firstName(Equation.getEqnName(sys.eqnArr[i])), NBVariable.RESIDUAL_STR + "_BND_") then
       bindingEquations := i :: bindingEquations;
     end if;
@@ -359,15 +383,30 @@ algorithm
   end if;
 end traverseEBLTAndExtractSetCAndSetS;
 
-protected function setBEntryString
-  input tuple<Integer, Integer> entry;
-  output String str;
+protected function modifyModel
+  "For each failed procedure, the equation involving the boundary condition that
+  failed the procedure is replaced by x = 0 where x is the variable of interest of
+  the procedure. The new equations are binding equations, like in the old backend."
+  input ExtractionSystem sys;
+  input list<tuple<Integer, Integer>> setB "(var of interest, eqn to remove)";
+  input Pointer<Integer> uniqueIndex;
+  output list<Pointer<Equation>> eqn_lst = {};
 protected
-  Integer var, eqn;
+  list<Integer> eqlistToRemove = list(Util.tuple22(entry) for entry in setB);
+  Pointer<Variable> var;
 algorithm
-  (var, eqn) := entry;
-  str := "(" + intString(var) + ", " + intString(eqn) + ")";
-end setBEntryString;
+  for i in arrayLength(sys.eqnArr):-1:1 loop
+    if not listMember(i, eqlistToRemove) then
+      eqn_lst := sys.eqnArr[i] :: eqn_lst;
+    end if;
+  end for;
+
+  for entry in listReverse(setB) loop
+    var := sys.varArr[Util.tuple21(entry)];
+    eqn_lst := Equation.makeAssignment(Expression.fromCref(BVariable.getVarName(var)), Expression.REAL(0.0), uniqueIndex,
+      "BND", Iterator.EMPTY(), EquationAttributes.default(EquationKind.CONTINUOUS, false)) :: eqn_lst;
+  end for;
+end modifyModel;
 
 protected function isBoundaryConditionVar
   input tuple<Integer, Pointer<Equation>, list<Integer>> failed;
