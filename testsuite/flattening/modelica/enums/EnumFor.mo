@@ -19,38 +19,37 @@ equation
   for i in E.c : E.e loop
     C[i] = B[i];
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EnumFor;
 
 // Result:
 // class EnumFor
-//   Real A[EnumFor.E.a];
-//   Real A[EnumFor.E.b];
-//   Real A[EnumFor.E.c];
-//   Real A[EnumFor.E.d];
-//   Real A[EnumFor.E.e];
-//   Real A[EnumFor.E.f];
-//   Real B[EnumFor.E.a];
-//   Real B[EnumFor.E.b];
-//   Real B[EnumFor.E.c];
-//   Real B[EnumFor.E.d];
-//   Real B[EnumFor.E.e];
-//   Real B[EnumFor.E.f];
-//   Real C[EnumFor.E.a];
-//   Real C[EnumFor.E.b];
-//   Real C[EnumFor.E.c];
-//   Real C[EnumFor.E.d];
-//   Real C[EnumFor.E.e];
-//   Real C[EnumFor.E.f];
+//   Real A[E.a];
+//   Real A[E.b];
+//   Real A[E.c];
+//   Real A[E.d];
+//   Real A[E.e];
+//   Real A[E.f];
+//   Real B[E.a];
+//   Real B[E.b];
+//   Real B[E.c];
+//   Real B[E.d];
+//   Real B[E.e];
+//   Real B[E.f];
+//   Real C[E.a];
+//   Real C[E.b];
+//   Real C[E.c];
+//   Real C[E.d];
+//   Real C[E.e];
+//   Real C[E.f];
 // equation
-//   B[EnumFor.E.a] = A[EnumFor.E.a];
-//   B[EnumFor.E.b] = A[EnumFor.E.b];
-//   B[EnumFor.E.c] = A[EnumFor.E.c];
-//   B[EnumFor.E.d] = A[EnumFor.E.d];
-//   B[EnumFor.E.e] = A[EnumFor.E.e];
-//   B[EnumFor.E.f] = A[EnumFor.E.f];
-//   C[EnumFor.E.c] = B[EnumFor.E.c];
-//   C[EnumFor.E.d] = B[EnumFor.E.d];
-//   C[EnumFor.E.e] = B[EnumFor.E.e];
+//   B[E.a] = A[E.a];
+//   B[E.b] = A[E.b];
+//   B[E.c] = A[E.c];
+//   B[E.d] = A[E.d];
+//   B[E.e] = A[E.e];
+//   B[E.f] = A[E.f];
+//   C[E.c] = B[E.c];
+//   C[E.d] = B[E.d];
+//   C[E.e] = B[E.e];
 // end EnumFor;
 // endResult

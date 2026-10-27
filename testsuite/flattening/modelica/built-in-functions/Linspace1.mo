@@ -11,7 +11,6 @@ model Linspace1
   parameter Real b = 1;
 equation
   x = linspace(a, b, 2);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Linspace1;
 
 // Result:
@@ -21,7 +20,6 @@ end Linspace1;
 //   parameter Real a = 0.0;
 //   parameter Real b = 1.0;
 // equation
-//   x[1] = a;
-//   x[2] = a + b - a;
+//   x = array(a + (b - a) * (/*Real*/(i) - 1.0) for i in 1:2);
 // end Linspace1;
 // endResult

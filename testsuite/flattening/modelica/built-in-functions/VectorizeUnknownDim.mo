@@ -13,7 +13,6 @@ model VectorizeUnknownDim
   Integer b[2];
 algorithm
   b := Foo(a);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end VectorizeUnknownDim;
 
 // Result:
@@ -21,7 +20,7 @@ end VectorizeUnknownDim;
 //   input Integer[:] x;
 //   output Integer[size(x, 1)] y;
 // algorithm
-//   y := array(abs($tmpVar0) for $tmpVar0 in x);
+//   y := array(abs(x[$i0]) for $i0 in 1:size(x, 1));
 // end VectorizeUnknownDim.Foo;
 //
 // class VectorizeUnknownDim
@@ -32,6 +31,6 @@ end VectorizeUnknownDim;
 // equation
 //   a = {1, -1};
 // algorithm
-//   b := VectorizeUnknownDim.Foo({a[1], a[2]});
+//   b := VectorizeUnknownDim.Foo(a);
 // end VectorizeUnknownDim;
 // endResult

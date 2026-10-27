@@ -18,7 +18,6 @@ model SumVar
   Integer j;
 equation
   j = mySum(3, i);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SumVar;
 
 // Result:
@@ -37,6 +36,6 @@ end SumVar;
 //   Integer j;
 // equation
 //   i = {1, 2, 3};
-//   j = mySum(3, {i[1], i[2], i[3]});
+//   j = mySum(3, i);
 // end SumVar;
 // endResult
