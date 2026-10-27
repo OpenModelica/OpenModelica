@@ -1336,6 +1336,17 @@ void buildGUIAndRunOMEditTestsuite() {
       "-DOM_OMEDIT_ENABLE_TESTS=ON"], 'cmake', false)
   }
 
+  // The build runs lupdate (OM_UPDATE_TRANSLATIONS) on OMEdit, OMNotebook, OMPlot and OMShell and
+  // rewrites their *.ts files in the source tree. Any difference means the checked-in
+  // translations were out of date.
+  sh label: 'CheckTranslationsUpToDate', script: '''
+    if ! git diff --exit-code --stat -- 'OMEdit/*.ts' 'OMNotebook/*.ts' 'OMPlot/*.ts' 'OMShell/*.ts'; then
+      echo "ERROR: The translation files (*.ts) are out of date." >&2
+      echo "Build OpenModelica with CMake (lupdate runs automatically) and commit the updated *.ts files." >&2
+      exit 1
+    fi
+  '''
+
   // The tests browse the MSL, so they need the test libraries and a writable HOME.
   makeLibsAndCache()
   try {
