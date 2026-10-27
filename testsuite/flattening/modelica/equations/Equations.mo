@@ -5,12 +5,11 @@
 // Drmodelica:
 //
 
-class Equations
+model Equations
   Real x(start = 2);        // Modification equation
   constant Integer one = 1;      // Declaration equation
 equation
   x = 3*one;            // Normal equation
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Equations;
 
 
