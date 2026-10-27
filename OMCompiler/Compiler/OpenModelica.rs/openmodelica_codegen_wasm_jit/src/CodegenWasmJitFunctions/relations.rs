@@ -108,7 +108,7 @@ fn compile_relation_indexed(
             ctx.emit(we::Instruction::LocalGet(slot));
             ctx.emit(we::Instruction::I32Load(mem_arg(dir_off, 2)));
         } else if real_ineq {
-            compile_relation_hyst(ctx, e1, op, e2, slot, dir_off)?;
+            compile_relation_hyst(ctx, e1, op, e2, slot, dir_off, true)?;
         } else {
             compile_relation_fresh(ctx, e1, op, e2)?;
         }
@@ -128,7 +128,7 @@ fn compile_relation_indexed(
         ctx.emit(we::Instruction::If(we::BlockType::Result(we::ValType::I32)));
         compile_relation_fresh(ctx, e1, op, e2)?;
         ctx.emit(we::Instruction::Else);
-        compile_relation_hyst(ctx, e1, op, e2, slot, dir_off)?;
+        compile_relation_hyst(ctx, e1, op, e2, slot, dir_off, false)?;
         ctx.emit(we::Instruction::End);
     } else {
         compile_relation_fresh(ctx, e1, op, e2)?;
@@ -159,10 +159,15 @@ fn compile_relation_hyst(
     e2: &metamodelica::Ref<DAE::Exp>,
     slot: u32,
     dir_off: u32,
+    zc: bool,
 ) -> Result<()> {
     use we::Instruction as I;
     let data = ctx.sim()?.data_local;
     let zctol_off = ctx.sim()?.zctol_off;
+    let relations_off = plain_off(ctx.sim()?.relations_off)?;
+    let settled_off = plain_off(ctx.sim()?.rel_settled_off)?;
+    let outside_off = plain_off(ctx.sim()?.rel_outside_off)?;
+    let mark_off = ctx.sim()?.mark_rel_outside_off;
 
     let nom = ctx.alloc_temp(WTy::F64);
     emit_relation_nominal(ctx, e1, e2)?;
@@ -199,13 +204,116 @@ fn compile_relation_hyst(
     ctx.emit(I::LocalSet(diff));
 
     // The held snapshot (`slot + dir_off`) chooses which band edge applies.
+    let [dir, settled, exact, extra, res] = ctx.rel_state_temps()?;
     ctx.emit(I::LocalGet(slot));
     ctx.emit(I::I32Load(mem_arg(dir_off, 2)));
+    ctx.emit(I::LocalSet(dir));
+    ctx.emit(I::LocalGet(slot));
+    ctx.emit(I::I32Load(mem_arg(settled_off, 2)));
+    ctx.emit(I::LocalSet(settled));
+    // settled == dir && a == b: the operator decides, as in C's relationhysteresis(ZC)
+    ctx.emit(I::LocalGet(settled));
+    ctx.emit(I::LocalGet(dir));
+    ctx.emit(I::I32Eq);
+    ctx.emit(I::LocalGet(a));
+    ctx.emit(I::LocalGet(b));
+    ctx.emit(I::F64Eq);
+    ctx.emit(I::I32And);
+    ctx.emit(I::LocalSet(exact));
+
+    if zc {
+        // Only the full evaluation at an accepted point; a root function may
+        // compute the operands differently.
+        let mark = extra;
+        ctx.emit(I::LocalGet(data));
+        ctx.emit(I::I32Load(sim_mem(mark_off, 2)?));
+        ctx.emit(I::LocalSet(mark));
+        ctx.emit(I::LocalGet(mark));
+        ctx.emit(I::LocalGet(exact));
+        ctx.emit(I::I32And);
+        ctx.emit(I::If(we::BlockType::Result(we::ValType::I32)));
+        emit_exact_cmp(ctx, op, a, b)?;
+        ctx.emit(I::Else);
+        emit_band(ctx, op, diff, eps, dir, false)?;
+        ctx.emit(I::End);
+        ctx.emit(I::LocalSet(res));
+        // A marked evaluation records on which side the operands left the band.
+        ctx.emit(I::LocalGet(mark));
+        ctx.emit(I::If(we::BlockType::Empty));
+        emit_band(ctx, op, diff, eps, dir, true)?;
+        ctx.emit(I::LocalGet(dir));
+        ctx.emit(I::I32Eq);
+        ctx.emit(I::If(we::BlockType::Empty));
+        ctx.emit(I::LocalGet(slot));
+        ctx.emit(I::LocalGet(dir));
+        ctx.emit(I::I32Store(mem_arg(outside_off, 2)));
+        ctx.emit(I::End);
+        ctx.emit(I::End);
+        ctx.emit(I::LocalGet(res));
+        return Ok(());
+    }
+
+    ctx.emit(I::LocalGet(settled));
+    ctx.emit(I::I32Const(RELATION_SWITCHED_EXACTLY));
+    ctx.emit(I::I32Eq);
     ctx.emit(I::If(we::BlockType::Result(we::ValType::I32)));
-    emit_hyst_cmp(ctx, op, diff, eps, true)?;
+    // A system re-solved after the switch can land exactly on the threshold again.
+    let current = extra;
+    ctx.emit(I::LocalGet(slot));
+    ctx.emit(I::I32Load(mem_arg(relations_off, 2)));
+    ctx.emit(I::LocalSet(current));
+    emit_band(ctx, op, diff, eps, current, false)?;
     ctx.emit(I::Else);
-    emit_hyst_cmp(ctx, op, diff, eps, false)?;
+    ctx.emit(I::LocalGet(exact));
+    ctx.emit(I::If(we::BlockType::Result(we::ValType::I32)));
+    emit_exact_cmp(ctx, op, a, b)?;
+    ctx.emit(I::LocalSet(res));
+    ctx.emit(I::LocalGet(res));
+    ctx.emit(I::LocalGet(dir));
+    ctx.emit(I::I32Ne);
+    ctx.emit(I::If(we::BlockType::Empty));
+    ctx.emit(I::LocalGet(slot));
+    ctx.emit(I::I32Const(RELATION_SWITCHED_EXACTLY));
+    ctx.emit(I::I32Store(mem_arg(settled_off, 2)));
     ctx.emit(I::End);
+    ctx.emit(I::LocalGet(res));
+    ctx.emit(I::Else);
+    emit_band(ctx, op, diff, eps, dir, false)?;
+    ctx.emit(I::End);
+    ctx.emit(I::End);
+    Ok(())
+}
+
+/// C's `RELATION_SWITCHED_EXACTLY` in `relationsSettled`.
+const RELATION_SWITCHED_EXACTLY: i32 = -2;
+
+/// Emit the band comparison with the direction in the i32 local `dir`, or its
+/// negation when `negate`, leaving an i32 boolean.
+fn emit_band(ctx: &mut FnCtx, op: &DAE::Operator, diff: u32, eps: u32, dir: u32, negate: bool) -> Result<()> {
+    use we::Instruction as I;
+    ctx.emit(I::LocalGet(dir));
+    ctx.emit(I::If(we::BlockType::Result(we::ValType::I32)));
+    emit_hyst_cmp(ctx, op, diff, eps, !negate)?;
+    ctx.emit(I::Else);
+    emit_hyst_cmp(ctx, op, diff, eps, negate)?;
+    ctx.emit(I::End);
+    Ok(())
+}
+
+/// Emit `a <op> b` on the f64 locals `a` and `b`, leaving an i32 boolean.
+fn emit_exact_cmp(ctx: &mut FnCtx, op: &DAE::Operator, a: u32, b: u32) -> Result<()> {
+    use DAE::Operator as O;
+    use we::Instruction as I;
+    let cmp = match op {
+        O::LESS { .. } => I::F64Lt,
+        O::LESSEQ { .. } => I::F64Le,
+        O::GREATER { .. } => I::F64Gt,
+        O::GREATEREQ { .. } => I::F64Ge,
+        _ => return Err("CodegenWasmJit: non-inequality in hysteresis path"),
+    };
+    ctx.emit(I::LocalGet(a));
+    ctx.emit(I::LocalGet(b));
+    ctx.emit(cmp);
     Ok(())
 }
 

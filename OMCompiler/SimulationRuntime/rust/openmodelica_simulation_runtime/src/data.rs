@@ -612,7 +612,6 @@ pub fn initialize_data_struc(data: *mut DATA, _thread_data: *mut threadData_t) {
     si.relations = calloc(n_rel.max(1));
     si.relationsPre = calloc(n_rel.max(1));
     si.storedRelations = calloc(n_rel.max(1));
-    // Never settled: this driver does not commit, so the band always applies.
     si.relationsSettled = calloc(n_rel.max(1));
     si.relationsOutside = calloc(n_rel.max(1));
     for i in 0..n_rel {
@@ -1256,6 +1255,13 @@ pub fn build_regions(rt: &mut RtData) {
     direct(l.relations_off, l.n_rel * 4, si.relations as *mut c_void);
     direct(l.stored_rel_off, l.n_rel * 4, si.storedRelations as *mut c_void);
     direct(l.relations_pre_off, l.n_rel * 4, si.relationsPre as *mut c_void);
+    direct(l.rel_settled_off, l.n_rel * 4, si.relationsSettled as *mut c_void);
+    direct(l.rel_outside_off, l.n_rel * 4, si.relationsOutside as *mut c_void);
+    direct(
+        l.mark_rel_outside_off,
+        4,
+        &mut si.markRelationsOutside as *mut c_int as *mut c_void,
+    );
     direct(l.mathevents_off, l.n_math * 8, si.mathEventsValuePre as *mut c_void);
     direct(l.zctol_off, 8, &raw mut crate::support::tolZC as *mut c_void);
     direct(l.nls_fail_off, 4, &raw mut crate::nls::nls_fail_slot as *mut c_void);

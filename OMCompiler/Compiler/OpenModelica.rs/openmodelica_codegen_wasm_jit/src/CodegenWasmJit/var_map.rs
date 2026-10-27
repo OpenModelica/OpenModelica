@@ -66,6 +66,12 @@ pub(crate) struct SimVarMap {
     pub(super) stored_rel_off: SimOff,
     /// `SimData` byte offset of `relationsPre` (`SimLayout::relations_pre_off`).
     pub(super) relations_pre_off: SimOff,
+    /// `SimData` byte offset of `relationsSettled` (`SimLayout::rel_settled_off`).
+    pub(super) rel_settled_off: SimOff,
+    /// `SimData` byte offset of `relationsOutside` (`SimLayout::rel_outside_off`).
+    pub(super) rel_outside_off: SimOff,
+    /// `SimData` byte offset of the mark flag (`SimLayout::mark_rel_outside_off`).
+    pub(super) mark_rel_outside_off: SimOff,
     /// Number of indexed relations (bounds the `relations[]` region).
     pub(super) n_relations: u32,
     /// `SimData` byte offset of the held math-event values (`mathEventsValuePre`).
@@ -1077,6 +1083,9 @@ pub(super) fn build_var_map(
         rel_fresh_off: layout.rel_fresh_off,
         stored_rel_off: layout.stored_rel_off,
         relations_pre_off: layout.relations_pre_off,
+        rel_settled_off: layout.rel_settled_off,
+        rel_outside_off: layout.rel_outside_off,
+        mark_rel_outside_off: layout.mark_rel_outside_off,
         n_relations: layout.n_rel as u32,
         mathevents_off: layout.mathevents_off,
         n_mathevents: layout.n_math as u32,
