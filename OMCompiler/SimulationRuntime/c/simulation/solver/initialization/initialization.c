@@ -789,6 +789,8 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   modelica_boolean fmi_init_method = !strcmp(pInitMethod, "fmi");
 
   data->simulationInfo->homotopySteps = 0;
+  /* an FMU in initialization mode can run this repeatedly */
+  resetRelationsSettled(data);
 
   infoStreamPrint(OMC_LOG_INIT, 0, "### START INITIALIZATION ###");
 

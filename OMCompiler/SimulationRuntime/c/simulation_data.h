@@ -883,6 +883,9 @@ typedef struct SIMULATION_INFO
   modelica_boolean* relations;
   modelica_boolean* relationsPre;
   modelica_boolean* storedRelations;   /* this array contains a copy of relations each time the event iteration starts */
+  modelica_boolean* relationsSettled;  /* value of a relation whose operands left the hysteresis band since it last switched; -1 if none, -2 after an exact switch in the current event */
+  modelica_boolean* relationsOutside;  /* value on whose side the operands were outside the band at the last marked zero-crossing evaluation, else -1 */
+  modelica_boolean markRelationsOutside; /* true while the zero crossings are evaluated at a point that may be accepted */
   modelica_real* mathEventsValuePre;
   long* zeroCrossingIndex;             /* := {0, 1, 2, ..., data->modelData->nZeroCrossings-1}; pointer for a list events at event instants */
   modelica_real* states_left;          /* work array for findRoot in event.c */

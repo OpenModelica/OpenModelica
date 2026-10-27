@@ -609,6 +609,16 @@ pub fn initialize_data_struc(data: *mut DATA, _thread_data: *mut threadData_t) {
     si.relations = calloc(n_rel.max(1));
     si.relationsPre = calloc(n_rel.max(1));
     si.storedRelations = calloc(n_rel.max(1));
+    // Never settled: this driver does not commit, so the band always applies.
+    si.relationsSettled = calloc(n_rel.max(1));
+    si.relationsOutside = calloc(n_rel.max(1));
+    for i in 0..n_rel {
+        unsafe {
+            *si.relationsSettled.add(i) = -1;
+            *si.relationsOutside.add(i) = -1;
+        }
+    }
+    si.markRelationsOutside = 0;
     si.mathEventsValuePre = calloc((md.nMathEvents as usize).max(1));
     si.zeroCrossingIndex = calloc(n_zc.max(1));
     for i in 0..n_zc {
@@ -868,6 +878,8 @@ pub fn free_data_struc(data: *mut DATA, thread_data: *mut threadData_t) {
     free(&mut si.relations);
     free(&mut si.relationsPre);
     free(&mut si.storedRelations);
+    free(&mut si.relationsSettled);
+    free(&mut si.relationsOutside);
     free(&mut si.mathEventsValuePre);
     free(&mut si.zeroCrossingIndex);
     free(&mut si.integerVarsOld);
