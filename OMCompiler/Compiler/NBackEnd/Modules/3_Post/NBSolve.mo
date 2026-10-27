@@ -406,7 +406,7 @@ public
         case StrongComponent.ENTWINED_COMPONENT() algorithm
           for slice in comp.entwined_slices loop
             generic_comp := slice;
-            if isSome(comp.resizable_order) then
+            if isSome(comp.periodic_order) then
               // the order of the iterations is given by the entwined component
               () := match generic_comp
                 case StrongComponent.RESIZABLE_COMPONENT() algorithm

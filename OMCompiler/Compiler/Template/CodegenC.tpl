@@ -8555,7 +8555,7 @@ case eqn as SES_ENTWINED_ASSIGN() then
   let &preExp = buffer ""
   let ranges = (eqn.single_calls |> call hasindex i0 => entwinedRange(call, i0, listGet(eqn.start_shifts, intAdd(i0, 1)), listGet(eqn.stop_shifts, intAdd(i0, 1)), context, &preExp, &varDecls, &varFrees, &auxFunction); separator="\n")
   let periods = (eqn.call_order |> c hasindex i0 => entwinedPeriods(c, listGet(eqn.offsets, intAdd(i0, 1)), eqn.direction); separator="\n")
-  let calls = (eqn.call_order |> c hasindex i0 => entwinedResizableCall(listGet(eqn.single_calls, intAdd(c, 1)), c, listGet(eqn.offsets, intAdd(i0, 1)), eqn.direction, context); separator="\n")
+  let calls = (eqn.call_order |> c hasindex i0 => entwinedResizableCall(listGet(eqn.single_calls, intAdd(c, 1)), c, i0, listGet(eqn.offsets, intAdd(i0, 1)), eqn, context, &varDecls, &varFrees, &auxFunction); separator="\n")
   <<
   <%preExp%>
   <%ranges%>
@@ -8578,9 +8578,10 @@ match eq
 case SES_RESIZABLE_ASSIGN(iters = {SIM_ITERATOR_RANGE(start = start, stop = stop)}) then
   let start_ = daeExp(start, context, &preExp, &varDecls, &varFrees, &auxFunction)
   let stop_ = daeExp(stop, context, &preExp, &varDecls, &varFrees, &auxFunction)
-  'const modelica_integer lo_<%i0%> = (<%start_%>) + <%start_shift%>, hi_<%i0%> = (<%stop_%>) - <%stop_shift%>;'
+  'const modelica_integer s_<%i0%> = <%start_%>, e_<%i0%> = <%stop_%>, lo_<%i0%> = s_<%i0%> + <%start_shift%>, hi_<%i0%> = e_<%i0%> - <%stop_shift%>;'
 else
-  error(sourceInfo(), 'entwinedRange: unhandled equation type')
+  // hasindex skips empty texts
+  '/* call <%i0%> is scalar */'
 end entwinedRange;
 
 template entwinedPeriods(Integer c, Integer offset, Integer direction)
@@ -8597,20 +8598,56 @@ if(lo_<%c%> <= hi_<%c%>) {
 >>
 end entwinedPeriods;
 
-template entwinedResizableCall(SimEqSystem eq, Integer c, Integer offset, Integer direction, Context context)
- "calls a resizable entwined equation for period k_ if the iteration exists"
+template entwinedResizableCall(SimEqSystem eq, Integer c, Integer r, Integer offset, SimEqSystem entw, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
+ "calls entry r of the period for period k_ if the iteration exists, with the scalar calls anchored to it"
 ::=
-match eq
-case SES_RESIZABLE_ASSIGN() then
-  let jac = match context case JACOBIAN_CONTEXT() then ", jacobian" else ""
-  let sub_name = match context case JACOBIAN_CONTEXT(name = jac_name) then 'jac_<%jac_name%>_' else ""
-  <<
-  i_ = <%direction%>*k_ + (<%offset%>);
-  if(i_ >= lo_<%c%> && i_ <= hi_<%c%>) genericCall_<%sub_name%><%call_index%>(data, threadData<%jac%>, equationIndexes, i_);
-  >>
+match entw
+case entw as SES_ENTWINED_ASSIGN() then
+  match eq
+  case SES_RESIZABLE_ASSIGN() then
+    let jac = match context case JACOBIAN_CONTEXT() then ", jacobian" else ""
+    let sub_name = match context case JACOBIAN_CONTEXT(name = jac_name) then 'jac_<%jac_name%>_' else ""
+    let before = (entw.scalar_calls |> sc hasindex j0 => entwinedAnchoredCall(listGet(entw.single_calls, intAdd(sc, 1)), c, r, listGet(entw.scalar_entries, intAdd(j0, 1)), listGet(entw.scalar_positions, intAdd(j0, 1)), listGet(entw.scalar_after, intAdd(j0, 1)), false, context, &varDecls, &varFrees, &auxFunction); separator="\n")
+    let after = (entw.scalar_calls |> sc hasindex j0 => entwinedAnchoredCall(listGet(entw.single_calls, intAdd(sc, 1)), c, r, listGet(entw.scalar_entries, intAdd(j0, 1)), listGet(entw.scalar_positions, intAdd(j0, 1)), listGet(entw.scalar_after, intAdd(j0, 1)), true, context, &varDecls, &varFrees, &auxFunction); separator="\n")
+    <<
+    i_ = <%entw.direction%>*k_ + (<%offset%>);
+    if(i_ >= lo_<%c%> && i_ <= hi_<%c%>) {
+      <%before%>
+      genericCall_<%sub_name%><%call_index%>(data, threadData<%jac%>, equationIndexes, i_);
+      <%after%>
+    }
+    >>
+  else
+    error(sourceInfo(), 'entwinedResizableCall: unhandled equation type')
+  end match
 else
   error(sourceInfo(), 'entwinedResizableCall: unhandled equation type')
 end entwinedResizableCall;
+
+template entwinedAnchoredCall(SimEqSystem eq, Integer c, Integer r, Integer entry, Integer position, Boolean after, Boolean want_after, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
+ "a scalar call of an entwined equation if it is anchored before or after entry r for the current iteration"
+::=
+if intEq(entry, r) then
+  let value = if intLt(position, 0) then 'e_<%c%> + (<%intAdd(position, 1)%>)' else 's_<%c%> + <%position%>'
+  let call =
+    <<
+    if(i_ == <%value%>) {
+      <%entwinedScalarCall(eq, context, &varDecls, &varFrees, &auxFunction)%>
+    }
+    >>
+  if after then (if want_after then call) else (if want_after then "" else call)
+end entwinedAnchoredCall;
+
+template entwinedScalarCall(SimEqSystem eq, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
+::=
+match eq
+case eqn as SES_SIMPLE_ASSIGN(__) then equationSimpleAssign(eqn, context, &varDecls, &varFrees, &auxFunction)
+case eqn as SES_ARRAY_CALL_ASSIGN(__) then equationArrayCallAssign(eqn, context, &varDecls, &varFrees, &auxFunction)
+case eqn as SES_ALGORITHM(__) then equationAlgorithm(eqn, context, &varDecls, &varFrees, &auxFunction)
+case eqn as SES_WHEN(__) then equationWhen(eqn, context, &varDecls, &varFrees, &auxFunction)
+else
+  error(sourceInfo(), 'entwinedScalarCall: unhandled equation type')
+end entwinedScalarCall;
 
 template entwinedSingleCallIndices(SimEqSystem eq, Context context,
                                  Text &varDecls, Text &varFrees, Text &auxFunction, String modelNamePrefix)

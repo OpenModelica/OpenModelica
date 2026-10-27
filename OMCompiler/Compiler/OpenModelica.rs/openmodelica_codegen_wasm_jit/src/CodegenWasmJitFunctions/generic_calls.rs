@@ -73,23 +73,42 @@ pub(crate) fn emit_entwined_assign(
 
 /// `SES_ENTWINED_ASSIGN` with a `direction`: `call_order` is one period `k` and
 /// each call runs its equation's body for `i = direction * k + offset` if `i` is
-/// within its bounds, like `CodegenC.tpl:equationEntwinedAssign`.
+/// within its bounds, like `CodegenC.tpl:equationEntwinedAssign`. A scalar call
+/// runs before or after the call of its period entry for one iteration value,
+/// relative to the start (`position >= 0`) or stop of that entry's range.
 pub(crate) fn emit_resizable_entwined_assign(
     ctx: &mut FnCtx,
     call_order: &List<i32>,
     single_calls: &List<metamodelica::Ref<SimCode::SimEqSystem>>,
     direction: i32,
     offsets: &List<i32>,
-    start_shifts: &List<i32>,
-    stop_shifts: &List<i32>,
+    shifts: (&List<i32>, &List<i32>),
+    scalars: (&List<i32>, &List<i32>, &List<i32>, &List<bool>),
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
 ) -> Result<()> {
     use SimCode::SimEqSystem as E;
     use we::Instruction as I;
-    let start_shifts: Vec<i32> = (&**start_shifts).into_iter().copied().collect();
-    let stop_shifts: Vec<i32> = (&**stop_shifts).into_iter().copied().collect();
-    // per single call: its body, iterator name and the locals of its bounds
+    let start_shifts: Vec<i32> = (&**shifts.0).into_iter().copied().collect();
+    let stop_shifts: Vec<i32> = (&**shifts.1).into_iter().copied().collect();
+    let single_calls: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = (&**single_calls).into_iter().cloned().collect();
+    // per scalar call: single call, period entry, position and whether it runs after the entry
+    let scalars: Vec<(usize, i32, i32, bool)> = (&**scalars.0)
+        .into_iter()
+        .zip((&**scalars.1).into_iter())
+        .zip((&**scalars.2).into_iter().zip((&**scalars.3).into_iter()))
+        .map(|((c, e), (p, a))| usize::try_from(*c).map(|c| (c, *e, *p, *a)))
+        .collect::<std::result::Result<_, _>>()
+        .map_err(|_| "CodegenWasmJit: negative entwined scalar call index")?;
+    if scalars.iter().any(|(c, ..)| *c >= single_calls.len()) {
+        return Err("CodegenWasmJit: entwined scalar call names a missing call");
+    }
+    // per loop call: its body, iterator name and the locals of its range and bounds
     let mut calls = Vec::new();
-    for (c, eq) in (&**single_calls).into_iter().enumerate() {
+    for (c, eq) in single_calls.iter().enumerate() {
+        if scalars.iter().any(|(sc, ..)| *sc == c) {
+            calls.push(None);
+            continue;
+        }
         let E::SES_RESIZABLE_ASSIGN { call_index, iters, .. } = &**eq else {
             return Err("CodegenWasmJit: resizable entwined call is no resizable assignment");
         };
@@ -97,10 +116,13 @@ pub(crate) fn emit_resizable_entwined_assign(
         let [BackendDAE::SimIterator::SIM_ITERATOR_RANGE { name, start, stop, .. }] = iters.as_slice() else {
             return Err("CodegenWasmJit: resizable entwined call needs a single range iterator");
         };
+        let s = ctx.alloc_temp(WTy::I32);
+        let e = ctx.alloc_temp(WTy::I32);
         let lo = ctx.alloc_temp(WTy::I32);
         let hi = ctx.alloc_temp(WTy::I32);
         let w = compile_exp(ctx, start)?;
         coerce(ctx, w, WTy::I32);
+        ctx.emit(I::LocalTee(s));
         ctx.emit(I::I32Const(
             *start_shifts
                 .get(c)
@@ -110,6 +132,7 @@ pub(crate) fn emit_resizable_entwined_assign(
         ctx.emit(I::LocalSet(lo));
         let w = compile_exp(ctx, stop)?;
         coerce(ctx, w, WTy::I32);
+        ctx.emit(I::LocalTee(e));
         ctx.emit(I::I32Const(
             *stop_shifts
                 .get(c)
@@ -117,7 +140,7 @@ pub(crate) fn emit_resizable_entwined_assign(
         ));
         ctx.emit(I::I32Sub);
         ctx.emit(I::LocalSet(hi));
-        calls.push((lookup_call(ctx, *call_index)?, (*name).clone(), lo, hi));
+        calls.push(Some((lookup_call(ctx, *call_index)?, (*name).clone(), (s, e), lo, hi)));
     }
     let period: Vec<(usize, i32)> = (&**call_order)
         .into_iter()
@@ -125,9 +148,10 @@ pub(crate) fn emit_resizable_entwined_assign(
         .map(|(c, o)| usize::try_from(*c).map(|c| (c, *o)))
         .collect::<std::result::Result<_, _>>()
         .map_err(|_| "CodegenWasmJit: negative entwined call index")?;
-    if period.iter().any(|(c, _)| *c >= calls.len()) {
+    if period.iter().any(|(c, _)| calls.get(*c).map_or(true, Option::is_none)) {
         return Err("CodegenWasmJit: entwined call order names a missing call");
     }
+    let loop_call = |c: usize| calls[c].as_ref().expect("checked above");
 
     // the periods k_lo..k_hi cover every iteration, the calls check their bounds
     let k_lo = ctx.alloc_temp(WTy::I32);
@@ -140,7 +164,7 @@ pub(crate) fn emit_resizable_entwined_assign(
     ctx.emit(I::I32Const(i32::MIN));
     ctx.emit(I::LocalSet(k_hi));
     for (c, o) in &period {
-        let (_, _, lo, hi) = &calls[*c];
+        let (_, _, _, lo, hi) = loop_call(*c);
         ctx.emit(I::LocalGet(*lo));
         ctx.emit(I::LocalGet(*hi));
         ctx.emit(I::I32LeS);
@@ -184,8 +208,8 @@ pub(crate) fn emit_resizable_entwined_assign(
     ctx.emit(I::LocalGet(k_hi));
     ctx.emit(I::I32GtS);
     ctx.emit(I::BrIf(1));
-    for (c, o) in &period {
-        let (call, name, lo, hi) = &calls[*c];
+    for (r, (c, o)) in period.iter().enumerate() {
+        let (call, name, (s, e), lo, hi) = loop_call(*c);
         ctx.emit(I::LocalGet(k));
         ctx.emit(I::I32Const(direction));
         ctx.emit(I::I32Mul);
@@ -199,9 +223,32 @@ pub(crate) fn emit_resizable_entwined_assign(
         ctx.emit(I::I32LeS);
         ctx.emit(I::I32And);
         ctx.emit(I::If(we::BlockType::Empty));
-        let bound = bind_iter(ctx, name, it, SigTy::Int)?;
-        emit_call_body(ctx, call)?;
-        unbind_iter(ctx, bound);
+        for after in [false, true] {
+            if after {
+                let bound = bind_iter(ctx, name, it, SigTy::Int)?;
+                emit_call_body(ctx, call)?;
+                unbind_iter(ctx, bound);
+            }
+            for (sc, entry, position, sc_after) in &scalars {
+                if *entry != r as i32 || *sc_after != after {
+                    continue;
+                }
+                // i_ == s + position or i_ == e + position + 1
+                ctx.emit(I::LocalGet(it));
+                if *position < 0 {
+                    ctx.emit(I::LocalGet(*e));
+                    ctx.emit(I::I32Const(*position + 1));
+                } else {
+                    ctx.emit(I::LocalGet(*s));
+                    ctx.emit(I::I32Const(*position));
+                }
+                ctx.emit(I::I32Add);
+                ctx.emit(I::I32Eq);
+                ctx.emit(I::If(we::BlockType::Empty));
+                crate::CodegenWasmJit::lower_equation(ctx, &single_calls[*sc], eq_index)?;
+                ctx.emit(I::End);
+            }
+        }
         ctx.emit(I::End);
     }
     ctx.emit(I::LocalGet(k));

@@ -188,8 +188,8 @@ public
 
     record ENTWINED_ASSIGN
       "entwined generic assignments calling for loop body functions with an index list and a call order.
-      with resizable arrays the call order is one period k and each call gets the iterator value
-      direction * k + offset, see StrongComponent.ResizableOrder."
+      with a direction the call order is one period k and each call gets the iterator value
+      direction * k + offset, see StrongComponent.PeriodicOrder."
       Integer index;
       list<Integer> call_order;
       list<Block> single_calls;
@@ -197,6 +197,10 @@ public
       list<Integer> offsets;
       list<Integer> start_shifts  "per single call: its first iteration is the start of its range plus this";
       list<Integer> stop_shifts   "per single call: its last iteration is the stop of its range minus this";
+      list<Integer> scalar_calls  "single calls of scalar slices in call order, see StrongComponent.ScalarAnchor";
+      list<Integer> scalar_entries;
+      list<Integer> scalar_positions;
+      list<Boolean> scalar_after;
       DAE.ElementSource source;
       EquationAttributes attr;
     end ENTWINED_ASSIGN;
@@ -865,8 +869,11 @@ public
           list<Block> single_calls = {};
           UnorderedMap<ComponentRef, Integer> entwined_index_map;
           list<Integer> call_order = {}, offsets = {}, start_shifts = {}, stop_shifts = {};
+          list<Integer> scalar_calls = {}, scalar_entries = {}, scalar_positions = {};
+          list<Boolean> scalar_after = {};
           Integer direction = 0;
-          list<tuple<Integer, Integer>> period, bounds;
+          list<tuple<Integer, Integer>> period = {}, bounds = {};
+          list<StrongComponent.ScalarAnchor> scalars = {};
           Identifier ident;
           list<SimIterator> iters;
 
@@ -950,9 +957,13 @@ public
         case StrongComponent.ENTWINED_COMPONENT() algorithm
           // create index list calls for entwined equations (position-based dispatch)
           entwined_index_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+          if isSome(comp.periodic_order) then
+            SOME(StrongComponent.PERIODIC_ORDER(direction = direction, period = period, bounds = bounds, scalars = scalars)) := comp.periodic_order;
+            scalar_calls := list(sc.slice for sc in scalars);
+          end if;
           for slice in comp.entwined_slices loop
-            if isSome(comp.resizable_order) then
-              // every slice is called with the values of the iterator of its equation
+            if isSome(comp.periodic_order) and not List.isMemberOnTrue(listLength(single_calls), scalar_calls, intEq) then
+              // every for-equation slice is called with the values of the iterator of its equation
               (single_call, simCodeIndices) := resizableEntwinedCall(slice, simCodeIndices, equation_map);
             else
               (single_call, simCodeIndices, _) := fromStrongComponent(slice, simCodeIndices, kind, simcode_map, equation_map, entwined = true);
@@ -962,12 +973,14 @@ public
             single_calls := single_call :: single_calls;
           end for;
           single_calls := listReverse(single_calls);
-          if isSome(comp.resizable_order) then
-            SOME(StrongComponent.RESIZABLE_ORDER(direction = direction, period = period, bounds = bounds)) := comp.resizable_order;
+          if isSome(comp.periodic_order) then
             call_order := list(Util.tuple21(c) for c in period);
             offsets := list(Util.tuple22(c) for c in period);
             start_shifts := list(Util.tuple21(c) for c in bounds);
             stop_shifts := list(Util.tuple22(c) for c in bounds);
+            scalar_entries := list(sc.entry for sc in scalars);
+            scalar_positions := list(sc.position for sc in scalars);
+            scalar_after := list(sc.after for sc in scalars);
           else
             for tpl in listReverse(comp.entwined_tpl_lst) loop
               (eqn_ptr, _) := tpl;
@@ -975,7 +988,7 @@ public
             end for;
           end if;
           // todo: eq attributes and source
-          tmp := ENTWINED_ASSIGN(simCodeIndices.equationIndex, call_order, single_calls, direction, offsets, start_shifts, stop_shifts, DAE.emptyElementSource, EquationAttributes.default(EquationKind.CONTINUOUS, false));
+          tmp := ENTWINED_ASSIGN(simCodeIndices.equationIndex, call_order, single_calls, direction, offsets, start_shifts, stop_shifts, scalar_calls, scalar_entries, scalar_positions, scalar_after, DAE.emptyElementSource, EquationAttributes.default(EquationKind.CONTINUOUS, false));
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then (tmp, getIndex(tmp));
 
@@ -1528,7 +1541,7 @@ public
         case ARRAY_ASSIGN()     then OldSimCode.SES_ARRAY_CALL_ASSIGN(blck.index, Expression.toDAE(blck.lhs), Expression.toDAE(blck.rhs), blck.source, EquationAttributes.convert(blck.attr));
         case RESIZABLE_ASSIGN() then OldSimCode.SES_RESIZABLE_ASSIGN(blck.index, blck.call_index, list(SimIterator.convert(it) for it in blck.iters), blck.source, EquationAttributes.convert(blck.attr));
         case GENERIC_ASSIGN()   then OldSimCode.SES_GENERIC_ASSIGN(blck.index, blck.call_index, blck.scal_indices, blck.source, EquationAttributes.convert(blck.attr));
-        case ENTWINED_ASSIGN()  then OldSimCode.SES_ENTWINED_ASSIGN(blck.index, blck.call_order, list(convert(single_call) for single_call in blck.single_calls), blck.direction, blck.offsets, blck.start_shifts, blck.stop_shifts, blck.source, EquationAttributes.convert(blck.attr));
+        case ENTWINED_ASSIGN()  then OldSimCode.SES_ENTWINED_ASSIGN(blck.index, blck.call_order, list(convert(single_call) for single_call in blck.single_calls), blck.direction, blck.offsets, blck.start_shifts, blck.stop_shifts, blck.scalar_calls, blck.scalar_entries, blck.scalar_positions, blck.scalar_after, blck.source, EquationAttributes.convert(blck.attr));
         case IF() algorithm
           for branch in blck.branches loop
             (exp, blcks) := branch;

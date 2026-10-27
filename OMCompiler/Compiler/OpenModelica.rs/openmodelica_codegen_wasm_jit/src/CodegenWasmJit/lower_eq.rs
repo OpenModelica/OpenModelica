@@ -60,6 +60,10 @@ pub(super) fn lower_equation_inner(
             offsets,
             start_shifts,
             stop_shifts,
+            scalar_calls,
+            scalar_entries,
+            scalar_positions,
+            scalar_after,
             ..
         } => emit_resizable_entwined_assign(
             ctx,
@@ -67,8 +71,9 @@ pub(super) fn lower_equation_inner(
             single_calls,
             *direction,
             offsets,
-            start_shifts,
-            stop_shifts,
+            (start_shifts, stop_shifts),
+            (scalar_calls, scalar_entries, scalar_positions, scalar_after),
+            eq_index,
         ),
         E::SES_LINEAR {
             lSystem,
