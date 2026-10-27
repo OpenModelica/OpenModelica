@@ -42,14 +42,13 @@ equation
       end for;
     end for;
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayDim2;
 
 // Result:
 // class ArrayDim2
-//   parameter Integer n = 1;
-//   parameter Integer m = 2;
-//   parameter Integer k = 3;
+//   final parameter Integer n = 1;
+//   final parameter Integer m = 2;
+//   final parameter Integer k = 3;
 //   Real positionvector[1];
 //   Real positionvector[2];
 //   Real positionvector[3];

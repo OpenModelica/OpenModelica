@@ -3,14 +3,13 @@
 // status:   correct
 //
 
-class OneReturnValue
+model OneReturnValue
   Real a = 1, b = 0, c = 1;
 
   Real s1[3] = sin({a, b, c});
                 // Vector argument, result: {sin(a), sin(b), sin(c)}
-  Real s2[2, 2] = sin([1, 2; 3, 4]);
+  constant Real s2[2, 2] = sin([1, 2; 3, 4]);
                 // Matrix argument, result: [sin(1), sin(2); sin(3), sin(4)]
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end OneReturnValue;
 
 // Result:
@@ -21,12 +20,11 @@ end OneReturnValue;
 //   Real s1[1];
 //   Real s1[2];
 //   Real s1[3];
-//   Real s2[1,1];
-//   Real s2[1,2];
-//   Real s2[2,1];
-//   Real s2[2,2];
+//   constant Real s2[1,1] = 0.8414709848078965;
+//   constant Real s2[1,2] = 0.9092974268256817;
+//   constant Real s2[2,1] = 0.1411200080598672;
+//   constant Real s2[2,2] = -0.7568024953079282;
 // equation
-//   s1 = {sin(a), sin(b), sin(c)};
-//   s2 = {{0.8414709848078965, 0.9092974268256817}, {0.1411200080598672, -0.7568024953079282}};
+//   s1 = array(sin({a, b, c}[$i0]) for $i0 in 1:3);
 // end OneReturnValue;
 // endResult

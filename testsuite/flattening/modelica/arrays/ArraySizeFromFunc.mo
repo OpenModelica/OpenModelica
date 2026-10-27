@@ -16,19 +16,11 @@ end f;
 model ArraySizeFromFunc
   parameter Integer n = 5;
   parameter Real x[:] = f(n);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArraySizeFromFunc;
 
 // Result:
-// function f
-//   input Integer n;
-//   output Real[n] x;
-// algorithm
-//   x := fill(1.0, n);
-// end f;
-//
 // class ArraySizeFromFunc
-//   parameter Integer n = 5;
+//   final parameter Integer n = 5;
 //   parameter Real x[1] = 1.0;
 //   parameter Real x[2] = 1.0;
 //   parameter Real x[3] = 1.0;
