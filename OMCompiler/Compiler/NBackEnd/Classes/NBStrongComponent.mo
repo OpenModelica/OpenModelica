@@ -210,7 +210,7 @@ public
       array<Boolean> seen = arrayCreate(n, false), called = arrayCreate(n, false), is_loop = arrayCreate(n, false);
       list<tuple<Integer, Integer, Integer>> calls = {} "period, slice and iterator value";
       list<Integer> current = {}, longest = {}, pending = {} "scalar slices before the first loop call";
-      list<ScalarAnchor> scalars = {};
+      list<ScalarAnchor> scalars = {}, ranked = {};
       Integer pos = 0, k = 0, p, i, first, dir = 0, stride, loops = 0, prev_k = -1, prev_rank = -1;
       Option<tuple<Integer, Integer>> last_loop = NONE() "slice and iterator value of the last loop call";
       Option<tuple<Integer, Integer>> o_range;
@@ -296,13 +296,15 @@ public
           return;
         end if;
       end for;
-      scalars := list(SCALAR_ANCHOR(sc.slice, rank[sc.entry + 1], sc.position, sc.after) for sc in listReverse(scalars));
+      for sc in scalars loop
+        ranked := SCALAR_ANCHOR(sc.slice, rank[sc.entry + 1], sc.position, sc.after) :: ranked;
+      end for;
 
       // iterations closer to a bound than the stride are kept apart by the offset
       stride := intAbs(dir);
       order := SOME(PERIODIC_ORDER(dir, list((j, offsets[j + 1]) for j in longest), list(
         if is_loop[j] then (cutBelow(min(first_i[j], last[j]) - starts[j], stride), cutBelow(stops[j] - max(first_i[j], last[j]), stride)) else (0, 0)
-        for j in 1:n), scalars));
+        for j in 1:n), ranked));
     end fromCalls;
 
     function anchor
