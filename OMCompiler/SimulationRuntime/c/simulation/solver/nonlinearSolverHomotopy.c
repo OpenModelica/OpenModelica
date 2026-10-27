@@ -1300,15 +1300,18 @@ int linearSolverWrapper(DATA *data, int n, double* x, double* A, int* indRow, in
         debugString(OMC_LOG_NLS_V, "Linear lapack solver failed!!!");
         debugString(OMC_LOG_NLS_V, "******************************************************");
       }
-      else if (fabs(detJac) < 1e-9 && casualTearingSet)
-      {
-        debugString(OMC_LOG_DT, "The determinant of the casual tearing set is vanishing, let's fail if this is not the solution...");
-        returnValue = 1;
-      }
       else
       {
         vecScalarMult(n, x, -1, x);
-        returnValue = 0;
+        if (fabs(detJac) < 1e-9 && casualTearingSet)
+        {
+          debugString(OMC_LOG_DT, "The determinant of the casual tearing set is vanishing, let's fail if this is not the solution...");
+          returnValue = 1;
+        }
+        else
+        {
+          returnValue = 0;
+        }
       }
       break;
     default:
@@ -1654,8 +1657,6 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
         vecCopy(solverData->n, solverData->x1, x);
       }
 
-      /* update statistics */
-      solverData->numberOfIterations += numberOfIterations;
       solverData->error_f_sqrd = error_f_sqrd;
 
       break;
@@ -1670,7 +1671,6 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     {
       solverData->info = 1;
       debugString(OMC_LOG_NLS_V, "Note: newton solver rejected last x because previous was as good");
-      solverData->numberOfIterations += numberOfIterations;
       solverData->error_f_sqrd = error_f_old;
       break;
     }
@@ -1687,9 +1687,6 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       /* debug information */
       debugString(OMC_LOG_NLS_V, "NEWTON SOLVER DID ---NOT--- CONVERGE TO A SOLUTION!!!");
       debugString(OMC_LOG_NLS_V, "******************************************************");
-
-      /* update statistics */
-      solverData->numberOfIterations += numberOfIterations;
       break;
     }
 
@@ -1726,8 +1723,6 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
         debugString(OMC_LOG_NLS_V, "NEWTON SOLVER DID ---NOT--- CONVERGE TO A SOLUTION!!!");
         debugString(OMC_LOG_NLS_V, "******************************************************");
       }
-      /* update statistics */
-      solverData->numberOfIterations += numberOfIterations;
       break;
     }
     assert = 1;
@@ -1757,6 +1752,8 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     scaleMatrixRows(solverData->n, solverData->m, solverData->fJac);
     vecCopy(n, solverData->fJac + n*n, solverData->dy0);
   }
+  /* update statistics, also of a run that failed */
+  solverData->numberOfIterations += numberOfIterations;
   return 0;
 }
 
@@ -2354,16 +2351,19 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
       {
         success = NLS_SOLVED;
         /* take the solution */
+        vecCopy(homotopyData->n, homotopyData->x0, homotopyData->x);
         vecCopy(homotopyData->n, homotopyData->x, nlsData->nlsx);
         /* reset continous flag */
         data->simulationInfo->solveContinuous = 0;
         assert = 0;
       } else {
+        /* keep the relations at x0, also for the Jacobian, like Newton's method does */
+        if (mixedSystem)
+          memcpy(relationsPreBackup, data->simulationInfo->relations, sizeof(modelica_boolean)*data->modelData->nRelations);
+        data->simulationInfo->solveContinuous = 1;
         homotopyData->fJac_f(homotopyData, homotopyData->x0, homotopyData->fJac);
         vecCopy(homotopyData->n, homotopyData->f1, homotopyData->fJac + homotopyData->n*homotopyData->n);
         vecCopy(homotopyData->n*homotopyData->m, homotopyData->fJac, homotopyData->fJacx0);
-        if (mixedSystem)
-          memcpy(relationsPreBackup, data->simulationInfo->relations, sizeof(modelica_boolean)*data->modelData->nRelations);
         /* calculate scaling factor of residuals */
         matVecMultAbsBB(homotopyData->n, homotopyData->fJac, homotopyData->ones, homotopyData->resScaling);
         vecMakeFinite(homotopyData->n, homotopyData->resScaling);
