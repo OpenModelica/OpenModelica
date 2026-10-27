@@ -1300,15 +1300,18 @@ int linearSolverWrapper(DATA *data, int n, double* x, double* A, int* indRow, in
         debugString(OMC_LOG_NLS_V, "Linear lapack solver failed!!!");
         debugString(OMC_LOG_NLS_V, "******************************************************");
       }
-      else if (fabs(detJac) < 1e-9 && casualTearingSet)
-      {
-        debugString(OMC_LOG_DT, "The determinant of the casual tearing set is vanishing, let's fail if this is not the solution...");
-        returnValue = 1;
-      }
       else
       {
         vecScalarMult(n, x, -1, x);
-        returnValue = 0;
+        if (fabs(detJac) < 1e-9 && casualTearingSet)
+        {
+          debugString(OMC_LOG_DT, "The determinant of the casual tearing set is vanishing, let's fail if this is not the solution...");
+          returnValue = 1;
+        }
+        else
+        {
+          returnValue = 0;
+        }
       }
       break;
     default:
