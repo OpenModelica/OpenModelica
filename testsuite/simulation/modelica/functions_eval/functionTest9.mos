@@ -1,7 +1,6 @@
 // name:      functionTest9
 // keywords:  evalConstFunc
 // status:    correct
-// cflags: -d=-newInst
 //
 
 loadString("
@@ -60,13 +59,13 @@ val(H, 0.0);
 //
 // IF-statement:
 //   if T > 298.15 then
-//     Ent := 1.0 + Ent;
+//     Ent := Ent + 1.0;
 //     Ent2 := Ent;
 //   elseif temp < 200.0 then
-//     Ent := -1.0 + Ent;
+//     Ent := Ent - 1.0;
 //     Ent2 := -Ent;
 //   else
-//     Ent := 1.0 + Ent;
+//     Ent := Ent + 1.0;
 //     Ent2 := Ent;
 //   end if;
 // -->try to check if its the if case
@@ -75,7 +74,7 @@ val(H, 0.0);
 // -->is it an other case? false
 // -->try to predict the outputs 
 // assignment:
-//   Ent := 1.0 + Ent;
+//   Ent := Ent + 1.0;
 // evaluated assignment to:
 //   Ent := 1.0;
 //
@@ -85,7 +84,7 @@ val(H, 0.0);
 //   Ent2 := 1.0;
 //
 // assignment:
-//   Ent := -1.0 + Ent;
+//   Ent := Ent - 1.0;
 // evaluated assignment to:
 //   Ent := -1.0;
 //
@@ -95,7 +94,7 @@ val(H, 0.0);
 //   Ent2 := 1.0;
 //
 // assignment:
-//   Ent := 1.0 + Ent;
+//   Ent := Ent + 1.0;
 // evaluated assignment to:
 //   Ent := 1.0;
 //
@@ -131,7 +130,7 @@ val(H, 0.0);
 //
 // record SimulationResult
 //     resultFile = "functionTest9_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'functionTest9', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'functionTest9', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

@@ -6,7 +6,7 @@
 // Drmodelica: 8.2 Conditional Equations with when-Equations (p. 246)
 
 
-class Activate
+model Activate
   constant Real x = 4;
   Real y, z;
 equation

@@ -1,6 +1,6 @@
 // name:     Ticket4258a.mos [BUG: #4258]
 // keywords: proper unique scopes for redeclares
-// cflags: -d=nogen -d=-newInst
+// cflags: -d=nogen
 // status:   correct
 // treardown_command: rm -rf simple_BasicHX_water_gas*
 //
@@ -27,11 +27,11 @@ simulate(simple_BasicHX_water_gas); getErrorString();
 // "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // Warning: Some equations could not be differentiated for following variables having attribute stateSelect=StateSelect.prefer. They will be treated as if they had stateSelect=StateSelect.default
 // ========================================
-// 1: WT_Nachreformer.pipe_1.mediums[5].T
-// 2: WT_Nachreformer.pipe_1.mediums[1].T
+// 1: WT_Nachreformer.pipe_1.mediums[4].T
+// 2: WT_Nachreformer.pipe_1.mediums[3].T
 // 3: WT_Nachreformer.pipe_1.mediums[2].T
-// 4: WT_Nachreformer.pipe_1.mediums[3].T
-// 5: WT_Nachreformer.pipe_1.mediums[4].T
+// 4: WT_Nachreformer.pipe_1.mediums[1].T
+// 5: WT_Nachreformer.pipe_1.mediums[5].T
 // Please use -d=bltdump for more information.
 // Warning: Some equations could not be differentiated for following variables having attribute stateSelect=StateSelect.prefer. They will be treated as if they had stateSelect=StateSelect.default
 // ========================================

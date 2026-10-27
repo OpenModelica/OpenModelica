@@ -2,7 +2,6 @@
 // keywords: assert
 // status:   correct
 // teardown_command: rm -rf Test7* output.log
-// cflags: -d=-newInst
 //
 //
 loadFile("AssertTest7.mo");
@@ -16,7 +15,7 @@ getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 7, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Test7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 7, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Test7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: Test7
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // Value of x(=0.51)

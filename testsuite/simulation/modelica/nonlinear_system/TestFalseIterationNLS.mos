@@ -1,6 +1,5 @@
 // name: TestFalseIterationNLS
 // status: correct
-// cflags: -d=-newInst
 //
 // Ticket 4046
 //
@@ -219,8 +218,7 @@ val(h_i[5], 1.0); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[<interactive>:20:3-20:42:writable] Warning: Unused input variable nc in function .pureComponentProperties_pTnc.
-// "
+// ""
 // 0.0
 // ""
 // -1.0

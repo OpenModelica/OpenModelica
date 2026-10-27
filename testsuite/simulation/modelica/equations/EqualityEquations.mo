@@ -17,7 +17,7 @@ algorithm
   e := a * b;
 end f;
 
-class EqualityEquations
+model EqualityEquations
   Real x;
   Real y;
   Real z;
