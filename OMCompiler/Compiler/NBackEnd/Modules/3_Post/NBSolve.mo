@@ -414,6 +414,10 @@ public
                   generic_comp.eqn := Slice.SLICE(Pointer.create(eqn), generic_comp.eqn.indices);
                   generic_comp.status := solve_status;
                 then ();
+                case _ guard(not List.any(StrongComponent.getEquations(generic_comp), Equation.isForEquation)) algorithm
+                  // a scalar slice is called once
+                  ({generic_comp}, implicit_index) := solveStrongComponent(generic_comp, funcMap, kind, implicit_index, slicing_map, varData, eqData);
+                then ();
                 else algorithm
                   (generic_comp, solve_status, implicit_index) := solveGenericEquation(slice, funcMap, kind, implicit_index, slicing_map, varData, eqData);
                 then ();
