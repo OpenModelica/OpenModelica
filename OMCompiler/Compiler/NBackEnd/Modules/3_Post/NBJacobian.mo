@@ -623,7 +623,6 @@ protected
     input Option<Adjacency.Matrix> full;
     input UnorderedMap<Path, Function> funcMap;
     input Partition.Kind kind;
-    input String name = "";
     output Boolean updated;
   protected
     StrongComponent original;
@@ -634,7 +633,7 @@ protected
   algorithm
     (comp, updated) := match comp
       case StrongComponent.ALIAS() algorithm
-        (original, updated) := compJacobian(comp.original, full, funcMap, kind, name);
+        (original, updated) := compJacobian(comp.original, full, funcMap, kind);
         comp.original := original;
       then (comp, updated);
 
@@ -672,7 +671,7 @@ protected
           // comp.implicitlyCreated components distinctly so the two numbering
           // spaces can never collide, without changing either one's actual numbers
           // (which existing reference test outputs depend on).
-          name               = if name <> "" then name else Partition.Partition.kindToString(kind)
+          name               = Partition.Partition.kindToString(kind)
                                 + (if comp.implicitlyCreated then "_NLS_IMPL_"
                                    else if comp.linear then "_LS_JAC_" else "_NLS_JAC_")
                                 + intString(comp.idx),
@@ -1182,9 +1181,8 @@ protected
         linResEqnPtrs := listReverse(linResEqnPtrs);
 
         if not listEmpty(linResEqnPtrs) then
-          loopComp := makeLinearAlgebraicLoop(lambdaPtrs, linResEqnPtrs, NONE(), mixed = false, homotopy = false);
-          (loopComp, _) := compJacobian(loopComp, NONE(), funcMap, NBPartition.Kind.JAC,
-            contextName + "_LS_JAC_" + intString(Pointer.access(idx)));
+          loopComp := makeLinearAlgebraicLoop(lambdaPtrs, linResEqnPtrs, Pointer.access(idx), NONE(), mixed = false, homotopy = false);
+          (loopComp, _) := compJacobian(loopComp, NONE(), funcMap, NBPartition.Kind.JAC);
           adjointComps := loopComp :: adjointComps;
         end if;
 
@@ -1796,6 +1794,7 @@ protected
   function makeLinearAlgebraicLoop
     input list<NBVariable.VariablePointer> itVarPtrs;           // unknowns y (order = columns of A)
     input list<Pointer<NBEquation.Equation>> resEqnPtrs;        // residuals r_i(y)=0, same order as rows of A
+    input Integer idx;
     input Option<NBackendDAE> jac = NONE();                     // optional analytic Jacobian for A
     input Boolean mixed = false;
     input Boolean homotopy = false;
@@ -1827,7 +1826,7 @@ protected
 
     // mark as linear algebraic loop
     comp := NBStrongComponent.ALGEBRAIC_LOOP(
-      idx      = -1,
+      idx      = idx,
       strict   = tearingSet,
       casual   = NONE(),
       linear   = true,
