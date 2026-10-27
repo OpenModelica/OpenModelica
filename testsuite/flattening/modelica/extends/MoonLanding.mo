@@ -17,7 +17,7 @@ model CelestialBody "Celestial body"
   parameter Real radius;
 end CelestialBody;
 
-class Rocket
+model Rocket
   extends Body;
   Real altitude(start = 59404);
   Real velocity(start = -2003);
@@ -44,7 +44,6 @@ equation
   else if (time < thrustEndTime) then force2
   else 0;
   apollo.gravity = moon.g*moon.mass/(apollo.altitude + moon.radius)^2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MoonLanding;
 
 // Result:
@@ -60,17 +59,17 @@ end MoonLanding;
 //   Real apollo.acceleration;
 //   Real apollo.thrust;
 //   Real apollo.gravity;
-//   parameter Real apollo.massLossRate = 0.000277;
-//   Real moon.mass = 7.382e+22;
+//   parameter Real apollo.massLossRate = 2.77e-4;
+//   Real moon.mass = 7.382e22;
 //   String moon.name = "moon";
-//   constant Real moon.g = 0.00000000006672;
-//   parameter Real moon.radius = 1738000.0;
+//   constant Real moon.g = 6.672e-11;
+//   parameter Real moon.radius = 1.738e6;
 // equation
 //   (apollo.thrust - apollo.mass * apollo.gravity) / apollo.mass = apollo.acceleration;
-//   der(apollo.mass) = (-apollo.massLossRate) * abs(apollo.thrust);
+//   der(apollo.mass) = -apollo.massLossRate * abs(apollo.thrust);
 //   der(apollo.altitude) = apollo.velocity;
 //   der(apollo.velocity) = apollo.acceleration;
 //   apollo.thrust = if time < thrustDecreaseTime then force1 else if time < thrustEndTime then force2 else 0.0;
-//   apollo.gravity = 0.00000000006672 * moon.mass / (apollo.altitude + moon.radius) ^ 2.0;
+//   apollo.gravity = 6.672e-11 * moon.mass / (apollo.altitude + moon.radius) ^ 2.0;
 // end MoonLanding;
 // endResult

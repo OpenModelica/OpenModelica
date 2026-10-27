@@ -3,18 +3,17 @@
 // status:   correct
 //
 
-class B
+model B
   Real x = 1.0;
 end B;
 
-class A
+model A
   B b1;
   B b2;
 end A;
 
-class Modification11
+model Modification11
   A a(b2(x = 17.0));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Modification11;
 
 // Result:

@@ -2,21 +2,20 @@
 // keywords: modification
 // status:   correct
 
-class A
-  class AA
+model A
+  model AA
     parameter Real p=1.0;
   end AA;
 end A;
 
-class B
-  replaceable class A=.A.AA;
+model B
+  replaceable model A=.A.AA;
   A a;
   A a2;
 end B;
 
-class Modification3
-  B b(redeclare class A=A.AA(p=2),a2(p=4));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
+model Modification3
+  B b(redeclare model A=A.AA(p=2),a2(p=4));
 end Modification3;
 
 // Result:

@@ -9,19 +9,13 @@ record InputRecord
   Real r;
 end InputRecord;
 
-class InputDeclRecord
+model InputDeclRecord
   input InputRecord ir;
 equation
   ir.r = 1.0;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InputDeclRecord;
 
 // Result:
-// function InputRecord "Automatically generated record constructor for InputRecord"
-//   input Real r;
-//   output InputRecord res;
-// end InputRecord;
-//
 // class InputDeclRecord
 //   input Real ir.r;
 // equation

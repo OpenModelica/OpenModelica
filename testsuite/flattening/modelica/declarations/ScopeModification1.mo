@@ -7,14 +7,13 @@
 // in the modification.
 //
 
-class ScopeModification1
-  class Inner
+model ScopeModification1
+  model Inner
     Real a=2;
     Real b;
   end Inner;
   Real a=1;
   Inner m(b = a);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ScopeModification1;
 
 // Result:
