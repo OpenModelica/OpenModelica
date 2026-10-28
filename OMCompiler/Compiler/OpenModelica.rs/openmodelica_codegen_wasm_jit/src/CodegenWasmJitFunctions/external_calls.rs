@@ -511,6 +511,15 @@ pub(crate) fn set_assert_throw_tag(tag: Option<u32>) {
     ASSERT_THROW_TAG.with(|c| c.set(tag));
 }
 
+thread_local! {
+    /// Catch with the legacy `try`/`catch` instead of `try_table`.
+    static LEGACY_EH: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+pub(crate) fn set_legacy_eh(legacy: bool) {
+    LEGACY_EH.with(|c| c.set(legacy));
+}
+
 /// End the computation the failed `assert()` was part of: a guarded module unwinds
 /// to its `<entry>$guard`, anything else traps.
 pub(super) fn emit_assert_unwind(ctx: &mut FnCtx) {
@@ -523,6 +532,8 @@ pub(super) fn emit_assert_unwind(ctx: &mut FnCtx) {
 /// The blocks [`open_ext_catch`] opened around an `ext` call.
 struct ExtCatch {
     saved_stack: u32,
+    tag: u32,
+    legacy: bool,
     /// A failed `assert()` in an argument unwinds past the call with this tag.
     assert_tag: Option<u32>,
 }
@@ -535,6 +546,16 @@ fn open_ext_catch(ctx: &mut FnCtx, tag: u32) -> Result<ExtCatch> {
     ctx.emit(I::Call(env_extra_index("rt_ext_stack_save")?));
     ctx.emit(I::LocalSet(saved_stack));
     let assert_tag = ASSERT_THROW_TAG.with(|c| c.get());
+    let legacy = LEGACY_EH.with(|c| c.get());
+    if legacy {
+        ctx.emit(I::Try(we::BlockType::Empty));
+        return Ok(ExtCatch {
+            saved_stack,
+            tag,
+            legacy,
+            assert_tag,
+        });
+    }
     ctx.emit(I::Block(we::BlockType::Empty)); // done
     ctx.emit(I::Block(we::BlockType::Empty)); // uncaught
     let mut catches = vec![we::Catch::OneRef { tag, label: 0 }];
@@ -552,6 +573,8 @@ fn open_ext_catch(ctx: &mut FnCtx, tag: u32) -> Result<ExtCatch> {
     ctx.emit(I::TryTable(we::BlockType::Empty, catches.into()));
     Ok(ExtCatch {
         saved_stack,
+        tag,
+        legacy,
         assert_tag,
     })
 }
@@ -565,16 +588,23 @@ fn close_ext_catch(
     recover: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {
     use we::Instruction as I;
+    if catch.legacy {
+        ctx.emit(I::Catch(catch.tag));
+        emit_ext_error_recovery(ctx, catch, recover)?;
+        ctx.emit(I::Rethrow(0));
+        if let Some(assert_tag) = catch.assert_tag.filter(|t| *t != catch.tag) {
+            ctx.emit(I::Catch(assert_tag));
+            ctx.emit(I::Rethrow(0));
+        }
+        ctx.emit(I::CatchAll);
+        emit_ext_uncaught(ctx, catch, name, recover)?;
+        ctx.emit(I::End); // try
+        return Ok(());
+    }
     ctx.emit(I::End); // try_table
     ctx.emit(I::Br(if catch.assert_tag.is_some() { 3 } else { 2 })); // done
     ctx.emit(I::End); // handler: the exception is on the stack
-    ctx.emit(I::Call(rt_index("rt_nls_recovering")?));
-    ctx.emit(I::If(we::BlockType::Empty));
-    ctx.emit(I::LocalGet(catch.saved_stack));
-    ctx.emit(I::Call(env_extra_index("rt_ext_stack_restore")?));
-    ctx.emit(I::Call(rt_index("rt_nls_note_assert")?));
-    recover(ctx)?;
-    ctx.emit(I::End); // if
+    emit_ext_error_recovery(ctx, catch, recover)?;
     // Not inside a residual: a `ModelicaError` ends the run, as in C.
     ctx.emit(I::ThrowRef);
     if catch.assert_tag.is_some() {
@@ -582,6 +612,35 @@ fn close_ext_catch(
         ctx.emit(I::ThrowRef);
     }
     ctx.emit(I::End); // uncaught: natively `std::terminate`
+    emit_ext_uncaught(ctx, catch, name, recover)?;
+    ctx.emit(I::End); // done
+    Ok(())
+}
+
+/// Inside a residual, a `ModelicaError` fails the trial step instead.
+fn emit_ext_error_recovery(
+    ctx: &mut FnCtx,
+    catch: &ExtCatch,
+    recover: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+) -> Result<()> {
+    use we::Instruction as I;
+    ctx.emit(I::Call(rt_index("rt_nls_recovering")?));
+    ctx.emit(I::If(we::BlockType::Empty));
+    ctx.emit(I::LocalGet(catch.saved_stack));
+    ctx.emit(I::Call(env_extra_index("rt_ext_stack_restore")?));
+    ctx.emit(I::Call(rt_index("rt_nls_note_assert")?));
+    recover(ctx)?;
+    ctx.emit(I::End); // if
+    Ok(())
+}
+
+fn emit_ext_uncaught(
+    ctx: &mut FnCtx,
+    catch: &ExtCatch,
+    name: &str,
+    recover: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+) -> Result<()> {
+    use we::Instruction as I;
     ctx.emit(I::LocalGet(catch.saved_stack));
     ctx.emit(I::Call(env_extra_index("rt_ext_stack_restore")?));
     emit_shared_str(
@@ -589,9 +648,7 @@ fn close_ext_catch(
         &format!("external function `{name}` ended with an exception it did not catch"),
     );
     ctx.emit(I::Call(rt_index("rt_throw_stream")?));
-    recover(ctx)?;
-    ctx.emit(I::End); // done
-    Ok(())
+    recover(ctx)
 }
 
 pub(super) fn emit_general_external_call(
