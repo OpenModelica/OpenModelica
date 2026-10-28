@@ -1313,14 +1313,6 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
 }
 
 /**
- * @brief Solve non-linear system with KINSol
- *
- * @param data                Runtime data struct.
- * @param threadData          Thread data for error handling.
- * @param nlsData             Pointer to non-linear system data.
- * @return NLS_SOLVER_STATUS  Return NLS_SOLVED on success and NLS_FAILED otherwise.
- */
-/**
  * @brief Set sign constraints from the min and max attributes of the iteration variables.
  *
  * Only for variables whose initial guess fulfills the constraint clearly,
@@ -1353,6 +1345,14 @@ static void nlsKinsolSetConstraints(NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTE
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetConstraints");
 }
 
+/**
+ * @brief Solve non-linear system with KINSol
+ *
+ * @param data                Runtime data struct.
+ * @param threadData          Thread data for error handling.
+ * @param nlsData             Pointer to non-linear system data.
+ * @return NLS_SOLVER_STATUS  Return NLS_SOLVED on success and NLS_FAILED otherwise.
+ */
 NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DATA* nlsData) {
 
   NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
