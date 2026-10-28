@@ -31,6 +31,7 @@
 #include "omc_config.h"
 #include "simulation/simulation_runtime.h"
 #include "simulation/results/simulation_result.h"
+#include "simulation/jacobian_util.h"
 #include "solver_main.h"
 #include "openmodelica_func.h"
 #include "initialization/initialization.h"
@@ -189,6 +190,19 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   solverInfo->sampleEvents = 0;
   resetSolverStats(&solverInfo->solverStats);
   resetSolverStats(&solverInfo->solverStatsTmp);
+
+#ifdef WITH_SUNDIALS
+  if (solverInfo->solverMethod == S_DASSL && data->modelData->nStates > 100)
+  {
+    JACOBIAN_METHOD jacobianMethod = getRequestedJacobianMethod(threadData);
+    JACOBIAN* jacobian = initSymbolicOdeJacobian(data, threadData, &jacobianMethod, FALSE);
+    if (jacobian->sparsePattern && jacobian->sparsePattern->nnz < 0.1 * data->modelData->nStates * data->modelData->nStates)
+    {
+      solverInfo->solverMethod = S_IDA;
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "Large and sparse system detected: Integration method automatically changed from DASSL to IDA to exploit sparse linear algebra.");
+    }
+  }
+#endif
 
   switch (solverInfo->solverMethod)
   {
