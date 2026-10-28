@@ -196,10 +196,13 @@ algorithm
       params := getParameters(sys, listAppend(setS, setC), varData.parameters);
       dumpVariables(params, "Parameters in SET_S");
 
+      System.writeFile(fileNamePrefix + "_AuxiliaryConditions.html", dumpExtractedEquationsToHTML(list(sys.eqnArr[eqn] for eqn in setC), "Auxiliary conditions"));
+      System.writeFile(fileNamePrefix + "_IntermediateEquations.html", dumpExtractedEquationsToHTML(list(sys.eqnArr[eqn] for eqn in setS), "Intermediate equations for measured variables"));
+      dumpRelatedBoundaryConditionsEquations(setBFailedBoundaryConditionEquations, fileNamePrefix);
+
       verifyDataReconciliation(sys, setC, setS, knowns, setSVars, listLength(unmeasured), fileNamePrefix);
 
-      data := createReconciliationData(sys, setC, setS, knowns, setSVars, params, unmeasured,
-        listLength(setBFailedBoundaryConditionEquations), eqData.uniqueIndex);
+      data := createReconciliationData(sys, setC, setS, knowns, setSVars, params, unmeasured, listLength(setBFailedBoundaryConditionEquations), eqData.uniqueIndex);
       if Flags.isSet(Flags.DUMP_DATARECONCILIATION) then
         dumpReconciliationData(data);
       end if;
@@ -567,6 +570,46 @@ algorithm
   end for;
   print("\n");
 end dumpEquationPointers;
+
+protected function dumpExtractedEquationsToHTML
+  "returns the html page of a list of equations, same as in the old backend"
+  input list<Pointer<Equation>> eqns;
+  input String heading;
+  output String str;
+protected
+  String comment = heading + " (" + intString(listLength(eqns)) + ", " + intString(sum(Equation.size(eqn) for eqn in eqns)) + ")";
+algorithm
+  if listEmpty(eqns) then
+    str := "The set of " + comment + " is empty.";
+  else
+    str := "<html>\n<body>\n<h2>" + comment + "</h2>\n<ol>";
+    for eqn in eqns loop
+      str := str + "\n  <li>(" + intString(Equation.size(eqn)) + "): " + equationString(eqn) + " </li>";
+    end for;
+    str := str + "\n</ol>\n</body>\n</html>";
+  end if;
+end dumpExtractedEquationsToHTML;
+
+protected function dumpRelatedBoundaryConditionsEquations
+  "writes the equations involving the boundary conditions that failed a procedure"
+  input list<tuple<Integer, Pointer<Equation>, list<Integer>>> setBFailedBoundaryConditionEquations;
+  input String fileNamePrefix;
+protected
+  Pointer<Equation> eqn;
+  String str;
+algorithm
+  if listEmpty(setBFailedBoundaryConditionEquations) then
+    str := "The set of Related boundary conditions are empty.";
+  else
+    str := "<html>\n<body>\n<h2> Related boundary conditions (" + intString(listLength(setBFailedBoundaryConditionEquations)) + ") </h2>\n<ol>";
+    for item in setBFailedBoundaryConditionEquations loop
+      (_, eqn, _) := item;
+      str := str + "\n  <li>(" + intString(Equation.size(eqn)) + "): " + equationString(eqn) + " </li>";
+    end for;
+    str := str + "\n</ol>\n</body>\n</html>";
+  end if;
+  System.writeFile(fileNamePrefix + "_relatedBoundaryConditionsEquations.html", str);
+end dumpRelatedBoundaryConditionsEquations;
 
 protected function verifyDataReconciliation
   "checks the conditions SET-C and SET-S have to fulfill, a failed condition other
