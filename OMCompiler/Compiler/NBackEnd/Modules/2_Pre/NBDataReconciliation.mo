@@ -45,6 +45,7 @@ protected
 
   import BackendDAE = NBackendDAE;
   import BackendExtension = NFBackendExtension;
+  import NFBinding.Binding;
   import Causalize = NBCausalize;
   import ComponentRef = NFComponentRef;
   import NBEquation.{Equation, EqData, EquationAttributes, EquationKind, EquationPointers, Iterator};
@@ -89,8 +90,8 @@ public function main extends Module.wrapper;
   input String fileNamePrefix;
 protected
   ExtractionSystem sys;
-  list<Integer> knowns, boundaryConditionVars, boundaryConditions, bindingEquations, ebltEquations = {}, setC, setS = {};
-  list<Integer> approximatedEquations = {}, boundaryConditionEquations;
+  list<Integer> knowns = {}, boundaryConditionVars, boundaryConditions, bindingEquations = {}, ebltEquations = {}, setC, setS = {};
+  list<Integer> approximatedEquations = {}, boundaryConditionEquations, setSVars;
   list<tuple<Integer, Integer>> setB;
   list<tuple<Integer, list<Integer>>> mappedEbltSetS = {};
   list<tuple<Integer, Pointer<Equation>, list<Integer>>> setBFailedBoundaryConditionEquations = {};
@@ -119,11 +120,12 @@ algorithm
 
   () := match bdae
     local
+      VarData varData;
       EqData eqData;
-    case BackendDAE.MAIN(eqData = eqData as EqData.EQ_DATA_SIM()) algorithm
+    case BackendDAE.MAIN(varData = varData as VarData.VAR_DATA_SIM(), eqData = eqData as EqData.EQ_DATA_SIM()) algorithm
       // run the procedure on a modified model until it succeeds
+      sys := createSystem(var_lst, eqn_lst);
       while not status loop
-        sys := createSystem(var_lst, eqn_lst);
         bindingEquations := getBindingEquations(sys);
         dumpOrderedVariables(sys);
         dumpEquationArray(sys, List.intRange(arrayLength(sys.eqnArr)), bindingEquations, "OrderedEquation");
@@ -151,6 +153,7 @@ algorithm
         if not status then
           print("\nExtraction procedure failed for iteration count: " + intString(procedureCount) + ", re-running with modified model\n" + UNDERLINE + "\n");
           eqn_lst := modifyModel(sys, setB, eqData.uniqueIndex);
+          sys := createSystem(var_lst, eqn_lst);
           procedureCount := procedureCount + 1;
         end if;
       end while;
@@ -165,6 +168,12 @@ algorithm
       setS := List.unique(setS);
 
       print("\nFinal set of equations after extraction algorithm\n" + UNDERLINE + "\nSET_C: " + List.toString(setC, intString) + "\nSET_S: " + List.toString(setS, intString) + "\n\n");
+      dumpEquationArray(sys, setC, bindingEquations, "SET_C");
+      dumpEquationArray(sys, setS, bindingEquations, "SET_S");
+
+      setSVars := List.setDifferenceOnTrue(getVariablesAfterExtraction(sys, setS), knowns, intEq);
+      dumpSetSVars(sys, setSVars, "Unknown variables in SET_S");
+      dumpVariables(getParameters(sys, listAppend(setS, setC), varData.parameters), "Parameters in SET_S");
     then ();
   end match;
 end main;
@@ -445,6 +454,28 @@ algorithm
   end for;
 end modifyModel;
 
+protected function getParameters
+  "returns the parameters occurring in the given equations, sorted by name"
+  input ExtractionSystem sys;
+  input list<Integer> eqns;
+  input VariablePointers parameters;
+  output list<Pointer<Variable>> params;
+protected
+  list<ComponentRef> crefs = {};
+algorithm
+  for eqn in listReverse(eqns) loop
+    crefs := listAppend(Equation.collectCrefs(Pointer.access(sys.eqnArr[eqn]), function Equation.collectFromMap(check_map = parameters.map)), crefs);
+  end for;
+  crefs := List.sort(UnorderedSet.unique_list(crefs, ComponentRef.hash, ComponentRef.isEqual), crefNameGreater);
+  params := list(BVariable.getVarPointer(cr, sourceInfo()) for cr in crefs);
+end getParameters;
+
+protected function crefNameGreater
+  input ComponentRef cr1;
+  input ComponentRef cr2;
+  output Boolean b = stringCompare(ComponentRef.toString(cr1), ComponentRef.toString(cr2)) > 0;
+end crefNameGreater;
+
 protected function swapComplexEquationsInSetC
   "work around for condition-1 failed, because complex equations are detected
   in Set-C and it should be swapped with any simple equation in Set-S with procedure = success"
@@ -546,18 +577,23 @@ protected function varString
   output String str;
 protected
   Variable var = Pointer.access(var_ptr);
-  String kind, attr;
+  String kind, attr, binding = "";
 algorithm
   kind := match var.backendinfo.varKind
     case BackendExtension.VariableKind.ALGEBRAIC() then "VARIABLE";
     case BackendExtension.VariableKind.STATE()     then "STATE";
     case BackendExtension.VariableKind.DISCRETE()  then "DISCRETE";
+    case BackendExtension.VariableKind.PARAMETER() algorithm
+      if Binding.hasExp(var.binding) then
+        binding := " = " + Expression.toString(Binding.getExp(var.binding)) + " ";
+      end if;
+    then "PARAM";
     else BackendExtension.VariableKind.toString(var.backendinfo.varKind);
   end match;
   attr := stringDelimitList(list(s for s guard(not stringEmpty(s)) in {
     BackendExtension.VariableAttributes.toString(var.backendinfo.attributes),
     uncertaintyString(BackendExtension.VariableAttributes.getUncertainty(var.backendinfo.attributes))}), " ");
-  str := ComponentRef.toString(var.name) + ":" + kind + "(" + attr + ")  type: " + Type.toString(var.ty);
+  str := ComponentRef.toString(var.name) + ":" + kind + "(" + attr + ") " + binding + " type: " + Type.toString(var.ty);
 end varString;
 
 protected function uncertaintyString
@@ -599,7 +635,7 @@ algorithm
 end dumpOrderedVariables;
 
 protected function dumpEquationArray
-  "same format as BackendDump.dumpEquationArray in the old backend"
+  "same format as BackendDump.dumpEquationArray in the old backend, nothing is printed for no equations"
   input ExtractionSystem sys;
   input list<Integer> eqns;
   input list<Integer> bindingEquations;
@@ -607,6 +643,9 @@ protected function dumpEquationArray
 protected
   Integer i = 1;
 algorithm
+  if listEmpty(eqns) then
+    return;
+  end if;
   print("\n" + heading + " (" + intString(listLength(eqns)) + ", " + intString(sum(Equation.size(sys.eqnArr[eqn]) for eqn in eqns))
     + ")\n========================================\n");
   for eqn in eqns loop
@@ -616,6 +655,42 @@ algorithm
   end for;
   print("\n");
 end dumpEquationArray;
+
+protected function dumpSetSVars
+  "same format as dumpSetSVars in the old backend"
+  input ExtractionSystem sys;
+  input list<Integer> vars;
+  input String heading;
+protected
+  Integer i = 1;
+  Variable var;
+algorithm
+  print("\n" + heading + " (" + intString(listLength(vars)) + ")\n========================================\n");
+  for v in vars loop
+    var := Pointer.access(sys.varArr[v]);
+    print("\n" + intString(i) + ": " + ComponentRef.toString(var.name) + " type: " + Type.toString(var.ty));
+    i := i + 1;
+  end for;
+  print("\n\n");
+end dumpSetSVars;
+
+protected function dumpVariables
+  "same format as BackendDump.dumpVariables in the old backend, nothing is printed for no variables"
+  input list<Pointer<Variable>> vars;
+  input String heading;
+protected
+  Integer i = 1;
+algorithm
+  if listEmpty(vars) then
+    return;
+  end if;
+  print("\n" + heading + " (" + intString(listLength(vars)) + ")\n========================================\n");
+  for var in vars loop
+    print(intString(i) + ": " + varString(var) + "\n");
+    i := i + 1;
+  end for;
+  print("\n");
+end dumpVariables;
 
 protected function dumpEquations
   "same format as BackendDump.dumpEquationList in the old backend, nothing is printed for no equations"
