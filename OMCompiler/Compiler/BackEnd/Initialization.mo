@@ -1411,6 +1411,7 @@ algorithm
     if not (listEmpty(redundantEqns) and listEmpty(unfixedVars)) then
       // 6. use subroutine resolveOverAndUnderconstraints for unmatched variables and equations
       if not listEmpty(redundantEqns) then
+        redundantEqns := moveRedundancyToSingleRowEquations(redundantEqns, outEqSystem.orderedEqs, m, eqn_to_var, var_to_eqn, scal_to_arr);
         consistencyCheck(redundantEqns, outEqSystem.orderedEqs, outEqSystem.orderedVars, inShared, 0, m, enhancedRows(outEqSystem, inShared), var_to_eqn, eqn_to_var, scal_to_arr);
         redundantEqns := List.unique(list(scal_to_arr[i] for i in redundantEqns));
       end if;
@@ -1462,6 +1463,109 @@ algorithm
     outEqSystem := inEqSystem;
   end if;
 end balanceInitialSystem;
+
+protected function moveRedundancyToSingleRowEquations
+  "An unmatched row of an equation with several rows cannot be removed alone:
+  removing the equation removes its matched rows as well. Move the redundancy
+  along an alternating path to an initial equation with a single row."
+  input list<Integer> redundantRows;
+  input BackendDAE.EquationArray eqns;
+  input BackendDAE.AdjacencyMatrix m "row -> variables";
+  input array<Integer> eqn_to_var;
+  input array<Integer> var_to_eqn;
+  input array<Integer> scal_to_arr;
+  output list<Integer> outRedundantRows = {};
+protected
+  array<Integer> unmatchedRows = arrayCreate(BackendEquation.getNumberOfEquations(eqns), 0);
+  Integer eq;
+  Option<Integer> target;
+algorithm
+  for row in redundantRows loop
+    eq := scal_to_arr[row];
+    unmatchedRows[eq] := unmatchedRows[eq] + 1;
+  end for;
+
+  for row in redundantRows loop
+    eq := scal_to_arr[row];
+    if unmatchedRows[eq] < BackendEquation.equationSize(BackendEquation.get(eqns, eq)) then
+      target := augmentToSingleRowEquation(row, eqns, m, eqn_to_var, var_to_eqn, scal_to_arr);
+      if isSome(target) then
+        outRedundantRows := Util.getOption(target) :: outRedundantRows;
+      else
+        outRedundantRows := row :: outRedundantRows;
+      end if;
+    else
+      outRedundantRows := row :: outRedundantRows;
+    end if;
+  end for;
+  outRedundantRows := listReverse(outRedundantRows);
+end moveRedundancyToSingleRowEquations;
+
+protected function augmentToSingleRowEquation
+  "Breadth-first search from the unmatched row for a matched row of an initial
+  equation with a single row, preferring initial equations of the model over
+  the ones generated from start values. The matching is shifted along the path,
+  so that row becomes unmatched instead."
+  input Integer startRow;
+  input BackendDAE.EquationArray eqns;
+  input BackendDAE.AdjacencyMatrix m;
+  input array<Integer> eqn_to_var;
+  input array<Integer> var_to_eqn;
+  input array<Integer> scal_to_arr;
+  output Option<Integer> target = NONE();
+protected
+  array<Integer> parentVar = arrayCreate(arrayLength(eqn_to_var), 0);
+  array<Integer> parentRow = arrayCreate(arrayLength(eqn_to_var), 0);
+  array<Boolean> visited = arrayCreate(arrayLength(var_to_eqn), false);
+  list<Integer> queue = {startRow}, next;
+  Integer row, var, generated = 0;
+  BackendDAE.Equation eqn;
+  SourceInfo info;
+algorithm
+  while not listEmpty(queue) and isNone(target) loop
+    next := {};
+    for x in queue loop
+      for v in m[x] loop
+        if v > 0 and not visited[v] then
+          visited[v] := true;
+          row := var_to_eqn[v];
+          if row > 0 and row <> startRow and parentVar[row] == 0 then
+            parentVar[row] := v;
+            parentRow[row] := x;
+            next := row :: next;
+            eqn := BackendEquation.get(eqns, scal_to_arr[row]);
+            if isNone(target) and BackendEquation.isInitialEquation(eqn) and BackendEquation.equationSize(eqn) == 1 then
+              info := BackendEquation.equationInfo(eqn);
+              if stringEmpty(info.fileName) then
+                if generated == 0 then
+                  generated := row;
+                end if;
+              else
+                target := SOME(row);
+              end if;
+            end if;
+          end if;
+        end if;
+      end for;
+    end for;
+    queue := listReverse(next);
+  end while;
+
+  if isNone(target) and generated > 0 then
+    target := SOME(generated);
+  end if;
+
+  if isSome(target) then
+    row := Util.getOption(target);
+    arrayUpdate(eqn_to_var, row, -1);
+    while row <> startRow loop
+      var := parentVar[row];
+      row := parentRow[row];
+      arrayUpdate(var_to_eqn, var, row);
+      arrayUpdate(eqn_to_var, row, var);
+    end while;
+  end if;
+end augmentToSingleRowEquation;
 
 protected function resolveOverAndUnderconstraints "author: kabdelhak
   Subroutine for balanceInitialSystem
@@ -2094,8 +2198,9 @@ algorithm
       true := isVarExplicitSolvable(enhancedRow(inME, indexEq), indexVar);
       var := BackendVariable.getVarAt(inVars, indexVar);
       eqn := BackendEquation.get(inEqns, indexEq);
-      // an algorithm cannot be solved for one of its variables
+      // an algorithm or a call with several outputs cannot be solved for one of its variables
       true := BackendEquation.isNotAlgorithm(eqn);
+      false := isTupleEquation(eqn);
 
       cref := BackendVariable.varCref(var);
       type_ := BackendVariable.varType(var);
@@ -2113,6 +2218,16 @@ algorithm
     then repls;
   end matchcontinue;
 end setupVarReplacements;
+
+protected function isTupleEquation
+  input BackendDAE.Equation eqn;
+  output Boolean b;
+algorithm
+  b := match eqn
+    case BackendDAE.COMPLEX_EQUATION(left = DAE.TUPLE()) then true;
+    else false;
+  end match;
+end isTupleEquation;
 
 protected function applyVarReplacements "author: lochel
   This function applies variable replacements to one equation out of an equation

@@ -1,0 +1,62 @@
+// name: redundantTupleEquation
+// keywords: initialization, over-determined, redundant, tuple
+// status: correct
+//
+// der(k) = 0 is redundant, and the matching leaves a row of the tuple
+// equation unmatched. Only a single row equation of the redundant set may be
+// removed, not the whole tuple equation.
+
+loadString("
+model RedundantTupleEquation
+  function f
+    input Real a;
+    output Real r;
+    output Real s;
+  algorithm
+    r := a;
+    s := 2*a;
+  end f;
+  parameter Real a = 1 annotation(Evaluate = false);
+  parameter Real p(fixed = false);
+  parameter Real q(fixed = false);
+  Real x(start = p, fixed = true);
+  Real v;
+  Real k;
+initial equation
+  (p, q) = f(a);
+  v = 0;
+  der(k) = 0;
+equation
+  v = der(x);
+  der(v) = -x - der(k);
+  k = x^2;
+end RedundantTupleEquation;
+"); getErrorString();
+
+setCommandLineOptions("-d=initialization"); getErrorString();
+simulate(RedundantTupleEquation, stopTime = 1); getErrorString();
+val(p, 0);
+val(q, 0);
+val(x, 0);
+val(v, 0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "RedundantTupleEquation_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'RedundantTupleEquation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization system:
+//          v = 0.0.
+// "
+// 1.0
+// 2.0
+// 1.0
+// 0.0
+// endResult
