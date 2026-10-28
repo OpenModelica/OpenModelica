@@ -1618,8 +1618,7 @@ impl Homotopy for FixpointHom<'_, '_> {
             for i in 0..n {
                 out[i + j * n] *= lam;
             }
-            // Unscaled, as C adds it.
-            out[j + j * n] += 1.0 - lam;
+            out[j + j * n] += (1.0 - lam) * xs[j];
         }
         for i in 0..n {
             out[i + n * n] = fbase[i] - (y[i] - self.x0[i]);
@@ -5300,5 +5299,33 @@ mod tests {
             r[1] = xs[0] + xs[1] - 2.0; // parallel: no solution, singular J
         };
         assert!(!newton_solve(2, &mut x, &mut eval));
+    }
+
+    // The fixpoint homotopy's Jacobian is `∂H/∂y·S`, the identity term included.
+    #[test]
+    fn fixpoint_jacobian_is_column_scaled() {
+        let n = 2;
+        let xscaling = [10.0, 100.0, 1.0];
+        let mut eval = |xs: &[f64], r: &mut [f64]| {
+            r[0] = xs[0] * xs[0] + xs[1] - 3.0;
+            r[1] = xs[0] - 2.0 * xs[1] * xs[1];
+        };
+        let mut hom = FixpointHom {
+            n,
+            x0: vec![1.0, -2.0],
+            fx: vec![0.0; n],
+            xscaling: &xscaling,
+            eval: &mut eval,
+        };
+        let y = [3.0, 5.0, 0.25];
+        let mut hbase = vec![0.0; n];
+        hom.h(&y, &mut hbase);
+        let mut jac = vec![0.0; n * (n + 1)];
+        hom.jac(&y, &hbase, &mut jac);
+        let mut fd = vec![0.0; n * (n + 1)];
+        fd_homotopy_jacobian(&mut hom, n, n + 1, &y, &hbase, &xscaling, None, &mut fd);
+        for (k, (a, b)) in jac.iter().zip(&fd).enumerate() {
+            assert!((a - b).abs() <= 1e-5 * (1.0 + b.abs()), "entry {k}: {a} vs {b}");
+        }
     }
 }
