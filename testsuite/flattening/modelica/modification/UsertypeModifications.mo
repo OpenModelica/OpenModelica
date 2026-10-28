@@ -19,7 +19,6 @@ model AliasType
 equation
   b = a;
   a2 = ones(3);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AliasType;
 
 // Result:

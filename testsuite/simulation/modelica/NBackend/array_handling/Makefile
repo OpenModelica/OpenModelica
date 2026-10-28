@@ -30,6 +30,7 @@ arrayConnectOutside.mos \
 mixedDependencyFrames.mos \
 arrayConnectRooted.mos \
 entwinedOrder.mos \
+entwinedOrderResizable.mos \
 resizableOverride.mos \
 resizableOverrideDerived.mos \
 resizableAliasStart.mos \

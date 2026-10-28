@@ -210,6 +210,44 @@ pub(crate) fn module_from_binary(wasm: &[u8]) -> std::result::Result<wasmer::Mod
     }
 }
 
+/// Whether the engine compiling the model takes `try_table`/`exnref`. V8's
+/// interpreter (jitless, e.g. Edge's enhanced security mode) only takes the legacy
+/// `try`/`catch` encoding.
+pub fn supports_exnref() -> bool {
+    #[cfg(target_arch = "wasm32")]
+    {
+        static PROBE: OnceLock<bool> = OnceLock::new();
+        return *PROBE.get_or_init(|| module_from_binary(&exnref_probe()).is_ok());
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    true
+}
+
+#[cfg(target_arch = "wasm32")]
+fn exnref_probe() -> Vec<u8> {
+    use wasm_encoder as we;
+    let mut types = we::TypeSection::new();
+    types.ty().function([], []);
+    let mut functions = we::FunctionSection::new();
+    functions.function(0);
+    let mut f = we::Function::new([]);
+    f.instruction(&we::Instruction::Block(we::BlockType::Result(we::ValType::EXNREF)));
+    f.instruction(&we::Instruction::TryTable(
+        we::BlockType::Empty,
+        vec![we::Catch::AllRef { label: 0 }].into(),
+    ));
+    f.instruction(&we::Instruction::End);
+    f.instruction(&we::Instruction::Unreachable);
+    f.instruction(&we::Instruction::End);
+    f.instruction(&we::Instruction::Drop);
+    f.instruction(&we::Instruction::End);
+    let mut code = we::CodeSection::new();
+    code.function(&f);
+    let mut m = we::Module::new();
+    m.section(&types).section(&functions).section(&code);
+    m.finish()
+}
+
 /// Begin compiling the fixed runtime module on a background thread, once per
 /// process. The runtime module does not depend on the model, so this can be
 /// started as soon as we know a wasm-jit simulation is coming (`translateModel`

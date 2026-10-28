@@ -1855,6 +1855,14 @@ public
       end if;
     end if;
 
+    // Literal indices of the inner dimensions can still be applied to the
+    // elements, e.g. {{1, 2}, {3, 4}}[i, 2] => {2, 4}[i].
+    if not listEmpty(restSubscripts) and List.all(restSubscripts, Subscript.isScalarLiteral) then
+      outExp := applySubscriptArray(Subscript.WHOLE(), exp, restSubscripts, false);
+      outExp := makeSubscriptedExp({Subscript.INDEX(index)}, outExp);
+      return;
+    end if;
+
     // Otherwise create a subscript expression.
     outExp := makeSubscriptedExp(Subscript.INDEX(index) :: restSubscripts, exp);
   end applyIndexExpArray;

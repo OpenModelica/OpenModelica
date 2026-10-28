@@ -405,7 +405,22 @@ public
         /* for now handle all entwined equations generically and don't try to solve */
         case StrongComponent.ENTWINED_COMPONENT() algorithm
           for slice in comp.entwined_slices loop
-            (generic_comp, solve_status, implicit_index) := solveGenericEquation(slice, funcMap, kind, implicit_index, slicing_map, varData, eqData);
+            generic_comp := slice;
+            if isSome(comp.periodic_order) then
+              // the order of the iterations is given by the entwined component
+              () := match generic_comp
+                case StrongComponent.RESIZABLE_COMPONENT() algorithm
+                  (eqn, solve_status, implicit_index, _) := solveEquation(Pointer.access(Slice.getT(generic_comp.eqn)), generic_comp.var_cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
+                  generic_comp.eqn := Slice.SLICE(Pointer.create(eqn), generic_comp.eqn.indices);
+                  generic_comp.status := solve_status;
+                then ();
+                else algorithm
+                  (generic_comp, solve_status, implicit_index) := solveGenericEquation(slice, funcMap, kind, implicit_index, slicing_map, varData, eqData);
+                then ();
+              end match;
+            else
+              (generic_comp, solve_status, implicit_index) := solveGenericEquation(slice, funcMap, kind, implicit_index, slicing_map, varData, eqData);
+            end if;
             // make loop on any solve_status != explicit
             entwined_slices := generic_comp :: entwined_slices;
           end for;

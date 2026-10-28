@@ -369,6 +369,7 @@ DimNegative1.mo \
 DimNegative2.mo \
 DimRagged1.mo \
 DimRagged2.mo \
+DimRagged3.mo \
 DimSize1.mo \
 DimSize2.mo \
 DimSize3.mo \
@@ -507,9 +508,11 @@ ExtendSelf1.mo \
 ExtendSelf2.mo \
 ExtendSelf3.mo \
 ExtendsMod1.mo \
+ExtendsMod2.mo \
 ExtendsShort1.mo \
 ExtendsShort2.mo \
 ExtendsShort3.mo \
+ExtendsShort4.mo \
 ExtendsVisibility1.mo \
 ExtendsVisibility2.mo \
 ExtendsVisibility3.mo \
@@ -1193,6 +1196,7 @@ Subscript4.mo \
 Subscript5.mo \
 Subscript6.mo \
 Subscript7.mo \
+Subscript8.mo \
 SubscriptCevalIndex1.mo \
 SubscriptCevalIndexRange1.mo \
 SubscriptCevalSlice1.mo \
@@ -1238,6 +1242,8 @@ TypeDimNonType1.mo \
 TypeExtends1.mo \
 TypeExtends2.mo \
 TypeExtends3.mo \
+TypeExtends4.mo \
+TypeExtends5.mo \
 TypeMissingBaseType1.mo \
 TypenameInvalid1.mo \
 TypenameInvalid2.mo \

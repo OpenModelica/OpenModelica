@@ -50,8 +50,31 @@ pub(super) fn lower_equation_inner(
         E::SES_ENTWINED_ASSIGN {
             call_order,
             single_calls,
+            direction: 0,
             ..
         } => emit_entwined_assign(ctx, call_order, single_calls, eq_index),
+        E::SES_ENTWINED_ASSIGN {
+            call_order,
+            single_calls,
+            direction,
+            offsets,
+            start_shifts,
+            stop_shifts,
+            scalar_calls,
+            scalar_entries,
+            scalar_positions,
+            scalar_after,
+            ..
+        } => emit_resizable_entwined_assign(
+            ctx,
+            call_order,
+            single_calls,
+            *direction,
+            offsets,
+            (start_shifts, stop_shifts),
+            (scalar_calls, scalar_entries, scalar_positions, scalar_after),
+            eq_index,
+        ),
         E::SES_LINEAR {
             lSystem,
             alternativeTearing: Some(at),

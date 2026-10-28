@@ -2016,7 +2016,27 @@ checkModel(BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.GlucoseUptak
 // "Check of BioChem.Examples.centralMetabolism.cytosol completed successfully.
 // Class BioChem.Examples.centralMetabolism.cytosol has 326 equation(s) and 326 variable(s).
 // 230 of these are trivial equation(s)."
-// ""
+// "[BioChem 1.1.3/Interfaces/Reactions/Uur.mo:9:3-9:93:writable] Warning: The following equation is INCONSISTENT due to specified unit information: jda.nP1 = cytosol_V
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"cytosol_V\" has unit \"l\"
+// - sub-expression \"jda.nP1\" has unit \"1\"
+// [BioChem 1.1.3/Examples/centralMetabolism.mo:344:7-344:184:writable] Warning: The following equation is INCONSISTENT due to specified unit information: vgph.rr = vgph.KcatGPH * vgph.m[3].c * (0.002 + vgph.m[2].c + vgph.m[1].c / vgph.bamp) / ((0.014 + vgph.m[2].c + vgph.m[1].c / vgph.bamp) * (8.0 * (0.01 + vgph.m[2].c + vgph.m[1].c / vgph.bamp) / (0.002 + vgph.m[2].c + vgph.m[1].c / vgph.bamp) + vgph.m[3].c))
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"0.01 + vgph.m[2].c\" has unit \"mol/l\"
+// - sub-expression \"vgph.m[1].c / vgph.bamp\" has unit \"Mmol.m-6\"
+// [BioChem 1.1.3/Examples/centralMetabolism.mo:344:7-344:184:writable] Warning: The following equation is INCONSISTENT due to specified unit information: vgph.rr = vgph.KcatGPH * vgph.m[3].c * (0.002 + vgph.m[2].c + vgph.m[1].c / vgph.bamp) / ((0.014 + vgph.m[2].c + vgph.m[1].c / vgph.bamp) * (8.0 * (0.01 + vgph.m[2].c + vgph.m[1].c / vgph.bamp) / (0.002 + vgph.m[2].c + vgph.m[1].c / vgph.bamp) + vgph.m[3].c))
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"0.002 + vgph.m[2].c\" has unit \"mol/l\"
+// - sub-expression \"vgph.m[1].c / vgph.bamp\" has unit \"Mmol.m-6\"
+// [BioChem 1.1.3/Examples/centralMetabolism.mo:344:7-344:184:writable] Warning: The following equation is INCONSISTENT due to specified unit information: vgph.rr = vgph.KcatGPH * vgph.m[3].c * (0.002 + vgph.m[2].c + vgph.m[1].c / vgph.bamp) / ((0.014 + vgph.m[2].c + vgph.m[1].c / vgph.bamp) * (8.0 * (0.01 + vgph.m[2].c + vgph.m[1].c / vgph.bamp) / (0.002 + vgph.m[2].c + vgph.m[1].c / vgph.bamp) + vgph.m[3].c))
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"0.014 + vgph.m[2].c\" has unit \"mol/l\"
+// - sub-expression \"vgph.m[1].c / vgph.bamp\" has unit \"Mmol.m-6\"
+// [BioChem 1.1.3/Examples/centralMetabolism.mo:344:7-344:184:writable] Warning: The following equation is INCONSISTENT due to specified unit information: vgph.rr = vgph.KcatGPH * vgph.m[3].c * (0.002 + vgph.m[2].c + vgph.m[1].c / vgph.bamp) / ((0.014 + vgph.m[2].c + vgph.m[1].c / vgph.bamp) * (8.0 * (0.01 + vgph.m[2].c + vgph.m[1].c / vgph.bamp) / (0.002 + vgph.m[2].c + vgph.m[1].c / vgph.bamp) + vgph.m[3].c))
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"0.002 + vgph.m[2].c\" has unit \"mol/l\"
+// - sub-expression \"vgph.m[1].c / vgph.bamp\" has unit \"Mmol.m-6\"
+// "
 // "Check of BioChem.Examples.CircadianOscillator.Container completed successfully.
 // Class BioChem.Examples.CircadianOscillator.Container has 252 equation(s) and 252 variable(s).
 // 180 of these are trivial equation(s)."
@@ -2044,7 +2064,11 @@ checkModel(BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.GlucoseUptak
 // "Check of BioChem.Examples.GlucoseInsulinModel.GlucoseInsulinModel completed successfully.
 // Class BioChem.Examples.GlucoseInsulinModel.GlucoseInsulinModel has 687 equation(s) and 687 variable(s).
 // 532 of these are trivial equation(s)."
-// "[BioChem 1.1.3/Examples/GlucoseInsulinModel.mo:235:9-235:123:writable] Warning: The following equation is INCONSISTENT due to specified unit information: der(BetaCell.i_po) = if der(BetaCell.g_p) > 0.0 and BetaCell.g > 95.0 then (-BetaCell.gamma * BetaCell.i_po) + BetaCell.y + BetaCell.K * der(BetaCell.g) + BetaCell.S_b else (-BetaCell.gamma * BetaCell.i_po) + BetaCell.y + BetaCell.S_b
+// "[BioChem 1.1.3/Examples/GlucoseInsulinModel.mo:277:9-277:29:writable] Warning: The following equation is INCONSISTENT due to specified unit information: PlasmaInsulin.i_signal = PlasmaInsulin.i_p / PlasmaInsulin.V_I
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"PlasmaInsulin.i_p / PlasmaInsulin.V_I\" has unit \"Mmol.m-6\"
+// - sub-expression \"PlasmaInsulin.i_signal\" has unit \"mol/l\"
+// [BioChem 1.1.3/Examples/GlucoseInsulinModel.mo:235:9-235:123:writable] Warning: The following equation is INCONSISTENT due to specified unit information: der(BetaCell.i_po) = if der(BetaCell.g_p) > 0.0 and BetaCell.g > 95.0 then (-BetaCell.gamma * BetaCell.i_po) + BetaCell.y + BetaCell.K * der(BetaCell.g) + BetaCell.S_b else (-BetaCell.gamma * BetaCell.i_po) + BetaCell.y + BetaCell.S_b
 // Warning: The units of following sub-expressions need to be equal:
 // - sub-expression \"if der(BetaCell.g_p) > 0.0 and BetaCell.g > 95.0 then (-BetaCell.gamma * BetaCell.i_po) + BetaCell.y + BetaCell.K * der(BetaCell.g) + BetaCell.S_b else (-BetaCell.gamma * BetaCell.i_po) + BetaCell.y + BetaCell.S_b\" has unit \"mol/l\"
 // - sub-expression \"der(BetaCell.i_po)\" has unit \"kmol.m-3.s-1\"
