@@ -412,6 +412,8 @@ impl Mat4Stream {
 /// Serialize the whole MATLAB v4 result file for `signals`. `rows` is the
 /// row-major time-variant buffer (`n_reals` columns per row, column 0 = time);
 /// `params` holds the scalar parameter values in `MatKind::Param` order.
+/// Unlike [`Mat4Stream`], it writes `binNormal`: a variable's trajectory is
+/// contiguous, so a reader takes one column without the others.
 pub fn write_mat4(
     signals: &[MatVar],
     start_time: f64,
@@ -421,14 +423,52 @@ pub fn write_mat4(
     params: &[f64],
     precision: Precision,
 ) -> Vec<u8> {
-    let mut out: Vec<u8> = Vec::new();
-    let first_row = rows.get(..n_reals as usize).unwrap_or(&[]);
-    let mut s = Mat4Stream::begin(
-        &mut out, signals, start_time, stop_time, first_row, n_reals, params, precision,
+    let n_reals = n_reals as usize;
+    let first_row = rows.get(..n_reals).unwrap_or(&[]);
+    // The streamed header is discarded; only the column assignment is used.
+    let mut head: Vec<u8> = Vec::new();
+    let s = Mat4Stream::begin(
+        &mut head,
+        signals,
+        start_time,
+        stop_time,
+        first_row,
+        n_reals as u32,
+        params,
+        precision,
     );
-    out.reserve(rows.len() / (n_reals as usize).max(1) * s.n_reals2() * precision.size());
-    s.push_rows(&mut out, rows);
-    s.finish(&mut out);
+    let n_rows = rows.len() / n_reals.max(1);
+
+    let mut out: Vec<u8> = Vec::new();
+    write_char_matrix_rows(&mut out, "Aclass", &["Atrajectory", "1.1", "", "binNormal"], 11);
+    for (name, strs) in [
+        ("name", signals.iter().map(|v| v.name).collect::<Vec<&str>>()),
+        ("description", signals.iter().map(|v| v.comment).collect()),
+    ] {
+        let len = strs.iter().map(|s| s.len()).max().unwrap_or(0) + 1;
+        write_char_matrix_rows(&mut out, name, &strs, len);
+    }
+    let info: Vec<i32> = (0..4).flat_map(|k| s.data_info.iter().map(move |i| i[k])).collect();
+    write_int_matrix(&mut out, "dataInfo", signals.len(), 4, &info);
+    let data_1: Vec<f64> = s
+        .data_1
+        .iter()
+        .enumerate()
+        .flat_map(|(i, &v)| if i == 0 { [start_time, stop_time] } else { [v, v] })
+        .collect();
+    write_real_matrix(&mut out, "data_1", 2, s.data_1.len(), &data_1, precision);
+
+    let columns: Vec<(usize, Neg)> = core::iter::once((0, Neg::None))
+        .chain(s.varying.iter().copied())
+        .collect();
+    write_mat_header(&mut out, "data_2", precision.type_code(), n_rows, columns.len());
+    out.reserve(n_rows * columns.len() * precision.size());
+    for (c, neg) in columns {
+        for row in rows.chunks_exact(n_reals.max(1)) {
+            let v = row[c];
+            push_real(&mut out, if neg == Neg::Not { 1.0 - v } else { v }, precision);
+        }
+    }
     out
 }
 
@@ -557,6 +597,26 @@ fn write_char_matrix_rows(out: &mut Vec<u8>, name: &str, rows: &[&str], ncols: u
 mod tests {
     use super::*;
 
+    /// The file as [`Mat4Stream`] writes it, in one batch.
+    fn stream_mat4(
+        signals: &[MatVar],
+        start_time: f64,
+        stop_time: f64,
+        rows: &[f64],
+        n_reals: u32,
+        params: &[f64],
+        precision: Precision,
+    ) -> Vec<u8> {
+        let mut out: Vec<u8> = Vec::new();
+        let first_row = rows.get(..n_reals as usize).unwrap_or(&[]);
+        let mut s = Mat4Stream::begin(
+            &mut out, signals, start_time, stop_time, first_row, n_reals, params, precision,
+        );
+        s.push_rows(&mut out, rows);
+        s.finish(&mut out);
+        out
+    }
+
     fn var<'a>(name: &'a str, comment: &'a str, kind: MatKind) -> MatVar<'a> {
         MatVar {
             name,
@@ -662,7 +722,7 @@ mod tests {
             ),
         ];
         let rows = [0.0, 1.0, 1.0, 3.0];
-        let plain = write_mat4(&vars, 0.0, 1.0, &rows, 2, &[], Precision::Double);
+        let plain = stream_mat4(&vars, 0.0, 1.0, &rows, 2, &[], Precision::Double);
         let mut out: Vec<u8> = Vec::new();
         let mut s = Mat4Stream::begin(&mut out, &vars, 0.0, 1.0, &rows[..2], 2, &[], Precision::Double);
         s.set_enumerations(entries.clone());
@@ -697,7 +757,7 @@ mod tests {
         // 3 communication points; x ramps 0,1,2.
         let rows = [0.0, 0.0, /*r1*/ 0.5, 1.0, /*r2*/ 1.0, 2.0];
         let params = [7.0]; // p = 7
-        let buf = write_mat4(&vars, 0.0, 1.0, &rows, 2, &params, Precision::Double);
+        let buf = stream_mat4(&vars, 0.0, 1.0, &rows, 2, &params, Precision::Double);
 
         // name matrix: 4 columns, one per signal, column-major null-padded.
         let (mrows, ncols, name_payload) = find_matrix(&buf, "name");
@@ -745,7 +805,7 @@ mod tests {
             ),
         ];
         let rows = [0.0, 0.0, 0.5, 1.0, 1.0, 2.0, 1.5, 3.0];
-        let whole = write_mat4(&vars, 0.0, 1.5, &rows, 2, &[], Precision::Double);
+        let whole = stream_mat4(&vars, 0.0, 1.5, &rows, 2, &[], Precision::Double);
 
         let mut out: Vec<u8> = Vec::new();
         let mut s = Mat4Stream::begin(&mut out, &vars, 0.0, 1.5, &rows[..2], 2, &[], Precision::Double);
@@ -792,7 +852,7 @@ mod tests {
             ),
         ];
         let rows = [0.0, 0.0, 4.0, /*r1*/ 1.0, 1.0, 4.0];
-        let buf = write_mat4(&vars, 0.0, 1.0, &rows, 3, &[], Precision::Double);
+        let buf = stream_mat4(&vars, 0.0, 1.0, &rows, 3, &[], Precision::Double);
         let di = i32s(find_matrix(&buf, "dataInfo").2);
         assert_eq!(&di[4..8], &[2, 2, 0, 0]);
         assert_eq!(&di[8..12], &[1, 2, 0, 0]);
@@ -845,7 +905,7 @@ mod tests {
         ];
         // n_reals = 3: [time, x, b].
         let rows = [0.0, 1.0, 0.0, /*r1*/ 0.5, 2.0, 1.0];
-        let buf = write_mat4(&vars, 0.0, 0.5, &rows, 3, &[1.0], Precision::Double);
+        let buf = stream_mat4(&vars, 0.0, 0.5, &rows, 3, &[1.0], Precision::Double);
 
         let (_r, _c, di) = find_matrix(&buf, "dataInfo");
         let di = i32s(di);
@@ -909,7 +969,7 @@ mod tests {
         ];
         // 2 rows; x is 0.5 and 1.5 (exact in f32), p = 7 (exact in f32).
         let rows = [0.0, 0.5, 1.0, 1.5];
-        let buf = write_mat4(&vars, 0.0, 1.0, &rows, 2, &[7.0], Precision::Single);
+        let buf = stream_mat4(&vars, 0.0, 1.0, &rows, 2, &[7.0], Precision::Single);
 
         assert_eq!(matrix_type(&buf, "data_1"), 10);
         assert_eq!(matrix_type(&buf, "data_2"), 10);
@@ -938,7 +998,7 @@ mod tests {
         ];
         // 1/3 is not exact in f32; the stored value must equal the f32 rounding.
         let rows = [0.0, 1.0 / 3.0];
-        let buf = write_mat4(&vars, 0.0, 0.0, &rows, 2, &[], Precision::Single);
+        let buf = stream_mat4(&vars, 0.0, 0.0, &rows, 2, &[], Precision::Single);
         let (_r, _c, d2) = find_matrix(&buf, "data_2");
         let d2 = f32s(d2);
         assert_eq!(d2[1], (1.0 / 3.0) as f32);
@@ -960,8 +1020,8 @@ mod tests {
             ),
         ];
         let rows = [0.0, 0.0, 1.0, 0.5, 2.0, 1.5];
-        let single = write_mat4(&vars, 0.0, 2.0, &rows, 2, &[], Precision::Single);
-        let double = write_mat4(&vars, 0.0, 2.0, &rows, 2, &[], Precision::Double);
+        let single = stream_mat4(&vars, 0.0, 2.0, &rows, 2, &[], Precision::Single);
+        let double = stream_mat4(&vars, 0.0, 2.0, &rows, 2, &[], Precision::Double);
         assert!(single.len() < double.len());
     }
 }
