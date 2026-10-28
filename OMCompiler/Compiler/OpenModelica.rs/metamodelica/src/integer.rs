@@ -1,8 +1,8 @@
 //! Integer arithmetic, comparison, bitwise and conversion builtins.
 
+use crate::Real;
 use arcstr::{ArcStr, format};
 use ordered_float::OrderedFloat;
-use crate::Real;
 
 /// Adds two Integer values.
 #[inline(always)]
@@ -24,8 +24,12 @@ pub fn intMul(i1: i32, i2: i32) -> i32 {
 
 /// Divides two Integer values (truncated division).
 /// Matches Modelica's div() semantics: truncates toward zero.
-pub fn intDiv(i1: i32, i2: i32) -> i32 {
-    i1 / i2
+/// A zero divisor fails, like the C runtime's `if (denom == 0) goto fail;`.
+pub fn intDiv(i1: i32, i2: i32) -> crate::Result<i32> {
+    if i2 == 0 {
+        return Err("Integer division by zero");
+    }
+    Ok(i1 / i2)
 }
 
 /// Calculates `mod(i1, i2)` with Modelica semantics: the result has the
@@ -166,9 +170,9 @@ pub fn intString(i: i32) -> ArcStr {
 mod tests {
     use super::*;
     use crate::*;
-    use std::sync::Arc;
+    use arcstr::{ArcStr, literal};
     use std::rc::Rc;
-    use arcstr::{literal, ArcStr};
+    use std::sync::Arc;
     mod int_arithmetic_tests {
         use super::*;
 
@@ -196,10 +200,11 @@ mod tests {
 
         #[test]
         fn test_int_div() {
-            assert_eq!(intDiv(10, 3), 3);
-            assert_eq!(intDiv(10, -3), -3);
-            assert_eq!(intDiv(-10, 3), -3);
-            assert_eq!(intDiv(-10, -3), 3);
+            assert_eq!(intDiv(10, 3), Ok(3));
+            assert_eq!(intDiv(10, -3), Ok(-3));
+            assert_eq!(intDiv(-10, 3), Ok(-3));
+            assert_eq!(intDiv(-10, -3), Ok(3));
+            assert!(intDiv(1, 0).is_err());
         }
 
         #[test]

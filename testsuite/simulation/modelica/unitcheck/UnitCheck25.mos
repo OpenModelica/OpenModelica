@@ -1,0 +1,41 @@
+// name: UnitCheck25
+// keywords: unit check, power
+// status: correct
+// cflags: --unitChecking -d=dumpUnits
+//
+// Inferring a unit through a non-integer power must not crash, #17536.
+
+loadString("
+model UnitCheck25
+  Real H(unit = \"W/m2\") = 300;
+  Real T(unit = \"K\");
+  constant Real c(unit = \"K4\") = 1e10;
+  Real T2(unit = \"K\");
+equation
+  T = (H/5.670374419e-8)^0.25;
+  T2 = c^0.25;
+end UnitCheck25;
+"); getErrorString();
+
+instantiateModel(UnitCheck25); getErrorString();
+
+// Result:
+// true
+// ""
+// (H, 1000.0 * s^(-3) * g^(1))
+// (T, 1.0 * K^(1))
+// (c, 1.0 * K^(4))
+// (T2, 1.0 * K^(1))
+// ######## UnitCheck COMPLETED ########
+// "class UnitCheck25
+//   Real H(unit = \"W/m2\") = 300.0;
+//   Real T(unit = \"K\");
+//   constant Real c(unit = \"K4\") = 1e10;
+//   Real T2(unit = \"K\");
+// equation
+//   T = (H / 5.670374419e-8) ^ 0.25;
+//   T2 = 316.22776601683796;
+// end UnitCheck25;
+// "
+// ""
+// endResult
