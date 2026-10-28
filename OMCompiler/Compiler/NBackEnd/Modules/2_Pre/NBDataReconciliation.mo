@@ -47,6 +47,8 @@ protected
   import BackendExtension = NFBackendExtension;
   import NFBinding.Binding;
   import Causalize = NBCausalize;
+  import Jacobian = NBJacobian;
+  import StrongComponent = NBStrongComponent;
   import ComponentRef = NFComponentRef;
   import NBEquation.{Equation, EqData, EquationAttributes, EquationKind, EquationPointers, Iterator};
   import Expression = NFExpression;
@@ -102,6 +104,7 @@ public uniontype ReconciliationData
     list<Pointer<Variable>> parameters      "parameters in SET-C and SET-S";
     list<Pointer<Variable>> unmeasuredVars  "uncertain = Uncertainty.propagate";
     Integer relatedBoundaryConditions;
+    Option<BackendDAE> jacobian             "F = d$RES_F/d inputVars, created by createJacobian";
   end RECONCILIATION_DATA;
 end ReconciliationData;
 
@@ -217,6 +220,49 @@ algorithm
   //   SymbolTable, which nbackend cannot import.
   bdae := replaceModel(bdae, data);
 end main;
+
+public function createJacobian
+  "Creates the jacobian F of the residuals with respect to the variables of interest,
+  SET-S gives the inner derivatives. Needs the solved strong components."
+  extends Module.wrapper;
+protected
+  Boolean scalarized = Flags.isSet(Flags.NF_SCALARIZE);
+algorithm
+  bdae := match bdae
+    local
+      ReconciliationData data;
+      list<NBPartition.Partition> partitions;
+      list<StrongComponent> comps;
+      list<Pointer<Variable>> unknowns;
+      list<Pointer<Equation>> equations;
+
+    case BackendDAE.MAIN(dataReconciliation = SOME(data as RECONCILIATION_DATA())) algorithm
+      partitions := listAppend(bdae.ode, bdae.algebraic);
+      comps := List.flatten(list(arrayList(Util.getOption(p.strongComponents)) for p guard(isSome(p.strongComponents)) in partitions));
+      // the runtime reads the columns in the order of the inputs and the rows in the order of the residuals
+      unknowns := List.flatten(list(VariablePointers.toList(p.unknowns) for p in partitions));
+      unknowns := listAppend(data.residualVars, List.filterOnFalse(unknowns, isResidual));
+      equations := List.flatten(list(EquationPointers.toList(p.equations) for p in partitions));
+
+      data.jacobian := Jacobian.dataReconciliation(
+        seedCandidates      = VariablePointers.fromList(data.inputVars, scalarized),
+        partialCandidates   = VariablePointers.fromList(unknowns, scalarized),
+        equations           = EquationPointers.fromList(equations),
+        comps               = listArray(comps),
+        funcMap             = bdae.funcMap,
+        name                = "F");
+      bdae.dataReconciliation := SOME(data);
+    then bdae;
+
+    else bdae;
+  end match;
+end createJacobian;
+
+public function isResidual
+  "the residuals $RES_F_<i> are the result variables of the jacobian F"
+  input Pointer<Variable> var_ptr;
+  output Boolean b = StringUtil.startsWith(ComponentRef.firstName(BVariable.getVarName(var_ptr)), NBVariable.RESIDUAL_STR + "_F_");
+end isResidual;
 
 public function isEnabled
   output Boolean b = List.isMemberOnTrue("dataReconciliation", Flags.getConfigStringList(Flags.PRE_OPT_MODULES), stringEq)
@@ -546,7 +592,8 @@ algorithm
     setSEqns                  = list(sys.eqnArr[eqn] for eqn in setS),
     parameters                = parameters,
     unmeasuredVars            = list(sys.varArr[v] for v in unmeasured),
-    relatedBoundaryConditions = relatedBoundaryConditions);
+    relatedBoundaryConditions = relatedBoundaryConditions,
+    jacobian                  = NONE());
 end createReconciliationData;
 
 protected function replaceModel
@@ -603,6 +650,10 @@ algorithm
       eqData.removed          := EquationPointers.empty();
       bdae.eqData := eqData;
 
+      // The old backend creates the jacobian F here with SymbolicJacobian.getSymbolicJacobian, which
+      // sorts the residual and SET-S equations itself. NBJacobian needs solved strong components,
+      // which only exist after causalization, and chooses the result variables by the jacobian type.
+      // F is therefore created after the post-optimization modules from this data.
       bdae.dataReconciliation := SOME(data);
     then bdae;
   end match;
