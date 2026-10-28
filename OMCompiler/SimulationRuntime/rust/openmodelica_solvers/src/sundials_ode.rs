@@ -719,13 +719,11 @@ impl DaeJac {
 
 /// The finite-difference increment for a column, C's `numericalJacobianStep`
 /// (`model_help.h`): a relative step off the larger of the point and the last
-/// step's derivative, floored by the nominal where the unknown is inside its own
-/// absolute tolerance and so carries no scale to difference over.
+/// step's derivative, but at least the unknown's error weight.
 fn fd_step(delta_x: f64, yi: f64, hyp: f64, tol: f64, nominal: f64) -> f64 {
     let scale = yi.abs().max(hyp.abs());
     let ewt_inv = tol * (yi.abs() + nominal);
-    let step = if scale > ewt_inv { scale } else { ewt_inv.max(nominal) };
-    let mag = delta_x * step;
+    let mag = (delta_x * scale.max(nominal)).max(ewt_inv);
     // The step takes the sign of h*y', as both runtimes do.
     if hyp >= 0.0 { mag } else { -mag }
 }
