@@ -270,6 +270,38 @@ public
     end match;
   end isScalar;
 
+  function sliceToRange
+    "A slice of consecutive literal indices, e.g. {2, 3, ..., 10} from an evaluated
+    2:end, as a range."
+    input output Subscript sub;
+  protected
+    array<Expression> elems;
+    Integer first, step, n;
+    Boolean is_range;
+  algorithm
+    sub := match sub
+      case SLICE(slice = Expression.ARRAY(elements = elems)) guard arrayLength(elems) > 2 algorithm
+        is_range := true;
+        for i in 1:arrayLength(elems) loop
+          is_range := is_range and Expression.isInteger(elems[i]);
+        end for;
+        if is_range then
+          first := Expression.integerValue(elems[1]);
+          step := Expression.integerValue(elems[2]) - first;
+          n := arrayLength(elems);
+          is_range := step <> 0;
+          for i in 3:n loop
+            is_range := is_range and Expression.integerValue(elems[i]) == first + (i - 1) * step;
+          end for;
+          if is_range then
+            sub := SLICE(Expression.makeIntegerRange(first, step, first + (n - 1) * step));
+          end if;
+        end if;
+      then sub;
+      else sub;
+    end match;
+  end sliceToRange;
+
   function isScalarLiteral
     input Subscript sub;
     output Boolean isScalarLiteral;

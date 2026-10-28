@@ -24,6 +24,7 @@ ArrayConnect3.mo \
 ArrayConnect4.mo \
 ArrayConnect5.mo \
 ArrayConnect6.mo \
+ArrayConnect7.mo \
 ArrayConstructorComplex1.mo \
 ArrayConstructorRecord1.mo \
 ArrayConstructorRecord2.mo \
