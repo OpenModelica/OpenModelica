@@ -2117,6 +2117,7 @@ public
 
     type InnerTemplate = tuple<ComponentRef, list<ComponentRef>> "solved cref with the subscripts of its equation, its dependencies";
     type InnerTemplates = list<InnerTemplate>;
+    type UnifyStatus = enumeration(DIFFERENT, MATCHED, UNKNOWN) "the subscripts address different elements, match with bindings or can not be compared";
 
     function sparsityAddTemplate
       input ComponentRef cref;
@@ -2138,7 +2139,7 @@ public
     protected
       InnerTemplates templates = UnorderedMap.getOrDefault(ComponentRef.stripSubscriptsAll(cref), template_map, {});
       list<Subscript> subs = ComponentRef.subscriptsAllWithWholeFlat(cref);
-      Integer status;
+      UnifyStatus status;
       UnorderedMap<ComponentRef, Expression> bindings;
       ComponentRef key, dep;
       list<ComponentRef> key_deps;
@@ -2147,9 +2148,9 @@ public
       for template in templates loop
         (key, key_deps) := template;
         (status, bindings) := sparsityUnify(ComponentRef.subscriptsAllWithWholeFlat(key), subs);
-        if status == 2 then
+        if status == UnifyStatus.UNKNOWN then
           return;
-        elseif status == 1 then
+        elseif status == UnifyStatus.MATCHED then
           matched := true;
           for d in key_deps loop
             if sparsityHasUnbound(d, bindings) then
@@ -2169,10 +2170,9 @@ public
     end sparsityTemplateDeps;
 
     function sparsityUnify
-      "0: the subscripts address different elements, 1: they match with the bindings, 2: unknown"
       input list<Subscript> key_subs;
       input list<Subscript> subs;
-      output Integer status = 1;
+      output UnifyStatus status = UnifyStatus.MATCHED;
       output UnorderedMap<ComponentRef, Expression> bindings = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
     protected
       Expression key_exp, exp, value, offset;
@@ -2180,7 +2180,7 @@ public
       ComponentRef iter;
     algorithm
       if listLength(key_subs) <> listLength(subs) then
-        status := 2;
+        status := UnifyStatus.UNKNOWN;
         return;
       end if;
       for tpl in List.zip(key_subs, subs) loop
@@ -2191,7 +2191,7 @@ public
             () := match Util.tuple22(tpl)
               case Subscript.INDEX(index = exp) guard(Expression.isInteger(exp) and Expression.isInteger(key_exp)) algorithm
                 if Expression.integerValue(exp) <> Expression.integerValue(key_exp) then
-                  status := 0;
+                  status := UnifyStatus.DIFFERENT;
                 end if;
               then ();
               else ();
@@ -2199,6 +2199,9 @@ public
           then ();
           // a symbolic index without iterators (e.g. x[N] of a resizable array) may match, like a literal
           case (Subscript.INDEX(index = key_exp), _) guard(not Expression.contains(key_exp, Expression.isIterator)) then ();
+          // several elements (x[i, :]) leave the iterator unbound, dependencies using it become whole arrays
+          case (Subscript.INDEX(), Subscript.WHOLE()) then ();
+          case (Subscript.INDEX(), Subscript.SLICE()) then ();
           case (Subscript.INDEX(index = key_exp), Subscript.INDEX(index = exp)) algorithm
             (ok, iter, offset, negated) := sparsityIteratorOffset(key_exp);
             if ok then
@@ -2206,19 +2209,19 @@ public
                 then SimplifyExp.simplify(Expression.BINARY(offset, Operator.makeSub(Type.INTEGER()), exp))
                 else SimplifyExp.simplify(Expression.BINARY(exp, Operator.makeSub(Type.INTEGER()), offset));
               if UnorderedMap.contains(iter, bindings) and not Expression.isEqual(value, UnorderedMap.getSafe(iter, bindings, sourceInfo())) then
-                status := 2;
+                status := UnifyStatus.UNKNOWN;
               else
                 UnorderedMap.add(iter, value, bindings);
               end if;
             else
-              status := 2;
+              status := UnifyStatus.UNKNOWN;
             end if;
           then ();
           else algorithm
-            status := 2;
+            status := UnifyStatus.UNKNOWN;
           then ();
         end match;
-        if status <> 1 then
+        if status <> UnifyStatus.MATCHED then
           return;
         end if;
       end for;
