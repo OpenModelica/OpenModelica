@@ -1313,18 +1313,10 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
 }
 
 /**
- * @brief Solve non-linear system with KINSol
- *
- * @param data                Runtime data struct.
- * @param threadData          Thread data for error handling.
- * @param nlsData             Pointer to non-linear system data.
- * @return NLS_SOLVER_STATUS  Return NLS_SOLVED on success and NLS_FAILED otherwise.
- */
-/**
  * @brief Set sign constraints from the min and max attributes of the iteration variables.
  *
- * Only for variables whose initial guess already fulfills the constraint,
- * otherwise KINSol() rejects the initial guess.
+ * Only for variables whose initial guess fulfills the constraint clearly,
+ * otherwise KINSol() rejects the initial guess or cannot leave the bound.
  *
  * @param kinsolData  Kinsol data with the initial guess.
  * @param nlsData     Nonlinear system data with min and max values.
@@ -1333,6 +1325,7 @@ static void nlsKinsolSetConstraints(NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTE
   int i, flag;
   double *x = NV_DATA_S(kinsolData->initialGuess);
   double *c = NV_DATA_S(kinsolData->constraints);
+  double tol;
 
   if (nlsData->min == NULL || nlsData->max == NULL) {
     return;
@@ -1340,10 +1333,11 @@ static void nlsKinsolSetConstraints(NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTE
 
   for (i = 0; i < kinsolData->size; i++) {
     c[i] = 0.0;
-    /* a variable on the bound would block every step that points outside */
-    if (nlsData->min[i] >= 0.0 && x[i] > 0.0) {
+    /* a variable on the bound, up to rounding, would block every step that points outside */
+    tol = sqrt(DBL_EPSILON) * fabs(nlsData->nominal[i]);
+    if (nlsData->min[i] >= 0.0 && x[i] > tol) {
       c[i] = nlsData->min[i] > 0.0 ? 2.0 : 1.0;    /* x > 0 or x >= 0 */
-    } else if (nlsData->max[i] <= 0.0 && x[i] < 0.0) {
+    } else if (nlsData->max[i] <= 0.0 && x[i] < -tol) {
       c[i] = nlsData->max[i] < 0.0 ? -2.0 : -1.0;  /* x < 0 or x <= 0 */
     }
   }
@@ -1351,6 +1345,14 @@ static void nlsKinsolSetConstraints(NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTE
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetConstraints");
 }
 
+/**
+ * @brief Solve non-linear system with KINSol
+ *
+ * @param data                Runtime data struct.
+ * @param threadData          Thread data for error handling.
+ * @param nlsData             Pointer to non-linear system data.
+ * @return NLS_SOLVER_STATUS  Return NLS_SOLVED on success and NLS_FAILED otherwise.
+ */
 NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DATA* nlsData) {
 
   NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
@@ -1423,10 +1425,9 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
     } else {
       infoStreamPrint(OMC_LOG_NLS_V, 0, "KINSol finished with errorCode %d.", flag);
     }
-    /* a step below the tolerance without any iteration only solves the system if the residual is small */
+    /* a step below the tolerance only solves the system if the residual is small */
     stalled = FALSE;
-    KINGetNumNonlinSolvIters(kinsolData->kinsolMemory, &nFEval);
-    if (flag == KIN_STEP_LT_STPTOL && nFEval == 0) {
+    if (flag == KIN_STEP_LT_STPTOL) {
       /* KINGetFuncNorm is not set if no step was taken, evaluate the scaled residual */
       nlsKinsolResiduals(kinsolData->initialGuess, kinsolData->fRes, kinsolData->userData);
       fNormValue = N_VWL2Norm(kinsolData->fRes, kinsolData->fScale);
