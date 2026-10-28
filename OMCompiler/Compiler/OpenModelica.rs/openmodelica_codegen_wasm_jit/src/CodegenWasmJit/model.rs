@@ -31,6 +31,25 @@ impl ExtHost {
     };
 }
 
+/// How the module encodes exception handling: `try_table`/`exnref`, or the legacy
+/// `try`/`catch` for an engine without exnref.
+#[derive(Clone, Copy, PartialEq)]
+pub(super) enum Eh {
+    Exnref,
+    Legacy,
+}
+
+impl Eh {
+    /// For a module this process runs. An exported artifact is always `Exnref`.
+    pub(super) fn sim() -> Eh {
+        if sim_runtime::supports_exnref() {
+            Eh::Exnref
+        } else {
+            Eh::Legacy
+        }
+    }
+}
+
 /// The wasm signature an `ext.*` import is declared with. In a shared-memory module
 /// the import binds directly to the real symbol, so it takes the C or Fortran
 /// argument list rather than the host-trampoline shape.
@@ -47,10 +66,22 @@ fn ext_import_sig(sig: &ExtCallSig) -> openmodelica_wasm_jit::sig::FnSig {
 
 /// `fmi_vrs`: also record the FMI value-reference table (FMU export only).
 /// One `<entry>$guard`, per the wrappers `build_sim_model` emits.
-fn build_guard_fn(target: u32) -> we::Function {
+fn build_guard_fn(target: u32, eh: Eh) -> we::Function {
     use we::Instruction as I;
     let mut f = we::Function::new([(1, we::ValType::I32)]);
     let threw = 1; // param 0 is the SimData pointer
+    if eh == Eh::Legacy {
+        f.instruction(&I::Try(we::BlockType::Empty));
+        f.instruction(&I::LocalGet(0));
+        f.instruction(&I::Call(target));
+        f.instruction(&I::Catch(0));
+        f.instruction(&I::I32Const(1));
+        f.instruction(&I::LocalSet(threw));
+        f.instruction(&I::End);
+        f.instruction(&I::LocalGet(threw));
+        f.instruction(&I::End);
+        return f;
+    }
     f.instruction(&I::Block(we::BlockType::Empty)); // done
     f.instruction(&I::Block(we::BlockType::Result(we::ValType::EXNREF))); // handler
     f.instruction(&I::TryTable(
@@ -77,6 +108,7 @@ pub(super) fn build_sim_model(
     sim_code: &SimCode::SimCode,
     fmi_vrs: bool,
     ext_host: ExtHost,
+    eh: Eh,
     cs_method: &str,
     fmi_solver_flags: &str,
 ) -> Result<SimModel> {
@@ -824,6 +856,7 @@ pub(super) fn build_sim_model(
     // (tag index 0: the module imports none).
     crate::CodegenWasmJitFunctions::set_ext_error_catch(error_tag_type.map(|_| 0));
     crate::CodegenWasmJitFunctions::set_assert_throw_tag(catches.then_some(0));
+    crate::CodegenWasmJitFunctions::set_legacy_eh(eh == Eh::Legacy);
     // Model functions first, in index order; poll for cancellation between them so
     // a long emit is interruptible like the frontend/backend upstream.
     let mut flat_bodies = Vec::with_capacity(flats.len());
@@ -2153,7 +2186,7 @@ pub(super) fn build_sim_model(
     if error_tag_type.is_some() {
         for (_, target) in &guarded {
             functions.function(guard_fn_type);
-            bodies.push(build_guard_fn(*target));
+            bodies.push(build_guard_fn(*target, eh));
         }
     }
 

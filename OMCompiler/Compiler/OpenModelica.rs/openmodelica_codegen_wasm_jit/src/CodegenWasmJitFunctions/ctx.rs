@@ -770,7 +770,8 @@ impl<'a> FnCtx<'a> {
             we::Instruction::Block(_)
             | we::Instruction::Loop(_)
             | we::Instruction::If(_)
-            | we::Instruction::TryTable(..) => {
+            | we::Instruction::TryTable(..)
+            | we::Instruction::Try(_) => {
                 self.ctrl_depth += 1;
             }
             we::Instruction::End => {

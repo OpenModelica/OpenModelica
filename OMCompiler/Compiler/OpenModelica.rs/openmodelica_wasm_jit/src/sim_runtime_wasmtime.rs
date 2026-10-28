@@ -58,6 +58,10 @@ pub(crate) type Module = wasmtime::Module;
 /// Cranelift then emits cost ~20% of the integration, hence the env var.
 static ALARM_SECS: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
 
+pub fn supports_exnref() -> bool {
+    true
+}
+
 /// Install the run's `-alarm`, before the modules are instantiated: a hard alarm
 /// selects the other engine.
 pub fn set_alarm(seconds: Option<u32>) {
