@@ -1,0 +1,36 @@
+// name: resizableSizeDimension
+// keywords: NewBackend resizable size
+// status: correct
+// cflags: --newBackend --resizableArrays --simCodeScalarize=false
+// suite: cSources
+// teardown_command: rm -f resizableSizeDimension_4.mat resizableSizeDimension_4.log
+//
+// A dimension given as size(n, 1) of a resizable array is resizable as well,
+// the size is not evaluated to its value during typing.
+
+loadString("
+model resizableSizeDimension
+  parameter Integer p = 2;
+  parameter Real n[p] = {i for i in 1:p};
+  Real s(start = 1, fixed = true);
+  Real r[size(n, 1)];
+equation
+  r = n*s;
+  der(s) = -s;
+end resizableSizeDimension;
+"); getErrorString();
+
+buildModel(resizableSizeDimension, stopTime = 1); getErrorString();
+system("./resizableSizeDimension -override=p=4 -r=resizableSizeDimension_4.mat", "resizableSizeDimension_4.log");
+// r[4](1) = 4*exp(-1)
+abs(val(r[4], 1, "resizableSizeDimension_4.mat") - 1.471518) < 1e-4;
+readSimulationResultVars("resizableSizeDimension_4.mat");
+// Result:
+// true
+// ""
+// {"resizableSizeDimension", "resizableSizeDimension_init.xml"}
+// ""
+// 0
+// true
+// {"der(s)", "n[1]", "n[2]", "n[3]", "n[4]", "p", "r[1]", "r[2]", "r[3]", "r[4]", "s", "time"}
+// endResult

@@ -2699,7 +2699,10 @@ algorithm
             exp := Expression.SIZE(exp, SOME(index));
           end if;
 
-          if not InstContext.inFunction(context) or Dimension.isKnown(dim) then
+          if Dimension.isResizable(dim) and evaluate then
+            // the size of a resizable dimension is its symbolic size, it must not be evaluated.
+            variability := Dimension.variability(dim);
+          elseif not InstContext.inFunction(context) or Dimension.isKnown(dim) then
             // size is constant outside functions, or for known dimensions inside functions.
             variability := Variability.CONSTANT;
           else
