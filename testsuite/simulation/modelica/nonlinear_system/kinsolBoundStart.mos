@@ -1,0 +1,43 @@
+// name: kinsolBoundStart
+// keywords: kinsol constraints min
+// status: correct
+// teardown_command: rm -f KinsolBoundStart*
+//
+// x starts on its min bound up to rounding and the first Newton step points
+// below it. KINSOL must not constrain x, and a stalled step with a large
+// residual must not count as a solution.
+
+loadString("
+model KinsolBoundStart
+  Real x(min = 0, start = 1e-30) annotation(__OpenModelica_tearingSelect = TearingSelect.always);
+  Real y(start = 3) annotation(__OpenModelica_tearingSelect = TearingSelect.always);
+equation
+  y^2 + 1e-3*x = 4;
+  x + x^3 = 2.1 - y;
+end KinsolBoundStart;
+"); getErrorString();
+
+simulate(KinsolBoundStart, stopTime = 0, simflags = "-nls=kinsol"); getErrorString();
+val(x, 0);
+val(y, 0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "KinsolBoundStart_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'KinsolBoundStart', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nls=kinsol'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Following iteration variables are selected by the user for strong component 1 (DAE kind: initialization):
+//   y:VARIABLE(start = 3.0 )  type: Real
+//   x:VARIABLE(min = 0.0 start = 1e-30 )  type: Real
+// Notification: Following iteration variables are selected by the user for strong component 2 (DAE kind: simulation):
+//   x:VARIABLE(min = 0.0 start = 1e-30 )  type: Real
+//   y:VARIABLE(start = 3.0 )  type: Real
+// "
+// 0.09905290789783655
+// 1.9999752366197194
+// endResult
