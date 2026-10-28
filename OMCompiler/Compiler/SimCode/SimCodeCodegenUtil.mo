@@ -2343,6 +2343,37 @@ algorithm
   end match;
 end isEventConstantExp;
 
+public function isContinuousZeroCrossing
+  "Whether the zero crossing of a relation can be generated as a continuous
+   function. ==, <>, non-Real relations and the special
+   delay/spatialDistribution relations are generated as +1/-1."
+  input DAE.Exp rel;
+  output Boolean b;
+algorithm
+  b := match rel
+    case DAE.RELATION(exp1 = DAE.CALL(path = Absyn.IDENT("$delayZeroCrossing"))) then false;
+    case DAE.RELATION(exp1 = DAE.CALL(path = Absyn.IDENT("$spatialDistributionZeroCrossing"))) then false;
+    case DAE.RELATION(operator = DAE.LESS()) then isContinuousRelation(rel);
+    case DAE.RELATION(operator = DAE.LESSEQ()) then isContinuousRelation(rel);
+    case DAE.RELATION(operator = DAE.GREATER()) then isContinuousRelation(rel);
+    case DAE.RELATION(operator = DAE.GREATEREQ()) then isContinuousRelation(rel);
+    else false;
+  end match;
+end isContinuousZeroCrossing;
+
+protected function isContinuousRelation
+  input DAE.Exp rel;
+  output Boolean b;
+algorithm
+  b := match rel
+    case DAE.RELATION() then
+      rel.index >= 0 and
+      Expression.isRealType(Expression.typeof(rel.exp1)) and
+      Expression.isRealType(Expression.typeof(rel.exp2));
+    else false;
+  end match;
+end isContinuousRelation;
+
 public function isSimulationCodegen
   "Whether the templates are running for a simulation or an FMU rather than for
    functions on their own. Only those set the SimCode structure, and only those

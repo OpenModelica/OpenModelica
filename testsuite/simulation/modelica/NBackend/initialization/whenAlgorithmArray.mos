@@ -26,6 +26,7 @@ model whenAlgorithmArray
   WhenAlgorithmComponent c[3](u = {k*time for k in 1:3});
 end whenAlgorithmArray;
 "); getErrorString();
+
 setCommandLineOptions("--newBackend"); getErrorString();
 simulate(whenAlgorithmArray, stopTime = 1); getErrorString();
 val(c[1].triggered, 0.4, "whenAlgorithmArray_res.mat");
@@ -33,6 +34,7 @@ val(c[1].triggered, 1, "whenAlgorithmArray_res.mat");
 abs(val(c[1].t0, 1, "whenAlgorithmArray_res.mat") - 0.5) < 1e-6;
 abs(val(c[2].t0, 1, "whenAlgorithmArray_res.mat") - 0.25) < 1e-6;
 abs(val(c[3].t0, 1, "whenAlgorithmArray_res.mat") - 0.5/3) < 1e-6;
+
 // Result:
 // true
 // ""

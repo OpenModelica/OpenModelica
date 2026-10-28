@@ -422,10 +422,10 @@ int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList)
     /* found event in left section */
     if(sign(data->simulationInfo->zeroCrossings[i]) != sign(data->simulationInfo->zeroCrossingsPre[i]))
     {
-      infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "%ld changed from %s to current %s",
+      infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "%ld changed from %g to current %g",
             i,
-            (data->simulationInfo->zeroCrossingsPre[i] > 0) ? "TRUE" : "FALSE",
-            (data->simulationInfo->zeroCrossings[i] > 0) ? "TRUE" : "FALSE");
+            data->simulationInfo->zeroCrossingsPre[i],
+            data->simulationInfo->zeroCrossings[i]);
       listPushFront(tmpEventList, listNodeData(it));
     }
   }
