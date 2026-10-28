@@ -369,6 +369,7 @@ DimNegative1.mo \
 DimNegative2.mo \
 DimRagged1.mo \
 DimRagged2.mo \
+DimRagged3.mo \
 DimSize1.mo \
 DimSize2.mo \
 DimSize3.mo \
