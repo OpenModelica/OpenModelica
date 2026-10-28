@@ -4583,7 +4583,7 @@ fn locate_zc_root(
         // C's `checkZeroCrossings`
         let in_left = hunted
             .iter()
-            .any(|&i| (cur[i] == -1.0 && pre[i] == 1.0) || (cur[i] == 1.0 && pre[i] == -1.0));
+            .any(|&i| (cur[i] < 0.0 && pre[i] > 0.0) || (cur[i] > 0.0 && pre[i] < 0.0));
         if in_left {
             b = c;
             backup.copy_from_slice(&cur);

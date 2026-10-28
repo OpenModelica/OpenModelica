@@ -44,7 +44,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS        | info    | status of zero crossings at time=0
 // |                 | |       | | [1] (pre:  0) -1 = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre:  0) -1 = h <= 0.0
-// |                 | |       | | [3] (pre:  0)  1 = v <= 0.0
+// |                 | |       | | [3] (pre:  0) 1e-10 = v <= 0.0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_EVENTS        | info    | state event at time=0.451523641008
 // |                 | |       | | [2] h <= 0.0
@@ -323,7 +323,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS        | info    | status of zero crossings at time=0
 // |                 | |       | | [1] (pre:  0) -1 = h <= 0.0 and v <= 0.0
 // |                 | |       | | [2] (pre:  0) -1 = h <= 0.0
-// |                 | |       | | [3] (pre:  0)  1 = v <= 0.0
+// |                 | |       | | [3] (pre:  0) 1e-10 = v <= 0.0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_EVENTS        | info    | state event at time=0.451523641008
 // |                 | |       | | [2] h <= 0.0
@@ -341,8 +341,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=0.451523641008
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -0.007) 8e-14 = h <= 0.0
+// |                 | |       | | [3] (pre:  4)  4 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=0.451523641008
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -351,8 +351,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=0.451523641008
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -0.007) 8e-14 = h <= 0.0
+// |                 | |       | | [3] (pre:  4)  4 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=0.451523641008
 // LOG_EVENTS        | info    | state event at time=0.451523641072
 // |                 | |       | | [2] h <= 0.0
@@ -364,8 +364,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=0.451523641072
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -5e-18 = h <= 0.0
+// |                 | |       | | [3] (pre: -3) -3 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=0.451523641072
 // LOG_EVENTS        | info    | state event at time=0.767590189724
 // |                 | |       | | [3] v <= 0.0
@@ -386,8 +386,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=1.08365673842
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -0.01) 6e-14 = h <= 0.0
+// |                 | |       | | [3] (pre:  3)  3 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=1.08365673842
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -396,8 +396,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=1.08365673842
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -0.01) 6e-14 = h <= 0.0
+// |                 | |       | | [3] (pre:  3)  3 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=1.08365673842
 // LOG_EVENTS        | info    | state event at time=1.08365673851
 // |                 | |       | | [2] h <= 0.0
@@ -409,8 +409,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=1.08365673851
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -1e-16 = h <= 0.0
+// |                 | |       | | [3] (pre: -2) -2 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=1.08365673851
 // LOG_EVENTS        | info    | state event at time=1.30490332252
 // |                 | |       | | [3] v <= 0.0
@@ -431,8 +431,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=1.52614990659
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -0.005) 4e-14 = h <= 0.0
+// |                 | |       | | [3] (pre:  2)  2 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=1.52614990659
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -441,8 +441,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=1.52614990659
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -0.005) 4e-14 = h <= 0.0
+// |                 | |       | | [3] (pre:  2)  2 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=1.52614990659
 // LOG_EVENTS        | info    | state event at time=1.52614990673
 // |                 | |       | | [2] h <= 0.0
@@ -454,8 +454,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=1.52614990673
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -4e-17 = h <= 0.0
+// |                 | |       | | [3] (pre: -2) -2 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=1.52614990673
 // LOG_EVENTS        | info    | state event at time=1.68102251546
 // |                 | |       | | [3] v <= 0.0
@@ -476,8 +476,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=1.83589512431
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -0.009) 3e-14 = h <= 0.0
+// |                 | |       | | [3] (pre:  1)  2 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=1.83589512431
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -486,8 +486,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=1.83589512431
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -0.009) 3e-14 = h <= 0.0
+// |                 | |       | | [3] (pre:  1)  2 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=1.83589512431
 // LOG_EVENTS        | info    | state event at time=1.8358951245
 // |                 | |       | | [2] h <= 0.0
@@ -499,7 +499,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=1.8358951245
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -2e-14 = h <= 0.0
 // |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=1.8358951245
 // LOG_EVENTS        | info    | state event at time=1.94430595052
@@ -521,7 +521,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.0527167767
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
+// |                 | |       | | [2] (pre: -0.0008) 2e-14 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.0527167767
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
@@ -531,7 +531,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.0527167767
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
+// |                 | |       | | [2] (pre: -0.0008) 2e-14 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.0527167767
 // LOG_EVENTS        | info    | state event at time=2.05271677697
@@ -544,8 +544,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.05271677697
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -6e-17 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.7) -0.7 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.05271677697
 // LOG_EVENTS        | info    | state event at time=2.12860435505
 // |                 | |       | | [3] v <= 0.0
@@ -566,8 +566,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.20449193337
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -0.002) 2e-14 = h <= 0.0
+// |                 | |       | | [3] (pre: 0.7) 0.7 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.20449193337
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -576,8 +576,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.20449193337
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -0.002) 2e-14 = h <= 0.0
+// |                 | |       | | [3] (pre: 0.7) 0.7 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.20449193337
 // LOG_EVENTS        | info    | state event at time=2.20449193375
 // |                 | |       | | [2] h <= 0.0
@@ -589,8 +589,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.20449193375
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -1e-14 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.5) -0.5 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.20449193375
 // LOG_EVENTS        | info    | state event at time=2.25761323821
 // |                 | |       | | [3] v <= 0.0
@@ -611,8 +611,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.31073454302
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -0.0004) 5e-17 = h <= 0.0
+// |                 | |       | | [3] (pre: 0.5) 0.5 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.31073454302
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -621,8 +621,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.31073454302
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -0.0004) 5e-17 = h <= 0.0
+// |                 | |       | | [3] (pre: 0.5) 0.5 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.31073454302
 // LOG_EVENTS        | info    | state event at time=2.31073454357
 // |                 | |       | | [2] h <= 0.0
@@ -634,8 +634,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.31073454357
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -9e-15 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.4) -0.4 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.31073454357
 // LOG_EVENTS        | info    | state event at time=2.34791945641
 // |                 | |       | | [3] v <= 0.0
@@ -656,8 +656,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.38510436977
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -0.001) 6e-17 = h <= 0.0
+// |                 | |       | | [3] (pre: 0.3) 0.4 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.38510436977
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -666,8 +666,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.38510436977
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -0.001) 6e-17 = h <= 0.0
+// |                 | |       | | [3] (pre: 0.3) 0.4 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.38510436977
 // LOG_EVENTS        | info    | state event at time=2.38510437055
 // |                 | |       | | [2] h <= 0.0
@@ -679,8 +679,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.38510437055
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -4e-17 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.3) -0.3 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.38510437055
 // LOG_EVENTS        | info    | state event at time=2.41113380913
 // |                 | |       | | [3] v <= 0.0
@@ -701,8 +701,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.43716324847
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -0.0003) 7e-15 = h <= 0.0
+// |                 | |       | | [3] (pre: 0.2) 0.3 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.43716324847
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -711,8 +711,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.43716324847
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -0.0003) 7e-15 = h <= 0.0
+// |                 | |       | | [3] (pre: 0.2) 0.3 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.43716324847
 // LOG_EVENTS        | info    | state event at time=2.43716324959
 // |                 | |       | | [2] h <= 0.0
@@ -724,8 +724,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.43716324959
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -5e-15 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.2) -0.2 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.43716324959
 // LOG_EVENTS        | info    | state event at time=2.45538385602
 // |                 | |       | | [3] v <= 0.0
@@ -746,8 +746,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.47360446354
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -0.0003) 2e-17 = h <= 0.0
+// |                 | |       | | [3] (pre: 0.2) 0.2 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.47360446354
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -756,8 +756,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.47360446354
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -0.0003) 2e-17 = h <= 0.0
+// |                 | |       | | [3] (pre: 0.2) 0.2 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.47360446354
 // LOG_EVENTS        | info    | state event at time=2.47360446513
 // |                 | |       | | [2] h <= 0.0
@@ -769,8 +769,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.47360446513
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -3e-15 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.1) -0.1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.47360446513
 // LOG_EVENTS        | info    | state event at time=2.48635888882
 // |                 | |       | | [3] v <= 0.0
@@ -791,8 +791,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.49911331406
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -0.0003) 6e-15 = h <= 0.0
+// |                 | |       | | [3] (pre: 0.09) 0.1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.49911331406
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -801,8 +801,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.49911331406
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -0.0003) 6e-15 = h <= 0.0
+// |                 | |       | | [3] (pre: 0.09) 0.1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.49911331406
 // LOG_EVENTS        | info    | state event at time=2.49911331634
 // |                 | |       | | [2] h <= 0.0
@@ -814,8 +814,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.49911331634
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -2e-15 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.09) -0.09 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.49911331634
 // LOG_EVENTS        | info    | state event at time=2.50804141174
 // |                 | |       | | [3] v <= 0.0
@@ -836,8 +836,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.51696950938
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -0.0002) 2e-18 = h <= 0.0
+// |                 | |       | | [3] (pre: 0.06) 0.09 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.51696950938
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -846,8 +846,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.51696950938
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -0.0002) 2e-18 = h <= 0.0
+// |                 | |       | | [3] (pre: 0.06) 0.09 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.51696950938
 // LOG_EVENTS        | info    | state event at time=2.51696951264
 // |                 | |       | | [2] h <= 0.0
@@ -859,8 +859,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.51696951264
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -2e-18 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.06) -0.06 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.51696951264
 // LOG_EVENTS        | info    | state event at time=2.52321917775
 // |                 | |       | | [3] v <= 0.0
@@ -881,8 +881,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.52946884606
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -0.0002) 2e-15 = h <= 0.0
+// |                 | |       | | [3] (pre: 0.03) 0.06 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.52946884606
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -891,8 +891,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.52946884606
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -0.0002) 2e-15 = h <= 0.0
+// |                 | |       | | [3] (pre: 0.03) 0.06 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.52946884606
 // LOG_EVENTS        | info    | state event at time=2.52946885072
 // |                 | |       | | [2] h <= 0.0
@@ -904,8 +904,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.52946885072
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -8e-18 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.04) -0.04 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.52946885072
 // LOG_EVENTS        | info    | state event at time=2.5338436139
 // |                 | |       | | [3] v <= 0.0
@@ -926,8 +926,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.53821838167
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -9e-06) 8e-18 = h <= 0.0
+// |                 | |       | | [3] (pre: 0.04) 0.04 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.53821838167
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -936,8 +936,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.53821838167
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -9e-06) 8e-18 = h <= 0.0
+// |                 | |       | | [3] (pre: 0.04) 0.04 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.53821838167
 // LOG_EVENTS        | info    | state event at time=2.53821838832
 // |                 | |       | | [2] h <= 0.0
@@ -949,8 +949,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.53821838832
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -2e-18 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.03) -0.03 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.53821838832
 // LOG_EVENTS        | info    | state event at time=2.54128071912
 // |                 | |       | | [3] v <= 0.0
@@ -971,8 +971,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.5443430565
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -1e-05) 5e-16 = h <= 0.0
+// |                 | |       | | [3] (pre: 0.03) 0.03 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.5443430565
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -981,8 +981,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.5443430565
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -1e-05) 5e-16 = h <= 0.0
+// |                 | |       | | [3] (pre: 0.03) 0.03 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.5443430565
 // LOG_EVENTS        | info    | state event at time=2.54434306601
 // |                 | |       | | [2] h <= 0.0
@@ -994,8 +994,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.54434306601
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -6e-16 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.02) -0.02 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.54434306601
 // LOG_EVENTS        | info    | state event at time=2.54648669268
 // |                 | |       | | [3] v <= 0.0
@@ -1016,8 +1016,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.54863032877
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -2e-05) 4e-16 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.02 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.54863032877
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -1026,8 +1026,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.54863032877
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -2e-05) 4e-16 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.02 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.54863032877
 // LOG_EVENTS        | info    | state event at time=2.54863034235
 // |                 | |       | | [2] h <= 0.0
@@ -1039,8 +1039,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.54863034235
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -4e-16 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.01) -0.01 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.54863034235
 // LOG_EVENTS        | info    | state event at time=2.55013087404
 // |                 | |       | | [3] v <= 0.0
@@ -1061,8 +1061,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55163141919
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -1e-05) 7e-21 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.01 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55163141919
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -1071,8 +1071,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55163141919
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -1e-05) 7e-21 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.01 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55163141919
 // LOG_EVENTS        | info    | state event at time=2.5516314386
 // |                 | |       | | [2] h <= 0.0
@@ -1084,8 +1084,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.5516314386
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -3e-19 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.01) -0.01 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.5516314386
 // LOG_EVENTS        | info    | state event at time=2.55268180081
 // |                 | |       | | [3] v <= 0.0
@@ -1106,8 +1106,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55373218227
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -5e-06) 2e-16 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.01 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55373218227
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -1116,8 +1116,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55373218227
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -5e-06) 2e-16 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.01 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55373218227
 // LOG_EVENTS        | info    | state event at time=2.55373221
 // |                 | |       | | [2] h <= 0.0
@@ -1129,8 +1129,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55373221
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -3e-19 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.007) -0.007 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55373221
 // LOG_EVENTS        | info    | state event at time=2.5544674493
 // |                 | |       | | [3] v <= 0.0
@@ -1151,8 +1151,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55520271612
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -3e-06) 2e-16 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.007 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55520271612
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -1161,8 +1161,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55520271612
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -3e-06) 2e-16 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.007 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55520271612
 // LOG_EVENTS        | info    | state event at time=2.55520275574
 // |                 | |       | | [2] h <= 0.0
@@ -1174,8 +1174,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55520275574
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -1e-18 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.005) -0.005 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55520275574
 // LOG_EVENTS        | info    | state event at time=2.55571740291
 // |                 | |       | | [3] v <= 0.0
@@ -1196,8 +1196,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55623208942
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -9e-07) 1e-16 = h <= 0.0
+// |                 | |       | | [3] (pre: 0.003) 0.005 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55623208942
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -1206,8 +1206,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55623208942
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -9e-07) 1e-16 = h <= 0.0
+// |                 | |       | | [3] (pre: 0.003) 0.005 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55623208942
 // LOG_EVENTS        | info    | state event at time=2.55623214602
 // |                 | |       | | [2] h <= 0.0
@@ -1219,8 +1219,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55623214602
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -1e-16 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.004) -0.004 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55623214602
 // LOG_EVENTS        | info    | state event at time=2.55659236999
 // |                 | |       | | [3] v <= 0.0
@@ -1241,8 +1241,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55695265019
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -6e-07) 8e-17 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.004 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55695265019
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -1251,8 +1251,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55695265019
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -6e-07) 8e-17 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.004 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55695265019
 // LOG_EVENTS        | info    | state event at time=2.55695273106
 // |                 | |       | | [2] h <= 0.0
@@ -1264,8 +1264,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55695273106
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -7e-17 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.002) -0.002 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55695273106
 // LOG_EVENTS        | info    | state event at time=2.55720484635
 // |                 | |       | | [3] v <= 0.0
@@ -1286,8 +1286,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.557457042
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -3e-07) 8e-17 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.002 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.557457042
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -1296,8 +1296,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.557457042
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -3e-07) 8e-17 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.002 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.557457042
 // LOG_EVENTS        | info    | state event at time=2.55745715755
 // |                 | |       | | [2] h <= 0.0
@@ -1309,8 +1309,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55745715755
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -4e-19 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.002) -0.002 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55745715755
 // LOG_EVENTS        | info    | state event at time=2.55763357898
 // |                 | |       | | [3] v <= 0.0
@@ -1331,8 +1331,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55781011528
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -2e-07) 4e-17 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.002 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55781011528
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -1341,8 +1341,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55781011528
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -2e-07) 4e-17 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.002 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55781011528
 // LOG_EVENTS        | info    | state event at time=2.55781028041
 // |                 | |       | | [2] h <= 0.0
@@ -1354,8 +1354,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55781028041
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -3e-17 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.001) -0.001 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55781028041
 // LOG_EVENTS        | info    | state event at time=2.55793369072
 // |                 | |       | | [3] v <= 0.0
@@ -1376,8 +1376,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55805726525
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -7e-08) 6e-17 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.001 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55805726525
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -1386,8 +1386,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55805726525
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -7e-08) 6e-17 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.001 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55805726525
 // LOG_EVENTS        | info    | state event at time=2.55805750132
 // |                 | |       | | [2] h <= 0.0
@@ -1399,8 +1399,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55805750132
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -2e-19 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.0008) -0.0008 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55805750132
 // LOG_EVENTS        | info    | state event at time=2.55814376745
 // |                 | |       | | [3] v <= 0.0
@@ -1421,8 +1421,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55823026845
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -4e-08) 1e-19 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.0008 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55823026845
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -1431,8 +1431,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55823026845
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -4e-08) 1e-19 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.0008 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55823026845
 // LOG_EVENTS        | info    | state event at time=2.55823060619
 // |                 | |       | | [2] h <= 0.0
@@ -1444,8 +1444,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55823060619
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -2e-19 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.0006) -0.0006 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55823060619
 // LOG_EVENTS        | info    | state event at time=2.55829081917
 // |                 | |       | | [3] v <= 0.0
@@ -1466,8 +1466,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55835136827
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -2e-08) 5e-20 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.0006 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55835136827
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -1476,8 +1476,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55835136827
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -2e-08) 5e-20 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.0006 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55835136827
 // LOG_EVENTS        | info    | state event at time=2.55835185227
 // |                 | |       | | [2] h <= 0.0
@@ -1489,8 +1489,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55835185227
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -1e-17 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.0004) -0.0004 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55835185227
 // LOG_EVENTS        | info    | state event at time=2.55839375266
 // |                 | |       | | [3] v <= 0.0
@@ -1511,8 +1511,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55843613483
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -9e-09) 1e-17 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.0004 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55843613483
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -1521,8 +1521,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55843613483
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -9e-09) 1e-17 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.0004 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55843613483
 // LOG_EVENTS        | info    | state event at time=2.55843683061
 // |                 | |       | | [2] h <= 0.0
@@ -1534,8 +1534,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55843683061
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -7e-18 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.0003) -0.0003 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55843683061
 // LOG_EVENTS        | info    | state event at time=2.55846580237
 // |                 | |       | | [3] v <= 0.0
@@ -1556,8 +1556,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55849546686
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -4e-09) 7e-18 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.0003 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55849546686
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -1566,8 +1566,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55849546686
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -4e-09) 7e-18 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.0003 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55849546686
 // LOG_EVENTS        | info    | state event at time=2.55849647374
 // |                 | |       | | [2] h <= 0.0
@@ -1579,8 +1579,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55849647374
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -4e-18 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.0002) -0.0002 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55849647374
 // LOG_EVENTS        | info    | state event at time=2.55851623202
 // |                 | |       | | [3] v <= 0.0
@@ -1601,8 +1601,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55853699312
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -2e-09) 1e-20 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.0002 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55853699312
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -1611,8 +1611,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55853699312
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -2e-09) 1e-20 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.0002 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55853699312
 // LOG_EVENTS        | info    | state event at time=2.55853847233
 // |                 | |       | | [2] h <= 0.0
@@ -1624,8 +1624,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55853847233
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -3e-19 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.0001) -0.0001 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55853847233
 // LOG_EVENTS        | info    | state event at time=2.55855152591
 // |                 | |       | | [3] v <= 0.0
@@ -1646,8 +1646,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55856605309
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -1e-09) 4e-18 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.0001 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55856605309
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -1656,8 +1656,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55856605309
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -1e-09) 4e-18 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.0001 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55856605309
 // LOG_EVENTS        | info    | state event at time=2.55856831036
 // |                 | |       | | [2] h <= 0.0
@@ -1669,8 +1669,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55856831036
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -6e-21 = h <= 0.0
+// |                 | |       | | [3] (pre: -0.0001) -8e-05 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55856831036
 // LOG_EVENTS        | info    | state event at time=2.55857622212
 // |                 | |       | | [3] v <= 0.0
@@ -1691,8 +1691,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55858638353
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -5e-10) 3e-18 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.0001 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55858638353
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -1701,8 +1701,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55858638353
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -5e-10) 3e-18 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 0.0001 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55858638353
 // LOG_EVENTS        | info    | state event at time=2.55859037025
 // |                 | |       | | [2] h <= 0.0
@@ -1714,8 +1714,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55859037025
 // |                 | |       | | [1] (pre: -1) -1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1) -1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1) -1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) -9e-19 = h <= 0.0
+// |                 | |       | | [3] (pre: -7e-05) -3e-05 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55859037025
 // LOG_EVENTS        | info    | state event at time=2.55859349653
 // |                 | |       | | [3] v <= 0.0
@@ -1736,8 +1736,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55860059936
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -2e-10) 2e-18 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 7e-05 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55860059936
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -1746,8 +1746,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55860059936
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -2e-10) 2e-18 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 7e-05 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55860059936
 // LOG_EVENTS        | info    | state event at time=2.55860557137
 // |                 | |       | | [3] v <= 0.0
@@ -1760,8 +1760,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55860557137
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) 8e-11 = h <= 0.0
+// |                 | |       | | [3] (pre: -5e-05) 4e-13 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55860557137
 // LOG_EVENTS        | info    | state event at time=2.5586105337
 // |                 | |       | | [2] h <= 0.0
@@ -1779,8 +1779,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.5586105337
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -1e-10) 1e-18 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 5e-05 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.5586105337
 // |                 | |       | | discrete var changed: $whenCondition1 from true to false
 // |                 | |       | | discrete var changed: $whenCondition3 from true to false
@@ -1789,8 +1789,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.5586105337
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: -1e-10) 1e-18 = h <= 0.0
+// |                 | |       | | [3] (pre: 2e-10) 5e-05 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.5586105337
 // LOG_EVENTS        | info    | state event at time=2.55861400735
 // |                 | |       | | [3] v <= 0.0
@@ -1807,8 +1807,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS_V      | info    | status of zero crossings at time=2.55861400735
 // |                 | |       | | [1] (pre: -1)  1 = h <= 0.0 and v <= 0.0
-// |                 | |       | | [2] (pre:  1)  1 = h <= 0.0
-// |                 | |       | | [3] (pre: -1)  1 = v <= 0.0
+// |                 | |       | | [2] (pre: 2e-10) 1e-10 = h <= 0.0
+// |                 | |       | | [3] (pre: -3e-05) 1e-15 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55861400735
 // LOG_EVENTS_V      | info    | terminal event at stop time 3
 // LOG_EVENTS_V      | info    | check for discrete changes at time=3
