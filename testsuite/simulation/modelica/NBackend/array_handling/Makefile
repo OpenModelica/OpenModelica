@@ -32,6 +32,8 @@ arrayConnectRooted.mos \
 entwinedOrder.mos \
 entwinedOrderResizable.mos \
 resizableOverride.mos \
+resizableSizeDimension.mos \
+resizableDiffIteratorArray.mos \
 resizableOverrideDerived.mos \
 resizableAliasStart.mos \
 resizablePartialLoops.mos \

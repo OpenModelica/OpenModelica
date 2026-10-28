@@ -1056,6 +1056,8 @@ public
       case _ guard(diffArguments.diffType == DifferentiationType.FUNCTION) then Pointer.create(NBVariable.DUMMY_VARIABLE);
       case Expression.CREF(cref = ComponentRef.EMPTY()) then Pointer.create(NBVariable.DUMMY_VARIABLE);
       case Expression.CREF(cref = ComponentRef.WILD())  then Pointer.create(NBVariable.DUMMY_VARIABLE);
+      // iterators of array constructors and reductions are not lowered
+      case Expression.CREF() guard(isUnloweredIterator(exp.cref)) then Pointer.create(NBVariable.DUMMY_VARIABLE);
       case Expression.CREF() then BVariable.getVarPointer(exp.cref, sourceInfo());
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});
@@ -1086,6 +1088,13 @@ public
       // -------------------------------------
       case (Expression.CREF(cref = ComponentRef.EMPTY()), _, _) then (exp, diffArguments);
       case (Expression.CREF(cref = ComponentRef.WILD()), _, _)  then (exp, diffArguments);
+
+      // iterators, e.g. i in {f(i) for i in 1:n}, have a zero derivative,
+      // except for D(i)/di => 1 (handled by the SIMPLE rule below).
+      case (Expression.CREF(), _, _)
+        guard(ComponentRef.isIterator(exp.cref) and not (diffArguments.diffType == DifferentiationType.SIMPLE
+          and ComponentRef.isEqual(exp.cref, diffArguments.diffCref)))
+      then (makeZero(exp.ty), diffArguments);
 
       // -------------------------------------
       //    Special rules for Type: FUNCTION
@@ -4178,6 +4187,12 @@ protected
       print(s + "\n");
     end if;
   end dbg;
+
+  function isUnloweredIterator
+    "true for iterators that have no backend variable, e.g. of array constructors"
+    input ComponentRef cref;
+    output Boolean b = ComponentRef.isIterator(cref) and not InstNode.isVar(ComponentRef.node(cref));
+  end isUnloweredIterator;
 
   function expressionHasIteratorCref
     input Expression exp;
