@@ -5,9 +5,9 @@
 //! (`Aclass`/`name`/`description`/`dataInfo`/`data_1`/`data_2`), looking up
 //! variables, and reading their trajectories (with linear interpolation).
 //
-//! Both storage layouts emitted by the runtime are supported: `binTrans` (the
-//! default, data_2 stored variable-major) and `binNormal` (time-major, as some
-//! Dymola-produced reference files use).
+//! Both storage layouts are supported: `binTrans` (what the simulation runtimes
+//! write, data_2 stored time-major) and `binNormal` (variable-major, as
+//! `filterSimulationResults` writes).
 
 #![allow(non_snake_case)]
 
@@ -20,11 +20,8 @@ pub mod fs;
 // `std::fs::File` natively, an in-memory `Cursor` on the web target.
 type Src = fs::Reader;
 
-/// How much of data_2 is worth holding in memory. Under it the whole matrix is
-/// read once and every lookup is an index; over it only what the caller asks for
-/// is read, as the C reader always has.
-const MAX_CACHED_DATA2: u64 = 64 * 1024 * 1024;
-const READ_ALL_MAX: u64 = 2 * 1024 * 1024 * 1024;
+/// Bytes of data_2 read from the file at a time while loading or scanning it.
+const CHUNK_BYTES: usize = if cfg!(test) { 32 } else { 1 << 20 };
 
 /// One entry from the `name`/`description`/`dataInfo` metadata tables.
 #[derive(Clone)]
@@ -156,12 +153,16 @@ pub struct MatReader {
     pub nrows: usize,
     /// File offset (bytes) where the data_2 payload begins.
     var_offset: u64,
-    /// data_2 stored variable-major (`binTrans`) vs. time-major (`binNormal`).
+    /// data_2 stored time-major (`binTrans`) vs. variable-major (`binNormal`).
     binTrans: bool,
     /// True if data_2 is stored as IEEE double, false if single precision.
     doublePrecision: bool,
-    /// data_2 loaded lazily and transposed to time-major order: `data2[i*nvar+v]`.
+    /// data_2 in memory, variable-major: `data2[v*nrows + i]`.
     data2: Option<Vec<f64>>,
+    /// Loading data_2 failed (too large for memory); not retried.
+    data2Failed: bool,
+    /// The time column, cached when data_2 is not in memory.
+    time: Option<Vec<f64>>,
     startTime: Option<f64>,
     stopTime: Option<f64>,
 }
@@ -333,6 +334,15 @@ fn read_doubles(ty: i32, n: usize, file: &mut Src) -> Result<Vec<f64>, String> {
     }
 }
 
+/// Element `k` of a data_2 buffer of doubles or floats.
+fn decode(raw: &[u8], k: usize, double: bool) -> f64 {
+    if double {
+        f64::from_le_bytes(raw[k * 8..k * 8 + 8].try_into().unwrap())
+    } else {
+        f32::from_le_bytes(raw[k * 4..k * 4 + 4].try_into().unwrap()) as f64
+    }
+}
+
 /// "der(a.b.c)" -> "a.b.der(c)" (Dymola style), or None if no conversion needed.
 pub fn dymola_style_name(var: &str) -> Option<String> {
     if !var.starts_with("der(") {
@@ -370,6 +380,8 @@ impl MatReader {
             binTrans: true,
             doublePrecision: true,
             data2: None,
+            data2Failed: false,
+            time: None,
             startTime: None,
             stopTime: None,
         };
@@ -551,56 +563,106 @@ impl MatReader {
         read_doubles(ty, 1, &mut self.file).ok()?.first().copied()
     }
 
-    /// How large data_2 is.
-    fn data2_bytes(&self) -> u64 {
-        self.nrows as u64 * self.nvar as u64 * self.elem_size()
-    }
-
-    /// Load and transpose data_2 into time-major order on first access. Only for
-    /// a matrix that fits in memory; past that the callers read off the disk.
-    fn ensure_data2(&mut self) -> bool {
-        self.load_data2(MAX_CACHED_DATA2)
-    }
-
-    /// C's `omc_matlab4_read_all_vals`, for a caller that will read most
-    /// columns: the per-element disk path costs a seek per row.
-    pub fn read_all(&mut self) -> bool {
-        self.load_data2(READ_ALL_MAX)
-    }
-
-    fn load_data2(&mut self, max_bytes: u64) -> bool {
+    /// Decode data_2 into memory, variable-major, a chunk of the file at a
+    /// time. False if it does not fit in memory or cannot be read.
+    fn load_data2(&mut self) -> bool {
         if self.data2.is_some() {
             return true;
         }
-        if self.nrows == 0 || self.nvar == 0 || self.data2_bytes() > max_bytes {
+        if self.data2Failed || self.nrows == 0 || self.nvar == 0 {
             return false;
         }
-        let n = self.nrows * self.nvar;
-        if self.file.seek(SeekFrom::Start(self.var_offset)).is_err() {
-            return false;
-        }
-        // read_doubles selects double vs. float on the type's precision digit
-        // p = (ty%100)/10: 0 = double, 1 = float.
-        let ty = if self.doublePrecision { 0 } else { 10 };
-        let raw = match read_doubles(ty, n, &mut self.file) {
-            Ok(v) => v,
-            Err(_) => return false,
-        };
-        let data2 = if self.binTrans {
-            // On disk: raw[i*nvar + v] already time-major.
-            raw
-        } else {
-            // On disk: raw[v*nrows + i]; transpose to data2[i*nvar + v].
-            let mut t = vec![0f64; n];
-            for v in 0..self.nvar {
-                for i in 0..self.nrows {
-                    t[i * self.nvar + v] = raw[v * self.nrows + i];
+        self.data2 = self.read_data2();
+        self.data2Failed = self.data2.is_none();
+        self.data2.is_some()
+    }
+
+    fn read_data2(&mut self) -> Option<Vec<f64>> {
+        let (nrows, nvar) = (self.nrows, self.nvar);
+        let mut data2 = Vec::new();
+        data2.try_reserve_exact(nrows.checked_mul(nvar)?).ok()?;
+        data2.resize(nrows * nvar, 0.0);
+        let elem = self.elem_size() as usize;
+        let double = self.doublePrecision;
+        // A chunk holds whole rows (binTrans) or whole columns (binNormal).
+        let (lines, line_len) = if self.binTrans { (nrows, nvar) } else { (nvar, nrows) };
+        let per_chunk = (CHUNK_BYTES / (line_len * elem)).max(1);
+        let mut raw = Vec::new();
+        raw.try_reserve_exact(per_chunk * line_len * elem).ok()?;
+        self.file.seek(SeekFrom::Start(self.var_offset)).ok()?;
+        for first in (0..lines).step_by(per_chunk) {
+            let count = per_chunk.min(lines - first);
+            raw.resize(count * line_len * elem, 0);
+            self.file.read_exact(&mut raw).ok()?;
+            if self.binTrans {
+                for v in 0..nvar {
+                    for (r, d) in data2[v * nrows + first..][..count].iter_mut().enumerate() {
+                        *d = decode(&raw, r * nvar + v, double);
+                    }
+                }
+            } else {
+                for (k, d) in data2[first * nrows..][..count * nrows].iter_mut().enumerate() {
+                    *d = decode(&raw, k, double);
                 }
             }
-            t
-        };
-        self.data2 = Some(data2);
-        true
+        }
+        Some(data2)
+    }
+
+    /// Whether data_2 is in memory. A binTrans file is loaded: reading any one
+    /// of its columns already reads all of it.
+    fn columns_in_memory(&mut self) -> bool {
+        if self.binTrans {
+            self.load_data2()
+        } else {
+            self.data2.is_some()
+        }
+    }
+
+    /// C's `omc_matlab4_read_all_vals`, for a caller that will read most columns.
+    pub fn read_all(&mut self) -> bool {
+        self.load_data2()
+    }
+
+    /// 0-based column `col` read from the file: one contiguous read (binNormal)
+    /// or one pass over data_2 (binTrans).
+    fn disk_column(&mut self, col: usize) -> Option<Vec<f64>> {
+        let (nrows, nvar) = (self.nrows, self.nvar);
+        let elem = self.elem_size();
+        let ty = if self.doublePrecision { 0 } else { 10 };
+        if !self.binTrans {
+            self.file
+                .seek(SeekFrom::Start(self.var_offset + col as u64 * nrows as u64 * elem))
+                .ok()?;
+            return read_doubles(ty, nrows, &mut self.file).ok();
+        }
+        let row_len = nvar.checked_mul(elem as usize)?;
+        let per_chunk = (CHUNK_BYTES / row_len).max(1);
+        let mut raw = Vec::new();
+        raw.try_reserve_exact(per_chunk.checked_mul(row_len)?).ok()?;
+        let mut out = Vec::new();
+        out.try_reserve_exact(nrows).ok()?;
+        self.file.seek(SeekFrom::Start(self.var_offset)).ok()?;
+        for first in (0..nrows).step_by(per_chunk) {
+            let count = per_chunk.min(nrows - first);
+            raw.resize(count * row_len, 0);
+            self.file.read_exact(&mut raw).ok()?;
+            out.extend((0..count).map(|r| decode(&raw, r * nvar + col, self.doublePrecision)));
+        }
+        Some(out)
+    }
+
+    fn time_column(&mut self) -> Option<&[f64]> {
+        if self.nrows == 0 || self.nvar == 0 {
+            return None;
+        }
+        if self.columns_in_memory() {
+            return self.data2.as_deref().map(|d| &d[..self.nrows]);
+        }
+        if self.time.is_none() {
+            self.time = Some(self.disk_column(0)?);
+        }
+        self.time.as_deref()
     }
 
     /// Single value of `varIndex` (1-based, sign for negative alias) at row
@@ -610,10 +672,10 @@ impl MatReader {
         if absv == 0 || absv > self.nvar || timeIndex >= self.nrows {
             return None;
         }
-        let v = if self.ensure_data2() {
-            *self.data2.as_ref()?.get(timeIndex * self.nvar + (absv - 1))?
-        } else {
-            self.disk_val(timeIndex, absv - 1)?
+        let v = match (&self.data2, &self.time) {
+            (Some(d), _) => d[(absv - 1) * self.nrows + timeIndex],
+            (None, Some(t)) if absv == 1 => t[timeIndex],
+            _ => self.disk_val(timeIndex, absv - 1)?,
         };
         Some(if varIndex < 0 { -v } else { v })
     }
@@ -624,38 +686,18 @@ impl MatReader {
         if absv == 0 || absv > self.nvar || self.nrows == 0 {
             return None;
         }
-        let (nvar, nrows) = (self.nvar, self.nrows);
-        let negate = varIndex < 0;
-        if self.ensure_data2() {
-            let data2 = self.data2.as_ref()?;
-            return Some(
-                (0..nrows)
-                    .map(|i| {
-                        let v = data2[i * nvar + (absv - 1)];
-                        if negate { -v } else { v }
-                    })
-                    .collect(),
-            );
+        let col = absv - 1;
+        let mut v = if self.columns_in_memory() {
+            self.data2.as_ref()?[col * self.nrows..][..self.nrows].to_vec()
+        } else if col == 0 {
+            self.time_column()?.to_vec()
+        } else {
+            self.disk_column(col)?
+        };
+        if varIndex < 0 {
+            v.iter_mut().for_each(|x| *x = -*x);
         }
-        let elem = self.elem_size();
-        let ty = if self.doublePrecision { 0 } else { 10 };
-        // Variable-major on disk: the column is one contiguous run.
-        if !self.binTrans {
-            let at = self.var_offset + (absv - 1) as u64 * nrows as u64 * elem;
-            self.file.seek(SeekFrom::Start(at)).ok()?;
-            let mut v = read_doubles(ty, nrows, &mut self.file).ok()?;
-            if negate {
-                v.iter_mut().for_each(|x| *x = -*x);
-            }
-            return Some(v);
-        }
-        // Time-major: the column is `nrows` elements `nvar` apart.
-        let mut out = Vec::with_capacity(nrows);
-        for i in 0..nrows {
-            let v = self.disk_val(i, absv - 1)?;
-            out.push(if negate { -v } else { v });
-        }
-        Some(out)
+        Some(v)
     }
 
     pub fn start_time(&mut self) -> f64 {
@@ -701,8 +743,7 @@ impl MatReader {
     /// `omc_matlab4_val`. Used by the resampling path of filterSimulationResults,
     /// which works with raw column indices rather than `allInfo` entries.
     pub fn interp_val(&mut self, index: i32, time: f64) -> Option<f64> {
-        let timevec = self.read_vals(1)?;
-        let (i1, w1, i2, w2) = find_closest_points(time, &timevec);
+        let (i1, w1, i2, w2) = find_closest_points(time, self.time_column()?);
         if i2 < 0 {
             self.single_val(index, i1 as usize)
         } else if i1 < 0 {
@@ -839,6 +880,117 @@ mod tests {
             MatReader::open(path.to_str().unwrap()).err().as_deref(),
             Some("Matrix name mismatch: dataInfo")
         );
+        let _ = std::fs::remove_file(&path);
+    }
+
+    /// time, x, its negated alias y and a parameter p over five rows with an
+    /// event at t=1, in either storage order and precision.
+    fn table_file(path: &std::path::Path, bin_trans: bool, single: bool) {
+        let names = ["time", "x", "y", "p"];
+        let info = [[0, 1, 0, -1], [2, 2, 0, 0], [2, -2, 0, 0], [1, 2, 0, 0]];
+        let time = [0.0, 1.0, 1.0, 2.0, 3.0];
+        let x = [5.0, 7.0, 8.0, 11.0, 13.0];
+        let data_2: Vec<f64> = if bin_trans {
+            (0..5).flat_map(|i| [time[i], x[i]]).collect()
+        } else {
+            time.iter().chain(&x).copied().collect()
+        };
+        let reals = |v: &[f64]| -> Vec<u8> {
+            if single {
+                v.iter().flat_map(|x| (*x as f32).to_le_bytes()).collect()
+            } else {
+                doubles(v)
+            }
+        };
+        let len = 1 + names.iter().map(|n| n.len()).max().unwrap();
+        let chars = |strs: &[&str]| -> Vec<u8> {
+            let padded: Vec<Vec<u8>> = strs
+                .iter()
+                .map(|s| s.bytes().chain(std::iter::repeat(0)).take(len).collect())
+                .collect();
+            if bin_trans {
+                padded.concat()
+            } else {
+                (0..len).flat_map(|c| padded.iter().map(move |s| s[c])).collect()
+            }
+        };
+        let order = if bin_trans { "binTrans" } else { "binNormal" };
+        let mut out = Vec::new();
+        let aclass: Vec<u8> = (0..11)
+            .flat_map(|c| ["Atrajectory", "1.1", "", order].map(|r| *r.as_bytes().get(c).unwrap_or(&0)))
+            .collect();
+        matrix(&mut out, "Aclass", 51, 4, 11, &aclass);
+        let n = names.len();
+        let dims = |a: usize, b: usize| if bin_trans { (a, b) } else { (b, a) };
+        let (r, c) = dims(len, n);
+        matrix(&mut out, "name", 51, r, c, &chars(&names));
+        matrix(&mut out, "description", 51, r, c, &chars(&["", "", "", ""]));
+        let info: Vec<i32> = if bin_trans {
+            info.concat()
+        } else {
+            (0..4).flat_map(|k| info.iter().map(move |i| i[k])).collect()
+        };
+        let (r, c) = dims(4, n);
+        matrix(
+            &mut out,
+            "dataInfo",
+            20,
+            r,
+            c,
+            &info.iter().flat_map(|v| v.to_le_bytes()).collect::<Vec<u8>>(),
+        );
+        // Both orders store [start, stop] of time, then of p.
+        matrix(&mut out, "data_1", 0, 2, 2, &doubles(&[0.0, 3.0, 3.0, 3.0]));
+        let (r, c) = dims(2, 5);
+        matrix(&mut out, "data_2", if single { 10 } else { 0 }, r, c, &reals(&data_2));
+        std::fs::write(path, out).unwrap();
+    }
+
+    /// Every storage order and precision gives the same values, with data_2 in
+    /// memory and read from the file in chunks.
+    #[test]
+    fn layouts_and_paths_agree() {
+        let path = std::env::temp_dir().join(format!("omc_mat_reader_layouts_{}.mat", std::process::id()));
+        for bin_trans in [true, false] {
+            for single in [false, true] {
+                for in_memory in [true, false] {
+                    let case = format!("binTrans={bin_trans} single={single} in_memory={in_memory}");
+                    table_file(&path, bin_trans, single);
+                    let mut r = MatReader::open(path.to_str().unwrap()).unwrap_or_else(|e| panic!("{case}: {e}"));
+                    if in_memory {
+                        assert!(r.read_all(), "{case}");
+                    } else {
+                        r.data2Failed = true;
+                    }
+                    let var = |r: &MatReader, n: &str| r.find_var(n).unwrap();
+                    let x = r.allInfo[var(&r, "x")].index;
+                    assert_eq!(
+                        r.read_vals(1).as_deref(),
+                        Some(&[0.0, 1.0, 1.0, 2.0, 3.0][..]),
+                        "{case}"
+                    );
+                    assert_eq!(
+                        r.read_vals(x).as_deref(),
+                        Some(&[5.0, 7.0, 8.0, 11.0, 13.0][..]),
+                        "{case}"
+                    );
+                    assert_eq!(
+                        r.read_vals(-x).as_deref(),
+                        Some(&[-5.0, -7.0, -8.0, -11.0, -13.0][..]),
+                        "{case}"
+                    );
+                    assert_eq!((r.start_time(), r.stop_time()), (0.0, 3.0), "{case}");
+                    let (ix, iy, ip) = (var(&r, "x"), var(&r, "y"), var(&r, "p"));
+                    assert_eq!(r.val(ix, 0.5), Some(6.0), "{case}");
+                    assert_eq!(r.val(ix, 1.0), Some(8.0), "{case}");
+                    assert_eq!(r.val(ix, 2.5), Some(12.0), "{case}");
+                    assert_eq!(r.val(iy, 2.5), Some(-12.0), "{case}");
+                    assert_eq!(r.val(ip, 1.5), Some(3.0), "{case}");
+                    assert_eq!(r.val(ix, 3.5), None, "{case}");
+                    assert_eq!(r.data2.is_some(), in_memory || (bin_trans && !r.data2Failed), "{case}");
+                }
+            }
+        }
         let _ = std::fs::remove_file(&path);
     }
 }
