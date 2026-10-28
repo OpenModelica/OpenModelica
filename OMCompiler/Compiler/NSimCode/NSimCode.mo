@@ -466,7 +466,7 @@ public
             (jacB, simCodeIndices) := SimJacobian.empty("B", simCodeIndices);
             (jacC, simCodeIndices) := SimJacobian.empty("C", simCodeIndices);
             (jacD, simCodeIndices) := SimJacobian.empty("D", simCodeIndices);
-            (jacF, simCodeIndices) := SimJacobian.empty("F", simCodeIndices);
+            (jacF, simCodeIndices) := SimJacobian.createDataReconciliationJacobian(bdae.dataReconciliation, simCodeIndices, simcode_map);
             (jacH, simCodeIndices) := SimJacobian.empty("H", simCodeIndices);
 
             (jacLfg, jacMrf, jacR0, simCodeIndices) := SimJacobian.createOptimizationJacobian(listAppend(bdae.ode, bdae.ode_event), simCodeIndices, simcode_map);
@@ -777,16 +777,17 @@ public
     function setRelatedBoundaryConditions
       input output ModelInfo modelInfo;
       input Option<DataReconciliation.ReconciliationData> data_opt;
-    protected
-      DataReconciliation.ReconciliationData data;
-      VarInfo varInfo;
     algorithm
-      if isSome(data_opt) then
-        SOME(data) := data_opt;
-        varInfo := modelInfo.varInfo;
-        varInfo.numRelatedBoundaryConditions := data.relatedBoundaryConditions;
-        modelInfo.varInfo := varInfo;
-      end if;
+      modelInfo := match (modelInfo, data_opt)
+        local
+          VarInfo varInfo;
+          DataReconciliation.ReconciliationData data;
+        case (MODEL_INFO(varInfo = varInfo as VarInfo.VAR_INFO()), SOME(data as DataReconciliation.RECONCILIATION_DATA())) algorithm
+          varInfo.numRelatedBoundaryConditions := data.relatedBoundaryConditions;
+          modelInfo.varInfo := varInfo;
+        then modelInfo;
+        else modelInfo;
+      end match;
     end setRelatedBoundaryConditions;
 
     function convert

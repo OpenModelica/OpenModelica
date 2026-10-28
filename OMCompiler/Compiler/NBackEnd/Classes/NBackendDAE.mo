@@ -499,6 +499,11 @@ public
       (Initialization.minimizeHomotopySystem, "Minimize Homotopy System")
     };
 
+    // needs the solved strong components
+    if DataReconciliation.isEnabled() then
+      postOptModules := listAppend(postOptModules, {(DataReconciliation.createJacobian, "Data Reconciliation Jacobian")}) annotation(__OpenModelica_DisableListAppendWarning=true);
+    end if;
+
     (bdae, preOptClocks)  := applyModules(bdae, preOptModules, eq_filter_opt, ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE);
     (bdae, mainClocks)    := applyModules(bdae, mainModules, eq_filter_opt, ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE);
     (bdae, postOptClocks) := applyModules(bdae, postOptModules, eq_filter_opt, ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE);

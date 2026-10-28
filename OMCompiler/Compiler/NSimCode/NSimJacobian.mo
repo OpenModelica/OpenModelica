@@ -57,6 +57,7 @@ public
   import NBVariable.{VariablePointers, VarData};
   import BVariable = NBVariable;
   import Variable = NFVariable;
+  import DataReconciliation = NBDataReconciliation;
   import Jacobian = NBJacobian;
   import Partition = NBPartition;
 
@@ -754,6 +755,29 @@ public
         end if;
       end if;
     end createOptimizationJacobian;
+
+    function createDataReconciliationJacobian
+      input Option<DataReconciliation.ReconciliationData> data_opt;
+      output SimJacobian simJac;
+      input output SimCode.SimCodeIndices simCodeIndices;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
+    protected
+      Option<SimJacobian> simJac_opt = NONE();
+    algorithm
+      (simJac_opt, simCodeIndices) := match data_opt
+        local
+          BackendDAE jacobian;
+        case SOME(DataReconciliation.RECONCILIATION_DATA(jacobian = SOME(jacobian)))
+        then SimJacobian.create(jacobian, simCodeIndices, simcode_map);
+        else (NONE(), simCodeIndices);
+      end match;
+
+      if isSome(simJac_opt) then
+        SOME(simJac) := simJac_opt;
+      else
+        (simJac, simCodeIndices) := SimJacobian.empty("F", simCodeIndices);
+      end if;
+    end createDataReconciliationJacobian;
 
     function empty
       input String name = "";
