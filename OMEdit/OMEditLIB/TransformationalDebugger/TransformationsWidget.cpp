@@ -547,7 +547,7 @@ QVariant EquationTreeItem::data(int column, int role) const
     return QVariant();
   }
 
-  /* If the equation is not profiled then show only index, section, size and equation columns
+  /* If the equation is not profiled then show only index, section, unknowns and equation columns
    * and hide the rest of the columns by showing empty string in them.
    * This is done to avoid showing 0 and 0% in NCall, MaxTime, Time and Fraction columns for non-profiled equations.
    */
@@ -575,7 +575,7 @@ QVariant EquationTreeItem::data(int column, int role) const
         default:
           return QVariant();
       }
-    case 2: // Size
+    case 2: // Unknowns
       switch (role)
       {
         case Qt::DisplayRole:
@@ -706,7 +706,7 @@ QVariant EquationTreeModel::headerData(int section, Qt::Orientation orientation,
     switch (section) {
     case 0: return "Index";
     case 1: return "Type";
-    case 2: return "Size";
+    case 2: return "Unknowns";
     case 3: return "Equation";
     case 4: return "NCall";
     case 5: return "MaxTime";
