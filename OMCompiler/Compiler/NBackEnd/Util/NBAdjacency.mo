@@ -2199,6 +2199,9 @@ public
           then ();
           // a symbolic index without iterators (e.g. x[N] of a resizable array) may match, like a literal
           case (Subscript.INDEX(index = key_exp), _) guard(not Expression.contains(key_exp, Expression.isIterator)) then ();
+          // several elements (x[i, :]) leave the iterator unbound, dependencies using it become whole arrays
+          case (Subscript.INDEX(), Subscript.WHOLE()) then ();
+          case (Subscript.INDEX(), Subscript.SLICE()) then ();
           case (Subscript.INDEX(index = key_exp), Subscript.INDEX(index = exp)) algorithm
             (ok, iter, offset, negated) := sparsityIteratorOffset(key_exp);
             if ok then

@@ -8,6 +8,7 @@ sparsityMatrixResidual.mos \
 forNestedElseIf.mos \
 forSliceRowMajor.mos \
 sliceRangeSparsity.mos \
+wholeSubscriptSparsity.mos \
 scalarDivArray.mos \
 arrayRowScalar.mos \
 emptyArrayTupleArgument.mos \
