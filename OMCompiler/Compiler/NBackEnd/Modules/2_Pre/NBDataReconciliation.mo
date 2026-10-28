@@ -88,6 +88,21 @@ public uniontype ExtractionSystem
   end EXTRACTION_SYSTEM;
 end ExtractionSystem;
 
+public uniontype ReconciliationData
+  "The system the runtime reconciles: the residuals of SET-C are computed from the
+  variables of interest (inputs) with the help of SET-S."
+  record RECONCILIATION_DATA
+    list<Pointer<Variable>> inputVars       "variables of interest";
+    list<Pointer<Variable>> residualVars    "$RES_F_i, one per SET-C equation";
+    list<Pointer<Equation>> residualEqns    "$RES_F_i = rhs - lhs of the SET-C equations";
+    list<Pointer<Variable>> setSVars        "unknowns of SET-S";
+    list<Pointer<Equation>> setSEqns;
+    list<Pointer<Variable>> parameters      "parameters in SET-C and SET-S";
+    list<Pointer<Variable>> unmeasuredVars  "uncertain = Uncertainty.propagate";
+    Integer relatedBoundaryConditions;
+  end RECONCILIATION_DATA;
+end ReconciliationData;
+
 public function main extends Module.wrapper;
   input String fileNamePrefix;
 protected
@@ -97,8 +112,9 @@ protected
   list<tuple<Integer, Integer>> setB;
   list<tuple<Integer, list<Integer>>> mappedEbltSetS = {};
   list<tuple<Integer, Pointer<Equation>, list<Integer>>> setBFailedBoundaryConditionEquations = {};
-  list<Pointer<Variable>> unknowns, var_lst, bc_vars;
+  list<Pointer<Variable>> unknowns, var_lst, bc_vars, params;
   list<Pointer<Equation>> eqn_lst, bc_eqns;
+  ReconciliationData data;
   Boolean status = false;
   Integer procedureCount = 1;
 algorithm
@@ -177,9 +193,16 @@ algorithm
 
       setSVars := List.setDifferenceOnTrue(getVariablesAfterExtraction(sys, setS), knowns, intEq);
       dumpSetSVars(sys, setSVars, "Unknown variables in SET_S");
-      dumpVariables(getParameters(sys, listAppend(setS, setC), varData.parameters), "Parameters in SET_S");
+      params := getParameters(sys, listAppend(setS, setC), varData.parameters);
+      dumpVariables(params, "Parameters in SET_S");
 
       verifyDataReconciliation(sys, setC, setS, knowns, setSVars, listLength(unmeasured), fileNamePrefix);
+
+      data := createReconciliationData(sys, setC, setS, knowns, setSVars, params, unmeasured,
+        listLength(setBFailedBoundaryConditionEquations), eqData.uniqueIndex);
+      if Flags.isSet(Flags.DUMP_DATARECONCILIATION) then
+        dumpReconciliationData(data);
+      end if;
     then ();
   end match;
 end main;
@@ -475,6 +498,75 @@ algorithm
   crefs := List.sort(UnorderedSet.unique_list(crefs, ComponentRef.hash, ComponentRef.isEqual), crefNameGreater);
   params := list(BVariable.getVarPointer(cr, sourceInfo()) for cr in crefs);
 end getParameters;
+
+protected function createReconciliationData
+  input ExtractionSystem sys;
+  input list<Integer> setC;
+  input list<Integer> setS;
+  input list<Integer> knowns;
+  input list<Integer> setSVars;
+  input list<Pointer<Variable>> parameters;
+  input list<Integer> unmeasured;
+  input Integer relatedBoundaryConditions;
+  input Pointer<Integer> uniqueIndex;
+  output ReconciliationData data;
+protected
+  Pointer<Variable> res_var;
+  ComponentRef res_cref;
+  list<Pointer<Variable>> residualVars = {};
+  list<Pointer<Equation>> residualEqns = {};
+  Integer i = 1;
+algorithm
+  for eqn in setC loop
+    (res_var, res_cref) := BVariable.makeResidualVar("F", i, Type.REAL());
+    // the residuals are computed from the inputs like any algebraic variable
+    BVariable.setVarKind(res_var, BackendExtension.VariableKind.ALGEBRAIC());
+    residualVars := res_var :: residualVars;
+    residualEqns := Equation.makeAssignment(Expression.fromCref(res_cref), Equation.getResidualExp(Pointer.access(sys.eqnArr[eqn])),
+      uniqueIndex, NBEquation.SIMULATION_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.CONTINUOUS, false)) :: residualEqns;
+    i := i + 1;
+  end for;
+
+  data := RECONCILIATION_DATA(
+    inputVars                 = list(sys.varArr[v] for v in knowns),
+    residualVars              = listReverse(residualVars),
+    residualEqns              = listReverse(residualEqns),
+    setSVars                  = list(sys.varArr[v] for v in setSVars),
+    setSEqns                  = list(sys.eqnArr[eqn] for eqn in setS),
+    parameters                = parameters,
+    unmeasuredVars            = list(sys.varArr[v] for v in unmeasured),
+    relatedBoundaryConditions = relatedBoundaryConditions);
+end createReconciliationData;
+
+protected function dumpReconciliationData
+  "same headings as the debug dump of the old backend"
+  input ReconciliationData data;
+algorithm
+  dumpVariables(data.inputVars, "Jacobian_knownVariables");
+  dumpVariables(data.residualVars, "Jacobian_outResidualVars");
+  dumpVariables(data.setSVars, "Jacobian_outOtherVars");
+  dumpEquationPointers(data.residualEqns, "Jacobian_ResidualEquation");
+  dumpEquationPointers(data.setSEqns, "Jacobian_other_Equation");
+end dumpReconciliationData;
+
+protected function dumpEquationPointers
+  "same format as BackendDump.dumpEquationArray in the old backend, nothing is printed for no equations"
+  input list<Pointer<Equation>> eqns;
+  input String heading;
+protected
+  Integer i = 1;
+algorithm
+  if listEmpty(eqns) then
+    return;
+  end if;
+  print("\n" + heading + " (" + intString(listLength(eqns)) + ", " + intString(sum(Equation.size(eqn) for eqn in eqns))
+    + ")\n========================================\n");
+  for eqn in eqns loop
+    print(intString(i) + "/" + intString(i) + " (" + intString(Equation.size(eqn)) + "): " + equationString(eqn) + "\n");
+    i := i + 1;
+  end for;
+  print("\n");
+end dumpEquationPointers;
 
 protected function verifyDataReconciliation
   "checks the conditions SET-C and SET-S have to fulfill, a failed condition other
