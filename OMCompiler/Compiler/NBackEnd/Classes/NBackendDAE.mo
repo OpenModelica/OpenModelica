@@ -45,6 +45,7 @@ public
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, EquationAttributes, EquationKind, IfEquationBody, Iterator};
   import NBVariable.{VariablePointer, VariablePointers, VarData};
+  import DataReconciliation = NBDataReconciliation;
   import Evaluation = NBEvaluation;
   import Events = NBEvents;
   import Jacobian = NBJacobian;
@@ -88,7 +89,6 @@ protected
   import Alias = NBAlias;
   import BackendDAE = NBackendDAE;
   import Bindings = NBBindings;
-  import DataReconciliation = NBDataReconciliation;
   import Causalize = NBCausalize;
   import DAEMode = NBDAEMode;
   import DetectStates = NBDetectStates;
@@ -129,6 +129,7 @@ public
     Events.EventInfo eventInfo            "contains time and state events";
     Partitioning.ClockedInfo clockedInfo  "contains information about clocked partitions";
     UnorderedMap<Path, Function> funcMap  "Function bodies";
+    Option<DataReconciliation.ReconciliationData> dataReconciliation "set by the data reconciliation module";
   end MAIN;
 
   record JACOBIAN
@@ -273,7 +274,7 @@ public
     variableData := lowerVariableData(continuousImplicitDiscretes(flat.variables, listAppend(flat.equations, flat.initialEquations),
       listAppend(flat.algorithms, flat.initialAlgorithms)));
     (equationData, variableData) := lowerEquationData(flat.equations, flat.algorithms, flat.initialEquations, flat.initialAlgorithms, variableData);
-    bdae := MAIN({}, {}, {}, {}, {}, {}, NONE(), NONE(), {}, variableData, equationData, eventInfo, clockedInfo, lowerFunctions(funcMap));
+    bdae := MAIN({}, {}, {}, {}, {}, {}, NONE(), NONE(), {}, variableData, equationData, eventInfo, clockedInfo, lowerFunctions(funcMap), NONE());
   end lower;
 
   function lowerExp

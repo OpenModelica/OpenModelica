@@ -602,6 +602,8 @@ algorithm
       // the removed equations would otherwise be added back to the system
       eqData.removed          := EquationPointers.empty();
       bdae.eqData := eqData;
+
+      bdae.dataReconciliation := SOME(data);
     then bdae;
   end match;
 end replaceModel;

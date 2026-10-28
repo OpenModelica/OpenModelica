@@ -85,6 +85,7 @@ protected
   import NBInitialization;
   import NBVariable.{VariablePointers, VarData};
   import BVariable = NBVariable;
+  import DataReconciliation = NBDataReconciliation;
   import Partition = NBPartition;
   import NBResizable;
 
@@ -367,6 +368,7 @@ public
             // create sim vars before everything else
             residual_vars                       := BackendDAE.getLoopResiduals(bdae);
             (vars, simCodeIndices)              := SimVars.create(varData, residual_vars, simCodeIndices);
+            vars                                := SimVars.addDataReconciliation(vars, bdae.dataReconciliation);
             (extObjInfo, vars, simCodeIndices)  := ExtObjInfo.create(varData.external_objects, vars, simCodeIndices);
             simcode_map                         := SimCodeUtil.createSimCodeMap(vars, extObjInfo);
 
@@ -491,6 +493,7 @@ public
             literals            := UnorderedMap.keyList(literals_map);
 
             (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, fileName, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, bdae.clockedInfo, simCodeIndices);
+            modelInfo := ModelInfo.setRelatedBoundaryConditions(modelInfo, bdae.dataReconciliation);
 
             simCode := SIM_CODE(
               modelInfo                 = modelInfo,
@@ -770,6 +773,21 @@ public
         then fail();
       end match;
     end setSeedVars;
+
+    function setRelatedBoundaryConditions
+      input output ModelInfo modelInfo;
+      input Option<DataReconciliation.ReconciliationData> data_opt;
+    protected
+      DataReconciliation.ReconciliationData data;
+      VarInfo varInfo;
+    algorithm
+      if isSome(data_opt) then
+        SOME(data) := data_opt;
+        varInfo := modelInfo.varInfo;
+        varInfo.numRelatedBoundaryConditions := data.relatedBoundaryConditions;
+        modelInfo.varInfo := varInfo;
+      end if;
+    end setRelatedBoundaryConditions;
 
     function convert
       input ModelInfo modelInfo;
