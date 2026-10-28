@@ -59,9 +59,9 @@ val(x3, 0.53);
 // |                 | |       | | [2] (pre: false) false = t < time
 // |                 | |       | | [3] (pre: false) false = z > 0.5
 // LOG_EVENTS        | info    | status of zero crossings at time=0
-// |                 | |       | | [1] (pre:  0) -0.4 = time > 2.0 * t
-// |                 | |       | | [2] (pre:  0) -0.2 = t < time
-// |                 | |       | | [3] (pre:  0) -0.5 = z > 0.5
+// |                 | |       | | [1] (pre: false) false = time > 2.0 * t
+// |                 | |       | | [2] (pre: false) false = t < time
+// |                 | |       | | [3] (pre: false) false = z > 0.5
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_EVENTS        | info    | time event at time=0.1
 // |                 | |       | | [1] sample(0.1, 0.2)
@@ -75,7 +75,7 @@ val(x3, 0.53);
 // |                 | |       | | [1] time > 2.0 * t
 // LOG_EVENTS        | info    | time event at time=0.5
 // |                 | |       | | [1] sample(0.1, 0.2)
-// LOG_EVENTS        | info    | state event at time=0.5235987755982989
+// LOG_EVENTS        | info    | state event at time=0.523598775598
 // |                 | |       | | [3] z > 0.5
 // LOG_EVENTS        | info    | time event at time=0.7
 // |                 | |       | | [1] sample(0.1, 0.2)

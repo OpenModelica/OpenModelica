@@ -31,8 +31,8 @@ simulate(delayTests.DelayZeroCrossing, stopTime = 1.0, simflags = "-lv=LOG_EVENT
 // |                 | |       | | [1] (pre:  true)  true = time < 0.5
 // |                 | |       | | [2] (pre: false) false = $delayZeroCrossing(0, 1, 0.1)
 // LOG_EVENTS        | info    | status of zero crossings at time=0
-// |                 | |       | | [1] (pre:  0) 0.5 = time < 0.5
-// |                 | |       | | [2] (pre:  0) -1 = $delayZeroCrossing(0, 1, 0.1) > 0.0
+// |                 | |       | | [1] (pre: false)  true = time < 0.5
+// |                 | |       | | [2] (pre: false) false = $delayZeroCrossing(0, 1, 0.1) > 0.0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_EVENTS        | info    | time event at time=0.5
 // LOG_EVENTS        | info    | state event at time=0.6

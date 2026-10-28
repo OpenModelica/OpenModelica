@@ -35,9 +35,9 @@ val(y, 2.0); getErrorString();
 //     messages = "LOG_EVENTS        | info    | status of relations at time=0
 // |                 | |       | | [1] (pre: false) false = $DER.y < 0.0
 // LOG_EVENTS        | info    | status of zero crossings at time=0
-// |                 | |       | | [1] (pre:  0) -2 = $DER.y < 0.0
+// |                 | |       | | [1] (pre: false) false = $DER.y < 0.0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_EVENTS        | info    | state event at time=1.57079632684
+// LOG_EVENTS        | info    | state event at time=1.570796326794
 // |                 | |       | | [1] $DER.y < 0.0
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

@@ -52,9 +52,9 @@ simulate(SingleBeltChangingVel, stopTime=2.0, simflags="-lv=LOG_EVENTS"); getErr
 // |                 | |       | | [2] (pre:  true)  true = v >= 0.0
 // |                 | |       | | [3] (pre: false) false = $spatialDistributionZeroCrossing(0, 2, x, posV)
 // LOG_EVENTS        | info    | status of zero crossings at time=0
-// |                 | |       | | [1] (pre:  0)  1 = time < 1.0
-// |                 | |       | | [2] (pre:  0)  2 = v >= 0.0
-// |                 | |       | | [3] (pre:  0) -1 = $spatialDistributionZeroCrossing(0, 2, x, posV) > 0.0
+// |                 | |       | | [1] (pre: false) true = time < 1.0
+// |                 | |       | | [2] (pre: false) true = v >= 0.0
+// |                 | |       | | [3] (pre: false) false = $spatialDistributionZeroCrossing(0, 2, x, posV) > 0.0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_EVENTS        | info    | state event at time=0.5
 // |                 | |       | | [3] $spatialDistributionZeroCrossing(0, 2, x, posV) > 0.0

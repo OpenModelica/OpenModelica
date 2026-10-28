@@ -5808,8 +5808,8 @@ template zeroCrossingRelationValue(Exp relation, Text &preExp, Text &varDecls, T
     let nominalTmp = daeExpNominalTmp(tmp1, tmp2, rel.exp1, rel.exp2, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
     let &preExp += '<%nominalTmp%><%\n%>'
     let index = match rel.optionExpisASUB
-      case SOME((iterExp, i, j)) then
-        '<%rel.index%> + (<%daeExp(iterExp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)%> - <%i%>)/<%j%>'
+      case SOME((iterExp, start, step)) then
+        '<%rel.index%> + (<%daeExp(iterExp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)%> - <%start%>)/<%step%>'
       else rel.index
     '<%rel_f%>ZCValue(<%e1%>, <%e2%>, <%tmp1%>, <%tmp2%>, data->simulationInfo->storedRelations[<%index%>])'
 end zeroCrossingRelationValue;

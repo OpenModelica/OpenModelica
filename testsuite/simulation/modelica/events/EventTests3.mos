@@ -25,9 +25,9 @@ simulate(testEvents3, simflags="-lv=LOG_EVENTS"); getErrorString();
 //     messages = "LOG_EVENTS        | info    | status of relations at time=0
 // |                 | |       | | [1] (pre: false) false = time > 0.5
 // LOG_EVENTS        | info    | status of zero crossings at time=0
-// |                 | |       | | [1] (pre:  0) -0.5 = time > 0.5
+// |                 | |       | | [1] (pre: false) false = time > 0.5
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_EVENTS        | info    | state event at time=0.5000000001
+// LOG_EVENTS        | info    | state event at time=0.5
 // |                 | |       | | [1] time > 0.5
 // |                 | |       | | reinit x = 0
 // LOG_SUCCESS       | info    | The simulation finished successfully.
