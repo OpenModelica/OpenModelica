@@ -211,6 +211,10 @@ algorithm
     then data;
   end match;
 
+  // TODO: set the start values of the variables of interest to the measurements in the -sx csv file,
+  //   like readMeasurementsFromCSV and setStartValuesToMeasurements in the old backend. The simulation
+  //   flags are not passed to the new backend, and resolving a modelica:// or file:// path needs
+  //   SymbolTable, which nbackend cannot import.
   bdae := replaceModel(bdae, data);
 end main;
 
