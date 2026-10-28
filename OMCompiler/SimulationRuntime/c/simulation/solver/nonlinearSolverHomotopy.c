@@ -1091,7 +1091,8 @@ static int wrapper_fvec_homotopy_fixpoint_der(DATA_HOMOTOPY* solverData, double*
     for (j=0; j<n; j++) {
       hJac[i+ j * n] = x[n]*hJac[i+ j * n];
     }
-    hJac[i+ i * n] = hJac[i+ i * n] + (1-x[n]);
+    /* the columns of hJac are scaled with xScaling, so is the identity */
+    hJac[i+ i * n] = hJac[i+ i * n] + (1-x[n]) * solverData->xScaling[i];
     hJac[i+ n * n] = solverData->f1[i]-(x[i] - solverData->x0[i]);
   }
   return 0;
