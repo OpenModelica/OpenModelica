@@ -52,6 +52,8 @@ protected
   import Expression = NFExpression;
   import NBMatching.Matching;
   import NFBackendExtension.Uncertainty;
+  import Attributes = NFAttributes;
+  import NFPrefixes;
   import Type = NFType;
   import BVariable = NBVariable;
   import NBVariable.{VariablePointers, VarData};
@@ -136,7 +138,7 @@ algorithm
   var_lst := listAppend(unknowns, bc_vars);
   eqn_lst := listAppend(bc_eqns, eqn_lst);
 
-  () := match bdae
+  data := match bdae
     local
       VarData varData;
       EqData eqData;
@@ -206,8 +208,10 @@ algorithm
       if Flags.isSet(Flags.DUMP_DATARECONCILIATION) then
         dumpReconciliationData(data);
       end if;
-    then ();
+    then data;
   end match;
+
+  bdae := replaceModel(bdae, data);
 end main;
 
 public function isEnabled
@@ -540,6 +544,63 @@ algorithm
     unmeasuredVars            = list(sys.varArr[v] for v in unmeasured),
     relatedBoundaryConditions = relatedBoundaryConditions);
 end createReconciliationData;
+
+protected function replaceModel
+  "Replaces the model with the system the runtime reconciles: the residuals and SET-S
+  are the only equations, the variables of interest are inputs and only the parameters
+  in SET-C and SET-S are kept, like in the old backend."
+  input output BackendDAE bdae;
+  input ReconciliationData data;
+protected
+  Boolean scalarized = Flags.isSet(Flags.NF_SCALARIZE);
+  list<Pointer<Variable>> unknowns = listAppend(data.residualVars, data.setSVars);
+  list<Pointer<Equation>> equations = listAppend(data.residualEqns, data.setSEqns);
+  Variable var;
+  Attributes attr;
+algorithm
+  for var_ptr in data.inputVars loop
+    var := Pointer.access(var_ptr);
+    attr := var.attributes;
+    attr.direction := NFPrefixes.Direction.INPUT;
+    var.attributes := attr;
+    Pointer.update(var_ptr, var);
+  end for;
+
+  bdae := match bdae
+    local
+      VarData varData;
+      EqData eqData;
+    case BackendDAE.MAIN(varData = varData as VarData.VAR_DATA_SIM(), eqData = eqData as EqData.EQ_DATA_SIM()) algorithm
+      varData.variables       := VariablePointers.addList(data.residualVars, varData.variables);
+      varData.unknowns        := VariablePointers.fromList(unknowns, scalarized);
+      varData.algebraics      := VariablePointers.fromList(unknowns, scalarized);
+      varData.initials        := VariablePointers.fromList(unknowns, scalarized);
+      varData.knowns          := VariablePointers.removeList(listAppend(VariablePointers.toList(varData.states), listAppend(
+                                   VariablePointers.toList(varData.previous), VariablePointers.toList(varData.parameters))), varData.knowns);
+      varData.knowns          := VariablePointers.addList(listAppend(data.inputVars, data.parameters), varData.knowns);
+      varData.top_level_inputs:= VariablePointers.fromList(data.inputVars, scalarized);
+      varData.parameters      := VariablePointers.fromList(data.parameters, scalarized);
+      varData.states          := VariablePointers.empty(scalarized = scalarized);
+      varData.derivatives     := VariablePointers.empty(scalarized = scalarized);
+      varData.discretes       := VariablePointers.empty(scalarized = scalarized);
+      varData.discrete_states := VariablePointers.empty(scalarized = scalarized);
+      varData.clocked_states  := VariablePointers.empty(scalarized = scalarized);
+      varData.previous        := VariablePointers.empty(scalarized = scalarized);
+      bdae.varData := varData;
+
+      eqData.equations        := EquationPointers.fromList(equations);
+      eqData.simulation       := EquationPointers.fromList(equations);
+      eqData.continuous       := EquationPointers.fromList(equations);
+      eqData.discretes        := EquationPointers.empty();
+      eqData.clocked          := EquationPointers.empty();
+      eqData.initials         := EquationPointers.empty();
+      eqData.auxiliaries      := EquationPointers.empty();
+      // the removed equations would otherwise be added back to the system
+      eqData.removed          := EquationPointers.empty();
+      bdae.eqData := eqData;
+    then bdae;
+  end match;
+end replaceModel;
 
 protected function dumpReconciliationData
   "same headings as the debug dump of the old backend"
