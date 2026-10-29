@@ -1951,23 +1951,26 @@ function isJacobianResultVar
     Expression binding;
     function isEvaluable
       input Expression exp;
+      input Boolean resizable;
       output Boolean b;
     protected
       Expression new_exp;
     algorithm
       b := Expression.isLiteralXML(exp);
-      if not b then
+      if not b or (resizable and not Expression.isLiteral(exp)) then
         // try to extract literal from array constructor (use dummy map, there should not be any new iterators)
         (_, new_exp) := Iterator.extract(exp);
         new_exp := SimplifyExp.simplifyDump(new_exp, true, getInstanceName());
-        b := Expression.isLiteralXML(Ceval.tryEvalExp(new_exp));
+        // the start value of a resizable array has to be a scalar that is broadcast to all elements
+        b := Expression.isLiteralXML(Ceval.tryEvalExp(new_exp)) and
+             not (resizable and Type.isArray(Expression.typeOf(new_exp)));
       end if;
     end isEvaluable;
   algorithm
     // check binding
     if isBound(var_ptr) then
       binding := Binding.getExp(var.binding);
-      b := isEvaluable(binding);
+      b := isEvaluable(binding, Type.isResizable(var.ty));
     else
       b := false;
     end if;
