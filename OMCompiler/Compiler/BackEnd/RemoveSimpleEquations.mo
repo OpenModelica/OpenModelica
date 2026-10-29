@@ -2875,35 +2875,26 @@ protected function traverseAliasTree "author: Frenkel TUD 2012-12
   input BackendDAE.Shared ishared;
   input BackendVarTransform.VariableReplacements iRepl;
   input VarSetAttributes iAttributes "fixed, list<startvalue, origin, cr>, nominal, min, max, discrete";
-  output BackendDAE.Variables oVars;
-  output list<BackendDAE.Equation> oEqnslst;
-  output BackendDAE.Shared oshared;
-  output BackendVarTransform.VariableReplacements oRepl;
-  output VarSetAttributes oAttributes "fixed, list<startvalue, origin, cr>, nominal, min, max, discrete";
+  output BackendDAE.Variables oVars = iVars;
+  output list<BackendDAE.Equation> oEqnslst = iEqnslst;
+  output BackendDAE.Shared oshared = ishared;
+  output BackendVarTransform.VariableReplacements oRepl = iRepl;
+  output VarSetAttributes oAttributes = iAttributes "fixed, list<startvalue, origin, cr>, nominal, min, max, discrete";
+protected
+  list<tuple<Integer, Integer, Option<DAE.Exp>, Boolean>> stack, children;
+  Integer r, last;
+  Option<DAE.Exp> oexp;
+  Boolean negate;
+  SimpleContainer s;
 algorithm
- (oVars, oEqnslst, oshared, oRepl, oAttributes):=
-  match rows
-    local
-      Integer r;
-      list<Integer> rest;
-      BackendDAE.Variables vars;
-      list<BackendDAE.Equation> eqnslst;
-      BackendDAE.Shared shared;
-      BackendVarTransform.VariableReplacements repl;
-      SimpleContainer s;
-      VarSetAttributes vsattr;
-
-    case {} then (iVars, iEqnslst, ishared, iRepl, iAttributes);
-    case r::rest
-      algorithm
-        s := simpleeqnsarr[r];
-        arrayUpdate(simpleeqnsarr, r, setVisited(mark, s));
-        (vars, eqnslst, shared, repl, vsattr) := traverseAliasTree1(s, r, ilast, exp, optExp, globalnegate, derReplaceState, mark, simpleeqnsarr, iMT, unReplaceable, iVars, iEqnslst, ishared, iRepl, iAttributes);
-        (vars, eqnslst, shared, repl, vsattr) := traverseAliasTree(rest, ilast, exp, optExp, globalnegate, derReplaceState, mark, simpleeqnsarr, iMT, unReplaceable, vars, eqnslst, shared, repl, vsattr);
-      then
-        (vars, eqnslst, shared, repl, vsattr);
-
-  end match;
+  stack := list((row, ilast, optExp, globalnegate) for row in rows);
+  while not listEmpty(stack) loop
+    (r, last, oexp, negate) :: stack := stack;
+    s := simpleeqnsarr[r];
+    arrayUpdate(simpleeqnsarr, r, setVisited(mark, s));
+    (oVars, oEqnslst, oshared, oRepl, oAttributes, children) := traverseAliasTree1(s, r, last, exp, oexp, negate, derReplaceState, mark, simpleeqnsarr, iMT, unReplaceable, oVars, oEqnslst, oshared, oRepl, oAttributes);
+    stack := listAppend(children, stack);
+  end while;
 end traverseAliasTree;
 
 protected function traverseAliasTree1 "author: Frenkel TUD 2012-12
@@ -2929,8 +2920,9 @@ protected function traverseAliasTree1 "author: Frenkel TUD 2012-12
   output BackendDAE.Shared oshared;
   output BackendVarTransform.VariableReplacements oRepl;
   output VarSetAttributes oAttributes "fixed, list<startvalue, origin, cr>, nominal, min, max, discrete";
+  output list<tuple<Integer, Integer, Option<DAE.Exp>, Boolean>> children "rows to traverse next";
 algorithm
- (oVars, oEqnslst, oshared, oRepl, oAttributes):=
+ (oVars, oEqnslst, oshared, oRepl, oAttributes, children):=
   match sc
     local
       Integer i1, i2, i;
@@ -2968,9 +2960,8 @@ algorithm
         crexp := negateExpression(negated, crexp, crexp, " ALIAS_2 ");
         rows := List.removeOnTrue(r, intEq, iMT[i]);
         arrayUpdate(iMT, i, {});
-        (vars, eqnslst, shared, repl, vsattr) := traverseAliasTree(rows, i, exp, SOME(crexp), globalnegated1, derReplaceState, mark, simpleeqnsarr, iMT, unReplaceable, vars, eqnslst, shared, repl, vsattr);
       then
-        (vars, eqnslst, shared, repl, vsattr);
+        (vars, eqnslst, shared, repl, vsattr, list((row, i, SOME(crexp), globalnegated1) for row in rows));
 
     case PARAMETERALIAS(cr1, negatedCr1, i1, cr2, negatedCr2, _, (source, _), _)
       algorithm
