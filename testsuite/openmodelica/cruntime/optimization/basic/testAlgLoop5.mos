@@ -138,7 +138,8 @@ getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Notification: Following iteration variables are selected by the user for strong component 1 (DAE kind: initialization):
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// Notification: Following iteration variables are selected by the user for strong component 1 (DAE kind: initialization):
 //   t2:VARIABLE(min = -2.0 max = 0.5 start = 1.0 )  type: Real
 //   t1:VARIABLE(min = -0.4 start = 1.0 )  type: Real
 // Notification: Following iteration variables are selected by the user for strong component 2 (DAE kind: simulation):
