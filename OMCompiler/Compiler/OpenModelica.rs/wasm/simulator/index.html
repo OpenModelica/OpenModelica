@@ -265,6 +265,7 @@ import { COLORS, createCharts, escapeHtml, unitHTML, unitLabel } from '../plot.j
 import { toDisplay, fromDisplay, scale, relative } from '../units.js';
 import { attachFmuAot } from '../fmu-aot.js';
 import { bindModal, downloadBlob } from '../ui.js';
+import { setErrorText } from '../wasm-stack.js';
 // The omc compiler runs in Web Workers (omc-worker.js), not on this thread, so
 // compile/simulate never freezes the UI. Two are spawned: a plain one that is
 // ready fast, and a second that installs the MSL in the background and takes
@@ -341,7 +342,7 @@ let opStart = null, opLabel = 'Failed';
 function beginOp(label) { opLabel = label; return (opStart = performance.now()); }
 
 function showEmpty(text, isErr = false) {
-  chartsEmpty.textContent = text;
+  setErrorText(chartsEmpty, text);
   chartsEmpty.className = 'charts-empty' + (isErr ? ' err' : '');
   chartsEmpty.style.display = '';
 }

@@ -561,7 +561,9 @@ wasm/simulator/examples/BouncingBall.mo
 wasm/simulator/examples/DistrictHeating.mo
 wasm/simulator/index.html
 wasm/simulator/omc-worker.js
+wasm/symbolize.html
 wasm/theme.css
 wasm/units.js
 wasm/ui.js
 wasm/wasm-blobs.js
+wasm/wasm-stack.js

@@ -43,6 +43,7 @@ import init, {
   omc_take_pending_downloads, omc_take_plot_commands, wasi_write_file,
 } from '../omc/OpenModelicaCompiler.js';
 import { installWasmBlobs } from '../wasm-blobs.js';
+import { describeError, setErrorText } from '../wasm-stack.js';
 
 const log = document.getElementById('log');
 const input = document.getElementById('input');
@@ -51,7 +52,7 @@ const form = document.getElementById('form');
 function line(text, cls) {
   const div = document.createElement('div');
   div.className = cls;
-  div.textContent = text;
+  setErrorText(div, text);
   log.appendChild(div);
   log.scrollTop = log.scrollHeight;
 }
@@ -123,7 +124,7 @@ form.addEventListener('submit', async (ev) => {
   input.disabled = true;
   let reply;
   try { reply = await evalWithDownloads(cmd); }
-  catch (e) { line('' + e, 'err'); input.disabled = false; input.focus(); return; }
+  catch (e) { line(describeError(e), 'err'); input.disabled = false; input.focus(); return; }
   line(reply, reply.startsWith('Error:') ? 'err' : 'reply');
   input.disabled = false;
   input.focus();
