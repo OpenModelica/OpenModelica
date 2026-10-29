@@ -28,7 +28,6 @@ model Top
   A a1,a2;
 equation
   connect(world.p,topPin);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Top;
 
 // Result:
@@ -44,13 +43,13 @@ end Top;
 //   Real a2.aPin.i;
 //   Real a2.aPin.v;
 // equation
-//   world.p.i + (-topPin.i) + (-a1.aPin.i) + (-a2.aPin.i) = 0.0;
+//   world.p.v = topPin.v;
+//   world.p.v = a2.aPin.v;
+//   world.p.v = a1.aPin.v;
+//   world.p.i - topPin.i - a2.aPin.i - a1.aPin.i = 0.0;
 //   world.n.i = 0.0;
 //   topPin.i = 0.0;
 //   a1.aPin.i = 0.0;
 //   a2.aPin.i = 0.0;
-//   a1.aPin.v = a2.aPin.v;
-//   a1.aPin.v = topPin.v;
-//   a1.aPin.v = world.p.v;
 // end Top;
 // endResult

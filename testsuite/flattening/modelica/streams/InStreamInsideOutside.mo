@@ -28,7 +28,6 @@ equation
   connect(a.s, s);
   instream_s = inStream(s.s);
   instream_s_a = inStream(a.s.s);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InStreamInsideOutside;
 
 // Result:
@@ -43,12 +42,12 @@ end InStreamInsideOutside;
 //   Real instream_s;
 //   Real instream_s_a;
 // equation
+//   a.s.r = s.r;
+//   a.s.s = s.s;
+//   a.s.f - s.f = 0.0;
+//   s.f = 0.0;
 //   a.instream_s = s.s;
 //   instream_s = s.s;
 //   instream_s_a = s.s;
-//   a.s.f + (-s.f) = 0.0;
-//   s.f = 0.0;
-//   a.s.r = s.r;
-//   a.s.s = s.s;
 // end InStreamInsideOutside;
 // endResult

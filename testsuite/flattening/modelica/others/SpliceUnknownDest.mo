@@ -25,24 +25,9 @@ model SpliceUnknownDest
   String tab[8];
 equation
   tab=getVariableNameTable(2,8);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SpliceUnknownDest;
 
 // Result:
-// function SpliceUnknownDest.getVariableNameTable
-//   protected final constant String[8] model1 = {"a", "b", "c", "d", "e", "f", "g", "h"};
-//   protected final constant String[8] model2 = {"a", "b", "c", "d", "e", "f", "g", "i"};
-//   input Integer indexModel;
-//   input Integer dim;
-//   output String[dim] variableNameTable;
-// algorithm
-//   if indexModel == 1 then
-//     variableNameTable[{1, 2, 3, 4, 5, 6, 7, 8}] := {"a", "b", "c", "d", "e", "f", "g", "h"};
-//   elseif indexModel == 2 then
-//     variableNameTable[{1, 2, 3, 4, 5, 6, 7, 8}] := {"a", "b", "c", "d", "e", "f", "g", "i"};
-//   end if;
-// end SpliceUnknownDest.getVariableNameTable;
-//
 // class SpliceUnknownDest
 //   String tab[1];
 //   String tab[2];
