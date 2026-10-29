@@ -215,7 +215,7 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
   {
     infoStreamPrint(OMC_LOG_LS_V, 1, "Old solution x:");
     for(i = 0; i < solverData->n_row; ++i)
-      infoStreamPrint(OMC_LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], aux_x[i]);
+      infoStreamPrint(OMC_LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquationVar(&data->modelData->modelDataXml,eqSystemNumber, i), aux_x[i]);
     messageClose(OMC_LOG_LS_V);
 
     infoStreamPrint(OMC_LOG_LS_V, 1, "Matrix A n_rows = %d", solverData->n_row);
@@ -310,7 +310,7 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
       infoStreamPrint(OMC_LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).numVar);
 
       for(i = 0; i < systemData->size; ++i)
-        infoStreamPrint(OMC_LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], aux_x[i]);
+        infoStreamPrint(OMC_LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquationVar(&data->modelData->modelDataXml,eqSystemNumber, i), aux_x[i]);
 
       messageClose(OMC_LOG_LS_V);
     }

@@ -219,7 +219,7 @@ int print_csvLineIterStatsHeader(DATA* data, NONLINEAR_SYSTEM_DATA* systemData, 
 
   /* variables x */
   for(j=0; j<size; ++j) {
-    sprintf(buffer, "%s", modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[j]);
+    sprintf(buffer, "%s", modelInfoGetEquationVar(&data->modelData->modelDataXml, systemData->equationIndex, j));
     omc_write_csv(csvData, buffer);
     fputc(csvData->seperator,csvData->handle);
   }
@@ -810,6 +810,23 @@ void printNonLinearSystemSolvingStatistics(NONLINEAR_SYSTEM_DATA* nonlinsys, enu
   messageClose(stream);
 }
 
+/**
+ * @brief Get the equation index of residual `row` of a non-linear system.
+ *
+ * @param nlsData   Non-linear system data.
+ * @param row       Residual index.
+ * @return          Equation index, -1 if unknown, e.g. for a system of
+ *                  resizable arrays, whose equations are not scalar.
+ */
+int nlsResidualEquationIndex(NONLINEAR_SYSTEM_DATA* nlsData, long row)
+{
+  long k = nlsData->torn_plus_residual_size - nlsData->size + row;
+  if (nlsData->updateSize != NULL || k < 0 || k >= nlsData->torn_plus_residual_size) {
+    return -1;
+  }
+  return nlsData->eqn_simcode_indices[k];
+}
+
 /*! \fn printNonLinearInitialInfo
  *
  *  This function prints information of an non-linear systems before an solving step.
@@ -827,7 +844,7 @@ void printNonLinearInitialInfo(int logName, DATA* data, NONLINEAR_SYSTEM_DATA *n
 
   for(i=0; i<nonlinsys->size; i++)
     infoStreamPrint(logName, 0, "[%2ld] %30s  = %16.8g\t\t nom = %16.8g", i+1,
-                    modelInfoGetEquation(&data->modelData->modelDataXml,nonlinsys->equationIndex).vars[i],
+                    modelInfoGetEquationVar(&data->modelData->modelDataXml,nonlinsys->equationIndex, i),
                     nonlinsys->nlsx[i], nonlinsys->nominal[i]);
   messageClose(logName);
 }
@@ -867,7 +884,7 @@ void printNonLinearFinishInfo(int logName, DATA* data, NONLINEAR_SYSTEM_DATA *no
   infoStreamPrint(logName, 0, "solution values:");
   for(i=0; i<nonlinsys->size; i++)
     infoStreamPrint(logName, 0, "[%2ld] %30s  = %16.8g", i+1,
-                    modelInfoGetEquation(&data->modelData->modelDataXml,nonlinsys->equationIndex).vars[i],
+                    modelInfoGetEquationVar(&data->modelData->modelDataXml,nonlinsys->equationIndex, i),
                     nonlinsys->nlsx[i]);
 
   messageClose(logName);
@@ -1379,7 +1396,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
       if (pFile) {
         fprintf(pFile, "\"sep=%s\"\n%s", sep, "\"lambda\"");
         for(j=0; j<nonlinsys->size; ++j)
-          fprintf(pFile, "%s\"%s\"", sep, modelInfoGetEquation(&data->modelData->modelDataXml, nonlinsys->equationIndex).vars[j]);
+          fprintf(pFile, "%s\"%s\"", sep, modelInfoGetEquationVar(&data->modelData->modelDataXml, nonlinsys->equationIndex, j));
         fprintf(pFile, "\n");
       }
     }
@@ -1540,7 +1557,7 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
       const MODEL_DATA *mData = data->modelData;
       for(k=0; k<mData->nVariablesRealArray && !done; ++k)
       {
-        if (!strcmp(mData->realVarsData[k].info.name, modelInfoGetEquation(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex).vars[j]))
+        if (!strcmp(mData->realVarsData[k].info.name, modelInfoGetEquationVar(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex, j)))
         {
         done = 1;
         real_vector_to_string(&mData->realVarsData[k].attribute.start, mData->realVarsData[k].dimension.numberOfDimensions == 0, start_buffer, buff_size);
@@ -1556,8 +1573,8 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
       {
         warningStreamPrint(OMC_LOG_INIT, 0, "[%ld] Real %s(start=?, nominal=?)",
                            j+1,
-                           modelInfoGetEquation(&data->modelData->modelDataXml,
-                           (nonlinsys[i]).equationIndex).vars[j]);
+                           modelInfoGetEquationVar(&data->modelData->modelDataXml,
+                           (nonlinsys[i]).equationIndex, j));
       }
     }
     free(start_buffer);

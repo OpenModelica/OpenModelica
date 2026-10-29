@@ -312,7 +312,7 @@ void printUnknowns(int logName, DATA_HOMOTOPY *solverData)
 
   for(i=0; i<solverData->n; i++)
     infoStreamPrint(logName, 0, "[%2ld] %30s  = %16.8g\t\t nom = %16.8g\t\t min = %16.8g\t\t max = %16.8g", i+1,
-                    modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i],
+                    modelInfoGetEquationVar(&data->modelData->modelDataXml,eqSystemNumber, i),
                     solverData->x[i], solverData->xScaling[i], solverData->minValue[i], solverData->maxValue[i]);
   messageClose(logName);
 }
@@ -329,7 +329,7 @@ void printNewtonStep(int logName, DATA_HOMOTOPY *solverData)
 
   for(i=0; i<solverData->n; i++)
     infoStreamPrint(logName, 0, "[%2ld] %30s  = %16.8g\t\t step = %16.8g\t\t old = %16.8g", i+1,
-                    modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i],
+                    modelInfoGetEquationVar(&data->modelData->modelDataXml,eqSystemNumber, i),
                     solverData->x1[i], solverData->dy0[i], solverData->x[i]);
   messageClose(logName);
 }
@@ -346,11 +346,11 @@ void printHomotopyUnknowns(int logName, DATA_HOMOTOPY *solverData)
 
   for(i=0; i<solverData->n; i++)
     infoStreamPrint(logName, 0, "[%2ld] %30s  = %16.8g\t\t nom = %16.8g\t\t min = %16.8g\t\t max = %16.8g", i+1,
-                    modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i],
+                    modelInfoGetEquationVar(&data->modelData->modelDataXml,eqSystemNumber, i),
                     solverData->y0[i], solverData->xScaling[i], solverData->minValue[i], solverData->maxValue[i]);
   if (solverData->initHomotopy) {
     infoStreamPrint(logName, 0, "[%2ld] %30s  = %16.8g\t\t nom = %16.8g\t\t min = %16.8g\t\t max = %16.8g", i+1,
-                    modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i],
+                    modelInfoGetEquationVar(&data->modelData->modelDataXml,eqSystemNumber, i),
                     solverData->y0[i], solverData->xScaling[i], solverData->minValue[i], solverData->maxValue[i]);
   }
   else {
@@ -373,11 +373,11 @@ void printHomotopyPredictorStep(int logName, DATA_HOMOTOPY *solverData)
 
   for(i=0; i<solverData->n; i++)
     infoStreamPrint(logName, 0, "[%2ld] %30s  = %16.8g\t\t dy = %16.8g\t\t old = %16.8g\t\t tau = %16.8g", i+1,
-                    modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i],
+                    modelInfoGetEquationVar(&data->modelData->modelDataXml,eqSystemNumber, i),
                     solverData->yt[i], solverData->dy0[i], solverData->y0[i], solverData->tau);
   if (solverData->initHomotopy) {
     infoStreamPrint(logName, 0, "[%2ld] %30s  = %16.8g\t\t dy = %16.8g\t\t old = %16.8g\t\t tau = %16.8g", i+1,
-                    modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i],
+                    modelInfoGetEquationVar(&data->modelData->modelDataXml,eqSystemNumber, i),
                     solverData->yt[i], solverData->dy0[i], solverData->y0[i], solverData->tau);
   } else {
     infoStreamPrint(logName, 0, "[%2ld] %30s  = %16.8g\t\t dy = %16.8g\t\t old = %16.8g\t\t tau = %16.8g", i+1,
@@ -399,11 +399,11 @@ void printHomotopyCorrectorStep(int logName, DATA_HOMOTOPY *solverData)
 
   for(i=0; i<solverData->n; i++)
     infoStreamPrint(logName, 0, "[%2ld] %30s  = %16.8g\t\t dy = %16.8g\t\t old = %16.8g\t\t tau = %16.8g", i+1,
-                    modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i],
+                    modelInfoGetEquationVar(&data->modelData->modelDataXml,eqSystemNumber, i),
                     solverData->y1[i], solverData->dy1[i], solverData->yt[i], solverData->tau);
   if (solverData->initHomotopy) {
     infoStreamPrint(logName, 0, "[%2ld] %30s  = %16.8g\t\t dy = %16.8g\t\t old = %16.8g\t\t tau = %16.8g", i+1,
-                    modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i],
+                    modelInfoGetEquationVar(&data->modelData->modelDataXml,eqSystemNumber, i),
                     solverData->y1[i], solverData->dy1[i], solverData->yt[i], solverData->tau);
   } else {
     infoStreamPrint(logName, 0, "[%2ld] %30s  = %16.8g\t\t dy = %16.8g\t\t old = %16.8g\t\t tau = %16.8g", i+1,
@@ -1810,7 +1810,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       pFile = omc_fopen(buffer, "wt");
       fprintf(pFile, "\"sep=%s\"\n%s", sep, "\"lambda\"");
       for(i=0; i<n; ++i)
-        fprintf(pFile, "%s\"%s\"", sep, modelInfoGetEquation(&data->modelData->modelDataXml,solverData->eqSystemNumber).vars[i]);
+        fprintf(pFile, "%s\"%s\"", sep, modelInfoGetEquationVar(&data->modelData->modelDataXml,solverData->eqSystemNumber, i));
       fprintf(pFile, "\n");
       fprintf(pFile, "0.0");
       for(i=0; i<n; ++i)

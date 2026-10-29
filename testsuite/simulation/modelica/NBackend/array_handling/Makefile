@@ -22,6 +22,7 @@ jacobianArrayIndices.mos \
 scalarSparsityTables.mos \
 array_constructor_if.mos \
 resizableConnectFor.mos \
+resizableNLSLogging.mos \
 resizableSparsity.mos \
 resizableSparsityArrayEqn.mos \
 resizableConnectChain.mos \
