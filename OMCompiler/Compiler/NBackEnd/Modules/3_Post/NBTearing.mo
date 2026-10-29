@@ -895,6 +895,7 @@ protected
         strict.residual_eqns := list(wholeEqnSlice(e) for e in strict.residual_eqns);
         if Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then
           strict.residual_eqns := List.flatten(list(restrictedForSlice(e, eq_index) for e in strict.residual_eqns));
+          strict.residual_eqns := List.flatten(list(bodyElementFors(e, eq_index) for e in strict.residual_eqns));
         end if;
 
         // inline potential records
@@ -969,6 +970,45 @@ protected
       else ();
     end match;
   end restrictedForSlice;
+
+  function bodyElementFors
+    "a whole for-equation with a fixed size array body as one for-equation per
+     body element, the iterators stay symbolic"
+    input Slice<EquationPointer> slice;
+    input Pointer<Integer> eq_index;
+    output list<Slice<EquationPointer>> slices = {slice};
+  protected
+    Equation eqn, body;
+    list<Integer> sizes;
+    list<Subscript> subs;
+    Pointer<Equation> eqn_ptr;
+  algorithm
+    if not listEmpty(slice.indices) then
+      return;
+    end if;
+    eqn := Pointer.access(Slice.getT(slice));
+    () := match eqn
+      case Equation.FOR_EQUATION(body = {body as Equation.ARRAY_EQUATION(recordSize = NONE())}) guard
+          List.all(Type.arrayDims(body.ty), function Dimension.isKnown(allowExp = false)) and
+          not List.any(Type.arrayDims(body.ty), Dimension.isResizable) algorithm
+        sizes := list(Dimension.size(d) for d in Type.arrayDims(body.ty));
+        slices := {};
+        for i in 0:List.fold(sizes, intMul, 1)-1 loop
+          subs := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in Slice.indexToLocation(i, sizes));
+          eqn.body := {Equation.SCALAR_EQUATION(Type.arrayElementType(body.ty),
+            SimplifyExp.simplifyDump(Equation.scalarizeElement(body.lhs, subs), true, getInstanceName()),
+            SimplifyExp.simplifyDump(Equation.scalarizeElement(body.rhs, subs), true, getInstanceName()),
+            body.source, body.attr)};
+          eqn.size := Iterator.size(eqn.iter);
+          eqn_ptr := Pointer.create(eqn);
+          Equation.createName(eqn_ptr, eq_index, NBEquation.SIMULATION_STR);
+          slices := Slice.SLICE(eqn_ptr, {}) :: slices;
+        end for;
+        slices := listReverse(slices);
+      then ();
+      else ();
+    end match;
+  end bodyElementFors;
 
   function restrictedIterators
     "the iterator restricted to the boxes of the iterations, empty if not possible"
