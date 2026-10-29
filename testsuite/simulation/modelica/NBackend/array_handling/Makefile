@@ -44,6 +44,7 @@ resizablePartialLoops.mos \
 resizableArrayJacobian.mos \
 resizableMergedJacobian.mos \
 resizableLoopBlocks.mos \
+resizableTearStart.mos \
 resizableConnectArrays.mos \
 resizableConnectSizeAlias.mos \
 resizableManySizes.mos \
