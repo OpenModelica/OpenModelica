@@ -899,7 +899,7 @@ protected
     input ComponentRef lhsKey;
     input Expression rhsExpr;
     input String contextName;
-    input Integer eqIndex;
+    input Pointer<Integer> idx;
     output NBStrongComponent diffed_comp;
   protected
     Pointer<NBEquation.Equation> eqPtr;
@@ -909,7 +909,7 @@ protected
     eqPtr := Equation.makeAssignment(
       Expression.fromCref(lhsKey),
       rhsExpr,
-      Pointer.create(eqIndex),
+      idx,
       contextName,
       BEquation.Iterator.EMPTY(),
       NBEquation.EquationAttributes.default(NBEquation.EquationKind.CONTINUOUS, false)
@@ -1021,6 +1021,12 @@ protected
     end for;
   end populateDiffMap;
 
+  function collectAdjointLoopCref
+    extends Slice.filterCref;
+  algorithm
+    UnorderedSet.add(ComponentRef.stripSubscriptsAll(cref), acc);
+  end collectAdjointLoopCref;
+
   function isSupportedAdjointStrongComponent
     input StrongComponent comp;
     output Boolean ok;
@@ -1071,12 +1077,18 @@ protected
         Tearing tearing;
         list<VariablePointer> itVarPtrs;
         list<Expression> residuals;
+        array<StrongComponent> innerEquations;
+        list<VariablePointer> innerVarPtrs;
+        UnorderedSet<ComponentRef> loopCrefs;
+        list<StrongComponent> innerAdjointComps, innerCompAdjoints;
+        list<VariablePointer> innerTmpVars;
         list<Pointer<Variable>> lambdaPtrs;
         list<ComponentRef> lambdaCrefs;
         Integer iRes;
         Pointer<Variable> lhsVarPtr;
         ComponentRef newC;
         UnorderedMap<ComponentRef, ComponentRef> diff_map_y, diff_map_x, diff_map_union;
+        UnorderedMap<ComponentRef, ComponentRef> diff_map_inner, diff_map_local;
         UnorderedMap<ComponentRef, AdjointTermList> loop_product_adjoint_map;
         list<Pointer<Variable>> seedPtrListX;
         list<Pointer<Equation>> linResEqnPtrs;
@@ -1107,6 +1119,14 @@ protected
         // Collect iteration vars and residual equations and turn into residual expressions
         itVarPtrs := Tearing.getIterationVars(tearing);
         residuals := list(Equation.getResidualExp(Pointer.access(e)) for e in Tearing.getResidualEqns(tearing));
+        innerEquations := Tearing.getInnerEquations(tearing);
+        innerVarPtrs := List.flatten(list(StrongComponent.getVariables(c) for c in innerEquations));
+        diff_map_inner := populateDiffMap(innerVarPtrs, diff_map);
+        innerAdjointComps := {};
+        loopCrefs := UnorderedSet.fromList(List.flatten(list(Equation.collectCrefs(Pointer.access(e),
+          collectAdjointLoopCref) for e in listAppend(Tearing.getResidualEqns(tearing),
+          List.flatten(list(StrongComponent.getEquations(c) for c in innerEquations))))),
+          ComponentRef.hash, ComponentRef.isEqual);
 
         // Create scalar lambda_i temporaries
         // Is it possible to create it as a vector?
@@ -1126,14 +1146,32 @@ protected
         // Build filtered diff maps
         diff_map_y := populateDiffMap(itVarPtrs, diff_map);
         seedPtrListX := listAppend(BVariable.VariablePointers.toList(seedCandidates), tmpVarCandidates);
-        seedPtrListX := list(vp for vp guard(not UnorderedMap.contains(BVariable.getVarName(vp), diff_map_y)) in seedPtrListX);
+        seedPtrListX := list(vp for vp guard(not UnorderedMap.contains(BVariable.getVarName(vp), diff_map_y)
+          and not UnorderedMap.contains(BVariable.getVarName(vp), diff_map_inner)
+          and UnorderedSet.contains(ComponentRef.stripSubscriptsAll(BVariable.getVarName(vp)), loopCrefs)) in seedPtrListX);
         diff_map_x := populateDiffMap(seedPtrListX, diff_map);
         diff_map_union := UnorderedMap.merge(diff_map_y, diff_map_x, sourceInfo());
 
+        if arrayLength(innerEquations) > 0 then
+          diff_map_union := UnorderedMap.merge(diff_map_union, diff_map_inner, sourceInfo());
+          diff_map_local := UnorderedMap.copy(diff_map_union);
+          for entry in UnorderedMap.toList(diff_map_union) loop
+            (baseX, pDerX) := entry;
+            (lhsVarPtr, newC) := BVariable.makeAuxVar(NBVariable.TEMPORARY_STR, Pointer.access(idx) + 1,
+              ComponentRef.getComponentType(pDerX), false);
+            Pointer.update(idx, Pointer.access(idx) + 1);
+            (newC, lhsVarPtr) := BVariable.makePDerVar(newC, contextName, isTmp = true);
+            newTmpVars := lhsVarPtr :: newTmpVars;
+            UnorderedMap.add(baseX, newC, diff_map_local);
+          end for;
+        else
+          diff_map_local := diff_map_union;
+        end if;
+
         // Pre-populate loop_product_adjoint_map
         loop_product_adjoint_map := UnorderedMap.new<AdjointTermList>(ComponentRef.hash, ComponentRef.isEqual, listLength(itVarPtrs) + listLength(seedPtrListX));
-        for vp in itVarPtrs loop addEntryToLPAMap(vp, diff_map_y, loop_product_adjoint_map); end for;
-        for vp in seedPtrListX loop addEntryToLPAMap(vp, diff_map_x, loop_product_adjoint_map); end for;
+        for vp in itVarPtrs loop addEntryToLPAMap(vp, diff_map_local, loop_product_adjoint_map); end for;
+        for vp in seedPtrListX loop addEntryToLPAMap(vp, diff_map_local, loop_product_adjoint_map); end for;
 
         // Accumulate reverse-mode adjoints per residual with seed = lambda_i
         iRes := 1;
@@ -1142,7 +1180,7 @@ protected
           diffArgs := accumulateAdjointForResidual(
             residual_i,
             Expression.fromCref(listGet(lambdaCrefs, iRes)),
-            diff_map_union,
+            diff_map_local,
             funcMap,
             scalarized,
             loop_product_adjoint_map
@@ -1169,7 +1207,7 @@ protected
         linResEqnPtrs := listReverse(linResEqnPtrs);
 
         if not listEmpty(linResEqnPtrs) then
-          loopComp := makeLinearAlgebraicLoop(lambdaPtrs, linResEqnPtrs, Pointer.access(idx), NONE(), mixed = false, homotopy = false);
+          loopComp := makeLinearAlgebraicLoop(lambdaPtrs, linResEqnPtrs, Pointer.access(idx), NONE(), mixed = false, homotopy = false, innerComps = innerAdjointComps);
           (loopComp, _) := compJacobian(loopComp, NONE(), funcMap, NBPartition.Kind.JAC);
           adjointComps := loopComp :: adjointComps;
         end if;
@@ -1453,7 +1491,7 @@ protected
 
   function jacobianSymbolicAdjoint extends Module.jacobianInterface;
   protected
-    list<StrongComponent> comps, primalComps, diffed_comps = {};
+    list<StrongComponent> comps, primalComps, sparsity_comps, diffed_comps = {};
     Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
     Pointer<list<Pointer<Variable>>> pDer_vars_ptr = Pointer.create({});
     UnorderedMap<ComponentRef,ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
@@ -1597,9 +1635,10 @@ protected
     if jacType == JacobianType.ODE then
       adjacencyVars := VariablePointers.addList(VariablePointers.toList(partialCandidates), adjacencyVars);
     end if;
+    sparsity_comps := List.flatten(list(withInnerComps(comp) for comp in comps));
     fullLocal := Adjacency.Matrix.createFull(adjacencyVars,
-      EquationPointers.fromList(List.flatten(list(StrongComponent.getEquations(comp) for comp in comps))));
-    sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, comps, seed_set, pder_set, diff_map, isAdjoint = true, vars = SOME(adjacencyVars));
+      EquationPointers.fromList(List.flatten(list(StrongComponent.getEquations(comp) for comp in sparsity_comps))));
+    sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, sparsity_comps, seed_set, pder_set, diff_map, isAdjoint = true);
 
     jacobian := SOME(Jacobian.JACOBIAN(
       name      = newName,
@@ -1786,6 +1825,7 @@ protected
     input Option<NBackendDAE> jac = NONE();                     // optional analytic Jacobian for A
     input Boolean mixed = false;
     input Boolean homotopy = false;
+    input list<StrongComponent> innerComps = {};
     output NBStrongComponent comp;
   protected
     Integer m1 = listLength(itVarPtrs);
@@ -1804,11 +1844,10 @@ protected
     itVars_s := list(NBSlice.SLICE(vp, {}) for vp in itVarPtrs);
     res_s    := list(NBSlice.SLICE(ep, {}) for ep in resEqnPtrs);
 
-    // strict tearing: no inner equations for a plain linear system
     tearingSet := NBTearing.TEARING_SET(
       iteration_vars = itVars_s,
       residual_eqns  = res_s,
-      innerEquations = listArray({}),
+      innerEquations = listArray(innerComps),
       jac            = jac
     );
 
