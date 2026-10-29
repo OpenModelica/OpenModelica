@@ -239,6 +239,19 @@ algorithm
   bdae := replaceModel(bdae, data);
 end main;
 
+// TODO: algebraic loops in SET-S, e.g. a torn loop over pressure drop and density, become loops
+//   of the jacobian F. The new backend cannot generate loops inside a jacobian yet, so such models
+//   fail at runtime ("residual function pointer is invalid"). The old backend generates them as
+//   linear systems of the model (SimCodeUtil.addAlgebraicLoopsModelInfoSymJacs) that are part of
+//   the jacobian (partOfJac, parentJacobian in the runtime). For the new backend NSimCode needs to:
+//   1. resolve the iteration variables of a loop in SimJacobian.create with the jac_map of the
+//      jacobian instead of the empty dummy map, so that the loop becomes a LINEAR block (the
+//      derivative of a loop is always linear, see NBDifferentiate),
+//   2. create these LINEAR_SYSTEMs with partOfJac = true and a jacobian of their own w.r.t. the
+//      $pDER iteration variables,
+//   3. collect them into the linear systems of the model, as NSimCode does for the partitions.
+//   This is the TODO about the linear systems of jacobians in NSimCode.main and also concerns the
+//   simulation jacobian A.
 public function createJacobian
   "Creates the jacobian F of the residuals with respect to the variables of interest,
   SET-S gives the inner derivatives. Needs the solved strong components."

@@ -471,10 +471,6 @@ public
 
             (jacLfg, jacMrf, jacR0, simCodeIndices) := SimJacobian.createOptimizationJacobian(listAppend(bdae.ode, bdae.ode_event), simCodeIndices, simcode_map);
 
-            // the algebraic loops of the data reconciliation jacobian are not part of any partition
-            (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := SimStrongComponent.Block.collectAlgebraicLoopsSingle(
-              SimJacobian.getJacobiansBlocks({jacF}), linearLoops, nonlinearLoops, jacobians, simCodeIndices, simcode_map);
-
             //jacobians := jacA :: jacB :: jacC :: jacD :: jacF :: jacH :: jacAdjoint :: jacobians;
             jacobians := listReverse(jacR0 :: jacMrf :: jacLfg :: jacAdjoint :: jacH :: jacF :: jacD :: jacC :: jacB :: jacA :: jacobians);
 
