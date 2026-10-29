@@ -1519,6 +1519,8 @@ public
                   end for;
                 end for;
 
+                sparsityRemoveCovered(dep_map, rep_set);
+
                 // Store result variables (state derivatives) in inner_map so later
                 // result equations can trace transitive dependencies through them.
                 // e.g. der(x_i) = f(der(x_j), x_k) with der(x_j) = g(x_s) -> x_s dep.
@@ -2631,6 +2633,64 @@ public
       // every component that solves (a part of) the variable, also as a whole (e.g. an algebraic loop)
       UnorderedMap.add(stripped, cref :: UnorderedMap.getOrDefault(stripped, inner_keys, {}), inner_keys);
     end sparsityAddInner;
+
+    function sparsityRemoveCovered
+      "removes the dependencies of a row on elements (x[i]) that a dependency on all
+      elements of the same variable (x) covers."
+      input UnorderedMap<ComponentRef, Dependency> dep_map;
+      input UnorderedSet<ComponentRef> rep_set;
+    protected
+      type Crefs = list<ComponentRef>;
+      UnorderedMap<ComponentRef, Crefs> covering = UnorderedMap.new<Crefs>(ComponentRef.hash, ComponentRef.isEqual);
+      ComponentRef cref, name;
+      Dependency dep;
+    algorithm
+      for tpl in UnorderedMap.toList(dep_map) loop
+        (cref, dep) := tpl;
+        cref := ComponentRef.fillSubscripts(cref);
+        if sparsityCoversAll(cref, dep, UnorderedSet.contains(Util.tuple21(tpl), rep_set)) then
+          name := ComponentRef.stripSubscriptsAll(cref);
+          UnorderedMap.add(name, cref :: UnorderedMap.getOrDefault(name, covering, {}), covering);
+        end if;
+      end for;
+      if UnorderedMap.isEmpty(covering) then
+        return;
+      end if;
+      for key in UnorderedMap.keyList(dep_map) loop
+        cref := ComponentRef.fillSubscripts(key);
+        if List.any(UnorderedMap.getOrDefault(ComponentRef.stripSubscriptsAll(cref), covering, {}), function sparsityCovers(cref = cref)) then
+          UnorderedMap.remove(key, dep_map);
+          UnorderedSet.remove(key, rep_set);
+        end if;
+      end for;
+    end sparsityRemoveCovered;
+
+    function sparsityCoversAll
+      "a dependency with whole subscripts covers all their elements, except a regular
+      dependency on a whole one-dimensional array, which code generation treats
+      elementwise."
+      input ComponentRef cref "with filled subscripts";
+      input Dependency dep;
+      input Boolean repeated;
+      output Boolean b;
+    protected
+      list<Subscript> subs = ComponentRef.subscriptsAllFlat(cref);
+    algorithm
+      b := List.any(subs, Subscript.isWhole) and (repeated or listLength(subs) <> 1 or listEmpty(dep.kinds)
+        or Dependency.isReductionKind(listHead(dep.kinds)));
+    end sparsityCoversAll;
+
+    function sparsityCovers
+      input ComponentRef cover "with filled subscripts";
+      input ComponentRef cref "with filled subscripts";
+      output Boolean b;
+    protected
+      list<Subscript> cover_subs = ComponentRef.subscriptsAllFlat(cover);
+      list<Subscript> subs = ComponentRef.subscriptsAllFlat(cref);
+    algorithm
+      b := not ComponentRef.isEqual(cover, cref) and listLength(cover_subs) == listLength(subs)
+        and List.all(list(Subscript.isWhole(c) or Subscript.isEqual(c, s) threaded for c in cover_subs, s in subs), Util.id);
+    end sparsityCovers;
 
     function upgrade
       "upgrades a matrix using the information provided by the full matrix"

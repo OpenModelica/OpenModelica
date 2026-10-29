@@ -25,6 +25,7 @@ resizableConnectFor.mos \
 resizableNLSLogging.mos \
 resizableNLSNominal.mos \
 resizableSparsity.mos \
+resizableCoveredSparsity.mos \
 resizableSparsityArrayEqn.mos \
 resizableSparsityInner.mos \
 resizablePartialBodyFor.mos \
