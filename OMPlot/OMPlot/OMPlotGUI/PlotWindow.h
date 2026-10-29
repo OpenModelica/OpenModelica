@@ -98,6 +98,7 @@ private:
   QToolButton* mpLogYButton;
   QToolButton* mpAlignZeroButton;
   QToolButton* mpStackCurvesButton;
+  QAction* mpStackCurvesAction;
   QComboBox* mpGridComboBox;
   QToolButton* mpAutoScaleButton;
   QToolButton* mpSetupButton;
@@ -237,6 +238,7 @@ public:
   bool getPrefixUnits() const;
   void setPrefixUnits(bool prefixUnits);
   bool getAlignZero() const { return mAlignZero; }
+  bool canStackCurves() const { return isPlot() || isPlotAll() || isPlotInteractive(); }
   bool getStackCurves() const;
   void checkForErrors(QStringList variables, QStringList variablesPlotted);
   Plot* getPlot();

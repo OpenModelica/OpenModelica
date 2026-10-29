@@ -167,6 +167,17 @@ void VariablesBrowserTest::valueLabels()
       QCOMPARE(pPlotCurve->isStacked(), stack);
     }
   }
+
+  // a parametric plot never stacks, not even when asked to
+  OMPlot::PlotWindow parametricPlotWindow;
+  parametricPlotWindow.initializePlot(QStringList() << "" << workingDirectory.filePath("ValueLabelsTest_res.mat") << "" << "simple" << "plotParametric"
+                                      << "false" << "false" << "time" << "" << "0" << "0" << "0" << "0" << "1" << "1" << "top" << ""
+                                      << "true" << "" << "" << "0" << "0" << "true" << "b" << "i");
+  QVERIFY(!parametricPlotWindow.canStackCurves());
+  parametricPlotWindow.setStackCurves(true);
+  QVERIFY(!parametricPlotWindow.getStackCurves());
+  QCOMPARE(parametricPlotWindow.getPlot()->getPlotCurvesList().size(), 1);
+  QVERIFY(!parametricPlotWindow.getPlot()->getPlotCurvesList().first()->isStacked());
 }
 
 void VariablesBrowserTest::resultFileUnits()

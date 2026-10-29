@@ -351,6 +351,8 @@ void PlotWindow::setVariablesList(QStringList variables)
 void PlotWindow::setPlotType(PlotType type)
 {
   mPlotType = type;
+  // only the curves of a plot over time go in lanes
+  mpStackCurvesAction->setVisible(canStackCurves());
 }
 
 void PlotWindow::initializeFile(QString file)
@@ -552,7 +554,7 @@ void PlotWindow::setupToolbar(int toolbarIconSize)
   mpStackCurvesButton->setToolTip(tr("Draw each curve in a band of its own, one below the other"));
   mpStackCurvesButton->setStatusTip(mpStackCurvesButton->toolTip());
   connect(mpStackCurvesButton, SIGNAL(toggled(bool)), SLOT(setStackCurves(bool)));
-  toolBar->addWidget(mpStackCurvesButton);
+  mpStackCurvesAction = toolBar->addWidget(mpStackCurvesButton);
   toolBar->addSeparator();
   // setup
   mpSetupButton = new QToolButton(toolBar);
@@ -1782,10 +1784,14 @@ void PlotWindow::setAlignZero(bool on)
  * \brief PlotWindow::getStackCurves
  * Whether each curve is drawn in a band of its own: as set with the toolbar,
  * otherwise when all curves are Booleans, Integers or enumerations, see Plot::autoStack.
+ * Never for a parametric or an array plot, whose x-axis is not the time.
  * \return
  */
 bool PlotWindow::getStackCurves() const
 {
+  if (!canStackCurves()) {
+    return false;
+  }
   return mStackCurvesSet ? mStackCurves : mpPlot->autoStack();
 }
 
