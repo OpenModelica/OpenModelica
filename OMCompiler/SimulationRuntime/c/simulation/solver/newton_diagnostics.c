@@ -54,6 +54,7 @@
 #include "newton_diagnostics.h"
 #include "../simulation_info_json.h"
 #include "../jacobian_util.h"
+#include "nonlinearSystem.h"
 
 extern int dgesv_(int *n, int *nrhs, double *a, int *lda,
                   int *ipiv, double *b, int *ldb, int *info);
@@ -71,7 +72,7 @@ unsigned var_id( unsigned idx, DATA* data, NONLINEAR_SYSTEM_DATA* systemData)
   // Returns index of "modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[idx])"
   // in "data->modelData->realVarsData[i]"
 
-  const char *name = modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[idx];
+  const char *name = modelInfoGetEquationVar(&data->modelData->modelDataXml, systemData->equationIndex, idx);
   for (unsigned int i = 0; i < data->modelData->nVariablesReal; ++i) {
     if (!strcmp(data->modelData->realVarsData[i].info.name, name)) {
       return i;
@@ -636,7 +637,6 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "Values of relevant indicators");
 
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
-  modelica_integer sizeOfTorns;
   unsigned i, j, k;
   double eps = 1e-2;
 
@@ -802,7 +802,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
         // Print variable referenced l by Sigma, its init value and the max value between Gamma and Sigma
         infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%7d  %40s  %13.7g    %5.2f",
           w_idx[index_Sigma[l]]+1,
-          modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[w_idx[index_Sigma[l]]],
+          modelInfoGetEquationVar(&data->modelData->modelDataXml, systemData->equationIndex, w_idx[index_Sigma[l]]),
           x0[w_idx[index_Sigma[l]]],
           fabs(Sigma_ij[index_Sigma[l]][index_Sigma[l]]));
         printedIdx[nPrinted++] = index_Sigma[l];
@@ -823,7 +823,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
         // Print variable referenced l by Gamma, its init value and the value of Gamma_ilk
         infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%7d  %40s  %13.7g  %5.2f",
           w_idx[index_Gamma_j[l]]+1,
-          modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[w_idx[index_Gamma_j[l]]],
+          modelInfoGetEquationVar(&data->modelData->modelDataXml, systemData->equationIndex, w_idx[index_Gamma_j[l]]),
           x0[w_idx[index_Gamma_j[l]]],
           Gamma_ijk[index_Gamma_i[l]][index_Gamma_j[l]][index_Gamma_k[l]]);
         printedIdx[nPrinted++] = index_Gamma_j[l];
@@ -832,7 +832,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
         // Print variable referenced l by Gamma, its init value and the value of Gamma_ijl
         infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%7d  %40s  %13.7g  %5.2f",
           w_idx[index_Gamma_k[l]]+1,
-          modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[w_idx[index_Gamma_k[l]]],
+          modelInfoGetEquationVar(&data->modelData->modelDataXml, systemData->equationIndex, w_idx[index_Gamma_k[l]]),
           x0[w_idx[index_Gamma_k[l]]],
           Gamma_ijk[index_Gamma_i[l]][index_Gamma_j[l]][index_Gamma_k[l]]);
         printedIdx[nPrinted++] = index_Gamma_k[l];
@@ -922,7 +922,6 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "------  ------    ----------------");
   for (l = 0; l < n_gt_eps; l++) {
     printedIdx[nPrinted] = -1;
-    sizeOfTorns = systemData->torn_plus_residual_size - systemData->size;
     if (0 <= index_alpha[l] && index_alpha[l] < p) {
       // Check if equation l referenced by alpha has already been printed for Gamma
       unsigned alreadyPrinted = 0;
@@ -933,10 +932,10 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
         // Print equation l referenced by alpha and the value of alpha_i
         if (alpha[index_alpha[l]] < 1.e3)
           infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%6d  %6d  %5.2f", n_idx[index_alpha[l]]+1,
-                          systemData->eqn_simcode_indices[sizeOfTorns + n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
+                          nlsResidualEquationIndex(systemData, n_idx[index_alpha[l]]), alpha[index_alpha[l]]);
         else
           infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%6d  %6d  %5.2e", n_idx[index_alpha[l]]+1,
-                          systemData->eqn_simcode_indices[sizeOfTorns + n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
+                          nlsResidualEquationIndex(systemData, n_idx[index_alpha[l]]), alpha[index_alpha[l]]);
         printedIdx[nPrinted++] = index_alpha[l];
       }
     } else if (0 <= index_Gamma_i[l] && index_Gamma_i[l] < p &&
@@ -951,7 +950,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
       if (!alreadyPrinted) {
         // Print equation l referenced by Gamma and the value of Gamma_ljk
         infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%6d  %6d  %5.2f", n_idx[index_Gamma_i[l]]+1,
-          systemData->eqn_simcode_indices[sizeOfTorns + n_idx[index_Gamma_i[l]]],
+          nlsResidualEquationIndex(systemData, n_idx[index_Gamma_i[l]]),
           Gamma_ijk[index_Gamma_i[l]][index_Gamma_j[l]][index_Gamma_k[l]]);
         printedIdx[nPrinted++] = index_Gamma_i[l];
       }
@@ -1187,6 +1186,11 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
   unsigned m = systemData->size;
   unsigned i, j, k, p, q;
 
+  if (systemData->updateSize != NULL) {
+    warningStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics do not support systems of resizable arrays.");
+    return;
+  }
+
   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Running newton diagnostics for system " OMC_INT_FORMAT, systemData->equationIndex);
 
   // Store all dependents in "x0" and function values as function of x0 in f
@@ -1252,19 +1256,19 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
   for (i = 0; i < m; i++) {
     if(m < 10)
       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "x0[%1d] = %14.10f  (%s)", i+1, x0[i],
-        modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[i]);
+        modelInfoGetEquationVar(&data->modelData->modelDataXml, systemData->equationIndex, i));
     else if(m < 100)
       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "x0[%2d] = %14.10f  (%s)", i+1, x0[i],
-        modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[i]);
+        modelInfoGetEquationVar(&data->modelData->modelDataXml, systemData->equationIndex, i));
     else if(m < 1000)
       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "x0[%3d] = %14.10f  (%s)", i+1, x0[i],
-        modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[i]);
+        modelInfoGetEquationVar(&data->modelData->modelDataXml, systemData->equationIndex, i));
     else if(m < 100)
       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "x0[%4d] = %14.10f  (%s)", i+1, x0[i],
-        modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[i]);
+        modelInfoGetEquationVar(&data->modelData->modelDataXml, systemData->equationIndex, i));
     else
       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "x0[%5d] = %14.10f  (%s)", i+1, x0[i],
-        modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[i]);
+        modelInfoGetEquationVar(&data->modelData->modelDataXml, systemData->equationIndex, i));
   }
   messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS);
 
@@ -1291,19 +1295,19 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
   for (i = 0; i < q; i++) {
     if (m < 10)
       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "w0[%1d] = x0[%1d] = %14.10f  (%s)", i+1, w_idx[i] + 1, x0[w_idx[i]],
-        modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[w_idx[i]]);
+        modelInfoGetEquationVar(&data->modelData->modelDataXml, systemData->equationIndex, w_idx[i]));
     else if (m < 100)
       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "w0[%2d] = x0[%2d] = %14.10f  (%s)", i+1, w_idx[i] + 1, x0[w_idx[i]],
-        modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[w_idx[i]]);
+        modelInfoGetEquationVar(&data->modelData->modelDataXml, systemData->equationIndex, w_idx[i]));
     else if (m < 1000)
       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "w0[%3d] = x0[%3d] = %14.10f  (%s)", i+1, w_idx[i] + 1, x0[w_idx[i]],
-        modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[w_idx[i]]);
+        modelInfoGetEquationVar(&data->modelData->modelDataXml, systemData->equationIndex, w_idx[i]));
     else if (m < 10000)
       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "w0[%4d] = x0[%4d] = %14.10f  (%s)", i+q+1, w_idx[i] + 1, x0[w_idx[i]],
-        modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[w_idx[i]]);
+        modelInfoGetEquationVar(&data->modelData->modelDataXml, systemData->equationIndex, w_idx[i]));
     else
       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "w0[%5d] = x0[%5d] = %14.10f  (%s)", i+q+1, w_idx[i] + 1, x0[w_idx[i]],
-        modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[w_idx[i]]);
+        modelInfoGetEquationVar(&data->modelData->modelDataXml, systemData->equationIndex, w_idx[i]));
   }
   messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS);
 
@@ -1313,19 +1317,19 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
     for (i = 0; i < m-q; i++) {
       if (m - q < 10)
         infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "z0[%1d] = %14.10f  (%s)", i + 1, x0[z_idx[i]],
-          modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[z_idx[i]]);
+          modelInfoGetEquationVar(&data->modelData->modelDataXml, systemData->equationIndex, z_idx[i]));
       else if (m - q < 100)
         infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "z0[%2d] = %14.10f  (%s)", i + 1, x0[z_idx[i]],
-          modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[z_idx[i]]);
+          modelInfoGetEquationVar(&data->modelData->modelDataXml, systemData->equationIndex, z_idx[i]));
       else if (m - q < 1000)
         infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "z0[%3d] = %14.10f  (%s)", i + 1, x0[z_idx[i]],
-          modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[z_idx[i]]);
+          modelInfoGetEquationVar(&data->modelData->modelDataXml, systemData->equationIndex, z_idx[i]));
       else if (m - q < 10000)
         infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "z0[%4d] = %14.10f  (%s)", i + 1, x0[z_idx[i]],
-          modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[z_idx[i]]);
+          modelInfoGetEquationVar(&data->modelData->modelDataXml, systemData->equationIndex, z_idx[i]));
       else
         infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "z0[%5d] = %14.10f  (%s)", i + 1, x0[z_idx[i]],
-          modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[z_idx[i]]);
+          modelInfoGetEquationVar(&data->modelData->modelDataXml, systemData->equationIndex, z_idx[i]));
     }
     messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS);
   }

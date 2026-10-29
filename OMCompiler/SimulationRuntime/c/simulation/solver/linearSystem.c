@@ -609,7 +609,7 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
       const MODEL_DATA *mData = data->modelData;
       for(k=0; k<mData->nVariablesRealArray && !done; ++k)
       {
-        if (!strcmp(mData->realVarsData[k].info.name, modelInfoGetEquation(&data->modelData->modelDataXml, (linsys[i]).equationIndex).vars[j]))
+        if (!strcmp(mData->realVarsData[k].info.name, modelInfoGetEquationVar(&data->modelData->modelDataXml, (linsys[i]).equationIndex, j)))
         {
         done = 1;
         real_vector_to_string(&mData->realVarsData[k].attribute.start, mData->realVarsData[k].dimension.numberOfDimensions == 0, start_buffer, buff_size);
@@ -623,7 +623,7 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
       }
       if (!done)
       {
-        warningStreamPrint(OMC_LOG_LS, 0, "[%ld] Real %s(start=?, nominal=?)", j+1, modelInfoGetEquation(&data->modelData->modelDataXml, (linsys[i]).equationIndex).vars[j]);
+        warningStreamPrint(OMC_LOG_LS, 0, "[%ld] Real %s(start=?, nominal=?)", j+1, modelInfoGetEquationVar(&data->modelData->modelDataXml, (linsys[i]).equationIndex, j));
       }
     }
     messageCloseWarning(OMC_LOG_STDOUT);

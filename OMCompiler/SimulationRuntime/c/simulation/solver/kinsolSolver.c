@@ -558,7 +558,7 @@ static int nlsKinsolDenseDerivativeTest(DATA *data, NONLINEAR_SYSTEM_DATA *nlsDa
           if (!errorFound)
           {
             infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "Column / Variable: %i, Name: %s",
-            col + 1, modelInfoGetEquation(&data->modelData->modelDataXml, nlsData->equationIndex).vars[col]);
+            col + 1, modelInfoGetEquationVar(&data->modelData->modelDataXml, nlsData->equationIndex, col));
             infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "%-12s %-6s %-6s %-15s  %-15s  %-8s",
                             "Type", "Col", "Row", "Symbolic", "Numerical", "RelError");
             errorFound = TRUE;
@@ -574,7 +574,7 @@ static int nlsKinsolDenseDerivativeTest(DATA *data, NONLINEAR_SYSTEM_DATA *nlsDa
         if (!errorFound)
         {
           infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "Column / Variable: %i, Name: %s",
-                          col + 1, modelInfoGetEquation(&data->modelData->modelDataXml, nlsData->equationIndex).vars[col]);
+                          col + 1, modelInfoGetEquationVar(&data->modelData->modelDataXml, nlsData->equationIndex, col));
           infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "%-12s %-6s %-6s %-15s  %-15s  %-8s",
                           "Type", "Col", "Row", "Symbolic", "Numerical", "RelError");
           errorFound = TRUE;

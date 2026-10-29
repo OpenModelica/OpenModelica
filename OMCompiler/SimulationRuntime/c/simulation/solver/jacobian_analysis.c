@@ -264,7 +264,6 @@ static void svd_dense_dump_statistics(const SVD_DATA *svd_data)
 {
     int i, u, v, var_idx, eq_idx, start, end, count;
     modelica_real val;
-    modelica_integer size_of_torns;
     SVD_Component *entries = NULL;
     NONLINEAR_SYSTEM_DATA *nls_data = svd_data->nls_data;
     NONLINEAR_SOLVER solver = nls_data->nlsMethod;
@@ -352,7 +351,7 @@ static void svd_dense_dump_statistics(const SVD_DATA *svd_data)
                 var_idx = entries[i].index;
                 val = entries[i].value;
                 infoStreamPrint(OMC_LOG_NLS_SVD, 0, "V[%d][%d] = %+.8e for NLS Var: %d with Name: %s", var_idx + 1, v + 1, val, var_idx + 1,
-                                modelInfoGetEquation(&svd_data->data->modelData->modelDataXml, nls_data->equationIndex).vars[var_idx]);
+                                modelInfoGetEquationVar(&svd_data->data->modelData->modelDataXml, nls_data->equationIndex, var_idx));
             }
 
             messageClose(OMC_LOG_NLS_SVD);
@@ -389,14 +388,13 @@ static void svd_dense_dump_statistics(const SVD_DATA *svd_data)
             // sort by abs value descending O(n * log(n))
             qsort(entries, svd_data->rows, sizeof(SVD_Component), cmp_fabs_desc);
 
-            size_of_torns = nls_data->torn_plus_residual_size - nls_data->size;
             for (i = 0; i < svd_data->rows; i++)
             {
                 eq_idx = entries[i].index;
                 val = entries[i].value;
 
                 infoStreamPrint(OMC_LOG_NLS_SVD, 0, "U[%d][%d] = %+.8e for NLS Eqn: %d with transformational debugger Idx: %d", eq_idx + 1, u + 1, val, eq_idx + 1,
-                                nls_data->eqn_simcode_indices[size_of_torns + entries[i].index]);
+                                nlsResidualEquationIndex(nls_data, entries[i].index));
             }
 
             messageClose(OMC_LOG_NLS_SVD);
@@ -825,7 +823,6 @@ static void svd_sparse_print_vectors(primme_callback_ctx_t *ctx, primme_handle_t
     modelica_real sign;
     int i, u, v, var_idx, eq_idx, sing_value_idx;
     modelica_real val;
-    modelica_integer size_of_torns;
     int size = res->rows;
     SVD_Component *entries = (SVD_Component*)malloc(size * sizeof(SVD_Component));
     NONLINEAR_SYSTEM_DATA *nls_data = ctx->nls_data;
@@ -857,7 +854,7 @@ static void svd_sparse_print_vectors(primme_callback_ctx_t *ctx, primme_handle_t
             var_idx = entries[i].index;
             val = entries[i].value;
             infoStreamPrint(OMC_LOG_NLS_SVD, 0, "V[%d][%d] = %+.8e for NLS Var: %d with Name: %s", var_idx + 1, sing_value_idx, val, var_idx + 1,
-                            modelInfoGetEquation(&ctx->data->modelData->modelDataXml, nls_data->equationIndex).vars[var_idx]);
+                            modelInfoGetEquationVar(&ctx->data->modelData->modelDataXml, nls_data->equationIndex, var_idx));
         }
         messageClose(OMC_LOG_NLS_SVD);
     }
@@ -882,14 +879,13 @@ static void svd_sparse_print_vectors(primme_callback_ctx_t *ctx, primme_handle_t
         // sort by abs value descending O(n * log(n))
         qsort(entries, size, sizeof(SVD_Component), cmp_fabs_desc);
 
-        size_of_torns = nls_data->torn_plus_residual_size - nls_data->size;
         for (i = 0; i < size; i++)
         {
             eq_idx = entries[i].index;
             val = entries[i].value;
 
             infoStreamPrint(OMC_LOG_NLS_SVD, 0, "U[%d][%d] = %+.8e for NLS Eqn: %d with transformational debugger Idx: %d", eq_idx + 1, sing_value_idx, val, eq_idx + 1,
-                            nls_data->eqn_simcode_indices[size_of_torns + entries[i].index]);
+                            nlsResidualEquationIndex(nls_data, entries[i].index));
         }
         messageClose(OMC_LOG_NLS_SVD);
     }
@@ -1014,7 +1010,6 @@ void nlsJacobianRowColSums(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData, SUNMatrix
   int i, row, col, nz, count;
   modelica_real value;
   const int size = (int)nlsData->size;
-  const int size_of_torns = (int)nlsData->torn_plus_residual_size - size;
 
   sunindextype nnz = SUNSparseMatrix_NNZ(J);
 
@@ -1069,7 +1064,7 @@ void nlsJacobianRowColSums(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData, SUNMatrix
   for (i = 0; i < print_count; i++)
   {
     row = rowSums[i].index;
-    modelica_integer eq_debug_idx = nlsData->eqn_simcode_indices[size_of_torns + row];
+    modelica_integer eq_debug_idx = nlsResidualEquationIndex(nlsData, row);
     infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "fabs(Row[%d]) = %+.5e for NLS Eq ID (debugger): " OMC_INT_FORMAT, row + 1, rowSums[i].value, eq_debug_idx);
   }
   messageClose(OMC_LOG_NLS_JAC_SUMS);
@@ -1081,7 +1076,7 @@ void nlsJacobianRowColSums(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData, SUNMatrix
     for (i = size - print_count; i < size; i++)
     {
       row = rowSums[i].index;
-      modelica_integer eq_debug_idx = nlsData->eqn_simcode_indices[size_of_torns + row];
+      modelica_integer eq_debug_idx = nlsResidualEquationIndex(nlsData, row);
       infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "fabs(Row[%d]) = %+.5e for NLS Eq ID (debugger): " OMC_INT_FORMAT, row + 1, rowSums[i].value, eq_debug_idx);
     }
     messageClose(OMC_LOG_NLS_JAC_SUMS);
@@ -1093,7 +1088,7 @@ void nlsJacobianRowColSums(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData, SUNMatrix
   for (i = 0; i < print_count; i++)
   {
     col = colSums[i].index;
-    const char *var_name = modelInfoGetEquation(&data->modelData->modelDataXml, nlsData->equationIndex).vars[col];
+    const char *var_name = modelInfoGetEquationVar(&data->modelData->modelDataXml, nlsData->equationIndex, col);
     infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "fabs(Col[%d]) = %+.5e for Variable %d: %s", col + 1, colSums[i].value, col + 1, var_name);
   }
   messageClose(OMC_LOG_NLS_JAC_SUMS);
@@ -1105,7 +1100,7 @@ void nlsJacobianRowColSums(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData, SUNMatrix
     for (i = size - print_count; i < size; i++)
     {
       col = colSums[i].index;
-      const char *var_name = modelInfoGetEquation(&data->modelData->modelDataXml, nlsData->equationIndex).vars[col];
+      const char *var_name = modelInfoGetEquationVar(&data->modelData->modelDataXml, nlsData->equationIndex, col);
       infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "fabs(Col[%d]) = %+.5e for Variable %d: %s", col + 1, colSums[i].value, col + 1, var_name);
     }
     messageClose(OMC_LOG_NLS_JAC_SUMS);
@@ -1116,7 +1111,7 @@ void nlsJacobianRowColSums(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData, SUNMatrix
   for (i = 0; i < size; i++)
   {
     row = rowSums[i].index;
-    modelica_integer eq_debug_idx = nlsData->eqn_simcode_indices[size_of_torns + row];
+    modelica_integer eq_debug_idx = nlsResidualEquationIndex(nlsData, row);
     infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "fabs(Row[%d]) = %+.5e for NLS Eq ID (debugger): " OMC_INT_FORMAT, row + 1, rowSums[i].value, eq_debug_idx);
   }
   messageClose(OMC_LOG_NLS_JAC_SUMS);
@@ -1126,7 +1121,7 @@ void nlsJacobianRowColSums(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData, SUNMatrix
   for (i = 0; i < size; i++)
   {
     col = colSums[i].index;
-    const char *var_name = modelInfoGetEquation(&data->modelData->modelDataXml, nlsData->equationIndex).vars[col];
+    const char *var_name = modelInfoGetEquationVar(&data->modelData->modelDataXml, nlsData->equationIndex, col);
     infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "fabs(Col[%d]) = %+.5e for Variable %d: %s", col + 1, colSums[i].value, col + 1, var_name);
   }
   messageClose(OMC_LOG_NLS_JAC_SUMS);
