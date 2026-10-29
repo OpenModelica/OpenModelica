@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 inactiveWhenBranch.mos \
+algebraicPartition.mos \
 arrayCascade.mos \
 enumWithIntegerConstants.mos \
 arrayReadElements.mos \

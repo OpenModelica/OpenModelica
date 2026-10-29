@@ -1,0 +1,73 @@
+// name: algebraicPartition
+// keywords: NewBackend
+// status: correct
+// teardown_command: rm -f AlgebraicOutputs AlgebraicOutputs_* AlgebraicOutputs.log
+//
+// k is not needed for der(x) or an event, it moves to an algebraic partition
+// and is only evaluated for the output. e is needed for the event and stays.
+
+loadString("
+model AlgebraicOutputs
+  Real x(start = 1);
+  Real k;
+  Real e;
+  Integer cnt(start = 0, fixed = true);
+equation
+  der(x) = -x;
+  k = sin(x);
+  e = 2 * x;
+  when e < 1 then
+    cnt = pre(cnt) + 1;
+  end when;
+end AlgebraicOutputs;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=backenddaeinfo"); getErrorString();
+simulate(AlgebraicOutputs); getErrorString();
+val(k, 1);
+val(cnt, 1);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "AlgebraicOutputs_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AlgebraicOutputs', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+//  * Number of equations: 4 (4)
+//  * Number of variables: 4 (4)
+// Notification: Partition statistics after passing the back-end:
+//  * Number of ODE partitions: ..................... 0
+//  * Number of algebraic partitions: ............... 1
+//  * Number of ODE event partitions: ............... 1
+//  * Number of algebraic event partitions: ......... 0
+//  * Number of clocked partitions: ................. 0
+//  * Number of initial partitions: ................. 1
+//  * Number of initial(lambda=0) partitions: ....... 0
+// Notification: Variable statistics after passing the back-end:
+//  * Number of states: ............................. 1 (1) ('-d=stateselection' for the list of states)
+//  * Number of discrete states: .................... 1 (1) ('-d=discreteinfo' or '-d=stateselection' for the list of discrete states)
+//  * Number of clocked states: ..................... 0 (0) ('-d=discreteinfo' or '-d=stateselection' for the list of clocked states)
+//  * Number of discrete variables: ................. 1 (1) ('-d=discreteinfo' for the list of discrete variables)
+//  * Number of algorithm local variables: .......... 0 (0) ('-d=discreteinfo' for the list of algorithm local variables)
+//  * Number of clocks: ............................. 0 (0) ('-d=discreteinfo' for the list of clocks variables)
+//  * Number of top-level inputs: ................... 0 (0) ('-d=discreteinfo' for the list of top level inputs)
+// Notification: [Simulation] Strong Component statistics after passing the back-end:
+//  * Number of single strong components: ........... 3 (scalar:3, array:0, record:0)
+//  * Number of multi strong components: ............ 1 (algorithm:0, when:1, if:0, tuple:0)
+//  * Number of for-loop strong components: ......... 0 (resizable: 0, generic: 0, entwined:0)
+//  * Number of algebraic-loop strong components: ... 0 (linear: 0, nonlinear:0)
+// Notification: [Initialization] Strong Component statistics after passing the back-end:
+//  * Number of single strong components: ........... 6 (scalar:6, array:0, record:0)
+//  * Number of multi strong components: ............ 0 (algorithm:0, when:0, if:0, tuple:0)
+//  * Number of for-loop strong components: ......... 0 (resizable: 0, generic: 0, entwined:0)
+//  * Number of algebraic-loop strong components: ... 0 (linear: 0, nonlinear:0)
+// "
+// 0.35963601802559386
+// 1.0
+// endResult
