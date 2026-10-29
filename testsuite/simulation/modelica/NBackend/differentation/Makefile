@@ -16,6 +16,7 @@ AlgLinearSystem.mos \
 ArrayLinearSystem.mos \
 numericJacobianRows.mos \
 tornNLSJacobianRows.mos \
+tornAdjointJacobian.mos \
 derSeedJacobian.mos \
 tupleAssignmentDerivative.mos \
 functionInputDerivative.mos \
