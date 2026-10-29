@@ -530,6 +530,8 @@ algorithm
 
         // Replace the split subscripts with the corresponding subscripts from the cref.
         subs := list(subscriptBinding3(s, sub_map) for s in subs);
+        (subs, subMap) := List.mapFold(subs, function Subscript.mapFoldExpShallow(
+          func = function subscriptBinding2(cref = cref, evalSubscripts = evalSubscripts)), subMap);
 
         // Evaluate the subscripts if it was requested.
         if evalSubscripts then
