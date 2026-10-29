@@ -1,0 +1,34 @@
+// name: resizableNLSNominal
+// keywords: NewBackend resizable nonlinear system nominal
+// status: correct
+// cflags: --newBackend --resizableArrays
+// suite: cSources
+// teardown_command: rm -f resizableNLSNominal resizableNLSNominal_* resizableNLSNominal.log
+//
+// The iteration variables of a resizable nonlinear system get the nominal
+// values and bounds of their variables.
+
+loadString("
+model resizableNLSNominal
+  parameter Integer N = 3;
+  Real T[N](each start = 300, each nominal = 1000, each min = 200, each max = 2000);
+equation
+  for i in 1:N loop
+    T[i] + 1e-6*T[i]^3 = 400 + 10*i + time;
+  end for;
+end resizableNLSNominal;
+"); getErrorString();
+
+buildModel(resizableNLSNominal, stopTime = 0.1); getErrorString();
+system("./resizableNLSNominal -override=N=5 -lv=LOG_NLS_V", "resizableNLSNominal.log");
+system("grep -q 'nom = *1000.*min = *200.*max = *2000' resizableNLSNominal.log");
+val(T[5], 0.1, "resizableNLSNominal_res.mat");
+// Result:
+// true
+// ""
+// {"resizableNLSNominal", "resizableNLSNominal_init.xml"}
+// ""
+// 0
+// 0
+// 390.53605962703233
+// endResult
