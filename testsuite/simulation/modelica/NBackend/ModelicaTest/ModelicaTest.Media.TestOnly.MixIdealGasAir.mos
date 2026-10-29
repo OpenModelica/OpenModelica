@@ -22,10 +22,10 @@ diffSimulationResults("ModelicaTest.Media.TestOnly.MixIdealGasAir_res.mat", "Ref
 // end SimulationResult;
 // "Warning: NBResolveSingularities.balanceInitialization reports an overdetermined initialization!
 // Checking for consistency is not yet supported, following equations had to be removed:
-// [SCAL] (1) $DER.medium.T = 1000.0; ($RES_SIM_98)
-// [SCAL] (1) $DER.medium.p = 1000.0; ($RES_SIM_97)
-// [SCAL] (1) $DER.medium2.T = 0.0; ($RES_SIM_100)
-// [SCAL] (1) $DER.medium2.p = 1000.0; ($RES_SIM_99)
+// [SCAL] (1) $DER.medium.T = 1000.0; ($RES_SIM_100)
+// [SCAL] (1) $DER.medium.p = 1000.0; ($RES_SIM_99)
+// [SCAL] (1) $DER.medium2.T = 0.0; ($RES_SIM_102)
+// [SCAL] (1) $DER.medium2.p = 1000.0; ($RES_SIM_101)
 // "
 // (true, {})
 // endResult
