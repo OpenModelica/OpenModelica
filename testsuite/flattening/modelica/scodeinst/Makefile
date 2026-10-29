@@ -1160,6 +1160,7 @@ ReinitInvalid6.mo \
 ReinitInvalid7.mo \
 ReinitInvalid8.mo \
 ResizableConstantSize.mo \
+ResizableNestedSplit.mo \
 ResizableStreamElements.mo \
 ResizableUntypedConstant.mo \
 Return1.mo \
