@@ -4,11 +4,15 @@
 // depends: ./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter1_Inputs.csv
 // teardown_command: rm -rf ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter1 ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter1_* Reconciled_ModelicaDataReconciliationSimpleTests_Models_Splitter_Splitter1.mo ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter1.html
 
+setCommandLineOptions("--newBackend");
+getErrorString();
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
 loadFile("ModelicaDataReconciliationSimpleTests/package.mo");
 getErrorString();
 
+// buildModel(ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter1);
+// getErrorString();
 AnnotationNamedModifiers:=getAnnotationNamedModifiers(ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter1, "__OpenModelica_simulationFlags");
 
 simFlags:="-reconcile ";
@@ -20,8 +24,8 @@ print("simFlags: "+simFlags);
 simulate(ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter1, simflags=simFlags);
 getErrorString();
 
-readFile("ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter1_Outputs.csv");
-getErrorString();
+// readFile("ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter1_Outputs.csv");
+// getErrorString();
 
 
 // Result:

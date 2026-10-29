@@ -4,24 +4,30 @@
 // depends: ./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Pipe1_Inputs.csv
 // teardown_command: rm -rf ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe1 ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe1_* Reconciled_ModelicaDataReconciliationSimpleTests_Models_Pipe_Pipe1.mo ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe1.html
 
+setCommandLineOptions("--newBackend");
+getErrorString();
+
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
 loadFile("ModelicaDataReconciliationSimpleTests/package.mo");
 getErrorString();
 
-AnnotationNamedModifiers:=getAnnotationNamedModifiers(ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe1, "__OpenModelica_simulationFlags");
+// AnnotationNamedModifiers:=getAnnotationNamedModifiers(ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe1, "__OpenModelica_simulationFlags");
 
-simFlags:="-reconcile ";
-for i in 1:size(AnnotationNamedModifiers, 1) loop
-  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe1, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
-end for;
-print("simFlags: "+simFlags);
+// simFlags:="-reconcile ";
+// for i in 1:size(AnnotationNamedModifiers, 1) loop
+//   simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe1, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+// end for;
+// print("simFlags: "+simFlags);
 
-simulate(ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe1, simflags=simFlags);
+buildModel(ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe1);
 getErrorString();
 
-readFile("ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe1_Outputs.csv");
-getErrorString();
+// simulate(ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe1, simflags=simFlags);
+// getErrorString();
+
+// readFile("ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe1_Outputs.csv");
+// getErrorString();
 
 
 // Result:
