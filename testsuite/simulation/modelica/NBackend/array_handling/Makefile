@@ -41,6 +41,7 @@ resizableArrayJacobian.mos \
 resizableMergedJacobian.mos \
 resizableLoopBlocks.mos \
 resizableConnectArrays.mos \
+resizableConnectSizeAlias.mos \
 resizableManySizes.mos \
 literalConnects.mos \
 resizableSparseLoop.mos \
