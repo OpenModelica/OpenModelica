@@ -56,6 +56,7 @@ protected
   import NFBackendExtension.Uncertainty;
   import Attributes = NFAttributes;
   import NFPrefixes;
+  import Slice = NBSlice;
   import Type = NFType;
   import BVariable = NBVariable;
   import NBVariable.{VariablePointers, VarData};
@@ -80,15 +81,18 @@ public constant String UNDERLINE = "============================================
 public uniontype ExtractionSystem
   "Index based view of the system as used by the extraction algorithm. Variables
   and equations are numbered from 1, like orderedVars and orderedEqs in the old
-  backend."
+  backend. An equation of size n, e.g. a record equation, has n scalar rows; the
+  matching and the extraction work on rows, like the old backend."
   record EXTRACTION_SYSTEM
     VariablePointers vars;
     EquationPointers eqns;
     array<Pointer<Variable>> varArr;
     array<Pointer<Equation>> eqnArr;
-    array<list<Integer>> adjacency  "eqn -> all variables occurring in it";
-    array<Integer> var_to_eqn;
-    array<Integer> eqn_to_var;
+    array<Integer> rowToEqn         "mapIncRowEqn in the old backend";
+    array<list<Integer>> eqnToRows  "mapEqnIncRow in the old backend";
+    array<list<Integer>> adjacency  "row -> all variables occurring in its equation";
+    array<Integer> var_to_row;
+    array<Integer> row_to_var;
   end EXTRACTION_SYSTEM;
 end ExtractionSystem;
 
@@ -113,7 +117,8 @@ public function main extends Module.wrapper;
 protected
   ExtractionSystem sys;
   list<Integer> knowns = {}, boundaryConditionVars, boundaryConditions, bindingEquations = {}, ebltEquations = {}, setC, setS = {};
-  list<Integer> approximatedEquations = {}, boundaryConditionEquations, setSVars, unmeasured = {};
+  list<Integer> approximatedEquations = {}, approximatedRows = {}, boundaryConditionEquations, setSVars, unmeasured = {};
+  list<Integer> setCEqns, setSEqns "SET-C and SET-S as equations, the extraction works on rows";
   list<tuple<Integer, Integer>> setB;
   list<tuple<Integer, list<Integer>>> mappedEbltSetS = {};
   list<tuple<Integer, Pointer<Equation>, list<Integer>>> setBFailedBoundaryConditionEquations = {};
@@ -156,13 +161,14 @@ algorithm
         dumpEquationArray(sys, List.intRange(arrayLength(sys.eqnArr)), bindingEquations, "OrderedEquation");
         dumpMatching(sys);
         // the old backend lists the matching from the last variable to the first
-        dumpEquationList(sys, list(sys.var_to_eqn[i] for i in arrayLength(sys.var_to_eqn):-1:1), "Standard BLT of the original model");
+        dumpEquationList(sys, list(sys.var_to_row[i] for i in arrayLength(sys.var_to_row):-1:1), "Standard BLT of the original model");
 
         (approximatedEquations, boundaryConditionEquations) := getEquationsTaggedApproximatedOrBoundaryCondition(sys);
+        approximatedRows := rowsOf(sys, approximatedEquations);
 
         (knowns, boundaryConditionVars, _, unmeasured) := getVariableCategories(sys);
         // the variables solved by equations tagged as boundary condition are boundary conditions too
-        boundaryConditions := listAppend(boundaryConditionVars, list(sys.eqn_to_var[eqn] for eqn in boundaryConditionEquations));
+        boundaryConditions := listAppend(boundaryConditionVars, list(sys.row_to_var[row] for row in rowsOf(sys, boundaryConditionEquations)));
         dumpVarList(sys, knowns, "Variables of interest");
         dumpVarList(sys, boundaryConditions, "Boundary conditions");
         dumpEquationList(sys, bindingEquations, "Binding equations");
@@ -186,28 +192,28 @@ algorithm
       print("\nExtraction procedure is successfully completed in iteration count: " + intString(procedureCount) + "\n" + UNDERLINE + "\n");
 
       // remove approximated equations from SET-C and SET-S
-      setC := List.setDifferenceOnTrue(ebltEquations, approximatedEquations, intEq);
-      setS := List.setDifferenceOnTrue(setS, approximatedEquations, intEq);
+      setC := List.setDifferenceOnTrue(ebltEquations, approximatedRows, intEq);
+      setS := List.setDifferenceOnTrue(setS, approximatedRows, intEq);
       (setC, setS) := swapComplexEquationsInSetC(sys, setC, setS, mappedEbltSetS, bindingEquations);
-      setC := List.unique(setC);
-      setS := List.unique(setS);
+      setCEqns := eqnsOf(sys, setC);
+      setSEqns := eqnsOf(sys, setS);
 
-      print("\nFinal set of equations after extraction algorithm\n" + UNDERLINE + "\nSET_C: " + List.toString(setC, intString) + "\nSET_S: " + List.toString(setS, intString) + "\n\n");
-      dumpEquationArray(sys, setC, bindingEquations, "SET_C");
-      dumpEquationArray(sys, setS, bindingEquations, "SET_S");
+      print("\nFinal set of equations after extraction algorithm\n" + UNDERLINE + "\nSET_C: " + List.toString(setCEqns, intString) + "\nSET_S: " + List.toString(setSEqns, intString) + "\n\n");
+      dumpEquationArray(sys, setCEqns, bindingEquations, "SET_C");
+      dumpEquationArray(sys, setSEqns, bindingEquations, "SET_S");
 
       setSVars := List.setDifferenceOnTrue(getVariablesAfterExtraction(sys, setS), knowns, intEq);
       dumpSetSVars(sys, setSVars, "Unknown variables in SET_S");
-      params := getParameters(sys, listAppend(setS, setC), varData.parameters);
+      params := getParameters(sys, listAppend(setSEqns, setCEqns), varData.parameters);
       dumpVariables(params, "Parameters in SET_S");
 
-      System.writeFile(fileNamePrefix + "_AuxiliaryConditions.html", dumpExtractedEquationsToHTML(list(sys.eqnArr[eqn] for eqn in setC), "Auxiliary conditions"));
-      System.writeFile(fileNamePrefix + "_IntermediateEquations.html", dumpExtractedEquationsToHTML(list(sys.eqnArr[eqn] for eqn in setS), "Intermediate equations for measured variables"));
+      System.writeFile(fileNamePrefix + "_AuxiliaryConditions.html", dumpExtractedEquationsToHTML(list(sys.eqnArr[eqn] for eqn in setCEqns), "Auxiliary conditions"));
+      System.writeFile(fileNamePrefix + "_IntermediateEquations.html", dumpExtractedEquationsToHTML(list(sys.eqnArr[eqn] for eqn in setSEqns), "Intermediate equations for measured variables"));
       dumpRelatedBoundaryConditionsEquations(setBFailedBoundaryConditionEquations, fileNamePrefix);
 
-      verifyDataReconciliation(sys, setC, setS, knowns, setSVars, listLength(unmeasured), fileNamePrefix);
+      verifyDataReconciliation(sys, setC, setS, setCEqns, setSEqns, knowns, setSVars, listLength(unmeasured), fileNamePrefix);
 
-      data := createReconciliationData(sys, setC, setS, knowns, setSVars, params, unmeasured, listLength(setBFailedBoundaryConditionEquations), eqData.uniqueIndex);
+      data := createReconciliationData(sys, setCEqns, setSEqns, knowns, setSVars, params, unmeasured, listLength(setBFailedBoundaryConditionEquations), eqData.uniqueIndex);
       if Flags.isSet(Flags.DUMP_DATARECONCILIATION) then
         dumpReconciliationData(data);
       end if;
@@ -331,27 +337,58 @@ protected
   EquationPointers eqns = EquationPointers.fromList(eqn_lst);
   array<Pointer<Variable>> varArr = listArray(VariablePointers.toList(vars));
   array<Pointer<Equation>> eqnArr = listArray(EquationPointers.toList(eqns));
-  array<list<Integer>> adjacency;
+  array<Integer> rowToEqn;
+  array<list<Integer>> eqnToRows, adjacency;
   Matching matching;
   list<ComponentRef> crefs;
+  list<Integer> vars_of_eqn;
+  Integer row = 1, size;
 algorithm
-  // the extraction algorithm works on scalar equation and variable indices
-  if VariablePointers.scalarSize(vars) <> arrayLength(varArr) or EquationPointers.scalarSize(eqns) <> arrayLength(eqnArr) then
-    Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed, data reconciliation requires a scalarized system."});
-    fail();
-  end if;
-
-  (matching, _) := Causalize.simple(vars, eqns, NBPartition.Kind.ODE);
-
-  adjacency := arrayCreate(arrayLength(eqnArr), {});
-  for i in 1:arrayLength(eqnArr) loop
-    crefs := Equation.collectCrefs(Pointer.access(eqnArr[i]), function Equation.collectFromMap(check_map = vars.map));
-    // descending, so that the procedure visits the variables in ascending order like the old backend
-    adjacency[i] := List.sort(list(UnorderedMap.getSafe(cr, vars.map, sourceInfo()) for cr in crefs), intLt);
+  // the extraction algorithm works on scalar variable indices
+  for var in varArr loop
+    if BVariable.size(var) <> 1 then
+      Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed, data reconciliation requires scalar variables but got "
+        + BVariable.pointerToString(var) + "."});
+      fail();
+    end if;
   end for;
 
-  sys := EXTRACTION_SYSTEM(vars, eqns, varArr, eqnArr, adjacency, matching.var_to_eqn, matching.eqn_to_var);
+  // the matching numbers the scalar rows of the equations in their order
+  (matching, _) := Causalize.simple(vars, eqns, NBPartition.Kind.ODE);
+
+  rowToEqn := arrayCreate(EquationPointers.scalarSize(eqns), 0);
+  eqnToRows := arrayCreate(arrayLength(eqnArr), {});
+  adjacency := arrayCreate(arrayLength(rowToEqn), {});
+  for i in 1:arrayLength(eqnArr) loop
+    // a record, e.g. f(r), depends on all its elements
+    crefs := Equation.collectCrefs(Pointer.access(eqnArr[i]), function Slice.getDependentCref(map = vars.map, pseudo = false));
+    // descending, so that the procedure visits the variables in ascending order like the old backend
+    vars_of_eqn := List.sort(list(UnorderedMap.getSafe(cr, vars.map, sourceInfo()) for cr in crefs), intLt);
+    size := Equation.size(eqnArr[i]);
+    eqnToRows[i] := List.intRange2(row, row + size - 1);
+    for r in row:row + size - 1 loop
+      rowToEqn[r] := i;
+      adjacency[r] := vars_of_eqn;
+    end for;
+    row := row + size;
+  end for;
+
+  sys := EXTRACTION_SYSTEM(vars, eqns, varArr, eqnArr, rowToEqn, eqnToRows, adjacency, matching.var_to_eqn, matching.eqn_to_var);
 end createSystem;
+
+protected function rowsOf
+  "maps equations to their rows, mapEqnIncRow in the old backend"
+  input ExtractionSystem sys;
+  input list<Integer> eqns;
+  output list<Integer> rows = List.flatten(list(sys.eqnToRows[eqn] for eqn in eqns));
+end rowsOf;
+
+protected function eqnsOf
+  "maps rows to their unique equations, getAbsoluteIndexHelper in the old backend"
+  input ExtractionSystem sys;
+  input list<Integer> rows;
+  output list<Integer> eqns = List.unique(list(sys.rowToEqn[row] for row in rows));
+end eqnsOf;
 
 protected function getVariableCategories
   "knowns: uncertain = Uncertainty.refine
@@ -406,15 +443,18 @@ algorithm
 end isBoundaryCondition;
 
 protected function getBindingEquations
-  "binding equations are created by NBBindings with the residual name $RES_BND_<n>"
+  "rows of the binding equations, which are created by NBBindings with the residual name $RES_BND_<n>"
   input ExtractionSystem sys;
-  output list<Integer> bindingEquations = {} "descending, like in the old backend";
+  output list<Integer> bindingRows;
+protected
+  list<Integer> bindingEquations = {} "descending, like in the old backend";
 algorithm
   for i in 1:arrayLength(sys.eqnArr) loop
     if StringUtil.startsWith(ComponentRef.firstName(Equation.getEqnName(sys.eqnArr[i])), NBVariable.RESIDUAL_STR + "_BND_") then
       bindingEquations := i :: bindingEquations;
     end if;
   end for;
+  bindingRows := rowsOf(sys, bindingEquations);
 end getBindingEquations;
 
 protected function getEquationsTaggedApproximatedOrBoundaryCondition
@@ -437,21 +477,21 @@ algorithm
 end getEquationsTaggedApproximatedOrBoundaryCondition;
 
 protected function getEBLTEquations
-  "returns the equations matched to the variables of interest, without binding equations"
+  "returns the rows matched to the variables of interest, without binding equations"
   input ExtractionSystem sys;
   input list<Integer> knowns;
-  input list<Integer> bindingEquations;
-  output list<Integer> ebltEquations = {};
+  input list<Integer> bindingRows;
+  output list<Integer> ebltRows = {};
 protected
-  Integer eqn;
+  Integer row;
 algorithm
   for var in knowns loop
-    eqn := sys.var_to_eqn[var];
-    if eqn > 0 and not listMember(eqn, bindingEquations) then
-      ebltEquations := eqn :: ebltEquations;
+    row := sys.var_to_row[var];
+    if row > 0 and not listMember(row, bindingRows) then
+      ebltRows := row :: ebltRows;
     end if;
   end for;
-  ebltEquations := listReverse(ebltEquations);
+  ebltRows := listReverse(ebltRows);
 end getEBLTEquations;
 
 protected function getVariablesAfterExtraction
@@ -508,11 +548,11 @@ algorithm
       end if;
       if not listMember(listHead(minimalSetS), eqlistToRemove) then
         eqlistToRemove := listHead(minimalSetS) :: eqlistToRemove;
-        setB := (sys.eqn_to_var[eqn], listHead(minimalSetS)) :: setB;
+        setB := (sys.row_to_var[eqn], listHead(minimalSetS)) :: setB;
         // store the failed boundary condition equations for D.2, they are removed from the modified model
         if not List.any(setBFailedBoundaryConditionEquations, function isBoundaryConditionVar(var = boundaryConditionVar)) then
           intermediateVars := listReverse(List.setDifferenceOnTrue(getVariablesAfterExtraction(sys, {listHead(minimalSetS)}), knowns, intEq));
-          setBFailedBoundaryConditionEquations := (boundaryConditionVar, sys.eqnArr[listHead(minimalSetS)], intermediateVars) :: setBFailedBoundaryConditionEquations;
+          setBFailedBoundaryConditionEquations := (boundaryConditionVar, sys.eqnArr[sys.rowToEqn[listHead(minimalSetS)]], intermediateVars) :: setBFailedBoundaryConditionEquations;
         end if;
       end if;
     end if;
@@ -532,11 +572,11 @@ protected function modifyModel
   failed the procedure is replaced by x = 0 where x is the variable of interest of
   the procedure. The new equations are binding equations, like in the old backend."
   input ExtractionSystem sys;
-  input list<tuple<Integer, Integer>> setB "(var of interest, eqn to remove)";
+  input list<tuple<Integer, Integer>> setB "(var of interest, row to remove)";
   input Pointer<Integer> uniqueIndex;
   output list<Pointer<Equation>> eqn_lst = {};
 protected
-  list<Integer> eqlistToRemove = list(Util.tuple22(entry) for entry in setB);
+  list<Integer> eqlistToRemove = eqnsOf(sys, list(Util.tuple22(entry) for entry in setB));
   Pointer<Variable> var;
 algorithm
   for i in arrayLength(sys.eqnArr):-1:1 loop
@@ -842,8 +882,10 @@ protected function verifyDataReconciliation
   "checks the conditions SET-C and SET-S have to fulfill, a failed condition other
   than condition 2 writes an html report and fails"
   input ExtractionSystem sys;
-  input list<Integer> setC;
-  input list<Integer> setS;
+  input list<Integer> setC "rows";
+  input list<Integer> setS "rows";
+  input list<Integer> setCEqns;
+  input list<Integer> setSEqns;
   input list<Integer> knowns;
   input list<Integer> setSVars;
   input Integer unmeasuredVariables;
@@ -851,16 +893,16 @@ protected function verifyDataReconciliation
 protected
   list<Integer> commonEqns, knownsInSetC, unknownsInSetC, knownsInSetS, unknownsInSetS;
   list<Integer> knownsFound, knownsNotInSetC, knownsInSetSOnly, knownsNotFound, intermediateFound, intermediateNotFound;
-  String auxiliaryConditions = intString(listLength(setC)), varsToReconcile = intString(listLength(knowns)), msg;
+  String auxiliaryConditions = intString(listLength(setCEqns)), varsToReconcile = intString(listLength(knowns)), msg;
   Integer setSSize;
 algorithm
   print("\n\nAutomatic Verification Steps of DataReconciliation Algorithm\n" + UNDERLINE + "\n");
   dumpVarList(sys, knowns, "knownVariables:" + List.toString(knowns, intString));
-  print("-SET_C:" + List.toString(setC, intString) + "\n-SET_S:" + List.toString(setS, intString) + "\n\n");
+  print("-SET_C:" + List.toString(setCEqns, intString) + "\n-SET_S:" + List.toString(setSEqns, intString) + "\n\n");
 
   // Condition-1
   print("Condition-1 \"SET_C and SET_S must not have no equations in common\"\n" + UNDERLINE + "\n");
-  commonEqns := List.intersectionOnTrue(setC, setS, intEq);
+  commonEqns := List.intersectionOnTrue(setCEqns, setSEqns, intEq);
   if listEmpty(commonEqns) then
     print("-Passed\n\n");
   else
@@ -934,11 +976,11 @@ algorithm
 
   // Condition-5
   print("Condition-5 \"SET_S should be square\"\n" + UNDERLINE + "\n");
-  if listEmpty(setS) then
+  if listEmpty(setSEqns) then
     print("-Passed\n-SET_S contains 0 intermediate variables and 0 equations\n\n");
     return;
   end if;
-  setSSize := sum(Equation.size(sys.eqnArr[eqn]) for eqn in setS);
+  setSSize := sum(Equation.size(sys.eqnArr[eqn]) for eqn in setSEqns);
   if setSSize == listLength(setSVars) then
     print("-Passed\n Set_S has " + intString(listLength(setS)) + " equations and " + intString(listLength(setSVars)) + " variables\n\n");
   else
@@ -1053,10 +1095,10 @@ protected
 algorithm
   for item in mappedEbltSetS loop
     (eqn, matchedEqns) := item;
-    if isComplexEquation(sys.eqnArr[eqn]) then
+    if isComplexEquation(sys.eqnArr[sys.rowToEqn[eqn]]) then
       complexEquations := eqn :: complexEquations;
       for i in matchedEqns loop
-        if not isComplexEquation(sys.eqnArr[i]) then
+        if not isComplexEquation(sys.eqnArr[sys.rowToEqn[i]]) then
           setC := i :: List.removeOnTrue(eqn, intEq, setC);
           setS := eqn :: List.removeOnTrue(i, intEq, setS);
           swappedEquations := i :: swappedEquations;
@@ -1067,8 +1109,8 @@ algorithm
   end for;
 
   if not listEmpty(complexEquations) then
-    dumpEquationArray(sys, listReverse(complexEquations), bindingEquations, "Warning complex equation detected in Set-C");
-    dumpEquationArray(sys, listReverse(swappedEquations), bindingEquations, "Swapping Equations from Set-S");
+    dumpEquationArray(sys, eqnsOf(sys, listReverse(complexEquations)), bindingEquations, "Warning complex equation detected in Set-C");
+    dumpEquationArray(sys, eqnsOf(sys, listReverse(swappedEquations)), bindingEquations, "Swapping Equations from Set-S");
   end if;
 end swapComplexEquationsInSetC;
 
@@ -1121,7 +1163,7 @@ algorithm
       break;
     end if;
 
-    mappedEq := sys.var_to_eqn[var];
+    mappedEq := sys.var_to_row[var];
     if not listMember(mappedEq, bindingEquations) then
       minimalSetS := mappedEq :: minimalSetS;
       dumpSetSTargetEquation(sys, mappedEq, "");
@@ -1201,23 +1243,47 @@ protected function dumpEquationArray
   "same format as BackendDump.dumpEquationArray in the old backend, nothing is printed for no equations"
   input ExtractionSystem sys;
   input list<Integer> eqns;
-  input list<Integer> bindingEquations;
+  input list<Integer> bindingRows;
   input String heading;
-protected
-  Integer i = 1;
 algorithm
   if listEmpty(eqns) then
     return;
   end if;
   print("\n" + heading + " (" + intString(listLength(eqns)) + ", " + intString(sum(Equation.size(sys.eqnArr[eqn]) for eqn in eqns))
     + ")\n========================================\n");
-  for eqn in eqns loop
-    print(intString(i) + "/" + intString(i) + " (" + intString(Equation.size(sys.eqnArr[eqn])) + "): " + equationString(sys.eqnArr[eqn])
-      + (if listMember(eqn, bindingEquations) then "   [binding]" else "   [dynamic]") + "\n");
-    i := i + 1;
-  end for;
+  printEquations(sys, eqns, bindingRows);
   print("\n");
 end dumpEquationArray;
+
+protected function printEquations
+  "<i>/<scalar index> (<size>): <equation>   [binding|dynamic], like BackendDump"
+  input ExtractionSystem sys;
+  input list<Integer> eqns;
+  input list<Integer> bindingRows;
+protected
+  Integer i = 1, j = 1;
+algorithm
+  for eqn in eqns loop
+    print(intString(i) + "/" + intString(j) + " (" + intString(Equation.size(sys.eqnArr[eqn])) + "): " + equationString(sys.eqnArr[eqn])
+      + (if isBindingEquation(sys, eqn, bindingRows) then "   [binding]" else "   [dynamic]") + "\n");
+    i := i + 1;
+    j := j + Equation.size(sys.eqnArr[eqn]);
+  end for;
+end printEquations;
+
+protected function isBindingEquation
+  input ExtractionSystem sys;
+  input Integer eqn;
+  input list<Integer> bindingRows;
+  output Boolean b = false;
+algorithm
+  for row in sys.eqnToRows[eqn] loop
+    if listMember(row, bindingRows) then
+      b := true;
+      return;
+    end if;
+  end for;
+end isBindingEquation;
 
 protected function dumpSetSVars
   "same format as dumpSetSVars in the old backend"
@@ -1259,18 +1325,12 @@ protected function dumpEquations
   "same format as BackendDump.dumpEquationList in the old backend, nothing is printed for no equations"
   input ExtractionSystem sys;
   input list<Integer> eqns;
-  input list<Integer> bindingEquations;
+  input list<Integer> bindingRows;
   input String heading;
-protected
-  Integer i = 1;
 algorithm
   if not listEmpty(eqns) then
     print("\n" + heading + " (" + intString(listLength(eqns)) + ")\n========================================\n");
-    for eqn in eqns loop
-      print(intString(i) + "/" + intString(i) + " (" + intString(Equation.size(sys.eqnArr[eqn])) + "): " + equationString(sys.eqnArr[eqn])
-        + (if listMember(eqn, bindingEquations) then "   [binding]" else "   [dynamic]") + "\n");
-      i := i + 1;
-    end for;
+    printEquations(sys, eqns, bindingRows);
     print("\n");
   end if;
 end dumpEquations;
@@ -1278,9 +1338,9 @@ end dumpEquations;
 protected function dumpMatching
   input ExtractionSystem sys;
 algorithm
-  print("Matching\n========================================\n" + intString(arrayLength(sys.var_to_eqn)) + " variables and equations\n");
-  for i in 1:arrayLength(sys.var_to_eqn) loop
-    print("var " + intString(i) + " is solved in eqn " + intString(sys.var_to_eqn[i]) + "\n");
+  print("Matching\n========================================\n" + intString(arrayLength(sys.var_to_row)) + " variables and equations\n");
+  for i in 1:arrayLength(sys.var_to_row) loop
+    print("var " + intString(i) + " is solved in eqn " + intString(sys.var_to_row[i]) + "\n");
   end for;
 end dumpMatching;
 
@@ -1292,26 +1352,26 @@ end varName;
 
 protected function dumpSetSTargetEquation
   "same format as dumpSetSTargetEquations in the old backend:
-  <prefix><solved var index>: <solved var>: (<eqn>/<eqn>): (<size>): <equation>"
+  <prefix><solved var index>: <solved var>: (<eqn>/<row>): (<size>): <equation>"
   input ExtractionSystem sys;
-  input Integer eqn;
+  input Integer row;
   input String prefix;
 protected
-  Integer var = sys.eqn_to_var[eqn];
+  Integer var = sys.row_to_var[row], eqn = sys.rowToEqn[row];
 algorithm
-  print("\n" + prefix + intString(var) + ": " + varName(sys, var) + ": (" + intString(eqn) + "/" + intString(eqn)
+  print("\n" + prefix + intString(var) + ": " + varName(sys, var) + ": (" + intString(eqn) + "/" + intString(row)
     + "): (" + intString(Equation.size(sys.eqnArr[eqn])) + "): " + equationString(sys.eqnArr[eqn]));
 end dumpSetSTargetEquation;
 
 protected function dumpEquationList
   "same format as dumpSetSVarsSolvedInfo in the old backend"
   input ExtractionSystem sys;
-  input list<Integer> eqns;
+  input list<Integer> rows;
   input String heading;
 algorithm
-  print("\n" + heading + ":(" + intString(listLength(eqns)) + ")\n============================================================\n");
-  for eqn in eqns loop
-    dumpSetSTargetEquation(sys, eqn, "");
+  print("\n" + heading + ":(" + intString(listLength(rows)) + ")\n============================================================\n");
+  for row in rows loop
+    dumpSetSTargetEquation(sys, row, "");
   end for;
   print("\n\n");
 end dumpEquationList;
