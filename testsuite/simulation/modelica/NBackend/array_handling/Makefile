@@ -24,6 +24,7 @@ array_constructor_if.mos \
 resizableConnectFor.mos \
 resizableSparsity.mos \
 resizableSparsityArrayEqn.mos \
+resizableSparsityInner.mos \
 resizableConnectChain.mos \
 resizableConnectIf.mos \
 arrayConnectOutside.mos \

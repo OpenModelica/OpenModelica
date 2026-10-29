@@ -2153,11 +2153,13 @@ public
         elseif status == UnifyStatus.MATCHED then
           matched := true;
           for d in key_deps loop
-            if sparsityHasUnbound(d, bindings) then
-              // an iterator of the inner equation that does not occur in the solved cref
+            // an iterator of the inner equation that does not occur in the solved cref addresses all
+            // elements, only of the last dimension if the others are bound (the shape codegen supports)
+            dep := sparsityWholeLastIfUnbound(d, bindings);
+            if sparsityHasUnbound(dep, bindings) then
               deps := ComponentRef.stripSubscriptsAll(d) :: deps;
             else
-              dep := ComponentRef.mapExp(ComponentRef.mapExp(d, function sparsityBind(bindings = bindings)), sparsitySimplify);
+              dep := ComponentRef.mapExp(ComponentRef.mapExp(dep, function sparsityBind(bindings = bindings)), sparsitySimplify);
               dep := sparsityResolveLookups(dep);
               if sparsityInBounds(dep) then
                 deps := dep :: deps;
@@ -2186,6 +2188,7 @@ public
       for tpl in List.zip(key_subs, subs) loop
         () := match tpl
           case (Subscript.WHOLE(), _) then ();
+          case (Subscript.SLICE(slice = key_exp), _) guard(not sparsityHasIterator(key_exp)) then ();
           // a literal or a parameter (x[N]) binds nothing, it can only be told apart from another literal
           case (Subscript.INDEX(index = key_exp), _) guard(not sparsityHasIterator(key_exp)) algorithm
             () := match Util.tuple22(tpl)
@@ -2279,6 +2282,50 @@ public
       exp := SimplifyExp.combineBinaries(exp);
       exp := SimplifyExp.simplify(exp);
     end sparsitySimplify;
+
+    function sparsityWholeLastIfUnbound
+      input output ComponentRef cref;
+      input UnorderedMap<ComponentRef, Expression> bindings;
+    protected
+      list<Subscript> subs = listReverse(ComponentRef.subscriptsAllFlat(cref));
+      Subscript last;
+    algorithm
+      if listEmpty(subs) then
+        return;
+      end if;
+      last :: subs := subs;
+      if sparsityIsUnboundIndex(last, bindings) and not List.any(subs, function sparsityIsUnboundIndex(bindings = bindings))
+         and List.all(subs, Subscript.isIndex) then
+        cref := ComponentRef.mapSubscripts(cref, function sparsityWholeIfUnbound(bindings = bindings));
+      end if;
+    end sparsityWholeLastIfUnbound;
+
+    function sparsityWholeIfUnbound
+      input output Subscript sub;
+      input UnorderedMap<ComponentRef, Expression> bindings;
+    algorithm
+      if sparsityIsUnboundIndex(sub, bindings) then
+        sub := Subscript.WHOLE();
+      end if;
+    end sparsityWholeIfUnbound;
+
+    function sparsityIsUnboundIndex
+      input Subscript sub;
+      input UnorderedMap<ComponentRef, Expression> bindings;
+      output Boolean b;
+    algorithm
+      b := match sub
+        case Subscript.INDEX() then UnorderedSet.any(Expression.extractCrefs(sub.index),
+          function sparsityIsUnboundIterator(bindings = bindings));
+        else false;
+      end match;
+    end sparsityIsUnboundIndex;
+
+    function sparsityIsUnboundIterator
+      input ComponentRef cref;
+      input UnorderedMap<ComponentRef, Expression> bindings;
+      output Boolean b = ComponentRef.isIterator(cref) and not UnorderedMap.contains(cref, bindings);
+    end sparsityIsUnboundIterator;
 
     function sparsityHasUnbound
       input ComponentRef cref;
