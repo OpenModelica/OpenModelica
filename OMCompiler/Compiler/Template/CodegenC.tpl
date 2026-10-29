@@ -3816,14 +3816,28 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
   let bodyStaticData = (crefs |> cr hasindex i0 =>
     let cComment = '/* static nls data for <%crefStrNoUnderscore(cr)%> */'
     if nlsResizableCref(cr) then
-        <<
-        <%cComment%>
-        for (k_ = 0; k_ < <%nlsCount(cr)%>; k_++) {
-          sysData->nominal[i] = 1.0;
-          sysData->min[i]     = -DBL_MAX;
-          sysData->max[i++]   = DBL_MAX;
-        }
-        >>
+      match cref2simvar(crefRemovePrePrefix(cr), getSimCode())
+        case v as SIMVAR(type_=T_REAL(__))
+        case v as SIMVAR(type_=T_ARRAY(ty=T_REAL(__))) then
+          let kind = lsVarKind(v)
+          let first = realScalarIndex(v)
+          <<
+          <%cComment%>
+          for (k_ = 0; k_ < <%nlsCount(cr)%>; k_++) {
+            sysData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%first%> + k_);
+            sysData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%first%> + k_);
+            sysData->max[i++]   = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%first%> + k_);
+          }
+          >>
+        else
+          <<
+          <%cComment%>
+          for (k_ = 0; k_ < <%nlsCount(cr)%>; k_++) {
+            sysData->nominal[i] = 1.0;
+            sysData->min[i]     = -DBL_MAX;
+            sysData->max[i++]   = DBL_MAX;
+          }
+          >>
     else
     match cref2simvar(crefRemovePrePrefix(cr), getSimCode())
       case SIMVAR(type_=T_REAL(__)) then
@@ -3901,6 +3915,14 @@ template nlsResizable(list<ComponentRef> crefs)
  "non-empty if an iteration variable of an algebraic loop is a whole resizable array"
 ::= (crefs |> cr => match cref2simvar(cr, getSimCode()) case v as SIMVAR(__) then if isWholeResizableArray(cr, v) then "1" ;separator="")
 end nlsResizable;
+
+template realScalarIndex(SimVar var)
+ "the scalar index of the first element of a real variable at runtime"
+::=
+  match var
+    case SIMVAR(varKind=PARAM()) then 'data->simulationInfo->realParamsIndex[<%index%>]'
+    case SIMVAR(__) then 'data->simulationInfo->realVarsIndex[<%index%>]'
+end realScalarIndex;
 
 template nlsResizableCref(ComponentRef cr)
 ::= match cref2simvar(cr, getSimCode()) case v as SIMVAR(__) then if isWholeResizableArray(cr, v) then "1"

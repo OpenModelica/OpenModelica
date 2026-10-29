@@ -23,6 +23,7 @@ scalarSparsityTables.mos \
 array_constructor_if.mos \
 resizableConnectFor.mos \
 resizableNLSLogging.mos \
+resizableNLSNominal.mos \
 resizableSparsity.mos \
 resizableSparsityArrayEqn.mos \
 resizableSparsityInner.mos \
