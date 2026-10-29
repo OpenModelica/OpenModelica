@@ -995,12 +995,11 @@ protected
     list<ComponentRef> names;
     list<Expression> ranges;
     list<Option<Iterator>> maps;
-    UnorderedMap<ComponentRef, Integer> iter_sizes = UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedMap<ComponentRef, Expression> iter_sizes = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
     Pointer<Option<list<Subscript>>> subs_ptr = Pointer.create(NONE());
     Pointer<Boolean> ok_ptr = Pointer.create(true);
     Pointer<Option<Type>> ty_ptr = Pointer.create(NONE());
     Expression lhs, rhs;
-    Integer start, step, stop;
   algorithm
     (lhs, rhs) := match eq
       case Equation.FOR_EQUATION(body = {Equation.SCALAR_EQUATION(lhs = lhs, rhs = rhs)}) then (lhs, rhs);
@@ -1015,10 +1014,11 @@ protected
         local
           ComponentRef name;
           Expression range;
-        case (name, range as Expression.RANGE(), NONE()) guard(Expression.isLiteral(range)) algorithm
-          (start, step, stop) := Expression.getIntegerRange(range, false);
-          if start <> 1 or step <> 1 then return; end if;
-          UnorderedMap.add(name, stop, iter_sizes);
+        // the stop may be symbolic, e.g. the parameter of a resizable dimension
+        case (name, range as Expression.RANGE(start = Expression.INTEGER(1)), NONE())
+          guard(isNone(range.step) or Expression.isOne(Util.getOption(range.step))) algorithm
+          if Expression.isInteger(range.stop) and Expression.integerValue(range.stop) < 1 then return; end if;
+          UnorderedMap.add(name, range.stop, iter_sizes);
         then ();
         else algorithm return; then ();
       end match;
@@ -1041,7 +1041,7 @@ protected
 
   function isIteratorCref
     input Expression exp;
-    input UnorderedMap<ComponentRef, Integer> iter_sizes;
+    input UnorderedMap<ComponentRef, Expression> iter_sizes;
     output Boolean b;
   algorithm
     b := match exp
@@ -1054,7 +1054,7 @@ protected
     "true if the subscript is whole or an iterator that covers the full dimension"
     input Subscript sub;
     input Dimension dim;
-    input UnorderedMap<ComponentRef, Integer> iter_sizes;
+    input UnorderedMap<ComponentRef, Expression> iter_sizes;
     output Boolean b;
   algorithm
     b := match sub
@@ -1068,7 +1068,7 @@ protected
       then start == 1 and step == 1 and stop == Dimension.size(dim);
       case Subscript.INDEX(index = Expression.CREF(cref = iter))
         guard(UnorderedMap.contains(iter, iter_sizes) and Dimension.isKnown(dim))
-      then Dimension.size(dim) == UnorderedMap.getSafe(iter, iter_sizes, sourceInfo());
+      then Expression.isEqual(Dimension.sizeExp(dim), UnorderedMap.getSafe(iter, iter_sizes, sourceInfo()));
       else false;
     end match;
   end isFullIteratorSubscript;
@@ -1077,7 +1077,7 @@ protected
     "helper for forToFullArrayEquation. Replaces subscripted crefs by the full variable
     and checks that all of them are subscripted the same way and that no iterator is used otherwise."
     input output Expression exp;
-    input UnorderedMap<ComponentRef, Integer> iter_sizes;
+    input UnorderedMap<ComponentRef, Expression> iter_sizes;
     input Pointer<Option<list<Subscript>>> subs_ptr;
     input Pointer<Boolean> ok_ptr;
     input Pointer<Option<Type>> ty_ptr;
