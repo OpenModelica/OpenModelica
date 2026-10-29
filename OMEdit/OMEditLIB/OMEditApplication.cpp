@@ -47,6 +47,7 @@
 //! @todo Remove this once new frontend is used as default and old frontend is removed.
 #include "Options/OptionsDialog.h"
 #include "Simulation/TranslationFlagsWidget.h"
+#include "PlotTranslator.h"
 
 #include <locale.h>
 #include <QDir>
@@ -312,6 +313,10 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
           installTranslator(&mTranslator);
         } else {
           translatorLoadError = QString("Failed to load translation file %1 from location %2").arg("OMEdit_" + locale, translationsLocation);
+        }
+        // install the translations of the OMPlot widgets, they are maintained in OMPlot
+        if (OMPlot::loadTranslation(mPlotTranslator, QString::fromLocal8Bit(installationDirectoryPath), locale)) {
+          installTranslator(&mPlotTranslator);
         }
       }
       break;

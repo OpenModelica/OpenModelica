@@ -1082,6 +1082,43 @@ Diese Aktion kann nicht rückgängig gemacht werden!</translation>
         <source>Cells cannot be moved inside or outside another hierarchy.</source>
         <translation>Zellen können nicht in eine andere Ebene verschoben werden.</translation>
     </message>
+    <message>
+        <source>&amp;View</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Zoom &amp;In</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enlarge the displayed text of the cells (the notebook is not changed)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Zoom &amp;Out</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reduce the displayed text of the cells (the notebook is not changed)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Reset Zoom</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display the text of the cells in its original size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Zoom: %1%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The file does not exist anymore:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>IAEX::OtherDlg</name>

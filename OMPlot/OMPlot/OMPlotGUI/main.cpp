@@ -39,9 +39,12 @@
 #include "PlotMainWindow.h"
 #include "PlotApplication.h"
 #include "PlotWindowContainer.h"
+#include "PlotTranslator.h"
 
 #include <QMessageBox>
 #include <QDir>
+#include <QLocale>
+#include <QTranslator>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -276,6 +279,11 @@ int main(int argc, char *argv[])
   arguments.append(vars);
   // create the plot application object that is used to check that only one instance of application is running
   PlotApplication app(argc, argv, "OMPlot");
+  // load the translations, OMPlot is installed in <omhome>/bin
+  QTranslator translator;
+  if (OMPlot::loadTranslation(translator, QDir::cleanPath(QCoreApplication::applicationDirPath() + "/.."), QLocale::system().name())) {
+    app.installTranslator(&translator);
+  }
   // create the plot main window
   PlotMainWindow w;
   QObject::connect(&app, SIGNAL(messageAvailable(QStringList)),
