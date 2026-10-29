@@ -18,6 +18,7 @@ equation
 end RedeclareFlowEffort;
 // Result:
 // Error processing file: RedeclareFlowEffort.mo
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
 // [flattening/modelica/redeclare/RedeclareFlowEffort.mo:8:1-11:14:writable] Warning: Connector .Connector$c2 is not balanced: The number of potential variables (0) is not equal to the number of flow variables (2).
 // [flattening/modelica/redeclare/RedeclareFlowEffort.mo:16:3-16:18:writable] Error: Cannot connect flow component c2.e to non-flow component c1.e.
 // [flattening/modelica/redeclare/RedeclareFlowEffort.mo:16:3-16:18:writable] Error: The type of variables

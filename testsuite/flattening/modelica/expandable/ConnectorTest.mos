@@ -64,11 +64,13 @@ simulate(ConnectorTest.Test); getErrorString();
 //   As.aout.ax = Bu.bin.ax;
 // end ConnectorTest.Test;
 // "
-// ""
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// "
 // "Check of ConnectorTest.Test completed successfully.
 // Class ConnectorTest.Test has 24 equation(s) and 24 variable(s).
 // 20 of these are trivial equation(s)."
-// ""
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// "
 // record SimulationResult
 //     resultFile = "ConnectorTest.Test_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ConnectorTest.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
@@ -76,5 +78,6 @@ simulate(ConnectorTest.Test); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// "
 // endResult

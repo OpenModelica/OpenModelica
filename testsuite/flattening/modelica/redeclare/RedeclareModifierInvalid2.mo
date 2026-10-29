@@ -17,6 +17,7 @@ end RedeclareModifierInvalid2;
 
 // Result:
 // Error processing file: RedeclareModifierInvalid2.mo
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
 // [flattening/modelica/redeclare/RedeclareModifierInvalid2.mo:14:3-14:37:writable] Notification: From here:
 // [flattening/modelica/redeclare/RedeclareModifierInvalid2.mo:9:3-9:18:writable] Error: Redeclaration with a new type requires 'm2' to be replaceable.
 // Error: Error occurred while flattening model RedeclareModifierInvalid2

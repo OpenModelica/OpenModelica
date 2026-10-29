@@ -154,4 +154,6 @@ end HierarchicalAndParallelStateMachine;
 // equation
 //   v = if activeState(state1) then state1.v else if activeState(state2) then state2.v else previous(v);
 // end HierarchicalAndParallelStateMachine;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+//
 // endResult

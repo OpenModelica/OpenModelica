@@ -23,6 +23,7 @@ end ConnectFlowEffort;
 
 // Result:
 // Error processing file: ConnectFlowEffort.mo
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
 // [flattening/modelica/connectors/ConnectFlowEffort.mo:20:3-20:18:writable] Error: Cannot connect flow component c2.e to non-flow component c1.e.
 // [flattening/modelica/connectors/ConnectFlowEffort.mo:20:3-20:18:writable] Error: The type of variables
 // c1 type:

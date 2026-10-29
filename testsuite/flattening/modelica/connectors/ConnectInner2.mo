@@ -54,6 +54,7 @@ end ConnectInner2;
 //   b.a.global.e = b.a.my.e;
 //   (-b.a.my.f) + (-b.a.global.f) = 0.0;
 // end ConnectInner2;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
 // [flattening/modelica/connectors/ConnectInner2.mo:13:3-13:17:writable] Warning: No corresponding 'inner' declaration found for component .C b.a.global declared as 'outer'.
 //   The existing 'inner' components are:
 //     There are no 'inner' components defined in the model in any of the parent scopes of 'outer' component's scope: A.

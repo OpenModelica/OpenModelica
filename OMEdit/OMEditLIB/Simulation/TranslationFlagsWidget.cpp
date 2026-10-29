@@ -72,7 +72,8 @@ TranslationFlagsWidget::TranslationFlagsWidget(QWidget *pParent)
   mpEvaluateAllParametersCheckBox = new QCheckBox(tr("Evaluate all parameters (faster simulation, cannot change them at runtime)"));
   mpNLSanalyticJacobianCheckBox = new QCheckBox(tr("Enable analytical jacobian for non-linear strong components"));
   mpParmodautoCheckBox = new QCheckBox(tr("Enable parallelization of independent systems of equations (Experimental)"));
-  mpOldInstantiationCheckBox = new QCheckBox(tr("Enable old frontend for code generation"));
+  mpOldInstantiationCheckBox = new QCheckBox(tr("Enable old frontend for code generation (deprecated)"));
+  mpOldInstantiationCheckBox->setToolTip(tr("The old frontend is deprecated and will be removed after OpenModelica 1.28.0 is released."));
   mpEnableFMUImportCheckBox = new QCheckBox(tr("Enable FMU Import"));
   mpProfilingLabel = new Label(tr("Profiling (enable performance measurements)"));
   mpProfilingComboBox = new ComboBox;
