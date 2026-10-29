@@ -52,6 +52,7 @@ resizableAlgebraicLoops.mos \
 resizableFill.mos \
 resizableStreams.mos \
 resizableWholeSubscript.mos \
+resizableArrayAlias.mos \
 resizableArrayBodyFor.mos \
 array_start_vector.mos\
 array_start_int_bool_string.mos\
