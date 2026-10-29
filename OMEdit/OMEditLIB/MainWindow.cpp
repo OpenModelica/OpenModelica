@@ -4910,10 +4910,12 @@ void MainWindow::createActions()
   // Tile windows Matrix action
   mpTileWindowsMatrixAction = new QAction(tr("Tile Windows Matrix"), this);
   mpTileWindowsMatrixAction->setStatusTip(tr("Arranges all child windows in a matrix pattern"));
+  mpTileWindowsMatrixAction->setShortcut(QKeySequence("Ctrl+Alt+Shift+M"));
   connect(mpTileWindowsMatrixAction, SIGNAL(triggered()), SLOT(tileSubWindowsMatrix()));
   // Equate windows and tile them in a matrix action
   mpEquateAndTileWindowsMatrixAction = new QAction(tr("Equate && Tile Windows Matrix"), this);
   mpEquateAndTileWindowsMatrixAction->setStatusTip(tr("Equates the size of all child windows to the size of active window and arranges them in a matrix pattern"));
+  mpEquateAndTileWindowsMatrixAction->setShortcut(QKeySequence("Ctrl+Alt+Shift+E"));
   connect(mpEquateAndTileWindowsMatrixAction, SIGNAL(triggered()), SLOT(equateAndTileSubWindowsMatrix()));
   // Toggle between tab or sub-window view
   mpToggleTabOrSubWindowView = new QAction(tr("Toggle Tab/Sub-window View"), this);
@@ -5734,7 +5736,7 @@ void MainWindow::tileSubWindows(QMdiArea *pMdiArea, bool horizontally)
 /*!
  * \brief MainWindow::tileSubWindowsMatrix
  * Arranges all child windows in a matrix pattern. When resize is true the tiles are resized to fill the matrix,
- * otherwise the windows keep their sizes and may superimpose.
+ * otherwise the windows keep their sizes and are positioned using their dimensions.
  * \param pMdiArea - the subwindows parent mdi area.
  * \param resize
  */
@@ -5785,8 +5787,7 @@ void MainWindow::tileSubWindowsMatrix(QMdiArea *pMdiArea, bool resize)
         position.setX(position.x() + width);
       }
     } else {
-      // The windows keep their sizes, so they superimpose when the matrix is unfeasible.
-      pSubWindow->move(column * tileWidth, row * tileHeight);
+      pSubWindow->move(column * pSubWindow->width(), row * pSubWindow->height());
     }
     tile++;
   }
@@ -5804,7 +5805,14 @@ void MainWindow::equateSubWindowSizes(QMdiArea *pMdiArea)
     return;
   }
   // A maximized active window equates by the size it would have when restored.
-  QSize size = pActiveSubWindow->isMaximized() && !pActiveSubWindow->isShaded() ? pActiveSubWindow->normalGeometry().size() : pActiveSubWindow->size();
+  // normalGeometry() returns an empty size for maximized subwindows, so restore
+  // it first to read the real size; otherwise every window would be resized to
+  // 0x0 and the MDI area would turn blank.
+  QSize size = pActiveSubWindow->size();
+  if (pActiveSubWindow->isMaximized() && !pActiveSubWindow->isShaded()) {
+    pActiveSubWindow->showNormal();
+    size = pActiveSubWindow->size();
+  }
   QList<QMdiSubWindow*> subWindowsList = pMdiArea->subWindowList(QMdiArea::ActivationHistoryOrder);
   foreach (QMdiSubWindow *pSubWindow, subWindowsList) {
     if (pSubWindow->isVisible() && (!pSubWindow->isMinimized() || pSubWindow->isShaded())) {
