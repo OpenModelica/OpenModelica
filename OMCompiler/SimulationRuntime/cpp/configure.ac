@@ -1,6 +1,10 @@
 AC_PREREQ([2.63])
 AC_INIT([SimulationRuntimeCpp],[dev],[https://github.com/OpenModelica/OpenModelica/issues],[openmodelica],[https://openmodelica.org])
 
+dnl autoconf 2.73 appends -std=gnu23 to CC, which breaks the K&R code in the
+dnl 3rdParty libraries and the CMake builds that get CC; stay on C11
+: ${ac_cv_prog_cc_c23=no}
+
 AC_LANG([C])
 AC_PROG_CC
 AC_PROG_CXX

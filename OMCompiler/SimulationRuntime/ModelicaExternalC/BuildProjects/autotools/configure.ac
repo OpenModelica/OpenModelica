@@ -2,6 +2,10 @@ dnl Init
 AC_PREREQ([2.63])
 AC_INIT([Modelica Standard Library Tables],[4.0.0],[https://github.com/modelica/ModelicaStandardLibrary],[libmodelicastandardtables],[https://modelica.org])
 
+dnl autoconf 2.73 appends -std=gnu23 to CC, which breaks the K&R code in the
+dnl 3rdParty libraries and the CMake builds that get CC; stay on C11
+: ${ac_cv_prog_cc_c23=no}
+
 AM_INIT_AUTOMAKE([subdir-objects])
 AC_CONFIG_MACRO_DIR([m4])
 
