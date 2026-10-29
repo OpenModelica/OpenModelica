@@ -17,15 +17,14 @@ algorithm
   for k in 1:max(size(Xaux)) + offset loop
     Ydia[k,1]:=Xaux[k + abs(offset),k];
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DiagonalBlock;
 
 // Result:
 // class DiagonalBlock
-//   parameter Integer m5 = 3;
-//   parameter Integer m6 = 3;
-//   parameter Integer m7 = 1;
-//   parameter Integer m8 = 2;
+//   final parameter Integer m5 = 3;
+//   final parameter Integer m6 = 3;
+//   final parameter Integer m7 = 1;
+//   final parameter Integer m8 = 2;
 //   input Integer offset;
 //   output Real Xaux[1,1];
 //   output Real Xaux[1,2];

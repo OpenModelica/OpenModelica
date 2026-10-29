@@ -23,27 +23,14 @@ model EndUnknown
   Real x(start=1);
 equation
   der(x) = -a * x;
-  annotation(__OpenModelica_commandLineOptions="-d=noevalfunc,gen -d=-newInst");
+  annotation(__OpenModelica_commandLineOptions="-d=noevalfunc,gen");
 end EndUnknown;
 
 // Result:
-// function EndUnknown.simpson "Simpson's numerical integration formula"
-//   input Real[:] vals "function values";
-//   input Real a "Lower limit";
-//   input Real b "Upper limit";
-//   output Real res;
-// algorithm
-//   if size(vals, 1) >= 3 then
-//     res := 0.3333333333333333 * (b - a) * (vals[1] + 2.0 * sum(vals[3:2:-1 + size(vals, 1)]) + 4.0 * sum(vals[2:2:-1 + size(vals, 1)]) + vals[size(vals, 1)]) / /*Real*/(-1 + size(vals, 1));
-//   else
-//     res := 0.5 * (b - a) * sum(vals);
-//   end if;
-// end EndUnknown.simpson;
-//
 // class EndUnknown
-//   constant Real a = 0.2416666666666666;
+//   constant Real a = 0.24166666666666667;
 //   Real x(start = 1.0);
 // equation
-//   der(x) = (-0.2416666666666666) * x;
+//   der(x) = -0.24166666666666667 * x;
 // end EndUnknown;
 // endResult

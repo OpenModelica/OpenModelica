@@ -18,7 +18,6 @@ model OverrideFinalTest
  final parameter Real eAxis_ia[3](each final unit="1") = fcall({1,2,3});
  final parameter Real eAxis_ia2[3](each final unit="1") = {1,2,3};
 
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end OverrideFinalTest;
 
 // function OverrideFinalTest.fcall
@@ -29,13 +28,6 @@ end OverrideFinalTest;
 // end OverrideFinalTest.fcall;
 //
 // Result:
-// function OverrideFinalTest.fcall
-//   input Real[3] inArr;
-//   output Real[3] outArr;
-// algorithm
-//   outArr := {inArr[1], inArr[2], inArr[3]};
-// end OverrideFinalTest.fcall;
-//
 // class OverrideFinalTest
 //   final parameter Real eAxis_ia[1](unit = "1") = 1.0;
 //   final parameter Real eAxis_ia[2](unit = "1") = 2.0;

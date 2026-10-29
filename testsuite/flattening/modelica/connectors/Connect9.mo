@@ -13,12 +13,11 @@ connector C2
   output Real x;
 end C2;
 
-class Connect9
+model Connect9
   C1 c1;
   C2 c2;
 equation
   connect(c1,c2);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Connect9;
 
 // Result:
