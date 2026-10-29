@@ -276,6 +276,13 @@ algorithm
   end match;
 end createJacobian;
 
+public function isVariableOfInterest
+  "true for the variables of interest after the model has been replaced by the reconciled
+  system, they are known inputs even if they are not top level"
+  input Pointer<Variable> var_ptr;
+  output Boolean b = BVariable.isInput(var_ptr) and hasUncertainty(var_ptr, Uncertainty.REFINE);
+end isVariableOfInterest;
+
 public function isResidual
   "the residuals $RES_F_<i> are the result variables of the jacobian F"
   input Pointer<Variable> var_ptr;
