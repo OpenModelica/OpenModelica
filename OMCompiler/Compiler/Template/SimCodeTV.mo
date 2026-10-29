@@ -1569,6 +1569,11 @@ package SimCodeCodegenUtil
     output DAE.Exp exp;
   end simVarSizeExp;
 
+  function typeSizeExp
+    input DAE.Type ty;
+    output DAE.Exp exp;
+  end typeSizeExp;
+
   function simVarDimExps
     input SimCodeVar.SimVar var;
     output list<DAE.Exp> exps;

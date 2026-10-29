@@ -1392,7 +1392,7 @@ algorithm
   end match;
 end simIteratorSizeExp;
 
-protected function typeSizeExp
+public function typeSizeExp
   "the number of scalar elements of a type as an expression"
   input DAE.Type ty;
   output DAE.Exp exp = DAE.ICONST(1);
