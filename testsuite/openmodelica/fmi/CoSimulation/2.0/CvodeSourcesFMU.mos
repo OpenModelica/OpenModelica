@@ -1,0 +1,51 @@
+// name:     CvodeSourcesFMU
+// keywords: fmu export cvode cross compilation
+// suite: fmuCSources
+// status: correct
+// teardown_command: rm -rf CvodeSources.fmu CvodeSources_* CvodeSources-tmp reCompile.log
+//
+// A Co-Simulation FMU integrates with CVODE by default. Re-compiled where the
+// SUNDIALS libraries of the installation are not found, as when cross
+// compiling, it compiles CVODE and KLU from sources/cvode_sources.
+
+loadString("
+model CvodeSources
+  Real x(start = 1, fixed = true);
+  Real y(start = 0, fixed = true);
+equation
+  der(x) = -1000*(x - y);
+  der(y) = 1 - y;
+end CvodeSources;
+"); getErrorString();
+
+setCommandLineOptions("--fmiSources=true"); getErrorString();
+buildModelFMU(CvodeSources, version="2.0", fmuType="cs", platforms={"static"}); getErrorString();
+
+system("rm -rf CvodeSources_FMU && unzip -qq CvodeSources.fmu -d CvodeSources_FMU", outputFile="reCompile.log"); getErrorString();
+system("cmake -S CvodeSources_FMU/sources -B CvodeSources_FMU/sources/build_cmake -DCVODE_DIRECTORY=CvodeSources_none | grep -o 'CVODE: Compiled from cvode_sources'"); getErrorString();
+system("cmake --build CvodeSources_FMU/sources/build_cmake --target create_fmu", outputFile="reCompile.log"); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator CvodeSources.fmu --mode=cs --stopTime=1 --stepSize=0.01 --resultFile=CvodeSources_res.mat --stripRoot --suppressPath --tempDir=CvodeSources-tmp", "CvodeSources_systemCall.log"); getErrorString();
+val(y, 1.0, "CvodeSources_res.mat"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "CvodeSources.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// CVODE: Compiled from cvode_sources
+// 0
+// ""
+// 0
+// ""
+// 0
+// ""
+// 0.6321212373581759
+// ""
+// endResult

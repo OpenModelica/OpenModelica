@@ -1087,7 +1087,7 @@ algorithm
       list<String> simrt_mixed_solver_sources, fmi_export_files, model_gen_files, model_all_gen_files, shared_source_files;
       list<String> rust_crate_roots;
       list<String> simrt_c_sources;
-      Boolean rustRuntime, rustFmi;
+      Boolean rustRuntime, rustFmi, cvodeIntegrator;
       SimCode.VarInfo varInfo;
     case (SimCode.SIMCODE(),"wasm-jit")
       algorithm
@@ -1258,6 +1258,8 @@ algorithm
         // importer, and the FMI 1.0 export only ships fmu1_model_interface.h, so copying the
         // sundials sources there breaks compilation (fatal error:
         // 'fmi-export/fmu2_model_interface.h' file not found). See issue #15838.
+        cvodeIntegrator := FMUVersion <> "1.0" and not rustFmi and FMI.isFMICSType(FMUType)
+                           and SimCodeUtil.csSolverIsCvode(simCode.fmiSimulationFlags);
         if FMUVersion == "1.0" then
           // The in-FMU CVODE integrator does not apply to a model-exchange FMU; warn that the
           // 's:cvode' flag is ignored and do not pull in the sundials sources (they would not
@@ -1266,11 +1268,13 @@ algorithm
             Error.addCompilerWarning("OpenModelica exports FMI 1.0 as Model Exchange only (Co-Simulation export requires FMI 2.0). A model-exchange FMU is integrated by the importer, so the in-FMU CVODE integrator does not apply. The 's:cvode' simulation flag is ignored for this FMI 1.0 export.");
           end if;
           simrt_c_sundials_sources := {};
-        elseif not rustFmi and SimCodeUtil.cvodeFmiFlagIsSet(simCode.fmiSimulationFlags) then
-          // The sundials headers are in the include directory.
-          copyFiles(RuntimeSources.sundials_headers, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
+        elseif cvodeIntegrator then
           copyFiles(RuntimeSources.simrt_c_sundials_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-          simrt_c_sundials_sources := RuntimeSources.simrt_c_sundials_sources;
+          if not (System.copyPath(install_fmu_sources_dir + "/" + RuntimeSources.cvode_sources_dir + "/include", fmu_tmp_sources_dir)
+                  and System.copyPath(install_fmu_sources_dir + "/" + RuntimeSources.cvode_sources_dir + "/src", fmu_tmp_sources_dir + RuntimeSources.cvode_sources_dir)) then
+            Error.addInternalError("Failed to copy " + install_fmu_sources_dir + "/" + RuntimeSources.cvode_sources_dir + " to " + fmu_tmp_sources_dir, sourceInfo());
+          end if;
+          simrt_c_sundials_sources := listAppend(RuntimeSources.simrt_c_sundials_sources, RuntimeSources.cvode_sources);
         else
           simrt_c_sundials_sources := {};
         end if;
@@ -1437,14 +1441,7 @@ algorithm
 
         // Add external libraries and includes
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMI_INTERFACE_HEADER_FILES_DIRECTORY@", "\"" + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + "\"");
-        // FMI 1.0 (Model Exchange only) never links CVODE into the FMU (see note above where the
-        // sundials sources are skipped for FMI 1.0); keep NEED_CVODE=OFF so cvode_solver.c and
-        // sundials_error.c are not compiled. See issue #15838.
-        if FMUVersion == "1.0" or rustFmi then
-          (needCvode, cvodeDirectory) := ("OFF", "\"\"");
-        else
-          (needCvode, cvodeDirectory) := SimCodeUtil.getCmakeSundialsLinkCode(simCode.fmiSimulationFlags);
-        end if;
+        (needCvode, cvodeDirectory) := SimCodeUtil.getCmakeSundialsLinkCode(cvodeIntegrator);
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@NEED_CVODE@", needCvode);
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@CVODE_DIRECTORY@", cvodeDirectory);
         // --simCodeTarget=C+Rust: name the installed archive, which is what this
@@ -1492,6 +1489,9 @@ algorithm
           CodegenFMU.settingsfile,
           simCode,
           txt=Tpl.redirectToFile(Tpl.emptyTxt, fmutmp+"/sources/omc_simulation_settings.h")));
+        if cvodeIntegrator then
+          System.appendFile(fmutmp+"/sources/omc_simulation_settings.h", "\n#if !defined(WITH_SUNDIALS)\n#define WITH_SUNDIALS 1\n#endif\n");
+        end if;
       then ();
     case (_,"Cpp")
       algorithm

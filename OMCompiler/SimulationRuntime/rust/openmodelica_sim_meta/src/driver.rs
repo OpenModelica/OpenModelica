@@ -9978,9 +9978,8 @@ pub enum CsStep {
 }
 
 /// C's `FMI2CS_initializeSolverData`: an FMU's solver is set up in
-/// `fmi2Instantiate`, and for CVODE `LOG_SOLVER` is forced on across
-/// `cvode_solver_initial` so the banner reaches the log either way. `defer` decides
-/// the root-finding line — see [`CsDriver::new`].
+/// `fmi2Instantiate`, where CVODE logs its configuration to `LOG_SOLVER`. `defer`
+/// decides the root-finding line — see [`CsDriver::new`].
 pub fn log_cs_solver_setup(model: &SimModel, defer: CsDefer) {
     let Ok(method) = resolve_solver_method(model.cs_method(), model.layout.dae_mode()) else {
         return;
@@ -9993,15 +9992,12 @@ pub fn log_cs_solver_setup(model: &SimModel, defer: CsDefer) {
     #[cfg(sundials)]
     {
         let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
-        let mask = omclog::mask();
-        omclog::set_mask(mask | (1 << omclog::SOLVER));
         log_cvode_configuration(
             tol,
             defer == CsDefer::Any,
             crate::simflags::with_flags(|f| crate::simflags::cvode_config(&f)),
             cvode_jacobian_method(cvode_jac_a(model)),
         );
-        omclog::set_mask(mask);
     }
     #[cfg(not(sundials))]
     let _ = defer;

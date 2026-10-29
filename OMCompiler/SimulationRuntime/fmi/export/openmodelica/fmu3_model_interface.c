@@ -2644,10 +2644,10 @@ static fmi3Status doStepInternal(ModelInstance* c, fmi3Float64 currentCommunicat
         break;
       case S_CVODE:
 #ifdef WITH_SUNDIALS
-        flag = cvode_solver_fmi_step(comp, tNext, states);
+        flag = cvode_solver_fmi_step(comp->fmuData, comp->threadData, comp->solverInfo, tNext, states);
         if (flag < 0)
         {
-          FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "fmi3DoStep: CVODE integrator step failed.")
+          FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "fmi3DoStep: CVODE integrator step failed with flag %d at time %.15g.", flag, comp->solverInfo->currentTime)
           status = fmi3Fatal;
           goto doStep_cleanup;
         }
@@ -2933,7 +2933,7 @@ void parseFlags(SOLVER_INFO *solverInfo, const char *str)
  * @brief Initialize solver data.
  *
  * Reads optional FMU simulation flags from <fmiPrefix>.fmu/resources/<fmiPrefix>_flags.json.
- * Initialize solver euler or CVODE.
+ * Initialize solver euler or CVODE, the default if the FMU has SUNDIALS.
  *
  * @param comp          FMU component.
  * @return int          Return 0 on success and -1 when an error occurred.
@@ -2957,7 +2957,11 @@ int FMI3CS_initializeSolverData(ModelInstance* comp)
   solverInfo->currentTime = 0;
   solverInfo->currentStepSize = 0;
   solverInfo->laststep = 0;
-  solverInfo->solverMethod = 0;
+#ifdef WITH_SUNDIALS
+  solverInfo->solverMethod = S_CVODE;
+#else
+  solverInfo->solverMethod = S_EULER;
+#endif
   solverInfo->solverRootFinding = 0;
   solverInfo->solverNoEquidistantGrid = FALSE;
   solverInfo->lastdesiredStep = solverInfo->currentTime + solverInfo->currentStepSize;
@@ -2985,7 +2989,6 @@ int FMI3CS_initializeSolverData(ModelInstance* comp)
   else
   {
     FILTERED_LOG(comp, fmi3OK, LOG_ALL, "omcInstantiate: Using default simulation settings.")
-    solverInfo->solverMethod = S_EULER;
   }
 
   /* If no states are present, we can use Euler's method since it is doing nothing. */
@@ -3003,23 +3006,23 @@ int FMI3CS_initializeSolverData(ModelInstance* comp)
       break;
       case S_CVODE:
 #ifdef WITH_SUNDIALS
-      omc_useStream[OMC_LOG_SOLVER] = 1;
-      CVODE_SOLVER* cvodeData = NULL;
-      FILTERED_LOG(comp, fmi3OK, LOG_ALL, "Initializing CVODE ODE Solver")
-      cvodeData = (CVODE_SOLVER*) calloc(1, sizeof(CVODE_SOLVER));
-      if (!cvodeData) {
-        FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "omcInstantiate: Out of memory.")
-        free(solverInfo);
-        return -1;
-      } else {
-        /* FMI 3.0 has no memory callbacks, so plain free matches the calloc
-         * above. Must be set: cvode_solver_deinitial frees the struct through
-         * this pointer, which calloc left NULL. */
-        cvodeData->freeSolverMemory = free;
-        retValue = cvode_solver_initial(data, threadData, solverInfo, cvodeData, 1 /* is FMI */);   /* TODO: cvode_solver_initial needs to use malloc and free */
+      {
+        CVODE_SOLVER* cvodeData = NULL;
+        FILTERED_LOG(comp, fmi3OK, LOG_ALL, "Initializing CVODE ODE Solver")
+        cvodeData = (CVODE_SOLVER*) calloc(1, sizeof(CVODE_SOLVER));
+        if (!cvodeData) {
+          FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "omcInstantiate: Out of memory.")
+          free(solverInfo);
+          return -1;
+        } else {
+          /* FMI 3.0 has no memory callbacks, so plain free matches the calloc
+           * above. Must be set: cvode_solver_deinitial frees the struct through
+           * this pointer, which calloc left NULL. */
+          cvodeData->freeSolverMemory = free;
+          retValue = cvode_solver_initial(data, threadData, solverInfo, cvodeData, 1 /* is FMI */);   /* TODO: cvode_solver_initial needs to use malloc and free */
+        }
+        solverInfo->solverData = cvodeData;
       }
-      solverInfo->solverData = cvodeData;
-      omc_useStream[OMC_LOG_SOLVER] = 0;
 #else
       solverInfo->solverData = NULL;
       FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "omcInstantiate: FMU not compiled with SUNDIALS but solver CVODE selected.")
