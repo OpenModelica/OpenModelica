@@ -49,6 +49,7 @@ resizableTearStart.mos \
 resizableConnectArrays.mos \
 resizableConnectSizeAlias.mos \
 resizableManySizes.mos \
+resizableContiguousSlice.mos \
 literalConnects.mos \
 resizableSparseLoop.mos \
 resizableInputs.mos \
