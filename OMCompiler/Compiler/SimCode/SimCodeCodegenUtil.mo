@@ -2414,7 +2414,7 @@ public function contiguousSliceStart
   "The subscripts of the first element of a slice that is one block of its
    variable's storage, {} for any other slice. Such a slice has scalar
    subscripts, then optionally one literal range with step 1, then whole
-   dimensions, over constant dimensions."
+   dimensions. Only the sliced dimensions need constant sizes."
   input list<DAE.Subscript> subs;
   input list<DAE.Dimension> dims;
   output list<DAE.Subscript> start;
@@ -2445,18 +2445,18 @@ protected
   Boolean inBlock = false, sliced = false, ok;
 algorithm
   for dim in dims loop
-    d := match dim case DAE.DIM_INTEGER() then dim.integer; else -1; end match;
+    d := match dim case DAE.DIM_INTEGER() then dim.integer; case DAE.DIM_UNKNOWN() then 0; else -1; end match;
     if listEmpty(rest) then
       sub := DAE.WHOLEDIM();
     else
       sub :: rest := rest;
     end if;
-    ok := if d < 1 then false else match sub
-      case DAE.INDEX(exp = DAE.ICONST(integer = i)) guard not inBlock and i >= 1 and i <= d
+    ok := match sub
+      case DAE.INDEX(exp = DAE.ICONST(integer = i)) guard not inBlock and i >= 1 and (d < 0 or i <= d)
         algorithm
           start := sub :: start;
         then true;
-      case DAE.INDEX(exp = e) guard not inBlock and not Expression.isConst(e) and Types.isInteger(Expression.typeof(e))
+      case DAE.INDEX(exp = e) guard not inBlock and d <> 0 and not Expression.isConst(e) and Types.isInteger(Expression.typeof(e))
         algorithm
           start := sub :: start;
         then true;
@@ -2468,7 +2468,7 @@ algorithm
           start := DAE.INDEX(DAE.ICONST(i)) :: start;
           sliceDims := (j - i + 1) :: sliceDims;
         then true;
-      case DAE.WHOLEDIM()
+      case DAE.WHOLEDIM() guard d >= 1
         algorithm
           inBlock := true;
           start := DAE.INDEX(DAE.ICONST(1)) :: start;
