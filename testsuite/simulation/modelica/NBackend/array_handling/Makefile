@@ -38,6 +38,7 @@ resizableSizeDimension.mos \
 resizableDiffIteratorArray.mos \
 resizableOverrideDerived.mos \
 resizableAliasStart.mos \
+resizableStartSize.mos \
 resizablePartialLoops.mos \
 resizableArrayJacobian.mos \
 resizableMergedJacobian.mos \

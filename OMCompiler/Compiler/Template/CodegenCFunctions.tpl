@@ -9018,7 +9018,7 @@ template startArrayEnsureSize(ComponentRef cr)
   written into it, it has to hold one element per array element."
 ::=
   match getDimensionSizes(crefTypeFull(crefStripSubs(popCref(cr))))
-  case sizes as _::_ then
+  case _::_ then
     match cref2simvar(crefStripSubs(popCref(cr)), getSimCode())
     case var as SIMVAR(__) then
       let ty = crefShortType(name)
@@ -9027,7 +9027,7 @@ template startArrayEnsureSize(ComponentRef cr)
         case "integer"
         case "boolean" then
           let &nosub = buffer ""
-          let size = if isSymbolicArrayVar(var) then varSizeRuntime(var) else (sizes ; separator="*")
+          let size = if isSymbolicArrayVar(var) then varSizeRuntime(var) else typeSizeRuntime(crefTypeFull(crefStripSubs(popCref(cr))))
           '<%ty%>_array_ensure_size(&<%varAttributes(var, &nosub)%>.start, <%size%>);'
         else ""
     else ""
@@ -9043,6 +9043,16 @@ template varSizeRuntime(SimVar var)
   let &aux = buffer ""
   '(<%daeExp(simVarSizeExp(var), contextSimulationNonDiscrete, &preExp, &varDecls, &varFrees, &aux)%>)'
 end varSizeRuntime;
+
+template typeSizeRuntime(DAE.Type ty)
+ "the number of elements of an array type at runtime"
+::=
+  let &preExp = buffer ""
+  let &varDecls = buffer ""
+  let &varFrees = buffer ""
+  let &aux = buffer ""
+  '(<%daeExp(typeSizeExp(ty), contextSimulationNonDiscrete, &preExp, &varDecls, &varFrees, &aux)%>)'
+end typeSizeRuntime;
 
 template startArrayScatterEnsureSize(ComponentRef cr, Text type, Text arr)
  "Without --simCodeScalarize the array is one VarsData entry. Its start
