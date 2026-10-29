@@ -19,11 +19,10 @@ model UnusedInput
   Real x = sinxx(time);
   Real y = sinxy(time);
 
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end UnusedInput;
 
 // Result:
-// function UnusedInput.sinxx
+// impure function UnusedInput.sinxx
 //   input Real x;
 //   output Real y;
 //
@@ -41,6 +40,4 @@ end UnusedInput;
 //   Real x = UnusedInput.sinxx(time);
 //   Real y = UnusedInput.sinxy(time);
 // end UnusedInput;
-// [flattening/modelica/algorithms-functions/UnusedInput.mo:7:5-7:17:writable] Warning: Unused input variable x in function .UnusedInput.sinxx.
-//
 // endResult

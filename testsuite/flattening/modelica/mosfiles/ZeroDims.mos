@@ -1,7 +1,6 @@
 //name:        Check model with zero dimension arrays.
 //keyword:     checking models.
 //status:      correct
-// cflags: -d=-newInst
 //
 //
 // check model example
@@ -21,7 +20,7 @@ instantiateModel(ZeroDims); getErrorString();
 //     parameter Real length = 0.0;
 //   end ZeroDim;
 //
-//   input Integer lines[:, 2, 2] = zeros(0, 2, 2);
+//   parameter Integer lines[:, 2, 2] = zeros(0, 2, 2);
 //   parameter Integer n = size(lines, 1);
 //   ZeroDim c[n](length = {0.0 for i in 1:n});
 // end ZeroDims;"
@@ -31,7 +30,7 @@ instantiateModel(ZeroDims); getErrorString();
 // 0 of these are trivial equation(s)."
 // ""
 // "class ZeroDims
-//   parameter Integer n = 0;
+//   final parameter Integer n = 0;
 // end ZeroDims;
 // "
 // ""

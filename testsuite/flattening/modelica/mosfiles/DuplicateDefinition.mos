@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 
 setCommandLineOptions("-g=MetaModelica -d=nogen");
 loadString("
@@ -48,8 +47,18 @@ instantiateModel(M);getErrorString();
 //
 // "[<f2>:10:3-10:20:writable] Error: The same variable is being defined twice: x.
 // "
-// ""
-// "[<M>:5:3-5:25:writable] Error: The same variable is being defined twice: x.
-// Error: Error occurred while flattening model M
+// "function f
+//   input Real x1;
+//   input Real x2;
+//   output Real o1 = x1;
+//   output Real o2 = x2;
+// end f;
+//
+// class M
+//   Real x;
+// equation
+//   (x, x) = f(time, 2.0 * time);
+// end M;
 // "
+// ""
 // endResult

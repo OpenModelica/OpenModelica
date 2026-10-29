@@ -5,13 +5,12 @@
 // check that modifiers on redeclare are not lost
 //
 
-class C1
+model C1
   replaceable parameter Real r=3.14;
 end C1;
 
 model C2
   replaceable parameter C1 x1(redeclare replaceable Real r=3);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end C2;
 
 // Result:

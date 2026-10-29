@@ -38,18 +38,10 @@ end Mine;
 
 model ArrayAsAliasInExtends
   extends Mine.Theirs;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayAsAliasInExtends;
 
 
 // Result:
-// function Orientation.equalityConstraint
-//   input Real[NowLetsSee] x(unit = "fish/s");
-//   output Real y;
-// algorithm
-//   y := x[NowLetsSee.one] + x[NowLetsSee.two] + x[NowLetsSee.three];
-// end Orientation.equalityConstraint;
-//
 // class ArrayAsAliasInExtends
 //   parameter Real R1[NowLetsSee.one](unit = "fish/s") = 1.0;
 //   parameter Real R1[NowLetsSee.two](unit = "fish/s") = 2.0;

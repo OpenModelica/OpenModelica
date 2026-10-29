@@ -19,7 +19,7 @@ model ExternalFunction1
   Real y;
 equation
   y = f(x);
-  annotation(__OpenModelica_commandLineOptions="-d=gen -d=-newInst");
+  annotation(__OpenModelica_commandLineOptions="-d=gen");
 end ExternalFunction1;
 
 
@@ -31,7 +31,7 @@ end ExternalFunction1;
 // end f;
 //
 // Result:
-// function f
+// impure function f
 //   input Real x;
 //   output Real y;
 //
@@ -42,6 +42,6 @@ end ExternalFunction1;
 //   constant Real x = 5.0;
 //   Real y;
 // equation
-//   y = 15.0;
+//   y = f(5.0);
 // end ExternalFunction1;
 // endResult
