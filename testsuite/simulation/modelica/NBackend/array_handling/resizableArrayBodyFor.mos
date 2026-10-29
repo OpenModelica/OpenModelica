@@ -1,0 +1,43 @@
+// name: resizableArrayBodyFor
+// keywords: NewBackend resizable for-equation array body
+// status: correct
+// cflags: --newBackend --resizableArrays
+// suite: cSources
+// teardown_command: rm -f resizableArrayBodyFor resizableArrayBodyFor_* resizableArrayBodyFor.log
+//
+// A torn for-equation with an array body has to stay a loop over N instead of
+// one equation per element of the size it was built with.
+
+loadString("
+model resizableArrayBodyFor
+  parameter Integer N = 4;
+  constant Real c[3] = {1, 2, 3};
+  Real x[N, 3](each start = 1);
+  Real y[N](each start = 1);
+equation
+  for i in 1:N loop
+    x[i, :] = c*sin(y[i]) + c .* x[i, :].^2/10 + fill(if i > 1 then y[i-1] else 0.5, 3);
+  end for;
+  for i in 1:N loop
+    y[i] = cos(sum(x[i, :]))/2 + time;
+  end for;
+end resizableArrayBodyFor;
+"); getErrorString();
+
+simulate(resizableArrayBodyFor, stopTime = 0.1, simflags = "-override=N=7"); getErrorString();
+val(x[7, 3], 0.1);
+val(y[6], 0.1);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "resizableArrayBodyFor_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'resizableArrayBodyFor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=N=7'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.724365886456321
+// 0.14317397034245447
+// endResult
