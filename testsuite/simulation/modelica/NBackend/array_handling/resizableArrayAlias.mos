@@ -1,0 +1,70 @@
+// name: resizableArrayAlias
+// keywords: NewBackend resizable alias
+// status: correct
+// cflags: --newBackend --resizableArrays -d=dumprepl
+// suite: cSources
+// teardown_command: rm -f resizableArrayAlias resizableArrayAlias_* resizableArrayAlias.log
+//
+// A for-equation over 1:N that equates two whole arrays of size N is an alias.
+
+loadString("
+model resizableArrayAlias
+  parameter Integer N = 3;
+  Real x[N], y[N], z[N];
+equation
+  for i in 1:N loop
+    x[i] = y[i];
+  end for;
+  for i in 1:N loop
+    der(y[i]) = -i*z[i];
+    z[i] = sin(x[i]) + time;
+  end for;
+end resizableArrayAlias;
+"); getErrorString();
+
+simulate(resizableArrayAlias, stopTime = 0.1, simflags = "-override=N=5"); getErrorString();
+val(x[5], 0.1);
+// Result:
+// true
+// ""
+// =====================================
+//   [dumprepl] Simulation Alias Sets:
+// =====================================
+//
+// Alias Set 1:
+// **************
+// 	<No Constant/Parameter Binding>
+// 	### Set Equations:
+// 	[ARRY] (3) x = y; ($RES_SIM_4)
+//
+// [dumprepl] Constant Replacements:
+// ***********************************
+// [dumprepl] Trivial Alias Replacements:
+// ****************************************
+// 	y	 ==> 	x
+// [dumprepl] Nontrivial Alias Replacements:
+// *******************************************
+//
+// ==================================
+//   [dumprepl] Clocked Alias Sets:
+// ==================================
+//
+// <No Clocked Alias Sets>
+//
+// [dumprepl] Constant Replacements:
+// ***********************************
+// [dumprepl] Trivial Alias Replacements:
+// ****************************************
+// [dumprepl] Nontrivial Alias Replacements:
+// *******************************************
+//
+// record SimulationResult
+//     resultFile = "resizableArrayAlias_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'resizableArrayAlias', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=N=5'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -0.02130843995492038
+// endResult
