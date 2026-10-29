@@ -10508,6 +10508,16 @@ impl CsDriver {
 }
 
 impl EventsDriver {
+    fn snap_stop_time(&mut self, e: &mut dyn SimEngine, stop: f64) -> Result<()> {
+        let t = self.core.t;
+        if t < stop && stop - t <= 8.0 * f64::EPSILON * fmath::fabs(t).max(fmath::fabs(stop)) {
+            self.core.t = stop;
+            self.reached = stop;
+            write_time(e, self.core.sim_data, stop)?;
+        }
+        Ok(())
+    }
+
     /// `gbode` is built (and has logged its setup) by [`make_driver`] before
     /// initialization, as C's `gbode_allocateData` runs before `initializeModel`.
     fn new(
@@ -10626,13 +10636,11 @@ impl Driver for EventsDriver {
             emit_row(e, &mut self.rows, sim_data, layout, self.core.t, stop)?;
         }
         let tout_of = |row: u32| if no_grid { stop } else { grid(row) };
-        // C ends on `currentTime >= stopTime`, not on a row count, so a last grid
-        // point left short of `stop` gets one more step at `grid(n_steps + 1)`.
         let more = |row: u32, t: f64| {
             if no_grid || n_steps == 0 {
                 row < n_rows
             } else {
-                t < stop
+                t < stop && stop - t > 8.0 * f64::EPSILON * fmath::fabs(t).max(fmath::fabs(stop))
             }
         };
         // C's `perform_simulation` skips an output point an event step already
@@ -10862,6 +10870,7 @@ impl Driver for EventsDriver {
                 self.did_event_step = event_step;
                 self.row += u32::from(!self.retry.holds()); // a shortened step leaves its output point ahead
             }
+            self.snap_stop_time(e, stop)?;
             self.finished = true;
             return Ok(Advance::Done);
         }
@@ -10991,6 +11000,9 @@ impl Driver for EventsDriver {
         };
         self.core.nfe = ctx.nfe;
         self.retry.end(e); // a `break` out of the region still has to leave it
+        if matches!(outcome, Advance::Done) {
+            self.snap_stop_time(e, stop)?;
+        }
         if matches!(outcome, Advance::Done | Advance::Terminated) {
             self.finished = true;
         }
@@ -11021,6 +11033,10 @@ impl Driver for EventsDriver {
 
     fn fill_stats(&mut self, _model: &SimModel, stats: &mut SolveStats) {
         self.core.fill_stats(stats);
+    }
+
+    fn terminal_time(&self) -> Option<f64> {
+        Some(self.core.t)
     }
 }
 
