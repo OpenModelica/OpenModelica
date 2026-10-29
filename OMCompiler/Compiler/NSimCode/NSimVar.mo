@@ -1270,7 +1270,8 @@ public
       for var in vars.algVars loop
         UnorderedMap.add(SimVar.getName(var), var, map);
       end for;
-      vars.dataReconSetcVars  := list(getDataReconciliationVar(v, map) for v in data.residualVars);
+      // the runtime reads setcVars in reverse order, the rows of the jacobian F are in the order of the residuals
+      vars.dataReconSetcVars  := list(getDataReconciliationVar(v, map) for v in listReverse(data.residualVars));
       vars.dataReconinputVars := list(getDataReconciliationVar(v, map) for v in data.inputVars);
       vars.dataReconSetBVars  := list(getDataReconciliationVar(v, map) for v in data.unmeasuredVars);
     end addDataReconciliation;
