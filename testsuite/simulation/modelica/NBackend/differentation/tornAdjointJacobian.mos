@@ -1,0 +1,844 @@
+// name: tornAdjointJacobian
+// keywords: NewBackend, differentiation, jacobian, adjoint, tearing
+// status: correct
+
+loadString("
+model NBTornAdjoint
+  Real x(start=1, fixed=true);
+  Real y, z;
+equation
+  y + 3*z + cos(time) + x = 0;
+  z + y/4 - x = 0;
+  der(x) = y - 0.1*x;
+end NBTornAdjoint;
+
+model NBTornAdjointPositive
+  Real x(start=1, fixed=true);
+  Real y, z;
+equation
+  y + 3*z + cos(time) = 0;
+  z + y/4 + x = 0;
+  der(x) = y - 0.1*x;
+end NBTornAdjointPositive;
+
+model NBTornAdjointChain
+  Real x(start=1, fixed=true);
+  Real y(start=0) annotation(__OpenModelica_tearingSelect = TearingSelect.always);
+  Real z(start=1) annotation(__OpenModelica_tearingSelect = TearingSelect.never);
+  Real w(start=2) annotation(__OpenModelica_tearingSelect = TearingSelect.never);
+  Real v(start=3) annotation(__OpenModelica_tearingSelect = TearingSelect.never);
+equation
+  z = x + 2*y;
+  w = z*z + x;
+  v = w + z*x;
+  y + v + x*y = 3;
+  der(x) = y + 2*z + 3*w + v - 0.1*x;
+end NBTornAdjointChain;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --generateDynamicJacobian=symbolicadjoint -d=symjacdump"); getErrorString();
+buildModel(NBTornAdjoint); getErrorString();
+buildModel(NBTornAdjointPositive); getErrorString();
+
+setCommandLineOptions("--tearingMethod=guruTearing"); getErrorString();
+buildModel(NBTornAdjointChain); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// #################################################
+//
+//     [symjacdump] Creating symbolic Jacobians:
+//
+// #################################################
+//
+// ================================
+//   (1) Continuous ODE Partition
+// ================================
+//
+// --- Alias of INI[1 | 2] ---
+// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real $FUN_1
+// ### Equation:
+// 	[SCAL] (1) $FUN_1 = cos(time); ($RES_AUX_3)
+//
+// --- Alias of INI[1 | 3] ---
+// BLOCK 2: Algebraic Loop (Linear = true, Mixed = false, Homotopy = false, size = 2)
+// ------------------------------------------------------------------------------------
+// Strict Tearing Set
+// ********************
+// ### Iteration Variables:
+//     [ALGB] (1) Real y
+// ### Residual Equations:
+//     [SCAL] (1) $RES_SIM_1 = -((0.25 * y + z) - x); ($RES_SIM_1)
+// ### Inner Equations:
+//     BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real z
+// ### Equation:
+// 	[SCAL] (1) z = 0.3333333333333333 * (-(x + y + $FUN_1)); ($RES_SIM_2)
+//
+// --- Alias of INI[1 | 4] ---
+// BLOCK 3: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real $DER.x
+// ### Equation:
+// 	[SCAL] (1) $DER.x = y - 0.1 * x; ($RES_SIM_0)
+//
+// ###############################################
+//
+//     [ODE] Jacobian ODE_JAC_ADJ: ODE Adjoint
+//
+// ###############################################
+//
+// Partial Derivative Variables (9/9)
+// ************************************
+// (1)       [JVAR] (1) Real $pDER_ODE_JAC_ADJ.x
+// (2)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_1
+// (3)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_2
+// (4)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_3
+// (5)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_4
+// (6)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_5
+// (7)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.$FUN_1
+// (8)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.y
+// (9)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.z
+//
+// Seed Variables (1/1)
+// **********************
+// (1)       [SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.x
+//
+// BLOCK 1: Multi Strong Component (status = Solve.EXPLICIT, size = 2)
+// ---------------------------------------------------------------------
+// ### Variables:
+// 	[JVAR] (1) Real $pDER_ODE_JAC_ADJ.x
+// 	[JTMP] (1) Real $pDER_ODE_JAC_ADJ.y
+// ### Equation:
+// 	[ALGO] (2) ($RES_ODE_JAC_ADJ_12)
+// 	[----] $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x - 0.1 * $SEED_ODE_JAC_ADJ.$DER.x;
+// 	[----] $pDER_ODE_JAC_ADJ.y := $pDER_ODE_JAC_ADJ.y + $SEED_ODE_JAC_ADJ.$DER.x;
+//
+//
+// BLOCK 2: Algebraic Loop (Linear = true, Mixed = false, Homotopy = false, size = 8)
+// ------------------------------------------------------------------------------------
+// Strict Tearing Set
+// ********************
+// ### Iteration Variables:
+//     [JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_1
+// ### Residual Equations:
+//     [SCAL] (1) $RES_ODE_JAC_ADJ_10 = $pDER_ODE_JAC_ADJ.y - $pDER_ODE_JAC_ADJ.$TMP_4; ($RES_ODE_JAC_ADJ_10)
+// ### Inner Equations:
+//     BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_JAC_ADJ.$TMP_2
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC_ADJ.$TMP_2 = $pDER_ODE_JAC_ADJ.$TMP_1; ($RES_ODE_JAC_ADJ_5)
+//
+//   BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_JAC_ADJ.$TMP_3
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC_ADJ.$TMP_3 = 0.0; ($RES_ODE_JAC_ADJ_6)
+//
+//   BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_JAC_ADJ.$TMP_4
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC_ADJ.$TMP_4 = (-$pDER_ODE_JAC_ADJ.$TMP_1) .* 0.25; ($RES_ODE_JAC_ADJ_7)
+//
+//   BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_JAC_ADJ.$TMP_5
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC_ADJ.$TMP_5 = -($pDER_ODE_JAC_ADJ.$TMP_1 + $pDER_ODE_JAC_ADJ.z); ($RES_ODE_JAC_ADJ_8)
+//
+//   BLOCK: Multi Strong Component (status = Solve.EXPLICIT, size = 3)
+// -------------------------------------------------------------------
+// ### Variables:
+// 	[JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_2
+// 	[JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_4
+// 	[JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_3
+// ### Equation:
+// 	[ALGO] (3) ($RES_ODE_JAC_ADJ_9)
+// 	[----] $pDER_ODE_JAC_ADJ.$TMP_2 := $pDER_ODE_JAC_ADJ.$TMP_2 - 0.3333333333333333 * $pDER_ODE_JAC_ADJ.$TMP_5;
+// 	[----] $pDER_ODE_JAC_ADJ.$TMP_4 := $pDER_ODE_JAC_ADJ.$TMP_4 - 0.3333333333333333 * $pDER_ODE_JAC_ADJ.$TMP_5;
+// 	[----] $pDER_ODE_JAC_ADJ.$TMP_3 := $pDER_ODE_JAC_ADJ.$TMP_3 - 0.3333333333333333 * $pDER_ODE_JAC_ADJ.$TMP_5;
+//
+//
+// BLOCK 3: Multi Strong Component (status = Solve.EXPLICIT, size = 2)
+// ---------------------------------------------------------------------
+// ### Variables:
+// 	[JVAR] (1) Real $pDER_ODE_JAC_ADJ.x
+// 	[JTMP] (1) Real $pDER_ODE_JAC_ADJ.$FUN_1
+// ### Equation:
+// 	[ALGO] (2) ($RES_ODE_JAC_ADJ_11)
+// 	[----] $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x - $pDER_ODE_JAC_ADJ.$TMP_2;
+// 	[----] $pDER_ODE_JAC_ADJ.$FUN_1 := $pDER_ODE_JAC_ADJ.$FUN_1 - $pDER_ODE_JAC_ADJ.$TMP_3;
+//
+//
+// =============================
+//   SPARSITY Adjacency Matrix
+// =============================
+//
+// 0  | {1} .$RES_SIM_0 ...{$SEED_ODE_JAC_ADJ.$DER.x} ... {$pDER_ODE_JAC_ADJ.x[{}]}
+//
+//
+// BLOCK: Algebraic Loop (Linear = true, Mixed = false, Homotopy = false, size = 2)
+// ----------------------------------------------------------------------------------
+// Strict Tearing Set
+// ********************
+// ### Iteration Variables:
+//     [ALGB] (1) Real y
+// ### Residual Equations:
+//     [SCAL] (1) $RES_SIM_1 = -((0.25 * y + z) - x); ($RES_SIM_1)
+// ### Inner Equations:
+//     BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real z
+// ### Equation:
+// 	[SCAL] (1) z = 0.3333333333333333 * (-(x + y + $FUN_1)); ($RES_SIM_2)
+//
+// ########################################
+//
+//     [NLS] Jacobian INI_LS_JAC_1: NLS
+//
+// ########################################
+//
+// Partial Derivative Variables (2/2)
+// ************************************
+// (1)       [JVAR] (1) Real $pDER_INI_LS_JAC_1.$RES_SIM_1
+// (2)       [JTMP] (1) Real $pDER_INI_LS_JAC_1.z
+//
+// Seed Variables (1/1)
+// **********************
+// (1)       [SEED] (1) Real $SEED_INI_LS_JAC_1.y
+//
+// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_INI_LS_JAC_1.z
+// ### Equation:
+// 	[SCAL] (1) $pDER_INI_LS_JAC_1.z = -0.3333333333333333 * $SEED_INI_LS_JAC_1.y; ($RES_INI_LS_JAC_1_0)
+//
+// BLOCK 2: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_INI_LS_JAC_1.$RES_SIM_1
+// ### Equation:
+// 	[SCAL] (1) $pDER_INI_LS_JAC_1.$RES_SIM_1 = -(0.25 * $SEED_INI_LS_JAC_1.y + $pDER_INI_LS_JAC_1.z); ($RES_INI_LS_JAC_1_1)
+//
+// =============================
+//   SPARSITY Adjacency Matrix
+// =============================
+//
+// 0  | {1} .$RES_SIM_1 ...{$pDER_INI_LS_JAC_1.$RES_SIM_1} ... {$SEED_INI_LS_JAC_1.y[{}]}
+//
+// {"NBTornAdjoint", "NBTornAdjoint_init.xml"}
+// ""
+// #################################################
+//
+//     [symjacdump] Creating symbolic Jacobians:
+//
+// #################################################
+//
+// ================================
+//   (1) Continuous ODE Partition
+// ================================
+//
+// --- Alias of INI[1 | 2] ---
+// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real $FUN_1
+// ### Equation:
+// 	[SCAL] (1) $FUN_1 = cos(time); ($RES_AUX_3)
+//
+// --- Alias of INI[1 | 3] ---
+// BLOCK 2: Algebraic Loop (Linear = true, Mixed = false, Homotopy = false, size = 2)
+// ------------------------------------------------------------------------------------
+// Strict Tearing Set
+// ********************
+// ### Iteration Variables:
+//     [ALGB] (1) Real y
+// ### Residual Equations:
+//     [SCAL] (1) $RES_SIM_1 = -(0.25 * y + z + x); ($RES_SIM_1)
+// ### Inner Equations:
+//     BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real z
+// ### Equation:
+// 	[SCAL] (1) z = 0.3333333333333333 * (-($FUN_1 + y)); ($RES_SIM_2)
+//
+// --- Alias of INI[1 | 4] ---
+// BLOCK 3: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real $DER.x
+// ### Equation:
+// 	[SCAL] (1) $DER.x = y - 0.1 * x; ($RES_SIM_0)
+//
+// ###############################################
+//
+//     [ODE] Jacobian ODE_JAC_ADJ: ODE Adjoint
+//
+// ###############################################
+//
+// Partial Derivative Variables (9/9)
+// ************************************
+// (1)       [JVAR] (1) Real $pDER_ODE_JAC_ADJ.x
+// (2)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_1
+// (3)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_2
+// (4)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_3
+// (5)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_4
+// (6)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_5
+// (7)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.$FUN_1
+// (8)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.y
+// (9)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.z
+//
+// Seed Variables (1/1)
+// **********************
+// (1)       [SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.x
+//
+// BLOCK 1: Multi Strong Component (status = Solve.EXPLICIT, size = 2)
+// ---------------------------------------------------------------------
+// ### Variables:
+// 	[JVAR] (1) Real $pDER_ODE_JAC_ADJ.x
+// 	[JTMP] (1) Real $pDER_ODE_JAC_ADJ.y
+// ### Equation:
+// 	[ALGO] (2) ($RES_ODE_JAC_ADJ_12)
+// 	[----] $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x - 0.1 * $SEED_ODE_JAC_ADJ.$DER.x;
+// 	[----] $pDER_ODE_JAC_ADJ.y := $pDER_ODE_JAC_ADJ.y + $SEED_ODE_JAC_ADJ.$DER.x;
+//
+//
+// BLOCK 2: Algebraic Loop (Linear = true, Mixed = false, Homotopy = false, size = 7)
+// ------------------------------------------------------------------------------------
+// Strict Tearing Set
+// ********************
+// ### Iteration Variables:
+//     [JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_1
+// ### Residual Equations:
+//     [SCAL] (1) $RES_ODE_JAC_ADJ_10 = $pDER_ODE_JAC_ADJ.y - $pDER_ODE_JAC_ADJ.$TMP_4; ($RES_ODE_JAC_ADJ_10)
+// ### Inner Equations:
+//     BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_JAC_ADJ.$TMP_2
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC_ADJ.$TMP_2 = -$pDER_ODE_JAC_ADJ.$TMP_1; ($RES_ODE_JAC_ADJ_5)
+//
+//   BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_JAC_ADJ.$TMP_3
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC_ADJ.$TMP_3 = 0.0; ($RES_ODE_JAC_ADJ_6)
+//
+//   BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_JAC_ADJ.$TMP_4
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC_ADJ.$TMP_4 = (-$pDER_ODE_JAC_ADJ.$TMP_1) .* 0.25; ($RES_ODE_JAC_ADJ_7)
+//
+//   BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_JAC_ADJ.$TMP_5
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC_ADJ.$TMP_5 = -($pDER_ODE_JAC_ADJ.$TMP_1 + $pDER_ODE_JAC_ADJ.z); ($RES_ODE_JAC_ADJ_8)
+//
+//   BLOCK: Multi Strong Component (status = Solve.EXPLICIT, size = 2)
+// -------------------------------------------------------------------
+// ### Variables:
+// 	[JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_3
+// 	[JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_4
+// ### Equation:
+// 	[ALGO] (2) ($RES_ODE_JAC_ADJ_9)
+// 	[----] $pDER_ODE_JAC_ADJ.$TMP_3 := $pDER_ODE_JAC_ADJ.$TMP_3 - 0.3333333333333333 * $pDER_ODE_JAC_ADJ.$TMP_5;
+// 	[----] $pDER_ODE_JAC_ADJ.$TMP_4 := $pDER_ODE_JAC_ADJ.$TMP_4 - 0.3333333333333333 * $pDER_ODE_JAC_ADJ.$TMP_5;
+//
+//
+// BLOCK 3: Multi Strong Component (status = Solve.EXPLICIT, size = 2)
+// ---------------------------------------------------------------------
+// ### Variables:
+// 	[JVAR] (1) Real $pDER_ODE_JAC_ADJ.x
+// 	[JTMP] (1) Real $pDER_ODE_JAC_ADJ.$FUN_1
+// ### Equation:
+// 	[ALGO] (2) ($RES_ODE_JAC_ADJ_11)
+// 	[----] $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x - $pDER_ODE_JAC_ADJ.$TMP_2;
+// 	[----] $pDER_ODE_JAC_ADJ.$FUN_1 := $pDER_ODE_JAC_ADJ.$FUN_1 - $pDER_ODE_JAC_ADJ.$TMP_3;
+//
+//
+// =============================
+//   SPARSITY Adjacency Matrix
+// =============================
+//
+// 0  | {1} .$RES_SIM_0 ...{$SEED_ODE_JAC_ADJ.$DER.x} ... {$pDER_ODE_JAC_ADJ.x[{}]}
+//
+//
+// BLOCK: Algebraic Loop (Linear = true, Mixed = false, Homotopy = false, size = 2)
+// ----------------------------------------------------------------------------------
+// Strict Tearing Set
+// ********************
+// ### Iteration Variables:
+//     [ALGB] (1) Real y
+// ### Residual Equations:
+//     [SCAL] (1) $RES_SIM_1 = -(0.25 * y + z + x); ($RES_SIM_1)
+// ### Inner Equations:
+//     BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real z
+// ### Equation:
+// 	[SCAL] (1) z = 0.3333333333333333 * (-($FUN_1 + y)); ($RES_SIM_2)
+//
+// ########################################
+//
+//     [NLS] Jacobian INI_LS_JAC_1: NLS
+//
+// ########################################
+//
+// Partial Derivative Variables (2/2)
+// ************************************
+// (1)       [JVAR] (1) Real $pDER_INI_LS_JAC_1.$RES_SIM_1
+// (2)       [JTMP] (1) Real $pDER_INI_LS_JAC_1.z
+//
+// Seed Variables (1/1)
+// **********************
+// (1)       [SEED] (1) Real $SEED_INI_LS_JAC_1.y
+//
+// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_INI_LS_JAC_1.z
+// ### Equation:
+// 	[SCAL] (1) $pDER_INI_LS_JAC_1.z = -0.3333333333333333 * $SEED_INI_LS_JAC_1.y; ($RES_INI_LS_JAC_1_0)
+//
+// BLOCK 2: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_INI_LS_JAC_1.$RES_SIM_1
+// ### Equation:
+// 	[SCAL] (1) $pDER_INI_LS_JAC_1.$RES_SIM_1 = -(0.25 * $SEED_INI_LS_JAC_1.y + $pDER_INI_LS_JAC_1.z); ($RES_INI_LS_JAC_1_1)
+//
+// =============================
+//   SPARSITY Adjacency Matrix
+// =============================
+//
+// 0  | {1} .$RES_SIM_1 ...{$pDER_INI_LS_JAC_1.$RES_SIM_1} ... {$SEED_INI_LS_JAC_1.y[{}]}
+//
+// {"NBTornAdjointPositive", "NBTornAdjointPositive_init.xml"}
+// ""
+// true
+// ""
+// #################################################
+//
+//     [symjacdump] Creating symbolic Jacobians:
+//
+// #################################################
+//
+// BLOCK: Algebraic Loop (Linear = false, Mixed = false, Homotopy = false, size = 4)
+// -----------------------------------------------------------------------------------
+// Strict Tearing Set
+// ********************
+// ### Iteration Variables:
+//     [ALGB] (1) Real y (start = 0.0, TearingSelect = always)
+// ### Residual Equations:
+//     [SCAL] (1) $RES_SIM_1 = 3.0 - (v + y + x * y); ($RES_SIM_1)
+// ### Inner Equations:
+//     BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real z
+// ### Equation:
+// 	[SCAL] (1) z = x + 2.0 * y; ($RES_SIM_4)
+//
+//   BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real w
+// ### Equation:
+// 	[SCAL] (1) w = z * z + x; ($RES_SIM_3)
+//
+//   BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real v
+// ### Equation:
+// 	[SCAL] (1) v = w + z * x; ($RES_SIM_2)
+//
+// #########################################
+//
+//     [NLS] Jacobian ODE_NLS_JAC_1: NLS
+//
+// #########################################
+//
+// Partial Derivative Variables (4/4)
+// ************************************
+// (1)       [JVAR] (1) Real $pDER_ODE_NLS_JAC_1.$RES_SIM_1
+// (2)       [JTMP] (1) Real $pDER_ODE_NLS_JAC_1.z
+// (3)       [JTMP] (1) Real $pDER_ODE_NLS_JAC_1.w
+// (4)       [JTMP] (1) Real $pDER_ODE_NLS_JAC_1.v
+//
+// Seed Variables (1/1)
+// **********************
+// (1)       [SEED] (1) Real $SEED_ODE_NLS_JAC_1.y
+//
+// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_NLS_JAC_1.z
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_NLS_JAC_1.z = 2.0 * $SEED_ODE_NLS_JAC_1.y; ($RES_ODE_NLS_JAC_1_0)
+//
+// BLOCK 2: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_NLS_JAC_1.w
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_NLS_JAC_1.w = $pDER_ODE_NLS_JAC_1.z * z + z * $pDER_ODE_NLS_JAC_1.z; ($RES_ODE_NLS_JAC_1_1)
+//
+// BLOCK 3: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_NLS_JAC_1.v
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_NLS_JAC_1.v = $pDER_ODE_NLS_JAC_1.w + $pDER_ODE_NLS_JAC_1.z * x; ($RES_ODE_NLS_JAC_1_2)
+//
+// BLOCK 4: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_NLS_JAC_1.$RES_SIM_1
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_1 = -($pDER_ODE_NLS_JAC_1.v + $SEED_ODE_NLS_JAC_1.y + x * $SEED_ODE_NLS_JAC_1.y); ($RES_ODE_NLS_JAC_1_3)
+//
+// =============================
+//   SPARSITY Adjacency Matrix
+// =============================
+//
+// 0  | {1} .$RES_SIM_1 ...{$pDER_ODE_NLS_JAC_1.$RES_SIM_1} ... {$SEED_ODE_NLS_JAC_1.y[{}]}
+//
+// ================================
+//   (1) Continuous ODE Partition
+// ================================
+//
+// BLOCK 1: Algebraic Loop (Linear = false, Mixed = false, Homotopy = false, size = 4)
+// -------------------------------------------------------------------------------------
+// Strict Tearing Set
+// ********************
+// ### Iteration Variables:
+//     [ALGB] (1) Real y (start = 0.0, TearingSelect = always)
+// ### Residual Equations:
+//     [SCAL] (1) $RES_SIM_1 = 3.0 - (v + y + x * y); ($RES_SIM_1)
+// ### Inner Equations:
+//     BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real z
+// ### Equation:
+// 	[SCAL] (1) z = x + 2.0 * y; ($RES_SIM_4)
+//
+//   BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real w
+// ### Equation:
+// 	[SCAL] (1) w = z * z + x; ($RES_SIM_3)
+//
+//   BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real v
+// ### Equation:
+// 	[SCAL] (1) v = w + z * x; ($RES_SIM_2)
+//
+// #########################################
+//
+//     [NLS] Jacobian ODE_NLS_JAC_1: NLS
+//
+// #########################################
+//
+// Partial Derivative Variables (4/4)
+// ************************************
+// (1)       [JVAR] (1) Real $pDER_ODE_NLS_JAC_1.$RES_SIM_1
+// (2)       [JTMP] (1) Real $pDER_ODE_NLS_JAC_1.z
+// (3)       [JTMP] (1) Real $pDER_ODE_NLS_JAC_1.w
+// (4)       [JTMP] (1) Real $pDER_ODE_NLS_JAC_1.v
+//
+// Seed Variables (1/1)
+// **********************
+// (1)       [SEED] (1) Real $SEED_ODE_NLS_JAC_1.y
+//
+// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_NLS_JAC_1.z
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_NLS_JAC_1.z = 2.0 * $SEED_ODE_NLS_JAC_1.y; ($RES_ODE_NLS_JAC_1_0)
+//
+// BLOCK 2: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_NLS_JAC_1.w
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_NLS_JAC_1.w = $pDER_ODE_NLS_JAC_1.z * z + z * $pDER_ODE_NLS_JAC_1.z; ($RES_ODE_NLS_JAC_1_1)
+//
+// BLOCK 3: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_NLS_JAC_1.v
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_NLS_JAC_1.v = $pDER_ODE_NLS_JAC_1.w + $pDER_ODE_NLS_JAC_1.z * x; ($RES_ODE_NLS_JAC_1_2)
+//
+// BLOCK 4: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_NLS_JAC_1.$RES_SIM_1
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_1 = -($pDER_ODE_NLS_JAC_1.v + $SEED_ODE_NLS_JAC_1.y + x * $SEED_ODE_NLS_JAC_1.y); ($RES_ODE_NLS_JAC_1_3)
+//
+// =============================
+//   SPARSITY Adjacency Matrix
+// =============================
+//
+// 0  | {1} .$RES_SIM_1 ...{$pDER_ODE_NLS_JAC_1.$RES_SIM_1} ... {$SEED_ODE_NLS_JAC_1.y[{}]}
+//
+// --- Alias of INI[1 | 3] ---
+// BLOCK 2: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real $DER.x
+// ### Equation:
+// 	[SCAL] (1) $DER.x = (v + 3.0 * w + 2.0 * z + y) - 0.1 * x; ($RES_SIM_0)
+//
+// ###############################################
+//
+//     [ODE] Jacobian ODE_JAC_ADJ: ODE Adjoint
+//
+// ###############################################
+//
+// Partial Derivative Variables (11/11)
+// **************************************
+// (1)       [JVAR] (1) Real $pDER_ODE_JAC_ADJ.x
+// (2)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_1
+// (3)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_2
+// (4)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_3
+// (5)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_4
+// (6)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_5
+// (7)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_6
+// (8)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.v
+// (9)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.w
+// (10)      [JTMP] (1) Real $pDER_ODE_JAC_ADJ.y
+// (11)      [JTMP] (1) Real $pDER_ODE_JAC_ADJ.z
+//
+// Seed Variables (1/1)
+// **********************
+// (1)       [SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.x
+//
+// BLOCK 1: Multi Strong Component (status = Solve.EXPLICIT, size = 5)
+// ---------------------------------------------------------------------
+// ### Variables:
+// 	[JVAR] (1) Real $pDER_ODE_JAC_ADJ.x
+// 	[JTMP] (1) Real $pDER_ODE_JAC_ADJ.v
+// 	[JTMP] (1) Real $pDER_ODE_JAC_ADJ.w
+// 	[JTMP] (1) Real $pDER_ODE_JAC_ADJ.z
+// 	[JTMP] (1) Real $pDER_ODE_JAC_ADJ.y
+// ### Equation:
+// 	[ALGO] (5) ($RES_ODE_JAC_ADJ_16)
+// 	[----] $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x - 0.1 * $SEED_ODE_JAC_ADJ.$DER.x;
+// 	[----] $pDER_ODE_JAC_ADJ.v := $pDER_ODE_JAC_ADJ.v + $SEED_ODE_JAC_ADJ.$DER.x;
+// 	[----] $pDER_ODE_JAC_ADJ.w := $pDER_ODE_JAC_ADJ.w + 3.0 * $SEED_ODE_JAC_ADJ.$DER.x;
+// 	[----] $pDER_ODE_JAC_ADJ.z := $pDER_ODE_JAC_ADJ.z + 2.0 * $SEED_ODE_JAC_ADJ.$DER.x;
+// 	[----] $pDER_ODE_JAC_ADJ.y := $pDER_ODE_JAC_ADJ.y + $SEED_ODE_JAC_ADJ.$DER.x;
+//
+//
+// BLOCK 2: Algebraic Loop (Linear = true, Mixed = false, Homotopy = false, size = 13)
+// -------------------------------------------------------------------------------------
+// Strict Tearing Set
+// ********************
+// ### Iteration Variables:
+//     [JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_1
+// ### Residual Equations:
+//     [SCAL] (1) $RES_ODE_JAC_ADJ_14 = $pDER_ODE_JAC_ADJ.y - $pDER_ODE_JAC_ADJ.$TMP_6; ($RES_ODE_JAC_ADJ_14)
+// ### Inner Equations:
+//     BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_JAC_ADJ.$TMP_2
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC_ADJ.$TMP_2 = -$pDER_ODE_JAC_ADJ.z; ($RES_ODE_JAC_ADJ_6)
+//
+//   BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_JAC_ADJ.$TMP_3
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC_ADJ.$TMP_3 = -$pDER_ODE_JAC_ADJ.w; ($RES_ODE_JAC_ADJ_7)
+//
+//   BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_JAC_ADJ.$TMP_4
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC_ADJ.$TMP_4 = -($pDER_ODE_JAC_ADJ.$TMP_1 + $pDER_ODE_JAC_ADJ.v); ($RES_ODE_JAC_ADJ_8)
+//
+//   BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_JAC_ADJ.$TMP_5
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC_ADJ.$TMP_5 = (-$pDER_ODE_JAC_ADJ.$TMP_1) .* y; ($RES_ODE_JAC_ADJ_9)
+//
+//   BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_JAC_ADJ.$TMP_6
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC_ADJ.$TMP_6 = -($pDER_ODE_JAC_ADJ.$TMP_1 + $pDER_ODE_JAC_ADJ.$TMP_1 * x); ($RES_ODE_JAC_ADJ_10)
+//
+//   BLOCK: Multi Strong Component (status = Solve.EXPLICIT, size = 3)
+// -------------------------------------------------------------------
+// ### Variables:
+// 	[JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_3
+// 	[JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_5
+// 	[JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_2
+// ### Equation:
+// 	[ALGO] (3) ($RES_ODE_JAC_ADJ_11)
+// 	[----] $pDER_ODE_JAC_ADJ.$TMP_3 := $pDER_ODE_JAC_ADJ.$TMP_3 + $pDER_ODE_JAC_ADJ.$TMP_4;
+// 	[----] $pDER_ODE_JAC_ADJ.$TMP_5 := $pDER_ODE_JAC_ADJ.$TMP_5 + $pDER_ODE_JAC_ADJ.$TMP_4 * z;
+// 	[----] $pDER_ODE_JAC_ADJ.$TMP_2 := $pDER_ODE_JAC_ADJ.$TMP_2 + $pDER_ODE_JAC_ADJ.$TMP_4 * x;
+//
+//
+//   BLOCK: Multi Strong Component (status = Solve.EXPLICIT, size = 2)
+// -------------------------------------------------------------------
+// ### Variables:
+// 	[JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_2
+// 	[JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_5
+// ### Equation:
+// 	[ALGO] (2) ($RES_ODE_JAC_ADJ_12)
+// 	[----] $pDER_ODE_JAC_ADJ.$TMP_2 := $pDER_ODE_JAC_ADJ.$TMP_2 + ($pDER_ODE_JAC_ADJ.$TMP_3 * z + $pDER_ODE_JAC_ADJ.$TMP_3 * z);
+// 	[----] $pDER_ODE_JAC_ADJ.$TMP_5 := $pDER_ODE_JAC_ADJ.$TMP_5 + $pDER_ODE_JAC_ADJ.$TMP_3;
+//
+//
+//   BLOCK: Multi Strong Component (status = Solve.EXPLICIT, size = 2)
+// -------------------------------------------------------------------
+// ### Variables:
+// 	[JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_5
+// 	[JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_6
+// ### Equation:
+// 	[ALGO] (2) ($RES_ODE_JAC_ADJ_13)
+// 	[----] $pDER_ODE_JAC_ADJ.$TMP_5 := $pDER_ODE_JAC_ADJ.$TMP_5 + $pDER_ODE_JAC_ADJ.$TMP_2;
+// 	[----] $pDER_ODE_JAC_ADJ.$TMP_6 := $pDER_ODE_JAC_ADJ.$TMP_6 + 2.0 * $pDER_ODE_JAC_ADJ.$TMP_2;
+//
+//
+// BLOCK 3: Multi Strong Component (status = Solve.EXPLICIT, size = 1)
+// ---------------------------------------------------------------------
+// ### Variables:
+// 	[JVAR] (1) Real $pDER_ODE_JAC_ADJ.x
+// ### Equation:
+// 	[ALGO] (1) ($RES_ODE_JAC_ADJ_15)
+// 	[----] $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x - $pDER_ODE_JAC_ADJ.$TMP_5;
+//
+//
+// =============================
+//   SPARSITY Adjacency Matrix
+// =============================
+//
+// 0  | {1} .$RES_SIM_0 ...{$SEED_ODE_JAC_ADJ.$DER.x} ... {$pDER_ODE_JAC_ADJ.x[{}]}
+//
+//
+// BLOCK: Algebraic Loop (Linear = false, Mixed = false, Homotopy = false, size = 4)
+// -----------------------------------------------------------------------------------
+// Strict Tearing Set
+// ********************
+// ### Iteration Variables:
+//     [ALGB] (1) Real y (start = 0.0, TearingSelect = always)
+// ### Residual Equations:
+//     [SCAL] (1) $RES_SIM_3 = (z * z + x) - w; ($RES_SIM_3)
+// ### Inner Equations:
+//     BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real v
+// ### Equation:
+// 	[SCAL] (1) v = 3.0 - (x * y + y); ($RES_SIM_1)
+//
+//   BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real z
+// ### Equation:
+// 	[SCAL] (1) z = x + 2.0 * y; ($RES_SIM_4)
+//
+//   BLOCK: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// --------------------------------------------------------------------
+// ### Variable:
+// 	Real w
+// ### Equation:
+// 	[SCAL] (1) w = v - z * x; ($RES_SIM_2)
+//
+// #########################################
+//
+//     [NLS] Jacobian INI_NLS_JAC_1: NLS
+//
+// #########################################
+//
+// Partial Derivative Variables (4/4)
+// ************************************
+// (1)       [JVAR] (1) Real $pDER_INI_NLS_JAC_1.$RES_SIM_3
+// (2)       [JTMP] (1) Real $pDER_INI_NLS_JAC_1.v
+// (3)       [JTMP] (1) Real $pDER_INI_NLS_JAC_1.z
+// (4)       [JTMP] (1) Real $pDER_INI_NLS_JAC_1.w
+//
+// Seed Variables (1/1)
+// **********************
+// (1)       [SEED] (1) Real $SEED_INI_NLS_JAC_1.y
+//
+// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_INI_NLS_JAC_1.v
+// ### Equation:
+// 	[SCAL] (1) $pDER_INI_NLS_JAC_1.v = -(x * $SEED_INI_NLS_JAC_1.y + $SEED_INI_NLS_JAC_1.y); ($RES_INI_NLS_JAC_1_0)
+//
+// BLOCK 2: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_INI_NLS_JAC_1.z
+// ### Equation:
+// 	[SCAL] (1) $pDER_INI_NLS_JAC_1.z = 2.0 * $SEED_INI_NLS_JAC_1.y; ($RES_INI_NLS_JAC_1_1)
+//
+// BLOCK 3: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_INI_NLS_JAC_1.w
+// ### Equation:
+// 	[SCAL] (1) $pDER_INI_NLS_JAC_1.w = $pDER_INI_NLS_JAC_1.v - $pDER_INI_NLS_JAC_1.z * x; ($RES_INI_NLS_JAC_1_2)
+//
+// BLOCK 4: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real $pDER_INI_NLS_JAC_1.$RES_SIM_3
+// ### Equation:
+// 	[SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_SIM_3 = ($pDER_INI_NLS_JAC_1.z * z + z * $pDER_INI_NLS_JAC_1.z) - $pDER_INI_NLS_JAC_1.w; ($RES_INI_NLS_JAC_1_3)
+//
+// =============================
+//   SPARSITY Adjacency Matrix
+// =============================
+//
+// 0  | {1} .$RES_SIM_3 ...{$pDER_INI_NLS_JAC_1.$RES_SIM_3} ... {$SEED_INI_NLS_JAC_1.y[{}]}
+//
+// {"NBTornAdjointChain", "NBTornAdjointChain_init.xml"}
+// ""
+// endResult
