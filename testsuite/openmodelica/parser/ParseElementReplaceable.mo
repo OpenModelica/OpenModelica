@@ -6,13 +6,12 @@
 
 model ParseElementReplaceable
 
-class Palette
+model Palette
   replaceable Integer c1;
 end Palette;
 
 Palette p(redeclare replaceable Real c1);
 
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ParseElementReplaceable;
 
 // Result:

@@ -14,15 +14,9 @@ model RedeclareRecordComponent1
   record R2 = R(redeclare MyReal x);
 
   R2 r = R2(x = 1.0);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RedeclareRecordComponent1;
 
 // Result:
-// function RedeclareRecordComponent1.R2 "Automatically generated record constructor for RedeclareRecordComponent1.R2"
-//   input Real x(quantity = "fish");
-//   output R2 res;
-// end RedeclareRecordComponent1.R2;
-//
 // class RedeclareRecordComponent1
 //   Real r.x(quantity = "fish") = 1.0;
 // end RedeclareRecordComponent1;

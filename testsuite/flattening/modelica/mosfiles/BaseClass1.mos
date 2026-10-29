@@ -1,7 +1,6 @@
 // name:     BaseClass1
 // keywords: error handling
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that pointless errors are not generated
 //
@@ -16,8 +15,8 @@ getErrorString();
 //   Real medium.Xi[2];
 //   Real medium.Xi[3];
 //   Real medium.Xi[4];
-//   parameter Integer medium.nXi = if medium.b then 4 else 2;
-//   parameter Boolean medium.b = true;
+//   final parameter Integer medium.nXi = 4;
+//   final parameter Boolean medium.b = true;
 // equation
 //   medium.Xi = {1.0, 2.0, 3.0, 4.0};
 // end BaseClass1;

@@ -3,7 +3,6 @@
 // status: correct
 //
 
-setCommandLineOptions("-d=-newInst");
 
 loadFile("ParameterBug.mo"); getErrorString();
 instantiateModel(ParameterBug.A); getErrorString();
@@ -13,14 +12,13 @@ instantiateModel(D); getErrorString();
 
 // Result:
 // true
-// true
 // ""
 // "class ParameterBug.A
+//   parameter Real Vdc = 1.0;
 //   parameter Real offset = Vdc;
-//   parameter Real c.offset = offset;
+//   final parameter Real c.offset = offset;
 //   Real c.x;
 //   Real c.y = c.x;
-//   parameter Real Vdc = 1.0;
 // equation
 //   c.x = c.offset;
 // end ParameterBug.A;

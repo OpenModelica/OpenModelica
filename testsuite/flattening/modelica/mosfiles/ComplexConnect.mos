@@ -1,48 +1,50 @@
 // name: ComplexConnect
 // status: correct
 // teardown_command: rm -rf ComplexConnect.Test*
-// cflags: -d=-newInst
 
 loadString("
 package ComplexConnect
+  connector RealInput = input Real;
+  connector RealOutput = output Real;
 
-class Loop 
-  input Real sIn; 
-  output Real sOut; 
-equation 
-  sOut = sIn; 
-  //connect(sIn, sOut); 
-end Loop; 
+  model Loop
+    RealInput sIn;
+    RealOutput sOut;
+  equation
+    sOut = sIn;
+  end Loop;
 
-// This model works 
-model Test 
-  Real sIn; 
-  Real sOut; 
-  Loop l; 
-equation 
-  sIn = time; 
-  connect(sIn, l.sIn); 
-  connect(l.sOut, sOut); 
-end Test; 
+  // This model works
+  model Test
+    RealOutput sIn;
+    RealOutput sOut;
+    Loop l;
+  equation
+    sIn = time;
+    connect(sIn, l.sIn);
+    connect(l.sOut, sOut);
+  end Test;
 
-// This model does not work 
-model TestArray 
-  Real sIn; 
-  Real sOut; 
-  Loop l[1]; 
-equation 
-  sIn = time; 
-  connect(sIn, l[1].sIn); 
-  connect(l[1].sOut, sOut); 
-end TestArray;
+  model TestArray
+    RealOutput sIn;
+    RealOutput sOut;
+    Loop l[1];
+  equation
+    sIn = time;
+    connect(sIn, l[1].sIn);
+    connect(l[1].sOut, sOut);
+  end TestArray;
 end ComplexConnect;
-");
+"); getErrorString();
 
-translateModel(ComplexConnect.TestArray);
-translateModel(ComplexConnect.Test);
+translateModel(ComplexConnect.TestArray); getErrorString();
+translateModel(ComplexConnect.Test); getErrorString();
 
 // Result:
 // true
+// ""
 // true
+// ""
 // true
+// ""
 // endResult

@@ -2,7 +2,6 @@
 // keywords: nonlinsys, linearization
 // status:   correct
 // teardown_command: rm -rf p.nonlinsys.* p.nonlinsys_* output.log linearized_model.* linearized_model.mo linearized_model_* linearized_model p.nonlinsys
-// cflags: -d=-newInst
 //
 //  Case for linearization of nonlinsys model
 //
@@ -106,11 +105,11 @@ readFile("linearized_model.log"); // Check that output log is empty
 //   parameter Real x0[n] = {1, 1, 2};
 //   parameter Real u0[m] = {0};
 //   parameter Real z0[nz] = {0, -6, -6, 0, 0, 0};
-//   parameter Real A[n, n] = [0, 0, 0; 0, 6, -2; 0, 4, -6];
+//   parameter Real A[n, n] = [0, 0, 0; 0, 5.999999994797209, -2.000000002708405; 0, 3.999999998752807, -6.000000017010549];
 //   parameter Real B[n, m] = [0; 0; 0];
 //   parameter Real C[p, n] = [0, 0, 0; 0, 0, 0];
 //   parameter Real D[p, m] = [0; 0];
-//   parameter Real Cz[nz, n] = [0, 0, 0; 0, 10, -8; 0, 10, -8; 0, 0, 0; 0, 0, 0; 0, 0, 0];
+//   parameter Real Cz[nz, n] = [0, 0, 0; 0, 9.999999993550016, -8.000000019718954; 0, 9.999999993550016, -8.000000019718954; 0, 0, 0; 0, 0, 0; 0, 0, 0];
 //   parameter Real Dz[nz, m] = [0; 0; 0; 1; 0; 0];
 //   Real x[n](start = x0);
 //   input Real u[m](start = u0);
@@ -122,7 +121,7 @@ readFile("linearized_model.log"); // Check that output log is empty
 //   Real 'u_u1' = u[1];
 //   Real 'y_y1' = y[1];
 //   Real 'y_y2' = y[2];
-//   Real 'z_a1.y' = z[1];
+//   Real 'z_b1.u' = z[1];
 //   Real 'z_c1.y' = z[2];
 //   Real 'z_c1.y1' = z[3];
 //   Real 'z_u1' = z[4];

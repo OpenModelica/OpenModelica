@@ -6,14 +6,13 @@
 // into separate equations for the components.
 //
 
-class EquationComponent2
+model EquationComponent2
   record R
     Real x,y;
   end R;
   R a,b,c;
 equation
   a = if true then b else c;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EquationComponent2;
 // Result:
 // function EquationComponent2.R "Automatically generated record constructor for EquationComponent2.R"
@@ -30,7 +29,6 @@ end EquationComponent2;
 //   Real c.x;
 //   Real c.y;
 // equation
-//   a.x = b.x;
-//   a.y = b.y;
+//   a = b;
 // end EquationComponent2;
 // endResult
