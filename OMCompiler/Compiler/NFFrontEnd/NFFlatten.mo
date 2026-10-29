@@ -2976,6 +2976,8 @@ protected
 algorithm
   // the array handlers do not know about deleted conditional components
   flatModel.equations := removeDeletedConnects(flatModel.equations, deletedVars);
+  // the frontend evaluates slices of known size to index arrays, the handlers expect ranges
+  flatModel.equations := list(Equation.map(eq, connectSliceRanges) for eq in flatModel.equations);
 
   // Overconstrained connections: build the graph like resolveConnections, which
   // evaluates the Connections.* operators (isRoot, rooted). The connect equations
@@ -3008,6 +3010,24 @@ algorithm
   end if;
   execStat(getInstanceName());
 end resolveArrayConnections;
+
+function connectSliceRanges
+  input output Equation eq;
+protected
+  function sliceRanges
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      case Expression.CREF() then Expression.CREF(exp.ty, ComponentRef.mapSubscripts(exp.cref, Subscript.sliceToRange));
+      else exp;
+    end match;
+  end sliceRanges;
+algorithm
+  eq := match eq
+    case Equation.CONNECT() then Equation.mapExp(eq, sliceRanges);
+    else eq;
+  end match;
+end connectSliceRanges;
 
 function coalesceConnects
   "Runs of connections of single elements of one-dimensional arrays with the

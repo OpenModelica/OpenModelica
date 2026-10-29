@@ -292,40 +292,10 @@ public
     input output Expression exp;
   algorithm
     exp := match exp
-      case Expression.CREF() then Expression.CREF(exp.ty, ComponentRef.mapSubscripts(exp.cref, sliceToRange));
+      case Expression.CREF() then Expression.CREF(exp.ty, ComponentRef.mapSubscripts(exp.cref, Subscript.sliceToRange));
       else exp;
     end match;
   end lowerSliceRanges;
-
-  function sliceToRange
-    input output Subscript sub;
-  protected
-    array<Expression> elems;
-    Integer first, step, n;
-    Boolean is_range;
-  algorithm
-    sub := match sub
-      case Subscript.SLICE(slice = Expression.ARRAY(elements = elems)) guard arrayLength(elems) > 2 algorithm
-        is_range := true;
-        for i in 1:arrayLength(elems) loop
-          is_range := is_range and Expression.isInteger(elems[i]);
-        end for;
-        if is_range then
-          first := Expression.integerValue(elems[1]);
-          step := Expression.integerValue(elems[2]) - first;
-          n := arrayLength(elems);
-          is_range := step <> 0;
-          for i in 3:n loop
-            is_range := is_range and Expression.integerValue(elems[i]) == first + (i - 1) * step;
-          end for;
-          if is_range then
-            sub := Subscript.SLICE(Expression.makeIntegerRange(first, step, first + (n - 1) * step));
-          end if;
-        end if;
-      then sub;
-      else sub;
-    end match;
-  end sliceToRange;
 
   function lowerFunctionPointer
     "A function pointer such as f in solveOneNonlinearEquation(f, ...) is a cref to
