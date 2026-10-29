@@ -1,7 +1,6 @@
 // name: getComponentCondition
 // keywords: Graphical API, component attributes, conditional
 // status: correct
-// cflags: -d=-newInst
 
 loadString("
 model M

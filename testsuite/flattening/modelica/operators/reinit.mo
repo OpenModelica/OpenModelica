@@ -17,11 +17,10 @@ equation
   y = k*x;
 initial algorithm
   x := u;
-algorithm
+equation
   when time > 0 then
     reinit(x, u); // if x is u since der(x) = (u - x)/T
   end when;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FilterBlock1;
 
 // Result:
@@ -34,11 +33,10 @@ end FilterBlock1;
 // initial algorithm
 //   x := u;
 // equation
-//   der(x) = (u - x) / T;
-//   y = k * x;
-// algorithm
 //   when time > 0.0 then
 //     reinit(x, u);
 //   end when;
+//   der(x) = (u - x) / T;
+//   y = k * x;
 // end FilterBlock1;
 // endResult

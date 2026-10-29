@@ -2,7 +2,6 @@
 // keywords: EventHandling, Chattering, logFormat, #17233
 // status: correct
 // teardown_command: rm -rf Chattering.ChatteringEvents1* output.log
-// cflags: -d=-newInst
 //
 // The chattering message names the equations of the zero-crossing as
 // <used index=.../> in the XML log, where OMEdit's "Debug more" link comes from.
