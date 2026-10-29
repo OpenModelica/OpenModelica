@@ -1,0 +1,40 @@
+// name: resizableTearStart
+// keywords: NewBackend resizable tearing start
+// status: correct
+// cflags: --newBackend --resizableArrays
+// suite: cSources
+// teardown_command: rm -f resizableTearStart resizableTearStart_* resizableTearStart.log
+//
+// The loop over x[2:N] iterates on a new array for the slice. It needs the
+// sliced start value of x, otherwise sqrt is evaluated outside its domain.
+
+loadString("
+model resizableTearStart
+  parameter Integer N = 4;
+  parameter Real p = 2;
+  Real x[N](each start = p);
+equation
+  x[1] = 1 + time;
+  for i in 2:N loop
+    sqrt(x[i] - 0.5) + x[i] = x[i-1] + (if i < N then 0.1*x[i+1] else 0) + 1;
+  end for;
+end resizableTearStart;
+"); getErrorString();
+
+simulate(resizableTearStart, stopTime = 1, simflags = "-override=N=7"); getErrorString();
+val(x[3], 0);
+val(x[7], 1);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "resizableTearStart_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'resizableTearStart', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=N=7'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.4511448374943607
+// 1.7919618158999548
+// endResult

@@ -64,11 +64,12 @@ protected
   import ComponentRef = NFComponentRef;
   import Subscript = NFSubscript;
   import Type = NFType;
+  import Call = NFCall;
   import Dimension = NFDimension;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
   import NFInstNode.InstNode;
-  import NFBackendExtension.{BackendInfo, VariableKind};
+  import NFBackendExtension.{BackendInfo, VariableAttributes, VariableKind};
 
   // Backend imports
   import Adjacency = NBAdjacency;
@@ -497,6 +498,7 @@ protected
     Boolean resizable;
     list<Module.tearingInterface> pre_funcs;
     Module.tearingInterface fin;
+    list<StrongComponent> comps, guesses;
   algorithm
     for part in partitions loop
       if isSome(part.strongComponents) and isSome(part.adjacencyMatrix) then
@@ -521,12 +523,13 @@ protected
           strongComponents := mergeResizableLoops(strongComponents);
           fin := List.last(funcs);
           part_vars := Pointer.create({});
+          comps := {};
           for i in 1:arrayLength(strongComponents) loop
-            tmp := resizableIterationArrays(strongComponents[i], eq_index, part_vars);
+            (tmp, guesses) := resizableIterationArrays(strongComponents[i], eq_index, part_vars);
             (tmp, full, idx) := fin(tmp, full, funcMap, idx, part.unknowns, part.equations, eq_index, kind);
-            arrayUpdate(strongComponents, i, tmp);
+            comps := tmp :: List.append_reverse(guesses, comps);
           end for;
-          strongComponents := listArray(List.flatten(list(splitGenericSlices(c) for c in strongComponents)));
+          strongComponents := listArray(List.flatten(list(splitGenericSlices(c) for c in listReverse(comps))));
           // the new whole arrays are unknowns of the partition (e.g. for the jacobian sparsity)
           part.unknowns := VariablePointers.addList(Pointer.access(part_vars), part.unknowns);
           Pointer.update(new_vars, listAppend(Pointer.access(part_vars), Pointer.access(new_vars)));
@@ -542,23 +545,27 @@ protected
   function resizableIterationArrays
     "Partial slices of resizable arrays as iteration variables are only known at
      the analysis sizes. A slice that consists of boxes of elements becomes new
-     whole resizable arrays, the elements of the slice are assigned from them first."
+     whole resizable arrays, the elements of the slice are assigned from them first.
+     The guesses assign the new arrays from the current values of the slices before the loop."
     input output StrongComponent comp;
+    output list<StrongComponent> guesses = {};
     input Pointer<Integer> eq_index;
     input Pointer<list<Pointer<Variable>>> new_vars;
   protected
     list<Slice<VariablePointer>> vars = {}, new_slices;
-    list<StrongComponent> copies = {}, new_copies;
+    list<StrongComponent> copies = {}, new_copies, new_guesses;
   algorithm
     comp := match comp
       local
         Tearing strict;
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict as TEARING_SET()) algorithm
         for slice in strict.iteration_vars loop
-          (new_slices, new_copies) := resizableIterationArray(wholeVarSlice(slice), eq_index, new_vars);
+          (new_slices, new_copies, new_guesses) := resizableIterationArray(wholeVarSlice(slice), eq_index, new_vars);
           vars := List.append_reverse(new_slices, vars);
           copies := List.append_reverse(new_copies, copies);
+          guesses := List.append_reverse(new_guesses, guesses);
         end for;
+        guesses := listReverse(guesses);
         if not listEmpty(copies) then
           strict.iteration_vars := listReverse(vars);
           strict.innerEquations := listArray(listAppend(listReverse(copies), arrayList(strict.innerEquations)));
@@ -577,6 +584,7 @@ protected
     input Slice<VariablePointer> slice;
     output list<Slice<VariablePointer>> slices = {slice};
     output list<StrongComponent> copies = {};
+    output list<StrongComponent> guesses = {};
     input Pointer<Integer> eq_index;
     input Pointer<list<Pointer<Variable>>> new_vars;
   protected
@@ -587,7 +595,7 @@ protected
     Iterator full_iter;
     list<list<Integer>> parts;
     list<Option<Iterator>> o_iters;
-    StrongComponent copy;
+    StrongComponent copy, guess;
     Slice<VariablePointer> new_slice;
   algorithm
     dims := Type.arrayDims(var.ty);
@@ -610,37 +618,57 @@ protected
 
     slices := {};
     for o_iter in o_iters loop
-      (new_slice, copy) := resizableIterationBox(Slice.getT(slice), iters, Util.getOption(o_iter), eq_index, new_vars);
+      (new_slice, copy, guess) := resizableIterationBox(Slice.getT(slice), iters, Util.getOption(o_iter), eq_index, new_vars);
       slices := new_slice :: slices;
       copies := copy :: copies;
+      guesses := guess :: guesses;
     end for;
     slices := listReverse(slices);
     copies := listReverse(copies);
+    guesses := listReverse(guesses);
   end resizableIterationArray;
 
   function resizableIterationBox
-    "the new whole array for a box of a variable and the assignment of its elements"
+    "the new whole array for a box of a variable, the assignment of its elements
+     and the assignment of the new array from the current values as initial guess"
     input Pointer<Variable> var_ptr;
     input list<ComponentRef> iters "the iterators of the dimensions";
     input Iterator iter "the iterators restricted to the box";
     output Slice<VariablePointer> slice;
     output StrongComponent copy;
+    output StrongComponent guess;
     input Pointer<Integer> eq_index;
     input Pointer<list<Pointer<Variable>>> new_vars;
   protected
-    Variable var = Pointer.access(var_ptr);
+    Variable var = Pointer.access(var_ptr), aux;
+    VariableAttributes attrs;
+    SliceFunc func;
     list<ComponentRef> names;
     list<Expression> ranges;
     Pointer<Variable> aux_ptr;
-    ComponentRef aux_cref, elem_cref;
+    ComponentRef aux_cref, elem_cref, aux_elem_cref;
     Expression lhs, rhs, start;
     list<Subscript> aux_subs = {};
-    Pointer<Equation> eqn;
+    Pointer<Equation> eqn, guess_eqn;
     UnorderedMap<ComponentRef, EvalOrder> order;
   algorithm
     (names, ranges, _) := Iterator.getFrames(iter);
     (aux_ptr, aux_cref) := BVariable.makeAuxVar("$RZ", Pointer.access(eq_index), Type.ARRAY(Type.arrayElementType(var.ty),
       list(Type.nthDimension(Expression.typeOf(r), 1) for r in ranges)), false);
+    aux := Pointer.access(aux_ptr);
+    attrs := var.backendinfo.attributes;
+    attrs := match attrs
+      case VariableAttributes.VAR_ATTR_REAL() algorithm
+        func := function sliceAttribute(subs = list(Subscript.SLICE(r) for r in ranges));
+        attrs.start   := Util.applyOption(attrs.start, function Binding.mapExpShallow(mapFn = func));
+        attrs.nominal := Util.applyOption(attrs.nominal, function Binding.mapExpShallow(mapFn = func));
+        attrs.min     := Util.applyOption(attrs.min, function Binding.mapExpShallow(mapFn = func));
+        attrs.max     := Util.applyOption(attrs.max, function Binding.mapExpShallow(mapFn = func));
+      then attrs;
+      else aux.backendinfo.attributes;
+    end match;
+    aux.backendinfo := BackendInfo.setAttributes(aux.backendinfo, attrs, var.backendinfo.annotations);
+    Pointer.update(aux_ptr, aux);
     Pointer.update(new_vars, aux_ptr :: Pointer.access(new_vars));
     for tpl in List.zip(names, ranges) loop
       Expression.RANGE(start = start) := Util.tuple22(tpl);
@@ -649,16 +677,59 @@ protected
     end for;
     aux_subs := listReverse(aux_subs);
     elem_cref := ComponentRef.mergeSubscripts(list(Subscript.INDEX(Expression.fromCref(i)) for i in iters), var.name, true, true);
+    aux_elem_cref := ComponentRef.mergeSubscripts(aux_subs, aux_cref, true, true);
     lhs := Expression.fromCref(elem_cref);
-    rhs := Expression.fromCref(ComponentRef.mergeSubscripts(aux_subs, aux_cref, true, true));
+    rhs := Expression.fromCref(aux_elem_cref);
     eqn := Equation.makeAssignment(lhs, rhs, eq_index, NBEquation.SIMULATION_STR, iter, EquationAttributes.default(EquationKind.CONTINUOUS, false));
+    guess_eqn := Equation.makeAssignment(rhs, lhs, eq_index, NBEquation.SIMULATION_STR, iter, EquationAttributes.default(EquationKind.CONTINUOUS, false));
     order := UnorderedMap.new<EvalOrder>(ComponentRef.hash, ComponentRef.isEqual);
     for n in names loop
       UnorderedMap.add(n, EvalOrder.INDEPENDENT, order);
     end for;
     copy := StrongComponent.RESIZABLE_COMPONENT(elem_cref, Slice.SLICE(var_ptr, {}), Slice.SLICE(eqn, {}), order, NBSolve.Status.EXPLICIT);
+    guess := StrongComponent.RESIZABLE_COMPONENT(aux_elem_cref, Slice.SLICE(aux_ptr, {}), Slice.SLICE(guess_eqn, {}), UnorderedMap.copy(order), NBSolve.Status.EXPLICIT);
     slice := Slice.SLICE(aux_ptr, {});
   end resizableIterationBox;
+
+  partial function SliceFunc
+    input output Expression exp;
+  end SliceFunc;
+
+  function sliceAttribute
+    "the attribute of the box elements, e.g. the start values of x[2:N] for $RZ"
+    input output Expression exp;
+    input list<Subscript> subs;
+  protected
+    Integer n = Type.dimensionCount(Expression.typeOf(exp));
+    Call call;
+    list<tuple<InstNode, Expression>> iters = {};
+    list<Subscript> rest;
+    Expression range;
+    Boolean ok = true;
+  algorithm
+    if n == 0 then return; end if;
+    // an attribute with fewer dimensions applies to the trailing ones
+    rest := List.lastN(subs, n);
+    exp := match exp
+      // {e for i in 1:n}[s:t] -> {e for i in s:t}, the last iterator belongs to the first dimension
+      case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) guard(listLength(call.iters) == n) algorithm
+        for tpl in listReverse(call.iters) loop
+          range := match (Util.tuple22(tpl), listHead(rest))
+            local
+              Expression slice;
+            case (_, Subscript.WHOLE()) then Util.tuple22(tpl);
+            case (Expression.RANGE(start = Expression.INTEGER(1), step = NONE()), Subscript.SLICE(slice = slice as Expression.RANGE())) then slice;
+            else algorithm ok := false; then Util.tuple22(tpl);
+          end match;
+          iters := (Util.tuple21(tpl), range) :: iters;
+          rest := listRest(rest);
+        end for;
+        call.iters := iters;
+        call.ty := Type.ARRAY(Type.arrayElementType(call.ty), list(Type.nthDimension(Expression.typeOf(Util.tuple22(t)), 1) for t in listReverse(iters)));
+      then if ok then Expression.CALL(call) else Expression.applySubscripts(List.lastN(subs, n), exp);
+      else Expression.applySubscripts(rest, exp);
+    end match;
+  end sliceAttribute;
 
   function mergeResizableLoops
     "Adjacent algebraic loops that are parts of the same variables and equations
