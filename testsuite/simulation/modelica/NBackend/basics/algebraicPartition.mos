@@ -23,16 +23,21 @@ end AlgebraicOutputs;
 "); getErrorString();
 
 setCommandLineOptions("--newBackend -d=backenddaeinfo"); getErrorString();
-buildModel(AlgebraicOutputs); getErrorString();
-system("./AlgebraicOutputs", "AlgebraicOutputs.log");
-val(k, 1, "AlgebraicOutputs_res.mat");
-val(cnt, 1, "AlgebraicOutputs_res.mat");
+simulate(AlgebraicOutputs); getErrorString();
+val(k, 1);
+val(cnt, 1);
 // Result:
 // true
 // ""
 // true
 // ""
-// {"AlgebraicOutputs", "AlgebraicOutputs_init.xml"}
+// record SimulationResult
+//     resultFile = "AlgebraicOutputs_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AlgebraicOutputs', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
 // "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 4 (4)
 //  * Number of variables: 4 (4)
@@ -63,7 +68,6 @@ val(cnt, 1, "AlgebraicOutputs_res.mat");
 //  * Number of for-loop strong components: ......... 0 (resizable: 0, generic: 0, entwined:0)
 //  * Number of algebraic-loop strong components: ... 0 (linear: 0, nonlinear:0)
 // "
-// 0
 // 0.35963601802559386
 // 1.0
 // endResult
