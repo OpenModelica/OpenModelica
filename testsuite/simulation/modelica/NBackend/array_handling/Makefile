@@ -27,6 +27,7 @@ resizableNLSNominal.mos \
 resizableSparsity.mos \
 resizableSparsityArrayEqn.mos \
 resizableSparsityInner.mos \
+resizablePartialBodyFor.mos \
 resizableConnectChain.mos \
 resizableConnectIf.mos \
 arrayConnectOutside.mos \

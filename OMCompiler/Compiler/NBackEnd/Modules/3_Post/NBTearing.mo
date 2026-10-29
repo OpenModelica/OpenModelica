@@ -1043,29 +1043,36 @@ protected
   end restrictedForSlice;
 
   function bodyElementFors
-    "a whole for-equation with a fixed size array body as one for-equation per
-     body element, the iterators stay symbolic"
+    "a for-equation with a fixed size array body as one for-equation per body
+     element, the iterators stay symbolic. a partial slice only if it has every
+     iteration of its body elements."
     input Slice<EquationPointer> slice;
     input Pointer<Integer> eq_index;
     output list<Slice<EquationPointer>> slices = {slice};
   protected
     Equation eqn, body;
     list<Integer> sizes;
+    list<list<Integer>> locations;
     list<Subscript> subs;
     Pointer<Equation> eqn_ptr;
   algorithm
-    if not listEmpty(slice.indices) then
-      return;
-    end if;
     eqn := Pointer.access(Slice.getT(slice));
     () := match eqn
       case Equation.FOR_EQUATION(body = {body as Equation.ARRAY_EQUATION(recordSize = NONE())}) guard
           List.all(Type.arrayDims(body.ty), function Dimension.isKnown(allowExp = false)) and
           not List.any(Type.arrayDims(body.ty), Dimension.isResizable) algorithm
         sizes := list(Dimension.size(d) for d in Type.arrayDims(body.ty));
+        if listEmpty(slice.indices) then
+          locations := list(Slice.indexToLocation(i, sizes) for i in 0:List.fold(sizes, intMul, 1)-1);
+        else
+          locations := bodyElementLocations(eqn, listLength(sizes), slice.indices);
+          if listEmpty(locations) then
+            return;
+          end if;
+        end if;
         slices := {};
-        for i in 0:List.fold(sizes, intMul, 1)-1 loop
-          subs := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in Slice.indexToLocation(i, sizes));
+        for location in locations loop
+          subs := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in location);
           eqn.body := {Equation.SCALAR_EQUATION(Type.arrayElementType(body.ty),
             SimplifyExp.simplifyDump(Equation.scalarizeElement(body.lhs, subs), true, getInstanceName()),
             SimplifyExp.simplifyDump(Equation.scalarizeElement(body.rhs, subs), true, getInstanceName()),
@@ -1080,6 +1087,30 @@ protected
       else ();
     end match;
   end bodyElementFors;
+
+  function bodyElementLocations
+    "the body elements of the rows of a for-equation with an array body, empty if
+     one of them misses an iteration. the rows are numbered as in
+     Equation.forArrayBodyRowResidual, at the analysis sizes of resizable arrays."
+    input Equation eqn;
+    input Integer n_body;
+    input list<Integer> indices;
+    output list<list<Integer>> locations;
+  protected
+    list<Integer> sizes = list(Dimension.size(d, true) for d in Type.arrayDims(Equation.getType(eqn)));
+    Integer n_iter = Iterator.size(Equation.getForIterator(eqn), true);
+    list<Integer> rows = List.sort(List.unique(indices), intGt);
+    list<list<Integer>> row_locations;
+  algorithm
+    row_locations := list(List.firstN(listReverse(Slice.indexToLocation(i, sizes)), n_body) for i in rows);
+    locations := List.uniqueOnTrue(row_locations, function List.isEqualOnTrue(inCompFunc = intEq));
+    for location in locations loop
+      if List.count(row_locations, function List.isEqualOnTrue(inList2 = location, inCompFunc = intEq)) <> n_iter then
+        locations := {};
+        return;
+      end if;
+    end for;
+  end bodyElementLocations;
 
   function restrictedIterators
     "the iterator restricted to the boxes of the iterations, empty if not possible"
