@@ -25,6 +25,7 @@ resizableConnectFor.mos \
 resizableNLSLogging.mos \
 resizableSparsity.mos \
 resizableSparsityArrayEqn.mos \
+resizableSparsityInner.mos \
 resizableConnectChain.mos \
 resizableConnectIf.mos \
 arrayConnectOutside.mos \

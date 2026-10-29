@@ -1,0 +1,72 @@
+// name: resizableSparsityInner
+// keywords: NewBackend resizable sparsity algebraic loop
+// status: correct
+// cflags: --newBackend --simCodeScalarize=false --resizableArrays
+// suite: cSources
+// teardown_command: rm -f resizableSparsityInner1* resizableSparsityInner2*
+//
+// The sparsity pattern of the algebraic loops of a component array stays
+// elementwise for inner variables solved by an array equation (y[1:3]) and for
+// inner variables used as a whole (sum(y)).
+
+loadString("
+model resizableSparsityInner1
+  model Cell
+    Real a(start = 1);
+    Real y[3];
+  equation
+    y = a * {1, 2, 3};
+    a + sum(y[2:3])^3 = time;
+  end Cell;
+  parameter Integer n = 10;
+  Cell c[n];
+end resizableSparsityInner1;
+
+model resizableSparsityInner2
+  model Cell
+    Real a[3](each start = 1);
+    Real y[3];
+  equation
+    for j in 1:3 loop
+      y[j] = a[j]^2;
+    end for;
+    for j in 1:3 loop
+      a[j] + 0.1 * sum(y) = time + j;
+    end for;
+  end Cell;
+  parameter Integer n = 10;
+  Cell c[n];
+end resizableSparsityInner2;
+"); getErrorString();
+
+buildModel(resizableSparsityInner1, stopTime = 1); getErrorString();
+system("grep -q 'SEED_INI_NLS_JAC_1.c\\[WHOLEDIM\\]' resizableSparsityInner1_12jac.c");
+system("./resizableSparsityInner1 -override=n=20", "resizableSparsityInner1.log");
+a := val(c.a[17], 1, "resizableSparsityInner1_res.mat");
+abs(a + (5 * a)^3 - 1) < 1e-6;
+
+buildModel(resizableSparsityInner2, stopTime = 1); getErrorString();
+system("grep -q 'SEED_INI_NLS_JAC_1.c\\[WHOLEDIM\\]' resizableSparsityInner2_12jac.c");
+system("grep -q 'SEED_INI_NLS_JAC_1.c\\[\\$i1\\].a\\[WHOLEDIM\\]' resizableSparsityInner2_12jac.c");
+system("./resizableSparsityInner2 -override=n=20", "resizableSparsityInner2.log");
+a := val(c.a[17,2], 1, "resizableSparsityInner2_res.mat");
+s := val(c.a[17,1], 1, "resizableSparsityInner2_res.mat")^2 + a^2 + val(c.a[17,3], 1, "resizableSparsityInner2_res.mat")^2;
+abs(a + 0.1 * s - 3) < 1e-6;
+// Result:
+// true
+// ""
+// {"resizableSparsityInner1", "resizableSparsityInner1_init.xml"}
+// ""
+// 1
+// 0
+// 0.1866877281769053
+// true
+// {"resizableSparsityInner2", "resizableSparsityInner2_init.xml"}
+// ""
+// 1
+// 0
+// 0
+// 1.8134355029701832
+// 11.865644970298165
+// true
+// endResult
