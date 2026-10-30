@@ -1219,7 +1219,7 @@ algorithm
       },
       Binding.getInfo(binding));
 
-    if not InstContext.inRelaxed(context) then
+    if not InstContext.inInstanceAPI(context) then
       fail();
     end if;
   end if;
