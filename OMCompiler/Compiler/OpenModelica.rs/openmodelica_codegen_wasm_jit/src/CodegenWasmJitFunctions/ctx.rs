@@ -208,6 +208,15 @@ pub(crate) struct SimCtx {
     pub(crate) stored_rel_off: SimOff,
     /// `SimData` byte offset of `relationsPre` (held-mode relation values).
     pub(crate) relations_pre_off: SimOff,
+    /// `SimData` byte offset of `relationsSettled` (C's settled state per relation).
+    pub(crate) rel_settled_off: SimOff,
+    /// `SimData` byte offset of `relationsOutside` (marks of a marked evaluation).
+    pub(crate) rel_outside_off: SimOff,
+    /// `SimData` byte offset of the `markRelationsOutside` flag.
+    pub(crate) mark_rel_outside_off: SimOff,
+    /// Scratch i32 locals of the hysteresis relation state; no expression is
+    /// lowered while they are live, so one set serves every relation in the body.
+    pub(crate) rel_state_tmp: Option<[u32; 5]>,
     /// Number of indexed relations.
     pub(crate) n_relations: u32,
     /// `SimData` byte offset of the held math-event values (`mathEventsValuePre`).
@@ -837,6 +846,17 @@ impl<'a> FnCtx<'a> {
             }
         }
     }
+    pub(super) fn rel_state_temps(&mut self) -> Result<[u32; 5]> {
+        if let Some(p) = self.sim()?.rel_state_tmp {
+            return Ok(p);
+        }
+        let p = [(); 5].map(|_| self.alloc_temp(WTy::I32));
+        self.sim
+            .as_mut()
+            .ok_or("CodegenWasmJit: sim context missing (internal error)")?
+            .rel_state_tmp = Some(p);
+        Ok(p)
+    }
 
     /// Build a context for lowering one *simulation* equation function (see
     /// `CodegenWasmJit`). The function takes the `SimData` base pointer as its
@@ -871,7 +891,11 @@ impl<'a> FnCtx<'a> {
             null_locals: Vec::new(),
             elem_ptr_tmp: None,
             src_loc: None,
-            sim: Some(sim),
+            // The scratch locals belong to this function, whatever `sim` was cloned from.
+            sim: Some(SimCtx {
+                rel_state_tmp: None,
+                ..sim
+            }),
             dt_local_cons: false,
             dt_fallback: None,
             flat: HashMap::default(),

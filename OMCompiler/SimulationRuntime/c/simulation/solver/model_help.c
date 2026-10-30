@@ -170,10 +170,68 @@ void saveZeroCrossings(DATA* data, threadData_t *threadData)
 {
   long i = 0;
 
+  /* the previous marked evaluation was at the point the solver accepted */
+  updateRelationsSettled(data);
+
   for(i=0;i<data->modelData->nZeroCrossings;i++)
     data->simulationInfo->zeroCrossingsPre[i] = data->simulationInfo->zeroCrossings[i];
 
+  functionZeroCrossingsMarked(data, threadData);
+}
+
+/**
+ * @brief Evaluate the zero crossings at a point that may be accepted and mark
+ * on which side the operands of each relation left the hysteresis band.
+ */
+void functionZeroCrossingsMarked(DATA* data, threadData_t *threadData)
+{
+  discardRelationsOutside(data);
+  data->simulationInfo->markRelationsOutside = 1;
   data->callback->function_ZeroCrossings(data, threadData, data->simulationInfo->zeroCrossings);
+  data->simulationInfo->markRelationsOutside = 0;
+}
+
+/**
+ * @brief A relation is settled once its operands left the hysteresis band
+ * after its last switch, and stays settled until it switches again.
+ */
+void updateRelationsSettled(DATA* data)
+{
+  long i;
+  /* an unfinished marked evaluation may have left marks from rejected points */
+  modelica_boolean finished = !data->simulationInfo->markRelationsOutside;
+
+  data->simulationInfo->markRelationsOutside = 0;
+  for(i=0; i<data->modelData->nRelations; i++)
+  {
+    modelica_boolean value = data->simulationInfo->storedRelations[i];
+    if(data->simulationInfo->relationsSettled[i] != value)
+      data->simulationInfo->relationsSettled[i] = finished && data->simulationInfo->relationsOutside[i] == value ? value : RELATION_NONE;
+  }
+}
+
+/**
+ * @brief Forget the marks of the last marked evaluation.
+ */
+void discardRelationsOutside(DATA* data)
+{
+  long i;
+
+  for(i=0; i<data->modelData->nRelations; i++)
+    data->simulationInfo->relationsOutside[i] = RELATION_NONE;
+  data->simulationInfo->markRelationsOutside = 0;
+}
+
+/**
+ * @brief Forget the settled state, e.g. when initialization starts again.
+ */
+void resetRelationsSettled(DATA* data)
+{
+  long i;
+
+  for(i=0; i<data->modelData->nRelations; i++)
+    data->simulationInfo->relationsSettled[i] = RELATION_NONE;
+  discardRelationsOutside(data);
 }
 
 /*! \fn copyStartValuestoInitValues
@@ -1460,6 +1518,9 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo->relations = (modelica_boolean*) calloc(data->modelData->nRelations, sizeof(modelica_boolean));
   data->simulationInfo->relationsPre = (modelica_boolean*) calloc(data->modelData->nRelations, sizeof(modelica_boolean));
   data->simulationInfo->storedRelations = (modelica_boolean*) calloc(data->modelData->nRelations, sizeof(modelica_boolean));
+  data->simulationInfo->relationsSettled = (modelica_boolean*) malloc(data->modelData->nRelations*sizeof(modelica_boolean));
+  data->simulationInfo->relationsOutside = (modelica_boolean*) malloc(data->modelData->nRelations*sizeof(modelica_boolean));
+  resetRelationsSettled(data);
   data->simulationInfo->mathEventsValuePre = (modelica_real*) malloc(data->modelData->nMathEvents*sizeof(modelica_real));
   data->simulationInfo->zeroCrossingIndex = (long*) malloc(data->modelData->nZeroCrossings*sizeof(long));
   /* initialize zeroCrossingsIndex with corresponding index is used by events lists */
@@ -1664,6 +1725,8 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo->relations);
   free(data->simulationInfo->relationsPre);
   free(data->simulationInfo->storedRelations);
+  free(data->simulationInfo->relationsSettled);
+  free(data->simulationInfo->relationsOutside);
   free(data->simulationInfo->mathEventsValuePre);
   free(data->simulationInfo->zeroCrossingIndex);
   free(data->simulationInfo->states_left);

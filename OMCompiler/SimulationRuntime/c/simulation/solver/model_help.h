@@ -104,6 +104,10 @@ void allocIndexMap(MODEL_DATA* modelData, SIMULATION_INFO* simulationInfo);
 void updateDiscreteSystem(DATA *data, threadData_t *threadData);
 
 void saveZeroCrossings(DATA *data, threadData_t *threadData);
+void functionZeroCrossingsMarked(DATA *data, threadData_t *threadData);
+void updateRelationsSettled(DATA *data);
+void discardRelationsOutside(DATA *data);
+void resetRelationsSettled(DATA *data);
 
 void copyStartValuestoInitValues(DATA *data);
 
@@ -166,6 +170,9 @@ modelica_boolean LessEqZC(double a, double b, double a_nominal, double b_nominal
 modelica_boolean GreaterZC(double a, double b, double a_nominal, double b_nominal, modelica_boolean);
 modelica_boolean GreaterEqZC(double a, double b, double a_nominal, double b_nominal, modelica_boolean);
 
+/* values of relationsSettled and relationsOutside other than a relation value */
+#define RELATION_NONE (-1)
+#define RELATION_SWITCHED_EXACTLY (-2)
 
 /**
  * @brief Relation function for compare functions.
@@ -205,6 +212,7 @@ static inline void relation(DATA* data, modelica_boolean* res, double exp1, doub
  *   1. During initialization: Use op_w(exp1,exp2) and update relations[index] and return result in res.
  *   2. No descrete call or in continuous case: Only return pre-value of relation in res
  *   3. Else (events, zero-crossing): Use op_w_zc(exp1,exp2,...) to update relations[index] and return result in res.
+ *      Equal operands of a settled relation compare exactly; once that switches it, the band follows its current value.
  *
  * @param[in]   data      Pointer to data struct
  * @param[out]  res       Gets overwritten with result of relation.
@@ -227,9 +235,41 @@ static inline void relationhysteresis(DATA* data, modelica_boolean* res, double 
   }
   else
   {
-    *res = op_w_zc(exp1, exp2, exp1_nominal, exp2_nominal, data->simulationInfo->storedRelations[index]);
+    modelica_boolean direction = data->simulationInfo->storedRelations[index];
+    modelica_boolean settled = data->simulationInfo->relationsSettled[index];
+    if(settled == RELATION_SWITCHED_EXACTLY)
+    {
+      /* a system re-solved after the switch can land exactly on the threshold again */
+      *res = op_w_zc(exp1, exp2, exp1_nominal, exp2_nominal, data->simulationInfo->relations[index]);
+    }
+    else if(settled == direction && exp1 == exp2)
+    {
+      *res = op_w(exp1, exp2);
+      if(*res != direction)
+        data->simulationInfo->relationsSettled[index] = RELATION_SWITCHED_EXACTLY;
+    }
+    else
+    {
+      *res = op_w_zc(exp1, exp2, exp1_nominal, exp2_nominal, direction);
+    }
     data->simulationInfo->relations[index] = *res;
   }
+}
+
+/**
+ * @brief Zero-crossing counterpart of relationhysteresis. In a marked evaluation, equal operands of a
+ * settled relation compare exactly and the side on which the operands left the band is recorded.
+ */
+static inline void relationhysteresisZC(DATA* data, modelica_boolean* res, double exp1, double exp2, double exp1_nominal, double exp2_nominal, int index, modelica_boolean(*op_w)(double, double), modelica_boolean(*op_w_zc)(double, double, double, double, modelica_boolean))
+{
+  modelica_boolean direction = data->simulationInfo->storedRelations[index];
+  /* only the full evaluation at an accepted point; a root function may compute the operands differently */
+  if(data->simulationInfo->markRelationsOutside && data->simulationInfo->relationsSettled[index] == direction && exp1 == exp2)
+    *res = op_w(exp1, exp2);
+  else
+    *res = op_w_zc(exp1, exp2, exp1_nominal, exp2_nominal, direction);
+  if(data->simulationInfo->markRelationsOutside && op_w_zc(exp1, exp2, exp1_nominal, exp2_nominal, !direction) == direction)
+    data->simulationInfo->relationsOutside[index] = direction;
 }
 
 DLLDataDirection extern int measure_time_flag;

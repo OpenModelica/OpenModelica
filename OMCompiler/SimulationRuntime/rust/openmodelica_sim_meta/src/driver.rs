@@ -953,6 +953,8 @@ impl StepRetry {
             }
         }
         save_old_real(e, sim_data, layout)?; // C's `overwriteOldSimulationData`
+        // The marks may come from the rejected point.
+        discard_relations_outside(e, sim_data, layout)?;
         iterate_discrete(e, sim_data, layout)?;
         if first {
             omclog::warning(
@@ -2764,10 +2766,7 @@ fn init_model(
     // that neither integrates (no states) nor crosses (no zero crossings) reaches no
     // other writer, and would spend the whole run in initialization mode.
     write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
-    if layout.n_zc > 0 {
-        save_zc_pre(e, sim_data, layout)?;
-        e.call2(MODEL_FN_ZC, sim_data, sim_data + layout.zc_off)?;
-    }
+    save_zero_crossings(e, sim_data, layout, true)?;
     write_i32(e, sim_data + layout.initial_off, 0)?;
     // C's `initializeModel` ends with `checkForAsserts` — before the
     // initialization-success line.
@@ -2784,6 +2783,8 @@ fn run_initialization_impl(
     model: Option<&SimMeta>,
 ) -> Result<()> {
     omclog::info(omclog::INIT, false, "### START INITIALIZATION ###");
+    // An FMU in initialization mode can run this repeatedly.
+    reset_relations_settled(e, sim_data, layout)?;
     init_report::reset();
     // Initialization throws on a failed assert (C clears `noThrowAsserts` here).
     let _ = rethrow_store::take();
@@ -4089,23 +4090,130 @@ fn zc_sign_changed(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Resu
 
 /// C's `saveZeroCrossings` (`model_help.c`), the tail of every `simulationUpdate`:
 /// hold, then recompute at the accepted point.
-fn save_zero_crossings(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<usize>> {
+/// `settle` records the settled relation state, which C does only in a simulation.
+fn save_zero_crossings(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, settle: bool) -> Result<Vec<usize>> {
     if layout.n_zc == 0 {
         return Ok(Vec::new());
     }
+    if settle {
+        // The previous marked evaluation was at the point the solver accepted.
+        update_relations_settled(e, sim_data, layout)?;
+    }
     save_zc_pre(e, sim_data, layout)?;
-    e.call2(MODEL_FN_ZC, sim_data, sim_data + layout.zc_off)?;
+    match settle {
+        true => zero_crossings_marked(e, sim_data, layout)?,
+        false => {
+            e.call2(MODEL_FN_ZC, sim_data, sim_data + layout.zc_off)?;
+        }
+    }
     zc_sign_changed(e, sim_data, layout)
 }
 
 /// C's `saveZeroCrossingsAfterEvent` (`events.c`): recompute first, *then* hold, so
 /// the discrete update's own jump is not read as a crossing.
-fn save_zero_crossings_after_event(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+fn save_zero_crossings_after_event(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    settle: bool,
+) -> Result<()> {
     if layout.n_zc == 0 {
         return Ok(());
     }
-    e.call2(MODEL_FN_ZC, sim_data, sim_data + layout.zc_off)?;
+    if settle {
+        zero_crossings_marked(e, sim_data, layout)?;
+        update_relations_settled(e, sim_data, layout)?;
+    } else {
+        e.call2(MODEL_FN_ZC, sim_data, sim_data + layout.zc_off)?;
+    }
     save_zc_pre(e, sim_data, layout)
+}
+
+/// One little-endian i32 of `buf` at element `i`.
+fn i32_at(buf: &[u8], i: usize) -> i32 {
+    i32::from_le_bytes(buf[i * 4..i * 4 + 4].try_into().unwrap())
+}
+
+/// C's `functionZeroCrossingsMarked` (`model_help.c`): evaluate the zero crossings
+/// at a point that may be accepted and mark on which side the operands of each
+/// relation left the hysteresis band. An error leaves the mark set, as in C.
+fn zero_crossings_marked(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    marked(e, sim_data, layout, |e| {
+        e.call2(MODEL_FN_ZC, sim_data, sim_data + layout.zc_off).map(|_| ())
+    })
+}
+
+/// Run `eval` with the mark set, after discarding the previous marks.
+fn marked<T>(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    eval: impl FnOnce(&mut dyn SimEngine) -> Result<T>,
+) -> Result<T> {
+    if layout.n_rel > 0 {
+        discard_relations_outside(e, sim_data, layout)?;
+        write_i32(e, sim_data + layout.mark_rel_outside_off, 1)?;
+    }
+    let v = eval(e)?;
+    if layout.n_rel > 0 {
+        write_i32(e, sim_data + layout.mark_rel_outside_off, 0)?;
+    }
+    Ok(v)
+}
+
+/// C's `updateRelationsSettled` (`model_help.c`): a relation is settled once its
+/// operands left the hysteresis band after its last switch, and stays settled
+/// until it switches again.
+fn update_relations_settled(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    if layout.n_rel == 0 {
+        return Ok(());
+    }
+    // An unfinished marked evaluation may have left marks from rejected points.
+    let finished = read_i32(e, sim_data + layout.mark_rel_outside_off)? == 0;
+    write_i32(e, sim_data + layout.mark_rel_outside_off, 0)?;
+    let n = layout.n_rel as usize;
+    let (mut stored, mut settled, mut outside) = (vec![0u8; n * 4], vec![0u8; n * 4], vec![0u8; n * 4]);
+    e.read_bytes(sim_data + layout.stored_rel_off, &mut stored)?;
+    e.read_bytes(sim_data + layout.rel_settled_off, &mut settled)?;
+    e.read_bytes(sim_data + layout.rel_outside_off, &mut outside)?;
+    for i in 0..n {
+        let value = i32_at(&stored, i);
+        if i32_at(&settled, i) != value {
+            let v = if finished && i32_at(&outside, i) == value {
+                value
+            } else {
+                -1
+            };
+            settled[i * 4..i * 4 + 4].copy_from_slice(&v.to_le_bytes());
+        }
+    }
+    e.write_bytes(sim_data + layout.rel_settled_off, &settled)
+}
+
+/// C's `discardRelationsOutside` (`model_help.c`): forget the marks of the last
+/// marked evaluation.
+fn discard_relations_outside(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    if layout.n_rel == 0 {
+        return Ok(());
+    }
+    e.write_bytes(
+        sim_data + layout.rel_outside_off,
+        &(-1i32).to_le_bytes().repeat(layout.n_rel as usize),
+    )?;
+    write_i32(e, sim_data + layout.mark_rel_outside_off, 0)
+}
+
+/// C's `resetRelationsSettled` (`model_help.c`): forget the settled state, e.g.
+/// when initialization starts again.
+fn reset_relations_settled(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    if layout.n_rel == 0 {
+        return Ok(());
+    }
+    e.write_bytes(
+        sim_data + layout.rel_settled_off,
+        &(-1i32).to_le_bytes().repeat(layout.n_rel as usize),
+    )?;
+    discard_relations_outside(e, sim_data, layout)
 }
 
 /// Copy `relations[]` into the held relation snapshot at `stored_rel_off`. The
@@ -4498,6 +4606,25 @@ fn read_zero_crossings(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout,
     Ok(())
 }
 
+/// [`read_zero_crossings`] as C's marked evaluation (`functionZeroCrossingsMarked`):
+/// at a point that may be accepted, record on which side each relation's operands
+/// left the hysteresis band.
+fn read_zero_crossings_marked(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, out: &mut [f64]) -> Result<()> {
+    marked(e, sim_data, layout, |e| read_zero_crossings(e, sim_data, layout, out))
+}
+
+/// [`save_zero_crossings_after_event`] for a walk that keeps the values in `out`.
+fn read_zero_crossings_after_event(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    out: &mut [f64],
+) -> Result<()> {
+    read_zero_crossings_marked(e, sim_data, layout, out)?;
+    update_relations_settled(e, sim_data, layout)?;
+    save_zc_pre(e, sim_data, layout)
+}
+
 /// C's `bisection`: the crossings at `time` off their own equations. A subset, so
 /// an assert outside it does not fire on every trial point of the root search.
 fn probe_zero_crossings(
@@ -4530,7 +4657,12 @@ fn update_zero_crossings(
     time: f64,
     out: &mut [f64],
     keep: bool,
+    marked: bool,
 ) -> Result<()> {
+    // C's marked evaluation at a point that may be accepted, after committing the last one.
+    if marked {
+        update_relations_settled(e, sim_data, layout)?;
+    }
     // Flush older ones, so only this pass's are in hand below.
     drain_asserts(e, sim_data, omclog::INFO, true)?;
     write_i32(e, sim_data + layout.nls_fail_off, 0)?;
@@ -4540,7 +4672,10 @@ fn update_zero_crossings(
     if !keep {
         let _ = e.take_pending_warnings();
     }
-    read_zero_crossings(e, sim_data, layout, out)
+    match marked {
+        true => read_zero_crossings_marked(e, sim_data, layout, out),
+        false => read_zero_crossings(e, sim_data, layout, out),
+    }
 }
 
 /// Whether any zero-crossing value changed sign between `a` and `b` — i.e. a state
@@ -8242,6 +8377,9 @@ struct SolverCore {
     /// The model's ODE Jacobian sparsity+coloring, for the solvers that difference
     /// it themselves rather than through a `ResCtx` the integrator owns.
     jac_a: Option<JacAInfo>,
+    /// Record the settled relation state at accepted points; C does it in a
+    /// simulation, never in an FMU.
+    settle_relations: bool,
 }
 
 /// C's `numEventLimit`: the longest run in [`crate::CHATTER_LIMITS`].
@@ -8783,6 +8921,7 @@ impl SolverCore {
             time_event: f64::INFINITY,
             step_horizon: f64::INFINITY,
             jac_a: model.jac_a.clone(),
+            settle_relations: true,
         })
     }
 
@@ -9426,6 +9565,7 @@ impl SolverCore {
         sync: &mut crate::sync::Sync,
         mut rows: Option<&mut Vec<f64>>,
         flips: &[usize],
+        left_limit_written: bool,
     ) -> Result<bool> {
         let layout = &model.layout;
         let sim_data = self.sim_data;
@@ -9436,11 +9576,12 @@ impl SolverCore {
         self.note_chatter(model, flips[0])?;
         if let Some(r) = rows.as_deref_mut()
             && !no_event_emit()
+            && !left_limit_written
         {
             capture_pre(e, r, sim_data, layout, t)?;
         }
         self.event_update_here(e, sim_data, layout, ctx as *mut ResCtx, t)?;
-        save_zero_crossings_after_event(e, sim_data, layout)?;
+        save_zero_crossings_after_event(e, sim_data, layout, self.settle_relations)?;
         if let Some(r) = rows.as_deref_mut() {
             if emit_post_event_row(model, t) {
                 capture_row(e, r, sim_data, layout)?;
@@ -9640,7 +9781,7 @@ impl SolverCore {
                         eval_continuous(e, sim_data, layout)?;
                     }
                     store_operators(e, sim_data, layout)?;
-                    let flips = save_zero_crossings(e, sim_data, layout)?;
+                    let flips = save_zero_crossings(e, sim_data, layout, self.settle_relations)?;
                     if !flips.is_empty() {
                         *did_step = true;
                         event_step = true;
@@ -9648,7 +9789,7 @@ impl SolverCore {
                             log_state_event(self.t, &flips, model);
                             return Ok(Step::Event { time: self.t });
                         }
-                        if self.handle_zc_flips(e, model, ctx, sync, rows.as_deref_mut(), &flips)? {
+                        if self.handle_zc_flips(e, model, ctx, sync, rows.as_deref_mut(), &flips, false)? {
                             return Ok(Step::Terminated);
                         }
                     }
@@ -9687,7 +9828,8 @@ impl SolverCore {
                     let roots = if left.is_none() {
                         eval_pre(e, sim_data, layout, troot)?;
                         e.call1_if_present("functionZeroCrossingsEquations", sim_data)?;
-                        save_zero_crossings(e, sim_data, layout)?
+                        // The exact relation rule needs operands from the full evaluation.
+                        save_zero_crossings(e, sim_data, layout, self.settle_relations && !layout.has_when)?
                     } else {
                         self.roots_nonzero()
                     };
@@ -9716,14 +9858,14 @@ impl SolverCore {
                         }
                     }
                     if left.is_some() {
-                        let _ = save_zero_crossings(e, sim_data, layout)?;
+                        let _ = save_zero_crossings(e, sim_data, layout, self.settle_relations)?;
                     }
                     if defers(troot) {
                         write_time(e, sim_data, troot)?;
                         return Ok(Step::Event { time: troot });
                     }
                     self.event_update_here(e, sim_data, layout, ctx, troot)?;
-                    save_zero_crossings_after_event(e, sim_data, layout)?;
+                    save_zero_crossings_after_event(e, sim_data, layout, self.settle_relations)?;
                     if let Some(r) = rows.as_deref_mut() {
                         if emit_post_event_row(model, troot) {
                             capture_row(e, r, sim_data, layout)?;
@@ -9801,7 +9943,7 @@ impl SolverCore {
                 if !accepted {
                     store_operators_at(e, sim_data, layout, te)?;
                 }
-                let flips = save_zero_crossings(e, sim_data, layout)?;
+                let flips = save_zero_crossings(e, sim_data, layout, self.settle_relations)?;
                 log_roots(&flips, model);
                 if defers(te) {
                     self.t = te;
@@ -9822,7 +9964,7 @@ impl SolverCore {
                 {
                     emit_row(e, r, sim_data, layout, te, model.stop_time)?;
                 }
-                save_zero_crossings_after_event(e, sim_data, layout)?;
+                save_zero_crossings_after_event(e, sim_data, layout, self.settle_relations)?;
                 store_operators(e, sim_data, layout)?;
                 omclog::close(omclog::EVENTS);
                 if terminated(e, sim_data, layout)? {
@@ -9866,12 +10008,12 @@ impl SolverCore {
                     }
                     // `fmi2DoStep`'s own detection: the only one an FMU without
                     // root finding has, and it lands on the communication point.
-                    let flips = save_zero_crossings(e, sim_data, layout)?;
+                    let flips = save_zero_crossings(e, sim_data, layout, self.settle_relations)?;
                     if !flips.is_empty() {
                         if defers(self.t) {
                             return Ok(Step::Event { time: self.t });
                         }
-                        if self.handle_zc_flips(e, model, ctx, sync, None, &flips)? {
+                        if self.handle_zc_flips(e, model, ctx, sync, None, &flips, false)? {
                             return Ok(Step::Terminated);
                         }
                     }
@@ -10047,6 +10189,7 @@ impl CsDriver {
         };
         let gbode = alloc_gbode(e, model, method)?;
         let mut core = SolverCore::new(&*e, model, sim_data, t, method, gbode)?;
+        core.settle_relations = false;
         core.fmi_cs_solver_setup(defer);
         if core.n_states > 0 {
             core.read_states(e)?;
@@ -10210,7 +10353,7 @@ impl CsDriver {
                 }
                 let mut troot = None;
                 if layout.n_zc > 0 && subtarget - self.core.t > eps {
-                    update_zero_crossings(e, sim_data, layout, subtarget, &mut scratch, false)?;
+                    update_zero_crossings(e, sim_data, layout, subtarget, &mut scratch, false, false)?;
                     if zc_crossed(&self.zc0, &scratch) {
                         troot = Some(locate_zc_root(
                             e,
@@ -10226,7 +10369,7 @@ impl CsDriver {
                 if let Some((tleft, tr)) = troot {
                     eval_event_left(e, sim_data, layout, sim_data + layout.real_off, tleft, &[], true)?;
                     // The bisection left `SimData` at its last trial point.
-                    update_zero_crossings(e, sim_data, layout, tr, &mut scratch, false)?;
+                    update_zero_crossings(e, sim_data, layout, tr, &mut scratch, false, false)?;
                     self.core.t = tr;
                     let crossed = zc_crossed_idx(&self.zc0, &scratch);
                     log_state_event(tr, &crossed, model);
@@ -10379,7 +10522,7 @@ impl CsDriver {
         if tc.is_finite() {
             up.next_event_time = Some(up.next_event_time.map_or(tc, |n: f64| n.min(tc)));
         }
-        save_zero_crossings_after_event(e, sim_data, layout)?;
+        save_zero_crossings_after_event(e, sim_data, layout, false)?;
         store_operators(e, sim_data, layout)?;
         if self.core.n_states == 0 && layout.n_zc > 0 {
             read_zero_crossings(e, sim_data, layout, &mut self.zc0)?;
@@ -10698,7 +10841,7 @@ impl Driver for EventsDriver {
                     let mut troot = None;
                     if layout.n_zc > 0 && subtarget - self.core.t > eps {
                         evaluated = subtarget >= tout - eps;
-                        update_zero_crossings(e, sim_data, layout, subtarget, &mut scratch, evaluated)?;
+                        update_zero_crossings(e, sim_data, layout, subtarget, &mut scratch, evaluated, true)?;
                         if zc_crossed(&zc0, &scratch) {
                             troot = Some(locate_zc_root(
                                 e,
@@ -10714,7 +10857,7 @@ impl Driver for EventsDriver {
                     if let Some((tleft, tr)) = troot {
                         supersede(e, &mut evaluated);
                         // The bisection left `SimData` at its last trial point.
-                        update_zero_crossings(e, sim_data, layout, tr, &mut scratch, false)?;
+                        update_zero_crossings(e, sim_data, layout, tr, &mut scratch, false, false)?;
                         let crossed = zc_crossed_idx(&zc0, &scratch);
                         log_state_event(tr, &crossed, model);
                         self.core.t = tr;
@@ -10748,8 +10891,7 @@ impl Driver for EventsDriver {
                         // C's "add event to spatialDistribution": the post-event
                         // input jump becomes a discontinuity in the profile.
                         store_operators(e, sim_data, layout)?;
-                        read_zero_crossings(e, sim_data, layout, &mut zc0)?;
-                        save_zc_pre(e, sim_data, layout)?;
+                        read_zero_crossings_after_event(e, sim_data, layout, &mut zc0)?;
                         omclog::close(omclog::EVENTS);
                         if tout - tr < GRID_SKIP_EPS {
                             grid_covered = true;
@@ -10785,8 +10927,7 @@ impl Driver for EventsDriver {
                             }
                             store_operators(e, sim_data, layout)?;
                             if layout.n_zc > 0 {
-                                read_zero_crossings(e, sim_data, layout, &mut zc0)?;
-                                save_zc_pre(e, sim_data, layout)?;
+                                read_zero_crossings_after_event(e, sim_data, layout, &mut zc0)?;
                             }
                             if tout - subtarget < GRID_SKIP_EPS {
                                 grid_covered = true;
@@ -10821,8 +10962,7 @@ impl Driver for EventsDriver {
                         self.core.t = te;
                         store_operators(e, sim_data, layout)?;
                         if layout.n_zc > 0 {
-                            read_zero_crossings(e, sim_data, layout, &mut zc0)?;
-                            save_zc_pre(e, sim_data, layout)?;
+                            read_zero_crossings_after_event(e, sim_data, layout, &mut zc0)?;
                         }
                         omclog::close(omclog::EVENTS);
                         if tout - te < GRID_SKIP_EPS {
@@ -10964,11 +11104,17 @@ impl Driver for EventsDriver {
                 if !accepted {
                     store_operators(e, sim_data, layout)?;
                 }
-                let flips = save_zero_crossings(e, sim_data, layout)?;
+                let flips = save_zero_crossings(e, sim_data, layout, self.core.settle_relations)?;
                 if !flips.is_empty()
-                    && self
-                        .core
-                        .handle_zc_flips(e, model, &mut ctx, &mut self.sync, Some(&mut self.rows), &flips)?
+                    && self.core.handle_zc_flips(
+                        e,
+                        model,
+                        &mut ctx,
+                        &mut self.sync,
+                        Some(&mut self.rows),
+                        &flips,
+                        true,
+                    )?
                 {
                     break Advance::Terminated;
                 }
@@ -12600,6 +12746,7 @@ impl GuessStepper {
     pub(crate) fn new(e: &mut (dyn SimEngine + 'static), model: &SimModel, sim_data: u32, t0: f64) -> Result<Self> {
         daskr::auxiliary::xsetf(0); // DASKR's own printing would corrupt the log
         let mut core = SolverCore::new(e, model, sim_data, t0, "dassl", None)?;
+        core.settle_relations = false;
         core.read_states(e)?;
         Ok(GuessStepper { core })
     }

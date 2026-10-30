@@ -32,6 +32,7 @@ MathEventFuncs2.mos \
 noEventEmit.mos \
 noEventNotRespected.mos \
 Reinit.mos \
+RelationEqualOperands.mos \
 sample1.mos \
 sample2.mos \
 ServerWithQueue.mos \
