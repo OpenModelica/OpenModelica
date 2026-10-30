@@ -21,8 +21,8 @@ end jacobianArrayIndices;
 
 setCommandLineOptions("--newBackend --simCodeScalarize=false");
 simulate(jacobianArrayIndices); getErrorString();
-regexBool(readFile("jacobianArrayIndices_12jac.c"), "col_counts\\[2\\]\\+\\+");
-regexBool(readFile("jacobianArrayIndices_12jac.c"), "col_counts\\[1\\]\\+\\+");
+regexBool(readFile("jacobianArrayIndices_12jac.c"), "addSparsePair\\(&_sp_pairs, 2, ");
+regexBool(readFile("jacobianArrayIndices_12jac.c"), "addSparsePair\\(&_sp_pairs, 1, ");
 val(x[1], 1.0);
 val(y, 1.0);
 

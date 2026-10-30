@@ -37,6 +37,15 @@
 extern "C" {
 #endif
 
+/* (column, row) entries of a sparsity pattern in any order, see sparsePatternFromPairs */
+typedef struct SPARSE_PAIRS
+{
+  unsigned int* cols;
+  unsigned int* rows;
+  size_t size;
+  size_t capacity;
+} SPARSE_PAIRS;
+
 void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRows, unsigned int sizeTmpVars, EVAL_DAG* dag, jacobianColumn_func_ptr evalColumn, jacobianColumn_func_ptr constantEqns, SPARSE_PATTERN* sparsePattern);
 JACOBIAN* copyJacobian(JACOBIAN* source);
 void freeJacobian(JACOBIAN* jac);
@@ -47,6 +56,8 @@ void evalJacobianBidirectional(DATA* data, threadData_t *threadData, JACOBIAN* f
 
 SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int nnz, unsigned int maxColors);
 SPARSE_PATTERN* cscToCsr(const SPARSE_PATTERN* csc, unsigned int nRows, unsigned int nCols);
+void addSparsePair(SPARSE_PAIRS* pairs, unsigned int col, unsigned int row);
+SPARSE_PATTERN* sparsePatternFromPairs(SPARSE_PAIRS* pairs, unsigned int nCols);
 SPARSE_PATTERN* transposeSparsePattern(const SPARSE_PATTERN* in, unsigned int nLeadOut, unsigned int nLeadIn, unsigned int** nzMap);
 SPARSE_PATTERN* getJacobianCscPattern(JACOBIAN* jac);
 void freeSparsePattern(SPARSE_PATTERN *spp);

@@ -79,9 +79,8 @@ pub static omr_td_off_error_stage: usize = core::mem::offset_of!(threadData_t, c
 /// `gc/omc_gc.h`'s `errorStage`, which decides what an assertion does.
 pub mod error_stage {
     pub use crate::abi::{
-        ERROR_EVENTHANDLING as EVENTHANDLING, ERROR_EVENTSEARCH as EVENTSEARCH,
-        ERROR_INTEGRATOR as INTEGRATOR, ERROR_NONLINEARSOLVER as NONLINEARSOLVER,
-        ERROR_OPTIMIZE as OPTIMIZE, ERROR_SIMULATION as SIMULATION,
+        ERROR_EVENTHANDLING as EVENTHANDLING, ERROR_EVENTSEARCH as EVENTSEARCH, ERROR_INTEGRATOR as INTEGRATOR,
+        ERROR_NONLINEARSOLVER as NONLINEARSOLVER, ERROR_OPTIMIZE as OPTIMIZE, ERROR_SIMULATION as SIMULATION,
     };
 }
 
@@ -129,11 +128,7 @@ fn with_position(info: &FILE_INFO, msg: &str) -> String {
 /// Every model callback called from inside a Rust frame goes through this. A
 /// stage that still jumps gets `threadData`'s simulation jump buffer: a `longjmp`
 /// past Rust frames would skip the solver's own bookkeeping.
-pub(crate) fn protected<F: FnMut()>(
-    thread_data: *mut threadData_t,
-    stage: c_int,
-    mut f: F,
-) -> bool {
+pub(crate) fn protected<F: FnMut()>(thread_data: *mut threadData_t, stage: c_int, mut f: F) -> bool {
     if stage_raises(stage) {
         let td = unsafe { &mut *thread_data };
         let saved = td.currentErrorStage;
@@ -145,9 +140,7 @@ pub(crate) fn protected<F: FnMut()>(
     unsafe extern "C" fn trampoline<F: FnMut()>(p: *mut c_void) {
         unsafe { (*(p as *mut F))() }
     }
-    let rc = unsafe {
-        omr_protected(trampoline::<F>, &mut f as *mut F as *mut c_void, thread_data, stage)
-    };
+    let rc = unsafe { omr_protected(trampoline::<F>, &mut f as *mut F as *mut c_void, thread_data, stage) };
     rc != -1 && !error_raised(thread_data)
 }
 
@@ -157,9 +150,7 @@ pub(crate) fn protected_global<F: FnMut()>(thread_data: *mut threadData_t, mut f
     unsafe extern "C" fn trampoline<F: FnMut()>(p: *mut c_void) {
         unsafe { (*(p as *mut F))() }
     }
-    let rc = unsafe {
-        omr_protected_global(trampoline::<F>, &mut f as *mut F as *mut c_void, thread_data)
-    };
+    let rc = unsafe { omr_protected_global(trampoline::<F>, &mut f as *mut F as *mut c_void, thread_data) };
     rc != -1 && !error_raised(thread_data)
 }
 
@@ -167,10 +158,7 @@ pub(crate) fn protected_global<F: FnMut()>(thread_data: *mut threadData_t, mut f
 fn stage_raises(stage: c_int) -> bool {
     matches!(
         stage,
-        error_stage::SIMULATION
-            | error_stage::INTEGRATOR
-            | error_stage::NONLINEARSOLVER
-            | error_stage::EVENTSEARCH
+        error_stage::SIMULATION | error_stage::INTEGRATOR | error_stage::NONLINEARSOLVER | error_stage::EVENTSEARCH
     )
 }
 
@@ -200,10 +188,7 @@ unsafe extern "C" {
     /// Leave through one of `threadData`'s jump buffers; does not return.
     pub(crate) fn omr_jump(threadData: *mut threadData_t, where_: c_int);
     /// The two entry points the function-pointer globals below are pre-set to.
-    #[cfg_attr(
-        shim_trampolines,
-        link_name = "omr_shim_assert_simulation_withEquationIndexes"
-    )]
+    #[cfg_attr(shim_trampolines, link_name = "omr_shim_assert_simulation_withEquationIndexes")]
     fn omc_assert_simulation_withEquationIndexes(
         threadData: *mut threadData_t,
         info: FILE_INFO,
@@ -277,10 +262,9 @@ pub extern "C" fn omr_assert_report(
         None => {}
     }
     match stage {
-        error_stage::EVENTSEARCH
-        | error_stage::SIMULATION
-        | error_stage::NONLINEARSOLVER
-        | error_stage::INTEGRATOR => jump::RAISE,
+        error_stage::EVENTSEARCH | error_stage::SIMULATION | error_stage::NONLINEARSOLVER | error_stage::INTEGRATOR => {
+            jump::RAISE
+        }
         error_stage::EVENTHANDLING | error_stage::OPTIMIZE => jump::GLOBAL,
         _ => jump::SIMULATION,
     }
@@ -498,9 +482,12 @@ pub extern "C" fn initJacobian(
 #[unsafe(no_mangle)]
 pub extern "C" fn initBidirectionalRecovery(fwd: *mut JACOBIAN) {
     let fwd = unsafe { &mut *fwd };
-    let Some(adj) = (unsafe { fwd.adjointJacobian.as_mut() }) else { return };
-    let (Some(f), Some(a)) = (unsafe { fwd.sparsePattern.as_ref() }, unsafe { adj.sparsePattern.as_ref() })
-    else {
+    let Some(adj) = (unsafe { fwd.adjointJacobian.as_mut() }) else {
+        return;
+    };
+    let (Some(f), Some(a)) = (unsafe { fwd.sparsePattern.as_ref() }, unsafe {
+        adj.sparsePattern.as_ref()
+    }) else {
         return;
     };
     let nnz = f.nnz as usize;
@@ -537,11 +524,7 @@ pub extern "C" fn initBidirectionalRecovery(fwd: *mut JACOBIAN) {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn allocSparsePattern(
-    n_leadIndex: c_uint,
-    nnz: c_uint,
-    maxColors: c_uint,
-) -> *mut SPARSE_PATTERN {
+pub extern "C" fn allocSparsePattern(n_leadIndex: c_uint, nnz: c_uint, maxColors: c_uint) -> *mut SPARSE_PATTERN {
     let p = calloc_bytes(core::mem::size_of::<SPARSE_PATTERN>()) as *mut SPARSE_PATTERN;
     let s = unsafe { &mut *p };
     s.nnz = nnz;
@@ -612,7 +595,13 @@ unsafe extern "C" fn omr_message_text(
         Some(&n) if n > 0 => unsafe { core::slice::from_raw_parts(indexes.add(1), n as usize) },
         _ => &[],
     };
-    omclog::message_text_used(ty as omclog::LogType, stream as omclog::Stream, indent_next != 0, &text, used);
+    omclog::message_text_used(
+        ty as omclog::LogType,
+        stream as omclog::Stream,
+        indent_next != 0,
+        &text,
+        used,
+    );
 }
 
 unsafe extern "C" fn omr_message_close(stream: c_int) {
@@ -658,20 +647,17 @@ pub fn publish_log_streams() {
         unsafe { omc_useStream[i] = omclog::active(i as omclog::Stream) as c_int };
     }
     unsafe {
-        omc_showAllWarnings =
-            (omclog::mask() & omclog::SHOW_ALL_WARNINGS != 0) as c_int;
+        omc_showAllWarnings = (omclog::mask() & omclog::SHOW_ALL_WARNINGS != 0) as c_int;
     }
 }
 
 /// C's `cscToCsr`: the same pattern by row. `colorCols` is left at the
 /// allocation's zeros -- the caller only reads `leadindex`/`index`.
 #[unsafe(no_mangle)]
-pub extern "C" fn cscToCsr(
-    csc: *const SPARSE_PATTERN,
-    nRows: c_uint,
-    nCols: c_uint,
-) -> *mut SPARSE_PATTERN {
-    let Some(csc) = (unsafe { csc.as_ref() }) else { return ptr::null_mut() };
+pub extern "C" fn cscToCsr(csc: *const SPARSE_PATTERN, nRows: c_uint, nCols: c_uint) -> *mut SPARSE_PATTERN {
+    let Some(csc) = (unsafe { csc.as_ref() }) else {
+        return ptr::null_mut();
+    };
     let (rows, cols, nnz) = (nRows as usize, nCols as usize, csc.nnz as usize);
     let ap = unsafe { core::slice::from_raw_parts(csc.leadindex, cols + 1) };
     let ai = unsafe { core::slice::from_raw_parts(csc.index, nnz) };
@@ -708,6 +694,69 @@ pub extern "C" fn cscToCsr(
         core::ptr::copy_nonoverlapping(bj.as_ptr(), d.index, nnz);
     }
     csr
+}
+
+/// C's `addSparsePair`: append one entry, `pairs` zeroed before the first call.
+#[unsafe(no_mangle)]
+pub extern "C" fn addSparsePair(pairs: *mut SPARSE_PAIRS, col: c_uint, row: c_uint) {
+    let p = unsafe { &mut *pairs };
+    if p.size == p.capacity {
+        p.capacity = if p.capacity == 0 { 64 } else { 2 * p.capacity };
+        let bytes = p.capacity * core::mem::size_of::<c_uint>();
+        p.cols = unsafe { libc::realloc(p.cols as *mut c_void, bytes) } as *mut c_uint;
+        p.rows = unsafe { libc::realloc(p.rows as *mut c_void, bytes) } as *mut c_uint;
+        if p.cols.is_null() || p.rows.is_null() {
+            std::process::abort();
+        }
+    }
+    unsafe {
+        *p.cols.add(p.size) = col;
+        *p.rows.add(p.size) = row;
+    }
+    p.size += 1;
+}
+
+/// C's `sparsePatternFromPairs`: the CSC pattern of the entries, rows in the
+/// order they were added; frees the entries.
+#[unsafe(no_mangle)]
+pub extern "C" fn sparsePatternFromPairs(pairs: *mut SPARSE_PAIRS, nCols: c_uint) -> *mut SPARSE_PATTERN {
+    let p = unsafe { &mut *pairs };
+    let cols = nCols as usize;
+    let sp = allocSparsePattern(nCols, p.size as c_uint, 0);
+    let (pc, pr): (&[c_uint], &[c_uint]) = if p.size == 0 {
+        (&[], &[])
+    } else {
+        unsafe {
+            (
+                core::slice::from_raw_parts(p.cols, p.size),
+                core::slice::from_raw_parts(p.rows, p.size),
+            )
+        }
+    };
+    let mut next = vec![0 as c_uint; cols + 1];
+    for &c in pc {
+        next[c as usize + 1] += 1;
+    }
+    for c in 0..cols {
+        next[c + 1] += next[c];
+    }
+    unsafe {
+        let d = &mut *sp;
+        core::ptr::copy_nonoverlapping(next.as_ptr(), d.leadindex, cols + 1);
+        for (&c, &r) in pc.iter().zip(pr) {
+            *d.index.add(next[c as usize] as usize) = r;
+            next[c as usize] += 1;
+        }
+        libc::free(p.cols as *mut c_void);
+        libc::free(p.rows as *mut c_void);
+    }
+    *p = SPARSE_PAIRS {
+        cols: ptr::null_mut(),
+        rows: ptr::null_mut(),
+        size: 0,
+        capacity: 0,
+    };
+    sp
 }
 
 /// C's `sortUniqueSparsePattern`: the resizable NBackend pattern can have unsorted
@@ -871,9 +920,7 @@ pub extern "C" fn readSparsePatternColor(
         if index >= maxIndex {
             crate::throw(
                 threadData,
-                &format!(
-                    "Error while reading color {color} of sparsity pattern. Index {index} out of bounds"
-                ),
+                &format!("Error while reading color {color} of sparsity pattern. Index {index} out of bounds"),
             );
         }
         unsafe { *colorCols.add(index as usize) = color };
@@ -908,14 +955,20 @@ fn build_eval_dag(md: *mut MODEL_DATA, n_vars: usize, n_eqns: usize, ixs: *const
     for i in 0..md.nVariablesReal.max(0) as usize {
         let info = unsafe { &(*md.realVarsData.add(i)).info };
         let name = unsafe { core::ffi::CStr::from_ptr(info.name) };
-        let var = if info.id >= 1000 { (info.id - 1000) as usize } else { NO_INDEX };
+        let var = if info.id >= 1000 {
+            (info.id - 1000) as usize
+        } else {
+            NO_INDEX
+        };
         if let Entry::Vacant(v) = table.entry(name) {
             v.insert((var, NO_INDEX));
         }
     }
     let ixs = unsafe { core::slice::from_raw_parts(ixs, n_eqns) };
     let cstrs = |p: *const *const c_char, n: c_int| -> Vec<&'static core::ffi::CStr> {
-        (0..n.max(0) as usize).map(|j| unsafe { core::ffi::CStr::from_ptr(*p.add(j)) }).collect()
+        (0..n.max(0) as usize)
+            .map(|j| unsafe { core::ffi::CStr::from_ptr(*p.add(j)) })
+            .collect()
     };
     let mut map_var_to_eq = vec![NO_INDEX; n_vars];
     for (i, &ix) in ixs.iter().enumerate() {
@@ -946,7 +999,10 @@ fn build_eval_dag(md: *mut MODEL_DATA, n_vars: usize, n_eqns: usize, ixs: *const
         .iter()
         .map(|&ix| {
             let eq = crate::info_json::modelInfoGetEquation(&mut md.modelDataXml, ix);
-            cstrs(eq.varsUsed, eq.numVarUsed).iter().map(|u| table.get(u).map_or(NO_INDEX, |e| e.1)).collect()
+            cstrs(eq.varsUsed, eq.numVarUsed)
+                .iter()
+                .map(|u| table.get(u).map_or(NO_INDEX, |e| e.1))
+                .collect()
         })
         .collect();
     Box::into_raw(Box::new(EvalDag { map_var_to_eq, eq_dep })) as *mut c_void
@@ -960,7 +1016,12 @@ pub extern "C" fn buildEvalDAG_ODE(modelData: *mut MODEL_DATA, nEqns: usize, ixs
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn buildEvalDAG_Jac(jacobian: *mut JACOBIAN, modelData: *mut MODEL_DATA, nEqns: usize, ixs: *const usize) {
+pub extern "C" fn buildEvalDAG_Jac(
+    jacobian: *mut JACOBIAN,
+    modelData: *mut MODEL_DATA,
+    nEqns: usize,
+    ixs: *const usize,
+) {
     let n_vars = unsafe { (*jacobian).sizeRows + (*jacobian).sizeTmpVars };
     let dag = build_eval_dag(modelData, n_vars, nEqns, ixs);
     unsafe { (*jacobian).dag = dag };
@@ -978,8 +1039,16 @@ impl EvalSelection {
     pub fn new(dag: *mut c_void) -> Option<Self> {
         let d = unsafe { (dag as *const EvalDag).as_ref()? };
         let mut idx = vec![0usize; d.eq_dep.len()];
-        let sel = Box::new(EVAL_SELECTION { n: 0, idx: idx.as_mut_ptr(), dag });
-        Some(EvalSelection { sel, idx, select: vec![false; d.eq_dep.len()] })
+        let sel = Box::new(EVAL_SELECTION {
+            n: 0,
+            idx: idx.as_mut_ptr(),
+            dag,
+        });
+        Some(EvalSelection {
+            sel,
+            idx,
+            select: vec![false; d.eq_dep.len()],
+        })
     }
 
     /// C's `updateEvalSelection`: the equations solving the derivatives of
@@ -1072,7 +1141,11 @@ pub extern "C" fn _event_mod_integer(
         }
     }
     let tmp = x1 % x2;
-    if (x2 > 0 && tmp < 0) || (x2 < 0 && tmp > 0) { tmp + x2 } else { tmp }
+    if (x2 > 0 && tmp < 0) || (x2 < 0 && tmp > 0) {
+        tmp + x2
+    } else {
+        tmp
+    }
 }
 
 #[unsafe(no_mangle)]
@@ -1178,7 +1251,14 @@ pub extern "C" fn getStartFromScalarIdx(
     kind: c_int,
     scalar_idx: usize,
 ) -> f64 {
-    real_attribute(unsafe { &*simulationInfo }, unsafe { &*modelData }, kind, scalar_idx, |a| &a.start, 0.0)
+    real_attribute(
+        unsafe { &*simulationInfo },
+        unsafe { &*modelData },
+        kind,
+        scalar_idx,
+        |a| &a.start,
+        0.0,
+    )
 }
 
 #[unsafe(no_mangle)]
@@ -1189,7 +1269,14 @@ pub extern "C" fn getMinFromScalarIdx(
     kind: c_int,
     scalar_idx: usize,
 ) -> f64 {
-    real_attribute(unsafe { &*simulationInfo }, unsafe { &*modelData }, kind, scalar_idx, |a| &a.min, -f64::MAX)
+    real_attribute(
+        unsafe { &*simulationInfo },
+        unsafe { &*modelData },
+        kind,
+        scalar_idx,
+        |a| &a.min,
+        -f64::MAX,
+    )
 }
 
 #[unsafe(no_mangle)]
@@ -1200,7 +1287,14 @@ pub extern "C" fn getMaxFromScalarIdx(
     kind: c_int,
     scalar_idx: usize,
 ) -> f64 {
-    real_attribute(unsafe { &*simulationInfo }, unsafe { &*modelData }, kind, scalar_idx, |a| &a.max, f64::MAX)
+    real_attribute(
+        unsafe { &*simulationInfo },
+        unsafe { &*modelData },
+        kind,
+        scalar_idx,
+        |a| &a.max,
+        f64::MAX,
+    )
 }
 
 #[unsafe(no_mangle)]
@@ -1210,5 +1304,12 @@ pub extern "C" fn getNominalFromScalarIdx(
     kind: c_int,
     scalar_idx: usize,
 ) -> f64 {
-    real_attribute(unsafe { &*simulationInfo }, unsafe { &*modelData }, kind, scalar_idx, |a| &a.nominal, 1.0)
+    real_attribute(
+        unsafe { &*simulationInfo },
+        unsafe { &*modelData },
+        kind,
+        scalar_idx,
+        |a| &a.nominal,
+        1.0,
+    )
 }
