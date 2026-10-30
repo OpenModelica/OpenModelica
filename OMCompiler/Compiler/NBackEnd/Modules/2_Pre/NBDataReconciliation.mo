@@ -63,10 +63,12 @@ protected
   import Variable = NFVariable;
 
   // Util
+  import Absyn;
   import DAE;
   import Error;
   import Flags;
   import List;
+  import ProgramUtil;
   import SCode;
   import SCodeUtil;
   import Settings;
@@ -113,8 +115,10 @@ public uniontype ReconciliationData
 end ReconciliationData;
 
 public function main extends Module.wrapper;
-  input String fileNamePrefix;
 protected
+  BackendDAE.ExtraInfo info = BackendDAE.getExtraInfo(bdae);
+  String fileNamePrefix = info.fileNamePrefix;
+  String csvFileName;
   ExtractionSystem sys;
   list<Integer> knowns = {}, boundaryConditionVars, boundaryConditions, bindingEquations = {}, ebltEquations = {}, setC, setS = {};
   list<Integer> approximatedEquations = {}, approximatedRows = {}, boundaryConditionEquations, setSVars, unmeasured = {};
@@ -125,6 +129,7 @@ protected
   list<Pointer<Variable>> unknowns, var_lst, bc_vars, params;
   list<Pointer<Equation>> eqn_lst, bc_eqns;
   ReconciliationData data;
+  list<tuple<String, String>> measurements;
   Boolean status = false;
   Integer procedureCount = 1;
 algorithm
@@ -220,10 +225,9 @@ algorithm
     then data;
   end match;
 
-  // TODO: set the start values of the variables of interest to the measurements in the -sx csv file,
-  //   like readMeasurementsFromCSV and setStartValuesToMeasurements in the old backend. The simulation
-  //   flags are not passed to the new backend, and resolving a modelica:// or file:// path needs
-  //   SymbolTable, which nbackend cannot import.
+  // the measurements as start values help the convergence
+  (csvFileName, measurements) := readMeasurementsFromCSV(info.simflags, info.program);
+  setStartValuesToMeasurements(data.inputVars, measurements, csvFileName);
 
   // templates for the measurements, existing files of the user are not overwritten
   if not System.regularFileExists(fileNamePrefix + "_Inputs.csv") then
@@ -238,6 +242,103 @@ algorithm
   System.writeFile(fileNamePrefix + "_Reconciled_tmp.mo", dumpReconciledModel(data, fileNamePrefix));
   bdae := replaceModel(bdae, data);
 end main;
+
+protected function extractSxPath
+  "returns the csv file of the -sx flag in the simulation flags"
+  input String simflags;
+  output String csvFilePath = "";
+protected
+  Integer nummatches;
+  list<String> matches;
+algorithm
+  if System.stringFind(simflags, "-sx") < 0 then
+    Error.addMessage(Error.INTERNAL_ERROR, {": No -sx flag found in simflags, hence no csv file will be read for setting start values of the variables of interest for data reconciliation initialization."});
+    fail();
+  end if;
+
+  (nummatches, matches) := System.regex(simflags, "-sx[ \t]*=[ \t]*(\"[^\"]*\"|[^, \t]+)", 2, true);
+  if nummatches == 2 then
+    csvFilePath := System.stringReplace(listGet(matches, 2), " ", "");
+    csvFilePath := System.stringReplace(csvFilePath, "\"", "");
+  end if;
+end extractSxPath;
+
+protected function readMeasurementsFromCSV
+  "reads the (name, value) pairs of the -sx csv file"
+  input Option<String> simflags;
+  input Absyn.Program program;
+  output String csvFileName;
+  output list<tuple<String, String>> measurementData = {};
+protected
+  String content;
+  list<String> tokens;
+algorithm
+  if isNone(simflags) then
+    Error.addMessage(Error.INTERNAL_ERROR, {": simflags is NONE, expected the simulation flags to be present for reading measurements from csv file for data reconciliation initialization."});
+    fail();
+  end if;
+
+  csvFileName := extractSxPath(Util.getOption(simflags));
+  if stringEmpty(csvFileName) then
+    Error.addMessage(Error.INTERNAL_ERROR, {": No csv file provided or failed to read file with -sx flag in simflags."});
+    fail();
+  end if;
+
+  if StringUtil.startsWith(csvFileName, "modelica://") or StringUtil.startsWith(csvFileName, "file://") then
+    csvFileName := ProgramUtil.getFullPathFromUri(program, csvFileName, true);
+  end if;
+
+  content := System.readFile(csvFileName);
+  if stringEmpty(content) then
+    Error.addMessage(Error.INTERNAL_ERROR, {": Failed to read csv file content from " + csvFileName + " and hence start values can not be set."});
+    fail();
+  end if;
+
+  for line in System.strtok(content, "\n") loop
+    line := System.trim(System.stringReplace(line, ";", ","));
+    tokens := Util.stringSplitAtChar(line, ",");
+    if listLength(tokens) >= 2 then
+      measurementData := (listGet(tokens, 1), listGet(tokens, 2)) :: measurementData;
+    end if;
+  end for;
+end readMeasurementsFromCSV;
+
+protected function setStartValuesToMeasurements
+  input list<Pointer<Variable>> vars;
+  input list<tuple<String, String>> measurementData;
+  input String csvFileName;
+protected
+  String name;
+  Option<String> valueStr;
+  Real value;
+algorithm
+  for var_ptr in vars loop
+    name := ComponentRef.toString(BVariable.getVarName(var_ptr));
+    valueStr := List.findSome(measurementData, function measurementValue(name = name));
+    if isNone(valueStr) then
+      Error.addMessage(Error.INTERNAL_ERROR, {": Entry for variable of interest " + name + " not found in the measurement csv file " + csvFileName});
+      fail();
+    end if;
+    try
+      value := stringReal(Util.getOption(valueStr));
+    else
+      Error.addMessage(Error.INTERNAL_ERROR, {": Failed to convert the measurement value \"" + Util.getOption(valueStr) + "\" for variable of interest " + name + " from csv file " + csvFileName + " to a valid Real number for setting start value for data reconciliation initialization."});
+      fail();
+    end try;
+    Pointer.update(var_ptr, BVariable.setStartAttribute(Pointer.access(var_ptr), Expression.REAL(value), true));
+  end for;
+end setStartValuesToMeasurements;
+
+protected function measurementValue
+  input tuple<String, String> measurement;
+  input String name;
+  output Option<String> value;
+protected
+  String var_name, str;
+algorithm
+  (var_name, str) := measurement;
+  value := if var_name == name then SOME(str) else NONE();
+end measurementValue;
 
 // TODO: algebraic loops in SET-S, e.g. a torn loop over pressure drop and density, become loops
 //   of the jacobian F. The new backend cannot generate loops inside a jacobian yet, so such models
