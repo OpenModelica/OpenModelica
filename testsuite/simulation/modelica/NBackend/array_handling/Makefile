@@ -19,6 +19,7 @@ arrayZeroDivisionInitial.mos \
 arrayPreValues.mos \
 jacobianElementSeed.mos \
 jacobianArrayIndices.mos \
+jacobianLiterals.mos \
 scalarSparsityTables.mos \
 array_constructor_if.mos \
 resizableConnectFor.mos \
