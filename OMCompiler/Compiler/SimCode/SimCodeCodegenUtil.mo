@@ -1228,7 +1228,8 @@ protected
   list<BackendDAE.VarKind> kinds = {};
   UnorderedSet<Integer> seen;
   UnorderedMap<Integer, DAE.Exp> map;
-  DAE.Exp exp;
+  Integer offset;
+  list<tuple<DAE.Exp, Integer>> terms;
   Boolean symbolic;
 algorithm
   vars := BaseHashTable.hashTableValueList(ht);
@@ -1250,18 +1251,80 @@ algorithm
       end if;
     end for;
     map := UnorderedMap.new<DAE.Exp>(Util.id, intEq);
-    exp := DAE.ICONST(0);
+    offset := 0;
+    terms := {};
     symbolic := false;
     for v in List.sort(kindVars, simVarIndexGt) loop
       if symbolic then
-        UnorderedMap.add(v.index, exp, map);
+        UnorderedMap.add(v.index, linearSumExp(offset, terms), map);
       end if;
-      exp := DAE.BINARY(exp, DAE.ADD(DAE.T_INTEGER_DEFAULT), simVarSizeExp(v));
+      (offset, terms) := addSizeTerm(v, offset, terms);
       symbolic := symbolic or hasRuntimeSize(v);
     end for;
     offsets := (kind, map) :: offsets;
   end for;
 end computeJacobianOffsets;
+
+protected function addSizeTerm
+  "Adds the size of a SimVar to offset + sum(coefficient * product), merging
+   equal products of symbolic dimensions."
+  input SimCodeVar.SimVar var;
+  input output Integer offset;
+  input output list<tuple<DAE.Exp, Integer>> terms;
+protected
+  Integer coeff = 1;
+  Option<DAE.Exp> product = NONE();
+  DAE.Exp e;
+algorithm
+  for d in Expression.arrayDimension(var.type_) loop
+    () := match d
+      local
+        Integer i;
+      case DAE.DIM_EXP(exp = DAE.ICONST(i)) algorithm
+        coeff := coeff * i;
+      then ();
+      case DAE.DIM_EXP() algorithm
+        product := SOME(match product
+          case SOME(e) then DAE.BINARY(e, DAE.MUL(DAE.T_INTEGER_DEFAULT), d.exp);
+          else d.exp;
+        end match);
+      then ();
+      else algorithm
+        coeff := coeff * Expression.dimensionSize(d);
+      then ();
+    end match;
+  end for;
+  if isNone(product) then
+    offset := offset + coeff;
+    return;
+  end if;
+  e := Util.getOption(product);
+  if List.any(terms, function isTermOf(e = e)) then
+    terms := list(if isTermOf(t, e) then (Util.tuple21(t), Util.tuple22(t) + coeff) else t for t in terms);
+  else
+    terms := (e, coeff) :: terms;
+  end if;
+end addSizeTerm;
+
+protected function isTermOf
+  input tuple<DAE.Exp, Integer> term;
+  input DAE.Exp e;
+  output Boolean b = ExpressionBasics.expEqual(Util.tuple21(term), e);
+end isTermOf;
+
+protected function linearSumExp
+  input Integer offset;
+  input list<tuple<DAE.Exp, Integer>> terms;
+  output DAE.Exp exp = DAE.ICONST(offset);
+protected
+  DAE.Exp term;
+algorithm
+  for t in terms loop
+    term := if Util.tuple22(t) == 1 then Util.tuple21(t)
+      else DAE.BINARY(DAE.ICONST(Util.tuple22(t)), DAE.MUL(DAE.T_INTEGER_DEFAULT), Util.tuple21(t));
+    exp := DAE.BINARY(exp, DAE.ADD(DAE.T_INTEGER_DEFAULT), term);
+  end for;
+end linearSumExp;
 
 public function jacobianOffsetVars
   "The variables of one kind of a Jacobian (\"seed\", \"res\" or \"tmp\"), sorted by
