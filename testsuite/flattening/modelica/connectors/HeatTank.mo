@@ -49,7 +49,7 @@ equation
 
   outlet.temp = temp;
 
-  annotation(__OpenModelica_commandLineOptions="+std=2.x -d=-newInst");
+  annotation(__OpenModelica_commandLineOptions="+std=2.x");
 end HeatTank;
 
 
@@ -65,6 +65,8 @@ end HeatTank;
 //   Real level(start = 2.0);
 //   Real temp;
 // equation
+//   inlet.volumeFlowRate = 0.0;
+//   outlet.volumeFlowRate = 0.0;
 //   inlet.temp = 25.0;
 //   area * level * der(temp) = inlet.volumeFlowRate * inlet.temp + outlet.volumeFlowRate * outlet.temp;
 //   outlet.temp = temp;
@@ -73,7 +75,8 @@ end HeatTank;
 //   area * der(level) = inlet.volumeFlowRate + outlet.volumeFlowRate;
 //   outlet.pressure = inlet.pressure;
 //   outlet.volumeFlowRate = 2.0;
-//   inlet.volumeFlowRate = 0.0;
-//   outlet.volumeFlowRate = 0.0;
 // end HeatTank;
+// [flattening/modelica/connectors/HeatTank.mo:18:3-18:27:writable] Warning: Connector inlet is not balanced: The number of potential variables (2) is not equal to the number of flow variables (1).
+// [flattening/modelica/connectors/HeatTank.mo:18:3-18:27:writable] Warning: Connector outlet is not balanced: The number of potential variables (2) is not equal to the number of flow variables (1).
+//
 // endResult
