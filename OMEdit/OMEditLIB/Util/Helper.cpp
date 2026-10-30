@@ -180,6 +180,7 @@ QString Helper::attributes;
 QString Helper::properties;
 QString Helper::add;
 QString Helper::edit;
+QString Helper::editArray;
 QString Helper::save;
 QString Helper::saveTip;
 QString Helper::saveAs;
@@ -488,6 +489,7 @@ void Helper::initHelperVariables()
   Helper::properties = tr("Properties");
   Helper::add = tr("Add");
   Helper::edit = tr("Edit");
+  Helper::editArray = tr("Edit Array");
   Helper::save = tr("Save");
   Helper::saveTip = tr("Save a file");
   Helper::saveAs = tr("Save As");

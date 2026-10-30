@@ -135,6 +135,41 @@
     </message>
 </context>
 <context>
+    <name>ArrayParameterEditorDialog</name>
+    <message>
+        <source>%1 - %2 %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rows:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Columns:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expression:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete 1 row</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete %1 rows</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete 1 column</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete %1 columns</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>AttachToProcessDialog</name>
     <message>
         <source>Attach to Process ID:</source>
@@ -2894,6 +2929,10 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <source>Add</source>
         <translation>Aggiungi</translation>
+    </message>
+    <message>
+        <source>Edit Array</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Save a file</source>
@@ -6458,6 +6497,10 @@ Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMS
         <translation>Modifica</translation>
     </message>
     <message>
+        <source>Edit array</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Unable to find the redeclare class.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7832,18 +7875,6 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <source>Method</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add</source>
-        <translation type="unfinished">Aggiungi</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation type="unfinished">Rimuovi</translation>
-    </message>
-    <message>
-        <source>Edit</source>
-        <translation type="unfinished">Modifica</translation>
     </message>
     <message>
         <source>Solver Configurations</source>
