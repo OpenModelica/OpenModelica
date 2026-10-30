@@ -44,6 +44,7 @@ protected
   import Module = NBModule;
 
   import BackendDAE = NBackendDAE;
+  import NBackendDAE.ExtraInfo;
   import BackendExtension = NFBackendExtension;
   import NFBinding.Binding;
   import Causalize = NBCausalize;
@@ -118,7 +119,7 @@ end ReconciliationData;
 
 public function main extends Module.wrapper;
 protected
-  BackendDAE.ExtraInfo info = BackendDAE.getExtraInfo(bdae);
+  ExtraInfo info = BackendDAE.getExtraInfo(bdae);
   String fileNamePrefix = info.fileNamePrefix;
   String csvFileName;
   ExtractionSystem sys;
