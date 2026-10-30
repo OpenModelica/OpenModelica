@@ -805,6 +805,21 @@ public
       end match;
     end getJacobianHT;
 
+    function mapGenericCalls
+      input output SimJacobian jacobian;
+      input mapExp func;
+      partial function mapExp
+        input output Expression exp;
+      end mapExp;
+    algorithm
+      jacobian := match jacobian
+        case SIM_JAC() algorithm
+          jacobian.generic_loop_calls := list(SimGenericCall.mapShallow(call, func) for call in jacobian.generic_loop_calls);
+        then jacobian;
+        else jacobian;
+      end match;
+    end mapGenericCalls;
+
     function convert
       input SimJacobian simJac;
       output OldSimCode.JacobianMatrix oldJac;

@@ -488,6 +488,7 @@ public
             // generate the generic loop calls and replace literal expressions
             generic_loop_calls  := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(simCodeIndices.generic_call_map));
             generic_loop_calls  := list(SimGenericCall.mapShallow(call, collect_literals) for call in generic_loop_calls);
+            jacobians           := list(SimJacobian.mapGenericCalls(jac, collect_literals) for jac in jacobians);
             literals            := UnorderedMap.keyList(literals_map);
 
             (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, fileName, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, bdae.clockedInfo, simCodeIndices);
