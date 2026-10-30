@@ -30,8 +30,7 @@ TypeSimple.mo \
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
-FAILINGTESTFILES=\
-ColorPixel.mo 
+FAILINGTESTFILES=
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

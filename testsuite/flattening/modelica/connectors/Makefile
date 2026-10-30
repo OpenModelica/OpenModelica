@@ -83,7 +83,6 @@ Connect10.mo \
 Connect11.mo \
 ConnectArrayCond2.mo \
 ConnectConst1.mo \
-ConnectForEquations.mo \
 Units1.mo
 
 # Dependency files that are not .mo .mos or Makefile
