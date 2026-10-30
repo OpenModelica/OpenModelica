@@ -99,7 +99,6 @@ NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5a.mos \
 NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5b.mos \
 NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5c.mos \
 NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5d.mos \
-NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5e.mos \
 NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5f.mos \
 NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter6.mos \
 NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter7.mos \
@@ -146,6 +145,13 @@ NB_TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR.mos \
 NB_TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_WithHARE.mos \
 NB_UncertainAliasSimulation.mos
 
+# New backend tests whose SET-S has an algebraic loop. The jacobian F then
+# contains a linear system, which the new backend cannot generate yet, and
+# the simulation fails with "residual function pointer is invalid". See the
+# TODO at createJacobian in NBDataReconciliation.mo. Run make testNBJacobianLoops
+NB_JACOBIAN_LOOP_TESTFILES = \
+NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5e.mos \
+
 # Tests that fail and cannot be part of the testsuite (crash, hang, ...).
 # Models that fail in a reproducible way go in TESTFILES instead, with the
 # failure recorded as the expected result, see #15384.
@@ -165,7 +171,7 @@ TSP_DataReconciliationSimpleTests \
 
 CLEAN = `ls | grep -x -v -f deps.tmp`
 
-.PHONY : test testNB baselineNB clean getdeps failingtest
+.PHONY : test testNB testNBJacobianLoops baselineNB clean getdeps failingtest
 
 test:
 	@echo
@@ -186,14 +192,21 @@ testNB:
 	@echo Running new backend tests...
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
-	@$(TEST) $(NB_TESTFILES)
+	@$(TEST) $(NB_TESTFILES) $(NB_JACOBIAN_LOOP_TESTFILES)
+
+testNBJacobianLoops:
+	@echo
+	@echo Running new backend tests with loops in the jacobian F...
+	@echo
+	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
+	@$(TEST) $(NB_JACOBIAN_LOOP_TESTFILES)
 
 baselineNB:
 	@echo
 	@echo Running baseline for new backend tests...
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
-	@$(BASELINE) $(NB_TESTFILES)
+	@$(BASELINE) $(NB_TESTFILES) $(NB_JACOBIAN_LOOP_TESTFILES)
 
 failtestbaseline:
 	@echo
