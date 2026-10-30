@@ -1,0 +1,30 @@
+// name:     NB_ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected
+// keywords: extraction algorithm
+// status:   correct
+// depends: ./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.VDI2048Example_Corrected_Inputs.csv
+// teardown_command: rm -rf ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected_* Reconciled_ModelicaDataReconciliationSimpleTests_Models_VDI2048_VDI2048Example_Corrected.mo ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected.html
+
+setCommandLineOptions("--newBackend");
+getErrorString();
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadFile("ModelicaDataReconciliationSimpleTests/package.mo");
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+simulate(ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected, simflags=simFlags);
+getErrorString();
+
+readFile("ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected_Outputs.csv");
+getErrorString();
+
+// Result:
+// endResult
