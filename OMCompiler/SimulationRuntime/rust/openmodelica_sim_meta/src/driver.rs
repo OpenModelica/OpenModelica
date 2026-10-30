@@ -6540,8 +6540,7 @@ fn signed(mag: f64, hyp: f64) -> f64 {
 /// C's `numericalJacobianStep` as `jacA_num` calls it.
 fn fd_step_ewt(delta_x: f64, yi: f64, hyp: f64, ewt_inv: f64, nominal: f64) -> f64 {
     let scale = yi.abs().max(hyp.abs());
-    let step = if scale > ewt_inv { scale } else { ewt_inv.max(nominal) };
-    signed(delta_x * step, hyp)
+    signed((delta_x * scale.max(nominal)).max(ewt_inv), hyp)
 }
 
 /// C's `LOG_JAC` block: `printJacobianMatrix`, then the largest differences against

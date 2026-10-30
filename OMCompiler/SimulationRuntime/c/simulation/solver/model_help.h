@@ -69,12 +69,11 @@ DLLDataDirection extern int homBacktraceStrategy;
 /**
  * @brief Unsigned finite-difference step for one column of a numerical Jacobian.
  *
- * DASKR's DMATD and IDA's ida_ls difference over `delta_h*max(|y|,|h*y'|)`,
- * floored at the unknown's error weight `1/wt = rtol*|y| + atol`. The floor is
- * a tolerance, not a differencing step: an unknown below it is zero as far as
- * the error control is concerned and its magnitude is no scale to difference
- * over, but `1/wt` is `tolerance` times the nominal where the step wants
- * `delta_h` times it. So take the nominal there instead.
+ * As DASKR's DMATD and IDA's ida_ls: `delta_h*max(|y|,|h*y'|)`, but at least
+ * the unknown's error weight `1/wt = rtol*|y| + atol`. A smaller step only
+ * resolves changes the error control ignores, and where the residual solves
+ * algebraic loops iteratively it differences their convergence noise.
+ * `delta_h*nominal` bounds it from below for tolerances under `delta_h`.
  *
  * @param y         Value of the unknown.
  * @param hyprime   Step size times its derivative.
@@ -85,7 +84,7 @@ DLLDataDirection extern int homBacktraceStrategy;
 static inline double numericalJacobianStep(double y, double hyprime, double ewtInv, double nominal)
 {
   const double scale = fmax(fabs(y), fabs(hyprime));
-  return numericalDifferentiationDeltaXsolver * (scale > ewtInv ? scale : fmax(ewtInv, nominal));
+  return fmax(numericalDifferentiationDeltaXsolver * fmax(scale, nominal), ewtInv);
 }
 
 void allocModelDataVars(MODEL_DATA* modelData, modelica_boolean allocAlias, threadData_t* threadData);
