@@ -23,6 +23,7 @@ Type11.mo \
 TypeArray.mo \
 TypeClass1.mo \
 TypeClass2.mo \
+TypeClass3.mo \
 TypeDeclArray.mo \
 TypeEnumeration.mo \
 TypeSimple.mo \

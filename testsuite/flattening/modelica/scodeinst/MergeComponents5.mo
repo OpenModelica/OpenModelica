@@ -9,7 +9,7 @@ model A
   Real y;
 end A;
 
-type A3 = A[3](x = {1, 2, 3});
+model A3 = A[3](x = {1, 2, 3});
 
 model MergeComponents5
   A3 a1(y = {1, 2, 3});
