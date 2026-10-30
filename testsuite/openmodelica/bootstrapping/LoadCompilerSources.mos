@@ -134,7 +134,6 @@ if true then /* Suppress output */
     prefixPath + "BackEnd/BinaryTreeInt.mo",
     prefixPath + "BackEnd/Causalize.mo",
     prefixPath + "BackEnd/CommonSubExpression.mo",
-    prefixPath + "BackEnd/DAEQuery.mo",
     prefixPath + "BackEnd/Differentiate.mo",
     prefixPath + "BackEnd/DumpGraphML.mo",
     prefixPath + "BackEnd/DumpHTML.mo",

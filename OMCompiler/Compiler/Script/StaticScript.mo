@@ -46,7 +46,6 @@ protected
 import Ceval;
 import CevalScript;
 import CevalScriptBackend;
-import ClassInf;
 import Error;
 import ErrorExt;
 import Expression;
@@ -330,19 +329,16 @@ algorithm
    matchcontinue
      (inCache, inEnv, inComponentRef, inExps, inNamedArgs, inImplInst, inPrefix)
     local
-      DAE.ComponentRef cr_1;
       FCore.Graph env;
       Absyn.ComponentRef cr,cr2;
       Boolean impl;
-      Ident cname_str;
-      DAE.Exp filenameprefix,exp_1,crefExp;
+      DAE.Exp exp_1;
       DAE.Type recordtype;
       list<Absyn.NamedArg> args;
       DAE.Properties prop;
       Absyn.Exp exp;
       FCore.Cache cache;
       DAE.Prefix pre;
-      Absyn.Path className;
       list<DAE.Exp> simulationArgs;
       String name;
     case (cache, env, cr2 as Absyn.CREF_IDENT(), _, _, impl, _)
@@ -363,21 +359,6 @@ algorithm
         (cache, simulationArgs) := getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "translateModel", info, NONE());
       then
         (cache,Expression.makePureBuiltinCall("translateModel",simulationArgs,DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()));
-
-    case (cache, env, Absyn.CREF_IDENT(name = "exportDAEtoMatlab"), {Absyn.CREF(componentRef = cr)}, args, impl, pre)
-      algorithm
-        className := AbsynUtil.crefToPath(cr);
-        cname_str := AbsynUtil.pathString(className);
-        (cache,filenameprefix) := Static.getOptionalNamedArg(cache,env, impl, "fileNamePrefix",
-          DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str),pre,info);
-        recordtype :=
-          DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
-          {DAE.TYPES_VAR("flatClass",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),false,NONE()),
-           DAE.TYPES_VAR("exeFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),false,NONE())},
-           NONE(), false);
-      then
-        (cache,Expression.makePureBuiltinCall("exportDAEtoMatlab",
-          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
 
     case (cache, env, Absyn.CREF_IDENT(name = "buildModel"), {Absyn.CREF()}, args, _, _)
       algorithm
@@ -413,13 +394,6 @@ algorithm
         recordtype := CevalScriptBackend.getSimulationResultType();
       then
         (cache,Expression.makePureBuiltinCall("moo",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
-
-    case (cache, env, Absyn.CREF_IDENT(name = "jacobian"), {Absyn.CREF(componentRef = cr)}, _, impl, pre) /* Fill in rest of defaults here */
-      algorithm
-        (cache,cr_1) := Static.elabUntypedCref(cache,env,cr,impl,pre,info);
-        crefExp := Expression.crefExp(cr_1);
-      then
-        (cache,Expression.makePureBuiltinCall("jacobian",{crefExp},DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()));
 
     case (cache, env, Absyn.CREF_IDENT(name = "timing"), {exp}, {}, impl, pre)
       algorithm

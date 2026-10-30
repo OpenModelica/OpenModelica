@@ -64,9 +64,6 @@ import Autoconf;
 import BackendDAECreate;
 import BackendDAEOptimize;
 import BackendDAEUtil;
-import BackendDump;
-import BackendEquation;
-import BackendVariable;
 import Binding;
 import BlockCallRewrite;
 import CevalScript;
@@ -81,7 +78,6 @@ protected import ComponentReferenceBasics;
 import Config;
 import Conversion;
 import DAEDump;
-import DAEQuery;
 import DAEUtil;
 import Debug;
 import DiffAlgorithm;
@@ -145,7 +141,6 @@ import SimpleModelicaParser;
 import SimulationResults;
 import StaticScript;
 import StringUtil;
-import SymbolicJacobian;
 import SymbolTable;
 import System;
 import TaskGraphResults;
@@ -691,21 +686,14 @@ algorithm
       String simflags,s1,s2,s3,s4,s5,str,str1,str2,str3,str4,executable,
              outputFormat_str,initfilename,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,
              name,errMsg, res,workdir,filenameprefix,compileDir,exeDir, logFile, outputFile,
-             strlinearizeTime, modeldescriptionfilename, tmpDir, bom, description, resimulateExecutable;
+             strlinearizeTime, modeldescriptionfilename, tmpDir, bom, resimulateExecutable;
       list<Values.Value> vals;
       Absyn.Path path,classpath,className;
       SCode.Program sp;
-      FCore.Graph env;
       Absyn.Program p,pnew;
       Absyn.Class absynClass;
       Absyn.Element elem;
       Absyn.Exp aexp;
-      DAE.DAElist dae;
-      BackendDAE.BackendDAE daelow;
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqnarr;
-      array<list<Integer>> m;
-      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       Values.Value ret_val,simValue,v,v1,v2;
       SimCode.SimulationSettings simSettings;
       Integer i,i1,resI;
@@ -727,8 +715,6 @@ algorithm
       list<Absyn.Class> classes;
       list<Absyn.ElementArg> eltargs;
       Absyn.Within within_;
-      BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;
       Boolean dumpExtractionSteps;
       list<Boolean> blst;
       UnitAbsyn.Unit u1,u2;
@@ -1246,21 +1232,6 @@ algorithm
     case ("rewriteBlockCall", _)
       then Values.BOOL(false);
 
-    case ("jacobian",{Values.CODE(Absyn.C_TYPENAME(path))})
-      algorithm
-        (outCache, env, SOME(dae), _) := runFrontEnd(outCache, inEnv, path, true, transform = true);
-        filenameprefix := AbsynUtil.pathString(path);
-        description := DAEUtil.daeDescription(dae);
-        daelow := BackendDAECreate.lower(dae,outCache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE()));
-        BackendDAE.DAE({syst},shared) := BackendDAEUtil.preOptimizeBackendDAE(daelow,NONE());
-        (syst,m,_) := BackendDAEUtil.getAdjacencyMatrixfromOption(syst,BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
-        vars := BackendVariable.daeVars(syst);
-        eqnarr := BackendEquation.getEqnsFromEqSystem(syst);
-        (jac, _) := SymbolicJacobian.calculateJacobian(vars, eqnarr, m, false,shared);
-        res := BackendDump.dumpJacobianStr(jac);
-      then
-        Values.STRING(res);
-
     case ("translateModel",vals as {Values.CODE(Absyn.C_TYPENAME(className)),_,_,_,_,_,Values.STRING(filenameprefix),_,_,_,_,_})
       algorithm
         (outCache,simSettings) := calculateSimulationSettings(outCache, vals);
@@ -1313,12 +1284,6 @@ algorithm
       algorithm
         filenameprefix := Util.stringReplaceChar(if filenameprefix == "<default>" then AbsynUtil.pathString(className) else filenameprefix, ".", "_");
         (outCache, ret_val) := translateModelXML(outCache, inEnv, className, filenameprefix, true, NONE());
-      then
-        ret_val;
-
-    case ("exportDAEtoMatlab",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)})
-      algorithm
-        (outCache, ret_val, _) := getAdjacencyMatrix(outCache, inEnv, className, msg, filenameprefix);
       then
         ret_val;
 
@@ -3520,48 +3485,6 @@ algorithm
     else Autoconf.exeExt;
   end match;
 end getSimulationExtension;
-
-public function getAdjacencyMatrix " author: adrpo
- translates a model and returns the adjacency matrix"
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input Absyn.Path className "path for the model";
-  input Absyn.Msg inMsg;
-  input String filenameprefix;
-  output FCore.Cache outCache;
-  output Values.Value outValue;
-  output String outString;
-algorithm
-  (outCache,outValue,outString):=
-  match (inCache, inEnv)
-    local
-      String filename,file_dir, str;
-      DAE.DAElist dae;
-      FCore.Graph env;
-      BackendDAE.BackendDAE dlow;
-      Absyn.ComponentRef a_cref;
-      FCore.Cache cache;
-      String flatModelicaStr,description;
-
-    case (cache, env) /* mo file directory */
-      algorithm
-        (cache, env, SOME(dae), _) := runFrontEnd(cache, env, className, true, transform = true);
-        description := DAEUtil.daeDescription(dae);
-        a_cref := AbsynUtil.pathToCref(className);
-        file_dir := ProgramUtil.getFileDir(a_cref, SymbolTable.getAbsyn());
-        dlow := BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE()));
-        dlow := FindZeroCrossings.findZeroCrossings(dlow);
-        flatModelicaStr := DAEDump.dumpStr(dae,FCore.getFunctionTree(cache));
-        flatModelicaStr := stringAppend("OldEqStr={'", flatModelicaStr);
-        flatModelicaStr := System.stringReplace(flatModelicaStr, "\n", "%##%");
-        flatModelicaStr := System.stringReplace(flatModelicaStr, "%##%", "','");
-        flatModelicaStr := stringAppend(flatModelicaStr,"'};");
-        filename := DAEQuery.writeAdjacencyMatrix(dlow, filenameprefix, flatModelicaStr);
-        str := stringAppend("The equation system was dumped to Matlab file:", filename);
-      then
-        (cache,Values.STRING(str),file_dir);
-  end match;
-end getAdjacencyMatrix;
 
 /* -------------------------------------------------------------------
                          RUN FRONTEND

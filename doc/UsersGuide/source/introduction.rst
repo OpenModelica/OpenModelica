@@ -851,25 +851,6 @@ the possibility to don't print the MathML code within the xml file, to
 make it more readable. Usage is trivial, just:
 addMathMLCode=\ *true/false* (default value is false).
 
-Dump Matlab Representation
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The command export dumps an XML representation of a model, according to
-several optional parameters.
-
-exportDAEtoMatlab(\ *modelname*);
-
-This command dumps the mathematical representation of a model using a
-Matlab representation. Example:
-
-.. omc-mos ::
-
-  loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/BouncingBall.mo")
-  exportDAEtoMatlab(BouncingBall)
-
-.. literalinclude :: ../tmp/BouncingBall_imatrix.m
-  :language: matlab
-
 Summary of Commands for the Interactive Session Handler
 -------------------------------------------------------
 
@@ -909,8 +890,6 @@ clearVariables() Clear all defined variables.
 
 dumpXMLDAE(\ *modelname*, ...) Dumps an XML representation of a model,
 according to several optional parameters.
-
-exportDAEtoMatlab(\ *name*) Dumps a Matlab representation of a model.
 
 instantiateModel(\ *modelname*)Performs code instantiation of a
 model/class and return a string containing the flat class definition.
