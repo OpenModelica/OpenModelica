@@ -24,4 +24,6 @@ end HoldTest;
 //   y[1] = hold(z[1]);
 //   y[2] = hold(z[2]);
 // end HoldTest;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+//
 // endResult
