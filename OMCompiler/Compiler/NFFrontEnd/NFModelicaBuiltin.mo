@@ -2749,6 +2749,16 @@ annotation(Documentation(info="<html>
 </html>"),preferredView="text");
 end dumpXMLDAE;
 
+function modelEquationsUC
+  "Extracts the equations needed for data reconciliation of a model with uncertainties."
+  input TypeName className "the class to extract the equations from";
+  input String outputFile = "" "the file to write the extracted equations to";
+  input Boolean dumpSteps = false "print the steps of the extraction";
+  output String result;
+external "builtin";
+annotation(preferredView="text");
+end modelEquationsUC;
+
 function convertUnits
   "Gets conversion factors for two units."
   input String s1;
@@ -3160,6 +3170,19 @@ external "builtin";
 annotation(preferredView="text");
 end translateModel;
 
+function translateModelXML
+  "Translates a model into an XML representation of its equation system."
+  input TypeName className "the class that should be translated";
+  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"className\"";
+  output String xmlFile;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Translates a model and writes its equation system to <code>fileNamePrefix.xml</code>, with dots in <code>fileNamePrefix</code> replaced by underscores.</p>
+<p>Returns the name of the XML file, or an empty string on failure.</p>
+</html>"),
+  preferredView="text");
+end translateModelXML;
+
 function buildModel
   "Translates a Modelica model into C code and builds a simulation executable."
   input TypeName className "the class that should be built";
@@ -3399,6 +3422,31 @@ annotation(Documentation(info="<html>
 </html>"),
   preferredView="text");
 end optimize;
+
+function moo
+  "Generates an optimization executable for a model and runs it with the MOO dynamic optimizer."
+  input TypeName className "the class that should be optimized";
+  input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
+  input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
+  input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
+  input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
+  input String method = "<default>" "integration method used for simulation. <default> = dassl";
+  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
+  input String options = "<default>" "options. <default> = \"\"";
+  input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
+  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
+  input String cflags = "<default>" "cflags. <default> = \"\"";
+  input String simflags = "<default>" "simflags. <default> = \"\"";
+  output String optimizationResults;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Builds a dynamic optimization problem from a Modelica/Optimica model like <a href=\"modelica://OpenModelica.Scripting.optimize\">optimize()</a> and solves it with MOO (the executable is run with <code>-moo</code>).</p>
+<p>Example command:
+<pre>moo(A);</pre>
+</p>
+</html>"),
+  preferredView="text");
+end moo;
 
 function getSourceFile
   "Returns the filename of the class."
