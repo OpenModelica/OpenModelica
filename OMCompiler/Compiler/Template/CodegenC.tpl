@@ -6526,6 +6526,7 @@ match sparsity
     let isRowEval = if isAdjoint then "1" else "0"
     let availability = if SimCodeCodegenUtil.jacobianColumnsAreEmpty(columns) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
     <<
+    OMC_DISABLE_OPT
     int <%symbolName(modelNamePrefix,"initialResizableAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
     {
       SPARSE_PAIRS _sp_pairs = {0};
