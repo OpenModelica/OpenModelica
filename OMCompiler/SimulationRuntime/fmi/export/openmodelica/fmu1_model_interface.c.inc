@@ -801,7 +801,7 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
       if(comp->fmuData->simulationInfo->samples[i])
       {
         comp->fmuData->simulationInfo->samples[i] = 0;
-        comp->fmuData->simulationInfo->nextSampleTimes[i] += comp->fmuData->modelData->samplesInfo[i].interval;
+        advanceSample(comp->fmuData, i);
       }
     }
 

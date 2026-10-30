@@ -94,30 +94,30 @@ diffSimulationResults("ResultFileArrow_ym_res.mat", "ResultFileArrow_m_res.mat",
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// 28
+// 26
 // {"b", "bp", "d", "der(x)", "e", "ep", "ip", "m", "n", "nb", "p", "q", "s", "sp", "time", "v[1]", "v[2]", "x", "y", "z"}
 // {"b", "d", "der(x)", "e", "m", "n", "nb", "s", "time", "v[1]", "v[2]", "x", "y", "z"}
-// {0.5776679475028246, 0.5776679475028246}
-// {-0.5776679475028246, -0.5776679475028246}
-// {0.5776679475028246, 0.5776679475028246}
+// {0.5776677898139123, 0.5776677898139123}
+// {-0.5776677898139123, -0.5776677898139123}
+// {0.5776677898139123, 0.5776677898139123}
 // {6.0, 6.0}
 // {-6.0, -6.0}
 // {0.0, 0.0}
 // {1.0, 1.0}
-// {1.1553358950056491, 1.1553358950056491}
+// {1.1553355796278246, 1.1553355796278246}
 // {2.5, -2.5, 3.0, 1.0}
-// {0.6065278101424606, 0.6065278101424606}
+// {0.6065276490696824, 0.6065276490696824}
 // {3.0, 3.0, 2.0}
 // (true, {})
 // ""
 // true
 // ""
 // {"n", "q", "time", "x", "y"}
-// {-0.5776679475028246, -2.5}
+// {-0.5776677898139123, -2.5}
 // true
 // ""
 // {"n", "q", "time", "x", "y"}
-// {-0.5776679475028246, -2.5}
+// {-0.5776677898139123, -2.5}
 // record SimulationResult
 //     resultFile = "ResultFileArrow_s_res.arrow",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ResultFileArrow_s', options = '', outputFormat = 'arrow', variableFilter = '.*', cflags = '', simflags = '-single'",
@@ -127,7 +127,7 @@ diffSimulationResults("ResultFileArrow_ym_res.mat", "ResultFileArrow_m_res.mat",
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// {-0.5776679515838623, 1.0}
+// {-0.577667772769928, 1.0}
 // record SimulationResult
 //     resultFile = "ResultFileArrow_ya_res.arrow",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ResultFileArrow_ya', options = '', outputFormat = 'arrow', variableFilter = '.*', cflags = '', simflags = '-mat_sync=3'",
