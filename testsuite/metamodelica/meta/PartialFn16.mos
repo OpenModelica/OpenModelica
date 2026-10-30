@@ -1,14 +1,12 @@
 // status: correct
 // suite: metamodelica
 // bug #2675
+// cflags: -g=MetaModelica -d=noevalfunc,gen
 
-setCommandLineOptions({"-g=MetaModelica","-d=noevalfunc,gen"});getErrorString();
 loadFile("PartialFn16.mo");getErrorString();
 PartialFn16.all(15);getErrorString();
 
 // Result:
-// {true, true}
-// ""
 // true
 // ""
 // (15.0, 1.0, 1.0)

@@ -1,7 +1,7 @@
 // status: correct
 // suite: metamodelica
+// cflags: +g=MetaModelica +d=noevalfunc
 
-setCommandLineOptions("+g=MetaModelica +d=noevalfunc");getErrorString();
 loadString("
 function f
   input Integer i;
@@ -15,8 +15,6 @@ end f;
 f(3000000);getErrorString();
 
 // Result:
-// true
-// ""
 // true
 //
 // ""

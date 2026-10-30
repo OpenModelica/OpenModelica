@@ -1,8 +1,8 @@
 // status: correct
 // suite: metamodelica
 // Bug #2889
+// cflags: -g=MetaModelica -d=gen
 
-setCommandLineOptions("-g=MetaModelica -d=gen");getErrorString();
 loadString("function FuncID11<IT1, OT1>
   input FuncType inFunc;
   output FuncType outFunc = inFunc;
@@ -35,8 +35,6 @@ end test;");getErrorString();
 test();getErrorString();
 
 // Result:
-// true
-// ""
 // true
 // ""
 // 5.0

@@ -1,8 +1,8 @@
 // status: correct
-// cflags: -d=-newInst
+// cflags: -d=-newInst +g=MetaModelica
 // suite: metamodelica
 
-setCommandLineOptions("+g=MetaModelica");loadString("function polymorphicReduction
+loadString("function polymorphicReduction
   input list<list<Integer>> ll = {{1}, {2}};
   output Integer i = intAdd(e for e in {1,2});
   output list<Integer> l1 = listAppend(e for e in ll);
@@ -16,7 +16,6 @@ setCommandLineOptions("+d=noevalfunc,gen");
 polymorphicReduction();getErrorString();
 
 // Result:
-// true
 // true
 // ""
 // true

@@ -5,14 +5,13 @@
 //
 // List Testing
 //
-setCommandLineOptions("+g=MetaModelica");
+// cflags: +g=MetaModelica
 loadFile("List2.mo");getErrorString();
 setCommandLineOptions("-d=noevalfunc,gen");
 List2.func(5);
 getErrorString();
 
 // Result:
-// true
 // true
 // ""
 // true

@@ -1,8 +1,7 @@
 // status: correct
-// cflags: -d=-newInst
+// cflags: -d=-newInst -g=MetaModelica -d=gen
 // suite: metamodelica
 
-setCommandLineOptions("-g=MetaModelica -d=gen");
 loadString("package ForIterList
 
 function splitOnTrue<T>
@@ -41,7 +40,6 @@ end ForIterList;");
 ForIterList.main({2,-1,0,1,-2});getErrorString();
 
 // Result:
-// true
 // true
 // ({2, 1}, {-1, 0, -2})
 // ""

@@ -1,11 +1,9 @@
 // name:     ScalarArrayOperations
 // status:   correct
-// cflags:   -g=MetaModelica -d=gen
+// cflags:   -g=MetaModelica -d=noevalfunc,gen
 //
 // ticket:4382
 // suite: metamodelica
-
-setCommandLineOptions("-g=MetaModelica -d=noevalfunc,gen"); getErrorString();
 
 loadString("
 function main
@@ -40,8 +38,6 @@ end printArray;
 main();
 
 // Result:
-// true
-// ""
 // true
 // ""
 // { 1.0 2.0 3.0 4.0 }

@@ -1,7 +1,7 @@
 // status: correct
 // suite: metamodelica
+// cflags: -g=MetaModelica -d=gen
 
-setCommandLineOptions("-g=MetaModelica -d=gen");
 loadString("function forIterArray
   input Real x;
   output Real r = x;
@@ -16,7 +16,6 @@ end forIterArray;");getErrorString();
 forIterArray(0);getErrorString();
 
 // Result:
-// true
 // true
 // ""
 // 36.0
