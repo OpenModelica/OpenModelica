@@ -47,7 +47,6 @@ import Ceval;
 import CevalScript;
 import CevalScriptBackend;
 import ClassInf;
-import ComponentReference;
 import Error;
 import ErrorExt;
 import Expression;
@@ -336,7 +335,7 @@ algorithm
       Absyn.ComponentRef cr,cr2;
       Boolean impl;
       Ident cname_str;
-      DAE.Exp filenameprefix,exp_1,crefExp,outputFile,dumpExtractionSteps;
+      DAE.Exp filenameprefix,exp_1,crefExp;
       DAE.Type recordtype;
       list<Absyn.NamedArg> args;
       DAE.Properties prop;
@@ -364,30 +363,6 @@ algorithm
         (cache, simulationArgs) := getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "translateModel", info, NONE());
       then
         (cache,Expression.makePureBuiltinCall("translateModel",simulationArgs,DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()));
-
-   case (cache, env, Absyn.CREF_IDENT(name = "modelEquationsUC"), {Absyn.CREF(componentRef = cr)}, args, impl, pre)
-      algorithm
-        (cache,cr_1) := Static.elabUntypedCref(cache,env,cr,impl,pre,info);
-        className := ComponentReference.crefToPathIgnoreSubs(cr_1) "this extracts the fileNamePrefix which is used when generating code and init-file" ;
-        (cache,outputFile) := Static.getOptionalNamedArg(cache, env, impl, "outputFile", DAE.T_STRING_DEFAULT,args, DAE.SCONST(""),pre,info);
-        (cache,dumpExtractionSteps) := Static.getOptionalNamedArg(cache,env,impl,"dumpSteps",DAE.T_BOOL_DEFAULT,args,DAE.BCONST(false),pre,info);
-      then
-        (cache,Expression.makePureBuiltinCall("modelEquationsUC",{DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),outputFile,dumpExtractionSteps},DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()));
-
-    case (cache, env, Absyn.CREF_IDENT(name = "translateModelXML"), {Absyn.CREF(componentRef = cr)}, args, impl, pre)
-      algorithm
-        className := AbsynUtil.crefToPath(cr);
-        cname_str := AbsynUtil.pathString(className);
-        (cache,filenameprefix) := Static.getOptionalNamedArg(cache,env, impl, "fileNamePrefix",
-                                                     DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str),pre,info);
-        recordtype :=
-          DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
-          {DAE.TYPES_VAR("flatClass",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),false,NONE()),
-           DAE.TYPES_VAR("exeFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),false,NONE())},
-           NONE(), false);
-      then
-        (cache,Expression.makePureBuiltinCall("translateModelXML",
-          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
 
     case (cache, env, Absyn.CREF_IDENT(name = "exportDAEtoMatlab"), {Absyn.CREF(componentRef = cr)}, args, impl, pre)
       algorithm

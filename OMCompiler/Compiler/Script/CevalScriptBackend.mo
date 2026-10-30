@@ -1311,7 +1311,7 @@ algorithm
 
     case ("translateModelXML",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)})
       algorithm
-        filenameprefix := Util.stringReplaceChar(filenameprefix,".","_");
+        filenameprefix := Util.stringReplaceChar(if filenameprefix == "<default>" then AbsynUtil.pathString(className) else filenameprefix, ".", "_");
         (outCache, ret_val) := translateModelXML(outCache, inEnv, className, filenameprefix, true, NONE());
       then
         ret_val;
