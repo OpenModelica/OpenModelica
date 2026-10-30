@@ -785,12 +785,13 @@ algorithm
   if InstNode.name(builtin_ext) == "ExternalObject" then
     node := expandExternalObject(cls_tree, node);
   else
+    res := Restriction.fromSCode(SCodeUtil.getClassRestriction(def));
+
     if not InstNode.isEmpty(builtin_ext) then
-      checkBuiltinTypeExtends(builtin_ext, cls_tree, node);
+      checkBuiltinTypeExtends(builtin_ext, cls_tree, res, node);
     end if;
 
     cls_tree := ClassTree.expand(cls_tree);
-    res := Restriction.fromSCode(SCodeUtil.getClassRestriction(def));
     cls := Class.EXPANDED_CLASS(cls_tree, mod, cc_mod, prefs, res);
     node := InstNode.updateClass(cls, node);
   end if;
@@ -951,6 +952,7 @@ end expandExternalObject;
 function checkBuiltinTypeExtends
   input InstNode builtinExtends;
   input ClassTree tree;
+  input Restriction res;
   input InstNode node;
 algorithm
   // A class extending from a builtin type may not have other components or baseclasses.
@@ -959,6 +961,13 @@ algorithm
     //             message more accurate.
     Error.addSourceMessage(Error.BUILTIN_EXTENDS_INVALID_ELEMENTS,
       {InstNode.name(builtinExtends)}, InstNode.info(node));
+    fail();
+  end if;
+
+  // Only a type or a connector may extend a type (MLS 3.7, section 7.1.3).
+  if not (Restriction.isType(res) or Restriction.isNonexpandableConnector(res)) then
+    Error.addSourceMessage(Error.RESTRICTION_VIOLATION,
+      {InstNode.name(node), Restriction.toString(res), "type"}, InstNode.info(node));
     fail();
   end if;
 end checkBuiltinTypeExtends;
@@ -1072,7 +1081,7 @@ protected
   Attributes attrs;
   list<Dimension> dims;
   Modifier mod, cc_mod;
-  Restriction res;
+  Restriction res, ext_res;
 algorithm
   SCode.DERIVED(typeSpec = ty, attributes = sattrs) := definition;
 
@@ -1104,6 +1113,22 @@ algorithm
   cc_mod := Class.getCCModifier(cls);
 
   res := Restriction.fromSCode(SCodeUtil.getClassRestriction(element));
+
+  // A type may only be a predefined type, an enumeration or another type (MLS 3.7, section 4.7).
+  if Restriction.isType(res) then
+    () := match Class.restriction(InstNode.getClass(ext_node))
+      case Restriction.CLOCK() then ();
+      case Restriction.ENUMERATION() then ();
+      case Restriction.TYPE() then ();
+      case ext_res
+        algorithm
+          Error.addSourceMessage(Error.RESTRICTION_VIOLATION,
+            {InstNode.name(ext_node), Restriction.toString(ext_res), "type"}, info);
+        then
+          fail();
+    end match;
+  end if;
+
   cls := Class.EXPANDED_DERIVED(ext_node, mod, cc_mod, listArray(dims), prefs, attrs, res);
   node := InstNode.updateClass(cls, node);
 end expandClassDerived;
