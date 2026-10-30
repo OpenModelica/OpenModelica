@@ -92,7 +92,9 @@ public uniontype ExtractionSystem
     array<Pointer<Equation>> eqnArr;
     array<Integer> rowToEqn         "mapIncRowEqn in the old backend";
     array<list<Integer>> eqnToRows  "mapEqnIncRow in the old backend";
-    array<list<Integer>> adjacency  "row -> all variables occurring in its equation";
+    array<Integer> colToVar         "the scalar variables (columns) of the old backend";
+    array<ComponentRef> colNames;
+    array<list<Integer>> adjacency  "row -> all columns occurring in its equation";
     array<Integer> var_to_row;
     array<Integer> row_to_var;
   end EXTRACTION_SYSTEM;
@@ -459,32 +461,39 @@ protected
   array<Pointer<Variable>> varArr = listArray(VariablePointers.toList(vars));
   array<Pointer<Equation>> eqnArr = listArray(EquationPointers.toList(eqns));
   array<Integer> rowToEqn;
-  array<list<Integer>> eqnToRows, adjacency;
+  array<list<Integer>> eqnToRows, adjacency, varToCols;
+  array<Integer> colToVar;
+  array<ComponentRef> colNames;
   Matching matching;
-  list<ComponentRef> crefs;
+  list<ComponentRef> crefs, names;
   list<Integer> vars_of_eqn;
-  Integer row = 1, size;
+  Integer row = 1, col = 1, size;
 algorithm
-  // the extraction algorithm works on scalar variable indices
-  for var in varArr loop
-    if BVariable.size(var) <> 1 then
-      Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed, data reconciliation requires scalar variables but got "
-        + BVariable.pointerToString(var) + "."});
-      fail();
-    end if;
-  end for;
-
-  // the matching numbers the scalar rows of the equations in their order
+  // the matching numbers the scalar elements of the variables and the rows of the equations in their order
   (matching, _) := Causalize.simple(vars, eqns, NBPartition.Kind.ODE);
+
+  colToVar := arrayCreate(VariablePointers.scalarSize(vars), 0);
+  colNames := arrayCreate(arrayLength(colToVar), ComponentRef.EMPTY());
+  varToCols := arrayCreate(arrayLength(varArr), {});
+  for i in 1:arrayLength(varArr) loop
+    names := listReverse(ComponentRef.scalarizeAll(BVariable.getVarName(varArr[i]), false));
+    varToCols[i] := List.intRange2(col, col + listLength(names) - 1);
+    for name in names loop
+      colToVar[col] := i;
+      colNames[col] := name;
+      col := col + 1;
+    end for;
+  end for;
 
   rowToEqn := arrayCreate(EquationPointers.scalarSize(eqns), 0);
   eqnToRows := arrayCreate(arrayLength(eqnArr), {});
   adjacency := arrayCreate(arrayLength(rowToEqn), {});
   for i in 1:arrayLength(eqnArr) loop
-    // a record, e.g. f(r), depends on all its elements
-    crefs := Equation.collectCrefs(Pointer.access(eqnArr[i]), function Slice.getDependentCref(map = vars.map, pseudo = false));
+    // a record, e.g. f(r), depends on all its elements and an array element, e.g. x[1], on all elements of x
+    crefs := Equation.collectCrefs(Pointer.access(eqnArr[i]), function Slice.getDependentCref(map = vars.map, pseudo = true));
+    vars_of_eqn := List.unique(List.flatten(list(varToCols[UnorderedMap.getSafe(ComponentRef.stripSubscriptsAll(cr), vars.map, sourceInfo())] for cr in crefs)));
     // descending, so that the procedure visits the variables in ascending order like the old backend
-    vars_of_eqn := List.sort(list(UnorderedMap.getSafe(cr, vars.map, sourceInfo()) for cr in crefs), intLt);
+    vars_of_eqn := List.sort(vars_of_eqn, intLt);
     size := Equation.size(eqnArr[i]);
     eqnToRows[i] := List.intRange2(row, row + size - 1);
     for r in row:row + size - 1 loop
@@ -494,8 +503,27 @@ algorithm
     row := row + size;
   end for;
 
-  sys := EXTRACTION_SYSTEM(vars, eqns, varArr, eqnArr, rowToEqn, eqnToRows, adjacency, matching.var_to_eqn, matching.eqn_to_var);
+  sys := EXTRACTION_SYSTEM(vars, eqns, varArr, eqnArr, rowToEqn, eqnToRows, colToVar, colNames, adjacency, matching.var_to_eqn, matching.eqn_to_var);
 end createSystem;
+
+protected function varOf
+  input ExtractionSystem sys;
+  input Integer col;
+  output Pointer<Variable> var = sys.varArr[sys.colToVar[col]];
+end varOf;
+
+protected function scalarVarOf
+  "the variables of the reconciled system have to be scalar"
+  input ExtractionSystem sys;
+  input Integer col;
+  output Pointer<Variable> var = varOf(sys, col);
+algorithm
+  if BVariable.size(var) <> 1 then
+    Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed, data reconciliation of the array variable "
+      + BVariable.pointerToString(var) + " is not supported yet."});
+    fail();
+  end if;
+end scalarVarOf;
 
 protected function rowsOf
   "maps equations to their rows, mapEqnIncRow in the old backend"
@@ -524,8 +552,8 @@ protected function getVariableCategories
 protected
   Pointer<Variable> var;
 algorithm
-  for i in arrayLength(sys.varArr):-1:1 loop
-    var := sys.varArr[i];
+  for i in arrayLength(sys.colToVar):-1:1 loop
+    var := varOf(sys, i);
     if hasUncertainty(var, Uncertainty.REFINE) then
       knowns := i :: knowns;
     elseif isBoundaryCondition(var) then
@@ -698,7 +726,6 @@ protected function modifyModel
   output list<Pointer<Equation>> eqn_lst = {};
 protected
   list<Integer> eqlistToRemove = eqnsOf(sys, list(Util.tuple22(entry) for entry in setB));
-  Pointer<Variable> var;
 algorithm
   for i in arrayLength(sys.eqnArr):-1:1 loop
     if not listMember(i, eqlistToRemove) then
@@ -707,8 +734,7 @@ algorithm
   end for;
 
   for entry in listReverse(setB) loop
-    var := sys.varArr[Util.tuple21(entry)];
-    eqn_lst := Equation.makeAssignment(Expression.fromCref(BVariable.getVarName(var)), Expression.REAL(0.0), uniqueIndex,
+    eqn_lst := Equation.makeAssignment(Expression.fromCref(sys.colNames[Util.tuple21(entry)]), Expression.REAL(0.0), uniqueIndex,
       "BND", Iterator.EMPTY(), EquationAttributes.default(EquationKind.CONTINUOUS, false)) :: eqn_lst;
   end for;
 end modifyModel;
@@ -758,13 +784,13 @@ algorithm
   end for;
 
   data := RECONCILIATION_DATA(
-    inputVars                 = list(sys.varArr[v] for v in knowns),
+    inputVars                 = list(scalarVarOf(sys, v) for v in knowns),
     residualVars              = listReverse(residualVars),
     residualEqns              = listReverse(residualEqns),
-    setSVars                  = list(sys.varArr[v] for v in setSVars),
+    setSVars                  = list(scalarVarOf(sys, v) for v in setSVars),
     setSEqns                  = list(sys.eqnArr[eqn] for eqn in setS),
     parameters                = parameters,
-    unmeasuredVars            = list(sys.varArr[v] for v in unmeasured),
+    unmeasuredVars            = list(scalarVarOf(sys, v) for v in unmeasured),
     relatedBoundaryConditions = relatedBoundaryConditions,
     jacobian                  = NONE());
 end createReconciliationData;
@@ -1300,10 +1326,13 @@ end extractNewMinimalSetS;
 protected function varString
   "same format as BackendDump in the old backend, e.g. Q1:VARIABLE(start = 2.0 uncertain=Uncertainty.refine)  type: Real"
   input Pointer<Variable> var_ptr;
+  input Option<ComponentRef> scalarName = NONE() "the scalar element of an array variable";
   output String str;
 protected
   Variable var = Pointer.access(var_ptr);
   String kind, attr, binding = "";
+  ComponentRef name = Util.getOptionOrDefault(scalarName, var.name);
+  Type ty = if isSome(scalarName) then Type.arrayElementType(var.ty) else var.ty;
 algorithm
   kind := match var.backendinfo.varKind
     case BackendExtension.VariableKind.ALGEBRAIC() then "VARIABLE";
@@ -1319,8 +1348,14 @@ algorithm
   attr := stringDelimitList(list(s for s guard(not stringEmpty(s)) in {
     BackendExtension.VariableAttributes.toString(var.backendinfo.attributes),
     uncertaintyString(BackendExtension.VariableAttributes.getUncertainty(var.backendinfo.attributes))}), " ");
-  str := ComponentRef.toString(var.name) + ":" + kind + "(" + attr + ") " + binding + " type: " + Type.toString(var.ty);
+  str := ComponentRef.toString(name) + ":" + kind + "(" + attr + ") " + binding + " type: " + Type.toString(ty);
 end varString;
+
+protected function colString
+  input ExtractionSystem sys;
+  input Integer col;
+  output String str = varString(varOf(sys, col), SOME(sys.colNames[col]));
+end colString;
 
 protected function uncertaintyString
   input Option<Uncertainty> uncertainty;
@@ -1353,9 +1388,9 @@ end equationString;
 protected function dumpOrderedVariables
   input ExtractionSystem sys;
 algorithm
-  print("\nOrderedVariables (" + intString(arrayLength(sys.varArr)) + ")\n========================================\n");
-  for i in 1:arrayLength(sys.varArr) loop
-    print(intString(i) + ": " + varString(sys.varArr[i]) + "\n");
+  print("\nOrderedVariables (" + intString(arrayLength(sys.colToVar)) + ")\n========================================\n");
+  for i in 1:arrayLength(sys.colToVar) loop
+    print(intString(i) + ": " + colString(sys, i) + "\n");
   end for;
   print("\n");
 end dumpOrderedVariables;
@@ -1417,8 +1452,8 @@ protected
 algorithm
   print("\n" + heading + " (" + intString(listLength(vars)) + ")\n========================================\n");
   for v in vars loop
-    var := Pointer.access(sys.varArr[v]);
-    print("\n" + intString(i) + ": " + ComponentRef.toString(var.name) + " type: " + Type.toString(var.ty));
+    var := Pointer.access(varOf(sys, v));
+    print("\n" + intString(i) + ": " + ComponentRef.toString(sys.colNames[v]) + " type: " + Type.toString(Type.arrayElementType(var.ty)));
     i := i + 1;
   end for;
   print("\n\n");
@@ -1468,7 +1503,7 @@ end dumpMatching;
 protected function varName
   input ExtractionSystem sys;
   input Integer var;
-  output String str = if var > 0 then ComponentRef.toString(BVariable.getVarName(sys.varArr[var])) else "-";
+  output String str = if var > 0 then ComponentRef.toString(sys.colNames[var]) else "-";
 end varName;
 
 protected function dumpSetSTargetEquation
@@ -1506,7 +1541,7 @@ protected
 algorithm
   print("\n" + heading + " (" + intString(listLength(vars)) + ")\n========================================\n");
   for var in vars loop
-    print(intString(i) + ": " + varString(sys.varArr[var]) + "\n");
+    print(intString(i) + ": " + colString(sys, var) + "\n");
     i := i + 1;
   end for;
   print("\n");
