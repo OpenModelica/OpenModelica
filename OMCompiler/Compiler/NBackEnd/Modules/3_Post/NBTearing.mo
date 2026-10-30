@@ -2299,10 +2299,11 @@ protected
   end cellierRowSolvable;
 
   function cellierRankClass
-    "solving with constant or parameter coefficients is preferred over dividing by variables or
-    solving nonlinear occurrences"
+    "like the old backend: solving with constant coefficients is preferred over dividing by parameters
+    (they can be zero, e.g. the feedthrough of a strictly proper transfer function), dividing by variables
+    or solving nonlinear occurrences"
     input Integer rank;
-    output Integer cls = if rank <= 2 then 1 else rank;
+    output Integer cls = rank;
   end cellierRankClass;
 
   function cellierCanAssign
