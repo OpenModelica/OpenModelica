@@ -2,7 +2,6 @@
 // keywords: tuple assignment in when-clause, ticket:4093
 // status: correct
 // teardown_command: rm -f *DIDtuple*
-// cflags: -d=-newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
 
