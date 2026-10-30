@@ -305,7 +305,11 @@ void finalizeButcherTableauError(BUTCHER_TABLEAU *tableau, enum GB_NLS_METHOD nl
   switch (method)
   {
     case GB_ERROR_DEFAULT:
-      if (errorEstimatorIsSet(&tableau->error.two_step))
+      if (errorEstimatorIsSet(&tableau->error.active) && (internalNLS || (tableau->error.active.type != GB_ERROR_CONTRACTIVE && tableau->error.active.type != GB_ERROR_FILTER)))
+      {
+        selected = &tableau->error.active;
+      }
+      else if (errorEstimatorIsSet(&tableau->error.two_step))
       {
         selected = &tableau->error.two_step;
       }
@@ -1361,6 +1365,7 @@ void getButcherTableau_RADAU_IIA_3(BUTCHER_TABLEAU* tableau)
 
   setContractiveDefectError(tableau, dT_A, FALSE);
   setTwoStepErrorEstimator(tableau, 3, twoStepWeights_RADAU_IIA_3);
+  tableau->error.active = tableau->error.contractive_defect;
 }
 
 
@@ -1541,6 +1546,7 @@ void getButcherTableau_RADAU_IIA_5(BUTCHER_TABLEAU* tableau)
 
   setContractiveDefectError(tableau, dT_A, FALSE);
   setTwoStepErrorEstimator(tableau, 5, twoStepWeights_RADAU_IIA_5);
+  tableau->error.active = tableau->error.contractive_defect;
 }
 
 void denseOutput_Radau_IIA_6(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
@@ -1750,6 +1756,7 @@ void getButcherTableau_RADAU_IIA_7(BUTCHER_TABLEAU* tableau)
 
   setContractiveDefectError(tableau, dT_A, FALSE);
   setTwoStepErrorEstimator(tableau, 7, twoStepWeights_RADAU_IIA_7);
+  tableau->error.active = tableau->error.contractive_defect;
 }
 
 void denseOutput_LOBATTO_IIIA_3(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
@@ -4196,6 +4203,7 @@ void getButcherTableau_FIRK7_6TS_5L4SA(BUTCHER_TABLEAU* tableau)
                                real_eig_index, cmplx_eig_index, L, hasL, NULL, NULL);
 
   setTwoStepErrorEstimator(tableau, 6, twoStepWeights_FIRK7_6TS_5L4SA);
+  tableau->error.active = tableau->error.embedded;
 }
 
 /**
