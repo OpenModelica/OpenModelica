@@ -438,7 +438,7 @@ public constant ErrorTypes.Message INVALID_TYPE_PREFIX = ErrorTypes.MESSAGE(179,
 public constant ErrorTypes.Message LINEAR_SYSTEM_INVALID = ErrorTypes.MESSAGE(180, ErrorTypes.SYMBOLIC(), ErrorTypes.ERROR(),
   "Linear solver (%s) returned invalid input for linear system %s.");
 public constant ErrorTypes.Message LINEAR_SYSTEM_SINGULAR = ErrorTypes.MESSAGE(181, ErrorTypes.SYMBOLIC(), ErrorTypes.WARNING(),
-  "The linear system: %1\n might be structurally or numerically singular for variable %3 since U(%2,%2) = 0.0. It might be hard to solve. Compilation continues anyway.");
+  "The linear system:\n%1\n might be structurally or numerically singular for variable %3 since U(%2,%2) = 0.0. It might be hard to solve. Compilation continues anyway.");
 public constant ErrorTypes.Message EMPTY_ARRAY = ErrorTypes.MESSAGE(182, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Array constructor may not be empty.");
 public constant ErrorTypes.Message LOAD_MODEL_DIFFERENT_VERSIONS = ErrorTypes.MESSAGE(183, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
