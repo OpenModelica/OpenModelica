@@ -1030,6 +1030,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   int retVal = 0;
   int finished = FALSE;
   double tout = 0;
+  long int i;
 
   CVODE_SOLVER *cvodeData;
   SIMULATION_DATA *simulationData;
@@ -1065,22 +1066,15 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
     cvodeData->isInitialized = TRUE;
   }
 
-  saveJumpState = threadData->currentErrorStage;
-  threadData->currentErrorStage = ERROR_INTEGRATOR;
-
-  /* Try */
-#if !defined(OMC_EMCC)
-  OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
-
-  /* Check current step size */
   if (solverInfo->currentStepSize < DASSL_STEP_EPS)
   {
-    throwStreamPrint(threadData, "##CVODE## Desired step to small!");
-    infoStreamPrint(OMC_LOG_SOLVER, 0, "Interpolate constant");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Desired step too small try next one");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Interpolate linear");
 
-    /* Constant extrapolation */
-    /* TODO: Interpolate linear solution */
+    for (i = 0; i < cvodeData->N; i++)
+    {
+      simulationData->realVars[i] += simulationData->realVars[cvodeData->N + i] * solverInfo->currentStepSize;
+    }
     simulationData->timeValue = solverInfo->currentTime + solverInfo->currentStepSize;
     if (measure_time_flag)
       rt_accumulate(SIM_TIMER_SOLVER);
@@ -1089,6 +1083,14 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
 
     return 0;
   }
+
+  saveJumpState = threadData->currentErrorStage;
+  threadData->currentErrorStage = ERROR_INTEGRATOR;
+
+  /* Try */
+#if !defined(OMC_EMCC)
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
 
   /* CVODE may step past tout and interpolates back to it, but never past the
    * next time event */

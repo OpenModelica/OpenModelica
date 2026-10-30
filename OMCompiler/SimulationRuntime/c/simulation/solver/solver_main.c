@@ -878,7 +878,7 @@ static int sym_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* so
   else
   /* in case desired step size is too small */
   {
-    infoStreamPrint(OMC_LOG_SOLVER, 0, "Desired step to small try next one");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Desired step too small try next one");
     infoStreamPrint(OMC_LOG_SOLVER, 0, "Interpolate linear");
 
     /* explicit euler step*/

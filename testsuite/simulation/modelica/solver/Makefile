@@ -2,6 +2,7 @@ TEST = ../../../rtest -v
 
 TESTFILES = \
 bug2231-radau1.mos \
+CvodeEventUlpApart.mos \
 LotkaVolterraWithInput.mos \
 problem1-dasslsteps.mos \
 problem1-gbodeInternal.mos \

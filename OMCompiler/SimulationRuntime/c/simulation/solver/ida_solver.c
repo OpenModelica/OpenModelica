@@ -860,7 +860,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
    * If that is the case we skip the current step. */
   if (solverInfo->currentStepSize < DASSL_STEP_EPS)
   {
-    infoStreamPrint(OMC_LOG_SOLVER, 0, "Desired step to small try next one");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Desired step too small try next one");
     infoStreamPrint(OMC_LOG_SOLVER, 0, "Interpolate linear");
 
     /* linear extrapolation */
