@@ -190,6 +190,7 @@ public
     output Option<Jacobian> jacobian;
   protected
     constant Module.jacobianInterface func = if Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN)
+      or listMember(Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN), {"symbolic", "symbolicadjoint", "bidirectional"})
       then jacobianSymbolic
       else jacobianNumeric;
   algorithm
@@ -624,12 +625,18 @@ protected
     input Partition.Kind kind;
     output Boolean updated;
   protected
+    StrongComponent original;
     Tearing strict;
     list<StrongComponent> residual_comps;
     list<VariablePointer> seed_candidates, residual_vars, inner_vars;
     constant Boolean staticAsContinuous = Partition.kindIsInitial(kind);
   algorithm
     (comp, updated) := match comp
+      case StrongComponent.ALIAS() algorithm
+        (original, updated) := compJacobian(comp.original, full, funcMap, kind);
+        comp.original := original;
+      then (comp, updated);
+
       // nothing to differentiate if all iteration variables are discrete (e.g. Boolean)
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict)
         guard(not List.any(list(Slice.getT(v) for v in strict.iteration_vars), function BVariable.isContinuous(staticAsContinuous = staticAsContinuous)))
@@ -1174,7 +1181,8 @@ protected
         linResEqnPtrs := listReverse(linResEqnPtrs);
 
         if not listEmpty(linResEqnPtrs) then
-          loopComp := makeLinearAlgebraicLoop(lambdaPtrs, linResEqnPtrs, NONE(), mixed = false, homotopy = false);
+          loopComp := makeLinearAlgebraicLoop(lambdaPtrs, linResEqnPtrs, Pointer.access(idx), NONE(), mixed = false, homotopy = false);
+          (loopComp, _) := compJacobian(loopComp, NONE(), funcMap, NBPartition.Kind.JAC);
           adjointComps := loopComp :: adjointComps;
         end if;
 
@@ -1786,6 +1794,7 @@ protected
   function makeLinearAlgebraicLoop
     input list<NBVariable.VariablePointer> itVarPtrs;           // unknowns y (order = columns of A)
     input list<Pointer<NBEquation.Equation>> resEqnPtrs;        // residuals r_i(y)=0, same order as rows of A
+    input Integer idx;
     input Option<NBackendDAE> jac = NONE();                     // optional analytic Jacobian for A
     input Boolean mixed = false;
     input Boolean homotopy = false;
@@ -1817,7 +1826,7 @@ protected
 
     // mark as linear algebraic loop
     comp := NBStrongComponent.ALGEBRAIC_LOOP(
-      idx      = -1,
+      idx      = idx,
       strict   = tearingSet,
       casual   = NONE(),
       linear   = true,

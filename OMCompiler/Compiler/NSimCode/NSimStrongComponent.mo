@@ -87,6 +87,7 @@ protected
   import NSimCode.{Identifier, SimCodeIndices};
   import NSimGenericCall;
   import NSimGenericCall.SimIterator;
+  import NSimJacobian;
   import NSimJacobian.SimJacobian;
   import SimPartition = NSimPartition;
   import NSimVar.{SimVar, SimVars, VarType};
@@ -857,9 +858,11 @@ public
           Boolean allLinVarsFound;
           Integer resizable_size "the static size of whole resizable iteration arrays beyond 1 each";
           Option<SimVar> osimvar;
+          SimVar scalar_simvar;
           Block tmp;
           Variable var;
           Option<SimJacobian> jacobian;
+          BackendDAE.BackendDAE coefficientJacobian;
           EquationPointer eqn_ptr;
           Equation eqn;
           SlicingStatus status;
@@ -1018,6 +1021,15 @@ public
               for scal_var in Scalarize.scalarizeBackendVariable(var, slice.indices, resize = true) loop
                 crefs := scal_var.name :: crefs;
                 osimvar := UnorderedMap.get(scal_var.name, simcode_map);
+                if isNone(osimvar) and kind == NBPartition.Kind.JAC then
+                  scalar_simvar := UnorderedMap.getSafe(ComponentRef.stripSubscriptsAll(scal_var.name), simcode_map, sourceInfo());
+                  scalar_simvar.name := scal_var.name;
+                  scalar_simvar.type_ := scal_var.ty;
+                  scalar_simvar.index := scalar_simvar.index + NSimJacobian.crefFlatOffset(scal_var.name);
+                  scalar_simvar.arrayCref := NONE();
+                  scalar_simvar.numArrayElement := {};
+                  osimvar := SOME(scalar_simvar);
+                end if;
                 if isSome(osimvar) then
                   linVars := Util.getOption(osimvar) :: linVars;
                 else
@@ -1036,16 +1048,28 @@ public
           end for;
 
           // a jacobian without equations is the numeric fallback, the runtime differentiates numerically
-          if isSome(strict.jac) and not isNumericJacobian(Util.getOption(strict.jac)) then
-            (jacobian, simCodeIndices) := SimJacobian.create(Util.getOption(strict.jac), simCodeIndices, simcode_map);
+          if isSome(strict.jac) and not isNumericJacobian(Util.getOption(strict.jac)) and (kind == NBPartition.Kind.JAC or Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN)) then
+            coefficientJacobian := Util.getOption(strict.jac);
+            if kind == NBPartition.Kind.JAC then
+              coefficientJacobian := match coefficientJacobian
+                case BackendDAE.JACOBIAN() algorithm
+                  coefficientJacobian.name := coefficientJacobian.name + "_" + intString(simCodeIndices.jacobianIndex);
+                then coefficientJacobian;
+              end match;
+            end if;
+            (jacobian, simCodeIndices) := SimJacobian.create(coefficientJacobian, simCodeIndices, simcode_map);
           else
             jacobian := NONE();
           end if;
 
-          if comp.linear and isSome(jacobian) and not comp.homotopy and not comp.mixed
-             and not List.any(eqns, isForOrGenericResidual)
-             and not jacobianHasGenericLoopCalls(Util.getOption(jacobian))
-             and allLinVarsFound then
+          if kind == NBPartition.Kind.JAC and not (comp.linear and isSome(jacobian) and allLinVarsFound) then
+            // loops inside a Jac column should always be linear
+            Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " could not create a linear system in a Jacobian column:\n" + StrongComponent.toString(comp)});
+            fail();
+          end if;
+
+          if comp.linear and isSome(jacobian) and allLinVarsFound and (kind == NBPartition.Kind.JAC or (not comp.homotopy and not comp.mixed
+                         and not List.any(eqns, isForOrGenericResidual) and not jacobianHasGenericLoopCalls(Util.getOption(jacobian)))) then
             // Linear torn systems with an analytic Jacobian get solved directly (A*x=b)
             // instead of via Newton (#16458). Homotopy, for-loop/generic residuals,
             // generic_loop_calls Jacobians, and mixed (discrete-coupled, e.g. ideal-diode
@@ -1065,7 +1089,7 @@ public
               sources       = list(blockSource(b) for b in listReverse(eqns)),
               indexSystem   = simCodeIndices.linearSystemIndex,
               size          = listLength(crefs),
-              partOfJac     = false
+              partOfJac     = kind == NBPartition.Kind.JAC
             );
             simCodeIndices.linearSystemIndex := simCodeIndices.linearSystemIndex + 1;
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;

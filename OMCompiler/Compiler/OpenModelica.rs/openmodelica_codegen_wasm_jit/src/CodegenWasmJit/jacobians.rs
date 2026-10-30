@@ -422,7 +422,8 @@ fn build_linz_jac_fn(
         col.map(|c| lst(&c.constantEqns).cloned().collect()).unwrap_or_default();
     let column_eqns: Vec<metamodelica::Ref<SimCode::SimEqSystem>> =
         col.map(|c| lst(&c.columnEqns).cloned().collect()).unwrap_or_default();
-    let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
+    let jm_map = with_jac_calls(var_map, jm);
+    let mut ctx = FnCtx::new_sim(sim_ctx(&jm_map), by_name, literals);
     let mut lower = |c: &mut FnCtx, eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]| -> Result<()> {
         for eq in eqs {
             lower_equation(c, eq, eq_index)?;

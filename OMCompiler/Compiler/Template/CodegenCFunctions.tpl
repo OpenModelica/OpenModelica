@@ -5424,9 +5424,9 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart,
     case SIMVAR(aliasvar = ALIAS(varName = varName)) then crefToCStr(varName, ix, isPre, isStart, &sub)
     case SIMVAR(aliasvar = NEGATEDALIAS(varName = varName), type_=T_BOOL()) then '!(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
     case SIMVAR(aliasvar = NEGATEDALIAS(varName = varName)) then '-(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
-    case v as SIMVAR(varKind = JAC_VAR()) then '(parentJacobian->resultVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
-    case v as SIMVAR(varKind = JAC_TMP_VAR()) then '(parentJacobian->tmpVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
-    case v as SIMVAR(varKind = SEED_VAR()) then '(parentJacobian->seedVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind = JAC_VAR()) then '(<%if stringEq(sub, "") then "" else "&"%>parentJacobian->resultVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind = JAC_TMP_VAR()) then '(<%if stringEq(sub, "") then "" else "&"%>parentJacobian->tmpVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind = SEED_VAR()) then '(<%if stringEq(sub, "") then "" else "&"%>parentJacobian->seedVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
     case v as SIMVAR(varKind = DAE_RESIDUAL_VAR()) then '(data->simulationInfo->daeModeData->residualVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
     case v as SIMVAR(varKind = DAE_AUX_VAR()) then '(data->simulationInfo->daeModeData->auxiliaryVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
     case SIMVAR(index = -2) then
@@ -9125,7 +9125,12 @@ end lsVarKind;
 template initializeStaticLSVars(list<SimVar> vars, Integer index)
 ::=
   let len = listLength(vars)
-  let indices = (vars |> var as SIMVAR(__) => '<%index%> /* <%crefCComment(var, crefStrNoUnderscore(name))%> */' ;separator=",\n")
+  let indices = (vars |> var as SIMVAR(__) =>
+    match var.varKind
+    case JAC_VAR()
+    case JAC_TMP_VAR() then '-1'
+    else '<%var.index%> /* <%crefCComment(var, crefStrNoUnderscore(var.name))%> */'
+    ;separator=",\n")
   // A torn linear system's own iteration variables can be `fixed=false`
   // PARAMETERS (solved via an initial-equation call, e.g. a filter's
   // coefficient array) rather than ordinary VARIABLEs -- their scalar

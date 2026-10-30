@@ -271,13 +271,17 @@ public
     list<Slice<VariablePointer>> ite_vars;
     list<Slice<EquationPointer>> res_eqns;
     array<StrongComponent> inner_eqns;
+    DifferentiationArguments diffArguments;
   algorithm
     ite_vars := list(Slice.apply(var, function differentiateVariablePointer(diffArguments_ptr = diffArguments_ptr)) for var in tearing.iteration_vars);
     res_eqns := list(Slice.apply(eqn, function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr, name = name)) for eqn in tearing.residual_eqns);
     // Only differentiate continuous inner equations; discrete ones contribute zero to the Jacobian.
     inner_eqns := Array.mapNoCopy(Array.filter(tearing.innerEquations, StrongComponent.isDiscrete), function differentiateStrongComponent(diffArguments_ptr = diffArguments_ptr, idx = idx, context = context, name = name));
 
-    diff_tearing := Tearing.TEARING_SET(ite_vars, res_eqns, inner_eqns, NONE());
+    // the original Jacobian is the system matrix of the differentiated linear loop
+    diffArguments := Pointer.access(diffArguments_ptr);
+    diff_tearing := Tearing.TEARING_SET(ite_vars, res_eqns, inner_eqns,
+    if diffArguments.diffType == DifferentiationType.JACOBIAN then tearing.jac else NONE());
   end differentiateTearing;
 
   function differentiateEquationPointerList
