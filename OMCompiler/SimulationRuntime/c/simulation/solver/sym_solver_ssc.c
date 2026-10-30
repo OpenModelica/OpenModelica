@@ -156,7 +156,7 @@ int sym_solver_ssc_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solve
       if (isnan(userdata->radauStepSize) || userdata->radauStepSize < 1e-13)
       {
         userdata->radauStepSize = 1e-13;
-        infoStreamPrint(OMC_LOG_SOLVER, 0, "Desired step to small try next one");
+        infoStreamPrint(OMC_LOG_SOLVER, 0, "Desired step too small try next one");
         infoStreamPrint(OMC_LOG_SOLVER, 0, "Interpolate linear");
 
         /* explicit euler step*/
@@ -209,7 +209,7 @@ int sym_solver_ssc_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solve
   }
   else
   {
-    infoStreamPrint(OMC_LOG_SOLVER, 0, "Desired step to small try next one");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Desired step too small try next one");
     infoStreamPrint(OMC_LOG_SOLVER, 0, "Interpolate linear");
 
     /* explicit euler step*/
