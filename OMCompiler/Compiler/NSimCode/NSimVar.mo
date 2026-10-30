@@ -67,7 +67,7 @@ protected
   // Backend imports
   import BVariable = NBVariable;
   import NBEquation.Equation;
-  import NBEvents.{EventInfo, Condition, MathEvent, TimeEvent};
+  import NBEvents.{EventInfo, TimeEvent};
   import NBPartition.Partition;
   import Slice = NBSlice;
   import StrongComponent = NBStrongComponent;
@@ -1508,9 +1508,9 @@ public
       output VarInfo varInfo;
     algorithm
       varInfo := VAR_INFO(
-        numZeroCrossings             = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)) + sum(MathEvent.numZeroCrossings(mev) for mev in eventInfo.math_lst),
+        numZeroCrossings             = EventInfo.numZeroCrossings(eventInfo),
         numTimeEvents                = TimeEvent.nextIndex(eventInfo.time_set),
-        numRelations                 = sum(Condition.numRelations(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
+        numRelations                 = EventInfo.numRelations(eventInfo),
         numMathEventFunctions        = eventInfo.numberMathEvents,
         numStateVars                 = listScalarSize(vars.stateVars),
         numAlgVars                   = listScalarSize(vars.algVars),

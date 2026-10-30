@@ -44,6 +44,7 @@ import Module = NBModule;
 public
   // OF imports
   import Absyn.Path;
+  import AbsynUtil;
 
   // NF imports
   import Algorithm = NFAlgorithm;
@@ -1332,13 +1333,34 @@ protected
   algorithm
     crefExp := Expression.fromCref(cref);
     ty := ComponentRef.getSubscriptedType(cref, true);
-    numerator := Replacements.single(residual, crefExp, Expression.makeZero(ty));
+    numerator := replaceUndelayed(residual, crefExp, Expression.makeZero(ty));
     mulOp := Operator.makeMul(ty);
     uminOp := Operator.makeUMinus(ty);
     // Set eqn: cref = - f/f'
     eqn := Equation.setLHS(eqn, crefExp);
     eqn := Equation.setRHS(eqn, Expression.UNARY(uminOp, Expression.MULTARY({numerator},{derivative}, mulOp)));
   end solveLinear;
+
+  function replaceUndelayed
+    "replaces old by new, but not in the delayed expressions. delay(expr, ...) does not
+    depend on the current value of expr."
+    input output Expression exp;
+    input Expression old;
+    input Expression new;
+  algorithm
+    exp := match exp
+      local
+        Call call;
+        Expression delayed;
+        list<Expression> args;
+      case _ guard(Expression.isEqual(exp, old)) then new;
+      case Expression.CALL(call = call as Call.TYPED_CALL(arguments = delayed :: args))
+        guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "delay") algorithm
+        exp.call := Call.setArguments(call, delayed :: list(replaceUndelayed(arg, old, new) for arg in args));
+      then exp;
+      else Expression.mapShallow(exp, function replaceUndelayed(old = old, new = new));
+    end match;
+  end replaceUndelayed;
 
   function solveUnique
     "author: linuslangenkamp

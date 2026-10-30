@@ -1146,6 +1146,9 @@ public
           bdae.dae := SOME(list(Partition.mapExp(par, function cleanupHomotopy(kind = Partition.getKind(par))) for par in Util.getOption(bdae.dae)));
         end if;
 
+        // delay(expr, delayTime, delayMax) -> expr
+        bdae.init := list(Partition.mapExp(par, cleanupDelay) for par in bdae.init);
+
         // check if we have init lambda0 system
         bdae.init := list(Partition.mapExp(par, function containsLambda0(b = hasHom)) for par in bdae.init);
 
@@ -1210,6 +1213,20 @@ public
       else exp;
     end match;
   end cleanupHomotopy;
+
+  function cleanupDelay
+    "during initialization delay() returns the value of its expression at the start time"
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      local
+        Call call;
+      case Expression.CALL(call = call as Call.TYPED_CALL())
+        guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "delay")
+      then listHead(call.arguments);
+      else exp;
+    end match;
+  end cleanupDelay;
 
   function containsHomotopyCall
     input output Expression exp;

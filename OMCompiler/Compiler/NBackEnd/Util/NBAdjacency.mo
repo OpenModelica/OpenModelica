@@ -44,6 +44,7 @@ public
 protected
   // OF imports
   import Absyn.Path;
+  import AbsynUtil;
 
   // Old Simcode imports
   import OldSimCode = SimCode;
@@ -4191,7 +4192,7 @@ public
         Dependency dep;
         UnorderedSet<ComponentRef> set1, set2, diff;
         list<UnorderedSet<ComponentRef>> sets = {};
-        Expression call_exp;
+        Expression call_exp, delay_max;
         Call call;
         Boolean repeatLeft, repeatRight, reduce;
         Integer ind, new_depth;
@@ -4360,6 +4361,12 @@ public
         set := collectDependencies(call_exp, depth, map, dep_map, sol_map, rep_set);
         Dependency.updateList(UnorderedSet.toList(set), -1, false, dep_map);
       then set;
+
+      // delay(expr, delayTime, delayMax) with delayTime = delayMax only reads past values of expr
+      case Expression.CALL(call = call as Call.TYPED_CALL(arguments = {_, call_exp, delay_max}))
+        guard(Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.isEqual(call_exp, delay_max)
+          and AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "delay")
+      then UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
 
       // for functions set the dependency to full reduction (+ repetition) and solvability to implicit
       case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
