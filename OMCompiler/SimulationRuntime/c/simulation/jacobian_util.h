@@ -37,15 +37,6 @@
 extern "C" {
 #endif
 
-/* (column, row) entries of a sparsity pattern in any order, see sparsePatternFromPairs */
-typedef struct SPARSE_PAIRS
-{
-  unsigned int* cols;
-  unsigned int* rows;
-  size_t size;
-  size_t capacity;
-} SPARSE_PAIRS;
-
 void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRows, unsigned int sizeTmpVars, EVAL_DAG* dag, jacobianColumn_func_ptr evalColumn, jacobianColumn_func_ptr constantEqns, SPARSE_PATTERN* sparsePattern);
 JACOBIAN* copyJacobian(JACOBIAN* source);
 void freeJacobian(JACOBIAN* jac);
