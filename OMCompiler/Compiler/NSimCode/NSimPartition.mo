@@ -154,6 +154,25 @@ public
     end match;
   end getClock;
 
+  function mapShallow
+    input output SimPartition part;
+    input expFunc func;
+    partial function expFunc
+      input output Expression exp;
+    end expFunc;
+  algorithm
+    part := match part
+      case BASE_PARTITION() algorithm
+        part.subPartitions := list(mapShallow(sub, func) for sub in part.subPartitions);
+      then part;
+      case SUB_PARTITION() algorithm
+        part.equations := list(Block.mapShallow(blck, func) for blck in part.equations);
+        part.removedEquations := list(Block.mapShallow(blck, func) for blck in part.removedEquations);
+      then part;
+      else part;
+    end match;
+  end mapShallow;
+
   function listToString
     input list<SimPartition> parts;
     input output String str = "";

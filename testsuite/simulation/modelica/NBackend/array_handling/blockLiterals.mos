@@ -1,0 +1,53 @@
+// name: blockLiterals
+// keywords: NewBackend literal
+// status: correct
+// cflags: --newBackend
+// suite: cSources
+// teardown_command: rm -f blockLiterals blockLiterals_* blockLiterals.log blockLiterals.c blockLiterals.o blockLiterals.makefile blockLiterals.libs
+//
+// The constant c is a literal array in scalar and array equations of the
+// loops and their Jacobians. It is generated as a shared literal, not as a
+// switch over its elements or an array built at runtime.
+
+loadString("
+model blockLiterals
+  constant Real c[4] = {1.5, 2.0, 3.25, 4.0};
+  Integer k = integer(time * 3) + 1;
+  Real x(start = 1);
+  Real y;
+  Real z[4];
+  Real w;
+equation
+  y = c[k] * x^3 + sin(x);
+  x + y = time;
+  z = c * w;
+  w^3 + sum(z) = time;
+end blockLiterals;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(blockLiterals); getErrorString();
+system("grep -q 'ASUB' blockLiterals_02nls.c blockLiterals_12jac.c");
+system("grep -q 'array_alloc_scalar_real_array' blockLiterals_02nls.c blockLiterals_12jac.c");
+system("grep -q 'real_get(_OMC_LIT' blockLiterals_12jac.c");
+val(x, 1.0);
+val(w, 1.0);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "blockLiterals_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'blockLiterals', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1
+// 1
+// 0
+// 0.38800478914811753
+// 0.09294855600735295
+// endResult
