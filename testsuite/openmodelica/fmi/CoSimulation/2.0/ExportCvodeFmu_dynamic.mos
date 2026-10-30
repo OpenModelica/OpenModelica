@@ -2,7 +2,6 @@
 // keywords: fmu export simulation flags
 // status: correct
 // teardown_command: rm -rf *.fmu Pendulum* Pendulum-dynamic* Pendulum_dynamic* Pendulum_cs_systemCall* Pendulum_flags_dynamic.json
-// cflags: -d=-newInst
 //
 // Export Pendulum as 2.0 CS FMU with CVODE solver
 
@@ -67,7 +66,7 @@ val(rev.w, 1.0, "Pendulum_dynamic_res.mat"); getErrorString();
 //      - startTime : 0.000000
 //      - stopTime  : 1.000000
 //      - tolerance : 1e-06
-//      - stepSize  : 0.002
+//      - stepSize  : 0.01
 // info:    Result file: Pendulum_dynamic_res.mat (bufferSize=10)
 // info:    Parameter Pendulum.world.label1 will not be stored in the result file, because the signal type is not supported
 // info:    Parameter Pendulum.world.label2 will not be stored in the result file, because the signal type is not supported
@@ -76,8 +75,8 @@ val(rev.w, 1.0, "Pendulum_dynamic_res.mat"); getErrorString();
 // ""
 // 0.0
 // ""
-// -2.5807275314932356
+// -2.580795424025482
 // ""
-// 3.173993419273764
+// 3.1740981888855195
 // ""
 // endResult
