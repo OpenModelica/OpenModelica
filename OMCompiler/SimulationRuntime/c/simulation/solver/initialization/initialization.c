@@ -428,6 +428,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
           warningStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "No initialEquation_lambda0 was generated. Using normal initial equation system with lambda=0 instead.");
           data->callback->functionInitialEquations(data, threadData);
         }
+        data->simulationInfo->skipStartEquations = 1;
       }
       else
       {
@@ -448,6 +449,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
 #ifndef OMC_EMCC
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
+    data->simulationInfo->skipStartEquations = 0;
 
     messageClose(OMC_LOG_INIT_HOMOTOPY);
 
@@ -485,7 +487,9 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "solving simplified lambda0-DAE done\n---------------------------");
 
     // Run along the homotopy path and solve the actual system
+    data->simulationInfo->skipStartEquations = 1;
     data->callback->functionInitialEquations(data, threadData);
+    data->simulationInfo->skipStartEquations = 0;
     OMC_ERROR_CHECK_RETURN(-1);
 
     messageClose(OMC_LOG_INIT_HOMOTOPY);

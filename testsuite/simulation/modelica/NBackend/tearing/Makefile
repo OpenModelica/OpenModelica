@@ -11,6 +11,7 @@ partialNestedFor.mos \
 minimalTearing_simple.mos \
 loopSizeOne.mos \
 guruTearing1.mos \
+guruTearing2.mos \
 impliedInner.mos \
 nonlinearContinuousLoop.mos \
 torn2DForResidualIndex.mos \

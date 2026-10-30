@@ -229,6 +229,9 @@ pub struct Layout<T = u32> {
     pub n_out_off: T,
     /// Nonlinear-solver failure flag (i32).
     pub nls_fail_off: T,
+    /// C's `skipStartEquations` (i32): raised by a global homotopy after its
+    /// lambda = 0 step, so the initial system keeps the iterated start values.
+    pub skip_start_off: T,
     /// Number of `sample(...)` time events.
     pub n_samples: T,
     /// Base of the sample parameter region (start/interval f64 pairs).
@@ -617,6 +620,7 @@ impl<T: sizes::LayoutNum> Layout<T> {
             term_info_off: z.clone(),
             n_out_off: z.clone(),
             nls_fail_off: z.clone(),
+            skip_start_off: z.clone(),
             n_samples: z.clone(),
             sample_off: z.clone(),
             sample_active_off: z.clone(),
@@ -708,7 +712,8 @@ impl<T: sizes::LayoutNum> Layout<T> {
         self.term_info_off = self.initial_off.clone() + lit(4);
         self.n_out_off = self.term_info_off.clone() + lit(TERM_INFO_WORDS * 4);
         self.nls_fail_off = self.n_out_off.clone() + lit(4);
-        self.lambda_off = (self.nls_fail_off.clone() + lit(4)).align8();
+        self.skip_start_off = self.nls_fail_off.clone() + lit(4);
+        self.lambda_off = (self.skip_start_off.clone() + lit(4)).align8();
         self.sample_off = (self.lambda_off.clone() + lit(8)).align8();
         self.sample_active_off = self.sample_off.clone() + c.n_samples.clone().times(16);
         self.zc_off = (self.sample_active_off.clone() + c.n_samples.clone().times(4)).align8();
@@ -812,6 +817,7 @@ impl<T> Layout<T> {
             term_info_off: off(&self.term_info_off)?,
             n_out_off: off(&self.n_out_off)?,
             nls_fail_off: off(&self.nls_fail_off)?,
+            skip_start_off: off(&self.skip_start_off)?,
             n_samples: count(&self.n_samples)?,
             sample_off: off(&self.sample_off)?,
             sample_active_off: off(&self.sample_active_off)?,
@@ -2169,7 +2175,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 25;
+const VERSION: u32 = 26;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -2216,6 +2222,7 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
         l.term_info_off,
         l.n_out_off,
         l.nls_fail_off,
+        l.skip_start_off,
         l.n_samples,
         l.sample_off,
         l.sample_active_off,
@@ -2794,6 +2801,7 @@ impl<'a> Reader<'a> {
             term_info_off: self.u32()?,
             n_out_off: self.u32()?,
             nls_fail_off: self.u32()?,
+            skip_start_off: self.u32()?,
             n_samples: self.u32()?,
             sample_off: self.u32()?,
             sample_active_off: self.u32()?,

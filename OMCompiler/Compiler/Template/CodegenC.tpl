@@ -7835,14 +7835,30 @@ case SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
   let assign = if stringEq(crefType(cref), "modelica_string")
     then 'omc_string_store(&(<%lhs%>), <%expPart%>);'
     else '<%lhs%> = <%expPart%>;'
+  let body =
+    <<
+    <%preExp%>
+    <%assign%>
+    <%postExp%>
+    >>
   <<
   <%modelicaLine(eqInfo(eq))%>
-  <%preExp%>
-  <%assign%>
-  <%postExp%>
+  <%skipStartEquation(cref, body)%>
   <%endModelicaLine()%>
   >>
 end equationSimpleAssign;
+
+template skipStartEquation(ComponentRef cref, Text body)
+ "Global homotopy computes the start values only at lambda = 0."
+::=
+  if isStartCref(cref) then
+    <<
+    if (!data->simulationInfo->skipStartEquations) {
+      <%body%>
+    }
+    >>
+  else body
+end skipStartEquation;
 
 template equationSimpleAssignLhs(ComponentRef cref, Context context,
                                  Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub)
@@ -7918,10 +7934,12 @@ case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
   let &preExp = buffer ""
   let expPart = daeExp(exp, context, &preExp, &varDecls, &varFrees, &auxFunction)
   if boolAnd(crefSubIsScalar(lhs.componentRef), isStartCref(lhs.componentRef)) then
-    <<
-    <%preExp%>
-    <%startArrayScatter(lhs.componentRef, expTypeFromExpShort(eqn.exp), expPart, &varDecls, &varFrees)%>
-    >>
+    let scatter = startArrayScatter(lhs.componentRef, expTypeFromExpShort(eqn.exp), expPart, &varDecls, &varFrees)
+    skipStartEquation(lhs.componentRef,
+      <<
+      <%preExp%>
+      <%scatter%>
+      >>)
   else if crefSubIsScalar(lhs.componentRef) then
     let lhsstr = daeExpCrefLhs(lhs, context, &preExp, &varDecls, &varFrees, &auxFunction, false)
     match expTypeFromExpShort(eqn.exp)
@@ -9202,6 +9220,7 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       <%auxFunction%>
       void genericCall_<%sub_name%><%index%>(DATA *data, threadData_t *threadData<%jac%>, const int equationIndexes[2], <%idx_%>)
       {
+        <%match lhs case CREF(componentRef=cr) then (if isStartCref(cr) then 'if (data->simulationInfo->skipStartEquations) return;') else ''%>
         <%idx_copy%>
         <%varDecls%>
         <%iter_%>

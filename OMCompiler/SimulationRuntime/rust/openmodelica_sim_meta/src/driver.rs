@@ -2923,7 +2923,10 @@ fn solve_initial_system(
         "solving simplified lambda0-DAE done\n---------------------------",
     );
     write_i32(e, sim_data + layout.nls_fail_off, 0)?;
-    e.call1("functionInitialEquations", sim_data)?;
+    write_i32(e, sim_data + layout.skip_start_off, 1)?;
+    let solved = e.call1("functionInitialEquations", sim_data);
+    write_i32(e, sim_data + layout.skip_start_off, 0)?;
+    solved?;
     omclog::close(omclog::INIT_HOMOTOPY);
     check_nls(e, sim_data, layout)
 }
@@ -3267,6 +3270,7 @@ fn run_homotopy_continuation(
             );
             if step == 0 {
                 call_initial_equations_lambda0(e, sim_data, layout)?;
+                write_i32(e, sim_data + layout.skip_start_off, 1)?;
             } else {
                 write_i32(e, sim_data + layout.nls_fail_off, 0)?;
                 e.call1("functionInitialEquations", sim_data)?;
@@ -3281,6 +3285,7 @@ fn run_homotopy_continuation(
         }
         Ok(())
     })();
+    write_i32(e, sim_data + layout.skip_start_off, 0)?;
     omclog::close(omclog::INIT_HOMOTOPY);
     path.finish();
     if let Err(err) = steps_run {
