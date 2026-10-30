@@ -400,8 +400,9 @@ public
       end match;
     end filterWhen;
 
-    function map
-      "ToDo: other blocks and cref func"
+    function mapShallow
+      "applies func to the top level expressions of the block, including
+      inner blocks and jacobians of algebraic loops"
       input output Block blck;
       input expFunc func;
       partial function expFunc
@@ -410,16 +411,68 @@ public
     algorithm
       blck := match blck
         case RESIDUAL() algorithm
-          blck.exp := Expression.map(blck.exp, func);
+          blck.exp := func(blck.exp);
+        then blck;
+
+        case ARRAY_RESIDUAL() algorithm
+          blck.exp := func(blck.exp);
+        then blck;
+
+        case FOR_RESIDUAL() algorithm
+          blck.exp := func(blck.exp);
+        then blck;
+
+        case GENERIC_RESIDUAL() algorithm
+          blck.exp := func(blck.exp);
         then blck;
 
         case SIMPLE_ASSIGN() algorithm
-          blck.rhs := Expression.map(blck.rhs, func);
+          blck.rhs := func(blck.rhs);
+        then blck;
+
+        case ARRAY_ASSIGN() algorithm
+          blck.rhs := func(blck.rhs);
+        then blck;
+
+        case ENTWINED_ASSIGN() algorithm
+          blck.single_calls := list(mapShallow(b, func) for b in blck.single_calls);
+        then blck;
+
+        case ALGORITHM() algorithm
+          blck.stmts := list(Statement.mapExp(stmt, func) for stmt in blck.stmts);
+        then blck;
+
+        case INVERSE_ALGORITHM() algorithm
+          blck.stmts := list(Statement.mapExp(stmt, func) for stmt in blck.stmts);
+        then blck;
+
+        case IF() algorithm
+          blck.branches := list((func(Util.tuple21(br)), list(mapShallow(b, func) for b in Util.tuple22(br))) for br in blck.branches);
+        then blck;
+
+        case WHEN() algorithm
+          blck.when_stmts := list(WhenStatement.map(stmt, func, NONE(), Expression.fakeMap) for stmt in blck.when_stmts);
+          blck.else_when := Util.applyOption(blck.else_when, function mapShallow(func = func));
+        then blck;
+
+        case LINEAR() algorithm
+          blck.system := LinearSystem.mapShallow(blck.system, func);
+          blck.alternativeTearing := Util.applyOption(blck.alternativeTearing, function LinearSystem.mapShallow(func = func));
+        then blck;
+
+        case NONLINEAR() algorithm
+          blck.system := NonlinearSystem.mapShallow(blck.system, func);
+          blck.alternativeTearing := Util.applyOption(blck.alternativeTearing, function NonlinearSystem.mapShallow(func = func));
+        then blck;
+
+        case HYBRID() algorithm
+          blck.continuous := mapShallow(blck.continuous, func);
+          blck.discreteEqs := list(mapShallow(b, func) for b in blck.discreteEqs);
         then blck;
 
         else blck;
       end match;
-    end map;
+    end mapShallow;
 
     function listToString
       input list<Block> blcks;
@@ -1858,6 +1911,17 @@ public
         partOfJac             = system.partOfJac
         );
     end convert;
+
+    function mapShallow
+      input output LinearSystem system;
+      input expFunc func;
+      partial function expFunc
+        input output Expression exp;
+      end expFunc;
+    algorithm
+      system.residual := list(Block.mapShallow(b, func) for b in system.residual);
+      system.jacobian := Util.applyOption(system.jacobian, function SimJacobian.mapExp(func = func));
+    end mapShallow;
   end LinearSystem;
 
   uniontype NonlinearSystem
@@ -1917,6 +1981,17 @@ public
         clockIndex            = NONE() // ToDo update this
         );
     end convert;
+
+    function mapShallow
+      input output NonlinearSystem system;
+      input expFunc func;
+      partial function expFunc
+        input output Expression exp;
+      end expFunc;
+    algorithm
+      system.blcks := list(Block.mapShallow(b, func) for b in system.blcks);
+      Pointer.update(system.jacobian, Util.applyOption(Pointer.access(system.jacobian), function SimJacobian.mapExp(func = func)));
+    end mapShallow;
   end NonlinearSystem;
 
   annotation(__OpenModelica_Interface="nbackend");

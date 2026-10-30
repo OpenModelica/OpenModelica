@@ -490,7 +490,27 @@ public
             // generate the generic loop calls and replace literal expressions
             generic_loop_calls  := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(simCodeIndices.generic_call_map));
             generic_loop_calls  := list(SimGenericCall.mapShallow(call, collect_literals) for call in generic_loop_calls);
-            jacobians           := list(SimJacobian.mapGenericCalls(jac, collect_literals) for jac in jacobians);
+            jacobians           := list(SimJacobian.mapExp(jac, collect_literals) for jac in jacobians);
+            independent         := list(SimStrongComponent.Block.mapShallow(blck, collect_literals) for blck in independent);
+            allSim              := list(SimStrongComponent.Block.mapShallow(blck, collect_literals) for blck in allSim);
+            ode                 := list(list(SimStrongComponent.Block.mapShallow(blck, collect_literals) for blck in lst) for lst in ode);
+            algebraic           := list(list(SimStrongComponent.Block.mapShallow(blck, collect_literals) for blck in lst) for lst in algebraic);
+            clockedPartitions   := list(SimPartition.mapShallow(part, collect_literals) for part in clockedPartitions);
+            nominal             := list(SimStrongComponent.Block.mapShallow(blck, collect_literals) for blck in nominal);
+            min                 := list(SimStrongComponent.Block.mapShallow(blck, collect_literals) for blck in min);
+            max                 := list(SimStrongComponent.Block.mapShallow(blck, collect_literals) for blck in max);
+            param               := list(SimStrongComponent.Block.mapShallow(blck, collect_literals) for blck in param);
+            no_ret              := list(SimStrongComponent.Block.mapShallow(blck, collect_literals) for blck in no_ret);
+            algorithms          := list(SimStrongComponent.Block.mapShallow(blck, collect_literals) for blck in algorithms);
+            event_blocks        := list(SimStrongComponent.Block.mapShallow(blck, collect_literals) for blck in event_blocks);
+            jac_blocks          := list(SimStrongComponent.Block.mapShallow(blck, collect_literals) for blck in jac_blocks);
+            start               := list(SimStrongComponent.Block.mapShallow(blck, collect_literals) for blck in start);
+            init                := list(SimStrongComponent.Block.mapShallow(blck, collect_literals) for blck in init);
+            init_0              := list(SimStrongComponent.Block.mapShallow(blck, collect_literals) for blck in init_0);
+            init_no_ret         := list(SimStrongComponent.Block.mapShallow(blck, collect_literals) for blck in init_no_ret);
+            linearLoops         := list(SimStrongComponent.Block.mapShallow(blck, collect_literals) for blck in linearLoops);
+            nonlinearLoops      := list(SimStrongComponent.Block.mapShallow(blck, collect_literals) for blck in nonlinearLoops);
+            daeModeData         := Util.applyOption(daeModeData, function DaeModeData.mapShallow(func = collect_literals));
             literals            := UnorderedMap.keyList(literals_map);
 
             (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, fileName, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, bdae.clockedInfo, simCodeIndices);
@@ -819,6 +839,21 @@ public
       list<SimVar> auxiliaryVars;
       DaeModeConfig modeCreated;
     end DAE_MODE_DATA;
+
+    function mapShallow
+      input output DaeModeData data;
+      input expFunc func;
+      partial function expFunc
+        input output Expression exp;
+      end expFunc;
+    algorithm
+      data := match data
+        case DAE_MODE_DATA() algorithm
+          data.blcks := list(list(SimStrongComponent.Block.mapShallow(blck, func) for blck in lst) for lst in data.blcks);
+        then data;
+        else data;
+      end match;
+    end mapShallow;
 
     function toString
       input DaeModeData data;
