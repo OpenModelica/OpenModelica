@@ -147,6 +147,7 @@ public
       Integer numberMathEvents                          "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
       list<MathEvent> math_lst                          "math functions that trigger events, ordered by index";
       list<SpatialDistribution> spatial_lst            "stores all spatial distribution calls";
+      list<Expression> delays                           "indexed delay() calls, each one gets a zero crossing for the events in its buffer";
     end EVENT_INFO;
 
     function toString
@@ -222,7 +223,8 @@ public
         state_map         = bucket.state_map, // ToDo: StateEvent.updateIndices(stateEvents),
         numberMathEvents  = bucket.math_index,
         math_lst          = List.sort(UnorderedMap.valueList(bucket.math_map), MathEvent.indexGt),
-        spatial_lst      = spatial_lst
+        spatial_lst      = spatial_lst,
+        delays            = {}
       );
 
       if Flags.isSet(Flags.DUMP_EVENTS) then
@@ -289,7 +291,8 @@ public
         state_map         = UnorderedMap.new<StateEvent>(Condition.hash, Condition.isEqual),
         numberMathEvents  = 0,
         math_lst          = {},
-        spatial_lst      = {}
+        spatial_lst      = {},
+        delays            = {}
       );
     end empty;
 
@@ -312,14 +315,17 @@ public
       list<tuple<Condition, CompositeEvent>> cev_lst;
       list<tuple<Condition, StateEvent>> sev_lst;
       Integer math_base;
+      list<OldBackendDAE.ZeroCrossing> delay_zcs;
     algorithm
       // add composite at some point?
       (tev_lst, cev_lst, sev_lst) := toLists(eventInfo);
       // the zero crossings of math events are numbered after the ones of state events
       math_base := sum(Condition.numRelations(Util.tuple21(sev_tpl)) for sev_tpl in sev_lst);
-      zeroCrossings := listAppend(list(StateEvent.convert(sev_tpl, equation_map) for sev_tpl in sev_lst),
-                                  list(MathEvent.convert(mev, math_base + i, equation_map) threaded for mev in eventInfo.math_lst, i in List.intRange(listLength(eventInfo.math_lst))));
-      relations := List.flatten(list(StateEvent.convertRelations(sev_tpl, equation_map) for sev_tpl in sev_lst));
+      delay_zcs := delayZeroCrossings(eventInfo, math_base + listLength(eventInfo.math_lst) + 1);
+      zeroCrossings := List.flatten({list(StateEvent.convert(sev_tpl, equation_map) for sev_tpl in sev_lst),
+                                     list(MathEvent.convert(mev, math_base + i, equation_map) threaded for mev in eventInfo.math_lst, i in List.intRange(listLength(eventInfo.math_lst))),
+                                     delay_zcs});
+      relations := listAppend(List.flatten(list(StateEvent.convertRelations(sev_tpl, equation_map) for sev_tpl in sev_lst)), delay_zcs);
       timeEvents := list(TimeEvent.convert(tev) for tev in tev_lst);
       if listEmpty(eventInfo.spatial_lst) then
         spatialInfo := OldSimCode.SPATIAL_DISTRIBUTION_INFO({}, 0);
@@ -327,6 +333,68 @@ public
         spatialInfo := OldSimCode.SPATIAL_DISTRIBUTION_INFO(list(SpatialDistribution.convert(sd) for sd in eventInfo.spatial_lst), listLength(eventInfo.spatial_lst) - 1);
       end if;
     end convert;
+
+    function numZeroCrossings
+      input EventInfo eventInfo;
+      output Integer n = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map))
+        + sum(MathEvent.numZeroCrossings(mev) for mev in eventInfo.math_lst) + listLength(eventInfo.delays);
+    end numZeroCrossings;
+
+    function numRelations
+      input EventInfo eventInfo;
+      output Integer n = sum(Condition.numRelations(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)) + listLength(eventInfo.delays);
+    end numRelations;
+
+    function delayZeroCrossings
+      "$delayZeroCrossing(i, zc, delayTime) > 0 for the buffer i of each delay(), it flips the
+      sign of its own zero crossing zc when an event of the buffer reaches time - delayTime.
+      They come after all other zero crossings and relations."
+      input EventInfo eventInfo;
+      input Integer first_index "unique zero crossing index of the first one";
+      output list<OldBackendDAE.ZeroCrossing> zeroCrossings = {};
+    protected
+      Integer n = listLength(eventInfo.delays);
+      Integer zc_index = numZeroCrossings(eventInfo) - n;
+      Integer rel_index = numRelations(eventInfo) - n;
+      Integer index;
+      Expression delayTime;
+      DAE.Exp rel;
+    algorithm
+      for delay in eventInfo.delays loop
+        Expression.CALL(call = Call.TYPED_CALL(arguments = {Expression.INTEGER(index), _, delayTime, _})) := delay;
+        rel := DAE.RELATION(
+          DAE.CALL(Absyn.IDENT("$delayZeroCrossing"), {DAE.ICONST(index), DAE.ICONST(zc_index + index), Expression.toDAE(delayTime)}, DAE.callAttrBuiltinReal),
+          DAE.GREATER(DAE.T_REAL_DEFAULT), DAE.RCONST(0.0), rel_index + index, NONE());
+        zeroCrossings := OldBackendDAE.ZERO_CROSSING(first_index + index, rel, {}, NONE()) :: zeroCrossings;
+      end for;
+      zeroCrossings := listReverse(zeroCrossings);
+    end delayZeroCrossings;
+
+    function mapExp
+      "applies func to the expressions of the state and math events"
+      input output EventInfo eventInfo;
+      input MapFunc func;
+      partial function MapFunc
+        input output Expression exp;
+      end MapFunc;
+    protected
+      UnorderedMap<Condition, StateEvent> state_map = UnorderedMap.new<StateEvent>(Condition.hash, Condition.isEqual);
+      Condition cond;
+      StateEvent sev;
+      list<MathEvent> math_lst = {};
+    algorithm
+      for tpl in UnorderedMap.toList(eventInfo.state_map) loop
+        (cond, sev) := tpl;
+        cond.exp := func(cond.exp);
+        UnorderedMap.add(cond, sev, state_map);
+      end for;
+      eventInfo.state_map := state_map;
+      for mev in eventInfo.math_lst loop
+        mev.exp := func(mev.exp);
+        math_lst := mev :: math_lst;
+      end for;
+      eventInfo.math_lst := listReverse(math_lst);
+    end mapExp;
   end EventInfo;
 
   uniontype TimeEvent

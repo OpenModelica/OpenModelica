@@ -579,6 +579,9 @@ public
 
       case BackendDAE.MAIN() algorithm
         event_crefs := eventCrefs(bdae.eventInfo);
+        for part in bdae.ode loop
+          EquationPointers.mapExp(part.equations, function collectDelayCrefs(crefs = event_crefs));
+        end for;
         for syst in List.flatten(list(splitAlgebraic(p, event_crefs) for p in bdae.ode)) loop
           Partition.Partition.categorize(syst, ode, alg, ode_evt, alg_evt, clocked);
         end for;
@@ -711,6 +714,22 @@ public
       else ();
     end match;
   end eventCrefs;
+
+  function collectDelayCrefs
+    "the variables of delay() calls, their buffers are filled after every step"
+    input output Expression exp;
+    input UnorderedSet<ComponentRef> crefs;
+  algorithm
+    () := match exp
+      local
+        Call call;
+      case Expression.CALL(call = call as Call.TYPED_CALL())
+        guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "delay") algorithm
+        collectPartitioningCrefs(exp, crefs);
+      then ();
+      else ();
+    end match;
+  end collectDelayCrefs;
 
   function extractClocksEqn
     input output Equation eqn;

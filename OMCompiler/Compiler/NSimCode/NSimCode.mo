@@ -218,7 +218,7 @@ public
       list<ComponentRef> discreteVars                   "List of discrete variables";
       ExtObjInfo extObjInfo;
       OldSimCodeFunction.MakefileParams makefileParams;
-      //DelayedExpression delayedExps;
+      list<Expression> delayedExps                     "delay() calls, the position is the index of the buffer";
       list<SimJacobian> jacobians       "List of symbolic jacobians";
       Option<OldSimCode.SimulationSettings> simulationSettingsOpt; // replace this with new struct
       String fileNamePrefix;//, fullPathPrefix "Used in FMI where files are generated in a special directory";
@@ -348,7 +348,10 @@ public
           Option<DaeModeData> daeModeData;
           SimJacobian jacA, jacB, jacC, jacD, jacF, jacH, jacAdjoint, jacLfg, jacMrf, jacR0;
           list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
-          mapExp collect_literals;
+          mapExp collect_literals, index_delays;
+          UnorderedMap<Expression, Integer> delay_map = UnorderedMap.new<Integer>(Expression.hash, Expression.isEqual);
+          list<Expression> delayedExps;
+          EventInfo eventInfo;
         case BackendDAE.MAIN(varData = varData as BVariable.VAR_DATA_SIM(), eqData = eqData as BEquation.EQ_DATA_SIM())
           algorithm
             // somehow this cannot be set at definition (metamodelica bug?)
@@ -487,8 +490,32 @@ public
               end if;
             end for;
 
-            // generate the generic loop calls and replace literal expressions
             generic_loop_calls  := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(simCodeIndices.generic_call_map));
+
+            // number the delay() calls, equal calls share one buffer
+            index_delays        := function Expression.map(func = function indexDelay(map = delay_map));
+            generic_loop_calls  := list(SimGenericCall.mapShallow(call, index_delays) for call in generic_loop_calls);
+            jacobians           := list(SimJacobian.mapExp(jac, index_delays) for jac in jacobians);
+            independent         := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in independent);
+            allSim              := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in allSim);
+            ode                 := list(list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in lst) for lst in ode);
+            algebraic           := list(list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in lst) for lst in algebraic);
+            clockedPartitions   := list(SimPartition.mapShallow(part, index_delays) for part in clockedPartitions);
+            no_ret              := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in no_ret);
+            algorithms          := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in algorithms);
+            event_blocks        := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in event_blocks);
+            jac_blocks          := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in jac_blocks);
+            init                := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in init);
+            init_0              := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in init_0);
+            init_no_ret         := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in init_no_ret);
+            linearLoops         := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in linearLoops);
+            nonlinearLoops      := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in nonlinearLoops);
+            daeModeData         := Util.applyOption(daeModeData, function DaeModeData.mapShallow(func = index_delays));
+            eventInfo           := EventInfo.mapExp(bdae.eventInfo, index_delays);
+            delayedExps         := UnorderedMap.keyList(delay_map);
+            eventInfo.delays    := list(indexDelay(exp, delay_map) for exp in delayedExps);
+
+            // replace literal expressions
             generic_loop_calls  := list(SimGenericCall.mapShallow(call, collect_literals) for call in generic_loop_calls);
             jacobians           := list(SimJacobian.mapExp(jac, collect_literals) for jac in jacobians);
             independent         := list(SimStrongComponent.Block.mapShallow(blck, collect_literals) for blck in independent);
@@ -513,7 +540,7 @@ public
             daeModeData         := Util.applyOption(daeModeData, function DaeModeData.mapShallow(func = collect_literals));
             literals            := UnorderedMap.keyList(literals_map);
 
-            (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, fileName, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, bdae.clockedInfo, simCodeIndices);
+            (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, fileName, directory, functions, linearLoops, nonlinearLoops, eventInfo, bdae.clockedInfo, simCodeIndices);
 
             simCode := SIM_CODE(
               modelInfo                 = modelInfo,
@@ -541,12 +568,13 @@ public
               discreteVars              = discreteVars,
               extObjInfo                = extObjInfo,
               makefileParams            = makefileParams,
+              delayedExps               = delayedExps,
               jacobians                 = jacobians,
               simulationSettingsOpt     = simSettingsOpt,
               fileNamePrefix            = fileNamePrefix,
               simcode_map               = simcode_map,
               equation_map              = equation_map,
-              eventInfo                 = bdae.eventInfo,
+              eventInfo                 = eventInfo,
               daeModeData               = daeModeData,
               inlineEquations           = inlineEquations
             );
@@ -623,7 +651,7 @@ public
         discreteModelVars             = discreteModelVars,
         extObjInfo                    = ExtObjInfo.convert(simCode.extObjInfo), // ToDo: add this once external object info is supported
         makefileParams                = simCode.makefileParams, // ToDo: convert this to new structures
-        delayedExps                   = OldSimCode.DELAYED_EXPRESSIONS({}, 0), // ToDo: add this once delayed expressions are supported
+        delayedExps                   = convertDelayedExps(simCode.delayedExps),
         spatialInfo                   = spatialInfo,
         jacobianMatrices              = list(SimJacobian.convert(jac) for jac in simCode.jacobians),
         simulationSettingsOpt         = simCode.simulationSettingsOpt, // replace with new struct later on
@@ -645,6 +673,47 @@ public
         scalarized                    = Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE),
         fmiFigures                    = {});
     end convert;
+
+    function indexDelay
+      "delay(expr, delayTime, delayMax) -> delay(index, expr, delayTime, delayMax)
+      with the index of its buffer. Use with Expression.map."
+      input output Expression exp;
+      input UnorderedMap<Expression, Integer> map;
+    algorithm
+      exp := match exp
+        local
+          Call call;
+          Integer index;
+
+        case Expression.CALL(call = call as Call.TYPED_CALL(arguments = {_, _, _}))
+          guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "delay") algorithm
+          if Expression.contains(exp, Expression.isIterator) then
+            Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because delay() in for-equations is not yet supported: " + Expression.toString(exp)});
+            fail();
+          end if;
+          index := UnorderedMap.tryAdd(exp, UnorderedMap.size(map), map);
+          exp.call := Call.setArguments(call, Expression.INTEGER(index) :: call.arguments);
+        then exp;
+
+        else exp;
+      end match;
+    end indexDelay;
+
+    function convertDelayedExps
+      input list<Expression> delayedExps;
+      output OldSimCode.DelayedExpression oldDelayedExps;
+    protected
+      list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> lst = {};
+      Integer index = 0;
+      Expression e, delayTime, delayMax;
+    algorithm
+      for exp in delayedExps loop
+        Expression.CALL(call = Call.TYPED_CALL(arguments = {e, delayTime, delayMax})) := exp;
+        lst := (index, (Expression.toDAE(e), Expression.toDAE(delayTime), Expression.toDAE(delayMax))) :: lst;
+        index := index + 1;
+      end for;
+      oldDelayedExps := OldSimCode.DELAYED_EXPRESSIONS(listReverse(lst), index);
+    end convertDelayedExps;
 
     function getDirectoryAndLibs
       input SimCode simCode;

@@ -1,0 +1,62 @@
+// name: delayOperator
+// keywords: NewBackend
+// status: correct
+
+loadString("
+model delayOperator
+  Real x(start = 1, fixed = true);
+  Real y, z, u, w, v(start = 0, fixed = true);
+  Integer n;
+  discrete Real r(start = 0, fixed = true);
+initial equation
+  w = 2*delay(x, 0.2);
+equation
+  der(x) = -delay(x, 0.2) + y;
+  y = delay(sin(10*time), 0.3, 0.5);
+  z = delay(x, 0.1 + 0.05*sin(time), 0.2) + delay(x, 0.2);
+  n = integer(4*delay(x, 0.25));
+  u = 0.5*delay(u, 0.1) + sin(time);
+  der(w) = 0;
+  when time > 0.5 then
+    r = 1;
+  end when;
+  der(v) = delay(r, 0.3);
+end delayOperator;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(delayOperator, stopTime = 1); getErrorString();
+
+val(x, 0.3);
+val(x, 1.0);
+val(z, 1.0);
+val(n, 1.0);
+val(u, 0.05);
+val(u, 0.15);
+val(w, 1.0);
+val(v, 0.7);
+val(v, 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "delayOperator_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'delayOperator', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.7050055784708691
+// 0.2525788749082057
+// 0.7391208585338276
+// 1.0
+// 0.04997916927067833
+// 0.17442771710893837
+// 2.0
+// 0.0
+// 0.20000052304465699
+// endResult
