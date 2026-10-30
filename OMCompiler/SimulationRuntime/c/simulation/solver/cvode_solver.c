@@ -1066,7 +1066,8 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
     cvodeData->isInitialized = TRUE;
   }
 
-  if (solverInfo->currentStepSize < DASSL_STEP_EPS)
+  if ((solverInfo->currentStepSize < DASSL_STEP_EPS) ||
+      (solverInfo->currentStepSize < DASSL_STEP_EPS*(simulationInfo->stopTime - simulationInfo->startTime)))
   {
     infoStreamPrint(OMC_LOG_SOLVER, 0, "Desired step too small try next one");
     infoStreamPrint(OMC_LOG_SOLVER, 0, "Interpolate linear");

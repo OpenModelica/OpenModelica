@@ -43,6 +43,7 @@ problem6-irksco.mos \
 problem6-symSolverImp.mos \
 problem6-symSolverExp.mos \
 AlgebraicStepRetry.mos \
+StepAfterTimeEvent.mos \
 Ticket15649.mos
 
 # run only symSolver tests
