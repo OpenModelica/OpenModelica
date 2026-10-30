@@ -129,7 +129,7 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
       if(data->simulationInfo->samples[i])
       {
         data->simulationInfo->samples[i] = 0;
-        data->simulationInfo->nextSampleTimes[i] += data->modelData->samplesInfo[i].interval;
+        advanceSample(data, i);
       }
     }
   }

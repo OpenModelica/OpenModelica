@@ -433,7 +433,7 @@ fmi3Status internalEventUpdate(ModelInstance* c, EventInfo* eventInfo)
     for(i=0; i<comp->fmuData->modelData->nSamples; ++i) {
       if (comp->fmuData->simulationInfo->samples[i]) {
         comp->fmuData->simulationInfo->samples[i] = 0;
-        comp->fmuData->simulationInfo->nextSampleTimes[i] += comp->fmuData->modelData->samplesInfo[i].interval;
+        advanceSample(comp->fmuData, i);
       }
     }
 

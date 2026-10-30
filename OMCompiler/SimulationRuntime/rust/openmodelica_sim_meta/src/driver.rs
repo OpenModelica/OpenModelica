@@ -4841,7 +4841,7 @@ impl Samples {
                 // Advance to the next firing; a non-positive interval is a
                 // one-shot event (guard against a never-advancing schedule).
                 self.next[k] = if self.interval[k] > 0.0 {
-                    self.next[k] + self.interval[k]
+                    advance_sample(self.next[k], self.start[k], self.interval[k])
                 } else {
                     f64::INFINITY
                 };
@@ -8602,6 +8602,11 @@ const DASSL_STEP_EPS: f64 = 1e-13;
 
 /// C's `SAMPLE_EPS` (`simulation/solver/epsilon.h`).
 pub const SAMPLE_EPS: f64 = 1e-14;
+
+/// C's `advanceSample` (`simulation/solver/model_help.h`).
+pub fn advance_sample(next: f64, start: f64, interval: f64) -> f64 {
+    start + (fmath::floor((next - start) / interval + 0.5) + 1.0) * interval
+}
 
 /// How far past the step end a time event may lie and still pull the step onto
 /// it (C's `checkForSampleEvent`). Capped by the simulation interval so a short
