@@ -168,6 +168,15 @@ typedef struct SPARSE_PATTERN
   unsigned int sizeCols;          /* Allocated number of columns (= n_leadIndex passed to allocSparsePattern) */
 } SPARSE_PATTERN;
 
+/* (column, row) entries of a sparsity pattern in any order, see sparsePatternFromPairs */
+typedef struct SPARSE_PAIRS
+{
+  unsigned int* cols;
+  unsigned int* rows;
+  size_t size;
+  size_t capacity;
+} SPARSE_PAIRS;
+
 /* NONLINEAR_PATTERN
  *
  * nonlinear pattern used for initial stability analysis.

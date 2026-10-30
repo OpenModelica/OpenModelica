@@ -168,6 +168,14 @@ pub struct SPARSE_PATTERN {
 }
 
 #[repr(C)]
+pub struct SPARSE_PAIRS {
+    pub cols: *mut c_uint,
+    pub rows: *mut c_uint,
+    pub size: usize,
+    pub capacity: usize,
+}
+
+#[repr(C)]
 pub struct NONLINEAR_PATTERN {
     pub numberOfVars: c_uint,
     pub numberOfEqns: c_uint,
