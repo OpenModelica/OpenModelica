@@ -1,7 +1,7 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
-BiochemModels.mos
+BiochemModels.mos \
 EnzMM.mos \
 Glycolysis.mos \
 InsulinSignaling_Sedaghat.mos \
