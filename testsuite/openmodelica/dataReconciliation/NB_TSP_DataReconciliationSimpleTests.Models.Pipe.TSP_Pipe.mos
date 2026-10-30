@@ -1,0 +1,30 @@
+// name:     NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe
+// keywords: extraction algorithm
+// status:   correct
+// depends: ./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Pipe_Inputs.csv
+// teardown_command: rm -rf TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe_* Reconciled_TSP_DataReconciliationSimpleTests_Models_Pipe_TSP_Pipe.mo TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe.html
+
+setCommandLineOptions("--newBackend");
+getErrorString();
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadFile("TSP_DataReconciliationSimpleTests/package.mo");
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+simulate(TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe, simflags=simFlags);
+getErrorString();
+
+readFile("TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe_Outputs.csv");
+getErrorString();
+
+// Result:
+// endResult

@@ -1,0 +1,30 @@
+// name:     NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter9
+// keywords: extraction algorithm
+// status:   correct
+// depends: ./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter9_Inputs.csv
+// teardown_command: rm -rf ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter9 ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter9_* Reconciled_ModelicaDataReconciliationSimpleTests_Models_Splitter_Splitter9.mo ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter9.html
+
+setCommandLineOptions("--newBackend");
+getErrorString();
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadFile("ModelicaDataReconciliationSimpleTests/package.mo");
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter9, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter9, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+simulate(ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter9, simflags=simFlags);
+getErrorString();
+
+readFile("ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter9_Outputs.csv");
+getErrorString();
+
+// Result:
+// endResult

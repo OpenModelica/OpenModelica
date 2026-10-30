@@ -1,0 +1,30 @@
+// name:     NB_ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe3
+// keywords: extraction algorithm
+// status:   correct
+// depends: ./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Pipe3_Inputs.csv
+// teardown_command: rm -rf ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe3 ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe3_* Reconciled_ModelicaDataReconciliationSimpleTests_Models_Pipe_Pipe3.mo ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe3.html
+
+setCommandLineOptions("--newBackend");
+getErrorString();
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadFile("ModelicaDataReconciliationSimpleTests/package.mo");
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe3, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe3, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+simulate(ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe3, simflags=simFlags);
+getErrorString();
+
+readFile("ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe3_Outputs.csv");
+getErrorString();
+
+// Result:
+// endResult

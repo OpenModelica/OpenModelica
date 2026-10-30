@@ -1,0 +1,30 @@
+// name:     NB_TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter_DR
+// keywords: extraction algorithm
+// status:   correct
+// depends: ./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Splitter_DR_Inputs.csv
+// teardown_command: rm -rf TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter_DR TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter_DR_* Reconciled_TSP_DataReconciliationSimpleTests_Models_Splitter_TSP_Splitter_DR.mo TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter_DR.html
+
+setCommandLineOptions("--newBackend");
+getErrorString();
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadFile("TSP_DataReconciliationSimpleTests/package.mo");
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter_DR, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter_DR, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+simulate(TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter_DR, simflags=simFlags);
+getErrorString();
+
+readFile("TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter_DR_Outputs.csv");
+getErrorString();
+
+// Result:
+// endResult

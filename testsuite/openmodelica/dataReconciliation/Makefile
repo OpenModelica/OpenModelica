@@ -75,6 +75,77 @@ TESTFILES = \
 $(GENERATED_TESTFILES) \
 UncertainAliasSimulation.mos
 
+# New backend variants of the tests above, see testNB. They are spelled out,
+# runtests.pl only finds test files that are listed literally.
+NB_TESTFILES = \
+NB_ModelicaDataReconciliationSimpleTests.Models.DistillationTower.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.assert.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe1.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe2.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe3.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe4.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe5.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe6.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Pipe.PipeCorrelation.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter0.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter1.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter2.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter3.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter4.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5a.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5b.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5c.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5d.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5e.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5f.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter6.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter7.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter8.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter9.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows1.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows10.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows2.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows3.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows4.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows5.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows7.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows8.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows9.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe1.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe10.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe11.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe12.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe2.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe3.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe4.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe5.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe6.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe7.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe8.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe9.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter1.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter2.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter3.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter4.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter5.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter6.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter7.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter8.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter_DR.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.PressureLoss_DR.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.PressureLoss_DR_WithHARE.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_WithHARE.mos \
+NB_UncertainAliasSimulation.mos
+
 # Tests that fail and cannot be part of the testsuite (crash, hang, ...).
 # Models that fail in a reproducible way go in TESTFILES instead, with the
 # failure recorded as the expected result, see #15384.
@@ -94,7 +165,7 @@ TSP_DataReconciliationSimpleTests \
 
 CLEAN = `ls | grep -x -v -f deps.tmp`
 
-.PHONY : test clean getdeps failingtest
+.PHONY : test testNB baselineNB clean getdeps failingtest
 
 test:
 	@echo
@@ -109,6 +180,20 @@ baseline:
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	@$(BASELINE) $(TESTFILES)
+
+testNB:
+	@echo
+	@echo Running new backend tests...
+	@echo
+	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
+	@$(TEST) $(NB_TESTFILES)
+
+baselineNB:
+	@echo
+	@echo Running baseline for new backend tests...
+	@echo
+	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
+	@$(BASELINE) $(NB_TESTFILES)
 
 failtestbaseline:
 	@echo
