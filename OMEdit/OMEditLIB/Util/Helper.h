@@ -184,6 +184,7 @@ public:
   static QString properties;
   static QString add;
   static QString edit;
+  static QString editArray;
   static QString save;
   static QString saveTip;
   static QString saveAs;
