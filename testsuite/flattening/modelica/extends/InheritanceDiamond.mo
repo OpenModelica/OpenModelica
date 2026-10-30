@@ -5,25 +5,24 @@
 // Tests diamond inheritance
 //
 
-class SuperBase
+model SuperBase
   parameter Real superReal;
 end SuperBase;
 
-class Base1
+model Base1
   extends SuperBase(superReal = 2.0);
   parameter Real baseReal1;
 end Base1;
 
-class Base2
-  extends SuperBase(superReal = 3.0);
+model Base2
+  extends SuperBase(superReal = 2.0);
   parameter Real baseReal2;
 end Base2;
 
-class InheritanceDiamond
+model InheritanceDiamond
   extends Base1(baseReal1 = 2.0);
   extends Base2(baseReal2 = 3.0);
-  parameter Real finalReal;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
+  parameter Real finalReal = 4.0;
 end InheritanceDiamond;
 
 // Result:
@@ -31,6 +30,6 @@ end InheritanceDiamond;
 //   parameter Real superReal = 2.0;
 //   parameter Real baseReal1 = 2.0;
 //   parameter Real baseReal2 = 3.0;
-//   parameter Real finalReal;
+//   parameter Real finalReal = 4.0;
 // end InheritanceDiamond;
 // endResult
