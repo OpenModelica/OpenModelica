@@ -556,25 +556,25 @@ std::string& SimVars::getPreVar(const std::string& var)
 WrapArray<double> SimVars::getPreArr(const BaseArray<double>& arr)
 {
 	size_t i = arr.getData() - _real_vars;
-	return WrapArray<double>(_pre_real_vars + i, arr.getNumElems());
+	return WrapArray<double>(_pre_real_vars + i, arr.getDims());
 }
 
 WrapArray<int> SimVars::getPreArr(const BaseArray<int>& arr)
 {
 	size_t i = arr.getData() - _int_vars;
-	return WrapArray<int>(_pre_int_vars + i, arr.getNumElems());
+	return WrapArray<int>(_pre_int_vars + i, arr.getDims());
 }
 
 WrapArray<bool> SimVars::getPreArr(const BaseArray<bool>& arr)
 {
 	size_t i = arr.getData() - _bool_vars;
-	return WrapArray<bool>(_pre_bool_vars + i, arr.getNumElems());
+	return WrapArray<bool>(_pre_bool_vars + i, arr.getDims());
 }
 
 WrapArray<std::string> SimVars::getPreArr(const BaseArray<std::string>& arr)
 {
 	size_t i = arr.getData() - _string_vars;
-	return WrapArray<std::string>(_pre_string_vars + i, arr.getNumElems());
+	return WrapArray<std::string>(_pre_string_vars + i, arr.getDims());
 }
 
 /**\brief returns a pointer to a real simvar variable in simvar array
