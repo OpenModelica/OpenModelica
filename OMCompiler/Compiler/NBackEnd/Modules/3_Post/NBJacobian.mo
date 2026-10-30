@@ -73,6 +73,7 @@ protected
   import NBAdjacency.Mapping;
   import BEquation = NBEquation;
   import BVariable = NBVariable;
+  import DataReconciliation = NBDataReconciliation;
   import Differentiate = NBDifferentiate;
   import NBDifferentiate.{DifferentiationArguments, DifferentiationType};
   import NBEquation.{Equation, Iterator, EquationPointers, EqData};
@@ -98,7 +99,7 @@ protected
   import Util;
 
 public
-  type JacobianType = enumeration(ODE, DAE, LS, NLS, OPT_LFG, OPT_MRF, OPT_R0);
+  type JacobianType = enumeration(ODE, DAE, LS, NLS, OPT_LFG, OPT_MRF, OPT_R0, DATA_RECON);
 
   function isDynamic
     "is the jacobian used for integration (-> true)
@@ -222,6 +223,29 @@ public
     end try;
   end nonlinear;
 
+  function dataReconciliation
+    "jacobian of the data reconciliation residuals with respect to the variables of interest"
+    input VariablePointers seedCandidates;
+    input VariablePointers partialCandidates;
+    input EquationPointers equations;
+    input array<StrongComponent> comps;
+    input UnorderedMap<Path, Function> funcMap;
+    input String name;
+    output Option<Jacobian> jacobian;
+  algorithm
+    jacobian := jacobianSymbolic(
+        name                = name,
+        jacType             = JacobianType.DATA_RECON,
+        seedCandidates      = seedCandidates,
+        partialCandidates   = partialCandidates,
+        equations           = equations,
+        strongComponents    = SOME(comps),
+        full                = NONE(),
+        funcMap             = funcMap,
+        staticAsContinuous  = true
+      );
+  end dataReconciliation;
+
   function combine
     input list<BackendDAE> jacobians;
     input String name;
@@ -328,6 +352,7 @@ public
       case JacobianType.OPT_LFG then "[OPT-LFG]";
       case JacobianType.OPT_MRF then "[OPT-MRF]";
       case JacobianType.OPT_R0  then "[OPT-R0]";
+      case JacobianType.DATA_RECON then "[DATA-RECON]";
                                 else "[ERR]";
     end match;
   end jacobianTypeString;
@@ -1717,6 +1742,7 @@ protected
       case JacobianType.OPT_LFG then BVariable.isLfgFunction;
       case JacobianType.OPT_MRF then BVariable.isMrfFunction;
       case JacobianType.OPT_R0  then BVariable.isInitialConstraint;
+      case JacobianType.DATA_RECON then DataReconciliation.isResidual;
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because jacobian type is not known: " + jacobianTypeString(jacType)});
       then fail();

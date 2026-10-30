@@ -66,6 +66,7 @@ protected
 
   // Backend imports
   import BVariable = NBVariable;
+  import DataReconciliation = NBDataReconciliation;
   import NBEquation.Equation;
   import NBEvents.{EventInfo, Condition, MathEvent, TimeEvent};
   import NBPartition.Partition;
@@ -1252,6 +1253,45 @@ public
       simVars.intConstVars  := listAppend(simVars.intConstVars, list(SimVar.shiftIndex(v, simCodeIndices.integerVarIndex) for v in simVars.enumConstVars));
     end create;
 
+    function addDataReconciliation
+      "The data reconciliation lists refer to the simulation variables already created,
+      the generated code only uses their position in the list and their name."
+      input output SimVars vars;
+      input Option<DataReconciliation.ReconciliationData> data_opt;
+    protected
+      DataReconciliation.ReconciliationData data;
+      UnorderedMap<ComponentRef, SimVar> map;
+    algorithm
+      if isNone(data_opt) then
+        return;
+      end if;
+      SOME(data) := data_opt;
+      map := UnorderedMap.new<SimVar>(ComponentRef.hash, ComponentRef.isEqual);
+      for var in vars.algVars loop
+        UnorderedMap.add(SimVar.getName(var), var, map);
+      end for;
+      // the runtime reads setcVars in reverse order, the rows of the jacobian F are in the order of the residuals
+      vars.dataReconSetcVars  := list(getDataReconciliationVar(v, map) for v in listReverse(data.residualVars));
+      vars.dataReconinputVars := list(getDataReconciliationVar(v, map) for v in data.inputVars);
+      vars.dataReconSetBVars  := list(getDataReconciliationVar(v, map) for v in data.unmeasuredVars);
+    end addDataReconciliation;
+
+    function getDataReconciliationVar
+      input Pointer<Variable> var_ptr;
+      input UnorderedMap<ComponentRef, SimVar> map;
+      output SimVar var;
+    protected
+      ComponentRef name = BVariable.getVarName(var_ptr);
+    algorithm
+      var := match UnorderedMap.get(name, map)
+        case SOME(var) then var;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed, data reconciliation variable "
+            + ComponentRef.toString(name) + " is not a variable of the reconciled system."});
+        then fail();
+      end match;
+    end getDataReconciliationVar;
+
     function addSeedAndJacobianVars
       input output SimVars vars;
       input list<tuple<ComponentRef, SimVar>> hash_tpl;
@@ -1535,14 +1575,16 @@ public
         numNonLinearSystems          = simCodeIndices.nonlinearSystemIndex,
         numMixedSystems              = 0,
         numStateSets                 = 0,
-        numJacobians                 = simCodeIndices.nonlinearSystemIndex + simCodeIndices.linearSystemIndex + 5, // #nonlinSystems + #linSystems (torn linear systems with a symbolic Jacobian consume a jacobianIndex slot from the same analyticJacobians array too) + 5 simulation jacs (add state sets later!)
+        // every created jacobian (simulation, linear and nonlinear systems) consumes one jacobianIndex,
+        // the runtime allocates the analyticJacobians array with this size
+        numJacobians                 = intMax(simCodeIndices.jacobianIndex, simCodeIndices.nonlinearSystemIndex + simCodeIndices.linearSystemIndex + 5), // (add state sets later!)
         numOptimizeConstraints       = 0,
         numOptimizeFinalConstraints  = 0,
         numSensitivityParameters     = 0,
-        numSetcVars                  = 0,
-        numDataReconVars             = 0,
+        numSetcVars                  = listLength(vars.dataReconSetcVars),
+        numDataReconVars             = listLength(vars.dataReconinputVars),
         numRealIntputVars            = 0,
-        numSetbVars                  = 0,
+        numSetbVars                  = listLength(vars.dataReconSetBVars),
         numRelatedBoundaryConditions = 0);
     end create;
 

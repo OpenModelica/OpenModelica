@@ -1,0 +1,30 @@
+// name:     NB_ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows
+// keywords: extraction algorithm
+// status:   correct
+// depends: ./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.FourFlows_Inputs.csv
+// teardown_command: rm -rf ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows_* Reconciled_ModelicaDataReconciliationSimpleTests_Models_FourFlows_FourFlows.mo ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows.html
+
+setCommandLineOptions("--newBackend");
+getErrorString();
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadFile("ModelicaDataReconciliationSimpleTests/package.mo");
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+simulate(ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows, simflags=simFlags);
+getErrorString();
+
+readFile("ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows_Outputs.csv");
+getErrorString();
+
+// Result:
+// endResult

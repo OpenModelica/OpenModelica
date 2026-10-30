@@ -95,6 +95,7 @@ protected
   import BEquation = NBEquation;
   import BVariable = NBVariable;
   import Causalize = NBCausalize;
+  import DataReconciliation = NBDataReconciliation;
   import Differentiate = NBDifferentiate;
   import NBDifferentiate.{DifferentiationType, DifferentiationArguments};
   import NBEquation.{Equation, EquationAttributes, EquationKind, EquationPointers, EqData, Iterator};
@@ -1158,6 +1159,11 @@ protected
       // fail for top level inputs
       case Expression.CREF()
         guard(Variable.isTopLevelInput(Pointer.access(BVariable.getVarPointer(exp.cref, sourceInfo()))))
+      then FAILED_CREF_TPL;
+
+      // fail for the variables of interest of data reconciliation, they are inputs too
+      case Expression.CREF()
+        guard(DataReconciliation.isVariableOfInterest(BVariable.getVarPointer(exp.cref, sourceInfo())))
       then FAILED_CREF_TPL;
 
       // variable found
