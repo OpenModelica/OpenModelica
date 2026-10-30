@@ -4910,12 +4910,12 @@ void MainWindow::createActions()
   // Tile windows Matrix action
   mpTileWindowsMatrixAction = new QAction(tr("Tile Windows Matrix"), this);
   mpTileWindowsMatrixAction->setStatusTip(tr("Arranges all child windows in a matrix pattern"));
-  mpTileWindowsMatrixAction->setShortcut(QKeySequence("Ctrl+Alt+Shift+M"));
+  mpTileWindowsMatrixAction->setShortcut(QKeySequence("Ctrl+Shift+M"));
   connect(mpTileWindowsMatrixAction, SIGNAL(triggered()), SLOT(tileSubWindowsMatrix()));
   // Equate windows and tile them in a matrix action
   mpEquateAndTileWindowsMatrixAction = new QAction(tr("Equate && Tile Windows Matrix"), this);
   mpEquateAndTileWindowsMatrixAction->setStatusTip(tr("Equates the size of all child windows to the size of active window and arranges them in a matrix pattern"));
-  mpEquateAndTileWindowsMatrixAction->setShortcut(QKeySequence("Ctrl+Alt+Shift+E"));
+  mpEquateAndTileWindowsMatrixAction->setShortcut(QKeySequence("Ctrl+Shift+E"));
   connect(mpEquateAndTileWindowsMatrixAction, SIGNAL(triggered()), SLOT(equateAndTileSubWindowsMatrix()));
   // Toggle between tab or sub-window view
   mpToggleTabOrSubWindowView = new QAction(tr("Toggle Tab/Sub-window View"), this);
