@@ -55,6 +55,7 @@ resizableContiguousSlice.mos \
 literalConnects.mos \
 resizableSparseLoop.mos \
 resizableInputs.mos \
+resizableJacobianOffsets.mos \
 resizableAlgebraicLoops.mos \
 resizableFill.mos \
 resizableStreams.mos \

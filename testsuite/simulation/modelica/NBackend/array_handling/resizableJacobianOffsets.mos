@@ -1,0 +1,42 @@
+// name: resizableJacobianOffsets
+// keywords: NewBackend resizable Jacobian
+// status: correct
+// cflags: --newBackend --resizableArrays
+// suite: cSources
+// teardown_command: rm -f resizableJacobianOffsets resizableJacobianOffsets_* resizableJacobianOffsets.log resizableJacobianOffsets.c resizableJacobianOffsets.o resizableJacobianOffsets.makefile resizableJacobianOffsets.libs
+//
+// The positions of the resizable tmp variables of the Jacobian are
+// sums of their sizes, collected per size: 2*N instead of N + N.
+
+loadString("
+model resizableJacobianOffsets
+  parameter Integer N = 3;
+  constant Real c[3] = {1.5, 2.0, 3.25};
+  Real x[N](each start = 1);
+  Real y[N];
+  Real z[N];
+equation
+  for i in 1:N loop
+    y[i] = c[mod(i - 1, 3) + 1] * x[i]^3;
+    z[i] = y[i] + sin(x[i]);
+    x[i] + z[i] = time + i;
+  end for;
+end resizableJacobianOffsets;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --resizableArrays"); getErrorString();
+buildModel(resizableJacobianOffsets); getErrorString();
+system("grep -q 'tmpVars\\[(((modelica_integer) 0) + ((((modelica_integer) 2)) \\*' resizableJacobianOffsets_12jac.c");
+system("./resizableJacobianOffsets -override=N=5", "resizableJacobianOffsets.log");
+val(x[5], 1, "resizableJacobianOffsets_res.mat");
+// Result:
+// true
+// ""
+// true
+// ""
+// {"resizableJacobianOffsets", "resizableJacobianOffsets_init.xml"}
+// ""
+// 0
+// 0
+// 1.2400917446018342
+// endResult
