@@ -1,0 +1,32 @@
+// name: translateModelXML
+// keywords: xml
+// status: correct
+// teardown_command: rm -f P_M.xml other.xml
+//
+// Tests that translateModelXML returns the name of the file it writes.
+//
+
+loadString("
+package P
+  model M
+    Real x(start = 1, fixed = true);
+  equation
+    der(x) = -x;
+  end M;
+end P;
+"); getErrorString();
+
+f := translateModelXML(P.M); getErrorString();
+regularFileExists(f);
+f := translateModelXML(P.M, fileNamePrefix = "other"); getErrorString();
+regularFileExists(f);
+// Result:
+// true
+// ""
+// "P_M.xml"
+// ""
+// true
+// "other.xml"
+// ""
+// true
+// endResult
