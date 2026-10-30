@@ -1577,7 +1577,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo->callStatistics.functionAlgebraics = 0;
 
   data->simulationInfo->lambda = 1.0;
-  data->simulationInfo->skipStartEquations = 0;
+  data->simulationInfo->skipStartEquations = FALSE;
 
   /* initial build calls terminal, initial */
   data->simulationInfo->terminal = 0;
