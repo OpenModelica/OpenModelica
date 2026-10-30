@@ -562,10 +562,14 @@ public
   function isFunctionAliasCref
     input ComponentRef cref;
     output Boolean b;
+  protected
+    Pointer<Variable> var_ptr;
   algorithm
     b := match cref
-      case ComponentRef.CREF() guard InstNode.isVar(ComponentRef.node(cref))
-        then BVariable.isFunctionAlias(BVariable.getVarPointer(cref, sourceInfo()));
+      // the start value $START.$FUN_1 is the initial guess of $FUN_1, it has to stay in the initialization
+      case ComponentRef.CREF() guard InstNode.isVar(ComponentRef.node(cref)) algorithm
+        var_ptr := BVariable.getVarPointer(cref, sourceInfo());
+      then BVariable.isFunctionAlias(var_ptr) and not BVariable.isStart(var_ptr);
       else false;
     end match;
   end isFunctionAliasCref;

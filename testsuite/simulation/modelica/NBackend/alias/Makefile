@@ -26,6 +26,7 @@ AliasCyclic6.mos \
 AliasCyclic7.mos \
 AliasCyclic8.mos \
 AliasStartPriority.mos \
+AliasArrayStartParameter.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
