@@ -4410,6 +4410,23 @@ template functionStoreDelayed(DelayedExpression delayed, String modelNamePrefix)
       storeDelayedExpression(data, threadData, <%id%>, <%eRes%>, <%delayExp%>, <%delayExpMax%>);<%\n%>
       >>
     ))
+  let storeLoops = (match delayed case DELAYED_EXPRESSIONS(__) then (delayedLoops |> (idx, (e, d, delayMax), iters) =>
+      let &preExp = buffer ""
+      let &iterExp = buffer ""
+      let &sub = buffer ""
+      let forHead = (iters |> it => forIterator(it, contextSimulationNonDiscrete, &iterExp, &varDecls, &varFrees, &auxFunction, &sub); separator="\n")
+      let id = daeExp(idx, contextSimulationNonDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
+      let eRes = daeExp(e, contextSimulationNonDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
+      let delayExp = daeExp(d, contextSimulationNonDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
+      let delayExpMax = daeExp(delayMax, contextSimulationNonDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
+      <<
+      <%iterExp%>
+      <%forHead%>
+      <%preExp%>
+      storeDelayedExpression(data, threadData, <%id%>, <%eRes%>, <%delayExp%>, <%delayExpMax%>);
+      <%iters |> it => "}" ; separator="\n"%>
+      >>
+    ))
   <<
   <%auxFunction%>
   int <%symbolName(modelNamePrefix,"function_storeDelayed")%>(DATA *data, threadData_t *threadData)
@@ -4417,6 +4434,7 @@ template functionStoreDelayed(DelayedExpression delayed, String modelNamePrefix)
     int equationIndexes[2] = {1,-1};
     <%varDecls%>
     <%storePart%>
+    <%storeLoops%>
 
     _return: OMC_LABEL_UNUSED ;
     <%varFrees%>

@@ -41,6 +41,7 @@ encapsulated package NBEvents
 
 public
   import Module = NBModule;
+  import NSimGenericCall.SimIterator;
 
 protected
   // OF imports
@@ -76,7 +77,6 @@ protected
   import NBVariable.{VarData, VariablePointers};
 
   // SimCode
-  import NSimGenericCall.SimIterator;
   import OldSimIterator = BackendDAE.SimIterator;
   import Block = NSimStrongComponent.Block;
 
@@ -147,7 +147,7 @@ public
       Integer numberMathEvents                          "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
       list<MathEvent> math_lst                          "math functions that trigger events, ordered by index";
       list<SpatialDistribution> spatial_lst            "stores all spatial distribution calls";
-      list<Expression> delays                           "indexed delay() calls, each one gets a zero crossing for the events in its buffer";
+      list<tuple<Expression, list<SimIterator>>> delays "indexed delay() calls and the iterators their index depends on, each buffer gets a zero crossing";
     end EVENT_INFO;
 
     function toString
@@ -337,13 +337,25 @@ public
     function numZeroCrossings
       input EventInfo eventInfo;
       output Integer n = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map))
-        + sum(MathEvent.numZeroCrossings(mev) for mev in eventInfo.math_lst) + listLength(eventInfo.delays);
+        + sum(MathEvent.numZeroCrossings(mev) for mev in eventInfo.math_lst) + numDelayBuffers(eventInfo);
     end numZeroCrossings;
 
     function numRelations
       input EventInfo eventInfo;
-      output Integer n = sum(Condition.numRelations(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)) + listLength(eventInfo.delays);
+      output Integer n = sum(Condition.numRelations(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)) + numDelayBuffers(eventInfo);
     end numRelations;
+
+    function numDelayBuffers
+      input EventInfo eventInfo;
+      output Integer n = 0;
+    protected
+      Integer size;
+    algorithm
+      for delay in eventInfo.delays loop
+        (_, size) := SimIterator.flatIndex(Util.tuple22(delay));
+        n := n + size;
+      end for;
+    end numDelayBuffers;
 
     function delayZeroCrossings
       "$delayZeroCrossing(i, zc, delayTime) > 0 for the buffer i of each delay(), it flips the
@@ -353,29 +365,35 @@ public
       input Integer first_index "unique zero crossing index of the first one";
       output list<OldBackendDAE.ZeroCrossing> zeroCrossings = {};
     protected
-      Integer n = listLength(eventInfo.delays);
+      Integer n = numDelayBuffers(eventInfo);
       Integer zc_index = numZeroCrossings(eventInfo) - n;
       Integer rel_index = numRelations(eventInfo) - n;
-      Integer index;
-      Expression delayTime;
+      Integer i = 0, size;
+      Expression index, delayTime, slot;
+      list<SimIterator> iters;
       DAE.Exp rel;
     algorithm
       for delay in eventInfo.delays loop
-        Expression.CALL(call = Call.TYPED_CALL(arguments = {Expression.INTEGER(index), _, delayTime, _})) := delay;
+        (Expression.CALL(call = Call.TYPED_CALL(arguments = {index, _, delayTime, _})), iters) := delay;
+        (slot, size) := SimIterator.flatIndex(iters, zc_index);
         rel := DAE.RELATION(
-          DAE.CALL(Absyn.IDENT("$delayZeroCrossing"), {DAE.ICONST(index), DAE.ICONST(zc_index + index), Expression.toDAE(delayTime)}, DAE.callAttrBuiltinReal),
-          DAE.GREATER(DAE.T_REAL_DEFAULT), DAE.RCONST(0.0), rel_index + index, NONE());
-        zeroCrossings := OldBackendDAE.ZERO_CROSSING(first_index + index, rel, {}, NONE()) :: zeroCrossings;
+          DAE.CALL(Absyn.IDENT("$delayZeroCrossing"), {Expression.toDAE(index), Expression.toDAE(slot), Expression.toDAE(delayTime)}, DAE.callAttrBuiltinReal),
+          DAE.GREATER(DAE.T_REAL_DEFAULT), DAE.RCONST(0.0), rel_index, NONE());
+        zeroCrossings := OldBackendDAE.ZERO_CROSSING(first_index + i, rel, {}, if listEmpty(iters) then NONE() else SOME(list(SimIterator.convert(it) for it in iters))) :: zeroCrossings;
+        zc_index := zc_index + size;
+        rel_index := rel_index + size;
+        i := i + 1;
       end for;
       zeroCrossings := listReverse(zeroCrossings);
     end delayZeroCrossings;
 
     function mapExp
-      "applies func to the expressions of the state and math events"
+      "applies func to the expressions of the state and math events with their iterators"
       input output EventInfo eventInfo;
       input MapFunc func;
       partial function MapFunc
         input output Expression exp;
+        input Iterator iter;
       end MapFunc;
     protected
       UnorderedMap<Condition, StateEvent> state_map = UnorderedMap.new<StateEvent>(Condition.hash, Condition.isEqual);
@@ -385,12 +403,12 @@ public
     algorithm
       for tpl in UnorderedMap.toList(eventInfo.state_map) loop
         (cond, sev) := tpl;
-        cond.exp := func(cond.exp);
+        cond.exp := func(cond.exp, cond.iter);
         UnorderedMap.add(cond, sev, state_map);
       end for;
       eventInfo.state_map := state_map;
       for mev in eventInfo.math_lst loop
-        mev.exp := func(mev.exp);
+        mev.exp := func(mev.exp, mev.iter);
         math_lst := mev :: math_lst;
       end for;
       eventInfo.math_lst := listReverse(math_lst);

@@ -7650,8 +7650,9 @@ let &sub = buffer ""
     let &preExp += '<%rcReleaseBefore("modelica_string", tvar)%><%tvar%> = modelica_real_to_modelica_string(<%sExp%>, <%signdigExp%>, <%minlenExp%>, <%leftjustExp%>);<%\n%>'
     tvar
 
-  case CALL(path=IDENT(name="delay"), expLst={ICONST(integer=index), e, d, delayMax}) then
+  case CALL(path=IDENT(name="delay"), expLst={idx, e, d, delayMax}) then
     let tvar = tempDecl("modelica_real", &varDecls, &varFrees)
+    let index = daeExp(idx, context, &preExp, &varDecls, &varFrees, &auxFunction)
 
     let var1 = daeExp(e, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let var2 = daeExp(d, context, &preExp, &varDecls, &varFrees, &auxFunction)
@@ -7696,7 +7697,9 @@ let &sub = buffer ""
     let index_T = daeExp(index, context, &preExp, &varDecls, &varFrees, &auxFunction)
     'data->simulationInfo->samples[(<%index_T%>) - 1]'
 
-  case CALL(path=IDENT(name="$delayZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), delay}) then
+  case CALL(path=IDENT(name="$delayZeroCrossing"), expLst={idx, ridx, delay}) then
+    let index = daeExp(idx, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let rindex = daeExp(ridx, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let delay_T = daeExp(delay, context, &preExp, &varDecls, &varFrees, &auxFunction)
     'delayZeroCrossing(data, threadData, <%index%>, <%rindex%>, <%delay_T%>)'
 

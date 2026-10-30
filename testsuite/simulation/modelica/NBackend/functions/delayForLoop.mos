@@ -1,0 +1,55 @@
+// name: delayForLoop
+// keywords: NewBackend
+// status: correct
+
+loadString("
+model delayForLoop
+  parameter Integer n = 3;
+  parameter Real d[n] = {0.1, 0.2, 0.3};
+  Real x[n](each start = 1, each fixed = true);
+  Real y[n], z[n];
+  Integer k[n];
+equation
+  for i in 1:n loop
+    der(x[i]) = -delay(x[i], d[i]);
+    y[i] = delay(sin(10*time + i), d[i]);
+    z[i] = delay(if time > 0.5 then 1 else 0, d[i]);
+    k[i] = integer(4*delay(x[i], d[i], 0.5));
+  end for;
+end delayForLoop;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(delayForLoop, stopTime = 1); getErrorString();
+
+val(x[1], 1.0);
+val(x[3], 1.0);
+val(y[2], 0.65);
+val(z[1], 0.65);
+val(z[3], 0.65);
+val(z[3], 1.0);
+val(k[2], 0.35);
+val(k[2], 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "delayForLoop_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'delayForLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.3290345777888082
+// 0.23433220435197472
+// 0.21511998808781552
+// 1.0
+// 0.0
+// 1.0
+// 3.0
+// 1.0
+// endResult
