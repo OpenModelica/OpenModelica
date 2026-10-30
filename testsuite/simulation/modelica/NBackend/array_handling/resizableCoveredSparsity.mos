@@ -1,0 +1,37 @@
+// name: resizableCoveredSparsity
+// keywords: NewBackend resizable sparsity
+// status: correct
+// cflags: --newBackend --resizableArrays
+// suite: cSources
+// teardown_command: rm -f resizableCoveredSparsity resizableCoveredSparsity_* resizableCoveredSparsity.log resizableCoveredSparsity.c resizableCoveredSparsity.o resizableCoveredSparsity.makefile resizableCoveredSparsity.libs
+//
+// The row of der(x[i]) depends on x[i] and on all of x (sum). The sparsity code
+// is only generated for all of x, x[i] adds no entries.
+
+loadString("
+model resizableCoveredSparsity
+  parameter Integer N = 3;
+  Real x[N](each start = 1, each fixed = true);
+equation
+  for i in 1:N loop
+    der(x[i]) = -x[i] * sum(x);
+  end for;
+end resizableCoveredSparsity;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --resizableArrays"); getErrorString();
+buildModel(resizableCoveredSparsity); getErrorString();
+system("grep -q 'SEED_ODE_JAC.x\\[\\$i1\\]' resizableCoveredSparsity_12jac.c");
+system("./resizableCoveredSparsity -override=N=5", "resizableCoveredSparsity.log");
+val(x[5], 1, "resizableCoveredSparsity_res.mat");
+// Result:
+// true
+// ""
+// true
+// ""
+// {"resizableCoveredSparsity", "resizableCoveredSparsity_init.xml"}
+// ""
+// 1
+// 0
+// 0.16666760383868595
+// endResult
