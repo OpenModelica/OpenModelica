@@ -1,6 +1,7 @@
 // name: linearSystemResidualIndex
 // keywords: NewBackend tearing linear residual
 // status: correct
+// suite: cSources
 // cflags: --newBackend
 // teardown_command: rm -f linearSystemResidualIndex linearSystemResidualIndex_* linearSystemResidualIndex.log linearSystemResidualIndex.c linearSystemResidualIndex.o linearSystemResidualIndex.makefile linearSystemResidualIndex.libs
 //
