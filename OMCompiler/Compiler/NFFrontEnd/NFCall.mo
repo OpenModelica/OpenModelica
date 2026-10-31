@@ -2525,7 +2525,8 @@ protected
 
     // try to inst the parameters
     try
-      (args, named_args) := instArgs(functionArgs, scope, context, info);
+      (args, named_args) := instArgs(functionArgs, scope, context, info,
+        lookupScriptingInputs(functionName, scope, context, info));
     else
       // didn't work, is this DynamicSelect dynamic part?! #5631
       if InstContext.inAnnotation(context) and not InstContext.inInstanceAPI(context) and
@@ -2567,14 +2568,36 @@ protected
     input InstNode scope;
     input InstContext.Type context;
     input SourceInfo info;
+    input list<InstNode> scriptingInputs = {} "See lookupScriptingInputs.";
     output list<Expression> posArgs;
     output list<NamedArg> namedArgs;
+  protected
+    list<InstNode> rest_inputs = scriptingInputs;
+    Option<InstNode> input_node;
   algorithm
     (posArgs, namedArgs) := match args
       case Absyn.FUNCTIONARGS()
         algorithm
-          posArgs := list(Inst.instExp(a, scope, context, info) for a in args.args);
-          namedArgs := list(instNamedArg(a, scope, context, info) for a in args.argNames);
+          if listEmpty(scriptingInputs) then
+            posArgs := list(Inst.instExp(a, scope, context, info) for a in args.args);
+          else
+            posArgs := {};
+
+            for a in args.args loop
+              if listEmpty(rest_inputs) then
+                input_node := NONE();
+              else
+                input_node := SOME(listHead(rest_inputs));
+                rest_inputs := listRest(rest_inputs);
+              end if;
+
+              posArgs := instCodeArg(a, input_node, scope, context, info) :: posArgs;
+            end for;
+
+            posArgs := listReverseInPlace(posArgs);
+          end if;
+
+          namedArgs := list(instNamedArg(a, scope, context, info, scriptingInputs) for a in args.argNames);
         then
           (posArgs, namedArgs);
 
@@ -2591,14 +2614,83 @@ protected
     input InstNode scope;
     input InstContext.Type context;
     input SourceInfo info;
+    input list<InstNode> scriptingInputs;
     output NamedArg arg;
   protected
     String name;
     Absyn.Exp exp;
   algorithm
     Absyn.NAMEDARG(argName = name, argValue = exp) := absynArg;
-    arg := (name, Inst.instExp(exp, scope, context, info));
+
+    if listEmpty(scriptingInputs) then
+      arg := (name, Inst.instExp(exp, scope, context, info));
+    else
+      arg := (name, instCodeArg(exp, List.findOption(scriptingInputs, function InstNode.isNamed(name = name)),
+        scope, context, info));
+    end if;
   end instNamedArg;
+
+  function instCodeArg
+    "Quotes the argument of a $Code input, or instantiates any other."
+    input Absyn.Exp exp;
+    input Option<InstNode> inputNode;
+    input InstNode scope;
+    input InstContext.Type context;
+    input SourceInfo info;
+    output Expression arg;
+  protected
+    Type ty;
+  algorithm
+    if isSome(inputNode) then
+      ty := InstNode.getType(Component.classInstance(InstNode.component(Util.getOption(inputNode))));
+
+      if Type.codeName(ty) <> "" then
+        arg := Expression.quoteCode(exp, ty, info);
+        return;
+      end if;
+    end if;
+
+    arg := Inst.instExp(exp, scope, context, info);
+  end instCodeArg;
+
+  function lookupScriptingInputs
+    "In a script, returns the inputs of the OpenModelica.Scripting function a
+     call names, or nothing for any other function or outside a script.
+     instArgs quotes the arguments of $Code inputs rather than instantiating
+     them, e.g. the class name in simulate(M)."
+    input Absyn.ComponentRef functionName;
+    input InstNode scope;
+    input InstContext.Type context;
+    input SourceInfo info;
+    output list<InstNode> inputs = {};
+  protected
+    ComponentRef fn_ref;
+    InstNode fn_node;
+    list<Function> fns;
+    Function fn;
+  algorithm
+    if not InstContext.inScripting(context) then
+      return;
+    end if;
+
+    try
+      fn_ref := Lookup.lookupFunctionNameSilent(functionName, scope, context);
+      fn_node := ComponentRef.node(fn_ref);
+      true := InstNode.isClass(fn_node);
+      true := AbsynUtil.pathPrefixOf(Absyn.QUALIFIED("OpenModelica", Absyn.IDENT("Scripting")),
+                                     InstNode.scopePath(fn_node));
+    else
+      return;
+    end try;
+
+    fn_ref := Function.instFunction(functionName, scope, context, info);
+    fns := Function.getCachedFuncs(ComponentRef.node(fn_ref));
+
+    if listLength(fns) == 1 then
+      fn := listHead(fns);
+      inputs := fn.inputs;
+    end if;
+  end lookupScriptingInputs;
 
   function instIteratorCall
     input Absyn.ComponentRef functionName;

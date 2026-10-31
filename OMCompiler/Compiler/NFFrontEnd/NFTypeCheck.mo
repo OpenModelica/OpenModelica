@@ -1618,6 +1618,13 @@ algorithm
     return;
   end if;
 
+  if Type.isUnknown(actualType) and Expression.isCode(expression) and Type.codeName(expectedType) <> "" then
+    expression := Expression.quoteCode(Expression.toAbsyn(expression), expectedType, Absyn.dummyInfo);
+    compatibleType := expectedType;
+    matchKind := MatchKind.EXACT;
+    return;
+  end if;
+
   // Check if the types are different kinds of types.
   if valueConstructor(actualType) <> valueConstructor(expectedType) then
     // If the types are not of the same kind we might need to type cast the

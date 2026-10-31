@@ -3466,6 +3466,10 @@ algorithm
 
     case Absyn.Exp.UNITFUL_LITERAL() then instExp(absynExp.value, scope, context, info);
 
+    // Quoted by TypeCheck.matchTypes once the expected $Code type is known.
+    case Absyn.Exp.CODE() guard InstContext.inScripting(context)
+      then Expression.CODE(absynExp.code, Type.UNKNOWN());
+
     else
       algorithm
         Error.terminate(getInstanceName() + " got unknown expression: " + Dump.printExpStr(absynExp), sourceInfo());

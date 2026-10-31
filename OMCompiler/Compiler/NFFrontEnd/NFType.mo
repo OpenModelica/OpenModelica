@@ -606,6 +606,22 @@ public
     end match;
   end isComplexArray;
 
+  function codeName
+    "Returns the name of an OpenModelica.$Code type, e.g. TypeName, or an empty
+     string for any other type."
+    input Type ty;
+    output String name = "";
+  protected
+    InstNode node;
+  algorithm
+    if isComplex(ty) then
+      node := complexNode(ty);
+      if InstNode.name(InstNode.parent(node)) == "$Code" then
+        name := InstNode.name(node);
+      end if;
+    end if;
+  end codeName;
+
   function complexNode
     input Type ty;
     output InstNode node;
