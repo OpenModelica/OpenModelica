@@ -60,7 +60,7 @@ instantiateModel(TestNonStandardExtensions.TestIntegerAsEnum); getErrorString();
 //   i[E.one] = 1;
 //   i[E.two] = 2;
 //   i[E.three] = 3;
-//   x = TestNonStandardExtensions.TestIntegerAsEnum.f(/*E*/(i[E.three]));
+//   x = TestNonStandardExtensions.TestIntegerAsEnum.f(/*TestNonStandardExtensions.TestIntegerAsEnum.E*/(i[E.three]));
 // end TestNonStandardExtensions.TestIntegerAsEnum;
 // "
 // "Warning: Allowing usage of Integer expression: 1 as enumeration: E.one. This is non-standard Modelica, use the actual enumeration instead!
