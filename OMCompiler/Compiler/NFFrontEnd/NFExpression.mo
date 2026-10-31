@@ -59,6 +59,7 @@ protected
   import SimplifyExp = NFSimplifyExp;
   import TypeCheck = NFTypeCheck;
   import UnorderedSet;
+  import ValuesDump;
   import ValuesMake;
   import Variable = NFVariable;
 
@@ -3010,6 +3011,7 @@ public
         then Values.ENUM_LITERAL(AbsynUtil.suffixPath(ty.typePath, exp.name), exp.index);
       case ARRAY() then ValuesMake.makeArray(list(toDAEValue(e) for e in exp.elements));
       case RECORD() then toDAEValueRecord(exp.ty, exp.path, exp.elements);
+      case TUPLE() then Values.TUPLE(list(toDAEValue(e) for e in exp.elements));
       case FILENAME() then Values.STRING(exp.filename);
 
       else
@@ -3050,6 +3052,77 @@ public
     values := listReverseInPlace(values);
     value := Values.RECORD(path, values, field_names, -1);
   end toDAEValueRecord;
+
+  function fromDAEValue
+    "Converts a value to an expression of the given type. The type supplies
+     what the value lacks: the literals of an enumeration and the fields of a
+     record. An enumeration literal's index is taken from the type, since the
+     scripting API does not number all of its enumerations as declared."
+    input Values.Value value;
+    input Type ty;
+    output Expression exp;
+  algorithm
+    exp := match (value, ty)
+      local
+        Type elem_ty;
+        list<Type> tys;
+        String name;
+
+      case (Values.INTEGER(), _) then INTEGER(value.integer);
+      case (Values.REAL(), _) then REAL(value.real);
+      case (Values.STRING(), _) then STRING(value.string);
+      case (Values.BOOL(), _) then BOOLEAN(value.boolean);
+      case (Values.ENUM_LITERAL(), Type.ENUMERATION())
+        algorithm
+          name := AbsynUtil.pathLastIdent(value.name);
+        then
+          ENUM_LITERAL(ty, name, List.position(name, ty.literals));
+
+      case (Values.ARRAY(), Type.ARRAY())
+        algorithm
+          elem_ty := Type.unliftArray(ty);
+        then
+          makeArray(Type.ARRAY(ty.elementType, list(Dimension.fromInteger(d) for d in value.dimLst)),
+                    listArray(list(fromDAEValue(v, elem_ty) for v in value.valueLst)), literal = true);
+
+      case (Values.RECORD(), Type.COMPLEX()) then fromDAEValueRecord(value, ty);
+
+      case (Values.TUPLE(), Type.TUPLE(types = tys))
+        then TUPLE(ty, list(fromDAEValue(v, t) threaded for v in value.valueLst, t in tys));
+
+      case (Values.NORETCALL(), _) then EMPTY(ty);
+
+      else
+        algorithm
+          Error.addInternalError(getInstanceName() + " got unhandled value " +
+            ValuesDump.valString(value) + " of type " + Type.toString(ty), sourceInfo());
+        then
+          fail();
+    end match;
+  end fromDAEValue;
+
+  function fromDAEValueRecord
+    input Values.Value value;
+    input Type ty;
+    output Expression exp;
+  protected
+    Absyn.Path path;
+    list<Values.Value> values;
+    list<String> names;
+    list<Expression> fields = {};
+  algorithm
+    Values.RECORD(record_ = path, orderd = values, comp = names) := value;
+
+    for field in Type.recordFields(ty) loop
+      fields := match field
+        case Record.Field.INPUT()
+          then fromDAEValue(listGet(values, List.position(field.name, names)),
+                            Type.lookupRecordFieldType(field.name, ty)) :: fields;
+      end match;
+    end for;
+
+    exp := RECORD(path, ty, listReverseInPlace(fields));
+  end fromDAEValueRecord;
 
   function dimensionCount
     input Expression exp;
