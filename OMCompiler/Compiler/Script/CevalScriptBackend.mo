@@ -456,6 +456,67 @@ algorithm
   end matchcontinue;
 end buildSimulationOptionsFromModelExperimentAnnotation;
 
+public function simulationArguments
+  "Returns the arguments of simulate, buildModel and the other simulation calls
+   in the order they are declared. Arguments that are not given are taken from
+   the experiment annotation. stepSize, if given, sets numberOfIntervals."
+  input Absyn.Path className;
+  input list<tuple<String, Values.Value>> namedArgs;
+  input String callName;
+  input Option<InteractiveTypes.SimulationOptions> defaultOptions = NONE();
+  output list<Values.Value> args;
+protected
+  InteractiveTypes.SimulationOptions opts;
+  Values.Value start_time, stop_time, intervals;
+  list<Values.Value> rest;
+algorithm
+  opts := buildSimulationOptionsFromModelExperimentAnnotation(className,
+    AbsynUtil.pathString(AbsynUtil.unqotePathIdents(className)), defaultOptions,
+    optimization = callName == "optimize");
+
+  args := list(simulationArgument(name, namedArgs, opts) for name in
+    {"startTime", "stopTime", "numberOfIntervals", "tolerance", "method", "fileNamePrefix",
+     "options", "outputFormat", "variableFilter", "cflags", "simflags"});
+
+  for arg in namedArgs loop
+    if Util.tuple21(arg) == "stepSize" then
+      start_time :: stop_time :: intervals :: rest := args;
+      intervals := Values.INTEGER(realInt((ValuesUtil.valueReal(stop_time) - ValuesUtil.valueReal(start_time)) /
+                                          ValuesUtil.valueReal(Util.tuple22(arg))));
+      args := start_time :: stop_time :: intervals :: rest;
+    end if;
+  end for;
+
+  args := ValuesMake.makeCodeTypeName(className) :: args;
+
+  if callName == "simulate" then
+    args := List.appendElt(simulationArgumentOrDefault("resimulateExecutable", namedArgs, Values.STRING("")), args);
+  end if;
+end simulationArguments;
+
+protected function simulationArgument
+  input String name;
+  input list<tuple<String, Values.Value>> namedArgs;
+  input InteractiveTypes.SimulationOptions opts;
+  output Values.Value value;
+algorithm
+  value := simulationArgumentOrDefault(name, namedArgs, ValuesUtil.expValue(getSimulationOption(opts, name)));
+end simulationArgument;
+
+protected function simulationArgumentOrDefault
+  input String name;
+  input list<tuple<String, Values.Value>> namedArgs;
+  input Values.Value defaultValue;
+  output Values.Value value = defaultValue;
+algorithm
+  for arg in namedArgs loop
+    if Util.tuple21(arg) == name then
+      value := Util.tuple22(arg);
+      return;
+    end if;
+  end for;
+end simulationArgumentOrDefault;
+
 protected function setOptimizationFlags
   "Sets the flags needed to build a dynamic optimization problem (optimize, moo)
    and returns their previous values, to be given to restoreOptimizationFlags."
@@ -1778,11 +1839,10 @@ algorithm
       Absyn.Program p,newp;
       InteractiveTypes.SimulationOptions simOpt;
       Real startTime,stopTime,tolerance,reltol,reltolDiffMinMax,rangeDelta;
-      DAE.Exp startTimeExp,stopTimeExp,toleranceExp,intervalExp;
       Absyn.Class absynClass;
       Absyn.Exp aexp, aexp2, aexp3;
       Option<DAE.DAElist> odae;
-      Values.Value v,cvar,cvar2,v1,v2;
+      Values.Value v,cvar,cvar2,v1,v2,v3;
       Absyn.ComponentRef cr, cr2;
       Integer size,i,n,curveStyle,numberOfIntervals,x,y;
       Access access;
@@ -2163,16 +2223,15 @@ algorithm
 
     case ("getSimulationOptions",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.REAL(startTime),Values.REAL(stopTime),Values.REAL(tolerance),Values.INTEGER(numberOfIntervals),Values.REAL(interval)})
       algorithm
-        cr := AbsynUtil.pathToCref(classpath);
         // ignore the name of the model
         ErrorExt.setCheckpoint("getSimulationOptions");
         simOpt := InteractiveTypes.SIMULATION_OPTIONS(DAE.RCONST(startTime),DAE.RCONST(stopTime),DAE.ICONST(numberOfIntervals),DAE.RCONST(0.0),DAE.RCONST(tolerance),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""));
         ErrorExt.rollBack("getSimulationOptions");
-        (_, _::startTimeExp::stopTimeExp::intervalExp::toleranceExp::_) := StaticScript.getSimulationArguments(FCore.emptyCache(), FGraph.empty(), {Absyn.CREF(cr)},{},false,DAE.NOPRE(), "getSimulationOptions", Absyn.dummyInfo,SOME(simOpt));
-        startTime := ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,startTimeExp,Values.REAL(startTime)));
-        stopTime := ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,stopTimeExp,Values.REAL(stopTime)));
-        tolerance := ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,toleranceExp,Values.REAL(tolerance)));
-        Values.INTEGER(numberOfIntervals) := Util.makeValueOrDefault(Ceval.cevalSimple,intervalExp,Values.INTEGER(numberOfIntervals)); // number of intervals
+        _ :: v1 :: v2 :: Values.INTEGER(numberOfIntervals) :: v3 :: _ :=
+          simulationArguments(classpath, {}, "getSimulationOptions", SOME(simOpt));
+        startTime := ValuesUtil.valueReal(v1);
+        stopTime := ValuesUtil.valueReal(v2);
+        tolerance := ValuesUtil.valueReal(v3);
         if numberOfIntervals == 0 and interval > 0.0 then
           numberOfIntervals := integer(ceil((stopTime - startTime)/interval));
         else
@@ -10047,28 +10106,10 @@ function simulateModel
   input Absyn.Path path;
   output String result;
 protected
-  InteractiveTypes.SimulationOptions sim_opts;
   list<Values.Value> vals;
   Values.Value res;
 algorithm
-  sim_opts := buildSimulationOptionsFromModelExperimentAnnotation(path, AbsynUtil.pathString(path), NONE());
-
-  vals := {
-    ValuesMake.makeCodeTypeName(path),
-    ValuesUtil.expValue(sim_opts.startTime),
-    ValuesUtil.expValue(sim_opts.stopTime),
-    ValuesUtil.expValue(sim_opts.numberOfIntervals),
-    ValuesUtil.expValue(sim_opts.tolerance),
-    ValuesUtil.expValue(sim_opts.method),
-    ValuesUtil.expValue(sim_opts.fileNamePrefix),
-    ValuesUtil.expValue(sim_opts.options),
-    ValuesUtil.expValue(sim_opts.outputFormat),
-    ValuesUtil.expValue(sim_opts.variableFilter),
-    ValuesUtil.expValue(sim_opts.cflags),
-    ValuesUtil.expValue(sim_opts.simflags),
-    ValuesMake.makeString("")
-  };
-
+  vals := simulationArguments(path, {}, "simulate");
   (_, res) := simulate(vals, FCore.emptyCache(), FGraph.empty(), Absyn.NO_MSG());
   result := ValuesDump.printValStr(res) + "\n";
 end simulateModel;

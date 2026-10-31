@@ -54,7 +54,6 @@ encapsulated package Interactive
 import Absyn;
 import ProgramUtil;
 import AbsynUtil;
-import Builtin;
 import ConnectionGraph;
 import DAE;
 import FCore;
@@ -71,6 +70,7 @@ protected
 
 import Ceval;
 import CevalScript;
+import CevalScriptBackend;
 import ClassInf;
 import ClockIndexes;
 import Config;
@@ -721,7 +721,7 @@ algorithm
 end evaluateExprToStr;
 
 public function simulateModel
-  "simulate() against the builtin graph, not the O(program-size) env; empty/non-positive args dropped."
+  "simulate() with the given arguments; empty or non-positive arguments are left out."
   input String className;
   input Real stopTime;
   input Integer numberOfIntervals;
@@ -730,24 +730,18 @@ public function simulateModel
   input String simflags;
   output String result;
 protected
-  list<Absyn.NamedArg> nargs = {};
-  Absyn.Exp callExp;
-  FCore.Graph env;
-  FCore.Cache cache;
-  DAE.Exp sexp;
+  list<tuple<String, Values.Value>> args = {};
   Values.Value value;
 algorithm
   try
-    if not stringEmpty(simflags) then nargs := Absyn.NAMEDARG("simflags", Absyn.STRING(simflags)) :: nargs; end if;
-    if not stringEmpty(method) then nargs := Absyn.NAMEDARG("method", Absyn.STRING(method)) :: nargs; end if;
-    if tolerance > 0.0 then nargs := Absyn.NAMEDARG("tolerance", Absyn.REAL(realString(tolerance))) :: nargs; end if;
-    if numberOfIntervals > 0 then nargs := Absyn.NAMEDARG("numberOfIntervals", Absyn.INTEGER(numberOfIntervals)) :: nargs; end if;
-    if stopTime > 0.0 then nargs := Absyn.NAMEDARG("stopTime", Absyn.REAL(realString(stopTime))) :: nargs; end if;
-    callExp := Absyn.CALL(Absyn.CREF_IDENT("simulate", {}),
-      Absyn.FUNCTIONARGS({Absyn.CREF(AbsynUtil.pathToCref(Parser.stringPath(className)))}, nargs), {});
-    (_, env) := Builtin.initialGraph(FCore.emptyCache());
-    (cache, sexp, _) := StaticScript.elabExp(FCore.emptyCache(), env, callExp, true, true, DAE.NOPRE(), Absyn.dummyInfo);
-    (_, value) := CevalScript.ceval(cache, env, sexp, true, Absyn.MSG(Absyn.dummyInfo), 0);
+    if not stringEmpty(simflags) then args := ("simflags", Values.STRING(simflags)) :: args; end if;
+    if not stringEmpty(method) then args := ("method", Values.STRING(method)) :: args; end if;
+    if tolerance > 0.0 then args := ("tolerance", Values.REAL(tolerance)) :: args; end if;
+    if numberOfIntervals > 0 then args := ("numberOfIntervals", Values.INTEGER(numberOfIntervals)) :: args; end if;
+    if stopTime > 0.0 then args := ("stopTime", Values.REAL(stopTime)) :: args; end if;
+    (_, value) := CevalScriptBackend.simulate(
+      CevalScriptBackend.simulationArguments(Parser.stringPath(className), args, "simulate"),
+      FCore.emptyCache(), FGraph.empty(), Absyn.MSG(Absyn.dummyInfo));
     result := ValuesDump.valString(value);
   else
     result := "";
