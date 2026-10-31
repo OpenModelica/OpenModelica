@@ -1338,6 +1338,194 @@ algorithm
   end match;
 end pathHashContinue;
 
+public function crefHash
+  input Absyn.ComponentRef cref;
+  output Integer hash = crefHashContinue(cref, Util.HASH_SEED);
+end crefHash;
+
+public function crefHashContinue
+  input Absyn.ComponentRef cref;
+  input output Integer hash;
+algorithm
+  hash := match cref
+    case Absyn.ComponentRef.CREF_FULLYQUALIFIED()
+      algorithm
+        hash := stringHashDjb2Continue(".", hash);
+      then crefHashContinue(cref.componentRef, hash);
+
+    case Absyn.ComponentRef.CREF_QUAL()
+      algorithm
+        hash := stringHashDjb2Continue(".", hash);
+        hash := stringHashDjb2Continue(cref.name, hash);
+        hash := List.fold(cref.subscripts, subscriptHashContinue, hash);
+      then crefHashContinue(cref.componentRef, hash);
+
+    case Absyn.ComponentRef.CREF_IDENT()
+      algorithm
+        hash := stringHashDjb2Continue(".", hash);
+        hash := stringHashDjb2Continue(cref.name, hash);
+      then List.fold(cref.subscripts, subscriptHashContinue, hash);
+
+    else intHashDjb2Continue(valueConstructor(cref), hash);
+  end match;
+end crefHashContinue;
+
+public function subscriptHashContinue
+  input Absyn.Subscript sub;
+  input output Integer hash;
+algorithm
+  hash := match sub
+    case Absyn.Subscript.SUBSCRIPT() then expHashContinue(sub.subscript, hash);
+    else stringHashDjb2Continue(":", hash);
+  end match;
+end subscriptHashContinue;
+
+public function expHashContinue
+  "Hashes an expression consistently with expEqual, which also considers an
+   Integer and a Real literal with the same value equal."
+  input Absyn.Exp exp;
+  input output Integer hash;
+algorithm
+  hash := match exp
+    case Absyn.Exp.INTEGER() then realHashContinue(intReal(exp.value), hash);
+    case Absyn.Exp.REAL() then realHashContinue(stringReal(exp.value), hash);
+    else intHashDjb2Continue(valueConstructor(exp), hash);
+  end match;
+
+  hash := match exp
+    case Absyn.Exp.CREF() then crefHashContinue(exp.componentRef, hash);
+    case Absyn.Exp.STRING() then stringHashDjb2Continue(exp.value, hash);
+    case Absyn.Exp.BOOL() then intHashDjb2Continue(if exp.value then 1 else 0, hash);
+
+    case Absyn.Exp.BINARY() then binaryHashContinue(exp.exp1, exp.op, exp.exp2, hash);
+    case Absyn.Exp.LBINARY() then binaryHashContinue(exp.exp1, exp.op, exp.exp2, hash);
+    case Absyn.Exp.RELATION() then binaryHashContinue(exp.exp1, exp.op, exp.exp2, hash);
+    case Absyn.Exp.UNARY() then expHashContinue(exp.exp, intHashDjb2Continue(valueConstructor(exp.op), hash));
+    case Absyn.Exp.LUNARY() then expHashContinue(exp.exp, intHashDjb2Continue(valueConstructor(exp.op), hash));
+
+    case Absyn.Exp.IFEXP()
+      algorithm
+        hash := expHashContinue(exp.ifExp, hash);
+        hash := expHashContinue(exp.trueBranch, hash);
+        hash := expHashContinue(exp.elseBranch, hash);
+
+        for b in exp.elseIfBranch loop
+          hash := expHashContinue(Util.tuple21(b), hash);
+          hash := expHashContinue(Util.tuple22(b), hash);
+        end for;
+      then
+        hash;
+
+    case Absyn.Exp.CALL() then functionArgsHashContinue(exp.functionArgs, crefHashContinue(exp.function_, hash));
+    case Absyn.Exp.PARTEVALFUNCTION() then functionArgsHashContinue(exp.functionArgs, crefHashContinue(exp.function_, hash));
+    case Absyn.Exp.ARRAY() then List.fold(exp.arrayExp, expHashContinue, hash);
+    case Absyn.Exp.MATRIX() then List.fold(List.flatten(exp.matrix), expHashContinue, hash);
+
+    case Absyn.Exp.RANGE()
+      algorithm
+        hash := expHashContinue(exp.start, hash);
+
+        if isSome(exp.step) then
+          hash := expHashContinue(Util.getOption(exp.step), hash);
+        end if;
+      then
+        expHashContinue(exp.stop, hash);
+
+    case Absyn.Exp.TUPLE() then List.fold(exp.expressions, expHashContinue, hash);
+    case Absyn.Exp.CODE() then codeHashContinue(exp.code, hash);
+    case Absyn.Exp.AS() then expHashContinue(exp.exp, stringHashDjb2Continue(exp.id, hash));
+    case Absyn.Exp.CONS() then expHashContinue(exp.rest, expHashContinue(exp.head, hash));
+    case Absyn.Exp.LIST() then List.fold(exp.exps, expHashContinue, hash);
+    case Absyn.Exp.DOT() then expHashContinue(exp.index, expHashContinue(exp.exp, hash));
+    case Absyn.Exp.EXPRESSIONCOMMENT() then expHashContinue(exp.exp, hash);
+    case Absyn.Exp.SUBSCRIPTED_EXP()
+      then List.fold(exp.subscripts, subscriptHashContinue, expHashContinue(exp.exp, hash));
+    case Absyn.Exp.UNITFUL_LITERAL() then stringHashDjb2Continue(exp.unit, expHashContinue(exp.value, hash));
+    else hash;
+  end match;
+end expHashContinue;
+
+protected function realHashContinue
+  input Real r;
+  input output Integer hash;
+algorithm
+  // -0.0 and 0.0 are equal.
+  hash := stringHashDjb2Continue(realString(if r == 0.0 then 0.0 else r), hash);
+end realHashContinue;
+
+protected function binaryHashContinue
+  input Absyn.Exp exp1;
+  input Absyn.Operator op;
+  input Absyn.Exp exp2;
+  input output Integer hash;
+algorithm
+  hash := expHashContinue(exp1, hash);
+  hash := intHashDjb2Continue(valueConstructor(op), hash);
+  hash := expHashContinue(exp2, hash);
+end binaryHashContinue;
+
+public function functionArgsHashContinue
+  input Absyn.FunctionArgs args;
+  input output Integer hash;
+algorithm
+  hash := match args
+    case Absyn.FunctionArgs.FUNCTIONARGS()
+      algorithm
+        hash := List.fold(args.args, expHashContinue, hash);
+
+        for a in args.argNames loop
+          hash := stringHashDjb2Continue(a.argName, hash);
+          hash := expHashContinue(a.argValue, hash);
+        end for;
+      then
+        hash;
+
+    case Absyn.FunctionArgs.FOR_ITER_FARG() then expHashContinue(args.exp, hash);
+  end match;
+end functionArgsHashContinue;
+
+public function codeHashContinue
+  input Absyn.CodeNode code;
+  input output Integer hash;
+algorithm
+  hash := intHashDjb2Continue(valueConstructor(code), hash);
+
+  hash := match code
+    case Absyn.CodeNode.C_TYPENAME() then pathHashContinue(code.path, hash);
+    case Absyn.CodeNode.C_VARIABLENAME() then crefHashContinue(code.componentRef, hash);
+    case Absyn.CodeNode.C_EXPRESSION() then expHashContinue(code.exp, hash);
+    case Absyn.CodeNode.C_MODIFICATION() then modificationHashContinue(code.modification, hash);
+    else hash;
+  end match;
+end codeHashContinue;
+
+public function modificationHashContinue
+  input Absyn.Modification mod;
+  input output Integer hash;
+protected
+  Absyn.Exp exp;
+algorithm
+  for arg in mod.elementArgLst loop
+    hash := intHashDjb2Continue(valueConstructor(arg), hash);
+
+    hash := match arg
+      case Absyn.ElementArg.MODIFICATION()
+        algorithm
+          hash := pathHashContinue(arg.path, hash);
+        then
+          if isSome(arg.modification) then
+            modificationHashContinue(Util.getOption(arg.modification), hash) else hash;
+
+      else hash;
+    end match;
+  end for;
+
+  hash := match mod
+    case Absyn.Modification.CLASSMOD(eqMod = Absyn.EqMod.EQMOD(exp = exp)) then expHashContinue(exp, hash);
+    else hash;
+  end match;
+end modificationHashContinue;
+
 public function optPathString "Returns a path converted to string or an empty string if nothing exist"
   input Option<Absyn.Path> inPathOption;
   output String outString;
