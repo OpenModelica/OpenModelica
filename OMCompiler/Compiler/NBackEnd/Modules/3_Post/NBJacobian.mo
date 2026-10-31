@@ -1195,6 +1195,53 @@ protected
           iRes := iRes + 1;
         end for;
 
+        if arrayLength(innerEquations) > 0 then
+          // Local bars are reinitialized on every residual evaluation. Inner bars
+          // include the incoming gradient: mu = r_z^T * lambda - z_bar.
+          for entry in UnorderedMap.toList(diff_map_union) loop
+            (baseX, pDerX) := entry;
+            newC := UnorderedMap.getOrFail(baseX, diff_map_local);
+            rhs_x := buildAdjointRhs(newC, UnorderedMap.getOrDefault(newC, loop_product_adjoint_map, {}));
+            if UnorderedMap.contains(baseX, diff_map_inner) then
+              rhs_x := buildAdjointRhs(newC, {rhs_x, Expression.negate(Expression.fromCref(pDerX))});
+            end if;
+            innerAdjointComps := makeAdjointComponentFromRhs(newC, rhs_x, contextName,
+              idx) :: innerAdjointComps;
+          end for;
+
+          // Reverse the already causalized inner equations without substituting
+          // their expressions into the reduced transpose system.
+          for i in arrayLength(innerEquations):-1:1 loop
+            if not StrongComponent.isDiscrete(innerEquations[i]) then
+              (innerCompAdjoints, innerTmpVars) := generateAdjointComponent(innerEquations[i],
+                diff_map_local, funcMap, scalarized, staticAsContinuous, idx, contextName,
+                seedCandidates, tmpVarCandidates);
+              innerAdjointComps := listAppend(innerCompAdjoints, innerAdjointComps);
+              newTmpVars := listAppend(innerTmpVars, newTmpVars);
+            end if;
+          end for;
+          innerAdjointComps := listReverse(innerAdjointComps);
+
+          UnorderedMap.clear(loop_product_adjoint_map);
+          for entry in UnorderedMap.toList(diff_map_union) loop
+            (baseX, pDerX) := entry;
+            UnorderedMap.add(pDerX, {Expression.fromCref(UnorderedMap.getOrFail(baseX, diff_map_local))},
+              loop_product_adjoint_map);
+          end for;
+        end if;
+
+        // print the loop_product_adjoint_map for debugging
+        if Flags.isSet(Flags.DEBUG_ADJOINT) then
+          print("Loop product adjoint map for algebraic loop " + contextName + ":\n");
+          for entry in UnorderedMap.toList(loop_product_adjoint_map) loop
+            print("  " + ComponentRef.toString(Util.tuple21(entry)) + " -> [");
+            for term in Util.tuple22(entry) loop
+              print("    " + Expression.toString(term) + "\n");
+            end for;
+            print("  ]\n");
+          end for;
+        end if;
+
         // Build linear algebraic loop: sum_i(dr_i/dy_j * lambda_i) = y_bar_j
         linResEqnPtrs := {};
         for vp in itVarPtrs loop
