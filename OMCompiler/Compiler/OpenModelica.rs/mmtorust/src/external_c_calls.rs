@@ -501,6 +501,8 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("System_popen", Infallible); // returns status via output arg
         m.insert("System_readEnv", Fallible); // throws on missing var
         m.insert("System_readFile", Fallible);
+        m.insert("System_realIsNaN", Infallible);
+        m.insert("System_realNaN", Infallible);
         m.insert("System_realpath", Fallible); // canonicalisation throws
         m.insert("System_realtimeAccumulate", Fallible); // index OOB throws
         m.insert("System_realtimeAccumulated", Fallible);

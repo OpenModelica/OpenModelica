@@ -2142,6 +2142,7 @@ algorithm
     case "intBitLShift" then evalIntBitLShift(args);
     case "intBitRShift" then evalIntBitRShift(args);
     case "intMaxLit" then Expression.INTEGER(System.intMaxLit());
+    case "nan" then Expression.REAL(System.realNaN());
     case "inferredClock" then evalInferredClock(args);
     case "rationalClock" then evalRationalClock(args);
     case "realClock" then evalRealClock(args);

@@ -1099,6 +1099,30 @@ end Figure;
 package Internal
   "Internal definitions."
 
+partial function simulationArguments
+  "The arguments of simulate, buildModel and the other simulation calls.
+   An argument that is not given is taken from the experiment annotation."
+  input TypeName className "the class that should simulated";
+  input Real startTime = nan() "the start time of the simulation. <default> = 0.0";
+  input Real stopTime = nan() "the stop time of the simulation. <default> = 1.0";
+  input Integer numberOfIntervals = -1 "number of intervals in the result file. <default> = 500";
+  input Real stepSize = nan() "step size that is used for the result file; overrides numberOfIntervals. <default> = 0.002";
+  input Real tolerance = nan() "tolerance used by the integration method. <default> = 1e-6";
+  input String method = "<default>" "integration method used for simulation. <default> = dassl";
+  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
+  input String options = "<default>" "options. <default> = \"\"";
+  input String outputFormat = "<default>" "Format for the result file. <default> = \"mat\"";
+  input String variableFilter = "<default>" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
+  input String cflags = "<default>" "cflags. <default> = \"\"";
+  input String simflags = "<default>" "simflags. <default> = \"\"";
+end simulationArguments;
+
+function nan
+  "Not a number; the default of an argument that is computed when it is not given."
+  output Real r;
+external "builtin";
+end nan;
+
 package Time
   "Time related functions."
 
@@ -2859,18 +2883,7 @@ end buildEncryptedPackage;
 
 function simulate
   "Simulates a model."
-  input TypeName className "the class that should simulated";
-  input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
-  input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
-  input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
-  input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
-  input String method = "<default>" "integration method used for simulation. <default> = dassl";
-  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
-  input String options = "<default>" "options. <default> = \"\"";
-  input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
-  input String cflags = "<default>" "cflags. <default> = \"\"";
-  input String simflags = "<default>" "simflags. <default> = \"\"";
+  extends Internal.simulationArguments;
   input String resimulateExecutable = "" "If non-empty, skip translation and build and simulate this already-built executable directly.";
   output SimulationResult simulationResults;
   record SimulationResult
@@ -2899,18 +2912,7 @@ end simulate;
 
 function translateModel
   "Translates a modelica model into C code without building it."
-  input TypeName className "the class that should be built";
-  input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
-  input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
-  input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
-  input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
-  input String method = "<default>" "integration method used for simulation. <default> = dassl";
-  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
-  input String options = "<default>" "options. <default> = \"\"";
-  input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
-  input String cflags = "<default>" "cflags. <default> = \"\"";
-  input String simflags = "<default>" "simflags. <default> = \"\"";
+  extends Internal.simulationArguments;
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
@@ -2931,18 +2933,7 @@ end translateModelXML;
 
 function buildModel
   "Translates a Modelica model into C code and builds a simulation executable."
-  input TypeName className "the class that should be built";
-  input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
-  input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
-  input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
-  input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
-  input String method = "<default>" "integration method used for simulation. <default> = dassl";
-  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
-  input String options = "<default>" "options. <default> = \"\"";
-  input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
-  input String cflags = "<default>" "cflags. <default> = \"\"";
-  input String simflags = "<default>" "simflags. <default> = \"\"";
+  extends Internal.simulationArguments;
   output String[2] buildModelResults;
 external "builtin";
 annotation(Documentation(info="<html>
@@ -3107,21 +3098,7 @@ end refactorClass;
 
 function linearize
   "Creates a model with symbolic linearization matrices."
-  input TypeName className "the class that should simulated";
-  input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
-  input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
-  input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
-  input Real stepSize = 0.002 "step size that is used for the result file. <default> = 0.002";
-  input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
-  input String method = "<default>" "integration method used for simulation. <default> = dassl";
-  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
-  input Boolean storeInTemp = false "storeInTemp. <default> = false";
-  input Boolean noClean = false "noClean. <default> = false";
-  input String options = "<default>" "options. <default> = \"\"";
-  input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
-  input String cflags = "<default>" "cflags. <default> = \"\"";
-  input String simflags = "<default>" "simflags. <default> = \"\"";
+  extends Internal.simulationArguments;
   output String linearizationResult;
 external "builtin";
 annotation(Documentation(info="<html>
@@ -3142,21 +3119,7 @@ end linearize;
 
 function optimize
   "Generates an optimization executable for a Modelica/Optimica model and runs it."
-  input TypeName className "the class that should simulated";
-  input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
-  input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
-  input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
-  input Real stepSize = 0.002 "step size that is used for the result file. <default> = 0.002";
-  input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
-  input String method = DAE.SCONST("optimization") "optimize a modelica/optimica model.";
-  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
-  input Boolean storeInTemp = false "storeInTemp. <default> = false";
-  input Boolean noClean = false "noClean. <default> = false";
-  input String options = "<default>" "options. <default> = \"\"";
-  input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
-  input String cflags = "<default>" "cflags. <default> = \"\"";
-  input String simflags = "<default>" "simflags. <default> = \"\"";
+  extends Internal.simulationArguments;
   output String optimizationResults;
 external "builtin";
 annotation(Documentation(info="<html>
@@ -3171,18 +3134,7 @@ end optimize;
 
 function moo
   "Generates an optimization executable for a model and runs it with the MOO dynamic optimizer."
-  input TypeName className "the class that should be optimized";
-  input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
-  input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
-  input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
-  input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
-  input String method = "<default>" "integration method used for simulation. <default> = dassl";
-  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
-  input String options = "<default>" "options. <default> = \"\"";
-  input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
-  input String cflags = "<default>" "cflags. <default> = \"\"";
-  input String simflags = "<default>" "simflags. <default> = \"\"";
+  extends Internal.simulationArguments;
   output String optimizationResults;
 external "builtin";
 annotation(Documentation(info="<html>

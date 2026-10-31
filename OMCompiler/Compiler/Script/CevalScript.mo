@@ -1131,6 +1131,8 @@ algorithm
       then
         ValuesMake.makeIntArray(System.systemCallParallel(strs,i));
 
+    case ("nan",{}) then Values.REAL(System.realNaN());
+
     case ("timerClear",{Values.INTEGER(i)})
       algorithm
         System.realtimeClear(i);
