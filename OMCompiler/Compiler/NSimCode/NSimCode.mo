@@ -81,7 +81,7 @@ protected
   import NBPartitioning.ClockedInfo;
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, Iterator};
-  import NBEvents.{EventInfo, MathEvent};
+  import NBEvents.EventInfo;
   import NBInitialization;
   import NBVariable.{VariablePointers, VarData};
   import BVariable = NBVariable;
@@ -702,9 +702,7 @@ public
           delay_iters := List.sort(delay_iters, iteratorNameGt);
           names := List.flatten(list(SimIterator.names(it) for it in delay_iters));
           (_, n, supported) := SimIterator.flatIndex(delay_iters);
-          // the wasm targets need a constant index
-          if not supported or Expression.contains(exp, function isOtherIterator(names = names))
-            or (not listEmpty(delay_iters) and MathEvent.isWasmTarget()) then
+          if not supported or Expression.contains(exp, function isOtherIterator(names = names)) then
             Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because delay() is not supported in this for-loop: " + Expression.toString(exp)});
             fail();
           end if;
