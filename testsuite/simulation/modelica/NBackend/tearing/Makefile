@@ -17,6 +17,7 @@ nonlinearContinuousLoop.mos \
 torn2DForResidualIndex.mos \
 cellierArray.mos \
 cellierEntwined.mos \
+cellierParameterCoefficient.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

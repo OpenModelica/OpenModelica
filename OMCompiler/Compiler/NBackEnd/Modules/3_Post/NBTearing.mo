@@ -1887,15 +1887,15 @@ protected
       end for;
       touched := {};
 
-      // candidates that do not divide by variables first, among them the most nonlinear one like the old
-      // backend, so that the residuals stay as linear as possible. a candidate stays valid as long as
-      // its unknowns do not change
+      // candidates with the best rank first (a parameter coefficient can be zero), among them the most
+      // nonlinear one like the old backend, so that the residuals stay as linear as possible. a
+      // candidate stays valid as long as its unknowns do not change
       ready := list(c for c guard(cellierIsValid(Util.tuple21(c), unknown_rem, eqn_step, eqn_unknown, eqn_size)) in ready);
       found := not listEmpty(ready);
       best_cls := 10;
       best_points := -1;
       for c in ready loop
-        cls := cellierRankClass(if Util.tuple21(c) < 0 then partial_rank[-Util.tuple21(c)] else eqn_rank[Util.tuple21(c)]);
+        cls := if Util.tuple21(c) < 0 then partial_rank[-Util.tuple21(c)] else eqn_rank[Util.tuple21(c)];
         points := if Util.tuple21(c) < 0 then max(eqn_points[i] for i in partial_eqns[-Util.tuple21(c)]) else eqn_points[Util.tuple21(c)];
         if cls < best_cls or (cls == best_cls and points > best_points) then
           (best, units) := c;
@@ -1914,7 +1914,7 @@ protected
         row_points := eq_points;
         best_row := 0;
         for c in ready_rows loop
-          cls := cellierRankClass(row_rank[Util.tuple21(c)]);
+          cls := row_rank[Util.tuple21(c)];
           points := eqn_points[mapping.eqn_StA[Util.tuple21(c)]];
           if cls < best_cls or (cls == best_cls and points > row_points) then
             (best_row, best_sv) := c;
@@ -2297,13 +2297,6 @@ protected
       rank := 0;
     end if;
   end cellierRowSolvable;
-
-  function cellierRankClass
-    "solving with constant or parameter coefficients is preferred over dividing by variables or
-    solving nonlinear occurrences"
-    input Integer rank;
-    output Integer cls = if rank <= 2 then 1 else rank;
-  end cellierRankClass;
 
   function cellierCanAssign
     "returns the solvability rank (0 if not assignable) and the units an equation can be solved for.
