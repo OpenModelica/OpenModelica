@@ -605,8 +605,8 @@ protected
       case {} then elements[offset + 1];
       case n :: rest algorithm
         stride := List.fold(rest, intMul, 1);
-      then Expression.makeArray(Type.liftArrayLeftList(elemTy, list(Dimension.fromInteger(s) for s in sizes)),
-        listArray(list(reshapeStart(elements, rest, elemTy, offset + (i - 1) * stride) for i in 1:n)), true);
+      then Expression.makeArrayCheckLiteral(Type.liftArrayLeftList(elemTy, list(Dimension.fromInteger(s) for s in sizes)),
+        listArray(list(reshapeStart(elements, rest, elemTy, offset + (i - 1) * stride) for i in 1:n)));
     end match;
   end reshapeStart;
 
