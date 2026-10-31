@@ -503,7 +503,7 @@ protected
         // with resizable arrays adjacent parts of the same loop are merged before
         // they are finalized (the last function), see mergeResizableLoops
         resizable := Flags.getConfigBool(Flags.RESIZABLE_ARRAYS);
-        pre_funcs := if resizable then List.firstN(funcs, listLength(funcs) - 1) else funcs;
+        pre_funcs := List.firstN(funcs, listLength(funcs) - 1);
         for i in 1:arrayLength(strongComponents) loop
           // each module has a list of functions that need to be applied
           tmp := strongComponents[i];
@@ -517,19 +517,23 @@ protected
         end for;
         if resizable then
           strongComponents := mergeResizableLoops(strongComponents);
-          fin := List.last(funcs);
-          part_vars := Pointer.create({});
-          comps := {};
-          for i in 1:arrayLength(strongComponents) loop
-            (tmp, guesses) := resizableIterationArrays(strongComponents[i], eq_index, part_vars);
-            (tmp, full, idx) := fin(tmp, full, funcMap, idx, part.unknowns, part.equations, eq_index, kind);
-            comps := tmp :: List.append_reverse(guesses, comps);
-          end for;
-          strongComponents := listArray(List.flatten(list(splitGenericSlices(c) for c in listReverse(comps))));
-          // the new whole arrays are unknowns of the partition (e.g. for the jacobian sparsity)
-          part.unknowns := VariablePointers.addList(Pointer.access(part_vars), part.unknowns);
-          Pointer.update(new_vars, listAppend(Pointer.access(part_vars), Pointer.access(new_vars)));
         end if;
+        fin := List.last(funcs);
+        part_vars := Pointer.create({});
+        comps := {};
+        for i in 1:arrayLength(strongComponents) loop
+          (tmp, guesses) := iterationArrays(strongComponents[i], eq_index, part_vars);
+          (tmp, full, idx) := fin(tmp, full, funcMap, idx, part.unknowns, part.equations, eq_index, kind);
+          comps := tmp :: List.append_reverse(guesses, comps);
+        end for;
+        comps := listReverse(comps);
+        if resizable then
+          comps := List.flatten(list(splitGenericSlices(c) for c in comps));
+        end if;
+        strongComponents := listArray(comps);
+        // the new whole arrays are unknowns of the partition (e.g. for the jacobian sparsity)
+        part.unknowns := VariablePointers.addList(Pointer.access(part_vars), part.unknowns);
+        Pointer.update(new_vars, listAppend(Pointer.access(part_vars), Pointer.access(new_vars)));
         part.strongComponents := SOME(strongComponents);
         part.adjacencyMatrix := SOME(full);
       end if;
@@ -538,10 +542,11 @@ protected
     new_partitions := listReverse(new_partitions);
   end tearingTraverser;
 
-  function resizableIterationArrays
-    "Partial slices of resizable arrays as iteration variables are only known at
-     the analysis sizes. A slice that consists of boxes of elements becomes new
-     whole resizable arrays, the elements of the slice are assigned from them first.
+  function iterationArrays
+    "Partial slices of arrays as iteration variables can not be seeded in the jacobian
+     and with resizable arrays they are only known at the analysis sizes. A slice that
+     consists of boxes of elements becomes new whole arrays, the elements of the slice
+     are assigned from them first.
      The guesses assign the new arrays from the current values of the slices before the loop."
     input output StrongComponent comp;
     output list<StrongComponent> guesses = {};
@@ -556,7 +561,7 @@ protected
         Tearing strict;
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict as TEARING_SET()) algorithm
         for slice in strict.iteration_vars loop
-          (new_slices, new_copies, new_guesses) := resizableIterationArray(wholeVarSlice(slice), eq_index, new_vars);
+          (new_slices, new_copies, new_guesses) := iterationArray(wholeVarSlice(slice), eq_index, new_vars);
           vars := List.append_reverse(new_slices, vars);
           copies := List.append_reverse(new_copies, copies);
           guesses := List.append_reverse(new_guesses, guesses);
@@ -571,9 +576,9 @@ protected
       then comp;
       else comp;
     end match;
-  end resizableIterationArrays;
+  end iterationArrays;
 
-  function resizableIterationArray
+  function iterationArray
     "x[2:N] as iteration variable becomes $RZ[1:N-1] with the inner equation
      for i in 2:N loop x[i] = $RZ[i - 1]; end for; a slice that is no box is
      split into boxes first"
@@ -595,7 +600,7 @@ protected
     Slice<VariablePointer> new_slice;
   algorithm
     dims := Type.arrayDims(var.ty);
-    if listEmpty(slice.indices) or not List.any(dims, Dimension.isResizable) or not Type.isReal(Type.arrayElementType(var.ty)) then
+    if listEmpty(slice.indices) or listEmpty(dims) or not Type.isReal(Type.arrayElementType(var.ty)) then
       return;
     end if;
 
@@ -622,7 +627,7 @@ protected
     slices := listReverse(slices);
     copies := listReverse(copies);
     guesses := listReverse(guesses);
-  end resizableIterationArray;
+  end iterationArray;
 
   function resizableIterationBox
     "the new whole array for a box of a variable, the assignment of its elements
@@ -682,8 +687,18 @@ protected
     for n in names loop
       UnorderedMap.add(n, EvalOrder.INDEPENDENT, order);
     end for;
-    copy := StrongComponent.RESIZABLE_COMPONENT(elem_cref, Slice.SLICE(var_ptr, {}), Slice.SLICE(eqn, {}), order, NBSolve.Status.EXPLICIT);
-    guess := StrongComponent.RESIZABLE_COMPONENT(aux_elem_cref, Slice.SLICE(aux_ptr, {}), Slice.SLICE(guess_eqn, {}), UnorderedMap.copy(order), NBSolve.Status.EXPLICIT);
+    if Equation.isForEquation(eqn) then
+      copy := StrongComponent.RESIZABLE_COMPONENT(elem_cref, Slice.SLICE(var_ptr, {}), Slice.SLICE(eqn, {}), order, NBSolve.Status.EXPLICIT);
+      guess := StrongComponent.RESIZABLE_COMPONENT(aux_elem_cref, Slice.SLICE(aux_ptr, {}), Slice.SLICE(guess_eqn, {}), UnorderedMap.copy(order), NBSolve.Status.EXPLICIT);
+    else
+      // a box of one element is inlined to a scalar equation
+      Pointer.update(eqn, Equation.simplify(Pointer.access(eqn)));
+      Pointer.update(guess_eqn, Equation.simplify(Pointer.access(guess_eqn)));
+      copy := StrongComponent.SLICED_COMPONENT(Expression.toCref(Util.getOption(Equation.getLHS(Pointer.access(eqn)))),
+        Slice.SLICE(var_ptr, {}), Slice.SLICE(eqn, {}), NBSolve.Status.EXPLICIT);
+      guess := StrongComponent.SLICED_COMPONENT(Expression.toCref(Util.getOption(Equation.getLHS(Pointer.access(guess_eqn)))),
+        Slice.SLICE(aux_ptr, {}), Slice.SLICE(guess_eqn, {}), NBSolve.Status.EXPLICIT);
+    end if;
     slice := Slice.SLICE(aux_ptr, {});
   end resizableIterationBox;
 
@@ -1307,40 +1322,16 @@ protected
     // (the part of them that is in the loop), so arrays and records are never split any further.
     // The inner components of minimal tearing are kept as they are.
   protected
-    Tearing strict, cellier_strict;
+    Tearing strict;
   algorithm
     comp := match (comp, full)
       case (StrongComponent.ALGEBRAIC_LOOP(strict = strict), Adjacency.FULL())
         guard(not listEmpty(strict.iteration_vars) and not listEmpty(strict.residual_eqns)) algorithm
-        cellier_strict := cellierTearingSet(strict, full, equations, funcMap);
-        // a linear loop is solved directly as linear system if its tearing set allows it, do not
-        // replace such a tearing set by one that has to be solved as nonlinear system
-        if not (comp.linear and linearSystemCapable(strict) and not linearSystemCapable(cellier_strict)) then
-          comp.strict := cellier_strict;
-        end if;
+        comp.strict := cellierTearingSet(strict, full, equations, funcMap);
       then comp;
       else comp;
     end match;
   end cellier;
-
-  function linearSystemCapable
-    "true if the linear system codegen can handle the tearing set: no for equations in the inner
-    equations, for equation residuals only if finalize splits them into rows (partial variables)
-    and partial variables only if they are scalarized"
-    input Tearing strict;
-    output Boolean b;
-  protected
-    Boolean partial_vars = List.any(strict.iteration_vars, isPartialVarSlice);
-  algorithm
-    b := not Array.any(strict.innerEquations, isForComponent)
-      and (partial_vars or not List.any(list(Slice.getT(e) for e in strict.residual_eqns), Equation.isForEquation))
-      and (not partial_vars or Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE));
-  end linearSystemCapable;
-
-  function isForComponent
-    input StrongComponent comp;
-    output Boolean b = List.any(StrongComponent.getEquations(comp), Equation.isForEquation);
-  end isForComponent;
 
   function cellierHasRow
     input Pointer<Equation> eqn;

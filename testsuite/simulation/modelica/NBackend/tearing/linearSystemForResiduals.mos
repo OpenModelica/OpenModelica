@@ -1,0 +1,46 @@
+// name: linearSystemForResiduals
+// keywords: NewBackend tearing linear residual for
+// status: correct
+// suite: cSources
+// cflags: --newBackend
+// teardown_command: rm -f linearSystemForResiduals linearSystemForResiduals_* linearSystemForResiduals.log linearSystemForResiduals.c linearSystemForResiduals.o linearSystemForResiduals.makefile linearSystemForResiduals.libs
+//
+// A linear loop with for-equation residuals and the partial iteration
+// variable v[2:n + 1] is a linear system whose residuals stay for-loops.
+
+loadString("
+model linearSystemForResiduals
+  parameter Integer n = 10;
+  Real v[n + 1], i[n];
+equation
+  v[1] = 1 + time;
+  for k in 1:n loop
+    v[k] - v[k + 1] = 2 * i[k];
+  end for;
+  for k in 1:n - 1 loop
+    i[k] = i[k + 1] + v[k + 1];
+  end for;
+  i[n] = v[n + 1];
+end linearSystemForResiduals;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(linearSystemForResiduals); getErrorString();
+system("grep -q 'for(int ' linearSystemForResiduals_03lsy.c");
+val(v[11], 1);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "linearSystemForResiduals_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'linearSystemForResiduals', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0
+// 4.837894258145199e-6
+// endResult

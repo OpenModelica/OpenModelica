@@ -67,7 +67,7 @@ protected
   import Differentiate = NBDifferentiate;
   import NBDifferentiate.{DifferentiationArguments, DifferentiationType};
   import BEquation = NBEquation;
-  import NBEquation.{Equation, EquationAttributes, EquationPointers, Iterator, IfEquationBody, WhenEquationBody, WhenStatement};
+  import NBEquation.{Equation, EquationAttributes, EquationPointer, EquationPointers, Iterator, IfEquationBody, WhenEquationBody, WhenStatement};
   import Solve = NBSolve;
   import BVariable = NBVariable;
   import NBVariable.{VariablePointers, VarData};
@@ -1309,6 +1309,7 @@ public
       input UnorderedSet<ComponentRef> pder_set;
       input UnorderedMap<ComponentRef, ComponentRef> diff_map;
       input Boolean isAdjoint = false;
+      input Option<VariablePointers> vars = NONE() "the variables of full, to collect the dependencies of equations whose name is not unique";
       output Matrix sparsity;
 
       type Dependencies = list<ComponentRef>;
@@ -1377,6 +1378,10 @@ public
           UnorderedMap<ComponentRef, ComponentRef> origins;
           list<ComponentRef> template_crefs;
           list<ComponentRef> solved_keys;
+          UnorderedSet<ComponentRef> eqn_reps;
+          VariablePointers full_vars;
+          UnorderedMap<ComponentRef, EquationPointer> first_eqns = UnorderedMap.new<EquationPointer>(ComponentRef.hash, ComponentRef.isEqual);
+          UnorderedSet<ComponentRef> shared_names = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
 
         case FULL() algorithm
           // create the equation name -> index map
@@ -1390,6 +1395,25 @@ public
                and not UnorderedMap.contains(ComponentRef.stripSubscriptsAll(key), diff_map) then
               UnorderedMap.add(ComponentRef.stripSubscriptsAll(key), key :: UnorderedMap.getOrDefault(ComponentRef.stripSubscriptsAll(key), seed_elements, {}), seed_elements);
             end if;
+          end for;
+
+          // slices of a for-equation solved as scalar equations share its name, full only has
+          // the dependencies of one of them
+          for comp in comps loop
+            for eqn in StrongComponent.getEquations(comp) loop
+              eqn_name := Equation.getEqnName(eqn);
+              () := match UnorderedMap.get(eqn_name, first_eqns)
+                local
+                  EquationPointer oeqn;
+                case SOME(oeqn) guard(not referenceEq(oeqn, eqn)) algorithm
+                  UnorderedSet.add(eqn_name, shared_names);
+                then ();
+                case SOME(_) then ();
+                else algorithm
+                  UnorderedMap.add(eqn_name, eqn, first_eqns);
+                then ();
+              end match;
+            end for;
           end for;
 
           // get only relevant equations
@@ -1409,6 +1433,14 @@ public
               eqn_index   := UnorderedMap.getSafe(eqn_name, index_map, sourceInfo());
               eqn_iter    := Equation.getForIterator(Pointer.access(eqn));
               eqn_deps    := full.dependencies[eqn_index];
+              eqn_reps    := full.repetitions[eqn_index];
+              if isSome(vars) and UnorderedSet.contains(eqn_name, shared_names) then
+                SOME(full_vars) := vars;
+                eqn_deps := UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual);
+                eqn_reps := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+                collectDependenciesEquation(Pointer.access(eqn), NBPartition.Kind.ODE, full_vars.map, eqn_deps,
+                  UnorderedMap.new<Solvability>(ComponentRef.hash, ComponentRef.isEqual), eqn_reps);
+              end if;
               origins     := UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
               template_crefs := {};
               if listLength(eqns) == 1 and not StrongComponent.isAlgebraicLoop(comp) then
@@ -1424,7 +1456,7 @@ public
               for tpl in list(t for t guard(not List.any(own_vars, function ComponentRef.isEqual(cref2 = UnorderedMap.getOrDefault(Util.tuple21(t), origins, Util.tuple21(t)))))
                   in UnorderedMap.toList(eqn_deps)) loop
                 (dep_cref, dep) := tpl;
-                repeated := UnorderedSet.contains(UnorderedMap.getOrDefault(dep_cref, origins, dep_cref), full.repetitions[eqn_index]);
+                repeated := UnorderedSet.contains(UnorderedMap.getOrDefault(dep_cref, origins, dep_cref), eqn_reps);
                 (inner_deps, changed) := match UnorderedMap.get(dep_cref, inner_map)
                   // with resizable arrays other slices of the variable (e.g. solved by an algebraic
                   // loop) can have the same iterator but another range, also use their dependencies

@@ -821,7 +821,7 @@ protected
     sparsity_comps := List.flatten(list(withInnerComps(comp) for comp in comps));
     fullLocal := Adjacency.Matrix.createFull(adjacencyVars,
       EquationPointers.fromList(List.flatten(list(StrongComponent.getEquations(comp) for comp in sparsity_comps))));
-    sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, sparsity_comps, seed_set, pder_set, seed_diff_map);
+    sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, sparsity_comps, seed_set, pder_set, seed_diff_map, vars = SOME(adjacencyVars));
 
     jacobian := SOME(Jacobian.JACOBIAN(
       name      = name,
@@ -1611,7 +1611,7 @@ protected
     end if;
     fullLocal := Adjacency.Matrix.createFull(adjacencyVars,
       EquationPointers.fromList(List.flatten(list(StrongComponent.getEquations(comp) for comp in comps))));
-    sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, comps, seed_set, pder_set, diff_map, isAdjoint = true);
+    sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, comps, seed_set, pder_set, diff_map, isAdjoint = true, vars = SOME(adjacencyVars));
 
     jacobian := SOME(Jacobian.JACOBIAN(
       name      = newName,
@@ -1681,7 +1681,7 @@ protected
       sparsity_comps := List.flatten(list(withInnerComps(comp) for comp in Util.getOption(strongComponents)));
       fullLocal := Adjacency.Matrix.createFull(adjacencyVars, EquationPointers.fromList(
         List.flatten(list(StrongComponent.getEquations(comp) for comp in sparsity_comps))));
-      sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, sparsity_comps, seed_set, pder_set, diff_map);
+      sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, sparsity_comps, seed_set, pder_set, diff_map, vars = SOME(adjacencyVars));
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong components are missing."});
       fail();
