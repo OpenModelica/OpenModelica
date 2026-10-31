@@ -208,7 +208,8 @@ variables.mos \
 VendorAnnotation.mos \
 TestSpace.mos \
 Issue14178.mos \
-Issue16096.mos
+Issue16096.mos \
+Issue17654.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
