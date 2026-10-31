@@ -97,6 +97,12 @@ const HANDWRITTEN_EXPORTS: &[&str] = &[
     "NFExpression.toAbsyn",
     "Parser.parsestringexp",
     "Error.printMessagesStr",
+    // openmodelica_backend_main/src/unittests/scripting_eval_tests.rs →
+    // evaluates scripting calls in a script's context.
+    "NFCeval.evalExp",
+    "NFCeval.EvalTarget.new",
+    "Parser.parsestring",
+    "Config.acceptedGrammar",
     // openmodelica_susan/src/main.rs → Susan's Rust backend, and the types it
     // matches on (reached only through single-record uniontypes, which the
     // interface fixpoint does not descend into).

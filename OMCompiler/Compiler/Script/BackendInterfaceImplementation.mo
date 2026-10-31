@@ -47,6 +47,7 @@ protected
 import BackendInterface;
 import BackendCevalInterface;
 import CevalScript;
+import FGraph;
 import RewriteRules;
 import StaticScript;
 import SymbolTable;
@@ -58,7 +59,8 @@ algorithm
     noRewriteRulesFrontEnd,
     rewriteFrontEnd,
     appendLibrary,
-    InstHashTable.init));
+    InstHashTable.init,
+    evalScriptingFunction));
   BackendCevalInterface.initializeBackendInterface(BackendCevalInterface.BACKEND_INTERFACE_FUNCTIONS(
     cevalInteractiveFunctions,
     cevalCallFunction,
@@ -109,6 +111,16 @@ algorithm
   (outCache, outExp, outProperties) :=
     StaticScript.elabCallInteractive(inCache, inEnv, inCref, inExps, inNamedArgs, inImplInst, inPrefix, inInfo);
 end elabCallInteractive;
+
+function evalScriptingFunction
+  input String name;
+  input list<Values.Value> args;
+  input SourceInfo info;
+  output Values.Value result;
+algorithm
+  (_, result) := CevalScript.cevalInteractiveFunctions2(FCore.emptyCache(), FGraph.empty(),
+    name, args, Absyn.MSG(info));
+end evalScriptingFunction;
 
 function noRewriteRulesFrontEnd
   output Boolean noRules;

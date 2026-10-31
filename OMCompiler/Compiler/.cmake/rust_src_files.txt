@@ -126,6 +126,8 @@ openmodelica_backend/src/HpcOmBenchmarkExt.rs
 openmodelica_backend_main/Cargo.toml
 openmodelica_backend_main/src/Globals.rs
 openmodelica_backend_main/src/capi.rs
+openmodelica_backend_main/src/unittests/mod.rs
+openmodelica_backend_main/src/unittests/scripting_eval_tests.rs
 openmodelica_backend_tools/Cargo.toml
 openmodelica_backend_tools/src/CevalScriptOMSimulator_wasm.rs
 openmodelica_backend_tools/src/SerializeSparsityPattern.rs

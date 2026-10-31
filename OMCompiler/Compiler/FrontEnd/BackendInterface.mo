@@ -39,8 +39,10 @@ encapsulated package BackendInterface
   description: Interface functions used to separate frontend and backend."
 
 public import Absyn;
+public import Values;
 
 protected
+import Error;
 import Global;
 
 public
@@ -51,6 +53,7 @@ uniontype BackendInterfaceFunctions
     partialRewriteFrontEnd rewriteFrontEnd;
     partialAppendLibrary appendLibrary;
     partialInitInstHashTable initInstHashTable;
+    partialEvalScriptingFunction evalScriptingFunction;
   end BACKEND_INTERFACE_FUNCTIONS;
 end BackendInterfaceFunctions;
 
@@ -70,7 +73,7 @@ public function initializeWithoutBackend
    this lives beside the table rather than in the frontend."
 algorithm
   initializeBackendInterface(BACKEND_INTERFACE_FUNCTIONS(
-    noBackendRewriteRules, keepExpression, noBackendLibrary, doNothing));
+    noBackendRewriteRules, keepExpression, noBackendLibrary, doNothing, noScriptingFunctions));
 end initializeWithoutBackend;
 
 protected function noBackendRewriteRules
@@ -92,6 +95,16 @@ end noBackendLibrary;
 
 protected function doNothing
 end doNothing;
+
+protected function noScriptingFunctions
+  input String name;
+  input list<Values.Value> args;
+  input SourceInfo info;
+  output Values.Value result;
+algorithm
+  Error.addInternalError(getInstanceName() + ": no scripting API to evaluate " + name, info);
+  fail();
+end noScriptingFunctions;
 
 public
 
@@ -143,6 +156,22 @@ algorithm
   func();
 end initInstHashTable;
 
+function evalScriptingFunction
+  "Evaluates a call to an OpenModelica.Scripting function, named as the old
+   frontend names it (the external name of the builtin, if it has one)."
+  input String name;
+  input list<Values.Value> args;
+  input SourceInfo info;
+  output Values.Value result;
+protected
+  BackendInterfaceFunctions functions;
+  partialEvalScriptingFunction func;
+algorithm
+  functions := getGlobalRoot(Global.backendInterface);
+  func := functions.evalScriptingFunction;
+  result := func(name, args, info);
+end evalScriptingFunction;
+
 partial function partialNoRewriteRulesFrontEnd
   output Boolean noRules;
 end partialNoRewriteRulesFrontEnd;
@@ -162,6 +191,13 @@ end partialAppendLibrary;
 
 partial function partialInitInstHashTable
 end partialInitInstHashTable;
+
+partial function partialEvalScriptingFunction
+  input String name;
+  input list<Values.Value> args;
+  input SourceInfo info;
+  output Values.Value result;
+end partialEvalScriptingFunction;
 
 annotation(__OpenModelica_Interface="frontend_dump");
 end BackendInterface;
