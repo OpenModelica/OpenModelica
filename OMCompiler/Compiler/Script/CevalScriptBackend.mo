@@ -73,8 +73,6 @@ import CheckModel;
 import ClassInf;
 import ClockIndexes;
 import CodegenFMU;
-import ComponentReference;
-protected import ComponentReferenceBasics;
 import Config;
 import Conversion;
 import DAEDump;
@@ -283,32 +281,22 @@ algorithm
   res := createSimulationResult("", options, message, zeroAdditionalSimulationResultValues);
 end createSimulationResultFailure;
 
-protected function buildCurrentSimulationResultExp
-  output DAE.Exp outExp;
-protected
-  DAE.ComponentRef cref;
+protected function currentSimulationResult
+  "Returns fileName, or the script variable currentSimulationResult for \"<default>\"."
+  input String fileName;
+  output String outFileName = fileName;
 algorithm
-  cref := ComponentReferenceBasics.makeCrefIdent("currentSimulationResult",DAE.T_UNKNOWN_DEFAULT,{});
-  outExp := Expression.makeCrefExp(cref,DAE.T_UNKNOWN_DEFAULT);
-end buildCurrentSimulationResultExp;
+  if fileName == "<default>" then
+    InteractiveTypes.IVAR(value = Values.STRING(outFileName)) :=
+      List.getMemberOnTrue("currentSimulationResult", SymbolTable.getVars(), isVariableNamed);
+  end if;
+end currentSimulationResult;
 
-protected function cevalCurrentSimulationResultExp
-  input FCore.Cache inCache;
-  input FCore.Graph env;
-  input String inputFilename;
-  input Absyn.Msg msg;
-  output FCore.Cache outCache;
-  output String filename;
-algorithm
-  (outCache,filename) := match (inCache, inputFilename)
-    local FCore.Cache cache;
-    case (cache, "<default>")
-      algorithm
-        (cache,Values.STRING(filename)) := Ceval.ceval(cache,env,buildCurrentSimulationResultExp(),true,msg,0);
-      then (cache,filename);
-    else (inCache,inputFilename);
-  end match;
-end cevalCurrentSimulationResultExp;
+protected function isVariableNamed
+  input String name;
+  input InteractiveTypes.Variable var;
+  output Boolean b = name == var.varIdent;
+end isVariableNamed;
 
 public function convertSimulationOptionsToSimCode "converts SimulationOptions to SimCode.SimulationSettings"
   input InteractiveTypes.SimulationOptions opts;
@@ -2500,7 +2488,7 @@ algorithm
         // get OPENMODELICAHOME
         omhome := Settings.getInstallationDirectoryPath();
         // get the simulation filename
-        (outCache,filename) := cevalCurrentSimulationResultExp(outCache,inEnv,filename,msg);
+        filename := currentSimulationResult(filename);
         pd := Autoconf.pathDelimiter;
         // create absolute path of simulation result file
         str1 := System.pwd() + pd + filename;
@@ -2564,7 +2552,7 @@ algorithm
         // get OPENMODELICAHOME
         omhome := Settings.getInstallationDirectoryPath();
         // get the simulation filename
-        (outCache,filename) := cevalCurrentSimulationResultExp(outCache,inEnv,filename,msg);
+        filename := currentSimulationResult(filename);
         pd := Autoconf.pathDelimiter;
         // create absolute path of simulation result file
         str1 := System.pwd() + pd + filename;
@@ -2601,17 +2589,9 @@ algorithm
     case ("plot",_)
       then Values.BOOL(false);
 
-    case ("val",{cvar,Values.REAL(timeStamp),Values.STRING("<default>")})
-      algorithm
-        (outCache,Values.STRING(filename)) := Ceval.ceval(outCache,inEnv,buildCurrentSimulationResultExp(), true, msg, 0);
-        varNameStr := ValuesUtil.printCodeVariableName(cvar);
-        val := SimulationResults.val(filename,varNameStr,timeStamp);
-      then
-        Values.REAL(val);
-
     case ("val",{cvar,Values.REAL(timeStamp),Values.STRING(filename)})
       algorithm
-        false := stringEq(filename,"<default>");
+        filename := currentSimulationResult(filename);
         varNameStr := ValuesUtil.printCodeVariableName(cvar);
         val := SimulationResults.val(filename,varNameStr,timeStamp);
       then
@@ -3093,7 +3073,7 @@ algorithm
         // get OPENMODELICAHOME
         omhome := Settings.getInstallationDirectoryPath();
         // get the simulation filename
-        (outCache,filename) := cevalCurrentSimulationResultExp(outCache,inEnv,filename,msg);
+        filename := currentSimulationResult(filename);
         pd := Autoconf.pathDelimiter;
         // create absolute path of simulation result file
         str1 := System.pwd() + pd + filename;
