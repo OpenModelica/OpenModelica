@@ -652,8 +652,11 @@ void ida_solver_deinitial(IDA_SOLVER *idaData)
   N_VDestroy_Serial(idaData->newdelta);
 
   IDAFree(&idaData->ida_mem);
+  N_VDestroy_Serial(idaData->y);
+  N_VDestroy_Serial(idaData->yp);
 
   SUNContext_Free(&idaData->sunctx);
+  free(idaData);
 }
 
 
