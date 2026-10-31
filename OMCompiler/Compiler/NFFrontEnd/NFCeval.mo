@@ -72,8 +72,10 @@ import Prefixes = NFPrefixes;
 import SimplifyExp = NFSimplifyExp;
 import UnorderedMap;
 import Absyn;
+import BackendInterface;
 import ErrorExt;
 import Array;
+import Values;
 import Vector;
 
 public
@@ -2150,6 +2152,8 @@ algorithm
     case "solverClock" then evalSolverClock(args);
     case "$OMC$PositiveMax" then evalPositiveMax(listGet(args,1),listGet(args,2));
     case "$OMC$inStreamDiv" then listHead(args);
+    case _ guard InstContext.inScripting(target.context) and Function.isScripting(fn)
+      then evalScriptingCall(fn, AbsynUtil.pathFirstIdent(fn_path), args, target);
     else
       algorithm
         Error.addInternalError(getInstanceName() + ": unimplemented case for " +
@@ -2158,6 +2162,22 @@ algorithm
         fail();
   end match;
 end evalBuiltinCall;
+
+function evalScriptingCall
+  "Evaluates a call to a builtin OpenModelica.Scripting function through the
+   scripting API."
+  input Function fn;
+  input String name;
+  input list<Expression> args;
+  input EvalTarget target;
+  output Expression result;
+protected
+  Values.Value value;
+algorithm
+  value := BackendInterface.evalScriptingFunction(name,
+    list(Expression.toDAEValue(arg) for arg in args), target.info);
+  result := Expression.fromDAEValue(value, Function.returnType(fn));
+end evalScriptingCall;
 
 function evalNormalCallExp
   input Expression callExp;

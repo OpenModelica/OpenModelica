@@ -2677,8 +2677,7 @@ protected
       fn_ref := Lookup.lookupFunctionNameSilent(functionName, scope, context);
       fn_node := ComponentRef.node(fn_ref);
       true := InstNode.isClass(fn_node);
-      true := AbsynUtil.pathPrefixOf(Absyn.QUALIFIED("OpenModelica", Absyn.IDENT("Scripting")),
-                                     InstNode.scopePath(fn_node));
+      true := Function.isScriptingNode(fn_node);
     else
       return;
     end try;

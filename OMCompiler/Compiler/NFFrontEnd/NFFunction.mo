@@ -2006,6 +2006,19 @@ uniontype Function
     output Boolean isBuiltin = isBuiltinAttr(fn.attributes);
   end isBuiltin;
 
+  function isScripting
+    input Function fn;
+    output Boolean res = isScriptingNode(instance(fn));
+  end isScripting;
+
+  function isScriptingNode
+    "Whether the node is in OpenModelica.Scripting. Tested on the scope,
+     since a builtin function's path is only its name."
+    input InstNode node;
+    output Boolean res = AbsynUtil.pathPrefixOf(
+      Absyn.QUALIFIED("OpenModelica", Absyn.IDENT("Scripting")), InstNode.scopePath(node));
+  end isScriptingNode;
+
   function isBuiltinAttr
     input DAE.FunctionAttributes attrs;
     output Boolean isBuiltin;
