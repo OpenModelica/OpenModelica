@@ -2183,6 +2183,7 @@ public
       Expression key_exp, exp, value, offset;
       Boolean ok, negated;
       ComponentRef iter;
+      Boolean has_iter = List.any(list(sparsityHasIterator(Subscript.toExp(s)) for s guard(not Subscript.isWhole(s)) in key_subs), Util.id);
     algorithm
       if listLength(key_subs) <> listLength(subs) then
         status := UnifyStatus.UNKNOWN;
@@ -2191,7 +2192,15 @@ public
       for tpl in List.zip(key_subs, subs) loop
         () := match tpl
           case (Subscript.WHOLE(), _) then ();
-          case (Subscript.SLICE(slice = key_exp), _) guard(not sparsityHasIterator(key_exp)) then ();
+          // a constant slice next to iterators (y[$i1, 1:3]), without iterators the key binds nothing
+          case (Subscript.SLICE(slice = key_exp), _) guard(has_iter and not sparsityHasIterator(key_exp)) algorithm
+            () := match Util.tuple22(tpl)
+              case Subscript.INDEX(index = exp) guard(not sparsitySliceContains(key_exp, exp)) algorithm
+                status := UnifyStatus.DIFFERENT;
+              then ();
+              else ();
+            end match;
+          then ();
           // a literal or a parameter (x[N]) binds nothing, it can only be told apart from another literal
           case (Subscript.INDEX(index = key_exp), _) guard(not sparsityHasIterator(key_exp)) algorithm
             () := match Util.tuple22(tpl)
@@ -2232,6 +2241,30 @@ public
         end if;
       end for;
     end sparsityUnify;
+
+    function sparsitySliceContains
+      "false if a literal index is not an element of a literal slice"
+      input Expression slice;
+      input Expression index;
+      output Boolean b = true;
+    protected
+      Integer v, start, step, stop;
+    algorithm
+      if not Expression.isInteger(index) then
+        return;
+      end if;
+      v := Expression.integerValue(index);
+      b := match slice
+        case Expression.RANGE(start = Expression.INTEGER(start), step = NONE(), stop = Expression.INTEGER(stop))
+          then v >= start and v <= stop;
+        case Expression.RANGE(start = Expression.INTEGER(start), step = SOME(Expression.INTEGER(step)), stop = Expression.INTEGER(stop))
+          guard(step <> 0)
+          then (step > 0 and v >= start and v <= stop or step < 0 and v <= start and v >= stop) and intMod(v - start, step) == 0;
+        case Expression.ARRAY() guard(Array.all(slice.elements, Expression.isInteger))
+          then Array.any(slice.elements, function Expression.isEqual(exp2 = index));
+        else true;
+      end match;
+    end sparsitySliceContains;
 
     function sparsityIteratorOffset
       "i + c, c + i, i - c and i as (i, c, false), c - i as (i, c, true); c without iterators"
