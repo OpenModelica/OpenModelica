@@ -1916,9 +1916,8 @@ protected
         best_cls := 10;
         best_points := -1;
       end if;
-      // a single row only if it is better than every complete candidate. if the rows of its equation
-      // can be solved one after another, all of them are assigned together. the rows of a resizable
-      // equation only as such a chain.
+      // rows only if they are better than every complete candidate and can be solved one after
+      // another as a chain, single rows would scalarize the equations.
       eq_cls := best_cls;
       eq_points := best_points;
       while true loop
@@ -1948,9 +1947,6 @@ protected
           and (not List.hasOneElement(chain_eqns) or listLength(chain) == eqn_size[e])
           and List.all(list(eqn_size[ce] == sum(1 for c guard(mapping.eqn_StA[Util.tuple21(c)] == ce) in chain) for ce guard(row_resizable[ce]) in chain_eqns), Util.id);
         if chain_complete then break; end if;
-        // the row of a scalar equation only as part of a chain
-        chain := {(best_row, best_sv)};
-        if not (row_resizable[e] or row_scalar[e]) then break; end if;
         row_seq[best_row] := 0;
         cellierHeapPop(ready_rows);
       end while;
