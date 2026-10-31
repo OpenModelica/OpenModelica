@@ -94,6 +94,7 @@ protected
   import BackendUtil = NBBackendUtil;
   import StringUtil;
   import ErrorExt;
+  import Vector;
 
 public
 
@@ -1355,6 +1356,7 @@ protected
     input Boolean guru = false "the variables with tearing select prefer or always are tear variables, others only if they do not suffice";
   protected
     UnorderedMap<Integer, Boolean> probes = UnorderedMap.new<Boolean>(Util.id, intEq);
+    UnorderedMap<Integer, Integer> ranks = UnorderedMap.new<Integer>(Util.id, intEq);
     list<Pointer<Variable>> loop_vars, block_vars = {};
     list<Pointer<Equation>> loop_eqns;
     VariablePointers vars;
@@ -1363,7 +1365,8 @@ protected
     Adjacency.Mapping mapping;
     Integer nv, ne, nb, idx, start, size;
     array<Integer> unit_kind, eqn_glob, owner, eqn_step, row_var, block_step, row_step;
-    array<Integer> row_chain;
+    array<Integer> row_chain, eqn_points;
+    array<Boolean> row_scalar, row_resizable;
     list<Integer> left, chain_rows, chain_eqns;
     Option<StrongComponent> opt_comp;
     array<Slice<VariablePointer>> var_slices;
@@ -1435,6 +1438,9 @@ protected
       eqn_rows[i] := if listEmpty(eqn_slice.indices) then list(start + k for k in 0:size - 1)
         else list(start + k for k in List.sort(eqn_slice.indices, intGt));
     end for;
+    eqn_points := listArray(list(cellierNonlinearityPoints(Pointer.access(EquationPointers.getEqnAt(eqns, e)), solvabilities[eqn_glob[e]]) for e in 1:ne));
+    row_scalar := listArray(list(not cellierRowCapable(Pointer.access(EquationPointers.getEqnAt(eqns, e))) for e in 1:ne));
+    row_resizable := listArray(list(cellierRowResizable(Pointer.access(EquationPointers.getEqnAt(eqns, e))) for e in 1:ne));
 
     // blocks of minimal tearing keep their order, they wait for the loop variables they depend on
     owner := arrayCreate(nv, 0);
@@ -1460,16 +1466,16 @@ protected
 
     // greedy tearing, then try to remove every tear variable again, biggest first
     if guru then
-      (_, _, _, _, _, _, _, complete) := cellierCausalize(fixed, false, adj, vars, eqns, eqn_glob, eqn_rows, solvabilities, unit_kind, var_slices, block_in, block_out, funcMap, probes);
+      (_, _, _, _, _, _, _, complete) := cellierCausalize(fixed, false, adj, vars, eqns, eqn_glob, eqn_rows, solvabilities, unit_kind, var_slices, block_in, block_out, eqn_points, row_scalar, row_resizable, funcMap, probes, ranks);
     end if;
     if guru and complete then
       tears := fixed;
     else
-      (tears, _, _, _, _, _, _, _) := cellierCausalize(fixed, true, adj, vars, eqns, eqn_glob, eqn_rows, solvabilities, unit_kind, var_slices, block_in, block_out, funcMap, probes);
+      (tears, _, _, _, _, _, _, _) := cellierCausalize(fixed, true, adj, vars, eqns, eqn_glob, eqn_rows, solvabilities, unit_kind, var_slices, block_in, block_out, eqn_points, row_scalar, row_resizable, funcMap, probes, ranks);
       for t in List.sort(tears, function cellierSizeLess(var_slices = var_slices)) loop
         if not listMember(t, fixed) then
           trial := list(i for i guard(i <> t) in tears);
-          (_, _, _, _, _, _, _, complete) := cellierCausalize(trial, false, adj, vars, eqns, eqn_glob, eqn_rows, solvabilities, unit_kind, var_slices, block_in, block_out, funcMap, probes);
+          (_, _, _, _, _, _, _, complete) := cellierCausalize(trial, false, adj, vars, eqns, eqn_glob, eqn_rows, solvabilities, unit_kind, var_slices, block_in, block_out, eqn_points, row_scalar, row_resizable, funcMap, probes, ranks);
           if complete then tears := trial; end if;
         end if;
       end for;
@@ -1478,7 +1484,7 @@ protected
         if not listMember(t, fixed) then
           for c in List.sort(cellierNeighbours(t, adj, unit_kind, var_slices, tears), function cellierSizeGt(var_slices = var_slices)) loop
             trial := c :: list(i for i guard(i <> t) in tears);
-            (_, _, _, _, _, _, _, complete) := cellierCausalize(trial, false, adj, vars, eqns, eqn_glob, eqn_rows, solvabilities, unit_kind, var_slices, block_in, block_out, funcMap, probes);
+            (_, _, _, _, _, _, _, complete) := cellierCausalize(trial, false, adj, vars, eqns, eqn_glob, eqn_rows, solvabilities, unit_kind, var_slices, block_in, block_out, eqn_points, row_scalar, row_resizable, funcMap, probes, ranks);
             if complete then
               tears := trial;
               break;
@@ -1487,7 +1493,7 @@ protected
         end if;
       end for;
     end if;
-    (tears, eqn_step, eqn_units, row_var, block_step, row_step, row_chain, complete) := cellierCausalize(tears, false, adj, vars, eqns, eqn_glob, eqn_rows, solvabilities, unit_kind, var_slices, block_in, block_out, funcMap, probes);
+    (tears, eqn_step, eqn_units, row_var, block_step, row_step, row_chain, complete) := cellierCausalize(tears, false, adj, vars, eqns, eqn_glob, eqn_rows, solvabilities, unit_kind, var_slices, block_in, block_out, eqn_points, row_scalar, row_resizable, funcMap, probes, ranks);
 
     if not complete or (Array.all(eqn_step, function intEq(i2 = 0)) and Array.all(row_step, function intEq(i2 = 0))) then
       return;
@@ -1729,8 +1735,12 @@ protected
     input array<Slice<VariablePointer>> var_slices;
     input array<list<Integer>> block_in;
     input array<list<Integer>> block_out;
+    input array<Integer> eqn_points;
+    input array<Boolean> row_scalar "rows can not be assigned one at a time";
+    input array<Boolean> row_resizable;
     input UnorderedMap<Path, Function> funcMap;
     input UnorderedMap<Integer, Boolean> probes "cached solver checks";
+    input UnorderedMap<Integer, Integer> ranks "cached solvability ranks of a unit in an equation (2 * key), of a single row (2 * key + 1)";
     output list<Integer> tears = fixed_tears;
     output array<Integer> eqn_step;
     output array<list<Integer>> eqn_units;
@@ -1743,19 +1753,19 @@ protected
     Adjacency.IntMatrix m, mT;
     Adjacency.Mapping mapping;
     array<Integer> m_data, mT_data, unknown_rem, unknown_full, eqn_unknown, eqn_size, stamp;
-    array<Boolean> known_scal, row_in_loop, row_capable, row_resizable, row_scalar;
-    list<tuple<Integer, list<Integer>>> ready = {};
-    list<tuple<Integer, Integer>> ready_rows = {}, chain = {};
+    array<Boolean> known_scal, row_in_loop, row_capable;
+    Vector<CellierCandidate> ready = Vector.new<CellierCandidate>(), ready_rows = Vector.new<CellierCandidate>();
+    array<Integer> eqn_seq, unit_seq, row_seq "the newest candidate of each, older ones are outdated";
+    Integer seq = 0, entry_seq, id;
+    list<tuple<Integer, Integer>> chain = {};
     list<Integer> chain_eqns = {};
     Boolean chain_complete = false;
     Integer eq_cls, eq_points, e;
-    array<Integer> eqn_rank, row_rank;
     array<list<Integer>> partial_eqns;
     array<Integer> partial_cov, partial_rank, cover_owner;
     Boolean is_partial, overlap;
     Integer nv, ne, nb = arrayLength(block_in), start, size, open_units = 0, step = 0, next_block = 1, stamp_id = 0;
-    Integer rank, best = 0, u, points, best_points, best_row = 0, best_sv = 0, row_points, cnt, sv, cls, best_cls;
-    array<Integer> eqn_points;
+    Integer rank, best = 0, u, points, best_points, best_row = 0, best_sv = 0, cnt, sv, cls, best_cls;
     list<Integer> fresh = {}, units = {}, touched = {};
     Boolean found;
     Slice<VariablePointer> slice;
@@ -1780,9 +1790,9 @@ protected
     cover_owner := arrayCreate(arrayLength(mapping.var_StA), 0);
     row_step := arrayCreate(arrayLength(mapping.eqn_StA), 0);
     partial_rank := arrayCreate(nv, 0);
-    eqn_rank := arrayCreate(ne, 0);
-    row_rank := arrayCreate(arrayLength(mapping.eqn_StA), 0);
-    eqn_points := listArray(list(cellierNonlinearityPoints(Pointer.access(EquationPointers.getEqnAt(eqns, e)), solvabilities[eqn_glob[e]]) for e in 1:ne));
+    eqn_seq := arrayCreate(ne, 0);
+    unit_seq := arrayCreate(nv, 0);
+    row_seq := arrayCreate(arrayLength(mapping.eqn_StA), 0);
 
     // elements of partially contained variables that are not in the loop are known
     known_scal := arrayCreate(arrayLength(mapping.var_StA), false);
@@ -1826,9 +1836,7 @@ protected
 
     // the rows of a for equation can also be assigned one at a time, e.g. for a recursion x[i] = x[i+1] + y[i]
     // a scalar equation can solve a single element of an array this way
-    row_scalar := listArray(list(not cellierRowCapable(Pointer.access(EquationPointers.getEqnAt(eqns, e))) for e in 1:ne));
     row_capable := listArray(list(eqn_size[e] == 1 or not row_scalar[e] for e in 1:ne));
-    row_resizable := listArray(list(cellierRowResizable(Pointer.access(EquationPointers.getEqnAt(eqns, e))) for e in 1:ne));
     row_chain := arrayCreate(arrayLength(mapping.eqn_StA), 0);
     for e in 1:ne loop
       if row_capable[e] then touched := listAppend(eqn_rows[e], touched); end if;
@@ -1853,10 +1861,11 @@ protected
       // check the new candidates
       for e in fresh loop
         stamp_id := stamp_id + 1;
-        (rank, units, is_partial) := cellierCanAssign(e, eqn_rows[e], eqn_size[e], mapping, m, m_data, known_scal, unknown_rem, eqn_unknown, unit_kind, stamp, stamp_id, row_var, vars, eqns, solvabilities, eqn_glob, funcMap, probes);
+        (rank, units, is_partial) := cellierCanAssign(e, eqn_rows[e], eqn_size[e], mapping, m, m_data, known_scal, unknown_rem, eqn_unknown, unit_kind, stamp, stamp_id, row_var, vars, eqns, solvabilities, eqn_glob, funcMap, probes, ranks);
         if rank > 0 and not is_partial then
-          eqn_rank[e] := rank;
-          ready := (e, units) :: ready;
+          seq := seq + 1;
+          eqn_seq[e] := seq;
+          cellierHeapPush(ready, (rank, eqn_points[e], seq, e, 0, units));
         elseif rank > 0 then
           // collect equations that solve distinct elements of the unit, the unit is assigned once they cover all of it
           u := listHead(units);
@@ -1866,8 +1875,10 @@ protected
             partial_eqns[u] := e :: partial_eqns[u];
             partial_cov[u] := partial_cov[u] + eqn_size[e];
             partial_rank[u] := max(partial_rank[u], rank);
-            if partial_cov[u] == unknown_rem[u] then
-              ready := (-u, units) :: ready;
+            if partial_cov[u] == unknown_rem[u] or unit_seq[u] > 0 then
+              seq := seq + 1;
+              unit_seq[u] := seq;
+              cellierHeapPush(ready, (partial_rank[u], max(eqn_points[i] for i in partial_eqns[u]), seq, -u, 0, units));
             end if;
           end if;
         end if;
@@ -1877,10 +1888,11 @@ protected
         if row_step[r] == 0 and eqn_step[mapping.eqn_StA[r]] == 0 then
           (cnt, sv) := cellierRowUnknown(r, m, m_data, known_scal);
           if cnt == 1 then
-            rank := cellierRowSolvable(mapping.eqn_StA[r], mapping.var_StA[sv], unit_kind, vars, eqns, solvabilities, eqn_glob, funcMap, probes);
+            rank := cellierRowSolvable(mapping.eqn_StA[r], mapping.var_StA[sv], unit_kind, vars, eqns, solvabilities, eqn_glob, funcMap, probes, ranks);
             if rank > 0 then
-              row_rank[r] := rank;
-              ready_rows := (r, sv) :: ready_rows;
+              seq := seq + 1;
+              row_seq[r] := seq;
+              cellierHeapPush(ready_rows, (rank, eqn_points[mapping.eqn_StA[r]], seq, r, sv, {}));
             end if;
           end if;
         end if;
@@ -1890,44 +1902,44 @@ protected
       // candidates with the best rank first (a parameter coefficient can be zero), among them the most
       // nonlinear one like the old backend, so that the residuals stay as linear as possible. a
       // candidate stays valid as long as its unknowns do not change
-      ready := list(c for c guard(cellierIsValid(Util.tuple21(c), unknown_rem, eqn_step, eqn_unknown, eqn_size)) in ready);
-      found := not listEmpty(ready);
-      best_cls := 10;
-      best_points := -1;
-      for c in ready loop
-        cls := if Util.tuple21(c) < 0 then partial_rank[-Util.tuple21(c)] else eqn_rank[Util.tuple21(c)];
-        points := if Util.tuple21(c) < 0 then max(eqn_points[i] for i in partial_eqns[-Util.tuple21(c)]) else eqn_points[Util.tuple21(c)];
-        if cls < best_cls or (cls == best_cls and points > best_points) then
-          (best, units) := c;
-          best_cls := cls;
-          best_points := points;
+      while Vector.size(ready) > 0 loop
+        (_, _, entry_seq, id, _, _) := Vector.get(ready, 1);
+        if entry_seq == (if id < 0 then unit_seq[-id] else eqn_seq[id]) and cellierIsValid(id, unknown_rem, eqn_step, eqn_unknown, eqn_size) then
+          break;
         end if;
-      end for;
+        cellierHeapPop(ready);
+      end while;
+      found := Vector.size(ready) > 0;
+      if found then
+        (best_cls, best_points, _, best, _, units) := Vector.get(ready, 1);
+      else
+        best_cls := 10;
+        best_points := -1;
+      end if;
       // a single row only if it is better than every complete candidate. if the rows of its equation
       // can be solved one after another, all of them are assigned together. the rows of a resizable
       // equation only as such a chain.
-      ready_rows := list(c for c guard(cellierRowIsValid(c, m, m_data, known_scal, row_step, eqn_step, mapping)) in ready_rows);
       eq_cls := best_cls;
       eq_points := best_points;
       while true loop
-        best_cls := eq_cls;
-        row_points := eq_points;
         best_row := 0;
-        for c in ready_rows loop
-          cls := row_rank[Util.tuple21(c)];
-          points := eqn_points[mapping.eqn_StA[Util.tuple21(c)]];
-          if cls < best_cls or (cls == best_cls and points > row_points) then
-            (best_row, best_sv) := c;
-            best_cls := cls;
-            row_points := points;
+        while Vector.size(ready_rows) > 0 loop
+          (cls, points, entry_seq, id, sv, _) := Vector.get(ready_rows, 1);
+          if entry_seq == row_seq[id] and cellierRowIsValid((id, sv), m, m_data, known_scal, row_step, eqn_step, mapping) then
+            if cls < eq_cls or (cls == eq_cls and points > eq_points) then
+              best_row := id;
+              best_sv := sv;
+            end if;
+            break;
           end if;
-        end for;
+          cellierHeapPop(ready_rows);
+        end while;
         if best_row == 0 then break; end if;
         e := mapping.eqn_StA[best_row];
         // rather a chain through the rows of several equations than through only this one
-        (chain, chain_complete) := cellierChain(best_row, best_sv, false, m, m_data, mT, mT_data, known_scal, row_in_loop, row_capable, row_step, eqn_step, eqn_rows, mapping, unit_kind, vars, eqns, solvabilities, eqn_glob, funcMap, probes);
+        (chain, chain_complete) := cellierChain(best_row, best_sv, false, m, m_data, mT, mT_data, known_scal, row_in_loop, row_capable, row_step, eqn_step, eqn_rows, mapping, unit_kind, vars, eqns, solvabilities, eqn_glob, funcMap, probes, ranks);
         if not chain_complete then
-          (chain, chain_complete) := cellierChain(best_row, best_sv, true, m, m_data, mT, mT_data, known_scal, row_in_loop, row_capable, row_step, eqn_step, eqn_rows, mapping, unit_kind, vars, eqns, solvabilities, eqn_glob, funcMap, probes);
+          (chain, chain_complete) := cellierChain(best_row, best_sv, true, m, m_data, mT, mT_data, known_scal, row_in_loop, row_capable, row_step, eqn_step, eqn_rows, mapping, unit_kind, vars, eqns, solvabilities, eqn_glob, funcMap, probes, ranks);
         end if;
         chain_eqns := List.unique(list(mapping.eqn_StA[Util.tuple21(c)] for c in chain));
         // a chain through several equations becomes one component if it repeats one of them, through one
@@ -1939,7 +1951,8 @@ protected
         // the row of a scalar equation only as part of a chain
         chain := {(best_row, best_sv)};
         if not (row_resizable[e] or row_scalar[e]) then break; end if;
-        ready_rows := list(c for c guard(Util.tuple21(c) <> best_row) in ready_rows);
+        row_seq[best_row] := 0;
+        cellierHeapPop(ready_rows);
       end while;
 
       if best_row > 0 then
@@ -1998,6 +2011,60 @@ protected
       else false;
     end match;
   end cellierIsAliasSide;
+
+  type CellierCandidate = tuple<Integer, Integer, Integer, Integer, Integer, list<Integer>>
+    "rank, nonlinearity points, insertion, equation/row/negative unit, scalar variable of a row, units";
+
+  function cellierHeapBefore
+    "lower rank first, then more nonlinearity points, then the newest"
+    input CellierCandidate a;
+    input CellierCandidate b;
+    output Boolean before;
+  protected
+    Integer ra, pa, sa, rb, pb, sb;
+  algorithm
+    (ra, pa, sa, _, _, _) := a;
+    (rb, pb, sb, _, _, _) := b;
+    before := ra < rb or (ra == rb and (pa > pb or (pa == pb and sa > sb)));
+  end cellierHeapBefore;
+
+  function cellierHeapPush
+    input Vector<CellierCandidate> heap;
+    input CellierCandidate c;
+  protected
+    Integer i, p;
+  algorithm
+    Vector.push(heap, c);
+    i := Vector.size(heap);
+    while i > 1 loop
+      p := intDiv(i, 2);
+      if not cellierHeapBefore(c, Vector.get(heap, p)) then break; end if;
+      Vector.update(heap, i, Vector.get(heap, p));
+      i := p;
+    end while;
+    Vector.update(heap, i, c);
+  end cellierHeapPush;
+
+  function cellierHeapPop
+    "removes the first candidate"
+    input Vector<CellierCandidate> heap;
+  protected
+    CellierCandidate last;
+    Integer i = 1, k, n;
+  algorithm
+    last := Vector.get(heap, Vector.size(heap));
+    Vector.pop(heap);
+    n := Vector.size(heap);
+    if n == 0 then return; end if;
+    while 2 * i <= n loop
+      k := 2 * i;
+      if k < n and cellierHeapBefore(Vector.get(heap, k + 1), Vector.get(heap, k)) then k := k + 1; end if;
+      if not cellierHeapBefore(Vector.get(heap, k), last) then break; end if;
+      Vector.update(heap, i, Vector.get(heap, k));
+      i := k;
+    end while;
+    Vector.update(heap, i, last);
+  end cellierHeapPop;
 
   function cellierIsValid
     input Integer c "equation, or negative unit covered by several equations";
@@ -2172,6 +2239,7 @@ protected
     input array<Integer> eqn_glob;
     input UnorderedMap<Path, Function> funcMap;
     input UnorderedMap<Integer, Boolean> probes;
+    input UnorderedMap<Integer, Integer> ranks;
     output list<tuple<Integer, Integer>> chain = {(r, sv)};
     output Boolean complete = true;
   protected
@@ -2199,7 +2267,7 @@ protected
               (cnt, s) := cellierRowUnknown(q, m, m_data, known_scal);
               u := if cnt == 1 then mapping.var_StA[s] else 0;
               if cnt == 1 and (if UnorderedMap.contains(e, eqn_unit) then UnorderedMap.getSafe(e, eqn_unit, sourceInfo()) == u
-                  else cellierRowSolvable(e, u, unit_kind, vars, eqns, solvabilities, eqn_glob, funcMap, probes) > 0) then
+                  else cellierRowSolvable(e, u, unit_kind, vars, eqns, solvabilities, eqn_glob, funcMap, probes, ranks) > 0) then
                 UnorderedMap.tryAdd(e, u, eqn_unit);
                 UnorderedMap.add(e, UnorderedMap.getOrDefault(e, eqn_count, 0) + 1, eqn_count);
                 UnorderedSet.add(q, in_chain);
@@ -2275,17 +2343,22 @@ protected
     input array<Integer> eqn_glob;
     input UnorderedMap<Path, Function> funcMap;
     input UnorderedMap<Integer, Boolean> probes;
+    input UnorderedMap<Integer, Integer> ranks;
     output Integer rank = 0 "solvability rank, 0 if not solvable";
   protected
     ComponentRef name;
     Integer key;
   algorithm
     if unit_kind[u] <> 1 then return; end if;
+    key := e * (arrayLength(unit_kind) + 1) + u;
+    if UnorderedMap.contains(2 * key + 1, ranks) then
+      rank := UnorderedMap.getSafe(2 * key + 1, ranks, sourceInfo());
+      return;
+    end if;
     name := BVariable.getVarName(VariablePointers.getVarAt(vars, u));
-    rank := cellierRank(name, solvabilities[eqn_glob[e]]);
+    rank := cellierRankCached(2 * key, name, solvabilities[eqn_glob[e]], ranks);
     if List.hasOneElement(cellierOccurrences(name, solvabilities[eqn_glob[e]])) then
       if rank >= 1 and rank <= 4 then
-        key := e * (arrayLength(unit_kind) + 1) + u;
         if not UnorderedMap.contains(key, probes) then
           UnorderedMap.add(key, cellierSolvable(EquationPointers.getEqnAt(eqns, e), name, solvabilities[eqn_glob[e]], funcMap), probes);
         end if;
@@ -2296,6 +2369,7 @@ protected
     elseif rank <> 1 then
       rank := 0;
     end if;
+    UnorderedMap.add(2 * key + 1, rank, ranks);
   end cellierRowSolvable;
 
   function cellierCanAssign
@@ -2320,6 +2394,7 @@ protected
     input array<Integer> eqn_glob;
     input UnorderedMap<Path, Function> funcMap;
     input UnorderedMap<Integer, Boolean> probes;
+    input UnorderedMap<Integer, Integer> ranks;
     output Integer rank = 0;
     output list<Integer> units = {};
     output Boolean is_partial = false "the rows only cover a part of the unit";
@@ -2366,12 +2441,12 @@ protected
 
     if List.hasOneElement(units) then
       name := BVariable.getVarName(VariablePointers.getVarAt(vars, listHead(units)));
-      rank := cellierRank(name, solvabilities[eqn_glob[e]]);
+      key := e * (arrayLength(unit_kind) + 1) + listHead(units);
+      rank := cellierRankCached(2 * key, name, solvabilities[eqn_glob[e]], ranks);
       if rank < 1 or rank > 4 then
         rank := 0;
       else
         // make sure the solver can actually do it
-        key := e * (arrayLength(unit_kind) + 1) + listHead(units);
         if not UnorderedMap.contains(key, probes) then
           UnorderedMap.add(key, cellierSolvable(EquationPointers.getEqnAt(eqns, e), name, solvabilities[eqn_glob[e]], funcMap), probes);
         end if;
@@ -2382,6 +2457,22 @@ protected
     end if;
     if rank == 0 then units := {}; end if;
   end cellierCanAssign;
+
+  function cellierRankCached
+    input Integer key;
+    input ComponentRef name;
+    input UnorderedMap<ComponentRef, Solvability> solvabilities;
+    input UnorderedMap<Integer, Integer> ranks;
+    output Integer rank;
+  algorithm
+    rank := match UnorderedMap.get(key, ranks)
+      case SOME(rank) then rank;
+      else algorithm
+        rank := cellierRank(name, solvabilities);
+        UnorderedMap.add(key, rank, ranks);
+      then rank;
+    end match;
+  end cellierRankCached;
 
   function cellierOccurrences
     "all crefs of a variable as they occur in an equation"
