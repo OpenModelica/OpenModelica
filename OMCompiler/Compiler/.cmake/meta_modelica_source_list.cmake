@@ -222,7 +222,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/Causalize.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/Coloring.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/CommonSubExpression.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/DAEQuery.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/DAEMode.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/DataReconciliation.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/Differentiate.mo

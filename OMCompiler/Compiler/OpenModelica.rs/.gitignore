@@ -96,7 +96,6 @@ openmodelica_backend_tools/src/BinaryTreeInt.rs
 openmodelica_backend_tools/src/Binding.rs
 openmodelica_backend_tools/src/CevalScriptOMSimulator.rs
 openmodelica_backend_tools/src/Conversion.rs
-openmodelica_backend_tools/src/DAEQuery.rs
 openmodelica_backend_tools/src/DAEToMid.rs
 openmodelica_backend_tools/src/GenerateAPIFunctionsTpl.rs
 openmodelica_backend_tools/src/HashTableMidVar.rs
