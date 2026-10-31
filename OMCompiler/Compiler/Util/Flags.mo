@@ -1286,7 +1286,7 @@ constant ConfigFlag FMI_SOURCES = CONFIG_FLAG(135, "fmiSources", NONE(), EXTERNA
   "Defines how much source code FMUs will be exported with. --fmiFilter=blackBox might override this, because black box FMUs do never contain their source code.");
 constant ConfigFlag FMI_FLAGS = CONFIG_FLAG(136, "fmiFlags", NONE(), EXTERNAL(),
   STRING_LIST_FLAG({}), NONE(),
-  "Add simulation flags to FMU. Will create <fmiPrefix>_flags.json in resources folder with given flags. Use --fmiFlags or --fmiFlags=none to disable [default]. Use --fmiFlags=default for the default simulation flags. To pass flags use e.g. --fmiFlags=s:cvode,nls:homotopy or --fmiFlags=path/to/yourFlags.json.");
+  "Add simulation flags to FMU. Will create <fmiPrefix>_flags.json in resources folder with given flags. Use --fmiFlags or --fmiFlags=none to disable [default]. Use --fmiFlags=default for the default simulation flags. To pass flags use e.g. --fmiFlags=s:euler,nls:homotopy or --fmiFlags=path/to/yourFlags.json. Co-Simulation FMUs integrate with CVODE unless s selects euler.");
 constant ConfigFlag FMU_CMAKE_BUILD = CONFIG_FLAG(137, "fmuCMakeBuild",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   "Deprecated and ignored. Source-code FMUs are always built with CMake.");

@@ -478,37 +478,46 @@ if(${NEED_CVODE})
     target_compile_definitions(${FMU_NAME_HASH} PRIVATE SUNDIALS_STATIC_DEFINE)
   endif()
 
-  message(STATUS "CVODE_DIRECTORY: ${CVODE_DIRECTORY}")
-  # Static libraries resolve left to right: KLU's solver needs the sparse matrix
-  # and SuiteSparse's KLU, and the SUNDIALS libraries all need sundials_core.
-  # Built with MSVC or clang-cl, SUNDIALS and SuiteSparse name them <name>_static.lib.
-  foreach(_om_lib sundials_nvecserial sundials_cvode sundials_sunlinsolklu sundials_sunmatrixsparse
-                  sundials_core klu amd colamd btf suitesparseconfig)
-    string(TOUPPER "${_om_lib}_LIBRARY" _om_var)
-    find_library(${_om_var} NAMES ${_om_lib} ${_om_lib}_static
-                 PATHS ${CVODE_DIRECTORY}
-                 NO_DEFAULT_PATH
-                 NO_SYSTEM_ENVIRONMENT_PATH
-                 NO_CMAKE_FIND_ROOT_PATH
-                 REQUIRED)
-    if(NOT ${_om_var})
-      message(FATAL_ERROR "Couldn't find library ${_om_lib} in ${CVODE_DIRECTORY}")
-    endif()
-    list(APPEND CVODE_LIBRARIES ${${_om_var}})
-  endforeach()
-  list(APPEND RUNTIME_DEPENDS ${CVODE_LIBRARIES})
-  target_link_libraries(${FMU_NAME_HASH} PRIVATE ${CVODE_LIBRARIES})
-  target_include_directories(${FMU_NAME_HASH} PRIVATE sundials suitesparse)
+  # The installed libraries are built for the host.
+  set(CVODE_LIBRARIES "")
+  if(NOT CMAKE_CROSSCOMPILING)
+    message(STATUS "CVODE_DIRECTORY: ${CVODE_DIRECTORY}")
+    # Static libraries resolve left to right: KLU's solver needs the sparse matrix
+    # and SuiteSparse's KLU, and the SUNDIALS libraries all need sundials_core.
+    # Built with MSVC or clang-cl, SUNDIALS and SuiteSparse name them <name>_static.lib.
+    foreach(_om_lib sundials_nvecserial sundials_cvode sundials_sunlinsolklu sundials_sunmatrixsparse
+                    sundials_core klu amd colamd btf suitesparseconfig)
+      string(TOUPPER "${_om_lib}_LIBRARY" _om_var)
+      find_library(${_om_var} NAMES ${_om_lib} ${_om_lib}_static
+                   PATHS ${CVODE_DIRECTORY}
+                   NO_DEFAULT_PATH
+                   NO_SYSTEM_ENVIRONMENT_PATH
+                   NO_CMAKE_FIND_ROOT_PATH)
+      if(NOT ${_om_var})
+        message(STATUS "Couldn't find library ${_om_lib} in ${CVODE_DIRECTORY}")
+        set(CVODE_LIBRARIES "")
+        break()
+      endif()
+      list(APPEND CVODE_LIBRARIES ${${_om_var}})
+    endforeach()
+  endif()
+  if(CVODE_LIBRARIES)
+    list(APPEND RUNTIME_DEPENDS ${CVODE_LIBRARIES})
+    target_link_libraries(${FMU_NAME_HASH} PRIVATE ${CVODE_LIBRARIES})
+    message(STATUS "CVODE: ${CVODE_LIBRARIES}")
+  else()
+    file(GLOB CVODE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cvode_sources/*.c)
+    target_sources(${FMU_NAME_HASH} PRIVATE ${CVODE_SOURCES})
+    message(STATUS "CVODE: Compiled from cvode_sources")
+  endif()
   set(WITH_SUNDIALS ";WITH_SUNDIALS")
-  message(STATUS "CVODE: ${CVODE_LIBRARIES}")
 else()
   message(STATUS "CVODE: Not linked")
 endif()
 
 # Add include directories
 target_include_directories(${FMU_NAME_HASH} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(${FMU_NAME_HASH} PRIVATE ${FMI_INTERFACE_HEADER_FILES_DIRECTORY}
-                                               sundials@FMU_ADDITIONAL_INCLUDES@)
+target_include_directories(${FMU_NAME_HASH} PRIVATE ${FMI_INTERFACE_HEADER_FILES_DIRECTORY}@FMU_ADDITIONAL_INCLUDES@)
 
 # Set compiler definitions
 target_compile_definitions(${FMU_NAME_HASH} PRIVATE OMC_MINIMAL_RUNTIME=1;OMC_FMI_RUNTIME=1;CMINPACK_NO_DLL${WITH_SUNDIALS})
