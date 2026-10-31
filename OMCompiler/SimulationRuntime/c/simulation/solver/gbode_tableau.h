@@ -463,6 +463,17 @@ enum GM_TYPE {
 
 /* Function prototypes */
 
+/* Constants for less verbose BLAS calls, shared by the gbode sources instead
+ * of being redefined per file (which unity builds merge into one).
+ */
+static const double DBL_ZERO = 0.0;
+static const double DBL_ONE = 1.0;
+static const double DBL_MINUS_ONE = -1.0;
+static const int INT_ONE = 1;
+static const int INT_TWO = 2;
+static const char CHAR_TRANS = 'T';
+static const char CHAR_NO_TRANS = 'N';
+
 BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD method, enum _FLAG flag);
 void freeButcherTableau(BUTCHER_TABLEAU* tableau);
 void finalizeButcherTableauError(BUTCHER_TABLEAU *tableau, enum GB_NLS_METHOD nlsMethod);

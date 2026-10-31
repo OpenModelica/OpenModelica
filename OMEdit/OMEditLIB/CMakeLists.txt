@@ -370,6 +370,29 @@ set_source_files_properties(${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPI
 
 add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS} ${OMEDITLIB_TRANSLATIONS})
 
+# MCPToolsDiagram.cpp repeats file-local helpers from MCPServer.cpp
+# (colorToModelica, filledShapeArgs, pointsToModelica, extentToModelica),
+# and MCPServer.cpp and MCPToolsSimulation.cpp share notifyToolsImageWasReturned;
+# merged into one unity translation unit they redefine each other. Keep them
+# out of the unity batches; no-op for non-unity builds.
+set_source_files_properties(MCP/MCPToolsDiagram.cpp MCP/MCPServer.cpp
+  MCP/MCPToolsSimulation.cpp
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+
+# FlatModelica/Parser.cpp includes the ANTLR4 runtime, whose Lexer::emit
+# clashes with Qt's emit macro once batched with the Qt sources. Keep it out
+# of the unity batches; no-op for non-unity builds.
+set_source_files_properties(FlatModelica/Parser.cpp
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+
+# OneDriveProvider.cpp and GoogleDriveProvider.cpp define the same
+# anonymous-namespace helpers (kAppFolderName, itemFromJson, jsonRequest)
+# with provider-specific bodies; merged into one unity translation unit the
+# anonymous namespaces fuse and they redefine each other. Keep one of them
+# out of the unity batches; no-op for non-unity builds.
+set_source_files_properties(Cloud/GoogleDriveProvider.cpp
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+
 # Update the .ts files (see OM_UPDATE_TRANSLATIONS). lupdate scans the sources and headers listed
 # above, without the generated scripting API (absolute paths). OMPlot has its own translations.
 set(OMEDITLIB_LUPDATE_SOURCES)
