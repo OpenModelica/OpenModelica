@@ -1305,12 +1305,36 @@ protected
   algorithm
     comp := match (comp, full)
       case (StrongComponent.ALGEBRAIC_LOOP(), Adjacency.FULL())
-        guard(List.any(comp.strict.iteration_vars, function Slice.check(func = isGuruVar))) algorithm
+        guard(List.any(comp.strict.iteration_vars, function Slice.check(func = isGuruVar)) and tearingSizeAllowed(comp)) algorithm
         comp.strict := cellierTearingSet(comp.strict, full, equations, funcMap, true);
       then comp;
       else comp;
     end match;
   end guru;
+
+  function tearingSizeAllowed
+    "false if the loop is larger than --maxSizeLinearTearing or --maxSizeNonlinearTearing"
+    input StrongComponent comp;
+    output Boolean b = true;
+  protected
+    Integer max_size, n;
+  algorithm
+    () := match comp
+      case StrongComponent.ALGEBRAIC_LOOP() algorithm
+        max_size := Flags.getConfigInt(if comp.linear then Flags.MAX_SIZE_LINEAR_TEARING else Flags.MAX_SIZE_NONLINEAR_TEARING);
+        n := StrongComponent.size(comp, true);
+        if n > max_size then
+          b := false;
+          if max_size > 0 then
+            Error.addMessage(Error.MAX_TEARING_SIZE, {intString(comp.idx), intString(n),
+              if comp.linear then "linear" else "nonlinear", intString(max_size),
+              if comp.linear then "maxSizeLinearTearing" else "maxSizeNonlinearTearing"});
+          end if;
+        end if;
+      then ();
+      else ();
+    end match;
+  end tearingSizeAllowed;
 
   function isGuruVar
     input Pointer<Variable> var_ptr;
@@ -1326,7 +1350,7 @@ protected
   algorithm
     comp := match (comp, full)
       case (StrongComponent.ALGEBRAIC_LOOP(strict = strict), Adjacency.FULL())
-        guard(not listEmpty(strict.iteration_vars) and not listEmpty(strict.residual_eqns)) algorithm
+        guard(not listEmpty(strict.iteration_vars) and not listEmpty(strict.residual_eqns) and tearingSizeAllowed(comp)) algorithm
         comp.strict := cellierTearingSet(strict, full, equations, funcMap);
       then comp;
       else comp;
