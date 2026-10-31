@@ -51,8 +51,8 @@ template translateModel(SimCode simCode)
  "Generates root template for compiling a simulation of a Modelica model."
 ::=
 match simCode
-case SIMCODE(modelInfo = MODELINFO(__)) then
-    let() = textFile(generateXml(simCode), '<%dotPathXml(modelInfo.name)%>.xml')
+case SIMCODE(__) then
+    let() = textFile(generateXml(simCode), '<%fileNamePrefix%>.xml')
     "" //always returns an empty result since generated texts are written to files directly
 end translateModel;
 
