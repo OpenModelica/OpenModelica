@@ -41,6 +41,14 @@ set(OMC_SIMRT_UTIL_SOURCES
   "write_matlab4.c"
 )
 
+# omc_numbers.c and omc_stackoverflow.c enable GNU extensions with a file-local
+# '#define _GNU_SOURCE 1' ahead of their own libc includes. Once batched into a
+# unity translation unit, an earlier source's plain libc includes win and the
+# GNU prototypes (strtod_l, pthread_getattr_np, ...) stay undeclared. Keep both
+# files out of the unity batches; no-op for non-unity builds.
+set_source_files_properties("omc_numbers.c" "omc_stackoverflow.c"
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+
 set(OMC_SIMRT_UTIL_HEADERS
   "base_array.h"
   "boolean_array.h"

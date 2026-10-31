@@ -33,6 +33,14 @@ set(libModelicaExternalC_SOURCES C-Sources/ModelicaFFT.c
                                  C-Sources/ModelicaRandom.c
                                  C-Sources/ModelicaStrings.c)
 
+# ModelicaStrings.c enables GNU extensions with a file-local
+# '#define _GNU_SOURCE 1' for strtol_l/strtod_l. Once batched into a unity
+# translation unit, an earlier source's plain libc includes win and the GNU
+# prototypes stay undeclared. Keep it out of the unity batches; no-op for
+# non-unity builds.
+set_source_files_properties(C-Sources/ModelicaStrings.c
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+
 if(MSVC)
   set(libModelicaExternalC_SOURCES ${libModelicaExternalC_SOURCES} C-Sources/win32_dirent.c)
 endif()

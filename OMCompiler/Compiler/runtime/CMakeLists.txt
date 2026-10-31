@@ -73,6 +73,16 @@ if(OM_OMC_ENABLE_COLPACK)
   list(APPEND OMC_RUNTIME_SOURCES ColPackBicoloring_omc.cpp)
 endif()
 
+# These sources textually include OpenModelicaBootstrappingHeader.h, whose
+# generated static record literals have no multiple-inclusion guard: batched
+# into one unity translation unit they redefine each other. System_omc.c also
+# carries a file-local '#define _GNU_SOURCE 1' for dladdr that cannot survive
+# batching. Keep them out of the unity batches to restore the fine-grained
+# resolution; no-op for non-unity builds.
+set_source_files_properties(System_omc.c SimulationResults_omc.c Settings_omc.cpp
+  Error_omc.cpp Dynload_omc.cpp ptolemyio_omc.cpp ffi_omc.cpp
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+
 
 # ######################################################################################################################
 # Library: omcruntime
@@ -163,6 +173,12 @@ set(OMC_BACKENDRUNTIIME_SOURCES
     matching_cheap.c
     FMI_omc.c
     cJSON.c)
+
+# HpcOmSchedulerExt_omc.cpp, HpcOmBenchmarkExt_omc.cpp and FMI_omc.c textually
+# include OpenModelicaBootstrappingHeader.h (see above): keep them out of the
+# unity batches; no-op for non-unity builds.
+set_source_files_properties(HpcOmSchedulerExt_omc.cpp HpcOmBenchmarkExt_omc.cpp
+  FMI_omc.c PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 
 target_sources(omcbackendruntime PRIVATE ${OMC_BACKENDRUNTIIME_SOURCES})
 

@@ -167,8 +167,11 @@ match elt
         >>
         else
         <<
+        #ifndef <%fullname%>__struct_added
+        #define <%fullname%>__struct_added
         static const MMC_DEFSTRUCTLIT(<%fullname%>__struct,1,<%ctor%>) {&<%omcname%>__desc}};
-        static void *<%fullname%> = MMC_REFSTRUCTLIT(<%fullname%>__struct);<%\n%>
+        static void *<%fullname%> = MMC_REFSTRUCTLIT(<%fullname%>__struct);
+        #endif<%\n%>
         >>
       %>
       >>

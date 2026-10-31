@@ -71,8 +71,8 @@ void printErrors(double delta_x, double delta_x_scaled, double delta_f, double e
 
 extern double enorm_(int *n, double *x);
 extern int dgesv_(int *n, int *nrhs, doublereal *a, int *lda, int *ipiv, doublereal *b, int *ldb, int *info);
-extern void dgetrf_(int *m, int *n, doublereal *fjac, int *lda, int* iwork, int *info);
-extern void dgetrs_(char *trans, int *n, int *nrhs, doublereal *a, int *lda, int *ipiv, doublereal *b, int *ldb, int *info);
+extern int dgetrf_(int *m, int *n, double *fjac, int *lda, int* iwork, int *info);
+extern int dgetrs_(char *trans, int *n, int *nrhs, double *a, int *lda, int *ipiv, double *b, int *ldb, int *info);
 
 /**
  * @brief Allocate NLS Newton data.
