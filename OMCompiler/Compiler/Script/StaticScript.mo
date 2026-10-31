@@ -103,7 +103,7 @@ algorithm
   end for;
 
   outSimulationArguments := list(ValuesUtil.valueExp(a) for a in
-    CevalScriptBackend.simulationArguments(className, listReverse(named), callName));
+    CevalScriptBackend.declaredSimulationArguments(className, listReverse(named), callName));
 end getSimulationArguments;
 
 protected function simulationArgumentType

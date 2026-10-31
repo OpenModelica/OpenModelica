@@ -1840,6 +1840,15 @@ pub fn realMaxLit() -> metamodelica::Real {
     metamodelica::OrderedFloat(f64::MAX / 2048.0)
 }
 
+pub fn realNaN() -> metamodelica::Real {
+    metamodelica::OrderedFloat(f64::NAN)
+}
+
+/// `OrderedFloat` treats NaN as equal to itself, so `r <> r` cannot detect it.
+pub fn realIsNaN(r: metamodelica::Real) -> bool {
+    r.0.is_nan()
+}
+
 // ───────────────────────────────── URI / platform info ───────────────────────
 
 /// Percent-decode a URI component, mirroring `decodeUri2` in

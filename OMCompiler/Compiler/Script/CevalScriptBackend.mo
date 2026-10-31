@@ -482,6 +482,88 @@ algorithm
   end if;
 end simulationArguments;
 
+public function declaredSimulationArguments
+  "Returns the arguments of simulate and the other simulation calls in the
+   order they are declared, with a sentinel for each argument not given."
+  input Absyn.Path className;
+  input list<tuple<String, Values.Value>> namedArgs;
+  input String callName;
+  output list<Values.Value> args;
+algorithm
+  args := ValuesMake.makeCodeTypeName(className) ::
+    list(simulationArgumentOrDefault(name, namedArgs, unsetSimulationArgument(name))
+         for name in simulationArgumentNames(callName));
+end declaredSimulationArguments;
+
+protected function simulationCallArguments
+  "Converts the declared arguments of a simulation call to the arguments it is
+   evaluated with. Other calls, and argument lists that do not match the
+   declaration, are returned unchanged."
+  input String callName;
+  input list<Values.Value> inArgs;
+  output list<Values.Value> args = inArgs;
+protected
+  Absyn.Path className;
+  list<Values.Value> rest;
+  list<String> names;
+  list<tuple<String, Values.Value>> named = {};
+algorithm
+  if not listMember(callName, {"simulate", "translateModel", "buildModel", "linearize", "optimize", "moo"}) then
+    return;
+  end if;
+
+  names := simulationArgumentNames(callName);
+  args := match inArgs
+    case Values.CODE(Absyn.C_TYPENAME(className)) :: rest guard listLength(rest) == listLength(names)
+      algorithm
+        for arg in List.zip(names, rest) loop
+          if not isUnsetSimulationArgument(Util.tuple22(arg)) then
+            named := arg :: named;
+          end if;
+        end for;
+      then
+        simulationArguments(className, listReverse(named), callName);
+    else inArgs;
+  end match;
+end simulationCallArguments;
+
+protected function simulationArgumentNames
+  input String callName;
+  output list<String> names = {"startTime", "stopTime", "numberOfIntervals", "stepSize", "tolerance",
+    "method", "fileNamePrefix", "options", "outputFormat", "variableFilter", "cflags", "simflags"};
+algorithm
+  if callName == "simulate" then
+    names := List.appendElt("resimulateExecutable", names);
+  end if;
+end simulationArgumentNames;
+
+protected function unsetSimulationArgument
+  input String name;
+  output Values.Value value;
+algorithm
+  value := match name
+    case "numberOfIntervals" then Values.INTEGER(-1);
+    case "resimulateExecutable" then Values.STRING("");
+    case "startTime" then Values.REAL(System.realNaN());
+    case "stopTime" then Values.REAL(System.realNaN());
+    case "stepSize" then Values.REAL(System.realNaN());
+    case "tolerance" then Values.REAL(System.realNaN());
+    else Values.STRING("<default>");
+  end match;
+end unsetSimulationArgument;
+
+protected function isUnsetSimulationArgument
+  input Values.Value value;
+  output Boolean unset;
+algorithm
+  unset := match value
+    case Values.REAL() then System.realIsNaN(value.real);
+    case Values.INTEGER() then value.integer < 0;
+    case Values.STRING() then value.string == "<default>";
+    else false;
+  end match;
+end isUnsetSimulationArgument;
+
 protected function simulationArgument
   input String name;
   input list<tuple<String, Values.Value>> namedArgs;
@@ -729,8 +811,9 @@ public function cevalInteractiveFunctions3
 protected
   import LexerModelicaDiff.{Token,TokenId,tokenContent,scanString,reportErrors,filterModelicaDiff,modelicaDiffTokenEq,modelicaDiffTokenWhitespace};
   import DiffAlgorithm.{Diff,diff,printActual,printDiffTerminalColor,printDiffXml};
+  list<Values.Value> args = simulationCallArguments(inFunctionName, inVals);
 algorithm
-  outValue := matchcontinue (inFunctionName,inVals)
+  outValue := matchcontinue (inFunctionName,args)
     local
       String simflags,s1,s2,s3,s4,s5,str,str1,str2,str3,str4,executable,
              outputFormat_str,initfilename,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,

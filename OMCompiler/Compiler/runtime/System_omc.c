@@ -117,6 +117,16 @@ extern const char* System_stringFindString(const char* str, const char* searchSt
   return strcpy(ModelicaAllocateString(strlen(found)), found);
 }
 
+extern double System_realNaN(void)
+{
+  return NAN;
+}
+
+extern int System_realIsNaN(double r)
+{
+  return isnan(r);
+}
+
 extern void System_realtimeTick(int ix)
 {
   if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) MMC_THROW();

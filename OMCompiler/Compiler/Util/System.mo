@@ -1038,6 +1038,17 @@ public function realMaxLit "Returns the maximum real that can be represent using
   external "builtin" outReal=realMaxLit();
 end realMaxLit;
 
+public function realNaN
+  output Real nan;
+  external "C" nan=System_realNaN() annotation(Library = "omcruntime");
+end realNaN;
+
+public function realIsNaN
+  input Real r;
+  output Boolean isNaN;
+  external "C" isNaN=System_realIsNaN(r) annotation(Library = "omcruntime");
+end realIsNaN;
+
 public function uriToClassAndPath "Handles modelica:// and file:// URI's. The result is an absolute path on the local system.
   The result depends on the current OPENMODELICALIBRARY (MODELICAPATH in the language specification). Sets the error buffer on failure."
   input String uri;

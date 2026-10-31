@@ -95,6 +95,15 @@ algorithm
   assert(false, getInstanceName());
 end getSimulationResultType;
 
+function declaredSimulationArguments
+  input Absyn.Path className;
+  input list<tuple<String, Values.Value>> namedArgs;
+  input String callName;
+  output list<Values.Value> args;
+algorithm
+  assert(false, getInstanceName());
+end declaredSimulationArguments;
+
 function simulationArguments
   input Absyn.Path className;
   input list<tuple<String, Values.Value>> namedArgs;
