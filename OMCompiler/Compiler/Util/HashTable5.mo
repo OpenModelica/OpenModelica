@@ -82,11 +82,6 @@ partial function FuncExpStr
   output String res;
 end FuncExpStr;
 
-protected function hashFunc
-"Calculates a hash value for Key"
-  input Key cr;
-  output Integer res = stringHashDjb2(Dump.printComponentRefStr(cr));
-end hashFunc;
 
 public function emptyHashTable
 "
@@ -106,7 +101,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(hashFunc,AbsynUtil.crefEqual,Dump.printComponentRefStr,intString));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(AbsynUtil.crefHash,AbsynUtil.crefEqual,Dump.printComponentRefStr,intString));
 end emptyHashTableSized;
 
 annotation(__OpenModelica_Interface="ast_collections");
