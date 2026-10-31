@@ -93,10 +93,17 @@ fn scripting_calls_are_evaluated_in_a_script() {
         no_messages("OpenModelica.Scripting.stringReplace(\"abc\", \"b\", \"x\")"),
         "\"axc\""
     );
-    // The first of the three outputs, as in any expression.
     assert_eq!(
         no_messages("OpenModelica.Scripting.convertUnits(\"m\", \"mm\")"),
-        "true"
+        "(true, 0.001, 0)"
+    );
+    assert_eq!(
+        no_messages("OpenModelica.Scripting.stringReplace({\"abc\", \"bcd\"}, \"b\", \"x\")"),
+        "{\"axc\", \"xcd\"}"
+    );
+    assert_eq!(
+        no_messages("OpenModelica.Scripting.typeNameString(OpenModelica.Scripting.stringTypeName(\"A.B\"))"),
+        "\"A.B\""
     );
     assert_eq!(no_messages("f(\"!\")"), "\"Modelica.Blocks!\"");
     assert!(no_messages("OpenModelica.Scripting.getVersion()").starts_with('"'));

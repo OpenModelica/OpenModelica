@@ -117,8 +117,14 @@ function evalScriptingFunction
   input list<Values.Value> args;
   input SourceInfo info;
   output Values.Value result;
+protected
+  FCore.Graph env;
 algorithm
-  (_, result) := CevalScript.cevalInteractiveFunctions2(FCore.emptyCache(), FGraph.empty(),
+  // Only these look classes up in the old frontend's environment.
+  env := if listMember(name, {"getExternalFunctions", "generateCode", "generateHeader",
+                              "generateSeparateCode", "generateSeparateCodeDependencies"})
+    then SymbolTable.buildEnv() else FGraph.empty();
+  (_, result) := CevalScript.cevalInteractiveFunctions2(FCore.emptyCache(), env,
     name, args, Absyn.MSG(info));
 end evalScriptingFunction;
 

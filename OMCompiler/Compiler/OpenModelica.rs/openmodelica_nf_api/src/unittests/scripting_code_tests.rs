@@ -80,6 +80,10 @@ fn code_arguments_are_quoted_in_a_script() {
         "setElementModifierValue($Code(A), $Code(b.c), $Code( = 1))"
     );
     assert!(ok("OpenModelica.Scripting.plot({a, der(b)})").starts_with("plot($Code({a, der(b)}), false, "));
+    assert_eq!(
+        ok("OpenModelica.Scripting.val(der(der(y)), 1.0)"),
+        "val($Code(der(der(y))), 1, \"<default>\")"
+    );
     assert!(ok("OpenModelica.Scripting.plot(z)").starts_with("plot($Code({z}), false, "));
 }
 

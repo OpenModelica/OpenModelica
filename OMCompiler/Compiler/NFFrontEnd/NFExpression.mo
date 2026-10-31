@@ -3034,6 +3034,7 @@ public
       case TUPLE() then Values.TUPLE(list(toDAEValue(e) for e in exp.elements));
       case FILENAME() then Values.STRING(exp.filename);
       case CODE() then codeToDAEValue(exp.code, exp.ty);
+      case EMPTY(ty = Type.NORETCALL()) then Values.NORETCALL();
 
       else
         algorithm
@@ -3212,10 +3213,12 @@ public
     output Boolean res;
   algorithm
     res := match exp
+      local
+        Absyn.Exp arg;
       case Absyn.Exp.CREF() then true;
       case Absyn.Exp.CALL(function_ = Absyn.ComponentRef.CREF_IDENT(name = "der"),
-                          functionArgs = Absyn.FunctionArgs.FUNCTIONARGS(args = {Absyn.Exp.CREF()}, argNames = {}))
-        then true;
+                          functionArgs = Absyn.FunctionArgs.FUNCTIONARGS(args = {arg}, argNames = {}))
+        then isQuotableVariableName(arg);
       else false;
     end match;
   end isQuotableVariableName;

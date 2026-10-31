@@ -301,7 +301,7 @@ public
     "Returns true if the given context indicates the expression is alone on
      either side of an equality/assignment."
     input Type context;
-    output Boolean isSingle = context < ITERATION_RANGE - 1;
+    output Boolean isSingle = unset(context, GLOBAL_FLAGS) < ITERATION_RANGE - 1;
   end isSingleExpression;
 
   function nodeContext
