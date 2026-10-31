@@ -3936,13 +3936,25 @@ fmi3Status fmi3GetAdjointDerivative(fmi3Instance instance, const fmi3ValueRefere
      over the "knowns" (states/inputs). Recover the per-real-type value
      reference understood by omcGetAdjointDerivative by subtracting the real
      base-type offset. */
-  if (nSeed != nUnknowns || nSensitivity != nKnowns) return fmi3Error;
-  u = (fmi3ValueReference*) calloc(nUnknowns, sizeof(fmi3ValueReference));
-  k = (fmi3ValueReference*) calloc(nKnowns,   sizeof(fmi3ValueReference));
+  /* FMI counts references separately from scalar elements. Expand whole-array
+   * references in the same row-major order as get/setFloat64 before entering
+   * the scalar Jacobian engine. Validate lengths before accessing buffers. */
+  if (nSeed != fmi3NumValues(unknowns, nUnknowns) ||
+      nSensitivity != fmi3NumValues(knowns, nKnowns)) return fmi3Error;
+  u = (fmi3ValueReference*) calloc(nSeed, sizeof(fmi3ValueReference));
+  k = (fmi3ValueReference*) calloc(nSensitivity ? nSensitivity : 1, sizeof(fmi3ValueReference));
   if (!u || !k) { free(u); free(k); return fmi3Error; }
-  for (i = 0; i < nUnknowns; i++) u[i] = (fmi3ValueReference)(unknowns[i] - FMI3_REAL_VR_OFFSET);
-  for (i = 0; i < nKnowns;   i++) k[i] = (fmi3ValueReference)(knowns[i]   - FMI3_REAL_VR_OFFSET);
-  status = omcGetAdjointDerivative(c, u, nUnknowns, k, nKnowns, seed, sensitivity);
+  for (i = 0, nSeed = 0; i < nUnknowns; i++) {
+    size_t j, count = fmi3ArrayLength(unknowns[i]);
+    for (j = 0; j < count; j++)
+      u[nSeed++] = (fmi3ValueReference)(unknowns[i] - FMI3_REAL_VR_OFFSET + j);
+  }
+  for (i = 0, nSensitivity = 0; i < nKnowns; i++) {
+    size_t j, count = fmi3ArrayLength(knowns[i]);
+    for (j = 0; j < count; j++)
+      k[nSensitivity++] = (fmi3ValueReference)(knowns[i] - FMI3_REAL_VR_OFFSET + j);
+  }
+  status = omcGetAdjointDerivative(c, u, nSeed, k, nSensitivity, seed, sensitivity);
   free(u);
   free(k);
   return status;

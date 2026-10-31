@@ -343,6 +343,7 @@ case SIMCODE(__) then
   fmi2ValueReference mapInputReference2InputNumber(const fmi2ValueReference vr);
   fmi2ValueReference mapOutputReference2OutputNumber(const fmi2ValueReference vr);
   int mapAdjointReference2KnownNumber(const fmi2ValueReference vr);
+  int mapAdjointReference2UnknownNumber(const fmi2ValueReference vr);
   fmi2ValueReference mapOutputReference2RealOutputDerivatives(const fmi2ValueReference vr);
   fmi2ValueReference mapInitialUnknownsdependentIndex(const fmi2ValueReference vr);
   fmi2ValueReference mapInitialUnknownsIndependentIndex(const fmi2ValueReference vr);

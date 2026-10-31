@@ -2487,6 +2487,9 @@ public function fmi3AdjointVariables
 protected
   HashTableCrefSimVar.HashTable ht;
   SimCodeVar.SimVar known;
+  UnorderedMap<Integer, Integer> indices = UnorderedMap.new<Integer>(Util.id, intEq);
+  Option<Integer> reference;
+  Integer vr;
 algorithm
   for jac in simCode.jacobianMatrices loop
     if jac.matrixName == "FMIDERADJ" and isSome(jac.crefsHT) then
@@ -2496,7 +2499,22 @@ algorithm
           else valueEq(v.varKind, BackendDAE.JAC_VAR())) and v.index >= 0 then
           known := v;
           known.name := ComponentReference.crefStripFirstIdent(v.name);
-          knowns := known :: knowns;
+          // The Jacobian hash table also contains aggregate array aliases.
+          // Only exported scalar keys belong in the scalarized VR switch;
+          // aggregate aliases may be absent from the model's VR table, or
+          // share the first element's VR and Jacobian index.
+          reference := AvlTreeCRToInt.getOpt(simCode.valueReferences, known.name);
+          if isSome(reference) then
+            vr := Util.getOption(reference);
+            if not UnorderedMap.contains(vr, indices) then
+              UnorderedMap.add(vr, known.index, indices);
+              knowns := known :: knowns;
+            else
+              true := UnorderedMap.getOrFail(vr, indices) == known.index;
+            end if;
+          elseif Flags.isSet(Flags.FAILTRACE) then
+            print("FMI adjoint: skipping non-exported aggregate " + ComponentReferenceBasics.printComponentRefStr(known.name) + "\n");
+          end if;
         end if;
       end for;
       knowns := List.sort(knowns, simVarIndexGt);

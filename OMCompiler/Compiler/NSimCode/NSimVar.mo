@@ -553,8 +553,16 @@ public
         source              = DAE.emptyElementSource, //ToDo update this!
         causality           = Util.applyOption(simVar.causality, convertCausality),
         variable_index      = simVar.variable_index,
-        fmi_index           = simVar.fmi_index,
-        numArrayElement     = list(Expression.toString(e) for e in simVar.numArrayElement),
+        // FMI indices identify XML variables globally, not per-type storage
+        // slots (parameter slot 0 otherwise collides with state slot 0).
+        fmi_index           = simVar.variable_index,
+        // Scalar storage still needs the declared array dimensions so FMI 3
+        // can group a complete row-major element run into one native variable.
+        // Do this only in the converted metadata, not in NB storage counts.
+        numArrayElement     = if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then
+          list(Expression.toString(layoutSizeExp(dim)) for dim in Type.arrayDims(
+            ComponentRef.getSubscriptedType(ComponentRef.stripSubscriptsAll(simVar.name))))
+          else list(Expression.toString(e) for e in simVar.numArrayElement),
         isValueChangeable   = simVar.isValueChangeable,
         isProtected         = simVar.isProtected,
         hideResult          = SOME(simVar.hideResult),
