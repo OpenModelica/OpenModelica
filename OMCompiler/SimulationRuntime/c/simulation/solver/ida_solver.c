@@ -858,7 +858,8 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   /* Check that tout is not less than timeValue otherwise the solver
    * will come in trouble.
    * If that is the case we skip the current step. */
-  if (solverInfo->currentStepSize < DASSL_STEP_EPS)
+  if ((solverInfo->currentStepSize < DASSL_STEP_EPS) ||
+      (solverInfo->currentStepSize < DASSL_STEP_EPS*(data->simulationInfo->stopTime - data->simulationInfo->startTime)))
   {
     infoStreamPrint(OMC_LOG_SOLVER, 0, "Desired step too small try next one");
     infoStreamPrint(OMC_LOG_SOLVER, 0, "Interpolate linear");
