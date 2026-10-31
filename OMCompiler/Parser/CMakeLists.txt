@@ -25,6 +25,15 @@ set(OM_PARSE_SOURCES ${OM_PARSE_SOURCES} ${ANTLR_BASE_LEXER_MetaModelica_Lexer_O
 omc_add_antlr_grammar_target(${CMAKE_CURRENT_SOURCE_DIR}/Modelica.g ${GNERATED_DIRECTORY})
 set(OM_PARSE_SOURCES ${OM_PARSE_SOURCES} ${GNERATED_DIRECTORY}/ModelicaParser.c)
 
+# The ANTLR-generated lexers and parsers each define identically-named
+# file-scope tables (lit_1, ...). They cannot share a unity translation unit,
+# so compile them separately; no-op for non-unity builds.
+set_source_files_properties(${ANTLR_BASE_LEXER_Modelica_3_Lexer_OUTPUT_SOURCES}
+  ${ANTLR_BASE_LEXER_ParModelica_Lexer_OUTPUT_SOURCES}
+  ${ANTLR_BASE_LEXER_MetaModelica_Lexer_OUTPUT_SOURCES}
+  ${GNERATED_DIRECTORY}/ModelicaParser.c
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+
 
 # ######################################################################################################################
 # Library: omparse

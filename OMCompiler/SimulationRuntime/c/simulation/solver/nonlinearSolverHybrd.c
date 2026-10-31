@@ -165,7 +165,7 @@ void freeHybrdData(DATA_HYBRD* hybrdData)
  *
  *  \author wbraun
  */
-static void printVector(const double *vector, const integer size, const int logLevel, const char *name)
+static void printVectorHybrd(const double *vector, const integer size, const int logLevel, const char *name)
 {
   int i;
   if (!OMC_ACTIVE_STREAM(logLevel)) return;
@@ -272,7 +272,7 @@ static int getNumericalJacobian(NLS_USERDATA* hybrdUserData, double* jac, const 
  * @param jac             Contains values of Jacobian J(x) on exit.
  * @return int            Return 0 on success.
  */
-static int getAnalyticalJacobian(NLS_USERDATA* hybrdUserData, double* jac)
+static int getAnalyticalJacobianHybrd(NLS_USERDATA* hybrdUserData, double* jac)
 {
   DATA *data = hybrdUserData->data;
   threadData_t *threadData = hybrdUserData->threadData;
@@ -326,8 +326,8 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
     /* debug output */
     if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_RES)) {
       infoStreamPrint(OMC_LOG_NLS_RES, 0, "-- residual function call %d -- scaling = %d", (int)hybrdData->nfev, hybrdData->useXScaling);
-      printVector(x, n, OMC_LOG_NLS_RES, "x vector (scaled)");
-      printVector(hybrdData->xScaled, n, OMC_LOG_NLS_RES, "x vector");
+      printVectorHybrd(x, n, OMC_LOG_NLS_RES, "x vector (scaled)");
+      printVectorHybrd(hybrdData->xScaled, n, OMC_LOG_NLS_RES, "x vector");
     }
 
     /* call residual function */
@@ -344,7 +344,7 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
 
     /* debug output */
     if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_RES)) {
-      printVector(f, n, OMC_LOG_NLS_RES, "residuals");
+      printVectorHybrd(f, n, OMC_LOG_NLS_RES, "residuals");
       infoStreamPrint(OMC_LOG_NLS_RES, 0, "-- end of residual function call %d --", (int)hybrdData->nfev);
     }
 
@@ -366,7 +366,7 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
       integer iflagtmp = 1;
       wrapper_fvec_hybrj(n_p, x, f, fjac, ldjac, &iflagtmp, userData);
 
-      getAnalyticalJacobian(userData, fjac);
+      getAnalyticalJacobianHybrd(userData, fjac);
     }
     else{
       getNumericalJacobian(userData, fjac, x, f);
@@ -496,8 +496,8 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
 
     /* debug output */
     if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_V)) {
-      printVector(hybrdData->xScalefactors, (hybrdData->n), OMC_LOG_NLS_V, "scaling factors x vector");
-      printVector(hybrdData->x, (hybrdData->n), OMC_LOG_NLS_V, "Iteration variable values");
+      printVectorHybrd(hybrdData->xScalefactors, (hybrdData->n), OMC_LOG_NLS_V, "scaling factors x vector");
+      printVectorHybrd(hybrdData->x, (hybrdData->n), OMC_LOG_NLS_V, "Iteration variable values");
     }
 
     /* Scaling x vector */
@@ -510,7 +510,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
     /* debug output */
     if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_V))
     {
-      printVector(hybrdData->x, hybrdData->n, OMC_LOG_NLS_V, "Iteration variable values (scaled)");
+      printVectorHybrd(hybrdData->x, hybrdData->n, OMC_LOG_NLS_V, "Iteration variable values (scaled)");
     }
 
     /* set residual function continuous */

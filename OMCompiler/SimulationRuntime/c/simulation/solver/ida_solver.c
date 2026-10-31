@@ -69,7 +69,7 @@ static int callDenseJacobian(sunrealtype tt, sunrealtype cj, N_Vector yy,
                              void *user_data, N_Vector tmp1, N_Vector tmp2,
                              N_Vector tmp3);
 
-static int callSparseJacobian(sunrealtype currentTime, sunrealtype cj,
+static int callSparseJacobianIda(sunrealtype currentTime, sunrealtype cj,
                               N_Vector yy, N_Vector yp, N_Vector rr, SUNMatrix Jac, void *user_data,
                               N_Vector tmp1, N_Vector tmp2, N_Vector tmp3);
 
@@ -463,7 +463,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     case COLOREDSYMJACADJ:
     case BICOLOREDSYMJAC:
     case COLOREDNUMJAC:
-      flag = IDASetJacFn(idaData->ida_mem, callSparseJacobian);
+      flag = IDASetJacFn(idaData->ida_mem, callSparseJacobianIda);
 
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDALS_FLAG, "IDASetJacFn");
       if (omc_flag[FLAG_IDA_SCALING]) {
@@ -1667,7 +1667,7 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
  * ToDo: backend: generate seeds for der(x)
          here: always set der(x) seeds to cj when setting seed for x
  */
-int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
+int jacColoredSymbolicalSparseIda(double currentTime, N_Vector yy, N_Vector yp,
                                N_Vector rr, SUNMatrix Jac, double cj,
                                void *userData)
 {
@@ -1693,7 +1693,7 @@ int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
 /*
  * Wrapper function to call numerical or symbolical jacobian matrix
  */
-static int callSparseJacobian(double currentTime, double cj,
+static int callSparseJacobianIda(double currentTime, double cj,
                               N_Vector yy, N_Vector yp, N_Vector rr,
                               SUNMatrix Jac, void *user_data,
                               N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
@@ -1711,7 +1711,7 @@ static int callSparseJacobian(double currentTime, double cj,
   if (idaData->jacobianMethod == COLOREDSYMJAC || idaData->jacobianMethod == SYMJAC
       || idaData->jacobianMethod == COLOREDSYMJACADJ || idaData->jacobianMethod == BICOLOREDSYMJAC)
   {
-    jacColoredSymbolicalSparse(currentTime, yy, yp, rr, Jac, cj, user_data);
+    jacColoredSymbolicalSparseIda(currentTime, yy, yp, rr, Jac, cj, user_data);
   }
   else if (idaData->jacobianMethod == COLOREDNUMJAC || idaData->jacobianMethod == NUMJAC)
   {
@@ -1774,7 +1774,7 @@ static int getScalingFactors(DATA* data, IDA_SOLVER* idaData, SUNMatrix inScaleM
       if (idaData->scaleMatrix == NULL) {
         idaData->scaleMatrix = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ + idaData->N, SUN_CSC_MAT, idaData->sunctx);
       }
-      callSparseJacobian(data->localData[0]->timeValue, 1.0, idaData->y, idaData->yp, rres,
+      callSparseJacobianIda(data->localData[0]->timeValue, 1.0, idaData->y, idaData->yp, rres,
                          idaData->scaleMatrix, idaData, tmp1, tmp2, tmp3);
     }
     else
