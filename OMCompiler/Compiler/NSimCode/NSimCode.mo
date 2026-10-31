@@ -80,7 +80,7 @@ protected
   import BackendDAE = NBackendDAE;
   import NBPartitioning.ClockedInfo;
   import BEquation = NBEquation;
-  import NBEquation.{Equation, EquationPointer, EquationPointers, EqData};
+  import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, Iterator};
   import NBEvents.EventInfo;
   import NBInitialization;
   import NBVariable.{VariablePointers, VarData};
@@ -92,6 +92,7 @@ protected
   import SimCodeUtil = NSimCodeUtil;
   import NSimJacobian.SimJacobian;
   import SimGenericCall = NSimGenericCall;
+  import NSimGenericCall.SimIterator;
   import SimPartition = NSimPartition;
   import SimStrongComponent = NSimStrongComponent;
   import NSimVar.{SimVar, SimVars, VarInfo, ExtObjInfo, ConvertMemo};
@@ -187,6 +188,8 @@ public
     );
   end EMPTY_SIM_CODE_INDICES;
 
+  type DelayBuffers = tuple<Integer, list<SimIterator>> "first buffer of a delay() call and the iterators of its index";
+
   uniontype SimCode
     record SIM_CODE
       ModelInfo modelInfo;
@@ -218,7 +221,7 @@ public
       list<ComponentRef> discreteVars                   "List of discrete variables";
       ExtObjInfo extObjInfo;
       OldSimCodeFunction.MakefileParams makefileParams;
-      list<Expression> delayedExps                     "delay() calls, the position is the index of the buffer";
+      list<tuple<Expression, list<SimIterator>>> delayedExps "indexed delay() calls and the iterators their index depends on";
       list<SimJacobian> jacobians       "List of symbolic jacobians";
       Option<OldSimCode.SimulationSettings> simulationSettingsOpt; // replace this with new struct
       String fileNamePrefix;//, fullPathPrefix "Used in FMI where files are generated in a special directory";
@@ -349,8 +352,9 @@ public
           SimJacobian jacA, jacB, jacC, jacD, jacF, jacH, jacAdjoint, jacLfg, jacMrf, jacR0;
           list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
           mapExp collect_literals, index_delays;
-          UnorderedMap<Expression, Integer> delay_map = UnorderedMap.new<Integer>(Expression.hash, Expression.isEqual);
-          list<Expression> delayedExps;
+          UnorderedMap<Expression, DelayBuffers> delay_map = UnorderedMap.new<DelayBuffers>(Expression.hash, Expression.isEqual);
+          Pointer<Integer> delay_size = Pointer.create(0);
+          list<tuple<Expression, list<SimIterator>>> delayedExps;
           EventInfo eventInfo;
         case BackendDAE.MAIN(varData = varData as BVariable.VAR_DATA_SIM(), eqData = eqData as BEquation.EQ_DATA_SIM())
           algorithm
@@ -493,8 +497,9 @@ public
             generic_loop_calls  := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(simCodeIndices.generic_call_map));
 
             // number the delay() calls, equal calls share one buffer
-            index_delays        := function Expression.map(func = function indexDelay(map = delay_map));
-            generic_loop_calls  := list(SimGenericCall.mapShallow(call, index_delays) for call in generic_loop_calls);
+            index_delays        := function Expression.map(func = function indexDelay(map = delay_map, size = delay_size, iters = {}));
+            generic_loop_calls  := list(indexDelaysCall(call, delay_map, delay_size) for call in generic_loop_calls);
+            jacobians           := list(SimJacobian.mapGenericCalls(jac, function indexDelaysCall(map = delay_map, size = delay_size)) for jac in jacobians);
             jacobians           := list(SimJacobian.mapExp(jac, index_delays) for jac in jacobians);
             independent         := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in independent);
             allSim              := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in allSim);
@@ -511,9 +516,9 @@ public
             linearLoops         := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in linearLoops);
             nonlinearLoops      := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in nonlinearLoops);
             daeModeData         := Util.applyOption(daeModeData, function DaeModeData.mapShallow(func = index_delays));
-            eventInfo           := EventInfo.mapExp(bdae.eventInfo, index_delays);
-            delayedExps         := UnorderedMap.keyList(delay_map);
-            eventInfo.delays    := list(indexDelay(exp, delay_map) for exp in delayedExps);
+            eventInfo           := EventInfo.mapExp(bdae.eventInfo, function indexDelaysIter(map = delay_map, size = delay_size));
+            delayedExps         := list((indexDelay(Util.tuple21(tpl), delay_map, delay_size, Util.tuple22(Util.tuple22(tpl))), Util.tuple22(Util.tuple22(tpl))) for tpl in UnorderedMap.toList(delay_map));
+            eventInfo.delays    := delayedExps;
 
             // replace literal expressions
             generic_loop_calls  := list(SimGenericCall.mapShallow(call, collect_literals) for call in generic_loop_calls);
@@ -675,44 +680,128 @@ public
     end convert;
 
     function indexDelay
-      "delay(expr, delayTime, delayMax) -> delay(index, expr, delayTime, delayMax)
-      with the index of its buffer. Use with Expression.map."
+      "delay(expr, delayTime, delayMax) -> delay(index, expr, delayTime, delayMax) with the
+      index of its buffer. Equal calls share one, in for-loops each iteration of the iterators
+      the call depends on gets its own. Use with Expression.map."
       input output Expression exp;
-      input UnorderedMap<Expression, Integer> map;
+      input UnorderedMap<Expression, DelayBuffers> map;
+      input Pointer<Integer> size "number of buffers";
+      input list<SimIterator> iters "iterators of the enclosing for-loop";
     algorithm
       exp := match exp
         local
           Call call;
-          Integer index;
+          Integer index, n;
+          list<SimIterator> delay_iters, old_iters;
+          list<ComponentRef> names;
+          Expression index_exp;
+          Boolean supported;
 
-        case Expression.CALL(call = call as Call.TYPED_CALL(arguments = {_, _, _}))
-          guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "delay") algorithm
-          if Expression.contains(exp, Expression.isIterator) then
-            Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because delay() in for-equations is not yet supported: " + Expression.toString(exp)});
+        case Expression.CALL(call = call as Call.TYPED_CALL(arguments = {_, _, _})) guard(isDelay(exp)) algorithm
+          delay_iters := list(it for it guard Expression.contains(exp, function isIteratorOf(names = SimIterator.names(it))) in iters);
+          delay_iters := List.sort(delay_iters, iteratorNameGt);
+          names := List.flatten(list(SimIterator.names(it) for it in delay_iters));
+          (_, n, supported) := SimIterator.flatIndex(delay_iters);
+          if not supported or Expression.contains(exp, function isOtherIterator(names = names)) then
+            Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because delay() is not supported in this for-loop: " + Expression.toString(exp)});
             fail();
           end if;
-          index := UnorderedMap.tryAdd(exp, UnorderedMap.size(map), map);
-          exp.call := Call.setArguments(call, Expression.INTEGER(index) :: call.arguments);
+          index := match UnorderedMap.get(exp, map)
+            case SOME((index, old_iters))
+              guard(List.toString(delay_iters, SimIterator.toString) == List.toString(old_iters, SimIterator.toString))
+            then index;
+            case NONE() algorithm
+              index := Pointer.access(size);
+              UnorderedMap.add(exp, (index, delay_iters), map);
+              Pointer.update(size, index + n);
+            then index;
+            else algorithm
+              Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because delay() occurs in for-loops with different ranges: " + Expression.toString(exp)});
+            then fail();
+          end match;
+          (index_exp, _) := SimIterator.flatIndex(delay_iters, index);
+          exp.call := Call.setArguments(call, index_exp :: call.arguments);
         then exp;
 
         else exp;
       end match;
     end indexDelay;
 
+    function indexDelaysCall
+      input output SimGenericCall call;
+      input UnorderedMap<Expression, DelayBuffers> map;
+      input Pointer<Integer> size;
+    algorithm
+      call := SimGenericCall.mapShallow(call, function Expression.map(func = function indexDelay(map = map, size = size, iters = SimGenericCall.getIterators(call))));
+    end indexDelaysCall;
+
+    function indexDelaysIter
+      input output Expression exp;
+      input Iterator iter;
+      input UnorderedMap<Expression, DelayBuffers> map;
+      input Pointer<Integer> size;
+    protected
+      list<SimIterator> iters = if Iterator.isEmpty(iter) or not Expression.contains(exp, isDelay) then {} else SimIterator.fromIterator(iter);
+    algorithm
+      exp := Expression.map(exp, function indexDelay(map = map, size = size, iters = iters));
+    end indexDelaysIter;
+
+    function isDelay
+      input Expression exp;
+      output Boolean b;
+    algorithm
+      b := match exp
+        local
+          Call call;
+        case Expression.CALL(call = call as Call.TYPED_CALL()) then AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "delay";
+        else false;
+      end match;
+    end isDelay;
+
+    function isIteratorOf
+      input Expression exp;
+      input list<ComponentRef> names;
+      output Boolean b;
+    algorithm
+      b := match exp
+        case Expression.CREF() then List.isMemberOnTrue(exp.cref, names, ComponentRef.isEqual);
+        else false;
+      end match;
+    end isIteratorOf;
+
+    function isOtherIterator
+      input Expression exp;
+      input list<ComponentRef> names;
+      output Boolean b = Expression.isIterator(exp) and not isIteratorOf(exp, names);
+    end isOtherIterator;
+
+    function iteratorNameGt
+      input SimIterator iter1;
+      input SimIterator iter2;
+      output Boolean b = stringCompare(ComponentRef.toString(listHead(SimIterator.names(iter1))), ComponentRef.toString(listHead(SimIterator.names(iter2)))) > 0;
+    end iteratorNameGt;
+
     function convertDelayedExps
-      input list<Expression> delayedExps;
+      input list<tuple<Expression, list<SimIterator>>> delayedExps;
       output OldSimCode.DelayedExpression oldDelayedExps;
     protected
       list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> lst = {};
-      Integer index = 0;
-      Expression e, delayTime, delayMax;
+      list<tuple<DAE.Exp, tuple<DAE.Exp, DAE.Exp, DAE.Exp>, list<OldBackendDAE.SimIterator>>> loops = {};
+      Integer size = 0, n;
+      Expression index, e, delayTime, delayMax;
+      list<SimIterator> iters;
     algorithm
-      for exp in delayedExps loop
-        Expression.CALL(call = Call.TYPED_CALL(arguments = {e, delayTime, delayMax})) := exp;
-        lst := (index, (Expression.toDAE(e), Expression.toDAE(delayTime), Expression.toDAE(delayMax))) :: lst;
-        index := index + 1;
+      for tpl in delayedExps loop
+        (Expression.CALL(call = Call.TYPED_CALL(arguments = {index, e, delayTime, delayMax})), iters) := tpl;
+        if listEmpty(iters) then
+          lst := (Expression.integerValue(index), (Expression.toDAE(e), Expression.toDAE(delayTime), Expression.toDAE(delayMax))) :: lst;
+        else
+          loops := (Expression.toDAE(index), (Expression.toDAE(e), Expression.toDAE(delayTime), Expression.toDAE(delayMax)), list(SimIterator.convert(it) for it in iters)) :: loops;
+        end if;
+        (_, n) := SimIterator.flatIndex(iters);
+        size := size + n;
       end for;
-      oldDelayedExps := OldSimCode.DELAYED_EXPRESSIONS(listReverse(lst), index);
+      oldDelayedExps := OldSimCode.DELAYED_EXPRESSIONS(listReverse(lst), size, listReverse(loops));
     end convertDelayedExps;
 
     function getDirectoryAndLibs
