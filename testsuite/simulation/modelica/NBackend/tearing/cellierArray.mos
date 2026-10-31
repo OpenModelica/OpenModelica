@@ -306,17 +306,23 @@ val(c[2].wIn, 1);
 //   [INI] Tearing Result 1
 // ==========================
 //
-// BLOCK: Algebraic Loop (Linear = false, Mixed = false, Homotopy = false, size = 7)
+// BLOCK: Algebraic Loop (Linear = false, Mixed = false, Homotopy = false, size = 8)
 // -----------------------------------------------------------------------------------
 // Strict Tearing Set
 // ********************
 // ### Iteration Variables:
-//     [ALGB] (2) Real[2] T (start = {1.0 for $f1 in 1:2})
-// 	slice: {0}
+//     [ALGB] (1) Real[1] $RZ_8 (start = {1.0 for $f1 in 1:1})
 // ### Residual Equations:
 //     [SCAL] (1) $RES_SIM_2_0 = h[1, :] * X - hIn[1]; ($RES_SIM_2_0)
 // ### Inner Equations:
-//     BLOCK: Sliced Component (status = Solve.UNPROCESSED, size = 3)
+//     BLOCK: Sliced Component (status = Solve.EXPLICIT, size = 1)
+// -------------------------------------------------------------
+// ### Variable:
+// 	T[1]
+// ### Equation:
+// 	[SCAL] (1) T[1] = $RZ_8[1]; ($RES_SIM_8)
+//
+//   BLOCK: Sliced Component (status = Solve.UNPROCESSED, size = 3)
 // ----------------------------------------------------------------
 // ### Variable:
 // 	g[$i1, $i2]
@@ -348,17 +354,23 @@ val(c[2].wIn, 1);
 //   [ODE] Tearing Result 1
 // ==========================
 //
-// BLOCK: Algebraic Loop (Linear = false, Mixed = false, Homotopy = false, size = 7)
+// BLOCK: Algebraic Loop (Linear = false, Mixed = false, Homotopy = false, size = 8)
 // -----------------------------------------------------------------------------------
 // Strict Tearing Set
 // ********************
 // ### Iteration Variables:
-//     [ALGB] (2) Real[2] T (start = {1.0 for $f1 in 1:2})
-// 	slice: {0}
+//     [ALGB] (1) Real[1] $RZ_10 (start = {1.0 for $f1 in 1:1})
 // ### Residual Equations:
 //     [SCAL] (1) $RES_SIM_2_0 = h[1, :] * X - hIn[1]; ($RES_SIM_2_0)
 // ### Inner Equations:
-//     BLOCK: Sliced Component (status = Solve.UNPROCESSED, size = 3)
+//     BLOCK: Sliced Component (status = Solve.EXPLICIT, size = 1)
+// -------------------------------------------------------------
+// ### Variable:
+// 	T[1]
+// ### Equation:
+// 	[SCAL] (1) T[1] = $RZ_10[1]; ($RES_SIM_10)
+//
+//   BLOCK: Sliced Component (status = Solve.UNPROCESSED, size = 3)
 // ----------------------------------------------------------------
 // ### Variable:
 // 	g[$i1, $i2]

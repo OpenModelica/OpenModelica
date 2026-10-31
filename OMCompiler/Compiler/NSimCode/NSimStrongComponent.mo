@@ -867,28 +867,6 @@ public
       end match;
     end solvesConstant;
 
-    function jacobianHasGenericLoopCalls
-      "True if this Jacobian's per-column evaluation uses generic for-loop/array calls."
-      input SimJacobian jac;
-      output Boolean b;
-    algorithm
-      b := match jac
-        case SimJacobian.SIM_JAC() then not listEmpty(jac.generic_loop_calls);
-      end match;
-    end jacobianHasGenericLoopCalls;
-
-    function isForOrGenericResidual
-      "True for for-loop/generic-index residual block kinds (unsupported by the linear-system codegen)."
-      input Block blck;
-      output Boolean b;
-    algorithm
-      b := match blck
-        case FOR_RESIDUAL()     then true;
-        case GENERIC_RESIDUAL() then true;
-        else false;
-      end match;
-    end isForOrGenericResidual;
-
     function fromStrongComponent
       input StrongComponent comp;
       output Block blck;
@@ -1121,12 +1099,10 @@ public
             fail();
           end if;
 
-          if comp.linear and isSome(jacobian) and allLinVarsFound and (kind == NBPartition.Kind.JAC or (not comp.homotopy and not comp.mixed
-                         and not List.any(eqns, isForOrGenericResidual) and not jacobianHasGenericLoopCalls(Util.getOption(jacobian)))) then
+          if comp.linear and isSome(jacobian) and allLinVarsFound and (kind == NBPartition.Kind.JAC or (not comp.homotopy and not comp.mixed)) then
             // Linear torn systems with an analytic Jacobian get solved directly (A*x=b)
-            // instead of via Newton (#16458). Homotopy, for-loop/generic residuals,
-            // generic_loop_calls Jacobians, and mixed (discrete-coupled, e.g. ideal-diode
-            // switching networks) systems fall back below -- a one-shot direct solve has
+            // instead of via Newton (#16458). Homotopy and mixed (discrete-coupled,
+            // e.g. ideal-diode switching networks) systems fall back below -- a one-shot direct solve has
             // no damping across the discrete state, and coarser NBackend tearing than OB's
             // for these networks makes that chatter across event iterations instead of
             // settling (see newInst-newBackend library-testing regressions after #16463).
