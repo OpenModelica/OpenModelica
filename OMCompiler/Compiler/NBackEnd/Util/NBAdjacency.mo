@@ -2259,7 +2259,7 @@ public
           then v >= start and v <= stop;
         case Expression.RANGE(start = Expression.INTEGER(start), step = SOME(Expression.INTEGER(step)), stop = Expression.INTEGER(stop))
           guard(step <> 0)
-          then (if step > 0 then v >= start and v <= stop else v <= start and v >= stop) and intMod(v - start, step) == 0;
+          then (step > 0 and v >= start and v <= stop or step < 0 and v <= start and v >= stop) and intMod(v - start, step) == 0;
         case Expression.ARRAY() guard(Array.all(slice.elements, Expression.isInteger))
           then Array.any(slice.elements, function Expression.isEqual(exp2 = index));
         else true;
