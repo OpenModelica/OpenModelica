@@ -678,7 +678,9 @@ protected
 algorithm
   path := InstNode.scopePath(scope);
   lits := list(e.literal for e in literals);
-  ty := Type.ENUMERATION(path, lits);
+  // The relative path is not unique, e.g. for a type in the simulated model
+  // and a top-level type with the same name.
+  ty := Type.ENUMERATION(path, lits, InstNode.enclosingScopePath(scope));
 end makeEnumerationType;
 
 function expandClass

@@ -87,6 +87,7 @@ public
   record ENUMERATION
     Absyn.Path typePath;
     list<String> literals;
+    Absyn.Path classPath "The full path of the declaring class, the type's name in the backend.";
   end ENUMERATION;
 
   // TODO: Remove this, which requires updating the bootstrapping sources to
@@ -1200,7 +1201,7 @@ public
       case Type.REAL() then DAE.T_REAL_DEFAULT;
       case Type.STRING() then DAE.T_STRING_DEFAULT;
       case Type.BOOLEAN() then DAE.T_BOOL_DEFAULT;
-      case Type.ENUMERATION() then DAE.T_ENUMERATION(NONE(), ty.typePath, ty.literals, {}, {});
+      case Type.ENUMERATION() then DAE.T_ENUMERATION(NONE(), ty.classPath, ty.literals, {}, {});
       case Type.CLOCK() then DAE.T_CLOCK_DEFAULT;
       case Type.ARRAY()
         then DAE.T_ARRAY(toDAE(ty.elementType, makeTypeVars),

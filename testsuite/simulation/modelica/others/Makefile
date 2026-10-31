@@ -82,6 +82,7 @@ TestSolve19.mos \
 Ticket5129.mos \
 ResultFileArrow.mos \
 ResultFileArrowTimeAlias.mos \
+EnumerationTypeNames.mos \
 ResultFileEnumeration.mos \
 ResultFileEnumerationInitXml.mos \
 VariableFilter.mos \

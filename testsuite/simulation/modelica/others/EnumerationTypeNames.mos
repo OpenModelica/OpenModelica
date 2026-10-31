@@ -1,0 +1,179 @@
+// name: EnumerationTypeNames
+// keywords: enumeration type name init xml fmu modelDescription
+// status: correct
+// suite: cSources
+// teardown_command: rm -rf EnumerationTypeNames_* EnumerationTypeNames EnumerationTypeNames.c EnumerationTypeNames.exe EnumerationTypeNames.libs EnumerationTypeNames.log EnumerationTypeNames.makefile EnumerationTypeNames.o EnumerationTypeNames.fmu EnumerationTypeNames.fmutmp/ output.log
+//
+// Enumeration types are named by the full path of the declaring class in
+// the type definitions of the init XML and of modelDescription.xml, so a
+// type declared in the simulated model does not collide with a top-level
+// type of the same name, and all instances of a class share one type (#17462).
+
+loadString("
+type Mode = enumeration(X, Y, Z);
+package P
+  model Sub
+    type Mode = enumeration(On, Off);
+    Mode s = Mode.Off;
+  end Sub;
+  model Base
+    type Level = enumeration(Low, High);
+    Level lv = Level.High;
+  end Base;
+end P;
+model EnumerationTypeNames
+  extends P.Base;
+  type Mode = enumeration(A, B);
+  Mode t = Mode.B;
+  .Mode g = .Mode.Z;
+  P.Sub sub1, sub2;
+end EnumerationTypeNames;
+"); getErrorString();
+
+buildModel(EnumerationTypeNames); getErrorString();
+regex(readFile("EnumerationTypeNames_init.xml"), "<TypeDefinitions>.*</TypeDefinitions>");
+system("grep -o -E '^ *name ?= ?\"[^\"]*\"|declaredType=\"[^\"]*\"' EnumerationTypeNames_init.xml", outputFile = "EnumerationTypeNames_ob.txt"); readFile("EnumerationTypeNames_ob.txt");
+
+buildModelFMU(EnumerationTypeNames, version = "2.0", fmuType = "me"); getErrorString();
+system("unzip -o -qq EnumerationTypeNames.fmu modelDescription.xml -d EnumerationTypeNames_fmu"); getErrorString();
+regex(readFile("EnumerationTypeNames_fmu/modelDescription.xml"), "<TypeDefinitions>.*</TypeDefinitions>");
+system("grep -o -E '^ *name ?= ?\"[^\"]*\"|declaredType=\"[^\"]*\"' EnumerationTypeNames_fmu/modelDescription.xml", outputFile = "EnumerationTypeNames_fmu.txt"); readFile("EnumerationTypeNames_fmu.txt");
+
+setCommandLineOptions("--newBackend"); getErrorString();
+buildModel(EnumerationTypeNames, fileNamePrefix = "EnumerationTypeNames_nb"); getErrorString();
+regex(readFile("EnumerationTypeNames_nb_init.xml"), "<TypeDefinitions>.*</TypeDefinitions>");
+system("grep -o -E '^ *name ?= ?\"[^\"]*\"|declaredType=\"[^\"]*\"' EnumerationTypeNames_nb_init.xml", outputFile = "EnumerationTypeNames_nb.txt"); readFile("EnumerationTypeNames_nb.txt");
+
+// Result:
+// true
+// ""
+// {"EnumerationTypeNames", "EnumerationTypeNames_init.xml"}
+// ""
+// (1, {"<TypeDefinitions>
+// <SimpleType name=\"Mode\">
+// <Enumeration>
+// <Item name=\"X\" value=\"1\"/>
+// <Item name=\"Y\" value=\"2\"/>
+// <Item name=\"Z\" value=\"3\"/>
+// </Enumeration>
+// </SimpleType>
+// <SimpleType name=\"P.Base.Level\">
+// <Enumeration>
+// <Item name=\"Low\" value=\"1\"/>
+// <Item name=\"High\" value=\"2\"/>
+// </Enumeration>
+// </SimpleType>
+// <SimpleType name=\"P.Sub.Mode\">
+// <Enumeration>
+// <Item name=\"On\" value=\"1\"/>
+// <Item name=\"Off\" value=\"2\"/>
+// </Enumeration>
+// </SimpleType>
+// <SimpleType name=\"EnumerationTypeNames.Mode\">
+// <Enumeration>
+// <Item name=\"A\" value=\"1\"/>
+// <Item name=\"B\" value=\"2\"/>
+// </Enumeration>
+// </SimpleType>
+// </TypeDefinitions>"})
+// 0
+// " name = \"g\"
+// declaredType=\"Mode\"
+// name = \"lv\"
+// declaredType=\"P.Base.Level\"
+// name = \"sub1.s\"
+// declaredType=\"P.Sub.Mode\"
+// name = \"sub2.s\"
+// declaredType=\"P.Sub.Mode\"
+// name = \"t\"
+// declaredType=\"EnumerationTypeNames.Mode\"
+// "
+// "EnumerationTypeNames.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// (1, {"<TypeDefinitions>
+// <SimpleType name=\"Mode\">
+// <Enumeration>
+// <Item name=\"X\" value=\"1\"/>
+// <Item name=\"Y\" value=\"2\"/>
+// <Item name=\"Z\" value=\"3\"/>
+// </Enumeration>
+// </SimpleType>
+// <SimpleType name=\"P.Base.Level\">
+// <Enumeration>
+// <Item name=\"Low\" value=\"1\"/>
+// <Item name=\"High\" value=\"2\"/>
+// </Enumeration>
+// </SimpleType>
+// <SimpleType name=\"P.Sub.Mode\">
+// <Enumeration>
+// <Item name=\"On\" value=\"1\"/>
+// <Item name=\"Off\" value=\"2\"/>
+// </Enumeration>
+// </SimpleType>
+// <SimpleType name=\"EnumerationTypeNames.Mode\">
+// <Enumeration>
+// <Item name=\"A\" value=\"1\"/>
+// <Item name=\"B\" value=\"2\"/>
+// </Enumeration>
+// </SimpleType>
+// </TypeDefinitions>"})
+// 0
+// " name=\"g\"
+// declaredType=\"Mode\"
+// name=\"lv\"
+// declaredType=\"P.Base.Level\"
+// name=\"sub1.s\"
+// declaredType=\"P.Sub.Mode\"
+// name=\"sub2.s\"
+// declaredType=\"P.Sub.Mode\"
+// name=\"t\"
+// declaredType=\"EnumerationTypeNames.Mode\"
+// "
+// true
+// ""
+// {"EnumerationTypeNames_nb", "EnumerationTypeNames_nb_init.xml"}
+// ""
+// (1, {"<TypeDefinitions>
+// <SimpleType name=\"P.Base.Level\">
+// <Enumeration>
+// <Item name=\"Low\" value=\"1\"/>
+// <Item name=\"High\" value=\"2\"/>
+// </Enumeration>
+// </SimpleType>
+// <SimpleType name=\"EnumerationTypeNames.Mode\">
+// <Enumeration>
+// <Item name=\"A\" value=\"1\"/>
+// <Item name=\"B\" value=\"2\"/>
+// </Enumeration>
+// </SimpleType>
+// <SimpleType name=\"Mode\">
+// <Enumeration>
+// <Item name=\"X\" value=\"1\"/>
+// <Item name=\"Y\" value=\"2\"/>
+// <Item name=\"Z\" value=\"3\"/>
+// </Enumeration>
+// </SimpleType>
+// <SimpleType name=\"P.Sub.Mode\">
+// <Enumeration>
+// <Item name=\"On\" value=\"1\"/>
+// <Item name=\"Off\" value=\"2\"/>
+// </Enumeration>
+// </SimpleType>
+// </TypeDefinitions>"})
+// 0
+// " name = \"lv\"
+// declaredType=\"P.Base.Level\"
+// name = \"t\"
+// declaredType=\"EnumerationTypeNames.Mode\"
+// name = \"g\"
+// declaredType=\"Mode\"
+// name = \"sub1.s\"
+// declaredType=\"P.Sub.Mode\"
+// name = \"sub2.s\"
+// declaredType=\"P.Sub.Mode\"
+// "
+// endResult
