@@ -1,10 +1,9 @@
 // name: UtilTest
 // status: correct
 // teardown_command: rm -f Util_* UtilTest_*
-// cflags: -d=-newInst
+// cflags: -d=-newInst -g=MetaModelica -n=1
 // suite: metamodelica
 
-setCommandLineOptions("-g=MetaModelica -n=1");
 echo(false);
 prefixPath := "../../../OMCompiler/Compiler/Util/";
 echo(true);
@@ -74,7 +73,6 @@ StringUtil.wordWrap("this is a somewhat long string with new\nlines", 20, "\n  "
 getErrorString();
 
 // Result:
-// true
 // true
 // true
 // ""

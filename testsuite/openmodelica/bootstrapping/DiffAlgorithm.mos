@@ -1,8 +1,7 @@
 // status: correct
-// cflags: -d=-newInst
+// cflags: -d=-newInst -g=MetaModelica -n=1 -d=noevalfunc,gen
 // suite: metamodelica
 
-setCommandLineOptions("-g=MetaModelica -n=1 -d=noevalfunc,gen");
 echo(false);
 prefixPath := if ""==getEnvironmentVar("OMCOMPILERSOURCES") then "../../../OMCompiler/Compiler/" else getEnvironmentVar("OMCOMPILERSOURCES") + "/";
 echo(true);
@@ -22,7 +21,6 @@ TestDiffAlgorithm();
 getErrorString();
 
 // Result:
-// true
 // true
 // true
 // ""

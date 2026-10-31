@@ -1,7 +1,7 @@
 // status: correct
 // suite: metamodelica
+// cflags: -g=MetaModelica -d=gen
 
-setCommandLineOptions("-g=MetaModelica -d=gen");
 loadString("package FunctionPartialApplicationAsGeneralExp
 
 function f
@@ -21,7 +21,6 @@ end FunctionPartialApplicationAsGeneralExp;");getErrorString();
 FunctionPartialApplicationAsGeneralExp.f();getErrorString();
 
 // Result:
-// true
 // true
 // ""
 // 1.0

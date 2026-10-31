@@ -1,9 +1,8 @@
 // name: System
 // status: correct
-// cflags: -d=-newInst
+// cflags: -d=-newInst -g=MetaModelica -d=rml,noevalfunc,gen
 // suite: metamodelica
 
-setCommandLineOptions("-g=MetaModelica -d=rml,noevalfunc,gen");
 loadFile("../../../OMCompiler/Compiler/Util/System.mo");
 loadFile("SystemTest.mo");
 
@@ -18,7 +17,6 @@ SystemTest.randTest(1000,5);getErrorString();
 SystemTest.randTest(1000,6);getErrorString();
 
 // Result:
-// true
 // true
 // true
 // "System.getCurrentTimeStr"

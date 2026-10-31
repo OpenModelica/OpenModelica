@@ -1,7 +1,7 @@
 // status: correct
 // suite: metamodelica
+// cflags: -g=MetaModelica -d=gen
 
-setCommandLineOptions("-g=MetaModelica -d=gen");getErrorString();
 setCFlags(getCFlags() + " -g");getErrorString();
 loadFile("MatchDotNotation.mo");getErrorString();
 
@@ -17,8 +17,6 @@ MatchDotNotation.error4(0);getErrorString();
 MatchDotNotation.error5(0);getErrorString();
 
 // Result:
-// true
-// ""
 // true
 // ""
 // true

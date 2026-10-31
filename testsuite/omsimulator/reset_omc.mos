@@ -3,8 +3,6 @@
 // status: correct
 // teardown_command: rm -rf reset.fmu reset.log reset_systemCall.log temp-reset test_res.mat
 
-setCommandLineOptions("-g=MetaModelica");
-
 loadString("
 model reset
   parameter Real a = -1;
@@ -31,16 +29,16 @@ oms_initialize("test");
 (v2,_):=oms_getReal("test.root.A.x");
 
 print("info:    Initialization\n");
-print("info:      A.x_start: " + realString(v1)+"\n");
-print("info:      A.x:       " + realString(v2)+"\n");
+print("info:      A.x_start: " + String(v1)+"\n");
+print("info:      A.x:       " + String(v2)+"\n");
 
 oms_simulate("test");
 (v1,_):=oms_getReal("test.root.A.x_start");
 (v2,_):=oms_getReal("test.root.A.x");
 
 print("info:    Simulation\n");
-print("info:      A.x_start: " + realString(v1)+"\n");
-print("info:      A.x:       " + realString(v2)+"\n");
+print("info:      A.x_start: " + String(v1)+"\n");
+print("info:      A.x:       " + String(v2)+"\n");
 
 for i in 0:1 loop
   oms_reset("test");
@@ -49,15 +47,15 @@ for i in 0:1 loop
   (v1,_):=oms_getReal("test.root.A.x_start");
   (v2,_):=oms_getReal("test.root.A.x");
   print("info:    Initialization\n");
-  print("info:      A.x_start: " + realString(v1)+"\n");
-  print("info:      A.x:       " + realString(v2)+"\n");
+  print("info:      A.x_start: " + String(v1)+"\n");
+  print("info:      A.x:       " + String(v2)+"\n");
 
   oms_simulate("test");
   (v1,_):=oms_getReal("test.root.A.x_start");
   (v2,_):=oms_getReal("test.root.A.x");
   print("info:    Simulation\n");
-  print("info:      A.x_start: " + realString(v1)+"\n");
-  print("info:      A.x:       " + realString(v2)+"\n");
+  print("info:      A.x_start: " + String(v1)+"\n");
+  print("info:      A.x:       " + String(v2)+"\n");
 end for;
 
 oms_terminate("test");
@@ -67,7 +65,6 @@ unloadOMSimulator();
 
 // Result:
 // true
-// true
 // ""
 // "reset.fmu"
 // "Notification: Building FMU for platform 'static' (1/1).
@@ -75,23 +72,23 @@ unloadOMSimulator();
 // "
 // info:    Result file: test_res.mat (bufferSize=10)
 // info:    Initialization
-// info:      A.x_start: 1.0
-// info:      A.x:       1.0
+// info:      A.x_start: 1
+// info:      A.x:       1
 // info:    Simulation
-// info:      A.x_start: 1.0
-// info:      A.x:       0.3676954247709639
+// info:      A.x_start: 1
+// info:      A.x:       0.367695
 // info:    Result file: test_res.mat (bufferSize=10)
 // info:    Initialization
 // info:      A.x_start: 1.5
 // info:      A.x:       1.5
 // info:    Simulation
 // info:      A.x_start: 1.5
-// info:      A.x:       0.5515431371564458
+// info:      A.x:       0.551543
 // info:    Result file: test_res.mat (bufferSize=10)
 // info:    Initialization
 // info:      A.x_start: 1.5
 // info:      A.x:       1.5
 // info:    Simulation
 // info:      A.x_start: 1.5
-// info:      A.x:       0.5515431371564458
+// info:      A.x:       0.551543
 // endResult

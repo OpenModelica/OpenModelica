@@ -1,7 +1,7 @@
 // status: correct
 // suite: metamodelica
+// cflags: -g=MetaModelica -d=noevalfunc,gen
 
-setCommandLineOptions("-g=MetaModelica -d=noevalfunc,gen");
 loadString("
 package TestFind
 
@@ -47,7 +47,6 @@ end TestFind;
 TestFind.test();getErrorString();
 
 // Result:
-// true
 // true
 // fail()
 // ""

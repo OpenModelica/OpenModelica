@@ -1,6 +1,6 @@
 // status: correct
+// cflags: -g=MetaModelica -d=nogen
 
-setCommandLineOptions("-g=MetaModelica -d=nogen");
 loadString("
 function f1
   input Real x1,x2;
@@ -35,7 +35,6 @@ f2(1.0,2.0);getErrorString();
 instantiateModel(M);getErrorString();
 
 // Result:
-// true
 // true
 // true
 // ""
