@@ -1814,7 +1814,6 @@ algorithm
       InteractiveTypes.SimulationOptions simOpt;
       Real startTime,stopTime,tolerance,reltol,reltolDiffMinMax,rangeDelta;
       DAE.Exp startTimeExp,stopTimeExp,toleranceExp,intervalExp;
-      DAE.Type tp;
       Absyn.Class absynClass;
       Absyn.Exp aexp, aexp2, aexp3;
       Option<DAE.DAElist> odae;
@@ -2156,11 +2155,7 @@ algorithm
         Values.BOOL(b);
 
     case ("getBuiltinType",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      algorithm
-        (_, tp, _) := Lookup.lookupType(outCache, inEnv, classpath, SOME(Absyn.dummyInfo));
-        str := TypesDump.unparseType(tp);
-      then
-        Values.STRING(str);
+      then Values.STRING(NFApi.getBuiltinType(classpath, SymbolTable.getAbsyn()));
 
     // if the lookup fails
     case ("getBuiltinType",{Values.CODE(Absyn.C_TYPENAME(_))})

@@ -1,0 +1,59 @@
+// name: getBuiltinType
+// keywords:
+// status: correct
+
+loadString("
+  package P
+    type R = Real(unit = \"Ohm\");
+    type R2 = R(min = 0);
+    type I = Integer;
+    type E = enumeration(a, b);
+    type E2 = E;
+    type V = R[2, 2];
+    connector C = Real;
+    record Rec Real x; end Rec;
+    model M Real x; end M;
+  end P;
+"); getErrorString();
+
+getBuiltinType(Real); getErrorString();
+getBuiltinType(P.R); getErrorString();
+getBuiltinType(P.R2); getErrorString();
+getBuiltinType(P.I); getErrorString();
+getBuiltinType(P.E); getErrorString();
+getBuiltinType(P.E2); getErrorString();
+getBuiltinType(P.V); getErrorString();
+getBuiltinType(P.C); getErrorString();
+getBuiltinType(P.Rec); getErrorString();
+getBuiltinType(P.M); getErrorString();
+getBuiltinType(StateSelect); getErrorString();
+getBuiltinType(P.Missing); getErrorString();
+// Result:
+// true
+// ""
+// "Real"
+// ""
+// "Real"
+// ""
+// "Real"
+// ""
+// "Integer"
+// ""
+// "enumeration(a, b)"
+// ""
+// "enumeration(a, b)"
+// ""
+// "Real"
+// ""
+// "Real"
+// ""
+// ""
+// ""
+// ""
+// ""
+// "enumeration(never, avoid, default, prefer, always)"
+// ""
+// ""
+// "Error: Class P.Missing not found in scope <top>.
+// "
+// endResult

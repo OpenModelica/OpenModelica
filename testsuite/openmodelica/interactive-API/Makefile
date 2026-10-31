@@ -62,6 +62,7 @@ GetAllSubtypeOf2.mos \
 GetAllSubtypeOf3.mos \
 GetAllSubtypeOf4.mos \
 GetAllSubtypeOf5.mos \
+getBuiltinType.mos \
 getClassComment.mos \
 getClassDiagram1.mos \
 getClassDiagram2.mos \
