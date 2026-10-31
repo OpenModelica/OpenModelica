@@ -1752,7 +1752,7 @@ protected
   protected
     Adjacency.IntMatrix m, mT;
     Adjacency.Mapping mapping;
-    array<Integer> m_data, mT_data, unknown_rem, unknown_full, eqn_unknown, eqn_size, stamp;
+    array<Integer> m_data, mT_data, unknown_rem, unknown_full, eqn_unknown, eqn_size, eqn_open, stamp;
     array<Boolean> known_scal, row_in_loop, row_capable;
     Vector<CellierCandidate> ready = Vector.new<CellierCandidate>(), ready_rows = Vector.new<CellierCandidate>();
     array<Integer> eqn_seq, unit_seq, row_seq "the newest candidate of each, older ones are outdated";
@@ -1833,6 +1833,7 @@ protected
       if eqn_unknown[e] == eqn_size[e] then fresh := e :: fresh; end if;
     end for;
     unknown_full := arrayCopy(unknown_rem);
+    eqn_open := arrayCopy(eqn_size);
 
     // the rows of a for equation can also be assigned one at a time, e.g. for a recursion x[i] = x[i+1] + y[i]
     // a scalar equation can solve a single element of an array this way
@@ -1937,9 +1938,9 @@ protected
         if best_row == 0 then break; end if;
         e := mapping.eqn_StA[best_row];
         // rather a chain through the rows of several equations than through only this one
-        (chain, chain_complete) := cellierChain(best_row, best_sv, false, m, m_data, mT, mT_data, known_scal, row_in_loop, row_capable, row_step, eqn_step, eqn_rows, mapping, unit_kind, vars, eqns, solvabilities, eqn_glob, funcMap, probes, ranks);
+        (chain, chain_complete) := cellierChain(best_row, best_sv, false, m, m_data, mT, mT_data, known_scal, row_in_loop, row_capable, row_step, eqn_step, eqn_open, mapping, unit_kind, vars, eqns, solvabilities, eqn_glob, funcMap, probes, ranks);
         if not chain_complete then
-          (chain, chain_complete) := cellierChain(best_row, best_sv, true, m, m_data, mT, mT_data, known_scal, row_in_loop, row_capable, row_step, eqn_step, eqn_rows, mapping, unit_kind, vars, eqns, solvabilities, eqn_glob, funcMap, probes, ranks);
+          (chain, chain_complete) := cellierChain(best_row, best_sv, true, m, m_data, mT, mT_data, known_scal, row_in_loop, row_capable, row_step, eqn_step, eqn_open, mapping, unit_kind, vars, eqns, solvabilities, eqn_glob, funcMap, probes, ranks);
         end if;
         chain_eqns := List.unique(list(mapping.eqn_StA[Util.tuple21(c)] for c in chain));
         // a chain through several equations becomes one component if it repeats one of them, through one
@@ -1965,6 +1966,7 @@ protected
           (best_row, best_sv) := c;
           step := step + 1;
           row_step[best_row] := step;
+          eqn_open[mapping.eqn_StA[best_row]] := eqn_open[mapping.eqn_StA[best_row]] - 1;
           row_var[best_row] := best_sv;
           u := mapping.var_StA[best_sv];
           // equations that wanted to cover the unit together might solve this element as well
@@ -2230,7 +2232,7 @@ protected
     input array<Boolean> row_capable;
     input array<Integer> row_step;
     input array<Integer> eqn_step;
-    input array<list<Integer>> eqn_rows;
+    input array<Integer> eqn_open "unassigned rows per equation";
     input Adjacency.Mapping mapping;
     input array<Integer> unit_kind;
     input VariablePointers vars;
@@ -2288,7 +2290,7 @@ protected
     chain := listReverse(chain);
     for tpl in UnorderedMap.toList(eqn_count) loop
       (e, cnt) := tpl;
-      complete := complete and cnt == sum(1 for q guard(row_step[q] == 0) in eqn_rows[e]);
+      complete := complete and cnt == eqn_open[e];
     end for;
   end cellierChain;
 
