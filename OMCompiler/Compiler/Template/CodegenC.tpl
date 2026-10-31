@@ -2742,6 +2742,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
           let &varFreesRes = buffer ""
           let &auxFunction = buffer ""
           let &tmp = buffer ""
+          let &notResizable = buffer ""
           let xlocs = (ls.vars |> var as SIMVAR() hasindex i0 => '<%cref(name, &sub)%> = xloc[<%i0%>];' ;separator="\n")
           let jacobianName = match ls.vars case SIMVAR(matrixName=SOME(name))::_ then name else ""
           let prebody = (match ls.partOfJac
@@ -2754,7 +2755,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
                 functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
               ;separator="\n")
             end match)
-          let body = systemResiduals(ls.residual, "", &varDeclsRes, &varFreesRes, &auxFunction)
+          let body = systemResiduals(ls.residual, notResizable, &varDeclsRes, &varFreesRes, &auxFunction)
           let eqnbody =
           <<
           <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%ls.index%>).profileBlockIndex,1);' %>
