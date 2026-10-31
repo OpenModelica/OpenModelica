@@ -106,6 +106,19 @@ impl ResultTable for MatReader {
     fn all_info(&self) -> &[MatVariable] {
         &self.allInfo
     }
+    fn unit(&self, idx: usize) -> (&str, &str) {
+        self.allInfo.get(idx).map_or(("", ""), |v| description_units(&v.descr))
+    }
+    fn var_type(&self, idx: usize) -> &str {
+        self.types.get(idx).copied().unwrap_or("Real")
+    }
+    fn enumeration(&self, idx: usize) -> Option<Vec<String>> {
+        self.enumeration_of
+            .get(idx)
+            .copied()
+            .flatten()
+            .map(|e| self.enumerations[e].1.clone())
+    }
     fn params(&self) -> &[f64] {
         &self.params
     }
@@ -165,6 +178,12 @@ pub struct MatReader {
     time: Option<Vec<f64>>,
     startTime: Option<f64>,
     stopTime: Option<f64>,
+    /// Per `allInfo` entry: the type its description is tagged with.
+    types: Vec<&'static str>,
+    /// Per `allInfo` entry: its enumeration type, an index into `enumerations`.
+    enumeration_of: Vec<Option<usize>>,
+    /// The `enumerations` matrix: each type's name and literals.
+    enumerations: Vec<(String, Vec<String>)>,
 }
 
 /// MATLAB v4 matrix header (5 little-endian u32 fields).
@@ -265,6 +284,71 @@ fn read_header(file: &mut Src) -> Result<MHeader, String> {
         imagf: g(12),
         namelen: g(16),
     })
+}
+
+/// The `X` of a Dymola type tag, `comment [unit:#(type=X)]`, in a description.
+fn description_type(descr: &str) -> Option<&str> {
+    let tags = &descr[descr.rfind('[')?..];
+    let start = tags.find(":#(type=")? + ":#(type=".len();
+    let len = tags[start..].find(')')?;
+    Some(&tags[start..start + len])
+}
+
+/// The unit and display unit of a description, Dymola's way: its trailing
+/// `[unit|displayUnit:#(type=X)]`, each part optional.
+fn description_units(descr: &str) -> (&str, &str) {
+    let Some(inside) = descr
+        .trim_end()
+        .strip_suffix(']')
+        .and_then(|d| d.rfind('[').map(|at| &d[at + 1..]))
+    else {
+        return ("", "");
+    };
+    let units = inside.find(":#").map_or(inside, |at| &inside[..at]);
+    units.split_once('|').unwrap_or((units, ""))
+}
+
+/// The `enumerations` text matrix, after `data_2` or between the six standard
+/// matrices, one `Type(Literal1, Literal2)` entry per column; `hdr` is its
+/// header, the file is at its data. A matrix that is not text, or is cut short
+/// by a file still being written, gives no enumerations.
+fn read_enumerations(file: &mut Src, hdr: &MHeader) -> Vec<(String, Vec<String>)> {
+    if hdr.ty != 51 || hdr.imagf != 0 {
+        return Vec::new();
+    }
+    let (mrows, ncols) = (hdr.mrows as usize, hdr.ncols as usize);
+    let Ok(text) = read_exact_vec(file, mrows.saturating_mul(ncols)) else {
+        return Vec::new();
+    };
+    text.chunks_exact(mrows.max(1))
+        .filter_map(|c| enumeration_entry(&fixed_str(c)))
+        .collect()
+}
+
+/// Split `P.Mode(Off, Heat, 'a, b')` into its name and literals.
+fn enumeration_entry(entry: &str) -> Option<(String, Vec<String>)> {
+    let open = entry.find('(')?;
+    let body = entry[open + 1..].strip_suffix(')')?;
+    let mut literals = Vec::new();
+    let (mut quoted, mut escaped, mut cur) = (false, false, String::new());
+    for c in body.chars() {
+        match c {
+            _ if escaped => escaped = false,
+            '\\' if quoted => escaped = true,
+            '\'' => quoted = !quoted,
+            ',' if !quoted => {
+                literals.push(cur.trim().to_string());
+                cur.clear();
+                continue;
+            }
+            _ => {}
+        }
+        cur.push(c);
+    }
+    if !cur.trim().is_empty() {
+        literals.push(cur.trim().to_string());
+    }
+    Some((entry[..open].trim().to_string(), literals))
 }
 
 /// Read `n` character elements (stored either as doubles or raw bytes).
@@ -384,13 +468,16 @@ impl MatReader {
             time: None,
             startTime: None,
             stopTime: None,
+            types: Vec::new(),
+            enumeration_of: Vec::new(),
+            enumerations: Vec::new(),
         };
         // Parse sequentially using `file`; `reader.file` is the clone kept for
         // the lazy data_2 read.
         let mut binTrans = true;
 
-        // The six matrices in this order; others between them (`enumerations`)
-        // are skipped.
+        // The six matrices in this order; others between them are skipped, but
+        // `enumerations`, which is read.
         let mut i = 0;
         while i < 6 {
             let hdr = read_header(&mut file).map_err(|_| "Corrupt header (1)".to_string())?;
@@ -410,7 +497,11 @@ impl MatReader {
                 if MATRIX_NAMES.contains(&name.as_str()) {
                     return Err(format!("Matrix name mismatch: {}", MATRIX_NAMES[i]));
                 }
-                file.seek(SeekFrom::Current(matrix_length as i64))
+                let start = file.stream_position().map_err(|e| e.to_string())?;
+                if name == "enumerations" {
+                    reader.enumerations = read_enumerations(&mut file, &hdr);
+                }
+                file.seek(SeekFrom::Start(start + matrix_length as u64))
                     .map_err(|_| "Corrupt header (4)".to_string())?;
                 continue;
             }
@@ -535,11 +626,28 @@ impl MatReader {
                         reader.nvar = hdr.ncols as usize;
                     }
                     reader.var_offset = file.stream_position().map_err(|e| e.to_string())?;
-                    let _ = matrix_length; // data_2 is the final matrix; nothing follows.
+                    // The writer puts `enumerations` after data_2, where older
+                    // readers do not look; a missing or partial one is no error.
+                    if file.seek(SeekFrom::Current(matrix_length as i64)).is_ok()
+                        && let Ok(hdr) = read_header(&mut file)
+                        && read_exact_vec(&mut file, hdr.namelen as usize).is_ok_and(|n| n == b"enumerations\0")
+                    {
+                        reader.enumerations = read_enumerations(&mut file, &hdr);
+                    }
                 }
                 _ => unreachable!(),
             }
             i += 1;
+        }
+        for v in &reader.allInfo {
+            let (ty, e) = match description_type(&v.descr) {
+                None | Some("Real" | "String" | "Clock") => ("Real", None),
+                Some("Boolean") => ("Boolean", None),
+                Some("Integer") => ("Integer", None),
+                Some(name) => ("enumeration", reader.enumerations.iter().position(|(n, _)| n == name)),
+            };
+            reader.types.push(ty);
+            reader.enumeration_of.push(e);
         }
         Ok(reader)
     }
@@ -830,9 +938,107 @@ mod tests {
         v.iter().flat_map(|x| x.to_le_bytes()).collect()
     }
 
+    /// time, a Boolean b, an enumeration m and a Real x, two rows; with an
+    /// `enumerations` matrix when `literals` holds its columns, after `data_2`
+    /// as written now or, `early`, after `dataInfo`.
+    fn result_file(path: &std::path::Path, literals: &[&str], early: bool) {
+        let mut out = Vec::new();
+        matrix(&mut out, "Aclass", 51, 4, 11, &{
+            let rows = ["Atrajectory", "1.1", "", "binTrans"];
+            (0..11)
+                .flat_map(|c| rows.iter().map(move |r| *r.as_bytes().get(c).unwrap_or(&0)))
+                .collect::<Vec<u8>>()
+        });
+        text(&mut out, "name", &["time", "b", "m", "x"]);
+        text(
+            &mut out,
+            "description",
+            &[
+                "Simulation time [s]",
+                "a flag [:#(type=Boolean)]",
+                "a mode [:#(type=P.Mode)]",
+                "a real [m|mm]",
+            ],
+        );
+        let info: Vec<u8> = [0, 1, 0, -1, 2, 2, 0, 0, 2, 3, 0, 0, 2, 4, 0, 0]
+            .iter()
+            .flat_map(|v: &i32| v.to_le_bytes())
+            .collect();
+        matrix(&mut out, "dataInfo", 20, 4, 4, &info);
+        if early && !literals.is_empty() {
+            text(&mut out, "enumerations", literals);
+        }
+        matrix(&mut out, "data_1", 0, 1, 2, &doubles(&[0.0, 1.0]));
+        matrix(
+            &mut out,
+            "data_2",
+            0,
+            4,
+            2,
+            &doubles(&[0.0, 0.0, 1.0, 0.5, 1.0, 1.0, 3.0, 0.7]),
+        );
+        if !early && !literals.is_empty() {
+            text(&mut out, "enumerations", literals);
+        }
+        std::fs::write(path, out).unwrap();
+    }
+
+    #[test]
+    fn types_come_from_the_description_tags() {
+        let path = std::env::temp_dir().join("omc_mat_reader_types.mat");
+        for early in [false, true] {
+            result_file(&path, &["P.Mode(Off, Heat, Cool)", "Q('a, b', c)"], early);
+            let r = MatReader::open(path.to_str().unwrap()).unwrap();
+            let ty = |n: &str| r.var_type(r.find_var(n).unwrap()).to_string();
+            assert_eq!(
+                [ty("time"), ty("b"), ty("m"), ty("x")],
+                ["Real", "Boolean", "enumeration", "Real"]
+            );
+            assert_eq!(
+                r.enumeration(r.find_var("m").unwrap()),
+                Some(vec!["Off".to_string(), "Heat".to_string(), "Cool".to_string()]),
+                "early {early}"
+            );
+            assert_eq!(r.enumeration(r.find_var("b").unwrap()), None);
+            assert_eq!(r.enumerations[1].1, ["'a, b'", "c"]);
+            let unit = |n: &str| r.unit(r.find_var(n).unwrap());
+            assert_eq!([unit("time"), unit("b"), unit("x")], [("s", ""), ("", ""), ("m", "mm")]);
+        }
+
+        // A Dymola file: the tag, no literals.
+        result_file(&path, &[], false);
+        let r = MatReader::open(path.to_str().unwrap()).unwrap();
+        assert_eq!(r.var_type(r.find_var("m").unwrap()), "enumeration");
+        assert_eq!(r.enumeration(r.find_var("m").unwrap()), None);
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn description_tags() {
+        assert_eq!(description_type("a [m]"), None);
+        assert_eq!(description_type("[:#(type=Integer)]"), Some("Integer"));
+        assert_eq!(description_type("x [1/s:#(type=Integer)]"), Some("Integer"));
+        assert_eq!(
+            description_type("[:#(type=Clock):#(clock=c.activationCount)]"),
+            Some("Clock")
+        );
+    }
+
+    #[test]
+    fn description_units_and_display_units() {
+        assert_eq!(description_units("a"), ("", ""));
+        assert_eq!(description_units("a [m]"), ("m", ""));
+        assert_eq!(description_units("a [m|mm]"), ("m", "mm"));
+        assert_eq!(description_units("[|mm]"), ("", "mm"));
+        assert_eq!(description_units("x [1/s:#(type=Integer)]"), ("1/s", ""));
+        assert_eq!(description_units("[K|degC:#(type=Real)]"), ("K", "degC"));
+        assert_eq!(description_units("[:#(type=Boolean)]"), ("", ""));
+        assert_eq!(description_units("v[1] [V] "), ("V", ""));
+    }
+
     /// time and x over two rows, with `extra` text matrices written right
     /// before the matrix named by their first element.
-    fn result_file(path: &std::path::Path, extra: &[(&str, &str)]) {
+    fn skip_file(path: &std::path::Path, extra: &[(&str, &str)]) {
         let mut out = Vec::new();
         let mut before = |out: &mut Vec<u8>, name: &str| {
             for (at, extra) in extra {
@@ -869,13 +1075,13 @@ mod tests {
     fn other_matrices_are_skipped() {
         let path = std::env::temp_dir().join(format!("omc_mat_reader_skip_{}.mat", std::process::id()));
         for at in ["Aclass", "description", "data_1", "data_2"] {
-            result_file(&path, &[(at, "enumerations")]);
+            skip_file(&path, &[(at, "enumerations")]);
             let mut r = MatReader::open(path.to_str().unwrap()).unwrap_or_else(|e| panic!("before {at}: {e}"));
             assert_eq!(r.nrows, 2, "before {at}");
             let x = r.allInfo[r.find_var("x").unwrap()].index;
             assert_eq!(r.read_vals(x).as_deref(), Some(&[5.0, 7.0][..]), "before {at}");
         }
-        result_file(&path, &[("dataInfo", "data_1")]);
+        skip_file(&path, &[("dataInfo", "data_1")]);
         assert_eq!(
             MatReader::open(path.to_str().unwrap()).err().as_deref(),
             Some("Matrix name mismatch: dataInfo")

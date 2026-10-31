@@ -3333,6 +3333,7 @@ function plot
   input String yAxis = "L" "Sets the variable to be plotted on the left (L) or right (R) y-axis.";
   input String yLabelRight = "" "This text will be used as the right vertical label in the diagram.";
   input Real yRangeRight[2] = {0.0,0.0} "Determines the right vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Boolean stack = false "Draws each curve in a lane of its own, one below the other.";
   output Boolean success "Returns true on success";
 external "builtin";
 annotation(preferredView="text",Documentation(info="<html>
@@ -3343,6 +3344,7 @@ annotation(preferredView="text",Documentation(info="<html>
 <li><code>simulate(A); plot({x,y,z});</code></li>
 <li><code>simulate(A); plot(x, externalWindow=true);</code></li>
 <li><code>simulate(A,fileNamePrefix=\"B\"); simulate(C); plot(z,fileName=\"B.mat\",legendPosition=none);</code></li>
+<li><code>simulate(A); plot({b,x}, stack=true);</code></li>
 </ul>
 </html>"));
 end plot;
@@ -3368,6 +3370,7 @@ function plotAll
   input String yAxis = "L" "Sets the variable to be plotted on the left (L) or right (R) y-axis.";
   input String yLabelRight = "" "This text will be used as the right vertical label in the diagram.";
   input Real yRangeRight[2] = {0.0,0.0} "Determines the right vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Boolean stack = false "Draws each curve in a lane of its own, one below the other.";
   output Boolean success "Returns true on success";
 external "builtin";
 annotation(Documentation(info="<html>

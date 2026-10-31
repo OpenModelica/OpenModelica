@@ -1825,7 +1825,7 @@ algorithm
       list<String> vars_1,args,strings,strs1,strs2,files;
       Real timeStamp,val,x1,x2,y1,y2,y1R,y2R,r1,r2,curveWidth, interval;
       GlobalScript.Statements istmts;
-      Boolean b, b1, b2, b3, externalWindow, logX, logY, autoScale, forceOMPlot, keepRedeclares, hintReadAllVars;
+      Boolean b, b1, b2, b3, externalWindow, logX, logY, autoScale, forceOMPlot, stackCurves, keepRedeclares, hintReadAllVars;
       list<Real> realVals;
       list<Absyn.Path> paths;
       list<Absyn.NamedArg> nargs;
@@ -2474,7 +2474,8 @@ algorithm
           Values.BOOL(forceOMPlot),
           Values.STRING(yAxis),
           Values.STRING(yLabelRight),
-          Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)})
+          Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)}),
+          Values.BOOL(stackCurves)
         })
       algorithm
         // get OPENMODELICAHOME
@@ -2492,7 +2493,7 @@ algorithm
           // create the path till OMPlot
           str2 := stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
           // create the list of arguments for OMPlot
-          str3 := "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotAll --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale);
+          str3 := "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotAll --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " --stack=" + boolString(stackCurves);
           call := stringAppendList({"\"",str2,"\""," ",str3});
           0 := System.spawnCall(str2, call);
         elseif b then
@@ -2535,7 +2536,8 @@ algorithm
           Values.BOOL(forceOMPlot),
           Values.STRING(yAxis),
           Values.STRING(yLabelRight),
-          Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)})
+          Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)}),
+          Values.BOOL(stackCurves)
         })
       algorithm
         // get the variables list
@@ -2557,7 +2559,7 @@ algorithm
           // create the path till OMPlot
           str2 := stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
           // create the list of arguments for OMPlot
-          str3 := "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plot --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " '" + str + "'";
+          str3 := "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plot --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " --stack=" + boolString(stackCurves) + " '" + str + "'";
           call := stringAppendList({"\"",str2,"\""," ",str3});
           0 := System.spawnCall(str2, call);
         elseif b then
