@@ -403,6 +403,8 @@ openmodelica_nbackend/Cargo.toml
 openmodelica_nbackend/src/NBASSCExt.rs
 openmodelica_nf_api/Cargo.toml
 openmodelica_nf_api/src/Globals.rs
+openmodelica_nf_api/src/unittests/mod.rs
+openmodelica_nf_api/src/unittests/scripting_code_tests.rs
 openmodelica_nf_frontend/Cargo.toml
 openmodelica_nf_frontend/build.rs
 openmodelica_nf_frontend/src/FFI.rs

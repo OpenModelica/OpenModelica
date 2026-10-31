@@ -50,8 +50,9 @@ public
   constant Type RELAXED         = intBitLShift(1,  0); // Relaxed instantiation, used by e.g. checkModel.
   constant Type INSTANCE_API    = intBitLShift(1,  1); // Instantiation for the model instance API.
   constant Type FAST_LOOKUP     = intBitLShift(1,  2); // Only expand packages when doing lookup.
+  constant Type SCRIPTING       = intBitLShift(1, 27); // Evaluating a script.
 
-  constant Type GLOBAL_FLAGS    = intBitOr(RELAXED, intBitOr(INSTANCE_API, FAST_LOOKUP));
+  constant Type GLOBAL_FLAGS    = intBitOr(intBitOr(RELAXED, SCRIPTING), intBitOr(INSTANCE_API, FAST_LOOKUP));
 
   // Scope flags:
   constant Type CLASS           = intBitLShift(1,  3); // In class.
@@ -149,6 +150,11 @@ public
     input Type context;
     output Boolean res = intBitAnd(context, FAST_LOOKUP) > 0;
   end inFastLookup;
+
+  function inScripting
+    input Type context;
+    output Boolean res = intBitAnd(context, SCRIPTING) > 0;
+  end inScripting;
 
   function inClass
     input Type context;

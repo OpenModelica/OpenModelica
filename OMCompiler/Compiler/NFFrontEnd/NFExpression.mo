@@ -48,6 +48,7 @@ protected
   import BuiltinCall = NFBuiltinCall;
   import Ceval = NFCeval;
   import ComplexType = NFComplexType;
+  import Dump;
   import ExpandExp = NFExpandExp;
   import Expression = NFExpression;
   import Function = NFFunction;
@@ -257,6 +258,12 @@ public
   record FILENAME
     String filename;
   end FILENAME;
+
+  record CODE
+    "A quoted argument of a scripting function, e.g. the class name in simulate(M)."
+    Absyn.CodeNode code;
+    Type ty;
+  end CODE;
 
   record SHARED_LITERAL
     "Before code generation, we make a pass that replaces constant literals
@@ -674,6 +681,7 @@ public
         then hash;
 
       case FILENAME() then stringHashDjb2Continue(exp.filename, hash);
+      case CODE() then AbsynUtil.codeHashContinue(exp.code, hash);
 
       case SHARED_LITERAL()
         algorithm
@@ -738,6 +746,7 @@ public
         list<list<Expression>> mat;
         array<Expression> arr;
         InstNode node;
+        Absyn.CodeNode code;
 
       case INTEGER()
         algorithm
@@ -1014,6 +1023,12 @@ public
         then
           stringCompare(exp1.filename, s);
 
+      case CODE()
+        algorithm
+          CODE(code = code) := exp2;
+        then
+          valueCompare(exp1.code, code);
+
       case INSTANCE_NAME()
         algorithm
           INSTANCE_NAME(scope = node) := exp2;
@@ -1090,6 +1105,7 @@ public
       case PARTIAL_FUNCTION_APPLICATION() then exp.ty;
       case FILENAME()        then Type.STRING();
       case INSTANCE_NAME()   then Type.STRING();
+      case CODE()            then exp.ty;
       else Type.UNKNOWN();
     end match;
   end typeOf;
@@ -2454,6 +2470,7 @@ public
 
       case FILENAME() then "\"" + System.escapedString(exp.filename, false) + "\"";
       case INSTANCE_NAME() then "getInstanceName()";
+      case CODE() then codeString(exp.code);
       else anyString(exp);
     end match;
   end toString;
@@ -2555,6 +2572,7 @@ public
 
       case FILENAME() then "\"" + Util.escapeModelicaStringToCString(exp.filename) + "\"";
       case INSTANCE_NAME() then "getInstanceName()";
+      case CODE() then codeString(exp.code);
       else anyString(exp);
     end match;
   end toFlatString;
@@ -2814,6 +2832,7 @@ public
         then Absyn.Exp.PARTEVALFUNCTION(ComponentRef.toAbsyn(exp.fn),
           Absyn.FunctionArgs.FUNCTIONARGS(list(toAbsyn(e) for e in exp.args), {}));
       case FILENAME() then Absyn.Exp.STRING(exp.filename);
+      case CODE() then Absyn.Exp.CODE(exp.code);
       case INSTANCE_NAME() then AbsynUtil.makeCall(Absyn.ComponentRef.CREF_IDENT("getInstanceName", {}), {});
 
       else
@@ -2933,6 +2952,7 @@ public
           DAE.EMPTY("", DAE.CREF_IDENT("$dummy", dty, {}), dty, Type.toString(exp.ty));
 
       case SHARED_LITERAL() then DAE.SHARED_LITERAL(exp.index, toDAE(exp.exp));
+      case CODE() then DAE.CODE(exp.code, DAE.T_UNKNOWN_DEFAULT);
       case FILENAME()
         then if Flags.getConfigBool(Flags.BUILDING_FMU) then
                DAE.CALL(Absyn.Path.IDENT("OpenModelica_fmuLoadResource"),
@@ -3013,6 +3033,7 @@ public
       case RECORD() then toDAEValueRecord(exp.ty, exp.path, exp.elements);
       case TUPLE() then Values.TUPLE(list(toDAEValue(e) for e in exp.elements));
       case FILENAME() then Values.STRING(exp.filename);
+      case CODE() then codeToDAEValue(exp.code, exp.ty);
 
       else
         algorithm
@@ -3091,6 +3112,7 @@ public
         then TUPLE(ty, list(fromDAEValue(v, t) threaded for v in value.valueLst, t in tys));
 
       case (Values.NORETCALL(), _) then EMPTY(ty);
+      case (Values.CODE(), _) then CODE(value.A, ty);
 
       else
         algorithm
@@ -3123,6 +3145,120 @@ public
 
     exp := RECORD(path, ty, listReverseInPlace(fields));
   end fromDAEValueRecord;
+
+  function quoteCode
+    "Quotes an argument or binding of a $Code type, as Static.elabCodeExp does:
+     a TypeName is a path, a VariableName a component reference or der of
+     one, VariableNames an array of those, and an Expression or
+     ExpressionOrModification is kept as written."
+    input Absyn.Exp exp;
+    input Type ty;
+    input SourceInfo info;
+    output Expression outExp;
+  protected
+    String kind = Type.codeName(ty);
+    Absyn.Exp e;
+    Absyn.CodeNode code;
+  algorithm
+    code := match exp
+      case Absyn.Exp.CODE(code = Absyn.CodeNode.C_TYPENAME()) guard kind == "TypeName" then exp.code;
+      case Absyn.Exp.CODE(code = Absyn.CodeNode.C_VARIABLENAME()) guard kind == "VariableName" then exp.code;
+      case Absyn.Exp.CODE(code = Absyn.CodeNode.C_MODIFICATION()) guard kind == "ExpressionOrModification"
+        then exp.code;
+      case Absyn.Exp.CODE(code = Absyn.CodeNode.C_EXPRESSION(exp = e)) then quoteCodeExp(e, kind, exp, info);
+      else quoteCodeExp(exp, kind, exp, info);
+    end match;
+
+    outExp := CODE(code, ty);
+  end quoteCode;
+
+  function quoteCodeExp
+    input Absyn.Exp exp;
+    input String kind;
+    input Absyn.Exp quotedExp;
+    input SourceInfo info;
+    output Absyn.CodeNode code;
+  algorithm
+    code := match (kind, exp)
+      case ("TypeName", Absyn.Exp.CREF()) then Absyn.CodeNode.C_TYPENAME(AbsynUtil.crefToPath(exp.componentRef));
+      case ("VariableName", Absyn.Exp.CREF()) then Absyn.CodeNode.C_VARIABLENAME(exp.componentRef);
+      case ("VariableName", _) guard isQuotableVariableName(exp) then Absyn.CodeNode.C_EXPRESSION(exp);
+      case ("VariableNames", Absyn.Exp.ARRAY()) guard List.all(exp.arrayExp, isQuotableVariableName)
+        then Absyn.CodeNode.C_EXPRESSION(exp);
+      case ("VariableNames", _) guard isQuotableVariableName(exp)
+        then Absyn.CodeNode.C_EXPRESSION(Absyn.Exp.ARRAY({exp}));
+      case ("Expression", _) then Absyn.CodeNode.C_EXPRESSION(exp);
+      case ("ExpressionOrModification", _) then Absyn.CodeNode.C_EXPRESSION(exp);
+      else
+        algorithm
+          Error.addSourceMessage(Error.ELAB_CODE_EXP_FAILED, {Dump.printExpStr(quotedExp), kind}, info);
+        then
+          fail();
+    end match;
+  end quoteCodeExp;
+
+  function isCode
+    input Expression exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case CODE() then true;
+      else false;
+    end match;
+  end isCode;
+
+  function isQuotableVariableName
+    input Absyn.Exp exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case Absyn.Exp.CREF() then true;
+      case Absyn.Exp.CALL(function_ = Absyn.ComponentRef.CREF_IDENT(name = "der"),
+                          functionArgs = Absyn.FunctionArgs.FUNCTIONARGS(args = {Absyn.Exp.CREF()}, argNames = {}))
+        then true;
+      else false;
+    end match;
+  end isQuotableVariableName;
+
+  function codeString
+    "Prints a TypeName or VariableName as the name it quotes, and other code as $Code(...)."
+    input Absyn.CodeNode code;
+    output String str;
+  algorithm
+    str := match code
+      case Absyn.CodeNode.C_TYPENAME() then AbsynUtil.pathString(code.path);
+      case Absyn.CodeNode.C_VARIABLENAME() then Dump.printComponentRefStr(code.componentRef);
+      else "$Code(" + Dump.printCodeStr(code) + ")";
+    end match;
+  end codeString;
+
+  function codeToDAEValue
+    "The scripting API takes VariableNames as an array of VariableName values."
+    input Absyn.CodeNode code;
+    input Type ty;
+    output Values.Value value;
+  algorithm
+    value := match code
+      local
+        list<Absyn.Exp> names;
+
+      case Absyn.CodeNode.C_EXPRESSION(exp = Absyn.Exp.ARRAY(arrayExp = names))
+        guard Type.codeName(ty) == "VariableNames"
+        then ValuesMake.makeArray(list(Values.CODE(variableNameCode(n)) for n in names));
+
+      else Values.CODE(code);
+    end match;
+  end codeToDAEValue;
+
+  function variableNameCode
+    input Absyn.Exp exp;
+    output Absyn.CodeNode code;
+  algorithm
+    code := match exp
+      case Absyn.Exp.CREF() then Absyn.CodeNode.C_VARIABLENAME(exp.componentRef);
+      else Absyn.CodeNode.C_EXPRESSION(exp);
+    end match;
+  end variableNameCode;
 
   function dimensionCount
     input Expression exp;
@@ -5976,6 +6112,7 @@ public
       case PARTIAL_FUNCTION_APPLICATION() then Variability.CONTINUOUS;
       case FILENAME() then Variability.CONSTANT;
       case INSTANCE_NAME() then Variability.CONSTANT;
+      case CODE() then Variability.CONSTANT;
       else
         algorithm
           Error.terminate(getInstanceName() + " got unknown expression.", sourceInfo());
@@ -6057,6 +6194,7 @@ public
       case PARTIAL_FUNCTION_APPLICATION() then Purity.PURE;
       case FILENAME() then Purity.PURE;
       case INSTANCE_NAME() then Purity.PURE;
+      case CODE() then Purity.PURE;
       else
         algorithm
           Error.terminate(getInstanceName() + " got unknown expression.", sourceInfo());
