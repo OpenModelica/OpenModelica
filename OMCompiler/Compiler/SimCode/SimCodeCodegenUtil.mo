@@ -2316,6 +2316,53 @@ algorithm
   n := 2*varInfo.numStateVars+varInfo.numAlgVars+varInfo.numDiscreteReal+varInfo.numOptimizeConstraints+varInfo.numOptimizeFinalConstraints;
 end nVariablesReal;
 
+public function simVarIndexRuns
+  "The variables as runs (position in the list, first index, length, kind): kind 1 for
+   real variables with consecutive indices in realVars, else a run of one variable
+   with kind 0 for variables without index, 2 for parameters and 3 for any other."
+  input list<SimCodeVar.SimVar> vars;
+  output list<tuple<Integer, Integer, Integer, Integer>> runs = {};
+protected
+  Integer pos = 0, start = -1, len = 0, kind, index;
+algorithm
+  for var in vars loop
+    kind := match var.varKind
+      case BackendDAE.JAC_VAR() then 0;
+      case BackendDAE.JAC_TMP_VAR() then 0;
+      case BackendDAE.PARAM() then 2;
+      case BackendDAE.VARIABLE() then if Types.isReal(var.type_) then 1 else 3;
+      case BackendDAE.STATE() then 1;
+      case BackendDAE.STATE_DER() then 1;
+      case BackendDAE.DUMMY_DER() then if Types.isReal(var.type_) then 1 else 3;
+      case BackendDAE.DUMMY_STATE() then if Types.isReal(var.type_) then 1 else 3;
+      else 3;
+    end match;
+    index := var.index;
+    if index < 0 then
+      kind := 0;
+    end if;
+    if kind == 1 and len > 0 and index == start + len then
+      len := len + 1;
+    else
+      if len > 0 then
+        runs := (pos - len, start, len, 1) :: runs;
+        len := 0;
+      end if;
+      if kind == 1 then
+        start := index;
+        len := 1;
+      else
+        runs := (pos, index, 1, kind) :: runs;
+      end if;
+    end if;
+    pos := pos + 1;
+  end for;
+  if len > 0 then
+    runs := (pos - len, start, len, 1) :: runs;
+  end if;
+  runs := listReverse(runs);
+end simVarIndexRuns;
+
 public function getSimCode
   output SimCode.SimCode code;
 protected
