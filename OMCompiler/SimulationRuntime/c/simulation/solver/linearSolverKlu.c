@@ -47,8 +47,8 @@
 #include "linearSystem.h"
 #include "linearSolverKlu.h"
 
-static void printMatrixCSC(int* Ap, int* Ai, double* Ax, int n);
-static void printMatrixCSR(int* Ap, int* Ai, double* Ax, int n);
+static void printMatrixCSCKlu(int* Ap, int* Ai, double* Ax, int n);
+static void printMatrixCSRKlu(int* Ap, int* Ai, double* Ax, int n);
 
 /*! \fn allocate memory for linear system solver Klu
  *
@@ -110,7 +110,7 @@ int freeKluData(void **voiddata)
  *  \author wbraun
  *
  */
-static void getAnalyticalJacobian(DATA* data, threadData_t *threadData,
+static void getAnalyticalJacobianKlu(DATA* data, threadData_t *threadData,
                                  LINEAR_SYSTEM_DATA* systemData)
 {
   int i,j,l,nth;
@@ -197,7 +197,7 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
       solverData->Ap[0] = 0;
       /* calculate jacobian -> matrix A*/
       if(systemData->jacobianIndex != -1){
-        getAnalyticalJacobian(data, threadData, systemData);
+        getAnalyticalJacobianKlu(data, threadData, systemData);
       } else {
         assertStreamPrint(threadData, 1, "jacobian function pointer is invalid" );
       }
@@ -329,7 +329,7 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 }
 
 static
-void printMatrixCSC(int* Ap, int* Ai, double* Ax, int n)
+void printMatrixCSCKlu(int* Ap, int* Ai, double* Ax, int n)
 {
   int i, j, k, l;
 
@@ -370,7 +370,7 @@ void printMatrixCSC(int* Ap, int* Ai, double* Ax, int n)
 }
 
 static
-void printMatrixCSR(int* Ap, int* Ai, double* Ax, int n)
+void printMatrixCSRKlu(int* Ap, int* Ai, double* Ax, int n)
 {
   int i, j, k;
   char *buffer = (char*)malloc(sizeof(char)*n*15);

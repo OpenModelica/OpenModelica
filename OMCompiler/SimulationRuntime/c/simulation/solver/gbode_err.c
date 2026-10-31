@@ -31,13 +31,6 @@
 #include <float.h>
 #include <math.h>
 
-/* some constants for less verbose BLAS calls */
-static const double DBL_ZERO = 0.0;
-static const double DBL_ONE = 1.0;
-static const double DBL_MINUS_ONE = -1.0;
-static const int INT_ONE = 1;
-static const char CHAR_NO_TRANS = 'N';
-
 /* y := a * x + y */
 extern void daxpy_(const int *n,
                    const double *alpha,

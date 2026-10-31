@@ -399,6 +399,27 @@ if(OM_ENABLE_OMSIMULATOR)
   if(MSVC AND CMAKE_C_COMPILER_ID MATCHES "Clang")
     target_compile_options(fmi4c PRIVATE -Wno-implicit-function-declaration)
   endif()
+  # oms_minizip compiles the minizip and miniunz command-line tools into one
+  # archive; their identical file-scope helpers (do_banner, ...) collide once
+  # merged into a unity translation unit. No-op for non-unity builds.
+  if(TARGET oms_minizip)
+    set_target_properties(oms_minizip PROPERTIES UNITY_BUILD OFF)
+  endif()
+  # zlibstatic: gzguts.h redefines gz_state/gz_statep/gz_error in each
+  # translation unit (same failure as upstream CMake's cmzlib).
+  if(TARGET zlibstatic)
+    set_target_properties(zlibstatic PROPERTIES UNITY_BUILD OFF)
+  endif()
+  # xerces-c: identical templated-helper typedef names (e.g. CleanupType as
+  # JanitorMemFunCall<...>) differ per translation unit and collide once merged.
+  if(TARGET xerces-c)
+    set_target_properties(xerces-c PROPERTIES UNITY_BUILD OFF)
+  endif()
+  # zip (libzip): zip_source_pkware_{decode,encode}.c define different
+  # file-scope structs both named trad_pkware.
+  if(TARGET zip)
+    set_target_properties(zip PROPERTIES UNITY_BUILD OFF)
+  endif()
 endif()
 
 # OMPlot provides OMPlotLib and the omqwt target, needed by OMEdit, OMNotebook

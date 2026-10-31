@@ -2429,7 +2429,7 @@ static void free_system_mo(void *data)
   free(members);
 }
 
-static void make_key(void)
+static void systemMo_make_key(void)
 {
   pthread_key_create(&systemMoKey,free_system_mo);
 }
@@ -2440,7 +2440,7 @@ static systemMoData* getSystemMoData(threadData_t *threadData)
   if (threadData && threadData->localRoots[LOCAL_ROOT_SYSTEM_MO]) {
     return (systemMoData*) threadData->localRoots[LOCAL_ROOT_SYSTEM_MO];
   }
-  pthread_once(&system_once_create_key,make_key);
+  pthread_once(&system_once_create_key,systemMo_make_key);
   res = (systemMoData*) pthread_getspecific(systemMoKey);
   if (res != NULL) return res;
   /* We use malloc instead of new because when we do dynamic loading of functions, C++ objects in TLS might be free'd upon return to the main process. */

@@ -59,11 +59,6 @@ extern void daxpy_(const int *n,
                    const double *x, const int *incX,
                    double *y, const int *incY);
 
-static const double DBL_ZERO = 0.0;
-static const double DBL_ONE = 1.0;
-static const int INT_ONE = 1;
-static const char CHAR_NO_TRANS = 'N';
-
 static inline double horner(const double *coefficients, int size, double x)
 {
   double y = 0.0;

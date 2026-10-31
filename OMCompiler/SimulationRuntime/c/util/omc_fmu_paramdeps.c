@@ -34,7 +34,7 @@
 
 #include "omc_file.h"
 
-#define VERSION 1
+#define OMC_FMU_PARAMDEPS_VERSION 1
 #define MAX_SLOT (1 << 28)
 
 typedef struct READER {
@@ -42,7 +42,7 @@ typedef struct READER {
   int failed;
 } READER;
 
-static uint64_t read_varint(READER *r)
+static uint64_t fmu_paramdeps_read_varint(READER *r)
 {
   uint64_t v = 0;
   int shift = 0;
@@ -72,7 +72,7 @@ static unsigned char read_u8(READER *r)
 
 static size_t* read_slots(READER *r, size_t *start, size_t k, size_t *n, size_t *cap, size_t *slots, size_t *nSlots)
 {
-  uint64_t m = read_varint(r), i;
+  uint64_t m = fmu_paramdeps_read_varint(r), i;
   start[k] = *n;
   if (m > (uint64_t) (r->end - r->p)) {
     r->failed = 1;
@@ -83,7 +83,7 @@ static size_t* read_slots(READER *r, size_t *start, size_t k, size_t *n, size_t 
     slots = (size_t*) realloc(slots, *cap * sizeof(size_t));
   }
   for (i = 0; i < m && !r->failed; i++) {
-    uint64_t s = read_varint(r);
+    uint64_t s = fmu_paramdeps_read_varint(r);
     if (s >= MAX_SLOT) {
       r->failed = 1;
     } else if (s >= *nSlots) {
@@ -137,12 +137,12 @@ OMC_FMU_PARAMDEPS* omc_fmu_paramdeps_load(const MODEL_DATA *md)
   r.failed = 0;
   if (len < 13 || memcmp(bytes, "OMCFMUP", 8)) {
     snprintf(deps->error, sizeof(deps->error), "%s is not a parameter dependency file of an FMU.", path);
-  } else if ((bytes[8] | bytes[9] << 8 | bytes[10] << 16 | (uint32_t) bytes[11] << 24) != VERSION) {
-    snprintf(deps->error, sizeof(deps->error), "%s has another version than %d.", path, VERSION);
+  } else if ((bytes[8] | bytes[9] << 8 | bytes[10] << 16 | (uint32_t) bytes[11] << 24) != OMC_FMU_PARAMDEPS_VERSION) {
+    snprintf(deps->error, sizeof(deps->error), "%s has another version than %d.", path, OMC_FMU_PARAMDEPS_VERSION);
   } else {
     r.p += 12;
     deps->checked = read_u8(&r);
-    nEqs = read_varint(&r);
+    nEqs = fmu_paramdeps_read_varint(&r);
     if (nEqs > (uint64_t) (r.end - r.p)) {
       r.failed = 1;
     } else {
@@ -157,7 +157,7 @@ OMC_FMU_PARAMDEPS* omc_fmu_paramdeps_load(const MODEL_DATA *md)
       deps->uses = read_slots(&r, deps->usesStart, k, &nUses, &capUses, deps->uses, &deps->nSlots);
       deps->defines = read_slots(&r, deps->definesStart, k, &nDefines, &capDefines, deps->defines, &deps->nSlots);
     }
-    nSettable = r.failed ? 0 : read_varint(&r);
+    nSettable = r.failed ? 0 : fmu_paramdeps_read_varint(&r);
     if (nSettable > (uint64_t) (r.end - r.p)) {
       r.failed = 1;
     } else {
@@ -166,7 +166,7 @@ OMC_FMU_PARAMDEPS* omc_fmu_paramdeps_load(const MODEL_DATA *md)
       flagValues = (unsigned char*) malloc(capFlags ? capFlags : 1);
     }
     for (k = 0; k < capFlags && !r.failed; k++) {
-      uint64_t s = read_varint(&r);
+      uint64_t s = fmu_paramdeps_read_varint(&r);
       flagValues[nFlags] = read_u8(&r);
       if (s >= MAX_SLOT) {
         r.failed = 1;

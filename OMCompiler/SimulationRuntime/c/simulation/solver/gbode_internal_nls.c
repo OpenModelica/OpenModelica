@@ -40,15 +40,6 @@
 #define DBL_ABSORPTION (10 * DBL_EPSILON)
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
-/* some constants for less verbose BLAS calls */
-static const double DBL_ZERO = 0.0;
-static const double DBL_ONE = 1.0;
-static const double DBL_MINUS_ONE = -1.0;
-static const int INT_ONE = 1;
-static const int INT_TWO = 2;
-static const char CHAR_TRANS = 'T';
-static const char CHAR_NO_TRANS = 'N';
-
 /* y := a * x + y */
 extern void daxpy_(const int *n,
                    const double *alpha,

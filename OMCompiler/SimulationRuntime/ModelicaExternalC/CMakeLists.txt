@@ -33,6 +33,14 @@ set(libModelicaExternalC_SOURCES C-Sources/ModelicaFFT.c
                                  C-Sources/ModelicaRandom.c
                                  C-Sources/ModelicaStrings.c)
 
+# ModelicaStrings.c enables GNU extensions with a file-local
+# '#define _GNU_SOURCE 1' for strtol_l/strtod_l. Once batched into a unity
+# translation unit, an earlier source's plain libc includes win and the GNU
+# prototypes stay undeclared. Keep it out of the unity batches; no-op for
+# non-unity builds.
+set_source_files_properties(C-Sources/ModelicaStrings.c
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+
 if(MSVC)
   set(libModelicaExternalC_SOURCES ${libModelicaExternalC_SOURCES} C-Sources/win32_dirent.c)
 endif()
@@ -71,6 +79,14 @@ endif()
 include(${CMAKE_CURRENT_SOURCE_DIR}/hdf5_native.cmake)
 
 set(libModelicaMatIO_SOURCES C-Sources/ModelicaMatIO.c C-Sources/snprintf.c)
+# snprintf.c enables its rpl_snprintf replacement with compiler-based feature
+# tests (STDC99, ...). ModelicaMatIO.c includes the bundled zlib earlier in
+# the same unity batch and zlib's zconf.h defines STDC99, so snprintf.c would
+# conclude the libc provides snprintf and collapse to its dummy body while
+# ModelicaMatIO.c still calls rpl_snprintf. Keep snprintf.c out of the unity
+# batches; no-op for non-unity builds.
+set_source_files_properties(C-Sources/snprintf.c
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 # Static version
 add_library(ModelicaMatIO STATIC ${libModelicaMatIO_SOURCES})
 add_library(omc::simrt::Modelica::MatIO ALIAS ModelicaMatIO)

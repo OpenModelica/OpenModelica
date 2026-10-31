@@ -272,7 +272,7 @@ static int getNumericalJacobian(NLS_USERDATA* hybrdUserData, double* jac, const 
  * @param jac             Contains values of Jacobian J(x) on exit.
  * @return int            Return 0 on success.
  */
-static int getAnalyticalJacobian(NLS_USERDATA* hybrdUserData, double* jac)
+static int getAnalyticalJacobianHybrd(NLS_USERDATA* hybrdUserData, double* jac)
 {
   DATA *data = hybrdUserData->data;
   threadData_t *threadData = hybrdUserData->threadData;
@@ -366,7 +366,7 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
       integer iflagtmp = 1;
       wrapper_fvec_hybrj(n_p, x, f, fjac, ldjac, &iflagtmp, userData);
 
-      getAnalyticalJacobian(userData, fjac);
+      getAnalyticalJacobianHybrd(userData, fjac);
     }
     else{
       getNumericalJacobian(userData, fjac, x, f);

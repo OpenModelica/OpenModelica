@@ -30,6 +30,12 @@ set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/GDBMIOutputParser.c PROP
 add_library(libGDBMIParser STATIC GDBMIOutputLexer.c GDBMIOutputParser.c GDBMIParser.cpp)
 add_library(omedit::debugger::parser ALIAS libGDBMIParser)
 
+# The ANTLR-generated lexer and parser define identically-named file-scope
+# symbols (fileName, getGrammarFileName, BACKTRACKING, ...). They cannot share
+# a unity translation unit, so compile them separately; no-op otherwise.
+set_source_files_properties(GDBMIOutputLexer.c GDBMIOutputParser.c
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+
 # set_target_properties(libGDBMIParser PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_link_libraries(libGDBMIParser PUBLIC omc::3rd::omantlr3)

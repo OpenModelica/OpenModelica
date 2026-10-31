@@ -16,6 +16,11 @@ add_executable(bomc)
 target_sources(bomc PRIVATE ${BOOTSTRAP_SOURCES})
 target_sources(bomc PRIVATE ../.cmake/omc_main.c)
 
+# The pre-translated MetaModelica sources number their literals per file
+# (_OMC_LIT_STRUCT0, ...), so no two of them can share a unity translation
+# unit. Keep the bootstrapper out of unity builds.
+set_target_properties(bomc PROPERTIES UNITY_BUILD OFF)
+
 target_compile_definitions(bomc PRIVATE ADD_METARECORD_DEFINITIONS=)
 
 # Silence warnings about extra parenthesized equality checks. if((a==b)).

@@ -287,7 +287,7 @@ static void B_kinsolErrorHandlerFunction(int line, const char *func, const char 
  *
  * @param kinsolData          KINSOL data.
  */
-static void initKinsolMemory(B_NLS_KINSOL_DATA *kinsolData) {
+static void B_initKinsolMemory(B_NLS_KINSOL_DATA *kinsolData) {
   int flag;
   int size = kinsolData->size;
   NONLINEAR_SYSTEM_DATA *nlsData = kinsolData->userData->nlsData;
@@ -366,7 +366,7 @@ static void initKinsolMemory(B_NLS_KINSOL_DATA *kinsolData) {
     } else if (sparsePattern != NULL) {
       flag = KINSetJacFn(kinsolData->kinsolMemory, B_nlsSparseJac); /* Use numeric Jacobian with sparsity pattern */
     } else {
-      throwStreamPrint(NULL, "experimental-kinsol: In function initKinsolMemory: Sparse linear solver KLU needs sparse Jacobian, but no sparsity pattern is available. Use a dense non-linear solver instead of KINSOL.");
+      throwStreamPrint(NULL, "experimental-kinsol: In function B_initKinsolMemory: Sparse linear solver KLU needs sparse Jacobian, but no sparsity pattern is available. Use a dense non-linear solver instead of KINSOL.");
     }
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
   }
@@ -447,7 +447,7 @@ B_NLS_KINSOL_DATA* B_nlsKinsolAllocate(int size, NLS_USERDATA* userData, modelic
 
   kinsolData->kinsolMemory = NULL;
 
-  initKinsolMemory(kinsolData);
+  B_initKinsolMemory(kinsolData);
 
   return kinsolData;
 }
@@ -636,13 +636,13 @@ static int B_nlsDenseJac(long int N,
  *
  * @param A   CSC matrix
  */
-static void finishSparseColPtr(SUNMatrix A, int nnz) {
+static void B_finishSparseColPtr(SUNMatrix A, int nnz) {
   int i;
 
   /* TODO: Remove this check for performance reasons? */
   if (SM_SPARSETYPE_S(A) != SUN_CSC_MAT) {
     errorStreamPrint(OMC_LOG_STDOUT, 0,
-                     "experimental-kinsol: In function finishSparseColPtr: Wrong sparse format of SUNMatrix A.");
+                     "experimental-kinsol: In function B_finishSparseColPtr: Wrong sparse format of SUNMatrix A.");
   }
 
   /* Set last value of indexptrs to nnz */
@@ -678,7 +678,7 @@ static void finishSparseColPtr(SUNMatrix A, int nnz) {
  *                          0 derivative test successful and no error
  *                         -1 internal error
  */
-static int nlsKinsolDenseDerivativeTest(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData, B_NLS_KINSOL_DATA *kinsolData,
+static int B_nlsKinsolDenseDerivativeTest(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData, B_NLS_KINSOL_DATA *kinsolData,
                                         SUNMatrix Jsym, SolverCaller caller)
 {
   int row, col, nz, numericalErrorCount, structuralErrorCount;
@@ -719,7 +719,7 @@ static int nlsKinsolDenseDerivativeTest(DATA *data, NONLINEAR_SYSTEM_DATA *nlsDa
   B_nlsKinsolResiduals(vecX, vecFX, kinsolData->userData);
   if (B_nlsDenseJac(size, vecX, vecFX, Jnum, kinsolData->userData, tmp1, tmp2) != 0)
   {
-    errorStreamPrint(OMC_LOG_STDOUT, 0, "Numerical Jacobian computation failed in nlsKinsolDenseDerivativeTest");
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Numerical Jacobian computation failed in B_nlsKinsolDenseDerivativeTest");
     ret = -1;
     SUNMatDestroy(Jnum);
     N_VDestroy_Serial(vecX);
@@ -873,7 +873,7 @@ static int B_nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   setSundialsSparsePattern(jacobian, Jac);
 
   /* Finish sparse matrix and do a cheap check for singularity */
-  finishSparseColPtr(Jac, sp->nnz);
+  B_finishSparseColPtr(Jac, sp->nnz);
 
   if (kinsolData->useScaling) {
     nlsKinsolInplaceScaleX(kinsolData, vecX);
@@ -890,7 +890,7 @@ static int B_nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
 
   if (omc_useStream[OMC_LOG_NLS_DERIVATIVE_TEST])
   {
-    nlsKinsolDenseDerivativeTest(data, nlsData, kinsolData, Jac, KINSOL_B_JAC_EVAL);
+    B_nlsKinsolDenseDerivativeTest(data, nlsData, kinsolData, Jac, KINSOL_B_JAC_EVAL);
   }
 
   if (omc_useStream[OMC_LOG_NLS_JAC_SUMS])
@@ -1025,7 +1025,7 @@ static int B_nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   }
   /* Finish sparse matrix */
   setSundialsSparseColPtrs(sparsePattern, Jac);
-  finishSparseColPtr(Jac, sparsePattern->nnz);
+  B_finishSparseColPtr(Jac, sparsePattern->nnz);
 
   kinsolData->useScaling = stored_nominal_jac;
   if (kinsolData->useScaling) {
@@ -1048,7 +1048,7 @@ static int B_nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
 
   if (omc_useStream[OMC_LOG_NLS_DERIVATIVE_TEST])
   {
-    nlsKinsolDenseDerivativeTest(data, nlsData, kinsolData, Jac, KINSOL_B_JAC_EVAL);
+    B_nlsKinsolDenseDerivativeTest(data, nlsData, kinsolData, Jac, KINSOL_B_JAC_EVAL);
   }
 
   if (omc_useStream[OMC_LOG_NLS_JAC_SUMS])
@@ -1396,7 +1396,7 @@ static void B_nlsKinsolConfigPrint(B_NLS_KINSOL_DATA *kinsolData,
  * @param kinsolData          Kinsol data.
  * @return modelica_boolean   Return true, if it is possible to retry KINSol().
  */
-static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
+static modelica_boolean B_nlsKinsolErrorHandler(int errorCode, DATA *data,
                                               NONLINEAR_SYSTEM_DATA *nlsData,
                                               B_NLS_KINSOL_DATA *kinsolData) {
   int flag;             /* KIN_* and KINLS_* codes, which are plain macros */
@@ -1692,7 +1692,7 @@ NLS_SOLVER_STATUS B_nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINE
 
     if (omc_useStream[OMC_LOG_NLS_DERIVATIVE_TEST])
     {
-      nlsKinsolDenseDerivativeTest(data, nlsData, kinsolData, kinsolData->J, KINSOL_B_ENTRY_POINT);
+      B_nlsKinsolDenseDerivativeTest(data, nlsData, kinsolData, kinsolData->J, KINSOL_B_ENTRY_POINT);
     }
     */
 
@@ -1723,7 +1723,7 @@ NLS_SOLVER_STATUS B_nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINE
       infoStreamPrint(OMC_LOG_NLS_V, 0, "KINSol finished with errorCode %d.", flag);
     }
     /* Try to handle recoverable errors */
-    retry = flag < 0 && kinsolData->attemptRetry && nlsKinsolErrorHandler(flag, data, nlsData, kinsolData);
+    retry = flag < 0 && kinsolData->attemptRetry && B_nlsKinsolErrorHandler(flag, data, nlsData, kinsolData);
 
     /* solution found */
     if ((flag == KIN_SUCCESS) || (flag == KIN_INITIAL_GUESS_OK) ||

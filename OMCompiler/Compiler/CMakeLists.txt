@@ -292,6 +292,12 @@ if(MSVC)
 endif()
 add_dependencies(OpenModelicaCompiler DEPENDENCY_UPDATE)
 
+# Like bomc above, these are MetaModelica-generated sources with per-file
+# literal numbering (_OMC_LIT_STRUCT0, ...): they cannot share unity
+# translation units. The unity speedup for the compiler comes from its
+# hand-written runtime/parser/simulation sources instead.
+set_target_properties(OpenModelicaCompiler PROPERTIES UNITY_BUILD OFF)
+
 # Coverage instrumentation (-DOM_ENABLE_COVERAGE=ON) for the whole compiler.
 # GEN_DEBUG_SYMBOLS above makes the generated C carry #line directives back to
 # the .mo sources, so this reports as MetaModelica coverage. See

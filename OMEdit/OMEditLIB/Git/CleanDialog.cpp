@@ -47,7 +47,7 @@
 #include "QStandardItemModel"
 #include "QApplication"
 
-enum { columnCount };
+enum { cleanColumnCount };
 enum { fileNameRole = Qt::UserRole, isDirectoryRole = Qt::UserRole + 1 };
 
 /*!
@@ -66,7 +66,7 @@ CleanDialog::CleanDialog(QWidget *pParent)
   resize(500, 400);
   // Select all check box
   mpSelectAllCheckBox = new QCheckBox(tr("Select All"));
-  mpCleanFilesModel = new QStandardItemModel(0, columnCount, this);
+  mpCleanFilesModel = new QStandardItemModel(0, cleanColumnCount, this);
   mpCleanFilesModel->setHorizontalHeaderLabels(QStringList(tr("Name")));
   // files tree view
   mpCleanFilesTreeView = new QTreeView;

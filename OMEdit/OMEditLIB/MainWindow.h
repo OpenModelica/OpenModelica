@@ -40,8 +40,6 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#undef smooth
-
 #ifdef OMC_RUST_ABI
 #include "omc_rust_embedding.h" // Rust omc port: self-contained threadData_t (no MMC runtime)
 #else
@@ -49,6 +47,14 @@ extern "C" {
 #include "meta/meta_modelica.h"
 }
 #endif
+/* meta_modelica.h drags in openmodelica.h's function-like smooth(P,EXP)
+ * macro, which hijacks Qt's QQuickItem::smooth (and friends) in any
+ * translation unit that includes a Qt header afterwards -- in particular
+ * under CMAKE_UNITY_BUILD, where MainWindow.h is batched with the rest of
+ * OMEdit. Nothing in OMEdit uses the macro (generated code does not emit
+ * it), so undefine it right away.
+ */
+#undef smooth
 
 #include "Util/StringHandler.h"
 

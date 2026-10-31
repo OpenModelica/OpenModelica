@@ -290,7 +290,7 @@ static int jacColoredNumericalSparse(double t, N_Vector y, N_Vector fy, SUNMatri
  * @param cvodeData   CVODE solver data.
  * @return int        0 on success, 1 if the model raised an error.
  */
-static int jacColoredSymbolicalSparse(double t, SUNMatrix Jac, CVODE_SOLVER *cvodeData)
+static int jacColoredSymbolicalSparseCvode(double t, SUNMatrix Jac, CVODE_SOLVER *cvodeData)
 {
   DATA *data = cvodeData->simData->data;
   threadData_t *threadData = cvodeData->simData->threadData;
@@ -326,7 +326,7 @@ static int jacColoredSymbolicalSparse(double t, SUNMatrix Jac, CVODE_SOLVER *cvo
  * @param tmp3        "
  * @return int        0 on success, positive value for a recoverable error.
  */
-static int callSparseJacobian(double t, N_Vector y, N_Vector fy,
+static int callSparseJacobianCvode(double t, N_Vector y, N_Vector fy,
                               SUNMatrix Jac, void *user_data,
                               N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
 {
@@ -340,7 +340,7 @@ static int callSparseJacobian(double t, N_Vector y, N_Vector fy,
 
   if (method == COLOREDSYMJAC || method == COLOREDSYMJACADJ || method == BICOLOREDSYMJAC)
   {
-    retVal = jacColoredSymbolicalSparse(t, Jac, cvodeData);
+    retVal = jacColoredSymbolicalSparseCvode(t, Jac, cvodeData);
   }
   else
   {
@@ -724,7 +724,7 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
     assertStreamPrint(threadData, NULL != cvodeData->linSol, "##CVODE## SUNLinSol_KLU failed.");
     flag = CVodeSetLinearSolver(cvodeData->cvode_mem, cvodeData->linSol, cvodeData->J);
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_CVLS_FLAG, "CVodeSetLinearSolver");
-    flag = CVodeSetJacFn(cvodeData->cvode_mem, callSparseJacobian);
+    flag = CVodeSetJacFn(cvodeData->cvode_mem, callSparseJacobianCvode);
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_CVLS_FLAG, "CVodeSetJacFn");
     cvodeData->fProbe = N_VNew_Serial(cvodeData->N, cvodeData->sunctx);
     cvodeData->ysave = (double *)malloc(cvodeData->N * sizeof(double));

@@ -1,6 +1,20 @@
 
 
 
+# Every FactoryExport.cpp defines the same extern "C"
+# boost_extension_exported_type_map_function. Merged into a unity batch of a
+# static library, that object is pulled in for unrelated symbols and the
+# duplicates across the OMCpp*_static archives collide at link time. Keep
+# them out of the unity batches; no-op for non-unity builds.
+set_source_files_properties(CVode/FactoryExport.cpp
+                            DASSL/FactoryExport.cpp
+                            Dgesv/FactoryExport.cpp
+                            IDA/FactoryExport.cpp
+                            Kinsol/FactoryExport.cpp
+                            LinearSolver/FactoryExport.cpp
+                            Newton/FactoryExport.cpp
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+
 #####################################################################################################
 # OMCppCVode
 set(OMC_SIMRT_CPP_SOLVER_CVODE_SOURCES CVode/CVode.cpp

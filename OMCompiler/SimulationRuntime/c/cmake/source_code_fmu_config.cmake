@@ -533,6 +533,35 @@ target_sources(SimulationRuntimeFMI PRIVATE ${SOURCE_FMU_COMMON_FILES_LIST}
                                             ${3RD_CMINPACK_FMU_FILES}
                                             ${3RD_DGESV_FILES})
 
+# The CMinpack sources clash with minpack.h's declarations once batched into
+# a unity translation unit; keep them out of the unity batches to restore the
+# fine-grained resolution. No-op for non-unity builds (and empty when
+# OM_USE_SYSTEM_CMINPACK leaves 3RD_CMINPACK_FMU_FILES unset).
+set_source_files_properties(${3RD_CMINPACK_FMU_FILES}
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+
+# The dgesv f2c sources each define 'static integer c__1' (and friends);
+# keep them out of the unity batches like the other f2c code (cdaskr).
+# No-op for non-unity builds.
+set_source_files_properties(${3RD_DGESV_FILES}
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+
+# util/omc_numbers.c carries a file-local '#define _GNU_SOURCE 1' (see
+# util/CMakeLists.txt); the SKIP_UNITY_BUILD_INCLUSION set there is scoped to
+# that directory, so repeat it for this directory's reuse of the file.
+set_source_files_properties(util/omc_numbers.c
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+
+# gc/omc_alloc.c carries a file-local '#define OMC_NO_GC_MAPPING' (it uses the
+# raw omc_alloc_interface names). It is the first source of this target's
+# unity batches, so the define would leak and omc_gc.h's include guard would
+# freeze the unmapped state for every source after it (e.g. GC_strdup in
+# util/omc_fmu_init.c). Keep it out of the unity batches to restore the
+# fine-grained resolution. No-op for non-unity builds. Scoped to this
+# directory on purpose: the MetaModelica gc/ batch relies on the current order.
+set_source_files_properties(gc/omc_alloc.c
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+
 target_compile_definitions(SimulationRuntimeFMI PRIVATE OMC_MINIMAL_RUNTIME=1;OMC_FMI_RUNTIME=1;CMINPACK_NO_DLL;WITH_SUITESPARSE)
 
 set_target_properties(SimulationRuntimeFMI PROPERTIES POSITION_INDEPENDENT_CODE ON

@@ -46,7 +46,7 @@
 #include "real_array.h"
 #include "string_array.h"
 
-#define VERSION 1
+#define OMC_FMU_INIT_VERSION 1
 #define NUM_ARRAYS 8
 #define BUFFER_SIZE 65536
 #define FIRST_VALUE_REFERENCE 1000
@@ -117,7 +117,7 @@ static void read_bytes(OMC_FMU_INIT *init, void *dest, size_t n)
   }
 }
 
-static uint64_t read_varint(OMC_FMU_INIT *init)
+static uint64_t fmu_init_read_varint(OMC_FMU_INIT *init)
 {
   uint64_t v = 0;
   int shift = 0, b;
@@ -136,7 +136,7 @@ static int64_t read_int(OMC_FMU_INIT *init)
   int b = next_byte(init);
   uint64_t m = (b >> 1) & 63;
   if (b & 128) {
-    m |= read_varint(init) << 6;
+    m |= fmu_init_read_varint(init) << 6;
   }
   return (b & 1) ? -(int64_t) m - 1 : (int64_t) m;
 }
@@ -165,7 +165,7 @@ static uint32_t read_u32(OMC_FMU_INIT *init)
 /* A malloc'd string, or NULL when it is skipped or the file ends. */
 static char* read_string(OMC_FMU_INIT *init, int keep)
 {
-  uint64_t n = read_varint(init);
+  uint64_t n = fmu_init_read_varint(init);
   char *s;
   if (n > MAX_LENGTH) {
     init->failed = 1;
@@ -262,7 +262,7 @@ static void read_variable(OMC_FMU_INIT *init, int kind, int id, TARGET *t)
   if (keepName) {
     info->name = name;
   }
-  file = read_varint(init);
+  file = fmu_init_read_varint(init);
   for (a = 0; a < 4; a++) {
     position[a] = read_int(init);
   }
@@ -285,7 +285,7 @@ static void read_variable(OMC_FMU_INIT *init, int kind, int id, TARGET *t)
   }
   if (flags & FLAG_DIMENSIONS) {
     DIMENSION_INFO *d = t->dimension && !t->dimension->numberOfDimensions ? t->dimension : NULL;
-    n = read_varint(init);
+    n = fmu_init_read_varint(init);
     if (n > 64) {
       init->failed = 1;
       return;
@@ -306,7 +306,7 @@ static void read_variable(OMC_FMU_INIT *init, int kind, int id, TARGET *t)
   for (a = ATTR_START; a <= ATTR_NOMINAL; a++) {
     base_array_t *arr = t->attribute[a];
     if (flags & (FLAG_START << a)) {
-      n = read_varint(init);
+      n = fmu_init_read_varint(init);
       if (n == 0 || n > MAX_LENGTH) {
         init->failed = 1;
       }
@@ -424,8 +424,8 @@ OMC_FMU_INIT* omc_fmu_init_load(const MODEL_DATA *md)
   read_bytes(init, magic, 8);
   if (init->failed || memcmp(magic, "OMCFMUI", 8)) {
     snprintf(init->error, sizeof(init->error), "%s is not an init file of an FMU.", path);
-  } else if (read_u32(init) != VERSION) {
-    snprintf(init->error, sizeof(init->error), "%s has another version than %d.", path, VERSION);
+  } else if (read_u32(init) != OMC_FMU_INIT_VERSION) {
+    snprintf(init->error, sizeof(init->error), "%s has another version than %d.", path, OMC_FMU_INIT_VERSION);
   } else {
     for (a = 0; a < NUM_ARRAYS; a++) {
       init->counts[a] = read_u32(init);
@@ -440,7 +440,7 @@ OMC_FMU_INIT* omc_fmu_init_load(const MODEL_DATA *md)
       init->experiment[a] = read_f64(init);
     }
     init->solver = read_string(init, 1);
-    init->numFiles = read_varint(init);
+    init->numFiles = fmu_init_read_varint(init);
     if (init->numFiles > MAX_LENGTH) {
       init->failed = 1;
     }
