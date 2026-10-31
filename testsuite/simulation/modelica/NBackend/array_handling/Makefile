@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 nlsArrayElementNominal.mos \
+resizableAliasMin.mos \
 reductionSkips.mos \
 nestedForConnectRange.mos \
 sparsityMatrixResidual.mos \
