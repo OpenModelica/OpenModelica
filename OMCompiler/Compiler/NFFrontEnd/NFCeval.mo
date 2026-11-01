@@ -2040,6 +2040,7 @@ function evalCall
   output Expression exp;
 protected
   Call c = call;
+  EvalTarget iter_target;
 algorithm
   exp := match c
     local
@@ -2055,17 +2056,19 @@ algorithm
 
     case Call.TYPED_ARRAY_CONSTRUCTOR()
       algorithm
-        c.exp := evalExpPartial(c.exp, target);
-        c.iters := Call.mapIteratorsExpShallow(c.iters, function evalExpPartialTarget(target = target));
+        iter_target := iterationTarget(target);
+        c.exp := evalExpPartial(c.exp, iter_target);
+        c.iters := Call.mapIteratorsExpShallow(c.iters, function evalExpPartialTarget(target = iter_target));
       then
-        Expression.mapSplitExpressions(Expression.CALL(c), function evalArrayConstructor(target = target));
+        Expression.mapSplitExpressions(Expression.CALL(c), function evalArrayConstructor(target = iter_target));
 
     case Call.TYPED_REDUCTION()
       algorithm
-        c.exp := evalExpPartial(c.exp, target);
-        c.iters := Call.mapIteratorsExpShallow(c.iters, function evalExpPartialTarget(target = target));
+        iter_target := iterationTarget(target);
+        c.exp := evalExpPartial(c.exp, iter_target);
+        c.iters := Call.mapIteratorsExpShallow(c.iters, function evalExpPartialTarget(target = iter_target));
       then
-        Expression.mapSplitExpressions(Expression.CALL(c), function evalReduction(target = target));
+        Expression.mapSplitExpressions(Expression.CALL(c), function evalReduction(target = iter_target));
 
     else
       algorithm
@@ -3400,6 +3403,14 @@ algorithm
   // scope that was saved during the typing.
   result := Expression.STRING(AbsynUtil.pathString(InstNode.rootPath(scope)));
 end evalGetInstanceName;
+
+protected function iterationTarget
+  "The body of an array constructor or reduction is evaluated without the
+   caller's target, except for the script context."
+  input EvalTarget target;
+  output EvalTarget iterTarget = if InstContext.inScripting(target.context) then
+    EvalTarget.new(Absyn.dummyInfo, NFInstContext.SCRIPTING) else noTarget;
+end iterationTarget;
 
 protected function evalArrayConstructor
   input Expression callExp;
