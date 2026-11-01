@@ -4027,11 +4027,31 @@ algorithm
   (cr, dim_index) := range_cr;
 
   // Deduced iteration range is 1:size(cr, dim_index)
-  dim := Type.nthDimension(InstNode.getType(ComponentRef.node(cr)), dim_index);
+  dim := iteratorCrefDim(ComponentRef.node(cr), dim_index, info);
   start_exp := Dimension.lowerBoundExp(dim);
   stop_exp := Dimension.endExp(dim, Expression.CREF(Type.UNKNOWN(), cr), dim_index);
   iterationRange := Expression.RANGE(Type.UNKNOWN(), start_exp, NONE(), stop_exp);
 end deduceIterationRange;
+
+function iteratorCrefDim
+  "Returns a dimension of a component subscripted with an implicit iterator.
+   The dimensions of e.g. package constants might not have been typed yet."
+  input InstNode node;
+  input Integer index;
+  input SourceInfo info;
+  output Dimension dim;
+protected
+  Type ty = InstNode.getType(node);
+algorithm
+  dim := Type.nthDimension(ty, index);
+
+  dim := match dim
+    case Dimension.UNTYPED()
+      then typeDimension(listArray(Type.arrayDims(ty)), index, node,
+        Component.getBinding(InstNode.component(node)), NFInstContext.CLASS, info);
+    else dim;
+  end match;
+end iteratorCrefDim;
 
 function collectIteratorCrefs
   "Traverses an expression and return a list of crefs that the given iterator
@@ -4102,8 +4122,8 @@ algorithm
   end if;
 
   // The crefs are probably untyped here, so use the type of the instance nodes instead.
-  dim1 := Type.nthDimension(InstNode.getType(node1), index1);
-  dim2 := Type.nthDimension(InstNode.getType(node2), index2);
+  dim1 := iteratorCrefDim(node1, index1, info);
+  dim2 := iteratorCrefDim(node2, index2, info);
 
   if not Dimension.isEqualKnownSize(dim1, node1, index1, dim2, node2, index2) then
     Error.addSourceMessage(Error.INCOMPATIBLE_IMPLICIT_RANGES,
