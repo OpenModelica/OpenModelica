@@ -173,6 +173,8 @@ modelica_boolean LessZC(double a, double b, double a_nominal, double b_nominal, 
 modelica_boolean LessEqZC(double a, double b, double a_nominal, double b_nominal, modelica_boolean);
 modelica_boolean GreaterZC(double a, double b, double a_nominal, double b_nominal, modelica_boolean);
 modelica_boolean GreaterEqZC(double a, double b, double a_nominal, double b_nominal, modelica_boolean);
+modelica_real LessZCValue(double a, double b, double a_nominal, double b_nominal, modelica_boolean);
+modelica_real GreaterZCValue(double a, double b, double a_nominal, double b_nominal, modelica_boolean);
 
 
 /**

@@ -1781,6 +1781,11 @@ package SimCodeCodegenUtil
     output Boolean b;
   end isTimeEventRelation;
 
+  function isContinuousZeroCrossing
+    input DAE.Exp rel;
+    output Boolean b;
+  end isContinuousZeroCrossing;
+
   function cref2simvar
     input DAE.ComponentRef cref;
     input SimCode.SimCode simCode;

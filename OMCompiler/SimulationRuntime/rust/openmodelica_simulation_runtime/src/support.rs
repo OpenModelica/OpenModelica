@@ -433,6 +433,28 @@ pub extern "C" fn LessEqZC(a: f64, b: f64, an: f64, bn: f64, direction: c_int) -
 pub extern "C" fn GreaterEqZC(a: f64, b: f64, an: f64, bn: f64, direction: c_int) -> c_int {
     (LessZC(a, b, an, bn, (direction == 0) as c_int) == 0) as c_int
 }
+/// C's `hysteresisZCValue`: `d` shifted by the hysteresis width, never 0, with the
+/// sign of the `*ZC` relation.
+fn hysteresis_zc_value(d: f64, eps: f64, direction: c_int) -> f64 {
+    let zc = if direction != 0 { d + eps } else { d - eps };
+    if zc != 0.0 {
+        zc
+    } else if direction != 0 {
+        f64::MIN_POSITIVE
+    } else {
+        -f64::MIN_POSITIVE
+    }
+}
+/// C's `LessZCValue`: continuous zero crossing whose sign is `LessZC`.
+#[unsafe(no_mangle)]
+pub extern "C" fn LessZCValue(a: f64, b: f64, an: f64, bn: f64, direction: c_int) -> f64 {
+    hysteresis_zc_value(b - a, zc_eps(a, b, an, bn), direction)
+}
+/// C's `GreaterZCValue`: continuous zero crossing whose sign is `GreaterZC`.
+#[unsafe(no_mangle)]
+pub extern "C" fn GreaterZCValue(a: f64, b: f64, an: f64, bn: f64, direction: c_int) -> f64 {
+    hysteresis_zc_value(a - b, zc_eps(a, b, an, bn), direction)
+}
 
 // ---------------------------------------------------------------------------
 // Analytic-Jacobian scaffolding (`jacobian_util.c`), called by the generated

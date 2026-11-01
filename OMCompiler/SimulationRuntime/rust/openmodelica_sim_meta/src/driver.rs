@@ -4405,9 +4405,15 @@ pub fn log_event_status(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, st
         if layout.n_zc > 0 {
             omclog::info!(stream, true, "status of zero crossings at time={time}");
             for i in 0..layout.n_zc {
-                let g = |off: u32| omclog::g(read_f64(e, sim_data + off + i * 8).unwrap_or(0.0), 2, 1);
+                let flag = |off: u32| {
+                    if read_f64(e, sim_data + off + i * 8).unwrap_or(0.0) > 0.0 {
+                        " true"
+                    } else {
+                        "false"
+                    }
+                };
                 let desc = d.zc_desc.get(i as usize).map(String::as_str).unwrap_or_default();
-                let (pre, cur) = (g(layout.zc_pre_off), g(layout.zc_off));
+                let (pre, cur) = (flag(layout.zc_pre_off), flag(layout.zc_off));
                 omclog::info!(stream, false, "[{}] (pre: {pre}) {cur} = {desc}", i + 1);
             }
             omclog::close(stream);
@@ -4588,7 +4594,7 @@ fn locate_zc_root(
         // C's `checkZeroCrossings`
         let in_left = hunted
             .iter()
-            .any(|&i| (cur[i] == -1.0 && pre[i] == 1.0) || (cur[i] == 1.0 && pre[i] == -1.0));
+            .any(|&i| (cur[i] < 0.0 && pre[i] > 0.0) || (cur[i] > 0.0 && pre[i] < 0.0));
         if in_left {
             b = c;
             backup.copy_from_slice(&cur);

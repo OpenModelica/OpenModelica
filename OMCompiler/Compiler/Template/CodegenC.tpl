@@ -5712,8 +5712,6 @@ template zeroCrossingsTpl(list<ZeroCrossing> zeroCrossings, Text &varDecls, Text
   ;separator="\n";empty)
 end zeroCrossingsTpl;
 
-
-
 template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>> iter, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates code for a zero crossing."
 ::=
@@ -5765,30 +5763,33 @@ template zeroCrossingValue(Integer index1, Exp relation, Text &preExp, Text &var
 ::=
   match relation
   case exp as RELATION(__) then
-    '(<%daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)%>) ? 1 : -1;'
+    if isContinuousZeroCrossing(exp) then
+      zeroCrossingRelationValue(exp, &preExp, &varDecls, &varFrees, &auxFunction)
+    else
+      '(<%daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)%>) ? 1 : -1'
 
   case exp as LBINARY(__) then
-    '(<%daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)%>) ? 1 : -1;'
+    '(<%daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)%>) ? 1 : -1'
 
   case exp as LUNARY(__) then
-    '(<%daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)%>) ? 1 : -1;'
+    '(<%daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)%>) ? 1 : -1'
 
-  case CALL(path=IDENT(name="sample"), expLst={_, start, interval}) then ''
+  case CALL(path=IDENT(name="sample"), expLst={_, _, _}) then ''
 
   case CALL(path=IDENT(name="integer"), expLst={exp, idx}) then
     let e1 = daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
     let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
-    '(floor(<%e1%>) != floor(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1;'
+    '(floor(<%e1%>) != floor(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1'
 
   case CALL(path=IDENT(name="floor"), expLst={exp, idx}) then
     let e1 = daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
     let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
-    '(floor(<%e1%>) != floor(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1;'
+    '(floor(<%e1%>) != floor(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1'
 
   case CALL(path=IDENT(name="ceil"), expLst={exp, idx}) then
     let e1 = daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
     let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
-    '(ceil(<%e1%>) != ceil(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1;'
+    '(ceil(<%e1%>) != ceil(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1'
 
   case CALL(path=IDENT(name="mod"), expLst={exp1, exp2, idx}) then
     let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
@@ -5798,18 +5799,41 @@ template zeroCrossingValue(Integer index1, Exp relation, Text &preExp, Text &var
     let tvar2 = tempDecl("modelica_real", &varDecls, &varFrees)
     let &preExp += '<%tvar1%> = floor((<%e1%>) / (<%e2%>));<%\n%>'
     let &preExp += '<%tvar2%> = floor((data->simulationInfo->mathEventsValuePre[<%indx%>]) / (data->simulationInfo->mathEventsValuePre[<%indx%>+1]));<%\n%>'
-    '(<%tvar1%> != <%tvar2%>) ? 1 : -1;'
+    '(<%tvar1%> != <%tvar2%>) ? 1 : -1'
 
   case CALL(path=IDENT(name="div"), expLst={exp1, exp2, idx}) then
     let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
     let e2 = daeExp(exp2, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
     let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
-    '(trunc((<%e1%>)/(<%e2%>)) != trunc(data->simulationInfo->mathEventsValuePre[<%indx%>]/data->simulationInfo->mathEventsValuePre[<%indx%>+1])) ? 1 : -1;'
+    '(trunc((<%e1%>)/(<%e2%>)) != trunc(data->simulationInfo->mathEventsValuePre[<%indx%>]/data->simulationInfo->mathEventsValuePre[<%indx%>+1])) ? 1 : -1'
 
   else
     error(sourceInfo(), ' UNKNOWN ZERO CROSSING for <%index1%>')
 end zeroCrossingValue;
 
+template zeroCrossingRelationValue(Exp relation, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
+ "Generates a continuous zero crossing for a Real relation that is positive
+  exactly when its hysteresis relation (LessZC, ...) is true."
+::=
+  match relation
+  case rel as RELATION(__) then
+    let rel_f = match rel.operator
+      case LESS(__) then 'Less'
+      case LESSEQ(__) then 'Less'
+      case GREATER(__) then 'Greater'
+      case GREATEREQ(__) then 'Greater'
+    let e1 = daeExp(rel.exp1, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
+    let e2 = daeExp(rel.exp2, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
+    let tmp1 = tempDecl("modelica_real", &varDecls, &varFrees)
+    let tmp2 = tempDecl("modelica_real", &varDecls, &varFrees)
+    let nominalTmp = daeExpNominalTmp(tmp1, tmp2, rel.exp1, rel.exp2, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
+    let &preExp += '<%nominalTmp%><%\n%>'
+    let index = match rel.optionExpisASUB
+      case SOME((iterExp, start, step)) then
+        '<%rel.index%> + (<%daeExp(iterExp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)%> - <%start%>)/<%step%>'
+      else rel.index
+    '<%rel_f%>ZCValue(<%e1%>, <%e2%>, <%tmp1%>, <%tmp2%>, data->simulationInfo->storedRelations[<%index%>])'
+end zeroCrossingRelationValue;
 
 template functionRelations(list<ZeroCrossing> relations, String modelNamePrefix) "template functionRelations
   Generates function in simulation file.
