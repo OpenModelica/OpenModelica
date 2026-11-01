@@ -38,6 +38,7 @@ arrayConnectOutside.mos \
 mixedDependencyFrames.mos \
 arrayConnectRooted.mos \
 entwinedOrder.mos \
+entwinedScalarAnchors.mos \
 entwinedOrderResizable.mos \
 resizableOverride.mos \
 resizableSizeDimension.mos \
