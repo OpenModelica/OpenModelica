@@ -25,8 +25,6 @@ Constant8.mo \
 Constant9.mo \
 Constant10.mo \
 Constant11.mo \
-Constant12.mo \
-Constant13.mo \
 ConstantDeclConnector.mo \
 ConstantDeclRecord.mo \
 ConstantDeclType.mo \

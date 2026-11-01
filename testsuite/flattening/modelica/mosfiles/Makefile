@@ -45,8 +45,7 @@ WhileStatement.mos WhileStatementIllegal.mos \
 ModifierProblem.mos \
 ZeroDims.mos \
 ZeroRange.mos \
-ZeroRangeNF.mos \
-vaporizing.mos
+ZeroRangeNF.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
