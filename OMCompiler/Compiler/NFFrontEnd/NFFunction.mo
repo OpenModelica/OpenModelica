@@ -1867,7 +1867,8 @@ uniontype Function
 
     // If the function is pure, check that it doesn't contain any impure calls.
     if not isImpure(fn) then
-      pure := foldExp(fn, function checkPureCall(fn = fn), true);
+      pure := foldExp(fn, function checkPureCall(fn = fn,
+        warn = not InstContext.inScripting(fn_context)), true);
 
       // The function does contain impure calls, mark the function as impure.
       if not pure then
@@ -1884,6 +1885,7 @@ uniontype Function
   function checkPureCall
     input Expression exp;
     input Function fn;
+    input Boolean warn "A script calls impure functions freely.";
     input output Boolean pure;
   algorithm
     if not pure then
@@ -1893,7 +1895,7 @@ uniontype Function
     if Expression.isImpureCall(exp) then
       pure := false;
 
-      if Config.languageStandardAtLeast(Config.LanguageStandard._3_3) then
+      if warn and Config.languageStandardAtLeast(Config.LanguageStandard._3_3) then
         Error.addSourceMessage(Error.PURE_FUNCTION_WITH_IMPURE_CALLS,
           {AbsynUtil.pathString(Function.name(fn)), Expression.getName(exp)},
           InstNode.info(InstNode.fromHandle(fn.node)));

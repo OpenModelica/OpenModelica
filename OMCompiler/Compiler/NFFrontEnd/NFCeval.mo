@@ -289,6 +289,14 @@ algorithm
   exp := evalExpPartial(exp);
 end evalExpPartialDefault;
 
+function evalExpPartialTarget
+  "evalExpPartial as a function pointer, see evalExpPartialDefault."
+  input output Expression exp;
+  input EvalTarget target;
+algorithm
+  exp := evalExpPartial(exp, target);
+end evalExpPartialTarget;
+
 function evalExpPartial
   "Evaluates the parts of an expression that are possible to evaluate. This
    means leaving parts of the expression that contains e.g. iterators or mutable
@@ -2047,17 +2055,17 @@ algorithm
 
     case Call.TYPED_ARRAY_CONSTRUCTOR()
       algorithm
-        c.exp := evalExpPartial(c.exp);
-        c.iters := Call.mapIteratorsExpShallow(c.iters, evalExpPartialDefault);
+        c.exp := evalExpPartial(c.exp, target);
+        c.iters := Call.mapIteratorsExpShallow(c.iters, function evalExpPartialTarget(target = target));
       then
-        Expression.mapSplitExpressions(Expression.CALL(c), evalArrayConstructor);
+        Expression.mapSplitExpressions(Expression.CALL(c), function evalArrayConstructor(target = target));
 
     case Call.TYPED_REDUCTION()
       algorithm
-        c.exp := evalExpPartial(c.exp);
-        c.iters := Call.mapIteratorsExpShallow(c.iters, evalExpPartialDefault);
+        c.exp := evalExpPartial(c.exp, target);
+        c.iters := Call.mapIteratorsExpShallow(c.iters, function evalExpPartialTarget(target = target));
       then
-        Expression.mapSplitExpressions(Expression.CALL(c), evalReduction);
+        Expression.mapSplitExpressions(Expression.CALL(c), function evalReduction(target = target));
 
     else
       algorithm
@@ -3355,6 +3363,7 @@ end evalGetInstanceName;
 
 protected function evalArrayConstructor
   input Expression callExp;
+  input EvalTarget target;
   output Expression result;
 protected
   Expression exp;
@@ -3364,13 +3373,14 @@ protected
 algorithm
   Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = exp, iters = iters)) := callExp;
   (exp, ranges, iter_exps) := Expression.createIterationRanges(exp, iters);
-  result := evalArrayConstructor2(exp, ranges, iter_exps);
+  result := evalArrayConstructor2(exp, ranges, iter_exps, target);
 end evalArrayConstructor;
 
 function evalArrayConstructor2
   input Expression exp;
   input list<Expression> ranges;
   input list<Mutable<Expression>> iterators;
+  input EvalTarget target;
   output Expression result;
 protected
   Expression range;
@@ -3383,17 +3393,17 @@ protected
   Type ty;
 algorithm
   if listEmpty(ranges) then
-    result := evalExp(exp);
+    result := evalExp(exp, target);
   else
     range :: ranges_rest := ranges;
-    range := evalExp(range);
+    range := evalExp(range, target);
     iter :: iters_rest := iterators;
     range_iter := ExpressionIterator.fromExp(range);
 
     while ExpressionIterator.hasNext(range_iter) loop
       (range_iter, value) := ExpressionIterator.next(range_iter);
       Mutable.update(iter, value);
-      expl := evalArrayConstructor2(exp, ranges_rest, iters_rest) :: expl;
+      expl := evalArrayConstructor2(exp, ranges_rest, iters_rest, target) :: expl;
     end while;
 
     arr := listArray(listReverseInPlace(expl));
@@ -3415,6 +3425,7 @@ end ReductionFn;
 
 function evalReduction
   input Expression callExp;
+  input EvalTarget target;
   output Expression result;
 protected
   Function fn;
@@ -3448,7 +3459,7 @@ algorithm
   end match;
 
   result := Expression.foldReduction(exp, iters, default_exp,
-    function evalExp(target = noTarget), red_fn);
+    function evalExp(target = target), red_fn);
 end evalReduction;
 
 function evalSize

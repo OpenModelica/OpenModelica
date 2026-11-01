@@ -302,10 +302,14 @@ public
       case UNTYPED_CALL()
         algorithm
           // Strip any contexts that don't apply inside the function itself.
+          fn_context := NFInstContext.FUNCTION;
+
           if InstContext.inRelaxed(context) then
-            fn_context := InstContext.set(NFInstContext.FUNCTION, NFInstContext.RELAXED);
-          else
-            fn_context := NFInstContext.FUNCTION;
+            fn_context := InstContext.set(fn_context, NFInstContext.RELAXED);
+          end if;
+
+          if InstContext.inScripting(context) then
+            fn_context := InstContext.set(fn_context, NFInstContext.SCRIPTING);
           end if;
 
           Function.typeRefCache(call.ref, fn_context);
@@ -2630,6 +2634,20 @@ protected
     end if;
   end instNamedArg;
 
+  function isNameCall
+    "Whether a call other than der is passed for a name, which is evaluated
+     rather than quoted, e.g. val(stringVariableName(\"x\"), 0.1)."
+    input Absyn.Exp exp;
+    input Type ty;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "der")) then false;
+      case Absyn.CALL() then listMember(Type.codeName(ty), {"TypeName", "VariableName", "VariableNames"});
+      else false;
+    end match;
+  end isNameCall;
+
   function instCodeArg
     "Quotes the argument of a $Code input, or instantiates any other."
     input Absyn.Exp exp;
@@ -2644,7 +2662,7 @@ protected
     if isSome(inputNode) then
       ty := InstNode.getType(Component.classInstance(InstNode.component(Util.getOption(inputNode))));
 
-      if Type.codeName(ty) <> "" then
+      if Type.codeName(ty) <> "" and not isNameCall(exp, ty) then
         arg := Expression.quoteCode(exp, ty, info);
         return;
       end if;
