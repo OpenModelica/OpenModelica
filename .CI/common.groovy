@@ -124,7 +124,7 @@ void insideTestImage(String image, String extraArgs, Closure body) {
   }
 }
 
-void partest(partition=1,partitionmodulo=1,cache=true,extraArgs='',reportOnly=false) {
+void partest(partition=1,partitionmodulo=1,cache=true,extraArgs='') {
   if (isWindows()) {
 
   bat ("""
@@ -184,8 +184,7 @@ void partest(partition=1,partitionmodulo=1,cache=true,extraArgs='',reportOnly=fa
 
   }
 
-  junit testResults: 'testsuite/partest/result.xml',
-        skipMarkingBuildUnstable: reportOnly, skipPublishingChecks: reportOnly
+  junit 'testsuite/partest/result.xml'
 }
 
 // Link the shared package cache into the workspace and install the testsuite
@@ -1237,8 +1236,9 @@ void partestRust(String simCodeTarget, partition, partitionmodulo) {
   // wasm: off everywhere else - these tests select the wasm-jit/wasm target
   // themselves, which only this build has.
   // hdf5: the CMake build this stage uses links the system HDF5, so MAT v7.3
-  // works. gbode: disabled in the Rust simulation runtime.
-  String suites = '-cpp,-hpcom,-metamodelica,-63bit,-antlr,-stackoverflow,+wasm,+hdf5,-gbode'
+  // works. gbode: disabled in the Rust simulation runtime. ofScripting and
+  // nfScripting: see nfScriptingArgs().
+  String suites = '-cpp,-hpcom,-metamodelica,-63bit,-antlr,-stackoverflow,+wasm,+hdf5,-gbode,-ofScripting,+nfScripting'
   // cSources/fmuCSources inspect generated C, which a wasm target does not write.
   // nativeSharedLib links a native shared library, which a wasm target cannot load.
   if (isWasmTarget) {
@@ -1257,7 +1257,7 @@ void partestRust(String simCodeTarget, partition, partitionmodulo) {
       .CI/scripts/cgroup-memory.sh check
       cd testsuite/partest
       set -x
-      ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/${partitionmodulo} -nocolour -with-xml -suites=${suites}${simCodeTargetArg} 2>&1 | tee runtests-${partition}.log
+      ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/${partitionmodulo} -nocolour -with-xml -suites=${suites}${simCodeTargetArg} ${nfScriptingArgs()} 2>&1 | tee runtests-${partition}.log
       CODE=\${PIPESTATUS[0]}
       set +x
       ../../.CI/scripts/cgroup-memory.sh report
@@ -1680,32 +1680,28 @@ String sharedTestSuites() {
 
 // The clang shards run --simCodeTarget=C+Rust, which does not change the C++
 // runtime, so its tests run in the gcc shards only. fmuCSources expects the
-// sources of a C FMU. The Rust runtime has gbode disabled.
+// sources of a C FMU. The Rust runtime has gbode disabled. The clang shards
+// evaluate scripts with the new frontend, see nfScriptingArgs().
 String rustRuntimeTestSuites() {
-  return "${sharedTestSuites()},-cpp,-fmuCSources,-gbode"
+  return "${sharedTestSuites()},-cpp,-fmuCSources,-gbode,-ofScripting,+nfScripting"
+}
+
+// The C+Rust and wasm-jit lanes evaluate scripts with the new frontend
+// (#17473): they run the nfScripting tests in place of the ofScripting ones,
+// whose expected output is the old frontend's. The gcc lanes keep the old
+// frontend.
+String nfScriptingArgs() {
+  return '-omcflags=-d=nfScripting'
 }
 
 // A partest shard against a stashed CMake install tree (see buildClangOMC).
-void partestStashed(stashName, partition, partitionmodulo, String simCodeTarget = '', String suites = sharedTestSuites()) {
+void partestStashed(stashName, partition, partitionmodulo, String simCodeTarget = '', String suites = sharedTestSuites(), String extraArgs = '') {
   standardSetup()
   unstash stashName
   makeLibsAndCache()
   String simCodeTargetArg = simCodeTarget ? " -simCodeTarget=${simCodeTarget}" : ''
   partest(partition, partitionmodulo, true,
-          "-suites=${suites} -partition-suites=${suites}${simCodeTargetArg}")
-}
-
-// The testsuite with the new frontend script loop (-d=nfScripting) on the C
-// target, until it is the default (#17473). Its results are reported, but
-// neither failing tests nor a failing run change the build result. The C++
-// runtime tests are left out: the script loop does not depend on the runtime.
-void partestNFScripting() {
-  standardSetup()
-  unstash 'omc-clang'
-  makeLibsAndCache()
-  catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-    partest(1, 1, false, "-suites=${sharedTestSuites()},-cpp -omcflags=-d=nfScripting", true)
-  }
+          "-suites=${suites} -partition-suites=${suites}${simCodeTargetArg} ${extraArgs}")
 }
 
 // A CTest-driven testsuite shard against a stashed CMake install tree (see

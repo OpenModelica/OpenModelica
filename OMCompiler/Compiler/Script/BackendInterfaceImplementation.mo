@@ -48,6 +48,7 @@ import BackendInterface;
 import BackendCevalInterface;
 import CevalScript;
 import FGraph;
+import NFApi;
 import NFInteractive;
 import RewriteRules;
 import StaticScript;
@@ -122,6 +123,20 @@ function evalScriptingFunction
 protected
   FCore.Graph env;
 algorithm
+  // The script loop releases the nodes of the scope it evaluates in once the
+  // statement is done, see NFInteractive.evaluate.
+  if name == "clear" then
+    SymbolTable.reset();
+    NFApi.clearCache(releaseNodes = false);
+    result := Values.BOOL(true);
+    return;
+  elseif name == "clearProgram" then
+    SymbolTable.clearProgram();
+    NFApi.clearCache(releaseNodes = false);
+    result := Values.BOOL(true);
+    return;
+  end if;
+
   // Only these look classes up in the old frontend's environment.
   env := if listMember(name, {"getExternalFunctions", "generateCode", "generateHeader",
                               "generateSeparateCode", "generateSeparateCodeDependencies"})

@@ -67,6 +67,7 @@ end mkFullyQual;
 
 public
 function clearCache
+  input Boolean releaseNodes = true;
 end clearCache;
 
 function getInheritedClasses

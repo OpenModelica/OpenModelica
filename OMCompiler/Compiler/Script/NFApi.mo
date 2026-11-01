@@ -453,11 +453,17 @@ end mkFullyQual;
 public function clearCache
   "Release every tree the instance API is holding. A session that has dropped
    its program otherwise keeps its last models instantiated until something
-   instantiates again."
+   instantiates again. Without releaseNodes the nodes stay until
+   MutableWeak.clearRoots, see NFInstanceAPI.dropTopScopeCache."
+  input Boolean releaseNodes = true;
 algorithm
   setGlobalRoot(Global.instNFInstCacheIndex, {});
   setGlobalRoot(Global.instNFLookupCacheIndex, {});
-  NFInstanceAPI.clearTopScopeCache();
+  if releaseNodes then
+    NFInstanceAPI.clearTopScopeCache();
+  else
+    NFInstanceAPI.dropTopScopeCache();
+  end if;
 end clearCache;
 
 protected

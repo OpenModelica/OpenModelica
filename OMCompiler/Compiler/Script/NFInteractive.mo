@@ -54,8 +54,10 @@ import Error;
 import ErrorTypes;
 import Expression;
 import FGraph;
+import Global;
 import InteractiveTypes;
 import List;
+import MutableWeak;
 import NFCall;
 import NFCeval;
 import NFExpression;
@@ -82,6 +84,19 @@ function evaluate
    prints nothing; a failing statement fails, as in the old frontend's loop."
   input GlobalScript.Statement statement;
   output String result;
+algorithm
+  try
+    result := evaluateStatement(statement);
+  else
+    releaseClearedScope();
+    fail();
+  end try;
+  releaseClearedScope();
+end evaluate;
+
+function evaluateStatement
+  input GlobalScript.Statement statement;
+  output String result;
 protected
   Absyn.Algorithm alg;
   SourceInfo info;
@@ -102,7 +117,16 @@ algorithm
 
     else "";
   end match;
-end evaluate;
+end evaluateStatement;
+
+function releaseClearedScope
+  "clear() and clearProgram() drop the top scope but leave its nodes to the
+   end of the statement, which may still be evaluating in it."
+algorithm
+  if listEmpty(getGlobalRoot(Global.instNFNodeCacheIndex)) then
+    MutableWeak.clearRoots();
+  end if;
+end releaseClearedScope;
 
 function lookupVariable
   "The value of a script variable, or of a field of one, as an expression;

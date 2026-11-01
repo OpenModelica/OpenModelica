@@ -1,5 +1,6 @@
 // name: ZeroRange
 // status: correct
+// suite: ofScripting
 // teardown_command: rm -f ZeroRange_*
 
 loadFile("ZeroRange.mo");
