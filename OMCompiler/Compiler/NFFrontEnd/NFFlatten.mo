@@ -377,9 +377,9 @@ algorithm
         alg := listReverseInPlace(sections.algorithms);
         ialg := listReverseInPlace(sections.initialAlgorithms);
       then
-        FlatModel.FLAT_MODEL(classPath, vars, eql, ieql, alg, ialg, src);
+        FlatModel.FLAT_MODEL(classPath, vars, eql, ieql, alg, ialg, {}, {}, src);
 
-      else FlatModel.FLAT_MODEL(classPath, vars, {}, {}, {}, {}, src);
+      else FlatModel.FLAT_MODEL(classPath, vars, {}, {}, {}, {}, {}, {}, src);
   end match;
 
   // get inputs and outputs for algorithms now that types are computed
@@ -437,6 +437,8 @@ algorithm
   funcs := List.fold(flatModel.initialEquations, collectEquationFuncs, funcs);
   funcs := List.fold(flatModel.algorithms, collectAlgorithmFuncs, funcs);
   funcs := List.fold(flatModel.initialAlgorithms, collectAlgorithmFuncs, funcs);
+  funcs := List.fold(flatModel.constraints, collectExpFuncs, funcs);
+  funcs := List.fold(list(Util.tuple22(a) for a in flatModel.optimizationAttributes), collectExpFuncs, funcs);
   execStat(getInstanceName());
 end collectFunctions;
 
@@ -2990,7 +2992,7 @@ algorithm
   if System.getHasOverconstrainedConnectors() and not symbolic_oc then
     // the graph needs the single connections, roots and branches: unroll the
     // for loops of a copy of the equations for it
-    unrolled := FlatModel.FLAT_MODEL(flatModel.name, {}, unrollForGraph(flatModel.equations), {}, {}, {}, flatModel.source);
+    unrolled := FlatModel.FLAT_MODEL(flatModel.name, {}, unrollForGraph(flatModel.equations), {}, {}, {}, {}, {}, flatModel.source);
     (_, conns) := Connections.collectConnections(unrolled, function isDeletedCref(deletedVars = deletedVars));
     (flatModel, broken) := NFOCConnectionGraph.handleOverconstrainedArrayConnections(flatModel, unrolled.equations, conns,
       function isDeletedCref(deletedVars = deletedVars));

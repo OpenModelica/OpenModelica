@@ -1,6 +1,5 @@
 // name: LoopTest
 // status: correct
-// cflags: -d=-newInst
 
 setCommandLineOptions("+g=Optimica");
 getErrorString();
