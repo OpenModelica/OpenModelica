@@ -1488,6 +1488,10 @@ constant ConfigFlag FMU_WITH_FMI2 = CONFIG_FLAG(174,
   "", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   "buildModelFMU(version=\"2.0+3.0\"): the FMI 3.0 FMU also serves FMI 2.0, for OpenModelicaLibraryTesting only.");
 
+constant ConfigFlag FMU_ACAUSAL_COMPONENT = CONFIG_FLAG(175, "fmuAcausalComponent",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  "Translate the model as an acausal component, to be connected through its top-level connectors after it is compiled. A flow variable of such a connector gets the placeholder residual 0 = OpenModelica.Internal.connectorResidual(flow, potentials, name) instead of flow = 0: it still means flow = 0 to anyone who does not know it, but it is neither solved nor substituted, so the connector variables stay unknowns of the system. With --daeMode, the FMI 3.0 Model Exchange FMU is then an open DAE in fmi-ls-dae form whose placeholder residuals an importer replaces by the equations of its connections.");
+
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
   input Boolean initialize = true;
