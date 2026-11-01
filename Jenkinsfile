@@ -29,7 +29,6 @@ pipeline {
     booleanParam(name: 'BUILD_ENTERPRISE_LINUX', defaultValue: false, description: 'Build with Enterprise Linux')
     booleanParam(name: 'BUILD_FEDORA', defaultValue: false, description: 'Build with Fedora 44')
     booleanParam(name: 'ENABLE_MACOS_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on MacOS')
-    booleanParam(name: 'TEST_NF_SCRIPTING', defaultValue: false, description: 'Also run the testsuite with the new frontend script loop (-d=nfScripting); reported only, never fails the build')
     // Read at queue time, before common.groovy is loaded.
     string(name: 'BUILD_PRIORITY',
            defaultValue: env.CHANGE_ID ? '3' : '5',
@@ -332,7 +331,7 @@ pipeline {
       parallel {
         // One testsuite per simulation runtime: gcc (coverage-instrumented) on
         // --simCodeTarget=C, clang on --simCodeTarget=C+Rust without the C++
-        // runtime tests.
+        // runtime tests and with the new frontend's script loop.
         stage('04 testsuite-gcc 1/2') {
           agent {
             node {
@@ -414,7 +413,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-24.04',
                                      common.testCacheMounts('runtest-clang-cache')) {
-                common.partestStashed('omc-clang', 1, 2, 'C+Rust', common.rustRuntimeTestSuites())
+                common.partestStashed('omc-clang', 1, 2, 'C+Rust', common.rustRuntimeTestSuites(), common.nfScriptingArgs())
               }
             }
           }
@@ -443,7 +442,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-24.04',
                                      common.testCacheMounts('runtest-clang-cache')) {
-                common.partestStashed('omc-clang', 2, 2, 'C+Rust', common.rustRuntimeTestSuites())
+                common.partestStashed('omc-clang', 2, 2, 'C+Rust', common.rustRuntimeTestSuites(), common.nfScriptingArgs())
               }
             }
           }
@@ -747,37 +746,6 @@ pipeline {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04-rust',
                                      common.testCacheMounts('runtest-rust-cache')) {
                 common.partestRust('wasm-jit', 1, 1)
-              }
-            }
-          }
-        }
-
-        // The testsuite with the new frontend script loop, which is not the
-        // default yet; see common.partestNFScripting().
-        stage('22 testsuite-nfScripting') {
-          agent {
-            node {
-              label 'linux && !slow'
-              customWorkspace 'ws/OpenModelica'
-            }
-          }
-          environment {
-            RUNTESTDB = "/cache/runtest/"
-            LIBRARIES = "/cache/omlibrary"
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests && params.TEST_NF_SCRIPTING }
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script { common.checkoutSCM() }
-            script {
-              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-24.04',
-                                     common.testCacheMounts('runtest-clang-cache')) {
-                common.partestNFScripting()
               }
             }
           }

@@ -2749,7 +2749,7 @@ end translateGraphics;
 
 function codeToString
   "Converts a $Code expression to a string."
-  input $Code className;
+  input ExpressionOrModification className;
   output String string;
 external "builtin";
 annotation(preferredView="text");

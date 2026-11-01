@@ -594,10 +594,9 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getErrorString()
 // ""
 // Evaluating: codeToString($Code( = 1 + 2))
-//
+// " = 1 + 2"
 // Evaluating: getErrorString()
-// "[openmodelica/interactive-API/interactive_api_calls.mos:109:1-109:26:writable] Error: Class codeToString not found in scope <global scope> (looking for a function or record).
-// "
+// ""
 // Evaluating: deleteClass(ModelicaServices)
 // true
 // Evaluating: loadModel(Modelica, {"4.1.0"})

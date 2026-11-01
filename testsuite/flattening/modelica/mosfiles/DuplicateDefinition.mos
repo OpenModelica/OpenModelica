@@ -1,4 +1,5 @@
 // status: correct
+// suite: ofScripting
 // cflags: -g=MetaModelica -d=nogen
 
 loadString("
