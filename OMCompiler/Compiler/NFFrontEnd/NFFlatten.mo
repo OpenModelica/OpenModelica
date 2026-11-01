@@ -3820,7 +3820,7 @@ algorithm
   end match;
 end verifyDimension;
 
-function updateVariability
+public function updateVariability
   input output Variable var;
 protected
   Variability v;

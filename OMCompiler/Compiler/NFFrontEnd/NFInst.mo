@@ -240,6 +240,7 @@ algorithm
   Error.checkCancel();
   flatModel := Flatten.flatten(inst_cls, classPath);
   flatModel := typeOptimica(constraints, opt_attrs, inst_cls, context, flatModel);
+  flatModel := EvalConstants.checkBindingCycles(flatModel);
   flatModel := EvalConstants.evaluate(flatModel, context);
 
   InstUtil.dumpFlatModelDebug("eval", flatModel);
