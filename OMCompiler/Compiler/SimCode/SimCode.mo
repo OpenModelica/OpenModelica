@@ -747,6 +747,7 @@ public uniontype FmiTerminal
     String terminalKind     "the connector type path (e.g. Modelica....Flange_a), \"\" if unknown";
     Boolean isExpandable    "true for expandable connectors (matchingRule=bus, else plug)";
     list<FmiTerminalMember> members;
+    list<FmiTerminalStreamMember> streamMembers "--fmuAcausalComponent: the stream variables with their inStream variables";
   end FMI_TERMINAL;
 end FmiTerminal;
 
@@ -757,6 +758,15 @@ public uniontype FmiTerminalMember
     String variableKind     "role of the member, derived from causality (input/output/...)";
   end FMI_TERMINAL_MEMBER;
 end FmiTerminalMember;
+
+public uniontype FmiTerminalStreamMember
+  record FMI_TERMINAL_STREAM_MEMBER
+    String inStreamMemberName    "e.g. inStream(h_outflow)";
+    String outStreamMemberName   "e.g. h_outflow";
+    DAE.ComponentRef inStreamVariable  "e.g. 'inStream(port.h_outflow)'; formatted like TerminalMember3";
+    DAE.ComponentRef outStreamVariable "e.g. port.h_outflow";
+  end FMI_TERMINAL_STREAM_MEMBER;
+end FmiTerminalStreamMember;
 
 /* The Documentation(figures=...) annotation resolved against the exported
    variables; emitted by CodegenFMU3 as the OpenModelica <Figures> vendor

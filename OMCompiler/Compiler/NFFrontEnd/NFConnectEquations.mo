@@ -79,9 +79,11 @@ import UnorderedMap;
 import Flatten = NFFlatten;
 import Subscript = NFSubscript;
 import Structural = NFStructural;
+import Attributes = NFAttributes;
 
 constant Expression EQ_ASSERT_STR =
   Expression.STRING("Connected constants/parameters must be equal");
+type ExpressionList = list<Expression>;
 
 public
 function generateEquations
@@ -102,6 +104,9 @@ protected
   Expression flowThreshold;
   ConnectorType.Type cty;
   Boolean flow_alias_elim = Flags.isSet(Flags.FLOW_ALIAS_ELIMINATION);
+  Boolean acausal_component = Flags.getConfigBool(Flags.FMU_ACAUSAL_COMPONENT);
+  UnorderedMap<ComponentRef, list<Expression>> potentials;
+  Option<Function> residual_fn = NONE();
 algorithm
   setGlobalRoot(Global.isInStream, NONE());
   connectedLocalIOs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
@@ -110,13 +115,20 @@ algorithm
   potfunc := generatePotentialEquations;
   flowThreshold := Expression.REAL(Flags.getConfigReal(Flags.FLOW_THRESHOLD));
 
+  potentials := if acausal_component then collectTopLevelPotentials(variables)
+    else UnorderedMap.new<ExpressionList>(ComponentRef.hash, ComponentRef.isEqual);
+
   for set in sets loop
     cty := getSetType(set);
 
     if ConnectorType.isPotential(cty) then
       (set_eql, connectedLocalIOs) := potfunc(set, connectedLocalIOs);
     elseif ConnectorType.isFlow(cty) then
-      set_eql := generateFlowEquations(set);
+      if acausal_component and isOpenTopLevelFlow(set) then
+        (set_eql, residual_fn) := generateConnectorResidual(listHead(set), potentials, residual_fn);
+      else
+        set_eql := generateFlowEquations(set);
+      end if;
     elseif ConnectorType.isStream(cty) then
       if flow_alias_elim then
         // If doing flow alias elimination in stream connectors we need to
@@ -464,6 +476,159 @@ algorithm
     ranges := listRest(ranges);
   end while;
 end generateFlowEquations;
+
+function isTopLevelConnectorElement
+  "Returns true if the cref is an element of a connector declared in the top-level
+   model, e.g. p.i or p.a.i where p is a connector of the model being translated."
+  input ComponentRef cref;
+  output Boolean res;
+algorithm
+  res := match ComponentRef.toListReverse(cref, includeScope = false)
+    local
+      ComponentRef first;
+    case first :: _ :: _ then InstNode.isConnector(ComponentRef.node(first));
+    else false;
+  end match;
+end isTopLevelConnectorElement;
+
+function isOpenTopLevelFlow
+  "Returns true if the flow set is a scalar flow variable of a top-level connector
+   on its own, i.e. the one that gets flow = 0 because nothing outside connects it."
+  input list<Connector> set;
+  output Boolean res;
+algorithm
+  res := match set
+    local
+      Connector c;
+    case {c} then not Connector.isArray(c) and isTopLevelConnectorElement(c.name);
+    else false;
+  end match;
+end isOpenTopLevelFlow;
+
+function collectTopLevelPotentials
+  "Maps each top-level connector (the prefix of its elements) to its Real
+   potential variables, in declaration order."
+  input UnorderedMap<ComponentRef, Variable> variables;
+  output UnorderedMap<ComponentRef, list<Expression>> potentials;
+protected
+  ComponentRef connector_cref;
+algorithm
+  potentials := UnorderedMap.new<ExpressionList>(ComponentRef.hash, ComponentRef.isEqual);
+
+  for v in listReverse(UnorderedMap.valueList(variables)) loop
+    if Variable.isPotential(v) and Type.isReal(v.ty) and isTopLevelConnectorElement(v.name) then
+      connector_cref := ComponentRef.rest(v.name);
+      UnorderedMap.add(connector_cref, Expression.fromCref(v.name) ::
+        UnorderedMap.getOrDefault(connector_cref, potentials, {}), potentials);
+    end if;
+  end for;
+end collectTopLevelPotentials;
+
+function generateConnectorResidual
+  "Generates 0 = OpenModelica.Internal.connectorResidual(flow, {potentials}, \"flow\") for a
+   flow variable of a top-level connector, the placeholder --fmuAcausalComponent
+   generates instead of flow = 0 (see connectorResidual)."
+  input Connector element;
+  input UnorderedMap<ComponentRef, list<Expression>> potentials;
+  output list<Equation> equations;
+  input output Option<Function> residualFn "Looked up on the first call.";
+protected
+  Function fn;
+  Expression flow_exp, pots, call;
+  list<Expression> pot_expl;
+algorithm
+  fn := match residualFn
+    case SOME(fn) then fn;
+    else lookupInternalFunction("connectorResidual", element.name);
+  end match;
+  residualFn := SOME(fn);
+
+  flow_exp := Expression.fromCref(element.name);
+  pot_expl := UnorderedMap.getOrDefault(ComponentRef.rest(element.name), potentials, {});
+  pots := Expression.makeArray(Type.liftArrayLeft(Type.REAL(), NFDimension.fromInteger(listLength(pot_expl))),
+    listArray(pot_expl));
+  call := Expression.CALL(Call.makeTypedCall(fn,
+    {flow_exp, pots, Expression.STRING(ComponentRef.toString(element.name))}, Variability.CONTINUOUS, Purity.PURE));
+  equations := {Equation.makeEquality(Expression.REAL(0.0), call, Type.REAL(), element.source)};
+end generateConnectorResidual;
+
+public
+function generateInStreamResiduals
+  "Generates, for --fmuAcausalComponent, a variable for inStream of each scalar
+   stream variable of a top-level connector, and the placeholder residual
+   0 = OpenModelica.Internal.inStreamResidual(inStream_var, stream, \"stream\"), which
+   still means inStream(stream) = stream, the inStream of an unconnected
+   connector. An importer that connects the component replaces the residual by
+   the mixing rule of the connection set, computed from the other members."
+  input list<Variable> variables;
+  output list<Variable> inStreamVariables = {};
+  output list<Equation> equations = {};
+protected
+  Option<Function> residual_fn = NONE();
+  Function fn;
+  Variable instream_var;
+  Attributes attrs;
+  Expression call;
+algorithm
+  for v in variables loop
+    if Variable.isStream(v) and Type.isReal(v.ty) and isTopLevelConnectorElement(v.name) then
+      fn := match residual_fn
+        case SOME(fn) then fn;
+        else lookupInternalFunction("inStreamResidual", v.name);
+      end match;
+      residual_fn := SOME(fn);
+
+      // Keep the type attributes (start, nominal, unit, ...) of the stream
+      // variable, since inStream gives a value of the same quantity.
+      instream_var := v;
+      instream_var.name := inStreamVariableCref(v.name);
+      instream_var.binding := Binding.UNBOUND();
+      attrs := instream_var.attributes;
+      attrs.connectorType := ConnectorType.NON_CONNECTOR;
+      instream_var.attributes := attrs;
+      instream_var.children := {};
+      inStreamVariables := instream_var :: inStreamVariables;
+
+      call := Expression.CALL(Call.makeTypedCall(fn,
+        {Expression.fromCref(instream_var.name), Expression.fromCref(v.name),
+         Expression.STRING(ComponentRef.toString(v.name))}, Variability.CONTINUOUS, Purity.PURE));
+      equations := Equation.makeEquality(Expression.REAL(0.0), call, Type.REAL(),
+        ElementSource.createElementSource(v.info)) :: equations;
+    end if;
+  end for;
+
+  inStreamVariables := listReverseInPlace(inStreamVariables);
+  equations := listReverseInPlace(equations);
+end generateInStreamResiduals;
+
+protected
+function inStreamVariableCref
+  "The variable --fmuAcausalComponent generates for inStream of a stream variable
+   of a top-level connector: the quoted identifier 'inStream(port.h_outflow)'."
+  input ComponentRef streamCref;
+  output ComponentRef cref;
+algorithm
+  cref := ComponentRef.prefixCref(
+    InstNode.NAME_NODE(Util.makeQuotedIdentifier("inStream(" + ComponentRef.toString(streamCref) + ")")),
+    Type.REAL(), {}, ComponentRef.EMPTY());
+end inStreamVariableCref;
+
+function lookupInternalFunction
+  "Looks up and types the function OpenModelica.Internal.<name> from the top
+   scope of the given cref."
+  input String name;
+  input ComponentRef scopeCref;
+  output Function fn;
+protected
+  ComponentRef fn_ref;
+  InstNode fn_node;
+algorithm
+  fn_ref := Function.lookupFunction(
+    Absyn.CREF_QUAL("OpenModelica", {}, Absyn.CREF_QUAL("Internal", {}, Absyn.CREF_IDENT(name, {}))),
+    InstNode.topScope(ComponentRef.node(scopeCref)), NFInstContext.EQUATION, Absyn.dummyInfo);
+  (_, fn_node) := Function.instFunctionRef(fn_ref, NFInstContext.EQUATION, Absyn.dummyInfo);
+  {fn} := Function.typeNodeCache(fn_node);
+end lookupInternalFunction;
 
 function makeFlowExp
   "Creates an expression from a connector element, which is the element itself
@@ -1067,6 +1232,13 @@ algorithm
     // that models both stream directions (allow flow reversal) does not end up
     // with a redundant equation pair (c1 = c2; c2 = c1). The deferred inStream is
     // resolved later when the component is coupled through its connectors.
+    // With --fmuAcausalComponent, inStream of a top-level connector is the
+    // variable generateInStreamResiduals generates for it, which an importer
+    // computes from the connection set the component ends up in.
+    case {Connector.CONNECTOR(face = Face.INSIDE)}
+      guard Flags.getConfigBool(Flags.FMU_ACAUSAL_COMPONENT) and isTopLevelConnectorElement(streamCref)
+      then Expression.fromCref(inStreamVariableCref(streamCref));
+
     case {Connector.CONNECTOR(face = Face.INSIDE)}
       then if Flags.isSet(Flags.DISABLE_SINGLE_FLOW_EQ)
            then makeInStreamCall(Expression.fromCref(streamCref))

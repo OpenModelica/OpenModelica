@@ -2631,7 +2631,7 @@ function resolveConnections
 protected
   Connections conns;
   list<Equation> conn_eql, stream_eql, ec_eql, tlio_eql;
-  list<Variable> tlio_vars;
+  list<Variable> tlio_vars, instream_vars;
   ConnectionSets.Sets csets;
   array<list<Connector>> csets_array;
   list<list<Connector>> unhandled_stream_sets;
@@ -2691,6 +2691,14 @@ algorithm
 
   // add the equations to the flat model
   flatModel.equations := listAppend(conn_eql, flatModel.equations);
+
+  // --fmuAcausalComponent: a variable and a placeholder residual for inStream of
+  // each stream variable of a top-level connector, see generateInStreamResiduals.
+  if Flags.getConfigBool(Flags.FMU_ACAUSAL_COMPONENT) and System.getHasStreamConnectors() then
+    (instream_vars, stream_eql) := ConnectEquations.generateInStreamResiduals(flatModel.variables);
+    flatModel.variables := listAppend(flatModel.variables, instream_vars);
+    flatModel.equations := listAppend(stream_eql, flatModel.equations);
+  end if;
 
   // do flow alias elimination if it's enabled
   if not listEmpty(unhandled_stream_sets) then

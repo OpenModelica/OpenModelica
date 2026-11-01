@@ -1,0 +1,94 @@
+// name: fmi3_acausal_component.mos
+// keywords: FMI 3.0 export Model Exchange daeMode fmi-ls-dae acausal terminals
+// status: correct
+// teardown_command: rm -rf RC.fmu Source.fmu RC_* Source_* RC.* Source.* AcausalComponent_*
+//
+// An acausal component exported with --fmuAcausalComponent, to be connected
+// through its connectors after it is compiled (#17664). A flow variable of a
+// top-level connector gets the placeholder residual
+//   0 = OpenModelica.Internal.connectorResidual(flow, {potentials}, "flow")
+// instead of flow = 0, so it stays a residual of the fmi-ls-dae system and the
+// connector variables stay unknowns of the importer. The extension manifest under
+// extra/org.openmodelica.fmi-ls-dae-acausal/ names those residuals, and the
+// terminals group the connector variables.
+//
+// Without the placeholder neither component can be exported: the RC is short one
+// equation, and in the Source, which has no states, the causalized DAE mode turns
+// every equation into an assignment. In the Source n.i becomes an alias of -p.i,
+// which is why the residual of n names its flow by the name argument.
+
+setCommandLineOptions("--simCodeTarget=C+Rust --daeMode --fmuAcausalComponent"); getErrorString();
+loadFile("fmi3_acausal_component.mo"); getErrorString();
+
+buildModelFMU(AcausalComponent.RC, version="3.0", fmuType="me"); getErrorString();
+system("unzip -cqq RC.fmu extra/org.openmodelica.fmi-ls-dae-acausal/fmi-ls-manifest.xml > AcausalComponent_RC_acausal.xml"); getErrorString();
+readFile("AcausalComponent_RC_acausal.xml"); getErrorString();
+system("unzip -cqq RC.fmu extra/org.fmi-standard.fmi-ls-dae/fmi-ls-manifest.xml | grep -E \"Algebraic|Residual\" | sed \"s/^ *//\""); getErrorString();
+system("unzip -cqq RC.fmu modelDescription.xml | grep -oE \"<Float64 name=.p[.][a-z]. valueReference=.[0-9]+.\""); getErrorString();
+system("unzip -cqq RC.fmu terminalsAndIcons/terminalsAndIcons.xml | grep -E \"Terminal \" | sed \"s/^ *//\""); getErrorString();
+
+buildModelFMU(AcausalComponent.Source, version="3.0", fmuType="me"); getErrorString();
+system("unzip -cqq Source.fmu extra/org.openmodelica.fmi-ls-dae-acausal/fmi-ls-manifest.xml | grep ConnectorResidual | sed \"s/^ *//\""); getErrorString();
+system("unzip -cqq Source.fmu extra/org.fmi-standard.fmi-ls-dae/fmi-ls-manifest.xml | grep -E \"Algebraic|Residual\" | sed \"s/^ *//\""); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "RC.fmu"
+// "Notification: The Model Exchange FMU carries a DAE formulation as fmi-ls-dae 1.0.0-alpha.1, implemented against the draft of 2026-09-02 (commit 78313f4). fmi-ls-dae is not a released layered standard yet, so an importer written against another revision of the draft may not read the manifest.
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+// <fmiDAEAcausalManifest
+// xmlns:fmi-ls=\"http://fmi-standard.org/fmi-ls-manifest\"
+// fmi-ls:fmi-ls-name=\"org.openmodelica.fmi-ls-dae-acausal\"
+// fmi-ls:fmi-ls-version=\"0.1.0\"
+// fmi-ls:fmi-ls-description=\"OpenModelica extension of fmi-ls-dae: a component connected through its terminals.\">
+// <ConnectorResiduals>
+// <ConnectorResidual valueReference=\"9\" terminal=\"p\" variableName=\"p.i\"/>
+// </ConnectorResiduals>
+// </fmiDAEAcausalManifest>"
+// ""
+// <AlgebraicVariables>
+// <AlgebraicVariable valueReference="2"/>
+// <AlgebraicVariable valueReference="3"/>
+// </AlgebraicVariables>
+// <Residual valueReference="8" dependencies="0 1 2 3" dependenciesKind="dependent dependent dependent dependent"/>
+// <Residual valueReference="9" dependencies="2 3" dependenciesKind="dependent dependent"/>
+// <Residual valueReference="10" dependencies="0 1 2" dependenciesKind="dependent dependent dependent"/>
+// 0
+// ""
+// <Float64 name="p.i" valueReference="2"
+// <Float64 name="p.v" valueReference="3"
+// 0
+// ""
+// <Terminal name="p" matchingRule="plug" terminalKind="AcausalComponent.Pin">
+// 0
+// ""
+// "Source.fmu"
+// "Notification: The Model Exchange FMU carries a DAE formulation as fmi-ls-dae 1.0.0-alpha.1, implemented against the draft of 2026-09-02 (commit 78313f4). fmi-ls-dae is not a released layered standard yet, so an importer written against another revision of the draft may not read the manifest.
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// <ConnectorResiduals>
+// <ConnectorResidual valueReference="8" terminal="n" variableName="n.i"/>
+// <ConnectorResidual valueReference="7" terminal="p" variableName="p.i"/>
+// </ConnectorResiduals>
+// 0
+// ""
+// <AlgebraicVariables>
+// <AlgebraicVariable valueReference="0"/>
+// <AlgebraicVariable valueReference="1"/>
+// <AlgebraicVariable valueReference="2"/>
+// </AlgebraicVariables>
+// <Residual valueReference="7" dependencies="1 2" dependenciesKind="dependent dependent"/>
+// <Residual valueReference="8" dependencies="0 1" dependenciesKind="dependent dependent"/>
+// <Residual valueReference="9" dependencies="0 2" dependenciesKind="dependent dependent"/>
+// 0
+// ""
+// endResult

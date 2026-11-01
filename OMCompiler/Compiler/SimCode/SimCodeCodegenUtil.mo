@@ -2111,6 +2111,19 @@ public function fmiLsDaeVersion
   output String version = FMI_LS_DAE_VERSION;
 end fmiLsDaeVersion;
 
+public constant String FMI_LS_DAE_ACAUSAL_NAME = "org.openmodelica.fmi-ls-dae-acausal";
+public constant String FMI_LS_DAE_ACAUSAL_VERSION = "0.1.0";
+
+public function fmiLsDaeAcausalName
+  "The name of OpenModelica's extension of fmi-ls-dae for --fmuAcausalComponent,
+   which is also the directory under extra/ its manifest is written to."
+  output String name = FMI_LS_DAE_ACAUSAL_NAME;
+end fmiLsDaeAcausalName;
+
+public function fmiLsDaeAcausalVersion
+  output String version = FMI_LS_DAE_ACAUSAL_VERSION;
+end fmiLsDaeAcausalVersion;
+
 public function getFMI3DaeModeValueReference
   "fmi-ls-dae: the value reference of the structural parameter that switches a
    --daeMode FMU into DAE mode, the first one past the event indicators. The
@@ -2180,6 +2193,96 @@ algorithm
   end for;
   residuals := listReverse(residuals);
 end fmi3DaeResiduals;
+
+public function fmi3ConnectorResiduals
+  "--fmuAcausalComponent: the placeholder residuals the frontend generated for the
+   flow variables of the top-level connectors (OpenModelica.Internal.connectorResidual),
+   as (value reference of the residual, name of the flow variable it stands for).
+   The name comes from the call's last argument, which alias elimination leaves
+   alone while it may rewrite the flow and potential arguments."
+  input SimCode.SimCode simCode;
+  output list<tuple<String, String>> residuals;
+algorithm
+  residuals := fmi3PlaceholderResiduals(simCode, "OpenModelica.Internal.connectorResidual");
+end fmi3ConnectorResiduals;
+
+public function fmi3StreamResiduals
+  "--fmuAcausalComponent: the placeholder residuals the frontend generated for the
+   stream variables of the top-level connectors (OpenModelica.Internal.inStreamResidual),
+   as (value reference of the residual, name of the stream variable it stands for)."
+  input SimCode.SimCode simCode;
+  output list<tuple<String, String>> residuals;
+algorithm
+  residuals := fmi3PlaceholderResiduals(simCode, "OpenModelica.Internal.inStreamResidual");
+end fmi3StreamResiduals;
+
+protected function fmi3PlaceholderResiduals
+  "The residuals of the DAE-mode system that are calls of the placeholder function
+   fnName, as (value reference, the call's String argument)."
+  input SimCode.SimCode simCode;
+  input String fnName;
+  output list<tuple<String, String>> residuals = {};
+protected
+  SimCode.DaeModeData dmd;
+  Integer daeModeVR;
+  String name;
+algorithm
+  if not isSome(simCode.daeModeData) then
+    return;
+  end if;
+  SOME(dmd) := simCode.daeModeData;
+  daeModeVR := stringInt(getFMI3DaeModeValueReference(simCode));
+  for eq in List.flatten(dmd.daeEquations) loop
+    _ := match eq
+      case SimCode.SES_SIMPLE_ASSIGN()
+        algorithm
+          (_, (_, name)) := Expression.traverseExpTopDown(eq.exp, findPlaceholderResidualName, (fnName, ""));
+          if not stringEmpty(name) then
+            for var in dmd.residualVars loop
+              if ComponentReferenceBasics.crefEqual(var.name, eq.cref) then
+                residuals := (String(daeModeVR + 1 + var.index), name) :: residuals;
+                break;
+              end if;
+            end for;
+          end if;
+        then ();
+      else ();
+    end match;
+  end for;
+  residuals := listReverse(residuals);
+end fmi3PlaceholderResiduals;
+
+public function connectorResidualTerminal
+  "The terminal a placeholder residual belongs to: the name of its flow variable
+   without the last component, e.g. p for p.i."
+  input String flowName;
+  output String terminal;
+protected
+  list<String> parts = Util.stringSplitAtChar(flowName, ".");
+algorithm
+  terminal := stringDelimitList(List.firstN(parts, listLength(parts) - 1), ".");
+end connectorResidualTerminal;
+
+protected function findPlaceholderResidualName
+  input DAE.Exp inExp;
+  input tuple<String, String> inNames "(placeholder function name, String argument found)";
+  output DAE.Exp outExp = inExp;
+  output Boolean cont;
+  output tuple<String, String> names;
+protected
+  String fn_name, name;
+algorithm
+  (fn_name, name) := inNames;
+  (cont, names) := match inExp
+    local
+      Absyn.Path path;
+      String str;
+    case DAE.CALL(path = path, expLst = {_, _, DAE.SCONST(str)})
+      guard AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(path)) == fn_name
+      then (false, (fn_name, str));
+    else (stringEmpty(name), inNames);
+  end match;
+end findPlaceholderResidualName;
 
 protected function getNLSysRHS
     input list<SimCode.SimEqSystem> eqs;
@@ -3370,6 +3473,8 @@ protected
   Boolean texp, texp2;
   SimCode.FmiTerminalMember mem;
   list<SimCode.FmiTerminalMember> mems;
+  list<SimCode.FmiTerminalStreamMember> streamMems;
+  list<String> streams;
 algorithm
   vars := simCode.modelInfo.vars;
   // Gather the variables that also end up in modelDescription.xml. The alias var
@@ -3402,21 +3507,31 @@ algorithm
   // one terminal per connector instance, members in first-seen order. memberName
   // must be unique per terminal (FMI 3.0), so skip a member whose name was already
   // added (e.g. a real var and an alias mapping to the same connector member).
+  // --fmuAcausalComponent: a stream variable with a placeholder residual is a
+  // stream member, paired with the variable the frontend generated for its inStream.
+  streams := list(Util.tuple22(r) for r in fmi3StreamResiduals(simCode));
   for nm in names loop
     mems := {};
+    streamMems := {};
     memberNames := {};
     texp := false;
     tkind := "";
     for t in flat loop
       (tname2, tkind2, texp2, mem) := t;
       if stringEq(tname2, nm) and not listMember(mem.memberName, memberNames) then
-        mems := mem :: mems;
+        if listMember(ComponentReference.crefStr(mem.variable), streams) then
+          streamMems := SimCode.FMI_TERMINAL_STREAM_MEMBER("inStream(" + mem.memberName + ")", mem.memberName,
+            DAE.CREF_IDENT(inStreamVariableName(ComponentReference.crefStr(mem.variable)), DAE.T_REAL_DEFAULT, {}),
+            mem.variable) :: streamMems;
+        else
+          mems := mem :: mems;
+        end if;
         memberNames := mem.memberName :: memberNames;
         texp := texp2;
         tkind := tkind2;
       end if;
     end for;
-    terminals := SimCode.FMI_TERMINAL(nm, tkind, texp, listReverse(mems)) :: terminals;
+    terminals := SimCode.FMI_TERMINAL(nm, tkind, texp, listReverse(mems), listReverse(streamMems)) :: terminals;
   end for;
   // Append the simple signal ports: top-level scalar input/output variables. A
   // signal connector (e.g. Modelica.Blocks.Interfaces.RealInput/RealOutput, the
@@ -3429,6 +3544,13 @@ algorithm
   // are already grouped above, so they are skipped here.
   terminals := listAppend(listReverse(terminals), simplePortTerminals(vars, names));
 end getFMI3Terminals;
+
+protected function inStreamVariableName
+  "The name of the variable --fmuAcausalComponent generates for inStream of a
+   stream variable (NFConnectEquations.inStreamVariableCref)."
+  input String streamName;
+  output String name = "'inStream(" + streamName + ")'";
+end inStreamVariableName;
 
 protected function simplePortTerminals
   "One single-member terminal per top-level scalar input/output variable (the FMU
@@ -3457,7 +3579,7 @@ algorithm
             fail();
           end if;
           seen := nm :: seen;
-        then SimCode.FMI_TERMINAL(nm, "", false, {SimCode.FMI_TERMINAL_MEMBER(cr, nm, "signal")}) :: terminals;
+        then SimCode.FMI_TERMINAL(nm, "", false, {SimCode.FMI_TERMINAL_MEMBER(cr, nm, "signal")}, {}) :: terminals;
       else terminals;
     end matchcontinue;
   end for;

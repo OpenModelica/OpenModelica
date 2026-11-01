@@ -1,0 +1,167 @@
+// name: fmi3_acausal_stream.mos
+// keywords: FMI 3.0 export Model Exchange daeMode fmi-ls-dae acausal terminals stream
+// status: correct
+// teardown_command: rm -rf Volume.fmu Sink.fmu Volume_* Sink_* Volume.* Sink.* AcausalStream_*
+//
+// Stream connectors of an acausal component exported with --fmuAcausalComponent
+// (#17664). inStream of a stream variable of a top-level connector becomes the
+// variable 'inStream(port.h_outflow)', with the placeholder residual
+//   0 = OpenModelica.Internal.inStreamResidual('inStream(port.h_outflow)', port.h_outflow, "port.h_outflow")
+// which still means inStream(port.h_outflow) = port.h_outflow, the inStream of an
+// unconnected connector. An importer replaces it by the mixing rule of the
+// connection set. The extension manifest names it as a StreamResidual, and the
+// terminal pairs the stream variable with its inStream variable in a
+// TerminalStreamMemberVariable. In the Sink the inStream variable is an alias of hIn.
+
+setCommandLineOptions("--simCodeTarget=C+Rust --daeMode --fmuAcausalComponent"); getErrorString();
+loadFile("fmi3_acausal_stream.mo"); getErrorString();
+
+instantiateModel(AcausalStream.Volume); getErrorString();
+
+buildModelFMU(AcausalStream.Volume, version="3.0", fmuType="me"); getErrorString();
+system("unzip -cqq Volume.fmu extra/org.openmodelica.fmi-ls-dae-acausal/fmi-ls-manifest.xml | grep Residual | sed \"s/^ *//\""); getErrorString();
+system("unzip -cqq Volume.fmu extra/org.fmi-standard.fmi-ls-dae/fmi-ls-manifest.xml | grep -E \"Algebraic|Residual\" | sed \"s/^ *//\""); getErrorString();
+system("unzip -cqq Volume.fmu modelDescription.xml | grep -oE \"<Float64 name=.[^ ]*inStream[^ ]* valueReference=.[0-9]+.\""); getErrorString();
+system("unzip -cqq Volume.fmu terminalsAndIcons/terminalsAndIcons.xml | grep -E \"Terminal\" | sed \"s/^ *//\""); getErrorString();
+
+buildModelFMU(AcausalStream.Sink, version="3.0", fmuType="me"); getErrorString();
+system("unzip -cqq Sink.fmu extra/org.openmodelica.fmi-ls-dae-acausal/fmi-ls-manifest.xml | grep Residual | sed \"s/^ *//\""); getErrorString();
+system("unzip -cqq Sink.fmu extra/org.fmi-standard.fmi-ls-dae/fmi-ls-manifest.xml | grep -E \"Algebraic|Residual\" | sed \"s/^ *//\""); getErrorString();
+system("unzip -cqq Sink.fmu modelDescription.xml | grep -E \"inStream\" | sed \"s/^ *//\""); getErrorString();
+system("unzip -cqq Sink.fmu terminalsAndIcons/terminalsAndIcons.xml | grep -E \"TerminalStream\" | sed \"s/^ *//\""); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "impure function OpenModelica.Internal.connectorResidual \"The placeholder residual --fmuAcausalComponent generates for a flow variable of
+//      a top-level connector, instead of flow = 0. It is the flow variable itself, so
+//      0 = connectorResidual(flow, potentials, name) still means flow = 0; the backend
+//      can neither solve it nor substitute it, so the connector variables stay
+//      unknowns. The potentials of the connector are arguments only for matching to
+//      see them, and the name of the flow variable says which flow the residual
+//      stands for once alias elimination has rewritten the other arguments. An
+//      importer that connects the component replaces this residual by the equations
+//      of the connection.\"
+//   input Real flowVariable;
+//   input Real[:] potentials;
+//   input String flowName;
+//   output Real residual;
+//
+//   external \"C\" residual = OpenModelica_connectorResidual(flowVariable);
+// end OpenModelica.Internal.connectorResidual;
+//
+// impure function OpenModelica.Internal.inStreamResidual \"The placeholder residual --fmuAcausalComponent generates for a stream variable
+//      of a top-level connector. inStreamVariable is the variable that stands for
+//      inStream(streamVariable) in the component, and the residual is their
+//      difference, so 0 = inStreamResidual(inStreamVariable, streamVariable, name)
+//      still means inStream(streamVariable) = streamVariable, the inStream of an
+//      unconnected connector. The name of the stream variable says which stream the
+//      residual stands for once alias elimination has rewritten the other arguments.
+//      An importer that connects the component replaces this residual by the mixing
+//      rule of the connection set.\"
+//   input Real inStreamVariable;
+//   input Real streamVariable;
+//   input String streamName;
+//   output Real residual;
+//
+//   external \"C\" residual = OpenModelica_inStreamResidual(inStreamVariable, streamVariable);
+// end OpenModelica.Internal.inStreamResidual;
+//
+// class AcausalStream.Volume \"an incompressible mixing volume with the specific enthalpy as state\"
+//   parameter Real m = 1.0;
+//   Real a.p;
+//   Real a.m_flow;
+//   Real a.h_outflow;
+//   Real b.p;
+//   Real b.m_flow;
+//   Real b.h_outflow;
+//   Real h(start = 1.0, fixed = true);
+//   Real 'inStream(a.h_outflow)';
+//   Real 'inStream(b.h_outflow)';
+// equation
+//   0.0 = OpenModelica.Internal.inStreamResidual('inStream(a.h_outflow)', a.h_outflow, \"a.h_outflow\");
+//   0.0 = OpenModelica.Internal.inStreamResidual('inStream(b.h_outflow)', b.h_outflow, \"b.h_outflow\");
+//   0.0 = OpenModelica.Internal.connectorResidual(a.m_flow, {a.p}, \"a.m_flow\");
+//   0.0 = OpenModelica.Internal.connectorResidual(b.m_flow, {b.p}, \"b.m_flow\");
+//   a.p = b.p;
+//   a.m_flow + b.m_flow = 0.0;
+//   m * der(h) = smooth(0, a.m_flow * (if a.m_flow > 0.0 then 'inStream(a.h_outflow)' else a.h_outflow)) + smooth(0, b.m_flow * (if b.m_flow > 0.0 then 'inStream(b.h_outflow)' else b.h_outflow));
+//   a.h_outflow = h;
+//   b.h_outflow = h;
+// end AcausalStream.Volume;
+// "
+// ""
+// "Volume.fmu"
+// "Notification: The Model Exchange FMU carries a DAE formulation as fmi-ls-dae 1.0.0-alpha.1, implemented against the draft of 2026-09-02 (commit 78313f4). fmi-ls-dae is not a released layered standard yet, so an importer written against another revision of the draft may not read the manifest.
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// <ConnectorResiduals>
+// <ConnectorResidual valueReference="16" terminal="b" variableName="b.m_flow"/>
+// <ConnectorResidual valueReference="15" terminal="a" variableName="a.m_flow"/>
+// <StreamResidual valueReference="14" terminal="b" variableName="b.h_outflow"/>
+// <StreamResidual valueReference="13" terminal="a" variableName="a.h_outflow"/>
+// </ConnectorResiduals>
+// 0
+// ""
+// <AlgebraicVariables>
+// <AlgebraicVariable valueReference="2"/>
+// <AlgebraicVariable valueReference="3"/>
+// <AlgebraicVariable valueReference="4"/>
+// <AlgebraicVariable valueReference="5"/>
+// </AlgebraicVariables>
+// <Residual valueReference="13" dependencies="0 1 2" dependenciesKind="dependent dependent dependent"/>
+// <Residual valueReference="14" dependencies="0 1 3" dependenciesKind="dependent dependent dependent"/>
+// <Residual valueReference="15" dependencies="4 5" dependenciesKind="dependent dependent"/>
+// <Residual valueReference="16" dependencies="4 5" dependenciesKind="dependent dependent"/>
+// <Residual valueReference="17" dependencies="0 1 2 3 4" dependenciesKind="dependent dependent dependent dependent dependent"/>
+// 0
+// ""
+// <Float64 name="'inStream(a.h_outflow)'" valueReference="2"
+// <Float64 name="'inStream(b.h_outflow)'" valueReference="3"
+// 0
+// ""
+// <fmiTerminalsAndIcons fmiVersion="3.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/modelica/fmi-standard/v3.0.2/schema/fmi3TerminalsAndIcons.xsd">
+// <Terminals>
+// <Terminal name="a" matchingRule="plug" terminalKind="AcausalStream.Port">
+// <TerminalMemberVariable variableName="a.m_flow" memberName="m_flow" variableKind="inflow"/>
+// <TerminalMemberVariable variableName="a.p" memberName="p" variableKind="signal"/>
+// <TerminalStreamMemberVariable inStreamMemberName="inStream(h_outflow)" outStreamMemberName="h_outflow" inStreamVariableName="'inStream(a.h_outflow)'" outStreamVariableName="a.h_outflow"/>
+// </Terminal>
+// <Terminal name="b" matchingRule="plug" terminalKind="AcausalStream.Port">
+// <TerminalMemberVariable variableName="b.m_flow" memberName="m_flow" variableKind="inflow"/>
+// <TerminalMemberVariable variableName="b.p" memberName="p" variableKind="signal"/>
+// <TerminalStreamMemberVariable inStreamMemberName="inStream(h_outflow)" outStreamMemberName="h_outflow" inStreamVariableName="'inStream(b.h_outflow)'" outStreamVariableName="b.h_outflow"/>
+// </Terminal>
+// </Terminals>
+// </fmiTerminalsAndIcons>
+// 0
+// ""
+// "Sink.fmu"
+// "Notification: The Model Exchange FMU carries a DAE formulation as fmi-ls-dae 1.0.0-alpha.1, implemented against the draft of 2026-09-02 (commit 78313f4). fmi-ls-dae is not a released layered standard yet, so an importer written against another revision of the draft may not read the manifest.
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// <ConnectorResiduals>
+// <ConnectorResidual valueReference="9" terminal="port" variableName="port.m_flow"/>
+// <StreamResidual valueReference="10" terminal="port" variableName="port.h_outflow"/>
+// </ConnectorResiduals>
+// 0
+// ""
+// <AlgebraicVariables>
+// <AlgebraicVariable valueReference="0"/>
+// <AlgebraicVariable valueReference="1"/>
+// </AlgebraicVariables>
+// <Residual valueReference="9" dependencies="1" dependenciesKind="dependent"/>
+// <Residual valueReference="10" dependencies="0" dependenciesKind="dependent"/>
+// 0
+// ""
+// <Alias name="'inStream(port.h_outflow)'"/>
+// 0
+// ""
+// <TerminalStreamMemberVariable inStreamMemberName="inStream(h_outflow)" outStreamMemberName="h_outflow" inStreamVariableName="'inStream(port.h_outflow)'" outStreamVariableName="port.h_outflow"/>
+// 0
+// ""
+// endResult

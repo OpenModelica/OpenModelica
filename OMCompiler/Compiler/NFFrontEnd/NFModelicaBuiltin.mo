@@ -1271,6 +1271,68 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
   </html>"));
   end arrayMin;
 
+  function connectorResidual
+    "The placeholder residual --fmuAcausalComponent generates for a flow variable of
+     a top-level connector, instead of flow = 0. It is the flow variable itself, so
+     0 = connectorResidual(flow, potentials, name) still means flow = 0; the backend
+     can neither solve it nor substitute it, so the connector variables stay
+     unknowns. The potentials of the connector are arguments only for matching to
+     see them, and the name of the flow variable says which flow the residual
+     stands for once alias elimination has rewritten the other arguments. An
+     importer that connects the component replaces this residual by the equations
+     of the connection."
+    input Real flowVariable;
+    input Real potentials[:];
+    input String flowName;
+    output Real residual;
+    external "C" residual = OpenModelica_connectorResidual(flowVariable)
+      annotation(Include = "static double OpenModelica_connectorResidual(double f) { return f; }",
+                 derivative = connectorResidualDerivative);
+  end connectorResidual;
+
+  function connectorResidualDerivative
+    "The derivative of connectorResidual."
+    input Real flowVariable;
+    input Real potentials[:];
+    input String flowName;
+    input Real der_flowVariable;
+    input Real der_potentials[:];
+    output Real der_residual;
+  algorithm
+    der_residual := der_flowVariable;
+  end connectorResidualDerivative;
+
+  function inStreamResidual
+    "The placeholder residual --fmuAcausalComponent generates for a stream variable
+     of a top-level connector. inStreamVariable is the variable that stands for
+     inStream(streamVariable) in the component, and the residual is their
+     difference, so 0 = inStreamResidual(inStreamVariable, streamVariable, name)
+     still means inStream(streamVariable) = streamVariable, the inStream of an
+     unconnected connector. The name of the stream variable says which stream the
+     residual stands for once alias elimination has rewritten the other arguments.
+     An importer that connects the component replaces this residual by the mixing
+     rule of the connection set."
+    input Real inStreamVariable;
+    input Real streamVariable;
+    input String streamName;
+    output Real residual;
+    external "C" residual = OpenModelica_inStreamResidual(inStreamVariable, streamVariable)
+      annotation(Include = "static double OpenModelica_inStreamResidual(double s, double h) { return s - h; }",
+                 derivative = inStreamResidualDerivative);
+  end inStreamResidual;
+
+  function inStreamResidualDerivative
+    "The derivative of inStreamResidual."
+    input Real inStreamVariable;
+    input Real streamVariable;
+    input String streamName;
+    input Real der_inStreamVariable;
+    input Real der_streamVariable;
+    output Real der_residual;
+  algorithm
+    der_residual := der_inStreamVariable - der_streamVariable;
+  end inStreamResidualDerivative;
+
   package Architecture
     function numBits
       output Integer numBit;
