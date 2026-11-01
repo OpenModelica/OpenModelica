@@ -5,7 +5,6 @@ Annotations.mo \
 Annotations2.mo \
 BuiltinTime1.mo \
 BuiltinTimeInvalid1.mo \
-BuiltinTimeInvalid2.mo \
 ClassRestriction1.mo \
 CondDeclaration.mo \
 ConnectorRestriction1.mo \
