@@ -2814,7 +2814,39 @@ protected
     checkParamTypes2(fn.inputs);
     checkParamTypes2(list(InstNode.fromHandle(o) for o in fn.outputs));
     checkParamTypes2(fn.locals);
+    checkExternalObjectOutputs(fn);
   end checkParamTypes;
+
+  function checkExternalObjectOutputs
+    "Only the constructor may return an external object, MLS 3.7 section 12.9.8."
+    input Function fn;
+  protected
+    Type ty;
+    NFInstNode.ScopeRef ctor_ref;
+    InstNode ctor;
+  algorithm
+    for o in fn.outputs loop
+      ty := Type.arrayElementType(InstNode.getType(InstNode.fromHandle(o)));
+
+      () := match ty
+        case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT(constructor = ctor_ref))
+          algorithm
+            ctor := InstNode.borrow(ctor_ref);
+
+            if not InstNode.isSame(InstNode.fromHandle(fn.node), ctor) then
+              Error.addSourceMessage(Error.FUNCTION_RETURN_EXT_OBJ,
+                {AbsynUtil.pathString(fn.path),
+                 AbsynUtil.pathString(AbsynUtil.suffixPath(InstNode.rootPath(Type.complexNode(ty)), InstNode.name(ctor)))},
+                InstNode.info(InstNode.fromHandle(fn.node)));
+              fail();
+            end if;
+          then
+            ();
+
+        else ();
+      end match;
+    end for;
+  end checkExternalObjectOutputs;
 
   function checkParamTypes2
     input list<InstNode> params;
