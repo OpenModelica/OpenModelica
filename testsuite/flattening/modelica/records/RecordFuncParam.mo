@@ -19,7 +19,7 @@ algorithm
 end f;
 
 model RecordFuncParam
-  input R r;
+  R r;
   output Real y;
 equation
   r.x = time;
@@ -42,8 +42,8 @@ end RecordFuncParam;
 // end f;
 //
 // class RecordFuncParam
-//   input Real r.x;
-//   input Real r.y;
+//   Real r.x;
+//   Real r.y;
 //   output Real y;
 // equation
 //   r.x = time;
