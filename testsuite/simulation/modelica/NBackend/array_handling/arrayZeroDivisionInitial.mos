@@ -12,7 +12,7 @@ model ArrayZeroDivision
 equation
   r = sum(a);
   x = a / r;
-  a = {0, 0} * time;
+  a = {1, 2} * time;
 end ArrayZeroDivision;
 "); getErrorString();
 setCommandLineOptions("--newBackend"); getErrorString();

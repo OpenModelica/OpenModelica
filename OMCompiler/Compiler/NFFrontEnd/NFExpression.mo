@@ -7337,6 +7337,10 @@ public
         exp.operator := Operator.repairMultary(exp.operator, list(typeOf(e) for e in listAppend(exp.arguments, exp.inv_arguments)));
       then exp;
 
+      case UNARY() algorithm
+        exp.operator := Operator.setType(typeOf(exp.exp), exp.operator);
+      then exp;
+
       else exp;
     end match;
   end repairOperator;
