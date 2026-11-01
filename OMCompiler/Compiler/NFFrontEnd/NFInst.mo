@@ -825,7 +825,8 @@ algorithm
         checkExtendsLoop(base_node, scope, base_path, info);
         checkReplaceableBaseClass(base_nodes, base_path, info);
 
-        if InstNode.isRootClass(scope) and SCodeUtil.isEmptyMod(smod) then
+        if InstNode.isRootClass(scope) and SCodeUtil.isEmptyMod(smod) and
+           not SCodeUtil.isFunction(InstNode.definition(scope)) then
           base_node := InstUtil.mergeScalars(base_node, base_path, false, nameMap);
         end if;
 
