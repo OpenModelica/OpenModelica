@@ -1461,6 +1461,9 @@ constant ConfigFlag FMU_DIRECTORY = CONFIG_FLAG(171, "fmuDirectory",
 constant ConfigFlag TPL_INTERFACE_DIR = CONFIG_FLAG(172, "tplInterfaceDir",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   "Directory searched before the current one for the interface files a Susan\n.tpl imports with 'import interface'.");
+constant ConfigFlag FMU_ACAUSAL_COMPONENT = CONFIG_FLAG(173, "fmuAcausalComponent",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  "Translate the model as an acausal component, to be connected through its\ntop-level connectors after it is compiled. A flow variable of such a connector\ngets the placeholder residual 0 = OpenModelica.Internal.connectorResidual(flow,\npotentials, name) instead of flow = 0: it still means flow = 0 to anyone who does not\nknow it, but it is neither solved nor substituted, so the connector variables\nstay unknowns of the system. With --daeMode and --simCodeTarget=C+Rust, the FMI\n3.0 Model Exchange FMU is then an open DAE in fmi-ls-dae form whose placeholder\nresiduals an importer replaces by the equations of its connections.");
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

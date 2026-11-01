@@ -9,6 +9,8 @@ fmi3_arrays_scalarized.mos \
 fmi3_import_me.mos \
 fmi3_import_boolean.mos \
 fmi3_arrays_approx.mos \
+fmi3_acausal_component.mos \
+fmi3_acausal_stream.mos \
 fmi3_arrays_start_vector.mos \
 fmi3_attributes_01.mos \
 fmi3_binary_extobj.mos \
