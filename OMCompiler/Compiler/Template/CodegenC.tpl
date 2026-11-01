@@ -8145,8 +8145,8 @@ case entw as SES_ENTWINED_ASSIGN() then
   case SES_RESIZABLE_ASSIGN() then
     let jac = match context case JACOBIAN_CONTEXT() then ", jacobian" else ""
     let sub_name = match context case JACOBIAN_CONTEXT(name = jac_name) then 'jac_<%jac_name%>_' else ""
-    let before = (entw.scalar_calls |> sc hasindex j0 => entwinedAnchoredCall(listGet(entw.single_calls, intAdd(sc, 1)), c, r, listGet(entw.scalar_entries, intAdd(j0, 1)), listGet(entw.scalar_positions, intAdd(j0, 1)), listGet(entw.scalar_after, intAdd(j0, 1)), false, context, &varDecls, &varFrees, &auxFunction); separator="\n")
-    let after = (entw.scalar_calls |> sc hasindex j0 => entwinedAnchoredCall(listGet(entw.single_calls, intAdd(sc, 1)), c, r, listGet(entw.scalar_entries, intAdd(j0, 1)), listGet(entw.scalar_positions, intAdd(j0, 1)), listGet(entw.scalar_after, intAdd(j0, 1)), true, context, &varDecls, &varFrees, &auxFunction); separator="\n")
+    let before = (List.intRange(listLength(entw.scalar_calls)) |> j => entwinedAnchoredCall(listGet(entw.single_calls, intAdd(listGet(entw.scalar_calls, j), 1)), c, r, listGet(entw.scalar_entries, j), listGet(entw.scalar_positions, j), listGet(entw.scalar_after, j), false, context, &varDecls, &varFrees, &auxFunction); separator="\n")
+    let after = (List.intRange(listLength(entw.scalar_calls)) |> j => entwinedAnchoredCall(listGet(entw.single_calls, intAdd(listGet(entw.scalar_calls, j), 1)), c, r, listGet(entw.scalar_entries, j), listGet(entw.scalar_positions, j), listGet(entw.scalar_after, j), true, context, &varDecls, &varFrees, &auxFunction); separator="\n")
     <<
     i_ = <%entw.direction%>*k_ + (<%offset%>);
     if(i_ >= lo_<%c%> && i_ <= hi_<%c%>) {
