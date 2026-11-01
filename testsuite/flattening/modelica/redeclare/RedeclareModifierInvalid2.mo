@@ -12,14 +12,12 @@ end m;
 model RedeclareModifierInvalid2
   model m3 end m3;
   extends m(redeclare model m2 = m3);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RedeclareModifierInvalid2;
 
 // Result:
 // Error processing file: RedeclareModifierInvalid2.mo
-// [flattening/modelica/redeclare/RedeclareModifierInvalid2.mo:14:3-14:37:writable] Notification: From here:
-// [flattening/modelica/redeclare/RedeclareModifierInvalid2.mo:9:3-9:18:writable] Error: Redeclaration with a new type requires 'm2' to be replaceable.
-// Error: Error occurred while flattening model RedeclareModifierInvalid2
+// [flattening/modelica/redeclare/RedeclareModifierInvalid2.mo:9:3-9:18:writable] Notification: From here:
+// [flattening/modelica/redeclare/RedeclareModifierInvalid2.mo:14:23-14:36:writable] Error: Redeclaration with a new type requires 'm2' to be replaceable.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

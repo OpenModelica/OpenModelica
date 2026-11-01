@@ -1981,6 +1981,22 @@ algorithm
     fail();
   end if;
 
+  if not InstContext.inInstanceAPI(context) then
+    if SCodeUtil.finalBool(SCodeUtil.prefixesFinal(SCodeUtil.elementPrefixes(InstNode.definition(originalNode)))) then
+      Error.addMultiSourceMessage(Error.INVALID_REDECLARE, {"final", "class", InstNode.name(originalNode)},
+        {InstNode.info(originalNode), InstNode.info(redeclareNode)});
+      fail();
+    end if;
+
+    if not (InstNode.isReplaceable(originalNode) or
+            SCodeUtil.isClassExtends(InstNode.definition(redeclareNode)) or
+            isSameTypeRedeclare(InstNode.definition(originalNode), InstNode.definition(redeclareNode))) then
+      Error.addMultiSourceMessage(Error.REDECLARE_NON_REPLACEABLE, {InstNode.name(originalNode)},
+        {InstNode.info(originalNode), InstNode.info(redeclareNode)});
+      fail();
+    end if;
+  end if;
+
   partialInstClass(originalNode);
   orig_cls := InstNode.getClass(originalNode);
   partialInstClass(redeclareNode);
@@ -2050,6 +2066,25 @@ algorithm
   node_ty := InstNodeType.REDECLARED_CLASS(InstNode.scopeRef(InstNode.parent(originalNode)), InstNode.nodeType(originalNode), orig_opt, instLevel);
   redeclaredNode := InstNode.setNodeType(node_ty, redeclaredNode);
 end redeclareClass;
+
+function isSameTypeRedeclare
+  "Returns true if both classes are short class definitions of the same type,
+   e.g. type T = Real[:] redeclared as type T = Real[3]."
+  input SCode.Element originalElement;
+  input SCode.Element redeclareElement;
+  output Boolean res;
+algorithm
+  res := match (originalElement, redeclareElement)
+    local
+      Absyn.TypeSpec ts1, ts2;
+
+    case (SCode.CLASS(classDef = SCode.DERIVED(typeSpec = ts1)),
+          SCode.CLASS(classDef = SCode.DERIVED(typeSpec = ts2)))
+      then AbsynUtil.pathEqual(AbsynUtil.typeSpecPath(ts1), AbsynUtil.typeSpecPath(ts2));
+
+    else false;
+  end match;
+end isSameTypeRedeclare;
 
 function redeclareEnum
   input Class redeclareClass;
@@ -2438,6 +2473,21 @@ algorithm
 
   orig_node := InstNode.resolveInner(originalNode);
   orig_comp := InstNode.component(orig_node);
+
+  if not InstContext.inInstanceAPI(context) then
+    if Component.isFinal(orig_comp) then
+      Error.addMultiSourceMessage(Error.INVALID_REDECLARE, {"final", "component", InstNode.name(orig_node)},
+        {InstNode.info(orig_node), InstNode.info(redeclareNode)});
+      fail();
+    end if;
+
+    if Component.variability(orig_comp) == Variability.CONSTANT then
+      Error.addMultiSourceMessage(Error.INVALID_REDECLARE, {"constant", "component", InstNode.name(orig_node)},
+        {InstNode.info(orig_node), InstNode.info(redeclareNode)});
+      fail();
+    end if;
+  end if;
+
   rdcl_type := InstNodeType.REDECLARED_COMP(InstNode.scopeRef(InstNode.parent(orig_node)));
   rdcl_node := InstNode.setNodeType(rdcl_type, redeclareNode);
   rdcl_node := InstNode.copyInstancePtr(orig_node, rdcl_node);
