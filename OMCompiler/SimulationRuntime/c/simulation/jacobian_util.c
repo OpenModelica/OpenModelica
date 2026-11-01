@@ -1214,7 +1214,7 @@ JACOBIAN* initSymbolicOdeJacobian(DATA* data, threadData_t* threadData, JACOBIAN
   JACOBIAN* adjointJacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ]);
   JACOBIAN* jacobian;
 
-  if (requireForwardJacobian || *jacobianMethod != COLOREDSYMJACADJ) {
+  if ((requireForwardJacobian || *jacobianMethod != COLOREDSYMJACADJ) && forwardJacobian->availability == JACOBIAN_UNKNOWN) {
     data->callback->initialAnalyticJacobianA(data, threadData, forwardJacobian);
   }
 
@@ -1222,7 +1222,7 @@ JACOBIAN* initSymbolicOdeJacobian(DATA* data, threadData_t* threadData, JACOBIAN
     /* If the model was compiled bidirectionally and A was initialized, the adjoint
      * Jacobian is already initialized and linked by initialAnalyticJacobianA().
      * So this check is true if the adjoint Jacobian was not already initialized but is requested. */
-    if (forwardJacobian->adjointJacobian != adjointJacobian) {
+    if (forwardJacobian->adjointJacobian != adjointJacobian && adjointJacobian->availability == JACOBIAN_UNKNOWN) {
       data->callback->initialAnalyticJacobianADJ(data, threadData, adjointJacobian);
     }
     if (adjointJacobian->availability == JACOBIAN_AVAILABLE) {
