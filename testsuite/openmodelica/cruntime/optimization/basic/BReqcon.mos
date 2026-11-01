@@ -1,6 +1,5 @@
 // name: BatchReactorEqualConstarints
 // status: correct
-// cflags: -d=-newInst
 
 setCommandLineOptions("+g=Optimica");
 getErrorString();
@@ -59,7 +58,7 @@ getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: In relation u == path_u,  ==  on Real operands is deprecated in non-function contexts.
+// "[<interactive>:2:1-10:26:writable] Warning: In relation u == path_u, == on Real operands is deprecated in non-function contexts.
 // "
 // {"Files Equal!"}
 // "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.

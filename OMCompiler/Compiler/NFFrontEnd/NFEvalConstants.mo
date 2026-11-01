@@ -59,6 +59,8 @@ import NFClassTree.ClassTree;
 protected
 import MetaModelica.Dangerous.*;
 import ExecStat.execStat;
+import ElementSource;
+import Util;
 import NFPrefixes.Variability;
 import Ceval = NFCeval;
 import Package = NFPackage;
@@ -80,6 +82,7 @@ function evaluate
   input InstContext.Type context;
 protected
   EvalSettings settings;
+  SourceInfo info = ElementSource.getInfo(flatModel.source);
 algorithm
   settings := EvalSettings.SETTINGS(
     Flags.isSet(Flags.NF_SCALARIZE)
@@ -90,6 +93,9 @@ algorithm
   flatModel.initialEquations := evaluateEquations(flatModel.initialEquations);
   flatModel.algorithms := evaluateAlgorithms(flatModel.algorithms);
   flatModel.initialAlgorithms := evaluateAlgorithms(flatModel.initialAlgorithms);
+  flatModel.constraints := list(evaluateExp(e, info) for e in flatModel.constraints);
+  flatModel.optimizationAttributes := list(Util.applyTuple22(a, function evaluateExp(info = info))
+    for a in flatModel.optimizationAttributes);
 
   execStat(getInstanceName());
 end evaluate;

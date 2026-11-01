@@ -190,6 +190,8 @@ protected
   InstContext.Type context;
   SCode.Program prog = program;
   InstSettings settings;
+  list<Expression> constraints;
+  list<tuple<String, Expression>> opt_attrs;
 algorithm
   resetGlobalFlags();
   context := if relaxedFrontend or Flags.getConfigBool(Flags.CHECK_MODEL) or Flags.isSet(Flags.NF_API) then
@@ -216,6 +218,9 @@ algorithm
   // create the settings from flags
   settings := InstSettings.create();
 
+  // Must be done before instExpressions flattens away the extends nodes.
+  (constraints, opt_attrs) := instOptimica(inst_cls, InstContext.set(context, NFInstContext.CLASS));
+
   // Instantiate expressions (i.e. anything that can contains crefs, like
   // bindings, dimensions, etc). This is done as a separate step after
   // instantiation to make sure that lookup is able to find the correct nodes.
@@ -234,6 +239,7 @@ algorithm
   // Flatten the model and evaluate constants in it.
   Error.checkCancel();
   flatModel := Flatten.flatten(inst_cls, classPath);
+  flatModel := typeOptimica(constraints, opt_attrs, inst_cls, context, flatModel);
   flatModel := EvalConstants.evaluate(flatModel, context);
 
   InstUtil.dumpFlatModelDebug("eval", flatModel);
@@ -443,6 +449,75 @@ algorithm
   insertGeneratedInners(clsNode, InstNode.topScope(clsNode), context);
 end instantiateRootClass;
 
+function instOptimica
+  "Instantiates the Optimica constraint sections and class attributes of a
+   class and the classes it extends."
+  input InstNode node;
+  input InstContext.Type context;
+  input output list<Expression> constraints = {} "In reverse order.";
+  input output list<tuple<String, Expression>> attributes = {};
+protected
+  InstNode cls_node = Class.lastBaseClass(node);
+  list<SCode.ConstraintSection> constraint_sections;
+  list<Absyn.NamedArg> class_attrs;
+  SourceInfo info = InstNode.info(cls_node);
+algorithm
+  for ext in ClassTree.getExtends(Class.classTree(InstNode.getClass(cls_node))) loop
+    (constraints, attributes) := instOptimica(ext, context, constraints, attributes);
+  end for;
+
+  (constraint_sections, class_attrs) := match InstNode.definition(cls_node)
+    case SCode.CLASS(classDef = SCode.PARTS(constraintLst = constraint_sections, clsattrs = class_attrs))
+      then (constraint_sections, class_attrs);
+    case SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition =
+        SCode.PARTS(constraintLst = constraint_sections, clsattrs = class_attrs)))
+      then (constraint_sections, class_attrs);
+    else ({}, {});
+  end match;
+
+  for c in constraint_sections loop
+    for e in c.constraints loop
+      constraints := instExp(e, cls_node, context, info) :: constraints;
+    end for;
+  end for;
+
+  for attr in class_attrs loop
+    if not listMember(attr.argName, {"objective", "objectiveIntegrand", "startTime", "finalTime"}) then
+      Error.addSourceMessage(Error.OPTIMICA_ERROR,
+        {"Unknown class attribute " + attr.argName}, info);
+      fail();
+    end if;
+
+    attributes := (attr.argName, instExp(attr.argValue, cls_node, context, info)) :: attributes;
+  end for;
+end instOptimica;
+
+function typeOptimica
+  input list<Expression> constraints;
+  input list<tuple<String, Expression>> attributes;
+  input InstNode node;
+  input InstContext.Type context;
+  input output FlatModel flatModel;
+protected
+  InstContext.Type eq_context = InstContext.set(context, NFInstContext.EQUATION);
+  SourceInfo info = InstNode.info(node);
+  Flatten.Prefix prefix = Flatten.Prefix.new(node);
+  String name;
+  Expression exp;
+algorithm
+  for e in constraints loop
+    exp := Typing.typeExp(e, eq_context, info);
+    flatModel.constraints := Flatten.flattenExp(exp, prefix, info) :: flatModel.constraints;
+  end for;
+
+  for attr in attributes loop
+    (name, exp) := attr;
+    exp := Typing.typeExp(exp, eq_context, info);
+    flatModel.optimizationAttributes := (name, Flatten.flattenExp(exp, prefix, info)) :: flatModel.optimizationAttributes;
+  end for;
+  flatModel.optimizationAttributes := listReverseInPlace(flatModel.optimizationAttributes);
+end typeOptimica;
+
 function instantiateRootFunction
   input InstNode funcNode;
   input InstContext.Type context;
@@ -457,7 +532,7 @@ algorithm
     functions := Flatten.flattenFunction(fn, functions);
   end for;
 
-  flatModel := FlatModel.FLAT_MODEL(Absyn.Path.IDENT(InstNode.name(funcNode)), {}, {}, {}, {}, {},
+  flatModel := FlatModel.FLAT_MODEL(Absyn.Path.IDENT(InstNode.name(funcNode)), {}, {}, {}, {}, {}, {}, {},
     ElementSource.createElementSource(InstNode.info(funcNode)));
 end instantiateRootFunction;
 
