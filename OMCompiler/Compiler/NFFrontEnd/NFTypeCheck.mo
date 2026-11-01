@@ -2060,24 +2060,25 @@ protected
 algorithm
   if listLength(comps1) <> listLength(comps2) then
     matchKind := MatchKind.NOT_COMPATIBLE;
-  else
-    for c1_ref in comps1 loop
-      c2_ref :: rest_c2 := rest_c2;
-      c1 := InstNode.borrow(c1_ref);
-      c2 := InstNode.borrow(c2_ref);
-
-      if InstNode.name(c1) <> InstNode.name(c2) then
-        matchKind := MatchKind.NOT_COMPATIBLE;
-        return;
-      end if;
-
-      (_, _, matchKind) := matchTypes(InstNode.getType(c1), InstNode.getType(c2), dummy, options);
-
-      if matchKind == MatchKind.NOT_COMPATIBLE then
-        return;
-      end if;
-    end for;
+    return;
   end if;
+
+  for c1_ref in comps1 loop
+    c2_ref :: rest_c2 := rest_c2;
+    c1 := InstNode.borrow(c1_ref);
+    c2 := InstNode.borrow(c2_ref);
+
+    if InstNode.name(c1) <> InstNode.name(c2) then
+      matchKind := MatchKind.NOT_COMPATIBLE;
+      return;
+    end if;
+
+    (_, _, matchKind) := matchTypes(InstNode.getType(c1), InstNode.getType(c2), dummy, options);
+
+    if matchKind == MatchKind.NOT_COMPATIBLE then
+      return;
+    end if;
+  end for;
 
   matchKind := MatchKind.PLUG_COMPATIBLE;
 end matchComponentList;
