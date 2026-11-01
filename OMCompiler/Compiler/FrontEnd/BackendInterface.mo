@@ -54,6 +54,7 @@ uniontype BackendInterfaceFunctions
     partialAppendLibrary appendLibrary;
     partialInitInstHashTable initInstHashTable;
     partialEvalScriptingFunction evalScriptingFunction;
+    partialLookupScriptVariable lookupScriptVariable;
   end BACKEND_INTERFACE_FUNCTIONS;
 end BackendInterfaceFunctions;
 
@@ -73,7 +74,8 @@ public function initializeWithoutBackend
    this lives beside the table rather than in the frontend."
 algorithm
   initializeBackendInterface(BACKEND_INTERFACE_FUNCTIONS(
-    noBackendRewriteRules, keepExpression, noBackendLibrary, doNothing, noScriptingFunctions));
+    noBackendRewriteRules, keepExpression, noBackendLibrary, doNothing, noScriptingFunctions,
+    noScriptVariables));
 end initializeWithoutBackend;
 
 protected function noBackendRewriteRules
@@ -105,6 +107,13 @@ algorithm
   Error.addInternalError(getInstanceName() + ": no scripting API to evaluate " + name, info);
   fail();
 end noScriptingFunctions;
+
+protected function noScriptVariables
+  input Absyn.ComponentRef cref;
+  output Absyn.Exp exp;
+algorithm
+  fail();
+end noScriptVariables;
 
 public
 
@@ -172,6 +181,20 @@ algorithm
   result := func(name, args, info);
 end evalScriptingFunction;
 
+function lookupScriptVariable
+  "The value of a script variable, or of a field or element of one, as an
+   expression. Fails if the name is not a script variable."
+  input Absyn.ComponentRef cref;
+  output Absyn.Exp exp;
+protected
+  BackendInterfaceFunctions functions;
+  partialLookupScriptVariable func;
+algorithm
+  functions := getGlobalRoot(Global.backendInterface);
+  func := functions.lookupScriptVariable;
+  exp := func(cref);
+end lookupScriptVariable;
+
 partial function partialNoRewriteRulesFrontEnd
   output Boolean noRules;
 end partialNoRewriteRulesFrontEnd;
@@ -191,6 +214,11 @@ end partialAppendLibrary;
 
 partial function partialInitInstHashTable
 end partialInitInstHashTable;
+
+partial function partialLookupScriptVariable
+  input Absyn.ComponentRef cref;
+  output Absyn.Exp exp;
+end partialLookupScriptVariable;
 
 partial function partialEvalScriptingFunction
   input String name;

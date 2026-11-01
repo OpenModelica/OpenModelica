@@ -37,6 +37,7 @@ encapsulated uniontype NFCall
 
 import Absyn;
 import AbsynUtil;
+import BackendInterface;
 import BaseModelica;
 import DAE;
 import Expression = NFExpression;
@@ -2648,6 +2649,36 @@ protected
     end match;
   end isNameCall;
 
+  function scriptCode
+    "A name of a script variable that holds a type or variable name stands for
+     that name, as e.g. in val(v, 0.1) with v := stringVariableName(\"x\")."
+    input Absyn.Exp exp;
+    output Absyn.Exp outExp = exp;
+  protected
+    Absyn.ComponentRef cref;
+  algorithm
+    if not AbsynUtil.isCref(exp) then
+      return;
+    end if;
+
+    Absyn.CREF(componentRef = cref) := exp;
+    if not AbsynUtil.crefIsIdent(cref) or AbsynUtil.crefHasSubscripts(cref) then
+      return;
+    end if;
+
+    try
+      outExp := match BackendInterface.lookupScriptVariable(cref)
+        local
+          Absyn.ComponentRef name;
+          Absyn.Path path;
+        case Absyn.CODE(code = Absyn.C_VARIABLENAME(name)) then Absyn.CREF(name);
+        case Absyn.CODE(code = Absyn.C_TYPENAME(path)) then Absyn.CREF(AbsynUtil.pathToCref(path));
+        else exp;
+      end match;
+    else
+    end try;
+  end scriptCode;
+
   function instCodeArg
     "Quotes the argument of a $Code input, or instantiates any other."
     input Absyn.Exp exp;
@@ -2663,7 +2694,7 @@ protected
       ty := InstNode.getType(Component.classInstance(InstNode.component(Util.getOption(inputNode))));
 
       if Type.codeName(ty) <> "" and not isNameCall(exp, ty) then
-        arg := Expression.quoteCode(exp, ty, info);
+        arg := Expression.quoteCode(scriptCode(exp), ty, info);
         return;
       end if;
     end if;
@@ -2912,7 +2943,7 @@ protected
           variability := Variability.variabilityMax(variability, exp_var);
           purity := Variability.purityMin(purity, exp_pur);
           {fn} := Function.typeRefCache(call.ref);
-          TypeCheck.checkReductionType(ty, Function.name(fn), call.exp, info);
+          TypeCheck.checkReductionType(ty, Function.name(fn), call.exp, context, info);
         then
           (makeTypedReduction(fn, ty, variability, purity, arg, iters, info), ty, variability, purity);
 

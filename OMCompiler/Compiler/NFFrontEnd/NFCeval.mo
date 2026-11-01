@@ -2160,6 +2160,8 @@ algorithm
     case "solverClock" then evalSolverClock(args);
     case "$OMC$PositiveMax" then evalPositiveMax(listGet(args,1),listGet(args,2));
     case "$OMC$inStreamDiv" then listHead(args);
+    case "print" guard InstContext.inScripting(target.context) then evalScriptPrint(listHead(args));
+    case "assert" guard InstContext.inScripting(target.context) then evalScriptAssert(args, target);
     case _ guard InstContext.inScripting(target.context) and Function.isScripting(fn)
       then evalScriptingCall(fn, AbsynUtil.pathFirstIdent(fn_path), args, target);
     else
@@ -2170,6 +2172,44 @@ algorithm
         fail();
   end match;
 end evalBuiltinCall;
+
+function evalScriptPrint
+  input Expression arg;
+  output Expression result = Expression.EMPTY(Type.NORETCALL());
+protected
+  String str;
+algorithm
+  Expression.STRING(value = str) := arg;
+  print(str);
+end evalScriptPrint;
+
+function evalScriptAssert
+  "assert(condition, message, level) called in a script, which reports the
+   assertion as NFEvalFunction does for an assert statement."
+  input list<Expression> args;
+  input EvalTarget target;
+  output Expression result = Expression.EMPTY(Type.NORETCALL());
+protected
+  Expression condition, msg, level;
+algorithm
+  condition :: msg :: level :: _ := args;
+
+  if Expression.isFalse(condition) then
+    () := match (msg, level)
+      case (Expression.STRING(), Expression.ENUM_LITERAL(name = "warning"))
+        algorithm
+          Error.addSourceMessage(Error.ASSERT_TRIGGERED_WARNING, {msg.value}, target.info);
+        then
+          ();
+
+      case (Expression.STRING(), _)
+        algorithm
+          Error.addSourceMessage(Error.ASSERT_TRIGGERED_ERROR, {msg.value}, target.info);
+        then
+          fail();
+    end match;
+  end if;
+end evalScriptAssert;
 
 function evalScriptingCall
   "Evaluates a call to a builtin OpenModelica.Scripting function through the

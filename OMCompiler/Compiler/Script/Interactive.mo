@@ -97,6 +97,7 @@ import Lookup;
 import MetaUtil;
 import Mod;
 import NFApi;
+import NFInteractive;
 import Parser;
 import Print;
 import Refactor;
@@ -300,6 +301,10 @@ protected
 algorithm
   try /* Stack overflow */
     outString := match inStatement
+      case _ guard Flags.isSet(Flags.NF_SCRIPTING) and Flags.isSet(Flags.SCODE_INST) and
+                   not Config.acceptMetaModelicaGrammar()
+        then NFInteractive.evaluate(inStatement);
+
       // Evaluate algorithm statements in evaluateAlgStmt()
       case GlobalScript.IALG(algItem = algitem as Absyn.ALGORITHMITEM())
         algorithm

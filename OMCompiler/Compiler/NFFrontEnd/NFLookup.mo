@@ -208,7 +208,7 @@ protected
   InstNode node;
 algorithm
   try
-    (foundCref, foundScope, state) := lookupCref(cref, scope, context);
+    (foundCref, foundScope, state) := lookupFunctionCref(cref, scope, context);
     node := ComponentRef.node(foundCref);
     false := InstNode.isName(node);
   else
@@ -230,11 +230,51 @@ protected
   LookupState state;
   InstNode node;
 algorithm
-  (foundCref, foundScope, state) := lookupCref(cref, scope, context);
+  (foundCref, foundScope, state) := lookupFunctionCref(cref, scope, context);
   node := ComponentRef.node(foundCref);
   (foundCref, state) := fixExternalObjectCall(node, foundCref, state);
   true := LookupState.isFunction(state, node);
 end lookupFunctionNameSilent;
+
+function lookupFunctionCref
+  "In a script, a simple name that is not found, or is not a function, is
+   looked up in OpenModelica.Scripting, so that e.g. simulate(M) needs no
+   qualification and val(x, t) works with a model named val loaded."
+  input Absyn.ComponentRef cref;
+  input InstNode scope;
+  input InstContext.Type context;
+  output ComponentRef foundCref;
+  output InstNode foundScope;
+  output LookupState state;
+algorithm
+  try
+    (foundCref, foundScope, state) := lookupCref(cref, scope, context);
+  else
+    (foundCref, foundScope, state) := lookupScriptingCref(cref, scope, context);
+    return;
+  end try;
+
+  if InstContext.inScripting(context) and AbsynUtil.crefIsIdent(cref) and
+     not LookupState.isFunction(state, ComponentRef.node(foundCref)) then
+    try
+      (foundCref, foundScope, state) := lookupScriptingCref(cref, scope, context);
+    else
+    end try;
+  end if;
+end lookupFunctionCref;
+
+function lookupScriptingCref
+  input Absyn.ComponentRef cref;
+  input InstNode scope;
+  input InstContext.Type context;
+  output ComponentRef foundCref;
+  output InstNode foundScope;
+  output LookupState state;
+algorithm
+  true := InstContext.inScripting(context) and AbsynUtil.crefIsIdent(cref);
+  (foundCref, foundScope, state) := lookupCref(
+    Absyn.CREF_QUAL("OpenModelica", {}, Absyn.CREF_QUAL("Scripting", {}, cref)), scope, context);
+end lookupScriptingCref;
 
 function fixExternalObjectCall
   "Changes calls to external objects so that the constructor is called instead,

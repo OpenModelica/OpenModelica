@@ -48,6 +48,7 @@ import BackendInterface;
 import BackendCevalInterface;
 import CevalScript;
 import FGraph;
+import NFInteractive;
 import RewriteRules;
 import StaticScript;
 import SymbolTable;
@@ -60,7 +61,8 @@ algorithm
     rewriteFrontEnd,
     appendLibrary,
     InstHashTable.init,
-    evalScriptingFunction));
+    evalScriptingFunction,
+    NFInteractive.lookupVariable));
   BackendCevalInterface.initializeBackendInterface(BackendCevalInterface.BACKEND_INTERFACE_FUNCTIONS(
     cevalInteractiveFunctions,
     cevalCallFunction,

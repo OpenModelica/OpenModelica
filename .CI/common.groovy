@@ -124,7 +124,7 @@ void insideTestImage(String image, String extraArgs, Closure body) {
   }
 }
 
-void partest(partition=1,partitionmodulo=1,cache=true,extraArgs='') {
+void partest(partition=1,partitionmodulo=1,cache=true,extraArgs='',reportOnly=false) {
   if (isWindows()) {
 
   bat ("""
@@ -184,7 +184,8 @@ void partest(partition=1,partitionmodulo=1,cache=true,extraArgs='') {
 
   }
 
-  junit 'testsuite/partest/result.xml'
+  junit testResults: 'testsuite/partest/result.xml',
+        skipMarkingBuildUnstable: reportOnly, skipPublishingChecks: reportOnly
 }
 
 // Link the shared package cache into the workspace and install the testsuite
@@ -1692,6 +1693,19 @@ void partestStashed(stashName, partition, partitionmodulo, String simCodeTarget 
   String simCodeTargetArg = simCodeTarget ? " -simCodeTarget=${simCodeTarget}" : ''
   partest(partition, partitionmodulo, true,
           "-suites=${suites} -partition-suites=${suites}${simCodeTargetArg}")
+}
+
+// The testsuite with the new frontend script loop (-d=nfScripting) on the C
+// target, until it is the default (#17473). Its results are reported, but
+// neither failing tests nor a failing run change the build result. The C++
+// runtime tests are left out: the script loop does not depend on the runtime.
+void partestNFScripting() {
+  standardSetup()
+  unstash 'omc-clang'
+  makeLibsAndCache()
+  catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+    partest(1, 1, false, "-suites=${sharedTestSuites()},-cpp -omcflags=-d=nfScripting", true)
+  }
 }
 
 // A CTest-driven testsuite shard against a stashed CMake install tree (see
