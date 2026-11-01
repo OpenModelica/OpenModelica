@@ -184,7 +184,7 @@ constant InstNode STRING_NODE = InstNode.CLASS_NODE("String",
 
 constant InstNode ENUM_NODE = InstNode.CLASS_NODE("enumeration",
   Elements.ENUMERATION, Visibility.PUBLIC,
-  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.ENUMERATION(Absyn.Path.IDENT(":"), {}), NFClassTree.EMPTY_TREE(),
+  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.ENUMERATION(Absyn.Path.IDENT(":"), {}, Absyn.Path.IDENT(":")), NFClassTree.EMPTY_TREE(),
     Modifier.NOMOD(), NFClass.DEFAULT_PREFIXES, Restriction.ENUMERATION())),
   EMPTY_NODE_CACHE, NONE(), NONE(), NFInstNode.NO_SCOPE, InstNodeType.BUILTIN_CLASS());
 
