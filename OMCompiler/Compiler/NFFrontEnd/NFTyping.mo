@@ -134,6 +134,7 @@ algorithm
   next_context := InstContext.set(context, NFInstContext.CLASS);
   typeClassType(cls, NFBinding.EMPTY_BINDING, next_context, cls);
   typeComponents(cls, next_context);
+  checkStreamConnectorClass(cls);
   execStat("NFTyping.typeComponents");
   typeBindings(cls, next_context);
   execStat("NFTyping.typeBindings");
@@ -414,6 +415,37 @@ algorithm
     fail();
   end if;
 end checkConnectorTypeBalance;
+
+function checkStreamConnectorClass
+  "A stream connector must have exactly one flow variable, MLS 3.7 section
+   15.1. Connector components are checked in checkConnectorTypeBalance, this
+   checks a connector that is itself the class being instantiated."
+  input InstNode cls;
+protected
+  Class c = InstNode.getClass(cls);
+  Integer flows = 0, streams = 0;
+  ConnectorType.Type cty;
+algorithm
+  if not Restriction.isConnector(Class.restriction(c)) then
+    return;
+  end if;
+
+  for comp in ClassTree.enumerateComponents(Class.classTree(c)) loop
+    cty := Component.connectorType(InstNode.component(comp));
+
+    if ConnectorType.isFlow(cty) then
+      flows := flows + 1;
+    elseif ConnectorType.isStream(cty) then
+      streams := streams + 1;
+    end if;
+  end for;
+
+  if streams > 0 and flows <> 1 then
+    Error.addSourceMessage(Error.MISMATCHED_FLOW_IN_STREAM_CONNECTOR,
+      {InstNode.name(cls), String(flows)}, InstNode.info(cls));
+    fail();
+  end if;
+end checkStreamConnectorClass;
 
 function checkBlockConnector
   "Checks that all variables in a public connector component of a block are
