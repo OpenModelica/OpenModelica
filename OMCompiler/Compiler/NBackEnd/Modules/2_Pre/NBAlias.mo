@@ -234,21 +234,43 @@ protected
         UnorderedSet<VariablePointer> new_iters = UnorderedSet.new(BVariable.hash, BVariable.equalName);
         EquationPointers newEquations;
         list<Pointer<Variable>> alias_vars, const_vars, non_trivial_alias;
-        list<Pointer<Equation>> non_trivial_eqs, auxEquations;
+        list<Pointer<Equation>> non_trivial_eqs, auxEquations, follow_aux;
+        UnorderedSet<ComponentRef> alias_records;
+        UnorderedMap<ComponentRef, EquationList> index;
+        UnorderedMap<ComponentRef, Expression> follow_repl;
 
       case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM())
         algorithm
           // -----------------------------------
           //            1. 2. 3.
           // -----------------------------------
-          (replacements, newEquations) := aliasCausalize(varData.unknowns, eqData.simulation, kind, eqData.uniqueIndex, "Simulation");
-          (replacements, auxEquations) := checkReplacements(replacements, eqData);
+          alias_records := aliasRecords(eqData.simulation);
+          (replacements, newEquations) := aliasCausalize(varData.unknowns, eqData.simulation, kind, eqData.uniqueIndex, "Simulation", alias_records);
+          (replacements, auxEquations) := checkReplacements(replacements, exceptions(eqData), eqData.uniqueIndex);
+
+          // index the remaining equations by their variables before replacing them
+          index := UnorderedMap.new<EquationList>(ComponentRef.hash, ComponentRef.isEqual);
+          if not UnorderedMap.isEmpty(replacements) then
+            EquationPointers.mapPtr(newEquations, function indexEquation(index = index));
+          end if;
 
           // -----------------------------------
           // 4. apply replacements
           // 5. save replacements in bindings of alias variables
           // -----------------------------------
           (eqData, varData) := Replacements.applySimple(eqData, varData, replacements);
+          replaceAliasRecords(eqData, replacements);
+
+          // replacements can simplify equations to new alias equations (e.g. x.re = 0.0 * L)
+          (follow_repl, follow_aux) := aliasFollowUp(index, replacements, varData.unknowns, alias_records, exceptions(eqData), kind, eqData.uniqueIndex);
+          if not UnorderedMap.isEmpty(follow_repl) then
+            (eqData, varData) := Replacements.applySimple(eqData, varData, follow_repl);
+            replaceAliasRecords(eqData, follow_repl);
+            for cref in UnorderedMap.keyList(follow_repl) loop
+              UnorderedMap.add(cref, UnorderedMap.getOrFail(cref, follow_repl), replacements);
+            end for;
+            auxEquations := listAppend(follow_aux, auxEquations);
+          end if;
           alias_vars := list(BVariable.getVarPointer(cref, sourceInfo()) for cref in UnorderedMap.keyList(replacements));
 
           // update record variability and flatten to record children
@@ -610,20 +632,27 @@ protected
     end match;
   end reshapeStart;
 
+  function exceptions
+    input EqData eqData;
+    output UnorderedMap<ComponentRef, ExceptionKind> exceptionMap = UnorderedMap.new<ExceptionKind>(ComponentRef.hash, ComponentRef.isEqual);
+  algorithm
+    EqData.map(eqData, function filterExceptionsEquation(acc = exceptionMap));
+  end exceptions;
+
   function checkReplacements
     "Checks validity of all replacements, returns all valid replacements and auxiliary equations"
     input UnorderedMap<ComponentRef, Expression> replacements;
-    input EqData eqData;
+    input UnorderedMap<ComponentRef, ExceptionKind> exceptionMap;
+    input Pointer<Integer> uniqueIndex;
+    input Boolean dump = true;
     output UnorderedMap<ComponentRef, Expression> newReplacements = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
     output list<Pointer<Equation>> auxEquations = {};
   protected
-    UnorderedMap<ComponentRef, ExceptionKind> exceptionMap = UnorderedMap.new<ExceptionKind>(ComponentRef.hash, ComponentRef.isEqual);
     ComponentRef cref;
     Expression exp;
     Pointer<Equation> eqPtr;
     EquationAttributes attr;
   algorithm
-    EqData.map(eqData, function filterExceptionsEquation(acc = exceptionMap));
     for keyValueTpl in UnorderedMap.toList(replacements) loop
       (cref, exp) := keyValueTpl;
       if isValidReplacement(cref, exp, exceptionMap) then
@@ -632,12 +661,12 @@ protected
       else
         // add auxiliary equation
         attr := BackendDAE.lowerEquationAttributes(ComponentRef.getSubscriptedType(cref), false);
-        eqPtr := Equation.makeAssignment(Expression.fromCref(cref), exp, EqData.getUniqueIndex(eqData), "SIM", Iterator.EMPTY(), attr);
+        eqPtr := Equation.makeAssignment(Expression.fromCref(cref), exp, uniqueIndex, "SIM", Iterator.EMPTY(), attr);
         auxEquations := eqPtr :: auxEquations;
       end if;
     end for;
 
-    if Flags.isSet(Flags.DUMP_REPL)  then
+    if dump and Flags.isSet(Flags.DUMP_REPL) then
       dumpReplacements(newReplacements, auxEquations);
     end if;
   end checkReplacements;
@@ -751,14 +780,15 @@ protected
           // -----------------------------------
           //            1. 2. 3.
           // -----------------------------------
-          (replacements, newEquations) := aliasCausalize(varData.clocks, eqData.clocked, kind, eqData.uniqueIndex, "Clocked");
-          (replacements, auxEquations) := checkReplacements(replacements, eqData);
+          (replacements, newEquations) := aliasCausalize(varData.clocks, eqData.clocked, kind, eqData.uniqueIndex, "Clocked", aliasRecords(eqData.clocked));
+          (replacements, auxEquations) := checkReplacements(replacements, exceptions(eqData), eqData.uniqueIndex);
 
           // -----------------------------------
           // 4. apply replacements
           // 5. save replacements in bindings of alias variables
           // -----------------------------------
           (eqData, varData) := Replacements.applySimple(eqData, varData, replacements);
+          replaceAliasRecords(eqData, replacements);
           alias_vars := list(BVariable.getVarPointer(cref, sourceInfo()) for cref in UnorderedMap.keyList(replacements));
 
           // save new equations and compress affected arrays(some might have been removed)
@@ -786,6 +816,8 @@ protected
     input Partition.Kind kind;
     input Pointer<Integer> index;
     input String context;
+    input UnorderedSet<ComponentRef> alias_records "records of simple record equations";
+    input Boolean dumpEmpty = true;
     output UnorderedMap<ComponentRef, Expression> replacements;
     output EquationPointers newEquations;
   protected
@@ -799,10 +831,10 @@ protected
     // collect (cref) -> (simpleSet) hashtable
     size := VariablePointers.size(variables);
     map := UnorderedMap.new<SetPtr>(ComponentRef.hash, ComponentRef.isEqual, size);
-    (newEquations, map) := NBEquation.EquationPointers.foldRemovePtr(equations, findSimpleEquation, map);
+    (newEquations, map) := NBEquation.EquationPointers.foldRemovePtr(equations, function findSimpleEquation(alias_records = alias_records), map);
 
     sets := getSimpleSets(map, size);
-    if Flags.isSet(Flags.DUMP_REPL) then
+    if Flags.isSet(Flags.DUMP_REPL) and (dumpEmpty or not listEmpty(sets)) then
       print(StringUtil.headline_2("[dumprepl] " + context + " Alias Sets:") + "\n");
       if listEmpty(sets) then
         print("<No " + context + " Alias Sets>\n\n");
@@ -825,11 +857,122 @@ protected
 
   end aliasCausalize;
 
+  type EquationPtr = Pointer<Equation>;
+  type EquationList = list<Pointer<Equation>>;
+
+  function aliasFollowUp
+    "Replacements can simplify equations to new alias equations (e.g. x.re = 0.0 * L). Only the
+    equations that contained replaced variables are checked again, until no new alias is found.
+    Returns the replacements of all follow-up runs, resolved w.r.t. each other."
+    input UnorderedMap<ComponentRef, EquationList> index "variable -> equations, updated";
+    input UnorderedMap<ComponentRef, Expression> replacements "already applied";
+    input VariablePointers variables;
+    input UnorderedSet<ComponentRef> alias_records;
+    input UnorderedMap<ComponentRef, ExceptionKind> exceptionMap;
+    input Partition.Kind kind;
+    input Pointer<Integer> uniqueIndex;
+    output UnorderedMap<ComponentRef, Expression> resolved = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+    output list<Pointer<Equation>> auxEquations = {};
+  protected
+    UnorderedMap<ComponentRef, Expression> repl = replacements;
+    list<UnorderedMap<ComponentRef, Expression>> runs = {};
+    list<Pointer<Equation>> candidates, aux;
+    EquationPointers equations;
+    Boolean applied = true;
+  algorithm
+    while not UnorderedMap.isEmpty(repl) loop
+      candidates := candidateEquations(repl, index);
+      if listEmpty(candidates) then break; end if;
+      equations := EquationPointers.fromList(candidates);
+      if not applied then
+        equations := EquationPointers.mapExp(equations, function Replacements.applySimpleExp(replacements = repl), SOME(function Replacements.applySimpleCref(replacements = repl)));
+        replaceAliasRecordsEquations(equations, repl);
+      end if;
+      applied := false;
+      EquationPointers.mapPtr(equations, function indexEquation(index = index));
+      equations := EquationPointers.map(equations, function filterExceptionsEquation(acc = exceptionMap));
+      (repl, _) := aliasCausalize(variables, equations, kind, uniqueIndex, "Simulation", alias_records, false);
+      (repl, aux) := checkReplacements(repl, exceptionMap, uniqueIndex, not UnorderedMap.isEmpty(repl));
+      auxEquations := listAppend(aux, auxEquations);
+      runs := repl :: runs;
+    end while;
+
+    // later runs replace variables of earlier replacements, resolve from the last run backwards
+    for run in runs loop
+      for cref in UnorderedMap.keyList(run) loop
+        UnorderedMap.add(cref, Expression.map(UnorderedMap.getOrFail(cref, run), function Replacements.applySimpleExp(replacements = resolved)), resolved);
+      end for;
+    end for;
+  end aliasFollowUp;
+
+  function candidateEquations
+    "the remaining equations containing replaced variables or their records"
+    input UnorderedMap<ComponentRef, Expression> replacements;
+    input UnorderedMap<ComponentRef, EquationList> index;
+    output list<Pointer<Equation>> candidates;
+  protected
+    UnorderedMap<ComponentRef, EquationPtr> eqns = UnorderedMap.new<EquationPtr>(ComponentRef.hash, ComponentRef.isEqual);
+    ComponentRef name;
+    Option<Pointer<Variable>> parent;
+    EquationList eq_lst;
+  algorithm
+    for cref in UnorderedMap.keyList(replacements) loop
+      name := ComponentRef.stripSubscriptsAll(cref);
+      eq_lst := UnorderedMap.getOrDefault(name, index, {});
+      for eq_ptr in eq_lst loop
+        UnorderedMap.tryAdd(Equation.getEqnName(eq_ptr), eq_ptr, eqns);
+      end for;
+      // replaced variables do not occur again
+      UnorderedMap.remove(name, index);
+      parent := BVariable.getParent(BVariable.getVarPointer(cref, sourceInfo()));
+      while isSome(parent) loop
+        eq_lst := UnorderedMap.getOrDefault(BVariable.getVarName(Util.getOption(parent)), index, {});
+        for eq_ptr in eq_lst loop
+          UnorderedMap.tryAdd(Equation.getEqnName(eq_ptr), eq_ptr, eqns);
+        end for;
+        parent := BVariable.getParent(Util.getOption(parent));
+      end while;
+    end for;
+    candidates := list(eq_ptr for eq_ptr guard(not Equation.isDummy(Pointer.access(eq_ptr))) in UnorderedMap.valueList(eqns));
+  end candidateEquations;
+
+  function indexEquation
+    input output Pointer<Equation> eq_ptr;
+    input UnorderedMap<ComponentRef, EquationList> index;
+  algorithm
+    _ := Equation.map(Pointer.access(eq_ptr), function indexExp(eq_ptr = eq_ptr, index = index),
+      SOME(function indexCref(eq_ptr = eq_ptr, index = index)));
+  end indexEquation;
+
+  function indexExp
+    input output Expression exp;
+    input Pointer<Equation> eq_ptr;
+    input UnorderedMap<ComponentRef, EquationList> index;
+  algorithm
+    () := match exp
+      case Expression.CREF() algorithm
+        indexCref(exp.cref, eq_ptr, index);
+      then ();
+      else ();
+    end match;
+  end indexExp;
+
+  function indexCref
+    input output ComponentRef cref;
+    input Pointer<Equation> eq_ptr;
+    input UnorderedMap<ComponentRef, EquationList> index;
+  protected
+    ComponentRef name = ComponentRef.stripSubscriptsAll(cref);
+  algorithm
+    UnorderedMap.add(name, eq_ptr :: UnorderedMap.getOrDefault(name, index, {}), index);
+  end indexCref;
+
   function findSimpleEquation
     "Checks if the equation is simple and adds it to the correct set in the hashTable."
     input Pointer<Equation> eq_ptr;
     input output UnorderedMap<ComponentRef, SetPtr> map;
     output Boolean delete = false;
+    input UnorderedSet<ComponentRef> alias_records "records of simple record equations";
   protected
     Equation eq;
     CrefTpl crefTpl = EMPTY_CREF_TPL;
@@ -855,6 +998,14 @@ protected
 
       else crefTpl;
     end match;
+
+    // record elements are only removed if they belong to function alias records that are no
+    // aliases themselves and are bound to a constant or parameter (e.g. $FUN_1.re = 0.0)
+    if List.any(crefTpl.cr_lst, isRecordElement) and (listLength(crefTpl.cr_lst) > 1
+       or not List.all(crefTpl.cr_lst, isFunctionAliasElement) or containsTime(eq)
+       or List.any(crefTpl.cr_lst, function hasAliasRecord(alias_records = alias_records))) then
+      crefTpl := EMPTY_CREF_TPL;
+    end if;
 
     (map, delete) := match crefTpl
       local
@@ -1134,6 +1285,174 @@ protected
     end match;
   end fullVariableCref;
 
+  function aliasRecords
+    input EquationPointers equations;
+    output UnorderedSet<ComponentRef> alias_records = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+  algorithm
+    EquationPointers.mapPtr(equations, function collectAliasRecords(records = alias_records));
+  end aliasRecords;
+
+  function collectAliasRecords
+    "the records of simple record equations a = b"
+    input output Pointer<Equation> eq_ptr;
+    input UnorderedSet<ComponentRef> records;
+  algorithm
+    () := match Pointer.access(eq_ptr)
+      local
+        ComponentRef cref1, cref2;
+      case BEquation.RECORD_EQUATION(lhs = Expression.CREF(cref = cref1), rhs = Expression.CREF(cref = cref2)) algorithm
+        UnorderedSet.add(cref1, records);
+        UnorderedSet.add(cref2, records);
+      then ();
+      else ();
+    end match;
+  end collectAliasRecords;
+
+  function hasAliasRecord
+    "true if one of the records the element belongs to is in a simple record equation"
+    input ComponentRef cref;
+    input UnorderedSet<ComponentRef> alias_records;
+    output Boolean b = false;
+  protected
+    Option<Pointer<Variable>> parent = BVariable.getParent(BVariable.getVarPointer(cref, sourceInfo()));
+  algorithm
+    while isSome(parent) and not b loop
+      b := UnorderedSet.contains(BVariable.getVarName(Util.getOption(parent)), alias_records);
+      parent := BVariable.getParent(Util.getOption(parent));
+    end while;
+  end hasAliasRecord;
+
+  function containsTime
+    input Equation eq;
+    output Boolean b;
+  algorithm
+    b := match eq
+      case BEquation.SCALAR_EQUATION() then Expression.contains(eq.lhs, Expression.isTime) or Expression.contains(eq.rhs, Expression.isTime);
+      case BEquation.ARRAY_EQUATION()  then Expression.contains(eq.lhs, Expression.isTime) or Expression.contains(eq.rhs, Expression.isTime);
+      case BEquation.RECORD_EQUATION() then Expression.contains(eq.lhs, Expression.isTime) or Expression.contains(eq.rhs, Expression.isTime);
+      else true;
+    end match;
+  end containsTime;
+
+  function isFunctionAliasElement
+    input ComponentRef cref;
+    output Boolean b = isFunctionAliasOrElement(BVariable.getVarPointer(cref, sourceInfo()));
+  end isFunctionAliasElement;
+
+  function isFunctionAliasOrElement
+    input Pointer<Variable> var_ptr;
+    output Boolean b;
+  algorithm
+    b := match BVariable.getParent(var_ptr)
+      local
+        Pointer<Variable> parent;
+      case SOME(parent) then isFunctionAliasOrElement(parent);
+      else BVariable.isFunctionAlias(var_ptr);
+    end match;
+  end isFunctionAliasOrElement;
+
+  function isRecordElement
+    input ComponentRef cref;
+    output Boolean b = isSome(BVariable.getParent(BVariable.getVarPointer(cref, sourceInfo())));
+  end isRecordElement;
+
+  function replaceAliasRecords
+    "replaces records with replaced fields by the record of the replacements (updates the equation pointers)"
+    input EqData eqData;
+    input UnorderedMap<ComponentRef, Expression> replacements;
+  protected
+    UnorderedMap<ComponentRef, Expression> records = recordReplacements(replacements);
+  algorithm
+    if not UnorderedMap.isEmpty(records) then
+      _ := EqData.mapExp(eqData, function replaceRecordCref(records = records));
+    end if;
+  end replaceAliasRecords;
+
+  function replaceAliasRecordsEquations
+    input EquationPointers equations;
+    input UnorderedMap<ComponentRef, Expression> replacements;
+  protected
+    UnorderedMap<ComponentRef, Expression> records = recordReplacements(replacements);
+  algorithm
+    if not UnorderedMap.isEmpty(records) then
+      _ := EquationPointers.mapExp(equations, function replaceRecordCref(records = records));
+    end if;
+  end replaceAliasRecordsEquations;
+
+  function recordReplacements
+    "the records with replaced fields"
+    input UnorderedMap<ComponentRef, Expression> replacements;
+    output UnorderedMap<ComponentRef, Expression> records = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+  protected
+    Option<Pointer<Variable>> parent;
+    Pointer<Variable> record_var;
+  algorithm
+    for cref in UnorderedMap.keyList(replacements) loop
+      parent := BVariable.getParent(BVariable.getVarPointer(cref, sourceInfo()));
+      while isSome(parent) loop
+        SOME(record_var) := parent;
+        UnorderedMap.tryAdd(BVariable.getVarName(record_var), recordReplacement(record_var, replacements), records);
+        parent := BVariable.getParent(record_var);
+      end while;
+    end for;
+  end recordReplacements;
+
+  function recordReplacement
+    "the record of the replaced fields"
+    input Pointer<Variable> var;
+    input UnorderedMap<ComponentRef, Expression> replacements;
+    output Expression exp;
+  protected
+    ComponentRef name = BVariable.getVarName(var);
+    list<Pointer<Variable>> children = BVariable.getRecordChildren(var);
+    Type ty;
+  algorithm
+    if listEmpty(children) then
+      exp := UnorderedMap.getOrDefault(name, replacements, Expression.fromCref(name));
+    else
+      ty := Variable.typeOf(Pointer.access(var));
+      exp := Expression.RECORD(InstNode.fullPath(Type.complexNode(Type.arrayElementType(ty))), ty,
+        list(recordReplacement(child, replacements) for child in children));
+    end if;
+  end recordReplacement;
+
+  function replaceRecordCref
+    input output Expression exp;
+    input UnorderedMap<ComponentRef, Expression> records;
+  protected
+    Option<Expression> record_exp;
+    list<Subscript> subs;
+  algorithm
+    exp := match exp
+      case Expression.CREF() algorithm
+        record_exp := UnorderedMap.get(ComponentRef.stripSubscriptsAll(exp.cref), records);
+        if isSome(record_exp) then
+          subs := ComponentRef.subscriptsAllFlat(exp.cref);
+          record_exp := subscriptRecord(Util.getOption(record_exp), subs);
+        end if;
+      then Util.getOptionOrDefault(record_exp, exp);
+      else exp;
+    end match;
+  end replaceRecordCref;
+
+  function subscriptRecord
+    "applies the subscripts of a record cref to its replacement. records of fields only for
+    scalar records or all dimensions subscripted by indices"
+    input Expression exp;
+    input list<Subscript> subs;
+    output Option<Expression> sub_exp;
+  protected
+    list<Option<Expression>> elements;
+  algorithm
+    sub_exp := match exp
+      case Expression.RECORD() guard(listLength(subs) == Type.dimensionCount(exp.ty) and List.all(subs, Subscript.isIndex)) algorithm
+        elements := list(subscriptRecord(e, subs) for e in exp.elements);
+      then if List.all(elements, isSome) then SOME(Expression.RECORD(exp.path, Type.arrayElementType(exp.ty), list(Util.getOption(e) for e in elements))) else NONE();
+      case Expression.RECORD() then NONE();
+      else SOME(Expression.applySubscripts(subs, exp, true));
+    end match;
+  end subscriptRecord;
+
   function findCrefs "BB, kabdelhak
   looks for variable crefs in Expressions, if more than 2 are found stop searching
   also stop if complex structures appear, e.g. IFEXP
@@ -1149,11 +1468,6 @@ protected
       case Expression.CREF()
         guard(BVariable.isParamOrConst(BVariable.getVarPointer(exp.cref, sourceInfo())) or ComponentRef.isTime(exp.cref))
       then tpl;
-
-      // fail for record elements for now
-      case Expression.CREF()
-        guard(isSome(BVariable.getParent(BVariable.getVarPointer(exp.cref, sourceInfo()))))
-      then FAILED_CREF_TPL;
 
       // fail for top level inputs
       case Expression.CREF()

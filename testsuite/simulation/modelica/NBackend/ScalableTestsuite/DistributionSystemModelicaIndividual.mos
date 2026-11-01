@@ -25,7 +25,7 @@ res := OpenModelica.Scripting.compareSimulationResults("ScalableTestSuite.Electr
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Notification: Tearing is skipped for strong component 1 because system size of 519 exceeds maximum system size for tearing of linear systems (200).
+// "Notification: Tearing is skipped for strong component 1 because system size of 419 exceeds maximum system size for tearing of linear systems (200).
 // To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size>.
 // "
 // {"Files Equal!"}
