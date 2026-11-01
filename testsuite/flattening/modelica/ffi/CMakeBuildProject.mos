@@ -2,7 +2,7 @@
 // keywords: ffi external cmake BuildProjects
 // status:   correct
 // setup_command: rm -rf "$HOME/.openmodelica/binaries/BuildProjectTest" "$APPDATA/.openmodelica/binaries/BuildProjectTest"
-// teardown_command: rm -rf "$HOME/.openmodelica/binaries/BuildProjectTest" "$APPDATA/.openmodelica/binaries/BuildProjectTest"
+// teardown_command: rm -rf "$HOME/.openmodelica/binaries/BuildProjectTest" "$APPDATA/.openmodelica/binaries/BuildProjectTest" BuildProjectCall*
 // depends: BuildProjectTest
 //
 // BuildProjectTest ships no Resources/Library, so Library="BuildProjectTestLib"
@@ -10,17 +10,34 @@
 // builds the same project a second time, cross-compiled to a module.
 
 loadFile("BuildProjectTest/package.mo"); getErrorString();
-setCommandLineOptions("-d=gen,noevalfunc"); getErrorString();
-BuildProjectTest.scale(2.0);
+// The call is made by a simulation, which builds the library; a script
+// evaluates only libraries that exist.
+setCommandLineOptions("-d=noevalfunc"); getErrorString();
+loadString("model BuildProjectCall
+  Real y;
+algorithm
+  y := BuildProjectTest.scale(2.0);
+end BuildProjectCall;"); getErrorString();
+echo(false);
+res := simulate(BuildProjectCall, stopTime=0.0);
+echo(true);
+res.messages;
 // The notifications name a temporary directory, so ask whether anything went
 // wrong instead of printing them.
 regex(getErrorString(), "(Error|Warning):", 1);
+val(y, 0.0);
 
 // Result:
 // true
 // ""
 // true
 // ""
-// 42.0
+// true
+// ""
+// true
+// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
 // (0, {""})
+// 42.0
 // endResult

@@ -14,6 +14,14 @@ impure function myExtFunctionError
   external "C" annotation(Library = {"ModelicaUtilities.myExtFunction.c","ModelicaExternalC"});
 end myExtFunctionError;
 
+model Error
+  String p;
+equation
+  when initial() then
+    p = myExtFunctionError("abc", time);
+  end when;
+end Error;
+
   String p;
 equation
   when initial() then

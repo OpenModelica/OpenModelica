@@ -2,9 +2,37 @@
 // keywords: algorithm
 // status:   correct
 // setup_command: $OMC_CC $OMC_CFLAGS $OMC_EXTLIB_FLAGS -o External_C_RecordTest$OMC_EXTLIB_EXT External_C_RecordTest.c $OMC_EXTLIB_LIBS
-// teardown_command: rm -f External_C_RecordTest$OMC_EXTLIB_EXT
+// teardown_command: rm -f External_C_RecordTest$OMC_EXTLIB_EXT NestedRecordTestExternal*
 
 loadFile("RecordTest.mo");
+
+// The external calls are made by a simulation, which links the object
+// file; a script cannot call an external function returning a record.
+setCommandLineOptions("-d=noevalfunc");
+loadString("model NestedRecordTestExternal
+  RecordTest.PLUS plus, explicit, byRef;
+algorithm
+  plus := RecordTest.mk_plus_ext(RecordTest.ADD(1.0, 2.0), RecordTest.ADD(3.0, 4.0));
+  explicit := RecordTest.mk_plus_ext_explicit(RecordTest.ADD(1.0, 2.0), RecordTest.ADD(3.0, 4.0));
+  byRef := RecordTest.mk_plus_ext_by_reference(RecordTest.ADD(1.0, 2.0), RecordTest.ADD(3.0, 4.0));
+end NestedRecordTestExternal;");getErrorString();
+echo(false);
+res := simulate(NestedRecordTestExternal, stopTime=0.0);
+echo(true);
+res.messages;
+val(plus.left.a1, 0.0);
+val(plus.left.a2, 0.0);
+val(plus.right.a1, 0.0);
+val(plus.right.a2, 0.0);
+val(explicit.left.a1, 0.0);
+val(explicit.left.a2, 0.0);
+val(explicit.right.a1, 0.0);
+val(explicit.right.a2, 0.0);
+val(byRef.left.a1, 0.0);
+val(byRef.left.a2, 0.0);
+val(byRef.right.a1, 0.0);
+val(byRef.right.a2, 0.0);
+setCommandLineOptions("-d=evalfunc");
 
 left:=RecordTest.ADD(1.0,2.0);
 right:=RecordTest.ADD(3.0,4.0);
@@ -14,15 +42,27 @@ plus2:=RecordTest.mk_plus2(right,right);
 plus3:=RecordTest.mk_plus3(right,left);
 res:=RecordTest.mk_plus4(1.0,2.0,3.0,4.0);
 res:=RecordTest.MULT_PLUS(plus1,plus2,plus3);
-setCommandLineOptions("-d=gen");
-"No explicit external call";
-res := RecordTest.mk_plus_ext(RecordTest.ADD(1.0,2.0),RecordTest.ADD(3.0,4.0));
-"Explicit external call, return value";
-res_explicit := RecordTest.mk_plus_ext_explicit(RecordTest.ADD(1.0,2.0),RecordTest.ADD(3.0,4.0));
-"Explicit external call, return by input argument reference";
-res_by_ref := RecordTest.mk_plus_ext_by_reference(RecordTest.ADD(1.0,2.0),RecordTest.ADD(3.0,4.0));
-
 // Result:
+// true
+// true
+// true
+// ""
+// true
+// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// 1.0
+// 2.0
+// 3.0
+// 4.0
+// 1.0
+// 2.0
+// 3.0
+// 4.0
+// 1.0
+// 2.0
+// 3.0
+// 4.0
 // true
 // record RecordTest.ADD
 //     a1 = 1.0,
@@ -104,38 +144,4 @@ res_by_ref := RecordTest.mk_plus_ext_by_reference(RecordTest.ADD(1.0,2.0),Record
 // end RecordTest.ADD;
 // end RecordTest.PLUS;
 // end RecordTest.MULT_PLUS;
-// true
-// "No explicit external call"
-// record RecordTest.PLUS
-//     left = record RecordTest.ADD
-//     a1 = 1.0,
-//     a2 = 2.0
-// end RecordTest.ADD;,
-//     right = record RecordTest.ADD
-//     a1 = 3.0,
-//     a2 = 4.0
-// end RecordTest.ADD;
-// end RecordTest.PLUS;
-// "Explicit external call, return value"
-// record RecordTest.PLUS
-//     left = record RecordTest.ADD
-//     a1 = 1.0,
-//     a2 = 2.0
-// end RecordTest.ADD;,
-//     right = record RecordTest.ADD
-//     a1 = 3.0,
-//     a2 = 4.0
-// end RecordTest.ADD;
-// end RecordTest.PLUS;
-// "Explicit external call, return by input argument reference"
-// record RecordTest.PLUS
-//     left = record RecordTest.ADD
-//     a1 = 1.0,
-//     a2 = 2.0
-// end RecordTest.ADD;,
-//     right = record RecordTest.ADD
-//     a1 = 3.0,
-//     a2 = 4.0
-// end RecordTest.ADD;
-// end RecordTest.PLUS;
 // endResult
