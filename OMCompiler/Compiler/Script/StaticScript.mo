@@ -288,12 +288,6 @@ algorithm
       then
         (cache,Expression.makePureBuiltinCall("moo",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
 
-    case (cache, env, Absyn.CREF_IDENT(name = "timing"), {exp}, {}, impl, pre)
-      algorithm
-        (cache,exp_1,_) := elabExp(cache,env, exp, impl, true,pre,info);
-      then
-        (cache,Expression.makePureBuiltinCall("timing",{exp_1},DAE.T_REAL_DEFAULT),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()));
-
   end matchcontinue;
 end elabCallInteractive_work;
 
