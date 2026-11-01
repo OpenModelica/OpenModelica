@@ -169,6 +169,65 @@ set(FMILIB_FMI3_PLATFORM "${_fmi3_arch}-${_fmi3_os}" CACHE STRING "FMI 3.0 platf
 # of them (the cdylib is built --no-default-features), so skip them in wasm mode.
 if(NOT OM_OMC_WASM)
   omc_add_subdirectory(3rdParty)
+  # Several bundled 3rdParty libraries are not unity-safe (duplicate
+  # file-local symbols across translation units, function-like macros leaking
+  # from one source into the next, int/long twin sources compiled twice into
+  # the same archive, ...) and can never be, so opt them back out when the
+  # developer configures with -DCMAKE_UNITY_BUILD=ON. Guarded by if(TARGET):
+  # most of them are behind options that replace or skip their targets, and
+  # on some platforms the bundled copy is not built at all. No-op otherwise.
+  # Verified by building with -DCMAKE_UNITY_BUILD=ON
+  # -DCMAKE_UNITY_BUILD_BATCH_SIZE=16 (sundials core needs 32 to fail).
+  # Bundled zlib: gzguts.h redefines gz_state/gz_statep/gz_error in each
+  # translation unit (same failure as upstream CMake's cmzlib).
+  # ryu: d2s/s2f/s2d each define static to_chars/floor_log2/max32 with
+  # clashing signatures.
+  # omantlr3 (libantlr3c): static helpers such as toString/replaceChildren
+  # differ per translation unit.
+  # cdaskr: f2c-style 'static integer c__1' (and friends) in every file.
+  # cminpack (+ld/+s variants): chkder.c/chkder_.c do '#define factor ...'
+  # without #undef, poisoning every source batched after them.
+  # ffi (libffi): ffi_type_void/ffi_type_uint8/... defined in several
+  # translation units at once.
+  # metis (incl. GKlib): feature-test macro ordering breaks (getline
+  # implicitly declared) once sources share a translation unit.
+  # SuiteSparse (BTF/AMD/COLAMD/KLU/UMFPACK): every lib compiles the same
+  # sources twice (int32/int64 twins) into one archive; merged into a single
+  # translation unit the twins redefine each other (augment, dfs,
+  # btf_l_maxtrans, ...). SuiteSparseConfig has no twins and stays unified.
+  # FMIL: FMI1/2/3 variant sources define the same file-scope symbols
+  # (e.g. valid_variability_causality in FMI3/fmi3_enums.c, 'module' in the
+  # fmi*_import sources), and fmixml packs bison-generated parsers whose yy*
+  # symbols collide like upstream CMake's lexers/parsers. fmilib itself only
+  # failed via these dependencies.
+  # Ipopt: the linear-solver interfaces each define the same namespace-scope
+  # fallback stubs (user_mc68_default_control, write_iajaa_matrix, ...) when
+  # their proprietary solvers are absent; merged into one translation unit
+  # they redefine each other.
+  # MUMPS (seq/mumps_common/...): the same helper sources are compiled into
+  # several archives with different content, benign as separate objects (the
+  # linker picks one) but multiple-definition errors once unified -- the same
+  # shape as LAPACK's lsame/xerbla duplication.
+  # oneTBB: ittnotify.h token-pasting breaks once its sources share a
+  # translation unit.
+  # primme: precision-templating macros leak across sources in one translation
+  # unit, silently emitting wrongly-named symbols (Xprimme_...) and dropping
+  # the real API (primme_svds_initialize, ...). Unity "succeeds" but the
+  # archive is unusable -- downstream Rust link fails. Keep it fine-grained.
+  # SUNDIALS core: sundials_errors.c and sundials_logger.c define different
+  # static sunCreateLogMessage helpers; batch size 16 kept them apart, larger
+  # batches merge them. (The other sundials libs stay unified until proven
+  # otherwise.)
+  foreach(_om_unity_target IN ITEMS
+      zlib ryu omantlr3 cdaskr cminpack cminpackld cminpacks ffi metis
+      BTF_static AMD_static COLAMD_static KLU_static UMFPACK_static
+      jmutils fmixml fmizip fmicapi fmiimport fmilib
+      ipopt seq pord mumps_common dmumps tbb primme
+      sundials_core_obj_static)
+    if(TARGET ${_om_unity_target})
+      set_target_properties(${_om_unity_target} PROPERTIES UNITY_BUILD OFF)
+    endif()
+  endforeach()
 endif()
 
 # What a link line naming libfmilib.a needs besides it (Autoconf.fmilibLibs), i.e. the code of an

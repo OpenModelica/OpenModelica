@@ -91,7 +91,7 @@ static void free_printimpl(void *data)
 pthread_once_t printimpl_once_create_key = PTHREAD_ONCE_INIT;
 pthread_key_t printimplKey;
 
-static void make_key()
+static void printimpl_make_key()
 {
   pthread_key_create(&printimplKey,free_printimpl);
 }
@@ -107,7 +107,7 @@ static print_members* getMembers(threadData_t *threadData)
     return threadData->localRoots[LOCAL_ROOT_PRINT_MO];
   }
 #if defined(OM_HAVE_PTHREADS)
-  pthread_once(&printimpl_once_create_key,make_key);
+  pthread_once(&printimpl_once_create_key,printimpl_make_key);
   res = (print_members*) pthread_getspecific(printimplKey);
 #endif
   if (res != NULL) return res;
@@ -640,3 +640,18 @@ static long PrintImpl__saveAndClearBuf(threadData_t *threadData)
   cursize=INITIAL_BUFSIZE;
   return freeHandle;
 }
+
+/* The shorthand macros above are local to this file, which is textually
+ * included into Print_omc.c. Undefine them so they cannot leak into whatever
+ * follows in the translation unit (in particular under CMAKE_UNITY_BUILD,
+ * where sibling sources share the translation unit).
+ */
+#undef buf
+#undef errorBuf
+#undef nfilled
+#undef cursize
+#undef errorNfilled
+#undef errorCursize
+#undef savedBuffers
+#undef savedCurSize
+#undef savedNfilled

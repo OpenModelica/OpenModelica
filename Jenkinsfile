@@ -249,6 +249,7 @@ pipeline {
                 "-DCMAKE_C_COMPILER=gcc",           // Always specify the compilers explicitly for macOS
                 "-DCMAKE_CXX_COMPILER=g++",
                 "-DCMAKE_Fortran_COMPILER=gfortran",
+                "-DCMAKE_UNITY_BUILD=ON",
                 "-DOM_OMC_ENABLE_COLPACK=OFF"])     // Disable ColPack (missing OpenMP)
             }
           }

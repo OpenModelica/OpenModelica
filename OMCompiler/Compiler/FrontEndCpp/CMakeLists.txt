@@ -35,6 +35,11 @@ add_library(omc::compiler::frontendcpp ALIAS omcfrontendcpp)
 
 target_sources(omcfrontendcpp PRIVATE ${OMC_FRONTEND_CPP_SOURCES})
 
+# The Absyn sources use pervasive file-local constexpr names (REDECLARE,
+# CLOCK, WILD, ...) that collide when merged; renaming them all is churn with
+# no product benefit, so keep the target out of unity builds.
+set_target_properties(omcfrontendcpp PROPERTIES UNITY_BUILD OFF)
+
 target_link_libraries(omcfrontendcpp PUBLIC omc::compiler::frontendcpp::absyn)
 # MetaModelica code: the collected runtime.
 target_link_libraries(omcfrontendcpp PUBLIC omc::mmc::runtime)
