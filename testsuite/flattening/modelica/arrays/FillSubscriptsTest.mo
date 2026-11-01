@@ -6699,4 +6699,6 @@ end Manifold;
 //   P1.y = sou_2.p_in;
 //   ducFixRes_2.port_a.p = sou_2.ports[1].p;
 // end Manifold;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+//
 // endResult

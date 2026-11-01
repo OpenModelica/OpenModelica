@@ -95,4 +95,6 @@ end SimpleModelWithSubstructure_TC01;
 //   parameter Real simpleModelWithSubstructure1.dhydMax[2,1] = Modelica.Math.Nonlinear.solveOneNonlinearEquation(function SimpleModelWithSubstructure.dhydCalc(#(simpleModelWithSubstructure1.qNom[2,2])), 0.0, 0.1, 1e-13);
 //   parameter Real simpleModelWithSubstructure1.dhydMax[3,1] = Modelica.Math.Nonlinear.solveOneNonlinearEquation(function SimpleModelWithSubstructure.dhydCalc(#(simpleModelWithSubstructure1.qNom[3,2])), 0.0, 0.1, 1e-13);
 // end SimpleModelWithSubstructure_TC01;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+//
 // endResult

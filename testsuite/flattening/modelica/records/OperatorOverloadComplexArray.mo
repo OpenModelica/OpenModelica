@@ -400,4 +400,6 @@ end Test;
 //   c1[2] = Complex.'-'.subtract(Complex.'+'(Complex.'*'.multiply(Complex.'/'(c1[2], c2[2]), c1[2]), Complex.'*'.multiply(c2[2], Complex.'constructor'.fromReal(1.0, 0.0))), Complex.'*'.multiply(c2[2], c1[2]));
 //   c1[3] = Complex.'-'.subtract(Complex.'+'(Complex.'*'.multiply(Complex.'/'(c1[3], c2[3]), c1[3]), Complex.'*'.multiply(c2[3], Complex.'constructor'.fromReal(1.0, 0.0))), Complex.'*'.multiply(c2[3], c1[3]));
 // end Test;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+//
 // endResult
