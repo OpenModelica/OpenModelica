@@ -1640,7 +1640,8 @@ pub struct SimMeta {
     /// Integration method (`"dassl"`, `"euler"`, …; empty = the dassl default).
     pub method: String,
     /// What a Co-Simulation `do-step` integrates with (C's
-    /// `FMI2CS_initializeSolverData`: `-s` from `_flags.json`, else euler).
+    /// `FMI2CS_initializeSolverData`: `-s` from `_flags.json`, else cvode if
+    /// available, else euler).
     /// Empty except for a CS export.
     pub cs_method: String,
     /// The nonlinear/linear solver selection an FMU export hard-codes, as a simflags

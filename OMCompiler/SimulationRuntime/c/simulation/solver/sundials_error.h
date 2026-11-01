@@ -38,6 +38,7 @@ extern "C" {
 #include <stdio.h>
 #include <string.h>
 
+#include "../../omc_simulation_settings.h"
 #ifndef OMC_FMI_RUNTIME
   #include "omc_config.h"
 #endif

@@ -1190,26 +1190,31 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
 #ifdef OMC_FMI_RUNTIME
 
 /**
- * @brief Integration step with CVODE for fmi2DoStep
+ * @brief Integration step with CVODE for fmi2DoStep and fmi3DoStep
  *
- * @param comp          Pointer to FMU component.
+ * @param data          Runtime data struct.
+ * @param threadData    Thread data for error handling.
+ * @param solverInfo    Solver info with the CVODE_SOLVER as solverData.
  * @param tNext         Next desired time step for integrator to end.
  * @param states        States vector.
- * @return int          Returns 0 on success and -1 else.
+ * @return int          Returns 0 on success, else the failing CVODE flag, or -1
+ *                      if CVODE stopped before tNext.
  */
-int cvode_solver_fmi_step(ModelInstance *comp, double tNext, double* states)
+int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double tNext, double* states)
 {
-  DATA* data = comp->fmuData;
-  threadData_t* threadData = comp->threadData;
-  SOLVER_INFO* solverInfo = comp->solverInfo;
   /* Variables */
   int flag;
-  int retVal = 0;
 
   CVODE_SOLVER *cvodeData;
 
   cvodeData = (CVODE_SOLVER*) solverInfo->solverData;
   solverInfo->currentTime = data->localData[0]->timeValue;
+
+  /* CVODE rejects a step this short with CV_TOO_CLOSE, e.g. up to a time event at the current time. */
+  if (tNext - solverInfo->currentTime <= 2 * SUN_UNIT_ROUNDOFF * fmax(fabs(solverInfo->currentTime), fabs(tNext))) {
+    solverInfo->currentTime = tNext;
+    return 0;
+  }
 
   N_VSetArrayPointer(states, cvodeData->y);
   if (solverInfo->didEventStep || !cvodeData->isInitialized)    // TODO Save if we have had an event
@@ -1219,26 +1224,17 @@ int cvode_solver_fmi_step(ModelInstance *comp, double tNext, double* states)
   }
   flag = CVodeSetStopTime(cvodeData->cvode_mem, tNext);
   if (flag < 0) {
-    FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: ##CVODE## CVodeSetStopTime failed with flag %i.", flag)
-    return -1;
+    return flag;
   }
   flag = CVode(cvodeData->cvode_mem,
                tNext,
                cvodeData->y,
                &(solverInfo->currentTime),
                CV_NORMAL);
-  /* Error handling */
-  if ((flag == CV_SUCCESS || flag == CV_TSTOP_RETURN) && solverInfo->currentTime >= tNext)
-  {
-    FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2DoStep:##CVODE## step done to time = %.15g.", comp->solverInfo->currentTime)
+  if (flag < 0) {
+    return flag;
   }
-  else
-  {
-    FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: ##CVODE## %d error occurred at time = %.15g.", flag, solverInfo->currentTime)
-    return -1;
-  }
-
-  return 0;
+  return solverInfo->currentTime >= tNext ? 0 : -1;
 }
 
 #endif /* OMC_FMI_RUNTIME */
@@ -1276,7 +1272,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
 }
 
 #ifdef OMC_FMI_RUNTIME
-int cvode_solver_fmi_step(ModelInstance *comp, double tNext, double* states)
+int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double tNext, double* states)
 {
   printf("##CVODE## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable CVODE in FMUs.\n");
   return -1;
