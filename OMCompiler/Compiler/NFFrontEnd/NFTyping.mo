@@ -291,6 +291,9 @@ algorithm
     case Class.INSTANCED_CLASS(restriction = Restriction.FUNCTION())
         guard InstNode.isComponent(instanceNode)
       algorithm
+        // The function is normally instantiated when a call of the parameter is
+        // instantiated, but the parameter might not be called anywhere.
+        Function.instFunctionNode(clsNode, context, InstNode.info(clsNode));
         fn :: _ := Function.typeNodeCache(clsNode);
         ty := Type.FUNCTION(fn, NFType.FunctionType.FUNCTIONAL_PARAMETER);
         cls.ty := ty;
