@@ -118,6 +118,7 @@ protected
   list<Variable> smVars, resultVars;
   list<ComponentRef> allStateCrefs;
   UnorderedMap<ComponentRef, OuterVarList> outerVarMap;
+  UnorderedMap<ComponentRef, ComponentRef> mergedVarMap;
   // Hierarchy detection: map from stateCref → semantics of SM it belongs to
   UnorderedMap<ComponentRef, FlatSmSemantics> stateToSem;
   list<tuple<ComponentRef, list<ComponentRef>>> smGroupPairs, smGroupsSorted;
@@ -156,7 +157,7 @@ algorithm
 
   // Sort SM groups by init state cref depth so outer SMs are processed first
   smGroupPairs := List.zip(initStates, smGroups);
-  smGroupsSorted := List.sort(smGroupPairs, smGroupDepthLt);
+  smGroupsSorted := List.sort(smGroupPairs, smGroupDepthGt);
 
   // Map from state cref to SM semantics — used to find enclosing SM for nested SMs
   stateToSem := UnorderedMap.new<FlatSmSemantics>(ComponentRef.hash, ComponentRef.isEqual);
@@ -195,6 +196,11 @@ algorithm
   for outerVarCref in UnorderedMap.keyList(outerVarMap) loop
     (smEqs, smVars) := generateMergeEquation(outerVarCref, outerVarMap, flatModel.variables, smEqs, smVars);
   end for;
+
+  mergedVarMap := mergedInnerOuterVars(outerVarMap);
+  if not UnorderedMap.isEmpty(mergedVarMap) then
+    smEqs := list(Equation.mapExp(eq, function previousOfMergedVar(mergedVarMap = mergedVarMap)) for eq in smEqs);
+  end if;
 
   // Substitute activeState(x) → x.active in all equations (SM eqs may contain activeState() from model code)
   resultEqs := listAppend(list(subsActiveStateInEq(eq) for eq in smEqs), list(subsActiveStateInEq(eq) for eq in otherEqs));
@@ -320,18 +326,18 @@ end statePriorityGt;
 // ============================================================
 
 protected
-function smGroupDepthLt
+function smGroupDepthGt
   "Comparator for sorting SM groups by cref depth (outer SMs first)."
   input tuple<ComponentRef, list<ComponentRef>> g1;
   input tuple<ComponentRef, list<ComponentRef>> g2;
-  output Boolean lt;
+  output Boolean gt;
 protected
   ComponentRef c1, c2;
 algorithm
   (c1, _) := g1;
   (c2, _) := g2;
-  lt := ComponentRef.depth(c1) < ComponentRef.depth(c2);
-end smGroupDepthLt;
+  gt := ComponentRef.depth(c1) > ComponentRef.depth(c2);
+end smGroupDepthGt;
 
 protected
 function flatSmToDataFlow
@@ -1596,7 +1602,7 @@ protected
 algorithm
   transitions := List.filterMap(transitionEqs,
     function extractTransition(stateCrefs = stateCrefs));
-  t := List.sort(transitions, priorityGt);
+  t := List.sort(transitions, priorityLt);
   c := list(tr.condition for tr in t);
 end createTandC;
 
@@ -1639,15 +1645,14 @@ algorithm
 end extractTransition;
 
 protected
-function priorityGt
-  "Greater-than comparator for List.sort: compare(a,b)=true means b comes before a.
-   Lower priority numbers (= higher MLS priority) sort first."
+function priorityLt
+  "Comparator for List.sort that puts the lowest priority number last."
   input Transition t1;
   input Transition t2;
-  output Boolean gt;
+  output Boolean lt;
 algorithm
-  gt := t1.priority > t2.priority;
-end priorityGt;
+  lt := t1.priority < t2.priority;
+end priorityLt;
 
 // ============================================================
 // Predicate helpers
@@ -1838,6 +1843,68 @@ algorithm
   src := ElementSource.createElementSource(Absyn.dummyInfo);
   accEqs := Equation.EQUALITY(outerVarExp, mergeRhs, ty, NFInstNode.NO_SCOPE, src, ScalarizeMode.NO_PREFERENCE) :: accEqs;
 end generateMergeEquation;
+
+protected
+function mergedInnerOuterVars
+  "Maps each inner outer variable that is both merged from the states it
+   encloses and merged into an enclosing variable to that variable."
+  input UnorderedMap<ComponentRef, list<tuple<ComponentRef, ComponentRef>>> outerVarMap;
+  output UnorderedMap<ComponentRef, ComponentRef> mergedVarMap;
+protected
+  ComponentRef perStateVarRef;
+  list<tuple<ComponentRef, ComponentRef>> stateEntries;
+algorithm
+  mergedVarMap := UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
+  for outerVarCref in UnorderedMap.keyList(outerVarMap) loop
+    stateEntries := UnorderedMap.getOrDefault(outerVarCref, outerVarMap, {});
+    for entry in stateEntries loop
+      (_, perStateVarRef) := entry;
+      if UnorderedMap.contains(perStateVarRef, outerVarMap) then
+        UnorderedMap.add(perStateVarRef, outerVarCref, mergedVarMap);
+      end if;
+    end for;
+  end for;
+end mergedInnerOuterVars;
+
+protected
+function previousOfMergedVar
+  "Replaces previous(x) by previous(y) when the inner outer x is merged into y,
+   since x only has a value while its state is active (MLS 3.7, section 17.3.7)."
+  input output Expression e;
+  input UnorderedMap<ComponentRef, ComponentRef> mergedVarMap;
+algorithm
+  e := Expression.map(e, function previousOfMergedVar2(mergedVarMap = mergedVarMap));
+end previousOfMergedVar;
+
+protected
+function previousOfMergedVar2
+  input output Expression e;
+  input UnorderedMap<ComponentRef, ComponentRef> mergedVarMap;
+protected
+  ComponentRef cr;
+  Option<ComponentRef> outerCr;
+algorithm
+  cr := match e
+    case Expression.CALL()
+      guard stringEq(Call.functionNameLast(e.call), "previous")
+      then match Call.arguments(e.call)
+        case {Expression.CREF(cref = cr)} then cr;
+        else ComponentRef.EMPTY();
+      end match;
+    else ComponentRef.EMPTY();
+  end match;
+
+  outerCr := UnorderedMap.get(cr, mergedVarMap);
+  if isNone(outerCr) then
+    return;
+  end if;
+
+  while isSome(outerCr) loop
+    SOME(cr) := outerCr;
+    outerCr := UnorderedMap.get(cr, mergedVarMap);
+  end while;
+  e := makePreviousCall(makeCrefExp(cr, Expression.typeOf(e)), Expression.typeOf(e));
+end previousOfMergedVar2;
 
 // ============================================================
 // ComponentRef utilities
