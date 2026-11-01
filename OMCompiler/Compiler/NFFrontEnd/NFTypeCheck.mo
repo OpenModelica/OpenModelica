@@ -3188,6 +3188,7 @@ function checkReductionType
   input Type ty;
   input Absyn.Path name;
   input Expression exp;
+  input InstContext.Type context;
   input SourceInfo info;
 protected
   String err;
@@ -3199,6 +3200,8 @@ algorithm
           case Type.INTEGER() then "";
           case Type.REAL() then "";
           case Type.COMPLEX() guard checkSumComplexType(ty, exp, info) then "";
+          // Scripts concatenate strings with sum, as the old frontend allowed.
+          case Type.STRING() guard InstContext.inScripting(context) then "";
           else "Integer or Real, or operator record";
         end match;
 

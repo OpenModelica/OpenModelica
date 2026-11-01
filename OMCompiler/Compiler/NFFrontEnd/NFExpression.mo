@@ -5530,6 +5530,7 @@ public
       case Type.REAL()    then REAL(0.0);
       case Type.INTEGER() then INTEGER(0);
       case Type.BOOLEAN() then BOOLEAN(false);
+      case Type.STRING()  then STRING("");
       case Type.ARRAY()   then fillType(ty, makeZero(Type.arrayElementType(ty)));
       case Type.COMPLEX() then makeOperatorRecordZero(Type.complexNode(ty));
       else algorithm

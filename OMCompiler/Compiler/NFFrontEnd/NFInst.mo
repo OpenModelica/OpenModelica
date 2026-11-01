@@ -84,6 +84,7 @@ import Connections = NFConnections;
 import InstUtil = NFInstUtil;
 import List;
 import Lookup = NFLookup;
+import BackendInterface;
 import MetaModelica.Dangerous;
 import Typing = NFTyping;
 import ExecStat.{execStat,execStatReset};
@@ -3360,6 +3361,9 @@ algorithm
     case Absyn.Exp.STRING() then Expression.STRING(System.unescapedString(absynExp.value));
     case Absyn.Exp.BOOL() then Expression.BOOLEAN(absynExp.value);
 
+    case Absyn.Exp.CREF() guard InstContext.inScripting(context)
+      then instScriptCref(absynExp.componentRef, scope, context, info);
+
     case Absyn.Exp.CREF()
       then instCref(absynExp.componentRef, scope, context, info);
 
@@ -3519,6 +3523,42 @@ algorithm
     else Expression.CREF(Type.UNKNOWN(), cref);
   end match;
 end instCref;
+
+function instScriptCref
+  "In a script, a name can be a script variable, which stands for its value.
+   Script variables shadow the top scope, e.g. a variable named size, but not
+   the names inside functions or iterators."
+  input Absyn.ComponentRef absynCref;
+  input InstNode scope;
+  input InstContext.Type context;
+  input SourceInfo info;
+  output Expression crefExp;
+protected
+  Option<Absyn.Exp> value = NONE();
+  InstNode found_scope;
+  Boolean in_top;
+algorithm
+  try
+    (_, found_scope, _) := Lookup.lookupCref(absynCref, scope, context);
+    in_top := InstNode.isTopScope(found_scope);
+  else
+    in_top := true;
+  end try;
+
+  if in_top then
+    try
+      value := SOME(BackendInterface.lookupScriptVariable(absynCref));
+    else
+    end try;
+  end if;
+
+  crefExp := match value
+    local
+      Absyn.Exp exp;
+    case SOME(exp) then instExp(exp, scope, context, info);
+    else instCref(absynCref, scope, context, info);
+  end match;
+end instScriptCref;
 
 function instCrefComponent
   input ComponentRef cref;
