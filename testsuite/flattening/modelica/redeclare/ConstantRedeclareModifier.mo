@@ -11,14 +11,12 @@ end m;
 
 model ConstantRedeclareModifier
   extends m(replaceable Real x = 2.0);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConstantRedeclareModifier;
 
 // Result:
 // Error processing file: ConstantRedeclareModifier.mo
-// [flattening/modelica/redeclare/ConstantRedeclareModifier.mo:13:3-13:38:writable] Notification: From here:
-// [flattening/modelica/redeclare/ConstantRedeclareModifier.mo:9:3-9:30:writable] Error: Redeclaration of constant component x is not allowed.
-// Error: Error occurred while flattening model ConstantRedeclareModifier
+// [flattening/modelica/redeclare/ConstantRedeclareModifier.mo:9:3-9:30:writable] Notification: From here:
+// [flattening/modelica/redeclare/ConstantRedeclareModifier.mo:13:13-13:37:writable] Error: Redeclaration of constant component x is not allowed.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

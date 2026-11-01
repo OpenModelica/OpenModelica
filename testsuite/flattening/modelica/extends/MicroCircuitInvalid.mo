@@ -81,14 +81,13 @@ class GenMicroCircuit
 end GenMicroCircuit;
 
 class InductorMicroCircuit =
-  GenMicroCircuit(redeclare type CompType = Inductor) annotation(__OpenModelica_commandLineOptions="-d=-newInst");
+  GenMicroCircuit(redeclare type CompType = Inductor);
 
 
 
 // Result:
 // Error processing file: MicroCircuitInvalid.mo
-// [flattening/modelica/extends/MicroCircuitInvalid.mo:84:29-84:53:writable] Error: Class specialization violation: .Inductor is a model, not a type.
-// Error: Error occurred while flattening model InductorMicroCircuit
+// [flattening/modelica/extends/MicroCircuitInvalid.mo:84:29-84:53:writable] Error: Class specialization violation: Inductor is a model, not a type.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.
