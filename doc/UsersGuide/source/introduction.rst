@@ -918,9 +918,6 @@ system(\ *str*) Execute *str* as a system(shell) command in the
 operating system; return integer success value. Output into stdout from
 a shell command is put into the console window.
 
-timing(\ *expr*) Evaluate expression *expr* and return the number of
-seconds (elapsed time) the evaluation took.
-
 typeOf(\ *variable*) Return the type of the *variable* as a string.
 
 saveModel(\ *str*,\ *modelname*) Save the model/class with name
