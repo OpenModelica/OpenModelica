@@ -89,7 +89,6 @@ ScopeDeclaration2.mo \
 ScopeDeclaration3.mo \
 ScopeModification1.mo \
 ScopeModification2.mo \
-TestPackageConstantHandling.mo \
 Ticket4276a.mo \
 Ticket4276b.mo \
 TypeRestriction1.mo \
