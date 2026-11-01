@@ -2130,6 +2130,8 @@ algorithm
     case "nthRoot" then evalBuiltinNthRoot(args, target);
     case "ones" then evalBuiltinOnes(args);
     case "pre" then listHead(args);
+    // hold of a parameter expression is that value, MLS 3.7 section 16.5.1.
+    case "hold" then listHead(args);
     case "product" then evalBuiltinProduct(listHead(args));
     case "promote" then evalBuiltinPromote(listGet(args,1),listGet(args,2));
     case "rem" then evalBuiltinRem(args, target);
