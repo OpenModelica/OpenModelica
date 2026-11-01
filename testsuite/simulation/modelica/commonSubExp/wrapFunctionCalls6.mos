@@ -1,7 +1,6 @@
 // name: wrapFunctionCalls6
 // keywords: cse, wrapFunctionCalls
 // status: correct
-// cflags: -d=-newInst
 
 loadString("
 package CSE
@@ -22,9 +21,9 @@ package CSE
     Real b, c, x;
     parameter Real p1 = 5;
   equation
-    b = f1(time).y2;
+    (, b) = f1(time);
     x = 2*p1;
-    c = f1(x).y2;
+    (, c) = f1(x);
   end wrapFunctionCalls6;
 end CSE;
 "); getErrorString();
@@ -51,20 +50,20 @@ simulate(CSE.wrapFunctionCalls6); getErrorString();
 //
 // ########### Updated Equation List (simulation) (1, 1)
 // ========================================
-// 1/1 (1): (_, b, _) = CSE.wrapFunctionCalls6.f1(time)   [unknown |0|0|0|0|]
+// 1/1 (1): (_, b) = CSE.wrapFunctionCalls6.f1(time)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (simulation) (3)
 // ========================================
 // 1: p1:PARAM()  = 5.0  type: Real
 // 2: x:VARIABLE(fixed = true final = true )  = 2.0 * p1  type: Real
-// 3: c in (_, c, _):PARAM(final = true )  = CSE.wrapFunctionCalls6.f1(x)  type: Real
+// 3: c in (_, c):PARAM(final = true )  = CSE.wrapFunctionCalls6.f1(x)  type: Real
 //
 //
 // ########### CSE Replacements (2/44)
 // ========================================
-// 1: (_, b, _) - CSE.wrapFunctionCalls6.f1(time) - {}
-// 2: (_, c, _) - CSE.wrapFunctionCalls6.f1(x) - {}
+// 1: (_, b) - CSE.wrapFunctionCalls6.f1(time) - {}
+// 2: (_, c) - CSE.wrapFunctionCalls6.f1(x) - {}
 // record SimulationResult
 //     resultFile = "CSE.wrapFunctionCalls6_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'CSE.wrapFunctionCalls6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
