@@ -2551,32 +2551,12 @@ protected
   algorithm
     try
       (coeff, _) := Differentiate.differentiateExpression(Equation.getResidualExp(eqn), Differentiate.DifferentiationArguments.simpleCref(cref, funcMap));
-      for i in 1:5 loop
-        coeff := SimplifyExp.simplify(Expression.map(coeff, parameterBinding));
-        if Expression.isLiteral(coeff) then break; end if;
-      end for;
+      coeff := Solvability.evaluateCoefficient(coeff);
       b := Expression.isLiteral(coeff) and Expression.isZero(coeff);
     else
       b := false;
     end try;
   end isZeroCoefficient;
-
-  function parameterBinding
-    input output Expression exp;
-  protected
-    Pointer<Variable> var_ptr;
-    Variable var;
-  algorithm
-    exp := match exp
-      case Expression.CREF() guard(BVariable.checkCref(exp.cref, BVariable.isParamOrConst, sourceInfo())) algorithm
-        var_ptr := BVariable.getVarPointer(exp.cref, sourceInfo());
-        var := Pointer.access(var_ptr);
-      then if Binding.hasExp(var.binding) then
-          Expression.applySubscripts(ComponentRef.getSubscripts(exp.cref), Binding.getExp(var.binding))
-        else exp;
-      else exp;
-    end match;
-  end parameterBinding;
 
   function cellierRank
     "worst solvability rank of all occurrences of a variable, for equations also keyed by subscripted crefs"
