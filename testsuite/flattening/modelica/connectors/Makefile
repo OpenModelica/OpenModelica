@@ -24,7 +24,6 @@ ConnectFlowEffort2.mo\
 ConnectHierarchical1.mo \
 ConnectHierarchical2.mo \
 ConnectInner1.mo \
-ConnectInner2.mo \
 ConnectInner3.mo \
 ConnectInnerOuter.mo \
 ConnectInnerOuter2.mo \

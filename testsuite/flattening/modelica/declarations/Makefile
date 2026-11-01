@@ -25,8 +25,6 @@ Constant8.mo \
 Constant9.mo \
 Constant10.mo \
 Constant11.mo \
-Constant12.mo \
-Constant13.mo \
 ConstantDeclConnector.mo \
 ConstantDeclRecord.mo \
 ConstantDeclType.mo \
@@ -89,7 +87,6 @@ ScopeDeclaration2.mo \
 ScopeDeclaration3.mo \
 ScopeModification1.mo \
 ScopeModification2.mo \
-TestPackageConstantHandling.mo \
 Ticket4276a.mo \
 Ticket4276b.mo \
 TypeRestriction1.mo \

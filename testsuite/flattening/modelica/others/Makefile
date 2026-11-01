@@ -22,7 +22,6 @@ CyclicBindingParam.mo \
 Derivative1.mo \
 DiagonalBlock.mo \
 DocString.mo \
-DotOperator.mo \
 DuplicateElements.mo \
 DuplicateElementsNonEquivalent.mo \
 DuplicateElementsExtends.mo \
