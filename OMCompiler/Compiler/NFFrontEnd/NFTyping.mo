@@ -326,6 +326,7 @@ end typeClassType;
 function makeConnectorType
   input ClassTree ctree;
   input Boolean isExpandable;
+  input Boolean onlyPresent = false;
   output ComplexType connectorTy;
 protected
   list<NFInstNode.ScopeRef> pots = {}, flows = {}, streams = {}, exps = {};
@@ -346,6 +347,10 @@ algorithm
   else
     for c in ClassTree.enumerateComponents(ctree) loop
       cty := Component.connectorType(InstNode.component(InstNode.resolveInner(c)));
+
+      if onlyPresent and ConnectorType.isPotentiallyPresent(cty) then
+        continue;
+      end if;
 
       if intBitAnd(cty, ConnectorType.FLOW) > 0 then
         flows := InstNode.scopeRef(c) :: flows;
