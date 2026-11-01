@@ -33,6 +33,9 @@ val(x, 1);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "Warning: NBResolveSingularities.balanceInitialization reports an overdetermined initialization!
+// Checking for consistency is not yet supported, following equations had to be removed:
+// [SCAL] (1) $DER.z = 1.0; ($RES_SIM_5)
+// "
 // 6.0
 // endResult
