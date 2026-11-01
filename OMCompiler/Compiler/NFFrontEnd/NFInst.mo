@@ -3845,8 +3845,9 @@ algorithm
 
     case (SCode.PARTS(externalDecl = SOME(ext_decl)), _)
       algorithm
-        if SCodeUtil.classDefHasSections(parts, checkExternal = false) then
-          // Class with external section that also contains other sections.
+        if SCodeUtil.classDefHasSections(parts, checkExternal = false) or
+           not Sections.isEmpty(sections) then
+          // Class with external section that also contains or inherits other sections.
           Error.addSourceMessage(Error.MULTIPLE_SECTIONS_IN_FUNCTION,
             {InstNode.name(scope)}, InstNode.info(scope));
           fail();
