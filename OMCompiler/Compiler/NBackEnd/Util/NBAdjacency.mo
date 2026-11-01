@@ -50,7 +50,9 @@ protected
   import OldSimCode = SimCode;
 
   // NF imports
+  import Binding = NFBinding;
   import Call = NFCall;
+  import Ceval = NFCeval;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
@@ -61,6 +63,7 @@ protected
   import Type = NFType;
   import Operator = NFOperator;
   import NFOperator.Op;
+  import NFPrefixes.{Variability, Purity};
   import Variable = NFVariable;
 
   // NB imports
@@ -3249,6 +3252,9 @@ public
                       sol := Solvability.EXPLICIT_LINEAR(
                         pars = if UnorderedSet.isEmpty(param_set) then NONE() else SOME(param_set),
                         vars = if UnorderedSet.isEmpty(var_set) then NONE() else SOME(var_set));
+                      if Solvability.hasZeroElement(exp, eqn_ptr) then
+                        sol := Solvability.IMPLICIT();
+                      end if;
                     end if;
                   end if;
                   UnorderedMap.add(var, sol, full.solvabilities[eqn_idx]);
@@ -4088,6 +4094,67 @@ public
         UnorderedMap.add(cref, sol, map);
       end if;
     end update;
+
+    function hasZeroElement
+      "true if the coefficient of a for-equation is zero for one of its iterations, e.g. {0.0, 1.0}[i]"
+      input Expression coeff;
+      input Pointer<Equation> eqn_ptr;
+      output Boolean b = false;
+    protected
+      list<ComponentRef> names;
+      list<Expression> ranges;
+      list<Option<Iterator>> maps;
+      Expression exp;
+      Type ty;
+    algorithm
+      if not Equation.isForEquation(eqn_ptr) or Expression.isLiteral(coeff) then return; end if;
+      (names, ranges, maps) := Iterator.getFrames(Equation.getForIterator(Pointer.access(eqn_ptr)));
+      if not (List.all(ranges, Expression.isLiteral) and not List.any(maps, isSome)) then return; end if;
+      exp := evaluateCoefficient(coeff);
+      if Expression.contains(exp, isNonIteratorCref) then return; end if;
+      ty := Type.liftArrayLeftList(Expression.typeOf(exp), list(Type.nthDimension(Expression.typeOf(r), 1) for r in ranges));
+      exp := Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(ty, Variability.CONSTANT, Purity.PURE, exp,
+        list((ComponentRef.node(n), r) threaded for n in names, r in ranges)));
+      exp := Ceval.tryEvalExp(exp);
+      b := Expression.isLiteral(exp) and List.any(Expression.arrayScalarElements(exp), Expression.isZero);
+    end hasZeroElement;
+
+    function evaluateCoefficient
+      "replaces parameters by their bindings, like the old backend does to avoid dividing by zero"
+      input output Expression coeff;
+    algorithm
+      for i in 1:5 loop
+        coeff := SimplifyExp.simplify(Expression.map(coeff, parameterBinding));
+        if Expression.isLiteral(coeff) then break; end if;
+      end for;
+    end evaluateCoefficient;
+
+    function parameterBinding
+      input output Expression exp;
+    protected
+      Pointer<Variable> var_ptr;
+      Variable var;
+    algorithm
+      exp := match exp
+        case Expression.CREF() guard(BVariable.checkCref(exp.cref, BVariable.isParamOrConst, sourceInfo())) algorithm
+          var_ptr := BVariable.getVarPointer(exp.cref, sourceInfo());
+          var := Pointer.access(var_ptr);
+        then if Binding.hasExp(var.binding) then
+            Expression.applySubscripts(ComponentRef.getSubscripts(exp.cref), Binding.getExp(var.binding))
+          else exp;
+        else exp;
+      end match;
+    end parameterBinding;
+
+    function isNonIteratorCref
+      input Expression exp;
+      output Boolean b;
+    algorithm
+      b := match exp
+        case Expression.CREF() then not ComponentRef.isIterator(exp.cref);
+        else false;
+      end match;
+    end isNonIteratorCref;
 
     function updateList
       input list<ComponentRef> lst;

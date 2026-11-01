@@ -17,6 +17,7 @@ impliedInner.mos \
 nonlinearContinuousLoop.mos \
 torn2DForResidualIndex.mos \
 cellierArray.mos \
+cellierZeroElement.mos \
 cellierEntwined.mos \
 cellierParameterCoefficient.mos \
 linearSystemResidualIndex.mos \
