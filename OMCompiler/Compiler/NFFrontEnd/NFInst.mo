@@ -2193,6 +2193,12 @@ algorithm
 
     case SCode.COMPONENT(info = info)
       algorithm
+        // time is a keyword, MLS 3.7 section 2.3.3.
+        if component.name == "time" then
+          Error.addSourceMessage(Error.RESERVED_IDENTIFIER, {component.name}, info);
+          fail();
+        end if;
+
         mod := instElementModifier(component, node, parent, instLevel);
 
         if not listEmpty(propagatedSubs) then
