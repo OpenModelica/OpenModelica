@@ -537,6 +537,8 @@ algorithm
         ty := Type.liftArrayLeftList(ty, arrayList(dims));
 
         if Binding.isBound(c.condition) then
+          c.condition := markConditionProcessing(c.condition, node);
+          InstNode.updateComponent(c, node);
           c.condition := typeComponentCondition(c.condition, context, evaluate = true);
           is_deleted := Expression.isFalse(Binding.getExp(c.condition));
         else
@@ -577,6 +579,30 @@ algorithm
 
   end match;
 end typeComponent;
+
+function markConditionProcessing
+  "Marks an untyped condition as being typed, and fails if it already is since
+   the condition then depends on itself."
+  input output Binding condition;
+  input InstNode node;
+algorithm
+  () := match condition
+    case Binding.UNTYPED_BINDING()
+      algorithm
+        if condition.isProcessing then
+          Error.addSourceMessage(Error.CIRCULAR_PARAM, {InstNode.name(node),
+            Prefixes.variabilityString(Component.variability(InstNode.component(node)))},
+            Binding.getInfo(condition));
+          fail();
+        end if;
+
+        condition.isProcessing := true;
+      then
+        ();
+
+    else ();
+  end match;
+end markConditionProcessing;
 
 function typeComponentTry
   input InstNode componentNode;
