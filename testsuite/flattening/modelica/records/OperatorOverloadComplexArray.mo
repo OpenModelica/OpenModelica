@@ -49,7 +49,7 @@ operator record Complex "Complex number with overloaded operators"
     end subtract;
   end '-';
 
-  operator '*'  " Multiplication"
+  encapsulated operator '*'  " Multiplication"
 
     encapsulated function multiply "Multiply two complex numbers"
       import Complex;
@@ -205,12 +205,11 @@ equation
    b = c1 and c2;  // This should be vectorized
 
    // String() operator on arrays
-   s = String(c1,"j",5);
+   s = {String(c1[i],"j",5) for i in 1:3};
 
    // Mix
    // === ((c6 ./ c5 ) * c4) .+ (c3 .* 1) .- (c2 .* c1)
    c1 = c1 ./ c2 .* c1 .+ c2 .* 1 .- c2 .* c1;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Test;
 
 // Result:
@@ -225,7 +224,7 @@ end Test;
 //   input Complex c2 "Complex number 2";
 //   output Complex c3 "= c1*c2";
 // algorithm
-//   c3 := Complex(c1.re * c2.re - c1.im * c2.im, c1.re * c2.im + c1.im * c2.re);
+//   c3 := Complex.'constructor'.fromReal(c1.re * c2.re - c1.im * c2.im, c1.re * c2.im + c1.im * c2.re);
 // end Complex.'*'.multiply;
 //
 // function Complex.'*'.scalarProduct "Scalar product c1*c2 of two complex vectors"
@@ -241,21 +240,14 @@ end Test;
 //   input Complex c2 "Complex number 2";
 //   output Complex c3 "= c1 + c2";
 // algorithm
-//   c3 := Complex(c1.re + c2.re, c1.im + c2.im);
+//   c3 := Complex.'constructor'.fromReal(c1.re + c2.re, c1.im + c2.im);
 // end Complex.'+';
-//
-// function Complex.'-'.negate "Unary minus (multiply complex number by -1)"
-//   input Complex c1 "Complex number";
-//   output Complex c2 "= -c1";
-// algorithm
-//   c2 := Complex(-c1.re, -c1.im);
-// end Complex.'-'.negate;
 //
 // function Complex.'-'.negateArr "Unary minus (multiply complex number by -1)"
 //   input Complex[:] c1 "Complex number";
 //   output Complex[size(c1, 1)] c2 "= -c1";
 // algorithm
-//   c2[1] := Complex(-c1[1].re, -c1[1].im);
+//   c2[1] := Complex.'constructor'.fromReal(-c1[1].re, -c1[1].im);
 // end Complex.'-'.negateArr;
 //
 // function Complex.'-'.subtract "Subtract two complex numbers"
@@ -263,7 +255,7 @@ end Test;
 //   input Complex c2 "Complex number 2";
 //   output Complex c3 "= c1 - c2";
 // algorithm
-//   c3 := Complex(c1.re - c2.re, c1.im - c2.im);
+//   c3 := Complex.'constructor'.fromReal(c1.re - c2.re, c1.im - c2.im);
 // end Complex.'-'.subtract;
 //
 // function Complex.'/' "Divide two complex numbers"
@@ -271,7 +263,7 @@ end Test;
 //   input Complex c2 "Complex number 2";
 //   output Complex c3 "= c1/c2";
 // algorithm
-//   c3 := Complex((c1.re * c2.re + c1.im * c2.im) / (c2.re ^ 2.0 + c2.im ^ 2.0), (c1.im * c2.re - c1.re * c2.im) / (c2.re ^ 2.0 + c2.im ^ 2.0));
+//   c3 := Complex.'constructor'.fromReal((c1.re * c2.re + c1.im * c2.im) / (c2.re * c2.re + c2.im * c2.im), (c1.im * c2.re - c1.re * c2.im) / (c2.re * c2.re + c2.im * c2.im));
 // end Complex.'/';
 //
 // function Complex.'String' "Transform Complex number into a String representation"
@@ -295,12 +287,12 @@ end Test;
 //   input Complex c1 "Complex number";
 //   input Complex c2 "Complex exponent";
 //   output Complex c3 "= c1^c2";
-//   protected Real lnz = 0.5 * log(c1.re ^ 2.0 + c1.im ^ 2.0);
+//   protected Real lnz = 0.5 * log(c1.re * c1.re + c1.im * c1.im);
 //   protected Real phi = atan2(c1.im, c1.re);
 //   protected Real re = lnz * c2.re - phi * c2.im;
 //   protected Real im = lnz * c2.im + phi * c2.re;
 // algorithm
-//   c3 := Complex(exp(re) * cos(im), exp(re) * sin(im));
+//   c3 := Complex.'constructor'.fromReal(exp(re) * cos(im), exp(re) * sin(im));
 // end Complex.'^';
 //
 // function Complex.'and' "Test whether two complex numbers are identical"
@@ -314,14 +306,15 @@ end Test;
 // function Complex.'constructor'.fromReal "Construct Complex from Real"
 //   input Real re "Real part of complex number";
 //   input Real im = 0.0 "Imaginary part of complex number";
-//   output Complex result = Complex(re, im) "Complex number";
+//   output Complex result = Complex.'constructor'.fromReal(re, im) "Complex number";
+// algorithm
 // end Complex.'constructor'.fromReal;
 //
 // function Complex.'not' "not (multiply complex number by -1)"
 //   input Complex c1 "Complex number";
 //   output Complex c2 "= -c1";
 // algorithm
-//   c2 := Complex(-c1.re, -c1.im);
+//   c2 := Complex.'constructor'.fromReal(-c1.re, -c1.im);
 // end Complex.'not';
 //
 // class Test
@@ -355,9 +348,7 @@ end Test;
 //   Integer a[3];
 // equation
 //   a = {1, 2, 3};
-//   c1[1] = Complex.'constructor'.fromReal(/*Real*/(a[1]), 0.0);
-//   c1[2] = Complex.'constructor'.fromReal(/*Real*/(a[2]), 0.0);
-//   c1[3] = Complex.'constructor'.fromReal(/*Real*/(a[3]), 0.0);
+//   c1 = array(Complex.'constructor'.fromReal(/*Real*/(a[$i0]), 0.0) for $i0 in 1:3);
 //   c2[1] = Complex.'+'(c1[1], c1[1]);
 //   c2[2] = Complex.'+'(c1[2], c1[2]);
 //   c2[3] = Complex.'+'(c1[3], c1[3]);
@@ -384,18 +375,14 @@ end Test;
 //   c1[1] = Complex.'+'(c1[1], Complex.'constructor'.fromReal(3.0, 0.0));
 //   c1[2] = Complex.'+'(c1[2], Complex.'constructor'.fromReal(3.0, 0.0));
 //   c1[3] = Complex.'+'(c1[3], Complex.'constructor'.fromReal(3.0, 0.0));
-//   c1[1] = Complex.'-'.negate(c2[1]);
-//   c1[2] = Complex.'-'.negate(c2[2]);
-//   c1[3] = Complex.'-'.negate(c2[3]);
+//   c1 = Complex.'-'.negateArr(c2);
 //   c2[1] = Complex.'not'(c1[1]);
 //   c2[2] = Complex.'not'(c1[2]);
 //   c2[3] = Complex.'not'(c1[3]);
 //   b[1] = Complex.'and'(c1[1], c2[1]);
 //   b[2] = Complex.'and'(c1[2], c2[2]);
 //   b[3] = Complex.'and'(c1[3], c2[3]);
-//   s[1] = Complex.'String'(c1[1], "j", 5);
-//   s[2] = Complex.'String'(c1[2], "j", 5);
-//   s[3] = Complex.'String'(c1[3], "j", 5);
+//   s = array(Complex.'String'(c1[i], "j", 5) for i in 1:3);
 //   c1[1] = Complex.'-'.subtract(Complex.'+'(Complex.'*'.multiply(Complex.'/'(c1[1], c2[1]), c1[1]), Complex.'*'.multiply(c2[1], Complex.'constructor'.fromReal(1.0, 0.0))), Complex.'*'.multiply(c2[1], c1[1]));
 //   c1[2] = Complex.'-'.subtract(Complex.'+'(Complex.'*'.multiply(Complex.'/'(c1[2], c2[2]), c1[2]), Complex.'*'.multiply(c2[2], Complex.'constructor'.fromReal(1.0, 0.0))), Complex.'*'.multiply(c2[2], c1[2]));
 //   c1[3] = Complex.'-'.subtract(Complex.'+'(Complex.'*'.multiply(Complex.'/'(c1[3], c2[3]), c1[3]), Complex.'*'.multiply(c2[3], Complex.'constructor'.fromReal(1.0, 0.0))), Complex.'*'.multiply(c2[3], c1[3]));
