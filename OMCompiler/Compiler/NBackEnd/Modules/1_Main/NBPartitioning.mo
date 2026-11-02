@@ -609,6 +609,7 @@ public
     array<StrongComponent> comps;
     Integer n;
     UnorderedMap<ComponentRef, Slice.IntLst> solved = UnorderedMap.new<Slice.IntLst>(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedMap<ComponentRef, Slice.IntLst> solved_elements = UnorderedMap.new<Slice.IntLst>(ComponentRef.hash, ComponentRef.isEqual);
     UnorderedSet<ComponentRef> deps, alg_vars, alg_eqns;
     array<tuple<Integer, list<Integer>>> graph;
     list<Integer> seeds = {};
@@ -625,6 +626,11 @@ public
 
     // the components that solve a variable, seeded by state derivatives, discrete and event variables
     for i in 1:n loop
+      for cref in StrongComponent.getVariableCrefs(comps[i]) loop
+        if hasLiteralSubscripts(cref) then
+          UnorderedMap.add(cref, i :: UnorderedMap.getOrDefault(cref, solved_elements, {}), solved_elements);
+        end if;
+      end for;
       for var in StrongComponent.getVariables(comps[i]) loop
         name := ComponentRef.stripSubscriptsAll(BVariable.getVarName(var));
         UnorderedMap.add(name, i :: UnorderedMap.getOrDefault(name, solved, {}), solved);
@@ -640,9 +646,9 @@ public
     for i in 1:n loop
       deps := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
       for eqn in componentEquations(comps[i]) loop
-        Equation.map(Pointer.access(eqn), function collectPartitioningCrefs(var_crefs = deps), NONE(), Expression.fakeMap);
+        Equation.map(Pointer.access(eqn), function collectPartitioningCrefs(var_crefs = deps, strip = false), NONE(), Expression.fakeMap);
       end for;
-      graph[i] := (i, List.flatten(list(UnorderedMap.getOrDefault(d, solved, {}) for d in UnorderedSet.toList(deps))));
+      graph[i] := (i, List.flatten(list(solvingComponents(d, solved_elements, solved) for d in UnorderedSet.toList(deps))));
     end for;
 
     needed := arrayCreate(n, false);
@@ -1117,7 +1123,7 @@ protected
 
         // collect all crefs in equation
         var_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-        Equation.map(Pointer.access(eqn), function collectPartitioningCrefs(var_crefs = var_crefs), NONE(), Expression.fakeMap);
+        Equation.map(Pointer.access(eqn), function collectPartitioningCrefs(var_crefs = var_crefs, strip = true), NONE(), Expression.fakeMap);
 
         // find all indices of connected variables
         var_indices := list(VariablePointers.getVarIndex(variables, cref) for cref in UnorderedSet.toList(var_crefs));
@@ -1390,9 +1396,28 @@ protected
     end for;
   end sortClockedPartitions;
 
+  function solvingComponents
+    "a literal element (x[2]) solved by its own component only depends on that component"
+    input ComponentRef cref;
+    input UnorderedMap<ComponentRef, Slice.IntLst> solved_elements;
+    input UnorderedMap<ComponentRef, Slice.IntLst> solved;
+    output Slice.IntLst comps;
+  algorithm
+    comps := match UnorderedMap.get(cref, solved_elements)
+      case SOME(comps) guard(hasLiteralSubscripts(cref)) then comps;
+      else UnorderedMap.getOrDefault(ComponentRef.stripSubscriptsAll(cref), solved, {});
+    end match;
+  end solvingComponents;
+
+  function hasLiteralSubscripts
+    input ComponentRef cref;
+    output Boolean b = List.all(ComponentRef.subscriptsAllFlat(cref), Subscript.isLiteral);
+  end hasLiteralSubscripts;
+
   function collectPartitioningCrefs
     input output Expression exp;
     input UnorderedSet<ComponentRef> var_crefs;
+    input Boolean strip = true "false to keep the subscripts of the variables";
   algorithm
     exp := match exp
       local
@@ -1423,8 +1448,8 @@ protected
                 Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
               then fail();
             end match;
-          then Expression.mapShallow(arg, function collectPartitioningCrefs(var_crefs = var_crefs));
-          else Expression.mapShallow(exp, function collectPartitioningCrefs(var_crefs = var_crefs));
+          then Expression.mapShallow(arg, function collectPartitioningCrefs(var_crefs = var_crefs, strip = strip));
+          else Expression.mapShallow(exp, function collectPartitioningCrefs(var_crefs = var_crefs, strip = strip));
         end match;
       then newExp;
 
@@ -1441,7 +1466,7 @@ protected
 
         for child in children loop
           // check if cref has to be considered as a dependency
-          stripped := ComponentRef.stripSubscriptsAll(child);
+          stripped := if strip then ComponentRef.stripSubscriptsAll(child) else child;
           if not BVariable.checkCref(stripped, BVariable.isParamOrConst, sourceInfo()) then
             addCrefToSet(stripped, var_crefs);
           end if;
@@ -1450,12 +1475,12 @@ protected
         // variables in subscripts (e.g. idx in y = val[idx]) are dependencies as well
         for sub in ComponentRef.subscriptsAllFlat(exp.cref) loop
           if (Subscript.isIndex(sub) or (Subscript.isSliced(sub) and not Subscript.isWhole(sub))) and not Subscript.isLiteral(sub) then
-            collectPartitioningCrefs(Subscript.toExp(sub), var_crefs);
+            collectPartitioningCrefs(Subscript.toExp(sub), var_crefs, strip);
           end if;
         end for;
       then exp;
 
-      else Expression.mapShallow(exp, function collectPartitioningCrefs(var_crefs = var_crefs));
+      else Expression.mapShallow(exp, function collectPartitioningCrefs(var_crefs = var_crefs, strip = strip));
     end match;
   end collectPartitioningCrefs;
 
