@@ -263,6 +263,12 @@ algorithm
     case Expression.INSTANCE_NAME()
       then evalGetInstanceName(exp.scope);
 
+    case Expression.PARTIAL_FUNCTION_APPLICATION()
+      algorithm
+        exp.args := list(evalExp(a, target) for a in exp.args);
+      then
+        exp;
+
     else exp;
   end match;
 end evalExp;
