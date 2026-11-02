@@ -30,8 +30,6 @@
 
 #include "sundials_error.h"
 
-#ifdef WITH_SUNDIALS
-
 #define UNUSED(x) (void)(x)   /* Surpress compiler warnings for unused function input */
 
 /* Internal function prototypes */
@@ -934,19 +932,3 @@ void kinsolErrorHandlerFunction(int line, const char *func, const char *file,
 }
 
 #endif /* #ifndef OMC_FMI_RUNTIME */
-
-#else
-
-/**
- * @brief Function not supported without WITH_SUNDIALS
- *
- * @param flag
- * @param type
- * @param functionName
- */
-void checkReturnFlag_SUNDIALS(int flag, int type, const char *functionName) {
-  throwStreamPrint(NULL, "No sundials/kinsol support activated.");
-}
-
-
-#endif /* WITH_SUNDIALS */

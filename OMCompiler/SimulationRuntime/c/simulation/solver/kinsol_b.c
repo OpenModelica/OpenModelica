@@ -43,8 +43,6 @@
 #include "sundials_util.h"
 #include "util/omc_error.h"
 
-#ifdef WITH_SUNDIALS
-
 #include "events.h"
 #include "model_help.h"
 #include "openmodelica.h"
@@ -1776,25 +1774,3 @@ NLS_SOLVER_STATUS B_nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINE
 
   return kinsolData->solved;
 }
-
-#else /* WITH_SUNDIALS */
-
-void* B_nlsKinsolAllocate(int size, void* userData, int attemptRetry, modelica_boolean isPatternAvailable) {
-
-  throwStreamPrint(NULL, "No sundials/kinsol support activated.");
-  return 0;
-}
-
-int B_nlsKinsolFree(void* kinsolData) {
-
-  throwStreamPrint(NULL, "No sundials/kinsol support activated.");
-  return 0;
-}
-
-int B_nlsKinsolSolve(void *data, threadData_t *threadData, void* nlsData) {
-
-  throwStreamPrint(threadData, "No sundials/kinsol support activated.");
-  return 0;
-}
-
-#endif /* WITH_SUNDIALS */

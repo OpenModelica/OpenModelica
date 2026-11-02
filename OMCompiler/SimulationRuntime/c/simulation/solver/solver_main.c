@@ -129,7 +129,6 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
     return retVal;
 #endif
-#ifdef WITH_SUNDIALS
   case S_IDA:
     retVal = ida_solver_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
@@ -140,7 +139,6 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
     return retVal;
-#endif
   case S_SYM_SOLVER:
     retVal = sym_solver_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
@@ -250,7 +248,6 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     break;
   }
 #endif
-#ifdef WITH_SUNDIALS
   case S_IDA:
   {
     IDA_SOLVER* idaData = NULL;
@@ -271,7 +268,6 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     solverInfo->solverData = cvodeData;
     break;
   }
-#endif
   default:
     errorStreamPrint(OMC_LOG_SOLVER, 0, "Solver %s disabled on this configuration", SOLVER_METHOD_NAME[solverInfo->solverMethod]);
     return 1;
@@ -304,12 +300,10 @@ int updateSolverNominals(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     dassl_setNominals(data, solverInfo->solverData);
     break;
 #endif
-#ifdef WITH_SUNDIALS
   case S_IDA:
     return ida_solver_setNominals(data, threadData, solverInfo->solverData);
   case S_CVODE:
     return cvode_solver_setNominals(data, threadData, solverInfo->solverData);
-#endif
   default:
     break;
   }
@@ -363,7 +357,6 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     /*destroyIpopt(solverInfo);*/
     break;
 #endif
-#ifdef WITH_SUNDIALS
   case S_IDA:
     /* free work arrays */
     ida_solver_deinitial(solverInfo->solverData);
@@ -372,7 +365,6 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     /* free work arrays */
     cvode_solver_deinitial(solverInfo->solverData);
     break;
-#endif
   default:
     throwStreamPrint(NULL, "Unknown solver %u encountered. Possibly leaking memory!", solverInfo->solverMethod);
   }

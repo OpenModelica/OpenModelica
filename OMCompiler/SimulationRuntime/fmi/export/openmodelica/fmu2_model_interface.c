@@ -33,7 +33,7 @@
 #include "../simulation/solver/initialization/initialization.h"
 #include "../simulation/solver/stateset.h"
 #include "../simulation/solver/model_help.h"
-#ifdef WITH_SUNDIALS
+#ifdef OMC_FMI_HAVE_CVODE
 #include "../simulation/solver/cvode_solver.h"
 #endif
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
@@ -2687,7 +2687,7 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
         }
         break;
       case S_CVODE:
-#ifdef WITH_SUNDIALS
+#ifdef OMC_FMI_HAVE_CVODE
         flag = cvode_solver_fmi_step(comp, tNext, states);
         if (flag < 0)
         {
@@ -2699,7 +2699,7 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
         FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: FMU not compiled with SUNDIALS but solver CVODE selected.")
         status = fmi2Fatal;
         goto doStep_cleanup;
-#endif /* WITH_SUNDIALS */
+#endif /* OMC_FMI_HAVE_CVODE */
         break;
       default:
         FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: Unknown solver method %d.", comp->solverInfo->solverMethod)

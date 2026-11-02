@@ -38,8 +38,6 @@
 #include "sundials_error.h"
 #include "solver_main.h"
 
-#ifdef WITH_SUNDIALS
-
 #include <sundials/sundials_context.h>              /* SUNContext */
 #include <cvode/cvode.h>                            /* prototypes for CVODE fcts., consts. */
 #include <nvector/nvector_serial.h>                 /* serial N_Vector types, fcts., macros */
@@ -142,12 +140,6 @@ typedef struct CVODE_SOLVER
   void (*freeSolverMemory)(void*); /* How to free this struct: FMI callback (FMI2) or plain free (FMI3/no callback) */
 #endif
 } CVODE_SOLVER;
-
-#else /* WITH_SUNDIALS */
-
-typedef void CVODE_SOLVER;
-
-#endif /* WITH_SUNDIALS */
 
 /* Function prototypes */
 int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData, int isFMI);
