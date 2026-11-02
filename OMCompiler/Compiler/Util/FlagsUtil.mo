@@ -641,10 +641,12 @@ protected function updateConfigFlagArray
   output array<Flags.FlagData> outFlags;
 protected
   Integer index;
+  Flags.FlagData old_value;
 algorithm
   Flags.CONFIG_FLAG(index = index) := inFlag;
+  old_value := arrayGet(inFlags, index);
   outFlags := arrayUpdate(inFlags, index, inValue);
-  applySideEffects(inFlag, inValue);
+  applySideEffects(inFlag, inValue, old_value);
 end updateConfigFlagArray;
 
 public function readArgs
@@ -1231,6 +1233,7 @@ protected function applySideEffects
   "Some flags have side effects, which are handled by this function."
   input Flags.ConfigFlag inFlag;
   input Flags.FlagData inValue;
+  input Flags.FlagData inOldValue;
 algorithm
   () := matchcontinue inValue
     local
@@ -1242,6 +1245,20 @@ algorithm
         true := configFlagsIsEqualIndex(inFlag, Flags.SHOW_ERROR_MESSAGES);
         Flags.BOOL_FLAG(data = value) := inValue;
         ErrorExt.setShowErrorMessages(value);
+      then
+        ();
+
+    // NFInst.resetGlobalFlags overrides these debug flags for the new backend,
+    // restore them when switching back to the old backend.
+    case Flags.BOOL_FLAG(data = false)
+      algorithm
+        true := configFlagsIsEqualIndex(inFlag, Flags.NEW_BACKEND);
+        Flags.BOOL_FLAG(data = true) := inOldValue;
+
+        for f in {Flags.NF_SCALARIZE, Flags.VECTORIZE_BINDINGS,
+                  Flags.NF_EXPAND_OPERATIONS, Flags.NF_EXPAND_FUNC_ARGS} loop
+          set(f, f.default);
+        end for;
       then
         ();
 
