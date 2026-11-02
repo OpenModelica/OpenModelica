@@ -414,4 +414,4 @@ Bouskela, D., Jardin, A., Palanisamy, A., Ochel, L., & Pop, A. (2021). New Metho
 
 VDI - Verein Deutscher Ingenieure. (2000). Uncertainty of measurement during acceptance tests on energy-conversion and power plants - Part 1: Fundamentals. VDI 2048 Blatt 1, October 2000.
 
-
+Mazurié, B., Jardin, A., Borel, P., Davelaar, F., Boldo, D., Corona Mesa‑Moles, L. (2025). Data Reconciliation for Industrial Experiments. Proceedings of the 16th International Modelica & FMI Conference, Lucerne, Switzerland.
