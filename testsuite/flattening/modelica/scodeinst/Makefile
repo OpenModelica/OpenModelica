@@ -898,6 +898,7 @@ InStreamNonCref1.mo \
 InStreamNoStream1.mo \
 InStreamPipeline.mo \
 InStreamReduction1.mo \
+InStreamReduction2.mo \
 InStreamTwoInside.mo \
 InStreamTwoOutside.mo \
 InStreamUnconnected.mo \
