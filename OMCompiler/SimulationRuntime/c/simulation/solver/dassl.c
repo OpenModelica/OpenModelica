@@ -527,6 +527,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   static unsigned int dasslStepsOutputCounter = 1;
   int return_from_small_step = 0;
   int firstStepRestarts = 0;
+  int workRetries = 0;
 
   DASSL_DATA *dasslData = (DASSL_DATA*) solverInfo->solverData;
 
@@ -660,12 +661,11 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
       /* rhs final flag is TRUE during for output evaluation */
       RHSFinalFlag = 1;
 
-      if(dasslData->idid == -1)
+      if(dasslData->idid == -1 && workRetries++ < SOLVER_WORK_RETRIES)
       {
         fflush(stderr);
         fflush(stdout);
-        warningStreamPrint(OMC_LOG_DASSL, 0, "A large amount of work has been expended.(About 500 steps). Trying to continue ...");
-        infoStreamPrint(OMC_LOG_DASSL, 0, "DASSL will try again...");
+        warningStreamPrint(OMC_LOG_SOLVER, 0, "##DASSL## has done too much work with small steps at time = %.15g. Continuing to solve anyway.", solverInfo->currentTime);
         dasslData->info[0] = 1; /* try again */
         if (solverInfo->currentTime <= data->simulationInfo->stopTime)
           continue;
@@ -816,8 +816,8 @@ static int continue_DASSL(int* idid, double* atol)
     /* 1-4 means success */
     break;
   case -1:
-    warningStreamPrint(OMC_LOG_DASSL, 0, "A large amount of work has been expended.(About 500 steps). Trying to continue ...");
-    retValue = 1; /* adrpo: try to continue */
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "DDASKR has done too much work with small steps.");
+    retValue = -1;
     break;
   case -2:
     warningStreamPrint(OMC_LOG_STDOUT, 0, "The error tolerances are too stringent");

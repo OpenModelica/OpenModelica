@@ -768,6 +768,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   static unsigned int stepsOutputCounter = 1;
   int stepsMode;    /* Has to be IDA_NORMAL (1) or IDA_ONE_STEP (2) */
   int restartAfterLSFail = 0;
+  int workRetries = 0;
 
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
@@ -949,9 +950,9 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     {
       infoStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## continue integration time = %.15g", solverInfo->currentTime);
     }
-    else if (flag == IDA_TOO_MUCH_WORK)
+    else if (flag == IDA_TOO_MUCH_WORK && workRetries++ < SOLVER_WORK_RETRIES)
     {
-      warningStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## has done too much work with small steps at time = %.15g", solverInfo->currentTime);
+      warningStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## has done too much work with small steps at time = %.15g. Continuing to solve anyway.", solverInfo->currentTime);
     }
     else if (flag == IDA_LSETUP_FAIL && !restartAfterLSFail)
     {
