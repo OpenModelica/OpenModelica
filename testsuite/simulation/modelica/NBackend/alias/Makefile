@@ -30,6 +30,7 @@ AliasStartPriority.mos \
 AliasArrayStartParameter.mos \
 RecordFieldConstantAlias.mos \
 AliasWhenInitial.mos \
+AliasZeroProduct.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

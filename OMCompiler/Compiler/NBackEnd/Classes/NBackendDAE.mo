@@ -437,9 +437,8 @@ public
       (Bindings.main,      "Bindings"),
       (function FunctionAlias.main(kind = kind), "FunctionAlias"),
       (function Inline.main(inline_types = inline_types, init = false), "Early Inline"),
-      (function simplify(init = false), "Simplify 1"),
+      (function simplify(init = false), "Simplify"),
       (function Alias.main(kind = kind),  "Alias"),
-      (function simplify(init = false), "Simplify 2"), // TODO simplify in Alias only
       (removeStream,       "Remove Stream"),
       (detectAlgorithmLocals, "Algorithm Locals"),
       (DetectStates.main,  "Detect States"),
