@@ -96,6 +96,7 @@ NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5a.mos \
 NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5b.mos \
 NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5c.mos \
 NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5d.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5e.mos \
 NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5f.mos \
 NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter6.mos \
 NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter7.mos \
@@ -142,12 +143,33 @@ NB_TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR.mos \
 NB_TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_WithHARE.mos \
 NB_UncertainAliasSimulation.mos
 
-# New backend tests whose SET-S has an algebraic loop. The jacobian F then
-# contains a linear system, which the new backend cannot generate yet, and
-# the simulation fails with "residual function pointer is invalid". See the
-# TODO at createJacobian in NBDataReconciliation.mo. Run make testNBJacobianLoops
+# The tests of NB_TESTFILES whose SET-S has an algebraic loop. The jacobian F
+# then contains a linear system, which the new backend cannot generate yet,
+# and the simulation fails with "residual function pointer is invalid". See
+# the TODO at createJacobian in NBDataReconciliation.mo. They keep the failure
+# as expected result. Run make testNBJacobianLoops
 NB_JACOBIAN_LOOP_TESTFILES = \
 NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5e.mos \
+NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5f.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows1.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows3.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows7.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows9.mos \
+
+# The tests of NB_TESTFILES that fail in the initialization of the reconciled
+# system: NBTearing fails with "UnorderedMap.getSafe failed because the key did
+# not exist". They keep the failure as expected result. Run make testNBInitialization
+NB_INITIALIZATION_TESTFILES = \
+NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows2.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows5.mos \
+
+# The tests of NB_TESTFILES that fail in NSimCode because the tuple equation of
+# Water_sat_P is not solved (Solve.UNPROCESSED). They keep the failure as
+# expected result. Run make testNBTupleEquations
+NB_TUPLE_EQUATION_TESTFILES = \
+NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows4.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6.mos \
 
 # Tests that fail and cannot be part of the testsuite (crash, hang, ...).
 # Models that fail in a reproducible way go in TESTFILES instead, with the
@@ -165,7 +187,7 @@ Makefile \
 
 CLEAN = `ls | grep -x -v -f deps.tmp`
 
-.PHONY : test testNB testNBJacobianLoops baselineNB clean getdeps failingtest
+.PHONY : test testNB testNBJacobianLoops testNBInitialization testNBTupleEquations baselineNB clean getdeps failingtest
 
 test:
 	@echo
@@ -186,7 +208,7 @@ testNB:
 	@echo Running new backend tests...
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
-	@$(TEST) $(NB_TESTFILES) $(NB_JACOBIAN_LOOP_TESTFILES)
+	@$(TEST) $(NB_TESTFILES)
 
 testNBJacobianLoops:
 	@echo
@@ -195,12 +217,26 @@ testNBJacobianLoops:
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	@$(TEST) $(NB_JACOBIAN_LOOP_TESTFILES)
 
+testNBInitialization:
+	@echo
+	@echo Running new backend tests that fail in the initialization...
+	@echo
+	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
+	@$(TEST) $(NB_INITIALIZATION_TESTFILES)
+
+testNBTupleEquations:
+	@echo
+	@echo Running new backend tests that fail with an unsolved tuple equation...
+	@echo
+	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
+	@$(TEST) $(NB_TUPLE_EQUATION_TESTFILES)
+
 baselineNB:
 	@echo
 	@echo Running baseline for new backend tests...
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
-	@$(BASELINE) $(NB_TESTFILES) $(NB_JACOBIAN_LOOP_TESTFILES)
+	@$(BASELINE) $(NB_TESTFILES)
 
 failtestbaseline:
 	@echo
