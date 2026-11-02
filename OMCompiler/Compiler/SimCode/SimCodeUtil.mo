@@ -14382,11 +14382,11 @@ end getCmakeLinkLibrariesCode;
 
 public function getCmakeSundialsLinkCode
   "Code for FMU CMakeLists.txt to specify if CVODE is needed."
-  input Option<SimCode.FmiSimulationFlags> fmiSimulationFlags;
+  input Boolean needsCvode;
   output String needCvode = "OFF";
   output String cvodeDirectory = "\"\"";
 algorithm
-  if cvodeFmiFlagIsSet(fmiSimulationFlags) then
+  if needsCvode then
     needCvode := "ON";
     // ${DOCKER_VOL_DIR} so the path also resolves inside the container when cross compiling,
     // see getCmakeLinkLibrariesCode. It is empty for a normal build.
@@ -14428,6 +14428,35 @@ algorithm
     else then();
   end match;
 end cvodeFmiFlagIsSet;
+
+public function csSolverIsCvode
+  "Checks if a Co-Simulation FMU integrates with CVODE, which it does unless the
+   FMI simulation flags select another solver with s."
+  input Option<SimCode.FmiSimulationFlags> fmiSimulationFlags;
+  output Boolean isCvode = true;
+algorithm
+  isCvode := match fmiSimulationFlags
+    local
+      list<tuple<String,String>> nameValueTuples;
+      String setting, value;
+      String configFile;
+      String fileContent;
+    case SOME(SimCode.FMI_SIMULATION_FLAGS(nameValueTuples))
+      algorithm
+        for tpl in nameValueTuples loop
+          (setting, value) := tpl;
+          if stringEqual(setting, "s") then
+            isCvode := stringEqual(value, "cvode");
+          end if;
+        end for;
+      then isCvode;
+    case SOME(SimCode.FMI_SIMULATION_FLAGS_FILE(configFile))
+      algorithm
+        fileContent := System.readFile(configFile);
+      then -1 == System.stringFind(fileContent, "\"s\"") or -1 <> System.stringFind(fileContent, "\"cvode\"");
+    else true;
+  end match;
+end csSolverIsCvode;
 
 public function stripIncludeFlag
   "Directory of a makefileParams include entry, which is of the form \"-I<directory>\",

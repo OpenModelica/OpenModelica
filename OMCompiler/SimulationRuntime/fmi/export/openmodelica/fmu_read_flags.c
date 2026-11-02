@@ -145,7 +145,7 @@ void parseFlags(SOLVER_INFO *solverInfo, const char *str)
  * @brief Initialize solver data.
  *
  * Reads optional FMU simulation flags from <fmiPrefix>.fmu/resources/<fmiPrefix>_flags.json.
- * Initialize solver euler or CVODE.
+ * Initialize solver euler or CVODE, the default if the FMU has SUNDIALS.
  *
  * @param comp          FMU component.
  * @return int          Return 0 on success and -1 when an error occurred.
@@ -171,7 +171,11 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
   solverInfo->currentTime = 0;
   solverInfo->currentStepSize = 0;
   solverInfo->laststep = 0;
-  solverInfo->solverMethod = 0;
+#ifdef WITH_SUNDIALS
+  solverInfo->solverMethod = S_CVODE;
+#else
+  solverInfo->solverMethod = S_EULER;
+#endif
   solverInfo->solverRootFinding = 0;
   solverInfo->solverNoEquidistantGrid = FALSE;
   solverInfo->lastdesiredStep = solverInfo->currentTime + solverInfo->currentStepSize;
@@ -199,7 +203,6 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
   else
   {
     FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2Instantiate: Using default simulation settings.")
-    solverInfo->solverMethod = S_EULER;
   }
 
   /* If no states are present, we can use Euler's method since it is doing nothing. */
@@ -217,20 +220,20 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
       break;
       case S_CVODE:
 #ifdef WITH_SUNDIALS
-      omc_useStream[OMC_LOG_SOLVER] = 1;
-      CVODE_SOLVER* cvodeData = NULL;
-      FILTERED_LOG(comp, fmi2OK, LOG_ALL, "Initializing CVODE ODE Solver")
-      cvodeData = (CVODE_SOLVER*) functions->allocateMemory(1, sizeof(CVODE_SOLVER));
-      if (!cvodeData) {
-        FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: Out of memory.")
-        functions->freeMemory(solverInfo);
-        return -1;
-      } else {
-        cvodeData->freeSolverMemory = functions->freeMemory;
-        retValue = cvode_solver_initial(data, threadData, solverInfo, cvodeData, 1 /* is FMI */);   /* TODO: cvode_solver_initial needs to use malloc and free from fmi2CallbackFunctions */
+      {
+        CVODE_SOLVER* cvodeData = NULL;
+        FILTERED_LOG(comp, fmi2OK, LOG_ALL, "Initializing CVODE ODE Solver")
+        cvodeData = (CVODE_SOLVER*) functions->allocateMemory(1, sizeof(CVODE_SOLVER));
+        if (!cvodeData) {
+          FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: Out of memory.")
+          functions->freeMemory(solverInfo);
+          return -1;
+        } else {
+          cvodeData->freeSolverMemory = functions->freeMemory;
+          retValue = cvode_solver_initial(data, threadData, solverInfo, cvodeData, 1 /* is FMI */);   /* TODO: cvode_solver_initial needs to use malloc and free from fmi2CallbackFunctions */
+        }
+        solverInfo->solverData = cvodeData;
       }
-      solverInfo->solverData = cvodeData;
-      omc_useStream[OMC_LOG_SOLVER] = 0;
 #else
       solverInfo->solverData = NULL;
       FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: FMU not compiled with SUNDIALS but solver CVODE selected.")

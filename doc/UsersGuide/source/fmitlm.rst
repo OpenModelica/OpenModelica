@@ -192,25 +192,27 @@ with experimental support for FMI 3.0 (see the version table above).
 
 For the Co-Simulation FMU two integrator methods are available:
 
-* Forward Euler [default]
-* SUNDIALS CVODE (see [#f1]_)
+* SUNDIALS CVODE [default] (see [#f1]_)
+* Forward Euler
 
 Forward Euler uses root finding, which does an Euler step of ``communicationStepSize``
 in ``fmi2DoStep``. Events are checked for before and after the call to
 ``fmi2GetDerivatives``.
 
-If CVODE is chosen as integrator the FMU should also include runtime dependencies
-(:ref:`--fmuRuntimeDepends=modelica<omcflag-fmuRuntimeDepends>`) to copy all used dynamic
-libraries into the generated FMU to make it exchangeable.
+Built for the platform OpenModelica runs on, the FMU links the SUNDIALS libraries of
+the OpenModelica installation. When cross compiling, it compiles CVODE and KLU from
+the sources it carries in ``sources/cvode_sources``. These are listed with the other
+source files of the FMU, so an importer that builds the FMU from its sources compiles
+them too.
 
-To export a Co-Simulation FMU with CVODE for the bouncing ball example use the
+To export a Co-Simulation FMU with forward Euler for the bouncing ball example use the
 following commands:
 
 .. omc-mos ::
   :erroratend:
 
   loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/BouncingBall.mo")
-  setCommandLineOptions("--fmiFlags=s:cvode")
+  setCommandLineOptions("--fmiFlags=s:euler")
   buildModelFMU(BouncingBall, version = "2.0", fmuType="cs")
 
 
@@ -277,16 +279,15 @@ The CMake compilation accepts the following settings:
 * ``NEED_CVODE``:
   Boolean value to integrate CVODE integrator into CoSimulation FMU.
 
-  * ``ON``: Link to SUNDIALS CVODE. If CVODE is not in a default location
-    ``CVODE_DIRECTORY`` needs to be set.
-    Its also recommended to use ``RUNTIME_DEPENDENCIES_LEVEL=modelica`` or higher to add
-    SUNDIALS runtime dependencies into the FMU.
+  * ``ON``: Link to the SUNDIALS CVODE libraries in ``CVODE_DIRECTORY``. When cross
+    compiling, or if they are not there, compile CVODE from ``cvode_sources`` instead.
 
-  * ``OFF`` (default): Don't link to SUNDIALS CVODE.
+  * ``OFF``: Don't use SUNDIALS CVODE.
+
+  Defaults to ``ON`` for a Co-Simulation FMU that integrates with CVODE.
 
 * ``CVODE_DIRECTORY``:
-  String value with location of libraries ``sundials_cvode`` and ``sundials_nvecserial``
-  with SUNDIALS version 5.4.0.
+  String value with location of the SUNDIALS and KLU libraries.
 
   * Defaults to a location inside the OpenModelica installation directory, which was
     used to create the FMU.

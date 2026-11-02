@@ -2688,10 +2688,10 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
         break;
       case S_CVODE:
 #ifdef WITH_SUNDIALS
-        flag = cvode_solver_fmi_step(comp, tNext, states);
+        flag = cvode_solver_fmi_step(comp->fmuData, comp->threadData, comp->solverInfo, tNext, states);
         if (flag < 0)
         {
-          FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: CVODE integrator step failed.")
+          FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: CVODE integrator step failed with flag %d at time %.15g.", flag, comp->solverInfo->currentTime)
           status = fmi2Fatal;
           goto doStep_cleanup;
         }

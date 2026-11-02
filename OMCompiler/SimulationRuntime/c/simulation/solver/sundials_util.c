@@ -31,11 +31,11 @@
 #include "util/omc_error.h"
 
 #include "sundials_util.h"
-#include <sunmatrix/sunmatrix_sparse.h>
-#include <nvector/nvector_serial.h>
-
 
 #ifdef WITH_SUNDIALS
+
+#include <sunmatrix/sunmatrix_sparse.h>
+#include <nvector/nvector_serial.h>
 
 #define UNUSED(x) (void)(x)   /* Surpress compiler warnings for unused function input */
 

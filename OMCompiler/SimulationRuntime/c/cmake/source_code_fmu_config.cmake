@@ -326,6 +326,140 @@ foreach(source_file ${SOURCE_FMU_CVODE_RUNTIME_FILES_LIST})
 endforeach()
 list(JOIN SOURCE_FMU_CVODE_RUNTIME_FILES_LIST_QUOTED ",\n                                                  " SOURCE_FMU_CVODE_RUNTIME_FILES)
 
+# CVODE and KLU for the FMU. The public headers go to include/, the FMU's sources/
+# directory; the sources and private headers flat to src/, its cvode_sources/. Every
+# #include then resolves with sources/ as the only include directory and no
+# definitions, as an importer building from <SourceFiles> compiles them.
+set(SOURCE_FMU_CVODE_DIR ${SOURCE_FMU_SOURCES_DIR}/cvode_sources)
+set(3RD_SUNDIALS_DIR ${OMCompiler_3rdParty_SOURCE_DIR}/sundials)
+set(3RD_SUITESPARSE_DIR ${OMCompiler_3rdParty_SOURCE_DIR}/SuiteSparse)
+
+set(3RD_SUNDIALS_FMU_DIRS cvode
+                          sundials
+                          sunmemory/system
+                          nvector/serial
+                          sunmatrix/band
+                          sunmatrix/dense
+                          sunmatrix/sparse
+                          sunlinsol/dense
+                          sunlinsol/klu
+                          sunnonlinsol/fixedpoint
+                          sunnonlinsol/newton)
+set(3RD_SUNDIALS_FMU_FILES cvode/cvode.c
+                           cvode/cvode_cli.c
+                           cvode/cvode_io.c
+                           cvode/cvode_ls.c
+                           cvode/cvode_nls.c
+                           cvode/cvode_proj.c
+                           cvode/cvode_resize.c
+                           sundials/sundatanode/sundatanode_inmem.c
+                           sundials/sundials_adaptcontroller.c
+                           sundials/sundials_adjointcheckpointscheme.c
+                           sundials/sundials_adjointstepper.c
+                           sundials/sundials_band.c
+                           sundials/sundials_cli.c
+                           sundials/sundials_context.c
+                           sundials/sundials_datanode.c
+                           sundials/sundials_dense.c
+                           sundials/sundials_direct.c
+                           sundials/sundials_domeigestimator.c
+                           sundials/sundials_errors.c
+                           sundials/sundials_futils.c
+                           sundials/sundials_hashmap.c
+                           sundials/sundials_iterative.c
+                           sundials/sundials_linearsolver.c
+                           sundials/sundials_logger.c
+                           sundials/sundials_math.c
+                           sundials/sundials_matrix.c
+                           sundials/sundials_memory.c
+                           sundials/sundials_nonlinearsolver.c
+                           sundials/sundials_nvector.c
+                           sundials/sundials_nvector_senswrapper.c
+                           sundials/sundials_profiler.c
+                           sundials/sundials_stepper.c
+                           sundials/sundials_version.c
+                           sunmemory/system/sundials_system_memory.c
+                           nvector/serial/nvector_serial.c
+                           sunmatrix/band/sunmatrix_band.c
+                           sunmatrix/dense/sunmatrix_dense.c
+                           sunmatrix/sparse/sunmatrix_sparse.c
+                           sunlinsol/dense/sunlinsol_dense.c
+                           sunlinsol/klu/sunlinsol_klu.c
+                           sunnonlinsol/fixedpoint/sunnonlinsol_fixedpoint.c
+                           sunnonlinsol/newton/sunnonlinsol_newton.c)
+
+foreach(source_dir ${3RD_SUNDIALS_FMU_DIRS})
+  file(GLOB private_headers ${3RD_SUNDIALS_DIR}/src/${source_dir}/*.h)
+  install(FILES ${private_headers} DESTINATION ${SOURCE_FMU_CVODE_DIR}/src)
+endforeach()
+# Its quoted includes are relative to src/sundials, now its parent.
+file(READ ${3RD_SUNDIALS_DIR}/src/sundials/sundatanode/sundatanode_inmem.h SUNDATANODE_INMEM_H)
+string(REPLACE "#include \"" "#include \"../" SUNDATANODE_INMEM_H "${SUNDATANODE_INMEM_H}")
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/fmu_sundials/sundatanode/sundatanode_inmem.h "${SUNDATANODE_INMEM_H}")
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/fmu_sundials/sundatanode/sundatanode_inmem.h
+        DESTINATION ${SOURCE_FMU_CVODE_DIR}/src/sundatanode)
+install(FILES ${3RD_SUNDIALS_DIR}/src/sundials/stl/sunstl_vector.h
+        DESTINATION ${SOURCE_FMU_CVODE_DIR}/src/stl)
+foreach(source_file ${3RD_SUNDIALS_FMU_FILES})
+  install(FILES ${3RD_SUNDIALS_DIR}/src/${source_file} DESTINATION ${SOURCE_FMU_CVODE_DIR}/src)
+  get_filename_component(source_file_name ${source_file} NAME)
+  list(APPEND SOURCE_FMU_CVODE_FILES_LIST_QUOTED "\"cvode_sources/${source_file_name}\"")
+endforeach()
+
+foreach(include_dir cvode nvector sundials sunlinsol sunmatrix sunmemory sunnonlinsol)
+  install(DIRECTORY ${3RD_SUNDIALS_DIR}/include/${include_dir}
+          DESTINATION ${SOURCE_FMU_CVODE_DIR}/include
+          FILES_MATCHING PATTERN "*.h")
+endforeach()
+
+# The generated configuration describes the compiler OpenModelica was built with;
+# leave out what another one might not support.
+file(READ ${SUNDIALS_BINARY_DIR}/include/sundials/sundials_config.h SUNDIALS_FMU_CONFIG)
+string(REGEX REPLACE "#define SUNDIALS_C_COMPILER_HAS_[A-Z_]+\n" "" SUNDIALS_FMU_CONFIG "${SUNDIALS_FMU_CONFIG}")
+string(REPLACE "#define SUNDIALS_HAVE_POSIX_TIMERS\n" "" SUNDIALS_FMU_CONFIG "${SUNDIALS_FMU_CONFIG}")
+string(REPLACE "#include \"sundials/sundials_export.h\""
+               "#ifndef SUNDIALS_STATIC_DEFINE\n#define SUNDIALS_STATIC_DEFINE\n#endif\n#include \"sundials/sundials_export.h\""
+               SUNDIALS_FMU_CONFIG "${SUNDIALS_FMU_CONFIG}")
+string(REPLACE "#endif /* _SUNDIALS_CONFIG_H */"
+               "#if !defined(_WIN32)\n#define SUNDIALS_HAVE_POSIX_TIMERS\n#endif\n\n#endif /* _SUNDIALS_CONFIG_H */"
+               SUNDIALS_FMU_CONFIG "${SUNDIALS_FMU_CONFIG}")
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/fmu_sundials/sundials_config.h "${SUNDIALS_FMU_CONFIG}")
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/fmu_sundials/sundials_config.h
+              ${SUNDIALS_BINARY_DIR}/include/sundials/sundials_export.h
+        DESTINATION ${SOURCE_FMU_CVODE_DIR}/include/sundials)
+
+file(GLOB 3RD_KLU_FMU_FILES ${3RD_SUITESPARSE_DIR}/KLU/Source/klu*.c)
+list(FILTER 3RD_KLU_FMU_FILES EXCLUDE REGEX "/klu_z[^/]*\\.c$")
+file(GLOB 3RD_SUITESPARSE_FMU_FILES ${3RD_SUITESPARSE_DIR}/AMD/Source/*.c
+                                    ${3RD_SUITESPARSE_DIR}/BTF/Source/*.c
+                                    ${3RD_SUITESPARSE_DIR}/COLAMD/Source/*.c)
+list(APPEND 3RD_SUITESPARSE_FMU_FILES ${3RD_KLU_FMU_FILES}
+                                      ${3RD_SUITESPARSE_DIR}/SuiteSparse_config/SuiteSparse_config.c)
+file(GLOB 3RD_SUITESPARSE_FMU_PRIVATE_HEADERS ${3RD_SUITESPARSE_DIR}/AMD/Include/*_internal.h
+                                              ${3RD_SUITESPARSE_DIR}/BTF/Include/*_internal.h
+                                              ${3RD_SUITESPARSE_DIR}/KLU/Include/*_internal.h
+                                              ${3RD_SUITESPARSE_DIR}/KLU/Include/klu_version.h)
+install(FILES ${3RD_SUITESPARSE_FMU_FILES} ${3RD_SUITESPARSE_FMU_PRIVATE_HEADERS}
+        DESTINATION ${SOURCE_FMU_CVODE_DIR}/src)
+list(SORT 3RD_SUITESPARSE_FMU_FILES)
+foreach(source_file_full_path ${3RD_SUITESPARSE_FMU_FILES})
+  get_filename_component(source_file ${source_file_full_path} NAME)
+  list(APPEND SOURCE_FMU_CVODE_FILES_LIST_QUOTED "\"cvode_sources/${source_file}\"")
+endforeach()
+list(JOIN SOURCE_FMU_CVODE_FILES_LIST_QUOTED ",\n                                     " SOURCE_FMU_CVODE_FILES)
+
+# SuiteSparse's timer needs clock_gettime, which MinGW has only in winpthreads.
+file(READ ${3RD_SUITESPARSE_DIR}/SuiteSparse_config/SuiteSparse_config.h SUITESPARSE_FMU_CONFIG)
+string(REPLACE "// determine which timer to use, if any"
+               "#ifndef NTIMER\n#define NTIMER\n#endif\n\n// determine which timer to use, if any"
+               SUITESPARSE_FMU_CONFIG "${SUITESPARSE_FMU_CONFIG}")
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/fmu_suitesparse/SuiteSparse_config.h "${SUITESPARSE_FMU_CONFIG}")
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/fmu_suitesparse/SuiteSparse_config.h
+              ${3RD_SUITESPARSE_DIR}/AMD/Include/amd.h
+              ${3RD_SUITESPARSE_DIR}/BTF/Include/btf.h
+              ${3RD_SUITESPARSE_DIR}/COLAMD/Include/colamd.h
+              ${3RD_SUITESPARSE_DIR}/KLU/Include/klu.h
+        DESTINATION ${SOURCE_FMU_CVODE_DIR}/include)
 
 # ######################################################################################################################
 # Library: SimulationRuntimeFMI

@@ -822,7 +822,7 @@ public uniontype FmiSimulationFlags
   end FMI_SIMULATION_FLAGS_FILE;
 end FmiSimulationFlags;
 
-constant FmiSimulationFlags defaultFmiSimulationFlags = FMI_SIMULATION_FLAGS({("s","euler")});
+constant FmiSimulationFlags defaultFmiSimulationFlags = FMI_SIMULATION_FLAGS({("s","cvode")});
 
 annotation(__OpenModelica_Interface="simcode_types");
 end SimCode;
