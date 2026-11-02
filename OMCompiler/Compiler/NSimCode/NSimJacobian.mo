@@ -300,6 +300,7 @@ public
   uniontype Sparsity
     record SPARSITY
       list<SparsityRow> rows;
+      Boolean resizable "the model has variables with resizable dimensions";
     end SPARSITY;
 
     record EMPTY
@@ -309,6 +310,7 @@ public
       input Adjacency.Matrix mat;
       input list<SimVar> resVars;
       input Boolean isAdjoint;
+      input Boolean resizable;
       output Sparsity sparsity;
     protected
       list<SparsityRow> rows;
@@ -322,7 +324,7 @@ public
           if not isAdjoint then
             rows := SparsityRow.sortByResultVars(rows, resVars);
           end if;
-        then SPARSITY(rows);
+        then SPARSITY(rows, resizable);
         case Adjacency.EMPTY() then EMPTY();
 
         else algorithm
@@ -336,7 +338,7 @@ public
       output OldSimCode.Sparsity oldsparsity;
     algorithm
       oldsparsity := match sparsity
-        case SPARSITY() then OldSimCode.SPARSITY(list(SparsityRow.convert(row) for row in sparsity.rows));
+        case SPARSITY() then OldSimCode.SPARSITY(list(SparsityRow.convert(row) for row in sparsity.rows), sparsity.resizable);
         case EMPTY() then OldSimCode.EMPTY();
       end match;
     end convert;
@@ -603,7 +605,7 @@ public
             constantEqns        = {},
             columnVars          = tmpVars,
             seedVars            = seedVars,
-            sparsityMatrix      = Sparsity.create(jacobian.sparsity, resVars, jacobian.isAdjoint),
+            sparsityMatrix      = Sparsity.create(jacobian.sparsity, resVars, jacobian.isAdjoint, indices.resizable),
             generic_loop_calls  = generic_loop_calls,
             jac_map             = SOME(jac_map),
             isAdjoint           = jacobian.isAdjoint,

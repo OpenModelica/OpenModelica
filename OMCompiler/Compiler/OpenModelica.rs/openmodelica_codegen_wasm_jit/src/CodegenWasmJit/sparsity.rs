@@ -109,7 +109,7 @@ fn nls_jac_pattern_static(jm: &SimCode::JacobianMatrix, n: usize) -> Option<NlsJ
 /// at build time. A regular whole-array dependency of a whole-array unknown pairs
 /// element-wise (`resizableColCountRegular`); everything else is the cross product.
 fn resizable_rows_by_col(jm: &SimCode::JacobianMatrix, n_cols: usize, n_rows: usize) -> Option<Vec<Vec<i32>>> {
-    let SimCode::Sparsity::SPARSITY { rows } = &jm.sparsityMatrix else {
+    let SimCode::Sparsity::SPARSITY { rows, .. } = &jm.sparsityMatrix else {
         return None;
     };
     let slots = JacArraySlots::of(jm)?;
@@ -525,7 +525,7 @@ pub(super) fn sparsity_nonzeros(jm: &SimCode::JacobianMatrix) -> Option<usize> {
         return Some(lst(&jm.sparsity).map(|(_, rows)| count(rows)).sum());
     }
     match &jm.sparsityMatrix {
-        SimCode::Sparsity::SPARSITY { rows } => Some(lst(rows).map(|r| count(&r.dependencies)).sum()),
+        SimCode::Sparsity::SPARSITY { rows, .. } => Some(lst(rows).map(|r| count(&r.dependencies)).sum()),
         SimCode::Sparsity::EMPTY => None,
     }
 }
@@ -627,7 +627,7 @@ pub(super) fn jac_pattern_info(jac: &SimCode::JacobianMatrix, n: usize) -> Optio
 /// layout: the constant-size states in `stateVars` order, then the runtime-sized.
 pub(super) fn sym_jac_a(sim_code: &SimCode::SimCode, sizes: &mut SizeParams) -> Option<SymPattern> {
     let jm = jac_a_matrix(sim_code)?;
-    let SimCode::Sparsity::SPARSITY { rows } = &jm.sparsityMatrix else {
+    let SimCode::Sparsity::SPARSITY { rows, .. } = &jm.sparsityMatrix else {
         return None;
     };
     let mut fixed: Vec<(String, Vec<Sz>)> = Vec::new();
@@ -661,7 +661,7 @@ pub(super) fn sym_nls_jac(
     unknowns: Vec<(String, Vec<Sz>)>,
     sizes: &mut SizeParams,
 ) -> Option<SymNlsJac> {
-    let SimCode::Sparsity::SPARSITY { rows } = &jm.sparsityMatrix else {
+    let SimCode::Sparsity::SPARSITY { rows, .. } = &jm.sparsityMatrix else {
         return None;
     };
     let mut results: Vec<_> = jac_listed_vars(jm)
