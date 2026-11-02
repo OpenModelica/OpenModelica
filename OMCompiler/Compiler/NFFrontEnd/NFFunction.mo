@@ -2150,6 +2150,21 @@ uniontype Function
     output Boolean isImpure = fn.attributes.purity == DAE.Purity.IMPURE;
   end isImpure;
 
+  function isExplicitlyImpure
+    "Returns true if the function is declared impure, as opposed to e.g. an
+     external function that is impure by default."
+    input Function fn;
+    output Boolean isImpure;
+  algorithm
+    isImpure := match InstNode.fromHandle(fn.node)
+      local
+        SCode.FunctionRestriction fr;
+      case InstNode.CLASS_NODE(definition = SCode.CLASS(restriction = SCode.R_FUNCTION(functionRestriction = fr)))
+        then SCodeUtil.isImpureFunctionRestriction(fr);
+      else false;
+    end match;
+  end isExplicitlyImpure;
+
   function isFunctionPointer
     input Function fn;
     output Boolean isPointer = fn.attributes.isFunctionPointer;

@@ -2,11 +2,10 @@
 // suite: stackoverflow
 
 loadString("model StackOverflowTest
-  impure function f
+  function f
     output Real r = 2;
   algorithm
     f();
-    print(\"Can't get here, can you?\n\");
   end f;
   constant Real r = f();
 end StackOverflowTest;");
@@ -18,6 +17,6 @@ getErrorString();
 // true
 // ""
 // ""
-// "[<interactive>:2:3-8:8:writable] Error: The recursion limit (--evalRecursionLimit=256) was exceeded during evaluation of StackOverflowTest.f.
+// "[<interactive>:2:3-6:8:writable] Error: The recursion limit (--evalRecursionLimit=256) was exceeded during evaluation of StackOverflowTest.f.
 // "
 // endResult

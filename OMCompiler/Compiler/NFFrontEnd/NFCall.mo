@@ -416,7 +416,11 @@ public
     ty := Function.returnType(func);
     ty := resolvePolymorphicReturnType(func, typed_args, ty);
 
-    if var == Variability.PARAMETER and Function.isExternal(func) then
+    if Function.isExplicitlyImpure(func) and not InstContext.inScripting(context) then
+      // Calls of impure functions must not be evaluated during translation,
+      // MLS 3.7 section 12.3.
+      var := Prefixes.variabilityMax(var, Variability.NON_STRUCTURAL_PARAMETER);
+    elseif var == Variability.PARAMETER and Function.isExternal(func) then
       // Mark external functions with parameter expressions as non-structural,
       // to avoid them being marked as structural unnecessarily.
       var := Variability.NON_STRUCTURAL_PARAMETER;
