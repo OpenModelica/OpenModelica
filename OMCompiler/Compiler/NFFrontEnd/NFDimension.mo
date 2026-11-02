@@ -294,6 +294,48 @@ public
     output Integer outSize = product(Dimension.size(d, resize) for d in dims);
   end sizesProduct;
 
+  function sizesProductSymbolic
+    "Returns the size of a list of dimensions as sz * product(exps).
+     This function assumes that the input sz and exps are for the element type
+     of the array type the dimensions are from, and will include them in the
+     product. The optional variable is used to create a size expressions for
+     any : dimensions."
+    input list<Dimension> dims;
+    input output Integer sz = 1;
+    input output list<Expression> exps = {};
+    input Option<ComponentRef> variable;
+  protected
+    Integer index = 1;
+    ComponentRef cref;
+  algorithm
+    for dim in dims loop
+      if isKnown(dim) then
+        sz := sz * Dimension.size(dim);
+      elseif isUnknown(dim) and isSome(variable) then
+        SOME(cref) := variable;
+        exps := Expression.SIZE(Expression.fromCref(cref), SOME(Expression.INTEGER(index))) :: exps;
+      else
+        exps := sizeExp(dim) :: exps;
+      end if;
+
+      index := index + 1;
+    end for;
+
+    if not listEmpty(exps) then
+      if sz == 0 or List.any(exps, Expression.isZero) then
+        sz := 0;
+        exps := {};
+      else
+        if sz <> 1 then
+          exps := Expression.INTEGER(sz) :: exps;
+        end if;
+
+        sz := 0;
+        exps := {Expression.MULTARY(exps, {}, Operator.makeMul(Type.INTEGER()))};
+      end if;
+    end if;
+  end sizesProductSymbolic;
+
   function isEqual
     input Dimension dim1;
     input Dimension dim2;

@@ -56,6 +56,8 @@ public
   import NFFunction.Function;
   import Record = NFRecord;
   import UnorderedMap;
+  import ComponentRef = NFComponentRef;
+  import Expression = NFExpression;
 
   type FunctionType = enumeration(
     FUNCTIONAL_PARAMETER "Function parameter of function type.",
@@ -1651,6 +1653,65 @@ public
                                                       else NONE();
     end match;
   end complexSize;
+
+  function sizeOfSymbolic
+    "Returns the size of a type symbolically as sz + sum(exps), where sz represents
+     the known sizes and exps the unknown. For example, Real[2, n] = 2*n."
+    input Type ty;
+    input output Integer sz = 0;
+    input output list<Expression> exps = {};
+    input Option<ComponentRef> variable = NONE() "The variable the type is from, if any. Used to create size-expressions for : dimensions";
+  protected
+    Integer s;
+    list<Expression> e;
+
+    function fold_comp_size
+      input InstNode comp;
+      input output tuple<Integer, list<Expression>> size;
+    protected
+      Integer sz;
+      list<Expression> exps;
+    algorithm
+      (sz, exps) := size;
+      (sz, exps) := sizeOfSymbolic(InstNode.getType(comp), sz, exps);
+      size := (sz, exps);
+    end fold_comp_size;
+  algorithm
+    (sz, exps) := match ty
+      case INTEGER() then (sz + 1, exps);
+      case REAL() then (sz + 1, exps);
+      case STRING() then (sz + 1, exps);
+      case BOOLEAN() then (sz + 1, exps);
+      case CLOCK() then (sz + 1, exps);
+      case ENUMERATION() then (sz + 1, exps);
+
+      case ARRAY()
+        algorithm
+          (s, e) := sizeOfSymbolic(ty.elementType);
+          (s, e) := Dimension.sizesProductSymbolic(ty.dimensions, s, e, variable);
+        then
+          (sz + s, listAppend(e, exps));
+
+      case TUPLE()
+        algorithm
+          for t in ty.types loop
+            (sz, exps) := sizeOfSymbolic(t, sz, exps);
+          end for;
+        then
+          (sz, exps);
+
+      case COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT()) then (sz + 1, exps);
+
+      case COMPLEX(complexTy = ComplexType.RECORD())
+        algorithm
+          (s, e) := ClassTree.foldComponents(Class.classTree(InstNode.getClass(complexNode(ty))), fold_comp_size, (0, {}));
+        then
+          (sz + s, listAppend(e, exps));
+
+      case COMPLEX() then (sz + 1, exps);
+      else (sz, exps);
+    end match;
+  end sizeOfSymbolic;
 
   annotation(__OpenModelica_Interface="nf_frontend");
 end NFType;

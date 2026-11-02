@@ -117,7 +117,7 @@ checkModel(PowerSystems.Examples.AC3ph.Inverters.Rectifier); getErrorString();
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2 completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2 has 2860 equation(s) and 2860 variable(s).
-// 2361 of these are trivial equation(s)."
+// 2343 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheel completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheel has 947 equation(s) and 947 variable(s).

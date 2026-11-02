@@ -85,7 +85,7 @@ import Error;
 import ErrorExt;
 import ExecStat;
 import Expression;
-protected import ExpressionBasics;
+import ExpressionBasics;
 import FBuiltin;
 import FGraph;
 import Figaro;
@@ -106,6 +106,7 @@ import LexerModelicaDiff;
 import List;
 import Lookup;
 import NFApi;
+import NFCheckModel;
 import NFConvertDAE;
 import NFFlatModel;
 import NFFlatten;
@@ -6791,8 +6792,10 @@ algorithm
       Option<DAE.DAElist> odae;
       DAE.DAElist dae;
       Integer eqnSize,varSize,simpleEqnSize;
-      String retStr,classNameStr;
+      String retStr,classNameStr, eqnsStr, varsStr;
       Flags.Flag flags;
+      NFFlatModel flatModel;
+      NFExpression eqnSizeExp, varSizeExp;
 
     // handle normal models
     case ()
@@ -6801,9 +6804,19 @@ algorithm
         flags := loadCommandLineOptionsFromModel(className);
 
         try
-          (cache, _, odae) := runFrontEnd(cache, env, className, false);
-          SOME(dae) := odae;
-          (varSize, eqnSize, simpleEqnSize) := CheckModel.checkModel(dae);
+          if Flags.isSet(Flags.SCODE_INST) then
+            flatModel := runFrontEndNF(className);
+            (varSizeExp, eqnSizeExp, simpleEqnSize) := NFCheckModel.checkModel(flatModel);
+            varsStr := NFExpression.toString(varSizeExp);
+            eqnsStr := NFExpression.toString(eqnSizeExp);
+          else
+            (cache, _, odae) := runFrontEnd(cache, env, className, false);
+            SOME(dae) := odae;
+            (varSize, eqnSize, simpleEqnSize) := CheckModel.checkModel(dae);
+            varsStr := String(varSize);
+            eqnsStr := String(eqnSize);
+          end if;
+
           FlagsUtil.saveFlags(flags);
         else
           FlagsUtil.saveFlags(flags);
@@ -6811,8 +6824,8 @@ algorithm
         end try;
 
         classNameStr := AbsynUtil.pathString(className);
-        retStr := stringAppendList({"Check of ",classNameStr," completed successfully.\nClass ",classNameStr," has ",String(eqnSize)," equation(s) and ",
-          String(varSize)," variable(s).\n",String(simpleEqnSize)," of these are trivial equation(s)."});
+        retStr := stringAppendList({"Check of ",classNameStr," completed successfully.\nClass ",classNameStr," has ",eqnsStr," equation(s) and ",
+          varsStr," variable(s).\n",String(simpleEqnSize)," of these are trivial equation(s)."});
       then Values.STRING(retStr);
 
     case ()
