@@ -6506,7 +6506,8 @@ template resizableJacobianRows(list<JacobianColumn> columns, Sparsity sparsity, 
   let nRows = (columns |> JAC_COLUMN() => numberOfResultVars; separator="\n")
   match context
   case JACOBIAN_CONTEXT(jacHT = jacHT as SOME(_)) then
-    if hasSymbolicDims(jacobianResultVars(sparsity, jacHT)) then numScalarElemsExp(jacobianResultVars(sparsity, jacHT)) else nRows
+    (match jacobianResultVars(sparsity, jacHT)
+     case vars then if hasSymbolicDims(vars) then numScalarElemsExp(vars) else nRows)
   else nRows
 end resizableJacobianRows;
 

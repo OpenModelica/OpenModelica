@@ -1542,19 +1542,18 @@ public function jacobianResultVars
   output list<SimCodeVar.SimVar> vars = {};
 protected
   HashTableCrefSimVar.HashTable ht;
-  list<DAE.ComponentRef> crefs = {};
   list<SimCode.SparsityRow> rows;
+  UnorderedSet<DAE.ComponentRef> crefs = UnorderedSet.new(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
 algorithm
   try
     SOME(ht) := crefsHT;
     SimCode.SPARSITY(rows = rows) := sparsity;
     for row in rows loop
       for cr in row.solved_crefs loop
-        crefs := ComponentReference.crefStripSubs(cr) :: crefs;
+        UnorderedSet.add(ComponentReference.crefStripSubs(cr), crefs);
       end for;
     end for;
-    crefs := List.unique(listReverse(crefs));
-    vars := list(BaseHashTable.get(cr, ht) for cr in crefs);
+    vars := list(BaseHashTable.get(cr, ht) for cr in UnorderedSet.toList(crefs));
   else
     vars := {};
   end try;
