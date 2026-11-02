@@ -3976,7 +3976,6 @@ public
     end if;
   end differentiateBinding;
 
-protected
   function sizeClassificationFromType
     input Type ty;
     output Operator.SizeClassification sc;
@@ -3989,6 +3988,7 @@ protected
     end match;
   end sizeClassificationFromType;
 
+protected
   function minusOne
     input output Expression exp;
     input Operator op;

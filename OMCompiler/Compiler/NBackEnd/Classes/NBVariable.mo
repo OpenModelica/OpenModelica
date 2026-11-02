@@ -1227,6 +1227,19 @@ function isJacobianResultVar
     b := StringUtil.startsWith(ComponentRef.firstName(getVarName(var_ptr)), FUNCTION_STR);
   end isFunctionAlias;
 
+  function isFunctionAliasOrElement
+    "true for function alias variables and the elements of function alias records"
+    input Pointer<Variable> var_ptr;
+    output Boolean b;
+  algorithm
+    b := match getParent(var_ptr)
+      local
+        Pointer<Variable> parent;
+      case SOME(parent) then isFunctionAliasOrElement(parent);
+      else isFunctionAlias(var_ptr);
+    end match;
+  end isFunctionAliasOrElement;
+
   function isClockAlias
     extends checkVar;
   algorithm

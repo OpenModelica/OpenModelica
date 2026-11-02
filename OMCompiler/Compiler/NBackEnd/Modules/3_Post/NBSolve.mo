@@ -352,7 +352,7 @@ public
         // a single row of an array equation solved for a scalar, e.g. x from row 1 of v = fill(1, 3) .* x
         case StrongComponent.SLICED_COMPONENT() guard(Equation.isArrayEquation(Slice.getT(comp.eqn))
           and List.hasOneElement(comp.eqn.indices) and not Type.isArray(ComponentRef.getSubscriptedType(comp.var_cref, true))) algorithm
-          eqn := arrayRowEquation(Slice.getT(comp.eqn), listHead(comp.eqn.indices));
+          eqn := Equation.arrayRow(Slice.getT(comp.eqn), listHead(comp.eqn.indices));
           (eqn, solve_status, implicit_index) := solveSingleStrongComponent(eqn, Variable.fromCref(comp.var_cref), funcMap, kind, implicit_index, slicing_map, varData, eqData);
           if solve_status < Status.UNSOLVABLE then
             comp.eqn := Slice.SLICE(Pointer.create(eqn), {});
@@ -2216,35 +2216,6 @@ protected
       end if;
     end if;
   end getVarSlice;
-
-  function arrayRowEquation
-    "the scalar equation of one row of an array equation"
-    input Pointer<Equation> eqn_ptr;
-    input Integer index "zero based";
-    output Equation row;
-  protected
-    Equation eqn = Pointer.access(eqn_ptr);
-    list<Subscript> subs;
-    Type ty;
-  algorithm
-    subs := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in Slice.indexToLocation(index, Equation.sizes(eqn_ptr)));
-    ty := Type.arrayElementType(Equation.getType(eqn));
-    row := Equation.SCALAR_EQUATION(ty, rowElement(Util.getOption(Equation.getLHS(eqn)), subs),
-      rowElement(Util.getOption(Equation.getRHS(eqn)), subs), Equation.getSource(eqn), Equation.getAttributes(eqn));
-  end arrayRowEquation;
-
-  function rowElement
-    "the element of an array expression, expanded to make it solvable"
-    input Expression exp;
-    input list<Subscript> subs;
-    output Expression element;
-  protected
-    Expression expanded;
-    Boolean success;
-  algorithm
-    (expanded, success) := ExpandExp.expand(exp, true);
-    element := SimplifyExp.simplify(Expression.applySubscripts(subs, if success then expanded else exp));
-  end rowElement;
 
   function solveForVarSlice
     input output Slice<EquationPointer> eqn_slice;

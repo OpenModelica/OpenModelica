@@ -1358,20 +1358,8 @@ protected
 
   function isFunctionAliasElement
     input ComponentRef cref;
-    output Boolean b = isFunctionAliasOrElement(BVariable.getVarPointer(cref, sourceInfo()));
+    output Boolean b = BVariable.isFunctionAliasOrElement(BVariable.getVarPointer(cref, sourceInfo()));
   end isFunctionAliasElement;
-
-  function isFunctionAliasOrElement
-    input Pointer<Variable> var_ptr;
-    output Boolean b;
-  algorithm
-    b := match BVariable.getParent(var_ptr)
-      local
-        Pointer<Variable> parent;
-      case SOME(parent) then isFunctionAliasOrElement(parent);
-      else BVariable.isFunctionAlias(var_ptr);
-    end match;
-  end isFunctionAliasOrElement;
 
   function isRecordElement
     input ComponentRef cref;

@@ -833,18 +833,6 @@ protected
     ));
   end jacobianSymbolic;
 
-  function sizeClassificationFromType
-    input Type ty;
-    output SizeClassification sc;
-  algorithm
-    sc := match Type.dimensionCount(ty)
-      case 0 then SizeClassification.SCALAR;
-      case 1 then SizeClassification.ELEMENT_WISE;
-      case 2 then SizeClassification.MATRIX;
-      else SizeClassification.ELEMENT_WISE;
-    end match;
-  end sizeClassificationFromType;
-
   // Helper: build addition (or single term) expression from a list of terms for a given LHS cref.
   function buildAdjointRhs
     input ComponentRef lhsCref;
@@ -868,7 +856,7 @@ protected
       return;
     end if;
 
-    sc := sizeClassificationFromType(vty);
+    sc := Differentiate.sizeClassificationFromType(vty);
     addOp := Operator.fromClassification(
       (MathClassification.ADDITION, sc),
       vty
@@ -1200,7 +1188,7 @@ protected
               if Expression.containsCref(rhs_x, pDerX) then
                 accRhs := rhs_x;
               else
-                sc_x := sizeClassificationFromType(vty);
+                sc_x := Differentiate.sizeClassificationFromType(vty);
                 addOp_x := Operator.fromClassification((MathClassification.ADDITION, sc_x), vty);
                 accRhs := SimplifyExp.simplify(Expression.MULTARY({Expression.fromCref(pDerX), rhs_x}, {}, addOp_x));
               end if;

@@ -506,7 +506,7 @@ public
       list<ComponentRef> names;
     algorithm
       (names, _, _) := Iterator.getFrames(iter);
-      if not listEmpty(names) and List.any(exps, function Expression.contains(func = function isIteratorCref(names = names))) then
+      if not listEmpty(names) and List.any(exps, function Expression.contains(func = function BackendUtil.isIteratorOf(names = names))) then
         event_iter := iter;
       end if;
     end eventIterator;
@@ -2067,17 +2067,6 @@ protected
       then cond;
     end match;
   end simplifyWhenConditionExp;
-
-  function isIteratorCref
-    input Expression exp;
-    input list<ComponentRef> names;
-    output Boolean b;
-  algorithm
-    b := match exp
-      case Expression.CREF() then List.isMemberOnTrue(exp.cref, names, ComponentRef.isEqual);
-      else false;
-    end match;
-  end isIteratorCref;
 
   function containsTimeTraverseExp
     input output Expression exp;
