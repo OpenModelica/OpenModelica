@@ -1,0 +1,19 @@
+// name:     FillSubscriptsTest
+// keywords: inStream reduction
+// status:   correct
+//
+// Checks Buildings.Fluid.HeatExchangers.BaseClasses.Examples.Manifold, which
+// has sum reductions of array-valued inStream.
+//
+
+loadFile("FillSubscriptsTest.mo"); getErrorString();
+checkModel(Manifold); getErrorString();
+
+// Result:
+// true
+// ""
+// "Check of Manifold completed successfully.
+// Class Manifold has 510 equation(s) and 510 variable(s).
+// 426 of these are trivial equation(s)."
+// ""
+// endResult

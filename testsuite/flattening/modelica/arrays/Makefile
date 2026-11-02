@@ -116,7 +116,7 @@ EmptyArrayAlgorithm.mo \
 EmptyArray.mo \
 EmptyArraySubscript.mo \
 EmptyAsubSliceSubscript.mo \
-FillSubscriptsTest.mo \
+FillSubscriptsTest.mos \
 FixedFinalParameter.mo \
 InOutArray2.mo \
 InOutArray.mo \
