@@ -466,6 +466,7 @@ end SparsityRow;
   uniontype Sparsity
     record SPARSITY
       list<SparsityRow> rows;
+      Boolean resizable;
     end SPARSITY;
 
     record EMPTY

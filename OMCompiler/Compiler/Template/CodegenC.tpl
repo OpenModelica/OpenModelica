@@ -6504,10 +6504,13 @@ template resizableJacobianRows(list<JacobianColumn> columns, Sparsity sparsity, 
   variables the sparsity rows are solved for."
 ::=
   let nRows = (columns |> JAC_COLUMN() => numberOfResultVars; separator="\n")
-  match context
-  case JACOBIAN_CONTEXT(jacHT = jacHT as SOME(_)) then
-    (match jacobianResultVars(sparsity, jacHT)
-     case vars then if hasSymbolicDims(vars) then numScalarElemsExp(vars) else nRows)
+  match sparsity
+  case SPARSITY(resizable = true) then
+    (match context
+     case JACOBIAN_CONTEXT(jacHT = jacHT as SOME(_)) then
+       (match jacobianResultVars(sparsity, jacHT)
+        case vars then if hasSymbolicDims(vars) then numScalarElemsExp(vars) else nRows)
+     else nRows)
   else nRows
 end resizableJacobianRows;
 

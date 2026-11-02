@@ -148,6 +148,7 @@ public
 
       UnorderedMap<AliasInfo, Integer> alias_map;
       UnorderedMap<Identifier, Integer> generic_call_map;
+      Boolean resizable "the model has variables with resizable dimensions";
     end SIM_CODE_INDICES;
   end SimCodeIndices;
 
@@ -184,7 +185,8 @@ public
       1,0,0,
       0,0,0,0,
       UnorderedMap.new<Integer>(AliasInfo.hash, AliasInfo.isEqual),
-      UnorderedMap.new<Integer>(Identifier.hash, Identifier.isEqual)
+      UnorderedMap.new<Integer>(Identifier.hash, Identifier.isEqual),
+      false
     );
   end EMPTY_SIM_CODE_INDICES;
 
@@ -360,6 +362,7 @@ public
           algorithm
             // somehow this cannot be set at definition (metamodelica bug?)
             simCodeIndices := EMPTY_SIM_CODE_INDICES();
+            simCodeIndices.resizable := List.any(VariablePointers.toList(varData.variables), BVariable.isResizable);
             funcMap := BackendDAE.getFunctionMap(bdae);
 
             // get and replace all literals in functions

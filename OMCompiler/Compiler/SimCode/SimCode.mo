@@ -97,6 +97,7 @@ uniontype Sparsity
   "the new resizable sparsity pattern for the NB"
   record SPARSITY
     list<SparsityRow> rows;
+    Boolean resizable "the model has variables with resizable dimensions";
   end SPARSITY;
 
   record EMPTY
