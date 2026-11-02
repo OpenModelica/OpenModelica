@@ -652,19 +652,33 @@ public
   end solveSliceElementwise;
 
   function expandReduction
-    "expands sum and product reductions over constant ranges, e.g.
-    sum(x[1, j] for j in 1:3) -> x[1, 1] + x[1, 2] + x[1, 3]"
+    "expands sum and product reductions over constant ranges and of arrays, e.g.
+    sum(x[1, j] for j in 1:3) -> x[1, 1] + x[1, 2] + x[1, 3], sum(x[1, :]) -> x[1, 1] + x[1, 2]"
     input output Expression exp;
   protected
     Call call;
     String name;
     Type ty;
     Operator op;
-    Expression default_exp, range;
+    Expression default_exp, range, arg;
     Boolean expanded;
     list<tuple<NFInstNode.InstNode, Expression>> iters = {};
   algorithm
     exp := match exp
+      case Expression.CALL(call = call as Call.TYPED_CALL(arguments = {arg})) algorithm
+        name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
+        ty := Type.arrayElementType(Expression.typeOf(arg));
+        if not (name == "sum" or name == "product") or not Type.isArray(Expression.typeOf(arg)) or Type.isRecord(ty) then
+          return;
+        end if;
+        (arg, expanded) := ExpandExp.expand(arg, true);
+        if not expanded then
+          return;
+        end if;
+        (default_exp, op) := if name == "sum" then (Expression.makeZero(ty), Operator.makeAdd(ty))
+                             else (Expression.makeOne(ty), Operator.makeMul(ty));
+      then SimplifyExp.simplify(List.fold(Expression.arrayScalarElements(arg), function makeBinary(op = op), default_exp));
+
       case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
         name := AbsynUtil.pathString(Function.name(call.fn));
         ty := Expression.typeOf(call.exp);

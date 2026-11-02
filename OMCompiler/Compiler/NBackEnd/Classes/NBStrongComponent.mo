@@ -571,7 +571,8 @@ public
 
   function solvesInsideReduction
     "true if a scalar for-equation is solved for a cref with a whole dimension, e.g. x[i, :] for
-    y[i] = sum(x[i, j] for j in 1:n) matched to x[i, 1]. The cref does not determine the solved
+    y[i] = sum(x[i, j] for j in 1:n) matched to x[i, 1], or for an unsubscripted array, e.g. v[i].m
+    for v[i].mb = sum(v[i].m) matched to v[i].m[1]. The cref does not determine the solved
     elements, they have to be solved one by one. A whole dimension of an array equation inside
     the for-equation, e.g. a[i, :] = b * i, determines them."
     input Pointer<Equation> eqn_ptr;
@@ -584,7 +585,7 @@ public
       // a size one array equation, e.g. a[i, :] = b[1:1, i], determines the elements as well
       case Equation.FOR_EQUATION(body = {body}) then Equation.size(Pointer.create(body)) == 1
         and not Type.isArray(Equation.getType(body))
-        and List.any(ComponentRef.subscriptsAllFlat(cref), Subscript.isWhole);
+        and Type.isArray(ComponentRef.getSubscriptedType(cref, true));
       else false;
     end match;
   end solvesInsideReduction;

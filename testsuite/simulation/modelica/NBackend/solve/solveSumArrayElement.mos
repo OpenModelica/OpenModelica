@@ -1,0 +1,45 @@
+// name: solveSumArrayElement
+// keywords: NewBackend, solve, sum, for-loop, component array
+// status: correct
+// cflags: --newBackend
+// teardown_command: rm -rf solveSumArrayElement.A* output.log
+//
+// mb = sum(m) in a for-loop over a component array, matched to m[1],
+// is solved as m[1] = mb - m[2] and not for the whole array m.
+
+loadString("
+package solveSumArrayElement
+  model V
+    Real m[2];
+    Real mb;
+  equation
+    mb = sum(m);
+    m[2] = time;
+  end V;
+  model A
+    V v[2];
+  equation
+    for i in 1:2 loop
+      v[i].mb = 3*time;
+    end for;
+  end A;
+end solveSumArrayElement;
+"); getErrorString();
+
+simulate(solveSumArrayElement.A, stopTime = 1); getErrorString();
+val(v[1].m[1], 1.0);
+val(v[2].m[1], 0.5);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "solveSumArrayElement.A_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'solveSumArrayElement.A', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// 1.0
+// endResult
