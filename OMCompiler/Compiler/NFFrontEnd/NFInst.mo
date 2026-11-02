@@ -2716,10 +2716,7 @@ algorithm
     case Absyn.TPATH()
       algorithm
         (node, prefixes) := Lookup.lookupClassName(typeSpec.path, scope, context, info);
-
-        if instLevel >= 100 then
-          checkRecursiveDefinition(node, parent, limitReached = true);
-        end if;
+        checkRecursiveDefinition(node, parent, limitReached = instLevel >= 100);
 
         node := expand(node, context);
         (node, outAttributes) := instClass(node, modifier, attributes, useBinding, instLevel,
@@ -2774,6 +2771,11 @@ algorithm
         // using the instance API.
         InstNode.componentApply(component, Component.setClassInstance, InstNode.EMPTY_NODE());
         fail();
+      end if;
+
+      // The enclosing scopes of the root class are not part of the instance tree.
+      if InstNode.isRootClass(parent) then
+        break;
       end if;
 
       parent := InstNode.parent(parent);
