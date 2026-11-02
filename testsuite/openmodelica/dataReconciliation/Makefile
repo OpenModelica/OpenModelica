@@ -156,6 +156,11 @@ NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows1.mos \
 NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows3.mos \
 NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows7.mos \
 NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows9.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe7.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe8.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe10.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe11.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe12.mos \
 
 # The tests of NB_TESTFILES that fail in the initialization of the reconciled
 # system: NBTearing fails with "UnorderedMap.getSafe failed because the key did
