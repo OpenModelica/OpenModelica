@@ -70,7 +70,6 @@ FunctionEval10.mo \
 FunctionEval11.mo \
 FunctionEval12.mo \
 FunctionEvalBuiltin.mo \
-FunctionEvalFail.mo \
 FunctionEvalSlice.mo \
 FunctionInvalidVar1.mo \
 FunctionInvalidVar2.mo \
@@ -80,7 +79,6 @@ FunctionProtectedInput.mo \
 FunctionReturn.mo \
 FunctionSimple.mo \
 FunctionSimplex.mo \
-FunctionVariability.mo \
 GenStringArrayOutput.mos \
 IfExpression1.mo \
 InvalidFunctionBinding.mo \

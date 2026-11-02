@@ -6,7 +6,6 @@ BooleanDim.mo \
 BooleanEnumDims.mo \
 BooleanLiterals.mo \
 BooleanRanges.mo \
-CheckInstantiationLimit.mo \
 Circuit1.mo \
 Class1.mo \
 Class2.mo \
