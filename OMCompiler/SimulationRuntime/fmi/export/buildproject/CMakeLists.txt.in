@@ -66,6 +66,10 @@ set(RUST_SIM_RUNTIME_LIBRARY
     @RUST_SIM_RUNTIME_LIBRARY@
     CACHE FILEPATH
     "Prebuilt libSimulationRuntimeRust archive. Empty, or missing, builds it from rust/.")
+set(SIMULATION_RUNTIME_FMI_LIBRARY
+    ""
+    CACHE FILEPATH
+    "Prebuilt libSimulationRuntimeFMI archive of the exporting installation. Empty, or missing, compiles the C runtime from these sources.")
 
 if(NOT ${CMAKE_VERSION} VERSION_LESS "4.3")
   cmake_policy(SET CMP0207 NEW)
@@ -169,6 +173,17 @@ if(NOT ${NEED_CVODE})
                                        ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/sundials_util.c
                                        ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/cvode_solver.c)
 endif()
+# The archive holds the rest of the runtime, built with OM_HAVE_PTHREADS and
+# for the platform omc runs on.
+set(OM_LINK_SIMULATION_RUNTIME_FMI OFF)
+if(SIMULATION_RUNTIME_FMI_LIBRARY AND EXISTS "${SIMULATION_RUNTIME_FMI_LIBRARY}"
+   AND NOT OMC_RUST_SIMULATION_RUNTIME AND NOT CMAKE_CROSSCOMPILING AND OM_HAVE_PTHREADS
+   AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(OM_LINK_SIMULATION_RUNTIME_FMI ON)
+  list(FILTER FMU_RUNTIME_SOURCES INCLUDE REGEX
+       "/(fmi-export|ModelicaExternalC)/|/simulation/solver/(cvode_solver|sundials_error|sundials_util)\\.c$")
+  message(STATUS "C simulation runtime: ${SIMULATION_RUNTIME_FMI_LIBRARY}")
+endif()
 file(GLOB FMU_GENERATED_MODEL_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
 # <Model>_info.c is not a standalone translation unit; it is a bare string literal that gets
 # #included into <Model>_init_fmu.c (used by FMI 1.0). Remove it from the compiled sources so
@@ -253,6 +268,10 @@ endif()
 add_library(${FMU_NAME_HASH}
             ${FMU_RUNTIME_SOURCES}
             ${FMU_GENERATED_MODEL_SOURCES})
+
+if(OM_LINK_SIMULATION_RUNTIME_FMI)
+  target_link_libraries(${FMU_NAME_HASH} PRIVATE "${SIMULATION_RUNTIME_FMI_LIBRARY}")
+endif()
 
 # Set output name for the .dll's and .so files to use the full FMU name instead of fmu hash string
 set_target_properties(${FMU_NAME_HASH} PROPERTIES OUTPUT_NAME ${FMU_NAME})

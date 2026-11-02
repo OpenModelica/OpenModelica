@@ -3908,7 +3908,7 @@ protected
   String quote, dquote, defaultFmiIncludeDirectoy;
   String CC;
   SimCodeFunction.MakefileParams makefileParams;
-  String msvcEnv, rmrf;
+  String msvcEnv, rmrf, simrtLib;
 algorithm
   makefileParams := SimCodeFunctionUtil.createMakefileParams({}, {}, {}, false, true);
   fmuSourceDir := fmutmp+"/sources/";
@@ -3928,6 +3928,8 @@ algorithm
     rmrf := "rm -rf ";
   end if;
   defaultFmiIncludeDirectoy := dquote + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + dquote;
+  // Only a build for this platform can link the runtime omc was built with.
+  simrtLib := "-DSIMULATION_RUNTIME_FMI_LIBRARY=" + dquote + Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc/libSimulationRuntimeFMI.a" + dquote;
 
   // Set build type
   if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
@@ -3963,7 +3965,7 @@ algorithm
       algorithm
         buildDir := "build_cmake_dynamic";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
-                     CMAKE_BUILD_TYPE + " " + CC +
+                     CMAKE_BUILD_TYPE + " " + CC + " " + simrtLib +
                      " ..";
         cmd := msvcEnv + "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
@@ -3979,7 +3981,7 @@ algorithm
       algorithm
         buildDir := "build_cmake_static";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
-                     CMAKE_BUILD_TYPE + " " + CC +
+                     CMAKE_BUILD_TYPE + " " + CC + " " + simrtLib +
                      " ..";
         cmd := msvcEnv + "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
