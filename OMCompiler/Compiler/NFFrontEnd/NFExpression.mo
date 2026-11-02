@@ -318,6 +318,16 @@ public
     end match;
   end isCref;
 
+  function isSubscriptedExp
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case SUBSCRIPTED_EXP() then true;
+      else false;
+    end match;
+  end isSubscriptedExp;
+
   function isFunctionInputCref
     input Expression exp;
     output Boolean res;

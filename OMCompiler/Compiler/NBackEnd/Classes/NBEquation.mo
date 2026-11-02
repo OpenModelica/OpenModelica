@@ -1328,6 +1328,35 @@ public
       end match;
     end sizes;
 
+    function arrayRow
+      "the scalar equation of one row of an array equation"
+      input Pointer<Equation> eqn_ptr;
+      input Integer index "zero based";
+      output Equation row;
+    protected
+      Equation eqn = Pointer.access(eqn_ptr);
+      list<Subscript> subs;
+      Type ty;
+    algorithm
+      subs := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in Slice.indexToLocation(index, Equation.sizes(eqn_ptr)));
+      ty := Type.arrayElementType(Equation.getType(eqn));
+      row := Equation.SCALAR_EQUATION(ty, rowElement(Util.getOption(Equation.getLHS(eqn)), subs),
+        rowElement(Util.getOption(Equation.getRHS(eqn)), subs), Equation.getSource(eqn), Equation.getAttributes(eqn));
+    end arrayRow;
+
+    function rowElement
+      "the element of an array expression, expanded to make it solvable"
+      input Expression exp;
+      input list<Subscript> subs;
+      output Expression element;
+    protected
+      Expression expanded;
+      Boolean success;
+    algorithm
+      (expanded, success) := ExpandExp.expand(exp, true);
+      element := SimplifyExp.simplify(Expression.applySubscripts(subs, if success then expanded else exp));
+    end rowElement;
+
     function applyToType
       input output Pointer<Equation> eqn_ptr;
       input typeFunc func;
@@ -3644,35 +3673,13 @@ public
       output list<Pointer<Equation>> rows;
     protected
       Equation eqn = Pointer.access(eqn_ptr);
-      list<Integer> sizes;
-      list<Subscript> subs;
     algorithm
       rows := match eqn
-        case ARRAY_EQUATION() guard(Type.hasKnownSize(eqn.ty)) algorithm
-          sizes := Equation.sizes(eqn_ptr);
-          rows := {};
-          for i in Equation.size(eqn_ptr)-1:-1:0 loop
-            subs := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in Slice.indexToLocation(i, sizes));
-            rows := Pointer.create(SCALAR_EQUATION(Type.arrayElementType(eqn.ty), rowElement(eqn.lhs, subs),
-              rowElement(eqn.rhs, subs), eqn.source, eqn.attr)) :: rows;
-          end for;
-        then rows;
+        case ARRAY_EQUATION() guard(Type.hasKnownSize(eqn.ty))
+        then list(Pointer.create(Equation.arrayRow(eqn_ptr, i)) for i in 0:Equation.size(eqn_ptr) - 1);
         else {eqn_ptr};
       end match;
     end scalarRows;
-
-    function rowElement
-      "the element of an array expression, expanded to make it solvable"
-      input Expression exp;
-      input list<Subscript> subs;
-      output Expression element;
-    protected
-      Expression expanded;
-      Boolean success;
-    algorithm
-      (expanded, success) := ExpandExp.expand(exp, true);
-      element := SimplifyExp.simplify(Expression.applySubscripts(subs, if success then expanded else exp));
-    end rowElement;
 
     function sameSize
       input list<Pointer<Equation>> eqns;

@@ -78,6 +78,7 @@ protected
   // Backend imports
   import AliasInfo = NBStrongComponent.AliasInfo;
   import BackendDAE = NBackendDAE;
+  import BackendUtil = NBBackendUtil;
   import NBPartitioning.ClockedInfo;
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, Iterator};
@@ -698,7 +699,7 @@ public
           Boolean supported;
 
         case Expression.CALL(call = call as Call.TYPED_CALL(arguments = {_, _, _})) guard(isDelay(exp)) algorithm
-          delay_iters := list(it for it guard Expression.contains(exp, function isIteratorOf(names = SimIterator.names(it))) in iters);
+          delay_iters := list(it for it guard Expression.contains(exp, function BackendUtil.isIteratorOf(names = SimIterator.names(it))) in iters);
           delay_iters := List.sort(delay_iters, iteratorNameGt);
           names := List.flatten(list(SimIterator.names(it) for it in delay_iters));
           (_, n, supported) := SimIterator.flatIndex(delay_iters);
@@ -758,21 +759,10 @@ public
       end match;
     end isDelay;
 
-    function isIteratorOf
-      input Expression exp;
-      input list<ComponentRef> names;
-      output Boolean b;
-    algorithm
-      b := match exp
-        case Expression.CREF() then List.isMemberOnTrue(exp.cref, names, ComponentRef.isEqual);
-        else false;
-      end match;
-    end isIteratorOf;
-
     function isOtherIterator
       input Expression exp;
       input list<ComponentRef> names;
-      output Boolean b = Expression.isIterator(exp) and not isIteratorOf(exp, names);
+      output Boolean b = Expression.isIterator(exp) and not BackendUtil.isIteratorOf(exp, names);
     end isOtherIterator;
 
     function iteratorNameGt

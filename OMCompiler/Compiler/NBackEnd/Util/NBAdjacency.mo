@@ -1739,7 +1739,7 @@ public
             guard(sparsityIsUnitRange(arrayList(e_arr)))
             then Subscript.INDEX(sparsitySimplify(Expression.MULTARY({Expression.INTEGER(Expression.integerValue(arrayGet(e_arr, 1))), index},
               {Expression.INTEGER(1)}, Operator.makeAdd(Type.INTEGER()))));
-          case Subscript.INDEX(index = e) guard(Expression.contains(e, sparsityIsLookup)) algorithm
+          case Subscript.INDEX(index = e) guard(Expression.contains(e, Expression.isSubscriptedExp)) algorithm
             ok := false;
           then s;
           else s;
@@ -1766,16 +1766,6 @@ public
         next := next + 1;
       end for;
     end sparsityIsUnitRange;
-
-    function sparsityIsLookup
-      input Expression exp;
-      output Boolean b;
-    algorithm
-      b := match exp
-        case Expression.SUBSCRIPTED_EXP() then true;
-        else false;
-      end match;
-    end sparsityIsLookup;
 
     function sparsityTemplateKey
       "the element of a solved variable an elementwise array equation solves (see
