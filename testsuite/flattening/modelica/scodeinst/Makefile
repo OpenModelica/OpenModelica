@@ -54,6 +54,7 @@ BindingArray7.mo \
 BindingArray8.mo \
 BindingArray9.mo \
 BindingArray10.mo \
+BindingCycle1.mo \
 BindingInvalidType1.mo \
 BindingInvalidType2.mo \
 BindingInvalidType3.mo \

@@ -59,11 +59,11 @@ simulate(parameterTest13); getErrorString();
 // Known variables only depending on parameters and constants - globalKnownVars (6)
 // ========================================
 // 1: p3:PARAM()  = 5  type: Integer
-// 2: p2:PARAM()  = if b3 then p1 else p3  type: Integer
-// 3: p1:PARAM()  = if b2 then p2 else 0  type: Integer
-// 4: b3:PARAM()  = not b1  type: Boolean
-// 5: b2:PARAM()  = b1  type: Boolean
-// 6: b1:PARAM()  = true  type: Boolean
+// 2: p2:PARAM()  = p3  type: Integer
+// 3: p1:PARAM()  = p2  type: Integer
+// 4: b3:PARAM(final = true )  = false  type: Boolean
+// 5: b2:PARAM(final = true )  = true  type: Boolean
+// 6: b1:PARAM(final = true )  = true  type: Boolean
 //
 //
 //
@@ -80,10 +80,10 @@ simulate(parameterTest13); getErrorString();
 // ========================================
 // number of rows: 6
 // 1:
-// 2: 4 3 1
-// 3: 5 2
-// 4: 6
-// 5: 6
+// 2: 1
+// 3: 2
+// 4:
+// 5:
 // 6:
 //
 // Transposed Adjacency Matrix (row: variable)
@@ -91,30 +91,24 @@ simulate(parameterTest13); getErrorString();
 // number of rows: 6
 // 1: 2 1
 // 2: 3 2
-// 3: 3 2
-// 4: 4 2
-// 5: 5 3
-// 6: 6 5 4
+// 3: 3
+// 4: 4
+// 5: 5
+// 6: 6
 //
 //
 // After evaluating the selected parameters:
 // ================================================================================
 //
 // All replacements:
-// Replacements: (5)
+// Replacements: (2)
 // ========================================
-// b1 -> true
-// b3 -> false
-// b2 -> true
 // p3 -> 5
 // p2 -> 5
 //
 // Replacements that will be replaced in the DAE:
-// Replacements: (5)
+// Replacements: (2)
 // ========================================
-// b1 -> true
-// b3 -> false
-// b2 -> true
 // p3 -> 5
 // p2 -> 5
 //
@@ -122,14 +116,14 @@ simulate(parameterTest13); getErrorString();
 // ========================================
 // 1: p3:PARAM(final = true )  = 5  type: Integer
 // 2: p2:PARAM(final = true )  = 5  type: Integer
-// 3: p1:PARAM()  = if b2 then p2 else 0  type: Integer
-// 4: b3:PARAM(final = true )  = not b1  type: Boolean
-// 5: b2:PARAM(final = true )  = b1  type: Boolean
+// 3: p1:PARAM()  = p2  type: Integer
+// 4: b3:PARAM(final = true )  = false  type: Boolean
+// 5: b2:PARAM(final = true )  = true  type: Boolean
 // 6: b1:PARAM(final = true )  = true  type: Boolean
 //
 //
 // mark: 1
-// markarr: 1,1,1,1,1,1
+// markarr: 1,1,-1,-1,-1,-1
 //
 //
 // After sorting parameters:
@@ -139,7 +133,8 @@ simulate(parameterTest13); getErrorString();
 // 5
 // 4
 // 1
-// 3,2
+// 2
+// 3
 //
 //
 // After replacing the evaluated parameters in parameter bindings:
@@ -147,21 +142,21 @@ simulate(parameterTest13); getErrorString();
 // All replacements:
 // Replacements: (6)
 // ========================================
-// b1 -> true
-// b3 -> false
-// b2 -> true
 // p3 -> 5
 // p2 -> 5
+// b1 -> true
+// b2 -> true
+// b3 -> false
 // p1 -> 5
 //
 // Replacements that will be replaced in the DAE:
 // Replacements: (6)
 // ========================================
-// b1 -> true
-// b3 -> false
-// b2 -> true
 // p3 -> 5
 // p2 -> 5
+// b1 -> true
+// b2 -> true
+// b3 -> false
 // p1 -> 5
 //
 // globalKnownVars (6)
@@ -175,7 +170,7 @@ simulate(parameterTest13); getErrorString();
 //
 //
 // mark: 1
-// markarr: 1,1,1,1,1,1
+// markarr: 1,1,-1,-1,-1,-1
 //
 //
 // After replacing the evaluated parameters in variable bindings and start attributes:
@@ -183,21 +178,21 @@ simulate(parameterTest13); getErrorString();
 // All replacements:
 // Replacements: (6)
 // ========================================
-// b1 -> true
-// b3 -> false
-// b2 -> true
 // p3 -> 5
 // p2 -> 5
+// b1 -> true
+// b2 -> true
+// b3 -> false
 // p1 -> 5
 //
 // Replacements that will be replaced in the DAE:
 // Replacements: (6)
 // ========================================
-// b1 -> true
-// b3 -> false
-// b2 -> true
 // p3 -> 5
 // p2 -> 5
+// b1 -> true
+// b2 -> true
+// b3 -> false
 // p1 -> 5
 //
 // globalKnownVars (6)
@@ -211,7 +206,7 @@ simulate(parameterTest13); getErrorString();
 //
 //
 // mark: 1
-// markarr: 1,1,1,1,1,1
+// markarr: 1,1,-1,-1,-1,-1
 //
 //
 // ########################################
