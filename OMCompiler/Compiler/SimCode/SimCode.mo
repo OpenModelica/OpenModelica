@@ -252,6 +252,7 @@ uniontype DelayedExpression
   record DELAYED_EXPRESSIONS
     list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
     Integer maxDelayedIndex;
+    list<tuple<DAE.Exp, tuple<DAE.Exp, DAE.Exp, DAE.Exp>, list<BackendDAE.SimIterator>>> delayedLoops "delays in for-loops, the index depends on the iterators";
   end DELAYED_EXPRESSIONS;
 end DelayedExpression;
 

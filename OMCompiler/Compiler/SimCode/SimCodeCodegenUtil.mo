@@ -1228,7 +1228,8 @@ protected
   list<BackendDAE.VarKind> kinds = {};
   UnorderedSet<Integer> seen;
   UnorderedMap<Integer, DAE.Exp> map;
-  DAE.Exp exp;
+  Integer offset;
+  list<tuple<DAE.Exp, Integer>> terms;
   Boolean symbolic;
 algorithm
   vars := BaseHashTable.hashTableValueList(ht);
@@ -1250,18 +1251,80 @@ algorithm
       end if;
     end for;
     map := UnorderedMap.new<DAE.Exp>(Util.id, intEq);
-    exp := DAE.ICONST(0);
+    offset := 0;
+    terms := {};
     symbolic := false;
     for v in List.sort(kindVars, simVarIndexGt) loop
       if symbolic then
-        UnorderedMap.add(v.index, exp, map);
+        UnorderedMap.add(v.index, linearSumExp(offset, terms), map);
       end if;
-      exp := DAE.BINARY(exp, DAE.ADD(DAE.T_INTEGER_DEFAULT), simVarSizeExp(v));
+      (offset, terms) := addSizeTerm(v, offset, terms);
       symbolic := symbolic or hasRuntimeSize(v);
     end for;
     offsets := (kind, map) :: offsets;
   end for;
 end computeJacobianOffsets;
+
+protected function addSizeTerm
+  "Adds the size of a SimVar to offset + sum(coefficient * product), merging
+   equal products of symbolic dimensions."
+  input SimCodeVar.SimVar var;
+  input output Integer offset;
+  input output list<tuple<DAE.Exp, Integer>> terms;
+protected
+  Integer coeff = 1;
+  Option<DAE.Exp> product = NONE();
+  DAE.Exp e;
+algorithm
+  for d in Expression.arrayDimension(var.type_) loop
+    () := match d
+      local
+        Integer i;
+      case DAE.DIM_EXP(exp = DAE.ICONST(i)) algorithm
+        coeff := coeff * i;
+      then ();
+      case DAE.DIM_EXP() algorithm
+        product := SOME(match product
+          case SOME(e) then DAE.BINARY(e, DAE.MUL(DAE.T_INTEGER_DEFAULT), d.exp);
+          else d.exp;
+        end match);
+      then ();
+      else algorithm
+        coeff := coeff * Expression.dimensionSize(d);
+      then ();
+    end match;
+  end for;
+  if isNone(product) then
+    offset := offset + coeff;
+    return;
+  end if;
+  e := Util.getOption(product);
+  if List.any(terms, function isTermOf(e = e)) then
+    terms := list(if isTermOf(t, e) then (Util.tuple21(t), Util.tuple22(t) + coeff) else t for t in terms);
+  else
+    terms := (e, coeff) :: terms;
+  end if;
+end addSizeTerm;
+
+protected function isTermOf
+  input tuple<DAE.Exp, Integer> term;
+  input DAE.Exp e;
+  output Boolean b = ExpressionBasics.expEqual(Util.tuple21(term), e);
+end isTermOf;
+
+protected function linearSumExp
+  input Integer offset;
+  input list<tuple<DAE.Exp, Integer>> terms;
+  output DAE.Exp exp = DAE.ICONST(offset);
+protected
+  DAE.Exp term;
+algorithm
+  for t in terms loop
+    term := if Util.tuple22(t) == 1 then Util.tuple21(t)
+      else DAE.BINARY(DAE.ICONST(Util.tuple22(t)), DAE.MUL(DAE.T_INTEGER_DEFAULT), Util.tuple21(t));
+    exp := DAE.BINARY(exp, DAE.ADD(DAE.T_INTEGER_DEFAULT), term);
+  end for;
+end linearSumExp;
 
 public function jacobianOffsetVars
   "The variables of one kind of a Jacobian (\"seed\", \"res\" or \"tmp\"), sorted by
@@ -1392,7 +1455,7 @@ algorithm
   end match;
 end simIteratorSizeExp;
 
-protected function typeSizeExp
+public function typeSizeExp
   "the number of scalar elements of a type as an expression"
   input DAE.Type ty;
   output DAE.Exp exp = DAE.ICONST(1);
@@ -2253,6 +2316,53 @@ algorithm
   n := 2*varInfo.numStateVars+varInfo.numAlgVars+varInfo.numDiscreteReal+varInfo.numOptimizeConstraints+varInfo.numOptimizeFinalConstraints;
 end nVariablesReal;
 
+public function simVarIndexRuns
+  "The variables as runs (position in the list, first index, length, kind): kind 1 for
+   real variables with consecutive indices in realVars, else a run of one variable
+   with kind 0 for variables without index, 2 for parameters and 3 for any other."
+  input list<SimCodeVar.SimVar> vars;
+  output list<tuple<Integer, Integer, Integer, Integer>> runs = {};
+protected
+  Integer pos = 0, start = -1, len = 0, kind, index;
+algorithm
+  for var in vars loop
+    kind := match var.varKind
+      case BackendDAE.JAC_VAR() then 0;
+      case BackendDAE.JAC_TMP_VAR() then 0;
+      case BackendDAE.PARAM() then 2;
+      case BackendDAE.VARIABLE() then if Types.isReal(var.type_) then 1 else 3;
+      case BackendDAE.STATE() then 1;
+      case BackendDAE.STATE_DER() then 1;
+      case BackendDAE.DUMMY_DER() then if Types.isReal(var.type_) then 1 else 3;
+      case BackendDAE.DUMMY_STATE() then if Types.isReal(var.type_) then 1 else 3;
+      else 3;
+    end match;
+    index := var.index;
+    if index < 0 then
+      kind := 0;
+    end if;
+    if kind == 1 and len > 0 and index == start + len then
+      len := len + 1;
+    else
+      if len > 0 then
+        runs := (pos - len, start, len, 1) :: runs;
+        len := 0;
+      end if;
+      if kind == 1 then
+        start := index;
+        len := 1;
+      else
+        runs := (pos, index, 1, kind) :: runs;
+      end if;
+    end if;
+    pos := pos + 1;
+  end for;
+  if len > 0 then
+    runs := (pos - len, start, len, 1) :: runs;
+  end if;
+  runs := listReverse(runs);
+end simVarIndexRuns;
+
 public function getSimCode
   output SimCode.SimCode code;
 protected
@@ -2414,7 +2524,7 @@ public function contiguousSliceStart
   "The subscripts of the first element of a slice that is one block of its
    variable's storage, {} for any other slice. Such a slice has scalar
    subscripts, then optionally one literal range with step 1, then whole
-   dimensions, over constant dimensions."
+   dimensions. Only the sliced dimensions need constant sizes."
   input list<DAE.Subscript> subs;
   input list<DAE.Dimension> dims;
   output list<DAE.Subscript> start;
@@ -2445,18 +2555,18 @@ protected
   Boolean inBlock = false, sliced = false, ok;
 algorithm
   for dim in dims loop
-    d := match dim case DAE.DIM_INTEGER() then dim.integer; else -1; end match;
+    d := match dim case DAE.DIM_INTEGER() then dim.integer; case DAE.DIM_UNKNOWN() then 0; else -1; end match;
     if listEmpty(rest) then
       sub := DAE.WHOLEDIM();
     else
       sub :: rest := rest;
     end if;
-    ok := if d < 1 then false else match sub
-      case DAE.INDEX(exp = DAE.ICONST(integer = i)) guard not inBlock and i >= 1 and i <= d
+    ok := match sub
+      case DAE.INDEX(exp = DAE.ICONST(integer = i)) guard not inBlock and i >= 1 and (d < 0 or i <= d)
         algorithm
           start := sub :: start;
         then true;
-      case DAE.INDEX(exp = e) guard not inBlock and not Expression.isConst(e) and Types.isInteger(Expression.typeof(e))
+      case DAE.INDEX(exp = e) guard not inBlock and d <> 0 and not Expression.isConst(e) and Types.isInteger(Expression.typeof(e))
         algorithm
           start := sub :: start;
         then true;
@@ -2468,7 +2578,7 @@ algorithm
           start := DAE.INDEX(DAE.ICONST(i)) :: start;
           sliceDims := (j - i + 1) :: sliceDims;
         then true;
-      case DAE.WHOLEDIM()
+      case DAE.WHOLEDIM() guard d >= 1
         algorithm
           inBlock := true;
           start := DAE.INDEX(DAE.ICONST(1)) :: start;

@@ -2923,7 +2923,10 @@ fn solve_initial_system(
         "solving simplified lambda0-DAE done\n---------------------------",
     );
     write_i32(e, sim_data + layout.nls_fail_off, 0)?;
-    e.call1("functionInitialEquations", sim_data)?;
+    write_i32(e, sim_data + layout.skip_start_off, 1)?;
+    let solved = e.call1("functionInitialEquations", sim_data);
+    write_i32(e, sim_data + layout.skip_start_off, 0)?;
+    solved?;
     omclog::close(omclog::INIT_HOMOTOPY);
     check_nls(e, sim_data, layout)
 }
@@ -3267,6 +3270,7 @@ fn run_homotopy_continuation(
             );
             if step == 0 {
                 call_initial_equations_lambda0(e, sim_data, layout)?;
+                write_i32(e, sim_data + layout.skip_start_off, 1)?;
             } else {
                 write_i32(e, sim_data + layout.nls_fail_off, 0)?;
                 e.call1("functionInitialEquations", sim_data)?;
@@ -3281,6 +3285,7 @@ fn run_homotopy_continuation(
         }
         Ok(())
     })();
+    write_i32(e, sim_data + layout.skip_start_off, 0)?;
     omclog::close(omclog::INIT_HOMOTOPY);
     path.finish();
     if let Err(err) = steps_run {
@@ -4841,7 +4846,7 @@ impl Samples {
                 // Advance to the next firing; a non-positive interval is a
                 // one-shot event (guard against a never-advancing schedule).
                 self.next[k] = if self.interval[k] > 0.0 {
-                    self.next[k] + self.interval[k]
+                    advance_sample(self.next[k], self.start[k], self.interval[k])
                 } else {
                     f64::INFINITY
                 };
@@ -8602,6 +8607,11 @@ const DASSL_STEP_EPS: f64 = 1e-13;
 
 /// C's `SAMPLE_EPS` (`simulation/solver/epsilon.h`).
 pub const SAMPLE_EPS: f64 = 1e-14;
+
+/// C's `advanceSample` (`simulation/solver/model_help.h`).
+pub fn advance_sample(next: f64, start: f64, interval: f64) -> f64 {
+    start + (fmath::floor((next - start) / interval + 0.5) + 1.0) * interval
+}
 
 /// How far past the step end a time event may lie and still pull the step onto
 /// it (C's `checkForSampleEvent`). Capped by the simulation interval so a short

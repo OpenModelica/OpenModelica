@@ -29,6 +29,7 @@ Generated on |date| at |time|
   parmodauto
   debugger
   basemodelica
+  acausaldae
   porting
   backwardscompatibility
   graphs

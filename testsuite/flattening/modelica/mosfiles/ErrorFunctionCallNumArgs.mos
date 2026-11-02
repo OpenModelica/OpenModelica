@@ -1,5 +1,6 @@
 // name: ErrorFunctionCallNumArgs
 // status: correct
+// suite: ofScripting
 loadFile("ErrorFunctionCallNumArgs.mo");
 ErrorFunctionCallNumArgs.f0();
 getErrorString();

@@ -39,8 +39,10 @@ encapsulated package BackendInterface
   description: Interface functions used to separate frontend and backend."
 
 public import Absyn;
+public import Values;
 
 protected
+import Error;
 import Global;
 
 public
@@ -51,6 +53,8 @@ uniontype BackendInterfaceFunctions
     partialRewriteFrontEnd rewriteFrontEnd;
     partialAppendLibrary appendLibrary;
     partialInitInstHashTable initInstHashTable;
+    partialEvalScriptingFunction evalScriptingFunction;
+    partialLookupScriptVariable lookupScriptVariable;
   end BACKEND_INTERFACE_FUNCTIONS;
 end BackendInterfaceFunctions;
 
@@ -70,7 +74,8 @@ public function initializeWithoutBackend
    this lives beside the table rather than in the frontend."
 algorithm
   initializeBackendInterface(BACKEND_INTERFACE_FUNCTIONS(
-    noBackendRewriteRules, keepExpression, noBackendLibrary, doNothing));
+    noBackendRewriteRules, keepExpression, noBackendLibrary, doNothing, noScriptingFunctions,
+    noScriptVariables));
 end initializeWithoutBackend;
 
 protected function noBackendRewriteRules
@@ -92,6 +97,23 @@ end noBackendLibrary;
 
 protected function doNothing
 end doNothing;
+
+protected function noScriptingFunctions
+  input String name;
+  input list<Values.Value> args;
+  input SourceInfo info;
+  output Values.Value result;
+algorithm
+  Error.addInternalError(getInstanceName() + ": no scripting API to evaluate " + name, info);
+  fail();
+end noScriptingFunctions;
+
+protected function noScriptVariables
+  input Absyn.ComponentRef cref;
+  output Absyn.Exp exp;
+algorithm
+  fail();
+end noScriptVariables;
 
 public
 
@@ -143,6 +165,36 @@ algorithm
   func();
 end initInstHashTable;
 
+function evalScriptingFunction
+  "Evaluates a call to an OpenModelica.Scripting function, named as the old
+   frontend names it (the external name of the builtin, if it has one)."
+  input String name;
+  input list<Values.Value> args;
+  input SourceInfo info;
+  output Values.Value result;
+protected
+  BackendInterfaceFunctions functions;
+  partialEvalScriptingFunction func;
+algorithm
+  functions := getGlobalRoot(Global.backendInterface);
+  func := functions.evalScriptingFunction;
+  result := func(name, args, info);
+end evalScriptingFunction;
+
+function lookupScriptVariable
+  "The value of a script variable, or of a field or element of one, as an
+   expression. Fails if the name is not a script variable."
+  input Absyn.ComponentRef cref;
+  output Absyn.Exp exp;
+protected
+  BackendInterfaceFunctions functions;
+  partialLookupScriptVariable func;
+algorithm
+  functions := getGlobalRoot(Global.backendInterface);
+  func := functions.lookupScriptVariable;
+  exp := func(cref);
+end lookupScriptVariable;
+
 partial function partialNoRewriteRulesFrontEnd
   output Boolean noRules;
 end partialNoRewriteRulesFrontEnd;
@@ -162,6 +214,18 @@ end partialAppendLibrary;
 
 partial function partialInitInstHashTable
 end partialInitInstHashTable;
+
+partial function partialLookupScriptVariable
+  input Absyn.ComponentRef cref;
+  output Absyn.Exp exp;
+end partialLookupScriptVariable;
+
+partial function partialEvalScriptingFunction
+  input String name;
+  input list<Values.Value> args;
+  input SourceInfo info;
+  output Values.Value result;
+end partialEvalScriptingFunction;
 
 annotation(__OpenModelica_Interface="frontend_dump");
 end BackendInterface;

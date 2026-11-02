@@ -127,6 +127,7 @@ CevalArrayConstant3.mo \
 CevalArrayConstructor1.mo \
 CevalArrayConstructor2.mo \
 CevalArrayConstructor3.mo \
+CevalArrayConstructor4.mo \
 CevalAsin1.mo \
 CevalAtan1.mo \
 CevalAtan21.mo \
@@ -929,6 +930,7 @@ MergeComponents7.mo \
 MergeComponents8.mo \
 MergeComponents9.mo \
 MergeComponents10.mo \
+MergeComponents11.mo \
 MinInvalidArg1.mo \
 MinInvalidArg2.mo \
 MinInvalidArg3.mo \
@@ -1160,6 +1162,7 @@ ReinitInvalid6.mo \
 ReinitInvalid7.mo \
 ReinitInvalid8.mo \
 ResizableConstantSize.mo \
+ResizableNestedSplit.mo \
 ResizableStreamElements.mo \
 ResizableUntypedConstant.mo \
 Return1.mo \

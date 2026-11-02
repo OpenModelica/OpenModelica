@@ -65,6 +65,11 @@ pub(crate) fn jac_column_vars(jm: &Arc<SimCode::JacobianMatrix>) -> Arc<Vec<meta
 
 fn compute_jac_column_vars(jm: &SimCode::JacobianMatrix) -> Vec<metamodelica::Ref<SimCodeVar::SimVar>> {
     use openmodelica_backend_types::BackendDAE::VarKind;
+    let elements: Vec<_> = jac_listed_vars(jm).iter().flat_map(jac_var_elements).collect();
+    let bases: HashSet<_> = elements
+        .iter()
+        .filter_map(|sv| array_element_of(&sv.name).ok().flatten().map(|(base, _)| base))
+        .collect();
     let mut seen: HashSet<String> = HashSet::default();
     let mut out: Vec<metamodelica::Ref<SimCodeVar::SimVar>> = Vec::new();
     let mut push = |sv: &metamodelica::Ref<SimCodeVar::SimVar>| {
@@ -72,15 +77,13 @@ fn compute_jac_column_vars(jm: &SimCode::JacobianMatrix) -> Vec<metamodelica::Re
             return;
         }
         if let Ok(key) = sim_cref_key(&sv.name) {
-            if seen.insert(key) {
+            if !bases.contains(&key) && seen.insert(key) {
                 out.push(sv.clone());
             }
         }
     };
-    for sv in jac_listed_vars(jm) {
-        for e in jac_var_elements(&sv) {
-            push(&e);
-        }
+    for sv in elements {
+        push(&sv);
     }
     out
 }
@@ -174,7 +177,12 @@ fn jac_eq_lowerable(eq: &metamodelica::Ref<SimCode::SimEqSystem>) -> bool {
         // `lower_linear_system` needs either a usable `simJac` or the residuals of a
         // torn system; the inner equations run through `lower_equation` too.
         E::SES_LINEAR { lSystem, .. } => {
-            let torn = lst(&lSystem.residual).any(|e| matches!(&**e, E::SES_RESIDUAL { .. }));
+            let torn = lst(&lSystem.residual).any(|e| {
+                matches!(
+                    &**e,
+                    E::SES_RESIDUAL { .. } | E::SES_FOR_RESIDUAL { .. } | E::SES_GENERIC_RESIDUAL { .. }
+                )
+            });
             let sim_jac = lst(&lSystem.simJac).next().is_some()
                 && lst(&lSystem.simJac).all(|(_, _, e)| matches!(&**e, E::SES_RESIDUAL { .. }))
                 && count(&lSystem.beqs) == count(&lSystem.vars);
@@ -211,7 +219,9 @@ fn jac_eq_crefs(eq: &SimCode::SimEqSystem) -> Option<Vec<metamodelica::Ref<DAE::
             exp(rhs, &mut out).then_some(out)
         }
         E::SES_ARRAY_CALL_ASSIGN { lhs, exp: rhs, .. } => (exp(lhs, &mut out) && exp(rhs, &mut out)).then_some(out),
-        E::SES_RESIDUAL { exp: e, .. } => exp(e, &mut out).then_some(out),
+        E::SES_RESIDUAL { exp: e, .. }
+        | E::SES_FOR_RESIDUAL { exp: e, .. }
+        | E::SES_GENERIC_RESIDUAL { exp: e, .. } => exp(e, &mut out).then_some(out),
         E::SES_RESIZABLE_ASSIGN { .. } | E::SES_GENERIC_ASSIGN { .. } => Some(out),
         // `traverseDAEEquationsStmts` visits a statement's left-hand side too.
         E::SES_ALGORITHM { statements, .. } => {

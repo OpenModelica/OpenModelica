@@ -361,14 +361,15 @@ pub(super) fn build_next_time_event_fn(
 }
 
 /// Build `functionStoreDelayed(SimData*)` (C's `function_storeDelayed`): append
-/// each `delay(...)` expression's current value to its ring buffer.
+/// each `delay(...)` expression's current value to its ring buffer. The delays of
+/// for-loops are unrolled, one buffer per iteration.
 pub(super) fn build_store_delayed_fn(
     sim_code: &SimCode::SimCode,
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
-    let delayed: Vec<(
+    let mut delayed: Vec<(
         i32,
         metamodelica::Ref<DAE::Exp>,
         metamodelica::Ref<DAE::Exp>,
@@ -376,6 +377,40 @@ pub(super) fn build_store_delayed_fn(
     )> = lst(&sim_code.delayedExps.delayedExps)
         .map(|(i, (e, d, dmax))| (*i, e.clone(), d.clone(), dmax.clone()))
         .collect();
+    for (idx, (e, d, dmax), iters) in lst(&sim_code.delayedExps.delayedLoops) {
+        let mut combos: Vec<Vec<(String, metamodelica::Ref<DAE::Exp>)>> = vec![Vec::new()];
+        for iter in lst(iters) {
+            let (name, values, sub_iters) = iterator_bindings(iter)?;
+            let mut next = Vec::with_capacity(combos.len() * values.len());
+            for (pos, value) in values.iter().enumerate() {
+                for combo in &combos {
+                    let mut combo = combo.clone();
+                    combo.push((name.clone(), value.clone()));
+                    for (sub_name, table) in &sub_iters {
+                        let v = table
+                            .get(pos)
+                            .ok_or("CodegenWasmJit: dependent iterator range is too short")?;
+                        combo.push((sub_name.clone(), v.clone()));
+                    }
+                    next.push(combo);
+                }
+            }
+            combos = next;
+        }
+        for combo in &combos {
+            let bind = |x: &metamodelica::Ref<DAE::Exp>| -> Result<metamodelica::Ref<DAE::Exp>> {
+                let mut x = x.clone();
+                for (name, value) in combo {
+                    x = subst_iterator(&x, name, value)?;
+                }
+                Ok(x)
+            };
+            let Some(i) = crate::CodegenWasmJitFunctions::fold_int(&bind(idx)?) else {
+                return Err("CodegenWasmJit: `delay` index of a for-loop is not constant");
+            };
+            delayed.push((i, bind(e)?, bind(d)?, bind(dmax)?));
+        }
+    }
     let sim = sim_ctx(var_map);
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
     ctx.emit_store_delayed(&delayed)?;

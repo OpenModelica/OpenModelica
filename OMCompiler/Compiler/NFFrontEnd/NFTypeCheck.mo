@@ -1618,6 +1618,13 @@ algorithm
     return;
   end if;
 
+  if Type.isUnknown(actualType) and Expression.isCode(expression) and Type.codeName(expectedType) <> "" then
+    expression := Expression.quoteCode(Expression.toAbsyn(expression), expectedType, Absyn.dummyInfo);
+    compatibleType := expectedType;
+    matchKind := MatchKind.EXACT;
+    return;
+  end if;
+
   // Check if the types are different kinds of types.
   if valueConstructor(actualType) <> valueConstructor(expectedType) then
     // If the types are not of the same kind we might need to type cast the
@@ -2053,24 +2060,25 @@ protected
 algorithm
   if listLength(comps1) <> listLength(comps2) then
     matchKind := MatchKind.NOT_COMPATIBLE;
-  else
-    for c1_ref in comps1 loop
-      c2_ref :: rest_c2 := rest_c2;
-      c1 := InstNode.borrow(c1_ref);
-      c2 := InstNode.borrow(c2_ref);
-
-      if InstNode.name(c1) <> InstNode.name(c2) then
-        matchKind := MatchKind.NOT_COMPATIBLE;
-        return;
-      end if;
-
-      (_, _, matchKind) := matchTypes(InstNode.getType(c1), InstNode.getType(c2), dummy, options);
-
-      if matchKind == MatchKind.NOT_COMPATIBLE then
-        return;
-      end if;
-    end for;
+    return;
   end if;
+
+  for c1_ref in comps1 loop
+    c2_ref :: rest_c2 := rest_c2;
+    c1 := InstNode.borrow(c1_ref);
+    c2 := InstNode.borrow(c2_ref);
+
+    if InstNode.name(c1) <> InstNode.name(c2) then
+      matchKind := MatchKind.NOT_COMPATIBLE;
+      return;
+    end if;
+
+    (_, _, matchKind) := matchTypes(InstNode.getType(c1), InstNode.getType(c2), dummy, options);
+
+    if matchKind == MatchKind.NOT_COMPATIBLE then
+      return;
+    end if;
+  end for;
 
   matchKind := MatchKind.PLUG_COMPATIBLE;
 end matchComponentList;
@@ -3181,6 +3189,7 @@ function checkReductionType
   input Type ty;
   input Absyn.Path name;
   input Expression exp;
+  input InstContext.Type context;
   input SourceInfo info;
 protected
   String err;
@@ -3192,6 +3201,8 @@ algorithm
           case Type.INTEGER() then "";
           case Type.REAL() then "";
           case Type.COMPLEX() guard checkSumComplexType(ty, exp, info) then "";
+          // Scripts concatenate strings with sum, as the old frontend allowed.
+          case Type.STRING() guard InstContext.inScripting(context) then "";
           else "Integer or Real, or operator record";
         end match;
 

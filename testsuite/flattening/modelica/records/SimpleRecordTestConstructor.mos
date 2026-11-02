@@ -2,7 +2,7 @@
 // keywords: algorithm
 // status:   correct
 // setup_command: $OMC_CC $OMC_CFLAGS $OMC_EXTLIB_FLAGS -o External_C_RecordTest$OMC_EXTLIB_EXT External_C_RecordTest.c $OMC_EXTLIB_LIBS
-// teardown_command: rm -f External_C_RecordTest$OMC_EXTLIB_EXT
+// teardown_command: rm -f External_C_RecordTest$OMC_EXTLIB_EXT SimpleRecordTestExternal*
 
 loadFile("RecordTest.mo");
 
@@ -10,8 +10,20 @@ a:=RecordTest.mk_add1(1.0,2.0);
 a:=RecordTest.mk_add2(1.0,2.0);
 a:=RecordTest.mk_add3();
 a:=RecordTest.ADD(1.0,2.0);
-setCommandLineOptions("-d=gen");
-a:=RecordTest.mk_add_ext(1.0,2.0);
+// The external calls are made by a simulation, which links the object
+// file; a script cannot call an external function returning a record.
+setCommandLineOptions("-d=noevalfunc");
+loadString("model SimpleRecordTestExternal
+  RecordTest.ADD add;
+algorithm
+  add := RecordTest.mk_add_ext(1.0, 2.0);
+end SimpleRecordTestExternal;");getErrorString();
+echo(false);
+res := simulate(SimpleRecordTestExternal, stopTime=0.0);
+echo(true);
+res.messages;
+val(add.a1, 0.0);
+val(add.a2, 0.0);
 
 // Result:
 // true
@@ -32,8 +44,12 @@ a:=RecordTest.mk_add_ext(1.0,2.0);
 //     a2 = 2.0
 // end RecordTest.ADD;
 // true
-// record RecordTest.ADD
-//     a1 = 1.0,
-//     a2 = 2.0
-// end RecordTest.ADD;
+// true
+// ""
+// true
+// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// 1.0
+// 2.0
 // endResult

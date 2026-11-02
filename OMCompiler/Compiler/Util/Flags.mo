@@ -580,6 +580,8 @@ constant DebugFlag OMEDIT = DEBUG_FLAG(201, "omedit", false,
   "Set by OMEdit, so the compiler can emit output only a GUI consumes.");
 constant DebugFlag CHECK_USED_ELEMENTS_LOOKUP = DEBUG_FLAG(202, "checkUsedElementsLookup", false,
   "Checks the classes found by the lookup of getDefUseChains and getClassDiagram against the new frontend's lookup.");
+constant DebugFlag NF_SCRIPTING = DEBUG_FLAG(203, "nfScripting", false,
+  "Evaluates scripts with the new frontend. Experimental.");
 
 public
 // CONFIGURATION FLAGS

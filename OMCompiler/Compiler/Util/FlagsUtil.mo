@@ -262,7 +262,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.CHECK_DEF_USE,
   Flags.TEARING_COST,
   Flags.OMEDIT,
-  Flags.CHECK_USED_ELEMENTS_LOOKUP
+  Flags.CHECK_USED_ELEMENTS_LOOKUP,
+  Flags.NF_SCRIPTING
 };
 
 protected

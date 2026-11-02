@@ -648,8 +648,39 @@ public
     input list<SuperNode> nodes;
     output StrongComponent entwined;
   protected
-    UnorderedMap<Integer, Slice.IntLst> elem_map = UnorderedMap.new<Slice.IntLst>(Util.id, intEq);
     UnorderedMap<Integer, ComponentRef> cref_map = UnorderedMap.new<ComponentRef>(Util.id, intEq);
+    Option<StrongComponent> opt_entwined;
+  algorithm
+    // collect crefs to solve for
+    for node in nodes loop
+      () := match node
+        case SuperNode.ARRAY_BUCKET() algorithm
+          UnorderedMap.add(node.arr_idx, node.cref_to_solve, cref_map);
+        then ();
+        else ();
+      end match;
+    end for;
+    opt_entwined := tryPseudoEntwined(eqn_indices, eqn_to_var, mapping, vars, eqns, cref_map);
+    if isNone(opt_entwined) then
+      Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because the order of the entwined equations could not be resolved for every size of the resizable arrays:\n"
+        + stringDelimitList(list(Equation.pointerToString(EquationPointers.getEqnAt(eqns, e), "\t") for e in List.unique(list(mapping.eqn_StA[i] for i in eqn_indices))), "\n")});
+      fail();
+    end if;
+    SOME(entwined) := opt_entwined;
+  end createPseudoEntwined;
+
+  function tryPseudoEntwined
+    "the entwined component for the scalar equations in call order, none if it has resizable
+    equations but no periodic order. equations with a cref to solve become slices."
+    input list<Integer> eqn_indices;
+    input array<Integer> eqn_to_var;
+    input Mapping mapping;
+    input VariablePointers vars;
+    input EquationPointers eqns;
+    input UnorderedMap<Integer, ComponentRef> cref_map;
+    output Option<StrongComponent> entwined = NONE();
+  protected
+    UnorderedMap<Integer, Slice.IntLst> elem_map = UnorderedMap.new<Slice.IntLst>(Util.id, intEq);
     Integer eqn_arr_idx, var_arr_idx;
     Slice.IntLst scal_indices;
     list<StrongComponent> entwined_slices = {};
@@ -661,15 +692,6 @@ public
     for idx in eqn_indices loop
       UnorderedMap.add(mapping.eqn_StA[idx], idx :: UnorderedMap.getOrDefault(mapping.eqn_StA[idx], elem_map, {}), elem_map);
     end for;
-    // collect crefs to solve for
-    for node in nodes loop
-      () := match node
-        case SuperNode.ARRAY_BUCKET() algorithm
-          UnorderedMap.add(node.arr_idx, node.cref_to_solve, cref_map);
-        then ();
-        else ();
-      end match;
-    end for;
 
     // create individual slices (array bucket → slice component, scalar → scalar component)
     for tpl in UnorderedMap.toList(elem_map) loop
@@ -677,7 +699,7 @@ public
       // the calls of the slice consume its indices in order, see the call order below
       scal_indices := listReverse(scal_indices);
       if UnorderedMap.contains(eqn_arr_idx, cref_map) then
-        var_arr_idx := mapping.var_StA[eqn_to_var[Util.tuple21(mapping.eqn_AtS[eqn_arr_idx])]];
+        var_arr_idx := mapping.var_StA[eqn_to_var[listHead(scal_indices)]];
         entwined_slices := createPseudoSlice(var_arr_idx, eqn_arr_idx, UnorderedMap.getSafe(eqn_arr_idx, cref_map, sourceInfo()), scal_indices, eqn_to_var, eqns, mapping) :: entwined_slices;
       else
         entwined_slices := createPseudoScalar(scal_indices, eqn_to_var, mapping, vars, eqns) :: entwined_slices;
@@ -691,12 +713,10 @@ public
     periodic_order := PeriodicOrder.fromCalls(eqn_indices, entwined_slices, slice_eqns, mapping);
     // the order of the scalar calls only holds for the analysis sizes of resizable arrays
     if isNone(periodic_order) and List.any(list(EquationPointers.getEqnAt(eqns, e) for e in slice_eqns), Equation.isResizable) then
-      Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because the order of the entwined equations could not be resolved for every size of the resizable arrays:\n"
-        + stringDelimitList(list(Equation.pointerToString(EquationPointers.getEqnAt(eqns, e), "\t") for e in slice_eqns), "\n")});
-      fail();
+      return;
     end if;
-    entwined := ENTWINED_COMPONENT(entwined_slices, entwined_tpl_lst, periodic_order);
-  end createPseudoEntwined;
+    entwined := SOME(ENTWINED_COMPONENT(entwined_slices, entwined_tpl_lst, periodic_order));
+  end tryPseudoEntwined;
 
   function createAlias
     input BPartition.Kind kind;
@@ -1554,14 +1574,14 @@ protected
       (var_arr_idx, idx_lst)  := tpl;
       (var_scal_idx, _)       := mapping.var_AtS[var_arr_idx];
       var                     := VariablePointers.getVarAt(vars, var_arr_idx);
-      idx_lst                 := if listLength(idx_lst) == BVariable.size(var) then {} else list(i - var_scal_idx for i in idx_lst);
+      idx_lst                 := if listLength(idx_lst) == BVariable.size(var, true) then {} else list(i - var_scal_idx for i in idx_lst);
       acc_vars                := Slice.SLICE(var, sortAscending(idx_lst)) :: acc_vars;
     end for;
     for tpl in UnorderedMap.toList(eqn_map) loop
       (eqn_arr_idx, idx_lst)  := tpl;
       (eqn_scal_idx, _)       := mapping.eqn_AtS[eqn_arr_idx];
       eqn                     := EquationPointers.getEqnAt(eqns, eqn_arr_idx);
-      idx_lst                 := if listLength(idx_lst) == Equation.size(eqn) then {} else list(i - eqn_scal_idx for i in idx_lst);
+      idx_lst                 := if listLength(idx_lst) == Equation.size(eqn, true) then {} else list(i - eqn_scal_idx for i in idx_lst);
       acc_eqns                := Slice.SLICE(eqn, sortAscending(idx_lst)) :: acc_eqns;
     end for;
   end getLoopVarsAndEqns;

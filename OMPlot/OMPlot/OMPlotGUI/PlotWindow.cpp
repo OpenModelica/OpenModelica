@@ -121,6 +121,27 @@ static std::vector<double> readValues(const QString &windowTitle, const omc::Res
   return values;
 }
 
+/* Names the values of a Boolean or an enumeration curve as the result file does.
+ * A file without types leaves what the caller knows from elsewhere. */
+static void setValueLabels(PlotCurve *pPlotCurve, const omc::ResultFile &result, const std::string &name)
+{
+  const std::string type = result.type(name);
+  if (type == "Boolean") {
+    pPlotCurve->setValueLabels(QStringList() << "false" << "true", 0);
+  } else if (type == "enumeration") {
+    QStringList literals;
+    for (const std::string &literal : result.enumeration(name)) {
+      literals.append(QString::fromStdString(literal));
+    }
+    if (!literals.isEmpty()) {
+      pPlotCurve->setValueLabels(literals, 1);
+    }
+    pPlotCurve->setDiscrete(true);
+  } else if (type == "Integer") {
+    pPlotCurve->setDiscrete(true);
+  }
+}
+
 /* The elements var[1], var[2], ... (der(var[i]) for a derivative) at `time`. */
 static QList<double> readArrayAt(const omc::ResultFile &result, const QString &variable, double time)
 {
@@ -253,10 +274,13 @@ void PlotWindow::initializePlot(QStringList arguments)
   setYRightLabel(QString(arguments[19]));
   setYRightCustomLabel(getYRightLabel());
   setYRightRange(QString(arguments[20]).toDouble(), QString(arguments[21]).toDouble());
+  // stacked when asked to, otherwise as Plot::autoStack decides
+  mStackCurvesSet = QString(arguments[22]) == "true";
+  mStackCurves = mStackCurvesSet;
   setTimeUnit("");
   /* read variables */
   QStringList variablesToRead;
-  for(int i = 22; i < arguments.length(); i++)
+  for(int i = 23; i < arguments.length(); i++)
     variablesToRead.append(QString(arguments[i]));
 
   setVariablesList(variablesToRead);
@@ -266,11 +290,13 @@ void PlotWindow::initializePlot(QStringList arguments)
   {
     setPlotType(PlotWindow::PLOT);
     plot();
+    updatePlot();
   }
   else if(plotType.toLower().compare("plotall") == 0)
   {
     setPlotType(PlotWindow::PLOTALL);
     plot();
+    updatePlot();
   }
   else if(plotType.toLower().compare("plotparametric") == 0)
   {
@@ -325,6 +351,8 @@ void PlotWindow::setVariablesList(QStringList variables)
 void PlotWindow::setPlotType(PlotType type)
 {
   mPlotType = type;
+  // only the curves of a plot over time go in lanes
+  mpStackCurvesAction->setVisible(canStackCurves());
 }
 
 void PlotWindow::initializeFile(QString file)
@@ -517,6 +545,16 @@ void PlotWindow::setupToolbar(int toolbarIconSize)
   mpAlignZeroButton->setStatusTip(mpAlignZeroButton->toolTip());
   connect(mpAlignZeroButton, SIGNAL(toggled(bool)), SLOT(setAlignZero(bool)));
   toolBar->addWidget(mpAlignZeroButton);
+  mpStackCurvesButton = new QToolButton(toolBar);
+  mpStackCurvesButton->setText(tr("Stack"));
+  mpStackCurvesButton->setIcon(QIcon(":/Resources/icons/stack_curves.svg"));
+  mpStackCurvesButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  mpStackCurvesButton->setCheckable(true);
+  mpStackCurvesButton->setAutoRaise(true);
+  mpStackCurvesButton->setToolTip(tr("Draw each curve in a band of its own, one below the other"));
+  mpStackCurvesButton->setStatusTip(mpStackCurvesButton->toolTip());
+  connect(mpStackCurvesButton, SIGNAL(toggled(bool)), SLOT(setStackCurves(bool)));
+  mpStackCurvesAction = toolBar->addWidget(mpStackCurvesButton);
   toolBar->addSeparator();
   // setup
   mpSetupButton = new QToolButton(toolBar);
@@ -649,6 +687,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
       }
       pPlotCurve->clearXAxisVector();
       pPlotCurve->clearYAxisVector();
+      setValueLabels(pPlotCurve, result, name);
       if (result.isParameter(name)) {
         double value = 0.0;
         if (!result.valueAt(name, startTime, value)) {
@@ -1193,10 +1232,18 @@ void PlotWindow::updatePlot()
   if (mpAutoScaleButton->isChecked()) {
     fitInView();
   } else {
+    const bool stack = getStackCurves();
+    updateStack(stack);
+    if (stack) {
+      mpPlot->applyValueScales();
+    }
     mpPlot->updateLayout();
     mpPlot->replot();
     if (mpPlot->getPlotZoomer()->zoomStack().size() == 1) {
       mpPlot->getPlotZoomer()->setZoomBase(false);
+      if (stack) {
+        mpPlot->applyValueScales();
+      }
     }
     alignYAxisZero();
     mpPlot->replot();
@@ -1465,14 +1512,22 @@ void PlotWindow::closeEvent(QCloseEvent *event)
 
 void PlotWindow::fitInView()
 {
+  updateStack(getStackCurves());
   mpPlot->getPlotZoomer()->zoom(0);
   mpPlot->setAxisAutoScale(QwtPlot::yLeft);
   mpPlot->setAxisAutoScale(QwtPlot::yRight);
   mpPlot->setAxisAutoScale(QwtPlot::xBottom);
   mpPlot->replot();
+  mpPlot->applyValueScales();
+  mpPlot->replot();
   alignYAxisZero();
   mpPlot->replot();
   mpPlot->getPlotZoomer()->setZoomBase(false);
+  // the zoomer has divided the y-axes again
+  if (mpPlot->hasValueScale(false) || mpPlot->hasValueScale(true)) {
+    mpPlot->applyValueScales();
+    mpPlot->replot();
+  }
 }
 
 /*!
@@ -1723,6 +1778,49 @@ void PlotWindow::setAlignZero(bool on)
     mpAlignZeroButton->blockSignals(state);
   }
   updatePlot();
+}
+
+/*!
+ * \brief PlotWindow::getStackCurves
+ * Whether each curve is drawn in a band of its own: as set with the toolbar,
+ * otherwise when all curves are Booleans, Integers or enumerations, see Plot::autoStack.
+ * Never for a parametric or an array plot, whose x-axis is not the time.
+ * \return
+ */
+bool PlotWindow::getStackCurves() const
+{
+  if (!canStackCurves()) {
+    return false;
+  }
+  return mStackCurvesSet ? mStackCurves : mpPlot->autoStack();
+}
+
+/*!
+ * \brief PlotWindow::setStackCurves
+ * Sets whether each curve is drawn in a band of its own.
+ * Synchronizes the toolbar control and refreshes the plot.
+ * \param on
+ */
+void PlotWindow::setStackCurves(bool on)
+{
+  mStackCurves = on;
+  mStackCurvesSet = true;
+  updatePlot();
+}
+
+/*!
+ * \brief PlotWindow::updateStack
+ * Stacks the curves or not and shows it on the toolbar control.
+ * \param stack
+ */
+void PlotWindow::updateStack(bool stack)
+{
+  mpPlot->updateStack(stack);
+  if (mpStackCurvesButton) {
+    const bool state = mpStackCurvesButton->blockSignals(true);
+    mpStackCurvesButton->setChecked(stack);
+    mpStackCurvesButton->blockSignals(state);
+  }
 }
 
 void PlotWindow::setAutoScale(bool on)

@@ -15,6 +15,7 @@ ArrayAlias1.mos \
 ArrayAlias2.mos \
 ArrayAliasSizeOne.mos \
 ForEquationAlias.mos \
+LiteralArrayAlias.mos \
 Alias_pre.mos \
 AliasCyclic.mos \
 AliasCyclic1.mos \
@@ -26,6 +27,8 @@ AliasCyclic6.mos \
 AliasCyclic7.mos \
 AliasCyclic8.mos \
 AliasStartPriority.mos \
+AliasArrayStartParameter.mos \
+RecordFieldConstantAlias.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

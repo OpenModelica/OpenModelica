@@ -1935,27 +1935,18 @@ end isVarExplicitSolvable;
 
 protected function splitStrongComponents "author: mwenzler"
   input list<list<Integer>> inComps "list of strong components";
-  output list<Integer> outListComps "all components of size 1";
-  output list<Integer> outLoopListComps "all components of size > 1";
+  output list<Integer> outListComps = {} "all components of size 1";
+  output list<Integer> outLoopListComps = {} "all components of size > 1";
 algorithm
-  (outListComps, outLoopListComps) := match inComps
-    local
-      Integer currIndex;
-      list<Integer> currComp, listComps, loopListComps;
-      list<list<Integer>> restComps;
-
-    case {}
-    then ({}, {});
-
-    case {currIndex}::restComps algorithm
-      (listComps, loopListComps) := splitStrongComponents(restComps);
-    then (currIndex::listComps, loopListComps);
-
-    case currComp::restComps algorithm
-      (listComps, loopListComps) := splitStrongComponents(restComps);
-      loopListComps := listAppend(currComp, loopListComps);
-    then (listComps, loopListComps);
-  end match;
+  for comp in inComps loop
+    if listLength(comp) == 1 then
+      outListComps := listHead(comp) :: outListComps;
+    else
+      outLoopListComps := List.append_reverse(comp, outLoopListComps);
+    end if;
+  end for;
+  outListComps := listReverseInPlace(outListComps);
+  outLoopListComps := listReverseInPlace(outLoopListComps);
 end splitStrongComponents;
 
 protected function mapIndex "author: lochel
@@ -2070,25 +2061,18 @@ protected function setupVarReplacements
   input array<Integer> inMapIncRowEqn;
   input EnhancedRows inME;
   input BackendDAE.Shared inShared;
-  output BackendVarTransform.VariableReplacements outRepls;
+  output BackendVarTransform.VariableReplacements outRepls = inRepls;
+protected
+  Integer indexVar, indexEq;
+  BackendDAE.Var var;
+  DAE.ComponentRef varName;
+  BackendDAE.Equation eqn;
+  DAE.ComponentRef cref;
+  BackendDAE.Type type_;
+  DAE.Exp exp, exp1, x;
 algorithm
-  outRepls := matchcontinue inMarkedEqns
-    local
-      Integer markedEqn;
-      list<Integer> markedEqns;
-      Integer indexVar, indexEq;
-      BackendVarTransform.VariableReplacements repls;
-      BackendDAE.Var var;
-      DAE.ComponentRef varName;
-      BackendDAE.Equation eqn;
-      DAE.ComponentRef cref;
-      BackendDAE.Type type_;
-      DAE.Exp exp, exp1, x;
-
-    case {}
-    then inRepls;
-
-    case markedEqn::markedEqns algorithm
+  for markedEqn in inMarkedEqns loop
+    try
       indexVar := inVecEqToVar[markedEqn];
       indexEq := inMapIncRowEqn[markedEqn];
       true := isVarExplicitSolvable(enhancedRow(inME, indexEq), indexVar);
@@ -2104,14 +2088,10 @@ algorithm
 
       varName := BackendVariable.varCref(var);
       (exp1, _) := Expression.traverseExpBottomUp(exp, BackendDAEUtil.replaceCrefsWithValues, (inVars, varName));
-      repls := BackendVarTransform.addReplacement(inRepls, varName, exp1, NONE());
-      repls := setupVarReplacements(markedEqns, inEqns, inVars, inVecEqToVar, repls, inMapIncRowEqn, inME, inShared);
-    then repls;
-
-    case _::markedEqns algorithm
-      repls := setupVarReplacements(markedEqns, inEqns, inVars, inVecEqToVar, inRepls, inMapIncRowEqn, inME, inShared);
-    then repls;
-  end matchcontinue;
+      outRepls := BackendVarTransform.addReplacement(outRepls, varName, exp1, NONE());
+    else
+    end try;
+  end for;
 end setupVarReplacements;
 
 protected function applyVarReplacements "author: lochel

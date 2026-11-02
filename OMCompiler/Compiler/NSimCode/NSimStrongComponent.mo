@@ -87,6 +87,7 @@ protected
   import NSimCode.{Identifier, SimCodeIndices};
   import NSimGenericCall;
   import NSimGenericCall.SimIterator;
+  import NSimJacobian;
   import NSimJacobian.SimJacobian;
   import SimPartition = NSimPartition;
   import NSimVar.{SimVar, SimVars, VarType};
@@ -399,8 +400,9 @@ public
       end match;
     end filterWhen;
 
-    function map
-      "ToDo: other blocks and cref func"
+    function mapShallow
+      "applies func to the top level expressions of the block, including
+      inner blocks and jacobians of algebraic loops"
       input output Block blck;
       input expFunc func;
       partial function expFunc
@@ -409,16 +411,68 @@ public
     algorithm
       blck := match blck
         case RESIDUAL() algorithm
-          blck.exp := Expression.map(blck.exp, func);
+          blck.exp := func(blck.exp);
+        then blck;
+
+        case ARRAY_RESIDUAL() algorithm
+          blck.exp := func(blck.exp);
+        then blck;
+
+        case FOR_RESIDUAL() algorithm
+          blck.exp := func(blck.exp);
+        then blck;
+
+        case GENERIC_RESIDUAL() algorithm
+          blck.exp := func(blck.exp);
         then blck;
 
         case SIMPLE_ASSIGN() algorithm
-          blck.rhs := Expression.map(blck.rhs, func);
+          blck.rhs := func(blck.rhs);
+        then blck;
+
+        case ARRAY_ASSIGN() algorithm
+          blck.rhs := func(blck.rhs);
+        then blck;
+
+        case ENTWINED_ASSIGN() algorithm
+          blck.single_calls := list(mapShallow(b, func) for b in blck.single_calls);
+        then blck;
+
+        case ALGORITHM() algorithm
+          blck.stmts := list(Statement.mapExp(stmt, func) for stmt in blck.stmts);
+        then blck;
+
+        case INVERSE_ALGORITHM() algorithm
+          blck.stmts := list(Statement.mapExp(stmt, func) for stmt in blck.stmts);
+        then blck;
+
+        case IF() algorithm
+          blck.branches := list((func(Util.tuple21(br)), list(mapShallow(b, func) for b in Util.tuple22(br))) for br in blck.branches);
+        then blck;
+
+        case WHEN() algorithm
+          blck.when_stmts := list(WhenStatement.map(stmt, func, NONE(), Expression.fakeMap) for stmt in blck.when_stmts);
+          blck.else_when := Util.applyOption(blck.else_when, function mapShallow(func = func));
+        then blck;
+
+        case LINEAR() algorithm
+          blck.system := LinearSystem.mapShallow(blck.system, func);
+          blck.alternativeTearing := Util.applyOption(blck.alternativeTearing, function LinearSystem.mapShallow(func = func));
+        then blck;
+
+        case NONLINEAR() algorithm
+          blck.system := NonlinearSystem.mapShallow(blck.system, func);
+          blck.alternativeTearing := Util.applyOption(blck.alternativeTearing, function NonlinearSystem.mapShallow(func = func));
+        then blck;
+
+        case HYBRID() algorithm
+          blck.continuous := mapShallow(blck.continuous, func);
+          blck.discreteEqs := list(mapShallow(b, func) for b in blck.discreteEqs);
         then blck;
 
         else blck;
       end match;
-    end map;
+    end mapShallow;
 
     function listToString
       input list<Block> blcks;
@@ -813,28 +867,6 @@ public
       end match;
     end solvesConstant;
 
-    function jacobianHasGenericLoopCalls
-      "True if this Jacobian's per-column evaluation uses generic for-loop/array calls."
-      input SimJacobian jac;
-      output Boolean b;
-    algorithm
-      b := match jac
-        case SimJacobian.SIM_JAC() then not listEmpty(jac.generic_loop_calls);
-      end match;
-    end jacobianHasGenericLoopCalls;
-
-    function isForOrGenericResidual
-      "True for for-loop/generic-index residual block kinds (unsupported by the linear-system codegen)."
-      input Block blck;
-      output Boolean b;
-    algorithm
-      b := match blck
-        case FOR_RESIDUAL()     then true;
-        case GENERIC_RESIDUAL() then true;
-        else false;
-      end match;
-    end isForOrGenericResidual;
-
     function fromStrongComponent
       input StrongComponent comp;
       output Block blck;
@@ -857,9 +889,11 @@ public
           Boolean allLinVarsFound;
           Integer resizable_size "the static size of whole resizable iteration arrays beyond 1 each";
           Option<SimVar> osimvar;
+          SimVar scalar_simvar;
           Block tmp;
           Variable var;
           Option<SimJacobian> jacobian;
+          BackendDAE.BackendDAE coefficientJacobian;
           EquationPointer eqn_ptr;
           Equation eqn;
           SlicingStatus status;
@@ -1018,6 +1052,15 @@ public
               for scal_var in Scalarize.scalarizeBackendVariable(var, slice.indices, resize = true) loop
                 crefs := scal_var.name :: crefs;
                 osimvar := UnorderedMap.get(scal_var.name, simcode_map);
+                if isNone(osimvar) and kind == NBPartition.Kind.JAC then
+                  scalar_simvar := UnorderedMap.getSafe(ComponentRef.stripSubscriptsAll(scal_var.name), simcode_map, sourceInfo());
+                  scalar_simvar.name := scal_var.name;
+                  scalar_simvar.type_ := scal_var.ty;
+                  scalar_simvar.index := scalar_simvar.index + NSimJacobian.crefFlatOffset(scal_var.name);
+                  scalar_simvar.arrayCref := NONE();
+                  scalar_simvar.numArrayElement := {};
+                  osimvar := SOME(scalar_simvar);
+                end if;
                 if isSome(osimvar) then
                   linVars := Util.getOption(osimvar) :: linVars;
                 else
@@ -1036,20 +1079,30 @@ public
           end for;
 
           // a jacobian without equations is the numeric fallback, the runtime differentiates numerically
-          if isSome(strict.jac) and not isNumericJacobian(Util.getOption(strict.jac)) then
-            (jacobian, simCodeIndices) := SimJacobian.create(Util.getOption(strict.jac), simCodeIndices, simcode_map);
+          if isSome(strict.jac) and not isNumericJacobian(Util.getOption(strict.jac)) and (kind == NBPartition.Kind.JAC or Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN)) then
+            coefficientJacobian := Util.getOption(strict.jac);
+            if kind == NBPartition.Kind.JAC then
+              coefficientJacobian := match coefficientJacobian
+                case BackendDAE.JACOBIAN() algorithm
+                  coefficientJacobian.name := coefficientJacobian.name + "_" + intString(simCodeIndices.jacobianIndex);
+                then coefficientJacobian;
+              end match;
+            end if;
+            (jacobian, simCodeIndices) := SimJacobian.create(coefficientJacobian, simCodeIndices, simcode_map);
           else
             jacobian := NONE();
           end if;
 
-          if comp.linear and isSome(jacobian) and not comp.homotopy and not comp.mixed
-             and not List.any(eqns, isForOrGenericResidual)
-             and not jacobianHasGenericLoopCalls(Util.getOption(jacobian))
-             and allLinVarsFound then
+          if kind == NBPartition.Kind.JAC and not (comp.linear and isSome(jacobian) and allLinVarsFound) then
+            // loops inside a Jac column should always be linear
+            Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " could not create a linear system in a Jacobian column:\n" + StrongComponent.toString(comp)});
+            fail();
+          end if;
+
+          if comp.linear and isSome(jacobian) and allLinVarsFound and (kind == NBPartition.Kind.JAC or (not comp.homotopy and not comp.mixed)) then
             // Linear torn systems with an analytic Jacobian get solved directly (A*x=b)
-            // instead of via Newton (#16458). Homotopy, for-loop/generic residuals,
-            // generic_loop_calls Jacobians, and mixed (discrete-coupled, e.g. ideal-diode
-            // switching networks) systems fall back below -- a one-shot direct solve has
+            // instead of via Newton (#16458). Homotopy and mixed (discrete-coupled,
+            // e.g. ideal-diode switching networks) systems fall back below -- a one-shot direct solve has
             // no damping across the discrete state, and coarser NBackend tearing than OB's
             // for these networks makes that chatter across event iterations instead of
             // settling (see newInst-newBackend library-testing regressions after #16463).
@@ -1065,7 +1118,7 @@ public
               sources       = list(blockSource(b) for b in listReverse(eqns)),
               indexSystem   = simCodeIndices.linearSystemIndex,
               size          = listLength(crefs),
-              partOfJac     = false
+              partOfJac     = kind == NBPartition.Kind.JAC
             );
             simCodeIndices.linearSystemIndex := simCodeIndices.linearSystemIndex + 1;
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
@@ -1834,6 +1887,17 @@ public
         partOfJac             = system.partOfJac
         );
     end convert;
+
+    function mapShallow
+      input output LinearSystem system;
+      input expFunc func;
+      partial function expFunc
+        input output Expression exp;
+      end expFunc;
+    algorithm
+      system.residual := list(Block.mapShallow(b, func) for b in system.residual);
+      system.jacobian := Util.applyOption(system.jacobian, function SimJacobian.mapExp(func = func));
+    end mapShallow;
   end LinearSystem;
 
   uniontype NonlinearSystem
@@ -1893,6 +1957,17 @@ public
         clockIndex            = NONE() // ToDo update this
         );
     end convert;
+
+    function mapShallow
+      input output NonlinearSystem system;
+      input expFunc func;
+      partial function expFunc
+        input output Expression exp;
+      end expFunc;
+    algorithm
+      system.blcks := list(Block.mapShallow(b, func) for b in system.blcks);
+      Pointer.update(system.jacobian, Util.applyOption(Pointer.access(system.jacobian), function SimJacobian.mapExp(func = func)));
+    end mapShallow;
   end NonlinearSystem;
 
   annotation(__OpenModelica_Interface="nbackend");

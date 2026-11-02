@@ -591,6 +591,7 @@ end SparsityRow;
     record DELAYED_EXPRESSIONS
       list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
       Integer maxDelayedIndex;
+      list<tuple<DAE.Exp, tuple<DAE.Exp, DAE.Exp, DAE.Exp>, list<BackendDAE.SimIterator>>> delayedLoops;
     end DELAYED_EXPRESSIONS;
   end DelayedExpression;
 
@@ -1569,6 +1570,11 @@ package SimCodeCodegenUtil
     output DAE.Exp exp;
   end simVarSizeExp;
 
+  function typeSizeExp
+    input DAE.Type ty;
+    output DAE.Exp exp;
+  end typeSizeExp;
+
   function simVarDimExps
     input SimCodeVar.SimVar var;
     output list<DAE.Exp> exps;
@@ -1751,6 +1757,11 @@ package SimCodeCodegenUtil
     input SimCode.VarInfo varInfo;
     output Integer n;
   end nVariablesReal;
+
+  function simVarIndexRuns
+    input list<SimCodeVar.SimVar> vars;
+    output list<tuple<Integer, Integer, Integer, Integer>> runs;
+  end simVarIndexRuns;
 
   function getSimCode
     output SimCode.SimCode code;

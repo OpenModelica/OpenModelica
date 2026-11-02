@@ -89,6 +89,8 @@ public
     list<Equation> initialEquations;
     list<Algorithm> algorithms;
     list<Algorithm> initialAlgorithms;
+    list<Expression> constraints "Optimica constraint sections";
+    list<tuple<String, Expression>> optimizationAttributes "Optimica class attributes, e.g. objective";
     ElementSource source;
   end FLAT_MODEL;
 

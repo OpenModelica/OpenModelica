@@ -605,11 +605,18 @@ public function clearTopScopeCache
    them is `nfTopScope` and MutableWeak's set of identity cells, and makeTopNode
    replaces those only at the next instantiation."
 algorithm
+  dropTopScopeCache();
+  MutableWeak.clearRoots();
+end clearTopScopeCache;
+
+public function dropTopScopeCache
+  "As clearTopScopeCache, but the nodes stay until MutableWeak.clearRoots, for
+   a caller still evaluating in the top scope."
+algorithm
   setGlobalRoot(Global.instNFNodeCacheIndex, {});
   setGlobalRoot(Global.nfTopScope, {});
   setGlobalRoot(Global.nfDiagramIconCache, NONE());
-  MutableWeak.clearRoots();
-end clearTopScopeCache;
+end dropTopScopeCache;
 
 public function iconJSONFromTop
   "The icon dump for one class of an already built top scope. A caller doing a

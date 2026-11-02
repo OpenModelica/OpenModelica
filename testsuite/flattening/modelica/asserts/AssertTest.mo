@@ -6,7 +6,7 @@
 //
 
 
-class AssertTest
+model AssertTest
   parameter Real lowlimit   = -5;
   parameter Real highlimit   =  5;
   parameter Real x = 7;
@@ -14,9 +14,8 @@ equation
   assert(x >= lowlimit and x <= highlimit, "Variable x out of limit");
 end AssertTest;
 
-class AssertTestInst
+model AssertTestInst
   AssertTest assertTest(lowlimit = -2, highlimit = 6, x = 5);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AssertTestInst;
 
 // Result:

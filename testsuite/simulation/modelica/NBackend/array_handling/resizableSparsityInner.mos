@@ -47,7 +47,7 @@ abs(a + (5 * a)^3 - 1) < 1e-6;
 
 buildModel(resizableSparsityInner2, stopTime = 1); getErrorString();
 system("grep -q 'SEED_INI_NLS_JAC_1.c\\[WHOLEDIM\\]' resizableSparsityInner2_12jac.c");
-system("grep -q 'SEED_INI_NLS_JAC_1.c\\[\\$i1\\].a\\[WHOLEDIM\\]' resizableSparsityInner2_12jac.c");
+system("grep -q 'SEED_INI_NLS_JAC_1.\\$FUN_1\\[\\$i1\\]' resizableSparsityInner2_12jac.c");
 system("./resizableSparsityInner2 -override=n=20", "resizableSparsityInner2.log");
 a := val(c.a[17,2], 1, "resizableSparsityInner2_res.mat");
 s := val(c.a[17,1], 1, "resizableSparsityInner2_res.mat")^2 + a^2 + val(c.a[17,3], 1, "resizableSparsityInner2_res.mat")^2;

@@ -1980,7 +1980,7 @@ protected
     list<TypedArg> namedArgs;
     Expression e1, e2;
     Type t1;
-    Variability v1;
+    Variability v1, v2;
     ComponentRef fn_ref;
     Function normalSample, clockedSample;
     InstNode recopnode;
@@ -1995,9 +1995,11 @@ protected
     (callExp, outType, var) := match(args, namedArgs)
 
       // sample(start, Real interval) - the usual stuff
-      case ({TypedArg.TYPED_ARG(value = e1, ty = t1),
-             TypedArg.TYPED_ARG(value = e2, ty = Type.INTEGER())}, {})
+      case ({TypedArg.TYPED_ARG(value = e1, ty = t1, var = v1),
+             TypedArg.TYPED_ARG(value = e2, ty = Type.INTEGER(), var = v2)}, {})
         algorithm
+          checkSampleArgVariability("start", e1, v1, info);
+          checkSampleArgVariability("interval", e2, v2, info);
           if Type.isInteger(t1) then
             e1 := Expression.CAST(Type.REAL(), e1);
           end if;
@@ -2007,9 +2009,11 @@ protected
           (Expression.CALL(ty_call), Type.BOOLEAN(), Variability.PARAMETER);
 
       // sample(start, Real interval) - the usual stuff
-      case ({TypedArg.TYPED_ARG(value = e1, ty = t1),
-             TypedArg.TYPED_ARG(value = e2, ty = Type.REAL())}, {})
+      case ({TypedArg.TYPED_ARG(value = e1, ty = t1, var = v1),
+             TypedArg.TYPED_ARG(value = e2, ty = Type.REAL(), var = v2)}, {})
         algorithm
+          checkSampleArgVariability("start", e1, v1, info);
+          checkSampleArgVariability("interval", e2, v2, info);
           if Type.isInteger(t1) then
             e1 := Expression.CAST(Type.REAL(), e1);
           end if;
@@ -2018,9 +2022,11 @@ protected
           (Expression.CALL(ty_call), Type.BOOLEAN(), Variability.PARAMETER);
 
       // sample(start, Real interval = value) - the usual stuff
-      case ({TypedArg.TYPED_ARG(value = e1, ty = t1)},
-            {TypedArg.TYPED_ARG(name = SOME("interval"), value = e2, ty = Type.REAL())})
+      case ({TypedArg.TYPED_ARG(value = e1, ty = t1, var = v1)},
+            {TypedArg.TYPED_ARG(name = SOME("interval"), value = e2, ty = Type.REAL(), var = v2)})
         algorithm
+          checkSampleArgVariability("start", e1, v1, info);
+          checkSampleArgVariability("interval", e2, v2, info);
           if Type.isInteger(t1) then
             e1 := Expression.CAST(Type.REAL(), e1);
           end if;
@@ -2059,6 +2065,20 @@ protected
           fail();
     end match;
   end typeSampleCall;
+
+  function checkSampleArgVariability
+    "sample(start, interval) requires parameter expressions, MLS 3.7 section 3.7.5."
+    input String name;
+    input Expression arg;
+    input Variability var;
+    input SourceInfo info;
+  algorithm
+    if var > Variability.PARAMETER then
+      Error.addSourceMessage(Error.FUNCTION_SLOT_VARIABILITY,
+        {name, Expression.toString(arg), "sample", Prefixes.variabilityString(var), "parameter"}, info);
+      fail();
+    end if;
+  end checkSampleArgVariability;
 
   function typeActualInStreamCall
     input String name;

@@ -2,15 +2,33 @@
 // keywords: algorithm
 // status:   correct
 // setup_command: $OMC_CC $OMC_CFLAGS $OMC_EXTLIB_FLAGS -o External_C_RecordTest$OMC_EXTLIB_EXT External_C_RecordTest.c $OMC_EXTLIB_LIBS
-// teardown_command: rm -f External_C_RecordTest$OMC_EXTLIB_EXT
+// teardown_command: rm -f External_C_RecordTest$OMC_EXTLIB_EXT EmptyRecordTestExternal*
 
 loadFile("RecordTest.mo");
 
 a:=RecordTest.mk_empty1();
 a:=RecordTest.mk_empty2();
 a:=RecordTest.EMPTY();
-setCommandLineOptions("-d=gen");
-a:=RecordTest.mk_empty_ext();
+// The external calls are made by a simulation, which links the object
+// file; a script cannot call an external function returning a record.
+setCommandLineOptions("-d=noevalfunc");
+loadString("impure function callEmptyExt
+  output Real r = 1.0;
+protected
+  RecordTest.EMPTY e;
+algorithm
+  e := RecordTest.mk_empty_ext();
+end callEmptyExt;
+model EmptyRecordTestExternal
+  Real r;
+algorithm
+  r := callEmptyExt();
+end EmptyRecordTestExternal;");getErrorString();
+echo(false);
+res := simulate(EmptyRecordTestExternal, stopTime=0.0);
+echo(true);
+res.messages;
+val(r, 0.0);
 
 // Result:
 // true
@@ -21,6 +39,11 @@ a:=RecordTest.mk_empty_ext();
 // record RecordTest.EMPTY
 // end RecordTest.EMPTY;
 // true
-// record RecordTest.EMPTY
-// end RecordTest.EMPTY;
+// true
+// ""
+// true
+// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// 1.0
 // endResult

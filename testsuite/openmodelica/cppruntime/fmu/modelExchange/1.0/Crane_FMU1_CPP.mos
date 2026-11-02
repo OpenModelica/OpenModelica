@@ -2,7 +2,6 @@
 // keywords: Crane FMI-Export FMI-Import
 // status:   correct
 // teardown_command: rm -rf binaries sources modelDescription.xml *cranes_crane*
-// cflags: -d=-newInst
 // Real variables, Real input variable, continuous-time states, state events, event iteration
 
 loadModel(Modelica, {"4.1.0"}); getErrorString();
@@ -12,6 +11,7 @@ buildModelFMU(cranes.crane, version="1.0", fileNamePrefix="cranes.crane"); getEr
 
 setCommandLineOptions("+simCodeTarget=C"); getErrorString();
 //importFMU("cranes_crane.fmu", "<default>", 6, false, true); getErrorString();
+setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString(); // make importFMU work
 importFMU("cranes_crane.fmu", "<default>"); getErrorString();
 loadFile("cranes_crane_me_FMU.mo"); getErrorString();
 simulate(cranes_crane_me_FMU, numberOfIntervals=150); getErrorString();
@@ -32,6 +32,8 @@ val(prismatic_v, 1);
 // ""
 // true
 // ""
+// true
+// ""
 // "cranes_crane_me_FMU.mo"
 // ""
 // true
@@ -43,11 +45,11 @@ val(prismatic_v, 1);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[openmodelica/cppruntime/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:790:3-790:90:writable] Warning: Parameter bodyShape_frameTranslation_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cylinder\") as default value.
-// [openmodelica/cppruntime/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:791:3-791:73:writable] Warning: Parameter bodyShape_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cylinder\") as default value.
-// [openmodelica/cppruntime/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:792:3-792:80:writable] Warning: Parameter fixedTranslation_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cylinder\") as default value.
-// [openmodelica/cppruntime/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:793:3-793:78:writable] Warning: Parameter world_label1 has no value, and is fixed during initialization (fixed=true), using available start value (start=\"x\") as default value.
-// [openmodelica/cppruntime/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:794:3-794:76:writable] Warning: Parameter world_label2 has no value, and is fixed during initialization (fixed=true), using available start value (start=\"y\") as default value.
+// "[openmodelica/cppruntime/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:773:3-773:90:writable] Warning: Parameter bodyShape_frameTranslation_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cylinder\") as default value.
+// [openmodelica/cppruntime/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:774:3-774:73:writable] Warning: Parameter bodyShape_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cylinder\") as default value.
+// [openmodelica/cppruntime/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:775:3-775:80:writable] Warning: Parameter fixedTranslation_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cylinder\") as default value.
+// [openmodelica/cppruntime/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:776:3-776:78:writable] Warning: Parameter world_label1 has no value, and is fixed during initialization (fixed=true), using available start value (start=\"x\") as default value.
+// [openmodelica/cppruntime/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:777:3-777:76:writable] Warning: Parameter world_label2 has no value, and is fixed during initialization (fixed=true), using available start value (start=\"y\") as default value.
 // "
 // 0.9493545676148132
 // 0.3948240567415474

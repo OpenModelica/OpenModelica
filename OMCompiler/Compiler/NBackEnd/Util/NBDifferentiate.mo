@@ -203,6 +203,9 @@ public
         Tearing strict;
         Option<Tearing> casual;
         Boolean linear;
+        list<StrongComponent> new_slices;
+        UnorderedMap<ComponentRef, EquationPointer> eqn_map;
+        list<tuple<Pointer<Equation>, Integer>> new_tpl_lst;
 
       case StrongComponent.SINGLE_COMPONENT() algorithm
         new_var := differentiateVariablePointer(comp.var, diffArguments_ptr);
@@ -249,8 +252,16 @@ public
       then StrongComponent.ALGEBRAIC_LOOP(-1, strict, casual, linear, false, comp.homotopy, comp.status, comp.implicitlyCreated);
 
       case StrongComponent.ENTWINED_COMPONENT() algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " not implemented for entwined equation:\n" + StrongComponent.toString(comp)});
-      then fail();
+        new_slices := list(differentiateStrongComponent(slice, diffArguments_ptr, idx, context, name) for slice in comp.entwined_slices);
+        // the call order refers to the differentiated equations
+        eqn_map := UnorderedMap.new<EquationPointer>(ComponentRef.hash, ComponentRef.isEqual);
+        for tpl in List.zip(comp.entwined_slices, new_slices) loop
+          for eqn_tpl in List.zip(StrongComponent.getEquations(Util.tuple21(tpl)), StrongComponent.getEquations(Util.tuple22(tpl))) loop
+            UnorderedMap.add(Equation.getEqnName(Util.tuple21(eqn_tpl)), Util.tuple22(eqn_tpl), eqn_map);
+          end for;
+        end for;
+        new_tpl_lst := list((UnorderedMap.getSafe(Equation.getEqnName(Util.tuple21(tpl)), eqn_map, sourceInfo()), Util.tuple22(tpl)) for tpl in comp.entwined_tpl_lst);
+      then StrongComponent.ENTWINED_COMPONENT(new_slices, new_tpl_lst, comp.periodic_order);
 
       case StrongComponent.ALIAS() then differentiateStrongComponent(comp.original, diffArguments_ptr, idx, context, name);
 
@@ -271,13 +282,17 @@ public
     list<Slice<VariablePointer>> ite_vars;
     list<Slice<EquationPointer>> res_eqns;
     array<StrongComponent> inner_eqns;
+    DifferentiationArguments diffArguments;
   algorithm
     ite_vars := list(Slice.apply(var, function differentiateVariablePointer(diffArguments_ptr = diffArguments_ptr)) for var in tearing.iteration_vars);
     res_eqns := list(Slice.apply(eqn, function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr, name = name)) for eqn in tearing.residual_eqns);
     // Only differentiate continuous inner equations; discrete ones contribute zero to the Jacobian.
     inner_eqns := Array.mapNoCopy(Array.filter(tearing.innerEquations, StrongComponent.isDiscrete), function differentiateStrongComponent(diffArguments_ptr = diffArguments_ptr, idx = idx, context = context, name = name));
 
-    diff_tearing := Tearing.TEARING_SET(ite_vars, res_eqns, inner_eqns, NONE());
+    // the original Jacobian is the system matrix of the differentiated linear loop
+    diffArguments := Pointer.access(diffArguments_ptr);
+    diff_tearing := Tearing.TEARING_SET(ite_vars, res_eqns, inner_eqns,
+    if diffArguments.diffType == DifferentiationType.JACOBIAN then tearing.jac else NONE());
   end differentiateTearing;
 
   function differentiateEquationPointerList
