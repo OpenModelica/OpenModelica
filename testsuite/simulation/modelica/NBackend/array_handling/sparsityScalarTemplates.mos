@@ -2,7 +2,7 @@
 // keywords: NewBackend jacobian sparsity
 // status: correct
 // suite: cSources
-// teardown_command: rm -f sparsityScalarTemplates sparsityScalarTemplates_* nnz.log
+// teardown_command: rm -f sparsityScalarTemplates sparsityScalarTemplates_* pairs.log
 //
 // The elements of y are solved by scalar equations, the for-equation uses
 // y[i]. Its rows only depend on x[i] and x[i - 1], not on all elements.
@@ -27,8 +27,8 @@ end sparsityScalarTemplates;
 setCommandLineOptions("--newBackend"); getErrorString();
 
 simulate(sparsityScalarTemplates); getErrorString();
-system("./sparsityScalarTemplates -lv=LOG_SIMULATION | grep -o 'NNZ.*' > nnz.log"); getErrorString();
-readFile("nnz.log");
+system("grep -c addSparsePair sparsityScalarTemplates_12jac.c > pairs.log"); getErrorString();
+readFile("pairs.log");
 abs(val(x[1], 1, "sparsityScalarTemplates_res.mat") - 0.60652921990747433) < 1e-5;
 abs(val(x[3], 1, "sparsityScalarTemplates_res.mat") - 0.53381679135990423) < 1e-5;
 abs(val(x[5], 1, "sparsityScalarTemplates_res.mat") - 0.52254220068878188) < 1e-5;
@@ -47,7 +47,7 @@ abs(val(x[5], 1, "sparsityScalarTemplates_res.mat") - 0.52254220068878188) < 1e-
 // ""
 // 0
 // ""
-// "NNZ:  9 colors: 2
+// "2
 // "
 // true
 // true
