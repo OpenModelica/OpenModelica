@@ -6891,6 +6891,7 @@ fn log_dassl_step(t: f64) {
 /// `can't continue`. `-10` is the one [`dassl_res`]'s `IRES = -1` leads to.
 fn report_dassl_failure(idid: i32, t: f64) -> &'static str {
     let msg = match idid {
+        -1 => "DDASKR has done too much work with small steps.",
         -2 => "The error tolerances are too stringent",
         -6 => "DDASSL had repeated error test failures on the last attempted step.",
         -7 => "The corrector could not converge.",
@@ -7022,8 +7023,8 @@ struct DasslDriver {
     /// row boundary. Resumed on the next `advance`.
     pending_tout: Option<f64>,
     /// DASKR continuations spent on the in-progress interval (persisted so the
-    /// runaway cap bounds one interval across yields).
-    work_retries: i32,
+    /// cap bounds one interval across yields).
+    work_retries: u32,
     tiny_steps: TinySteps,
     /// [`dassl::restart_first_step`]s since DASKR last succeeded.
     first_step_restarts: u32,
@@ -7421,8 +7422,13 @@ impl Driver for DasslDriver {
             if let Some(err) = ctx.err.take() {
                 return Err(err);
             }
-            if self.idid == -1 && self.work_retries < 10_000 {
-                // Work quota expended before TOUT: stay on this interval, continue.
+            if self.idid == -1 && self.work_retries < openmodelica_solvers::SOLVER_WORK_RETRIES {
+                omclog::warning!(
+                    omclog::SOLVER,
+                    false,
+                    "##DASSL## has done too much work with small steps at time = {}. Continuing to solve anyway.",
+                    format_g(self.t, 15),
+                );
                 self.info[0] = 1;
                 self.work_retries += 1;
                 self.pending_tout = Some(tout);
@@ -8051,8 +8057,15 @@ impl CvodeState {
         y.copy_from_slice(cv.y());
         Ok(match stop {
             crate::sundials::Stop::Failed(flag)
-                if flag == crate::sundials::CV_TOO_MUCH_WORK && self.work_retries < CVODE_WORK_RETRIES =>
+                if flag == crate::sundials::CV_TOO_MUCH_WORK
+                    && self.work_retries < openmodelica_solvers::SOLVER_WORK_RETRIES =>
             {
+                omclog::warning!(
+                    omclog::SOLVER,
+                    false,
+                    "##CVODE## has done too much work with small steps at time = {}. Continuing to solve anyway.",
+                    format_g(*t, 15),
+                );
                 self.work_retries += 1;
                 Progress::WorkQuota
             }
@@ -8155,8 +8168,15 @@ impl IdaState {
         }
         Ok(match stop {
             crate::sundials::Stop::Failed(flag)
-                if flag == crate::sundials::IDA_TOO_MUCH_WORK && self.work_retries < IDA_WORK_RETRIES =>
+                if flag == crate::sundials::IDA_TOO_MUCH_WORK
+                    && self.work_retries < openmodelica_solvers::SOLVER_WORK_RETRIES =>
             {
+                omclog::warning!(
+                    omclog::SOLVER,
+                    false,
+                    "##IDA## has done too much work with small steps at time = {}. Continuing to solve anyway.",
+                    format_g(*t, 15),
+                );
                 self.work_retries += 1;
                 Progress::WorkQuota
             }
@@ -11268,12 +11288,6 @@ unsafe extern "C" fn cvode_root(
     }
 }
 
-/// How many times one interval may be resumed after `CV_TOO_MUCH_WORK` (1000
-/// internal steps per call, as in C). C warns and calls `CVode` again with no
-/// limit; resuming continues the same trajectory, this only bounds it.
-#[cfg(sundials)]
-const CVODE_WORK_RETRIES: u32 = 10_000;
-
 /// Resumable CVODE driver, event-free path. Owns the CVODE memory block across
 /// chunks, so an `advance` resumes the exact same continuation.
 #[cfg(sundials)]
@@ -11513,8 +11527,15 @@ impl Driver for CvodeDriver {
             match stop_reason {
                 crate::sundials::Stop::Reached | crate::sundials::Stop::Stepped | crate::sundials::Stop::Root => {}
                 crate::sundials::Stop::Failed(flag)
-                    if flag == crate::sundials::CV_TOO_MUCH_WORK && self.work_retries < CVODE_WORK_RETRIES =>
+                    if flag == crate::sundials::CV_TOO_MUCH_WORK
+                        && self.work_retries < openmodelica_solvers::SOLVER_WORK_RETRIES =>
                 {
+                    omclog::warning!(
+                        omclog::SOLVER,
+                        false,
+                        "##CVODE## has done too much work with small steps at time = {}. Continuing to solve anyway.",
+                        format_g(self.t, 15),
+                    );
                     self.work_retries += 1;
                     self.pending_tout = Some(tout);
                     self.retry.close(e)?;
@@ -12232,12 +12253,6 @@ unsafe extern "C" fn ida_jac(
     }
 }
 
-/// How many times one interval may be resumed after `IDA_TOO_MUCH_WORK` (IDA's
-/// 500 internal steps per call). C warns and calls `IDASolve` again with no
-/// limit; resuming continues the same trajectory, this only bounds it.
-#[cfg(sundials)]
-const IDA_WORK_RETRIES: u32 = 10_000;
-
 /// Resumable IDA driver, event-free path. [`CvodeDriver`] with `y'` carried
 /// alongside `y`, IDA needing a consistent derivative at every restart.
 #[cfg(sundials)]
@@ -12495,8 +12510,15 @@ impl Driver for IdaDriver {
             match stop_reason {
                 crate::sundials::Stop::Reached | crate::sundials::Stop::Stepped | crate::sundials::Stop::Root => {}
                 crate::sundials::Stop::Failed(flag)
-                    if flag == crate::sundials::IDA_TOO_MUCH_WORK && self.work_retries < IDA_WORK_RETRIES =>
+                    if flag == crate::sundials::IDA_TOO_MUCH_WORK
+                        && self.work_retries < openmodelica_solvers::SOLVER_WORK_RETRIES =>
                 {
+                    omclog::warning!(
+                        omclog::SOLVER,
+                        false,
+                        "##IDA## has done too much work with small steps at time = {}. Continuing to solve anyway.",
+                        format_g(self.t, 15),
+                    );
                     self.work_retries += 1;
                     self.pending_tout = Some(tout);
                     self.retry.close(e)?;
