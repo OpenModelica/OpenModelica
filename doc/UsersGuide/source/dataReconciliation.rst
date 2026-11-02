@@ -399,8 +399,10 @@ The results for the splitter are:
 
 Contacts
 ~~~~~~~~
-| Daniel Bouskela (daniel.bouskela@edf.fr)
 | Audrey Jardin (audrey.jardin@edf.fr)
+| Baptiste Mazurié (baptiste.mazurie@edf.fr)
+| Luis Corona Mesa-Molès (luis.corona-mesa-moles@edf.fr)
+| Daniel Bouskela (daniel.bouskela@edf.fr)
 | Arunkumar Palanisamy (arunkumar.palanisamy@ri.se)
 | Lennart Ochel (lennart.ochel@ri.se)
 | Adrian Pop (adrian.pop@liu.se)
