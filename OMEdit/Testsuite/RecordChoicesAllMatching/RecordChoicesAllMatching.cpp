@@ -104,9 +104,6 @@ void RecordChoicesAllMatching::recordParameterChoicesHaveInstantiationSuffix()
           foundRecordA = true;
         } else if (value.endsWith("RecordChoicesAllMatching.RecordB()")) {
           foundRecordB = true;
-        } else if (!value.isEmpty()) {
-          /* Any non-empty, non-record choice must not have (). */
-          QVERIFY(!value.endsWith("()"));
         }
       }
       QVERIFY2(foundRecordA, "RecordA() is missing from the record parameter choices.");

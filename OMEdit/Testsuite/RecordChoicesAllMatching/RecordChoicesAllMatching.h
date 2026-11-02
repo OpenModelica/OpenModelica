@@ -44,7 +44,7 @@
 
 /*!
  * \brief The RecordChoicesAllMatching class
- * Tests that replaceable choices offered via choices(allMatching=true) for record
+ * Tests that replaceable choices offered via choicesAllMatching=true for record
  * types include the () instantiation suffix in the parameter value widget.
  */
 class RecordChoicesAllMatching : public QObject
@@ -55,7 +55,7 @@ private slots:
   /*!
    * \brief recordParameterChoicesHaveInstantiationSuffix
    * Opens the parameters dialog of a model with a record parameter that uses
-   * choices(allMatching=true). Verifies that record subtype choices have () appended
+   * choicesAllMatching=true. Verifies that record subtype choices have () appended
    * so they can be instantiated, e.g. RecordA() instead of RecordA.
    */
   void recordParameterChoicesHaveInstantiationSuffix();
