@@ -6,7 +6,7 @@ ExternalFunction1.mo \
 ExternalFunction2.mo \
 ExternalFunction3.mo \
 ExternalFunction4.mo \
-ExternalFunction6.mo \
+ExternalFunction6.mos \
 ExternalFunction8.mo \
 ExternalFunctionAnno.mo \
 ExternalFunctionArray.mo \
@@ -26,6 +26,7 @@ FAILINGTESTFILES=\
 # Add them here or they will be cleaned.
 DEPENDENCIES = \
 *.mo \
+*.mos \
 Makefile \
 ExternalFunction1_f.c \
 ExternalFunction2_f.c \
