@@ -394,7 +394,7 @@ algorithm
       // If the element doesn't already exist, add it to the list of elements to be
       // added to the connector.
       nodes := node :: nodes;
-      ty := c.ty;
+      ty := InstNode.getType(node);
       elem_name := ComponentRef.prefixCref(node, ty, {}, exp_name);
       vars := createVirtualVariables(elem_name, ty, ElementSource.getInfo(c.source), vars);
     else
