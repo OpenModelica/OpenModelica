@@ -1349,7 +1349,7 @@ public
           UnorderedMap<ComponentRef, Dependencies> inner_map = UnorderedMap.new<Dependencies>(ComponentRef.hash, ComponentRef.isEqual);
           UnorderedMap<ComponentRef, Dependencies> inner_keys = UnorderedMap.new<Dependencies>(ComponentRef.hash, ComponentRef.isEqual);
           list<Pointer<Equation>> eqns;
-          list<ComponentRef> var_crefs, pder_crefs, tmp_crefs, own_vars;
+          list<ComponentRef> var_crefs, pder_crefs, tmp_crefs, own_vars, comp_pder_crefs, comp_tmp_crefs;
           ComponentRef eqn_name, dep_cref, seed_cref, pder_cref;
           Option<ComponentRef> oseed_cref;
           Integer eqn_index;
@@ -1374,7 +1374,8 @@ public
           UnorderedSet<ComponentRef> no_iters = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
           UnorderedMap<ComponentRef, SliceAliases> slice_map = UnorderedMap.new<SliceAliases>(ComponentRef.hash, ComponentRef.isEqual);
           UnorderedMap<ComponentRef, InnerTemplates> template_map = UnorderedMap.new<InnerTemplates>(ComponentRef.hash, ComponentRef.isEqual);
-          Boolean handled;
+          Boolean handled, loop_union, single;
+          UnorderedSet<ComponentRef> loop_deps;
           list<ComponentRef> alias_deps, template_deps;
           UnorderedMap<ComponentRef, Dependency> eqn_deps;
           Iterator eqn_iter;
@@ -1429,8 +1430,13 @@ public
             var_crefs := StrongComponent.getVariableCrefs(comp);
 
             // an algebraic loop of independent blocks gets elementwise dependencies
-            handled := StrongComponent.isAlgebraicLoop(comp) and not List.any(var_crefs, function filterSet(set = pder_set))
+            (comp_pder_crefs, comp_tmp_crefs) := List.splitOnTrue(var_crefs, function filterSet(set = pder_set));
+            handled := StrongComponent.isAlgebraicLoop(comp) and listEmpty(comp_pder_crefs)
               and sparsityLoopBlocks(comp, var_crefs, full.dependencies, index_map, seed_set, inner_map, inner_keys, template_map, slice_map, seed_elements);
+            // all inner variables of a loop depend on the union of its equations, add it once
+            single := List.hasOneElement(eqns) and not StrongComponent.isAlgebraicLoop(comp);
+            loop_union := not handled and List.hasSeveralElements(eqns) and listEmpty(comp_pder_crefs);
+            loop_deps := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
             for eqn in (if handled then {} else eqns) loop
               eqn_name    := Equation.getEqnName(eqn);
               eqn_index   := UnorderedMap.getSafe(eqn_name, index_map, sourceInfo());
@@ -1446,7 +1452,7 @@ public
               end if;
               origins     := UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
               template_crefs := {};
-              if listLength(eqns) == 1 and not StrongComponent.isAlgebraicLoop(comp) then
+              if single then
                 (eqn_iter, eqn_deps, origins, template_crefs) := sparsityElementwise(Pointer.access(eqn), eqn_iter, eqn_deps, var_crefs);
               end if;
 
@@ -1455,7 +1461,7 @@ public
               changed     := false;
               // the variable a single equation solves is no input of it (the residual of a loop
               // uses the loop variables, they are resolved through the inner equations)
-              own_vars := if listLength(eqns) == 1 and not StrongComponent.isAlgebraicLoop(comp) then var_crefs else {};
+              own_vars := if single then var_crefs else {};
               for tpl in list(t for t guard(not List.any(own_vars, function ComponentRef.isEqual(cref2 = UnorderedMap.getOrDefault(Util.tuple21(t), origins, Util.tuple21(t)))))
                   in UnorderedMap.toList(eqn_deps)) loop
                 (dep_cref, dep) := tpl;
@@ -1513,7 +1519,8 @@ public
                 local_deps := (inner_deps, dep, repeated) :: local_deps;
               end for;
 
-              (pder_crefs, tmp_crefs) := List.splitOnTrue(var_crefs, function filterSet(set = pder_set));
+              pder_crefs := comp_pder_crefs;
+              tmp_crefs := comp_tmp_crefs;
 
               // handle result rows
               if not listEmpty(pder_crefs) then
@@ -1624,13 +1631,27 @@ public
                   inner_deps := UnorderedSet.unique_list(list(if sparsityCrefHasIterator(c) then ComponentRef.stripSubscriptsAll(c) else c
                     for c in inner_deps), ComponentRef.hash, ComponentRef.isEqual);
                 end if;
-                for cref in tmp_crefs loop
-                  sparsityAddInner(cref, inner_deps, inner_map, inner_keys);
-                  sparsityAddTemplate(sparsityTemplateKey(cref, template_crefs), inner_deps, template_map);
-                end for;
+                if loop_union then
+                  for c in inner_deps loop
+                    UnorderedSet.add(c, loop_deps);
+                  end for;
+                else
+                  for cref in tmp_crefs loop
+                    sparsityAddInner(cref, inner_deps, inner_map, inner_keys);
+                    sparsityAddTemplate(sparsityTemplateKey(cref, template_crefs), inner_deps, template_map);
+                  end for;
+                end if;
                 sparsityAddSliceAlias(Pointer.access(eqn), tmp_crefs, seed_set, slice_map);
               end if;
             end for;
+
+            if loop_union then
+              inner_deps := UnorderedSet.toList(loop_deps);
+              for cref in var_crefs loop
+                sparsityAddInner(cref, inner_deps, inner_map, inner_keys, true);
+                sparsityAddTemplate(sparsityTemplateKey(cref, {}), inner_deps, template_map);
+              end for;
+            end if;
           end for;
         then SPARSITY(
           equation_names      = listArray(listReverse(eqn_names)),
@@ -2681,11 +2702,14 @@ public
       input list<ComponentRef> deps;
       input UnorderedMap<ComponentRef, list<ComponentRef>> inner_map;
       input UnorderedMap<ComponentRef, list<ComponentRef>> inner_keys "name -> the crefs its slices are solved as, once per component";
+      input Boolean unique = false "deps has no duplicates and can be shared";
     protected
       ComponentRef stripped = ComponentRef.stripSubscriptsAll(cref);
+      list<ComponentRef> existing = UnorderedMap.getOrDefault(cref, inner_map, {});
     algorithm
       // several components can solve slices of the same variable with the same cref (e.g. x[$i1])
-      UnorderedMap.add(cref, UnorderedSet.unique_list(listAppend(deps, UnorderedMap.getOrDefault(cref, inner_map, {})), ComponentRef.hash, ComponentRef.isEqual), inner_map);
+      UnorderedMap.add(cref, if unique and listEmpty(existing) then deps
+        else UnorderedSet.unique_list(listAppend(deps, existing), ComponentRef.hash, ComponentRef.isEqual), inner_map);
       if not ComponentRef.isEqual(stripped, cref) then
         UnorderedMap.add(stripped, UnorderedSet.unique_list(listAppend(deps, UnorderedMap.getOrDefault(stripped, inner_map, {})), ComponentRef.hash, ComponentRef.isEqual), inner_map);
       end if;
