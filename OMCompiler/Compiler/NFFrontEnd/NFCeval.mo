@@ -2108,15 +2108,19 @@ algorithm
     case "atan" then evalBuiltinAtan(listHead(args));
     case "cat" then evalBuiltinCat(listHead(args), listRest(args), target);
     case "ceil" then evalBuiltinCeil(listHead(args));
+    case "change" then Expression.BOOLEAN(false);
     case "cosh" then evalBuiltinCosh(listHead(args));
     case "cos" then evalBuiltinCos(listHead(args));
     case "der" then evalBuiltinDer(listHead(args));
     // TODO: Fix typing of diagonal so the argument isn't boxed.
     case "diagonal" then evalBuiltinDiagonal(Expression.unbox(listHead(args)));
     case "div" then evalBuiltinDiv(args, target);
+    case "edge" then Expression.BOOLEAN(false);
     case "exp" then evalBuiltinExp(listHead(args));
     case "fill" then evalBuiltinFill(args);
     case "floor" then evalBuiltinFloor(listHead(args));
+    // hold of a parameter expression is that value, MLS 3.7 section 16.5.1.
+    case "hold" then listHead(args);
     case "identity" then evalBuiltinIdentity(listHead(args));
     case "integer" then evalBuiltinInteger(listHead(args));
     case "Integer" then evalBuiltinIntegerEnum(listHead(args));
@@ -2130,8 +2134,6 @@ algorithm
     case "nthRoot" then evalBuiltinNthRoot(args, target);
     case "ones" then evalBuiltinOnes(args);
     case "pre" then listHead(args);
-    // hold of a parameter expression is that value, MLS 3.7 section 16.5.1.
-    case "hold" then listHead(args);
     case "product" then evalBuiltinProduct(listHead(args));
     case "promote" then evalBuiltinPromote(listGet(args,1),listGet(args,2));
     case "rem" then evalBuiltinRem(args, target);
