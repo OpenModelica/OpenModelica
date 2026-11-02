@@ -400,7 +400,7 @@ The results for the splitter are:
 Contacts
 ~~~~~~~~
 | Daniel Bouskela (daniel.bouskela@edf.fr)
-| Audrey Jardin (audrey.jardin@edf.fr
+| Audrey Jardin (audrey.jardin@edf.fr)
 | Arunkumar Palanisamy (arunkumar.palanisamy@ri.se)
 | Lennart Ochel (lennart.ochel@ri.se)
 | Adrian Pop (adrian.pop@liu.se)
