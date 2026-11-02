@@ -175,6 +175,8 @@ NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows5.mos \
 NB_TUPLE_EQUATION_TESTFILES = \
 NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows4.mos \
 NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter5.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter8.mos \
 
 # Tests that fail and cannot be part of the testsuite (crash, hang, ...).
 # Models that fail in a reproducible way go in TESTFILES instead, with the
