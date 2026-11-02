@@ -3750,6 +3750,10 @@ algorithm
 
     case (false, false)
       algorithm
+        // MetaModelica is only supported by the old frontend.
+        if not (nf_inst_actual or Config.acceptMetaModelicaGrammar()) then
+          Error.addMessage(Error.OLD_FRONTEND_DEPRECATED, {});
+        end if;
         scodeP := SymbolTable.getSCode();
         ExecStat.execStat("FrontEnd - Absyn->SCode");
 

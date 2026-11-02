@@ -5968,8 +5968,8 @@ Continue?</source>
 <context>
     <name>OMEditApplication</name>
     <message>
-        <source>You have enabled old frontend for code generation which is not recommended. Do you want to switch to new frontend?</source>
-        <translation>Для создания кода был задействован старый пользовательский интерфейс, использовать который не рекомендуется. Переключиться на новый пользовательский интерфейс?</translation>
+        <source>You have enabled the old frontend for code generation. It is deprecated and will be removed after OpenModelica 1.28.0 is released. Do you want to switch to the new frontend?</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Switch to new frontend</source>
@@ -7958,16 +7958,20 @@ Can cause high overhead but values will not be missed.</source>
         <translation>Показать дополнительную информацию из процесса инициализации</translation>
     </message>
     <message>
+        <source>Enable old frontend for code generation (deprecated)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The old frontend is deprecated and will be removed after OpenModelica 1.28.0 is released.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Enable FMU Import</source>
         <translation>Активировать импорт FMU</translation>
     </message>
     <message>
         <source>Enable analytical jacobian for non-linear strong components</source>
         <translation>Включить аналитический якобиан для важных нелинейных компонентов</translation>
-    </message>
-    <message>
-        <source>Enable old frontend for code generation</source>
-        <translation>Включить старый интерфейс пользователя для генерации кода</translation>
     </message>
     <message>
         <source>Enable parallelization of independent systems of equations (Experimental)</source>
