@@ -60,9 +60,6 @@
 #include "simulation/simulation_runtime.h"
 #include "solver_main.h"
 
-#ifdef WITH_SUNDIALS
-
-
 /* Private function prototypes */
 static int callDenseJacobian(sunrealtype tt, sunrealtype cj, N_Vector yy,
                              N_Vector yp, N_Vector rr, SUNMatrix Jac,
@@ -1894,5 +1891,3 @@ static void idaReScaleData(IDA_SOLVER *idaData)
   idaReScaleVector(idaData->yp, idaData->ypScale, idaData->N);
   messageClose(OMC_LOG_SOLVER_V);
 }
-
-#endif /* #ifdef WITH_SUNDIALS */

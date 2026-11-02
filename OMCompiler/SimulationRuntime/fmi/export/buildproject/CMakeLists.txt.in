@@ -499,7 +499,7 @@ if(${NEED_CVODE})
   list(APPEND RUNTIME_DEPENDS ${CVODE_LIBRARIES})
   target_link_libraries(${FMU_NAME_HASH} PRIVATE ${CVODE_LIBRARIES})
   target_include_directories(${FMU_NAME_HASH} PRIVATE sundials suitesparse)
-  set(WITH_SUNDIALS ";WITH_SUNDIALS")
+  set(OMC_FMI_HAVE_CVODE ";OMC_FMI_HAVE_CVODE")
   message(STATUS "CVODE: ${CVODE_LIBRARIES}")
 else()
   message(STATUS "CVODE: Not linked")
@@ -511,7 +511,7 @@ target_include_directories(${FMU_NAME_HASH} PRIVATE ${FMI_INTERFACE_HEADER_FILES
                                                sundials@FMU_ADDITIONAL_INCLUDES@)
 
 # Set compiler definitions
-target_compile_definitions(${FMU_NAME_HASH} PRIVATE OMC_MINIMAL_RUNTIME=1;OMC_FMI_RUNTIME=1;CMINPACK_NO_DLL${WITH_SUNDIALS})
+target_compile_definitions(${FMU_NAME_HASH} PRIVATE OMC_MINIMAL_RUNTIME=1;OMC_FMI_RUNTIME=1;CMINPACK_NO_DLL${OMC_FMI_HAVE_CVODE})
 
 if(BUILD_SHARED_LIBS)
   # Override FMI2_FUNCTION_PREFIX if FMU compiled dynamically (shared-library FMUs
