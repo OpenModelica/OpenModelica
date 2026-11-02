@@ -1,0 +1,55 @@
+// name: sparsityScalarTemplates
+// keywords: NewBackend jacobian sparsity
+// status: correct
+// suite: cSources
+// teardown_command: rm -f sparsityScalarTemplates sparsityScalarTemplates_* nnz.log
+//
+// The elements of y are solved by scalar equations, the for-equation uses
+// y[i]. Its rows only depend on x[i] and x[i - 1], not on all elements.
+// Values of the old backend.
+
+loadString("
+model sparsityScalarTemplates
+  Real x[5](each start = 1, each fixed = true);
+  Real y[5], z[5];
+equation
+  y[1] = time;
+  y[2] = sin(x[1]);
+  y[3] = sin(x[2]);
+  y[4] = sin(x[3]);
+  y[5] = sin(x[4]);
+  for i in 1:5 loop
+    z[i] = y[i] * x[i];
+    der(x[i]) = -z[i];
+  end for;
+end sparsityScalarTemplates;
+"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+
+simulate(sparsityScalarTemplates); getErrorString();
+system("./sparsityScalarTemplates -lv=LOG_SIMULATION | grep -o 'NNZ.*' > nnz.log"); getErrorString();
+readFile("nnz.log");
+abs(val(x[1], 1, "sparsityScalarTemplates_res.mat") - 0.60652921990747433) < 1e-5;
+abs(val(x[3], 1, "sparsityScalarTemplates_res.mat") - 0.53381679135990423) < 1e-5;
+abs(val(x[5], 1, "sparsityScalarTemplates_res.mat") - 0.52254220068878188) < 1e-5;
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "sparsityScalarTemplates_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'sparsityScalarTemplates', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0
+// ""
+// "NNZ:  9 colors: 2
+// "
+// true
+// true
+// true
+// endResult

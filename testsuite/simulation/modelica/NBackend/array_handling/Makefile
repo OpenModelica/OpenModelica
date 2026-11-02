@@ -9,6 +9,7 @@ sparsityMatrixResidual.mos \
 forNestedElseIf.mos \
 forSliceRowMajor.mos \
 sliceRangeSparsity.mos \
+sparsityScalarTemplates.mos \
 scalarDivArray.mos \
 arrayRowScalar.mos \
 emptyArrayTupleArgument.mos \

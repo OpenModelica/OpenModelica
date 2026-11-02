@@ -2175,7 +2175,8 @@ public
       output Boolean handled = false;
       output list<ComponentRef> deps = {};
     protected
-      InnerTemplates templates = UnorderedMap.getOrDefault(ComponentRef.stripSubscriptsAll(cref), template_map, {});
+      ComponentRef stripped = ComponentRef.stripSubscriptsAll(cref);
+      InnerTemplates templates = UnorderedMap.getOrDefault(stripped, template_map, {});
       list<Subscript> subs = ComponentRef.subscriptsAllWithWholeFlat(cref);
       UnifyStatus status;
       UnorderedMap<ComponentRef, Expression> bindings;
@@ -2183,6 +2184,11 @@ public
       list<ComponentRef> key_deps;
       Boolean matched = false;
     algorithm
+      // a literal key binds nothing, an iterator would match all of them
+      if not listEmpty(templates) and not listEmpty(listRest(templates)) and sparsityCrefHasIterator(cref) then
+        templates := sparsityGeneralizeTemplates(templates, stripped);
+        UnorderedMap.add(stripped, templates, template_map);
+      end if;
       for template in templates loop
         (key, key_deps) := template;
         (status, bindings) := sparsityUnify(ComponentRef.subscriptsAllWithWholeFlat(key), subs);
@@ -2208,6 +2214,64 @@ public
       end for;
       handled := matched;
     end sparsityTemplateDeps;
+
+    function sparsityGeneralizeTemplates
+      "the templates x[k] -> {y[k + c], ...} of all elements of x as one template x[$tpl] -> {y[$tpl + c], ...}.
+      The few elements with other dependencies (e.g. at the boundaries) keep their templates."
+      input output InnerTemplates templates;
+      input ComponentRef stripped;
+    protected
+      ComponentRef iter = ComponentRef.makeIterator(InstNode.newIterator("$tpl", Type.INTEGER(), sourceInfo()), Type.INTEGER());
+      UnorderedSet<Integer> values = UnorderedSet.new(Util.id, intEq);
+      list<tuple<InnerTemplate, Integer, UnorderedSet<ComponentRef>>> normalized = {};
+      tuple<InnerTemplate, Integer, UnorderedSet<ComponentRef>> pattern;
+      InnerTemplates exceptions;
+      Integer value, size;
+    algorithm
+      try
+        size := ComponentRef.size(stripped, false);
+      else
+        return;
+      end try;
+      if size < 3 or listLength(templates) <> size then
+        return;
+      end if;
+      for template in templates loop
+        value := match ComponentRef.subscriptsAllWithWholeFlat(Util.tuple21(template))
+          case {Subscript.INDEX(index = Expression.INTEGER(value))} then value;
+          else -1;
+        end match;
+        if value < 0 or UnorderedSet.contains(value, values) then
+          return;
+        end if;
+        UnorderedSet.add(value, values);
+        normalized := (template, value, UnorderedSet.fromList(list(ComponentRef.mapSubscripts(d, function sparsityOffsetSubscript(iter = iter, value = value), true)
+          for d in Util.tuple22(template)), ComponentRef.hash, ComponentRef.isEqual)) :: normalized;
+      end for;
+      // the boundaries are more likely to differ than the middle
+      pattern := listGet(normalized, intDiv(size, 2) + 1);
+      exceptions := list(Util.tuple31(t) for t guard(not UnorderedSet.isEqual(Util.tuple33(t), Util.tuple33(pattern))) in normalized);
+      if listLength(exceptions) > max(2, intDiv(size, 10)) then
+        return;
+      end if;
+      templates := (ComponentRef.mapSubscripts(Util.tuple21(Util.tuple31(pattern)), function sparsityOffsetSubscript(iter = iter, value = Util.tuple32(pattern)), true),
+        UnorderedSet.toList(Util.tuple33(pattern))) :: exceptions;
+    end sparsityGeneralizeTemplates;
+
+    function sparsityOffsetSubscript
+      "x[w] as x[iter + w - value]"
+      input output Subscript sub;
+      input ComponentRef iter;
+      input Integer value;
+    protected
+      Integer w;
+    algorithm
+      sub := match sub
+        case Subscript.INDEX(index = Expression.INTEGER(value = w)) then Subscript.INDEX(if w == value then Expression.fromCref(iter)
+          else Expression.BINARY(Expression.fromCref(iter), Operator.makeAdd(Type.INTEGER()), Expression.INTEGER(w - value)));
+        else sub;
+      end match;
+    end sparsityOffsetSubscript;
 
     function sparsityUnify
       input list<Subscript> key_subs;
