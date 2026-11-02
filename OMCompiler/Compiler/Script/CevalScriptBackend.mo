@@ -3912,7 +3912,7 @@ protected
   String quote, dquote, defaultFmiIncludeDirectoy;
   String CC;
   SimCodeFunction.MakefileParams makefileParams;
-  String msvcEnv, rmrf, simrtLib;
+  String msvcEnv, rmrf, simrtLib, cflags;
 algorithm
   makefileParams := SimCodeFunctionUtil.createMakefileParams({}, {}, {}, false, true);
   fmuSourceDir := fmutmp+"/sources/";
@@ -3934,6 +3934,13 @@ algorithm
   defaultFmiIncludeDirectoy := dquote + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + dquote;
   // Only a build for this platform can link the runtime omc was built with.
   simrtLib := "-DSIMULATION_RUNTIME_FMI_LIBRARY=" + dquote + Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc/libSimulationRuntimeFMI.a" + dquote;
+  // As in a simulation executable; its Makefile expands MODELICAUSERCFLAGS itself.
+  // The FMU's CMakeLists.txt defines OM_HAVE_PTHREADS if it finds pthreads.
+  cflags := System.stringReplace(System.getCFlags(), "${MODELICAUSERCFLAGS}",
+                                 Util.makeValueOrDefault(System.readEnv, "MODELICAUSERCFLAGS", ""));
+  cflags := System.stringReplace(cflags, "-DOM_HAVE_PTHREADS", "");
+  cflags := if isWindows then System.stringReplace(cflags, "\"", "\\\"") else System.stringReplace(cflags, "'", "'\\''");
+  cflags := "-DCMAKE_C_FLAGS=" + dquote + cflags + dquote;
 
   // Set build type
   if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
@@ -3969,7 +3976,7 @@ algorithm
       algorithm
         buildDir := "build_cmake_dynamic";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
-                     CMAKE_BUILD_TYPE + " " + CC + " " + simrtLib +
+                     CMAKE_BUILD_TYPE + " " + CC + " " + simrtLib + " " + cflags +
                      " ..";
         cmd := msvcEnv + "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
@@ -3985,7 +3992,7 @@ algorithm
       algorithm
         buildDir := "build_cmake_static";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
-                     CMAKE_BUILD_TYPE + " " + CC + " " + simrtLib +
+                     CMAKE_BUILD_TYPE + " " + CC + " " + simrtLib + " " + cflags +
                      " ..";
         cmd := msvcEnv + "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
