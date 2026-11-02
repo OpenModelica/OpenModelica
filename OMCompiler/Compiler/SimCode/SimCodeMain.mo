@@ -416,6 +416,8 @@ protected
   NSimCode.SimCodeIndices simCodeIndices;
   SimCode.SimCode oldSimCode;
   Option<NBackendDAE.BackendDAE> fmiAdjointBackendJacobian;
+  Option<NBackendDAE.BackendDAE> fmiForwardBackendJacobian;
+  Option<SimCode.JacobianMatrix> fmiForwardJacobian;
   Option<SimCode.JacobianMatrix> fmiAdjointJacobian;
   list<SimCode.JacobianMatrix> fmiAdjointJacobians;
 algorithm
@@ -429,6 +431,13 @@ algorithm
         // Generate FMI derivatives only for FMU export. Keep the NB maps and
         // final index counters until the target-specific Jacobian is included;
         // converting to template SimCode first would lose this context.
+        if FMI.getFMIVersionString() == "3.0" and not Flags.isSet(Flags.DIS_SYMJAC_FMI20) then
+          fmiForwardBackendJacobian := NBJacobian.fmi(bdae);
+          if isSome(fmiForwardBackendJacobian) then
+            (simCode, simCodeIndices) := NSimCode.SimCode.addJacobian(
+              Util.getOption(fmiForwardBackendJacobian), simCode, simCodeIndices);
+          end if;
+        end if;
         fmiAdjointBackendJacobian := NBJacobian.fmiAdjoint(bdae);
         if isSome(fmiAdjointBackendJacobian) then
           (simCode, simCodeIndices) := NSimCode.SimCode.addJacobian(
@@ -471,9 +480,16 @@ algorithm
         // before the one-time NB SimCode conversion.
         fmiAdjointJacobians := list(jac for jac guard(jac.matrixName == "FMIDERADJ") in oldSimCode.jacobianMatrices);
         fmiAdjointJacobian := if listEmpty(fmiAdjointJacobians) then NONE() else SOME(listHead(fmiAdjointJacobians));
+        fmiForwardJacobian := NONE();
+        for jac in oldSimCode.jacobianMatrices loop
+          if jac.matrixName == "FMIDER" then
+            fmiForwardJacobian := SOME(jac);
+            break;
+          end if;
+        end for;
         // Minimal ModelStructure (state derivatives + outputs) so an FMI master
         // can drive Model Exchange integration. TODO: add dependencies.
-        oldSimCode.modelStructure := SimCodeUtil.createMinimalFMIModelStructure(oldSimCode.modelInfo, fmiAdjointJacobian);
+        oldSimCode.modelStructure := SimCodeUtil.createMinimalFMIModelStructure(oldSimCode.modelInfo, fmiAdjointJacobian, fmiForwardJacobian);
         //oldSimCode.modelStructure := SimCodeUtil.createMinimalFMIModelStructure(oldSimCode.modelInfo);
         callTargetTemplatesFMU(oldSimCode, Config.simCodeTarget(), FMI.getFMIVersionString(), fmuType, SymbolTable.getAbsyn());
       then ();

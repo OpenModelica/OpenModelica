@@ -2012,13 +2012,16 @@ fmi3Status omcGetDirectionalDerivative(ModelInstance* c,
 
   int i;
 
-  int independent = modelData->nStates+modelData->nInputVars;
-  int dependent = modelData->nStates+modelData->nOutputVars;
+  int independent;
+  int dependent;
 
   if (invalidState(comp, "omcGetDirectionalDerivative", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error))
     return fmi3Error;
   if (!comp->_has_jacobian)
     return unsupportedFunction(comp, "omcGetDirectionalDerivative");
+
+  independent = comp->fmiDerJac->sizeCols;
+  dependent = comp->fmiDerJac->sizeRows;
 
   FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcGetDirectionalDerivative")
 
@@ -2049,16 +2052,24 @@ fmi3Status omcGetDirectionalDerivative(ModelInstance* c,
     comp->fmiDerJac->seedVars[i]=0;
   }
   for (i=0;i<nKnown; i++) {
+#ifdef OMC_FMI3_FORWARD_JACOBIAN_MAP
+    int idx = mapDirectionalReference2KnownNumber(vKnown_ref[i]);
+#else
     int idx = vKnown_ref[i];
     /* if idx is > nStates it's an input so we need a mapping */
     if (idx >= modelData->nStates){
       idx = mapInputReference2InputNumber(vKnown_ref[i]);
+      if (idx < 0) {
+        FILTERED_LOG(comp, fmi3Error, LOG_STATUSERROR, "omcGetDirectionalDerivative: known reference %u is not a state or input; parameter derivatives are not supported.", vKnown_ref[i])
+        return fmi3Error;
+      }
       idx = modelData->nStates + idx;
     }
+#endif
     if (vrOutOfRange(comp, "omcGetDirectionalDerivative input index", idx, independent))
       return fmi3Error;
     /* Put the supplied value in the seeds */
-    comp->fmiDerJac->seedVars[idx]=dvKnown[i];
+    comp->fmiDerJac->seedVars[idx]+=dvKnown[i];
   }
   /* Call the Jacobian evaluation function. This function evaluates the whole column of the Jacobian.
    * More efficient code could only evaluate the equations needed for the
@@ -2069,6 +2080,18 @@ fmi3Status omcGetDirectionalDerivative(ModelInstance* c,
 
   /* Write the results to dvUnknown array */
   for (i=0;i<nUnknown; i++) {
+#ifdef OMC_FMI3_FORWARD_JACOBIAN_MAP
+    /* State outputs have identity rows, not differentiated defining equations. */
+    if (vUnknown_ref[i] < modelData->nStates &&
+        (int)mapOutputReference2OutputNumber(vUnknown_ref[i]) >= 0) {
+      int idx = mapDirectionalReference2KnownNumber(vUnknown_ref[i]);
+      if (vrOutOfRange(comp, "omcGetDirectionalDerivative state output index", idx, independent))
+        return fmi3Error;
+      dvUnknown[i] = comp->fmiDerJac->seedVars[idx];
+      continue;
+    }
+    int idx = mapDirectionalReference2UnknownNumber(vUnknown_ref[i]);
+#else
     /* derivatives are behind the states */
     int idx = vUnknown_ref[i] - modelData->nStates;
     /* if idx is > nStates it's an output so we need a mapping */
@@ -2076,6 +2099,7 @@ fmi3Status omcGetDirectionalDerivative(ModelInstance* c,
       idx = mapOutputReference2OutputNumber(vUnknown_ref[i]);
       idx = modelData->nStates + idx;
     }
+#endif
     if (vrOutOfRange(comp, "omcGetDirectionalDerivative output index", idx, dependent))
       return fmi3Error;
     dvUnknown[i] = comp->fmiDerJac->resultVars[idx];
@@ -3897,18 +3921,24 @@ fmi3Status fmi3GetDirectionalDerivative(fmi3Instance instance, const fmi3ValueRe
       nullPointer(c, "fmi3GetDirectionalDerivative", "seed", seed) ||
       nullPointer(c, "fmi3GetDirectionalDerivative", "sensitivity", sensitivity))
     return fmi3Error;
-  /* the directional-derivative unknowns (derivatives/outputs) and knowns
-     (states/inputs) are all Float64 variables. Recover the per-real-type value
-     reference understood by omcGetDirectionalDerivative by subtracting the real
-     base-type offset. The FMI 3.0 seed maps to dvKnown and sensitivity to
-     dvUnknown. */
-  if (nSeed != nKnowns || nSensitivity != nUnknowns) return fmi3Error;
-  u = (fmi3ValueReference*) calloc(nUnknowns, sizeof(fmi3ValueReference));
-  k = (fmi3ValueReference*) calloc(nKnowns,   sizeof(fmi3ValueReference));
+  /* FMI lengths count scalar elements, not value references. Expand whole
+     arrays in the same row-major order as fmi3GetFloat64/SetFloat64. */
+  if (nSeed != fmi3NumValues(knowns, nKnowns) ||
+      nSensitivity != fmi3NumValues(unknowns, nUnknowns)) return fmi3Error;
+  u = (fmi3ValueReference*) calloc(nSensitivity ? nSensitivity : 1, sizeof(fmi3ValueReference));
+  k = (fmi3ValueReference*) calloc(nSeed ? nSeed : 1, sizeof(fmi3ValueReference));
   if (!u || !k) { free(u); free(k); return fmi3Error; }
-  for (i = 0; i < nUnknowns; i++) u[i] = (fmi3ValueReference)(unknowns[i] - FMI3_REAL_VR_OFFSET);
-  for (i = 0; i < nKnowns;   i++) k[i] = (fmi3ValueReference)(knowns[i]   - FMI3_REAL_VR_OFFSET);
-  status = omcGetDirectionalDerivative(c, u, nUnknowns, k, nKnowns, seed, sensitivity);
+  for (i = 0, nSensitivity = 0; i < nUnknowns; i++) {
+    size_t j, count = fmi3ArrayLength(unknowns[i]);
+    for (j = 0; j < count; j++)
+      u[nSensitivity++] = (fmi3ValueReference)(unknowns[i] - FMI3_REAL_VR_OFFSET + j);
+  }
+  for (i = 0, nSeed = 0; i < nKnowns; i++) {
+    size_t j, count = fmi3ArrayLength(knowns[i]);
+    for (j = 0; j < count; j++)
+      k[nSeed++] = (fmi3ValueReference)(knowns[i] - FMI3_REAL_VR_OFFSET + j);
+  }
+  status = omcGetDirectionalDerivative(c, u, nSensitivity, k, nSeed, seed, sensitivity);
   free(u);
   free(k);
   return status;

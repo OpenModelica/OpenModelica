@@ -262,7 +262,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.CHECK_DEF_USE,
   Flags.TEARING_COST,
   Flags.OMEDIT,
-  Flags.FMI_ADJOINT_PARAMETERS
+  Flags.FMI_ADJOINT_PARAMETERS,
+  Flags.FMI_DIRECTIONAL_PARAMETERS
 };
 
 protected

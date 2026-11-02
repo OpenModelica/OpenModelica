@@ -1462,6 +1462,7 @@ package SimCodeCodegenUtil
   function fmi3AdjointVariables
     input SimCode.SimCode simCode;
     input Boolean seedVars;
+    input String matrixName;
     output list<SimCodeVar.SimVar> knowns;
   end fmi3AdjointVariables;
 

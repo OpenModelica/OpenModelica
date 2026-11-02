@@ -2477,12 +2477,13 @@ algorithm
 end stackArrayLength;
 
 public function fmi3AdjointVariables
-  "The primal knowns or unknowns with their actual FMIDERADJ result/seed indices. Use the
+  "The primal knowns or unknowns with their actual FMI Jacobian result/seed indices. Use the
    Jacobian map rather than assuming states/inputs/parameters have the same
-   order or size as the exported variable lists. An absent result is not a
+    order or size as the exported variable lists. An absent entry is not a
    supported independent variable (in particular, parameters by default)."
   input SimCode.SimCode simCode;
   input Boolean seedVars = false;
+  input String matrixName = "FMIDERADJ";
   output list<SimCodeVar.SimVar> knowns = {};
 protected
   HashTableCrefSimVar.HashTable ht;
@@ -2492,7 +2493,7 @@ protected
   Integer vr;
 algorithm
   for jac in simCode.jacobianMatrices loop
-    if jac.matrixName == "FMIDERADJ" and isSome(jac.crefsHT) then
+    if jac.matrixName == matrixName and isSome(jac.crefsHT) then
       ht := Util.getOption(jac.crefsHT);
       for v in BaseHashTable.hashTableValueList(ht) loop
         if (if seedVars then valueEq(v.varKind, BackendDAE.SEED_VAR())
@@ -2513,7 +2514,7 @@ algorithm
               true := UnorderedMap.getOrFail(vr, indices) == known.index;
             end if;
           elseif Flags.isSet(Flags.FAILTRACE) then
-            print("FMI adjoint: skipping non-exported aggregate " + ComponentReferenceBasics.printComponentRefStr(known.name) + "\n");
+            print("FMI Jacobian: skipping non-exported aggregate " + ComponentReferenceBasics.printComponentRefStr(known.name) + "\n");
           end if;
         end if;
       end for;

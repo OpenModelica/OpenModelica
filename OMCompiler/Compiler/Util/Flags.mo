@@ -580,6 +580,8 @@ constant DebugFlag OMEDIT = DEBUG_FLAG(201, "omedit", false,
   "Set by OMEdit, so the compiler can emit output only a GUI consumes.");
 constant DebugFlag FMI_ADJOINT_PARAMETERS = DEBUG_FLAG(202, "fmiAdjointParameters", false,
   "Includes retained Real parameters among the independent variables of FMI 3.0 adjoint derivatives in the new backend. Evaluated and structural parameters are not included.");
+constant DebugFlag FMI_DIRECTIONAL_PARAMETERS = DEBUG_FLAG(203, "fmiDirectionalParameters", false,
+  "Includes retained Real parameters among the independent variables of FMI 3.0 directional derivatives in the new backend. Evaluated and structural parameters are not included.");
 
 public
 // CONFIGURATION FLAGS

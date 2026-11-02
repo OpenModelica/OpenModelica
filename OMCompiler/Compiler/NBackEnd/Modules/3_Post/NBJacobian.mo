@@ -169,20 +169,27 @@ public
   end main;
 
   function fmiAdjoint
-    "Generate the FMI reverse-mode Jacobian, J^T, for fmi3GetAdjointDerivative.
-     Its seed/result axes are deliberately different from the simulation ODE
-    Jacobian: FMI knowns are continuous states plus top-level Real inputs
-    and, with fmiAdjointParameters, retained Real parameters;
-     FMI unknowns are state derivatives plus top-level Real outputs. All other
-     continuous partition unknowns remain partial candidates so the reverse
-     sweep can propagate through intermediate algebraic variables."
+    "Generate the reverse-mode FMI Jacobian."
     input Jacobian bdae;
+    output Option<Jacobian> jacobian;
+  algorithm
+    jacobian := fmi(bdae, true);
+  end fmiAdjoint;
+
+  function fmi
+    "Generate FMIDER (forward) or FMIDERADJ (reverse) from the same flat FMI
+     variable sets and strong components. Knowns are states, Real inputs and
+     optionally retained Real parameters; unknowns are state derivatives and
+     Real outputs. Other continuous unknowns remain partial candidates so
+     differentiation propagates through intermediate algebraic variables."
+    input Jacobian bdae;
+    input Boolean adjoint = false "Reverse mode instead of forward directional derivatives";
     output Option<Jacobian> jacobian;
   protected
     BVariable.VarData varData;
     VariablePointers fmiKnowns, fmiUnknowns, partialCandidates;
     list<Pointer<Variable>> stateVars, derivativeVars, inputVars, outputVars, parameterVars;
-    Boolean includeParameters = Flags.isSet(Flags.FMI_ADJOINT_PARAMETERS);
+    Boolean includeParameters = Flags.isSet(if adjoint then Flags.FMI_ADJOINT_PARAMETERS else Flags.FMI_DIRECTIONAL_PARAMETERS);
     list<StrongComponent> comps = {};
     list<Partition.Partition> partitions;
     EquationPointers equations;
@@ -240,13 +247,18 @@ public
         else
           equations := EquationPointers.fromList(List.flatten(list(StrongComponent.getEquations(comp) for comp in comps)));
           // Parameters are constant in time, but independent for these partial derivatives.
-          jacobian := jacobianSymbolicAdjoint("FMIDER", JacobianType.FMI, fmiKnowns,
-            partialCandidates, equations, SOME(listArray(comps)), NONE(), bdae.funcMap, includeParameters);
+          if adjoint then
+            jacobian := jacobianSymbolicAdjoint("FMIDER", JacobianType.FMI, fmiKnowns,
+              partialCandidates, equations, SOME(listArray(comps)), NONE(), bdae.funcMap, includeParameters);
+          else
+            jacobian := jacobianSymbolic("FMIDER", JacobianType.FMI, fmiKnowns,
+              partialCandidates, equations, SOME(listArray(comps)), NONE(), bdae.funcMap, includeParameters);
+          end if;
           /* jacobianSymbolicAdjoint uses an internal _ADJ suffix for generated
            * variables. The matrix name must match the FMI callback symbols. */
           fmiJacobian := match Util.getOption(jacobian)
             case fmiJacobian as BackendDAE.JACOBIAN() algorithm
-              fmiJacobian.name := "FMIDERADJ";
+              fmiJacobian.name := if adjoint then "FMIDERADJ" else "FMIDER";
             then fmiJacobian;
           end match;
           jacobian := SOME(fmiJacobian);
@@ -255,7 +267,7 @@ public
 
       else NONE();
     end match;
-  end fmiAdjoint;
+  end fmi;
 
   function applyToPartitions
     input output list<Partition.Partition> partitions;

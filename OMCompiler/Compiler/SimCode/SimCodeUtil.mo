@@ -13282,6 +13282,8 @@ public function createMinimalFMIModelStructure
   input SimCode.ModelInfo modelInfo;
   input Option<SimCode.JacobianMatrix> adjointPartialDerivatives = NONE()
     "NB-generated FMIDERADJ matrix, if symbolic adjoint generation succeeded.";
+  input Option<SimCode.JacobianMatrix> continuousPartialDerivatives = NONE()
+    "NB-generated FMIDER matrix, if symbolic forward generation succeeded.";
   output Option<SimCode.FmiModelStructure> outStructure;
 protected
   list<SimCode.FmiUnknown> derivs, outs, initialUnknowns;
@@ -13291,8 +13293,7 @@ algorithm
   outs   := list(SimCode.FMIUNKNOWN(SimCodeCodegenUtil.getVariableFMIIndex(v), {}, {}) for v in modelInfo.vars.outputVars);
 
   // InitialUnknowns according to the FMI specification, but without dependency
-  // information (the new backend FMU export does not compute the FMIDER
-  // Jacobian here). Omitting the dependencies is valid; the importer then
+  // information. Omitting the dependencies is valid; the importer then
   // assumes a dependency on all knowns. The list consists of:
   //  1. outputs with initial = approx or calculated
   //  2. calculatedParameters
@@ -13313,7 +13314,7 @@ algorithm
   outStructure := SOME(SimCode.FMIMODELSTRUCTURE(
     SimCode.FMIOUTPUTS(outs),
     SimCode.FMIDERIVATIVES(derivs),
-    NONE(),
+    continuousPartialDerivatives,
     NONE(),
     adjointPartialDerivatives,
     SimCode.FMIDISCRETESTATES({}),
