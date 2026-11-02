@@ -933,7 +933,7 @@ function checkExtendsLoop
   input Absyn.Path path;
   input SourceInfo info;
 protected
-  InstNode parent;
+  InstNode parent, scope_cls;
 algorithm
   () := match InstNode.getClass(node)
     // expand begins by changing the class to an EXPANDED_CLASS, but keeps the
@@ -951,7 +951,13 @@ algorithm
         parent := scope;
 
         while not InstNode.isTopScope(parent) loop
-          if InstNode.refEqual(parent, node) then
+          // The enclosing scope might be an instance of the base class, e.g. a
+          // component of it, so compare the class definitions.
+          scope_cls := if InstNode.isComponent(parent) then InstNode.classScope(parent) else parent;
+
+          if InstNode.refEqual(parent, node) or
+             (InstNode.isClass(scope_cls) and InstNode.isClass(node) and
+              referenceEq(InstNode.definition(scope_cls), InstNode.definition(node))) then
             Error.addSourceMessage(Error.EXTENDS_LOOP,
               {AbsynUtil.pathString(path)}, info);
             fail();
