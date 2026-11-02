@@ -13113,8 +13113,8 @@ algorithm
   end if;
 end exportIfAlgebraicState;
 
-public constant String FMI_LS_DAE_DRAFT_DATE = "2026-09-02";
-public constant String FMI_LS_DAE_DRAFT_COMMIT = "78313f4";
+public constant String FMI_LS_DAE_DRAFT_DATE = "2026-09-11";
+public constant String FMI_LS_DAE_DRAFT_COMMIT = "e5b8ffa";
 
 
 protected function getHighestDerivation"computes the highest derivative among all states. this includes derivatives of derivatives as well
