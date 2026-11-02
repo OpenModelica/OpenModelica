@@ -61,7 +61,7 @@ simulate(DaeModeMe, simflags="-s fmi3:me:dassl -daeMode", resimulateExecutable="
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DaeModeMe', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:me -daeMode -r=me_dae_zip.mat'",
 //     messages = "LOG_STDOUT        | info    | wasm artifact loaded (compiled from the component)
 // LOG_STDOUT        | info    | ModelExchange instantiated
-// LOG_STDOUT        | info    | ModelExchange run: 67 steps, 190 evaluations, 34 Jacobians, 1 state events, 0 time events, 503 samples
+// LOG_STDOUT        | info    | ModelExchange run: 72 steps, 228 evaluations, 33 Jacobians, 1 state events, 0 time events, 503 samples
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
@@ -82,10 +82,12 @@ simulate(DaeModeMe, simflags="-s fmi3:me:dassl -daeMode", resimulateExecutable="
 //   fmi-ls:fmi-ls-description=\"Layered standard for DAE support in FMI.\">
 //   <EnableDAEParameter valueReference=\"9\"/>
 //   <AlgebraicVariables>
+//     <AlgebraicVariable valueReference=\"1\"/>
 //     <AlgebraicVariable valueReference=\"3\"/>
 //     <AlgebraicVariable valueReference=\"4\"/>
 //   </AlgebraicVariables>
 //   <ModelStructure>
+//     <ContinuousStateDerivative valueReference=\"1\" dependencies=\"1\" dependenciesKind=\"constant\"/>
 //     <InitialUnknown valueReference=\"1\"/>
 //     <EventIndicator valueReference=\"8\"/>
 //     <Residual valueReference=\"10\" dependencies=\"0 1 3 4\" dependenciesKind=\"dependent dependent dependent dependent\"/>
@@ -110,7 +112,7 @@ simulate(DaeModeMe, simflags="-s fmi3:me:dassl -daeMode", resimulateExecutable="
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DaeModeMe', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:me -daeMode -r=me_dae.mat'",
 //     messages = "LOG_STDOUT        | info    | wasm artifact loaded (model kernel linked against the cached adapter)
 // LOG_STDOUT        | info    | ModelExchange instantiated
-// LOG_STDOUT        | info    | ModelExchange run: 67 steps, 190 evaluations, 34 Jacobians, 1 state events, 0 time events, 503 samples
+// LOG_STDOUT        | info    | ModelExchange run: 72 steps, 228 evaluations, 33 Jacobians, 1 state events, 0 time events, 503 samples
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

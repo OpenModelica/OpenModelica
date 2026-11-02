@@ -564,19 +564,24 @@ template fmiLsDaeManifest(SimCode simCode)
  "fmi-ls-dae's manifest (extra/org.fmi-standard.fmi-ls-dae/fmi-ls-manifest.xml)
   for a --daeMode Model Exchange FMU: the switch, the algebraic variables the
   importer solves for beside the states, and a ModelStructure that restates the
-  model description's and adds the residuals — the fully implicit form
-  F(der(x), x, a, t) = 0, so no ContinuousStateDerivative entries."
+  model description's and adds the residuals. fmi-ls-dae takes the semi-explicit
+  form der(x) = f(x, a, t), 0 = g(x, a, t): the fully implicit residuals
+  F(der(x), x, a, t) = 0 of --daeMode are written in it by making each der(x) an
+  algebraic variable too, with f the identity on it (fmi-ls-dae's appendix on
+  the relationship between the two forms)."
 ::=
 match simCode
-case SIMCODE(daeModeData=SOME(dmd as DAEMODEDATA(__)), modelStructure=modelStructure) then
+case SIMCODE(daeModeData=SOME(dmd as DAEMODEDATA(__)), modelStructure=modelStructure, modelInfo=MODELINFO(vars=vars as SIMVARS(__))) then
   let _ = SimCodeCodegenUtil.cacheFMI3ValueReferences(simCode)
-  let structure = match modelStructure
-    case SOME(fmistruct as FMIMODELSTRUCTURE(__)) then
-      <<
-      <%ModelStructureOutputs3(simCode, fmistruct.fmiOutputs)%>
-      <%ModelStructureInitialUnknowns3(simCode, fmistruct.fmiInitialUnknowns)%>
-      >>
+  let outputs = match modelStructure
+    case SOME(fmistruct as FMIMODELSTRUCTURE(__)) then ModelStructureOutputs3(simCode, fmistruct.fmiOutputs)
     else ''
+  let initialUnknowns = match modelStructure
+    case SOME(fmistruct as FMIMODELSTRUCTURE(__)) then ModelStructureInitialUnknowns3(simCode, fmistruct.fmiInitialUnknowns)
+    else ''
+  let derivatives = (vars.derivativeVars |> var =>
+    let vr = SimCodeCodegenUtil.getFMI3ValueReference(var, simCode)
+    '<ContinuousStateDerivative valueReference="<%vr%>" dependencies="<%vr%>" dependenciesKind="constant"/>' ;separator="\n")
   let indicators = EventIndicators3(simCode)
   let residuals = (SimCodeCodegenUtil.fmi3DaeResiduals(simCode) |> (vr, dependencyAttributes) => DaeResidual3(vr, dependencyAttributes) ;separator="\n")
   let _ = SimCodeCodegenUtil.clearFMI3ValueReferences()
@@ -588,10 +593,13 @@ case SIMCODE(daeModeData=SOME(dmd as DAEMODEDATA(__)), modelStructure=modelStruc
     fmi-ls:fmi-ls-description="Layered standard for DAE support in FMI.">
     <EnableDAEParameter valueReference="<%SimCodeCodegenUtil.getFMI3DaeModeValueReference(simCode)%>"/>
     <AlgebraicVariables>
+      <%vars.derivativeVars |> var => '<AlgebraicVariable valueReference="<%SimCodeCodegenUtil.getFMI3ValueReference(var, simCode)%>"/>' ;separator="\n"%>
       <%dmd.algebraicVars |> var => '<AlgebraicVariable valueReference="<%SimCodeCodegenUtil.getFMI3ValueReference(var, simCode)%>"/>' ;separator="\n"%>
     </AlgebraicVariables>
     <ModelStructure>
-      <%structure%>
+      <%outputs%>
+      <%derivatives%>
+      <%initialUnknowns%>
       <%indicators%>
       <%residuals%>
     </ModelStructure>
