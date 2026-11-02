@@ -923,7 +923,7 @@ protected
         UnorderedMap.tryAdd(Equation.getEqnName(eq_ptr), eq_ptr, eqns);
       end for;
       // replaced variables do not occur again
-      UnorderedMap.remove(name, index);
+      UnorderedMap.add(name, {}, index);
       parent := BVariable.getParent(BVariable.getVarPointer(cref, sourceInfo()));
       while isSome(parent) loop
         eq_lst := UnorderedMap.getOrDefault(BVariable.getVarName(Util.getOption(parent)), index, {});
