@@ -97,7 +97,7 @@ protected
   import Causalize = NBCausalize;
   import Differentiate = NBDifferentiate;
   import NBDifferentiate.{DifferentiationType, DifferentiationArguments};
-  import NBEquation.{Equation, EquationAttributes, EquationKind, EquationPointers, EqData, Iterator};
+  import NBEquation.{Equation, EquationAttributes, EquationKind, EquationPointers, EqData, Iterator, WhenEquationBody, WhenStatement};
   import Partition = NBPartition;
   import Replacements = NBReplacements;
   import SimplifyExp = NFSimplifyExp;
@@ -269,8 +269,8 @@ protected
             for cref in UnorderedMap.keyList(follow_repl) loop
               UnorderedMap.add(cref, UnorderedMap.getOrFail(cref, follow_repl), replacements);
             end for;
-            auxEquations := listAppend(follow_aux, auxEquations);
           end if;
+          auxEquations := listAppend(follow_aux, auxEquations);
           alias_vars := list(BVariable.getVarPointer(cref, sourceInfo()) for cref in UnorderedMap.keyList(replacements));
 
           // update record variability and flatten to record children
@@ -702,10 +702,33 @@ protected
           UnorderedMap.add(cref, ExceptionKind.NO_ALIAS, acc);
         end for;
       then ();
+      // when-equation left hand sides can only be replaced by crefs
+      case Equation.WHEN_EQUATION() algorithm
+        filterExceptionsWhenBody(eqn.body, acc);
+      then ();
       else ();
     end match;
     Equation.map(eqn, function filterExceptions(acc = acc));
   end filterExceptionsEquation;
+
+  function filterExceptionsWhenBody
+    input WhenEquationBody body;
+    input UnorderedMap<ComponentRef, ExceptionKind> acc;
+  protected
+    ComponentRef cref;
+  algorithm
+    for stmt in body.when_stmts loop
+      () := match stmt
+        case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = cref)) algorithm
+          UnorderedMap.tryAdd(cref, ExceptionKind.CREF_ALIAS, acc);
+        then ();
+        else ();
+      end match;
+    end for;
+    if isSome(body.else_when) then
+      filterExceptionsWhenBody(Util.getOption(body.else_when), acc);
+    end if;
+  end filterExceptionsWhenBody;
 
   function filterExceptions
     "Filter expression for all forbidden aliases (pre, dynamic optimization annotations, ...)"
