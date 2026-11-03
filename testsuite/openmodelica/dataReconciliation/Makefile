@@ -167,6 +167,7 @@ NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe12.mos \
 NB_INITIALIZATION_TESTFILES = \
 NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows2.mos \
 NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows5.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR.mos \
 
 # The tests of NB_TESTFILES that fail in NSimCode because the tuple equation of
 # Water_sat_P is not solved (Solve.UNPROCESSED). They keep the failure as
@@ -176,6 +177,7 @@ NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows4.mos \
 NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6.mos \
 NB_TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter5.mos \
 NB_TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter8.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_WithHARE.mos \
 
 # Tests that fail and cannot be part of the testsuite (crash, hang, ...).
 # Models that fail in a reproducible way go in TESTFILES instead, with the

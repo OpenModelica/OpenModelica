@@ -6,6 +6,9 @@
 // The uncertain attribute is only meant for data reconciliation. Without it
 // enabled, uncertain=Uncertainty.refine must not change which alias variable
 // is kept, so both models must iterate on a with start = 1.
+//
+// TODO: the new backend does not print -d=iterationVars, so this test does not
+// show the iteration variable. -d=tearingdump would print it.
 
 setCommandLineOptions("--newBackend");
 getErrorString();
@@ -34,4 +37,16 @@ translateModel(UncertainAliasSimulation.Plain); getErrorString();
 translateModel(UncertainAliasSimulation.Refine); getErrorString();
 
 // Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// "Warning: NBAlias.selectStartByConfidence: Alias set with conflicting unfixed start values of equal confidence detected. Use -d=dumprepl for more information.
+// "
+// true
+// "Warning: NBAlias.selectStartByConfidence: Alias set with conflicting unfixed start values of equal confidence detected. Use -d=dumprepl for more information.
+// "
 // endResult
