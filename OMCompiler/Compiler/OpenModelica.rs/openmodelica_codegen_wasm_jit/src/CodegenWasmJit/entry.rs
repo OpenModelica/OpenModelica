@@ -22,7 +22,7 @@ pub fn translateModel(simCode: metamodelica::Ref<SimCode::SimCode>) -> Result<()
     let prefix = simCode.fileNamePrefix.to_string();
     let _ = std::fs::remove_file(format!("{prefix}.wasm"));
     let errs_before = openmodelica_util::Error::getNumErrorMessages();
-    let outcome = build_sim_model(&simCode, false, ExtHost::SIM, "", "").and_then(|model| {
+    let outcome = build_sim_model(&simCode, false, ExtHost::SIM, Eh::sim(), "", "").and_then(|model| {
         write_output(&format!("{prefix}.wasm"), &model.wasm).map_err(|_| "CodegenWasmJit: write failed")?;
         sim_models()
             .lock()

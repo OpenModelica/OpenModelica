@@ -40,6 +40,7 @@
 #include "ScaleDraw.h"
 #include "OMPlot.h"
 #include "PlotWindow.h"
+#include "PlotCurve.h"
 
 #include "qwt_scale_map.h"
 #include "qwt_text.h"
@@ -71,6 +72,19 @@ QwtText ScaleDraw::label(double value) const
 {
   mUnitPrefix = "";
   mExponent = 0;
+
+  // The y-axis of a stacked plot, or of Booleans or of one enumeration, names the values.
+  if (alignment() == QwtScaleDraw::LeftScale || alignment() == QwtScaleDraw::RightScale) {
+    const bool right = alignment() == QwtScaleDraw::RightScale;
+    QList<PlotCurve*> curves = mpParentPlot->axisCurves(right);
+    if (!curves.isEmpty() && curves.first()->isStacked()) {
+      PlotCurve *pPlotCurve = mpParentPlot->stackedCurveAt(right, value);
+      return pPlotCurve ? pPlotCurve->valueText(pPlotCurve->unstackedValue(value)) : QString();
+    }
+    if (mpParentPlot->commonValueLabels(right)) {
+      return qAbs(value - qRound(value)) < 1e-9 ? curves.first()->valueText(value) : QString();
+    }
+  }
 
   if (mpParentPlot->getParentPlotWindow()->getPrefixUnits() && mPrefixLabel && !mpParentPlot->getPlotCurvesList().isEmpty()
       && !mpParentPlot->getParentPlotWindow()->isPlotParametric() && !mpParentPlot->getParentPlotWindow()->isPlotArrayParametric()) {

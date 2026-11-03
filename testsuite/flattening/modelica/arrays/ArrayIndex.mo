@@ -6,7 +6,7 @@
 // Drmodelica: 7.4 Array Indexing operator (p. 216)
 //
 
-class ArrayIndex
+model ArrayIndex
   Real[2, 2] A = {{2, 3}, {4, 5}}; // Definition of array A
   Real A_Retrieval = A[2, 2]; // Retrieves the array element value 5
   Real B[2, 2];
@@ -15,7 +15,6 @@ algorithm
   B := fill(1,2,2); // B will have the values {{1, 1}, {1, 1}}
   B[2, 1] := 8; // Assignment to the array element B[2, 1]
   c := A[1, 1];
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayIndex;
 
 // Result:

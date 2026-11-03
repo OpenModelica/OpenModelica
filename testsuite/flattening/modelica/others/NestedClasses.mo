@@ -5,19 +5,18 @@
 // Tests nested classes
 //
 
-class NestedClasses
-  class NestedClass1
+model NestedClasses
+  model NestedClass1
     Integer nestedInt1;
   end NestedClass1;
 
-  class NestedClass2
+  model NestedClass2
     Integer nestedInt2;
   end NestedClass2;
 
   NestedClass1 nc1;
   NestedClass2 nc2;
   Integer i;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end NestedClasses;
 
 // Result:

@@ -1,0 +1,38 @@
+// name: resizableStartSize
+// keywords: NewBackend resizable start
+// status: correct
+// cflags: --newBackend
+// suite: cSources
+// teardown_command: rm -f resizableStartSize resizableStartSize_* resizableStartSize.log
+//
+// The start values of c[i].X are set per element of the component array of
+// resizable size N, so their buffer has to hold N*3 values.
+
+loadString("
+model resizableStartSize
+  model C
+    parameter Real X_start[3] = {1, 2, 3};
+    Real X[3](start = X_start);
+  equation
+    der(X) = -X;
+  end C;
+  parameter Integer N = 100 annotation(__OpenModelica_resizable = true);
+  C c[N](each X_start = {1, 2, 3});
+end resizableStartSize;
+"); getErrorString();
+
+simulate(resizableStartSize, stopTime = 0.1); getErrorString();
+val(c[100].X[3], 0);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "resizableStartSize_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'resizableStartSize', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 3.0
+// endResult

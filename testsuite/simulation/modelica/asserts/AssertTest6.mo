@@ -5,12 +5,12 @@
 //
 
 
-class AssertTest
+model AssertTest
   function print "Print string to terminal or file"
     input String string="" "String to be printed";
     external "C" myPuts(string) annotation(Include="#include <stdio.h>\n#define myPuts(X) { fputs(X,stdout); fflush(NULL); }");
   end print;
-  function f
+  impure function f
     input Real x;
     output Real y;
   algorithm
@@ -26,7 +26,7 @@ equation
 equation
 end AssertTest;
 
-class Test6
+model Test6
   AssertTest assertTest;
 end Test6;
 

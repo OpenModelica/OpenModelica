@@ -19,11 +19,11 @@ model ExternalFunction2
   Real y[size(x,1)];
 equation
   y = ext_f(x);
-  annotation(__OpenModelica_commandLineOptions="-d=gen -d=-newInst");
+  annotation(__OpenModelica_commandLineOptions="-d=gen");
 end ExternalFunction2;
 
 // Result:
-// function ext_f
+// impure function ext_f
 //   input Real[:] x;
 //   output Real[size(x, 1)] y;
 //
@@ -40,9 +40,6 @@ end ExternalFunction2;
 //   Real y[3];
 //   Real y[4];
 // equation
-//   y[1] = 9.0;
-//   y[2] = 12.0;
-//   y[3] = 15.0;
-//   y[4] = 18.0;
+//   y = ext_f({3.0, 4.0, 5.0, 6.0});
 // end ExternalFunction2;
 // endResult

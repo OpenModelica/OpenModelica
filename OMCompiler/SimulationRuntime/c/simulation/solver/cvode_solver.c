@@ -51,8 +51,6 @@
 #include "sundials_util.h"
 
 
-#ifdef WITH_SUNDIALS
-
 #define CVODE_LMM_MAX 2
 const char *CVODE_LMM_NAME[CVODE_LMM_MAX + 1] = {
     "undefined",
@@ -1029,7 +1027,9 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   int flag;
   int retVal = 0;
   int finished = FALSE;
+  int workRetries = 0;
   double tout = 0;
+  long int i;
 
   CVODE_SOLVER *cvodeData;
   SIMULATION_DATA *simulationData;
@@ -1065,22 +1065,16 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
     cvodeData->isInitialized = TRUE;
   }
 
-  saveJumpState = threadData->currentErrorStage;
-  threadData->currentErrorStage = ERROR_INTEGRATOR;
-
-  /* Try */
-#if !defined(OMC_EMCC)
-  OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
-
-  /* Check current step size */
-  if (solverInfo->currentStepSize < DASSL_STEP_EPS)
+  if ((solverInfo->currentStepSize < DASSL_STEP_EPS) ||
+      (solverInfo->currentStepSize < DASSL_STEP_EPS*(simulationInfo->stopTime - simulationInfo->startTime)))
   {
-    throwStreamPrint(threadData, "##CVODE## Desired step to small!");
-    infoStreamPrint(OMC_LOG_SOLVER, 0, "Interpolate constant");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Desired step too small try next one");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Interpolate linear");
 
-    /* Constant extrapolation */
-    /* TODO: Interpolate linear solution */
+    for (i = 0; i < cvodeData->N; i++)
+    {
+      simulationData->realVars[i] += simulationData->realVars[cvodeData->N + i] * solverInfo->currentStepSize;
+    }
     simulationData->timeValue = solverInfo->currentTime + solverInfo->currentStepSize;
     if (measure_time_flag)
       rt_accumulate(SIM_TIMER_SOLVER);
@@ -1089,6 +1083,14 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
 
     return 0;
   }
+
+  saveJumpState = threadData->currentErrorStage;
+  threadData->currentErrorStage = ERROR_INTEGRATOR;
+
+  /* Try */
+#if !defined(OMC_EMCC)
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
 
   /* CVODE may step past tout and interpolates back to it, but never past the
    * next time event */
@@ -1142,9 +1144,9 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
       infoStreamPrint(OMC_LOG_SOLVER, 0, "##CVODE## root found at time = %.15g", solverInfo->currentTime);
       finished = TRUE;
     }
-    else if (flag == CV_TOO_MUCH_WORK)
+    else if (flag == CV_TOO_MUCH_WORK && workRetries++ < SOLVER_WORK_RETRIES)
     {
-      warningStreamPrint(OMC_LOG_SOLVER, 0, "##CVODE## has done too much work with small steps at time = %.15g", solverInfo->currentTime);
+      warningStreamPrint(OMC_LOG_SOLVER, 0, "##CVODE## has done too much work with small steps at time = %.15g. Continuing to solve anyway.", solverInfo->currentTime);
     }
     else
     {
@@ -1199,32 +1201,61 @@ int cvode_solver_fmi_step(ModelInstance *comp, double tNext, double* states)
   DATA* data = comp->fmuData;
   threadData_t* threadData = comp->threadData;
   SOLVER_INFO* solverInfo = comp->solverInfo;
-  /* Variables */
-  int flag;
-  int retVal = 0;
+  SIMULATION_INFO* simulationInfo = data->simulationInfo;
+  CVODE_SOLVER *cvodeData = (CVODE_SOLVER*) solverInfo->solverData;
+  const double *ders = data->localData[0]->realVars + cvodeData->N;
+  double h;
+  int flag, workRetries;
+  long int i;
 
-  CVODE_SOLVER *cvodeData;
-
-  cvodeData = (CVODE_SOLVER*) solverInfo->solverData;
   solverInfo->currentTime = data->localData[0]->timeValue;
+  h = tNext - solverInfo->currentTime;
 
   N_VSetArrayPointer(states, cvodeData->y);
-  if (solverInfo->didEventStep || !cvodeData->isInitialized)    // TODO Save if we have had an event
+  if (solverInfo->didEventStep || !cvodeData->isInitialized)
   {
     cvode_solver_reinit(data, threadData, solverInfo, cvodeData);
     cvodeData->isInitialized = TRUE;
+  }
+
+  /* As cvode_solver_step: CVODE rejects a tout within roundoff of t */
+  if (h < DASSL_STEP_EPS || h < DASSL_STEP_EPS*(simulationInfo->stopTime - simulationInfo->startTime))
+  {
+    for (i = 0; i < cvodeData->N; i++)
+    {
+      states[i] += ders[i] * h;
+    }
+    solverInfo->currentTime = tNext;
+    return 0;
+  }
+
+  if (solverInfo->didEventStep && !omc_flag[FLAG_INITIAL_STEP_SIZE])
+  {
+    flag = CVodeSetInitStep(cvodeData->cvode_mem, cvodeRestartStep(data, cvodeData, h));
+    if (flag < 0) {
+      FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: ##CVODE## CVodeSetInitStep failed with flag %i.", flag)
+      return -1;
+    }
   }
   flag = CVodeSetStopTime(cvodeData->cvode_mem, tNext);
   if (flag < 0) {
     FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: ##CVODE## CVodeSetStopTime failed with flag %i.", flag)
     return -1;
   }
-  flag = CVode(cvodeData->cvode_mem,
-               tNext,
-               cvodeData->y,
-               &(solverInfo->currentTime),
-               CV_NORMAL);
-  /* Error handling */
+  for (workRetries = 0; ; workRetries++)
+  {
+    flag = CVode(cvodeData->cvode_mem,
+                 tNext,
+                 cvodeData->y,
+                 &(solverInfo->currentTime),
+                 CV_NORMAL);
+    if (flag != CV_TOO_MUCH_WORK || workRetries == SOLVER_WORK_RETRIES)
+    {
+      break;
+    }
+    FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2DoStep: ##CVODE## has done too much work with small steps at time = %.15g. Continuing to solve anyway.", solverInfo->currentTime)
+  }
+
   if ((flag == CV_SUCCESS || flag == CV_TSTOP_RETURN) && solverInfo->currentTime >= tNext)
   {
     FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2DoStep:##CVODE## step done to time = %.15g.", comp->solverInfo->currentTime)
@@ -1239,45 +1270,3 @@ int cvode_solver_fmi_step(ModelInstance *comp, double tNext, double* states)
 }
 
 #endif /* OMC_FMI_RUNTIME */
-
-#else /* WITH_SUNDIALS */
-
-int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData, int isFMI)
-{
-#ifdef OMC_FMI_RUNTIME
-  printf("##CVODE## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable CVODE in FMUs.\n");
-  return -1;
-#else
-  throwStreamPrint(threadData, "##CVODE## SUNDIALS not available. Reconfigure omc with SUNDIALS.\n");
-#endif
-}
-
-int cvode_solver_deinitial(CVODE_SOLVER *cvodeData)
-{
-#ifdef OMC_FMI_RUNTIME
-  printf("##CVODE## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable CVODE in FMUs.\n");
-  return -1;
-#else
-  throwStreamPrint(NULL, "##CVODE## SUNDIALS not available. Reconfigure omc with SUNDIALS.\n");
-#endif
-}
-
-int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
-{
-#ifdef OMC_FMI_RUNTIME
-  printf("##CVODE## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable CVODE in FMUs.\n");
-  return -1;
-#else
-  throwStreamPrint(threadData, "##CVODE## SUNDIALS not available. Reconfigure omc with SUNDIALS.\n");
-#endif
-}
-
-#ifdef OMC_FMI_RUNTIME
-int cvode_solver_fmi_step(ModelInstance *comp, double tNext, double* states)
-{
-  printf("##CVODE## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable CVODE in FMUs.\n");
-  return -1;
-}
-#endif
-
-#endif /* #ifdef WITH_SUNDIALS */

@@ -129,7 +129,7 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
       if(data->simulationInfo->samples[i])
       {
         data->simulationInfo->samples[i] = 0;
-        data->simulationInfo->nextSampleTimes[i] += data->modelData->samplesInfo[i].interval;
+        advanceSample(data, i);
       }
     }
   }
@@ -1577,6 +1577,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo->callStatistics.functionAlgebraics = 0;
 
   data->simulationInfo->lambda = 1.0;
+  data->simulationInfo->skipStartEquations = FALSE;
 
   /* initial build calls terminal, initial */
   data->simulationInfo->terminal = 0;

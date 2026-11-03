@@ -1328,6 +1328,13 @@ algorithm
           if not listEmpty(SimCodeCodegenUtil.getFMI3Terminals(simCode)) then
             Util.createDirectoryTree(fmutmp + "/terminalsAndIcons/");
           end if;
+          // fmi-ls-dae: create extra/org.fmi-standard.fmi-ls-dae/ for a --daeMode
+          // Model Exchange model; the CodegenFMU3 template writes the manifest into it.
+          if isSome(simCode.daeModeData) and FMI.isFMIMEType(FMUType) then
+            Util.createDirectoryTree(fmutmp + "/extra/org.fmi-standard.fmi-ls-dae/");
+            Error.addMessage(Error.FMU_EXPORT_FMI_LS_DAE_DRAFT,
+              {SimCodeCodegenUtil.FMI_LS_DAE_VERSION, SimCodeUtil.FMI_LS_DAE_DRAFT_DATE, SimCodeUtil.FMI_LS_DAE_DRAFT_COMMIT});
+          end if;
         end if;
 
         /*
@@ -2534,7 +2541,7 @@ algorithm
       discreteModelVars           = discreteModelVars,
       extObjInfo                  = extObjInfo,
       makefileParams              = makefileParams,
-      delayedExps                 = SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex),
+      delayedExps                 = SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex, {}),
       spatialInfo                 = spatialInfo,
       jacobianMatrices            = SymbolicJacs,
       simulationSettingsOpt       = simSettingsOpt,

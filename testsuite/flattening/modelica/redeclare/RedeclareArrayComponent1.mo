@@ -14,14 +14,16 @@ model RedeclareArrayComponent1
   type Real3 = Real[3];
   A a1(redeclare Real3 x);
   A a2(redeclare Real x);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RedeclareArrayComponent1;
 
 // Result:
 // class RedeclareArrayComponent1
-//   Real a1.x[1];
-//   Real a1.x[2];
-//   Real a1.x[3];
+//   Real a1.x[1,1];
+//   Real a1.x[1,2];
+//   Real a1.x[1,3];
+//   Real a1.x[2,1];
+//   Real a1.x[2,2];
+//   Real a1.x[2,3];
 //   Real a2.x[1];
 //   Real a2.x[2];
 // end RedeclareArrayComponent1;

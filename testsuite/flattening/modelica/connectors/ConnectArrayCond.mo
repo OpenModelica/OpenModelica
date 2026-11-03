@@ -15,10 +15,9 @@ model A
 end A;
 
 model ConnectArrayCond
-  C c1[2] if false;
+  A c1[2] if false;
 equation
   connect(c1[1].c, c1[2].c);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConnectArrayCond;
 
 // Result:

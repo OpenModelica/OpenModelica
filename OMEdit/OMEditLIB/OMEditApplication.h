@@ -61,6 +61,7 @@ private:
   QStringList mFilesToOpenList;
   QTranslator mQtTranslator;
   QTranslator mTranslator;
+  QTranslator mPlotTranslator;
 protected:
   virtual bool event(QEvent *pEvent) override;
 };

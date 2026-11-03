@@ -1,0 +1,70 @@
+// name: ArrayLinearSystem
+// keywords: NewBackend
+// status: correct
+
+loadString("
+model ArrayNonlinearSystem
+  Real x[2](start = {0.0, 0.1}, each fixed = true);
+  Real a[2](each start = -0.4);
+  Real b[2](each start = 0.6);
+equation
+  for i in 1:2 loop
+    a[i] = x[i] - b[i] ^ 2;
+    b[i] = 1.0 - x[i] ^ 2 + a[i];
+    der(x[i]) = x[i] + a[i];
+  end for;
+end ArrayNonlinearSystem;
+
+model ArrayLinearSystem
+  Real x[2](start = {0.0, 0.1}, each fixed = true);
+  Real y[2](each start = 1.0);
+equation
+  2.0 * y[1] + y[2] = x[1] + 1.0;
+  y[1] + 3.0 * y[2] = x[2] + 2.0;
+  der(x) = x + y;
+end ArrayLinearSystem;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --generateDynamicJacobian=symbolic -d=NLSanalyticJacobian"); getErrorString();
+simulate(ArrayNonlinearSystem, stopTime=0.2, numberOfIntervals=20, fileNamePrefix="ArrayNonlinearSystemAnalytic", simflags="-jacobian=coloredSymbolical"); getErrorString();
+
+setCommandLineOptions("-d=-NLSanalyticJacobian"); getErrorString();
+simulate(ArrayNonlinearSystem, stopTime=0.2, numberOfIntervals=20, fileNamePrefix="ArrayNonlinearSystemNumeric", simflags="-jacobian=coloredSymbolical"); getErrorString();
+
+setCommandLineOptions("-d=NLSanalyticJacobian"); getErrorString();
+simulate(ArrayLinearSystem, stopTime=0.2, numberOfIntervals=20, simflags="-jacobian=coloredSymbolical"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ArrayNonlinearSystemAnalytic_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.2, numberOfIntervals = 20, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ArrayNonlinearSystemAnalytic', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-jacobian=coloredSymbolical'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ArrayNonlinearSystemNumeric_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.2, numberOfIntervals = 20, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ArrayNonlinearSystemNumeric', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-jacobian=coloredSymbolical'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ArrayLinearSystem_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.2, numberOfIntervals = 20, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ArrayLinearSystem', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-jacobian=coloredSymbolical'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

@@ -26,7 +26,6 @@ equation
   outlet.pressure = inlet.pressure;
   outlet.volumeFlowRate = 2;
 
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Tank;
 
 
@@ -39,12 +38,12 @@ end Tank;
 //   Real outlet.volumeFlowRate;
 //   Real level(start = 2.0);
 // equation
+//   inlet.volumeFlowRate = 0.0;
+//   outlet.volumeFlowRate = 0.0;
 //   inlet.volumeFlowRate = 1.0;
 //   inlet.pressure = 1.0;
 //   area * der(level) = inlet.volumeFlowRate + outlet.volumeFlowRate;
 //   outlet.pressure = inlet.pressure;
 //   outlet.volumeFlowRate = 2.0;
-//   inlet.volumeFlowRate = 0.0;
-//   outlet.volumeFlowRate = 0.0;
 // end Tank;
 // endResult

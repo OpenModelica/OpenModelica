@@ -24,7 +24,6 @@ ConnectFlowEffort2.mo\
 ConnectHierarchical1.mo \
 ConnectHierarchical2.mo \
 ConnectInner1.mo \
-ConnectInner2.mo \
 ConnectInner3.mo \
 ConnectInnerOuter.mo \
 ConnectInnerOuter2.mo \
@@ -83,7 +82,6 @@ Connect10.mo \
 Connect11.mo \
 ConnectArrayCond2.mo \
 ConnectConst1.mo \
-ConnectForEquations.mo \
 Units1.mo
 
 # Dependency files that are not .mo .mos or Makefile

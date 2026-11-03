@@ -222,7 +222,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/Causalize.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/Coloring.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/CommonSubExpression.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/DAEQuery.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/DAEMode.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/DataReconciliation.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/Differentiate.mo
@@ -429,6 +428,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/CevalScriptBackend.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/PackageManagement.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/NFApi.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Script/NFInteractive.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/Conversion.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/Obfuscate.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/TotalModelDebug.mo

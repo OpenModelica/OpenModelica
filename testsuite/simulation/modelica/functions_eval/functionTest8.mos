@@ -1,7 +1,6 @@
 // name:      functionTest8
 // keywords:  evalConstFunc
 // status:    correct
-// cflags: -d=-newInst
 //
 
 loadString("
@@ -100,13 +99,13 @@ val(H, 0.0);
 //   if T > 298.15 then
 //     while temp < T loop
 //       Ent := Ent + temp;
-//       temp := 1.0 + temp;
+//       temp := temp + 1.0;
 //     end while;
 //     Ent2 := Ent;
 //   else
 //     while temp > T loop
 //       Ent := Ent + temp;
-//       temp := -1.0 + temp;
+//       temp := temp - 1.0;
 //     end while;
 //     Ent2 := -Ent;
 //   end if;
@@ -118,12 +117,12 @@ val(H, 0.0);
 // While-statement (not evaluated):
 //   while temp < T loop
 //     Ent := Ent + temp;
-//     temp := 1.0 + temp;
+//     temp := temp + 1.0;
 //   end while;
 // evaluated While-statement to:
 //   while temp < T loop
 //     Ent := Ent + temp;
-//     temp := 1.0 + temp;
+//     temp := temp + 1.0;
 //   end while;
 // assignment:
 //   Ent2 := Ent;
@@ -133,12 +132,12 @@ val(H, 0.0);
 // While-statement (not evaluated):
 //   while temp > T loop
 //     Ent := Ent + temp;
-//     temp := -1.0 + temp;
+//     temp := temp - 1.0;
 //   end while;
 // evaluated While-statement to:
 //   while temp > T loop
 //     Ent := Ent + temp;
-//     temp := -1.0 + temp;
+//     temp := temp - 1.0;
 //   end while;
 // assignment:
 //   Ent2 := -Ent;
@@ -151,13 +150,13 @@ val(H, 0.0);
 //   if T > 298.15 then
 //     while temp < T loop
 //       Ent := Ent + temp;
-//       temp := 1.0 + temp;
+//       temp := temp + 1.0;
 //     end while;
 //     Ent2 := Ent;
 //   else
 //     while temp > T loop
 //       Ent := Ent + temp;
-//       temp := -1.0 + temp;
+//       temp := temp - 1.0;
 //     end while;
 //     Ent2 := -Ent;
 //   end if;
@@ -197,13 +196,13 @@ val(H, 0.0);
 //   if T > 298.15 then
 //     while temp < T loop
 //       Ent := Ent + temp;
-//       temp := 1.0 + temp;
+//       temp := temp + 1.0;
 //     end while;
 //     Ent2 := Ent;
 //   else
 //     while temp > T loop
 //       Ent := Ent + temp;
-//       temp := -1.0 + temp;
+//       temp := temp - 1.0;
 //     end while;
 //     Ent2 := -Ent;
 //   end if;
@@ -215,12 +214,12 @@ val(H, 0.0);
 // While-statement (not evaluated):
 //   while temp < T loop
 //     Ent := Ent + temp;
-//     temp := 1.0 + temp;
+//     temp := temp + 1.0;
 //   end while;
 // evaluated While-statement to:
 //   while temp < T loop
 //     Ent := Ent + temp;
-//     temp := 1.0 + temp;
+//     temp := temp + 1.0;
 //   end while;
 // assignment:
 //   Ent2 := Ent;
@@ -230,12 +229,12 @@ val(H, 0.0);
 // While-statement (not evaluated):
 //   while temp > T loop
 //     Ent := Ent + temp;
-//     temp := -1.0 + temp;
+//     temp := temp - 1.0;
 //   end while;
 // evaluated While-statement to:
 //   while temp > T loop
 //     Ent := Ent + temp;
-//     temp := -1.0 + temp;
+//     temp := temp - 1.0;
 //   end while;
 // assignment:
 //   Ent2 := -Ent;
@@ -248,13 +247,13 @@ val(H, 0.0);
 //   if T > 298.15 then
 //     while temp < T loop
 //       Ent := Ent + temp;
-//       temp := 1.0 + temp;
+//       temp := temp + 1.0;
 //     end while;
 //     Ent2 := Ent;
 //   else
 //     while temp > T loop
 //       Ent := Ent + temp;
-//       temp := -1.0 + temp;
+//       temp := temp - 1.0;
 //     end while;
 //     Ent2 := -Ent;
 //   end if;
@@ -265,7 +264,7 @@ val(H, 0.0);
 //
 // record SimulationResult
 //     resultFile = "functionTest8_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'functionTest8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'functionTest8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

@@ -65,10 +65,10 @@ use crate::CodegenWasmJitFunctions::{
     compile_linear_system_analytic, compile_linear_system_analytic_csc, compile_linear_system_symbolic,
     emit_entwined_assign, emit_generic_assign, emit_nls_jac_body, emit_nls_jac_csc_body, emit_nls_jac_dyn_body,
     emit_nls_load_body, emit_nls_residual_body, emit_nls_residual_epilogue, emit_nls_residual_prologue,
-    emit_nls_residual_store, emit_resizable_assign, emit_sim_const_stores, emit_solve_nls_call, external_general_why,
-    external_import_sig, external_known, flat_sim_key, function_signature, nls_residuals_all_scalar, nls_use_sparse,
-    note_declined_external, reset_declined_externals, residual_rows, resolve_sim_key, restore_known_outputs, rt_index,
-    sim_const_store, sim_cref_key, split_elem_key,
+    emit_nls_residual_store, emit_resizable_assign, emit_resizable_entwined_assign, emit_sim_const_stores,
+    emit_solve_nls_call, external_general_why, external_import_sig, external_known, flat_sim_key, function_signature,
+    nls_residuals_all_scalar, nls_use_sparse, note_declined_external, reset_declined_externals, residual_rows,
+    resolve_sim_key, restore_known_outputs, rt_index, sim_const_store, sim_cref_key, split_elem_key,
 };
 
 // The `SimData` layout, result-variable descriptors, and solver metadata are

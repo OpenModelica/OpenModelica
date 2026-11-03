@@ -1,7 +1,6 @@
 // name:     ModifierVariabilityError
 // keywords: modifier variability bug1040
 // status:   correct
-// cflags: -d=-newInst
 // 
 //  Checks that the compiler gives an error if a modifier has higher variability
 //  than the component.
@@ -15,11 +14,9 @@ checkModel(ModifierVariabilityErrorVar); getErrorString();
 // true
 // ""
 // ""
-// "[flattening/modelica/mosfiles/ModifierVariabilityError.mo:3:3-3:23:writable] Error: Component y of variability PARAM has binding x of higher variability VAR.
-// Error: Error occurred while flattening model ModifierVariabilityErrorParam
+// "[flattening/modelica/mosfiles/ModifierVariabilityError.mo:3:3-3:23:writable] Error: Component y of variability parameter has binding 'x' of higher variability continuous.
 // "
 // ""
-// "[flattening/modelica/mosfiles/ModifierVariabilityError.mo:8:3-8:20:writable] Error: Variable y: Component start of variability PARAM has binding x of higher variability VAR.
-// Error: Error occurred while flattening model ModifierVariabilityErrorVar
+// "[flattening/modelica/mosfiles/ModifierVariabilityError.mo:8:10-8:19:writable] Error: Component start of variability parameter has binding 'x' of higher variability continuous.
 // "
 // endResult

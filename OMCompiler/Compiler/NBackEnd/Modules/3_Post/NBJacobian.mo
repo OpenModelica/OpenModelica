@@ -190,6 +190,7 @@ public
     output Option<Jacobian> jacobian;
   protected
     constant Module.jacobianInterface func = if Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN)
+      or listMember(Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN), {"symbolic", "symbolicadjoint", "bidirectional"})
       then jacobianSymbolic
       else jacobianNumeric;
   algorithm
@@ -624,12 +625,18 @@ protected
     input Partition.Kind kind;
     output Boolean updated;
   protected
+    StrongComponent original;
     Tearing strict;
     list<StrongComponent> residual_comps;
     list<VariablePointer> seed_candidates, residual_vars, inner_vars;
     constant Boolean staticAsContinuous = Partition.kindIsInitial(kind);
   algorithm
     (comp, updated) := match comp
+      case StrongComponent.ALIAS() algorithm
+        (original, updated) := compJacobian(comp.original, full, funcMap, kind);
+        comp.original := original;
+      then (comp, updated);
+
       // nothing to differentiate if all iteration variables are discrete (e.g. Boolean)
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict)
         guard(not List.any(list(Slice.getT(v) for v in strict.iteration_vars), function BVariable.isContinuous(staticAsContinuous = staticAsContinuous)))
@@ -814,7 +821,7 @@ protected
     sparsity_comps := List.flatten(list(withInnerComps(comp) for comp in comps));
     fullLocal := Adjacency.Matrix.createFull(adjacencyVars,
       EquationPointers.fromList(List.flatten(list(StrongComponent.getEquations(comp) for comp in sparsity_comps))));
-    sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, sparsity_comps, seed_set, pder_set, seed_diff_map);
+    sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, sparsity_comps, seed_set, pder_set, seed_diff_map, vars = SOME(adjacencyVars));
 
     jacobian := SOME(Jacobian.JACOBIAN(
       name      = name,
@@ -825,18 +832,6 @@ protected
       isAdjoint = false
     ));
   end jacobianSymbolic;
-
-  function sizeClassificationFromType
-    input Type ty;
-    output SizeClassification sc;
-  algorithm
-    sc := match Type.dimensionCount(ty)
-      case 0 then SizeClassification.SCALAR;
-      case 1 then SizeClassification.ELEMENT_WISE;
-      case 2 then SizeClassification.MATRIX;
-      else SizeClassification.ELEMENT_WISE;
-    end match;
-  end sizeClassificationFromType;
 
   // Helper: build addition (or single term) expression from a list of terms for a given LHS cref.
   function buildAdjointRhs
@@ -861,7 +856,7 @@ protected
       return;
     end if;
 
-    sc := sizeClassificationFromType(vty);
+    sc := Differentiate.sizeClassificationFromType(vty);
     addOp := Operator.fromClassification(
       (MathClassification.ADDITION, sc),
       vty
@@ -1174,7 +1169,8 @@ protected
         linResEqnPtrs := listReverse(linResEqnPtrs);
 
         if not listEmpty(linResEqnPtrs) then
-          loopComp := makeLinearAlgebraicLoop(lambdaPtrs, linResEqnPtrs, NONE(), mixed = false, homotopy = false);
+          loopComp := makeLinearAlgebraicLoop(lambdaPtrs, linResEqnPtrs, Pointer.access(idx), NONE(), mixed = false, homotopy = false);
+          (loopComp, _) := compJacobian(loopComp, NONE(), funcMap, NBPartition.Kind.JAC);
           adjointComps := loopComp :: adjointComps;
         end if;
 
@@ -1192,7 +1188,7 @@ protected
               if Expression.containsCref(rhs_x, pDerX) then
                 accRhs := rhs_x;
               else
-                sc_x := sizeClassificationFromType(vty);
+                sc_x := Differentiate.sizeClassificationFromType(vty);
                 addOp_x := Operator.fromClassification((MathClassification.ADDITION, sc_x), vty);
                 accRhs := SimplifyExp.simplify(Expression.MULTARY({Expression.fromCref(pDerX), rhs_x}, {}, addOp_x));
               end if;
@@ -1602,7 +1598,7 @@ protected
     end if;
     fullLocal := Adjacency.Matrix.createFull(adjacencyVars,
       EquationPointers.fromList(List.flatten(list(StrongComponent.getEquations(comp) for comp in comps))));
-    sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, comps, seed_set, pder_set, diff_map, isAdjoint = true);
+    sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, comps, seed_set, pder_set, diff_map, isAdjoint = true, vars = SOME(adjacencyVars));
 
     jacobian := SOME(Jacobian.JACOBIAN(
       name      = newName,
@@ -1672,7 +1668,7 @@ protected
       sparsity_comps := List.flatten(list(withInnerComps(comp) for comp in Util.getOption(strongComponents)));
       fullLocal := Adjacency.Matrix.createFull(adjacencyVars, EquationPointers.fromList(
         List.flatten(list(StrongComponent.getEquations(comp) for comp in sparsity_comps))));
-      sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, sparsity_comps, seed_set, pder_set, diff_map);
+      sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, sparsity_comps, seed_set, pder_set, diff_map, vars = SOME(adjacencyVars));
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong components are missing."});
       fail();
@@ -1785,6 +1781,7 @@ protected
   function makeLinearAlgebraicLoop
     input list<NBVariable.VariablePointer> itVarPtrs;           // unknowns y (order = columns of A)
     input list<Pointer<NBEquation.Equation>> resEqnPtrs;        // residuals r_i(y)=0, same order as rows of A
+    input Integer idx;
     input Option<NBackendDAE> jac = NONE();                     // optional analytic Jacobian for A
     input Boolean mixed = false;
     input Boolean homotopy = false;
@@ -1816,7 +1813,7 @@ protected
 
     // mark as linear algebraic loop
     comp := NBStrongComponent.ALGEBRAIC_LOOP(
-      idx      = -1,
+      idx      = idx,
       strict   = tearingSet,
       casual   = NONE(),
       linear   = true,

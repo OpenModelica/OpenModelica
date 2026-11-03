@@ -74,6 +74,8 @@ pub(crate) struct SimVarMap {
     pub(super) n_mathevents: u32,
     /// `SimData` byte offset of the homotopy parameter lambda (`SimLayout`).
     pub(super) lambda_off: SimOff,
+    /// `SimData` byte offset of C's `skipStartEquations` flag (`SimLayout`).
+    pub(super) skip_start_off: SimOff,
     /// C's `homotopyMethod` code (`SimLayout::homotopy_method`).
     pub(super) homotopy_method: u8,
     /// `SimCtx::old_real`.
@@ -1081,6 +1083,7 @@ pub(super) fn build_var_map(
         mathevents_off: layout.mathevents_off,
         n_mathevents: layout.n_math as u32,
         lambda_off: layout.lambda_off,
+        skip_start_off: layout.skip_start_off,
         homotopy_method: layout.homotopy_method.code(),
         old_real: layout
             .has_old_real

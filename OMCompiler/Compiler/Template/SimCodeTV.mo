@@ -466,6 +466,7 @@ end SparsityRow;
   uniontype Sparsity
     record SPARSITY
       list<SparsityRow> rows;
+      Boolean resizable;
     end SPARSITY;
 
     record EMPTY
@@ -591,6 +592,7 @@ end SparsityRow;
     record DELAYED_EXPRESSIONS
       list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
       Integer maxDelayedIndex;
+      list<tuple<DAE.Exp, tuple<DAE.Exp, DAE.Exp, DAE.Exp>, list<BackendDAE.SimIterator>>> delayedLoops;
     end DELAYED_EXPRESSIONS;
   end DelayedExpression;
 
@@ -713,6 +715,14 @@ end SparsityRow;
       Integer index;
       list<Integer> call_order;
       list<SimEqSystem> single_calls;
+      Integer direction;
+      list<Integer> offsets;
+      list<Integer> start_shifts "per single call: its first iteration is the start of its range plus this";
+      list<Integer> stop_shifts "per single call: its last iteration is the stop of its range minus this";
+      list<Integer> scalar_calls "single calls of scalar slices in call order, each called before or after the call of a period entry";
+      list<Integer> scalar_entries;
+      list<Integer> scalar_positions "iteration value of the entry: start + position if >= 0, stop + position + 1 otherwise";
+      list<Boolean> scalar_after;
       DAE.ElementSource source;
       BackendDAE.EquationAttributes eqAttr;
     end SES_ENTWINED_ASSIGN;
@@ -1561,6 +1571,11 @@ package SimCodeCodegenUtil
     output DAE.Exp exp;
   end simVarSizeExp;
 
+  function typeSizeExp
+    input DAE.Type ty;
+    output DAE.Exp exp;
+  end typeSizeExp;
+
   function simVarDimExps
     input SimCodeVar.SimVar var;
     output list<DAE.Exp> exps;
@@ -1743,6 +1758,11 @@ package SimCodeCodegenUtil
     input SimCode.VarInfo varInfo;
     output Integer n;
   end nVariablesReal;
+
+  function simVarIndexRuns
+    input list<SimCodeVar.SimVar> vars;
+    output list<tuple<Integer, Integer, Integer, Integer>> runs;
+  end simVarIndexRuns;
 
   function getSimCode
     output SimCode.SimCode code;

@@ -693,6 +693,7 @@ pub fn initialize_data_struc(data: *mut DATA, _thread_data: *mut threadData_t) {
     si.callStatistics.functionAlgebraics = 0;
 
     si.lambda = 1.0;
+    si.skipStartEquations = 0;
     si.terminal = 0;
     si.initial = 0;
     si.sampleActivated = 0;
@@ -1038,6 +1039,7 @@ pub fn jac_adj_ptr(data: *mut DATA) -> *mut JACOBIAN {
     let a = jac_ptr(data, unsafe { (*(*data).callback).INDEX_JAC_ADJ });
     match unsafe { a.as_ref() } {
         Some(j) if !j.seedVarsAdj.is_null() && !j.resultVarsAdj.is_null() && j.evalRow.is_some() => a,
+        Some(j) if !j.seedVars.is_null() && !j.resultVars.is_null() && j.evalColumn.is_some() => a,
         _ => core::ptr::null_mut(),
     }
 }
@@ -1225,6 +1227,11 @@ pub fn build_regions(rt: &mut RtData) {
     direct(l.terminal_off, 4, &mut si.terminal as *mut c_int as *mut c_void);
     direct(l.initial_off, 4, &mut si.initial as *mut c_int as *mut c_void);
     direct(l.lambda_off, 8, &mut si.lambda as *mut f64 as *mut c_void);
+    direct(
+        l.skip_start_off,
+        4,
+        &mut si.skipStartEquations as *mut c_int as *mut c_void,
+    );
     direct(l.sample_active_off, l.n_samples * 4, si.samples as *mut c_void);
     direct(l.zc_off, l.n_zc * 8, si.zeroCrossings as *mut c_void);
     direct(l.zc_pre_off, l.n_zc * 8, si.zeroCrossingsPre as *mut c_void);

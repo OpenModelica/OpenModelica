@@ -1,7 +1,7 @@
 // name: ExternalLibraryFunction
 // status: correct
 // setup_command: $OMC_CC $OMC_CFLAGS $OMC_EXTLIB_FLAGS -o ./TestLibrary/Resources/Library/libext1$OMC_EXTLIB_EXT ./TestLibrary/Resources/Library/ext1.c $OMC_EXTLIB_LIBS && $OMC_AR -cr ./TestLibrary/Resources/Library/libext1.a ./TestLibrary/Resources/Library/libext1.o && $OMC_CC $OMC_CFLAGS $OMC_EXTLIB_FLAGS -o ./TestLibrary/Resources/SpecialLib/libext2$OMC_EXTLIB_EXT ./TestLibrary/Resources/SpecialLib/ext2.c $OMC_EXTLIB_LIBS && $OMC_AR -cr ./TestLibrary/Resources/SpecialLib/libext2.a ./TestLibrary/Resources/SpecialLib/libext2.o
-// teardown_command: rm -f ./TestLibrary/Resources/Library/libext1$OMC_EXTLIB_EXT ./TestLibrary/Resources/Library/libext1.a ./TestLibrary/Resources/SpecialLib/libext2$OMC_EXTLIB_EXT ./TestLibrary/Resources/SpecialLib/libext2.a Test_ext*
+// teardown_command: rm -f ./TestLibrary/Resources/Library/libext1$OMC_EXTLIB_EXT ./TestLibrary/Resources/Library/libext1.a ./TestLibrary/Resources/SpecialLib/libext2$OMC_EXTLIB_EXT ./TestLibrary/Resources/SpecialLib/libext2.a Test_ext* ExternalLibraryCalls*
 // depends: TestLibrary
 
 setModelicaPath("./TestLibrary/");
@@ -12,11 +12,23 @@ echo(true);
 libs[1,1];
 testsuiteFriendlyName(libs[1,2]);
 testsuiteFriendlyName(OpenModelica.Scripting.uriToFilename("modelica://Test")); // Don't print the full path
-setCommandLineOptions("-d=gen,noevalfunc");
-Test.ext1();getErrorString();
-Test.ext2();getErrorString();
-Test.ext3();getErrorString();
-Test.ext4();getErrorString();
+// The calls are made by a simulation, which links the libraries and compiles
+// the included sources; a script cannot evaluate included sources.
+setCommandLineOptions("-d=noevalfunc");
+loadString("model ExternalLibraryCalls
+  Real r1 = Test.ext1();
+  Real r2 = Test.ext2();
+  Real r3 = Test.ext3();
+  Real r4 = Test.ext4();
+end ExternalLibraryCalls;");getErrorString();
+echo(false);
+res := simulate(ExternalLibraryCalls, stopTime=0.0);
+echo(true);
+res.messages;getErrorString();
+val(r1, 0.0);
+val(r2, 0.0);
+val(r3, 0.0);
+val(r4, 0.0);
 
 // Result:
 // true
@@ -27,12 +39,15 @@ Test.ext4();getErrorString();
 // "flattening/modelica/mosfiles/TestLibrary"
 // "flattening/modelica/mosfiles/TestLibrary"
 // true
+// true
+// ""
+// true
+// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// ""
 // 42.1
-// ""
 // 42.2
-// ""
 // 42.3
-// ""
 // 42.4
-// ""
 // endResult

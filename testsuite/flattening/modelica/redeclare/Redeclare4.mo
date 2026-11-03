@@ -28,14 +28,13 @@ end F;
 
 model D
   F.C c(b=5, redeclare E.BB d);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end D;
 
 
 // Result:
 // class D
 //   parameter Real c.b = 5.0;
-//   parameter Real c.d.b = c.b;
+//   final parameter Real c.d.b = c.b;
 //   Real c.d.x;
 // equation
 //   der(c.d.x) = c.d.b;

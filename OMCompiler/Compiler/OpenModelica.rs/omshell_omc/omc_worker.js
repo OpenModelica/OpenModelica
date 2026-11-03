@@ -44,6 +44,7 @@ import init, {
 import * as OmcModule from "./omc/OpenModelicaCompiler.js";
 import { installWasmBlobs } from "./wasm-blobs.js";
 import { installFmuAot } from "./fmu-aot.js";
+import { describeError } from "./wasm-stack.js";
 
 // Self-ID so a page console shows which omc_worker.js loaded (cache diagnosis).
 console.log("omc_worker.js loaded (WASI file surface)");
@@ -341,11 +342,11 @@ self.onmessage = async (e) => {
     // A trap inside omc must not silently wedge the shell: report it on the
     // channel the GUI is waiting on so it clears `busy`.
     if (msg.cmd === "init") {
-      self.postMessage({ kind: "ready", ok: false, error: String(err) });
+      self.postMessage({ kind: "ready", ok: false, error: describeError(err) });
     } else if (msg.cmd === "abi") {
-      self.postMessage({ kind: "abiResult", id: msg.id, response: JSON.stringify({ error: String(err) }) });
+      self.postMessage({ kind: "abiResult", id: msg.id, response: JSON.stringify({ error: describeError(err) }) });
     } else {
-      self.postMessage({ kind: "done", result: "", error: String(err), keep: true });
+      self.postMessage({ kind: "done", result: "", error: describeError(err), keep: true });
     }
   }
 };

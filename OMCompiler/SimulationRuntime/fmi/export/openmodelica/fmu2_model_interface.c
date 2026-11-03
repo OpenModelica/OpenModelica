@@ -33,7 +33,7 @@
 #include "../simulation/solver/initialization/initialization.h"
 #include "../simulation/solver/stateset.h"
 #include "../simulation/solver/model_help.h"
-#ifdef WITH_SUNDIALS
+#ifdef OMC_FMI_HAVE_CVODE
 #include "../simulation/solver/cvode_solver.h"
 #endif
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
@@ -210,10 +210,13 @@ fmi2Boolean isCategoryLogged(ModelInstance *comp, int categoryIndex)
 
 static void omc_assert_fmi_common(threadData_t *threadData, fmi2Status status, int categoryIndex, FILE_INFO info, const char *msg, va_list args)
 {
-  const char *str;
-  GC_vasprintf(&str, msg, args);
-  if (threadData) {
-    ModelInstance* c = (ModelInstance*) threadData->localRoots[LOCAL_ROOT_FMI_DATA];
+  ModelInstance* c = threadData ? (ModelInstance*) threadData->localRoots[LOCAL_ROOT_FMI_DATA] : NULL;
+  char str[2048];
+  if (c && !isCategoryLogged(c, categoryIndex)) {
+    return;
+  }
+  vsnprintf(str, sizeof(str), msg, args);
+  if (c) {
     if (info.lineStart) {
       FILTERED_LOG(c, status, categoryIndex, "%s:%d: %s", info.filename, info.lineStart, str)
     } else {
@@ -274,21 +277,12 @@ static void omc_terminate_fmi(FILE_INFO info, const char *msg, ...)
 // ---------------------------------------------------------------------------
 // Private helpers functions
 // ---------------------------------------------------------------------------
-static inline void resetThreadData(ModelInstance* comp)
-{
-#if defined(OM_HAVE_PTHREADS)
-  if (comp->threadDataParent) {
-    pthread_setspecific(mmc_thread_data_key, comp->threadDataParent);
-  }
-#endif
-}
-
+/* Code without a threadData argument (warning asserts, terminate, ModelicaError)
+   finds it through the key. The importer may call from any thread. */
 static inline void setThreadData(ModelInstance* comp)
 {
 #if defined(OM_HAVE_PTHREADS)
-  if (comp->threadDataParent) {
-    pthread_setspecific(mmc_thread_data_key, comp->threadData);
-  }
+  pthread_setspecific(mmc_thread_data_key, comp->threadData);
 #endif
 }
 
@@ -380,7 +374,7 @@ fmi2Status internalEventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
     for(i=0; i<comp->fmuData->modelData->nSamples; ++i) {
       if (comp->fmuData->simulationInfo->samples[i]) {
         comp->fmuData->simulationInfo->samples[i] = 0;
-        comp->fmuData->simulationInfo->nextSampleTimes[i] += comp->fmuData->modelData->samplesInfo[i].interval;
+        advanceSample(comp->fmuData, i);
       }
     }
 
@@ -456,7 +450,6 @@ fmi2Status internalEventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
   threadData->mmc_jumper = old_jmp;
   releaseAsserts(comp);
-  resetThreadData(comp);
 
   if (done) {
     return fmi2OK;
@@ -602,7 +595,6 @@ fmi2Status updateIfNeeded(ModelInstance *comp, const char *func)
 #endif
     if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); success = 0; }
 
-    resetThreadData(comp);
     releaseAsserts(comp);
     if (!success)
     {
@@ -667,7 +659,6 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   TODO: We should set the interface, but we can't until it's no longer a global variable.
   * The problem is that we might overwrite the main simulation's copy of the interface...
   */
-  threadData_t *threadDataParent = (threadData_t*) pthread_getspecific(mmc_thread_data_key);
   ModelInstance *comp;
   if (!functions->logger) {
     return NULL;
@@ -732,7 +723,6 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   */
 
   comp->threadData = threadData;
-  comp->threadDataParent = threadDataParent;
   comp->fmuData = fmudata;
   threadData->localRoots[LOCAL_ROOT_FMI_DATA] = comp;
 
@@ -741,9 +731,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
     comp->logCategories[i] = loggingOn;
   }
 
-#if defined(OM_HAVE_PTHREADS)
-  pthread_setspecific(mmc_thread_data_key, comp->threadData);
-#endif
+  setThreadData(comp);
   omc_assert = omc_assert_fmi;
   omc_assert_warning = omc_assert_fmi_warning;
   omc_terminate = omc_terminate_fmi;
@@ -881,7 +869,6 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   }
 
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Instantiate: GUID=%s", fmuGUID)
-  resetThreadData(comp);
   return comp;
 }
 
@@ -903,6 +890,7 @@ void fmi2FreeInstance(fmi2Component c)
     FMI2CS_deInitializeSolverData(comp);
   }
 
+  setThreadData(comp);
   /* call external objects destructors */
   comp->fmuData->callback->callExternalObjectDestructors(comp->fmuData, comp->threadData);
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
@@ -1043,7 +1031,6 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
       comp->state = model_state_error;
       OMC_RESTORE_INTERNAL(simulationJumpBuffer);
       threadData->mmc_jumper = old_jmp;
-      resetThreadData(comp);
       FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2ExitInitializationMode: failed")
       return fmi2Error;
     }
@@ -1085,7 +1072,6 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
   }
 
   comp->state = isCoSimulation(comp) ? model_state_cs_step_complete : model_state_me_event_mode;
-  resetThreadData(comp);
 
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2ExitInitializationMode: succeed")
   return res;
@@ -1106,9 +1092,7 @@ fmi2Status fmi2Terminate(fmi2Component c)
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Terminate...")
 
-  setThreadData(comp);
   comp->state = model_state_terminated;
-  resetThreadData(comp);
   return fmi2OK;
 }
 
@@ -1204,7 +1188,6 @@ fmi2Status fmi2Reset(fmi2Component c)
 
   comp->_need_update = 1;
   comp->state = model_state_instantiated;
-  resetThreadData(comp);
   return fmi2OK;
 }
 
@@ -1923,7 +1906,6 @@ fmi2Status fmi2GetDirectionalDerivativeForInitialization(fmi2Component c,
    * known variables only */
   setThreadData(comp);
   fmudata->callback->functionJacFMIDERINIT_column(fmudata, td, comp->fmiDerJacInitialization, NULL);
-  resetThreadData(comp);
 
   /* Write the results to dvUnknown array */
   for (i=0;i<nUnknown; i++)
@@ -2003,7 +1985,6 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
    * known variables only */
   setThreadData(comp);
   fmudata->callback->functionJacFMIDER_column(fmudata, td, comp->fmiDerJac, NULL);
-  resetThreadData(comp);
 
   /* Write the results to dvUnknown array */
   for (i=0;i<nUnknown; i++) {
@@ -2127,7 +2108,6 @@ fmi2Status internal_CompletedIntegratorStep(fmi2Component c, const char *func, f
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
   threadData->mmc_jumper = old_jmp;
-  resetThreadData(comp);
   releaseAsserts(comp);
 
   if (done) {
@@ -2237,7 +2217,6 @@ fmi2Status internalGetDerivatives(fmi2Component c, const char *func, fmi2Real de
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
 
   threadData->mmc_jumper = old_jmp;
-  resetThreadData(comp);
   releaseAsserts(comp);
 
   if (done) {
@@ -2292,7 +2271,6 @@ fmi2Status internalGetEventIndicators(fmi2Component c, const char *func, fmi2Rea
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
   threadData->mmc_jumper = old_jmp;
-  resetThreadData(comp);
   releaseAsserts(comp);
 
   if (done) {
@@ -2687,7 +2665,7 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
         }
         break;
       case S_CVODE:
-#ifdef WITH_SUNDIALS
+#ifdef OMC_FMI_HAVE_CVODE
         flag = cvode_solver_fmi_step(comp, tNext, states);
         if (flag < 0)
         {
@@ -2699,7 +2677,7 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
         FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: FMU not compiled with SUNDIALS but solver CVODE selected.")
         status = fmi2Fatal;
         goto doStep_cleanup;
-#endif /* WITH_SUNDIALS */
+#endif /* OMC_FMI_HAVE_CVODE */
         break;
       default:
         FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: Unknown solver method %d.", comp->solverInfo->solverMethod)
@@ -2848,7 +2826,6 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
 doStep_cleanup:
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
   threadData->mmc_jumper = old_jmp;
-  resetThreadData(comp);
 
   if (!done)
   {

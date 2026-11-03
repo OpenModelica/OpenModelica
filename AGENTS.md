@@ -297,6 +297,12 @@ Agents add far too many comments. Keep them few and brief.
 - All contributions are made under the
   [contributor license agreement](https://openmodelica.org/osmc-pl/osmc-pl-1.8.txt).
 
+## Language
+
+Use ASD-STE100 for Github issues, commit messages, and pull requests.
+Strict adherence is not necessary, but keep the language simple and
+easy to follow.
+
 ## Running commands
 
 - Do not start commands that can block forever (simulations, interactive

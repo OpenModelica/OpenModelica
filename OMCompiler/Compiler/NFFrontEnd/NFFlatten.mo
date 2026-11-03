@@ -377,9 +377,9 @@ algorithm
         alg := listReverseInPlace(sections.algorithms);
         ialg := listReverseInPlace(sections.initialAlgorithms);
       then
-        FlatModel.FLAT_MODEL(classPath, vars, eql, ieql, alg, ialg, src);
+        FlatModel.FLAT_MODEL(classPath, vars, eql, ieql, alg, ialg, {}, {}, src);
 
-      else FlatModel.FLAT_MODEL(classPath, vars, {}, {}, {}, {}, src);
+      else FlatModel.FLAT_MODEL(classPath, vars, {}, {}, {}, {}, {}, {}, src);
   end match;
 
   // get inputs and outputs for algorithms now that types are computed
@@ -437,6 +437,8 @@ algorithm
   funcs := List.fold(flatModel.initialEquations, collectEquationFuncs, funcs);
   funcs := List.fold(flatModel.algorithms, collectAlgorithmFuncs, funcs);
   funcs := List.fold(flatModel.initialAlgorithms, collectAlgorithmFuncs, funcs);
+  funcs := List.fold(flatModel.constraints, collectExpFuncs, funcs);
+  funcs := List.fold(list(Util.tuple22(a) for a in flatModel.optimizationAttributes), collectExpFuncs, funcs);
   execStat(getInstanceName());
 end collectFunctions;
 
@@ -1033,8 +1035,13 @@ algorithm
     (vars, sections) := flattenClass(cls, pre, visibility, opt_binding, vars, sections, deletedVars, settings);
   elseif settings.scalarize then
     dims := list(flattenDimension(d, pre, info) for d in dims);
-    verifyDimensions(dims, node);
-    (vars, sections) := flattenArray(cls, dims, pre, visibility, opt_binding, vars, sections, {}, deletedVars, info, settings);
+
+    if settings.relaxedErrorChecking and not List.all(dims, function Dimension.isKnown(allowExp = false)) then
+      (vars, sections) := vectorizeArray(cls, ty, dims, pre, visibility, opt_binding, vars, sections, {}, deletedVars, settings);
+    else
+      verifyDimensions(dims, node);
+      (vars, sections) := flattenArray(cls, dims, pre, visibility, opt_binding, vars, sections, {}, deletedVars, info, settings);
+    end if;
   else
     (vars, sections) := vectorizeArray(cls, ty, dims, pre, visibility, opt_binding, vars, sections, {}, deletedVars, settings);
   end if;
@@ -2976,6 +2983,8 @@ protected
 algorithm
   // the array handlers do not know about deleted conditional components
   flatModel.equations := removeDeletedConnects(flatModel.equations, deletedVars);
+  // the frontend evaluates slices of known size to index arrays, the handlers expect ranges
+  flatModel.equations := list(Equation.map(eq, connectSliceRanges) for eq in flatModel.equations);
 
   // Overconstrained connections: build the graph like resolveConnections, which
   // evaluates the Connections.* operators (isRoot, rooted). The connect equations
@@ -2988,7 +2997,7 @@ algorithm
   if System.getHasOverconstrainedConnectors() and not symbolic_oc then
     // the graph needs the single connections, roots and branches: unroll the
     // for loops of a copy of the equations for it
-    unrolled := FlatModel.FLAT_MODEL(flatModel.name, {}, unrollForGraph(flatModel.equations), {}, {}, {}, flatModel.source);
+    unrolled := FlatModel.FLAT_MODEL(flatModel.name, {}, unrollForGraph(flatModel.equations), {}, {}, {}, {}, {}, flatModel.source);
     (_, conns) := Connections.collectConnections(unrolled, function isDeletedCref(deletedVars = deletedVars));
     (flatModel, broken) := NFOCConnectionGraph.handleOverconstrainedArrayConnections(flatModel, unrolled.equations, conns,
       function isDeletedCref(deletedVars = deletedVars));
@@ -3008,6 +3017,24 @@ algorithm
   end if;
   execStat(getInstanceName());
 end resolveArrayConnections;
+
+function connectSliceRanges
+  input output Equation eq;
+protected
+  function sliceRanges
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      case Expression.CREF() then Expression.CREF(exp.ty, ComponentRef.mapSubscripts(exp.cref, Subscript.sliceToRange));
+      else exp;
+    end match;
+  end sliceRanges;
+algorithm
+  eq := match eq
+    case Equation.CONNECT() then Equation.mapExp(eq, sliceRanges);
+    else eq;
+  end match;
+end connectSliceRanges;
 
 function coalesceConnects
   "Runs of connections of single elements of one-dimensional arrays with the
@@ -3798,7 +3825,7 @@ algorithm
   end match;
 end verifyDimension;
 
-function updateVariability
+public function updateVariability
   input output Variable var;
 protected
   Variability v;

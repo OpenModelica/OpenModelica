@@ -68,7 +68,7 @@ using namespace OMPlot;
  * \param pParent
  */
 PlotWindowContainer::PlotWindowContainer(QWidget *pParent)
-  : QMdiArea(pParent), mpDiagramWindow(0)
+  : QMdiArea(pParent), mpDiagramWindow(0), mLastPlotWindowMaximized(true)
 {
   setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -327,8 +327,11 @@ PlotWindow* PlotWindowContainer::addPlotWindow()
     pPlotWindow->setTimeUnit(MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox()->currentText());
     pPlotWindow->setXLabel(QString("time"));
     pPlotWindow->installEventFilter(this);
-    bool maximize = subWindowList().isEmpty();
+    bool maximize = subWindowList().isEmpty() ? mLastPlotWindowMaximized : false;
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
+    connect(pPlotWindow, &PlotWindow::closingDown, this, [this, pSubWindow]() {
+      mLastPlotWindowMaximized = pSubWindow->isMaximized();
+    });
     PlottingPage *pPlottingPage = OptionsDialog::instance()->getPlottingPage();
     pPlotWindow->getPlot()->setFontSizes(pPlottingPage->getTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisNumbersFontSizeSpinBox()->value(),
                                          pPlottingPage->getVerticalAxisTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisNumbersFontSizeSpinBox()->value(),
@@ -366,8 +369,11 @@ void PlotWindowContainer::addParametricPlotWindow()
     pPlotWindow->setPrefixUnits(OptionsDialog::instance()->getPlottingPage()->getPrefixUnitsCheckbox()->isChecked());
     pPlotWindow->setTimeUnit(MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox()->currentText());
     pPlotWindow->installEventFilter(this);
-    bool maximize = subWindowList().isEmpty();
+    bool maximize = subWindowList().isEmpty() ? mLastPlotWindowMaximized : false;
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
+    connect(pPlotWindow, &PlotWindow::closingDown, this, [this, pSubWindow]() {
+      mLastPlotWindowMaximized = pSubWindow->isMaximized();
+    });
     PlottingPage *pPlottingPage = OptionsDialog::instance()->getPlottingPage();
     pPlotWindow->getPlot()->setFontSizes(pPlottingPage->getTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisNumbersFontSizeSpinBox()->value(),
                                          pPlottingPage->getVerticalAxisTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisNumbersFontSizeSpinBox()->value(),
@@ -411,8 +417,11 @@ void PlotWindowContainer::addArrayPlotWindow()
     pPlotWindow->setTimeUnit(unitComboBox->currentText());
     pPlotWindow->setXLabel(QString("array element index"));
     pPlotWindow->installEventFilter(this);
-    bool maximize = subWindowList().isEmpty();
+    bool maximize = subWindowList().isEmpty() ? mLastPlotWindowMaximized : false;
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
+    connect(pPlotWindow, &PlotWindow::closingDown, this, [this, pSubWindow]() {
+      mLastPlotWindowMaximized = pSubWindow->isMaximized();
+    });
     PlottingPage *pPlottingPage = OptionsDialog::instance()->getPlottingPage();
     pPlotWindow->getPlot()->setFontSizes(pPlottingPage->getTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisNumbersFontSizeSpinBox()->value(),
                                          pPlottingPage->getVerticalAxisTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisNumbersFontSizeSpinBox()->value(),
@@ -451,8 +460,11 @@ PlotWindow* PlotWindowContainer::addInteractivePlotWindow(QString owner, int por
     pPlotWindow->setTimeUnit(MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox()->currentText());
     pPlotWindow->setXLabel(QString("time"));
     pPlotWindow->installEventFilter(this);
-    bool maximize = subWindowList().isEmpty();
+    bool maximize = subWindowList().isEmpty() ? mLastPlotWindowMaximized : false;
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
+    connect(pPlotWindow, &PlotWindow::closingDown, this, [this, pSubWindow]() {
+      mLastPlotWindowMaximized = pSubWindow->isMaximized();
+    });
     PlottingPage *pPlottingPage = OptionsDialog::instance()->getPlottingPage();
     pPlotWindow->getPlot()->setFontSizes(pPlottingPage->getTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisNumbersFontSizeSpinBox()->value(),
                                          pPlottingPage->getVerticalAxisTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisNumbersFontSizeSpinBox()->value(),
@@ -498,8 +510,11 @@ void PlotWindowContainer::addArrayParametricPlotWindow()
     }
     pPlotWindow->setTimeUnit(unitComboBox->currentText());
     pPlotWindow->installEventFilter(this);
-    bool maximize = subWindowList().isEmpty();
+    bool maximize = subWindowList().isEmpty() ? mLastPlotWindowMaximized : false;
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
+    connect(pPlotWindow, &PlotWindow::closingDown, this, [this, pSubWindow]() {
+      mLastPlotWindowMaximized = pSubWindow->isMaximized();
+    });
     PlottingPage *pPlottingPage = OptionsDialog::instance()->getPlottingPage();
     pPlotWindow->getPlot()->setFontSizes(pPlottingPage->getTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisNumbersFontSizeSpinBox()->value(),
                                          pPlottingPage->getVerticalAxisTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisNumbersFontSizeSpinBox()->value(),

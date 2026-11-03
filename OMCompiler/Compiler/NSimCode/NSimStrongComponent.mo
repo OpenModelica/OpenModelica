@@ -87,6 +87,7 @@ protected
   import NSimCode.{Identifier, SimCodeIndices};
   import NSimGenericCall;
   import NSimGenericCall.SimIterator;
+  import NSimJacobian;
   import NSimJacobian.SimJacobian;
   import SimPartition = NSimPartition;
   import NSimVar.{SimVar, SimVars, VarType};
@@ -187,10 +188,20 @@ public
     end GENERIC_ASSIGN;
 
     record ENTWINED_ASSIGN
-      "entwined generic assignments calling for loop body functions with an index list and a call order."
+      "entwined generic assignments calling for loop body functions with an index list and a call order.
+      with a direction the call order is one period k and each call gets the iterator value
+      direction * k + offset, see StrongComponent.PeriodicOrder."
       Integer index;
       list<Integer> call_order;
       list<Block> single_calls;
+      Integer direction           "0 for a fixed call order";
+      list<Integer> offsets;
+      list<Integer> start_shifts  "per single call: its first iteration is the start of its range plus this";
+      list<Integer> stop_shifts   "per single call: its last iteration is the stop of its range minus this";
+      list<Integer> scalar_calls  "single calls of scalar slices in call order, see StrongComponent.ScalarAnchor";
+      list<Integer> scalar_entries;
+      list<Integer> scalar_positions;
+      list<Boolean> scalar_after;
       DAE.ElementSource source;
       EquationAttributes attr;
     end ENTWINED_ASSIGN;
@@ -389,8 +400,9 @@ public
       end match;
     end filterWhen;
 
-    function map
-      "ToDo: other blocks and cref func"
+    function mapShallow
+      "applies func to the top level expressions of the block, including
+      inner blocks and jacobians of algebraic loops"
       input output Block blck;
       input expFunc func;
       partial function expFunc
@@ -399,16 +411,68 @@ public
     algorithm
       blck := match blck
         case RESIDUAL() algorithm
-          blck.exp := Expression.map(blck.exp, func);
+          blck.exp := func(blck.exp);
+        then blck;
+
+        case ARRAY_RESIDUAL() algorithm
+          blck.exp := func(blck.exp);
+        then blck;
+
+        case FOR_RESIDUAL() algorithm
+          blck.exp := func(blck.exp);
+        then blck;
+
+        case GENERIC_RESIDUAL() algorithm
+          blck.exp := func(blck.exp);
         then blck;
 
         case SIMPLE_ASSIGN() algorithm
-          blck.rhs := Expression.map(blck.rhs, func);
+          blck.rhs := func(blck.rhs);
+        then blck;
+
+        case ARRAY_ASSIGN() algorithm
+          blck.rhs := func(blck.rhs);
+        then blck;
+
+        case ENTWINED_ASSIGN() algorithm
+          blck.single_calls := list(mapShallow(b, func) for b in blck.single_calls);
+        then blck;
+
+        case ALGORITHM() algorithm
+          blck.stmts := list(Statement.mapExp(stmt, func) for stmt in blck.stmts);
+        then blck;
+
+        case INVERSE_ALGORITHM() algorithm
+          blck.stmts := list(Statement.mapExp(stmt, func) for stmt in blck.stmts);
+        then blck;
+
+        case IF() algorithm
+          blck.branches := list((func(Util.tuple21(br)), list(mapShallow(b, func) for b in Util.tuple22(br))) for br in blck.branches);
+        then blck;
+
+        case WHEN() algorithm
+          blck.when_stmts := list(WhenStatement.map(stmt, func, NONE(), Expression.fakeMap) for stmt in blck.when_stmts);
+          blck.else_when := Util.applyOption(blck.else_when, function mapShallow(func = func));
+        then blck;
+
+        case LINEAR() algorithm
+          blck.system := LinearSystem.mapShallow(blck.system, func);
+          blck.alternativeTearing := Util.applyOption(blck.alternativeTearing, function LinearSystem.mapShallow(func = func));
+        then blck;
+
+        case NONLINEAR() algorithm
+          blck.system := NonlinearSystem.mapShallow(blck.system, func);
+          blck.alternativeTearing := Util.applyOption(blck.alternativeTearing, function NonlinearSystem.mapShallow(func = func));
+        then blck;
+
+        case HYBRID() algorithm
+          blck.continuous := mapShallow(blck.continuous, func);
+          blck.discreteEqs := list(mapShallow(b, func) for b in blck.discreteEqs);
         then blck;
 
         else blck;
       end match;
-    end map;
+    end mapShallow;
 
     function listToString
       input list<Block> blcks;
@@ -803,28 +867,6 @@ public
       end match;
     end solvesConstant;
 
-    function jacobianHasGenericLoopCalls
-      "True if this Jacobian's per-column evaluation uses generic for-loop/array calls."
-      input SimJacobian jac;
-      output Boolean b;
-    algorithm
-      b := match jac
-        case SimJacobian.SIM_JAC() then not listEmpty(jac.generic_loop_calls);
-      end match;
-    end jacobianHasGenericLoopCalls;
-
-    function isForOrGenericResidual
-      "True for for-loop/generic-index residual block kinds (unsupported by the linear-system codegen)."
-      input Block blck;
-      output Boolean b;
-    algorithm
-      b := match blck
-        case FOR_RESIDUAL()     then true;
-        case GENERIC_RESIDUAL() then true;
-        else false;
-      end match;
-    end isForOrGenericResidual;
-
     function fromStrongComponent
       input StrongComponent comp;
       output Block blck;
@@ -847,9 +889,11 @@ public
           Boolean allLinVarsFound;
           Integer resizable_size "the static size of whole resizable iteration arrays beyond 1 each";
           Option<SimVar> osimvar;
+          SimVar scalar_simvar;
           Block tmp;
           Variable var;
           Option<SimJacobian> jacobian;
+          BackendDAE.BackendDAE coefficientJacobian;
           EquationPointer eqn_ptr;
           Equation eqn;
           SlicingStatus status;
@@ -858,7 +902,12 @@ public
           Block single_call;
           list<Block> single_calls = {};
           UnorderedMap<ComponentRef, Integer> entwined_index_map;
-          list<Integer> call_order = {};
+          list<Integer> call_order = {}, offsets = {}, start_shifts = {}, stop_shifts = {};
+          list<Integer> scalar_calls = {}, scalar_entries = {}, scalar_positions = {};
+          list<Boolean> scalar_after = {};
+          Integer direction = 0;
+          list<tuple<Integer, Integer>> period = {}, bounds = {};
+          list<StrongComponent.ScalarAnchor> scalars = {};
           Identifier ident;
           list<SimIterator> iters;
 
@@ -942,19 +991,38 @@ public
         case StrongComponent.ENTWINED_COMPONENT() algorithm
           // create index list calls for entwined equations (position-based dispatch)
           entwined_index_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+          if isSome(comp.periodic_order) then
+            SOME(StrongComponent.PERIODIC_ORDER(direction = direction, period = period, bounds = bounds, scalars = scalars)) := comp.periodic_order;
+            scalar_calls := list(sc.slice for sc in scalars);
+          end if;
           for slice in comp.entwined_slices loop
-            (single_call, simCodeIndices, _) := fromStrongComponent(slice, simCodeIndices, kind, simcode_map, equation_map, entwined = true);
+            if isSome(comp.periodic_order) and not List.isMemberOnTrue(listLength(single_calls), scalar_calls, intEq) then
+              // every for-equation slice is called with the values of the iterator of its equation
+              (single_call, simCodeIndices) := resizableEntwinedCall(slice, simCodeIndices, equation_map);
+            else
+              (single_call, simCodeIndices, _) := fromStrongComponent(slice, simCodeIndices, kind, simcode_map, equation_map, entwined = true);
+            end if;
             // position = current list length before prepend (0-based, stable after reversal below)
             UnorderedMap.add(getEntwinedEquationName(slice), listLength(single_calls), entwined_index_map);
             single_calls := single_call :: single_calls;
           end for;
           single_calls := listReverse(single_calls);
-          for tpl in listReverse(comp.entwined_tpl_lst) loop
-            (eqn_ptr, _) := tpl;
-            call_order := UnorderedMap.getSafe(Equation.getEqnName(eqn_ptr), entwined_index_map, sourceInfo()) :: call_order;
-          end for;
+          if isSome(comp.periodic_order) then
+            call_order := list(Util.tuple21(c) for c in period);
+            offsets := list(Util.tuple22(c) for c in period);
+            start_shifts := list(Util.tuple21(c) for c in bounds);
+            stop_shifts := list(Util.tuple22(c) for c in bounds);
+            scalar_entries := list(sc.entry for sc in scalars);
+            scalar_positions := list(sc.position for sc in scalars);
+            scalar_after := list(sc.after for sc in scalars);
+          else
+            for tpl in listReverse(comp.entwined_tpl_lst) loop
+              (eqn_ptr, _) := tpl;
+              call_order := UnorderedMap.getSafe(Equation.getEqnName(eqn_ptr), entwined_index_map, sourceInfo()) :: call_order;
+            end for;
+          end if;
           // todo: eq attributes and source
-          tmp := ENTWINED_ASSIGN(simCodeIndices.equationIndex, call_order, single_calls, DAE.emptyElementSource, EquationAttributes.default(EquationKind.CONTINUOUS, false));
+          tmp := ENTWINED_ASSIGN(simCodeIndices.equationIndex, call_order, single_calls, direction, offsets, start_shifts, stop_shifts, scalar_calls, scalar_entries, scalar_positions, scalar_after, DAE.emptyElementSource, EquationAttributes.default(EquationKind.CONTINUOUS, false));
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then (tmp, getIndex(tmp));
 
@@ -984,6 +1052,15 @@ public
               for scal_var in Scalarize.scalarizeBackendVariable(var, slice.indices, resize = true) loop
                 crefs := scal_var.name :: crefs;
                 osimvar := UnorderedMap.get(scal_var.name, simcode_map);
+                if isNone(osimvar) and kind == NBPartition.Kind.JAC then
+                  scalar_simvar := UnorderedMap.getSafe(ComponentRef.stripSubscriptsAll(scal_var.name), simcode_map, sourceInfo());
+                  scalar_simvar.name := scal_var.name;
+                  scalar_simvar.type_ := scal_var.ty;
+                  scalar_simvar.index := scalar_simvar.index + NSimJacobian.crefFlatOffset(scal_var.name);
+                  scalar_simvar.arrayCref := NONE();
+                  scalar_simvar.numArrayElement := {};
+                  osimvar := SOME(scalar_simvar);
+                end if;
                 if isSome(osimvar) then
                   linVars := Util.getOption(osimvar) :: linVars;
                 else
@@ -1002,20 +1079,30 @@ public
           end for;
 
           // a jacobian without equations is the numeric fallback, the runtime differentiates numerically
-          if isSome(strict.jac) and not isNumericJacobian(Util.getOption(strict.jac)) then
-            (jacobian, simCodeIndices) := SimJacobian.create(Util.getOption(strict.jac), simCodeIndices, simcode_map);
+          if isSome(strict.jac) and not isNumericJacobian(Util.getOption(strict.jac)) and (kind == NBPartition.Kind.JAC or Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN)) then
+            coefficientJacobian := Util.getOption(strict.jac);
+            if kind == NBPartition.Kind.JAC then
+              coefficientJacobian := match coefficientJacobian
+                case BackendDAE.JACOBIAN() algorithm
+                  coefficientJacobian.name := coefficientJacobian.name + "_" + intString(simCodeIndices.jacobianIndex);
+                then coefficientJacobian;
+              end match;
+            end if;
+            (jacobian, simCodeIndices) := SimJacobian.create(coefficientJacobian, simCodeIndices, simcode_map);
           else
             jacobian := NONE();
           end if;
 
-          if comp.linear and isSome(jacobian) and not comp.homotopy and not comp.mixed
-             and not List.any(eqns, isForOrGenericResidual)
-             and not jacobianHasGenericLoopCalls(Util.getOption(jacobian))
-             and allLinVarsFound then
+          if kind == NBPartition.Kind.JAC and not (comp.linear and isSome(jacobian) and allLinVarsFound) then
+            // loops inside a Jac column should always be linear
+            Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " could not create a linear system in a Jacobian column:\n" + StrongComponent.toString(comp)});
+            fail();
+          end if;
+
+          if comp.linear and isSome(jacobian) and allLinVarsFound and (kind == NBPartition.Kind.JAC or (not comp.homotopy and not comp.mixed)) then
             // Linear torn systems with an analytic Jacobian get solved directly (A*x=b)
-            // instead of via Newton (#16458). Homotopy, for-loop/generic residuals,
-            // generic_loop_calls Jacobians, and mixed (discrete-coupled, e.g. ideal-diode
-            // switching networks) systems fall back below -- a one-shot direct solve has
+            // instead of via Newton (#16458). Homotopy and mixed (discrete-coupled,
+            // e.g. ideal-diode switching networks) systems fall back below -- a one-shot direct solve has
             // no damping across the discrete state, and coarser NBackend tearing than OB's
             // for these networks makes that chatter across event iterations instead of
             // settling (see newInst-newBackend library-testing regressions after #16463).
@@ -1031,7 +1118,7 @@ public
               sources       = list(blockSource(b) for b in listReverse(eqns)),
               indexSystem   = simCodeIndices.linearSystemIndex,
               size          = listLength(crefs),
-              partOfJac     = false
+              partOfJac     = kind == NBPartition.Kind.JAC
             );
             simCodeIndices.linearSystemIndex := simCodeIndices.linearSystemIndex + 1;
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
@@ -1073,6 +1160,35 @@ public
         then fail();
       end match;
     end fromStrongComponent;
+
+    function resizableEntwinedCall
+      "the call of the body of the for-equation of a slice of a resizable entwined component"
+      input StrongComponent slice;
+      output Block blck;
+      input output SimCodeIndices simCodeIndices;
+      input UnorderedMap<ComponentRef, Block> equation_map;
+    protected
+      Slice<EquationPointer> eqn_slice;
+      ComponentRef var_cref;
+      EquationPointer eqn_ptr;
+      Equation eqn;
+      Integer generic_call_index;
+    algorithm
+      (eqn_slice, var_cref) := match slice
+        case StrongComponent.RESIZABLE_COMPONENT() then (slice.eqn, slice.var_cref);
+        case StrongComponent.GENERIC_COMPONENT()   then (slice.eqn, slice.var_cref);
+        case StrongComponent.SLICED_COMPONENT()    then (slice.eqn, slice.var_cref);
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + StrongComponent.toString(slice)});
+        then fail();
+      end match;
+      eqn_ptr := Slice.getT(eqn_slice);
+      eqn := Pointer.access(eqn_ptr);
+      generic_call_index := UnorderedMap.tryAdd(Identifier.IDENTIFIER(eqn_ptr, var_cref, true), UnorderedMap.size(simCodeIndices.generic_call_map), simCodeIndices.generic_call_map);
+      blck := RESIZABLE_ASSIGN(simCodeIndices.equationIndex, generic_call_index, SimIterator.fromIterator(Equation.getForIterator(eqn)), Equation.getSource(eqn), Equation.getAttributes(eqn));
+      UnorderedMap.add(Equation.getEqnName(eqn_ptr), blck, equation_map);
+      simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+    end resizableEntwinedCall;
 
     function restrictedResizableIterator
       "the iterator of a slice of a for-equation with a scalar body over a
@@ -1478,7 +1594,7 @@ public
         case ARRAY_ASSIGN()     then OldSimCode.SES_ARRAY_CALL_ASSIGN(blck.index, Expression.toDAE(blck.lhs), Expression.toDAE(blck.rhs), blck.source, EquationAttributes.convert(blck.attr));
         case RESIZABLE_ASSIGN() then OldSimCode.SES_RESIZABLE_ASSIGN(blck.index, blck.call_index, list(SimIterator.convert(it) for it in blck.iters), blck.source, EquationAttributes.convert(blck.attr));
         case GENERIC_ASSIGN()   then OldSimCode.SES_GENERIC_ASSIGN(blck.index, blck.call_index, blck.scal_indices, blck.source, EquationAttributes.convert(blck.attr));
-        case ENTWINED_ASSIGN()  then OldSimCode.SES_ENTWINED_ASSIGN(blck.index, blck.call_order, list(convert(single_call) for single_call in blck.single_calls), blck.source, EquationAttributes.convert(blck.attr));
+        case ENTWINED_ASSIGN()  then OldSimCode.SES_ENTWINED_ASSIGN(blck.index, blck.call_order, list(convert(single_call) for single_call in blck.single_calls), blck.direction, blck.offsets, blck.start_shifts, blck.stop_shifts, blck.scalar_calls, blck.scalar_entries, blck.scalar_positions, blck.scalar_after, blck.source, EquationAttributes.convert(blck.attr));
         case IF() algorithm
           for branch in blck.branches loop
             (exp, blcks) := branch;
@@ -1771,6 +1887,17 @@ public
         partOfJac             = system.partOfJac
         );
     end convert;
+
+    function mapShallow
+      input output LinearSystem system;
+      input expFunc func;
+      partial function expFunc
+        input output Expression exp;
+      end expFunc;
+    algorithm
+      system.residual := list(Block.mapShallow(b, func) for b in system.residual);
+      system.jacobian := Util.applyOption(system.jacobian, function SimJacobian.mapExp(func = func));
+    end mapShallow;
   end LinearSystem;
 
   uniontype NonlinearSystem
@@ -1830,6 +1957,17 @@ public
         clockIndex            = NONE() // ToDo update this
         );
     end convert;
+
+    function mapShallow
+      input output NonlinearSystem system;
+      input expFunc func;
+      partial function expFunc
+        input output Expression exp;
+      end expFunc;
+    algorithm
+      system.blcks := list(Block.mapShallow(b, func) for b in system.blcks);
+      Pointer.update(system.jacobian, Util.applyOption(Pointer.access(system.jacobian), function SimJacobian.mapExp(func = func)));
+    end mapShallow;
   end NonlinearSystem;
 
   annotation(__OpenModelica_Interface="nbackend");

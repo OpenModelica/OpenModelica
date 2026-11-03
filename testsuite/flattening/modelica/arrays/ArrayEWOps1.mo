@@ -4,7 +4,7 @@
 //
 // Array elementwise operators: addition
 
-class ArrayEWOps1
+model ArrayEWOps1
   Real[2,2] x,x1,x2,y,z;
   Real t,u,v;
 equation
@@ -12,7 +12,6 @@ equation
   x1=y.+t;
   x2=t.+y;
   v=t.+u;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayEWOps1;
 
 // Result:
@@ -49,10 +48,10 @@ end ArrayEWOps1;
 //   x1[1,2] = y[1,2] + t;
 //   x1[2,1] = y[2,1] + t;
 //   x1[2,2] = y[2,2] + t;
-//   x2[1,1] = y[1,1] + t;
-//   x2[1,2] = y[1,2] + t;
-//   x2[2,1] = y[2,1] + t;
-//   x2[2,2] = y[2,2] + t;
+//   x2[1,1] = t + y[1,1];
+//   x2[1,2] = t + y[1,2];
+//   x2[2,1] = t + y[2,1];
+//   x2[2,2] = t + y[2,2];
 //   v = t + u;
 // end ArrayEWOps1;
 // endResult

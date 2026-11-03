@@ -1,7 +1,7 @@
 // name: resizableMergedJacobian
 // keywords: NewBackend resizable mergeComponents jacobian
 // status: correct
-// cflags: --newBackend --resizableArrays -d=arrayConnect,mergeComponents
+// cflags: --newBackend --resizableArrays --maxSizeLinearTearing=1000 -d=arrayConnect,mergeComponents
 // teardown_command: rm -f resizableMergedJacobian_res.mat
 //
 // The resistors of a distribution grid (ScalableTestSuite's

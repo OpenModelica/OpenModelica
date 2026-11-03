@@ -2152,6 +2152,8 @@ function(omc_rust_setup_wasm)
         ${RUST_OMC_DIR}/wasm/fmu-aot.js
         ${RUST_OMC_DIR}/wasm/fmu-aot-worker.js
         ${RUST_OMC_DIR}/wasm/wasm-blobs.js
+        ${RUST_OMC_DIR}/wasm/wasm-stack.js
+        ${RUST_OMC_DIR}/wasm/symbolize.html
         # Shared 3D animation view (anim/), used by both simulator pages.
         ${RUST_OMC_DIR}/wasm/anim/animation.js
         ${RUST_OMC_DIR}/wasm/anim/OrbitControls.js
@@ -2198,6 +2200,8 @@ function(omc_rust_setup_wasm)
                 ${RUST_OMC_DIR}/wasm/fmu-aot.js
                 ${RUST_OMC_DIR}/wasm/fmu-aot-worker.js
                 ${RUST_OMC_DIR}/wasm/wasm-blobs.js
+                ${RUST_OMC_DIR}/wasm/wasm-stack.js
+                ${RUST_OMC_DIR}/wasm/symbolize.html
                 ${_web_dir}/
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/omc-terminal
         COMMAND ${CMAKE_COMMAND} -E copy
@@ -2262,8 +2266,10 @@ function(omc_rust_setup_wasm)
   # Release size optimisation, only if binaryen is available.
   set(_wasm_opt_cmd "")
   if(_profile STREQUAL "release" AND WASM_OPT_EXECUTABLE)
+    # -Oz drops the name section; symbolize.html maps the error frames with this.
     set(_wasm_opt_cmd COMMAND ${WASM_OPT_EXECUTABLE} -Oz ${WASM_OPT_FEATURES}
-        ${_wasm_pkgdir}/${_wasm_name}_bg.wasm -o ${_wasm_pkgdir}/${_wasm_name}_bg.wasm)
+        ${_wasm_pkgdir}/${_wasm_name}_bg.wasm -o ${_wasm_pkgdir}/${_wasm_name}_bg.wasm
+        --symbolmap=${_wasm_pkgdir}/${_wasm_name}_bg.symbols)
   endif()
 
   # Cargo invocation. If a prebuilt runtime.wasm was supplied (CI stage 2),

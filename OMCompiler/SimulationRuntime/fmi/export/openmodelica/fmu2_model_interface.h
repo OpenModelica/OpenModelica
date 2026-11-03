@@ -86,7 +86,7 @@ typedef struct {
   SOLVER_INFO* solverInfo;
 
   DATA* fmuData;
-  threadData_t *threadData, *threadDataParent;
+  threadData_t *threadData;
   fmi2Boolean toleranceDefined;
   fmi2Real tolerance;
   fmi2Real startTime;

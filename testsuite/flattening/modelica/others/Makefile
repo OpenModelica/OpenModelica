@@ -6,7 +6,6 @@ BooleanDim.mo \
 BooleanEnumDims.mo \
 BooleanLiterals.mo \
 BooleanRanges.mo \
-CheckInstantiationLimit.mo \
 Circuit1.mo \
 Class1.mo \
 Class2.mo \
@@ -22,7 +21,6 @@ CyclicBindingParam.mo \
 Derivative1.mo \
 DiagonalBlock.mo \
 DocString.mo \
-DotOperator.mo \
 DuplicateElements.mo \
 DuplicateElementsNonEquivalent.mo \
 DuplicateElementsExtends.mo \

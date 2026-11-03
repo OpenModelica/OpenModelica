@@ -370,6 +370,24 @@ set_source_files_properties(${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPI
 
 add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS} ${OMEDITLIB_TRANSLATIONS})
 
+# Update the .ts files (see OM_UPDATE_TRANSLATIONS). lupdate scans the sources and headers listed
+# above, without the generated scripting API (absolute paths). OMPlot has its own translations.
+set(OMEDITLIB_LUPDATE_SOURCES)
+foreach(_src IN LISTS OMEDITLIB_SOURCES OMEDITLIB_HEADERS)
+  if(NOT IS_ABSOLUTE "${_src}")
+    list(APPEND OMEDITLIB_LUPDATE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/${_src}")
+  endif()
+endforeach()
+# The wasm specific sources of OMEditGUI have translatable strings too.
+file(GLOB OMEDITGUI_WASM_LUPDATE_SOURCES CONFIGURE_DEPENDS
+     "${CMAKE_CURRENT_SOURCE_DIR}/../OMEditGUI/wasm/*.cpp"
+     "${CMAKE_CURRENT_SOURCE_DIR}/../OMEditGUI/wasm/*.h")
+set(OMEDITLIB_LUPDATE_TS_FILES ${TS_FILES})
+list(TRANSFORM OMEDITLIB_LUPDATE_TS_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
+omc_add_qt_lupdate(OMEditLib
+                   TS_FILES ${OMEDITLIB_LUPDATE_TS_FILES}
+                   SOURCES ${OMEDITLIB_LUPDATE_SOURCES} ${OMEDITGUI_WASM_LUPDATE_SOURCES})
+
 # Wait for the generated Qt API (rust_codegen); AUTOGEN_TARGET_DEPENDS so AUTOMOC waits too.
 # In the prebuilt GUI-only build (RUST_OMC_PREBUILT_CDYLIB) there is no codegen target —
 # the Qt sources are supplied ready-made — so only wire the dependency when it exists.
