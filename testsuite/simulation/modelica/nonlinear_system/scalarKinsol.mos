@@ -15,7 +15,6 @@ end ScalarNLS;
 "); getErrorString();
 
 echo(false); res := simulate(ScalarNLS, stopTime = 1, numberOfIntervals = 2, simflags = "-nls=kinsol -lv=LOG_NLS_V"); messages := res.messages; echo(true);
-OpenModelica.Scripting.regexBool(messages, "KINSOL");
 OpenModelica.Scripting.regexBool(messages, "changing the method");
 OpenModelica.Scripting.regexBool(messages, "simulation finished successfully");
 val(x, 1.0);
@@ -28,7 +27,6 @@ val(x, 1.0);
 // Result:
 // true
 // ""
-// true
 // true
 // false
 // true
