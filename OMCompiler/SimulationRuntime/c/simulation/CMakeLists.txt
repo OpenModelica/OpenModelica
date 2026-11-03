@@ -46,7 +46,6 @@ set(OMC_SIMRT_SIMULATION_SOURCES
   "solver/linearSolverLapack.c"
   "solver/linearSolverLis.c"
   "solver/linearSolverTotalPivot.c"
-  "solver/linearSolverUmfpack.c"
   "solver/linearSystem.c"
   "solver/mixedSearchSolver.c"
   "solver/mixedSystem.c"
@@ -118,7 +117,6 @@ set(OMC_SIMRT_SIMULATION_HEADERS
   "solver/linearSolverLapack.h"
   "solver/linearSolverLis.h"
   "solver/linearSolverTotalPivot.h"
-  "solver/linearSolverUmfpack.h"
   "solver/linearSystem.h"
   "solver/mixedSearchSolver.h"
   "solver/mixedSystem.h"
@@ -191,7 +189,6 @@ target_link_libraries(OpenModelicaRuntimeCSimulation
     omc::3rd::suitesparse::amd
     omc::3rd::suitesparse::btf
     omc::3rd::suitesparse::colamd
-    omc::3rd::suitesparse::umfpack
     omc::3rd::suitesparse::config
     omc::3rd::cminpack
     omc::3rd::cdaskr

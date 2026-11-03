@@ -38,7 +38,13 @@ fn build_stub_model_calling(ext: Option<(&str, usize)>) -> Vec<u8> {
     imports.import(
         "rt",
         "memory",
-        we::MemoryType { minimum: 0, maximum: None, memory64: false, shared: false, page_size_log2: None },
+        we::MemoryType {
+            minimum: 0,
+            maximum: None,
+            memory64: false,
+            shared: false,
+            page_size_log2: None,
+        },
     );
     imports.import("rt", "rt_alloc", we::EntityType::Function(0));
     if let Some((name, _)) = ext {
@@ -221,7 +227,6 @@ fn solver_libraries_follow_the_fmi_flags() {
         (r#"{"s":"ida"}"#, true, false, vec!["sundials_driver", "klu"]),
         (r#"{"nls":"kinsol"}"#, true, false, vec!["kinsol", "klu"]),
         (r#"{"lss":"lis"}"#, true, false, vec!["lis", "klu"]),
-        (r#"{"ls":"umfpack"}"#, true, false, vec!["umfpack", "klu"]),
         (r#"{"nlsLS":"klu"}"#, true, false, vec!["klu"]),
         (r#"{"ls":"lapack"}"#, true, false, vec![]),
         (r#"{"s":"gbode"}"#, true, false, vec!["klu"]),
@@ -238,13 +243,14 @@ fn solver_libraries_follow_the_fmi_flags() {
     ] {
         let method = cs_method_from(json, if cs { "CS" } else { "ME" }, false, "dassl");
         assert_eq!(
-            fmu_solver_libraries(json, &method, cs, sparse_nls), want,
+            fmu_solver_libraries(json, &method, cs, sparse_nls),
+            want,
             "{json} cs={cs} sparse_nls={sparse_nls}"
         );
     }
     // Every name the mapping can produce must be a library that exists.
     let known: Vec<&str> = SOLVER_LIBRARIES.iter().map(|l| l.name).collect();
-    let all = r#"{"s":"ida","nls":"kinsol","ls":"lis","lss":"umfpack"}"#;
+    let all = r#"{"s":"ida","nls":"kinsol","ls":"lis","lss":"klu"}"#;
     for name in fmu_solver_libraries(all, "ida", true, true) {
         assert!(known.contains(&name), "{name} is not a solver library");
     }
@@ -263,19 +269,21 @@ fn baked_solver_flags_come_from_the_fmi_flags() {
     );
     // Whatever is baked has to parse, and be servable by the libraries the same
     // flags select.
-    for json in [r#"{"nls":"kinsol"}"#, r#"{"ls":"lis"}"#, r#"{"lss":"umfpack"}"#,
-                 r#"{"nlsLS":"klu"}"#] {
+    for json in [
+        r#"{"nls":"kinsol"}"#,
+        r#"{"ls":"lis"}"#,
+        r#"{"lss":"lis"}"#,
+        r#"{"nlsLS":"klu"}"#,
+    ] {
         let baked = fmu_solver_flags(json);
         let argv: Vec<String> = core::iter::once("model".to_string())
             .chain(baked.split_whitespace().map(str::to_string))
             .collect();
         let f = simflags::parse(&argv).expect(&baked);
-        let libs =
-            fmu_solver_libraries(json, &cs_method_from(json, "CS", false, "dassl"), true, false);
+        let libs = fmu_solver_libraries(json, &cs_method_from(json, "CS", false, "dassl"), true, false);
         let cap = simflags::Capabilities {
             klu: libs.contains(&"klu"),
             kinsol: libs.contains(&"kinsol"),
-            umfpack: libs.contains(&"umfpack"),
             lis: libs.contains(&"lis"),
             ida: false,
             cvode: false,
@@ -308,5 +316,8 @@ fn merge_leaves_only_wasi_imports() {
         );
     }
     // And the command entry point survives the merge.
-    assert!(module.get_export("_start").is_some(), "merged module must export `_start`");
+    assert!(
+        module.get_export("_start").is_some(),
+        "merged module must export `_start`"
+    );
 }

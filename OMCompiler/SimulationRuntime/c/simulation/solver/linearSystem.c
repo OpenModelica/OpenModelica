@@ -41,7 +41,6 @@
 #if !defined(OMC_MINIMAL_RUNTIME)
 #include "linearSolverKlu.h"
 #include "linearSolverLis.h"
-#include "linearSolverUmfpack.h"
 #endif
 #include "linearSolverTotalPivot.h"
 #include "../options.h"
@@ -49,7 +48,6 @@
 
 static void setAElement(int row, int col, double value, int nth, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t* threadData);
 static void setAElementLis(int row, int col, double value, int nth, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t* threadData);
-static void setAElementUmfpack(int row, int col, double value, int nth, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t* threadData);
 static void setAElementKlu(int row, int col, double value, int nth, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t* threadData);
 static void setBElement(int row, double value, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t* threadData);
 static void setBElementLis(int row, double value, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t* threadData);
@@ -115,7 +113,7 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
       linsys[i].jacobian = jacobian;
     }
 
-    /* -ls reaches klu and umfpack too, so naming a solver can override the format. */
+    /* -ls reaches klu too, so naming a solver can override the format. */
     if (omc_flag[FLAG_LSS]) {
       linsys[i].useSparseSolver = 1;
     } else if (omc_flag[FLAG_LS]) {
@@ -139,11 +137,6 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
       switch(data->simulationInfo->lssMethod)
       {
     #ifdef WITH_SUITESPARSE
-      case LSS_UMFPACK:
-        linsys[i].setAElement = setAElementUmfpack;
-        linsys[i].setBElement = setBElement;
-        allocateUmfPackData(size, size, nnz, linsys[i].solverData);
-        break;
       case LSS_KLU:
         linsys[i].setAElement = setAElementKlu;
         linsys[i].setBElement = setBElement;
@@ -151,8 +144,7 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
         break;
     #else
       case LSS_KLU:
-      case LSS_UMFPACK:
-        throwStreamPrint(threadData, "OMC is compiled without UMFPACK, if you want use klu or umfpack please compile OMC with UMFPACK.");
+        throwStreamPrint(threadData, "OMC is compiled without KLU.");
         break;
     #endif
     #if !defined(OMC_MINIMAL_RUNTIME)
@@ -198,19 +190,10 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
         break;
     #endif
     #ifdef WITH_SUITESPARSE
-      case LS_UMFPACK:
-        linsys[i].setAElement = setAElementUmfpack;
-        linsys[i].setBElement = setBElement;
-        allocateUmfPackData(size, size, nnz, linsys[i].solverData);
-        break;
       case LS_KLU:
         linsys[i].setAElement = setAElementKlu;
         linsys[i].setBElement = setBElement;
         allocateKluData(size, size, nnz, linsys[i].solverData);
-        break;
-    #else
-      case LS_UMFPACK:
-        throwStreamPrint(threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
         break;
     #endif
 
@@ -334,15 +317,8 @@ int freeLinearSystems(DATA *data, threadData_t *threadData)
     #endif
 
     #ifdef WITH_SUITESPARSE
-      case LSS_UMFPACK:
-        freeUmfPackData(linsys[i].solverData);
-        break;
       case LSS_KLU:
         freeKluData(linsys[i].solverData);
-        break;
-    #else
-      case LSS_UMFPACK:
-        throwStreamPrint(threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
         break;
     #endif
 
@@ -364,15 +340,8 @@ int freeLinearSystems(DATA *data, threadData_t *threadData)
   #endif
 
   #ifdef WITH_SUITESPARSE
-      case LS_UMFPACK:
-        freeUmfPackData(linsys[i].solverData);
-        break;
       case LS_KLU:
         freeKluData(linsys[i].solverData);
-        break;
-  #else
-      case LS_UMFPACK:
-        throwStreamPrint(threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
         break;
   #endif
 
@@ -431,25 +400,16 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, dou
       break;
   #else
     case LSS_LIS_NOT_AVAILABLE:
-      throwStreamPrint(threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
+      throwStreamPrint(threadData, "OMC is compiled without sparse linear solver Lis.");
       break;
   #endif
   #ifdef WITH_SUITESPARSE
     case LSS_KLU:
       success = solveKlu(data, threadData, sysNumber, aux_x);
       break;
-    case LSS_UMFPACK:
-      success = solveUmfPack(data, threadData, sysNumber, aux_x);
-      if (!success && linsys->strictTearingFunctionCall != NULL){
-        debugString(OMC_LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
-        success = linsys->strictTearingFunctionCall(data, threadData);
-        if (success) success=2;
-      }
-      break;
   #else
     case LSS_KLU:
-    case LSS_UMFPACK:
-      throwStreamPrint(threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
+      throwStreamPrint(threadData, "OMC is compiled without KLU.");
       break;
   #endif
     default:
@@ -472,18 +432,6 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, dou
   #ifdef WITH_SUITESPARSE
     case LS_KLU:
       success = solveKlu(data, threadData, sysNumber, aux_x);
-      break;
-    case LS_UMFPACK:
-      success = solveUmfPack(data, threadData, sysNumber, aux_x);
-      if (!success && linsys->strictTearingFunctionCall != NULL){
-        debugString(OMC_LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
-        success = linsys->strictTearingFunctionCall(data, threadData);
-        if (success) success=2;
-      }
-      break;
-  #else
-    case LS_UMFPACK:
-      throwStreamPrint(threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
       break;
   #endif
 
@@ -685,21 +633,6 @@ static void setBElementLis(int row, double value, LINEAR_SYSTEM_DATA* linearSyst
 #endif
 
 #ifdef WITH_SUITESPARSE
-static void setAElementUmfpack(int row, int col, double value, int nth, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t *threadData)
-{
-  DATA_UMFPACK* sData = (DATA_UMFPACK*) linearSystemData->solverData[0];
-
-  infoStreamPrint(OMC_LOG_LS_V, 0, " set %d. -> (%d,%d) = %f", nth, row, col, value);
-  if (row > 0) {
-    if (sData->Ap[row] == 0) {
-      sData->Ap[row] = nth;
-    }
-  }
-
-  sData->Ai[nth] = col;
-  sData->Ax[nth] = value;
-}
-
 static void setAElementKlu(int row, int col, double value, int nth, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t *threadData)
 {
   DATA_KLU* sData = (DATA_KLU*) linearSystemData->solverData[0];
