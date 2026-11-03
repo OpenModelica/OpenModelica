@@ -455,24 +455,64 @@ pub extern "C" fn initJacobian(
     evalColumn: jacobianColumn_func_ptr,
     constantEqns: jacobianColumn_func_ptr,
     sparsePattern: *mut SPARSE_PATTERN,
+    isAdjoint: c_uint,
 ) {
     let j = unsafe { &mut *jacobian };
     j.sizeCols = sizeCols as usize;
     j.sizeRows = sizeRows as usize;
-    j.sizeTmpVars = sizeTmpVars as usize;
-    j.seedVars = calloc_bytes(sizeCols as usize * 8) as *mut f64;
-    j.resultVars = calloc_bytes(sizeRows as usize * 8) as *mut f64;
-    j.tmpVars = calloc_bytes(sizeTmpVars as usize * 8) as *mut f64;
-    j.dag = dag;
-    j.evalSelection = ptr::null_mut();
-    j.evalColumn = evalColumn;
-    j.constantEqns = constantEqns;
-    j.sparsePattern = sparsePattern;
-    j.availability = JACOBIAN_UNKNOWN;
+    if isAdjoint == 1 {
+        j.seedVarsAdj = calloc_bytes(sizeRows as usize * 8) as *mut f64;
+        j.seedVars = ptr::null_mut();
+
+        j.resultVarsAdj = calloc_bytes(sizeCols as usize * 8) as *mut f64;
+        j.resultVars = ptr::null_mut();
+
+        j.sizeTmpVars = 0;
+        j.sizeTmpVarsAdj = sizeTmpVars as usize;
+
+        j.tmpVars = ptr::null_mut();
+        j.tmpVarsAdj = calloc_bytes(sizeTmpVars as usize * 8) as *mut f64;
+
+        j.dag = ptr::null_mut();
+        j.dagT = ptr::null_mut();
+
+        j.evalColumn = None;
+        j.evalRow = evalColumn;
+
+        j.constColEqns = None;
+        j.constRowEqns = constantEqns;
+
+        j.sparsePattern = ptr::null_mut();
+        j.sparsePatternT = sparsePattern;
+    } else {
+        j.seedVars = calloc_bytes(sizeCols as usize * 8) as *mut f64;
+        j.seedVarsAdj = ptr::null_mut();
+
+        j.resultVars = calloc_bytes(sizeRows as usize * 8) as *mut f64;
+        j.resultVarsAdj = ptr::null_mut();
+
+        j.sizeTmpVars = sizeTmpVars as usize;
+        j.sizeTmpVarsAdj = 0;
+
+        j.tmpVars = calloc_bytes(sizeTmpVars as usize * 8) as *mut f64;
+        j.tmpVarsAdj = ptr::null_mut();
+
+        j.dag = dag;
+        j.dagT = ptr::null_mut();
+
+        j.evalColumn = evalColumn;
+        j.evalRow = None;
+
+        j.constColEqns = constantEqns;
+        j.constRowEqns = None;
+
+        j.sparsePattern = sparsePattern;
+        j.sparsePatternT = ptr::null_mut();
+    }
+
+    j.evalSelectionCol = ptr::null_mut();
+    j.evalSelectionRow = ptr::null_mut();
     j.dae_cj = 0.0;
-    j.isRowEval = 0;
-    j.isBidirectional = 0;
-    j.adjointJacobian = ptr::null_mut();
     j.recoverMask = ptr::null_mut();
     j.csrToCscMap = ptr::null_mut();
 }
@@ -482,18 +522,14 @@ pub extern "C" fn initJacobian(
 #[unsafe(no_mangle)]
 pub extern "C" fn initBidirectionalRecovery(fwd: *mut JACOBIAN) {
     let fwd = unsafe { &mut *fwd };
-    let Some(adj) = (unsafe { fwd.adjointJacobian.as_mut() }) else {
-        return;
-    };
     let (Some(f), Some(a)) = (unsafe { fwd.sparsePattern.as_ref() }, unsafe {
-        adj.sparsePattern.as_ref()
+        fwd.sparsePatternT.as_ref()
     }) else {
         return;
     };
     let nnz = f.nnz as usize;
     fwd.recoverMask = calloc_bytes(nnz) as *mut u8;
-    adj.recoverMask = calloc_bytes(nnz) as *mut u8;
-    adj.csrToCscMap = calloc_bytes(nnz * 4) as *mut c_uint;
+    fwd.csrToCscMap = calloc_bytes(nnz * 4) as *mut c_uint;
     let at = |p: *mut c_uint, k: usize| unsafe { *p.add(k) as usize };
     // The nonzeros of one lead index, and the leads they point at.
     let span = |sp: &SPARSE_PATTERN, k: usize| at(sp.leadindex, k)..at(sp.leadindex, k + 1);
@@ -516,9 +552,9 @@ pub extern "C" fn initBidirectionalRecovery(fwd: *mut JACOBIAN) {
                 let i2 = at(f.index, k);
                 i2 == i || at(a.colorCols, i2) != ri
             });
-            unsafe { *adj.recoverMask.add(nz) = unique as u8 };
+            unsafe { *fwd.recoverMask.add(nz) = 2 * unique as u8 };
             let csc = span(f, j).find(|&k| at(f.index, k) == i).unwrap_or(0);
-            unsafe { *adj.csrToCscMap.add(nz) = csc as c_uint };
+            unsafe { *fwd.csrToCscMap.add(nz) = csc as c_uint };
         }
     }
 }
@@ -654,11 +690,11 @@ pub fn publish_log_streams() {
 /// C's `cscToCsr`: the same pattern by row. `colorCols` is left at the
 /// allocation's zeros -- the caller only reads `leadindex`/`index`.
 #[unsafe(no_mangle)]
-pub extern "C" fn cscToCsr(csc: *const SPARSE_PATTERN, nRows: c_uint, nCols: c_uint) -> *mut SPARSE_PATTERN {
+pub extern "C" fn cscToCsr(csc: *const SPARSE_PATTERN, nRows: c_uint) -> *mut SPARSE_PATTERN {
     let Some(csc) = (unsafe { csc.as_ref() }) else {
         return ptr::null_mut();
     };
-    let (rows, cols, nnz) = (nRows as usize, nCols as usize, csc.nnz as usize);
+    let (rows, cols, nnz) = (nRows as usize, csc.sizeCols as usize, csc.nnz as usize);
     let ap = unsafe { core::slice::from_raw_parts(csc.leadindex, cols + 1) };
     let ai = unsafe { core::slice::from_raw_parts(csc.index, nnz) };
     if ap[0] != 0 || ap[cols] as usize != nnz || ai.iter().any(|&r| r as usize >= rows) {
@@ -796,7 +832,7 @@ pub extern "C" fn computeColumnColoring(sp: *mut SPARSE_PATTERN, nRows: c_uint, 
     }
     sort_unique_sparse_pattern(sp, cols);
     let color_cols = unsafe { core::slice::from_raw_parts_mut(sp.colorCols, cols) };
-    let csr = cscToCsr(sp, nRows, nCols);
+    let csr = cscToCsr(sp, nRows);
     if csr.is_null() {
         // C's fallback: one column per color.
         for (c, slot) in color_cols.iter_mut().enumerate() {

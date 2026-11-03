@@ -685,18 +685,14 @@ fn jac_a_info(data: *mut DATA, layout: &Layout) -> Option<openmodelica_sim_meta:
     let j = crate::data::jac_a(data)?;
     let n = layout.n_states;
     let mut info = sparsity_info(j.sparsePattern, n)?;
-    if j.availability != JACOBIAN_AVAILABLE
-        || j.evalColumn.is_none()
-        || j.sizeCols != n as usize
-        || j.sizeRows != n as usize
-    {
+    if j.evalColumn.is_none() || j.sizeCols != n as usize || j.sizeRows != n as usize {
         return Some(info);
     }
     let cols = j.sizeCols as u32;
     info.sym = Some(openmodelica_sim_meta::JacSym {
         seed_offs: (0..cols).map(|k| layout.nls_jac_off + k * 8).collect(),
         result_offs: (0..n).map(|k| layout.nls_jac_off + (cols + k) * 8).collect(),
-        has_constant: j.constantEqns.is_some(),
+        has_constant: j.constColEqns.is_some(),
         adj: jac_adj_info(data, layout, n),
     });
     Some(info)
@@ -706,7 +702,7 @@ fn jac_a_info(data: *mut DATA, layout: &Layout) -> Option<openmodelica_sim_meta:
 /// window `build_regions` maps, its results by column.
 fn jac_adj_info(data: *mut DATA, layout: &Layout, n: u32) -> Option<openmodelica_sim_meta::JacAdj> {
     let a = unsafe { crate::data::jac_adj_ptr(data).as_ref()? };
-    let sp = unsafe { a.sparsePattern.as_ref()? };
+    let sp = unsafe { a.sparsePatternT.as_ref()? };
     if a.sizeCols != n as usize || a.sizeRows != n as usize || sp.maxColors == 0 {
         return None;
     }
@@ -719,12 +715,12 @@ fn jac_adj_info(data: *mut DATA, layout: &Layout, n: u32) -> Option<openmodelica
         row_colors[color - 1].push(r as u32);
     }
     let base = crate::data::extra(layout, unsafe { &*(*data).modelData }).jac_adj;
-    let tmp = a.sizeTmpVars as u32;
+    let tmp = a.sizeTmpVarsAdj as u32;
     Some(openmodelica_sim_meta::JacAdj {
         seed_offs: (0..n).map(|k| base + k * 8).collect(),
         result_offs: (0..n).map(|k| base + (n + k) * 8).collect(),
         zero_offs: (n..2 * n + tmp).map(|k| base + k * 8).collect(),
-        has_constant: a.constantEqns.is_some(),
+        has_constant: a.constRowEqns.is_some(),
         row_colors,
     })
 }
