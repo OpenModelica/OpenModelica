@@ -514,14 +514,14 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
   /* Set NLS user data */
   NLS_USERDATA* nlsUserData = initNlsUserData(data, threadData, sysNum, nonlinsys, jacobian);
 
-// FIXME: add generation of scalar system (total system size = 1) to codegen
 #if !defined(OMC_MINIMAL_RUNTIME)
-  /* check for trivial sparsity pattern (is not always generated) */
+  /* the trivial sparsity pattern is not always generated */
   if (nonlinsys->size == 1 && !nonlinsys->sparsePattern && (nonlinsys->nlsMethod == NLS_KINSOL || nonlinsys->nlsMethod == NLS_KINSOL_B)) {
-    nonlinsys->nlsMethod = NLS_HYBRID;
-    nonlinsys->nlsLinearSolver = NLS_LS_DEFAULT;
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "Sparsity pattern for non-linear system %d with size 1x1 (nnz = 1) does not exist. "
-                                           "Can not use the set sparse NLS solver - changing the method to Hybrid.", sysNum);
+    nonlinsys->sparsePattern = allocSparsePattern(1, 1, 1);
+    nonlinsys->sparsePattern->leadindex[0] = 0;
+    nonlinsys->sparsePattern->leadindex[1] = 1;
+    nonlinsys->sparsePattern->index[0] = 0;
+    nonlinsys->sparsePattern->colorCols[0] = 1;
   }
 #endif
 
