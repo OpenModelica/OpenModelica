@@ -41,7 +41,7 @@ The complete data reconciliation workflow consists in four main phases:
 Step 1: Define the Data Reconciliation Problem in OpenModelica
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To perform data reconciliation, two kinds of variables must be declared:
+To perform data reconciliation, the user first identifies two kinds of variables:
     1.  The boundary conditions (which represent assumptions on the environment);
     2.  The variables of interest to be reconciled.
 These two kinds of variables must be manually declared in the Modelica source code
@@ -96,7 +96,7 @@ or the temperature T0 of the source (depending on the option chosen by the user)
 Boundary conditions are declared with **annotations** so that libraries can be modified to accomodate data reconciliation,
  and still can be used with tools that do not support data reconciliation (because annotations not recognized by a tool are ignored by that tool). 
 
-Variables of interest are marked with **modifiers** instead of annotations so that checks can be performed to detect errors such as declaring a
+Variables of interest are however marked with **modifiers** instead of annotations so that checks can be performed to detect errors such as declaring a
 variable that does not exist to be a variable to be reconciled. The drawback is that tools that do not support
 data reconciliation will produce an error. 
 
@@ -124,19 +124,29 @@ data reconciliation will produce an error.
 Step 2: Quantify Measurement Uncertainties
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In addition to declaring boundary conditions and variables of interest, one must provide two input files:
+Once boundary conditions and variables of interest have been declared, measurements and their uncertainties are collected.
+Uncertainty estimates and correlations between measurements should be determined before launching the reconciliation process.
+External uncertainty quantification method and tools such as GUM and OpenTURNS may be used to construct covariance matrices and estimate correlations.
+
+In practice, when uncertainty charaterization has been done, the user should provide measurement data and correlation information through two input files:
     1. The measurement input file (mandatory).
     2. The correlation matrix input file (optional).
 
-The measurement input file is a csv file with three columns:
+The **measurement input file** is a ``.csv`` file with three columns:
     1. One column for the variable names [ident]
     2. One column for measured values [positive floating point number]
-    3. One column for the half-width confidence intervals [positive floating point number].The half-with confidence interval for variable :math:`x_i` is defined as :math:`wi = \lambda_{95\%}\sigma_i`, where :math:`\sigma_i` is the standard deviation of :math:`x_i` and  :math:`\lambda_{95\%} = 1.96`
+    3. One column for the half-width confidence intervals [positive floating point number].
+    
+The half-with confidence interval for variable :math:`x_i` is defined as :math:`wi = \lambda_{95\%}\sigma_i`, where :math:`\sigma_i` is the standard deviation of :math:`x_i` and  :math:`\lambda_{95\%} = 1.96`
 
-The header of the file is the row
+The header of the file is the row:
+
+.. code::
     | Variable Names; Measured Value-x; Half Width Confidence Interval
 
-It is possible to insert comments with // at the beginning of a row
+It is possible to insert comments with ``//`` at the beginning of a row:
+
+.. code::
     | // Measurement input file for the Splitter model.
     | Variable Name;Measured Value;Half Width Confidence Interval
     | splitter.pipe1.Q; 2.50; 0.196
@@ -154,7 +164,7 @@ The above file can be more easily visualized in matrix form:
 .. figure :: media/dataReconciliationcsvinput.png
   :name: dataReconciliationcsvinput
 
-The correlation matrix file is a csv file that contains the off-diagonal lower triangular
+The **correlation matrix file** is a ``.csv`` file that contains the off-diagonal lower triangular
 correlation coefficients of the variables of interest:
 
     1.  The first row contains names of variables of interest [ident].
@@ -167,6 +177,7 @@ correlation coefficients of the variables of interest:
 
 The following correlation file is drawn from the VDI2048 standard example of a heat circuit of a steam turbine plant.
 
+.. code::
     | Sxy;mV;mHK;mSPLL;mSPL;mFDKELL;mFDKEL
     | mV
     | mHK
@@ -180,7 +191,19 @@ The above file can be more easily visualized in matrix form:
 .. figure :: media/dataReconciliationcorrelationcsvinput.png
   :name: dataReconciliationcorrelationcsvinput
 
-The variables mV and mHK could have been omitted because they do not have any positive correlation coefficients.
+The variables ``mV`` and ``mHK`` could have been omitted because they do not have any positive correlation coefficients.
+
+.. hint::
+
+  **The quality of reconciliation results strongly depends on the quality of uncertainty information.**
+  For each measurement, uncertainties should be evaluated according to the principles of the Guide to the Expression of Uncertainty in Measurement (GUM).
+  Typical uncertainty sources include:
+  * sensor calibration;
+  * acquisition chain accuracy;
+  * environmental effects;
+  * measurement methodology;
+  * repeatability.
+
 
 Step 3: Execute Data Reconciliation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
