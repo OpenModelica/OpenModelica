@@ -503,6 +503,10 @@ References
 
 Bouskela, D., Jardin, A., Palanisamy, A., Ochel, L., & Pop, A. (2021). New Method to Perform Data Reconciliation with OpenModelica and ThermoSysPro. Proceedings of 14th Modelica Conference 2021, Linköping, Sweden, September 20-24, 2021.
 
+Mazurié, B., Jardin, A., Borel, P., Davelaar, F., Boldo, D., Corona Mesa‑Moles, L. (2025). Data Reconciliation for Industrial Experiments. Proceedings of the 16th International Modelica & FMI Conference, Lucerne, Switzerland, September 8-10, 2025.
+
 VDI - Verein Deutscher Ingenieure. (2000). Uncertainty of measurement during acceptance tests on energy-conversion and power plants - Part 1: Fundamentals. VDI 2048 Blatt 1, October 2000.
 
-Mazurié, B., Jardin, A., Borel, P., Davelaar, F., Boldo, D., Corona Mesa‑Moles, L. (2025). Data Reconciliation for Industrial Experiments. Proceedings of the 16th International Modelica & FMI Conference, Lucerne, Switzerland, September 8-10, 2025.
+GUM - ISO/IEC GUIDE 98-3, Uncertainty of measurement - Part 3: Guide to the expression of uncertainty in measurement, 1995.
+
+OpenTURNS: An Open source initiative for the Treatment of Uncertainties, Risks'N Statistics}, https://openturns.github.io/.
