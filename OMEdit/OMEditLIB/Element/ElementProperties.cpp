@@ -95,7 +95,7 @@ FinalEachToolButton::FinalEachToolButton(bool canHaveEach, QWidget *parent)
   // break action
   mpBreakAction = new QAction(Helper::BREAK);
   mpBreakAction->setCheckable(true);
-  connect(mpBreakAction, SIGNAL(toggled(bool)), SIGNAL(breakToggled(bool)));
+  connect(mpBreakAction, &QAction::toggled, this, &FinalEachToolButton::breakToggled);
   // create a menu
   mpFinalEachMenu = new QMenu;
   mpFinalEachMenu->addAction(mpFinalAction);
@@ -106,7 +106,7 @@ FinalEachToolButton::FinalEachToolButton(bool canHaveEach, QWidget *parent)
   mpFinalEachMenu->addSeparator();
   mpFinalEachMenu->addAction(mpBreakAction);
 
-  connect(this, SIGNAL(clicked()), SLOT(showParameterMenu()));
+  connect(this, &QToolButton::clicked, this, &FinalEachToolButton::showParameterMenu);
 }
 
 void FinalEachToolButton::setFinal(bool final)
@@ -235,9 +235,9 @@ ArrayParameterEditorDialog::ArrayParameterEditorDialog(const QString &arrayValue
   }
   mpRowsSpinBox->setEnabled(!mRowsFixed);
   mpColumnsSpinBox->setEnabled(!mColumnsFixed && !mVector);
-  connect(mpRowsSpinBox, SIGNAL(valueChanged(int)), SLOT(rowsChanged(int)));
-  connect(mpColumnsSpinBox, SIGNAL(valueChanged(int)), SLOT(columnsChanged(int)));
-  connect(mpArrayTableWidget, SIGNAL(itemChanged(QTableWidgetItem*)), SLOT(updateExpressionFromTable()));
+  connect(mpRowsSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &ArrayParameterEditorDialog::rowsChanged);
+  connect(mpColumnsSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &ArrayParameterEditorDialog::columnsChanged);
+  connect(mpArrayTableWidget, &QTableWidget::itemChanged, this, &ArrayParameterEditorDialog::updateExpressionFromTable);
   mpArrayTableWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
   mpArrayTableWidget->setContextMenuPolicy(Qt::CustomContextMenu);
   connect(mpArrayTableWidget, &QTableWidget::customContextMenuRequested,
@@ -245,10 +245,10 @@ ArrayParameterEditorDialog::ArrayParameterEditorDialog(const QString &arrayValue
   Label *pExpressionLabel = new Label(tr("Expression:"));
   mpExpressionLineEdit = new QLineEdit;
   mpExpressionLineEdit->setPlaceholderText(defaultValue);
-  connect(mpExpressionLineEdit, SIGNAL(textEdited(const QString &)), SLOT(expressionTextEdited(const QString &)));
+  connect(mpExpressionLineEdit, &QLineEdit::textEdited, this, &ArrayParameterEditorDialog::expressionTextEdited);
   QDialogButtonBox *pButtonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-  connect(pButtonBox, SIGNAL(accepted()), SLOT(okClicked()));
-  connect(pButtonBox, SIGNAL(rejected()), SLOT(reject()));
+  connect(pButtonBox, &QDialogButtonBox::accepted, this, &ArrayParameterEditorDialog::okClicked);
+  connect(pButtonBox, &QDialogButtonBox::rejected, this, &ArrayParameterEditorDialog::reject);
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->addWidget(pRowsLabel, 0, 0);
   pMainLayout->addWidget(mpRowsSpinBox, 0, 1);
@@ -346,10 +346,14 @@ void ArrayParameterEditorDialog::showTableContextMenu(const QPoint &position)
 
   QMenu menu(this);
   if (!mRowsFixed && !selectedRows.isEmpty()) {
-    QAction *pDeleteRowsAction = menu.addAction(tr("Delete %n row(s)", nullptr, selectedRows.size()));
+    const int rowCount = selectedRows.size();
+    const QString deleteRowsText = rowCount == 1 ? tr("Delete 1 row") : tr("Delete %1 rows").arg(rowCount);
+    QAction *pDeleteRowsAction = menu.addAction(deleteRowsText);
     connect(pDeleteRowsAction, &QAction::triggered, this, &ArrayParameterEditorDialog::deleteSelectedRows);
   } else if (!mColumnsFixed && !selectedColumns.isEmpty()) {
-    QAction *pDeleteColumnsAction = menu.addAction(tr("Delete %n column(s)", nullptr, selectedColumns.size()));
+    const int columnCount = selectedColumns.size();
+    const QString deleteColumnsText = columnCount == 1 ? tr("Delete 1 column") : tr("Delete %1 columns").arg(columnCount);
+    QAction *pDeleteColumnsAction = menu.addAction(deleteColumnsText);
     connect(pDeleteColumnsAction, &QAction::triggered, this, &ArrayParameterEditorDialog::deleteSelectedColumns);
   }
   if (!menu.isEmpty()) {
@@ -765,7 +769,7 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
 
   mpNameLabel = new Label;
   mpFixedCheckBox = new FixedCheckBox;
-  connect(mpFixedCheckBox, SIGNAL(clicked()), SLOT(showFixedMenu()));
+  connect(mpFixedCheckBox, &QAbstractButton::clicked, this, &Parameter::showFixedMenu);
   setFixedState("", true);
   mpFixedFinalEachMenuButton = new FinalEachToolButton((mpElementParameters->hasElement() && mpElementParameters->isElementArray())
                                                        || mpModelInstanceElement->getDimensions().isArray());
@@ -810,13 +814,13 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
   // final and each menu
   mpFinalEachMenuButton = new FinalEachToolButton((mpElementParameters->hasElement() && mpElementParameters->isElementArray())
                                                   || mpModelInstanceElement->getDimensions().isArray());
-  connect(mpFinalEachMenuButton, SIGNAL(breakToggled(bool)), SLOT(setBreakValue(bool)));
+  connect(mpFinalEachMenuButton, &FinalEachToolButton::breakToggled, this, &Parameter::setBreakValue);
   mValueCheckBoxModified = false;
   mDefaultValue = "";
   mpFileSelectorButton = new QToolButton;
   mpFileSelectorButton->setText("...");
   mpFileSelectorButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
-  connect(mpFileSelectorButton, SIGNAL(clicked()), SLOT(fileSelectorButtonClicked()));
+  connect(mpFileSelectorButton, &QToolButton::clicked, this, &Parameter::fileSelectorButtonClicked);
   createValueWidget();
   // Get unit value
   QPair<QString, bool> unit = mpModelInstanceElement->getModifierValueFromType(QStringList() << "unit");
@@ -843,7 +847,7 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
   if (mDisplayUnit.compare(mUnit) != 0) {
     mpUnitComboBox->setCurrentIndex(1);
   }
-  connect(mpUnitComboBox, SIGNAL(currentIndexChanged(int)), SLOT(unitComboBoxChanged(int)));
+  connect(mpUnitComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &Parameter::unitComboBoxChanged);
   /* Issue #11715.
    * Do not add each menu item to displayUnit modifiers.
    * We will automatically add the each prefix for arrays.
@@ -1200,7 +1204,7 @@ void Parameter::createEditClassButton()
   mpEditClassButton->setIcon(QIcon(":/Resources/icons/edit-icon.svg"));
   mpEditClassButton->setToolTip(tr("Edit"));
   mpEditClassButton->setAutoRaise(true);
-  connect(mpEditClassButton, SIGNAL(clicked()), SLOT(editClassButtonClicked()));
+  connect(mpEditClassButton, &QToolButton::clicked, this, &Parameter::editClassButtonClicked);
 }
 
 void Parameter::createValueWidget()
@@ -1218,7 +1222,7 @@ void Parameter::createValueWidget()
       createValueComboBox();
       mpValueComboBox->addItemWithToolTip("true", "true", "true");
       mpValueComboBox->addItemWithToolTip("false", "false", "false");
-      connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
+      connect(mpValueComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &Parameter::valueComboBoxChanged);
       break;
 
     case Parameter::Enumeration:
@@ -1233,12 +1237,12 @@ void Parameter::createValueWidget()
       for (i = 0 ; i < enumerationLiterals.size(); i++) {
         mpValueComboBox->addItemWithToolTip(enumerationLiterals[i], className + "." + enumerationLiterals[i], enumerationLiteralsTooltip[i]);
       }
-      connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
+      connect(mpValueComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &Parameter::valueComboBoxChanged);
       break;
 
     case Parameter::CheckBox:
       mpValueCheckBox = new QCheckBox;
-      connect(mpValueCheckBox, SIGNAL(toggled(bool)), SLOT(valueCheckBoxChanged(bool)));
+      connect(mpValueCheckBox, &QCheckBox::toggled, this, &Parameter::valueCheckBoxChanged);
       break;
 
     case Parameter::ReplaceableComponent:
@@ -1763,19 +1767,19 @@ void Parameter::showFixedMenu()
   QString trueText = tr("true: start-value is used to initialize");
   QAction *pTrueAction = new QAction(trueText, pFixedActionGroup);
   pTrueAction->setCheckable(true);
-  connect(pTrueAction, SIGNAL(triggered()), SLOT(trueFixedClicked()));
+  connect(pTrueAction, &QAction::triggered, this, &Parameter::trueFixedClicked);
   menu.addAction(pTrueAction);
   // false case action
   QString falseText = tr("false: start-value is only a guess-value");
   QAction *pFalseAction = new QAction(falseText, pFixedActionGroup);
   pFalseAction->setCheckable(true);
-  connect(pFalseAction, SIGNAL(triggered()), SLOT(falseFixedClicked()));
+  connect(pFalseAction, &QAction::triggered, this, &Parameter::falseFixedClicked);
   menu.addAction(pFalseAction);
   // inherited case action
   QString inheritedText = tr("inherited: (%1)").arg(mpFixedCheckBox->getInheritedValue() ? trueText : falseText);
   QAction *pInheritedAction = new QAction(inheritedText, pFixedActionGroup);
   pInheritedAction->setCheckable(true);
-  connect(pInheritedAction, SIGNAL(triggered()), SLOT(inheritedFixedClicked()));
+  connect(pInheritedAction, &QAction::triggered, this, &Parameter::inheritedFixedClicked);
   menu.addAction(pInheritedAction);
   // set the menu actions states
   if (mpFixedCheckBox->getTickStateString().compare("true") == 0) {
@@ -2249,7 +2253,7 @@ void ElementParameters::setUpDialog()
   mpComponentClassCommentTextBox->setTextFormat(Qt::RichText);
   mpComponentClassCommentTextBox->setTextInteractionFlags(mpComponentClassCommentTextBox->textInteractionFlags() | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
   mpComponentClassCommentTextBox->setText(getComponentClassComment());
-  connect(mpComponentClassCommentTextBox, SIGNAL(linkActivated(QString)), SLOT(commentLinkClicked(QString)));
+  connect(mpComponentClassCommentTextBox, &QLabel::linkActivated, this, &ElementParameters::commentLinkClicked);
   QGridLayout *pComponentClassGroupBoxLayout = new QGridLayout;
   pComponentClassGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pComponentClassGroupBoxLayout->addWidget(mpComponentClassNameLabel, 0, 0);
@@ -2423,12 +2427,12 @@ void ElementParameters::setUpDialog()
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(updateElementParameters()));
+  connect(mpOkButton, &QPushButton::clicked, this, &ElementParameters::updateElementParameters);
   mpOkButton->setDisabled(!mpGraphicsView->getModelWidget()->isElementMode() && (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary()
                                                                                  || mpGraphicsView->isVisualizationView()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &ElementParameters::reject);
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
@@ -3144,10 +3148,10 @@ void ElementAttributes::setUpDialog()
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(updateElementAttributes()));
+  connect(mpOkButton, &QPushButton::clicked, this, &ElementAttributes::updateElementAttributes);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &ElementAttributes::reject);
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
   if (mpElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() || mpElement->isInheritedElement()) {
