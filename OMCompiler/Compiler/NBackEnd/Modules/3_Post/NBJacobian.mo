@@ -1266,7 +1266,7 @@ protected
         linResEqnPtrs := listReverse(linResEqnPtrs);
 
         if not listEmpty(linResEqnPtrs) then
-          loopComp := makeLinearAlgebraicLoop(lambdaPtrs, linResEqnPtrs, NONE(), mixed = false,
+          loopComp := makeLinearAlgebraicLoop(lambdaPtrs, linResEqnPtrs, Pointer.access(idx), NONE(), mixed = false,
             homotopy = false, innerComps = innerAdjointComps);
           (loopComp, _) := compJacobian(loopComp, NONE(), funcMap, NBPartition.Kind.JAC);
           adjointComps := loopComp :: adjointComps;
