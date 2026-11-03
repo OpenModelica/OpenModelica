@@ -261,26 +261,14 @@ Step 3: Execute Data Reconciliation
 OpenModelica automatically extracts the auxiliary equations linking the measured variables, constructs the reconciliation problem, 
 computes reconciled values and uncertainties, performs statistical tests and generates a reconciliation report.
 
-
-Step 4: Analyze the Results
----------------------------
-The reconciliation report must be analysed to verify consistency of the measurements, uncertainty model and physical model.
-
-Successful statistical tests indicate that reconciled values provide a more reliable estimate of the actual state of the system and can be used for subsequent engineering analyses.
-
-When inconsistencies are detected, measurements, uncertainty assumptions and the physical model should be reviewed. Data reconciliation should therefore be considered as an iterative process supporting instrumentation validation, uncertainty improvement and model refinement.
-
-
-Data Reconciliation Support in OMEdit
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The data reconciliation setup is done by:
-    1. Opening the Modelica model with the data reconciliation modifiers in OMEdit.
+In practice the data reconciliation setup is done in OMEdit by:
+    1. Opening the Modelica model with the data reconciliation modifiers.
     2. Selecting Data Reconciliation > Calculate Data Reconciliation.
     3. Selecting the Data Reconciliation algorithm.
     4. Filling the Data Reconciliation form with
         a. The name of the Measurement Input File (mandatory);
         b. The name of the Correlation Matrix Input file (optional). The default is the identity matrix (i.e. measurements are independent of each other);
-        c. The value of Epsilon (optional). The default value is 1.e-10. Epsilon is the stopping criteria of the data reconciliation numerical iterations.
+        c. The value of Epsilon (optional). The default value is ``1.e-10``. Epsilon is the stopping criteria of the data reconciliation numerical iterations.
     5. Clicking on Save Settings to save the above settings in the Modelica model.
     6. Clicking on Calculate to launch the calculation
 
@@ -302,7 +290,8 @@ The data reconciliation computation is performed in three main steps:
     2. The model is simulated to compute the Jacobian matrices and eliminate numerically the intermediate variables.
        At this step, numerical simulation errors can occur, such as divisions by zero, non-convergence, etc. They can be corrected by improving the model or providing better start values.
 
-    3. The input files are read, the data reconciliation calculation is performed, and the results are displayed. Errors can occur:
+    3. The input files are read, the data reconciliation calculation is performed, and the results are displayed. 
+        Errors can occur:
          a. If input files do not exist.
          b. If there is a mismatch between the variables of interest declared in the model and in the input files:
               i. All variables of interest declared in the model should be declared in the measurement input file and reciprocally.
@@ -311,21 +300,32 @@ The data reconciliation computation is performed in three main steps:
          d. If the first row and the first column are different in the correlation matrix file.
          e. If the numerical cells of the matrices are not positive real numbers.
 
-The results are displayed:
-    1. In an html file with the title: Data Reconciliation Report. This file automatically pops up when the calculation is completed.
-    2. In two csv output files:
+Step 4: Analyze the Results
+---------------------------
+The reconciliation report must be analysed to verify the validity of the assumptions made on the measurements, uncertainty model and physical model.
+
+Successful statistical tests indicate that reconciled values provide a more reliable estimate of the actual state of the system and uncertainty reduction can be used for subsequent engineering analyses.
+
+When inconsistencies are detected, measurements, uncertainty assumptions and the physical model should be reviewed. 
+
+Data reconciliation should therefore be considered as an iterative process supporting instrumentation validation, uncertainty improvement and model refinement.
+
+
+In practice, OMEdit displays the results:
+    1. In an ``.html`` file with the title: Data Reconciliation Report. This file automatically pops up when the calculation is completed.
+    2. In two ``.csv`` output files:
          a. One that contains the reconciled values and the reconciled half-width confidence intervals.
          b. The other that contains the reconciled covariance matrix.
 
-    These files do not pop up automatically when the calculation is completed. The names of the files are respectively
-         | <working directory>\\<model name>\\< model name>_Outputs.csv
-    and
-         | <working directory>\\<model name>\\< model name>_Reconciled_Sx.csv,
+These files do not pop up automatically when the calculation is completed. The names of the files are respectively
+  ``| <working directory>\\<model name>\\< model name>_Outputs.csv``
+and
+  ``| <working directory>\\<model name>\\< model name>_Reconciled_Sx.csv``,
 
-    where <model name> denotes the full name of the model, including its path. The name of the working directory can be read with the command Tools > Options.
+where ``<model name>`` denotes the full name of the model, including its path. The name of the working directory can be read with the command ``Tools > Options``.
 
 
-The Data Reconciliation Report has three sections:
+The **Data Reconciliation Report** has three sections:
 
     1. Overview, with the following information:
         a. Model file: name of the Modelica model file
@@ -336,15 +336,15 @@ The Data Reconciliation Report has three sections:
         f. Generated: date and time of the generation of the data reconciliation report
 
     2. Analysis, with the following information:
-        a. Number of auxiliary conditions, denoted r in the sequel.
+        a. Number of auxiliary conditions, denoted :math:`r` in the sequel.
         b. Number of variables to be reconciled.
         c. Number of related boundary conditions: number of boundary conditions related to the variables to be reconciled. This number should be strictly less than the number of variables to be reconciled, otherwise the data reconciliation problem is ill-posed and data reconciliation cannot be performed.
         d. Number of iterations to convergence: number of iterations of the data reconciliation numerical loop.
-        e. Final value of J*/r: final value of the data reconciliation iteration loop. This value is smaller than epsilon when the iterations are completed (cf. below).
-        f. Epsilon: stopping criteria of the data reconciliation iteration loop. The recommended value by VDI 2048 is 1.e-10.
-        g. Final value of the objective function J*: is equal to J*/r multiplied by r, where r is the number of auxiliary conditions.
-        h. Chi-square value: value of the chi-square distribution for r degrees of freedom and statistical certainty of probability of 95%.
-        i. Result of global test: true if J* is less than the chi-square value, false otherwise. If false, the results for the reconciled values should be rejected because the vector of contradictions (i.e. the discrepancy between the measured values and the reconciled values) is too large.
+        e. Final value of :math:`J*/r`: final value of the data reconciliation iteration loop. This value is smaller than epsilon when the iterations are completed (cf. below).
+        f. Epsilon: stopping criteria of the data reconciliation iteration loop. The recommended value by VDI 2048 is ``1.e-10``.
+        g. Final value of the objective function :math:`J*`: is equal to :math:`J*/r` multiplied by :math:`r`, where :math:`r` is the number of auxiliary conditions.
+        h. Chi-square value: value of the chi-square distribution for :math:`r` degrees of freedom and statistical certainty of probability of 95%.
+        i. Result of global test: true if :math:`J*` is less than the chi-square value, false otherwise. If false, the results for the reconciled values should be rejected because the vector of contradictions (i.e. the discrepancy between the measured values and the reconciled values) is too large.
         j. Auxiliary conditions: set of the auxiliary conditions (i.e., the equations that constrain the variables of interest).
         k. Intermediate equations: set of the intermediate equations (i.e., the equations that compute the intermediate variables from the variables of interest). This set can be empty if there are no intermediate variables.
         l. Debug log: log of the numerical iteration loop.
@@ -463,6 +463,15 @@ For the splitter, the results are the following:
 
 .. figure :: media/dataReconciliationResult_4.png
   :name: dataReconciliationResult_4
+
+
+.. hint::
+  When inconsistencies are detected, several causes should be investigated:
+  - Measurement Issues. Possible causes include: sensor drift, calibration errors, acquisition chain failures, incorrect measured values.
+  - Uncertainty Characterisation Issues. Possible causes include: underestimated uncertainties, neglected correlations, incorrect uncertainty propagation assumptions.
+  - Model Issues. Possible causes include: missing physical phenomena, invalid operating assumptions, modelling errors.
+
+  Do not forget that the reconciliation process is therefore iterative: discrepancies revealed by statistical tests should be used to improve either the measurements, the uncertainty model, or the physical model until a statistically consistent solution is obtained.
 
 Additional Feature: Compute the Boundary Conditions from the Reconciled Values
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
