@@ -16,6 +16,19 @@ The complete data reconciliation workflow consists in four main phases:
 
 Step 1: Define the Data Reconciliation Problem in OpenModelica
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To perform data reconciliation, two kinds of variables must be declared:
+    1.  The boundary conditions (which represent assumptions on the environment);
+    2.  The variables of interest to be reconciled.
+These two kinds of variables must be manually declared in the Modelica source code
+    1.	With annotations for the boundary conditions;
+    2.	With modifiers for the variables of interest.
+
+The boundary conditions are declared with the annotation: ``annotation(__OpenModelica_BoundaryCondition = true)``.
+The variables of interest are declared with the modifier ``uncertain = Uncertainty.refine``.
+
+OpenModelica uses this information to automatically extract from the Modelica model the equations required for reconciliation.
+
 Let us take the example of the Modelica model of a splitter.
 
 .. figure :: media/dataReconciliationsplitter.png
@@ -26,16 +39,8 @@ Water flows from left to right, from the source to the sinks. The model is made 
 .. figure :: media/dataReconciliationsplittercomponent.png
   :name: dataReconciliationsplittercomponent
 
-To perform data reconciliation, two kinds of variables must be declared:
-    1.  The boundary conditions (which represent assumptions on the environment);
-    2.  The variables of interest to be reconciled.
-These two kinds of variables must be manually declared in the source code
-    1.	With annotations for the boundary conditions;
-    2.	With modifiers for the variables of interest.
 
-The boundary conditions are declared with the annotation: ``annotation(__OpenModelica_BoundaryCondition = true)``.
-
-For the pressure source, the boundary conditions are the pressure P0, and the specific enthalpy h0
+For the pressure source component, the boundary conditions are the pressure P0, and the specific enthalpy h0
 or the temperature T0 of the source (depending on the option chosen by the user).
 
 
@@ -43,7 +48,7 @@ or the temperature T0 of the source (depending on the option chosen by the user)
 
       model SourceP "Water/steam source with fixed pressure"
         parameter Modelica.SIunits.AbsolutePressure P0=300000 "Source pressure" annotation(__OpenModelica_BoundaryCondition = true);
-        parameter Modelica.SIunits.Temperature T0=290 "Source temperature (active if option_temperature=1" annotation(__OpenModelica_BoundaryCondition = true);
+        parameter Modelica.SIunits.Temperature T0=290 "Source temperature (active if option_temperature=1)" annotation(__OpenModelica_BoundaryCondition = true);
         parameter Modelica.SIunits.SpecificEnthalpy h0=100000
           "Source specific enthalpy (active if option_temperature=2)" annotation(__OpenModelica_BoundaryCondition = true);
         parameter Integer option_temperature=1 "1:temperature fixed - 2:specific enthalpy fixed";
@@ -63,16 +68,18 @@ or the temperature T0 of the source (depending on the option chosen by the user)
         end if;
       end SourceP;
 
-Boundary conditions are declared with annotations so that libraries can be modified to accomodate data reconciliation,
-and still can be used with tools that do not support data reconciliation (because annotations not recognized by a tool
-are ignored by that tool). The variables of interest are declared with the modifier "uncertain = Uncertainty.refine"
 
-A modifier is used instead of an annotation so that checks can be performed to detect errors such as declaring a
+Boundary conditions are declared with **annotations** so that libraries can be modified to accomodate data reconciliation,
+ and still can be used with tools that do not support data reconciliation (because annotations not recognized by a tool are ignored by that tool). 
+
+Variables of interest are marked with **modifiers** instead of annotations so that checks can be performed to detect errors such as declaring a
 variable that does not exist to be a variable to be reconciled. The drawback is that tools that do not support
-data reconciliation will produce an error. To avoid this problem, variables of interest should be declared in
-a separate model (Splitter_DR in the example below) that instantiates the orginal model (Splitter),
-so that the original model (Splitter) is not modified and can still be used with tools that do not
-support data reconciliation.
+data reconciliation will produce an error. 
+
+.. hint::
+
+  To avoid this problem, variables of interest should be declared in a separate model (``Splitter_DR`` in the example below) that instantiates the orginal model (``Splitter``),
+  so that the original model (Splitter) is not modified and can still be used with tools that do not support data reconciliation.
 
 .. code-block:: modelica
 
