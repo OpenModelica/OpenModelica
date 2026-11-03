@@ -2617,10 +2617,10 @@ static fmi3Status doStepInternal(ModelInstance* c, fmi3Float64 currentCommunicat
         break;
       case S_CVODE:
 #ifdef OMC_FMI_HAVE_CVODE
-        flag = cvode_solver_fmi_step(comp, tNext, states);
+        flag = cvode_solver_fmi_step(comp->fmuData, comp->threadData, comp->solverInfo, tNext, states);
         if (flag < 0)
         {
-          FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "fmi3DoStep: CVODE integrator step failed.")
+          FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "fmi3DoStep: CVODE integrator step failed with flag %d at time %.15g.", flag, comp->solverInfo->currentTime)
           status = fmi3Fatal;
           goto doStep_cleanup;
         }

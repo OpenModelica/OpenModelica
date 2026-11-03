@@ -1189,18 +1189,17 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
 #ifdef OMC_FMI_RUNTIME
 
 /**
- * @brief Integration step with CVODE for fmi2DoStep
+ * @brief Integration step with CVODE for fmi2DoStep and fmi3DoStep
  *
- * @param comp          Pointer to FMU component.
+ * @param data          Runtime data of the FMU instance.
+ * @param threadData    Thread data of the FMU instance.
+ * @param solverInfo    Solver of the FMU instance.
  * @param tNext         Next desired time step for integrator to end.
  * @param states        States vector.
- * @return int          Returns 0 on success and -1 else.
+ * @return int          0 on success, else the negative flag of the CVODE call that failed.
  */
-int cvode_solver_fmi_step(ModelInstance *comp, double tNext, double* states)
+int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double tNext, double* states)
 {
-  DATA* data = comp->fmuData;
-  threadData_t* threadData = comp->threadData;
-  SOLVER_INFO* solverInfo = comp->solverInfo;
   SIMULATION_INFO* simulationInfo = data->simulationInfo;
   CVODE_SOLVER *cvodeData = (CVODE_SOLVER*) solverInfo->solverData;
   const double *ders = data->localData[0]->realVars + cvodeData->N;
@@ -1233,14 +1232,12 @@ int cvode_solver_fmi_step(ModelInstance *comp, double tNext, double* states)
   {
     flag = CVodeSetInitStep(cvodeData->cvode_mem, cvodeRestartStep(data, cvodeData, h));
     if (flag < 0) {
-      FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: ##CVODE## CVodeSetInitStep failed with flag %i.", flag)
-      return -1;
+      return flag;
     }
   }
   flag = CVodeSetStopTime(cvodeData->cvode_mem, tNext);
   if (flag < 0) {
-    FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: ##CVODE## CVodeSetStopTime failed with flag %i.", flag)
-    return -1;
+    return flag;
   }
   for (workRetries = 0; ; workRetries++)
   {
@@ -1253,17 +1250,16 @@ int cvode_solver_fmi_step(ModelInstance *comp, double tNext, double* states)
     {
       break;
     }
-    FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2DoStep: ##CVODE## has done too much work with small steps at time = %.15g. Continuing to solve anyway.", solverInfo->currentTime)
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "##CVODE## has done too much work with small steps at time = %.15g. Continuing to solve anyway.", solverInfo->currentTime);
   }
 
   if ((flag == CV_SUCCESS || flag == CV_TSTOP_RETURN) && solverInfo->currentTime >= tNext)
   {
-    FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2DoStep:##CVODE## step done to time = %.15g.", comp->solverInfo->currentTime)
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "##CVODE## step done to time = %.15g.", solverInfo->currentTime);
   }
   else
   {
-    FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: ##CVODE## %d error occurred at time = %.15g.", flag, solverInfo->currentTime)
-    return -1;
+    return flag < 0 ? flag : -1;
   }
 
   return 0;

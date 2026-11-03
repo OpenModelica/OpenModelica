@@ -30,8 +30,6 @@
 
 #ifndef OMC_FMI_RUNTIME
   #include "omc_config.h"
-#else
-  #include "fmi-export/fmu2_model_interface.h"
 #endif
 #include "../../simulation_data.h"
 #include "../../util/simulation_options.h"
@@ -151,7 +149,7 @@ int cvode_solver_setNominals(DATA *data, threadData_t *threadData, CVODE_SOLVER 
 int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo);
 
 #ifdef OMC_FMI_RUNTIME
-int cvode_solver_fmi_step(ModelInstance *comp, double tNext, double* states);
+int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double tNext, double* states);
 #endif
 
 #endif /* #ifndef CVODE_SOLVER_H */
