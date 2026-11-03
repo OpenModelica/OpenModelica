@@ -145,6 +145,18 @@ is available. By default the solver runs in single-rate mode using the
 embedded RK scheme ESDIRK4 :cite:`KENNEDY2019221` with variable-step-size
 control and efficient event handling.
 
+Some common methods have a shorthand:
+
+.. code-block::
+
+  -s=rungekutta     -s=gbode -gbm=rungekutta -gbctrl=const
+  -s=heun           -s=gbode -gbm=heun -gbctrl=const
+  -s=impeuler       -s=gbode -gbm=impl_euler -gbctrl=const
+  -s=trapezoid      -s=gbode -gbm=trapezoid -gbctrl=const
+  -s=imprungekutta  -s=gbode -gbm=radauIA2 -gbctrl=const
+  -s=irksco         -s=gbode -gbm=trapezoid
+  -s=rungekuttaSsc  -s=gbode -gbm=rungekuttaSsc
+
 The bi-rate mode can be utilized using the simulation flag
 :ref:`gbratio <simflag-gbratio>`. This flag determines the percentage of fast
 states with respect to all states. These states will then be automatically
@@ -181,20 +193,6 @@ The basic explicit solvers Euler uses a fixed step-size based on the
 :math:`\mbox{stepSize} \approx \cfrac{\mbox{stopTime} - \mbox{startTime}}{\mbox{numberOfIntervals}}`
 
 - euler - Explicit Euler, fixed step size, order 1
-
-Deprecated Solvers
-~~~~~~~~~~~~~~~~~~~~
-
-The following solvers are deprecated and will be removed in a future version of
-OpenModelica:
-
-- rungekutta - Classic Runge-Kutta method RK4, explicit, fixed step-size, oder 4
-
-.. code-block::
-
-  old: -s=rungekutta
-  new: -s=gbode -gbm=rungekutta -gbctrl=const
-
 
 DAE Mode Simulation
 -------------------

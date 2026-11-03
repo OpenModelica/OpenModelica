@@ -76,8 +76,6 @@ modelica_boolean checkFastStatesChange(DATA_GBODE* gbData);
 
 void logSolverStats(enum OMC_LOG_STREAM stream, const char* name, double timeValue, double integratorTime, double stepSize, SOLVERSTATS* stats, unsigned int *fastStateUpdates, unsigned int *additionalEvalsFODE);
 
-void deprecationWarningGBODE(enum SOLVER_METHOD method);
-
 /* cache for slow-state interpolations in multirate
  * avoids redundant slow-state interpolations during fast steps / NLS
  *

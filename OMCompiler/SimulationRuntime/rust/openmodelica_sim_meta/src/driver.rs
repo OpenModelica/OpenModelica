@@ -5109,7 +5109,8 @@ pub(crate) fn effective_method<'a>(method: &'a str) -> &'a str {
         Some(crate::simflags::Solver::Cvode) => "cvode",
         Some(crate::simflags::Solver::Ida) => "ida",
         Some(crate::simflags::Solver::Gbode) => "gbode",
-        Some(crate::simflags::Solver::RungeKutta) => "rungekutta",
+        // `resolve_solver_method` rejects every shorthand alike.
+        Some(crate::simflags::Solver::GbodeShorthand) => "rungekutta",
         Some(crate::simflags::Solver::Optimization) => "optimization",
         _ => method,
     }
@@ -5141,7 +5142,7 @@ fn is_dassl(method: &str) -> bool {
 /// with a symbolic Jacobian and `""` the dassl default.
 fn check_method(method: &str) -> bool {
     is_dassl(method)
-        || matches!(method, "euler" | "rungekutta")
+        || method == "euler"
         || (matches!(method, "cvode" | "ida") && cfg!(sundials))
         // `optimize()`; `drive` handles it before the integrators, and reports
         // C's "Ipopt is needed but not available." when it was not linked.
@@ -5166,6 +5167,9 @@ fn resolve_solver_method<'a>(method: &'a str, dae_mode: bool) -> Result<&'a str>
     if method == "gbode" {
         return Err(crate::simflags::GBODE_DISABLED);
     }
+    if crate::simflags::is_gbode_shorthand(method) {
+        return Err(crate::simflags::GBODE_SHORTHAND_DISABLED);
+    }
     if !check_method(method) {
         return Err(UNSUPPORTED_METHOD);
     }
@@ -5177,8 +5181,6 @@ fn resolve_solver_method<'a>(method: &'a str, dae_mode: bool) -> Result<&'a str>
 /// with, so only a standalone run applies it.
 fn resolve_sim_solver_method<'a>(method: &'a str, layout: &SimLayout) -> Result<&'a str> {
     let method = resolve_solver_method(method, layout.dae_mode())?;
-    // C warns before the swap below.
-    crate::fixedstep::deprecation_warning(method);
     // C exempts `optimization`.
     let nothing_to_solve = match layout.dae_mode() {
         true => layout.n_dae_res + layout.n_dae_alg < 1,
@@ -5318,7 +5320,6 @@ fn make_driver_resolved(
             "ida" => "ida",
             "gbode" => "gbode",
             "euler" => "euler-events",
-            "rungekutta" => "rungekutta",
             _ => "dassl-events",
         };
         return Ok((Box::new(EventsDriver::new(e, model, sim_data, method, gbode)?), label));
@@ -5327,10 +5328,6 @@ fn make_driver_resolved(
         "dassl" | "dasslrt" | "dassljac" | "" => Ok((Box::new(DasslDriver::new(e, model, sim_data)?), "dassl")),
         // Uniform host-driven Euler so it is resumable/cancellable like DASSL.
         "euler" => Ok((Box::new(EulerDriver::new(e, model, sim_data)?), "euler-host")),
-        "rungekutta" => Ok((
-            Box::new(EventsDriver::new(e, model, sim_data, method, None)?),
-            "rungekutta",
-        )),
         #[cfg(sundials)]
         "cvode" => Ok((Box::new(CvodeDriver::new(e, model, sim_data)?), "cvode")),
         #[cfg(sundials)]
@@ -5350,10 +5347,9 @@ fn csv_input_given() -> bool {
 /// Listing what `make_driver` accepts; `simflags::check` rejects the rest earlier,
 /// so this is only reached by a `method=` the model was compiled with.
 const UNSUPPORTED_METHOD: &str = if cfg!(sundials) {
-    "unsupported integration method (supported: `dassl`, `cvode`, `ida`, `euler`, \
-     `rungekutta`)"
+    "unsupported integration method (supported: `dassl`, `cvode`, `ida`, `euler`)"
 } else {
-    "unsupported integration method (supported: `dassl`, `euler`, `rungekutta`)"
+    "unsupported integration method (supported: `dassl`, `euler`)"
 };
 
 /// Free external objects (so repeated runs don't leak) and read back parameter
@@ -7571,8 +7567,8 @@ enum Solver {
     /// `-s=gbode`: takes its own steps, locates its own events and interpolates
     /// onto the output grid, so [`SolverCore`] only has to hand it a target.
     Gbode(alloc::boxed::Box<crate::gbode::Gbode>),
-    /// `-s=euler` / `-s=rungekutta`: one step per output interval, events located
-    /// by bisecting the step afterwards.
+    /// `-s=euler`: one step per output interval, events located by bisecting the
+    /// step afterwards.
     Fixed(crate::fixedstep::FixedStep),
 }
 
@@ -8533,15 +8529,6 @@ fn model_ode<'a>(
     }
 }
 
-/// C's `-s=euler`/`-s=rungekutta`, the two schemes [`crate::fixedstep`] serves.
-fn fixed_kind(method: &str) -> Option<crate::fixedstep::FixedKind> {
-    match method {
-        "euler" => Some(crate::fixedstep::FixedKind::Euler),
-        "rungekutta" => Some(crate::fixedstep::FixedKind::RungeKutta),
-        _ => None,
-    }
-}
-
 /// The driver's errors are `&'static str`, but a solver setup error carries the
 /// offending flag value, so the message is built at runtime. Leaking it is fine:
 /// it happens at most once per run, on the path that aborts the run.
@@ -8673,8 +8660,8 @@ impl SolverCore {
         let maxs = read_state_maxs(e, sim_data, layout)?;
         let mins = read_state_mins(e, sim_data, layout)?;
         let (rtol, atol) = dassl_tolerances(tol, &nominals);
-        let solver = if let Some(kind) = fixed_kind(method) {
-            Solver::Fixed(crate::fixedstep::FixedStep::new(kind, n_states, layout.n_zc as usize))
+        let solver = if method == "euler" {
+            Solver::Fixed(crate::fixedstep::FixedStep::new(n_states, layout.n_zc as usize))
         } else if let Some(mut g) = gbode {
             g.set_experiment(model.start_time, model.stop_time, model.step_size());
             g.set_nominals(&nominals);
@@ -9286,10 +9273,7 @@ impl SolverCore {
             #[cfg(sundials)]
             Solver::Ida(_) => "ida",
             Solver::Gbode(_) => "gbode",
-            Solver::Fixed(f) => match f.kind() {
-                crate::fixedstep::FixedKind::Euler => "euler",
-                _ => "rungekutta",
-            },
+            Solver::Fixed(_) => "euler",
         }
     }
 
@@ -9859,7 +9843,7 @@ pub struct CsDriver {
     core: SolverCore,
     samp: Samples,
     sync: crate::sync::Sync,
-    /// The step `euler`/`rungekutta` take (the model's own output step); `None` for a
+    /// The step `euler` takes (the model's own output step); `None` for a
     /// variable-step method, which is handed the whole interval.
     fixed_h: Option<f64>,
     /// The event the master's `update-discrete-states` resolved since the last
@@ -9976,7 +9960,7 @@ impl CsDriver {
             core.read_states(e)?;
         }
         let h = model.step_size();
-        let fixed_h = fixed_kind(method).map(|_| if h > 0.0 { h } else { f64::INFINITY });
+        let fixed_h = (method == "euler").then(|| if h > 0.0 { h } else { f64::INFINITY });
         let mut zc0 = vec![0.0f64; layout.n_zc as usize];
         if core.n_states == 0 && layout.n_zc > 0 {
             read_zero_crossings(e, sim_data, layout, &mut zc0)?;
