@@ -25,7 +25,7 @@ Implementing data reconciliation in OpenModelica offers several advantages:
 Apart from this "equation extraction" phase — which is specific to OpenModelica — the current implementation of the "reconciliation" component follows the assumptions 
 and calculation procedures specified in the VDI 2048 standard.
 Current assumptions are:
-- The extracted equations should represend a static model (model featuring algebraic equations only, no differential equation).
+- The extracted equations should represent a static model (model featuring algebraic equations only, no differential equation).
 - The uncertainties associated to the measured values follow a Gaussian distribution.
 
 
@@ -38,13 +38,17 @@ The complete data reconciliation workflow consists in four main phases:
     3.  Execute data reconciliation;
     4.  Analyze the results.
 
-The above figure illustrates the workflow: refers to steps implemented in OpenModelica while dark blue highlights steps performed in a third-party tool dedicated to uncertainty quantification.
+The above figure summarizes the workflow: light blue refers to steps implemented in OpenModelica while dark blue highlights steps performed in a third-party tool dedicated to uncertainty quantification.
 
 .. figure :: media/dataReconciliationWorkflow.png
   :name: dataReconciliationWorkflow
 
+
+Main Feature : Validate and Reconcile Measured Values
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Step 1: Define the Data Reconciliation Problem in OpenModelica
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------------------------------
 
 To perform data reconciliation, the user first identifies two kinds of variables:
     1.  The boundary conditions (which represent assumptions on the environment);
@@ -127,7 +131,7 @@ data reconciliation will produce an error.
 
 
 Step 2: Quantify Measurement Uncertainties
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------
 
 Once boundary conditions and variables of interest have been declared, measurements and their uncertainties are collected.
 Uncertainty estimates and correlations between measurements should be determined before launching the reconciliation process.
@@ -215,13 +219,13 @@ The variables ``mV`` and ``mHK`` could have been omitted because they do not hav
   * estimate correlations between measured variables. 
 
 Step 3: Execute Data Reconciliation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------------
 OpenModelica automatically extracts the auxiliary equations linking the measured variables, constructs the reconciliation problem, 
 computes reconciled values and uncertainties, performs statistical tests and generates a reconciliation report.
 
 
 Step 4: Analyze the Results
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------
 The reconciliation report must be analysed to verify consistency of the measurements, uncertainty model and physical model.
 
 Successful statistical tests indicate that reconciled values provide a more reliable estimate of the actual state of the system and can be used for subsequent engineering analyses.
@@ -422,8 +426,8 @@ For the splitter, the results are the following:
 .. figure :: media/dataReconciliationResult_4.png
   :name: dataReconciliationResult_4
 
-Computing the Boundary Conditions from the Reconciled Values
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Additional Feature: Compute the Boundary Conditions from the Reconciled Values
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The values and uncertainties of the boundary conditions that correspond to the reconciled values of the variables of interest can be computed by:
     1. Selecting Data Reconciliation > Calculate Data Reconciliation
