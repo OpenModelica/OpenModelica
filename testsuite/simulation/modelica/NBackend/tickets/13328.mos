@@ -30,6 +30,9 @@ diffSimulationResults("Iterator_res.mat", "ReferenceFiles/Iterator_res.mat", "It
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "Warning: NBResolveSingularities.balanceInitialization reports an overdetermined initialization!
+// Checking for consistency is not yet supported, following equations had to be removed:
+// [ARRY] (3) $DER.x = u1; ($RES_SIM_8)
+// "
 // (true, {})
 // endResult
