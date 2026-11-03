@@ -38,6 +38,7 @@ QuotedIdentifier.mos \
 QuotedIdentifierCSV.mos \
 Return.mos \
 StringArrayReturn.mos \
+StringSignificantDigits.mos \
 TestLoadModel.mos \
 UnpOpPrecedence.mos \
 UnusedVariable.mos \
