@@ -1986,18 +1986,6 @@ function isJacobianResultVar
              not (resizable and Type.isArray(Expression.typeOf(new_exp)));
       end if;
     end isEvaluable;
-
-    function isExplicitlyImpureCall
-      input Expression exp;
-      output Boolean b;
-    algorithm
-      b := match exp
-        local
-          Function fn;
-        case Expression.CALL(call = Call.TYPED_CALL(fn = fn)) then Function.isExplicitlyImpure(fn);
-        else false;
-      end match;
-    end isExplicitlyImpureCall;
   algorithm
     // check binding
     if isBound(var_ptr) then
@@ -3175,6 +3163,18 @@ protected
   algorithm
     Pointer.update(acc, getVarName(var) :: Pointer.access(acc));
   end getVarNameTraverse;
+
+  function isExplicitlyImpureCall
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      local
+        Function fn;
+      case Expression.CALL(call = Call.TYPED_CALL(fn = fn)) then Function.isExplicitlyImpure(fn);
+      else false;
+    end match;
+  end isExplicitlyImpureCall;
 
   annotation(__OpenModelica_Interface="nbackend");
 end NBVariable;
