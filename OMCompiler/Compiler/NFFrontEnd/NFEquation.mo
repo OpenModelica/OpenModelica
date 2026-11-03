@@ -53,6 +53,7 @@ protected
   import IOStream;
   import Util;
   import Call = NFCall;
+  import Operator = NFOperator;
   import MetaModelica.Dangerous.listReverseInPlace;
 
 public
@@ -136,6 +137,17 @@ public
         else 0;
       end match;
     end sizeOf;
+
+    function sizeOfSymbolic
+      input Branch branch;
+      input output Integer sz;
+      input output list<Expression> exps;
+    algorithm
+      (sz, exps) := match branch
+        case Branch.BRANCH() then Equation.sizeOfListSymbolic(branch.body, sz, exps);
+        else (sz, exps);
+      end match;
+    end sizeOfSymbolic;
 
     function toStream
       input Branch branch;
@@ -1240,6 +1252,64 @@ public
       else 0;
     end matchcontinue;
   end sizeOf;
+
+  function sizeOfListSymbolic
+    input list<Equation> eqs;
+    input output Integer sz = 0;
+    input output list<Expression> exps = {};
+  algorithm
+    for eq in eqs loop
+      (sz, exps) := sizeOfSymbolic(eq, sz, exps);
+    end for;
+  end sizeOfListSymbolic;
+
+  function sizeOfSymbolic
+    input Equation eq;
+    input output Integer sz = 0;
+    input output list<Expression> exps = {};
+  protected
+    Integer s;
+    list<Expression> e;
+  algorithm
+    (sz, exps) := match eq
+      // Use the type of the lhs instead of the whole equation, to avoid counting
+      // omitted tuple elements.
+      case EQUALITY() then Type.sizeOfSymbolic(Expression.typeOf(eq.lhs), sz, exps);
+      case CONNECT() then Type.sizeOfSymbolic(Expression.typeOf(eq.lhs), sz, exps);
+      case FOR() then sizeOfSymbolicFor(Util.getOption(eq.range), eq.body, sz, exps);
+      case IF() then Branch.sizeOfSymbolic(listHead(eq.branches), sz, exps);
+      case WHEN() then Branch.sizeOfSymbolic(listHead(eq.branches), sz, exps);
+      else (sz, exps);
+    end match;
+  end sizeOfSymbolic;
+
+  function sizeOfSymbolicFor
+    input Expression range;
+    input list<Equation> body;
+    input output Integer sz;
+    input output list<Expression> exps;
+  protected
+    Integer range_sz, body_sz = 0;
+    list<Expression> range_exps, body_exps = {};
+    Expression exp, range_exp;
+  algorithm
+    (range_sz, range_exps) := Type.sizeOfSymbolic(Expression.typeOf(range));
+    (body_sz, body_exps) := sizeOfListSymbolic(body, body_sz, body_exps);
+
+    if listEmpty(range_exps) and listEmpty(body_exps) then
+      sz := sz + range_sz * body_sz;
+    elseif listEmpty(body_exps) then
+      exps := listAppend(range_exps, exps);
+    else
+      exp := Expression.MULTARY(body_exps, {}, Operator.makeAdd(Type.INTEGER()));
+
+      if range_sz > 1 then
+        exp := Expression.BINARY(Expression.INTEGER(range_sz), Operator.makeMul(Type.INTEGER()), exp);
+      elseif not listEmpty(range_exps) then
+        exp := Expression.BINARY(listHead(range_exps), Operator.makeMul(Type.INTEGER()), exp);
+      end if;
+    end if;
+  end sizeOfSymbolicFor;
 
   function toString
     input Equation eq;
