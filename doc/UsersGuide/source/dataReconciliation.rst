@@ -184,7 +184,8 @@ The variables mV and mHK could have been omitted because they do not have any po
 
 Step 3: Execute Data Reconciliation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+OpenModelica automatically extracts the auxiliary equations linking the measured variables, constructs the reconciliation problem, 
+computes reconciled values and uncertainties, performs statistical tests and generates a reconciliation report.
 
 
 Step 4: Analyze the Results
