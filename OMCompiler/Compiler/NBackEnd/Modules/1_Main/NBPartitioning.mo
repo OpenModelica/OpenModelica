@@ -612,7 +612,7 @@ public
     UnorderedMap<ComponentRef, Slice.IntLst> solved_elements = UnorderedMap.new<Slice.IntLst>(ComponentRef.hash, ComponentRef.isEqual);
     UnorderedSet<ComponentRef> deps, alg_vars, alg_eqns;
     array<tuple<Integer, list<Integer>>> graph;
-    list<Integer> seeds = {};
+    list<Integer> seeds = {}, solving;
     array<Boolean> needed;
     ComponentRef name;
     Boolean has_der = false;
@@ -651,10 +651,26 @@ public
       graph[i] := (i, List.flatten(list(solvingComponents(d, solved_elements, solved) for d in UnorderedSet.toList(deps))));
     end for;
 
+    // the partitions get whole variables, all components solving elements of a needed variable are needed
     needed := arrayCreate(n, false);
-    for i in Graph.allReachableNodesInt((seeds, {}), graph, n + 1, n) loop
-      needed[i] := true;
-    end for;
+    while not listEmpty(seeds) loop
+      for i in Graph.allReachableNodesInt((seeds, {}), graph, n + 1, n) loop
+        needed[i] := true;
+      end for;
+      seeds := {};
+      for i in 1:n loop
+        if needed[i] then
+          for var in StrongComponent.getVariables(comps[i]) loop
+            solving := UnorderedMap.getOrDefault(ComponentRef.stripSubscriptsAll(BVariable.getVarName(var)), solved, {});
+            for j in solving loop
+              if not needed[j] then
+                seeds := j :: seeds;
+              end if;
+            end for;
+          end for;
+        end if;
+      end for;
+    end while;
     if not has_der or Array.all(needed, Util.id) then
       return;
     end if;
@@ -1410,8 +1426,10 @@ protected
   end solvingComponents;
 
   function hasLiteralSubscripts
+    "true for a single element, an array cref like x stands for all components solving any of its elements"
     input ComponentRef cref;
-    output Boolean b = List.all(ComponentRef.subscriptsAllFlat(cref), Subscript.isLiteral);
+    output Boolean b = List.all(ComponentRef.subscriptsAllFlat(cref), Subscript.isLiteral)
+      and not Type.isArray(ComponentRef.getSubscriptedType(cref, true));
   end hasLiteralSubscripts;
 
   function collectPartitioningCrefs
