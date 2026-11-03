@@ -182,8 +182,7 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
               newtonIteration$(OBJ_EXT) \
               nonlinearSolverNewton$(OBJ_EXT) \
               sundials_error$(OBJ_EXT) \
-              sundials_util$(OBJ_EXT) \
-              sym_solver_ssc$(OBJ_EXT)
+              sundials_util$(OBJ_EXT)
 else
   SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL)
 endif
@@ -205,8 +204,7 @@ SOLVER_HFILES = cvode_solver.h \
                 spatialDistribution.h \
                 stateset.h \
                 sundials_error.h \
-                sundials_util.h \
-                sym_solver_ssc.h
+                sundials_util.h
 
 INITIALIZATION_OBJS = initialization$(OBJ_EXT)
 INITIALIZATION_HFILES = initialization.h

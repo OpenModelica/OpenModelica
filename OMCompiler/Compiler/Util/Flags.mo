@@ -774,7 +774,6 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("simplifysemiLinear", "Simplifies calls to semiLinear."),
     ("solveLinearSystem", "solve linear system with newton step"),
     ("solveSimpleEquations", "Solves simple equations"),
-    ("symSolver", "Rewrites the ode system for implicit Euler method. This module requires +symSolver."),
     ("symbolicJacobian", "Detects the sparse pattern of the ODE system and calculates also the symbolic Jacobian if flag '--generateDynamicJacobian=symbolic'."),
     ("tearingSystem", "For method selection use flag tearingMethod."),
     ("wrapFunctionCalls", "This module introduces variables for each function call and substitutes all these calls with the newly introduced variables.")
@@ -959,9 +958,9 @@ constant ConfigFlag DYNAMIC_TEARING = CONFIG_FLAG(58, "dynamicTearing",
     ("nonlinear", "Dynamic tearing only for nonlinear systems.")
   })),
   "Activates dynamic tearing (TearingSet can be changed automatically during runtime, strict set vs. casual set.)");
-constant ConfigFlag SYM_SOLVER = CONFIG_FLAG(59, "symSolver",
-  NONE(), EXTERNAL(), ENUM_FLAG(0, {("none",0), ("impEuler", 1), ("expEuler",2)}), NONE(),
-  "Activates symbolic implicit solver (original system is not changed).");
+constant ConfigFlag TPL_INTERFACE_DIR = CONFIG_FLAG(59, "tplInterfaceDir",
+  NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
+  "Directory searched before the current one for the interface files a Susan\n.tpl imports with 'import interface'.");
 constant ConfigFlag LOOP2CON = CONFIG_FLAG(60, "loop2con",
   NONE(), EXTERNAL(), STRING_FLAG("none"),
   SOME(STRING_DESC_OPTION({
@@ -1458,9 +1457,6 @@ constant ConfigFlag TPL_OUTPUT_DIR = CONFIG_FLAG(170, "tplOutputDir",
 constant ConfigFlag FMU_DIRECTORY = CONFIG_FLAG(171, "fmuDirectory",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Write an exported FMU as an unzipped directory named <prefix>.fmu rather than\na zip file. An importer that reads a directory (OpenModelica's own does) then\npays neither the compression nor the extraction, which for a wasm FMU carrying a\nprecompiled artifact is most of what packing it costs. wasm FMUs only.");
-constant ConfigFlag TPL_INTERFACE_DIR = CONFIG_FLAG(172, "tplInterfaceDir",
-  NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
-  "Directory searched before the current one for the interface files a Susan\n.tpl imports with 'import interface'.");
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

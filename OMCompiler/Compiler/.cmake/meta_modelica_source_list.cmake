@@ -248,7 +248,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/RemoveSimpleEquations.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/ResolveLoops.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/Sorting.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/SymbolicImplicitSolver.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/SymbolicJacobian.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/SynchronousFeatures.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/Tearing.mo

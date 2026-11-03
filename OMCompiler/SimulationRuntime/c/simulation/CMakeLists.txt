@@ -64,7 +64,6 @@ set(OMC_SIMRT_SIMULATION_SOURCES
   "solver/stateset.c"
   "solver/sundials_error.c"
   "solver/sundials_util.c"
-  "solver/sym_solver_ssc.c"
   "solver/synchronous.c"
 )
 
@@ -134,7 +133,6 @@ set(OMC_SIMRT_SIMULATION_HEADERS
   "solver/stateset.h"
   "solver/sundials_error.h"
   "solver/sundials_util.h"
-  "solver/sym_solver_ssc.h"
   "solver/synchronous.h"
 )
 

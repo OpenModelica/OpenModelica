@@ -31,8 +31,6 @@ pub static mut measure_time_flag: c_int = 0;
 /// Set by the generated `main` to say how the model was translated.
 #[unsafe(no_mangle)]
 pub static mut compiledInDAEMode: c_int = 0;
-#[unsafe(no_mangle)]
-pub static mut compiledWithSymSolver: c_int = 0;
 /// `-steadyState`'s tolerance (`model_help.c`), whose default C also sets here.
 /// The driver reads the flag itself; this exists because the generated code and
 /// the C headers name the global.

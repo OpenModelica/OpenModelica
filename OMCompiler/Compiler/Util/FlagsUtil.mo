@@ -329,7 +329,7 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.CPP_FLAGS,
   Flags.REMOVE_SIMPLE_EQUATIONS,
   Flags.DYNAMIC_TEARING,
-  Flags.SYM_SOLVER,
+  Flags.TPL_INTERFACE_DIR,
   Flags.LOOP2CON,
   Flags.FORCE_TEARING,
   Flags.SIMPLIFY_LOOPS,
@@ -441,8 +441,7 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.TEARING_COST_MARGIN,
   Flags.FMU_NATIVE_PLATFORMS,
   Flags.TPL_OUTPUT_DIR,
-  Flags.FMU_DIRECTORY,
-  Flags.TPL_INTERFACE_DIR
+  Flags.FMU_DIRECTORY
 };
 
 public function new

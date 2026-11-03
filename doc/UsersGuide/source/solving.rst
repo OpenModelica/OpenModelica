@@ -195,10 +195,6 @@ OpenModelica:
   old: -s=rungekutta
   new: -s=gbode -gbm=rungekutta -gbctrl=const
 
-- symSolver - Symbolic inline solver
-  (requires :ref:`--symSolver <omcflag-symSolver>`) - fixed step-size, order 1
-- symSolverSsc - Symbolic implicit inline Euler with step-size control
-  (requires :ref:`--symSolver<omcflag-symSolver>`) - step-size control, order 1-2
 
 DAE Mode Simulation
 -------------------

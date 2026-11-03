@@ -489,13 +489,6 @@ pub struct DAEMODE_DATA {
     pub algIndexes: *mut c_int,
 }
 
-#[repr(C)]
-pub struct INLINE_DATA {
-    pub dt: modelica_real,
-    pub algVars: *mut modelica_real,
-    pub algOldVars: *mut modelica_real,
-}
-
 /// `EQUATION_SECTION`: which generated section an equation belongs to.
 pub const EQUATION_SECTION_UNKNOWN: c_int = 0;
 pub const EQUATION_SECTION_INIT_LAMBDA0: c_int = 1;
@@ -824,7 +817,6 @@ pub struct SIMULATION_INFO {
     pub mixedSystemData: *mut MIXED_SYSTEM_DATA,
     pub stateSetData: *mut STATE_SET_DATA,
     pub daeModeData: *mut DAEMODE_DATA,
-    pub inlineData: *mut INLINE_DATA,
 
     pub backupSolverData: *mut c_void,
 
@@ -984,8 +976,6 @@ pub struct OpenModelicaGeneratedFunctionCallbacks {
     pub getTimeGrid:
         Option<unsafe extern "C" fn(*mut DATA, *mut modelica_integer, *mut *mut modelica_integer) -> c_int>,
 
-    pub symbolicInlineSystems: sim_fn,
-
     pub function_initSynchronous: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t)>,
     pub function_updateSynchronous: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, c_long)>,
     pub function_equationsSynchronous:
@@ -1044,7 +1034,7 @@ pub const LSS_KLU: c_int = 3;
 pub const MIXED_SEARCH: c_int = 1;
 pub const NEWTON_DAMPED2: c_int = 2;
 /// The `*_MAX` sizes of the name/description tables `-help` prints.
-pub const S_MAX: c_int = 10;
+pub const S_MAX: c_int = 8;
 pub const IIM_MAX: c_int = 3;
 pub const LS_MAX: c_int = 6;
 pub const LSS_MAX: c_int = 4;

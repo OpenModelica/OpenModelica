@@ -130,16 +130,6 @@ impl FixedStep {
 /// allocated and before the model is initialized.
 pub fn deprecation_warning(method: &str) {
     use crate::omclog;
-    // C also warns (one line, no replacement text) for `symSolver` and `symSolverSsc`.
-    if matches!(method, "symSolver" | "symSolverSsc") {
-        omclog::warning!(
-            omclog::STDOUT,
-            false,
-            "Integration method '{method}' is deprecated and will be removed in a future \
-             version of OpenModelica.",
-        );
-        return;
-    }
     if method != "rungekutta" {
         return;
     }

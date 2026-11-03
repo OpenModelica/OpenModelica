@@ -67,7 +67,6 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"test_Bug3049_14lnz.c\" />
 //       <File name=\"test_Bug3049_15syn.c\" />
 //       <File name=\"test_Bug3049_16dae.c\" />
-//       <File name=\"test_Bug3049_17inl.c\" />
 //       <File name=\"test_Bug3049_18spd.c\" />
 //       <File name=\"test_Bug3049_FMU.c\" />
 //       <File name=\"test_Bug3049_functions.c\" />

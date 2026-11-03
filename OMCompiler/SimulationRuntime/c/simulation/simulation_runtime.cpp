@@ -785,23 +785,12 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
 
   /* Deprecation warnings */
    deprecationWarningGBODE(solverID);
-  switch (solverID)
-  {
-    case S_SYM_SOLVER:
-    case S_SYM_SOLVER_SSC:
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "Integration method '%s' is deprecated and will be removed in a future version of OpenModelica.",
-      SOLVER_METHOD_NAME[solverID]);
-    break;
-    default:
-    break;
-  }
 
   /* if no states are present, then we can
    * use euler method, since it does nothing.
    */
   if ( (simData->modelData->nStates < 1 &&
         solverID != S_OPTIMIZATION &&
-        solverID != S_SYM_SOLVER &&
         !compiledInDAEMode) ||
        (compiledInDAEMode && (simData->simulationInfo->daeModeData->nResidualVars +
                              simData->simulationInfo->daeModeData->nAlgebraicDAEVars < 1))

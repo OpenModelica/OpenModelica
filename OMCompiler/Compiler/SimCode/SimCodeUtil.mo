@@ -206,7 +206,6 @@ public function createSimCode "entry point to create SimCode from BackendDAE."
   input BackendDAE.BackendDAE inBackendDAE;
   input BackendDAE.BackendDAE inInitDAE;
   input Option<BackendDAE.BackendDAE> inInitDAE_lambda0;
-  input Option<BackendDAE.InlineData> inInlineData;
   input list<BackendDAE.Equation> inRemovedInitialEquationLst;
   input Absyn.Path inClassName;
   input String filenamePrefix;
@@ -282,8 +281,6 @@ protected
   list<SimCodeVar.SimVar> tempvars, jacobianSimvars, seedVars;
   list<list<SimCode.SimEqSystem>> algebraicEquations;   // --> functionAlgebraics
   list<list<SimCode.SimEqSystem>> odeEquations;         // --> functionODE
-  list<list<SimCode.SimEqSystem>> inlineEquationsTemp;  // --> symbolicInlineSystemTemp
-  list<SimCode.SimEqSystem> inlineEquations;            // --> symbolicInlineSystem
   SimCodeVar.SimVars tmpSimVars;
   SimCode.VarInfo varInfo;
   list<SimCodeVar.SimVar> sensitivityVars;
@@ -291,12 +288,7 @@ protected
   list<tuple<Integer, Integer>> equationSccMapping, eqBackendSimCodeMapping;
   list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
   SimCode.SpatialDistributionInfo spatialInfo;
-  BackendDAE.InlineData inlineData;
-  list<SimCodeVar.SimVar> inlineSimKnVars;
   BackendDAE.Variables emptyVars;
-  Integer SymEuler_help = 0;
-  SimCodeVar.SimVar dtSimVar;
-  BackendDAE.Var dtVar;
   HashTableSimCodeEqCache.HashTable eqCache;
   BackendDAE.Jacobian dataReconJac;
   Option<BackendDAE.Jacobian> dataReconJacH;
@@ -374,25 +366,12 @@ algorithm
     (clockedSysts, contSysts) := List.splitOnTrue(dlow.eqs, BackendDAEUtil.isClockedSyst);
     execStat("simCode: created event and clocks part");
 
-    // ToDo: fix this ugly flag switchting
-    if (Flags.getConfigEnum(Flags.SYM_SOLVER) > 0) then
-      SymEuler_help := Flags.getConfigEnum(Flags.SYM_SOLVER);
-      FlagsUtil.setConfigEnum(Flags.SYM_SOLVER, 0);
-    end if;
-
-
     (uniqueEqIndex, odeEquations, algebraicEquations, localKnownVars, allEquations, equationsForZeroCrossings, tempvars,
       equationSccMapping, eqBackendSimCodeMapping, backendMapping, sccOffset) :=
          createEquationsForSystems(contSysts, shared, uniqueEqIndex, zeroCrossings, tempvars, 1, backendMapping, true);
     if debug then execStat("simCode: createEquationsForSystems"); end if;
 
 
-    if (SymEuler_help > 0) then
-      FlagsUtil.setConfigEnum(Flags.SYM_SOLVER, SymEuler_help);
-    end if;
-
-    //List.map1_0(inlineEquations, dumpSimEqSystemLst,"\n");
-    if debug then execStat("simCode: createEquationsForSystems for inline module"); end if;
 
     outMapping := (uniqueEqIndex /* highestSimEqIndex */, equationSccMapping);
     execStat("simCode: created simulation system equations");
@@ -449,18 +428,6 @@ algorithm
     algebraicEquations := List.appendElt(listReverse(removedEquations), listReverse(algebraicEquations));
     allEquations := List.append_reverse(allEquations, removedEquations);
 
-    // create inline equations if present
-    if isSome(inInlineData) then
-      SOME(inlineData) := inInlineData;
-      (uniqueEqIndex, inlineEquationsTemp, _, _, _, _, tempvars, _, _, _, _) :=
-            createEquationsForSystems(inlineData.inlineSystems,
-                                      shared, uniqueEqIndex, {}, tempvars, uniqueEqIndex,
-                                      SimCode.NO_MAPPING(), false);
-      inlineEquations := List.flatten(inlineEquationsTemp);
-    else
-      inlineEquations := {};
-    end if;
-
     // state set stuff
     (dlow, stateSets, uniqueEqIndex, tempvars, numStateSets) := createStateSets(dlow, {}, uniqueEqIndex, tempvars);
     if debug then execStat("simCode: createStateSets"); end if;
@@ -513,8 +480,6 @@ algorithm
     (allEquations, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfo(allEquations, modelInfo);
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
     (clockedPartitions, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsClockPartitions(clockedPartitions, modelInfo);
-    SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
-    (inlineEquations, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfo(inlineEquations, modelInfo);
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
 
     // Generate jacobian code for DataReconciliation
@@ -614,19 +579,6 @@ algorithm
     if Flags.isSet(Flags.EXEC_HASH) then
       print("*** SimCode -> generate cref2simVar hashtable done!: " + realString(clock()) + "\n");
     end if;
-    // add known inline vars to simVarHT
-    if (Flags.getConfigEnum(Flags.SYM_SOLVER) > 0) then
-      SOME(inlineData) := inInlineData;
-      emptyVars := BackendVariable.emptyVars();
-      inlineSimKnVars := adjustStatesForInlineSolver(modelInfo.vars.stateVars);
-      // omc dt
-      ({dtVar},_) := BackendVariable.getVar(ComponentReferenceBasics.makeCrefIdent(BackendDAE.symSolverDT, DAE.T_REAL_DEFAULT, {}), inlineData.knownVariables);
-      dtSimVar := dlowvarToSimvar(dtVar, NONE(), emptyVars);
-      dtSimVar.index := listLength(inlineSimKnVars);
-      inlineSimKnVars := dtSimVar::inlineSimKnVars;
-      crefToSimVarHT := List.fold(inlineSimKnVars,HashTableCrefSimVar.addSimVarToHashTable,crefToSimVarHT);
-    end if;
-
     if Flags.getConfigBool(Flags.CALCULATE_SENSITIVITIES) then
       tmpSimVars := modelInfo.vars;
       (sensitivityVars, countSenParams) := createSimVarsForSensitivities(tmpSimVars.stateVars, tmpSimVars.paramVars, numberofFixedParameters);
@@ -769,7 +721,6 @@ algorithm
       fmiSimulationFlags          = fmiSimulationFlags,
       partitionData               = SimCode.emptyPartitionData,
       daeModeData                 = NONE(),
-      inlineEquations             = inlineEquations,
       scalarized                  = true,
       fmiFigures                  = {}
     );
@@ -7689,9 +7640,7 @@ protected function extractVarsFromList
 algorithm
   if if ComponentReference.isPreCref(var.varName) or ComponentReference.isStartCref(var.varName) then false else not BaseHashSet.has(var.varName, Mutable.access(hs)) then
     /* ignore variable, since they are treated by kind in the codegen */
-    if not BackendVariable.isAlgebraicOldState(var) then
-      extractVarFromVar(var, aliasVars, vars, simVars, hs, timeInterval, iterationVars, unitStrings);
-    end if;
+    extractVarFromVar(var, aliasVars, vars, simVars, hs, timeInterval, iterationVars, unitStrings);
   //  print("Added  " + ComponentReferenceBasics.printComponentRefStr(inVar.varName) + "\n");
   //else
   //  print("Skiped " + ComponentReferenceBasics.printComponentRefStr(inVar.varName) + "\n");
@@ -8631,10 +8580,6 @@ algorithm
   print(UNDERLINE + "\n\n\n");
   print("\ninitialEquations_lambda0: ("+intString(listLength(simCode.initialEquations_lambda0))+")\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.initialEquations_lambda0,"\n");
-  if (Flags.getConfigEnum(Flags.SYM_SOLVER) > 0) then
-    print("\ninlineEquations: ("+intString(listLength(simCode.inlineEquations))+" systems)\n" + UNDERLINE + "\n");
-    dumpSimEqSystemLst(simCode.inlineEquations,"\n");
-  end if;
   print("\nremovedInitialEquations:\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.removedInitialEquations,"\n");
   print("\nstartValueEquations:\n" + UNDERLINE + "\n");
@@ -9652,23 +9597,6 @@ algorithm
     case SimCodeFunction.RECORD_CONSTRUCTOR(name=name) then name;
   end match;
 end functionPath;
-
-
-protected function adjustStatesForInlineSolver
-  input list<SimCodeVar.SimVar> inStates;
-  output list<SimCodeVar.SimVar> outStates = {};
-algorithm
-try
-  for var in inStates loop
-    var.name := ComponentReference.appendStringLastIdent("$Old", var.name);
-    var.varKind := BackendDAE.ALG_STATE_OLD();
-    outStates := var::outStates;
-  end for;
-else
-  Error.addMessage(Error.INTERNAL_ERROR,{"SimCodeUtil.adjustStatesForInlineSolver failed"});
-  fail();
-end try;
-end adjustStatesForInlineSolver;
 
 /**************************************/
 /************* for index ***************/

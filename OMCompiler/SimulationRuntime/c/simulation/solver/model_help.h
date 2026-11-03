@@ -49,7 +49,6 @@ DLLDataDirection extern double maxStepFactor;
 DLLDataDirection extern double steadyStateTol;
 DLLDataDirection extern const size_t SIZERINGBUFFER;
 DLLDataDirection extern int compiledInDAEMode;
-DLLDataDirection extern int compiledWithSymSolver;
 DLLDataDirection extern double numericalDifferentiationDeltaXlinearize;
 DLLDataDirection extern double numericalDifferentiationDeltaXsolver;
 DLLDataDirection extern double homAdaptBend;

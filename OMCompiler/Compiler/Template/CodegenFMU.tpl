@@ -223,10 +223,6 @@ end translateModel;
      let()= textFileConvertLines(simulationFile_dae(simCode), '<%modelNamePrefix%>_16dae.c')
      // ... and its header, which the main file includes under --daeMode
      let()= textFile(simulationFile_dae_header(simCode), '<%modelNamePrefix%>_16dae.h')
-     // inline solver
-     let()=tmpTickResetIndex(0, 0)
-     let()=tmpTickResetIndex(0, 1)
-     let()= textFileConvertLines(simulationFile_inl(simCode), '<%modelNamePrefix%>_17inl.c')
      // main file
      let()=tmpTickResetIndex(0, 0)
      let()=tmpTickResetIndex(0, 1)

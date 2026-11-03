@@ -408,7 +408,7 @@ algorithm
   for var in (if visitReversed then listReverse(knownVars) else knownVars) loop
     cref := BackendVariable.varCref(var);
     if not BackendVariable.existsVar(cref, knownVars1, false) and
-       not (BackendVariable.isInput(var) or BackendVariable.isAlgebraicOldState(var)) then
+       not BackendVariable.isInput(var) then
       // put var back to the correct partition
       outDAE := fixKnownVarsCausal2(var, outDAE);
     else

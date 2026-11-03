@@ -2886,7 +2886,6 @@ int main(int argc, char **argv)
   omc_throw          = omc_throw_simulation;
   measure_time_flag  = 0;
   compiledInDAEMode  = 1;
-  compiledWithSymSolver = 0;
   MMC_INIT(0);
   omc_alloc_interface.init();
   {{
