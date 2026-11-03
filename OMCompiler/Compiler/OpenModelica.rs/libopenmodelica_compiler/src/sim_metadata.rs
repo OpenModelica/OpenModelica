@@ -406,23 +406,21 @@ pub static JACOBIAN_METHOD_DESC: CStrTable<8> = CStrTable([
 ]);
 
 #[unsafe(no_mangle)]
-pub static LS_NAME: CStrTable<7> = CStrTable([
+pub static LS_NAME: CStrTable<6> = CStrTable([
     c"LS_UNKNOWN".as_ptr(),
     c"lapack".as_ptr(),
     c"lis".as_ptr(),
     c"klu".as_ptr(),
-    c"umfpack".as_ptr(),
     c"totalpivot".as_ptr(),
     c"default".as_ptr(),
 ]);
 
 #[unsafe(no_mangle)]
-pub static LS_DESC: CStrTable<7> = CStrTable([
+pub static LS_DESC: CStrTable<6> = CStrTable([
     c"unknown".as_ptr(),
     c"method using LAPACK LU factorization".as_ptr(),
     c"method using iterative solver Lis".as_ptr(),
     c"method using KLU sparse linear solver".as_ptr(),
-    c"method using UMFPACK sparse linear solver".as_ptr(),
     c"method using a total pivoting LU factorization for underdetermination systems".as_ptr(),
     c"default method - LAPACK with total pivoting as fallback".as_ptr(),
 ]);

@@ -256,7 +256,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_LOG_FORMAT */                   "value specifies the log format of the executable. -logFormat=text (default), -logFormat=xml or -logFormat=xmltcp",
   /* FLAG_LS */                           "value specifies the linear solver method (default: lapack, totalpivot (fallback))",
   /* FLAG_LS_IPOPT */                     "value specifies the linear solver method for ipopt",
-  /* FLAG_LSS */                          "value specifies the linear sparse solver method (default: umfpack)",
+  /* FLAG_LSS */                          "value specifies the linear sparse solver method (default: klu)",
   /* FLAG_LSS_MAX_DENSITY */              "[double (default " EXPANDSTRING(DEFAULT_FLAG_LSS_MAX_DENSITY) ")] value specifies the maximum density for using a linear sparse solver",
   /* FLAG_LSS_MIN_SIZE */                 "[int (default " EXPANDSTRING(DEFAULT_FLAG_LSS_MIN_SIZE) ")] value specifies the minimum system size for using a linear sparse solver",
   /* FLAG_LV */                           "[string list] value specifies the logging level",
@@ -1375,7 +1375,6 @@ const char *LS_NAME[LS_MAX] = {
   /* LS_LIS */          "lis-not-available",
 #endif
   /* LS_KLU */          "klu",
-  /* LS_UMFPACK */      "umfpack",
   /* LS_TOTALPIVOT */   "totalpivot",
   /* LS_DEFAULT */      "default"
 };
@@ -1390,7 +1389,6 @@ const char *LS_DESC[LS_MAX] = {
   /* LS_LIS */          "iterative solver Lis is not available",
 #endif
   /* LS_KLU */          "method using KLU sparse linear solver",
-  /* LS_UMFPACK */      "method using UMFPACK sparse linear solver",
   /* LS_TOTALPIVOT */   "method using a total pivoting LU factorization for underdetermination systems",
   /* LS_DEFAULT */      "default method - LAPACK with total pivoting as fallback"
 };
@@ -1403,8 +1401,7 @@ const char *LSS_NAME[LSS_MAX] = {
 #else
   /* LSS_LIS */         "lis-not-available",
 #endif
-  /* LSS_KLU */         "klu",
-  /* LSS_UMFPACK */     "umfpack"
+  /* LSS_KLU */         "klu"
 };
 
 const char *LSS_DESC[LSS_MAX] = {
@@ -1415,8 +1412,7 @@ const char *LSS_DESC[LSS_MAX] = {
 #else
   /* LSS_LIS */         "iterative solver Lis not available",
 #endif
-  /* LSS_KLU */         "method using klu sparse linear solver",
-  /* LSS_UMFPACK */     "method using umfpack sparse linear solver"
+  /* LSS_KLU */         "method using klu sparse linear solver"
 };
 
 const char *NLS_NAME[NLS_MAX] = {

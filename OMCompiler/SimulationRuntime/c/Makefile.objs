@@ -178,7 +178,6 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
               kinsolSolver$(OBJ_EXT) \
               linearSolverKlu$(OBJ_EXT) \
               linearSolverLis$(OBJ_EXT) \
-              linearSolverUmfpack$(OBJ_EXT) \
               newton_diagnostics$(OBJ_EXT) \
               newtonIteration$(OBJ_EXT) \
               nonlinearSolverNewton$(OBJ_EXT) \

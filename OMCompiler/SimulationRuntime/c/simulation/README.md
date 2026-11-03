@@ -96,10 +96,6 @@ The dashed ODE solvers `Runge Kutta`, `symSolver`, `symSolverSsc` and `QSS` are 
       Implementation of Gaussian elimination based on LU decomposition with
       total pivot.
 
-    - UMFPACK:
-      [solver/linearSolverUmfpack.c](./solver/linearSolverUmfpack.c)<br/>
-      Integration of Suite Sparse's UMFPACK linear solver.
-
 ### Analysis Tools
 
   - Jacobian Analysis:
