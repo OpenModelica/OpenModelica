@@ -522,16 +522,8 @@ pub extern "C" fn initJacobian(
 #[unsafe(no_mangle)]
 pub extern "C" fn initBidirectionalRecovery(fwd: *mut JACOBIAN) {
     let fwd = unsafe { &mut *fwd };
-<<<<<<< HEAD
     let (Some(f), Some(a)) = (unsafe { fwd.sparsePattern.as_ref() }, unsafe {
         fwd.sparsePatternT.as_ref()
-=======
-    let Some(adj) = (unsafe { fwd.adjointJacobian.as_mut() }) else {
-        return;
-    };
-    let (Some(f), Some(a)) = (unsafe { fwd.sparsePattern.as_ref() }, unsafe {
-        adj.sparsePattern.as_ref()
->>>>>>> master
     }) else {
         return;
     };
@@ -698,19 +690,11 @@ pub fn publish_log_streams() {
 /// C's `cscToCsr`: the same pattern by row. `colorCols` is left at the
 /// allocation's zeros -- the caller only reads `leadindex`/`index`.
 #[unsafe(no_mangle)]
-<<<<<<< HEAD
 pub extern "C" fn cscToCsr(csc: *const SPARSE_PATTERN, nRows: c_uint) -> *mut SPARSE_PATTERN {
     let Some(csc) = (unsafe { csc.as_ref() }) else {
         return ptr::null_mut();
     };
     let (rows, cols, nnz) = (nRows as usize, csc.sizeCols as usize, csc.nnz as usize);
-=======
-pub extern "C" fn cscToCsr(csc: *const SPARSE_PATTERN, nRows: c_uint, nCols: c_uint) -> *mut SPARSE_PATTERN {
-    let Some(csc) = (unsafe { csc.as_ref() }) else {
-        return ptr::null_mut();
-    };
-    let (rows, cols, nnz) = (nRows as usize, nCols as usize, csc.nnz as usize);
->>>>>>> master
     let ap = unsafe { core::slice::from_raw_parts(csc.leadindex, cols + 1) };
     let ai = unsafe { core::slice::from_raw_parts(csc.index, nnz) };
     if ap[0] != 0 || ap[cols] as usize != nnz || ai.iter().any(|&r| r as usize >= rows) {
