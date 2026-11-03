@@ -5,6 +5,7 @@ ExportCvodeFmu_cmake.mos \
 ExportCvodeFmu_dynamic.mos \
 ExportCvodeFmu_static.mos \
 fmi_interpolation_01.mos \
+FmuNlsSameTime.mos \
 FmuExportFlags.mos \
 RecompileSourceCodeFMU.mos \
 simpleStiffFMU.mos \
@@ -22,6 +23,7 @@ FAILINGTESTFILES = \
 DEPENDENCIES = \
 *.mo \
 *.mos \
+FmuNlsSameTime.py \
 Makefile \
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
