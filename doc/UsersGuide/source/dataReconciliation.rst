@@ -190,7 +190,11 @@ computes reconciled values and uncertainties, performs statistical tests and gen
 
 Step 4: Analyze the Results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The reconciliation report must be analysed to verify consistency of the measurements, uncertainty model and physical model.
 
+Successful statistical tests indicate that reconciled values provide a more reliable estimate of the actual state of the system and can be used for subsequent engineering analyses.
+
+When inconsistencies are detected, measurements, uncertainty assumptions and the physical model should be reviewed. Data reconciliation should therefore be considered as an iterative process supporting instrumentation validation, uncertainty improvement and model refinement.
 
 
 Data Reconciliation Support in OMEdit
