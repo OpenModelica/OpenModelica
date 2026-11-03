@@ -257,7 +257,7 @@ protected
           // 4. apply replacements
           // 5. save replacements in bindings of alias variables
           // -----------------------------------
-          (eqData, varData) := Replacements.applySimple(eqData, varData, replacements);
+          Replacements.applySimple(eqData, varData, replacements);
           replaceAliasRecords(eqData, replacements);
 
           // replacements can simplify equations to new alias equations (e.g. x.re = 0.0 * L)
@@ -265,7 +265,7 @@ protected
             exceptions(eqData), kind, eqData.uniqueIndex, acc_discrete_states, acc_previous);
           auxEquations := listAppend(follow_aux, auxEquations);
           if not UnorderedMap.isEmpty(follow_repl) then
-            (eqData, varData) := Replacements.applySimple(eqData, varData, follow_repl);
+            Replacements.applySimple(eqData, varData, follow_repl);
             replaceAliasRecords(eqData, follow_repl);
             // the auxiliary equations are not part of eqData yet
             aux_eqns := EquationPointers.fromList(auxEquations);
@@ -825,7 +825,7 @@ protected
           if not UnorderedMap.isEmpty(replacements) then
             EquationPointers.mapPtr(eqData.equations, function indexEquation(index = index));
           end if;
-          (eqData, varData) := Replacements.applySimple(eqData, varData, replacements);
+          Replacements.applySimple(eqData, varData, replacements);
           replaceAliasRecords(eqData, replacements);
           _ := candidateEquations(replacements, index, changed);
           simplifyEquations(listAppend(UnorderedMap.valueList(changed), auxEquations), acc_discrete_states, acc_previous);
