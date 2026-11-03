@@ -97,6 +97,8 @@ typedef struct {
   int _held_assert_logged;
   int _event_found;
   int _terminate_simulation_requested;
+  fmi2Boolean terminated;
+  fmi2Real lastSuccessfulTime;
   int _has_jacobian;
   int _has_jacobian_intialization;
   JACOBIAN* fmiDerJac;

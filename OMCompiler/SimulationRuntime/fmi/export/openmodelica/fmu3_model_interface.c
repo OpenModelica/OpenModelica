@@ -302,26 +302,24 @@ static void omc_assert_fmi_warning(FILE_INFO info, const char *msg, ...)
   va_end(args);
 }
 
+/* Modelica 8.3.8: the simulation stops once the current step or event
+   iteration has completed, so only record the request. */
 static void omc_terminate_fmi(FILE_INFO info, const char *msg, ...)
 {
-  va_list ap;
-  va_start(ap,msg);
-  printInfo(stderr, info);
-  fputs("Modelica Terminate: ", stderr);
-  vfprintf(stderr,msg,ap);
-  fputs("!\n", stderr);
-  va_end(ap);
-  fflush(NULL);
-
   threadData_t *threadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key);
-  if (threadData) {
-    ModelInstance* c = (ModelInstance*) threadData->localRoots[LOCAL_ROOT_FMI_DATA];
-    if (c) {
-      c->_terminate_simulation_requested = 1;
-    }
+  ModelInstance* c = threadData ? (ModelInstance*) threadData->localRoots[LOCAL_ROOT_FMI_DATA] : NULL;
+  const char *str;
+  va_list ap;
+  va_start(ap, msg);
+  GC_vasprintf(&str, msg, ap);
+  va_end(ap);
+  if (c) {
+    c->_terminate_simulation_requested = 1;
+    FILTERED_LOG(c, fmi3OK, LOG_EVENTS, "%s:%d: terminate(): %s", info.filename, info.lineStart, str)
+  } else {
+    printInfo(stderr, info);
+    fprintf(stderr, "Modelica Terminate: %s!\n", str);
   }
-
-  OMC_THROW();
 }
 
 // ---------------------------------------------------------------------------
@@ -512,14 +510,11 @@ fmi3Status internalEventUpdate(ModelInstance* c, EventInfo* eventInfo)
   resetThreadData(comp);
 
   if (done) {
-    return fmi3OK;
-  }
-
-  if (comp->_terminate_simulation_requested) {
-    comp->_terminate_simulation_requested = 0;
-    eventInfo->newDiscreteStatesNeeded = fmi3False;
-    eventInfo->terminateSimulation = fmi3True;
-    FILTERED_LOG(comp, fmi3OK, LOG_EVENTS, "internalEventUpdate: terminate simulation requested by the model.")
+    if (comp->_terminate_simulation_requested && !eventInfo->newDiscreteStatesNeeded) {
+      comp->_terminate_simulation_requested = 0;
+      eventInfo->terminateSimulation = fmi3True;
+      FILTERED_LOG(comp, fmi3OK, LOG_EVENTS, "internalEventUpdate: terminate simulation requested by the model.")
+    }
     return fmi3OK;
   }
 
@@ -1244,6 +1239,7 @@ fmi3Status omcReset(ModelInstance* c)
   }
 
   comp->_need_update = 1;
+  comp->_terminate_simulation_requested = 0;
   comp->state = model_state_instantiated;
   resetThreadData(comp);
   return fmi3OK;
@@ -2166,12 +2162,11 @@ fmi3Status internal_CompletedIntegratorStep(ModelInstance* c, const char *func, 
   releaseAsserts(comp);
 
   if (done) {
-    return fmi3OK;
-  }
-  if (comp->_terminate_simulation_requested) {
-    comp->_terminate_simulation_requested = 0;
-    *terminateSimulation = fmi3True;
-    FILTERED_LOG(comp, fmi3OK, LOG_EVENTS, "%s: terminate simulation requested by the model.", func)
+    if (comp->_terminate_simulation_requested) {
+      comp->_terminate_simulation_requested = 0;
+      *terminateSimulation = fmi3True;
+      FILTERED_LOG(comp, fmi3OK, LOG_EVENTS, "%s: terminate simulation requested by the model.", func)
+    }
     return fmi3OK;
   }
 
@@ -2794,17 +2789,10 @@ doStep_cleanup:
   threadData->mmc_jumper = old_jmp;
   resetThreadData(comp);
 
-  if (!done)
+  if (!done && status == fmi3OK)
   {
-    if (comp->_terminate_simulation_requested) {
-      comp->_terminate_simulation_requested = 0;
-      term = fmi3True;
-      FILTERED_LOG(comp, fmi3OK, LOG_EVENTS, "fmi3DoStep: terminate simulation requested by the model.")
-      status = fmi3OK;
-    } else if (status == fmi3OK) {
-      FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "fmi3DoStep: terminated by an assertion.")
-      status = fmi3Error;
-    }
+    FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "fmi3DoStep: terminated by an assertion.")
+    status = fmi3Error;
   }
 
   if (status <= fmi3Warning)
@@ -4128,6 +4116,12 @@ fmi3Status fmi3ActivateModelPartition(fmi3Instance instance, fmi3ValueReference 
   resetThreadData(comp);
 
   if (done) {
+    /* FMI 3.0, 5.2: after fmi3Discard the importer starts no new model partition. */
+    if (comp->_terminate_simulation_requested) {
+      comp->_terminate_simulation_requested = 0;
+      FILTERED_LOG(comp, fmi3Discard, LOG_EVENTS, "fmi3ActivateModelPartition: terminate simulation requested by the model.")
+      return fmi3Discard;
+    }
     return fmi3OK;
   }
   FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "fmi3ActivateModelPartition: terminated by an assertion.")
