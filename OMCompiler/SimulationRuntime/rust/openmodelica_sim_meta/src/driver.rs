@@ -3555,7 +3555,7 @@ static TERMINATE_REPORTER: AtomicUsize = AtomicUsize::new(0);
 
 /// Report `terminate()` this way instead of as the driver's own notice — C's
 /// `omc_terminate`, which `fmi2Instantiate` swaps for `omc_terminate_fmi`.
-pub fn set_terminate_reporter(f: fn(&str, &str)) {
+pub fn set_terminate_reporter(f: fn(&TerminateInfo)) {
     TERMINATE_REPORTER.store(f as usize, Ordering::Relaxed);
 }
 
@@ -3587,16 +3587,16 @@ fn report_terminate(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, at_ini
             }
         }
     };
+    let p = TERMINATE_REPORTER.load(Ordering::Relaxed);
+    if p != 0 {
+        let f: fn(&TerminateInfo) = unsafe { core::mem::transmute(p) };
+        f(&t);
+        return Ok(());
+    }
     let (msg, file) = (t.msg, t.file);
     let ro = if t.readonly { "readonly" } else { "writable" };
     let [ls, cs, le, ce] = t.span;
     let pos = format!("[{file}:{ls}:{cs}-{le}:{ce}:{ro}]");
-    let p = TERMINATE_REPORTER.load(Ordering::Relaxed);
-    if p != 0 {
-        let f: fn(&str, &str) = unsafe { core::mem::transmute(p) };
-        f(&pos, &msg);
-        return Ok(());
-    }
     if !file.is_empty() {
         log_line(crate::omclog::STDOUT, crate::omclog::INFO, &format!("{pos}\n"));
     }
