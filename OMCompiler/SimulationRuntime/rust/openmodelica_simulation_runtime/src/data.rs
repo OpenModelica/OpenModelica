@@ -1039,7 +1039,6 @@ pub fn jac_adj_ptr(data: *mut DATA) -> *mut JACOBIAN {
     let a = jac_ptr(data, unsafe { (*(*data).callback).INDEX_JAC_ADJ });
     match unsafe { a.as_ref() } {
         Some(j) if !j.seedVarsAdj.is_null() && !j.resultVarsAdj.is_null() && j.evalRow.is_some() => a,
-        Some(j) if !j.seedVars.is_null() && !j.resultVars.is_null() && j.evalColumn.is_some() => a,
         _ => core::ptr::null_mut(),
     }
 }
