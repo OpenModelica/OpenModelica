@@ -2,7 +2,7 @@ TEST = ../../rtest -v
 BASELINE = ../../rtest -b
 
 # The tests are spelled out, runtests.pl only finds test files that are listed
-# literally.
+# literally. NB_* are the new backend variants of the tests.
 TESTFILES = \
 ModelicaDataReconciliationSimpleTests.Models.DistillationTower.mos \
 ModelicaDataReconciliationSimpleTests.Models.assert.mos \
@@ -70,11 +70,7 @@ TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.PressureLoss_DR.mos 
 TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.PressureLoss_DR_WithHARE.mos \
 TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR.mos \
 TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_WithHARE.mos \
-UncertainAliasSimulation.mos
-
-# New backend variants of the tests above, see testNB. They are spelled out,
-# runtests.pl only finds test files that are listed literally.
-NB_TESTFILES = \
+UncertainAliasSimulation.mos \
 NB_ModelicaDataReconciliationSimpleTests.Models.DistillationTower.mos \
 NB_ModelicaDataReconciliationSimpleTests.Models.assert.mos \
 NB_ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows.mos \
@@ -142,6 +138,9 @@ NB_TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.PressureLoss_DR_W
 NB_TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR.mos \
 NB_TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_WithHARE.mos \
 NB_UncertainAliasSimulation.mos
+
+# The new backend tests, see testNB.
+NB_TESTFILES = $(filter NB_%,$(TESTFILES))
 
 # The tests of NB_TESTFILES whose SET-S has an algebraic loop. The jacobian F
 # then contains a linear system, which the new backend cannot generate yet,
