@@ -117,7 +117,7 @@ typedef struct {
   SOLVER_INFO* solverInfo;
 
   DATA* fmuData;
-  threadData_t *threadData, *threadDataParent;
+  threadData_t *threadData;
   fmi3Boolean toleranceDefined;
   fmi3Float64 tolerance;
   fmi3Float64 startTime;

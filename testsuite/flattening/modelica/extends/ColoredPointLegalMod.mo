@@ -18,33 +18,32 @@ protected
   parameter Real green;
 end ColorData;
 
-class Color
+model Color
   extends ColorData(blue = 3.5, green = 5);
 equation
   red + blue + green = 1;
 end Color;
 
-class Point
+model Point
 public
-  parameter Real x;
+  parameter Real x(fixed = false);
 protected
-  parameter Real y;
-  parameter Real z;
+  parameter Real y(fixed = false);
+  parameter Real z(fixed = false);
 end Point;
 
-class ColoredPoint
+model ColoredPoint
 protected
   extends Color;   // red, blue and green from ColorData become
 public       // protected fields
   extends Point;   // y and z from Point stay protected
 end ColoredPoint;
 
-class A
+model A
   Real a,b,c;
   ColoredPoint cp;
 equation
   a = cp.x;       //Should work since x is public
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end A;
 
 // Result:
@@ -54,13 +53,13 @@ end A;
 //   Real c;
 //   protected Real cp.dummy;
 //   protected Real cp.red;
-//   protected parameter Real cp.blue = 3.5;
-//   protected parameter Real cp.green = 5.0;
-//   parameter Real cp.x;
-//   protected parameter Real cp.y;
-//   protected parameter Real cp.z;
+//   protected final parameter Real cp.blue = 3.5;
+//   protected final parameter Real cp.green = 5.0;
+//   parameter Real cp.x(fixed = false);
+//   protected parameter Real cp.y(fixed = false);
+//   protected parameter Real cp.z(fixed = false);
 // equation
-//   cp.red + cp.blue + cp.green = 1.0;
+//   cp.red + 3.5 + 5.0 = 1.0;
 //   a = cp.x;
 // end A;
 // endResult

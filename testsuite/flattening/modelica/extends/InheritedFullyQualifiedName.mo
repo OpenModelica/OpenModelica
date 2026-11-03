@@ -21,14 +21,9 @@ end P2;
 
 model InheritedFullyQualifiedName
   extends P2.P.M;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InheritedFullyQualifiedName;
 
 // Result:
-// function P.f
-//   output Real y = 1.0;
-// end P.f;
-//
 // class InheritedFullyQualifiedName
 //   Real x = 1.0;
 // end InheritedFullyQualifiedName;

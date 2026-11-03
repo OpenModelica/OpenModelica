@@ -18,7 +18,6 @@ algorithm
   end when;
 equation
   der(x) = 2*x;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WhenStat2;
 
 

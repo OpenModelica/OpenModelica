@@ -1,7 +1,7 @@
 // name: AlgorithmElseOpt
 // status: correct
 
-class AlgorithmElseOpt
+model AlgorithmElseOpt
   function f
     output Real r;
   algorithm
@@ -59,7 +59,6 @@ algorithm
     r := 2.1;
   end if;
 
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AlgorithmElseOpt;
 
 // Result:

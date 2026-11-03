@@ -1,0 +1,8 @@
+// script to test the sanity of the OpenModelica compiler:
+// a Co-Simulation FMU that links CVODE from the installation, see #17436.
+// Run after testSanity.mos, which saves the model to m.mo.
+
+setCommandLineOptions({"--std=3.2", "--fmiFlags=s:cvode"}); getErrorString();
+loadFile("m.mo"); getErrorString();
+
+buildModelFMU(M, version = "2.0", fmuType = "cs", fileNamePrefix = "M_cvode", platforms = {"dynamic"}); getErrorString();

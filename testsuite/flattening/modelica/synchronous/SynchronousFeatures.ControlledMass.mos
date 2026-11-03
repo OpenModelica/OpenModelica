@@ -1,7 +1,6 @@
 // name: SynchronousFeatures.ControlledMass
 // keywords: synchronous features
 // status: correct
-// cflags: -d=-newInst
 
 loadFile("SynchronousFeatures.mo"); getErrorString();
 
@@ -21,14 +20,14 @@ instantiateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //   parameter Real KInner = 20.0 \"Gain of speed P controller\";
 //   parameter Real Ti = 10.0 \"Integral time for pos. PI controller\";
 //   parameter Real xref = 10.0 \"Position reference\";
-//   discrete Real xd;
-//   discrete Real eOuter;
-//   discrete Real intE(start = 0.0);
-//   discrete Real uOuter(start = 0.0);
-//   discrete Real xdFast;
-//   discrete Real vd;
-//   discrete Real vref;
-//   discrete Real uInner(start = 0.0);
+//   Real xd;
+//   Real eOuter;
+//   Real intE(start = 0.0);
+//   Real uOuter(start = 0.0);
+//   Real xdFast;
+//   Real vd;
+//   Real vref;
+//   Real uInner(start = 0.0);
 //   Clock cControl = Clock(0.01);
 //   Clock cOuter = subSample(shiftSample(cControl, 2, 3), 5);
 //   Clock cFast = superSample(cControl, 2);
@@ -43,7 +42,7 @@ instantiateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //   uInner = KInner * (vref - vd);
 //   f = hold(uInner);
 //   der(x) = v;
-//   m * der(v) = f + (-k) * x - d * v;
+//   m * der(v) = f - k * x - d * v;
 // end SynchronousFeatures.ControlledMass;
 // "
 // ""

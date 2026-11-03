@@ -1,7 +1,6 @@
 // name:     Ticket4157.mos [ticket:4157]
 // keywords: equation, complex
 // status:   correct
-// cflags: -d=-newInst
 //
 // Check some handling of compex equations
 //
@@ -28,8 +27,15 @@ instantiateModel(Ticket4157.if_complex_if_expression); getErrorString();
 //   input Complex c2 \"Complex number 2\";
 //   output Complex c3 \"= c1 + c2\";
 // algorithm
-//   c3 := Complex(c1.re + c2.re, c1.im + c2.im);
+//   c3 := Complex.'constructor'.fromReal(c1.re + c2.re, c1.im + c2.im);
 // end Complex.'+';
+//
+// function Complex.'constructor'.fromReal \"Construct Complex from Real\"
+//   input Real re \"Real part of complex number\";
+//   input Real im = 0.0 \"Imaginary part of complex number\";
+//   output Complex result \"Complex number\";
+// algorithm
+// end Complex.'constructor'.fromReal;
 //
 // class Ticket4157.when_init_complex
 //   Real a_re;
@@ -40,7 +46,7 @@ instantiateModel(Ticket4157.if_complex_if_expression); getErrorString();
 //   a_re = 10.0;
 //   a_im = 0.0;
 //   when initial() then
-//     Eo = Complex.'+'(Complex(a_re, a_im), Complex(10.0, 0.0));
+//     Eo = Complex.'+'(Complex.'constructor'.fromReal(a_re, a_im), Complex(10.0, 0.0));
 //   end when;
 // end Ticket4157.when_init_complex;
 // "
@@ -51,6 +57,13 @@ instantiateModel(Ticket4157.if_complex_if_expression); getErrorString();
 //   output Complex res;
 // end Complex;
 //
+// function Complex.'constructor'.fromReal \"Construct Complex from Real\"
+//   input Real re \"Real part of complex number\";
+//   input Real im = 0.0 \"Imaginary part of complex number\";
+//   output Complex result \"Complex number\";
+// algorithm
+// end Complex.'constructor'.fromReal;
+//
 // class Ticket4157.if_complex_if_expression
 //   parameter Real E.re = 1.0 \"Real part of complex number\";
 //   parameter Real E.im = 0.0 \"Imaginary part of complex number\";
@@ -60,7 +73,7 @@ instantiateModel(Ticket4157.if_complex_if_expression); getErrorString();
 //   Real V.im \"Imaginary part of complex number\";
 //   parameter Boolean model_type = true;
 // equation
-//   Complex(E.re - V.re, E.im - V.im) = if model_type then Complex(0.0, 0.0) else Complex(Z.re, Z.im);
+//   Complex.'constructor'.fromReal(E.re - V.re, E.im - V.im) = if model_type then Complex(0.0, 0.0) else Complex.'constructor'.fromReal(Z.re, Z.im);
 // end Ticket4157.if_complex_if_expression;
 // "
 // ""

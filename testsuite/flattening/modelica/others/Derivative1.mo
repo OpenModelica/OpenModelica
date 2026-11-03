@@ -62,7 +62,6 @@ equation
   der(x[1:2])=x[2:3];
   x[3]=u[3];
   der(u[1:2])=u[2:3];
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Derivative1;
 
 // Result:
@@ -99,7 +98,7 @@ end Derivative1;
 //   output Real der_2_y;
 // algorithm
 //   if b then
-//     der_2_y := cos(x) * der_2_x - sin(x) * der_x ^ 2.0;
+//     der_2_y := cos(x) * der_2_x - sin(x) * der_x * der_x;
 //   else
 //     der_2_y := der_2_x;
 //   end if;

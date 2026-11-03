@@ -47,6 +47,7 @@
 //! @todo Remove this once new frontend is used as default and old frontend is removed.
 #include "Options/OptionsDialog.h"
 #include "Simulation/TranslationFlagsWidget.h"
+#include "PlotTranslator.h"
 
 #include <locale.h>
 #include <QDir>
@@ -313,6 +314,10 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
         } else {
           translatorLoadError = QString("Failed to load translation file %1 from location %2").arg("OMEdit_" + locale, translationsLocation);
         }
+        // install the translations of the OMPlot widgets, they are maintained in OMPlot
+        if (OMPlot::loadTranslation(mPlotTranslator, QString::fromLocal8Bit(installationDirectoryPath), locale)) {
+          installTranslator(&mPlotTranslator);
+        }
       }
       break;
     }
@@ -473,7 +478,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
       pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::question));
       pMessageBox->setIcon(QMessageBox::Question);
       pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-      pMessageBox->setText(tr("You have enabled old frontend for code generation which is not recommended. Do you want to switch to new frontend?"));
+      pMessageBox->setText(tr("You have enabled the old frontend for code generation. It is deprecated and will be removed after OpenModelica 1.28.0 is released. Do you want to switch to the new frontend?"));
       pMessageBox->addButton(tr("Switch to new frontend"), QMessageBox::AcceptRole);
       pMessageBox->addButton(tr("Keep using old frontend"), QMessageBox::RejectRole);
       int answer = pMessageBox->exec();

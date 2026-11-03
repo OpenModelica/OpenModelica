@@ -12,7 +12,6 @@ equation
   for i in 1:2 loop
     k[i] = if index == i then 1 else 0;
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ForIf;
 
 // Result:

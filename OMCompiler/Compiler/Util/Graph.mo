@@ -897,38 +897,36 @@ end printNodesInt;
 public function allReachableNodesInt
 "This function searches for a starting node in M
  all reachabel nodes. Call with start nodes in M. The
- result is collected in L."
+ result is collected in L. Nodes >= inMaxGraphNode are
+ not expanded, inMaxNodexIndex is the biggest node."
   input tuple<list<Integer>,list<Integer>>  intmpstorage;//(M,L)
   input array<tuple<Integer, list<Integer>>> inGraph;
   input Integer inMaxGraphNode;
   input Integer inMaxNodexIndex;
   output list<Integer> reachableNodes;
+protected
+  list<Integer> stack, edges;
+  array<Boolean> visited = arrayCreate(inMaxNodexIndex, false);
+  Integer node;
 algorithm
-  reachableNodes := matchcontinue intmpstorage
-    local
-      Integer node;
-      list<Integer> edges,M,L;
-    case ({},L) then L;
-    case (node::M,L)
-      algorithm
-        L := List.union(L,{node});
-        false := intGe(node,inMaxGraphNode);
-        (_,edges) := arrayGet(inGraph, node);
-        edges := List.filter1OnTrue(edges, List.notMember, L);
-        M := List.union(M,edges);
-        reachableNodes := allReachableNodesInt((M,L),inGraph,inMaxGraphNode,inMaxNodexIndex);
-      then reachableNodes;
-    case (node::M,L)
-      algorithm
-        L := List.union(L,{node});
-        true := intGe(node,inMaxGraphNode);
-        reachableNodes := allReachableNodesInt((M,L),inGraph,inMaxGraphNode,inMaxNodexIndex);
-      then reachableNodes;
-    else
-      algorithm
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.allReachableNodesInt failed."}, sourceInfo());
-      then fail();
-  end matchcontinue;
+  (stack, reachableNodes) := intmpstorage;
+  for n in reachableNodes loop
+    visited[n] := true;
+  end for;
+  reachableNodes := listReverse(reachableNodes);
+  while not listEmpty(stack) loop
+    node := listHead(stack);
+    stack := listRest(stack);
+    if not visited[node] then
+      visited[node] := true;
+      reachableNodes := node :: reachableNodes;
+      if node < inMaxGraphNode then
+        (_, edges) := arrayGet(inGraph, node);
+        stack := listAppend(edges, stack);
+      end if;
+    end if;
+  end while;
+  reachableNodes := listReverse(reachableNodes);
 end allReachableNodesInt;
 
 public function partialDistance2colorInt

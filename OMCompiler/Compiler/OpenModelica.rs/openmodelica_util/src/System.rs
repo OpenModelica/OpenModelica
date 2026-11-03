@@ -526,9 +526,12 @@ pub fn appendFile(file: ArcStr, data: ArcStr) -> Result<()> {
 }
 
 pub fn readFile(inString: ArcStr) -> Result<ArcStr> {
-    let bytes =
-        openmodelica_wasi::fs::read(inString.as_str()).map_err(|_| "System.readFile: cannot read {inString}")?;
-    let s = String::from_utf8(bytes).map_err(|_| "System.readFile: {inString} is not valid UTF-8")?;
+    // mirrors SystemImpl__readFile: ERROR_OPENING_FILE, then fail
+    let bytes = openmodelica_wasi::fs::read(inString.as_str()).map_err(|e| {
+        add_scripting_error_id(85, "Error opening file: %s: %s.", &[&inString, &io_error_text(&e)]);
+        "System.readFile: cannot read the file"
+    })?;
+    let s = String::from_utf8(bytes).map_err(|_| "System.readFile: the file is not valid UTF-8")?;
     Ok(ArcStr::from(s))
 }
 
@@ -552,14 +555,10 @@ pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
     // Spawn the command through the platform shell; if outFile is non-empty,
     // redirect both stdout and stderr there. Returns the child's exit code, or
     // -1 on spawn failure.
-    use std::io::Write;
     use std::process::{Command, Stdio};
     // C's `fflush(NULL)` around the call: the child writes to the same fd 1, so
     // whatever `print()` left in the buffer has to be out first.
-    let flush = || {
-        let _ = std::io::stdout().flush();
-    };
-    flush();
+    metamodelica::host_flush();
     #[cfg(windows)]
     let mut cmd = {
         use std::os::windows::process::CommandExt;
@@ -600,7 +599,7 @@ pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
         Ok(s) => s.code().unwrap_or(-1),
         Err(_) => -1,
     };
-    flush();
+    metamodelica::host_flush();
     status
 }
 
@@ -842,7 +841,19 @@ pub fn cd(inString: ArcStr) -> i32 {
     // fs facade so it also sets the store cwd on wasm (set_current_dir is a no-op there).
     match openmodelica_wasi::fs::set_cwd(inString.as_str()) {
         Ok(()) => 0,
-        Err(_) => -1,
+        Err(_) => {
+            // mirrors SystemImpl__chdir
+            add_scripting_error_id(
+                -1,
+                if cfg!(windows) {
+                    "SetCurrentDirectoryW failed."
+                } else {
+                    "chdir failed."
+                },
+                &[],
+            );
+            -1
+        }
     }
 }
 
@@ -1844,6 +1855,15 @@ pub fn realMaxLit() -> metamodelica::Real {
     metamodelica::OrderedFloat(f64::MAX / 2048.0)
 }
 
+pub fn realNaN() -> metamodelica::Real {
+    metamodelica::OrderedFloat(f64::NAN)
+}
+
+/// `OrderedFloat` treats NaN as equal to itself, so `r <> r` cannot detect it.
+pub fn realIsNaN(r: metamodelica::Real) -> bool {
+    r.0.is_nan()
+}
+
 // ───────────────────────────────── URI / platform info ───────────────────────
 
 /// Percent-decode a URI component, mirroring `decodeUri2` in
@@ -1871,15 +1891,33 @@ fn decode_uri_component(src: &str) -> String {
 /// `c_add_message(NULL, -1, ErrorType_scripting, ErrorLevel_error, ...)`
 /// equivalent for the URI errors below.
 fn add_scripting_error(template: &str, token: &str) {
+    add_scripting_error_id(-1, template, &[token]);
+}
+
+/// `c_add_message(NULL, id, ErrorType_scripting, ErrorLevel_error, ...)`. The
+/// tokens are in the order they appear in the message.
+fn add_scripting_error_id(id: i32, template: &str, tokens: &[&str]) {
     let _ = crate::Error::addMessage(
         openmodelica_error::ErrorTypes::Message {
-            id: -1,
+            id,
             ty: openmodelica_error::ErrorTypes::MessageType::SCRIPTING,
             severity: openmodelica_error::ErrorTypes::Severity::ERROR,
             message: ArcStr::from(template),
         },
-        metamodelica::cons(ArcStr::from(token), metamodelica::nil()),
+        tokens
+            .iter()
+            .rev()
+            .fold(metamodelica::nil(), |l, t| metamodelica::cons(ArcStr::from(*t), l)),
     );
+}
+
+/// `strerror(errno)` for an I/O error: its text without " (os error N)".
+fn io_error_text(e: &std::io::Error) -> String {
+    let s = e.to_string();
+    match s.rfind(" (os error ") {
+        Some(i) => s[..i].to_string(),
+        None => s,
+    }
 }
 
 /// Split `modelica://Pkg.Sub/dir/file` / `file:///some/path` URIs into
@@ -3025,9 +3063,7 @@ pub fn relocateFunctions(_fileName: ArcStr, _names: List<(ArcStr, ArcStr)>) -> b
 }
 
 pub fn fflush() {
-    use std::io::Write as _;
-    let _ = std::io::stdout().flush();
-    let _ = std::io::stderr().flush();
+    metamodelica::host_flush();
 }
 
 pub fn updateUriMapping(namesAndDirs: metamodelica::Array<ArcStr>) {
@@ -3065,12 +3101,11 @@ impl Ord for StreamType {
 }
 
 pub fn fputs(r#str: ArcStr, streamType: StreamType) -> i32 {
-    use std::io::Write as _;
-    let res = match streamType {
-        StreamType::STDOUT => std::io::stdout().write_all(r#str.as_bytes()),
-        StreamType::STDERR => std::io::stderr().write_all(r#str.as_bytes()),
+    let ok = match streamType {
+        StreamType::STDOUT => metamodelica::host_print(&r#str),
+        StreamType::STDERR => metamodelica::host_eprint(&r#str),
     };
-    if res.is_ok() { 0 } else { -1 }
+    if ok { 0 } else { -1 }
 }
 
 pub fn waitForInput() {

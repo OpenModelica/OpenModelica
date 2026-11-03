@@ -1,7 +1,6 @@
 // name:      parameterTest15
 // keywords:  parameter evaluation, override
 // status:    correct
-// cflags: -d=-newInst
 
 loadString("
 model parameterTest15
@@ -55,11 +54,11 @@ simulate(parameterTest15, simflags="-override p1=2,p2=10,p3=10 -output=p1,p2,p3"
 //
 // Known variables only depending on parameters and constants - globalKnownVars (12)
 // ========================================
-// 1: pr2:PARAM(protected = true )  = pr1  type: Integer
-// 2: pr1:PARAM(protected = true )  = 5  type: Integer
-// 3: p8:PARAM(start = 2 * p3 )  type: Integer
-// 4: p7:PARAM(start = 1 final = true )  type: Integer
-// 5: p6:PARAM(final = true )  = p5  type: Integer
+// 1: pr2:PARAM(protected = true final = true )  = 5  type: Integer
+// 2: pr1:PARAM(protected = true final = true )  = 5  type: Integer
+// 3: p8:PARAM(start = 2 * p3 )  = 2 * p3  type: Integer
+// 4: p7:PARAM(start = 1 final = true )  = 1  type: Integer
+// 5: p6:PARAM(final = true )  = 1  type: Integer
 // 6: p5:PARAM(final = true )  = 1  type: Integer
 // 7: p4:PARAM(fixed = false )  type: Integer
 // 8: p3:PARAM()  = 5  type: Integer
@@ -82,11 +81,11 @@ simulate(parameterTest15, simflags="-override p1=2,p2=10,p3=10 -output=p1,p2,p3"
 // Adjacency Matrix (row: equation)
 // ========================================
 // number of rows: 12
-// 1: 2
+// 1:
 // 2:
 // 3: 8
 // 4:
-// 5: 6
+// 5:
 // 6:
 // 7:
 // 8:
@@ -99,11 +98,11 @@ simulate(parameterTest15, simflags="-override p1=2,p2=10,p3=10 -output=p1,p2,p3"
 // ========================================
 // number of rows: 12
 // 1: 1
-// 2: 2 1
+// 2: 2
 // 3: 3
 // 4: 4
 // 5: 5
-// 6: 6 5
+// 6: 6
 // 7: 7
 // 8: 8 3
 // 9: 9
@@ -127,11 +126,11 @@ simulate(parameterTest15, simflags="-override p1=2,p2=10,p3=10 -output=p1,p2,p3"
 //
 // globalKnownVars (12)
 // ========================================
-// 1: pr2:PARAM(protected = true )  = pr1  type: Integer
-// 2: pr1:PARAM(protected = true )  = 5  type: Integer
-// 3: p8:PARAM(start = 2 * p3 )  type: Integer
-// 4: p7:PARAM(start = 1 final = true )  type: Integer
-// 5: p6:PARAM(final = true )  = p5  type: Integer
+// 1: pr2:PARAM(protected = true final = true )  = 5  type: Integer
+// 2: pr1:PARAM(protected = true final = true )  = 5  type: Integer
+// 3: p8:PARAM(start = 2 * p3 )  = 2 * p3  type: Integer
+// 4: p7:PARAM(start = 1 final = true )  = 1  type: Integer
+// 5: p6:PARAM(final = true )  = 1  type: Integer
 // 6: p5:PARAM(final = true )  = 1  type: Integer
 // 7: p4:PARAM(fixed = false )  type: Integer
 // 8: p3:PARAM()  = 5  type: Integer
@@ -165,23 +164,29 @@ simulate(parameterTest15, simflags="-override p1=2,p2=10,p3=10 -output=p1,p2,p3"
 // After replacing the evaluated parameters in parameter bindings:
 // ================================================================================
 // All replacements:
-// Replacements: (2)
+// Replacements: (5)
 // ========================================
 // p5 -> 1
 // p6 -> 1
+// p7 -> 1
+// pr1 -> 5
+// pr2 -> 5
 //
 // Replacements that will be replaced in the DAE:
-// Replacements: (2)
+// Replacements: (5)
 // ========================================
 // p5 -> 1
 // p6 -> 1
+// p7 -> 1
+// pr1 -> 5
+// pr2 -> 5
 //
 // globalKnownVars (12)
 // ========================================
-// 1: pr2:PARAM(protected = true )  = pr1  type: Integer
-// 2: pr1:PARAM(protected = true )  = 5  type: Integer
-// 3: p8:PARAM(start = 2 * p3 )  type: Integer
-// 4: p7:PARAM(start = 1 final = true )  type: Integer
+// 1: pr2:PARAM(protected = true final = true )  = 5  type: Integer
+// 2: pr1:PARAM(protected = true final = true )  = 5  type: Integer
+// 3: p8:PARAM(start = 2 * p3 )  = 2 * p3  type: Integer
+// 4: p7:PARAM(start = 1 final = true )  = 1  type: Integer
 // 5: p6:PARAM(final = true )  = 1  type: Integer
 // 6: p5:PARAM(final = true )  = 1  type: Integer
 // 7: p4:PARAM(fixed = false )  type: Integer
@@ -199,23 +204,29 @@ simulate(parameterTest15, simflags="-override p1=2,p2=10,p3=10 -output=p1,p2,p3"
 // After replacing the evaluated parameters in variable bindings and start attributes:
 // ================================================================================
 // All replacements:
-// Replacements: (2)
+// Replacements: (5)
 // ========================================
 // p5 -> 1
 // p6 -> 1
+// p7 -> 1
+// pr1 -> 5
+// pr2 -> 5
 //
 // Replacements that will be replaced in the DAE:
-// Replacements: (2)
+// Replacements: (5)
 // ========================================
 // p5 -> 1
 // p6 -> 1
+// p7 -> 1
+// pr1 -> 5
+// pr2 -> 5
 //
 // globalKnownVars (12)
 // ========================================
-// 1: pr2:PARAM(protected = true )  = pr1  type: Integer
-// 2: pr1:PARAM(protected = true )  = 5  type: Integer
-// 3: p8:PARAM(start = 2 * p3 )  type: Integer
-// 4: p7:PARAM(start = 1 final = true )  type: Integer
+// 1: pr2:PARAM(protected = true final = true )  = 5  type: Integer
+// 2: pr1:PARAM(protected = true final = true )  = 5  type: Integer
+// 3: p8:PARAM(start = 2 * p3 )  = 2 * p3  type: Integer
+// 4: p7:PARAM(start = 1 final = true )  = 1  type: Integer
 // 5: p6:PARAM(final = true )  = 1  type: Integer
 // 6: p5:PARAM(final = true )  = 1  type: Integer
 // 7: p4:PARAM(fixed = false )  type: Integer
@@ -247,10 +258,10 @@ simulate(parameterTest15, simflags="-override p1=2,p2=10,p3=10 -output=p1,p2,p3"
 //
 // Known variables only depending on parameters and constants - globalKnownVars (12)
 // ========================================
-// 1: pr2:PARAM(protected = true )  = pr1  type: Integer
-// 2: pr1:PARAM(protected = true )  = 5  type: Integer
-// 3: p8:PARAM(start = 2 * p3 )  type: Integer
-// 4: p7:PARAM(start = 1 final = true )  type: Integer
+// 1: pr2:PARAM(protected = true final = true )  = 5  type: Integer
+// 2: pr1:PARAM(protected = true final = true )  = 5  type: Integer
+// 3: p8:PARAM(start = 2 * p3 )  = 2 * p3  type: Integer
+// 4: p7:PARAM(start = 1 final = true )  = 1  type: Integer
 // 5: p6:PARAM(final = true )  = 1  type: Integer
 // 6: p5:PARAM(final = true )  = 1  type: Integer
 // 7: p4:PARAM(fixed = false )  type: Integer
@@ -267,14 +278,14 @@ simulate(parameterTest15, simflags="-override p1=2,p2=10,p3=10 -output=p1,p2,p3"
 //
 // record SimulationResult
 //     resultFile = "parameterTest15_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'parameterTest15', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output=p1,p2,p3'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'parameterTest15', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output=p1,p2,p3'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // time=1,p1=1,p2=1,p3=5
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "[<interactive>:11:3-11:39:writable] Warning: Parameter p7 has no value, and is fixed during initialization (fixed=true), using available start value (start=1) as default value.
-// [<interactive>:12:3-12:36:writable] Warning: Parameter p8 has no value, and is fixed during initialization (fixed=true), using available start value (start=2 * p3) as default value.
+// [<interactive>:12:3-12:36:writable] Warning: Parameter p8 has no value, and is fixed during initialization (fixed=true), using available start value (start=2*p3) as default value.
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // record SimulationResult

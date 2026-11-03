@@ -13,7 +13,6 @@ end modelInner;
 
 model topModel
   modelInner m(param1 = modelInner.typeA.e2);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end topModel;
 
 // Result:

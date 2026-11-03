@@ -1,0 +1,80 @@
+// name: LiteralArrayAlias
+// keywords: NewBackend alias
+// status: correct
+//
+// Elements of literal arrays in for-equations, scaled by a parameter or
+// negated, are alias replacements of the whole array.
+
+loadString("
+model LiteralArrayAlias
+  parameter Real k = 2;
+  parameter Real c[3] = {1, 2, 3};
+  Real a[3], b[3], x[3](each start = 1, each fixed = true);
+equation
+  for i in 1:3 loop
+    a[i] = k * ({0.0, 1.0, -1.0})[i];
+    b[i] = -c[i];
+    der(x[i]) = a[i] * x[i] + b[i];
+  end for;
+end LiteralArrayAlias;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=dumprepl"); getErrorString();
+simulate(LiteralArrayAlias, stopTime = 1); getErrorString();
+val(x[1], 1);
+val(x[2], 1);
+val(x[3], 1);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// =====================================
+//   [dumprepl] Simulation Alias Sets:
+// =====================================
+//
+// Alias Set 1:
+// **************
+// 	Constant/Parameter Binding: [ARRY] (3) a = k * {0.0, 1.0, -1.0}; ($RES_SIM_0)
+// 	###<No Set Equations>
+//
+// Alias Set 2:
+// **************
+// 	Constant/Parameter Binding: [ARRY] (3) b = -c; ($RES_SIM_2)
+// 	###<No Set Equations>
+//
+// [dumprepl] Constant Replacements:
+// ***********************************
+// [dumprepl] Trivial Alias Replacements:
+// ****************************************
+// 	b	 ==> 	-c
+// [dumprepl] Nontrivial Alias Replacements:
+// *******************************************
+// 	a	 ==> 	{0.0, 1.0, -1.0} * k
+//
+// ==================================
+//   [dumprepl] Clocked Alias Sets:
+// ==================================
+//
+// <No Clocked Alias Sets>
+//
+// [dumprepl] Constant Replacements:
+// ***********************************
+// [dumprepl] Trivial Alias Replacements:
+// ****************************************
+// [dumprepl] Nontrivial Alias Replacements:
+// *******************************************
+//
+// record SimulationResult
+//     resultFile = "LiteralArrayAlias_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'LiteralArrayAlias', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 3.331991042051574e-16
+// 1.0
+// -1.1616608710752234
+// endResult

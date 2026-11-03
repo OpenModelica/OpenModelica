@@ -711,33 +711,44 @@ void Parameter::createValueWidget()
       if (mpModelInstanceElement->getAnnotation()->isChoicesAllMatching()) {
         replaceableChoices = pOMCProxy->getReplaceableChoices(constrainedByClassName, parentClassName);
       }
-      for (i = 0; i < replaceableChoices.size(); i++) {
-        QStringList replaceableChoice = replaceableChoices[i];
-        const QString replaceableText = replaceableChoice[0];
-        QString replaceableToolTip = replaceableChoice[0];
-        // add comment if available
-        if (!replaceableChoice[1].isEmpty()) {
-          replaceableToolTip += " \"" + replaceableChoice[1] + "\"";
-        }
 
-        if (isReplaceableComponent() || isReplaceableClass()) {
-          QString replaceableValue = "redeclare " + replaceableChoice[0];
-          // if replaceableChoice points to a class in this scope, remove scope
-          if (replaceableChoice[0].startsWith(parentClassName + ".")) {
-            replaceableChoice[0].remove(0, parentClassName.size() + 1);
-          }
-          if (isReplaceableClass()) {
-            replaceableValue = QString("redeclare %1 %2 = %3").arg(restriction, elementName, replaceableChoice[0]);
+      {
+        const bool isClass = isReplaceableClass();
+        const bool isReplaceable = isClass || isReplaceableComponent();
+        const bool isRecord = (restriction == QStringLiteral("record"));
+        const QString scopePrefix = parentClassName + ".";
+
+        for (const QStringList &choice : replaceableChoices) {
+          QString text = choice.value(0);
+          const QString comment = choice.value(1);
+
+          QString value;
+          if (isReplaceable) {
+            // if the choice points to a class in this scope, remove the scope
+            if (text.startsWith(scopePrefix)) {
+              text.remove(0, scopePrefix.size());
+            }
+            value = isClass ? QString("redeclare %1 %2 = %3").arg(restriction, elementName, text)
+                            : QString("redeclare %1 %2").arg(text, elementName);
           } else {
-            replaceableValue = QString("redeclare %1 %2").arg(replaceableChoice[0], elementName);
+            // Records need () to be instantiated, e.g. DC01() instead of DC01. See issue #17600.
+            if (isRecord) {
+              text += "()";
+            }
+            value = text;
           }
-          mpValueComboBox->addItemWithToolTip(replaceableText, replaceableValue, replaceableToolTip);
-        } else {
-          mpValueComboBox->addItemWithToolTip(replaceableText, replaceableText, replaceableToolTip);
+
+          // add comment if available
+          QString toolTip = text;
+          if (!comment.isEmpty()) {
+            toolTip += " \"" + comment + "\"";
+          }
+
+          mpValueComboBox->addItemWithToolTip(text, value, toolTip);
         }
       }
 
-      connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
+      connect(mpValueComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &Parameter::valueComboBoxChanged);
       break;
     case Parameter::Normal:
     default:
@@ -938,9 +949,19 @@ void Parameter::editClassButtonClicked()
      */
     foreach (auto *pModifier, pReplaceableConstrainedByModifier->getModifiers()) {
       Parameter *pParameter = mpElementParameters->findParameter(pModifier->getName());
+      /* Use the value of the parameter or its default value when the value is not set.
+       * Never override the modifier value with an empty value, the value is used to
+       * instantiate the class below the sub dialog.
+       * See issue #16642
+       */
       if (pParameter) {
-        // qDebug() << "pParameter->getValue()" << pParameter->getValue();
-        pModifier->setValue(pParameter->getValue());
+        QString parameterValue = pParameter->getValue();
+        if (parameterValue.isEmpty()) {
+          parameterValue = pParameter->getDefaultValue();
+        }
+        if (!parameterValue.isEmpty()) {
+          pModifier->setValue(parameterValue);
+        }
       }
     }
     // qDebug() << "replaceable constrainedby modifier" << pReplaceableConstrainedByModifier->toString();

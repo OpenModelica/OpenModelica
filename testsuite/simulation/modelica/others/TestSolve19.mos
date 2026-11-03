@@ -1,0 +1,60 @@
+// name:     TestSolve19
+// keywords: ExpressionSolve, record, inline #17177
+// status:   correct
+//
+// An equation where the unknown s.p only occurs as a field of a record argument
+// of a function call is solved explicitly by inlining the call, not by a
+// nonlinear system.
+
+loadString("
+model TestSolve19
+  record R
+    Real p;
+    Real T;
+  end R;
+
+  function pressure
+    input R r;
+    output Real p;
+  algorithm
+    p := r.p;
+  end pressure;
+
+  R s;
+equation
+  s.T = time;
+  2*pressure(s) = s.T + 1;
+end TestSolve19;
+"); getErrorString();
+setCommandLineOptions("-d=backenddaeinfo"); getErrorString();
+simulate(TestSolve19);
+echo(false);
+err := getErrorString();
+echo(true);
+for l in strtok(err, "\n") loop
+  if regexBool(l, "Equation systems \\(not torn\\)|Torn equation systems") then
+    print(l + "\n");
+  end if;
+end for;
+val(s.p, 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TestSolve19_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TestSolve19', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+//  * Equation systems (not torn): 0
+//  * Torn equation systems: 0
+//  * Equation systems (not torn): 0
+//  * Torn equation systems: 0
+//
+// 1.0
+// endResult

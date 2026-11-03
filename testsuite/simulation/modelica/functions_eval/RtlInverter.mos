@@ -1,7 +1,6 @@
 // name:      RtlInverter
 // keywords:  evalConstFunc
 // status:    correct
-// cflags: -d=-newInst
 //
 
 

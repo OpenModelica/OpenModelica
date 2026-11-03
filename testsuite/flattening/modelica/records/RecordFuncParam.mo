@@ -14,16 +14,17 @@ end R;
 function f
   input R r;
   output Real y;
+algorithm
+  y := r.x + r.y;
 end f;
 
 model RecordFuncParam
-  input R r;
+  R r;
   output Real y;
 equation
   r.x = time;
   r.y = r.x * 2;
   y = f(r);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RecordFuncParam;
 
 // Result:
@@ -36,15 +37,17 @@ end RecordFuncParam;
 // function f
 //   input R r;
 //   output Real y;
+// algorithm
+//   y := r.x + r.y;
 // end f;
 //
 // class RecordFuncParam
-//   input Real r.x;
-//   input Real r.y;
+//   Real r.x;
+//   Real r.y;
 //   output Real y;
 // equation
 //   r.x = time;
-//   r.y = 2.0 * r.x;
+//   r.y = r.x * 2.0;
 //   y = f(r);
 // end RecordFuncParam;
 // endResult

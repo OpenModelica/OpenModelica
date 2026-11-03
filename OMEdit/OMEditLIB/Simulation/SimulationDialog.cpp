@@ -1827,7 +1827,12 @@ void SimulationDialog::saveDialogGeometry()
 
 void SimulationDialog::reSimulate(SimulationOptions simulationOptions)
 {
-  createAndShowSimulationOutputWidget(simulationOptions);
+  if (simulationOptions.getTargetLanguage().compare("wasm-jit") == 0) {
+    runWasmJitSimulation(simulationOptions, QString("startTime=%1, stopTime=%2, outputFormat=\"%3\"")
+                         .arg(simulationOptions.getStartTime(), simulationOptions.getStopTime(), simulationOptions.getOutputFormat()));
+  } else {
+    createAndShowSimulationOutputWidget(simulationOptions);
+  }
 }
 
 void SimulationDialog::showAlgorithmicDebugger(SimulationOptions simulationOptions)
@@ -2391,6 +2396,7 @@ void SimulationDialog::simulate()
 {
   if (validate()) {
     SimulationOptions simulationOptions = createSimulationOptions();
+    bool runSimulation = false;
     if (simulationOptions.isValid()) {
       // If we are not doing a re-simulation then save the new SimulationOptions in the class.
       if (!mIsReSimulate) {
@@ -2398,7 +2404,7 @@ void SimulationDialog::simulate()
       }
       // interactive simulation
       if (mpInteractiveSimulationGroupBox->isChecked() || mIsReSimulate) {
-        performSimulation(simulationOptions);
+        runSimulation = true;
       } else {
         // if no option is selected then show error message to user
         if (!(mpSaveExperimentAnnotationCheckBox->isChecked() ||
@@ -2426,15 +2432,18 @@ void SimulationDialog::simulate()
             mpSaveTranslationFlagsAnnotationCheckBox->isChecked() || mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
           mpLibraryTreeItem->getModelWidget()->endMacro();
         }
-        if (mpSimulateCheckBox->isChecked()) {
-          performSimulation(simulationOptions);
-        }
+        runSimulation = mpSimulateCheckBox->isChecked();
       }
     }
     if (isVisible()) {
       saveDialogGeometry();
     }
+    // Close the dialog first: omc pumps events during the translation and an
+    // in-process (wasm-jit) simulation, and a second OK would re-enter omc.
     accept();
+    if (runSimulation) {
+      performSimulation(simulationOptions);
+    }
   }
 }
 

@@ -126,6 +126,8 @@ openmodelica_backend/src/HpcOmBenchmarkExt.rs
 openmodelica_backend_main/Cargo.toml
 openmodelica_backend_main/src/Globals.rs
 openmodelica_backend_main/src/capi.rs
+openmodelica_backend_main/src/unittests/mod.rs
+openmodelica_backend_main/src/unittests/scripting_eval_tests.rs
 openmodelica_backend_tools/Cargo.toml
 openmodelica_backend_tools/src/CevalScriptOMSimulator_wasm.rs
 openmodelica_backend_tools/src/SerializeSparsityPattern.rs
@@ -403,6 +405,8 @@ openmodelica_nbackend/Cargo.toml
 openmodelica_nbackend/src/NBASSCExt.rs
 openmodelica_nf_api/Cargo.toml
 openmodelica_nf_api/src/Globals.rs
+openmodelica_nf_api/src/unittests/mod.rs
+openmodelica_nf_api/src/unittests/scripting_code_tests.rs
 openmodelica_nf_frontend/Cargo.toml
 openmodelica_nf_frontend/build.rs
 openmodelica_nf_frontend/src/FFI.rs
@@ -492,6 +496,7 @@ openmodelica_util_datatypes_basic/src/unittests/mutable_tests.rs
 openmodelica_wasi/Cargo.toml
 openmodelica_wasi/src/fs.rs
 openmodelica_wasi/src/lib.rs
+openmodelica_wasi/src/stdio.rs
 openmodelica_wasi/src/wasi.rs
 openmodelica_wasi_libc/Cargo.toml
 openmodelica_wasi_libc/build.rs
@@ -560,7 +565,9 @@ wasm/simulator/examples/BouncingBall.mo
 wasm/simulator/examples/DistrictHeating.mo
 wasm/simulator/index.html
 wasm/simulator/omc-worker.js
+wasm/symbolize.html
 wasm/theme.css
 wasm/units.js
 wasm/ui.js
 wasm/wasm-blobs.js
+wasm/wasm-stack.js

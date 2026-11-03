@@ -30,11 +30,11 @@ end TOOLS;
 
 model Lookup10
   extends TOOLS.surf_orient.surf_orient_alias_def;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Lookup10;
 
 // Result:
 // class Lookup10
 //   constant Integer i = 4;
+//   constant Integer n_of_surf_orient_def = 4;
 // end Lookup10;
 // endResult

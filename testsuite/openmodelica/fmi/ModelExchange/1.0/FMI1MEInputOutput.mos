@@ -2,7 +2,6 @@
 // keywords: fmu export fmi 1.0 model exchange input output
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml *.fmu *_FMU.* *.fmutmp *.libs *.lib *.so *.dll *_res.mat *_info.json test_fmu_me_1_0*
-// cflags: -d=-newInst
 //
 // Regression test for #15838: exporting an FMI 1.0 Model-Exchange FMU for a
 // model with a Real input and Real output (a Modelica.Blocks gain). This is the

@@ -1,0 +1,40 @@
+// name:     ArrayArgElementReplaced
+// keywords: array, function call, removeSimpleEquations #17177
+// status:   correct
+//
+// A 3-dimensional array passed to a function keeps its shape when one of its
+// elements is replaced by a constant, and matrix() of it is A[:, :, 1].
+
+loadString("
+model ArrayArgElementReplaced
+  function f
+    input Real x[:, :, :];
+    output Real y[size(x, 1), size(x, 2)] = matrix(x);
+  end f;
+
+  Real m3[2, 2, 1] = {{{time}, {2*time}}, {{3*time}, {4}}};
+  Real m4[2, 2] = matrix(m3);
+  Real m5[2, 2] = f(m3);
+end ArrayArgElementReplaced;
+"); getErrorString();
+
+simulate(ArrayArgElementReplaced, stopTime = 1); getErrorString();
+val(m4[1, 2], 1.0);
+val(m5[2, 1], 1.0);
+val(m5[2, 2], 1.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ArrayArgElementReplaced_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ArrayArgElementReplaced', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// 3.0
+// 4.0
+// endResult

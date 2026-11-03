@@ -5,7 +5,7 @@
 // Drmodelica: 3.4 Access Control (p. 88)
 //
 
-class Activate
+model Activate
   constant Real x = 4;
   Real y, z;
 equation
@@ -13,7 +13,6 @@ equation
   end when;
   when terminal() then z = x - 2; // Equations to be activated at the end of the simulation
   end when;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Activate;
 
 // Result:
@@ -23,10 +22,10 @@ end Activate;
 //   Real z;
 // equation
 //   when initial() then
-//   y = 7.0;
+//     y = 7.0;
 //   end when;
 //   when terminal() then
-//   z = 2.0;
+//     z = 2.0;
 //   end when;
 // end Activate;
 // endResult

@@ -205,7 +205,7 @@ public
         for cr in crefs loop
           v.name := cr;
           exp :: expl := expl;
-          v.binding := Binding.makeFlat(exp, bind_var, bind_src);
+          v.binding := Binding.makeFlat(exp, bind_var, bind_src, var.info);
           vars := v :: vars;
         end for;
       else
@@ -782,7 +782,7 @@ public
     input Binding.Source source = NFBinding.Source.GENERATED;
     output Binding binding;
   algorithm
-    binding := Binding.makeFlat(Expression.fromTypedCref(var.name, var.ty), variability(var), source);
+    binding := Binding.makeFlat(Expression.fromTypedCref(var.name, var.ty), variability(var), source, var.info);
   end asBinding;
 
   annotation(__OpenModelica_Interface="nf_frontend");

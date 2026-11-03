@@ -5424,9 +5424,9 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart,
     case SIMVAR(aliasvar = ALIAS(varName = varName)) then crefToCStr(varName, ix, isPre, isStart, &sub)
     case SIMVAR(aliasvar = NEGATEDALIAS(varName = varName), type_=T_BOOL()) then '!(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
     case SIMVAR(aliasvar = NEGATEDALIAS(varName = varName)) then '-(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
-    case v as SIMVAR(varKind = JAC_VAR()) then '(parentJacobian->resultVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
-    case v as SIMVAR(varKind = JAC_TMP_VAR()) then '(parentJacobian->tmpVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
-    case v as SIMVAR(varKind = SEED_VAR()) then '(parentJacobian->seedVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind = JAC_VAR()) then '(<%if stringEq(sub, "") then "" else "&"%>parentJacobian->resultVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind = JAC_TMP_VAR()) then '(<%if stringEq(sub, "") then "" else "&"%>parentJacobian->tmpVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind = SEED_VAR()) then '(<%if stringEq(sub, "") then "" else "&"%>parentJacobian->seedVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
     case v as SIMVAR(varKind = DAE_RESIDUAL_VAR()) then '(data->simulationInfo->daeModeData->residualVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
     case v as SIMVAR(varKind = DAE_AUX_VAR()) then '(data->simulationInfo->daeModeData->auxiliaryVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
     case SIMVAR(index = -2) then
@@ -7526,6 +7526,29 @@ let &sub = buffer ""
               >>
     tvar
 
+  case CALL(path=IDENT(name="matrix"), expLst={exp}, attr=CALL_ATTR(ty=ty)) then
+    let val = daeExpAsLValue(exp, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let dim = tempDecl("int", &varDecls, &varFrees)
+    let nElts = tempDecl("modelica_integer", &varDecls, &varFrees)
+    let tvardata = tempDecl("void *", &varDecls, &varFrees)
+    let szElt = 'sizeof(<%expTypeModelica(ty)%>)'
+    let ty_str = expTypeArray(ty)
+    let tvar = tempDecl(ty_str, &varDecls, &varFrees)
+    let &preExp +=
+              <<
+              for (<%dim%> = 3; <%dim%> <= <%val%>.ndims; <%dim%>++) {
+                if (size_of_dimension_base_array(<%val%>, <%dim%>) != 1) {
+                  <%raiseOrThrow()%>(threadData, "Invalid dimension %d of argument to matrix, expected dimension size 1 but got %d.", <%dim%>, (int) size_of_dimension_base_array(<%val%>, <%dim%>));
+                  break;
+                }
+              }
+              <%nElts%> = base_array_nr_of_elements(<%val%>);
+              <%tvardata%> = omc_alloc_interface.malloc(<%szElt%>*<%nElts%>);
+              memcpy(<%tvardata%>, <%val%>.data, <%szElt%>*<%nElts%>);
+              <%rcReleaseBefore(ty_str, tvar)%>simple_alloc_2d_base_array(&<%tvar%>, size_of_dimension_base_array(<%val%>, 1), size_of_dimension_base_array(<%val%>, 2), <%tvardata%>);<%\n%>
+              >>
+    tvar
+
   case CALL(path=IDENT(name="cat"), expLst=dim::arrays, attr=CALL_ATTR(ty = ty)) then
     let dim_exp = daeExp(dim, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let arrays_exp = (arrays |> array =>
@@ -7627,8 +7650,9 @@ let &sub = buffer ""
     let &preExp += '<%rcReleaseBefore("modelica_string", tvar)%><%tvar%> = modelica_real_to_modelica_string(<%sExp%>, <%signdigExp%>, <%minlenExp%>, <%leftjustExp%>);<%\n%>'
     tvar
 
-  case CALL(path=IDENT(name="delay"), expLst={ICONST(integer=index), e, d, delayMax}) then
+  case CALL(path=IDENT(name="delay"), expLst={idx, e, d, delayMax}) then
     let tvar = tempDecl("modelica_real", &varDecls, &varFrees)
+    let index = daeExp(idx, context, &preExp, &varDecls, &varFrees, &auxFunction)
 
     let var1 = daeExp(e, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let var2 = daeExp(d, context, &preExp, &varDecls, &varFrees, &auxFunction)
@@ -7668,11 +7692,18 @@ let &sub = buffer ""
   case CALL(path=IDENT(name="sample"), expLst={ICONST(integer=index), _, _}) then
     'data->simulationInfo->samples[<%intSub(index, 1)%>]'
 
-  case CALL(path=IDENT(name="delayZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), delay}) then
+  // iterated samples, the index depends on the iterator
+  case CALL(path=IDENT(name="sample"), expLst={index, _, _}) then
+    let index_T = daeExp(index, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    'data->simulationInfo->samples[(<%index_T%>) - 1]'
+
+  case CALL(path=IDENT(name="$delayZeroCrossing"), expLst={idx, ridx, delay}) then
+    let index = daeExp(idx, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let rindex = daeExp(ridx, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let delay_T = daeExp(delay, context, &preExp, &varDecls, &varFrees, &auxFunction)
     'delayZeroCrossing(data, threadData, <%index%>, <%rindex%>, <%delay_T%>)'
 
-  case CALL(path=IDENT(name="spatialDistributionZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), xPos, dir}) then
+  case CALL(path=IDENT(name="$spatialDistributionZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), xPos, dir}) then
     let xPos_T = daeExp(xPos, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let dir_T = daeExp(dir, context, &preExp, &varDecls, &varFrees, &auxFunction)
     'spatialDistributionZeroCrossing(data, threadData, <%index%>, <%rindex%>, <%xPos_T%>, <%dir_T%>)'
@@ -7934,10 +7965,20 @@ case ARRAY(array = array, scalar = scalar, ty = T_ARRAY(ty = t as T_COMPLEX(__))
       ;separator="\n")
   let &preExp += '<%params%><%\n%>'
   arrayVar
-case ARRAY(array={}) then
-  let arrayVar = tempDecl("base_array_t", &varDecls, &varFrees)
-  let &preExp += '<%rcReleaseBefore("base_array_t", arrayVar)%>simple_alloc_1d_base_array(&<%arrayVar%>, 0, NULL);<%\n%>'
-  arrayVar
+case ARRAY(array={}, ty=arrTy) then
+  match Expression.expDimensions(exp)
+  case dims then
+    if boolOr(listEmpty(dims), Expression.hasUnknownDims(dims)) then
+      let arrayVar = tempDecl("base_array_t", &varDecls, &varFrees)
+      let &preExp += '<%rcReleaseBefore("base_array_t", arrayVar)%>simple_alloc_1d_base_array(&<%arrayVar%>, 0, NULL);<%\n%>'
+      arrayVar
+    else
+      let arrayTypeStr = expTypeArray(arrTy)
+      let arrayVar = tempDecl(arrayTypeStr, &varDecls, &varFrees)
+      let dimsStr = (dims |> d => '(_index_t)<%dimension(d, context, &preExp, &varDecls, &varFrees, &auxFunction)%>' ;separator=", ")
+      let &preExp += '<%rcReleaseBefore(arrayTypeStr, arrayVar)%>alloc_<%arrayTypeStr%>(&<%arrayVar%>, <%listLength(dims)%>, <%dimsStr%>);<%\n%>'
+      arrayVar
+  end match
 case ARRAY(__) then
   let arrayTypeStr = expTypeArray(ty)
   let arrayVar = tempDecl(arrayTypeStr, &varDecls, &varFrees)
@@ -8493,7 +8534,6 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
             case DIM_ENUM(__) then ', (_index_t)<%size%>'
             case DAE.DIM_EXP(exp=e) then ', (_index_t)<%daeExp(e,context,&rangeExpPre,&tmpVarDecls, &tmpVarFrees, &auxFunction)%>'
             else error(sourceInfo(), 'array reduction unable to generate code for element of unknown dimension sizes; type <%unparseType(typeof(r.expr))%>: <%ExpressionDumpTpl.dumpExp(r.expr,"\"")%>')
-            ; separator = ", "
           'alloc_<%arrayTypeResult%>(&<%res%>, <%intAdd(1,listLength(dims))%>, <%length%><%dimSizes%>);'
         else
           'simple_alloc_1d_<%arrayTypeResult%>(&<%res%>,<%length%>);'%>
@@ -8980,7 +9020,7 @@ template startArrayEnsureSize(ComponentRef cr)
   written into it, it has to hold one element per array element."
 ::=
   match getDimensionSizes(crefTypeFull(crefStripSubs(popCref(cr))))
-  case sizes as _::_ then
+  case _::_ then
     match cref2simvar(crefStripSubs(popCref(cr)), getSimCode())
     case var as SIMVAR(__) then
       let ty = crefShortType(name)
@@ -8989,7 +9029,7 @@ template startArrayEnsureSize(ComponentRef cr)
         case "integer"
         case "boolean" then
           let &nosub = buffer ""
-          let size = if isSymbolicArrayVar(var) then varSizeRuntime(var) else (sizes ; separator="*")
+          let size = if isSymbolicArrayVar(var) then varSizeRuntime(var) else typeSizeRuntime(crefTypeFull(crefStripSubs(popCref(cr))))
           '<%ty%>_array_ensure_size(&<%varAttributes(var, &nosub)%>.start, <%size%>);'
         else ""
     else ""
@@ -9005,6 +9045,16 @@ template varSizeRuntime(SimVar var)
   let &aux = buffer ""
   '(<%daeExp(simVarSizeExp(var), contextSimulationNonDiscrete, &preExp, &varDecls, &varFrees, &aux)%>)'
 end varSizeRuntime;
+
+template typeSizeRuntime(DAE.Type ty)
+ "the number of elements of an array type at runtime"
+::=
+  let &preExp = buffer ""
+  let &varDecls = buffer ""
+  let &varFrees = buffer ""
+  let &aux = buffer ""
+  '(<%daeExp(typeSizeExp(ty), contextSimulationNonDiscrete, &preExp, &varDecls, &varFrees, &aux)%>)'
+end typeSizeRuntime;
 
 template startArrayScatterEnsureSize(ComponentRef cr, Text type, Text arr)
  "Without --simCodeScalarize the array is one VarsData entry. Its start
@@ -9075,38 +9125,35 @@ template lsVarKind(SimVar var)
 end lsVarKind;
 
 template initializeStaticLSVars(list<SimVar> vars, Integer index)
+"nominal, min and max of the iteration variables, read per run of consecutive indices
+ (see simVarIndexRuns). The variables can be fixed=false parameters, their index is
+ one of the parameters."
 ::=
-  let len = listLength(vars)
-  let indices = (vars |> var as SIMVAR(__) => '<%index%> /* <%crefCComment(var, crefStrNoUnderscore(name))%> */' ;separator=",\n")
-  // A torn linear system's own iteration variables can be `fixed=false`
-  // PARAMETERS (solved via an initial-equation call, e.g. a filter's
-  // coefficient array) rather than ordinary VARIABLEs -- their scalar
-  // index lives in realParamsIndex/nParametersReal, a completely
-  // different space than realVarsIndex/nVariablesReal. Hardcoding
-  // VAR_KIND_VARIABLE here (as opposed to the equivalent, correct
-  // per-var dispatch in generateStaticInitialData for NONLINEAR_SYSTEM_DATA)
-  // looked up a variable-space index using a parameter-space index value,
-  // failing getNominalFromScalarIdx's out-of-bounds assertion whenever the
-  // parameter index exceeds nVariablesReal.
-  let kinds = (vars |> var as SIMVAR(__) => lsVarKind(var) ;separator=",\n")
+  let len = listLength(simVarIndexRuns(vars))
+  let rows = (simVarIndexRuns(vars) |> (pos, idx, n, kind) =>
+    match listGet(vars, intAdd(pos, 1)) case var as SIMVAR() then
+      '{<%pos%>, <%idx%>, <%n%>, <%kind%>} /* <%crefCComment(var, crefStrNoUnderscore(var.name))%> */'
+    ;separator=",\n")
   <<
   void initializeStaticLSData<%index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern)
   {
-    const int indices[<%len%>] = {
-      <%indices%>
+    /* position, first index, length, kind (0 no index, 1 variable, 2 parameter, 3 other variable) */
+    const int runs[<%len%>][4] = {
+      <%rows%>
     };
-    const enum var_kind kinds[<%len%>] = {
-      <%kinds%>
-    };
-    for (int i = 0; i < <%len%>; ++i) {
-      if (indices[i] < 0) {
-        linearSystemData->nominal[i] = 1.0;
-        linearSystemData->min[i]     = -DBL_MAX;
-        linearSystemData->max[i]     = DBL_MAX;
-      } else {
-        linearSystemData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, kinds[i], indices[i]);
-        linearSystemData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, kinds[i], indices[i]);
-        linearSystemData->max[i]     = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, kinds[i], indices[i]);
+    for (int r = 0; r < <%len%>; ++r) {
+      const enum var_kind kind = runs[r][3] == 2 ? VAR_KIND_PARAMETER : VAR_KIND_VARIABLE;
+      for (int k = 0; k < runs[r][2]; ++k) {
+        const int i = runs[r][0] + k;
+        if (runs[r][3] == 0) {
+          linearSystemData->nominal[i] = 1.0;
+          linearSystemData->min[i]     = -DBL_MAX;
+          linearSystemData->max[i]     = DBL_MAX;
+        } else {
+          linearSystemData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, kind, runs[r][1] + k);
+          linearSystemData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, kind, runs[r][1] + k);
+          linearSystemData->max[i]     = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, kind, runs[r][1] + k);
+        }
       }
     }
   }

@@ -168,6 +168,14 @@ pub struct SPARSE_PATTERN {
 }
 
 #[repr(C)]
+pub struct SPARSE_PAIRS {
+    pub cols: *mut c_uint,
+    pub rows: *mut c_uint,
+    pub size: usize,
+    pub capacity: usize,
+}
+
+#[repr(C)]
 pub struct NONLINEAR_PATTERN {
     pub numberOfVars: c_uint,
     pub numberOfEqns: c_uint,
@@ -296,12 +304,20 @@ pub struct STATIC_REAL_DATA {
 }
 
 #[repr(C)]
+pub struct ENUMERATION_TYPE {
+    pub name: *mut c_char,
+    pub nLiterals: usize,
+    pub literals: *mut *mut c_char,
+}
+
+#[repr(C)]
 pub struct STATIC_INTEGER_DATA {
     pub dimension: DIMENSION_INFO,
     pub info: VAR_INFO,
     pub attribute: INTEGER_ATTRIBUTE,
     pub filterOutput: modelica_boolean,
     pub time_unvarying: modelica_boolean,
+    pub enumeration: *const ENUMERATION_TYPE,
 }
 
 #[repr(C)]
@@ -616,6 +632,9 @@ pub struct MODEL_DATA {
     pub ndataReconVars: c_long,
     pub nSetbVars: c_long,
     pub nRelatedBoundaryConditions: c_long,
+
+    pub nEnumerationTypes: usize,
+    pub enumerationTypes: *mut ENUMERATION_TYPE,
 }
 
 #[repr(C)]
@@ -700,6 +719,7 @@ pub struct SIMULATION_INFO {
 
     pub homotopySteps: c_int,
     pub lambda: f64,
+    pub skipStartEquations: modelica_boolean,
 
     pub initial: modelica_boolean,
     pub terminal: modelica_boolean,

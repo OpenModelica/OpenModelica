@@ -74,6 +74,8 @@ pub(crate) struct SimVarMap {
     pub(super) n_mathevents: u32,
     /// `SimData` byte offset of the homotopy parameter lambda (`SimLayout`).
     pub(super) lambda_off: SimOff,
+    /// `SimData` byte offset of C's `skipStartEquations` flag (`SimLayout`).
+    pub(super) skip_start_off: SimOff,
     /// C's `homotopyMethod` code (`SimLayout::homotopy_method`).
     pub(super) homotopy_method: u8,
     /// `SimCtx::old_real`.
@@ -156,7 +158,7 @@ impl ResultList {
             discrete: sv.isDiscrete,
             filter: filter_bits(sv) | filter_extra,
             unvarying: false,
-            enumeration: enumeration_names(&sv.type_),
+            enumeration: enumeration_type(&sv.type_),
         });
         Ok(())
     }
@@ -393,11 +395,16 @@ fn is_boolean_type(ty: &DAE::Type) -> bool {
 
 /// Literal names of an enumeration type; the stored value is the 1-based index
 /// into these.
-fn enumeration_names(ty: &DAE::Type) -> Option<Vec<String>> {
+fn enumeration_type(ty: &DAE::Type) -> Option<openmodelica_sim_meta::Enumeration> {
     match ty {
-        DAE::Type::T_ENUMERATION { names, .. } => Some(lst(names).map(|n| n.to_string()).collect()),
-        DAE::Type::T_SUBTYPE_BASIC { complexType, .. } => enumeration_names(complexType),
-        DAE::Type::T_ARRAY { ty, .. } => enumeration_names(ty),
+        DAE::Type::T_ENUMERATION { path, names, .. } => Some(openmodelica_sim_meta::Enumeration {
+            name: openmodelica_frontend_dump::AbsynUtil::pathString(path.clone(), arcstr::literal!("."), false, false)
+                .map(|s| s.to_string())
+                .unwrap_or_default(),
+            literals: lst(names).map(|n| n.to_string()).collect(),
+        }),
+        DAE::Type::T_SUBTYPE_BASIC { complexType, .. } => enumeration_type(complexType),
+        DAE::Type::T_ARRAY { ty, .. } => enumeration_type(ty),
         _ => None,
     }
 }
@@ -636,18 +643,7 @@ fn scalarize_var_list(
             continue;
         }
         let first = out.len();
-        for idx in row_major_indices(&dims) {
-            let mut e = (**sv).clone();
-            e.name = cref_with_indices(&sv.name, &idx);
-            e.numArrayElement = metamodelica::nil();
-            e.arrayCref = None;
-            e.aliasvar = reindex_aliasvar(&sv.aliasvar, &idx);
-            e.initialValue = index_attr(&sv.initialValue, &idx);
-            e.nominalValue = index_attr(&sv.nominalValue, &idx);
-            e.minValue = index_attr(&sv.minValue, &idx);
-            e.maxValue = index_attr(&sv.maxValue, &idx);
-            out.push(metamodelica::Ref::new(e));
-        }
+        out.extend(sim_var_elements(sv, &dims));
         if let (Some(e), Some(base)) = (out.get(first), run_base(&sv.name)) {
             runs.insert(
                 run_key(e),
@@ -660,6 +656,49 @@ fn scalarize_var_list(
         }
     }
     Ok(out.into_iter().collect::<List<metamodelica::Ref<SimCodeVar::SimVar>>>())
+}
+
+/// The row-major scalar elements of the array variable `sv` of shape `dims`.
+fn sim_var_elements(sv: &SimCodeVar::SimVar, dims: &[u32]) -> Vec<metamodelica::Ref<SimCodeVar::SimVar>> {
+    row_major_indices(dims)
+        .into_iter()
+        .map(|idx| {
+            let mut e = sv.clone();
+            e.name = cref_with_indices(&sv.name, &idx);
+            e.numArrayElement = metamodelica::nil();
+            e.arrayCref = None;
+            e.aliasvar = reindex_aliasvar(&sv.aliasvar, &idx);
+            e.initialValue = index_attr(&sv.initialValue, &idx);
+            e.nominalValue = index_attr(&sv.nominalValue, &idx);
+            e.minValue = index_attr(&sv.minValue, &idx);
+            e.maxValue = index_attr(&sv.maxValue, &idx);
+            metamodelica::Ref::new(e)
+        })
+        .collect()
+}
+
+/// A whole-array Jacobian variable (`--simCodeScalarize=false`) as its elements,
+/// numbered from its own index as C lays them out in `tmpVars`/`resultVars`; any
+/// other variable, or one sized at runtime, as itself.
+pub(super) fn jac_var_elements(
+    sv: &metamodelica::Ref<SimCodeVar::SimVar>,
+) -> Vec<metamodelica::Ref<SimCodeVar::SimVar>> {
+    let whole = matches!(&*sv.type_, DAE::Type::T_ARRAY { .. })
+        && run_base(&sv.name).is_some()
+        && !openmodelica_util::Flags::getConfigBool(openmodelica_util::Flags::SIM_CODE_SCALARIZE.clone())
+            .unwrap_or(true);
+    let dims: Option<Vec<u32>> = lst(&sv.numArrayElement).map(|d| d.trim().parse().ok()).collect();
+    match dims {
+        Some(dims) if whole && !dims.is_empty() => sim_var_elements(sv, &dims)
+            .into_iter()
+            .zip(sv.index..)
+            .map(|(mut e, index)| {
+                metamodelica::Ref::make_mut(&mut e).index = index;
+                e
+            })
+            .collect(),
+        _ => vec![sv.clone()],
+    }
 }
 
 /// The key the elements of an array variable named `cr` extend with their
@@ -1044,6 +1083,7 @@ pub(super) fn build_var_map(
         mathevents_off: layout.mathevents_off,
         n_mathevents: layout.n_math as u32,
         lambda_off: layout.lambda_off,
+        skip_start_off: layout.skip_start_off,
         homotopy_method: layout.homotopy_method.code(),
         old_real: layout
             .has_old_real
@@ -1075,7 +1115,7 @@ pub(super) fn build_var_map(
                     is_start: false,
                     is_bool: is_boolean_type(&sv.type_),
                     is_string: false,
-                    enum_names: enumeration_names(&sv.type_).unwrap_or_default(),
+                    enum_names: enumeration_type(&sv.type_).map(|e| e.literals).unwrap_or_default(),
                 });
             }
         }
@@ -1129,7 +1169,7 @@ pub(super) fn build_var_map(
                 discrete: sv.isDiscrete,
                 filter: filter_bits(sv),
                 unvarying: false,
-                enumeration: enumeration_names(&sv.type_),
+                enumeration: enumeration_type(&sv.type_),
             }))
         };
     // The elements of an array variable resolve through one entry per table,
@@ -1175,7 +1215,7 @@ pub(super) fn build_var_map(
                 is_start: true,
                 is_bool: is_boolean_type(&sv.type_),
                 is_string: false,
-                enum_names: enumeration_names(&sv.type_).unwrap_or_default(),
+                enum_names: enumeration_type(&sv.type_).map(|e| e.literals).unwrap_or_default(),
             });
         }
         Ok(())
@@ -1388,7 +1428,7 @@ pub(super) fn build_var_map(
                 discrete: sv.isDiscrete,
                 filter: filter_bits(sv),
                 unvarying: false,
-                enumeration: enumeration_names(&sv.type_),
+                enumeration: enumeration_type(&sv.type_),
             });
         }
     }
@@ -1444,7 +1484,7 @@ pub(super) fn build_var_map(
                         discrete: av.isDiscrete,
                         filter: filter_bits(av) | var_filter::ALIAS,
                         unvarying: false,
-                        enumeration: enumeration_names(&av.type_),
+                        enumeration: enumeration_type(&av.type_),
                     });
                 }
             }
@@ -1508,7 +1548,7 @@ pub(super) fn build_var_map(
                 discrete: av.isDiscrete,
                 filter: filter_bits(av) | var_filter::ALIAS,
                 unvarying: false,
-                enumeration: enumeration_names(&av.type_),
+                enumeration: enumeration_type(&av.type_),
             }))
         };
         results.push_at(pos, make, &mut compact, brackets)?;
@@ -1656,6 +1696,25 @@ fn register_dyn(map: &mut SimVarMap, dv: &DynVar, slot: SimSlot, start_off: Opti
         Arc::make_mut(&mut map.start_slots).insert_dyn_array(key.clone(), StartSlot(s), dims.clone());
     }
     add_groups(map, &key, dims, slot, (slot.pre != 0).then_some(slot.pre))
+}
+
+/// Register a Real variable of a runtime-sized system's Jacobian at `off`.
+pub(super) fn register_jac_var(map: &mut SimVarMap, key: &str, off: SimOff, dims: &[Sz]) -> Result<()> {
+    let slot = SimSlot {
+        off,
+        wty: WTy::F64,
+        negate: Neg::None,
+        heap: false,
+        pre: 0,
+    };
+    if dims.is_empty() {
+        Arc::make_mut(&mut map.vars).slots.insert(key.to_string(), slot);
+        return Ok(());
+    }
+    Arc::make_mut(&mut map.vars)
+        .slots
+        .insert_dyn_array(key.to_string(), slot, dims.to_vec());
+    add_groups(map, key, dims.to_vec(), slot, None)
 }
 
 /// Register an [`ArrayRun`] whole: its element slots start at `off`.

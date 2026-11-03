@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 // teardown_command: rm Tables.mof
 
 loadModel(ModelicaServices, {"4.1.0"});getErrorString();

@@ -3,7 +3,6 @@
 // status: correct
 // cflags:
 // teardown_command: rm -rf initializationTests.discreteTest3* _initializationTests.discreteTest3* output.log
-// cflags: -d=-newInst
 //
 //  case for discrete variables during initialization
 //
@@ -12,9 +11,9 @@ loadString("
 within ;
 package initializationTests
   model discreteTest3
-    discrete Real d1(start=1, fixed=false); // d1 = 0.0 | pre(d1) = 1.0
-    discrete Real d2(start=1, fixed=false); // d2 = 1.0 | pre(d2) = 1.0
-    discrete Real d3(start=1, fixed=true);  // d3 = 0.0 | pre(d3) = 1.0
+    discrete Integer d1(start=1, fixed=false); // d1 = 0.0 | pre(d1) = 1.0
+    discrete Integer d2(start=1, fixed=false); // d2 = 1.0 | pre(d2) = 1.0
+    discrete Integer d3(start=1, fixed=true);  // d3 = 0.0 | pre(d3) = 1.0
 
     Real x1;  // 1.0
     Real x2;  // 1.0
@@ -33,9 +32,9 @@ package initializationTests
     der(x2) = 0;
     der(x3) = 0;
     
-    d1 = if time > 0.5 then 1.0 else 0.0;
-    d2 = if time < 0.5 then 1.0 else 0.0;
-    d3 = if time > 0.5 then 1.0 else 0.0;
+    d1 = if time > 0.5 then 1 else 0;
+    d2 = if time < 0.5 then 1 else 0;
+    d3 = if time > 0.5 then 1 else 0;
   end discreteTest3;
 end initializationTests;
 "); getErrorString();

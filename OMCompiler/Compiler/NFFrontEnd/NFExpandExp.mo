@@ -631,8 +631,8 @@ public
       case Op.MATRIX_PRODUCT    then expandBinaryMatrixProduct(exp);
       case Op.DIV_SCALAR_ARRAY  then expandBinaryScalarArray(exp, Op.DIV);
       case Op.DIV_ARRAY_SCALAR  then expandBinaryArrayScalar(exp, Op.DIV);
-      case Op.POW_SCALAR_ARRAY  then expandBinaryScalarArray(exp, Op.POW);
-      case Op.POW_ARRAY_SCALAR  then expandBinaryArrayScalar(exp, Op.POW);
+      case Op.POW_SCALAR_ARRAY  then expandBinaryScalarArray(exp, Op.POW, op.integerRHS);
+      case Op.POW_ARRAY_SCALAR  then expandBinaryArrayScalar(exp, Op.POW, op.integerRHS);
       case Op.POW_MATRIX        then expandBinaryPowMatrix(exp, resize);
       else                           expandBinaryElementWise(exp);
     end match;
@@ -706,6 +706,7 @@ public
   function expandBinaryScalarArray
     input Expression exp;
     input NFOperator.Op scalarOp;
+    input Boolean integerRHS = false;
     output Expression outExp;
     output Boolean expanded;
   protected
@@ -716,7 +717,7 @@ public
     (exp2, expanded) := expand(exp2);
 
     if expanded then
-      op := Operator.OPERATOR(Type.arrayElementType(Operator.typeOf(op)), scalarOp);
+      op := Operator.OPERATOR(Type.arrayElementType(Operator.typeOf(op)), scalarOp, integerRHS);
       outExp := Expression.mapArrayElements(exp2,
         function SimplifyExp.simplifyBinaryOp(op = op, exp1 = exp1));
     else
@@ -739,6 +740,7 @@ public
   function expandBinaryArrayScalar
     input Expression exp;
     input NFOperator.Op scalarOp;
+    input Boolean integerRHS = false;
     output Expression outExp;
     output Boolean expanded;
   protected
@@ -749,7 +751,7 @@ public
     (exp1, expanded) := expand(exp1);
 
     if expanded then
-      op := Operator.OPERATOR(Type.arrayElementType(Operator.typeOf(op)), scalarOp);
+      op := Operator.OPERATOR(Type.arrayElementType(Operator.typeOf(op)), scalarOp, integerRHS);
       outExp := Expression.mapArrayElements(exp1,
         function SimplifyExp.simplifyBinaryOp(op = op, exp2 = exp2));
     else

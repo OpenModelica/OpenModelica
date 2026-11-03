@@ -14,7 +14,6 @@ model Cross
 equation
   z = cross(x,y);
   zi = cross(xi,yi);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Cross;
 
 // Result:

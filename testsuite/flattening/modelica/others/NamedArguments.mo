@@ -19,7 +19,6 @@ model test
   Real y=foo(x=v,y=w);
   Real z=foo(y=v,x=w);
   Real z2=foo(w,v);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end test;
 
 

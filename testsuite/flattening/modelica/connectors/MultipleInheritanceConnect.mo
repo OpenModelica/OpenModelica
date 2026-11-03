@@ -38,7 +38,6 @@ end E;
 
 model MultipleInheritanceConnect
   E e;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MultipleInheritanceConnect;
 
 // Result:
@@ -48,9 +47,9 @@ end MultipleInheritanceConnect;
 //   Real e.d.port.p "potential Variable";
 //   Real e.d.port.f "flow Variable";
 // equation
-//   e.d.port.f = e.d.port.p;
-//   e.port.f = 0.0;
-//   (-e.port.f) + e.d.port.f = 0.0;
 //   e.d.port.p = e.port.p;
+//   e.port.f = 0.0;
+//   e.d.port.f - e.port.f = 0.0;
+//   e.d.port.f = e.d.port.p;
 // end MultipleInheritanceConnect;
 // endResult

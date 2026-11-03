@@ -1867,7 +1867,8 @@ uniontype Function
 
     // If the function is pure, check that it doesn't contain any impure calls.
     if not isImpure(fn) then
-      pure := foldExp(fn, function checkPureCall(fn = fn), true);
+      pure := foldExp(fn, function checkPureCall(fn = fn,
+        warn = not InstContext.inScripting(fn_context)), true);
 
       // The function does contain impure calls, mark the function as impure.
       if not pure then
@@ -1884,6 +1885,7 @@ uniontype Function
   function checkPureCall
     input Expression exp;
     input Function fn;
+    input Boolean warn "A script calls impure functions freely.";
     input output Boolean pure;
   algorithm
     if not pure then
@@ -1893,7 +1895,7 @@ uniontype Function
     if Expression.isImpureCall(exp) then
       pure := false;
 
-      if Config.languageStandardAtLeast(Config.LanguageStandard._3_3) then
+      if warn and Config.languageStandardAtLeast(Config.LanguageStandard._3_3) then
         Error.addSourceMessage(Error.PURE_FUNCTION_WITH_IMPURE_CALLS,
           {AbsynUtil.pathString(Function.name(fn)), Expression.getName(exp)},
           InstNode.info(InstNode.fromHandle(fn.node)));
@@ -2005,6 +2007,19 @@ uniontype Function
     input Function fn;
     output Boolean isBuiltin = isBuiltinAttr(fn.attributes);
   end isBuiltin;
+
+  function isScripting
+    input Function fn;
+    output Boolean res = isScriptingNode(instance(fn));
+  end isScripting;
+
+  function isScriptingNode
+    "Whether the node is in OpenModelica.Scripting. Tested on the scope,
+     since a builtin function's path is only its name."
+    input InstNode node;
+    output Boolean res = AbsynUtil.pathPrefixOf(
+      Absyn.QUALIFIED("OpenModelica", Absyn.IDENT("Scripting")), InstNode.scopePath(node));
+  end isScriptingNode;
 
   function isBuiltinAttr
     input DAE.FunctionAttributes attrs;
@@ -2134,6 +2149,21 @@ uniontype Function
     input Function fn;
     output Boolean isImpure = fn.attributes.purity == DAE.Purity.IMPURE;
   end isImpure;
+
+  function isExplicitlyImpure
+    "Returns true if the function is declared impure, as opposed to e.g. an
+     external function that is impure by default."
+    input Function fn;
+    output Boolean isImpure;
+  algorithm
+    isImpure := match InstNode.fromHandle(fn.node)
+      local
+        SCode.FunctionRestriction fr;
+      case InstNode.CLASS_NODE(definition = SCode.CLASS(restriction = SCode.R_FUNCTION(functionRestriction = fr)))
+        then SCodeUtil.isImpureFunctionRestriction(fr);
+      else false;
+    end match;
+  end isExplicitlyImpure;
 
   function isFunctionPointer
     input Function fn;
@@ -2742,7 +2772,9 @@ protected
           DAE.FUNCTION_ATTRIBUTES(inline_ty, generateEvents, purity, is_partial,
             DAE.FUNCTION_BUILTIN(SOME(name), has_unbox_args), DAE.FP_NON_PARALLEL(), DAE.NoReturn.RETURNS);
 
-      // Parallel function: there are some builtin functions.
+      // Parallel function: there are some builtin functions. Their results depend
+      // on the executing thread, and the parser drops the impure prefix of
+      // parallel and kernel functions.
       case SCode.FunctionRestriction.FR_PARALLEL_FUNCTION()
         algorithm
           in_params := list(InstNode.name(i) for i in inputs);
@@ -2752,7 +2784,7 @@ protected
           generateEvents := InstBasics.commentGenerateEvents(cmt);
           has_unbox_args := hasUnboxArgsAnnotation(cmt);
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, generateEvents, purity, is_partial,
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, generateEvents, DAE.Purity.IMPURE, is_partial,
             DAE.FUNCTION_BUILTIN(SOME(name), has_unbox_args), DAE.FP_PARALLEL_FUNCTION(), DAE.NoReturn.RETURNS);
 
       // Parallel function: non-builtin.
@@ -2766,7 +2798,7 @@ protected
 
       // Kernel functions: never builtin and never inlined.
       case SCode.FunctionRestriction.FR_KERNEL_FUNCTION()
-        then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(), false, purity, is_partial,
+        then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(), false, DAE.Purity.IMPURE, is_partial,
           DAE.FUNCTION_NOT_BUILTIN(), DAE.FP_KERNEL_FUNCTION(), DAE.NoReturn.RETURNS);
 
       // Normal function.
@@ -2797,7 +2829,39 @@ protected
     checkParamTypes2(fn.inputs);
     checkParamTypes2(list(InstNode.fromHandle(o) for o in fn.outputs));
     checkParamTypes2(fn.locals);
+    checkExternalObjectOutputs(fn);
   end checkParamTypes;
+
+  function checkExternalObjectOutputs
+    "Only the constructor may return an external object, MLS 3.7 section 12.9.8."
+    input Function fn;
+  protected
+    Type ty;
+    NFInstNode.ScopeRef ctor_ref;
+    InstNode ctor;
+  algorithm
+    for o in fn.outputs loop
+      ty := Type.arrayElementType(InstNode.getType(InstNode.fromHandle(o)));
+
+      () := match ty
+        case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT(constructor = ctor_ref))
+          algorithm
+            ctor := InstNode.borrow(ctor_ref);
+
+            if not InstNode.isSame(InstNode.fromHandle(fn.node), ctor) then
+              Error.addSourceMessage(Error.FUNCTION_RETURN_EXT_OBJ,
+                {AbsynUtil.pathString(fn.path),
+                 AbsynUtil.pathString(AbsynUtil.suffixPath(InstNode.rootPath(Type.complexNode(ty)), InstNode.name(ctor)))},
+                InstNode.info(InstNode.fromHandle(fn.node)));
+              fail();
+            end if;
+          then
+            ();
+
+        else ();
+      end match;
+    end for;
+  end checkExternalObjectOutputs;
 
   function checkParamTypes2
     input list<InstNode> params;

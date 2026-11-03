@@ -31,7 +31,6 @@ end InnerOuterWithExtends;
 model InnerOuterWithExtendsTest
   import InnerOuterWithExtends.*;
   extends C1;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InnerOuterWithExtendsTest;
 
 

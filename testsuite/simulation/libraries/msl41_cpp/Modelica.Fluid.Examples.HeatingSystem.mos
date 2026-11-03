@@ -1,7 +1,6 @@
 // name:     Modelica.Fluid.Examples.HeatingSystem
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library
@@ -11,8 +10,10 @@ runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 packageVersion := "4.1.0";
 
-modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+timeoutSim := 600;
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Fluid.Examples.HeatingSystem);
+stopTime := 600.0;
 compareVars :=
 {
    "heater.mediums[1].h",
@@ -35,12 +36,23 @@ runScript(modelTesting);getErrorString();
 // "
 // ""
 // "4.1.0"
-// OpenModelicaModelTesting.Kind.Compilation
+// 600
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Fluid.Examples.HeatingSystem
+// 600.0
 // {"heater.mediums[1].h", "heater.mediums[1].p", "pipe.mediums[1].h", "pipe.mediums[2].h", "pipe.mediums[2].p", "radiator.mediums[1].h", "radiator.mediums[1].p", "tank.level", "tank.medium.h"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Compilation succeeded
+// Simulation options: startTime = 0.0, stopTime = 600.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.HeatingSystem', options = '', outputFormat = 'mat', variableFilter = 'time|heater.mediums.1..h|heater.mediums.1..p|pipe.mediums.1..h|pipe.mediums.2..h|pipe.mediums.2..p|radiator.mediums.1..h|radiator.mediums.1..p|tank.level|tank.medium.h', cflags = '', simflags = ' -emit_protected'
+// Result file: Modelica.Fluid.Examples.HeatingSystem_res.mat
+// Files Equal!
+// [Modelica 4.1.0+maint.om/Media/Water/IF97_Utilities.mo:900:9-900:73:writable] Warning: Output parameter bpro.cv was not assigned a value. This is deprecated and will become an error in future releases.
+// [Modelica 4.1.0+maint.om/Media/Water/IF97_Utilities.mo:937:9-937:73:writable] Warning: Output parameter bpro.cv was not assigned a value. This is deprecated and will become an error in future releases.
+// [Modelica 4.1.0+maint.om/Media/Water/IF97_Utilities.mo:900:9-900:73:writable] Warning: Output parameter bpro.cv was not assigned a value. This is deprecated and will become an error in future releases.
+// [Modelica 4.1.0+maint.om/Media/Water/IF97_Utilities.mo:937:9-937:73:writable] Warning: Output parameter bpro.cv was not assigned a value. This is deprecated and will become an error in future releases.
+// [Modelica 4.1.0+maint.om/Media/Water/IF97_Utilities.mo:900:9-900:73:writable] Warning: Output parameter bpro.cv was not assigned a value. This is deprecated and will become an error in future releases.
+// [Modelica 4.1.0+maint.om/Media/Water/IF97_Utilities.mo:937:9-937:73:writable] Warning: Output parameter bpro.cv was not assigned a value. This is deprecated and will become an error in future releases.
 // Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+//
 // "true
 // "
 // ""

@@ -175,7 +175,6 @@ set(SOURCE_FMU_COMMON_HEADERS "omc_dll.h"
                               "util/generic_array.h"
                               "util/index_spec.h"
                               "util/integer_array.h"
-                              "meta/java_interface.h"
                               "util/ModelicaUtilitiesExtra.h"
                               "util/modelica.h"
                               "util/modelica_string.h"
@@ -333,15 +332,30 @@ list(JOIN SOURCE_FMU_CVODE_RUNTIME_FILES_LIST_QUOTED ",\n                       
 add_library(SimulationRuntimeFMI STATIC)
 add_library(omc::simrt::simrtfmi ALIAS SimulationRuntimeFMI)
 
+# Every runtime source an FMU compiles, except fmi-export/, ModelicaExternalC/
+# and the CVODE files: buildModelFMU links this archive instead of compiling
+# them for each FMU it builds on this platform.
 target_sources(SimulationRuntimeFMI PRIVATE ${SOURCE_FMU_COMMON_FILES_LIST}
                                             ${SOURCE_FMU_LS_FILES_LIST}
                                             ${SOURCE_FMU_NLS_FILES_LIST}
                                             ${SOURCE_FMU_MIXED_FILES_LIST}
-                                            ${3RD_CMINPACK_FMU_FILES})
+                                            ${3RD_CMINPACK_FMU_FILES}
+                                            ${3RD_DGESV_FILES})
 
 target_compile_definitions(SimulationRuntimeFMI PRIVATE OMC_MINIMAL_RUNTIME=1;OMC_FMI_RUNTIME=1;CMINPACK_NO_DLL)
 
+set_target_properties(SimulationRuntimeFMI PROPERTIES POSITION_INDEPENDENT_CODE ON
+                                                      C_VISIBILITY_PRESET hidden)
+
+# An FMU links this archive without --coverage.
+if(OM_ENABLE_COVERAGE)
+  get_target_property(_om_simrtfmi_options SimulationRuntimeFMI COMPILE_OPTIONS)
+  list(REMOVE_ITEM _om_simrtfmi_options ${OM_COVERAGE_COMPILE_OPTIONS})
+  set_target_properties(SimulationRuntimeFMI PROPERTIES COMPILE_OPTIONS "${_om_simrtfmi_options}")
+endif()
+
 target_include_directories(SimulationRuntimeFMI PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(SimulationRuntimeFMI PRIVATE ${OMCompiler_3rdParty_SOURCE_DIR}/dgesv/include)
 
 target_link_libraries(SimulationRuntimeFMI PUBLIC OMCPThreads::OMCPThreads)
 

@@ -35,17 +35,13 @@ end ExpandablePack;
 
 model ExpandableVariableUsed
   extends ExpandablePack.Test;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ExpandableVariableUsed;
 
 // Result:
 // class ExpandableVariableUsed
-//   Real a1.bin.x;
 //   Real a1.y;
-//   Real b1.bout.x;
 // equation
 //   a1.y = 2.0 * a1.bin.x;
 //   b1.bout.x = sin(time);
-//   a1.bin.x = b1.bout.x;
 // end ExpandableVariableUsed;
 // endResult

@@ -1,7 +1,6 @@
 // name: StateMachine
 // keywords: 
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the getTransitions, addTransition and deleteTransition APIs.
 //

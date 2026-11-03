@@ -744,6 +744,7 @@ algorithm
       Real valueR;
       Integer valueI;
       DAE.CallAttributes attr;
+
      ///Add label to a+b
      case  (e as DAE.BINARY(exp1 = e1,operator = (op as DAE.ADD()),exp2 = e2), vars, idx)
 
@@ -1354,8 +1355,10 @@ algorithm
       list<String> labels,labels1,labels2;
       DAE.CallAttributes attr;
       DAE.Type tp;
+      Boolean int_rhs;
+
     //Linearize x^a
-    case (e as DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = tp),exp2 = e2), vars, idx)
+    case (e as DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = tp, integerRHS = int_rhs),exp2 = e2), vars, idx)
       algorithm
         true := Expression.expHasCrefs(e1);
         false := Expression.expHasCrefs(e2);
@@ -1368,9 +1371,9 @@ algorithm
 
         (e3,vars1,idx1,labels):=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
       then
-        (DAE.BINARY(e3,DAE.POW(tp),e2),vars1,idx1,labels);
+        (DAE.BINARY(e3,DAE.POW(tp,int_rhs),e2),vars1,idx1,labels);
     //Linearize a^x
-    case (e as DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = tp),exp2 = e2), vars, idx)
+    case (e as DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = tp, integerRHS = int_rhs),exp2 = e2), vars, idx)
       algorithm
         false := Expression.expHasCrefs(e1);
         true := Expression.expHasCrefs(e2);
@@ -1382,7 +1385,7 @@ algorithm
         //Debug.fcall(Flags.CPP,print,"Add label to pow exp "+& ExpressionBasics.printExpStr(e) +& "\n");
 
         (e3,vars1,idx1,labels):=addLabelToExpForLinearization(e2,vars,idx,reduceList,inVarRepl);
-        e4:=DAE.BINARY(e1,DAE.POW(tp),e3);
+        e4:=DAE.BINARY(e1,DAE.POW(tp,int_rhs),e3);
         e5:=linearizeExp(e4,e3,vars,inVarRepl);
         (e6,vars2,idx2,labels1):=addTwoLabels(e4,e5,true,vars1,idx1,reduceList);
         labels2:=listAppend(labels,labels1);

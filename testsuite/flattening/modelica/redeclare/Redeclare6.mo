@@ -21,7 +21,6 @@ model Redeclare6
 
   Lib.PackageModel mod1(redeclare package Pack = Pack);
   Lib.PackageModel mod2(redeclare package Pack = Lib.TypePackage);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Redeclare6;
 
 // Result:

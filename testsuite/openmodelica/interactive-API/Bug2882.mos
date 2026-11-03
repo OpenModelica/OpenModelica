@@ -1,6 +1,5 @@
 // name: Bug2882.mos [BUG: #2882]
 // status: correct
-// cflags: -d=-newInst
 
 loadModel(Modelica,{"4.1.0"}); getErrorString();
 getDerivedClassModifierValue(Modelica.Fluid.Vessels.BaseClasses.PartialLumpedVessel.Medium.MassFlowRate,unit); getErrorString();

@@ -1279,6 +1279,13 @@ algorithm
   end match;
 end isParam;
 
+public function isParamWithoutFixedValue
+"Return true if variable is a parameter with fixed = false, i.e. its value is
+  computed during initialization."
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean = isParam(inVar) and not varFixed(inVar);
+end isParamWithoutFixedValue;
+
 public function makeParam
   "Change variable to parameter"
   input output BackendDAE.Var var;

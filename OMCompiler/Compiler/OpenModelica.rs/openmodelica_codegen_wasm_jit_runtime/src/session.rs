@@ -37,6 +37,8 @@ unsafe extern "C" {
     fn rt_host_take_warnings(ptr: u32, max: u32) -> u32;
     /// Same for the `reinit`s the model recorded with `rt_reinit_note`.
     fn rt_host_take_reinits(ptr: u32, max: u32) -> u32;
+    /// Move the host's pending failed assertion (`[i32; 9]`) to `ptr`; 0 if none.
+    fn rt_host_take_assert(ptr: u32) -> i32;
     /// The driver's `AssertHold` mode, on the host: that is where `rt_assert`
     /// lives, whichever driver runs.
     fn rt_host_set_assert_hold(v: i32);
@@ -55,6 +57,28 @@ pub(crate) fn now_ms_hook() -> f64 {
 }
 fn cancel_hook() -> bool {
     unsafe { rt_host_cancel() != 0 }
+}
+
+// A model error unwinds to its `<entry>$guard` past any runtime frames between,
+// whose epilogues never hand the shadow stack back.
+core::arch::global_asm!(
+    ".globaltype __stack_pointer, i32",
+    ".globl rt_session_sp_get",
+    "rt_session_sp_get:",
+    ".functype rt_session_sp_get () -> (i32)",
+    "global.get __stack_pointer",
+    "end_function",
+    ".globl rt_session_sp_set",
+    "rt_session_sp_set:",
+    ".functype rt_session_sp_set (i32) -> ()",
+    "local.get 0",
+    "global.set __stack_pointer",
+    "end_function",
+);
+
+unsafe extern "C" {
+    fn rt_session_sp_get() -> u32;
+    fn rt_session_sp_set(sp: u32);
 }
 
 // Table-slot order the host populates (relative to `fn_base`): a function's slot is
@@ -80,6 +104,8 @@ fn slot_of(name: &str) -> Option<u32> {
 struct InWasmEngine {
     fn_base: u32,
     present_mask: u64,
+    /// Slots holding the model's `<entry>$guard`, `(i32) -> i32`, nonzero if it threw.
+    guarded_mask: u64,
 }
 
 impl InWasmEngine {
@@ -109,6 +135,15 @@ impl SimEngine for InWasmEngine {
             return Err("in-wasm engine: required model function not exported");
         }
         let idx = self.fn_base + slot;
+        if self.guarded_mask & (1u64 << slot) != 0 {
+            let f: extern "C" fn(u32) -> i32 = unsafe { core::mem::transmute(idx as usize) };
+            let sp = unsafe { rt_session_sp_get() };
+            if f(arg) != 0 {
+                unsafe { rt_session_sp_set(sp) };
+                return Err(driver::ASSERT_ERR);
+            }
+            return Ok(());
+        }
         let f: extern "C" fn(u32) = unsafe { core::mem::transmute(idx as usize) };
         f(arg);
         Ok(())
@@ -167,10 +202,8 @@ impl SimEngine for InWasmEngine {
         }
     }
     fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
-        // The model imports `rt_assert` from the host; a failed assert traps and
-        // unwinds out of `rt_sim_advance` to the host, which reports it. Nothing
-        // to take in-wasm.
-        None
+        let mut buf = [0i32; 9];
+        (unsafe { rt_host_take_assert(buf.as_mut_ptr() as u32) } != 0).then_some(buf)
     }
     fn rt_stats(&mut self) -> [u64; driver::RT_STATS] {
         let mut out = [0u64; driver::RT_STATS];
@@ -344,7 +377,11 @@ impl Drop for HostOut {
 #[cfg(not(target_os = "wasi"))]
 fn open_result(path: &str) -> Option<Box<dyn ResultOut>> {
     (unsafe { rt_host_result_open(path.as_ptr() as u32, path.len() as u32) } == 0).then(|| {
-        Box::new(HostOut { buf: Vec::with_capacity(1 << 18), ok: true, closed: false }) as Box<dyn ResultOut>
+        Box::new(HostOut {
+            buf: Vec::with_capacity(1 << 18),
+            ok: true,
+            closed: false,
+        }) as Box<dyn ResultOut>
     })
 }
 
@@ -358,7 +395,11 @@ pub extern "C" fn rt_sim_set_result(path: u32, path_len: u32, keep: u32, keep_le
     *result_cfg() = Some(ResultCfg {
         path: String::from_utf8_lossy(path).into_owned(),
         keep: keep.iter().map(|&k| k != 0).collect(),
-        precision: if single != 0 { Precision::Single } else { Precision::Double },
+        precision: if single != 0 {
+            Precision::Single
+        } else {
+            Precision::Double
+        },
     });
     0
 }
@@ -401,7 +442,10 @@ pub extern "C" fn rt_sim_set_args(ptr: u32, len: u32) -> i32 {
     let argv = simflags::argv_from_bytes(bytes);
     // The host resolves `-variableFilter` (`rt_sim_set_result`'s `keep`).
     match simflags::parse(&argv).and_then(|f| {
-        let cap = simflags::Capabilities { variable_filter: true, ..crate::sundials::capabilities() };
+        let cap = simflags::Capabilities {
+            variable_filter: true,
+            ..crate::sundials::capabilities()
+        };
         simflags::check(&f, cap).map(|()| f)
     }) {
         Ok(f) => {
@@ -480,10 +524,17 @@ pub extern "C" fn rt_sim_set_overrides(ptr: u32, len: u32) -> i32 {
 /// Start a resumable in-wasm run. `meta_ptr`/`meta_len` point at the model's
 /// encoded [`SimMeta`] blob (its `om_meta` segment); `fn_base` is the first table
 /// slot the host populated with the model's exports (in `N_SLOTS` order);
-/// `present_mask` bit `s` is set iff slot `s` holds a real funcref. Returns 0 on
-/// success, <0 on error.
+/// `present_mask` bit `s` is set iff slot `s` holds a real funcref, `guarded_mask`
+/// iff that funcref is the export's `$guard`. Returns 0 on success, <0 on error
+/// (-2: initialization failed, -3: by a model error).
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, present_mask: u64) -> i32 {
+pub extern "C" fn rt_sim_start(
+    meta_ptr: u32,
+    meta_len: u32,
+    fn_base: u32,
+    present_mask: u64,
+    guarded_mask: u64,
+) -> i32 {
     // Any prior session is dropped (frees its buffers) before starting a new one.
     *session() = None;
     *result_stream() = None;
@@ -528,7 +579,14 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     // `+profiling`: the traces are collected here and rendered by the host, which
     // is the side that knows what the result file it reports on ended up being
     // (`profiling::snapshot` / `rt_sim_prof_ptr`).
-    openmodelica_sim_meta::profiling::start(&mut InWasmEngine { fn_base, present_mask }, &model);
+    openmodelica_sim_meta::profiling::start(
+        &mut InWasmEngine {
+            fn_base,
+            present_mask,
+            guarded_mask,
+        },
+        &model,
+    );
     driver::set_cancel_hook(cancel_hook);
     driver::set_init_done_hook(init_done_hook);
     openmodelica_sim_meta::files::set_writer(|path, bytes| {
@@ -537,13 +595,17 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     });
     driver::set_assert_hold_hook(|m| unsafe { rt_host_set_assert_hold(m as i32) });
 
-    let mut engine = InWasmEngine { fn_base, present_mask };
+    let mut engine = InWasmEngine {
+        fn_base,
+        present_mask,
+        guarded_mask,
+    };
     let sim_data = crate::rt_sim_data_new(model.layout.total);
 
     let method = model.method.clone();
     let driver = match driver::make_driver(&mut engine, &model, sim_data, method.as_str()) {
         Ok((d, _label)) => d,
-        Err(_) => return -2,
+        Err(err) => return failure(err),
     };
     let n_reals = driver::row_width(&model.layout);
 
@@ -577,7 +639,8 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
 }
 
 /// Integrate for about `budget_ms` of wall-clock (`+inf` runs to completion),
-/// then return. Status: 0 running, 1 done, 2 terminated, 3 cancelled, <0 error.
+/// then return. Status: 0 running, 1 done, 2 terminated, 3 cancelled, <0 error
+/// (-3: a model error).
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_sim_advance(budget_ms: f64) -> i32 {
     let Some(s) = session().as_mut() else {
@@ -587,15 +650,19 @@ pub extern "C" fn rt_sim_advance(budget_ms: f64) -> i32 {
         return 1;
     }
     let mut adv = {
-        let Session { engine, driver, model, .. } = &mut *s;
+        let Session {
+            engine, driver, model, ..
+        } = &mut *s;
         driver.advance(engine, model, budget_ms)
     };
     // C's `performSimulation` catch, here rather than in the host loop: only
     // `advance` knows where the step boundary is.
     while let Err(err) = adv {
-        let Session { engine, driver, model, .. } = &mut *s;
+        let Session {
+            engine, driver, model, ..
+        } = &mut *s;
         if !driver::is_model_throw(err) || !driver.retry_step(engine, model).unwrap_or(false) {
-            return -2;
+            return failure(err);
         }
         adv = driver.advance(engine, model, budget_ms);
     }
@@ -609,8 +676,12 @@ pub extern "C" fn rt_sim_advance(budget_ms: f64) -> i32 {
             let _ = driver::finalize_run(&mut s.engine, &s.model, s.sim_data);
             3
         }
-        Err(_) => -2,
+        Err(err) => failure(err),
     }
+}
+
+fn failure(err: &str) -> i32 {
+    if driver::is_model_throw(err) { -3 } else { -2 }
 }
 
 /// Capture rows, stats and parameter values after the run completes.
@@ -619,13 +690,7 @@ fn finish(s: &mut Session) {
     s.driver.fill_stats(&s.model, &mut s.stats);
     s.rows = s.driver.take_rows();
     let at = s.driver.terminal_time();
-    let _ = driver::emit_terminal_row(
-        &mut s.engine,
-        &mut s.rows,
-        s.sim_data,
-        &s.model.layout,
-        at,
-    );
+    let _ = driver::emit_terminal_row(&mut s.engine, &mut s.rows, s.sim_data, &s.model.layout, at);
     if let Ok(Some(f)) = openmodelica_sim_meta::linearize::linearize(&mut s.engine, &s.model, s.sim_data) {
         s.lin.extend_from_slice(f.name.as_bytes());
         s.lin.push(0);
@@ -676,7 +741,9 @@ pub extern "C" fn rt_sim_n_reals() -> u32 {
 /// Rows the run produced, whether streamed to the result file or kept in the buffer.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_sim_n_rows() -> u32 {
-    session().as_ref().map_or(0, |s| s.rows_written + (s.rows.len() as u32) / s.n_reals.max(1))
+    session()
+        .as_ref()
+        .map_or(0, |s| s.rows_written + (s.rows.len() as u32) / s.n_reals.max(1))
 }
 /// The initial result row (`result::decode_first_row`); empty when the run was
 /// given no result file to write.

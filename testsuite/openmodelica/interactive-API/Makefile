@@ -40,11 +40,14 @@ CopyClass9.mos \
 CopyClass10.mos \
 CopyClassInvalid1.mos \
 CopyClassRedeclare1.mos \
-daeModeHomotopy.mos \
 DefaultComponentName.mos \
 DeleteConnection.mos \
 deleteEquation1.mos \
 DialogAnnotation.mos \
+evaluateProbe1.mos \
+evaluateProbe2.mos \
+evaluateProbe3.mos \
+evaluateProbe4.mos \
 FlagParsing.mos \
 ForStatement1.mos \
 ForStatement2.mos \
@@ -59,6 +62,7 @@ GetAllSubtypeOf2.mos \
 GetAllSubtypeOf3.mos \
 GetAllSubtypeOf4.mos \
 GetAllSubtypeOf5.mos \
+getBuiltinType.mos \
 getClassComment.mos \
 getClassDiagram1.mos \
 getClassDiagram2.mos \
@@ -76,13 +80,14 @@ getComponentsTestNF.mos \
 getComponentsTestOF.mos \
 getConnectorCount.mos \
 getDefinitionAt1.mos \
-getDefinitions.mos \
 getDependencyGraph1.mos \
 getDefUseChains1.mos \
 getDefUseChains2.mos \
 getDefUseChains3.mos \
 getDefUseChains4.mos \
 getDefUseChains5.mos \
+getDefUseChains6.mos \
+getDefUseChains7.mos \
 getDialogAnnotation.mos \
 getElementAnnotation.mos \
 getElements1.mos \
@@ -96,6 +101,8 @@ getNthComponentAnnotation.mos \
 getNthConnector.mos \
 getNthConnectorIconAnnotation.mos \
 getNthImport.mos \
+getProbeTree1.mos \
+getProbeTree2.mos \
 GetReplaceableChoices1.mos \
 getSimulationOptions1.mos \
 getSimulationOptions2.mos \
@@ -192,7 +199,9 @@ Ticket6287and6288.mos \
 Ticket6300.mos \
 Ticket6307.mos \
 Ticket6406.mos \
+translateAcausalDAE1.mos \
 translateResidualsDAE1.mos \
+translateResidualsDAE2.mos \
 UnpatchedModelicaServices.mos \
 updateEquation1.mos \
 UsesAnnotation1.mos \
@@ -201,7 +210,8 @@ variables.mos \
 VendorAnnotation.mos \
 TestSpace.mos \
 Issue14178.mos \
-Issue16096.mos
+Issue16096.mos \
+Issue17654.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

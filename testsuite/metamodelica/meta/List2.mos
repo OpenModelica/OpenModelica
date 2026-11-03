@@ -1,19 +1,17 @@
 // name:     List2
 // keywords: Lists
 // status:   correct
-// cflags: -d=-newInst
 // suite: metamodelica
 //
 // List Testing
 //
-setCommandLineOptions("+g=MetaModelica");
+// cflags: +g=MetaModelica
 loadFile("List2.mo");getErrorString();
 setCommandLineOptions("-d=noevalfunc,gen");
 List2.func(5);
 getErrorString();
 
 // Result:
-// true
 // true
 // ""
 // true

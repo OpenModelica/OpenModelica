@@ -13,7 +13,6 @@ equation
   ia[1] = 1;
   ia[2] = 2;
   ia[3] = 3;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TypeArray;
 
 // Result:

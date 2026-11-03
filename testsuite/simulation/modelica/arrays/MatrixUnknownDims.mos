@@ -1,0 +1,91 @@
+// name:     MatrixUnknownDims
+// keywords: array, matrix #17177
+// status:   correct
+//
+// matrix(A) requires size(A, i) = 1 for i > 2. Sizes not known until the
+// function is called are checked when it is evaluated.
+
+loadString("
+package MatrixUnknownDims
+  function f
+    input Real A[:, :, :, :];
+    output Real B[size(A, 1), size(A, 2)];
+  algorithm
+    B := matrix(A);
+  end f;
+
+  model Valid
+    Real x[2, 2] = f({{{{time}}, {{2*time}}}, {{{3*time}}, {{4*time}}}});
+  end Valid;
+
+  model Invalid
+    Real x[2, 2] = f(fill(time, 2, 2, 1, 3));
+  end Invalid;
+
+  model ConstValid
+    constant Real c[2, 2] = f({{{{1}}, {{2}}}, {{{3}}, {{4}}}});
+  end ConstValid;
+
+  model ConstInvalid
+    constant Real c[2, 2] = f(fill(1.0, 2, 2, 1, 3));
+  end ConstInvalid;
+end MatrixUnknownDims;
+"); getErrorString();
+
+instantiateModel(MatrixUnknownDims.Valid); getErrorString();
+instantiateModel(MatrixUnknownDims.ConstValid); getErrorString();
+instantiateModel(MatrixUnknownDims.ConstInvalid); getErrorString();
+simulate(MatrixUnknownDims.Valid, stopTime = 1); getErrorString();
+val(x[2, 1], 1.0);
+simulate(MatrixUnknownDims.Invalid, stopTime = 1); getErrorString();
+
+// Result:
+// true
+// ""
+// "function MatrixUnknownDims.f
+//   input Real[:, :, :, :] A;
+//   output Real[size(A, 1), size(A, 2)] B;
+// algorithm
+//   B := matrix(A);
+// end MatrixUnknownDims.f;
+//
+// class MatrixUnknownDims.Valid
+//   Real x[1,1];
+//   Real x[1,2];
+//   Real x[2,1];
+//   Real x[2,2];
+// equation
+//   x = MatrixUnknownDims.f({{{{time}}, {{2.0 * time}}}, {{{3.0 * time}}, {{4.0 * time}}}});
+// end MatrixUnknownDims.Valid;
+// "
+// ""
+// "class MatrixUnknownDims.ConstValid
+//   constant Real c[1,1] = 1.0;
+//   constant Real c[1,2] = 2.0;
+//   constant Real c[2,1] = 3.0;
+//   constant Real c[2,2] = 4.0;
+// end MatrixUnknownDims.ConstValid;
+// "
+// ""
+// ""
+// "[<interactive>:7:5-7:19:writable] Error: Invalid dimension 4 of argument to matrix, expected dimension size 1 but got 3.
+// "
+// record SimulationResult
+//     resultFile = "MatrixUnknownDims.Valid_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'MatrixUnknownDims.Valid', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 3.0
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'MatrixUnknownDims.Invalid', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: MatrixUnknownDims.Invalid
+// LOG_ASSERT        | debug   | Invalid dimension 4 of argument to matrix, expected dimension size 1 but got 3.
+// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
+// "
+// end SimulationResult;
+// ""
+// endResult

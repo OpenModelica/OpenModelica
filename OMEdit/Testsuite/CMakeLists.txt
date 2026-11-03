@@ -121,6 +121,10 @@ set(OMEDIT_TEST_RECENTMODELS_SOURCES RecentModels/RecentModelsTest.cpp
                                      RecentModels/RecentModelsTest.h)
 add_omedit_test(RecentModels "${OMEDIT_TEST_RECENTMODELS_SOURCES}")
 
+set(OMEDIT_TEST_REPLACEABLECONSTRAINEDBY_SOURCES ReplaceableConstrainedBy/ReplaceableConstrainedByTest.cpp
+                                                  ReplaceableConstrainedBy/ReplaceableConstrainedByTest.h)
+add_omedit_test(ReplaceableConstrainedBy "${OMEDIT_TEST_REPLACEABLECONSTRAINEDBY_SOURCES}")
+
 set(OMEDIT_TEST_DOCUMENTATION_SOURCES Documentation/DocumentationViewerTest.cpp
                                        Documentation/DocumentationViewerTest.h)
 add_omedit_test(DocumentationViewer "${OMEDIT_TEST_DOCUMENTATION_SOURCES}")
@@ -128,6 +132,10 @@ add_omedit_test(DocumentationViewer "${OMEDIT_TEST_DOCUMENTATION_SOURCES}")
 set(OMEDIT_TEST_OUTERPARAMETERDIALOG_SOURCES OuterParameterDialog/OuterParameterDialogTest.cpp
                                             OuterParameterDialog/OuterParameterDialogTest.h)
 add_omedit_test(OuterParameterDialog "${OMEDIT_TEST_OUTERPARAMETERDIALOG_SOURCES}")
+
+set(OMEDIT_TEST_RECORDCHOICESALLMATCHING_SOURCES RecordChoicesAllMatching/RecordChoicesAllMatching.cpp
+                                                   RecordChoicesAllMatching/RecordChoicesAllMatching.h)
+add_omedit_test(RecordChoicesAllMatching "${OMEDIT_TEST_RECORDCHOICESALLMATCHING_SOURCES}")
 
 set(OMEDIT_TEST_STRINGHANDLER_SOURCES StringHandler/StringHandlerTest.cpp
                                        StringHandler/StringHandlerTest.h)

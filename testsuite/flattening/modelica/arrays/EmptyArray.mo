@@ -8,7 +8,6 @@
 
 model EmptyArray
   Real r[:] = {};
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EmptyArray;
 
 // Result:

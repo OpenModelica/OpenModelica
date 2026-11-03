@@ -20,14 +20,13 @@ model test
 equation
 x=y;
 b = equal(x,y);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end test;
 
 // Result:
 // function equal
 //   input Real[:] x;
 //   input Real[:] y;
-//   input Real eps = 0.000001;
+//   input Real eps = 1e-6;
 //   output Boolean equal;
 // algorithm
 //   equal := false;
@@ -43,6 +42,6 @@ end test;
 //   y = {1.0, 2.0};
 //   x[1] = y[1];
 //   x[2] = y[2];
-//   b = equal({x[1], x[2]}, {y[1], y[2]}, 0.000001);
+//   b = equal(x, y, 1e-6);
 // end test;
 // endResult

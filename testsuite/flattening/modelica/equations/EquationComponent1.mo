@@ -6,14 +6,13 @@
 // into separate equations for the components.
 //
 
-class EquationComponent1
+model EquationComponent1
   record R
     Real x,y;
   end R;
   R a,b;
 equation
   a = b;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EquationComponent1;
 
 // Result:
@@ -29,7 +28,6 @@ end EquationComponent1;
 //   Real b.x;
 //   Real b.y;
 // equation
-//   a.x = b.x;
-//   a.y = b.y;
+//   a = b;
 // end EquationComponent1;
 // endResult

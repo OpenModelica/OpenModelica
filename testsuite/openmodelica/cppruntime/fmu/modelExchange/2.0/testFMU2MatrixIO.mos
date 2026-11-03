@@ -2,7 +2,6 @@
 // keywords: array storage order
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml *MatrixIOTest*
-// cflags: -d=-newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
 

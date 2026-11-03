@@ -963,6 +963,8 @@ void DuplicateClassDialog::duplicateClassHelper(LibraryTreeItem *pDestinationLib
      * If the save type is save in one file then we need to insert the new class inside the package.
      */
     insertClassInOneFilePackage(pDestinationLibraryTreeItem);
+  } else if (pDestinationLibraryTreeItem->parent()->isSaveFolderStructure()) {
+    pDestinationLibraryTreeItem->parent()->setIsSaved(false);
   }
 
   if (fileType == Directory || fileType == Directories
@@ -1010,6 +1012,7 @@ void DuplicateClassDialog::syncDuplicatedModelWithOMC(LibraryTreeItem *pLibraryT
   QString classText = pLibraryTreeItem->getClassText(pLibraryTreeModel);
   // load the string in omc so that OMC and OMEdit have same line numbers.
   MainWindow::instance()->getOMCProxy()->loadString(classText, filename, Helper::utf8, false, false);
+  MainWindow::instance()->getOMCProxy()->setSourceFile(pLibraryTreeItem->getNameStructure(), filename);
 
   if (pLibraryTreeItem->isSaveInOneFile()) {
     pLibraryTreeModel->updateChildLibraryTreeItemClassText(pLibraryTreeItem, classText, pLibraryTreeItem->getFileName());

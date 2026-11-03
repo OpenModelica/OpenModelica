@@ -12,11 +12,18 @@
 //! scalar parameter values (`params`, in `MatKind::Param` order). How a signal
 //! sources its value — a result-buffer column, a parameter slot, or a literal
 //! constant — is [`MatKind`].
+//!
+//! A signal's type is tagged in its description the way Dymola does it
+//! ([`description`]), and the literals of the enumeration types follow `data_2`
+//! in an `enumerations` matrix ([`write_enumerations`]), so a reader that stops
+//! after the six standard matrices is not affected.
 
 #![cfg_attr(not(test), no_std)]
 
 extern crate alloc;
 
+use alloc::format;
+use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 
@@ -127,6 +134,9 @@ pub struct Mat4Stream {
     /// Rows between header rewrites (`-mat_sync`); 0 = only at `finish`.
     sync: usize,
     since_sync: usize,
+    /// The [`enumeration_entry`]s [`Mat4Stream::close`] appends.
+    enumerations: Vec<String>,
+    closed: bool,
 }
 
 impl Mat4Stream {
@@ -277,7 +287,11 @@ impl Mat4Stream {
             row_idx += 1;
         }
         for &(c, neg) in &const_cols {
-            let row = if neg == Neg::Not { not_data1_row[c] } else { col_data1_row[c] };
+            let row = if neg == Neg::Not {
+                not_data1_row[c]
+            } else {
+                col_data1_row[c]
+            };
             let idx = (row - 1) as usize;
             let v = first_row.get(c).copied().unwrap_or(0.0);
             let v = if neg == Neg::Not { 1.0 - v } else { v };
@@ -295,7 +309,21 @@ impl Mat4Stream {
         let data2_pos = head.len() as u64;
         out.write(&head);
 
-        Mat4Stream { varying, n_reals, precision, n_rows: 0, ncols_pos, data2_pos, data_info, data_1, buf: Vec::new(), sync: 0, since_sync: 0 }
+        Mat4Stream {
+            varying,
+            n_reals,
+            precision,
+            n_rows: 0,
+            ncols_pos,
+            data2_pos,
+            data_info,
+            data_1,
+            buf: Vec::new(),
+            sync: 0,
+            since_sync: 0,
+            enumerations: Vec::new(),
+            closed: false,
+        }
     }
 
     /// Patch the `data_2` row count after every `rows` pushed rows (C's
@@ -336,6 +364,20 @@ impl Mat4Stream {
         out.write_at(self.ncols_pos, &(self.n_rows as i32).to_le_bytes());
     }
 
+    /// The enumeration types [`Mat4Stream::close`] writes after `data_2`.
+    pub fn set_enumerations(&mut self, entries: Vec<String>) {
+        self.enumerations = entries;
+    }
+
+    /// [`Mat4Stream::finish`], then the `enumerations` matrix; no rows can follow.
+    pub fn close(&mut self, out: &mut dyn Out) {
+        self.finish(out);
+        if !self.closed {
+            write_enumerations(out, &self.enumerations);
+            self.closed = true;
+        }
+    }
+
     pub fn n_rows(&self) -> usize {
         self.n_rows
     }
@@ -370,6 +412,8 @@ impl Mat4Stream {
 /// Serialize the whole MATLAB v4 result file for `signals`. `rows` is the
 /// row-major time-variant buffer (`n_reals` columns per row, column 0 = time);
 /// `params` holds the scalar parameter values in `MatKind::Param` order.
+/// Unlike [`Mat4Stream`], it writes `binNormal`: a variable's trajectory is
+/// contiguous, so a reader takes one column without the others.
 pub fn write_mat4(
     signals: &[MatVar],
     start_time: f64,
@@ -379,13 +423,109 @@ pub fn write_mat4(
     params: &[f64],
     precision: Precision,
 ) -> Vec<u8> {
+    let n_reals = n_reals as usize;
+    let first_row = rows.get(..n_reals).unwrap_or(&[]);
+    // The streamed header is discarded; only the column assignment is used.
+    let mut head: Vec<u8> = Vec::new();
+    let s = Mat4Stream::begin(
+        &mut head,
+        signals,
+        start_time,
+        stop_time,
+        first_row,
+        n_reals as u32,
+        params,
+        precision,
+    );
+    let n_rows = rows.len() / n_reals.max(1);
+
     let mut out: Vec<u8> = Vec::new();
-    let first_row = rows.get(..n_reals as usize).unwrap_or(&[]);
-    let mut s = Mat4Stream::begin(&mut out, signals, start_time, stop_time, first_row, n_reals, params, precision);
-    out.reserve(rows.len() / (n_reals as usize).max(1) * s.n_reals2() * precision.size());
-    s.push_rows(&mut out, rows);
-    s.finish(&mut out);
+    write_char_matrix_rows(&mut out, "Aclass", &["Atrajectory", "1.1", "", "binNormal"], 11);
+    for (name, strs) in [
+        ("name", signals.iter().map(|v| v.name).collect::<Vec<&str>>()),
+        ("description", signals.iter().map(|v| v.comment).collect()),
+    ] {
+        let len = strs.iter().map(|s| s.len()).max().unwrap_or(0) + 1;
+        write_char_matrix_rows(&mut out, name, &strs, len);
+    }
+    let info: Vec<i32> = (0..4).flat_map(|k| s.data_info.iter().map(move |i| i[k])).collect();
+    write_int_matrix(&mut out, "dataInfo", signals.len(), 4, &info);
+    let data_1: Vec<f64> = s
+        .data_1
+        .iter()
+        .enumerate()
+        .flat_map(|(i, &v)| if i == 0 { [start_time, stop_time] } else { [v, v] })
+        .collect();
+    write_real_matrix(&mut out, "data_1", 2, s.data_1.len(), &data_1, precision);
+
+    let columns: Vec<(usize, Neg)> = core::iter::once((0, Neg::None))
+        .chain(s.varying.iter().copied())
+        .collect();
+    write_mat_header(&mut out, "data_2", precision.type_code(), n_rows, columns.len());
+    out.reserve(n_rows * columns.len() * precision.size());
+    for (c, neg) in columns {
+        for row in rows.chunks_exact(n_reals.max(1)) {
+            let v = row[c];
+            push_real(&mut out, if neg == Neg::Not { 1.0 - v } else { v }, precision);
+        }
+    }
     out
+}
+
+/// A signal's `description` entry, Dymola's way: the comment, then the unit, the
+/// display unit when it differs and the type in brackets, `comment [K|degC]`,
+/// `comment [unit:#(type=Integer)]`. `type_name` is `Boolean`, `Integer` or the
+/// enumeration type, and empty for a Real.
+pub fn description(comment: &str, unit: &str, display_unit: &str, type_name: &str) -> String {
+    let unit = if display_unit.is_empty() || display_unit == unit {
+        String::from(unit)
+    } else {
+        format!("{unit}|{display_unit}")
+    };
+    if type_name.is_empty() {
+        if unit.is_empty() {
+            String::from(comment)
+        } else {
+            format!("{comment} [{unit}]")
+        }
+    } else if comment.is_empty() {
+        format!("[{unit}:#(type={type_name})]")
+    } else {
+        format!("{comment} [{unit}:#(type={type_name})]")
+    }
+}
+
+/// One enumeration type of the `enumerations` matrix, in Modelica syntax:
+/// `P.Mode(Off, Heat, Cool)`; value `k` is the `k`-th literal.
+pub fn enumeration_entry(name: &str, literals: &[String]) -> String {
+    format!("{name}({})", literals.join(", "))
+}
+
+/// The [`enumeration_entry`] of each distinct type, in order of appearance.
+pub fn enumeration_entries<'a>(types: impl IntoIterator<Item = (&'a str, &'a [String])>) -> Vec<String> {
+    let mut names: Vec<&str> = Vec::new();
+    let mut entries = Vec::new();
+    for (name, literals) in types {
+        if !names.contains(&name) {
+            names.push(name);
+            entries.push(enumeration_entry(name, literals));
+        }
+    }
+    entries
+}
+
+/// Append the `enumerations` text matrix, one type per column; nothing when
+/// `entries` is empty. OpenModelica's readers skip it anywhere now, but older
+/// ones take the first six matrices in order, so it follows `data_2` until
+/// those are gone; then it can move next to `dataInfo`.
+pub fn write_enumerations(out: &mut dyn Out, entries: &[String]) {
+    if entries.is_empty() {
+        return;
+    }
+    let cols: Vec<&str> = entries.iter().map(|e| e.as_str()).collect();
+    let mut bytes = Vec::new();
+    write_char_matrix_cols(&mut bytes, "enumerations", &cols);
+    out.write(&bytes);
 }
 
 fn push_real(out: &mut Vec<u8>, v: f64, precision: Precision) {
@@ -457,8 +597,33 @@ fn write_char_matrix_rows(out: &mut Vec<u8>, name: &str, rows: &[&str], ncols: u
 mod tests {
     use super::*;
 
+    /// The file as [`Mat4Stream`] writes it, in one batch.
+    fn stream_mat4(
+        signals: &[MatVar],
+        start_time: f64,
+        stop_time: f64,
+        rows: &[f64],
+        n_reals: u32,
+        params: &[f64],
+        precision: Precision,
+    ) -> Vec<u8> {
+        let mut out: Vec<u8> = Vec::new();
+        let first_row = rows.get(..n_reals as usize).unwrap_or(&[]);
+        let mut s = Mat4Stream::begin(
+            &mut out, signals, start_time, stop_time, first_row, n_reals, params, precision,
+        );
+        s.push_rows(&mut out, rows);
+        s.finish(&mut out);
+        out
+    }
+
     fn var<'a>(name: &'a str, comment: &'a str, kind: MatKind) -> MatVar<'a> {
-        MatVar { name, comment, kind, unvarying: false }
+        MatVar {
+            name,
+            comment,
+            kind,
+            unvarying: false,
+        }
     }
 
     /// Locate a named matrix in the v4 stream and return (mrows, ncols, payload).
@@ -490,13 +655,86 @@ mod tests {
     }
 
     fn f64s(payload: &[u8]) -> Vec<f64> {
-        payload.chunks_exact(8).map(|c| f64::from_le_bytes(c.try_into().unwrap())).collect()
+        payload
+            .chunks_exact(8)
+            .map(|c| f64::from_le_bytes(c.try_into().unwrap()))
+            .collect()
     }
     fn f32s(payload: &[u8]) -> Vec<f32> {
-        payload.chunks_exact(4).map(|c| f32::from_le_bytes(c.try_into().unwrap())).collect()
+        payload
+            .chunks_exact(4)
+            .map(|c| f32::from_le_bytes(c.try_into().unwrap()))
+            .collect()
     }
     fn i32s(payload: &[u8]) -> Vec<i32> {
-        payload.chunks_exact(4).map(|c| i32::from_le_bytes(c.try_into().unwrap())).collect()
+        payload
+            .chunks_exact(4)
+            .map(|c| i32::from_le_bytes(c.try_into().unwrap()))
+            .collect()
+    }
+
+    /// The columns of a text matrix written by `write_char_matrix_cols`.
+    fn text_cols(buf: &[u8], want: &str) -> Vec<String> {
+        let (mrows, _, payload) = find_matrix(buf, want);
+        payload
+            .chunks_exact(mrows)
+            .map(|c| String::from_utf8_lossy(c).trim_end_matches('\0').to_string())
+            .collect()
+    }
+
+    #[test]
+    fn descriptions_carry_the_type_like_dymola() {
+        assert_eq!(description("a real", "m", "", ""), "a real [m]");
+        assert_eq!(description("a real", "", "", ""), "a real");
+        assert_eq!(description("a speed", "rad/s", "rpm", ""), "a speed [rad/s|rpm]");
+        assert_eq!(description("a speed", "rad/s", "rad/s", ""), "a speed [rad/s]");
+        assert_eq!(description("a flag", "", "", "Boolean"), "a flag [:#(type=Boolean)]");
+        assert_eq!(description("", "", "", "Integer"), "[:#(type=Integer)]");
+        assert_eq!(
+            description("a count", "1/s", "", "Integer"),
+            "a count [1/s:#(type=Integer)]"
+        );
+        assert_eq!(description("a mode", "", "", "P.Mode"), "a mode [:#(type=P.Mode)]");
+    }
+
+    /// The `enumerations` matrix comes after `data_2`, once per type, and leaves
+    /// the six standard matrices as they were.
+    #[test]
+    fn enumerations_follow_data_2() {
+        let mode: Vec<String> = ["Off", "Heat", "Cool"].map(String::from).to_vec();
+        let init: Vec<String> = ["NoInit", "SteadyState"].map(String::from).to_vec();
+        let entries = enumeration_entries([
+            ("P.Mode", mode.as_slice()),
+            ("Init", init.as_slice()),
+            ("P.Mode", mode.as_slice()),
+        ]);
+        assert_eq!(entries, ["P.Mode(Off, Heat, Cool)", "Init(NoInit, SteadyState)"]);
+
+        let vars = [
+            var("time", "", MatKind::Time),
+            var(
+                "m",
+                "[:#(type=P.Mode)]",
+                MatKind::Column {
+                    col: 1,
+                    negate: Neg::None,
+                },
+            ),
+        ];
+        let rows = [0.0, 1.0, 1.0, 3.0];
+        let plain = stream_mat4(&vars, 0.0, 1.0, &rows, 2, &[], Precision::Double);
+        let mut out: Vec<u8> = Vec::new();
+        let mut s = Mat4Stream::begin(&mut out, &vars, 0.0, 1.0, &rows[..2], 2, &[], Precision::Double);
+        s.set_enumerations(entries.clone());
+        s.push_rows(&mut out, &rows);
+        s.close(&mut out);
+        s.close(&mut out);
+        assert_eq!(&out[..plain.len()], &plain[..]);
+        assert_eq!(text_cols(&out[plain.len()..], "enumerations"), entries);
+        assert_eq!(text_cols(&out, "description")[1], "[:#(type=P.Mode)]");
+        let mut none: Vec<u8> = Vec::new();
+        write_enumerations(&mut none, &[]);
+        assert!(none.is_empty());
     }
 
     /// time + one varying real state + one parameter + one constant, 3 rows.
@@ -505,14 +743,21 @@ mod tests {
     fn writes_expected_matrices() {
         let vars = [
             var("time", "Time in s", MatKind::Time),
-            var("x", "", MatKind::Column { col: 1, negate: Neg::None }),
+            var(
+                "x",
+                "",
+                MatKind::Column {
+                    col: 1,
+                    negate: Neg::None,
+                },
+            ),
             var("p", "a param", MatKind::Param { negate: Neg::None }),
             var("k", "", MatKind::Const { value: 9.0 }),
         ];
         // 3 communication points; x ramps 0,1,2.
         let rows = [0.0, 0.0, /*r1*/ 0.5, 1.0, /*r2*/ 1.0, 2.0];
         let params = [7.0]; // p = 7
-        let buf = write_mat4(&vars, 0.0, 1.0, &rows, 2, &params, Precision::Double);
+        let buf = stream_mat4(&vars, 0.0, 1.0, &rows, 2, &params, Precision::Double);
 
         // name matrix: 4 columns, one per signal, column-major null-padded.
         let (mrows, ncols, name_payload) = find_matrix(&buf, "name");
@@ -550,10 +795,17 @@ mod tests {
     fn streams_in_batches() {
         let vars = [
             var("time", "", MatKind::Time),
-            var("x", "", MatKind::Column { col: 1, negate: Neg::None }),
+            var(
+                "x",
+                "",
+                MatKind::Column {
+                    col: 1,
+                    negate: Neg::None,
+                },
+            ),
         ];
         let rows = [0.0, 0.0, 0.5, 1.0, 1.0, 2.0, 1.5, 3.0];
-        let whole = write_mat4(&vars, 0.0, 1.5, &rows, 2, &[], Precision::Double);
+        let whole = stream_mat4(&vars, 0.0, 1.5, &rows, 2, &[], Precision::Double);
 
         let mut out: Vec<u8> = Vec::new();
         let mut s = Mat4Stream::begin(&mut out, &vars, 0.0, 1.5, &rows[..2], 2, &[], Precision::Double);
@@ -573,12 +825,34 @@ mod tests {
     fn unvarying_column_in_data_1() {
         let vars = [
             var("time", "", MatKind::Time),
-            var("x", "", MatKind::Column { col: 1, negate: Neg::None }),
-            MatVar { name: "c", comment: "", kind: MatKind::Column { col: 2, negate: Neg::None }, unvarying: true },
-            var("mc", "", MatKind::Column { col: 2, negate: Neg::Arith }),
+            var(
+                "x",
+                "",
+                MatKind::Column {
+                    col: 1,
+                    negate: Neg::None,
+                },
+            ),
+            MatVar {
+                name: "c",
+                comment: "",
+                kind: MatKind::Column {
+                    col: 2,
+                    negate: Neg::None,
+                },
+                unvarying: true,
+            },
+            var(
+                "mc",
+                "",
+                MatKind::Column {
+                    col: 2,
+                    negate: Neg::Arith,
+                },
+            ),
         ];
         let rows = [0.0, 0.0, 4.0, /*r1*/ 1.0, 1.0, 4.0];
-        let buf = write_mat4(&vars, 0.0, 1.0, &rows, 3, &[], Precision::Double);
+        let buf = stream_mat4(&vars, 0.0, 1.0, &rows, 3, &[], Precision::Double);
         let di = i32s(find_matrix(&buf, "dataInfo").2);
         assert_eq!(&di[4..8], &[2, 2, 0, 0]);
         assert_eq!(&di[8..12], &[1, 2, 0, 0]);
@@ -595,15 +869,43 @@ mod tests {
     fn negated_aliases() {
         let vars = [
             var("time", "", MatKind::Time),
-            var("x", "", MatKind::Column { col: 1, negate: Neg::None }),
-            var("mx", "", MatKind::Column { col: 1, negate: Neg::Arith }),
-            var("b", "", MatKind::Column { col: 2, negate: Neg::None }),
-            var("nb", "", MatKind::Column { col: 2, negate: Neg::Not }),
+            var(
+                "x",
+                "",
+                MatKind::Column {
+                    col: 1,
+                    negate: Neg::None,
+                },
+            ),
+            var(
+                "mx",
+                "",
+                MatKind::Column {
+                    col: 1,
+                    negate: Neg::Arith,
+                },
+            ),
+            var(
+                "b",
+                "",
+                MatKind::Column {
+                    col: 2,
+                    negate: Neg::None,
+                },
+            ),
+            var(
+                "nb",
+                "",
+                MatKind::Column {
+                    col: 2,
+                    negate: Neg::Not,
+                },
+            ),
             var("np", "", MatKind::Param { negate: Neg::Not }),
         ];
         // n_reals = 3: [time, x, b].
         let rows = [0.0, 1.0, 0.0, /*r1*/ 0.5, 2.0, 1.0];
-        let buf = write_mat4(&vars, 0.0, 0.5, &rows, 3, &[1.0], Precision::Double);
+        let buf = stream_mat4(&vars, 0.0, 0.5, &rows, 3, &[1.0], Precision::Double);
 
         let (_r, _c, di) = find_matrix(&buf, "dataInfo");
         let di = i32s(di);
@@ -631,7 +933,15 @@ mod tests {
             let ncols = i32::from_le_bytes(buf[p + 8..p + 12].try_into().unwrap()) as usize;
             let namelen = i32::from_le_bytes(buf[p + 16..p + 20].try_into().unwrap()) as usize;
             let name = core::str::from_utf8(&buf[p + 20..p + 20 + namelen - 1]).unwrap();
-            let p_elt = if ty % 10 == 1 { 1 } else if (ty / 10) % 10 == 2 { 4 } else if (ty / 10) % 10 == 1 { 4 } else { 8 };
+            let p_elt = if ty % 10 == 1 {
+                1
+            } else if (ty / 10) % 10 == 2 {
+                4
+            } else if (ty / 10) % 10 == 1 {
+                4
+            } else {
+                8
+            };
             let data_off = p + 20 + namelen;
             if name == want {
                 return ty;
@@ -647,12 +957,19 @@ mod tests {
     fn single_precision() {
         let vars = [
             var("time", "", MatKind::Time),
-            var("x", "", MatKind::Column { col: 1, negate: Neg::None }),
+            var(
+                "x",
+                "",
+                MatKind::Column {
+                    col: 1,
+                    negate: Neg::None,
+                },
+            ),
             var("p", "", MatKind::Param { negate: Neg::None }),
         ];
         // 2 rows; x is 0.5 and 1.5 (exact in f32), p = 7 (exact in f32).
         let rows = [0.0, 0.5, 1.0, 1.5];
-        let buf = write_mat4(&vars, 0.0, 1.0, &rows, 2, &[7.0], Precision::Single);
+        let buf = stream_mat4(&vars, 0.0, 1.0, &rows, 2, &[7.0], Precision::Single);
 
         assert_eq!(matrix_type(&buf, "data_1"), 10);
         assert_eq!(matrix_type(&buf, "data_2"), 10);
@@ -670,11 +987,18 @@ mod tests {
     fn single_precision_rounds() {
         let vars = [
             var("time", "", MatKind::Time),
-            var("x", "", MatKind::Column { col: 1, negate: Neg::None }),
+            var(
+                "x",
+                "",
+                MatKind::Column {
+                    col: 1,
+                    negate: Neg::None,
+                },
+            ),
         ];
         // 1/3 is not exact in f32; the stored value must equal the f32 rounding.
         let rows = [0.0, 1.0 / 3.0];
-        let buf = write_mat4(&vars, 0.0, 0.0, &rows, 2, &[], Precision::Single);
+        let buf = stream_mat4(&vars, 0.0, 0.0, &rows, 2, &[], Precision::Single);
         let (_r, _c, d2) = find_matrix(&buf, "data_2");
         let d2 = f32s(d2);
         assert_eq!(d2[1], (1.0 / 3.0) as f32);
@@ -686,11 +1010,18 @@ mod tests {
     fn single_precision_is_smaller() {
         let vars = [
             var("time", "", MatKind::Time),
-            var("x", "", MatKind::Column { col: 1, negate: Neg::None }),
+            var(
+                "x",
+                "",
+                MatKind::Column {
+                    col: 1,
+                    negate: Neg::None,
+                },
+            ),
         ];
         let rows = [0.0, 0.0, 1.0, 0.5, 2.0, 1.5];
-        let single = write_mat4(&vars, 0.0, 2.0, &rows, 2, &[], Precision::Single);
-        let double = write_mat4(&vars, 0.0, 2.0, &rows, 2, &[], Precision::Double);
+        let single = stream_mat4(&vars, 0.0, 2.0, &rows, 2, &[], Precision::Single);
+        let double = stream_mat4(&vars, 0.0, 2.0, &rows, 2, &[], Precision::Double);
         assert!(single.len() < double.len());
     }
 }

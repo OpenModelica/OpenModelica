@@ -1,0 +1,31 @@
+// name: DistributionSystemModelicaIndividualArrayConnect
+// keywords: NewBackend, resizable, arrayConnect, mergeComponents
+// status: correct
+//
+// -d=mergeComponents collects the components into arrays but keeps their
+// connections scalar (literal indices). They are resolved by the scalar
+// connection handler: the array handlers split the connector arrays into one
+// piece per element, --resizableArrays failed above 300 elements
+// ($Resistor2 has 820) and -d=arrayConnect alone did not finish (#17368).
+
+setCommandLineOptions("--newBackend --resizableArrays -d=arrayConnect,mergeComponents"); getErrorString();
+loadModel(ScalableTestSuite); getErrorString();
+checkModel(ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_20_M_20); getErrorString();
+setCommandLineOptions("--resizableArrays=false"); getErrorString();
+checkModel(ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_20_M_20); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// "Check of ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_20_M_20 completed successfully.
+// Class ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_20_M_20 has 8189 equation(s) and 8189 variable(s).
+// 1648 of these are trivial equation(s)."
+// ""
+// true
+// ""
+// "Check of ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_20_M_20 completed successfully.
+// Class ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_20_M_20 has 8189 equation(s) and 8189 variable(s).
+// 1648 of these are trivial equation(s)."
+// ""
+// endResult

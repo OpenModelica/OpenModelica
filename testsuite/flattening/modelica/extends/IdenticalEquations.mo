@@ -5,7 +5,7 @@
 // Checks that identical equations from inheritance are not merged.
 //
 
-class Color
+model Color
   parameter Real red=0.2;
   parameter Real blue=0.6;
   Real green;
@@ -13,11 +13,10 @@ equation
   red + blue + green = 1;
 end Color;
 
-class Color2
+model Color2
   extends Color;
 equation
   red + blue + green = 1;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Color2;
 
 // Result:

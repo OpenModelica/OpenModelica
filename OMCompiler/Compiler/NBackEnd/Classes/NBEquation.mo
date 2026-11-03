@@ -77,6 +77,7 @@ public
 
   // New Backend imports
   import DetectStates = NBDetectStates;
+  import Differentiate = NBDifferentiate;
   import NBResizable.EvalOrder;
   import Evaluation = NBEvaluation;
   import Inline = NBInline;
@@ -1327,6 +1328,35 @@ public
       end match;
     end sizes;
 
+    function arrayRow
+      "the scalar equation of one row of an array equation"
+      input Pointer<Equation> eqn_ptr;
+      input Integer index "zero based";
+      output Equation row;
+    protected
+      Equation eqn = Pointer.access(eqn_ptr);
+      list<Subscript> subs;
+      Type ty;
+    algorithm
+      subs := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in Slice.indexToLocation(index, Equation.sizes(eqn_ptr)));
+      ty := Type.arrayElementType(Equation.getType(eqn));
+      row := Equation.SCALAR_EQUATION(ty, rowElement(Util.getOption(Equation.getLHS(eqn)), subs),
+        rowElement(Util.getOption(Equation.getRHS(eqn)), subs), Equation.getSource(eqn), Equation.getAttributes(eqn));
+    end arrayRow;
+
+    function rowElement
+      "the element of an array expression, expanded to make it solvable"
+      input Expression exp;
+      input list<Subscript> subs;
+      output Expression element;
+    protected
+      Expression expanded;
+      Boolean success;
+    algorithm
+      (expanded, success) := ExpandExp.expand(exp, true);
+      element := SimplifyExp.simplify(Expression.applySubscripts(subs, if success then expanded else exp));
+    end rowElement;
+
     function applyToType
       input output Pointer<Equation> eqn_ptr;
       input typeFunc func;
@@ -1538,9 +1568,20 @@ public
       Algorithm alg;
     algorithm
       alg := Algorithm.ALGORITHM(stmts, {}, {}, NONE(), NFInstNode.NO_SCOPE, DAE.emptyElementSource);
-      alg := Algorithm.setInputsOutputs(alg);
+      alg := setAlgorithmInputsOutputs(alg);
       eqn := BackendDAE.lowerAlgorithm(alg, init);
     end makeAlgorithm;
+
+    function setAlgorithmInputsOutputs
+      "sets the inputs and outputs of an algorithm from its statements. variables
+      that only this algorithm uses (VariableKind.ALGORITHM_LOCAL) are neither,
+      they are not part of the system, like protected variables of a function."
+      input output Algorithm alg;
+    algorithm
+      alg := Algorithm.setInputsOutputs(alg);
+      alg.inputs  := list(cref for cref guard(not BVariable.isAlgorithmLocalCref(cref)) in alg.inputs);
+      alg.outputs := list(cref for cref guard(not BVariable.isAlgorithmLocalCref(cref)) in alg.outputs);
+    end setAlgorithmInputsOutputs;
 
     function forEquationToString
       input Iterator iter             "the iterator variable(s)";
@@ -1701,7 +1742,7 @@ public
           // pass mapFunc because the function itself does not map
           alg := Algorithm.mapExp(eq.alg, function mapFunc(func = funcExp));
           if not referenceEq(alg, eq.alg) then
-            eq.alg := Algorithm.setInputsOutputs(alg);
+            eq.alg := setAlgorithmInputsOutputs(alg);
           end if;
         then eq;
 
@@ -2025,15 +2066,15 @@ public
 
         case ARRAY_EQUATION() algorithm
           if Expression.isEqual(eq.lhs, eq.rhs) then
-            eq.lhs := Expression.makeZero(eq.ty);
-            eq.rhs := Expression.makeZero(eq.ty);
+            eq.lhs := Differentiate.makeZero(eq.ty);
+            eq.rhs := Differentiate.makeZero(eq.ty);
           end if;
         then eq;
 
         case RECORD_EQUATION() algorithm
           if Expression.isEqual(eq.lhs, eq.rhs) then
-            eq.lhs := Expression.makeZero(eq.ty);
-            eq.rhs := Expression.makeZero(eq.ty);
+            eq.lhs := Differentiate.makeZero(eq.ty);
+            eq.rhs := Differentiate.makeZero(eq.ty);
           end if;
         then eq;
 
@@ -2308,11 +2349,11 @@ public
           Class cls;
 
         case SCALAR_EQUATION() algorithm
-          operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.ADD);
+          operator := Operator.makeAdd(Expression.typeOf(eqn.lhs));
         then Expression.MULTARY({eqn.rhs}, {eqn.lhs}, operator);
 
         case ARRAY_EQUATION()  algorithm
-          operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.ADD_EW);
+          operator := Operator.makeAddEW(Expression.typeOf(eqn.lhs));
         then Expression.MULTARY({eqn.rhs}, {eqn.lhs}, operator);
 
         case RECORD_EQUATION(ty = Type.COMPLEX()) algorithm
@@ -2329,7 +2370,7 @@ public
               fail();
             end if;
           end for;
-          operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.ADD);
+          operator := Operator.makeAdd(Expression.typeOf(eqn.lhs));
         then Expression.MULTARY({eqn.rhs}, {eqn.lhs}, operator);
 
         // returns innermost residual!
@@ -3130,7 +3171,7 @@ public
       (cref, exp)   := tpl;
       equality_exp  := Expression.RELATION(
         exp1      = Expression.fromCref(cref),
-        operator  = Operator.OPERATOR(ComponentRef.nodeType(cref), NFOperator.Op.NEQUAL),
+        operator  = Operator.makeNotEqual(ComponentRef.nodeType(cref)),
         exp2      = SimplifyExp.simplifyDump(exp, true, getInstanceName()),
         index     = -1
       );
@@ -3262,7 +3303,7 @@ public
       // convert to algorithm if the body is an algorithm. mainly used for asserts in if-equations
       if isAlgorithm then
         alg   := Algorithm.ALGORITHM(Equation.toStatement(e), {}, {}, NONE(), NFInstNode.NO_SCOPE, source);
-        alg   := Algorithm.setInputsOutputs(alg);
+        alg   := Equation.setAlgorithmInputsOutputs(alg);
         size  := sum(ComponentRef.size(out, false) for out in alg.outputs);
         eqn   := Pointer.create(Equation.ALGORITHM(size, alg, alg.source, DAE.EXPAND(), attr));
       else
@@ -3632,35 +3673,13 @@ public
       output list<Pointer<Equation>> rows;
     protected
       Equation eqn = Pointer.access(eqn_ptr);
-      list<Integer> sizes;
-      list<Subscript> subs;
     algorithm
       rows := match eqn
-        case ARRAY_EQUATION() guard(Type.hasKnownSize(eqn.ty)) algorithm
-          sizes := Equation.sizes(eqn_ptr);
-          rows := {};
-          for i in Equation.size(eqn_ptr)-1:-1:0 loop
-            subs := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in Slice.indexToLocation(i, sizes));
-            rows := Pointer.create(SCALAR_EQUATION(Type.arrayElementType(eqn.ty), rowElement(eqn.lhs, subs),
-              rowElement(eqn.rhs, subs), eqn.source, eqn.attr)) :: rows;
-          end for;
-        then rows;
+        case ARRAY_EQUATION() guard(Type.hasKnownSize(eqn.ty))
+        then list(Pointer.create(Equation.arrayRow(eqn_ptr, i)) for i in 0:Equation.size(eqn_ptr) - 1);
         else {eqn_ptr};
       end match;
     end scalarRows;
-
-    function rowElement
-      "the element of an array expression, expanded to make it solvable"
-      input Expression exp;
-      input list<Subscript> subs;
-      output Expression element;
-    protected
-      Expression expanded;
-      Boolean success;
-    algorithm
-      (expanded, success) := ExpandExp.expand(exp, true);
-      element := SimplifyExp.simplify(Expression.applySubscripts(subs, if success then expanded else exp));
-    end rowElement;
 
     function sameSize
       input list<Pointer<Equation>> eqns;
@@ -4433,9 +4452,15 @@ public
             if isSome(funcCrefOpt) then
               SOME(funcCref) := funcCrefOpt;
               stateVar := funcCref(stmt.stateVar);
-              if not referenceEq(stateVar, stmt.stateVar) then
-                stmt.stateVar := stateVar;
-              end if;
+            else
+              // map the state as expression, e.g. to replace iterators in its subscripts
+              stateVar := match mapFunc(Expression.fromCref(stmt.stateVar), funcExp)
+                case Expression.CREF(cref = stateVar) then stateVar;
+                else stmt.stateVar;
+              end match;
+            end if;
+            if not referenceEq(stateVar, stmt.stateVar) then
+              stmt.stateVar := stateVar;
             end if;
             value := mapFunc(stmt.value, funcExp);
             if not referenceEq(value, stmt.value) then

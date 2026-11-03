@@ -116,7 +116,7 @@ EmptyArrayAlgorithm.mo \
 EmptyArray.mo \
 EmptyArraySubscript.mo \
 EmptyAsubSliceSubscript.mo \
-FillSubscriptsTest.mo \
+FillSubscriptsTest.mos \
 FixedFinalParameter.mo \
 InOutArray2.mo \
 InOutArray.mo \
@@ -154,7 +154,6 @@ TypeTest.mos \
 UnknownDimensionMod.mo \
 VectorizeConstCref2D.mo \
 VectorizeOneReturnValue.mo \
-VectorizeSeveralArguments.mo \
 WrongNumberOfSubscripts1.mo \
 XPowers1.mo \
 XPowers2.mo \
@@ -165,15 +164,7 @@ XPowers3.mo \
 FAILINGTESTFILES=\
 Array5.mo \
 Array6.mo \
-ArraySlice.mo \
-ArrayAlgebraFunc.mo \
-ArrayEmpty.mo \
-ConcatArr1.mo \
-ConcatArr2.mo \
 ConcatArr4.mo \
-DimConvert.mo \
-DimSize.mo \
-DoubleWhenConflict.mo \
 ErrorUnknownDimension.mo \
 IndexOutOfBoundsConnect1.mo \
 IndexOutOfBoundsConnect2.mo \
@@ -185,9 +176,6 @@ NonExpArray3.mo \
 NonExpArray4.mo \
 NonExpModif1.mo \
 NonExpModif2.mo \
-PointInst.mo \
-SubArrayIndex.mo  \
-VectorizeSumVec.mo \
 WrongSubscriptType1.mo \
 
 # Dependency files that are not .mo .mos or Makefile

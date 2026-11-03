@@ -2,11 +2,13 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 solveCallExp.mos \
+FunctionInverseSolve.mos \
 scalarFromArrayEquation.mos \
 scalarFromSingleElementArray.mos \
 solveCallTan.mos \
 solveForLoop.mos \
 solveMultaryBinary.mos \
+solveSumArrayElement.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

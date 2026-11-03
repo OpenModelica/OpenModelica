@@ -60,7 +60,6 @@ simulationnewbackend-simplification.log \
 simulationnewbackend-solve.log \
 simulationnewbackend-tearing.log \
 simulationnewbackend-tickets.log \
-simulationdeclarations.log \
 simulationenums.log \
 simulationequations.log \
 simulationevents.log \
@@ -101,7 +100,6 @@ parallel.log \
 parameters.log \
 simoptions.log \
 annex60.log \
-frontEndUnitCheck.log \
 newFrontEndUnitCheck.log
 
 # Sorted by time it takes to run the tests...
@@ -113,7 +111,6 @@ simulationarrays.log \
 simulationasserts.log \
 simulationbuilt-in-functions.log \
 simulationconnectors.log \
-simulationdeclarations.log \
 simulationenums.log \
 simulationequations.log \
 simulationevents.log \
@@ -213,7 +210,7 @@ omc-diff :
 	 exit 1
 test : slow.logs fast.logs
 	@cat `ls $(FASTLOGS) $(SLOWLOGS) | sort`
-	@rm -f {flattening/modelica/asserts,flattening/modelica/algorithms-functions,flattening/modelica/arrays,flattening/modelica/others,flattening/modelica/external-functions,flattening/modelica/equations,flattening/modelica/built-in-functions,flattening/modelica/extends,flattening/modelica/operators,flattening/modelica/packages,flattening/modelica/declarations,flattening/modelica/enums,flattening/modelica/synchronous,flattening/modelica/statemachines,flattening/modelica/scoping,flattening/modelica/types,flattening/modelica/modification,flattening/modelica/connectors,flattening/modelica/blocks,flattening/modelica/streams,flattening/modelica/msl,metamodelica/meta,flattening/modelica/records,openmodelica/java,openmodelica/interactive-API,openmodelica/instance-API,flattening/modelica/mosfiles}/*.{dll,so,exe};
+	@rm -f {flattening/modelica/asserts,flattening/modelica/algorithms-functions,flattening/modelica/arrays,flattening/modelica/others,flattening/modelica/external-functions,flattening/modelica/equations,flattening/modelica/built-in-functions,flattening/modelica/extends,flattening/modelica/operators,flattening/modelica/packages,flattening/modelica/declarations,flattening/modelica/enums,flattening/modelica/synchronous,flattening/modelica/statemachines,flattening/modelica/scoping,flattening/modelica/types,flattening/modelica/modification,flattening/modelica/connectors,flattening/modelica/blocks,flattening/modelica/streams,flattening/modelica/msl,metamodelica/meta,flattening/modelica/records,openmodelica/interactive-API,openmodelica/instance-API,flattening/modelica/mosfiles}/*.{dll,so,exe};
 test-oldresult:
 	@cat `ls $(FASTLOGS) $(SLOWLOGS) | sort`
 test-oldresult-summary:
@@ -222,13 +219,12 @@ test-oldresult-summary:
 	@grep ^== test.log | grep failed | gawk '{ fail += $$2; sum += $$5 } END {printf "== Total: %d out of %d failed\n",fail,sum}'
 fast : omc-diff fast.logs
 	@cat `ls $(FASTLOGS) | sort`
-	@rm -f {flattening/modelica/asserts,flattening/modelica/algorithms-functions,flattening/modelica/arrays,flattening/modelica/others,flattening/modelica/external-functions,flattening/modelica/equations,flattening/modelica/built-in-functions,flattening/modelica/extends,flattening/modelica/operators,flattening/modelica/packages,flattening/modelica/declarations,flattening/modelica/enums,flattening/modelica/synchronous,flattening/modelica/statemachines,flattening/modelica/scoping,flattening/modelica/types,flattening/modelica/modification,flattening/modelica/connectors,flattening/modelica/blocks,flattening/modelica/streams,flattening/modelica/msl,metamodelica/meta,flattening/modelica/records,openmodelica/java}/*.{dll,so,exe};
+	@rm -f {flattening/modelica/asserts,flattening/modelica/algorithms-functions,flattening/modelica/arrays,flattening/modelica/others,flattening/modelica/external-functions,flattening/modelica/equations,flattening/modelica/built-in-functions,flattening/modelica/extends,flattening/modelica/operators,flattening/modelica/packages,flattening/modelica/declarations,flattening/modelica/enums,flattening/modelica/synchronous,flattening/modelica/statemachines,flattening/modelica/scoping,flattening/modelica/types,flattening/modelica/modification,flattening/modelica/connectors,flattening/modelica/blocks,flattening/modelica/streams,flattening/modelica/msl,metamodelica/meta,flattening/modelica/records}/*.{dll,so,exe};
 simulation: omc-diff simulation.logs
 	@cat `ls $(SIMULATIONLOGS) | sort` > simulation.log
 	@cat simulation.log
 	@grep ^== simulation.log | grep failed | gawk '{ fail += $$2; sum += $$5 } END {printf "== Total: %d out of %d failed\n",fail,sum}'
 fast.logs: $(FASTLOGS)
-# java should probably also be part of 'fast'
 slow.logs: $(SLOWLOGS)
 simulation.logs: $(SIMULATIONLOGS)
 streams.log: omc-diff
@@ -402,9 +398,6 @@ simulationnewbackend-tearing.log: omc-diff
 simulationnewbackend-tickets.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/tickets/ -f Makefile test > $@
 	@echo $@ done
-simulationdeclarations.log: omc-diff
-	$(MAKE) -C simulation/modelica/declarations -f Makefile test > $@
-	@echo $@ done
 simulationenums.log: omc-diff
 	$(MAKE) -C simulation/modelica/enums -f Makefile test > $@
 	@echo $@ done
@@ -495,9 +488,6 @@ simulationinitialization.log: omc-diff
 simulationqss.log: omc-diff
 	$(MAKE) -C simulation/modelica/qss -f Makefile test > $@
 	@echo $@ done
-frontEndUnitCheck.log: omc-diff
-	$(MAKE) -C simulation/modelica/unitcheck/OFunitcheck -f Makefile test > $@
-	@echo $@ done
 newFrontEndUnitCheck.log: omc-diff
 	$(MAKE) -C simulation/modelica/unitcheck -f Makefile test > $@
 	@echo $@ done
@@ -539,9 +529,6 @@ linearization.log: omc-diff
 	@echo $@ done
 modelicaML.log: omc-diff
 	$(MAKE) -C openmodelica/modelicaML -f Makefile test > $@
-	@echo $@ done
-openmodelicajava.log: omc-diff
-	$(MAKE) -C openmodelica/java -f Makefile test > $@
 	@echo $@ done
 bootstrapping.log: omc-diff
 	$(MAKE) -C openmodelica/bootstrapping -f Makefile test > $@
@@ -763,7 +750,6 @@ clean_g_2 :
 	$(MAKE) -C simulation/modelica/asserts -f Makefile clean
 	$(MAKE) -C simulation/modelica/built_in_functions -f Makefile clean
 	$(MAKE) -C simulation/modelica/connectors -f Makefile clean
-	$(MAKE) -C simulation/modelica/declarations -f Makefile clean
 	$(MAKE) -C simulation/modelica/enums -f Makefile clean
 	$(MAKE) -C simulation/modelica/equations -f Makefile clean
 	$(MAKE) -C simulation/modelica/events -f Makefile clean
@@ -781,7 +767,6 @@ clean_g_2 :
 	$(MAKE) -C simulation/modelica/records -f Makefile clean
 	$(MAKE) -C simulation/modelica/types -f Makefile clean
 	$(MAKE) -C simulation/modelica/unitcheck -f Makefile clean
-	$(MAKE) -C simulation/modelica/unitcheck/OFunitcheck -f Makefile clean
 
 clean_g_3 :
 	$(MAKE) -C flattening/libraries/biochem -f Makefile clean

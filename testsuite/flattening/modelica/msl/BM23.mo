@@ -978,7 +978,6 @@ model BM23
 
 equation
   connect(constant1.outPort,sqrt1.inPort) annotation(Line(visible=true,points={{-64.27,9.53},{-41.77,6.19}}));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM23;
 // class BM23
 // parameter Integer sqrt1.n = 1 "Number of inputs (= number of outputs)";
@@ -1003,25 +1002,24 @@ end BM23;
 // end BM23;
 // Result:
 // class BM23
-//   parameter Integer sqrt1.n = 1 "Number of inputs (= number of outputs)";
-//   parameter Integer sqrt1.inPort.n = sqrt1.n "Dimension of signal vector";
+//   final parameter Integer sqrt1.n = 1 "Number of inputs (= number of outputs)";
+//   final parameter Integer sqrt1.inPort.n = 1 "Dimension of signal vector";
 //   Real sqrt1.inPort.signal[1] "Real input signals";
-//   parameter Integer sqrt1.outPort.n = sqrt1.n "Dimension of signal vector";
+//   final parameter Integer sqrt1.outPort.n = 1 "Dimension of signal vector";
 //   Real sqrt1.outPort.signal[1] "Real output signals";
 //   Real sqrt1.y[1] "Output signals";
 //   protected Real sqrt1.u[1] "Input signals";
-//   parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
-//   parameter Integer constant1.outPort.n = constant1.nout "Dimension of signal vector";
+//   parameter Real constant1.k[1] = 1.0 "Constant output values";
+//   final parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
+//   final parameter Integer constant1.outPort.n = 1 "Dimension of signal vector";
 //   Real constant1.outPort.signal[1] "Real output signals";
 //   Real constant1.y[1];
-//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 // equation
-//   sqrt1.u = {sqrt1.inPort.signal[1]};
+//   constant1.outPort.signal[1] = sqrt1.inPort.signal[1];
+//   sqrt1.u = sqrt1.inPort.signal;
 //   sqrt1.y[1] = sqrt(sqrt1.u[1]);
 //   sqrt1.y[1] = sqrt1.outPort.signal[1];
 //   constant1.outPort.signal[1] = constant1.k[1];
 //   constant1.y[1] = constant1.outPort.signal[1];
-//   assert(constant1.outPort.n == sqrt1.inPort.n, "automatically generated from connect");
-//   constant1.outPort.signal[1] = sqrt1.inPort.signal[1];
 // end BM23;
 // endResult

@@ -11,12 +11,11 @@ loadString("
   end solveMultaryBinary;
 "); getErrorString();
 
-setCommandLineOptions("-d=dumpSolve");
-simulate(solveMultaryBinary); getErrorString();
+translateModel(solveMultaryBinary); getErrorString();
+
 // Result:
 // true
 // ""
-// true
 //
 // ##########################################
 // START - Solve
@@ -46,12 +45,6 @@ simulate(solveMultaryBinary); getErrorString();
 // END - Solve
 // ##########################################
 //
-// record SimulationResult
-//     resultFile = "solveMultaryBinary_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'solveMultaryBinary', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
+// true
 // ""
 // endResult

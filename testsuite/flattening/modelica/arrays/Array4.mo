@@ -9,17 +9,16 @@
 model Array4
   type T1 = Real[3];
   type T2 = T1[2];
-  parameter T2 x;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
+  parameter T2 x(each fixed = false);
 end Array4;
 
 // Result:
 // class Array4
-//   parameter Real x[1,1];
-//   parameter Real x[1,2];
-//   parameter Real x[1,3];
-//   parameter Real x[2,1];
-//   parameter Real x[2,2];
-//   parameter Real x[2,3];
+//   parameter Real x[1,1](fixed = false);
+//   parameter Real x[1,2](fixed = false);
+//   parameter Real x[1,3](fixed = false);
+//   parameter Real x[2,1](fixed = false);
+//   parameter Real x[2,2](fixed = false);
+//   parameter Real x[2,3](fixed = false);
 // end Array4;
 // endResult

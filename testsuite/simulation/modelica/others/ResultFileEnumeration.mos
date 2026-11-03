@@ -1,0 +1,81 @@
+// name: ResultFileEnumeration
+// keywords: result file enumeration Boolean type
+// status: correct
+// teardown_command: rm -f ResultFileEnumeration_* ResultFileEnumeration ResultFileEnumeration.c ResultFileEnumeration.exe ResultFileEnumeration.libs ResultFileEnumeration.log ResultFileEnumeration.makefile ResultFileEnumeration.o output.log
+//
+// The .mat result file types the Boolean and enumeration signals and the
+// readers still read it, for scalars and for an array kept whole (#14952).
+// The init XML side is ResultFileEnumerationInitXml.mos.
+
+loadString("
+model ResultFileEnumeration
+  type Mode = enumeration(Off \"switched off\", Heat, Cool);
+  type Level = enumeration(Low, High);
+  parameter Mode pm = Mode.Heat \"a parameter\";
+  Mode m(start = Mode.Off, fixed = true) \"a mode\";
+  Mode ma \"alias of m\";
+  Level lv[2] \"used only in an array\";
+  Boolean b \"a flag\";
+  Integer i \"a counter\";
+  Real x \"a real\";
+equation
+  when sample(0, 0.25) then
+    m = if pre(m) == Mode.Cool then Mode.Off else if pre(m) == Mode.Off then Mode.Heat else Mode.Cool;
+  end when;
+  ma = m;
+  lv = {if time < 0.5 then Level.Low else Level.High, Level.High};
+  b = time > 0.4;
+  i = integer(10*time);
+  x = time;
+end ResultFileEnumeration;
+"); getErrorString();
+
+simulate(ResultFileEnumeration, stopTime=1.0, numberOfIntervals=10, fileNamePrefix="ResultFileEnumeration_s"); getErrorString();
+{val(m, 0.3, "ResultFileEnumeration_s_res.mat"), val(ma, 0.3, "ResultFileEnumeration_s_res.mat"), val(pm, 0.3, "ResultFileEnumeration_s_res.mat"), val(lv[1], 0.9, "ResultFileEnumeration_s_res.mat"), val(b, 0.9, "ResultFileEnumeration_s_res.mat")};
+// The readers skip the literals after data_2.
+filterSimulationResults("ResultFileEnumeration_s_res.mat", "ResultFileEnumeration_f.mat", {"m", "lv[1]"}); getErrorString();
+{val(m, 0.3, "ResultFileEnumeration_f.mat"), val(lv[1], 0.9, "ResultFileEnumeration_f.mat")};
+simulate(ResultFileEnumeration, stopTime=1.0, numberOfIntervals=10, fileNamePrefix="ResultFileEnumeration_y", simflags="-mat_sync=3"); getErrorString();
+diffSimulationResults("ResultFileEnumeration_y_res.mat", "ResultFileEnumeration_s_res.mat", "ResultFileEnumeration_diff", relTol=1e-12); getErrorString();
+
+setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
+simulate(ResultFileEnumeration, stopTime=1.0, numberOfIntervals=10, fileNamePrefix="ResultFileEnumeration_a"); getErrorString();
+{val(m, 0.3, "ResultFileEnumeration_a_res.mat"), val(lv[1], 0.9, "ResultFileEnumeration_a_res.mat"), val(lv[2], 0.1, "ResultFileEnumeration_a_res.mat")};
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ResultFileEnumeration_s_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ResultFileEnumeration_s', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {3.0, 3.0, 2.0, 2.0, 1.0}
+// true
+// ""
+// {3.0, 2.0}
+// record SimulationResult
+//     resultFile = "ResultFileEnumeration_y_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ResultFileEnumeration_y', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-mat_sync=3'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true, {})
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ResultFileEnumeration_a_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ResultFileEnumeration_a', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {3.0, 2.0, 2.0}
+// endResult

@@ -1,0 +1,90 @@
+// name: evaluateProbe1
+// keywords: probe tree, CodeProber
+// status: correct
+//
+// Tests evaluateProbe with the properties of the source and the frontend.
+
+writeFile("evaluateProbe1.mo", "package EP
+  connector Pin
+    Real v;
+    flow Real i;
+  end Pin;
+  model R
+    parameter Real r = 2;
+    Pin p, n;
+  equation
+    p.v - n.v = r*p.i;
+    p.i + n.i = 0;
+  end R;
+  model G
+    Pin p;
+  equation
+    p.v = 0;
+  end G;
+  model B
+    R r1(r = 3), r2;
+    G gnd;
+  equation
+    connect(r1.n, r2.p);
+    connect(r2.n, gnd.p);
+    connect(r1.p, r2.x);
+    r1.p.v = sin(time);
+  end B;
+end EP;
+");
+getErrorString();
+loadFile("evaluateProbe1.mo"); getErrorString();
+// The file, its classes and the unresolved r2.x and its checkModel error.
+print(evaluateProbe("evaluateProbe1.mo", "0", "topClasses")); getErrorString();
+print(evaluateProbe("evaluateProbe1.mo", "0", "errors")); getErrorString();
+// The r in r*p.i: what it refers to, the declaration as a node, and its role.
+print(evaluateProbe("evaluateProbe1.mo", "0.0.2.3.4", "text")); getErrorString();
+print(evaluateProbe("evaluateProbe1.mo", "0.0.2.3.4", "definition")); getErrorString();
+print(evaluateProbe("evaluateProbe1.mo", "0.0.2.3.4", "role")); getErrorString();
+print(evaluateProbe("evaluateProbe1.mo", "0.0.2.3.4", "hover")); getErrorString();
+// The declaration of r: its uses as nodes and as arrows.
+print(evaluateProbe("evaluateProbe1.mo", "0.0.2.1", "definition")); getErrorString();
+print(evaluateProbe("evaluateProbe1.mo", "0.0.2.1", "uses")); getErrorString();
+print(evaluateProbe("evaluateProbe1.mo", "0.0.2.1", "useArrows")); getErrorString();
+// Model B: the classes it uses, checkModel and the flat model.
+print(evaluateProbe("evaluateProbe1.mo", "0.0.4", "dependsOn")); getErrorString();
+print(evaluateProbe("evaluateProbe1.mo", "0.0.4", "checkModel")); getErrorString();
+print(evaluateProbe("evaluateProbe1.mo", "0.0.2", "flatModelica")); getErrorString();
+// What isn't a node or a property of the node.
+print(evaluateProbe("evaluateProbe1.mo", "0.7", "text")); getErrorString();
+print(evaluateProbe("evaluateProbe1.mo", "0", "cCode")); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"node":"0", "property":"topClasses", "result":[{"node":"0.0"}]}
+// ""
+// {"node":"0", "property":"errors", "result":[{"severity":"warning", "lineStart":24, "columnStart":22, "lineEnd":24, "columnEnd":22, "message":"unresolved name r2.x"}, {"severity":"error", "lineStart":24, "columnStart":5, "lineEnd":24, "columnEnd":24, "message":"Variable r2.x not found in scope B."}]}
+// ""
+// {"node":"0.0.2.3.4", "property":"text", "result":[{"text":"r"}]}
+// ""
+// {"node":"0.0.2.3.4", "property":"definition", "result":[{"text":"component EP.R.r : Real, declared at line 7"}, {"node":"0.0.2.1"}]}
+// ""
+// {"node":"0.0.2.3.4", "property":"role", "result":[{"text":"equation"}]}
+// ""
+// {"node":"0.0.2.3.4", "property":"hover", "result":[{"text":"r -> component EP.R.r : Real, declared at line 7 [equation]"}]}
+// ""
+// {"node":"0.0.2.1", "property":"definition", "result":[{"text":"component EP.R.r : Real, declared at line 7"}]}
+// ""
+// {"node":"0.0.2.1", "property":"uses", "result":[{"node":"0.0.2.3.4"}, {"node":"0.0.4.1.1.1"}]}
+// ""
+// {"node":"0.0.2.1", "property":"useArrows", "result":[{"arrow":"#27ef", "lineStart":7, "columnStart":20, "lineEnd":7, "columnEnd":20, "to":{"lineStart":10, "columnStart":17, "lineEnd":10, "columnEnd":17}, "message":"line 10: r (equation)"}, {"arrow":"#27ef", "lineStart":7, "columnStart":20, "lineEnd":7, "columnEnd":20, "to":{"lineStart":19, "columnStart":10, "lineEnd":19, "columnEnd":10}, "message":"line 19: r (modifier)"}]}
+// ""
+// {"node":"0.0.4", "property":"dependsOn", "result":[{"node":"0.0.3"}, {"node":"0.0.1"}, {"node":"0.0.2"}]}
+// ""
+// {"node":"0.0.4", "property":"checkModel", "result":[{"severity":"error", "lineStart":24, "columnStart":5, "lineEnd":24, "columnEnd":24, "message":"Variable r2.x not found in scope B."}]}
+// ""
+// {"node":"0.0.2", "property":"flatModelica", "result":[{"text":"//! base 0.1.0"}, {"text":"package 'R'"}, {"text":"  model 'R'"}, {"text":"    parameter Real 'r' = 2.0;"}, {"text":"    Real 'p.v';"}, {"text":"    Real 'p.i';"}, {"text":"    Real 'n.v';"}, {"text":"    Real 'n.i';"}, {"text":"  equation"}, {"text":"    'p.i' = 0.0;"}, {"text":"    'n.i' = 0.0;"}, {"text":"    'p.v' - 'n.v' = 'r' * 'p.i';"}, {"text":"    'p.i' + 'n.i' = 0.0;"}, {"text":"  end 'R';"}, {"text":"end 'R';"}]}
+// ""
+// {"node":"0.7", "property":"text", "result":[{"text":"no node 0.7"}]}
+// ""
+// {"node":"0", "property":"cCode", "result":[{"text":"no property cCode on StoredDefinition"}]}
+// ""
+// endResult

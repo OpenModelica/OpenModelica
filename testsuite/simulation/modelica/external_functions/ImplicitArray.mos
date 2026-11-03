@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 // From ticket:4009
 
 loadString("

@@ -207,7 +207,10 @@ fn precompile_installed_libraries() -> Result<Vec<String>, String> {
     let files = dirs.iter().fold(metamodelica::nil(), |l, d| {
         metamodelica::cons(ArcStr::from(d.join("package.mo").to_string_lossy().as_ref()), l)
     });
-    let _ = openmodelica_script_util::PackageManagement::installMissingWasmOfLoaded(files, openmodelica_wasm_jit::dylink::PREBUILT_ABI);
+    let _ = openmodelica_script_util::PackageManagement::installMissingWasmOfLoaded(
+        files,
+        openmodelica_wasm_jit::dylink::PREBUILT_ABI,
+    );
     let messages = openmodelica_util::Error::printMessagesStr(false);
     if !messages.is_empty() {
         eprint!("{messages}");
@@ -220,6 +223,7 @@ fn precompile_installed_libraries() -> Result<Vec<String>, String> {
 #[cfg(not(target_arch = "wasm32"))]
 fn prepare_exit() {
     openmodelica_util::File::flush_all_registered();
+    metamodelica::host_flush();
     openmodelica_backend_main::Globals::leak_program_for_exit();
 }
 
@@ -240,7 +244,6 @@ fn prepare_exit() {
 #[cfg(not(target_arch = "wasm32"))]
 #[unsafe(no_mangle)]
 pub extern "C" fn omc_cli_run(argc: c_int, argv: *const *const c_char) -> c_int {
-    use std::io::Write;
     set_revision();
     // `OMC_WASM_PRECOMPILE_CACHE=<dir>`: compile the fixed wasm blobs into <dir>
     // and stop; empty means the per-user cache, which an installer or a test run
@@ -253,16 +256,26 @@ pub extern "C" fn omc_cli_run(argc: c_int, argv: *const *const c_char) -> c_int 
         metamodelica::heap_limit::set_max_heap_size(0);
         let dir = std::path::PathBuf::from(&dir);
         let per_user = dir.as_os_str().is_empty();
-        let dir = if per_user { openmodelica_wasm_jit::sim_runtime::aot_cache_dir() } else { dir };
-        let precompiled = openmodelica_wasm_jit::sim_runtime::precompile_fixed_blobs(&dir, !per_user).and_then(|mut names| {
-            if per_user {
-                names.extend(precompile_installed_libraries()?);
-            }
-            Ok(names)
-        });
+        let dir = if per_user {
+            openmodelica_wasm_jit::sim_runtime::aot_cache_dir()
+        } else {
+            dir
+        };
+        let precompiled =
+            openmodelica_wasm_jit::sim_runtime::precompile_fixed_blobs(&dir, !per_user).and_then(|mut names| {
+                if per_user {
+                    names.extend(precompile_installed_libraries()?);
+                }
+                Ok(names)
+            });
         return match precompiled {
             Ok(names) => {
-                println!("precompiled {} wasm artifacts into {}", names.len(), dir.display());
+                metamodelica::host_print(&format!(
+                    "precompiled {} wasm artifacts into {}\n",
+                    names.len(),
+                    dir.display()
+                ));
+                metamodelica::host_flush();
                 0
             }
             Err(e) => {
@@ -295,16 +308,14 @@ pub extern "C" fn omc_cli_run(argc: c_int, argv: *const *const c_char) -> c_int 
     prepare_exit();
     match status {
         Ok(Ok(())) => 0,
-        // Mirror the launcher's old inline `run()`: flush stdout, report on
-        // stderr and exit 1. The MetaModelica exception carries no payload worth
-        // printing — diagnostics were already emitted via the Error buffer.
+        // Mirror the launcher's old inline `run()`: report on stderr and exit
+        // 1. The MetaModelica exception carries no payload worth printing —
+        // diagnostics were already emitted via the Error buffer.
         Ok(Err(_)) => {
-            let _ = std::io::stdout().flush();
             eprintln!("Execution failed!");
             1
         }
         Err(p) => {
-            let _ = std::io::stdout().flush();
             match metamodelica::heap_limit::oom_from_panic(&*p) {
                 Some(oom) => eprintln!("{oom}"),
                 None => eprintln!("Execution failed!"),
@@ -376,10 +387,7 @@ pub extern "C" fn omc_compiler_eval(command: *const c_char) -> *mut c_char {
 /// running: `*keep_running` is set to 0 after `quit()` and 1 otherwise (mirroring
 /// `omc_Main_handleCommand`'s boolean result). `keep_running` may be null.
 #[unsafe(no_mangle)]
-pub extern "C" fn omc_compiler_eval_keep(
-    command: *const c_char,
-    keep_running: *mut c_int,
-) -> *mut c_char {
+pub extern "C" fn omc_compiler_eval_keep(command: *const c_char, keep_running: *mut c_int) -> *mut c_char {
     if !keep_running.is_null() {
         unsafe { *keep_running = 1 };
     }

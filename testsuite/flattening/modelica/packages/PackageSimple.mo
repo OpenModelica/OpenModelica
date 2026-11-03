@@ -10,7 +10,6 @@ package SimplePackage
 end SimplePackage;
 
 model PackageSimple
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end PackageSimple;
 
 // Result:

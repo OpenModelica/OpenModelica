@@ -94,7 +94,6 @@ import ErrorExt;
 import InstExtends;
 import Graph;
 import UnitAbsynBuilder;
-import UnitChecker;
 import NFSCodeFlatten;
 import HashSet;
 import BaseHashSet;
@@ -433,7 +432,7 @@ algorithm
       list<DAE.Element> elts;
 
       /* Only traverse on top scope */
-    case (true,UnitAbsyn.INSTSTORE(UnitAbsyn.STORE(vec,_),ht,_),DAE.DAE(elts))
+    case (true,UnitAbsyn.INSTSTORE(UnitAbsyn.STORE(vec,_),ht),DAE.DAE(elts))
       algorithm
         elts := List.map2(elts,updateDeducedUnits2,vec,ht);
       then DAE.DAE(elts);
@@ -468,35 +467,6 @@ algorithm
     else elt;
   end matchcontinue;
 end updateDeducedUnits2;
-
-public function reportUnitConsistency "reports CONSISTENT or INCOMPLETE error message depending on content of store"
-  input Boolean topScope;
-  input UnitAbsyn.InstStore store;
-algorithm
-  () := matchcontinue(topScope,store)
-    local
-      Boolean complete; UnitAbsyn.Store st;
-
-    case(_,_)
-      algorithm
-        // phi: very old unit checking
-        /*
-        false = Flags.getConfigBool(Flags.UNIT_CHECKING);
-        */
-      then
-        ();
-
-    case(true,UnitAbsyn.INSTSTORE(st,_,SOME(UnitAbsyn.CONSISTENT())))
-      algorithm
-        (complete,_) := UnitChecker.isComplete(st);
-        Error.addMessage(if complete then Error.CONSISTENT_UNITS else Error.INCOMPLETE_UNITS,{});
-      then
-        ();
-
-    else ();
-
-  end matchcontinue;
-end reportUnitConsistency;
 
 protected function extractConnectorPrefix
 "Author: BZ, 2009-09
@@ -718,64 +688,6 @@ algorithm
     end try;
   end for;
 end equalityConstraint;
-
-public function handleUnitChecking
-"@author: adrpo
- do this unit checking ONLY if we have the flag!"
-  input FCore.Cache cache;
-  input FCore.Graph env;
-  input UnitAbsyn.InstStore inStore;
-  input DAE.Prefix pre;
-  input DAE.DAElist compDAE;
-  input list<DAE.DAElist> daes;
-  input String className "for debugging";
-  output FCore.Cache outCache;
-  output FCore.Graph outEnv;
-  output UnitAbsyn.InstStore outStore;
-algorithm
-  (outCache,outEnv,outStore) := match inStore
-    local
-      DAE.DAElist daetemp;
-      UnitAbsyn.UnitTerms ut;
-      UnitAbsyn.InstStore store;
-
-    // do nothing if we don't have to do unit checking
-    case store
-      // phi: very old unit checking
-      /*
-      guard
-        not Flags.getConfigBool(Flags.UNIT_CHECKING)
-      */
-      then
-        (cache,env,store);
-
-    case store
-      algorithm
-        // Perform unit checking/dimensional analysis
-        //(daetemp,_) = ConnectUtil.equations(csets,pre,false,ConnectionGraph.EMPTY); // ToDO. calculation of connect eqns done twice. remove in future.
-        // equations from components (dae1) not considered, they are checked in resp recursive call
-        // but bindings on scalar variables must be considered, therefore passing dae1 separately
-        //daetemp = DAEUtil.joinDaeLst(daetemp::daes);
-        daetemp := DAEUtil.joinDaeLst(daes);
-        (store,ut):=  UnitAbsynBuilder.instBuildUnitTerms(env,daetemp,compDAE,store);
-
-        //print("built store for "+className+"\n");
-        //UnitAbsynBuilder.printInstStore(store);
-        //print("terms for "+className+"\n");
-        //UnitAbsynBuilder.printTerms(ut);
-
-        UnitAbsynBuilder.registerUnitWeights(cache,env,compDAE);
-
-        // perform the check
-        store := UnitChecker.check(ut,store);
-
-        //print("store for "+className+"\n");
-        //UnitAbsynBuilder.printInstStore(store);
-        //print("dae1="+DAEDump.dumpDebugDAE(DAE.DAE(dae1))+"\n");
-     then
-       (cache,env,store);
-  end match;
-end  handleUnitChecking;
 
 protected function checkExtendsRestrictionMatch
 "see Modelica Specfification 3.1, 7.1.3 Restrictions on the Kind of Base Class"

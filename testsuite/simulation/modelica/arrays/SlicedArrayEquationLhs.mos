@@ -1,0 +1,93 @@
+// name:     SlicedArrayEquationLhs
+// keywords: array equation, slice, function call #17393
+// status:   correct
+//
+// Array equations that assign a function call to a row of a matrix.
+
+loadString("
+package SlicedArrayEquationLhs
+  function f
+    input Real T;
+    output Real y[3];
+  algorithm
+    y := {T, 2*T, 3*T};
+  end f;
+
+  function colorOf
+    input Real T;
+    input Real colorMap[:, 3];
+    output Real color[3];
+  algorithm
+    color := colorMap[max(1, min(size(colorMap, 1), integer(T*(size(colorMap, 1) - 1)) + 1)), :];
+    annotation(Inline = true);
+  end colorOf;
+
+  model Rows
+    Real c[2, 3];
+  equation
+    c[1, :] = f(time);
+    c[2, :] = f(time/2);
+  end Rows;
+
+  model Cols
+    Real c[3, 2];
+  equation
+    c[:, 1] = f(time);
+    c[:, 2] = f(time/2);
+  end Cols;
+
+  model Colors
+    Real T[2] = {time, time/2};
+    Real c[2, 3];
+  equation
+    for i in 1:2 loop
+      c[i, :] = colorOf(T[i], {{0, 0, 1}, {0, 1, 1}, {1, 1, 0}, {1, 0, 0}});
+    end for;
+  end Colors;
+end SlicedArrayEquationLhs;
+"); getErrorString();
+
+simulate(SlicedArrayEquationLhs.Rows, stopTime = 1); getErrorString();
+val(c[1, 3], 1);
+val(c[2, 3], 1);
+simulate(SlicedArrayEquationLhs.Cols, stopTime = 1); getErrorString();
+val(c[3, 1], 1);
+val(c[3, 2], 1);
+simulate(SlicedArrayEquationLhs.Colors, stopTime = 1); getErrorString();
+val(c[1, 1], 1);
+val(c[2, 2], 1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "SlicedArrayEquationLhs.Rows_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'SlicedArrayEquationLhs.Rows', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 3.0
+// 1.5
+// record SimulationResult
+//     resultFile = "SlicedArrayEquationLhs.Cols_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'SlicedArrayEquationLhs.Cols', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 3.0
+// 1.5
+// record SimulationResult
+//     resultFile = "SlicedArrayEquationLhs.Colors_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'SlicedArrayEquationLhs.Colors', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 1.0
+// endResult

@@ -1,12 +1,11 @@
 // name:     Uniontype6
 // keywords: Uniontype
 // status:   correct
-// cflags: -d=-newInst
 // suite: metamodelica
 //
 // Uniontype Testing
 //
-setCommandLineOptions("+g=MetaModelica");
+// cflags: +g=MetaModelica
 loadFile("Uniontype6.mo");
 getErrorString();
 getErrorString();
@@ -16,7 +15,6 @@ Uniontype6.test(5);
 getErrorString();
 
 // Result:
-// true
 // true
 // ""
 // ""

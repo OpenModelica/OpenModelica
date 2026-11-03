@@ -1,0 +1,44 @@
+// name: AliasArrayStartParameter
+// keywords: NewBackend, alias, start
+// status: correct
+// teardown_command: rm -f AliasArrayStartParameter AliasArrayStartParameter_* AliasArrayStartParameter.log AliasArrayStartParameter.c AliasArrayStartParameter.o AliasArrayStartParameter.makefile AliasArrayStartParameter.libs
+//
+// The array start value collected from the element aliases {{vr0}} and
+// {{vi0}} holds parameters and is no literal.
+
+loadString("
+model AliasArrayStartParameter
+  parameter Real vi0 = 0.5;
+  parameter Real vr0 = 1.0;
+  parameter Real V = 2;
+  Real vr(start = vr0), vi(start = vi0);
+  Real d(start = 0.1, fixed = true);
+  Real vd(start = 0.3), vq(start = 0.4);
+equation
+  der(d) = -d;
+  [vr; vi] = [sin(d), cos(d); -cos(d), sin(d)]*[vd; vq]*V;
+  vd^3 + vr = 1 + time;
+  vq^3 + vi*vd = 2;
+end AliasArrayStartParameter;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(AliasArrayStartParameter); getErrorString();
+val(vd, 1.0);
+val(vq, 1.0);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "AliasArrayStartParameter_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AliasArrayStartParameter', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -1.0597496636978636
+// 1.6351704242760994
+// endResult

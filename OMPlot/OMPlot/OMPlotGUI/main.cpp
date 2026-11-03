@@ -39,9 +39,12 @@
 #include "PlotMainWindow.h"
 #include "PlotApplication.h"
 #include "PlotWindowContainer.h"
+#include "PlotTranslator.h"
 
 #include <QMessageBox>
 #include <QDir>
+#include <QLocale>
+#include <QTranslator>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -74,14 +77,15 @@ void printUsage(bool shortDescription)
     printf("    --curve-width=WIDTH        Sets the WIDTH of the curve\n");
     printf("    --filename=NAME            Sets the NAME of the file to plot\n");
     printf("    --footer=FOOTER            Sets the FOOTER of the plot window\n");
-    printf("    --grid=GRID                Sets the GRID of the plot i.e simple, detailed, none\n");
-    printf("    --legend-position=POSITION Sets the POSITION of the legend i.e left, right, top, bottom, none\n");
+    printf("    --grid=GRID                Sets the GRID of the plot i.e., simple, detailed, none, xonly\n");
+    printf("    --legend-position=POSITION Sets the POSITION of the legend i.e., left, right, top, bottom, none\n");
     printf("    --logx=[true|false]        Use log scale for the x-axis\n");
     printf("    --logy=[true|false]        Use log scale for the y-axis\n");
     printf("    --new-window=[true|false]  Create a MDI dialog in the plot-window\n");
     printf("    --plot                     Create a normal plot\n");
     printf("    --plotAll                  Create a normal plot containing every variable in the result-file\n");
     printf("    --plotParametric           Create a parametric plot (plot variables as functions of each other)\n");
+    printf("    --stack=[true|false]       Draw each curve in a lane of its own (by default only Boolean, Integer and enumeration curves)\n");
     printf("    --title=TITLE              Sets the TITLE of the plot window\n");
     printf("    --xlabel=LABEL             Use LABEL as the label of the x-axis\n");
     printf("    --xrange=LEFT:RIGHT        Sets the initial range of the x-axis to LEFT:RIGHT\n");
@@ -124,6 +128,7 @@ int main(int argc, char *argv[])
   QString legendPosition = "top";
   QString footer("");
   bool autoScale = true;
+  bool stack = false;
   QString yaxisID("");
   QStringList vars;
   QString filename;
@@ -187,6 +192,8 @@ int main(int argc, char *argv[])
       footer = argv[i]+9;
     } else if (strncmp(argv[i], "--auto-scale=",13) == 0) {
       CONSUME_BOOL_ARG(i,13,autoScale);
+    } else if (strncmp(argv[i], "--stack=",8) == 0) {
+      CONSUME_BOOL_ARG(i,8,stack);
     } else if (strncmp(argv[i], "--yaxis=", 8) == 0) {
       yaxisID = argv[i] + 8;
       bool digit = true;
@@ -273,9 +280,15 @@ int main(int argc, char *argv[])
   arguments.append(ylabelRight);
   arguments.append(QString::number(yrange1right, 'g', 17));
   arguments.append(QString::number(yrange2right, 'g', 17));
+  arguments.append(stack ? "true" : "false");
   arguments.append(vars);
   // create the plot application object that is used to check that only one instance of application is running
   PlotApplication app(argc, argv, "OMPlot");
+  // load the translations, OMPlot is installed in <omhome>/bin
+  QTranslator translator;
+  if (OMPlot::loadTranslation(translator, QDir::cleanPath(QCoreApplication::applicationDirPath() + "/.."), QLocale::system().name())) {
+    app.installTranslator(&translator);
+  }
   // create the plot main window
   PlotMainWindow w;
   QObject::connect(&app, SIGNAL(messageAvailable(QStringList)),

@@ -669,22 +669,10 @@ algorithm
     local
       FCore.Cache cache;
       FCore.Graph env;
-      DAE.Exp exp;
       list<DAE.Exp> eLst;
       list<Values.Value> valLst;
       String name;
       Values.Value value;
-      Real t1,t2,t;
-
-      // This needs to be first because otherwise it takes 0 time to get the value :)
-    case (cache, env, DAE.CALL(path = Absyn.IDENT(name = "timing"),expLst = {exp}))
-      algorithm
-        t1 := System.time();
-        (cache,_) := Ceval.ceval(cache,env, exp, true, msg,numIter+1);
-        t2 := System.time();
-        t := t2 - t1;
-      then
-        (cache,Values.REAL(t));
 
     case (cache, env, DAE.CALL(path=Absyn.IDENT(name),attr=DAE.CALL_ATTR(builtin=true),expLst=eLst))
       algorithm
@@ -1131,6 +1119,8 @@ algorithm
       then
         ValuesMake.makeIntArray(System.systemCallParallel(strs,i));
 
+    case ("nan",{}) then Values.REAL(System.realNaN());
+
     case ("timerClear",{Values.INTEGER(i)})
       algorithm
         System.realtimeClear(i);
@@ -1244,16 +1234,6 @@ algorithm
         Values.BOOL(true);
 
     case ("generateHeader",_)
-      then Values.BOOL(false);
-
-    case ("generateJuliaHeader",{Values.STRING(filename)})
-      algorithm
-        str := Tpl.tplString(Unparsing.programExternalHeaderJulia, SymbolTable.getSCode());
-        System.writeFile(filename,str);
-      then
-        Values.BOOL(true);
-
-    case ("generateJuliaHeader",_)
       then Values.BOOL(false);
 
     case ("generateCode",{Values.CODE(Absyn.C_TYPENAME(path))})

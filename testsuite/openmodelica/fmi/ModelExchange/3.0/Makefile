@@ -13,6 +13,7 @@ fmi3_arrays_start_vector.mos \
 fmi3_attributes_01.mos \
 fmi3_binary_extobj.mos \
 fmi3_builddescription.mos \
+fmi3_c_daemode_me.mos \
 fmi3_causalize_protected.mos \
 fmi3_clocks.mos \
 fmi3_directional_derivatives.mos \

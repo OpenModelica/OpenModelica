@@ -1,0 +1,49 @@
+// name: entwinedScalarAnchors
+// keywords: NewBackend entwined for-equation tearing
+// status: correct
+// cflags: --newBackend
+//
+// The entwined component inside the torn loop has scalar equations anchored
+// before the first and after the second for-equation of its period.
+
+loadString("
+model entwinedScalarAnchors
+  Real p[3], n[3], phi[3];
+  Real x(start = 1, fixed = true);
+  Real y;
+equation
+  der(x) = -x;
+  p[1] = y;
+  y = x - 0.1*n[3];
+  for i in 1:3 loop
+    n[i] = sin(time) - phi[i];
+  end for;
+  p[2] = -0.5*n[1];
+  p[3] = -0.5*n[2];
+  for i in 1:3 loop
+    phi[i] = (2 + time)*p[i];
+  end for;
+end entwinedScalarAnchors;
+"); getErrorString();
+
+simulate(entwinedScalarAnchors, stopTime = 1); getErrorString();
+val(phi[1], 1);
+val(phi[2], 1);
+val(phi[3], 1);
+val(p[3], 1);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "entwinedScalarAnchors_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'entwinedScalarAnchors', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -0.29371630384406827
+// -1.702780932977947
+// -3.8163778766787657
+// -1.272125958892922
+// endResult

@@ -10,20 +10,19 @@
 model Array7
   model A
     parameter Integer n;
-    parameter Real x[n,n];
+    parameter Real x[n,n](each fixed = false);
   end A;
   A a[2](n={1,2});
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Array7;
 
 // Result:
 // class Array7
-//   parameter Integer a[1].n = 1;
-//   parameter Real a[1].x[1,1];
-//   parameter Integer a[2].n = 2;
-//   parameter Real a[2].x[1,1];
-//   parameter Real a[2].x[1,2];
-//   parameter Real a[2].x[2,1];
-//   parameter Real a[2].x[2,2];
+//   final parameter Integer a[1].n = 1;
+//   parameter Real a[1].x[1,1](fixed = false);
+//   final parameter Integer a[2].n = 2;
+//   parameter Real a[2].x[1,1](fixed = false);
+//   parameter Real a[2].x[1,2](fixed = false);
+//   parameter Real a[2].x[2,1](fixed = false);
+//   parameter Real a[2].x[2,2](fixed = false);
 // end Array7;
 // endResult

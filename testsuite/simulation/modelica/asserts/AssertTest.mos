@@ -6,7 +6,6 @@
 // Error! Assertion does not cancel simulation.
 // Simulation should fail! Update case after implementation of assert.
 // Drmodelica: 8.2 Assert (p. 249)
-// cflags: -d=-newInst
 //
 
 loadFile("AssertTest.mo");

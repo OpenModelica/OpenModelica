@@ -12,7 +12,6 @@ model VectorizeConstCref2D
   parameter Real[3] t = {0, 0, -1};
 equation
    tmp = phi[:, 1:3] * f + phi[:, 4:6] * t;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end VectorizeConstCref2D;
 
 // Result:

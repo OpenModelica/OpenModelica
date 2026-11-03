@@ -50,6 +50,7 @@ protected
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import NFFunction.Function;
+  import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
 
@@ -58,8 +59,10 @@ protected
   import BackendDAE = NBackendDAE;
   import Causalize = NBCausalize;
   import BEquation = NBEquation;
+  import Events = NBEvents;
   import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, EquationKind, WhenEquationBody, WhenStatement};
   import Matching = NBMatching;
+  import Slice = NBSlice;
   import Sorting = NBSorting;
   import StrongComponent = NBStrongComponent;
   import Partition = NBPartition;
@@ -68,12 +71,16 @@ protected
 
   // Util
   import MetaModelica.Dangerous;
+  import Array;
   import DoubleEnded;
+  import Graph;
+  import List;
   import Rational;
   import NBBackendUtil;
   import PointerWeak;
   import UnorderedMap;
   import UnorderedSet;
+  import Util;
 
   // Old imports
   import OldDAE = DAE;
@@ -568,9 +575,14 @@ public
         DoubleEnded.MutableList<Partition.Partition> ode_evt = DoubleEnded.MutableList.fromList({});
         DoubleEnded.MutableList<Partition.Partition> alg_evt = DoubleEnded.MutableList.fromList({});
         DoubleEnded.MutableList<Partition.Partition> clocked = DoubleEnded.MutableList.fromList({});
+        UnorderedSet<ComponentRef> event_crefs;
 
       case BackendDAE.MAIN() algorithm
-        for syst in bdae.ode loop
+        event_crefs := eventCrefs(bdae.eventInfo);
+        for part in bdae.ode loop
+          EquationPointers.mapExp(part.equations, function collectDelayCrefs(crefs = event_crefs));
+        end for;
+        for syst in List.flatten(list(splitAlgebraic(p, event_crefs) for p in bdae.ode)) loop
           Partition.Partition.categorize(syst, ode, alg, ode_evt, alg_evt, clocked);
         end for;
         bdae.ode := DoubleEnded.MutableList.toListAndClear(ode);
@@ -585,6 +597,145 @@ public
       then fail();
     end match;
   end categorize;
+
+  function splitAlgebraic
+    "splits the strong components of a continuous partition that no state derivative,
+    discrete variable or event depends on into an algebraic partition. they are only
+    needed for the output and not evaluated with the ode."
+    input Partition.Partition part;
+    input UnorderedSet<ComponentRef> event_crefs;
+    output list<Partition.Partition> parts = {part};
+  protected
+    array<StrongComponent> comps;
+    Integer n;
+    UnorderedMap<ComponentRef, Slice.IntLst> solved = UnorderedMap.new<Slice.IntLst>(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedMap<ComponentRef, Slice.IntLst> solved_elements = UnorderedMap.new<Slice.IntLst>(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedSet<ComponentRef> deps, alg_vars, alg_eqns;
+    array<tuple<Integer, list<Integer>>> graph;
+    list<Integer> seeds = {};
+    array<Boolean> needed;
+    ComponentRef name;
+    Boolean has_der = false;
+    Partition.Partition ode_part, alg_part;
+  algorithm
+    if Partition.Partition.isClocked(part) or isSome(part.daeUnknowns) or isNone(part.strongComponents) then
+      return;
+    end if;
+    SOME(comps) := part.strongComponents;
+    n := arrayLength(comps);
+
+    // the components that solve a variable, seeded by state derivatives, discrete and event variables
+    for i in 1:n loop
+      for cref in StrongComponent.getVariableCrefs(comps[i]) loop
+        if hasLiteralSubscripts(cref) then
+          UnorderedMap.add(cref, i :: UnorderedMap.getOrDefault(cref, solved_elements, {}), solved_elements);
+        end if;
+      end for;
+      for var in StrongComponent.getVariables(comps[i]) loop
+        name := ComponentRef.stripSubscriptsAll(BVariable.getVarName(var));
+        UnorderedMap.add(name, i :: UnorderedMap.getOrDefault(name, solved, {}), solved);
+        has_der := has_der or BVariable.isStateDerivative(var);
+        if BVariable.isStateDerivative(var) or BVariable.isDiscrete(var) or UnorderedSet.contains(name, event_crefs) then
+          seeds := i :: seeds;
+        end if;
+      end for;
+    end for;
+
+    // edges to the components a component depends on
+    graph := arrayCreate(n, (0, {}));
+    for i in 1:n loop
+      deps := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+      for eqn in componentEquations(comps[i]) loop
+        Equation.map(Pointer.access(eqn), function collectPartitioningCrefs(var_crefs = deps, strip = false), NONE(), Expression.fakeMap);
+      end for;
+      graph[i] := (i, List.flatten(list(solvingComponents(d, solved_elements, solved) for d in UnorderedSet.toList(deps))));
+    end for;
+
+    needed := arrayCreate(n, false);
+    for i in Graph.allReachableNodesInt((seeds, {}), graph, n + 1, n) loop
+      needed[i] := true;
+    end for;
+    if not has_der or Array.all(needed, Util.id) then
+      return;
+    end if;
+
+    alg_vars := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    alg_eqns := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    for i in 1:n loop
+      if not needed[i] then
+        for var in StrongComponent.getVariables(comps[i]) loop
+          UnorderedSet.add(BVariable.getVarName(var), alg_vars);
+        end for;
+        for eqn in componentEquations(comps[i]) loop
+          UnorderedSet.add(Equation.getEqnName(eqn), alg_eqns);
+        end for;
+      end if;
+    end for;
+
+    ode_part := part;
+    ode_part.strongComponents := SOME(listArray(list(comps[i] for i guard(needed[i]) in 1:n)));
+    ode_part.unknowns := VariablePointers.fromList(list(v for v guard(not UnorderedSet.contains(BVariable.getVarName(v), alg_vars)) in VariablePointers.toList(part.unknowns)), part.unknowns.scalarized);
+    ode_part.equations := EquationPointers.fromList(list(e for e guard(not UnorderedSet.contains(Equation.getEqnName(e), alg_eqns)) in EquationPointers.toList(part.equations)));
+    alg_part := part;
+    alg_part.strongComponents := SOME(listArray(list(comps[i] for i guard(not needed[i]) in 1:n)));
+    alg_part.unknowns := VariablePointers.fromList(list(v for v guard(UnorderedSet.contains(BVariable.getVarName(v), alg_vars)) in VariablePointers.toList(part.unknowns)), part.unknowns.scalarized);
+    alg_part.equations := EquationPointers.fromList(list(e for e guard(UnorderedSet.contains(Equation.getEqnName(e), alg_eqns)) in EquationPointers.toList(part.equations)));
+    parts := {ode_part, alg_part};
+  end splitAlgebraic;
+
+  function componentEquations
+    "all equations of a strong component, also the inner equations of algebraic loops"
+    input StrongComponent comp;
+    output list<Pointer<Equation>> eqns;
+  algorithm
+    eqns := match comp
+      case StrongComponent.ALGEBRAIC_LOOP() then listAppend(StrongComponent.getEquations(comp),
+        List.flatten(list(componentEquations(c) for c in comp.strict.innerEquations)));
+      else StrongComponent.getEquations(comp);
+    end match;
+  end componentEquations;
+
+  function eventCrefs
+    "the variables zero crossings and event conditions depend on"
+    input Events.EventInfo eventInfo;
+    output UnorderedSet<ComponentRef> crefs = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+  algorithm
+    () := match eventInfo
+      case Events.EventInfo.EVENT_INFO() algorithm
+        for cond in listAppend(UnorderedMap.keyList(eventInfo.time_map), UnorderedMap.keyList(eventInfo.state_map)) loop
+          collectPartitioningCrefs(cond.exp, crefs);
+        end for;
+        for sev in UnorderedMap.valueList(eventInfo.state_map) loop
+          UnorderedSet.add(BVariable.getVarName(sev.auxiliary), crefs);
+        end for;
+        for mev in eventInfo.math_lst loop
+          collectPartitioningCrefs(mev.exp, crefs);
+        end for;
+        for sd in eventInfo.spatial_lst loop
+          for exp in {sd.in0, sd.in1, sd.pos, sd.dir} loop
+            collectPartitioningCrefs(exp, crefs);
+          end for;
+        end for;
+      then ();
+      else ();
+    end match;
+  end eventCrefs;
+
+  function collectDelayCrefs
+    "the variables of delay() calls, their buffers are filled after every step"
+    input output Expression exp;
+    input UnorderedSet<ComponentRef> crefs;
+  algorithm
+    () := match exp
+      local
+        Call call;
+      case Expression.CALL(call = call as Call.TYPED_CALL())
+        guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "delay") algorithm
+        collectPartitioningCrefs(exp, crefs);
+      then ();
+      else ();
+    end match;
+  end collectDelayCrefs;
 
   function extractClocksEqn
     input output Equation eqn;
@@ -972,7 +1123,7 @@ protected
 
         // collect all crefs in equation
         var_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-        Equation.map(Pointer.access(eqn), function collectPartitioningCrefs(var_crefs = var_crefs), NONE(), Expression.fakeMap);
+        Equation.map(Pointer.access(eqn), function collectPartitioningCrefs(var_crefs = var_crefs, strip = true), NONE(), Expression.fakeMap);
 
         // find all indices of connected variables
         var_indices := list(VariablePointers.getVarIndex(variables, cref) for cref in UnorderedSet.toList(var_crefs));
@@ -1245,9 +1396,28 @@ protected
     end for;
   end sortClockedPartitions;
 
+  function solvingComponents
+    "a literal element (x[2]) solved by its own component only depends on that component"
+    input ComponentRef cref;
+    input UnorderedMap<ComponentRef, Slice.IntLst> solved_elements;
+    input UnorderedMap<ComponentRef, Slice.IntLst> solved;
+    output Slice.IntLst comps;
+  algorithm
+    comps := match UnorderedMap.get(cref, solved_elements)
+      case SOME(comps) guard(hasLiteralSubscripts(cref)) then comps;
+      else UnorderedMap.getOrDefault(ComponentRef.stripSubscriptsAll(cref), solved, {});
+    end match;
+  end solvingComponents;
+
+  function hasLiteralSubscripts
+    input ComponentRef cref;
+    output Boolean b = List.all(ComponentRef.subscriptsAllFlat(cref), Subscript.isLiteral);
+  end hasLiteralSubscripts;
+
   function collectPartitioningCrefs
     input output Expression exp;
     input UnorderedSet<ComponentRef> var_crefs;
+    input Boolean strip = true "false to keep the subscripts of the variables";
   algorithm
     exp := match exp
       local
@@ -1278,8 +1448,8 @@ protected
                 Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
               then fail();
             end match;
-          then Expression.mapShallow(arg, function collectPartitioningCrefs(var_crefs = var_crefs));
-          else Expression.mapShallow(exp, function collectPartitioningCrefs(var_crefs = var_crefs));
+          then Expression.mapShallow(arg, function collectPartitioningCrefs(var_crefs = var_crefs, strip = strip));
+          else Expression.mapShallow(exp, function collectPartitioningCrefs(var_crefs = var_crefs, strip = strip));
         end match;
       then newExp;
 
@@ -1296,14 +1466,21 @@ protected
 
         for child in children loop
           // check if cref has to be considered as a dependency
-          stripped := ComponentRef.stripSubscriptsAll(child);
+          stripped := if strip then ComponentRef.stripSubscriptsAll(child) else child;
           if not BVariable.checkCref(stripped, BVariable.isParamOrConst, sourceInfo()) then
             addCrefToSet(stripped, var_crefs);
           end if;
         end for;
+
+        // variables in subscripts (e.g. idx in y = val[idx]) are dependencies as well
+        for sub in ComponentRef.subscriptsAllFlat(exp.cref) loop
+          if (Subscript.isIndex(sub) or (Subscript.isSliced(sub) and not Subscript.isWhole(sub))) and not Subscript.isLiteral(sub) then
+            collectPartitioningCrefs(Subscript.toExp(sub), var_crefs, strip);
+          end if;
+        end for;
       then exp;
 
-      else Expression.mapShallow(exp, function collectPartitioningCrefs(var_crefs = var_crefs));
+      else Expression.mapShallow(exp, function collectPartitioningCrefs(var_crefs = var_crefs, strip = strip));
     end match;
   end collectPartitioningCrefs;
 

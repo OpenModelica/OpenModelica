@@ -13,15 +13,14 @@ model Vectorizable7
   end f;
 
   Real r = f(integer(time));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Vectorizable7;
 
 // Result:
 // function Vectorizable7.f
 //   input Integer m;
 //   output Real y;
-//   protected parameter Real[m] phi = array(/*Real*/(-1 + i) / /*Real*/(-1 + m) for i in 1:m);
-//   protected parameter Real[m] t = array(cos($tmpVar5) for $tmpVar5 in phi);
+//   protected parameter Real[m] phi = array((/*Real*/(i) - 1.0) / (/*Real*/(m) - 1.0) for i in 1:m);
+//   protected parameter Real[m] t = array(cos(phi[$i0]) for $i0 in 1:m);
 // algorithm
 //   y := sum(t);
 // end Vectorizable7.f;

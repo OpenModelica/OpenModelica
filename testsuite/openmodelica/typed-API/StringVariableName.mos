@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 
 loadString("model M
   Real r(fixed=true) = r + der(r) - 1.0;

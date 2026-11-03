@@ -11,13 +11,12 @@ model Test
   constant Integer y = 3;
 end Test;
 
-class C1
+model C1
   parameter Integer x = 1;
 end C1;
 
 model DeclarationOrder
   Test t;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DeclarationOrder;
 
 // Result:

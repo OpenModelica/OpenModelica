@@ -1,7 +1,6 @@
 // name:     Modelica.Fluid.Examples.PumpingSystem
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library
@@ -41,11 +40,11 @@ runScript(modelTesting);getErrorString();
 // Result file: Modelica.Fluid.Examples.PumpingSystem_res.mat
 // Messages: LOG_ASSERT        | warning | [Modelica 4.1.0+maint.om/Fluid/Interfaces.mo:1027:9-1032:39:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((pipe.flowModel.m_flows[1] >= -0.0 and pipe.flowModel.m_flows[1] <= 1e5)) --> "Variable violating min/max constraint: -0.0 <= pipe.flowModel.m_flows[1] <= 1e5, has value: -141.424"
+// |                 | |       | ((pipe.flowModel.m_flows[1] >= 0.0 and pipe.flowModel.m_flows[1] <= 1e5)) --> "Variable violating min/max constraint: 0.0 <= pipe.flowModel.m_flows[1] <= 1e5, has value: -141.424"
 // LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
-// LOG_ASSERT        | info    | [Modelica 4.1.0+maint.om/Fluid/Valves.mo:308:5-316:27:writable]
+// LOG_ASSERT        | info    | [Modelica 4.1.0+maint.om/Blocks/Interfaces.mo:300:5-301:56:writable]
 // |                 | |       | The following assertion has been violated at time 200.000000
-// |                 | |       | ((userValve.opening >= 0.0 and userValve.opening <= 1.0)) --> "Variable violating min/max constraint: 0.0 <= userValve.opening <= 1.0, has value: 1"
+// |                 | |       | ((valveOpening.y >= 0.0 and valveOpening.y <= 1.0)) --> "Variable violating min/max constraint: 0.0 <= valveOpening.y <= 1.0, has value: 1"
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!

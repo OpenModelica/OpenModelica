@@ -102,6 +102,7 @@ algorithm
   elems := convertInitialEquations(flatModel.initialEquations, elems);
   elems := convertAlgorithms(flatModel.algorithms, elems);
   elems := convertInitialAlgorithms(flatModel.initialAlgorithms, elems);
+  elems := convertOptimica(flatModel, elems);
 
   class_elem := DAE.COMP(FlatModel.fullName(flatModel), elems, flatModel.source, ElementSource.getOptComment(flatModel.source));
   dae := DAE.DAE({class_elem});
@@ -115,6 +116,46 @@ algorithm
 end convertStatements;
 
 protected
+function convertOptimica
+  input FlatModel flatModel;
+  input output list<DAE.Element> elements;
+protected
+  Option<DAE.Exp> objective, objective_integrand, start_time, final_time;
+algorithm
+  if not listEmpty(flatModel.constraints) then
+    elements := DAE.Element.CONSTRAINT(
+      DAE.Constraint.CONSTRAINT_EXPS(list(Expression.toDAE(e) for e in flatModel.constraints)),
+      flatModel.source) :: elements;
+  end if;
+
+  if not listEmpty(flatModel.optimizationAttributes) then
+    objective := convertOptimizationAttribute("objective", flatModel.optimizationAttributes);
+    objective_integrand := convertOptimizationAttribute("objectiveIntegrand", flatModel.optimizationAttributes);
+    start_time := convertOptimizationAttribute("startTime", flatModel.optimizationAttributes);
+    final_time := convertOptimizationAttribute("finalTime", flatModel.optimizationAttributes);
+    elements := DAE.Element.CLASS_ATTRIBUTES(DAE.ClassAttributes.OPTIMIZATION_ATTRS(
+      objective, objective_integrand, start_time, final_time)) :: elements;
+  end if;
+end convertOptimica;
+
+function convertOptimizationAttribute
+  input String name;
+  input list<tuple<String, Expression>> attributes;
+  output Option<DAE.Exp> exp = NONE();
+protected
+  String attr_name;
+  Expression attr_exp;
+algorithm
+  for attr in attributes loop
+    (attr_name, attr_exp) := attr;
+
+    if attr_name == name then
+      exp := SOME(Expression.toDAE(attr_exp));
+      return;
+    end if;
+  end for;
+end convertOptimizationAttribute;
+
 uniontype VariableConversionSettings
   record VARIABLE_CONVERSION_SETTINGS
     Boolean isFunctionParameter;

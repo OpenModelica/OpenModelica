@@ -6,18 +6,17 @@
 //
 
 model Type6
-  parameter Integer i             "an integer";
-  parameter Real r                "a real value";
-  parameter String s              "a string";
-  parameter Boolean b             "a boolean";
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
+  parameter Integer i(fixed = false)             "an integer";
+  parameter Real r(fixed = false)                "a real value";
+  parameter String s(fixed = false)              "a string";
+  parameter Boolean b(fixed = false)             "a boolean";
 end Type6;
 
 // Result:
 // class Type6
-//   parameter Integer i "an integer";
-//   parameter Real r "a real value";
+//   parameter Integer i(fixed = false) "an integer";
+//   parameter Real r(fixed = false) "a real value";
 //   parameter String s "a string";
-//   parameter Boolean b "a boolean";
+//   parameter Boolean b(fixed = false) "a boolean";
 // end Type6;
 // endResult

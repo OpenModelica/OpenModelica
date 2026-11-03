@@ -1,0 +1,39 @@
+// name: linearSystemResidualIndex
+// keywords: NewBackend tearing linear residual
+// status: correct
+// suite: cSources
+// cflags: --newBackend
+// teardown_command: rm -f linearSystemResidualIndex linearSystemResidualIndex_* linearSystemResidualIndex.log linearSystemResidualIndex.c linearSystemResidualIndex.o linearSystemResidualIndex.makefile linearSystemResidualIndex.libs
+//
+// The residuals of a linear system that is not resizable are written to
+// literal positions of the residual vector, not to offsets summed up over
+// the preceding residuals.
+
+loadString("
+model linearSystemResidualIndex
+  Real x[3];
+equation
+  x[1] + 2 * x[2] - x[3] = sin(time);
+  3 * x[1] - x[2] + x[3] = cos(time);
+  x[1] + x[2] + 4 * x[3] = 1;
+end linearSystemResidualIndex;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(linearSystemResidualIndex); getErrorString();
+system("grep -q 'res\\[0\\] = ' linearSystemResidualIndex_03lsy.c");
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "linearSystemResidualIndex_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'linearSystemResidualIndex', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0
+// endResult

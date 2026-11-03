@@ -5,13 +5,20 @@
 // Tests the discrete prefix on a regular type
 //
 
-class DiscreteDeclType
-  discrete Real rDiscrete = 1.0;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
+model DiscreteDeclType
+  discrete Real rDiscrete;
+equation
+  when initial() then
+    rDiscrete = 1.0;
+  end when;
 end DiscreteDeclType;
 
 // Result:
 // class DiscreteDeclType
-//   discrete Real rDiscrete = 1.0;
+//   discrete Real rDiscrete;
+// equation
+//   when initial() then
+//     rDiscrete = 1.0;
+//   end when;
 // end DiscreteDeclType;
 // endResult

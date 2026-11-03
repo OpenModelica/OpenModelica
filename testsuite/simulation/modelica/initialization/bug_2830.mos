@@ -2,7 +2,6 @@
 // keywords: initialization
 // status: correct
 // teardown_command: rm -rf initializationTests.bug_2830* _initializationTests.bug_2830* output.log
-// cflags: -d=-newInst
 
 
 loadString("

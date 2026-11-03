@@ -44,7 +44,7 @@
 #include "../simulation/solver/initialization/initialization.h"
 #include "../simulation/solver/stateset.h"
 #include "../simulation/solver/model_help.h"
-#ifdef WITH_SUNDIALS
+#ifdef OMC_FMI_HAVE_CVODE
 #include "../simulation/solver/cvode_solver.h"
 #endif
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
@@ -327,21 +327,12 @@ static void omc_terminate_fmi(FILE_INFO info, const char *msg, ...)
 // ---------------------------------------------------------------------------
 // Private helpers functions
 // ---------------------------------------------------------------------------
-static inline void resetThreadData(ModelInstance* comp)
-{
-#if defined(OM_HAVE_PTHREADS)
-  if (comp->threadDataParent) {
-    pthread_setspecific(mmc_thread_data_key, comp->threadDataParent);
-  }
-#endif
-}
-
+/* Code without a threadData argument (warning asserts, terminate, ModelicaError)
+   finds it through the key. The importer may call from any thread. */
 static inline void setThreadData(ModelInstance* comp)
 {
 #if defined(OM_HAVE_PTHREADS)
-  if (comp->threadDataParent) {
-    pthread_setspecific(mmc_thread_data_key, comp->threadData);
-  }
+  pthread_setspecific(mmc_thread_data_key, comp->threadData);
 #endif
 }
 
@@ -433,7 +424,7 @@ fmi3Status internalEventUpdate(ModelInstance* c, EventInfo* eventInfo)
     for(i=0; i<comp->fmuData->modelData->nSamples; ++i) {
       if (comp->fmuData->simulationInfo->samples[i]) {
         comp->fmuData->simulationInfo->samples[i] = 0;
-        comp->fmuData->simulationInfo->nextSampleTimes[i] += comp->fmuData->modelData->samplesInfo[i].interval;
+        advanceSample(comp->fmuData, i);
       }
     }
 
@@ -509,7 +500,6 @@ fmi3Status internalEventUpdate(ModelInstance* c, EventInfo* eventInfo)
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
   threadData->mmc_jumper = old_jmp;
   releaseAsserts(comp);
-  resetThreadData(comp);
 
   if (done) {
     return fmi3OK;
@@ -655,7 +645,6 @@ fmi3Status updateIfNeeded(ModelInstance *comp, const char *func)
 #endif
     if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); success = 0; }
 
-    resetThreadData(comp);
     releaseAsserts(comp);
     if (!success)
     {
@@ -710,7 +699,6 @@ ModelInstance* omcInstantiate(fmi3String instanceName, OMC_FmuType fmuType, fmi3
   TODO: We should set the interface, but we can't until it's no longer a global variable.
   * The problem is that we might overwrite the main simulation's copy of the interface...
   */
-  threadData_t *threadDataParent = (threadData_t*) pthread_getspecific(mmc_thread_data_key);
   ModelInstance *comp;
   if (!logMessage) {
     return NULL;
@@ -769,7 +757,6 @@ ModelInstance* omcInstantiate(fmi3String instanceName, OMC_FmuType fmuType, fmi3
   */
 
   comp->threadData = threadData;
-  comp->threadDataParent = threadDataParent;
   comp->fmuData = fmudata;
   threadData->localRoots[LOCAL_ROOT_FMI_DATA] = comp;
 
@@ -778,9 +765,7 @@ ModelInstance* omcInstantiate(fmi3String instanceName, OMC_FmuType fmuType, fmi3
     comp->logCategories[i] = loggingOn;
   }
 
-#if defined(OM_HAVE_PTHREADS)
-  pthread_setspecific(mmc_thread_data_key, comp->threadData);
-#endif
+  setThreadData(comp);
   omc_assert = omc_assert_fmi;
   omc_assert_warning = omc_assert_fmi_warning;
   omc_terminate = omc_terminate_fmi;
@@ -924,7 +909,6 @@ ModelInstance* omcInstantiate(fmi3String instanceName, OMC_FmuType fmuType, fmi3
   }
 
   FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcInstantiate: GUID=%s", fmuGUID)
-  resetThreadData(comp);
   return comp;
 }
 
@@ -945,6 +929,7 @@ void omcFreeInstance(ModelInstance* c)
     FMI3CS_deInitializeSolverData(comp);
   }
 
+  setThreadData(comp);
   /* call external objects destructors */
   comp->fmuData->callback->callExternalObjectDestructors(comp->fmuData, comp->threadData);
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
@@ -1084,7 +1069,6 @@ fmi3Status omcExitInitializationMode(ModelInstance* c)
       comp->state = model_state_error;
       OMC_RESTORE_INTERNAL(simulationJumpBuffer);
       threadData->mmc_jumper = old_jmp;
-      resetThreadData(comp);
       FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "omcExitInitializationMode: failed")
       return fmi3Error;
     }
@@ -1126,7 +1110,6 @@ fmi3Status omcExitInitializationMode(ModelInstance* c)
   }
 
   comp->state = isCoSimulation(comp) ? model_state_cs_step_complete : model_state_me_event_mode;
-  resetThreadData(comp);
 
   FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcExitInitializationMode: succeed")
   return res;
@@ -1147,9 +1130,7 @@ fmi3Status omcTerminate(ModelInstance* c)
     return fmi3Error;
   FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcTerminate...")
 
-  setThreadData(comp);
   comp->state = model_state_terminated;
-  resetThreadData(comp);
   return fmi3OK;
 }
 
@@ -1245,7 +1226,6 @@ fmi3Status omcReset(ModelInstance* c)
 
   comp->_need_update = 1;
   comp->state = model_state_instantiated;
-  resetThreadData(comp);
   return fmi3OK;
 }
 
@@ -1958,7 +1938,6 @@ fmi3Status omcGetDirectionalDerivativeForInitialization(ModelInstance* c,
    * known variables only */
   setThreadData(comp);
   fmudata->callback->functionJacFMIDERINIT_column(fmudata, td, comp->fmiDerJacInitialization, NULL);
-  resetThreadData(comp);
 
   /* Write the results to dvUnknown array */
   for (i=0;i<nUnknown; i++)
@@ -2038,7 +2017,6 @@ fmi3Status omcGetDirectionalDerivative(ModelInstance* c,
    * known variables only */
   setThreadData(comp);
   fmudata->callback->functionJacFMIDER_column(fmudata, td, comp->fmiDerJac, NULL);
-  resetThreadData(comp);
 
   /* Write the results to dvUnknown array */
   for (i=0;i<nUnknown; i++) {
@@ -2162,7 +2140,6 @@ fmi3Status internal_CompletedIntegratorStep(ModelInstance* c, const char *func, 
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
   threadData->mmc_jumper = old_jmp;
-  resetThreadData(comp);
   releaseAsserts(comp);
 
   if (done) {
@@ -2272,7 +2249,6 @@ fmi3Status internalGetDerivatives(ModelInstance* c, const char *func, fmi3Float6
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
 
   threadData->mmc_jumper = old_jmp;
-  resetThreadData(comp);
   releaseAsserts(comp);
 
   if (done) {
@@ -2327,7 +2303,6 @@ fmi3Status internalGetEventIndicators(ModelInstance* c, const char *func, fmi3Fl
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
   threadData->mmc_jumper = old_jmp;
-  resetThreadData(comp);
   releaseAsserts(comp);
 
   if (done) {
@@ -2643,7 +2618,7 @@ static fmi3Status doStepInternal(ModelInstance* c, fmi3Float64 currentCommunicat
         }
         break;
       case S_CVODE:
-#ifdef WITH_SUNDIALS
+#ifdef OMC_FMI_HAVE_CVODE
         flag = cvode_solver_fmi_step(comp, tNext, states);
         if (flag < 0)
         {
@@ -2655,7 +2630,7 @@ static fmi3Status doStepInternal(ModelInstance* c, fmi3Float64 currentCommunicat
         FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "fmi3DoStep: FMU not compiled with SUNDIALS but solver CVODE selected.")
         status = fmi3Fatal;
         goto doStep_cleanup;
-#endif /* WITH_SUNDIALS */
+#endif /* OMC_FMI_HAVE_CVODE */
         break;
       default:
         FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "fmi3DoStep: Unknown solver method %d.", comp->solverInfo->solverMethod)
@@ -2792,7 +2767,6 @@ static fmi3Status doStepInternal(ModelInstance* c, fmi3Float64 currentCommunicat
 doStep_cleanup:
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
   threadData->mmc_jumper = old_jmp;
-  resetThreadData(comp);
 
   if (!done)
   {
@@ -3002,7 +2976,7 @@ int FMI3CS_initializeSolverData(ModelInstance* comp)
       retValue = 0;
       break;
       case S_CVODE:
-#ifdef WITH_SUNDIALS
+#ifdef OMC_FMI_HAVE_CVODE
       omc_useStream[OMC_LOG_SOLVER] = 1;
       CVODE_SOLVER* cvodeData = NULL;
       FILTERED_LOG(comp, fmi3OK, LOG_ALL, "Initializing CVODE ODE Solver")
@@ -3024,7 +2998,7 @@ int FMI3CS_initializeSolverData(ModelInstance* comp)
       solverInfo->solverData = NULL;
       FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "omcInstantiate: FMU not compiled with SUNDIALS but solver CVODE selected.")
       retValue = -1;
-#endif /* WITH_SUNDIALS */
+#endif /* OMC_FMI_HAVE_CVODE */
       break;
     default:
       FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "omcInstantiate: Unknown solver method.")
@@ -3069,14 +3043,14 @@ int FMI3CS_deInitializeSolverData(ModelInstance* comp)
       retValue = 0;
       break;
     case S_CVODE:
-#ifdef WITH_SUNDIALS
+#ifdef OMC_FMI_HAVE_CVODE
       retValue = cvode_solver_deinitial(solverInfo->solverData);
       break;
 #else
       FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "omcInstantiate: FMU not compiled with SUNDIALS but solver CVODE selected.")
       retValue = -1;
       break;
-#endif /* WITH_SUNDIALS */
+#endif /* OMC_FMI_HAVE_CVODE */
     default:
       FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "omcFreeInstance: Unknown solver method.")
       retValue = -1;
@@ -4125,7 +4099,6 @@ fmi3Status fmi3ActivateModelPartition(fmi3Instance instance, fmi3ValueReference 
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
   threadData->mmc_jumper = old_jmp;
-  resetThreadData(comp);
 
   if (done) {
     return fmi3OK;

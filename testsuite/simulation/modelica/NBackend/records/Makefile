@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 zeroSizeRecordField.mos \
+RecordParamOrder.mos \
 constantRecordField.mos \
 simple_record.mos \
 nestedRecordBinding.mos \

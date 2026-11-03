@@ -46,8 +46,6 @@ extern "C" {
 #include "../../util/omc_error.h"
 #include "../simulation_info_json.h"
 
-#ifdef WITH_SUNDIALS
-
 #include <sundials/sundials_context.h>   /* SUNContext */
 #include <sundials/sundials_logger.h>    /* SUNLogger */
 #include <cvode/cvode.h>
@@ -95,7 +93,6 @@ void kinsolErrorHandlerFunction(int line, const char *func, const char *file,
                                 void *err_user_data, SUNContext sunctx);
 #endif /* OMC_FMI_RUNTIME */
 void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel);
-#endif /* WITH_SUNDIALS */
 
 #ifdef __cplusplus
 };

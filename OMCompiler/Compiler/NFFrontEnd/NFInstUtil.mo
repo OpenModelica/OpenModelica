@@ -459,6 +459,9 @@ public
         case SCode.Element.COMPONENT()
           guard isMergeableComponent(e)
           algorithm
+            // Canonicalize the mod so we don't have to deal with submodifiers
+            // that modify the same element.
+            e.modifications := canonicalizeMod(e.modifications);
             UnorderedMap.addUpdate(getComponentSignature(e),
               function append_merge(elem = e), merge_map);
           then
@@ -483,6 +486,66 @@ public
       end if;
     end for;
   end makeMergeMap;
+
+  function canonicalizeMod
+    "Merges submodifiers in the modifier, (a(x = 1), a(y = 2)) => (a(x = 1, y = 2))"
+    input output SCode.Mod mod;
+  protected
+    UnorderedMap<String, SCode.SubMod> sub_mods;
+
+    function merge_mod
+      input SCode.SubMod subMod1;
+      input SCode.SubMod subMod2;
+      output SCode.SubMod subMod;
+    protected
+      SCode.Mod mod1, mod2;
+    algorithm
+      mod1 := subMod1.mod;
+      mod2 := subMod2.mod;
+
+      mod1 := match (mod1, mod2)
+        case (SCode.Mod.MOD(), SCode.Mod.MOD())
+          guard isNone(mod1.binding) or isNone(mod2.binding)
+          algorithm
+            mod1.binding := if isSome(mod1.binding) then mod1.binding else mod2.binding;
+            mod1.subModLst := listAppend(mod1.subModLst, mod2.subModLst);
+          then
+            mod1;
+
+        else
+          algorithm
+            Error.addMultiSourceMessage(Error.DUPLICATE_MODIFICATIONS,
+              {subMod1.ident, ""}, {SCodeUtil.getModifierInfo(mod1), SCodeUtil.getModifierInfo(mod2)});
+          then
+            fail();
+      end match;
+
+      subMod := SCode.SubMod.NAMEMOD(subMod1.ident, mod1);
+    end merge_mod;
+  algorithm
+    () := match mod
+      case SCode.MOD()
+        guard not listEmpty(mod.subModLst)
+        algorithm
+          sub_mods := UnorderedMap.new<SCode.SubMod>(stringHashDjb2, stringEq);
+
+          for sm in mod.subModLst loop
+            UnorderedMap.addMerge(sm.ident, sm, merge_mod, sub_mods);
+          end for;
+
+          mod.subModLst := list(canonicalizeSubMod(sm) for sm in UnorderedMap.valueList(sub_mods));
+        then
+          ();
+
+      else ();
+    end match;
+  end canonicalizeMod;
+
+  function canonicalizeSubMod
+    input output SCode.SubMod subMod;
+  algorithm
+    subMod.mod := canonicalizeMod(subMod.mod);
+  end canonicalizeSubMod;
 
   function isMergeableComponent
     "Returns true if an element is a component that is considered to be

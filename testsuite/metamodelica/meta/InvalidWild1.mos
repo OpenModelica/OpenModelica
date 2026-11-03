@@ -1,5 +1,5 @@
 // name: InvalidWild1
-// cflags: -g=MetaModelica -d=-newInst
+// cflags: -g=MetaModelica
 // status: correct
 // suite: metamodelica
 

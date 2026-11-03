@@ -1,0 +1,212 @@
+// name: cellierEntwined
+// keywords: NewBackend, tearing, entwined, resizable
+// status: correct
+//
+// Cellier tearing assigns the rows of two for-equations that alternate as one entwined component,
+// with the scalar equation that starts the chain, instead of tearing a whole array. The order holds
+// for every size of resizable arrays.
+
+loadString("
+package CellierEntwined
+  model Forward
+    parameter Integer N = 4;
+    Real p[N], T[N], z;
+  equation
+    p[1] = z + 1;
+    for i in 2:N loop
+      p[i] = T[i - 1] + 1;
+    end for;
+    for i in 1:N loop
+      T[i] = 0.5 * p[i] + 0.1 * sin(time);
+    end for;
+    z = cos(T[N]);
+  end Forward;
+  model Backward
+    parameter Integer N = 4;
+    Real p[N], T[N], z;
+  equation
+    p[N] = z + 1;
+    for i in 1:N-1 loop
+      p[i] = T[i + 1] + 1;
+    end for;
+    for i in 1:N loop
+      T[i] = 0.5 * p[i] + 0.1 * sin(time);
+    end for;
+    z = cos(T[1]);
+  end Backward;
+  model Forward6 = Forward(N = 6);
+  model Backward6 = Backward(N = 6);
+end CellierEntwined;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=tearingdump"); getErrorString();
+simulate(CellierEntwined.Forward); getErrorString();
+val(z, 1);
+val(T[4], 1);
+setCommandLineOptions("-d=-tearingdump"); getErrorString();
+simulate(CellierEntwined.Forward6); getErrorString();
+val(z, 1);
+val(T[6], 1);
+simulate(CellierEntwined.Backward6); getErrorString();
+val(z, 1);
+val(T[1], 1);
+
+setCommandLineOptions("--resizableArrays"); getErrorString();
+simulate(CellierEntwined.Forward, simflags = "-override=N=6"); getErrorString();
+val(z, 1);
+val(T[6], 1);
+simulate(CellierEntwined.Backward, simflags = "-override=N=6"); getErrorString();
+val(z, 1);
+val(T[1], 1);
+// Result:
+// true
+// ""
+// true
+// ""
+// #####################
+//
+//     [INI] Tearing
+//
+// #####################
+//
+// ==========================
+//   [INI] Tearing Result 1
+// ==========================
+//
+// BLOCK: Algebraic Loop (Linear = false, Mixed = false, Homotopy = false, size = 9)
+// -----------------------------------------------------------------------------------
+// Strict Tearing Set
+// ********************
+// ### Iteration Variables:
+//     [ALGB] (1) Real z
+// ### Residual Equations:
+//     [SCAL] (1) $RES_AUX_6 = cos(T[4]) - z; ($RES_AUX_6)
+// ### Inner Equations:
+//     BLOCK: Entwined Component (status = Solve.EXPLICIT, size = 8)
+// ---------------------------------------------------------------
+// call order: {$RES_SIM_5, $RES_SIM_1, $RES_SIM_3, $RES_SIM_1, $RES_SIM_3, $RES_SIM_1, $RES_SIM_3, $RES_SIM_1}
+// periodic order: direction = 1, period = {(1, 1), (0, 2)}, bounds = {(0, 0), (0, 0), (0, 0)}, scalars = {2 before 0 at 0}
+// BLOCK: Resizable Component (status = Solve.UNPROCESSED, size = 3)
+// -------------------------------------------------------------------
+// ### Variable:
+// 	p[$i1]
+// ### Equation:
+// 	[FOR-] (3) ($RES_SIM_3)
+// 	[----] for $i1 in 2:4 loop
+// 	[----]   [SCAL] (1) p[$i1] = 1.0 + T[(-1) + $i1]; ($RES_SIM_4)
+// 	[----] end for;
+// BLOCK: Resizable Component (status = Solve.UNPROCESSED, size = 4)
+// -------------------------------------------------------------------
+// ### Variable:
+// 	T[$i1]
+// ### Equation:
+// 	[FOR-] (4) ($RES_SIM_1)
+// 	[----] for $i1 in 1:4 loop
+// 	[----]   [SCAL] (1) T[$i1] = 0.5 * p[$i1] + 0.1 * $FUN_1; ($RES_SIM_2)
+// 	[----] end for;
+// ### Variable:
+// 	p[1]
+// ### Equation:
+// 	[SCAL] (1) p[1] = 1.0 + z; ($RES_SIM_5)
+//
+// #####################
+//
+//     [ODE] Tearing
+//
+// #####################
+//
+// ==========================
+//   [ODE] Tearing Result 1
+// ==========================
+//
+// BLOCK: Algebraic Loop (Linear = false, Mixed = false, Homotopy = false, size = 9)
+// -----------------------------------------------------------------------------------
+// Strict Tearing Set
+// ********************
+// ### Iteration Variables:
+//     [ALGB] (1) Real z
+// ### Residual Equations:
+//     [SCAL] (1) $RES_AUX_6 = cos(T[4]) - z; ($RES_AUX_6)
+// ### Inner Equations:
+//     BLOCK: Entwined Component (status = Solve.EXPLICIT, size = 8)
+// ---------------------------------------------------------------
+// call order: {$RES_SIM_5, $RES_SIM_1, $RES_SIM_3, $RES_SIM_1, $RES_SIM_3, $RES_SIM_1, $RES_SIM_3, $RES_SIM_1}
+// periodic order: direction = 1, period = {(1, 1), (0, 2)}, bounds = {(0, 0), (0, 0), (0, 0)}, scalars = {2 before 0 at 0}
+// BLOCK: Resizable Component (status = Solve.UNPROCESSED, size = 3)
+// -------------------------------------------------------------------
+// ### Variable:
+// 	p[$i1]
+// ### Equation:
+// 	[FOR-] (3) ($RES_SIM_3)
+// 	[----] for $i1 in 2:4 loop
+// 	[----]   [SCAL] (1) p[$i1] = 1.0 + T[(-1) + $i1]; ($RES_SIM_4)
+// 	[----] end for;
+// BLOCK: Resizable Component (status = Solve.UNPROCESSED, size = 4)
+// -------------------------------------------------------------------
+// ### Variable:
+// 	T[$i1]
+// ### Equation:
+// 	[FOR-] (4) ($RES_SIM_1)
+// 	[----] for $i1 in 1:4 loop
+// 	[----]   [SCAL] (1) T[$i1] = 0.5 * p[$i1] + 0.1 * $FUN_1; ($RES_SIM_2)
+// 	[----] end for;
+// ### Variable:
+// 	p[1]
+// ### Equation:
+// 	[SCAL] (1) p[1] = 1.0 + z; ($RES_SIM_5)
+//
+// record SimulationResult
+//     resultFile = "CellierEntwined.Forward_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'CellierEntwined.Forward', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.4335458037471485
+// 1.1223724223856775
+// true
+// ""
+// record SimulationResult
+//     resultFile = "CellierEntwined.Forward6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'CellierEntwined.Forward6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.40269986557769316
+// 1.156331785533706
+// record SimulationResult
+//     resultFile = "CellierEntwined.Backward6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'CellierEntwined.Backward6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.40269986557769316
+// 1.156331785533706
+// true
+// ""
+// record SimulationResult
+//     resultFile = "CellierEntwined.Forward_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'CellierEntwined.Forward', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=N=6'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.40269986557769316
+// 1.156331785533706
+// record SimulationResult
+//     resultFile = "CellierEntwined.Backward_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'CellierEntwined.Backward', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=N=6'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.40269986557769316
+// 1.156331785533706
+// endResult

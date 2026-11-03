@@ -122,6 +122,7 @@ public:
   QWidget* getValueWidget();
   bool isValueModified();
   QString getValue();
+  QString getDefaultValue() const {return mDefaultValue;}
   void hideValueWidget();
   QToolButton *getEditClassButton() const {return mpEditClassButton;}
   FinalEachToolButton *getFinalEachMenu() const {return mpFinalEachMenuButton;}

@@ -1,0 +1,72 @@
+// name:                standingStill.mos
+// keywords:            spatialDistribution, events
+// status:              correct
+// teardown_command:    rm -f StandingStill*
+//
+// Regression test for issue #17434.
+// x stands still, or jitters around a position, while the boundary value
+// changes and then starts moving. Each accepted step used to add another
+// discontinuity at the input edge, and moves of x within the position
+// tolerance left events behind that made the simulation fail with
+//   "New front position is not smaller then previous first event node."
+
+loadString("
+model StandingStill
+  parameter Real a = 0 \"Amplitude of der(x) while standing\";
+  Real x(start = 0, fixed = true);
+  Real v;
+  Real in0 = 1 + 0.5*sin(10*time);
+  Real out0, out1;
+  Real solution = 1 + 0.5*sin(10*(time - 1));
+equation
+  v = if time < 0.5 then a*sin(1000*time) else 1;
+  der(x) = v;
+  (out0, out1) = spatialDistribution(in0, 0, x, v >= 0, {0, 1}, {1, 1});
+end StandingStill;
+"); getErrorString();
+
+simulate(StandingStill, stopTime = 2); getErrorString();
+val(out1, 1.4); val(out1, 1.6); val(solution, 1.6); val(out1, 2.0); val(solution, 2.0);
+
+// Jitter of x below and at the position tolerance; the warnings about
+// reversals inside a step depend on the step sizes, so LOG_STDOUT is off.
+simulate(StandingStill, stopTime = 2, simflags = "-override=a=1e-12 -lv=-LOG_STDOUT", fileNamePrefix = "StandingStillJitter1"); getErrorString();
+val(out1, 2.0, "StandingStillJitter1_res.mat");
+simulate(StandingStill, stopTime = 2, simflags = "-override=a=1e-10 -lv=-LOG_STDOUT", fileNamePrefix = "StandingStillJitter2"); getErrorString();
+val(out1, 2.0, "StandingStillJitter2_res.mat");
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "StandingStill_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'StandingStill', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 0.8602922509005376
+// 0.8602922509005375
+// 0.727989444555316
+// 0.7279894445553151
+// record SimulationResult
+//     resultFile = "StandingStillJitter1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'StandingStillJitter1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=a=1e-12 -lv=-LOG_STDOUT'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.7279894445553142
+// record SimulationResult
+//     resultFile = "StandingStillJitter2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'StandingStillJitter2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=a=1e-10 -lv=-LOG_STDOUT'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.727989444555316
+// endResult

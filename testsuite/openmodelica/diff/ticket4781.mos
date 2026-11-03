@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 
 loadFile("ticket4781.mo");
 getErrorString();

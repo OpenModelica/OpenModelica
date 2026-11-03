@@ -1072,14 +1072,7 @@ void OptionsDialog::readMessagesSettings()
   }
   // read font family
   QTextBrowser textBrowser;
-  if (mpSettings->contains("messages/fontFamily")) {
-    // select font family item
-    int currentIndex = mpMessagesPage->getFontFamilyComboBox()->findText(mpSettings->value("messages/fontFamily").toString(), Qt::MatchExactly);
-    mpMessagesPage->getFontFamilyComboBox()->setCurrentIndex(currentIndex);
-  } else {
-    int currentIndex = mpMessagesPage->getFontFamilyComboBox()->findText(textBrowser.font().family(), Qt::MatchExactly);
-    mpMessagesPage->getFontFamilyComboBox()->setCurrentIndex(currentIndex);
-  }
+  mpMessagesPage->setFontFamily(mpSettings->value("messages/fontFamily").toString());
   // read font size
   if (mpSettings->contains("messages/fontSize")) {
     mpMessagesPage->getFontSizeSpinBox()->setValue(mpSettings->value("messages/fontSize").toDouble());
@@ -1777,9 +1770,11 @@ void OptionsDialog::saveGeneralSettings()
     mpSettings->setValue("welcomePage/view", welcomePageView);
   }
   bool showLatestNews = mpGeneralSettingsPage->getShowLatestNewsCheckBox()->isChecked();
-  int recentFilesSize = mpSettings->value("welcomePage/recentFilesSize").toInt();
+  int recentFilesSize = mpSettings->contains("welcomePage/recentFilesSize")
+      ? mpSettings->value("welcomePage/recentFilesSize").toInt()
+      : OptionsDefaults::GeneralSettings::recentFilesAndLatestNewsSize;
   int recentFilesAndLatestNewsSize = mpGeneralSettingsPage->getRecentFilesAndLatestNewsSizeSpinBox()->value();
-  if ((MainWindow::instance()->getWelcomePageWidget()->getLatestNewsFrame()->isHidden() && showLatestNews) || recentFilesSize != recentFilesAndLatestNewsSize) {
+  if (showLatestNews && (MainWindow::instance()->getWelcomePageWidget()->getLatestNewsFrame()->isHidden() || recentFilesSize != recentFilesAndLatestNewsSize)) {
     MainWindow::instance()->getWelcomePageWidget()->getLatestNewsFrame()->show();
     MainWindow::instance()->getWelcomePageWidget()->addLatestNewsListItems();
   } else if (!showLatestNews) {
@@ -2630,8 +2625,8 @@ void OptionsDialog::saveMessagesSettings()
   }
   // save font
   QTextBrowser textBrowser;
-  QString fontFamily = mpMessagesPage->getFontFamilyComboBox()->currentFont().family();
-  if (fontFamily.compare(textBrowser.font().family()) == 0) {
+  QString fontFamily = mpMessagesPage->getFontFamily();
+  if (fontFamily.compare(mpMessagesPage->getDefaultFontFamily()) == 0) {
     mpSettings->remove("messages/fontFamily");
   } else {
     mpSettings->setValue("messages/fontFamily", fontFamily);
@@ -5610,9 +5605,8 @@ MessagesPage::MessagesPage(OptionsDialog *pOptionsDialog)
   mpFontFamilyLabel = new Label(Helper::fontFamily);
   mpFontFamilyComboBox = new QFontComboBox;
   QTextBrowser textBrowser;
-  int currentIndex;
-  currentIndex = mpFontFamilyComboBox->findText(textBrowser.font().family(), Qt::MatchExactly);
-  mpFontFamilyComboBox->setCurrentIndex(currentIndex);
+  mDefaultFontFamily = textBrowser.font().family();
+  setFontFamily(mDefaultFontFamily);
   // font size combobox
   mpFontSizeLabel = new Label(Helper::fontSize);
   mpFontSizeSpinBox = new DoubleSpinBox;
@@ -5661,6 +5655,35 @@ MessagesPage::MessagesPage(OptionsDialog *pOptionsDialog)
   pMainLayout->addWidget(mpGeneralGroupBox);
   pMainLayout->addWidget(mpFontColorsGroupBox);
   setLayout(pMainLayout);
+}
+
+/*!
+ * \brief MessagesPage::setFontFamily
+ * Selects the font family, or the default one if empty.
+ * Hidden system fonts, e.g., .AppleSystemUIFont on macOS, are not listed by QFontComboBox so they are set as edit text.
+ * \param family
+ */
+void MessagesPage::setFontFamily(const QString &family)
+{
+  const QString fontFamily = family.isEmpty() ? mDefaultFontFamily : family;
+  int currentIndex = mpFontFamilyComboBox->findText(fontFamily, Qt::MatchExactly);
+  if (currentIndex >= 0) {
+    mpFontFamilyComboBox->setCurrentIndex(currentIndex);
+  } else {
+    mpFontFamilyComboBox->setEditText(fontFamily);
+  }
+}
+
+/*!
+ * \brief MessagesPage::getFontFamily
+ * Returns the selected font family, or the default one if empty.
+ * Uses currentText() since Qt 5 does not update QFontComboBox::currentFont() for edit text.
+ * \return
+ */
+QString MessagesPage::getFontFamily() const
+{
+  const QString family = mpFontFamilyComboBox->currentText().trimmed();
+  return family.isEmpty() ? mDefaultFontFamily : family;
 }
 
 void MessagesPage::setNotificationPickColorButtonIcon()
@@ -6513,9 +6536,11 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
 #if defined(__EMSCRIPTEN__)
   const QStringList fmuPlatforms = omcWorkerFmuPlatforms();
   pPlatformsLayout->addWidget(new Label(fmuPlatforms.isEmpty()
-                                        ? tr("Note: No native platform is available here, the FMU only contains the WebAssembly binary.")
+                                        ? tr("Note: No native platform is available here, the FMU only contains the WebAssembly binary\n"
+                                             "and is exported as FMI 3.0 (fmi-ls-wasm).")
                                         : tr("Note: The FMU always contains the WebAssembly binary.\n"
-                                             "The listed platforms have a precompiled FMU driver and are added as native binaries.")));
+                                             "The listed platforms have a precompiled FMU driver and are added as native binaries.\n"
+                                             "With no platform selected, the FMU is exported as FMI 3.0 (fmi-ls-wasm).")));
   foreach (QString platform, fmuPlatforms) {
     QCheckBox *pCheckBox = new QCheckBox(platform);
     pCheckBox->setProperty(Helper::fmuPlatformNamePropertyId, platform);
@@ -7278,7 +7303,7 @@ QString LanguageServerPage::installedServerVersion()
 #else
   // The qmake build does not install a server and so does not define it. Keep it
   // in step with MODELICA_LS_VERSION in OMEditLIB/CMakeLists.txt.
-  return QStringLiteral("v0.3.3");
+  return QStringLiteral("v0.3.8");
 #endif
 }
 

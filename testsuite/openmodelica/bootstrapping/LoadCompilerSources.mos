@@ -8,7 +8,6 @@ if true then /* Suppress output */
   // where (rtest passes it through); unset means they are next to the sources,
   // which is where a build without --tplOutputDir still puts them.
   generatedPath := if getEnvironmentVar("OMCOMPILERGENERATEDSOURCES")=="" then prefixPath else (getEnvironmentVar("OMCOMPILERGENERATEDSOURCES")+"/");
-  setCommandLineOptions("+g=MetaModelica");
   files := {
     prefixPath + "FrontEnd/Absyn.mo",
     prefixPath + "FrontEnd/AbsynUtil.mo",
@@ -77,7 +76,6 @@ if true then /* Suppress output */
     prefixPath + "FrontEnd/TypesDump.mo",
     prefixPath + "FrontEnd/UnitAbsyn.mo",
     prefixPath + "FrontEnd/UnitAbsynBuilder.mo",
-    prefixPath + "FrontEnd/UnitChecker.mo",
     prefixPath + "FrontEnd/UnitParserExt.mo",
     prefixPath + "FrontEnd/Values.mo",
     prefixPath + "FrontEnd/ValuesDump.mo",
@@ -135,7 +133,6 @@ if true then /* Suppress output */
     prefixPath + "BackEnd/BinaryTreeInt.mo",
     prefixPath + "BackEnd/Causalize.mo",
     prefixPath + "BackEnd/CommonSubExpression.mo",
-    prefixPath + "BackEnd/DAEQuery.mo",
     prefixPath + "BackEnd/Differentiate.mo",
     prefixPath + "BackEnd/DumpGraphML.mo",
     prefixPath + "BackEnd/DumpHTML.mo",

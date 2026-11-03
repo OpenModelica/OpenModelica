@@ -24,6 +24,7 @@ ArrayConnect3.mo \
 ArrayConnect4.mo \
 ArrayConnect5.mo \
 ArrayConnect6.mo \
+ArrayConnect7.mo \
 ArrayConstructorComplex1.mo \
 ArrayConstructorRecord1.mo \
 ArrayConstructorRecord2.mo \
@@ -53,6 +54,7 @@ BindingArray7.mo \
 BindingArray8.mo \
 BindingArray9.mo \
 BindingArray10.mo \
+BindingCycle1.mo \
 BindingInvalidType1.mo \
 BindingInvalidType2.mo \
 BindingInvalidType3.mo \
@@ -98,6 +100,7 @@ BuiltinAttribute24.mo \
 BuiltinAttribute25.mo \
 BuiltinAttribute26.mo \
 BuiltinAttribute27.mo \
+BuiltinAttribute28.mo \
 BuiltinLookup1.mo \
 BuiltinTime.mo \
 BuiltinTimeSubscripted.mo \
@@ -125,6 +128,7 @@ CevalArrayConstant3.mo \
 CevalArrayConstructor1.mo \
 CevalArrayConstructor2.mo \
 CevalArrayConstructor3.mo \
+CevalArrayConstructor4.mo \
 CevalAsin1.mo \
 CevalAtan1.mo \
 CevalAtan21.mo \
@@ -368,6 +372,7 @@ DimNegative1.mo \
 DimNegative2.mo \
 DimRagged1.mo \
 DimRagged2.mo \
+DimRagged3.mo \
 DimSize1.mo \
 DimSize2.mo \
 DimSize3.mo \
@@ -478,6 +483,7 @@ ExpandableConnector11.mo \
 ExpandableConnector12.mo \
 ExpandableConnector13.mo \
 ExpandableConnector14.mo \
+ExpandableConnector15.mo \
 ExpandableConnectorComplex1.mo \
 ExpandableConnectorFlow1.mo \
 ExpandableConnectorFlow2.mo \
@@ -506,9 +512,11 @@ ExtendSelf1.mo \
 ExtendSelf2.mo \
 ExtendSelf3.mo \
 ExtendsMod1.mo \
+ExtendsMod2.mo \
 ExtendsShort1.mo \
 ExtendsShort2.mo \
 ExtendsShort3.mo \
+ExtendsShort4.mo \
 ExtendsVisibility1.mo \
 ExtendsVisibility2.mo \
 ExtendsVisibility3.mo \
@@ -600,6 +608,7 @@ FuncBuiltinLinspace.mo \
 FuncBuiltinMath.mo \
 FuncBuiltinMatrix.mo \
 FuncBuiltinMatrixWrongType1.mo \
+FuncBuiltinMatrixWrongType2.mo \
 FuncBuiltinMax.mo \
 FuncBuiltinMax2.mo \
 FuncBuiltinMin.mo \
@@ -891,6 +900,7 @@ InStreamNonCref1.mo \
 InStreamNoStream1.mo \
 InStreamPipeline.mo \
 InStreamReduction1.mo \
+InStreamReduction2.mo \
 InStreamTwoInside.mo \
 InStreamTwoOutside.mo \
 InStreamUnconnected.mo \
@@ -922,6 +932,8 @@ MergeComponents6.mo \
 MergeComponents7.mo \
 MergeComponents8.mo \
 MergeComponents9.mo \
+MergeComponents10.mo \
+MergeComponents11.mo \
 MinInvalidArg1.mo \
 MinInvalidArg2.mo \
 MinInvalidArg3.mo \
@@ -1046,6 +1058,7 @@ RangeTypeError1.mo \
 RangeTypeError2.mo \
 RangeTypeError3.mo \
 RealRangeBinding1.mo \
+RealRangeBinding2.mo \
 RecordBinding1.mo \
 RecordBinding2.mo \
 RecordBinding3.mo \
@@ -1151,6 +1164,10 @@ ReinitInvalid5.mo \
 ReinitInvalid6.mo \
 ReinitInvalid7.mo \
 ReinitInvalid8.mo \
+ResizableConstantSize.mo \
+ResizableNestedSplit.mo \
+ResizableStreamElements.mo \
+ResizableUntypedConstant.mo \
 Return1.mo \
 Return2.mo \
 Size1.mo \
@@ -1186,6 +1203,7 @@ Subscript4.mo \
 Subscript5.mo \
 Subscript6.mo \
 Subscript7.mo \
+Subscript8.mo \
 SubscriptCevalIndex1.mo \
 SubscriptCevalIndexRange1.mo \
 SubscriptCevalSlice1.mo \
@@ -1231,6 +1249,8 @@ TypeDimNonType1.mo \
 TypeExtends1.mo \
 TypeExtends2.mo \
 TypeExtends3.mo \
+TypeExtends4.mo \
+TypeExtends5.mo \
 TypeMissingBaseType1.mo \
 TypenameInvalid1.mo \
 TypenameInvalid2.mo \

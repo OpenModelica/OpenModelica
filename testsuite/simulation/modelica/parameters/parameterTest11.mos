@@ -1,7 +1,6 @@
 // name:      parameterTest11
 // keywords:  parameter evaluation, structural
 // status:    correct
-// cflags: -d=-newInst
 
 loadString("
 package ParameterTest11
@@ -54,9 +53,9 @@ simulate(ParameterTest11.parameterTest11); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: obj.x[3]:VARIABLE()  type: Real  [3]
-// 2: obj.x[2]:VARIABLE()  type: Real  [3]
-// 3: obj.x[1]:VARIABLE()  type: Real  [3]
+// 1: obj.x[3]:VARIABLE()  type: Real [3]
+// 2: obj.x[2]:VARIABLE()  type: Real [3]
+// 3: obj.x[1]:VARIABLE()  type: Real [3]
 //
 //
 // Equations (3, 3)
@@ -75,12 +74,12 @@ simulate(ParameterTest11.parameterTest11); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (6)
 // ========================================
-// 1: obj.b2:PARAM()  = b2  type: Boolean 
-// 2: obj.b1:PARAM(final = true )  = b1  type: Boolean 
-// 3: obj.s1:PARAM(final = true )  = s1  type: Integer 
-// 4: b2:PARAM()  = false  type: Boolean 
-// 5: b1:PARAM()  = true  type: Boolean 
-// 6: s1:PARAM(final = true )  = 3  type: Integer 
+// 1: obj.b2:PARAM()  = b2  type: Boolean
+// 2: obj.b1:PARAM(final = true )  = true  type: Boolean
+// 3: obj.s1:PARAM(final = true )  = 3  type: Integer
+// 4: b2:PARAM()  = false  type: Boolean
+// 5: b1:PARAM(final = true )  = true  type: Boolean
+// 6: s1:PARAM(final = true )  = 3  type: Integer
 //
 //
 //
@@ -89,16 +88,16 @@ simulate(ParameterTest11.parameterTest11); getErrorString();
 // START evaluating parameters:
 // ================================================================================
 // Number of parameters: 6
-// Number of parameters selected for evaluation: 3
+// Number of parameters selected for evaluation: 0
 // Selected parameters for evaluation:
-// 6,3,2
+//
 //
 // Adjacency Matrix (row: equation)
 // ========================================
 // number of rows: 6
 // 1: 4
-// 2: 5
-// 3: 6
+// 2:
+// 3:
 // 4:
 // 5:
 // 6:
@@ -110,41 +109,35 @@ simulate(ParameterTest11.parameterTest11); getErrorString();
 // 2: 2
 // 3: 3
 // 4: 4 1
-// 5: 5 2
-// 6: 6 3
+// 5: 5
+// 6: 6
 //
 //
 // After evaluating the selected parameters:
 // ================================================================================
 //
 // All replacements:
-// Replacements: (4)
+// Replacements: (0)
 // ========================================
-// s1 -> 3
-// obj.s1 -> 3
-// b1 -> true
-// obj.b1 -> true
+//
 //
 // Replacements that will be replaced in the DAE:
-// Replacements: (4)
+// Replacements: (0)
 // ========================================
-// s1 -> 3
-// obj.s1 -> 3
-// b1 -> true
-// obj.b1 -> true
+//
 //
 // globalKnownVars (6)
 // ========================================
-// 1: obj.b2:PARAM()  = b2  type: Boolean 
-// 2: obj.b1:PARAM(final = true )  = true  type: Boolean 
-// 3: obj.s1:PARAM(final = true )  = 3  type: Integer 
-// 4: b2:PARAM()  = false  type: Boolean 
-// 5: b1:PARAM(final = true )  = true  type: Boolean 
-// 6: s1:PARAM(final = true )  = 3  type: Integer 
+// 1: obj.b2:PARAM()  = b2  type: Boolean
+// 2: obj.b1:PARAM(final = true )  = true  type: Boolean
+// 3: obj.s1:PARAM(final = true )  = 3  type: Integer
+// 4: b2:PARAM()  = false  type: Boolean
+// 5: b1:PARAM(final = true )  = true  type: Boolean
+// 6: s1:PARAM(final = true )  = 3  type: Integer
 //
 //
 // mark: 1
-// markarr: -1,1,1,-1,1,1
+// markarr: -1,-1,-1,-1,-1,-1
 //
 //
 // After sorting parameters:
@@ -164,30 +157,30 @@ simulate(ParameterTest11.parameterTest11); getErrorString();
 // Replacements: (4)
 // ========================================
 // s1 -> 3
-// obj.s1 -> 3
 // b1 -> true
+// obj.s1 -> 3
 // obj.b1 -> true
 //
 // Replacements that will be replaced in the DAE:
 // Replacements: (4)
 // ========================================
 // s1 -> 3
-// obj.s1 -> 3
 // b1 -> true
+// obj.s1 -> 3
 // obj.b1 -> true
 //
 // globalKnownVars (6)
 // ========================================
-// 1: obj.b2:PARAM()  = b2  type: Boolean 
-// 2: obj.b1:PARAM(final = true )  = true  type: Boolean 
-// 3: obj.s1:PARAM(final = true )  = 3  type: Integer 
-// 4: b2:PARAM()  = false  type: Boolean 
-// 5: b1:PARAM(final = true )  = true  type: Boolean 
-// 6: s1:PARAM(final = true )  = 3  type: Integer 
+// 1: obj.b2:PARAM()  = b2  type: Boolean
+// 2: obj.b1:PARAM(final = true )  = true  type: Boolean
+// 3: obj.s1:PARAM(final = true )  = 3  type: Integer
+// 4: b2:PARAM()  = false  type: Boolean
+// 5: b1:PARAM(final = true )  = true  type: Boolean
+// 6: s1:PARAM(final = true )  = 3  type: Integer
 //
 //
 // mark: 1
-// markarr: -1,1,1,-1,1,1
+// markarr: -1,-1,-1,-1,-1,-1
 //
 //
 // After replacing the evaluated parameters in variable bindings and start attributes:
@@ -196,30 +189,30 @@ simulate(ParameterTest11.parameterTest11); getErrorString();
 // Replacements: (4)
 // ========================================
 // s1 -> 3
-// obj.s1 -> 3
 // b1 -> true
+// obj.s1 -> 3
 // obj.b1 -> true
 //
 // Replacements that will be replaced in the DAE:
 // Replacements: (4)
 // ========================================
 // s1 -> 3
-// obj.s1 -> 3
 // b1 -> true
+// obj.s1 -> 3
 // obj.b1 -> true
 //
 // globalKnownVars (6)
 // ========================================
-// 1: obj.b2:PARAM()  = b2  type: Boolean 
-// 2: obj.b1:PARAM(final = true )  = true  type: Boolean 
-// 3: obj.s1:PARAM(final = true )  = 3  type: Integer 
-// 4: b2:PARAM()  = false  type: Boolean 
-// 5: b1:PARAM(final = true )  = true  type: Boolean 
-// 6: s1:PARAM(final = true )  = 3  type: Integer 
+// 1: obj.b2:PARAM()  = b2  type: Boolean
+// 2: obj.b1:PARAM(final = true )  = true  type: Boolean
+// 3: obj.s1:PARAM(final = true )  = 3  type: Integer
+// 4: b2:PARAM()  = false  type: Boolean
+// 5: b1:PARAM(final = true )  = true  type: Boolean
+// 6: s1:PARAM(final = true )  = 3  type: Integer
 //
 //
 // mark: 1
-// markarr: -1,1,1,-1,1,1
+// markarr: -1,-1,-1,-1,-1,-1
 //
 //
 // ########################################
@@ -232,9 +225,9 @@ simulate(ParameterTest11.parameterTest11); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: obj.x[3]:VARIABLE()  type: Real  [3]
-// 2: obj.x[2]:VARIABLE()  type: Real  [3]
-// 3: obj.x[1]:VARIABLE()  type: Real  [3]
+// 1: obj.x[3]:VARIABLE()  type: Real [3]
+// 2: obj.x[2]:VARIABLE()  type: Real [3]
+// 3: obj.x[1]:VARIABLE()  type: Real [3]
 //
 //
 // Equations (3, 3)
@@ -253,12 +246,12 @@ simulate(ParameterTest11.parameterTest11); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (6)
 // ========================================
-// 1: obj.b2:PARAM()  = b2  type: Boolean 
-// 2: obj.b1:PARAM(final = true )  = true  type: Boolean 
-// 3: obj.s1:PARAM(final = true )  = 3  type: Integer 
-// 4: b2:PARAM()  = false  type: Boolean 
-// 5: b1:PARAM(final = true )  = true  type: Boolean 
-// 6: s1:PARAM(final = true )  = 3  type: Integer 
+// 1: obj.b2:PARAM()  = b2  type: Boolean
+// 2: obj.b1:PARAM(final = true )  = true  type: Boolean
+// 3: obj.s1:PARAM(final = true )  = 3  type: Integer
+// 4: b2:PARAM()  = false  type: Boolean
+// 5: b1:PARAM(final = true )  = true  type: Boolean
+// 6: s1:PARAM(final = true )  = 3  type: Integer
 //
 //
 //
@@ -267,7 +260,7 @@ simulate(ParameterTest11.parameterTest11); getErrorString();
 //
 // record SimulationResult
 //     resultFile = "ParameterTest11.parameterTest11_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ParameterTest11.parameterTest11', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ParameterTest11.parameterTest11', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

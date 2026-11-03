@@ -5,14 +5,13 @@
 // Checks that subscripts are handled in a correct manner int the component clause.
 //
 
-class Type9
+model Type9
   Real[3] x[2];
   Real y[2,3];
   Real ok[3];
 equation
   x = y;
   ok[1]=3.0;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Type9;
 
 // Result:

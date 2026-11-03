@@ -5,7 +5,7 @@
 // Tests type declaration from a legal class
 //
 
-class LegalClass
+type LegalClass
   extends Integer;
 end LegalClass;
 
@@ -15,7 +15,6 @@ model TypeClass1
   LegalType lt;
 equation
   lt = 1;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TypeClass1;
 
 // Result:

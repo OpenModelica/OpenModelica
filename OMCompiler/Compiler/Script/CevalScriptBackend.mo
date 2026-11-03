@@ -59,15 +59,11 @@ import UnitAbsyn;
 
 // protected imports
 protected
-import AbsynToJulia;
 import AbsynToSCode;
 import Autoconf;
 import BackendDAECreate;
 import BackendDAEOptimize;
 import BackendDAEUtil;
-import BackendDump;
-import BackendEquation;
-import BackendVariable;
 import Binding;
 import BlockCallRewrite;
 import CevalScript;
@@ -77,12 +73,9 @@ import CheckModel;
 import ClassInf;
 import ClockIndexes;
 import CodegenFMU;
-import ComponentReference;
-protected import ComponentReferenceBasics;
 import Config;
 import Conversion;
 import DAEDump;
-import DAEQuery;
 import DAEUtil;
 import Debug;
 import DiffAlgorithm;
@@ -128,6 +121,7 @@ import OMGraphics;
 import PackageManagement;
 import Parser;
 import Print;
+import ProbeTree;
 import Refactor;
 import ReverseLookup;
 import RewriteRules;
@@ -145,7 +139,6 @@ import SimpleModelicaParser;
 import SimulationResults;
 import StaticScript;
 import StringUtil;
-import SymbolicJacobian;
 import SymbolTable;
 import System;
 import TaskGraphResults;
@@ -180,12 +173,6 @@ protected constant DAE.Type simulationResultType_full = DAE.T_COMPLEX(ClassInf.R
   DAE.TYPES_VAR("timeCompile",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE()),
   DAE.TYPES_VAR("timeSimulation",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE()),
   DAE.TYPES_VAR("timeTotal",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE())
-  },NONE(), false);
-
-protected constant DAE.Type simulationResultType_drModelica = DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
-  DAE.TYPES_VAR("messages",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),false,NONE()),
-  DAE.TYPES_VAR("flatteningTime",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE()),
-  DAE.TYPES_VAR("simulationTime",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE())
   },NONE(), false);
 
 //these are in reversed order than above
@@ -263,12 +250,6 @@ algorithm
   t := if Testsuite.isRunning() then simulationResultType_rtest else simulationResultType_full;
 end getSimulationResultType;
 
-public function getDrModelicaSimulationResultType
-  output DAE.Type t;
-algorithm
-  t := if Testsuite.isRunning() then simulationResultType_rtest else simulationResultType_drModelica;
-end getDrModelicaSimulationResultType;
-
 public function createSimulationResult
   input String resultFile;
   input String options;
@@ -300,32 +281,22 @@ algorithm
   res := createSimulationResult("", options, message, zeroAdditionalSimulationResultValues);
 end createSimulationResultFailure;
 
-protected function buildCurrentSimulationResultExp
-  output DAE.Exp outExp;
-protected
-  DAE.ComponentRef cref;
+protected function currentSimulationResult
+  "Returns fileName, or the script variable currentSimulationResult for \"<default>\"."
+  input String fileName;
+  output String outFileName = fileName;
 algorithm
-  cref := ComponentReferenceBasics.makeCrefIdent("currentSimulationResult",DAE.T_UNKNOWN_DEFAULT,{});
-  outExp := Expression.makeCrefExp(cref,DAE.T_UNKNOWN_DEFAULT);
-end buildCurrentSimulationResultExp;
+  if fileName == "<default>" then
+    InteractiveTypes.IVAR(value = Values.STRING(outFileName)) :=
+      List.getMemberOnTrue("currentSimulationResult", SymbolTable.getVars(), isVariableNamed);
+  end if;
+end currentSimulationResult;
 
-protected function cevalCurrentSimulationResultExp
-  input FCore.Cache inCache;
-  input FCore.Graph env;
-  input String inputFilename;
-  input Absyn.Msg msg;
-  output FCore.Cache outCache;
-  output String filename;
-algorithm
-  (outCache,filename) := match (inCache, inputFilename)
-    local FCore.Cache cache;
-    case (cache, "<default>")
-      algorithm
-        (cache,Values.STRING(filename)) := Ceval.ceval(cache,env,buildCurrentSimulationResultExp(),true,msg,0);
-      then (cache,filename);
-    else (inCache,inputFilename);
-  end match;
-end cevalCurrentSimulationResultExp;
+protected function isVariableNamed
+  input String name;
+  input InteractiveTypes.Variable var;
+  output Boolean b = name == var.varIdent;
+end isVariableNamed;
 
 public function convertSimulationOptionsToSimCode "converts SimulationOptions to SimCode.SimulationSettings"
   input InteractiveTypes.SimulationOptions opts;
@@ -472,6 +443,150 @@ algorithm
       then defaults;
   end matchcontinue;
 end buildSimulationOptionsFromModelExperimentAnnotation;
+
+public function simulationArguments
+  "Returns the arguments of simulate, buildModel and the other simulation calls
+   in the order they are declared. Arguments that are not given are taken from
+   the experiment annotation. stepSize, if given, sets numberOfIntervals."
+  input Absyn.Path className;
+  input list<tuple<String, Values.Value>> namedArgs;
+  input String callName;
+  input Option<InteractiveTypes.SimulationOptions> defaultOptions = NONE();
+  output list<Values.Value> args;
+protected
+  InteractiveTypes.SimulationOptions opts;
+  Values.Value start_time, stop_time, intervals;
+  list<Values.Value> rest;
+algorithm
+  opts := buildSimulationOptionsFromModelExperimentAnnotation(className,
+    AbsynUtil.pathString(AbsynUtil.unqotePathIdents(className)), defaultOptions,
+    optimization = callName == "optimize");
+
+  args := list(simulationArgument(name, namedArgs, opts) for name in
+    {"startTime", "stopTime", "numberOfIntervals", "tolerance", "method", "fileNamePrefix",
+     "options", "outputFormat", "variableFilter", "cflags", "simflags"});
+
+  for arg in namedArgs loop
+    if Util.tuple21(arg) == "stepSize" then
+      start_time :: stop_time :: intervals :: rest := args;
+      intervals := Values.INTEGER(realInt((ValuesUtil.valueReal(stop_time) - ValuesUtil.valueReal(start_time)) /
+                                          ValuesUtil.valueReal(Util.tuple22(arg))));
+      args := start_time :: stop_time :: intervals :: rest;
+    end if;
+  end for;
+
+  args := ValuesMake.makeCodeTypeName(className) :: args;
+
+  if callName == "simulate" then
+    args := List.appendElt(simulationArgumentOrDefault("resimulateExecutable", namedArgs, Values.STRING("")), args);
+  end if;
+end simulationArguments;
+
+public function declaredSimulationArguments
+  "Returns the arguments of simulate and the other simulation calls in the
+   order they are declared, with a sentinel for each argument not given."
+  input Absyn.Path className;
+  input list<tuple<String, Values.Value>> namedArgs;
+  input String callName;
+  output list<Values.Value> args;
+algorithm
+  args := ValuesMake.makeCodeTypeName(className) ::
+    list(simulationArgumentOrDefault(name, namedArgs, unsetSimulationArgument(name))
+         for name in simulationArgumentNames(callName));
+end declaredSimulationArguments;
+
+protected function simulationCallArguments
+  "Converts the declared arguments of a simulation call to the arguments it is
+   evaluated with. Other calls, and argument lists that do not match the
+   declaration, are returned unchanged."
+  input String callName;
+  input list<Values.Value> inArgs;
+  output list<Values.Value> args = inArgs;
+protected
+  Absyn.Path className;
+  list<Values.Value> rest;
+  list<String> names;
+  list<tuple<String, Values.Value>> named = {};
+algorithm
+  if not listMember(callName, {"simulate", "translateModel", "buildModel", "linearize", "optimize", "moo",
+                               "translateAcausalDAE", "buildAcausalDAE", "simulateAcausalDAE"}) then
+    return;
+  end if;
+
+  names := simulationArgumentNames(callName);
+  args := match inArgs
+    case Values.CODE(Absyn.C_TYPENAME(className)) :: rest guard listLength(rest) == listLength(names)
+      algorithm
+        for arg in List.zip(names, rest) loop
+          if not isUnsetSimulationArgument(Util.tuple22(arg)) then
+            named := arg :: named;
+          end if;
+        end for;
+      then
+        simulationArguments(className, listReverse(named), callName);
+    else inArgs;
+  end match;
+end simulationCallArguments;
+
+protected function simulationArgumentNames
+  input String callName;
+  output list<String> names = {"startTime", "stopTime", "numberOfIntervals", "stepSize", "tolerance",
+    "method", "fileNamePrefix", "options", "outputFormat", "variableFilter", "cflags", "simflags"};
+algorithm
+  if callName == "simulate" then
+    names := List.appendElt("resimulateExecutable", names);
+  end if;
+end simulationArgumentNames;
+
+protected function unsetSimulationArgument
+  input String name;
+  output Values.Value value;
+algorithm
+  value := match name
+    case "numberOfIntervals" then Values.INTEGER(-1);
+    case "resimulateExecutable" then Values.STRING("");
+    case "startTime" then Values.REAL(System.realNaN());
+    case "stopTime" then Values.REAL(System.realNaN());
+    case "stepSize" then Values.REAL(System.realNaN());
+    case "tolerance" then Values.REAL(System.realNaN());
+    else Values.STRING("<default>");
+  end match;
+end unsetSimulationArgument;
+
+protected function isUnsetSimulationArgument
+  input Values.Value value;
+  output Boolean unset;
+algorithm
+  unset := match value
+    case Values.REAL() then System.realIsNaN(value.real);
+    case Values.INTEGER() then value.integer < 0;
+    case Values.STRING() then value.string == "<default>";
+    else false;
+  end match;
+end isUnsetSimulationArgument;
+
+protected function simulationArgument
+  input String name;
+  input list<tuple<String, Values.Value>> namedArgs;
+  input InteractiveTypes.SimulationOptions opts;
+  output Values.Value value;
+algorithm
+  value := simulationArgumentOrDefault(name, namedArgs, ValuesUtil.expValue(getSimulationOption(opts, name)));
+end simulationArgument;
+
+protected function simulationArgumentOrDefault
+  input String name;
+  input list<tuple<String, Values.Value>> namedArgs;
+  input Values.Value defaultValue;
+  output Values.Value value = defaultValue;
+algorithm
+  for arg in namedArgs loop
+    if Util.tuple21(arg) == name then
+      value := Util.tuple22(arg);
+      return;
+    end if;
+  end for;
+end simulationArgumentOrDefault;
 
 protected function setOptimizationFlags
   "Sets the flags needed to build a dynamic optimization problem (optimize, moo)
@@ -697,27 +812,21 @@ public function cevalInteractiveFunctions3
 protected
   import LexerModelicaDiff.{Token,TokenId,tokenContent,scanString,reportErrors,filterModelicaDiff,modelicaDiffTokenEq,modelicaDiffTokenWhitespace};
   import DiffAlgorithm.{Diff,diff,printActual,printDiffTerminalColor,printDiffXml};
+  list<Values.Value> args = simulationCallArguments(inFunctionName, inVals);
 algorithm
-  outValue := matchcontinue (inFunctionName,inVals)
+  outValue := matchcontinue (inFunctionName,args)
     local
       String simflags,s1,s2,s3,s4,s5,str,str1,str2,str3,str4,executable,
              outputFormat_str,initfilename,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,
              name,errMsg, res,workdir,filenameprefix,compileDir,exeDir, logFile, outputFile,
-             strlinearizeTime, modeldescriptionfilename, tmpDir, bom, description, resimulateExecutable;
+             strlinearizeTime, modeldescriptionfilename, tmpDir, bom, resimulateExecutable;
       list<Values.Value> vals;
       Absyn.Path path,classpath,className;
       SCode.Program sp;
-      FCore.Graph env;
       Absyn.Program p,pnew;
       Absyn.Class absynClass;
       Absyn.Element elem;
       Absyn.Exp aexp;
-      DAE.DAElist dae;
-      BackendDAE.BackendDAE daelow;
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqnarr;
-      array<list<Integer>> m;
-      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       Values.Value ret_val,simValue,v,v1,v2;
       SimCode.SimulationSettings simSettings;
       Integer i,i1,resI;
@@ -739,8 +848,6 @@ algorithm
       list<Absyn.Class> classes;
       list<Absyn.ElementArg> eltargs;
       Absyn.Within within_;
-      BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;
       Boolean dumpExtractionSteps;
       list<Boolean> blst;
       UnitAbsyn.Unit u1,u2;
@@ -1258,21 +1365,6 @@ algorithm
     case ("rewriteBlockCall", _)
       then Values.BOOL(false);
 
-    case ("jacobian",{Values.CODE(Absyn.C_TYPENAME(path))})
-      algorithm
-        (outCache, env, SOME(dae), _) := runFrontEnd(outCache, inEnv, path, true, transform = true);
-        filenameprefix := AbsynUtil.pathString(path);
-        description := DAEUtil.daeDescription(dae);
-        daelow := BackendDAECreate.lower(dae,outCache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE()));
-        BackendDAE.DAE({syst},shared) := BackendDAEUtil.preOptimizeBackendDAE(daelow,NONE());
-        (syst,m,_) := BackendDAEUtil.getAdjacencyMatrixfromOption(syst,BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
-        vars := BackendVariable.daeVars(syst);
-        eqnarr := BackendEquation.getEqnsFromEqSystem(syst);
-        (jac, _) := SymbolicJacobian.calculateJacobian(vars, eqnarr, m, false,shared);
-        res := BackendDump.dumpJacobianStr(jac);
-      then
-        Values.STRING(res);
-
     case ("translateModel",vals as {Values.CODE(Absyn.C_TYPENAME(className)),_,_,_,_,_,Values.STRING(filenameprefix),_,_,_,_,_})
       algorithm
         (outCache,simSettings) := calculateSimulationSettings(outCache, vals);
@@ -1323,14 +1415,8 @@ algorithm
 
     case ("translateModelXML",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)})
       algorithm
-        filenameprefix := Util.stringReplaceChar(filenameprefix,".","_");
+        filenameprefix := Util.stringReplaceChar(if filenameprefix == "<default>" then AbsynUtil.pathString(className) else filenameprefix, ".", "_");
         (outCache, ret_val) := translateModelXML(outCache, inEnv, className, filenameprefix, true, NONE());
-      then
-        ret_val;
-
-    case ("exportDAEtoMatlab",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)})
-      algorithm
-        (outCache, ret_val, _) := getAdjacencyMatrix(outCache, inEnv, className, msg, filenameprefix);
       then
         ret_val;
 
@@ -1455,6 +1541,21 @@ algorithm
         (b,outCache,_,executable,_,_,initfilename,_,_,_) := buildModel(outCache,inEnv, vals, msg);
       then
         ValuesMake.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")});
+
+    case ("translateAcausalDAE", vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
+      algorithm
+        (outCache, simValue) := runAcausalDAE(outCache, inEnv, vals, msg, 0);
+      then simValue;
+
+    case ("buildAcausalDAE", vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
+      algorithm
+        (outCache, simValue) := runAcausalDAE(outCache, inEnv, vals, msg, 1);
+      then simValue;
+
+    case ("simulateAcausalDAE", vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
+      algorithm
+        (outCache, simValue) := runAcausalDAE(outCache, inEnv, vals, msg, 2);
+      then simValue;
 
     case ("simulate", vals)
       algorithm
@@ -1825,19 +1926,17 @@ algorithm
       Absyn.Program p,newp;
       InteractiveTypes.SimulationOptions simOpt;
       Real startTime,stopTime,tolerance,reltol,reltolDiffMinMax,rangeDelta;
-      DAE.Exp startTimeExp,stopTimeExp,toleranceExp,intervalExp;
-      DAE.Type tp;
       Absyn.Class absynClass;
       Absyn.Exp aexp, aexp2, aexp3;
       Option<DAE.DAElist> odae;
-      Values.Value v,cvar,cvar2,v1,v2;
+      Values.Value v,cvar,cvar2,v1,v2,v3;
       Absyn.ComponentRef cr, cr2;
       Integer size,i,n,curveStyle,numberOfIntervals,x,y;
       Access access;
       list<String> vars_1,args,strings,strs1,strs2,files;
       Real timeStamp,val,x1,x2,y1,y2,y1R,y2R,r1,r2,curveWidth, interval;
       GlobalScript.Statements istmts;
-      Boolean b, b1, b2, b3, externalWindow, logX, logY, autoScale, forceOMPlot, keepRedeclares, hintReadAllVars;
+      Boolean b, b1, b2, b3, externalWindow, logX, logY, autoScale, forceOMPlot, stackCurves, keepRedeclares, hintReadAllVars;
       list<Real> realVals;
       list<Absyn.Path> paths;
       list<Absyn.NamedArg> nargs;
@@ -2168,11 +2267,7 @@ algorithm
         Values.BOOL(b);
 
     case ("getBuiltinType",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      algorithm
-        (_, tp, _) := Lookup.lookupType(outCache, inEnv, classpath, SOME(Absyn.dummyInfo));
-        str := TypesDump.unparseType(tp);
-      then
-        Values.STRING(str);
+      then Values.STRING(NFApi.getBuiltinType(classpath, SymbolTable.getAbsyn()));
 
     // if the lookup fails
     case ("getBuiltinType",{Values.CODE(Absyn.C_TYPENAME(_))})
@@ -2215,16 +2310,15 @@ algorithm
 
     case ("getSimulationOptions",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.REAL(startTime),Values.REAL(stopTime),Values.REAL(tolerance),Values.INTEGER(numberOfIntervals),Values.REAL(interval)})
       algorithm
-        cr := AbsynUtil.pathToCref(classpath);
         // ignore the name of the model
         ErrorExt.setCheckpoint("getSimulationOptions");
         simOpt := InteractiveTypes.SIMULATION_OPTIONS(DAE.RCONST(startTime),DAE.RCONST(stopTime),DAE.ICONST(numberOfIntervals),DAE.RCONST(0.0),DAE.RCONST(tolerance),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""));
         ErrorExt.rollBack("getSimulationOptions");
-        (_, _::startTimeExp::stopTimeExp::intervalExp::toleranceExp::_) := StaticScript.getSimulationArguments(FCore.emptyCache(), FGraph.empty(), {Absyn.CREF(cr)},{},false,DAE.NOPRE(), "getSimulationOptions", Absyn.dummyInfo,SOME(simOpt));
-        startTime := ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,startTimeExp,Values.REAL(startTime)));
-        stopTime := ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,stopTimeExp,Values.REAL(stopTime)));
-        tolerance := ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,toleranceExp,Values.REAL(tolerance)));
-        Values.INTEGER(numberOfIntervals) := Util.makeValueOrDefault(Ceval.cevalSimple,intervalExp,Values.INTEGER(numberOfIntervals)); // number of intervals
+        _ :: v1 :: v2 :: Values.INTEGER(numberOfIntervals) :: v3 :: _ :=
+          simulationArguments(classpath, {}, "getSimulationOptions", SOME(simOpt));
+        startTime := ValuesUtil.valueReal(v1);
+        stopTime := ValuesUtil.valueReal(v2);
+        tolerance := ValuesUtil.valueReal(v3);
         if numberOfIntervals == 0 and interval > 0.0 then
           numberOfIntervals := integer(ceil((stopTime - startTime)/interval));
         else
@@ -2486,13 +2580,14 @@ algorithm
           Values.BOOL(forceOMPlot),
           Values.STRING(yAxis),
           Values.STRING(yLabelRight),
-          Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)})
+          Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)}),
+          Values.BOOL(stackCurves)
         })
       algorithm
         // get OPENMODELICAHOME
         omhome := Settings.getInstallationDirectoryPath();
         // get the simulation filename
-        (outCache,filename) := cevalCurrentSimulationResultExp(outCache,inEnv,filename,msg);
+        filename := currentSimulationResult(filename);
         pd := Autoconf.pathDelimiter;
         // create absolute path of simulation result file
         str1 := System.pwd() + pd + filename;
@@ -2504,7 +2599,7 @@ algorithm
           // create the path till OMPlot
           str2 := stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
           // create the list of arguments for OMPlot
-          str3 := "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotAll --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale);
+          str3 := "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotAll --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " --stack=" + boolString(stackCurves);
           call := stringAppendList({"\"",str2,"\""," ",str3});
           0 := System.spawnCall(str2, call);
         elseif b then
@@ -2547,7 +2642,8 @@ algorithm
           Values.BOOL(forceOMPlot),
           Values.STRING(yAxis),
           Values.STRING(yLabelRight),
-          Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)})
+          Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)}),
+          Values.BOOL(stackCurves)
         })
       algorithm
         // get the variables list
@@ -2555,7 +2651,7 @@ algorithm
         // get OPENMODELICAHOME
         omhome := Settings.getInstallationDirectoryPath();
         // get the simulation filename
-        (outCache,filename) := cevalCurrentSimulationResultExp(outCache,inEnv,filename,msg);
+        filename := currentSimulationResult(filename);
         pd := Autoconf.pathDelimiter;
         // create absolute path of simulation result file
         str1 := System.pwd() + pd + filename;
@@ -2569,7 +2665,7 @@ algorithm
           // create the path till OMPlot
           str2 := stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
           // create the list of arguments for OMPlot
-          str3 := "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plot --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " '" + str + "'";
+          str3 := "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plot --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " --stack=" + boolString(stackCurves) + " '" + str + "'";
           call := stringAppendList({"\"",str2,"\""," ",str3});
           0 := System.spawnCall(str2, call);
         elseif b then
@@ -2592,17 +2688,9 @@ algorithm
     case ("plot",_)
       then Values.BOOL(false);
 
-    case ("val",{cvar,Values.REAL(timeStamp),Values.STRING("<default>")})
-      algorithm
-        (outCache,Values.STRING(filename)) := Ceval.ceval(outCache,inEnv,buildCurrentSimulationResultExp(), true, msg, 0);
-        varNameStr := ValuesUtil.printCodeVariableName(cvar);
-        val := SimulationResults.val(filename,varNameStr,timeStamp);
-      then
-        Values.REAL(val);
-
     case ("val",{cvar,Values.REAL(timeStamp),Values.STRING(filename)})
       algorithm
-        false := stringEq(filename,"<default>");
+        filename := currentSimulationResult(filename);
         varNameStr := ValuesUtil.printCodeVariableName(cvar);
         val := SimulationResults.val(filename,varNameStr,timeStamp);
       then
@@ -3084,7 +3172,7 @@ algorithm
         // get OPENMODELICAHOME
         omhome := Settings.getInstallationDirectoryPath();
         // get the simulation filename
-        (outCache,filename) := cevalCurrentSimulationResultExp(outCache,inEnv,filename,msg);
+        filename := currentSimulationResult(filename);
         pd := Autoconf.pathDelimiter;
         // create absolute path of simulation result file
         str1 := System.pwd() + pd + filename;
@@ -3154,12 +3242,6 @@ algorithm
         b := System.relocateFunctions(str, relocatableFunctionsTuple);
       then
         Values.BOOL(b);
-
-    case ("toJulia",{})
-      algorithm
-        str := Tpl.tplString(AbsynToJulia.dumpProgram, SymbolTable.getAbsyn());
-      then
-        Values.STRING(str);
 
     case ("interactiveDumpAbsynToJL",{})
       algorithm
@@ -3476,9 +3558,6 @@ algorithm
     case ("getDefaultComponentPrefixes", {Values.CODE(Absyn.C_TYPENAME(classpath))})
       then Interactive.getDefaultComponentPrefixes(classpath, SymbolTable.getAbsyn());
 
-    case ("getDefinitions", {Values.BOOL(b)})
-      then Interactive.getDefinitions(SymbolTable.getAbsyn(), b);
-
     case ("getDefaultOpenCLDevice", {})
       then ValuesMake.makeInteger(Config.getDefaultOpenCLDevice());
 
@@ -3490,6 +3569,12 @@ algorithm
 
     case ("getDefinitionAt", {Values.STRING(str), Values.INTEGER(x), Values.INTEGER(y), Values.BOOL(b)})
       then ValuesMake.makeString(getDefinitionAt(str, x, y, b));
+
+    case ("getProbeTree", {Values.STRING(str), Values.BOOL(b)})
+      then ValuesMake.makeString(ProbeTree.probeTreeJSON(str, b));
+
+    case ("evaluateProbe", {Values.STRING(str), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3), Values.BOOL(b)})
+      then ValuesMake.makeString(ProbeTree.evaluateProbeJSON(str, str1, str2, str3, b));
 
     case ("getClassDiagram", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str), Values.STRING(str1),
                               Values.INTEGER(i), v as Values.ARRAY(), Values.BOOL(b)})
@@ -3535,48 +3620,6 @@ algorithm
     else Autoconf.exeExt;
   end match;
 end getSimulationExtension;
-
-public function getAdjacencyMatrix " author: adrpo
- translates a model and returns the adjacency matrix"
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input Absyn.Path className "path for the model";
-  input Absyn.Msg inMsg;
-  input String filenameprefix;
-  output FCore.Cache outCache;
-  output Values.Value outValue;
-  output String outString;
-algorithm
-  (outCache,outValue,outString):=
-  match (inCache, inEnv)
-    local
-      String filename,file_dir, str;
-      DAE.DAElist dae;
-      FCore.Graph env;
-      BackendDAE.BackendDAE dlow;
-      Absyn.ComponentRef a_cref;
-      FCore.Cache cache;
-      String flatModelicaStr,description;
-
-    case (cache, env) /* mo file directory */
-      algorithm
-        (cache, env, SOME(dae), _) := runFrontEnd(cache, env, className, true, transform = true);
-        description := DAEUtil.daeDescription(dae);
-        a_cref := AbsynUtil.pathToCref(className);
-        file_dir := ProgramUtil.getFileDir(a_cref, SymbolTable.getAbsyn());
-        dlow := BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE()));
-        dlow := FindZeroCrossings.findZeroCrossings(dlow);
-        flatModelicaStr := DAEDump.dumpStr(dae,FCore.getFunctionTree(cache));
-        flatModelicaStr := stringAppend("OldEqStr={'", flatModelicaStr);
-        flatModelicaStr := System.stringReplace(flatModelicaStr, "\n", "%##%");
-        flatModelicaStr := System.stringReplace(flatModelicaStr, "%##%", "','");
-        flatModelicaStr := stringAppend(flatModelicaStr,"'};");
-        filename := DAEQuery.writeAdjacencyMatrix(dlow, filenameprefix, flatModelicaStr);
-        str := stringAppend("The equation system was dumped to Matlab file:", filename);
-      then
-        (cache,Values.STRING(str),file_dir);
-  end match;
-end getAdjacencyMatrix;
 
 /* -------------------------------------------------------------------
                          RUN FRONTEND
@@ -3707,6 +3750,10 @@ algorithm
 
     case (false, false)
       algorithm
+        // MetaModelica is only supported by the old frontend.
+        if not (nf_inst_actual or Config.acceptMetaModelicaGrammar()) then
+          Error.addMessage(Error.OLD_FRONTEND_DEPRECATED, {});
+        end if;
         scodeP := SymbolTable.getSCode();
         ExecStat.execStat("FrontEnd - Absyn->SCode");
 
@@ -3865,7 +3912,7 @@ protected
   String quote, dquote, defaultFmiIncludeDirectoy;
   String CC;
   SimCodeFunction.MakefileParams makefileParams;
-  String msvcEnv, rmrf;
+  String msvcEnv, rmrf, simrtLib, cflags;
 algorithm
   makefileParams := SimCodeFunctionUtil.createMakefileParams({}, {}, {}, false, true);
   fmuSourceDir := fmutmp+"/sources/";
@@ -3885,6 +3932,15 @@ algorithm
     rmrf := "rm -rf ";
   end if;
   defaultFmiIncludeDirectoy := dquote + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + dquote;
+  // Only a build for this platform can link the runtime omc was built with.
+  simrtLib := "-DSIMULATION_RUNTIME_FMI_LIBRARY=" + dquote + Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc/libSimulationRuntimeFMI.a" + dquote;
+  // As in a simulation executable; its Makefile expands MODELICAUSERCFLAGS itself.
+  // The FMU's CMakeLists.txt defines OM_HAVE_PTHREADS if it finds pthreads.
+  cflags := System.stringReplace(System.getCFlags(), "${MODELICAUSERCFLAGS}",
+                                 Util.makeValueOrDefault(System.readEnv, "MODELICAUSERCFLAGS", ""));
+  cflags := System.stringReplace(cflags, "-DOM_HAVE_PTHREADS", "");
+  cflags := if isWindows then System.stringReplace(cflags, "\"", "\\\"") else System.stringReplace(cflags, "'", "'\\''");
+  cflags := "-DCMAKE_C_FLAGS=" + dquote + cflags + dquote;
 
   // Set build type
   if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
@@ -3920,7 +3976,7 @@ algorithm
       algorithm
         buildDir := "build_cmake_dynamic";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
-                     CMAKE_BUILD_TYPE + " " + CC +
+                     CMAKE_BUILD_TYPE + " " + CC + " " + simrtLib + " " + cflags +
                      " ..";
         cmd := msvcEnv + "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
@@ -3936,7 +3992,7 @@ algorithm
       algorithm
         buildDir := "build_cmake_static";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
-                     CMAKE_BUILD_TYPE + " " + CC +
+                     CMAKE_BUILD_TYPE + " " + CC + " " + simrtLib + " " + cflags +
                      " ..";
         cmd := msvcEnv + "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
@@ -4172,6 +4228,22 @@ algorithm
   end try;
 end translateModelFMU;
 
+protected function canExportDaeModeFMU
+  "Which targets can export a --daeMode model as an FMU. The wasm runtime serves
+   the residual form for both FMU kinds. A --simCodeTarget=C+Rust FMU gets its FMI
+   API from the same Rust runtime component, so it serves it as fmi-ls-dae for
+   FMI 3.0 Model Exchange, where the importer owns the DAE residuals and the
+   algebraic variables. The C simulation runtime of --simCodeTarget=C does not."
+  input String FMUType;
+  input String FMUVersion;
+  input Boolean isWasmFMU;
+  output Boolean canExport;
+algorithm
+  canExport := isWasmFMU or
+               (FMI.isFMIVersion30(FMUVersion) and FMI.isFMIMEType(FMUType) and
+                Config.simCodeRustRuntime());
+end canExportDaeModeFMU;
+
 protected function callTranslateModelFMU
  "Translates a model into target code and writes CMakeLists.txt"
   input FCore.Cache inCache;
@@ -4216,7 +4288,7 @@ algorithm
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
   end if;
-  if Flags.getConfigBool(Flags.DAE_MODE) and not isWasmFMU then
+  if Flags.getConfigBool(Flags.DAE_MODE) and not canExportDaeModeFMU(FMUType, FMUVersion, isWasmFMU) then
     success := false;
     outValue := Values.STRING("");
     if FMI.isFMIMEType(FMUType) then
@@ -4604,7 +4676,6 @@ protected function buildModelFMU
   output Values.Value outValue;
 protected
   Flags.Flag flags;
-  list<String> fmiFlags;
 algorithm
   if isProtectedContentAccess(className) then
     // if AST contains encrypted class show nothing
@@ -4612,20 +4683,14 @@ algorithm
     outValue := Values.STRING("");
   else
     flags := loadCommandLineOptionsFromModel(className);
-    // `method=` reaches the FMU only through --fmiFlags, a global: restore it by
-    // hand so one export does not pick the solver for the next. `saveFlags` will
-    // not — without __OpenModelica_commandLineOptions `flags` aliases the store.
-    fmiFlags := Flags.getConfigStringList(Flags.FMI_FLAGS);
     fmuMethodToSimulationFlag(method, isWasmFMUExport(FMUVersion, platforms));
     fmuAnnotationSimulationFlags(className, isWasmFMUExport(FMUVersion, platforms));
 
     try
       (cache, outValue) := callBuildModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
       // reset to the original flags
-      FlagsUtil.setConfigStringList(Flags.FMI_FLAGS, fmiFlags);
       FlagsUtil.saveFlags(flags);
     else
-      FlagsUtil.setConfigStringList(Flags.FMI_FLAGS, fmiFlags);
       FlagsUtil.saveFlags(flags);
       fail();
     end try;
@@ -4638,7 +4703,7 @@ public function callBuildModelFMU
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.Path className "path for the model";
-  input String FMUVersion;
+  input String inFMUVersion;
   input String inFMUType;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
@@ -4656,6 +4721,7 @@ protected
   Boolean needs3rdPartyLibs;
   Integer platformIndex, platformCount;
   String platformName;
+  String FMUVersion = inFMUVersion;
   String FMUType = inFMUType;
   // FMI 1.0 is deprecated and the wasm export does not serve it; such a request
   // is the C export's business even under the wasm simCodeTarget.
@@ -4688,11 +4754,17 @@ algorithm
     Error.addMessage(Error.FMU_EXPORT_WASM_FMI1, {});
     return;
   end if;
+  // without a native binary to load it, the wasm model is only reachable as fmi-ls-wasm,
+  // which is layered on FMI 3.0
+  if wasmRequested and FMUVersion == "2.0" and listEmpty(nativePlatforms) then
+    Error.addMessage(Error.FMU_EXPORT_WASM_FMI2_AS_FMI3, {});
+    FMUVersion := "3.0";
+  end if;
   if Config.simCodeTarget() == "Cpp" and FMI.isFMICSType(FMUType) then
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
   end if;
-  if Flags.getConfigBool(Flags.DAE_MODE) and not isWasmFMU then
+  if Flags.getConfigBool(Flags.DAE_MODE) and not canExportDaeModeFMU(FMUType, FMUVersion, isWasmFMU) then
     outValue := Values.STRING("");
     if FMI.isFMIMEType(FMUType) then
       Error.addMessage(Error.FMU_EXPORT_DAE_MODE_ME, {FMUType});
@@ -6412,6 +6484,239 @@ algorithm
 
   end match;
 end formatSimulationFlagString;
+
+protected function runAcausalDAE
+  "Orchestrates the acausal-DAE flow for a flowsheet whose top-level components
+   are acausal DAE blocks:
+     1. getModelInstance(flowsheet)                     -> instance JSON
+     2. combine_components.py prepare                   -> Top_<c> wrappers,
+                                                           _connect_<model>.txt,
+                                                           component manifest
+     3. translateResidualsDAE(Top_<c>) per component    -> per-component DAE C
+     4. combine_components.py combine                   -> combined C + makefile
+     5. (mode>=1) make                                  -> simulation executable
+     6. (mode==2) run executable + collect SimulationResult
+   mode: 0 = translate only, 1 = build (no run), 2 = simulate (build + run).
+   Returns Boolean (mode 0), String[2] {exe,init} (mode 1) or a SimulationResult
+   record (mode 2)."
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input list<Values.Value> vals;
+  input Absyn.Msg msg;
+  input Integer mode;
+  output FCore.Cache outCache = inCache;
+  output Values.Value outValue;
+protected
+  Absyn.Path className;
+  String cname, prefix, workdir, scriptPath, instFile, outPrefix, cmd, names,
+         exe, logFile, resultFile, instJson, omhome, wrappersFile, prepLog, combLog, outFmt,
+         flatFile, flatStr;
+  list<String> prefixes;
+  Integer rc;
+  Boolean ok, buildOk;
+  Real timeTotal, timeSim = 0.0;
+algorithm
+  System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+  Values.CODE(Absyn.C_TYPENAME(className)) := listHead(vals);
+  cname := AbsynUtil.pathString(className);
+  omhome := System.stringReplace(Settings.getInstallationDirectoryPath(), "\"", "");
+  scriptPath := omhome + "/share/omc/scripts/combine_components.py";
+
+  // working directory: cwd if writable, otherwise a temp directory (issue: the
+  // directory where omc was started may be read-only).
+  workdir := acausalWorkingDir(cname);
+
+  // 1. dump the model instance (resolves through extends, gives components,
+  //    modifiers incl. redeclares, and the top-level connections).
+  Values.STRING(instJson) := NFApi.getModelInstance(className, Absyn.IDENT("__NoContext"), "", false);
+  instFile := workdir + "/" + cname + "_instance.json";
+  System.writeFile(instFile, instJson);
+
+  // 1b. dump the RESOLVED flat model of the original top-level model. The new
+  //     frontend has already run resolveConnections, so this flat model carries
+  //     OMC's authoritative connection resolution: potential equalities, flow/KCL
+  //     sums with the correct inside/outside signs, stream equations, and broken
+  //     overconstrained loops. The combine reads connect() semantics from here
+  //     rather than reconstructing them from the raw edges. This flattening is
+  //     for metadata only -- the components are still compiled separately.
+  //     getModelInstance (step 1) populates NFInst's global mutable caches and
+  //     leaves them in an instance-API state; a subsequent full instantiation
+  //     fails unless we wipe them first (runFrontEndWorkNF only clears on its own
+  //     failure). So clear the NF caches, then flatten with dumpFlat=true to get
+  //     the flat-Modelica string directly.
+  flatFile := workdir + "/" + cname + "_flat.mo";
+  try
+    NFInst.clearCaches();
+    (outCache, _, _, flatStr) := runFrontEnd(outCache, inEnv, className, false, true);
+    if not stringEmpty(flatStr) then
+      System.writeFile(flatFile, flatStr);
+    end if;
+  else
+    // Non-fatal: the resolved flat model is auxiliary connection metadata; the
+    // combine falls back to the instance-JSON connections if it is absent.
+    flatStr := "";
+  end try;
+
+  // 2. prepare: synthesize per-component wrapper models + connection list.
+  prepLog := workdir + "/_acausal_prepare.log";
+  cmd := "python3 \"" + scriptPath + "\" prepare --instance \"" + instFile +
+         "\" --dir \"" + workdir + "\" --model " + cname;
+  rc := System.systemCall(cmd, prepLog);
+  if rc <> 0 then
+    outValue := acausalFail(mode, "simulateAcausalDAE: prepare step failed:\n" + System.readFile(prepLog));
+    return;
+  end if;
+
+  // 3. load wrappers and generate per-component DAE residual code, reusing
+  //    already-generated code for components whose wrapper signature (type +
+  //    modifications + copied decls) and omc version are unchanged (point 6).
+  wrappersFile := workdir + "/_acausal_wrappers.mo";
+  SymbolTable.setAbsyn(CevalScript.loadFile(wrappersFile, "UTF-8", SymbolTable.getAbsyn(), true, false, false, true));
+  prefixes := {};
+  rc := System.cd(workdir);
+  for entry in acausalReadManifest(workdir + "/_acausal_components.txt") loop
+    (prefix, ok) := acausalGenComponent(entry);
+    if not ok then
+      outValue := acausalFail(mode, "simulateAcausalDAE: translateResidualsDAE failed for component " + prefix);
+      return;
+    end if;
+    prefixes := prefix :: prefixes;
+  end for;
+  prefixes := listReverse(prefixes);
+
+  // 4. stitch the components together with the connection equations.
+  names := stringDelimitList(prefixes, ",");
+  outPrefix := "combined";
+  combLog := workdir + "/_acausal_combine.log";
+  cmd := "python3 \"" + scriptPath + "\" combine --dir \"" + workdir + "\" --comps " +
+         names + " --conn _connect_" + cname + ".txt --out " + outPrefix;
+  rc := System.systemCall(cmd, combLog);
+  if rc <> 0 then
+    outValue := acausalFail(mode, "simulateAcausalDAE: combine step failed:\n" + System.readFile(combLog));
+    return;
+  end if;
+
+  if mode == 0 then
+    outValue := ValuesMake.makeBoolean(true);
+    return;
+  end if;
+
+  // 5. build the combined model.
+  logFile := workdir + "/" + outPrefix + ".log";
+  cmd := Autoconf.make + " -f " + outPrefix + ".makefile OPENMODELICAHOME=\"" + omhome + "\"";
+  buildOk := System.systemCall(cmd, logFile) == 0;
+  exe := workdir + "/" + outPrefix;
+
+  if mode == 1 then
+    outValue := ValuesMake.makeArray({ValuesMake.makeString(if buildOk then exe else ""), ValuesMake.makeString("")});
+    return;
+  end if;
+
+  // 6. run the combined executable and return a SimulationResult like simulate().
+  //    The driver writes both combined_res.mat and combined_res.csv; point the
+  //    result at the one matching outputFormat (vals[9]), defaulting to mat.
+  outFmt := match listGet(vals, 9) case Values.STRING("csv") then "csv"; else "mat"; end match;
+  resultFile := workdir + "/" + outPrefix + "_res." + outFmt;
+  if buildOk then
+    rc := System.systemCallRestrictedEnv("\"" + exe + "\"", logFile);
+  else
+    rc := 1;
+  end if;
+  timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+  (outCache, outValue) := createSimulationResultFromcallModelExecutable(
+    buildOk, rc, timeTotal, timeSim, {}, inCache, className, vals, resultFile, logFile);
+end runAcausalDAE;
+
+protected function acausalFail
+  "Builds the mode-appropriate failure value for runAcausalDAE and records the
+   message so it shows up in getErrorString()."
+  input Integer mode;
+  input String message;
+  output Values.Value v;
+algorithm
+  Error.addInternalError(message, sourceInfo());
+  v := match mode
+    case 0 then ValuesMake.makeBoolean(false);
+    case 1 then ValuesMake.makeArray({ValuesMake.makeString(""), ValuesMake.makeString("")});
+    else createSimulationResultFailure(message, "");
+  end match;
+end acausalFail;
+
+protected function acausalWorkingDir
+  "Returns the current directory if it is writable, otherwise a temp directory."
+  input String cname;
+  output String dir;
+protected
+  String cwd, probe, tmp;
+algorithm
+  cwd := System.pwd();
+  probe := cwd + "/." + cname + "_acausal_probe";
+  try
+    System.writeFile(probe, "");
+    true := System.regularFileExists(probe);
+    System.removeFile(probe);
+    dir := cwd;
+  else
+    tmp := Settings.getTempDirectoryPath() + "/acausalDAE_" + cname;
+    if not System.directoryExists(tmp) then
+      System.createDirectory(tmp);
+    end if;
+    dir := tmp;
+  end try;
+end acausalWorkingDir;
+
+protected function acausalReadManifest
+  "Reads the component manifest ('<name>\\t<signature>' per line) into a list of
+   (name, signature) tuples."
+  input String file;
+  output list<tuple<String, String>> comps = {};
+protected
+  list<String> toks;
+algorithm
+  for line in System.strtok(System.readFile(file), "\n") loop
+    toks := System.strtok(System.trimWhitespace(line), "\t");
+    comps := match toks
+      case {} then comps;
+      case {_} then (listGet(toks, 1), "") :: comps;
+      else (listGet(toks, 1), listGet(toks, 2)) :: comps;
+    end match;
+  end for;
+  comps := listReverse(comps);
+end acausalReadManifest;
+
+protected function acausalGenComponent
+  "Generates the DAE residual code for one component, reusing the previously
+   generated code if a cache sidecar with a matching signature + omc version
+   exists (point 6: avoid re-running translateResidualsDAE for unchanged
+   components). Returns (componentName, success)."
+  input tuple<String, String> entry;
+  output String prefix;
+  output Boolean success;
+protected
+  String sig, cacheFile, daeFile, cacheContent;
+  Boolean ok;
+algorithm
+  (prefix, sig) := entry;
+  cacheFile := prefix + "_acausal_cache.json";
+  daeFile := prefix + "_16dae.c";
+  cacheContent := "{\"component\": \"" + prefix + "\", \"signature\": \"" + sig +
+                  "\", \"omcVersion\": \"" + Settings.getVersionNr() + "\"}";
+
+  // reuse if the per-component code and a matching cache sidecar are present
+  if sig <> "" and System.regularFileExists(cacheFile) and System.regularFileExists(daeFile)
+     and System.trimWhitespace(System.readFile(cacheFile)) == cacheContent then
+    success := true;
+    return;
+  end if;
+
+  // translateResidualsDAE swallows backend errors and returns true regardless,
+  // so verify it actually produced the DAE residual file before trusting it.
+  ok := NFApi.translateResidualsDAE(Absyn.IDENT("Top_" + prefix), prefix);
+  success := ok and System.regularFileExists(daeFile);
+  if success and sig <> "" then
+    System.writeFile(cacheFile, cacheContent);
+  end if;
+end acausalGenComponent;
 
 protected function createSimulationResultFromcallModelExecutable
 "This function calls the compiled simulation executable."
@@ -8430,7 +8735,7 @@ algorithm
   end if;
 end scopeClassPaths;
 
-protected function collectDefUse
+public function collectDefUse
   "Walks the given classes and returns the definitions and uses of the names in
    them, see NFUsedElements.collectUses."
   input list<Absyn.Path> paths "In reverse order.";
@@ -8441,6 +8746,7 @@ protected function collectDefUse
 protected
   SCode.Program builtin_p, annotation_p;
   Boolean nf_inst;
+  list<String> lookup_differences = {};
 algorithm
   // Only the uses are wanted from the lookups, not their messages.
   ErrorExt.setCheckpoint(getInstanceName());
@@ -8451,13 +8757,18 @@ algorithm
     (_, builtin_p) := FBuiltin.getInitialFunctions();
     annotation_p := AbsynToSCode.translateAbsyn2SCode(
       InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion()));
-    (defs, uses, unresolved) := NFUsedElements.collectUses(listReverse(paths),
+    (defs, uses, unresolved, lookup_differences) := NFUsedElements.collectUses(listReverse(paths),
       listAppend(builtin_p, program), annotation_p);
   else
   end try;
 
   FlagsUtil.set(Flags.SCODE_INST, nf_inst);
   ErrorExt.rollBack(getInstanceName());
+
+  // -d=checkUsedElementsLookup, after the rollback so that they're kept.
+  for d in lookup_differences loop
+    Error.addCompilerWarning("checkUsedElementsLookup: " + d);
+  end for;
 end collectDefUse;
 
 protected function getNestedClassPaths
@@ -9826,7 +10137,7 @@ algorithm
   end if;
 end simulationLogFile;
 
-function instantiateModel
+public function instantiateModel
   input output FCore.Cache cache;
   input FCore.Graph env;
   input Absyn.Path path;
@@ -10096,8 +10407,10 @@ protected
   String opts;
   list<String> args;
 algorithm
+  // a copy, not the flags in use: the callers change flags while translating
+  // and restore oldFlags afterwards
+  oldFlags := FlagsUtil.backupFlags();
   if Config.ignoreCommandLineOptionsAnnotation() then
-    oldFlags := FlagsUtil.loadFlags();
     return;
   end if;
 
@@ -10108,12 +10421,8 @@ algorithm
     Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
 
   if not stringEmpty(opts) then
-    // backup the current flags and apply the flags from the annotation
-    oldFlags := FlagsUtil.backupFlags();
     args := System.strtok(opts, " ");
     FlagsUtil.readArgs(args);
-  else
-    oldFlags := FlagsUtil.loadFlags();
   end if;
 end loadCommandLineOptionsFromModel;
 
@@ -10138,28 +10447,10 @@ function simulateModel
   input Absyn.Path path;
   output String result;
 protected
-  InteractiveTypes.SimulationOptions sim_opts;
   list<Values.Value> vals;
   Values.Value res;
 algorithm
-  sim_opts := buildSimulationOptionsFromModelExperimentAnnotation(path, AbsynUtil.pathString(path), NONE());
-
-  vals := {
-    ValuesMake.makeCodeTypeName(path),
-    ValuesUtil.expValue(sim_opts.startTime),
-    ValuesUtil.expValue(sim_opts.stopTime),
-    ValuesUtil.expValue(sim_opts.numberOfIntervals),
-    ValuesUtil.expValue(sim_opts.tolerance),
-    ValuesUtil.expValue(sim_opts.method),
-    ValuesUtil.expValue(sim_opts.fileNamePrefix),
-    ValuesUtil.expValue(sim_opts.options),
-    ValuesUtil.expValue(sim_opts.outputFormat),
-    ValuesUtil.expValue(sim_opts.variableFilter),
-    ValuesUtil.expValue(sim_opts.cflags),
-    ValuesUtil.expValue(sim_opts.simflags),
-    ValuesMake.makeString("")
-  };
-
+  vals := simulationArguments(path, {}, "simulate");
   (_, res) := simulate(vals, FCore.emptyCache(), FGraph.empty(), Absyn.NO_MSG());
   result := ValuesDump.printValStr(res) + "\n";
 end simulateModel;

@@ -21,12 +21,15 @@ Generated on |date| at |time|
   packagemanager
   omedit
   languageserver
+  umldiagrams
+  propertyprobes
   plotting
   compiler
   solving
   parmodauto
   debugger
   basemodelica
+  acausaldae
   porting
   backwardscompatibility
   graphs

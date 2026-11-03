@@ -115,14 +115,23 @@ pub(super) fn build_stateset_jac_fn(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
-    let mut eqs: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = Vec::new();
+    let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
+    let mut pending = BTreeMap::new();
     for set in lst(state_sets) {
-        for col in lst(&set.jacobianMatrix.columns) {
-            eqs.extend(lst(&col.constantEqns).cloned());
-            eqs.extend(lst(&col.columnEqns).cloned());
+        let jm = &set.jacobianMatrix;
+        for col in lst(&jm.columns) {
+            let eqs: Vec<metamodelica::Ref<SimCode::SimEqSystem>> =
+                lst(&col.constantEqns).chain(lst(&col.columnEqns)).cloned().collect();
+            lower_with_jac_calls(&mut ctx, jm, |c| {
+                for unit in &eq_units(&eqs) {
+                    lower_unit(c, unit, eq_index, &mut pending)?;
+                }
+                Ok(())
+            })?;
         }
     }
-    build_eq_fn_single(&eq_units(&eqs), var_map, eq_index, by_name, literals)
+    emit_sim_const_stores(&mut ctx, &pending)?;
+    Ok(finish_fn(ctx))
 }
 
 /// Slot of the state-set selection-matrix entry `A[row,col]` (1-based). The backend

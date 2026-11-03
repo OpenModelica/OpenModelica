@@ -3,7 +3,6 @@
 // status: correct
 // cflags:
 // teardown_command: rm -rf initializationTests.discreteTest6* _initializationTests.discreteTest6* output.log
-// cflags: -d=-newInst
 //
 //  case for an ineffective  initial()-call inside a when-condition
 //
@@ -45,7 +44,8 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.discrete
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "[<interactive>:15:5-17:13:writable] Warning: initial() may only be used as a when condition (when initial() or when {..., initial(), ...}), but got condition 'initial() or time > 0.5'.
+// "
 // {{0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}}
 // ""
 // endResult

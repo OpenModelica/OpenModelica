@@ -751,7 +751,7 @@ algorithm
       discreteModelVars           = discreteModelVars,
       extObjInfo                  = extObjInfo,
       makefileParams              = makefileParams,
-      delayedExps                 = SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex),
+      delayedExps                 = SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex, {}),
       spatialInfo                 = spatialInfo,
       jacobianMatrices            = SymbolicJacs,
       simulationSettingsOpt       = simSettingsOpt,
@@ -3548,7 +3548,7 @@ algorithm
         varnames := stringDelimitList(List.map(vars, ComponentReferenceBasics.printComponentRefStr), " ;\n  ");
         rhsStr := stringDelimitList(List.map(rhs, realString), " ;\n  ");
         jacStr := stringDelimitList(List.map1(List.mapList(jac, realString), stringDelimitList, " , "), " ;\n  ");
-        syst := stringAppendList({"\n[\n  ", jacStr, "\n]\n  *\n[\n  ", varnames, "\n]\n  =\n[\n  ", rhsStr, "\n]"});
+        syst := stringAppendList({"[\n  ", jacStr, "\n]\n  *\n[\n  ", varnames, "\n]\n  =\n[\n  ", rhsStr, "\n]"});
         Error.addMessage(Error.LINEAR_SYSTEM_SINGULAR, {syst, infoStr, varname});
       then fail();
     case _
@@ -6080,7 +6080,7 @@ algorithm
     // An array equation
     // cref = rhsexp
     case ((BackendDAE.ARRAY_EQUATION(left=e1 as DAE.CREF(cr_1, _), right=e2, source=source, attr=eqAttr)), BackendDAE.VAR(varName=cr)::_)
-    guard ComponentReferenceBasics.crefEqual(cr_1, ComponentReferenceBasics.crefStripLastSubs(cr))
+    guard isArrayCrefOf(cr_1, cr)
     algorithm
       (e1, _) := BackendDAEUtil.collateArrExp(e1, NONE());
       (e2, _) := BackendDAEUtil.collateArrExp(e2, NONE());
@@ -6091,7 +6091,7 @@ algorithm
     // An array equation
     // lhsexp = cref
     case ((BackendDAE.ARRAY_EQUATION(left=e1, right=e2 as DAE.CREF(cr_1, _), source=source, attr=eqAttr)), BackendDAE.VAR(varName=cr)::_)
-    guard ComponentReferenceBasics.crefEqual(cr_1, ComponentReferenceBasics.crefStripLastSubs(cr))
+    guard isArrayCrefOf(cr_1, cr)
     algorithm
       (e1, _) := BackendDAEUtil.collateArrExp(e1, NONE());
       (e2, _) := BackendDAEUtil.collateArrExp(e2, NONE());
@@ -6121,6 +6121,18 @@ algorithm
     then fail();
   end matchcontinue;
 end createSingleArrayEqnCode;
+
+protected function isArrayCrefOf
+  "Returns true if the array cref arrCr is the array variable of cr or a slice
+   of it that contains cr, e.g. x or x[2, :] for x[2, 3]."
+  input DAE.ComponentRef arrCr;
+  input DAE.ComponentRef cr;
+  output Boolean b;
+algorithm
+  b := ComponentReferenceBasics.crefEqual(arrCr, ComponentReferenceBasics.crefStripLastSubs(cr)) or
+       (ComponentReferenceBasics.crefEqualWithoutSubs(arrCr, cr) and
+        Expression.subscriptContain(ComponentReferenceBasics.crefSubs(cr), ComponentReferenceBasics.crefSubs(arrCr)));
+end isArrayCrefOf;
 
 protected function createSingleAlgorithmCode
   input list<BackendDAE.Equation> eqns;
@@ -7095,8 +7107,8 @@ algorithm
     //BackendDump.dumpVariables(vars,"VAR BEFORE");
     //BackendDump.dumpEquationList(eqLst,"EQS BEFORE");
   eqs := BackendEquation.copyEquationArray(systIn.orderedEqs);
-  BackendDAEUtil.traverseBackendDAEExpsEqns(eqs,replaceCrefWithStartValue,globalKnownVars);
-  BackendDAEUtil.traverseBackendDAEExpsEqns(eqs,replaceCrefWithStartValue,vars);
+  BackendDAEUtil.traverseBackendDAEExpsEqns(eqs,replaceCrefWithStartValue,(globalKnownVars,newStartValueCache()));
+  BackendDAEUtil.traverseBackendDAEExpsEqns(eqs,replaceCrefWithStartValue,(vars,newStartValueCache()));
     //BackendDump.dumpEquationList(eqLst,"EQS AFTER");
   vars1 := BackendVariable.listVar1(noStartVarLst);
   syst := BackendDAEUtil.createEqSystem(vars1, eqs);
@@ -7172,7 +7184,7 @@ algorithm
       //print("check these equations again: "+stringDelimitList(List.map(newEqIdcs,intString),", ")+"\n");
       // replace the var with the new start value in these equations
       eqLst := List.map1r(newEqIdcs,BackendEquation.get,eqs);
-      (eqLst,_) := BackendEquation.traverseExpsOfEquationList(eqLst,replaceCrefWithStartValue,varArr);
+      (eqLst,_) := BackendEquation.traverseExpsOfEquationList(eqLst,replaceCrefWithStartValue,(varArr,newStartValueCache()));
       eqArr := List.threadFold(newEqIdcs,eqLst,BackendEquation.setAtIndexFirst,eqs);
       // update the adjacencyMatrix m and remove the idcs for the calculated var
       mEntries := List.map1(newEqIdcs,Array.getIndexFirst,m);
@@ -7200,19 +7212,37 @@ algorithm
   end match;
 end artificialVarKind;
 
+protected function newStartValueCache
+  output UnorderedMap<DAE.ComponentRef, DAE.Exp> cache;
+algorithm
+  cache := UnorderedMap.new<DAE.Exp>(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
+end newStartValueCache;
+
 protected function replaceCrefWithStartValue "replaces a cref with its constant start value. Only if the BackendDAE.Varkind is not artificial in order to avoid guess-start values
 Waurich 2015-01"
   input DAE.Exp expIn;
-  input BackendDAE.Variables varsIn;
+  input tuple<BackendDAE.Variables, UnorderedMap<DAE.ComponentRef, DAE.Exp>> inTpl;
   output DAE.Exp expOut;
-  output BackendDAE.Variables varsOut;
+  output tuple<BackendDAE.Variables, UnorderedMap<DAE.ComponentRef, DAE.Exp>> outTpl = inTpl;
+protected
+  BackendDAE.Variables vars;
+  UnorderedMap<DAE.ComponentRef, DAE.Exp> cache;
 algorithm
-  (expOut,varsOut) := matchcontinue expIn
+  (vars, cache) := inTpl;
+  expOut := replaceCrefWithStartValueWork(expIn, vars, cache);
+end replaceCrefWithStartValue;
+
+protected function replaceCrefWithStartValueWork
+  input DAE.Exp expIn;
+  input BackendDAE.Variables varsIn;
+  input UnorderedMap<DAE.ComponentRef, DAE.Exp> cache;
+  output DAE.Exp expOut;
+algorithm
+  expOut := matchcontinue expIn
    local
      Integer idx;
      Real r;
      Option<tuple<DAE.Exp,Integer,Integer>> optionExpisASUB;
-     BackendDAE.Var var;
      DAE.ComponentRef cref;
      DAE.Exp exp, exp1, exp2, exp3, startTime, exp1_, exp2_, exp3_;
      DAE.Operator op;
@@ -7220,116 +7250,195 @@ algorithm
 
    case DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))
      algorithm
-     then (DAE.RCONST(0.0),varsIn);
+     then DAE.RCONST(0.0);
 
    case DAE.CREF(componentRef=cref)
      algorithm
-       (var,_) := BackendVariable.getVarSingle(cref,varsIn);
-       true :=  not artificialVarKind(BackendVariable.varKind(var));// if its not of kind variable(), it is something artificial (DUMMY_DER,...) and the start value is not model based in that case
-      // print("VAR: "+BackendDump.varString(var)+" -->");
-       if BackendVariable.varHasBindExp(var) /*and Expression.isConst(BackendVariable.varBindExp(var))*/ then
-         exp := BackendVariable.varBindExp(var);
-         if 0 <> ExpressionBasics.compare(exp, expIn) then
-           // Or should this be an error? Replacing the start-value by itself...
-           exp := replaceCrefWithStartValue(exp,varsIn);
-         end if;
-       elseif BackendVariable.varHasStartValue(var) then
-         exp := BackendVariable.varStartValue(var);
-       else
-         exp := expIn;
-       end if;
-       //print(" has START:"+ ExpressionBasics.printExpStr(exp)+"\n");
-       exp := if Expression.isConst(exp) then exp else expIn;
-     then (exp,varsIn);
+       exp := crefStartValue(cref, varsIn, cache);
+     then if Expression.isConst(exp) then exp else expIn;
 
    case DAE.CALL(path=Absyn.IDENT("sample"), expLst=expLst)
        algorithm
        startTime := listGet(expLst,2);
-       startTime := replaceCrefWithStartValue(startTime,varsIn);
+       startTime := replaceCrefWithStartValueWork(startTime,varsIn,cache);
        if Expression.isZero(startTime) then
          exp := DAE.BCONST(true);
        else
          exp := expIn;
        end if;
-     then (exp,varsIn);
+     then exp;
 
    case DAE.BINARY(exp1=exp1,operator=op,exp2=exp2)
      algorithm
-       exp1_ := replaceCrefWithStartValue(exp1,varsIn);
-       exp2_ := replaceCrefWithStartValue(exp2,varsIn);
+       exp1_ := replaceCrefWithStartValueWork(exp1,varsIn,cache);
+       exp2_ := replaceCrefWithStartValueWork(exp2,varsIn,cache);
        if referenceEq(exp1, exp1_) and referenceEq(exp2,exp2_) then
          exp := expIn;
        else
          exp := DAE.BINARY(exp1_,op,exp2_);
        end if;
-     then (exp,varsIn);
+     then exp;
 
      case DAE.LBINARY(exp1=exp1,operator=op,exp2=exp2)
      algorithm
-       exp1_ := replaceCrefWithStartValue(exp1,varsIn);
-       exp2_ := replaceCrefWithStartValue(exp2,varsIn);
+       exp1_ := replaceCrefWithStartValueWork(exp1,varsIn,cache);
+       exp2_ := replaceCrefWithStartValueWork(exp2,varsIn,cache);
        if referenceEq(exp1, exp1_) and referenceEq(exp2,exp2_) then
          exp := expIn;
        else
          exp := DAE.LBINARY(exp1_,op,exp2_);
        end if;
-     then (exp,varsIn);
+     then exp;
 
      // time > -1.0 or similar
     case DAE.RELATION(exp1=DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")),operator=DAE.GREATER(),exp2=DAE.RCONST(real=r))
      algorithm
        true := realLe(r,0.0);
-     then (expIn,varsIn);
+     then expIn;
 
      // time >= -1.0 or similar
     case DAE.RELATION(exp1=DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")),operator=DAE.GREATEREQ(),exp2=DAE.RCONST(real=r))
      algorithm
        true := realLe(r,0.0);
-     then (expIn,varsIn);
+     then expIn;
 
     // -1.0 < time or similar
     case DAE.RELATION(exp1=DAE.RCONST(real=r),operator=DAE.LESS(),exp2=DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")))
      algorithm
        true := realLe(r,0.0);
-     then (expIn,varsIn);
+     then expIn;
 
      // -1.0 <= time or similar
     case DAE.RELATION(exp1=DAE.RCONST(real=r),operator=DAE.LESSEQ(),exp2=DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")))
      algorithm
        true := realLe(r,0.0);
-     then (expIn,varsIn);
+     then expIn;
 
     case DAE.RELATION(exp1=exp1,operator=op,exp2=exp2,index=idx,optionExpisASUB=optionExpisASUB)
      algorithm
-       exp1_ := replaceCrefWithStartValue(exp1,varsIn);
-       exp2_ := replaceCrefWithStartValue(exp2,varsIn);
+       exp1_ := replaceCrefWithStartValueWork(exp1,varsIn,cache);
+       exp2_ := replaceCrefWithStartValueWork(exp2,varsIn,cache);
        if referenceEq(exp1, exp1_) and referenceEq(exp2,exp2_) then
          exp := expIn;
        else
          exp := DAE.RELATION(exp1_,op,exp2_,idx,optionExpisASUB);
        end if;
-     then (exp,varsIn);
+     then exp;
 
     case DAE.IFEXP(expCond=exp1,expThen=exp2,expElse=exp3)
      algorithm
        //print("IFEXP: "+ExpressionDump.dumpExpStr(expIn,0)+"\n");
-       exp1_ := replaceCrefWithStartValue(exp1,varsIn);
-       exp2_ := replaceCrefWithStartValue(exp2,varsIn);
-       exp3_ := replaceCrefWithStartValue(exp3,varsIn);
+       exp1_ := replaceCrefWithStartValueWork(exp1,varsIn,cache);
+       exp2_ := replaceCrefWithStartValueWork(exp2,varsIn,cache);
+       exp3_ := replaceCrefWithStartValueWork(exp3,varsIn,cache);
        if referenceEq(exp1, exp1_) and referenceEq(exp2,exp2_) and referenceEq(exp3,exp3_) then
          exp := expIn;
        else
          exp := DAE.IFEXP(exp1_,exp2_,exp3_);
        end if;
-     then (exp,varsIn);
+     then exp;
 
    else
      algorithm
        //print("Without START:"+ ExpressionBasics.printExpStr(expIn)+"\n");
-     then (expIn,varsIn);
+     then expIn;
 
   end matchcontinue;
-end replaceCrefWithStartValue;
+end replaceCrefWithStartValueWork;
+
+protected constant DAE.Exp NO_START_VALUE = DAE.CREF(DAE.WILD(), DAE.T_UNKNOWN_DEFAULT);
+
+protected function crefStartValue
+  "Returns the constant start value or binding of a variable, or NO_START_VALUE."
+  input DAE.ComponentRef cref;
+  input BackendDAE.Variables vars;
+  input UnorderedMap<DAE.ComponentRef, DAE.Exp> cache;
+  output DAE.Exp value;
+algorithm
+  value := match startValueVar(cref, vars)
+    local
+      BackendDAE.Var var;
+      DAE.Exp exp;
+
+    case SOME(var as BackendDAE.VAR(bindExp = NONE()))
+      algorithm
+        exp := if BackendVariable.varHasStartValue(var) then BackendVariable.varStartValue(var) else NO_START_VALUE;
+      then if Expression.isConst(exp) then exp else NO_START_VALUE;
+
+    case SOME(BackendDAE.VAR(bindExp = SOME(exp)))
+      then if Expression.isConst(exp) then exp else
+        match UnorderedMap.get(cref, cache)
+          case SOME(exp) then exp;
+          else resolveBindingStartValue(cref, exp, vars, cache);
+        end match;
+
+    else NO_START_VALUE;
+  end match;
+end crefStartValue;
+
+protected function resolveBindingStartValue
+  "Resolves the bindings a binding depends on with an explicit stack, since
+   binding chains can be as long as the model."
+  input DAE.ComponentRef cref;
+  input DAE.Exp binding;
+  input BackendDAE.Variables vars;
+  input UnorderedMap<DAE.ComponentRef, DAE.Exp> cache;
+  output DAE.Exp value;
+protected
+  list<tuple<DAE.ComponentRef, DAE.Exp>> stack = {(cref, binding)}, deps;
+  DAE.ComponentRef cr;
+  DAE.Exp exp;
+algorithm
+  while not listEmpty(stack) loop
+    (cr, exp) :: stack := stack;
+    deps := if UnorderedMap.contains(cr, cache) then {} else
+      List.fold2(Expression.extractCrefsFromExp(exp), addUncachedBinding, vars, cache, {});
+    if listEmpty(deps) then
+      exp := replaceCrefWithStartValueWork(exp, vars, cache);
+      exp := if Expression.isConst(exp) then ExpressionSimplify.simplify(exp) else NO_START_VALUE;
+      UnorderedMap.add(cr, exp, cache);
+    else
+      // Marks cr as in progress; a binding cycle then reads it as non-constant.
+      UnorderedMap.add(cr, NO_START_VALUE, cache);
+      stack := listAppend(deps, (cr, exp) :: stack);
+    end if;
+  end while;
+  value := UnorderedMap.getOrFail(cref, cache);
+end resolveBindingStartValue;
+
+protected function addUncachedBinding
+  input DAE.ComponentRef cref;
+  input BackendDAE.Variables vars;
+  input UnorderedMap<DAE.ComponentRef, DAE.Exp> cache;
+  input output list<tuple<DAE.ComponentRef, DAE.Exp>> deps;
+algorithm
+  if not UnorderedMap.contains(cref, cache) then
+    deps := match startValueVar(cref, vars)
+      local
+        DAE.Exp binding;
+      case SOME(BackendDAE.VAR(bindExp = SOME(binding))) guard not Expression.isConst(binding)
+        then (cref, binding) :: deps;
+      else deps;
+    end match;
+  end if;
+end addUncachedBinding;
+
+protected function startValueVar
+  "Returns the variable unless it is unknown or artificial (DUMMY_DER, ...), in
+   which case its start value does not come from the model."
+  input DAE.ComponentRef cref;
+  input BackendDAE.Variables vars;
+  output Option<BackendDAE.Var> outVar;
+protected
+  BackendDAE.Var var;
+algorithm
+  try
+    (var, _) := BackendVariable.getVarSingle(cref, vars);
+    outVar := if artificialVarKind(BackendVariable.varKind(var)) then NONE() else SOME(var);
+  else
+    outVar := NONE();
+  end try;
+end startValueVar;
 
 protected function setVarKindForStates
     input BackendDAE.Var inVar;
@@ -14226,7 +14335,7 @@ algorithm
   // HDF5 is there for ModelicaMatIO, which the FMU compiles from source without it.
   (locations, libraries) := getDirectoriesForDLLsFromLinkLibs(
     List.removeOnTrue(Autoconf.hdf5Libs, stringEqual, libs));
-  locations := listAppend({Settings.getInstallationDirectoryPath() + "/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc"}, locations); // zlib
+  locations := listAppend({Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc"}, locations); // zlib
   locations := listAppend({Settings.getInstallationDirectoryPath() + "/bin"}, locations);   // pthread located in OpenModelica/bin/ on Windows
   locations := List.map(locations, addDockerVol);
   // Use target_link_directories when CMake 3.13 is available and skip the find_library part
@@ -14281,7 +14390,7 @@ algorithm
     needCvode := "ON";
     // ${DOCKER_VOL_DIR} so the path also resolves inside the container when cross compiling,
     // see getCmakeLinkLibrariesCode. It is empty for a normal build.
-    cvodeDirectory := "\"${DOCKER_VOL_DIR}" + Settings.getInstallationDirectoryPath() + "/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc\"";
+    cvodeDirectory := "\"${DOCKER_VOL_DIR}" + Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc\"";
   end if;
 end getCmakeSundialsLinkCode;
 

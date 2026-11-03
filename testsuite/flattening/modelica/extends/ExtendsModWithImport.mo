@@ -25,17 +25,9 @@ end Model2;
 
 model ExtendsModWithImport
   extends Model2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ExtendsModWithImport;
 
 // Result:
-// function Package.Func
-//   input Real IR;
-//   output Real OR;
-// algorithm
-//   OR := IR;
-// end Package.Func;
-//
 // class ExtendsModWithImport
 //   parameter Real m.param = 1.0;
 // end ExtendsModWithImport;
