@@ -14,8 +14,8 @@ The complete data reconciliation workflow consists in four main phases:
     3.  Execute data reconciliation;
     4.  Analyze the results.
 
-Defining the Data Reconciliation Problem in OpenModelica
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Step 1: Define the Data Reconciliation Problem in OpenModelica
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Let us take the example of the Modelica model of a splitter.
 
 .. figure :: media/dataReconciliationsplitter.png
@@ -33,7 +33,8 @@ These two kinds of variables must be manually declared in the source code
     1.	With annotations for the boundary conditions;
     2.	With modifiers for the variables of interest.
 
-The boundary conditions are declared with the annotation: annotation(__OpenModelica_BoundaryCondition = true).
+The boundary conditions are declared with the annotation: ``annotation(__OpenModelica_BoundaryCondition = true)``.
+
 For the pressure source, the boundary conditions are the pressure P0, and the specific enthalpy h0
 or the temperature T0 of the source (depending on the option chosen by the user).
 
@@ -87,6 +88,10 @@ support data reconciliation.
            pipe2(T(uncertain = Uncertainty.refine)),
            pipe3(T(uncertain = Uncertainty.refine)));
       end Splitter_DR;
+
+
+Step 2: Quantify Measurement Uncertainties
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In addition to declaring boundary conditions and variables of interest, one must provide two input files:
     1. The measurement input file (mandatory).
@@ -145,6 +150,16 @@ The above file can be more easily visualized in matrix form:
   :name: dataReconciliationcorrelationcsvinput
 
 The variables mV and mHK could have been omitted because they do not have any positive correlation coefficients.
+
+Step 3: Execute Data Reconciliation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+Step 4: Analyze the Results
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
 
 Data Reconciliation Support in OMEdit
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
