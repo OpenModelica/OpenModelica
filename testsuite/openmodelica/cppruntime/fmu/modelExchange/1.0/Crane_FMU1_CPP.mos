@@ -29,13 +29,15 @@ val(prismatic_v, 1);
 // true
 // ""
 // "cranes_crane.fmu"
-// ""
+// "Warning: FMI 1.0 export is deprecated and will be removed after OpenModelica 1.28.0 is released. Export FMI 2.0 or 3.0 instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.
+// "
 // true
 // ""
 // true
 // ""
 // "cranes_crane_me_FMU.mo"
-// ""
+// "Warning: FMI 1.0 import is deprecated and will be removed after OpenModelica 1.28.0 is released. Import an FMI 2.0 or 3.0 FMU instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.
+// "
 // true
 // ""
 // record SimulationResult
