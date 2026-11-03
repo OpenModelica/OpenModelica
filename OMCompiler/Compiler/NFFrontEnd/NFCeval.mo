@@ -2052,7 +2052,7 @@ algorithm
     local
       Function fn;
 
-    case Call.TYPED_CALL(fn = fn) guard not Function.isExplicitlyImpure(fn)
+    case Call.TYPED_CALL(fn = fn) guard not Function.isExplicitlyImpure(fn) or InstContext.inScripting(target.context)
       algorithm
         c.arguments := list(evalExp(arg, target) for arg in c.arguments);
       then
