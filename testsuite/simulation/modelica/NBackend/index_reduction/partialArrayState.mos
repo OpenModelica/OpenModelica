@@ -1,0 +1,40 @@
+// name: partialArrayState
+// keywords: NewBackend
+// status: correct
+//
+// Only x[1] occurs in the constraint, x[2] still has a derivative and
+// must not loop the index reduction.
+
+loadString("
+model partialArrayState
+  Real x[2](start = {0, 1}, fixed = {false, true});
+  Real v[2](start = {1, 0}, fixed = {false, true});
+  Real F;
+equation
+  der(x) = v;
+  der(v) = {-x[1] + F, -x[2]};
+  x[1] = sin(time);
+end partialArrayState;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(partialArrayState); getErrorString();
+val(F, 1.0);
+// cos(1)
+val(x[2], 1.0);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "partialArrayState_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'partialArrayState', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// 0.5403049306009626
+// endResult
