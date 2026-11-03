@@ -175,7 +175,7 @@ wasm-encoder = "0.259"
 # or wasmer — whose `js` backend is the only one that can JIT inside a
 # browser-wasm build of omc, and which can also be selected natively
 # (`--features engine-wasmer`) to benchmark against wasmtime.
-wasmtime = { version = "48", default-features = false, features = [
+wasmtime = { version = "50", default-features = false, features = [
   "std",
   "cranelift",
   "runtime",

@@ -305,6 +305,8 @@ algorithm
           case Op.SUB then checkOverloadedBinaryArrayAddSub(exp1, type1, var1, op, exp2, type2, var2, candidates, context, info);
           case Op.MUL then checkOverloadedBinaryArrayMul(exp1, type1, var1, op, exp2, type2, var2, candidates, context, info);
           case Op.DIV then checkOverloadedBinaryArrayDiv(exp1, type1, var1, op, exp2, type2, var2, candidates, context, info);
+          case Op.AND then checkOverloadedBinaryArrayEW(exp1, type1, var1, op, exp2, type2, var2, candidates, context, info);
+          case Op.OR then checkOverloadedBinaryArrayEW(exp1, type1, var1, op, exp2, type2, var2, candidates, context, info);
           else
             algorithm
               printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, type2}, info, showErrors);
@@ -434,17 +436,15 @@ function checkOverloadedBinaryArrayAddSub
   output Type outType;
 protected
   Expression e1, e2;
-  MatchKind mk;
 algorithm
-  // For addition or subtraction both sides must have the same type.
-  (e1, e2, _, mk) := matchExpressions(exp1, type1, exp2, type2, ALLOW_UNKNOWN);
-
-  if not isCompatibleMatch(mk) then
-    printUnresolvableTypeError(Expression.BINARY(e1, op, e2), {type1, type2}, info);
+  // For addition or subtraction both sides must have the same dimensions. The
+  // elements are matched one by one, which also allows implicit construction.
+  if not List.isEqualOnTrue(Type.arrayDims(type1), Type.arrayDims(type2), Dimension.isEqual) then
+    printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, type2}, info);
   end if;
 
-  e1 := ExpandExp.expand(e1);
-  e2 := ExpandExp.expand(e2);
+  e1 := ExpandExp.expand(exp1);
+  e2 := ExpandExp.expand(exp2);
 
   (outExp, outType) :=
     checkOverloadedBinaryArrayAddSub2(e1, type1, var1, op, e2, type2, var2, candidates, context, info);
@@ -752,17 +752,10 @@ function checkOverloadedBinaryArrayEW
   output Type outType;
 protected
   Expression e1, e2;
-  MatchKind mk;
 algorithm
-  if Type.isArray(type1) and Type.isArray(type2) then
-    (e1, e2, _, mk) := matchExpressions(exp1, type1, exp2, type2, ALLOW_UNKNOWN);
-  else
-    (e1, e2, _, mk) := matchExpressions(exp1, Type.arrayElementType(type1),
-                                        exp2, Type.arrayElementType(type2), ALLOW_UNKNOWN);
-  end if;
-
-  if not isCompatibleMatch(mk) then
-    printUnresolvableTypeError(Expression.BINARY(e1, op, e2), {type1, type2}, info);
+  if Type.isArray(type1) and Type.isArray(type2) and
+     not List.isEqualOnTrue(Type.arrayDims(type1), Type.arrayDims(type2), Dimension.isEqual) then
+    printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, type2}, info);
   end if;
 
   e1 := ExpandExp.expand(exp1);
@@ -1368,6 +1361,11 @@ algorithm
   // We only allow exact matches for operator overloading. e.g. no casting or generic matches.
   exactMatches := MatchedFunction.getExactMatches(matchedFunctions);
   if listEmpty(exactMatches) then
+    if Type.isArray(inType1) then
+      (outExp, outType) := checkOverloadedUnaryArray(inExp1, inType1, var, inOp, context, info);
+      return;
+    end if;
+
     printUnresolvableTypeError(Expression.UNARY(inOp, inExp1), {inType1}, info);
     fail();
   end if;
@@ -1391,6 +1389,40 @@ algorithm
 
   outExp := Inline.inlineCallExp(outExp);
 end checkOverloadedUnaryOperator;
+
+function checkOverloadedUnaryArray
+  "Applies an overloaded unary operator to each element of an array, MLS 3.7
+   section 14.6."
+  input Expression exp;
+  input Type ty;
+  input Variability var;
+  input Operator op;
+  input InstContext.Type context;
+  input SourceInfo info;
+  output Expression outExp;
+  output Type outType;
+protected
+  Type elem_ty = Type.unliftArray(ty), res_ty = elem_ty;
+  Expression e;
+  Boolean expanded;
+  array<Expression> elems;
+algorithm
+  (e, expanded) := ExpandExp.expand(exp);
+
+  if not expanded then
+    printUnresolvableTypeError(Expression.UNARY(op, exp), {ty}, info);
+  end if;
+
+  elems := Expression.arrayElements(e);
+
+  for i in 1:arrayLength(elems) loop
+    (outExp, res_ty) := checkOverloadedUnaryOperator(elems[i], elem_ty, var, op, context, info);
+    arrayUpdate(elems, i, outExp);
+  end for;
+
+  outType := Type.setArrayElementType(ty, Type.arrayElementType(res_ty));
+  outExp := Expression.makeArray(outType, elems);
+end checkOverloadedUnaryArray;
 
 function checkLogicalBinaryOperation
   input Expression exp1;
@@ -1614,6 +1646,13 @@ algorithm
   // Return true if the references are the same.
   if referenceEq(actualType, expectedType) then
     compatibleType := actualType;
+    matchKind := MatchKind.EXACT;
+    return;
+  end if;
+
+  if Type.isUnknown(actualType) and Expression.isCode(expression) and Type.codeName(expectedType) <> "" then
+    expression := Expression.quoteCode(Expression.toAbsyn(expression), expectedType, Absyn.dummyInfo);
+    compatibleType := expectedType;
     matchKind := MatchKind.EXACT;
     return;
   end if;
@@ -2053,24 +2092,25 @@ protected
 algorithm
   if listLength(comps1) <> listLength(comps2) then
     matchKind := MatchKind.NOT_COMPATIBLE;
-  else
-    for c1_ref in comps1 loop
-      c2_ref :: rest_c2 := rest_c2;
-      c1 := InstNode.borrow(c1_ref);
-      c2 := InstNode.borrow(c2_ref);
-
-      if InstNode.name(c1) <> InstNode.name(c2) then
-        matchKind := MatchKind.NOT_COMPATIBLE;
-        return;
-      end if;
-
-      (_, _, matchKind) := matchTypes(InstNode.getType(c1), InstNode.getType(c2), dummy, options);
-
-      if matchKind == MatchKind.NOT_COMPATIBLE then
-        return;
-      end if;
-    end for;
+    return;
   end if;
+
+  for c1_ref in comps1 loop
+    c2_ref :: rest_c2 := rest_c2;
+    c1 := InstNode.borrow(c1_ref);
+    c2 := InstNode.borrow(c2_ref);
+
+    if InstNode.name(c1) <> InstNode.name(c2) then
+      matchKind := MatchKind.NOT_COMPATIBLE;
+      return;
+    end if;
+
+    (_, _, matchKind) := matchTypes(InstNode.getType(c1), InstNode.getType(c2), dummy, options);
+
+    if matchKind == MatchKind.NOT_COMPATIBLE then
+      return;
+    end if;
+  end for;
 
   matchKind := MatchKind.PLUG_COMPATIBLE;
 end matchComponentList;
@@ -3181,6 +3221,7 @@ function checkReductionType
   input Type ty;
   input Absyn.Path name;
   input Expression exp;
+  input InstContext.Type context;
   input SourceInfo info;
 protected
   String err;
@@ -3192,6 +3233,8 @@ algorithm
           case Type.INTEGER() then "";
           case Type.REAL() then "";
           case Type.COMPLEX() guard checkSumComplexType(ty, exp, info) then "";
+          // Scripts concatenate strings with sum, as the old frontend allowed.
+          case Type.STRING() guard InstContext.inScripting(context) then "";
           else "Integer or Real, or operator record";
         end match;
 

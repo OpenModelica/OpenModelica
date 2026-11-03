@@ -684,6 +684,24 @@ EQUATION_INFO modelInfoGetEquation(MODEL_DATA_XML* xml, size_t ix)
   return xml->equationInfo[ix];
 }
 
+/**
+ * @brief Get the name of the `i`-th variable of equation `ix`.
+ *
+ * Return an empty string if the equation info has no such name, e.g. for the
+ * scalar variables of a system of resizable arrays, which lists one name per
+ * array.
+ *
+ * @param xml       Model info XML.
+ * @param ix        Equation index.
+ * @param i         Variable index.
+ * @return          Name of the variable.
+ */
+const char* modelInfoGetEquationVar(MODEL_DATA_XML* xml, size_t ix, long i)
+{
+  EQUATION_INFO eq = modelInfoGetEquation(xml, ix);
+  return (i >= 0 && i < eq.numVar && eq.vars[i] != NULL) ? eq.vars[i] : "";
+}
+
 EQUATION_INFO modelInfoGetEquationIndexByProfileBlock(MODEL_DATA_XML* xml, size_t ix)
 {
   /* check for xml->fileName == NULL for --fmiFilter=blackBox and protected

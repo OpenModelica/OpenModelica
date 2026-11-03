@@ -34,6 +34,7 @@ noEventNotRespected.mos \
 Reinit.mos \
 sample1.mos \
 sample2.mos \
+SampleTimeDrift.mos \
 ServerWithQueue.mos \
 TestNoEventsFlags.mos \
 whenInAlgorithm.mos \

@@ -66,22 +66,22 @@ pub mod atomic64;
 pub mod clock;
 pub mod counters;
 pub mod dassl;
+pub mod delay;
 pub mod events;
 pub mod fixedstep;
 pub mod fmath;
-pub mod delay;
 pub mod gbode;
 pub mod klu;
 pub mod omclog;
 pub mod simflags;
 pub mod solverflags;
 pub mod spatial;
-pub mod symsolver;
-pub mod sysstat;
 #[cfg(sundials)]
 pub mod sundials;
 #[cfg(sundials)]
 pub mod sundials_ode;
+pub mod symsolver;
+pub mod sysstat;
 
 /// Whether this build has the real CVODE and IDA linked in (`build.rs`).
 pub const CVODE: bool = cfg!(sundials);
@@ -96,6 +96,10 @@ pub const SOLVER_FAILED_ERR: &str = "integrator failed";
 /// C's `MINIMAL_STEP_SIZE` (`simulation/solver/epsilon.h`), the bisection's
 /// absolute tolerance.
 pub const MINIMAL_STEP_SIZE: f64 = 1e-12;
+
+/// C's `SOLVER_WORK_RETRIES`: how often one step continues after the solver's
+/// work quota for one call ran out.
+pub const SOLVER_WORK_RETRIES: u32 = 10;
 
 /// What [`Ode::catch_begin`] displaced, for [`Ode::catch_end`] to restore.
 #[derive(Clone, Copy, Default)]

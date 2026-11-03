@@ -32,7 +32,6 @@ equation
   x11 = -x2+(((x*x2) - x/x4)/x);
   x12 = x*((x4*x1)+(x5*x1^2))*x;
 
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SimplifyBinary;
 
 // Result:
@@ -62,25 +61,25 @@ end SimplifyBinary;
 // equation
 //   10.0 = x + der(x);
 //   a = x - der(x);
-//   b = a;
-//   c = x;
-//   d = -a;
-//   e = -x;
-//   f = -x;
-//   g = -a;
-//   h = -x;
-//   i = x;
-//   x1 = 1.0 + x;
+//   b = a * x / x;
+//   c = a * x / a;
+//   d = a * x / (-x);
+//   e = a * x / (-a);
+//   f = a * (-x) / a;
+//   g = a * x / (-x);
+//   h = a * x / (-a);
+//   i = (-a) * x / (-a);
+//   x1 = x + 1.0;
 //   x2 = -x;
 //   x3 = x;
-//   x4 = x * time;
-//   x5 = x * (2.0 - time);
-//   x6 = x * (a - b);
-//   x7 = x * (x1 + x4 * x6);
-//   x8 = x * (x1 * x3 - x4 * x6);
-//   x9 = (1.0 / x2 - x4) * x;
-//   x10 = (x2 + (-1.0) / x4) * x;
-//   x11 = (-1.0) / x4;
-//   x12 = (x4 * x1 + x5 * x1 ^ 2.0) * x ^ 2.0;
+//   x4 = (time - 1.0) * x + x;
+//   x5 = x + x * (1.0 - time);
+//   x6 = x * a - x * b;
+//   x7 = x1 * x + x4 * x * x6;
+//   x8 = x1 * x * x3 - x4 * x * x6;
+//   x9 = x / x2 - x * x4;
+//   x10 = x * x2 - x / x4;
+//   x11 = (x * x2 - x / x4) / x - x2;
+//   x12 = x * (x4 * x1 + x5 * x1 ^ 2.0) * x;
 // end SimplifyBinary;
 // endResult

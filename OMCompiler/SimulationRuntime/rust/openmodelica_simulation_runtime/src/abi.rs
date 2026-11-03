@@ -168,6 +168,14 @@ pub struct SPARSE_PATTERN {
 }
 
 #[repr(C)]
+pub struct SPARSE_PAIRS {
+    pub cols: *mut c_uint,
+    pub rows: *mut c_uint,
+    pub size: usize,
+    pub capacity: usize,
+}
+
+#[repr(C)]
 pub struct NONLINEAR_PATTERN {
     pub numberOfVars: c_uint,
     pub numberOfEqns: c_uint,
@@ -711,6 +719,7 @@ pub struct SIMULATION_INFO {
 
     pub homotopySteps: c_int,
     pub lambda: f64,
+    pub skipStartEquations: modelica_boolean,
 
     pub initial: modelica_boolean,
     pub terminal: modelica_boolean,

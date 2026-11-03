@@ -17,7 +17,6 @@ end B;
 
 model A
  extends B.X(z = 15);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end A;
 
 // Result:

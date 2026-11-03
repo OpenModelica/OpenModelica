@@ -1,7 +1,6 @@
 // name:      ElectricalCircuit6
 // keywords:  resolveLoops
 // status:    correct
-// cflags: -d=-newInst
 //
 
 loadModel(Modelica, {"4.1.0"}); getErrorString();
@@ -29,11 +28,11 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit6_res.m
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+// "[Modelica 4.1.0+maint.om/Electrical/Analog/Sources/SineVoltage.mo:3:3-3:59:writable] Warning: Parameter sineVoltage.V has no value, and is fixed during initialization (fixed=true), using available start value (start=1) as default value.
+// [Modelica 4.1.0+maint.om/Electrical/Analog/Sources/SineVoltage.mo:5:3-5:61:writable] Warning: Parameter sineVoltage.f has no value, and is fixed during initialization (fixed=true), using available start value (start=1) as default value.
+// Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 171
 //  * Number of variables: 171
-// [Modelica 4.1.0+maint.om/Electrical/Analog/Sources/SineVoltage.mo:3:3-3:59:writable] Warning: Parameter sineVoltage.V has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
-// [Modelica 4.1.0+maint.om/Electrical/Analog/Sources/SineVoltage.mo:5:3-5:61:writable] Warning: Parameter sineVoltage.f has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 2

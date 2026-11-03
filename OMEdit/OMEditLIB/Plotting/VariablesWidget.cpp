@@ -1292,9 +1292,21 @@ void VariablesTreeModel::getVariableInformation(ResultFileReader *pMatReader, QS
         }
       }
     }
-    *unit = scalarVariable.unit;
-    *displayUnit = scalarVariable.displayUnit;
     *description = scalarVariable.description;
+  }
+  /* The result file's units win; the init.xml fills in what it lacks. A .mat
+   * written before display units were stored has only the unit.
+   */
+  QString fileUnit, fileDisplayUnit;
+  if (pMatReader->isOpen()) {
+    fileUnit = QString::fromStdString(pMatReader->unit(variableToFind.toStdString()));
+    fileDisplayUnit = QString::fromStdString(pMatReader->displayUnit(variableToFind.toStdString()));
+  }
+  *unit = fileUnit.isEmpty() && found ? scalarVariable.unit : fileUnit;
+  if (!fileDisplayUnit.isEmpty()) {
+    *displayUnit = fileDisplayUnit;
+  } else if (found && scalarVariable.unit.compare(*unit) == 0) {
+    *displayUnit = scalarVariable.displayUnit;
   }
 }
 
@@ -1913,8 +1925,9 @@ void VariablesWidget::reSimulate(SimulationOptions simulationOptions, VariablesT
   simulationOptions.setReSimulate(true);
   if (pVariablesTreeItem) {
     MainWindow::instance()->getSimulationDialog()->removeInteractiveSimulation(simulationOptions.isInteractiveSimulation(), pVariablesTreeItem->getFileName(), false);
+    updateInitXmlFile(pVariablesTreeItem, simulationOptions);
     if (simulationOptions.getTargetLanguage().compare("wasm-jit") == 0) {
-      // wasm-jit has no _init.xml; it takes changes only via -override.
+      // wasm-jit does not read _init.xml (only the Variables Browser does); it takes changes via -override.
       QHash<QString, QHash<QString, QString> > changed;
       readVariablesAndUpdateXML(pVariablesTreeItem, simulationOptions.getFullResultFileName(), &changed);
       QStringList overrides;
@@ -1927,8 +1940,6 @@ void VariablesWidget::reSimulate(SimulationOptions simulationOptions, VariablesT
         // The setup dialog rebuilds the flags from its fields.
         simulationOptions.setAdditionalSimulationFlags(QStringList({simulationOptions.getAdditionalSimulationFlags(), overrideFlag}).join(" ").trimmed());
       }
-    } else {
-      updateInitXmlFile(pVariablesTreeItem, simulationOptions);
     }
   }
 

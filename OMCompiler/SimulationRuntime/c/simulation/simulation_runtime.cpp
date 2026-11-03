@@ -602,6 +602,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
         }
       }
       init_file = tmp_filename;
+      omc_rc_release((void*) tmp_filename);
     }
     else {
       init_file = omc_flagValue[FLAG_IIF];

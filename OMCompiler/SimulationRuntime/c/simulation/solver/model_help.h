@@ -140,6 +140,14 @@ void setZCtol(double relativeTol);
 int getNextSampleTimeFMU(DATA *data, double *nextSampleEvent);
 void updateNextSampleEvent(DATA *data, threadData_t *threadData);
 
+/* Advance sample i to start + k*interval; adding the interval accumulates rounding. */
+static inline void advanceSample(DATA *data, long i)
+{
+  const SAMPLE_INFO *info = &data->modelData->samplesInfo[i];
+  double k = floor((data->simulationInfo->nextSampleTimes[i] - info->start) / info->interval + 0.5);
+  data->simulationInfo->nextSampleTimes[i] = info->start + (k + 1) * info->interval;
+}
+
 void storeOldValues(DATA *data);
 
 modelica_integer _event_integer(modelica_real x, modelica_integer index, DATA *data);

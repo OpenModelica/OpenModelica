@@ -79,6 +79,8 @@ writeFile(\""+fixName(typeNameString(cl))+".res\",\"{\\\"time\\\":\"+String(time
 getErrorString();
 
 filename := OpenModelica.Scripting.uriToFilename("modelica://ModelicaCompliance/Resources/tools/xml-report/report.xsl"); getErrorString();
-system_parallel(commands); getErrorString();
+// Fills the wasm-jit cache serially
+system(commands[1]); getErrorString();
+system_parallel(commands[2:end]); getErrorString();
 system("python3 "+getInstallationDirectoryPath()+"/share/doc/omc/testmodels/ComplianceSuite.py --version=\"`cat version`\" --outPrefix=\"" + COMPLIANCEPREFIX + "\" " + COMPLIANCEEXTRAREPORTFLAGS); getErrorString();
 system("xsltproc -o "+COMPLIANCEPREFIX+".html '" + filename + "' "+COMPLIANCEPREFIX+".xml"); getErrorString();

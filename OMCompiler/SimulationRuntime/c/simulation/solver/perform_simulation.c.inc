@@ -248,6 +248,9 @@ static void fmtInit(DATA* data, MEASURE_TIME* mt)
     size_t len = strlen(fullFileName);
     char* filename = (char*) malloc((len+15) * sizeof(char));
     strncpy(filename,fullFileName,len);
+    if (fullFileName != data->modelData->modelFilePrefix) {
+      omc_rc_release((void*) fullFileName);
+    }
     strncpy(&filename[len],"_prof.realdata",15);
     mt->fmtReal = omc_fopen(filename, "wb");
     if(!mt->fmtReal)

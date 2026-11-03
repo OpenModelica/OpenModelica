@@ -1,5 +1,5 @@
 model Base
-  class Foo
+  model Foo
     parameter Integer foo = 0;
   end Foo;
 end Base;

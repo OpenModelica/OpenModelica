@@ -11,24 +11,23 @@ connector Connector
   Real e;
 end Connector;
 
-class B
+model B
   Connector c;
 end B;
 
-class A
+model A
   B b;
   Connector c1, c2(f = 2.0);
 equation
   connect(c1, b.c);
 end A;
 
-class ConnectHierarchical1
+model ConnectHierarchical1
   A a;
   Connector c(e = 1.0, f = 1.0);
 equation
   connect(a.c1, a.c2);
   connect(c, a.c1);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConnectHierarchical1;
 
 // Result:
@@ -42,11 +41,11 @@ end ConnectHierarchical1;
 //   Real c.f = 1.0;
 //   Real c.e = 1.0;
 // equation
-//   a.b.c.f + (-a.c1.f) = 0.0;
-//   a.c1.f + a.c2.f + (-c.f) = 0.0;
-//   a.b.c.e = a.c1.e;
+//   a.c1.e = a.b.c.e;
+//   a.b.c.f - a.c1.f = 0.0;
+//   c.e = a.c1.e;
+//   c.e = a.c2.e;
+//   a.c2.f + a.c1.f - c.f = 0.0;
 //   c.f = 0.0;
-//   a.c1.e = a.c2.e;
-//   a.c1.e = c.e;
 // end ConnectHierarchical1;
 // endResult

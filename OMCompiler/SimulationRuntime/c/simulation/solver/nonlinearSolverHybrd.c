@@ -196,7 +196,7 @@ static void printStatus(DATA *data, DATA_HYBRD *solverData, int eqSystemNumber, 
   for(i=0; i<solverData->n; i++)
     infoStreamPrint(logLevel, 0, "[%ld] %s  = %.20e\n - scaling factor internal = %.16e\n"
                     " - scaling factor external = %.16e", i+1,
-                    modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i],
+                    modelInfoGetEquationVar(&data->modelData->modelDataXml,eqSystemNumber, i),
                     solverData->x[i], solverData->diag[i], solverData->xScalefactors[i]);
   messageClose(logLevel);
 
@@ -247,7 +247,7 @@ static int getNumericalJacobian(NLS_USERDATA* hybrdUserData, double* jac, const 
 
     if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_JAC))
     {
-      infoStreamPrint(OMC_LOG_NLS_JAC, 0, "%d. %s = %f (delta_hh = %f)", i+1, modelInfoGetEquation(&hybrdUserData->data->modelData->modelDataXml, systemData->equationIndex).vars[i], solverData->xSave[i], delta_hh);
+      infoStreamPrint(OMC_LOG_NLS_JAC, 0, "%d. %s = %f (delta_hh = %f)", i+1, modelInfoGetEquationVar(&hybrdUserData->data->modelData->modelDataXml, systemData->equationIndex, i), solverData->xSave[i], delta_hh);
     }
     wrapper_fvec_hybrj(&solverData->n, (const double*) solverData->xSave, solverData->fvecSave, solverData->fjacobian, &solverData->ldfjac, &iflag, hybrdUserData);
 
@@ -466,7 +466,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
       eqSystemNumber, (int) nlsData->size, data->localData[0]->timeValue);
 
     for(i = 0; i < hybrdData->n; i++) {
-      infoStreamPrint(OMC_LOG_NLS_V, 1, "%d. %s = %f", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], nlsData->nlsx[i]);
+      infoStreamPrint(OMC_LOG_NLS_V, 1, "%d. %s = %f", i+1, modelInfoGetEquationVar(&data->modelData->modelDataXml,eqSystemNumber, i), nlsData->nlsx[i]);
       infoStreamPrint(OMC_LOG_NLS_V, 0, "    nominal = %f\nold = %f\nextrapolated = %f",
           nlsData->nominal[i], nlsData->nlsxOld[i], nlsData->nlsxExtrapolation[i]);
       messageClose(OMC_LOG_NLS_V);

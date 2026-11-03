@@ -35,9 +35,6 @@
 #include "simulation_data.h"
 #include "util/simulation_options.h"
 #include "simulation/solver/solver_main.h"
-#include "omc_config.h" /* for WITH_SUNDIALS */
-
-#ifdef WITH_SUNDIALS
 
 #include <sundials/sundials_context.h>       /* SUNContext */
 #include <idas/idas.h>
@@ -136,7 +133,5 @@ int ida_solver_step(DATA* simData, threadData_t *threadData, SOLVER_INFO* solver
 
 /* event handing reinitialization function  */
 int ida_event_update(DATA* data, threadData_t *threadData);
-
-#endif  /* #ifdef WITH_SUNDIALS */
 
 #endif  /* #ifndef OMC_IDA_SOLVER_H*/

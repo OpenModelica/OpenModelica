@@ -29,7 +29,7 @@
 #include "../simulation/options.h"
 #include "../util/simulation_options.h"
 #include "../simulation/solver/solver_main.h"
-#ifdef WITH_SUNDIALS
+#ifdef OMC_FMI_HAVE_CVODE
 #include "../simulation/solver/cvode_solver.h"
 #endif
 #include "../util/omc_mmap.h"
@@ -216,7 +216,7 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
       retValue = 0;
       break;
       case S_CVODE:
-#ifdef WITH_SUNDIALS
+#ifdef OMC_FMI_HAVE_CVODE
       omc_useStream[OMC_LOG_SOLVER] = 1;
       CVODE_SOLVER* cvodeData = NULL;
       FILTERED_LOG(comp, fmi2OK, LOG_ALL, "Initializing CVODE ODE Solver")
@@ -235,7 +235,7 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
       solverInfo->solverData = NULL;
       FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: FMU not compiled with SUNDIALS but solver CVODE selected.")
       retValue = -1;
-#endif /* WITH_SUNDIALS */
+#endif /* OMC_FMI_HAVE_CVODE */
       break;
     default:
       FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: Unknown solver method.")
@@ -282,14 +282,14 @@ int FMI2CS_deInitializeSolverData(ModelInstance* comp)
       retValue = 0;
       break;
     case S_CVODE:
-#ifdef WITH_SUNDIALS
+#ifdef OMC_FMI_HAVE_CVODE
       retValue = cvode_solver_deinitial(solverInfo->solverData);
       break;
 #else
       FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: FMU not compiled with SUNDIALS but solver CVODE selected.")
       retValue = -1;
       break;
-#endif /* WITH_SUNDIALS */
+#endif /* OMC_FMI_HAVE_CVODE */
     default:
       FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2FreeInstance: Unknown solver method.")
       retValue = -1;

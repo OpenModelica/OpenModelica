@@ -60,9 +60,6 @@
 #include "simulation/simulation_runtime.h"
 #include "solver_main.h"
 
-#ifdef WITH_SUNDIALS
-
-
 /* Private function prototypes */
 static int callDenseJacobian(sunrealtype tt, sunrealtype cj, N_Vector yy,
                              N_Vector yp, N_Vector rr, SUNMatrix Jac,
@@ -771,6 +768,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   static unsigned int stepsOutputCounter = 1;
   int stepsMode;    /* Has to be IDA_NORMAL (1) or IDA_ONE_STEP (2) */
   int restartAfterLSFail = 0;
+  int workRetries = 0;
 
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
@@ -858,9 +856,10 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   /* Check that tout is not less than timeValue otherwise the solver
    * will come in trouble.
    * If that is the case we skip the current step. */
-  if (solverInfo->currentStepSize < DASSL_STEP_EPS)
+  if ((solverInfo->currentStepSize < DASSL_STEP_EPS) ||
+      (solverInfo->currentStepSize < DASSL_STEP_EPS*(data->simulationInfo->stopTime - data->simulationInfo->startTime)))
   {
-    infoStreamPrint(OMC_LOG_SOLVER, 0, "Desired step to small try next one");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Desired step too small try next one");
     infoStreamPrint(OMC_LOG_SOLVER, 0, "Interpolate linear");
 
     /* linear extrapolation */
@@ -951,9 +950,9 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     {
       infoStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## continue integration time = %.15g", solverInfo->currentTime);
     }
-    else if (flag == IDA_TOO_MUCH_WORK)
+    else if (flag == IDA_TOO_MUCH_WORK && workRetries++ < SOLVER_WORK_RETRIES)
     {
-      warningStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## has done too much work with small steps at time = %.15g", solverInfo->currentTime);
+      warningStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## has done too much work with small steps at time = %.15g. Continuing to solve anyway.", solverInfo->currentTime);
     }
     else if (flag == IDA_LSETUP_FAIL && !restartAfterLSFail)
     {
@@ -1893,5 +1892,3 @@ static void idaReScaleData(IDA_SOLVER *idaData)
   idaReScaleVector(idaData->yp, idaData->ypScale, idaData->N);
   messageClose(OMC_LOG_SOLVER_V);
 }
-
-#endif /* #ifdef WITH_SUNDIALS */

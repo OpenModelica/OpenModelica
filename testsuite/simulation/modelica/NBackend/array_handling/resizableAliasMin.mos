@@ -1,0 +1,63 @@
+// name: resizableAliasMin
+// keywords: NewBackend resizable alias min reduction
+// status: correct
+// suite: cSources
+//
+// Merged min of resizable 3-D alias arrays, a reduction over matrix elements.
+
+loadString("
+model resizableAliasMin
+  type Pressure = Real(min = 0);
+  connector P
+    Pressure p;
+    flow Real f;
+  end P;
+  model C
+    P a;
+    input Real u;
+  equation
+    a.p * (1 + a.p) = u;
+  end C;
+  model D
+    parameter Integer k;
+    P b[k];
+  equation
+    for l in 1:k loop
+      b[l].f = b[l].p;
+    end for;
+  end D;
+  parameter Integer n = 2;
+  parameter Integer m = 3;
+  parameter Integer k = 4;
+  C c[n, m, k](each u = time + 1);
+  D d[n, m](each k = k);
+  Real x(start = 1, fixed = true);
+equation
+  for i in 1:n, j in 1:m, l in 1:k loop
+    connect(d[i, j].b[l], c[i, j, l].a);
+  end for;
+  der(x) = -c[n, m, k].a.p * x;
+end resizableAliasMin;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --resizableArrays -d=arrayConnect"); getErrorString();
+simulate(resizableAliasMin, stopTime = 0.1); getErrorString();
+regexBool(readFile("resizableAliasMin_08bnd.c"), "/\\* m PARAM \\*/\\), \\(_index_t\\)\\(data->simulationInfo->integerParameter\\[data->simulationInfo->integerParamsIndex\\[[0-9]+\\]\\] /\\* k PARAM \\*/\\)\\);");
+val(x, 0.1);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "resizableAliasMin_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'resizableAliasMin', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// 0.9379975574669711
+// endResult

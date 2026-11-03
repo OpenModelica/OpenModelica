@@ -1,13 +1,11 @@
 // status: correct
 // ticket: #3063
 // suite: metamodelica
+// cflags: -g=MetaModelica -d=noevalfunc,gen
 
-setCommandLineOptions("-g=MetaModelica -d=noevalfunc,gen");getErrorString();
 loadFile("SwitchString.mo");getErrorString();
 switchString();getErrorString();
 // Result:
-// true
-// ""
 // true
 // ""
 // "bad"

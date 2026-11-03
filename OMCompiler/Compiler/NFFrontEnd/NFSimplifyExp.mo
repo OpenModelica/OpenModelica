@@ -130,6 +130,13 @@ algorithm
     case Expression.BOX()               then Expression.box(simplify(exp.exp));
     case Expression.MUTABLE()           then simplify(Mutable.access(exp.exp));
     case Expression.INSTANCE_NAME()     then Ceval.evalGetInstanceName(exp.scope);
+
+    case Expression.PARTIAL_FUNCTION_APPLICATION()
+      algorithm
+        exp.args := list(simplify(a) for a in exp.args);
+      then
+        exp;
+
                                         else exp;
   end match;
 

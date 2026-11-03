@@ -3,7 +3,6 @@
 // teardown_command: rm -rf test03/ test_res.mat Modelica_Blocks_Sources_* Modelica.Blocks.Sources.Constant.fmu Modelica.Blocks.Sources.Sine.fmu
 // suite: disabled
 
-setCommandLineOptions("-g=MetaModelica");
 loadModel(Modelica, {"4.1.0"});
 getErrorString();
 buildModelFMU(Modelica.Blocks.Sources.Constant, version="2.0", fmuType="me_cs", fileNamePrefix="Modelica.Blocks.Sources.Constant", platforms={"static"});
@@ -86,7 +85,6 @@ oms_delete("test");
 unloadOMSimulator();
 
 // Result:
-// true
 // true
 // ""
 // "Modelica.Blocks.Sources.Constant.fmu"

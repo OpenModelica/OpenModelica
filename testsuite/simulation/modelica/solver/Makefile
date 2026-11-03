@@ -2,6 +2,7 @@ TEST = ../../../rtest -v
 
 TESTFILES = \
 bug2231-radau1.mos \
+CvodeEventUlpApart.mos \
 LotkaVolterraWithInput.mos \
 problem1-dasslsteps.mos \
 problem1-gbodeInternal.mos \
@@ -42,6 +43,7 @@ problem6-irksco.mos \
 problem6-symSolverImp.mos \
 problem6-symSolverExp.mos \
 AlgebraicStepRetry.mos \
+StepAfterTimeEvent.mos \
 Ticket15649.mos
 
 # run only symSolver tests

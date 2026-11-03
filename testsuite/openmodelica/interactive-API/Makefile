@@ -62,6 +62,7 @@ GetAllSubtypeOf2.mos \
 GetAllSubtypeOf3.mos \
 GetAllSubtypeOf4.mos \
 GetAllSubtypeOf5.mos \
+getBuiltinType.mos \
 getClassComment.mos \
 getClassDiagram1.mos \
 getClassDiagram2.mos \
@@ -198,7 +199,9 @@ Ticket6287and6288.mos \
 Ticket6300.mos \
 Ticket6307.mos \
 Ticket6406.mos \
+translateAcausalDAE1.mos \
 translateResidualsDAE1.mos \
+translateResidualsDAE2.mos \
 UnpatchedModelicaServices.mos \
 updateEquation1.mos \
 UsesAnnotation1.mos \
@@ -207,7 +210,8 @@ variables.mos \
 VendorAnnotation.mos \
 TestSpace.mos \
 Issue14178.mos \
-Issue16096.mos
+Issue16096.mos \
+Issue17654.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

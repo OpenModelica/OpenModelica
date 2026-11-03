@@ -1,6 +1,7 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+kinsolBoundStart.mos \
 bug_2841.mos \
 bug_3527.mos \
 externalErrorThenThrow.mos \

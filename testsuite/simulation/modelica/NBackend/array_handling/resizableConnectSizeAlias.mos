@@ -1,0 +1,63 @@
+// name: resizableConnectSizeAlias
+// keywords: NewBackend resizable connect size parameter
+// status: correct
+// cflags: --newBackend --resizableArrays --simCodeScalarize=false -d=dumpResizable
+// suite: cSources
+// teardown_command: rm -f resizableConnectSizeAlias.log resizableConnectSizeAlias_res.mat
+//
+// Connected arrays whose sizes are different parameters with the same value
+// (s.n = 3, k.m = 3) must have equal sizes: k.m becomes s.n, and overriding
+// s.n resizes both.
+
+loadString("
+connector RealOutput = output Real;
+connector RealInput = input Real;
+connector C
+  parameter Integer n;
+  Real e[n];
+  flow Real f[n];
+end C;
+model Src
+  parameter Integer n = 3;
+  RealOutput y[n] = {i * time for i in 1:n};
+  C p(n = n);
+equation
+  p.e = y;
+end Src;
+model Sink
+  parameter Integer m = 3;
+  RealInput u[m];
+  Real z[m] = 2 * u;
+  C p(n = m);
+equation
+  p.f = p.e;
+end Sink;
+model resizableConnectSizeAlias
+  Src s;
+  Sink k;
+equation
+  connect(s.y, k.u);
+  connect(s.p, k.p);
+end resizableConnectSizeAlias;
+"); getErrorString();
+
+buildModel(resizableConnectSizeAlias, stopTime = 1); getErrorString();
+system("./resizableConnectSizeAlias -override=s.n=5", "resizableConnectSizeAlias.log");
+val(k.z[5], 1, "resizableConnectSizeAlias_res.mat");
+val(k.p.f[5], 1, "resizableConnectSizeAlias_res.mat");
+// Result:
+// true
+// ""
+// =================================================================
+//   [dumpResizable] Evaluated Optimal Resizable Parameter Values:
+// =================================================================
+//
+//   s.n ..... OPTIMAL: 3 (ORIGINAL: 3)
+//
+// {"resizableConnectSizeAlias", "resizableConnectSizeAlias_init.xml"}
+// "Notification: --resizableArrays: k.m = s.n because their arrays are connected.
+// "
+// 0
+// 10.0
+// 5.0
+// endResult

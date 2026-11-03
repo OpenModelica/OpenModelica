@@ -1,42 +1,73 @@
 // name: External Function: Result Order
 // keyword: external functions, result
 // status: correct
-// teardown_command: rm -rf ExternalFunctionResultOrder_*.log ExternalFunctionResultOrder_*.makefile ExternalFunctionResultOrder*.libs ExternalFunctionResultOrder_*.c
+// teardown_command: rm -rf ExternalFunctionResultOrder_*.log ExternalFunctionResultOrder_*.makefile ExternalFunctionResultOrder*.libs ExternalFunctionResultOrder_*.c ExternalFunctionResultOrderTest*
 // depends: ext_ExternalFunctionResultOrder.c
 //
 // Verifies that the external call mapping works for different combinations,
 // and not only when the outputs are in the same order as the default mapping.
 //
 
-setCommandLineOptions("-d=gen,noevalfunc");
+// The calls are made by a simulation, which compiles the included sources;
+// a script cannot evaluate included sources.
+setCommandLineOptions("-d=noevalfunc");
 loadFile("ExternalFunctionResultOrder.mo");
-ExternalFunctionResultOrder.c1234();getErrorString();
-ExternalFunctionResultOrder.c2341();getErrorString();
-ExternalFunctionResultOrder.c1243();getErrorString();
-ExternalFunctionResultOrder.c4321();getErrorString();
-
-ExternalFunctionResultOrder.f1234();getErrorString();
-ExternalFunctionResultOrder.f2341();getErrorString();
-ExternalFunctionResultOrder.f1243();getErrorString();
-ExternalFunctionResultOrder.f4321();getErrorString();
+loadString("model ExternalFunctionResultOrderTest
+  Integer c1234[4];
+  Integer c2341[4];
+  Integer c1243[4];
+  Integer c4321[4];
+  Integer f1234[4];
+  Integer f2341[4];
+  Integer f1243[4];
+  Integer f4321[4];
+  Integer c1234Digits = c1234[1]*1000 + c1234[2]*100 + c1234[3]*10 + c1234[4];
+  Integer c2341Digits = c2341[1]*1000 + c2341[2]*100 + c2341[3]*10 + c2341[4];
+  Integer c1243Digits = c1243[1]*1000 + c1243[2]*100 + c1243[3]*10 + c1243[4];
+  Integer c4321Digits = c4321[1]*1000 + c4321[2]*100 + c4321[3]*10 + c4321[4];
+  Integer f1234Digits = f1234[1]*1000 + f1234[2]*100 + f1234[3]*10 + f1234[4];
+  Integer f2341Digits = f2341[1]*1000 + f2341[2]*100 + f2341[3]*10 + f2341[4];
+  Integer f1243Digits = f1243[1]*1000 + f1243[2]*100 + f1243[3]*10 + f1243[4];
+  Integer f4321Digits = f4321[1]*1000 + f4321[2]*100 + f4321[3]*10 + f4321[4];
+equation
+  (c1234[1], c1234[2], c1234[3], c1234[4]) = ExternalFunctionResultOrder.c1234();
+  (c2341[1], c2341[2], c2341[3], c2341[4]) = ExternalFunctionResultOrder.c2341();
+  (c1243[1], c1243[2], c1243[3], c1243[4]) = ExternalFunctionResultOrder.c1243();
+  (c4321[1], c4321[2], c4321[3], c4321[4]) = ExternalFunctionResultOrder.c4321();
+  (f1234[1], f1234[2], f1234[3], f1234[4]) = ExternalFunctionResultOrder.f1234();
+  (f2341[1], f2341[2], f2341[3], f2341[4]) = ExternalFunctionResultOrder.f2341();
+  (f1243[1], f1243[2], f1243[3], f1243[4]) = ExternalFunctionResultOrder.f1243();
+  (f4321[1], f4321[2], f4321[3], f4321[4]) = ExternalFunctionResultOrder.f4321();
+end ExternalFunctionResultOrderTest;");getErrorString();
+echo(false);
+res := simulate(ExternalFunctionResultOrderTest, stopTime=0.0);
+echo(true);
+res.messages;getErrorString();
+val(c1234Digits, 0.0);
+val(c2341Digits, 0.0);
+val(c1243Digits, 0.0);
+val(c4321Digits, 0.0);
+val(f1234Digits, 0.0);
+val(f2341Digits, 0.0);
+val(f1243Digits, 0.0);
+val(f4321Digits, 0.0);
 
 // Result:
 // true
 // true
-// (1,2,3,4)
+// true
 // ""
-// (2,3,4,1)
+// true
+// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
 // ""
-// (1,2,4,3)
-// ""
-// (4,3,2,1)
-// ""
-// (1,2,3,4)
-// ""
-// (2,3,4,1)
-// ""
-// (1,2,4,3)
-// ""
-// (4,3,2,1)
-// ""
+// 1234.0
+// 2341.0
+// 1243.0
+// 4321.0
+// 1234.0
+// 2341.0
+// 1243.0
+// 4321.0
 // endResult

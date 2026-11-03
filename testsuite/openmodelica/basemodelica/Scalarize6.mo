@@ -7,7 +7,8 @@ function f
 end f;
 
 model A
-  parameter Real x[3] = f(x);
+  parameter Real p[3] = {1, 2, 3};
+  parameter Real x[3] = f(p);
 end A;
 
 model Scalarize6
@@ -24,9 +25,12 @@ end Scalarize6;
 //   end 'f';
 //
 //   model 'Scalarize6'
-//     parameter Real 'a.x[1]' = ('f'('a.x'))[1];
-//     parameter Real 'a.x[2]' = ('f'('a.x'))[2];
-//     parameter Real 'a.x[3]' = ('f'('a.x'))[3];
+//     parameter Real 'a.p[1]' = 1.0;
+//     parameter Real 'a.p[2]' = 2.0;
+//     parameter Real 'a.p[3]' = 3.0;
+//     parameter Real 'a.x[1]' = ('f'('a.p'))[1];
+//     parameter Real 'a.x[2]' = ('f'('a.p'))[2];
+//     parameter Real 'a.x[3]' = ('f'('a.p'))[3];
 //   end 'Scalarize6';
 // end 'Scalarize6';
 // endResult

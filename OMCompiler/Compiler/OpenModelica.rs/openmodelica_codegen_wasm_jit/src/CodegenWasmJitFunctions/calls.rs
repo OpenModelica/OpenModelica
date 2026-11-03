@@ -664,13 +664,17 @@ pub(super) fn compile_math_builtin(
         // this reads that i32 flag. `start`/`interval` are handled by `initSample`
         // and the driver, not evaluated here.
         // delay(index, e, d, delayMax): `e` at `time - d` from buffer `index`.
+        // In a for-loop the index depends on the iterators.
         "delay" => {
             need_args(&argv, 4, name)?;
-            let DAE::Exp::ICONST { integer: index } = &**argv[0] else {
-                return Err("CodegenWasmJit: `delay` index must be an integer literal");
-            };
             let data = ctx.sim()?.data_local;
-            ctx.emit(we::Instruction::I32Const(*index));
+            match fold_int(argv[0]) {
+                Some(index) => ctx.emit(we::Instruction::I32Const(index)),
+                None => {
+                    let w = compile_exp(ctx, argv[0])?;
+                    coerce(ctx, w, WTy::I32);
+                }
+            }
             ctx.emit(we::Instruction::LocalGet(data)); // time (TIME_OFF = 0)
             ctx.emit(we::Instruction::F64Load(mem_arg(0, 3)));
             for a in &argv[1..4] {
@@ -687,24 +691,25 @@ pub(super) fn compile_math_builtin(
             if !ctx.sim()?.zc_context {
                 return Err("CodegenWasmJit: delayZeroCrossing outside a zero-crossing context");
             }
-            let DAE::Exp::ICONST { integer: index } = &**argv[0] else {
-                return Err("CodegenWasmJit: `delayZeroCrossing` index must be an integer literal");
+            // crossings in for-loops are unrolled, their indices fold to constants
+            let Some(index) = fold_int(argv[0]) else {
+                return Err("CodegenWasmJit: `delayZeroCrossing` index must be constant");
             };
-            let DAE::Exp::ICONST { integer: rindex } = &**argv[1] else {
-                return Err("CodegenWasmJit: `delayZeroCrossing` relation index must be an integer literal");
+            let Some(rindex) = fold_int(argv[1]) else {
+                return Err("CodegenWasmJit: `delayZeroCrossing` relation index must be constant");
             };
             let (data, zc_pre_off) = {
                 let s = ctx.sim()?;
                 (s.data_local, s.zc_pre_off)
             };
-            ctx.emit(we::Instruction::I32Const(*index));
+            ctx.emit(we::Instruction::I32Const(index));
             ctx.emit(we::Instruction::LocalGet(data)); // time (TIME_OFF = 0)
             ctx.emit(we::Instruction::F64Load(mem_arg(0, 3)));
             let w = compile_exp(ctx, argv[2])?; // delay time
             coerce(ctx, w, WTy::F64);
             ctx.emit(we::Instruction::LocalGet(data)); // zeroCrossingsPre[rindex]
             ctx.emit(we::Instruction::F64Load(sim_mem(
-                zc_pre_off + SimOff::from(*rindex as u32 * 8),
+                zc_pre_off + SimOff::from(rindex as u32 * 8),
                 3,
             )?));
             ctx.emit(we::Instruction::Call(rt_index("rt_delay_zc")?));
@@ -893,5 +898,18 @@ pub(super) fn compile_math_builtin(
                 Err("CodegenWasmJit: builtin function not yet supported")
             }
         },
+    }
+}
+
+/// The value of a constant integer expression, e.g. a delay index `2 + 3` of an
+/// unrolled for-loop.
+pub(crate) fn fold_int(e: &metamodelica::Ref<DAE::Exp>) -> Option<i32> {
+    if let DAE::Exp::ICONST { integer } = &**e {
+        return Some(*integer);
+    }
+    let (s, _) = openmodelica_frontend_base::ExpressionSimplify::simplify1(e.clone()).ok()?;
+    match &*s {
+        DAE::Exp::ICONST { integer } => Some(*integer),
+        _ => None,
     }
 }

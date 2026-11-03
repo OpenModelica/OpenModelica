@@ -55,6 +55,7 @@ import Config;
 import ElementSource;
 import Expression = NFExpression;
 import Face = NFConnector.Face;
+import AbsynUtil;
 import List;
 import NFPrefixes.{Variability, Purity, ConnectorType};
 import Operator = NFOperator;
@@ -955,6 +956,7 @@ protected
   Expression arg, iter_exp;
   list<tuple<InstNode, Expression>> iters = {};
   InstNode iter_node;
+  list<Expression> elems;
 algorithm
   evalExp := match exp
     case Expression.CALL(call = call as Call.TYPED_REDUCTION())
@@ -976,13 +978,42 @@ algorithm
 
         iters := listReverseInPlace(iters);
         arg := ExpandExp.expandArrayConstructor(call.exp, ty, iters);
+        elems := arrayConstructorElements(arg, listLength(iters));
       then
-        Expression.CALL(Call.makeTypedCall(call.fn, {arg}, call.var, Purity.PURE, call.ty));
+        // sum of an array expression is element-wise, unlike the sum function.
+        if Type.isArray(Expression.typeOf(call.exp)) and
+           AbsynUtil.pathString(Function.name(call.fn)) == "sum" and
+           not listEmpty(elems) then
+          List.reduce(elems, function makeArrayAdd(ty = call.ty))
+        else
+          Expression.CALL(Call.makeTypedCall(call.fn, {arg}, call.var, Purity.PURE, call.ty));
 
   end match;
 
   evalExp := evaluateOperators(evalExp, sets, setsArray, variables, ctable, replacements);
 end evaluateOperatorReductionExp;
+
+function arrayConstructorElements
+  "Returns the elements of an expanded array constructor with the given number
+   of iterators, i.e. the elements at that depth of the nested arrays."
+  input Expression exp;
+  input Integer depth;
+  output list<Expression> elements;
+algorithm
+  if depth == 0 then
+    elements := {exp};
+  else
+    elements := List.flatten(list(arrayConstructorElements(e, depth - 1)
+      for e in Expression.arrayElementList(exp)));
+  end if;
+end arrayConstructorElements;
+
+function makeArrayAdd
+  input Expression exp1;
+  input Expression exp2;
+  input Type ty;
+  output Expression exp = Expression.BINARY(exp1, Operator.makeAdd(ty), exp2);
+end makeArrayAdd;
 
 function evaluateOperatorArrayConstructorExp
   input Expression exp;
@@ -1062,8 +1093,15 @@ algorithm
   exp := match reducedStreams
     // Unconnected stream connector:
     //   inStream(c) = c;
+    // For separate compilation (translateResidualsDAE, -d=disableSingleFlowEq) we
+    // keep inStream(c) unevaluated instead of collapsing it to c, so a component
+    // that models both stream directions (allow flow reversal) does not end up
+    // with a redundant equation pair (c1 = c2; c2 = c1). The deferred inStream is
+    // resolved later when the component is coupled through its connectors.
     case {Connector.CONNECTOR(face = Face.INSIDE)}
-      then Expression.fromCref(streamCref);
+      then if Flags.isSet(Flags.DISABLE_SINGLE_FLOW_EQ)
+           then makeInStreamCall(Expression.fromCref(streamCref))
+           else Expression.fromCref(streamCref);
 
     // Two inside connected stream connectors:
     //   inStream(c1) = c2;

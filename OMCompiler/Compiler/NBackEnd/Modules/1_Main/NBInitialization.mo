@@ -265,7 +265,7 @@ public
         // if it is an array create for-equation (fixed or unfixed)
         case Variable.VARIABLE() guard BVariable.isArray(var) algorithm
           // the start value of a function output is the call at the start values of its arguments
-          if not BVariable.isFixed(var) and isFunctionAliasOrElement(var) then
+          if not BVariable.isFixed(var) and BVariable.isFunctionAliasOrElement(var) then
             start_ok := Pointer.create(true);
             () := match BVariable.getStartAttribute(var)
               case SOME(start_exp) guard not Expression.isLiteralXML(start_exp) algorithm
@@ -317,7 +317,7 @@ public
             case SOME(e) guard not Expression.isLiteralXML(e) algorithm
               // the start value of a function output is the call at the start values of its arguments
               start_ok := Pointer.create(true);
-              if isFunctionAliasOrElement(var) then
+              if BVariable.isFunctionAliasOrElement(var) then
                 e := resolveStartCrefs(e, ptr_start_vars, aliasVars, start_ok, 0);
               end if;
               if Pointer.access(start_ok) then
@@ -562,10 +562,14 @@ public
   function isFunctionAliasCref
     input ComponentRef cref;
     output Boolean b;
+  protected
+    Pointer<Variable> var_ptr;
   algorithm
     b := match cref
-      case ComponentRef.CREF() guard InstNode.isVar(ComponentRef.node(cref))
-        then BVariable.isFunctionAlias(BVariable.getVarPointer(cref, sourceInfo()));
+      // the start value $START.$FUN_1 is the initial guess of $FUN_1, it has to stay in the initialization
+      case ComponentRef.CREF() guard InstNode.isVar(ComponentRef.node(cref)) algorithm
+        var_ptr := BVariable.getVarPointer(cref, sourceInfo());
+      then BVariable.isFunctionAlias(var_ptr) and not BVariable.isStart(var_ptr);
       else false;
     end match;
   end isFunctionAliasCref;
@@ -783,19 +787,6 @@ public
     input VariablePointers aliasVars;
     output Boolean b = VariablePointers.containsCref(BVariable.getVarName(var_ptr), aliasVars);
   end isAliasVar;
-
-  function isFunctionAliasOrElement
-    "true for function alias variables and the elements of function alias records"
-    input Pointer<Variable> var_ptr;
-    output Boolean b;
-  algorithm
-    b := match BVariable.getParent(var_ptr)
-      local
-        Pointer<Variable> parent;
-      case SOME(parent) then isFunctionAliasOrElement(parent);
-      else BVariable.isFunctionAlias(var_ptr);
-    end match;
-  end isFunctionAliasOrElement;
 
   function resolveStartCrefs
     "Replaces the variables in a start expression by their start values, e.g. the start value of a function output
@@ -1146,6 +1137,9 @@ public
           bdae.dae := SOME(list(Partition.mapExp(par, function cleanupHomotopy(kind = Partition.getKind(par))) for par in Util.getOption(bdae.dae)));
         end if;
 
+        // delay(expr, delayTime, delayMax) -> expr
+        bdae.init := list(Partition.mapExp(par, cleanupDelay) for par in bdae.init);
+
         // check if we have init lambda0 system
         bdae.init := list(Partition.mapExp(par, function containsLambda0(b = hasHom)) for par in bdae.init);
 
@@ -1210,6 +1204,20 @@ public
       else exp;
     end match;
   end cleanupHomotopy;
+
+  function cleanupDelay
+    "during initialization delay() returns the value of its expression at the start time"
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      local
+        Call call;
+      case Expression.CALL(call = call as Call.TYPED_CALL())
+        guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "delay")
+      then listHead(call.arguments);
+      else exp;
+    end match;
+  end cleanupDelay;
 
   function containsHomotopyCall
     input output Expression exp;

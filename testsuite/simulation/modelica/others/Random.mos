@@ -13,11 +13,24 @@
 setCommandLineOptions("--std=3.2"); // So we do not need to mark functions "impure"
 loadFile("Random.mo"); getErrorString();
 
-setCommandLineOptions("-d=gen");
-testRandom1({5,6,13});
-testRandom1({6,7,2});
-testRandom1({33,21,17});
-setCommandLineOptions("-d=nogen");
+// testRandom1 prints with an included C function, which a simulation compiles;
+// a script cannot evaluate included sources.
+loadString("model testRandom1Calls
+  discrete Real x1, x2, x3;
+algorithm
+  when initial() then
+    x1 := testRandom1({5,6,13});
+    x2 := testRandom1({6,7,2});
+    x3 := testRandom1({33,21,17});
+  end when;
+end testRandom1Calls;"); getErrorString();
+echo(false);
+res := simulate(testRandom1Calls, stopTime=0.0);
+echo(true);
+res.messages; getErrorString();
+val(x1, 0.0);
+val(x2, 0.0);
+val(x3, 0.0);
 
 instantiateModel(testRandom2); getErrorString();
 simulate(testRandom2, stopTime=3); getErrorString();
@@ -27,7 +40,9 @@ simulate(testRandom2, stopTime=3); getErrorString();
 // true
 // ""
 // true
-// See if seed_start is OK
+// ""
+// true
+// "See if seed_start is OK
 // seed_start[1] = 5
 // seed_start[2] = 6
 // seed_start[3] = 13
@@ -40,12 +55,11 @@ simulate(testRandom2, stopTime=3); getErrorString();
 // x = 0.6320634440543993
 // x = 0.1746304784651729
 // x = 0.2261487421133115
-// x = 0.5822825403329426
+// x = 0.5822825403329424
 // x = 0.8685325299092261
 // x = 0.324700999603456
 // x = 0.1539904247592703
 // x = 0.9668480139584232
-// 0.9668480139584232
 // See if seed_start is OK
 // seed_start[1] = 6
 // seed_start[2] = 7
@@ -59,12 +73,11 @@ simulate(testRandom2, stopTime=3); getErrorString();
 // x = 0.4768262391718505
 // x = 0.7703588380462376
 // x = 0.9086443360920615
-// x = 0.9854621425896029
+// x = 0.9854621425896026
 // x = 0.4482131888968541
 // x = 0.2495274098011118
 // x = 0.981638535344608
-// x = 0.4101378849580573
-// 0.41013788495805725
+// x = 0.4101378849580568
 // See if seed_start is OK
 // seed_start[1] = 33
 // seed_start[2] = 21
@@ -73,8 +86,8 @@ simulate(testRandom2, stopTime=3); getErrorString();
 // seed[1] = 33
 // seed[2] = 21
 // seed[3] = 17
-// x = 0.4009159389765676
-// x = 0.5804987598022007
+// x = 0.4009159389765675
+// x = 0.5804987598022004
 // x = 0.5620918184705914
 // x = 0.5724159035264322
 // x = 0.8498200264820869
@@ -83,8 +96,13 @@ simulate(testRandom2, stopTime=3); getErrorString();
 // x = 0.7933464385344386
 // x = 0.8767777042924849
 // x = 0.6998297199089916
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// ""
+// 0.9668480139584232
+// 0.4101378849580568
 // 0.6998297199089916
-// true
 // "function Modelica.Utilities.Streams.print \"Print string to terminal or file\"
 //   input String string = \"\" \"String to be printed\";
 //   input String fileName = \"\" \"File where to print (empty string is the terminal)\";

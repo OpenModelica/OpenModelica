@@ -217,6 +217,8 @@ pub(crate) struct SimCtx {
     /// `SimData` byte offset of the homotopy parameter lambda (`homotopy(a, s)` =
     /// `s + lambda*(a-s)`).
     pub(crate) lambda_off: SimOff,
+    /// `SimData` byte offset of C's `skipStartEquations` flag (i32).
+    pub(crate) skip_start_off: SimOff,
     /// C's `homotopyMethod` code, handed to `rt_solve_nls`.
     pub(crate) homotopy_method: u8,
     /// True while lowering the `functionZeroCrossings` body: an indexed relation is
@@ -770,7 +772,8 @@ impl<'a> FnCtx<'a> {
             we::Instruction::Block(_)
             | we::Instruction::Loop(_)
             | we::Instruction::If(_)
-            | we::Instruction::TryTable(..) => {
+            | we::Instruction::TryTable(..)
+            | we::Instruction::Try(_) => {
                 self.ctrl_depth += 1;
             }
             we::Instruction::End => {

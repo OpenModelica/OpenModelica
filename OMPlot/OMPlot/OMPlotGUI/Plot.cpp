@@ -51,12 +51,17 @@
 #include "qwt_legend_item.h"
 #endif
 #include "qwt_text_label.h"
+#include "qwt_plot_item.h"
+#include "qwt_scale_map.h"
 
 #include <QtMath>
 #include <QFontMetrics>
+#include <QPainter>
 #include <QMouseEvent>
 #include <QResizeEvent>
 #include <QChildEvent>
+
+#include <algorithm>
 #include <QRubberBand>
 
 namespace OMPlot{
@@ -91,6 +96,49 @@ static QPoint clampedCanvasPosition(QWidget *canvas, const QPoint &globalPositio
   return position;
 }
 
+/*!
+ * \class StackLanes
+ * Draws the lanes of the stacked curves of one y-axis: each band shaded, the
+ * name of its curve above it.
+ */
+class StackLanes : public QwtPlotItem
+{
+public:
+  StackLanes(Plot *pPlot, bool right)
+    : mpPlot(pPlot), mRight(right)
+  {
+    setYAxis(right ? QwtPlot::yRight : QwtPlot::yLeft);
+    setZ(5); // below the grid and the curves
+    setItemAttribute(QwtPlotItem::AutoScale, false);
+    setItemAttribute(QwtPlotItem::Legend, false);
+  }
+  int rtti() const override {return QwtPlotItem::Rtti_PlotUserItem;}
+  void draw(QPainter *painter, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &canvasRect) const override
+  {
+    Q_UNUSED(xMap);
+    QColor shade = OMPlot::isDarkMode() ? mpPlot->palette().color(QPalette::Text) : QColor(Qt::black);
+    shade.setAlpha(OMPlot::isDarkMode() ? 32 : 24);
+    painter->save();
+    painter->setFont(mpPlot->canvas()->font());
+    foreach (PlotCurve *pPlotCurve, mpPlot->axisCurves(mRight)) {
+      if (!pPlotCurve->isStacked()) {
+        continue;
+      }
+      const double top = yMap.transform(pPlotCurve->getStackOffset() + pPlotCurve->getStackHeight());
+      const double bottom = yMap.transform(pPlotCurve->getStackOffset());
+      if (bottom > top) {
+        painter->fillRect(QRectF(canvasRect.left(), top, canvasRect.width(), bottom - top), shade);
+      }
+      painter->setPen(pPlotCurve->pen().color());
+      painter->drawText(QPointF(canvasRect.left() + 4, top - painter->fontMetrics().descent() - 2), pPlotCurve->title().text());
+    }
+    painter->restore();
+  }
+private:
+  Plot *mpPlot;
+  bool mRight;
+};
+
 Plot::Plot(PlotWindow *pParent)
   : QwtPlot(pParent)
 {
@@ -102,6 +150,8 @@ Plot::Plot(PlotWindow *pParent)
   insertLegend(mpLegend, QwtPlot::TopLegend);
   // create an instance of grid
   mpPlotGrid = new PlotGrid(this);
+  (new StackLanes(this, false))->attach(this);
+  (new StackLanes(this, true))->attach(this);
   // create the scale engine
   LinearScaleEngine *pXLinearScaleEngine = new LinearScaleEngine;
   setAxisScaleEngine(QwtPlot::xBottom, pXLinearScaleEngine);
@@ -702,14 +752,200 @@ void Plot::updateMaxMajorSteps()
     const int labelHeight = yFm.height() + 6;  // + spacing between labels
     maxMajorY = qBound(2, canvasHeight / labelHeight, 8);
   }
-  if (axisMaxMajor(QwtPlot::yLeft) != maxMajorY) {
+  // an axis that names values has a tick per value, see applyValueScales
+  if (axisMaxMajor(QwtPlot::yLeft) != maxMajorY && !hasValueScale(false)) {
     setAxisMaxMajor(QwtPlot::yLeft, maxMajorY);
   }
 
   // y-axis (right): use the same density as the left axis.
-  if (axisMaxMajor(QwtPlot::yRight) != maxMajorY) {
+  if (axisMaxMajor(QwtPlot::yRight) != maxMajorY && !hasValueScale(true)) {
     setAxisMaxMajor(QwtPlot::yRight, maxMajorY);
   }
+}
+
+/*!
+ * \brief Plot::axisCurves
+ * The visible curves of the left or the right y-axis.
+ * \param right
+ * \return
+ */
+QList<PlotCurve*> Plot::axisCurves(bool right) const
+{
+  QList<PlotCurve*> curves;
+  foreach (PlotCurve *pPlotCurve, mPlotCurvesList) {
+    if (pPlotCurve->isVisible() && pPlotCurve->isYAxisRight() == right) {
+      curves.append(pPlotCurve);
+    }
+  }
+  return curves;
+}
+
+/*!
+ * \brief Plot::autoStack
+ * Whether the curves go in lanes without being asked to: all of them Booleans,
+ * Integers or enumerations, and not all of one Boolean or enumeration type
+ * on an axis, which names the values already.
+ * \return
+ */
+bool Plot::autoStack() const
+{
+  int curves = 0;
+  foreach (PlotCurve *pPlotCurve, mPlotCurvesList) {
+    if (pPlotCurve->isVisible()) {
+      if (!pPlotCurve->isDiscrete()) {
+        return false;
+      }
+      curves++;
+    }
+  }
+  return curves > 1 && !((axisCurves(false).isEmpty() || commonValueLabels(false))
+                         && (axisCurves(true).isEmpty() || commonValueLabels(true)));
+}
+
+/*!
+ * \brief Plot::updateStack
+ * Stacked, each curve of an axis gets a band of its own, the first curve on top:
+ * a Boolean or an enumeration one unit per value, any other curve two units
+ * between its minimum and maximum. The bands are 1.5 units apart, so that they
+ * stand out from the values within a band.
+ * \param stack
+ */
+void Plot::updateStack(bool stack)
+{
+  foreach (PlotCurve *pPlotCurve, mPlotCurvesList) {
+    pPlotCurve->clearStack();
+    pPlotCurve->getPointMarker()->setVisible(false);
+  }
+  if (stack) {
+    for (bool right : {false, true}) {
+      QList<PlotCurve*> curves = axisCurves(right);
+      double offset = 0;
+      for (int i = curves.size() - 1 ; i >= 0 ; i--) {
+        PlotCurve *pPlotCurve = curves.at(i);
+        if (pPlotCurve->hasValueLabels()) {
+          const double height = pPlotCurve->getValueLabels().size() - 1;
+          pPlotCurve->setStack(offset, pPlotCurve->getValueLabelBase(), 1, height);
+          offset += height + 1.5;
+        } else {
+          double low = 0, high = 0;
+          if (!pPlotCurve->mYAxisVector.isEmpty()) {
+            low = high = pPlotCurve->mYAxisVector.first();
+            foreach (double value, pPlotCurve->mYAxisVector) {
+              low = qMin(low, value);
+              high = qMax(high, value);
+            }
+          }
+          pPlotCurve->setStack(offset, low, high > low ? 2 / (high - low) : 0, high > low ? 2 : 0);
+          offset += high > low ? 3.5 : 1.5;
+        }
+      }
+    }
+  }
+  foreach (PlotCurve *pPlotCurve, mPlotCurvesList) {
+    pPlotCurve->applyStack();
+  }
+}
+
+/*!
+ * \brief Plot::applyValueScales
+ * Puts the ticks of a stacked y-axis on the values of its bands, and those of a
+ * y-axis whose curves are all of one Boolean or enumeration type on its values.
+ */
+void Plot::applyValueScales()
+{
+  for (bool right : {false, true}) {
+    const int axis = right ? QwtPlot::yRight : QwtPlot::yLeft;
+    QList<PlotCurve*> curves = axisCurves(right);
+    QList<double> ticks;
+    QStringList labels;
+    int base = 0;
+    if (!curves.isEmpty() && curves.first()->isStacked()) {
+      foreach (PlotCurve *pPlotCurve, curves) {
+        if (pPlotCurve->hasValueLabels()) {
+          for (int k = 0 ; k <= pPlotCurve->getStackHeight() ; k++) {
+            ticks.append(pPlotCurve->getStackOffset() + k);
+          }
+        } else {
+          ticks.append(pPlotCurve->getStackOffset());
+          if (pPlotCurve->getStackHeight() > 0) {
+            ticks.append(pPlotCurve->getStackOffset() + pPlotCurve->getStackHeight());
+          }
+        }
+      }
+    } else if (commonValueLabels(right, &labels, &base)) {
+      for (int k = 0 ; k < labels.size() ; k++) {
+        ticks.append(base + k);
+      }
+    } else {
+      continue;
+    }
+    std::sort(ticks.begin(), ticks.end());
+    // room above the top lane for its name
+    const double top = ticks.last() + (curves.first()->isStacked() ? 1 : 0.5);
+    // the range too, for whenever Qwt divides the scale again
+    setAxisScale(axis, ticks.first() - 0.5, top, 1);
+    setAxisScaleDiv(axis, QwtScaleDiv(ticks.first() - 0.5, top, QList<double>(), QList<double>(), ticks));
+  }
+}
+
+/*!
+ * \brief Plot::stackedCurveAt
+ * The stacked curve whose band holds value.
+ * \param right
+ * \param value
+ * \return
+ */
+PlotCurve* Plot::stackedCurveAt(bool right, double value) const
+{
+  foreach (PlotCurve *pPlotCurve, axisCurves(right)) {
+    if (pPlotCurve->isStacked() && value >= pPlotCurve->getStackOffset() - 1e-9
+        && value <= pPlotCurve->getStackOffset() + pPlotCurve->getStackHeight() + 1e-9) {
+      return pPlotCurve;
+    }
+  }
+  return nullptr;
+}
+
+/*!
+ * \brief Plot::hasValueScale
+ * Whether an axis names values, stacked or of one Boolean or enumeration type.
+ * \param right
+ * \return
+ */
+bool Plot::hasValueScale(bool right) const
+{
+  QList<PlotCurve*> curves = axisCurves(right);
+  return !curves.isEmpty() && (curves.first()->isStacked() || commonValueLabels(right));
+}
+
+/*!
+ * \brief Plot::commonValueLabels
+ * Whether all curves of an axis name their values the same way, a Boolean's or
+ * one enumeration's.
+ * \param right
+ * \param pLabels
+ * \param pBase
+ * \return
+ */
+bool Plot::commonValueLabels(bool right, QStringList *pLabels, int *pBase) const
+{
+  QList<PlotCurve*> curves = axisCurves(right);
+  if (curves.isEmpty() || !curves.first()->hasValueLabels()) {
+    return false;
+  }
+  foreach (PlotCurve *pPlotCurve, curves) {
+    if (pPlotCurve->getValueLabels() != curves.first()->getValueLabels()
+        || pPlotCurve->getValueLabelBase() != curves.first()->getValueLabelBase()) {
+      return false;
+    }
+  }
+  if (pLabels) {
+    *pLabels = curves.first()->getValueLabels();
+  }
+  if (pBase) {
+    *pBase = curves.first()->getValueLabelBase();
+  }
+  return true;
 }
 
 // just overloaded this function to get colors for curves.

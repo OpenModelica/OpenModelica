@@ -41,7 +41,7 @@ encapsulated package ComplexNumbers
 end ComplexNumbers;
 
 
-class ComplexUser
+model ComplexUser
   ComplexNumbers.Complex a(re=1.0, im=2.0);
   ComplexNumbers.Complex b(re=1.0, im=2.0);
   ComplexNumbers.Complex z,w;
