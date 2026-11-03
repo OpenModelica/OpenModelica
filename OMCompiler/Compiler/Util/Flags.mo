@@ -1444,7 +1444,7 @@ constant ConfigFlag FMU_PLATFORMS = CONFIG_FLAG(166, "fmuPlatforms",
 constant ConfigFlag FMU_VERSION = CONFIG_FLAG(167, "fmiVersion",
   NONE(), EXTERNAL(), ENUM_FLAG(FMI_VERSION_20, {("1.0", FMI_VERSION_10), ("2.0", FMI_VERSION_20), ("3.0", FMI_VERSION_30)}),
   SOME(STRING_OPTION({"1.0", "2.0", "3.0"})),
-  "FMI version for FMU export: 1.0, 2.0, 3.0.");
+  "FMI version for FMU export: 1.0 (deprecated), 2.0, 3.0.");
 constant ConfigFlag TEARING_COST_MARGIN = CONFIG_FLAG(168, "tearingCostMargin",
   NONE(), EXTERNAL(), REAL_FLAG(2.0), NONE(),
   "How much cheaper solving a linear system untorn has to be estimated before its\ntearing set is dropped. Raise it to keep tearing systems the estimate would give\nup on, lower it towards 0 to tear less (default 2).");

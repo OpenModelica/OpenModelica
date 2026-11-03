@@ -1807,6 +1807,9 @@ algorithm
         /* Initialize FMI objects */
         (b, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) := FMIExt.initializeFMIImport(filename, workdir, fmiLogLevel, inputConnectors, outputConnectors);
         true := b; /* if something goes wrong while initializing */
+        if FMI.isFMIVersion10(FMI.getFMIVersion(fmiInfo)) then
+          Error.addMessage(Error.FMU_IMPORT_FMI1_DEPRECATED, {});
+        end if;
         fmiTypeDefinitionsList := listReverse(fmiTypeDefinitionsList);
         fmiModelVariablesList := listReverse(fmiModelVariablesList);
         s1 := System.tolower(Autoconf.platform);
@@ -1850,6 +1853,9 @@ algorithm
         (b, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) :=
           FMIExt.initializeFMIImport(modeldescriptionfilename, tmpDir, fmiLogLevel, inputConnectors, outputConnectors, true);
         true := b; /* if something goes wrong while initializing */
+        if FMI.isFMIVersion10(FMI.getFMIVersion(fmiInfo)) then
+          Error.addMessage(Error.FMU_IMPORT_FMI1_DEPRECATED, {});
+        end if;
         fmiTypeDefinitionsList := listReverse(fmiTypeDefinitionsList);
         fmiModelVariablesList := listReverse(fmiModelVariablesList);
         s1 := System.tolower(Autoconf.platform);
@@ -4284,6 +4290,9 @@ algorithm
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED, {FMUType, FMUVersion});
     return;
   end if;
+  if FMI.isFMIVersion10(FMUVersion) then
+    Error.addMessage(Error.FMU_EXPORT_FMI1_DEPRECATED, {});
+  end if;
   if Config.simCodeTarget() == "Cpp" and FMI.isFMICSType(FMUType) then
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
@@ -4753,6 +4762,9 @@ algorithm
     outValue := Values.STRING("");
     Error.addMessage(Error.FMU_EXPORT_WASM_FMI1, {});
     return;
+  end if;
+  if FMI.isFMIVersion10(FMUVersion) then
+    Error.addMessage(Error.FMU_EXPORT_FMI1_DEPRECATED, {});
   end if;
   // without a native binary to load it, the wasm model is only reachable as fmi-ls-wasm,
   // which is layered on FMI 3.0
