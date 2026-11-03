@@ -38,6 +38,11 @@ The complete data reconciliation workflow consists in four main phases:
     3.  Execute data reconciliation;
     4.  Analyze the results.
 
+The above figure illustrates the workflow: refers to steps implemented in OpenModelica while dark blue highlights steps performed in a third-party tool dedicated to uncertainty quantification.
+
+.. figure :: media/dataReconciliationWorkflow.png
+  :name: dataReconciliationWorkflow
+
 Step 1: Define the Data Reconciliation Problem in OpenModelica
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -208,8 +213,6 @@ The variables ``mV`` and ``mHK`` could have been omitted because they do not hav
   * propagate elementary uncertainty sources;
   * construct covariance matrices;
   * estimate correlations between measured variables. 
-
-
 
 Step 3: Execute Data Reconciliation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -426,13 +429,13 @@ The values and uncertainties of the boundary conditions that correspond to the r
     1. Selecting Data Reconciliation > Calculate Data Reconciliation
     2. Selecting the Boundary Conditions algorithm.
     3. Filling the Data Reconciliation form with
-        a. The name of the Reconciled Measurement File (mandatory). It is the name of the csv output file produced by   the data reconciliation algorithm.
-        b. The name of the Reconciled Correlation Matrix file (mandatory). It is the name of the correlation matrix csv file produced by the data reconciliation algorithm.
+        a. The name of the Reconciled Measurement File (mandatory). It is the name of the ``.csv`` output file produced by   the data reconciliation algorithm.
+        b. The name of the Reconciled Correlation Matrix file (mandatory). It is the name of the correlation matrix ``.csv`` file produced by the data reconciliation algorithm.
     4. Clicking on Save Settings to save the above settings in the Modelica model.
     5. Clicking on Calculate to launch the calculation.
 
 At least one boundary condition must be declared in the model, otherwise the computation fails with a difficult to interpret error message such as
-    | Cannot Compute Jacobian Matrix F.
+    | Cannot Compute Jacobian Matrix ``F``.
 
 A better error message will be posted in a future version.
 
@@ -447,10 +450,10 @@ The computation of the boundary conditions is performed in three main steps:
     3. The input files are read, the numerical calculations are performed, and the results are displayed. The half-width confidence intervals for the boundary conditions are calculated by propagating the reconciled uncertainties on the variables of interest through the inverted model.
 
 The results are displayed:
-    1. In an html file with the title: Boundary Condition Report. This file pops up automatically when the calculation is completed.
+    1. In an ``.html`` file with the title: Boundary Condition Report. This file pops up automatically when the calculation is completed.
 
-    2. In a csv output file. The name of the csv output file is
-    <working directory>\\<model name>\\< model name>_ BoundaryConditions_Outputs.csv
+    2. In a ``.csv`` output file. The name of the ``.csv`` output file is
+    ``<working directory>\\<model name>\\< model name>_ BoundaryConditions_Outputs.csv``
 
 The Boundary Condition Report has three sections:
 
