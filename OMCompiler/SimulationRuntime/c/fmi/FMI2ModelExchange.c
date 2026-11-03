@@ -107,7 +107,9 @@ void* FMI2ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
 void FMI2ModelExchangeDestructor_OMC(void* in_fmi2me)
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  fmi2_import_terminate(FMI2ME->FMIImportInstance);
+  if (FMI2ME->FMISolvingMode == fmi2_event_mode || FMI2ME->FMISolvingMode == fmi2_continuousTime_mode) {
+    fmi2_import_terminate(FMI2ME->FMIImportInstance);
+  }
   fmi2_import_free_instance(FMI2ME->FMIImportInstance);
   fmi2_import_destroy_dllfmu(FMI2ME->FMIImportInstance);
   fmi2_import_free(FMI2ME->FMIImportInstance);
@@ -152,10 +154,11 @@ void fmi2ExitInitializationModel_OMC(void* in_fmi2me)
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
   fmi2_status_t status = fmi2_import_exit_initialization_mode(FMI2ME->FMIImportInstance);
-  FMI2ME->FMISolvingMode = fmi2_event_mode;
   if (status != fmi2_status_ok && status != fmi2_status_warning) {
+    FMI2ME->FMISolvingMode = fmi2_none_mode;
     ModelicaFormatError("fmi2ExitInitializationMode failed with status : %s\n", fmi2_status_to_string(status));
   }
+  FMI2ME->FMISolvingMode = fmi2_event_mode;
 }
 
 /*

@@ -1107,6 +1107,8 @@ fmi3Status omcExitInitializationMode(ModelInstance* c)
   if (!done)
   {
     FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "omcExitInitializationMode: terminated by an assertion.")
+    comp->state = model_state_error;
+    return fmi3Error;
   }
 
   comp->state = isCoSimulation(comp) ? model_state_cs_step_complete : model_state_me_event_mode;

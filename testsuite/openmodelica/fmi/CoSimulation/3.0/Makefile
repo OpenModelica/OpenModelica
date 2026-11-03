@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 fmi3_cs_01.mos \
+fmi3_cs_exitinit_assert.mos \
 fmi3_msl_clocked_drive.mos \
 fmi3_wasm_annotation_flags.mos \
 fmi3_wasm_arrays.mos \
@@ -19,6 +20,7 @@ fmi3_wasm_terminate_init.mos
 DEPENDENCIES = \
 *.mo \
 *.mos \
+fmi3_cs_exitinit_assert.py \
 Makefile \
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
