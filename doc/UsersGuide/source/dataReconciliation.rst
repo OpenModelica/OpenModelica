@@ -15,8 +15,8 @@ Besides uncertainty reduction, data reconciliation can be used to:
 * identify possible instrumentation defects;
 * reveal modelling deficiencies.
 
-Data Reconciliation Implementation in OpenModelica
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Benefits of Performing Reconciliation in OpenModelica
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Implementing data reconciliation in OpenModelica offers several advantages:
     1.  The equations required for data reconciliation can be automatically extracted from an existing Modelica model;
@@ -28,6 +28,44 @@ Current assumptions are:
 - The extracted equations should represent a static model (model featuring algebraic equations only, no differential equation).
 - The uncertainties associated to the measured values follow a Gaussian distribution.
 
+Pieces of Data Reconciliation Theory
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Prior and Reconciled Distributions
+----------------------------------
+The measurements are assumed to follow a multivariate Gaussian distribution characterised by:
+*	a vector of measured values;
+*	a variance-covariance matrix describing uncertainties and correlations.
+
+The physical constraints extracted from the Modelica model define admissible operating states. 
+Data reconciliation computes the conditional distribution satisfying these constraints.
+
+The outputs of the reconciliation process are:
+* reconciled values;
+* reconciled uncertainties;
+* reconciled covariance matrix.
+
+These quantities represent the best estimate of the system state under the assumptions provided by the model and measurement uncertainty characterisation. 
+
+Statistical Validation
+----------------------
+The validity of reconciliation results must be assessed using statistical tests.
+
+** Global Consistency Test **
+A global :math:`χ²` test evaluates whether the corrections required to satisfy the physical constraints remain compatible with the uncertainty assumptions.
+A failure of the global test indicates at least one inconsistency among:
+* the measurements;
+* the uncertainty model;
+* the physical model
+
+** Local Consistency Tests **
+Local tests are performed for individual measurements.
+A reconciled value requiring a correction exceeding its expected uncertainty range may indicate:
+* a faulty sensor;
+* underestimated measurement uncertainty;
+* missing physical phenomena in the model.
+
+Statistical tests should always be analysed before using reconciled values for operational or engineering decisions.
 
 Recommended Workflow
 ~~~~~~~~~~~~~~~~~~~~
