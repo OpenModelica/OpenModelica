@@ -2953,7 +2953,7 @@ void LibraryTreeView::createActions()
   // omuq UQ activities Action
   mpOMUQActivitiesAction = new QAction(tr("UQ Activities..."), this);
   mpOMUQActivitiesAction->setStatusTip(tr("Runs the uncertainty quantification activities attached to the SSP model with omuq"));
-  connect(mpOMUQActivitiesAction, SIGNAL(triggered()), SLOT(runOMUQActivities()));
+  connect(mpOMUQActivitiesAction, &QAction::triggered, this, &LibraryTreeView::runOMUQActivities);
 }
 
 /*!
@@ -3245,8 +3245,6 @@ void LibraryTreeView::showContextMenu(QPoint point)
 #if !defined(__EMSCRIPTEN__)
             menu.addSeparator();
             menu.addAction(mpOMSCalibrateAction);
-#endif
-#if QT_CONFIG(process)
             menu.addSeparator();
             menu.addAction(mpOMUQActivitiesAction);
 #endif

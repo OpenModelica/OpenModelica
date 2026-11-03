@@ -4440,23 +4440,23 @@ void MainWindow::messageTabAdded(QWidget *pSimulationOutputTab, const QString &n
   MessageTab *pMessageTab = createMessageTab(name, false);
   SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(pSimulationOutputTab);
   if (pSimulationOutputWidget) {
-    connect(pSimulationOutputWidget, SIGNAL(updateText(QString)), pMessageTab, SLOT(updateText(QString)));
-    connect(pSimulationOutputWidget, SIGNAL(updateProgressBar(QProgressBar*)), pMessageTab, SLOT(updateProgress(QProgressBar*)));
+    connect(pSimulationOutputWidget, &SimulationOutputWidget::updateText, pMessageTab, &MessageTab::updateText);
+    connect(pSimulationOutputWidget, &SimulationOutputWidget::updateProgressBar, pMessageTab, &MessageTab::updateProgress);
   } else {
     OMSSimulationOutputWidget *pOMSSimulationOutputWidget = qobject_cast<OMSSimulationOutputWidget*>(pSimulationOutputTab);
     if (pOMSSimulationOutputWidget) {
-      connect(pOMSSimulationOutputWidget, SIGNAL(updateText(QString)), pMessageTab, SLOT(updateText(QString)));
-      connect(pOMSSimulationOutputWidget, SIGNAL(updateProgressBar(QProgressBar*)), pMessageTab, SLOT(updateProgress(QProgressBar*)));
+      connect(pOMSSimulationOutputWidget, &OMSSimulationOutputWidget::updateText, pMessageTab, &MessageTab::updateText);
+      connect(pOMSSimulationOutputWidget, &OMSSimulationOutputWidget::updateProgressBar, pMessageTab, &MessageTab::updateProgress);
     } else {
       CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = qobject_cast<CRMLTranslatorOutputWidget*>(pSimulationOutputTab);
       if (pCRMLTranslatorOutputWidget) {
-        connect(pCRMLTranslatorOutputWidget, SIGNAL(updateText(QString)), pMessageTab, SLOT(updateText(QString)));
-        connect(pCRMLTranslatorOutputWidget, SIGNAL(updateProgressBar(QProgressBar*)), pMessageTab, SLOT(updateProgress(QProgressBar*)));
+        connect(pCRMLTranslatorOutputWidget, &CRMLTranslatorOutputWidget::updateText, pMessageTab, &MessageTab::updateText);
+        connect(pCRMLTranslatorOutputWidget, &CRMLTranslatorOutputWidget::updateProgressBar, pMessageTab, &MessageTab::updateProgress);
       } else {
         OMUQOutputWidget *pOMUQOutputWidget = qobject_cast<OMUQOutputWidget*>(pSimulationOutputTab);
         if (pOMUQOutputWidget) {
-          connect(pOMUQOutputWidget, SIGNAL(updateText(QString)), pMessageTab, SLOT(updateText(QString)));
-          connect(pOMUQOutputWidget, SIGNAL(updateProgressBar(QProgressBar*)), pMessageTab, SLOT(updateProgress(QProgressBar*)));
+          connect(pOMUQOutputWidget, &OMUQOutputWidget::updateText, pMessageTab, &MessageTab::updateText);
+          connect(pOMUQOutputWidget, &OMUQOutputWidget::updateProgressBar, pMessageTab, &MessageTab::updateProgress);
         }
       }
     }
