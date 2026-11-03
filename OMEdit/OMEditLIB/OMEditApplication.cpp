@@ -197,15 +197,16 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   // renders through dzn, which cannot create a GrContext. GBM needs a render
   // node; without one the D3D12 EGL has no dma_buf import either and the
   // Documentation view stays blank. Render in software then: --disable-gpu would
-  // also paint, but it turns off WebGL, which the omuq live view needs, while
-  // SwiftShader keeps WebGL working on the CPU.
+  // also paint, but it turns off WebGL, which the omuq live view needs.
+  // swiftshader-webgl keeps GPU compositing off (QtWebEngine warns about it on
+  // Mesa llvmpipe) and only gives WebGL a software implementation.
   if (QFile::exists("/dev/dxg")) {
     if (!QDir("/dev/dri").entryList(QStringList("renderD*"), QDir::System).isEmpty()) {
       if (!qEnvironmentVariableIsSet("QTWEBENGINE_FORCE_USE_GBM")) {
         qputenv("QTWEBENGINE_FORCE_USE_GBM", "1");
       }
     } else if (!qEnvironmentVariableIsSet("QTWEBENGINE_CHROMIUM_FLAGS")) {
-      qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--use-angle=swiftshader --enable-unsafe-swiftshader --disable-gpu-compositing");
+      qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--use-angle=swiftshader-webgl --enable-unsafe-swiftshader --disable-gpu-compositing");
     }
   }
 #endif // #ifdef Q_OS_LINUX
