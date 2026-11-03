@@ -1,0 +1,47 @@
+// name:     FmuStartEventError
+// keywords: FMI 2.0 export co-simulation initialization event assert
+// status:   correct
+// teardown_command: rm -rf FmuStartEventError*.fmu FmuStartEventError*.fmutmp/ FmuStartEventError*.log FmuStartEventError*_out.txt
+//
+// The C FMU runs an event due at the start time in fmi2ExitInitializationMode.
+// When that event fails, fmi2ExitInitializationMode must fail too (#17769).
+// The Rust runtime runs that event in the first step instead, so this test
+// uses the C runtime.
+setCommandLineOptions("--simCodeTarget=C"); getErrorString();
+loadString("
+model FmuStartEventError
+  function f
+    input Real p;
+    output Real y;
+  algorithm
+    assert(p > 0.5, \"p must exceed 0.5\");
+    y := p;
+  end f;
+  discrete Real d(start = 1, fixed = true);
+  discrete Real y(start = 1, fixed = true);
+equation
+  when sample(0, 0.1) then
+    d = pre(d) - 1;
+    y = f(d);
+  end when;
+end FmuStartEventError;
+"); getErrorString();
+buildModelFMU(FmuStartEventError, version = "2.0", fmuType = "cs"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" FmuStartEventError.py FmuStartEventError.fmu FmuStartEventError_out.txt"); getErrorString();
+readFile("FmuStartEventError_out.txt"); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// "FmuStartEventError.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "fmi2ExitInitializationMode: fmi2Error
+// fmi2DoStep: fmi2Error
+// "
+// ""
+// endResult
