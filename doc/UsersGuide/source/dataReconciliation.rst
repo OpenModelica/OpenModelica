@@ -6,6 +6,14 @@ Objective of Data Reconciliation
 
 The objective of data reconciliation is to use physical models to reduce the impact of measurement errors by decreasing measurement uncertainties and detecting faulty sensors. Data reconciliation is possible only when redundant measurements are available. Redundancy can be achieved by linking together the measured variables of interest using the physical laws that constrain them. This can be done with static Modelica models (models featuring algebraic equations only, no differential equations).
 
+Recommended Workflow
+~~~~~~~~~~~~~~~~~~~~
+The complete data reconciliation workflow consists in four main phases:
+    1.  Define the reconciliation problem;
+    2.  Quantify measurement uncertainties;
+    3.  Execute data reconciliation;
+    4.  Analyze the results.
+
 Defining the Data Reconciliation Problem in OpenModelica
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Let us take the example of the Modelica model of a splitter.
