@@ -783,6 +783,7 @@ public
           VariablePointers.removeList(ads_accessed, varData.unknowns);
           VariablePointers.removeList(ads_accessed, varData.discretes);
           VariablePointers.removeList(ads_accessed, varData.discrete_states);
+          VariablePointers.removeList(ads_accessed, varData.initials);
 
           VariablePointers.removeList(ap_accessed, varData.previous);
           VariablePointers.removeList(ap_accessed, varData.variables);
