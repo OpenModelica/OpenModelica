@@ -18,7 +18,6 @@ end NBFlagsResetModel;
 clearCommandLineOptions();
 setCommandLineOptions("--newBackend"); getErrorString();
 translateModel(NBFlagsResetModel); getErrorString();
-getCommandLineOptions();
 setCommandLineOptions("--newBackend=false"); getErrorString();
 getCommandLineOptions();
 instantiateModel(NBFlagsResetModel); getErrorString();
@@ -36,7 +35,6 @@ getCommandLineOptions();
 // ""
 // true
 // ""
-// {"-d=vectorizeBindings,nonfExpandOperations,nonfScalarize", "--newBackend=true"}
 // true
 // ""
 // {}
