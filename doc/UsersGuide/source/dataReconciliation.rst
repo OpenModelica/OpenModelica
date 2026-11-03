@@ -6,19 +6,32 @@ Objective of Data Reconciliation
 
 Data reconciliation aims at improving the estimation of the actual state of a physical system by combining:
 * measured values and their uncertainties;
-* physical constraints extracted from a Modelica model;
+* physical constraints relating the measured quantities;
 * statistical inference methods.
-Measured values are adjusted so that the reconciled values satisfy the physical laws represented by the model while remaining consistent with the uncertainty associated with each measurement. The resulting reconciled values are statistically more likely than the original measurements and generally exhibit reduced uncertainty. [16_IMOC_paper_22 | PDF]
+
+Measured values are adjusted so that the reconciled values satisfy the physical laws while remaining consistent with the uncertainty associated with each measurement. The resulting reconciled values are statistically more likely than the original measurements and generally exhibit reduced uncertainty. [16_IMOC_paper_22 | PDF]
 Besides uncertainty reduction, data reconciliation can be used to:
 * detect inconsistent measurements;
 * identify possible instrumentation defects;
-* reveal modelling deficiencies;
+* reveal modelling deficiencies.
 
-This can be done with static Modelica models (models featuring algebraic equations only, no differential equations).
+Data Reconciliation Implementation in OpenModelica
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Implementing data reconciliation in OpenModelica offers several advantages:
+    1.  The equations required for data reconciliation can be automatically extracted from an existing Modelica model;
+    2.  The Modelica model does not need to be simulable (making it possible to perform reconciliation on a model that fails to initialize correctly).
+
+Apart from this "equation extraction" phase — which is specific to OpenModelica — the current implementation of the "reconciliation" component follows the assumptions 
+and calculation procedures specified in the VDI 2048 standard.
+Current assumptions are:
+- The extracted equations should represend a static model (model featuring algebraic equations only, no differential equation).
+- The uncertainties associated to the measured values follow a Gaussian distribution.
 
 
 Recommended Workflow
 ~~~~~~~~~~~~~~~~~~~~
+
 The complete data reconciliation workflow consists in four main phases:
     1.  Define the reconciliation problem;
     2.  Quantify measurement uncertainties;
