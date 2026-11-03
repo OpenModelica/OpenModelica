@@ -141,12 +141,12 @@ The half-with confidence interval for variable :math:`x_i` is defined as :math:`
 
 The header of the file is the row:
 
-.. code::
+.. code-block::
     | Variable Names; Measured Value-x; Half Width Confidence Interval
 
 It is possible to insert comments with ``//`` at the beginning of a row:
 
-.. code::
+.. code-block::
     | // Measurement input file for the Splitter model.
     | Variable Name;Measured Value;Half Width Confidence Interval
     | splitter.pipe1.Q; 2.50; 0.196
@@ -177,7 +177,7 @@ correlation coefficients of the variables of interest:
 
 The following correlation file is drawn from the VDI2048 standard example of a heat circuit of a steam turbine plant.
 
-.. code::
+.. code-block::
     | Sxy;mV;mHK;mSPLL;mSPL;mFDKELL;mFDKEL
     | mV
     | mHK
@@ -203,6 +203,12 @@ The variables ``mV`` and ``mHK`` could have been omitted because they do not hav
   * environmental effects;
   * measurement methodology;
   * repeatability.
+  When measurements are correlated, correlation coefficients should also be estimated and included in the covariance matrix.
+  External uncertainty quantification tools such as OpenTURNS may be used to:
+  * propagate elementary uncertainty sources;
+  * construct covariance matrices;
+  * estimate correlations between measured variables. 
+
 
 
 Step 3: Execute Data Reconciliation
@@ -310,56 +316,57 @@ The Data Reconciliation Report has three sections:
 
 The data reconciliation report for the the VDI2048 standard example of a heat circuit of a steam turbine plant is given below.
 
-Overview:
----------
-  | Model file: VDI2048Example.mo
-  | Model name: NewDataReconciliationSimpleTests.VDI2048Example
-  | Model directory: NewDataReconciliationSimpleTests
-  | Measurement input file: VDI2048Example_Inputs.csv
-  | Correlation matrix input file: VDI2048Example_Correlation.csv
-  | Generated: Thu Jan 20 18:41:45 2022by OpenModelica v1.19.0-dev-500-g6c3a4e429f (64-bit)
+.. code-block::
+  Overview:
+  ---------
+    | Model file: VDI2048Example.mo
+    | Model name: NewDataReconciliationSimpleTests.VDI2048Example
+    | Model directory: NewDataReconciliationSimpleTests
+    | Measurement input file: VDI2048Example_Inputs.csv
+    | Correlation matrix input file: VDI2048Example_Correlation.csv
+    | Generated: Thu Jan 20 18:41:45 2022by OpenModelica v1.19.0-dev-500-g6c3a4e429f (64-bit)
 
-Analysis:
----------
-  | Number of auxiliary conditions: 3
-  | Number of variables to be reconciled: 11
-  | Number of related boundary conditions: 0
-  | Number of iterations to convergence: 2
-  | Final value of (J*/r) : 4.56744e-28
-  | Epsilon : 1e-10
-  | Final value of the objective function (J*) : 1.37023e-27
-  | Chi-square value : 7.81473
-  | Result of global test : TRUE
+  Analysis:
+  ---------
+    | Number of auxiliary conditions: 3
+    | Number of variables to be reconciled: 11
+    | Number of related boundary conditions: 0
+    | Number of iterations to convergence: 2
+    | Final value of (J*/r) : 4.56744e-28
+    | Epsilon : 1e-10
+    | Final value of the objective function (J*) : 1.37023e-27
+    | Chi-square value : 7.81473
+    | Result of global test : TRUE
 
-Auxiliary conditions
---------------------
-  1. (1): 0.0 = mHDANZ - mHDNK
-  2. (1): mFD3 = mHK + mA7 + mA6 + mA5 + 0.4 * mV
-  3. (1): mFD1 = mFDKEL + mFDKELL + (-0.2) * mV
+  Auxiliary conditions
+  --------------------
+    1. (1): 0.0 = mHDANZ - mHDNK
+    2. (1): mFD3 = mHK + mA7 + mA6 + mA5 + 0.4 * mV
+    3. (1): mFD1 = mFDKEL + mFDKELL + (-0.2) * mV
 
-Intermediate equations
-----------------------
-  1. (1): mHDANZ = mA7 + mA6 + mA5
-  2. (1): mFD2 = mSPL + mSPLL + (-0.6) * mV
-  3. (1): 0.0 = mFD2 - mFD3
-  4. (1): 0.0 = mFD1 - mFD2
+  Intermediate equations
+  ----------------------
+    1. (1): mHDANZ = mA7 + mA6 + mA5
+    2. (1): mFD2 = mSPL + mSPLL + (-0.6) * mV
+    3. (1): 0.0 = mFD2 - mFD3
+    4. (1): 0.0 = mFD1 - mFD2
 
-Debug log
----------
+  Debug log
+  ---------
 
-Results
--------
+  Results
+  -------
 
 .. figure :: media/dataReconciliationResult.png
   :name: dataReconciliationResult
 
 
-mD is not reconciled because it does not appear in any of the auxiliary conditions or intermediate equations.
+``mD`` is not reconciled because it does not appear in any of the auxiliary conditions or intermediate equations.
 
-For the VDI2048 example, the name of the csv output file is
- | <working directory>\\NewDataReconciliationSimpleTests.VDI2048Example\\NewDataReconciliationSimpleTests.VDI2048Example_Outputs.csv
+For the VDI2048 example, the name of the ``.csv`` output file is
+ ``| <working directory>\\NewDataReconciliationSimpleTests.VDI2048Example\\NewDataReconciliationSimpleTests.VDI2048Example_Outputs.csv``
 and the name of the reconciled covariance matrix csv file is
- | <working directory>\\NewDataReconciliationSimpleTests.VDI2048Example\\NewDataReconciliationSimpleTests.VDI2048Example_ Reconciled_Sx.csv
+ ``| <working directory>\\NewDataReconciliationSimpleTests.VDI2048Example\\NewDataReconciliationSimpleTests.VDI2048Example_ Reconciled_Sx.csv``
 
 The Modelica model of the VDI2048 example is given below.
 
@@ -393,7 +400,7 @@ The Modelica model of the VDI2048 example is given below.
     end VDI2048Example;
 
 Note that the binding equations that assign fixed values to the variables have been automatically eliminated by the
-extraction algorithm. These equations are necessary to have a valid square Modelica model,
+extraction algorithm. These equations are necessary to have a valid square Modelica model for simulation purpose,
 but must be eliminated for data reconciliation.
 
 The table below compares the results obtained with OpenModelica with those given by the VDI2048 standard.
@@ -401,8 +408,8 @@ The table below compares the results obtained with OpenModelica with those given
 .. figure :: media/dataReconciliationResult_2.png
   :name: dataReconciliationResult_2
 
-The value of mD is left unchanged after reconciliation. This is indicated by 'Not reconciled' in OpenModelica,
-and by repeating the initial measured values in VDI2048. In order to compute the reconciled values of mFD1, mFD2, mFD3 and mHDANZ, which have no measurements, it is possible to consider them as variables of interest with very large half-width confidence, e.g., 1e4, and assign them arbitrary measured values, e.g. 0. The result is
+The value of ``mD`` is left unchanged after reconciliation. This is indicated by ``'Not reconciled'`` in OpenModelica,
+and by repeating the initial measured values in VDI2048. In order to compute the reconciled values of ``mFD1``, ``mFD2``, ``mFD3`` and ``mHDANZ``, which have no measurements, it is possible to consider them as variables of interest with very large half-width confidence, e.g., ``1e4``, and assign them arbitrary measured values, e.g. ``0``. The result is
 
 .. figure :: media/dataReconciliationResult_3.png
   :name: dataReconciliationResult_3
@@ -447,32 +454,33 @@ The results are displayed:
 
 The Boundary Condition Report has three sections:
 
-Overview
---------
-  a. Model file: name of the Modelica model file
-  b. Model name: name of the Modelica model
-  c. Model directory: name of the directory of the Modelica model file
-  d. Reconciled values input file: name of the csv output file produced by the data reconciliation algorithm
-  e. Reconciled covariance matrix input file: name of the correlation matrix csv file produced by the data reconciliation algorithm
-  f. Generated: date and time of the generation of the boundary condition report
+.. code-block::
+  Overview
+  --------
+    a. Model file: name of the Modelica model file
+    b. Model name: name of the Modelica model
+    c. Model directory: name of the directory of the Modelica model file
+    d. Reconciled values input file: name of the csv output file produced by the data reconciliation algorithm
+    e. Reconciled covariance matrix input file: name of the correlation matrix csv file produced by the data reconciliation algorithm
+    f. Generated: date and time of the generation of the boundary condition report
 
-Analysis
---------
-  a. Number of boundary conditions.
-  b. Number of reconciled variables.
-  c. Boundary conditions: set of the boundary conditions (i.e., the equations that compute the boundary conditions).
-  d. Intermediate equations: set of the intermediate equations (i.e., the equations that compute the intermediate variables from the variables of interest).
+  Analysis
+  --------
+    a. Number of boundary conditions.
+    b. Number of reconciled variables.
+    c. Boundary conditions: set of the boundary conditions (i.e., the equations that compute the boundary conditions).
+    d. Intermediate equations: set of the intermediate equations (i.e., the equations that compute the intermediate variables from the variables of interest).
 
-Debug log
----------
-  Log of the numerical iteration loop
+  Debug log
+  ---------
+    Log of the numerical iteration loop
 
-Results
--------
-A table with the following columns
-  a. Boundary Conditions: the names of the boundary conditions.
-  b. Values: the computed values of the boundary conditions.
-  c. Reconciled Half-width Confidence Intervals: the half-with confidence intervals for the boundary conditions.
+  Results
+  -------
+  A table with the following columns
+    a. Boundary Conditions: the names of the boundary conditions.
+    b. Values: the computed values of the boundary conditions.
+    c . Reconciled Half-width Confidence Intervals: the half-with confidence intervals for the boundary conditions.
 
 The results for the splitter are:
 
