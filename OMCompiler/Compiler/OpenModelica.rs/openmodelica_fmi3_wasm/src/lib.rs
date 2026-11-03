@@ -1601,6 +1601,10 @@ macro_rules! cs_instance_methods {
         _no_set_fmu_state_prior_to_current_point: bool,
     ) -> Result<DoStepResult, Status> {
         let mut st = self.st.borrow_mut();
+        // A failed exit-initialization-mode leaves the instance in Init.
+        if st.mode != Mode::Ready {
+            return Err(err_status("fmi3DoStep: only allowed after Initialization Mode"));
+        }
         let target = current_communication_point + communication_step_size;
         let (sim_data, t, defer) = (st.sim_data, st.read_f64(TIME_OFF), st.defer);
         let st = &mut *st;
