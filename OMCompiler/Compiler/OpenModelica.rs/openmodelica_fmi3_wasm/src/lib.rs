@@ -1760,9 +1760,6 @@ macro_rules! shared_instance_methods {
         if let Err(status) = st.update_if_needed() {
             return status;
         }
-        st.mode = Mode::Ready;
-        // Exiting Initialization Mode leaves the instance in Event Mode.
-        st.event_mode = true;
         // `run_initialization` has run `initSample`, so the schedule is readable. A
         // relation on `time` is scheduled the same way.
         if st.layout.n_samples > 0 || st.layout.n_zc > 0 {
@@ -1787,6 +1784,9 @@ macro_rules! shared_instance_methods {
                 Err(err) => return err_status(err),
             }
         }
+        st.mode = Mode::Ready;
+        // Exiting Initialization Mode leaves the instance in Event Mode.
+        st.event_mode = true;
         Status::Ok
     }
 
