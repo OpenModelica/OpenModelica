@@ -52,13 +52,7 @@ encapsulated package NBAlias
 //    - for the ODE
 //    - for jacobians/hessians (once we got hessians)
 //    - for strong components in general
-// 4. simplify only replaced equations and remove simplify2 module
-//    - probably not that trivial
-//    - Equation mapExp function that returns true if something was replaced
-//    - EquationArray map function that accumulates pointers if function returns true
-//    - simplify all equations in pointer list
-
-// 5. trivial solution a = b; a = -b; (or other cyclic sets)
+// 4. trivial solution a = b; a = -b; (or other cyclic sets)
 //    - take an equation from the set, get both crefs in it (a,b)
 //    - solve for a -> set a as known
 //    - solve the rest of the set with causalize
@@ -237,7 +231,10 @@ protected
         list<Pointer<Equation>> non_trivial_eqs, auxEquations, follow_aux;
         UnorderedSet<ComponentRef> alias_records;
         UnorderedMap<ComponentRef, EquationList> index;
+        UnorderedMap<ComponentRef, EquationPtr> changed;
         UnorderedMap<ComponentRef, Expression> follow_repl;
+        Pointer<list<Pointer<Variable>>> acc_discrete_states = Pointer.create({});
+        Pointer<list<Pointer<Variable>>> acc_previous = Pointer.create({});
 
       case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM())
         algorithm
@@ -248,10 +245,11 @@ protected
           (replacements, newEquations) := aliasCausalize(varData.unknowns, eqData.simulation, kind, eqData.uniqueIndex, "Simulation", alias_records);
           (replacements, auxEquations) := checkReplacements(replacements, exceptions(eqData), eqData.uniqueIndex);
 
-          // index the remaining equations by their variables before replacing them
+          // index all equations by their variables before replacing them
           index := UnorderedMap.new<EquationList>(ComponentRef.hash, ComponentRef.isEqual);
+          changed := UnorderedMap.new<EquationPtr>(ComponentRef.hash, ComponentRef.isEqual);
           if not UnorderedMap.isEmpty(replacements) then
-            EquationPointers.mapPtr(newEquations, function indexEquation(index = index));
+            EquationPointers.mapPtr(eqData.equations, function indexEquation(index = index));
           end if;
 
           // -----------------------------------
@@ -262,7 +260,8 @@ protected
           replaceAliasRecords(eqData, replacements);
 
           // replacements can simplify equations to new alias equations (e.g. x.re = 0.0 * L)
-          (follow_repl, follow_aux) := aliasFollowUp(index, replacements, varData.unknowns, alias_records, exceptions(eqData), kind, eqData.uniqueIndex);
+          (follow_repl, follow_aux) := aliasFollowUp(index, changed, newEquations, replacements, varData.unknowns, alias_records,
+            exceptions(eqData), kind, eqData.uniqueIndex, acc_discrete_states, acc_previous);
           if not UnorderedMap.isEmpty(follow_repl) then
             (eqData, varData) := Replacements.applySimple(eqData, varData, follow_repl);
             replaceAliasRecords(eqData, follow_repl);
@@ -271,6 +270,8 @@ protected
             end for;
           end if;
           auxEquations := listAppend(follow_aux, auxEquations);
+          // only the replaced equations have to be simplified again
+          simplifyEquations(listAppend(UnorderedMap.valueList(changed), auxEquations), acc_discrete_states, acc_previous);
           alias_vars := list(BVariable.getVarPointer(cref, sourceInfo()) for cref in UnorderedMap.keyList(replacements));
 
           // update record variability and flatten to record children
@@ -288,6 +289,8 @@ protected
           eqData.equations  := EquationPointers.compress(eqData.equations);
           eqData.continuous := EquationPointers.compress(eqData.continuous);
           eqData.discretes  := EquationPointers.compress(eqData.discretes);
+          eqData.initials   := EquationPointers.compress(eqData.initials);
+          _ := BackendDAE.updateDiscreteStates(varData, acc_discrete_states, acc_previous);
 
           // remove alias vars from all relevant arrays
           varData.unknowns    := VariablePointers.removeList(alias_vars, varData.unknowns);
@@ -797,6 +800,10 @@ protected
         EquationPointers newEquations;
         list<Pointer<Variable>> alias_vars;
         list<Pointer<Equation>> auxEquations;
+        UnorderedMap<ComponentRef, EquationList> index = UnorderedMap.new<EquationList>(ComponentRef.hash, ComponentRef.isEqual);
+        UnorderedMap<ComponentRef, EquationPtr> changed = UnorderedMap.new<EquationPtr>(ComponentRef.hash, ComponentRef.isEqual);
+        Pointer<list<Pointer<Variable>>> acc_discrete_states = Pointer.create({});
+        Pointer<list<Pointer<Variable>>> acc_previous = Pointer.create({});
 
       case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM())
         algorithm
@@ -810,12 +817,19 @@ protected
           // 4. apply replacements
           // 5. save replacements in bindings of alias variables
           // -----------------------------------
+          if not UnorderedMap.isEmpty(replacements) then
+            EquationPointers.mapPtr(eqData.equations, function indexEquation(index = index));
+          end if;
           (eqData, varData) := Replacements.applySimple(eqData, varData, replacements);
           replaceAliasRecords(eqData, replacements);
+          _ := candidateEquations(replacements, index, changed);
+          simplifyEquations(listAppend(UnorderedMap.valueList(changed), auxEquations), acc_discrete_states, acc_previous);
           alias_vars := list(BVariable.getVarPointer(cref, sourceInfo()) for cref in UnorderedMap.keyList(replacements));
 
           // save new equations and compress affected arrays(some might have been removed)
           eqData.clocked    := EquationPointers.compress(newEquations);
+          eqData.initials   := EquationPointers.compress(eqData.initials);
+          _ := BackendDAE.updateDiscreteStates(varData, acc_discrete_states, acc_previous);
 
           // remove alias variables from clocks and add to alias
           varData.clocks    := VariablePointers.removeList(alias_vars, varData.clocks);
@@ -888,12 +902,16 @@ protected
     equations that contained replaced variables are checked again, until no new alias is found.
     Returns the replacements of all follow-up runs, resolved w.r.t. each other."
     input UnorderedMap<ComponentRef, EquationList> index "variable -> equations, updated";
+    input UnorderedMap<ComponentRef, EquationPtr> changed "all equations with replaced variables, updated";
+    input EquationPointers simulation;
     input UnorderedMap<ComponentRef, Expression> replacements "already applied";
     input VariablePointers variables;
     input UnorderedSet<ComponentRef> alias_records;
     input UnorderedMap<ComponentRef, ExceptionKind> exceptionMap;
     input Partition.Kind kind;
     input Pointer<Integer> uniqueIndex;
+    input Pointer<list<Pointer<Variable>>> acc_discrete_states;
+    input Pointer<list<Pointer<Variable>>> acc_previous;
     output UnorderedMap<ComponentRef, Expression> resolved = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
     output list<Pointer<Equation>> auxEquations = {};
   protected
@@ -904,7 +922,8 @@ protected
     Boolean applied = true;
   algorithm
     while not UnorderedMap.isEmpty(repl) loop
-      candidates := candidateEquations(repl, index);
+      candidates := candidateEquations(repl, index, changed);
+      candidates := list(eq_ptr for eq_ptr guard(UnorderedMap.contains(Equation.getEqnName(eq_ptr), simulation.map)) in candidates);
       if listEmpty(candidates) then break; end if;
       equations := EquationPointers.fromList(candidates);
       if not applied then
@@ -912,6 +931,8 @@ protected
         replaceAliasRecordsEquations(equations, repl);
       end if;
       applied := false;
+      // e.g. x.re = 0.0 * L has to become x.re = 0.0 to be found
+      simplifyEquations(candidates, acc_discrete_states, acc_previous);
       EquationPointers.mapPtr(equations, function indexEquation(index = index));
       equations := EquationPointers.map(equations, function filterExceptionsEquation(acc = exceptionMap));
       (repl, _) := aliasCausalize(variables, equations, kind, uniqueIndex, "Simulation", alias_records, false);
@@ -932,6 +953,7 @@ protected
     "the remaining equations containing replaced variables or their records"
     input UnorderedMap<ComponentRef, Expression> replacements;
     input UnorderedMap<ComponentRef, EquationList> index;
+    input UnorderedMap<ComponentRef, EquationPtr> changed "all equations with replaced variables, updated";
     output list<Pointer<Equation>> candidates;
   protected
     UnorderedMap<ComponentRef, EquationPtr> eqns = UnorderedMap.new<EquationPtr>(ComponentRef.hash, ComponentRef.isEqual);
@@ -957,12 +979,28 @@ protected
       end while;
     end for;
     candidates := list(eq_ptr for eq_ptr guard(not Equation.isDummy(Pointer.access(eq_ptr))) in UnorderedMap.valueList(eqns));
+    for eq_ptr in candidates loop
+      UnorderedMap.tryAdd(Equation.getEqnName(eq_ptr), eq_ptr, changed);
+    end for;
   end candidateEquations;
+
+  function simplifyEquations
+    input list<Pointer<Equation>> equations;
+    input Pointer<list<Pointer<Variable>>> acc_discrete_states;
+    input Pointer<list<Pointer<Variable>>> acc_previous;
+  algorithm
+    for eq_ptr in equations loop
+      if not Equation.isDummy(Pointer.access(eq_ptr)) then
+        Pointer.update(eq_ptr, Equation.simplify(Pointer.access(eq_ptr), getInstanceName(), "", acc_discrete_states, acc_previous));
+      end if;
+    end for;
+  end simplifyEquations;
 
   function indexEquation
     input output Pointer<Equation> eq_ptr;
     input UnorderedMap<ComponentRef, EquationList> index;
   algorithm
+    if Equation.isDummy(Pointer.access(eq_ptr)) then return; end if;
     _ := Equation.map(Pointer.access(eq_ptr), function indexExp(eq_ptr = eq_ptr, index = index),
       SOME(function indexCref(eq_ptr = eq_ptr, index = index)));
   end indexEquation;
