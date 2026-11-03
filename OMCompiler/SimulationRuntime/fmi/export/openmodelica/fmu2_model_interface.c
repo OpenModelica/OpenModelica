@@ -210,10 +210,13 @@ fmi2Boolean isCategoryLogged(ModelInstance *comp, int categoryIndex)
 
 static void omc_assert_fmi_common(threadData_t *threadData, fmi2Status status, int categoryIndex, FILE_INFO info, const char *msg, va_list args)
 {
-  const char *str;
-  GC_vasprintf(&str, msg, args);
-  if (threadData) {
-    ModelInstance* c = (ModelInstance*) threadData->localRoots[LOCAL_ROOT_FMI_DATA];
+  ModelInstance* c = threadData ? (ModelInstance*) threadData->localRoots[LOCAL_ROOT_FMI_DATA] : NULL;
+  char str[2048];
+  if (c && !isCategoryLogged(c, categoryIndex)) {
+    return;
+  }
+  vsnprintf(str, sizeof(str), msg, args);
+  if (c) {
     if (info.lineStart) {
       FILTERED_LOG(c, status, categoryIndex, "%s:%d: %s", info.filename, info.lineStart, str)
     } else {
