@@ -191,8 +191,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   switch (solverInfo->solverMethod)
   {
   case S_SYM_SOLVER:
-  case S_EULER:
-  case S_QSS: break;
+  case S_EULER: break;
   case S_SYM_SOLVER_SSC:
   {
     allocateSymSolverSsc(solverInfo, data->modelData->nStates);
@@ -328,8 +327,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   switch (solverInfo->solverMethod)
   {
   case S_EULER:
-  case S_SYM_SOLVER:
-  case S_QSS: break;
+  case S_SYM_SOLVER: break;
   case S_SYM_SOLVER_SSC:
     freeSymSolverSsc(solverInfo);
     break;
@@ -531,8 +529,7 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     infoStreamPrint(OMC_LOG_STATS, 0, "%5ld time events", solverInfo->sampleEvents);
     messageClose(OMC_LOG_STATS);
 
-    if(S_OPTIMIZATION == solverInfo->solverMethod || /* skip solver statistics for optimization */
-       S_QSS == solverInfo->solverMethod) /* skip also for qss, since not available*/
+    if(S_OPTIMIZATION == solverInfo->solverMethod) /* skip solver statistics for optimization */
     {
     }
     else
@@ -729,20 +726,6 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
       data->localData[0]->timeValue = simInfo->stopTime;
       overwriteOldSimulationData(data);
       retVal = finishSimulation(data, threadData, &solverInfo, outputVariablesAtEnd);
-    } else if(S_QSS == solverInfo.solverMethod) {
-      /* starts the simulation main loop - special solvers */
-      sim_result.emit(&sim_result,data,threadData);
-
-      /* overwrite the whole ring-buffer with initialized values */
-      overwriteOldSimulationData(data);
-
-      infoStreamPrint(OMC_LOG_SOLVER, 0, "Start numerical integration (startTime: %g, stopTime: %g)", simInfo->startTime, simInfo->stopTime);
-      retVal = data->callback->performQSSSimulation(data, threadData, &solverInfo);
-      omc_alloc_interface.collect_a_little();
-
-      /* terminate the simulation */
-      finishSimulation(data, threadData, &solverInfo, outputVariablesAtEnd);
-      omc_alloc_interface.collect_a_little();
     } else {
       /* starts the simulation main loop - standard solver interface */
       if(omc_flag[FLAG_SOLVER_STEPS])

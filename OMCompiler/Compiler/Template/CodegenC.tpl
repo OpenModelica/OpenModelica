@@ -1347,9 +1347,6 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     #define prefixedName_performSimulation <%symbolName(modelNamePrefixStr,"performSimulation")%>
     #define prefixedName_updateContinuousSystem <%symbolName(modelNamePrefixStr,"updateContinuousSystem")%>
     #include <simulation/solver/perform_simulation.c.inc>
-
-    #define prefixedName_performQSSSimulation <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>
-    #include <simulation/solver/perform_qss_simulation.c.inc>
     >>
     %>
 
@@ -1393,7 +1390,6 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
 
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>'%>,    /* performSimulation */
-      <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>'%>,    /* performQSSSimulation */
       <% if isModelExchangeFMU then "NULL" else '<%symbolName(modelNamePrefixStr,"updateContinuousSystem")%>'%>,    /* updateContinuousSystem */
       <%symbolName(modelNamePrefixStr,"callExternalObjectDestructors")%>,    /* callExternalObjectDestructors */
       <%if intEq(varInfo.numNonLinearSystems,0) then "NULL" else symbolName(modelNamePrefixStr,"initialNonLinearSystem")%>,    /* initialNonLinearSystem */

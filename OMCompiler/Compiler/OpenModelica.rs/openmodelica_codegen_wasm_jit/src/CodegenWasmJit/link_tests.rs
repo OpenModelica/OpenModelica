@@ -290,7 +290,6 @@ fn baked_solver_flags_come_from_the_fmi_flags() {
             alarm: true,
             variable_filter: false,
             optimization: false,
-            qss: true,
         };
         assert!(simflags::check(&f, cap).is_ok(), "{json}: {baked}");
     }

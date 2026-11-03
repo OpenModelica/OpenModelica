@@ -558,7 +558,7 @@ fn master_solver(s: openmodelica_sim_meta::simflags::Solver) -> Option<Solver> {
         S::Gbode => Solver::Gbode,
         S::Euler => Solver::Euler,
         S::RungeKutta => Solver::RungeKutta,
-        S::SymSolver | S::SymSolverSsc | S::Qss | S::Optimization => return None,
+        S::SymSolver | S::SymSolverSsc | S::Optimization => return None,
     })
 }
 

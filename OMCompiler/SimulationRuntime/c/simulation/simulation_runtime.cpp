@@ -90,10 +90,6 @@
 #include "simulation/solver/dae_mode.h"
 #include "dataReconciliation/dataReconciliation.h"
 
-#ifdef _OMC_QSS_LIB
-  #include "solver_qss/solver_qss.h"
-#endif
-
 using namespace std;
 
 #ifndef NO_INTERACTIVE_DEPENDENCY
@@ -793,7 +789,6 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
   {
     case S_SYM_SOLVER:
     case S_SYM_SOLVER_SSC:
-    case S_QSS:
     warningStreamPrint(OMC_LOG_STDOUT, 0, "Integration method '%s' is deprecated and will be removed in a future version of OpenModelica.",
       SOLVER_METHOD_NAME[solverID]);
     break;
@@ -831,15 +826,7 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
     retVal = 1;
   } else {
     infoStreamPrint(OMC_LOG_SOLVER, 0, "recognized solver: %s", SOLVER_METHOD_NAME[solverID]);
-    /* special solvers */
-#ifdef _OMC_QSS_LIB
-    if(S_QSS == solverID) {
-      retVal = qss_main(argc, argv, simData->simulationInfo->startTime,
-                        simData->simulationInfo->stopTime, simData->simulationInfo->stepSize,
-                        simData->simulationInfo->numSteps, simData->simulationInfo->tolerance, 3);
-    } else /* standard solver interface */
-#endif
-      retVal = solver_main(simData, threadData, init_initMethod.c_str(), init_file.c_str(), init_time, solverID, outVars, argv_0);
+    retVal = solver_main(simData, threadData, init_initMethod.c_str(), init_file.c_str(), init_time, solverID, outVars, argv_0);
   }
 
   OMC_CATCH_INTERNAL(mmc_jumper)

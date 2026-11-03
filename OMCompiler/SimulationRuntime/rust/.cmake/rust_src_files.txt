@@ -112,7 +112,6 @@ openmodelica_sim_meta/src/optimization/model.rs
 openmodelica_sim_meta/src/optimization/setup.rs
 openmodelica_sim_meta/src/parmod.rs
 openmodelica_sim_meta/src/profiling.rs
-openmodelica_sim_meta/src/qss.rs
 openmodelica_sim_meta/src/resize.rs
 openmodelica_sim_meta/src/result.rs
 openmodelica_sim_meta/src/rtclock.rs

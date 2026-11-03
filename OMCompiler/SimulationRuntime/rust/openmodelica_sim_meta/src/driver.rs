@@ -5113,7 +5113,6 @@ pub(crate) fn effective_method<'a>(method: &'a str) -> &'a str {
         Some(crate::simflags::Solver::RungeKutta) => "rungekutta",
         Some(crate::simflags::Solver::SymSolver) => "symSolver",
         Some(crate::simflags::Solver::SymSolverSsc) => "symSolverSsc",
-        Some(crate::simflags::Solver::Qss) => "qss",
         Some(crate::simflags::Solver::Optimization) => "optimization",
         _ => method,
     }
@@ -5145,7 +5144,7 @@ fn is_dassl(method: &str) -> bool {
 /// with a symbolic Jacobian and `""` the dassl default.
 fn check_method(method: &str) -> bool {
     is_dassl(method)
-        || matches!(method, "euler" | "rungekutta" | "qss" | "symSolver" | "symSolverSsc")
+        || matches!(method, "euler" | "rungekutta" | "symSolver" | "symSolverSsc")
         || (matches!(method, "cvode" | "ida") && cfg!(sundials))
         // `optimize()`; `drive` handles it before the integrators, and reports
         // C's "Ipopt is needed but not available." when it was not linked.
@@ -5310,11 +5309,6 @@ fn make_driver_resolved(
     if is_dassl(method) {
         set_jacobian_method(jac_a_avail, true);
     }
-    // C's `solver_main` runs QSS from its own branch: it has no event handling and
-    // no output grid, so it never reaches the standard solver interface.
-    if method == "qss" {
-        return Ok((Box::new(crate::qss::Qss::new(e, model, sim_data)?), "qss"));
-    }
     // DAE mode always takes the `SolverCore` path: the consistent-restart its
     // discrete update needs lives there.
     // A clocked partition is an event source too, and only `EventsDriver` has the
@@ -5371,9 +5365,9 @@ const NO_SYM_SOLVER: &str = "the model was not translated with \
 /// so this is only reached by a `method=` the model was compiled with.
 const UNSUPPORTED_METHOD: &str = if cfg!(sundials) {
     "unsupported integration method (supported: `dassl`, `cvode`, `ida`, `euler`, \
-     `rungekutta`, `qss`)"
+     `rungekutta`)"
 } else {
-    "unsupported integration method (supported: `dassl`, `euler`, `rungekutta`, `qss`)"
+    "unsupported integration method (supported: `dassl`, `euler`, `rungekutta`)"
 };
 
 /// Free external objects (so repeated runs don't leak) and read back parameter
@@ -10060,11 +10054,6 @@ impl CsDriver {
         daskr::auxiliary::xsetf(0);
         let layout = &model.layout;
         let method = resolve_solver_method(model.cs_method(), layout.dae_mode())?;
-        // QSS runs a whole simulation of its own; C's `solver_main_step` throws
-        // "Unhandled case" for it rather than stepping it.
-        if method == "qss" {
-            return Err("method=\"qss\" cannot step to a communication point");
-        }
         store_relations(e, sim_data, layout)?;
         let samp = Samples::load(e, sim_data, layout, t)?;
         let sync = match sync {

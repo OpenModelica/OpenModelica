@@ -54,7 +54,6 @@ pub mod parmod;
 /// `+profiling`, whose files go out through [`files`] like every other side file,
 /// so an artifact's in-wasm driver reports as the host does.
 pub mod profiling;
-pub(crate) mod qss;
 #[cfg(feature = "result-files")]
 pub mod result;
 pub mod rtclock;
