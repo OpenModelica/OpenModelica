@@ -233,6 +233,7 @@ protected
         UnorderedMap<ComponentRef, EquationList> index;
         UnorderedMap<ComponentRef, EquationPtr> changed;
         UnorderedMap<ComponentRef, Expression> follow_repl;
+        EquationPointers aux_eqns;
         Pointer<list<Pointer<Variable>>> acc_discrete_states = Pointer.create({});
         Pointer<list<Pointer<Variable>>> acc_previous = Pointer.create({});
 
@@ -262,14 +263,18 @@ protected
           // replacements can simplify equations to new alias equations (e.g. x.re = 0.0 * L)
           (follow_repl, follow_aux) := aliasFollowUp(index, changed, newEquations, replacements, varData.unknowns, alias_records,
             exceptions(eqData), kind, eqData.uniqueIndex, acc_discrete_states, acc_previous);
+          auxEquations := listAppend(follow_aux, auxEquations);
           if not UnorderedMap.isEmpty(follow_repl) then
             (eqData, varData) := Replacements.applySimple(eqData, varData, follow_repl);
             replaceAliasRecords(eqData, follow_repl);
+            // the auxiliary equations are not part of eqData yet
+            aux_eqns := EquationPointers.fromList(auxEquations);
+            _ := EquationPointers.mapExp(aux_eqns, function Replacements.applySimpleExp(replacements = follow_repl), SOME(function Replacements.applySimpleCref(replacements = follow_repl)));
+            replaceAliasRecordsEquations(aux_eqns, follow_repl);
             for cref in UnorderedMap.keyList(follow_repl) loop
               UnorderedMap.add(cref, UnorderedMap.getOrFail(cref, follow_repl), replacements);
             end for;
           end if;
-          auxEquations := listAppend(follow_aux, auxEquations);
           // only the replaced equations have to be simplified again
           simplifyEquations(listAppend(UnorderedMap.valueList(changed), auxEquations), acc_discrete_states, acc_previous);
           alias_vars := list(BVariable.getVarPointer(cref, sourceInfo()) for cref in UnorderedMap.keyList(replacements));
@@ -993,6 +998,10 @@ protected
       if not Equation.isDummy(Pointer.access(eq_ptr)) then
         Pointer.update(eq_ptr, Equation.simplify(Pointer.access(eq_ptr), getInstanceName(), "", acc_discrete_states, acc_previous));
       end if;
+    end for;
+    // lhs of removed when-equations are parameters for the following alias runs
+    for var in Pointer.access(acc_discrete_states) loop
+      BVariable.setVarKind(var, VariableKind.PARAMETER(NONE()));
     end for;
   end simplifyEquations;
 

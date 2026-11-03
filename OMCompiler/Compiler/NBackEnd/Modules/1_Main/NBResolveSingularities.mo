@@ -1109,6 +1109,8 @@ protected
     () := match adj
       case Adjacency.Matrix.FINAL() algorithm
         for i in 1:arrayLength(adj.mapping.var_AtS) loop
+          // all elements of a state have a derivative, even if they are not referenced
+          if BVariable.isState(VariablePointers.getVarAt(candidates, i)) then continue; end if;
           (start, size) := adj.mapping.var_AtS[i];
           set := UnorderedSet.new(Util.id, intEq);
           for j in start:start + size - 1 loop

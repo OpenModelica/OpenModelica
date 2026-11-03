@@ -1049,7 +1049,10 @@ FILE * openSparsePatternFile(DATA* data, threadData_t *threadData, const char* f
   }
   pFile = omc_fopen(fullPath, "rb");
   if (pFile == NULL) {
-    throwStreamPrint(threadData, "Could not open sparsity pattern file %s.", fullPath);
+    char path[2048];
+    snprintf(path, sizeof(path), "%s", fullPath);
+    omc_rc_release((void*) fullPath);
+    throwStreamPrint(threadData, "Could not open sparsity pattern file %s.", path);
   }
   omc_rc_release((void*) fullPath);
   return pFile;

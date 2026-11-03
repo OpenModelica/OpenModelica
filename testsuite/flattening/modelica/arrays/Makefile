@@ -108,6 +108,7 @@ BlockMatrix2.mo \
 BlockMatrix3.mo \
 BlockMatrix.mo \
 BooleanArrayEq.mo \
+CheckModelUnknownDim1.mos \
 Concat3.mo \
 ConstructFunc.mo \
 DiscreteVectorStateSpace.mo \

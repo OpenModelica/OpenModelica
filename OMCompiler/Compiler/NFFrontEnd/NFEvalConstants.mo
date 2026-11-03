@@ -235,8 +235,7 @@ protected
   Variable var = UnorderedMap.getOrFail(name, vars);
 algorithm
   dep_set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-  Expression.fold(Binding.getTypedExp(var.binding),
-    function collectBindingDependency(vars = vars, deps = dep_set), 0);
+  collectBindingDependency(Binding.getTypedExp(var.binding), vars, dep_set);
   deps := UnorderedSet.toList(dep_set);
 end bindingDependencies;
 
@@ -244,7 +243,6 @@ function collectBindingDependency
   input Expression exp;
   input UnorderedMap<ComponentRef, Variable> vars;
   input UnorderedSet<ComponentRef> deps;
-  input output Integer dummy;
 protected
   ComponentRef cref;
 algorithm
@@ -256,10 +254,25 @@ algorithm
         if UnorderedMap.contains(cref, vars) then
           UnorderedSet.add(cref, deps);
         end if;
+
+        Expression.applyShallow(exp, function collectBindingDependency(vars = vars, deps = deps));
       then
         ();
 
-    else ();
+    // size(x, i) depends only on the dimensions of x, not on its value.
+    case Expression.SIZE()
+      algorithm
+        if isSome(exp.dimIndex) then
+          collectBindingDependency(Util.getOption(exp.dimIndex), vars, deps);
+        end if;
+      then
+        ();
+
+    else
+      algorithm
+        Expression.applyShallow(exp, function collectBindingDependency(vars = vars, deps = deps));
+      then
+        ();
   end match;
 end collectBindingDependency;
 

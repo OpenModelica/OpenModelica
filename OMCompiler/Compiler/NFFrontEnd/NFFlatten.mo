@@ -1035,8 +1035,13 @@ algorithm
     (vars, sections) := flattenClass(cls, pre, visibility, opt_binding, vars, sections, deletedVars, settings);
   elseif settings.scalarize then
     dims := list(flattenDimension(d, pre, info) for d in dims);
-    verifyDimensions(dims, node);
-    (vars, sections) := flattenArray(cls, dims, pre, visibility, opt_binding, vars, sections, {}, deletedVars, info, settings);
+
+    if settings.relaxedErrorChecking and not List.all(dims, function Dimension.isKnown(allowExp = false)) then
+      (vars, sections) := vectorizeArray(cls, ty, dims, pre, visibility, opt_binding, vars, sections, {}, deletedVars, settings);
+    else
+      verifyDimensions(dims, node);
+      (vars, sections) := flattenArray(cls, dims, pre, visibility, opt_binding, vars, sections, {}, deletedVars, info, settings);
+    end if;
   else
     (vars, sections) := vectorizeArray(cls, ty, dims, pre, visibility, opt_binding, vars, sections, {}, deletedVars, settings);
   end if;

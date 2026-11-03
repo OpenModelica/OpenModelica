@@ -26,6 +26,7 @@ AliasCyclic5.mos \
 AliasCyclic6.mos \
 AliasCyclic7.mos \
 AliasCyclic8.mos \
+AliasFollowUpWhen.mos \
 AliasStartPriority.mos \
 AliasArrayStartParameter.mos \
 RecordFieldConstantAlias.mos \
