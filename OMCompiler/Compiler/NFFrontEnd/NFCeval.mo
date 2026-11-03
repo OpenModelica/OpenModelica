@@ -2050,8 +2050,9 @@ protected
 algorithm
   exp := match c
     local
+      Function fn;
 
-    case Call.TYPED_CALL()
+    case Call.TYPED_CALL(fn = fn) guard not Function.isExplicitlyImpure(fn)
       algorithm
         c.arguments := list(evalExp(arg, target) for arg in c.arguments);
       then
