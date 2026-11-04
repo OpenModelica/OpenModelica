@@ -970,6 +970,82 @@ algorithm
   supported := target == "C" or target == "wasm-jit" or target == "wasm";
 end operatorEventsSupported;
 
+protected function isParameterExp
+  "Whether the expression only depends on parameters and constants."
+  input DAE.Exp exp;
+  input BackendDAE.Variables globalKnownVars;
+  output Boolean isParameter;
+algorithm
+  (_, (_, isParameter)) := Expression.traverseExpTopDown(exp, isParameterExpWork, (globalKnownVars, true));
+end isParameterExp;
+
+protected function isParameterExpWork
+  input DAE.Exp inExp;
+  input tuple<BackendDAE.Variables, Boolean> inTpl;
+  output DAE.Exp outExp = inExp;
+  output Boolean cont;
+  output tuple<BackendDAE.Variables, Boolean> outTpl;
+protected
+  BackendDAE.Variables globalKnownVars;
+algorithm
+  (globalKnownVars, cont) := inTpl;
+  if cont then
+    cont := matchcontinue inExp
+      local
+        BackendDAE.Var var;
+      case DAE.CREF()
+        algorithm
+          (var::_, _) := BackendVariable.getVar(inExp.componentRef, globalKnownVars);
+        then BackendVariable.isParamOrConstant(var);
+      case DAE.CREF() then false;
+      case DAE.CALL() then false;
+      case DAE.REDUCTION() then false;
+      else true;
+    end matchcontinue;
+  end if;
+  outTpl := (globalKnownVars, cont);
+end isParameterExpWork;
+
+protected function collectZCGuarded
+  "Collects the zero crossings of a branch of an if-expression and adds them
+   with the condition of the branch. The relations stay unchanged."
+  input DAE.Exp branch;
+  input DAE.Exp condition;
+  output DAE.Exp outBranch;
+  input output ZCArgType tpl;
+protected
+  BackendDAE.ZeroCrossingSet zeroCrossings, relations, samples;
+  BackendDAE.ZeroCrossingSet branchZeroCrossings = ZeroCrossings.new();
+  Integer numMathFunctions;
+  tuple<Integer, BackendDAE.Variables, BackendDAE.Variables> tp1;
+  Option<list<BackendDAE.SimIterator>> iters;
+algorithm
+  ((zeroCrossings, relations, samples, numMathFunctions), tp1, iters) := tpl;
+  (outBranch, ((_, relations, samples, numMathFunctions), tp1, iters)) := Expression.traverseExpTopDown(branch, collectZC, ((branchZeroCrossings, relations, samples, numMathFunctions), tp1, iters));
+  for zc in ZeroCrossings.toList(branchZeroCrossings) loop
+    // the zero crossing without guard already triggers all events
+    if not ZeroCrossings.contains(zeroCrossings, zc) then
+      ZeroCrossings.add(zeroCrossings, guardZeroCrossing(zc, condition));
+    end if;
+  end for;
+  tpl := ((zeroCrossings, relations, samples, numMathFunctions), tp1, iters);
+end collectZCGuarded;
+
+protected function guardZeroCrossing
+  input output BackendDAE.ZeroCrossing zc;
+  input DAE.Exp condition;
+algorithm
+  zc.relation_ := match zc.relation_
+    // these keep the state of delay() and spatialDistribution() up to date
+    case DAE.RELATION(exp1=DAE.CALL(path=Absyn.IDENT(name="$delayZeroCrossing"))) then zc.relation_;
+    case DAE.RELATION(exp1=DAE.CALL(path=Absyn.IDENT(name="$spatialDistributionZeroCrossing"))) then zc.relation_;
+    case DAE.RELATION() then DAE.LBINARY(condition, DAE.AND(DAE.T_BOOL_DEFAULT), zc.relation_);
+    case DAE.LBINARY() then DAE.LBINARY(condition, DAE.AND(DAE.T_BOOL_DEFAULT), zc.relation_);
+    case DAE.LUNARY() then DAE.LBINARY(condition, DAE.AND(DAE.T_BOOL_DEFAULT), zc.relation_);
+    else zc.relation_;
+  end match;
+end guardZeroCrossing;
+
 protected function collectZC
   "Collects zero crossings in equations"
   input DAE.Exp inExp;
@@ -1063,6 +1139,14 @@ algorithm
         end if;
 
     then (DAE.CALL(Absyn.IDENT(name="spatialDistribution"), {index, in0, in1, x, dir, initPnts, initVals}, attr), true, ((zeroCrossings, relations, samples, numMathFunctions), tp1, iters));
+
+    // a parameter selects the branch, so only the zero crossings of the selected branch may trigger events
+    case (DAE.IFEXP(expCond=e, expThen=e1, expElse=e2), (_, (_, _, globalKnownVars), _), _)
+      guard isParameterExp(e, globalKnownVars)
+      algorithm
+        (e_1, tpl) := collectZCGuarded(e1, e, inTpl);
+        (e_2, tpl) := collectZCGuarded(e2, DAE.LUNARY(DAE.NOT(DAE.T_BOOL_DEFAULT), e), tpl);
+    then (DAE.IFEXP(e, e_1, e_2), false, tpl);
 
     // function with discrete expressions generate no zerocrossing
     case (DAE.LUNARY(exp=e1), ((_, relations, _, _), (_, vars, globalKnownVars), _), _)
