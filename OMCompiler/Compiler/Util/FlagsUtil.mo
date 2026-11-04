@@ -450,7 +450,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.FMU_WITH_FMI2,
   Flags.INSTALL_MISSING_PACKAGES,
   Flags.WARN_NON_STANDARD_MODELICA,
-  Flags.MAX_ARRAY_EXPANSION
+  Flags.MAX_ARRAY_EXPANSION,
+  Flags.INPUT_DERIVATIVES
 };
 
 public function new

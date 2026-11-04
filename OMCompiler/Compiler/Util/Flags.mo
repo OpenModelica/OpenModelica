@@ -1501,6 +1501,14 @@ constant ConfigFlag MAX_ARRAY_EXPANSION = CONFIG_FLAG(177, "maxArrayExpansion",
   NONE(), EXTERNAL(), INT_FLAG(256), NONE(),
   "Sets the maximum array size that the new backend expands into elements (default 256).");
 
+constant ConfigFlag INPUT_DERIVATIVES = CONFIG_FLAG(178, "inputDerivatives",
+  NONE(), EXTERNAL(), STRING_FLAG("error"),
+  SOME(STRING_DESC_OPTION({
+    ("error", "Stop the translation with an error that lists the derivatives of inputs that the model needs."),
+    ("zero", "Take the derivatives of inputs that index reduction and alias elimination need as zero, without a check (the old behavior). der(u) in the model is still an error.")
+    })),
+  "Sets how derivatives of top-level inputs are treated, e.g. der(u) in the model or from index reduction.");
+
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
   input Boolean initialize = true;
