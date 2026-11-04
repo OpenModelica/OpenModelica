@@ -197,8 +197,8 @@ void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* data, OptD
 static inline void local_jac_struct(DATA * data, OptDataDim * dim, OptDataStructure *s, const modelica_real * const vnom){
   int sizeCols;
   int maxColors;
-  int i,ii, j, l, index, tmp_index, tmpnJ, h_index;
-  unsigned int* lindex, *cC, *pindex;
+  int i,ii, ci, j, l, index, tmp_index, tmpnJ, h_index;
+  unsigned int* lindex, *pindex, *c_lindex, *c_pindex;
 
   s->lindex = (unsigned int**)malloc(5*sizeof(unsigned int*));
   s->seedVec = (modelica_real ***)malloc(5*sizeof(modelica_real**));
@@ -220,8 +220,9 @@ static inline void local_jac_struct(DATA * data, OptDataDim * dim, OptDataStruct
       /******************************/
       sizeCols = data->simulationInfo->analyticJacobians[h_index].sizeCols;
       maxColors = data->simulationInfo->analyticJacobians[h_index].sparsePattern->maxColors + 1;
-      cC = (unsigned int*) data->simulationInfo->analyticJacobians[h_index].sparsePattern->colorCols;
-      lindex = (unsigned int*) data->simulationInfo->analyticJacobians[h_index].sparsePattern->leadindex;
+      c_lindex = data->simulationInfo->analyticJacobians[h_index].sparsePattern->color_leadindex;
+      c_pindex = data->simulationInfo->analyticJacobians[h_index].sparsePattern->color_index;
+      lindex = data->simulationInfo->analyticJacobians[h_index].sparsePattern->leadindex;
       pindex = data->simulationInfo->analyticJacobians[h_index].sparsePattern->index;
 
       s->seedVec[index] = (modelica_real **)malloc((maxColors)*sizeof(modelica_real*));
@@ -229,13 +230,12 @@ static inline void local_jac_struct(DATA * data, OptDataDim * dim, OptDataStruct
       if(sizeCols > 0){
         for(ii = 1; ii < maxColors; ++ii){
           s->seedVec[index][ii] = (modelica_real*)calloc(sizeCols, sizeof(modelica_real));
-          for(i = 0; i < sizeCols; i++){
-            if(cC[i] == ii){
-              s->seedVec[index][ii][i] = vnom[i];
-              for(j = lindex[i]; j < lindex[i + 1]; ++j){
-                l = pindex[j];
-                s->J[tmp_index][l][i] = (modelica_boolean)1;
-              }
+          for (ci = c_lindex[ii-1]; ci < c_lindex[ii]; ci++) {
+            i = c_pindex[ci];
+            s->seedVec[index][ii][i] = vnom[i];
+            for(j = lindex[i]; j < lindex[i + 1]; ++j){
+              l = pindex[j];
+              s->J[tmp_index][l][i] = (modelica_boolean)1;
             }
           }
         }

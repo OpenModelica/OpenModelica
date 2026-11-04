@@ -111,18 +111,18 @@ static void colorSparsePattern(SPARSE_PATTERN *pattern, int sizeRows, int sizeCo
 
 static SPARSE_PATTERN *copySparsePattern(const SPARSE_PATTERN *source, int size, modelica_boolean copyColoring)
 {
-  SPARSE_PATTERN *copy = allocSparsePattern(size, source->nnz, size);
+  SPARSE_PATTERN *copy = allocSparsePattern(size, source->nnz, copyColoring ? source->maxColors : 0);
   memcpy(copy->leadindex, source->leadindex, (size + 1) * sizeof(unsigned int));
   memcpy(copy->index, source->index, source->nnz * sizeof(unsigned int));
   if (copyColoring)
   {
     memcpy(copy->colorCols, source->colorCols, size * sizeof(unsigned int));
-    copy->maxColors = source->maxColors;
-  }
-  else
-  {
+    memcpy(copy->color_leadindex, source->color_leadindex, (source->maxColors + 1) * sizeof(unsigned int));
+    memcpy(copy->color_index, source->color_index, size * sizeof(unsigned int));
+  } else {
     memset(copy->colorCols, 0, size * sizeof(unsigned int));
-    copy->maxColors = 0;
+    memset(copy->color_leadindex, 0, (source->maxColors + 1) * sizeof(unsigned int));
+    memset(copy->color_index, 0, size * sizeof(unsigned int));
   }
   return copy;
 }
@@ -226,6 +226,8 @@ static void reduceSparsePattern(const SPARSE_PATTERN *source, int sourceSize, SP
   }
   target->nnz = targetNz;
   memset(target->colorCols, 0, targetSize * sizeof(unsigned int));
+  memset(target->color_leadindex, 0, (targetSize + 1) * sizeof(unsigned int));
+  memset(target->color_index, 0, targetSize * sizeof(unsigned int));
   target->maxColors = 0;
 }
 

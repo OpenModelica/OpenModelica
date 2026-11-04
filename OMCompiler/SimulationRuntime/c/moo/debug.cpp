@@ -101,14 +101,17 @@ void print_jacobian_sparsity(const JACOBIAN* jac, bool print_pattern, const char
         infoStreamPrint(OMC_LOG_MOO, 0, "%s", oss.str().c_str());
     }
 
-    // colorCols
+    // colors
     {
-        std::ostringstream oss;
-        oss << "colorCols: ";
-        for (unsigned int i = 0; i < sp->maxColors; ++i) {
-            oss << (sp->colorCols ? sp->colorCols[i] : 0) << " ";
+        infoStreamPrint(OMC_LOG_MOO, 1, "colors:");
+        for (unsigned int color = 0; color < sp->maxColors; ++color) {
+            std::ostringstream oss;
+            for (unsigned int i = sp->color_leadindex[color]; i < sp->color_leadindex[color+1]; i++) {
+                oss << sp->color_index[color] << " ";
+            }
+            infoStreamPrint(OMC_LOG_MOO, 0, "%u: %s", color, oss.str().c_str());
         }
-        infoStreamPrint(OMC_LOG_MOO, 0, "%s", oss.str().c_str());
+        messageClose(OMC_LOG_MOO);
     }
 
     if (!print_pattern) {

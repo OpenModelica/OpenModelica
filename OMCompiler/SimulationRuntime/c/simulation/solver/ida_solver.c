@@ -1354,7 +1354,7 @@ static int jacColoredNumericalDense(double currentTime, double cj, N_Vector yy, 
   double delta_hhh;
   double *abstol = N_VGetArrayPointer_Serial(idaData->absoluteTolerance);
   double rtol = data->simulationInfo->tolerance;
-  long int i,j,l,ii;
+  long int i,j,l,ii, ci;
 
   double currentStep;
 
@@ -1375,49 +1375,44 @@ static int jacColoredNumericalDense(double currentTime, double cj, N_Vector yy, 
 
   setContext(data, currentTime, CONTEXT_JACOBIAN);
 
-  for(i = 0; i < sparsePattern->maxColors; i++)
-  {
-    for(ii=0; ii < idaData->N; ii++)
-    {
-      if(sparsePattern->colorCols[ii]-1 == i)
-      {
-        delta_hhh = currentStep * yprime[ii];
-        delta_hh[ii] = numericalJacobianStep(states[ii], delta_hhh, rtol*fabs(states[ii]) + abstol[ii],
-                                             idaData->jacNominalFactor * idaData->nominal[ii]);
-        delta_hh[ii] = (delta_hhh >= 0 ? delta_hh[ii] : -delta_hh[ii]);
-        delta_hh[ii] = (states[ii] + delta_hh[ii]) - states[ii];      // Due to floating-point arithmetic rounding errors can result in: delta_hh[ii] != (states[ii] + delta_hh[ii]) - states[ii]
-        ysave[ii] = states[ii];
-        states[ii] += delta_hh[ii];
+  for(i = 0; i < sparsePattern->maxColors; i++) {
+    for (ci = sparsePattern->color_leadindex[i]; ci < sparsePattern->color_leadindex[i+1]; ci++) {
+      ii = sparsePattern->color_index[ci];
 
-        if (idaData->daeMode){
-          ypsave[ii] = yprime[ii];
-          yprime[ii] += cj * delta_hh[ii];
-        }
+      delta_hhh = currentStep * yprime[ii];
+      delta_hh[ii] = numericalJacobianStep(states[ii], delta_hhh, rtol*fabs(states[ii]) + abstol[ii],
+                                            idaData->jacNominalFactor * idaData->nominal[ii]);
+      delta_hh[ii] = (delta_hhh >= 0 ? delta_hh[ii] : -delta_hh[ii]);
+      delta_hh[ii] = (states[ii] + delta_hh[ii]) - states[ii];      // Due to floating-point arithmetic rounding errors can result in: delta_hh[ii] != (states[ii] + delta_hh[ii]) - states[ii]
+      ysave[ii] = states[ii];
+      states[ii] += delta_hh[ii];
 
-        delta_hh[ii] = 1. / delta_hh[ii];
+      if (idaData->daeMode) {
+        ypsave[ii] = yprime[ii];
+        yprime[ii] += cj * delta_hh[ii];
       }
+
+      delta_hh[ii] = 1. / delta_hh[ii];
     }
 
     idaData->residualFunction(currentTime, yy, yp, idaData->newdelta, (void*) idaData);   /* Points to residualFunctionIDA */
 
     increaseJacContext(data);
 
-    for(ii = 0; ii < idaData->N; ii++)
-    {
-      if(sparsePattern->colorCols[ii]-1 == i)
+    for (ci = sparsePattern->color_leadindex[i]; ci < sparsePattern->color_leadindex[i+1]; ci++) {
+      ii = sparsePattern->color_index[ci];
+
+      j = sparsePattern->leadindex[ii];
+      while(j < sparsePattern->leadindex[ii+1])
       {
-        j = sparsePattern->leadindex[ii];
-        while(j < sparsePattern->leadindex[ii+1])
-        {
-          l  =  sparsePattern->index[j];
-          SM_ELEMENT_D(Jac, l, ii) = (newdelta[l] - delta[l]) * delta_hh[ii];
-          j++;
-        };
-        states[ii] = ysave[ii];
-        if (idaData->daeMode)
-        {
-          yprime[ii] = ypsave[ii];
-        }
+        l  =  sparsePattern->index[j];
+        SM_ELEMENT_D(Jac, l, ii) = (newdelta[l] - delta[l]) * delta_hh[ii];
+        j++;
+      };
+      states[ii] = ysave[ii];
+      if (idaData->daeMode)
+      {
+        yprime[ii] = ypsave[ii];
       }
     }
   }
@@ -1558,7 +1553,7 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
   double *abstol = N_VGetArrayPointer_Serial(idaData->absoluteTolerance);
   double rtol = data->simulationInfo->tolerance;
 
-  long int i,j,ii;
+  long int i,j,ii, ci;
   int nth = 0;
   int disBackup = idaData->useScaling;
 
@@ -1593,27 +1588,24 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
     idaReScaleData(idaData);
   }
 
-  for(i = 0; i < sparsePattern->maxColors; i++)
-  {
-    for(ii=0; ii < idaData->N; ii++)
-    {
-      if(sparsePattern->colorCols[ii]-1 == i)
-      {
-        delta_hhh = currentStep * yprime[ii];
-        delta_hh[ii] = numericalJacobianStep(states[ii], delta_hhh, rtol*fabs(states[ii]) + abstol[ii],
-                                             idaData->jacNominalFactor * idaData->nominal[ii]);
-        delta_hh[ii] = (delta_hhh >= 0 ? delta_hh[ii] : -delta_hh[ii]);
-        delta_hh[ii] = (states[ii] + delta_hh[ii]) - states[ii];     // Due to floating-point arithmetic rounding errors can result in: delta_hh[ii] != (states[ii] + delta_hh[ii]) - states[ii]
-        ysave[ii] = states[ii];
-        states[ii] += delta_hh[ii];
+  for(i = 0; i < sparsePattern->maxColors; i++) {
+    for (ci = sparsePattern->color_leadindex[i]; ci < sparsePattern->color_leadindex[i+1]; ci++) {
+      ii = sparsePattern->color_index[ci];
 
-        if (idaData->daeMode){
-          ypsave[ii] = yprime[ii];
-          yprime[ii] += cj * delta_hh[ii];
-        }
+      delta_hhh = currentStep * yprime[ii];
+      delta_hh[ii] = numericalJacobianStep(states[ii], delta_hhh, rtol*fabs(states[ii]) + abstol[ii],
+                                            idaData->jacNominalFactor * idaData->nominal[ii]);
+      delta_hh[ii] = (delta_hhh >= 0 ? delta_hh[ii] : -delta_hh[ii]);
+      delta_hh[ii] = (states[ii] + delta_hh[ii]) - states[ii];     // Due to floating-point arithmetic rounding errors can result in: delta_hh[ii] != (states[ii] + delta_hh[ii]) - states[ii]
+      ysave[ii] = states[ii];
+      states[ii] += delta_hh[ii];
 
-        delta_hh[ii] = 1. / delta_hh[ii];
+      if (idaData->daeMode) {
+        ypsave[ii] = yprime[ii];
+        yprime[ii] += cj * delta_hh[ii];
       }
+
+      delta_hh[ii] = 1. / delta_hh[ii];
     }
     idaData->useScaling = FALSE;
     idaData->residualFunction(currentTime, yy, yp, idaData->newdelta, userData);  /* Points to residualFunctionIDA */
@@ -1621,27 +1613,25 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
 
     increaseJacContext(data);
 
-    for(ii = 0; ii < idaData->N; ii++)
-    {
-      if(sparsePattern->colorCols[ii]-1 == i)
+    for (ci = sparsePattern->color_leadindex[i]; ci < sparsePattern->color_leadindex[i+1]; ci++) {
+      ii = sparsePattern->color_index[ci];
+
+      nth = sparsePattern->leadindex[ii];
+      while(nth < sparsePattern->leadindex[ii+1])
       {
-        nth = sparsePattern->leadindex[ii];
-        while(nth < sparsePattern->leadindex[ii+1])
-        {
-          j  =  sparsePattern->index[nth];
-          /* use row scaling for jacobian elements */
-          if (!idaData->useScaling || !omc_flag[FLAG_IDA_SCALING]){
-            setJacElementSundialsSparse(j, ii, nth, (newdelta[j] - delta[j]) * delta_hh[ii], Jac, SM_CONTENT_S(Jac)->M);
-          } else {
-            setJacElementSundialsSparse(j, ii, nth, ((newdelta[j] - delta[j]) * delta_hh[ii]) / idaData->resScale[j] * idaData->yScale[ii], Jac, SM_CONTENT_S(Jac)->M);
-          }
-          nth++;
-        };
-        states[ii] = ysave[ii];
-        if (idaData->daeMode)
-        {
-          yprime[ii] = ypsave[ii];
+        j  =  sparsePattern->index[nth];
+        /* use row scaling for jacobian elements */
+        if (!idaData->useScaling || !omc_flag[FLAG_IDA_SCALING]){
+          setJacElementSundialsSparse(j, ii, nth, (newdelta[j] - delta[j]) * delta_hh[ii], Jac, SM_CONTENT_S(Jac)->M);
+        } else {
+          setJacElementSundialsSparse(j, ii, nth, ((newdelta[j] - delta[j]) * delta_hh[ii]) / idaData->resScale[j] * idaData->yScale[ii], Jac, SM_CONTENT_S(Jac)->M);
         }
+        nth++;
+      };
+      states[ii] = ysave[ii];
+      if (idaData->daeMode)
+      {
+        yprime[ii] = ypsave[ii];
       }
     }
   }
