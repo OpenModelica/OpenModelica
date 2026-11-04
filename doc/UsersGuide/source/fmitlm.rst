@@ -19,7 +19,7 @@ FMI Standards
    * - Version
      - Support in OpenModelica
    * - `1.0.1 <https://fmi-standard.org/assets/releases/FMI_for_ModelExchange_v1.0.1.pdf>`_
-     - Deprecated
+     - Deprecated, will be removed after OpenModelica 1.28.0 is released
    * - `2.0.5 <https://github.com/modelica/fmi-standard/releases/download/v2.0.5/FMI-Specification-2.0.5.pdf>`_
      - Supported
    * - `3.0.2 <https://fmi-standard.org/docs/3.0.2/>`_
@@ -187,8 +187,10 @@ If there are some errors while creating the FMU, they will be shown in the comma
 window and logged in this log file as well.
 
 By default an FMU that can be used for both Model Exchange and Co-Simulation is generated.
-We support FMI 1.0 (deprecated) and FMI 2.0 for Model Exchange and Co-Simulation FMUs,
+We support FMI 2.0 for Model Exchange and Co-Simulation FMUs,
 with experimental support for FMI 3.0 (see the version table above).
+FMI 1.0 export and import are deprecated and give a warning; they will be
+removed after OpenModelica 1.28.0 is released.
 
 For the Co-Simulation FMU two integrator methods are available:
 

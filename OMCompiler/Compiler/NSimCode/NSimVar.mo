@@ -894,7 +894,6 @@ public
         case VariableKind.OPT_LOOP_INPUT()          then OldBackendDAE.OPT_LOOP_INPUT(ComponentRef.toDAE(varKind.replaceCref));
         // ToDo maybe deprecated:
         case VariableKind.ALG_STATE()               then OldBackendDAE.ALG_STATE();
-        case VariableKind.ALG_STATE_OLD()           then OldBackendDAE.ALG_STATE_OLD();
         case VariableKind.RESIDUAL_VAR()            then OldBackendDAE.DAE_RESIDUAL_VAR();
         case VariableKind.DAE_AUX_VAR()             then OldBackendDAE.DAE_AUX_VAR();
         case VariableKind.LOOP_ITERATION()          then OldBackendDAE.LOOP_ITERATION();

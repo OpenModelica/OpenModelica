@@ -85,7 +85,7 @@ import Error;
 import ErrorExt;
 import ExecStat;
 import Expression;
-protected import ExpressionBasics;
+import ExpressionBasics;
 import FBuiltin;
 import FGraph;
 import Figaro;
@@ -106,6 +106,7 @@ import LexerModelicaDiff;
 import List;
 import Lookup;
 import NFApi;
+import NFCheckModel;
 import NFConvertDAE;
 import NFFlatModel;
 import NFFlatten;
@@ -1807,6 +1808,9 @@ algorithm
         /* Initialize FMI objects */
         (b, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) := FMIExt.initializeFMIImport(filename, workdir, fmiLogLevel, inputConnectors, outputConnectors);
         true := b; /* if something goes wrong while initializing */
+        if FMI.isFMIVersion10(FMI.getFMIVersion(fmiInfo)) then
+          Error.addMessage(Error.FMU_IMPORT_FMI1_DEPRECATED, {});
+        end if;
         fmiTypeDefinitionsList := listReverse(fmiTypeDefinitionsList);
         fmiModelVariablesList := listReverse(fmiModelVariablesList);
         s1 := System.tolower(Autoconf.platform);
@@ -1850,6 +1854,9 @@ algorithm
         (b, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) :=
           FMIExt.initializeFMIImport(modeldescriptionfilename, tmpDir, fmiLogLevel, inputConnectors, outputConnectors, true);
         true := b; /* if something goes wrong while initializing */
+        if FMI.isFMIVersion10(FMI.getFMIVersion(fmiInfo)) then
+          Error.addMessage(Error.FMU_IMPORT_FMI1_DEPRECATED, {});
+        end if;
         fmiTypeDefinitionsList := listReverse(fmiTypeDefinitionsList);
         fmiModelVariablesList := listReverse(fmiModelVariablesList);
         s1 := System.tolower(Autoconf.platform);
@@ -3905,7 +3912,6 @@ protected function configureFMU_cmake
   input String logfile;
   input list<String> externalLibLocations;
   input Boolean isWindows;
-  input Boolean needs3rdPartyLibs;
 protected
   String fmuSourceDir;
   String CMAKE_GENERATOR = "", CMAKE_BUILD_TYPE;
@@ -3932,8 +3938,10 @@ algorithm
     rmrf := "rm -rf ";
   end if;
   defaultFmiIncludeDirectoy := dquote + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + dquote;
-  // Only a build for this platform can link the runtime omc was built with.
-  simrtLib := "-DSIMULATION_RUNTIME_FMI_LIBRARY=" + dquote + Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc/libSimulationRuntimeFMI.a" + dquote;
+  // Only this omc, building the FMU it just generated, knows that its archives
+  // fit the sources. A docker build or a later rebuild compiles them instead.
+  simrtLib := "-DSIMULATION_RUNTIME_FMI_LIBRARY=" + dquote + Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc/libSimulationRuntimeFMI.a" + dquote
+            + " -DSOLVER_LIBRARY_DIRECTORY=" + dquote + Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc" + dquote;
   // As in a simulation executable; its Makefile expands MODELICAUSERCFLAGS itself.
   // The FMU's CMakeLists.txt defines OM_HAVE_PTHREADS if it finds pthreads.
   cflags := System.stringReplace(System.getCFlags(), "${MODELICAUSERCFLAGS}",
@@ -4067,11 +4075,6 @@ algorithm
         externalIncludeDirsFile := fmutmp + "/.external_include_dirs";
         if System.regularFileExists(externalIncludeDirsFile) then
           locations := listAppend(System.strtok(System.readFile(externalIncludeDirsFile), "\n"), locations);
-        end if;
-        // CVODE_DIRECTORY is not one of the model's link directories, so nothing would
-        // copy it for a model that has no external libraries of its own.
-        if needs3rdPartyLibs then
-          locations := Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc" :: locations;
         end if;
         for loc in locations loop
           if System.directoryExists(loc) then
@@ -4283,6 +4286,9 @@ algorithm
     outValue := Values.STRING("");
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED, {FMUType, FMUVersion});
     return;
+  end if;
+  if FMI.isFMIVersion10(FMUVersion) then
+    Error.addMessage(Error.FMU_EXPORT_FMI1_DEPRECATED, {});
   end if;
   if Config.simCodeTarget() == "Cpp" and FMI.isFMICSType(FMUType) then
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
@@ -4718,7 +4724,6 @@ protected
   SimCode.SimulationSettings simSettings;
   list<String> libs = {} "the reuse path translates nothing, so nothing reports libraries";
   Boolean isWindows;
-  Boolean needs3rdPartyLibs;
   Integer platformIndex, platformCount;
   String platformName;
   String FMUVersion = inFMUVersion;
@@ -4753,6 +4758,9 @@ algorithm
     outValue := Values.STRING("");
     Error.addMessage(Error.FMU_EXPORT_WASM_FMI1, {});
     return;
+  end if;
+  if FMI.isFMIVersion10(FMUVersion) then
+    Error.addMessage(Error.FMU_EXPORT_FMI1_DEPRECATED, {});
   end if;
   // without a native binary to load it, the wasm model is only reachable as fmi-ls-wasm,
   // which is layered on FMI 3.0
@@ -4872,9 +4880,6 @@ algorithm
   CevalScript.compileModel(filenameprefix+"_FMU" , libs);
   ExecStat.execStat("buildModelFMU: Generate the FMI files");
 
-  // Check flag fmiFlags if we need additional 3rdParty runtime libs and files
-  needs3rdPartyLibs := SimCodeUtil.cvodeFmiFlagIsSet(SimCodeUtil.createFMISimulationFlags(false));
-
   // A docker build compiles the FMU from sources/, which --fmiSources=false only
   // strips when packing, so the Rust half has to be there too.
   if Config.simCodeRustRuntime() and not System.directoryExists(fmutmp + "/sources/rust")
@@ -4897,7 +4902,7 @@ algorithm
     Error.addCompilerNotification("Building FMU for platform '" + platformName + "' (" + String(platformIndex) + "/" + String(platformCount) + ").");
 
     configureLogFile := System.realpath(fmutmp)+"/resources/"+System.stringReplace(platformName,"/","-")+".log";
-    configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, libs, isWindows, needs3rdPartyLibs);
+    configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, libs, isWindows);
     if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
       System.removeFile(configureLogFile);
     end if;
@@ -6791,8 +6796,10 @@ algorithm
       Option<DAE.DAElist> odae;
       DAE.DAElist dae;
       Integer eqnSize,varSize,simpleEqnSize;
-      String retStr,classNameStr;
+      String retStr,classNameStr, eqnsStr, varsStr;
       Flags.Flag flags;
+      NFFlatModel flatModel;
+      NFExpression eqnSizeExp, varSizeExp;
 
     // handle normal models
     case ()
@@ -6801,9 +6808,19 @@ algorithm
         flags := loadCommandLineOptionsFromModel(className);
 
         try
-          (cache, _, odae) := runFrontEnd(cache, env, className, false);
-          SOME(dae) := odae;
-          (varSize, eqnSize, simpleEqnSize) := CheckModel.checkModel(dae);
+          if Flags.isSet(Flags.SCODE_INST) then
+            flatModel := runFrontEndNF(className);
+            (varSizeExp, eqnSizeExp, simpleEqnSize) := NFCheckModel.checkModel(flatModel);
+            varsStr := NFExpression.toString(varSizeExp);
+            eqnsStr := NFExpression.toString(eqnSizeExp);
+          else
+            (cache, _, odae) := runFrontEnd(cache, env, className, false);
+            SOME(dae) := odae;
+            (varSize, eqnSize, simpleEqnSize) := CheckModel.checkModel(dae);
+            varsStr := String(varSize);
+            eqnsStr := String(eqnSize);
+          end if;
+
           FlagsUtil.saveFlags(flags);
         else
           FlagsUtil.saveFlags(flags);
@@ -6811,8 +6828,8 @@ algorithm
         end try;
 
         classNameStr := AbsynUtil.pathString(className);
-        retStr := stringAppendList({"Check of ",classNameStr," completed successfully.\nClass ",classNameStr," has ",String(eqnSize)," equation(s) and ",
-          String(varSize)," variable(s).\n",String(simpleEqnSize)," of these are trivial equation(s)."});
+        retStr := stringAppendList({"Check of ",classNameStr," completed successfully.\nClass ",classNameStr," has ",eqnsStr," equation(s) and ",
+          varsStr," variable(s).\n",String(simpleEqnSize)," of these are trivial equation(s)."});
       then Values.STRING(retStr);
 
     case ()

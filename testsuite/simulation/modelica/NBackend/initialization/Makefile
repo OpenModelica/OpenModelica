@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 startCycleJacobian.mos \
+impureParameterBinding.mos \
 attributeInitParameter.mos \
 whenAlgorithmArray.mos \
 whenAlgorithmPre.mos \

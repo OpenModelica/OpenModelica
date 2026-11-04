@@ -127,8 +127,6 @@ unsafe extern "C" {
     fn functionInitSynchronous_guard(sim_data: u32) -> u32;
     #[link_name = "callExternalObjectDestructors$guard"]
     fn callExternalObjectDestructors_guard(sim_data: u32) -> u32;
-    #[link_name = "symbolicInlineSystem$guard"]
-    fn symbolicInlineSystem_guard(sim_data: u32) -> u32;
     #[link_name = "functionDAE$guard"]
     fn functionDAE_guard(sim_data: u32) -> u32;
 }
@@ -150,9 +148,6 @@ mod stdio {
         let mut out = std::io::stdout();
         let _ = out.write_all(bytes);
         let _ = out.flush();
-    }
-    pub fn stderr(bytes: &[u8]) {
-        let _ = std::io::stderr().write_all(bytes);
     }
 }
 
@@ -219,6 +214,7 @@ const CATEGORIES: [&str; 11] = [
     "logAll",
     "logFmi3Call",
 ];
+const CAT_EVENTS: u32 = 0;
 const CAT_WARNING: u32 = 4;
 const CAT_ERROR: u32 = 6;
 const CAT_ALL: u32 = 9;
@@ -390,10 +386,14 @@ pub fn init_logging(name: String, logging_on: bool) {
     omclog::set_mask(omclog::FMU_STREAMS);
 }
 
-/// C's `omc_terminate_fmi`, which `fmi2Instantiate` installs: stderr, not the
+/// C's `omc_terminate_fmi`, which `fmi2Instantiate` installs: the logger, not the
 /// driver's `LOG_STDOUT` notice. The importer reports the terminate itself.
-fn terminate_fmi(pos: &str, msg: &str) {
-    stdio::stderr(alloc::format!("{pos}Modelica Terminate: {msg}!\n").as_bytes());
+fn terminate_fmi(t: &driver::TerminateInfo) {
+    fmi_log(
+        Status::Ok,
+        CAT_EVENTS,
+        &alloc::format!("{}:{}: terminate(): {}", t.file, t.span[0], t.msg),
+    );
 }
 
 /// The runtime `String` behind a handle, empty for the null handle.
@@ -698,7 +698,6 @@ impl SimEngine for Engine {
                 "initSample" => initSample_guard(arg),
                 "functionInitSynchronous" => functionInitSynchronous_guard(arg),
                 "callExternalObjectDestructors" => callExternalObjectDestructors_guard(arg),
-                "symbolicInlineSystem" => symbolicInlineSystem_guard(arg),
                 "functionDAE" => functionDAE_guard(arg),
                 #[cfg(all(feature = "me", feature = "cs"))]
                 "linearJacA" => linearJacA_guard(arg),

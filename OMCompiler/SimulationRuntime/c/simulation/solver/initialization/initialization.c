@@ -306,11 +306,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   int solveWithGlobalHomotopy;
   int triedWithoutHomotopy = 0;
   int adaptiveGlobal;
-  int kinsol = 0;
-
-#if !defined(OMC_MINIMAL_RUNTIME)
-  kinsol = (data->simulationInfo->nlsMethod == NLS_KINSOL);
-#endif
+  int kinsol = (data->simulationInfo->nlsMethod == NLS_KINSOL);
 
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
   for(i=0; i<mData->nNonLinearSystems; i++) {

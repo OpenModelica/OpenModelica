@@ -617,13 +617,6 @@ typedef struct DAEMODE_DATA
   int *algIndexes;                     /* index of the algebraic DAE variable in original order */
 } DAEMODE_DATA;
 
-typedef struct INLINE_DATA
-{
-  modelica_real dt;                    /* step size for inline step */
-  modelica_real* algVars;              /* alg-state variables */
-  modelica_real* algOldVars;           /* old alg-state variables */
-} INLINE_DATA;
-
 typedef struct MODEL_DATA_XML
 {
   const char *fileName;
@@ -981,8 +974,6 @@ typedef struct SIMULATION_INFO
   STATE_SET_DATA* stateSetData;
 
   DAEMODE_DATA* daeModeData;
-
-  INLINE_DATA* inlineData;
 
   void* backupSolverData;              /* Used for generic Runge-Kutta methods to get access to some solver details inside callbacks */
 

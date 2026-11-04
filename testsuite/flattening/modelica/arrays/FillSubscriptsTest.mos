@@ -14,6 +14,6 @@ checkModel(Manifold); getErrorString();
 // ""
 // "Check of Manifold completed successfully.
 // Class Manifold has 510 equation(s) and 510 variable(s).
-// 426 of these are trivial equation(s)."
+// 432 of these are trivial equation(s)."
 // ""
 // endResult

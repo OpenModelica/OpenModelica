@@ -74,6 +74,7 @@ getInstanceDiagram3.mos \
 getInstanceDiagram4.mos \
 getClassNames.mos \
 getCommandLineOptions.mos \
+NewBackendFlagsReset.mos \
 getComponentCondition.mos \
 GetComponents.mos \
 getComponentsTestNF.mos \

@@ -1,12 +1,11 @@
 // name:     ModelicaDataReconciliationSimpleTests.Models.Pipe.PipeCorrelation
 // keywords: extraction algorithm
 // status:   correct
-// depends: ./ModelicaDataReconciliationSimpleTests/resources/PipeCorrelation_Inputs.csv
 // teardown_command: rm -rf ModelicaDataReconciliationSimpleTests.Models.Pipe.PipeCorrelation ModelicaDataReconciliationSimpleTests.Models.Pipe.PipeCorrelation_* Reconciled_ModelicaDataReconciliationSimpleTests_Models_Pipe_PipeCorrelation.mo ModelicaDataReconciliationSimpleTests.Models.Pipe.PipeCorrelation.html
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
-loadFile("ModelicaDataReconciliationSimpleTests/package.mo");
+loadModel(ModelicaDataReconciliationSimpleTests, {"4.0.0"});
 getErrorString();
 
 AnnotationNamedModifiers:=getAnnotationNamedModifiers(ModelicaDataReconciliationSimpleTests.Models.Pipe.PipeCorrelation, "__OpenModelica_simulationFlags");
@@ -29,14 +28,11 @@ echo(false); getErrorString(); echo(true);
 // true
 // ""
 // true
-// "Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from ModelicaDataReconciliationSimpleTests.
-// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
-// "
+// ""
 // {"lv", "eps", "s", "sx", "cx"}
 // "-reconcile "
 //
-// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=./ModelicaDataReconciliationSimpleTests/resources/PipeCorrelation_Inputs.csv -cx=./ModelicaDataReconciliationSimpleTests/resources/PipeCorrelation_InputsS_xj.csv
+// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/PipeCorrelation_Inputs.csv -cx=modelica://ModelicaDataReconciliationSimpleTests/resources/PipeCorrelation_InputsS_xj.csv
 //
 // ModelInfo: ModelicaDataReconciliationSimpleTests.Models.Pipe.PipeCorrelation
 // ==========================================================================

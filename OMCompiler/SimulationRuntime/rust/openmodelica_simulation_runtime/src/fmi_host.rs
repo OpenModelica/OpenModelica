@@ -14,8 +14,6 @@ impl FmiHost for CEngine {
         simflags::Capabilities {
             klu: openmodelica_solvers::klu::AVAILABLE,
             kinsol: openmodelica_nls::kinsol::AVAILABLE,
-            // `-ls`/`-lss=umfpack` fall back to KLU here (src/systems.rs).
-            umfpack: openmodelica_solvers::klu::AVAILABLE,
             lis: false,
             ida: openmodelica_sim_meta::IDA,
             cvode: openmodelica_sim_meta::CVODE,
@@ -25,7 +23,6 @@ impl FmiHost for CEngine {
             // Ipopt is deliberately not in the FMU archive: it would bring MUMPS
             // and a libgfortran dependency for an entry point no FMU has.
             optimization: false,
-            qss: true,
         }
     }
 
@@ -56,10 +53,15 @@ impl FmiHost for CEngine {
         let mut strings = Vec::new();
         let mut at = 0;
         for _ in string_slots(self.rt.data) {
-            let Some(len) = state.get(at..at + 8).map(|b| u64::from_le_bytes(b.try_into().unwrap()) as usize) else {
+            let Some(len) = state
+                .get(at..at + 8)
+                .map(|b| u64::from_le_bytes(b.try_into().unwrap()) as usize)
+            else {
                 return false;
             };
-            let Some(s) = state.get(at + 8..at + 8 + len) else { return false };
+            let Some(s) = state.get(at + 8..at + 8 + len) else {
+                return false;
+            };
             strings.push(s);
             at += 8 + len;
         }

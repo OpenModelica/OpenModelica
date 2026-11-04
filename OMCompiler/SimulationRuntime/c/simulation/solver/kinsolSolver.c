@@ -31,7 +31,9 @@
 #include "kinsolSolver.h"
 
 #include "nonlinearSystem.h"
+#if !defined(OMC_FMI_RUNTIME)
 #include "omc_config.h"
+#endif
 #include "omc_math.h"
 #include "../options.h"
 #include "../simulation_info_json.h"
@@ -186,6 +188,56 @@ void initKinsolMemory(NLS_KINSOL_DATA *kinsolData) {
 
   /* Configuration */
   nlsKinsolConfigSetup(kinsolData);
+}
+
+/**
+ * @brief Error handler function given to KINSOL.
+ *
+ * @param errorCode   Error code from KINSOL
+ * @param module      Name of the KINSOL module reporting the error.
+ * @param function    Name of the function in which the error occurred.
+ * @param msg         Error Message.
+ * @param userData    Pointer to user data given with KINSetUserData.
+ */
+static void kinsolErrorHandlerFunction(int line, const char *func, const char *file,
+                                const char *msg, SUNErrCode err_code,
+                                void *err_user_data, SUNContext sunctx) {
+  /* Variables */
+  NLS_KINSOL_DATA* kinsolData;
+  DATA* data;
+  NONLINEAR_SYSTEM_DATA* nlsData;
+  long eqSystemNumber = -1;
+
+  (void) sunctx;
+
+  if (err_user_data != NULL) {
+    kinsolData = (NLS_KINSOL_DATA *)err_user_data;
+    data = kinsolData->userData->data;
+    nlsData = kinsolData->userData->nlsData;
+    if (nlsData) {
+      eqSystemNumber = nlsData->equationIndex;
+    }
+  }
+
+  if (OMC_ACTIVE_STREAM(OMC_LOG_NLS)) {
+    if (err_user_data != NULL && eqSystemNumber > 0) {
+      warningStreamPrint(
+          OMC_LOG_NLS, 1, "kinsol failed for system %d",
+          modelInfoGetEquation(&data->modelData->modelDataXml, eqSystemNumber).id);
+    } else {
+      warningStreamPrint(
+          OMC_LOG_NLS, 1, "kinsol failed");
+    }
+
+    warningStreamPrint(OMC_LOG_NLS, 0,
+                       "[function] %s | [at] %s:%d | [error_code] %d",
+                       func, file, line, err_code);
+    /* Package level codes (KIN_* and friends) are not SUNErrCodes, so
+     * SUNGetErrMsg() only makes sense when SUNDIALS did not supply a message. */
+    warningStreamPrint(OMC_LOG_NLS, 0, "%s", msg ? msg : SUNGetErrMsg(err_code));
+
+    messageCloseWarning(OMC_LOG_NLS);
+  }
 }
 
 /**

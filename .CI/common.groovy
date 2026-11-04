@@ -1237,8 +1237,8 @@ void partestRust(String simCodeTarget, partition, partitionmodulo) {
   // themselves, which only this build has.
   // hdf5: the CMake build this stage uses links the system HDF5, so MAT v7.3
   // works. gbode: disabled in the Rust simulation runtime. ofScripting and
-  // nfScripting: see nfScriptingArgs().
-  String suites = '-cpp,-hpcom,-metamodelica,-63bit,-antlr,-stackoverflow,+wasm,+hdf5,-gbode,-ofScripting,+nfScripting'
+  // nfScripting: see ofScriptingArgs().
+  String suites = '-cpp,-hpcom,-metamodelica,-63bit,-antlr,-stackoverflow,+wasm,+hdf5,-gbode,+ofScripting,-nfScripting'
   // cSources/fmuCSources inspect generated C, which a wasm target does not write.
   // nativeSharedLib links a native shared library, which a wasm target cannot load.
   if (isWasmTarget) {
@@ -1257,7 +1257,7 @@ void partestRust(String simCodeTarget, partition, partitionmodulo) {
       .CI/scripts/cgroup-memory.sh check
       cd testsuite/partest
       set -x
-      ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/${partitionmodulo} -nocolour -with-xml -suites=${suites}${simCodeTargetArg} ${nfScriptingArgs()} 2>&1 | tee runtests-${partition}.log
+      ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/${partitionmodulo} -nocolour -with-xml -suites=${suites}${simCodeTargetArg} ${ofScriptingArgs()} 2>&1 | tee runtests-${partition}.log
       CODE=\${PIPESTATUS[0]}
       set +x
       ../../.CI/scripts/cgroup-memory.sh report
@@ -1681,17 +1681,17 @@ String sharedTestSuites() {
 // The clang shards run --simCodeTarget=C+Rust, which does not change the C++
 // runtime, so its tests run in the gcc shards only. fmuCSources expects the
 // sources of a C FMU. The Rust runtime has gbode disabled. The clang shards
-// evaluate scripts with the new frontend, see nfScriptingArgs().
+// evaluate scripts with the old frontend, see ofScriptingArgs().
 String rustRuntimeTestSuites() {
-  return "${sharedTestSuites()},-cpp,-fmuCSources,-gbode,-ofScripting,+nfScripting"
+  return "${sharedTestSuites()},-cpp,-fmuCSources,-gbode,+ofScripting,-nfScripting"
 }
 
-// The C+Rust and wasm-jit lanes evaluate scripts with the new frontend
-// (#17473): they run the nfScripting tests in place of the ofScripting ones,
-// whose expected output is the old frontend's. The gcc lanes keep the old
-// frontend.
-String nfScriptingArgs() {
-  return '-omcflags=-d=nfScripting'
+// The C+Rust and wasm-jit lanes evaluate scripts with the old frontend
+// (#17473): they run the ofScripting tests in place of the nfScripting ones,
+// whose expected output is the new frontend's. The gcc lanes use the new
+// frontend, the default.
+String ofScriptingArgs() {
+  return '-omcflags=-d=-nfScripting'
 }
 
 // A partest shard against a stashed CMake install tree (see buildClangOMC).

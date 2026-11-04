@@ -51,54 +51,18 @@ encapsulated package RuntimeSources
                                              "_14lnz.c",
                                              "_15syn.c",
                                              "_16dae.c",
-                                             "_17inl.c",
                                              "_18spd.c",
                                              "_init_fmu.c",
                                              "_FMU.c"};
 
 
-  constant list<String> sundials_headers={"sundials/cvode/cvode.h",
-                                          "sundials/cvode/cvode_ls.h",
-                                          "sundials/cvode/cvode_proj.h",
-                                          "sundials/nvector/nvector_serial.h",
-                                          "sundials/sundials/priv/sundials_context_impl.h",
-                                          "sundials/sundials/priv/sundials_errors_impl.h",
-                                          "sundials/sundials/sundials_adaptcontroller.h",
-                                          "sundials/sundials/sundials_adjointcheckpointscheme.h",
-                                          "sundials/sundials/sundials_adjointstepper.h",
-                                          "sundials/sundials/sundials_config.h",
-                                          "sundials/sundials/sundials_context.h",
-                                          "sundials/sundials/sundials_core.h",
-                                          "sundials/sundials/sundials_dense.h",
-                                          "sundials/sundials/sundials_direct.h",
-                                          "sundials/sundials/sundials_domeigestimator.h",
-                                          "sundials/sundials/sundials_errors.h",
-                                          "sundials/sundials/sundials_export.h",
-                                          "sundials/sundials/sundials_iterative.h",
-                                          "sundials/sundials/sundials_linearsolver.h",
-                                          "sundials/sundials/sundials_logger.h",
-                                          "sundials/sundials/sundials_math.h",
-                                          "sundials/sundials/sundials_matrix.h",
-                                          "sundials/sundials/sundials_memory.h",
-                                          "sundials/sundials/sundials_nonlinearsolver.h",
-                                          "sundials/sundials/sundials_nvector.h",
-                                          "sundials/sundials/sundials_profiler.h",
-                                          "sundials/sundials/sundials_stepper.h",
-                                          "sundials/sundials/sundials_types.h",
-                                          "sundials/sundials/sundials_version.h",
-                                          "sundials/sunlinsol/sunlinsol_dense.h",
-                                          "sundials/sunlinsol/sunlinsol_klu.h",
-                                          "sundials/sunmatrix/sunmatrix_band.h",
-                                          "sundials/sunmatrix/sunmatrix_dense.h",
-                                          "sundials/sunmatrix/sunmatrix_sparse.h",
-                                          "sundials/sunnonlinsol/sunnonlinsol_fixedpoint.h",
-                                          "suitesparse/SuiteSparse_config.h",
-                                          "suitesparse/amd.h",
-                                          "suitesparse/btf.h",
-                                          "suitesparse/colamd.h",
-                                          "suitesparse/klu.h"};
+  constant list<String> simrt_c_sundials_sources={@SOURCE_FMU_SUNDIALS_FILES@};
 
-  constant list<String> simrt_c_sundials_sources={@SOURCE_FMU_CVODE_RUNTIME_FILES@};
+  constant list<String> simrt_c_cvode_sources={@SOURCE_FMU_CVODE_RUNTIME_FILES@};
+
+  constant list<String> solver_library_files={@SOURCE_FMU_SOLVER_LIBRARY_FILES@};
+
+  constant list<String> solver_library_sources={@SOURCE_FMU_SOLVER_LIBRARY_SOURCES@};
 
   constant list<String> modelica_external_c_sources={"ModelicaExternalC/ModelicaStandardTables.c",
                                                      "ModelicaExternalC/ModelicaMatIO.c",

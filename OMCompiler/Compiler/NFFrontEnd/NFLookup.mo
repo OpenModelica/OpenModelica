@@ -238,8 +238,9 @@ end lookupFunctionNameSilent;
 
 function lookupFunctionCref
   "In a script, a simple name that is not found, or is not a function, is
-   looked up in OpenModelica.Scripting, so that e.g. simulate(M) needs no
-   qualification and val(x, t) works with a model named val loaded."
+   looked up in OpenModelica.Scripting before a library with that name is
+   loaded, so that e.g. simulate(M) needs no qualification and val(x, t) works
+   with a model named val loaded."
   input Absyn.ComponentRef cref;
   input InstNode scope;
   input InstContext.Type context;
@@ -247,20 +248,22 @@ function lookupFunctionCref
   output InstNode foundScope;
   output LookupState state;
 algorithm
-  try
-    (foundCref, foundScope, state) := lookupCref(cref, scope, context);
-  else
-    (foundCref, foundScope, state) := lookupScriptingCref(cref, scope, context);
-    return;
-  end try;
+  if InstContext.inScripting(context) and AbsynUtil.crefIsIdent(cref) then
+    try
+      (foundCref, foundScope, state) := lookupCref(cref, scope, context, loadLibraries = false);
+      true := LookupState.isFunction(state, ComponentRef.node(foundCref));
+      return;
+    else
+    end try;
 
-  if InstContext.inScripting(context) and AbsynUtil.crefIsIdent(cref) and
-     not LookupState.isFunction(state, ComponentRef.node(foundCref)) then
     try
       (foundCref, foundScope, state) := lookupScriptingCref(cref, scope, context);
+      return;
     else
     end try;
   end if;
+
+  (foundCref, foundScope, state) := lookupCref(cref, scope, context);
 end lookupFunctionCref;
 
 function lookupScriptingCref
@@ -354,6 +357,7 @@ function lookupCref
   input Absyn.ComponentRef cref;
   input InstNode scope "The scope to look in.";
   input InstContext.Type context;
+  input Boolean loadLibraries = true;
   output ComponentRef foundCref;
   output InstNode foundScope "The scope where the first part of the cref was found.";
   output LookupState state;
@@ -364,14 +368,14 @@ algorithm
   (foundCref, foundScope, state) := match cref
     case Absyn.ComponentRef.CREF_IDENT()
       algorithm
-        (_, foundCref, foundScope, in_enclosing, _, state) := lookupSimpleCref(cref.name, cref.subscripts, scope, context);
+        (_, foundCref, foundScope, in_enclosing, _, state) := lookupSimpleCref(cref.name, cref.subscripts, scope, context, loadLibraries);
         state := LookupState.checkCrefVariability(foundCref, in_enclosing, context, state);
       then
         (foundCref, foundScope, state);
 
     case Absyn.ComponentRef.CREF_QUAL()
       algorithm
-        (node, foundCref, foundScope, in_enclosing, is_iterator, state) := lookupSimpleCref(cref.name, cref.subscripts, scope, context);
+        (node, foundCref, foundScope, in_enclosing, is_iterator, state) := lookupSimpleCref(cref.name, cref.subscripts, scope, context, loadLibraries);
         (foundCref, foundScope, state) :=
           lookupCrefInNode(cref.componentRef, node, is_iterator, foundCref, foundScope, state, context);
         state := LookupState.checkCrefVariability(foundCref, in_enclosing, context, state);
@@ -379,7 +383,7 @@ algorithm
         (foundCref, foundScope, state);
 
     case Absyn.ComponentRef.CREF_FULLYQUALIFIED()
-      then lookupCref(cref.componentRef, InstNode.topScope(scope), context);
+      then lookupCref(cref.componentRef, InstNode.topScope(scope), context, loadLibraries);
 
     case Absyn.ComponentRef.WILD()
       then (ComponentRef.WILD(), scope, LookupState.PREDEF_COMP());
@@ -888,6 +892,7 @@ function lookupSimpleCref
   input list<Absyn.Subscript> subs;
   input InstNode scope;
   input InstContext.Type context;
+  input Boolean loadLibraries = true;
   output InstNode node;
   output ComponentRef cref;
   output InstNode foundScope = scope;
@@ -934,7 +939,7 @@ algorithm
           foundScope := InstNode.topScope(InstNode.parentScope(foundScope));
           require_builtin := true;
         else
-          if InstNode.isTopScope(foundScope) and not loaded and not require_builtin then
+          if loadLibraries and InstNode.isTopScope(foundScope) and not loaded and not require_builtin then
             // If the name couldn't be found in any scope, try to load a library
             // with that name and then try to look it up in the top scope again.
             loaded := true;

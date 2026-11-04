@@ -3080,7 +3080,7 @@ end importFMUModelDescription;
 impure function translateModelFMU
   "Translates a model into C code for a FMU without building it."
   input TypeName className "the class that should translated";
-  input String version = "2.0" "FMU version, 1.0 or 2.0.";
+  input String version = "2.0" "FMU version, 2.0 or 3.0 (1.0 is deprecated).";
   input String fmuType = "me" "FMU type, me (model exchange), cs (co-simulation), me_cs (both model exchange and co-simulation)";
   input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"className\"";
   input String platforms[:] = {"static"} "The list of platforms to generate code for.
@@ -3104,7 +3104,7 @@ end translateModelFMU;
 impure function buildModelFMU
   "Translates a Modelica model into a Functional Mockup Unit."
   input TypeName className "the class that should translated";
-  input String version = "2.0" "FMU version, 1.0 or 2.0.";
+  input String version = "2.0" "FMU version, 2.0 or 3.0 (1.0 is deprecated).";
   input String fmuType = "me" "FMU type, me (model exchange), cs (co-simulation), me_cs (both model exchange and co-simulation)";
   input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"className\"";
   input String platforms[:] = {"static"} "The list of platforms to generate code for.

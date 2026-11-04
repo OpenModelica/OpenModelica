@@ -195,11 +195,6 @@ OpenModelica:
   old: -s=rungekutta
   new: -s=gbode -gbm=rungekutta -gbctrl=const
 
-- symSolver - Symbolic inline solver
-  (requires :ref:`--symSolver <omcflag-symSolver>`) - fixed step-size, order 1
-- symSolverSsc - Symbolic implicit inline Euler with step-size control
-  (requires :ref:`--symSolver<omcflag-symSolver>`) - step-size control, order 1-2
-- qss - A QSS solver
 
 DAE Mode Simulation
 -------------------
@@ -582,7 +577,6 @@ There are dense and sparse solver available.
   - *lapack*     : Non-Sparse LU factorization using :cite:`anderson1999lapack`
   - *lis*        : Iterative linear solver :cite:`nishida2010experience`
   - *klu*        : Sparse LU factorization :cite:`natarajan2005klu`
-  - *umfpack*    : Sparse unsymmetric multifrontal LU factorization :cite:`davis2004algorithm`
   - *totalpivot* : Total pivoting LU factorization for underdetermined systems
 
 **Non-linear solvers**

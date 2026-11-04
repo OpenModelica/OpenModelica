@@ -1683,8 +1683,7 @@ public
       case BINARY() guard List.all(subscript :: restSubscripts, isCheapSubscript)
         then applySubscriptBinary(subscript, exp, restSubscripts, applyToScope);
 
-      case UNARY() guard Type.isArray(Operator.typeOf(exp.operator)) and
-                         List.all(subscript :: restSubscripts, isCheapSubscript)
+      case UNARY() guard Type.isArray(Operator.typeOf(exp.operator))
         algorithm
           outExp := applySubscript(subscript, exp.exp, restSubscripts, applyToScope);
         then

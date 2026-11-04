@@ -1371,6 +1371,10 @@ public constant ErrorTypes.Message FMU_EXPORT_WASM_FMI1 = ErrorTypes.MESSAGE(702
   "The wasm FMU export does not serve the deprecated FMI 1.0. Ask for version=\"2.0\" or version=\"3.0\", or drop \"wasm\" from platforms to export a C FMU.");
 public constant ErrorTypes.Message FMU_EXPORT_WASM_FMI2_AS_FMI3 = ErrorTypes.MESSAGE(7033, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
   "No native platform was selected for the wasm FMU, so it is exported as FMI 3.0 (fmi-ls-wasm) instead of FMI 2.0. An FMI 2.0 FMU needs a native platform to load the wasm binary.");
+public constant ErrorTypes.Message FMU_EXPORT_FMI1_DEPRECATED = ErrorTypes.MESSAGE(7034, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  "FMI 1.0 export is deprecated and will be removed after OpenModelica 1.28.0 is released. Export FMI 2.0 or 3.0 instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.");
+public constant ErrorTypes.Message FMU_IMPORT_FMI1_DEPRECATED = ErrorTypes.MESSAGE(7035, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  "FMI 1.0 import is deprecated and will be removed after OpenModelica 1.28.0 is released. Import an FMI 2.0 or 3.0 FMU instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.");
 
 constant SourceInfo dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
 

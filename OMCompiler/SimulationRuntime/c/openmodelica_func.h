@@ -53,7 +53,6 @@ extern "C" {
 struct OpenModelicaGeneratedFunctionCallbacks {
   /* Defined in perform_simulation.c and omp_perform_simulation.c */
   int (*performSimulation)(DATA* data, threadData_t*, void* solverInfo);
-  int (*performQSSSimulation)(DATA* data, threadData_t*, void* solverInfo);
   void (*updateContinuousSystem)(DATA *data, threadData_t*);
   /* Function for calling external object deconstructors */
   void (*callExternalObjectDestructors)(DATA *_data, threadData_t*);
@@ -335,12 +334,6 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   */
   int (*getTimeGrid)(DATA *data, modelica_integer * nsi, modelica_integer**idx);
 
-
-  /*
-  * update parameter for symSolver
-  */
-
-  int (*symbolicInlineSystems)(DATA * data, threadData_t *threadData);
 
   /*
   * initialize clocks and subclocks info in modelData

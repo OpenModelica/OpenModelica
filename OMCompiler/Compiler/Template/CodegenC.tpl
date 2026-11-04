@@ -240,7 +240,6 @@ end translateModel;
     extern int <%symbolName(modelNamePrefixStr,"dataReconciliationUnmeasuredVariables")%>(DATA* data, char ** names);
     extern int <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>(DATA *data, DAEMODE_DATA*);
     extern int <%symbolName(modelNamePrefixStr,"functionLocalKnownVars")%>(DATA* data, threadData_t* threadData);
-    extern int <%symbolName(modelNamePrefixStr,"symbolicInlineSystem")%>(DATA* data, threadData_t* threadData);
 
     #include "<%fileNamePrefix%>_literals.h"
 
@@ -1228,63 +1227,6 @@ template simulationFile_dae(SimCode simCode)
   end match
 end simulationFile_dae;
 
-template simulationFile_inl(SimCode simCode)
-"DAEmode equations generation"
-::=
-  match simCode
-    case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(__)),inlineEquations={}) then
-      let modelNamePrefixStr = modelNamePrefix(simCode)
-      <<
-      /* Inline equation file is empty */
-      <%simulationFileHeader(fileNamePrefix(simCode))%>
-      #ifdef __cplusplus
-      extern "C" {
-      #endif
-      int <%symbolName(modelNamePrefixStr,"symbolicInlineSystem")%>(DATA *data, threadData_t *threadData){
-      <% if intEq(Flags.getConfigEnum(Flags.SYM_SOLVER),0) then
-      <<
-        return -1;
-      >>
-      %>
-      <% if intGt(Flags.getConfigEnum(Flags.SYM_SOLVER),0) then
-      <<
-        return 0;
-      >>
-      %>
-      }
-      #ifdef __cplusplus
-      }
-      #endif<%\n%>
-      >>
-    case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(__)),inlineEquations=inlineEquations) then
-      let modelNamePrefixStr = modelNamePrefix(simCode)
-
-      let funcNames = (inlineEquations |> eq => equationNames_(eq,contextSimulationNonDiscrete,modelNamePrefixStr))
-      <<
-      /* Inline equation file */
-      <%simulationFileHeader(fileNamePrefix(simCode))%>
-
-      #ifdef __cplusplus
-      extern "C" {
-      #endif
-
-      <%(inlineEquations |> eq hasindex i0 =>
-          equation_impl(-1, -1, eq, contextSimulationNonDiscrete, modelNamePrefixStr, false)
-          ;separator="\n")%>
-
-      /* inline equations*/
-      int <%symbolName(modelNamePrefixStr,"symbolicInlineSystem")%>(DATA *data, threadData_t *threadData){
-        <%funcNames%>
-
-        return 0;
-      }
-
-      #ifdef __cplusplus
-      }
-      #endif<%\n%>
-      >>
-end simulationFile_inl;
-
 template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
   "Generates code for main C file for simulation target."
 ::=
@@ -1347,9 +1289,6 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     #define prefixedName_performSimulation <%symbolName(modelNamePrefixStr,"performSimulation")%>
     #define prefixedName_updateContinuousSystem <%symbolName(modelNamePrefixStr,"updateContinuousSystem")%>
     #include <simulation/solver/perform_simulation.c.inc>
-
-    #define prefixedName_performQSSSimulation <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>
-    #include <simulation/solver/perform_qss_simulation.c.inc>
     >>
     %>
 
@@ -1393,7 +1332,6 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
 
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>'%>,    /* performSimulation */
-      <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>'%>,    /* performQSSSimulation */
       <% if isModelExchangeFMU then "NULL" else '<%symbolName(modelNamePrefixStr,"updateContinuousSystem")%>'%>,    /* updateContinuousSystem */
       <%symbolName(modelNamePrefixStr,"callExternalObjectDestructors")%>,    /* callExternalObjectDestructors */
       <%if intEq(varInfo.numNonLinearSystems,0) then "NULL" else symbolName(modelNamePrefixStr,"initialNonLinearSystem")%>,    /* initialNonLinearSystem */
@@ -1463,7 +1401,6 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>,
       <%symbolName(modelNamePrefixStr,"setInputData")%>,
       <%symbolName(modelNamePrefixStr,"getTimeGrid")%>,
-      <%symbolName(modelNamePrefixStr,"symbolicInlineSystem")%>,
       <%symbolName(modelNamePrefixStr,"function_initSynchronous")%>,
       <%symbolName(modelNamePrefixStr,"function_updateSynchronous")%>,
       <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>,
@@ -1562,7 +1499,6 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       data.simulationInfo = &simInfo;
       measure_time_flag = <% if profileHtml() then "5" else if profileSome() then "1" else if profileAll() then "2" else "0" /* Would be good if this was not a global variable...*/ %>;
       compiledInDAEMode = <% if Flags.getConfigBool(Flags.DAE_MODE) then 1 else 0%>;
-      compiledWithSymSolver = <% intSub(Flags.getConfigEnum(Flags.SYM_SOLVER), 0) %>;
       <%mainInit%>
       <%mainTop(mainBody,"https://trac.openmodelica.org/OpenModelica/newticket")%>
 
@@ -8800,7 +8736,7 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   CFILES=<%fileNamePrefix%>_functions.c <%fileNamePrefix%>_records.c \
   <%fileNamePrefix%>_01exo.c <%fileNamePrefix%>_02nls.c <%fileNamePrefix%>_03lsy.c <%fileNamePrefix%>_04set.c <%fileNamePrefix%>_05evt.c <%fileNamePrefix%>_06inz.c <%fileNamePrefix%>_07dly.c \
   <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c \
-  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_16dae.c <%fileNamePrefix%>_17inl.c <%fileNamePrefix%>_18spd.c <%extraFiles |> extraFile => extraFile ;separator=" "%>
+  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_16dae.c <%fileNamePrefix%>_18spd.c <%extraFiles |> extraFile => extraFile ;separator=" "%>
   GENERATEDFILES=$(MAINFILE) $(FILEPREFIX).makefile $(FILEPREFIX)_literals.h $(FILEPREFIX)_functions.h $(CFILES)
 
   omc_main_target:
@@ -8859,7 +8795,7 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   CFILES=<%fileNamePrefix%>_functions.c <%fileNamePrefix%>_records.c \
   <%fileNamePrefix%>_01exo.c <%fileNamePrefix%>_02nls.c <%fileNamePrefix%>_03lsy.c <%fileNamePrefix%>_04set.c <%fileNamePrefix%>_05evt.c <%fileNamePrefix%>_06inz.c <%fileNamePrefix%>_07dly.c \
   <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c \
-  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_16dae.c <%fileNamePrefix%>_17inl.c <%fileNamePrefix%>_18spd.c <%extraFiles |> extraFile => ' \<%\n%>  <%extraFile%>'%>
+  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_16dae.c <%fileNamePrefix%>_18spd.c <%extraFiles |> extraFile => ' \<%\n%>  <%extraFile%>'%>
 
   OFILES=$(CFILES:.c=.o)
   GENERATEDFILES=$(MAINFILE) <%fileNamePrefix%>.makefile <%fileNamePrefix%>_literals.h <%fileNamePrefix%>_functions.h $(CFILES)

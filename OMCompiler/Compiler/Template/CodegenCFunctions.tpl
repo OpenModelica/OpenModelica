@@ -5332,7 +5332,6 @@ end contextIteratorName;
   match cr
   case CREF_IDENT(ident = "xloc") then CodegenUtil.crefStr(cr)
   case CREF_IDENT(ident = "time") then "data->localData[0]->timeValue"
-  case CREF_IDENT(ident = "__OMC_DT") then "data->simulationInfo->inlineData->dt"
   case CREF_IDENT(ident = "__HOM_LAMBDA") then "data->simulationInfo->lambda"
   case WILD(__) then ''
   else crefToCStr(cr, 0, false, false, &sub)
@@ -5352,7 +5351,6 @@ template crefOldSub(ComponentRef cr, Integer ix, Text &sub)
   match cr
   case CREF_IDENT(ident = "xloc") then CodegenUtil.crefStr(cr)
   case CREF_IDENT(ident = "time") then 'data->localData[<%ix%>]->timeValue'
-  case CREF_IDENT(ident = "__OMC_DT") then "data->simulationInfo->inlineData->dt"
   case CREF_IDENT(ident = "__HOM_LAMBDA") then "data->simulationInfo->lambda"
   case WILD(__) then ''
   else crefToCStr(cr, ix, false, false, &sub)
@@ -5420,7 +5418,6 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart,
     let &elemSub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), contextOther, &preExp, &varDecls, &varFrees, &auxFunction)%>'
     crefToCStr(crefStripSubs(cr), ix, isPre, isStart, &elemSub)
   else match cref2simvar(cr, getSimCode())
-    case SIMVAR(varKind = ALG_STATE_OLD(), index = index) then '(data->simulationInfo->inlineData->algOldVars[<%index%>])<%&sub%>'
     case SIMVAR(aliasvar = ALIAS(varName = varName)) then crefToCStr(varName, ix, isPre, isStart, &sub)
     case SIMVAR(aliasvar = NEGATEDALIAS(varName = varName), type_=T_BOOL()) then '!(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
     case SIMVAR(aliasvar = NEGATEDALIAS(varName = varName)) then '-(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
@@ -7206,13 +7203,6 @@ let &sub = buffer ""
   case CALL(path=IDENT(name="$_signNoNull"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &varFrees, &auxFunction)
     '(<%var1%> >= 0.0 ? 1.0:-1.0)'
-  // numerical der()
-  case CALL(path=IDENT(name="$_DF$DER"), expLst={arg as CREF(__)}) then
-    let derstr = cref(crefPrefixDer(arg.componentRef), &sub)
-    let nameold0 = crefOld(arg.componentRef, 0)
-    let nameold1 = crefOld(arg.componentRef, 1)
-    let dt = 'data->simulationInfo->inlineData->dt'
-    '(<%dt%> == 0.0 ? <%derstr%> : (<%nameold0%> - <%nameold1%>)/<%dt%>)'
   // round
   case CALL(path=IDENT(name="$_round"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &varFrees, &auxFunction)

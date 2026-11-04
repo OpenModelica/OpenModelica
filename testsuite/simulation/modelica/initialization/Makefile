@@ -98,6 +98,7 @@ conflictingStartValues.mos \
 startAttributePriority.mos \
 Ticket5340.mos \
 Issue17162.mos \
+redundantTupleEquation.mos \
 
 
 # test that currently fail. Move up when fixed.

@@ -669,11 +669,6 @@ pub fn initialize_data_struc(data: *mut DATA, _thread_data: *mut threadData_t) {
     if let Some(f) = cb.initializeDAEmodeData {
         unsafe { f(data, si.daeModeData) };
     }
-    si.inlineData = calloc(1);
-    unsafe {
-        (*si.inlineData).algVars = calloc(n_states.max(1));
-        (*si.inlineData).algOldVars = calloc(n_states.max(1));
-    }
     si.analyticJacobians = calloc((md.nJacobians as usize).max(1));
     md.modelDataXml.functionNames = core::ptr::null_mut();
     md.modelDataXml.equationInfo = core::ptr::null_mut();
@@ -891,13 +886,6 @@ pub fn free_data_struc(data: *mut DATA, thread_data: *mut threadData_t) {
     free(&mut si.nonlinearSystemData);
     free(&mut si.stateSetData);
     free(&mut si.daeModeData);
-    if !si.inlineData.is_null() {
-        unsafe {
-            free(&mut (*si.inlineData).algVars);
-            free(&mut (*si.inlineData).algOldVars);
-        }
-        free(&mut si.inlineData);
-    }
     if !si.analyticJacobians.is_null() {
         for i in 0..(md.nJacobians as usize).max(1) {
             free_jacobian(unsafe { &mut *si.analyticJacobians.add(i) });
@@ -1168,7 +1156,6 @@ fn layout_for(
         // Always generated (a stub when there are none) and reporting the offending
         // equation itself, so this is a flag rather than a count.
         cb.functionRemovedInitialEquations.is_some() as u32,
-        unsafe { crate::support::compiledWithSymSolver } as u8,
         // `has_when` marks the wasm-jit form of `functionAlgebraics` (the discrete
         // update); C's is the plain algebraic pass, the engine adds `storePreValues`.
         false,
@@ -1287,12 +1274,6 @@ pub fn build_regions(rt: &mut RtData) {
         l.n_base_clocks * 4,
         crate::sync::fire_flags(rt.data) as *mut c_void,
     );
-    if l.sym_solver > 0 {
-        direct(l.inline_dt_off, 8, unsafe { &mut (*si.inlineData).dt } as *mut f64
-            as *mut c_void);
-        direct(l.alg_old_off, l.n_states * 8, unsafe { (*si.inlineData).algOldVars }
-            as *mut c_void);
-    }
     if let Some(j) = jac_a(rt.data)
         && j.availability == JACOBIAN_AVAILABLE
         && !j.seedVars.is_null()

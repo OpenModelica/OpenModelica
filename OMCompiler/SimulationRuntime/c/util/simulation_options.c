@@ -256,7 +256,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_LOG_FORMAT */                   "value specifies the log format of the executable. -logFormat=text (default), -logFormat=xml or -logFormat=xmltcp",
   /* FLAG_LS */                           "value specifies the linear solver method (default: lapack, totalpivot (fallback))",
   /* FLAG_LS_IPOPT */                     "value specifies the linear solver method for ipopt",
-  /* FLAG_LSS */                          "value specifies the linear sparse solver method (default: umfpack)",
+  /* FLAG_LSS */                          "value specifies the linear sparse solver method (default: klu)",
   /* FLAG_LSS_MAX_DENSITY */              "[double (default " EXPANDSTRING(DEFAULT_FLAG_LSS_MAX_DENSITY) ")] value specifies the maximum density for using a linear sparse solver",
   /* FLAG_LSS_MIN_SIZE */                 "[int (default " EXPANDSTRING(DEFAULT_FLAG_LSS_MIN_SIZE) ")] value specifies the minimum system size for using a linear sparse solver",
   /* FLAG_LV */                           "[string list] value specifies the logging level",
@@ -1333,9 +1333,6 @@ const char *SOLVER_METHOD_NAME[S_MAX] = {
   /* S_GBODE */         "gbode",
   /* S_EULER */         "euler",
   /* S_RUNGEKUTTA */    "rungekutta",
-  /* S_SYM_SOLVER */    "symSolver",
-  /* S_SYM_SOLVER_SSC */"symSolverSsc",
-  /* S_QSS */           "qss",
   /* S_OPTIMIZATION */  "optimization"
 };
 
@@ -1347,9 +1344,6 @@ const char *SOLVER_METHOD_DESC[S_MAX] = {
   /* S_GBODE */         "gbode - generic Runge-Kutta ODE solver - implicit (sparse solver)/explicit, fixed/variable step size control, order 1-14, event location, optional bi-rate integration - additional simulation flags -gbm -gbctrl -gbratio - additional advanced flags -gbctrl_filter -gbctrl_fhr -gberr -gbint -gbnls -gbfm -gbfctrl -gbferr -gbfint -gbfnls",
   /* S_EULER */         "euler - explicit Euler, fixed step size, order 1",
   /* S_RUNGEKUTTA */    "rungekutta - classical Runge-Kutta - explicit, fixed step, order 4",
-  /* S_SYM_SOLVER */    "symSolver - symbolic inline Solver [compiler flag '--symSolver' needed] - fixed step size, order 1",
-  /* S_SYM_SOLVER_SSC */"symSolverSsc - symbolic implicit Euler with step size control [compiler flag '--symSolver' needed] - step size control, order 1",
-  /* S_QSS */           "qss - A QSS solver [experimental]",
   /* S_OPTIMIZATION */  "optimization - Special solver for dynamic optimization"
 };
 
@@ -1369,13 +1363,8 @@ const char *LS_NAME[LS_MAX] = {
   "LS_UNKNOWN",
 
   /* LS_LAPACK */       "lapack",
-#if !defined(OMC_MINIMAL_RUNTIME)
   /* LS_LIS */          "lis",
-#else
-  /* LS_LIS */          "lis-not-available",
-#endif
   /* LS_KLU */          "klu",
-  /* LS_UMFPACK */      "umfpack",
   /* LS_TOTALPIVOT */   "totalpivot",
   /* LS_DEFAULT */      "default"
 };
@@ -1384,13 +1373,8 @@ const char *LS_DESC[LS_MAX] = {
   "unknown",
 
   /* LS_LAPACK */       "method using LAPACK LU factorization",
-#if !defined(OMC_MINIMAL_RUNTIME)
   /* LS_LIS */          "method using iterative solver Lis",
-#else
-  /* LS_LIS */          "iterative solver Lis is not available",
-#endif
   /* LS_KLU */          "method using KLU sparse linear solver",
-  /* LS_UMFPACK */      "method using UMFPACK sparse linear solver",
   /* LS_TOTALPIVOT */   "method using a total pivoting LU factorization for underdetermination systems",
   /* LS_DEFAULT */      "default method - LAPACK with total pivoting as fallback"
 };
@@ -1398,62 +1382,36 @@ const char *LS_DESC[LS_MAX] = {
 const char *LSS_NAME[LSS_MAX] = {
   "LS_UNKNOWN",
   /* LSS_DEFAULT */     "default",
-#if !defined(OMC_MINIMAL_RUNTIME)
   /* LSS_LIS */         "lis",
-#else
-  /* LSS_LIS */         "lis-not-available",
-#endif
-  /* LSS_KLU */         "klu",
-  /* LSS_UMFPACK */     "umfpack"
+  /* LSS_KLU */         "klu"
 };
 
 const char *LSS_DESC[LSS_MAX] = {
   "unknown",
   /* LSS_DEFAULT */     "the default sparse linear solver (or a dense solver if there is none available) ",
-#if !defined(OMC_MINIMAL_RUNTIME)
   /* LSS_LIS */         "method using iterative solver Lis",
-#else
-  /* LSS_LIS */         "iterative solver Lis not available",
-#endif
-  /* LSS_KLU */         "method using klu sparse linear solver",
-  /* LSS_UMFPACK */     "method using umfpack sparse linear solver"
+  /* LSS_KLU */         "method using klu sparse linear solver"
 };
 
 const char *NLS_NAME[NLS_MAX] = {
   "NLS_UNKNOWN",
 
-#if !defined(OMC_MINIMAL_RUNTIME)
   /* NLS_HYBRID */       "hybrid",
   /* NLS_KINSOL */       "kinsol",
   /* NLS_KINSOL_B */     "experimental-kinsol",
   /* NLS_NEWTON */       "newton",
   /* NLS_MIXED */        "mixed",
-#else
-  /* NLS_HYBRID */       "hybrid-not-available",
-  /* NLS_KINSOL */       "kinsol-not-available",
-  /* NLS_KINSOL_B */     "kinsol-experimental-not-available",
-  /* NLS_NEWTON */       "newton-not-available",
-  /* NLS_MIXED */        "mixed-not-available",
-#endif
   /* NLS_HOMOTOPY */     "homotopy"
 };
 
 const char *NLS_DESC[NLS_MAX] = {
   "unknown",
 
-#if !defined(OMC_MINIMAL_RUNTIME)
   /* NLS_HYBRID */       "Modification of the Powell hybrid method from minpack - former default solver",
   /* NLS_KINSOL */       "SUNDIALS/KINSOL includes an interface to the sparse direct solver, KLU. See simulation option -nlsLS for more information.",
   /* NLS_KINSOL_B */     "SUNDIALS/KINSOL (with internal scaling) includes an interface to the sparse direct solver, KLU. See simulation option -nlsLS for more information.",
   /* NLS_NEWTON */       "Newton Raphson - prototype implementation",
   /* NLS_MIXED */        "Mixed strategy. First the homotopy solver is tried and then as fallback the hybrid solver.",
-#else
-  /* NLS_HYBRID */       "Modification of the Powell hybrid method from minpack - former default solver. Not available in minimal runtime.",
-  /* NLS_KINSOL */       "SUNDIALS/KINSOL includes interface to the sparse direct solver, KLU. See simulation option -nlsLS for more information."
-  /* NLS_KINSOL_B */     "SUNDIALS/KINSOL (with internal scaling) includes interface to the sparse direct solver, KLU. See simulation option -nlsLS for more information."
-  /* NLS_NEWTON */       "Newton Raphson - prototype implementation. Not available in minimal runtime.",
-  /* NLS_MIXED */        "Mixed strategy. First the homotopy solver is tried and then as fallback the hybrid solver. Not available in minimal runtime.",
-#endif
   /* NLS_HOMOTOPY */     "Damped Newton solver if failing case fixed-point and Newton homotopies are tried."
 };
 

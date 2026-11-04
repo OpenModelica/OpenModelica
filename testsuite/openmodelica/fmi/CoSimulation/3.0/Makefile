@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 fmi3_cs_01.mos \
+fmi3_cs_cvode.mos \
 fmi3_cs_exitinit_assert.mos \
 fmi3_msl_clocked_drive.mos \
 fmi3_wasm_annotation_flags.mos \

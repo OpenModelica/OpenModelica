@@ -70,7 +70,6 @@ int maxJacUpdate[4] = {10,3,1,1};
 double steadyStateTol = 1e-3;
 const size_t SIZERINGBUFFER = 3;
 int compiledInDAEMode = 0;
-int compiledWithSymSolver = 0;
 double numericalDifferentiationDeltaXlinearize = 1e-8;
 double numericalDifferentiationDeltaXsolver = 1e-8;
 double homAdaptBend = 0.5;
@@ -1440,11 +1439,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo->spatialDistributionData = allocSpatialDistribution(data->modelData->nSpatialDistributions);
 
   /* set default solvers for algebraic loops */
-#if !defined(OMC_MINIMAL_RUNTIME)
   data->simulationInfo->nlsMethod = NLS_MIXED;
-#else
-  data->simulationInfo->nlsMethod = NLS_HOMOTOPY;
-#endif
   data->simulationInfo->nlsLinearSolver = NLS_LS_DEFAULT;
   data->simulationInfo->lsMethod = LS_DEFAULT;
   data->simulationInfo->lssMethod = LSS_DEFAULT;
@@ -1538,11 +1533,6 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   /* buffer for daeMode */
   data->simulationInfo->daeModeData = (DAEMODE_DATA*) omc_alloc_interface.malloc_uncollectable(sizeof(DAEMODE_DATA));
   data->callback->initializeDAEmodeData(data, data->simulationInfo->daeModeData);
-
-  /* buffer for inline Data */
-  data->simulationInfo->inlineData = (INLINE_DATA*) omc_alloc_interface.malloc_uncollectable(sizeof(INLINE_DATA));
-  data->simulationInfo->inlineData->algVars = (modelica_real*) calloc(data->modelData->nStates, sizeof(modelica_real));
-  data->simulationInfo->inlineData->algOldVars = (modelica_real*) calloc(data->modelData->nStates, sizeof(modelica_real));
 
   /* buffer for analytical jacobians */
   data->simulationInfo->analyticJacobians = (JACOBIAN*) omc_alloc_interface.malloc_uncollectable(data->modelData->nJacobians*sizeof(JACOBIAN));
@@ -1725,11 +1715,6 @@ void deInitializeDataStruc(DATA *data)
 
   /* free buffer for state sets */
   omc_alloc_interface.free_uncollectable(data->simulationInfo->daeModeData);
-
-  /* buffer for inline Data */
-  free(data->simulationInfo->inlineData->algVars);
-  free(data->simulationInfo->inlineData->algOldVars);
-  omc_alloc_interface.free_uncollectable(data->simulationInfo->inlineData);
 
   /* free inputs and output */
   free(data->simulationInfo->inputVars);

@@ -18,7 +18,7 @@ non-linear systems.
 
 OpenModelica links to `IDAS`, but calls it `IDA` in the documentation.
 Also, the linear solver method `LAPACK` is actually `DGESV` from LAPACK.
-The dashed ODE solvers `Runge Kutta`, `symSolver`, `symSolverSsc` and `QSS` are deprecated and might be removed in a future version.
+The dashed ODE solver `Runge Kutta` is deprecated and might be removed in a future version.
 
 ## Directory Structure
 
@@ -42,10 +42,6 @@ The dashed ODE solvers `Runge Kutta`, `symSolver`, `symSolverSsc` and `QSS` are 
     - GBODE: [solver/gbode_main.c](./solver/gbode_main.c)<br/>
       Implementation of a generic (implicit and explicit) Runge Kutta ODE
       solver.
-
-   - QSS:
-     [solver/perform_qss_simulation.c.inc](./solver/perform_qss_simulation.c.inc)<br/>
-     Quantized State System (QSS) solver for sparse ODE systems.
 
 ### Non-Linear Solver
 
@@ -95,10 +91,6 @@ The dashed ODE solvers `Runge Kutta`, `symSolver`, `symSolverSsc` and `QSS` are 
       [solver/linearSolverTotalPivot.c](./solver/linearSolverTotalPivot.c)<br/>
       Implementation of Gaussian elimination based on LU decomposition with
       total pivot.
-
-    - UMFPACK:
-      [solver/linearSolverUmfpack.c](./solver/linearSolverUmfpack.c)<br/>
-      Integration of Suite Sparse's UMFPACK linear solver.
 
 ### Analysis Tools
 

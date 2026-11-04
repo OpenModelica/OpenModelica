@@ -200,7 +200,6 @@ uniontype SimCode
     Option<FmiSimulationFlags> fmiSimulationFlags;
     PartitionData partitionData;
     Option<DaeModeData> daeModeData;
-    list<SimEqSystem> inlineEquations;
     Boolean scalarized;
     list<FmiFigure> fmiFigures "set by SimCodeUtil.addFMI3Figures for an FMI 3.0 export";
   end SIMCODE;

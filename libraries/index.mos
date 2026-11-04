@@ -73,6 +73,13 @@ if not installPackage(ModelicaCompliance, "3.2.0-master", exactMatch=true) then
 else
   print("Installed: ModelicaCompliance 3.2.0-master\n");
 end if;
+if not installPackage(ModelicaDataReconciliationSimpleTests, "4.0.0", exactMatch=true) then
+  print("ModelicaDataReconciliationSimpleTests 4.0.0 failed.\n");
+  print(getErrorString());
+  exit(1);
+else
+  print("Installed: ModelicaDataReconciliationSimpleTests 4.0.0\n");
+end if;
 if not installPackage(ModelicaReference, "4.0.0+maint.om", exactMatch=true) then
   print("ModelicaReference 4.0.0+maint.om failed.\n");
   print(getErrorString());
@@ -143,6 +150,13 @@ if not installPackage(ScalableTestSuite, "2.2.0", exactMatch=true) then
 else
   print("Installed: ScalableTestSuite 2.2.0\n");
 end if;
+if not installPackage(TSP_DataReconciliationSimpleTests, "4.0.0", exactMatch=true) then
+  print("TSP_DataReconciliationSimpleTests 4.0.0 failed.\n");
+  print(getErrorString());
+  exit(1);
+else
+  print("Installed: TSP_DataReconciliationSimpleTests 4.0.0\n");
+end if;
 if not installPackage(ThermoPower, "4.0.0-dev", exactMatch=true) then
   print("ThermoPower 4.0.0-dev failed.\n");
   print(getErrorString());
@@ -157,4 +171,4 @@ if not installPackage(ThermoSysPro, "4.2.0", exactMatch=true) then
 else
   print("Installed: ThermoSysPro 4.2.0\n");
 end if;
-system("touch .openmodelica/20260929124953.stamp")
+system("touch .openmodelica/20261104012751.stamp")

@@ -252,26 +252,24 @@ static void omc_assert_fmi_warning(FILE_INFO info, const char *msg, ...)
   va_end(args);
 }
 
+/* Modelica 8.3.8: the simulation stops once the current step or event
+   iteration has completed, so only record the request. */
 static void omc_terminate_fmi(FILE_INFO info, const char *msg, ...)
 {
+  threadData_t *threadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key);
+  ModelInstance* c = threadData ? (ModelInstance*) threadData->localRoots[LOCAL_ROOT_FMI_DATA] : NULL;
+  const char *str;
   va_list ap;
   va_start(ap, msg);
-  printInfo(stderr, info);
-  fputs("Modelica Terminate: ", stderr);
-  vfprintf(stderr, msg, ap);
-  fputs("!\n", stderr);
+  GC_vasprintf(&str, msg, ap);
   va_end(ap);
-  fflush(NULL);
-
-  threadData_t *threadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key);
-  if (threadData) {
-    ModelInstance* c = (ModelInstance*) threadData->localRoots[LOCAL_ROOT_FMI_DATA];
-    if (c) {
-      c->_terminate_simulation_requested = 1;
-    }
+  if (c) {
+    c->_terminate_simulation_requested = 1;
+    FILTERED_LOG(c, fmi2OK, LOG_EVENTS, "%s:%d: terminate(): %s", info.filename, info.lineStart, str)
+  } else {
+    printInfo(stderr, info);
+    fprintf(stderr, "Modelica Terminate: %s!\n", str);
   }
-
-  OMC_THROW();
 }
 
 // ---------------------------------------------------------------------------
@@ -452,14 +450,11 @@ fmi2Status internalEventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
   releaseAsserts(comp);
 
   if (done) {
-    return fmi2OK;
-  }
-
-  if (comp->_terminate_simulation_requested) {
-    comp->_terminate_simulation_requested = 0;
-    eventInfo->newDiscreteStatesNeeded = fmi2False;
-    eventInfo->terminateSimulation = fmi2True;
-    FILTERED_LOG(comp, fmi2OK, LOG_EVENTS, "internalEventUpdate: terminate simulation requested by the model.")
+    if (comp->_terminate_simulation_requested && !eventInfo->newDiscreteStatesNeeded) {
+      comp->_terminate_simulation_requested = 0;
+      eventInfo->terminateSimulation = fmi2True;
+      FILTERED_LOG(comp, fmi2OK, LOG_EVENTS, "internalEventUpdate: terminate simulation requested by the model.")
+    }
     return fmi2OK;
   }
 
@@ -1189,6 +1184,8 @@ fmi2Status fmi2Reset(fmi2Component c)
   }
 
   comp->_need_update = 1;
+  comp->_terminate_simulation_requested = 0;
+  comp->terminated = fmi2False;
   comp->state = model_state_instantiated;
   return fmi2OK;
 }
@@ -1635,6 +1632,11 @@ cleanup:
     free(savedStringParam);
   }
 
+  /* FMI 2.0, 4.2.3: a discarded step is redone by restoring an FMU state. */
+  if (status == fmi2OK && comp->state == model_state_cs_step_failed) {
+    comp->state = model_state_cs_step_complete;
+    comp->terminated = fmi2False;
+  }
   return status;
 }
 
@@ -2113,12 +2115,11 @@ fmi2Status internal_CompletedIntegratorStep(fmi2Component c, const char *func, f
   releaseAsserts(comp);
 
   if (done) {
-    return fmi2OK;
-  }
-  if (comp->_terminate_simulation_requested) {
-    comp->_terminate_simulation_requested = 0;
-    *terminateSimulation = fmi2True;
-    FILTERED_LOG(comp, fmi2OK, LOG_EVENTS, "%s: terminate simulation requested by the model.", func)
+    if (comp->_terminate_simulation_requested) {
+      comp->_terminate_simulation_requested = 0;
+      *terminateSimulation = fmi2True;
+      FILTERED_LOG(comp, fmi2OK, LOG_EVENTS, "%s: terminate simulation requested by the model.", func)
+    }
     return fmi2OK;
   }
 
@@ -2668,10 +2669,13 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
         break;
       case S_CVODE:
 #ifdef OMC_FMI_HAVE_CVODE
-        flag = cvode_solver_fmi_step(comp, tNext, states);
-        if (flag < 0)
+        comp->solverInfo->currentTime = comp->fmuData->localData[0]->timeValue;
+        comp->solverInfo->currentStepSize = tNext - comp->solverInfo->currentTime;
+        flag = cvode_solver_step(comp->fmuData, comp->threadData, comp->solverInfo);
+        memcpy(states, comp->fmuData->localData[0]->realVars, NUMBER_OF_STATES * sizeof(fmi2Real));
+        if (flag != 0)
         {
-          FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: CVODE integrator step failed.")
+          FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: CVODE integrator step failed with flag %d at time %.15g.", flag, comp->solverInfo->currentTime)
           status = fmi2Fatal;
           goto doStep_cleanup;
         }
@@ -2829,21 +2833,19 @@ doStep_cleanup:
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
   threadData->mmc_jumper = old_jmp;
 
-  if (!done)
+  if (!done && status == fmi2OK)
   {
-    if (comp->_terminate_simulation_requested) {
-      comp->_terminate_simulation_requested = 0;
-      terminateSimulation = fmi2True;
-      FILTERED_LOG(comp, fmi2OK, LOG_EVENTS, "fmi2DoStep: terminate simulation requested by the model.")
-      status = fmi2OK;
-    } else if (status == fmi2OK) {
-      FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2DoStep: terminated by an assertion.")
-      status = fmi2Error;
-    }
+    FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2DoStep: terminated by an assertion.")
+    status = fmi2Error;
   }
 
-  if (terminateSimulation) {
-    comp->state = model_state_cs_step_complete;
+  comp->lastSuccessfulTime = comp->fmuData->localData[0]->timeValue;
+  /* FMI 2.0, 4.2.3: a slave that wants to stop returns fmi2Discard and reports
+     the reason through fmi2GetBooleanStatus(fmi2Terminated). */
+  if (terminateSimulation && status <= fmi2Warning) {
+    comp->terminated = fmi2True;
+    comp->state = model_state_cs_step_failed;
+    status = fmi2Discard;
   }
 
   return status;
@@ -2861,10 +2863,17 @@ fmi2Status fmi2GetStatus(fmi2Component c, const fmi2StatusKind s, fmi2Status* va
   return unsupportedFunction((ModelInstance *)c, "fmi2GetStatus");
 }
 
+#define CS_STATUS_STATES (model_state_cs_step_complete|model_state_cs_step_in_progress|model_state_cs_step_failed|model_state_terminated)
+
 fmi2Status fmi2GetRealStatus(fmi2Component c, const fmi2StatusKind s, fmi2Real* value)
 {
-  // TODO Write code here
-  return unsupportedFunction((ModelInstance *)c, "fmi2GetRealStatus");
+  ModelInstance *comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmi2GetRealStatus", 0, CS_STATUS_STATES) || nullPointer(comp, "fmi2GetRealStatus", "value", value))
+    return fmi2Error;
+  if (s != fmi2LastSuccessfulTime)
+    return fmi2Discard;
+  *value = comp->lastSuccessfulTime;
+  return fmi2OK;
 }
 
 fmi2Status fmi2GetIntegerStatus(fmi2Component c, const fmi2StatusKind s, fmi2Integer* value)
@@ -2875,8 +2884,13 @@ fmi2Status fmi2GetIntegerStatus(fmi2Component c, const fmi2StatusKind s, fmi2Int
 
 fmi2Status fmi2GetBooleanStatus(fmi2Component c, const fmi2StatusKind s, fmi2Boolean* value)
 {
-  // TODO Write code here
-  return unsupportedFunction((ModelInstance *)c, "fmi2GetBooleanStatus");
+  ModelInstance *comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmi2GetBooleanStatus", 0, CS_STATUS_STATES) || nullPointer(comp, "fmi2GetBooleanStatus", "value", value))
+    return fmi2Error;
+  if (s != fmi2Terminated)
+    return fmi2Discard;
+  *value = comp->terminated;
+  return fmi2OK;
 }
 
 fmi2Status fmi2GetStringStatus(fmi2Component c, const fmi2StatusKind s, fmi2String* value)
