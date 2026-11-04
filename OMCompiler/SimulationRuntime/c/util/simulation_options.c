@@ -1369,11 +1369,7 @@ const char *LS_NAME[LS_MAX] = {
   "LS_UNKNOWN",
 
   /* LS_LAPACK */       "lapack",
-#if !defined(OMC_MINIMAL_RUNTIME)
   /* LS_LIS */          "lis",
-#else
-  /* LS_LIS */          "lis-not-available",
-#endif
   /* LS_KLU */          "klu",
   /* LS_TOTALPIVOT */   "totalpivot",
   /* LS_DEFAULT */      "default"
@@ -1383,11 +1379,7 @@ const char *LS_DESC[LS_MAX] = {
   "unknown",
 
   /* LS_LAPACK */       "method using LAPACK LU factorization",
-#if !defined(OMC_MINIMAL_RUNTIME)
   /* LS_LIS */          "method using iterative solver Lis",
-#else
-  /* LS_LIS */          "iterative solver Lis is not available",
-#endif
   /* LS_KLU */          "method using KLU sparse linear solver",
   /* LS_TOTALPIVOT */   "method using a total pivoting LU factorization for underdetermination systems",
   /* LS_DEFAULT */      "default method - LAPACK with total pivoting as fallback"
@@ -1396,60 +1388,36 @@ const char *LS_DESC[LS_MAX] = {
 const char *LSS_NAME[LSS_MAX] = {
   "LS_UNKNOWN",
   /* LSS_DEFAULT */     "default",
-#if !defined(OMC_MINIMAL_RUNTIME)
   /* LSS_LIS */         "lis",
-#else
-  /* LSS_LIS */         "lis-not-available",
-#endif
   /* LSS_KLU */         "klu"
 };
 
 const char *LSS_DESC[LSS_MAX] = {
   "unknown",
   /* LSS_DEFAULT */     "the default sparse linear solver (or a dense solver if there is none available) ",
-#if !defined(OMC_MINIMAL_RUNTIME)
   /* LSS_LIS */         "method using iterative solver Lis",
-#else
-  /* LSS_LIS */         "iterative solver Lis not available",
-#endif
   /* LSS_KLU */         "method using klu sparse linear solver"
 };
 
 const char *NLS_NAME[NLS_MAX] = {
   "NLS_UNKNOWN",
 
-#if !defined(OMC_MINIMAL_RUNTIME)
   /* NLS_HYBRID */       "hybrid",
   /* NLS_KINSOL */       "kinsol",
   /* NLS_KINSOL_B */     "experimental-kinsol",
   /* NLS_NEWTON */       "newton",
   /* NLS_MIXED */        "mixed",
-#else
-  /* NLS_HYBRID */       "hybrid-not-available",
-  /* NLS_KINSOL */       "kinsol-not-available",
-  /* NLS_KINSOL_B */     "kinsol-experimental-not-available",
-  /* NLS_NEWTON */       "newton-not-available",
-  /* NLS_MIXED */        "mixed-not-available",
-#endif
   /* NLS_HOMOTOPY */     "homotopy"
 };
 
 const char *NLS_DESC[NLS_MAX] = {
   "unknown",
 
-#if !defined(OMC_MINIMAL_RUNTIME)
   /* NLS_HYBRID */       "Modification of the Powell hybrid method from minpack - former default solver",
   /* NLS_KINSOL */       "SUNDIALS/KINSOL includes an interface to the sparse direct solver, KLU. See simulation option -nlsLS for more information.",
   /* NLS_KINSOL_B */     "SUNDIALS/KINSOL (with internal scaling) includes an interface to the sparse direct solver, KLU. See simulation option -nlsLS for more information.",
   /* NLS_NEWTON */       "Newton Raphson - prototype implementation",
   /* NLS_MIXED */        "Mixed strategy. First the homotopy solver is tried and then as fallback the hybrid solver.",
-#else
-  /* NLS_HYBRID */       "Modification of the Powell hybrid method from minpack - former default solver. Not available in minimal runtime.",
-  /* NLS_KINSOL */       "SUNDIALS/KINSOL includes interface to the sparse direct solver, KLU. See simulation option -nlsLS for more information."
-  /* NLS_KINSOL_B */     "SUNDIALS/KINSOL (with internal scaling) includes interface to the sparse direct solver, KLU. See simulation option -nlsLS for more information."
-  /* NLS_NEWTON */       "Newton Raphson - prototype implementation. Not available in minimal runtime.",
-  /* NLS_MIXED */        "Mixed strategy. First the homotopy solver is tried and then as fallback the hybrid solver. Not available in minimal runtime.",
-#endif
   /* NLS_HOMOTOPY */     "Damped Newton solver if failing case fixed-point and Newton homotopies are tried."
 };
 

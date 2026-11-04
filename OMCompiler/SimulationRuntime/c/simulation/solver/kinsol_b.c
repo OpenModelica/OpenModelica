@@ -35,7 +35,9 @@
 #include "kinsol_b.h"
 
 #include "nonlinearSystem.h"
+#if !defined(OMC_FMI_RUNTIME)
 #include "omc_config.h"
+#endif
 #include "omc_math.h"
 #include "../options.h"
 #include "../simulation_info_json.h"
@@ -46,7 +48,9 @@
 #include "events.h"
 #include "model_help.h"
 #include "openmodelica.h"
+#if !defined(OMC_FMI_RUNTIME)
 #include "../results/simulation_result_rust.h"
+#endif
 #include "openmodelica_func.h"
 #include "util/read_matlab4.h"
 #include "util/varinfo.h"
@@ -1590,6 +1594,9 @@ static void B_save_initial_guess_system(DATA *data, threadData_t *threadData, NO
      * TODO: replace this with call to list of inner equations */
     B_nlsKinsolResiduals(kinsolData->initialGuess, kinsolData->fTmp, kinsolData->userData);
 
+#if defined(OMC_FMI_RUNTIME)
+    throwStreamPrint(threadData, "An FMU cannot write the initial guess of non-linear system %d to a file.", nls_idx);
+#else
     /* write out current localData[0] to .mat file */
     simulation_result file_result;
     const char *outputFormat = data->simulationInfo->outputFormat;
@@ -1611,6 +1618,7 @@ static void B_save_initial_guess_system(DATA *data, threadData_t *threadData, NO
      * throw unwinds into the solver, which keeps its message to OMC_LOG_NLS */
     infoStreamPrint(OMC_LOG_STDOUT, 0, "Success: Initial guess has been written to disk (path = %s). The program will terminate now.", path);
     throwStreamPrint(threadData, "Initial guess for non-linear system %d written to disk.", nls_idx);
+#endif
   }
   else
   {

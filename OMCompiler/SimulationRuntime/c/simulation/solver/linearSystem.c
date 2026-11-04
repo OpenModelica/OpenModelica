@@ -38,10 +38,11 @@
 #include "nonlinearSystem.h"
 #include "linearSystem.h"
 #include "linearSolverLapack.h"
-#if !defined(OMC_MINIMAL_RUNTIME)
+#if !defined(OMC_FMI_RUNTIME)
+#include "omc_config.h"
+#endif
 #include "linearSolverKlu.h"
 #include "linearSolverLis.h"
-#endif
 #include "linearSolverTotalPivot.h"
 #include "../options.h"
 #include "../simulation_info_json.h"
@@ -72,7 +73,7 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
   if (LSS_DEFAULT == data->simulationInfo->lssMethod) {
 #ifdef WITH_SUITESPARSE
     data->simulationInfo->lssMethod = LSS_KLU;
-#elif !defined(OMC_MINIMAL_RUNTIME)
+#else
     data->simulationInfo->lssMethod = LSS_LIS;
 #endif
   }
@@ -147,26 +148,11 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
         throwStreamPrint(threadData, "OMC is compiled without KLU.");
         break;
     #endif
-    #if !defined(OMC_MINIMAL_RUNTIME)
       case LSS_LIS:
         linsys[i].setAElement = setAElementLis;
         linsys[i].setBElement = setBElementLis;
         allocateLisData(size, size, nnz, linsys[i].solverData);
         break;
-    #else
-      case LSS_LIS_NOT_AVAILABLE:
-        throwStreamPrint(threadData, "OMC is compiled without sparse linear solver Lis.");
-        break;
-    #endif
-    #if defined(OMC_MINIMAL_RUNTIME) && !defined(WITH_SUITESPARSE)
-      case LSS_DEFAULT:
-        {
-          int indexes[2] = {1, linsys[i].equationIndex};
-          infoStreamPrintWithEquationIndexes(OMC_LOG_STDOUT, omc_dummyFileInfo, 0, indexes, "The simulation runtime does not have access to sparse solvers. Defaulting to a dense linear system solver instead.");
-          linsys[i].useSparseSolver = 0;
-          break;
-        }
-    #endif
       default:
         throwStreamPrint(threadData, "unrecognized sparse linear solver (%d)", data->simulationInfo->lssMethod);
       }
@@ -182,13 +168,11 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
         allocateLapackData(size, linsys[i].solverData);
         break;
 
-    #if !defined(OMC_MINIMAL_RUNTIME)
       case LS_LIS:
         linsys[i].setAElement = setAElementLis;
         linsys[i].setBElement = setBElementLis;
         allocateLisData(size, size, nnz, linsys[i].solverData);
         break;
-    #endif
     #ifdef WITH_SUITESPARSE
       case LS_KLU:
         linsys[i].setAElement = setAElementKlu;
@@ -310,11 +294,9 @@ int freeLinearSystems(DATA *data, threadData_t *threadData)
     {
       switch(data->simulationInfo->lssMethod)
       {
-    #if !defined(OMC_MINIMAL_RUNTIME)
       case LSS_LIS:
         freeLisData(linsys[i].solverData);
         break;
-    #endif
 
     #ifdef WITH_SUITESPARSE
       case LSS_KLU:
@@ -333,11 +315,9 @@ int freeLinearSystems(DATA *data, threadData_t *threadData)
         freeLapackData(linsys[i].solverData);
         break;
 
-  #if !defined(OMC_MINIMAL_RUNTIME)
       case LS_LIS:
         freeLisData(linsys[i].solverData);
         break;
-  #endif
 
   #ifdef WITH_SUITESPARSE
       case LS_KLU:
@@ -394,15 +374,9 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, dou
   {
     switch(data->simulationInfo->lssMethod)
     {
-  #if !defined(OMC_MINIMAL_RUNTIME)
     case LSS_LIS:
       success = solveLis(data, threadData, sysNumber, aux_x);
       break;
-  #else
-    case LSS_LIS_NOT_AVAILABLE:
-      throwStreamPrint(threadData, "OMC is compiled without sparse linear solver Lis.");
-      break;
-  #endif
   #ifdef WITH_SUITESPARSE
     case LSS_KLU:
       success = solveKlu(data, threadData, sysNumber, aux_x);
@@ -424,11 +398,9 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, dou
       success = solveLapack(data, threadData, sysNumber, aux_x);
       break;
 
-  #if !defined(OMC_MINIMAL_RUNTIME)
     case LS_LIS:
       success = solveLis(data, threadData, sysNumber, aux_x);
       break;
-  #endif
   #ifdef WITH_SUITESPARSE
     case LS_KLU:
       success = solveKlu(data, threadData, sysNumber, aux_x);
@@ -618,7 +590,6 @@ static void setBElement(int row, double value, LINEAR_SYSTEM_DATA* linearSystemD
   linearSystemData->b[row] = value;
 }
 
-#if !defined(OMC_MINIMAL_RUNTIME)
 static void setAElementLis(int row, int col, double value, int nth, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t *threadData)
 {
   DATA_LIS* sData = (DATA_LIS*) linearSystemData->solverData[0];
@@ -630,7 +601,6 @@ static void setBElementLis(int row, double value, LINEAR_SYSTEM_DATA* linearSyst
   DATA_LIS* sData = (DATA_LIS*) linearSystemData->solverData[0];
   lis_vector_set_value(LIS_INS_VALUE, row, value, sData->b);
 }
-#endif
 
 #ifdef WITH_SUITESPARSE
 static void setAElementKlu(int row, int col, double value, int nth, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t *threadData)

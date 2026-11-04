@@ -1398,7 +1398,7 @@ else
 end match
 end mapInitialUnknownsIndependentCrefs;
 
-template settingsfile(SimCode simCode)
+template settingsfile(SimCode simCode, String solverDefines)
 "Generates content of omc_simulation_settings.h"
 ::=
   match simCode
@@ -1415,6 +1415,7 @@ template settingsfile(SimCode simCode)
   #define OMC_MODEL_PREFIX "<%modelNamePrefix(simCode)%>"
   #define OMC_MINIMAL_RUNTIME 1
   #define OMC_FMI_RUNTIME 1
+  <%solverDefines%>
   #endif
  >>
 end settingsfile;

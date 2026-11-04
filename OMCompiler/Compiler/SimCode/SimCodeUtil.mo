@@ -14380,20 +14380,6 @@ algorithm
   end for;
 end getCmakeLinkLibrariesCode;
 
-public function getCmakeSundialsLinkCode
-  "Code for FMU CMakeLists.txt to specify if CVODE is needed."
-  input Option<SimCode.FmiSimulationFlags> fmiSimulationFlags;
-  output String needCvode = "OFF";
-  output String cvodeDirectory = "\"\"";
-algorithm
-  if cvodeFmiFlagIsSet(fmiSimulationFlags) then
-    needCvode := "ON";
-    // ${DOCKER_VOL_DIR} so the path also resolves inside the container when cross compiling,
-    // see getCmakeLinkLibrariesCode. It is empty for a normal build.
-    cvodeDirectory := "\"${DOCKER_VOL_DIR}" + Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc\"";
-  end if;
-end getCmakeSundialsLinkCode;
-
 public function cvodeFmiFlagIsSet
   "Checks if s:cvode is part of FMI_FLAGS.
    If a *.json exists we don't check and assume cvode will be needed at some point."

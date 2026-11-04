@@ -1440,11 +1440,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo->spatialDistributionData = allocSpatialDistribution(data->modelData->nSpatialDistributions);
 
   /* set default solvers for algebraic loops */
-#if !defined(OMC_MINIMAL_RUNTIME)
   data->simulationInfo->nlsMethod = NLS_MIXED;
-#else
-  data->simulationInfo->nlsMethod = NLS_HOMOTOPY;
-#endif
   data->simulationInfo->nlsLinearSolver = NLS_LS_DEFAULT;
   data->simulationInfo->lsMethod = LS_DEFAULT;
   data->simulationInfo->lssMethod = LSS_DEFAULT;

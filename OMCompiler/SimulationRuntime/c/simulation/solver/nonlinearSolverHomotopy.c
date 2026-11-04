@@ -46,9 +46,7 @@
 #include "../../util/omc_file.h"
 #include "../../util/varinfo.h"
 #include "model_help.h"
-#if !defined(OMC_MINIMAL_RUNTIME)
 #include "../../util/write_csv.h"
-#endif
 
 #include "nonlinearSystem.h"
 #include "nonlinearSolverHomotopy.h"
@@ -1619,7 +1617,6 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       debugDouble(OMC_LOG_NLS_V, "newtonFTol          =", sqrt(solverData->ftol_sqrd));
     }
 
-#if !defined(OMC_MINIMAL_RUNTIME)
     if (data->simulationInfo->nlsCsvInfomation){
       print_csvLineIterStats(((struct csvStats*) nlsData->csvData)->iterStats,
                              nlsData->size,
@@ -1634,7 +1631,6 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
                              lambda
       );
     }
-#endif
     /* away from any solution: no 1% improvement for long, or only heavily damped steps */
     if (countNegativeSteps > 20 || countCycles > 20 || ((countStalls > 400 || countCreeps > 400) && error_f_sqrd >= solverData->ftol_sqrd*1e6 && error_f_sqrd_scaled >= solverData->ftol_sqrd*1e6))
     {
