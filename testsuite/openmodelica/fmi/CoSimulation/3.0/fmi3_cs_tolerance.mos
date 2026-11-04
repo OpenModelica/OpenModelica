@@ -1,0 +1,52 @@
+// name:     fmi3_cs_tolerance
+// keywords: FMI 2.0 3.0 export CoSimulation CVODE tolerance
+// status:   correct
+// teardown_command: rm -rf fmi3_cs_tolerance*.fmu fmi3_cs_tolerance*.fmutmp/ fmi3_cs_tolerance*_info.json fmi3_cs_tolerance*.log fmi3_cs_tolerance*_out.txt
+//
+// CVODE in a Co-Simulation FMU uses the tolerance of the importer, not the
+// one of the experiment annotation.
+
+loadString("
+model fmi3_cs_tolerance
+  Real x(start = 1, fixed = true);
+  Real y(start = 0, fixed = true);
+equation
+  der(x) = y;
+  der(y) = -x;
+  annotation(experiment(StopTime = 10, Tolerance = 1e-6));
+end fmi3_cs_tolerance;
+"); getErrorString();
+setCommandLineOptions("--fmiFlags=s:cvode"); getErrorString();
+buildModelFMU(fmi3_cs_tolerance, version="2.0", fmuType="cs", fileNamePrefix="fmi3_cs_tolerance2"); getErrorString();
+buildModelFMU(fmi3_cs_tolerance, version="3.0", fmuType="cs"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi3_cs_tolerance.py fmi3_cs_tolerance2.fmu fmi3_cs_tolerance2_out.txt > fmi3_cs_tolerance2.log 2>&1"); getErrorString();
+readFile("fmi3_cs_tolerance2_out.txt"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi3_cs_tolerance.py fmi3_cs_tolerance.fmu fmi3_cs_tolerance_out.txt > fmi3_cs_tolerance.log 2>&1"); getErrorString();
+readFile("fmi3_cs_tolerance_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3_cs_tolerance2.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// "fmi3_cs_tolerance.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "tolerance 0.001: True
+// tolerance 1e-10: True
+// "
+// ""
+// 0
+// ""
+// "tolerance 0.001: True
+// tolerance 1e-10: True
+// "
+// ""
+// endResult
