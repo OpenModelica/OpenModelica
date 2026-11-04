@@ -10,6 +10,7 @@ forNestedElseIf.mos \
 forSliceRowMajor.mos \
 sliceRangeSparsity.mos \
 sparsityScalarTemplates.mos \
+sparsityNegatedAlias.mos \
 scalarDivArray.mos \
 arrayRowScalar.mos \
 emptyArrayTupleArgument.mos \
