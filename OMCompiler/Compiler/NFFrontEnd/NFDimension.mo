@@ -618,6 +618,16 @@ public
     end match;
   end endExp;
 
+  function containsSplitSubscriptedExp
+    input Dimension dim;
+    output Boolean res;
+  algorithm
+    res := match dim
+      case EXP() then Expression.containsSplitSubscriptedExp(dim.exp);
+      else false;
+    end match;
+  end containsSplitSubscriptedExp;
+
   function sizeExp
     "Returns the size of a dimension as an Expression."
     input Dimension dim;

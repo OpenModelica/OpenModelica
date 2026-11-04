@@ -1210,6 +1210,25 @@ algorithm
   subs := listReverseInPlace(subs);
 end makeBindingIterators;
 
+function bindingIteratorIndex
+  "$w2 with the prefix name $w -> 2, otherwise 0"
+  input String name;
+  input String prefixName;
+  output Integer index = 0;
+protected
+  Integer len = stringLength(prefixName);
+  String rest;
+algorithm
+  if stringLength(name) > len and substring(name, 1, len) == prefixName then
+    rest := substring(name, len + 1, stringLength(name));
+    try
+      index := stringInt(rest);
+    else
+      index := 0;
+    end try;
+  end if;
+end bindingIteratorIndex;
+
 function vectorizeBinding
   input output Binding binding;
   input Prefix prefix;
@@ -1257,7 +1276,7 @@ algorithm
   dims := List.flatten(list(Type.arrayDims(InstNode.getType(n)) for n in nodes));
   dims := List.lastN(dims, listLength(subs));
   // the size of a nested array may depend on an outer element, e.g. {2, 3}[<w, 1>] -> {2, 3}[$w1]
-  dims := list(if dimensionHasSplitIndex(d) then flattenDimension(d, prefix, Binding.getInfo(binding)) else d for d in dims);
+  dims := list(if Dimension.containsSplitSubscriptedExp(d) then flattenDimension(d, prefix, Binding.getInfo(binding)) else d for d in dims);
   // the expression is already split, e.g. CAST(Real, {..}[$x1]), so its own type is the element type
   binding_ty := Type.liftArrayLeftList(Expression.typeOf(exp), dims);
 
@@ -1278,26 +1297,6 @@ algorithm
 
   binding := Binding.makeFlat(exp, Binding.variability(binding), Binding.source(binding), Binding.getInfo(binding), Binding.confidence(binding));
 end vectorizeBinding;
-
-function dimensionHasSplitIndex
-  input Dimension dim;
-  output Boolean res;
-algorithm
-  res := match dim
-    case Dimension.EXP() then Expression.contains(dim.exp, isSplitSubscriptedExp);
-    else false;
-  end match;
-end dimensionHasSplitIndex;
-
-function isSplitSubscriptedExp
-  input Expression exp;
-  output Boolean res;
-algorithm
-  res := match exp
-    case Expression.SUBSCRIPTED_EXP(split = true) then true;
-    else false;
-  end match;
-end isSplitSubscriptedExp;
 
 function fillVectorizedBinding
   input output Binding binding;
@@ -1365,11 +1364,11 @@ protected
 algorithm
   // Split indices of this component in expressions, e.g. {2, 3}[<lay, 1>] from T[end] with
   // differently sized elements, become the iterators. Flattening would expand them to {2, 3}.
-  split := Equation.containsExp(eqn, function Expression.contains(func = function isSplitOfNode(node = node)));
+  split := Equation.containsExp(eqn, function Expression.contains(func = function Expression.isSplitSubscriptedExpOf(node = node)));
   if split then
     (iters, ranges, subs) := makeIterators(Prefix.prefix(prefix), dimensions);
     subs := listReverse(subs);
-    eql := flattenEquation(Equation.mapExp(eqn, function replaceSplitIndicesOfNode(node = node, subscripts = subs)), EMPTY_PREFIX, {}, settings);
+    eql := flattenEquation(Equation.mapExp(eqn, function Expression.replaceSplitIndicesOfNode(node = node, subscripts = subs)), EMPTY_PREFIX, {}, settings);
   else
     // Flatten with an empty prefix to get rid of any split indices.
     eql := flattenEquation(eqn, EMPTY_PREFIX, {}, settings);
@@ -1439,52 +1438,6 @@ algorithm
     vectorizedEqn := Equation.FOR(iter, SOME(range), {vectorizedEqn}, scope, src);
   end while;
 end vectorizeEquationGeneric;
-
-function isSplitOfNode
-  input Expression exp;
-  input InstNode node;
-  output Boolean res;
-algorithm
-  res := match exp
-    case Expression.SUBSCRIPTED_EXP(split = true)
-      then List.any(exp.subscripts, function isSplitIndexOfNode(node = node));
-    else false;
-  end match;
-end isSplitOfNode;
-
-function isSplitIndexOfNode
-  input Subscript sub;
-  input InstNode node;
-  output Boolean res;
-algorithm
-  res := match sub
-    case Subscript.SPLIT_INDEX() then InstNode.refEqual(InstNode.borrow(sub.node), node);
-    else false;
-  end match;
-end isSplitIndexOfNode;
-
-function replaceSplitIndicesOfNode
-  input output Expression exp;
-  input InstNode node;
-  input list<Subscript> subscripts;
-algorithm
-  exp := Expression.map(exp, function replaceSplitIndicesOfNode2(node = node, subscripts = subscripts));
-end replaceSplitIndicesOfNode;
-
-function replaceSplitIndicesOfNode2
-  input output Expression exp;
-  input InstNode node;
-  input list<Subscript> subscripts;
-algorithm
-  () := match exp
-    case Expression.SUBSCRIPTED_EXP(split = true) guard isSplitOfNode(exp, node)
-      algorithm
-        exp.subscripts := list(match s case Subscript.SPLIT_INDEX() guard isSplitIndexOfNode(s, node)
-          then listGet(subscripts, s.dimIndex); else s; end match for s in exp.subscripts);
-      then ();
-    else ();
-  end match;
-end replaceSplitIndicesOfNode2;
 
 function vectorizeAlgorithms
   input list<Algorithm> algs;
@@ -1600,25 +1553,6 @@ algorithm
     else exp;
   end match;
 end addIterator_traverse;
-
-function bindingIteratorIndex
-  "$w2 with the prefix name $w -> 2, otherwise 0"
-  input String name;
-  input String prefixName;
-  output Integer index = 0;
-protected
-  Integer len = stringLength(prefixName);
-  String rest;
-algorithm
-  if stringLength(name) > len and substring(name, 1, len) == prefixName then
-    rest := substring(name, len + 1, stringLength(name));
-    try
-      index := stringInt(rest);
-    else
-      index := 0;
-    end try;
-  end if;
-end bindingIteratorIndex;
 
 function mergeIterator
   input output ComponentRef cref;

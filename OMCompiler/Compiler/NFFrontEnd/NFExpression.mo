@@ -6767,6 +6767,46 @@ public
     end match;
   end filterSplitIndices2;
 
+  function isSplitSubscriptedExpOf
+    "Returns true if the expression is a split subscripted expression with a
+     split index of the given node."
+    input Expression exp;
+    input InstNode node;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case SUBSCRIPTED_EXP(split = true)
+        then List.any(exp.subscripts, function filterSplitIndices2(node = node));
+      else false;
+    end match;
+  end isSplitSubscriptedExpOf;
+
+  function replaceSplitIndicesOfNode
+    "Replaces the split indices of the given node, the n:th with the n:th of the
+     given subscripts, e.g. {2, 3}[<lay, 1>] -> {2, 3}[$i1]."
+    input output Expression exp;
+    input InstNode node;
+    input list<Subscript> subscripts;
+  algorithm
+    exp := map(exp, function replaceSplitIndicesOfNode2(node = node, subscripts = subscripts));
+  end replaceSplitIndicesOfNode;
+
+  function replaceSplitIndicesOfNode2
+    input output Expression exp;
+    input InstNode node;
+    input list<Subscript> subscripts;
+  algorithm
+    () := match exp
+      case SUBSCRIPTED_EXP(split = true) guard isSplitSubscriptedExpOf(exp, node)
+        algorithm
+          exp.subscripts := list(match s case Subscript.SPLIT_INDEX() guard filterSplitIndices2(s, node)
+            then listGet(subscripts, s.dimIndex); else s; end match for s in exp.subscripts);
+        then
+          ();
+      else ();
+    end match;
+  end replaceSplitIndicesOfNode2;
+
   function expandSplitIndices
     "Replaces split indices in a subscripted expression with : subscripts."
     input Expression exp;
