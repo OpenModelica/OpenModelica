@@ -1,0 +1,157 @@
+// name:     InputDerivatives
+// keywords: index reduction, alias elimination, input, derivative, #9802
+// status:   correct
+// teardown_command: rm -rf MWE* illegalDerInput* InputDerivatives2* InputDerivatives_*.csv
+//
+// Derivatives of top-level inputs, see --inputDerivatives. In MWE alias
+// elimination replaces y by u_top and der(y) by der(u_top), in
+// InputDerivatives2 index reduction differentiates x = u1*u2 + sin(u1) twice,
+// illegalDerInput writes der(u).
+
+loadString("
+model MWE
+  input Real u_top;
+  Real u;
+  Real y;
+  parameter Real tau = 1;
+equation
+  tau*der(y) + y = u \"First-order low-pass filter\";
+  y = u_top \"The input prescribes the output of the filter, inverse problem\";
+end MWE;
+
+model illegalDerInput
+  input Real u;
+  output Real y;
+equation
+  y = der(u);
+end illegalDerInput;
+
+model InputDerivatives2
+  input Real u1, u2;
+  Real x, v, f;
+equation
+  der(x) = v;
+  der(v) = f;
+  x = u1*u2 + sin(u1);
+end InputDerivatives2;
+"); getErrorString();
+
+// u_top = 1 + 2*time, u2 = 3 - time
+writeFile("InputDerivatives_MWE.csv", "time,u_top,der(u_top)\n0,1,2\n2,5,2\n"); getErrorString();
+writeFile("InputDerivatives_u.csv", "time,u,der(u)\n0,0,0\n1,1,2\n2,4,4\n"); getErrorString();
+writeFile("InputDerivatives_2.csv", "time,u1,u2,der(u1),der(u2),der(der(u1)),der(der(u2))\n0,1,3,2,-1,0,0\n2,5,1,2,-1,0,0\n"); getErrorString();
+
+// default: error
+buildModel(MWE); getErrorString();
+buildModel(illegalDerInput); getErrorString();
+buildModel(InputDerivatives2); getErrorString();
+
+setCommandLineOptions("--inputDerivatives=input"); getErrorString();
+simulate(MWE, stopTime = 2, simflags = "-csvInput=InputDerivatives_MWE.csv"); getErrorString();
+// u = tau*der(u_top) + u_top = 2 + (1 + 2*time)
+val(u, 0.0); val(u, 1.0); val(u, 2.0);
+simulate(illegalDerInput, stopTime = 2, simflags = "-csvInput=InputDerivatives_u.csv"); getErrorString();
+val(y, 0.5); val(y, 1.5);
+simulate(InputDerivatives2, stopTime = 2, simflags = "-csvInput=InputDerivatives_2.csv"); getErrorString();
+// v = der(u1)*(u2 + cos(u1)) + u1*der(u2), f = 2*der(u1)*der(u2) - sin(u1)*der(u1)^2
+val(v, 1.0); 2*(2 + cos(3)) - 3;
+val(f, 1.0); -4 - 4*sin(3);
+
+// the derivative is taken as zero
+setCommandLineOptions("--inputDerivatives=zero"); getErrorString();
+simulate(MWE, stopTime = 2, simflags = "-csvInput=InputDerivatives_MWE.csv"); getErrorString();
+val(u, 1.0);
+
+setCommandLineOptions("--daeMode --inputDerivatives=error"); getErrorString();
+buildModel(MWE); getErrorString();
+setCommandLineOptions("--inputDerivatives=input"); getErrorString();
+buildModel(MWE); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// {"", ""}
+// "Error: The model requires derivatives of some inputs as listed below:
+// der(u_top)
+// Use --inputDerivatives=input to make them additional inputs.
+// Error: post-optimization module inputDerivativesUsed (simulation) failed.
+// "
+// {"", ""}
+// "Error: The model requires derivatives of some inputs as listed below:
+// der(u)
+// Use --inputDerivatives=input to make them additional inputs.
+// Error: post-optimization module inputDerivativesUsed (simulation) failed.
+// "
+// {"", ""}
+// "Error: The model requires derivatives of some inputs as listed below:
+// der(u2)
+// der(u1)
+// Use --inputDerivatives=input to make them additional inputs.
+// Error: post-optimization module inputDerivativesUsed (simulation) failed.
+// "
+// true
+// ""
+// record SimulationResult
+//     resultFile = "MWE_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'MWE', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-csvInput=InputDerivatives_MWE.csv'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 3.0
+// 5.0
+// 7.0
+// record SimulationResult
+//     resultFile = "illegalDerInput_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'illegalDerInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-csvInput=InputDerivatives_u.csv'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 3.0
+// record SimulationResult
+//     resultFile = "InputDerivatives2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'InputDerivatives2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-csvInput=InputDerivatives_2.csv'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -0.9799849932008908
+// -0.9799849932008908
+// -4.564480032239469
+// -4.5644800322394685
+// true
+// ""
+// record SimulationResult
+//     resultFile = "MWE_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'MWE', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-csvInput=InputDerivatives_MWE.csv'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 3.0
+// true
+// ""
+// {"", ""}
+// "Error: The model requires derivatives of some inputs as listed below:
+// der(u_top)
+// Use --inputDerivatives=input to make them additional inputs.
+// Error: post-optimization module inputDerivativesUsed (simulation) failed.
+// Error: Internal error SimCode DAEmode: The model MWE could not be translated
+// "
+// true
+// ""
+// {"MWE", "MWE_init.xml"}
+// ""
+// endResult

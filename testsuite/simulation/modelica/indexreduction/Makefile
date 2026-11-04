@@ -6,6 +6,7 @@ SingularPlanarLoop.mos \
 PantelidesSingular.mos \
 MoveWithInputs.mos \
 DiscreteTupleOutput.mos \
+InputDerivatives.mos \
 TupleConstraintEquation.mos \
 TupleConstraintStateSet.mos \
 TupleAssignInIf.mos \
