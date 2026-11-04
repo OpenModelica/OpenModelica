@@ -1137,6 +1137,7 @@ RedeclareMod9.mo \
 RedeclareMod10.mo \
 RedeclareMod11.mo \
 RedeclareMod12.mo \
+RedeclareMod13.mo \
 RedeclareNonReplaceable1.mo \
 redeclare10.mo \
 redeclare11.mo \
