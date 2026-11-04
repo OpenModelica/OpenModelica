@@ -13,6 +13,7 @@ issue10523.mos \
 Issue14456.mos \
 CvodeStepTooClose.mos \
 Issue17436.mos \
+FmuStartEventError.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -24,6 +25,7 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 FmuNlsSameTime.py \
+FmuStartEventError.py \
 Makefile \
 
 CLEAN = `ls | grep -w -v -f deps.tmp`

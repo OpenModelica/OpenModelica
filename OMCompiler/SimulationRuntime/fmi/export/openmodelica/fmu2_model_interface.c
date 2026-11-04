@@ -1047,15 +1047,15 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
   {
     comp->eventInfo.nextEventTimeDefined = fmi2True;
     comp->eventInfo.nextEventTime = nextSampleEvent;
-    internalEventUpdate(comp, &(comp->eventInfo));
+    res = internalEventUpdate(comp, &(comp->eventInfo));
   }
   else
   {
     comp->eventInfo.nextEventTimeDefined = fmi2False;
+    res = fmi2OK;
   }
-  res = fmi2OK;
 
-  done = 1;
+  done = res == fmi2OK;
   /* catch */
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }

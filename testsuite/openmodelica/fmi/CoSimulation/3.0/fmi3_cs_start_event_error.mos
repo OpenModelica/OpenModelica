@@ -1,0 +1,47 @@
+// name:     fmi3_cs_start_event_error
+// keywords: FMI 3.0 export co-simulation initialization event assert
+// status:   correct
+// teardown_command: rm -rf fmi3_cs_start_event_error*.fmu fmi3_cs_start_event_error*.fmutmp/ fmi3_cs_start_event_error*.log fmi3_cs_start_event_error*_out.txt
+//
+// The C FMU runs an event due at the start time in fmi3ExitInitializationMode.
+// When that event fails, fmi3ExitInitializationMode must fail too (#17769).
+// The Rust runtime runs that event in the first step instead, so this test
+// uses the C runtime.
+setCommandLineOptions("--simCodeTarget=C"); getErrorString();
+loadString("
+model fmi3_cs_start_event_error
+  function f
+    input Real p;
+    output Real y;
+  algorithm
+    assert(p > 0.5, \"p must exceed 0.5\");
+    y := p;
+  end f;
+  discrete Real d(start = 1, fixed = true);
+  discrete Real y(start = 1, fixed = true);
+equation
+  when sample(0, 0.1) then
+    d = pre(d) - 1;
+    y = f(d);
+  end when;
+end fmi3_cs_start_event_error;
+"); getErrorString();
+buildModelFMU(fmi3_cs_start_event_error, version = "3.0", fmuType = "cs"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi3_cs_start_event_error.py fmi3_cs_start_event_error.fmu fmi3_cs_start_event_error_out.txt"); getErrorString();
+readFile("fmi3_cs_start_event_error_out.txt"); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3_cs_start_event_error.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "fmi3ExitInitializationMode: fmi3Error
+// fmi3DoStep: fmi3Error
+// "
+// ""
+// endResult

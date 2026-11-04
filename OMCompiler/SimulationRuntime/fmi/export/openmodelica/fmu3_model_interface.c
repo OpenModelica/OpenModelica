@@ -1088,15 +1088,15 @@ fmi3Status omcExitInitializationMode(ModelInstance* c)
   {
     comp->eventInfo.nextEventTimeDefined = fmi3True;
     comp->eventInfo.nextEventTime = nextSampleEvent;
-    internalEventUpdate(comp, &(comp->eventInfo));
+    res = internalEventUpdate(comp, &(comp->eventInfo));
   }
   else
   {
     comp->eventInfo.nextEventTimeDefined = fmi3False;
+    res = fmi3OK;
   }
-  res = fmi3OK;
 
-  done = 1;
+  done = res == fmi3OK;
   /* catch */
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
