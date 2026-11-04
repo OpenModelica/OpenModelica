@@ -366,12 +366,13 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   int (*dataReconciliationUnmeasuredVariables)(DATA* modelData, char ** names);
 
   /*
-  * FMU's have simulation settings in <DefaultExperiment> and we need to read those settings during instantiation
+  * FMI 1.0 FMUs: the default experiment, read during instantiation. FMI 2.0 and
+  * 3.0 FMUs read it from resources/<prefix>_init.bin (util/omc_fmu_init.h).
   */
   void (*read_simulation_info)(SIMULATION_INFO* simulationSettings);
 
   /*
-  * FMU's do not need the XML-file; they use this callback instead.
+  * FMI 1.0 FMUs: the variable info and attributes, instead of the XML file.
   */
   void (*read_input_fmu)(MODEL_DATA* modelData);
 

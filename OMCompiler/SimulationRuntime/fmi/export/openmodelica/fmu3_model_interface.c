@@ -65,6 +65,7 @@
 #include "../simulation/solver/synchronous.h"
 #include "../simulation/options.h"
 #include "../util/simulation_options.h"
+#include "../util/omc_fmu_init.h"
 #include "../util/omc_error.h"
 
 #include "../util/omc_mmap.h"
@@ -699,6 +700,7 @@ ModelInstance* omcInstantiate(fmi3String instanceName, OMC_FmuType fmuType, fmi3
   * The problem is that we might overwrite the main simulation's copy of the interface...
   */
   ModelInstance *comp;
+  OMC_FMU_INIT *init;
   if (!logMessage) {
     return NULL;
   }
@@ -791,12 +793,26 @@ ModelInstance* omcInstantiate(fmi3String instanceName, OMC_FmuType fmuType, fmi3
   omc_useStream[OMC_LOG_STDOUT] = 1;
   omc_useStream[OMC_LOG_ASSERT] = 1;
   fmu3_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
+  init = omc_fmu_init_load(comp->fmuData->modelData);
+  if (omc_fmu_init_error(init)) {
+    omc_fmi3_logCallback(logMessage, instanceEnvironment, fmi3Error, "logStatusError", "omcInstantiate: %s", omc_fmu_init_error(init));
+    omc_fmu_init_free(init);
+    free(comp->fmuData->modelData->resourcesDir);
+    free(threadData);
+    free(simInfo);
+    free(modelData);
+    free(fmudata);
+    free((void*)comp->GUID);
+    free((void*)comp->instanceName);
+    free(comp);
+    return NULL;
+  }
   /*
    * load the simulation settings before initializing the DataStruct for fmus
    * fix issue #11855, always take the startTime provided in modeldescription.xml
    * to handle model that have startTime > 0 (e.g) startTime = 0.2
    */
-  comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
+  omc_fmu_init_experiment(init, comp->fmuData->simulationInfo);
   allocModelDataVars(comp->fmuData->modelData, FALSE, comp->threadData);
   scalarAllocArrayAttributes(comp->fmuData->modelData);
   if (comp->fmuData->callback->updateStructuralParameters) {
@@ -805,18 +821,19 @@ ModelInstance* omcInstantiate(fmi3String instanceName, OMC_FmuType fmuType, fmi3
   calculateAllScalarLength(comp->fmuData->modelData);
 
   /* setup model data with default start data */
-  setDefaultStartValues(comp);
+  omc_fmu_init_variables(init, comp->fmuData->modelData, 1);
   initializeDataStruc(comp->fmuData, comp->threadData);
 
   setAllParamsToStart(comp->fmuData->simulationInfo, comp->fmuData->modelData);
   setAllVarsToStart(comp->fmuData->localData[0], comp->fmuData->simulationInfo, comp->fmuData->modelData);
-  /* read_input_fmu sets the per-variable info and attribute values (parameter
-     start values etc.). It must run AFTER initializeDataStruc/computeVarIndices
-     has built the variable->global-array index maps, otherwise the start values
-     it writes never reach simulationInfo->realParameter[realParamsIndex[...]]
-     and parameters stay 0 (issue #15686). This mirrors fmu2_model_interface.c /
+  /* The info and attribute values. They must be set AFTER
+     initializeDataStruc/computeVarIndices has built the variable->global-array
+     index maps, otherwise the start values never reach
+     simulationInfo->realParameter[realParamsIndex[...]] and parameters stay 0
+     (issue #15686). This mirrors fmu2_model_interface.c /
      fmu1_model_interface.c.inc (#15838). */
-  comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData);
+  omc_fmu_init_variables(init, comp->fmuData->modelData, 0);
+  omc_fmu_init_free(init);
 
 
 #if !defined(OMC_MINIMAL_METADATA)
@@ -1036,7 +1053,7 @@ fmi3Status omcEnterInitializationMode(ModelInstance* c)
   FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcEnterInitializationMode...")
 
   setZCtol(comp->fmuData->simulationInfo->tolerance); /* set zero-crossing tolerance */
-  setStartValues(comp);
+  setStartToCurrentValues(comp->fmuData);
   copyStartValuestoInitValues(comp->fmuData);
   comp->state = model_state_initialization_mode;
 
@@ -1150,6 +1167,7 @@ fmi3Status omcReset(ModelInstance* c)
 {
   ModelInstance* comp = (ModelInstance *)c;
   modelica_boolean modelDataVarsFreed = FALSE;
+  OMC_FMU_INIT *init;
   if (invalidState(comp, "omcReset", model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error))
     return fmi3Error;
   FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcReset")
@@ -1187,6 +1205,13 @@ fmi3Status omcReset(ModelInstance* c)
   omc_useStream[OMC_LOG_STDOUT] = 1;
   omc_useStream[OMC_LOG_ASSERT] = 1;
   fmu3_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
+  init = omc_fmu_init_load(comp->fmuData->modelData);
+  if (omc_fmu_init_error(init)) {
+    FILTERED_LOG(comp, fmi3Error, LOG_STATUSERROR, "omcReset: %s", omc_fmu_init_error(init))
+    omc_fmu_init_free(init);
+    comp->state = model_state_error;
+    return fmi3Error;
+  }
   if (modelDataVarsFreed) {
     /* deInitializeDataStruc freed the var data arrays; re-allocate them before they are
      * initialized and filled again, mirroring fmi3Instantiate. */
@@ -1197,14 +1222,15 @@ fmi3Status omcReset(ModelInstance* c)
     }
     calculateAllScalarLength(comp->fmuData->modelData);
   }
-  comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
+  omc_fmu_init_experiment(init, comp->fmuData->simulationInfo);
   initializeDataStruc(comp->fmuData, comp->threadData);
 
   /* reset model data with default start data */
-  setDefaultStartValues(comp);
+  omc_fmu_init_variables(init, comp->fmuData->modelData, 1);
   setAllParamsToStart(comp->fmuData->simulationInfo, comp->fmuData->modelData);
   setAllVarsToStart(comp->fmuData->localData[0], comp->fmuData->simulationInfo ,comp->fmuData->modelData);
-  comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData);
+  omc_fmu_init_variables(init, comp->fmuData->modelData, 0);
+  omc_fmu_init_free(init);
 #if !defined(OMC_MINIMAL_METADATA)
   modelInfoInit(&(comp->fmuData->modelData->modelDataXml));
 #endif

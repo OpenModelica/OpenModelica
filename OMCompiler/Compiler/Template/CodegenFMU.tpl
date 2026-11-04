@@ -112,7 +112,8 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
 
   let _ = generateSimulationFiles(simCode,guid,fileNamePrefixTmpDir,FMUVersion)
 
-  let()= textFile(simulationInitFunction(simCode,guid), '<%fileNamePrefixTmpDir%>_init_fmu.c')
+  // FMI 2.0 and 3.0 read resources/<prefix>_init.bin (SerializeFmuInit) instead.
+  let _ = if isFMIVersion10(FMUVersion) then simulationInitFunctionFile(simCode,guid,fileNamePrefixTmpDir)
   let()= textFile(fmumodel_identifierHeaderFile(simCode,guid,FMUVersion,FMUType), '<%fileNamePrefixTmpDir%>_FMU.h')
   let()= textFile(fmumodel_identifierFile(simCode,guid,FMUVersion,FMUType), '<%fileNamePrefixTmpDir%>_FMU.c')
 
@@ -327,8 +328,12 @@ case SIMCODE(__) then
   >>
   %>
 
+  <%if isFMIVersion10(FMUVersion) then
+  <<
   void setStartValues(ModelInstance *comp);
   void setDefaultStartValues(ModelInstance *comp);
+  >>
+  %>
   <%if boolOr(isFMIVersion20(FMUVersion), isFMIVersion30(FMUVersion)) then
   <<
   void eventUpdate(ModelInstance* comp, fmi2EventInfo* eventInfo);
@@ -400,8 +405,12 @@ case SIMCODE(__) then
 
   #include "simulation/solver/events.h"
 
+  <%if isFMIVersion10(FMUVersion) then
+  <<
   <%setDefaultStartValues(modelInfo)%>
   <%setStartValues(modelInfo)%>
+  >>
+  %>
   const size_t omc_fmu_threadDataSize = sizeof(threadData_t);
   <%if isFMIVersion30(FMUVersion) then
   <<
@@ -3752,6 +3761,12 @@ case FMI3ENUMERATIONVARIABLE(variability = "",causality="output") then
   {<%name%>} = map_<%getEnumerationTypeFromTypes(fmiTypeDefinitionsList, baseType)%>_from_integers(<%fmiGetFunction%>(<%fmiInstance%>, {<%valueReference%>}, flowStatesInputs));<%\n%>
   >>
 end dumpOutputGetEnumerationVariable;
+
+template simulationInitFunctionFile(SimCode simCode, String guid, String fileNamePrefixTmpDir)
+::=
+  let()= textFile(simulationInitFunction(simCode,guid), '<%fileNamePrefixTmpDir%>_init_fmu.c')
+  ""
+end simulationInitFunctionFile;
 
 /* public */ template simulationInitFunction(SimCode simCode, String guid)
  "Generates the contents of the makefile for the simulation case.

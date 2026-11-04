@@ -88,7 +88,6 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"testDID_18spd.c\" />
 //       <File name=\"testDID_FMU.c\" />
 //       <File name=\"testDID_functions.c\" />
-//       <File name=\"testDID_init_fmu.c\" />
 //       <File name=\"testDID_records.c\" />
 //       <File name=\"fmi-export/fmu2_model_interface.c\" />
 //       <File name=\"fmi-export/fmu_read_flags.c\" />
@@ -129,6 +128,7 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"util/omc_box.c\" />
 //       <File name=\"util/omc_error.c\" />
 //       <File name=\"util/omc_file.c\" />
+//       <File name=\"util/omc_fmu_init.c\" />
 //       <File name=\"util/omc_init.c\" />
 //       <File name=\"util/omc_mmap.c\" />
 //       <File name=\"util/omc_msvc.c\" />
