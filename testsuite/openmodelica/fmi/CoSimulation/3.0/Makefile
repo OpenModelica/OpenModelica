@@ -4,6 +4,7 @@ TESTFILES = \
 fmi3_cs_01.mos \
 fmi3_cs_cvode.mos \
 fmi3_cs_event_mode_reinit.mos \
+fmi3_cs_tolerance.mos \
 fmi3_msl_clocked_drive.mos \
 fmi3_wasm_annotation_flags.mos \
 fmi3_wasm_arrays.mos \
@@ -22,6 +23,7 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 fmi3_cs_event_mode_reinit.py \
+fmi3_cs_tolerance.py \
 Makefile \
 
 CLEAN = `ls | grep -w -v -f deps.tmp`

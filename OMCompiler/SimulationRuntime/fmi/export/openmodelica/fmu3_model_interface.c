@@ -1013,6 +1013,9 @@ fmi3Status omcSetupExperiment(ModelInstance* c, fmi3Boolean toleranceDefined, fm
 
   comp->toleranceDefined = toleranceDefined;
   comp->tolerance = tolerance;
+  if (toleranceDefined) {
+    comp->fmuData->simulationInfo->tolerance = tolerance;
+  }
   comp->startTime = startTime;
   comp->stopTimeDefined = stopTimeDefined;
   comp->stopTime = stopTime;
@@ -1031,7 +1034,7 @@ fmi3Status omcEnterInitializationMode(ModelInstance* c)
     return fmi3Error;
   FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcEnterInitializationMode...")
 
-  setZCtol(comp->tolerance); /* set zero-crossing tolerance */
+  setZCtol(comp->fmuData->simulationInfo->tolerance); /* set zero-crossing tolerance */
   setStartValues(comp);
   copyStartValuestoInitValues(comp->fmuData);
   comp->state = model_state_initialization_mode;
@@ -1071,6 +1074,13 @@ fmi3Status omcExitInitializationMode(ModelInstance* c)
       return fmi3Error;
     }
   }
+
+#ifdef OMC_FMI_HAVE_CVODE
+  /* As updateSolverNominals: the nominals and the tolerance are known now. */
+  if (comp->solverInfo && comp->solverInfo->solverMethod == S_CVODE) {
+    cvode_solver_setNominals(comp->fmuData, comp->threadData, comp->solverInfo->solverData);
+  }
+#endif
 
   /* use defined stopTime, if stopTimeDefined is given to calculate the sample events beforehand.
    * TODO: when stopTime is not defined we use an arbitrary constant 100.0, maybe issue a warning
