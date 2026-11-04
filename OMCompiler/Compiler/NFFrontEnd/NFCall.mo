@@ -1447,38 +1447,76 @@ public
           cast_ty := Type.setArrayElementType(call.ty, ty);
         then
           match AbsynUtil.pathFirstIdent(Function.name(call.fn))
+            case "cat" then typeCastRestArgs(call, ty, cast_ty);
             // For 'fill' we can type cast the first argument rather than the
             // whole array that 'fill' constructs.
-            case "fill"
-              algorithm
-                call.arguments := Expression.typeCast(listHead(call.arguments), ty) ::
-                                  listRest(call.arguments);
-                call.ty := cast_ty;
-              then
-                Expression.CALL(call);
-
+            case "fill" then typeCastFirstArg(call, ty, cast_ty);
             // For diagonal we can type cast the argument rather than the
             // matrix that diagonal constructs.
-            case "diagonal"
-              algorithm
-                call.arguments := {Expression.typeCast(listHead(call.arguments), ty)};
-                call.ty := cast_ty;
-              then
-                Expression.CALL(call);
-
+            case "diagonal" then typeCastArgs(call, ty, cast_ty);
             // For DynamicSelect we type cast both of the arguments.
-            case "DynamicSelect"
-              algorithm
-                call.arguments := list(Expression.typeCast(arg, ty) for arg in call.arguments);
-              then
-                Expression.CALL(call);
-
+            case "DynamicSelect" then typeCastArgs(call, ty, cast_ty);
+            // Cast the argument of matrix unless it's more expensive than casting the result.
+            case "matrix" guard Type.dimensionCount(ty) <= 2 then typeCastArgs(call, ty, cast_ty);
+            case "promote" then typeCastFirstArg(call, ty, cast_ty);
+            case "transpose" then typeCastArgs(call, ty, cast_ty);
+            // Cast the argument of vector unless it's more expensive than casting the result.
+            case "vector" guard Type.dimensionCount(ty) <= 1 then typeCastArgs(call, ty, cast_ty);
             else Expression.CAST(cast_ty, callExp);
           end match;
 
       else Expression.typeCastGeneric(callExp, ty);
     end match;
   end typeCast;
+
+  function typeCastArgs
+    input Call call;
+    input Type ty;
+    input Type callTy;
+    output Expression result;
+  algorithm
+    result := match call
+      case TYPED_CALL()
+        algorithm
+          call.arguments := list(Expression.typeCast(arg, ty) for arg in call.arguments);
+          call.ty := callTy;
+        then
+          Expression.CALL(call);
+    end match;
+  end typeCastArgs;
+
+  function typeCastFirstArg
+    input Call call;
+    input Type ty;
+    input Type callTy;
+    output Expression result;
+  algorithm
+    result := match call
+      case TYPED_CALL()
+        algorithm
+          call.arguments := Expression.typeCast(listHead(call.arguments), ty) :: listRest(call.arguments);
+          call.ty := callTy;
+        then
+          Expression.CALL(call);
+    end match;
+  end typeCastFirstArg;
+
+  function typeCastRestArgs
+    input Call call;
+    input Type ty;
+    input Type callTy;
+    output Expression result;
+  algorithm
+    result := match call
+      case TYPED_CALL()
+        algorithm
+          call.arguments := listHead(call.arguments) ::
+            list(Expression.typeCast(arg, ty) for arg in listRest(call.arguments));
+          call.ty := callTy;
+        then
+          Expression.CALL(call);
+    end match;
+  end typeCastRestArgs;
 
   function containsExp
     input Call call;
