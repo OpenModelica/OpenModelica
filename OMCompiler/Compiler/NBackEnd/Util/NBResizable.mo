@@ -135,6 +135,7 @@ public
         if Flags.isSet(Flags.DUMP_RESIZABLE) or debug then
           print(optimalValuesToString(optimal_values));
         end if;
+        varData.resizable := true;
       then varData;
 
       else algorithm

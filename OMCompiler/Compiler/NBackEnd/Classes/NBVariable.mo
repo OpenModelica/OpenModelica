@@ -2770,6 +2770,7 @@ function isJacobianResultVar
 
       /* state order for differentiation and index reduction */
       UnorderedMap<ComponentRef, ComponentRef> state_order;
+      Boolean resizable                   "true if the model has resizable parameters, set by Resizable.resize";
     end VAR_DATA_SIM;
 
     record VAR_DATA_JAC
