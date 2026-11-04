@@ -1,0 +1,68 @@
+// name: sparsityNegatedAlias
+// keywords: NewBackend jacobian sparsity alias
+// status: correct
+// suite: cSources
+// teardown_command: rm -f sparsityNegatedAlias sparsityNegatedAlias_* pairs.log
+//
+// Alias replaces k[i - 1].b.Q_flow by -k[i - 1].Q_flow. The rows of der(c[i].T)
+// depend on c[i - 1].T, c[i].T and c[i + 1].T.
+
+loadString("
+model sparsityNegatedAlias
+  connector Port
+    Real T;
+    flow Real Q_flow;
+  end Port;
+  model Conductor
+    Port a, b;
+    Real Q_flow;
+  equation
+    Q_flow = a.T - b.T;
+    a.Q_flow = Q_flow;
+    b.Q_flow = -Q_flow;
+  end Conductor;
+  model Capacitor
+    Port p;
+    Real T(fixed = true);
+  equation
+    T = p.T;
+    der(T) = p.Q_flow;
+  end Capacitor;
+  Capacitor c[5](T(start = {1, 2, 3, 4, 5}));
+  Conductor k[4];
+equation
+  for i in 1:4 loop
+    connect(c[i].p, k[i].a);
+    connect(k[i].b, c[i + 1].p);
+  end for;
+end sparsityNegatedAlias;
+"); getErrorString();
+setCommandLineOptions("--newBackend -d=arrayConnect"); getErrorString();
+
+simulate(sparsityNegatedAlias); getErrorString();
+system("grep -c addSparsePair sparsityNegatedAlias_12jac.c > pairs.log"); getErrorString();
+readFile("pairs.log");
+val(c[1].T, 1, "sparsityNegatedAlias_res.mat");
+val(c[3].T, 1, "sparsityNegatedAlias_res.mat");
+val(c[5].T, 1, "sparsityNegatedAlias_res.mat");
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "sparsityNegatedAlias_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'sparsityNegatedAlias', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0
+// ""
+// "3
+// "
+// 1.6993164907935006
+// 3.0
+// 4.300683509206499
+// endResult
