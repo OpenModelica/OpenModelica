@@ -377,9 +377,9 @@ algorithm
         alg := listReverseInPlace(sections.algorithms);
         ialg := listReverseInPlace(sections.initialAlgorithms);
       then
-        FlatModel.FLAT_MODEL(classPath, vars, eql, ieql, alg, ialg, src);
+        FlatModel.FLAT_MODEL(classPath, vars, eql, ieql, alg, ialg, {}, {}, src);
 
-      else FlatModel.FLAT_MODEL(classPath, vars, {}, {}, {}, {}, src);
+      else FlatModel.FLAT_MODEL(classPath, vars, {}, {}, {}, {}, {}, {}, src);
   end match;
 
   // get inputs and outputs for algorithms now that types are computed
@@ -437,6 +437,8 @@ algorithm
   funcs := List.fold(flatModel.initialEquations, collectEquationFuncs, funcs);
   funcs := List.fold(flatModel.algorithms, collectAlgorithmFuncs, funcs);
   funcs := List.fold(flatModel.initialAlgorithms, collectAlgorithmFuncs, funcs);
+  funcs := List.fold(flatModel.constraints, collectExpFuncs, funcs);
+  funcs := List.fold(list(Util.tuple22(a) for a in flatModel.optimizationAttributes), collectExpFuncs, funcs);
   execStat(getInstanceName());
 end collectFunctions;
 
@@ -1033,8 +1035,13 @@ algorithm
     (vars, sections) := flattenClass(cls, pre, visibility, opt_binding, vars, sections, deletedVars, settings);
   elseif settings.scalarize then
     dims := list(flattenDimension(d, pre, info) for d in dims);
-    verifyDimensions(dims, node);
-    (vars, sections) := flattenArray(cls, dims, pre, visibility, opt_binding, vars, sections, {}, deletedVars, info, settings);
+
+    if settings.relaxedErrorChecking and not List.all(dims, function Dimension.isKnown(allowExp = false)) then
+      (vars, sections) := vectorizeArray(cls, ty, dims, pre, visibility, opt_binding, vars, sections, {}, deletedVars, settings);
+    else
+      verifyDimensions(dims, node);
+      (vars, sections) := flattenArray(cls, dims, pre, visibility, opt_binding, vars, sections, {}, deletedVars, info, settings);
+    end if;
   else
     (vars, sections) := vectorizeArray(cls, ty, dims, pre, visibility, opt_binding, vars, sections, {}, deletedVars, settings);
   end if;
@@ -1203,6 +1210,25 @@ algorithm
   subs := listReverseInPlace(subs);
 end makeBindingIterators;
 
+function bindingIteratorIndex
+  "$w2 with the prefix name $w -> 2, otherwise 0"
+  input String name;
+  input String prefixName;
+  output Integer index = 0;
+protected
+  Integer len = stringLength(prefixName);
+  String rest;
+algorithm
+  if stringLength(name) > len and substring(name, 1, len) == prefixName then
+    rest := substring(name, len + 1, stringLength(name));
+    try
+      index := stringInt(rest);
+    else
+      index := 0;
+    end try;
+  end if;
+end bindingIteratorIndex;
+
 function vectorizeBinding
   input output Binding binding;
   input Prefix prefix;
@@ -1249,6 +1275,8 @@ algorithm
   nodes := ComponentRef.nodes(prefix_cr);
   dims := List.flatten(list(Type.arrayDims(InstNode.getType(n)) for n in nodes));
   dims := List.lastN(dims, listLength(subs));
+  // the size of a nested array may depend on an outer element, e.g. {2, 3}[<w, 1>] -> {2, 3}[$w1]
+  dims := list(if Dimension.containsSplitSubscriptedExp(d) then flattenDimension(d, prefix, Binding.getInfo(binding)) else d for d in dims);
   // the expression is already split, e.g. CAST(Real, {..}[$x1]), so its own type is the element type
   binding_ty := Type.liftArrayLeftList(Expression.typeOf(exp), dims);
 
@@ -1328,9 +1356,23 @@ protected
   list<Equation> eql;
   Type ty;
   Expression lhs, rhs;
+  InstNode node = ComponentRef.node(Prefix.prefix(prefix));
+  Boolean split;
+  list<InstNode> iters = {};
+  list<Expression> ranges = {};
+  list<Subscript> subs = {};
 algorithm
-  // Flatten with an empty prefix to get rid of any split indices.
-  eql := flattenEquation(eqn, EMPTY_PREFIX, {}, settings);
+  // Split indices of this component in expressions, e.g. {2, 3}[<lay, 1>] from T[end] with
+  // differently sized elements, become the iterators. Flattening would expand them to {2, 3}.
+  split := Equation.containsExp(eqn, function Expression.contains(func = function Expression.isSplitSubscriptedExpOf(node = node)));
+  if split then
+    (iters, ranges, subs) := makeIterators(Prefix.prefix(prefix), dimensions);
+    subs := listReverse(subs);
+    eql := flattenEquation(Equation.mapExp(eqn, function Expression.replaceSplitIndicesOfNode(node = node, subscripts = subs)), EMPTY_PREFIX, {}, settings);
+  else
+    // Flatten with an empty prefix to get rid of any split indices.
+    eql := flattenEquation(eqn, EMPTY_PREFIX, {}, settings);
+  end if;
 
   for eq in eql loop
     equations := match eq
@@ -1339,7 +1381,7 @@ algorithm
       //            will lead to complicated code if not index or whole dim
       //            and we are better off just using for loops for these
       case Equation.EQUALITY(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CREF())
-        guard(not Flags.getConfigBool(Flags.NEW_BACKEND)
+        guard not split and (not Flags.getConfigBool(Flags.NEW_BACKEND)
           or (List.all(ComponentRef.subscriptsAllWithWholeFlat(lhs.cref), Subscript.isSimple)
           and List.all(ComponentRef.subscriptsAllWithWholeFlat(rhs.cref), Subscript.isSimple)))
         algorithm
@@ -1357,7 +1399,7 @@ algorithm
       // wrap general equation into for loop
       else
         algorithm
-          eq := vectorizeEquationGeneric(eq, dimensions, prefix);
+          eq := vectorizeEquationGeneric(eq, dimensions, prefix, iters, ranges, subs);
         then
           splitForLoop(eq, EMPTY_PREFIX, equations, settings);
 
@@ -1369,18 +1411,23 @@ function vectorizeEquationGeneric
   input Equation eqn;
   input list<Dimension> dimensions;
   input Prefix prefix;
+  input list<InstNode> iterators "created here if empty";
+  input list<Expression> iteratorRanges;
+  input list<Subscript> iteratorSubscripts;
   output Equation vectorizedEqn;
 protected
   InstNode iter;
-  list<InstNode> iters;
+  list<InstNode> iters = iterators;
   Expression range;
-  list<Expression> ranges;
-  list<Subscript> subs;
+  list<Expression> ranges = iteratorRanges;
+  list<Subscript> subs = iteratorSubscripts;
   NFInstNode.ScopeRef scope;
   DAE.ElementSource src;
 algorithm
-  (iters, ranges, subs) := makeIterators(Prefix.prefix(prefix), dimensions);
-  subs := listReverseInPlace(subs);
+  if listEmpty(iters) then
+    (iters, ranges, subs) := makeIterators(Prefix.prefix(prefix), dimensions);
+    subs := listReverseInPlace(subs);
+  end if;
   vectorizedEqn := Equation.mapExp(eqn, function addIterator(prefix = prefix, subscripts = subs));
   scope := Equation.scopeCell(eqn);
   src := Equation.source(eqn);
@@ -1488,6 +1535,13 @@ algorithm
   exp := match exp
     local
       ComponentRef restCref;
+      Integer index;
+    // the binding iterators of the component, e.g. $w1 in the size {2, 3}[$w1] of a nested array, see makeBindingIterators
+    case Expression.CREF() guard ComponentRef.isIterator(exp.cref)
+      algorithm
+        index := bindingIteratorIndex(ComponentRef.firstName(exp.cref), "$" + ComponentRef.nodeName(ref));
+      then
+        if index > 0 and index <= listLength(subscripts) then Subscript.toExp(listGet(subscripts, index)) else exp;
     case Expression.CREF(cref = ComponentRef.CREF(restCref = restCref))
       algorithm
         restString := ComponentRef.toString(restCref);
@@ -1651,7 +1705,7 @@ algorithm
 
     case Expression.SUBSCRIPTED_EXP(split = true)
       then Expression.mapShallow(
-        replaceSplitIndices(exp.exp, exp.subscripts, prefix, info),
+        replaceSplitIndices(exp.exp, exp.subscripts, exp.ty, prefix, info),
         function flattenExp(prefix = prefix, info = info));
 
     case Expression.IF(ty = Type.CONDITIONAL_ARRAY())
@@ -1669,17 +1723,24 @@ end flattenExp;
 function replaceSplitIndices
   input output Expression exp;
   input list<Subscript> subscripts;
+  input Type ty;
   input Prefix prefix;
   input SourceInfo info;
 protected
   list<Subscript> subs = subscripts, cr_subs;
   Integer index;
   InstNode cr_node;
+  list<InstNode> vectorized = {};
 algorithm
   for cr in ComponentRef.toListReverse(Prefix.indexedPrefix(prefix)) loop
     cr_subs := ComponentRef.getSubscripts(cr);
 
-    if not listEmpty(cr_subs) then
+    if listEmpty(cr_subs) then
+      // a vectorized component array, see vectorizeEquation
+      if Flags.getConfigBool(Flags.NEW_BACKEND) and Type.isArray(ComponentRef.nodeType(cr)) then
+        vectorized := ComponentRef.node(cr) :: vectorized;
+      end if;
+    else
       index := 1;
       cr_node := ComponentRef.node(cr);
 
@@ -1691,9 +1752,14 @@ algorithm
     end if;
   end for;
 
-  subs := Subscript.expandSplitIndices(subs);
-  exp := Expression.applySubscripts(subs, exp);
-  exp := flattenExp(exp, prefix, info);
+  subs := Subscript.expandSplitIndices(subs, vectorized);
+
+  if List.any(subs, Subscript.isSplitIndex) then
+    exp := Expression.SUBSCRIPTED_EXP(exp, subs, ty, true);
+  else
+    exp := Expression.applySubscripts(subs, exp);
+    exp := flattenExp(exp, prefix, info);
+  end if;
 end replaceSplitIndices;
 
 function replaceSplitIndices2
@@ -1766,7 +1832,7 @@ function flattenConditionalArrayIfExp
   input SourceInfo info;
 protected
   Type ty;
-  Expression cond, tb, fb;
+  Expression cond, tb, fb, flat_tb = exp, flat_fb = exp;
   Variability cond_var;
 algorithm
   Expression.IF(ty = ty, condition = cond, trueBranch = tb, falseBranch = fb) := exp;
@@ -1778,6 +1844,10 @@ algorithm
     // dimensions, evaluate the condition and try to select one of the branches.
     Structural.markExp(cond);
     cond := Ceval.tryEvalExp(cond);
+    if not Expression.isBoolean(cond) and Flags.getConfigBool(Flags.NEW_BACKEND) then
+      flat_tb := flattenExp(tb, prefix, info);
+      flat_fb := flattenExp(fb, prefix, info);
+    end if;
 
     exp := match cond
       case Expression.BOOLEAN()
@@ -1793,6 +1863,12 @@ algorithm
           end if;
         then
           flattenExp(if cond.value then tb else fb, prefix, info);
+
+      // A condition that differs between the elements of a vectorized component array,
+      // e.g. if s then cat(1, {a}, b) else c: the branches have the same size for each element.
+      case _ guard Flags.getConfigBool(Flags.NEW_BACKEND) and
+        Type.dimensionCount(Expression.typeOf(flat_tb)) == Type.dimensionCount(Expression.typeOf(flat_fb))
+        then Expression.IF(Expression.typeOf(flat_tb), cond, flat_tb, flat_fb);
 
       else
         algorithm
@@ -2976,6 +3052,8 @@ protected
 algorithm
   // the array handlers do not know about deleted conditional components
   flatModel.equations := removeDeletedConnects(flatModel.equations, deletedVars);
+  // the frontend evaluates slices of known size to index arrays, the handlers expect ranges
+  flatModel.equations := list(Equation.map(eq, connectSliceRanges) for eq in flatModel.equations);
 
   // Overconstrained connections: build the graph like resolveConnections, which
   // evaluates the Connections.* operators (isRoot, rooted). The connect equations
@@ -2988,7 +3066,7 @@ algorithm
   if System.getHasOverconstrainedConnectors() and not symbolic_oc then
     // the graph needs the single connections, roots and branches: unroll the
     // for loops of a copy of the equations for it
-    unrolled := FlatModel.FLAT_MODEL(flatModel.name, {}, unrollForGraph(flatModel.equations), {}, {}, {}, flatModel.source);
+    unrolled := FlatModel.FLAT_MODEL(flatModel.name, {}, unrollForGraph(flatModel.equations), {}, {}, {}, {}, {}, flatModel.source);
     (_, conns) := Connections.collectConnections(unrolled, function isDeletedCref(deletedVars = deletedVars));
     (flatModel, broken) := NFOCConnectionGraph.handleOverconstrainedArrayConnections(flatModel, unrolled.equations, conns,
       function isDeletedCref(deletedVars = deletedVars));
@@ -3008,6 +3086,24 @@ algorithm
   end if;
   execStat(getInstanceName());
 end resolveArrayConnections;
+
+function connectSliceRanges
+  input output Equation eq;
+protected
+  function sliceRanges
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      case Expression.CREF() then Expression.CREF(exp.ty, ComponentRef.mapSubscripts(exp.cref, Subscript.sliceToRange));
+      else exp;
+    end match;
+  end sliceRanges;
+algorithm
+  eq := match eq
+    case Equation.CONNECT() then Equation.mapExp(eq, sliceRanges);
+    else eq;
+  end match;
+end connectSliceRanges;
 
 function coalesceConnects
   "Runs of connections of single elements of one-dimensional arrays with the
@@ -3798,7 +3894,7 @@ algorithm
   end match;
 end verifyDimension;
 
-function updateVariability
+public function updateVariability
   input output Variable var;
 protected
   Variability v;

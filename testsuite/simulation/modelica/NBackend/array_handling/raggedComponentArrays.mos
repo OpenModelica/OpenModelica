@@ -1,0 +1,68 @@
+// name: raggedComponentArrays
+// keywords: NewBackend, component array, ragged
+// status: correct
+// Component arrays whose elements have arrays of different sizes.
+
+loadString("
+model RaggedComponentArrays
+  model Layer
+    parameter Integer n;
+    parameter Real k = 1;
+    Real T[n](each start = 1);
+  equation
+    for i in 1:n loop
+      der(T[i]) = -k * i * T[i];
+    end for;
+  end Layer;
+  Layer lay[3](n = {2, 3, 1}, k = {1, 2, 3});
+  Real y = lay[2].T[3];
+end RaggedComponentArrays;
+
+model NestedRaggedComponentArrays
+  model Layer
+    parameter Integer n;
+    Real T[n](each start = 1);
+  equation
+    for i in 1:n loop
+      der(T[i]) = -i * T[i];
+    end for;
+  end Layer;
+  model Wall
+    parameter Integer nn[2];
+    Layer lay[2](n = nn);
+  end Wall;
+  Wall w[2](nn = {{2, 3}, {3, 1}});
+  Real y = w[2].lay[1].T[3];
+end NestedRaggedComponentArrays;
+"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+
+simulate(RaggedComponentArrays); getErrorString();
+val(y, 1.0);
+simulate(NestedRaggedComponentArrays); getErrorString();
+val(y, 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "RaggedComponentArrays_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'RaggedComponentArrays', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0024795108698781932
+// record SimulationResult
+//     resultFile = "NestedRaggedComponentArrays_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'NestedRaggedComponentArrays', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.04978905341928679
+// endResult

@@ -1355,6 +1355,30 @@ end Figure;
 package Internal
   "Internal definitions."
 
+partial function simulationArguments
+  "The arguments of simulate, buildModel and the other simulation calls.
+   An argument that is not given is taken from the experiment annotation."
+  input TypeName className "the class that should simulated";
+  input Real startTime = nan() "the start time of the simulation. <default> = 0.0";
+  input Real stopTime = nan() "the stop time of the simulation. <default> = 1.0";
+  input Integer numberOfIntervals = -1 "number of intervals in the result file. <default> = 500";
+  input Real stepSize = nan() "step size that is used for the result file; overrides numberOfIntervals. <default> = 0.002";
+  input Real tolerance = nan() "tolerance used by the integration method. <default> = 1e-6";
+  input String method = "<default>" "integration method used for simulation. <default> = dassl";
+  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
+  input String options = "<default>" "options. <default> = \"\"";
+  input String outputFormat = "<default>" "Format for the result file. <default> = \"mat\"";
+  input String variableFilter = "<default>" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
+  input String cflags = "<default>" "cflags. <default> = \"\"";
+  input String simflags = "<default>" "simflags. <default> = \"\"";
+end simulationArguments;
+
+function nan
+  "Not a number; the default of an argument that is computed when it is not given."
+  output Real r;
+external "builtin";
+end nan;
+
 package Time
   "Time related functions."
 
@@ -1396,14 +1420,14 @@ algorithm
 annotation(preferredView="text");
 end readableTime;
 
-function timerTick
+impure function timerTick
   "Starts the internal timer with the given index."
   input Integer index;
 external "builtin";
 annotation(preferredView="text");
 end timerTick;
 
-function timerTock
+impure function timerTock
   "Reads the internal timer with the given index."
   input Integer index;
   output Real elapsed;
@@ -1411,7 +1435,7 @@ external "builtin";
 annotation(preferredView="text");
 end timerTock;
 
-function timerAccumulated
+impure function timerAccumulated
   "Reads the total time accumulated on the internal timer with the given index,
    or -1 if that timer never ran. Timers that measure a stretch of work that
    recurs during one command accumulate instead of ticking once."
@@ -1421,7 +1445,7 @@ external "builtin";
 annotation(preferredView="text");
 end timerAccumulated;
 
-function timerClear
+impure function timerClear
   "Clears the internal timer with the given index."
   input Integer index;
 external "builtin";
@@ -1432,7 +1456,7 @@ end Time;
 
 type FileType = enumeration(NoFile, RegularFile, Directory, SpecialFile) "Return type of stat.";
 
-function stat
+impure function stat
   "Display file status."
   input String name;
   output FileType fileType;
@@ -1442,14 +1466,14 @@ end stat;
 
 end Internal;
 
-function checkSettings
+impure function checkSettings
   "Display some diagnostics."
   output CheckSettingsResult result;
 external "builtin";
 annotation(preferredView="text");
 end checkSettings;
 
-function loadFile
+impure function loadFile
   "Loads a Modelica file (``*.mo``)."
   input String fileName;
   input String encoding = "UTF-8";
@@ -1469,7 +1493,7 @@ annotation(Documentation(info="<html>
 </html>"), preferredView="text");
 end loadFile;
 
-function loadFiles
+impure function loadFiles
   "Loads Modelica files (``*.mo``)."
   input String[:] fileNames;
   input String encoding = "UTF-8";
@@ -1483,7 +1507,7 @@ external "builtin";
 annotation(preferredView="text");
 end loadFiles;
 
-function parseEncryptedPackage
+impure function parseEncryptedPackage
   "Parses an encrypted package and returns the names of the parsed classes."
   input String fileName;
   input String workdir = "<default>" "The output directory for imported encrypted files. <default> will put the files to current working directory.";
@@ -1492,7 +1516,7 @@ external "builtin";
 annotation(preferredView="text");
 end parseEncryptedPackage;
 
-function loadEncryptedPackage
+impure function loadEncryptedPackage
   "Loads an encrypted package."
   input String fileName;
   input String workdir = "<default>" "The output directory for imported encrypted files. <default> will put the files to current working directory.";
@@ -1505,7 +1529,7 @@ external "builtin";
 annotation(preferredView="text");
 end loadEncryptedPackage;
 
-function reloadClass
+impure function reloadClass
   "Reloads the file associated with the given loaded class."
   input TypeName name;
   input String encoding = "UTF-8";
@@ -1516,7 +1540,7 @@ annotation(preferredView="text",Documentation(info="<html>
 </html>"));
 end reloadClass;
 
-function loadString
+impure function loadString
   "Loads Modelica definitions from a string."
   input String data;
   input String filename = "<interactive>";
@@ -1543,7 +1567,7 @@ was read from a file with the same name.</p>
 </html>"));
 end loadString;
 
-function loadClassContentString
+impure function loadClassContentString
   "Loads class elements from a string and inserts them into the given loaded class."
   input String data;
   input TypeName className;
@@ -1585,7 +1609,7 @@ If an offset is given it will be applied to the graphical annotations on the loa
 </html>"));
 end loadClassContentString;
 
-function parseString
+impure function parseString
   "Parses a string containing Modelica definitions and returns the parsed classes."
   input String data;
   input String filename = "<interactive>";
@@ -1594,7 +1618,7 @@ external "builtin";
 annotation(preferredView="text");
 end parseString;
 
-function parseFile
+impure function parseFile
   "Parses a Modelica file and returns the parsed classes."
   input String filename;
   input String encoding = "UTF-8";
@@ -1603,7 +1627,7 @@ external "builtin";
 annotation(preferredView="text");
 end parseFile;
 
-function loadFileInteractiveQualified
+impure function loadFileInteractiveQualified
   "Loads a Modelica file and returns a list of the top-level classes that were loaded."
   input String filename;
   input String encoding = "UTF-8";
@@ -1612,7 +1636,7 @@ external "builtin";
 annotation(preferredView="text");
 end loadFileInteractiveQualified;
 
-function loadFileInteractive
+impure function loadFileInteractive
   "Loads a Modelica file and returns a list of all loaded top-level classes."
   input String filename;
   input String encoding = "UTF-8";
@@ -1640,7 +1664,7 @@ external "builtin";
 annotation(__OpenModelica_Impure=true, preferredView="text");
 end system_parallel;
 
-function saveAll "Saves the entire loaded AST to file."
+impure function saveAll "Saves the entire loaded AST to file."
   input String fileName;
   output Boolean success;
 external "builtin";
@@ -1653,25 +1677,25 @@ function help "Display the OpenModelica help text."
 external "builtin";
 end help;
 
-function clear "Clears loaded classes and user defined variables."
+impure function clear "Clears loaded classes and user defined variables."
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
 end clear;
 
-function clearProgram "Clears loaded classes."
+impure function clearProgram "Clears loaded classes."
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
 end clearProgram;
 
-function clearVariables "Clears all user defined variables."
+impure function clearVariables "Clears all user defined variables."
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
 end clearVariables;
 
-function generateHeader
+impure function generateHeader
   "Generates header file for external MetaModelica functions."
   input String fileName;
   output Boolean success;
@@ -1679,7 +1703,7 @@ external "builtin";
 annotation(preferredView="text");
 end generateHeader;
 
-function generateSeparateCode
+impure function generateSeparateCode
   "Generates code for a MetaModelica package."
   input TypeName className;
   input Boolean cleanCache = false "If true, the cache is reset between each generated package. This conserves memory at the cost of speed.";
@@ -1689,7 +1713,7 @@ annotation(Documentation(info="<html><p>Under construction.</p>
 </html>"),preferredView="text");
 end generateSeparateCode;
 
-function generateSeparateCodeDependencies
+impure function generateSeparateCodeDependencies
   "Generates dependencies for a MetaModelica package."
   input String stampSuffix = ".c" "Suffix to add to dependencies (often .c.stamp)";
   output String [:] dependencies;
@@ -1698,7 +1722,7 @@ annotation(Documentation(info="<html><p>Under construction.</p>
 </html>"),preferredView="text");
 end generateSeparateCodeDependencies;
 
-function generateSeparateCodeDependenciesMakefile
+impure function generateSeparateCodeDependenciesMakefile
   "Generates dependencies Makefile for a MetaModelica package."
   input String filename "The file to write the makefile to";
   input String directory = "" "The relative path of the generated files";
@@ -1709,14 +1733,14 @@ annotation(Documentation(info="<html><p>Under construction.</p>
 </html>"),preferredView="text");
 end generateSeparateCodeDependenciesMakefile;
 
-function getLinker
+impure function getLinker
   "Returns the linker (LINK) used for simulation code."
   output String linker;
 external "builtin";
 annotation(preferredView="text");
 end getLinker;
 
-function setLinker
+impure function setLinker
   "Sets the linker (LINK) used for simulation code."
   input String linker;
   output Boolean success;
@@ -1724,14 +1748,14 @@ external "builtin";
 annotation(preferredView="text");
 end setLinker;
 
-function getLinkerFlags
+impure function getLinkerFlags
   "Returns the linker flags (LDFLAGS) used for simulation code."
   output String linkerFlags;
 external "builtin";
 annotation(preferredView="text");
 end getLinkerFlags;
 
-function setLinkerFlags
+impure function setLinkerFlags
   "Sets the linker flags (LDFLAGS) used for simulation code."
   input String linkerFlags;
   output Boolean success;
@@ -1739,14 +1763,14 @@ external "builtin";
 annotation(preferredView="text");
 end setLinkerFlags;
 
-function getCompiler
+impure function getCompiler
   "Returns the C compiler (CC) used for simulation code."
   output String compiler;
 external "builtin";
 annotation(preferredView="text");
 end getCompiler;
 
-function setCompiler
+impure function setCompiler
   "Sets the C compiler (CC) used for simulation code."
   input String compiler;
   output Boolean success;
@@ -1754,7 +1778,7 @@ external "builtin";
 annotation(preferredView="text");
 end setCompiler;
 
-function getCFlags
+impure function getCFlags
   "Returns the C compiler flags (CFLAGS) used for simulation code."
   output String outString;
 external "builtin";
@@ -1764,7 +1788,7 @@ See <a href=\"modelica://OpenModelica.Scripting.setCFlags\">setCFlags()</a> for 
   preferredView="text");
 end getCFlags;
 
-function setCFlags
+impure function setCFlags
   "Sets the C compiler flags (CFLAGS) used for simulation code."
   input String inString;
   output Boolean success;
@@ -1775,14 +1799,14 @@ Sets the CFLAGS passed to the C compiler. Remember to add -fPIC if you are on a 
   preferredView="text");
 end setCFlags;
 
-function getCXXCompiler
+impure function getCXXCompiler
   "Returns the C++ compiler (CXX) used for simulation code."
   output String compiler;
 external "builtin";
 annotation(preferredView="text");
 end getCXXCompiler;
 
-function setCXXCompiler
+impure function setCXXCompiler
   "Sets the C++ compiler (CXX) used for simulation code."
   input String compiler;
   output Boolean success;
@@ -1790,7 +1814,7 @@ external "builtin";
 annotation(preferredView="text");
 end setCXXCompiler;
 
-function getSettings
+impure function getSettings
   "Returns some settings."
   output String settings;
 algorithm
@@ -1801,7 +1825,7 @@ algorithm
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end getSettings;
 
-function setTempDirectoryPath
+impure function setTempDirectoryPath
   "Sets the current user temporary directory location."
   input String tempDirectoryPath;
   output Boolean success;
@@ -1809,14 +1833,14 @@ external "builtin";
 annotation(preferredView="text");
 end setTempDirectoryPath;
 
-function getTempDirectoryPath
+impure function getTempDirectoryPath
   "Returns the current user temporary directory location."
   output String tempDirectoryPath;
 external "builtin";
 annotation(preferredView="text");
 end getTempDirectoryPath;
 
-function getEnvironmentVar
+impure function getEnvironmentVar
   "Returns the value of the given environment variable."
   input String var;
   output String value "returns empty string on failure";
@@ -1824,7 +1848,7 @@ external "builtin";
 annotation(preferredView="text");
 end getEnvironmentVar;
 
-function setEnvironmentVar
+impure function setEnvironmentVar
   "Sets the value of the given environment variable."
   input String var;
   input String value;
@@ -1833,7 +1857,7 @@ external "builtin";
 annotation(preferredView="text");
 end setEnvironmentVar;
 
-function appendEnvironmentVar
+impure function appendEnvironmentVar
   "Appends a variable to the environment variables list."
   input String var;
   input String value;
@@ -1843,7 +1867,7 @@ algorithm
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end appendEnvironmentVar;
 
-function setInstallationDirectoryPath
+impure function setInstallationDirectoryPath
   "Sets the OPENMODELICAHOME environment variable."
   input String installationDirectoryPath;
   output Boolean success;
@@ -1854,7 +1878,7 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end setInstallationDirectoryPath;
 
-function getInstallationDirectoryPath
+impure function getInstallationDirectoryPath
   "Returns the installation directory path."
   output String installationDirectoryPath;
 external "builtin";
@@ -1864,7 +1888,7 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end getInstallationDirectoryPath;
 
-function setModelicaPath
+impure function setModelicaPath
   "Sets the Modelica library path."
   input String modelicaPath;
   output Boolean success;
@@ -1876,7 +1900,7 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end setModelicaPath;
 
-function getModelicaPath
+impure function getModelicaPath
   "Returns the Modelica library path."
   output String modelicaPath;
 external "builtin";
@@ -1888,14 +1912,14 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end getModelicaPath;
 
-function getHomeDirectoryPath
+impure function getHomeDirectoryPath
   "Returns the path to the current user's HOME directory."
   output String homeDirectoryPath;
 external "builtin";
 annotation(preferredView="text");
 end getHomeDirectoryPath;
 
-function setCompilerFlags
+impure function setCompilerFlags
   "Same as setCFlags."
   input String compilerFlags;
   output Boolean success;
@@ -1903,21 +1927,21 @@ external "builtin";
 annotation(preferredView="text");
 end setCompilerFlags;
 
-function enableNewInstantiation
+impure function enableNewInstantiation
   "Enables the new (default) instantiation."
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
 end enableNewInstantiation;
 
-function disableNewInstantiation
+impure function disableNewInstantiation
   "Disables the new (default) instantiation."
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
 end disableNewInstantiation;
 
-function setDebugFlags
+impure function setDebugFlags
   "Sets compiler debug flags."
   input String debugFlags;
   output Boolean success;
@@ -1930,14 +1954,14 @@ annotation(__OpenModelica_EarlyInline = true, Documentation(info="<html>
   preferredView="text");
 end setDebugFlags;
 
-function clearDebugFlags
+impure function clearDebugFlags
   "Resets all debug flags to their default values."
   output Boolean success;
   external "builtin";
   annotation(preferredView="text");
 end clearDebugFlags;
 
-function setPreOptModules
+impure function setPreOptModules
   "Sets pre optimization modules for the backend."
   input String modules;
   output Boolean success;
@@ -1950,7 +1974,7 @@ annotation(__OpenModelica_EarlyInline = true, Documentation(info="<html>
   preferredView="text");
 end setPreOptModules;
 
-function setCheapMatchingAlgorithm
+impure function setCheapMatchingAlgorithm
   "Sets the cheap matching algorithm."
   input Integer matchingAlgorithm;
   output Boolean success;
@@ -1963,7 +1987,7 @@ annotation(__OpenModelica_EarlyInline = true, Documentation(info="<html>
   preferredView="text");
 end setCheapMatchingAlgorithm;
 
-function getMatchingAlgorithm
+impure function getMatchingAlgorithm
   "Returns the currently used matching algorithm."
   output String selected;
   external "builtin";
@@ -1976,7 +2000,7 @@ function getAvailableMatchingAlgorithms
   external "builtin";
 end getAvailableMatchingAlgorithms;
 
-function setMatchingAlgorithm
+impure function setMatchingAlgorithm
   "Sets the matching algorithm."
   input String matchingAlgorithm;
   output Boolean success;
@@ -1989,7 +2013,7 @@ annotation(__OpenModelica_EarlyInline = true, Documentation(info="<html>
   preferredView="text");
 end setMatchingAlgorithm;
 
-function getIndexReductionMethod
+impure function getIndexReductionMethod
   "Returns the currently used index reduction method."
   output String selected;
   external "builtin";
@@ -2002,7 +2026,7 @@ function getAvailableIndexReductionMethods
   external "builtin";
 end getAvailableIndexReductionMethods;
 
-function setIndexReductionMethod
+impure function setIndexReductionMethod
   "Sets the index reduction method."
   input String method;
   output Boolean success;
@@ -2015,7 +2039,7 @@ annotation(__OpenModelica_EarlyInline = true, Documentation(info="<html>
   preferredView="text");
 end setIndexReductionMethod;
 
-function setPostOptModules
+impure function setPostOptModules
   "Sets post optimization modules for the backend."
   input String modules;
   output Boolean success;
@@ -2028,7 +2052,7 @@ annotation(__OpenModelica_EarlyInline = true, Documentation(info="<html>
   preferredView="text");
 end setPostOptModules;
 
-function getTearingMethod
+impure function getTearingMethod
   "Returns the currently used tearing method."
   output String selected;
   external "builtin";
@@ -2041,7 +2065,7 @@ function getAvailableTearingMethods
   external "builtin";
 end getAvailableTearingMethods;
 
-function setTearingMethod
+impure function setTearingMethod
   "Sets the tearing method used by the backend."
   input String tearingMethod;
   output Boolean success;
@@ -2054,7 +2078,7 @@ annotation(__OpenModelica_EarlyInline = true, Documentation(info="<html>
   preferredView="text");
 end setTearingMethod;
 
-function setCommandLineOptions
+impure function setCommandLineOptions
   "Sets command line options for the compiler."
   input String options;
   output Boolean success;
@@ -2066,7 +2090,7 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end setCommandLineOptions;
 
-function getCommandLineOptions
+impure function getCommandLineOptions
   "Returns all command line options who have non-default values as a list of strings."
   output String[:] flags;
 external "builtin";
@@ -2086,14 +2110,14 @@ external "builtin";
 annotation(preferredView="text");
 end getConfigFlagValidOptions;
 
-function clearCommandLineOptions
+impure function clearCommandLineOptions
   "Resets all command line options to their default values."
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
 end clearCommandLineOptions;
 
-function getVersion
+impure function getVersion
   "Returns the version of the compiler or a Modelica library."
   input TypeName cl = $TypeName(OpenModelica);
   output String version;
@@ -2104,7 +2128,7 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end getVersion;
 
-function regularFileExists
+impure function regularFileExists
   "Returns whether the given file exists or not."
   input String fileName;
   output Boolean exists;
@@ -2112,7 +2136,7 @@ external "builtin";
 annotation(preferredView="text");
 end regularFileExists;
 
-function directoryExists
+impure function directoryExists
   "Returns whether the given directory exists or not."
   input String dirName;
   output Boolean exists;
@@ -2288,7 +2312,7 @@ record ErrorMessage
 annotation(preferredView="text");
 end ErrorMessage;
 
-function getMessagesStringInternal
+impure function getMessagesStringInternal
   "Returns error messages in a machine-readable format."
   input Boolean unique = true;
   output ErrorMessage[:] messagesString;
@@ -2299,7 +2323,7 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end getMessagesStringInternal;
 
-function countMessages
+impure function countMessages
   "Returns the number of buffered messages."
   output Integer numMessages;
   output Integer numErrors;
@@ -2310,7 +2334,7 @@ annotation(Documentation(info="<html>
 </html>"));
 end countMessages;
 
-function clearMessages "Clears the error buffer."
+impure function clearMessages "Clears the error buffer."
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
@@ -2323,7 +2347,7 @@ external "builtin";
 annotation(preferredView="text");
 end runScript;
 
-function echo
+impure function echo
   "Turns interactive output on or off."
   input Boolean setEcho;
   output Boolean newEcho;
@@ -2334,13 +2358,13 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end echo;
 
-function getAnnotationVersion "Returns the current annotation version."
+impure function getAnnotationVersion "Returns the current annotation version."
   output String annotationVersion;
 external "builtin";
 annotation(preferredView="text");
 end getAnnotationVersion;
 
-function setAnnotationVersion "Sets the annotation version."
+impure function setAnnotationVersion "Sets the annotation version."
   input String annotationVersion;
   output Boolean success;
 algorithm
@@ -2348,27 +2372,27 @@ algorithm
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setAnnotationVersion;
 
-function getNoSimplify "Returns true if noSimplify flag is set."
+impure function getNoSimplify "Returns true if noSimplify flag is set."
   output Boolean noSimplify;
 external "builtin";
 annotation(preferredView="text");
 end getNoSimplify;
 
-function setNoSimplify "Sets the noSimplify flag."
+impure function setNoSimplify "Sets the noSimplify flag."
   input Boolean noSimplify;
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
 end setNoSimplify;
 
-function getVectorizationLimit
+impure function getVectorizationLimit
   "Returns the vectorization limit used by the old frontend."
   output Integer vectorizationLimit;
 external "builtin";
 annotation(preferredView="text");
 end getVectorizationLimit;
 
-function setVectorizationLimit
+impure function setVectorizationLimit
   "Sets the vectorization limit used by the old frontend."
   input Integer vectorizationLimit;
   output Boolean success;
@@ -2377,14 +2401,14 @@ algorithm
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setVectorizationLimit;
 
-function getDefaultOpenCLDevice
+impure function getDefaultOpenCLDevice
   "Returns the id for the default OpenCL device to be used."
   output Integer defdevid;
 external "builtin";
 annotation(preferredView="text");
 end getDefaultOpenCLDevice;
 
-function setDefaultOpenCLDevice
+impure function setDefaultOpenCLDevice
   "Sets the default OpenCL device to be used. 0 selects one automatically."
   input Integer defdevid;
   output Boolean success;
@@ -2393,7 +2417,7 @@ algorithm
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setDefaultOpenCLDevice;
 
-function setShowAnnotations
+impure function setShowAnnotations
   "Sets the value of the --showAnnotations flag."
   input Boolean show;
   output Boolean success;
@@ -2401,14 +2425,14 @@ external "builtin";
 annotation(preferredView="text");
 end setShowAnnotations;
 
-function getShowAnnotations
+impure function getShowAnnotations
   "Returns the value of the --showAnnotations flag."
   output Boolean show;
 external "builtin";
 annotation(preferredView="text");
 end getShowAnnotations;
 
-function setOrderConnections "Sets the orderConnection flag."
+impure function setOrderConnections "Sets the orderConnection flag."
   input Boolean orderConnections;
   output Boolean success;
 algorithm
@@ -2416,13 +2440,13 @@ algorithm
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setOrderConnections;
 
-function getOrderConnections "Returns true if orderConnections flag is set."
+impure function getOrderConnections "Returns true if orderConnections flag is set."
   output Boolean orderConnections;
 external "builtin";
 annotation(preferredView="text");
 end getOrderConnections;
 
-function setLanguageStandard "Sets the Modelica Language Standard."
+impure function setLanguageStandard "Sets the Modelica Language Standard."
   input String inVersion;
   output Boolean success;
 algorithm
@@ -2430,13 +2454,13 @@ algorithm
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setLanguageStandard;
 
-function getLanguageStandard "Returns the current Modelica Language Standard in use."
+impure function getLanguageStandard "Returns the current Modelica Language Standard in use."
   output String outVersion;
 external "builtin";
 annotation(preferredView="text");
 end getLanguageStandard;
 
-function cd
+impure function cd
   "Changes the working directory."
   input String newWorkingDirectory = "";
   output String workingDirectory;
@@ -2449,7 +2473,7 @@ Returns the new working directory on success or a message on failure.</p>
   preferredView="text");
 end cd;
 
-function mkdir
+impure function mkdir
   "Creates a directory."
   input String newDirectory;
   output Boolean success;
@@ -2461,7 +2485,7 @@ Returns true if the directory was created or already exists, otherwise false.</p
   preferredView="text");
 end mkdir;
 
-function copy
+impure function copy
   "Copies a file."
   input String source;
   input String destination;
@@ -2473,7 +2497,7 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end copy;
 
-function remove
+impure function remove
   "Removes a file or directory."
   input String path;
   output Boolean success "Returns true on success.";
@@ -2485,7 +2509,7 @@ Returns true if the file was successfully removed, otherwise false.</p>
   preferredView="text");
 end remove;
 
-function checkModel
+impure function checkModel
   "Checks a model and returns the number of variables and equations."
   input TypeName className;
   output String result;
@@ -2493,7 +2517,7 @@ external "builtin";
 annotation(preferredView="text");
 end checkModel;
 
-function checkAllModelsRecursive
+impure function checkAllModelsRecursive
   "Checks all models recursively and returns number of variables and equations."
   input TypeName className;
   input Boolean checkProtected = false "Checks also protected classes if true";
@@ -2502,7 +2526,7 @@ external "builtin";
 annotation(preferredView="text");
 end checkAllModelsRecursive;
 
-function typeOf
+impure function typeOf
   "Returns the type of an interactive variable."
   input VariableName variableName;
   output String result;
@@ -2510,7 +2534,7 @@ external "builtin";
 annotation(preferredView="text");
 end typeOf;
 
-function instantiateModel
+impure function instantiateModel
   "Instantiates a model and returns the flattened model."
   input TypeName className;
   output String result;
@@ -2518,7 +2542,7 @@ external "builtin";
 annotation(preferredView="text");
 end instantiateModel;
 
-function generateCode
+impure function generateCode
   "Generates code for a function."
   input TypeName className;
   output Boolean success;
@@ -2529,7 +2553,7 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end generateCode;
 
-function getExternalFunctions
+impure function getExternalFunctions
   "Describes the external \"C\" functions of a library."
   input TypeName className;
   output String json;
@@ -2546,7 +2570,7 @@ loads for these functions from this description.</p>
   preferredView="text");
 end getExternalFunctions;
 
-function loadModel
+impure function loadModel
   "Loads a Modelica library."
   input TypeName className;
   input String[:] priorityVersion = {"default"};
@@ -2589,7 +2613,7 @@ You are recommended to convert your files to UTF-8 without byte-order mark.
 preferredView="text");
 end loadModel;
 
-function deleteFile
+impure function deleteFile
   "Deletes a file with the given name."
   input String fileName;
   output Boolean success;
@@ -2597,7 +2621,7 @@ external "builtin";
 annotation(preferredView="text");
 end deleteFile;
 
-function saveModel
+impure function saveModel
   "Saves a loaded model to the given file."
   input String fileName;
   input TypeName className;
@@ -2606,7 +2630,7 @@ external "builtin";
 annotation(preferredView="text");
 end saveModel;
 
-function saveTotalModel
+impure function saveTotalModel
   "Saves a model and dependencies to a single file."
   input String fileName;
   input TypeName className;
@@ -2638,7 +2662,7 @@ loaded with loadFile() or passing the file to the compiler on the command line.<
   preferredView="text");
 end saveTotalModel;
 
-function previous_saveTotalModel
+impure function previous_saveTotalModel
   "Saves a model and dependencies to a single file, the previous way."
   input String fileName;
   input TypeName className;
@@ -2655,7 +2679,7 @@ analysis of the old frontend. It is kept for comparison for now and will be remo
   preferredView="text");
 end previous_saveTotalModel;
 
-function getTotalModel
+impure function getTotalModel
   "Saves a model and dependencies to a single string."
   input TypeName className;
   input Boolean stripAnnotations = false;
@@ -2686,7 +2710,7 @@ loaded with loadFile() or passing the file to the compiler on the command line.<
   preferredView="text");
 end getTotalModel;
 
-function saveTotalModelDebug
+impure function saveTotalModelDebug
   "Saves a model and dependencies to a single file using a heuristic."
   input String filename;
   input TypeName className;
@@ -2705,7 +2729,7 @@ where the normal <a href=\"modelica://OpenModelica.Scripting.saveTotalModel\">sa
   preferredView="text");
 end saveTotalModelDebug;
 
-function save
+impure function save
   "Saves a class to the file(s) it's defined in."
   input TypeName className;
   output Boolean success;
@@ -2713,9 +2737,9 @@ external "builtin";
 annotation(preferredView="text");
 end save;
 
-function saveTotalSCode = saveTotalModel "Alias for saveTotalModel";
+impure function saveTotalSCode = saveTotalModel "Alias for saveTotalModel";
 
-function translateGraphics
+impure function translateGraphics
   "Translates old graphical annotations to Modelica standard annotations."
   input TypeName className;
   output String result;
@@ -2725,13 +2749,13 @@ end translateGraphics;
 
 function codeToString
   "Converts a $Code expression to a string."
-  input $Code className;
+  input ExpressionOrModification className;
   output String string;
 external "builtin";
 annotation(preferredView="text");
 end codeToString;
 
-function dumpXMLDAE
+impure function dumpXMLDAE
   "Outputs the DAE system corresponding to a specific model."
   input TypeName className;
   input String translationLevel = "flat" "flat, optimiser, backEnd, or stateSpace";
@@ -2749,7 +2773,17 @@ annotation(Documentation(info="<html>
 </html>"),preferredView="text");
 end dumpXMLDAE;
 
-function convertUnits
+impure function modelEquationsUC
+  "Extracts the equations needed for data reconciliation of a model with uncertainties."
+  input TypeName className "the class to extract the equations from";
+  input String outputFile = "" "the file to write the extracted equations to";
+  input Boolean dumpSteps = false "print the steps of the extraction";
+  output String result;
+external "builtin";
+annotation(preferredView="text");
+end modelEquationsUC;
+
+impure function convertUnits
   "Gets conversion factors for two units."
   input String s1;
   input String s2;
@@ -2763,7 +2797,7 @@ annotation(preferredView="text",Documentation(info="<html>
 </html>"));
 end convertUnits;
 
-function getDerivedUnits
+impure function getDerivedUnits
   "Returns the list of derived units for the specified base unit."
   input String baseUnit;
   output String[:] derivedUnits;
@@ -2771,7 +2805,7 @@ external "builtin";
 annotation(preferredView="text");
 end getDerivedUnits;
 
-function listVariables
+impure function listVariables
   "Lists the names of the active variables in the scripting environment."
   output TypeName variables[:];
 external "builtin";
@@ -2832,7 +2866,7 @@ end escapeXML;
 
 type ExportKind = enumeration(Absyn "Normal Absyn",SCode "Normal SCode",MetaModelicaInterface "A restricted MetaModelica package interface (protected parts are stripped)",Internal "True unparsing of the Absyn") "Enumeration used by list to configure the output.";
 
-function list "Lists the contents of the given class, or all loaded classes."
+impure function list "Lists the contents of the given class, or all loaded classes."
   input TypeName class_ = $TypeName(AllLoadedClasses);
   input Boolean interfaceOnly = false;
   input Boolean shortOnly = false "only short class definitions";
@@ -2864,7 +2898,7 @@ empty string is returned.</p>
   preferredView="text");
 end list;
 
-function listFile "Lists the contents of the file given by the class."
+impure function listFile "Lists the contents of the file given by the class."
   input TypeName class_;
   input Boolean nestedClasses = true;
   output String contents;
@@ -2883,7 +2917,7 @@ end listFile;
 
 type DiffFormat = enumeration(plain "no deletions, no markup", color "terminal escape sequences", xml "XML tags") "Enumeration used by diffModelicaFileListings to configure the output format.";
 
-function diffModelicaFileListings "Creates diffs of two strings corresponding to Modelica files"
+impure function diffModelicaFileListings "Creates diffs of two strings corresponding to Modelica files"
   input String before;
   input String after;
   input DiffFormat diffFormat = DiffFormat.color;
@@ -2906,7 +2940,7 @@ the final text (deletions removed).</p>
 end diffModelicaFileListings;
 
 // exportToFigaro added by Alexander Carlqvist
-function exportToFigaro
+impure function exportToFigaro
   "Exports a model to a Figaro database."
   input TypeName path;
   input String directory = cd();
@@ -2919,7 +2953,7 @@ external "builtin";
 annotation(preferredView="text");
 end exportToFigaro;
 
-function inferBindings
+impure function inferBindings
   "Update bindings for a verification model."
   input TypeName path;
   output Boolean success;
@@ -2927,7 +2961,7 @@ external "builtin";
 annotation(preferredView="text");
 end inferBindings;
 
-function generateVerificationScenarios
+impure function generateVerificationScenarios
   "Generate scenarios for a verification model."
   input TypeName path;
   output Boolean success;
@@ -2935,7 +2969,7 @@ external "builtin";
 annotation(preferredView="text");
 end generateVerificationScenarios;
 
-function rewriteBlockCall "Function for property modeling, transforms block calls into instantiations for a loaded model"
+impure function rewriteBlockCall "Function for property modeling, transforms block calls into instantiations for a loaded model"
   input TypeName className;
   input TypeName inDefs;
   output Boolean success;
@@ -2945,7 +2979,7 @@ annotation(Documentation(info="<html>
 </html>"),preferredView="text");
 end rewriteBlockCall;
 
-function realpath "Get full path name of file or directory name"
+impure function realpath "Get full path name of file or directory name"
   input String name "Absolute or relative file or directory name";
   output String fullName "Full path of 'name'";
 external "builtin" fullName = OpenModelicaInternal_fullPathName(name);
@@ -2967,7 +3001,7 @@ modelica:// URI's are only handled if the class is already loaded.</p>
 </html>"));
 end uriToFilename;
 
-function getLoadedLibraries
+impure function getLoadedLibraries
   "Returns the loaded libraries."
   output String [:,2] libraries;
 external "builtin";
@@ -2996,7 +3030,7 @@ annotation(Documentation(info="<html>
 end solveLinearSystem;
 
 type StandardStream = enumeration(stdin,stdout,stderr) "Enumeration for standard streams.";
-function reopenStandardStream
+impure function reopenStandardStream
   "Changes which file is associated with a standard stream."
   input StandardStream _stream;
   input String filename;
@@ -3005,7 +3039,7 @@ external "builtin";
 annotation(preferredView="text");
 end reopenStandardStream;
 
-function importFMU
+impure function importFMU
   "Imports a Functional Mockup Unit."
   input String filename "the fmu file name";
   input String workdir = "<default>" "The output directory for imported FMU files. <default> will put the files to current working directory.";
@@ -3025,7 +3059,7 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end importFMU;
 
-function importFMUModelDescription "Imports modelDescription.xml"
+impure function importFMUModelDescription "Imports modelDescription.xml"
   input String filename "the fmu file name";
   input String workdir = "<default>" "The output directory for imported FMU files. <default> will put the files to current working directory.";
   input Integer loglevel = 3 "loglevel_nothing=0;loglevel_fatal=1;loglevel_error=2;loglevel_warning=3;loglevel_info=4;loglevel_verbose=5;loglevel_debug=6";
@@ -3043,10 +3077,10 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end importFMUModelDescription;
 
-function translateModelFMU
+impure function translateModelFMU
   "Translates a model into C code for a FMU without building it."
   input TypeName className "the class that should translated";
-  input String version = "2.0" "FMU version, 1.0 or 2.0.";
+  input String version = "2.0" "FMU version, 2.0 or 3.0 (1.0 is deprecated).";
   input String fmuType = "me" "FMU type, me (model exchange), cs (co-simulation), me_cs (both model exchange and co-simulation)";
   input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"className\"";
   input String platforms[:] = {"static"} "The list of platforms to generate code for.
@@ -3067,10 +3101,10 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end translateModelFMU;
 
-function buildModelFMU
+impure function buildModelFMU
   "Translates a Modelica model into a Functional Mockup Unit."
   input TypeName className "the class that should translated";
-  input String version = "2.0" "FMU version, 1.0 or 2.0.";
+  input String version = "2.0" "FMU version, 2.0 or 3.0 (1.0 is deprecated).";
   input String fmuType = "me" "FMU type, me (model exchange), cs (co-simulation), me_cs (both model exchange and co-simulation)";
   input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"className\"";
   input String platforms[:] = {"static"} "The list of platforms to generate code for.
@@ -3092,7 +3126,7 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end buildModelFMU;
 
-function buildEncryptedPackage
+impure function buildEncryptedPackage
   "Builds an encrypted package for a class."
   input TypeName className "the class that should encrypted";
   input Boolean encrypt = true;
@@ -3101,20 +3135,9 @@ external "builtin";
 annotation(preferredView="text");
 end buildEncryptedPackage;
 
-function simulate
+impure function simulate
   "Simulates a model."
-  input TypeName className "the class that should simulated";
-  input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
-  input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
-  input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
-  input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
-  input String method = "<default>" "integration method used for simulation. <default> = dassl";
-  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
-  input String options = "<default>" "options. <default> = \"\"";
-  input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
-  input String cflags = "<default>" "cflags. <default> = \"\"";
-  input String simflags = "<default>" "simflags. <default> = \"\"";
+  extends Internal.simulationArguments;
   input String resimulateExecutable = "" "If non-empty, skip translation and build and simulate this already-built executable directly.";
   output SimulationResult simulationResults;
   record SimulationResult
@@ -3141,39 +3164,30 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end simulate;
 
-function translateModel
+impure function translateModel
   "Translates a modelica model into C code without building it."
-  input TypeName className "the class that should be built";
-  input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
-  input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
-  input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
-  input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
-  input String method = "<default>" "integration method used for simulation. <default> = dassl";
-  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
-  input String options = "<default>" "options. <default> = \"\"";
-  input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
-  input String cflags = "<default>" "cflags. <default> = \"\"";
-  input String simflags = "<default>" "simflags. <default> = \"\"";
+  extends Internal.simulationArguments;
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
 end translateModel;
 
-function buildModel
+impure function translateModelXML
+  "Translates a model into an XML representation of its equation system."
+  input TypeName className "the class that should be translated";
+  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"className\"";
+  output String xmlFile;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Translates a model and writes its equation system to <code>fileNamePrefix.xml</code>, with dots in <code>fileNamePrefix</code> replaced by underscores.</p>
+<p>Returns the name of the XML file, or an empty string on failure.</p>
+</html>"),
+  preferredView="text");
+end translateModelXML;
+
+impure function buildModel
   "Translates a Modelica model into C code and builds a simulation executable."
-  input TypeName className "the class that should be built";
-  input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
-  input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
-  input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
-  input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
-  input String method = "<default>" "integration method used for simulation. <default> = dassl";
-  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
-  input String options = "<default>" "options. <default> = \"\"";
-  input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
-  input String cflags = "<default>" "cflags. <default> = \"\"";
-  input String simflags = "<default>" "simflags. <default> = \"\"";
+  extends Internal.simulationArguments;
   output String[2] buildModelResults;
 external "builtin";
 annotation(Documentation(info="<html>
@@ -3188,7 +3202,7 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end buildModel;
 
-function buildLabel
+impure function buildLabel
   "Calls buildModel with the --generateLabeledSimCode flag enabled."
   input TypeName className "the class that should be built";
   input Real startTime = 0.0 "the start time of the simulation. <default> = 0.0";
@@ -3207,7 +3221,7 @@ external "builtin";
 annotation(preferredView="text");
 end buildLabel;
 
-function reduceTerms
+impure function reduceTerms
   "Calls buildModel with the --reduceTerms flag enabled."
   input TypeName className "the class that should be built";
   input Real startTime = 0.0 "the start time of the simulation. <default> = 0.0";
@@ -3227,7 +3241,7 @@ external "builtin";
 annotation(preferredView="text");
 end reduceTerms;
 
-function translateResidualsDAE
+impure function translateResidualsDAE
   input TypeName className;
   input String fileNamePrefix = "<default>";
   output Boolean success;
@@ -3238,7 +3252,64 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end translateResidualsDAE;
 
-function createModel
+impure function translateAcausalDAE
+  "Generates the combined DAE C code for a flowsheet model whose top-level
+   components are acausal DAE blocks, without building it. Each top-level component
+   is translated separately via translateResidualsDAE, the connections are
+   extracted, and the per-component code is stitched together by
+   combine_components.py. This is the acausal-DAE counterpart of translateModel()."
+  extends Internal.simulationArguments;
+  output Boolean success;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Generates the combined acausal-DAE C code (per-component residual code plus connection equations) without building it, the acausal-DAE counterpart of <a href=\"modelica://OpenModelica.Scripting.translateModel\">translateModel()</a>.</p>
+</html>"),
+  preferredView="text");
+end translateAcausalDAE;
+
+impure function buildAcausalDAE
+  "Generates and builds (but does not run) the combined DAE simulation executable
+   for a flowsheet model whose top-level components are acausal DAE blocks. This is
+   the acausal-DAE counterpart of buildModel()."
+  extends Internal.simulationArguments;
+  output String[2] buildModelResults;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Note that unlike <a href=\"modelica://OpenModelica.Scripting.simulateAcausalDAE\">simulateAcausalDAE()</a> this function only builds the combined simulation executable, it does not run it. The acausal-DAE counterpart of <a href=\"modelica://OpenModelica.Scripting.buildModel\">buildModel()</a>.</p>
+<p>Returns the filenames for the generated simulation executable and the initialization file.</p>
+</html>"),
+  preferredView="text");
+end buildAcausalDAE;
+
+impure function simulateAcausalDAE
+  "Simulates a flowsheet model whose top-level components are acausal DAE blocks.
+   Each top-level component is translated separately via translateResidualsDAE,
+   the connections are extracted, the per-component code is stitched together by
+   combine_components.py, and the resulting combined DAE system is built, run and
+   returned just like simulate()."
+  extends Internal.simulationArguments;
+  output SimulationResult simulationResults;
+  record SimulationResult
+    String resultFile;
+    String simulationOptions;
+    String messages;
+    Real timeFrontend;
+    Real timeBackend;
+    Real timeSimCode;
+    Real timeTemplates;
+    Real timeCompile;
+    Real timeSimulation;
+    Real timeTotal;
+  end SimulationResult;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Simulates a flowsheet model whose top-level components are acausal DAE blocks, by separately compiling each top-level component (see <code>translateResidualsDAE</code>), stitching them together with the connection equations, and building/running the combined DAE system. Returns the same <code>SimulationResult</code> record as <code>simulate</code>.</p>
+<p><code>simulateAcausalDAE(className, [startTime], [stopTime], [numberOfIntervals], [tolerance], [method], [fileNamePrefix], [options], [outputFormat], [variableFilter], [cflags], [simflags])</code></p>
+</html>"),
+  preferredView="text");
+end simulateAcausalDAE;
+
+impure function createModel
   "Creates a new empty model."
   input TypeName className;
   output Boolean success;
@@ -3246,7 +3317,7 @@ external "builtin";
 annotation(preferredView="text");
 end createModel;
 
-function newModel
+impure function newModel
   "Creates a new empty model in the given package."
   input TypeName className;
   input TypeName withinPath;
@@ -3255,7 +3326,7 @@ external "builtin";
 annotation(preferredView="text");
 end newModel;
 
-function moveClass
+impure function moveClass
   "Moves a class up or down in a package."
  input TypeName className "the class that should be moved";
  input Integer offset "Offset in the class list.";
@@ -3273,7 +3344,7 @@ section it was alone in.</p>
   preferredView="text");
 end moveClass;
 
-function moveClassToTop
+impure function moveClassToTop
   "Moves a class to the top of its enclosing class."
   input TypeName className;
   output Boolean result;
@@ -3284,7 +3355,7 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end moveClassToTop;
 
-function moveClassToBottom
+impure function moveClassToBottom
   "Moves a class to the bottom of its enclosing class."
   input TypeName className;
   output Boolean result;
@@ -3295,7 +3366,7 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end moveClassToBottom;
 
-function copyClass
+impure function copyClass
   "Copies a class within the same level."
   input TypeName className "the class that should be copied";
   input String newClassName "the name for new class";
@@ -3305,7 +3376,7 @@ external "builtin";
 annotation(preferredView="text");
 end copyClass;
 
-function renameClass
+impure function renameClass
   "Renames a class and updates references to it."
   input TypeName oldName "The path of the class to rename.";
   input TypeName newName "The new non-qualified name of the class.";
@@ -3317,7 +3388,7 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end renameClass;
 
-function deleteClass
+impure function deleteClass
   "Unloads a class."
   input TypeName className;
   output Boolean success;
@@ -3325,7 +3396,7 @@ external "builtin";
 annotation(preferredView="text");
 end deleteClass;
 
-function refactorClass
+impure function refactorClass
   "Updates old graphical annotations to Modelica standard ones in a class."
   input TypeName className;
   output String result;
@@ -3336,23 +3407,9 @@ annotation(
   preferredView="text");
 end refactorClass;
 
-function linearize
+impure function linearize
   "Creates a model with symbolic linearization matrices."
-  input TypeName className "the class that should simulated";
-  input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
-  input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
-  input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
-  input Real stepSize = 0.002 "step size that is used for the result file. <default> = 0.002";
-  input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
-  input String method = "<default>" "integration method used for simulation. <default> = dassl";
-  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
-  input Boolean storeInTemp = false "storeInTemp. <default> = false";
-  input Boolean noClean = false "noClean. <default> = false";
-  input String options = "<default>" "options. <default> = \"\"";
-  input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
-  input String cflags = "<default>" "cflags. <default> = \"\"";
-  input String simflags = "<default>" "simflags. <default> = \"\"";
+  extends Internal.simulationArguments;
   output String linearizationResult;
 external "builtin";
 annotation(Documentation(info="<html>
@@ -3371,23 +3428,9 @@ annotation(Documentation(info="<html>
 </html>"),preferredView="text");
 end linearize;
 
-function optimize
+impure function optimize
   "Generates an optimization executable for a Modelica/Optimica model and runs it."
-  input TypeName className "the class that should simulated";
-  input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
-  input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
-  input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
-  input Real stepSize = 0.002 "step size that is used for the result file. <default> = 0.002";
-  input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
-  input String method = DAE.SCONST("optimization") "optimize a modelica/optimica model.";
-  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
-  input Boolean storeInTemp = false "storeInTemp. <default> = false";
-  input Boolean noClean = false "noClean. <default> = false";
-  input String options = "<default>" "options. <default> = \"\"";
-  input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
-  input String cflags = "<default>" "cflags. <default> = \"\"";
-  input String simflags = "<default>" "simflags. <default> = \"\"";
+  extends Internal.simulationArguments;
   output String optimizationResults;
 external "builtin";
 annotation(Documentation(info="<html>
@@ -3400,7 +3443,21 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end optimize;
 
-function getSourceFile
+impure function moo
+  "Generates an optimization executable for a model and runs it with the MOO dynamic optimizer."
+  extends Internal.simulationArguments;
+  output String optimizationResults;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Builds a dynamic optimization problem from a Modelica/Optimica model like <a href=\"modelica://OpenModelica.Scripting.optimize\">optimize()</a> and solves it with MOO (the executable is run with <code>-moo</code>).</p>
+<p>Example command:
+<pre>moo(A);</pre>
+</p>
+</html>"),
+  preferredView="text");
+end moo;
+
+impure function getSourceFile
   "Returns the filename of the class."
   input TypeName class_;
   output String filename "empty on failure";
@@ -3408,7 +3465,7 @@ external "builtin";
 annotation(preferredView="text");
 end getSourceFile;
 
-function setSourceFile
+impure function setSourceFile
   "Sets the filename for a class."
   input TypeName class_;
   input String filename;
@@ -3417,7 +3474,7 @@ external "builtin";
 annotation(preferredView="text");
 end setSourceFile;
 
-function isShortDefinition
+impure function isShortDefinition
   "Returns true if the given class is defined as a short class."
   input TypeName class_;
   output Boolean isShortCls;
@@ -3425,7 +3482,7 @@ external "builtin";
 annotation(preferredView="text");
 end isShortDefinition;
 
-function setClassComment
+impure function setClassComment
   "Sets a class comment."
   input TypeName class_;
   input String filename;
@@ -3434,7 +3491,7 @@ external "builtin";
 annotation(preferredView="text");
 end setClassComment;
 
-function getIconAnnotation
+impure function getIconAnnotation
   "Returns the Icon annotation for a given class."
   input TypeName className;
   output Expression result;
@@ -3442,7 +3499,7 @@ external "builtin";
 annotation(preferredView="text");
 end getIconAnnotation;
 
-function getDiagramAnnotation
+impure function getDiagramAnnotation
   "Returns the Diagram annotation for a given class."
   input TypeName className;
   output Expression result;
@@ -3450,7 +3507,7 @@ external "builtin";
 annotation(preferredView="text");
 end getDiagramAnnotation;
 
-function refactorIconAnnotation
+impure function refactorIconAnnotation
   "Updates an old Icon annotation to a Modelica standard one in the given class."
   input TypeName className;
   output Expression result;
@@ -3458,7 +3515,7 @@ external "builtin";
 annotation(preferredView="text");
 end refactorIconAnnotation;
 
-function refactorDiagramAnnotation
+impure function refactorDiagramAnnotation
   "Updates an old Diagram annotation to a Modelica standard one in the given class."
   input TypeName className;
   output Expression result;
@@ -3466,7 +3523,7 @@ external "builtin";
 annotation(preferredView="text");
 end refactorDiagramAnnotation;
 
-function getClassNames
+impure function getClassNames
   "Returns the list of class names defined in the class."
   input TypeName class_ = $TypeName(AllLoadedClasses);
   input Boolean recursive = false;
@@ -3480,21 +3537,21 @@ external "builtin";
 annotation(preferredView="text");
 end getClassNames;
 
-function getUsedClassNames "Returns the list of class names used in the total program defined by the class."
+impure function getUsedClassNames "Returns the list of class names used in the total program defined by the class."
   input TypeName className;
   output TypeName classNames[:];
 external "builtin";
 annotation(preferredView="text");
 end getUsedClassNames;
 
-function getPackages "Returns the list of packages defined in the class."
+impure function getPackages "Returns the list of packages defined in the class."
   input TypeName class_ = $TypeName(AllLoadedClasses);
   output TypeName classNames[:];
 external "builtin";
 annotation(preferredView="text");
 end getPackages;
 
-function getAllSubtypeOf
+impure function getAllSubtypeOf
   "Returns the list of all classes that extend from className given a parentClass where the lookup for className should start"
   input TypeName className;
   input TypeName parentClass = $TypeName(AllLoadedClasses);
@@ -3506,7 +3563,7 @@ external "builtin";
 annotation(preferredView="text");
 end getAllSubtypeOf;
 
-function getReplaceableChoices
+impure function getReplaceableChoices
   "Returns all replaceable choices for a class with choicesAllMatching."
   input TypeName baseClass;
   input TypeName parentClass;
@@ -3517,7 +3574,7 @@ external "builtin";
 annotation(preferredView="text");
 end getReplaceableChoices;
 
-function plot
+impure function plot
   "Displays a plot with selected variables using OMPlot."
   input VariableNames vars "The variables you want to plot";
   input Boolean externalWindow = false "Opens the plot in a new plot window";
@@ -3539,6 +3596,7 @@ function plot
   input String yAxis = "L" "Sets the variable to be plotted on the left (L) or right (R) y-axis.";
   input String yLabelRight = "" "This text will be used as the right vertical label in the diagram.";
   input Real yRangeRight[2] = {0.0,0.0} "Determines the right vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Boolean stack = false "Draws each curve in a lane of its own, one below the other.";
   output Boolean success "Returns true on success";
 external "builtin";
 annotation(preferredView="text",Documentation(info="<html>
@@ -3549,11 +3607,12 @@ annotation(preferredView="text",Documentation(info="<html>
 <li><code>simulate(A); plot({x,y,z});</code></li>
 <li><code>simulate(A); plot(x, externalWindow=true);</code></li>
 <li><code>simulate(A,fileNamePrefix=\"B\"); simulate(C); plot(z,fileName=\"B.mat\",legendPosition=none);</code></li>
+<li><code>simulate(A); plot({b,x}, stack=true);</code></li>
 </ul>
 </html>"));
 end plot;
 
-function plotAll
+impure function plotAll
   "Displays a plot with all variables using OMPlot."
   input Boolean externalWindow = false "Opens the plot in a new plot window";
   input String fileName = "<default>" "The filename containing the variables. <default> will read the last simulation result";
@@ -3574,6 +3633,7 @@ function plotAll
   input String yAxis = "L" "Sets the variable to be plotted on the left (L) or right (R) y-axis.";
   input String yLabelRight = "" "This text will be used as the right vertical label in the diagram.";
   input Real yRangeRight[2] = {0.0,0.0} "Determines the right vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Boolean stack = false "Draws each curve in a lane of its own, one below the other.";
   output Boolean success "Returns true on success";
 external "builtin";
 annotation(Documentation(info="<html>
@@ -3589,7 +3649,7 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end plotAll;
 
-function plotParametric
+impure function plotParametric
   "Displays a parametric plot with two variables using OMPlot."
   input VariableName xVariable;
   input VariableName yVariable;
@@ -3624,7 +3684,7 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end plotParametric;
 
-function readSimulationResult
+impure function readSimulationResult
   "Reads a result file, returning a matrix corresponding to the variables and size given."
   input String filename;
   input VariableNames variables "e.g. {a.b, a[1].b[3].c}, or a single VariableName";
@@ -3634,7 +3694,7 @@ external "builtin";
 annotation(preferredView="text");
 end readSimulationResult;
 
-function readSimulationResultSize
+impure function readSimulationResultSize
   "Returns the number of intervals that are present in the output file."
   input String fileName;
   output Integer sz;
@@ -3642,7 +3702,7 @@ external "builtin";
 annotation(preferredView="text");
 end readSimulationResultSize;
 
-function readSimulationResultVars
+impure function readSimulationResultVars
   "Returns the variables in a simulation results file."
   input String fileName;
   input Boolean readParameters = true;
@@ -3656,7 +3716,7 @@ annotation(Documentation(info="<html>
 </html>"),preferredView="text");
 end readSimulationResultVars;
 
-function filterSimulationResults
+impure function filterSimulationResults
   "Creates a simulation results file with selected variables."
   input String inFile;
   input String outFile;
@@ -3679,7 +3739,7 @@ annotation(Documentation(info="<html>
 </html>"),preferredView="text");
 end filterSimulationResults;
 
-function compareSimulationResults
+impure function compareSimulationResults
   "Compares simulation results."
   input String filename;
   input String reffilename;
@@ -3692,7 +3752,7 @@ external "builtin";
 annotation(preferredView="text", version="Deprecated");
 end compareSimulationResults;
 
-function deltaSimulationResults
+impure function deltaSimulationResults
   "Calculates the sum of absolute errors."
   input String filename;
   input String reffilename;
@@ -3705,7 +3765,7 @@ annotation(Documentation(info="<html>
 </html>"),preferredView="text");
 end deltaSimulationResults;
 
-function diffSimulationResults
+impure function diffSimulationResults
   "Compares simulation results."
   input String actualFile;
   input String expectedFile;
@@ -3724,7 +3784,7 @@ annotation(Documentation(info="<html>
 </html>"),preferredView="text");
 end diffSimulationResults;
 
-function diffSimulationResultsHtml
+impure function diffSimulationResultsHtml
   "Compares simulation results and generates an HTML report."
   input String var;
   input String actualFile;
@@ -3740,7 +3800,7 @@ annotation(Documentation(info="<html>
 </html>"),preferredView="text");
 end diffSimulationResultsHtml;
 
-function checkTaskGraph
+impure function checkTaskGraph
   "Checks if the given taskgraph has the same structure as the reference taskgraph and if all attributes are set correctly."
   input String filename;
   input String reffilename;
@@ -3749,7 +3809,7 @@ external "builtin";
 annotation(preferredView="text");
 end checkTaskGraph;
 
-function checkCodeGraph
+impure function checkCodeGraph
   "Checks if the given taskgraph has the same structure as the graph described in the codefile."
   input String graphfile;
   input String codefile;
@@ -3758,7 +3818,7 @@ external "builtin";
 annotation(preferredView="text");
 end checkCodeGraph;
 
-function val
+impure function val
   "Return the value of a variable at a given time in the simulation results"
   input VariableName var;
   input Real timePoint = 0.0;
@@ -3773,7 +3833,7 @@ annotation(preferredView="text",Documentation(info="<html>
 </html>"));
 end val;
 
-function closeSimulationResultFile
+impure function closeSimulationResultFile
   "Closes the current simulation results file."
   output Boolean success;
 external "builtin";
@@ -3784,7 +3844,7 @@ To allow OMEdit to make successful simulation again on the same file we must clo
   preferredView="text");
 end closeSimulationResultFile;
 
-function addClassAnnotation
+impure function addClassAnnotation
   "Adds an annotation to a class."
   input TypeName class_;
   input ExpressionOrModification annotate;
@@ -3797,7 +3857,7 @@ and the annotation to set.</p>
 </html>"));
 end addClassAnnotation;
 
-function addComponent
+impure function addComponent
   "Adds a component to the given class."
   input TypeName componentName;
   input TypeName typeName;
@@ -3811,7 +3871,7 @@ external "builtin";
 annotation(preferredView="text");
 end addComponent;
 
-function updateComponent
+impure function updateComponent
   "Updates an existing component."
   input TypeName componentName;
   input TypeName typeName;
@@ -3825,7 +3885,7 @@ external "builtin";
 annotation(preferredView="text");
 end updateComponent;
 
-function deleteComponent
+impure function deleteComponent
   "Deletes a component from the given class."
   input TypeName componentName;
   input TypeName classPath;
@@ -3834,7 +3894,7 @@ external "builtin";
 annotation(preferredView="text");
 end deleteComponent;
 
-function renameComponent
+impure function renameComponent
   "Renames a component and updates references to it."
   input TypeName classPath;
   input VariableName oldName;
@@ -3848,7 +3908,7 @@ annotation(
   preferredView="text");
 end renameComponent;
 
-function renameComponentInClass
+impure function renameComponentInClass
   "Renames a component in a class."
   input TypeName classPath;
   input VariableName oldName;
@@ -3862,7 +3922,7 @@ annotation(
   preferredView="text");
 end renameComponentInClass;
 
-function getParameterNames
+impure function getParameterNames
   "Returns the names of all parameters in a given class."
   input TypeName class_;
   output String[:] parameters;
@@ -3870,7 +3930,7 @@ external "builtin";
 annotation(preferredView="text");
 end getParameterNames;
 
-function getParameterValue
+impure function getParameterValue
   "Returns the value of a parameter of the class."
   input TypeName class_;
   input String parameterName;
@@ -3879,7 +3939,7 @@ external "builtin";
 annotation(preferredView="text");
 end getParameterValue;
 
-function setParameterValue
+impure function setParameterValue
   "Sets the binding equation of a component."
   input TypeName className;
   input TypeName variableName;
@@ -3889,7 +3949,7 @@ external "builtin";
 annotation(preferredView="text");
 end setParameterValue;
 
-function getNthComponent
+impure function getNthComponent
   "Returns the type, name, and description string of the n:th component in the given class."
   input TypeName className;
   input Integer n;
@@ -3898,7 +3958,7 @@ external "builtin";
 annotation(preferredView="text");
 end getNthComponent;
 
-function getComponents
+impure function getComponents
   "Returns information about the component in a given class."
   input TypeName className;
   input Boolean useQuotes = false;
@@ -3925,7 +3985,7 @@ annotation(
   preferredView="text");
 end getComponents;
 
-function getElements
+impure function getElements
   "Returns information about the elements in a given class."
   input TypeName className;
   input Boolean useQuotes = false;
@@ -3955,7 +4015,7 @@ annotation(
   preferredView="text");
 end getElements;
 
-function getElementsInfo
+impure function getElementsInfo
   "Returns information about the elements in a given class."
   input TypeName className;
   output Expression result;
@@ -3963,7 +4023,7 @@ external "builtin";
 annotation(preferredView="text");
 end getElementsInfo;
 
-function getComponentModifierNames
+impure function getComponentModifierNames
   "Returns the list of class component modifiers."
   input TypeName class_;
   input String componentName;
@@ -3972,7 +4032,7 @@ external "builtin";
 annotation(preferredView="text");
 end getComponentModifierNames;
 
-function getComponentModifierValue
+impure function getComponentModifierValue
   "Returns the binding equation of a component."
   input TypeName class_;
   input TypeName modifier;
@@ -3997,7 +4057,7 @@ annotation(
   preferredView="text");
 end getComponentModifierValue;
 
-function getComponentModifierValues
+impure function getComponentModifierValues
   "Returns the modifier for a component."
   input TypeName class_;
   input TypeName modifier;
@@ -4019,7 +4079,7 @@ annotation(
   preferredView="text");
 end getComponentModifierValues;
 
-function removeComponentModifiers
+impure function removeComponentModifiers
   "Removes the component modifiers."
   input TypeName class_;
   input String componentName;
@@ -4029,7 +4089,7 @@ external "builtin";
 annotation(preferredView="text");
 end removeComponentModifiers;
 
-function getElementModifierNames
+impure function getElementModifierNames
   "Returns the list of element (component or short class) modifiers in a class."
   input TypeName className;
   input String elementName;
@@ -4038,7 +4098,7 @@ external "builtin";
 annotation(preferredView="text");
 end getElementModifierNames;
 
-function getExtendsModifierNames
+impure function getExtendsModifierNames
   "Returns the names of the modifiers on an extends clause."
   input TypeName className;
   input TypeName extendsName;
@@ -4048,9 +4108,9 @@ external "builtin";
 annotation(preferredView="text");
 end getExtendsModifierNames;
 
-function setComponentModifierValue = setElementModifierValue "Deprecated; alias for setElementModifierValue.";
+impure function setComponentModifierValue = setElementModifierValue "Deprecated; alias for setElementModifierValue.";
 
-function setElementModifierValue
+impure function setElementModifierValue
   "Sets a modifier on an element in a class definition."
   input TypeName className;
   input TypeName elementName;
@@ -4060,7 +4120,7 @@ external "builtin";
 annotation(preferredView="text");
 end setElementModifierValue;
 
-function getElementModifierValue
+impure function getElementModifierValue
   "Returns the binding equation for an element."
   input TypeName className;
   input TypeName modifier;
@@ -4087,7 +4147,7 @@ annotation(
   preferredView="text");
 end getElementModifierValue;
 
-function getElementModifierValues
+impure function getElementModifierValues
   "Returns the modifier for an element."
   input TypeName className;
   input TypeName modifier;
@@ -4112,7 +4172,7 @@ annotation(
   preferredView="text");
 end getElementModifierValues;
 
-function removeElementModifiers
+impure function removeElementModifiers
   "Removes the element (component or short class) modifiers."
   input TypeName className;
   input String componentName;
@@ -4122,7 +4182,7 @@ external "builtin";
 annotation(preferredView="text");
 end removeElementModifiers;
 
-function getExtendsModifierValue
+impure function getExtendsModifierValue
   "Returns the modifier value for a modifier on an extends clause."
   input TypeName className;
   input TypeName extendsName;
@@ -4132,7 +4192,7 @@ external "builtin";
 annotation(preferredView="text");
 end getExtendsModifierValue;
 
-function setExtendsModifierValue
+impure function setExtendsModifierValue
   "Sets a modifier on an element in an extends clause in a class."
   input TypeName className;
   input TypeName extendsName;
@@ -4163,7 +4223,7 @@ end P;
   preferredView="text");
 end setExtendsModifierValue;
 
-function setExtendsModifier
+impure function setExtendsModifier
   "Sets a modifier on an extends clause in a class definition."
   input TypeName className;
   input TypeName extendsName;
@@ -4173,7 +4233,7 @@ external "builtin";
 annotation(preferredView="text");
 end setExtendsModifier;
 
-function isExtendsModifierFinal
+impure function isExtendsModifierFinal
   "Returns whether a modifier on an extends clause is final or not."
   input TypeName className;
   input TypeName extendsName;
@@ -4183,7 +4243,7 @@ external "builtin";
 annotation(preferredView="text");
 end isExtendsModifierFinal;
 
-function getComponentCount
+impure function getComponentCount
   "Returns the number of components in a class."
   input TypeName classPath;
   output Integer count;
@@ -4191,7 +4251,7 @@ external "builtin";
 annotation(preferredView="text");
 end getComponentCount;
 
-function getNthComponentAnnotation
+impure function getNthComponentAnnotation
   "Returns the annotation for the n:th component in the given class."
   input TypeName className;
   input Integer n;
@@ -4200,7 +4260,7 @@ external "builtin";
 annotation(preferredView="text");
 end getNthComponentAnnotation;
 
-function getNthComponentModification
+impure function getNthComponentModification
   "Returns the modification for the n:th component in the given class."
   input TypeName className;
   input Integer n;
@@ -4209,7 +4269,7 @@ external "builtin";
 annotation(preferredView="text");
 end getNthComponentModification;
 
-function getNthComponentCondition
+impure function getNthComponentCondition
   "Returns the condition for the n:th component in the given class as a string."
   input TypeName className;
   input Integer n;
@@ -4218,7 +4278,7 @@ external "builtin";
 annotation(preferredView="text");
 end getNthComponentCondition;
 
-function getComponentCondition
+impure function getComponentCondition
   "Returns the condition of the given component in the given class as a string."
   input TypeName className;
   input TypeName componentName;
@@ -4227,7 +4287,7 @@ external "builtin";
 annotation(preferredView="text");
 end getComponentCondition;
 
-function getElementAnnotation
+impure function getElementAnnotation
   "Returns the annotation on a component or class element as a string."
   input TypeName elementName;
   output String annotationString;
@@ -4235,7 +4295,7 @@ external "builtin";
 annotation(preferredView="text");
 end getElementAnnotation;
 
-function setElementAnnotation
+impure function setElementAnnotation
   "Sets the annotation on a component or class element."
   input TypeName elementName;
   input ExpressionOrModification annotationMod;
@@ -4244,7 +4304,7 @@ external "builtin";
 annotation(preferredView="text");
 end setElementAnnotation;
 
-function setElementType
+impure function setElementType
   "Changes the type of a component or short class element."
   input TypeName elementName;
   input VariableName typeName;
@@ -4253,7 +4313,7 @@ external "builtin";
 annotation(preferredView="text");
 end setElementType;
 
-function getInstantiatedParametersAndValues
+impure function getInstantiatedParametersAndValues
   "Returns the top-level parameter names and values from the DAE."
   input TypeName cls;
   output String[:] values;
@@ -4261,7 +4321,7 @@ external "builtin";
 annotation(preferredView="text");
 end getInstantiatedParametersAndValues;
 
-function getComponentAnnotations
+impure function getComponentAnnotations
   "Returns the annotations of the components in the given class."
   input TypeName className;
   output Expression result;
@@ -4269,7 +4329,7 @@ external "builtin";
 annotation(preferredView="text");
 end getComponentAnnotations;
 
-function getElementAnnotations
+impure function getElementAnnotations
   "Returns the annotations of the components and short class definitions in the given class."
   input TypeName className;
   output Expression result;
@@ -4277,7 +4337,7 @@ external "builtin";
 annotation(preferredView="text");
 end getElementAnnotations;
 
-function removeExtendsModifiers
+impure function removeExtendsModifiers
   "Removes the extends modifiers of a class."
   input TypeName className;
   input TypeName baseClassName;
@@ -4287,7 +4347,7 @@ external "builtin";
 annotation(preferredView="text");
 end removeExtendsModifiers;
 
-function getComponentComment
+impure function getComponentComment
   "Returns the comment on a component."
   input TypeName className;
   input TypeName componentName;
@@ -4296,7 +4356,7 @@ external "builtin";
 annotation(preferredView="text");
 end getComponentComment;
 
-function setComponentComment
+impure function setComponentComment
   "Sets the comment on a component."
   input TypeName className;
   input TypeName componentName;
@@ -4306,7 +4366,7 @@ external "builtin";
 annotation(preferredView="text");
 end setComponentComment;
 
-function setComponentDimensions
+impure function setComponentDimensions
   "Sets the array dimensions of a component."
   input TypeName className;
   input TypeName componentName;
@@ -4316,7 +4376,7 @@ external "builtin";
 annotation(preferredView="text");
 end setComponentDimensions;
 
-function setComponentProperties
+impure function setComponentProperties
   "Sets the properties of a component in a class."
   input TypeName className;
   input TypeName componentName;
@@ -4333,7 +4393,7 @@ annotation(
   preferredView="text");
 end setComponentProperties;
 
-function setComponentCondition
+impure function setComponentCondition
   "Sets the condition of a component in a class. An empty string removes the condition."
   input TypeName className;
   input TypeName componentName;
@@ -4343,7 +4403,7 @@ external "builtin";
 annotation(preferredView="text");
 end setComponentCondition;
 
-function getNthConnector
+impure function getNthConnector
   "Returns the name and type of the n:th public connector in the given class."
   input TypeName className;
   input Integer n;
@@ -4352,7 +4412,7 @@ external "builtin";
 annotation(preferredView="text");
 end getNthConnector;
 
-function getNthConnectorIconAnnotation
+impure function getNthConnectorIconAnnotation
   "Returns the Icon annotation from the type of the n:th public connector in the given class."
   input TypeName className;
   input Integer n;
@@ -4361,7 +4421,7 @@ external "builtin";
 annotation(preferredView="text");
 end getNthConnectorIconAnnotation;
 
-function getConnectorCount
+impure function getConnectorCount
   "Returns the number of public connectors in the given class."
   input TypeName className;
   output Integer count;
@@ -4369,7 +4429,7 @@ external "builtin";
 annotation(preferredView="text");
 end getConnectorCount;
 
-function addConnection
+impure function addConnection
   "Adds a connection to the given class."
   input VariableName connector1;
   input VariableName connector2;
@@ -4381,7 +4441,7 @@ external "builtin";
 annotation(preferredView="text");
 end addConnection;
 
-function deleteConnection
+impure function deleteConnection
   "Deletes a connection in the given class."
   input VariableName connector1;
   input VariableName connector2;
@@ -4391,7 +4451,7 @@ external "builtin";
 annotation(preferredView="text");
 end deleteConnection;
 
-function updateConnection
+impure function updateConnection
   "Updates the connection annotation in the class."
   input TypeName className;
   input String from;
@@ -4404,7 +4464,7 @@ annotation(preferredView="text",Documentation(info="<html>
 </html>"));
 end updateConnection;
 
-function updateConnectionAnnotation
+impure function updateConnectionAnnotation
   "Updates the connection annotation in the class."
   input TypeName className;
   input String from;
@@ -4417,7 +4477,7 @@ annotation(preferredView="text",Documentation(info="<html>
 </html>"));
 end updateConnectionAnnotation;
 
-function setConnectionComment
+impure function setConnectionComment
   "Sets the description string on a connect equation in the given class."
   input TypeName className;
   input VariableName connector1;
@@ -4428,7 +4488,7 @@ external "builtin";
 annotation(preferredView="text");
 end setConnectionComment;
 
-function updateConnectionNames
+impure function updateConnectionNames
   "Updates the connection connector names in the class."
   input TypeName className;
   input String from;
@@ -4442,7 +4502,7 @@ annotation(preferredView="text",Documentation(info="<html>
 </html>"));
 end updateConnectionNames;
 
-function getConnectionCount
+impure function getConnectionCount
   "Counts the number of connect equation in a class."
   input TypeName className;
   output Integer count;
@@ -4450,7 +4510,7 @@ external "builtin";
 annotation(preferredView="text");
 end getConnectionCount;
 
-function getNthConnection
+impure function getNthConnection
   "Returns the n:th connection."
   input TypeName className;
   input Integer index;
@@ -4464,7 +4524,7 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end getNthConnection;
 
-function getNthConnectionAnnotation
+impure function getNthConnectionAnnotation
   "Returns the annotation of the n:th connect clause in the class."
   input TypeName className;
   input Integer index;
@@ -4473,7 +4533,7 @@ external "builtin";
 annotation(preferredView="text");
 end getNthConnectionAnnotation;
 
-function getConnectionList
+impure function getConnectionList
   "Returns an list of all connect equations including those within loops"
   input TypeName className;
   output String[:,:] result;
@@ -4487,7 +4547,7 @@ annotation(
   preferredView="text");
 end getConnectionList;
 
-function addEquation
+impure function addEquation
   "Adds an equation to a class."
   input TypeName className "The name of the class to add the equation to";
   input String eq "The equation given as a string";
@@ -4501,14 +4561,14 @@ The equation is added to the end of the last equation or initial equation sectio
   preferredView="text");
 end addEquation;
 
-function deleteEquation = updateEquation(newEq = "") "Deletes an equation in a class."
+impure function deleteEquation = updateEquation(newEq = "") "Deletes an equation in a class."
   annotation(
     Documentation(info="<html>
 Alias for <a href=\"modelica://OpenModelica.Scripting.updateEquation\">updateEquation()</a> with <pre>newEq = ""</pre>.
 </html>"),
     preferredView="text");
 
-function updateEquation
+impure function updateEquation
   "Replaces an equation with another equation in a class."
   input TypeName className "The name of the class";
   input String oldEq "The equation to replace";
@@ -4552,7 +4612,7 @@ updateEquation takes two equations, given as strings that are parsed as Modelica
   preferredView="text");
 end updateEquation;
 
-function getAlgorithmCount
+impure function getAlgorithmCount
   "Counts the number of algorithm sections in a class."
   input TypeName class_;
   output Integer count;
@@ -4560,7 +4620,7 @@ external "builtin";
 annotation(preferredView="text");
 end getAlgorithmCount;
 
-function getNthAlgorithm
+impure function getNthAlgorithm
   "Returns the n:th algorithm section in a class."
   input TypeName class_;
   input Integer index;
@@ -4569,7 +4629,7 @@ external "builtin";
 annotation(preferredView="text");
 end getNthAlgorithm;
 
-function getInitialAlgorithmCount
+impure function getInitialAlgorithmCount
   "Counts the number of initial algorithm sections in a class."
   input TypeName class_;
   output Integer count;
@@ -4577,7 +4637,7 @@ external "builtin";
 annotation(preferredView="text");
 end getInitialAlgorithmCount;
 
-function getNthInitialAlgorithm
+impure function getNthInitialAlgorithm
   "Returns the n:th initial algorithm section in a class."
   input TypeName class_;
   input Integer index;
@@ -4586,7 +4646,7 @@ external "builtin";
 annotation(preferredView="text");
 end getNthInitialAlgorithm;
 
-function getAlgorithmItemsCount
+impure function getAlgorithmItemsCount
   "Counts the number of algorithm statements in a class."
   input TypeName class_;
   output Integer count;
@@ -4594,7 +4654,7 @@ external "builtin";
 annotation(preferredView="text");
 end getAlgorithmItemsCount;
 
-function getNthAlgorithmItem
+impure function getNthAlgorithmItem
   "Returns the n:th algorithm statement in a class."
   input TypeName class_;
   input Integer index;
@@ -4603,7 +4663,7 @@ external "builtin";
 annotation(preferredView="text");
 end getNthAlgorithmItem;
 
-function getInitialAlgorithmItemsCount
+impure function getInitialAlgorithmItemsCount
   "Counts the number of initial algorithm statements in a class."
   input TypeName class_;
   output Integer count;
@@ -4611,7 +4671,7 @@ external "builtin";
 annotation(preferredView="text");
 end getInitialAlgorithmItemsCount;
 
-function getNthInitialAlgorithmItem
+impure function getNthInitialAlgorithmItem
   "Returns the n:th initial algorithm statement in a class."
   input TypeName class_;
   input Integer index;
@@ -4620,7 +4680,7 @@ external "builtin";
 annotation(preferredView="text");
 end getNthInitialAlgorithmItem;
 
-function getEquationCount
+impure function getEquationCount
   "Counts the number of equation sections in a class."
   input TypeName class_;
   output Integer count;
@@ -4628,7 +4688,7 @@ external "builtin";
 annotation(preferredView="text");
 end getEquationCount;
 
-function getNthEquation
+impure function getNthEquation
   "Returns the n:th equation section in a class."
   input TypeName class_;
   input Integer index;
@@ -4637,7 +4697,7 @@ external "builtin";
 annotation(preferredView="text");
 end getNthEquation;
 
-function getInitialEquationCount
+impure function getInitialEquationCount
   "Counts the number of initial equation sections in a class."
   input TypeName class_;
   output Integer count;
@@ -4645,7 +4705,7 @@ external "builtin";
 annotation(preferredView="text");
 end getInitialEquationCount;
 
-function getNthInitialEquation
+impure function getNthInitialEquation
   "Returns the n:th initial equation section in a class."
   input TypeName class_;
   input Integer index;
@@ -4654,7 +4714,7 @@ external "builtin";
 annotation(preferredView="text");
 end getNthInitialEquation;
 
-function getEquationItemsCount
+impure function getEquationItemsCount
   "Counts the number of equations in a class."
   input TypeName class_;
   output Integer count;
@@ -4662,7 +4722,7 @@ external "builtin";
 annotation(preferredView="text");
 end getEquationItemsCount;
 
-function getNthEquationItem
+impure function getNthEquationItem
   "Returns the n:th equation in a class."
   input TypeName class_;
   input Integer index;
@@ -4671,7 +4731,7 @@ external "builtin";
 annotation(preferredView="text");
 end getNthEquationItem;
 
-function getInitialEquationItemsCount
+impure function getInitialEquationItemsCount
   "Counts the number of initial equations in a class."
   input TypeName class_;
   output Integer count;
@@ -4679,7 +4739,7 @@ external "builtin";
 annotation(preferredView="text");
 end getInitialEquationItemsCount;
 
-function getNthInitialEquationItem
+impure function getNthInitialEquationItem
   "Returns the n:th initial equation in a class."
   input TypeName class_;
   input Integer index;
@@ -4688,7 +4748,7 @@ external "builtin";
 annotation(preferredView="text");
 end getNthInitialEquationItem;
 
-function getAnnotationCount
+impure function getAnnotationCount
   "Counts the number of annotation sections in a class."
   input TypeName class_;
   output Integer count;
@@ -4696,7 +4756,7 @@ external "builtin";
 annotation(preferredView="text");
 end getAnnotationCount;
 
-function getNthAnnotationString
+impure function getNthAnnotationString
   "Returns the n:th annotation section as string."
   input TypeName class_;
   input Integer index;
@@ -4705,7 +4765,7 @@ external "builtin";
 annotation(preferredView="text");
 end getNthAnnotationString;
 
-function getImportCount
+impure function getImportCount
   "Counts the number of import-clauses in a class."
   input TypeName class_;
   output Integer count;
@@ -4713,7 +4773,7 @@ external "builtin";
 annotation(preferredView="text");
 end getImportCount;
 
-function getMMfileTotalDependencies
+impure function getMMfileTotalDependencies
   "Returns imports for a MetaModelica package."
   input String in_package_name;
   input String public_imports_dir;
@@ -4722,7 +4782,7 @@ external "builtin";
 annotation(preferredView="text");
 end getMMfileTotalDependencies;
 
-function getImportedNames
+impure function getImportedNames
   "Returns the definition names of all import-clauses in a class."
   input TypeName class_;
   output String[:] out_public;
@@ -4731,7 +4791,7 @@ external "builtin";
 annotation(preferredView="text");
 end getImportedNames;
 
-function getNthImport
+impure function getNthImport
   "Returns the n:th import-clause."
   input TypeName class_;
   input Integer index;
@@ -4753,7 +4813,7 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end iconv;
 
-function getDocumentationAnnotation
+impure function getDocumentationAnnotation
   "Returns the Documentation annotation defined in the class."
   input TypeName cl;
   output String out[3] "{info,revision,infoHeader}"; //TODO: Should be changed to have 2 outputs instead of an array of 2 Strings..."
@@ -4761,7 +4821,7 @@ external "builtin";
 annotation(preferredView="text");
 end getDocumentationAnnotation;
 
-function setDocumentationAnnotation
+impure function setDocumentationAnnotation
   "Sets the Documentation annotation in a class."
   input TypeName class_;
   input String info = "";
@@ -4774,7 +4834,7 @@ annotation(preferredView = "text", Documentation(info = "<html>
 </html>"));
 end setDocumentationAnnotation;
 
-function getTimeStamp
+impure function getTimeStamp
   "Returns the timestamp for a class."
   input TypeName cl;
   output Real timeStamp;
@@ -4821,7 +4881,7 @@ external "builtin";
 annotation(preferredView="text");
 end typeNameStrings;
 
-function getClassComment
+impure function getClassComment
   "Returns a class's comment."
   input TypeName cl;
   output String comment;
@@ -4851,7 +4911,7 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end basename;
 
-function existClass
+impure function existClass
   "Returns whether the given class exists or not."
   input TypeName cl;
   output Boolean exists;
@@ -4859,10 +4919,10 @@ external "builtin";
 annotation(preferredView="text");
 end existClass;
 
-function existModel = isModel "Returns whether the given model exists or not.";
-function existPackage = isPackage "Returns whether the given package exists or not.";
+impure function existModel = isModel "Returns whether the given model exists or not.";
+impure function existPackage = isPackage "Returns whether the given package exists or not.";
 
-function getClassRestriction
+impure function getClassRestriction
   "Returns the restriction of the given class."
   input TypeName cl;
   output String restriction;
@@ -4870,7 +4930,7 @@ external "builtin";
 annotation(preferredView="text");
 end getClassRestriction;
 
-function isType
+impure function isType
   "Checks if a given class is a type."
   input TypeName cl;
   output Boolean b;
@@ -4878,7 +4938,7 @@ external "builtin";
 annotation(preferredView="text");
 end isType;
 
-function isPackage
+impure function isPackage
   "Checks if a given class is a package."
   input TypeName cl;
   output Boolean b;
@@ -4886,7 +4946,7 @@ external "builtin";
 annotation(preferredView="text");
 end isPackage;
 
-function isClass
+impure function isClass
   "Checks if a given class is a class."
   input TypeName cl;
   output Boolean b;
@@ -4894,7 +4954,7 @@ external "builtin";
 annotation(preferredView="text");
 end isClass;
 
-function isRecord
+impure function isRecord
   "Checks if a given class is a record."
   input TypeName cl;
   output Boolean b;
@@ -4902,7 +4962,7 @@ external "builtin";
 annotation(preferredView="text");
 end isRecord;
 
-function isBlock
+impure function isBlock
   "Checks if a given class is a block."
   input TypeName cl;
   output Boolean b;
@@ -4910,7 +4970,7 @@ external "builtin";
 annotation(preferredView="text");
 end isBlock;
 
-function isFunction
+impure function isFunction
   "Checks if a given class is a function."
   input TypeName cl;
   output Boolean b;
@@ -4918,7 +4978,7 @@ external "builtin";
 annotation(preferredView="text");
 end isFunction;
 
-function isPartial
+impure function isPartial
   "Checks if a given class is partial."
   input TypeName cl;
   output Boolean b;
@@ -4926,7 +4986,7 @@ external "builtin";
 annotation(preferredView="text");
 end isPartial;
 
-function isReplaceable
+impure function isReplaceable
   "Checks if a given element is replaceable."
   input TypeName element;
   output Boolean b;
@@ -4934,7 +4994,7 @@ external "builtin";
 annotation(preferredView="text");
 end isReplaceable;
 
-function isRedeclare
+impure function isRedeclare
   "Checks if a given element is a redeclare element."
   input TypeName element;
   output Boolean b;
@@ -4942,7 +5002,7 @@ external "builtin";
 annotation(preferredView="text");
 end isRedeclare;
 
-function isModel
+impure function isModel
   "Checks if a given class is a model."
   input TypeName cl;
   output Boolean b;
@@ -4950,7 +5010,7 @@ external "builtin";
 annotation(preferredView="text");
 end isModel;
 
-function isConnector
+impure function isConnector
   "Checks if a given class is a connector or expandable connector."
   input TypeName cl;
   output Boolean b;
@@ -4958,7 +5018,7 @@ external "builtin";
 annotation(preferredView="text");
 end isConnector;
 
-function isOptimization
+impure function isOptimization
   "Checks if a given class is an optimization."
   input TypeName cl;
   output Boolean b;
@@ -4966,7 +5026,7 @@ external "builtin";
 annotation(preferredView="text");
 end isOptimization;
 
-function isEnumeration
+impure function isEnumeration
   "Checks if a given class is an enumeration."
   input TypeName cl;
   output Boolean b;
@@ -4974,7 +5034,7 @@ external "builtin";
 annotation(preferredView="text");
 end isEnumeration;
 
-function isOperator
+impure function isOperator
   "Checks if a given class is an operator."
   input TypeName cl;
   output Boolean b;
@@ -4982,7 +5042,7 @@ external "builtin";
 annotation(preferredView="text");
 end isOperator;
 
-function isOperatorRecord
+impure function isOperatorRecord
   "Checks if a given class is an operator record."
   input TypeName cl;
   output Boolean b;
@@ -4990,7 +5050,7 @@ external "builtin";
 annotation(preferredView="text");
 end isOperatorRecord;
 
-function isOperatorFunction
+impure function isOperatorFunction
   "Checks if a given class is an operator function."
   input TypeName cl;
   output Boolean b;
@@ -4998,7 +5058,7 @@ external "builtin";
 annotation(preferredView="text");
 end isOperatorFunction;
 
-function isProtectedClass
+impure function isProtectedClass
   "Returns true if the given class c1 has class c2 as one of its protected class."
   input TypeName cl;
   input String c2;
@@ -5007,7 +5067,7 @@ external "builtin";
 annotation(preferredView="text");
 end isProtectedClass;
 
-function getBuiltinType
+impure function getBuiltinType
   "Returns the builtin type e.g Real, Integer, Boolean & String of the class."
   input TypeName cl;
   output String name;
@@ -5015,7 +5075,7 @@ external "builtin";
 annotation(preferredView="text");
 end getBuiltinType;
 
-function isPrimitive
+impure function isPrimitive
   "Checks if a type is primitive."
   input TypeName className;
   output Boolean result;
@@ -5023,7 +5083,7 @@ external "builtin";
 annotation(preferredView="text");
 end isPrimitive;
 
-function isParameter
+impure function isParameter
   "Checks whether a component in a class is a parameter."
   input TypeName componentName;
   input TypeName className;
@@ -5032,7 +5092,7 @@ external "builtin";
 annotation(preferredView="text");
 end isParameter;
 
-function isConstant
+impure function isConstant
   "Checks if a component in a class is a constant."
   input TypeName componentName;
   input TypeName className;
@@ -5041,7 +5101,7 @@ external "builtin";
 annotation(preferredView="text");
 end isConstant;
 
-function isProtected
+impure function isProtected
   "Checks if a component in a class is protected."
   input TypeName componentName;
   input TypeName className;
@@ -5050,7 +5110,7 @@ external "builtin";
 annotation(preferredView="text");
 end isProtected;
 
-function setInitXmlStartValue
+impure function setInitXmlStartValue
   "Sets the start value for a variable in an initialization file."
   input String fileName;
   input String variableName;
@@ -5075,7 +5135,7 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end setInitXmlStartValue;
 
-function ngspicetoModelica
+impure function ngspicetoModelica
   "Converts ngspice netlist to Modelica code."
   input String netlistfileName;
   output Boolean success = false;
@@ -5090,7 +5150,7 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end ngspicetoModelica;
 
-function getInheritanceCount
+impure function getInheritanceCount
   "Returns the numbers of extends clauses in the given class."
   input TypeName className;
   output Integer count;
@@ -5098,7 +5158,7 @@ external "builtin";
 annotation(preferredView="text");
 end getInheritanceCount;
 
-function getInheritedClasses
+impure function getInheritedClasses
   "Returns the list of inherited classes in a class."
   input TypeName name;
   output TypeName inheritedClasses[:];
@@ -5106,7 +5166,7 @@ external "builtin";
 annotation(preferredView="text");
 end getInheritedClasses;
 
-function getNthInheritedClass
+impure function getNthInheritedClass
   "Returns the name of the n:th inherited class in the given class."
   input TypeName className;
   input Integer n;
@@ -5115,7 +5175,7 @@ external "builtin";
 annotation(preferredView="text");
 end getNthInheritedClass;
 
-function getNthInheritedClassIconMapAnnotation
+impure function getNthInheritedClassIconMapAnnotation
   "Returns the IconMap annotation for the n:th inherited class in the given class."
   input TypeName className;
   input Integer n;
@@ -5124,7 +5184,7 @@ external "builtin";
 annotation(preferredView="text");
 end getNthInheritedClassIconMapAnnotation;
 
-function getNthInheritedClassDiagramMapAnnotation
+impure function getNthInheritedClassDiagramMapAnnotation
   "Returns the IconMap annotation for the n:th inherited class in the given class."
   input TypeName className;
   input Integer n;
@@ -5133,7 +5193,7 @@ external "builtin";
 annotation(preferredView="text");
 end getNthInheritedClassDiagramMapAnnotation;
 
-function getComponentsTest
+impure function getComponentsTest
   "Returns an array of records with information about the components of the given class."
   input TypeName name;
   output Component[:] components;
@@ -5155,7 +5215,7 @@ external "builtin";
 annotation(preferredView="text");
 end getComponentsTest;
 
-function isExperiment
+impure function isExperiment
   "Checks if a class is an experiment."
   input TypeName name;
   output Boolean res;
@@ -5166,7 +5226,7 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end isExperiment;
 
-function getSimulationOptions
+impure function getSimulationOptions
   "Returns the startTime, stopTime, tolerance, and interval based on the experiment annotation."
   input TypeName name;
   input Real defaultStartTime = 0.0;
@@ -5183,7 +5243,7 @@ external "builtin";
 annotation(preferredView="text");
 end getSimulationOptions;
 
-function getModelFigures
+impure function getModelFigures
   "Returns the figures defined in the class' figures sub-annotation of Documentation."
   input TypeName name;
   output Figure[:] figures;
@@ -5191,7 +5251,7 @@ external "builtin";
 annotation(preferredView="text");
 end getModelFigures;
 
-function getAnnotationNamedModifiers
+impure function getAnnotationNamedModifiers
   "Returns the names of the modifiers in the given annotation."
   input TypeName className;
   input String annotationName;
@@ -5210,7 +5270,7 @@ annotation(Documentation(info="<html>
 </html>"));
 end getAnnotationNamedModifiers;
 
-function getAnnotationModifierValue
+impure function getAnnotationModifierValue
   "Returns the value for a modifier in the given annotation."
   input TypeName className;
   input String annotationName;
@@ -5230,7 +5290,7 @@ annotation(Documentation(info="<html>
 </html>"));
 end getAnnotationModifierValue;
 
-function classAnnotationExists
+impure function classAnnotationExists
   "Checks if an annotation exists in a class."
   input TypeName className;
   input TypeName annotationName;
@@ -5246,7 +5306,7 @@ annotation(Documentation(info="<html>
 </html>"));
 end classAnnotationExists;
 
-function getBooleanClassAnnotation
+impure function getBooleanClassAnnotation
   "Checks if an annotation exists and returns its value"
   input TypeName className;
   input TypeName annotationName;
@@ -5262,7 +5322,7 @@ annotation(Documentation(info="<html>
 </html>"));
 end getBooleanClassAnnotation;
 
-function getNamedAnnotation
+impure function getNamedAnnotation
   "Returns the value of the annotation with the given name in the given class."
   input TypeName className;
   input TypeName annotationName;
@@ -5271,7 +5331,7 @@ external "builtin";
 annotation(preferredView="text");
 end getNamedAnnotation;
 
-function extendsFrom
+impure function extendsFrom
   "Returns true if the given class extends from the given base class."
   input TypeName className;
   input TypeName baseClassName;
@@ -5280,7 +5340,7 @@ external "builtin";
 annotation(preferredView="text");
 end extendsFrom;
 
-function loadModelica3D
+impure function loadModelica3D
   "Loads Modelica3D."
   input String version = "3.2.1";
   output Boolean status;
@@ -5313,7 +5373,7 @@ simulate(DoublePendulum);getErrorString();</pre>
  </html>"), preferredView="text");
 end loadModelica3D;
 
-function searchClassNames
+impure function searchClassNames
   "Searches for a string in the loaded classes."
   input String searchText;
   input Boolean findInText = false;
@@ -5332,7 +5392,7 @@ annotation(
   preferredView="text");
 end searchClassNames;
 
-function getAvailableLibraries
+impure function getAvailableLibraries
   "Returns a list of all available libraries."
   output String[:] libraries;
 external "builtin";
@@ -5343,7 +5403,7 @@ annotation(
   preferredView="text");
 end getAvailableLibraries;
 
-function getAvailableLibraryVersions
+impure function getAvailableLibraryVersions
   "Returns the installed versions of a library."
   input TypeName libraryName;
   output String[:] librariesAndVersions;
@@ -5351,7 +5411,7 @@ external "builtin";
 annotation(preferredView="text");
 end getAvailableLibraryVersions;
 
-function installPackage
+impure function installPackage
   "Installs a package."
   input TypeName pkg;
   input String version = "";
@@ -5366,7 +5426,7 @@ annotation(
   preferredView="text");
 end installPackage;
 
-function updatePackageIndex
+impure function updatePackageIndex
   "Updates the package index."
   output Boolean result;
 external "builtin";
@@ -5379,7 +5439,7 @@ annotation(
   preferredView="text");
 end updatePackageIndex;
 
-function installWasmToolchain
+impure function installWasmToolchain
   "Installs the sysroot wasm external \"C\" code is compiled against."
   input Boolean cxx = false "Also libc++, for C++ code";
   output String sysroot;
@@ -5397,7 +5457,7 @@ Returns the empty string if the index has none or the download fails.</p>
   preferredView="text");
 end installWasmToolchain;
 
-function getAvailablePackageVersions
+impure function getAvailablePackageVersions
   "Returns the versions that provide the requested version of the library."
   input TypeName pkg;
   input String version;
@@ -5406,7 +5466,7 @@ external "builtin";
 annotation(preferredView="text");
 end getAvailablePackageVersions;
 
-function getAvailablePackageConversionsTo
+impure function getAvailablePackageConversionsTo
   "Returns the versions that provide conversion to the requested version of the library."
   input TypeName pkg;
   input String version;
@@ -5415,7 +5475,7 @@ external "builtin";
 annotation(preferredView="text");
 end getAvailablePackageConversionsTo;
 
-function getAvailablePackageConversionsFrom
+impure function getAvailablePackageConversionsFrom
   "Returns the versions that provide conversion from the requested version of the library."
   input TypeName pkg;
   input String version;
@@ -5424,7 +5484,7 @@ external "builtin";
 annotation(preferredView="text");
 end getAvailablePackageConversionsFrom;
 
-function upgradeInstalledPackages
+impure function upgradeInstalledPackages
   "Upgrades installed packages."
   input Boolean installNewestVersions = true;
   output Boolean result;
@@ -5437,7 +5497,7 @@ annotation(
   preferredView="text");
 end upgradeInstalledPackages;
 
-function getUses
+impure function getUses
   "Returns the libraries used by a package."
   input TypeName pack;
   output String[:,:] uses;
@@ -5449,7 +5509,7 @@ annotation(
   preferredView="text");
 end getUses;
 
-function getConversionsFromVersions
+impure function getConversionsFromVersions
   "Returns the versions this library can convert from with and without conversions."
   input TypeName pack;
   output String[:] withoutConversion;
@@ -5458,7 +5518,7 @@ external "builtin";
 annotation(preferredView="text");
 end getConversionsFromVersions;
 
-function getDerivedClassModifierNames
+impure function getDerivedClassModifierNames
   "Returns a derived class's modifier names."
   input TypeName className;
   output String[:] modifierNames;
@@ -5475,7 +5535,7 @@ annotation(
   preferredView="text");
 end getDerivedClassModifierNames;
 
-function getDerivedClassModifierValue
+impure function getDerivedClassModifierValue
   "Returns a derived class's modifier value."
   input TypeName className;
   input TypeName modifierName;
@@ -5494,7 +5554,7 @@ annotation(
   preferredView="text");
 end getDerivedClassModifierValue;
 
-function generateEntryPoint
+impure function generateEntryPoint
   "Generates an entry point for a MetaModelica program."
   input String fileName;
   input TypeName entryPoint;
@@ -5506,7 +5566,7 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end generateEntryPoint;
 
-function numProcessors
+impure function numProcessors
   "Returns the number of available processors or threads."
   output Integer result;
 external "builtin";
@@ -5516,7 +5576,7 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end numProcessors;
 
-function runScriptParallel
+impure function runScriptParallel
   "Runs multiple scripts in parallel."
   input String scripts[:];
   input Integer numThreads = numProcessors();
@@ -5532,14 +5592,14 @@ annotation(
   preferredView="text");
 end runScriptParallel;
 
-function exit
+impure function exit
   "Forces omc to quit with the given exit status."
   input Integer status;
 external "builtin";
 annotation(preferredView="text");
 end exit;
 
-function threadWorkFailed
+impure function threadWorkFailed
   "Exits the current thread with a failure."
 external "builtin";
 annotation(
@@ -5548,7 +5608,7 @@ annotation(
 </html>"));
 end threadWorkFailed;
 
-function getMemorySize
+impure function getMemorySize
   "Returns the amount of system memory."
   output Real memory(unit="MiB");
 external "builtin";
@@ -5559,7 +5619,7 @@ annotation(
   preferredView="text");
 end getMemorySize;
 
-function GC_gcollect_and_unmap
+impure function GC_gcollect_and_unmap
   "Forces the GC to collect and unmap memory."
 external "builtin";
 annotation(
@@ -5569,7 +5629,7 @@ annotation(
   preferredView="text");
 end GC_gcollect_and_unmap;
 
-function GC_expand_hp
+impure function GC_expand_hp
   "Forces the GC to expand the heap to accomodate more data."
   input Integer size;
   output Boolean success;
@@ -5577,7 +5637,7 @@ external "builtin";
 annotation(preferredView="text");
 end GC_expand_hp;
 
-function GC_set_max_heap_size
+impure function GC_set_max_heap_size
   "Forces the GC to limit the maximum heap size."
   input Real size "In bytes; a Real so that sizes past 2^31 fit";
   output Boolean success;
@@ -5599,14 +5659,14 @@ record GC_PROFSTATS
   Integer reclaimed_bytes_before_gc;
 end GC_PROFSTATS;
 
-function GC_get_prof_stats
+impure function GC_get_prof_stats
   "Returns a record with the GC statistics."
   output GC_PROFSTATS gcStats;
 external "builtin";
 annotation(preferredView="text");
 end GC_get_prof_stats;
 
-function checkInterfaceOfPackages
+impure function checkInterfaceOfPackages
   "Checks the interfaces of MetaModelica packages."
   input TypeName cl;
   input String dependencyMatrix[:,:];
@@ -5628,7 +5688,7 @@ function sortStrings
 annotation(preferredView="text");
 end sortStrings;
 
-function getClassInformation
+impure function getClassInformation
   "Returns information about a class."
   input TypeName cl;
   output String restriction, comment;
@@ -5654,7 +5714,7 @@ annotation(
 </html>"), preferredView="text");
 end getClassInformation;
 
-function getCrefInfo
+impure function getCrefInfo
   "Deprecated; use getClassInformation instead."
   input TypeName cl;
   output Expression[:] result;
@@ -5662,7 +5722,7 @@ external "builtin";
 annotation(preferredView="text");
 end getCrefInfo;
 
-function getDefaultComponentName
+impure function getDefaultComponentName
   "Returns the default component name for a class."
   input TypeName cl;
   output String name;
@@ -5673,7 +5733,7 @@ annotation(
 </html>"), preferredView="text");
 end getDefaultComponentName;
 
-function getDefaultComponentPrefixes
+impure function getDefaultComponentPrefixes
   "Returns the default component prefixes for a class."
   input TypeName cl;
   output String prefixes;
@@ -5684,7 +5744,7 @@ annotation(
 </html>"), preferredView="text");
 end getDefaultComponentPrefixes;
 
-function getShortDefinitionBaseClassInformation
+impure function getShortDefinitionBaseClassInformation
   "Returns information about a short class definition."
   input TypeName className;
   output Expression result;
@@ -5696,7 +5756,7 @@ annotation(
   preferredView="text");
 end getShortDefinitionBaseClassInformation;
 
-function getExternalFunctionSpecification
+impure function getExternalFunctionSpecification
   "Returns information about a function's external specification."
   input TypeName functionName;
   output Expression result;
@@ -5708,7 +5768,7 @@ annotation(
   preferredView="text");
 end getExternalFunctionSpecification;
 
-function getEnumerationLiterals
+impure function getEnumerationLiterals
   "Returns the literals for a given enumeration type."
   input TypeName className;
   output String[:] result;
@@ -5716,7 +5776,7 @@ external "builtin";
 annotation(preferredView="text");
 end getEnumerationLiterals;
 
-function getTransitions
+impure function getTransitions
   "Returns list of transitions for the given class."
   input TypeName cl;
   output String[:,:] transitions;
@@ -5727,7 +5787,7 @@ annotation(
 </html>"), preferredView="text");
 end getTransitions;
 
-function addTransition
+impure function addTransition
   "Adds a transition to a class."
   input TypeName cl;
   input String from;
@@ -5743,7 +5803,7 @@ external "builtin";
 annotation(preferredView="text");
 end addTransition;
 
-function deleteTransition
+impure function deleteTransition
   "Deletes a transition from a class."
   input TypeName cl;
   input String from;
@@ -5758,7 +5818,7 @@ external "builtin";
 annotation(preferredView="text");
 end deleteTransition;
 
-function updateTransition
+impure function updateTransition
   "Updates a transition in a class."
   input TypeName cl;
   input String from;
@@ -5779,7 +5839,7 @@ external "builtin";
 annotation(preferredView="text");
 end updateTransition;
 
-function getInitialStates
+impure function getInitialStates
   "Returns a list of initial states in a class."
   input TypeName cl;
   output String[:,:] initialStates;
@@ -5790,7 +5850,7 @@ annotation(
 </html>"), preferredView="text");
 end getInitialStates;
 
-function addInitialState
+impure function addInitialState
   "Adds an initial state to a class."
   input TypeName cl;
   input String state;
@@ -5800,7 +5860,7 @@ external "builtin";
 annotation(preferredView="text");
 end addInitialState;
 
-function deleteInitialState
+impure function deleteInitialState
   "Deletes an initial state in a class."
   input TypeName cl;
   input String state;
@@ -5809,7 +5869,7 @@ external "builtin";
 annotation(preferredView="text");
 end deleteInitialState;
 
-function updateInitialState
+impure function updateInitialState
   "Updates an initial state in a class."
   input TypeName cl;
   input String state;
@@ -5819,7 +5879,7 @@ external "builtin";
 annotation(preferredView="text");
 end updateInitialState;
 
-function generateScriptingAPI
+impure function generateScriptingAPI
   "Generates the scripting API."
   input TypeName cl;
   input String name;
@@ -5835,7 +5895,7 @@ annotation(
 </html>"), preferredView="text");
 end generateScriptingAPI;
 
-function runConversionScript
+impure function runConversionScript
   "Runs a conversion script on a selected package."
   input TypeName packageToConvert;
   input String scriptFile;
@@ -5844,7 +5904,7 @@ external "builtin";
 annotation(preferredView="text");
 end runConversionScript;
 
-function convertPackageToLibrary
+impure function convertPackageToLibrary
   "Runs the conversion script for a library on a selected package."
   input TypeName packageToConvert;
   input TypeName library;
@@ -5854,7 +5914,7 @@ external "builtin";
 annotation(preferredView="text");
 end convertPackageToLibrary;
 
-function getModelInstance
+impure function getModelInstance
   "Dumps a model instance as a JSON string."
   input TypeName className;
   input TypeName context = $TypeName(__NoContext);
@@ -5864,7 +5924,7 @@ function getModelInstance
 external "builtin";
 end getModelInstance;
 
-function getModelInstanceAnnotation
+impure function getModelInstanceAnnotation
   "Dumps the annotation of a model using the same JSON format as getModelInstance."
   input TypeName className;
   input String[:] filter = fill("", 0);
@@ -5878,7 +5938,7 @@ annotation(
    preferredView="text");
 end getModelInstanceAnnotation;
 
-function getModelInstanceReference
+impure function getModelInstanceReference
   "Like getModelInstance, but returns an integer handle to an in-memory model
    instance structure instead of a JSON string (see issue #15219). The handle is
    intended to be read directly by an in-process client such as OMEdit and must
@@ -5890,7 +5950,7 @@ function getModelInstanceReference
 external "builtin";
 end getModelInstanceReference;
 
-function getModelInstanceAnnotationReference
+impure function getModelInstanceAnnotationReference
   "Like getModelInstanceAnnotation, but returns an integer handle to an
    in-memory structure instead of a JSON string (see getModelInstanceReference)."
   input TypeName className;
@@ -5899,7 +5959,7 @@ function getModelInstanceAnnotationReference
 external "builtin";
 end getModelInstanceAnnotationReference;
 
-function releaseModelInstanceReference
+impure function releaseModelInstanceReference
   "Releases a handle returned by getModelInstanceReference or
    getModelInstanceAnnotationReference. Returns true on success."
   input Integer handle;
@@ -5907,7 +5967,7 @@ function releaseModelInstanceReference
 external "builtin";
 end releaseModelInstanceReference;
 
-function modifierToJSON
+impure function modifierToJSON
   "Parses a modifier given as a string and dumps it as JSON."
   input String modifier;
   input Boolean prettyPrint = false;
@@ -5916,14 +5976,14 @@ external "builtin";
 annotation(preferredView="text");
 end modifierToJSON;
 
-function storeAST
+impure function storeAST
   "Stores the AST and returns an id that can be used to restore it with restoreAST."
   output Integer id;
 external "builtin";
 annotation(preferredView="text");
 end storeAST;
 
-function restoreAST
+impure function restoreAST
   "Restores an AST that was previously stored with storeAST."
   input Integer id;
   output Boolean success;
@@ -5931,7 +5991,7 @@ external "builtin";
 annotation(preferredView="text");
 end restoreAST;
 
-function qualifyPath
+impure function qualifyPath
   "Returns the fully qualified path for the given path in a class."
   input TypeName classPath;
   input TypeName path;
@@ -5940,7 +6000,7 @@ external "builtin";
 annotation(preferredView="text");
 end qualifyPath;
 
-function getDefUseChains
+impure function getDefUseChains
   input TypeName className "A class, or a component declared in a class.";
   input String fileName = "" "The file to write the JSON to, if not empty.";
   input TypeName scope = $TypeName(AllLoadedClasses) "The class to look for the uses in.";
@@ -5969,7 +6029,7 @@ that couldn't be looked up are listed under <code>unresolved</code>.</p>
 </html>"));
 end getDefUseChains;
 
-function getDependencyGraph
+impure function getDependencyGraph
   input TypeName scope = $TypeName(AllLoadedClasses) "The classes to include.";
   input String fileName = "" "The file to write the JSON to, if not empty.";
   input Boolean prettyPrint = false;
@@ -5990,7 +6050,7 @@ a class it uses, directly or not, has another hash or other uses.</p>
 </html>"));
 end getDependencyGraph;
 
-function getDefinitionAt
+impure function getDefinitionAt
   input String fileName "A file of a loaded class.";
   input Integer line;
   input Integer column "Starting at 1, counting bytes.";
@@ -6012,7 +6072,7 @@ class is redeclared as. The uses of the definition are returned by
 </html>"));
 end getDefinitionAt;
 
-function getProbeTree
+impure function getProbeTree
   input String fileName "A file whose classes are loaded.";
   input Boolean prettyPrint = false;
   output String tree;
@@ -6035,7 +6095,7 @@ its span, its <code>properties</code> and its <code>children</code>. If the file
 </html>"));
 end getProbeTree;
 
-function evaluateProbe
+impure function evaluateProbe
   input String fileName "A file whose classes are loaded.";
   input String nodeId "The id of a node of getProbeTree.";
   input String property "One of the properties of the node.";
@@ -6084,7 +6144,7 @@ the file.</p>
 </html>"));
 end evaluateProbe;
 
-function getClassDiagram
+impure function getClassDiagram
   input TypeName className;
   input String fileName = "" "The file to write the diagram to, if not empty.";
   input String format = "plantuml" "plantuml, mermaid or drawio.";
@@ -6125,7 +6185,7 @@ With <code>showModifiers = false</code> the modifiers and bindings aren't shown.
 </html>"));
 end getClassDiagram;
 
-function getInstanceDiagram
+impure function getInstanceDiagram
   input TypeName className;
   input String fileName = "" "The file to write the diagram to, if not empty.";
   input String format = "plantuml" "plantuml, mermaid or drawio.";
@@ -6163,7 +6223,7 @@ are left out.</p>
 </html>"));
 end getInstanceDiagram;
 
-function reverseLookup
+impure function reverseLookup
   input TypeName name;
   input TypeName scope = $TypeName(AllLoadedClasses);
   input Boolean exactMatch = true;
@@ -6221,21 +6281,21 @@ type oms_fault_type = enumeration (
   oms_fault_type_const      ///< y = faultValue
 ) "OMSimulator enumeration for fault types.";
 
-function loadOMSimulator
+impure function loadOMSimulator
   "Loads the OMSimulator DLL from the default path."
   output Integer status;
 external "builtin";
 annotation(preferredView="text");
 end loadOMSimulator;
 
-function unloadOMSimulator
+impure function unloadOMSimulator
   "Frees the OMSimulator instances."
   output Integer status;
 external "builtin";
 annotation(preferredView="text");
 end unloadOMSimulator;
 
-function oms_addBus
+impure function oms_addBus
   "OMSimulator: Adds a bus to a given component."
   input String cref;
   output Integer status;
@@ -6243,7 +6303,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_addBus;
 
-function oms_addConnection
+impure function oms_addConnection
   "Adds a new connection between connectors A and B."
   input String crefA;
   input String crefB;
@@ -6252,7 +6312,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_addConnection;
 
-function oms_addConnector
+impure function oms_addConnector
   "Adds a connector to a given component."
   input String cref;
   input oms_causality causality;
@@ -6262,7 +6322,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_addConnector;
 
-function oms_addConnectorToBus
+impure function oms_addConnectorToBus
   "Adds a connector to a bus."
   input String busCref;
   input String connectorCref;
@@ -6271,7 +6331,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_addConnectorToBus;
 
-function oms_addConnectorToTLMBus
+impure function oms_addConnectorToTLMBus
   "Adds a connector to a TLM bus."
   input String busCref;
   input String connectorCref;
@@ -6281,7 +6341,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_addConnectorToTLMBus;
 
-function oms_addDynamicValueIndicator
+impure function oms_addDynamicValueIndicator
   "Adds a dynamic value indicator."
   input String signal;
   input String lower;
@@ -6292,7 +6352,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_addDynamicValueIndicator;
 
-function oms_addEventIndicator
+impure function oms_addEventIndicator
   "Adds an event indicator."
   input String signal;
   output Integer status;
@@ -6300,7 +6360,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_addEventIndicator;
 
-function oms_addExternalModel
+impure function oms_addExternalModel
   "Adds an external model to a TLM system."
   input String cref;
   input String path;
@@ -6310,7 +6370,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_addExternalModel;
 
-function oms_addSignalsToResults
+impure function oms_addSignalsToResults
   "Adds all variables that match the given regex to the result file."
   input String cref;
   input String regex;
@@ -6319,7 +6379,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_addSignalsToResults;
 
-function oms_addStaticValueIndicator
+impure function oms_addStaticValueIndicator
   "Adds a static value indicator."
   input String signal;
   input Real lower;
@@ -6330,7 +6390,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_addStaticValueIndicator;
 
-function oms_addSubModel
+impure function oms_addSubModel
   "Adds a component to a system."
   input String cref;
   input String fmuPath;
@@ -6339,7 +6399,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_addSubModel;
 
-function oms_addSystem
+impure function oms_addSystem
   "Adds a (sub-)system to a model or system."
   input String cref;
   input oms_system type_;
@@ -6348,7 +6408,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_addSystem;
 
-function oms_addTimeIndicator
+impure function oms_addTimeIndicator
   "Adds a time indicator."
   input String signal;
   output Integer status;
@@ -6356,7 +6416,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_addTimeIndicator;
 
-function oms_addTLMBus
+impure function oms_addTLMBus
   "Adds a TLM bus."
   input String cref;
   input oms_tlm_domain domain;
@@ -6367,7 +6427,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_addTLMBus;
 
-function oms_addTLMConnection
+impure function oms_addTLMConnection
   "Connects two TLM connectors."
   input String crefA;
   input String crefB;
@@ -6380,7 +6440,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_addTLMConnection;
 
-function oms_compareSimulationResults
+impure function oms_compareSimulationResults
   "Compares a given signal in two result files."
   input String filenameA;
   input String filenameB;
@@ -6392,7 +6452,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_compareSimulationResults;
 
-function oms_copySystem
+impure function oms_copySystem
   "Copies a system."
   input String source;
   input String target;
@@ -6401,7 +6461,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_copySystem;
 
-function oms_delete
+impure function oms_delete
   "Deletes a connector, component, system, or model object."
   input String cref;
   output Integer status;
@@ -6409,7 +6469,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_delete;
 
-function oms_deleteConnection
+impure function oms_deleteConnection
   "Deletes the connection between two connectors."
   input String crefA;
   input String crefB;
@@ -6418,7 +6478,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_deleteConnection;
 
-function oms_deleteConnectorFromBus
+impure function oms_deleteConnectorFromBus
   "Deletes a connector from a given bus."
   input String busCref;
   input String connectorCref;
@@ -6427,7 +6487,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_deleteConnectorFromBus;
 
-function oms_deleteConnectorFromTLMBus
+impure function oms_deleteConnectorFromTLMBus
   "Deletes a connector from a given TLM bus."
   input String busCref;
   input String connectorCref;
@@ -6436,7 +6496,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_deleteConnectorFromTLMBus;
 
-function oms_export
+impure function oms_export
   "Exports a composite model to a SPP file."
   input String cref;
   input String filename;
@@ -6445,7 +6505,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_export;
 
-function oms_exportDependencyGraphs
+impure function oms_exportDependencyGraphs
   "Exports the dependency graphs of a given model to dot files."
   input String cref;
   input String initialization;
@@ -6456,7 +6516,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_exportDependencyGraphs;
 
-function oms_exportSnapshot
+impure function oms_exportSnapshot
   "Lists the SSD representation of a given model, system, or component."
   input String cref;
   output String contents;
@@ -6465,7 +6525,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_exportSnapshot;
 
-function oms_extractFMIKind
+impure function oms_extractFMIKind
   "Extracts the FMI kind of a given FMU from the file system."
   input String filename;
   output Integer  kind;
@@ -6474,7 +6534,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_extractFMIKind;
 
-function oms_getBoolean
+impure function oms_getBoolean
   "Get boolean value of a given signal."
   input String cref;
   output Boolean  value;
@@ -6483,7 +6543,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_getBoolean;
 
-function oms_getFixedStepSize
+impure function oms_getFixedStepSize
   "Gets the fixed step size."
   input String cref;
   output Real stepSize;
@@ -6492,7 +6552,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_getFixedStepSize;
 
-function oms_getInteger
+impure function oms_getInteger
   "Get integer value of a given signal."
   input String cref;
   input Integer value;
@@ -6501,7 +6561,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_getInteger;
 
-function oms_getModelState
+impure function oms_getModelState
   "Gets the model state of the given model cref."
   input String cref;
   output Integer modelState;
@@ -6510,7 +6570,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_getModelState;
 
-function oms_getReal
+impure function oms_getReal
   "Get real value."
   input String cref;
   output Real value;
@@ -6519,7 +6579,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_getReal;
 
-function oms_getSolver
+impure function oms_getSolver
   "Gets the selected solver method of the given system."
   input String cref;
   output Integer solver;
@@ -6528,7 +6588,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_getSolver;
 
-function oms_getStartTime
+impure function oms_getStartTime
   "Gets the start time from the model."
   input String cref;
   output Real startTime;
@@ -6537,7 +6597,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_getStartTime;
 
-function oms_getStopTime
+impure function oms_getStopTime
   "Gets the stop time from the model."
   input String cref;
   output Real stopTime;
@@ -6546,7 +6606,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_getStopTime;
 
-function oms_getSubModelPath
+impure function oms_getSubModelPath
   "Returns the path of a given component."
   input String cref;
   output String path;
@@ -6555,7 +6615,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_getSubModelPath;
 
-function oms_getSystemType
+impure function oms_getSystemType
   "Gets the type of a given system."
   input String cref;
   output Integer type_;
@@ -6564,7 +6624,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_getSystemType;
 
-function oms_getTolerance
+impure function oms_getTolerance
   "Gets the tolerance of a given system or component."
   input String cref;
   output Real absoluteTolerance;
@@ -6574,7 +6634,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_getTolerance;
 
-function oms_getVariableStepSize
+impure function oms_getVariableStepSize
   "Gets the step size parameters."
   input String cref;
   output Real initialStepSize;
@@ -6585,7 +6645,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_getVariableStepSize;
 
-function oms_faultInjection
+impure function oms_faultInjection
   "Defines a new fault injection block."
   input String signal;
   input oms_fault_type faultType;
@@ -6595,7 +6655,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_faultInjection;
 
-function oms_importFile
+impure function oms_importFile
   "Imports a composite model from a SSP file."
   input String filename;
   output String cref;
@@ -6604,7 +6664,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_importFile;
 
-function oms_importSnapshot
+impure function oms_importSnapshot
   "Loads a snapshot to restore a previous model state."
   input String cref;
   input String snapshot;
@@ -6613,7 +6673,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_importSnapshot;
 
-function oms_initialize
+impure function oms_initialize
   "Initializes a composite model."
   input String cref;
   output Integer status;
@@ -6621,7 +6681,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_initialize;
 
-function oms_instantiate
+impure function oms_instantiate
   "Instantiates a given composite model."
   input String cref;
   output Integer status;
@@ -6629,7 +6689,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_instantiate;
 
-function oms_list
+impure function oms_list
   "Lists the SSD representation of a given model, system, or component."
   input String cref;
   output String contents;
@@ -6638,7 +6698,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_list;
 
-function oms_listUnconnectedConnectors
+impure function oms_listUnconnectedConnectors
   "Lists all unconnected connectors of a given system."
   input String cref;
   output String contents;
@@ -6647,7 +6707,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_listUnconnectedConnectors;
 
-function oms_loadSnapshot
+impure function oms_loadSnapshot
   "Loads a snapshot to restore a previous model state."
   input String cref;
   input String snapshot;
@@ -6657,7 +6717,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_loadSnapshot;
 
-function oms_newModel
+impure function oms_newModel
   "Creates a new composite model."
   input String cref;
   output Integer status;
@@ -6665,7 +6725,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_newModel;
 
-function oms_removeSignalsFromResults
+impure function oms_removeSignalsFromResults
   "Removes all variables that match the given regex from the result file."
   input String cref;
   input String regex;
@@ -6674,7 +6734,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_removeSignalsFromResults;
 
-function oms_rename
+impure function oms_rename
   "Renames a model, system, or component."
   input String cref;
   input String newCref;
@@ -6683,7 +6743,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_rename;
 
-function oms_reset
+impure function oms_reset
   "Reset the composite model after a simulation run."
   input String cref;
   output Integer status;
@@ -6691,7 +6751,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_reset;
 
-function oms_RunFile
+impure function oms_RunFile
   "Simulates a single FMU or SSP model."
   input String filename;
   output Integer status;
@@ -6699,7 +6759,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_RunFile;
 
-function oms_setBoolean
+impure function oms_setBoolean
   "Sets the value of a given boolean signal."
   input String cref;
   input Boolean value;
@@ -6708,7 +6768,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_setBoolean;
 
-function oms_setCommandLineOption
+impure function oms_setCommandLineOption
   "Sets special flags."
   input String cmd;
   output Integer status;
@@ -6716,7 +6776,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_setCommandLineOption;
 
-function oms_setFixedStepSize
+impure function oms_setFixedStepSize
   "Sets the fixed step size."
   input String cref;
   input Real stepSize;
@@ -6725,7 +6785,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_setFixedStepSize;
 
-function oms_setInteger
+impure function oms_setInteger
   "Sets the value of a given integer signal."
   input String cref;
   input Integer value;
@@ -6734,7 +6794,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_setInteger;
 
-function oms_setLogFile
+impure function oms_setLogFile
   "Redirects logging output to file or std streams."
   input String filename;
   output Integer status;
@@ -6742,7 +6802,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_setLogFile;
 
-function oms_setLoggingInterval
+impure function oms_setLoggingInterval
   "Sets the logging interval of the simulation."
   input String cref;
   input Real loggingInterval;
@@ -6751,7 +6811,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_setLoggingInterval;
 
-function oms_setLoggingLevel
+impure function oms_setLoggingLevel
   "Enables/disables debug logging."
   input Integer logLevel;
   output Integer status;
@@ -6759,7 +6819,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_setLoggingLevel;
 
-function oms_setReal
+impure function oms_setReal
   "Sets the value of a given real signal."
   input String cref;
   input Real value;
@@ -6768,7 +6828,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_setReal;
 
-function oms_setRealInputDerivative
+impure function oms_setRealInputDerivative
   "Sets the first order derivative of a real input signal."
   input String cref;
   input Real value;
@@ -6777,7 +6837,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_setRealInputDerivative;
 
-function oms_setResultFile
+impure function oms_setResultFile
   "Sets the result file of the simulation."
   input String cref;
   input String filename;
@@ -6787,7 +6847,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_setResultFile;
 
-function oms_setSignalFilter
+impure function oms_setSignalFilter
   "Sets a signal filter."
   input String cref;
   input String regex;
@@ -6796,7 +6856,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_setSignalFilter;
 
-function oms_setSolver
+impure function oms_setSolver
   "Sets the solver method for the given system."
   input String cref;
   input oms_solver solver;
@@ -6805,7 +6865,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_setSolver;
 
-function oms_setStartTime
+impure function oms_setStartTime
   "Sets the start time of the simulation."
   input String cref;
   input Real startTime;
@@ -6814,7 +6874,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_setStartTime;
 
-function oms_setStopTime
+impure function oms_setStopTime
   "Sets the stop time of the simulation."
   input String cref;
   input Real stopTime;
@@ -6823,7 +6883,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_setStopTime;
 
-function oms_setTempDirectory
+impure function oms_setTempDirectory
   "Sets new temp directory."
   input String newTempDir;
   output Integer status;
@@ -6831,7 +6891,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_setTempDirectory;
 
-function oms_setTLMPositionAndOrientation
+impure function oms_setTLMPositionAndOrientation
   "Sets initial position and orientation for a TLM 3D interface."
   input String cref;
   input Real x1;
@@ -6851,7 +6911,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_setTLMPositionAndOrientation;
 
-function oms_setTLMSocketData
+impure function oms_setTLMSocketData
   "Sets data for TLM socket communication."
   input String cref;
   input String address;
@@ -6862,7 +6922,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_setTLMSocketData;
 
-function oms_setTolerance
+impure function oms_setTolerance
   "Sets the tolerance for a given model or system."
   input String cref;
   input Real absoluteTolerance;
@@ -6872,7 +6932,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_setTolerance;
 
-function oms_setVariableStepSize
+impure function oms_setVariableStepSize
   "Sets the step size parameters for methods with stepsize control."
   input String cref;
   input Real initialStepSize;
@@ -6883,7 +6943,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_setVariableStepSize;
 
-function oms_setWorkingDirectory
+impure function oms_setWorkingDirectory
   "Sets a new working directory."
   input String newWorkingDir;
   output Integer status;
@@ -6891,7 +6951,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_setWorkingDirectory;
 
-function oms_simulate
+impure function oms_simulate
   "Simulates a composite model."
   input String cref;
   output Integer status;
@@ -6899,7 +6959,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_simulate;
 
-function oms_stepUntil
+impure function oms_stepUntil
   "Simulates a composite model until a given time value."
   input String cref;
   input Real stopTime;
@@ -6908,7 +6968,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_stepUntil;
 
-function oms_terminate
+impure function oms_terminate
   "Terminates a given composite model."
   input String cref;
   output Integer status;
@@ -6916,7 +6976,7 @@ external "builtin";
 annotation(preferredView="text");
 end oms_terminate;
 
-function oms_getVersion
+impure function oms_getVersion
   "Returns the version of the OMSimulator."
   output String version;
 external "builtin";
@@ -6928,7 +6988,7 @@ end oms_getVersion;
 package Experimental
   "Package with experimental features."
 
-function relocateFunctions
+impure function relocateFunctions
   "Update symbols in the running program to ones defined in the given shared object."
   input String fileName;
   input String names[:,2];
@@ -6942,7 +7002,7 @@ annotation(
 </html>"), preferredView="text");
 end relocateFunctions;
 
-function interactiveDumpAbsynToJL
+impure function interactiveDumpAbsynToJL
   "Dumps the AST into a Julia representation."
   output String res;
 external "builtin";

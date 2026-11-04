@@ -306,11 +306,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   int solveWithGlobalHomotopy;
   int triedWithoutHomotopy = 0;
   int adaptiveGlobal;
-  int kinsol = 0;
-
-#if !defined(OMC_MINIMAL_RUNTIME)
-  kinsol = (data->simulationInfo->nlsMethod == NLS_KINSOL);
-#endif
+  int kinsol = (data->simulationInfo->nlsMethod == NLS_KINSOL);
 
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
   for(i=0; i<mData->nNonLinearSystems; i++) {
@@ -428,6 +424,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
           warningStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "No initialEquation_lambda0 was generated. Using normal initial equation system with lambda=0 instead.");
           data->callback->functionInitialEquations(data, threadData);
         }
+        data->simulationInfo->skipStartEquations = TRUE;
       }
       else
       {
@@ -448,6 +445,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
 #ifndef OMC_EMCC
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
+    data->simulationInfo->skipStartEquations = FALSE;
 
     messageClose(OMC_LOG_INIT_HOMOTOPY);
 
@@ -485,7 +483,9 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "solving simplified lambda0-DAE done\n---------------------------");
 
     // Run along the homotopy path and solve the actual system
+    data->simulationInfo->skipStartEquations = TRUE;
     data->callback->functionInitialEquations(data, threadData);
+    data->simulationInfo->skipStartEquations = FALSE;
     OMC_ERROR_CHECK_RETURN(-1);
 
     messageClose(OMC_LOG_INIT_HOMOTOPY);

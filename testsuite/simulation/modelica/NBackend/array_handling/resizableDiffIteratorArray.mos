@@ -1,0 +1,50 @@
+// name: resizableDiffIteratorArray
+// keywords: NewBackend resizable index reduction differentiation iterator
+// status: correct
+// cflags: --newBackend --resizableArrays --simCodeScalarize=false
+// suite: cSources
+// teardown_command: rm -f resizableDiffIteratorArray_4.mat resizableDiffIteratorArray_4.log
+//
+// The index reduction differentiates n = {f(i, time) for i in 1:p}; the
+// iterator i of the array constructor has a zero derivative.
+// (ExtraEquationColoring of the DLR benchmarks with a resizable size p)
+
+loadString("
+model resizableDiffIteratorArray
+  parameter Integer p = 3;
+  Real n[p];
+  Real l;
+  Real e[p];
+  Real s(start = 1, fixed = true);
+  Real r[p];
+equation
+  l = sqrt(n*n);
+  e = 2*n/l;
+  r = e*s;
+  e*der(r) = der(s) - s;
+  n = {if i < p then i else (p-1)*time for i in 1:p};
+end resizableDiffIteratorArray;
+"); getErrorString();
+
+simulate(resizableDiffIteratorArray, stopTime = 1.5); getErrorString();
+// reference values of the old backend
+abs(val(s, 1.5) - 0.606531) < 1e-4;
+abs(val(r[3], 1.5) - 0.972613) < 1e-4;
+system("./resizableDiffIteratorArray -override=p=4 -r=resizableDiffIteratorArray_4.mat", "resizableDiffIteratorArray_4.log");
+abs(val(r[4], 1.5, "resizableDiffIteratorArray_4.mat") - 0.932750) < 1e-4;
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "resizableDiffIteratorArray_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.5, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'resizableDiffIteratorArray', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// true
+// 0
+// true
+// endResult

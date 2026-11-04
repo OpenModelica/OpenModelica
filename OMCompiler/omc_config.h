@@ -134,7 +134,6 @@
 #define CONFIG_IPOPT_LIB /* Without IPOPT */
 
 #define WITH_HWLOC 0
-#define WITH_SUNDIALS
 
 #include "revision.h"
 

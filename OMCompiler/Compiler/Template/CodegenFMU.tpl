@@ -112,7 +112,8 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
 
   let _ = generateSimulationFiles(simCode,guid,fileNamePrefixTmpDir,FMUVersion)
 
-  let()= textFile(simulationInitFunction(simCode,guid), '<%fileNamePrefixTmpDir%>_init_fmu.c')
+  // FMI 2.0 and 3.0 read resources/<prefix>_init.bin (SerializeFmuInit) instead.
+  let _ = if isFMIVersion10(FMUVersion) then simulationInitFunctionFile(simCode,guid,fileNamePrefixTmpDir)
   let()= textFile(fmumodel_identifierHeaderFile(simCode,guid,FMUVersion,FMUType), '<%fileNamePrefixTmpDir%>_FMU.h')
   let()= textFile(fmumodel_identifierFile(simCode,guid,FMUVersion,FMUType), '<%fileNamePrefixTmpDir%>_FMU.c')
 
@@ -124,6 +125,9 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   */
 
   let()= textFile(fmuModelDescriptionFile(simCode, guid, FMUVersion, FMUType, sourceFiles), '<%fileNamePrefixHash%>.fmutmp/modelDescription.xml')
+
+  // Generate optional extra/org.fmi-standard.fmi-ls-dae/fmi-ls-manifest.xml (--daeMode ME)
+  let _ = if stringEq(FMUVersion, "3.0") then CodegenFMU3.fmiLsDaeManifestFile(simCode, FMUType, fileNamePrefixHash)
 
   // Generate optional terminalsAndIcons/terminalsAndIcons.xml (FMI 3.0 Terminals)
   let _ = if stringEq(FMUVersion, "3.0") then CodegenFMU3.fmiTerminalsAndIconsFile(simCode, fileNamePrefixHash)
@@ -218,10 +222,8 @@ end translateModel;
      let()=tmpTickResetIndex(0, 0)
      let()=tmpTickResetIndex(0, 1)
      let()= textFileConvertLines(simulationFile_dae(simCode), '<%modelNamePrefix%>_16dae.c')
-     // inline solver
-     let()=tmpTickResetIndex(0, 0)
-     let()=tmpTickResetIndex(0, 1)
-     let()= textFileConvertLines(simulationFile_inl(simCode), '<%modelNamePrefix%>_17inl.c')
+     // ... and its header, which the main file includes under --daeMode
+     let()= textFile(simulationFile_dae_header(simCode), '<%modelNamePrefix%>_16dae.h')
      // main file
      let()=tmpTickResetIndex(0, 0)
      let()=tmpTickResetIndex(0, 1)
@@ -278,7 +280,6 @@ case SIMCODE(__) then
     <<
     #define fmu2_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
     #include "fmi-export/fmu2_model_interface.h"
-    #include "fmi-export/fmu_read_flags.h"
     >>
   else
     <<
@@ -294,8 +295,8 @@ case SIMCODE(__) then
 
   <%if isFMIVersion30(FMUVersion) then
   <<
-  // FMI 3.0 export. fmu3_model_interface.c is self-contained (its own model
-  // engine) and is built independently of the FMI 2.0 files. The generated
+  // FMI 3.0 export. fmu3_model_interface.c shares the model interface with
+  // FMI 2.0 (fmu_model_interface.c.inc), but not the FMI 2.0 files. The generated
   // per-base-type get/set helper functions below (getReal/setReal/...) are
   // shared model code. FMI 3.0 requires globally unique value references, so the
   // per-base-type value references are shifted by the offsets below to recover
@@ -322,12 +323,15 @@ case SIMCODE(__) then
   #define FMI2_FUNCTION_PREFIX <%modelNamePrefix(simCode)%>_
   #include "fmi2Functions.h"
   #include "fmi-export/fmu2_model_interface.h"
-  #include "fmi-export/fmu_read_flags.h"
   >>
   %>
 
+  <%if isFMIVersion10(FMUVersion) then
+  <<
   void setStartValues(ModelInstance *comp);
   void setDefaultStartValues(ModelInstance *comp);
+  >>
+  %>
   <%if boolOr(isFMIVersion20(FMUVersion), isFMIVersion30(FMUVersion)) then
   <<
   void eventUpdate(ModelInstance* comp, fmi2EventInfo* eventInfo);
@@ -399,8 +403,12 @@ case SIMCODE(__) then
 
   #include "simulation/solver/events.h"
 
+  <%if isFMIVersion10(FMUVersion) then
+  <<
   <%setDefaultStartValues(modelInfo)%>
   <%setStartValues(modelInfo)%>
+  >>
+  %>
   const size_t omc_fmu_threadDataSize = sizeof(threadData_t);
   <%if isFMIVersion30(FMUVersion) then
   <<
@@ -421,6 +429,13 @@ case SIMCODE(__) then
   >>
   %>
   void omc_fmu_setupDataStruc(DATA *data, threadData_t *threadData) {
+    <%if Flags.getConfigBool(Flags.DAE_MODE) then
+    <<
+    /* What the generated main says for a simulation: the runtime lays out the
+       DAE residuals (fmi-ls-dae) only for a model translated with --daeMode. */
+    compiledInDAEMode = 1;
+    >>
+    %>
     <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>(data, threadData);
   }
   #if defined(OMC_RUST_SIMULATION_RUNTIME)
@@ -1386,7 +1401,7 @@ else
 end match
 end mapInitialUnknownsIndependentCrefs;
 
-template settingsfile(SimCode simCode)
+template settingsfile(SimCode simCode, String solverDefines)
 "Generates content of omc_simulation_settings.h"
 ::=
   match simCode
@@ -1403,6 +1418,7 @@ template settingsfile(SimCode simCode)
   #define OMC_MODEL_PREFIX "<%modelNamePrefix(simCode)%>"
   #define OMC_MINIMAL_RUNTIME 1
   #define OMC_FMI_RUNTIME 1
+  <%solverDefines%>
   #endif
  >>
 end settingsfile;
@@ -3743,6 +3759,12 @@ case FMI3ENUMERATIONVARIABLE(variability = "",causality="output") then
   {<%name%>} = map_<%getEnumerationTypeFromTypes(fmiTypeDefinitionsList, baseType)%>_from_integers(<%fmiGetFunction%>(<%fmiInstance%>, {<%valueReference%>}, flowStatesInputs));<%\n%>
   >>
 end dumpOutputGetEnumerationVariable;
+
+template simulationInitFunctionFile(SimCode simCode, String guid, String fileNamePrefixTmpDir)
+::=
+  let()= textFile(simulationInitFunction(simCode,guid), '<%fileNamePrefixTmpDir%>_init_fmu.c')
+  ""
+end simulationInitFunctionFile;
 
 /* public */ template simulationInitFunction(SimCode simCode, String guid)
  "Generates the contents of the makefile for the simulation case.

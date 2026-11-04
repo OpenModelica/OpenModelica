@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 startCycleJacobian.mos \
+impureParameterBinding.mos \
 attributeInitParameter.mos \
 whenAlgorithmArray.mos \
 whenAlgorithmPre.mos \
@@ -17,6 +18,7 @@ resizableParameterBinding.mos \
 primaryParameterRecordArray.mos \
 homotopy_indirect.mos \
 homotopy_no_loop.mos \
+homotopyStartValue.mos \
 init_if_eq.mos \
 init_if_exp.mos \
 initialNoReturnCall.mos \

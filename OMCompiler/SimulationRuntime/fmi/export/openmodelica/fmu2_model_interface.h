@@ -77,7 +77,7 @@ typedef struct {
   fmi2String instanceName;
   fmi2Type type;
   fmi2String GUID;
-  const fmi2CallbackFunctions *functions;
+  fmi2CallbackLogger logger;
   fmi2Boolean loggingOn;
   fmi2Boolean logCategories[NUMBER_OF_CATEGORIES];
   fmi2ComponentEnvironment componentEnvironment;
@@ -86,7 +86,7 @@ typedef struct {
   SOLVER_INFO* solverInfo;
 
   DATA* fmuData;
-  threadData_t *threadData, *threadDataParent;
+  threadData_t *threadData;
   fmi2Boolean toleranceDefined;
   fmi2Real tolerance;
   fmi2Real startTime;
@@ -97,6 +97,8 @@ typedef struct {
   int _held_assert_logged;
   int _event_found;
   int _terminate_simulation_requested;
+  fmi2Boolean terminated;
+  fmi2Real lastSuccessfulTime;
   int _has_jacobian;
   int _has_jacobian_intialization;
   JACOBIAN* fmiDerJac;
@@ -140,7 +142,7 @@ static fmi2String logCategoriesNames[] = {"logEvents", "logSingularLinearSystems
  * @param ...             Arguments specifying data to log.
  */
 #define FILTERED_LOG(instance, status, categoryIndex, message, ...) if (isCategoryLogged(instance, categoryIndex)) { \
-    instance->functions->logger(instance->functions->componentEnvironment, instance->instanceName, status, \
+    instance->logger(instance->componentEnvironment, instance->instanceName, status, \
         logCategoriesNames[categoryIndex], message, ##__VA_ARGS__); }
 #endif
 

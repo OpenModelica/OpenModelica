@@ -991,21 +991,11 @@ protected
   algorithm
     elements := listArray(list(Expression.applySubscripts({Subscript.nth(dim, i)}, exp, true) for i in 1:n));
     for e in elements loop
-      if Expression.contains(e, isSubscriptedExp) then
+      if Expression.contains(e, Expression.isSubscriptedExp) then
         fail();
       end if;
     end for;
   end subscriptElements;
-
-  function isSubscriptedExp
-    input Expression exp;
-    output Boolean b;
-  algorithm
-    b := match exp
-      case Expression.SUBSCRIPTED_EXP() then true;
-      else false;
-    end match;
-  end isSubscriptedExp;
 
   function inlineArrayConstructor
     input output Equation eqn;

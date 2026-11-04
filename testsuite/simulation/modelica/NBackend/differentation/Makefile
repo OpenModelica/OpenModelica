@@ -12,6 +12,8 @@ diff_subs.mos \
 arrayDiff.mos \
 arrayScalar.mos \
 algebraicLoop.mos \
+AlgLinearSystem.mos \
+ArrayLinearSystem.mos \
 numericJacobianRows.mos \
 tornNLSJacobianRows.mos \
 derSeedJacobian.mos \

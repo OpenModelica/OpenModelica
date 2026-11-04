@@ -12,9 +12,7 @@
 /.github/workflows/on-release.yaml @AnHeuermann @adrpo
 
 # Build system
-CMakeLists.txt @AnHeuermann
-*.cmake @AnHeuermann
-*.cmake.in @AnHeuermann
+/CMakeLists.txt @AnHeuermann
 /cmake/ @AnHeuermann
 
 # Continuous Integration / Continuous Deployment
@@ -58,8 +56,9 @@ CMakeLists.txt @AnHeuermann
 /OMCompiler/Compiler/boot/ @sjoelund
 
 # Compiler: scripting API
-/OMCompiler/Compiler/Script/ @perost
-/OMCompiler/Compiler/Script/CevalScriptBackend.mo @perost @adrpo
+/OMCompiler/Compiler/Script/NFApi.mo @perost
+/OMCompiler/Compiler/NFFrontEnd/NFInstanceAPI.mo @perost
+/OMCompiler/Compiler/Script/CevalScriptBackend.mo @adrpo
 
 # Compiler: C API
 /OMCompiler/Compiler/omcCAPI/ @AnHeuermann
@@ -80,7 +79,7 @@ CMakeLists.txt @AnHeuermann
 /OMCompiler/SimulationRuntime/c/simulation/solver/sundials_* @AnHeuermann
 
 # C simulation runtime: GBODE integrator
-/OMCompiler/SimulationRuntime/c/simulation/solver/gbode* @bernhardbachmann @phannebohm @linuslangenkamp 
+/OMCompiler/SimulationRuntime/c/simulation/solver/gbode* @bernhardbachmann @phannebohm @linuslangenkamp
 
 # C++ simulation runtime
 # /OMCompiler/SimulationRuntime/cpp/

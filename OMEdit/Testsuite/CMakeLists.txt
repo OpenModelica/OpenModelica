@@ -133,6 +133,10 @@ set(OMEDIT_TEST_OUTERPARAMETERDIALOG_SOURCES OuterParameterDialog/OuterParameter
                                             OuterParameterDialog/OuterParameterDialogTest.h)
 add_omedit_test(OuterParameterDialog "${OMEDIT_TEST_OUTERPARAMETERDIALOG_SOURCES}")
 
+set(OMEDIT_TEST_RECORDCHOICESALLMATCHING_SOURCES RecordChoicesAllMatching/RecordChoicesAllMatching.cpp
+                                                   RecordChoicesAllMatching/RecordChoicesAllMatching.h)
+add_omedit_test(RecordChoicesAllMatching "${OMEDIT_TEST_RECORDCHOICESALLMATCHING_SOURCES}")
+
 set(OMEDIT_TEST_STRINGHANDLER_SOURCES StringHandler/StringHandlerTest.cpp
                                        StringHandler/StringHandlerTest.h)
 add_omedit_test(StringHandler "${OMEDIT_TEST_STRINGHANDLER_SOURCES}")

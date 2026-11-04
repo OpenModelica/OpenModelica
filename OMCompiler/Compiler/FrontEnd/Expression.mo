@@ -2227,7 +2227,7 @@ algorithm
         iterTp := typeof(iterExp);
         operTp := typeof(operExp);
         DAE.T_ARRAY(dims=iterdims) := iterTp;
-        tp := Types.liftTypeWithDims(operTp, iterdims);
+        tp := liftArrayLeftList(operTp, iterdims);
       then tp;
     case DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(exprType=ty))
       then Types.simplifyType(ty);

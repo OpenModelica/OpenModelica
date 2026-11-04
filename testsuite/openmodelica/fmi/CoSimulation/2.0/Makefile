@@ -5,11 +5,13 @@ ExportCvodeFmu_cmake.mos \
 ExportCvodeFmu_dynamic.mos \
 ExportCvodeFmu_static.mos \
 fmi_interpolation_01.mos \
+FmuNlsSameTime.mos \
 FmuExportFlags.mos \
 RecompileSourceCodeFMU.mos \
 simpleStiffFMU.mos \
 issue10523.mos \
 Issue14456.mos \
+CvodeStepTooClose.mos \
 Issue17436.mos \
 
 # test that currently fail. Move up when fixed.
@@ -21,6 +23,7 @@ FAILINGTESTFILES = \
 DEPENDENCIES = \
 *.mo \
 *.mos \
+FmuNlsSameTime.py \
 Makefile \
 
 CLEAN = `ls | grep -w -v -f deps.tmp`

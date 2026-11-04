@@ -466,6 +466,7 @@ end SparsityRow;
   uniontype Sparsity
     record SPARSITY
       list<SparsityRow> rows;
+      Boolean resizable;
     end SPARSITY;
 
     record EMPTY
@@ -555,7 +556,6 @@ end SparsityRow;
       Option<FmiSimulationFlags> fmiSimulationFlags;
       PartitionData partitionData;
       Option<DaeModeData> daeModeData;
-      list<SimEqSystem> inlineEquations;
       Boolean scalarized;
       list<FmiFigure> fmiFigures;
     end SIMCODE;
@@ -591,6 +591,7 @@ end SparsityRow;
     record DELAYED_EXPRESSIONS
       list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
       Integer maxDelayedIndex;
+      list<tuple<DAE.Exp, tuple<DAE.Exp, DAE.Exp, DAE.Exp>, list<BackendDAE.SimIterator>>> delayedLoops;
     end DELAYED_EXPRESSIONS;
   end DelayedExpression;
 
@@ -1569,6 +1570,11 @@ package SimCodeCodegenUtil
     output DAE.Exp exp;
   end simVarSizeExp;
 
+  function typeSizeExp
+    input DAE.Type ty;
+    output DAE.Exp exp;
+  end typeSizeExp;
+
   function simVarDimExps
     input SimCodeVar.SimVar var;
     output list<DAE.Exp> exps;
@@ -1751,6 +1757,11 @@ package SimCodeCodegenUtil
     input SimCode.VarInfo varInfo;
     output Integer n;
   end nVariablesReal;
+
+  function simVarIndexRuns
+    input list<SimCodeVar.SimVar> vars;
+    output list<tuple<Integer, Integer, Integer, Integer>> runs;
+  end simVarIndexRuns;
 
   function getSimCode
     output SimCode.SimCode code;
@@ -2123,8 +2134,6 @@ package BackendDAE
     end OPT_LOOP_INPUT;
     record ALG_STATE        "algebraic state used by inline solver"
     end ALG_STATE;
-    record ALG_STATE_OLD    "algebraic state old value used by inline solver"
-    end ALG_STATE_OLD;
     record DAE_RESIDUAL_VAR "variable kind used for DAEmode"
     end DAE_RESIDUAL_VAR;
     record DAE_AUX_VAR      "auxiliary variable used for DAEmode"
@@ -2239,7 +2248,6 @@ package BackendDAE
 
   constant String optimizationMayerTermName;
   constant String optimizationLagrangeTermName;
-  constant String symSolverDT;
 
   type Constraints = list<DAE.Constraint> "Constraints on the solvability of the (casual) tearing set; needed for proper Dynamic Tearing";
 
@@ -4583,7 +4591,6 @@ package Flags
   constant ConfigFlag PROFILING_LEVEL;
   constant ConfigFlag CPP_FLAGS;
   constant ConfigFlag MATRIX_FORMAT;
-  constant ConfigFlag SYM_SOLVER;
   constant DebugFlag FMU_EXPERIMENTAL;
   constant DebugFlag MULTIRATE_PARTITION;
   constant ConfigFlag DAE_MODE;

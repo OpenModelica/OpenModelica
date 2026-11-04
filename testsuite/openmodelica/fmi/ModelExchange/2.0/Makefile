@@ -3,6 +3,8 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 EnumerationTest.mos \
 ExportFMUCLI.mos \
+FmuSparseSolvers.mos \
+FmuUserCFlags.mos \
 fmi_attributes_01.mos \
 fmi_attributes_02.mos \
 fmi_attributes_03.mos \
@@ -87,6 +89,7 @@ BouncingBall.mos \
 DEPENDENCIES = \
 *.mo \
 *.mos \
+*.py \
 FMUResourceTest \
 Makefile \
 

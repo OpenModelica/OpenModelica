@@ -1292,9 +1292,21 @@ void VariablesTreeModel::getVariableInformation(ResultFileReader *pMatReader, QS
         }
       }
     }
-    *unit = scalarVariable.unit;
-    *displayUnit = scalarVariable.displayUnit;
     *description = scalarVariable.description;
+  }
+  /* The result file's units win; the init.xml fills in what it lacks. A .mat
+   * written before display units were stored has only the unit.
+   */
+  QString fileUnit, fileDisplayUnit;
+  if (pMatReader->isOpen()) {
+    fileUnit = QString::fromStdString(pMatReader->unit(variableToFind.toStdString()));
+    fileDisplayUnit = QString::fromStdString(pMatReader->displayUnit(variableToFind.toStdString()));
+  }
+  *unit = fileUnit.isEmpty() && found ? scalarVariable.unit : fileUnit;
+  if (!fileDisplayUnit.isEmpty()) {
+    *displayUnit = fileDisplayUnit;
+  } else if (found && scalarVariable.unit.compare(*unit) == 0) {
+    *displayUnit = scalarVariable.displayUnit;
   }
 }
 

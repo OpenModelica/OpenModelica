@@ -95,22 +95,34 @@ algorithm
   assert(false, getInstanceName());
 end getSimulationResultType;
 
-function buildSimulationOptionsFromModelExperimentAnnotation
-  input Absyn.Path inModelPath;
-  input String inFileNamePrefix;
-  input Option<InteractiveTypes.SimulationOptions> defaultOption;
-  output InteractiveTypes.SimulationOptions outSimOpt;
+function declaredSimulationArguments
+  input Absyn.Path className;
+  input list<tuple<String, Values.Value>> namedArgs;
+  input String callName;
+  output list<Values.Value> args;
 algorithm
   assert(false, getInstanceName());
-end buildSimulationOptionsFromModelExperimentAnnotation;
+end declaredSimulationArguments;
 
-function getSimulationOption
-  input InteractiveTypes.SimulationOptions inSimOpt;
-  input String optionName;
-  output DAE.Exp outOptionValue;
+function simulationArguments
+  input Absyn.Path className;
+  input list<tuple<String, Values.Value>> namedArgs;
+  input String callName;
+  input Option<InteractiveTypes.SimulationOptions> defaultOptions = NONE();
+  output list<Values.Value> args;
 algorithm
   assert(false, getInstanceName());
-end getSimulationOption;
+end simulationArguments;
+
+function simulate
+  input list<Values.Value> values;
+  input output FCore.Cache cache;
+  input FCore.Graph env;
+  input Absyn.Msg msg;
+  output Values.Value outValue;
+algorithm
+  assert(false, getInstanceName());
+end simulate;
 
 function cevalInteractiveFunctions3
   input FCore.Cache inCache;

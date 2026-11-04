@@ -54,6 +54,7 @@
 #include "cellcursor.h"
 #include "visitor.h"
 #include "notebookcommands.h"
+#include "PlotTranslator.h"
 #include <QSplashScreen>
 #include <QTimer>
 
@@ -197,6 +198,10 @@ namespace IAEX
 
       if (translator.load("OMNotebook_" + locale, translationDirectory))
           app_->installTranslator(&translator);
+
+      // The OMPlot widgets (graph cells) are translated by the OMPlot translations.
+      if (OMPlot::loadTranslation(plotTranslator, QString::fromLatin1(installationDirectoryPath), locale))
+          app_->installTranslator(&plotTranslator);
 #endif
 
       //  Main window (purely a placeholder – real windows are opened later)

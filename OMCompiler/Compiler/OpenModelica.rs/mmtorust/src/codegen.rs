@@ -15081,8 +15081,8 @@ fn emit_builtin_call<'a>(
             let f = if a1.ty() == Ty::I32 && a2.ty() == Ty::I32 {"intDiv"} else {"realDiv"};
             let arg1 = emit_builtin_call_arg(f, 0, a1, is_const, ctx, top_level);
             let arg2 = emit_builtin_call_arg(f, 1, a2, is_const, ctx, top_level);
-            // intDiv and realDiv are both infallible: no ctx.q() needed
-            Ok(format!("{f}({arg1}, {arg2})"))
+            let call = format!("{f}({arg1}, {arg2})");
+            Ok(if is_const { call } else { ctx.q(&call) })
         },
         "abs" => {
             let arg = args.first().map(|a| emit_builtin_call_arg(func, 0, a, is_const, ctx, top_level)).unwrap_or_default();

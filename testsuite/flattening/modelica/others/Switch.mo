@@ -22,7 +22,6 @@ equation
     1 - i1 = 0;
     1 - v - i = 0;
     open = time >= 0.5;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Switch;
 
 // Result:
@@ -40,7 +39,7 @@ end Switch;
 //     i = 0.0;
 //   end if;
 //   1.0 - i1 = 0.0;
-//   1.0 - (v + i) = 0.0;
+//   1.0 - v - i = 0.0;
 //   open = time >= 0.5;
 // end Switch;
 // endResult

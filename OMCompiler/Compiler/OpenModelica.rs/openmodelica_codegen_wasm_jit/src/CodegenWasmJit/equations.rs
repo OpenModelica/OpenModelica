@@ -163,7 +163,6 @@ pub(super) fn prof_plan(
         &sim_code.maxValueEquations,
         &sim_code.parameterEquations,
         &sim_code.algorithmAndEquationAsserts,
-        &sim_code.inlineEquations,
         &sim_code.jacobianEquations,
     ] {
         for e in lst(list) {
@@ -506,7 +505,6 @@ pub(super) fn has_method1_linear(sim_code: &SimCode::SimCode) -> bool {
         &sim_code.removedEquations,
         &sim_code.startValueEquations,
         &sim_code.equationsForZeroCrossings,
-        &sim_code.inlineEquations,
     ];
     lists.iter().any(|l| lst(l).any(walk))
         || lst(&sim_code.odeEquations)

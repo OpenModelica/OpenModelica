@@ -331,7 +331,7 @@ pipeline {
       parallel {
         // One testsuite per simulation runtime: gcc (coverage-instrumented) on
         // --simCodeTarget=C, clang on --simCodeTarget=C+Rust without the C++
-        // runtime tests.
+        // runtime tests and with the old frontend's script loop.
         stage('04 testsuite-gcc 1/2') {
           agent {
             node {
@@ -413,7 +413,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-24.04',
                                      common.testCacheMounts('runtest-clang-cache')) {
-                common.partestStashed('omc-clang', 1, 2, 'C+Rust', common.rustRuntimeTestSuites())
+                common.partestStashed('omc-clang', 1, 2, 'C+Rust', common.rustRuntimeTestSuites(), common.ofScriptingArgs())
               }
             }
           }
@@ -442,7 +442,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-24.04',
                                      common.testCacheMounts('runtest-clang-cache')) {
-                common.partestStashed('omc-clang', 2, 2, 'C+Rust', common.rustRuntimeTestSuites())
+                common.partestStashed('omc-clang', 2, 2, 'C+Rust', common.rustRuntimeTestSuites(), common.ofScriptingArgs())
               }
             }
           }

@@ -180,7 +180,6 @@ pub(super) fn build_sim_model(
     let mut linz = build_linz_plan(sim_code, vars, n_states)?;
     // `-reconcile`: F/H, laid out right behind them.
     let mut recon = datarecon::build_plan(sim_code, vars);
-    let sym_solver = sym_solver_kind()?;
     let counts = openmodelica_sim_meta::LayoutCounts {
         n_states,
         n_real_alg,
@@ -216,7 +215,6 @@ pub(super) fn build_sim_model(
         n_removed_init: removed_init_residuals(sim_code).len() as u32,
     };
     let flags = openmodelica_sim_meta::LayoutFlags {
-        sym_solver,
         has_when,
         has_homotopy,
         homotopy_method: homotopy_method()?,
@@ -253,37 +251,6 @@ pub(super) fn build_sim_model(
     if dae_mode.is_some() {
         finalize_array_groups(&mut var_map)?;
     }
-    // The inline equations' `__OMC_DT` and `<state>$Old` operands: `SimCodeUtil`
-    // only ever put them in the cref->SimVar table, so no `modelInfo.vars` walk
-    // reaches them.
-    if sym_solver > 0 {
-        Arc::make_mut(&mut var_map.vars).insert(
-            "__OMC_DT".to_string(),
-            SimSlot {
-                off: layout.inline_dt_off,
-                wty: WTy::F64,
-                negate: Neg::None,
-                heap: false,
-                pre: 0,
-            },
-        );
-        for (i, sv) in states.iter().enumerate() {
-            let old = openmodelica_frontend_base::ComponentReference::appendStringLastIdent(
-                &arcstr::literal!("$Old"),
-                &sv.name,
-            )?;
-            Arc::make_mut(&mut var_map.vars).insert(
-                sim_cref_key(&old)?,
-                SimSlot {
-                    off: layout.alg_old_off + SimOff::from((i as u32) * 8),
-                    wty: WTy::F64,
-                    negate: Neg::None,
-                    heap: false,
-                    pre: 0,
-                },
-            );
-        }
-    }
     let sens_params = push_sensitivity_vars(&sens_vars, n_sens_par, vars, &layout, &mut result_vars.vars)?;
     var_map.n_samples = samples.len() as u32;
     var_map.sample_active_off = layout.sample_active_off;
@@ -317,7 +284,6 @@ pub(super) fn build_sim_model(
     index_list(&sim_code.startValueEquations, &mut eq_index);
     index_list(&sim_code.algorithmAndEquationAsserts, &mut eq_index);
     index_list(&sim_code.equationsForZeroCrossings, &mut eq_index);
-    index_list(&sim_code.inlineEquations, &mut eq_index);
     for e in dae_eqs.iter() {
         index_eq_recursive(&e.0, &mut eq_index);
     }
@@ -597,7 +563,6 @@ pub(super) fn build_sim_model(
         false => None,
     };
     let zc_eqs = flatten_eqs(&sim_code.equationsForZeroCrossings);
-    let inline_eqs = flatten_eqs(&sim_code.inlineEquations);
     // Register every nonlinear system with the runtime solver `rt_solve_nls`
     // *before* lowering the equation functions (which call it): assign each a
     // shared-table job and thread the map through `var_map`. The systems' own
@@ -621,7 +586,6 @@ pub(super) fn build_sim_model(
         &assert_eqs,
         &removed_init_eqs,
         &clocked,
-        &inline_eqs,
     ]
     .iter()
     .map(|l| eqs_with_nested(l.as_slice()))
@@ -1864,28 +1828,6 @@ pub(super) fn build_sim_model(
         )?);
         idx
     };
-    // C's `symbolicInlineSystem`. Emitted (empty without `--symSolver`) either way,
-    // so every module's entry points sit at the same indices.
-    let sym_inline_idx = {
-        let idx = import_base + bodies.len() as u32;
-        splits.push(build_split_fn(
-            "symbolicInlineSystem",
-            &eq_units(&inline_eqs),
-            1,
-            eqfn_type,
-            &[],
-            &[],
-            &var_map,
-            &eq_index,
-            &by_name,
-            &mut literals,
-            &mut bodies,
-            &mut pool,
-            false,
-        )?);
-        idx
-    };
-
     // C's `functionDAE`: `functionLocalKnownVars` + `allEquations` in the discrete
     // context, and the discrete pass wherever `functionAlgebraics` is not already the
     // full list: the sorted order interleaves the two subsets, so `functionODE` then
@@ -2055,7 +1997,6 @@ pub(super) fn build_sim_model(
     functions.function(sync_fn_type); // functionEquationsSynchronous: (i32, i32) -> ()
     functions.function(eqfn_type); // functionRemovedInitialEquations: (i32) -> ()
     functions.function(dae_fn_type); // evaluateDAEResiduals: (i32, i32) -> ()
-    functions.function(eqfn_type); // symbolicInlineSystem: (i32) -> ()
     functions.function(eqfn_type); // functionDAE: (i32) -> ()
     if parmod_fns.is_some() {
         functions.function(eqfn_type); // functionLocalKnownVars: (i32) -> ()
@@ -2175,7 +2116,6 @@ pub(super) fn build_sim_model(
         ("functionAttrDefaults", attr_defaults_idx),
         ("functionRemovedInitialEquations", removed_init_idx),
         ("functionInitSynchronous", sync_idx.0),
-        ("symbolicInlineSystem", sym_inline_idx),
         ("functionDAE", dae_entry_idx),
         ("linearJacA", linz_jac_idx),
         ("linearJacB", linz_jac_idx + 1),
@@ -2332,7 +2272,6 @@ pub(super) fn build_sim_model(
     exports.export("functionUpdateSynchronous", we::ExportKind::Func, sync_update);
     exports.export("functionEquationsSynchronous", we::ExportKind::Func, sync_eqs);
     exports.export("evaluateDAEResiduals", we::ExportKind::Func, dae_residuals_idx);
-    exports.export("symbolicInlineSystem", we::ExportKind::Func, sym_inline_idx);
     if error_tag_type.is_some() {
         for (k, (name, _)) in guarded.iter().enumerate() {
             exports.export(&format!("{name}$guard"), we::ExportKind::Func, guard_base + k as u32);
@@ -2414,7 +2353,6 @@ pub(super) fn build_sim_model(
     names.push((sync_update, "functionUpdateSynchronous".to_string()));
     names.push((sync_eqs, "functionEquationsSynchronous".to_string()));
     names.push((dae_residuals_idx, "evaluateDAEResiduals".to_string()));
-    names.push((sym_inline_idx, "symbolicInlineSystem".to_string()));
     if let Some((lk_idx, task_idx)) = parmod_fns {
         names.push((lk_idx, "functionLocalKnownVars".to_string()));
         names.push((task_idx, "parmodTask".to_string()));
@@ -2628,12 +2566,6 @@ pub(super) fn homotopy_method() -> Result<openmodelica_sim_meta::HomotopyMethod>
     })
 }
 
-/// C's `compiledWithSymSolver`: which `--symSolver` variant generated the model's
-/// inline update equations, 0 for none.
-fn sym_solver_kind() -> Result<u8> {
-    Ok(openmodelica_util::Flags::getConfigEnum(openmodelica_util::Flags::SYM_SOLVER.clone())?.clamp(0, 2) as u8)
-}
-
 /// C's `LOG_STDOUT` "… changed to …" lines, ahead of everything the run prints.
 pub(super) fn flag_change_log(flags: &simflags::SimFlags) -> String {
     use openmodelica_modelica_utilities::{LOG_STDOUT_INFO, LOG_STDOUT_WARNING};
@@ -2695,6 +2627,7 @@ pub(crate) fn sim_ctx(var_map: &SimVarMap) -> SimCtx {
         mathevents_off: var_map.mathevents_off,
         n_mathevents: var_map.n_mathevents,
         lambda_off: var_map.lambda_off,
+        skip_start_off: var_map.skip_start_off,
         homotopy_method: var_map.homotopy_method,
         old_real: var_map.old_real,
         zctol_off: var_map.zctol_off,

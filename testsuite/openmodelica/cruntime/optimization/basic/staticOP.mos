@@ -1,6 +1,5 @@
 // name: static OP
 // status: correct
-// cflags: -d=-newInst
 
 setCommandLineOptions("+g=Optimica");
 

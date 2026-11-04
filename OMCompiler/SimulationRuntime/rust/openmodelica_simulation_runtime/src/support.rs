@@ -31,8 +31,6 @@ pub static mut measure_time_flag: c_int = 0;
 /// Set by the generated `main` to say how the model was translated.
 #[unsafe(no_mangle)]
 pub static mut compiledInDAEMode: c_int = 0;
-#[unsafe(no_mangle)]
-pub static mut compiledWithSymSolver: c_int = 0;
 /// `-steadyState`'s tolerance (`model_help.c`), whose default C also sets here.
 /// The driver reads the flag itself; this exists because the generated code and
 /// the C headers name the global.
@@ -716,6 +714,69 @@ pub extern "C" fn cscToCsr(csc: *const SPARSE_PATTERN, nRows: c_uint, nCols: c_u
         core::ptr::copy_nonoverlapping(bj.as_ptr(), d.index, nnz);
     }
     csr
+}
+
+/// C's `addSparsePair`: append one entry, `pairs` zeroed before the first call.
+#[unsafe(no_mangle)]
+pub extern "C" fn addSparsePair(pairs: *mut SPARSE_PAIRS, col: c_uint, row: c_uint) {
+    let p = unsafe { &mut *pairs };
+    if p.size == p.capacity {
+        p.capacity = if p.capacity == 0 { 64 } else { 2 * p.capacity };
+        let bytes = p.capacity * core::mem::size_of::<c_uint>();
+        p.cols = unsafe { libc::realloc(p.cols as *mut c_void, bytes) } as *mut c_uint;
+        p.rows = unsafe { libc::realloc(p.rows as *mut c_void, bytes) } as *mut c_uint;
+        if p.cols.is_null() || p.rows.is_null() {
+            std::process::abort();
+        }
+    }
+    unsafe {
+        *p.cols.add(p.size) = col;
+        *p.rows.add(p.size) = row;
+    }
+    p.size += 1;
+}
+
+/// C's `sparsePatternFromPairs`: the CSC pattern of the entries, rows in the
+/// order they were added; frees the entries.
+#[unsafe(no_mangle)]
+pub extern "C" fn sparsePatternFromPairs(pairs: *mut SPARSE_PAIRS, nCols: c_uint) -> *mut SPARSE_PATTERN {
+    let p = unsafe { &mut *pairs };
+    let cols = nCols as usize;
+    let sp = allocSparsePattern(nCols, p.size as c_uint, 0);
+    let (pc, pr): (&[c_uint], &[c_uint]) = if p.size == 0 {
+        (&[], &[])
+    } else {
+        unsafe {
+            (
+                core::slice::from_raw_parts(p.cols, p.size),
+                core::slice::from_raw_parts(p.rows, p.size),
+            )
+        }
+    };
+    let mut next = vec![0 as c_uint; cols + 1];
+    for &c in pc {
+        next[c as usize + 1] += 1;
+    }
+    for c in 0..cols {
+        next[c + 1] += next[c];
+    }
+    unsafe {
+        let d = &mut *sp;
+        core::ptr::copy_nonoverlapping(next.as_ptr(), d.leadindex, cols + 1);
+        for (&c, &r) in pc.iter().zip(pr) {
+            *d.index.add(next[c as usize] as usize) = r;
+            next[c as usize] += 1;
+        }
+        libc::free(p.cols as *mut c_void);
+        libc::free(p.rows as *mut c_void);
+    }
+    *p = SPARSE_PAIRS {
+        cols: ptr::null_mut(),
+        rows: ptr::null_mut(),
+        size: 0,
+        capacity: 0,
+    };
+    sp
 }
 
 /// C's `sortUniqueSparsePattern`: the resizable NBackend pattern can have unsorted

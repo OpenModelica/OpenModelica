@@ -97,6 +97,7 @@ uniontype Sparsity
   "the new resizable sparsity pattern for the NB"
   record SPARSITY
     list<SparsityRow> rows;
+    Boolean resizable "the model has variables with resizable dimensions";
   end SPARSITY;
 
   record EMPTY
@@ -199,7 +200,6 @@ uniontype SimCode
     Option<FmiSimulationFlags> fmiSimulationFlags;
     PartitionData partitionData;
     Option<DaeModeData> daeModeData;
-    list<SimEqSystem> inlineEquations;
     Boolean scalarized;
     list<FmiFigure> fmiFigures "set by SimCodeUtil.addFMI3Figures for an FMI 3.0 export";
   end SIMCODE;
@@ -252,6 +252,7 @@ uniontype DelayedExpression
   record DELAYED_EXPRESSIONS
     list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
     Integer maxDelayedIndex;
+    list<tuple<DAE.Exp, tuple<DAE.Exp, DAE.Exp, DAE.Exp>, list<BackendDAE.SimIterator>>> delayedLoops "delays in for-loops, the index depends on the iterators";
   end DELAYED_EXPRESSIONS;
 end DelayedExpression;
 

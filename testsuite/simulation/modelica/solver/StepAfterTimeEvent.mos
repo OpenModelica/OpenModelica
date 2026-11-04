@@ -1,0 +1,48 @@
+// name: StepAfterTimeEvent
+// keywords: cvode ida time event
+// status: correct
+// teardown_command: rm -rf StepAfterTimeEvent StepAfterTimeEvent.c StepAfterTimeEvent.o StepAfterTimeEvent.h StepAfterTimeEvent.libs StepAfterTimeEvent.log StepAfterTimeEvent.makefile StepAfterTimeEvent_*
+//
+// period*width/100 is one ulp below 600: the time event lies one ulp before
+// the output point 660, too close to it for CVODE and IDA to restart.
+
+loadString("
+model StepAfterTimeEvent
+  parameter Real period = 28800;
+  parameter Real width = 2.083333333333333;
+  Real x(start = 0, fixed = true);
+equation
+  der(x) = if time < 60 or time >= 60 + period*width/100 then -1e-3*x else 1;
+  annotation(experiment(StopTime = 1000, Interval = 1));
+end StepAfterTimeEvent;
+"); getErrorString();
+
+echo(false);
+res := simulate(StepAfterTimeEvent, method = "cvode");
+echo(true);
+getErrorString();
+res.messages;
+val(x, 1000);
+echo(false);
+res := simulate(StepAfterTimeEvent, method = "ida");
+echo(true);
+getErrorString();
+res.messages;
+val(x, 1000);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// 427.06135294428293
+// true
+// ""
+// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// 427.0627368000349
+// endResult

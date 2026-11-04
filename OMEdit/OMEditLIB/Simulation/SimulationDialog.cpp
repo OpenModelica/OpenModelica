@@ -58,6 +58,7 @@
 #include <QDockWidget>
 #include <QMessageBox>
 #include <QRegularExpression>
+#include <cmath>
 #include <limits>
 
 static bool isSinglePrecisionFormat(const QString &outputFormat)
@@ -2154,6 +2155,51 @@ void SimulationDialog::plotAnnotatedFigures(const QString &className, const QStr
     }
     return pPlotWindowContainer->addPlotWindow();
   };
+  auto getAxisBound = [](const FlatModelica::Expression &expression, double &bound) {
+    const FlatModelica::Expression *pValue = &expression;
+    if (pValue->isArray()) {
+      if (pValue->size() != 1) {
+        return false;
+      }
+      pValue = &pValue->elements().front();
+    }
+    if (!pValue->isNumber()) {
+      return false;
+    }
+    bound = pValue->realValue();
+    return std::isfinite(bound);
+  };
+  auto applyAxis = [getAxisBound](OMPlot::PlotWindow *pPlotWindow, const ModelInstance::Axis *pAxis, bool isXAxis) {
+    const int axis = isXAxis ? QwtPlot::xBottom : QwtPlot::yLeft;
+    QwtPlot *pPlot = pPlotWindow->getPlot();
+    pPlot->setAxisAutoScale(axis, pPlotWindow->getAutoScaleButton()->isChecked());
+    double min = 0.0;
+    double max = 0.0;
+    const bool hasMin = pAxis && getAxisBound(pAxis->getMin(), min);
+    const bool hasMax = pAxis && getAxisBound(pAxis->getMax(), max);
+    if (!hasMin && !hasMax) {
+      return;
+    }
+    if (!hasMin || !hasMax) {
+      pPlot->replot();
+    }
+    const QwtScaleDiv &scaleDiv = pPlot->axisScaleDiv(axis);
+    if (!hasMin) {
+      min = scaleDiv.lowerBound();
+    }
+    if (!hasMax) {
+      max = scaleDiv.upperBound();
+    }
+    if (!std::isfinite(min) || !std::isfinite(max) || min >= max) {
+      return;
+    }
+    pPlot->setAxisAutoScale(axis, false);
+    if (isXAxis) {
+      pPlotWindow->setXRange(min, max);
+    } else {
+      pPlotWindow->setYRange(min, max);
+    }
+  };
 
   for (int figureIndex = 0; figureIndex < static_cast<int>(pDocumentation->getFigures().size()); ++figureIndex) {
     const auto &figure = pDocumentation->getFigures().at(figureIndex);
@@ -2249,6 +2295,9 @@ void SimulationDialog::plotAnnotatedFigures(const QString &className, const QStr
             pPlotWindow->updatePlot();
           }
         }
+        applyAxis(pPlotWindow, pXAxis, true);
+        applyAxis(pPlotWindow, pYAxis, false);
+        pPlotWindow->getPlot()->replot();
       }
     }
   }
@@ -2396,6 +2445,7 @@ void SimulationDialog::simulate()
 {
   if (validate()) {
     SimulationOptions simulationOptions = createSimulationOptions();
+    bool runSimulation = false;
     if (simulationOptions.isValid()) {
       // If we are not doing a re-simulation then save the new SimulationOptions in the class.
       if (!mIsReSimulate) {
@@ -2403,7 +2453,7 @@ void SimulationDialog::simulate()
       }
       // interactive simulation
       if (mpInteractiveSimulationGroupBox->isChecked() || mIsReSimulate) {
-        performSimulation(simulationOptions);
+        runSimulation = true;
       } else {
         // if no option is selected then show error message to user
         if (!(mpSaveExperimentAnnotationCheckBox->isChecked() ||
@@ -2431,15 +2481,18 @@ void SimulationDialog::simulate()
             mpSaveTranslationFlagsAnnotationCheckBox->isChecked() || mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
           mpLibraryTreeItem->getModelWidget()->endMacro();
         }
-        if (mpSimulateCheckBox->isChecked()) {
-          performSimulation(simulationOptions);
-        }
+        runSimulation = mpSimulateCheckBox->isChecked();
       }
     }
     if (isVisible()) {
       saveDialogGeometry();
     }
+    // Close the dialog first: omc pumps events during the translation and an
+    // in-process (wasm-jit) simulation, and a second OK would re-enter omc.
     accept();
+    if (runSimulation) {
+      performSimulation(simulationOptions);
+    }
   }
 }
 

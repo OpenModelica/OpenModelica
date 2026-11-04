@@ -49,7 +49,6 @@ DLLDataDirection extern double maxStepFactor;
 DLLDataDirection extern double steadyStateTol;
 DLLDataDirection extern const size_t SIZERINGBUFFER;
 DLLDataDirection extern int compiledInDAEMode;
-DLLDataDirection extern int compiledWithSymSolver;
 DLLDataDirection extern double numericalDifferentiationDeltaXlinearize;
 DLLDataDirection extern double numericalDifferentiationDeltaXsolver;
 DLLDataDirection extern double homAdaptBend;
@@ -123,6 +122,7 @@ void restoreExtrapolationDataOld(DATA *data);
 
 void setAllVarsToStart(SIMULATION_DATA *simulationData, const SIMULATION_INFO *simulationInfo, const MODEL_DATA *modelData);
 void setAllParamsToStart(SIMULATION_INFO *simulationInfo, const MODEL_DATA *modelData);
+void setStartToCurrentValues(DATA *data);
 
 void restoreOldValues(DATA *data);
 
@@ -139,6 +139,14 @@ void setZCtol(double relativeTol);
 
 int getNextSampleTimeFMU(DATA *data, double *nextSampleEvent);
 void updateNextSampleEvent(DATA *data, threadData_t *threadData);
+
+/* Advance sample i to start + k*interval; adding the interval accumulates rounding. */
+static inline void advanceSample(DATA *data, long i)
+{
+  const SAMPLE_INFO *info = &data->modelData->samplesInfo[i];
+  double k = floor((data->simulationInfo->nextSampleTimes[i] - info->start) / info->interval + 0.5);
+  data->simulationInfo->nextSampleTimes[i] = info->start + (k + 1) * info->interval;
+}
 
 void storeOldValues(DATA *data);
 

@@ -60,7 +60,6 @@ simulationnewbackend-simplification.log \
 simulationnewbackend-solve.log \
 simulationnewbackend-tearing.log \
 simulationnewbackend-tickets.log \
-simulationdeclarations.log \
 simulationenums.log \
 simulationequations.log \
 simulationevents.log \
@@ -87,7 +86,6 @@ simulationtypes.log \
 msl41simulation.log \
 simulation-start-value-selection.log \
 simulationinitialization.log \
-simulationqss.log \
 simulationunitcheck.log \
 simulationtearing.log \
 simulationDrModelica.log \
@@ -112,7 +110,6 @@ simulationarrays.log \
 simulationasserts.log \
 simulationbuilt-in-functions.log \
 simulationconnectors.log \
-simulationdeclarations.log \
 simulationenums.log \
 simulationequations.log \
 simulationevents.log \
@@ -400,9 +397,6 @@ simulationnewbackend-tearing.log: omc-diff
 simulationnewbackend-tickets.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/tickets/ -f Makefile test > $@
 	@echo $@ done
-simulationdeclarations.log: omc-diff
-	$(MAKE) -C simulation/modelica/declarations -f Makefile test > $@
-	@echo $@ done
 simulationenums.log: omc-diff
 	$(MAKE) -C simulation/modelica/enums -f Makefile test > $@
 	@echo $@ done
@@ -490,8 +484,6 @@ expandable.log: omc-diff
 simulationinitialization.log: omc-diff
 	$(MAKE) -C simulation/modelica/initialization -f Makefile test > $@
 	@echo $@ done
-simulationqss.log: omc-diff
-	$(MAKE) -C simulation/modelica/qss -f Makefile test > $@
 	@echo $@ done
 newFrontEndUnitCheck.log: omc-diff
 	$(MAKE) -C simulation/modelica/unitcheck -f Makefile test > $@
@@ -755,7 +747,6 @@ clean_g_2 :
 	$(MAKE) -C simulation/modelica/asserts -f Makefile clean
 	$(MAKE) -C simulation/modelica/built_in_functions -f Makefile clean
 	$(MAKE) -C simulation/modelica/connectors -f Makefile clean
-	$(MAKE) -C simulation/modelica/declarations -f Makefile clean
 	$(MAKE) -C simulation/modelica/enums -f Makefile clean
 	$(MAKE) -C simulation/modelica/equations -f Makefile clean
 	$(MAKE) -C simulation/modelica/events -f Makefile clean
@@ -763,7 +754,6 @@ clean_g_2 :
 	$(MAKE) -C simulation/modelica/external_functions -f Makefile clean
 	$(MAKE) -C simulation/modelica/inheritances -f Makefile clean
 	$(MAKE) -C simulation/modelica/initialization -f Makefile clean
-	$(MAKE) -C simulation/modelica/qss -f Makefile clean
 	$(MAKE) -C simulation/modelica/tearing -f Makefile clean
 	$(MAKE) -C simulation/modelica/japaneselanguage -f Makefile clean
 	$(MAKE) -C simulation/modelica/linear_system -f Makefile clean

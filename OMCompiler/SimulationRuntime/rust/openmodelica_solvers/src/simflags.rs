@@ -24,11 +24,8 @@ pub enum Solver {
     Cvode,
     Gbode,
     Euler,
-    RungeKutta,
-    SymSolver,
-    SymSolverSsc,
-    /// C's deprecated experimental QSS1 (`perform_qss_simulation.c.inc`).
-    Qss,
+    /// `rungekutta`, `heun` and the others C runs as gbode.
+    GbodeShorthand,
     /// `optimize()`'s collocation solver; only selectable where Ipopt is linked.
     Optimization,
 }
@@ -68,7 +65,6 @@ pub enum Ls {
     Lapack = 2,
     TotalPivot = 3,
     Klu = 4,
-    Umfpack = 5,
     Lis = 6,
 }
 
@@ -79,7 +75,6 @@ pub enum Lss {
     Default = 1,
     Klu = 2,
     Rsparse = 3,
-    Umfpack = 4,
     Lis = 5,
 }
 
@@ -477,8 +472,6 @@ pub struct Capabilities {
     pub klu: bool,
     /// SUNDIALS KINSOL, the `-nls=kinsol` nonlinear solver.
     pub kinsol: bool,
-    /// SuiteSparse UMFPACK.
-    pub umfpack: bool,
     /// Lis, the iterative `-ls=lis`/`-lss=lis`.
     pub lis: bool,
     pub ida: bool,
@@ -489,14 +482,19 @@ pub struct Capabilities {
     pub variable_filter: bool,
     /// Ipopt is linked, so `method="optimization"` / `-s=optimization` can run.
     pub optimization: bool,
-    /// This runtime runs a whole simulation of its own, so `-s=qss` — which has no
-    /// output grid and no stepping interface — can drive it. C throws "Unhandled
-    /// case in solver_main_step" where it cannot.
-    pub qss: bool,
 }
 
 pub const GBODE_DISABLED: &str =
     "integration method gbode is disabled in the Rust simulation runtime; use --simCodeTarget=C instead";
+pub const GBODE_SHORTHAND_DISABLED: &str = "this integration method is a shorthand for gbode, which is disabled in the \
+     Rust simulation runtime; use --simCodeTarget=C instead";
+
+/// Whether `method` is one of the names C turns into a gbode setup.
+pub fn is_gbode_shorthand(method: &str) -> bool {
+    SOLVERS
+        .iter()
+        .any(|(n, s, _)| *n == method && *s == Solver::GbodeShorthand)
+}
 
 /// Reject flag values this runtime cannot honour.
 pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
@@ -514,10 +512,8 @@ pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
         ),
         ("nlsLS", (f.nls_ls == Some(NlsLs::Klu)).then_some("klu"), cap.klu),
         ("ls", (f.ls == Some(Ls::Klu)).then_some("klu"), cap.klu),
-        ("ls", (f.ls == Some(Ls::Umfpack)).then_some("umfpack"), cap.umfpack),
         ("ls", (f.ls == Some(Ls::Lis)).then_some("lis"), cap.lis),
         ("lss", (f.lss == Some(Lss::Klu)).then_some("klu"), cap.klu),
-        ("lss", (f.lss == Some(Lss::Umfpack)).then_some("umfpack"), cap.umfpack),
         ("lss", (f.lss == Some(Lss::Lis)).then_some("lis"), cap.lis),
     ] {
         if let (Some(name), false) = (name, have) {
@@ -533,11 +529,13 @@ pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
     if f.solver == Some(Solver::Gbode) {
         return Err(GBODE_DISABLED.to_string());
     }
+    if f.solver == Some(Solver::GbodeShorthand) {
+        return Err(GBODE_SHORTHAND_DISABLED.to_string());
+    }
     let unsupported = match f.solver {
         Some(Solver::Ida) if !cap.ida => "ida",
         Some(Solver::Cvode) if !cap.cvode => "cvode",
         Some(Solver::Optimization) if !cap.optimization => "optimization",
-        Some(Solver::Qss) if !cap.qss => "qss",
         _ => return Ok(()),
     };
     let have: Vec<String> = supported(cap)
@@ -1522,12 +1520,10 @@ enum Offer {
     Always,
     WithKlu,
     WithKinsol,
-    WithUmfpack,
     WithLis,
     WithIda,
     WithCvode,
     WithIpopt,
-    WithQss,
     /// `default`, an alias of a listed value, or one this runtime substitutes for.
     Never,
 }
@@ -1538,31 +1534,31 @@ impl Offer {
             Offer::Always => true,
             Offer::WithKlu => cap.klu,
             Offer::WithKinsol => cap.kinsol,
-            Offer::WithUmfpack => cap.umfpack,
             Offer::WithLis => cap.lis,
             Offer::WithIda => cap.ida,
             Offer::WithCvode => cap.cvode,
             Offer::WithIpopt => cap.optimization,
-            Offer::WithQss => cap.qss,
             Offer::Never => false,
         }
     }
 }
 
-/// `-s`. `symSolver*` need a model translated with `--symSolver`, so they are
-/// accepted but never offered.
+/// `-s`.
 const SOLVERS: &[Value<Solver>] = &[
     ("dassl", Solver::Dassl, Offer::Always),
     ("dasslrt", Solver::Dassl, Offer::Never),
     ("euler", Solver::Euler, Offer::Always),
-    ("rungekutta", Solver::RungeKutta, Offer::Always),
+    ("rungekutta", Solver::GbodeShorthand, Offer::Never),
+    ("heun", Solver::GbodeShorthand, Offer::Never),
+    ("impeuler", Solver::GbodeShorthand, Offer::Never),
+    ("trapezoid", Solver::GbodeShorthand, Offer::Never),
+    ("imprungekutta", Solver::GbodeShorthand, Offer::Never),
+    ("irksco", Solver::GbodeShorthand, Offer::Never),
+    ("rungekuttassc", Solver::GbodeShorthand, Offer::Never),
     ("gbode", Solver::Gbode, Offer::Never),
     ("ida", Solver::Ida, Offer::WithIda),
     ("cvode", Solver::Cvode, Offer::WithCvode),
     ("optimization", Solver::Optimization, Offer::WithIpopt),
-    ("symSolver", Solver::SymSolver, Offer::Never),
-    ("symSolverSsc", Solver::SymSolverSsc, Offer::Never),
-    ("qss", Solver::Qss, Offer::WithQss),
 ];
 
 /// `-nls`. Without the archives `kinsol` runs the runtime's own sparse Newton.
@@ -1592,7 +1588,6 @@ const LS_VALUES: &[Value<Ls>] = &[
     ("lis", Ls::Lis, Offer::WithLis),
     ("totalpivot", Ls::TotalPivot, Offer::Always),
     ("klu", Ls::Klu, Offer::WithKlu),
-    ("umfpack", Ls::Umfpack, Offer::WithUmfpack),
 ];
 
 /// `-lss`
@@ -1601,7 +1596,6 @@ const LSS_VALUES: &[Value<Lss>] = &[
     ("lis", Lss::Lis, Offer::WithLis),
     ("rsparse", Lss::Rsparse, Offer::Always),
     ("klu", Lss::Klu, Offer::WithKlu),
-    ("umfpack", Lss::Umfpack, Offer::WithUmfpack),
 ];
 
 const CVODE_LMM_VALUES: &[Value<CvodeLmm>] = &[
@@ -1749,26 +1743,22 @@ mod tests {
     const NOTHING: Capabilities = Capabilities {
         klu: false,
         kinsol: false,
-        umfpack: false,
         lis: false,
         ida: false,
         cvode: false,
         alarm: false,
         variable_filter: false,
         optimization: false,
-        qss: false,
     };
     const EVERYTHING: Capabilities = Capabilities {
         klu: true,
         kinsol: true,
-        umfpack: true,
         lis: true,
         ida: true,
         cvode: true,
         alarm: true,
         variable_filter: true,
         optimization: true,
-        qss: true,
     };
 
     #[test]
@@ -1829,8 +1819,6 @@ mod tests {
             ("-lss=klu", "-lss=klu"),
             ("-ls=klu", "-ls=klu"),
             ("-nlsLS=klu", "-nlsLS=klu"),
-            ("-lss=umfpack", "-lss=umfpack"),
-            ("-ls=umfpack", "-ls=umfpack"),
             ("-ls=lis", "-ls=lis"),
             ("-lss=lis", "-lss=lis"),
             ("-nls=kinsol", "-nls=kinsol"),
@@ -1838,6 +1826,8 @@ mod tests {
             ("-s=ida", "dassl"),
             ("-s=cvode", "dassl"),
             ("-s=gbode", "--simCodeTarget=C instead"),
+            ("-s=rungekutta", "--simCodeTarget=C instead"),
+            ("-s=irksco", "--simCodeTarget=C instead"),
         ] {
             let f = parse(&argv(&[arg])).expect("parses");
             let e = check(&f, NOTHING).expect_err("must reject");
@@ -1858,13 +1848,6 @@ mod tests {
     fn each_solver_library_is_gated_on_its_own() {
         for (arg, cap) in [
             ("-lss=klu", Capabilities { klu: true, ..NOTHING }),
-            (
-                "-ls=umfpack",
-                Capabilities {
-                    umfpack: true,
-                    ..NOTHING
-                },
-            ),
             ("-lss=lis", Capabilities { lis: true, ..NOTHING }),
             (
                 "-nls=kinsol",
@@ -1879,10 +1862,6 @@ mod tests {
             // Every other library alone is not enough.
             for other in [
                 Capabilities { klu: true, ..NOTHING },
-                Capabilities {
-                    umfpack: true,
-                    ..NOTHING
-                },
                 Capabilities { lis: true, ..NOTHING },
                 Capabilities {
                     kinsol: true,
@@ -1891,8 +1870,8 @@ mod tests {
             ] {
                 if check(&f, other).is_ok() {
                     assert_eq!(
-                        (other.klu, other.umfpack, other.lis, other.kinsol),
-                        (cap.klu, cap.umfpack, cap.lis, cap.kinsol),
+                        (other.klu, other.lis, other.kinsol),
+                        (cap.klu, cap.lis, cap.kinsol),
                         "{arg} accepted by the wrong library"
                     );
                 }
@@ -1913,7 +1892,6 @@ mod tests {
             "-lss=rsparse",
             "-s=euler",
             "-s=dassl",
-            "-s=rungekutta",
         ] {
             let f = parse(&argv(&[arg])).expect("parses");
             assert!(check(&f, NOTHING).is_ok(), "{arg}");
@@ -1932,8 +1910,8 @@ mod tests {
                 }
             }
         }
-        // KLU, UMFPACK and KINSOL come from the archives, so none shows up above.
-        for v in ["klu", "umfpack", "kinsol"] {
+        // KLU and KINSOL come from the archives, so neither shows up above.
+        for v in ["klu", "kinsol"] {
             assert!(!supported(NOTHING).iter().any(|(_, vals)| vals.contains(&v)));
         }
     }
@@ -1973,8 +1951,8 @@ mod tests {
         assert_eq!(parse(&argv(&[])).expect("parses").solver_codes(), (0, 0, 0, 0));
         let f = parse(&argv(&["-nls=kinsol", "-nlsLS=totalpivot", "-ls=klu", "-lss=rsparse"])).expect("parses");
         assert_eq!(f.solver_codes(), (2, 2, 4, 3));
-        let f = parse(&argv(&["-ls=umfpack", "-lss=umfpack"])).expect("parses");
-        assert_eq!(f.solver_codes(), (0, 0, 5, 4));
+        let f = parse(&argv(&["-ls=lis", "-lss=lis"])).expect("parses");
+        assert_eq!(f.solver_codes(), (0, 0, 6, 5));
     }
 
     #[test]

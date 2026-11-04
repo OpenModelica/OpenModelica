@@ -24,6 +24,7 @@ ArrayConnect3.mo \
 ArrayConnect4.mo \
 ArrayConnect5.mo \
 ArrayConnect6.mo \
+ArrayConnect7.mo \
 ArrayConstructorComplex1.mo \
 ArrayConstructorRecord1.mo \
 ArrayConstructorRecord2.mo \
@@ -53,6 +54,7 @@ BindingArray7.mo \
 BindingArray8.mo \
 BindingArray9.mo \
 BindingArray10.mo \
+BindingCycle1.mo \
 BindingInvalidType1.mo \
 BindingInvalidType2.mo \
 BindingInvalidType3.mo \
@@ -126,6 +128,7 @@ CevalArrayConstant3.mo \
 CevalArrayConstructor1.mo \
 CevalArrayConstructor2.mo \
 CevalArrayConstructor3.mo \
+CevalArrayConstructor4.mo \
 CevalAsin1.mo \
 CevalAtan1.mo \
 CevalAtan21.mo \
@@ -480,6 +483,7 @@ ExpandableConnector11.mo \
 ExpandableConnector12.mo \
 ExpandableConnector13.mo \
 ExpandableConnector14.mo \
+ExpandableConnector15.mo \
 ExpandableConnectorComplex1.mo \
 ExpandableConnectorFlow1.mo \
 ExpandableConnectorFlow2.mo \
@@ -896,6 +900,7 @@ InStreamNonCref1.mo \
 InStreamNoStream1.mo \
 InStreamPipeline.mo \
 InStreamReduction1.mo \
+InStreamReduction2.mo \
 InStreamTwoInside.mo \
 InStreamTwoOutside.mo \
 InStreamUnconnected.mo \
@@ -928,6 +933,7 @@ MergeComponents7.mo \
 MergeComponents8.mo \
 MergeComponents9.mo \
 MergeComponents10.mo \
+MergeComponents11.mo \
 MinInvalidArg1.mo \
 MinInvalidArg2.mo \
 MinInvalidArg3.mo \
@@ -1131,6 +1137,7 @@ RedeclareMod9.mo \
 RedeclareMod10.mo \
 RedeclareMod11.mo \
 RedeclareMod12.mo \
+RedeclareMod13.mo \
 RedeclareNonReplaceable1.mo \
 redeclare10.mo \
 redeclare11.mo \
@@ -1159,6 +1166,7 @@ ReinitInvalid6.mo \
 ReinitInvalid7.mo \
 ReinitInvalid8.mo \
 ResizableConstantSize.mo \
+ResizableNestedSplit.mo \
 ResizableStreamElements.mo \
 ResizableUntypedConstant.mo \
 Return1.mo \
@@ -1267,6 +1275,7 @@ VectorizeBindings3.mo \
 VectorizeBindings4.mo \
 VectorizeBindings5.mo \
 VectorizeBindings6.mo \
+VectorizeRaggedArrays.mos \
 VectorTest.mo \
 Visibility1.mo \
 Visibility2.mo \

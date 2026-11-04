@@ -168,6 +168,15 @@ typedef struct SPARSE_PATTERN
   unsigned int sizeCols;          /* Allocated number of columns (= n_leadIndex passed to allocSparsePattern) */
 } SPARSE_PATTERN;
 
+/* (column, row) entries of a sparsity pattern in any order, see sparsePatternFromPairs */
+typedef struct SPARSE_PAIRS
+{
+  unsigned int* cols;
+  unsigned int* rows;
+  size_t size;
+  size_t capacity;
+} SPARSE_PAIRS;
+
 /* NONLINEAR_PATTERN
  *
  * nonlinear pattern used for initial stability analysis.
@@ -608,13 +617,6 @@ typedef struct DAEMODE_DATA
   int *algIndexes;                     /* index of the algebraic DAE variable in original order */
 } DAEMODE_DATA;
 
-typedef struct INLINE_DATA
-{
-  modelica_real dt;                    /* step size for inline step */
-  modelica_real* algVars;              /* alg-state variables */
-  modelica_real* algOldVars;           /* old alg-state variables */
-} INLINE_DATA;
-
 typedef struct MODEL_DATA_XML
 {
   const char *fileName;
@@ -850,6 +852,7 @@ typedef struct SIMULATION_INFO
 
   int homotopySteps;                   /* the number of homotopy lambda steps during initialization, =0 no homotopy was used */
   double lambda;                       /* homotopy parameter E [0, 1.0] */
+  modelica_boolean skipStartEquations; /* global homotopy after lambda=0: keep the iterated start values */
 
   /* indicators for simulations state */
   modelica_boolean initial;            /* true during initialization */
@@ -971,8 +974,6 @@ typedef struct SIMULATION_INFO
   STATE_SET_DATA* stateSetData;
 
   DAEMODE_DATA* daeModeData;
-
-  INLINE_DATA* inlineData;
 
   void* backupSolverData;              /* Used for generic Runge-Kutta methods to get access to some solver details inside callbacks */
 

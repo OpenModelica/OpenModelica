@@ -2,8 +2,8 @@
 // status: correct
 // suite: metamodelica
 // suite: smoke
+// cflags: -g=MetaModelica -d=gen
 
-setCommandLineOptions("-g=MetaModelica -d=gen");
 loadFile("AlgPatternm.mo");
 getErrorString();
 AlgPatternm.f1(1);
@@ -12,7 +12,6 @@ AlgPatternm.f2(1);
 getErrorString();
 
 // Result:
-// true
 // true
 // ""
 // (1,2)

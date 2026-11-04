@@ -2,7 +2,6 @@
 // keywords: double integrator FMI-Export FMI-Import
 // status:   correct
 // teardown_command: rm -rf binaries sources modelDescription.xml DIC.fmu *DIC*.so OMCppDIC*.cpp OMCppDIC*.h OMCppDIC*.o DIC*.json *DIC_me*
-// cflags: -d=-newInst
 // Real variables, Real input variable, continuous-time states, state events, event iteration
 
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
@@ -25,6 +24,7 @@ buildModelFMU(DIC, version="1.0"); getErrorString();
 
 loadModel(Modelica, {"4.1.0"}); getErrorString();
 setCommandLineOptions("+simCodeTarget=C"); getErrorString();
+setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString(); // make importFMU work
 importFMU("DIC.fmu"); getErrorString();
 loadFile("DIC_me_FMU.mo"); getErrorString();
 simulate(DIC_me_FMU); getErrorString();
@@ -40,13 +40,17 @@ val(y2, 1);
 // ""
 // true
 // "DIC.fmu"
+// "Warning: FMI 1.0 export is deprecated and will be removed after OpenModelica 1.28.0 is released. Export FMI 2.0 or 3.0 instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.
+// "
+// true
 // ""
 // true
 // ""
 // true
 // ""
 // "DIC_me_FMU.mo"
-// ""
+// "Warning: FMI 1.0 import is deprecated and will be removed after OpenModelica 1.28.0 is released. Import an FMI 2.0 or 3.0 FMU instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.
+// "
 // true
 // ""
 // record SimulationResult

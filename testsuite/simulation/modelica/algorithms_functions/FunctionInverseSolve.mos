@@ -1,6 +1,7 @@
 // name: FunctionInverseSolve
 // keywords: function, inverse, solve
 // status: correct
+// suite: cSources
 // teardown_command: rm -rf FunctionInverseSolve.Test* _FunctionInverseSolve.Test* output.log
 //
 // An equation y = f(a, x) is solved for x with the inverse annotation of f

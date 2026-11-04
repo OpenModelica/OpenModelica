@@ -30,10 +30,10 @@ set(NEED_CVODE
     @NEED_CVODE@
     CACHE BOOL
     "FMU needs to link to SUNDIALS CVODE if 'ON'. Used for CoSimulation FMUs that want to use CVODE as integrator. Use 'OFF' otherwise.")
-set(CVODE_DIRECTORY
-    @CVODE_DIRECTORY@
-    CACHE STRING
-    "IF CVODE is needed provide a directory where to find it.")
+set(SOLVER_LIBRARY_DIRECTORY
+    ""
+    CACHE PATH
+    "Prebuilt SuiteSparse, SUNDIALS and Lis archives of the exporting installation. Empty compiles them from 3rdParty/.")
 # As OM_LIBRARY_ARCH in OpenModelica's top-level CMakeLists.txt.
 if(CMAKE_LIBRARY_ARCHITECTURE)
   set(OM_LIBRARY_ARCH "${CMAKE_LIBRARY_ARCHITECTURE}")
@@ -66,6 +66,10 @@ set(RUST_SIM_RUNTIME_LIBRARY
     @RUST_SIM_RUNTIME_LIBRARY@
     CACHE FILEPATH
     "Prebuilt libSimulationRuntimeRust archive. Empty, or missing, builds it from rust/.")
+set(SIMULATION_RUNTIME_FMI_LIBRARY
+    ""
+    CACHE FILEPATH
+    "Prebuilt libSimulationRuntimeFMI archive of the exporting installation. Empty, or missing, compiles the C runtime from these sources.")
 
 if(NOT ${CMAKE_VERSION} VERSION_LESS "4.3")
   cmake_policy(SET CMP0207 NEW)
@@ -165,9 +169,18 @@ if(${COMPILE_MODELICA_EXTERNAL_C})
                                   ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaMatIO.c)
 endif()
 if(NOT ${NEED_CVODE})
-  list(REMOVE_ITEM FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/sundials_error.c
-                                       ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/sundials_util.c
-                                       ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/cvode_solver.c)
+  list(REMOVE_ITEM FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/cvode_solver.c)
+endif()
+# The archive holds the rest of the runtime, built with OM_HAVE_PTHREADS and
+# for the platform omc runs on.
+set(OM_LINK_SIMULATION_RUNTIME_FMI OFF)
+if(SIMULATION_RUNTIME_FMI_LIBRARY AND EXISTS "${SIMULATION_RUNTIME_FMI_LIBRARY}"
+   AND NOT OMC_RUST_SIMULATION_RUNTIME AND NOT CMAKE_CROSSCOMPILING AND OM_HAVE_PTHREADS
+   AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(OM_LINK_SIMULATION_RUNTIME_FMI ON)
+  list(FILTER FMU_RUNTIME_SOURCES INCLUDE REGEX
+       "/(fmi-export|ModelicaExternalC)/|/simulation/solver/(cvode_solver|sundials_error|sundials_util)\\.c$")
+  message(STATUS "C simulation runtime: ${SIMULATION_RUNTIME_FMI_LIBRARY}")
 endif()
 file(GLOB FMU_GENERATED_MODEL_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
 # <Model>_info.c is not a standalone translation unit; it is a bare string literal that gets
@@ -243,7 +256,7 @@ message(STATUS "Install directory: ${CMAKE_INSTALL_PREFIX}")
 if(APPLE)
   set(CMAKE_INSTALL_RPATH "@loader_path")
 else()
-  if(${NEED_CVODE} AND RUNTIME_DEPENDENCIES_LEVEL STREQUAL "none")
+  if(NOT OMC_RUST_SIMULATION_RUNTIME AND RUNTIME_DEPENDENCIES_LEVEL STREQUAL "none")
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH True)
   endif()
   set(CMAKE_INSTALL_RPATH "$ORIGIN")
@@ -253,6 +266,10 @@ endif()
 add_library(${FMU_NAME_HASH}
             ${FMU_RUNTIME_SOURCES}
             ${FMU_GENERATED_MODEL_SOURCES})
+
+if(OM_LINK_SIMULATION_RUNTIME_FMI)
+  target_link_libraries(${FMU_NAME_HASH} PRIVATE "${SIMULATION_RUNTIME_FMI_LIBRARY}")
+endif()
 
 # Set output name for the .dll's and .so files to use the full FMU name instead of fmu hash string
 set_target_properties(${FMU_NAME_HASH} PROPERTIES OUTPUT_NAME ${FMU_NAME})
@@ -471,47 +488,62 @@ endmacro()
 
 @FMU_ADDITIONAL_LIBS@
 
-if(${NEED_CVODE})
-  # Force static compilation on Windows or if CMake is too old
-  if(WIN32 OR (${CMAKE_VERSION} VERSION_LESS "3.21" AND NOT ${RUNTIME_DEPENDENCIES_LEVEL} STREQUAL "none"))
-    set(CMAKE_FIND_LIBRARY_SUFFIXES .a .lib)
-    target_compile_definitions(${FMU_NAME_HASH} PRIVATE SUNDIALS_STATIC_DEFINE)
+if(NOT OMC_RUST_SIMULATION_RUNTIME)
+  if(${NEED_CVODE})
+    set(OMC_FMI_HAVE_CVODE ";OMC_FMI_HAVE_CVODE")
   endif()
 
-  message(STATUS "CVODE_DIRECTORY: ${CVODE_DIRECTORY}")
-  # Static libraries resolve left to right: KLU's solver needs the sparse matrix
-  # and SuiteSparse's KLU, and the SUNDIALS libraries all need sundials_core.
-  # Built with MSVC or clang-cl, SUNDIALS and SuiteSparse name them <name>_static.lib.
-  foreach(_om_lib sundials_nvecserial sundials_cvode sundials_sunlinsolklu sundials_sunmatrixsparse
-                  sundials_core klu amd colamd btf suitesparseconfig)
-    string(TOUPPER "${_om_lib}_LIBRARY" _om_var)
-    find_library(${_om_var} NAMES ${_om_lib} ${_om_lib}_static
-                 PATHS ${CVODE_DIRECTORY}
-                 NO_DEFAULT_PATH
-                 NO_SYSTEM_ENVIRONMENT_PATH
-                 NO_CMAKE_FIND_ROOT_PATH
-                 REQUIRED)
-    if(NOT ${_om_var})
-      message(FATAL_ERROR "Couldn't find library ${_om_lib} in ${CVODE_DIRECTORY}")
+  if(SOLVER_LIBRARY_DIRECTORY)
+    # Force static compilation on Windows or if CMake is too old
+    if(WIN32 OR (${CMAKE_VERSION} VERSION_LESS "3.21" AND NOT ${RUNTIME_DEPENDENCIES_LEVEL} STREQUAL "none"))
+      set(CMAKE_FIND_LIBRARY_SUFFIXES .a .lib)
+      target_compile_definitions(${FMU_NAME_HASH} PRIVATE SUNDIALS_STATIC_DEFINE)
     endif()
-    list(APPEND CVODE_LIBRARIES ${${_om_var}})
-  endforeach()
-  list(APPEND RUNTIME_DEPENDS ${CVODE_LIBRARIES})
-  target_link_libraries(${FMU_NAME_HASH} PRIVATE ${CVODE_LIBRARIES})
-  target_include_directories(${FMU_NAME_HASH} PRIVATE sundials suitesparse)
-  set(WITH_SUNDIALS ";WITH_SUNDIALS")
-  message(STATUS "CVODE: ${CVODE_LIBRARIES}")
-else()
-  message(STATUS "CVODE: Not linked")
+
+    message(STATUS "SOLVER_LIBRARY_DIRECTORY: ${SOLVER_LIBRARY_DIRECTORY}")
+    set(_om_solver_libs sundials_kinsol)
+    if(${NEED_CVODE})
+      list(APPEND _om_solver_libs sundials_cvode)
+    endif()
+    # Static libraries resolve left to right: the SUNDIALS libraries all need
+    # sundials_core, and KLU's solver needs the sparse matrix and SuiteSparse's KLU.
+    # Built with MSVC or clang-cl, SUNDIALS and SuiteSparse name them <name>_static.lib.
+    list(APPEND _om_solver_libs sundials_sunlinsolklu sundials_sunlinsollapackdense sundials_sunlinsoldense
+                                sundials_sunmatrixsparse sundials_sunmatrixdense sundials_nvecserial sundials_core
+                                klu amd colamd btf suitesparseconfig lis)
+    foreach(_om_lib ${_om_solver_libs})
+      string(TOUPPER "${_om_lib}_LIBRARY" _om_var)
+      find_library(${_om_var} NAMES ${_om_lib} ${_om_lib}_static
+                   PATHS ${SOLVER_LIBRARY_DIRECTORY}
+                   NO_DEFAULT_PATH
+                   NO_SYSTEM_ENVIRONMENT_PATH
+                   NO_CMAKE_FIND_ROOT_PATH
+                   REQUIRED)
+      if(NOT ${_om_var})
+        message(FATAL_ERROR "Couldn't find library ${_om_lib} in ${SOLVER_LIBRARY_DIRECTORY}")
+      endif()
+      list(APPEND SOLVER_LIBRARIES ${${_om_var}})
+    endforeach()
+    list(APPEND RUNTIME_DEPENDS ${SOLVER_LIBRARIES})
+  else()
+    # As <SourceFiles> compiles them: sources/ is the include directory.
+    file(GLOB_RECURSE _om_sources ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/*.c)
+    add_library(omc_fmu_solvers STATIC ${_om_sources})
+    target_include_directories(omc_fmu_solvers PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    set_target_properties(omc_fmu_solvers PROPERTIES POSITION_INDEPENDENT_CODE ON C_VISIBILITY_PRESET hidden)
+    set(SOLVER_LIBRARIES omc_fmu_solvers)
+  endif()
+  target_link_libraries(${FMU_NAME_HASH} PRIVATE ${SOLVER_LIBRARIES})
+  set(OMC_FMI_SOLVER_DEFINITIONS ";WITH_SUITESPARSE${OMC_FMI_HAVE_CVODE}")
+  message(STATUS "Solver libraries: ${SOLVER_LIBRARIES}")
 endif()
 
 # Add include directories
 target_include_directories(${FMU_NAME_HASH} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(${FMU_NAME_HASH} PRIVATE ${FMI_INTERFACE_HEADER_FILES_DIRECTORY}
-                                               sundials@FMU_ADDITIONAL_INCLUDES@)
+target_include_directories(${FMU_NAME_HASH} PRIVATE ${FMI_INTERFACE_HEADER_FILES_DIRECTORY}@FMU_ADDITIONAL_INCLUDES@)
 
 # Set compiler definitions
-target_compile_definitions(${FMU_NAME_HASH} PRIVATE OMC_MINIMAL_RUNTIME=1;OMC_FMI_RUNTIME=1;CMINPACK_NO_DLL${WITH_SUNDIALS})
+target_compile_definitions(${FMU_NAME_HASH} PRIVATE OMC_MINIMAL_RUNTIME=1;OMC_FMI_RUNTIME=1;CMINPACK_NO_DLL${OMC_FMI_SOLVER_DEFINITIONS})
 
 if(BUILD_SHARED_LIBS)
   # Override FMI2_FUNCTION_PREFIX if FMU compiled dynamically (shared-library FMUs
@@ -529,7 +561,7 @@ endif()
 if(RUNTIME_DEPENDENCIES_LEVEL STREQUAL "all")
   install(TARGETS ${FMU_NAME_HASH}
     RUNTIME_DEPENDENCIES
-      DIRECTORIES ${EXTERNAL_LIBDIRECTORIES} ${CVODE_DIRECTORY}
+      DIRECTORIES ${EXTERNAL_LIBDIRECTORIES} ${SOLVER_LIBRARY_DIRECTORY}
     PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -539,7 +571,7 @@ elseif(RUNTIME_DEPENDENCIES_LEVEL STREQUAL "modelica")
   message(STATUS "Installing dynamic dependencies from list: ${RUNTIME_DEPENDS}")
   install(TARGETS ${FMU_NAME_HASH}
     RUNTIME_DEPENDENCIES
-      DIRECTORIES ${EXTERNAL_LIBDIRECTORIES} ${CVODE_DIRECTORY}
+      DIRECTORIES ${EXTERNAL_LIBDIRECTORIES} ${SOLVER_LIBRARY_DIRECTORY}
       PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
       POST_EXCLUDE_REGEXES "^\\/lib.*" "^\\/usr\\/lib.*" "^\\/usr\\/local\\/lib.*" ".*system32/.*\\.dll"
       POST_INCLUDE_FILES ${RUNTIME_DEPENDS}

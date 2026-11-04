@@ -46,17 +46,9 @@ extern "C" {
 #include "../../util/omc_error.h"
 #include "../simulation_info_json.h"
 
-#ifdef WITH_SUNDIALS
-
 #include <sundials/sundials_context.h>   /* SUNContext */
 #include <sundials/sundials_logger.h>    /* SUNLogger */
-#include <cvode/cvode.h>
-#include "cvode_solver.h"
-#ifndef OMC_FMI_RUNTIME
-#include "ida_solver.h"
-#include <kinsol/kinsol.h>
-#include "kinsolSolver.h"
-#endif
+#include <sundials/sundials_matrix.h>    /* SUNMatrix */
 
 /**
  * @brief Specify type of flag used by different SUNDIALS module for error
@@ -89,13 +81,7 @@ void sundialsSilenceLogger(SUNContext sunctx);
 void sundialsErrorHandlerFunction(int line, const char *func, const char *file,
                                   const char *msg, SUNErrCode err_code,
                                   void *err_user_data, SUNContext sunctx);
-#ifndef OMC_FMI_RUNTIME
-void kinsolErrorHandlerFunction(int line, const char *func, const char *file,
-                                const char *msg, SUNErrCode err_code,
-                                void *err_user_data, SUNContext sunctx);
-#endif /* OMC_FMI_RUNTIME */
 void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel);
-#endif /* WITH_SUNDIALS */
 
 #ifdef __cplusplus
 };

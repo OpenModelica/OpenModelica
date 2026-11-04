@@ -692,13 +692,17 @@ class WrapArray : public BaseArray<T>
 {
  public:
   /**
-   * Constuctor for wrapper array storing a pointer
+   * Constuctor for wrapper array storing a pointer to data in column-major
+   * order with the sizes dims
    */
-  WrapArray(T* data, size_t nelems)
+  WrapArray(T* data, const std::vector<size_t>& dims)
     :BaseArray<T>(true, false)
   {
     _data = data;
-    _nelems = nelems;
+    _dims = dims;
+    _nelems = 1;
+    for (size_t k = 0; k < dims.size(); k++)
+      _nelems *= dims[k];
   }
 
   /**
@@ -710,6 +714,7 @@ class WrapArray : public BaseArray<T>
   {
     _data = otherarray._data;
     _nelems = otherarray.getNumElems();
+    _dims = otherarray._dims;
   }
 
   /**
@@ -730,7 +735,7 @@ class WrapArray : public BaseArray<T>
    */
   virtual const T& operator()(const vector<size_t>& idx) const
   {
-    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong WrapArray const operator() call");
+    return _data[offset(idx)];
   }
 
   /**
@@ -739,7 +744,67 @@ class WrapArray : public BaseArray<T>
    */
   virtual T& operator()(const vector<size_t>& idx)
   {
-    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong WrapArray operator() call");
+    return _data[offset(idx)];
+  }
+
+  inline T& operator()(size_t i)
+  {
+    return _data[i - 1];
+  }
+
+  inline const T& operator()(size_t i) const
+  {
+    return _data[i - 1];
+  }
+
+  inline T& operator()(size_t i, size_t j)
+  {
+    return _data[i - 1 + _dims[0]*(j - 1)];
+  }
+
+  inline const T& operator()(size_t i, size_t j) const
+  {
+    return _data[i - 1 + _dims[0]*(j - 1)];
+  }
+
+  inline T& operator()(size_t i, size_t j, size_t k)
+  {
+    return _data[i - 1 + _dims[0]*(j - 1 + _dims[1]*(k - 1))];
+  }
+
+  inline const T& operator()(size_t i, size_t j, size_t k) const
+  {
+    return _data[i - 1 + _dims[0]*(j - 1 + _dims[1]*(k - 1))];
+  }
+
+  inline T& operator()(size_t i, size_t j, size_t k, size_t l)
+  {
+    return _data[i - 1 + _dims[0]*(j - 1 + _dims[1]*(k - 1 + _dims[2]*(l - 1)))];
+  }
+
+  inline const T& operator()(size_t i, size_t j, size_t k, size_t l) const
+  {
+    return _data[i - 1 + _dims[0]*(j - 1 + _dims[1]*(k - 1 + _dims[2]*(l - 1)))];
+  }
+
+  inline T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m)
+  {
+    return _data[i - 1 + _dims[0]*(j - 1 + _dims[1]*(k - 1 + _dims[2]*(l - 1 + _dims[3]*(m - 1))))];
+  }
+
+  inline const T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m) const
+  {
+    return _data[i - 1 + _dims[0]*(j - 1 + _dims[1]*(k - 1 + _dims[2]*(l - 1 + _dims[3]*(m - 1))))];
+  }
+
+  inline T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m, size_t n)
+  {
+    return _data[i - 1 + _dims[0]*(j - 1 + _dims[1]*(k - 1 + _dims[2]*(l - 1 + _dims[3]*(m - 1 + _dims[4]*(n - 1)))))];
+  }
+
+  inline const T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m, size_t n) const
+  {
+    return _data[i - 1 + _dims[0]*(j - 1 + _dims[1]*(k - 1 + _dims[2]*(l - 1 + _dims[3]*(m - 1 + _dims[4]*(n - 1)))))];
   }
 
   /**
@@ -747,7 +812,7 @@ class WrapArray : public BaseArray<T>
    */
   virtual std::vector<size_t> getDims() const
   {
-    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong WrapArray getDims call");
+    return _dims;
   }
 
   /**
@@ -755,7 +820,7 @@ class WrapArray : public BaseArray<T>
    */
   virtual int getDim(size_t dim) const
   {
-    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong WrapArray getDim call");
+    return (int)_dims[dim - 1];
   }
 
   /**
@@ -763,7 +828,7 @@ class WrapArray : public BaseArray<T>
    */
   virtual size_t getNumDims() const
   {
-    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong WrapArray getNumDims call");
+    return _dims.size();
   }
 
   /**
@@ -857,8 +922,19 @@ class WrapArray : public BaseArray<T>
   virtual void setDims(const std::vector<size_t>& v) {}
 
  protected:
+  size_t offset(const vector<size_t>& idx) const
+  {
+    size_t off = 0, stride = 1;
+    for (size_t k = 0; k < _dims.size(); k++) {
+      off += (idx[k] - 1)*stride;
+      stride *= _dims[k];
+    }
+    return off;
+  }
+
   T *_data; // array data
   size_t _nelems; // number of elements
+  std::vector<size_t> _dims;
 };
 
 /**

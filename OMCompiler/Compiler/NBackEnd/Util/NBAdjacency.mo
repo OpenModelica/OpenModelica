@@ -44,12 +44,15 @@ public
 protected
   // OF imports
   import Absyn.Path;
+  import AbsynUtil;
 
   // Old Simcode imports
   import OldSimCode = SimCode;
 
   // NF imports
+  import Binding = NFBinding;
   import Call = NFCall;
+  import Ceval = NFCeval;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
@@ -60,13 +63,14 @@ protected
   import Type = NFType;
   import Operator = NFOperator;
   import NFOperator.Op;
+  import NFPrefixes.{Variability, Purity};
   import Variable = NFVariable;
 
   // NB imports
   import Differentiate = NBDifferentiate;
   import NBDifferentiate.{DifferentiationArguments, DifferentiationType};
   import BEquation = NBEquation;
-  import NBEquation.{Equation, EquationAttributes, EquationPointers, Iterator, IfEquationBody, WhenEquationBody, WhenStatement};
+  import NBEquation.{Equation, EquationAttributes, EquationPointer, EquationPointers, Iterator, IfEquationBody, WhenEquationBody, WhenStatement};
   import Solve = NBSolve;
   import BVariable = NBVariable;
   import NBVariable.{VariablePointers, VarData};
@@ -1308,6 +1312,7 @@ public
       input UnorderedSet<ComponentRef> pder_set;
       input UnorderedMap<ComponentRef, ComponentRef> diff_map;
       input Boolean isAdjoint = false;
+      input Option<VariablePointers> vars = NONE() "the variables of full, to collect the dependencies of equations whose name is not unique";
       output Matrix sparsity;
 
       type Dependencies = list<ComponentRef>;
@@ -1344,7 +1349,7 @@ public
           UnorderedMap<ComponentRef, Dependencies> inner_map = UnorderedMap.new<Dependencies>(ComponentRef.hash, ComponentRef.isEqual);
           UnorderedMap<ComponentRef, Dependencies> inner_keys = UnorderedMap.new<Dependencies>(ComponentRef.hash, ComponentRef.isEqual);
           list<Pointer<Equation>> eqns;
-          list<ComponentRef> var_crefs, pder_crefs, tmp_crefs, own_vars;
+          list<ComponentRef> var_crefs, pder_crefs, tmp_crefs, own_vars, comp_pder_crefs, comp_tmp_crefs;
           ComponentRef eqn_name, dep_cref, seed_cref, pder_cref;
           Option<ComponentRef> oseed_cref;
           Integer eqn_index;
@@ -1369,13 +1374,18 @@ public
           UnorderedSet<ComponentRef> no_iters = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
           UnorderedMap<ComponentRef, SliceAliases> slice_map = UnorderedMap.new<SliceAliases>(ComponentRef.hash, ComponentRef.isEqual);
           UnorderedMap<ComponentRef, InnerTemplates> template_map = UnorderedMap.new<InnerTemplates>(ComponentRef.hash, ComponentRef.isEqual);
-          Boolean handled;
+          Boolean handled, loop_union, single;
+          UnorderedSet<ComponentRef> loop_deps;
           list<ComponentRef> alias_deps, template_deps;
           UnorderedMap<ComponentRef, Dependency> eqn_deps;
           Iterator eqn_iter;
           UnorderedMap<ComponentRef, ComponentRef> origins;
           list<ComponentRef> template_crefs;
           list<ComponentRef> solved_keys;
+          UnorderedSet<ComponentRef> eqn_reps;
+          VariablePointers full_vars;
+          UnorderedMap<ComponentRef, EquationPointer> first_eqns = UnorderedMap.new<EquationPointer>(ComponentRef.hash, ComponentRef.isEqual);
+          UnorderedSet<ComponentRef> shared_names = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
 
         case FULL() algorithm
           // create the equation name -> index map
@@ -1391,6 +1401,25 @@ public
             end if;
           end for;
 
+          // slices of a for-equation solved as scalar equations share its name, full only has
+          // the dependencies of one of them
+          for comp in comps loop
+            for eqn in StrongComponent.getEquations(comp) loop
+              eqn_name := Equation.getEqnName(eqn);
+              () := match UnorderedMap.get(eqn_name, first_eqns)
+                local
+                  EquationPointer oeqn;
+                case SOME(oeqn) guard(not referenceEq(oeqn, eqn)) algorithm
+                  UnorderedSet.add(eqn_name, shared_names);
+                then ();
+                case SOME(_) then ();
+                else algorithm
+                  UnorderedMap.add(eqn_name, eqn, first_eqns);
+                then ();
+              end match;
+            end for;
+          end for;
+
           // get only relevant equations
           // check equation name. (STRONG COMPONENTS, NO NEED FOR EQUATIONS?)
           //    if it is EITHER inner or result, map all deps with tmp
@@ -1401,16 +1430,29 @@ public
             var_crefs := StrongComponent.getVariableCrefs(comp);
 
             // an algebraic loop of independent blocks gets elementwise dependencies
-            handled := StrongComponent.isAlgebraicLoop(comp) and not List.any(var_crefs, function filterSet(set = pder_set))
+            (comp_pder_crefs, comp_tmp_crefs) := List.splitOnTrue(var_crefs, function filterSet(set = pder_set));
+            handled := StrongComponent.isAlgebraicLoop(comp) and listEmpty(comp_pder_crefs)
               and sparsityLoopBlocks(comp, var_crefs, full.dependencies, index_map, seed_set, inner_map, inner_keys, template_map, slice_map, seed_elements);
+            // all inner variables of a loop depend on the union of its equations, add it once
+            single := List.hasOneElement(eqns) and not StrongComponent.isAlgebraicLoop(comp);
+            loop_union := not handled and List.hasSeveralElements(eqns) and listEmpty(comp_pder_crefs);
+            loop_deps := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
             for eqn in (if handled then {} else eqns) loop
               eqn_name    := Equation.getEqnName(eqn);
               eqn_index   := UnorderedMap.getSafe(eqn_name, index_map, sourceInfo());
               eqn_iter    := Equation.getForIterator(Pointer.access(eqn));
               eqn_deps    := full.dependencies[eqn_index];
+              eqn_reps    := full.repetitions[eqn_index];
+              if isSome(vars) and UnorderedSet.contains(eqn_name, shared_names) then
+                SOME(full_vars) := vars;
+                eqn_deps := UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual);
+                eqn_reps := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+                collectDependenciesEquation(Pointer.access(eqn), NBPartition.Kind.ODE, full_vars.map, eqn_deps,
+                  UnorderedMap.new<Solvability>(ComponentRef.hash, ComponentRef.isEqual), eqn_reps);
+              end if;
               origins     := UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
               template_crefs := {};
-              if listLength(eqns) == 1 and not StrongComponent.isAlgebraicLoop(comp) then
+              if single then
                 (eqn_iter, eqn_deps, origins, template_crefs) := sparsityElementwise(Pointer.access(eqn), eqn_iter, eqn_deps, var_crefs);
               end if;
 
@@ -1419,11 +1461,11 @@ public
               changed     := false;
               // the variable a single equation solves is no input of it (the residual of a loop
               // uses the loop variables, they are resolved through the inner equations)
-              own_vars := if listLength(eqns) == 1 and not StrongComponent.isAlgebraicLoop(comp) then var_crefs else {};
+              own_vars := if single then var_crefs else {};
               for tpl in list(t for t guard(not List.any(own_vars, function ComponentRef.isEqual(cref2 = UnorderedMap.getOrDefault(Util.tuple21(t), origins, Util.tuple21(t)))))
                   in UnorderedMap.toList(eqn_deps)) loop
                 (dep_cref, dep) := tpl;
-                repeated := UnorderedSet.contains(UnorderedMap.getOrDefault(dep_cref, origins, dep_cref), full.repetitions[eqn_index]);
+                repeated := UnorderedSet.contains(UnorderedMap.getOrDefault(dep_cref, origins, dep_cref), eqn_reps);
                 (inner_deps, changed) := match UnorderedMap.get(dep_cref, inner_map)
                   // with resizable arrays other slices of the variable (e.g. solved by an algebraic
                   // loop) can have the same iterator but another range, also use their dependencies
@@ -1477,7 +1519,8 @@ public
                 local_deps := (inner_deps, dep, repeated) :: local_deps;
               end for;
 
-              (pder_crefs, tmp_crefs) := List.splitOnTrue(var_crefs, function filterSet(set = pder_set));
+              pder_crefs := comp_pder_crefs;
+              tmp_crefs := comp_tmp_crefs;
 
               // handle result rows
               if not listEmpty(pder_crefs) then
@@ -1518,6 +1561,8 @@ public
                     end if;
                   end for;
                 end for;
+
+                sparsityRemoveCovered(dep_map, rep_set);
 
                 // Store result variables (state derivatives) in inner_map so later
                 // result equations can trace transitive dependencies through them.
@@ -1586,13 +1631,27 @@ public
                   inner_deps := UnorderedSet.unique_list(list(if sparsityCrefHasIterator(c) then ComponentRef.stripSubscriptsAll(c) else c
                     for c in inner_deps), ComponentRef.hash, ComponentRef.isEqual);
                 end if;
-                for cref in tmp_crefs loop
-                  sparsityAddInner(cref, inner_deps, inner_map, inner_keys);
-                  sparsityAddTemplate(sparsityTemplateKey(cref, template_crefs), inner_deps, template_map);
-                end for;
+                if loop_union then
+                  for c in inner_deps loop
+                    UnorderedSet.add(c, loop_deps);
+                  end for;
+                else
+                  for cref in tmp_crefs loop
+                    sparsityAddInner(cref, inner_deps, inner_map, inner_keys);
+                    sparsityAddTemplate(sparsityTemplateKey(cref, template_crefs), inner_deps, template_map);
+                  end for;
+                end if;
                 sparsityAddSliceAlias(Pointer.access(eqn), tmp_crefs, seed_set, slice_map);
               end if;
             end for;
+
+            if loop_union then
+              inner_deps := UnorderedSet.toList(loop_deps);
+              for cref in var_crefs loop
+                sparsityAddInner(cref, inner_deps, inner_map, inner_keys, true);
+                sparsityAddTemplate(sparsityTemplateKey(cref, {}), inner_deps, template_map);
+              end for;
+            end if;
           end for;
         then SPARSITY(
           equation_names      = listArray(listReverse(eqn_names)),
@@ -1701,7 +1760,7 @@ public
             guard(sparsityIsUnitRange(arrayList(e_arr)))
             then Subscript.INDEX(sparsitySimplify(Expression.MULTARY({Expression.INTEGER(Expression.integerValue(arrayGet(e_arr, 1))), index},
               {Expression.INTEGER(1)}, Operator.makeAdd(Type.INTEGER()))));
-          case Subscript.INDEX(index = e) guard(Expression.contains(e, sparsityIsLookup)) algorithm
+          case Subscript.INDEX(index = e) guard(Expression.contains(e, Expression.isSubscriptedExp)) algorithm
             ok := false;
           then s;
           else s;
@@ -1728,16 +1787,6 @@ public
         next := next + 1;
       end for;
     end sparsityIsUnitRange;
-
-    function sparsityIsLookup
-      input Expression exp;
-      output Boolean b;
-    algorithm
-      b := match exp
-        case Expression.SUBSCRIPTED_EXP() then true;
-        else false;
-      end match;
-    end sparsityIsLookup;
 
     function sparsityTemplateKey
       "the element of a solved variable an elementwise array equation solves (see
@@ -2137,7 +2186,8 @@ public
       output Boolean handled = false;
       output list<ComponentRef> deps = {};
     protected
-      InnerTemplates templates = UnorderedMap.getOrDefault(ComponentRef.stripSubscriptsAll(cref), template_map, {});
+      ComponentRef stripped = ComponentRef.stripSubscriptsAll(cref);
+      InnerTemplates templates = UnorderedMap.getOrDefault(stripped, template_map, {});
       list<Subscript> subs = ComponentRef.subscriptsAllWithWholeFlat(cref);
       UnifyStatus status;
       UnorderedMap<ComponentRef, Expression> bindings;
@@ -2145,6 +2195,11 @@ public
       list<ComponentRef> key_deps;
       Boolean matched = false;
     algorithm
+      // a literal key binds nothing, an iterator would match all of them
+      if not listEmpty(templates) and not listEmpty(listRest(templates)) and sparsityCrefHasIterator(cref) then
+        templates := sparsityGeneralizeTemplates(templates, stripped);
+        UnorderedMap.add(stripped, templates, template_map);
+      end if;
       for template in templates loop
         (key, key_deps) := template;
         (status, bindings) := sparsityUnify(ComponentRef.subscriptsAllWithWholeFlat(key), subs);
@@ -2153,11 +2208,13 @@ public
         elseif status == UnifyStatus.MATCHED then
           matched := true;
           for d in key_deps loop
-            if sparsityHasUnbound(d, bindings) then
-              // an iterator of the inner equation that does not occur in the solved cref
+            // an iterator of the inner equation that does not occur in the solved cref addresses all
+            // elements, only of the last dimension if the others are bound (the shape codegen supports)
+            dep := sparsityWholeLastIfUnbound(d, bindings);
+            if sparsityHasUnbound(dep, bindings) then
               deps := ComponentRef.stripSubscriptsAll(d) :: deps;
             else
-              dep := ComponentRef.mapExp(ComponentRef.mapExp(d, function sparsityBind(bindings = bindings)), sparsitySimplify);
+              dep := ComponentRef.mapExp(ComponentRef.mapExp(dep, function sparsityBind(bindings = bindings)), sparsitySimplify);
               dep := sparsityResolveLookups(dep);
               if sparsityInBounds(dep) then
                 deps := dep :: deps;
@@ -2169,6 +2226,64 @@ public
       handled := matched;
     end sparsityTemplateDeps;
 
+    function sparsityGeneralizeTemplates
+      "the templates x[k] -> {y[k + c], ...} of all elements of x as one template x[$tpl] -> {y[$tpl + c], ...}.
+      The few elements with other dependencies (e.g. at the boundaries) keep their templates."
+      input output InnerTemplates templates;
+      input ComponentRef stripped;
+    protected
+      ComponentRef iter = ComponentRef.makeIterator(InstNode.newIterator("$tpl", Type.INTEGER(), sourceInfo()), Type.INTEGER());
+      UnorderedSet<Integer> values = UnorderedSet.new(Util.id, intEq);
+      list<tuple<InnerTemplate, Integer, UnorderedSet<ComponentRef>>> normalized = {};
+      tuple<InnerTemplate, Integer, UnorderedSet<ComponentRef>> pattern;
+      InnerTemplates exceptions;
+      Integer value, size;
+    algorithm
+      try
+        size := ComponentRef.size(stripped, false);
+      else
+        return;
+      end try;
+      if size < 3 or listLength(templates) <> size then
+        return;
+      end if;
+      for template in templates loop
+        value := match ComponentRef.subscriptsAllWithWholeFlat(Util.tuple21(template))
+          case {Subscript.INDEX(index = Expression.INTEGER(value))} then value;
+          else -1;
+        end match;
+        if value < 0 or UnorderedSet.contains(value, values) then
+          return;
+        end if;
+        UnorderedSet.add(value, values);
+        normalized := (template, value, UnorderedSet.fromList(list(ComponentRef.mapSubscripts(d, function sparsityOffsetSubscript(iter = iter, value = value), true)
+          for d in Util.tuple22(template)), ComponentRef.hash, ComponentRef.isEqual)) :: normalized;
+      end for;
+      // the boundaries are more likely to differ than the middle
+      pattern := listGet(normalized, intDiv(size, 2) + 1);
+      exceptions := list(Util.tuple31(t) for t guard(not UnorderedSet.isEqual(Util.tuple33(t), Util.tuple33(pattern))) in normalized);
+      if listLength(exceptions) > max(2, intDiv(size, 10)) then
+        return;
+      end if;
+      templates := (ComponentRef.mapSubscripts(Util.tuple21(Util.tuple31(pattern)), function sparsityOffsetSubscript(iter = iter, value = Util.tuple32(pattern)), true),
+        UnorderedSet.toList(Util.tuple33(pattern))) :: exceptions;
+    end sparsityGeneralizeTemplates;
+
+    function sparsityOffsetSubscript
+      "x[w] as x[iter + w - value]"
+      input output Subscript sub;
+      input ComponentRef iter;
+      input Integer value;
+    protected
+      Integer w;
+    algorithm
+      sub := match sub
+        case Subscript.INDEX(index = Expression.INTEGER(value = w)) then Subscript.INDEX(if w == value then Expression.fromCref(iter)
+          else Expression.BINARY(Expression.fromCref(iter), Operator.makeAdd(Type.INTEGER()), Expression.INTEGER(w - value)));
+        else sub;
+      end match;
+    end sparsityOffsetSubscript;
+
     function sparsityUnify
       input list<Subscript> key_subs;
       input list<Subscript> subs;
@@ -2178,6 +2293,7 @@ public
       Expression key_exp, exp, value, offset;
       Boolean ok, negated;
       ComponentRef iter;
+      Boolean has_iter = List.any(list(sparsityHasIterator(Subscript.toExp(s)) for s guard(not Subscript.isWhole(s)) in key_subs), Util.id);
     algorithm
       if listLength(key_subs) <> listLength(subs) then
         status := UnifyStatus.UNKNOWN;
@@ -2186,6 +2302,15 @@ public
       for tpl in List.zip(key_subs, subs) loop
         () := match tpl
           case (Subscript.WHOLE(), _) then ();
+          // a constant slice next to iterators (y[$i1, 1:3]), without iterators the key binds nothing
+          case (Subscript.SLICE(slice = key_exp), _) guard(has_iter and not sparsityHasIterator(key_exp)) algorithm
+            () := match Util.tuple22(tpl)
+              case Subscript.INDEX(index = exp) guard(not sparsitySliceContains(key_exp, exp)) algorithm
+                status := UnifyStatus.DIFFERENT;
+              then ();
+              else ();
+            end match;
+          then ();
           // a literal or a parameter (x[N]) binds nothing, it can only be told apart from another literal
           case (Subscript.INDEX(index = key_exp), _) guard(not sparsityHasIterator(key_exp)) algorithm
             () := match Util.tuple22(tpl)
@@ -2226,6 +2351,30 @@ public
         end if;
       end for;
     end sparsityUnify;
+
+    function sparsitySliceContains
+      "false if a literal index is not an element of a literal slice"
+      input Expression slice;
+      input Expression index;
+      output Boolean b = true;
+    protected
+      Integer v, start, step, stop;
+    algorithm
+      if not Expression.isInteger(index) then
+        return;
+      end if;
+      v := Expression.integerValue(index);
+      b := match slice
+        case Expression.RANGE(start = Expression.INTEGER(start), step = NONE(), stop = Expression.INTEGER(stop))
+          then v >= start and v <= stop;
+        case Expression.RANGE(start = Expression.INTEGER(start), step = SOME(Expression.INTEGER(step)), stop = Expression.INTEGER(stop))
+          guard(step <> 0)
+          then (step > 0 and v >= start and v <= stop or step < 0 and v <= start and v >= stop) and intMod(v - start, step) == 0;
+        case Expression.ARRAY() guard(Array.all(slice.elements, Expression.isInteger))
+          then Array.any(slice.elements, function Expression.isEqual(exp2 = index));
+        else true;
+      end match;
+    end sparsitySliceContains;
 
     function sparsityIteratorOffset
       "i + c, c + i, i - c and i as (i, c, false), c - i as (i, c, true); c without iterators"
@@ -2279,6 +2428,50 @@ public
       exp := SimplifyExp.combineBinaries(exp);
       exp := SimplifyExp.simplify(exp);
     end sparsitySimplify;
+
+    function sparsityWholeLastIfUnbound
+      input output ComponentRef cref;
+      input UnorderedMap<ComponentRef, Expression> bindings;
+    protected
+      list<Subscript> subs = listReverse(ComponentRef.subscriptsAllFlat(cref));
+      Subscript last;
+    algorithm
+      if listEmpty(subs) then
+        return;
+      end if;
+      last :: subs := subs;
+      if sparsityIsUnboundIndex(last, bindings) and not List.any(subs, function sparsityIsUnboundIndex(bindings = bindings))
+         and List.all(subs, Subscript.isIndex) then
+        cref := ComponentRef.mapSubscripts(cref, function sparsityWholeIfUnbound(bindings = bindings));
+      end if;
+    end sparsityWholeLastIfUnbound;
+
+    function sparsityWholeIfUnbound
+      input output Subscript sub;
+      input UnorderedMap<ComponentRef, Expression> bindings;
+    algorithm
+      if sparsityIsUnboundIndex(sub, bindings) then
+        sub := Subscript.WHOLE();
+      end if;
+    end sparsityWholeIfUnbound;
+
+    function sparsityIsUnboundIndex
+      input Subscript sub;
+      input UnorderedMap<ComponentRef, Expression> bindings;
+      output Boolean b;
+    algorithm
+      b := match sub
+        case Subscript.INDEX() then UnorderedSet.any(Expression.extractCrefs(sub.index),
+          function sparsityIsUnboundIterator(bindings = bindings));
+        else false;
+      end match;
+    end sparsityIsUnboundIndex;
+
+    function sparsityIsUnboundIterator
+      input ComponentRef cref;
+      input UnorderedMap<ComponentRef, Expression> bindings;
+      output Boolean b = ComponentRef.isIterator(cref) and not UnorderedMap.contains(cref, bindings);
+    end sparsityIsUnboundIterator;
 
     function sparsityHasUnbound
       input ComponentRef cref;
@@ -2573,17 +2766,78 @@ public
       input list<ComponentRef> deps;
       input UnorderedMap<ComponentRef, list<ComponentRef>> inner_map;
       input UnorderedMap<ComponentRef, list<ComponentRef>> inner_keys "name -> the crefs its slices are solved as, once per component";
+      input Boolean unique = false "deps has no duplicates and can be shared";
     protected
       ComponentRef stripped = ComponentRef.stripSubscriptsAll(cref);
+      list<ComponentRef> existing = UnorderedMap.getOrDefault(cref, inner_map, {});
     algorithm
       // several components can solve slices of the same variable with the same cref (e.g. x[$i1])
-      UnorderedMap.add(cref, UnorderedSet.unique_list(listAppend(deps, UnorderedMap.getOrDefault(cref, inner_map, {})), ComponentRef.hash, ComponentRef.isEqual), inner_map);
+      UnorderedMap.add(cref, if unique and listEmpty(existing) then deps
+        else UnorderedSet.unique_list(listAppend(deps, existing), ComponentRef.hash, ComponentRef.isEqual), inner_map);
       if not ComponentRef.isEqual(stripped, cref) then
         UnorderedMap.add(stripped, UnorderedSet.unique_list(listAppend(deps, UnorderedMap.getOrDefault(stripped, inner_map, {})), ComponentRef.hash, ComponentRef.isEqual), inner_map);
       end if;
       // every component that solves (a part of) the variable, also as a whole (e.g. an algebraic loop)
       UnorderedMap.add(stripped, cref :: UnorderedMap.getOrDefault(stripped, inner_keys, {}), inner_keys);
     end sparsityAddInner;
+
+    function sparsityRemoveCovered
+      "removes the dependencies of a row on elements (x[i]) that a dependency on all
+      elements of the same variable (x) covers."
+      input UnorderedMap<ComponentRef, Dependency> dep_map;
+      input UnorderedSet<ComponentRef> rep_set;
+    protected
+      type Crefs = list<ComponentRef>;
+      UnorderedMap<ComponentRef, Crefs> covering = UnorderedMap.new<Crefs>(ComponentRef.hash, ComponentRef.isEqual);
+      ComponentRef cref, name;
+      Dependency dep;
+    algorithm
+      for tpl in UnorderedMap.toList(dep_map) loop
+        (cref, dep) := tpl;
+        cref := ComponentRef.fillSubscripts(cref);
+        if sparsityCoversAll(cref, dep, UnorderedSet.contains(Util.tuple21(tpl), rep_set)) then
+          name := ComponentRef.stripSubscriptsAll(cref);
+          UnorderedMap.add(name, cref :: UnorderedMap.getOrDefault(name, covering, {}), covering);
+        end if;
+      end for;
+      if UnorderedMap.isEmpty(covering) then
+        return;
+      end if;
+      for key in UnorderedMap.keyList(dep_map) loop
+        cref := ComponentRef.fillSubscripts(key);
+        if List.any(UnorderedMap.getOrDefault(ComponentRef.stripSubscriptsAll(cref), covering, {}), function sparsityCovers(cref = cref)) then
+          UnorderedMap.remove(key, dep_map);
+          UnorderedSet.remove(key, rep_set);
+        end if;
+      end for;
+    end sparsityRemoveCovered;
+
+    function sparsityCoversAll
+      "a dependency with whole subscripts covers all their elements, except a regular
+      dependency on a whole one-dimensional array, which code generation treats
+      elementwise."
+      input ComponentRef cref "with filled subscripts";
+      input Dependency dep;
+      input Boolean repeated;
+      output Boolean b;
+    protected
+      list<Subscript> subs = ComponentRef.subscriptsAllFlat(cref);
+    algorithm
+      b := List.any(subs, Subscript.isWhole) and (repeated or listLength(subs) <> 1 or listEmpty(dep.kinds)
+        or Dependency.isReductionKind(listHead(dep.kinds)));
+    end sparsityCoversAll;
+
+    function sparsityCovers
+      input ComponentRef cover "with filled subscripts";
+      input ComponentRef cref "with filled subscripts";
+      output Boolean b;
+    protected
+      list<Subscript> cover_subs = ComponentRef.subscriptsAllFlat(cover);
+      list<Subscript> subs = ComponentRef.subscriptsAllFlat(cref);
+    algorithm
+      b := not ComponentRef.isEqual(cover, cref) and listLength(cover_subs) == listLength(subs)
+        and List.all(list(Subscript.isWhole(c) or Subscript.isEqual(c, s) threaded for c in cover_subs, s in subs), Util.id);
+    end sparsityCovers;
 
     function upgrade
       "upgrades a matrix using the information provided by the full matrix"
@@ -3076,6 +3330,9 @@ public
                       sol := Solvability.EXPLICIT_LINEAR(
                         pars = if UnorderedSet.isEmpty(param_set) then NONE() else SOME(param_set),
                         vars = if UnorderedSet.isEmpty(var_set) then NONE() else SOME(var_set));
+                      if Solvability.hasZeroElement(exp, eqn_ptr) then
+                        sol := Solvability.IMPLICIT();
+                      end if;
                     end if;
                   end if;
                   UnorderedMap.add(var, sol, full.solvabilities[eqn_idx]);
@@ -3916,6 +4173,67 @@ public
       end if;
     end update;
 
+    function hasZeroElement
+      "true if the coefficient of a for-equation is zero for one of its iterations, e.g. {0.0, 1.0}[i]"
+      input Expression coeff;
+      input Pointer<Equation> eqn_ptr;
+      output Boolean b = false;
+    protected
+      list<ComponentRef> names;
+      list<Expression> ranges;
+      list<Option<Iterator>> maps;
+      Expression exp;
+      Type ty;
+    algorithm
+      if not Equation.isForEquation(eqn_ptr) or Expression.isLiteral(coeff) then return; end if;
+      (names, ranges, maps) := Iterator.getFrames(Equation.getForIterator(Pointer.access(eqn_ptr)));
+      if not (List.all(ranges, Expression.isLiteral) and not List.any(maps, isSome)) then return; end if;
+      exp := evaluateCoefficient(coeff);
+      if Expression.contains(exp, isNonIteratorCref) then return; end if;
+      ty := Type.liftArrayLeftList(Expression.typeOf(exp), list(Type.nthDimension(Expression.typeOf(r), 1) for r in ranges));
+      exp := Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(ty, Variability.CONSTANT, Purity.PURE, exp,
+        list((ComponentRef.node(n), r) threaded for n in names, r in ranges)));
+      exp := Ceval.tryEvalExp(exp);
+      b := Expression.isLiteral(exp) and List.any(Expression.arrayScalarElements(exp), Expression.isZero);
+    end hasZeroElement;
+
+    function evaluateCoefficient
+      "replaces parameters by their bindings, like the old backend does to avoid dividing by zero"
+      input output Expression coeff;
+    algorithm
+      for i in 1:5 loop
+        coeff := SimplifyExp.simplify(Expression.map(coeff, parameterBinding));
+        if Expression.isLiteral(coeff) then break; end if;
+      end for;
+    end evaluateCoefficient;
+
+    function parameterBinding
+      input output Expression exp;
+    protected
+      Pointer<Variable> var_ptr;
+      Variable var;
+    algorithm
+      exp := match exp
+        case Expression.CREF() guard(BVariable.checkCref(exp.cref, BVariable.isParamOrConst, sourceInfo())) algorithm
+          var_ptr := BVariable.getVarPointer(exp.cref, sourceInfo());
+          var := Pointer.access(var_ptr);
+        then if Binding.hasExp(var.binding) then
+            Expression.applySubscripts(ComponentRef.subscriptsAllWithWholeFlat(exp.cref), Binding.getExp(var.binding))
+          else exp;
+        else exp;
+      end match;
+    end parameterBinding;
+
+    function isNonIteratorCref
+      input Expression exp;
+      output Boolean b;
+    algorithm
+      b := match exp
+        case Expression.CREF() then not ComponentRef.isIterator(exp.cref);
+        else false;
+      end match;
+    end isNonIteratorCref;
+
     function updateList
       input list<ComponentRef> lst;
       input Solvability sol;
@@ -4084,7 +4402,7 @@ public
         Dependency dep;
         UnorderedSet<ComponentRef> set1, set2, diff;
         list<UnorderedSet<ComponentRef>> sets = {};
-        Expression call_exp;
+        Expression call_exp, delay_max;
         Call call;
         Boolean repeatLeft, repeatRight, reduce;
         Integer ind, new_depth;
@@ -4253,6 +4571,12 @@ public
         set := collectDependencies(call_exp, depth, map, dep_map, sol_map, rep_set);
         Dependency.updateList(UnorderedSet.toList(set), -1, false, dep_map);
       then set;
+
+      // delay(expr, delayTime, delayMax) with delayTime = delayMax only reads past values of expr
+      case Expression.CALL(call = call as Call.TYPED_CALL(arguments = {_, call_exp, delay_max}))
+        guard(Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.isEqual(call_exp, delay_max)
+          and AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "delay")
+      then UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
 
       // for functions set the dependency to full reduction (+ repetition) and solvability to implicit
       case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm

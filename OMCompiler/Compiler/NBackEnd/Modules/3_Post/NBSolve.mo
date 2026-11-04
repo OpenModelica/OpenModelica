@@ -44,6 +44,7 @@ import Module = NBModule;
 public
   // OF imports
   import Absyn.Path;
+  import AbsynUtil;
 
   // NF imports
   import Algorithm = NFAlgorithm;
@@ -351,7 +352,7 @@ public
         // a single row of an array equation solved for a scalar, e.g. x from row 1 of v = fill(1, 3) .* x
         case StrongComponent.SLICED_COMPONENT() guard(Equation.isArrayEquation(Slice.getT(comp.eqn))
           and List.hasOneElement(comp.eqn.indices) and not Type.isArray(ComponentRef.getSubscriptedType(comp.var_cref, true))) algorithm
-          eqn := arrayRowEquation(Slice.getT(comp.eqn), listHead(comp.eqn.indices));
+          eqn := Equation.arrayRow(Slice.getT(comp.eqn), listHead(comp.eqn.indices));
           (eqn, solve_status, implicit_index) := solveSingleStrongComponent(eqn, Variable.fromCref(comp.var_cref), funcMap, kind, implicit_index, slicing_map, varData, eqData);
           if solve_status < Status.UNSOLVABLE then
             comp.eqn := Slice.SLICE(Pointer.create(eqn), {});
@@ -413,6 +414,10 @@ public
                   (eqn, solve_status, implicit_index, _) := solveEquation(Pointer.access(Slice.getT(generic_comp.eqn)), generic_comp.var_cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
                   generic_comp.eqn := Slice.SLICE(Pointer.create(eqn), generic_comp.eqn.indices);
                   generic_comp.status := solve_status;
+                then ();
+                case _ guard(not List.any(StrongComponent.getEquations(generic_comp), Equation.isForEquation)) algorithm
+                  // a scalar slice is called once
+                  ({generic_comp}, implicit_index) := solveStrongComponent(generic_comp, funcMap, kind, implicit_index, slicing_map, varData, eqData);
                 then ();
                 else algorithm
                   (generic_comp, solve_status, implicit_index) := solveGenericEquation(slice, funcMap, kind, implicit_index, slicing_map, varData, eqData);
@@ -647,19 +652,33 @@ public
   end solveSliceElementwise;
 
   function expandReduction
-    "expands sum and product reductions over constant ranges, e.g.
-    sum(x[1, j] for j in 1:3) -> x[1, 1] + x[1, 2] + x[1, 3]"
+    "expands sum and product reductions over constant ranges and of arrays, e.g.
+    sum(x[1, j] for j in 1:3) -> x[1, 1] + x[1, 2] + x[1, 3], sum(x[1, :]) -> x[1, 1] + x[1, 2]"
     input output Expression exp;
   protected
     Call call;
     String name;
     Type ty;
     Operator op;
-    Expression default_exp, range;
+    Expression default_exp, range, arg;
     Boolean expanded;
     list<tuple<NFInstNode.InstNode, Expression>> iters = {};
   algorithm
     exp := match exp
+      case Expression.CALL(call = call as Call.TYPED_CALL(arguments = {arg})) algorithm
+        name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
+        ty := Type.arrayElementType(Expression.typeOf(arg));
+        if not (name == "sum" or name == "product") or not Type.isArray(Expression.typeOf(arg)) or Type.isRecord(ty) then
+          return;
+        end if;
+        (arg, expanded) := ExpandExp.expand(arg, true);
+        if not expanded then
+          return;
+        end if;
+        (default_exp, op) := if name == "sum" then (Expression.makeZero(ty), Operator.makeAdd(ty))
+                             else (Expression.makeOne(ty), Operator.makeMul(ty));
+      then SimplifyExp.simplify(List.fold(Expression.arrayScalarElements(arg), function makeBinary(op = op), default_exp));
+
       case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
         name := AbsynUtil.pathString(Function.name(call.fn));
         ty := Expression.typeOf(call.exp);
@@ -1328,13 +1347,34 @@ protected
   algorithm
     crefExp := Expression.fromCref(cref);
     ty := ComponentRef.getSubscriptedType(cref, true);
-    numerator := Replacements.single(residual, crefExp, Expression.makeZero(ty));
+    numerator := replaceUndelayed(residual, crefExp, Expression.makeZero(ty));
     mulOp := Operator.makeMul(ty);
     uminOp := Operator.makeUMinus(ty);
     // Set eqn: cref = - f/f'
     eqn := Equation.setLHS(eqn, crefExp);
     eqn := Equation.setRHS(eqn, Expression.UNARY(uminOp, Expression.MULTARY({numerator},{derivative}, mulOp)));
   end solveLinear;
+
+  function replaceUndelayed
+    "replaces old by new, but not in the delayed expressions. delay(expr, ...) does not
+    depend on the current value of expr."
+    input output Expression exp;
+    input Expression old;
+    input Expression new;
+  algorithm
+    exp := match exp
+      local
+        Call call;
+        Expression delayed;
+        list<Expression> args;
+      case _ guard(Expression.isEqual(exp, old)) then new;
+      case Expression.CALL(call = call as Call.TYPED_CALL(arguments = delayed :: args))
+        guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "delay") algorithm
+        exp.call := Call.setArguments(call, delayed :: list(replaceUndelayed(arg, old, new) for arg in args));
+      then exp;
+      else Expression.mapShallow(exp, function replaceUndelayed(old = old, new = new));
+    end match;
+  end replaceUndelayed;
 
   function solveUnique
     "author: linuslangenkamp
@@ -2190,35 +2230,6 @@ protected
       end if;
     end if;
   end getVarSlice;
-
-  function arrayRowEquation
-    "the scalar equation of one row of an array equation"
-    input Pointer<Equation> eqn_ptr;
-    input Integer index "zero based";
-    output Equation row;
-  protected
-    Equation eqn = Pointer.access(eqn_ptr);
-    list<Subscript> subs;
-    Type ty;
-  algorithm
-    subs := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in Slice.indexToLocation(index, Equation.sizes(eqn_ptr)));
-    ty := Type.arrayElementType(Equation.getType(eqn));
-    row := Equation.SCALAR_EQUATION(ty, rowElement(Util.getOption(Equation.getLHS(eqn)), subs),
-      rowElement(Util.getOption(Equation.getRHS(eqn)), subs), Equation.getSource(eqn), Equation.getAttributes(eqn));
-  end arrayRowEquation;
-
-  function rowElement
-    "the element of an array expression, expanded to make it solvable"
-    input Expression exp;
-    input list<Subscript> subs;
-    output Expression element;
-  protected
-    Expression expanded;
-    Boolean success;
-  algorithm
-    (expanded, success) := ExpandExp.expand(exp, true);
-    element := SimplifyExp.simplify(Expression.applySubscripts(subs, if success then expanded else exp));
-  end rowElement;
 
   function solveForVarSlice
     input output Slice<EquationPointer> eqn_slice;

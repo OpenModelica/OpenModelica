@@ -266,7 +266,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/runtime/rt_ldflags_generated_code.cmake)
 #
 #   <dir>/wasi-pic-sysroot/    the PIC wasi-libc sysroot omc's own side modules
 #                              are built against
-#   <dir>/sundials-wasm/       SUNDIALS/KLU/UMFPACK/Lis/PRIMME archives+headers
+#   <dir>/sundials-wasm/       SUNDIALS/KLU/Lis/PRIMME archives+headers
 #   <dir>/wasi_snapshot_preview1.reactor.wasm
 #   <dir>/blobs/               every wasm blob the cargo build scripts produce,
 #                              the wasm-jit runtime.wasm among them
@@ -392,14 +392,14 @@ ExternalProject_Add(rust_wasi_pic_sysroot
 endif()
 
 # ---------------------------------------------------------------------------
-# SUNDIALS/KLU/UMFPACK/Lis wasm cross-compile.
+# SUNDIALS/KLU/Lis wasm cross-compile.
 #
 # Separate from the native C runtime build (3rdParty/CMakeLists.txt). Uses the
 # same sources but a wasm32-wasip1 toolchain and a distinct build directory.
 # Produces static archives linked into the wasm-jit runtimes (FMI/web), which is
 # what makes `-ls`/`-lss`/`-idaLS` name the same solvers the C runtime does.
 # ---------------------------------------------------------------------------
-option(RUST_OMC_ENABLE_SUNDIALS "Build the 3rd-party solver archives (SUNDIALS/KLU/UMFPACK/Lis) for wasm32-wasip1, as used by the wasm-jit runtime." ON)
+option(RUST_OMC_ENABLE_SUNDIALS "Build the 3rd-party solver archives (SUNDIALS/KLU/Lis) for wasm32-wasip1, as used by the wasm-jit runtime." ON)
 
 if(RUST_OMC_ENABLE_SUNDIALS AND RUST_OMC_PREBUILT_WASM_DIR)
   set(RUST_SUNDIALS_WASM_DIR ${RUST_OMC_PREBUILT_WASM_DIR}/sundials-wasm
@@ -417,10 +417,6 @@ elseif(RUST_OMC_ENABLE_SUNDIALS)
   # statically gets a byte-identical module -- while an FMU's `--experimental-pic
   # --shared` SUNDIALS side module can only be linked from PIC objects at all.
   set(_sundials_cflags "-O2 -fPIC -I${_suitesparse_sources}/AMD/Include -I${_suitesparse_sources}/COLAMD/Include -I${_suitesparse_sources}/BTF/Include -I${_suitesparse_sources}/SuiteSparse_config")
-  # UMFPACK adds its own headers and `NBLAS`, its no-BLAS build, there being no
-  # BLAS for wasm. Passed as CMAKE_C_FLAGS, not through the toolchain's
-  # CMAKE_C_FLAGS_INIT, which an already-configured build directory ignores.
-  set(_suitesparse_cflags "${_sundials_cflags} -DNBLAS -I${_suitesparse_sources}/UMFPACK/Include")
   set(_sundials_toolchain ${CMAKE_CURRENT_BINARY_DIR}/sundials-wasi-toolchain.cmake)
   file(WRITE ${_sundials_toolchain}
     "set(CMAKE_SYSTEM_NAME WASI)\n"
@@ -442,22 +438,20 @@ elseif(RUST_OMC_ENABLE_SUNDIALS)
     LIST_SEPARATOR |
     CMAKE_ARGS
       -DCMAKE_TOOLCHAIN_FILE=${_sundials_toolchain}
-      -DCMAKE_C_FLAGS=${_suitesparse_cflags}
+      -DCMAKE_C_FLAGS=${_sundials_cflags}
       -DBUILD_SHARED_LIBS=OFF
-      -DSUITESPARSE_ENABLE_PROJECTS=suitesparse_config|amd|colamd|btf|klu|umfpack
+      -DSUITESPARSE_ENABLE_PROJECTS=suitesparse_config|amd|colamd|btf|klu
       -DSUITESPARSE_USE_FORTRAN=OFF
       -DSUITESPARSE_USE_OPENMP=OFF
       -DSUITESPARSE_USE_CUDA=OFF
       -DSUITESPARSE_DEMOS=OFF
       -DSUITESPARSE_USE_STRICT=OFF
       -DKLU_USE_CHOLMOD=OFF
-      -DUMFPACK_USE_CHOLMOD=OFF
-      # An empty BLAS_LIBRARIES takes SuiteSparseBLAS's "user supplied" path
-      # instead of find_package(BLAS); BLA_VENDOR only picks name-mangling defines.
-      -DBLAS_LIBRARIES=
+      # No enabled project calls BLAS. BLA_VENDOR must still be non-empty.
+      -DSUITESPARSE_REQUIRE_BLAS=OFF
       -DBLA_VENDOR=Generic
     BUILD_COMMAND ${CMAKE_COMMAND} --build ${_suitesparse_ep_build} --parallel
-      --target KLU_static UMFPACK_static AMD_static COLAMD_static BTF_static SuiteSparseConfig_static
+      --target KLU_static AMD_static COLAMD_static BTF_static SuiteSparseConfig_static
     INSTALL_COMMAND ""
     BUILD_ALWAYS ON
     EXCLUDE_FROM_ALL ON)
@@ -644,7 +638,6 @@ target_include_directories(primme PRIVATE
     # copy_if_different: build.rs keys the runtime blobs on these mtimes.
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
       ${_suitesparse_ep_build}/KLU/libklu.a
-      ${_suitesparse_ep_build}/UMFPACK/libumfpack.a
       ${_suitesparse_ep_build}/AMD/libamd.a
       ${_suitesparse_ep_build}/COLAMD/libcolamd.a
       ${_suitesparse_ep_build}/BTF/libbtf.a
@@ -2152,6 +2145,8 @@ function(omc_rust_setup_wasm)
         ${RUST_OMC_DIR}/wasm/fmu-aot.js
         ${RUST_OMC_DIR}/wasm/fmu-aot-worker.js
         ${RUST_OMC_DIR}/wasm/wasm-blobs.js
+        ${RUST_OMC_DIR}/wasm/wasm-stack.js
+        ${RUST_OMC_DIR}/wasm/symbolize.html
         # Shared 3D animation view (anim/), used by both simulator pages.
         ${RUST_OMC_DIR}/wasm/anim/animation.js
         ${RUST_OMC_DIR}/wasm/anim/OrbitControls.js
@@ -2198,6 +2193,8 @@ function(omc_rust_setup_wasm)
                 ${RUST_OMC_DIR}/wasm/fmu-aot.js
                 ${RUST_OMC_DIR}/wasm/fmu-aot-worker.js
                 ${RUST_OMC_DIR}/wasm/wasm-blobs.js
+                ${RUST_OMC_DIR}/wasm/wasm-stack.js
+                ${RUST_OMC_DIR}/wasm/symbolize.html
                 ${_web_dir}/
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/omc-terminal
         COMMAND ${CMAKE_COMMAND} -E copy
@@ -2262,8 +2259,10 @@ function(omc_rust_setup_wasm)
   # Release size optimisation, only if binaryen is available.
   set(_wasm_opt_cmd "")
   if(_profile STREQUAL "release" AND WASM_OPT_EXECUTABLE)
+    # -Oz drops the name section; symbolize.html maps the error frames with this.
     set(_wasm_opt_cmd COMMAND ${WASM_OPT_EXECUTABLE} -Oz ${WASM_OPT_FEATURES}
-        ${_wasm_pkgdir}/${_wasm_name}_bg.wasm -o ${_wasm_pkgdir}/${_wasm_name}_bg.wasm)
+        ${_wasm_pkgdir}/${_wasm_name}_bg.wasm -o ${_wasm_pkgdir}/${_wasm_name}_bg.wasm
+        --symbolmap=${_wasm_pkgdir}/${_wasm_name}_bg.symbols)
   endif()
 
   # Cargo invocation. If a prebuilt runtime.wasm was supplied (CI stage 2),

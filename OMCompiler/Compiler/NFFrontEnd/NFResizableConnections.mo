@@ -1708,6 +1708,7 @@ protected
       UnorderedMap<String, Variable> variables;
       UnorderedSet<String> literal "vertex keys of the connector arrays connected only with literal indices";
       UnorderedMap<String, list<Integer>> elements "vertex key of such a connector array -> the vertices of its elements";
+      UnorderedMap<String, Aff> aliases "size parameters equal to others because their arrays are connected";
     end CONTEXT;
   end Context;
 
@@ -1906,7 +1907,7 @@ protected
           else
             name := ComponentRef.toString(exp.cref);
             UnorderedMap.tryAdd(name, exp, ctx.params);
-            a1 := affParam(name);
+            a1 := UnorderedMap.getOrDefault(name, ctx.aliases, affParam(name));
           end if;
         then a1;
 
@@ -2463,7 +2464,10 @@ protected
           for p in List.zip(sa, sb) loop
             len_a := symSub(sliceHi(Util.tuple21(p)), sliceLo(Util.tuple21(p)), facts);
             len_b := symSub(sliceHi(Util.tuple22(p)), sliceLo(Util.tuple22(p)), facts);
-            if not symEq(len_a, len_b) then
+            if not symEq(len_a, len_b) and addSizeAlias(len_a, len_b, ctx) then
+              // resolve builds the edges again with the alias
+              len_b := len_a;
+            elseif not symEq(len_a, len_b) then
               unsupported("connecting slices whose sizes " + symString(len_a) + " + 1 and " + symString(len_b) +
                 " + 1 are not equal symbolically", source);
             end if;
@@ -2474,6 +2478,118 @@ protected
           (ib, ob) := sideDims(eb, it, facts);
           edge := EDGE(d, SIDE(va, ia, oa), SIDE(vb, ib, ob), source);
   end makeEdge;
+
+  function addSizeAlias
+    "Connected slices with sizes of the same value but different parameters
+     have to have equal sizes: one size parameter becomes an expression of the
+     others, e.g. b.n = a.n for connect(a.x, b.x) with x[n]."
+    input Sym a;
+    input Sym b;
+    input Context ctx;
+    output Boolean added = false;
+  protected
+    Aff d, rest;
+    String name;
+    Integer k;
+    Option<Variable> ovar;
+    Variable var;
+  algorithm
+    if not (symIsAff(a) and symIsAff(b)) or not equalValues(a, b, ctx.params) then
+      return;
+    end if;
+    d := affSub(symGetAff(b), symGetAff(a));
+    for t in d.k loop
+      (name, k) := t;
+      ovar := UnorderedMap.get(name, ctx.variables);
+      if abs(k) == 1 and isSome(ovar) then
+        SOME(var) := ovar;
+        if Util.applyOptionOrDefault(Binding.getExpOpt(var.binding), Expression.isInteger, false) then
+          // d = k * name + rest = 0
+          rest := affSub(d, affScale(affParam(name), k));
+          rest := if k == 1 then affNeg(rest) else rest;
+          for n in UnorderedMap.keyList(ctx.aliases) loop
+            UnorderedMap.add(n, affSubstitute(UnorderedMap.getOrFail(n, ctx.aliases), name, rest), ctx.aliases);
+          end for;
+          UnorderedMap.add(name, rest, ctx.aliases);
+          added := true;
+          return;
+        end if;
+      end if;
+    end for;
+  end addSizeAlias;
+
+  function affSubstitute
+    input Aff a;
+    input String name;
+    input Aff value;
+    output Aff res = a;
+  protected
+    String n;
+    Integer k;
+  algorithm
+    for t in a.k loop
+      (n, k) := t;
+      if n == name then
+        res := affAdd(affSub(a, affScale(affParam(name), k)), affScale(value, k));
+        return;
+      end if;
+    end for;
+  end affSubstitute;
+
+  function equalValues
+    "the bounds have the same value for the actual values of the size parameters"
+    input Sym a;
+    input Sym b;
+    input UnorderedMap<String, Expression> params;
+    output Boolean eq;
+  protected
+    function value
+      input Sym s;
+      input UnorderedMap<String, Expression> params;
+      output Expression e = SimplifyExp.simplify(Expression.map(symToExp(s, params), Expression.replaceResizableParameter));
+    end value;
+  algorithm
+    eq := match (value(a, params), value(b, params))
+      local
+        Integer va, vb;
+      case (Expression.INTEGER(value = va), Expression.INTEGER(value = vb)) then va == vb;
+      else false;
+    end match;
+  end equalValues;
+
+  function applySizeAliases
+    "replaces the aliased size parameters by their expressions and binds them to these"
+    input output FlatModel flatModel;
+    input Context ctx;
+  protected
+    UnorderedMap<String, Expression> values = UnorderedMap.new<Expression>(stringHashDjb2, stringEq);
+    Variable var;
+    list<Variable> vars = {};
+    String name;
+  algorithm
+    if UnorderedMap.isEmpty(ctx.aliases) then
+      return;
+    end if;
+    for name in UnorderedMap.keyList(ctx.aliases) loop
+      UnorderedMap.add(name, symToExp(symAff(UnorderedMap.getOrFail(name, ctx.aliases)), ctx.params), values);
+    end for;
+    flatModel := replaceSizes(flatModel, values);
+    for v in flatModel.variables loop
+      name := ComponentRef.toString(v.name);
+      if UnorderedMap.contains(name, values) then
+        var := v;
+        var.binding := Binding.setExp(UnorderedMap.getOrFail(name, values), var.binding);
+        if Flags.isSet(Flags.DUMP_RESIZABLE) then
+          Error.addCompilerNotification("--resizableArrays: " + name + " = " + Expression.toString(Binding.getExp(var.binding)) +
+            " because their arrays are connected.");
+        end if;
+        vars := var :: vars;
+      else
+        vars := v :: vars;
+      end if;
+    end for;
+    flatModel.variables := listReverseInPlace(vars);
+  end applySizeAliases;
 
   function coalesceEdges
     "Runs of connections of single elements of two one-dimensional connector
@@ -3118,7 +3234,7 @@ protected
           l := applyConnSubs(v1.cref, v1.connDims, inds1);
           r := applyConnSubs(v2.cref, v2.connDims, inds2);
           ty := Expression.typeOf(l);
-          if ComponentRef.variability(v1.cref) > Variability.PARAMETER and ComponentRef.variability(v2.cref) > Variability.PARAMETER then
+          if ComponentRef.variability(v1.cref) > Variability.NON_STRUCTURAL_PARAMETER and ComponentRef.variability(v2.cref) > Variability.NON_STRUCTURAL_PARAMETER then
             equations := Equation.makeEquality(l, r, ty, scalarizeMode = NFEquation.ScalarizeMode.DONT_SCALARIZE) :: equations;
           else
             equations := makeEqualityAssert(l, r, ty) :: equations;
@@ -3992,7 +4108,8 @@ protected
   algorithm
     ctx := CONTEXT(Vector.new<Vertex>(), UnorderedMap.new<Integer>(stringHashDjb2, stringEq),
       UnorderedMap.new<Expression>(stringHashDjb2, stringEq), UnorderedMap.new<Variable>(stringHashDjb2, stringEq),
-      UnorderedSet.new(stringHashDjb2, stringEq), UnorderedMap.new<VertexList>(stringHashDjb2, stringEq));
+      UnorderedSet.new(stringHashDjb2, stringEq), UnorderedMap.new<VertexList>(stringHashDjb2, stringEq),
+      UnorderedMap.new<Aff>(stringHashDjb2, stringEq));
     for var in flatModel.variables loop
       UnorderedMap.add(ComponentRef.toString(var.name), var, ctx.variables);
       obind := Binding.getExpOpt(var.binding);
@@ -4167,12 +4284,20 @@ public
           SimplifyExp.simplify(Expression.map(Expression.fromCref(var.name), Expression.replaceResizableParameter)), values);
       end if;
     end for;
+    flatModel := replaceSizes(flatModel, values);
+  end evaluateFixedSizes;
+
+  function replaceSizes
+    "replaces size parameters by expressions in all expressions and dimensions"
+    input output FlatModel flatModel;
+    input UnorderedMap<String, Expression> values;
+  algorithm
     flatModel.variables := list(Variable.applyToType(v, function Type.applyToDims(func =
       function fixedDimension(values = values))) for v in flatModel.variables);
     flatModel := FlatModel.mapExp(flatModel, function Expression.map(func = function fixedExp(values = values)));
     flatModel.equations := list(Equation.map(eq, function fixedEquationType(values = values)) for eq in flatModel.equations);
     flatModel.initialEquations := list(Equation.map(eq, function fixedEquationType(values = values)) for eq in flatModel.initialEquations);
-  end evaluateFixedSizes;
+  end replaceSizes;
 
   function fixedExp
     input output Expression exp;
@@ -4526,28 +4651,38 @@ public
     array<list<ConnVar>> potentials, flows, streams;
     ComponentRef c;
     UnorderedSet<String> fixed;
+    UnorderedMap<String, Aff> aliases = UnorderedMap.new<Aff>(stringHashDjb2, stringEq);
+    Integer n_aliases;
   algorithm
     (conns, eql) := List.splitOnTrue(flatModel.equations, isConnection);
-    ctx := CONTEXT(Vector.new<Vertex>(), UnorderedMap.new<Integer>(stringHashDjb2, stringEq),
-      UnorderedMap.new<Expression>(stringHashDjb2, stringEq), UnorderedMap.new<Variable>(stringHashDjb2, stringEq),
-      literalConnectors(conns), UnorderedMap.new<VertexList>(stringHashDjb2, stringEq));
-    for var in flatModel.variables loop
-      UnorderedMap.add(ComponentRef.toString(var.name), var, ctx.variables);
-    end for;
+    // a new size alias (addSizeAlias) changes the vertices, start over
+    while true loop
+      ctx := CONTEXT(Vector.new<Vertex>(), UnorderedMap.new<Integer>(stringHashDjb2, stringEq),
+        UnorderedMap.new<Expression>(stringHashDjb2, stringEq), UnorderedMap.new<Variable>(stringHashDjb2, stringEq),
+        literalConnectors(conns), UnorderedMap.new<VertexList>(stringHashDjb2, stringEq), aliases);
+      n_aliases := UnorderedMap.size(aliases);
+      for var in flatModel.variables loop
+        UnorderedMap.add(ComponentRef.toString(var.name), var, ctx.variables);
+      end for;
 
-    // every connector with flow variables is a vertex: unconnected flows are zero
-    for var in flatModel.variables loop
-      if Variable.isFlow(var) then
-        c := ComponentRef.rest(var.name);
-        if not ComponentRef.isEmpty(c) then
-          connectorVertices(c, ElementSource.createElementSource(var.info), ctx);
+      // every connector with flow variables is a vertex: unconnected flows are zero
+      for var in flatModel.variables loop
+        if Variable.isFlow(var) then
+          c := ComponentRef.rest(var.name);
+          if not ComponentRef.isEmpty(c) then
+            connectorVertices(c, ElementSource.createElementSource(var.info), ctx);
+          end if;
         end if;
-      end if;
-    end for;
+      end for;
 
-    for eq in conns loop
-      edges := collectEdges(eq, {}, {}, ctx, edges);
-    end for;
+      edges := {};
+      for eq in conns loop
+        edges := collectEdges(eq, {}, {}, ctx, edges);
+      end for;
+      if UnorderedMap.size(aliases) == n_aliases then
+        break;
+      end if;
+    end while;
     edges := coalesceEdges(listReverseInPlace(edges));
 
     (sets, facts) := connectionSets(ctx.vertices, edges);
@@ -4560,6 +4695,7 @@ public
     flatModel.equations := listAppend(eql, generateEquations(sets, ctx.vertices, potentials, flows, streams, ctx.params, facts, fixed));
     flatModel := resolveStreams(flatModel, sets, ctx, streams, facts, fixed);
     flatModel := evaluateFixedSizes(flatModel, fixed);
+    flatModel := applySizeAliases(flatModel, ctx);
   end resolve;
 
   annotation(__OpenModelica_Interface="nf_frontend");

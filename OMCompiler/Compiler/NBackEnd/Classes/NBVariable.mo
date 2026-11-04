@@ -53,11 +53,13 @@ public
   import BackendExtension = NFBackendExtension;
   import NFBackendExtension.{BackendInfo, StateSelect, TearingSelect, VariableAttributes, VariableKind, OptimizerExpression};
   import NFBinding.Binding;
+  import Call = NFCall;
   import Ceval = NFCeval;
   import Class = NFClass;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
+  import NFFunction.Function;
   import NFInstNode.InstNode;
   import Prefixes = NFPrefixes;
   import Scalarize = NFScalarize;
@@ -1227,6 +1229,19 @@ function isJacobianResultVar
     b := StringUtil.startsWith(ComponentRef.firstName(getVarName(var_ptr)), FUNCTION_STR);
   end isFunctionAlias;
 
+  function isFunctionAliasOrElement
+    "true for function alias variables and the elements of function alias records"
+    input Pointer<Variable> var_ptr;
+    output Boolean b;
+  algorithm
+    b := match getParent(var_ptr)
+      local
+        Pointer<Variable> parent;
+      case SOME(parent) then isFunctionAliasOrElement(parent);
+      else isFunctionAlias(var_ptr);
+    end match;
+  end isFunctionAliasOrElement;
+
   function isClockAlias
     extends checkVar;
   algorithm
@@ -1951,23 +1966,31 @@ function isJacobianResultVar
     Expression binding;
     function isEvaluable
       input Expression exp;
+      input Boolean resizable;
       output Boolean b;
     protected
       Expression new_exp;
     algorithm
+      // explicitly impure calls are not evaluated during translation
+      if Expression.contains(exp, isExplicitlyImpureCall) then
+        b := false;
+        return;
+      end if;
       b := Expression.isLiteralXML(exp);
-      if not b then
+      if not b or (resizable and not Expression.isLiteral(exp)) then
         // try to extract literal from array constructor (use dummy map, there should not be any new iterators)
         (_, new_exp) := Iterator.extract(exp);
         new_exp := SimplifyExp.simplifyDump(new_exp, true, getInstanceName());
-        b := Expression.isLiteralXML(Ceval.tryEvalExp(new_exp));
+        // the start value of a resizable array has to be a scalar that is broadcast to all elements
+        b := Expression.isLiteralXML(Ceval.tryEvalExp(new_exp)) and
+             not (resizable and Type.isArray(Expression.typeOf(new_exp)));
       end if;
     end isEvaluable;
   algorithm
     // check binding
     if isBound(var_ptr) then
       binding := Binding.getExp(var.binding);
-      b := isEvaluable(binding);
+      b := isEvaluable(binding, Type.isResizable(var.ty));
     else
       b := false;
     end if;
@@ -3140,6 +3163,18 @@ protected
   algorithm
     Pointer.update(acc, getVarName(var) :: Pointer.access(acc));
   end getVarNameTraverse;
+
+  function isExplicitlyImpureCall
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      local
+        Function fn;
+      case Expression.CALL(call = Call.TYPED_CALL(fn = fn)) then Function.isExplicitlyImpure(fn);
+      else false;
+    end match;
+  end isExplicitlyImpureCall;
 
   annotation(__OpenModelica_Interface="nbackend");
 end NBVariable;

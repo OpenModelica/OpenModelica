@@ -3,26 +3,25 @@
 // status:   correct
 //
 
-class A
+model A
   Real x;
 equation
   x = 1;
 end A;
 
-class B
+model B
   Real x,y;
 equation
   y = x;
 end B;
 
-class C
-  replaceable class Q = A;
+model C
+  replaceable model Q = A;
   Q x;
 end C;
 
-class Redeclare3
+model Redeclare3
   C c(redeclare class Q = B(y=1));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Redeclare3;
 
 

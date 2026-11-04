@@ -51,16 +51,11 @@ TempDepResistorCircuitInherited.mo \
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
 FAILINGTESTFILES=\
-ColorClasses.mo \
 ColoredPointIllegalMod1.mo \
 ColoredPointIllegalMod2.mo \
 ColoredPointIllegalMod3.mo \
-GenericMicroCircuit.mo \
 InheritanceRestrictions.mo \
-MicroCircuitValid.mo \
-Oscillator.mo \
-SimpleTypeExtend.mo \
-TempResistor3.mo
+SimpleTypeExtend.mo
 
 
 

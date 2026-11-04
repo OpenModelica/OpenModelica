@@ -76,7 +76,6 @@
 #include "simulation/results/simulation_result_ia.h"
 #include "simulation/results/simulation_result_rust.h"
 #include "simulation/solver/solver_main.h"
-#include "simulation/solver/gbode_util.h"
 #include "simulation_info_json.h"
 #include "modelinfo.h"
 #include "simulation/solver/events.h"
@@ -89,10 +88,6 @@
 #include "simulation/solver/initialization/initialization.h"
 #include "simulation/solver/dae_mode.h"
 #include "dataReconciliation/dataReconciliation.h"
-
-#ifdef _OMC_QSS_LIB
-  #include "solver_qss/solver_qss.h"
-#endif
 
 using namespace std;
 
@@ -602,6 +597,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
         }
       }
       init_file = tmp_filename;
+      omc_rc_release((void*) tmp_filename);
     }
     else {
       init_file = omc_flagValue[FLAG_IIF];
@@ -750,12 +746,38 @@ int initializeResultData(DATA* simData, threadData_t *threadData, int cpuTime)
 }
 
 /**
+ * @brief Set up GBODE for the integration methods that are a shorthand for it.
+ *
+ * @param solverID  Integration method.
+ * @return          S_GBODE for a shorthand, otherwise solverID.
+ */
+static enum SOLVER_METHOD resolveGbodeShorthand(enum SOLVER_METHOD solverID)
+{
+  enum GB_METHOD gbMethod;
+
+  switch (solverID) {
+    case S_RUNGEKUTTA:    gbMethod = RK_RUNGEKUTTA; break;
+    case S_HEUN:          gbMethod = RK_HEUN; break;
+    case S_IMPEULER:      gbMethod = RK_IMPL_EULER; break;
+    case S_TRAPEZOID:     gbMethod = RK_TRAPEZOID; break;
+    case S_IMPRUNGEKUTTA: gbMethod = RK_RADAU_IA_2; break;
+    case S_IRKSCO:        gbMethod = RK_TRAPEZOID; break;
+    case S_RUNGEKUTTASSC: gbMethod = RK_RKSSC; break;
+    default:              return solverID;
+  }
+
+  omc_flag[FLAG_SR] = 1;
+  omc_flagValue[FLAG_SR] = GB_METHOD_NAME[gbMethod];
+  return S_GBODE;
+}
+
+/**
  * Calls the solver which is selected in the parameter string "method"
  * This function is used for interactive and non-interactive simulation
  * Parameter method:
  * "" & "dassl" calls a DASSL Solver
  * "euler" calls an Euler solver
- * "rungekutta" calls a fourth-order Runge-Kutta Solver
+ * "rungekutta" and other shorthands call GBODE, see resolveGbodeShorthand
  */
 static int callSolver(DATA* simData, threadData_t *threadData, string init_initMethod, string init_file,
       double init_time, string outputVariablesAtEnd, int cpuTime, const char *argv_0)
@@ -786,26 +808,13 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
     }
   }
 
-  /* Deprecation warnings */
-   deprecationWarningGBODE(solverID);
-  switch (solverID)
-  {
-    case S_SYM_SOLVER:
-    case S_SYM_SOLVER_SSC:
-    case S_QSS:
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "Integration method '%s' is deprecated and will be removed in a future version of OpenModelica.",
-      SOLVER_METHOD_NAME[solverID]);
-    break;
-    default:
-    break;
-  }
+  solverID = resolveGbodeShorthand(solverID);
 
   /* if no states are present, then we can
    * use euler method, since it does nothing.
    */
   if ( (simData->modelData->nStates < 1 &&
         solverID != S_OPTIMIZATION &&
-        solverID != S_SYM_SOLVER &&
         !compiledInDAEMode) ||
        (compiledInDAEMode && (simData->simulationInfo->daeModeData->nResidualVars +
                              simData->simulationInfo->daeModeData->nAlgebraicDAEVars < 1))
@@ -830,15 +839,7 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
     retVal = 1;
   } else {
     infoStreamPrint(OMC_LOG_SOLVER, 0, "recognized solver: %s", SOLVER_METHOD_NAME[solverID]);
-    /* special solvers */
-#ifdef _OMC_QSS_LIB
-    if(S_QSS == solverID) {
-      retVal = qss_main(argc, argv, simData->simulationInfo->startTime,
-                        simData->simulationInfo->stopTime, simData->simulationInfo->stepSize,
-                        simData->simulationInfo->numSteps, simData->simulationInfo->tolerance, 3);
-    } else /* standard solver interface */
-#endif
-      retVal = solver_main(simData, threadData, init_initMethod.c_str(), init_file.c_str(), init_time, solverID, outVars, argv_0);
+    retVal = solver_main(simData, threadData, init_initMethod.c_str(), init_file.c_str(), init_time, solverID, outVars, argv_0);
   }
 
   OMC_CATCH_INTERNAL(mmc_jumper)

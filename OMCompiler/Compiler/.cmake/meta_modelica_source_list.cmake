@@ -222,7 +222,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/Causalize.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/Coloring.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/CommonSubExpression.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/DAEQuery.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/DAEMode.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/DataReconciliation.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/Differentiate.mo
@@ -249,7 +248,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/RemoveSimpleEquations.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/ResolveLoops.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/Sorting.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/SymbolicImplicitSolver.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/SymbolicJacobian.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/SynchronousFeatures.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/Tearing.mo
@@ -429,6 +427,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/CevalScriptBackend.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/PackageManagement.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/NFApi.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Script/NFInteractive.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/Conversion.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/Obfuscate.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/TotalModelDebug.mo
@@ -436,6 +435,7 @@ set(OMC_MM_BACKEND_SOURCES
 
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/HpcOmCodegenUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/HpcOmSimCodeMain.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeFmuInit.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeInitXML.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeModelInfo.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeSparsityPattern.mo

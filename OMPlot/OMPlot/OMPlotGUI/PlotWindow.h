@@ -71,10 +71,16 @@
 
 // MSVC needs the class explicitly exported so its Qt staticMetaObject (a data
 // symbol) is visible across the OMPlotLib DLL boundary; WINDOWS_EXPORT_ALL_SYMBOLS
-// only covers functions. MinGW auto-imports data, so this is a no-op there.
-#if defined(_WIN32) && defined(_MSC_VER)
+// only covers functions. MinGW exports everything itself, but the users of the
+// DLL need dllimport there too: without it &PlotWindow::closingDown is the address
+// of an import thunk and a function pointer connect() finds no such signal.
+#if defined(_WIN32)
 #  ifdef OMPLOTLIB_LIBRARY
-#    define OMPLOT_EXPORT __declspec(dllexport)
+#    ifdef _MSC_VER
+#      define OMPLOT_EXPORT __declspec(dllexport)
+#    else
+#      define OMPLOT_EXPORT
+#    endif
 #  else
 #    define OMPLOT_EXPORT __declspec(dllimport)
 #  endif
@@ -97,6 +103,8 @@ private:
   QToolButton* mpLogXButton;
   QToolButton* mpLogYButton;
   QToolButton* mpAlignZeroButton;
+  QToolButton* mpStackCurvesButton;
+  QAction* mpStackCurvesAction;
   QComboBox* mpGridComboBox;
   QToolButton* mpAutoScaleButton;
   QToolButton* mpSetupButton;
@@ -127,13 +135,15 @@ private:
   QString mYRangeMax;
   QString mYRightRangeMin;
   QString mYRightRangeMax;
-  double mCurveWidth;
-  int mCurveStyle;
+  double mCurveWidth = 1;
+  int mCurveStyle = 1;
   QFont mLegendFont;
   double mTime;
   bool mTimeOutOfBounds = false;
   bool mIsInteractiveSimulation;
   bool mAlignZero = false;
+  bool mStackCurves = false;
+  bool mStackCurvesSet = false;
   QString mInteractiveTreeItemOwner;
   int mInteractivePort;
   QwtSeriesData<QPointF>* mpInteractiveData;
@@ -234,6 +244,8 @@ public:
   bool getPrefixUnits() const;
   void setPrefixUnits(bool prefixUnits);
   bool getAlignZero() const { return mAlignZero; }
+  bool canStackCurves() const { return isPlot() || isPlotAll() || isPlotInteractive(); }
+  bool getStackCurves() const;
   void checkForErrors(QStringList variables, QStringList variablesPlotted);
   Plot* getPlot();
   void receiveMessage(QStringList arguments);
@@ -249,6 +261,7 @@ private:
   void readPLTArray(QTextStream &textStream, QString variable, double alpha, int intervalSize, int it, QList<double> &arrLstOut);
   void setInteractiveControls(bool enabled);
   void alignYAxisZero();
+  void updateStack(bool stack);
 signals:
   void closingDown();
   void prefixUnitsChanged();
@@ -265,6 +278,7 @@ public slots:
   void setLogX(bool on);
   void setLogY(bool on);
   void setAlignZero(bool on);
+  void setStackCurves(bool on);
   void setAutoScale(bool on);
   bool toggleSign(PlotCurve *pPlotCurve, bool checked);
   void setYAxisRight(PlotCurve* pPlotCurve, bool right);

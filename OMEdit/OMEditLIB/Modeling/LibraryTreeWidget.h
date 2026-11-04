@@ -381,6 +381,7 @@ private:
   QAction *mpOMSRenameAction;
   QAction *mpUnloadOMSModelAction;
   QAction *mpOMSCalibrateAction;
+  QAction *mpOMUQActivitiesAction;
   void createActions();
   LibraryTreeItem* getSelectedLibraryTreeItem();
   void libraryTreeItemExpanded(LibraryTreeItem *pLibraryTreeItem);
@@ -436,6 +437,7 @@ public slots:
   void OMSRename();
   void unloadOMSModel();
   void OMSCalibrate();
+  void runOMUQActivities();
 protected:
   virtual void startDrag(Qt::DropActions supportedActions) override;
   virtual void keyPressEvent(QKeyEvent *event) override;

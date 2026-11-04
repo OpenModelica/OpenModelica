@@ -37,6 +37,7 @@ encapsulated uniontype NFCall
 
 import Absyn;
 import AbsynUtil;
+import BackendInterface;
 import BaseModelica;
 import DAE;
 import Expression = NFExpression;
@@ -302,10 +303,14 @@ public
       case UNTYPED_CALL()
         algorithm
           // Strip any contexts that don't apply inside the function itself.
+          fn_context := NFInstContext.FUNCTION;
+
           if InstContext.inRelaxed(context) then
-            fn_context := InstContext.set(NFInstContext.FUNCTION, NFInstContext.RELAXED);
-          else
-            fn_context := NFInstContext.FUNCTION;
+            fn_context := InstContext.set(fn_context, NFInstContext.RELAXED);
+          end if;
+
+          if InstContext.inScripting(context) then
+            fn_context := InstContext.set(fn_context, NFInstContext.SCRIPTING);
           end if;
 
           Function.typeRefCache(call.ref, fn_context);
@@ -411,7 +416,11 @@ public
     ty := Function.returnType(func);
     ty := resolvePolymorphicReturnType(func, typed_args, ty);
 
-    if var == Variability.PARAMETER and Function.isExternal(func) then
+    if Function.isExplicitlyImpure(func) and not InstContext.inScripting(context) then
+      // Calls of impure functions must not be evaluated during translation,
+      // MLS 3.7 section 12.3.
+      var := Prefixes.variabilityMax(var, Variability.NON_STRUCTURAL_PARAMETER);
+    elseif var == Variability.PARAMETER and Function.isExternal(func) then
       // Mark external functions with parameter expressions as non-structural,
       // to avoid them being marked as structural unnecessarily.
       var := Variability.NON_STRUCTURAL_PARAMETER;
@@ -702,8 +711,13 @@ public
       case TYPED_CALL()
         then match functionNameFirst(call)
           case "abs" then Expression.isNonZero(listHead(call.arguments));
+          case "cosh" then true;
+          case "exp" then true;
           case "max" then List.any(call.arguments, Expression.isPositive);
           case "min" then List.all(call.arguments, Expression.isPositive);
+          case "sign" then Expression.isPositive(listHead(call.arguments));
+          case "sinh" then Expression.isPositive(listHead(call.arguments));
+          case "sqrt" then Expression.isPositive(listHead(call.arguments));
           else false;
         end match;
 
@@ -719,9 +733,14 @@ public
     negative := match call
       case TYPED_CALL()
         then match functionNameFirst(call)
-          case "abs" then false;
-          case "min" then List.any(call.arguments, Expression.isNegative);
+          //case "abs" then false;
+          //case "cosh" then false;
+          //case "exp" then false;
           case "max" then List.all(call.arguments, Expression.isNegative);
+          case "min" then List.any(call.arguments, Expression.isNegative);
+          case "sign" then Expression.isNegative(listHead(call.arguments));
+          case "sinh" then Expression.isNegative(listHead(call.arguments));
+          //case "sqrt" then false;
           else false;
         end match;
 
@@ -738,8 +757,13 @@ public
       case TYPED_CALL()
         then match functionNameFirst(call)
           case "abs" then Expression.isZero(listHead(call.arguments));
+          //case "cosh" then false;
+          //case "exp" then false;
           case "max" then List.all(call.arguments, Expression.isNonPositive);
           case "min" then List.any(call.arguments, Expression.isNonPositive);
+          case "sign" then Expression.isNonPositive(listHead(call.arguments));
+          case "sinh" then Expression.isNonPositive(listHead(call.arguments));
+          case "sqrt" then Expression.isZero(listHead(call.arguments));
           else false;
         end match;
 
@@ -756,8 +780,13 @@ public
       case TYPED_CALL()
         then match functionNameFirst(call)
           case "abs" then true;
+          case "cosh" then true;
+          case "exp" then true;
           case "max" then List.any(call.arguments, Expression.isNonNegative);
           case "min" then List.all(call.arguments, Expression.isNonNegative);
+          case "sign" then Expression.isNonNegative(listHead(call.arguments));
+          case "sinh" then Expression.isNonNegative(listHead(call.arguments));
+          case "sqrt" then true;
           else false;
         end match;
 
@@ -1438,38 +1467,76 @@ public
           cast_ty := Type.setArrayElementType(call.ty, ty);
         then
           match AbsynUtil.pathFirstIdent(Function.name(call.fn))
+            case "cat" then typeCastRestArgs(call, ty, cast_ty);
             // For 'fill' we can type cast the first argument rather than the
             // whole array that 'fill' constructs.
-            case "fill"
-              algorithm
-                call.arguments := Expression.typeCast(listHead(call.arguments), ty) ::
-                                  listRest(call.arguments);
-                call.ty := cast_ty;
-              then
-                Expression.CALL(call);
-
+            case "fill" then typeCastFirstArg(call, ty, cast_ty);
             // For diagonal we can type cast the argument rather than the
             // matrix that diagonal constructs.
-            case "diagonal"
-              algorithm
-                call.arguments := {Expression.typeCast(listHead(call.arguments), ty)};
-                call.ty := cast_ty;
-              then
-                Expression.CALL(call);
-
+            case "diagonal" then typeCastArgs(call, ty, cast_ty);
             // For DynamicSelect we type cast both of the arguments.
-            case "DynamicSelect"
-              algorithm
-                call.arguments := list(Expression.typeCast(arg, ty) for arg in call.arguments);
-              then
-                Expression.CALL(call);
-
+            case "DynamicSelect" then typeCastArgs(call, ty, cast_ty);
+            // Cast the argument of matrix unless it's more expensive than casting the result.
+            case "matrix" guard Type.dimensionCount(ty) <= 2 then typeCastArgs(call, ty, cast_ty);
+            case "promote" then typeCastFirstArg(call, ty, cast_ty);
+            case "transpose" then typeCastArgs(call, ty, cast_ty);
+            // Cast the argument of vector unless it's more expensive than casting the result.
+            case "vector" guard Type.dimensionCount(ty) <= 1 then typeCastArgs(call, ty, cast_ty);
             else Expression.CAST(cast_ty, callExp);
           end match;
 
       else Expression.typeCastGeneric(callExp, ty);
     end match;
   end typeCast;
+
+  function typeCastArgs
+    input Call call;
+    input Type ty;
+    input Type callTy;
+    output Expression result;
+  algorithm
+    result := match call
+      case TYPED_CALL()
+        algorithm
+          call.arguments := list(Expression.typeCast(arg, ty) for arg in call.arguments);
+          call.ty := callTy;
+        then
+          Expression.CALL(call);
+    end match;
+  end typeCastArgs;
+
+  function typeCastFirstArg
+    input Call call;
+    input Type ty;
+    input Type callTy;
+    output Expression result;
+  algorithm
+    result := match call
+      case TYPED_CALL()
+        algorithm
+          call.arguments := Expression.typeCast(listHead(call.arguments), ty) :: listRest(call.arguments);
+          call.ty := callTy;
+        then
+          Expression.CALL(call);
+    end match;
+  end typeCastFirstArg;
+
+  function typeCastRestArgs
+    input Call call;
+    input Type ty;
+    input Type callTy;
+    output Expression result;
+  algorithm
+    result := match call
+      case TYPED_CALL()
+        algorithm
+          call.arguments := listHead(call.arguments) ::
+            list(Expression.typeCast(arg, ty) for arg in listRest(call.arguments));
+          call.ty := callTy;
+        then
+          Expression.CALL(call);
+    end match;
+  end typeCastRestArgs;
 
   function containsExp
     input Call call;
@@ -2525,7 +2592,8 @@ protected
 
     // try to inst the parameters
     try
-      (args, named_args) := instArgs(functionArgs, scope, context, info);
+      (args, named_args) := instArgs(functionArgs, scope, context, info,
+        lookupScriptingInputs(functionName, scope, context, info));
     else
       // didn't work, is this DynamicSelect dynamic part?! #5631
       if InstContext.inAnnotation(context) and not InstContext.inInstanceAPI(context) and
@@ -2567,14 +2635,36 @@ protected
     input InstNode scope;
     input InstContext.Type context;
     input SourceInfo info;
+    input list<InstNode> scriptingInputs = {} "See lookupScriptingInputs.";
     output list<Expression> posArgs;
     output list<NamedArg> namedArgs;
+  protected
+    list<InstNode> rest_inputs = scriptingInputs;
+    Option<InstNode> input_node;
   algorithm
     (posArgs, namedArgs) := match args
       case Absyn.FUNCTIONARGS()
         algorithm
-          posArgs := list(Inst.instExp(a, scope, context, info) for a in args.args);
-          namedArgs := list(instNamedArg(a, scope, context, info) for a in args.argNames);
+          if listEmpty(scriptingInputs) then
+            posArgs := list(Inst.instExp(a, scope, context, info) for a in args.args);
+          else
+            posArgs := {};
+
+            for a in args.args loop
+              if listEmpty(rest_inputs) then
+                input_node := NONE();
+              else
+                input_node := SOME(listHead(rest_inputs));
+                rest_inputs := listRest(rest_inputs);
+              end if;
+
+              posArgs := instCodeArg(a, input_node, scope, context, info) :: posArgs;
+            end for;
+
+            posArgs := listReverseInPlace(posArgs);
+          end if;
+
+          namedArgs := list(instNamedArg(a, scope, context, info, scriptingInputs) for a in args.argNames);
         then
           (posArgs, namedArgs);
 
@@ -2591,14 +2681,169 @@ protected
     input InstNode scope;
     input InstContext.Type context;
     input SourceInfo info;
+    input list<InstNode> scriptingInputs;
     output NamedArg arg;
   protected
     String name;
     Absyn.Exp exp;
   algorithm
     Absyn.NAMEDARG(argName = name, argValue = exp) := absynArg;
-    arg := (name, Inst.instExp(exp, scope, context, info));
+
+    if listEmpty(scriptingInputs) then
+      arg := (name, Inst.instExp(exp, scope, context, info));
+    else
+      arg := (name, instCodeArg(exp, List.findOption(scriptingInputs, function InstNode.isNamed(name = name)),
+        scope, context, info));
+    end if;
   end instNamedArg;
+
+  function isNameCall
+    "Whether a call other than der is passed for a name, which is evaluated
+     rather than quoted, e.g. val(stringVariableName(\"x\"), 0.1)."
+    input Absyn.Exp exp;
+    input Type ty;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "der")) then false;
+      case Absyn.CALL() then listMember(Type.codeName(ty), {"TypeName", "VariableName", "VariableNames"});
+      else false;
+    end match;
+  end isNameCall;
+
+  function scriptCode
+    "A name of a script variable that holds a type or variable name stands for
+     that name, as e.g. in val(v, 0.1) with v := stringVariableName(\"x\")."
+    input Absyn.Exp exp;
+    output Absyn.Exp outExp = exp;
+  protected
+    Absyn.ComponentRef cref;
+  algorithm
+    if not AbsynUtil.isCref(exp) then
+      return;
+    end if;
+
+    Absyn.CREF(componentRef = cref) := exp;
+    if not AbsynUtil.crefIsIdent(cref) or AbsynUtil.crefHasSubscripts(cref) then
+      return;
+    end if;
+
+    try
+      outExp := match BackendInterface.lookupScriptVariable(cref)
+        local
+          Absyn.ComponentRef name;
+          Absyn.Path path;
+        case Absyn.CODE(code = Absyn.C_VARIABLENAME(name)) then Absyn.CREF(name);
+        case Absyn.CODE(code = Absyn.C_TYPENAME(path)) then Absyn.CREF(AbsynUtil.pathToCref(path));
+        else exp;
+      end match;
+    else
+    end try;
+  end scriptCode;
+
+  function instCodeArg
+    "Quotes the argument of a $Code input, or instantiates any other."
+    input Absyn.Exp exp;
+    input Option<InstNode> inputNode;
+    input InstNode scope;
+    input InstContext.Type context;
+    input SourceInfo info;
+    output Expression arg;
+  protected
+    Type ty;
+  algorithm
+    if isSome(inputNode) then
+      ty := InstNode.getType(Component.classInstance(InstNode.component(Util.getOption(inputNode))));
+
+      if Type.codeName(ty) <> "" and not isNameCall(exp, ty) and not isValueName(exp, scope) then
+        arg := Expression.quoteCode(scriptCode(exp), ty, info);
+        return;
+      end if;
+    end if;
+
+    arg := Inst.instExp(exp, scope, context, info);
+  end instCodeArg;
+
+  function isValueName
+    "Whether a name passed for a $Code input stands for a value rather than
+     for itself: an iterator, e.g. getSourceFile(cl) in
+     {getSourceFile(cl) for cl in getClassNames()}, or a subscripted script
+     variable, e.g. cls[i]."
+    input Absyn.Exp exp;
+    input InstNode scope;
+    output Boolean res = false;
+  protected
+    Absyn.ComponentRef cref;
+    String name;
+    InstNode s = scope, parent;
+    list<InstNode> locals;
+  algorithm
+    if not AbsynUtil.isCref(exp) then
+      return;
+    end if;
+
+    Absyn.CREF(componentRef = cref) := exp;
+    name := AbsynUtil.crefFirstIdent(cref);
+
+    // Only the iterator scopes are searched, a general lookup could load a
+    // library for a class name.
+    while InstNode.isImplicit(s) loop
+      InstNode.IMPLICIT_SCOPE(parentScope = parent, locals = locals) := s;
+
+      if List.any(locals, function InstNode.isNamed(name = name)) then
+        res := true;
+        return;
+      end if;
+
+      s := parent;
+    end while;
+
+    if AbsynUtil.crefHasSubscripts(cref) then
+      try
+        _ := BackendInterface.lookupScriptVariable(Absyn.CREF_IDENT(name, {}));
+        res := true;
+      else
+      end try;
+    end if;
+  end isValueName;
+
+  function lookupScriptingInputs
+    "In a script, returns the inputs of the OpenModelica.Scripting function a
+     call names, or nothing for any other function or outside a script.
+     instArgs quotes the arguments of $Code inputs rather than instantiating
+     them, e.g. the class name in simulate(M)."
+    input Absyn.ComponentRef functionName;
+    input InstNode scope;
+    input InstContext.Type context;
+    input SourceInfo info;
+    output list<InstNode> inputs = {};
+  protected
+    ComponentRef fn_ref;
+    InstNode fn_node;
+    list<Function> fns;
+    Function fn;
+  algorithm
+    if not InstContext.inScripting(context) then
+      return;
+    end if;
+
+    try
+      fn_ref := Lookup.lookupFunctionNameSilent(functionName, scope, context);
+      fn_node := ComponentRef.node(fn_ref);
+      true := InstNode.isClass(fn_node);
+      true := Function.isScriptingNode(fn_node);
+    else
+      return;
+    end try;
+
+    fn_ref := Function.instFunction(functionName, scope, context, info);
+    fns := Function.getCachedFuncs(ComponentRef.node(fn_ref));
+
+    if listLength(fns) == 1 then
+      fn := listHead(fns);
+      inputs := fn.inputs;
+    end if;
+  end lookupScriptingInputs;
 
   function instIteratorCall
     input Absyn.ComponentRef functionName;
@@ -2710,8 +2955,9 @@ protected
         algorithm
           variability := Variability.CONSTANT;
           purity := Purity.PURE;
-          // The size of the expression must be known unless we're in a function.
-          is_structural := not InstContext.inFunction(context);
+          // The size of the expression must be known unless we're in a function
+          // or a script, where the range is only evaluated when the call is.
+          is_structural := not (InstContext.inFunction(context) or InstContext.inScripting(context));
           next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
 
           for i in listReverse(call.iters) loop
@@ -2803,7 +3049,7 @@ protected
           variability := Variability.variabilityMax(variability, exp_var);
           purity := Variability.purityMin(purity, exp_pur);
           {fn} := Function.typeRefCache(call.ref);
-          TypeCheck.checkReductionType(ty, Function.name(fn), call.exp, info);
+          TypeCheck.checkReductionType(ty, Function.name(fn), call.exp, context, info);
         then
           (makeTypedReduction(fn, ty, variability, purity, arg, iters, info), ty, variability, purity);
 
@@ -3108,8 +3354,11 @@ protected
 
           vect_ty := Type.liftArrayLeftList(base_call.ty, mk.vectDims);
           base_call.arguments := call_args;
+
+          exp := if Function.isDefaultRecordConstructor(base_call.fn) then
+            toRecordExpression(base_call, base_call.ty) else Expression.CALL(base_call);
         then
-          TYPED_ARRAY_CONSTRUCTOR(vect_ty, base_call.var, base_call.purity, Expression.CALL(base_call), iters);
+          TYPED_ARRAY_CONSTRUCTOR(vect_ty, base_call.var, base_call.purity, exp, iters);
 
       else
         algorithm
