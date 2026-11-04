@@ -1,0 +1,14 @@
+# libomc_init: reads <prefix>_init.bin, the model variables omc writes (see
+# include/omc_init_file.h). Used by both simulation runtimes' Rust side, by omc's
+# readInitFile and, through the C ABI, by the C omc and OMEdit.
+[package]
+name = "openmodelica_init_file"
+version = "0.1.0"
+edition = "2024"
+workspace = "../../../Compiler/OpenModelica.rs"
+
+[lib]
+name = "omc_init"
+crate-type = ["rlib", "cdylib"]
+
+[dependencies]

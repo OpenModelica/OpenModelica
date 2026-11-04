@@ -29,7 +29,7 @@ val(x[5], 1, "resizableCoveredSparsity_res.mat");
 // ""
 // true
 // ""
-// {"resizableCoveredSparsity", "resizableCoveredSparsity_init.xml"}
+// {"resizableCoveredSparsity", "resizableCoveredSparsity_init.bin"}
 // ""
 // 1
 // 0

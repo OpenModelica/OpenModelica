@@ -46,7 +46,7 @@ pub fn log_stats(s: &SolveStats) {
     omclog::info(STATS, true, "### STATISTICS ###");
     omclog::info(STATS, true, "timer");
     for (v, what) in [
-        (t(rtclock::INIT_XML), "reading init.xml"),
+        (t(rtclock::INIT_XML), "reading init.bin"),
         (t(rtclock::INFO_XML), "reading info.xml"),
     ] {
         omclog::info!(STATS, false, "{}s          {what}", omclog::g(v, 12, 6));

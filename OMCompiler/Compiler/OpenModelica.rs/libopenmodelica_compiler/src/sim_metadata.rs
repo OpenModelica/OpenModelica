@@ -16,7 +16,7 @@ pub struct CStrTable<const N: usize>(pub [*const c_char; N]);
 unsafe impl<const N: usize> Sync for CStrTable<N> {}
 
 #[unsafe(no_mangle)]
-pub static FLAG_NAME: CStrTable<159> = CStrTable([
+pub static FLAG_NAME: CStrTable<160> = CStrTable([
     c"FLAG_UNKNOWN".as_ptr(),
     c"abortSlowSimulation".as_ptr(),
     c"alarm".as_ptr(),
@@ -175,11 +175,12 @@ pub static FLAG_NAME: CStrTable<159> = CStrTable([
     c"parmodExportTaskGraph".as_ptr(),
     c"parmodImportClustering".as_ptr(),
     c"parmodDumpStages".as_ptr(),
+    c"listVariables".as_ptr(),
     c"FLAG_MAX".as_ptr(),
 ]);
 
 #[unsafe(no_mangle)]
-pub static FLAG_DETAILED_DESC: CStrTable<159> = CStrTable([
+pub static FLAG_DETAILED_DESC: CStrTable<160> = CStrTable([
     c"unknown".as_ptr(),
     c"  Aborts if the simulation chatters: 1000 state events in a row within 1e-6 times\x0a  the simulation interval, or 100 within 1e-9 times it, and within the step size.".as_ptr(),
     c"  Aborts after the given number of seconds (default=0 disables the alarm).".as_ptr(),
@@ -197,7 +198,7 @@ pub static FLAG_DETAILED_DESC: CStrTable<159> = CStrTable([
     c"  Syncs the mat file header after emitting every N time-points.".as_ptr(),
     c"  Emits protected variables to the result-file.".as_ptr(),
     c"  Value specifies the number of convergence iteration to be performed for DataReconciliation".as_ptr(),
-    c"  Value specifies a new setup XML file to the generated simulation code.\x0a".as_ptr(),
+    c"  Value specifies a new init file (<prefix>_init.bin) to the generated simulation code.\x0a".as_ptr(),
     c"  Get detailed information that specifies the command-line flag\x0a\x0a  For example, -help=f prints detailed information for command-line flag f.".as_ptr(),
     c"  Maximum trajectory bending to accept the homotopy step.\x0a  Default: 0.5, which means the corrector vector has to be smaller than half of the predictor vector.".as_ptr(),
     c"  Value specifies the backtrace strategy in the homotopy corrector step. Valid values:\x0a\x0a  * fix - default, go back to the path by fixing one coordinate\x0a  * orthogonal - go back to the path in an orthogonal direction to the tangent vector".as_ptr(),
@@ -230,7 +231,7 @@ pub static FLAG_DETAILED_DESC: CStrTable<159> = CStrTable([
     c"  Value specifies an initial step size, used by the methods: dassl, ida, gbode".as_ptr(),
     c"  Value specifies an csv-file with inputs for the simulation/optimization of the model".as_ptr(),
     c"  Value specifies an file with states start values for the optimization of the model.".as_ptr(),
-    c"  Value specifies a path for reading the input files i.e., model_init.xml and model_info.json".as_ptr(),
+    c"  Value specifies a path for reading the input files i.e., model_init.bin and model_info.json".as_ptr(),
     c"  Value specifies the hessematrix for Ipopt(OMC, BFGS, const).".as_ptr(),
     c"  Value specifies the initial guess for optimization (sim, const).".as_ptr(),
     c"  Value specifies the Jacobian for Ipopt(SYM, NUM, NUMDENSE).".as_ptr(),
@@ -338,6 +339,7 @@ pub static FLAG_DETAILED_DESC: CStrTable<159> = CStrTable([
     c"  Exports the parmodauto task graph (tasks, dependencies) and the resulting clustering to the given json file, keyed by equation index.".as_ptr(),
     c"  Imports a clustering (groups of equation indices) from the given json file instead of computing one. The simulation aborts if the clustering is invalid (forms a cycle or references unknown equations).".as_ptr(),
     c"  Exports the parmodauto task graph and clustering before and after each clustering optimization to a series of json files named <prefix>.NN.<stage>.json, so the effect of each optimization can be inspected.".as_ptr(),
+    c"  Prints the variables as JSON on stdout and exits without simulating:\x0a  {\"modelName\":..., \"generationTool\":..., \"defaultExperiment\":{...},\x0a  \"variables\":[{\"name\":..., \"type\":..., \"start\":..., ...}, ...]}.\x0a  The start values include the values given with -override and -overrideFile.".as_ptr(),
     c"FLAG_MAX".as_ptr(),
 ]);
 

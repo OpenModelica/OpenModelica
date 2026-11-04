@@ -246,7 +246,7 @@ public
   function addDimensionParameters
     "A dimension of a resizable array that is an expression of parameters (N-1,
     nT+1) gets an Integer parameter $DIM_k with the expression as start value.
-    The init.xml refers to it by value reference like to a plain size parameter,
+    The init file refers to it by value reference like to a plain size parameter,
     and the generated function updateStructuralParameters computes it from the
     start values of the other parameters (possibly changed with -override) before
     the runtime allocates the arrays."

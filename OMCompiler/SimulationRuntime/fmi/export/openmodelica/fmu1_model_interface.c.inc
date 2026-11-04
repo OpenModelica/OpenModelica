@@ -36,7 +36,7 @@
 #include "../simulation/solver/delay.h"
 #include "../simulation/solver/discrete_changes.h"
 #include "../simulation/simulation_info_json.h"
-#include "../simulation/simulation_input_xml.h"
+#include "../simulation/simulation_input.h"
 #include "../util/omc_error.h"
 #include "../util/omc_init.h"
 
@@ -193,16 +193,10 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCall
   /* The runtime no longer allocates the model variable data inside setupDataStruc; it has to
      be done explicitly here, before initializeDataStruc/computeVarIndices dereferences it.
      This mirrors fmu2_model_interface.c. See #15838. */
-  comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
-  allocModelDataVars(comp->fmuData->modelData, FALSE, comp->threadData);
-  scalarAllocArrayAttributes(comp->fmuData->modelData);
-  calculateAllScalarLength(comp->fmuData->modelData);
-  /* setup model data with default start data */
-  setDefaultStartValues(comp);
+  read_input(comp->fmuData->modelData, comp->fmuData->simulationInfo, TRUE, comp->threadData);
   initializeDataStruc(comp->fmuData, comp->threadData);
   setAllParamsToStart(comp->fmuData->simulationInfo, comp->fmuData->modelData);
   setAllVarsToStart(comp->fmuData->localData[0], comp->fmuData->simulationInfo ,comp->fmuData->modelData);
-  comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData);
   modelInfoInit(&(comp->fmuData->modelData->modelDataXml));
 
   strcpy((char*)comp->instanceName, (const char*)instanceName);
@@ -692,7 +686,7 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
   /* set zero-crossing tolerance */
   setZCtol(relativeTolerance);
 
-  setStartValues(comp);
+  setStartToCurrentValues(comp->fmuData);
   copyStartValuestoInitValues(comp->fmuData);
 
   /* try */

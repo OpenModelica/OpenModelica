@@ -720,6 +720,6 @@ buildModel(testSymjacdumpverbose); getErrorString();
 // ---+++  sparse pattern vars +++---
 //
 // ---+++  sparse pattern transpose +++---
-// {"testSymjacdumpverbose","testSymjacdumpverbose_init.xml"}
+// {"testSymjacdumpverbose","testSymjacdumpverbose_init.bin"}
 // ""
 // endResult

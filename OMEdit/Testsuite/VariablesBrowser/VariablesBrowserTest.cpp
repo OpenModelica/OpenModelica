@@ -41,6 +41,11 @@
 #include "OMPlot.h"
 #include "PlotWindow.h"
 #include "PlotCurve.h"
+#include "Modeling/LibraryTreeWidget.h"
+#include "Modeling/MessagesWidget.h"
+#include "Simulation/SimulationOutputWidget.h"
+
+#include <QtMath>
 
 OMEDITTEST_MAIN(VariablesBrowserTest)
 
@@ -68,11 +73,9 @@ void VariablesBrowserTest::arrayVariables()
   pOMCProxy->sendCommand("clearCommandLineOptions()");
   QVERIFY2(QFile::exists(workingDirectory.filePath("ArrayVariablesTest_res.mat")), qPrintable(simulationResult + pOMCProxy->getErrorString()));
 
-  // make sure the test covers the ArrayVariable case
-  QFile initFile(workingDirectory.filePath("ArrayVariablesTest_init.xml"));
-  QVERIFY(initFile.open(QIODevice::ReadOnly));
-  QVERIFY(initFile.readAll().contains("<ArrayVariable"));
-  initFile.close();
+  // make sure the test covers the array variable case
+  pOMCProxy->sendCommand(QString("readInitFile(\"%1\")").arg(workingDirectory.filePath("ArrayVariablesTest_init.bin")));
+  QVERIFY(pOMCProxy->getResult().contains("dimensions="));
 
   VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
   pVariablesWidget->insertVariablesItemsToTree("ArrayVariablesTest_res.mat", workingDirectory.path(), QStringList(), SimulationOptions());
@@ -199,7 +202,7 @@ void VariablesBrowserTest::resultFileUnits()
   pOMCProxy->sendCommand("simulate(ResultFileUnitsTest, stopTime=1)");
   const QString simulationResult = pOMCProxy->getResult();
   QVERIFY2(QFile::exists(workingDirectory.filePath("ResultFileUnitsTest_res.mat")), qPrintable(simulationResult + pOMCProxy->getErrorString()));
-  QVERIFY(QFile::remove(workingDirectory.filePath("ResultFileUnitsTest_init.xml")));
+  QVERIFY(QFile::remove(workingDirectory.filePath("ResultFileUnitsTest_init.bin")));
 
   // as MainWindow::openResultFile does
   const QStringList variables = pOMCProxy->readSimulationResultVars(workingDirectory.filePath("ResultFileUnitsTest_res.mat"));
@@ -213,6 +216,79 @@ void VariablesBrowserTest::resultFileUnits()
     QCOMPARE(pVariablesTreeItem->getUnit(), unit.at(1));
     QCOMPARE(pVariablesTreeItem->getDisplayUnit(), unit.at(2));
   }
+}
+
+void VariablesBrowserTest::reSimulate()
+{
+  QTemporaryDir modelDirectory;
+  QVERIFY(modelDirectory.isValid());
+  const QString className = "ReSimulateTest";
+  const QString fileName = modelDirectory.filePath(className + ".mo");
+  QFile file(fileName);
+  QVERIFY(file.open(QIODevice::WriteOnly));
+  file.write("model ReSimulateTest\n"
+             "  parameter Real k = 1;\n"
+             "  parameter Real c = 0;\n"
+             "  Real x(start = 1, fixed = true);\n"
+             "equation\n"
+             "  der(x) = -k*x + c;\n"
+             "end ReSimulateTest;\n");
+  file.close();
+  MainWindow::instance()->getLibraryWidget()->openFile(fileName);
+  LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(className);
+  QVERIFY(pLibraryTreeItem);
+
+  MessagesWidget::instance()->closeSimulationOutputWidgets(className);
+  MainWindow::instance()->simulate(pLibraryTreeItem);
+  QVERIFY(waitForSimulation(className));
+
+  VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
+  VariablesTreeModel *pVariablesTreeModel = pVariablesWidget->getVariablesTreeModel();
+  const QString resultFile = className + "_res.mat";
+  const QList<QPair<QString, QString>> changes = {{"k", "2"}, {"c", "1"}};
+  for (const QPair<QString, QString> &change : changes) {
+    VariablesTreeItem *pResultItem = pVariablesTreeModel->findVariablesTreeItem(resultFile, pVariablesTreeModel->getRootVariablesTreeItem());
+    QVERIFY(pResultItem);
+    VariablesTreeItem *pVariablesTreeItem = pVariablesTreeModel->findVariablesTreeItem(resultFile + "." + change.first, pResultItem);
+    QVERIFY2(pVariablesTreeItem, qPrintable("Variable " + change.first + " is not in the Variables Browser."));
+    QVERIFY(pVariablesTreeItem->isEditable());
+    pVariablesTreeModel->setData(pVariablesTreeModel->variablesTreeItemIndex(pVariablesTreeItem, 1), change.second, Qt::EditRole);
+    MessagesWidget::instance()->closeSimulationOutputWidgets(className);
+    pVariablesWidget->reSimulate(pResultItem->getSimulationOptions(), pResultItem, false);
+    QVERIFY(waitForSimulation(className));
+  }
+
+  // the browser shows the values the last simulation used
+  VariablesTreeItem *pKTreeItem = pVariablesTreeModel->findVariablesTreeItem(resultFile + ".k", pVariablesTreeModel->getRootVariablesTreeItem());
+  QVERIFY(pKTreeItem);
+  QCOMPARE(pKTreeItem->data(1, Qt::DisplayRole).toDouble(), 2.0);
+
+  // der(x) = -2*x + 1, x(0) = 1
+  const SimulationOptions simulationOptions = MessagesWidget::instance()->getSimulationOutputWidget(className)->getSimulationOptions();
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+  pOMCProxy->sendCommand(QString("val(x, 1.0, \"%1/%2\")").arg(simulationOptions.getWorkingDirectory(), simulationOptions.getFullResultFileName()));
+  bool ok;
+  const double x = pOMCProxy->getResult().toDouble(&ok);
+  QVERIFY2(ok, qPrintable(pOMCProxy->getResult() + pOMCProxy->getErrorString()));
+  QVERIFY2(qAbs(x - (0.5 + 0.5*qExp(-2.0))) < 1e-3, qPrintable(QString::number(x)));
+}
+
+bool VariablesBrowserTest::waitForSimulation(const QString &className)
+{
+  QCoreApplication::processEvents();
+  SimulationOutputWidget *pSimulationOutputWidget = MessagesWidget::instance()->getSimulationOutputWidget(className);
+  if (!pSimulationOutputWidget) {
+    qWarning() << "Translation of" << className << "failed.";
+    return false;
+  }
+  QSignalSpy simulationSignalSpy(pSimulationOutputWidget, SIGNAL(simulationFinished()));
+  if (!simulationSignalSpy.wait(300000)) {
+    qWarning() << "Simulation of" << className << "not finished in time.";
+    return false;
+  }
+  // the result file is loaded into the Variables Browser after the signal
+  QCoreApplication::processEvents();
+  return true;
 }
 
 void VariablesBrowserTest::cleanupTestCase()

@@ -60,7 +60,7 @@ getErrorString();
 // ""
 // true
 // ""
-// {"HeatingSystem", "HeatingSystem_init.xml"}
+// {"HeatingSystem", "HeatingSystem_init.bin"}
 // ""
 // record SimulationResult
 //     resultFile = "HeatingSystem_ref.mat",

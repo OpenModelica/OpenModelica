@@ -28,7 +28,7 @@ readSimulationResultVars("resizableSizeDimension_4.mat");
 // Result:
 // true
 // ""
-// {"resizableSizeDimension", "resizableSizeDimension_init.xml"}
+// {"resizableSizeDimension", "resizableSizeDimension_init.bin"}
 // ""
 // 0
 // true

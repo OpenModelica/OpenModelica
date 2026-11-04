@@ -48,6 +48,22 @@
 
 #include "SimulationResults.c"
 #include "SimulationResultsCmp.c"
+#include "omc_init_file.h"
+
+const char* SimulationResults_readInitFile(const char *filename)
+{
+  char *error = NULL, *text = omc_init_file_text(filename, &error);
+  const char *res;
+  if (text == NULL) {
+    const char *msg[1] = {error ? error : filename};
+    c_add_message(NULL, -1, ErrorType_scripting, ErrorLevel_error, gettext("Failed to read the init file: %s"), msg, 1);
+    omc_init_free_string(error);
+    MMC_THROW();
+  }
+  res = GC_strdup(text);
+  omc_init_free_string(text);
+  return res;
+}
 
 void* SimulationResults_readVariables(const char *filename, int readParameters, int omcStyle)
 {

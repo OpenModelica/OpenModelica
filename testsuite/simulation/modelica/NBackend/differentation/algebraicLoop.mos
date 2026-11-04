@@ -328,6 +328,6 @@ buildModel(algebraicLoop); getErrorString();
 // functions:
 // -----------
 //
-// {"algebraicLoop", "algebraicLoop_init.xml"}
+// {"algebraicLoop", "algebraicLoop_init.bin"}
 // ""
 // endResult

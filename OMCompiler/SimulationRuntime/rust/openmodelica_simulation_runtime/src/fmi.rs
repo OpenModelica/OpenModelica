@@ -31,7 +31,7 @@ pub static SIZERINGBUFFER: usize = 3;
 ///
 /// Built at the first `initialization` rather than in `initializeDataStruc`: the
 /// layout is sized from the systems, and the importer sets the parameters (and
-/// the generated `read_input_fmu` the attributes) in between.
+/// init file the attributes) in between.
 struct Instance {
     data: *mut DATA,
     engine: CEngine,
@@ -62,7 +62,7 @@ fn instance_for(data: *mut DATA, thread_data: *mut threadData_t) -> &'static mut
 }
 
 /// The engine over an instance's `DATA` and the model description it runs, once
-/// the generated `read_input_fmu` has put the attributes in place.
+/// the init file has put the attributes in place.
 pub(crate) fn engine_and_meta(data: *mut DATA, thread_data: *mut threadData_t) -> (CEngine, SimMeta) {
     let rt = crate::data::build_rt(data, thread_data);
     let layout = rt.layout;
@@ -103,7 +103,7 @@ fn instance(data: *mut DATA) -> Option<&'static mut Instance> {
 }
 
 // ---------------------------------------------------------------------------
-// MODEL_DATA: what the generated `<Model>_read_input_fmu` fills in
+// MODEL_DATA
 // ---------------------------------------------------------------------------
 
 fn alloc<T>(n: usize) -> *mut T {
@@ -141,12 +141,12 @@ pub extern "C" fn allocModelDataVars(
     }
 }
 
-/// The one element `<Model>_read_input_fmu`'s `put_real_element` writes into.
+/// One element.
 fn alloc_scalar_real_array(a: &mut real_array) {
     unsafe { crate::model_data::simple_alloc_1d_real_array(a, 1) };
 }
 
-/// The one element `<Model>_read_input_fmu`'s `put_<type>_element` writes into.
+/// One element.
 fn alloc_scalar_array(a: &mut base_array_t, alloc: crate::model_data::AllocArray) {
     unsafe { alloc(a, 1) };
 }
@@ -213,8 +213,7 @@ pub extern "C" fn calculateAllScalarLength(model_data: *mut MODEL_DATA) {
 // ---------------------------------------------------------------------------
 
 /// C's `initializeDataStruc`: the arrays only. The FMI interface asks for the
-/// solver systems separately, after the generated `read_input_fmu` has put the
-/// attributes a system is sized and scaled from in place.
+/// solver systems separately.
 #[unsafe(no_mangle)]
 pub extern "C" fn initializeDataStruc(data: *mut DATA, thread_data: *mut threadData_t) {
     crate::data::initialize_data_struc(data, thread_data);

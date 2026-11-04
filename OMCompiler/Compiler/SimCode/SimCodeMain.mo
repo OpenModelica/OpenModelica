@@ -108,7 +108,7 @@ import HpcOmTaskGraph;
 import NFConvertDAE;
 import RuntimeSources;
 import SemanticVersion;
-import SerializeInitXML;
+import SerializeInitBin;
 import SerializeModelInfo;
 import SerializeSparsityPattern;
 import SimCodeUtil;
@@ -610,7 +610,7 @@ algorithm
 
         System.realtimeTick(ClockIndexes.RT_PROFILER0);
         codegenFuncs := {};
-        codegenFuncs := (function runToBoolean(func=function SerializeInitXML.simulationInitFileReturnBool(simCode=simCode, guid=guid))) :: codegenFuncs;
+        codegenFuncs := (function runToBoolean(func=function SerializeInitBin.writeReturnBool(simCode=simCode, guid=guid))) :: codegenFuncs;
         codegenFuncs := (function runTpl(func=function CodegenC.translateModel(in_a_simCode=simCode))) :: codegenFuncs;
         for f in {
           // external objects
@@ -645,7 +645,7 @@ algorithm
             generatedObjects := AvlSetString.add(generatedObjects, simCode.fileNamePrefix + str + ".o\n");
           end if;
         end for;
-        for str in {"_11mix.o\n","_functions.o\n","_info.json\n","_init.xml\n"} loop
+        for str in {"_11mix.o\n","_functions.o\n","_info.json\n","_init.bin\n"} loop
           generatedObjects := AvlSetString.add(generatedObjects, simCode.fileNamePrefix + str);
         end for;
         codegenFuncs := (function runTpl(func=function CodegenC.simulationFile_mixAndHeader(a_simCode=simCode, a_modelNamePrefix=simCode.fileNamePrefix))) :: codegenFuncs;
@@ -745,8 +745,8 @@ algorithm
     case "JavaScript" algorithm
       guid := System.getUUIDStr();
       Tpl.tplNoret(CodegenC.translateModel, simCode);
-      SerializeInitXML.simulationInitFile(simCode, guid);
-      System.covertTextFileToCLiteral(simCode.fileNamePrefix+"_init.xml",simCode.fileNamePrefix+"_init.c", Config.simulationCodeTarget());
+      SerializeInitBin.write(simCode, guid);
+      writeInitBinCArray(simCode.fileNamePrefix + "_init.bin", simCode.fileNamePrefix + "_init_bin.h");
       SerializeSparsityPattern.serialize(simCode);
       SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
       Tpl.tplNoret(CodegenJS.markdownFile, simCode);
@@ -757,17 +757,14 @@ algorithm
     then ();
 
     case "wasm-jit" algorithm
+      // CodegenWasmJit.translateModel keeps it for -listVariables.
+      SerializeInitBin.write(simCode, System.getUUIDStr(), inMemory = true);
       // translateModel records the lowering error and fails, so the message
       // surfaces (getErrorString / OMEdit) instead of a later "no prepared model".
       CodegenWasmJit.translateModel(simCode);
-      // The wasm module carries its own metadata; *_init.xml is only read by
-      // OMEdit's variable browser and *_info.json only by its transformational
-      // debugger, so the latter is written only when debugging is asked for
-      // (OMEdit passes -d=infoXmlOperations when Generate Operations is on).
-      if Flags.isSet(Flags.OMEDIT) then
-        guid := System.getUUIDStr();
-        SerializeInitXML.simulationInitFile(simCode, guid);
-      end if;
+      // The wasm module carries its own metadata; *_info.json is only read by
+      // the transformational debugger, so it is written only when debugging is
+      // asked for (OMEdit passes -d=infoXmlOperations when Generate Operations is on).
       if Flags.isSet(Flags.INFO_XML_OPERATIONS) then
         SerializeModelInfo.serialize(simCode, true);
       elseif System.regularFileExists(simCode.fileNamePrefix + "_info.json") then
@@ -779,7 +776,7 @@ algorithm
     case "wasm" algorithm
       // Standalone WASI command module (merged model + runtime); run on the
       // desktop with wasmtime. The module carries its own metadata, so no
-      // _init.xml is needed for a CLI simulate. emitStandalone records the error
+      // _init.bin is needed for a CLI simulate. emitStandalone records the error
       // and fails if lowering fails, instead of emitting a silent empty module.
       CodegenWasmJit.emitStandalone(simCode);
     then ();
@@ -1050,6 +1047,18 @@ algorithm
   end if;
   setGlobalRoot(Global.optionSimCode, NONE());
 end emitWasmFMU;
+
+protected function writeInitBinCArray
+  "For models that cannot read <prefix>_init.bin at run time: FMI 1.0 Model
+   Exchange has no resources directory."
+  input String binFile;
+  input String cFile;
+algorithm
+  if not System.writeBinaryFileAsCArray(binFile, cFile) then
+    Error.addInternalError("Failed to write " + cFile, sourceInfo());
+    fail();
+  end if;
+end writeInitBinCArray;
 
 protected function callTargetTemplatesFMU
 "Generate target code by passing the SimCode data structure to templates."
@@ -1374,7 +1383,16 @@ algorithm
                                     });
         end if;
 
-        Tpl.tplNoret(function CodegenFMU.translateModel(in_a_FMUVersion=FMUVersion, in_a_FMUType=FMUType, in_a_sourceFiles=model_desc_src_files), simCode);
+        guid := System.getUUIDStr();
+        Tpl.tplNoret(function CodegenFMU.translateModel(in_a_FMUVersion=FMUVersion, in_a_FMUType=FMUType, in_a_sourceFiles=model_desc_src_files, in_a_guid=guid), simCode);
+        SerializeInitBin.write(simCode, guid);
+        fileName := simCode.fileNamePrefix + "_init.bin";
+        if FMUVersion == "1.0" then
+          writeInitBinCArray(fileName, fmu_tmp_sources_dir + simCode.fileNamePrefix + "_init_bin.h");
+          System.removeFile(fileName);
+        elseif not System.rename(fileName, resourcesDir + fileName) then
+          Error.addInternalError("Failed to move " + fileName, sourceInfo());
+        end if;
 
         // FMI 3.0 graphical user annotations (issue #15686 task 9): the template
         // above wrote terminalsAndIcons.xml, this adds the icons beside it. Before

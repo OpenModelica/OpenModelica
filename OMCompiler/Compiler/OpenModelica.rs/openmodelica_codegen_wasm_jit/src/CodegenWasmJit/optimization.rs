@@ -1,6 +1,6 @@
 //! `method="optimization"`: what the ported Ipopt collocation solver needs from the
 //! model, i.e. `CodegenC.tpl`'s `optimizationComponents` (`<model>_13opt.c`) and the
-//! `realVarsData[i].attribute` values C reads out of the `_init.xml`.
+//! `realVarsData[i].attribute` values C reads out of the `_init.bin`.
 //!
 //! The symbolic B/C/D themselves come from the same lowering the `-l` linearization
 //! uses (`LinzPlan`); this module adds the per-column entry point the optimizer
@@ -34,7 +34,7 @@ pub(crate) fn constraint_vars(vars: &SimCodeVar::SimVars) -> Vec<&SimCodeVar::Si
         .collect()
 }
 
-/// The per-real-variable attribute values C reads from the `_init.xml`, as the
+/// The per-real-variable attribute values C reads from the `_init.bin`, as the
 /// constant defaults the emitted `functionUpdateBoundVariableAttributes` stores.
 /// A parameter-dependent attribute overwrites its slot there; these are the
 /// literals (and C's fallbacks for an attribute the model never gives).

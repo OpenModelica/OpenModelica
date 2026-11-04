@@ -54,7 +54,7 @@ val(k.p.f[5], 1, "resizableConnectSizeAlias_res.mat");
 //
 //   s.n ..... OPTIMAL: 3 (ORIGINAL: 3)
 //
-// {"resizableConnectSizeAlias", "resizableConnectSizeAlias_init.xml"}
+// {"resizableConnectSizeAlias", "resizableConnectSizeAlias_init.bin"}
 // "Notification: --resizableArrays: k.m = s.n because their arrays are connected.
 // "
 // 0

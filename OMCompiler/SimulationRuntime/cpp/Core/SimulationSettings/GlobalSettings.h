@@ -65,6 +65,8 @@ public:
   virtual string getInputPath();
   virtual string getParameterOverrides();
   virtual void setParameterOverrides(string);
+  virtual bool getListVariables();
+  virtual void setListVariables(bool);
   virtual void setInputPath(string);
   ///path for simulation results in textfile
   virtual string getOutputPath();
@@ -110,6 +112,7 @@ private:
       _variableFilter,
       _parameterOverrides;
   bool
+      _listVariables,
       _infoOutput,  ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)
       _endless_sim,
       _nonLinSolverContinueOnError;

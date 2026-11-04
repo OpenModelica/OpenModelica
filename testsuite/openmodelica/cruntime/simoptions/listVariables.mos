@@ -1,0 +1,68 @@
+// name: listVariables
+// keywords: -listVariables -override
+// status: correct
+// teardown_command: rm -rf ListVariables* listVariables_override.txt
+//
+// The simulation executable prints its variables as JSON.
+
+loadString("
+package P
+  type E = enumeration(a, b, c);
+  model ListVariables
+    parameter Real k(unit = \"m\", min = 0, max = 10) = 0.5 \"gain \\\"k\\\"\";
+    parameter Integer n = 3;
+    parameter Boolean b = true;
+    parameter String s = \"text\";
+    parameter E e = E.b;
+    parameter Real p[2] = {1, 2};
+    parameter Real q = 2*k;
+    input Real u;
+    output Real y;
+    Real x(start = 1, fixed = true);
+    Real w = x annotation(HideResult = true);
+  protected
+    Real z;
+  equation
+    der(x) = -k*x + u;
+    y = x;
+    z = 2*y;
+  end ListVariables;
+end P;
+"); getErrorString();
+
+buildModel(P.ListVariables, fileNamePrefix = "ListVariables"); getErrorString();
+writeFile("listVariables_override.txt", "n=4\n"); getErrorString();
+
+echo(false);
+r := simulate(P.ListVariables, fileNamePrefix = "ListVariables", resimulateExecutable = "ListVariables", simflags = "-listVariables -override=k=2,s=new,b=false,q=7 -overrideFile=listVariables_override.txt");
+s := r.messages;
+s := stringReplace(s, getVersion(), "<version>");
+echo(true);
+print(s);
+
+// Result:
+// true
+// ""
+// {"ListVariables", "ListVariables_init.bin"}
+// ""
+// true
+// ""
+// true
+// {"modelName":"P.ListVariables","generationTool":"OpenModelica Compiler <version>","defaultExperiment":{"startTime":0,"stopTime":1,"stepSize":0.002,"tolerance":1e-06,"solver":"dassl","outputFormat":"mat","variableFilter":".*"},"variables":[
+// {"name":"x","type":"Real","description":"","variability":"continuous","causality":"local","isValueChangeable":true,"alias":"noAlias","isProtected":false,"isEncrypted":false,"start":1},
+// {"name":"der(x)","type":"Real","description":"","variability":"continuous","causality":"local","isValueChangeable":false,"alias":"noAlias","isProtected":false,"isEncrypted":false},
+// {"name":"u","type":"Real","description":"","variability":"continuous","causality":"input","isValueChangeable":true,"alias":"noAlias","isProtected":false,"isEncrypted":false},
+// {"name":"y","type":"Real","description":"","variability":"continuous","causality":"output","isValueChangeable":false,"alias":"noAlias","isProtected":false,"isEncrypted":false,"start":1},
+// {"name":"z","type":"Real","description":"","variability":"continuous","causality":"local","isValueChangeable":false,"alias":"noAlias","isProtected":true,"isEncrypted":false,"start":2},
+// {"name":"k","type":"Real","description":"gain \"k\"","variability":"parameter","causality":"parameter","isValueChangeable":true,"alias":"noAlias","isProtected":false,"isEncrypted":false,"start":2,"min":0,"max":10,"unit":"m"},
+// {"name":"p[1]","type":"Real","description":"","variability":"parameter","causality":"parameter","isValueChangeable":true,"alias":"noAlias","isProtected":false,"isEncrypted":false,"start":1},
+// {"name":"p[2]","type":"Real","description":"","variability":"parameter","causality":"parameter","isValueChangeable":true,"alias":"noAlias","isProtected":false,"isEncrypted":false,"start":2},
+// {"name":"q","type":"Real","description":"","variability":"parameter","causality":"calculatedParameter","isValueChangeable":false,"alias":"noAlias","isProtected":false,"isEncrypted":false},
+// {"name":"w","type":"Real","description":"","variability":"continuous","causality":"local","isValueChangeable":false,"alias":"alias","aliasVariable":"x","isProtected":false,"isEncrypted":false,"hideResult":true},
+// {"name":"e","type":"Enumeration","description":"","variability":"parameter","causality":"parameter","isValueChangeable":true,"alias":"noAlias","isProtected":false,"isEncrypted":false,"declaredType":"P.E","start":2},
+// {"name":"n","type":"Integer","description":"","variability":"parameter","causality":"parameter","isValueChangeable":true,"alias":"noAlias","isProtected":false,"isEncrypted":false,"start":4},
+// {"name":"b","type":"Boolean","description":"","variability":"parameter","causality":"parameter","isValueChangeable":true,"alias":"noAlias","isProtected":false,"isEncrypted":false,"start":false},
+// {"name":"s","type":"String","description":"","variability":"parameter","causality":"parameter","isValueChangeable":true,"alias":"noAlias","isProtected":false,"isEncrypted":false,"start":"new"}
+// ]}
+//
+// endResult

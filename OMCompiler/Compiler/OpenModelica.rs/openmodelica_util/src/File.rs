@@ -47,14 +47,23 @@ use std::fs::OpenOptions;
 use std::io::{BufWriter, Seek, SeekFrom, Write};
 use std::sync::{Arc, Mutex};
 
+use arcstr::{ArcStr, literal};
 use metamodelica::Result;
-use arcstr::{literal, ArcStr};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(i32)]
 pub enum Mode {
     Read = 1,
     Write = 2,
+    /// The bytes go to [`take_memory_file`] instead of a file.
+    Memory = 3,
+}
+
+static MEMORY_FILES: Mutex<Option<HashMap<String, Vec<u8>>>> = Mutex::new(None);
+
+/// What a `Mode.Memory` file of this name received, once.
+pub fn take_memory_file(name: &str) -> Option<Vec<u8>> {
+    MEMORY_FILES.lock().unwrap().as_mut()?.remove(name)
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
@@ -87,6 +96,7 @@ struct FileInner {
     pos: usize,
     #[cfg(target_arch = "wasm32")]
     mode: Option<Mode>,
+    memory: bool,
     name: ArcStr,
 }
 
@@ -98,19 +108,34 @@ fn fail(msg: String) -> &'static str {
 
 impl FileInner {
     fn write_bytes(&mut self, bytes: &[u8], what: &str) -> Result<()> {
+        if self.memory {
+            let mut files = MEMORY_FILES.lock().unwrap();
+            let files = files.get_or_insert_with(HashMap::new);
+            files.entry(self.name.to_string()).or_default().extend_from_slice(bytes);
+            return Ok(());
+        }
         #[cfg(not(target_arch = "wasm32"))]
         {
             match self.file.as_mut() {
-                Some(f) => f
-                    .write_all(bytes)
-                    .map_err(|e| fail(format!("File.{what}: Failed to write to file: {} error: {e}", self.name))),
-                None => Err(fail(format!("File.{what}: Failed to write to file: {} (not open)", self.name))),
+                Some(f) => f.write_all(bytes).map_err(|e| {
+                    fail(format!(
+                        "File.{what}: Failed to write to file: {} error: {e}",
+                        self.name
+                    ))
+                }),
+                None => Err(fail(format!(
+                    "File.{what}: Failed to write to file: {} (not open)",
+                    self.name
+                ))),
             }
         }
         #[cfg(target_arch = "wasm32")]
         {
             if self.mode != Some(Mode::Write) {
-                return Err(fail(format!("File.{what}: Failed to write to file: {} (not open)", self.name)));
+                return Err(fail(format!(
+                    "File.{what}: Failed to write to file: {} (not open)",
+                    self.name
+                )));
             }
             let end = self.pos + bytes.len();
             if self.buf.len() < end {
@@ -193,14 +218,11 @@ impl File {
                     pos: 0,
                     #[cfg(target_arch = "wasm32")]
                     mode: None,
+                    memory: false,
                     name: literal!("[no open file]"),
                 })),
             }),
-            Some(id) => FILE_REGISTRY.with(|r| {
-                r.borrow().get(&id).cloned().ok_or_else(|| {
-                    "error"
-                })
-            }),
+            Some(id) => FILE_REGISTRY.with(|r| r.borrow().get(&id).cloned().ok_or_else(|| "error")),
         }
     }
 }
@@ -220,6 +242,26 @@ pub fn destructor(_file: File) {}
 
 pub fn open(file: File, filename: ArcStr, mode: Mode) -> Result<()> {
     let mut guard = file.inner.lock().unwrap();
+    guard.memory = false;
+    if mode == Mode::Memory {
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            guard.file = None;
+        }
+        #[cfg(target_arch = "wasm32")]
+        {
+            guard.flush_to_vfs();
+            guard.mode = None;
+        }
+        MEMORY_FILES
+            .lock()
+            .unwrap()
+            .get_or_insert_with(HashMap::new)
+            .insert(filename.to_string(), Vec::new());
+        guard.memory = true;
+        guard.name = filename;
+        return Ok(());
+    }
     #[cfg(not(target_arch = "wasm32"))]
     {
         // If a file is already open, close it (drop it) before opening a new one,
@@ -227,13 +269,18 @@ pub fn open(file: File, filename: ArcStr, mode: Mode) -> Result<()> {
         guard.file = None;
         let handle = match mode {
             Mode::Read => OpenOptions::new().read(true).open(filename.as_str()),
-            Mode::Write => OpenOptions::new()
+            Mode::Write | Mode::Memory => OpenOptions::new()
                 .write(true)
                 .create(true)
                 .truncate(true)
                 .open(filename.as_str()),
         }
-        .map_err(|e| fail(format!("File.open: Failed to open file {filename} with mode {}: {e}", mode as i32)))?;
+        .map_err(|e| {
+            fail(format!(
+                "File.open: Failed to open file {filename} with mode {}: {e}",
+                mode as i32
+            ))
+        })?;
         guard.file = Some(BufWriter::with_capacity(64 * 1024, handle));
         guard.name = filename;
         Ok(())
@@ -245,11 +292,14 @@ pub fn open(file: File, filename: ArcStr, mode: Mode) -> Result<()> {
         match mode {
             Mode::Read => {
                 let bytes = openmodelica_wasi::read(filename.as_str()).ok_or_else(|| {
-                    fail(format!("File.open: Failed to open file {filename} with mode {}: No such file or directory", mode as i32))
+                    fail(format!(
+                        "File.open: Failed to open file {filename} with mode {}: No such file or directory",
+                        mode as i32
+                    ))
                 })?;
                 guard.buf = bytes;
             }
-            Mode::Write => {
+            Mode::Write | Mode::Memory => {
                 guard.buf = Vec::new();
                 // Create/truncate now so the file exists even if nothing is written.
                 openmodelica_wasi::write(filename.as_str(), Vec::new());
@@ -343,6 +393,21 @@ pub fn writeReal(file: File, data: metamodelica::Real, format: ArcStr) -> Result
     guard.write_bytes(s.as_bytes(), "writeReal")
 }
 
+pub fn writeBinaryInteger(file: File, data: i32, bytes: i32) -> Result<()> {
+    if !matches!(bytes, 1 | 2 | 4 | 8) {
+        return Err(fail(format!(
+            "File.writeBinaryInteger: Invalid number of bytes: {bytes}"
+        )));
+    }
+    let mut guard = file.inner.lock().unwrap();
+    guard.write_bytes(&(data as i64).to_le_bytes()[..bytes as usize], "writeBinaryInteger")
+}
+
+pub fn writeBinaryReal(file: File, data: metamodelica::Real) -> Result<()> {
+    let mut guard = file.inner.lock().unwrap();
+    guard.write_bytes(&data.0.to_le_bytes(), "writeBinaryReal")
+}
+
 pub fn writeEscape(file: File, data: ArcStr, escape: Escape) -> Result<()> {
     let mut buf: Vec<u8> = Vec::with_capacity(data.len());
     match escape {
@@ -393,6 +458,9 @@ pub fn writeEscape(file: File, data: ArcStr, escape: Escape) -> Result<()> {
 
 pub fn seek(file: File, offset: i32, whence: Whence) -> Result<bool> {
     let mut guard = file.inner.lock().unwrap();
+    if guard.memory {
+        return Ok(false);
+    }
     #[cfg(not(target_arch = "wasm32"))]
     {
         let Some(f) = guard.file.as_mut() else { return Ok(false) };
@@ -424,6 +492,13 @@ pub fn seek(file: File, offset: i32, whence: Whence) -> Result<bool> {
 
 pub fn tell(file: File) -> i32 {
     let mut guard = file.inner.lock().unwrap();
+    if guard.memory {
+        let files = MEMORY_FILES.lock().unwrap();
+        return files
+            .as_ref()
+            .and_then(|f| f.get(guard.name.as_str()))
+            .map_or(-1, |b| b.len() as i32);
+    }
     #[cfg(not(target_arch = "wasm32"))]
     {
         match guard.file.as_mut() {
@@ -478,8 +553,15 @@ pub fn releaseReference(file: File) -> Result<()> {
     // file that was never registered is an accounting bug upstream).
     let released = FILE_REGISTRY.with(|r| {
         let mut reg = r.borrow_mut();
-        match reg.iter().find(|(_, f)| Arc::ptr_eq(&f.inner, &file.inner)).map(|(id, _)| *id) {
-            Some(id) => { reg.remove(&id); true }
+        match reg
+            .iter()
+            .find(|(_, f)| Arc::ptr_eq(&f.inner, &file.inner))
+            .map(|(id, _)| *id)
+        {
+            Some(id) => {
+                reg.remove(&id);
+                true
+            }
             None => false,
         }
     });

@@ -796,6 +796,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "openmodelica_init_file"
+version = "0.1.0"
+
+[[package]]
 name = "openmodelica_lapack"
 version = "0.1.0"
 dependencies = [
@@ -898,6 +902,7 @@ version = "0.1.0"
 dependencies = [
  "cc",
  "libc",
+ "openmodelica_init_file",
  "openmodelica_lapack",
  "openmodelica_mat_reader",
  "openmodelica_mat_writer",
@@ -906,7 +911,6 @@ dependencies = [
  "openmodelica_regex",
  "openmodelica_sim_meta",
  "openmodelica_solvers",
- "roxmltree",
  "serde_json",
 ]
 
@@ -1069,15 +1073,6 @@ name = "regex-syntax"
 version = "0.8.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
-
-[[package]]
-name = "roxmltree"
-version = "0.21.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1964b10c76125c36f8afe190065a4bf9a87bf324842c05701330bba9f1cacbb"
-dependencies = [
- "memchr",
-]
 
 [[package]]
 name = "rsparse"

@@ -21,7 +21,7 @@ buildModel(test_backenddaeinfo); getErrorString();
 // ""
 // true
 // ""
-// {"test_backenddaeinfo","test_backenddaeinfo_init.xml"}
+// {"test_backenddaeinfo","test_backenddaeinfo_init.bin"}
 // "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 0
 //  * Number of variables: 0

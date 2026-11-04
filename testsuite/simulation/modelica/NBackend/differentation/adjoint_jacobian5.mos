@@ -298,6 +298,6 @@ buildModel(AlgorithmSSATest); getErrorString();
 // functions:
 // -----------
 //
-// {"AlgorithmSSATest", "AlgorithmSSATest_init.xml"}
+// {"AlgorithmSSATest", "AlgorithmSSATest_init.bin"}
 // ""
 // endResult

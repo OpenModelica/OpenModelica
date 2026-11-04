@@ -229,6 +229,6 @@ buildModel(testSymjacdump); getErrorString();
 // 4: $res_NLSJac1_1:VARIABLE()  type: Real
 // 5: h:PARAM()  = 0.16666666666666666  type: Real
 //
-// {"testSymjacdump", "testSymjacdump_init.xml"}
+// {"testSymjacdump", "testSymjacdump_init.bin"}
 // ""
 // endResult

@@ -373,6 +373,7 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("SimulationResults_diffSimulationResultsHtml", Fallible);
         m.insert("SimulationResults_filterSimulationResults", Fallible);
         m.insert("SimulationResults_readDataset", Fallible);
+        m.insert("SimulationResults_readInitFile", Fallible);
         m.insert("SimulationResults_readSimulationResultSize", Fallible);
         m.insert("SimulationResults_readVariables", Fallible);
         m.insert("SimulationResults_val", Fallible);
@@ -393,6 +394,7 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("SystemImpl__copyFile", Infallible); // returns int status
         m.insert("SystemImpl__copyPath", Infallible); // returns int status
         m.insert("SystemImpl__covertTextFileToCLiteral", Infallible);
+        m.insert("SystemImpl__writeBinaryFileAsCArray", Infallible);
         m.insert("SystemImpl__createDirectory", Infallible);
         m.insert("SystemImpl__createTemporaryDirectory", Fallible); // mkdtemp failure throws
         m.insert("SystemImpl__ctime", Infallible);
@@ -617,6 +619,8 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("om_file_write", Fallible);
         m.insert("om_file_write_int", Fallible);
         m.insert("om_file_write_real", Fallible);
+        m.insert("om_file_write_binary_integer", Fallible);
+        m.insert("om_file_write_binary_real", Fallible);
         m.insert("om_file_write_escape", Fallible);
         m.insert("om_file_seek", Infallible);
         m.insert("om_file_tell", Infallible);

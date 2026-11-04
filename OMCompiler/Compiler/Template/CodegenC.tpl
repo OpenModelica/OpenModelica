@@ -232,8 +232,6 @@ end translateModel;
     extern void <%symbolName(modelNamePrefixStr,"function_initSynchronous")%>(DATA * data, threadData_t *threadData);
     extern void <%symbolName(modelNamePrefixStr,"function_updateSynchronous")%>(DATA * data, threadData_t *threadData, long base_idx);
     extern int <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>(DATA * data, threadData_t *threadData, long base_idx, long sub_idx);
-    extern void <%symbolName(modelNamePrefixStr,"read_simulation_info")%>(SIMULATION_INFO* simulationData);
-    extern void <%symbolName(modelNamePrefixStr,"read_input_fmu")%>(MODEL_DATA* modelData);
     extern void <%symbolName(modelNamePrefixStr,"function_savePreSynchronous")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"inputNames")%>(DATA* data, char ** names);
     extern int <%symbolName(modelNamePrefixStr,"dataReconciliationInputNames")%>(DATA* data, char ** names);
@@ -1466,8 +1464,6 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <%symbolName(modelNamePrefixStr,"inputNames")%>,
       <%symbolName(modelNamePrefixStr,"dataReconciliationInputNames")%>,
       <%symbolName(modelNamePrefixStr,"dataReconciliationUnmeasuredVariables")%>,
-      <% if isModelExchangeFMU then symbolName(modelNamePrefixStr,"read_simulation_info") else "NULL" %>,
-      <% if isModelExchangeFMU then symbolName(modelNamePrefixStr,"read_input_fmu") else "NULL" %>,
       <% match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"initialAnalyticJacobianFMIDER") else "NULL"%>,
       <% match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"functionJacFMIDER_column") else "NULL"%>,
       <% match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"INDEX_JAC_FMIDER") else "-1"%>,
@@ -1606,7 +1602,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     <% match isModelExchangeFMU
     case "1.0" then
       <<
-      data->modelData->initXMLData = NULL;
+      <%initBinData(fileNamePrefix)%>
       data->modelData->modelDataXml.infoXMLData =
       #if defined(OMC_MINIMAL_METADATA)
         NULL;
@@ -1619,26 +1615,21 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     case "" then
       <<
       #if defined(OPENMODELICA_XML_FROM_FILE_AT_RUNTIME)
-      data->modelData->initXMLData = NULL;
+      data->modelData->initBinData = NULL;
+      data->modelData->initBinSize = 0;
       data->modelData->modelDataXml.infoXMLData = NULL;
       #else
+      <%initBinData(fileNamePrefix)%>
       #if defined(_MSC_VER) /* handle joke compilers */
       {
       /* for MSVC we encode a string like char x[] = {'a', 'b', 'c', '\0'} */
       /* because the string constant limit is 65535 bytes */
-      static const char contents_init[] =
-        #include "<%fileNamePrefix%>_init.c"
-        ;
       static const char contents_info[] =
         #include "<%fileNamePrefix%>_info.c"
         ;
-        data->modelData->initXMLData = contents_init;
         data->modelData->modelDataXml.infoXMLData = contents_info;
       }
       #else /* handle real compilers */
-      data->modelData->initXMLData =
-      #include "<%fileNamePrefix%>_init.c"
-        ;
       data->modelData->modelDataXml.infoXMLData =
       #include "<%fileNamePrefix%>_info.c"
         ;
@@ -1650,7 +1641,8 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
       >>
     else
       <<
-      data->modelData->initXMLData = NULL;
+      data->modelData->initBinData = NULL;
+      data->modelData->initBinSize = 0;
       data->modelData->modelDataXml.infoXMLData = NULL;
       GC_asprintf(&data->modelData->modelDataXml.fileName, "%s/<%fileNamePrefix%>_info.json", data->modelData->resourcesDir);
       >>
@@ -1795,7 +1787,7 @@ end hasStructuralUpdate;
 template functionUpdateStructuralParameters(list<SimVar> intParamVars, list<SimVar> inputVars, Text modelNamePrefixStr)
  "The size parameters $DIM_k of derived dimensions of resizable arrays (N-1),
   and the number of scalar inputs if an input is a resizable array.
-  The runtime calls it after reading the init.xml, before it computes the sizes
+  The runtime calls it after reading the init file, before it computes the sizes
   of the arrays and allocates them: only the start attributes of the parameters
   exist, possibly changed with -override, so they are what it reads and writes."
 ::=
@@ -1903,6 +1895,20 @@ template functionSimProfDef(SimEqSystem eq, Integer value, Text &reverseProf)
     >>
   end match
 end functionSimProfDef;
+
+template initBinData(String fileNamePrefix)
+ "<prefix>_init.bin compiled into the model, see SimCodeMain.writeInitBinCArray."
+::=
+  <<
+  {
+    static const unsigned char contents_init_bin[] =
+      #include "<%fileNamePrefix%>_init_bin.h"
+      ;
+    data->modelData->initBinData = contents_init_bin;
+    data->modelData->initBinSize = sizeof(contents_init_bin);
+  }
+  >>
+end initBinData;
 
 template variableDefinitions(ModelInfo modelInfo, list<BackendDAE.TimeEvent> timeEvents)
   "Generates global data in simulation file."

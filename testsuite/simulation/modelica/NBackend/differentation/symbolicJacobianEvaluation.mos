@@ -51,7 +51,7 @@ diffSimulationResults("gbode_bi.mat", "ReferenceFiles/symbolicJacobianEvaluation
 // ""
 // true
 // ""
-// {"assymetric", "assymetric_init.xml"}
+// {"assymetric", "assymetric_init.bin"}
 // ""
 // true
 // (true, {})

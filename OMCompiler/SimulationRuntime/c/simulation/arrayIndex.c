@@ -781,7 +781,7 @@ void computeVarReverseIndices(SIMULATION_INFO *simulationInfo,
  * array variable.
  *
  * An attribute with a single element (`each` or no attribute given in the
- * init XML) holds the value for all elements of the array variable.
+ * init file) holds the value for all elements of the array variable.
  *
  * @param attribute  Attribute array of any element type.
  * @param dim_idx    Index inside array variable as 1D representation.

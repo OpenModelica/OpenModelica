@@ -1,7 +1,6 @@
 // name: isChangeable1
 // keywords: xml, init, changeable value
 // status: correct
-// teardown_command: rm isChangeable1.xml
 // cflags: -d=omedit
 
 loadString("
@@ -11,17 +10,17 @@ end isChangeable1;
 "); getErrorString();
 
 translateModel(isChangeable1); getErrorString();
-system("grep -o \"isValueChangeable\\s*=\\s*\\\"\\w*\\\"\" isChangeable1_init.xml > isChangeable1.xml"); getErrorString();
-readFile("isChangeable1.xml"); getErrorString();
+readInitFile("isChangeable1_init.bin"); getErrorString();
 
 // Result:
 // true
 // ""
 // true
 // ""
-// 0
-// ""
-// "isValueChangeable = \"false\"
+// "model isChangeable1
+// sizes numberOfRealAlgebraicVariables=1
+// experiment startTime=0.0 stopTime=1.0 stepSize=0.002 tolerance=1e-6 solver=dassl outputFormat=mat variableFilter=\".*\"
+// rAlg x Real continuous fixed
 // "
 // ""
 // endResult

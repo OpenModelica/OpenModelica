@@ -23,6 +23,6 @@ buildModel(tornNLSJacobianRows); getErrorString();
 // ""
 // true
 // ""
-// {"tornNLSJacobianRows", "tornNLSJacobianRows_init.xml"}
+// {"tornNLSJacobianRows", "tornNLSJacobianRows_init.bin"}
 // ""
 // endResult

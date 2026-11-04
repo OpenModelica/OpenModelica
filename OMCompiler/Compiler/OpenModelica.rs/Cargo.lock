@@ -7450,6 +7450,7 @@ dependencies = [
  "openmodelica_frontend_base",
  "openmodelica_frontend_dump",
  "openmodelica_frontend_types",
+ "openmodelica_init_file",
  "openmodelica_mat_reader",
  "openmodelica_mat_writer",
  "openmodelica_modelica_utilities",
@@ -7673,6 +7674,10 @@ version = "0.1.0"
 dependencies = [
  "hdf5-metno-sys",
 ]
+
+[[package]]
+name = "openmodelica_init_file"
+version = "0.1.0"
 
 [[package]]
 name = "openmodelica_lapack"
@@ -7902,6 +7907,7 @@ dependencies = [
  "openmodelica_error",
  "openmodelica_frontend_dump",
  "openmodelica_frontend_types",
+ "openmodelica_init_file",
  "openmodelica_mat_reader",
  "openmodelica_result_files",
  "openmodelica_util",
@@ -7989,6 +7995,7 @@ dependencies = [
  "cc",
  "libc",
  "openmodelica_fmi3_wasm",
+ "openmodelica_init_file",
  "openmodelica_lapack",
  "openmodelica_mat_reader",
  "openmodelica_mat_writer",
@@ -7997,7 +8004,6 @@ dependencies = [
  "openmodelica_regex",
  "openmodelica_sim_meta",
  "openmodelica_solvers",
- "roxmltree",
  "serde_json",
 ]
 

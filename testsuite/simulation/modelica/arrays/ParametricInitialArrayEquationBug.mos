@@ -12,7 +12,7 @@ buildModelFMU(TransiEnt.Producer.Gas.Electrolyzer.Check.Test_400A_Espinosa_L2, f
 // true
 // "Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from TransiEnt.
 // "
-// {"TransiEnt.Producer.Gas.Electrolyzer.Check.Test_400A_Espinosa_L2", "TransiEnt.Producer.Gas.Electrolyzer.Check.Test_400A_Espinosa_L2_init.xml"}
+// {"TransiEnt.Producer.Gas.Electrolyzer.Check.Test_400A_Espinosa_L2", "TransiEnt.Producer.Gas.Electrolyzer.Check.Test_400A_Espinosa_L2_init.bin"}
 // "[simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:1344:7-1345:37:writable] Warning: Connector cycleSumPort is not balanced: The number of potential variables (0) is not equal to the number of flow variables (4).
 // [simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:26641:13-26641:147:writable] Warning: Connector powerCollector is not balanced: The number of potential variables (0) is not equal to the number of flow variables (1).
 // [simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:27044:13-27044:147:writable] Warning: Connector costsCollector is not balanced: The number of potential variables (0) is not equal to the number of flow variables (6).

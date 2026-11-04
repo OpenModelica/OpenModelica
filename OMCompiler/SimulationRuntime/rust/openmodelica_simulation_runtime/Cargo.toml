@@ -75,9 +75,9 @@ openmodelica_mat_writer = { path = "../openmodelica_mat_writer", optional = true
 openmodelica_plt_writer = { path = "../openmodelica_plt_writer", optional = true }
 # `-iif`: the result file the start values are imported from.
 openmodelica_mat_reader = { path = "../openmodelica_mat_reader", optional = true }
-# `_init.xml`: the variable names, attributes and start values the generated C
-# does not carry (C reads the same file with expat in `simulation_input_xml.c`).
-roxmltree = "0.21"
+# `_init.bin`: the variable names, attributes and start values the generated C
+# does not carry (C reads the same file in `simulation_input.c`).
+openmodelica_init_file = { path = "../openmodelica_init_file" }
 # `<Model>_info.json`: the equation and variable names the generated residuals
 # name their iteration variables through (`simulation_info_json.c` reads the same
 # file with a hand-rolled scanner).

@@ -21,6 +21,6 @@ buildModel(numericJacobianRows); getErrorString();
 // ""
 // true
 // ""
-// {"numericJacobianRows", "numericJacobianRows_init.xml"}
+// {"numericJacobianRows", "numericJacobianRows_init.bin"}
 // ""
 // endResult

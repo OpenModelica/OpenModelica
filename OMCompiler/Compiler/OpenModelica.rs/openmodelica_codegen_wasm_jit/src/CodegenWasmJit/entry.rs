@@ -21,6 +21,15 @@ pub fn translateModel(simCode: metamodelica::Ref<SimCode::SimCode>) -> Result<()
     sim_runtime::start_runtime_compile();
     let prefix = simCode.fileNamePrefix.to_string();
     let _ = std::fs::remove_file(format!("{prefix}.wasm"));
+    {
+        let mut files = init_files().lock().unwrap_or_else(|e| e.into_inner());
+        match openmodelica_util::File::take_memory_file(&format!("{prefix}_init.bin"))
+            .and_then(|bytes| omc_init::InitFile::parse(&bytes).ok())
+        {
+            Some(file) => files.insert(prefix.clone(), Arc::new(file)),
+            None => files.remove(&prefix),
+        };
+    }
     let errs_before = openmodelica_util::Error::getNumErrorMessages();
     let outcome = build_sim_model(&simCode, false, ExtHost::SIM, Eh::sim(), "", "").and_then(|model| {
         write_output(&format!("{prefix}.wasm"), &model.wasm).map_err(|_| "CodegenWasmJit: write failed")?;
@@ -102,6 +111,9 @@ pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcSt
             None => return run_artifact(&path, &logFile, &resultFile, &simflags),
         }
     }
+    if let Some(code) = list_variables(&prefix, &simflags, &logFile) {
+        return code;
+    }
     openmodelica_error::ErrorExt::setCheckpoint(RUN_CHECKPOINT);
     let (res, init_output, sim_output, post_output) = run_simulation_inner(&prefix, &result_file, &simflags);
     openmodelica_error::ErrorExt::rollBack(RUN_CHECKPOINT);
@@ -167,6 +179,29 @@ pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcSt
         Ok(()) => 0,
         Err(_) => 1,
     }
+}
+
+/// `-listVariables`: the JSON goes to `logFile`, which
+/// `simulate` returns as `messages`.
+fn list_variables(prefix: &str, simflags: &str, log_file: &str) -> Option<i32> {
+    let argv: Vec<String> = core::iter::once("model".to_string())
+        .chain(split_simflags(simflags))
+        .collect();
+    let flags = simflags::parse(&argv).ok()?;
+    if !flags.list_variables {
+        return None;
+    }
+    let file = init_files()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get(prefix)
+        .cloned();
+    let (out, code) = match file {
+        Some(file) => (file.list_variables(|n| flags.override_value(n)), 0),
+        None => (format!("No variables of {prefix}: translateModel not run?\n"), 1),
+    };
+    let _ = write_output(log_file, out.as_bytes());
+    Some(code)
 }
 
 /// Simulate an exported wasm artifact. The three faces (`-s fmi3:me[:solver]`,

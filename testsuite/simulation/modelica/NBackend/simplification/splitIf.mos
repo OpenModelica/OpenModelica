@@ -61,6 +61,6 @@ buildModel(SplitIf); getErrorString();
 // [BEFORE] (-0.0) ^ (1/3.0)
 // [AFTER ] 0.0
 //
-// {"SplitIf", "SplitIf_init.xml"}
+// {"SplitIf", "SplitIf_init.bin"}
 // ""
 // endResult

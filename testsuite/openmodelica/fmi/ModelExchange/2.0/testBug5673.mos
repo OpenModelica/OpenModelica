@@ -26,14 +26,12 @@ end aliasCheck;
 translateModel(aliasCheck.test1);
 getErrorString();
 // read only the modelVariables from xml
-system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" aliasCheck.test1_init.xml >Bug5673.xml"); getErrorString();
-readFile("Bug5673.xml"); getErrorString();
+readInitFile("aliasCheck.test1_init.bin"); getErrorString();
 
 translateModel(aliasCheck.test2);
 getErrorString();
 // read only the modelVariables from xml
-system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" aliasCheck.test2_init.xml >Bug5673.xml"); getErrorString();
-readFile("Bug5673.xml"); getErrorString();
+readInitFile("aliasCheck.test2_init.bin"); getErrorString();
 
 
 buildModelFMU(aliasCheck.test2,version="2.0", fileNamePrefix="aliasCheck.test2");
@@ -52,70 +50,20 @@ readFile("Bug5673.xml"); getErrorString();
 // true
 // true
 // ""
-// 0
-// ""
-// "  <ModelVariables>
-//
-//   <ScalarVariable
-//     name = \"b\"
-//     valueReference = \"1000\"
-//     variability = \"continuous\" isDiscrete = \"false\"
-//     causality = \"local\" isValueChangeable = \"false\"
-//     alias = \"noAlias\"
-//     classIndex = \"0\" classType = \"rAlg\"
-//     isProtected = \"false\" hideResult = \"\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"&lt;interactive&gt;\" startLine = \"5\" startColumn = \"2\" endLine = \"5\" endColumn = \"13\" fileWritable = \"true\">
-//     <Real fixed=\"true\" useNominal=\"false\" />
-//   </ScalarVariable>
-//   <ScalarVariable
-//     name = \"a\"
-//     valueReference = \"1001\"
-//     variability = \"continuous\" isDiscrete = \"false\"
-//     causality = \"local\" isValueChangeable = \"false\"
-//     alias = \"alias\" aliasVariable=\"b\" aliasVariableId=\"0\"
-//     classIndex = \"0\" classType = \"rAli\"
-//     isProtected = \"false\" hideResult = \"\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"&lt;interactive&gt;\" startLine = \"5\" startColumn = \"2\" endLine = \"5\" endColumn = \"13\" fileWritable = \"true\">
-//     <Real fixed=\"false\" useNominal=\"false\" />
-//   </ScalarVariable>
-//
-//
-//
-//   </ModelVariables>
+// "model aliasCheck.test1
+// sizes numberOfRealAlgebraicVariables=1 numberOfRealAlgebraicAliasVariables=1
+// experiment startTime=0.0 stopTime=1.0 stepSize=0.002 tolerance=1e-6 solver=dassl outputFormat=mat variableFilter=\".*\"
+// rAlg b Real continuous fixed
+// rAli a Real continuous alias=b
 // "
 // ""
 // true
 // ""
-// 0
-// ""
-// "  <ModelVariables>
-//
-//   <ScalarVariable
-//     name = \"b\"
-//     valueReference = \"1000\"
-//     variability = \"parameter\" isDiscrete = \"true\"
-//     causality = \"parameter\" isValueChangeable = \"true\"
-//     alias = \"noAlias\"
-//     classIndex = \"0\" classType = \"rPar\"
-//     isProtected = \"false\" hideResult = \"\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"&lt;interactive&gt;\" startLine = \"11\" startColumn = \"3\" endLine = \"11\" endColumn = \"21\" fileWritable = \"true\">
-//     <Real start=\"1.0\" fixed=\"true\" useNominal=\"false\" />
-//   </ScalarVariable>
-//   <ScalarVariable
-//     name = \"a\"
-//     valueReference = \"1001\"
-//     variability = \"continuous\" isDiscrete = \"false\"
-//     causality = \"local\" isValueChangeable = \"false\"
-//     alias = \"alias\" aliasVariable=\"b\" aliasVariableId=\"0\"
-//     classIndex = \"0\" classType = \"rAli\"
-//     isProtected = \"false\" hideResult = \"\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"&lt;interactive&gt;\" startLine = \"12\" startColumn = \"3\" endLine = \"12\" endColumn = \"9\" fileWritable = \"true\">
-//     <Real fixed=\"false\" useNominal=\"false\" />
-//   </ScalarVariable>
-//
-//
-//
-//   </ModelVariables>
+// "model aliasCheck.test2
+// sizes numberOfRealAlgebraicAliasVariables=1 numberOfRealParameters=1
+// experiment startTime=0.0 stopTime=1.0 stepSize=0.002 tolerance=1e-6 solver=dassl outputFormat=mat variableFilter=\".*\"
+// rPar b Real parameter causality=parameter changeable fixed start=1.0
+// rAli a Real continuous alias=b
 // "
 // ""
 // "aliasCheck.test2.fmu"

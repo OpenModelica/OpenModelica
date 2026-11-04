@@ -21,6 +21,6 @@ buildModel(testSymjacdumpeqn); getErrorString();
 // ""
 // true
 // ""
-// {"testSymjacdumpeqn","testSymjacdumpeqn_init.xml"}
+// {"testSymjacdumpeqn","testSymjacdumpeqn_init.bin"}
 // ""
 // endResult

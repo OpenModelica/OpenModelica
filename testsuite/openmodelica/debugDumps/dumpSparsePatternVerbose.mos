@@ -2386,6 +2386,6 @@ buildModel(testDumpSparsePatternVerbose); getErrorString();
 // Node : 1 Edges: 1
 // analytical Jacobians[SPARSE] -> builded graph for coloring.
 // analytical Jacobians[SPARSE] -> ready! 1.2055602093
-// {"testDumpSparsePatternVerbose","testDumpSparsePatternVerbose_init.xml"}
+// {"testDumpSparsePatternVerbose","testDumpSparsePatternVerbose_init.bin"}
 // ""
 // endResult

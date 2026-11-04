@@ -31,19 +31,23 @@ end InlineAttrNB15947;
 
 translateModel(InlineAttrNB15947); getErrorString();
 
-// The propagated attributes must appear on the model variables in _init.xml:
+// The propagated attributes must appear on the model variables in the init file:
 //   input  attributes on 'a': min=5.0 max=50.0 nominal=10.0 unit=K
 //   output attributes on 'c': min=1.0 max=99.0 nominal=20.0 start=7.0 unit=Pa
-// Each of the 9 markers must be present exactly once (sum = 9).
-system("c=0; for p in 'unit=\"K\"' 'unit=\"Pa\"' 'nominal=\"10.0\"' 'nominal=\"20.0\"' 'min=\"5.0\"' 'max=\"50.0\"' 'min=\"1.0\"' 'max=\"99.0\"' 'start=\"7.0\"'; do c=$((c+$(grep -c -- \"$p\" InlineAttrNB15947_init.xml))); done; printf '%s' \"$c\"", outputFile="InlineAttrNB15947_cnt.txt"); getErrorString();
-readFile("InlineAttrNB15947_cnt.txt");
+readInitFile("InlineAttrNB15947_init.bin"); getErrorString();
 
 // Result:
 // true
 // ""
 // true
 // ""
-// 0
+// "model InlineAttrNB15947
+// sizes numberOfRealAlgebraicVariables=4 numberOfFunctions=1
+// experiment startTime=0.0 stopTime=1.0 stepSize=0.002 tolerance=1e-6 solver=dassl outputFormat=mat variableFilter=\".*\"
+// rAlg a Real continuous useNominal hideResult=false min=5.0 max=50.0 nominal=10.0 unit=\"K\"
+// rAlg $FUN_1 Real continuous hideResult=true
+// rAlg c Real continuous useNominal hideResult=false start=7.0 min=1.0 max=99.0 nominal=20.0 unit=\"Pa\"
+// rAlg d Real continuous hideResult=false
+// "
 // ""
-// "9"
 // endResult

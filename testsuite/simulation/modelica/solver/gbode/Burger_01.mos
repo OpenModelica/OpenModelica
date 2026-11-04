@@ -79,7 +79,7 @@ getErrorString();
 // ""
 // true
 // ""
-// {"burgerEq", "burgerEq_init.xml"}
+// {"burgerEq", "burgerEq_init.bin"}
 // ""
 // record SimulationResult
 //     resultFile = "burgerEq_ref.mat",

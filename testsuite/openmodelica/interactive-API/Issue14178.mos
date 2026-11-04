@@ -26,7 +26,7 @@ readFile("Issue14178_start_tag.txt") == readFile("Issue14178_end_tag.txt");
 // Result:
 // true
 // ""
-// {"ThermofluidStream.Examples.EspressoMachine", "ThermofluidStream.Examples.EspressoMachine_init.xml"}
+// {"ThermofluidStream.Examples.EspressoMachine", "ThermofluidStream.Examples.EspressoMachine_init.bin"}
 // true
 // true
 // 0

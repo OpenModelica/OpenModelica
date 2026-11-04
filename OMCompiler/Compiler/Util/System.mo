@@ -1378,6 +1378,14 @@ public function covertTextFileToCLiteral
 external "C" success=SystemImpl__covertTextFileToCLiteral(textFile, outFile, target);
 end covertTextFileToCLiteral;
 
+public function writeBinaryFileAsCArray
+  "Writes the bytes of binFile as the initializer of an unsigned char array."
+  input String binFile;
+  input String outFile;
+  output Boolean success;
+external "C" success=SystemImpl__writeBinaryFileAsCArray(binFile, outFile);
+end writeBinaryFileAsCArray;
+
 public function dladdr<T>
   input T symbol "Function pointer";
   output String info;

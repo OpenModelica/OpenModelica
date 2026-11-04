@@ -25,7 +25,7 @@ res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum40_res
 // "
 // true
 // true
-// {"NPendulum.pendulum40", "NPendulum.pendulum40_init.xml"}
+// {"NPendulum.pendulum40", "NPendulum.pendulum40_init.bin"}
 // ""
 // record SimulationResult
 //     resultFile = "NPendulum.pendulum40_res.mat",

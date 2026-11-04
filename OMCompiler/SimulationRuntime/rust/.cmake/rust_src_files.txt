@@ -31,6 +31,9 @@ openmodelica_hdf5_result/src/lib.rs
 openmodelica_hdf5_result/src/mtsf.rs
 openmodelica_hdf5_result/src/sdf.rs
 openmodelica_hdf5_result/tests/roundtrip.rs
+openmodelica_init_file/Cargo.toml
+openmodelica_init_file/src/capi.rs
+openmodelica_init_file/src/lib.rs
 openmodelica_mat_reader/Cargo.toml
 openmodelica_mat_reader/src/fs.rs
 openmodelica_mat_reader/src/lib.rs
@@ -135,6 +138,7 @@ openmodelica_simulation_runtime/src/fmi_vrs.rs
 openmodelica_simulation_runtime/src/help.rs
 openmodelica_simulation_runtime/src/iif.rs
 openmodelica_simulation_runtime/src/info_json.rs
+openmodelica_simulation_runtime/src/init_bin.rs
 openmodelica_simulation_runtime/src/lib.rs
 openmodelica_simulation_runtime/src/linearize.rs
 openmodelica_simulation_runtime/src/meta.rs

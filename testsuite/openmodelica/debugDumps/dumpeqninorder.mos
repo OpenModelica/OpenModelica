@@ -25,6 +25,6 @@ buildModel(test_dumpeqninorder); getErrorString();
 // indxdae: eqns in order
 // ========================================
 //
-// {"test_dumpeqninorder","test_dumpeqninorder_init.xml"}
+// {"test_dumpeqninorder","test_dumpeqninorder_init.bin"}
 // ""
 // endResult

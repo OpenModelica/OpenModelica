@@ -1564,6 +1564,6 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // post-optimization done.
-// {"testOptdaedump", "testOptdaedump_init.xml"}
+// {"testOptdaedump", "testOptdaedump_init.bin"}
 // ""
 // endResult

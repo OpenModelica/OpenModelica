@@ -30,7 +30,7 @@ abs(a + (5 * a)^3 - 1) < 1e-6;
 // Result:
 // true
 // ""
-// {"PartialBodyFor", "PartialBodyFor_init.xml"}
+// {"PartialBodyFor", "PartialBodyFor_init.bin"}
 // ""
 // 0
 // 0.18668772817690527

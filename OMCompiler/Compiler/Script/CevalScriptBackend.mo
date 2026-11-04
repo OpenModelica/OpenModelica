@@ -2453,6 +2453,9 @@ algorithm
       then
         Values.META_FAIL();
 
+    case ("readInitFile",{Values.STRING(filename)})
+      then Values.STRING(SimulationResults.readInitFile(Util.absoluteOrRelative(filename)));
+
     case ("readSimulationResultSize",{Values.STRING(filename)})
       algorithm
         filename := Util.absoluteOrRelative(filename);
@@ -6408,7 +6411,7 @@ algorithm
         //  starttime_r, stoptime_r, interval_r, tolerance_r, method_str,options_str,outputFormat_str);
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_BUILD_MODEL);
-        init_filename := filenameprefix + "_init.xml"; //a hack ? should be at one place somewhere
+        init_filename := filenameprefix + (if Config.simCodeTarget() == "Cpp" then "_init.xml" else "_init.bin");
         //win1 = getWithinStatement(classname);
 
         if Flags.isSet(Flags.DYN_LOAD) then

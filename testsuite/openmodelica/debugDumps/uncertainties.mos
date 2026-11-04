@@ -21,6 +21,6 @@ buildModel(testUncertainties); getErrorString();
 // ""
 // true
 // ""
-// {"testUncertainties","testUncertainties_init.xml"}
+// {"testUncertainties","testUncertainties_init.bin"}
 // ""
 // endResult

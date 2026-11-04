@@ -31,7 +31,7 @@ end for;
 // "
 // end SimulationResult;
 // ""
-// {"Delta", "Delta_init.xml"}
+// {"Delta", "Delta_init.bin"}
 // ""
 // for parameter a = 0, the results are res1= 13 res2= 4.40454 res3=2
 // for parameter a = 1, the results are res1= 0 res2= 0 res3=0

@@ -34,7 +34,7 @@ val(x[5], 1, "resizableJacobianOffsets_res.mat");
 // ""
 // true
 // ""
-// {"resizableJacobianOffsets", "resizableJacobianOffsets_init.xml"}
+// {"resizableJacobianOffsets", "resizableJacobianOffsets_init.bin"}
 // ""
 // 0
 // 0

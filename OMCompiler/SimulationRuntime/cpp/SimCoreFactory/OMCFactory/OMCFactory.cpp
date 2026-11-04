@@ -642,6 +642,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      vm.add("variable-filter", 'B', CommandLine::VALUE, CommandLine::STRING, "only write variables that match filter", ".*");
      vm.add("solver-threads", 0, CommandLine::VALUE, CommandLine::INT, "number of threads that can be used by the solver", "1", true);
      vm.add("override", 0, CommandLine::VALUES, CommandLine::STRING, "start values of variables that replace those of the init xml: name=value[,name=value]...");
+     vm.add("list-variables", 0, CommandLine::FLAG, CommandLine::STRING, "print the variables, their attributes and the default experiment as JSON and exit");
 
      vector<string> unrecognized;
      try {
@@ -798,7 +799,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
        }
      }
 
-     SimSettings settings = {solver, linSolver, nonLinSolvers, starttime, stoptime, stepsize, 1e-24, 0.01, tolerance, resultsFileName, timeOut, outputPointType, logSettings, nlsContinueOnError, solverThreads, outputFormat, emitResults, variableFilter, inputPath, outputPath, parameterOverrides};
+     SimSettings settings = {solver, linSolver, nonLinSolvers, starttime, stoptime, stepsize, 1e-24, 0.01, tolerance, resultsFileName, timeOut, outputPointType, logSettings, nlsContinueOnError, solverThreads, outputFormat, emitResults, variableFilter, inputPath, outputPath, parameterOverrides, vm.flag("list-variables")};
 
      _library_path = libraries_path.string();
      _modelicasystem_path = modelica_path.string();
@@ -864,6 +865,7 @@ void OMCFactory::fillArgumentsToReplace()
   _argumentsToReplace.insert(pair<string,string>("-emit_protected", "emit-results protected"));
   _argumentsToReplace.insert(pair<string,string>("-ignoreHideResult", "ignore-hide-result"));
   _argumentsToReplace.insert(pair<string,string>("-inputPath", "input-path"));
+  _argumentsToReplace.insert(pair<string,string>("-listVariables", "list-variables"));
   _argumentsToReplace.insert(pair<string,string>("-outputPath", "output-path"));
   _argumentsToReplace.insert(pair<string,string>("-override", "override"));
 }

@@ -21,6 +21,6 @@ buildModel(testInteractivedump); getErrorString();
 // ""
 // true
 // ""
-// {"testInteractivedump","testInteractivedump_init.xml"}
+// {"testInteractivedump","testInteractivedump_init.bin"}
 // ""
 // endResult

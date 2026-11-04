@@ -100,6 +100,7 @@ members = [
   "../../SimulationRuntime/rust/openmodelica_mat_writer",
   "../../SimulationRuntime/rust/openmodelica_arrow_writer",
   "../../SimulationRuntime/rust/openmodelica_hdf5_result",
+  "../../SimulationRuntime/rust/openmodelica_init_file",
   "../../SimulationRuntime/rust/openmodelica_nls",
   "../../SimulationRuntime/rust/openmodelica_plt_writer",
   "../../SimulationRuntime/rust/openmodelica_regex",
@@ -213,6 +214,7 @@ openmodelica_animation = { path = "openmodelica_animation" }
 openmodelica_mat_writer = { path = "../../SimulationRuntime/rust/openmodelica_mat_writer" }
 openmodelica_arrow_writer = { path = "../../SimulationRuntime/rust/openmodelica_arrow_writer" }
 openmodelica_hdf5_result = { path = "../../SimulationRuntime/rust/openmodelica_hdf5_result" }
+openmodelica_init_file = { path = "../../SimulationRuntime/rust/openmodelica_init_file" }
 arrow-array = { version = "60", default-features = false }
 arrow-schema = { version = "60", default-features = false }
 arrow-ipc = { version = "60", default-features = false }

@@ -12,6 +12,6 @@ buildModel(Issue15300); getErrorString();
 // Result:
 // true
 // ""
-// {"Issue15300", "Issue15300_init.xml"}
+// {"Issue15300", "Issue15300_init.bin"}
 // ""
 // endResult

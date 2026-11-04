@@ -55,13 +55,13 @@ abs(a + 0.1 * s - 3) < 1e-6;
 // Result:
 // true
 // ""
-// {"resizableSparsityInner1", "resizableSparsityInner1_init.xml"}
+// {"resizableSparsityInner1", "resizableSparsityInner1_init.bin"}
 // ""
 // 1
 // 0
 // 0.1866877281769053
 // true
-// {"resizableSparsityInner2", "resizableSparsityInner2_init.xml"}
+// {"resizableSparsityInner2", "resizableSparsityInner2_init.bin"}
 // ""
 // 1
 // 0

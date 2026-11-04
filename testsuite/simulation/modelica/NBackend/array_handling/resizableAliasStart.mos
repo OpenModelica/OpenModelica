@@ -32,7 +32,7 @@ val(T[3], 0, "resizableAliasStart_5.mat");
 // Result:
 // true
 // ""
-// {"resizableAliasStart", "resizableAliasStart_init.xml"}
+// {"resizableAliasStart", "resizableAliasStart_init.bin"}
 // ""
 // 0
 // 5.0

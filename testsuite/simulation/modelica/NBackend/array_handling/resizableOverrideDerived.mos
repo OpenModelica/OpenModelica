@@ -45,7 +45,7 @@ readSimulationResultVars("resizableOverrideDerived_3.mat");
 // Result:
 // true
 // ""
-// {"resizableOverrideDerived", "resizableOverrideDerived_init.xml"}
+// {"resizableOverrideDerived", "resizableOverrideDerived_init.bin"}
 // ""
 // 0
 // true

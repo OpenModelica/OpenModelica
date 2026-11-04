@@ -47,6 +47,7 @@
 typedef omc::ResultFile ResultFileReader;
 
 #include <QDomDocument>
+#include <QJsonObject>
 #include <QSet>
 #include <QTreeView>
 
@@ -187,7 +188,8 @@ public:
   QModelIndex variablesTreeItemIndex(VariablesTreeItem *pVariablesTreeItem, int column = 0) const;
   bool insertVariablesItems(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
   void sortVariablesTreeItems();
-  void parseInitXml(QXmlStreamReader &xmlReader, SimulationOptions simulationOptions, QStringList *variablesList);
+  static QJsonObject listVariables(const QString &executable, const SimulationOptions &simulationOptions, QString *error);
+  void readVariables(const QJsonObject &variables, SimulationOptions simulationOptions, QStringList *variablesList);
   bool removeVariableTreeItem(QString variable, bool closeInteractivePlotWindow);
   void removeVariableTreeItem(VariablesTreeItem *pVariablesTreeItem);
   void unCheckVariables(VariablesTreeItem *pVariablesTreeItem);
@@ -197,11 +199,10 @@ private:
   VariablesTreeItem *mpRootVariablesTreeItem;
   VariablesTreeItem *mpActiveVariablesTreeItem;
   QHash<QString, ScalarVariable> mScalarVariablesHash;
-  // ArrayVariable elements of model_init.xml, keyed by name without subscripts
+  // The array variables of the model, keyed by name without subscripts
   QHash<QString, ScalarVariable> mArrayVariablesHash;
   void filterVariableTreeItem(VariableNode *pParentVariableNode, VariablesTreeItem *pParentVariablesTreeItem);
   void insertVariablesItems(VariableNode *pParentVariableNode, VariablesTreeItem *pParentVariablesTreeItem);
-  static ScalarVariable parseScalarVariable(QXmlStreamReader &xmlReader);
   static QString removeSubscripts(const QString &name);
   void getVariableInformation(ResultFileReader *pMatReader, QString variableToFind, QString *type, QString *value, bool *changeAble, QString *variability,
                               QString *unit, QString *displayUnit, QString *description);
@@ -258,12 +259,9 @@ public:
   void insertVariablesItemsToTree(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
   void variablesUpdated();
   void updateVariablesTreeHelper(QMdiSubWindow *pSubWindow);
-  void readVariablesAndUpdateXML(VariablesTreeItem *pVariablesTreeItem, QString outputFileName,
-                                 QHash<QString, QHash<QString, QString> > *variables);
-  void findVariableAndUpdateValue(QDomDocument xmlDocument, QHash<QString, QHash<QString, QString> > variables);
+  void readChangedValues(VariablesTreeItem *pVariablesTreeItem, QString outputFileName, QMap<QString, QString> *values);
   void reSimulate(bool showSetup);
   void reSimulate(SimulationOptions simulationOptions, VariablesTreeItem *pVariablesTreeItem, bool showSetup);
-  void updateInitXmlFile(VariablesTreeItem *pVariablesTreeItem, SimulationOptions simulationOptions);
   void initializeVisualization();
   void updateVisualization();
   void updatePlotWindows();

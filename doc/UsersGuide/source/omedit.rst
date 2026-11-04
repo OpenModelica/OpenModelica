@@ -733,7 +733,7 @@ General
 Simulation Flags
 ~~~~~~~~~~~~~~~~
 
--  *Model Setup File (Optional)* - specifies a new setup XML file to the generated
+-  *Model Setup File (Optional)* - specifies a new init file (<model>_init.bin) to the generated
    simulation code.
 
 -  *Initialization Method (Optional)* - specifies the initialization method.

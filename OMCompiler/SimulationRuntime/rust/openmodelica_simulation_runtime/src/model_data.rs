@@ -1,11 +1,11 @@
-//! `read_input_xml` + `allocModelDataVars`: fills `MODEL_DATA` from the model's
-//! `<prefix>_init.xml`.
+//! C's `read_input` + `allocModelDataVars`: fills `MODEL_DATA` from the model's
+//! `<prefix>_init.bin`, read into attribute maps by `init_bin`.
 //!
 //! The generated C carries only the counts of *array* variables; the names,
-//! attributes, start values and alias structure live in the XML beside the
-//! executable, which the C runtime reads with expat. This is the same read, with
-//! the same defaults and the same ordering (`rSta`, `rDer`, `rAlg`, then the
-//! parameters), so a model sees identical `modelData` under either runtime.
+//! attributes, start values and alias structure live in the init file. This is
+//! the same read as C's, with the same defaults and the same ordering (`rSta`,
+//! `rDer`, `rAlg`, then the parameters), so a model sees identical `modelData`
+//! under either runtime.
 
 use core::ffi::{c_char, c_int, c_long, c_void};
 use std::collections::HashMap;
@@ -25,9 +25,7 @@ impl XmlVar {
     }
 }
 
-/// What the XML says, grouped the way `read_input_xml` consumes it. The default is
-/// what an FMU has instead: the generated `<Model>_read_input_fmu` fills
-/// `MODEL_DATA` directly.
+/// What the init file says, grouped the way C's `read_input` consumes it.
 #[derive(Default)]
 pub struct InitXml {
     /// `classType` -> variables, each at its `classIndex`.
@@ -62,81 +60,35 @@ impl InitXml {
     }
 }
 
-pub fn parse(path: &str) -> Result<InitXml, String> {
-    let text = std::fs::read_to_string(path).map_err(|e| format!("cannot read {path}: {e}"))?;
-    parse_str(&text)
+/// C's `read_input`: `<prefix>_init.bin` compiled into the model, else the file
+/// `-f` names, else the one in `-inputPath`, the FMU's resources or the working
+/// directory.
+pub fn load_init(md: &MODEL_DATA) -> Result<InitXml, String> {
+    Ok(crate::init_bin::convert(read_init_file(md)?))
 }
 
-pub fn parse_str(text: &str) -> Result<InitXml, String> {
-    let doc = roxmltree::Document::parse(text).map_err(|e| format!("cannot parse the init XML: {e}"))?;
-    let root = doc.root_element();
-    let md: HashMap<String, String> = root
-        .attributes()
-        .map(|a| (a.name().to_string(), a.value().to_string()))
-        .collect();
-    let mut experiment = HashMap::new();
-    let mut groups: HashMap<String, Vec<Option<XmlVar>>> = HashMap::new();
-    let mut enumerations = HashMap::new();
-
-    for node in root.children().filter(|n| n.is_element()) {
-        match node.tag_name().name() {
-            "DefaultExperiment" => {
-                experiment = node
-                    .attributes()
-                    .map(|a| (a.name().to_string(), a.value().to_string()))
-                    .collect();
-            }
-            "TypeDefinitions" => {
-                for ty in node.children().filter(|n| n.has_tag_name("SimpleType")) {
-                    let literals = ty
-                        .descendants()
-                        .filter(|n| n.has_tag_name("Item"))
-                        .map(|n| n.attribute("name").unwrap_or_default().to_string())
-                        .collect();
-                    enumerations.insert(ty.attribute("name").unwrap_or_default().to_string(), literals);
-                }
-            }
-            "ModelVariables" => {
-                for sv in node.children().filter(|n| n.is_element()) {
-                    let mut attrs: HashMap<String, String> = sv
-                        .attributes()
-                        .map(|a| (a.name().to_string(), a.value().to_string()))
-                        .collect();
-                    let mut dims = 0usize;
-                    for child in sv.children().filter(|n| n.is_element()) {
-                        // `<Real start=".." fixed=".."/>` and `<Dimension .../>`.
-                        if child.tag_name().name() == "Dimension" {
-                            dims += 1;
-                            for a in child.attributes() {
-                                attrs.insert(format!("dim-{dims}-{}", a.name()), a.value().to_string());
-                            }
-                        } else {
-                            for a in child.attributes() {
-                                attrs.insert(a.name().to_string(), a.value().to_string());
-                            }
-                        }
-                    }
-                    if dims > 0 {
-                        attrs.insert("num_dimensions".into(), dims.to_string());
-                    }
-                    let class_type = attrs.get("classType").cloned().unwrap_or_default();
-                    let class_index: usize = attrs.get("classIndex").and_then(|s| s.parse().ok()).unwrap_or(0);
-                    let slot = groups.entry(class_type).or_default();
-                    if slot.len() <= class_index {
-                        slot.resize_with(class_index + 1, || None);
-                    }
-                    slot[class_index] = Some(XmlVar { attrs });
-                }
-            }
-            _ => {}
-        }
+pub fn read_init_file(md: &MODEL_DATA) -> Result<omc_init::InitFile, String> {
+    let init = if !md.initBinData.is_null() {
+        omc_init::InitFile::parse(unsafe { std::slice::from_raw_parts(md.initBinData, md.initBinSize) })?
+    } else {
+        let prefix = cstr(md.modelFilePrefix);
+        let flag =
+            |ix: usize| unsafe { (crate::support::omc_flag[ix] != 0).then(|| cstr(crate::support::omc_flagValue[ix])) };
+        let path = flag(FLAG_F).unwrap_or_else(|| match flag(FLAG_INPUT_PATH) {
+            Some(dir) => format!("{dir}/{prefix}_init.bin"),
+            None if !md.resourcesDir.is_null() => format!("{}/{prefix}_init.bin", cstr(md.resourcesDir)),
+            None => format!("{prefix}_init.bin"),
+        });
+        omc_init::InitFile::read(&path)?
+    };
+    let model_guid = cstr(md.modelGUID);
+    if init.model.guid != model_guid {
+        return Err(format!(
+            "GUID: {} from input data file does not match the GUID compiled in the model: {model_guid}",
+            init.model.guid
+        ));
     }
-    Ok(InitXml {
-        groups,
-        md,
-        experiment,
-        enumerations,
-    })
+    Ok(init)
 }
 
 // ---------------------------------------------------------------------------
@@ -341,7 +293,7 @@ macro_rules! read_group {
     }};
 }
 
-/// The variable and parameter arrays `read_input_xml` fills, plus the name ->
+/// The variable and parameter arrays `read_input` fills, plus the name ->
 /// index maps the alias variables resolve through.
 pub struct AliasMaps {
     pub vars: HashMap<String, i64>,
@@ -919,36 +871,4 @@ pub fn initialize_output_filter(md: &mut MODEL_DATA, filter: &str, cheap_aliases
         md.stringAlias,
         md.stringParameterData
     );
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn enumeration_types_come_from_type_definitions() {
-        let xml = parse_str(
-            r#"<fmiModelDescription guid="{x}">
-  <TypeDefinitions>
-    <SimpleType name="P.Mode">
-      <Enumeration>
-        <Item name="Off" value="1"/>
-        <Item name="Heat" value="2"/>
-      </Enumeration>
-    </SimpleType>
-  </TypeDefinitions>
-  <ModelVariables>
-    <ScalarVariable name="m" classIndex="0" classType="iAlg"><Integer declaredType="P.Mode" start="1"/></ScalarVariable>
-    <ScalarVariable name="i" classIndex="1" classType="iAlg"><Integer start="1"/></ScalarVariable>
-  </ModelVariables>
-</fmiModelDescription>"#,
-        )
-        .unwrap();
-        let e = xml.enumeration("iAlg", 0).unwrap();
-        assert_eq!(
-            (e.name.as_str(), e.literals.as_slice()),
-            ("P.Mode", &["Off".to_string(), "Heat".to_string()][..])
-        );
-        assert!(xml.enumeration("iAlg", 1).is_none());
-    }
 }

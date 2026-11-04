@@ -308,6 +308,6 @@ buildModel(scalarAdjointJacobian1); getErrorString();
 // functions:
 // -----------
 //
-// {"scalarAdjointJacobian1", "scalarAdjointJacobian1_init.xml"}
+// {"scalarAdjointJacobian1", "scalarAdjointJacobian1_init.bin"}
 // ""
 // endResult

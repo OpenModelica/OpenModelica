@@ -49,7 +49,8 @@ class File
   end destructor;
 end File;
 
-type Mode = enumeration(Read,Write);
+// Memory: the Rust omc keeps the bytes (File.rs take_memory_file); not in the C omc.
+type Mode = enumeration(Read,Write,Memory);
 
 function open
   input File file;
@@ -77,6 +78,21 @@ function writeReal
   input String format="%.15g";
 external "C" om_file_write_real(file,data,format) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file_ext.h\"");
 end writeReal;
+
+function writeBinaryInteger
+  "Writes the lowest bytes of data, little-endian two's complement."
+  input File file;
+  input Integer data;
+  input Integer bytes "1, 2, 4 or 8";
+external "C" om_file_write_binary_integer(file,data,bytes) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file_ext.h\"");
+end writeBinaryInteger;
+
+function writeBinaryReal
+  "Writes data as a little-endian IEEE 754 double."
+  input File file;
+  input Real data;
+external "C" om_file_write_binary_real(file,data) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file_ext.h\"");
+end writeBinaryReal;
 
 type Escape = enumeration(None "No escape string",
                           C "Escapes C strings (minimally): \\n and \"",

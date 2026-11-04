@@ -23,9 +23,6 @@ end fmi3_array_nonscalarized;
 
 buildModelFMU(fmi3_array_nonscalarized, version="3.0", fmuType="me"); getErrorString();
 
-// genuine array is dimensioned in the FMU init (non-empty count)
-system("unzip -cqq fmi3_array_nonscalarized.fmu sources/fmi3_array_nonscalarized_init_fmu.c | grep -c 'numberOfDimensions = [1-9]' > fmi3_array_nonscalarized.dims || true"); getErrorString();
-readFile("fmi3_array_nonscalarized.dims"); getErrorString();
 
 // native FMI 3.0 array variable with a Dimension child
 system("unzip -cqq fmi3_array_nonscalarized.fmu modelDescription.xml > fmi3_array_nonscalarized_tmp.xml"); getErrorString();
@@ -41,11 +38,6 @@ readFile("fmi3_array_nonscalarized.xml"); getErrorString();
 // "Notification: Building FMU for platform 'static' (1/1).
 // Notification: Finished FMU for platform 'static' (1/1).
 // "
-// 0
-// ""
-// "2
-// "
-// ""
 // 0
 // ""
 // 0

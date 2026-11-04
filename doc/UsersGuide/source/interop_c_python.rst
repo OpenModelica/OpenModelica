@@ -181,10 +181,9 @@ simulated via the OpenModelica scripting interface:
   res_file.close()
 
 A second option of simulating the above Modelica model is to use the
-command buildModel instead of the simulate command and setting the
-parameter value in the initial parameter file, CalledbyPython\_init.txt
-instead of using the command setComponentModifierValue. Then the file
-CalledbyPython.exe is just executed.
+command buildModel instead of the simulate command and to execute the file
+CalledbyPython.exe with the simulation flag -override to set the parameter
+value, instead of using the command setComponentModifierValue.
 
 The third option is to use the ZeroMQ interface for invoking the compiler
 and then just use the scripting interface to send commands to the

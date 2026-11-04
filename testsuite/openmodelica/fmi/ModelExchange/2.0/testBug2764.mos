@@ -80,7 +80,6 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"test_Bug2764_18spd.c\" />
 //       <File name=\"test_Bug2764_FMU.c\" />
 //       <File name=\"test_Bug2764_functions.c\" />
-//       <File name=\"test_Bug2764_init_fmu.c\" />
 //       <File name=\"test_Bug2764_records.c\" />
 //       <File name=\"fmi-export/fmu2_model_interface.c\" />
 //       <File name=\"fmi-export/fmu_read_flags.c\" />
@@ -95,6 +94,7 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"simulation/omc_simulation_util.c\" />
 //       <File name=\"simulation/options.c\" />
 //       <File name=\"simulation/simulation_info_json.c\" />
+//       <File name=\"simulation/simulation_input.c\" />
 //       <File name=\"simulation/simulation_omc_assert.c\" />
 //       <File name=\"simulation/solver/delay.c\" />
 //       <File name=\"simulation/solver/discrete_changes.c\" />
@@ -121,6 +121,7 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"util/omc_error.c\" />
 //       <File name=\"util/omc_file.c\" />
 //       <File name=\"util/omc_init.c\" />
+//       <File name=\"util/omc_init_bin.c\" />
 //       <File name=\"util/omc_mmap.c\" />
 //       <File name=\"util/omc_msvc.c\" />
 //       <File name=\"util/omc_numbers.c\" />

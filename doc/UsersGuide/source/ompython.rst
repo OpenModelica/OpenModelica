@@ -961,8 +961,10 @@ passed via the :code:`work_directory` argument of the constructor:
 -  the model executable, either as :code:`<model_name>` or :code:`<model_name>.exe`. On Windows an
    additional :code:`<model_name>.bat` file is expected; OMPython reads the library path from it.
 
--  the model initialization file :code:`<model_name>_init.xml`, which provides the model structure.
-   The quantities of the model - and therefore all get methods - are read from this file.
+-  the model initialization file :code:`<model_name>_init.bin` (:code:`<model_name>_init.xml` for
+   OpenModelica 1.27 and earlier). The quantities of the model - and therefore all get methods -
+   come from the model executable (simulation flag :code:`-listVariables`), or for
+   OpenModelica 1.27 and earlier from :code:`<model_name>_init.xml`.
 
 The constructor also accepts a :code:`session` argument, but it has to be an :code:`OMSessionRunner`;
 any other session raises a :code:`ModelicaSystemError`, because running a model executable does not

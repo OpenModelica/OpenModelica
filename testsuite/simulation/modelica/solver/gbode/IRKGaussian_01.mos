@@ -87,7 +87,7 @@ end for;
 // {"default"}
 // true
 // ""
-// {"SlowFastDynamics", "SlowFastDynamics_init.xml"}
+// {"SlowFastDynamics", "SlowFastDynamics_init.bin"}
 // ""
 // 0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.

@@ -25,29 +25,20 @@ end MultiDimArrayVar;
 
 buildModel(MultiDimArrayVar); getErrorString();
 
-system("sed -n '/<ArrayVariable/,/<\\/ArrayVariable>/p' MultiDimArrayVar_init.xml > MultiDimArrayVar_init.tmp.xml");
-initFileContent := readFile("MultiDimArrayVar_init.tmp.xml");
+initFileContent := readInitFile("MultiDimArrayVar_init.bin");
 
 // Result:
 // true
 // true
 // ""
-// {"MultiDimArrayVar", "MultiDimArrayVar_init.xml"}
+// {"MultiDimArrayVar", "MultiDimArrayVar_init.bin"}
 // ""
-// 0
-// "  <ArrayVariable
-//     name = \"A\"
-//     valueReference = \"1003\"
-//     variability = \"parameter\" isDiscrete = \"true\"
-//     causality = \"parameter\" isValueChangeable = \"true\"
-//     alias = \"noAlias\"
-//     classIndex = \"3\" classType = \"iPar\"
-//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
-//     <Dimension start=\"2\"/>
-//     <Dimension start=\"3\"/>
-//     <Dimension start=\"4\"/>
-//     <Integer start=\"1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24\" fixed=\"true\" />
-//   </ArrayVariable>
+// "model MultiDimArrayVar
+// sizes numberOfIntegerParameters=4
+// experiment startTime=0.0 stopTime=1.0 stepSize=0.002 tolerance=1e-6 solver=dassl outputFormat=mat variableFilter=\".*\"
+// iPar dim1 Integer parameter causality=parameter changeable fixed hideResult=false start=2
+// iPar dim2 Integer parameter causality=parameter changeable fixed hideResult=false start=3
+// iPar dim3 Integer parameter causality=parameter changeable fixed hideResult=false start=4
+// iPar A Integer parameter causality=parameter changeable fixed hideResult=false dimensions=[2,3,4] start={1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24}
 // "
 // endResult

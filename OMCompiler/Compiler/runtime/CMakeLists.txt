@@ -90,6 +90,7 @@ endif()
 target_link_libraries(omcruntime PUBLIC omc::mmc::runtime)
 # The scripting API reads and converts .arrow result files through libomc_result.
 target_link_libraries(omcruntime PUBLIC omc::result)
+target_link_libraries(omcruntime PUBLIC omc::init)
 target_link_libraries(omcruntime PUBLIC omc::3rd::ffi)
 target_link_libraries(omcruntime PUBLIC omc::3rd::libzmq)
 target_link_libraries(omcruntime PUBLIC omc::3rd::simdjson)

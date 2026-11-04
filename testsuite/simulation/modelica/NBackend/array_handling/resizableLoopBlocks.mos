@@ -43,7 +43,7 @@ abs(val(T[20], 1, "resizableLoopBlocks_20.mat") / val(T[20], 1, "resizableLoopBl
 // Result:
 // true
 // ""
-// {"resizableLoopBlocks", "resizableLoopBlocks_init.xml"}
+// {"resizableLoopBlocks", "resizableLoopBlocks_init.bin"}
 // ""
 // 1
 // 0

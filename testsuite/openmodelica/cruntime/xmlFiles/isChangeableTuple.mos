@@ -1,7 +1,6 @@
 // name: isChangeableTuple
 // keywords: xml, init, changeable value, tuple
 // status: correct
-// teardown_command: rm isChangeableTuple.xml
 // cflags: -d=omedit
 
 loadString("
@@ -23,19 +22,19 @@ end isChangeableTuple;
 "); getErrorString();
 
 translateModel(isChangeableTuple); getErrorString();
-system("grep -o \"isValueChangeable\\s*=\\s*\\\"\\w*\\\"\" isChangeableTuple_init.xml > isChangeableTuple.xml"); getErrorString();
-readFile("isChangeableTuple.xml"); getErrorString();
+readInitFile("isChangeableTuple_init.bin"); getErrorString();
 
 // Result:
 // true
 // ""
 // true
 // ""
-// 0
-// ""
-// "isValueChangeable = \"false\"
-// isValueChangeable = \"false\"
-// isValueChangeable = \"false\"
+// "model isChangeableTuple
+// sizes numberOfRealAlgebraicVariables=1 numberOfRealParameters=2 numberOfFunctions=1
+// experiment startTime=0.0 stopTime=1.0 stepSize=0.002 tolerance=1e-6 solver=dassl outputFormat=mat variableFilter=\".*\"
+// rAlg x Real continuous fixed
+// rPar y1 Real parameter causality=calculatedParameter fixed
+// rPar y2 Real parameter causality=calculatedParameter fixed
 // "
 // ""
 // endResult

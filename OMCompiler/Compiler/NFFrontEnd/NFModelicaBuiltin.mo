@@ -3694,6 +3694,14 @@ external "builtin";
 annotation(preferredView="text");
 end readSimulationResult;
 
+impure function readInitFile
+  "Returns the variables of a <prefix>_init.bin file as text, one line per variable."
+  input String fileName;
+  output String text;
+external "builtin";
+annotation(preferredView="text");
+end readInitFile;
+
 impure function readSimulationResultSize
   "Returns the number of intervals that are present in the output file."
   input String fileName;
@@ -5130,6 +5138,7 @@ algorithm
     success := 0 == system(command);
   end if;
 annotation(Documentation(info="<html>
+<p>Only the Cpp target writes an init XML file; the other targets write <code>&lt;prefix&gt;_init.bin</code>, and this function returns false for them. Give the start values to the simulation with the simulation flag <code>-override</code> instead.</p>
 <p>Requires <code>xsltproc</code> from libxslt (included in the OpenModelica installer for Windows).</p>
 </html>"),
   preferredView="text");

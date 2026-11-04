@@ -81,7 +81,7 @@ res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.m
 // "
 // true
 // ""
-// {"NPendulum.pendulum", "NPendulum.pendulum_init.xml"}
+// {"NPendulum.pendulum", "NPendulum.pendulum_init.bin"}
 // ""
 // record SimulationResult
 //     resultFile = "NPendulum.pendulum_res.mat",
@@ -110,7 +110,7 @@ res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.m
 // true
 // "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
 // "
-// {"NPendulum.pendulum", "NPendulum.pendulum_init.xml"}
+// {"NPendulum.pendulum", "NPendulum.pendulum_init.bin"}
 // ""
 // record SimulationResult
 //     resultFile = "NPendulum.pendulum_res.mat",

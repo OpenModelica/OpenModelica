@@ -29,6 +29,6 @@ buildModel(test_dumprepl); getErrorString();
 // Unreplaceable Crefs: (0)
 // ========================================
 //
-// {"test_dumprepl","test_dumprepl_init.xml"}
+// {"test_dumprepl","test_dumprepl_init.bin"}
 // ""
 // endResult

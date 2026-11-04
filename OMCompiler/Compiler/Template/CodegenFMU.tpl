@@ -93,13 +93,12 @@ import CodegenFMU2;
 import CodegenFMU3;
 
 
-template translateModel(SimCode simCode, String FMUVersion, String FMUType, list<String> sourceFiles)
+template translateModel(SimCode simCode, String FMUVersion, String FMUType, list<String> sourceFiles, String guid)
  "Generates C code and Makefile for compiling a FMU of a
   Modelica model."
 ::=
 match simCode
 case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
-  let guid = getUUIDStr()
   let target  = simulationCodeTarget()
   let fileNamePrefixHash = Util.hashFileNamePrefix(fileNamePrefix)
   let fileNamePrefixTmpDir = '<%fileNamePrefixHash%>.fmutmp/sources/<%fileNamePrefix%>'
@@ -112,7 +111,6 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
 
   let _ = generateSimulationFiles(simCode,guid,fileNamePrefixTmpDir,FMUVersion)
 
-  let()= textFile(simulationInitFunction(simCode,guid), '<%fileNamePrefixTmpDir%>_init_fmu.c')
   let()= textFile(fmumodel_identifierHeaderFile(simCode,guid,FMUVersion,FMUType), '<%fileNamePrefixTmpDir%>_FMU.h')
   let()= textFile(fmumodel_identifierFile(simCode,guid,FMUVersion,FMUType), '<%fileNamePrefixTmpDir%>_FMU.c')
 
@@ -291,7 +289,7 @@ case SIMCODE(__) then
     // ModelInstance struct used by the declarations below and by fmu1_model_interface.c.inc.
     // The FMI 2.0 fmi2Functions.h header is not needed for FMI 1.0. The implementation
     // (fmu1_model_interface.c.inc) is inlined further down, after the forward declarations
-    // that it calls (setStartValues, getReal, ...). See #15838.
+    // that it calls (getReal, ...). See #15838.
     #include "fmi-export/fmu1_model_interface.h"
     #define fmu1_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
     >>
@@ -331,8 +329,6 @@ case SIMCODE(__) then
   >>
   %>
 
-  void setStartValues(ModelInstance *comp);
-  void setDefaultStartValues(ModelInstance *comp);
   <%if boolOr(isFMIVersion20(FMUVersion), isFMIVersion30(FMUVersion)) then
   <<
   void eventUpdate(ModelInstance* comp, fmi2EventInfo* eventInfo);
@@ -369,7 +365,7 @@ case SIMCODE(__) then
   <%if isFMIVersion10(FMUVersion) then
   <<
   // FMI 1.0 inlines the model interface implementation here, after the forward declarations
-  // above (setStartValues, setDefaultStartValues, getReal, ...) that it calls. See #15838.
+  // above (getReal, ...) that it calls. See #15838.
   #if !defined(OMC_RUST_SIMULATION_RUNTIME)
   #include "fmi-export/fmu1_model_interface.c.inc"
   #endif
@@ -404,8 +400,6 @@ case SIMCODE(__) then
 
   #include "simulation/solver/events.h"
 
-  <%setDefaultStartValues(modelInfo)%>
-  <%setStartValues(modelInfo)%>
   const size_t omc_fmu_threadDataSize = sizeof(threadData_t);
   <%if isFMIVersion30(FMUVersion) then
   <<
@@ -530,59 +524,6 @@ template defineExternalFunction(SimCodeFunction.Function fn)
 end defineExternalFunction;
 
 
-template setDefaultStartValues(ModelInfo modelInfo)
- "Generates code in c file for function setStartValues() which will set start values for all variables."
-::=
-match modelInfo
-case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars),vars=SIMVARS(__)) then
-  <<
-  // Set values for all variables that define a start value
-  OMC_DISABLE_OPT
-  void omc_fmu_setDefaultStartValues(DATA *fmuData) {
-    <%vars.stateVars |> var => initValsDefault(var,"realVars") ;separator="\n"%>
-    <%vars.derivativeVars |> var => initValsDefault(var,"realVars") ;separator="\n"%>
-    <%vars.algVars |> var => initValsDefault(var,"realVars") ;separator="\n"%>
-    <%vars.discreteAlgVars |> var => initValsDefault(var, "realVars") ;separator="\n"%>
-    <%vars.intAlgVars |> var => initValsDefault(var,"integerVars") ;separator="\n"%>
-    <%vars.boolAlgVars |> var => initValsDefault(var,"booleanVars") ;separator="\n"%>
-    <%vars.stringAlgVars |> var => initValsDefault(var,"stringVars") ;separator="\n"%>
-    <%vars.paramVars |> var => initParamsDefault(var,"realParameter") ;separator="\n"%>
-    <%vars.intParamVars |> var => initParamsDefault(var,"integerParameter") ;separator="\n"%>
-    <%vars.boolParamVars |> var => initParamsDefault(var,"booleanParameter") ;separator="\n"%>
-    <%vars.stringParamVars |> var => initParamsDefault(var,"stringParameter") ;separator="\n"%>
-  }
-
-  void setDefaultStartValues(ModelInstance *comp) {
-    omc_fmu_setDefaultStartValues(comp->fmuData);
-  }
-  >>
-end setDefaultStartValues;
-
-template setStartValues(ModelInfo modelInfo)
- "Generates code in c file for function setStartValues() which will set start values for all variables."
-::=
-match modelInfo
-case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars),vars=SIMVARS(__)) then
-  <<
-  // Set values for all variables that define a start value
-  OMC_DISABLE_OPT
-  void setStartValues(ModelInstance *comp) {
-    <%vars.stateVars |> var => initVals(var,"realVars") ;separator="\n"%>
-    <%vars.derivativeVars |> var => initVals(var,"realVars") ;separator="\n"%>
-    <%vars.algVars |> var => initVals(var,"realVars") ;separator="\n"%>
-    <%vars.discreteAlgVars |> var => initVals(var, "realVars") ;separator="\n"%>
-    <%vars.intAlgVars |> var => initVals(var,"integerVars") ;separator="\n"%>
-    <%vars.boolAlgVars |> var => initVals(var,"booleanVars") ;separator="\n"%>
-    <%vars.stringAlgVars |> var => initVals(var,"stringVars") ;separator="\n"%>
-    <%vars.paramVars |> var => initParams(var,"realParameter") ;separator="\n"%>
-    <%vars.intParamVars |> var => initParams(var,"integerParameter") ;separator="\n"%>
-    <%vars.boolParamVars |> var => initParams(var,"booleanParameter") ;separator="\n"%>
-    <%vars.stringParamVars |> var => initParams(var,"stringParameter") ;separator="\n"%>
-  }
-
-  >>
-end setStartValues;
-
 template initializeFunction(list<SimEqSystem> allEquations)
   "Generates initialize function for c file."
 ::=
@@ -607,106 +548,6 @@ template initializeFunction(list<SimEqSystem> allEquations)
   >>
 end initializeFunction;
 
-
-template initVals(SimVar var, String arrayName) ::=
-  match var
-    case var as SIMVAR(type_=type_) then
-      if stringEq(CodegenUtil.crefStr(name),"$dummy") then
-        ''
-      else if stringEq(CodegenUtil.crefStr(name),"der($dummy)") then
-        ''
-      else
-        // For a non-scalarized array the start attribute is a single
-        // (broadcast) scalar element, so it is set like a scalar.
-        <<
-        put_<%expTypeShort(type_)%>_element(comp->fmuData->localData[0]-><%arrayName%>[<%var.index%>], 0, &comp->fmuData->modelData-><%arrayName%>Data[<%var.index%>].attribute.start);
-        >>
-end initVals;
-
-template initParams(SimVar var, String arrayName) ::=
-  match var
-    case SIMVAR(index=index, type_=type_) then
-      <<
-      put_<%expTypeShort(type_)%>_element(comp->fmuData->simulationInfo-><%arrayName%>[<%index%>], 0, &comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
-      >>
-end initParams;
-
-template initValsDefault(SimVar var, String arrayName) ::=
-  match var
-    // a non-scalarized real array's start attribute is a single broadcast scalar.
-    case SIMVAR(index=index, type_=T_REAL())
-    case SIMVAR(index=index, type_=T_ARRAY(ty=T_REAL())) then
-      <<
-      put_real_element(<%initValDefault(var)%>, 0, &fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
-      >>
-    case SIMVAR(index=index, type_=T_STRING())
-    case SIMVAR(index=index, type_=T_ARRAY(ty=T_STRING())) then
-      <<
-      omc_string_move((modelica_string*) fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start.data, <%initValDefault(var)%>);
-      >>
-    case SIMVAR(index=index, type_=type_) then
-      <<
-      put_<%expTypeShort(type_)%>_element(<%initValDefault(var)%>, 0, &fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
-      >>
-end initValsDefault;
-
-template initParamsDefault(SimVar var, String arrayName) ::=
-  match var
-    case SIMVAR(index=index, type_=T_REAL()) then
-      <<
-      put_real_element(<%initValDefault(var)%>, 0, &fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
-      >>
-    case SIMVAR(index=index, type_=T_STRING()) then
-      <<
-      omc_string_move((modelica_string*) fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start.data, <%initValDefault(var)%>);
-      >>
-    case SIMVAR(index=index, type_=type_) then
-      <<
-      put_<%expTypeShort(type_)%>_element(<%initValDefault(var)%>, 0, &fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
-      >>
-end initParamsDefault;
-
-template initValDefault(SimVar var) ::=
-  match var
-    case var as SIMVAR(__) then
-    match var.initialValue
-      case SOME(v as SCONST(__)) then 'omc_string_new(<%initVal(v)%>)'
-      case SOME(v as ICONST(__))
-      case SOME(v as RCONST(__))
-      case SOME(v as BCONST(__))
-      case SOME(v as ENUM_LITERAL(__))
-      // non-scalarized array start (broadcast scalar) given as an array
-      // constructor / reduction:
-      case SOME(v as ARRAY(__))
-      case SOME(v as REDUCTION(__)) then initVal(v)
-      else
-        match var.type_
-          case T_INTEGER(__)
-          case T_REAL(__)
-          case T_ENUMERATION(__)
-          case T_BOOL(__)
-          case T_ARRAY(ty=T_INTEGER())
-          case T_ARRAY(ty=T_REAL())
-          case T_ARRAY(ty=T_ENUMERATION())
-          case T_ARRAY(ty=T_BOOL()) then '0'
-          case T_STRING(__)
-          case T_ARRAY(ty=T_STRING()) then 'omc_string_new("")'
-          else error(sourceInfo(), 'Unknown type for initValDefault: <%unparseType(var.type_)%>')
-end initValDefault;
-
-template initVal(Exp initialValue)
-::=
-  match initialValue
-  case ICONST(__) then integer
-  case RCONST(__) then real
-  case SCONST(__) then '"<%Util.escapeModelicaStringToXmlString(string)%>"'
-  case BCONST(__) then if bool then "1" else "0"
-  case ENUM_LITERAL(__) then '<%index%>'
-  // non-scalarized array start (broadcast scalar): extract the element value.
-  case ARRAY(array = first :: _) then initVal(first)
-  case REDUCTION(expr = first) then initVal(first)
-  else error(sourceInfo(), 'initial value of unknown type: <%printExpStr(initialValue)%>')
-end initVal;
 
 template eventUpdateFunction(SimCode simCode)
  "Generates event update function for c file."
@@ -1439,13 +1280,11 @@ template fmuSourceMakefile(SimCode simCode, String FMUVersion, String fileNamePr
   case "msvc" then
   // nmake runs these in cmd; cmake comes with the Visual Studio environment.
   <<
-  <%\t%>cmake -E rm -f <%fileNamePrefixHash%>.fmutmp/sources/<%prefix%>_init.xml
   <%\t%>cmake -E copy_directory "<%omhome%>/share/omc/runtime/c/fmi/buildproject" <%fileNamePrefixHash%>.fmutmp/sources
   <%\t%>cmake -E copy <%prefix%>_FMU.libs <%fileNamePrefixHash%>.fmutmp/sources/
   >>
   else
   <<
-  <%\t%>rm -f <%fileNamePrefixHash%>.fmutmp/sources/<%prefix%>_init.xml<%/*Already translated to .c*/%>
   <%\t%>cp -a "<%omhome%>/share/omc/runtime/c/fmi/buildproject/"* <%fileNamePrefixHash%>.fmutmp/sources
   <%\t%>cp -a <%prefix%>_FMU.libs <%fileNamePrefixHash%>.fmutmp/sources/
   >>
@@ -3757,188 +3596,7 @@ case FMI3ENUMERATIONVARIABLE(variability = "",causality="output") then
   >>
 end dumpOutputGetEnumerationVariable;
 
-/* public */ template simulationInitFunction(SimCode simCode, String guid)
- "Generates the contents of the makefile for the simulation case.
-  used in Compiler/Template/CodegenFMU.tpl"
-::=
-match simCode
-case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINFO(__), vars = vars as SIMVARS(__)),
-             simulationSettingsOpt = SOME(s as SIMULATION_SETTINGS(__)), makefileParams = makefileParams as MAKEFILE_PARAMS(__))
-  then
-  <<
-  #include "simulation_data.h"
-  #include "util/real_array.h"
-  #include "util/integer_array.h"
-  #include "util/boolean_array.h"
-  #include "util/string_array.h"
 
-  OMC_DISABLE_OPT<%/* This function is very simple and doesn't need to be optimized. GCC/clang spend way too much time looking at it. */%>
-
-  void <%symbolName(modelNamePrefix(simCode),"read_simulation_info")%>(SIMULATION_INFO* simulationInfo)
-  {
-    simulationInfo->startTime = <%s.startTime%>;
-    simulationInfo->stopTime = <%s.stopTime%>;
-    simulationInfo->stepSize = <%s.stepSize%>;
-    simulationInfo->tolerance = <%s.tolerance%>;
-    /* Freed in deInitializeDataStruc, like the ones read from the init XML. */
-    simulationInfo->solverMethod = GC_strdup("<%s.method%>");
-    simulationInfo->outputFormat = GC_strdup("<%s.outputFormat%>");
-    simulationInfo->variableFilter = GC_strdup("<%s.variableFilter%>");
-    simulationInfo->OPENMODELICAHOME = GC_strdup("<%makefileParams.omhome%>");
-  }
-
-  void <%symbolName(modelNamePrefix(simCode),"read_input_fmu")%>(MODEL_DATA* modelData)
-  {
-    <%System.tmpTickReset(1000)%>
-    <%System.tmpTickResetIndex(0,2)%>
-    <%vars.stateVars       |> var => ScalarVariableFMU(var,"realVarsData") ;separator="\n";empty%>
-    <%vars.derivativeVars  |> var => ScalarVariableFMU(var,"realVarsData") ;separator="\n";empty%>
-    <%vars.algVars         |> var => ScalarVariableFMU(var,"realVarsData") ;separator="\n";empty%>
-    <%vars.discreteAlgVars |> var => ScalarVariableFMU(var,"realVarsData") ;separator="\n";empty%>
-    <%vars.realOptimizeConstraintsVars
-                           |> var => ScalarVariableFMU(var,"realVarsData") ;separator="\n";empty%>
-    <%vars.realOptimizeFinalConstraintsVars
-                           |> var => ScalarVariableFMU(var,"realVarsData") ;separator="\n";empty%>
-    <%System.tmpTickResetIndex(0,2)%>
-    <%vars.paramVars       |> var => ScalarVariableFMU(var,"realParameterData") ;separator="\n";empty%>
-    <%System.tmpTickResetIndex(0,2)%>
-    <%vars.intAlgVars      |> var => ScalarVariableFMU(var,"integerVarsData") ;separator="\n";empty%>
-    <%System.tmpTickResetIndex(0,2)%>
-    <%vars.intParamVars    |> var => ScalarVariableFMU(var,"integerParameterData") ;separator="\n";empty%>
-    <%System.tmpTickResetIndex(0,2)%>
-    <%vars.boolAlgVars     |> var => ScalarVariableFMU(var,"booleanVarsData") ;separator="\n";empty%>
-    <%System.tmpTickResetIndex(0,2)%>
-    <%vars.boolParamVars   |> var => ScalarVariableFMU(var,"booleanParameterData") ;separator="\n";empty%>
-    <%System.tmpTickResetIndex(0,2)%>
-    <%vars.stringAlgVars   |> var => ScalarVariableFMU(var,"stringVarsData") ;separator="\n";empty%>
-    <%System.tmpTickResetIndex(0,2)%>
-    <%vars.stringParamVars |> var => ScalarVariableFMU(var,"stringParameterData") ;separator="\n";empty%>
-    <%System.tmpTickResetIndex(0,2)%>
-  }
-  >>
-end simulationInitFunction;
-
-template getInfoArgsFMU(String str, builtin.SourceInfo info)
-::=
-  match info
-    case SOURCEINFO(__) then
-      <<
-      <%str%>.filename = "<%Util.escapeModelicaStringToCString(fileName)%>";
-      <%str%>.lineStart = <%lineNumberStart%>;
-      <%str%>.colStart = <%columnNumberStart%>;
-      <%str%>.lineEnd = <%lineNumberEnd%>;
-      <%str%>.colEnd = <%columnNumberEnd%>;
-      <%str%>.readonly = <%if isReadOnly then 1 else 0%>;
-      >>
-end getInfoArgsFMU;
-
-template ScalarVariableFMU(SimVar simVar, String classType)
- "Generates code for ScalarVariable file for FMU target."
-::=
-  match simVar
-    case SIMVAR(source = SOURCE(info = info)) then
-      let valueReference = System.tmpTick()
-      let ci = System.tmpTickIndex(2)
-      let description = if comment then Util.escapeModelicaStringToCString(comment)
-      let infostr = 'modelData-><%classType%>[<%ci%>].info'
-      let attrstr = 'modelData-><%classType%>[<%ci%>].attribute'
-      <<
-      <%infostr%>.id = <%valueReference%>;
-      <%infostr%>.name = "<%Util.escapeModelicaStringToCString(crefStrNoUnderscore(name))%>";
-      <%infostr%>.comment = "<%description%>";
-      <%getInfoArgsFMU(infostr+".info", info)%>
-      <%DimensionsFMU(simVar, classType, ci)%>
-      <%ScalarVariableTypeFMU(attrstr, unit, displayUnit, minValue, maxValue, initialValue, nominalValue, isFixed, type_)%>
-      >>
-end ScalarVariableFMU;
-
-template DimensionsFMU(SimVar simVar, String classType, String ci)
- "Sets the runtime array dimensions of a non-scalarized array variable so that
-  calculateAllScalarLength / computeVarIndices size the value vectors correctly.
-  Emits nothing for scalars (numberOfDimensions defaults to 0). Only genuine
-  array variables (type_ = T_ARRAY) are dimensioned: a scalarized array element
-  still carries the parent numArrayElement but is a scalar and must keep
-  numberOfDimensions 0, otherwise the start/min/max/nominal bound-attribute
-  update treats it as an array."
-::=
-match simVar
-case SIMVAR(type_ = T_ARRAY(), numArrayElement = dims) then
-  if listEmpty(dims) then '' else
-  <<
-  modelData-><%classType%>[<%ci%>].dimension.numberOfDimensions = <%listLength(dims)%>;
-  modelData-><%classType%>[<%ci%>].dimension.dimensions = (DIMENSION_ATTRIBUTE*)calloc(<%listLength(dims)%>, sizeof(DIMENSION_ATTRIBUTE));
-  <%dims |> d hasindex k0 =>
-    'modelData-><%classType%>[<%ci%>].dimension.dimensions[<%k0%>].start = <%d%>;<%\n%>modelData-><%classType%>[<%ci%>].dimension.dimensions[<%k0%>].valueReference = -1;<%\n%>modelData-><%classType%>[<%ci%>].dimension.dimensions[<%k0%>].type = DIMENSION_BY_START;'
-   ;separator="\n"%>
-  >>
-end DimensionsFMU;
-
-template scalarValFMU(Exp e, String default)
- "Returns a C literal for a scalar constant expression. For a non-scalarized
-  array start (a uniform array constructor / reduction) the single broadcast
-  element value is extracted."
-::=
-  match e
-  case ICONST(__) then integer
-  case RCONST(__) then real
-  case SCONST(__) then 'omc_string_new("<%Util.escapeModelicaStringToCString(string)%>")'
-  case BCONST(__) then if bool then 1 else 0
-  case ENUM_LITERAL(__) then '<%index%>'
-  case ARRAY(array = first :: _) then scalarValFMU(first, default)
-  case REDUCTION(expr = first) then scalarValFMU(first, default)
-  else default // error(sourceInfo(), 'initial value of unknown type: <%printExpStr(e)%>')
-end scalarValFMU;
-
-template optInitValFMU(Option<Exp> exp, String default)
-::=
-  match exp
-  case SOME(e) then scalarValFMU(e, default)
-  else default
-end optInitValFMU;
-
-template ScalarVariableTypeFMU(String attrstr, String unit, String displayUnit, Option<DAE.Exp> minValue, Option<DAE.Exp> maxValue, Option<DAE.Exp> startValue, Option<DAE.Exp> nominalValue, Boolean isFixed, DAE.Type type_)
- "Generates code for ScalarVariable Type file for FMU target."
-::=
-  match type_
-    case T_REAL(__) then
-      <<
-      omc_string_move(&<%attrstr%>.unit, omc_string_new("<%Util.escapeModelicaStringToCString(unit)%>"));
-      omc_string_move(&<%attrstr%>.displayUnit, omc_string_new("<%Util.escapeModelicaStringToCString(displayUnit)%>"));
-      put_real_element(<%optInitValFMU(minValue,"-DBL_MAX")%>, 0, &<%attrstr%>.min);
-      put_real_element(<%optInitValFMU(maxValue,"DBL_MAX")%>, 0, &<%attrstr%>.max);
-      <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
-      <%attrstr%>.useNominal = <%if nominalValue then 1 else 0%>;
-      put_real_element(<%optInitValFMU(nominalValue,"1.0")%>, 0, &<%attrstr%>.nominal);
-      put_real_element(<%optInitValFMU(startValue,"0.0")%>, 0, &<%attrstr%>.start);
-      >>
-    case T_INTEGER(__) then
-      <<
-      put_integer_element(<%optInitValFMU(minValue,"-LONG_MAX")%>, 0, &<%attrstr%>.min);
-      put_integer_element(<%optInitValFMU(maxValue,"LONG_MAX")%>, 0, &<%attrstr%>.max);
-      <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
-      put_integer_element(<%optInitValFMU(startValue,"0")%>, 0, &<%attrstr%>.start);
-      >>
-    case T_BOOL(__) then
-      <<
-      <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
-      put_boolean_element(<%optInitValFMU(startValue,"0")%>, 0, &<%attrstr%>.start);
-      >>
-    case T_STRING(__) then
-      <<
-      omc_string_move((modelica_string*) <%attrstr%>.start.data, <%optInitValFMU(startValue,"omc_string_new(\"\")")%>);
-      >>
-    case T_ENUMERATION(__) then
-      <<
-      put_integer_element(<%optInitValFMU(minValue,"1")%>, 0, &<%attrstr%>.min);
-      put_integer_element(<%optInitValFMU(maxValue,listLength(names))%>, 0, &<%attrstr%>.max);
-      <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
-      put_integer_element(<%optInitValFMU(startValue,"0")%>, 0, &<%attrstr%>.start);
-      >>
-    case T_ARRAY(ty=ty) then
-      // non-scalarized array variable: emit the attributes using the element type
-      ScalarVariableTypeFMU(attrstr, unit, displayUnit, minValue, maxValue, startValue, nominalValue, isFixed, ty)
-    else error(sourceInfo(), 'ScalarVariableTypeFMU: <%unparseType(type_)%>')
-end ScalarVariableTypeFMU;
 
 annotation(__OpenModelica_Interface="codegen_fmu_c");
 end CodegenFMU;

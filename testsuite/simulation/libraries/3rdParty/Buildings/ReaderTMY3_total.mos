@@ -11,7 +11,7 @@ simulate(ReaderTMY3_total, stopTime=0, simflags="-lv=-LOG_STDOUT", resimulateExe
 // ""
 // true
 // ""
-// {"ReaderTMY3_total", "ReaderTMY3_total_init.xml"}
+// {"ReaderTMY3_total", "ReaderTMY3_total_init.bin"}
 // "[simulation/libraries/3rdParty/Buildings/ReaderTMY3_total.mo:581:9-615:33:writable] Warning: Pure function 'Buildings.BoundaryConditions.WeatherData.BaseClasses.getHeaderElementTMY3' contains a call to impure function 'Modelica.Utilities.Streams.readLine'.
 // [simulation/libraries/3rdParty/Buildings/ReaderTMY3_total.mo:631:9-643:29:writable] Warning: Pure function 'Buildings.BoundaryConditions.WeatherData.BaseClasses.getLongitudeTMY3' contains a call to impure function 'Buildings.BoundaryConditions.WeatherData.BaseClasses.getHeaderElementTMY3'.
 // [simulation/libraries/3rdParty/Buildings/ReaderTMY3_total.mo:617:9-629:28:writable] Warning: Pure function 'Buildings.BoundaryConditions.WeatherData.BaseClasses.getLatitudeTMY3' contains a call to impure function 'Buildings.BoundaryConditions.WeatherData.BaseClasses.getHeaderElementTMY3'.

@@ -34,7 +34,7 @@ abs(val(x[20], 2, "resizableOverride_ida.mat") - 0.529743) < 1e-4;
 // Result:
 // true
 // ""
-// {"resizableOverride", "resizableOverride_init.xml"}
+// {"resizableOverride", "resizableOverride_init.bin"}
 // ""
 // 0
 // true

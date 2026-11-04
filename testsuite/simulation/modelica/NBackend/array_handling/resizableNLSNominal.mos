@@ -26,7 +26,7 @@ val(T[5], 0.1, "resizableNLSNominal_res.mat");
 // Result:
 // true
 // ""
-// {"resizableNLSNominal", "resizableNLSNominal_init.xml"}
+// {"resizableNLSNominal", "resizableNLSNominal_init.bin"}
 // ""
 // 0
 // 0

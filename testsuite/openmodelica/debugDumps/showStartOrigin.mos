@@ -21,6 +21,6 @@ buildModel(testShowStartOrigin); getErrorString();
 // ""
 // true
 // ""
-// {"testShowStartOrigin","testShowStartOrigin_init.xml"}
+// {"testShowStartOrigin","testShowStartOrigin_init.bin"}
 // ""
 // endResult

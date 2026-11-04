@@ -22,28 +22,19 @@ end MatrixArrayVariable;
 
 buildModel(MatrixArrayVariable); getErrorString();
 
-system("sed -n '/<ArrayVariable/,/<\\/ArrayVariable>/p' MatrixArrayVariable_init.xml > MatrixArrayVariable_init.tmp.xml");
-initFileContent := readFile("MatrixArrayVariable_init.tmp.xml");
+initFileContent := readInitFile("MatrixArrayVariable_init.bin");
 
 // Result:
 // true
 // true
 // ""
-// {"MatrixArrayVariable", "MatrixArrayVariable_init.xml"}
+// {"MatrixArrayVariable", "MatrixArrayVariable_init.bin"}
 // ""
-// 0
-// "  <ArrayVariable
-//     name = \"A\"
-//     valueReference = \"1000\"
-//     variability = \"parameter\" isDiscrete = \"true\"
-//     causality = \"parameter\" isValueChangeable = \"true\"
-//     alias = \"noAlias\"
-//     classIndex = \"0\" classType = \"rPar\"
-//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
-//     <Dimension start=\"3\"/>
-//     <Dimension start=\"2\"/>
-//     <Real start=\"0.0 0.1 1.0 1.1 2.0 2.1\" fixed=\"true\" useNominal=\"false\" />
-//   </ArrayVariable>
+// "model MatrixArrayVariable
+// sizes numberOfRealParameters=1 numberOfIntegerParameters=2
+// experiment startTime=0.0 stopTime=1.0 stepSize=0.002 tolerance=1e-6 solver=dassl outputFormat=mat variableFilter=\".*\"
+// rPar A Real parameter causality=parameter changeable fixed hideResult=false dimensions=[3,2] start={0.0, 0.1, 1.0, 1.1, 2.0, 2.1}
+// iPar m Integer parameter causality=parameter changeable fixed hideResult=false start=3
+// iPar n Integer parameter causality=parameter changeable fixed hideResult=false start=2
 // "
 // endResult

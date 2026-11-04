@@ -185,24 +185,24 @@ abs(val(s.a.i, 2, "resizableConnectA2A_5.mat") - val(s.a.i, 2, "resizableConnect
 // end resizableConnect.Chain;
 // "
 // ""
-// {"resizableConnectChain", "resizableConnectChain_init.xml"}
+// {"resizableConnectChain", "resizableConnectChain_init.bin"}
 // ""
 // 0
-// {"resizableConnectNested", "resizableConnectNested_init.xml"}
+// {"resizableConnectNested", "resizableConnectNested_init.bin"}
 // ""
 // 0
-// {"resizableConnectA2A", "resizableConnectA2A_init.xml"}
+// {"resizableConnectA2A", "resizableConnectA2A_init.bin"}
 // ""
 // 0
 // true
 // ""
-// {"resizableConnectChain_ref", "resizableConnectChain_ref_init.xml"}
+// {"resizableConnectChain_ref", "resizableConnectChain_ref_init.bin"}
 // ""
 // 0
-// {"resizableConnectNested_ref", "resizableConnectNested_ref_init.xml"}
+// {"resizableConnectNested_ref", "resizableConnectNested_ref_init.bin"}
 // ""
 // 0
-// {"resizableConnectA2A_ref", "resizableConnectA2A_ref_init.xml"}
+// {"resizableConnectA2A_ref", "resizableConnectA2A_ref_init.bin"}
 // ""
 // 0
 // true

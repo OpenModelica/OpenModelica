@@ -8,7 +8,7 @@
 #include "options.h"
 #include "simulation_omc_assert.h"
 
-#include "simulation_input_xml.h"
+#include "simulation_input.h"
 #include "util/integer_array.h"
 
 /**
@@ -18,7 +18,7 @@
  * First dimension tag uses "valueReference" attribute, the other two use the "start" attribute.
  *
  * @param argc  Number of arguments. Has to be 2.
- * @param argv  Second argument has to be path to resources/03_IntTensorVariable_init.xml;
+ * @param argv  Second argument has to be path to resources/03_IntTensorVariable_init.bin;
  * @return int  Return 0 on test success, 1 otherwise.
  */
 int main(int argc, char *argv[])
@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
   if (argc != 2)
   {
     printf("Wrong number of arguments!\n");
-    printf("First argument has to be path to resources/IntTensorVariable_init.xml\n");
+    printf("First argument has to be path to resources/IntTensorVariable_init.bin\n");
     return 1;
   }
 
@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
     fprintf(stderr, "Memory allocation failed for integerParameterData\n");
     return 1;
   }
-  modelData.initXMLData = NULL;
+  modelData.initBinData = NULL;
   modelData.modelGUID = "test-guid";
 
   SIMULATION_INFO simulationInfo = {0};
@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
     threadData->localRoots[LOCAL_ROOT_SIMULATION_DATA] = &data;
 
     // Call the function under test
-    read_input_xml(&modelData, &simulationInfo, threadData);
+    read_input(&modelData, &simulationInfo, FALSE, threadData);
 
     OMC_ELSE()
     fprintf(stderr, "Stack overflow!\n");

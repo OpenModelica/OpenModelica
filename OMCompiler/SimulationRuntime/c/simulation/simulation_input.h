@@ -41,9 +41,20 @@
 extern "C" {
 #endif
 
-void read_input_xml(MODEL_DATA* modelData,
-                    SIMULATION_INFO* simulationData,
-                    threadData_t* threadData);
+/* Reads <prefix>_init.bin, see util/omc_init_bin.h. An FMU ignores the
+ * simulation flags for the experiment and -override. */
+void read_input(MODEL_DATA* modelData,
+                SIMULATION_INFO* simulationInfo,
+                modelica_boolean isFMU,
+                threadData_t* threadData);
+/* The default experiment, OPENMODELICAHOME and the start values again, for
+ * model data that read_input filled before. */
+void read_input_defaults(MODEL_DATA* modelData,
+                         SIMULATION_INFO* simulationInfo,
+                         modelica_boolean isFMU,
+                         threadData_t* threadData);
+/* -listVariables: JSON on stdout. */
+void list_variables(MODEL_DATA* modelData, threadData_t* threadData);
 void parseVariableStr(char* variableStr);
 int isQuantityOverridden(const char *name);
 

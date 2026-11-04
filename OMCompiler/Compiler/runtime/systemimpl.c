@@ -3225,6 +3225,34 @@ int SystemImpl__alarm(int seconds)
 
 #endif
 
+int SystemImpl__writeBinaryFileAsCArray(const char *binFile, const char *outFile)
+{
+  unsigned char buffer[BUFSIZ];
+  size_t n, i, column = 0;
+  FILE *fout, *fin = omc_fopen(binFile, "rb");
+  if (!fin) {
+    return 0;
+  }
+  fout = omc_fopen(outFile, "w");
+  if (!fout) {
+    fclose(fin);
+    return 0;
+  }
+  fputs("{\n", fout);
+  while ((n = fread(buffer, 1, sizeof(buffer), fin)) > 0) {
+    for (i = 0; i < n; i++) {
+      fprintf(fout, "%u,", (unsigned) buffer[i]);
+      if (++column == 32) {
+        fputc('\n', fout);
+        column = 0;
+      }
+    }
+  }
+  fputs("\n}\n", fout);
+  fclose(fin);
+  return 0 == fclose(fout);
+}
+
 int SystemImpl__covertTextFileToCLiteral(const char *textFile, const char *outFile, const char* target)
 {
   FILE *fin;

@@ -116,7 +116,8 @@ if(WIN32)
     TARGET bomc
     POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:omc::result> ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
-    COMMENT "Copying omc_result.dll for the bootstrapped omc (to ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin).")
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:omc::init> ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
+    COMMENT "Copying omc_result.dll and omc_init.dll for the bootstrapped omc (to ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin).")
 endif()
 
 # add_custom_command(
