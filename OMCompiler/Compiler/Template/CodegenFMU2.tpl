@@ -186,7 +186,7 @@ case SIMCODE(__) then
     maxOutputDerivativeOrder="1"
     canRunAsynchronuously="false"
     canBeInstantiatedOnlyOncePerProcess="false"
-    canNotUseMemoryManagementFunctions="false"
+    canNotUseMemoryManagementFunctions="true"
     canGetAndSetFMUstate="true"
     canSerializeFMUstate="true"
     <% if Flags.isSet(FMU_EXPERIMENTAL) then 'providesDirectionalDerivative="true"' else 'providesDirectionalDerivative="false"'%>>

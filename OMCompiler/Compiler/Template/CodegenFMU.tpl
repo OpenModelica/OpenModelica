@@ -280,7 +280,6 @@ case SIMCODE(__) then
     <<
     #define fmu2_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
     #include "fmi-export/fmu2_model_interface.h"
-    #include "fmi-export/fmu_read_flags.h"
     >>
   else
     <<
@@ -296,8 +295,8 @@ case SIMCODE(__) then
 
   <%if isFMIVersion30(FMUVersion) then
   <<
-  // FMI 3.0 export. fmu3_model_interface.c is self-contained (its own model
-  // engine) and is built independently of the FMI 2.0 files. The generated
+  // FMI 3.0 export. fmu3_model_interface.c shares the model interface with
+  // FMI 2.0 (fmu_model_interface.c.inc), but not the FMI 2.0 files. The generated
   // per-base-type get/set helper functions below (getReal/setReal/...) are
   // shared model code. FMI 3.0 requires globally unique value references, so the
   // per-base-type value references are shifted by the offsets below to recover
@@ -324,7 +323,6 @@ case SIMCODE(__) then
   #define FMI2_FUNCTION_PREFIX <%modelNamePrefix(simCode)%>_
   #include "fmi2Functions.h"
   #include "fmi-export/fmu2_model_interface.h"
-  #include "fmi-export/fmu_read_flags.h"
   >>
   %>
 

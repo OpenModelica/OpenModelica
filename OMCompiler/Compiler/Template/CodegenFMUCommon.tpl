@@ -97,7 +97,7 @@ case SIMCODE(__) then
     needsExecutionTool="false"
     completedIntegratorStepNotNeeded="false"
     canBeInstantiatedOnlyOncePerProcess="false"
-    canNotUseMemoryManagementFunctions="false"
+    canNotUseMemoryManagementFunctions="true"
     canGetAndSetFMUstate="true"
     canSerializeFMUstate="true"
     <% if providesDirectionalDerivative(simCode) then 'providesDirectionalDerivative="true"' else 'providesDirectionalDerivative="false"'%>>
