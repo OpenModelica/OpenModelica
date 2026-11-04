@@ -1492,6 +1492,7 @@ constant ConfigFlag INPUT_DERIVATIVES = CONFIG_FLAG(175, "inputDerivatives",
   NONE(), EXTERNAL(), STRING_FLAG("error"),
   SOME(STRING_DESC_OPTION({
     ("error", "Stop the translation with an error that lists the derivatives of inputs that the model needs."),
+    ("input", "Make each needed derivative der(u) an additional input named der(u)."),
     ("zero", "Take the derivatives of inputs that index reduction and alias elimination need as zero, without a check (the old behavior). der(u) in the model is still an error.")
     })),
   "Sets how derivatives of top-level inputs are treated, e.g. der(u) in the model or from index reduction.");

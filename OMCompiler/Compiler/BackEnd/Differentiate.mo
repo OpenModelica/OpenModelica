@@ -125,6 +125,9 @@ algorithm
     (eqn, funcs) := differentiateEquation(inEquation, DAE.crefTime, diffData, BackendDAE.DIFFERENTIATION_TIME(), funcs);
     outEquation := SOME(eqn);
     outShared := BackendDAEUtil.setSharedFunctionTree(inShared, funcs);
+    if Flags.getConfigString(Flags.INPUT_DERIVATIVES) == "input" then
+      (_, outShared) := BackendEquation.traverseExpsOfEquation(eqn, addInputDerivativeVars, outShared);
+    end if;
     if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
       BackendDump.debugStrEqnStr("### Result of differentiateEquationTime\n --> ", eqn, "\n");
     end if;
@@ -140,6 +143,7 @@ public function differentiateExpTime
   input DAE.Exp inExp;
   input BackendDAE.Variables inVariables;
   input BackendDAE.Shared inShared;
+  input Boolean addInputDerivatives = true "--inputDerivatives=input: add the new inputs $DER.u to inShared";
   output DAE.Exp outExp;
   output BackendDAE.Shared outShared;
 protected
@@ -160,6 +164,9 @@ algorithm
     (dexp, funcs) := differentiateExp(inExp, DAE.crefTime, diffData, BackendDAE.DIFFERENTIATION_TIME(), funcs, defaultMaxIter);
     (outExp, _) := ExpressionSimplify.simplify(dexp);
     outShared := BackendDAEUtil.setSharedFunctionTree(inShared, funcs);
+    if addInputDerivatives and Flags.getConfigString(Flags.INPUT_DERIVATIVES) == "input" then
+      (_, outShared) := addInputDerivativeVars(outExp, outShared);
+    end if;
     if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
       BackendDump.debugStrExpStr("### Result of differentiateExpTime\n --> ", outExp, "n");
     end if;
@@ -213,6 +220,69 @@ algorithm
   end try;
 end differentiateExpSolve;
 
+public function addInputDerivativeVars
+  "Adds each $DER.u in the expression, where u is a top-level input, to the global
+  known variables as a new top-level input, see --inputDerivatives=input."
+  input output DAE.Exp exp;
+  input output BackendDAE.Shared shared;
+algorithm
+  (_, shared) := Expression.traverseExpBottomUp(exp, addInputDerivativeVar, shared);
+end addInputDerivativeVars;
+
+public function addInputDerivativeVarsDAE
+  "addInputDerivativeVars for all equations of the DAE."
+  input output BackendDAE.BackendDAE dae;
+protected
+  BackendDAE.Shared shared = dae.shared;
+algorithm
+  for syst in dae.eqs loop
+    shared := BackendDAEUtil.traverseBackendDAEExpsEqns(syst.orderedEqs, addInputDerivativeVars, shared);
+    shared := BackendDAEUtil.traverseBackendDAEExpsEqns(syst.removedEqs, addInputDerivativeVars, shared);
+  end for;
+  shared := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.initialEqs, addInputDerivativeVars, shared);
+  shared := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.removedEqs, addInputDerivativeVars, shared);
+  dae.shared := shared;
+end addInputDerivativeVarsDAE;
+
+protected function addInputDerivativeVar
+  "Adds $DER.u for a top-level input u to the global known variables as a new
+  top-level input, once."
+  input output DAE.Exp exp;
+  input output BackendDAE.Shared shared;
+protected
+  DAE.ComponentRef cr;
+  BackendDAE.Variables knvars;
+  BackendDAE.Var var;
+algorithm
+  _ := match exp
+    case DAE.CREF(componentRef = DAE.CREF_QUAL(ident = DAE.derivativeNamePrefix, componentRef = cr))
+      algorithm
+        knvars := BackendDAEUtil.getGlobalKnownVarsFromShared(shared);
+        if not BackendVariable.containsCref(exp.componentRef, knvars) then
+          try
+            (var, _) := BackendVariable.getVarSingle(cr, knvars);
+            true := BackendVariable.isVarOnTopLevelAndInput(var);
+            shared := BackendVariable.addGlobalKnownVarDAE(makeInputDerivativeVar(exp.componentRef, var), shared);
+          else
+          end try;
+        end if;
+      then ();
+    else ();
+  end match;
+end addInputDerivativeVar;
+
+public function makeInputDerivativeVar
+  "The top-level input $DER.u (der(u) in the result file and modelDescription.xml)
+  for the derivative of the top-level input u."
+  input DAE.ComponentRef inDerCref;
+  input BackendDAE.Var inInput;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar := BackendVariable.makeVar(inDerCref);
+  outVar.varType := inInput.varType;
+  outVar.varDirection := DAE.INPUT();
+  outVar.source := inInput.source;
+end makeInputDerivativeVar;
 
 public function differentiateExpCrefFullJacobian
   "Differentiates an expression inExp with respect to inCref."
@@ -1191,8 +1261,9 @@ algorithm
       then
         (zero, inFunctionTree);
 
-    // d(u)/dt of a top-level Real input u is $DER.u, which inputDerivativesUsed
-    // reports. --inputDerivatives=zero takes the fallback case zero.
+    // d(u)/dt of a top-level Real input u is $DER.u, see --inputDerivatives:
+    // a new input for 'input', reported by inputDerivativesUsed for 'error',
+    // the fallback case zero for 'zero'.
     case ((DAE.CREF(componentRef = cr, ty = tp)), _, BackendDAE.DIFFINPUTDATA(knownVars=SOME(knvars)), BackendDAE.DIFFERENTIATION_TIME())
       guard Types.isReal(tp) and Flags.getConfigString(Flags.INPUT_DERIVATIVES) <> "zero"
       algorithm

@@ -192,6 +192,10 @@ algorithm
     outDAE := fixKnownVars(outDAE);
     outDAE := fixAliasVarsVariablity(outDAE) "workaround for #5673";
   end if;
+
+  if Flags.getConfigString(Flags.INPUT_DERIVATIVES) == "input" then
+    outDAE := Differentiate.addInputDerivativeVarsDAE(outDAE);
+  end if;
 end removeSimpleEquations;
 
 public function removeVerySimpleEquations "This is a very simple removeSimpleEquations, finding a few variables and removing them to speed up the rest of the backend"
@@ -2722,7 +2726,8 @@ end varStateDerivative;
 protected function aliasDerivative
   "der(x) for an alias x = exp, where exp is time-independent apart from top-level
   inputs u. It contains $DER.u unless --inputDerivatives=zero, see
-  Differentiate.differentiateCrefs."
+  Differentiate.differentiateCrefs. The new inputs $DER.u are added at the end of
+  removeSimpleEquations, if they are used."
   input DAE.Exp exp;
   input BackendDAE.Variables vars;
   input BackendDAE.Shared shared;
@@ -2730,7 +2735,7 @@ protected function aliasDerivative
 algorithm
   if Flags.getConfigString(Flags.INPUT_DERIVATIVES) <> "zero" then
     try
-      (dexp, _) := Differentiate.differentiateExpTime(exp, vars, shared);
+      (dexp, _) := Differentiate.differentiateExpTime(exp, vars, shared, addInputDerivatives = false);
     else
     end try;
   end if;
