@@ -76,7 +76,6 @@
 #include "simulation/results/simulation_result_ia.h"
 #include "simulation/results/simulation_result_rust.h"
 #include "simulation/solver/solver_main.h"
-#include "simulation/solver/gbode_util.h"
 #include "simulation_info_json.h"
 #include "modelinfo.h"
 #include "simulation/solver/events.h"
@@ -747,12 +746,38 @@ int initializeResultData(DATA* simData, threadData_t *threadData, int cpuTime)
 }
 
 /**
+ * @brief Set up GBODE for the integration methods that are a shorthand for it.
+ *
+ * @param solverID  Integration method.
+ * @return          S_GBODE for a shorthand, otherwise solverID.
+ */
+static enum SOLVER_METHOD resolveGbodeShorthand(enum SOLVER_METHOD solverID)
+{
+  enum GB_METHOD gbMethod;
+
+  switch (solverID) {
+    case S_RUNGEKUTTA:    gbMethod = RK_RUNGEKUTTA; break;
+    case S_HEUN:          gbMethod = RK_HEUN; break;
+    case S_IMPEULER:      gbMethod = RK_IMPL_EULER; break;
+    case S_TRAPEZOID:     gbMethod = RK_TRAPEZOID; break;
+    case S_IMPRUNGEKUTTA: gbMethod = RK_RADAU_IA_2; break;
+    case S_IRKSCO:        gbMethod = RK_TRAPEZOID; break;
+    case S_RUNGEKUTTASSC: gbMethod = RK_RKSSC; break;
+    default:              return solverID;
+  }
+
+  omc_flag[FLAG_SR] = 1;
+  omc_flagValue[FLAG_SR] = GB_METHOD_NAME[gbMethod];
+  return S_GBODE;
+}
+
+/**
  * Calls the solver which is selected in the parameter string "method"
  * This function is used for interactive and non-interactive simulation
  * Parameter method:
  * "" & "dassl" calls a DASSL Solver
  * "euler" calls an Euler solver
- * "rungekutta" calls a fourth-order Runge-Kutta Solver
+ * "rungekutta" and other shorthands call GBODE, see resolveGbodeShorthand
  */
 static int callSolver(DATA* simData, threadData_t *threadData, string init_initMethod, string init_file,
       double init_time, string outputVariablesAtEnd, int cpuTime, const char *argv_0)
@@ -783,8 +808,7 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
     }
   }
 
-  /* Deprecation warnings */
-   deprecationWarningGBODE(solverID);
+  solverID = resolveGbodeShorthand(solverID);
 
   /* if no states are present, then we can
    * use euler method, since it does nothing.

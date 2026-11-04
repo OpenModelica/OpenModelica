@@ -1333,6 +1333,12 @@ const char *SOLVER_METHOD_NAME[S_MAX] = {
   /* S_GBODE */         "gbode",
   /* S_EULER */         "euler",
   /* S_RUNGEKUTTA */    "rungekutta",
+  /* S_HEUN */ "heun",
+  /* S_IMPEULER */ "impeuler",
+  /* S_TRAPEZOID */ "trapezoid",
+  /* S_IMPRUNGEKUTTA */ "imprungekutta",
+  /* S_IRKSCO */ "irksco",
+  /* S_RUNGEKUTTASSC */ "rungekuttassc",
   /* S_OPTIMIZATION */  "optimization"
 };
 
@@ -1343,7 +1349,13 @@ const char *SOLVER_METHOD_DESC[S_MAX] = {
   /* S_CVODE */         "cvode - SUNDIALS CVODE solver - BDF or Adams-Moulton solver - implicit (dense solver), variable step-size control, adaptive order 1-12, event location - additional simulation flags -cvodeLinearMultistepMethod -cvodeNonlinearSolverIteration",
   /* S_GBODE */         "gbode - generic Runge-Kutta ODE solver - implicit (sparse solver)/explicit, fixed/variable step size control, order 1-14, event location, optional bi-rate integration - additional simulation flags -gbm -gbctrl -gbratio - additional advanced flags -gbctrl_filter -gbctrl_fhr -gberr -gbint -gbnls -gbfm -gbfctrl -gbferr -gbfint -gbfnls",
   /* S_EULER */         "euler - explicit Euler, fixed step size, order 1",
-  /* S_RUNGEKUTTA */    "rungekutta - classical Runge-Kutta - explicit, fixed step, order 4",
+  /* S_RUNGEKUTTA */    "rungekutta - classical Runge-Kutta, shorthand for gbode with -gbm=rungekutta - explicit, order 4",
+  /* S_HEUN */ "heun - shorthand for gbode with -gbm=heun",
+  /* S_IMPEULER */ "impeuler - shorthand for gbode with -gbm=impl_euler",
+  /* S_TRAPEZOID */ "trapezoid - shorthand for gbode with -gbm=trapezoid",
+  /* S_IMPRUNGEKUTTA */ "imprungekutta - shorthand for gbode with -gbm=radauIA2",
+  /* S_IRKSCO */ "irksco - shorthand for gbode with -gbm=trapezoid",
+  /* S_RUNGEKUTTASSC */ "rungekuttassc - shorthand for gbode with -gbm=rungekuttaSsc",
   /* S_OPTIMIZATION */  "optimization - Special solver for dynamic optimization"
 };
 

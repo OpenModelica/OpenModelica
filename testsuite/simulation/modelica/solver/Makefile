@@ -22,6 +22,7 @@ problem2-ida.mos \
 problem2-idaLinearSolver.mos \
 problem2-idaJacobian.mos \
 problem4-rungekuttaSsc.mos \
+gbodeShorthands.mos \
 problem6-cvode.mos \
 problem6-irksco.mos \
 AlgebraicStepRetry.mos \
