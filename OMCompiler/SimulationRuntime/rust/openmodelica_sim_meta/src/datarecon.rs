@@ -1904,9 +1904,14 @@ pub fn report_run_failure(model: &SimMeta) {
         log: String::new(),
         log_path: String::new(),
     };
-    if mode.boundary {
+    if mode.reconcile {
+        starting(&ctx, "DataReconciliation Starting!");
+        create_error_html_report(&ctx, 1);
+    } else if mode.boundary {
+        starting(&ctx, "Reconcile Boundary Conditions Starting!");
         create_error_html_report_boundary(&ctx, 1);
     } else {
+        starting(&ctx, "Reconcile State Estimation Starting!");
         create_error_html_report(&ctx, 1);
     }
 }
