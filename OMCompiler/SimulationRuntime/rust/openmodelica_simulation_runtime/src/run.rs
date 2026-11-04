@@ -94,8 +94,7 @@ fn teardown() {
 fn uri_to_filename(uri: &str) -> String {
     unsafe extern "C" {
         /// src/shim.c: null where C asserts.
-        fn omr_uri_to_filename(thread_data: *mut threadData_t, uri: *mut core::ffi::c_void)
-        -> *mut core::ffi::c_void;
+        fn omr_uri_to_filename(thread_data: *mut threadData_t, uri: *mut core::ffi::c_void) -> *mut core::ffi::c_void;
     }
     if uri.len() >= 11 && uri[..11].eq_ignore_ascii_case("modelica://") {
         let td = crate::support::omr_thread_data();
