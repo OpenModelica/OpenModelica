@@ -2697,7 +2697,7 @@ protected
     if isSome(inputNode) then
       ty := InstNode.getType(Component.classInstance(InstNode.component(Util.getOption(inputNode))));
 
-      if Type.codeName(ty) <> "" and not isNameCall(exp, ty) then
+      if Type.codeName(ty) <> "" and not isNameCall(exp, ty) and not isValueName(exp, scope) then
         arg := Expression.quoteCode(scriptCode(exp), ty, info);
         return;
       end if;
@@ -2705,6 +2705,49 @@ protected
 
     arg := Inst.instExp(exp, scope, context, info);
   end instCodeArg;
+
+  function isValueName
+    "Whether a name passed for a $Code input stands for a value rather than
+     for itself: an iterator, e.g. getSourceFile(cl) in
+     {getSourceFile(cl) for cl in getClassNames()}, or a subscripted script
+     variable, e.g. cls[i]."
+    input Absyn.Exp exp;
+    input InstNode scope;
+    output Boolean res = false;
+  protected
+    Absyn.ComponentRef cref;
+    String name;
+    InstNode s = scope, parent;
+    list<InstNode> locals;
+  algorithm
+    if not AbsynUtil.isCref(exp) then
+      return;
+    end if;
+
+    Absyn.CREF(componentRef = cref) := exp;
+    name := AbsynUtil.crefFirstIdent(cref);
+
+    // Only the iterator scopes are searched, a general lookup could load a
+    // library for a class name.
+    while InstNode.isImplicit(s) loop
+      InstNode.IMPLICIT_SCOPE(parentScope = parent, locals = locals) := s;
+
+      if List.any(locals, function InstNode.isNamed(name = name)) then
+        res := true;
+        return;
+      end if;
+
+      s := parent;
+    end while;
+
+    if AbsynUtil.crefHasSubscripts(cref) then
+      try
+        _ := BackendInterface.lookupScriptVariable(Absyn.CREF_IDENT(name, {}));
+        res := true;
+      else
+      end try;
+    end if;
+  end isValueName;
 
   function lookupScriptingInputs
     "In a script, returns the inputs of the OpenModelica.Scripting function a
@@ -2854,8 +2897,9 @@ protected
         algorithm
           variability := Variability.CONSTANT;
           purity := Purity.PURE;
-          // The size of the expression must be known unless we're in a function.
-          is_structural := not InstContext.inFunction(context);
+          // The size of the expression must be known unless we're in a function
+          // or a script, where the range is only evaluated when the call is.
+          is_structural := not (InstContext.inFunction(context) or InstContext.inScripting(context));
           next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
 
           for i in listReverse(call.iters) loop

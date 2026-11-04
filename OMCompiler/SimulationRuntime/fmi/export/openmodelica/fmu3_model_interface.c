@@ -3957,9 +3957,12 @@ fmi3Status fmi3EnterStepMode(fmi3Instance instance)
 {
   ModelInstance *comp = fmu3InnerComp(instance);
   if (!comp) return fmi3Error;
-  /* The Co-Simulation instance never left Step Mode (model_state_cs_step_complete);
-     the continuous states and event indicators changed by the event are re-read
-     at the start of the next fmi3DoStep, so nothing needs to be restored here. */
+  /* The Co-Simulation instance never left Step Mode (model_state_cs_step_complete).
+     Inputs and states can change discontinuously in Event Mode (FMI 3.0 4.1.1),
+     so the solver restarts. */
+  if (comp->solverInfo) {
+    comp->solverInfo->didEventStep = 1;
+  }
   return fmi3OK;
 }
 
