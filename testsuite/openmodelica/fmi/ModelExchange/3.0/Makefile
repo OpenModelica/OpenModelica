@@ -37,6 +37,7 @@ fmi3_wasm_output_record.mos
 DEPENDENCIES = \
 *.mo \
 *.mos \
+*.py \
 *.c \
 Makefile \
 

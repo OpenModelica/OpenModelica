@@ -89,6 +89,7 @@ BouncingBall.mos \
 DEPENDENCIES = \
 *.mo \
 *.mos \
+*.py \
 FMUResourceTest \
 Makefile \
 

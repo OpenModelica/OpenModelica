@@ -326,7 +326,13 @@ double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double ti
   memcpy(data->localData[0]->realVars, states_left, data->modelData->nStates * sizeof(double));
 
   /* determined continuous system */
+#ifdef OMC_FMI_RUNTIME
+  /* An FMU has no updateContinuousSystem; the importer sets the inputs. */
+  data->callback->functionODE(data, threadData);
+  data->callback->functionAlgebraics(data, threadData);
+#else
   data->callback->updateContinuousSystem(data, threadData);
+#endif
   updateRelationsPre(data);
   /*sim_result_emit(data);*/
 
@@ -376,8 +382,10 @@ void bisection(DATA* data, threadData_t *threadData, double* a, double* b, doubl
 
     /*calculates Values dependents on new states*/
     /* read input vars */
+#ifndef OMC_FMI_RUNTIME
     externalInputUpdate(data);
     data->callback->input_function(data, threadData);
+#endif
     /* eval needed equations*/
     data->callback->function_ZeroCrossingsEquations(data, threadData);
 

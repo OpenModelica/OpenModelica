@@ -8955,19 +8955,14 @@ impl SolverCore {
         Ok(())
     }
 
-    /// C's `cvode_solver_initial` under `isFMI`, whose banner
+    /// C's `cvode_solver_initial` in an FMU, whose banner
     /// [`log_cs_solver_setup`] has already logged.
-    fn fmi_cs_solver_setup(&mut self, defer: CsDefer) {
+    fn fmi_cs_solver_setup(&mut self) {
         #[cfg(sundials)]
         if let Solver::Cvode(c) = &mut self.solver {
             c.banner = false;
             c.stop_at_target = true;
-            if defer != CsDefer::Any {
-                c.n_roots = 0;
-            }
         }
-        #[cfg(not(sundials))]
-        let _ = defer;
     }
 
     /// Restart the integrator at the current `(t, y)`, banking the run totals its
@@ -9922,9 +9917,8 @@ pub enum CsStep {
 
 /// C's `FMI2CS_initializeSolverData`: an FMU's solver is set up in
 /// `fmi2Instantiate`, and for CVODE `LOG_SOLVER` is forced on across
-/// `cvode_solver_initial` so the banner reaches the log either way. `defer` decides
-/// the root-finding line — see [`CsDriver::new`].
-pub fn log_cs_solver_setup(model: &SimModel, defer: CsDefer) {
+/// `cvode_solver_initial` so the banner reaches the log either way.
+pub fn log_cs_solver_setup(model: &SimModel) {
     let Ok(method) = resolve_solver_method(model.cs_method(), model.layout.dae_mode()) else {
         return;
     };
@@ -9940,14 +9934,12 @@ pub fn log_cs_solver_setup(model: &SimModel, defer: CsDefer) {
         omclog::set_mask(mask | (1 << omclog::SOLVER));
         log_cvode_configuration(
             tol,
-            defer == CsDefer::Any,
+            true,
             crate::simflags::with_flags(|f| crate::simflags::cvode_config(&f)),
             cvode_jacobian_method(cvode_jac_a(model)),
         );
         omclog::set_mask(mask);
     }
-    #[cfg(not(sundials))]
-    let _ = defer;
 }
 
 impl CsDriver {
@@ -9957,17 +9949,14 @@ impl CsDriver {
     /// The driver takes over `sync` so the instance has exactly one clock schedule,
     /// and builds its own only for a caller with none.
     ///
-    /// The integrator watches event indicators only under [`CsDefer::Any`], the one
-    /// mode whose master can be handed the crossing time (Event Mode with early
-    /// return). Otherwise the FMU resolves the event itself, and does it as C's
-    /// `fmi2DoStep` does: no root finding (`cvodeGetConfig(…, isFMI)`) and the sign
-    /// change picked up at the communication point.
+    /// The integrator stops at a state event as in the simulation. Under
+    /// [`CsDefer::Any`] (Event Mode with early return) the master gets the event
+    /// there; otherwise the FMU resolves it and continues.
     pub fn new(
         e: &mut (dyn SimEngine + 'static),
         model: &SimModel,
         sim_data: u32,
         t: f64,
-        defer: CsDefer,
         sync: Option<crate::sync::Sync>,
     ) -> Result<Self> {
         daskr::auxiliary::xsetf(0);
@@ -9985,7 +9974,7 @@ impl CsDriver {
         };
         let gbode = alloc_gbode(e, model, method)?;
         let mut core = SolverCore::new(&*e, model, sim_data, t, method, gbode)?;
-        core.fmi_cs_solver_setup(defer);
+        core.fmi_cs_solver_setup();
         if core.n_states > 0 {
             core.read_states(e)?;
         }

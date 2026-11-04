@@ -50,7 +50,7 @@ readFile("fmi_attributes_15_tmp.xml")
 //     needsExecutionTool=\"false\"
 //     completedIntegratorStepNotNeeded=\"false\"
 //     canBeInstantiatedOnlyOncePerProcess=\"false\"
-//     canNotUseMemoryManagementFunctions=\"false\"
+//     canNotUseMemoryManagementFunctions=\"true\"
 //     canGetAndSetFMUstate=\"true\"
 //     canSerializeFMUstate=\"true\"
 //     providesDirectionalDerivative=\"false\">
@@ -75,10 +75,8 @@ readFile("fmi_attributes_15_tmp.xml")
 //       <File name=\"fmi_attributes_15_18spd.c\" />
 //       <File name=\"fmi_attributes_15_FMU.c\" />
 //       <File name=\"fmi_attributes_15_functions.c\" />
-//       <File name=\"fmi_attributes_15_init_fmu.c\" />
 //       <File name=\"fmi_attributes_15_records.c\" />
 //       <File name=\"fmi-export/fmu2_model_interface.c\" />
-//       <File name=\"fmi-export/fmu_read_flags.c\" />
 //       <File name=\"gc/omc_alloc.c\" />
 //       <File name=\"gc/omc_gc.c\" />
 //       <File name=\"gc/omc_rc.c\" />
@@ -93,6 +91,7 @@ readFile("fmi_attributes_15_tmp.xml")
 //       <File name=\"simulation/simulation_omc_assert.c\" />
 //       <File name=\"simulation/solver/delay.c\" />
 //       <File name=\"simulation/solver/discrete_changes.c\" />
+//       <File name=\"simulation/solver/events.c\" />
 //       <File name=\"simulation/solver/initialization/initialization.c\" />
 //       <File name=\"simulation/solver/model_help.c\" />
 //       <File name=\"simulation/solver/omc_math.c\" />
@@ -115,6 +114,7 @@ readFile("fmi_attributes_15_tmp.xml")
 //       <File name=\"util/omc_box.c\" />
 //       <File name=\"util/omc_error.c\" />
 //       <File name=\"util/omc_file.c\" />
+//       <File name=\"util/omc_fmu_init.c\" />
 //       <File name=\"util/omc_init.c\" />
 //       <File name=\"util/omc_mmap.c\" />
 //       <File name=\"util/omc_msvc.c\" />
