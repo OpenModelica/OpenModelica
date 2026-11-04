@@ -355,7 +355,7 @@ pub static SOLVER_METHOD_NAME: CStrTable<14> = CStrTable([
     c"trapezoid".as_ptr(),
     c"imprungekutta".as_ptr(),
     c"irksco".as_ptr(),
-    c"rungekuttaSsc".as_ptr(),
+    c"rungekuttassc".as_ptr(),
     c"optimization".as_ptr(),
 ]);
 
@@ -373,7 +373,7 @@ pub static SOLVER_METHOD_DESC: CStrTable<14> = CStrTable([
     c"trapezoid - shorthand for gbode with -gbm=trapezoid -gbctrl=const".as_ptr(),
     c"imprungekutta - shorthand for gbode with -gbm=radauIA2 -gbctrl=const".as_ptr(),
     c"irksco - shorthand for gbode with -gbm=trapezoid".as_ptr(),
-    c"rungekuttaSsc - shorthand for gbode with -gbm=rungekuttaSsc".as_ptr(),
+    c"rungekuttassc - shorthand for gbode with -gbm=rungekuttaSsc".as_ptr(),
     c"optimization - Special solver for dynamic optimization".as_ptr(),
 ]);
 

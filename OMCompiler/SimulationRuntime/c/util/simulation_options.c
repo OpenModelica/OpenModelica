@@ -1338,7 +1338,7 @@ const char *SOLVER_METHOD_NAME[S_MAX] = {
   /* S_TRAPEZOID */ "trapezoid",
   /* S_IMPRUNGEKUTTA */ "imprungekutta",
   /* S_IRKSCO */ "irksco",
-  /* S_RUNGEKUTTASSC */ "rungekuttaSsc",
+  /* S_RUNGEKUTTASSC */ "rungekuttassc",
   /* S_OPTIMIZATION */  "optimization"
 };
 
@@ -1355,7 +1355,7 @@ const char *SOLVER_METHOD_DESC[S_MAX] = {
   /* S_TRAPEZOID */ "trapezoid - shorthand for gbode with -gbm=trapezoid -gbctrl=const",
   /* S_IMPRUNGEKUTTA */ "imprungekutta - shorthand for gbode with -gbm=radauIA2 -gbctrl=const",
   /* S_IRKSCO */ "irksco - shorthand for gbode with -gbm=trapezoid",
-  /* S_RUNGEKUTTASSC */ "rungekuttaSsc - shorthand for gbode with -gbm=rungekuttaSsc",
+  /* S_RUNGEKUTTASSC */ "rungekuttassc - shorthand for gbode with -gbm=rungekuttaSsc",
   /* S_OPTIMIZATION */  "optimization - Special solver for dynamic optimization"
 };
 

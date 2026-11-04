@@ -56,12 +56,12 @@ b := val(x, 1, "gbodeShorthands_x_res.mat");
 echo(true);
 "irksco"; a; a == b;
 echo(false);
-simulate(gbodeShorthands, stopTime = 1, numberOfIntervals = 10, method = "rungekuttaSsc", fileNamePrefix = "gbodeShorthands_x"); getErrorString();
+simulate(gbodeShorthands, stopTime = 1, numberOfIntervals = 10, method = "rungekuttassc", fileNamePrefix = "gbodeShorthands_x"); getErrorString();
 a := val(x, 1, "gbodeShorthands_x_res.mat");
 simulate(gbodeShorthands, stopTime = 1, numberOfIntervals = 10, method = "gbode", fileNamePrefix = "gbodeShorthands_x", simflags = "-gbm=rungekuttaSsc"); getErrorString();
 b := val(x, 1, "gbodeShorthands_x_res.mat");
 echo(true);
-"rungekuttaSsc"; a; a == b;
+"rungekuttassc"; a; a == b;
 echo(false);
 
 // Result:
@@ -92,7 +92,7 @@ echo(false);
 // 0.36787895487952205
 // true
 // true
-// "rungekuttaSsc"
+// "rungekuttassc"
 // 0.36780669365470603
 // true
 // endResult

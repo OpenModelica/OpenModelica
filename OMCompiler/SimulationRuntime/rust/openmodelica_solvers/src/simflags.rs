@@ -1554,7 +1554,7 @@ const SOLVERS: &[Value<Solver>] = &[
     ("trapezoid", Solver::GbodeShorthand, Offer::Never),
     ("imprungekutta", Solver::GbodeShorthand, Offer::Never),
     ("irksco", Solver::GbodeShorthand, Offer::Never),
-    ("rungekuttaSsc", Solver::GbodeShorthand, Offer::Never),
+    ("rungekuttassc", Solver::GbodeShorthand, Offer::Never),
     ("gbode", Solver::Gbode, Offer::Never),
     ("ida", Solver::Ida, Offer::WithIda),
     ("cvode", Solver::Cvode, Offer::WithCvode),

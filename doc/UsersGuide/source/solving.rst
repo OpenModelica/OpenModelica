@@ -155,7 +155,7 @@ Some common methods have a shorthand:
   -s=trapezoid      -s=gbode -gbm=trapezoid -gbctrl=const
   -s=imprungekutta  -s=gbode -gbm=radauIA2 -gbctrl=const
   -s=irksco         -s=gbode -gbm=trapezoid
-  -s=rungekuttaSsc  -s=gbode -gbm=rungekuttaSsc
+  -s=rungekuttassc  -s=gbode -gbm=rungekuttaSsc
 
 The bi-rate mode can be utilized using the simulation flag
 :ref:`gbratio <simflag-gbratio>`. This flag determines the percentage of fast
