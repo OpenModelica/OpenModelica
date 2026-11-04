@@ -3,12 +3,11 @@
 // status:   correct
 // The expected result records a known failure, not the correct output. Update it when
 // the model starts working, see https://github.com/OpenModelica/OpenModelica/issues/15384
-// depends: ./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows4_Inputs.csv
 // teardown_command: rm -rf TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows4 TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows4_* Reconciled_TSP_DataReconciliationSimpleTests_Models_FourFlows_TSP_FourFlows4.mo TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows4.html
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
-loadFile("TSP_DataReconciliationSimpleTests/package.mo");
+loadModel(TSP_DataReconciliationSimpleTests, {"4.0.0"});
 getErrorString();
 
 AnnotationNamedModifiers:=getAnnotationNamedModifiers(TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows4, "__OpenModelica_simulationFlags");
@@ -32,16 +31,11 @@ echo(false); getErrorString(); echo(true);
 // true
 // ""
 // true
-// "Notification: Automatically loaded package ThermoSysPro 4.2 due to uses annotation from TSP_DataReconciliationSimpleTests.
-// Notification: Skipped loading package ModelicaDataReconciliationSimpleTests (4.0) using OPENMODELICALIBRARY (MODELICAPATH in the language specification) /home/j74082/Documents/Logiciels/OpenModelica/main_2/OpenModelica/testsuite/openmodelica/dataReconciliation:/home/j74082/Documents/Logiciels/OpenModelica/main_2/OpenModelica//libraries/.openmodelica/libraries (uses-annotation may be wrong).
-// Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
-// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
-// "
+// ""
 // {"lv", "eps", "s", "sx"}
 // "-reconcile "
 //
-// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows4_Inputs.csv
+// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows4_Inputs.csv
 //
 // ModelInfo: TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows4
 // ==========================================================================
