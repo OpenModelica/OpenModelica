@@ -28,7 +28,13 @@ unsafe extern "C" {
     static omc_fmu3_arrayVrs: [u32; 1];
     static omc_fmu3_arrayLengths: [u32; 1];
     fn omc_fmu_setupDataStruc(data: *mut DATA, thread_data: *mut threadData_t);
-    fn omc_fmu_setDefaultStartValues(data: *mut DATA);
+
+    // util/omc_fmu_init.h: resources/<prefix>_init.bin of an FMU 2.0 or 3.0.
+    fn omc_fmu_init_load(model_data: *const MODEL_DATA) -> *mut c_void;
+    fn omc_fmu_init_error(init: *const c_void) -> *const c_char;
+    fn omc_fmu_init_free(init: *mut c_void);
+    fn omc_fmu_init_experiment(init: *const c_void, simulation_info: *mut SIMULATION_INFO);
+    fn omc_fmu_init_variables(init: *mut c_void, model_data: *mut MODEL_DATA, start_only: c_int);
 
     fn mmc_init_nogc();
     static mut omc_assert: *const c_void;
@@ -46,17 +52,28 @@ unsafe extern "C" {
 
 /// The importer's logger.
 pub(crate) enum Logger {
-    Fmi2 { cb: Fmi2LogCb, env: *mut c_void, name: CString },
-    Fmi3 { cb: Fmi3LogCb, env: *mut c_void },
+    Fmi2 {
+        cb: Fmi2LogCb,
+        env: *mut c_void,
+        name: CString,
+    },
+    Fmi3 {
+        cb: Fmi3LogCb,
+        env: *mut c_void,
+    },
 }
 
 impl Logger {
     pub(crate) fn log(&self, status: c_int, category: &str, message: &str) {
-        let (Ok(cat), Ok(msg)) = (CString::new(category), CString::new(message)) else { return };
+        let (Ok(cat), Ok(msg)) = (CString::new(category), CString::new(message)) else {
+            return;
+        };
         match self {
-            Logger::Fmi2 { cb: Some(cb), env, name } => unsafe {
-                cb(*env, name.as_ptr(), status, cat.as_ptr(), c"%s".as_ptr(), msg.as_ptr())
-            },
+            Logger::Fmi2 {
+                cb: Some(cb),
+                env,
+                name,
+            } => unsafe { cb(*env, name.as_ptr(), status, cat.as_ptr(), c"%s".as_ptr(), msg.as_ptr()) },
             Logger::Fmi3 { cb: Some(cb), env } => unsafe { cb(*env, status, cat.as_ptr(), msg.as_ptr()) },
             _ => {}
         }
@@ -89,7 +106,11 @@ fn report_assert(error: bool, info: &FILE_INFO, text: &str, passed_thread_data: 
         eprintln!("{pos}Modelica Assert: {text}!");
         return;
     }
-    let msg = if info.lineStart != 0 { format!("{file}:{}: {text}", info.lineStart) } else { text.to_string() };
+    let msg = if info.lineStart != 0 {
+        format!("{file}:{}: {text}", info.lineStart)
+    } else {
+        text.to_string()
+    };
     if error {
         openmodelica_fmi3_wasm::log_status_error(&msg);
     } else {
@@ -108,13 +129,20 @@ pub(crate) fn code(s: Status) -> c_int {
 }
 
 pub(crate) fn cstr(p: *const c_char) -> String {
-    if p.is_null() { String::new() } else { unsafe { CStr::from_ptr(p) }.to_string_lossy().into_owned() }
+    if p.is_null() {
+        String::new()
+    } else {
+        unsafe { CStr::from_ptr(p) }.to_string_lossy().into_owned()
+    }
 }
 
 #[derive(Clone, Copy, PartialEq)]
 pub(crate) enum Kind {
     ModelExchange,
-    CoSimulation { event_mode_used: bool, early_return_allowed: bool },
+    CoSimulation {
+        event_mode_used: bool,
+        early_return_allowed: bool,
+    },
     ScheduledExecution,
 }
 
@@ -164,7 +192,15 @@ impl Native {
             }
         };
         let log = core::cell::RefCell::new(openmodelica_fmi3_wasm::save_logging());
-        let n = Box::new(Native { inst, data, thread_data, logger, log, resources, kind });
+        let n = Box::new(Native {
+            inst,
+            data,
+            thread_data,
+            logger,
+            log,
+            resources,
+            kind,
+        });
         n.enter();
         Some(n)
     }
@@ -207,7 +243,9 @@ impl Native {
             + (md.nVariablesBoolean + md.nParametersBoolean + md.nAliasBoolean)
             + (md.nVariablesString + md.nParametersString + md.nAliasString);
         let i = (vr as i64).checked_sub(first as i64)?;
-        (0..md.nExtObjs as i64).contains(&i).then(|| unsafe { (*(*self.data).simulationInfo).extObjs.add(i as usize) })
+        (0..md.nExtObjs as i64)
+            .contains(&i)
+            .then(|| unsafe { (*(*self.data).simulationInfo).extObjs.add(i as usize) })
     }
 
     pub(crate) fn free(self) {
@@ -247,7 +285,12 @@ fn library_path() -> Option<std::path::PathBuf> {
     let mut module = core::ptr::null_mut();
     let mut buf = [0u16; 32768];
     unsafe {
-        if GetModuleHandleExW(FROM_ADDRESS | UNCHANGED_REFCOUNT, library_path as *const u16, &mut module) == 0 {
+        if GetModuleHandleExW(
+            FROM_ADDRESS | UNCHANGED_REFCOUNT,
+            library_path as *const u16,
+            &mut module,
+        ) == 0
+        {
             return None;
         }
         let n = GetModuleFileNameW(module, buf.as_mut_ptr(), buf.len() as u32) as usize;
@@ -269,7 +312,9 @@ fn calloc<T>(n: usize) -> *mut T {
 fn cs_method(data: *mut DATA) -> String {
     let md = unsafe { &*(*data).modelData };
     let path = format!("{}/{}_flags.json", cstr(md.resourcesDir), cstr(md.modelFilePrefix));
-    let Ok(text) = std::fs::read_to_string(path) else { return "euler".into() };
+    let Ok(text) = std::fs::read_to_string(path) else {
+        return "euler".into();
+    };
     let value = text.find("\"s\"").and_then(|k| {
         let rest = &text[k + 3..];
         let rest = &rest[rest.find(':')? + 1..];
@@ -329,7 +374,12 @@ fn build(resources: Option<&CString>, kind: Kind, token: Option<&str>) -> Result
     }
 }
 
-fn setup(data: *mut DATA, td: *mut threadData_t, kind: Kind, token: Option<&str>) -> Result<Option<Instance<CEngine>>, String> {
+fn setup(
+    data: *mut DATA,
+    td: *mut threadData_t,
+    kind: Kind,
+    token: Option<&str>,
+) -> Result<Option<Instance<CEngine>>, String> {
     unsafe {
         omc_fmu_setupDataStruc(data, td);
         let md = &*(*data).modelData;
@@ -339,18 +389,42 @@ fn setup(data: *mut DATA, td: *mut threadData_t, kind: Kind, token: Option<&str>
             return Err(format!("Wrong GUID {token}. Expected {}.", cstr(md.modelGUID)));
         }
         let cb = &*(*data).callback;
-        cb.read_simulation_info.expect("read_simulation_info")((*data).simulationInfo);
+        // FMI 1.0 has the generated `read_input_fmu`, the others `_init.bin`.
+        let init = match cb.read_input_fmu {
+            Some(_) => core::ptr::null_mut(),
+            None => {
+                let init = omc_fmu_init_load((*data).modelData);
+                let error = omc_fmu_init_error(init);
+                if !error.is_null() {
+                    let msg = cstr(error);
+                    omc_fmu_init_free(init);
+                    return Err(msg);
+                }
+                init
+            }
+        };
+        let fill = |start_only: c_int| match cb.read_input_fmu {
+            Some(f) => f((*data).modelData),
+            None => omc_fmu_init_variables(init, (*data).modelData, start_only),
+        };
+        match cb.read_simulation_info {
+            Some(f) => f((*data).simulationInfo),
+            None => omc_fmu_init_experiment(init, (*data).simulationInfo),
+        }
         crate::fmi::allocModelDataVars((*data).modelData, 0, td);
         crate::fmi::scalarAllocArrayAttributes((*data).modelData);
         if let Some(f) = cb.updateStructuralParameters {
             f(data, td);
         }
         crate::fmi::calculateAllScalarLength((*data).modelData);
-        omc_fmu_setDefaultStartValues(data);
+        fill(1);
         crate::fmi::initializeDataStruc(data, td);
         crate::fmi::setAllParamsToStart((*data).simulationInfo, (*data).modelData);
         crate::fmi::setAllVarsToStart(*(*data).localData, (*data).simulationInfo, (*data).modelData);
-        cb.read_input_fmu.expect("read_input_fmu")((*data).modelData);
+        fill(0);
+        if !init.is_null() {
+            omc_fmu_init_free(init);
+        }
         crate::fmi::initializeNonlinearSystems(data, td);
         crate::fmi::initializeLinearSystems(data, td);
         crate::fmi::initializeMixedSystems(data, td);
@@ -359,7 +433,10 @@ fn setup(data: *mut DATA, td: *mut threadData_t, kind: Kind, token: Option<&str>
     let (engine, mut meta) = crate::fmi::engine_and_meta(data, td);
     fmi3_arrays(&mut meta.fmi_vrs);
     let inst = match kind {
-        Kind::CoSimulation { event_mode_used, early_return_allowed } => {
+        Kind::CoSimulation {
+            event_mode_used,
+            early_return_allowed,
+        } => {
             meta.cs_method = cs_method(data);
             Instance::new_co_simulation(engine, meta, 0, event_mode_used, early_return_allowed)
         }

@@ -70,7 +70,6 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"test_Bug3049_18spd.c\" />
 //       <File name=\"test_Bug3049_FMU.c\" />
 //       <File name=\"test_Bug3049_functions.c\" />
-//       <File name=\"test_Bug3049_init_fmu.c\" />
 //       <File name=\"test_Bug3049_records.c\" />
 //       <File name=\"fmi-export/fmu2_model_interface.c\" />
 //       <File name=\"fmi-export/fmu_read_flags.c\" />
@@ -111,6 +110,7 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"util/omc_box.c\" />
 //       <File name=\"util/omc_error.c\" />
 //       <File name=\"util/omc_file.c\" />
+//       <File name=\"util/omc_fmu_init.c\" />
 //       <File name=\"util/omc_init.c\" />
 //       <File name=\"util/omc_mmap.c\" />
 //       <File name=\"util/omc_msvc.c\" />

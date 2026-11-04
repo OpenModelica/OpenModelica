@@ -830,6 +830,51 @@ void setAllParamsToStart(SIMULATION_INFO *simulationInfo, const MODEL_DATA *mode
   }
 }
 
+/**
+ * @brief Set the start attribute of all variables and parameters to their
+ * current value. For an array only the first element.
+ *
+ * @param data  Runtime data struct.
+ */
+void setStartToCurrentValues(DATA *data)
+{
+  MODEL_DATA *modelData = data->modelData;
+  SIMULATION_INFO *simulationInfo = data->simulationInfo;
+  SIMULATION_DATA *simulationData = data->localData[0];
+  long i;
+
+  for (i = 0; i < modelData->nVariablesRealArray; ++i) {
+    const char *name = modelData->realVarsData[i].info.name;
+    if (name && (0 == strcmp(name, "$dummy") || 0 == strcmp(name, "der($dummy)"))) {
+      continue;
+    }
+    put_real_element(simulationData->realVars[simulationInfo->realVarsIndex[i]], 0, &modelData->realVarsData[i].attribute.start);
+  }
+  for (i = 0; i < modelData->nVariablesIntegerArray; ++i) {
+    put_integer_element(simulationData->integerVars[simulationInfo->integerVarsIndex[i]], 0, &modelData->integerVarsData[i].attribute.start);
+  }
+  for (i = 0; i < modelData->nVariablesBooleanArray; ++i) {
+    put_boolean_element(simulationData->booleanVars[simulationInfo->booleanVarsIndex[i]], 0, &modelData->booleanVarsData[i].attribute.start);
+  }
+#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING > 0
+  for (i = 0; i < modelData->nVariablesStringArray; ++i) {
+    put_string_element(simulationData->stringVars[simulationInfo->stringVarsIndex[i]], 0, &modelData->stringVarsData[i].attribute.start);
+  }
+#endif
+  for (i = 0; i < modelData->nParametersRealArray; ++i) {
+    put_real_element(simulationInfo->realParameter[simulationInfo->realParamsIndex[i]], 0, &modelData->realParameterData[i].attribute.start);
+  }
+  for (i = 0; i < modelData->nParametersIntegerArray; ++i) {
+    put_integer_element(simulationInfo->integerParameter[simulationInfo->integerParamsIndex[i]], 0, &modelData->integerParameterData[i].attribute.start);
+  }
+  for (i = 0; i < modelData->nParametersBooleanArray; ++i) {
+    put_boolean_element(simulationInfo->booleanParameter[simulationInfo->booleanParamsIndex[i]], 0, &modelData->booleanParameterData[i].attribute.start);
+  }
+  for (i = 0; i < modelData->nParametersStringArray; ++i) {
+    put_string_element(simulationInfo->stringParameter[simulationInfo->stringParamsIndex[i]], 0, &modelData->stringParameterData[i].attribute.start);
+  }
+}
+
 /*! \fn storeOldValues
  *
  *  This function copies states and time into their old-values for event handling.
@@ -1630,7 +1675,7 @@ void deInitializeDataStruc(DATA *data)
   freeRingBuffer(data->simulationData);
 
   if (data->callback->read_input_fmu) {
-    /* FMU: `read_input_fmu` points the VAR_INFO strings at literals in the generated code,
+    /* FMI 1.0: `read_input_fmu` points the VAR_INFO strings at literals in the generated code,
      * but the arrays were still allocated by `allocModelDataVars` in `fmi2Instantiate`. */
     freeModelDataVarArrays(data->modelData);
   } else {

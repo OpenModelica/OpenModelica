@@ -55,6 +55,7 @@
 #include "../simulation/solver/synchronous.h"
 #include "../simulation/options.h"
 #include "../util/simulation_options.h"
+#include "../util/omc_fmu_init.h"
 #include "../util/omc_error.h"
 
 #include <math.h>
@@ -656,6 +657,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   * The problem is that we might overwrite the main simulation's copy of the interface...
   */
   ModelInstance *comp;
+  OMC_FMU_INIT *init;
   if (!functions->logger) {
     return NULL;
   }
@@ -754,12 +756,27 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   omc_useStream[OMC_LOG_STDOUT] = 1;
   omc_useStream[OMC_LOG_ASSERT] = 1;
   fmu2_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
+  init = omc_fmu_init_load(comp->fmuData->modelData);
+  if (omc_fmu_init_error(init)) {
+    functions->logger(functions->componentEnvironment, instanceName, fmi2Error, "error", "fmi2Instantiate: %s", omc_fmu_init_error(init));
+    omc_fmu_init_free(init);
+    functions->freeMemory(comp->fmuData->modelData->resourcesDir);
+    functions->freeMemory(threadData);
+    functions->freeMemory(simInfo);
+    functions->freeMemory(modelData);
+    functions->freeMemory(fmudata);
+    functions->freeMemory((void*)comp->functions);
+    functions->freeMemory((void*)comp->GUID);
+    functions->freeMemory((void*)comp->instanceName);
+    functions->freeMemory(comp);
+    return NULL;
+  }
   /*
    * load the simulation settings before initializing the DataStruct for fmus
    * fix issue #11855, always take the startTime provided in modeldescription.xml
    * to handle model that have startTime > 0 (e.g) startTime = 0.2
    */
-  comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
+  omc_fmu_init_experiment(init, comp->fmuData->simulationInfo);
   allocModelDataVars(comp->fmuData->modelData, FALSE, comp->threadData);
   scalarAllocArrayAttributes(comp->fmuData->modelData);
   if (comp->fmuData->callback->updateStructuralParameters) {
@@ -768,12 +785,13 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   calculateAllScalarLength(comp->fmuData->modelData);
 
   /* setup model data with default start data */
-  setDefaultStartValues(comp);
+  omc_fmu_init_variables(init, comp->fmuData->modelData, 1);
   initializeDataStruc(comp->fmuData, comp->threadData);
 
   setAllParamsToStart(comp->fmuData->simulationInfo, comp->fmuData->modelData);
   setAllVarsToStart(comp->fmuData->localData[0], comp->fmuData->simulationInfo, comp->fmuData->modelData);
-  comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData);
+  omc_fmu_init_variables(init, comp->fmuData->modelData, 0);
+  omc_fmu_init_free(init);
 
 
 #if !defined(OMC_MINIMAL_METADATA)
@@ -995,7 +1013,7 @@ fmi2Status fmi2EnterInitializationMode(fmi2Component c)
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EnterInitializationMode...")
 
   setZCtol(comp->fmuData->simulationInfo->tolerance); /* set zero-crossing tolerance */
-  setStartValues(comp);
+  setStartToCurrentValues(comp->fmuData);
   copyStartValuestoInitValues(comp->fmuData);
   comp->state = model_state_initialization_mode;
 
@@ -1109,6 +1127,7 @@ fmi2Status fmi2Reset(fmi2Component c)
 {
   ModelInstance* comp = (ModelInstance *)c;
   modelica_boolean modelDataVarsFreed = FALSE;
+  OMC_FMU_INIT *init;
   if (invalidState(comp, "fmi2Reset", model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error))
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Reset")
@@ -1146,6 +1165,13 @@ fmi2Status fmi2Reset(fmi2Component c)
   omc_useStream[OMC_LOG_STDOUT] = 1;
   omc_useStream[OMC_LOG_ASSERT] = 1;
   fmu2_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
+  init = omc_fmu_init_load(comp->fmuData->modelData);
+  if (omc_fmu_init_error(init)) {
+    FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "fmi2Reset: %s", omc_fmu_init_error(init))
+    omc_fmu_init_free(init);
+    comp->state = model_state_error;
+    return fmi2Error;
+  }
   if (modelDataVarsFreed) {
     /* deInitializeDataStruc freed the var data arrays; re-allocate them before they are
      * initialized and filled again, mirroring fmi2Instantiate. */
@@ -1156,14 +1182,15 @@ fmi2Status fmi2Reset(fmi2Component c)
     }
     calculateAllScalarLength(comp->fmuData->modelData);
   }
-  comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
+  omc_fmu_init_experiment(init, comp->fmuData->simulationInfo);
   initializeDataStruc(comp->fmuData, comp->threadData);
 
   /* reset model data with default start data */
-  setDefaultStartValues(comp);
+  omc_fmu_init_variables(init, comp->fmuData->modelData, 1);
   setAllParamsToStart(comp->fmuData->simulationInfo, comp->fmuData->modelData);
   setAllVarsToStart(comp->fmuData->localData[0], comp->fmuData->simulationInfo ,comp->fmuData->modelData);
-  comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData);
+  omc_fmu_init_variables(init, comp->fmuData->modelData, 0);
+  omc_fmu_init_free(init);
 #if !defined(OMC_MINIMAL_METADATA)
   modelInfoInit(&(comp->fmuData->modelData->modelDataXml));
 #endif
