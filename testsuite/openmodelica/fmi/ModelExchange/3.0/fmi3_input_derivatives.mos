@@ -1,0 +1,42 @@
+// name: fmi3_input_derivatives.mos
+// keywords: FMI 3.0 export input derivative
+// status: correct
+// teardown_command: rm -rf MWE.fmu MWE.fmutmp/ MWE_md.xml MWE_info.json MWE.log MWE_FMU.libs MWE_FMU.makefile MWE_external_functions.json index.html resources
+//
+// With --inputDerivatives=input the derivative der(u_top) that the model
+// needs is an additional input of the FMU.
+
+loadString("
+model MWE
+  input Real u_top;
+  Real u;
+  Real y;
+  parameter Real tau = 1;
+equation
+  tau*der(y) + y = u;
+  y = u_top;
+end MWE;
+"); getErrorString();
+
+setCommandLineOptions("--inputDerivatives=input"); getErrorString();
+buildModelFMU(MWE, version="3.0", fmuType="me"); getErrorString();
+
+system("unzip -cqq MWE.fmu modelDescription.xml > MWE_md.xml"); getErrorString();
+system("grep -E '<Float64 name=\"(u_top|der\\(u_top\\))\"' MWE_md.xml | sed -E 's/ (valueReference|description)=\"[^\"]*\"//g'"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "MWE.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+//     <Float64 name="der(u_top)" causality="input"  start="0.0"/>
+//     <Float64 name="u_top" causality="input"  start="0.0">
+// 0
+// ""
+// endResult

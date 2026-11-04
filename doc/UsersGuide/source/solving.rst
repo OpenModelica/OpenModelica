@@ -194,6 +194,8 @@ The basic explicit solvers Euler uses a fixed step-size based on the
 
 - euler - Explicit Euler, fixed step size, order 1
 
+.. _daemode :
+
 DAE Mode Simulation
 -------------------
 
@@ -208,6 +210,68 @@ Once a model is compiled in `DAE mode` the simulation can be only performed
 with :ref:`SUNDIALS/IDA <sundials_ida>` integrator and with enabled
 :ref:`-daeMode <simflag-daeMode>` simulation flag. Both are enabled
 automatically by default, when a simulation run is started.
+
+.. _input_derivatives :
+
+Derivatives of Inputs
+---------------------
+
+A model can need the time derivative ``der(u)`` of a top-level input ``u``. This
+occurs if ``der(u)`` is written in the model, if index reduction differentiates
+an equation that contains ``u``, or if alias elimination replaces a state ``x``
+by ``u`` (from ``x = u``) and thus ``der(x)`` by ``der(u)``. The values of an
+input are known only at the time instants at which they are given, thus the
+compiler cannot calculate ``der(u)`` from ``u``. The flag
+:ref:`--inputDerivatives <omcflag-inputDerivatives>` sets what the compiler
+does:
+
+- ``error`` (default): The translation stops with the error "The model requires
+  derivatives of some inputs as listed below", followed by the list of the
+  derivatives, e.g. ``der(u)``. This applies to the ODE mode, the
+  :ref:`DAE mode <daemode>` and the Model Exchange FMU export. A
+  Co-Simulation FMU (FMI 2.0 or 3.0) takes the derivatives as zero, as
+  before, because it also differentiates its outputs
+  (``maxOutputDerivativeOrder="1"``), which often depend on inputs.
+- ``input``: Each derivative ``der(u)`` that the model needs becomes an
+  additional top-level input with the name ``der(u)``, start value 0. The
+  user (or the FMU importer) gives its value together with the value of
+  ``u``. In a simulation with :ref:`-csvInput <simflag-csvInput>`, the input
+  file has a column ``der(u)``; without that column, ``der(u)`` stays at 0. In
+  an exported FMU, ``der(u)`` is an input variable in
+  ``modelDescription.xml``. The compiler does not check that ``der(u)`` is the
+  derivative of ``u``.
+- ``zero``: The derivatives that index reduction and alias elimination need
+  are replaced by 0, without a message. This was the behavior before
+  ``error`` became the default, and gives wrong results if the input is not
+  constant. A ``der(u)`` written in the model is still an error.
+
+For dynamic optimization (Optimica or :ref:`--gDynOpt <omcflag-gDynOpt>`),
+``der(u)`` written in the model is handled by the optimization as before.
+
+For example, the model below prescribes the output ``y`` of a first-order
+filter. Alias elimination replaces ``y`` by ``u_top``, and the filter equation
+then needs ``der(u_top)``:
+
+.. code-block:: modelica
+
+  model MWE
+    input Real u_top;
+    Real u;
+    Real y;
+    parameter Real tau = 1;
+  equation
+    tau*der(y) + y = u;
+    y = u_top;
+  end MWE;
+
+With ``--inputDerivatives=input`` the result is ``u = tau*der(u_top) + u_top``,
+where ``der(u_top)`` is read from the input file:
+
+.. code-block:: none
+
+  time, u_top, der(u_top)
+  0, 0, 1
+  2, 2, 1
 
 
 .. _initialization :
