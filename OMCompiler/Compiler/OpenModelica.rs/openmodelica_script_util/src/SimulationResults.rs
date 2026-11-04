@@ -1393,7 +1393,10 @@ fn filter_csv_input(
             col_of.push(c);
             continue;
         }
-        let Some(vals) = reader.dataset(name.as_str()) else {
+        // Reference files such as the MAP-LIB ones call the time column "Time",
+        // which diffSimulationResults accepts too. The output still calls it time.
+        let found = reader.dataset(name.as_str()).or_else(|| if col_of.is_empty() { reader.dataset("Time") } else { None });
+        let Some(vals) = found else {
             err(&ERROR_COULD_NOT_READ_VAR, [name.clone(), openmodelica_util::System::basename(in_file.clone())])?;
             return Ok(false);
         };
