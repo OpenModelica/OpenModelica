@@ -89,6 +89,30 @@ fn teardown() {
     success("The simulation finished successfully.");
 }
 
+/// C's `OpenModelica_uriToFilename` for a `modelica://` URI, e.g. of `-sx`,
+/// against the class table the generated `main` installs.
+fn uri_to_filename(uri: &str) -> String {
+    unsafe extern "C" {
+        /// src/shim.c: null where C asserts.
+        fn omr_uri_to_filename(thread_data: *mut threadData_t, uri: *mut core::ffi::c_void)
+        -> *mut core::ffi::c_void;
+    }
+    if uri.len() >= 11 && uri[..11].eq_ignore_ascii_case("modelica://") {
+        let td = crate::support::omr_thread_data();
+        if !td.is_null() {
+            let path = unsafe { omr_uri_to_filename(td, model_data::mk_scon_persist(uri)) };
+            if !path.is_null() {
+                return model_data::string_value(path);
+            }
+        }
+        return uri.to_string();
+    }
+    match uri.strip_prefix("file://") {
+        Some(path) => path.to_string(),
+        None => uri.to_string(),
+    }
+}
+
 fn argv_strings(argc: c_int, argv: *mut *mut c_char) -> Vec<String> {
     (0..argc.max(0) as usize)
         .map(|i| unsafe {
@@ -163,6 +187,7 @@ pub extern "C" fn _main_initRuntimeAndSimulation(
     driver::set_init_done_hook(init_done);
     driver::set_teardown_hook(teardown);
     driver::set_stats_hook(openmodelica_sim_meta::stats::log_stats);
+    driver::set_uri_resolver(uri_to_filename);
     if let Some(code) = crate::help::serve(&args) {
         std::process::exit(code);
     }
