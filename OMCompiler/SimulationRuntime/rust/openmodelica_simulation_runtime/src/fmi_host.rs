@@ -23,7 +23,6 @@ impl FmiHost for CEngine {
             // Ipopt is deliberately not in the FMU archive: it would bring MUMPS
             // and a libgfortran dependency for an entry point no FMU has.
             optimization: false,
-            qss: true,
         }
     }
 

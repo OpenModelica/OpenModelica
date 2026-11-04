@@ -130,9 +130,8 @@ impl FixedStep {
 /// allocated and before the model is initialized.
 pub fn deprecation_warning(method: &str) {
     use crate::omclog;
-    // C also warns (one line, no replacement text) for `symSolver`, `symSolverSsc`
-    // and `qss`.
-    if matches!(method, "symSolver" | "symSolverSsc" | "qss") {
+    // C also warns (one line, no replacement text) for `symSolver` and `symSolverSsc`.
+    if matches!(method, "symSolver" | "symSolverSsc") {
         omclog::warning!(
             omclog::STDOUT,
             false,
@@ -176,4 +175,3 @@ pub fn deprecation_warning(method: &str) {
     );
     omclog::close(omclog::STDOUT);
 }
-

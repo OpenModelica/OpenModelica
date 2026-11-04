@@ -895,7 +895,6 @@ pub type sim_fn = Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t) -> c
 #[repr(C)]
 pub struct OpenModelicaGeneratedFunctionCallbacks {
     pub performSimulation: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, *mut c_void) -> c_int>,
-    pub performQSSSimulation: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, *mut c_void) -> c_int>,
     pub updateContinuousSystem: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t)>,
     pub callExternalObjectDestructors: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t)>,
 
@@ -1045,7 +1044,7 @@ pub const LSS_KLU: c_int = 3;
 pub const MIXED_SEARCH: c_int = 1;
 pub const NEWTON_DAMPED2: c_int = 2;
 /// The `*_MAX` sizes of the name/description tables `-help` prints.
-pub const S_MAX: c_int = 11;
+pub const S_MAX: c_int = 10;
 pub const IIM_MAX: c_int = 3;
 pub const LS_MAX: c_int = 6;
 pub const LSS_MAX: c_int = 4;

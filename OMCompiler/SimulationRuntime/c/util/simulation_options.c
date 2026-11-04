@@ -1335,7 +1335,6 @@ const char *SOLVER_METHOD_NAME[S_MAX] = {
   /* S_RUNGEKUTTA */    "rungekutta",
   /* S_SYM_SOLVER */    "symSolver",
   /* S_SYM_SOLVER_SSC */"symSolverSsc",
-  /* S_QSS */           "qss",
   /* S_OPTIMIZATION */  "optimization"
 };
 
@@ -1349,7 +1348,6 @@ const char *SOLVER_METHOD_DESC[S_MAX] = {
   /* S_RUNGEKUTTA */    "rungekutta - classical Runge-Kutta - explicit, fixed step, order 4",
   /* S_SYM_SOLVER */    "symSolver - symbolic inline Solver [compiler flag '--symSolver' needed] - fixed step size, order 1",
   /* S_SYM_SOLVER_SSC */"symSolverSsc - symbolic implicit Euler with step size control [compiler flag '--symSolver' needed] - step size control, order 1",
-  /* S_QSS */           "qss - A QSS solver [experimental]",
   /* S_OPTIMIZATION */  "optimization - Special solver for dynamic optimization"
 };
 

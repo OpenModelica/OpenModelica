@@ -69,7 +69,6 @@ set(OMC_SIMRT_SIMULATION_SOURCES
 )
 
 set(OMC_SIMRT_SIMULATION_CINC
-  "solver/perform_qss_simulation.c.inc"
   "solver/perform_simulation.c.inc"
 )
 

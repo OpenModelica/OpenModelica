@@ -31,7 +31,6 @@ pub fn capabilities() -> openmodelica_sim_meta::simflags::Capabilities {
         // reports "Ipopt is needed but not available." here.
         optimization: false,
         // Both runtimes drive a whole trajectory, which is all QSS can do.
-        qss: true,
     }
 }
 

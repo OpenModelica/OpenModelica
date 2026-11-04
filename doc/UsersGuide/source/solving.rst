@@ -199,7 +199,6 @@ OpenModelica:
   (requires :ref:`--symSolver <omcflag-symSolver>`) - fixed step-size, order 1
 - symSolverSsc - Symbolic implicit inline Euler with step-size control
   (requires :ref:`--symSolver<omcflag-symSolver>`) - step-size control, order 1-2
-- qss - A QSS solver
 
 DAE Mode Simulation
 -------------------
