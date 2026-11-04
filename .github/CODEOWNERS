@@ -12,9 +12,7 @@
 /.github/workflows/on-release.yaml @AnHeuermann @adrpo
 
 # Build system
-CMakeLists.txt @AnHeuermann
-*.cmake @AnHeuermann
-*.cmake.in @AnHeuermann
+/CMakeLists.txt @AnHeuermann
 /cmake/ @AnHeuermann
 
 # Continuous Integration / Continuous Deployment
@@ -80,7 +78,7 @@ CMakeLists.txt @AnHeuermann
 /OMCompiler/SimulationRuntime/c/simulation/solver/sundials_* @AnHeuermann
 
 # C simulation runtime: GBODE integrator
-/OMCompiler/SimulationRuntime/c/simulation/solver/gbode* @bernhardbachmann @phannebohm @linuslangenkamp 
+/OMCompiler/SimulationRuntime/c/simulation/solver/gbode* @bernhardbachmann @phannebohm @linuslangenkamp
 
 # C++ simulation runtime
 # /OMCompiler/SimulationRuntime/cpp/
