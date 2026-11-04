@@ -40,6 +40,7 @@ CopyClass9.mos \
 CopyClass10.mos \
 CopyClassInvalid1.mos \
 CopyClassRedeclare1.mos \
+daeModeHomotopy.mos \
 DefaultComponentName.mos \
 DeleteConnection.mos \
 deleteEquation1.mos \
