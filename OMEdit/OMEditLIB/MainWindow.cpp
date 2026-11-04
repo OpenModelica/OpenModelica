@@ -1261,16 +1261,14 @@ void MainWindow::openDroppedFile(const QMimeData *pMimeData)
  * \brief MainWindow::loadCompiledModel
  * Loads the compiled model and switches to plotting perspective.
  * \param executableFilePath
- * \param modelInitFilePath
  * \param resultFilePath
  */
-void MainWindow::loadCompiledModel(const QString &executableFilePath, const QString &modelInitFilePath, const QString &resultFilePath)
+void MainWindow::loadCompiledModel(const QString &executableFilePath, const QString &resultFilePath)
 {
   // check if all files belong to the same directory
   const QString executableDir = QFileInfo(executableFilePath).absolutePath();
-  const QString modelInitDir = QFileInfo(modelInitFilePath).absolutePath();
   const QString resultDir = QFileInfo(resultFilePath).absolutePath();
-  if (executableDir != modelInitDir || executableDir != resultDir) {
+  if (executableDir != resultDir) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                           tr("All files must be in the same directory."),
                                                           Helper::scriptingKind, Helper::errorLevel));
@@ -1291,10 +1289,6 @@ void MainWindow::loadCompiledModel(const QString &executableFilePath, const QStr
   if (!checkFileExists(executableFilePath)) {
     return;
   }
-  // check if the model init file exists
-  if (!checkFileExists(modelInitFilePath)) {
-    return;
-  }
   // check if the result file exists
   if (!checkFileExists(resultFilePath)) {
     return;
@@ -1305,46 +1299,27 @@ void MainWindow::loadCompiledModel(const QString &executableFilePath, const QStr
   QStringList list = mpOMCProxy->readSimulationResultVars(resultFileInfo.absoluteFilePath());
   // if result file contains variables then switch to plotting perspective and add the variables to the variables tree.
   if (list.size() > 0) {
-    // build SimulationOptions object from the model init file.
-    // Parse model_init.xml to extract DefaultExperiment values
     SimulationOptions simulationOptions;
-    QFile initFile(modelInitFilePath);
-    if (initFile.open(QIODevice::ReadOnly)) {
-      QXmlStreamReader xml(&initFile);
-      while (!xml.atEnd() && !xml.hasError()) {
-        if (xml.readNext() == QXmlStreamReader::StartElement) {
-          if (xml.name() == QStringLiteral("fmiModelDescription")) {
-            simulationOptions.setClassName(xml.attributes().value("modelIdentifier").toString());
-          }
-          if (xml.name() == QStringLiteral("DefaultExperiment")) {
-            auto a = xml.attributes();
-            if (!a.value("startTime").isEmpty()) {
-              simulationOptions.setStartTime(a.value("startTime").toString());
-            }
-            if (!a.value("stopTime").isEmpty()) {
-              simulationOptions.setStopTime(a.value("stopTime").toString());
-            }
-            if (!a.value("stepSize").isEmpty()) {
-              simulationOptions.setStepSize(a.value("stepSize").toDouble());
-            }
-            if (!a.value("tolerance").isEmpty()) {
-              simulationOptions.setTolerance(a.value("tolerance").toString());
-            }
-            if (!a.value("solver").isEmpty()) {
-              simulationOptions.setMethod(a.value("solver").toString());
-            }
-            if (!a.value("outputFormat").isEmpty()) {
-              simulationOptions.setOutputFormat(a.value("outputFormat").toString());
-            }
-            if (!a.value("variableFilter").isEmpty()) {
-              simulationOptions.setVariableFilter(a.value("variableFilter").toString());
-            }
-          }
-        }
-      }
+    QString executable = executableFilePath;
+    executable.remove(QRegularExpression("\\.exe$"));
+    QString error;
+    const QJsonObject variables = VariablesTreeModel::listVariables(executable, simulationOptions, &error);
+    if (error.isEmpty()) {
+      const QJsonObject experiment = variables.value(QStringLiteral("defaultExperiment")).toObject();
+      simulationOptions.setClassName(variables.value(QStringLiteral("modelName")).toString());
+      simulationOptions.setStartTime(QString::number(experiment.value(QStringLiteral("startTime")).toDouble()));
+      simulationOptions.setStopTime(QString::number(experiment.value(QStringLiteral("stopTime")).toDouble()));
+      simulationOptions.setStepSize(experiment.value(QStringLiteral("stepSize")).toDouble());
+      simulationOptions.setTolerance(QString::number(experiment.value(QStringLiteral("tolerance")).toDouble()));
+      simulationOptions.setMethod(experiment.value(QStringLiteral("solver")).toString());
+      simulationOptions.setOutputFormat(experiment.value(QStringLiteral("outputFormat")).toString());
+      simulationOptions.setVariableFilter(experiment.value(QStringLiteral("variableFilter")).toString());
+    } else {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, error, Helper::scriptingKind, Helper::errorLevel));
     }
     simulationOptions.setWorkingDirectory(resultFileInfo.absoluteDir().absolutePath());
     simulationOptions.setResultFileName(resultFileInfo.fileName());
+    simulationOptions.setFileNamePrefix(QFileInfo(executable).fileName());
 
     QStringList simulationFlags;
     simulationFlags.append(QString("-startTime=").append(simulationOptions.getStartTime()));

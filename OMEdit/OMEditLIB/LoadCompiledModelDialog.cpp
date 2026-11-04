@@ -66,12 +66,6 @@ LoadCompiledModelDialog::LoadCompiledModelDialog(QWidget *pParent)
   mpExecutableTextBox = new QLineEdit;
   QPushButton *pExecutableBrowseButton = new QPushButton(Helper::browse);
   connect(pExecutableBrowseButton, &QPushButton::clicked, this, &LoadCompiledModelDialog::browseExecutable);
-  // create model init file label, combobox and browse button
-  Label *pModelInitFileLabel = new Label(tr("Model init file"));
-  mpModelInitFileComboBox = new QComboBox;
-  mpModelInitFileComboBox->setEditable(true);
-  QPushButton *pModelInitFileBrowseButton = new QPushButton(Helper::browse);
-  connect(pModelInitFileBrowseButton, &QPushButton::clicked, this, &LoadCompiledModelDialog::browseModelInitFile);
   // create result file label, combobox and browse button
   Label *pResultFileLabel = new Label(tr("Result file"));
   mpResultFileComboBox = new QComboBox;
@@ -95,34 +89,11 @@ LoadCompiledModelDialog::LoadCompiledModelDialog(QWidget *pParent)
   pMainLayout->addWidget(pExecutableLabel, 0, 0);
   pMainLayout->addWidget(mpExecutableTextBox, 0, 1);
   pMainLayout->addWidget(pExecutableBrowseButton, 0, 2);
-  pMainLayout->addWidget(pModelInitFileLabel, 1, 0);
-  pMainLayout->addWidget(mpModelInitFileComboBox, 1, 1);
-  pMainLayout->addWidget(pModelInitFileBrowseButton, 1, 2);
-  pMainLayout->addWidget(pResultFileLabel, 2, 0);
-  pMainLayout->addWidget(mpResultFileComboBox, 2, 1);
-  pMainLayout->addWidget(pResultFileBrowseButton, 2, 2);
-  pMainLayout->addWidget(pButtonBox, 3, 0, 1, 3, Qt::AlignRight);
+  pMainLayout->addWidget(pResultFileLabel, 1, 0);
+  pMainLayout->addWidget(mpResultFileComboBox, 1, 1);
+  pMainLayout->addWidget(pResultFileBrowseButton, 1, 2);
+  pMainLayout->addWidget(pButtonBox, 2, 0, 1, 3, Qt::AlignRight);
   setLayout(pMainLayout);
-}
-
-/*!
- * \brief LoadCompiledModelDialog::fetchModelInitFiles
- * Fetches the model init files from the executable path and populates the model init file combobox.
- */
-void LoadCompiledModelDialog::fetchModelInitFiles()
-{
-  mpModelInitFileComboBox->clear();
-  QString executablePath = mpExecutableTextBox->text();
-  if (executablePath.isEmpty()) {
-    return;
-  }
-  QDir dir(QFileInfo(executablePath).absolutePath());
-  QStringList filters;
-  filters << "*_init.xml";
-  QStringList initFiles = dir.entryList(filters, QDir::Files, QDir::Name);
-  for (const QString &initFile : initFiles) {
-    mpModelInitFileComboBox->addItem(dir.absoluteFilePath(initFile));
-  }
 }
 
 /*!
@@ -159,21 +130,7 @@ void LoadCompiledModelDialog::browseExecutable()
     return;
   }
   mpExecutableTextBox->setText(executableFilePath);
-  fetchModelInitFiles();
   fetchResultFiles();
-}
-
-/*!
- * \brief LoadCompiledModelDialog::browseModelInitFile
- * Browses for the model init file and sets the path in the model init file combobox.
- */
-void LoadCompiledModelDialog::browseModelInitFile()
-{
-  QString modelInitFilePath = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseFile), NULL, Helper::xmlFileTypes, NULL);
-  if (modelInitFilePath.isEmpty()) {
-    return;
-  }
-  mpModelInitFileComboBox->lineEdit()->setText(modelInitFilePath);
 }
 
 /*!
@@ -191,14 +148,13 @@ void LoadCompiledModelDialog::browseResultFile()
 
 /*!
  * \brief LoadCompiledModelDialog::loadCompiledModel
- * Loads the compiled model using the provided executable file path, model init file path, and result file path.
+ * Loads the compiled model using the provided executable file path and result file path.
  */
 void LoadCompiledModelDialog::loadCompiledModel()
 {
   const QString executableFilePath = mpExecutableTextBox->text();
-  const QString modelInitFilePath = mpModelInitFileComboBox->currentText();
   const QString resultFilePath = mpResultFileComboBox->currentText();
 
-  MainWindow::instance()->loadCompiledModel(executableFilePath, modelInitFilePath, resultFilePath);
+  MainWindow::instance()->loadCompiledModel(executableFilePath, resultFilePath);
   accept();
 }

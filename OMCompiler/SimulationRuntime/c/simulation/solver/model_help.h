@@ -123,6 +123,7 @@ void restoreExtrapolationDataOld(DATA *data);
 
 void setAllVarsToStart(SIMULATION_DATA *simulationData, const SIMULATION_INFO *simulationInfo, const MODEL_DATA *modelData);
 void setAllParamsToStart(SIMULATION_INFO *simulationInfo, const MODEL_DATA *modelData);
+void setStartToCurrentValues(DATA *data);
 
 void restoreOldValues(DATA *data);
 

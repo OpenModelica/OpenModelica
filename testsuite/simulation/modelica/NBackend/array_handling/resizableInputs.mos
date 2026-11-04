@@ -34,7 +34,7 @@ abs(val(x[2], 1, "resizableInputs_csv.mat") - 1.264241) < 1e-4;
 // Result:
 // true
 // ""
-// {"resizableInputs", "resizableInputs_init.xml"}
+// {"resizableInputs", "resizableInputs_init.bin"}
 // ""
 // 0
 // true

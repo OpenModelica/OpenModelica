@@ -5,7 +5,7 @@
 #     ./make-data.sh [directory] [model ...]
 #
 # With no model names it makes all of them. Each model leaves a `<name>_res.mat`
-# and the `<name>_init.xml` beside it: the benchmark needs both, because a
+# and the `<name>_init.bin` beside it: the benchmark needs both, because a
 # `.mat` records no units and no types and the other three formats would then
 # have no metadata to be compared on.
 #
@@ -99,7 +99,7 @@ EOF
 
     echo "simulating $name"
     (cd "$WORK" && "$OMC" "$script") || { echo "$name failed" >&2; exit 1; }
-    for suffix in _res.mat _init.xml; do
+    for suffix in _res.mat _init.bin; do
         [ -f "$WORK/$name$suffix" ] || { echo "$name$suffix not produced" >&2; exit 1; }
         mv "$WORK/$name$suffix" "$OUT/"
     done

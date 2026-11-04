@@ -21,6 +21,6 @@ buildModel(testDaedumpgraphv); getErrorString();
 // ""
 // true
 // ""
-// {"testDaedumpgraphv","testDaedumpgraphv_init.xml"}
+// {"testDaedumpgraphv","testDaedumpgraphv_init.bin"}
 // ""
 // endResult

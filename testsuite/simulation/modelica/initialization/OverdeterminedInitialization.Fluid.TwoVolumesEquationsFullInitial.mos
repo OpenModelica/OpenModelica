@@ -16,7 +16,7 @@ buildModel(OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullInitial); g
 // ""
 // true
 // ""
-// {"OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullInitial", "OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullInitial_init.xml"}
+// {"OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullInitial", "OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullInitial_init.bin"}
 // "Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization system:
 //          p1 = 1e5.
 // "

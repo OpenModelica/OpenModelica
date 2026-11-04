@@ -12,169 +12,32 @@ loadFile("ArrayAttributes.mo"); getErrorString();
 
 buildModel(ArrayAttributes); getErrorString();
 
-system("sed -n '/<ModelVariables>/,/<\\/ModelVariables>/p' ArrayAttributes_init.xml > ArrayAttributes_init.tmp.xml");
-initFileContent := readFile("ArrayAttributes_init.tmp.xml");
+initFileContent := readInitFile("ArrayAttributes_init.bin");
 
 // Result:
 // true
 // true
 // ""
-// {"ArrayAttributes", "ArrayAttributes_init.xml"}
+// {"ArrayAttributes", "ArrayAttributes_init.bin"}
 // "[simulation/modelica/NBackend/init_xml/ArrayAttributes.mo:4:3-13:67:writable] Warning: Parameter r_each has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // [simulation/modelica/NBackend/init_xml/ArrayAttributes.mo:38:3-42:49:writable] Warning: Parameter i_each has no value, and is fixed during initialization (fixed=true), using available start value (start=0) as default value.
 // [simulation/modelica/NBackend/init_xml/ArrayAttributes.mo:55:3-57:49:writable] Warning: Parameter b_each has no value, and is fixed during initialization (fixed=true), using available start value (start=false) as default value.
 // [simulation/modelica/NBackend/init_xml/ArrayAttributes.mo:66:3-68:48:writable] Warning: Parameter s_each has no value, and is fixed during initialization (fixed=true), using available start value (start=\"init\") as default value.
 // "
-// 0
-// "  <ModelVariables>
-//
-//   <ArrayVariable
-//     name = \"r_each\"
-//     valueReference = \"1000\"
-//     variability = \"parameter\" isDiscrete = \"true\"
-//     causality = \"parameter\" isValueChangeable = \"true\"
-//     alias = \"noAlias\"
-//     classIndex = \"0\" classType = \"rPar\"
-//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
-//     <Dimension start=\"2\"/>
-//     <Real start=\"1.0\" fixed=\"true\" useNominal=\"true\" nominal=\"5.0\" min=\"0.0\" max=\"10.0\" />
-//   </ArrayVariable>
-//   <ArrayVariable
-//     name = \"r_fill\"
-//     valueReference = \"1001\"
-//     variability = \"parameter\" isDiscrete = \"true\"
-//     causality = \"calculatedParameter\" isValueChangeable = \"false\"
-//     alias = \"noAlias\"
-//     classIndex = \"1\" classType = \"rPar\"
-//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
-//     <Dimension start=\"2\"/>
-//     <Real start=\"2.0\" fixed=\"false\" useNominal=\"true\" nominal=\"3.0\" min=\"-1.0\" max=\"5.0\" />
-//   </ArrayVariable>
-//   <ArrayVariable
-//     name = \"r_array\"
-//     valueReference = \"1002\"
-//     variability = \"parameter\" isDiscrete = \"true\"
-//     causality = \"calculatedParameter\" isValueChangeable = \"false\"
-//     alias = \"noAlias\"
-//     classIndex = \"2\" classType = \"rPar\"
-//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
-//     <Dimension start=\"2\"/>
-//     <Real start=\"0.5 1.5\" fixed=\"false\" useNominal=\"true\" nominal=\"1.0 2.0\" min=\"-2.0 -1.0\" max=\"10.0 20.0\" />
-//   </ArrayVariable>
-//   <ArrayVariable
-//     name = \"i_each\"
-//     valueReference = \"1003\"
-//     variability = \"parameter\" isDiscrete = \"true\"
-//     causality = \"parameter\" isValueChangeable = \"true\"
-//     alias = \"noAlias\"
-//     classIndex = \"0\" classType = \"iPar\"
-//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
-//     <Dimension start=\"2\"/>
-//     <Integer start=\"0\" fixed=\"true\" min=\"-10\" max=\"10\" />
-//   </ArrayVariable>
-//   <ArrayVariable
-//     name = \"i_fill\"
-//     valueReference = \"1004\"
-//     variability = \"parameter\" isDiscrete = \"true\"
-//     causality = \"calculatedParameter\" isValueChangeable = \"false\"
-//     alias = \"noAlias\"
-//     classIndex = \"1\" classType = \"iPar\"
-//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
-//     <Dimension start=\"2\"/>
-//     <Integer start=\"1\" fixed=\"false\" min=\"0\" max=\"100\" />
-//   </ArrayVariable>
-//   <ArrayVariable
-//     name = \"i_array\"
-//     valueReference = \"1005\"
-//     variability = \"parameter\" isDiscrete = \"true\"
-//     causality = \"calculatedParameter\" isValueChangeable = \"false\"
-//     alias = \"noAlias\"
-//     classIndex = \"2\" classType = \"iPar\"
-//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
-//     <Dimension start=\"2\"/>
-//     <Integer start=\"5 10\" fixed=\"false\" min=\"0 0\" max=\"20 30\" />
-//   </ArrayVariable>
-//   <ArrayVariable
-//     name = \"b_each\"
-//     valueReference = \"1006\"
-//     variability = \"parameter\" isDiscrete = \"true\"
-//     causality = \"parameter\" isValueChangeable = \"true\"
-//     alias = \"noAlias\"
-//     classIndex = \"0\" classType = \"bPar\"
-//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
-//     <Dimension start=\"2\"/>
-//     <Boolean start=\"false\" fixed=\"true\" />
-//   </ArrayVariable>
-//   <ArrayVariable
-//     name = \"b_fill\"
-//     valueReference = \"1007\"
-//     variability = \"parameter\" isDiscrete = \"true\"
-//     causality = \"calculatedParameter\" isValueChangeable = \"false\"
-//     alias = \"noAlias\"
-//     classIndex = \"1\" classType = \"bPar\"
-//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
-//     <Dimension start=\"2\"/>
-//     <Boolean start=\"true\" fixed=\"false\" />
-//   </ArrayVariable>
-//   <ArrayVariable
-//     name = \"b_array\"
-//     valueReference = \"1008\"
-//     variability = \"parameter\" isDiscrete = \"true\"
-//     causality = \"calculatedParameter\" isValueChangeable = \"false\"
-//     alias = \"noAlias\"
-//     classIndex = \"2\" classType = \"bPar\"
-//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
-//     <Dimension start=\"2\"/>
-//     <Boolean start=\"true false\" fixed=\"true\" />
-//   </ArrayVariable>
-//   <ArrayVariable
-//     name = \"s_each\"
-//     valueReference = \"1009\"
-//     variability = \"parameter\" isDiscrete = \"true\"
-//     causality = \"parameter\" isValueChangeable = \"true\"
-//     alias = \"noAlias\"
-//     classIndex = \"0\" classType = \"sPar\"
-//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
-//     <Dimension start=\"2\"/>
-//     <String start=\"init\" fixed=\"true\" />
-//   </ArrayVariable>
-//   <ArrayVariable
-//     name = \"s_fill\"
-//     valueReference = \"1010\"
-//     variability = \"parameter\" isDiscrete = \"true\"
-//     causality = \"calculatedParameter\" isValueChangeable = \"false\"
-//     alias = \"noAlias\"
-//     classIndex = \"1\" classType = \"sPar\"
-//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
-//     <Dimension start=\"2\"/>
-//     <String start=\"fillValue\" fixed=\"true\" />
-//   </ArrayVariable>
-//   <ArrayVariable
-//     name = \"s_array\"
-//     valueReference = \"1011\"
-//     variability = \"parameter\" isDiscrete = \"true\"
-//     causality = \"calculatedParameter\" isValueChangeable = \"false\"
-//     alias = \"noAlias\"
-//     classIndex = \"2\" classType = \"sPar\"
-//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
-//     <Dimension start=\"2\"/>
-//     <String start=\"&quot;a&quot; &quot;b&quot;\" fixed=\"true\" />
-//   </ArrayVariable>
-//
-//
-//
-//   </ModelVariables>
+// "model ArrayAttributes
+// sizes numberOfRealParameters=3 numberOfIntegerParameters=3 numberOfBooleanParameters=3 numberOfStringParameters=3
+// experiment startTime=0.0 stopTime=1.0 stepSize=0.002 tolerance=1e-6 solver=dassl outputFormat=mat variableFilter=\".*\"
+// rPar r_each Real parameter causality=parameter changeable fixed useNominal hideResult=false dimensions=[2] start=1.0 min=0.0 max=10.0 nominal=5.0
+// rPar r_fill Real parameter causality=calculatedParameter useNominal hideResult=false dimensions=[2] start=2.0 min=-1.0 max=5.0 nominal=3.0
+// rPar r_array Real parameter causality=calculatedParameter useNominal hideResult=false dimensions=[2] start={0.5, 1.5} min={-2.0, -1.0} max={10.0, 20.0} nominal={1.0, 2.0}
+// iPar i_each Integer parameter causality=parameter changeable fixed hideResult=false dimensions=[2] start=0 min=-10 max=10
+// iPar i_fill Integer parameter causality=calculatedParameter hideResult=false dimensions=[2] start=1 min=0 max=100
+// iPar i_array Integer parameter causality=calculatedParameter hideResult=false dimensions=[2] start={5, 10} min={0, 0} max={20, 30}
+// bPar b_each Boolean parameter causality=parameter changeable fixed hideResult=false dimensions=[2] start=false
+// bPar b_fill Boolean parameter causality=calculatedParameter hideResult=false dimensions=[2] start=true
+// bPar b_array Boolean parameter causality=calculatedParameter fixed hideResult=false dimensions=[2] start={true, false}
+// sPar s_each String parameter causality=parameter changeable fixed hideResult=false dimensions=[2] start=\"init\"
+// sPar s_fill String parameter causality=calculatedParameter fixed hideResult=false dimensions=[2] start=\"fillValue\"
+// sPar s_array String parameter causality=calculatedParameter fixed hideResult=false dimensions=[2] start={\"a\", \"b\"}
 // "
 // endResult

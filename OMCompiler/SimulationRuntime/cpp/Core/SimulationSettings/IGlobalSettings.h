@@ -137,5 +137,8 @@ public:
   ///< Start values of variables that replace those of the init xml: name=value,name=value (-override)
   virtual string getParameterOverrides() { return ""; }
   virtual void setParameterOverrides(string) {}
+  ///< -listVariables: print the variables as JSON and exit
+  virtual bool getListVariables() { return false; }
+  virtual void setListVariables(bool) {}
 };
 /** @} */ // end of coreSimulationSettings

@@ -2,7 +2,7 @@
 // placeholder; see HANDWRITTEN_TOP_PACKAGES in mmtorust/src/codegen.rs).
 //
 // Simulation half of the `wasm-jit` target — the counterpart of `CodegenC` for
-// the C target. Instead of generating ~25 C files + `_init.xml` + a makefile,
+// the C target. Instead of generating ~25 C files + `_init.bin` + a makefile,
 // building an executable and running it to write a `.mat`, this lowers the
 // SimCode equation systems to a single WebAssembly *model module* (the
 // numerical right-hand sides) and runs the simulation in-process with wasmer.

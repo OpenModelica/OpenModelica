@@ -51,14 +51,11 @@ public:
   explicit LoadCompiledModelDialog(QWidget *pParent = nullptr);
 private:
   QLineEdit *mpExecutableTextBox;
-  QComboBox *mpModelInitFileComboBox;
   QComboBox *mpResultFileComboBox;
 
-  void fetchModelInitFiles();
   void fetchResultFiles();
 private slots:
   void browseExecutable();
-  void browseModelInitFile();
   void browseResultFile();
   void loadCompiledModel();
 };

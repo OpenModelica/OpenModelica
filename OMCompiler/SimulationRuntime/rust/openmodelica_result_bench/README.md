@@ -79,10 +79,10 @@ trajectory costs nearly what reading all of them does.
 Enumerations are the one thing the benchmark cannot exercise: `arrow` stores an
 enumeration as a `Dictionary<Int32, Utf8>` column, or as a dictionary child of
 the parameter union, whose dictionary is the literal list - but the input here
-is a `.mat` and an `_init.xml`, and OpenModelica writes an enumeration variable
-into `_init.xml` as a plain `<Integer>`, with neither its literals nor its type
-name. So every enumeration in these files is an `Int32`, which the format allows
-a writer without literals to do.
+is a `.mat` and an `_init.bin`, and the benchmark takes only the base type of a
+variable from `_init.bin`, not the literals of its enumeration type. So every
+enumeration in these files is an `Int32`, which the format allows a writer
+without literals to do.
 
 **Compression is a writer's choice, not the format's**, so the specification says
 nothing about it - Arrow defines `BodyCompression` and every implementation
@@ -138,7 +138,7 @@ feature and nothing else.
 ## Making the data
 
 `./make-data.sh [directory] [model ...]` simulates the three models the report
-is built on and leaves `<name>_res.mat` and `<name>_init.xml` in the directory
+is built on and leaves `<name>_res.mat` and `<name>_init.bin` in the directory
 (default `/projects/result-bench-data`, deliberately outside any working tree).
 `BouncingBall` is written out by the script; the other two come from the
 Modelica Standard Library and from `Buildings`, and are installed only if
@@ -151,7 +151,7 @@ over 6344 rows).
 ## What the input is
 
 An OpenModelica `_res.mat`, read into memory once. A `.mat` records no units and
-no types, so the `_init.xml` beside it is scanned for both; without it every
+no types, so the `_init.bin` beside it is read for both; without it every
 variable is an unqualified `Real` and the metadata of the other three formats is
 understated. Aliases, parameters and the sign convention come from `dataInfo`,
 so each format is given the same alias structure to represent however it likes.

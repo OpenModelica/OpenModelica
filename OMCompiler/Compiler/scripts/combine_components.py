@@ -97,6 +97,7 @@ import os
 import sys
 import json
 import shlex
+import struct
 import argparse
 from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, Optional, Set
@@ -274,7 +275,7 @@ class ComponentInfo:
 
     # Parameter-independent signature of the generated base C (residual code,
     # structure). Two instances of the same class differing only in non-structural
-    # parameter VALUES (which live in the per-instance init XML, not the C) share
+    # parameter VALUES (which live in the per-instance init file, not the C) share
     # the same type_signature, so their base C is compiled only once and reused.
     type_signature: str = ""
 
@@ -537,11 +538,11 @@ def compute_type_signature(directory: str, prefix: str) -> str:
     Hashes the per-component base C files (model equations + structure) with the
     component's prefix tokenised out, so that two instances of the same class that
     differ only in non-structural parameter VALUES — which OMC keeps as runtime
-    parameters in the init XML, not inlined into the C — hash to the SAME value
+    parameters in the init file, not inlined into the C — hash to the SAME value
     and can share one compiled base object. Structural differences (different
     equations, sizes, Evaluate=true parameters) change the C and so the hash."""
     import hashlib, re as _re
-    # files that make up the reusable base (NOT the per-instance init XML, and NOT
+    # files that make up the reusable base (NOT the per-instance init file, and NOT
     # the topology-dependent connected_*.c)
     suffixes = ('_16dae.c', '_functions.h', '_functions.c',
                 '_06inz.c', '_08bnd.c', '_model.h')
@@ -566,15 +567,30 @@ def compute_type_signature(directory: str, prefix: str) -> str:
 
 
 def _read_init_guid(directory: str, prefix: str) -> str:
-    """Extract the model GUID from <prefix>_init.xml (needed when an instance
-    reuses another instance's compiled setup but reads its own init XML, since
-    read_input_xml verifies the GUID)."""
-    path = os.path.join(directory, f'{prefix}_init.xml')
+    """Extract the model GUID from <prefix>_init.bin (needed when an instance
+    reuses another instance's compiled setup but reads its own init file, since
+    read_input verifies the GUID). The format is described in
+    SimulationRuntime/rust/openmodelica_init_file/include/omc_init_file.h."""
+    path = os.path.join(directory, f'{prefix}_init.bin')
     if not os.path.exists(path):
         return ""
-    m = re.search(r'guid\s*=\s*"([^"]*)"',
-                  open(path, encoding='utf-8', errors='replace').read())
-    return m.group(1) if m else ""
+    with open(path, 'rb') as f:
+        data = f.read()
+    if data[:8] != b'OMCINIT\0':
+        return ""
+    strings = model = None
+    (num_sections,) = struct.unpack_from('<I', data, 12)
+    for i in range(num_sections):
+        sid, _, offset, _ = struct.unpack_from('<IIQQ', data, 16 + 24 * i)
+        if sid == 1:
+            strings = offset
+        elif sid == 2:
+            model = offset
+    if strings is None or model is None:
+        return ""
+    (guid,) = struct.unpack_from('<I', data, model + 12)
+    start = strings + guid
+    return data[start:data.index(b'\0', start)].decode('utf-8', errors='replace')
 
 
 def group_by_type(prefixes, comps):
@@ -2499,7 +2515,7 @@ def _clean_label(lbl: str) -> str:
 
 def generate_driver_c(prefixes, comps, gj, ac: 'AliasCollapse') -> str:
     """Emit combined_main.c: initialises every component's DATA structure the
-    same way OM's own main does (setupDataStruc -> read_input_xml ->
+    same way OM's own main does (setupDataStruc -> read_input ->
     initializeDataStruc -> initialization), then runs an implicit-Euler
     transient solve of the stacked DAE using a dense finite-difference Newton
     over combined_eval_residual, and writes the trajectory as CSV.
@@ -2527,7 +2543,7 @@ def generate_driver_c(prefixes, comps, gj, ac: 'AliasCollapse') -> str:
     p_sz = max(n_pin, 1)
     # component reuse: instances of the same type share ONE compiled base (the
     # representative's setupDataStruc + functions); each instance still has its
-    # own DATA and reads its own init XML (params/start), so only the parameter
+    # own DATA and reads its own init file (params/start), so only the parameter
     # differences are per-instance.
     repr_of, type_reprs = group_by_type(prefixes, comps)
     guids = {p: _read_init_guid(comps[p].directory, p) for p in prefixes}
@@ -2565,7 +2581,7 @@ def generate_driver_c(prefixes, comps, gj, ac: 'AliasCollapse') -> str:
  */
 #include "combined_jacobian.h"
 #include "combined_setup.h"
-#include "simulation/simulation_input_xml.h"
+#include "simulation/simulation_input.h"
 #include "simulation/simulation_omc_assert.h"   /* omc_assert_simulation etc. */
 #include "simulation/solver/model_help.h"
 #include "simulation/solver/initialization/initialization.h"
@@ -2610,11 +2626,11 @@ static void init_component(DATA *d, MODEL_DATA *md, SIMULATION_INFO *si,
   d->simulationInfo = si;
   setup(d, threadData);
   /* Component reuse: `setup` may belong to another instance of the same type.
-     Redirect this instance to its OWN init XML (<prefix>_init.xml) and GUID so
-     read_input_xml loads this instance's parameter/start values. */
+     Redirect this instance to its OWN init file (<prefix>_init.bin) and GUID so
+     read_input loads this instance's parameter/start values. */
   d->modelData->modelFilePrefix = prefix;
   if (guid && guid[0]) d->modelData->modelGUID = guid;
-  read_input_xml(d->modelData, d->simulationInfo, threadData);
+  read_input(d->modelData, d->simulationInfo, 0, threadData);
   initializeDataStruc(d, threadData);
   /* solver method selection (normally parsed from command-line flags) */
   d->simulationInfo->nlsMethod       = NLS_HYBRID;
@@ -3092,7 +3108,7 @@ def generate_makefile(comp_prefixes, output_prefix, directory, comps) -> str:
 
     # Component reuse: compile ONE base library per type (the representative
     # instance); other instances of that type link against it and only supply
-    # their own init XML at runtime. So everything below iterates type_reprs, not
+    # their own init file at runtime. So everything below iterates type_reprs, not
     # every instance.
     repr_of, type_reprs = group_by_type(comp_prefixes, comps)
     overridden = [p for p in type_reprs if comps[p].fdummy_residuals]

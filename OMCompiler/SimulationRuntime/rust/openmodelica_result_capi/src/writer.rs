@@ -546,7 +546,7 @@ fn open_where(
                 &types,
                 openmodelica_arrow_writer::block_rows(sync),
                 resolve(),
-                // The C runtime reads its variable attributes from `_init.xml`,
+                // The C runtime reads its variable attributes from `_init.bin`,
                 // which carries no unit definitions: a file it writes leans on
                 // the predefined units alone.
                 &FileMeta {

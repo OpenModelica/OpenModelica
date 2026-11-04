@@ -31,6 +31,9 @@
 #include <Core/Utils/extension/logger.hpp>
 #include <Core/DataExchange/XmlPropertyReader.h>
 #include <expat.h>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -284,6 +287,187 @@ static void addResultVars(OutVars& outVars, const T* vars, int pos, int n, const
   }
 }
 
+static void jsonString(std::ostream& out, const std::string& s)
+{
+  out << '"';
+  for (unsigned char c : s) {
+    switch (c) {
+      case '"': out << "\\\""; break;
+      case '\\': out << "\\\\"; break;
+      case '\n': out << "\\n"; break;
+      case '\r': out << "\\r"; break;
+      case '\t': out << "\\t"; break;
+      default:
+        if (c < 0x20) {
+          char buf[8];
+          snprintf(buf, sizeof(buf), "\\u%04x", c);
+          out << buf;
+        }
+        else
+          out << c;
+    }
+  }
+  out << '"';
+}
+
+// The shortest text that reads back as r, as the C runtime prints it.
+static std::string jsonReal(double r)
+{
+  if (std::isnan(r))
+    return "null";
+  if (std::isinf(r))
+    return r > 0 ? "1e999" : "-1e999";
+  char buf[32];
+  for (int precision = 15; precision <= 17; precision++) {
+    snprintf(buf, sizeof(buf), "%.*g", precision, r);
+    if (strtod(buf, nullptr) == r)
+      break;
+  }
+  return buf;
+}
+
+// A value of the given type, else the text as a JSON string.
+static std::string jsonValue(const std::string& type, const std::string& text)
+{
+  char* end;
+  if (type == "Real") {
+    double r = strtod(text.c_str(), &end);
+    if (!text.empty() && !*end)
+      return jsonReal(r);
+  }
+  else if (type == "Integer") {
+    long long i = strtoll(text.c_str(), &end, 10);
+    if (!text.empty() && !*end)
+      return std::to_string(i);
+  }
+  else if (type == "Boolean") {
+    if (text == "true" || text == "false")
+      return text;
+  }
+  std::ostringstream os;
+  jsonString(os, text);
+  return os.str();
+}
+
+static void jsonValues(std::ostream& out, const std::string& type, const std::string& name, const std::string* text, bool isArray)
+{
+  if (!text)
+    return;
+  out << ",\"" << name << "\":";
+  if (!isArray || type == "String") {
+    out << jsonValue(type, *text);
+    return;
+  }
+  std::istringstream is(*text);
+  std::string token;
+  out << '[';
+  for (bool first = true; is >> token; first = false)
+    out << (first ? "" : ",") << jsonValue(type, token);
+  out << ']';
+}
+
+// -listVariables, the same JSON as the C runtime prints from _init.bin.
+static void listVariables(std::ostream& out, const XmlElement& modelDescription,
+                          const std::map<std::string, std::string>& overrides)
+{
+  out << '{';
+  const std::string* modelName = modelDescription.attribute("modelName");
+  const std::string* generationTool = modelDescription.attribute("generationTool");
+  out << "\"modelName\":";
+  jsonString(out, modelName ? *modelName : "");
+  out << ",\"generationTool\":";
+  jsonString(out, generationTool ? *generationTool : "");
+  for (const XmlElement& e : modelDescription.children) {
+    if (e.name != "DefaultExperiment")
+      continue;
+    out << ",\"defaultExperiment\":{";
+    const char* sep = "";
+    for (const char* key : {"startTime", "stopTime", "stepSize", "tolerance"}) {
+      const std::string* value = e.attribute(key);
+      out << sep << '"' << key << "\":" << (value ? jsonValue("Real", *value) : "null");
+      sep = ",";
+    }
+    for (const char* key : {"solver", "outputFormat", "variableFilter"}) {
+      const std::string* value = e.attribute(key);
+      out << ",\"" << key << "\":";
+      jsonString(out, value ? *value : "");
+    }
+    out << '}';
+  }
+  out << ",\"variables\":[";
+  const char* sep = "\n";
+  for (const XmlElement& var : modelDescription.child("ModelVariables").children) {
+    if (var.name != "ScalarVariable" && var.name != "ArrayVariable")
+      continue;
+    const std::string* changeableText = var.attribute("isValueChangeable");
+    bool changeable = changeableText && *changeableText == "true";
+    const std::string& name = var.requiredAttribute("name");
+    out << sep;
+    sep = ",\n";
+    out << "{\"name\":";
+    jsonString(out, name);
+    const XmlElement* typeElement = nullptr;
+    std::vector<std::string> dims;
+    for (const XmlElement& c : var.children) {
+      if (c.name == "Dimension") {
+        const std::string* start = c.attribute("start");
+        dims.push_back(start ? *start : "");
+      }
+      else if (!typeElement)
+        typeElement = &c;
+    }
+    const std::string type = typeElement ? typeElement->name : "";
+    const std::string* description = var.attribute("description");
+    const std::string* hideResult = var.attribute("hideResult");
+    out << ",\"type\":";
+    jsonString(out, type);
+    out << ",\"description\":";
+    jsonString(out, description ? *description : "");
+    for (const char* key : {"variability", "causality"}) {
+      out << ",\"" << key << "\":";
+      jsonString(out, var.requiredAttribute(key));
+    }
+    out << ",\"isValueChangeable\":" << (changeable ? "true" : "false") << ",\"alias\":";
+    jsonString(out, var.requiredAttribute("alias"));
+    if (const std::string* aliasVariable = var.attribute("aliasVariable")) {
+      out << ",\"aliasVariable\":";
+      jsonString(out, *aliasVariable);
+    }
+    const std::string* isProtected = var.attribute("isProtected");
+    out << ",\"isProtected\":" << (isProtected && *isProtected == "true" ? "true" : "false")
+        << ",\"isEncrypted\":false";
+    if (hideResult && !hideResult->empty())
+      out << ",\"hideResult\":" << (*hideResult == "true" ? "true" : "false");
+    if (!dims.empty()) {
+      out << ",\"dimensions\":[";
+      for (size_t i = 0; i < dims.size(); i++)
+        out << (i ? "," : "") << jsonValue("Integer", dims[i]);
+      out << ']';
+    }
+    if (typeElement) {
+      std::map<std::string, std::string>::const_iterator o = overrides.find(name);
+      bool isArray = !dims.empty();
+      if (changeable && o != overrides.end()) {
+        out << ",\"start\":";
+        out << (isArray ? jsonValue("", o->second) : jsonValue(type, o->second));
+      }
+      else
+        jsonValues(out, type, "start", typeElement->attribute("start"), isArray);
+      jsonValues(out, type, "min", typeElement->attribute("min"), isArray);
+      jsonValues(out, type, "max", typeElement->attribute("max"), isArray);
+      for (const char* key : {"unit", "displayUnit"}) {
+        const std::string* value = typeElement->attribute(key);
+        if (value && !value->empty()) {
+          out << ",\"" << key << "\":";
+          jsonString(out, *value);
+        }
+      }
+    }
+    out << '}';
+  }
+  out << "\n]}\n";
+}
+
 void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVars> sim_vars)
 {
   std::ifstream file;
@@ -311,6 +495,11 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
       readXml(file, document);
 
       const XmlElement& modelDescription = document.child("ModelDescription");
+      if (_globalSettings->getListVariables()) {
+        listVariables(std::cout, modelDescription, overrides);
+        std::cout.flush();
+        std::exit(0);
+      }
 
       LOGGER_WRITE_BEGIN("Initialize start values:", LC_INIT, LL_DEBUG);
       for (const XmlElement& vars : modelDescription.child("ModelVariables").children)

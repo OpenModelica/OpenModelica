@@ -52,9 +52,9 @@ template modelInitXMLFile(SimCode simCode, String numRealVars, String numIntVars
       //let algLoops = (listAppend(allEquations,initialEquations) |> eq => algLoopXML(eq, simCode, varToArrayIndexMapping, '<%numRealVars%> - 1') ;separator="\n")
       //let jacobianMatrices = jacobianMatricesXML(simCode.jacobianMatrices)
       let descriptionTag = if generateFMUModelDescription then "fmiModelDescription" else "ModelDescription"
-      let fmiDescriptionAttributes = if generateFMUModelDescription then fmiDescriptionAttributes(simCode, FMUVersion, FMUType, FMUGuid) else 'modelName="<%dotPath(modelInfo.name)%>"'
+      let fmiDescriptionAttributes = if generateFMUModelDescription then fmiDescriptionAttributes(simCode, FMUVersion, FMUType, FMUGuid) else 'modelName="<%dotPath(modelInfo.name)%>" generationTool="OpenModelica Compiler <%getVersionNr()%>"'
       let fmiTypeDefinitions = if generateFMUModelDescription then CodegenFMUCommon.fmiTypeDefinitions(simCode, FMUVersion)
-      let fmiDefaultExperiment = if generateFMUModelDescription then CodegenFMUCommon.DefaultExperiment(simulationSettingsOpt, FMUVersion)
+      let fmiDefaultExperiment = if generateFMUModelDescription then CodegenFMUCommon.DefaultExperiment(simulationSettingsOpt, FMUVersion) else defaultExperiment(simulationSettingsOpt)
       <<
       <?xml version="1.0" encoding="UTF-8"?>
       <!--Generated with the modifications: <%generatorComments%> -->
@@ -80,6 +80,13 @@ template modelInitXMLFile(SimCode simCode, String numRealVars, String numIntVars
         %>
       */
 end modelInitXMLFile;
+
+template defaultExperiment(Option<SimulationSettings> simulationSettingsOpt)
+::=
+  match simulationSettingsOpt
+    case SOME(s as SIMULATION_SETTINGS(__)) then
+      '<DefaultExperiment startTime="<%s.startTime%>" stopTime="<%s.stopTime%>" stepSize="<%s.stepSize%>" tolerance="<%s.tolerance%>" solver="<%Util.escapeModelicaStringToXmlString(s.method)%>" outputFormat="<%Util.escapeModelicaStringToXmlString(s.outputFormat)%>" variableFilter="<%Util.escapeModelicaStringToXmlString(s.variableFilter)%>"/>'
+end defaultExperiment;
 
 template fmiDescriptionAttributes(SimCode simCode, String FMUVersion, String FMUType, String FMUGuid)
 ::=
@@ -188,15 +195,30 @@ template scalarVariableAttributeXML(SimVar simVar, SimCode simCode, String index
     case SIMVAR(source = SOURCE(info = info)) then
       let valueReference = SimCodeCodegenUtil.getValueReference(simVar, simCode, true)
       let alias = getAliasAttribute(aliasvar)
-      let causalityAtt = CodegenFMUCommon.getCausality(causality)
+      let causalityAtt = if generateFMUModelDescription then CodegenFMUCommon.getCausality(causality) else initCausality(causality)
       let variability = getVariablity(varKind)
       let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
       let hr = match hideResult case SOME(bval) then '<%bval%>'
-      let additionalAttributes = if generateFMUModelDescription then '' else 'isProtected="<%isProtected%>" hideResult="<%hr%>" isDiscrete="<%isDiscrete%>" isValueChangeable="<%isValueChangeable%>"'
+      let aliasVariable = match aliasvar
+        case ALIAS(varName = n)
+        case NEGATEDALIAS(varName = n) then ' aliasVariable="<%System.stringReplace(Util.escapeModelicaStringToXmlString(crefStrNoUnderscore(n)),"$", "_D_")%>"'
+      let additionalAttributes = if generateFMUModelDescription then '' else 'isProtected="<%isProtected%>" hideResult="<%hr%>" isDiscrete="<%isDiscrete%>" isValueChangeable="<%isValueChangeable%>"<%aliasVariable%>'
       <<
       name="<%System.stringReplace(Util.escapeModelicaStringToXmlString(crefStrNoUnderscore(name)),"$", "_D_")%>" valueReference="<%valueReference%>" <%description%> variability="<%variability%>" causality="<%causalityAtt%>" alias="<%alias%>" <%additionalAttributes%>
       >>
 end scalarVariableAttributeXML;
+
+template initCausality(Option<Causality> c)
+ "The causality as in <prefix>_init.bin."
+::=
+match c
+  case SOME(NONECAUS(__)) then "none"
+  case SOME(OUTPUT(__)) then "output"
+  case SOME(INPUT(__)) then "input"
+  case SOME(PARAMETER(__)) then "parameter"
+  case SOME(CALCULATED_PARAMETER(__)) then "calculatedParameter"
+  else "local"
+end initCausality;
 
 template getAliasAttribute(AliasVariable aliasvar)
   "Returns the alias Attribute of ScalarVariable."

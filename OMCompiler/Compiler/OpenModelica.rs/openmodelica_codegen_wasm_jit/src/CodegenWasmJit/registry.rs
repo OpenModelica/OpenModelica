@@ -11,6 +11,12 @@ pub(super) fn sim_models() -> &'static Mutex<HashMap<String, Arc<SimModel>>> {
     MODELS.get_or_init(|| Mutex::new(HashMap::default()))
 }
 
+/// The `_init.bin` data omc serialized in memory for each translated model.
+pub(super) fn init_files() -> &'static Mutex<HashMap<String, Arc<omc_init::InitFile>>> {
+    static FILES: OnceLock<Mutex<HashMap<String, Arc<omc_init::InitFile>>>> = OnceLock::new();
+    FILES.get_or_init(|| Mutex::new(HashMap::default()))
+}
+
 /// A model kernel a wasm FMU can be built around. Only kernels an export can
 /// actually use are kept, so finding one is the whole test.
 pub(super) struct FmuKernel {
@@ -105,7 +111,8 @@ impl CapturedSim {
 
     /// The independent `time` column.
     pub fn time(&self) -> Vec<f64> {
-        self.with_file(|r| r.time().map(<[f64]>::to_vec).unwrap_or_default()).unwrap_or_default()
+        self.with_file(|r| r.time().map(<[f64]>::to_vec).unwrap_or_default())
+            .unwrap_or_default()
     }
 
     /// The result file as `format`. Its own format is handed back unconverted,
@@ -126,7 +133,8 @@ impl CapturedSim {
         Some(match v.data {
             SeriesData::File => {
                 let name = v.name.clone();
-                self.with_file(|r| r.trajectory(&name).unwrap_or_default()).unwrap_or_default()
+                self.with_file(|r| r.trajectory(&name).unwrap_or_default())
+                    .unwrap_or_default()
             }
             SeriesData::Scalar(v) => vec![v],
         })
@@ -158,9 +166,17 @@ pub(super) fn capture_last_sim(
         openmodelica_sim_meta::simflags::with_flags(|f| m.with_flags(f))
     });
     let result_vars = run_meta.as_ref().map_or(model.result_vars(), |m| &m.vars[..]);
-    let at = |off: u32| run_meta.as_ref().and_then(|m| m.resize.as_ref()).map_or(off, |r| r.resolve_off(off));
-    let units: HashMap<&str, &str> =
-        result_vars.iter().filter(|v| !v.unit.is_empty()).map(|v| (v.name.as_str(), v.unit.as_str())).collect();
+    let at = |off: u32| {
+        run_meta
+            .as_ref()
+            .and_then(|m| m.resize.as_ref())
+            .map_or(off, |r| r.resolve_off(off))
+    };
+    let units: HashMap<&str, &str> = result_vars
+        .iter()
+        .filter(|v| !v.unit.is_empty())
+        .map(|v| (v.name.as_str(), v.unit.as_str()))
+        .collect();
     let unit_of = |name: &str| units.get(name).map(|u| u.to_string()).unwrap_or_default();
     let mut series = Vec::new();
     let mut param_idx = 0usize;
@@ -182,7 +198,11 @@ pub(super) fn capture_last_sim(
                 let row0 = negate.apply_f64(first_row.get(col).copied().unwrap_or(0.0));
                 // Both writers store an `unvarying` column as a parameter, so it
                 // is its row-0 value rather than a trajectory.
-                let data = Some(if v.unvarying { SeriesData::Scalar(row0) } else { SeriesData::File });
+                let data = Some(if v.unvarying {
+                    SeriesData::Scalar(row0)
+                } else {
+                    SeriesData::File
+                });
                 (!seen_cols.insert(col), row0, data)
             }
             ResultKind::Param { off, negate, .. } => {

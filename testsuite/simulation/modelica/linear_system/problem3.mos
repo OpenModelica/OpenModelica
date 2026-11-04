@@ -21,7 +21,7 @@ simulate(linear_system.problem3, simflags="-ls totalpivot", resimulateExecutable
 // ""
 // true
 // ""
-// {"linear_system.problem3", "linear_system.problem3_init.xml"}
+// {"linear_system.problem3", "linear_system.problem3_init.bin"}
 // ""
 // record SimulationResult
 //     resultFile = "linear_system.problem3_res.mat",

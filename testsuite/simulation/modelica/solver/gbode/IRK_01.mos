@@ -72,7 +72,7 @@ end for;
 // {"default", "richardson", "embedded"}
 // true
 // ""
-// {"SlowFastDynamics", "SlowFastDynamics_init.xml"}
+// {"SlowFastDynamics", "SlowFastDynamics_init.bin"}
 // ""
 // record SimulationResult
 //     resultFile = "SlowFastDynamics_ref.mat",

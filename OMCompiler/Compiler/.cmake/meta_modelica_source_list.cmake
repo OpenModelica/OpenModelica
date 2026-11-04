@@ -436,7 +436,7 @@ set(OMC_MM_BACKEND_SOURCES
 
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/HpcOmCodegenUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/HpcOmSimCodeMain.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeInitXML.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeInitBin.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeModelInfo.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeSparsityPattern.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeTaskSystemInfo.mo

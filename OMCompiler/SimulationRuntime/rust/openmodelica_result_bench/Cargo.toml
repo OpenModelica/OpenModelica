@@ -17,6 +17,7 @@ openmodelica_mat_writer = { path = "../openmodelica_mat_writer" }
 openmodelica_arrow_writer = { path = "../openmodelica_arrow_writer", features = ["zstd", "json-layout"] }
 openmodelica_hdf5_result = { path = "../openmodelica_hdf5_result", features = ["library"] }
 openmodelica_result_files = { path = "../openmodelica_result_files", features = ["hdf5", "json-layout"] }
+openmodelica_init_file = { path = "../openmodelica_init_file" }
 arrow-array = { version = "60", default-features = false }
 # The fifth format: an Arrow IPC file written through minarrow rather than
 # arrow-rs. Optional because it drags in tokio and needs a nightly rustc.
@@ -46,5 +47,6 @@ exclude = [
   "../openmodelica_arrow_writer",
   "../openmodelica_hdf5_result",
   "../openmodelica_result_files",
+  "../openmodelica_init_file",
   "../../../Compiler/OpenModelica.rs/openmodelica_wasi",
 ]

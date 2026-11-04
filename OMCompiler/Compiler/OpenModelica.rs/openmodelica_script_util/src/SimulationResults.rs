@@ -63,6 +63,12 @@ static ERROR_UNKNOWN_SUFFIX: ErrorTypes::Message = ErrorTypes::Message {
     severity: ErrorTypes::Severity::ERROR,
     message: literal!("Unknown result-file suffix of file '%s'"),
 };
+static ERROR_INIT_FILE: ErrorTypes::Message = ErrorTypes::Message {
+    id: -1,
+    ty: ErrorTypes::MessageType::SCRIPTING,
+    severity: ErrorTypes::Severity::ERROR,
+    message: literal!("Failed to read the init file: %s"),
+};
 static ERROR_OPEN_FAILED: ErrorTypes::Message = ErrorTypes::Message {
     id: -1,
     ty: ErrorTypes::MessageType::SCRIPTING,
@@ -512,6 +518,19 @@ pub fn readDataset(
                 rows.push(make_array(col.iter().copied().map(mk_real).collect()));
             }
             Ok(make_array(rows))
+        }
+    }
+}
+
+pub fn readInitFile(filename: ArcStr) -> Result<ArcStr> {
+    let file = openmodelica_wasi::fs::read(filename.as_str())
+        .map_err(|e| format!("cannot read {filename}: {e}"))
+        .and_then(|bytes| omc_init::InitFile::parse(&bytes).map_err(|e| format!("{filename}: {e}")));
+    match file {
+        Ok(f) => Ok(ArcStr::from(f.to_text())),
+        Err(e) => {
+            err(&ERROR_INIT_FILE, [ArcStr::from(e)])?;
+            Err("readInitFile")
         }
     }
 }

@@ -34,7 +34,7 @@ val(x[5], 1, "jacobianLiterals_res.mat");
 // ""
 // true
 // ""
-// {"jacobianLiterals", "jacobianLiterals_init.xml"}
+// {"jacobianLiterals", "jacobianLiterals_init.bin"}
 // ""
 // 0
 // 0

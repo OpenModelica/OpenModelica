@@ -23,7 +23,7 @@ setCommandLineOptions("--newBackend"); getErrorString();
 simulate(AliasBoundsNegated, stopTime = 1); getErrorString();
 val(y, 1);
 writeFile("bounds.log", "");
-system("awk '/name = \"z\"/{f=1} f && /alias =/{print} f && /<Real/{print; exit}' AliasBoundsNegated_init.xml", "bounds.log"); readFile("bounds.log");
+readInitFile("AliasBoundsNegated_init.bin");
 
 // Result:
 // true
@@ -40,8 +40,12 @@ system("awk '/name = \"z\"/{f=1} f && /alias =/{print} f && /<Real/{print; exit}
 // ""
 // -0.33658839392315865
 // true
-// 0
-// "    alias = \"noAlias\"
-//     <Real fixed=\"false\" useNominal=\"false\" min=\"-1.0\" max=\"0.5\" />
+// "model AliasBoundsNegated
+// sizes numberOfRealAlgebraicVariables=2 numberOfRealAlgebraicAliasVariables=2
+// experiment startTime=0.0 stopTime=1.0 stepSize=0.002 tolerance=1e-6 solver=dassl outputFormat=mat variableFilter=\".*\"
+// rAlg z Real continuous hideResult=false min=-1.0 max=0.5
+// rAlg $FUN_1 Real continuous hideResult=true
+// rAli x Real continuous hideResult=false alias=z min=-1.0 max=5.0
+// rAli y Real continuous hideResult=false negatedAlias=z min=-0.5 max=2.0
 // "
 // endResult

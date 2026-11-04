@@ -71,7 +71,7 @@
 #include "linearization/linearize.h"
 #include "options.h"
 #include "simulation_runtime.h"
-#include "simulation_input_xml.h"
+#include "simulation_input.h"
 #include "arrayIndex.h"
 #include "simulation/results/simulation_result_ia.h"
 #include "simulation/results/simulation_result_rust.h"
@@ -1075,10 +1075,15 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     data->simulationInfo->maxWarnDisplays = DEFAULT_FLAG_LV_MAX_WARN;
   }
 
+  if (omc_flag[FLAG_LIST_VARIABLES]) {
+    list_variables(data->modelData, threadData);
+    EXIT(0);
+  }
+
   rt_tick(SIM_TIMER_INIT_XML);
-  read_input_xml(data->modelData, data->simulationInfo, threadData);
+  read_input(data->modelData, data->simulationInfo, FALSE, threadData);
   /* derived sizes of resizable arrays from the start values, then the sizes
-   * again with them (read_input_xml computed them already without) */
+   * again with them (read_input computed them already without) */
   if (data->callback->updateStructuralParameters) {
     data->callback->updateStructuralParameters(data, threadData);
     calculateAllScalarLength(data->modelData);

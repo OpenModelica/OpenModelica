@@ -67,6 +67,6 @@ buildModel(MinimalModel); getErrroString();
 // 3: a:VARIABLE()  = const_k  type: Real
 //
 //
-// {"MinimalModel", "MinimalModel_init.xml"}
+// {"MinimalModel", "MinimalModel_init.bin"}
 //
 // endResult

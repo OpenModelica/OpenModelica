@@ -1727,7 +1727,7 @@ pub(super) fn build_sim_model(
         idx
     };
     // The optimizer's per-real-variable attributes (C reads them out of the
-    // `_init.xml`): constants here, parameter-dependent ones through `attr_targets`.
+    // `_init.bin`): constants here, parameter-dependent ones through `attr_targets`.
     let opt_attrs = match layout.n_opt_attr {
         0 => optimization::AttrDefaults {
             reals: Vec::new(),

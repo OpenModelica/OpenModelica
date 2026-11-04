@@ -105,6 +105,6 @@ buildModel(diff_subs); getErrorString();
 // [BEFORE] [SCAL] (1) $DER.y = $FUN_5; ($RES_SIM_0)
 // [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.y = $pDER_ODE_JAC.$FUN_5; ($RES_SIM_0)
 //
-// {"diff_subs", "diff_subs_init.xml"}
+// {"diff_subs", "diff_subs_init.bin"}
 // ""
 // endResult

@@ -187,6 +187,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_PARMOD_EXPORT_TASKGRAPH */        "parmodExportTaskGraph",
   /* FLAG_PARMOD_IMPORT_CLUSTERING */     "parmodImportClustering",
   /* FLAG_PARMOD_DUMP_STAGES */           "parmodDumpStages",
+  /* FLAG_LIST_VARIABLES */               "listVariables",
 
   "FLAG_MAX"
 };
@@ -210,7 +211,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_MAT_SYNC */                     "[int (default 0)] syncs the mat file header (flushes a record batch of an arrow file) after emitting every N time-points (default disabled)",
   /* FLAG_EMIT_PROTECTED */               "emits protected variables to the result-file",
   /* FLAG_DATA_RECONCILE_Eps */           "value specifies the number of convergence iteration to be performed for DataReconciliation",
-  /* FLAG_F */                            "value specifies a new setup XML file to the generated simulation code",
+  /* FLAG_F */                            "value specifies a new init file (<prefix>_init.bin) to the generated simulation code",
   /* FLAG_HELP */                         "get detailed information that specifies the command-line flag",
   /* FLAG_HOMOTOPY_ADAPT_BEND */          "[double (default 0.5)] maximum trajectory bending to accept the homotopy step",
   /* FLAG_HOMOTOPY_BACKTRACE_STRATEGY */  "value specifies the backtrace strategy in the homotopy corrector step (fix (default), orthogonal)",
@@ -243,7 +244,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_INITIAL_STEP_SIZE */            "value specifies an initial step size for supported solver",
   /* FLAG_INPUT_CSV */                    "value specifies an csv-file with inputs for the simulation/optimization of the model",
   /* FLAG_INPUT_FILE_STATES */            "value specifies an file with states start values for the optimization of the model",
-  /* FLAG_INPUT_PATH */                   "value specifies a path for reading the input files i.e., model_init.xml and model_info.json",
+  /* FLAG_INPUT_PATH */                   "value specifies a path for reading the input files i.e., model_init.bin and model_info.json",
   /* FLAG_IPOPT_HESSE */                  "value specifies the hessian for Ipopt",
   /* FLAG_IPOPT_INIT */                   "value specifies the initial guess for optimization",
   /* FLAG_IPOPT_JAC */                    "value specifies the Jacobian for Ipopt",
@@ -351,6 +352,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_PARMOD_EXPORT_TASKGRAPH */        "value specifies a json file to which the parmodauto task graph and clustering are exported",
   /* FLAG_PARMOD_IMPORT_CLUSTERING */     "value specifies a json file from which a parmodauto clustering is imported instead of computing one",
   /* FLAG_PARMOD_DUMP_STAGES */           "value specifies a file name prefix to which the parmodauto task graph and clustering are exported before and after each clustering optimization",
+  /* FLAG_LIST_VARIABLES */               "prints the variables, their attributes and the default experiment as JSON and exits",
 
   "FLAG_MAX"
 };
@@ -406,7 +408,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_DATA_RECONCILE_Eps */
   "  Value specifies the number of convergence iteration to be performed for DataReconciliation",
   /* FLAG_F */
-  "  Value specifies a new setup XML file to the generated simulation code.\n",
+  "  Value specifies a new init file (<prefix>_init.bin) to the generated simulation code.\n",
   /* FLAG_HELP */
   "  Get detailed information that specifies the command-line flag\n\n"
   "  For example, -help=f prints detailed information for command-line flag f.",
@@ -481,7 +483,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_INPUT_FILE_STATES */
   "  Value specifies an file with states start values for the optimization of the model.",
   /* FLAG_INPUT_PATH */
-  "  Value specifies a path for reading the input files i.e., model_init.xml and model_info.json",
+  "  Value specifies a path for reading the input files i.e., model_init.bin and model_info.json",
   /* FLAG_IPOPT_HESSE */
   "  Value specifies the hessematrix for Ipopt(OMC, BFGS, const).",
   /* FLAG_IPOPT_INIT */
@@ -767,6 +769,11 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Imports a clustering (groups of equation indices) from the given json file instead of computing one. The simulation aborts if the clustering is invalid (forms a cycle or references unknown equations).",
   /* FLAG_PARMOD_DUMP_STAGES */
   "  Exports the parmodauto task graph and clustering before and after each clustering optimization to a series of json files named <prefix>.NN.<stage>.json, so the effect of each optimization can be inspected.",
+  /* FLAG_LIST_VARIABLES */
+  "  Prints the variables as JSON on stdout and exits without simulating:\n"
+  "  {\"modelName\":..., \"generationTool\":..., \"defaultExperiment\":{...},\n"
+  "  \"variables\":[{\"name\":..., \"type\":..., \"start\":..., ...}, ...]}.\n"
+  "  The start values include the values given with -override and -overrideFile.",
 
 
   "FLAG_MAX"
@@ -932,6 +939,7 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_PARMOD_EXPORT_TASKGRAPH */      FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_PARMOD_IMPORT_CLUSTERING */     FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_PARMOD_DUMP_STAGES */           FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_LIST_VARIABLES */               FLAG_REPEAT_POLICY_FORBID,
 };
 
 
@@ -1095,6 +1103,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_PARMOD_EXPORT_TASKGRAPH */      FLAG_TYPE_OPTION,
   /* FLAG_PARMOD_IMPORT_CLUSTERING */     FLAG_TYPE_OPTION,
   /* FLAG_PARMOD_DUMP_STAGES */           FLAG_TYPE_OPTION,
+  /* FLAG_LIST_VARIABLES */               FLAG_TYPE_FLAG,
 };
 
 const char *GB_METHOD_NAME[RK_MAX] = {

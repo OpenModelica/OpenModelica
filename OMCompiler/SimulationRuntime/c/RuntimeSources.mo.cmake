@@ -53,7 +53,6 @@ encapsulated package RuntimeSources
                                              "_16dae.c",
                                              "_17inl.c",
                                              "_18spd.c",
-                                             "_init_fmu.c",
                                              "_FMU.c"};
 
 

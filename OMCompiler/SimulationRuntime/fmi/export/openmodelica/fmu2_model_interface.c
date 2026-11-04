@@ -50,7 +50,7 @@
 #include "../simulation/solver/discrete_changes.h"
 #include "../simulation/solver/epsilon.h"
 #include "../simulation/simulation_info_json.h"
-#include "../simulation/simulation_input_xml.h"
+#include "../simulation/simulation_input.h"
 #include "../simulation/solver/synchronous.h"
 #include "../simulation/options.h"
 #include "../util/simulation_options.h"
@@ -758,21 +758,16 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
    * fix issue #11855, always take the startTime provided in modeldescription.xml
    * to handle model that have startTime > 0 (e.g) startTime = 0.2
    */
-  comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
-  allocModelDataVars(comp->fmuData->modelData, FALSE, comp->threadData);
-  scalarAllocArrayAttributes(comp->fmuData->modelData);
+  read_input(comp->fmuData->modelData, comp->fmuData->simulationInfo, TRUE, comp->threadData);
   if (comp->fmuData->callback->updateStructuralParameters) {
     comp->fmuData->callback->updateStructuralParameters(comp->fmuData, comp->threadData);
   }
   calculateAllScalarLength(comp->fmuData->modelData);
 
-  /* setup model data with default start data */
-  setDefaultStartValues(comp);
   initializeDataStruc(comp->fmuData, comp->threadData);
 
   setAllParamsToStart(comp->fmuData->simulationInfo, comp->fmuData->modelData);
   setAllVarsToStart(comp->fmuData->localData[0], comp->fmuData->simulationInfo, comp->fmuData->modelData);
-  comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData);
 
 
 #if !defined(OMC_MINIMAL_METADATA)
@@ -991,7 +986,7 @@ fmi2Status fmi2EnterInitializationMode(fmi2Component c)
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EnterInitializationMode...")
 
   setZCtol(comp->tolerance); /* set zero-crossing tolerance */
-  setStartValues(comp);
+  setStartToCurrentValues(comp->fmuData);
   copyStartValuestoInitValues(comp->fmuData);
   comp->state = model_state_initialization_mode;
 
@@ -1138,21 +1133,18 @@ fmi2Status fmi2Reset(fmi2Component c)
   if (modelDataVarsFreed) {
     /* deInitializeDataStruc freed the var data arrays; re-allocate them before they are
      * initialized and filled again, mirroring fmi2Instantiate. */
-    allocModelDataVars(comp->fmuData->modelData, FALSE, comp->threadData);
-    scalarAllocArrayAttributes(comp->fmuData->modelData);
+    read_input(comp->fmuData->modelData, comp->fmuData->simulationInfo, TRUE, comp->threadData);
     if (comp->fmuData->callback->updateStructuralParameters) {
       comp->fmuData->callback->updateStructuralParameters(comp->fmuData, comp->threadData);
     }
     calculateAllScalarLength(comp->fmuData->modelData);
+  } else {
+    read_input_defaults(comp->fmuData->modelData, comp->fmuData->simulationInfo, TRUE, comp->threadData);
   }
-  comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
   initializeDataStruc(comp->fmuData, comp->threadData);
 
-  /* reset model data with default start data */
-  setDefaultStartValues(comp);
   setAllParamsToStart(comp->fmuData->simulationInfo, comp->fmuData->modelData);
   setAllVarsToStart(comp->fmuData->localData[0], comp->fmuData->simulationInfo ,comp->fmuData->modelData);
-  comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData);
 #if !defined(OMC_MINIMAL_METADATA)
   modelInfoInit(&(comp->fmuData->modelData->modelDataXml));
 #endif

@@ -111,24 +111,24 @@ abs(val(r0.a.i[2], 1, "resizableLoopsVSplit_6.mat") - val(r0.a.i[2], 1, "resizab
 // Result:
 // true
 // ""
-// {"resizableLoopsTri", "resizableLoopsTri_init.xml"}
+// {"resizableLoopsTri", "resizableLoopsTri_init.bin"}
 // ""
 // 0
-// {"resizableLoopsSep", "resizableLoopsSep_init.xml"}
+// {"resizableLoopsSep", "resizableLoopsSep_init.bin"}
 // ""
 // 0
-// {"resizableLoopsVSplit", "resizableLoopsVSplit_init.xml"}
+// {"resizableLoopsVSplit", "resizableLoopsVSplit_init.bin"}
 // ""
 // 0
 // true
 // ""
-// {"resizableLoopsTri_ref", "resizableLoopsTri_ref_init.xml"}
+// {"resizableLoopsTri_ref", "resizableLoopsTri_ref_init.bin"}
 // ""
 // 0
-// {"resizableLoopsSep_ref", "resizableLoopsSep_ref_init.xml"}
+// {"resizableLoopsSep_ref", "resizableLoopsSep_ref_init.bin"}
 // ""
 // 0
-// {"resizableLoopsVSplit_ref", "resizableLoopsVSplit_ref_init.xml"}
+// {"resizableLoopsVSplit_ref", "resizableLoopsVSplit_ref_init.bin"}
 // ""
 // 0
 // true

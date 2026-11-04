@@ -99,6 +99,6 @@ buildModel(test_dumpindxdae); getErrorString();
 // ========================================
 //
 //
-// {"test_dumpindxdae","test_dumpindxdae_init.xml"}
+// {"test_dumpindxdae","test_dumpindxdae_init.bin"}
 // ""
 // endResult

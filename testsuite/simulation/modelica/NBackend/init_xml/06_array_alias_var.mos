@@ -24,14 +24,13 @@ end ArrayAliasVar;
 
 buildModel(ArrayAliasVar); getErrorString();
 
-system("sed -n '/<ModelVariables>/,/<\\/ModelVariables>/p' ArrayAliasVar_init.xml > ArrayAliasVar_init.tmp.xml");
-initFileContent := readFile("ArrayAliasVar_init.tmp.xml");
+initFileContent := readInitFile("ArrayAliasVar_init.bin");
 
 // Result:
 // true
 // true
 // ""
-// {"ArrayAliasVar", "ArrayAliasVar_init.xml"}
+// {"ArrayAliasVar", "ArrayAliasVar_init.bin"}
 // "
 // 0
 // "  <ModelVariables>

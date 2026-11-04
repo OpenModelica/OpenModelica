@@ -21,6 +21,6 @@ buildModel(testDumpPPrepl); getErrorString();
 // ""
 // true
 // ""
-// {"testDumpPPrepl","testDumpPPrepl_init.xml"}
+// {"testDumpPPrepl","testDumpPPrepl_init.bin"}
 // ""
 // endResult

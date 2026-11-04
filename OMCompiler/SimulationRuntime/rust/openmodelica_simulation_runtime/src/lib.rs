@@ -30,6 +30,7 @@ mod help;
 #[cfg(feature = "standalone")]
 mod iif;
 mod info_json;
+mod init_bin;
 mod linearize;
 mod meta;
 mod mixed;

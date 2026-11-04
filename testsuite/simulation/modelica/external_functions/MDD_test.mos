@@ -21,7 +21,7 @@ buildModel(MDD_test); getErrorString();
 // "
 // true
 // ""
-// {"MDD_test", "MDD_test_init.xml"}
+// {"MDD_test", "MDD_test_init.bin"}
 // "[Modelica_DeviceDrivers 2.2.0/Blocks/Packaging/SerialPackager.mo:98:7-105:23:writable] Warning: Pure function 'Modelica_DeviceDrivers.Blocks.Packaging.SerialPackager.Internal.DummyFunctions.resetPointer' contains a call to impure function 'Modelica_DeviceDrivers.Packaging.SerialPackager_.resetPointer'.
 // [Modelica_DeviceDrivers 2.2.0/Blocks/Packaging/SerialPackager.mo:139:5-153:23:writable] Warning: Pure function 'Modelica_DeviceDrivers.Blocks.Packaging.SerialPackager.Internal.DummyFunctions.integerBitPack' contains a call to impure function 'Modelica_DeviceDrivers.Packaging.SerialPackager_.integerBitPack'.
 // [Modelica_DeviceDrivers 2.2.0/Blocks/Packaging/SerialPackager.mo:130:7-137:16:writable] Warning: Pure function 'Modelica_DeviceDrivers.Blocks.Packaging.SerialPackager.Internal.DummyFunctions.clear' contains a call to impure function 'Modelica_DeviceDrivers.Packaging.SerialPackager_.clear'.

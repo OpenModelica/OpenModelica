@@ -22,50 +22,18 @@ end RealArrayVariable;
 buildModel(RealArrayVariable); getErrorString();
 
 // Life's too short to learn regex. LLM to the rescue!
-system("sed -n 's/.*\\(numberOf[[:alnum:]_]*\\)[[:space:]]*=[[:space:]]*\"\\([0-9][0-9]*\\)\".*/\\1 \\2/p' RealArrayVariable_init.xml > RealArrayVariable_init.numberOf.xml ");
-initFileContent := readFile("RealArrayVariable_init.numberOf.xml");
-system("sed -n '/<ArrayVariable/,/<\\/ArrayVariable>/p' RealArrayVariable_init.xml > RealArrayVariable_init.ArrayVariable.xml");
-initFileContent := readFile("RealArrayVariable_init.ArrayVariable.xml");
+initFileContent := readInitFile("RealArrayVariable_init.bin");
 
 // Result:
 // true
 // true
 // ""
-// {"RealArrayVariable", "RealArrayVariable_init.xml"}
+// {"RealArrayVariable", "RealArrayVariable_init.bin"}
 // ""
-// 0
-// "numberOfEventIndicators 0
-// numberOfTimeEvents 0
-// numberOfInputVariables 0
-// numberOfOutputVariables 0
-// numberOfExternalObjects 0
-// numberOfFunctions 0
-// numberOfContinuousStates 0
-// numberOfRealAlgebraicVariables 1
-// numberOfRealAlgebraicAliasVariables 0
-// numberOfRealParameters 0
-// numberOfIntegerAlgebraicVariables 0
-// numberOfIntegerAliasVariables 0
-// numberOfIntegerParameters 1
-// numberOfStringAlgebraicVariables 0
-// numberOfStringAliasVariables 0
-// numberOfStringParameters 0
-// numberOfBooleanAlgebraicVariables 0
-// numberOfBooleanAliasVariables 0
-// numberOfBooleanParameters 0
-// "
-// 0
-// "  <ArrayVariable
-//     name = \"x\"
-//     valueReference = \"1000\"
-//     variability = \"continuous\" isDiscrete = \"false\"
-//     causality = \"local\" isValueChangeable = \"false\"
-//     alias = \"noAlias\"
-//     classIndex = \"0\" classType = \"rAlg\"
-//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
-//     <Dimension start=\"5\"/>
-//     <Real fixed=\"false\" useNominal=\"false\" />
-//   </ArrayVariable>
+// "model RealArrayVariable
+// sizes numberOfRealAlgebraicVariables=1 numberOfIntegerParameters=1
+// experiment startTime=0.0 stopTime=1.0 stepSize=0.002 tolerance=1e-6 solver=dassl outputFormat=mat variableFilter=\".*\"
+// rAlg x Real continuous hideResult=false dimensions=[5]
+// iPar p Integer parameter causality=parameter changeable fixed hideResult=false start=5
 // "
 // endResult

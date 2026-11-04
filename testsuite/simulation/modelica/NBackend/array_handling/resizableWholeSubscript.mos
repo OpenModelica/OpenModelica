@@ -24,7 +24,7 @@ abs(val(x[25], 0.5, "resizableWholeSubscript_25.mat") - 0.5) < 1e-8;
 // Result:
 // true
 // ""
-// {"resizableWholeSubscript", "resizableWholeSubscript_init.xml"}
+// {"resizableWholeSubscript", "resizableWholeSubscript_init.bin"}
 // ""
 // 0
 // true

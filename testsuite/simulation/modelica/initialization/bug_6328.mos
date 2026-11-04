@@ -691,7 +691,7 @@ readFile("outputFile-Test.txt");
 // 7: input $cse7.SeedNLSJac5:STATE_DER()  type: Real unreplaceable
 // 8: input y1.SeedNLSJac5:STATE_DER()  type: Real unreplaceable
 //
-// {"TestJacobian_6328.Test","TestJacobian_6328.Test_init.xml"}
+// {"TestJacobian_6328.Test","TestJacobian_6328.Test_init.bin"}
 // 0
 // "LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

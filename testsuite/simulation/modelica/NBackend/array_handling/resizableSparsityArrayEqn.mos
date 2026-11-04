@@ -37,7 +37,7 @@ abs(val(T[20], 1, "resizableSparsityArrayEqn_20.mat") - val(T[20], 1, "resizable
 // Result:
 // true
 // ""
-// {"resizableSparsityArrayEqn", "resizableSparsityArrayEqn_init.xml"}
+// {"resizableSparsityArrayEqn", "resizableSparsityArrayEqn_init.bin"}
 // ""
 // 1
 // 0

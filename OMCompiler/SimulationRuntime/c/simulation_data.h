@@ -663,7 +663,8 @@ typedef struct MODEL_DATA
   char* resultFileName;                /* default is <modelFilePrefix>_res.mat, but it can be overriden using -r=<resultFilename> */
   const char* modelDir;
   const char* modelGUID;
-  const char* initXMLData;
+  const unsigned char* initBinData;   /* <prefix>_init.bin compiled into the model, else NULL */
+  size_t initBinSize;
   char* resourcesDir;                   /* Resources directory, only set for FMUs */
   modelica_boolean runTestsuite;       /* true if this model was generated during testing */
 
@@ -740,7 +741,7 @@ typedef struct MODEL_DATA
   long nRelatedBoundaryConditions;
 
   size_t nEnumerationTypes;
-  ENUMERATION_TYPE *enumerationTypes;  /* of the enumeration variables, from the init XML */
+  ENUMERATION_TYPE *enumerationTypes;  /* of the enumeration variables, from the init file */
 } MODEL_DATA;
 
 /**

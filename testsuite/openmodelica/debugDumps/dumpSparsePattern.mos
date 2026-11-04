@@ -62,6 +62,6 @@ buildModel(testDumpSparsePattern); getErrorString();
 // Print sparse pattern: 1
 // Row[1] = {1}
 //
-// {"testDumpSparsePattern","testDumpSparsePattern_init.xml"}
+// {"testDumpSparsePattern","testDumpSparsePattern_init.bin"}
 // ""
 // endResult

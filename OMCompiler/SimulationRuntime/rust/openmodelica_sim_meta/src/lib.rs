@@ -293,7 +293,7 @@ pub struct Layout<T = u32> {
     /// `linearJac*` fill (column-major), then their seed/`$pDER` slots.
     pub linz_off: T,
     pub n_linz: T,
-    /// `method="optimization"`: the attribute arrays C reads out of the `_init.xml`
+    /// `method="optimization"`: the attribute arrays C reads out of the `_init.bin`
     /// (`realVarsData[i].attribute`), one entry per real variable in real-variable
     /// index order — `min`, `max`, `nominal` as f64 and `useNominal` as i32
     /// (`start` is [`Layout::start_off`], which every model has). Written by
@@ -1981,7 +1981,7 @@ impl SimMeta {
     }
 
     /// C's `simulationInfo->stepSize`: the output interval `SimCodeMain` writes into
-    /// the init XML, or the `-stepSize` override. Solver policy reads it too (the NLS
+    /// the init file, or the `-stepSize` override. Solver policy reads it too (the NLS
     /// initial-guess window, the chattering limit), so it is not only the grid.
     pub fn step_size(&self) -> f64 {
         if let Some(h) = crate::simflags::with_flags(|f| f.step_size) {
@@ -2003,7 +2003,7 @@ impl SimMeta {
     }
 
     /// [`step_size`](Self::step_size) as the model was translated, ignoring
-    /// `-stepSize`: what C reads out of the init XML.
+    /// `-stepSize`: what C reads out of the init file.
     fn translated_step_size(&self) -> f64 {
         let n = if self.n_intervals > 0 { self.n_intervals } else { 500 };
         (self.stop_time - self.start_time) / n as f64
@@ -2132,7 +2132,7 @@ impl SimMeta {
             omclog::close_warning(STDOUT);
         }
         // Only when a flag moved it: `n_intervals` is exact where C re-derives it
-        // from the step size the init XML carries.
+        // from the step size the init file carries.
         if (recalc || f.step_size.is_some()) && span > 0.0 && step > 0.0 {
             self.n_intervals = fmath::round(span / step) as u32;
         }

@@ -93,6 +93,6 @@ buildModel(test_dumpdaelow); getErrorString();
 // ========================================
 //
 //
-// {"test_dumpdaelow","test_dumpdaelow_init.xml"}
+// {"test_dumpdaelow","test_dumpdaelow_init.bin"}
 // ""
 // endResult

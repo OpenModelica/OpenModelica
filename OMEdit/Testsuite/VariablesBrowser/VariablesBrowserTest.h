@@ -48,8 +48,8 @@ class VariablesBrowserTest: public QObject
 private slots:
   /*!
    * \brief arrayVariables
-   * Simulates a model with --simCodeScalarize=false so that model_init.xml contains
-   * ArrayVariable elements and checks that the array elements are in the Variables Browser.
+   * Simulates a model with --simCodeScalarize=false so that model_init.bin contains
+   * array variables and checks that the array elements are in the Variables Browser.
    * See issue #16811.
    */
   void arrayVariables();
@@ -62,10 +62,18 @@ private slots:
   /*!
    * \brief resultFileUnits
    * Checks that the units and display units come from the .mat result file, also
-   * without a model_init.xml. See issue #14952.
+   * without a model_init.bin. See issue #14952.
    */
   void resultFileUnits();
+  /*!
+   * \brief reSimulate
+   * Changes a parameter in the Variables Browser and re-simulates, twice, and checks
+   * that the result has both changed values, given to the simulation with -override.
+   */
+  void reSimulate();
   void cleanupTestCase();
+private:
+  bool waitForSimulation(const QString &className);
 };
 
 #endif // VARIABLESBROWSERTEST_H

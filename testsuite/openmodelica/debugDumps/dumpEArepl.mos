@@ -25,6 +25,6 @@ buildModel(test_dumpEArepl); getErrorString();
 // Replacements: (0)
 // ========================================
 //
-// {"test_dumpEArepl","test_dumpEArepl_init.xml"}
+// {"test_dumpEArepl","test_dumpEArepl_init.bin"}
 // ""
 // endResult

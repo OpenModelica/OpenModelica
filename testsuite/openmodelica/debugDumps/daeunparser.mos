@@ -22,6 +22,6 @@ buildModel(testDaeunparser); getErrorString();
 // false
 // "Error: Unknown debug flag daeunparser.
 // "
-// {"testDaeunparser","testDaeunparser_init.xml"}
+// {"testDaeunparser","testDaeunparser_init.bin"}
 // ""
 // endResult

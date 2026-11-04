@@ -494,6 +494,6 @@ buildModel(AdjointJacobian2); getErrorString();
 // functions:
 // -----------
 //
-// {"AdjointJacobian2", "AdjointJacobian2_init.xml"}
+// {"AdjointJacobian2", "AdjointJacobian2_init.bin"}
 // ""
 // endResult

@@ -57,6 +57,8 @@
 #include <QDockWidget>
 #include <QMessageBox>
 #include <QMenu>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include <QRegularExpression>
 #include <QToolBar>
 #include <algorithm>
@@ -613,55 +615,160 @@ QModelIndex VariablesTreeModel::variablesTreeItemIndex(VariablesTreeItem *pVaria
 }
 
 /*!
- * \brief VariablesTreeModel::parseInitXml
- * Parses the model_init.xml file and returns the scalar variables information.
- * \param xmlReader
- * \param simulationOptions
- * \param variablesList
+ * \brief overrideValues
+ * The assignments of the -override flags.
+ * \param flags - the simulation flags.
+ * \return variable name -> value
  */
-void VariablesTreeModel::parseInitXml(QXmlStreamReader &xmlReader, SimulationOptions simulationOptions, QStringList* variablesList)
+static QMap<QString, QString> overrideValues(const QStringList &flags)
 {
-  // if the variables list is empty then add the xml scalar variables to the list
-  bool addVariablesToList = variablesList->isEmpty();
-  bool protectedVariables = simulationOptions.getProtectedVariables();
-  bool ignoreHideResult = simulationOptions.getIgnoreHideResult();
-  /* We'll parse the XML until we reach end of it.*/
-  while (!xmlReader.atEnd() && !xmlReader.hasError()) {
-    /* Read next element.*/
-    QXmlStreamReader::TokenType token = xmlReader.readNext();
-    /* If token is just StartDocument, we'll go to next.*/
-    if (token == QXmlStreamReader::StartDocument) {
-      continue;
-    }
-    /* If token is StartElement, we'll see if we can read it.*/
-    if (token == QXmlStreamReader::StartElement) {
-      /* If it's named ScalarVariable or ArrayVariable, we'll dig the information from there.
-       * ArrayVariable is written instead of the scalarized elements when --simCodeScalarize=false.
-       * Its elements are taken from the result file, see insertVariablesItems.
-       */
-      const bool isArrayVariable = xmlReader.name() == QStringLiteral("ArrayVariable");
-      if (isArrayVariable || xmlReader.name() == QStringLiteral("ScalarVariable")) {
-        ScalarVariable scalarVariable = VariablesTreeModel::parseScalarVariable(xmlReader);
-        /* Skip variables,
-         *   1. If ignoreHideResult is not set and hideResult is true.
-         *   2. If emit protected flag is false and variable is protected OR if variable belongs to an encrytped model.
-         *      If hideResult is false for protected variable then we show it.
-         */
-        if ((ignoreHideResult || !scalarVariable.hideResultIsTrue)
-            && ((protectedVariables && !scalarVariable.isEncrypted) || (!scalarVariable.isProtected || (!ignoreHideResult && scalarVariable.hideResultIsFalse)))) {
-          if (isArrayVariable) {
-            mArrayVariablesHash.insert(removeSubscripts(scalarVariable.name), scalarVariable);
-            continue;
-          }
-          mScalarVariablesHash.insert(scalarVariable.name, scalarVariable);
-          if (addVariablesToList) {
-            variablesList->append(scalarVariable.name);
-          }
+  QMap<QString, QString> values;
+  for (const QString &flag : flags) {
+    if (flag.startsWith(QStringLiteral("-override="))) {
+      for (const QString &assignment : flag.mid(10).split(',', Qt::SkipEmptyParts)) {
+        const int equals = assignment.indexOf('=');
+        if (equals > 0) {
+          values.insert(assignment.left(equals), assignment.mid(equals + 1));
         }
       }
     }
   }
-  xmlReader.clear();
+  return values;
+}
+
+/*!
+ * \brief jsonText
+ * A start value of -listVariables as text; the elements of an array separated by spaces.
+ */
+static QString jsonText(const QJsonValue &value)
+{
+  switch (value.type()) {
+    case QJsonValue::Bool:
+      return value.toBool() ? QStringLiteral("true") : QStringLiteral("false");
+    case QJsonValue::Double:
+      return QString::number(value.toDouble(), 'g', QLocale::FloatingPointShortest);
+    case QJsonValue::String:
+      return value.toString();
+    case QJsonValue::Array: {
+      QStringList elements;
+      for (const QJsonValue &element : value.toArray()) {
+        elements.append(jsonText(element));
+      }
+      return elements.join(' ');
+    }
+    default:
+      return QString();
+  }
+}
+
+/*!
+ * \brief VariablesTreeModel::listVariables
+ * Asks the simulation executable for the variables of the model, with the
+ * start values of the run's -override flags. The wasm-jit target has no
+ * executable; omc answers for it.
+ * \param executable - the simulation executable, or for wasm-jit the model's file name prefix.
+ * \param simulationOptions
+ * \param error - the reason if the variables could not be read.
+ * \return the output of -listVariables.
+ */
+QJsonObject VariablesTreeModel::listVariables(const QString &executable, const SimulationOptions &simulationOptions, QString *error)
+{
+  QStringList flags(QStringLiteral("-listVariables"));
+  for (const QString &flag : simulationOptions.getSimulationFlags()) {
+    if (flag.startsWith(QStringLiteral("-override=")) || flag.startsWith(QStringLiteral("-overrideFile="))) {
+      flags.append(flag);
+    }
+  }
+  QByteArray output;
+  if (simulationOptions.getTargetLanguage().compare(QStringLiteral("wasm-jit")) == 0) {
+    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+    pOMCProxy->sendCommand(QString("simulate(%1, resimulateExecutable=\"%2\", simflags=\"%3\")")
+                           .arg(simulationOptions.getClassName(), QFileInfo(executable).fileName(), flags.join(' ').replace('"', "\\\"")));
+    const QString messages = QRegularExpression("messages = (\"(?:[^\"\\\\]|\\\\.)*\")", QRegularExpression::DotMatchesEverythingOption)
+                               .match(pOMCProxy->getResult()).captured(1);
+    output = StringHandler::unparse(messages).toUtf8();
+  } else {
+#if QT_CONFIG(process)
+    QString program = executable;
+    QProcess process;
+    process.setWorkingDirectory(QFileInfo(executable).absolutePath());
+#if defined(_WIN32)
+    QProcessEnvironment processEnvironment = StringHandler::modelicaSimulationProcessEnvironment(program + ".bat", error);
+    program.append(".exe");
+    process.setProcessEnvironment(processEnvironment);
+#endif
+    if (!QFileInfo::exists(program)) {
+      *error = GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(program);
+      return QJsonObject();
+    }
+    process.start(program, flags);
+    if (!process.waitForFinished(60000) || process.exitStatus() != QProcess::NormalExit || process.exitCode() != 0) {
+      *error = QString("%1 %2: %3%4").arg(program, flags.join(' '), process.errorString(), QString::fromUtf8(process.readAllStandardOutput()));
+      process.kill();
+      return QJsonObject();
+    }
+    output = process.readAllStandardOutput();
+#else
+    *error = tr("Cannot run %1").arg(executable);
+    return QJsonObject();
+#endif
+  }
+  QJsonParseError parseError;
+  const QJsonDocument document = QJsonDocument::fromJson(output, &parseError);
+  if (!document.isObject()) {
+    *error = QString("%1: %2").arg(parseError.errorString(), QString::fromUtf8(output.left(1000)));
+    return QJsonObject();
+  }
+  return document.object();
+}
+
+/*!
+ * \brief VariablesTreeModel::readVariables
+ * Reads the variables of -listVariables.
+ * \param variables - the output of -listVariables.
+ * \param simulationOptions
+ * \param variablesList - the variables are appended to it if it is empty.
+ */
+void VariablesTreeModel::readVariables(const QJsonObject &variables, SimulationOptions simulationOptions, QStringList *variablesList)
+{
+  // if the variables list is empty then add the scalar variables to the list
+  bool addVariablesToList = variablesList->isEmpty();
+  bool protectedVariables = simulationOptions.getProtectedVariables();
+  bool ignoreHideResult = simulationOptions.getIgnoreHideResult();
+  for (const QJsonValue &value : variables.value(QStringLiteral("variables")).toArray()) {
+    const QJsonObject variable = value.toObject();
+    const QJsonValue hideResult = variable.value(QStringLiteral("hideResult"));
+    ScalarVariable scalarVariable;
+    scalarVariable.name = variable.value(QStringLiteral("name")).toString();
+    scalarVariable.description = variable.value(QStringLiteral("description")).toString();
+    scalarVariable.isValueChangeable = variable.value(QStringLiteral("isValueChangeable")).toBool();
+    scalarVariable.variability = variable.value(QStringLiteral("variability")).toString();
+    scalarVariable.hideResultIsTrue = hideResult.isBool() && hideResult.toBool();
+    scalarVariable.hideResultIsFalse = hideResult.isBool() && !hideResult.toBool();
+    scalarVariable.isProtected = variable.value(QStringLiteral("isProtected")).toBool();
+    scalarVariable.isEncrypted = variable.value(QStringLiteral("isEncrypted")).toBool();
+    scalarVariable.type = variable.value(QStringLiteral("type")).toString();
+    scalarVariable.start = jsonText(variable.value(QStringLiteral("start")));
+    scalarVariable.unit = variable.value(QStringLiteral("unit")).toString();
+    scalarVariable.displayUnit = variable.value(QStringLiteral("displayUnit")).toString();
+    /* Skip variables,
+     *   1. If ignoreHideResult is not set and hideResult is true.
+     *   2. If emit protected flag is false and variable is protected OR if variable belongs to an encrytped model.
+     *      If hideResult is false for protected variable then we show it.
+     */
+    if ((ignoreHideResult || !scalarVariable.hideResultIsTrue)
+        && ((protectedVariables && !scalarVariable.isEncrypted) || (!scalarVariable.isProtected || (!ignoreHideResult && scalarVariable.hideResultIsFalse)))) {
+      // The elements of an array variable are taken from the result file, see insertVariablesItems.
+      if (variable.contains(QStringLiteral("dimensions"))) {
+        mArrayVariablesHash.insert(removeSubscripts(scalarVariable.name), scalarVariable);
+        continue;
+      }
+      mScalarVariablesHash.insert(scalarVariable.name, scalarVariable);
+      if (addVariablesToList) {
+        variablesList->append(scalarVariable.name);
+      }
+    }
+  }
 }
 
 /*!
@@ -787,58 +894,29 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   }
   // set the newly inserted VariablesTreeItem active
   mpActiveVariablesTreeItem = pTopVariablesTreeItem;
-  /* open the model_init.xml file for reading */
+  /* read the variables from the simulation executable */
   mScalarVariablesHash.clear();
   mArrayVariablesHash.clear();
-  QString initFileName, infoFileName;
+  QString executable, infoFileName;
   if (simulationOptions.isValid()) {
-    initFileName = QString("%1_init.xml").arg(simulationOptions.getOutputFileName());
+    executable = QString("%1/%2").arg(simulationOptions.getWorkingDirectory(), simulationOptions.getOutputFileName());
     infoFileName = QString("%1_info.json").arg(simulationOptions.getOutputFileName());
   } else {
-    initFileName = QString("%1_init.xml").arg(text);
+    executable = QString("%1/%2").arg(filePath, text);
     infoFileName = QString("%1_info.json").arg(text);
   }
-  bool readingVariablesFromInitFile = false;
-#if defined(__EMSCRIPTEN__)
-  // _init.xml lives in omc's cwd (the working directory) in the worker VFS; read it
-  // from there (QFile can't reach the worker store).
-  extern QByteArray omcWorkerReadFile(const char *path);
-  QByteArray initData = omcWorkerReadFile(QString("%1/%2").arg(filePath, initFileName).toUtf8().constData());
-  if (!initData.isEmpty()) {
-    QXmlStreamReader initXmlReader(initData);
-    readingVariablesFromInitFile = variablesList.isEmpty();
-    parseInitXml(initXmlReader, simulationOptions, &variablesList);
-    if (initXmlReader.hasError()) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Failed to parse %1: %2").arg(initFileName, initXmlReader.errorString()),
+  bool readingVariablesFromModel = false;
+  if (!simulationOptions.isInteractiveSimulation()) {
+    QString error;
+    const QJsonObject variables = listVariables(executable, simulationOptions, &error);
+    if (error.isEmpty()) {
+      readingVariablesFromModel = variablesList.isEmpty();
+      readVariables(variables, simulationOptions, &variablesList);
+    } else if (variablesList.isEmpty()) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Failed to get the variables of the model; the Variable Browser may be incomplete: %1").arg(error),
                                                             Helper::scriptingKind, Helper::errorLevel));
     }
-  } else if (!simulationOptions.isInteractiveSimulation() && variablesList.isEmpty()) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("The initialization file %1 was not found; the Variable Browser may be incomplete.").arg(initFileName),
-                                                          Helper::scriptingKind, Helper::errorLevel));
   }
-#else
-  QFile initFile(QString("%1%2%3").arg(filePath, QDir::separator(), initFileName));
-  if (initFile.exists()) {
-    if (initFile.open(QIODevice::ReadOnly)) {
-      QByteArray data = initFile.readAll();
-      initFile.close();
-      QXmlStreamReader initXmlReader(data);
-      readingVariablesFromInitFile = variablesList.isEmpty();
-      parseInitXml(initXmlReader, simulationOptions, &variablesList);
-      if (initXmlReader.hasError()) {
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Failed to parse %1: %2").arg(initFile.fileName(), initXmlReader.errorString()),
-                                                              Helper::scriptingKind, Helper::errorLevel));
-      }
-    } else {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
-                                                            .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
-    }
-  } else if (!simulationOptions.isInteractiveSimulation() && variablesList.isEmpty()) {
-    // No init file and no variable list given: the Variable Browser will be empty.
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("The initialization file %1 was not found; the Variable Browser may be incomplete.").arg(initFile.fileName()),
-                                                          Helper::scriptingKind, Helper::errorLevel));
-  }
-#endif
 
   QMap<QString,QSet<QString>> usedInitialVars;
   QMap<QString,QSet<QString>> usedVars;
@@ -892,7 +970,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   variablesList.removeOne("time");
   /* Fixes issue #7551
    * Add the $cpuTime variable to the list if cpu time flag is set.
-   * We read the variables from model_init.xml file that doesn't contain $cpuTime variable but is present in model_res.mat file.
+   * The variables of the model (-listVariables) do not contain $cpuTime, which is in model_res.mat file.
    */
   if (simulationOptions.isValid() && simulationOptions.getCPUTime()) {
     variablesList.append("$cpuTime");
@@ -902,7 +980,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
    * But don't make them checkable so user can't plot them.
    */
   QSet<QString> variableSetFromResultFile;
-  if (readingVariablesFromInitFile && !simulationOptions.isInteractiveSimulation()) {
+  if (readingVariablesFromModel && !simulationOptions.isInteractiveSimulation()) {
     QStringList lst = MainWindow::instance()->getOMCProxy()->readSimulationResultVars(QString("%1%2%3").arg(filePath, QDir::separator(), fileName));
     /* QStringList::contains() does a linear search → O(n).
      * QSet::contains() does a hash lookup → O(1).
@@ -1022,7 +1100,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       variableData << infoFileName;
       /* existsInResultFile */
       bool variableExistsInResultFile = true;
-      if (readingVariablesFromInitFile && !variableSetFromResultFile.contains(variableToFind)) {
+      if (readingVariablesFromModel && !variableSetFromResultFile.contains(variableToFind)) {
         variableExistsInResultFile = false;
       }
       variableData << variableExistsInResultFile;
@@ -1145,68 +1223,6 @@ void VariablesTreeModel::insertVariablesItems(VariableNode *pParentVariableNode,
 }
 
 /*!
- * \brief VariablesTreeModel::parseScalarVariable
- * Parses the scalar variable.
- * Helper function for VariablesTreeModel::parseInitXml
- * \param xmlReader
- * \return
- */
-ScalarVariable VariablesTreeModel::parseScalarVariable(QXmlStreamReader &xmlReader)
-{
-  ScalarVariable scalarVariable;
-  /* Let's check that we're really getting a ScalarVariable or ArrayVariable. */
-  if (xmlReader.tokenType() != QXmlStreamReader::StartElement) {
-    return scalarVariable;
-  }
-  const QString elementName = xmlReader.name().toString();
-  /* Let's get the attributes for ScalarVariable */
-  QXmlStreamAttributes attributes = xmlReader.attributes();
-  /* Read the ScalarVariable attributes. */
-  // Single pass over attributes — avoids repeated linear scans via attributes.value()
-  for (const QXmlStreamAttribute &attr : xmlReader.attributes()) {
-    const QStringView name = attr.name();
-    const QStringView value = attr.value();
-    if (name == QLatin1String("name")) {
-      scalarVariable.name = value.toString();
-    } else if (name == QLatin1String("description")) {
-      scalarVariable.description = value.toString();
-    } else if (name == QLatin1String("isValueChangeable")) {
-      scalarVariable.isValueChangeable = (value == QLatin1String("true"));
-    } else if (name == QLatin1String("variability")) {
-      scalarVariable.variability = value.toString();
-    } else if (name == QLatin1String("hideResult")) {
-      scalarVariable.hideResultIsTrue  = (value == QLatin1String("true"));
-      scalarVariable.hideResultIsFalse = (value == QLatin1String("false"));
-    } else if (name == QLatin1String("isProtected")) {
-      scalarVariable.isProtected = (value == QLatin1String("true"));
-    } else if (name == QLatin1String("isEncrypted")) {
-      scalarVariable.isEncrypted = (value == QLatin1String("true"));
-    }
-  }
-  /* Read the next element i.e Real, Integer, Boolean etc. */
-  xmlReader.readNext();
-  while (!(xmlReader.tokenType() == QXmlStreamReader::EndElement && xmlReader.name() == elementName) && !xmlReader.atEnd()) {
-    /* Skip the Dimension elements of an ArrayVariable. */
-    if (xmlReader.tokenType() == QXmlStreamReader::StartElement && xmlReader.name() != QStringLiteral("Dimension")) {
-      scalarVariable.type = xmlReader.name().toString();
-      for (const QXmlStreamAttribute &attr : xmlReader.attributes()) {
-        const QStringView name = attr.name();
-        const QStringView value = attr.value();
-        if (name == QLatin1String("start")) {
-          scalarVariable.start = value.toString();
-        } else if (name == QLatin1String("unit")) {
-          scalarVariable.unit = value.toString();
-        } else if (name == QLatin1String("displayUnit")) {
-          scalarVariable.displayUnit = value.toString();
-        }
-      }
-    }
-    xmlReader.readNext();
-  }
-  return scalarVariable;
-}
-
-/*!
  * \brief VariablesTreeModel::removeSubscripts
  * Removes all subscripts from a variable name, e.g., der(a[1].x[2,3]) becomes der(a.x).
  * Subscripts inside quoted identifiers are kept.
@@ -1294,7 +1310,7 @@ void VariablesTreeModel::getVariableInformation(ResultFileReader *pMatReader, QS
     }
     *description = scalarVariable.description;
   }
-  /* The result file's units win; the init.xml fills in what it lacks. A .mat
+  /* The result file's units win; the model's attributes fill in what it lacks. A .mat
    * written before display units were stored has only the unit.
    */
   QString fileUnit, fileDisplayUnit;
@@ -1824,66 +1840,27 @@ void VariablesWidget::updateVariablesTreeHelper(QMdiSubWindow *pSubWindow)
 }
 
 /*!
- * \brief VariablesWidget::readVariablesAndUpdateXML
- * Reads the updated values
- * \sa VariablesWidget::findVariableAndUpdateValue()
+ * \brief VariablesWidget::readChangedValues
+ * Reads the values the user changed, in the base unit.
  * \param pVariablesTreeItem
  * \param outputFileName
- * \param variables
+ * \param values - variable name -> value
  */
-void VariablesWidget::readVariablesAndUpdateXML(VariablesTreeItem *pVariablesTreeItem, QString outputFileName,
-                                                QHash<QString, QHash<QString, QString> > *variables)
+void VariablesWidget::readChangedValues(VariablesTreeItem *pVariablesTreeItem, QString outputFileName, QMap<QString, QString> *values)
 {
   for (int i = 0 ; i < pVariablesTreeItem->mChildren.size() ; i++) {
     VariablesTreeItem *pChildVariablesTreeItem = pVariablesTreeItem->child(i);
     if (pChildVariablesTreeItem->isEditable() && pChildVariablesTreeItem->isValueChanged()) {
-      //QString value = pChildVariablesTreeItem->data(1, Qt::DisplayRole).toString();
       /* Ticket #2250, 4031
-       * We need to convert the value to base unit since the values stored in init xml are always in base unit.
+       * The values are given to the simulation in the base unit.
        */
       QString value = pChildVariablesTreeItem->getValue(pChildVariablesTreeItem->getDisplayUnit(),
                                                         pChildVariablesTreeItem->getUnit()).toString();
       QString variableToFind = pChildVariablesTreeItem->getVariableName();
       variableToFind.remove(QRegularExpression(outputFileName + "."));
-      QHash<QString, QString> hash;
-      hash["name"] = variableToFind;
-      hash["value"] = value;
-      variables->insert(variableToFind, hash);
+      values->insert(variableToFind, value);
     }
-    readVariablesAndUpdateXML(pChildVariablesTreeItem, outputFileName, variables);
-  }
-}
-
-/*!
- * \brief VariablesWidget::findVariableAndUpdateValue
- * Writes the updated values in the init xml dom
- * \param xmlDocument
- * \param variables
- */
-void VariablesWidget::findVariableAndUpdateValue(QDomDocument xmlDocument, QHash<QString, QHash<QString, QString> > variables)
-{
-  /* if no variables are changed. */
-  if (variables.empty()) {
-    return;
-  }
-  /* update the variables */
-  int count = 0;
-  QDomNodeList scalarVariable = xmlDocument.elementsByTagName("ScalarVariable");
-  for (int i = 0; i < scalarVariable.size(); i++) {
-    if (count >= variables.size()) {
-      break;
-    }
-    QDomElement element = scalarVariable.at(i).toElement();
-    if (!element.isNull()) {
-      QHash<QString, QString> hash = variables.value(element.attribute("name"));
-      if (element.attribute("name").compare(hash["name"]) == 0) {
-        count++;
-        QDomElement el = scalarVariable.at(i).firstChild().toElement();
-        if (!el.isNull()) {
-          el.setAttribute("start", hash["value"]);
-        }
-      }
-    }
+    readChangedValues(pChildVariablesTreeItem, outputFileName, values);
   }
 }
 
@@ -1915,7 +1892,7 @@ void VariablesWidget::reSimulate(bool showSetup)
 
 /*!
  * \brief VariablesWidget::reSimulate
- * Re-simulates the model with the given simulation options and updates the model_init.xml file if needed.
+ * Re-simulates the model with the given simulation options and the changed values.
  * \param simulationOptions
  * \param pVariablesTreeItem
  * \param showSetup
@@ -1925,21 +1902,26 @@ void VariablesWidget::reSimulate(SimulationOptions simulationOptions, VariablesT
   simulationOptions.setReSimulate(true);
   if (pVariablesTreeItem) {
     MainWindow::instance()->getSimulationDialog()->removeInteractiveSimulation(simulationOptions.isInteractiveSimulation(), pVariablesTreeItem->getFileName(), false);
-    updateInitXmlFile(pVariablesTreeItem, simulationOptions);
-    if (simulationOptions.getTargetLanguage().compare("wasm-jit") == 0) {
-      // wasm-jit does not read _init.xml (only the Variables Browser does); it takes changes via -override.
-      QHash<QString, QHash<QString, QString> > changed;
-      readVariablesAndUpdateXML(pVariablesTreeItem, simulationOptions.getFullResultFileName(), &changed);
-      QStringList overrides;
-      for (auto it = changed.constBegin(); it != changed.constEnd(); ++it) {
-        overrides << QString("%1=%2").arg(it.value().value("name"), it.value().value("value"));
+    // The changed values, together with the ones of earlier re-simulations, go to the simulation as -override.
+    QMap<QString, QString> overrides = overrideValues(simulationOptions.getSimulationFlags());
+    QStringList flags;
+    for (const QString &flag : simulationOptions.getSimulationFlags()) {
+      if (!flag.startsWith(QStringLiteral("-override="))) {
+        flags << flag;
       }
-      if (!overrides.isEmpty()) {
-        const QString overrideFlag = QString("-override=%1").arg(overrides.join(","));
-        simulationOptions.setSimulationFlags(QStringList(simulationOptions.getSimulationFlags()) << overrideFlag);
-        // The setup dialog rebuilds the flags from its fields.
-        simulationOptions.setAdditionalSimulationFlags(QStringList({simulationOptions.getAdditionalSimulationFlags(), overrideFlag}).join(" ").trimmed());
+    }
+    readChangedValues(pVariablesTreeItem, simulationOptions.getFullResultFileName(), &overrides);
+    if (!overrides.isEmpty()) {
+      QStringList assignments;
+      for (auto it = overrides.constBegin(); it != overrides.constEnd(); ++it) {
+        assignments << QString("%1=%2").arg(it.key(), it.value());
       }
+      const QString overrideFlag = QString("-override=%1").arg(assignments.join(","));
+      simulationOptions.setSimulationFlags(flags << overrideFlag);
+      // The setup dialog rebuilds the flags from its fields.
+      QString additionalFlags = simulationOptions.getAdditionalSimulationFlags();
+      additionalFlags.remove(QRegularExpression(QStringLiteral("\\s*-override=\\S*")));
+      simulationOptions.setAdditionalSimulationFlags(QStringList({additionalFlags, overrideFlag}).join(" ").trimmed());
     }
   }
 
@@ -1947,47 +1929,6 @@ void VariablesWidget::reSimulate(SimulationOptions simulationOptions, VariablesT
     MainWindow::instance()->getSimulationDialog()->show(0, true, simulationOptions);
   } else {
     MainWindow::instance()->getSimulationDialog()->reSimulate(simulationOptions);
-  }
-}
-
-/*!
- * \brief VariablesWidget::updateInitXmlFile
- * Updates the model_init.xml file
- * \param pVariablesTreeItem
- * \param simulationOptions
- */
-void VariablesWidget::updateInitXmlFile(VariablesTreeItem *pVariablesTreeItem, SimulationOptions simulationOptions)
-{
-  /* Update the _init.xml file with new values. */
-  /* open the model_init.xml file for writing */
-  QString initFileName = QString(simulationOptions.getOutputFileName()).append("_init.xml");
-  QFile initFile(QString(simulationOptions.getWorkingDirectory()).append(QDir::separator()).append(initFileName));
-  QDomDocument initXmlDocument;
-  if (initFile.open(QIODevice::ReadOnly)) {
-    if (initXmlDocument.setContent(&initFile)) {
-      if (pVariablesTreeItem) {
-        QHash<QString, QHash<QString, QString> > variables;
-        readVariablesAndUpdateXML(pVariablesTreeItem, simulationOptions.getFullResultFileName(), &variables);
-        findVariableAndUpdateValue(initXmlDocument, variables);
-      }
-    } else {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Unable to set the content of QDomDocument from file %1")
-                                                            .arg(initFile.fileName()), Helper::scriptingKind, Helper::errorLevel));
-    }
-    initFile.close();
-    if (initFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-      QTextStream textStream(&initFile);
-      textStream.setEncoding(QStringConverter::Utf8);
-      textStream.setGenerateByteOrderMark(false);
-      textStream << initXmlDocument.toString();
-      initFile.close();
-    } else {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
-                                                            .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
-    }
-  } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
-                                                          .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
   }
 }
 

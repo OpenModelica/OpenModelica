@@ -199,19 +199,21 @@ pub extern "C" fn _main_initRuntimeAndSimulation(
     let si: &mut SIMULATION_INFO = unsafe { &mut *(*data).simulationInfo };
     let prefix = cstr(md.modelFilePrefix);
 
-    // C reads `<prefix>_init.xml` from `-inputPath` (else the working directory)
-    // unless `-f` names another file; the model may also carry the contents
-    // compiled in.
-    let xml_path = simflags::with_flags(|f| f.init_xml.clone()).unwrap_or_else(|| match flag_value(FLAG_INPUT_PATH) {
-        Some(dir) => format!("{dir}/{prefix}_init.xml"),
-        None => format!("{prefix}_init.xml"),
-    });
-    let xml = if !md.initXMLData.is_null() {
-        model_data::parse_str(&cstr(md.initXMLData))
-    } else {
-        model_data::parse(&xml_path)
-    };
-    let mut xml = match xml {
+    if simflags::with_flags(|f| f.list_variables) {
+        match model_data::read_init_file(md) {
+            Ok(file) => {
+                let json = simflags::with_flags(|f| file.list_variables(|n| f.override_value(n)));
+                print!("{json}");
+                let _ = std::io::Write::flush(&mut std::io::stdout());
+                std::process::exit(0);
+            }
+            Err(e) => {
+                omclog::error(omclog::STDOUT, false, &e);
+                return 1;
+            }
+        }
+    }
+    let mut xml = match model_data::load_init(md) {
         Ok(x) => x,
         Err(e) => {
             omclog::error(omclog::STDOUT, false, &e);

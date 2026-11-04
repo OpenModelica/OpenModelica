@@ -240,7 +240,7 @@ impl RunPos<'_> {
     }
 }
 
-/// C's `crefStrXml`: the display name `_init.xml` carries into `modelData`'s
+/// C's `crefStrXml`: the display name `_init.bin` carries into `modelData`'s
 /// `info.name`, and with it the result file. `$DER` / `$PRE` qualifiers print as
 /// `der(...)` / `pre(...)`, nesting included (`$DER.$DER.x` -> `der(der(x))`).
 pub(crate) fn cref_display(cr: &metamodelica::Ref<DAE::ComponentRef>) -> Result<String> {
@@ -1332,7 +1332,7 @@ pub(super) fn build_var_map(
             if editable_param && sv.isValueChangeable && is_result_output(sv) {
                 push_editable(sv, &cref_display(&sv.name)?, off, wty)?;
             }
-            // Not a result signal, but `_init.xml` lists it and C's `-override` reaches it.
+            // Not a result signal, but `_init.bin` lists it and C's `-override` reaches it.
             if heap
                 && std::ptr::eq(base_sz, &lz.sparam_off)
                 && sv.isValueChangeable

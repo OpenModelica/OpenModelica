@@ -55,7 +55,7 @@
 #include "simulation/solver/embedded_server.h"
 #include "simulation/solver/real_time_sync.h"
 #endif
-#include "simulation/simulation_input_xml.h"
+#include "simulation/simulation_input.h"
 
 #include "optimization/OptimizerInterface.h"
 
@@ -508,7 +508,7 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     total100 = rt_accumulated(SIM_TIMER_TOTAL)/100.0;
 
     infoStreamPrint(OMC_LOG_STATS, 1, "timer");
-    infoStreamPrint(OMC_LOG_STATS, 0, "%12gs          reading init.xml", rt_accumulated(SIM_TIMER_INIT_XML));
+    infoStreamPrint(OMC_LOG_STATS, 0, "%12gs          reading init.bin", rt_accumulated(SIM_TIMER_INIT_XML));
     infoStreamPrint(OMC_LOG_STATS, 0, "%12gs          reading info.xml", rt_accumulated(SIM_TIMER_INFO_XML));
     infoStreamPrint(OMC_LOG_STATS, 0, "%12gs [%5.1f%%] pre-initialization", rt_accumulated(SIM_TIMER_PREINIT), rt_accumulated(SIM_TIMER_PREINIT)/total100);
     infoStreamPrint(OMC_LOG_STATS, 0, "%12gs [%5.1f%%] initialization", rt_accumulated(SIM_TIMER_INIT), rt_accumulated(SIM_TIMER_INIT)/total100);

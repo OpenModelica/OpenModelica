@@ -14,16 +14,11 @@ try { // Try to add an event listener like a webworker thread
     var data = e.data;
     if (!data) return;
     if (data.preload) {
-      var error = function() {console.log('error...'); /* self.postError({message: "Preload failed"}); */ };
       if (!preloadComplete) {
-        FS.createPreloadedFile('/', data.basename + "_init.xml", data.basename + "_init.xml", true, false, function() {
         FS.createLazyFile('/', data.basename + "_info.xml", data.basename + "_info.xml", true, false);
         preloadComplete = true;
-        self.postMessage({preloaded:true});
-      }, error);
-      } else {
-        self.postMessage({preloaded:true});
       }
+      self.postMessage({preloaded:true});
       return;
     }
     var result = {};

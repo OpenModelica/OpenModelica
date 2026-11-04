@@ -99,6 +99,6 @@ buildModel(test_dumpEncapsulateConditions); getErrorString();
 // ========================================
 //
 //
-// {"test_dumpEncapsulateConditions","test_dumpEncapsulateConditions_init.xml"}
+// {"test_dumpEncapsulateConditions","test_dumpEncapsulateConditions_init.bin"}
 // ""
 // endResult

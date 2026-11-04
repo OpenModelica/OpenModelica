@@ -21,7 +21,7 @@ buildModel(test_dumpTransformedModelica); getErrorString();
 // ""
 // true
 // ""
-// {"test_dumpTransformedModelica","test_dumpTransformedModelica_init.xml"}
+// {"test_dumpTransformedModelica","test_dumpTransformedModelica_init.bin"}
 // "Notification: The following Modelica-like model represents the back-end DAE for the 'dumpindxdae' stage:
 // /* This is probably not complete. */
 // model test_dumpTransformedModelica

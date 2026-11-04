@@ -75,10 +75,10 @@ abs(val(c.T[2,6], 1, "resizablePartialLoopsGrid_26.mat") - 4.33123383379216e-4) 
 // Result:
 // true
 // ""
-// {"resizablePartialLoopsChain", "resizablePartialLoopsChain_init.xml"}
+// {"resizablePartialLoopsChain", "resizablePartialLoopsChain_init.bin"}
 // ""
 // 0
-// {"resizablePartialLoopsGrid", "resizablePartialLoopsGrid_init.xml"}
+// {"resizablePartialLoopsGrid", "resizablePartialLoopsGrid_init.bin"}
 // ""
 // 0
 // true

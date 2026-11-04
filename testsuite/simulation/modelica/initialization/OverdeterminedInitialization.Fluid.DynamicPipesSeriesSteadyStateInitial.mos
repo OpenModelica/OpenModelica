@@ -16,7 +16,7 @@ buildModel(OverdeterminedInitialization.Fluid.DynamicPipesSeriesSteadyStateIniti
 // ""
 // true
 // ""
-// {"OverdeterminedInitialization.Fluid.DynamicPipesSeriesSteadyStateInitial", "OverdeterminedInitialization.Fluid.DynamicPipesSeriesSteadyStateInitial_init.xml"}
+// {"OverdeterminedInitialization.Fluid.DynamicPipesSeriesSteadyStateInitial", "OverdeterminedInitialization.Fluid.DynamicPipesSeriesSteadyStateInitial_init.bin"}
 // "[Modelica 4.0.0+maint.om/Media/Water/IF97_Utilities.mo:897:9-897:73:writable] Warning: Output parameter bpro.cv was not assigned a value. This is deprecated and will become an error in future releases.
 // [Modelica 4.0.0+maint.om/Media/Water/IF97_Utilities.mo:934:9-934:73:writable] Warning: Output parameter bpro.cv was not assigned a value. This is deprecated and will become an error in future releases.
 // [Modelica 4.0.0+maint.om/Media/Water/IF97_Utilities.mo:897:9-897:73:writable] Warning: Output parameter bpro.cv was not assigned a value. This is deprecated and will become an error in future releases.

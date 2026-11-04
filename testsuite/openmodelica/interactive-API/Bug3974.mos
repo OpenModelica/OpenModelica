@@ -26,7 +26,7 @@ v;
 // Result:
 // true
 // ""
-// {"ModelTestBug3974", "ModelTestBug3974_init.xml"}
+// {"ModelTestBug3974", "ModelTestBug3974_init.bin"}
 // ""
 // record SimulationResult
 //     resultFile = "ModelTestBug39741.mat",

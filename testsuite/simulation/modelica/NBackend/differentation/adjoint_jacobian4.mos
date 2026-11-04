@@ -381,6 +381,6 @@ buildModel(AdjointJacobian4); getErrorString();
 //
 // 0  | {1} .$RES_SIM_6 ...{$pDER_INI_LS_JAC_1.$RES_SIM_6} ... {$SEED_INI_LS_JAC_1.y[{}]}
 //
-// {"AdjointJacobian4", "AdjointJacobian4_init.xml"}
+// {"AdjointJacobian4", "AdjointJacobian4_init.bin"}
 // ""
 // endResult

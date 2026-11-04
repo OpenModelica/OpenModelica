@@ -261,7 +261,7 @@ public:
   int askForExit();
   void beforeClosingMainWindow();
   void openDroppedFile(const QMimeData *pMimeData);
-  void loadCompiledModel(const QString &executableFilePath, const QString &modelInitFilePath, const QString &resultFilePath);
+  void loadCompiledModel(const QString &executableFilePath, const QString &resultFilePath);
   void openResultFile(const QString &fileName);
   void simulate(LibraryTreeItem *pLibraryTreeItem);
   void simulateBuildOnly(LibraryTreeItem *pLibraryTreeItem);

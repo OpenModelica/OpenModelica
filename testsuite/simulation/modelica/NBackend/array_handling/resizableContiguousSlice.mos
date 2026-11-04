@@ -31,7 +31,7 @@ val(y[5], 1, "resizableContiguousSlice_res.mat");
 // ""
 // true
 // ""
-// {"resizableContiguousSlice", "resizableContiguousSlice_init.xml"}
+// {"resizableContiguousSlice", "resizableContiguousSlice_init.bin"}
 // ""
 // 1
 // 0

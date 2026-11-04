@@ -42,6 +42,7 @@ GlobalSettings::GlobalSettings()
   , _tolerance(1e-6)
   , _emitResults(EMIT_ALL)
   , _variableFilter(".*")
+  , _listVariables(false)
   , _infoOutput(true)
   , _selected_solver("euler")
   , _selected_lin_solver("dgesvSolver")
@@ -192,6 +193,16 @@ string GlobalSettings::getParameterOverrides()
 void GlobalSettings::setParameterOverrides(string overrides)
 {
   _parameterOverrides = overrides;
+}
+
+bool GlobalSettings::getListVariables()
+{
+  return _listVariables;
+}
+
+void GlobalSettings::setListVariables(bool list)
+{
+  _listVariables = list;
 }
 
 string GlobalSettings::getInputPath()

@@ -64,8 +64,8 @@ pub(super) fn prof_plan(
             info: src_info(info),
         });
     }
-    // C's `info.id` is the variable's `_init.xml` value reference: one counter from
-    // 1000 over `SerializeInitXML.modelVariables`' lists, the alias and sensitivity
+    // C's `info.id` is the variable's `_init.bin` value reference: one counter from
+    // 1000 over `SerializeInitBin.variables`' lists, the alias and sensitivity
     // variables included. The report lists `modelData`'s arrays instead, so an id is
     // not a position in it.
     let mut vr_of: HashMap<String, u32> = HashMap::default();
@@ -253,7 +253,7 @@ pub(super) fn collect_param_bindings(
     out
 }
 
-/// A literal the `_init.xml` would carry verbatim as a `start` attribute.
+/// A literal the `_init.bin` would carry verbatim as a `start` attribute.
 fn is_const_exp(e: &DAE::Exp) -> bool {
     matches!(
         e,

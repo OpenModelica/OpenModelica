@@ -76,7 +76,6 @@ readFile("fmi_attributes_15_tmp.xml")
 //       <File name=\"fmi_attributes_15_18spd.c\" />
 //       <File name=\"fmi_attributes_15_FMU.c\" />
 //       <File name=\"fmi_attributes_15_functions.c\" />
-//       <File name=\"fmi_attributes_15_init_fmu.c\" />
 //       <File name=\"fmi_attributes_15_records.c\" />
 //       <File name=\"fmi-export/fmu2_model_interface.c\" />
 //       <File name=\"fmi-export/fmu_read_flags.c\" />
@@ -91,6 +90,7 @@ readFile("fmi_attributes_15_tmp.xml")
 //       <File name=\"simulation/omc_simulation_util.c\" />
 //       <File name=\"simulation/options.c\" />
 //       <File name=\"simulation/simulation_info_json.c\" />
+//       <File name=\"simulation/simulation_input.c\" />
 //       <File name=\"simulation/simulation_omc_assert.c\" />
 //       <File name=\"simulation/solver/delay.c\" />
 //       <File name=\"simulation/solver/discrete_changes.c\" />
@@ -117,6 +117,7 @@ readFile("fmi_attributes_15_tmp.xml")
 //       <File name=\"util/omc_error.c\" />
 //       <File name=\"util/omc_file.c\" />
 //       <File name=\"util/omc_init.c\" />
+//       <File name=\"util/omc_init_bin.c\" />
 //       <File name=\"util/omc_mmap.c\" />
 //       <File name=\"util/omc_msvc.c\" />
 //       <File name=\"util/omc_numbers.c\" />

@@ -22,8 +22,7 @@ translateModel(ticket5670);
 getErrorString();
 
 // read only the modelVariables from xml
-system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" ticket5670_init.xml >Bug5670.xml"); getErrorString();
-readFile("Bug5670.xml"); getErrorString();
+readInitFile("ticket5670_init.bin"); getErrorString();
 
 buildModelFMU(ticket5670,version="2.0");
 getErrorString();
@@ -38,58 +37,13 @@ readFile("Bug5670.xml"); getErrorString();
 // true
 // true
 // ""
-// 0
-// ""
-// "  <ModelVariables>
-//
-//   <ScalarVariable
-//     name = \"y_float\"
-//     valueReference = \"1000\"
-//     variability = \"continuous\" isDiscrete = \"false\"
-//     causality = \"output\" isValueChangeable = \"false\"
-//     alias = \"noAlias\"
-//     classIndex = \"0\" classType = \"rAlg\"
-//     isProtected = \"false\" hideResult = \"\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"&lt;interactive&gt;\" startLine = \"3\" startColumn = \"3\" endLine = \"3\" endColumn = \"22\" fileWritable = \"true\">
-//     <Real start=\"2.2\" fixed=\"false\" useNominal=\"false\" />
-//   </ScalarVariable>
-//   <ScalarVariable
-//     name = \"y_int\"
-//     valueReference = \"1001\"
-//     variability = \"discrete\" isDiscrete = \"true\"
-//     causality = \"output\" isValueChangeable = \"false\"
-//     alias = \"noAlias\"
-//     classIndex = \"0\" classType = \"iAlg\"
-//     isProtected = \"false\" hideResult = \"\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"&lt;interactive&gt;\" startLine = \"4\" startColumn = \"3\" endLine = \"4\" endColumn = \"23\" fileWritable = \"true\">
-//     <Integer start=\"1\" fixed=\"false\" />
-//   </ScalarVariable>
-//   <ScalarVariable
-//     name = \"y_bool\"
-//     valueReference = \"1002\"
-//     variability = \"discrete\" isDiscrete = \"true\"
-//     causality = \"output\" isValueChangeable = \"false\"
-//     alias = \"noAlias\"
-//     classIndex = \"0\" classType = \"bAlg\"
-//     isProtected = \"false\" hideResult = \"\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"&lt;interactive&gt;\" startLine = \"6\" startColumn = \"3\" endLine = \"6\" endColumn = \"24\" fileWritable = \"true\">
-//     <Boolean start=\"true\" fixed=\"false\" />
-//   </ScalarVariable>
-//   <ScalarVariable
-//     name = \"y_string\"
-//     valueReference = \"1003\"
-//     variability = \"continuous\" isDiscrete = \"false\"
-//     causality = \"output\" isValueChangeable = \"false\"
-//     alias = \"noAlias\"
-//     classIndex = \"0\" classType = \"sAlg\"
-//     isProtected = \"false\" hideResult = \"\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"&lt;interactive&gt;\" startLine = \"5\" startColumn = \"3\" endLine = \"5\" endColumn = \"25\" fileWritable = \"true\">
-//     <String start=\"test\" fixed=\"false\" />
-//   </ScalarVariable>
-//
-//
-//
-//   </ModelVariables>
+// "model ticket5670
+// sizes numberOfRealAlgebraicVariables=1 numberOfIntegerAlgebraicVariables=1 numberOfBooleanAlgebraicVariables=1 numberOfStringAlgebraicVariables=1 numberOfOutputVariables=4
+// experiment startTime=0.0 stopTime=1.0 stepSize=0.002 tolerance=1e-6 solver=dassl outputFormat=mat variableFilter=\".*\"
+// rAlg y_float Real continuous causality=output start=2.2
+// iAlg y_int Integer discrete causality=output start=1
+// bAlg y_bool Boolean discrete causality=output start=true
+// sAlg y_string String continuous causality=output start=\"test\"
 // "
 // ""
 // "ticket5670.fmu"

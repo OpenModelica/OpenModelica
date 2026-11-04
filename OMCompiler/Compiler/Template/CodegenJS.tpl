@@ -57,10 +57,7 @@ then
 #!/usr/bin/nodejs --max-old-space-size=8192
 var fs = require('fs');
 
-var initXML = fs.readFileSync('./<%fileNamePrefix%>_init.xml');
-
 var mod = require('./<%fileNamePrefix%>.js');
-mod.FS_createDataFile("/", '<%fileNamePrefix%>_init.xml', initXML, true, false);
 mod.FS_createLazyFile("/", '<%fileNamePrefix%>_info.xml', '<%fileNamePrefix%>_info.xml', true, false);
 mod.callMain(process.argv.slice(2));
 

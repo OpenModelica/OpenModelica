@@ -25,6 +25,6 @@ buildModel(test_dumpConstrepl); getErrorString();
 // Replacements: (0)
 // ========================================
 //
-// {"test_dumpConstrepl","test_dumpConstrepl_init.xml"}
+// {"test_dumpConstrepl","test_dumpConstrepl_init.bin"}
 // ""
 // endResult

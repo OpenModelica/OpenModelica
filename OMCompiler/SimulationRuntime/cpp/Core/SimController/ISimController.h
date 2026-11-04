@@ -54,6 +54,7 @@ struct SimSettings
   string inputPath;
   string outputPath;
   string parameterOverrides;
+  bool listVariables;
 };
 
 /**

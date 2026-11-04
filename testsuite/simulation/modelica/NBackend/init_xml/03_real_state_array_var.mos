@@ -19,39 +19,19 @@ end StateArrayVariable;
 
 buildModel(StateArrayVariable); getErrorString();
 
-system("sed -n '/<ArrayVariable/,/<\\/ArrayVariable>/p' StateArrayVariable_init.xml > StateArrayVariable_init.tmp.xml");
-initFileContent := readFile("StateArrayVariable_init.tmp.xml");
+initFileContent := readInitFile("StateArrayVariable_init.bin");
 
 // Result:
 // true
 // true
 // ""
-// {"StateArrayVariable", "StateArrayVariable_init.xml"}
+// {"StateArrayVariable", "StateArrayVariable_init.bin"}
 // ""
-// 0
-// "  <ArrayVariable
-//     name = \"x\"
-//     valueReference = \"1000\"
-//     variability = \"continuous\" isDiscrete = \"false\"
-//     causality = \"local\" isValueChangeable = \"false\"
-//     alias = \"noAlias\"
-//     classIndex = \"0\" classType = \"rSta\"
-//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
-//     <Dimension start=\"5\"/>
-//     <Real start=\"1.0 2.0 3.0 4.0 5.0\" fixed=\"true\" useNominal=\"true\" nominal=\"1.0 1.0 2.0 1.0 1.0\" />
-//   </ArrayVariable>
-//   <ArrayVariable
-//     name = \"der(x)\"
-//     valueReference = \"1001\"
-//     variability = \"continuous\" isDiscrete = \"false\"
-//     causality = \"local\" isValueChangeable = \"false\"
-//     alias = \"noAlias\"
-//     classIndex = \"0\" classType = \"rDer\"
-//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
-//     <Dimension start=\"5\"/>
-//     <Real fixed=\"false\" useNominal=\"false\" />
-//   </ArrayVariable>
+// "model StateArrayVariable
+// sizes numberOfContinuousStates=1 numberOfIntegerParameters=1
+// experiment startTime=0.0 stopTime=1.0 stepSize=0.002 tolerance=1e-6 solver=dassl outputFormat=mat variableFilter=\".*\"
+// rSta x Real continuous fixed useNominal hideResult=false dimensions=[5] start={1.0, 2.0, 3.0, 4.0, 5.0} nominal={1.0, 1.0, 2.0, 1.0, 1.0}
+// rDer der(x) Real continuous hideResult=false dimensions=[5]
+// iPar p Integer parameter causality=parameter changeable fixed hideResult=false start=5
 // "
 // endResult

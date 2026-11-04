@@ -2890,6 +2890,23 @@ pub fn alarm(seconds: i32) -> i32 {
     0
 }
 
+pub fn writeBinaryFileAsCArray(binFile: ArcStr, outFile: ArcStr) -> bool {
+    let Ok(bytes) = openmodelica_wasi::fs::read(binFile.as_str()) else {
+        return false;
+    };
+    let mut out = String::with_capacity(4 * bytes.len() + 8);
+    out.push_str("{\n");
+    for line in bytes.chunks(32) {
+        for b in line {
+            out.push_str(&b.to_string());
+            out.push(',');
+        }
+        out.push('\n');
+    }
+    out.push_str("}\n");
+    openmodelica_wasi::fs::write(outFile.as_str(), out.as_bytes()).is_ok()
+}
+
 pub fn covertTextFileToCLiteral(textFile: ArcStr, outFile: ArcStr, target: ArcStr) -> bool {
     let Ok(bytes) = openmodelica_wasi::fs::read(textFile.as_str()) else {
         return false;

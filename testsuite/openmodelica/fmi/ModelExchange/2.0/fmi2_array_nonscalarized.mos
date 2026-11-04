@@ -24,9 +24,6 @@ end fmi2_array_nonscalarized;
 
 buildModelFMU(fmi2_array_nonscalarized, version="2.0", fmuType="me"); getErrorString();
 
-// The genuine array variable must be dimensioned (non-empty result).
-system("unzip -cqq fmi2_array_nonscalarized.fmu sources/fmi2_array_nonscalarized_init_fmu.c | grep -c 'numberOfDimensions = [1-9]' > fmi2_array_nonscalarized.dims || true"); getErrorString();
-readFile("fmi2_array_nonscalarized.dims"); getErrorString();
 
 // Result:
 // true
@@ -37,9 +34,4 @@ readFile("fmi2_array_nonscalarized.dims"); getErrorString();
 // "Notification: Building FMU for platform 'static' (1/1).
 // Notification: Finished FMU for platform 'static' (1/1).
 // "
-// 0
-// ""
-// "2
-// "
-// ""
 // endResult

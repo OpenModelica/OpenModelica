@@ -89,6 +89,13 @@ algorithm
   val := ValuesMake.makeArray(rows);
 end readDataset;
 
+public function readInitFile
+  input String filename;
+  output String text;
+
+  external "C" text=SimulationResults_readInitFile(filename) annotation(Library = "omcruntime");
+end readInitFile;
+
 public function readSimulationResultSize
   input String filename;
   output Integer size;

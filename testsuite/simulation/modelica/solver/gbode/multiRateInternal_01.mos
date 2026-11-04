@@ -32,7 +32,7 @@ simulate(SlowFastDynamics, simflags="-s=gbode -gbratio=0.5 -gbm=radauIIA3 -gbfm=
 // ""
 // true
 // ""
-// {"SlowFastDynamics", "SlowFastDynamics_init.xml"}
+// {"SlowFastDynamics", "SlowFastDynamics_init.bin"}
 // ""
 // record SimulationResult
 //     resultFile = "SlowFastDynamics_res.mat",

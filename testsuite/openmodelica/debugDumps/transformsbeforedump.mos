@@ -21,6 +21,6 @@ buildModel(testTransformsbeforedump); getErrorString();
 // ""
 // true
 // ""
-// {"testTransformsbeforedump","testTransformsbeforedump_init.xml"}
+// {"testTransformsbeforedump","testTransformsbeforedump_init.bin"}
 // ""
 // endResult

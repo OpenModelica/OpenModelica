@@ -18,27 +18,18 @@ end ParameterArrayVariable;
 
 buildModel(ParameterArrayVariable); getErrorString();
 
-system("sed -n '/<ArrayVariable/,/<\\/ArrayVariable>/p' ParameterArrayVariable_init.xml > ParameterArrayVariable_init.tmp.xml");
-initFileContent := readFile("ParameterArrayVariable_init.tmp.xml");
+initFileContent := readInitFile("ParameterArrayVariable_init.bin");
 
 // Result:
 // true
 // true
 // ""
-// {"ParameterArrayVariable", "ParameterArrayVariable_init.xml"}
+// {"ParameterArrayVariable", "ParameterArrayVariable_init.bin"}
 // ""
-// 0
-// "  <ArrayVariable
-//     name = \"intParamArray\"
-//     valueReference = \"1001\"
-//     variability = \"parameter\" isDiscrete = \"true\"
-//     causality = \"calculatedParameter\" isValueChangeable = \"false\"
-//     alias = \"noAlias\"
-//     classIndex = \"1\" classType = \"iPar\"
-//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
-//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
-//     <Dimension start=\"5\"/>
-//     <Integer start=\"1\" fixed=\"true\" />
-//   </ArrayVariable>
+// "model ParameterArrayVariable
+// sizes numberOfIntegerParameters=2
+// experiment startTime=0.0 stopTime=1.0 stepSize=0.002 tolerance=1e-6 solver=dassl outputFormat=mat variableFilter=\".*\"
+// iPar p Integer parameter causality=parameter changeable fixed hideResult=false start=5
+// iPar intParamArray Integer parameter causality=calculatedParameter fixed hideResult=false dimensions=[5] start=1
 // "
 // endResult

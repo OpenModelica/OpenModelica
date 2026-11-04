@@ -29,6 +29,6 @@ buildModel(MWE_14636); getErrorString();
 // [BEFORE] [ARRY] (3) $DER.e = e / q; ($RES_SIM_1)
 // [AFTER ] [ARRY] (3) $pDER_ODE_JAC.$DER.e = ($SEED_ODE_JAC.e .* q .- $SEED_ODE_JAC.q .* e) / q ^ 2.0; ($RES_SIM_1)
 //
-// {"MWE_14636", "MWE_14636_init.xml"}
+// {"MWE_14636", "MWE_14636_init.bin"}
 // ""
 // endResult

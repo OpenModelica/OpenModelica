@@ -80,7 +80,7 @@ abs(val(fixed.p.Q, 1, "resizableConnectChain_12.mat") - val(fixed.p.Q, 1, "resiz
 // ""
 // true
 // ""
-// {"resizableConnectChain", "resizableConnectChain_init.xml"}
+// {"resizableConnectChain", "resizableConnectChain_init.bin"}
 // ""
 // 0
 // 0

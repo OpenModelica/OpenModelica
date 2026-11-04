@@ -111,13 +111,13 @@ val(l2.sink.hIn, 3, "resizableStreams_7.mat");
 //
 //   bundle.n ..... OPTIMAL: 4 (ORIGINAL: 5)
 //
-// {"resizableStreams", "resizableStreams_init.xml"}
+// {"resizableStreams", "resizableStreams_init.bin"}
 // "Warning: --resizableArrays: the parameters bundle.npipes cannot be used to resize the model, other values would leave connectors unconnected. They keep their values.
 // "
 // 0
 // true
 // ""
-// {"resizableStreams_ref", "resizableStreams_ref_init.xml"}
+// {"resizableStreams_ref", "resizableStreams_ref_init.bin"}
 // ""
 // 0
 // true

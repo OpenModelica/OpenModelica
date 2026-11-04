@@ -166,6 +166,6 @@ buildModel(oneArgBuiltins); getErrorString();
 // [BEFORE] [SCAL] (1) $DER.var17 = $FUN_15; ($RES_SIM_0)
 // [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.var17 = $pDER_ODE_JAC.$FUN_15; ($RES_SIM_0)
 //
-// {"oneArgBuiltins", "oneArgBuiltins_init.xml"}
+// {"oneArgBuiltins", "oneArgBuiltins_init.bin"}
 // ""
 // endResult

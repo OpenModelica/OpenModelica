@@ -165,6 +165,8 @@ pub struct SimFlags {
     pub output_format: Option<String>,
     /// `-noemit`: no result file, C's `sim_noemit` (which it treats as `empty`).
     pub noemit: bool,
+    /// `-listVariables`: print the variables as JSON instead of simulating.
+    pub list_variables: bool,
     /// `-single`: store the `.mat` real data (`data_1`/`data_2`) as 4-byte single
     /// precision (C's `FLAG_SINGLE_PRECISION`). The simulation itself always runs
     /// in double; this only narrows the result file.
@@ -429,6 +431,15 @@ impl SimFlags {
         self.gb.iter().rev().find(|(n, _)| n == name).map(|(_, v)| v.clone())
     }
 
+    /// The `-override`/`-overrideFile` value of `name`; a later one wins.
+    pub fn override_value(&self, name: &str) -> Option<String> {
+        self.overrides
+            .iter()
+            .rev()
+            .find(|(n, _)| n == name)
+            .map(|(_, v)| v.clone())
+    }
+
     /// Whether a value-less `-gb*` flag was given.
     pub fn gb_toggle(&self, name: &str) -> bool {
         self.gb.iter().any(|(n, _)| n == name)
@@ -631,6 +642,7 @@ const C_FLAGS: &[(&str, bool)] = &[
     ("lss", true),
     ("lssMaxDensity", true),
     ("lssMinSize", true),
+    ("listVariables", false),
     ("lv", true),
     ("lvMaxWarn", true),
     ("lv_time", true),
@@ -855,6 +867,7 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "tolerance" => f.tolerance = Some(real(name, &value(name)?)?),
             "outputFormat" => f.output_format = Some(output_format(&value(name)?)?),
             "noemit" => f.noemit = true,
+            "listVariables" => f.list_variables = true,
             "single" => f.single_precision = true,
             "mat_sync" => f.mat_sync = Some(int(name, &value(name)?)?.max(0) as u32),
             "outputPath" => f.output_path = Some(value(name)?),

@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "simulation_input_xml.h"
+#include "simulation_input.h"
 #include "openmodelica_types.h"
 #include "util/base_array.h"
 #include "util/boolean_array.h"

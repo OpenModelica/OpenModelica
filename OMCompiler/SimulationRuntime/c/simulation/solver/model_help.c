@@ -831,6 +831,51 @@ void setAllParamsToStart(SIMULATION_INFO *simulationInfo, const MODEL_DATA *mode
   }
 }
 
+/**
+ * @brief Set the start attribute of all variables and parameters to their
+ * current value. For an array only the first element.
+ *
+ * @param data  Runtime data struct.
+ */
+void setStartToCurrentValues(DATA *data)
+{
+  MODEL_DATA *modelData = data->modelData;
+  SIMULATION_INFO *simulationInfo = data->simulationInfo;
+  SIMULATION_DATA *simulationData = data->localData[0];
+  long i;
+
+  for (i = 0; i < modelData->nVariablesRealArray; ++i) {
+    const char *name = modelData->realVarsData[i].info.name;
+    if (name && (0 == strcmp(name, "$dummy") || 0 == strcmp(name, "der($dummy)"))) {
+      continue;
+    }
+    put_real_element(simulationData->realVars[simulationInfo->realVarsIndex[i]], 0, &modelData->realVarsData[i].attribute.start);
+  }
+  for (i = 0; i < modelData->nVariablesIntegerArray; ++i) {
+    put_integer_element(simulationData->integerVars[simulationInfo->integerVarsIndex[i]], 0, &modelData->integerVarsData[i].attribute.start);
+  }
+  for (i = 0; i < modelData->nVariablesBooleanArray; ++i) {
+    put_boolean_element(simulationData->booleanVars[simulationInfo->booleanVarsIndex[i]], 0, &modelData->booleanVarsData[i].attribute.start);
+  }
+#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING > 0
+  for (i = 0; i < modelData->nVariablesStringArray; ++i) {
+    put_string_element(simulationData->stringVars[simulationInfo->stringVarsIndex[i]], 0, &modelData->stringVarsData[i].attribute.start);
+  }
+#endif
+  for (i = 0; i < modelData->nParametersRealArray; ++i) {
+    put_real_element(simulationInfo->realParameter[simulationInfo->realParamsIndex[i]], 0, &modelData->realParameterData[i].attribute.start);
+  }
+  for (i = 0; i < modelData->nParametersIntegerArray; ++i) {
+    put_integer_element(simulationInfo->integerParameter[simulationInfo->integerParamsIndex[i]], 0, &modelData->integerParameterData[i].attribute.start);
+  }
+  for (i = 0; i < modelData->nParametersBooleanArray; ++i) {
+    put_boolean_element(simulationInfo->booleanParameter[simulationInfo->booleanParamsIndex[i]], 0, &modelData->booleanParameterData[i].attribute.start);
+  }
+  for (i = 0; i < modelData->nParametersStringArray; ++i) {
+    put_string_element(simulationInfo->stringParameter[simulationInfo->stringParamsIndex[i]], 0, &modelData->stringParameterData[i].attribute.start);
+  }
+}
+
 /*! \fn storeOldValues
  *
  *  This function copies states and time into their old-values for event handling.
@@ -1030,7 +1075,7 @@ void allocModelDataVars(MODEL_DATA* modelData, modelica_boolean allocAlias, thre
   modelData->stringParameterData = (STATIC_STRING_DATA*) omc_alloc_interface.malloc_uncollectable(modelData->nParametersStringArray * sizeof(STATIC_STRING_DATA));
   assertStreamPrint(threadData, modelData->nParametersStringArray == 0 || modelData->stringParameterData != NULL, "Out of memory");
 
-  // Enumeration types, which only read_input_xml fills
+  // Enumeration types, which read_input fills
   for (long i = 0; i < modelData->nVariablesIntegerArray; i++) {
     modelData->integerVarsData[i].enumeration = NULL;
   }
@@ -1163,9 +1208,7 @@ void freeModelDataVars(MODEL_DATA* modelData)
 /**
  * @brief Free the var data arrays allocated by `allocModelDataVars`.
  *
- * Leaves the VAR_INFO strings alone. Use this instead of `freeModelDataVars`
- * when the strings were not allocated by `read_var_info`, e.g. for FMUs, where
- * `read_input_fmu` points them at string literals in the generated code.
+ * Leaves the VAR_INFO strings alone; `freeModelDataVars` frees them first.
  *
  * @param modelData   Pointer to model data.
  */
@@ -1422,7 +1465,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   memset(data->localData, 0, SIZERINGBUFFER * sizeof(SIMULATION_DATA));
   lookupRingBuffer(data->simulationData, (void**) data->localData);
 
-  /* modelData vars, parameter and alias arrays are already allocated in read_input_xml */
+  /* modelData vars, parameter and alias arrays are already allocated in read_input */
 
   data->modelData->samplesInfo = (SAMPLE_INFO*) omc_alloc_interface.malloc_uncollectable(data->modelData->nSamples * sizeof(SAMPLE_INFO));
   data->simulationInfo->nextSampleEvent = data->simulationInfo->startTime;
@@ -1635,13 +1678,7 @@ void deInitializeDataStruc(DATA *data)
   omc_alloc_interface.free_uncollectable(data->localData);
   freeRingBuffer(data->simulationData);
 
-  if (data->callback->read_input_fmu) {
-    /* FMU: `read_input_fmu` points the VAR_INFO strings at literals in the generated code,
-     * but the arrays were still allocated by `allocModelDataVars` in `fmi2Instantiate`. */
-    freeModelDataVarArrays(data->modelData);
-  } else {
-    freeModelDataVars(data->modelData);
-  }
+  freeModelDataVars(data->modelData);
 
   omc_alloc_interface.free_uncollectable(data->modelData->samplesInfo);
   free(data->simulationInfo->nextSampleTimes);
@@ -1767,7 +1804,7 @@ void deInitializeDataStruc(DATA *data)
   /* Free model info xml data */
   modelInfoDeinit(&(data->modelData->modelDataXml));
 
-  /* GC_strdup'd from the init XML and the command line. */
+  /* GC_strdup'd from the init file and the command line. */
   omc_rc_release((void*) data->simulationInfo->solverMethod);
   omc_rc_release((void*) data->simulationInfo->outputFormat);
   omc_rc_release((void*) data->simulationInfo->variableFilter);

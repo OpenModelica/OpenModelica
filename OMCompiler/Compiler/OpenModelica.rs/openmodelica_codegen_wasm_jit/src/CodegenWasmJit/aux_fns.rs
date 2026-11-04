@@ -147,10 +147,10 @@ pub(super) fn build_equations_synchronous_fn(
 }
 
 /// Build `functionInitStartValues(SimData*)`: every real variable's `start`
-/// attribute slot, in real-variable index order — the values C's `_init.xml`
+/// attribute slot, in real-variable index order — the values C's `_init.bin`
 /// carries. The driver copies the slots over the live region afterwards (C's
 /// `setAllVarsToStart`), so `-iif`/`-override` land in between. Literals only, as
-/// in C's `SerializeInitXML.expString`: evaluating a parameter-bound start here
+/// in C's `SerializeInitBin.literalElements`: evaluating a parameter-bound start here
 /// would put it on the wrong side of the `pre`-value snapshot.
 pub(super) fn build_init_start_values_fn(
     reals: &[&SimCodeVar::SimVar],
@@ -216,8 +216,8 @@ pub(super) fn bound_attr_equations(
     out
 }
 
-/// What C's `_init.xml` records for an attribute, i.e. what
-/// `SerializeInitXML.expString` serializes: a literal, and nothing else.
+/// What C's `_init.bin` records for an attribute, i.e. what
+/// `SerializeInitBin.literalElements` serializes: a literal, and nothing else.
 pub(super) fn literal_value(exp: &Option<metamodelica::Ref<DAE::Exp>>) -> Option<f64> {
     fn eval(e: &DAE::Exp) -> Option<f64> {
         use DAE::Exp as E;

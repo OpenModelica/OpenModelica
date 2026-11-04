@@ -22,6 +22,6 @@ buildModel(testDumpderrepl); getErrorString();
 // false
 // "Error: Unknown debug flag dumpderrepl.
 // "
-// {"testDumpderrepl","testDumpderrepl_init.xml"}
+// {"testDumpderrepl","testDumpderrepl_init.bin"}
 // ""
 // endResult

@@ -3,6 +3,6 @@
 buildModel(Modelica.Blocks.Examples.Filter); getErrorString();
 
 // Result:
-// {"Modelica.Blocks.Examples.Filter", "Modelica.Blocks.Examples.Filter_init.xml"}
+// {"Modelica.Blocks.Examples.Filter", "Modelica.Blocks.Examples.Filter_init.bin"}
 // ""
 // endResult

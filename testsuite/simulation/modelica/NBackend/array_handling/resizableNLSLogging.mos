@@ -30,7 +30,7 @@ system("./resizableNLSLogging -override=n=5 -nls=homotopy -lv=LOG_NLS_V", "resiz
 // Result:
 // true
 // ""
-// {"resizableNLSLogging", "resizableNLSLogging_init.xml"}
+// {"resizableNLSLogging", "resizableNLSLogging_init.bin"}
 // ""
 // 0
 // 0

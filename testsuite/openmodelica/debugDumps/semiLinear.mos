@@ -21,6 +21,6 @@ buildModel(testSemiLinear); getErrorString();
 // ""
 // true
 // ""
-// {"testSemiLinear","testSemiLinear_init.xml"}
+// {"testSemiLinear","testSemiLinear_init.bin"}
 // ""
 // endResult

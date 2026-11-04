@@ -21,6 +21,6 @@ buildModel(testDump); getErrorString();
 // ""
 // true
 // ""
-// {"testDump","testDump_init.xml"}
+// {"testDump","testDump_init.bin"}
 // ""
 // endResult

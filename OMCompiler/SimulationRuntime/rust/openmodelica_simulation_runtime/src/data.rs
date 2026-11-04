@@ -931,7 +931,7 @@ pub fn free_data_struc(data: *mut DATA, thread_data: *mut threadData_t) {
     ] {
         free(p);
     }
-    // The generated `read_simulation_info` and `setupDataStruc`'s `GC_strdup`s.
+    // `read_experiment`'s and `setupDataStruc`'s `GC_strdup`s.
     for p in [
         &mut si.solverMethod,
         &mut si.outputFormat,

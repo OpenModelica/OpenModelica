@@ -21,6 +21,6 @@ buildModel(testDumpParamrepl); getErrorString();
 // ""
 // true
 // ""
-// {"testDumpParamrepl","testDumpParamrepl_init.xml"}
+// {"testDumpParamrepl","testDumpParamrepl_init.bin"}
 // ""
 // endResult

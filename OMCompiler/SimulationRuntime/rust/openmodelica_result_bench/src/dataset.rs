@@ -1,10 +1,10 @@
 //! The benchmark's input: one OpenModelica `.mat` read into memory, plus the
-//! units and variability its `_init.xml` records, as the neutral description
+//! units and variability its `_init.bin` records, as the neutral description
 //! every writer is then driven from.
 //!
 //! A `.mat` alone has no units and no types (OpenModelica only appends `[s]` to
 //! `time`'s description), so a comparison driven from it alone would understate
-//! the metadata every other format carries. The `_init.xml` OpenModelica writes
+//! the metadata every other format carries. The `_init.bin` OpenModelica writes
 //! next to the model has both, so it is used whenever it can be found.
 
 use std::collections::HashMap;
@@ -46,7 +46,10 @@ impl Dataset {
     }
 
     pub fn n_params(&self) -> usize {
-        self.vars.iter().filter(|v| matches!(v.kind, Kind::Param { .. })).count()
+        self.vars
+            .iter()
+            .filter(|v| matches!(v.kind, Kind::Param { .. }))
+            .count()
     }
 
     pub fn n_aliases(&self) -> usize {
@@ -84,7 +87,12 @@ impl Dataset {
     /// The tail of the dotted name, for a table column.
     pub fn short_name(&self) -> String {
         let parts: Vec<&str> = self.name.rsplitn(3, '.').collect();
-        parts.into_iter().rev().skip(usize::from(self.name.matches('.').count() >= 2)).collect::<Vec<_>>().join(".")
+        parts
+            .into_iter()
+            .rev()
+            .skip(usize::from(self.name.matches('.').count() >= 2))
+            .collect::<Vec<_>>()
+            .join(".")
     }
 
     /// The first row, which gives the writers their `unvarying` values.
@@ -102,7 +110,9 @@ impl Dataset {
         // the writers all want it row-major.
         let mut rows = vec![0.0f64; n_rows * n_cols];
         for c in 0..n_cols {
-            let vals = mat.read_vals(c as i32 + 1).ok_or_else(|| format!("column {c} unreadable"))?;
+            let vals = mat
+                .read_vals(c as i32 + 1)
+                .ok_or_else(|| format!("column {c} unreadable"))?;
             for (r, v) in vals.iter().enumerate().take(n_rows) {
                 rows[r * n_cols + c] = *v;
             }
@@ -115,7 +125,11 @@ impl Dataset {
         let mut params = Vec::new();
         for info in &mat.allInfo {
             let a = attrs.get(&info.name);
-            let affine = if info.index < 0 { Affine::negated() } else { Affine::IDENTITY };
+            let affine = if info.index < 0 {
+                Affine::negated()
+            } else {
+                Affine::IDENTITY
+            };
             let kind = if info.isParam {
                 let slot = info.index.unsigned_abs() as usize;
                 let value = mat.params.get(slot.saturating_sub(1)).copied().unwrap_or(0.0);
@@ -124,7 +138,10 @@ impl Dataset {
             } else if info.index.unsigned_abs() == 1 && info.name == "time" {
                 Kind::Time
             } else {
-                Kind::Column { col: info.index.unsigned_abs() - 1, affine }
+                Kind::Column {
+                    col: info.index.unsigned_abs() - 1,
+                    affine,
+                }
             };
             let (comment, unit) = split_unit(&info.descr);
             vars.push(VarDesc {
@@ -143,7 +160,16 @@ impl Dataset {
         let name = std::path::Path::new(path)
             .file_stem()
             .map_or_else(String::new, |s| s.to_string_lossy().trim_end_matches("_res").to_owned());
-        Ok(Dataset { name, vars, rows, n_cols, n_rows, params, start_time, stop_time })
+        Ok(Dataset {
+            name,
+            vars,
+            rows,
+            n_cols,
+            n_rows,
+            params,
+            start_time,
+            stop_time,
+        })
     }
 
     /// `factor` times the rows, by repeating the trajectory: the same variable
@@ -190,9 +216,8 @@ struct Attr {
     discrete: bool,
 }
 
-/// The `<ScalarVariable>` table of an OpenModelica `_init.xml`, scanned for the
-/// attributes a `.mat` cannot hold. Deliberately not a real XML parser: the file
-/// is machine-written and only four attributes are wanted.
+/// The variables of an OpenModelica `_init.bin`, for the attributes a `.mat`
+/// cannot hold.
 struct ModelAttrs(HashMap<String, Attr>);
 
 impl ModelAttrs {
@@ -200,47 +225,37 @@ impl ModelAttrs {
         self.0.get(name)
     }
 
-    /// `<model>_res.mat` -> `<model>_init.xml`; an empty table if it is absent.
+    /// `<model>_res.mat` -> `<model>_init.bin`; an empty table if it is absent.
     fn beside(mat_path: &str) -> ModelAttrs {
-        let path = mat_path.strip_suffix("_res.mat").map(|p| format!("{p}_init.xml"));
-        let Some(text) = path.and_then(|p| std::fs::read_to_string(p).ok()) else {
+        let path = mat_path.strip_suffix("_res.mat").map(|p| format!("{p}_init.bin"));
+        let Some(file) = path.and_then(|p| omc_init::InitFile::read(&p).ok()) else {
             return ModelAttrs(HashMap::new());
         };
-        let mut map = HashMap::new();
-        for chunk in text.split("<ScalarVariable").skip(1) {
-            let Some(name) = attr(chunk, "name") else { continue };
-            let variability = attr(chunk, "variability").unwrap_or_default();
-            // The type element follows the ScalarVariable's own attributes.
-            let ty = if chunk.contains("<Integer ") {
-                VarTy::Integer
-            } else if chunk.contains("<Boolean ") {
-                VarTy::Boolean
-            } else if chunk.contains("<String ") {
-                VarTy::String
-            } else if chunk.contains("<Enumeration ") {
-                VarTy::Enumeration
-            } else {
-                VarTy::Real
-            };
-            let unit = attr(chunk, "unit").unwrap_or_default();
-            let display_unit = attr(chunk, "displayUnit").unwrap_or_else(|| unit.clone());
-            map.insert(
-                name,
-                Attr { unit, display_unit, ty, discrete: variability == "discrete" },
-            );
-        }
+        let map = file
+            .variables
+            .into_iter()
+            .map(|v| {
+                let ty = match v.base_type {
+                    omc_init::INTEGER => VarTy::Integer,
+                    omc_init::BOOLEAN => VarTy::Boolean,
+                    omc_init::STRING => VarTy::String,
+                    omc_init::ENUMERATION => VarTy::Enumeration,
+                    _ => VarTy::Real,
+                };
+                let display_unit = if v.display_unit.is_empty() {
+                    v.unit.clone()
+                } else {
+                    v.display_unit
+                };
+                let attr = Attr {
+                    unit: v.unit,
+                    display_unit,
+                    ty,
+                    discrete: v.variability == 1,
+                };
+                (v.name, attr)
+            })
+            .collect();
         ModelAttrs(map)
     }
-}
-
-fn attr(chunk: &str, key: &str) -> Option<String> {
-    let pat = format!("{key}=\"");
-    let at = chunk.find(&pat)? + pat.len();
-    let end = chunk[at..].find('"')? + at;
-    let raw = &chunk[at..end];
-    Some(if raw.contains('&') { unescape(raw) } else { raw.to_owned() })
-}
-
-fn unescape(s: &str) -> String {
-    s.replace("&quot;", "\"").replace("&apos;", "'").replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
 }

@@ -21,6 +21,6 @@ buildModel(testShowEquationSource); getErrorString();
 // ""
 // true
 // ""
-// {"testShowEquationSource","testShowEquationSource_init.xml"}
+// {"testShowEquationSource","testShowEquationSource_init.bin"}
 // ""
 // endResult

@@ -560,7 +560,8 @@ pub struct MODEL_DATA {
     pub resultFileName: *mut c_char,
     pub modelDir: *const c_char,
     pub modelGUID: *const c_char,
-    pub initXMLData: *const c_char,
+    pub initBinData: *const u8,
+    pub initBinSize: usize,
     pub resourcesDir: *mut c_char,
     pub runTestsuite: modelica_boolean,
 
@@ -995,9 +996,6 @@ pub struct OpenModelicaGeneratedFunctionCallbacks {
     pub dataReconciliationInputNames: Option<unsafe extern "C" fn(*mut DATA, *mut *mut c_char) -> c_int>,
     pub dataReconciliationUnmeasuredVariables: Option<unsafe extern "C" fn(*mut DATA, *mut *mut c_char) -> c_int>,
 
-    pub read_simulation_info: Option<unsafe extern "C" fn(*mut SIMULATION_INFO)>,
-    pub read_input_fmu: Option<unsafe extern "C" fn(*mut MODEL_DATA)>,
-
     pub initialPartialFMIDER: initialAnalyticalJacobian_func_ptr,
     pub functionJacFMIDER_column: jacobianColumn_func_ptr,
     pub INDEX_JAC_FMIDER: c_int,
@@ -1079,7 +1077,7 @@ unsafe extern "C" {
 /// `enum _FLAG` (util/simulation_options.h), indexing `omc_flag`/`omc_flagValue`.
 /// Only the entries the generated code or this runtime reads are named;
 /// `tests/abi_layout.rs` checks every one against the header.
-pub const FLAG_MAX: usize = 158;
+pub const FLAG_MAX: usize = 159;
 pub const FLAG_NO_SCALING: usize = 101;
 pub const FLAG_EMIT_PROTECTED: usize = 15;
 pub const FLAG_F: usize = 17;

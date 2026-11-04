@@ -129,6 +129,6 @@ buildModel(test_dumpinitialsystem); getErrorString();
 // ========================================
 //
 //
-// {"test_dumpinitialsystem","test_dumpinitialsystem_init.xml"}
+// {"test_dumpinitialsystem","test_dumpinitialsystem_init.bin"}
 // ""
 // endResult

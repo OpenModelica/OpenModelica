@@ -1560,7 +1560,7 @@ algorithm
   Print.printBuf("                            * Model.c           The model C code.\n");
   Print.printBuf("                            * Model_functions.c The model functions C code.\n");
   Print.printBuf("                            * Model.makefile    The makefile to compile the model.\n");
-  Print.printBuf("                            * Model_init.xml    The initial values.\n");
+  Print.printBuf("                            * Model_init.bin    The variables and start values.\n");
   //Print.printBuf("\tomc Model.mof            will produce flattened Model on standard output\n");
   Print.printBuf("  omc Script.mos           will run the commands from Script.mos.\n");
   Print.printBuf("  omc Model.mo Modelica    will first load the Modelica library and then produce\n                            flattened Model on standard output.\n");
