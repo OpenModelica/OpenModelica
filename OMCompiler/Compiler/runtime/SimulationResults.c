@@ -844,6 +844,11 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
       names[i] = MMC_STRINGDATA(MMC_CAR(vars));
       vars = MMC_CDR(vars);
       vals = read_csv_dataset(csv, names[i]);
+      if (vals == NULL && i == 0) {
+        /* Reference files such as the MAP-LIB ones call the time column "Time",
+         * which diffSimulationResults accepts too. The output still calls it time. */
+        vals = read_csv_dataset(csv, "Time");
+      }
       if (vals == NULL || csv->numsteps < 2) {
         msg[0] = SystemImpl__basename(inFile);
         msg[1] = names[i];
