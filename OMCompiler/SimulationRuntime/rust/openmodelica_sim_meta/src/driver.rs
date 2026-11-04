@@ -5179,8 +5179,24 @@ fn resolve_solver_method<'a>(method: &'a str, dae_mode: bool) -> Result<&'a str>
 /// [`resolve_solver_method`] plus C's "no states present" swap, which lives in
 /// `startNonInteractiveSimulation` — an FMU steps with the method it was exported
 /// with, so only a standalone run applies it.
-fn resolve_sim_solver_method<'a>(method: &'a str, layout: &SimLayout) -> Result<&'a str> {
+fn resolve_sim_solver_method<'a>(method: &'a str, model: &SimModel) -> Result<&'a str> {
+    let layout = &model.layout;
     let method = resolve_solver_method(method, layout.dae_mode())?;
+    #[cfg(sundials)]
+    if matches!(method, "" | "dassl")
+        && layout.n_states > 100
+        && model.jac_a.as_ref().is_some_and(|j| {
+            (j.rows_by_col.iter().map(Vec::len).sum::<usize>() as f64)
+                < 0.1 * f64::from(layout.n_states) * f64::from(layout.n_states)
+        })
+    {
+        omclog::warning(
+            omclog::STDOUT,
+            false,
+            "Large and sparse system detected: Integration method automatically changed from DASSL to IDA to exploit sparse linear algebra.",
+        );
+        return Ok("ida");
+    }
     // C warns before the swap below.
     crate::fixedstep::deprecation_warning(method);
     // C exempts `optimization` and `symSolver`.
@@ -5241,7 +5257,7 @@ pub fn make_driver(
     sim_data: u32,
     method: &str,
 ) -> Result<(Box<dyn Driver>, &'static str)> {
-    let method = resolve_sim_solver_method(method, &model.layout)?;
+    let method = resolve_sim_solver_method(method, model)?;
     make_driver_resolved(e, model, sim_data, method)
 }
 
@@ -5470,7 +5486,7 @@ pub fn drive(
 
     let mut stats = SolveStats::default();
     let use_events = layout.n_samples > 0 || layout.n_zc > 0 || !model.clocks.is_empty();
-    let method = resolve_sim_solver_method(method, layout)?;
+    let method = resolve_sim_solver_method(method, model)?;
 
     let mut label = "";
     let outcome = (|| -> Result<Vec<f64>> {
