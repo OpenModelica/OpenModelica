@@ -217,6 +217,6 @@ echo(false); getErrorString(); echo(true);
 //
 // true
 // ""
-//
+// true
 // true
 // endResult
