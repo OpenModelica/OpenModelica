@@ -245,7 +245,6 @@ public
       //PartitionData partitionData;
       EventInfo eventInfo;
       Option<DaeModeData> daeModeData                   "Simulation system in case of DAEMode";
-      list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
     end SIM_CODE;
 
     function toString
@@ -353,7 +352,6 @@ public
           UnorderedMap<ComponentRef, SimStrongComponent.Block> equation_map;
           Option<DaeModeData> daeModeData;
           SimJacobian jacA, jacB, jacC, jacD, jacF, jacH, jacAdjoint, jacLfg, jacMrf, jacR0;
-          list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
           mapExp collect_literals, index_delays;
           UnorderedMap<Expression, DelayBuffers> delay_map = UnorderedMap.new<DelayBuffers>(Expression.hash, Expression.isEqual);
           Pointer<Integer> delay_size = Pointer.create(0);
@@ -439,7 +437,6 @@ public
             allSim := listAppend(List.flatten(list(SimStrongComponent.Block.collectEntwinedEquations(blck) for blck in allSim)), allSim);
 
             // ToDo add event system
-            inlineEquations := {};
 
             // ToDo:
             // this has to be adapted at some point SimCodeFuntion needs to be translated
@@ -584,8 +581,7 @@ public
               simcode_map               = simcode_map,
               equation_map              = equation_map,
               eventInfo                 = eventInfo,
-              daeModeData               = daeModeData,
-              inlineEquations           = inlineEquations
+              daeModeData               = daeModeData
             );
         then simCode;
 
@@ -678,7 +674,6 @@ public
         fmiSimulationFlags            = NONE(), // FMI stuff
         partitionData                 = OldSimCode.PARTITIONDATA(-1,{},{},{}),
         daeModeData                   = if isSome(simCode.daeModeData) then SOME(DaeModeData.convert(Util.getOption(simCode.daeModeData))) else NONE(),
-        inlineEquations               = {},
         scalarized                    = Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE),
         fmiFigures                    = {});
     end convert;

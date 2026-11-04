@@ -25,8 +25,6 @@ pub enum Solver {
     Gbode,
     Euler,
     RungeKutta,
-    SymSolver,
-    SymSolverSsc,
     /// `optimize()`'s collocation solver; only selectable where Ipopt is linked.
     Optimization,
 }
@@ -1532,8 +1530,7 @@ impl Offer {
     }
 }
 
-/// `-s`. `symSolver*` need a model translated with `--symSolver`, so they are
-/// accepted but never offered.
+/// `-s`.
 const SOLVERS: &[Value<Solver>] = &[
     ("dassl", Solver::Dassl, Offer::Always),
     ("dasslrt", Solver::Dassl, Offer::Never),
@@ -1543,8 +1540,6 @@ const SOLVERS: &[Value<Solver>] = &[
     ("ida", Solver::Ida, Offer::WithIda),
     ("cvode", Solver::Cvode, Offer::WithCvode),
     ("optimization", Solver::Optimization, Offer::WithIpopt),
-    ("symSolver", Solver::SymSolver, Offer::Never),
-    ("symSolverSsc", Solver::SymSolverSsc, Offer::Never),
 ];
 
 /// `-nls`. Without the archives `kinsol` runs the runtime's own sparse Newton.

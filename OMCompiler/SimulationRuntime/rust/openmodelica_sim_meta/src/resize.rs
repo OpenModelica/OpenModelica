@@ -142,7 +142,6 @@ impl SimMeta {
         }
         let Some(mut r) = self.resize.take() else { return Ok(()) };
         let flags = LayoutFlags {
-            sym_solver: self.layout.sym_solver,
             has_when: self.layout.has_when,
             has_homotopy: self.layout.has_homotopy,
             homotopy_method: self.layout.homotopy_method,

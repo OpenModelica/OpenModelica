@@ -71,7 +71,6 @@ openmodelica_backend/src/SimCodeDump.rs
 openmodelica_backend/src/SimCodeUtil.rs
 openmodelica_backend/src/Sorting.rs
 openmodelica_backend/src/SymbolTable.rs
-openmodelica_backend/src/SymbolicImplicitSolver.rs
 openmodelica_backend/src/SymbolicJacobian.rs
 openmodelica_backend/src/SynchronousFeatures.rs
 openmodelica_backend/src/Tearing.rs

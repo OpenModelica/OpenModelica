@@ -342,7 +342,7 @@ pub static FLAG_DETAILED_DESC: CStrTable<159> = CStrTable([
 ]);
 
 #[unsafe(no_mangle)]
-pub static SOLVER_METHOD_NAME: CStrTable<10> = CStrTable([
+pub static SOLVER_METHOD_NAME: CStrTable<8> = CStrTable([
     c"unknown".as_ptr(),
     c"dassl".as_ptr(),
     c"ida".as_ptr(),
@@ -350,13 +350,11 @@ pub static SOLVER_METHOD_NAME: CStrTable<10> = CStrTable([
     c"gbode".as_ptr(),
     c"euler".as_ptr(),
     c"rungekutta".as_ptr(),
-    c"symSolver".as_ptr(),
-    c"symSolverSsc".as_ptr(),
     c"optimization".as_ptr(),
 ]);
 
 #[unsafe(no_mangle)]
-pub static SOLVER_METHOD_DESC: CStrTable<10> = CStrTable([
+pub static SOLVER_METHOD_DESC: CStrTable<8> = CStrTable([
     c"unknown".as_ptr(),
     c"dassl (default) - BDF method - implicit (dense solver), variable step size control, adaptive order 1-5, event location".as_ptr(),
     c"ida - SUNDIALS IDA solver - BDF method - implicit (sparse/dense solver, default sparse) variable step size control, adaptive order 1-5, event location - additional simulation flags: -idaMaxErrorTestFails -idaMaxNonLinIters -idaMaxConvFails -idaNonLinConvCoef -idaLS -idaScaling -idaSensitivity".as_ptr(),
@@ -364,8 +362,6 @@ pub static SOLVER_METHOD_DESC: CStrTable<10> = CStrTable([
     c"gbode - generic Runge-Kutta ODE solver - implicit (sparse solver)/explicit, fixed/variable step size control, order 1-14, event location, optional bi-rate integration - additional simulation flags -gbm -gbctrl -gbratio - additional advanced flags -gbctrl_filter -gbctrl_fhr -gberr -gbint -gbnls -gbfm -gbfctrl -gbferr -gbfint -gbfnls".as_ptr(),
     c"euler - explicit Euler, fixed step size, order 1".as_ptr(),
     c"rungekutta - classical Runge-Kutta - explicit, fixed step, order 4".as_ptr(),
-    c"symSolver - symbolic inline Solver [compiler flag '--symSolver' needed] - fixed step size, order 1".as_ptr(),
-    c"symSolverSsc - symbolic implicit Euler with step size control [compiler flag '--symSolver' needed] - step size control, order 1".as_ptr(),
     c"optimization - Special solver for dynamic optimization".as_ptr(),
 ]);
 

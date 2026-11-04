@@ -1333,8 +1333,6 @@ const char *SOLVER_METHOD_NAME[S_MAX] = {
   /* S_GBODE */         "gbode",
   /* S_EULER */         "euler",
   /* S_RUNGEKUTTA */    "rungekutta",
-  /* S_SYM_SOLVER */    "symSolver",
-  /* S_SYM_SOLVER_SSC */"symSolverSsc",
   /* S_OPTIMIZATION */  "optimization"
 };
 
@@ -1346,8 +1344,6 @@ const char *SOLVER_METHOD_DESC[S_MAX] = {
   /* S_GBODE */         "gbode - generic Runge-Kutta ODE solver - implicit (sparse solver)/explicit, fixed/variable step size control, order 1-14, event location, optional bi-rate integration - additional simulation flags -gbm -gbctrl -gbratio - additional advanced flags -gbctrl_filter -gbctrl_fhr -gberr -gbint -gbnls -gbfm -gbfctrl -gbferr -gbfint -gbfnls",
   /* S_EULER */         "euler - explicit Euler, fixed step size, order 1",
   /* S_RUNGEKUTTA */    "rungekutta - classical Runge-Kutta - explicit, fixed step, order 4",
-  /* S_SYM_SOLVER */    "symSolver - symbolic inline Solver [compiler flag '--symSolver' needed] - fixed step size, order 1",
-  /* S_SYM_SOLVER_SSC */"symSolverSsc - symbolic implicit Euler with step size control [compiler flag '--symSolver' needed] - step size control, order 1",
   /* S_OPTIMIZATION */  "optimization - Special solver for dynamic optimization"
 };
 

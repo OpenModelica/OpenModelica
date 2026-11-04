@@ -339,15 +339,6 @@ pub struct Layout<T = u32> {
     /// prints those values from inside that function, which the driver cannot.
     pub n_attr_log: T,
     pub attr_log_off: T,
-    /// C's `compiledWithSymSolver` (`--symSolver`): 0 none, 1 `impEuler`, 2
-    /// `expEuler`. Nonzero ⇒ the module exports `symbolicInlineSystem` and the two
-    /// regions below exist.
-    pub sym_solver: u8,
-    /// C's `simulationInfo->inlineData`: the step size `__OMC_DT` (f64) the inline
-    /// equations read, and the `<state>$Old` values (one f64 per state) they step
-    /// from.
-    pub inline_dt_off: T,
-    pub alg_old_off: T,
     /// Residuals `functionRemovedInitialEquations` checks; 0 ⇒ it is a stub.
     pub n_removed_init: T,
     /// The rejected residual (f64) and its 1-based index (i32); index 0 ⇒ consistent.
@@ -401,7 +392,6 @@ impl Layout {
         n_opt_attr: u32,
         n_attr_log: u32,
         n_removed_init: u32,
-        sym_solver: u8,
         has_when: bool,
         has_homotopy: bool,
         homotopy_method: HomotopyMethod,
@@ -438,7 +428,6 @@ impl Layout {
             n_removed_init,
         };
         let flags = LayoutFlags {
-            sym_solver,
             has_when,
             has_homotopy,
             homotopy_method,
@@ -519,7 +508,6 @@ impl LayoutCounts<Sz> {
 /// The parts of a [`Layout`] that are not counts.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub struct LayoutFlags {
-    pub sym_solver: u8,
     pub has_when: bool,
     pub has_homotopy: bool,
     pub homotopy_method: HomotopyMethod,
@@ -559,7 +547,6 @@ impl<T: sizes::LayoutNum> Layout<T> {
             has_init_lambda0: f.has_init_lambda0,
             has_history_ops: f.has_history_ops,
             has_old_real: f.has_old_real,
-            sym_solver: f.sym_solver,
             ..Layout::zero()
         };
         let start = T::lit(if f.resizable { REAL_OFF_RESIZABLE } else { REAL_OFF });
@@ -572,17 +559,16 @@ impl<T: sizes::LayoutNum> Layout<T> {
                 let at = l.attrs(at, &c);
                 let at = l.clocks(at, &c);
                 let at = l.opt(at, &c);
-                let at = l.log(at, &c, &f);
-                l.inline_old(at, &c, &f)
+                l.log(at, &c)
             }
             true => {
                 let at = l.flags_events(start, &c);
                 let at = l.clocks(at, &c);
-                let at = l.log(at, &c, &f);
+                let at = l.log(at, &c);
                 let at = l.vars(at.align8(), &c, &f);
                 let at = l.attrs(at, &c);
                 let at = l.opt(at, &c);
-                l.inline_old(at.align8(), &c, &f)
+                at.align8()
             }
         };
         l.total = at;
@@ -667,9 +653,6 @@ impl<T: sizes::LayoutNum> Layout<T> {
             n_removed_init: z.clone(),
             removed_init_res_off: z.clone(),
             removed_init_idx_off: z.clone(),
-            sym_solver: 0,
-            inline_dt_off: z.clone(),
-            alg_old_off: z.clone(),
             total: z.clone(),
             real_off: z.clone(),
             table_off: z,
@@ -761,22 +744,12 @@ impl<T: sizes::LayoutNum> Layout<T> {
         (self.opt_use_nom_off.clone() + c.n_opt_attr.clone().times(4)).align8()
     }
 
-    fn log(&mut self, at: T, c: &LayoutCounts<T>, f: &LayoutFlags) -> T {
+    fn log(&mut self, at: T, c: &LayoutCounts<T>) -> T {
         let lit = T::lit;
         self.attr_log_off = at;
         self.removed_init_res_off = self.attr_log_off.clone() + c.n_attr_log.clone().times(8);
         self.removed_init_idx_off = self.removed_init_res_off.clone() + lit(8);
-        self.inline_dt_off = (self.removed_init_idx_off.clone() + lit(4)).align8();
-        self.inline_dt_off.clone() + lit(if f.sym_solver > 0 { 8 } else { 0 })
-    }
-
-    fn inline_old(&mut self, at: T, c: &LayoutCounts<T>, f: &LayoutFlags) -> T {
-        self.alg_old_off = at.clone();
-        at + if f.sym_solver > 0 {
-            c.n_states.clone().times(8)
-        } else {
-            T::lit(0)
-        }
+        (self.removed_init_idx_off.clone() + lit(4)).align8()
     }
 }
 
@@ -864,9 +837,6 @@ impl<T> Layout<T> {
             n_removed_init: count(&self.n_removed_init)?,
             removed_init_res_off: off(&self.removed_init_res_off)?,
             removed_init_idx_off: off(&self.removed_init_idx_off)?,
-            sym_solver: self.sym_solver,
-            inline_dt_off: off(&self.inline_dt_off)?,
-            alg_old_off: off(&self.alg_old_off)?,
             total: off(&self.total)?,
             real_off: off(&self.real_off)?,
             table_off: off(&self.table_off)?,
@@ -2174,7 +2144,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 26;
+const VERSION: u32 = 27;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -2269,8 +2239,6 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
         l.n_removed_init,
         l.removed_init_res_off,
         l.removed_init_idx_off,
-        l.inline_dt_off,
-        l.alg_old_off,
         l.total,
         l.real_off,
         l.table_off,
@@ -2278,7 +2246,6 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
     ] {
         put_u32(o, v);
     }
-    o.push(l.sym_solver);
     o.push(l.has_when as u8);
     o.push(l.has_homotopy as u8);
     o.push(l.homotopy_method.code());
@@ -2848,13 +2815,10 @@ impl<'a> Reader<'a> {
             n_removed_init: self.u32()?,
             removed_init_res_off: self.u32()?,
             removed_init_idx_off: self.u32()?,
-            inline_dt_off: self.u32()?,
-            alg_old_off: self.u32()?,
             total: self.u32()?,
             real_off: self.u32()?,
             table_off: self.u32()?,
             n_table: self.u32()?,
-            sym_solver: 0,
             has_when: false,
             has_homotopy: false,
             homotopy_method: HomotopyMethod::default(),
@@ -2863,7 +2827,6 @@ impl<'a> Reader<'a> {
             has_old_real: false,
             extra_cols: 0,
         };
-        l.sym_solver = self.u8()?;
         l.has_when = self.u8()? != 0;
         l.has_homotopy = self.u8()? != 0;
         l.homotopy_method = HomotopyMethod::from_code(self.u8()?);
@@ -3456,7 +3419,6 @@ mod tests {
                 5,
                 2,
                 1,
-                2,
                 true,
                 true,
                 HomotopyMethod::LocalAdaptive,

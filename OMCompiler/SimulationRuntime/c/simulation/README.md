@@ -18,7 +18,7 @@ non-linear systems.
 
 OpenModelica links to `IDAS`, but calls it `IDA` in the documentation.
 Also, the linear solver method `LAPACK` is actually `DGESV` from LAPACK.
-The dashed ODE solvers `Runge Kutta`, `symSolver`, and `symSolverSsc` are deprecated and might be removed in a future version.
+The dashed ODE solver `Runge Kutta` is deprecated and might be removed in a future version.
 
 ## Directory Structure
 

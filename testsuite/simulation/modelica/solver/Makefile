@@ -12,10 +12,6 @@ problem1-imprk.mos \
 problem1-irksco.mos \
 problem1-ida.mos \
 problem1-cvode.mos \
-problem1-symSolverImp.mos \
-problem1-symSolverExp.mos \
-problem1-symSolverImpSsc.mos \
-problem1-symSolverExpSsc.mos \
 problem2-cvode.mos \
 problem2-dasslsteps.mos \
 problem2-impeuler.mos \
@@ -25,47 +21,13 @@ problem2-irksco.mos \
 problem2-ida.mos \
 problem2-idaLinearSolver.mos \
 problem2-idaJacobian.mos \
-problem2-symSolverImp.mos \
-problem2-symSolverExp.mos \
-problem2-symSolverImpSsc.mos \
-problem2-symSolverExpSsc.mos \
-problem3-symSolverImp.mos \
-problem3-symSolverExp.mos \
-problem3-symSolverImpSsc.mos \
-problem3-symSolverExpSsc.mos \
 problem4-rungekuttaSsc.mos \
-problem4-symSolverImp.mos \
-problem4-symSolverExp.mos \
-problem5-symSolverImp.mos \
-problem5-symSolverExp.mos \
 problem6-cvode.mos \
 problem6-irksco.mos \
-problem6-symSolverImp.mos \
-problem6-symSolverExp.mos \
 AlgebraicStepRetry.mos \
 StepAfterTimeEvent.mos \
 Ticket15649.mos
 
-# run only symSolver tests
-SYMSOLVER = \
-problem1-symSolverImp.mos \
-problem1-symSolverExp.mos \
-problem1-symSolverImpSsc.mos \
-problem1-symSolverExpSsc.mos \
-problem2-symSolverImp.mos \
-problem2-symSolverExp.mos \
-problem2-symSolverImpSsc.mos \
-problem2-symSolverExpSsc.mos \
-problem3-symSolverImp.mos \
-problem3-symSolverExp.mos \
-problem3-symSolverImpSsc.mos \
-problem3-symSolverExpSsc.mos \
-problem4-symSolverImp.mos \
-problem4-symSolverExp.mos \
-problem5-symSolverImp.mos \
-problem5-symSolverExp.mos \
-problem6-symSolverImp.mos \
-problem6-symSolverExp.mos \
 
 FAILINGTESTFILES = \
 
@@ -114,9 +76,3 @@ failingtest :
 	@echo
 	@$(TEST) -disabled $(FAILINGTESTFILES)
 
-symSolver:
-	@echo
-	@echo Running tests...
-	@echo
-	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
-	@$(TEST) $(SYMSOLVER)

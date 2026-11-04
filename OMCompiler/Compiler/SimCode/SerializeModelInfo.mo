@@ -108,7 +108,6 @@ algorithm
           ("max", code.maxValueEquations),
           ("parameter", code.parameterEquations),
           ("assertions", code.algorithmAndEquationAsserts),
-          ("inline", code.inlineEquations),
           ("residuals", List.flatten(SimCodeUtil.getSimCodeDAEModeDataEqns(code.daeModeData))),
           ("jacobian", code.jacobianEquations)
         } loop
@@ -1162,8 +1161,7 @@ algorithm
     case BackendDAE.OPT_INPUT_DER() then "derivation of input";
     case BackendDAE.OPT_TGRID() then "time grid for optimization";
     case BackendDAE.OPT_LOOP_INPUT() then "variable for transform loop in constraint";
-    case BackendDAE.ALG_STATE() then "helper variable transform ode for symSolver";
-    case BackendDAE.ALG_STATE_OLD() then "helper variable transform ode for symSolver";
+    case BackendDAE.ALG_STATE() then "helper variable transform ode for daeMode";
     case BackendDAE.LOOP_ITERATION() then "iteration variable for solving an algebraic loop";
     case BackendDAE.DAE_RESIDUAL_VAR() then "residual variable for dae mode";
     else

@@ -336,12 +336,6 @@ struct OpenModelicaGeneratedFunctionCallbacks {
 
 
   /*
-  * update parameter for symSolver
-  */
-
-  int (*symbolicInlineSystems)(DATA * data, threadData_t *threadData);
-
-  /*
   * initialize clocks and subclocks info in modelData
   */
   void (*function_initSynchronous)(DATA * data, threadData_t *threadData);
