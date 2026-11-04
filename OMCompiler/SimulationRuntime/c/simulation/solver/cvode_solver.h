@@ -119,12 +119,10 @@ typedef struct CVODE_SOLVER
   double *ysave;
   double *delta_hh;
   double jacNominalFactor;
-#ifndef OMC_FMI_RUNTIME
   /* where CVODE starts, with initialization's derivatives there */
   double startTime;
   double *yStart;
   double *fStart;
-#endif
 
   /* Non-linear solver data */
   SUNNonlinearSolver nonLinSol; /* Non-linear solver object */
@@ -147,9 +145,5 @@ int cvode_solver_deinitial(CVODE_SOLVER *cvodeData);
 /* read the nominal values into the absolute tolerances */
 int cvode_solver_setNominals(DATA *data, threadData_t *threadData, CVODE_SOLVER *cvodeData);
 int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo);
-
-#ifdef OMC_FMI_RUNTIME
-int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double tNext, double* states);
-#endif
 
 #endif /* #ifndef CVODE_SOLVER_H */

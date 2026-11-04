@@ -2667,8 +2667,11 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
         break;
       case S_CVODE:
 #ifdef OMC_FMI_HAVE_CVODE
-        flag = cvode_solver_fmi_step(comp->fmuData, comp->threadData, comp->solverInfo, tNext, states);
-        if (flag < 0)
+        comp->solverInfo->currentTime = comp->fmuData->localData[0]->timeValue;
+        comp->solverInfo->currentStepSize = tNext - comp->solverInfo->currentTime;
+        flag = cvode_solver_step(comp->fmuData, comp->threadData, comp->solverInfo);
+        memcpy(states, comp->fmuData->localData[0]->realVars, NUMBER_OF_STATES * sizeof(fmi2Real));
+        if (flag != 0)
         {
           FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: CVODE integrator step failed with flag %d at time %.15g.", flag, comp->solverInfo->currentTime)
           status = fmi2Fatal;
