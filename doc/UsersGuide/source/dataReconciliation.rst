@@ -52,7 +52,7 @@ Statistical Validation
 The validity of reconciliation results must be assessed using statistical tests.
 
 ** Global Consistency Test **
-A global :math:`χ²` test evaluates whether the corrections required to satisfy the physical constraints remain compatible with the uncertainty assumptions.
+A global :math:`\chi^2` test evaluates whether the corrections required to satisfy the physical constraints remain compatible with the uncertainty assumptions.
 A failure of the global test indicates at least one inconsistency among:
 * the measurements;
 * the uncertainty model;
@@ -189,22 +189,24 @@ The half-with confidence interval for variable :math:`x_i` is defined as :math:`
 The header of the file is the row:
 
 .. code-block::
-    | Variable Names; Measured Value-x; Half Width Confidence Interval
+
+    Variable Names; Measured Value-x; Half Width Confidence Interval
 
 It is possible to insert comments with ``//`` at the beginning of a row:
 
 .. code-block::
-    | // Measurement input file for the Splitter model.
-    | Variable Name;Measured Value;Half Width Confidence Interval
-    | splitter.pipe1.Q; 2.50; 0.196
-    | splitter.pipe2.Q; 1.15; 0.196
-    | splitter.pipe3.Q; 1.25; 0.196
-    | splitter.pipe1.Pm; 6.1e5; 0.392e5
-    | splitter.pipe2.Pm; 2.55e5; 0.392e5
-    | splitter.pipe3.Pm; 2.45e5; 0.392e5
-    | splitter.pipe1.T; 292; 1.96
-    | splitter.pipe2.T; 386; 1.91
-    | splitter.pipe3.T; 388; 1.91
+
+    // Measurement input file for the Splitter model.
+    Variable Name;Measured Value;Half Width Confidence Interval
+    splitter.pipe1.Q; 2.50; 0.196
+    splitter.pipe2.Q; 1.15; 0.196
+    splitter.pipe3.Q; 1.25; 0.196
+    splitter.pipe1.Pm; 6.1e5; 0.392e5
+    splitter.pipe2.Pm; 2.55e5; 0.392e5
+    splitter.pipe3.Pm; 2.45e5; 0.392e5
+    splitter.pipe1.T; 292; 1.96
+    splitter.pipe2.T; 386; 1.91
+    splitter.pipe3.T; 388; 1.91
 
 The above file can be more easily visualized in matrix form:
 
@@ -225,13 +227,14 @@ correlation coefficients of the variables of interest:
 The following correlation file is drawn from the VDI2048 standard example of a heat circuit of a steam turbine plant.
 
 .. code-block::
-    | Sxy;mV;mHK;mSPLL;mSPL;mFDKELL;mFDKEL
-    | mV
-    | mHK
-    | mSPLL
-    | mSPL;;;0.39951
-    | mFDKELL;;;0;0
-    | mFDKEL;;;0;0;0.2
+
+    Sxy;mV;mHK;mSPLL;mSPL;mFDKELL;mFDKEL
+    mV
+    mHK
+    mSPLL
+    mSPL;;;0.39951
+    mFDKELL;;;0;0
+    mFDKEL;;;0;0;0.2
 
 The above file can be more easily visualized in matrix form:
 
@@ -362,26 +365,27 @@ The **Data Reconciliation Report** has three sections:
 The data reconciliation report for the the VDI2048 standard example of a heat circuit of a steam turbine plant is given below.
 
 .. code-block::
+
   Overview:
   ---------
-    | Model file: VDI2048Example.mo
-    | Model name: NewDataReconciliationSimpleTests.VDI2048Example
-    | Model directory: NewDataReconciliationSimpleTests
-    | Measurement input file: VDI2048Example_Inputs.csv
-    | Correlation matrix input file: VDI2048Example_Correlation.csv
-    | Generated: Thu Jan 20 18:41:45 2022by OpenModelica v1.19.0-dev-500-g6c3a4e429f (64-bit)
+    Model file: VDI2048Example.mo
+    Model name: NewDataReconciliationSimpleTests.VDI2048Example
+    Model directory: NewDataReconciliationSimpleTests
+    Measurement input file: VDI2048Example_Inputs.csv
+    Correlation matrix input file: VDI2048Example_Correlation.csv
+    Generated: Thu Jan 20 18:41:45 2022by OpenModelica v1.19.0-dev-500-g6c3a4e429f (64-bit)
 
   Analysis:
   ---------
-    | Number of auxiliary conditions: 3
-    | Number of variables to be reconciled: 11
-    | Number of related boundary conditions: 0
-    | Number of iterations to convergence: 2
-    | Final value of (J*/r) : 4.56744e-28
-    | Epsilon : 1e-10
-    | Final value of the objective function (J*) : 1.37023e-27
-    | Chi-square value : 7.81473
-    | Result of global test : TRUE
+    Number of auxiliary conditions: 3
+    Number of variables to be reconciled: 11
+    Number of related boundary conditions: 0
+    Number of iterations to convergence: 2
+    Final value of (J*/r) : 4.56744e-28
+    Epsilon : 1e-10
+    Final value of the objective function (J*) : 1.37023e-27
+    Chi-square value : 7.81473
+    Result of global test : TRUE
 
   Auxiliary conditions
   --------------------
@@ -509,6 +513,7 @@ The results are displayed:
 The Boundary Condition Report has three sections:
 
 .. code-block::
+
   Overview
   --------
     a. Model file: name of the Modelica model file
