@@ -734,6 +734,7 @@ pub fn add_host_builtins(linker: &mut wasmtime::Linker<HostState>) -> Result<()>
     wt(linker.func_wrap("env", "rt_host_cancel", || -> i32 {
         metamodelica::cancel::check_cancel() as i32
     }))?;
+    wt(linker.func_wrap("env", "rt_host_progress", crate::sim_driver::report_sim_progress))?;
     wt(linker.func_wrap("env", "rt_host_init_done", || {
         openmodelica_sim_meta::driver::signal_init_done()
     }))?;
@@ -1153,6 +1154,11 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
         "env",
         "rt_host_cancel",
         Function::new_typed(store, || -> i32 { metamodelica::cancel::check_cancel() as i32 }),
+    );
+    imports.define(
+        "env",
+        "rt_host_progress",
+        Function::new_typed(store, crate::sim_driver::report_sim_progress),
     );
     imports.define(
         "env",

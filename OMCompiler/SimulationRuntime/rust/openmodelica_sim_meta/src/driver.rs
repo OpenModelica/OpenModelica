@@ -1288,7 +1288,7 @@ pub trait Driver {
 // because `sysstat` -- measured inside the solvers -- needs it too.
 pub use openmodelica_solvers::clock::{now_ms as now_ms_host, set_clock};
 
-use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use core::sync::atomic::{AtomicBool, AtomicI32, AtomicUsize, Ordering};
 
 fn now_ms() -> f64 {
     now_ms_host()
@@ -1410,6 +1410,35 @@ pub fn set_row_sink(rows: Option<fn(&[f64]) -> bool>, finish: Option<fn()>) {
 static TIME_ONLY_ROWS: AtomicBool = AtomicBool::new(false);
 fn set_time_only_rows(model: &SimModel) {
     TIME_ONLY_ROWS.store(model.output_format == "empty", Ordering::Relaxed);
+    PROGRESS_START.store(model.start_time.to_bits(), Ordering::Relaxed);
+    PROGRESS_STOP.store(model.stop_time.to_bits(), Ordering::Relaxed);
+    PROGRESS_LAST.store(-1, Ordering::Relaxed);
+}
+
+// Called with the run's progress in permille (0..=1000) when a result row moves
+// it: C's `communicateStatus("Running", ...)` for an embedder without `-port`.
+static PROGRESS_HOOK: AtomicUsize = AtomicUsize::new(0);
+static PROGRESS_START: openmodelica_solvers::atomic64::AtomicU64 = openmodelica_solvers::atomic64::AtomicU64::new(0);
+static PROGRESS_STOP: openmodelica_solvers::atomic64::AtomicU64 = openmodelica_solvers::atomic64::AtomicU64::new(0);
+static PROGRESS_LAST: AtomicI32 = AtomicI32::new(-1);
+pub fn set_progress_hook(f: fn(i32)) {
+    PROGRESS_HOOK.store(f as usize, Ordering::Relaxed);
+}
+fn report_progress(time: f64) {
+    let p = PROGRESS_HOOK.load(Ordering::Relaxed);
+    if p == 0 {
+        return;
+    }
+    let start = f64::from_bits(PROGRESS_START.load(Ordering::Relaxed));
+    let stop = f64::from_bits(PROGRESS_STOP.load(Ordering::Relaxed));
+    let permille = match stop > start {
+        true => (1000.0 * (time - start) / (stop - start)).clamp(0.0, 1000.0) as i32,
+        false => 1000,
+    };
+    if PROGRESS_LAST.swap(permille, Ordering::Relaxed) != permille {
+        let f: fn(i32) = unsafe { core::mem::transmute(p) };
+        f(permille);
+    }
 }
 /// Values per row of the output buffer.
 pub fn row_width(layout: &SimLayout) -> u32 {
@@ -3774,6 +3803,7 @@ fn emit_row_evaluated(
     );
     // C's `fmtEmitStep`, once per global step.
     crate::profiling::on_row(e, time);
+    report_progress(time);
     checked
 }
 
