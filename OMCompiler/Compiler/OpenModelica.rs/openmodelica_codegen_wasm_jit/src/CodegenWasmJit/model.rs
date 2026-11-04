@@ -264,6 +264,7 @@ pub(super) fn build_sim_model(
         // Mirroring the last accepted step's reals costs a copy per step, so only
         // a model with a method-1 linear system to read them asks for it.
         has_old_real: has_method1_linear(sim_code),
+        compiled_dae_mode: dae_mode.is_some(),
         resizable,
     };
     let counts_sz = resizable_counts(&counts, &dyn_vars);

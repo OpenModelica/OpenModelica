@@ -148,6 +148,7 @@ impl SimMeta {
             has_init_lambda0: self.layout.has_init_lambda0,
             has_history_ops: self.layout.has_history_ops,
             has_old_real: self.layout.has_old_real,
+            compiled_dae_mode: self.layout.compiled_dae_mode,
             resizable: true,
         };
         let mut layout = Layout::build(r.counts.eval(&values), flags);

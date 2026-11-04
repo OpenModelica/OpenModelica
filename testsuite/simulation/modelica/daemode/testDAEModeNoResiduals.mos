@@ -1,0 +1,91 @@
+// name: testDAEModeNoResiduals
+// keywords: daeMode, csvInput, events
+// status: correct
+// teardown_command: rm -rf DAENoRes* output.log
+//
+// --daeMode on models where every equation is solved explicitly, so no residual
+// is left for IDA and the run continues without an ODE solver. The equations are
+// then only in evaluateDAEResiduals; the algebraic and discrete variables must
+// still follow the inputs, time and the events.
+
+loadString("
+model DAENoResInput
+  input Real a, b;
+  Real u;
+equation
+  u = 2*a + b;
+end DAENoResInput;
+
+model DAENoResEvents
+  input Real a;
+  Real u;
+  discrete Real d(start = 0, fixed = true);
+  Integer k(start = 0, fixed = true);
+equation
+  u = 2*a + time;
+  when u > 2 then
+    d = u;
+  end when;
+  when sample(0, 0.5) then
+    k = pre(k) + 1;
+  end when;
+end DAENoResEvents;
+"); getErrorString();
+
+writeFile("DAENoResInput.csv", "time,a,b\n0,0,1\n2,2,1\n"); getErrorString();
+writeFile("DAENoResEvents.csv", "time,a\n0,0\n2,1\n"); getErrorString();
+
+setCommandLineOptions("--daeMode"); getErrorString();
+
+simulate(DAENoResInput, stopTime = 2, simflags = "-csvInput=DAENoResInput.csv"); getErrorString();
+val(a, 1.0);
+val(b, 1.0);
+val(u, 0.0);
+val(u, 1.0);
+val(u, 2.0);
+
+simulate(DAENoResEvents, stopTime = 2, simflags = "-csvInput=DAENoResEvents.csv"); getErrorString();
+val(u, 0.6);
+val(u, 1.5);
+val(d, 0.9);
+val(d, 2.0);
+val(k, 0.9);
+val(k, 2.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DAENoResInput_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'ida', fileNamePrefix = 'DAENoResInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-csvInput=DAENoResInput.csv'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 1.0
+// 1.0
+// 3.0
+// 5.0
+// record SimulationResult
+//     resultFile = "DAENoResEvents_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'ida', fileNamePrefix = 'DAENoResEvents', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-csvInput=DAENoResEvents.csv'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.2
+// 3.0
+// 0.0
+// 2.0000000003995373
+// 2.0
+// 5.0
+// endResult

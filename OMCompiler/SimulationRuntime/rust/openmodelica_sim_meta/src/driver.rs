@@ -3740,7 +3740,7 @@ fn eval_event_left(
 }
 
 pub fn eval_continuous(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
-    if layout.dae_mode() {
+    if layout.compiled_dae_mode {
         return e.call2(MODEL_FN_DAE, sim_data, eval_stage::ALGEBRAIC);
     }
     e.call1("functionODE", sim_data)?;
@@ -3750,7 +3750,7 @@ pub fn eval_continuous(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout)
 /// `functionODE` alone: the derivative slots for the state the integrator last
 /// wrote. In DAE mode `y'` is an unknown, so the dynamic residual stage stands in.
 fn eval_ode(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
-    if layout.dae_mode() {
+    if layout.compiled_dae_mode {
         return e.call2(MODEL_FN_DAE, sim_data, eval_stage::DYNAMIC);
     }
     e.call1("functionODE", sim_data)
@@ -3758,7 +3758,7 @@ fn eval_ode(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<
 
 /// One pass of C's `functionDAE`, which evaluates `allEquations` once.
 fn eval_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
-    if layout.dae_mode() {
+    if layout.compiled_dae_mode {
         return e.call2(MODEL_FN_DAE, sim_data, eval_stage::DISCRETE);
     }
     e.call1("functionDAE", sim_data)
@@ -3766,7 +3766,7 @@ fn eval_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Re
 
 /// C's `function_ZeroCrossingsEquations`: what the crossing functions read.
 pub fn eval_zc_equations(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
-    if layout.dae_mode() {
+    if layout.compiled_dae_mode {
         return e.call2(MODEL_FN_DAE, sim_data, eval_stage::ZEROCROSS);
     }
     e.call1("functionZeroCrossingsEquations", sim_data)
