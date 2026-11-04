@@ -1,0 +1,27 @@
+// name: ScriptTypeNameIterators
+// keywords: scripting, array constructor, TypeName, #17803, #17804
+// status: correct
+//
+// An array constructor in a script can iterate over the result of a scripting
+// call, and passes its iterator to a TypeName input as the value, not the name.
+
+loadString("package P end P; package Q end Q;", "ScriptTypeNameIterators.mo"); getErrorString();
+{typeNameString(cl) for cl in getClassNames()}; getErrorString();
+{getSourceFile(cl) for cl in getClassNames()}; getErrorString();
+cls := getClassNames(); getErrorString();
+{typeNameString(cl) for cl in cls}; getErrorString();
+{typeNameString(cls[i]) for i in 1:size(cls, 1)}; getErrorString();
+// Result:
+// true
+// ""
+// {"P", "Q"}
+// ""
+// {"ScriptTypeNameIterators.mo", "ScriptTypeNameIterators.mo"}
+// ""
+// {P, Q}
+// ""
+// {"P", "Q"}
+// ""
+// {"P", "Q"}
+// ""
+// endResult
