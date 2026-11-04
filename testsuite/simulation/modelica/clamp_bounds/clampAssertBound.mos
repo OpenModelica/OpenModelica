@@ -1,0 +1,48 @@
+// name: clampAssertBound
+// status: correct
+// teardown_command: rm -f ClampAssertBound* _ClampAssertBound* output.log
+//
+// inferBoundsFromAsserts: a function asserting its input domain has its call
+// arguments clamped to that domain, so the function is never evaluated outside
+// its valid range during the simulation. The argument a starts in domain (6 at
+// t=0) and drops below 5 during the run; with the clamp the call stays at 5 and
+// the run completes (without it, the assert would stop the simulation).
+
+setCommandLineOptions("--postOptModules+=inferBoundsFromAsserts"); getErrorString();
+
+loadString("
+function fasrt
+  input Real x;
+  output Real y;
+algorithm
+  assert(x >= 5.0, \"x below 5\");
+  y := x;
+  annotation(Inline = false);
+end fasrt;
+
+model ClampAssertBound
+  Real z, a;
+equation
+  z = fasrt(a);
+  a = 6.0 - time;
+end ClampAssertBound;
+"); getErrorString();
+
+simulate(ClampAssertBound, stopTime = 2.0); getErrorString();
+val(z, 2.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ClampAssertBound_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ClampAssertBound', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 5.0
+// endResult
