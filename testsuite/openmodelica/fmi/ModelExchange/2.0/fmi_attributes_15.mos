@@ -50,7 +50,7 @@ readFile("fmi_attributes_15_tmp.xml")
 //     needsExecutionTool=\"false\"
 //     completedIntegratorStepNotNeeded=\"false\"
 //     canBeInstantiatedOnlyOncePerProcess=\"false\"
-//     canNotUseMemoryManagementFunctions=\"false\"
+//     canNotUseMemoryManagementFunctions=\"true\"
 //     canGetAndSetFMUstate=\"true\"
 //     canSerializeFMUstate=\"true\"
 //     providesDirectionalDerivative=\"false\">
@@ -77,7 +77,6 @@ readFile("fmi_attributes_15_tmp.xml")
 //       <File name=\"fmi_attributes_15_functions.c\" />
 //       <File name=\"fmi_attributes_15_records.c\" />
 //       <File name=\"fmi-export/fmu2_model_interface.c\" />
-//       <File name=\"fmi-export/fmu_read_flags.c\" />
 //       <File name=\"gc/omc_alloc.c\" />
 //       <File name=\"gc/omc_gc.c\" />
 //       <File name=\"gc/omc_rc.c\" />
