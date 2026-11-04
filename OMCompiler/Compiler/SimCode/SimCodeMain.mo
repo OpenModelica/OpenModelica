@@ -2323,19 +2323,24 @@ algorithm
     (uniqueEqIndex, startValueEquations, _) := BackendDAEUtil.foldEqSystem(inInitDAE, SimCodeUtil.createStartValueEquations, (uniqueEqIndex, {}, inBackendDAE.shared.globalKnownVars));
     if debug then ExecStat.execStat("simCode: createStartValueEquations"); end if;
 
+    // create dummy system where all original variables are created
+    emptyBDAE := BackendDAE.DAE(BackendDAEUtil.createEqSystem(
+                                  Util.getOption(inBackendDAE.shared.daeModeData.modelVars))::{},
+                                inBackendDAE.shared);
+
     (uniqueEqIndex, nominalValueEquations) := SimCodeUtil.createValueEquationsShared(inBackendDAE.shared, SimCodeUtil.createInitialAssignmentsFromNominal, (uniqueEqIndex, nominalValueEquations));
     if debug then ExecStat.execStat("simCode: createNominalValueEquationsShared"); end if;
-    (uniqueEqIndex, nominalValueEquations) := BackendDAEUtil.foldEqSystem(inBackendDAE, SimCodeUtil.createNominalValueEquations, (uniqueEqIndex, nominalValueEquations));
+    (uniqueEqIndex, nominalValueEquations) := BackendDAEUtil.foldEqSystem(emptyBDAE, SimCodeUtil.createNominalValueEquations, (uniqueEqIndex, nominalValueEquations));
     if debug then ExecStat.execStat("simCode: createNominalValueEquations"); end if;
 
     (uniqueEqIndex, minValueEquations) := SimCodeUtil.createValueEquationsShared(inBackendDAE.shared, SimCodeUtil.createInitialAssignmentsFromMin, (uniqueEqIndex, minValueEquations));
     if debug then ExecStat.execStat("simCode: createMinValueEquationsShared"); end if;
-    (uniqueEqIndex, minValueEquations) := BackendDAEUtil.foldEqSystem(inBackendDAE, SimCodeUtil.createMinValueEquations, (uniqueEqIndex, minValueEquations));
+    (uniqueEqIndex, minValueEquations) := BackendDAEUtil.foldEqSystem(emptyBDAE, SimCodeUtil.createMinValueEquations, (uniqueEqIndex, minValueEquations));
     if debug then ExecStat.execStat("simCode: createMinValueEquations"); end if;
 
     (uniqueEqIndex, maxValueEquations) := SimCodeUtil.createValueEquationsShared(inBackendDAE.shared, SimCodeUtil.createInitialAssignmentsFromMax, (uniqueEqIndex, maxValueEquations));
     if debug then ExecStat.execStat("simCode: createMaxValueEquationsShared"); end if;
-    (uniqueEqIndex, maxValueEquations) := BackendDAEUtil.foldEqSystem(inBackendDAE, SimCodeUtil.createMaxValueEquations, (uniqueEqIndex, maxValueEquations));
+    (uniqueEqIndex, maxValueEquations) := BackendDAEUtil.foldEqSystem(emptyBDAE, SimCodeUtil.createMaxValueEquations, (uniqueEqIndex, maxValueEquations));
     if debug then ExecStat.execStat("simCode: createMaxValueEquations"); end if;
 
     (uniqueEqIndex, parameterEquations, _) := SimCodeUtil.createParameterEquations(uniqueEqIndex, parameterEquations, inBackendDAE.shared.globalKnownVars);
@@ -2347,10 +2352,6 @@ algorithm
     (daeEquations, uniqueEqIndex, tempVars) := SimCodeUtil.createEquationsfromBackendDAE(inBackendDAE, uniqueEqIndex, tempVars, true, true);
 
     // create model info
-    // create dummy system where all original variables are created
-    emptyBDAE := BackendDAE.DAE(BackendDAEUtil.createEqSystem(
-                                  Util.getOption(inBackendDAE.shared.daeModeData.modelVars))::{},
-                                inBackendDAE.shared);
     // disable start value calculation, it's only helpful in case of algebraic loops
     // and they are not present in DAEmode
 
