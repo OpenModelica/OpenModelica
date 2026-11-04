@@ -1191,6 +1191,17 @@ algorithm
       then
         (zero, inFunctionTree);
 
+    // d(u)/dt of a top-level Real input u is $DER.u, which inputDerivativesUsed
+    // reports. --inputDerivatives=zero takes the fallback case zero.
+    case ((DAE.CREF(componentRef = cr, ty = tp)), _, BackendDAE.DIFFINPUTDATA(knownVars=SOME(knvars)), BackendDAE.DIFFERENTIATION_TIME())
+      guard Types.isReal(tp) and Flags.getConfigString(Flags.INPUT_DERIVATIVES) <> "zero"
+      algorithm
+        (var,_) := BackendVariable.getVarSingle(cr, knvars);
+        true := BackendVariable.isVarOnTopLevelAndInput(var);
+        res := Expression.makeCrefExp(ComponentReference.crefPrefixDer(cr), tp);
+      then
+        (res, inFunctionTree);
+
     // d(discrete)/d(x) = 0
     case ((DAE.CREF(componentRef = cr,ty = tp)), _, BackendDAE.DIFFINPUTDATA(allVars=SOME(timevars)), BackendDAE.DIFFERENTIATION_TIME())
       algorithm
