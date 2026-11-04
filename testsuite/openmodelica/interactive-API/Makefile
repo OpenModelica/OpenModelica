@@ -161,6 +161,7 @@ ReverseLookup2.mos \
 ReverseLookup3.mos \
 RunScript.mos \
 saveShort.mos \
+ScriptTypeNameIterators.mos \
 saveTotalModel.mos \
 saveTotalModel2.mos \
 saveTotalModel3.mos \
