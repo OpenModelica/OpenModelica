@@ -6862,7 +6862,7 @@ algorithm
                                    arrayLength(dlow.shared.partitionsInfo.basePartitions),
                                    arrayLength(dlow.shared.partitionsInfo.subPartitions),
                                    numSpatialDistributions + 1,
-                                   hasLargeEqSystems, {}, {}, unitDefinitions);
+                                   hasLargeEqSystems, {}, {}, unitDefinitions, false);
   else
     Error.addInternalError("createModelInfo failed", sourceInfo());
     fail();

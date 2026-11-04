@@ -326,6 +326,7 @@ uniontype ModelInfo "Container for metadata about a Modelica model."
     list<SimEqSystem> linearSystems;
     list<SimEqSystem> nonLinearSystems;
     list<UnitDefinition> unitDefinitions "export unitDefintion in modelDescription.xml";
+    Boolean resizable "the model has variables with resizable dimensions";
   end MODELINFO;
 end ModelInfo;
 

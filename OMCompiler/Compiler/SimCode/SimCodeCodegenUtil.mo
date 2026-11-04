@@ -1489,7 +1489,7 @@ end isResizableSimVar;
 
 public function hasResizableVars
   input SimCode.ModelInfo modelInfo;
-  output Boolean b = SimCodeUtilShared.hasResizableVars(modelInfo);
+  output Boolean b = modelInfo.resizable;
 end hasResizableVars;
 
 public function resizableFixedSize

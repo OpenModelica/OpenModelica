@@ -159,7 +159,7 @@ algorithm
     (sim_vars.stringAliasVars, 4)
   };
 
-  if hasResizableVars(iModelInfo) then
+  if iModelInfo.resizable then
     vars := resizableLayout(sim_vars);
   end if;
 
@@ -198,19 +198,6 @@ algorithm
     end if;
   end for;
 end isResizableSimVar;
-
-public function hasResizableVars
-  input SimCode.ModelInfo modelInfo;
-  output Boolean b;
-protected
-  SimCodeVar.SimVars v = modelInfo.vars;
-algorithm
-  b := List.any(v.stateVars, isResizableSimVar) or List.any(v.algVars, isResizableSimVar)
-    or List.any(v.discreteAlgVars, isResizableSimVar) or List.any(v.intAlgVars, isResizableSimVar)
-    or List.any(v.boolAlgVars, isResizableSimVar) or List.any(v.stringAlgVars, isResizableSimVar)
-    or List.any(v.paramVars, isResizableSimVar) or List.any(v.intParamVars, isResizableSimVar)
-    or List.any(v.boolParamVars, isResizableSimVar) or List.any(v.stringParamVars, isResizableSimVar);
-end hasResizableVars;
 
 protected function resizableNonStateLists
   "The variable lists of resizableLayout that are neither states, derivatives nor aliases."
