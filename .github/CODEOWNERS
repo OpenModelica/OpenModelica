@@ -58,8 +58,9 @@ CMakeLists.txt @AnHeuermann
 /OMCompiler/Compiler/boot/ @sjoelund
 
 # Compiler: scripting API
-/OMCompiler/Compiler/Script/ @perost
-/OMCompiler/Compiler/Script/CevalScriptBackend.mo @perost @adrpo
+/OMCompiler/Compiler/Script/NFApi.mo @perost
+/OMCompiler/Compiler/NFFrontEnd/NFInstanceAPI.mo @perost
+/OMCompiler/Compiler/Script/CevalScriptBackend.mo @adrpo
 
 # Compiler: C API
 /OMCompiler/Compiler/omcCAPI/ @AnHeuermann
