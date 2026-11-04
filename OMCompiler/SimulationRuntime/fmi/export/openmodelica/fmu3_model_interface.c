@@ -59,6 +59,7 @@
 #include "../simulation/solver/delay.h"
 #include "../simulation/solver/spatialDistribution.h"
 #include "../simulation/solver/discrete_changes.h"
+#include "../simulation/solver/events.h"
 #include "../simulation/simulation_info_json.h"
 #include "../simulation/simulation_input_xml.h"
 #include "../simulation/solver/synchronous.h"
@@ -2607,6 +2608,11 @@ static fmi3Status doStepInternal(ModelInstance* c, fmi3Float64 currentCommunicat
     }
 
     /* integrate */
+#if NUMBER_OF_STATES > 0
+    fmi3Float64 states_t0[NUMBER_OF_STATES];
+    memcpy(states_t0, states, NUMBER_OF_STATES * sizeof(fmi3Float64));
+    fmi3Float64 t0 = comp->fmuData->localData[0]->timeValue;
+#endif
     switch(comp->solverInfo->solverMethod)
     {
       case S_EULER:
@@ -2627,6 +2633,12 @@ static fmi3Status doStepInternal(ModelInstance* c, fmi3Float64 currentCommunicat
           status = fmi3Fatal;
           goto doStep_cleanup;
         }
+        /* CVODE stopped at a root of the event indicators */
+        if (comp->solverInfo->currentTime < tNext)
+        {
+          tNext = comp->solverInfo->currentTime;
+          time_event = 0;
+        }
 #else
         FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "fmi3DoStep: FMU not compiled with SUNDIALS but solver CVODE selected.")
         status = fmi3Fatal;
@@ -2638,6 +2650,28 @@ static fmi3Status doStepInternal(ModelInstance* c, fmi3Float64 currentCommunicat
         status = fmi3Fatal;
         goto doStep_cleanup;
     }
+
+#if NUMBER_OF_STATES > 0 && NUMBER_OF_EVENT_INDICATORS > 0
+    /* A solver without root finding: findRoot locates a crossing inside the
+       sub-step, as in the simulation. */
+    if (!comp->solverInfo->solverRootFinding)
+    {
+      DATA *data = comp->fmuData;
+      data->localData[0]->timeValue = tNext;
+      status = internalSetContinuousStates(c, states, NUMBER_OF_STATES);
+      if (status != fmi3OK) goto doStep_cleanup;
+      status = internalGetEventIndicators(c, "fmi3DoStep", event_indicators, NUMBER_OF_EVENT_INDICATORS);
+      if (status != fmi3OK) goto doStep_cleanup;
+      memcpy(data->simulationInfo->zeroCrossingsPre, event_indicators_prev, NUMBER_OF_EVENT_INDICATORS * sizeof(fmi3Float64));
+      if (checkForStateEvent(data, comp->solverInfo->eventLst))
+      {
+        tNext = findRoot(data, comp->threadData, comp->solverInfo->eventLst, t0, states_t0, tNext, states);
+        memcpy(states, data->localData[0]->realVars, NUMBER_OF_STATES * sizeof(fmi3Float64));
+        listClear(comp->solverInfo->eventLst);
+        time_event = 0;
+      }
+    }
+#endif
 
     // update time
     comp->fmuData->localData[0]->timeValue = tNext;
@@ -2929,7 +2963,7 @@ int FMI3CS_initializeSolverData(ModelInstance* comp)
   solverInfo->solverRootFinding = 0;
   solverInfo->solverNoEquidistantGrid = FALSE;
   solverInfo->lastdesiredStep = solverInfo->currentTime + solverInfo->currentStepSize;
-  solverInfo->eventLst = NULL;
+  solverInfo->eventLst = allocList(eventListAlloc, eventListFree, eventListCopy);
   solverInfo->didEventStep = 0;
   solverInfo->stateEvents = 0;
   solverInfo->sampleEvents = 0;
@@ -2977,6 +3011,7 @@ int FMI3CS_initializeSolverData(ModelInstance* comp)
       cvodeData = (CVODE_SOLVER*) calloc(1, sizeof(CVODE_SOLVER));
       if (!cvodeData) {
         FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "omcInstantiate: Out of memory.")
+        freeList(solverInfo->eventLst);
         free(solverInfo);
         return -1;
       } else {
@@ -2984,7 +3019,7 @@ int FMI3CS_initializeSolverData(ModelInstance* comp)
          * above. Must be set: cvode_solver_deinitial frees the struct through
          * this pointer, which calloc left NULL. */
         cvodeData->freeSolverMemory = free;
-        retValue = cvode_solver_initial(data, threadData, solverInfo, cvodeData, 1 /* is FMI */);   /* TODO: cvode_solver_initial needs to use malloc and free */
+        retValue = cvode_solver_initial(data, threadData, solverInfo, cvodeData);   /* TODO: cvode_solver_initial needs to use malloc and free */
       }
       solverInfo->solverData = cvodeData;
       omc_useStream[OMC_LOG_SOLVER] = 0;
@@ -3050,6 +3085,7 @@ int FMI3CS_deInitializeSolverData(ModelInstance* comp)
       retValue = -1;
   }
 
+  freeList(comp->solverInfo->eventLst);
   free(comp->solverInfo);
   comp->solverInfo = NULL;
 

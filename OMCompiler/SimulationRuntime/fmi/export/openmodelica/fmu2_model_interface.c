@@ -49,6 +49,7 @@
 #include "../simulation/solver/spatialDistribution.h"
 #include "../simulation/solver/discrete_changes.h"
 #include "../simulation/solver/epsilon.h"
+#include "../simulation/solver/events.h"
 #include "../simulation/simulation_info_json.h"
 #include "../simulation/simulation_input_xml.h"
 #include "../simulation/solver/synchronous.h"
@@ -2424,105 +2425,6 @@ fmi2Status fmi2GetRealOutputDerivatives(fmi2Component c, const fmi2ValueReferenc
   return fmi2OK;
 }
 
-#if NUMBER_OF_STATES > 0 && NUMBER_OF_EVENT_INDICATORS > 0
-/**
- * @brief Locate a state event within [t_left, t_right] by bisection.
- *
- * fmi2DoStep integrates over an entire sub-step before it can check the
- * event indicators, so a zero crossing occurring inside that sub-step would
- * otherwise only be noticed (and applied) at the sub-step's end instead of
- * where it actually happens. For models with fast switching (e.g. ideal
- * diodes), that timing error is visible in the results (see issue #16093).
- * This mirrors the bisection root-finding events.c uses for the standalone
- * simulation runtime, but works directly through fmi2DoStep's own
- * get/set-state calls so it applies regardless of which internal solver
- * (S_EULER or S_CVODE) produced the bracket.
- *
- * States at an intermediate time are approximated by linear interpolation
- * between the bracket ends, consistent with the accuracy already assumed by
- * the explicit-Euler / macro CVODE step that produced them.
- *
- * On return, *eventTime and states_event hold the right bracket bound, i.e.
- * just past the crossing, so that the indicators there differ in sign from
- * indicators_left -- matching what fmi2DoStep's own zero-crossing check
- * expects to see in order to trigger event iteration.
- *
- * @param c                 FMU component.
- * @param t_left            Start time of the bracket (no crossing yet).
- * @param states_left       States at t_left.
- * @param indicators_left   Event indicators at t_left.
- * @param t_right           End time of the bracket (crossing already happened).
- * @param states_right      States at t_right.
- * @param states_event      Output: states just past the located crossing.
- * @param eventTime         Output: time just past the located crossing.
- * @return fmi2Status       fmi2OK, or an error propagated from a get/set call.
- */
-static fmi2Status internalLocateStateEvent(fmi2Component c,
-                                            fmi2Real t_left, const fmi2Real* states_left, const fmi2Real* indicators_left,
-                                            fmi2Real t_right, const fmi2Real* states_right,
-                                            fmi2Real* states_event, fmi2Real* eventTime)
-{
-  ModelInstance *comp = (ModelInstance *)c;
-  fmi2Status status = fmi2OK;
-  fmi2Real states_a[NUMBER_OF_STATES];
-  fmi2Real states_b[NUMBER_OF_STATES];
-  fmi2Real states_mid[NUMBER_OF_STATES];
-  fmi2Real indicators_a[NUMBER_OF_EVENT_INDICATORS];
-  fmi2Real indicators_mid[NUMBER_OF_EVENT_INDICATORS];
-  fmi2Real a = t_left, b = t_right, tmid, tol;
-  int i, crossed_left_half;
-
-  memcpy(states_a, states_left, NUMBER_OF_STATES * sizeof(fmi2Real));
-  memcpy(states_b, states_right, NUMBER_OF_STATES * sizeof(fmi2Real));
-  memcpy(indicators_a, indicators_left, NUMBER_OF_EVENT_INDICATORS * sizeof(fmi2Real));
-
-  tol = MINIMAL_STEP_SIZE + MINIMAL_STEP_SIZE * fabs(b - a);
-
-  while (fabs(b - a) > tol)
-  {
-    tmid = 0.5 * (a + b);
-    for (i = 0; i < NUMBER_OF_STATES; i++) {
-      states_mid[i] = 0.5 * (states_a[i] + states_b[i]);
-    }
-
-    comp->fmuData->localData[0]->timeValue = tmid;
-    status = internalSetContinuousStates(c, states_mid, NUMBER_OF_STATES);
-    if (status != fmi2OK) return status;
-    status = internalGetEventIndicators(c, "fmi2DoStep", indicators_mid, NUMBER_OF_EVENT_INDICATORS);
-    if (status != fmi2OK) return status;
-
-    crossed_left_half = 0;
-    for (i = 0; i < NUMBER_OF_EVENT_INDICATORS; i++)
-    {
-      if (indicators_a[i] * indicators_mid[i] < 0)
-      {
-        crossed_left_half = 1;
-        break;
-      }
-    }
-
-    if (crossed_left_half)
-    {
-      b = tmid;
-      memcpy(states_b, states_mid, NUMBER_OF_STATES * sizeof(fmi2Real));
-    }
-    else
-    {
-      a = tmid;
-      memcpy(states_a, states_mid, NUMBER_OF_STATES * sizeof(fmi2Real));
-      memcpy(indicators_a, indicators_mid, NUMBER_OF_EVENT_INDICATORS * sizeof(fmi2Real));
-    }
-  }
-
-  *eventTime = b;
-  memcpy(states_event, states_b, NUMBER_OF_STATES * sizeof(fmi2Real));
-
-  /* Leave the FMU state consistent with the returned (time, states). */
-  comp->fmuData->localData[0]->timeValue = b;
-  return internalSetContinuousStates(c, states_b, NUMBER_OF_STATES);
-}
-#endif
-
 /**
  * @brief FMI 2 doStep function.
  *
@@ -2677,6 +2579,12 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
           status = fmi2Fatal;
           goto doStep_cleanup;
         }
+        /* CVODE stopped at a root of the event indicators */
+        if (comp->solverInfo->currentTime < tNext)
+        {
+          tNext = comp->solverInfo->currentTime;
+          time_event = 0;
+        }
 #else
         FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: FMU not compiled with SUNDIALS but solver CVODE selected.")
         status = fmi2Fatal;
@@ -2690,37 +2598,23 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
     }
 
 #if NUMBER_OF_STATES > 0 && NUMBER_OF_EVENT_INDICATORS > 0
-    /* Check whether a state event occurred within this sub-step, and if so
-     * shrink the step to the precise crossing time by bisection instead of
-     * applying it at the sub-step's end (see internalLocateStateEvent). */
+    /* A solver without root finding: findRoot locates a crossing inside the
+       sub-step, as in the simulation. */
+    if (!comp->solverInfo->solverRootFinding)
     {
-      fmi2Real trial_indicators[NUMBER_OF_EVENT_INDICATORS];
-      int trial_zc = 0;
-
-      comp->fmuData->localData[0]->timeValue = tNext;
+      DATA *data = comp->fmuData;
+      data->localData[0]->timeValue = tNext;
       status = internalSetContinuousStates(c, states, NUMBER_OF_STATES);
       if (status != fmi2OK) goto doStep_cleanup;
-      status = internalGetEventIndicators(c, "fmi2DoStep", trial_indicators, NUMBER_OF_EVENT_INDICATORS);
+      status = internalGetEventIndicators(c, "fmi2DoStep", event_indicators, NUMBER_OF_EVENT_INDICATORS);
       if (status != fmi2OK) goto doStep_cleanup;
-
-      for (i = 0; i < NUMBER_OF_EVENT_INDICATORS; i++)
+      memcpy(data->simulationInfo->zeroCrossingsPre, event_indicators_prev, NUMBER_OF_EVENT_INDICATORS * sizeof(fmi2Real));
+      if (checkForStateEvent(data, comp->solverInfo->eventLst))
       {
-        if (trial_indicators[i]*event_indicators_prev[i] < 0)
-        {
-          trial_zc = 1;
-          break;
-        }
-      }
-
-      if (trial_zc)
-      {
-        fmi2Real eventTime;
-        fmi2Real states_event[NUMBER_OF_STATES];
-        status = internalLocateStateEvent(c, t0, states_t0, event_indicators_prev, tNext, states, states_event, &eventTime);
-        if (status != fmi2OK) goto doStep_cleanup;
-
-        tNext = eventTime;
-        memcpy(states, states_event, NUMBER_OF_STATES * sizeof(fmi2Real));
+        tNext = findRoot(data, comp->threadData, comp->solverInfo->eventLst, t0, states_t0, tNext, states);
+        memcpy(states, data->localData[0]->realVars, NUMBER_OF_STATES * sizeof(fmi2Real));
+        listClear(comp->solverInfo->eventLst);
+        time_event = 0;
       }
     }
 #endif
