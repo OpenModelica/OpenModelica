@@ -1,0 +1,46 @@
+// name: NewtonDiagnosticsSparse
+// keywords: nonlinear initialization newton diagnostics sparse Jacobian
+// status: correct
+// cflags: --maxSizeNonlinearTearing=0 --postOptModules-=wrapFunctionCalls
+
+loadString("model NewtonDiagnosticsSparse
+  parameter Real i_s = 6.9144e-13;
+  parameter Real v_t = 25e-3;
+  parameter Real P = 10.7;
+  parameter Real R = 1;
+  parameter Integer N = 10;
+  Real i(start = 0.9);
+  Real v(start = 9.63);
+  Real v_d(start = 0.63);
+  Real v_[N];
+equation
+  i - i_s*(exp(v_d/v_t) - 1) = 0;
+  v*i - P = 0;
+  v - sum(v_) - v_d = 0;
+  for j in 1:N loop
+    v_[j] - R*i = 0;
+  end for;
+end NewtonDiagnosticsSparse;");
+setCompiler("gcc");
+setCXXCompiler("g++");
+setCommandLineOptions("--maxSizeNonlinearTearing=0 --postOptModules-=wrapFunctionCalls --numProcs=1");
+buildModel(NewtonDiagnosticsSparse, stopTime=1, numberOfIntervals=10, outputFormat="mat"); getErrorString();
+system("./NewtonDiagnosticsSparse -nls=kinsol -lv=LOG_NLS_NEWTON_DIAGNOSTICS > NewtonDiagnosticsSparse.log 2>&1");
+abs(val(i, 0, "NewtonDiagnosticsSparse_res.mat") - 1) < 1e-7;
+abs(val(v_d, 0, "NewtonDiagnosticsSparse_res.mat") - 0.7) < 1e-7;
+abs(val(v, 0, "NewtonDiagnosticsSparse_res.mat") - 10.7) < 1e-7;
+abs(val(i, 1, "NewtonDiagnosticsSparse_res.mat") - 1) < 1e-7;
+
+// Result:
+// true
+// true
+// true
+// true
+// {"NewtonDiagnosticsSparse", "NewtonDiagnosticsSparse_init.xml"}
+// ""
+// 0
+// true
+// true
+// true
+// true
+// endResult
