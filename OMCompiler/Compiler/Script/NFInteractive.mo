@@ -66,6 +66,7 @@ import NFInst;
 import NFInstanceAPI;
 import NFInstContext;
 import NFInstNode.InstNode;
+import NFType;
 import NFTyping;
 import SymbolTable;
 import System;
@@ -136,12 +137,20 @@ function lookupVariable
   output Absyn.Exp exp;
 protected
   list<Absyn.Subscript> subs;
+  Values.Value value;
+  DAE.Type ty;
 algorithm
   false := AbsynUtil.crefHasSubscripts(AbsynUtil.crefStripLastSubs(cref));
-  exp := Expression.unelabExp(ValuesUtil.valueExp(variableValue(
-    AbsynUtil.pathToStringList(AbsynUtil.crefToPathIgnoreSubs(cref)), SymbolTable.getVars())));
-  // Absyn holds strings as written, with escape sequences.
-  (exp, _) := AbsynUtil.traverseExp(exp, escapeString, 0);
+  (value, ty) := variableValue(
+    AbsynUtil.pathToStringList(AbsynUtil.crefToPathIgnoreSubs(cref)), SymbolTable.getVars());
+
+  try
+    exp := emptyArrayExp(value, ty);
+  else
+    exp := Expression.unelabExp(ValuesUtil.valueExp(value));
+    // Absyn holds strings as written, with escape sequences.
+    (exp, _) := AbsynUtil.traverseExp(exp, escapeString, 0);
+  end try;
   subs := AbsynUtil.crefLastSubs(cref);
 
   if not listEmpty(subs) then
@@ -164,6 +173,7 @@ function variableValue
   input list<String> names;
   input list<InteractiveTypes.Variable> vars;
   output Values.Value value;
+  output DAE.Type ty "The type of a variable, unknown for a field of one.";
 protected
   String name;
   list<String> rest;
@@ -171,14 +181,40 @@ protected
   list<Values.Value> values;
 algorithm
   name :: rest := names;
-  InteractiveTypes.IVAR(value = value) :=
+  InteractiveTypes.IVAR(value = value, type_ = ty) :=
     List.getMemberOnTrue(name, vars, isVariableNamed);
+
+  if not listEmpty(rest) then
+    ty := DAE.T_UNKNOWN_DEFAULT;
+  end if;
 
   for field in rest loop
     Values.RECORD(orderd = values, comp = fields) := value;
     value := listGet(values, List.position(field, fields));
   end for;
 end variableValue;
+
+function emptyArrayExp
+  "An empty array value has no elements to tell its element type, so it is
+   fill(e, dims) with e the zero of the element type the variable was given."
+  input Values.Value value;
+  input DAE.Type ty;
+  output Absyn.Exp exp;
+protected
+  list<Integer> dims;
+  Absyn.Exp elt;
+algorithm
+  Values.ARRAY(dimLst = dims) := value;
+  true := listMember(0, dims);
+  elt := match Types.arrayElementType(ty)
+    case DAE.T_STRING() then Absyn.STRING("");
+    case DAE.T_INTEGER() then Absyn.INTEGER(0);
+    case DAE.T_REAL() then Absyn.REAL("0.0");
+    case DAE.T_BOOL() then Absyn.BOOL(false);
+  end match;
+  exp := Absyn.CALL(Absyn.CREF_IDENT("fill", {}),
+    Absyn.FUNCTIONARGS(elt :: list(Absyn.INTEGER(d) for d in dims), {}), {});
+end emptyArrayExp;
 
 function isVariableNamed
   input String name;
@@ -191,11 +227,20 @@ algorithm
 end isVariableNamed;
 
 function evaluateExp
+  input Absyn.Exp absynExp;
+  input SourceInfo info;
+  output Values.Value value;
+algorithm
+  (value, _) := evaluateExpAndType(absynExp, info);
+end evaluateExp;
+
+function evaluateExpAndType
   "A call to a scripting API function returns the API's value as it is, since
    many of them return values their declared output type does not describe."
   input Absyn.Exp absynExp;
   input SourceInfo info;
   output Values.Value value;
+  output DAE.Type emptyArrayType = DAE.T_UNKNOWN_DEFAULT "The type of an empty array value.";
 protected
   InstNode top;
   NFExpression exp;
@@ -218,7 +263,12 @@ algorithm
 
     else NFExpression.toDAEValue(NFCeval.evalExp(exp, target));
   end match;
-end evaluateExp;
+
+  emptyArrayType := match value
+    case Values.ARRAY() guard listMember(0, value.dimLst) then NFType.toDAE(NFExpression.typeOf(exp));
+    else emptyArrayType;
+  end match;
+end evaluateExpAndType;
 
 function evaluateAlgorithm
   input Absyn.Algorithm alg;
@@ -226,6 +276,7 @@ function evaluateAlgorithm
   output String result = "";
 protected
   Values.Value value;
+  DAE.Type ty;
   list<Values.Value> values;
   Absyn.ComponentRef cref;
   list<Absyn.Exp> lhs;
@@ -233,8 +284,8 @@ algorithm
   () := match alg
     case Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(cref as Absyn.CREF_IDENT()))
       algorithm
-        value := evaluateExp(alg.value, info);
-        assignVariable(cref, value, info);
+        (value, ty) := evaluateExpAndType(alg.value, info);
+        assignVariable(cref, value, info, ty);
         result := ValuesDump.valString(value);
       then
         ();
@@ -412,12 +463,15 @@ function assignVariable
   input Absyn.ComponentRef cref;
   input Values.Value value;
   input SourceInfo info;
+  input DAE.Type emptyArrayType = DAE.T_UNKNOWN_DEFAULT;
 protected
   String name;
   list<Absyn.Subscript> subs;
+  DAE.Type ty;
 algorithm
   Absyn.CREF_IDENT(name = name, subscripts = subs) := cref;
-  SymbolTable.addVar(DAE.CREF_IDENT(name, Types.typeOfValue(value),
+  ty := if listEmpty(subs) and not Types.isUnknownType(emptyArrayType) then emptyArrayType else Types.typeOfValue(value);
+  SymbolTable.addVar(DAE.CREF_IDENT(name, ty,
     list(evaluateSubscript(s, info) for s in subs)), value, FGraph.empty());
 end assignVariable;
 

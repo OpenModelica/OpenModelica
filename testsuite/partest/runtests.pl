@@ -114,9 +114,10 @@ my %suite_enabled = (
                       # slow: testsuite/runWindowsTests.sh.
   gbode       => 1,  # Integrates with gbode, which the Rust simulation runtime
                       # (C+Rust, wasm-jit, wasm) has disabled.
-  ofScripting => 1,  # Expects the output of the old frontend's script loop.
-  nfScripting => 0,  # Expects the output of the new frontend's script loop
-                      # (-d=nfScripting): <test>NF.mos for an ofScripting test.
+  ofScripting => 0,  # Expects the output of the old frontend's script loop
+                      # (-d=-nfScripting).
+  nfScripting => 1,  # Expects the output of the new frontend's script loop:
+                      # <test>NF.mos for an ofScripting test.
   # Not part of the testsuite: the tests a makefile lists as failing, not
   # compiling, not simulating or needing a manual setup. They are the tests that
   # fail, hang or eat the machine, so they are opt-in and rtest skips them too
