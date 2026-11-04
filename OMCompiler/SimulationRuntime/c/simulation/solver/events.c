@@ -450,7 +450,8 @@ void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData)
 
   infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "save all zerocrossings after an event at time=%g", data->localData[0]->timeValue); /* ??? */
 
-  data->callback->function_ZeroCrossings(data, threadData, data->simulationInfo->zeroCrossings);
+  functionZeroCrossingsMarked(data, threadData);
+  updateRelationsSettled(data);
   for(i=0; i<data->modelData->nZeroCrossings; i++) {
     data->simulationInfo->zeroCrossingsPre[i] = data->simulationInfo->zeroCrossings[i];
   }
