@@ -197,9 +197,11 @@ For the Co-Simulation FMU two integrator methods are available:
 * Forward Euler [default]
 * SUNDIALS CVODE (see [#f1]_)
 
-Forward Euler uses root finding, which does an Euler step of ``communicationStepSize``
-in ``fmi2DoStep``. Events are checked for before and after the call to
-``fmi2GetDerivatives``.
+Forward Euler does an Euler step of ``communicationStepSize`` in ``fmi2DoStep``.
+Both integrators find the time of a state event inside the step: CVODE with its
+root finding, as in the simulation, and Forward Euler by bisection between the
+two ends of the step. The FMU handles the event at that time. An FMI 3.0 FMU
+that is used with Event Mode and early return stops there instead.
 
 If CVODE is chosen as integrator the FMU should also include runtime dependencies
 (:ref:`--fmuRuntimeDepends=modelica<omcflag-fmuRuntimeDepends>`) to copy all used dynamic

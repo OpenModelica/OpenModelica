@@ -78,7 +78,7 @@ const char *CVODE_ITER_DESC[CVODE_ITER_MAX + 1] = {
 
 /* Internal function prototypes */
 int cvodeRightHandSideODEFunction(sunrealtype time, N_Vector y, N_Vector ydot, void *userData);
-void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, sunbooleantype isFMI);
+void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData);
 
 /**
  * @brief Computes the ODE right-hand side for a given value of the independent variable t and state vector y
@@ -436,7 +436,7 @@ int rootsFunctionCVODE(double time, N_Vector y, double *gout, void *userData)
  * @param cvodeData       CVODE solver data struckt
  * @param threadData      Thread data for error handling
  */
-void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, sunbooleantype isFMI)
+void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData)
 {
   /* Variables */
   int i;
@@ -584,7 +584,7 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, sunbooleanty
     config->BDFStabDetect = FALSE;
   }
 
-  if(omc_flag[FLAG_NO_ROOTFINDING] || isFMI)
+  if(omc_flag[FLAG_NO_ROOTFINDING])
   {
     config->solverRootFinding = FALSE;
   }
@@ -631,7 +631,7 @@ int cvode_solver_setNominals(DATA *data, threadData_t *threadData, CVODE_SOLVER 
  * @param cvodeData         CVODE solver data struct.
  * @return int              Return 0 on success.
  */
-int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData, int isFMI)
+int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData)
 {
   /* Variables */
   int flag;
@@ -650,7 +650,7 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   cvodeData->isInitialized = FALSE;
 
   /* Get CVODE settings from user flags */
-  cvodeGetConfig(&(cvodeData->config), threadData, isFMI);
+  cvodeGetConfig(&(cvodeData->config), threadData);
 
   /* Create the SUNDIALS context every other SUNDIALS object is created with */
   flag = SUNContext_Create(SUN_COMM_NULL, &cvodeData->sunctx);

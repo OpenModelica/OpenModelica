@@ -1610,7 +1610,7 @@ macro_rules! cs_instance_methods {
         // point (FMI ran Initialization Mode; the importer may also have set inputs).
         // Event Mode already built it in exit-initialization-mode.
         if st.cs.is_none() {
-            match CsDriver::new(&mut st.engine, &st.meta, sim_data, t, defer, st.sync.take()) {
+            match CsDriver::new(&mut st.engine, &st.meta, sim_data, t, st.sync.take()) {
                 Ok(d) => st.cs = Some(d),
                 Err(e) => return Err(err_status(e)),
             }
@@ -1780,9 +1780,9 @@ macro_rules! shared_instance_methods {
         // must run through the driver's sample schedule, so build it eagerly.
         #[cfg(feature = "cs")]
         if st.defer != CsDefer::None {
-            let (sim_data, t, defer) = (st.sim_data, st.read_f64(TIME_OFF), st.defer);
+            let (sim_data, t) = (st.sim_data, st.read_f64(TIME_OFF));
             let st = &mut *st;
-            match CsDriver::new(&mut st.engine, &st.meta, sim_data, t, defer, st.sync.take()) {
+            match CsDriver::new(&mut st.engine, &st.meta, sim_data, t, st.sync.take()) {
                 Ok(d) => st.cs = Some(d),
                 Err(err) => return err_status(err),
             }
@@ -2260,9 +2260,9 @@ macro_rules! shared_instance_methods {
         // belongs to the state left behind.
         #[cfg(feature = "cs")]
         if let Some(d) = st.cs.take() {
-            let (t, defer) = (st.read_f64(TIME_OFF), st.defer);
+            let t = st.read_f64(TIME_OFF);
             let st = &mut *st;
-            match CsDriver::new(&mut st.engine, &st.meta, sim_data, t, defer, Some(d.into_sync())) {
+            match CsDriver::new(&mut st.engine, &st.meta, sim_data, t, Some(d.into_sync())) {
                 Ok(d) => st.cs = Some(d),
                 Err(e) => return err_status(e),
             }
@@ -2462,7 +2462,7 @@ impl GuestCoSimulationInstance for Instance<Engine> {
             (true, true) => CsDefer::Any,
         };
         // C's `fmi2Instantiate` sets the internal solver up here, CS only.
-        driver::log_cs_solver_setup(&st.meta, st.defer);
+        driver::log_cs_solver_setup(&st.meta);
         Some(CoSimulationInstance::new(Instance { st: RefCell::new(st) }))
     }
 
@@ -2569,7 +2569,7 @@ impl<E: FmiHost + 'static> Instance<E> {
                 (true, false) => CsDefer::AtTarget,
                 (true, true) => CsDefer::Any,
             };
-            driver::log_cs_solver_setup(&st.meta, st.defer);
+            driver::log_cs_solver_setup(&st.meta);
         }
         Some(inst)
     }
