@@ -1334,6 +1334,11 @@ algorithm
             Util.createDirectoryTree(fmutmp + "/extra/org.fmi-standard.fmi-ls-dae/");
             Error.addMessage(Error.FMU_EXPORT_FMI_LS_DAE_DRAFT,
               {SimCodeCodegenUtil.FMI_LS_DAE_VERSION, SimCodeUtil.FMI_LS_DAE_DRAFT_DATE, SimCodeUtil.FMI_LS_DAE_DRAFT_COMMIT});
+            // --fmuAcausalComponent: the placeholder residuals of the top-level
+            // connectors, written by the CodegenFMU3 template next to the manifest.
+            if Flags.getConfigBool(Flags.FMU_ACAUSAL_COMPONENT) then
+              Util.createDirectoryTree(fmutmp + "/extra/" + SimCodeCodegenUtil.FMI_LS_DAE_ACAUSAL_NAME + "/");
+            end if;
           end if;
         end if;
 

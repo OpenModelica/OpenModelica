@@ -329,6 +329,7 @@ case FMI_TERMINAL(__) then
   <<
   <Terminal name="<%Util.escapeModelicaStringToXmlString(name)%>" matchingRule="<%rule%>"<%kindAttr%>>
     <%members |> m => TerminalMember3(m) ;separator="\n"%>
+    <%streamMembers |> m => TerminalStreamMember3(m) ;separator="\n"%>
   </Terminal>
   >>
 end Terminal3;
@@ -342,6 +343,17 @@ case FMI_TERMINAL_MEMBER(__) then
   let varName = Util.escapeModelicaStringToXmlString(System.stringReplace(crefStrNoUnderscore(variable),"$", "_D_"))
   '<TerminalMemberVariable variableName="<%varName%>" memberName="<%Util.escapeModelicaStringToXmlString(memberName)%>" variableKind="<%variableKind%>"/>'
 end TerminalMember3;
+
+template TerminalStreamMember3(FmiTerminalStreamMember member)
+ "Generates a <TerminalStreamMemberVariable> for a stream variable and the variable
+  that stands for its inStream (--fmuAcausalComponent)."
+::=
+match member
+case FMI_TERMINAL_STREAM_MEMBER(__) then
+  let inName = Util.escapeModelicaStringToXmlString(System.stringReplace(crefStrNoUnderscore(inStreamVariable),"$", "_D_"))
+  let outName = Util.escapeModelicaStringToXmlString(System.stringReplace(crefStrNoUnderscore(outStreamVariable),"$", "_D_"))
+  '<TerminalStreamMemberVariable inStreamMemberName="<%Util.escapeModelicaStringToXmlString(inStreamMemberName)%>" outStreamMemberName="<%Util.escapeModelicaStringToXmlString(outStreamMemberName)%>" inStreamVariableName="<%inName%>" outStreamVariableName="<%outName%>"/>'
+end TerminalStreamMember3;
 
 template fmiModelDescriptionAttributes(SimCode simCode, String guid)
  "Generates the attributes of the fmiModelDescription element for FMI 3.0."
@@ -548,8 +560,44 @@ match simCode
 case SIMCODE(daeModeData=SOME(_)) then
   if isFMIMEType(FMUType) then
   let()= textFile(fmiLsDaeManifestXml(simCode), '<%fileNamePrefixHash%>.fmutmp/extra/org.fmi-standard.fmi-ls-dae/fmi-ls-manifest.xml')
+  let _ = if Flags.getConfigBool(Flags.FMU_ACAUSAL_COMPONENT) then
+    let()= textFile(fmiLsDaeAcausalManifestXml(simCode), '<%fileNamePrefixHash%>.fmutmp/extra/<%SimCodeCodegenUtil.fmiLsDaeAcausalName()%>/fmi-ls-manifest.xml')
+    ''
   ''
 end fmiLsDaeManifestFile;
+
+template fmiLsDaeAcausalManifestXml(SimCode simCode)
+ "--fmuAcausalComponent: an OpenModelica extension of fmi-ls-dae for a component
+  that is connected through its top-level connectors (FMI 3.0 terminals) after it
+  is compiled. Each ConnectorResidual is a residual of the fmi-ls-dae manifest
+  that stands for the connection equation of one flow variable; on its own it
+  means flow = 0 (an unconnected connector), and an importer that connects the
+  terminal replaces it by the equations of the connection. Each StreamResidual
+  stands in the same way for inStream of one stream variable: on its own it means
+  inStream(stream) = stream, and the importer replaces it by the mixing rule of the
+  connection set; the terminal's TerminalStreamMemberVariable names the variable
+  that stands for inStream."
+::=
+  let _ = SimCodeCodegenUtil.cacheFMI3ValueReferences(simCode)
+  let residuals = (SimCodeCodegenUtil.fmi3ConnectorResiduals(simCode) |> (vr, flowName) =>
+    '<ConnectorResidual valueReference="<%vr%>" terminal="<%SimCodeCodegenUtil.connectorResidualTerminal(flowName)%>" variableName="<%flowName%>"/>' ;separator="\n")
+  let streamResiduals = (SimCodeCodegenUtil.fmi3StreamResiduals(simCode) |> (vr, streamName) =>
+    '<StreamResidual valueReference="<%vr%>" terminal="<%SimCodeCodegenUtil.connectorResidualTerminal(streamName)%>" variableName="<%streamName%>"/>' ;separator="\n")
+  let _ = SimCodeCodegenUtil.clearFMI3ValueReferences()
+  <<
+  <?xml version="1.0" encoding="UTF-8"?>
+  <fmiDAEAcausalManifest
+    xmlns:fmi-ls="http://fmi-standard.org/fmi-ls-manifest"
+    fmi-ls:fmi-ls-name="<%SimCodeCodegenUtil.fmiLsDaeAcausalName()%>"
+    fmi-ls:fmi-ls-version="<%SimCodeCodegenUtil.fmiLsDaeAcausalVersion()%>"
+    fmi-ls:fmi-ls-description="OpenModelica extension of fmi-ls-dae: a component connected through its terminals.">
+    <ConnectorResiduals>
+      <%residuals%>
+      <%streamResiduals%>
+    </ConnectorResiduals>
+  </fmiDAEAcausalManifest>
+  >>
+end fmiLsDaeAcausalManifestXml;
 
 template fmiLsDaeManifestXml(SimCode simCode)
  "fmiLsDaeManifest with the XML declaration, as it is written to a file."

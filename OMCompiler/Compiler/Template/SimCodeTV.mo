@@ -1052,6 +1052,7 @@ end SparsityRow;
       String terminalKind;
       Boolean isExpandable;
       list<FmiTerminalMember> members;
+      list<FmiTerminalStreamMember> streamMembers;
     end FMI_TERMINAL;
   end FmiTerminal;
 
@@ -1062,6 +1063,15 @@ end SparsityRow;
       String variableKind;
     end FMI_TERMINAL_MEMBER;
   end FmiTerminalMember;
+
+  uniontype FmiTerminalStreamMember
+    record FMI_TERMINAL_STREAM_MEMBER
+      String inStreamMemberName;
+      String outStreamMemberName;
+      DAE.ComponentRef inStreamVariable;
+      DAE.ComponentRef outStreamVariable;
+    end FMI_TERMINAL_STREAM_MEMBER;
+  end FmiTerminalStreamMember;
 
   uniontype FmiFigure
     record FMI_FIGURE
@@ -1667,9 +1677,32 @@ package SimCodeCodegenUtil
     output list<tuple<String, String>> residuals;
   end fmi3DaeResiduals;
 
+  function fmi3ConnectorResiduals
+    input SimCode.SimCode simCode;
+    output list<tuple<String, String>> residuals;
+  end fmi3ConnectorResiduals;
+
+  function fmi3StreamResiduals
+    input SimCode.SimCode simCode;
+    output list<tuple<String, String>> residuals;
+  end fmi3StreamResiduals;
+
+  function connectorResidualTerminal
+    input String flowName;
+    output String terminal;
+  end connectorResidualTerminal;
+
   function fmiLsDaeVersion
     output String version;
   end fmiLsDaeVersion;
+
+  function fmiLsDaeAcausalName
+    output String name;
+  end fmiLsDaeAcausalName;
+
+  function fmiLsDaeAcausalVersion
+    output String version;
+  end fmiLsDaeAcausalVersion;
 
   function getVarIndexListByMapping
     input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
@@ -4594,6 +4627,7 @@ package Flags
   constant DebugFlag FMU_EXPERIMENTAL;
   constant DebugFlag MULTIRATE_PARTITION;
   constant ConfigFlag DAE_MODE;
+  constant ConfigFlag FMU_ACAUSAL_COMPONENT;
   constant ConfigFlag EQUATIONS_PER_FILE;
   constant ConfigFlag GENERATE_DYNAMIC_JACOBIAN;
   constant ConfigFlag HOMOTOPY_APPROACH;
