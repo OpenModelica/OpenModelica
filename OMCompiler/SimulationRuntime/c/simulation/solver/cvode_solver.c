@@ -192,7 +192,6 @@ int cvodeRightHandSideODEFunction(sunrealtype time, N_Vector y, N_Vector ydot, v
   if (!success)
   {
     retVal = 1; /* Recoverable error, reduce step size and retry */
-#ifndef OMC_FMI_RUNTIME
     /* At the start point fall back to the derivatives DASSL and IDA start from:
      * the model can be singular at exactly that point. */
     if (cvodeData->fStart != NULL && time == cvodeData->startTime
@@ -201,7 +200,6 @@ int cvodeRightHandSideODEFunction(sunrealtype time, N_Vector y, N_Vector ydot, v
       memcpy(N_VGetArrayPointer(ydot), cvodeData->fStart, cvodeData->N * sizeof(double));
       retVal = 0;
     }
-#endif
   }
 
   threadData->currentErrorStage = saveJumpState;
@@ -883,10 +881,8 @@ int cvode_solver_deinitial(CVODE_SOLVER *cvodeData)
   }
   free(cvodeData->ysave);
   free(cvodeData->delta_hh);
-#ifndef OMC_FMI_RUNTIME
   free(cvodeData->yStart);
   free(cvodeData->fStart);
-#endif
   freeSymbolicOdeJacobian(cvodeData->simData->data);
 
   /* Free non-linear solver data */
@@ -1050,7 +1046,6 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   /* Reinitialize after event or at first call to cvode_solver_step() */
   if (solverInfo->didEventStep || !cvodeData->isInitialized)
   {
-#ifndef OMC_FMI_RUNTIME
     if (!cvodeData->isInitialized)
     {
       cvodeData->startTime = solverInfo->currentTime;
@@ -1060,7 +1055,6 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
       memcpy(cvodeData->yStart, simulationData->realVars, cvodeData->N * sizeof(double));
       memcpy(cvodeData->fStart, simulationData->realVars + cvodeData->N, cvodeData->N * sizeof(double));
     }
-#endif
     cvode_solver_reinit(data, threadData, solverInfo, cvodeData);
     cvodeData->isInitialized = TRUE;
   }
@@ -1095,6 +1089,10 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   /* CVODE may step past tout and interpolates back to it, but never past the
    * next time event */
   tout = solverInfo->currentTime + solverInfo->currentStepSize;
+#ifdef OMC_FMI_RUNTIME
+  /* The inputs of an FMU can change at the communication point */
+  CVodeSetStopTime(cvodeData->cvode_mem, tout);
+#else
   if (simulationInfo->nextSampleEvent < DBL_MAX)
   {
     CVodeSetStopTime(cvodeData->cvode_mem, fmax(simulationInfo->nextSampleEvent, tout));
@@ -1103,6 +1101,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   {
     CVodeClearStopTime(cvodeData->cvode_mem);
   }
+#endif
 
   if (solverInfo->didEventStep && !omc_flag[FLAG_INITIAL_STEP_SIZE])
   {
@@ -1185,84 +1184,3 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
 
   return retVal;
 }
-
-#ifdef OMC_FMI_RUNTIME
-
-/**
- * @brief Integration step with CVODE for fmi2DoStep and fmi3DoStep
- *
- * @param data          Runtime data of the FMU instance.
- * @param threadData    Thread data of the FMU instance.
- * @param solverInfo    Solver of the FMU instance.
- * @param tNext         Next desired time step for integrator to end.
- * @param states        States vector.
- * @return int          0 on success, else the negative flag of the CVODE call that failed.
- */
-int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double tNext, double* states)
-{
-  SIMULATION_INFO* simulationInfo = data->simulationInfo;
-  CVODE_SOLVER *cvodeData = (CVODE_SOLVER*) solverInfo->solverData;
-  const double *ders = data->localData[0]->realVars + cvodeData->N;
-  double h;
-  int flag, workRetries;
-  long int i;
-
-  solverInfo->currentTime = data->localData[0]->timeValue;
-  h = tNext - solverInfo->currentTime;
-
-  N_VSetArrayPointer(states, cvodeData->y);
-  if (solverInfo->didEventStep || !cvodeData->isInitialized)
-  {
-    cvode_solver_reinit(data, threadData, solverInfo, cvodeData);
-    cvodeData->isInitialized = TRUE;
-  }
-
-  /* As cvode_solver_step: CVODE rejects a tout within roundoff of t */
-  if (h < DASSL_STEP_EPS || h < DASSL_STEP_EPS*(simulationInfo->stopTime - simulationInfo->startTime))
-  {
-    for (i = 0; i < cvodeData->N; i++)
-    {
-      states[i] += ders[i] * h;
-    }
-    solverInfo->currentTime = tNext;
-    return 0;
-  }
-
-  if (solverInfo->didEventStep && !omc_flag[FLAG_INITIAL_STEP_SIZE])
-  {
-    flag = CVodeSetInitStep(cvodeData->cvode_mem, cvodeRestartStep(data, cvodeData, h));
-    if (flag < 0) {
-      return flag;
-    }
-  }
-  flag = CVodeSetStopTime(cvodeData->cvode_mem, tNext);
-  if (flag < 0) {
-    return flag;
-  }
-  for (workRetries = 0; ; workRetries++)
-  {
-    flag = CVode(cvodeData->cvode_mem,
-                 tNext,
-                 cvodeData->y,
-                 &(solverInfo->currentTime),
-                 CV_NORMAL);
-    if (flag != CV_TOO_MUCH_WORK || workRetries == SOLVER_WORK_RETRIES)
-    {
-      break;
-    }
-    infoStreamPrint(OMC_LOG_SOLVER, 0, "##CVODE## has done too much work with small steps at time = %.15g. Continuing to solve anyway.", solverInfo->currentTime);
-  }
-
-  if ((flag == CV_SUCCESS || flag == CV_TSTOP_RETURN) && solverInfo->currentTime >= tNext)
-  {
-    infoStreamPrint(OMC_LOG_SOLVER, 0, "##CVODE## step done to time = %.15g.", solverInfo->currentTime);
-  }
-  else
-  {
-    return flag < 0 ? flag : -1;
-  }
-
-  return 0;
-}
-
-#endif /* OMC_FMI_RUNTIME */
