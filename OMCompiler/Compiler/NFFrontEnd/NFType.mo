@@ -1033,6 +1033,14 @@ public
     end match;
   end mapDims;
 
+  function replaceIteratorsByName
+    "see Expression.replaceIteratorsByName"
+    input output Type ty;
+    input UnorderedMap<String, Expression> values;
+  algorithm
+    ty := mapDims(ty, function Dimension.replaceIteratorsByName(values = values));
+  end replaceIteratorsByName;
+
   function foldDims<ArgT>
     input Type ty;
     input FuncT func;

@@ -2292,6 +2292,39 @@ public
     res := contains(exp, function containsIterator2(iterator = iterator));
   end containsIterator;
 
+  function isIteratorNamed
+    input Expression exp;
+    input list<String> names;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case CREF() guard ComponentRef.isIterator(exp.cref)
+        then List.isMemberOnTrue(ComponentRef.firstName(exp.cref), names, stringEq);
+      else false;
+    end match;
+  end isIteratorNamed;
+
+  function replaceIteratorsByName
+    "Replaces iterators by name, also in the dimensions of the types. Unlike
+     replaceIterator this also works for different iterator nodes with the same
+     name, e.g. the binding iterators of a vectorized component."
+    input output Expression exp;
+    input UnorderedMap<String, Expression> values;
+  algorithm
+    exp := map(exp, function replaceIteratorByName(values = values));
+  end replaceIteratorsByName;
+
+  function replaceIteratorByName
+    input output Expression exp;
+    input UnorderedMap<String, Expression> values;
+  algorithm
+    exp := match exp
+      case CREF() guard ComponentRef.isIterator(exp.cref)
+        then UnorderedMap.getOrDefault(ComponentRef.firstName(exp.cref), values, exp);
+      else applyToType(exp, function Type.replaceIteratorsByName(values = values));
+    end match;
+  end replaceIteratorByName;
+
   function arrayFromList
     input list<Expression> inExps;
     input Type elemTy;

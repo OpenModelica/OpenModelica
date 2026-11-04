@@ -83,8 +83,6 @@ protected
   import Type = NFType;
   import Variable = NFVariable;
   import RangeIterator = NFRangeIterator;
-  import SCode;
-  import Absyn;
 
   // New Backend imports
   import Adjacency = NBAdjacency;
@@ -372,7 +370,7 @@ public
     end if;
 
     for d in dims loop
-      split_count := max(split_count, raggedDependency(d, iter_names));
+      split_count := max(split_count, Dimension.lastIteratorDependency(d, iter_names));
     end for;
     if split_count == 0 then
       vars := var :: vars;
@@ -385,7 +383,7 @@ public
     for element in elements loop
       values := raggedValues(iter_names, element);
       ty := Type.liftArrayLeftList(Type.arrayElementType(var.ty),
-        list(Dimension.fromExp(SimplifyExp.simplify(replaceNamedIterators(Dimension.sizeExp(d), values)), NFPrefixes.Variability.CONSTANT) for d in inner_dims));
+        list(Dimension.fromExp(SimplifyExp.simplify(Expression.replaceIteratorsByName(Dimension.sizeExp(d), values)), NFPrefixes.Variability.CONSTANT) for d in inner_dims));
       Pointer.update(index, Pointer.access(index) + 1);
       node := InstNode.VAR_NODE(RAGGED_STR + "_" + intString(Pointer.access(index)), PointerWeak.downgrade(Pointer.createImmutable(NBVariable.DUMMY_VARIABLE)));
       aux := var;
@@ -393,33 +391,12 @@ public
       aux.ty := ty;
       aux.binding := Binding.mapExpShallow(var.binding, function raggedElement(element = element, values = values));
       aux.typeAttributes := list((Util.tuple21(a), Binding.mapExpShallow(Util.tuple22(a), function raggedElement(element = element, values = values))) for a in var.typeAttributes);
-      aux.comment := hideResultComment(var.comment);
+      aux := Variable.setBooleanAnnotation("HideResult", true, aux);
       UnorderedMap.add(raggedKey(element), aux.name, crefs);
       vars := aux :: vars;
     end for;
     UnorderedMap.add(ComponentRef.stripSubscriptsAll(var.name), (split_count, crefs), map);
   end splitRaggedVariable;
-
-  function raggedDependency
-    "the position of the last outer dimension the size depends on, 0 if none"
-    input Dimension dim;
-    input list<String> names;
-    output Integer pos = 0;
-  protected
-    Integer i = 1;
-  algorithm
-    () := match dim
-      case Dimension.EXP() algorithm
-        for name in names loop
-          if Expression.contains(dim.exp, function isNamedIterator(names = {name})) then
-            pos := i;
-          end if;
-          i := i + 1;
-        end for;
-      then ();
-      else ();
-    end match;
-  end raggedDependency;
 
   function raggedElements
     "all index tuples of the given dimensions, a size may depend on the indices before it"
@@ -433,7 +410,7 @@ public
     for d in dims loop
       next := {};
       for e in elements loop
-        size := Expression.toInteger(SimplifyExp.simplify(replaceNamedIterators(Dimension.sizeExp(d), raggedValues(names, e))));
+        size := Expression.toInteger(SimplifyExp.simplify(Expression.replaceIteratorsByName(Dimension.sizeExp(d), raggedValues(names, e))));
         for k in 1:size loop
           next := listAppend(e, {k}) :: next;
         end for;
@@ -457,53 +434,6 @@ public
 
   constant String RAGGED_STR = "$RAG";
 
-  function isNamedIterator
-    input Expression exp;
-    input list<String> names;
-    output Boolean b;
-  algorithm
-    b := match exp
-      case Expression.CREF() guard(ComponentRef.isIterator(exp.cref)) then List.contains(names, ComponentRef.firstName(exp.cref), stringEqual);
-      else false;
-    end match;
-  end isNamedIterator;
-
-  function replaceNamedIterators
-    input output Expression exp;
-    input UnorderedMap<String, Expression> values;
-  algorithm
-    exp := Expression.map(exp, function replaceNamedIterator(values = values));
-  end replaceNamedIterators;
-
-  function replaceNamedIterator
-    input output Expression exp;
-    input UnorderedMap<String, Expression> values;
-  algorithm
-    exp := match exp
-      case Expression.CREF() guard(ComponentRef.isIterator(exp.cref))
-        then UnorderedMap.getOrDefault(ComponentRef.firstName(exp.cref), values, exp);
-      else Expression.applyToType(exp, function replaceNamedIteratorsType(values = values));
-    end match;
-  end replaceNamedIterator;
-
-  function replaceNamedIteratorsType
-    input output Type ty;
-    input UnorderedMap<String, Expression> values;
-  algorithm
-    ty := Type.mapDims(ty, function replaceNamedIteratorsDim(values = values));
-  end replaceNamedIteratorsType;
-
-  function replaceNamedIteratorsDim
-    input output Dimension dim;
-    input UnorderedMap<String, Expression> values;
-  algorithm
-    dim := match dim
-      case Dimension.EXP() guard(Expression.contains(dim.exp, function isNamedIterator(names = UnorderedMap.keyList(values))))
-        then Dimension.simplify(Dimension.EXP(replaceNamedIterators(dim.exp, values), dim.var));
-      else dim;
-    end match;
-  end replaceNamedIteratorsDim;
-
   function raggedElement
     "the element of a vectorized binding, e.g. array(e($lay1) for $lay1 in 1:3) -> e(2)"
     input output Expression exp;
@@ -515,26 +445,8 @@ public
         exp := Expression.applySubscript(Subscript.INDEX(Expression.INTEGER(e)), exp);
       end for;
     end if;
-    exp := SimplifyExp.simplify(replaceNamedIterators(exp, values));
+    exp := SimplifyExp.simplify(Expression.replaceIteratorsByName(exp, values));
   end raggedElement;
-
-  function hideResultComment
-    input output SCode.Comment comment;
-  protected
-    SCode.SubMod hide = SCode.NAMEMOD("HideResult", SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {}, SOME(Absyn.BOOL(true)), NONE(), Absyn.dummyInfo));
-  algorithm
-    comment := match comment
-      local
-        SCode.Mod mod;
-      case SCode.COMMENT(annotation_ = SOME(SCode.ANNOTATION(modification = mod as SCode.MOD()))) algorithm
-        mod.subModLst := hide :: mod.subModLst;
-        comment.annotation_ := SOME(SCode.ANNOTATION(mod));
-      then comment;
-      case SCode.COMMENT() algorithm
-        comment.annotation_ := SOME(SCode.ANNOTATION(SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {hide}, NONE(), NONE(), Absyn.dummyInfo)));
-      then comment;
-    end match;
-  end hideResultComment;
 
   function replaceRaggedCrefs
     "lay[2].T[i] -> $RAG_2[i] for literal indices of the split dimensions"
@@ -593,13 +505,13 @@ public
   algorithm
     acc := match eqn
       case FEquation.FOR(range = SOME(range))
-        guard(FEquation.containsExpList(eqn.body, function containsRaggedOuterIterator(iterator = eqn.iterator, map = map)))
+        guard(FEquation.containsExpList(eqn.body, function Expression.contains(func = function isRaggedOuterIterator(iterator = eqn.iterator, map = map))))
         algorithm
           range_iter := RangeIterator.fromExp(SimplifyExp.simplify(range));
           while RangeIterator.hasNext(range_iter) loop
             (range_iter, val) := RangeIterator.next(range_iter);
             values := UnorderedMap.fromLists({InstNode.name(eqn.iterator)}, {val}, stringHashDjb2, stringEq);
-            for body_eqn in FEquation.mapExpList(eqn.body, function replaceNamedIterators(values = values)) loop
+            for body_eqn in FEquation.mapExpList(eqn.body, function Expression.replaceIteratorsByName(values = values)) loop
               acc := splitRaggedEquation(body_eqn, map, acc);
             end for;
           end while;
@@ -637,13 +549,6 @@ public
     end match;
   end isRaggedCref;
 
-  function containsRaggedOuterIterator
-    input Expression exp;
-    input InstNode iterator;
-    input UnorderedMap<ComponentRef, RaggedVariable> map;
-    output Boolean b = Expression.contains(exp, function isRaggedOuterIterator(iterator = iterator, map = map));
-  end containsRaggedOuterIterator;
-
   function isRaggedOuterIterator
     input Expression exp;
     input InstNode iterator;
@@ -660,16 +565,10 @@ public
         if listLength(subs) < split_count then
           return;
         end if;
-      then List.any(List.firstN(subs, split_count), function subscriptContainsIterator(iterator = iterator));
+      then List.any(List.firstN(subs, split_count), function Subscript.containsExpShallow(func = function Expression.containsIterator(iterator = iterator)));
       else false;
     end match;
   end isRaggedOuterIterator;
-
-  function subscriptContainsIterator
-    input Subscript sub;
-    input InstNode iterator;
-    output Boolean b = Subscript.isIndex(sub) and Expression.contains(Subscript.toExp(sub), function isNamedIterator(names = {InstNode.name(iterator)}));
-  end subscriptContainsIterator;
 
   function continuousImplicitDiscretes
     "Real variables assigned in a when-equation are implicitly discrete. The frontend marks them before

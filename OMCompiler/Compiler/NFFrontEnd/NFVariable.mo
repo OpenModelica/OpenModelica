@@ -494,6 +494,23 @@ public
     end if;
   end propagateAnnotation;
 
+  function setBooleanAnnotation
+    input String name;
+    input Boolean value;
+    input output Variable var;
+  protected
+    SCode.Annotation anno;
+  algorithm
+    anno := SCode.ANNOTATION(modification = SCode.MOD(
+      finalPrefix = SCode.NOT_FINAL(),
+      eachPrefix  = SCode.NOT_EACH(),
+      subModLst   = {SCode.SubMod.NAMEMOD(name, SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {}, SOME(Absyn.BOOL(value)), NONE(), sourceInfo()))},
+      binding     = NONE(),
+      comment     = NONE(),
+      info        = sourceInfo()));
+    var.comment := SCodeUtil.appendAnnotationToComment(anno, var.comment, true);
+  end setBooleanAnnotation;
+
   function removeNonTopLevelDirection
     "Removes input/output prefixes from a variable that's not a top-level
      component, a component in a top-level connector, or a component in a
