@@ -5247,10 +5247,11 @@ public
     positive := match exp
       case INTEGER() then exp.value > 0;
       case REAL() then exp.value > 0.0;
-      case CAST() then isPositive(exp.exp);
-      case UNARY() then isNegative(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "min"), isPositive, false);
       case CALL() then Call.isPositive(exp.call);
+      case UNARY() then isNegative(exp.exp);
+      case IF() then isPositive(exp.trueBranch) and isPositive(exp.falseBranch);
+      case CAST() then isPositive(exp.exp);
       else false;
     end match;
   end isPositive;
@@ -5262,10 +5263,11 @@ public
     negative := match exp
       case INTEGER() then exp.value < 0;
       case REAL() then exp.value < 0.0;
-      case CAST() then isNegative(exp.exp);
-      case UNARY() then isPositive(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "max"), isNegative, false);
       case CALL() then Call.isNegative(exp.call);
+      case UNARY() then isPositive(exp.exp);
+      case IF() then isNegative(exp.trueBranch) and isNegative(exp.falseBranch);
+      case CAST() then isNegative(exp.exp);
       else false;
     end match;
   end isNegative;
@@ -5277,11 +5279,12 @@ public
     res := match exp
       case INTEGER() then exp.value <= 0;
       case REAL() then exp.value <= 0.0;
-      case CAST() then isNonPositive(exp.exp);
-      case UNARY() then isNonNegative(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "max"), isNonPositive, false);
-      case CALL() then Call.isNonPositive(exp.call);
       case ARRAY() then Array.all(exp.elements, isNonPositive);
+      case CALL() then Call.isNonPositive(exp.call);
+      case UNARY() then isNonNegative(exp.exp);
+      case IF() then isNonPositive(exp.trueBranch) and isNonPositive(exp.falseBranch);
+      case CAST() then isNonPositive(exp.exp);
       else false;
     end match;
   end isNonPositive;
@@ -5293,10 +5296,11 @@ public
     res := match exp
       case INTEGER() then exp.value >= 0;
       case REAL() then exp.value >= 0.0;
-      case CAST() then isNonNegative(exp.exp);
-      case UNARY() then isNonPositive(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "min"), isNonNegative, false);
       case CALL() then Call.isNonNegative(exp.call);
+      case UNARY() then isNonPositive(exp.exp);
+      case IF() then isNonNegative(exp.trueBranch) and isNonNegative(exp.falseBranch);
+      case CAST() then isNonNegative(exp.exp);
       else false;
     end match;
   end isNonNegative;

@@ -711,8 +711,13 @@ public
       case TYPED_CALL()
         then match functionNameFirst(call)
           case "abs" then Expression.isNonZero(listHead(call.arguments));
+          case "cosh" then true;
+          case "exp" then true;
           case "max" then List.any(call.arguments, Expression.isPositive);
           case "min" then List.all(call.arguments, Expression.isPositive);
+          case "sign" then Expression.isPositive(listHead(call.arguments));
+          case "sinh" then Expression.isPositive(listHead(call.arguments));
+          case "sqrt" then Expression.isPositive(listHead(call.arguments));
           else false;
         end match;
 
@@ -728,9 +733,14 @@ public
     negative := match call
       case TYPED_CALL()
         then match functionNameFirst(call)
-          case "abs" then false;
-          case "min" then List.any(call.arguments, Expression.isNegative);
+          //case "abs" then false;
+          //case "cosh" then false;
+          //case "exp" then false;
           case "max" then List.all(call.arguments, Expression.isNegative);
+          case "min" then List.any(call.arguments, Expression.isNegative);
+          case "sign" then Expression.isNegative(listHead(call.arguments));
+          case "sinh" then Expression.isNegative(listHead(call.arguments));
+          //case "sqrt" then false;
           else false;
         end match;
 
@@ -747,8 +757,13 @@ public
       case TYPED_CALL()
         then match functionNameFirst(call)
           case "abs" then Expression.isZero(listHead(call.arguments));
+          //case "cosh" then false;
+          //case "exp" then false;
           case "max" then List.all(call.arguments, Expression.isNonPositive);
           case "min" then List.any(call.arguments, Expression.isNonPositive);
+          case "sign" then Expression.isNonPositive(listHead(call.arguments));
+          case "sinh" then Expression.isNonPositive(listHead(call.arguments));
+          case "sqrt" then Expression.isZero(listHead(call.arguments));
           else false;
         end match;
 
@@ -765,8 +780,13 @@ public
       case TYPED_CALL()
         then match functionNameFirst(call)
           case "abs" then true;
+          case "cosh" then true;
+          case "exp" then true;
           case "max" then List.any(call.arguments, Expression.isNonNegative);
           case "min" then List.all(call.arguments, Expression.isNonNegative);
+          case "sign" then Expression.isNonNegative(listHead(call.arguments));
+          case "sinh" then Expression.isNonNegative(listHead(call.arguments));
+          case "sqrt" then true;
           else false;
         end match;
 
