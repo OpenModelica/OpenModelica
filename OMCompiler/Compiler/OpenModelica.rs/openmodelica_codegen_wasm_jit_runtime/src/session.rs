@@ -32,6 +32,7 @@ use openmodelica_sim_meta::{SimMeta, SolveStats};
 unsafe extern "C" {
     fn rt_host_now_ms() -> f64;
     fn rt_host_cancel() -> i32;
+    fn rt_host_progress(permille: i32);
     /// Copy up to `max` of the violations the model left with the host's
     /// `rt_assert`/`rt_assert_warning` (which it imports either way) to `ptr`.
     fn rt_host_take_warnings(ptr: u32, max: u32) -> u32;
@@ -57,6 +58,9 @@ pub(crate) fn now_ms_hook() -> f64 {
 }
 fn cancel_hook() -> bool {
     unsafe { rt_host_cancel() != 0 }
+}
+fn progress_hook(permille: i32) {
+    unsafe { rt_host_progress(permille) };
 }
 
 // A model error unwinds to its `<entry>$guard` past any runtime frames between,
@@ -588,6 +592,7 @@ pub extern "C" fn rt_sim_start(
         &model,
     );
     driver::set_cancel_hook(cancel_hook);
+    driver::set_progress_hook(progress_hook);
     driver::set_init_done_hook(init_done_hook);
     openmodelica_sim_meta::files::set_writer(|path, bytes| {
         crate::files::write_file(path, &alloc::string::String::from_utf8_lossy(bytes));

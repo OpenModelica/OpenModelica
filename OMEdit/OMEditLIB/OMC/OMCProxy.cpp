@@ -883,6 +883,25 @@ OMCLongOperation::~OMCLongOperation()
 }
 
 /*!
+ * \brief OMCProxy::simulationProgress
+ * \return The in-process simulation's progress in permille, or -1 when no simulation reports it.
+ */
+int OMCProxy::simulationProgress()
+{
+#if defined(__EMSCRIPTEN__)
+  const int phase = omedit_progress_phase();
+  const int permille = omedit_progress_permille();
+#elif defined(OMC_RUST_ABI)
+  const int phase = omc_compiler_progress_phase();
+  const int permille = omc_compiler_progress_permille();
+#else
+  const int phase = System_progressPhase();
+  const int permille = System_progressPermille();
+#endif
+  return phase == 5 ? permille : -1;
+}
+
+/*!
  * \class OMCProxy
  * \brief Interface to send commands to OpenModelica Compiler.
  */
