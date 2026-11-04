@@ -82,6 +82,7 @@ protected
   import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
+  import RangeIterator = NFRangeIterator;
 
   // New Backend imports
   import Adjacency = NBAdjacency;
@@ -269,6 +270,7 @@ public
     Partitioning.ClockedInfo clockedInfo = Partitioning.ClockedInfo.new();
     FlatModel flat = FlatModel.mapExp(flatModel, lowerExp);
   algorithm
+    flat := splitRaggedVariables(flat);
     variableData := lowerVariableData(continuousImplicitDiscretes(flat.variables, listAppend(flat.equations, flat.initialEquations),
       listAppend(flat.algorithms, flat.initialAlgorithms)));
     (equationData, variableData) := lowerEquationData(flat.equations, flat.algorithms, flat.initialEquations, flat.initialAlgorithms, variableData);
@@ -309,6 +311,264 @@ public
       else exp;
     end match;
   end lowerFunctionPointer;
+
+  function splitRaggedVariables
+    "A vectorized component array whose elements have arrays of different sizes gives a
+    ragged variable, e.g. Real[3, {2, 3, 2}[$lay1]] lay.T. Every element of the outer
+    dimensions becomes its own variable $RAG_k (Real[2], Real[3], Real[2]) and the
+    for-equations over the outer dimensions are unrolled to address them.
+    TODO: alias the original variable to the $RAG_k variables for the result."
+    input output FlatModel flat;
+  protected
+    UnorderedMap<ComponentRef, RaggedVariable> map = UnorderedMap.new<RaggedVariable>(ComponentRef.hashStrip, ComponentRef.isEqualStrip);
+    list<Variable> vars = {};
+    Pointer<Integer> index = Pointer.create(0);
+  algorithm
+    for var in flat.variables loop
+      vars := splitRaggedVariable(var, map, index, vars);
+    end for;
+    if UnorderedMap.isEmpty(map) then
+      return;
+    end if;
+    flat.variables := list(Variable.mapExp(v, function replaceRaggedCrefs(map = map)) for v in listReverse(vars));
+    flat.equations := splitRaggedEquations(flat.equations, map);
+    flat.initialEquations := splitRaggedEquations(flat.initialEquations, map);
+  end splitRaggedVariables;
+
+  type RaggedVariable = tuple<Integer, UnorderedMap<String, ComponentRef>> "number of split dimensions, element variables by indices";
+
+  function splitRaggedVariable
+    "Splits along the leading dimensions up to the last one that a size depends on, e.g. for
+    Real[2, {2, 3}[$w1], {{2, 3}, {1, 2, 2}}[$w1, $lay1]] w.lay.T along w and lay."
+    input Variable var;
+    input UnorderedMap<ComponentRef, RaggedVariable> map;
+    input Pointer<Integer> index;
+    input output list<Variable> vars;
+  protected
+    list<ComponentRef> parts;
+    list<String> iter_names = {};
+    list<Dimension> dims, inner_dims;
+    list<list<Integer>> elements;
+    UnorderedMap<String, ComponentRef> crefs;
+    Integer split_count = 0, pos = 0;
+    Variable aux;
+    InstNode node;
+    UnorderedMap<String, Expression> values;
+    Type ty;
+  algorithm
+    parts := ComponentRef.toListReverse(var.name, false);
+    for part in List.firstN(parts, listLength(parts) - 1) loop
+      for d in 1:Type.dimensionCount(ComponentRef.nodeType(part)) loop
+        iter_names := "$" + InstNode.name(ComponentRef.node(part)) + intString(d) :: iter_names;
+      end for;
+    end for;
+    iter_names := listReverse(iter_names);
+    dims := Type.arrayDims(var.ty);
+    if listEmpty(iter_names) or Type.isComplex(Type.arrayElementType(var.ty)) then
+      vars := var :: vars;
+      return;
+    end if;
+
+    for d in dims loop
+      split_count := max(split_count, Dimension.lastIteratorDependency(d, iter_names));
+    end for;
+    if split_count == 0 then
+      vars := var :: vars;
+      return;
+    end if;
+
+    elements := raggedElements(List.firstN(dims, split_count), iter_names);
+    inner_dims := List.stripN(dims, split_count);
+    crefs := UnorderedMap.new<ComponentRef>(stringHashDjb2, stringEq);
+    for element in elements loop
+      values := raggedValues(iter_names, element);
+      ty := Type.liftArrayLeftList(Type.arrayElementType(var.ty),
+        list(Dimension.fromExp(SimplifyExp.simplify(Expression.replaceIteratorsByName(Dimension.sizeExp(d), values)), NFPrefixes.Variability.CONSTANT) for d in inner_dims));
+      Pointer.update(index, Pointer.access(index) + 1);
+      node := InstNode.VAR_NODE(RAGGED_STR + "_" + intString(Pointer.access(index)), PointerWeak.downgrade(Pointer.createImmutable(NBVariable.DUMMY_VARIABLE)));
+      aux := var;
+      aux.name := ComponentRef.CREF(ComponentRef.storeNode(node), {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
+      aux.ty := ty;
+      aux.binding := Binding.mapExpShallow(var.binding, function raggedElement(element = element, values = values));
+      aux.typeAttributes := list((Util.tuple21(a), Binding.mapExpShallow(Util.tuple22(a), function raggedElement(element = element, values = values))) for a in var.typeAttributes);
+      aux := Variable.setBooleanAnnotation("HideResult", true, aux);
+      UnorderedMap.add(raggedKey(element), aux.name, crefs);
+      vars := aux :: vars;
+    end for;
+    UnorderedMap.add(ComponentRef.stripSubscriptsAll(var.name), (split_count, crefs), map);
+  end splitRaggedVariable;
+
+  function raggedElements
+    "all index tuples of the given dimensions, a size may depend on the indices before it"
+    input list<Dimension> dims;
+    input list<String> names;
+    output list<list<Integer>> elements = {{}};
+  protected
+    list<list<Integer>> next;
+    Integer size;
+  algorithm
+    for d in dims loop
+      next := {};
+      for e in elements loop
+        size := Expression.toInteger(SimplifyExp.simplify(Expression.replaceIteratorsByName(Dimension.sizeExp(d), raggedValues(names, e))));
+        for k in 1:size loop
+          next := listAppend(e, {k}) :: next;
+        end for;
+      end for;
+      elements := listReverse(next);
+    end for;
+  end raggedElements;
+
+  function raggedValues
+    input list<String> names;
+    input list<Integer> element;
+    output UnorderedMap<String, Expression> values;
+  algorithm
+    values := UnorderedMap.fromLists(List.firstN(names, listLength(element)), list(Expression.INTEGER(e) for e in element), stringHashDjb2, stringEq);
+  end raggedValues;
+
+  function raggedKey
+    input list<Integer> element;
+    output String key = stringDelimitList(list(intString(e) for e in element), ",");
+  end raggedKey;
+
+  constant String RAGGED_STR = "$RAG";
+
+  function raggedElement
+    "the element of a vectorized binding, e.g. array(e($lay1) for $lay1 in 1:3) -> e(2)"
+    input output Expression exp;
+    input list<Integer> element;
+    input UnorderedMap<String, Expression> values;
+  algorithm
+    if Type.dimensionCount(Expression.typeOf(exp)) >= listLength(element) then
+      for e in element loop
+        exp := Expression.applySubscript(Subscript.INDEX(Expression.INTEGER(e)), exp);
+      end for;
+    end if;
+    exp := SimplifyExp.simplify(Expression.replaceIteratorsByName(exp, values));
+  end raggedElement;
+
+  function replaceRaggedCrefs
+    "lay[2].T[i] -> $RAG_2[i] for literal indices of the split dimensions"
+    input output Expression exp;
+    input UnorderedMap<ComponentRef, RaggedVariable> map;
+  algorithm
+    exp := Expression.map(exp, function replaceRaggedCref(map = map));
+  end replaceRaggedCrefs;
+
+  function replaceRaggedCref
+    input output Expression exp;
+    input UnorderedMap<ComponentRef, RaggedVariable> map;
+  protected
+    Integer split_count;
+    UnorderedMap<String, ComponentRef> crefs;
+    list<Subscript> subs, split_subs;
+    ComponentRef cref;
+  algorithm
+    exp := match exp
+      case Expression.CREF() guard(UnorderedMap.contains(exp.cref, map)) algorithm
+        (split_count, crefs) := UnorderedMap.getOrFail(exp.cref, map);
+        subs := ComponentRef.subscriptsAllFlat(exp.cref);
+        if listLength(subs) < split_count then
+          return;
+        end if;
+        (split_subs, subs) := List.split(subs, split_count);
+        if not List.all(split_subs, Subscript.isLiteral) then
+          return;
+        end if;
+        cref := ComponentRef.setSubscripts(subs, UnorderedMap.getOrFail(raggedKey(list(Subscript.toInteger(o) for o in split_subs)), crefs));
+      then Expression.CREF(ComponentRef.getSubscriptedType(cref), cref);
+      else exp;
+    end match;
+  end replaceRaggedCref;
+
+  function splitRaggedEquations
+    input list<FEquation> eqns;
+    input UnorderedMap<ComponentRef, RaggedVariable> map;
+    output list<FEquation> result = {};
+  algorithm
+    for eqn in eqns loop
+      result := splitRaggedEquation(eqn, map, result);
+    end for;
+    result := listReverse(result);
+  end splitRaggedEquations;
+
+  function splitRaggedEquation
+    "unrolls for-equations whose iterator addresses an outer dimension of a ragged variable"
+    input FEquation eqn;
+    input UnorderedMap<ComponentRef, RaggedVariable> map;
+    input output list<FEquation> acc;
+  protected
+    RangeIterator range_iter;
+    Expression range, val;
+    UnorderedMap<String, Expression> values;
+  algorithm
+    acc := match eqn
+      case FEquation.FOR(range = SOME(range))
+        guard(FEquation.containsExpList(eqn.body, function Expression.contains(func = function isRaggedOuterIterator(iterator = eqn.iterator, map = map))))
+        algorithm
+          range_iter := RangeIterator.fromExp(SimplifyExp.simplify(range));
+          while RangeIterator.hasNext(range_iter) loop
+            (range_iter, val) := RangeIterator.next(range_iter);
+            values := UnorderedMap.fromLists({InstNode.name(eqn.iterator)}, {val}, stringHashDjb2, stringEq);
+            for body_eqn in FEquation.mapExpList(eqn.body, function Expression.replaceIteratorsByName(values = values)) loop
+              acc := splitRaggedEquation(body_eqn, map, acc);
+            end for;
+          end while;
+        then acc;
+
+      case FEquation.FOR() algorithm
+        eqn.body := splitRaggedEquations(eqn.body, map);
+        eqn.range := Util.applyOption(eqn.range, function simplifyRaggedExp(map = map));
+      then eqn :: acc;
+
+      else FEquation.mapExp(eqn, function simplifyRaggedExp(map = map)) :: acc;
+    end match;
+  end splitRaggedEquation;
+
+  function simplifyRaggedExp
+    input output Expression exp;
+    input UnorderedMap<ComponentRef, RaggedVariable> map;
+  algorithm
+    if Expression.contains(exp, function isRaggedCref(map = map)) then
+      exp := SimplifyExp.simplify(replaceRaggedCrefs(exp, map));
+    elseif Expression.contains(exp, Expression.isSubscriptedExp) then
+      // e.g. the range 1:{2, 3, 2}[2] of an unrolled inner loop
+      exp := SimplifyExp.simplify(exp);
+    end if;
+  end simplifyRaggedExp;
+
+  function isRaggedCref
+    input Expression exp;
+    input UnorderedMap<ComponentRef, RaggedVariable> map;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case Expression.CREF() then UnorderedMap.contains(exp.cref, map);
+      else false;
+    end match;
+  end isRaggedCref;
+
+  function isRaggedOuterIterator
+    input Expression exp;
+    input InstNode iterator;
+    input UnorderedMap<ComponentRef, RaggedVariable> map;
+    output Boolean b = false;
+  protected
+    Integer split_count;
+    list<Subscript> subs;
+  algorithm
+    b := match exp
+      case Expression.CREF() guard(UnorderedMap.contains(exp.cref, map)) algorithm
+        (split_count, _) := UnorderedMap.getOrFail(exp.cref, map);
+        subs := ComponentRef.subscriptsAllFlat(exp.cref);
+        if listLength(subs) < split_count then
+          return;
+        end if;
+      then List.any(List.firstN(subs, split_count), function Subscript.containsExpShallow(func = function Expression.containsIterator(iterator = iterator)));
+      else false;
+    end match;
+  end isRaggedOuterIterator;
 
   function continuousImplicitDiscretes
     "Real variables assigned in a when-equation are implicitly discrete. The frontend marks them before

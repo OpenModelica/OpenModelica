@@ -71,18 +71,7 @@
 
 double** work_states;
 
-typedef struct RK4_DATA
-{
-  double** work_states;
-  int work_states_ndims;
-  const double *b;
-  const double *c;
-  double h;
-}RK4_DATA;
-
-
 static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo);
-static int rungekutta_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 
 #ifdef OMC_HAVE_IPOPT
 static int ipopt_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
@@ -98,11 +87,6 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   {
   case S_EULER:
     retVal = euler_ex_step(data, solverInfo);
-    if(omc_flag[FLAG_SOLVER_STEPS])
-      data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
-    return retVal;
-  case S_RUNGEKUTTA:
-    retVal = rungekutta_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
     return retVal;
@@ -158,7 +142,6 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
 int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   int retValue = 0;
-  int i;
 
   SIMULATION_INFO *simInfo = data->simulationInfo;
 
@@ -184,31 +167,6 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     if (gbode_allocateData(data, threadData, solverInfo) != 0) {
       throwStreamPrint(threadData, "Failed to allocate memory for generic multigrid solver.");
     }
-    break;
-  }
-  case S_RUNGEKUTTA:
-  {
-    /* Allocate RK work arrays */
-
-    static const int rungekutta_s = 4;
-    static const double rungekutta_b[4] = { 1.0 / 6.0, 1.0 / 3.0, 1.0 / 3.0, 1.0 / 6.0 };
-    static const double rungekutta_c[4] = { 0.0, 0.5, 0.5, 1.0 };
-
-    static const int heun_s = 2;
-    static const double heun_b[2] = { 1.0 / 2.0, 1.0 / 2.0 };
-    static const double heun_c[2] = { 0.0, 1.0 };
-
-    RK4_DATA* rungeData = (RK4_DATA*) malloc(sizeof(RK4_DATA));
-
-    rungeData->work_states_ndims = rungekutta_s;
-    rungeData->b = rungekutta_b;
-    rungeData->c = rungekutta_c;
-
-    rungeData->work_states = (double**) malloc((rungeData->work_states_ndims + 1) * sizeof(double*));
-    for (i = 0; i < rungeData->work_states_ndims + 1; i++) {
-      rungeData->work_states[i] = (double*) calloc(data->modelData->nStates, sizeof(double));
-    }
-    solverInfo->solverData = rungeData;
     break;
   }
 #if !defined(OMC_MINIMAL_RUNTIME)
@@ -302,21 +260,12 @@ int updateSolverNominals(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
 int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
 {
   int retValue = 0;
-  int i;
 
   freeList(solverInfo->eventLst);
   /* deintialize solver related workspace */
   switch (solverInfo->solverMethod)
   {
   case S_EULER: break;
-  case S_RUNGEKUTTA:
-    /* free RK work arrays */
-    for(i = 0; i < ((RK4_DATA*)(solverInfo->solverData))->work_states_ndims + 1; i++) {
-      free(((RK4_DATA*)(solverInfo->solverData))->work_states[i]);
-    }
-    free(((RK4_DATA*)(solverInfo->solverData))->work_states);
-    free((RK4_DATA*)solverInfo->solverData);
-    break;
   case S_GBODE:
     gbode_freeData(data, solverInfo->solverData);
     solverInfo->solverData = NULL;
@@ -781,65 +730,6 @@ static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo)
   /* function ODE evaluation is done directly after this function */
   solverInfo->solverStatsTmp.nCallsODE += 1;
 
-  if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
-
-  return 0;
-}
-
-/***************************************    RK4      ***********************************/
-static int rungekutta_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
-{
-  RK4_DATA *rk = ((RK4_DATA*)(solverInfo->solverData));
-  double** k = rk->work_states;
-  double sum;
-  int i,j;
-  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
-  SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
-  modelica_real* stateDer = sData->realVars + data->modelData->nStates;
-  modelica_real* stateDerOld = sDataOld->realVars + data->modelData->nStates;
-
-  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
-
-  solverInfo->currentTime = sDataOld->timeValue + solverInfo->currentStepSize;
-
-  /* We calculate k[0] before returning from this function.
-   * We only want to calculate f() 4 times per call */
-  memcpy(k[0], stateDerOld, data->modelData->nStates*sizeof(modelica_real));
-
-  for (j = 1; j < rk->work_states_ndims; j++)
-  {
-    for(i = 0; i < data->modelData->nStates; i++)
-    {
-      sData->realVars[i] = sDataOld->realVars[i] + solverInfo->currentStepSize * rk->c[j] * k[j - 1][i];
-    }
-    sData->timeValue = sDataOld->timeValue + rk->c[j] * solverInfo->currentStepSize;
-    if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
-    /* read input vars */
-    externalInputUpdate(data);
-    data->callback->input_function(data, threadData);
-    /* eval ode equations */
-    data->callback->functionODE(data, threadData);
-    if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
-    memcpy(k[j], stateDer, data->modelData->nStates*sizeof(modelica_real));
-
-  }
-
-  for(i = 0; i < data->modelData->nStates; i++)
-  {
-    sum = 0;
-    for(j = 0; j < rk->work_states_ndims; j++)
-    {
-      sum = sum + rk->b[j] * k[j][i];
-    }
-    sData->realVars[i] = sDataOld->realVars[i] + solverInfo->currentStepSize * sum;
-  }
-  sData->timeValue = solverInfo->currentTime;
-
-  /* save stats */
-  /* steps */
-  solverInfo->solverStatsTmp.nStepsTaken += 1;
-  /* function ODE evaluation is done directly after this */
-  solverInfo->solverStatsTmp.nCallsODE += rk->work_states_ndims+1;
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
 
   return 0;

@@ -11,6 +11,7 @@ forSliceRowMajor.mos \
 sliceRangeSparsity.mos \
 sparsityScalarTemplates.mos \
 sparsityNegatedAlias.mos \
+raggedComponentArrays.mos \
 scalarDivArray.mos \
 arrayRowScalar.mos \
 emptyArrayTupleArgument.mos \

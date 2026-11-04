@@ -42,6 +42,7 @@ protected
   import Operator = NFOperator;
   import Prefixes = NFPrefixes;
   import List;
+  import UnorderedMap;
   import SimplifyExp = NFSimplifyExp;
   import Ceval = NFCeval;
 
@@ -618,6 +619,16 @@ public
     end match;
   end endExp;
 
+  function containsSplitSubscriptedExp
+    input Dimension dim;
+    output Boolean res;
+  algorithm
+    res := match dim
+      case EXP() then Expression.containsSplitSubscriptedExp(dim.exp);
+      else false;
+    end match;
+  end containsSplitSubscriptedExp;
+
   function sizeExp
     "Returns the size of a dimension as an Expression."
     input Dimension dim;
@@ -807,6 +818,43 @@ public
       else dim;
     end match;
   end simplify;
+
+  function replaceIteratorsByName
+    "see Expression.replaceIteratorsByName"
+    input output Dimension dim;
+    input UnorderedMap<String, Expression> values;
+  algorithm
+    dim := match dim
+      case EXP() guard Expression.contains(dim.exp, function Expression.isIteratorNamed(names = UnorderedMap.keyList(values)))
+        then simplify(EXP(Expression.replaceIteratorsByName(dim.exp, values), dim.var));
+      else dim;
+    end match;
+  end replaceIteratorsByName;
+
+  function lastIteratorDependency
+    "Returns the position of the last of the given iterators the size depends on,
+     or 0 if it depends on none of them, e.g. 2 for {{2, 3}, {1, 2}}[$w1, $lay1]
+     with {$w1, $lay1}."
+    input Dimension dim;
+    input list<String> iterators;
+    output Integer pos = 0;
+  protected
+    Integer i = 1;
+  algorithm
+    () := match dim
+      case EXP()
+        algorithm
+          for name in iterators loop
+            if Expression.contains(dim.exp, function Expression.isIteratorNamed(names = {name})) then
+              pos := i;
+            end if;
+            i := i + 1;
+          end for;
+        then
+          ();
+      else ();
+    end match;
+  end lastIteratorDependency;
 
   function typeOf
     input Dimension dim;

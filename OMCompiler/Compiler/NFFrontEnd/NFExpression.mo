@@ -2292,6 +2292,39 @@ public
     res := contains(exp, function containsIterator2(iterator = iterator));
   end containsIterator;
 
+  function isIteratorNamed
+    input Expression exp;
+    input list<String> names;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case CREF() guard ComponentRef.isIterator(exp.cref)
+        then List.isMemberOnTrue(ComponentRef.firstName(exp.cref), names, stringEq);
+      else false;
+    end match;
+  end isIteratorNamed;
+
+  function replaceIteratorsByName
+    "Replaces iterators by name, also in the dimensions of the types. Unlike
+     replaceIterator this also works for different iterator nodes with the same
+     name, e.g. the binding iterators of a vectorized component."
+    input output Expression exp;
+    input UnorderedMap<String, Expression> values;
+  algorithm
+    exp := map(exp, function replaceIteratorByName(values = values));
+  end replaceIteratorsByName;
+
+  function replaceIteratorByName
+    input output Expression exp;
+    input UnorderedMap<String, Expression> values;
+  algorithm
+    exp := match exp
+      case CREF() guard ComponentRef.isIterator(exp.cref)
+        then UnorderedMap.getOrDefault(ComponentRef.firstName(exp.cref), values, exp);
+      else applyToType(exp, function Type.replaceIteratorsByName(values = values));
+    end match;
+  end replaceIteratorByName;
+
   function arrayFromList
     input list<Expression> inExps;
     input Type elemTy;
@@ -5214,10 +5247,11 @@ public
     positive := match exp
       case INTEGER() then exp.value > 0;
       case REAL() then exp.value > 0.0;
-      case CAST() then isPositive(exp.exp);
-      case UNARY() then isNegative(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "min"), isPositive, false);
       case CALL() then Call.isPositive(exp.call);
+      case UNARY() then isNegative(exp.exp);
+      case IF() then isPositive(exp.trueBranch) and isPositive(exp.falseBranch);
+      case CAST() then isPositive(exp.exp);
       else false;
     end match;
   end isPositive;
@@ -5229,10 +5263,11 @@ public
     negative := match exp
       case INTEGER() then exp.value < 0;
       case REAL() then exp.value < 0.0;
-      case CAST() then isNegative(exp.exp);
-      case UNARY() then isPositive(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "max"), isNegative, false);
       case CALL() then Call.isNegative(exp.call);
+      case UNARY() then isPositive(exp.exp);
+      case IF() then isNegative(exp.trueBranch) and isNegative(exp.falseBranch);
+      case CAST() then isNegative(exp.exp);
       else false;
     end match;
   end isNegative;
@@ -5244,11 +5279,12 @@ public
     res := match exp
       case INTEGER() then exp.value <= 0;
       case REAL() then exp.value <= 0.0;
-      case CAST() then isNonPositive(exp.exp);
-      case UNARY() then isNonNegative(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "max"), isNonPositive, false);
-      case CALL() then Call.isNonPositive(exp.call);
       case ARRAY() then Array.all(exp.elements, isNonPositive);
+      case CALL() then Call.isNonPositive(exp.call);
+      case UNARY() then isNonNegative(exp.exp);
+      case IF() then isNonPositive(exp.trueBranch) and isNonPositive(exp.falseBranch);
+      case CAST() then isNonPositive(exp.exp);
       else false;
     end match;
   end isNonPositive;
@@ -5260,10 +5296,11 @@ public
     res := match exp
       case INTEGER() then exp.value >= 0;
       case REAL() then exp.value >= 0.0;
-      case CAST() then isNonNegative(exp.exp);
-      case UNARY() then isNonPositive(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "min"), isNonNegative, false);
       case CALL() then Call.isNonNegative(exp.call);
+      case UNARY() then isNonPositive(exp.exp);
+      case IF() then isNonNegative(exp.trueBranch) and isNonNegative(exp.falseBranch);
+      case CAST() then isNonNegative(exp.exp);
       else false;
     end match;
   end isNonNegative;
@@ -6766,6 +6803,46 @@ public
       else false;
     end match;
   end filterSplitIndices2;
+
+  function isSplitSubscriptedExpOf
+    "Returns true if the expression is a split subscripted expression with a
+     split index of the given node."
+    input Expression exp;
+    input InstNode node;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case SUBSCRIPTED_EXP(split = true)
+        then List.any(exp.subscripts, function filterSplitIndices2(node = node));
+      else false;
+    end match;
+  end isSplitSubscriptedExpOf;
+
+  function replaceSplitIndicesOfNode
+    "Replaces the split indices of the given node, the n:th with the n:th of the
+     given subscripts, e.g. {2, 3}[<lay, 1>] -> {2, 3}[$i1]."
+    input output Expression exp;
+    input InstNode node;
+    input list<Subscript> subscripts;
+  algorithm
+    exp := map(exp, function replaceSplitIndicesOfNode2(node = node, subscripts = subscripts));
+  end replaceSplitIndicesOfNode;
+
+  function replaceSplitIndicesOfNode2
+    input output Expression exp;
+    input InstNode node;
+    input list<Subscript> subscripts;
+  algorithm
+    () := match exp
+      case SUBSCRIPTED_EXP(split = true) guard isSplitSubscriptedExpOf(exp, node)
+        algorithm
+          exp.subscripts := list(match s case Subscript.SPLIT_INDEX() guard filterSplitIndices2(s, node)
+            then listGet(subscripts, s.dimIndex); else s; end match for s in exp.subscripts);
+        then
+          ();
+      else ();
+    end match;
+  end replaceSplitIndicesOfNode2;
 
   function expandSplitIndices
     "Replaces split indices in a subscripted expression with : subscripts."

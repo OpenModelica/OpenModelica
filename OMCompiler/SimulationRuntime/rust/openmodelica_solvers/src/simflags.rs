@@ -24,7 +24,8 @@ pub enum Solver {
     Cvode,
     Gbode,
     Euler,
-    RungeKutta,
+    /// `rungekutta`, `heun` and the others C runs as gbode.
+    GbodeShorthand,
     /// `optimize()`'s collocation solver; only selectable where Ipopt is linked.
     Optimization,
 }
@@ -485,6 +486,15 @@ pub struct Capabilities {
 
 pub const GBODE_DISABLED: &str =
     "integration method gbode is disabled in the Rust simulation runtime; use --simCodeTarget=C instead";
+pub const GBODE_SHORTHAND_DISABLED: &str = "this integration method is a shorthand for gbode, which is disabled in the \
+     Rust simulation runtime; use --simCodeTarget=C instead";
+
+/// Whether `method` is one of the names C turns into a gbode setup.
+pub fn is_gbode_shorthand(method: &str) -> bool {
+    SOLVERS
+        .iter()
+        .any(|(n, s, _)| *n == method && *s == Solver::GbodeShorthand)
+}
 
 /// Reject flag values this runtime cannot honour.
 pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
@@ -518,6 +528,9 @@ pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
     }
     if f.solver == Some(Solver::Gbode) {
         return Err(GBODE_DISABLED.to_string());
+    }
+    if f.solver == Some(Solver::GbodeShorthand) {
+        return Err(GBODE_SHORTHAND_DISABLED.to_string());
     }
     let unsupported = match f.solver {
         Some(Solver::Ida) if !cap.ida => "ida",
@@ -1535,7 +1548,13 @@ const SOLVERS: &[Value<Solver>] = &[
     ("dassl", Solver::Dassl, Offer::Always),
     ("dasslrt", Solver::Dassl, Offer::Never),
     ("euler", Solver::Euler, Offer::Always),
-    ("rungekutta", Solver::RungeKutta, Offer::Always),
+    ("rungekutta", Solver::GbodeShorthand, Offer::Never),
+    ("heun", Solver::GbodeShorthand, Offer::Never),
+    ("impeuler", Solver::GbodeShorthand, Offer::Never),
+    ("trapezoid", Solver::GbodeShorthand, Offer::Never),
+    ("imprungekutta", Solver::GbodeShorthand, Offer::Never),
+    ("irksco", Solver::GbodeShorthand, Offer::Never),
+    ("rungekuttassc", Solver::GbodeShorthand, Offer::Never),
     ("gbode", Solver::Gbode, Offer::Never),
     ("ida", Solver::Ida, Offer::WithIda),
     ("cvode", Solver::Cvode, Offer::WithCvode),
@@ -1807,6 +1826,8 @@ mod tests {
             ("-s=ida", "dassl"),
             ("-s=cvode", "dassl"),
             ("-s=gbode", "--simCodeTarget=C instead"),
+            ("-s=rungekutta", "--simCodeTarget=C instead"),
+            ("-s=irksco", "--simCodeTarget=C instead"),
         ] {
             let f = parse(&argv(&[arg])).expect("parses");
             let e = check(&f, NOTHING).expect_err("must reject");
@@ -1871,7 +1892,6 @@ mod tests {
             "-lss=rsparse",
             "-s=euler",
             "-s=dassl",
-            "-s=rungekutta",
         ] {
             let f = parse(&argv(&[arg])).expect("parses");
             assert!(check(&f, NOTHING).is_ok(), "{arg}");

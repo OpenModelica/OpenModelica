@@ -300,6 +300,7 @@ public:
   bool restoreAST(int id);
   QJsonArray reverseLookup(const QString &className, const QString &scope = QString("AllLoadedClasses"), bool exactMatch = true, bool prettyPrint = false);
   bool clear();
+  static int simulationProgress();
 signals:
   void commandFinished();
 public slots:

@@ -847,6 +847,8 @@ struct MeState<E: FmiHost + 'static> {
     /// The whole metadata blob: the start state comes from it at instantiate, and
     /// CS builds its driver from the solver settings, state sets and sparsity.
     meta: openmodelica_sim_meta::SimMeta,
+    /// The DefaultExperiment tolerance; `meta.tolerance` holds the master's.
+    exp_tolerance: f64,
     /// Built on exit-initialization-mode, once the model is initialized.
     #[cfg(feature = "cs")]
     cs: Option<CsDriver>,
@@ -1430,6 +1432,7 @@ fn new_state() -> Option<MeState<Engine>> {
         engine,
         sim_data,
         layout,
+        exp_tolerance: meta.tolerance,
         vrs: Vrs::new(core::mem::take(&mut meta.fmi_vrs)),
         meta,
         dss,
@@ -1745,8 +1748,10 @@ macro_rules! shared_instance_methods {
         st.need_update = true;
         st.dae_current = false;
         st.write_f64(TIME_OFF, start_time);
-        let (sim_data, layout) = (st.sim_data, st.layout);
-        match set_zc_tolerance(&mut st.engine, sim_data, &layout, tolerance.unwrap_or(0.0)) {
+        // C's `fmi2SetupExperiment`: the integrators read the master's tolerance.
+        st.meta.tolerance = tolerance.unwrap_or(st.exp_tolerance);
+        let (sim_data, layout, tol) = (st.sim_data, st.layout, st.meta.tolerance);
+        match set_zc_tolerance(&mut st.engine, sim_data, &layout, tol) {
             Ok(()) => Status::Ok,
             Err(err) => err_status(err),
         }
@@ -2517,6 +2522,7 @@ impl<E: FmiHost + 'static> Instance<E> {
             engine,
             sim_data,
             layout,
+            exp_tolerance: meta.tolerance,
             vrs: Vrs::new(core::mem::take(&mut meta.fmi_vrs)),
             meta,
             dss,
