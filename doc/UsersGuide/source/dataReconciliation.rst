@@ -265,43 +265,52 @@ OpenModelica automatically extracts the auxiliary equations linking the measured
 computes reconciled values and uncertainties, performs statistical tests and generates a reconciliation report.
 
 In practice the data reconciliation setup is done in OMEdit by:
-    1. Opening the Modelica model with the data reconciliation modifiers.
-    2. Selecting Data Reconciliation > Calculate Data Reconciliation.
-    3. Selecting the Data Reconciliation algorithm.
-    4. Filling the Data Reconciliation form with
-        a. The name of the Measurement Input File (mandatory);
-        b. The name of the Correlation Matrix Input file (optional). The default is the identity matrix (i.e. measurements are independent of each other);
-        c. The value of Epsilon (optional). The default value is ``1.e-10``. Epsilon is the stopping criteria of the data reconciliation numerical iterations.
-    5. Clicking on Save Settings to save the above settings in the Modelica model.
-    6. Clicking on Calculate to launch the calculation
+
+1. Opening the Modelica model with the data reconciliation modifiers.
+2. Selecting Data Reconciliation > Calculate Data Reconciliation.
+3. Selecting the Data Reconciliation algorithm.
+4. Filling the Data Reconciliation form with
+
+   a. The name of the Measurement Input File (mandatory);
+   b. The name of the Correlation Matrix Input file (optional). The default is the identity matrix (i.e. measurements are independent of each other);
+   c. The value of Epsilon (optional). The default value is ``1.e-10``. Epsilon is the stopping criteria of the data reconciliation numerical iterations.
+
+5. Clicking on Save Settings to save the above settings in the Modelica model.
+6. Clicking on Calculate to launch the calculation
 
 The data reconciliation computation is performed in three main steps:
-    1. Static analysis is performed on the model to extract the equations that are necessary for data reconciliation. There are two groups of extracted equations:
-         a. The auxiliary conditions that constrain the variables of interest.
-         b. The intermediate equations that solve the intermediate variables from the variables of interest (this is the numeric way of eliminating the intermediate variables).
 
-         The auxiliary and intermediate equations are interchangeable: denoting r the number of auxiliary conditions, there are as many possibilities to
-         construct the set of auxiliary conditions as to choose r equations among the set that contains both the auxiliary and the intermediate equations.
+1. Static analysis is performed on the model to extract the equations that are necessary for data reconciliation. There are two groups of extracted equations:
 
-         Any error in the posing of the data reconciliation problem is detected at this step. The possible errors are:
-            a. The number r of auxiliary equations is not strictly less than the number of variables of interest.
-            b. The number r of auxiliary equations is zero.
+   a. The auxiliary conditions that constrain the variables of interest.
+   b. The intermediate equations that solve the intermediate variables from the variables of interest (this is the numeric way of eliminating the intermediate variables).
 
-         Both errors occur when there are too many boundary conditions related to the variables of interest.
-         Variables of interest that are not involved in any of the auxiliary conditions or intermediate equations are not reconciled.
+   The auxiliary and intermediate equations are interchangeable: denoting r the number of auxiliary conditions, there are as many possibilities to
+   construct the set of auxiliary conditions as to choose r equations among the set that contains both the auxiliary and the intermediate equations.
 
-    2. The model is simulated to compute the Jacobian matrices and eliminate numerically the intermediate variables.
-       At this step, numerical simulation errors can occur, such as divisions by zero, non-convergence, etc. They can be corrected by improving the model or providing better start values.
+   Any error in the posing of the data reconciliation problem is detected at this step. The possible errors are:
 
-    3. The input files are read, the data reconciliation calculation is performed, and the results are displayed. 
-        Errors can occur:
-         a. If input files do not exist.
-         b. If there is a mismatch between the variables of interest declared in the model and in the input files:
-              i. All variables of interest declared in the model should be declared in the measurement input file and reciprocally.
-              ii. All variables of interest declared in the correlation matrix file should be declared in the model (the converse is not true).
-         c. If a variable of interest has multiple entries in an input file.
-         d. If the first row and the first column are different in the correlation matrix file.
-         e. If the numerical cells of the matrices are not positive real numbers.
+   a. The number r of auxiliary equations is not strictly less than the number of variables of interest.
+   b. The number r of auxiliary equations is zero.
+
+   Both errors occur when there are too many boundary conditions related to the variables of interest.
+   Variables of interest that are not involved in any of the auxiliary conditions or intermediate equations are not reconciled.
+
+2. The model is simulated to compute the Jacobian matrices and eliminate numerically the intermediate variables.
+   At this step, numerical simulation errors can occur, such as divisions by zero, non-convergence, etc. They can be corrected by improving the model or providing better start values.
+
+3. The input files are read, the data reconciliation calculation is performed, and the results are displayed.
+   Errors can occur:
+
+   a. If input files do not exist.
+   b. If there is a mismatch between the variables of interest declared in the model and in the input files:
+
+      i. All variables of interest declared in the model should be declared in the measurement input file and reciprocally.
+      ii. All variables of interest declared in the correlation matrix file should be declared in the model (the converse is not true).
+
+   c. If a variable of interest has multiple entries in an input file.
+   d. If the first row and the first column are different in the correlation matrix file.
+   e. If the numerical cells of the matrices are not positive real numbers.
 
 Step 4: Analyze the Results
 ---------------------------
@@ -315,10 +324,12 @@ Data reconciliation should therefore be considered as an iterative process suppo
 
 
 In practice, OMEdit displays the results:
-    1. In an ``.html`` file with the title: Data Reconciliation Report. This file automatically pops up when the calculation is completed.
-    2. In two ``.csv`` output files:
-         a. One that contains the reconciled values and the reconciled half-width confidence intervals.
-         b. The other that contains the reconciled covariance matrix.
+
+1. In an ``.html`` file with the title: Data Reconciliation Report. This file automatically pops up when the calculation is completed.
+2. In two ``.csv`` output files:
+
+   a. One that contains the reconciled values and the reconciled half-width confidence intervals.
+   b. The other that contains the reconciled covariance matrix.
 
 These files do not pop up automatically when the calculation is completed. The names of the files are respectively
   ``| <working directory>\\<model name>\\< model name>_Outputs.csv``
