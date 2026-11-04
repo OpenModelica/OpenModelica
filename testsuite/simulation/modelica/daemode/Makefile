@@ -16,6 +16,7 @@ testDAE10.mos \
 testDAEModeFileSplit_Issue4851.mos \
 testDAEModeNominal.mos \
 testDAEModeEventJacobianProbe.mos \
+illegalDerInput.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

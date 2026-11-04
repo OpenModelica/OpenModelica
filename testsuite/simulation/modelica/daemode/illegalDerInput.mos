@@ -1,0 +1,38 @@
+// name: illegalDerInput
+// keywords: daeMode, input, derivative
+// status: correct
+// teardown_command: rm -rf illegalDerInput illegalDerInput_* illegalDerInput.c illegalDerInput.o illegalDerInput.makefile illegalDerInput.libs illegalDerInput.log output.log
+//
+// Derivatives of top-level inputs must be reported in --daeMode the same way
+// as in the ODE mode instead of generating C code that does not compile.
+
+loadString("
+model illegalDerInput
+  input Real u;
+  output Real y;
+equation
+  y = der(u);
+end illegalDerInput;
+"); getErrorString();
+
+buildModel(illegalDerInput); getErrorString();
+setCommandLineOptions("--daeMode"); getErrorString();
+buildModel(illegalDerInput); getErrorString();
+
+// Result:
+// true
+// ""
+// {"", ""}
+// "Error: The model requires derivatives of some inputs as listed below:
+// der(u)
+// Error: post-optimization module inputDerivativesUsed (simulation) failed.
+// "
+// true
+// ""
+// {"", ""}
+// "Error: The model requires derivatives of some inputs as listed below:
+// der(u)
+// Error: post-optimization module inputDerivativesUsed (simulation) failed.
+// Error: Internal error SimCode DAEmode: The model illegalDerInput could not be translated
+// "
+// endResult
