@@ -101,12 +101,12 @@ val(derrabbits,420);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// 4310.037646344558
-// 312.6463881684519
-// 1154.916261997004
-// 43.73296284122289
-// 120.07171364661335
-// 76.41358431208276
+// 4310.037646344885
+// 312.6463881685007
+// 1154.916262002063
+// 43.73296313290461
+// 120.07171364661316
+// 76.4135843120514
 // record SimulationResult
 //     resultFile = "LotkaVolterra_res.csv",
 //     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-8, method = 'dassl', fileNamePrefix = 'LotkaVolterra', options = '', outputFormat = 'csv', variableFilter = '.*', cflags = '', simflags = ''",
@@ -121,12 +121,12 @@ val(derrabbits,420);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// 4310.037646344558
-// 312.1430551718008
-// 1154.916261997004
-// 43.72992717555711
-// 120.06656736373269
-// 76.41259048583119
+// 4310.037646344885
+// 312.14311093444553
+// 1154.916262002063
+// 43.729950745427224
+// 120.06656783176086
+// 76.4125896314704
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-8, method = 'euler', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-csvInput=LotkaVolterra_res.csv'",
@@ -134,12 +134,12 @@ val(derrabbits,420);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// 4310.037646344558
-// 151.26646182639627
-// 1154.916261997004
-// 4.328991581432914
-// 121.23886090018675
-// 79.63027796175186
+// 4310.037646344885
+// 151.2664618264293
+// 1154.916262002063
+// 4.328991625812239
+// 121.2388609001865
+// 79.63027796167692
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-8, method = 'rungekutta', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-csvInput=LotkaVolterra_res.csv'",
@@ -147,12 +147,12 @@ val(derrabbits,420);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// 4310.037646344558
-// 312.1340719996429
-// 1154.916261997004
-// 43.726137483466836
-// 120.06657426230882
-// 76.41278732152466
+// 4310.037646344885
+// 312.13407199970715
+// 1154.916262002063
+// 43.726137925298104
+// 120.06657426230858
+// 76.41278732145514
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-8, method = 'gbode', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=impl_euler -csvInput=LotkaVolterra_res.csv'",
@@ -161,12 +161,12 @@ val(derrabbits,420);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// 4310.037646344558
-// 312.32821918083584
-// 1154.916261997004
-// 43.82104182143655
-// 120.06544109012746
-// 76.40749125986726
+// 4310.037646344885
+// 312.3741518288655
+// 1154.916262002063
+// 43.83890093244685
+// 120.06501762370245
+// 76.40626536852709
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-8, method = 'gbode', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=radauIIA3 -csvInput=LotkaVolterra_res.csv'",
@@ -175,12 +175,12 @@ val(derrabbits,420);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// 4310.037646344558
-// 312.1419558554066
-// 1154.916261997004
-// 43.73022299744499
-// 120.06657171904241
-// 76.41256391775333
+// 4310.037646344885
+// 312.14198091132045
+// 1154.916262002063
+// 43.729429262921386
+// 120.06657898240123
+// 76.41261968318149
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-8, method = 'gbode', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=lobattoIIIA4 -csvInput=LotkaVolterra_res.csv'",
@@ -189,10 +189,10 @@ val(derrabbits,420);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// 4310.037646344558
-// 312.1416942921282
-// 1154.916261997004
-// 43.73007080422617
-// 120.06656898544824
-// 76.41259616988181
+// 4310.037646344885
+// 312.14255091390504
+// 1154.916262002063
+// 43.72962943065299
+// 120.06657390326177
+// 76.4126069950718
 // endResult

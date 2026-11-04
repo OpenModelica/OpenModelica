@@ -754,7 +754,6 @@ int initializeResultData(DATA* simData, threadData_t *threadData, int cpuTime)
 static enum SOLVER_METHOD resolveGbodeShorthand(enum SOLVER_METHOD solverID)
 {
   enum GB_METHOD gbMethod;
-  bool constantStep = true;
 
   switch (solverID) {
     case S_RUNGEKUTTA:    gbMethod = RK_RUNGEKUTTA; break;
@@ -762,17 +761,13 @@ static enum SOLVER_METHOD resolveGbodeShorthand(enum SOLVER_METHOD solverID)
     case S_IMPEULER:      gbMethod = RK_IMPL_EULER; break;
     case S_TRAPEZOID:     gbMethod = RK_TRAPEZOID; break;
     case S_IMPRUNGEKUTTA: gbMethod = RK_RADAU_IA_2; break;
-    case S_IRKSCO:        gbMethod = RK_TRAPEZOID; constantStep = false; break;
-    case S_RUNGEKUTTASSC: gbMethod = RK_RKSSC; constantStep = false; break;
+    case S_IRKSCO:        gbMethod = RK_TRAPEZOID; break;
+    case S_RUNGEKUTTASSC: gbMethod = RK_RKSSC; break;
     default:              return solverID;
   }
 
   omc_flag[FLAG_SR] = 1;
   omc_flagValue[FLAG_SR] = GB_METHOD_NAME[gbMethod];
-  if (constantStep) {
-    omc_flag[FLAG_SR_CTRL] = 1;
-    omc_flagValue[FLAG_SR_CTRL] = GB_CTRL_METHOD_NAME[GB_CTRL_CNST];
-  }
   return S_GBODE;
 }
 

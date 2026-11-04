@@ -16,35 +16,35 @@ end gbodeShorthands;
 echo(false);
 simulate(gbodeShorthands, stopTime = 1, numberOfIntervals = 10, method = "rungekutta", fileNamePrefix = "gbodeShorthands_x"); getErrorString();
 a := val(x, 1, "gbodeShorthands_x_res.mat");
-simulate(gbodeShorthands, stopTime = 1, numberOfIntervals = 10, method = "gbode", fileNamePrefix = "gbodeShorthands_x", simflags = "-gbm=rungekutta -gbctrl=const"); getErrorString();
+simulate(gbodeShorthands, stopTime = 1, numberOfIntervals = 10, method = "gbode", fileNamePrefix = "gbodeShorthands_x", simflags = "-gbm=rungekutta"); getErrorString();
 b := val(x, 1, "gbodeShorthands_x_res.mat");
 echo(true);
 "rungekutta"; a; a == b;
 echo(false);
 simulate(gbodeShorthands, stopTime = 1, numberOfIntervals = 10, method = "heun", fileNamePrefix = "gbodeShorthands_x"); getErrorString();
 a := val(x, 1, "gbodeShorthands_x_res.mat");
-simulate(gbodeShorthands, stopTime = 1, numberOfIntervals = 10, method = "gbode", fileNamePrefix = "gbodeShorthands_x", simflags = "-gbm=heun -gbctrl=const"); getErrorString();
+simulate(gbodeShorthands, stopTime = 1, numberOfIntervals = 10, method = "gbode", fileNamePrefix = "gbodeShorthands_x", simflags = "-gbm=heun"); getErrorString();
 b := val(x, 1, "gbodeShorthands_x_res.mat");
 echo(true);
 "heun"; a; a == b;
 echo(false);
 simulate(gbodeShorthands, stopTime = 1, numberOfIntervals = 10, method = "impeuler", fileNamePrefix = "gbodeShorthands_x"); getErrorString();
 a := val(x, 1, "gbodeShorthands_x_res.mat");
-simulate(gbodeShorthands, stopTime = 1, numberOfIntervals = 10, method = "gbode", fileNamePrefix = "gbodeShorthands_x", simflags = "-gbm=impl_euler -gbctrl=const"); getErrorString();
+simulate(gbodeShorthands, stopTime = 1, numberOfIntervals = 10, method = "gbode", fileNamePrefix = "gbodeShorthands_x", simflags = "-gbm=impl_euler"); getErrorString();
 b := val(x, 1, "gbodeShorthands_x_res.mat");
 echo(true);
 "impeuler"; a; a == b;
 echo(false);
 simulate(gbodeShorthands, stopTime = 1, numberOfIntervals = 10, method = "trapezoid", fileNamePrefix = "gbodeShorthands_x"); getErrorString();
 a := val(x, 1, "gbodeShorthands_x_res.mat");
-simulate(gbodeShorthands, stopTime = 1, numberOfIntervals = 10, method = "gbode", fileNamePrefix = "gbodeShorthands_x", simflags = "-gbm=trapezoid -gbctrl=const"); getErrorString();
+simulate(gbodeShorthands, stopTime = 1, numberOfIntervals = 10, method = "gbode", fileNamePrefix = "gbodeShorthands_x", simflags = "-gbm=trapezoid"); getErrorString();
 b := val(x, 1, "gbodeShorthands_x_res.mat");
 echo(true);
 "trapezoid"; a; a == b;
 echo(false);
 simulate(gbodeShorthands, stopTime = 1, numberOfIntervals = 10, method = "imprungekutta", fileNamePrefix = "gbodeShorthands_x"); getErrorString();
 a := val(x, 1, "gbodeShorthands_x_res.mat");
-simulate(gbodeShorthands, stopTime = 1, numberOfIntervals = 10, method = "gbode", fileNamePrefix = "gbodeShorthands_x", simflags = "-gbm=radauIA2 -gbctrl=const"); getErrorString();
+simulate(gbodeShorthands, stopTime = 1, numberOfIntervals = 10, method = "gbode", fileNamePrefix = "gbodeShorthands_x", simflags = "-gbm=radauIA2"); getErrorString();
 b := val(x, 1, "gbodeShorthands_x_res.mat");
 echo(true);
 "imprungekutta"; a; a == b;
@@ -64,28 +64,36 @@ echo(true);
 "rungekuttassc"; a; a == b;
 echo(false);
 
+simulate(gbodeShorthands, stopTime = 1, numberOfIntervals = 10, method = "rungekutta", fileNamePrefix = "gbodeShorthands_x", simflags = "-gbctrl=const"); getErrorString();
+a := val(x, 1, "gbodeShorthands_x_res.mat");
+simulate(gbodeShorthands, stopTime = 1, numberOfIntervals = 10, method = "gbode", fileNamePrefix = "gbodeShorthands_x", simflags = "-gbm=rungekutta -gbctrl=const"); getErrorString();
+b := val(x, 1, "gbodeShorthands_x_res.mat");
+echo(true);
+"rungekutta -gbctrl=const"; a; a == b;
+echo(false);
+
 // Result:
 // true
 // ""
 // true
 // "rungekutta"
-// 0.36787977441249853
+// 0.36787950449472134
 // true
 // true
 // "heun"
-// 0.36854098483355163
+// 0.36788041587926223
 // true
 // true
 // "impeuler"
-// 0.3855432894295317
+// 0.36809426060967615
 // true
 // true
 // "trapezoid"
-// 0.3675725423828691
+// 0.36787895487952205
 // true
 // true
 // "imprungekutta"
-// 0.3678744623975981
+// 0.3678794332913254
 // true
 // true
 // "irksco"
@@ -94,5 +102,9 @@ echo(false);
 // true
 // "rungekuttassc"
 // 0.36780669365470603
+// true
+// true
+// "rungekutta -gbctrl=const"
+// 0.36787977441249853
 // true
 // endResult

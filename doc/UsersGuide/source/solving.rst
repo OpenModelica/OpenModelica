@@ -149,11 +149,11 @@ Some common methods have a shorthand:
 
 .. code-block::
 
-  -s=rungekutta     -s=gbode -gbm=rungekutta -gbctrl=const
-  -s=heun           -s=gbode -gbm=heun -gbctrl=const
-  -s=impeuler       -s=gbode -gbm=impl_euler -gbctrl=const
-  -s=trapezoid      -s=gbode -gbm=trapezoid -gbctrl=const
-  -s=imprungekutta  -s=gbode -gbm=radauIA2 -gbctrl=const
+  -s=rungekutta     -s=gbode -gbm=rungekutta
+  -s=heun           -s=gbode -gbm=heun
+  -s=impeuler       -s=gbode -gbm=impl_euler
+  -s=trapezoid      -s=gbode -gbm=trapezoid
+  -s=imprungekutta  -s=gbode -gbm=radauIA2
   -s=irksco         -s=gbode -gbm=trapezoid
   -s=rungekuttassc  -s=gbode -gbm=rungekuttaSsc
 
