@@ -16,10 +16,12 @@ for i in 1:size(AnnotationNamedModifiers, 1) loop
 end for;
 print("simFlags: "+simFlags);
 
-simulate(TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe8, simflags=simFlags);
-getErrorString();
-
-readFile("TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe8_Outputs.csv");
+// How the simulation fails depends on the runtime (C or Rust), so only
+// record that it fails: resultFile stays empty until the model works.
+echo(false);
+res := simulate(TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe8, simflags=simFlags);
+echo(true);
+res.resultFile;
 getErrorString();
 
 
@@ -946,42 +948,8 @@ getErrorString();
 // -Passed
 //  Set_S has 16 equations and 16 variables
 //
-// record SimulationResult
-//     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Pipe8_Inputs.csv'",
-//     messages = "Simulation execution failed for model: TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe8
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// LOG_STDOUT        | info    | DataReconciliation Starting!
-// LOG_STDOUT        | info    | TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe8
-// LOG_ASSERT        | error   | [ThermoSysPro 4.2.0/Properties/Fluid/derTemperature_derP_derh.mo:56:5-56:44:writable]
-// |                 | |       | incorrect fluid number
-// LOG_ASSERT        | error   | [ThermoSysPro 4.2.0/Properties/Fluid/derTemperature_derP_derh.mo:56:5-56:44:writable]
-// |                 | |       | incorrect fluid number
-// LOG_ASSERT        | error   | [ThermoSysPro 4.2.0/Properties/Fluid/derTemperature_derP_derh.mo:56:5-56:44:writable]
-// |                 | |       | incorrect fluid number
-// LOG_ASSERT        | error   | [ThermoSysPro 4.2.0/Properties/Fluid/derTemperature_derP_derh.mo:56:5-56:44:writable]
-// |                 | |       | incorrect fluid number
-// LOG_ASSERT        | error   | [ThermoSysPro 4.2.0/Properties/Fluid/derTemperature_derP_derh.mo:56:5-56:44:writable]
-// |                 | |       | incorrect fluid number
-// LOG_ASSERT        | error   | [ThermoSysPro 4.2.0/Properties/Fluid/derTemperature_derP_derh.mo:56:5-56:44:writable]
-// |                 | |       | incorrect fluid number
-// LOG_STDOUT        | warning | Non-Linear Solver try to handle a problem with a called assert.
-// LOG_ASSERT        | error   | [ThermoSysPro 4.2.0/Properties/Fluid/derTemperature_derP_derh.mo:56:5-56:44:writable]
-// |                 | |       | incorrect fluid number
-// LOG_ASSERT        | error   | [ThermoSysPro 4.2.0/Properties/Fluid/derTemperature_derP_derh.mo:56:5-56:44:writable]
-// |                 | |       | incorrect fluid number
-// LOG_ASSERT        | error   | [ThermoSysPro 4.2.0/Properties/Fluid/derTemperature_derP_derh.mo:56:5-56:44:writable]
-// |                 | |       | incorrect fluid number
-// LOG_ASSERT        | error   | [ThermoSysPro 4.2.0/Properties/Fluid/derTemperature_derP_derh.mo:56:5-56:44:writable]
-// |                 | |       | incorrect fluid number
-// LOG_ASSERT        | error   | [ThermoSysPro 4.2.0/Properties/Fluid/derTemperature_derP_derh.mo:56:5-56:44:writable]
-// |                 | |       | incorrect fluid number
-// LOG_ASSERT        | error   | [ThermoSysPro 4.2.0/Properties/Fluid/derTemperature_derP_derh.mo:56:5-56:44:writable]
-// |                 | |       | incorrect fluid number
-// LOG_STDOUT        | error   | solveSystemFstar() Failed !, The solution could not be computed, The info satus is 1
-// "
-// end SimulationResult;
+// true
+// ""
 // "[TSP_DataReconciliationSimpleTests 4.0.0/Components/PressureLoss/SingularPressureLoss.mo:39:3-40:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [TSP_DataReconciliationSimpleTests 4.0.0/Components/PressureLoss/SingularPressureLoss.mo:41:3-42:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [TSP_DataReconciliationSimpleTests 4.0.0/Components/PressureLoss/SingularPressureLoss.mo:39:3-40:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
@@ -996,8 +964,5 @@ getErrorString();
 // [ThermoSysPro 4.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:118:3-118:151:writable] Warning: 'du1satp_der' is used uninitialized and may cause unexpected behaviour. This is deprecated and will become an error in future releases.
 // [ThermoSysPro 4.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:118:3-118:151:writable] Warning: 'du2satp_der' is used uninitialized and may cause unexpected behaviour. This is deprecated and will become an error in future releases.
 // [ThermoSysPro 4.2.0/Properties/Fluid/derDensity_derP_derh.mo:56:5-56:88:writable] Warning: 'T' is used uninitialized and may cause unexpected behaviour. This is deprecated and will become an error in future releases.
-// "
-// ""
-// "Error: Error opening file: TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe8_Outputs.csv: No such file or directory.
 // "
 // endResult
