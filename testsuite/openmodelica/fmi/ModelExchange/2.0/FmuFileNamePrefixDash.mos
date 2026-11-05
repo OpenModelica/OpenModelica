@@ -1,0 +1,34 @@
+// name:     FmuFileNamePrefixDash
+// keywords: FMI 2.0 export fileNamePrefix
+// status:   correct
+// teardown_command: rm -rf FmuFileNamePrefix-Dash.fmu FmuFileNamePrefix-Dash_* FmuFileNamePrefix-Dash.log
+//
+// An FMU builds when the fileNamePrefix is not a C identifier.
+
+loadString("
+model FmuFileNamePrefixDash
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = -x;
+end FmuFileNamePrefixDash;
+"); getErrorString();
+buildModelFMU(FmuFileNamePrefixDash, version = "2.0", fmuType = "me", fileNamePrefix = "FmuFileNamePrefix-Dash"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py FmuFileNamePrefix-Dash.fmu FmuFileNamePrefix-Dash_fmpy.csv 1.0 x > FmuFileNamePrefix-Dash.log 2>&1"); getErrorString();
+system("tail -n 1 FmuFileNamePrefix-Dash_fmpy.csv > FmuFileNamePrefix-Dash_last.txt"); getErrorString();
+readFile("FmuFileNamePrefix-Dash_last.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// "FmuFileNamePrefix-Dash.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// 0
+// ""
+// "1.0,0.36788021572117124
+// "
+// ""
+// endResult

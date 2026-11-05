@@ -1293,7 +1293,7 @@ protected
     variableData := BVariable.VAR_DATA_SIM(Pointer.create(0), variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias,
                       derivatives, algebraics, discretes, discrete_states, clocked_states, previous, clocks,
                       states, inputs, resizables, parameters, constants, records, external_objects, artificials,
-                      UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual));
+                      UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual), false);
 
     if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
       print(StringUtil.headline_4("[stateselection] (" + intString(listLength(forced_states)) + ") Forced states by StateSelect.ALWAYS:"));
@@ -1497,7 +1497,7 @@ protected
     (simulation_lst, continuous_lst, clocked_lst, discretes_lst, initials_lst, auxiliaries_lst, removed_lst) := BEquation.typeList(EquationPointers.toList(equations));
 
     equations := EquationPointers.removeList(clocked_lst, equations);
-    equations := Resizable.resize(equations, varData);
+    (equations, varData) := Resizable.resize(equations, varData);
 
     eqData := BEquation.EQ_DATA_SIM(
       uniqueIndex = idx,

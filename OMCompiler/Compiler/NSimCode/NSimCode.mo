@@ -361,7 +361,7 @@ public
           algorithm
             // somehow this cannot be set at definition (metamodelica bug?)
             simCodeIndices := EMPTY_SIM_CODE_INDICES();
-            simCodeIndices.resizable := List.any(VariablePointers.toList(varData.variables), BVariable.isResizable);
+            simCodeIndices.resizable := varData.resizable;
             funcMap := BackendDAE.getFunctionMap(bdae);
 
             // get and replace all literals in functions
@@ -875,6 +875,7 @@ public
       list<SimStrongComponent.Block> linearLoops;
       list<SimStrongComponent.Block> nonlinearLoops;
       //list<UnitDefinition> unitDefinitions "export unitDefintion in modelDescription.xml";
+      Boolean resizable                           "the model has variables with resizable dimensions";
     end MODEL_INFO;
 
     function toString
@@ -920,7 +921,8 @@ public
         nSpatialDistributions           = listLength(eventInfo.spatial_lst),
         hasLargeLinearEquationSystems   = true,
         linearLoops                     = linearLoops,
-        nonlinearLoops                  = nonlinearLoops);
+        nonlinearLoops                  = nonlinearLoops,
+        resizable                       = simCodeIndices.resizable);
     end create;
 
     function setSeedVars
@@ -970,7 +972,8 @@ public
         hasLargeLinearEquationSystems   = modelInfo.hasLargeLinearEquationSystems,
         linearSystems                   = SimStrongComponent.Block.convertList(modelInfo.linearLoops),
         nonLinearSystems                = SimStrongComponent.Block.convertList(modelInfo.nonlinearLoops),
-        unitDefinitions                 = {} // ToDo: add this once unit definitions are supported
+        unitDefinitions                 = {}, // ToDo: add this once unit definitions are supported
+        resizable                       = modelInfo.resizable
       );
     end convert;
   end ModelInfo;

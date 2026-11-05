@@ -10093,38 +10093,17 @@ algorithm
   if  System.stringFind(simflags, "-r") < 0 then
     return;
   end if;
-  // never fail!
+  // -r must be a flag of its own, not the start of another one such as -rt
+  // or -reconcile.
   try
-   // match -r="file"
-   (nm, {_, f}) := System.regex(simflags, "-r=\"(.*?)\"", 2, true);
-   if nm == 2 then
-     resultFile := f; return;
-   end if;
-   // match -r='file'
-   (nm, {_, f}) := System.regex(simflags, "-r=\'(.*?)\'", 2, true);
-   if nm == 2 then
-     resultFile := f; return;
-   end if;
-   // match -r 'file'
-   (nm, {_, f}) := System.regex(simflags, "-r[ ]*\"(.*?)\"", 2, true);
-   if nm == 2 then
-     resultFile := f; return;
-   end if;
-   // match -r "file"
-   (nm, {_, f}) := System.regex(simflags, "-r[ ]*\'(.*?)\'", 2, true);
-   if nm == 2 then
-     resultFile := f; return;
-   end if;
-   // match -r=file
-   (nm, {_, f}) := System.regex(simflags, "-r=([^ ]*)", 2, true);
-   if nm == 2 then
-     resultFile := f; return;
-   end if;
-   // match -r file
-   (nm, {_, f}) := System.regex(simflags, "-r[ ]*([^ ]*)", 2, true);
-   if nm == 2 then
-     resultFile := f; return;
-   end if;
+   for re in {"(^|[[:space:]])-r(=|[[:space:]]+)\"([^\"]*)\"",
+              "(^|[[:space:]])-r(=|[[:space:]]+)'([^']*)'",
+              "(^|[[:space:]])-r(=|[[:space:]]+)([^[:space:]]+)"} loop
+     (nm, {_, _, _, f}) := System.regex(simflags, re, 4, true);
+     if nm == 4 then
+       resultFile := f; return;
+     end if;
+   end for;
   else
     // do nothing
   end try;
