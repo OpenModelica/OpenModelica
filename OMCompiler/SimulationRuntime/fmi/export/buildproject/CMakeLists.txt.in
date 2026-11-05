@@ -163,7 +163,6 @@ file(GLOB_RECURSE FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/external_solve
                                       ${CMAKE_CURRENT_SOURCE_DIR}/util/*.c)
 if(${COMPILE_MODELICA_EXTERNAL_C})
   list(APPEND FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaStandardTables.c
-                                  ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaStandardTablesDummyUsertab.c
                                   ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/snprintf.c
                                   ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaIO.c
                                   ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaMatIO.c)
@@ -269,6 +268,13 @@ add_library(${FMU_NAME_HASH}
 
 if(OM_LINK_SIMULATION_RUNTIME_FMI)
   target_link_libraries(${FMU_NAME_HASH} PRIVATE "${SIMULATION_RUNTIME_FMI_LIBRARY}")
+endif()
+
+# An archive, so that a usertab of the model takes the place of the dummy one.
+if(${COMPILE_MODELICA_EXTERNAL_C})
+  add_library(omc_fmu_dummy_usertab STATIC ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaStandardTablesDummyUsertab.c)
+  set_target_properties(omc_fmu_dummy_usertab PROPERTIES POSITION_INDEPENDENT_CODE ON C_VISIBILITY_PRESET hidden)
+  target_link_libraries(${FMU_NAME_HASH} PRIVATE omc_fmu_dummy_usertab)
 endif()
 
 # Set output name for the .dll's and .so files to use the full FMU name instead of fmu hash string

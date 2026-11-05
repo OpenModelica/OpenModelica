@@ -6,6 +6,7 @@ ExportFMUCLI.mos \
 FmuFileNamePrefixDash.mos \
 FmuSparseSolvers.mos \
 FmuUserCFlags.mos \
+FmuUserTab.mos \
 fmi_attributes_01.mos \
 fmi_attributes_02.mos \
 fmi_attributes_03.mos \
