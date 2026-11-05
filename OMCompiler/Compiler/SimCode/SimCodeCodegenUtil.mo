@@ -55,6 +55,7 @@ import Util;
 protected
 import AbsynUtil;
 import Array;
+import Autoconf;
 import AvlTreeCRToInt;
 import BaseHashTable;
 import ClassInf;
@@ -3348,6 +3349,29 @@ algorithm
   end for;
   aliases := listReverse(aliases);
 end getFMI3VariableAliases;
+
+public constant list<String> fmuSourceLibraries = {"ModelicaStandardTables", "ModelicaIO", "ModelicaMatIO"}
+  "The libraries of Library annotations that an FMU compiles from its sources.";
+
+public function fmuExternalLibraries
+  "The libraries of Library annotations that an FMU does not carry as sources,
+   by name. zlib and HDF5 are only there for ModelicaMatIO, which the FMU
+   compiles without them."
+  input list<String> libs;
+  output list<String> names = {};
+protected
+  String name;
+algorithm
+  for lib in libs loop
+    if StringUtil.startsWith(lib, "-l") and not stringEqual(lib, Autoconf.hdf5Libs) then
+      name := substring(lib, 3, stringLength(lib));
+      if not (name == "zlib" or List.contains(fmuSourceLibraries, name, stringEqual) or List.contains(names, name, stringEqual)) then
+        names := name :: names;
+      end if;
+    end if;
+  end for;
+  names := listReverse(names);
+end fmuExternalLibraries;
 
 public function getFMI3Terminals
   "Collect the FMI 3.0 terminals from the exported SimVars. The flat-model type of

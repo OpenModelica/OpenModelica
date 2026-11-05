@@ -255,7 +255,7 @@ template fmiBuildDescription(SimCode simCode, list<String> sourceFiles)
   moves it here. Paths are relative to the sources/ directory."
 ::=
 match simCode
-case SIMCODE(__) then
+case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   let modelIdentifier = modelNamePrefix(simCode)
   <<
   <?xml version="1.0" encoding="UTF-8"?>
@@ -269,6 +269,7 @@ case SIMCODE(__) then
         <IncludeDirectory name="fmi"/>
       </SourceFileSet>
       <%rustSourceFileSet(sourceFiles)%>
+      <%SimCodeCodegenUtil.fmuExternalLibraries(makefileParams.libs) |> lib => '<Library name="<%Util.escapeModelicaStringToXmlString(lib)%>" external="true"/>' ;separator="\n"%>
     </BuildConfiguration>
   </fmiBuildDescription>
   >>
