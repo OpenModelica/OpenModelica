@@ -1913,7 +1913,9 @@ protected
 algorithm
   Flags.DEBUG_FLAG(default = default, name = name, description = desc) := inFlag;
   desc_str := desc;
-  if sphinx then
+  if valueEq(inFlag.visibility, Flags.INTERNAL()) then
+    outString := "";
+  elseif sphinx then
     desc_str := stringDelimitList(list(System.trim(s) for s in System.strtok(desc_str, "\n")), "\n  ");
     outString := "\n.. _omcflag-debug-"+name+":\n\n" +
       ":ref:`" + name + " <omcflag-debug-"+name+">`" +
