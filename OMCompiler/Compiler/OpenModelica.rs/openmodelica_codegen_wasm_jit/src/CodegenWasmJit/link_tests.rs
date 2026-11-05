@@ -32,6 +32,10 @@ fn build_stub_model_calling(ext: Option<(&str, usize)>) -> Vec<u8> {
     if let Some((_, params)) = ext {
         types.ty().function(vec![we::ValType::I32; params], []); // 6: the external
     }
+    let guard2_type = 6 + u32::from(ext.is_some());
+    types
+        .ty()
+        .function([we::ValType::I32, we::ValType::I32], [we::ValType::I32]);
     m.section(&types);
 
     let mut imports = we::ImportSection::new();
@@ -87,6 +91,7 @@ fn build_stub_model_calling(ext: Option<(&str, usize)>) -> Vec<u8> {
     for _ in &one_arg {
         funcs.function(0); // <entry>$guard: (i32)->i32, like rt_alloc's type
     }
+    funcs.function(guard2_type); // functionUpdateTunableParameters$guard
     m.section(&funcs);
 
     let mut exports = we::ExportSection::new();
@@ -110,6 +115,11 @@ fn build_stub_model_calling(ext: Option<(&str, usize)>) -> Vec<u8> {
     for (i, name) in one_arg.iter().enumerate() {
         exports.export(&format!("{name}$guard"), we::ExportKind::Func, guard_base + i as u32);
     }
+    exports.export(
+        "functionUpdateTunableParameters$guard",
+        we::ExportKind::Func,
+        guard_base + one_arg.len() as u32,
+    );
     m.section(&exports);
 
     let mut code = we::CodeSection::new();
@@ -146,7 +156,7 @@ fn build_stub_model_calling(ext: Option<(&str, usize)>) -> Vec<u8> {
     throw.instruction(&I::End);
     code.function(&throw);
     // Each guard: nothing threw.
-    for _ in &one_arg {
+    for _ in 0..=one_arg.len() {
         let mut f = we::Function::new([]);
         f.instruction(&I::I32Const(0));
         f.instruction(&I::End);

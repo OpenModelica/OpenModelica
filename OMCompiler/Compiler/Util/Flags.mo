@@ -167,6 +167,10 @@ public constant Integer FMI_SOURCES_NONE = 1;
 public constant Integer FMI_SOURCES_SLIM = 2;
 public constant Integer FMI_SOURCES_FULL = 3;
 
+// Which parameters an FMU exports as tunable, see FMI_TUNABLE_PARAMETERS
+public constant Integer FMI_TUNABLE_NONE = 1;
+public constant Integer FMI_TUNABLE_LITERAL = 2;
+
 // FMI version enum flags
 public constant Integer FMI_VERSION_10 = 10;
 public constant Integer FMI_VERSION_20 = 20;
@@ -1457,6 +1461,13 @@ constant ConfigFlag TPL_OUTPUT_DIR = CONFIG_FLAG(170, "tplOutputDir",
 constant ConfigFlag FMU_DIRECTORY = CONFIG_FLAG(171, "fmuDirectory",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Write an exported FMU as an unzipped directory named <prefix>.fmu rather than\na zip file. An importer that reads a directory (OpenModelica's own does) then\npays neither the compression nor the extraction, which for a wasm FMU carrying a\nprecompiled artifact is most of what packing it costs. wasm FMUs only.");
+constant ConfigFlag FMI_TUNABLE_PARAMETERS = CONFIG_FLAG(172, "fmiTunableParameters",
+  NONE(), EXTERNAL(), ENUM_FLAG(FMI_TUNABLE_LITERAL, {("none", FMI_TUNABLE_NONE), ("literal", FMI_TUNABLE_LITERAL)}),
+  SOME(STRING_DESC_OPTION({
+    ("none", "All parameters are fixed."),
+    ("literal", "A parameter with a literal binding is tunable, unless a value that is only calculated during initialization depends on it.")
+    })),
+  "Which parameters an FMU 2.0 or 3.0 exports as tunable.");
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

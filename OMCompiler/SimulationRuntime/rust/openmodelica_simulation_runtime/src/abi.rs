@@ -920,6 +920,7 @@ pub struct OpenModelicaGeneratedFunctionCallbacks {
     pub functionInitialEquations_lambda0: sim_fn,
     pub functionRemovedInitialEquations: sim_fn,
     pub updateBoundParameters: sim_fn,
+    pub updateTunableParameters: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, *const u8) -> c_int>,
     pub checkForAsserts: sim_fn,
     pub function_ZeroCrossingsEquations: sim_fn,
     pub function_ZeroCrossings: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, *mut f64) -> c_int>,

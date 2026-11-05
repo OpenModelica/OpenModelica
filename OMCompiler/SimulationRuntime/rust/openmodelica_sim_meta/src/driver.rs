@@ -518,6 +518,11 @@ pub trait SimEngine {
         rtclock::accumulate(ix);
         out
     }
+    /// C's `updateTunableParameters`: the parameter equations `k` with `mask[k]`
+    /// set, in the order of the model's parameter dependencies.
+    fn update_tunable_parameters(&mut self, _sim_data: u32, _mask: &[u8]) -> Result<()> {
+        Err("the model cannot update tunable parameters")
+    }
     /// Call the exported `simulate(sim_data, start, stop, n_steps) -> buf`, the
     /// in-wasm Euler driver; returns the result-buffer pointer.
     fn call_simulate(&mut self, sim_data: u32, start: f64, stop: f64, n_steps: u32) -> Result<u32>;

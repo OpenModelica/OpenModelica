@@ -30,6 +30,9 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::cell::RefCell;
 
+mod param_deps;
+use param_deps::ParamDeps;
+
 #[cfg(feature = "wasm")]
 use openmodelica_sim_meta::decode;
 use openmodelica_sim_meta::driver::{
@@ -113,6 +116,8 @@ unsafe extern "C" {
     fn functionInitSpatialDistribution_guard(sim_data: u32) -> u32;
     #[link_name = "functionUpdateBoundParameters$guard"]
     fn functionUpdateBoundParameters_guard(sim_data: u32) -> u32;
+    #[link_name = "functionUpdateTunableParameters$guard"]
+    fn functionUpdateTunableParameters_guard(sim_data: u32, mask: u32) -> u32;
     #[link_name = "functionUpdateBoundVariableAttributes$guard"]
     fn functionUpdateBoundVariableAttributes_guard(sim_data: u32) -> u32;
     #[link_name = "functionRemovedInitialEquations$guard"]
@@ -657,6 +662,12 @@ impl FmiHost for Engine {
 
 #[cfg(feature = "wasm")]
 impl SimEngine for Engine {
+    fn update_tunable_parameters(&mut self, sim_data: u32, mask: &[u8]) -> driver::Result<()> {
+        if unsafe { functionUpdateTunableParameters_guard(sim_data, mask.as_ptr() as u32) } != 0 {
+            return Err(driver::ASSERT_ERR);
+        }
+        Ok(())
+    }
     fn read_bytes(&self, addr: u32, buf: &mut [u8]) -> driver::Result<()> {
         let src = unsafe { core::slice::from_raw_parts(addr as *const u8, buf.len()) };
         buf.copy_from_slice(src);
@@ -836,6 +847,8 @@ struct Updated {
     ticked: bool,
     /// A sample or clock fired: an event whatever the discrete variables did.
     fired: bool,
+    /// A tunable parameter changed, and with it maybe a nominal.
+    tunable: bool,
 }
 
 struct MeState<E: FmiHost + 'static> {
@@ -907,9 +920,133 @@ struct MeState<E: FmiHost + 'static> {
     samples: Option<Samples>,
     /// Synchronous clocks (C's `initSynchronous`), for a model that has any.
     sync: Option<openmodelica_sim_meta::sync::Sync>,
+    tunable: Tunable,
+}
+
+/// The parameter dependencies and what the importer set, per slot (see
+/// [`param_deps`]). Without dependencies (an FMI 1.0 FMU) every set is allowed
+/// and nothing is updated.
+struct Tunable {
+    deps: Option<ParamDeps>,
+    /// Tunable parameters set since the last update, and what depends on them.
+    dirty: Vec<u8>,
+    /// Set before Initialization Mode was left.
+    set_before_init: Vec<u8>,
+    pending: bool,
+    /// An update ran that the next event update has not followed yet.
+    applied: bool,
+}
+
+impl Tunable {
+    fn new(meta: &openmodelica_sim_meta::SimMeta) -> Option<Self> {
+        let deps = match meta.param_deps.is_empty() {
+            true => None,
+            false => ParamDeps::parse(&meta.param_deps, param_deps::n_slots(&meta.layout))?,
+        };
+        let n = deps.as_ref().map_or(0, ParamDeps::n_slots);
+        Some(Tunable {
+            deps,
+            dirty: vec![0; n],
+            set_before_init: vec![0; n],
+            pending: false,
+            applied: false,
+        })
+    }
+
+    /// Calculate again what the tunable parameters reach, min, max and nominal too.
+    fn mark_all_tunable(&mut self) {
+        let Some(deps) = &self.deps else {
+            return;
+        };
+        for (s, d) in self.dirty.iter_mut().enumerate() {
+            *d = (deps.flags(s as u32) & param_deps::TUNABLE != 0) as u8;
+        }
+        self.pending = true;
+    }
+
+    fn reset(&mut self) {
+        self.dirty.fill(0);
+        self.set_before_init.fill(0);
+        self.pending = false;
+        self.applied = false;
+    }
+
+    /// The slots that keep their current values in `set_fmu_state`: the ones set
+    /// before Initialization Mode was left and what is calculated from them.
+    fn kept(&self) -> Option<Vec<u8>> {
+        let deps = self.deps.as_ref()?;
+        let mut keep = self.set_before_init.clone();
+        let mut mask = vec![0u8; deps.n_eqs()];
+        deps.select(&mut keep, &mut mask);
+        Some(keep)
+    }
 }
 
 impl<E: FmiHost + 'static> MeState<E> {
+    /// C's `recordSet`: whether FMI lets the importer set the variable at `off`
+    /// now, recording the write for the update and for `set_fmu_state`.
+    fn check_set(&mut self, call: &str, vr: u32, off: u32) -> Result<(), Status> {
+        use param_deps::{CONTINUOUS, INITIAL_APPROX, INITIAL_EXACT, INPUT, TUNABLE};
+        let Some(deps) = &self.tunable.deps else {
+            return Ok(());
+        };
+        let slot = param_deps::slot_of(&self.layout, off);
+        let f = slot.map_or(0, |s| deps.flags(s));
+        // fmi-ls-dae: the importer solves for the algebraic variables and sets them.
+        let dae_unknown = self.dae_mode && slot.is_some_and(|s| s % 8 == 0) && !param_deps::is_param(&self.layout, off);
+        let ok = match self.mode {
+            Mode::Instantiated => f & (INITIAL_EXACT | INITIAL_APPROX | INPUT) != 0,
+            Mode::Init => f & (INITIAL_EXACT | INPUT) != 0,
+            Mode::Ready if dae_unknown => true,
+            Mode::Ready if self.continuous_time => f & INPUT != 0 && f & CONTINUOUS != 0,
+            Mode::Ready => f & (INPUT | TUNABLE) != 0,
+        };
+        let Some(s) = slot.filter(|_| ok) else {
+            return Err(bad_vr(call, vr, "a variable that can be set now"));
+        };
+        let t = &mut self.tunable;
+        if self.mode != Mode::Ready {
+            if param_deps::is_param(&self.layout, off) {
+                t.set_before_init[s as usize] = 1;
+            }
+        } else if f & TUNABLE != 0 {
+            t.dirty[s as usize] = 1;
+            t.pending = true;
+        }
+        Ok(())
+    }
+
+    /// C's `applyTunableParameters`: the parameter equations that depend on the
+    /// tunable parameters set since the last update. True if any was set.
+    fn apply_tunable(&mut self) -> driver::Result<bool> {
+        let MeState {
+            tunable:
+                Tunable {
+                    deps: Some(deps),
+                    dirty,
+                    pending,
+                    applied,
+                    ..
+                },
+            ..
+        } = self
+        else {
+            return Ok(false);
+        };
+        if !core::mem::take(pending) {
+            return Ok(false);
+        }
+        *applied = true;
+        let mut mask = vec![0u8; deps.n_eqs()];
+        let n = deps.select(dirty, &mut mask);
+        dirty.fill(0);
+        self.jacobian_valid = false;
+        if n > 0 {
+            self.engine.update_tunable_parameters(self.sim_data, &mask)?;
+        }
+        Ok(true)
+    }
+
     /// The time-event schedule outside `SimData`, whichever of the ME state and
     /// the CS driver holds it.
     fn schedule_words(&self) -> Vec<f64> {
@@ -1113,7 +1250,10 @@ impl<E: FmiHost + 'static> MeState<E> {
         if self.mode == Mode::Init {
             self.run_init().map_err(err_status)?;
         } else {
-            self.evaluate(|m| m.eval())?;
+            self.evaluate(|m| {
+                m.apply_tunable()?;
+                m.eval()
+            })?;
         }
         self.need_update = false;
         Ok(())
@@ -1123,6 +1263,8 @@ impl<E: FmiHost + 'static> MeState<E> {
     /// event, then the timers again for an event clock — with the CS driver ordering
     /// its own schedule where it owns one.
     fn run_event_update(&mut self, time: f64) -> driver::Result<Updated> {
+        self.apply_tunable()?;
+        let tunable = core::mem::take(&mut self.tunable.applied);
         let (sim_data, layout) = (self.sim_data, self.layout);
         let mut ticked = false;
         #[cfg(feature = "cs")]
@@ -1202,6 +1344,7 @@ impl<E: FmiHost + 'static> MeState<E> {
             reselected,
             ticked,
             fired: fired || ticked,
+            tunable,
         })
     }
 
@@ -1428,6 +1571,7 @@ fn new_state() -> Option<MeState<Engine>> {
     let sim_data = openmodelica_codegen_wasm_jit_runtime::rt_sim_data_new(layout.total);
     let dae_enable_vr = meta.fmi_dae_enable_vr;
     let dss = driver::StateSelection::new(&meta);
+    let tunable = Tunable::new(&meta)?;
     let mut st = MeState {
         engine,
         sim_data,
@@ -1460,6 +1604,7 @@ fn new_state() -> Option<MeState<Engine>> {
         sync: None,
         jacobian_cache: Vec::new(),
         jacobian_valid: false,
+        tunable,
     };
     st.seed_start_state();
     Some(st)
@@ -1613,6 +1758,16 @@ macro_rules! cs_instance_methods {
             match CsDriver::new(&mut st.engine, &st.meta, sim_data, t, st.sync.take()) {
                 Ok(d) => st.cs = Some(d),
                 Err(e) => return Err(err_status(e)),
+            }
+        }
+        // A tunable parameter changed at the communication point: an event there,
+        // which also restarts the integrator.
+        if let Err(err) = st.apply_tunable() {
+            return Err(failed(&mut st.engine, sim_data, err));
+        }
+        if st.tunable.applied {
+            if let Err(err) = st.run_event_update(t) {
+                return Err(failed(&mut st.engine, sim_data, err));
             }
         }
         let inputs: Vec<(u32, f64, f64)> = st.input_ders.iter().map(|&(off, d)| (off, st.read_f64(off), d)).collect();
@@ -1839,7 +1994,7 @@ macro_rules! shared_instance_methods {
             terminate_simulation: u.up.terminate,
             // C's `updateSolverNominals`: a pivoted state set integrates other
             // variables, with other nominals.
-            nominals_of_continuous_states_changed: u.reselected,
+            nominals_of_continuous_states_changed: u.reselected || u.tunable,
             values_of_continuous_states_changed: u.up.states_changed || u.ticked || u.reselected,
             next_event_time_defined: u.next.is_some(),
             next_event_time: u.next.unwrap_or(0.0),
@@ -1879,6 +2034,7 @@ macro_rules! shared_instance_methods {
         st.init_overrides.clear();
         st.init_start_overrides.clear();
         st.init_string_overrides.clear();
+        st.tunable.reset();
         st.samples = None;
         st.sync = None;
         #[cfg(feature = "cs")]
@@ -2049,6 +2205,9 @@ macro_rules! shared_instance_methods {
         for (vr, v) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
                 Some(e) if e.wty == WTy::F64 && e.negate == Neg::None => {
+                    if let Err(s) = st.check_set("fmi3SetFloat64", vr, e.off) {
+                        return s;
+                    }
                     st.write_f64(e.off, v);
                     if st.mode != Mode::Ready {
                         let start = e.start_off != 0;
@@ -2077,6 +2236,9 @@ macro_rules! shared_instance_methods {
         for (vr, v) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
                 Some(e) if e.wty == WTy::I32 && e.negate == Neg::None && !e.is_string => {
+                    if let Err(s) = st.check_set("fmi3SetInt32", vr, e.off) {
+                        return s;
+                    }
                     st.write_i32(e.off, v);
                     if st.mode != Mode::Ready {
                         st.record_override(e.off, WTy::I32, v as f64, false);
@@ -2098,6 +2260,9 @@ macro_rules! shared_instance_methods {
         for (vr, v) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
                 Some(e) if e.wty == WTy::I32 && e.negate == Neg::None && !e.is_string => {
+                    if let Err(s) = st.check_set("fmi3SetInt64", vr, e.off) {
+                        return s;
+                    }
                     st.write_i32(e.off, v as i32);
                     if st.mode != Mode::Ready {
                         st.record_override(e.off, WTy::I32, v as f64, false);
@@ -2128,6 +2293,9 @@ macro_rules! shared_instance_methods {
         for (vr, v) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
                 Some(e) if e.wty == WTy::I32 && e.negate == Neg::None && !e.is_string => {
+                    if let Err(s) = st.check_set("fmi3SetUInt64", vr, e.off) {
+                        return s;
+                    }
                     st.write_i32(e.off, v as i32);
                     if st.mode != Mode::Ready {
                         st.record_override(e.off, WTy::I32, v as f64, false);
@@ -2157,6 +2325,9 @@ macro_rules! shared_instance_methods {
             }
             match st.vrs.resolve(vr) {
                 Some(e) if e.wty == WTy::I32 && e.negate == Neg::None && !e.is_string => {
+                    if let Err(s) = st.check_set("fmi3SetBoolean", vr, e.off) {
+                        return s;
+                    }
                     let iv = if v { 1 } else { 0 };
                     st.write_i32(e.off, iv);
                     if st.mode != Mode::Ready {
@@ -2179,6 +2350,9 @@ macro_rules! shared_instance_methods {
         for (vr, val) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
                 Some(e) if e.is_string => {
+                    if let Err(s) = st.check_set("fmi3SetString", vr, e.off) {
+                        return s;
+                    }
                     st.write_string(e.off, &val);
                     if st.mode != Mode::Ready {
                         st.init_string_overrides.retain(|(o, _)| *o != e.off);
@@ -2210,6 +2384,12 @@ macro_rules! shared_instance_methods {
     /// lengths of those two and of `SimData` close it.
     $($vis)? fn get_fmu_state(&self) -> Result<Vec<u8>, Status> {
         let mut st = self.st.borrow_mut();
+        if st.tunable.pending {
+            st.need_update = true;
+            st.update_if_needed()?;
+        }
+        // Restoring a state this instance saved restores all its parameters.
+        st.tunable.set_before_init.fill(0);
         let flat = st.layout.total as usize;
         let mut bytes = vec![0u8; flat];
         if st.engine.read_bytes(st.sim_data, &mut bytes).is_err() {
@@ -2225,8 +2405,9 @@ macro_rules! shared_instance_methods {
         }
         Ok(bytes)
     }
-    /// The parameters keep their current values, as C's since #15915: an importer
-    /// sets new ones on a fresh instance and then restores a state saved earlier.
+    /// The parameters come from the state, except those set before Initialization
+    /// Mode was left and what is calculated from them: an importer sets new ones
+    /// on a fresh instance and then restores a state saved earlier (#15216).
     $($vis)? fn set_fmu_state(&self, state: Vec<u8>) -> Status {
         let mut st = self.st.borrow_mut();
         let l = st.layout;
@@ -2249,13 +2430,39 @@ macro_rules! shared_instance_methods {
         // The string and external-object slots hold handles, which only the
         // current state owns: the engine puts the saved strings back itself.
         let pre_real = l.pre_real_off.min(flat as u32);
-        for (from, to) in [(l.rparam_off, l.int_off), (l.iparam_off, l.bool_off), (l.bparam_off, pre_real)] {
-            let _ = st.engine.read_bytes(sim_data + from, &mut state[from as usize..to as usize]);
+        let mut kept_strings = Vec::new();
+        match st.tunable.kept() {
+            Some(keep) => {
+                let _ = st.engine.read_bytes(sim_data + l.str_off, &mut state[l.str_off as usize..pre_real as usize]);
+                for s in (0..keep.len()).filter(|&s| keep[s] != 0) {
+                    match param_deps::slot_off(&l, s as u32) {
+                        Some((off, _, param_deps::STRING)) => kept_strings.push((off, st.read_string(off))),
+                        Some((off, size, _)) => {
+                            let _ = st.engine.read_bytes(sim_data + off, &mut state[off as usize..(off + size) as usize]);
+                        }
+                        None => {}
+                    }
+                }
+            }
+            None => {
+                for (from, to) in [(l.rparam_off, l.int_off), (l.iparam_off, l.bool_off), (l.bparam_off, pre_real)] {
+                    let _ = st.engine.read_bytes(sim_data + from, &mut state[from as usize..to as usize]);
+                }
+            }
         }
         if st.engine.write_bytes(sim_data, &state).is_err() || !st.engine.set_opaque_state(sim_data, &l, opaque) {
             return Status::Error;
         }
+        for (off, v) in kept_strings {
+            st.write_string(off, &v);
+        }
+        st.tunable.mark_all_tunable();
         st.need_update = true;
+        if st.mode == Mode::Ready {
+            if let Err(s) = st.update_if_needed() {
+                return s;
+            }
+        }
         // C's `fmi2SetFMUstate` sets the internal solver up again: its history
         // belongs to the state left behind.
         #[cfg(feature = "cs")]
@@ -2514,6 +2721,7 @@ impl<E: FmiHost + 'static> Instance<E> {
         apply_baked_solver_flags(&mut engine, &meta.fmi_solver_flags)?;
         let dae_enable_vr = meta.fmi_dae_enable_vr;
         let dss = driver::StateSelection::new(&meta);
+        let tunable = Tunable::new(&meta)?;
         let mut st = MeState {
             engine,
             sim_data,
@@ -2546,6 +2754,7 @@ impl<E: FmiHost + 'static> Instance<E> {
             sync: None,
             jacobian_cache: Vec::new(),
             jacobian_valid: false,
+            tunable,
         };
         st.seed_start_state();
         Some(Instance { st: RefCell::new(st) })

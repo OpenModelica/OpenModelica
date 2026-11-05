@@ -1618,6 +1618,9 @@ pub struct SimMeta {
     /// instantiates; the export links exactly the solver libraries they reach.
     /// Empty except for an FMU export.
     pub fmi_solver_flags: String,
+    /// An FMU's `<prefix>_paramdeps.bin`: the parameter dependencies and the
+    /// variables an importer may set. Empty except for an FMU export.
+    pub param_deps: Vec<u8>,
     /// Relative/absolute tolerance for the adaptive integrators.
     pub tolerance: f64,
     /// Result file format (`"mat"`, `"empty"`).
@@ -2144,7 +2147,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 27;
+const VERSION: u32 = 28;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -2317,6 +2320,8 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
     put_str(&mut o, &m.method);
     put_str(&mut o, &m.cs_method);
     put_str(&mut o, &m.fmi_solver_flags);
+    put_u32(&mut o, m.param_deps.len() as u32);
+    o.extend_from_slice(&m.param_deps);
     put_f64(&mut o, m.tolerance);
     put_str(&mut o, &m.output_format);
     put_str(&mut o, &m.prefix);
@@ -2878,6 +2883,8 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     let method = r.string()?;
     let cs_method = r.string()?;
     let fmi_solver_flags = r.string()?;
+    let n_param_deps = r.u32()? as usize;
+    let param_deps = r.take(n_param_deps)?.to_vec();
     let tolerance = r.f64()?;
     let output_format = r.string()?;
     let prefix = r.string()?;
@@ -3346,6 +3353,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         method,
         cs_method,
         fmi_solver_flags,
+        param_deps,
         tolerance,
         output_format,
         prefix,
@@ -3432,6 +3440,7 @@ mod tests {
             method: "dassl".to_string(),
             cs_method: "euler".to_string(),
             fmi_solver_flags: "-nls=kinsol -lss=klu".to_string(),
+            param_deps: vec![1, 2, 3],
             tolerance: 1e-6,
             output_format: "mat".to_string(),
             prefix: "MyModel".to_string(),

@@ -21,6 +21,9 @@ pub(super) enum EqUnit<'a> {
     ),
     /// A SimCode equation; `Some(mask)` adds the DAE-mode stage guard.
     Eq(&'a metamodelica::Ref<SimCode::SimEqSystem>, Option<u32>),
+    /// A SimCode equation evaluated only if byte `k` of the mask the second
+    /// parameter points at is set (`updateTunableParameters`).
+    Masked(&'a metamodelica::Ref<SimCode::SimEqSystem>, u32),
 }
 
 impl EqUnit<'_> {
@@ -33,7 +36,7 @@ impl EqUnit<'_> {
                 SimCode::SimEqSystem::SES_SIMPLE_ASSIGN { cref, exp, .. } => Some((cref, exp)),
                 _ => None,
             },
-            EqUnit::Eq(_, Some(_)) => None,
+            EqUnit::Eq(_, Some(_)) | EqUnit::Masked(..) => None,
         }
     }
 }
@@ -71,6 +74,12 @@ pub(super) fn lower_unit(
             if stages.is_some() {
                 ctx.sim_end_block();
             }
+            Ok(())
+        }
+        EqUnit::Masked(eq, k) => {
+            ctx.sim_mask_guard(*k);
+            lower_equation(ctx, eq, eq_index)?;
+            ctx.sim_end_block();
             Ok(())
         }
     }

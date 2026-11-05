@@ -558,6 +558,7 @@ end SparsityRow;
       Option<DaeModeData> daeModeData;
       Boolean scalarized;
       list<FmiFigure> fmiFigures;
+      ParamDeps paramDeps;
     end SIMCODE;
   end SimCode;
 
@@ -1061,6 +1062,22 @@ end SparsityRow;
       String variableKind;
     end FMI_TERMINAL_MEMBER;
   end FmiTerminalMember;
+
+  uniontype ParamDeps
+    record PARAM_DEPS
+      Boolean checked;
+      list<ParamDepEq> eqs;
+      list<tuple<Integer, Integer>> settable;
+    end PARAM_DEPS;
+  end ParamDeps;
+
+  uniontype ParamDepEq
+    record PARAM_DEP_EQ
+      Option<SimEqSystem> eq;
+      list<Integer> uses;
+      list<Integer> defines;
+    end PARAM_DEP_EQ;
+  end ParamDepEq;
 
   uniontype FmiFigure
     record FMI_FIGURE
@@ -1854,6 +1871,11 @@ package SimCodeCodegenUtil
     input list<SimCode.SimEqSystem> inEqs;
     output list<SimCode.SimEqSystem> eqs;
   end selectScalarLiteralAssignments;
+
+  function runnableParamDepEqs
+    input SimCode.ParamDeps deps;
+    output list<tuple<Integer, SimCode.SimEqSystem>> eqs;
+  end runnableParamDepEqs;
 
   function filterScalarLiteralAssignments
     input list<SimCode.SimEqSystem> inEqs;

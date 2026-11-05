@@ -76,7 +76,7 @@ readFile("fmi_attributes_19.xml"); getErrorString();
 //   <ScalarVariable
 //     name=\"rp1\"
 //     valueReference=\"3\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
 //     <Real start=\"6.0\"/>
@@ -94,7 +94,7 @@ readFile("fmi_attributes_19.xml"); getErrorString();
 //   <ScalarVariable
 //     name=\"rp2\"
 //     valueReference=\"1\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
 //     <Integer start=\"7\"/>
@@ -112,7 +112,7 @@ readFile("fmi_attributes_19.xml"); getErrorString();
 //   <ScalarVariable
 //     name=\"rp3\"
 //     valueReference=\"1\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
 //     <Boolean start=\"true\"/>

@@ -110,6 +110,7 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"util/omc_error.c\" />
 //       <File name=\"util/omc_file.c\" />
 //       <File name=\"util/omc_fmu_init.c\" />
+//       <File name=\"util/omc_fmu_paramdeps.c\" />
 //       <File name=\"util/omc_init.c\" />
 //       <File name=\"util/omc_mmap.c\" />
 //       <File name=\"util/omc_msvc.c\" />

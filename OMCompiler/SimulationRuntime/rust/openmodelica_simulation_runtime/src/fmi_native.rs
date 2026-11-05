@@ -432,6 +432,11 @@ fn setup(
     }
     let (engine, mut meta) = crate::fmi::engine_and_meta(data, td);
     fmi3_arrays(&mut meta.fmi_vrs);
+    if unsafe { (*(*data).callback).read_input_fmu.is_none() } {
+        let md = unsafe { &*(*data).modelData };
+        let path = format!("{}/{}_paramdeps.bin", cstr(md.resourcesDir), cstr(md.modelFilePrefix));
+        meta.param_deps = std::fs::read(&path).map_err(|_| format!("Cannot read {path}."))?;
+    }
     let inst = match kind {
         Kind::CoSimulation {
             event_mode_used,
