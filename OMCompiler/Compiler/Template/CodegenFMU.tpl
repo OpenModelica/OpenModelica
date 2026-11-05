@@ -390,7 +390,7 @@ template fmumodel_identifierFile(SimCode simCode, String guid, String FMUVersion
 match simCode
 case SIMCODE(__) then
   <<
-  #include "<%modelNamePrefix(simCode)%>_FMU.h"
+  #include "<%fileNamePrefix%>_FMU.h"
 
   // include fmu header files, typedefs and macros
   #include <stdio.h>
