@@ -2061,6 +2061,10 @@ public
           if Expression.isEqual(eq.lhs, eq.rhs) then
             eq.lhs := Expression.makeZero(eq.ty);
             eq.rhs := Expression.makeZero(eq.ty);
+          elseif Expression.isZero(eq.lhs) then
+            eq.rhs := removeNonZeroFactor(eq.rhs);
+          elseif Expression.isZero(eq.rhs) then
+            eq.lhs := removeNonZeroFactor(eq.lhs);
           end if;
         then eq;
 
@@ -2137,6 +2141,36 @@ public
         print(indent + "[AFTER ]\n" + toString(eq, indent + "  ") + "\n\n");
       end if;
     end simplify;
+
+    function removeNonZeroFactor
+      "Used for simplifying equations of the form
+        0 = nonzero * some_expr  <=>  0 = some_expr,
+      where `nonzero` is never zero and for equations of the form
+        0 = numerator / denominator  <=>  0 = numerator,
+      where we can assume that `denominator` is not zero."
+      input Expression exp;
+      output Expression res;
+
+      import NFOperator.Op;
+    algorithm
+      res := match exp
+        case Expression.BINARY() guard exp.operator.op == Op.MUL
+        then if Expression.isNonZero(exp.exp1) then exp.exp2    // nonzero * x  -->  x
+          else if Expression.isNonZero(exp.exp2) then exp.exp1  // x * nonzero  -->  x
+          else exp;
+
+        case Expression.BINARY() guard exp.operator.op == Op.DIV
+        then exp.exp1;
+
+        // (numerator)/(denominator)  -->  (numerator without nonzeros)
+        case Expression.MULTARY() guard exp.operator.op == Op.MUL algorithm
+          exp.arguments := list(arg for arg guard not Expression.isNonZero(arg) in exp.arguments);
+          exp.inv_arguments := {};  // TODO assert that inv_arguments are never zero
+        then exp;
+
+        else exp;
+      end match;
+    end removeNonZeroFactor;
 
     function createName
       input Pointer<Equation> eqn_ptr;
