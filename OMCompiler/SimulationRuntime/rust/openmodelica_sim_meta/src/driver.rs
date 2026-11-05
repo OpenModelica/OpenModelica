@@ -2067,6 +2067,9 @@ pub const CHATTER_ABORT_ERR: &str = "aborting simulation due to chattering";
 pub const ALARM_ABORT_ERR: &str = "simulation aborted (-alarm)";
 /// What [`enrich_trap`] returns for a trap that was a failed model `assert()`.
 pub const ASSERT_ERR: &str = "assertion failed";
+/// A `-reconcile*` procedure stopped where C calls `exit(1)`: the reason is
+/// already logged.
+pub const RECON_ABORTED_ERR: &str = "dataReconciliation: aborted";
 
 /// Whether an error out of a step is one of C's `longjmp`s; a solver failure, a
 /// cancelled run or a raw wasm trap is not. Which buffer it targeted, and so whether

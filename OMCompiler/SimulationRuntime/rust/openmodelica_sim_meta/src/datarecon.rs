@@ -126,7 +126,7 @@ fn init_column_matrix(data: &[f64], rows: usize, cols: usize) -> Matrix {
 /// C's error handling: every failure prints on `OMC_LOG_STDOUT`, appends to the
 /// debug log, writes the error HTML report and calls `exit(1)`. The exit becomes
 /// this error, which the caller turns into a failed run.
-const ABORTED: &str = "dataReconciliation: aborted";
+const ABORTED: &str = crate::driver::RECON_ABORTED_ERR;
 
 /// Which of the three procedures is running, C's three `omc_flag` tests.
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -2112,23 +2112,21 @@ fn run_modes(e: &mut dyn SimEngine, model: &SimMeta, sim_data: u32, mode: Mode) 
         log: String::new(),
         log_path: String::new(),
     };
+    // A failed procedure is C's exit(1), which never gets to the "Completed!" line.
     if mode.reconcile {
         starting(&ctx, "DataReconciliation Starting!");
-        let r = data_reconciliation(&mut ctx, e);
+        data_reconciliation(&mut ctx, e)?;
         omclog::info(omclog::STDOUT, false, "DataReconciliation Completed!");
-        r?;
     }
     if mode.boundary {
         starting(&ctx, "Reconcile Boundary Conditions Starting!");
-        let r = boundary_conditions(&mut ctx, e);
+        boundary_conditions(&mut ctx, e)?;
         omclog::info(omclog::STDOUT, false, "Reconcile Boundary Conditions Completed!");
-        r?;
     }
     if mode.state {
         starting(&ctx, "Reconcile State Estimation Starting!");
-        let r = data_reconciliation(&mut ctx, e);
+        data_reconciliation(&mut ctx, e)?;
         omclog::info(omclog::STDOUT, false, "Reconcile State Estimation Completed!");
-        r?;
     }
     Ok(())
 }
