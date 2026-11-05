@@ -827,12 +827,13 @@ void setLocalVars(OptData * optData, DATA * data, const double * const vopt,
 void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const int m, const int n, const int index){
   DATA * data = optData->data;
   threadData_t *threadData = optData->threadData;
-  int i,j,l,ii, ll;
+  int i,j,l,ii, ci, ll;
 
   const int h_index = optData->s.indexABCD[index];
   JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[h_index]);
   const long double * scaldt = optData->bounds.scaldt[m];
-  const unsigned int * const cC = jacobian->sparsePattern->colorCols;
+  const unsigned int * const c_lindex = jacobian->sparsePattern->color_leadindex;
+  const unsigned int * const c_pindex = jacobian->sparsePattern->color_index;
   const unsigned int * const lindex  = jacobian->sparsePattern->leadindex;
   const int nx = jacobian->sizeCols;
   const int Cmax = jacobian->sparsePattern->maxColors + 1;
@@ -869,23 +870,21 @@ void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const in
 
     increaseJacContext(data);
 
-    for(ii = 0; ii < nx; ++ii){
-      if(cC[ii] == i){
-        for(j = lindex[ii]; j < lindex[ii + 1]; ++j){
-          ll = sPindex[j];
-          l = index_J[ll];
-          if(l < dnx){
-            J[l][ii] = (modelica_real) resultVars[ll] * scaldt[l];
-          }else if(l < dnxnc){
-            J[l][ii] = (modelica_real) resultVars[ll];
-          }else if(l == optData->dim.nJ && optData->s.lagrange){
-            J[l][ii] = (modelica_real) resultVars[ll]* scalb;
-          }else if(l == nJ1 && optData->s.mayer){
-            J[l][ii] = (modelica_real) resultVars[ll];
-          }
+    for (ci = c_lindex[i-1]; ci < c_lindex[i]; ci++) {
+      ii = c_pindex[ci];
+      for(j = lindex[ii]; j < lindex[ii + 1]; ++j){
+        ll = sPindex[j];
+        l = index_J[ll];
+        if(l < dnx){
+          J[l][ii] = (modelica_real) resultVars[ll] * scaldt[l];
+        }else if(l < dnxnc){
+          J[l][ii] = (modelica_real) resultVars[ll];
+        }else if(l == optData->dim.nJ && optData->s.lagrange){
+          J[l][ii] = (modelica_real) resultVars[ll]* scalb;
+        }else if(l == nJ1 && optData->s.mayer){
+          J[l][ii] = (modelica_real) resultVars[ll];
         }
       }
-
     }
   }
   jacobian->seedVars = ownSeedVars;
@@ -897,11 +896,12 @@ void diffSynColoredOptimizerSystemF(OptData *optData, modelica_real **J){
   if(optData->dim.ncf > 0){
     DATA * data = optData->data;
     threadData_t *threadData = optData->threadData;
-    int i,j,l,ii, ll;
+    int i,j,l,ii, ci, ll;
     const int index = 4;
     const int h_index = optData->s.indexABCD[index];
     JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[h_index]);
-    const unsigned int * const cC = jacobian->sparsePattern->colorCols;
+    const unsigned int * const c_lindex = jacobian->sparsePattern->color_leadindex;
+    const unsigned int * const c_pindex = jacobian->sparsePattern->color_index;
     const unsigned int * const lindex  = jacobian->sparsePattern->leadindex;
     const int nx = jacobian->sizeCols;
     const int Cmax = jacobian->sparsePattern->maxColors + 1;
@@ -926,12 +926,11 @@ void diffSynColoredOptimizerSystemF(OptData *optData, modelica_real **J){
 
       increaseJacContext(data);
 
-      for(ii = 0; ii < nx; ++ii){
-        if(cC[ii] == i){
-          for(j = lindex[ii]; j < lindex[ii + 1]; ++j){
-            ll = sPindex[j];
-            J[ll][ii] = resultVars[ll];
-          }
+      for (ci = c_lindex[i-1]; ci < c_lindex[i]; ci++) {
+        ii = c_pindex[ci];
+        for(j = lindex[ii]; j < lindex[ii + 1]; ++j){
+          ll = sPindex[j];
+          J[ll][ii] = resultVars[ll];
         }
       }
     }
