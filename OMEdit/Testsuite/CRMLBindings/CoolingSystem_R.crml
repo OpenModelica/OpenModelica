@@ -1,0 +1,13 @@
+model CoolingSystem_R is {
+	// Requirement model for the cooling system (D2.1.1 Req. 2):
+	// "When they are in operation, pumps should not cavitate"
+	class Pump_R is {
+		Boolean inOperation is external;
+		Boolean cavitate is external;
+		Boolean R2 is if inOperation then not cavitate else undefined;
+	};
+
+	Pump_R {} pumps is external;
+
+	Boolean R2 is and pumps.R2;
+};

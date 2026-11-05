@@ -1,0 +1,18 @@
+{
+  "schema": "om-crml-architecture/0.1",
+  "name": "CoolingSystem_A1",
+  "source": {"kind": "handwritten"},
+  "types": [
+    {"name": "Pump_A", "specializes": [],
+     "attributes": [
+       {"name": "id", "type": "String"},
+       {"name": "NPSH_req", "type": "Real", "dims": [":", 2], "external": true}
+     ]}
+  ],
+  "elements": [
+    {"name": "pump1", "type": "Pump_A", "values": {"id": "PO1", "NPSH_req": [[0, 0.5e5], [5, 1.2e5]]}, "parts": []},
+    {"name": "pump2", "type": "Pump_A", "values": {"id": "PO2", "NPSH_req": [[0, 0.5e5], [5, 1.2e5]]}, "parts": []},
+    {"name": "pump3", "type": "Pump_A", "values": {"id": "PO3", "NPSH_req": [[0, 0.5e5], [5, 1.2e5]]}, "parts": []}
+  ],
+  "allocations": []
+}
