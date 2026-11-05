@@ -20,6 +20,9 @@ Bug3979.mos \
 Bug4248.mos \
 Buildings.PartialFlowMachine.mos \
 checkAllModelsRecursive1.mos \
+CheckModel1.mos \
+CheckModel2.mos \
+CheckModelNonexistentClass1.mos \
 CheckModelExtObj1.mos \
 choicesAllMatching.mos \
 Cmd1.mos \

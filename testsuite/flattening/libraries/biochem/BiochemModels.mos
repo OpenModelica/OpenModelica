@@ -48,7 +48,7 @@ checkModel(BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.GlucoseUptak
 // "Check of BioChem.Examples.centralMetabolism completed successfully.
 // Class BioChem.Examples.centralMetabolism has 0 equation(s) and 0 variable(s).
 // 0 of these are trivial equation(s)."
-// "Check of BioChem.Examples.centralMetabolism.cytosol completed successfully.
+// "Check of BioChem.Examples.centralMetabolism.cytosol completed successfully with 10 warning(s).
 // Class BioChem.Examples.centralMetabolism.cytosol has 326 equation(s) and 326 variable(s).
 // 230 of these are trivial equation(s)."
 // "[BioChem 1.1.3/Interfaces/Reactions/Uur.mo:9:3-9:93:writable] Warning: The following equation is INCONSISTENT due to specified unit information: jda.nP1 = cytosol_V
@@ -96,7 +96,7 @@ checkModel(BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.GlucoseUptak
 // Class BioChem.Examples.CaOscillations.Endoplasmic_Reticulum has 37 equation(s) and 38 variable(s).
 // 26 of these are trivial equation(s)."
 // ""
-// "Check of BioChem.Examples.GlucoseInsulinModel.GlucoseInsulinModel completed successfully.
+// "Check of BioChem.Examples.GlucoseInsulinModel.GlucoseInsulinModel completed successfully with 6 warning(s).
 // Class BioChem.Examples.GlucoseInsulinModel.GlucoseInsulinModel has 687 equation(s) and 687 variable(s).
 // 532 of these are trivial equation(s)."
 // "[BioChem 1.1.3/Examples/GlucoseInsulinModel.mo:277:9-277:29:writable] Warning: The following equation is INCONSISTENT due to specified unit information: PlasmaInsulin.i_signal = PlasmaInsulin.i_p / PlasmaInsulin.V_I
