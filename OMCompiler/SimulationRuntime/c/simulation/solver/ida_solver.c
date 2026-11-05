@@ -655,6 +655,19 @@ void ida_solver_deinitial(IDA_SOLVER *idaData)
 
 
 /**
+ * @brief Copy states, algebraic variables and state derivatives from IDA to realVars.
+ *
+ * @param data     Runtime data struct.
+ * @param idaData  IDA solver data.
+ */
+static void setDAEVarsFromIDA(DATA* data, IDA_SOLVER* idaData)
+{
+  memcpy(data->localData[0]->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
+  setAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
+  memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
+}
+
+/**
  * @brief EventHandle for DAE mode.
  *
  * Handles events by reinitialize main IDA solver, initializing next step and
@@ -732,14 +745,14 @@ int ida_event_update(DATA* data, threadData_t *threadData)
   /* obtain consistent values of y_algebraic and y_prime */
   IDAGetConsistentIC(idaData->ida_mem, idaData->y, idaData->yp);
 
+  /* IDACalcIC leaves its last residual evaluation in realVars, which can be a Jacobian perturbation */
+  setDAEVarsFromIDA(data, idaData);
+
   /* update inner algebraic variables */
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
   evaluateDAEResiduals_wrapperEventUpdate(data, threadData);
 
-  memcpy(data->localData[0]->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
-  // and  also algebraic vars
-  setAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
-  memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
+  setDAEVarsFromIDA(data, idaData);
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
   /* reset initial step size again to default */
