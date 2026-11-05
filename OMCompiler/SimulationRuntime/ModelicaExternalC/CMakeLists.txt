@@ -166,18 +166,32 @@ endif()
 
 # Common source files for all source-code-FMUs
 set(SOURCE_FMU_MODELICA_EXTERNAL_C_FILES_LIST
+  C-Sources/ModelicaFFT.c
+  C-Sources/ModelicaInternal.c
+  C-Sources/ModelicaRandom.c
+  C-Sources/ModelicaStrings.c
   C-Sources/ModelicaStandardTables.c
   C-Sources/ModelicaStandardTablesDummyUsertab.c
   C-Sources/ModelicaMatIO.c
   C-Sources/ModelicaIO.c
-  C-Sources/snprintf.c)
+  C-Sources/snprintf.c
+  C-Sources/win32_dirent.c)
 
 set(SOURCE_FMU_MODELICA_EXTERNAL_HEADER_FILES_LIST
+  C-Sources/ModelicaFFT.h
+  C-Sources/ModelicaInternal.h
+  C-Sources/ModelicaRandom.h
+  C-Sources/ModelicaStrings.h
   C-Sources/ModelicaStandardTables.h
   C-Sources/ModelicaMatIO.h
   C-Sources/ModelicaIO.h
+  C-Sources/gconstructor.h
   C-Sources/safe-math.h
   C-Sources/read_data_impl.h
+  C-Sources/stdint_msvc.h
+  C-Sources/stdint_wrap.h
+  C-Sources/uthash.h
+  C-Sources/win32_dirent.h
 )
 
 install(FILES ${SOURCE_FMU_MODELICA_EXTERNAL_C_FILES_LIST}

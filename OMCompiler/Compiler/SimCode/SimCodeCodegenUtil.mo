@@ -3350,7 +3350,7 @@ algorithm
   aliases := listReverse(aliases);
 end getFMI3VariableAliases;
 
-public constant list<String> fmuSourceLibraries = {"ModelicaStandardTables", "ModelicaIO", "ModelicaMatIO"}
+public constant list<String> fmuSourceLibraries = {"ModelicaExternalC", "ModelicaStandardTables", "ModelicaIO", "ModelicaMatIO"}
   "The libraries of Library annotations that an FMU compiles from its sources.";
 
 public function fmuExternalLibraries

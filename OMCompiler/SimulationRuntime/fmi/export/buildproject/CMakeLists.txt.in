@@ -162,7 +162,12 @@ file(GLOB_RECURSE FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/external_solve
                                       ${CMAKE_CURRENT_SOURCE_DIR}/simulation/*.c
                                       ${CMAKE_CURRENT_SOURCE_DIR}/util/*.c)
 if(${COMPILE_MODELICA_EXTERNAL_C})
-  list(APPEND FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaStandardTables.c
+  list(APPEND FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaFFT.c
+                                  ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaInternal.c
+                                  ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaRandom.c
+                                  ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaStrings.c
+                                  ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/win32_dirent.c
+                                  ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaStandardTables.c
                                   ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/snprintf.c
                                   ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaIO.c
                                   ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaMatIO.c)
