@@ -232,6 +232,7 @@ DLLDataDirection extern const char *FLAG_DESC[FLAG_MAX+1];
 DLLDataDirection extern const char *FLAG_DETAILED_DESC[FLAG_MAX+1];
 DLLDataDirection extern const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX];
 DLLDataDirection extern const int FLAG_TYPE[FLAG_MAX];
+DLLExport int omc_flagIsHidden(int flag);
 
 enum GB_METHOD {
   GB_UNKNOWN = 0,

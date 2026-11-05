@@ -972,6 +972,9 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
 
     for(i=1; i<FLAG_MAX; ++i)
     {
+      if(omc_flagIsHidden(i)) {
+        continue;
+      }
       if(FLAG_TYPE[i] == FLAG_TYPE_FLAG) {
         infoStreamPrint(OMC_LOG_STDOUT, 0, "<-%s>\n  %s", FLAG_NAME[i], FLAG_DESC[i]);
       } else if(FLAG_TYPE[i] == FLAG_TYPE_OPTION) {
