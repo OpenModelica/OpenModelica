@@ -419,11 +419,16 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"3rdParty/lis/src/precision/lis_precision.c\" />
 //       <File name=\"3rdParty/lis/src/precision/lis_precision_matvec.c\" />
 //       <File name=\"3rdParty/lis/src/precision/lis_precision_vec.c\" />
+//       <File name=\"ModelicaExternalC/ModelicaFFT.c\" />
+//       <File name=\"ModelicaExternalC/ModelicaInternal.c\" />
 //       <File name=\"ModelicaExternalC/ModelicaIO.c\" />
 //       <File name=\"ModelicaExternalC/ModelicaMatIO.c\" />
+//       <File name=\"ModelicaExternalC/ModelicaRandom.c\" />
 //       <File name=\"ModelicaExternalC/ModelicaStandardTables.c\" />
 //       <File name=\"ModelicaExternalC/ModelicaStandardTablesDummyUsertab.c\" />
+//       <File name=\"ModelicaExternalC/ModelicaStrings.c\" />
 //       <File name=\"ModelicaExternalC/snprintf.c\" />
+//       <File name=\"ModelicaExternalC/win32_dirent.c\" />
 //     </SourceFiles>
 //   </ModelExchange>
 //   <TypeDefinitions>

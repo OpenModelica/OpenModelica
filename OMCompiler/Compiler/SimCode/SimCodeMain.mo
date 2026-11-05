@@ -1348,6 +1348,7 @@ algorithm
         */
         copyFiles(RuntimeSources.modelica_external_c_sources, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
         copyFiles(RuntimeSources.modelica_external_c_headers, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
+        copyFiles(RuntimeSources.modelica_external_c_api_headers, source=install_include_omc_dir + "/ModelicaExternalC", destination=fmu_tmp_sources_dir);
         modelica_standard_table_sources := RuntimeSources.modelica_external_c_sources;
 
         System.writeFile(fmutmp+"/sources/isfmi" + (if FMUVersion=="1.0" then "1" elseif FMUVersion=="3.0" then "3" else "2"), "");

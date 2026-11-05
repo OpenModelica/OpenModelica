@@ -74,6 +74,7 @@ testDiscreteStructe.mos \
 testInitialEquationsFMI.mos \
 testModelicaStandardTables.mos \
 TestSourceCodeFMU.mos \
+TestSourceCodeFMUImporter.mos \
 ticket5670.mos \
 ticket6262.mos \
 ZeroStates.mos \
