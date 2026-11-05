@@ -246,7 +246,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_INPUT_PATH */                   "value specifies a path for reading the input files i.e., model_init.xml and model_info.json",
   /* FLAG_IPOPT_HESSE */                  "value specifies the hessian for Ipopt",
   /* FLAG_IPOPT_INIT */                   "value specifies the initial guess for optimization",
-  /* FLAG_IPOPT_JAC */                    "value specifies the Jacobian for Ipopt",
+  /* FLAG_IPOPT_JAC */                    "deprecated and ignored",
   /* FLAG_IPOPT_MAX_ITER */               "value specifies the max number of iteration for ipopt",
   /* FLAG_IPOPT_WARM_START */             "value specifies lvl for a warm start in ipopt: 1,2,3,...",
   /* FLAG_JACOBIAN */                     "select the calculation method of the Jacobian used only by ida and dassl solver.",
@@ -257,8 +257,8 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_LS */                           "value specifies the linear solver method (default: lapack, totalpivot (fallback))",
   /* FLAG_LS_IPOPT */                     "value specifies the linear solver method for ipopt",
   /* FLAG_LSS */                          "value specifies the linear sparse solver method (default: klu)",
-  /* FLAG_LSS_MAX_DENSITY */              "[double (default " EXPANDSTRING(DEFAULT_FLAG_LSS_MAX_DENSITY) ")] value specifies the maximum density for using a linear sparse solver",
-  /* FLAG_LSS_MIN_SIZE */                 "[int (default " EXPANDSTRING(DEFAULT_FLAG_LSS_MIN_SIZE) ")] value specifies the minimum system size for using a linear sparse solver",
+  /* FLAG_LSS_MAX_DENSITY */              "deprecated and ignored",
+  /* FLAG_LSS_MIN_SIZE */                 "deprecated and ignored",
   /* FLAG_LV */                           "[string list] value specifies the logging level",
   /* FLAG_LV_MAX_WARN */                  "[int (default " EXPANDSTRING(DEFAULT_FLAG_LV_MAX_WARN) ")] maximum times repeating warnings will be displayed",
   /* FLAG_LV_TIME */                      "[double list] specifying time interval to allow loging in",
@@ -283,8 +283,8 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_NLS */                          "value specifies the nonlinear solver",
   /* FLAG_NLS_INFO */                     "outputs detailed information about solving process of non-linear systems into csv files.",
   /* FLAG_NLS_LS */                       "value specifies the linear solver used by the non-linear solver",
-  /* FLAG_NLSS_MAX_DENSITY */             "[double (default " EXPANDSTRING(DEFAULT_FLAG_NLSS_MAX_DENSITY) ")] value specifies the maximum density for using a non-linear sparse solver",
-  /* FLAG_NLSS_MIN_SIZE */                "[int (default " EXPANDSTRING(DEFAULT_FLAG_NLSS_MIN_SIZE) ")] value specifies the minimum system size for using a non-linear sparse solver",
+  /* FLAG_NLSS_MAX_DENSITY */             "deprecated and ignored",
+  /* FLAG_NLSS_MIN_SIZE */                "deprecated and ignored",
   /* FLAG_NLS_JAC_TEST_ATOL */            "[double] value specifies the absolute tolerance for the Jacobian derivative test.",
   /* FLAG_NLS_JAC_TEST_RTOL */            "[double] value specifies the relative tolerance for the Jacobian derivative test.",
   /* FLAG_NOEMIT */                       "do not emit any results to the result file",
@@ -487,7 +487,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_IPOPT_INIT */
   "  Value specifies the initial guess for optimization (sim, const).",
   /* FLAG_IPOPT_JAC */
-  "  Value specifies the Jacobian for Ipopt(SYM, NUM, NUMDENSE).",
+  "  Deprecated and ignored.",
   /* FLAG_IPOPT_MAX_ITER */
   "  Value specifies the max number of iteration for ipopt.",
   /* FLAG_IPOPT_WARM_START */
@@ -520,11 +520,9 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_LSS */
   "  Value specifies the linear sparse solver method",
   /* FLAG_LSS_MAX_DENSITY */
-  "  Value specifies the maximum density for using a linear sparse solver.\n"
-  "  The value is a Double with default value " EXPANDSTRING(DEFAULT_FLAG_LSS_MAX_DENSITY) ".",
+  "  Deprecated and ignored.",
   /* FLAG_LSS_MIN_SIZE */
-  "  Value specifies the minimum system size for using a linear sparse solver.\n"
-  "  The value is an Integer with default value " EXPANDSTRING(DEFAULT_FLAG_LSS_MIN_SIZE) ".",
+  "  Deprecated and ignored.",
   /* FLAG_LV */
   "  Value (a comma-separated String list) specifies which logging levels to\n"
   "  enable. Multiple options can be enabled at the same time.",
@@ -595,11 +593,9 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_NLS_LS */
   "  Value specifies the linear solver used by the non-linear solver:",
   /* FLAG_NLSS_MAX_DENSITY */
-  "  Value specifies the maximum density for using a non-linear sparse solver.\n"
-  "  The value is a Double with default value " EXPANDSTRING(DEFAULT_FLAG_NLSS_MAX_DENSITY) ".",
+  "  Deprecated and ignored.",
   /* FLAG_NLSS_MIN_SIZE */
-  "  Value specifies the minimum system size for using a non-linear sparse solver.\n"
-  "  The value is an Integer with default value " EXPANDSTRING(DEFAULT_FLAG_NLSS_MIN_SIZE) ".",
+  "  Deprecated and ignored.",
   /* FLAG_NLS_JAC_TEST_ATOL */
   "  Value specifies the absolute tolerance for the Jacobian derivative test.",
   /* FLAG_NLS_JAC_TEST_RTOL */
@@ -1096,6 +1092,21 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_PARMOD_IMPORT_CLUSTERING */     FLAG_TYPE_OPTION,
   /* FLAG_PARMOD_DUMP_STAGES */           FLAG_TYPE_OPTION,
 };
+
+/* Accepted but ignored; left out of the help text and the documentation. */
+int omc_flagIsHidden(int flag)
+{
+  switch (flag) {
+  case FLAG_IPOPT_JAC:
+  case FLAG_LSS_MAX_DENSITY:
+  case FLAG_LSS_MIN_SIZE:
+  case FLAG_NLSS_MAX_DENSITY:
+  case FLAG_NLSS_MIN_SIZE:
+    return 1;
+  default:
+    return 0;
+  }
+}
 
 const char *GB_METHOD_NAME[RK_MAX] = {
   /* GB_UNKNOWN = 0 */     "unknown",

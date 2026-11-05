@@ -2787,6 +2787,9 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
   *cur = 0;
   for(i=1; i<FLAG_MAX; ++i)
   {
+    if (omc_flagIsHidden(i)) {
+      continue;
+    }
     if (sphinx) {
       cur += snprintf(cur, CHECK_NONNEGATIVE_BUFFER(), "\n.. _simflag-%s :\n\n", FLAG_NAME[i]);
     }
