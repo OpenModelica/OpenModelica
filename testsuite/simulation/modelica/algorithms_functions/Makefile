@@ -26,6 +26,7 @@ ForIterator1.mos \
 ForIterator2.mos \
 FuncDer.mos  \
 FunctionDerivativeZeroInput.mos \
+FunctionOutputBindingOrder.mos \
 FunctionIndirectRecursion.mos \
 FunctionIndirectRecursion2.mos \
 FunctionInReinit.mos \
