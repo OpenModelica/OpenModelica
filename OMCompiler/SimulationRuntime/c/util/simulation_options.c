@@ -250,7 +250,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_IPOPT_MAX_ITER */               "value specifies the max number of iteration for ipopt",
   /* FLAG_IPOPT_WARM_START */             "value specifies lvl for a warm start in ipopt: 1,2,3,...",
   /* FLAG_JACOBIAN */                     "select the calculation method of the Jacobian used only by ida and dassl solver.",
-  /* FLAG_JACOBIAN_NOMINAL_FACTOR */      "[double (default 1.0)] scales the nominal value the numerical Jacobian differences over below a variable's absolute tolerance.",
+  /* FLAG_JACOBIAN_NOMINAL_FACTOR */      "[double (default 1.0)] scales the nominal value that bounds the numerical Jacobian's step from below.",
   /* FLAG_L */                            "value specifies a time where the linearization of the model should be performed",
   /* FLAG_L_DATA_RECOVERY */              "emit data recovery matrices with model linearization",
   /* FLAG_LOG_FORMAT */                   "value specifies the log format of the executable. -logFormat=text (default), -logFormat=xml or -logFormat=xmltcp",
@@ -497,10 +497,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_JACOBIAN_NOMINAL_FACTOR */
   "  The numerical Jacobian differences column i over\n"
   "\n"
-  "    ``delta_h * max(|x[i]|, |h*x'[i]|)``\n"
+  "    ``max(delta_h * max(|x[i]|, |h*x'[i]|, factor*nominal[i]), rtol*|x[i]| + atol[i])``\n"
   "\n"
-  "  and, where that is inside the variable's own absolute tolerance and so is\n"
-  "  no scale of its own, over delta_h*factor*nominal[i] instead.\n"
   "  Lower the factor for a model that is non-smooth at that wider step;\n"
   "  the value is a Double with default value 1.0.",
   /* FLAG_L */
