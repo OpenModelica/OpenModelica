@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 fmi3_cs_01.mos \
+fmi3_cs_chattering.mos \
 fmi3_cs_cvode.mos \
 fmi3_cs_state_event.mos \
 fmi3_cs_event_mode_reinit.mos \
@@ -26,6 +27,7 @@ DEPENDENCIES = \
 fmi3_cs_state_event.py \
 fmi3_cs_event_mode_reinit.py \
 fmi3_cs_tolerance.py \
+fmi3_cs_chattering.py \
 Makefile \
 
 CLEAN = `ls | grep -w -v -f deps.tmp`

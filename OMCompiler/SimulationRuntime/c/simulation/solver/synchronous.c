@@ -229,21 +229,14 @@ modelica_boolean handleBaseClock(DATA* data, threadData_t *threadData, long idx,
   return frstSubClockIsBaseClock;
 }
 
-#if !defined(OMC_MINIMAL_RUNTIME)
 /**
- * @brief Handle timer clocks.
+ * @brief Fire all timers due at currentTime.
  *
- * Loop over all timers and check if a timer fired.
- * If there are no timers return NO_TIMER_FIRED.
- *
- * @param data            Pointer to data.
- * @param threadData      Pointer to thread data.
- * @param solverInfo      Pointer to solver info.
- * @return fire_timer_t   Return NO_TIMER_FIRED, if there are no fired timers;
- *                               TIMER_FIRED, if there is a fired timer;
- *                               TIMER_FIRED_EVENT, if there is a fired timer which triggers an event.
+ * @return fire_timer_t   NO_TIMER_FIRED, if no timer fired;
+ *                        TIMER_FIRED, if a timer fired;
+ *                        TIMER_FIRED_EVENT, if a timer fired that triggers an event.
  */
-fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+static fire_timer_t fireTimers(DATA* data, threadData_t *threadData, double currentTime)
 {
   int base_idx, sub_idx;
   double activationTime;
@@ -255,86 +248,6 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 
   if (data->simulationInfo->intvlTimers == NULL || listLen(data->simulationInfo->intvlTimers) <= 0) {
     return ret;
-  }
-
-  /* Fire all timers at current time step */
-  nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
-  while(nextTimer->activationTime <= solverInfo->currentTime + SYNC_EPS)
-  {
-    base_idx = nextTimer->base_idx;
-    sub_idx = nextTimer->sub_idx;
-    type = nextTimer->type;
-    activationTime = nextTimer->activationTime;
-    listRemoveFront(data->simulationInfo->intvlTimers);
-    switch(type)
-    {
-      case SYNC_BASE_CLOCK:
-        frstSubClockIsBaseClock = handleBaseClock(data, threadData, base_idx, activationTime);
-        if (frstSubClockIsBaseClock && data->simulationInfo->baseClocks[base_idx].subClocks[0].holdEvents) {
-          ret = TIMER_FIRED_EVENT;
-        } else {
-          ret = TIMER_FIRED;
-        }
-        break;
-      case SYNC_SUB_CLOCK:
-        // Save result before clock tick, then evaluate equations
-        sim_result.emit(&sim_result, data, threadData);
-        subClock = &data->simulationInfo->baseClocks[base_idx].subClocks[sub_idx];
-        subClock->stats.count++;
-        subClock->stats.previousInterval = solverInfo->currentTime - subClock->stats.lastActivationTime;
-        subClock->stats.lastActivationTime = solverInfo->currentTime;
-        data->callback->function_equationsSynchronous(data, threadData, base_idx, sub_idx);  /* TODO: Fix indices. Now indices for base and sub-clocks */
-        if (subClock->holdEvents) {
-          ret = TIMER_FIRED_EVENT;
-          infoStreamPrint(OMC_LOG_SYNCHRONOUS, 0, "Activated sub-clock (%i,%i) which triggered event at time %f",
-                          base_idx, sub_idx, solverInfo->currentTime);
-        } else {
-          ret = TIMER_FIRED;
-          infoStreamPrint(OMC_LOG_SYNCHRONOUS, 0, "Activated sub-clock (%i,%i) at time %f",
-                          base_idx, sub_idx, solverInfo->currentTime);
-        }
-        break;
-    }
-    if (listLen(data->simulationInfo->intvlTimers) == 0){
-      break;
-    }
-    nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
-  }
-  return ret;
-}
-#endif /* #if !defined(OMC_MINIMAL_RUNTIME) */
-
-
-/**
- * @brief Handle timer clocks and return next time a timer will fire
- *
- * Update timers and output when the next timer will fire.
- * Used for Synchronous features in FMUs.
- *
- * @param data                            data
- * @param threadData                      thread data, for errro handling
- * @param currentTime                     Current solver timer.
- * @param nextTimerDefined                FALSE if no next timer is defined.
- *                                        TRUE if a next timer is defined. Then the time is outputted in nextTimerActivationTime.
- * @param nextTimerActivationTime         If nextTimerDefined is true it will contain the next time a timer will fire.
- * @return int                            Return 0, if there is no fired timers;
- *                                               1, if there is a fired timer;
- *                                               2, if there is a fired timer which trigger event;
- */
-int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, modelica_boolean *nextTimerDefined, double *nextTimerActivationTime)
-{
-  int base_idx, sub_idx;
-  double activationTime;
-  modelica_boolean frstSubClockIsBaseClock = 0 /* false */;
-  SYNC_TIMER_TYPE type;
-  SYNC_TIMER* nextTimer;
-  fire_timer_t ret = NO_TIMER_FIRED;
-  SUBCLOCK_DATA* subClock;
-
-  *nextTimerDefined = FALSE;
-
-  if (data->simulationInfo->intvlTimers == NULL || listLen(data->simulationInfo->intvlTimers) <= 0) {
-    return (int) ret;
   }
 
   /* Fire all timers at current time step */
@@ -357,6 +270,10 @@ int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, mo
         }
         break;
       case SYNC_SUB_CLOCK:
+#if !defined(OMC_MINIMAL_RUNTIME)
+        // Save result before clock tick, then evaluate equations
+        sim_result.emit(&sim_result, data, threadData);
+#endif
         subClock = &data->simulationInfo->baseClocks[base_idx].subClocks[sub_idx];
         subClock->stats.count++;
         subClock->stats.previousInterval = currentTime - subClock->stats.lastActivationTime;
@@ -378,9 +295,48 @@ int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, mo
     }
     nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
   }
+  return ret;
+}
+
+/**
+ * @brief Handle timer clocks.
+ *
+ * Fire all timers due at the current time of the solver.
+ *
+ * @param data            Pointer to data.
+ * @param threadData      Pointer to thread data.
+ * @param solverInfo      Pointer to solver info.
+ * @return fire_timer_t   See fireTimers.
+ */
+fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+{
+  return fireTimers(data, threadData, solverInfo->currentTime);
+}
+
+/**
+ * @brief Handle timer clocks and return next time a timer will fire
+ *
+ * Update timers and output when the next timer will fire.
+ * Used for Synchronous features in FMUs.
+ *
+ * @param data                            data
+ * @param threadData                      thread data, for errro handling
+ * @param currentTime                     Current solver timer.
+ * @param nextTimerDefined                FALSE if no next timer is defined.
+ *                                        TRUE if a next timer is defined. Then the time is outputted in nextTimerActivationTime.
+ * @param nextTimerActivationTime         If nextTimerDefined is true it will contain the next time a timer will fire.
+ * @return int                            Return 0, if there is no fired timers;
+ *                                               1, if there is a fired timer;
+ *                                               2, if there is a fired timer which trigger event;
+ */
+int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, modelica_boolean *nextTimerDefined, double *nextTimerActivationTime)
+{
+  fire_timer_t ret = fireTimers(data, threadData, currentTime);
+
+  *nextTimerDefined = FALSE;
   /* Next time a timer will activate, whether or not one fired now. */
-  if (listLen(data->simulationInfo->intvlTimers) > 0) {
-    nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
+  if (data->simulationInfo->intvlTimers != NULL && listLen(data->simulationInfo->intvlTimers) > 0) {
+    SYNC_TIMER* nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
     *nextTimerActivationTime = nextTimer->activationTime;
     *nextTimerDefined = TRUE;
   }

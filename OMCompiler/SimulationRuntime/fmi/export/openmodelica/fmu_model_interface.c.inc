@@ -2732,7 +2732,7 @@ static fmiXStatus doStepInternal(ModelInstance* c, fmiXReal currentCommunication
   ModelInstance *comp = (ModelInstance *)c;
   threadData_t *threadData = comp->threadData;
   jmp_buf *old_jmp = threadData->mmc_jumper;
-  int i, zc_event = 0, time_event = 0;
+  int i;
   int flag;
   int done = 0;
   fmiXBoolean ev = fmiXFalse;   /* event encountered and deferred to the master */
@@ -2741,11 +2741,8 @@ static fmiXStatus doStepInternal(ModelInstance* c, fmiXReal currentCommunication
   fmiXStatus status = fmiXOK;
   fmiXReal* states = comp->states;
   fmiXReal* states_der = comp->states_der;
-  fmiXReal* event_indicators = comp->event_indicators;
-  fmiXReal* event_indicators_prev = comp->event_indicators_prev;
   fmiXReal t = comp->fmuData->localData[0]->timeValue;
   fmiXReal tNext, tEnd;
-  fmiXBoolean enterEventMode = fmiXFalse, terminateSimulation = fmiXFalse;
 
   fmiXEventInfo eventInfo;
 
@@ -2795,17 +2792,13 @@ static fmiXStatus doStepInternal(ModelInstance* c, fmiXReal currentCommunication
   }
   if (status != fmiXOK) goto doStep_cleanup;
 
-  /* Integration loop */
+  /* Integration loop: a solver step and simulationUpdate, as in the simulation */
   while (status == fmiXOK && comp->fmuData->localData[0]->timeValue < tEnd)
   {
-    /* fprintf(stderr, "DoStep %g -> %g State: %s\n", comp->fmuData->localData[0]->timeValue, tNext, stateToString(comp)); */
-
-    /* Both describe this sub-step only. Left set, a time event or zero
-       crossing in an earlier sub-step would make every later one end in a
-       spurious event iteration (and, in Event Mode, report an event that
-       is not there). */
-    zc_event = 0;
-    time_event = 0;
+    DATA *data = comp->fmuData;
+    SOLVER_INFO *solverInfo = comp->solverInfo;
+    fire_timer_t syncRet;
+    int eventType;
 
     // set the real Inputs with output_derivative values
 #if NUMBER_OF_REAL_INPUTS > 0
@@ -2833,53 +2826,36 @@ static fmiXStatus doStepInternal(ModelInstance* c, fmiXReal currentCommunication
   if (status != fmiXOK) goto doStep_cleanup;
 #endif
 
-#if NUMBER_OF_EVENT_INDICATORS > 0
-    status = internalGetEventIndicators(c, FMIX_STR "DoStep", event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
-  if (status != fmiXOK) goto doStep_cleanup;
-#endif
-
-    /* adjust for time events */
-    if (eventInfo.nextEventTimeDefined && (eventInfo.nextEventTime <= tEnd))
-    {
-      tNext = eventInfo.nextEventTime;
-      time_event = 1;
-    }
-    else
-    {
-      tNext = tEnd;
-    }
+    solverInfo->currentTime = data->localData[0]->timeValue;
+    solverInfo->currentStepSize = tEnd - solverInfo->currentTime;
+    checkForSynchronous(data, solverInfo);
+    checkForSampleEvent(data, solverInfo);
+    tNext = solverInfo->currentTime + solverInfo->currentStepSize;
+    storeOldValues(data);
 
     /* integrate */
-#if NUMBER_OF_STATES > 0
-    fmiXReal states_t0[NUMBER_OF_STATES];
-    memcpy(states_t0, states, NUMBER_OF_STATES * sizeof(fmiXReal));
-    fmiXReal t0 = comp->fmuData->localData[0]->timeValue;
-#endif
-    switch(comp->solverInfo->solverMethod)
+    switch(solverInfo->solverMethod)
     {
       case S_EULER:
         for (i = 0; i < NUMBER_OF_STATES; i++)
         {
-          states[i] = states[i] + (tNext - comp->fmuData->localData[0]->timeValue) * states_der[i];
+          states[i] = states[i] + (tNext - data->localData[0]->timeValue) * states_der[i];
         }
         break;
       case S_CVODE:
 #ifdef OMC_FMI_HAVE_CVODE
-        comp->solverInfo->currentTime = comp->fmuData->localData[0]->timeValue;
-        comp->solverInfo->currentStepSize = tNext - comp->solverInfo->currentTime;
-        flag = cvode_solver_step(comp->fmuData, comp->threadData, comp->solverInfo);
-        memcpy(states, comp->fmuData->localData[0]->realVars, NUMBER_OF_STATES * sizeof(fmiXReal));
+        flag = cvode_solver_step(data, comp->threadData, solverInfo);
+        memcpy(states, data->localData[0]->realVars, NUMBER_OF_STATES * sizeof(fmiXReal));
         if (flag != 0)
         {
-          FILTERED_LOG(comp, fmiXFatal, LOG_STATUSFATAL, FMIX_STR "DoStep: CVODE integrator step failed with flag %d at time %.15g.", flag, comp->solverInfo->currentTime)
+          FILTERED_LOG(comp, fmiXFatal, LOG_STATUSFATAL, FMIX_STR "DoStep: CVODE integrator step failed with flag %d at time %.15g.", flag, solverInfo->currentTime)
           status = fmiXFatal;
           goto doStep_cleanup;
         }
         /* CVODE stopped at a root of the event indicators */
-        if (comp->solverInfo->currentTime < tNext)
+        if (solverInfo->currentTime < tNext)
         {
-          tNext = comp->solverInfo->currentTime;
-          time_event = 0;
+          tNext = solverInfo->currentTime;
         }
 #else
         FILTERED_LOG(comp, fmiXFatal, LOG_STATUSFATAL, FMIX_STR "DoStep: FMU not compiled with SUNDIALS but solver CVODE selected.")
@@ -2888,36 +2864,14 @@ static fmiXStatus doStepInternal(ModelInstance* c, fmiXReal currentCommunication
 #endif /* OMC_FMI_HAVE_CVODE */
         break;
       default:
-        FILTERED_LOG(comp, fmiXFatal, LOG_STATUSFATAL, FMIX_STR "DoStep: Unknown solver method %d.", comp->solverInfo->solverMethod)
+        FILTERED_LOG(comp, fmiXFatal, LOG_STATUSFATAL, FMIX_STR "DoStep: Unknown solver method %d.", solverInfo->solverMethod)
         status = fmiXFatal;
         goto doStep_cleanup;
     }
 
-#if NUMBER_OF_STATES > 0 && NUMBER_OF_EVENT_INDICATORS > 0
-    /* A solver without root finding: findRoot locates a crossing inside the
-       sub-step, as in the simulation. */
-    if (!comp->solverInfo->solverRootFinding)
-    {
-      DATA *data = comp->fmuData;
-      data->localData[0]->timeValue = tNext;
-      status = internalSetContinuousStates(c, states, NUMBER_OF_STATES);
-      if (status != fmiXOK) goto doStep_cleanup;
-      status = internalGetEventIndicators(c, FMIX_STR "DoStep", event_indicators, NUMBER_OF_EVENT_INDICATORS);
-      if (status != fmiXOK) goto doStep_cleanup;
-      memcpy(data->simulationInfo->zeroCrossingsPre, event_indicators_prev, NUMBER_OF_EVENT_INDICATORS * sizeof(fmiXReal));
-      if (checkForStateEvent(data, comp->solverInfo->eventLst))
-      {
-        tNext = findRoot(data, comp->threadData, comp->solverInfo->eventLst, t0, states_t0, tNext, states);
-        memcpy(states, data->localData[0]->realVars, NUMBER_OF_STATES * sizeof(fmiXReal));
-        listClear(comp->solverInfo->eventLst);
-        time_event = 0;
-      }
-    }
-#endif
-
     // update time
-    comp->fmuData->localData[0]->timeValue = tNext;
-    comp->_need_update = 1;
+    data->localData[0]->timeValue = tNext;
+    solverInfo->currentTime = tNext;
 
     // set the real Inputs with output_derivative values
 #if (NUMBER_OF_REAL_INPUTS > 0)
@@ -2943,96 +2897,31 @@ static fmiXStatus doStepInternal(ModelInstance* c, fmiXReal currentCommunication
     if (status != fmiXOK) goto doStep_cleanup;
 #endif
 
-    /* signal completed integrator step */
-    status = internal_CompletedIntegratorStep(c, FMIX_STR "DoStep", fmiXTrue, &enterEventMode, &terminateSimulation);
-    if (terminateSimulation) {
+    syncRet = simulationUpdateStart(data, threadData, solverInfo);
+    if (OMC_ERROR_RAISED()) goto doStep_cleanup;
+    eventType = checkEvents(data, threadData, solverInfo->eventLst, !solverInfo->solverRootFinding, &solverInfo->currentTime);
+
+    if ((eventType > 0 || syncRet == TIMER_FIRED_EVENT) && eventModeUsed &&
+        (earlyReturnAllowed || data->localData[0]->timeValue >= tEnd))
+    {
+      /* FMI 3.0 Co-Simulation with Event Mode: stop the step at the event; the
+         master handles it with fmi3EnterEventMode / fmi3UpdateDiscreteStates /
+         fmi3EnterStepMode. An event inside the step is only deferred if the
+         master allows early return, else it is handled below. */
+      listClear(solverInfo->eventLst);
+      data->simulationInfo->sampleActivated = 0;
+      data->simulationInfo->noThrowAsserts = 0;
+      ev = fmiXTrue;
+      FILTERED_LOG(comp, fmiXOK, LOG_EVENTS, FMIX_STR "DoStep: event encountered at %g, deferring to the master", data->localData[0]->timeValue)
+      break;
+    }
+
+    simulationUpdateEvents(data, threadData, solverInfo, syncRet, eventType);
+    comp->_need_update = 1;
+    if (comp->_terminate_simulation_requested) {
+      comp->_terminate_simulation_requested = 0;
       term = fmiXTrue;
-      done = 1;
-      goto doStep_cleanup;
-    }
-    if (status != fmiXOK) goto doStep_cleanup;
-
-    /* check for events */
-#if NUMBER_OF_EVENT_INDICATORS > 0
-    status = internalGetEventIndicators(c, FMIX_STR "DoStep", event_indicators, NUMBER_OF_EVENT_INDICATORS);
-  if (status != fmiXOK) goto doStep_cleanup;
-
-    for (i = 0; i < NUMBER_OF_EVENT_INDICATORS; i++)
-    {
-      if (event_indicators[i]*event_indicators_prev[i] < 0)
-      {
-        zc_event = 1;
-        break;
-      }
-    }
-#endif
-
-    comp->solverInfo->didEventStep = 0;
-
-    if (enterEventMode || zc_event || time_event)
-    {
-      /* fprintf(stderr, "enterEventMode = %d, zc_event = %d, time_event = %d\n", enterEventMode, zc_event, time_event); */
-
-      if (eventModeUsed &&
-          (earlyReturnAllowed || comp->fmuData->localData[0]->timeValue >= tEnd))
-      {
-        /* FMI 3.0 Co-Simulation with Event Mode: do not resolve the event here.
-           Stop the step at the event and let the master handle it via
-           fmi3EnterEventMode / fmi3UpdateDiscreteStates / fmi3EnterStepMode. The
-           continuous states have already been advanced to and stored at this
-           point, so the deferred event update operates on a consistent state.
-           An event landing exactly at the communication point is reported
-           without an early return; an event strictly inside the step is only
-           deferred when the master allows early return, otherwise it is handled
-           internally below. */
-        ev = fmiXTrue;
-        FILTERED_LOG(comp, fmiXOK, LOG_EVENTS, FMIX_STR "DoStep: event encountered at %g, deferring to the master", comp->fmuData->localData[0]->timeValue)
-        break;
-      }
-
-      // Reset eventInfo
-      eventInfo.newDiscreteStatesNeeded           = fmiXFalse;
-      eventInfo.terminateSimulation               = fmiXFalse;
-      eventInfo.nominalsOfContinuousStatesChanged = fmiXFalse;
-      eventInfo.valuesOfContinuousStatesChanged   = fmiXTrue;
-      eventInfo.nextEventTimeDefined              = fmiXFalse;
-      eventInfo.nextEventTime                     = 0.0;
-      status = internalEventIteration(c, &eventInfo);
-      if (eventInfo.terminateSimulation) {
-        term = fmiXTrue;
-        done = 1;
-        goto doStep_cleanup;
-      }
-      if (status != fmiXOK) goto doStep_cleanup;
-
-      if (eventInfo.valuesOfContinuousStatesChanged)
-      {
-        #if NUMBER_OF_STATES > 0
-          status = internalGetContinuousStates(c, states, NUMBER_OF_STATES);
-          if (status != fmiXOK) goto doStep_cleanup;
-        #endif
-      }
-
-      if (eventInfo.nominalsOfContinuousStatesChanged)
-      {
-        #if NUMBER_OF_STATES > 0
-          status = internalGetNominalsOfContinuousStates(c, states, NUMBER_OF_STATES);
-          if (status != fmiXOK) goto doStep_cleanup;
-        #endif
-      }
-
-      #if NUMBER_OF_EVENT_INDICATORS > 0
-        status = internalGetEventIndicators(c, FMIX_STR "DoStep", event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
-        if (status != fmiXOK) goto doStep_cleanup;
-      #endif
-
-      comp->solverInfo->didEventStep = 1;
-
-      if (eventInfo.terminateSimulation)
-      {
-        term = fmiXTrue;
-        break;
-      }
+      break;
     }
   }
 

@@ -36,6 +36,7 @@
 #include "solver_main.h"
 #include "../../util/list.h"
 #include "discrete_changes.h"
+#include "synchronous.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,6 +51,11 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
 
 double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double time_left, double* states_left, double time_right, double* states_right);
 int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList);
+
+void updateContinuousSystem(DATA *data, threadData_t *threadData);
+fire_timer_t simulationUpdateStart(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
+fire_timer_t simulationUpdateEvents(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, fire_timer_t syncRet, int eventType);
+fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 
 void* eventListAlloc(const void* data);
 void eventListFree(void* data);

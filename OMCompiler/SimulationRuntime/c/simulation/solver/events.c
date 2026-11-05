@@ -35,6 +35,18 @@
 #include "model_help.h"
 #include "external_input.h"
 #include "epsilon.h"
+#if !defined(OMC_FMI_RUNTIME)
+#include "dae_mode.h"
+#endif
+#include "stateset.h"
+#include "synchronous.h"
+#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
+#include "nonlinearSystem.h"
+#endif
+#if !defined(OMC_MINIMAL_RUNTIME)
+#include "../results/simulation_result.h"
+#endif
+#include "../../util/rtclock.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -326,13 +338,7 @@ double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double ti
   memcpy(data->localData[0]->realVars, states_left, data->modelData->nStates * sizeof(double));
 
   /* determined continuous system */
-#ifdef OMC_FMI_RUNTIME
-  /* An FMU has no updateContinuousSystem; the importer sets the inputs. */
-  data->callback->functionODE(data, threadData);
-  data->callback->functionAlgebraics(data, threadData);
-#else
-  data->callback->updateContinuousSystem(data, threadData);
-#endif
+  updateContinuousSystem(data, threadData);
   updateRelationsPre(data);
   /*sim_result_emit(data);*/
 
@@ -494,4 +500,177 @@ void eventListFree(void* data) {
 void eventListCopy(void* dest, const void* src) {
   long* dest_event = (long*) dest;
   *dest_event = *((long*) src);
+}
+
+/**
+ * @brief Evaluate the continuous system at the current time.
+ *
+ * An FMU has no DAE mode, and the importer sets its inputs.
+ */
+void updateContinuousSystem(DATA *data, threadData_t *threadData)
+{
+#if !defined(OMC_FMI_RUNTIME)
+  externalInputUpdate(data);
+  data->callback->input_function(data, threadData);
+
+  if (compiledInDAEMode) /* dae mode */
+  {
+    data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData, EVAL_ALGEBRAIC);
+  }
+  else /* ode mode */
+#endif
+  {
+    data->callback->functionODE(data, threadData);
+    data->callback->functionAlgebraics(data, threadData);
+  }
+  data->callback->output_function(data, threadData);
+  data->callback->setc_function(data, threadData);
+  data->callback->setb_function(data, threadData);
+  data->callback->function_storeDelayed(data, threadData);
+  data->callback->function_storeSpatialDistribution(data, threadData);
+  storePreValues(data);
+}
+
+/**
+ * @brief First part of simulationUpdate: evaluate the system after a solver
+ * step and fire the timers.
+ *
+ * Asserts are held until simulationUpdateEvents. On an error the caller does
+ * not call simulationUpdateEvents.
+ */
+fire_timer_t simulationUpdateStart(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+{
+  fire_timer_t syncRet;
+  data->simulationInfo->noThrowAsserts = 1 /* true */;
+  data->simulationInfo->needToReThrow = 0 /* false */;
+
+  updateContinuousSystem(data, threadData);
+  /* Everything below would evaluate the model again, on the point that just
+     failed. */
+  if (OMC_ERROR_RAISED()) {
+    data->simulationInfo->noThrowAsserts = 0 /* false */;
+    return NO_TIMER_FIRED;
+  }
+
+  saveZeroCrossings(data, threadData);
+  if (OMC_ERROR_RAISED()) {
+    data->simulationInfo->noThrowAsserts = 0 /* false */;
+    return NO_TIMER_FIRED;
+  }
+
+  /***** Event handling *****/
+  if (measure_time_flag) rt_tick(SIM_TIMER_EVENT);
+
+  syncRet = handleTimers(data, threadData, solverInfo);
+  return syncRet;
+}
+
+/**
+ * @brief Second part of simulationUpdate: handle the event that checkEvents
+ * found (eventType), the state selection, the asserts and the timers.
+ */
+fire_timer_t simulationUpdateEvents(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, fire_timer_t syncRet, int eventType)
+{
+  int foundEvent = 0 /* false */;
+  int timerWasActivated = syncRet == TIMER_FIRED || syncRet == TIMER_FIRED_EVENT;
+  int first = 1;
+  fire_timer_t syncRet1;
+
+  do
+  {
+    if (!first) {
+      eventType = checkEvents(data, threadData, solverInfo->eventLst, !solverInfo->solverRootFinding, /*out*/ &solverInfo->currentTime);
+    }
+    first = 0;
+    if(eventType > 0 || syncRet == TIMER_FIRED_EVENT) /* event */
+    {
+      foundEvent = 1;
+      threadData->currentErrorStage = ERROR_EVENTHANDLING;
+      infoStreamPrint(OMC_LOG_EVENTS, 1, "%s event at time=%.12g", eventType == 1 ? "time" : "state", solverInfo->currentTime);
+#if !defined(OMC_MINIMAL_RUNTIME)
+      /* prevent emit if noEventEmit flag is used */
+      if (!(omc_flag[FLAG_NOEVENTEMIT])) /* output left limit */ {
+        rt_accumulate(SIM_TIMER_EVENT);
+        sim_result.emit(&sim_result, data, threadData);
+        rt_tick(SIM_TIMER_EVENT);
+      }
+#endif
+      handleEvents(data, threadData, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
+      /* Nothing is left to retry from: an error raised here ends the run. */
+      if (OMC_ERROR_RAISED()) {
+        OMC_ERROR_CLEAR();
+        longjmp(threadData->globalJumpBuffer ? *threadData->globalJumpBuffer : *threadData->mmc_jumper, 1);
+      }
+#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
+      cleanUpOldValueListAfterEvent(data, solverInfo->currentTime);
+#endif
+      messageClose(OMC_LOG_EVENTS);
+      threadData->currentErrorStage = ERROR_SIMULATION;
+      solverInfo->didEventStep = 1;
+      overwriteOldSimulationData(data);
+    }
+    else /* no event */
+    {
+      solverInfo->laststep = solverInfo->currentTime;
+      solverInfo->didEventStep = 0;
+    }
+
+    if (measure_time_flag) { rt_accumulate(SIM_TIMER_EVENT); rt_tick(SIM_TIMER_EVENT); }
+    /***** End event handling *****/
+
+
+#if !defined(OMC_NO_STATESELECTION)
+    /***** check state selection *****/
+    if (stateSelection(data, threadData, 1, 1))
+    {
+      /* if new set is calculated reinit the solver */
+      solverInfo->didEventStep = 1;
+      overwriteOldSimulationData(data);
+    }
+#endif
+
+    /* Check for warning of variables out of range assert(min<x || x>xmax, ...)*/
+    data->callback->checkForAsserts(data, threadData);
+
+    storePreValues(data);
+    storeOldValues(data);
+
+    syncRet1 = handleTimers(data, threadData, solverInfo);
+    syncRet = syncRet1 == NO_TIMER_FIRED ? syncRet : syncRet1;
+  } while (syncRet1 != NO_TIMER_FIRED);
+
+  /* Update continous system because hold() needs to be re-evaluated */
+  if (timerWasActivated == 1) {
+    updateContinuousSystem(data, threadData);
+  }
+
+  /* Add event to spatialDistribution */
+  if (foundEvent==1) {
+    data->callback->function_storeDelayed(data, threadData);
+    data->callback->function_storeSpatialDistribution(data, threadData);
+  }
+
+  /* Check if ignored assert throw was actually a valid throw */
+  data->simulationInfo->noThrowAsserts = 0 /* false */;
+  if (data->simulationInfo->needToReThrow && !foundEvent) {
+    errorStreamPrint(OMC_LOG_ASSERT, 0, "No event found, but assert was triggered. Throwing now!");
+    omc_throw(threadData);
+  } else if (data->simulationInfo->needToReThrow) {
+    infoStreamPrint(OMC_LOG_ASSERT, 0, "Found event, previous asserts are ignored.");
+  }
+
+  return syncRet;
+}
+
+/**
+ * @brief Update the system after a solver step and handle the events.
+ */
+fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+{
+  fire_timer_t syncRet = simulationUpdateStart(data, threadData, solverInfo);
+  if (OMC_ERROR_RAISED()) {
+    return NO_TIMER_FIRED;
+  }
+  return simulationUpdateEvents(data, threadData, solverInfo, syncRet,
+                                checkEvents(data, threadData, solverInfo->eventLst, !solverInfo->solverRootFinding, &solverInfo->currentTime));
 }
