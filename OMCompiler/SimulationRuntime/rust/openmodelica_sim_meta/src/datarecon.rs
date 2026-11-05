@@ -298,7 +298,7 @@ fn solve_system(ctx: &mut Ctx, n: usize, nrhs: usize, a: &mut Matrix, b: &mut Ma
     let mut ipiv = vec![0i32; n.max(1)];
     let info = openmodelica_lapack::lu::dgesv(n, nrhs, &mut a.data, n, &mut ipiv, &mut b.data, n);
     if info > 0 {
-        let msg = format!("solveSystemFstar() Failed !, The solution could not be computed, The info satus is {info} ");
+        let msg = format!("solveSystemFstar() Failed !, The solution could not be computed, The info satus is {info}");
         ctx.error(&msg);
         return Err(ctx.abort());
     }
