@@ -3,6 +3,7 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 EnumerationTest.mos \
 ExportFMUCLI.mos \
+FmuFileNamePrefixDash.mos \
 FmuSparseSolvers.mos \
 FmuUserCFlags.mos \
 fmi_attributes_01.mos \
