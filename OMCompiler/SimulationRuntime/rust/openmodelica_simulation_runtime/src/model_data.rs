@@ -400,6 +400,18 @@ pub(crate) unsafe fn string_set_new(slot: *mut modelica_string, s: &[u8]) {
     unsafe { omc_string_slots_release(&mut { old }, 1) };
 }
 
+/// C's `omc_string_new`.
+pub(crate) fn string_new(s: *const c_char) -> *mut c_void {
+    unsafe { omc_string_new(s) }
+}
+
+/// Drops the reference [`string_new`] returned.
+pub(crate) fn string_release(s: *mut c_void) {
+    if !s.is_null() {
+        unsafe { omc_string_slots_release(&mut { s }, 1) };
+    }
+}
+
 /// The byte offset of an `omc_string`'s data: it points at `struct omc_string_s`,
 /// whose `mmc_uint_t len` comes before the bytes (`util/omc_string.h`).
 const OMC_STRING_DATA: usize = core::mem::size_of::<usize>();

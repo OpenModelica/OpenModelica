@@ -342,6 +342,30 @@ int omr_protected_global(void (*thunk)(void *), void *ctx, void *threadData) {
   return rc;
 }
 
+/* `OpenModelica_uriToFilename_impl` throws on a URI it cannot resolve: catch it
+ * here rather than in a frame past Rust's. Returns -1 if it threw. */
+extern void *OpenModelica_uriToFilename_impl(void *threadData, void *uri, const char *resourcesDir);
+
+int omr_uri_to_filename(void *threadData, void *uri, void **out) {
+  jmp_buf buf;
+  void *saved_mmc = TD_PTR(threadData, omr_td_off_mmc_jumper);
+  void *saved_jb = TD_PTR(threadData, omr_td_off_sim_jumper);
+  void *saved_gj = TD_PTR(threadData, omr_td_off_global_jumper);
+  int rc = 0;
+  if (setjmp(buf) == 0) {
+    TD_PTR(threadData, omr_td_off_mmc_jumper) = &buf;
+    TD_PTR(threadData, omr_td_off_sim_jumper) = &buf;
+    TD_PTR(threadData, omr_td_off_global_jumper) = &buf;
+    *out = OpenModelica_uriToFilename_impl(threadData, uri, NULL);
+  } else {
+    rc = -1;
+  }
+  TD_PTR(threadData, omr_td_off_mmc_jumper) = saved_mmc;
+  TD_PTR(threadData, omr_td_off_sim_jumper) = saved_jb;
+  TD_PTR(threadData, omr_td_off_global_jumper) = saved_gj;
+  return rc;
+}
+
 /* The `omc_assert_*` entry points, split the way C's own
  * simulation/simulation_omc_assert.c splits them. */
 

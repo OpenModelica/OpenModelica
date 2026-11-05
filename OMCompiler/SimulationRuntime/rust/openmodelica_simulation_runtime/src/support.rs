@@ -152,6 +152,30 @@ pub(crate) fn protected_global<F: FnMut()>(thread_data: *mut threadData_t, mut f
     rc != -1 && !error_raised(thread_data)
 }
 
+/// C's `OpenModelica_uriToFilename`, with the `modelica://` lookup table the
+/// generated code installs (`OpenModelica_updateUriMapping`). A URI it cannot
+/// resolve is left as written.
+pub(crate) fn uri_to_filename(uri: &str) -> String {
+    if !uri.get(..11).is_some_and(|s| s.eq_ignore_ascii_case("modelica://")) {
+        return uri.strip_prefix("file://").unwrap_or(uri).to_string();
+    }
+    let td = omr_thread_data();
+    let Ok(c) = std::ffi::CString::new(uri) else {
+        return uri.to_string();
+    };
+    if td.is_null() {
+        return uri.to_string();
+    }
+    let input = crate::model_data::string_new(c.as_ptr());
+    let mut out: *mut c_void = ptr::null_mut();
+    let rc = unsafe { omr_uri_to_filename(td, input, &mut out) };
+    let _ = error_raised(td);
+    let path = if rc != 0 || out.is_null() { uri.to_string() } else { crate::model_data::string_value(out) };
+    // Not `out`: it can be the lookup table's own string.
+    crate::model_data::string_release(input);
+    path
+}
+
 /// The stages whose model errors are raised, not jumped (`omr_stage_raises`).
 fn stage_raises(stage: c_int) -> bool {
     matches!(
@@ -179,6 +203,7 @@ unsafe extern "C" {
         ctx: *mut c_void,
         thread_data: *mut threadData_t,
     ) -> c_int;
+    fn omr_uri_to_filename(thread_data: *mut threadData_t, uri: *mut c_void, out: *mut *mut c_void) -> c_int;
     /// `util/omc_error.h`: whether an error was raised, clearing it. The mirror
     /// stops at `parent`, so the field itself is out of reach here.
     fn omc_error_take(threadData: *mut threadData_t) -> c_int;
