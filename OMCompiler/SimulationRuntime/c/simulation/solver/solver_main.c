@@ -336,9 +336,7 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
   /* try */
   {
     int success = 0;
-#if !defined(OMC_EMCC)
     OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
     /* A raised error is reported by the catch below. */
     if (initialization(data, threadData, init_initMethod, init_file, init_time) && !OMC_ERROR_RAISED())
     {
@@ -358,9 +356,7 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
     }
 
     if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
-#if !defined(OMC_EMCC)
     OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
 
     if (!success)
     {
@@ -587,9 +583,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
     infoStreamPrint(OMC_LOG_STDOUT, 0, "start time: %f, stop time: %f, integrator step size: %f",simInfo->startTime, simInfo->stopTime, simInfo->stepSize);
     messageCloseWarning(OMC_LOG_STDOUT);
   }
-#if !defined(OMC_EMCC)
     OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
 
   /*  initialize external input structure */
   externalInputallocate(data);
@@ -687,9 +681,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
 #endif
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
 
-#if !defined(OMC_EMCC)
     OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
 
   /*  free external input data */
   externalInputFree(data);

@@ -552,9 +552,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
       omc_alloc_interface.collect_a_little();
 
       /* try */
-#if !defined(OMC_EMCC)
       OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
       {
         printAllVars(data, 0, OMC_LOG_SOLVER_V);
 
@@ -685,9 +683,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         }
       }
       if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
-#if !defined(OMC_EMCC)
       OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
       if (!success) { /* catch */
         /* halve the step size until the step succeeds, there is no step size to
          * halve for the optimization though */

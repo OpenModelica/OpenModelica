@@ -552,9 +552,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   threadData->currentErrorStage = ERROR_INTEGRATOR;
 
   /* try */
-#if !defined(OMC_EMCC)
   OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
 
   assertStreamPrint(threadData, 0 != dasslData->rpar, "could not passed to DDASKR");
 
@@ -727,9 +725,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   }
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
 
-#if !defined(OMC_EMCC)
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
   threadData->currentErrorStage = saveJumpState;
 
   if (return_from_small_step) {
@@ -913,9 +909,7 @@ static int functionODE_residual(double *t, double *y, double *yd, double* cj,
   threadData->currentErrorStage = ERROR_INTEGRATOR;
 
   /* try */
-#if !defined(OMC_EMCC)
   OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
 
   /* read input vars */
   externalInputUpdate(data);
@@ -933,9 +927,7 @@ static int functionODE_residual(double *t, double *y, double *yd, double* cj,
   }
   printVector(OMC_LOG_DASSL_STATES, "dd", delta, data->modelData->nStates, *t);
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
-#if !defined(OMC_EMCC)
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
 
   if (!success) {
     *ires = -1;
