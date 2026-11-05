@@ -5,6 +5,7 @@ EnumerationTest.mos \
 ExportFMUCLI.mos \
 FmuFileNamePrefixDash.mos \
 FmuSparseSolvers.mos \
+FmuLinkLibraries.mos \
 FmuUserCFlags.mos \
 fmi_attributes_01.mos \
 fmi_attributes_02.mos \

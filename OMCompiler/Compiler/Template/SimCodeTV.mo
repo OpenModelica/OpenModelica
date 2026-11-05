@@ -1625,6 +1625,11 @@ package SimCodeCodegenUtil
     output String out;
   end getFMI3ArrayStart;
 
+  function fmuExternalLibraries
+    input list<String> libs;
+    output list<String> names;
+  end fmuExternalLibraries;
+
   function getFMI3Terminals
     input SimCode.SimCode simCode;
     output list<SimCode.FmiTerminal> terminals;

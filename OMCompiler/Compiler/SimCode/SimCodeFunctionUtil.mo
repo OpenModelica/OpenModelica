@@ -2594,9 +2594,10 @@ algorithm
       String str;
       list<String> strs1, strs2, strs3, names1, names2, names3;
 
-    // Lapack is always included
-    case Absyn.STRING("lapack") then ({},{});
-    case Absyn.STRING("Lapack") then ({},{});
+    // Lapack is always included, except in an FMU, which carries only the part
+    // of it the runtime uses.
+    case Absyn.STRING(str) guard str=="lapack" or str=="Lapack"
+      then (if Flags.getConfigBool(Flags.BUILDING_FMU) then {"-llapack"} else {},{});
 
     //pthreads is already linked under windows
     case Absyn.STRING("pthread") guard Autoconf.os=="Windows_NT"

@@ -14279,7 +14279,7 @@ algorithm
   cmakeCode := cmakeCode + getCmakeCrossPlatformSuffixes() + "\n";
   for lib in libraries loop
     // Special handling for ModelicaExternalC, we always copy the sources into the FMU
-    if List.contains({"ModelicaStandardTables", "ModelicaIO", "ModelicaMatIO"}, lib, stringEqual) then
+    if List.contains(SimCodeCodegenUtil.fmuSourceLibraries, lib, stringEqual) then
       needModelicaExternalC := "ON";
     // zlib is referred to from MSL Tables, but by default not used by ModelicaMatIO
     elseif lib == "zlib" then
@@ -14294,16 +14294,24 @@ algorithm
                   "  target_link_libraries(${FMU_NAME_HASH} PRIVATE ${" + lib + "})" + "\n" +
                   "  list(APPEND RUNTIME_DEPENDS ${" + lib + "})" + "\n" +
                   "endif()\n";
+    elseif lib == "lapack" then
+      cmakeCode := cmakeCode + "find_package(LAPACK REQUIRED)\n" +
+                  "message(STATUS \"Linking ${LAPACK_LIBRARIES}\")\n" +
+                  "target_link_libraries(${FMU_NAME_HASH} PRIVATE ${LAPACK_LIBRARIES})\n";
     else
+      // Not in a Modelica library: a system library (rt, python3.8), linked by
+      // name as in a simulation executable and not copied into the FMU.
       cmakeCode := cmakeCode + "find_library(" + lib + "\n" +
                   "             NAMES " + lib + "\n" +
                   "             PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)\n" +
-                  "if(NOT " + lib + ")\n" +
-                  "  message(FATAL_ERROR \"Could not find library " + lib + "\")\n" +
-                  "endif()\n" +
-                  "message(STATUS \"Linking ${" + lib + "}\")\n" +
-                  "target_link_libraries(${FMU_NAME_HASH} PRIVATE ${" + lib + "})\n" +
-                  "list(APPEND RUNTIME_DEPENDS ${" + lib + "})\n";
+                  "if(" + lib + ")\n" +
+                  "  message(STATUS \"Linking ${" + lib + "}\")\n" +
+                  "  target_link_libraries(${FMU_NAME_HASH} PRIVATE ${" + lib + "})\n" +
+                  "  list(APPEND RUNTIME_DEPENDS ${" + lib + "})\n" +
+                  "else()\n" +
+                  "  message(STATUS \"Linking system library " + lib + "\")\n" +
+                  "  target_link_libraries(${FMU_NAME_HASH} PRIVATE " + lib + ")\n" +
+                  "endif()\n";
     end if;
   end for;
 end getCmakeLinkLibrariesCode;
