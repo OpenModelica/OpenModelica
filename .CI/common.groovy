@@ -1241,8 +1241,9 @@ void partestRust(String simCodeTarget, partition, partitionmodulo) {
   String suites = '-cpp,-hpcom,-metamodelica,-63bit,-antlr,-stackoverflow,+wasm,+hdf5,-gbode,+ofScripting,-nfScripting'
   // cSources/fmuCSources inspect generated C, which a wasm target does not write.
   // nativeSharedLib links a native shared library, which a wasm target cannot load.
+  // realTime passes -rt, which only a simulation executable accepts.
   if (isWasmTarget) {
-    suites += ',-cSources,-fmuCSources,-nativeSharedLib'
+    suites += ',-cSources,-fmuCSources,-nativeSharedLib,-realTime'
   }
   // wasmtime reserves ~4 GiB of address space per wasm memory, and shrinking that
   // reservation to fit an RLIMIT_AS costs the bounds-check-free fast path.
