@@ -1,0 +1,109 @@
+{
+  "schema": "om-crml-architecture/0.1",
+  "name": "CoolingSystem_A1",
+  "source": {
+    "kind": "handwritten"
+  },
+  "types": [
+    {
+      "name": "Pump_A",
+      "specializes": [],
+      "attributes": [
+        {
+          "name": "id",
+          "type": "String"
+        },
+        {
+          "name": "NPSH_req",
+          "type": "Real",
+          "dims": [
+            ":",
+            2
+          ],
+          "external": true
+        }
+      ]
+    }
+  ],
+  "elements": [
+    {
+      "name": "pump1",
+      "type": "Pump_A",
+      "values": {
+        "id": "PO1",
+        "NPSH_req": [
+          [
+            0,
+            50000.0
+          ],
+          [
+            5,
+            120000.0
+          ]
+        ]
+      },
+      "parts": []
+    },
+    {
+      "name": "pump2",
+      "type": "Pump_A",
+      "values": {
+        "id": "PO2",
+        "NPSH_req": [
+          [
+            0,
+            50000.0
+          ],
+          [
+            5,
+            120000.0
+          ]
+        ]
+      },
+      "parts": []
+    },
+    {
+      "name": "pump3",
+      "type": "Pump_A",
+      "values": {
+        "id": "PO3",
+        "NPSH_req": [
+          [
+            0,
+            50000.0
+          ],
+          [
+            5,
+            120000.0
+          ]
+        ]
+      },
+      "parts": []
+    }
+  ],
+  "allocations": [
+    {
+      "from": "pump1",
+      "to": "p1"
+    },
+    {
+      "from": "pump1",
+      "to": "m1",
+      "role": "inOperation"
+    },
+    {
+      "from": "pump2",
+      "to": "p2"
+    },
+    {
+      "from": "pump2",
+      "to": "m2",
+      "role": "inOperation"
+    },
+    {
+      "from": "pump3",
+      "to": "p3",
+      "role": "inOperation"
+    }
+  ]
+}
