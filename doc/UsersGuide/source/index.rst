@@ -44,7 +44,6 @@ Generated on |date| at |time|
   mdt
   mdtdebugger
   profiler
-  emscripten
   interop_c_python
   ompython
   ommatlab

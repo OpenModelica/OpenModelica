@@ -345,9 +345,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
      the original unmanipulated systems for trying without homotopy */
   } else if (!omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY]) {
     /* try */
-#ifndef OMC_EMCC
   OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
     if (adaptiveGlobal && kinsol) {
       infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "Automatically set -homotopyOnFirstTry, because trying without homotopy first is not supported for the adaptive global approach in combination with KINSOL.");
     } else {
@@ -361,9 +359,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
 
     /* catch */
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else if (triedWithoutHomotopy) { solveWithGlobalHomotopy = 0; }
-#ifndef OMC_EMCC
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
     if (adaptiveGlobal)
       data->callback->homotopyMethod = GLOBAL_ADAPTIVE_HOMOTOPY; /* new global homotopy approach (adaptive lambda) */
     if(solveWithGlobalHomotopy) {
@@ -398,9 +394,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
 
     infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 1, "homotopy process\n---------------------------");
     /* try */
-#ifndef OMC_EMCC
   OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
     for(step=0; step<=init_lambda_steps; ++step)
     {
       data->simulationInfo->lambda = ((double)step)/(init_lambda_steps);
@@ -442,9 +436,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     }
     /* catch */
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
-#ifndef OMC_EMCC
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
     data->simulationInfo->skipStartEquations = FALSE;
 
     messageClose(OMC_LOG_INIT_HOMOTOPY);

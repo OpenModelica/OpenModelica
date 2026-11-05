@@ -35,7 +35,6 @@ ulimitOmc:="660"; // 11 minutes to generate the C-code
 ulimitExe:="480"; // 8 additional minutes to initialize and run the simulation
 ulimitMemory:="16000000";  // ~16GB memory at most
 extraSimFlags:=""; // no extra sim flags
-javascript := false;
 customLibrary := false;
 
 runScript("CustomCommands.mos");
@@ -105,12 +104,10 @@ function cell
   input Real elapsedTime;
   input Boolean greenOnOk := false;
   input String greenColor := \\\"#00FF00\\\";
-  input String mdFile := \\\"\\\";
   output String str;
 algorithm
-  str := if mdFile == \\\"\\\" then \\\"\\\" else \\\" <a href=\\\\\\\"files/mdpad_local.html?\\\"+mdFile+\\\"\\\\\\\"><img width=\\\\\\\"16px\\\\\\\" src=\\\\\\\"files/Modelica.Icons.Example.svg\\\\\\\"></img></a>\\\";
   str := if elapsedTime==-1.0 then \\\"<td bgcolor=\\\\\\\"#FF0000\\\\\\\">&nbsp;</td>\\\" else ((if greenOnOk then \\\"<td bgcolor=\\\\\\\"\\\" + greenColor + \\\"\\\\\\\">\\\" else \\\"<td>\\\") +
-    OpenModelica.Scripting.Internal.Time.readableTime(elapsedTime)+str+\\\"</td>\\\");
+    OpenModelica.Scripting.Internal.Time.readableTime(elapsedTime)+\\\"</td>\\\");
 end cell;
 function length input String str; output Integer len; external \\\"C\\\" len=ModelicaStrings_length(str); end length;
 function substring input String str; input Integer i1,i2; output String out; external \\\"C\\\" out=ModelicaStrings_substring(str,i1,i2); end substring;
@@ -153,7 +150,6 @@ writeFile(statFile + \".verify\", testcase(0,false,\"killed\"));getErrorString()
 writeFile(\"files/" + s + ".uses\", \"\");getErrorString();
 
 outputFormat:=\"default\";
-javascript:="+String(javascript)+";
 mslRegressionOutput:=\"\";
 "+loadModelCommand+"
 reference_reltol:="+String(reference_reltol)+";
@@ -234,10 +230,6 @@ timeDiff := -1.0;
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 buildRes := res[1] <> \"\";
 simRes  := if not buildRes then false else 0 == system(\"./"+s+" \"+simFlags+emit_protected+\" > \"+simFile+\" 2>&1\");
-if buildRes and javascript then
-  system(\"cp " + s + ".js " + s + "_info.xml " + s + "_init.xml " + s + ".md files/\");
-end if;
-mdFile := if javascript then \""+s+".md\" else \"\";
 
 resFile := \""+s+"_res.\" + outputFormat;
 
@@ -353,7 +345,7 @@ sim:=readFile(simFile);
 str:=\"<tr><td>\" + (if err <> \"\" then \"<a class=\\\"\"+errorLinkClass+\"\\\" href=\\\"\"+errFile+\"\\\">"+s+"</a>\" else \""+s+"\") +
   (if sim <> \"\" then \" (<a href=\\\"\"+simFile+\"\\\">sim</a>)\" else \"\") +
   \"</td>\" + referenceCell +
-  cell(if simRes then timeSim else -1.0,greenOnOk=true,greenColor=greenColor,mdFile=mdFile) +
+  cell(if simRes then timeSim else -1.0,greenOnOk=true,greenColor=greenColor) +
   \"<td bgcolor=\\\"\"+(if res[1]<>\"\" then greenColor else \"#FF0000\")+\"\\\">\"+OpenModelica.Scripting.Internal.Time.readableTime(total)+\"</td>\" +
   sum(cell(d,greenColor=greenColor) for d in {frontend,backend,simcode,templates,build}) + \"</tr>\\n\";getErrorString();
 writeFile(statFile,str);getErrorString();
@@ -368,11 +360,6 @@ str:=if simRes then testcase(timeDiff,referenceOK,if referenceOK then \"\" else 
 writeFile(statFile + \".verify\", str);getErrorString();
 ") for s in a);
 getErrorString();
-if javascript then
-  system("python " + OpenModelica.Scripting.getInstallationDirectoryPath() + "/share/doc/omc/testmodels/generate_icons.py Modelica.Icons.Example");
-  system("cp ModelicaIcons/Modelica.Icons.Example.svg files/");
-  system("cp -a " + OpenModelica.Scripting.getInstallationDirectoryPath() + "/lib/omc/emcc/mdpad/* files/");
-end if;
 results := system_parallel({"/usr/bin/time -f '"+s+" %es' " + omc + " +n=1 " + s + ".mos" for s in a});
 getErrorString();
 

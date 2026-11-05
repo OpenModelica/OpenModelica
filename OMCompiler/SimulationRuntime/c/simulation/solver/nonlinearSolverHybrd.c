@@ -521,9 +521,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
     /* try */
     {
       catchedError = TRUE;
-#ifndef OMC_EMCC
       OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
       hybrj_(wrapper_fvec_hybrj, &hybrdData->n, hybrdData->x,
           hybrdData->fvec, hybrdData->fjac, &hybrdData->ldfjac, &hybrdData->xtol,
           &hybrdData->maxfev, hybrdData->diag, &hybrdData->mode, &hybrdData->factor,
@@ -551,9 +549,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
       assertCalled = 0;
       catchedError = FALSE;
       }
-#ifndef OMC_EMCC
       OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
       /* catch */
       if (catchedError)
       {
@@ -607,14 +603,10 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
         data->simulationInfo->solveContinuous = FALSE;
 
         /* try */
-#ifndef OMC_EMCC
         OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
         wrapper_fvec_hybrj(&hybrdData->n, hybrdData->x, hybrdData->fvec, hybrdData->fjac, &hybrdData->ldfjac, &iflag, hybrdData->userData);
         if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { catchedError = FALSE; }
-#ifndef OMC_EMCC
         OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
         /* catch */
         if (catchedError)
         {
@@ -715,14 +707,10 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
       /* try */
       {
         catchedError = TRUE;
-#ifndef OMC_EMCC
         OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
         wrapper_fvec_hybrj(&hybrdData->n, hybrdData->x, hybrdData->fvec, hybrdData->fjac, &hybrdData->ldfjac, &iflag, hybrdData->userData);
         if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { catchedError = FALSE; }
-#ifndef OMC_EMCC
         OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
         /* catch */
         if (catchedError) {
           warningStreamPrint(OMC_LOG_STDOUT, 0, "Non-Linear Solver try to handle a problem with a called assert.");

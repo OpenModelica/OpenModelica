@@ -927,10 +927,8 @@ fmiXStatus updateIfNeeded(ModelInstance *comp, const char *func)
     setThreadData(comp);
 
     /* TRY */
-#if !defined(OMC_EMCC)
     OMC_TRY_INTERNAL(simulationJumpBuffer)
     threadData->mmc_jumper = threadData->simulationJumpBuffer;
-#endif
 
     if (model_state_initialization_mode == comp->state)
     {
@@ -955,10 +953,8 @@ fmiXStatus updateIfNeeded(ModelInstance *comp, const char *func)
     success = 1;
 
     /* CATCH */
-#if !defined(OMC_EMCC)
     OMC_CATCH_INTERNAL(simulationJumpBuffer)
     threadData->mmc_jumper = old_jmp;
-#endif
     if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); success = 0; }
 
     releaseAsserts(comp);

@@ -464,7 +464,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUModelDescription.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCpp.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCppHpcom.mo
-    ${OMC_GENERATED_MO_DIR}/Template/CodegenJS.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenMidToC.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenUtilSimulation.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenWasmJitFunctions.mo
