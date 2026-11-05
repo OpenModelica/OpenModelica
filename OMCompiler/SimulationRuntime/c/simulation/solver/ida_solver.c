@@ -861,9 +861,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   threadData->currentErrorStage = ERROR_INTEGRATOR;
 
   /* try */
-#if !defined(OMC_EMCC)
   OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
 
 
   /* Check that tout is not less than timeValue otherwise the solver
@@ -1013,9 +1011,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   } while(!finished && !OMC_ERROR_RAISED());
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
 
-#if !defined(OMC_EMCC)
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
   threadData->currentErrorStage = saveJumpState;
 
   /* if a state event occurs than no sample event does need to be activated  */
@@ -1145,9 +1141,7 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
   threadData->currentErrorStage = ERROR_INTEGRATOR;
 
   /* try */
-#if !defined(OMC_EMCC)
   OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
 
   /* if sensitivity mode update also bound parameters*/
   if (idaData->idaSmode)
@@ -1232,9 +1226,7 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
 
   printVector(OMC_LOG_DASSL_STATES, "delta", delta, idaData->N, time);
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
-#if !defined(OMC_EMCC)
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
 
   if (!success) {
     retVal = 1;  /* Recoverable error, reduce step size and retry */

@@ -80,7 +80,6 @@ import CodegenFMUCppHpcom;
 import CodegenCpp;
 import CodegenCppHpcom;
 import CodegenXML;
-import CodegenJS;
 import CodegenWasmJit;
 import Config;
 import DAEMode;
@@ -740,16 +739,6 @@ algorithm
         runTplWriteFile(func = function CodegenESP32.readmeFile(a_simCode=simCode),
                         file = esp32Dir + "/README.md");
       then ();
-
-    case "JavaScript" algorithm
-      guid := System.getUUIDStr();
-      Tpl.tplNoret(CodegenC.translateModel, simCode);
-      SerializeInitXML.simulationInitFile(simCode, guid);
-      System.covertTextFileToCLiteral(simCode.fileNamePrefix+"_init.xml",simCode.fileNamePrefix+"_init.c", Config.simulationCodeTarget());
-      SerializeSparsityPattern.serialize(simCode);
-      SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
-      Tpl.tplNoret(CodegenJS.markdownFile, simCode);
-    then ();
 
     case "XML" algorithm
       Tpl.tplNoret(CodegenXML.translateModel, simCode);

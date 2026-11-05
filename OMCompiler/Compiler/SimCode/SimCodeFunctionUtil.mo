@@ -3107,17 +3107,15 @@ public function createMakefileParams
 protected
   String omhome, ccompiler, cxxcompiler, linker, exeext, dllext, cflags, ldflags, rtlibs, platform, compileDir;
 algorithm
-  ccompiler   := if stringEq(Config.simCodeTarget(),"JavaScript") then "emcc" else
-                 (if Flags.isSet(Flags.HPCOM) then System.getOMPCCompiler() else System.getCCompiler());
-  cxxcompiler := if stringEq(Config.simCodeTarget(),"JavaScript") then "emcc" else System.getCXXCompiler();
-  linker := if stringEq(Config.simCodeTarget(),"JavaScript") then "emcc" else System.getLinker();
-  exeext := if stringEq(Config.simCodeTarget(),"JavaScript") then ".js" else Autoconf.exeExt;
+  ccompiler := if Flags.isSet(Flags.HPCOM) then System.getOMPCCompiler() else System.getCCompiler();
+  cxxcompiler := System.getCXXCompiler();
+  linker := System.getLinker();
+  exeext := Autoconf.exeExt;
   dllext := Autoconf.dllExt;
   omhome := Settings.getInstallationDirectoryPath();
   omhome := System.trim(omhome, "\""); // Remove any quotation marks from omhome.
   cflags := System.getCFlags() + " " +
             (if Flags.isSet(Flags.HPCOM) then "-fopenmp" else "");
-  cflags := if stringEq(Config.simCodeTarget(),"JavaScript") then "-Os -Wno-warn-absolute-paths" else cflags;
   ldflags := System.getLDFlags();
   // The Rust simulation runtime serves ParModelica/auto's own interface, so
   // linking the C++ one beside it would define PM_Model_create and friends twice.

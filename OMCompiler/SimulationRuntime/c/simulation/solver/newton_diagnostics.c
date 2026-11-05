@@ -1000,18 +1000,14 @@ unsigned* getNonlinearEqns( DATA* data, threadData_t* threadData, unsigned sysNu
   assertStreamPrint(NULL, NULL != f_x1, "out of memory");
 
   // Try
-#if !defined(OMC_EMCC)
   OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
 
   // Calculate residuals f_x1 for x1
   systemData->residualFunc(&resUserData, x1, f_x1, (int*)&systemData->size);
 
   // Catch
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { failed = FALSE; }
-#if !defined(OMC_EMCC)
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
 
   // Lower the dampening factor until the function call succeeds
   while (failed) {
@@ -1026,16 +1022,12 @@ unsigned* getNonlinearEqns( DATA* data, threadData_t* threadData, unsigned sysNu
       x1[i] = x0[i] + *lambda * dx[i];
 
     // Retry the function call
-#if !defined(OMC_EMCC)
     OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
 
     systemData->residualFunc(&resUserData, x1, f_x1, (int*)&systemData->size);
 
     if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { failed = FALSE; }
-#if !defined(OMC_EMCC)
     OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
   }
 
   // Count number of nonlinear functions, i.e. all functions satifying: |f(x1)| > eps

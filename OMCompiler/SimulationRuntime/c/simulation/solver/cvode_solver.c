@@ -119,9 +119,7 @@ int cvodeRightHandSideODEFunction(sunrealtype time, N_Vector y, N_Vector ydot, v
   threadData->currentErrorStage = ERROR_INTEGRATOR;
 
   /* try */
-#if !defined(OMC_EMCC)
   OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
 
   /*
    fix issue https://github.com/OpenModelica/OpenModelica/issues/13582
@@ -180,9 +178,7 @@ int cvodeRightHandSideODEFunction(sunrealtype time, N_Vector y, N_Vector ydot, v
 
   /* catch */
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
-#if !defined(OMC_EMCC)
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
 
   for (i = 0; success && i < cvodeData->N; i++)
   {
@@ -306,15 +302,11 @@ static int jacColoredSymbolicalSparse(double t, SUNMatrix Jac, CVODE_SOLVER *cvo
   saveJumpState = threadData->currentErrorStage;
   threadData->currentErrorStage = ERROR_INTEGRATOR;
 
-#if !defined(OMC_EMCC)
   OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
   setSundialsSparsePattern(jac, Jac);
   evalJacobian(data, threadData, jac, NULL, SM_DATA_S(Jac), FALSE);
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
-#if !defined(OMC_EMCC)
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
 
   threadData->currentErrorStage = saveJumpState;
   unsetContext(data);
@@ -1082,9 +1074,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   threadData->currentErrorStage = ERROR_INTEGRATOR;
 
   /* Try */
-#if !defined(OMC_EMCC)
   OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
 
   /* CVODE may step past tout and interpolates back to it, but never past the
    * next time event */
@@ -1163,9 +1153,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
 
   /* Catch */
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
-#if !defined(OMC_EMCC)
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
   threadData->currentErrorStage = saveJumpState;
 
   /* If a state event occured no sample event needs to be activated */

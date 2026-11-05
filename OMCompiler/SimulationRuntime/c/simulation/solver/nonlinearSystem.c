@@ -958,9 +958,7 @@ int updateInnerEquation(RESIDUAL_USERDATA* resUserData, int sysNumber, int discr
   }
 
   /* try */
-#ifndef OMC_EMCC
   OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
 
   /* call residual function */
   if (nonlinsys->strictTearingFunctionCall != NULL)
@@ -975,9 +973,7 @@ int updateInnerEquation(RESIDUAL_USERDATA* resUserData, int sysNumber, int discr
     success = 1;
   /*catch */
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
-#ifndef OMC_EMCC
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
 
   if (!success && !constraintViolated)
   {
@@ -1016,60 +1012,44 @@ NLS_SOLVER_STATUS solveNLS(DATA *data, threadData_t *threadData, NONLINEAR_SYSTE
     solverData = nonlinsys->solverData;
     nonlinsys->solverData = solverData->ordinaryData;
     /* try */
-    #ifndef OMC_EMCC
       OMC_TRY_INTERNAL(simulationJumpBuffer)
-    #endif
     solver_status = solveHybrd(data, threadData, nonlinsys);
     /*catch */
       if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); solver_status = NLS_FAILED; }
-    #ifndef OMC_EMCC
       OMC_CATCH_INTERNAL(simulationJumpBuffer)
-    #endif
     nonlinsys->solverData = solverData;
     break;
   case NLS_KINSOL:
     solverData = nonlinsys->solverData;
     nonlinsys->solverData = solverData->ordinaryData;
     /* try */
-    #ifndef OMC_EMCC
       OMC_TRY_INTERNAL(simulationJumpBuffer)
-    #endif
     solver_status = nlsKinsolSolve(data, threadData, nonlinsys);
     /*catch */
       if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); solver_status = NLS_FAILED; }
-    #ifndef OMC_EMCC
       OMC_CATCH_INTERNAL(simulationJumpBuffer)
-    #endif
     nonlinsys->solverData = solverData;
     break;
   case NLS_KINSOL_B:
     solverData = nonlinsys->solverData;
     nonlinsys->solverData = solverData->ordinaryData;
     /* try */
-    #ifndef OMC_EMCC
       OMC_TRY_INTERNAL(simulationJumpBuffer)
-    #endif
     solver_status = B_nlsKinsolSolve(data, threadData, nonlinsys);
     /*catch */
       if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); solver_status = NLS_FAILED; }
-    #ifndef OMC_EMCC
       OMC_CATCH_INTERNAL(simulationJumpBuffer)
-    #endif
     nonlinsys->solverData = solverData;
     break;
   case NLS_NEWTON:
     solverData = nonlinsys->solverData;
     nonlinsys->solverData = solverData->ordinaryData;
     /* try */
-    #ifndef OMC_EMCC
       OMC_TRY_INTERNAL(simulationJumpBuffer)
-    #endif
     solver_status = solveNewton(data, threadData, nonlinsys);
     /*catch */
       if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); solver_status = NLS_FAILED; }
-    #ifndef OMC_EMCC
       OMC_CATCH_INTERNAL(simulationJumpBuffer)
-    #endif
     /* check if solution process was successful, if not use alternative tearing set if available (dynamic tearing)*/
     if (solver_status != NLS_SOLVED && casualTearingSet){
       debugString(OMC_LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
@@ -1089,9 +1069,7 @@ NLS_SOLVER_STATUS solveNLS(DATA *data, threadData_t *threadData, NONLINEAR_SYSTE
     nonlinsys->solverData = mixedSolverData->newtonHomotopyData;
 
     /* try */
-    #ifndef OMC_EMCC
       OMC_TRY_INTERNAL(simulationJumpBuffer)
-    #endif
     solver_status = solveHomotopy(data, threadData, nonlinsys);
 
     /* check if solution process was successful, if not use alternative tearing set if available (dynamic tearing)*/
@@ -1116,9 +1094,7 @@ NLS_SOLVER_STATUS solveNLS(DATA *data, threadData_t *threadData, NONLINEAR_SYSTE
 
     /*catch */
       if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); solver_status = NLS_FAILED; }
-    #ifndef OMC_EMCC
       OMC_CATCH_INTERNAL(simulationJumpBuffer)
-    #endif
     nonlinsys->solverData = mixedSolverData;
     break;
   default:
@@ -1239,9 +1215,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 
 
   /* try */
-#ifndef OMC_EMCC
   OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
 
   /* Improve start values with newton diagnostics method */
   if(omc_useStream[OMC_LOG_NLS_NEWTON_DIAGNOSTICS] && data->simulationInfo->initial) {
@@ -1253,16 +1227,12 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 
   /*catch */
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
-#ifndef OMC_EMCC
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
 
 
 
   /* try */
-#ifndef OMC_EMCC
   OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
 
   // TODO: refactor this logic
 
@@ -1401,9 +1371,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 
   /*catch */
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
-#ifndef OMC_EMCC
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
 
   messageClose(OMC_LOG_NLS_EXTRAPOLATE);
   /* update value list database */
