@@ -164,7 +164,7 @@ void fmi3ExitInitializationModel_OMC(void* in_fmi3me)
 void fmi3SetTime_OMC(void* in_fmi3me, double time)
 {
   FMI3ModelExchange* FMI3ME = (FMI3ModelExchange*)in_fmi3me;
-  if (FMI3ME->FMISolvingMode == fmi3_continuousTime_mode || FMI3ME->FMISolvingMode == fmi3_event_mode) {
+  if (FMI3ME->FMISolvingMode == fmi3_continuousTime_mode) {
     fmi3_status_t status = fmi3_import_set_time(FMI3ME->FMIImportInstance, time);
     if (status != fmi3_status_ok && status != fmi3_status_warning) {
       ModelicaFormatError("fmi3SetTime failed with status : %s\n", fmi3_status_to_string(status));
@@ -242,11 +242,14 @@ void fmi3GetDerivatives_OMC(void* in_fmi3me, int numberOfContinuousStates, doubl
 void fmi3StartEventUpdate_OMC(void* in_fmi3me)
 {
   FMI3ModelExchange* FMI3ME = (FMI3ModelExchange*)in_fmi3me;
-  fmi3_status_t status = fmi3_import_enter_event_mode(FMI3ME->FMIImportInstance);
-  if (status != fmi3_status_ok && status != fmi3_status_warning) {
-    ModelicaFormatError("fmi3EnterEventMode failed with status : %s\n", fmi3_status_to_string(status));
+  /* fmi3ExitInitializationMode already left the FMU in Event Mode for the first event. */
+  if (FMI3ME->FMISolvingMode != fmi3_event_mode) {
+    fmi3_status_t status = fmi3_import_enter_event_mode(FMI3ME->FMIImportInstance);
+    if (status != fmi3_status_ok && status != fmi3_status_warning) {
+      ModelicaFormatError("fmi3EnterEventMode failed with status : %s\n", fmi3_status_to_string(status));
+    }
+    FMI3ME->FMISolvingMode = fmi3_event_mode;
   }
-  FMI3ME->FMISolvingMode = fmi3_event_mode;
   FMI3ME->FMIEventInfo.discreteStatesNeedUpdate = fmi3_true;
   FMI3ME->FMIEventInfo.terminateSimulation = fmi3_false;
 }

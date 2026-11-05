@@ -2574,6 +2574,12 @@ impl<E: FmiHost + 'static> Instance<E> {
         Some(inst)
     }
 
+    /// Whether `vr` is a structural parameter, all Configuration Mode may set.
+    pub fn is_structural_parameter(&self, vr: u32) -> bool {
+        let st = self.st.borrow();
+        vr != 0 && vr == st.dae_enable_vr
+    }
+
     /// C's `fmi3ActivateModelPartition`: the importer owns the schedule, so the
     /// base clock's partition runs at `activation_time` without the timer list.
     pub fn activate_model_partition(&self, clock_vr: u32, activation_time: f64) -> Status {

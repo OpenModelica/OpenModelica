@@ -1,0 +1,113 @@
+// name: fmi3_configuration_mode.mos
+// keywords: FMI 3.0 export Configuration Mode structural parameter
+// status: correct
+// teardown_command: rm -rf ConfigMode.fmu ConfigMode.fmutmp/ ConfigMode_unzipped/ ConfigMode.log ConfigMode_info.json ConfigMode_FMU.libs ConfigMode_FMU.makefile ConfigMode_external_functions.json
+//
+// fmi3EnterConfigurationMode and fmi3ExitConfigurationMode of the C runtime: open
+// from Instantiated only, and everything but debug logging, Reset and
+// FreeInstance is refused in between. The model has no structural parameter, so
+// the calling sequence works for an FMU without one, which the spec says an
+// importer must not ask of it.
+
+setCommandLineOptions("--simCodeTarget=C"); getErrorString();
+loadString("
+model ConfigMode
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = -x;
+end ConfigMode;
+"); getErrorString();
+buildModelFMU(ConfigMode, version="3.0", fmuType="me_cs"); getErrorString();
+system("python3 fmi3ConfigurationMode.py ConfigMode > ConfigMode.log 2>&1"); getErrorString();
+readFile("ConfigMode.log"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "ConfigMode.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "Model Exchange:
+//  the sequence a Configuration Mode opens, on to a simulation
+//   EnterConfigurationMode: OK
+//   ExitConfigurationMode: OK
+//   EnterInitializationMode: OK
+//   ExitInitializationMode: OK
+//   GetFloat64 x: OK = 1.0000
+//   Terminate: OK
+//  twice, and the instance can still be freed
+//   EnterConfigurationMode: OK
+//   EnterConfigurationMode: Error
+//  Exit without Enter
+//   ExitConfigurationMode: Error
+//  Enter after initialization: there is no Reconfiguration Mode
+//   EnterInitializationMode: OK
+//   EnterConfigurationMode: Error
+//   EnterInitializationMode: OK
+//   ExitInitializationMode: OK
+//   EnterConfigurationMode: Error
+//  what Configuration Mode refuses, a fresh instance each
+//   EnterInitializationMode: Error
+//   GetFloat64 x: Error
+//   SetFloat64 x: Error
+//   Terminate: Error
+//   EnterEventMode: Error
+//   EnterStepMode: Error
+//   DoStep: Error
+//  what it allows: debug logging, and Reset back to Instantiated
+//   EnterConfigurationMode: OK
+//   SetDebugLogging: OK
+//   Reset: OK
+//   EnterInitializationMode: OK
+//   ExitInitializationMode: OK
+//   GetFloat64 x: OK = 1.0000
+//  freed while in it
+//   EnterConfigurationMode: OK
+//   done
+// Co-Simulation:
+//  the sequence a Configuration Mode opens, on to a simulation
+//   EnterConfigurationMode: OK
+//   ExitConfigurationMode: OK
+//   EnterInitializationMode: OK
+//   ExitInitializationMode: OK
+//   GetFloat64 x: OK = 1.0000
+//   DoStep: OK
+//   GetFloat64 x: OK = 0.9000
+//   Terminate: OK
+//  twice, and the instance can still be freed
+//   EnterConfigurationMode: OK
+//   EnterConfigurationMode: Error
+//  Exit without Enter
+//   ExitConfigurationMode: Error
+//  Enter after initialization: there is no Reconfiguration Mode
+//   EnterInitializationMode: OK
+//   EnterConfigurationMode: Error
+//   EnterInitializationMode: OK
+//   ExitInitializationMode: OK
+//   EnterConfigurationMode: Error
+//  what Configuration Mode refuses, a fresh instance each
+//   EnterInitializationMode: Error
+//   GetFloat64 x: Error
+//   SetFloat64 x: Error
+//   Terminate: Error
+//   EnterEventMode: Error
+//   EnterStepMode: Error
+//   DoStep: Error
+//  what it allows: debug logging, and Reset back to Instantiated
+//   EnterConfigurationMode: OK
+//   SetDebugLogging: OK
+//   Reset: OK
+//   EnterInitializationMode: OK
+//   ExitInitializationMode: OK
+//   GetFloat64 x: OK = 1.0000
+//  freed while in it
+//   EnterConfigurationMode: OK
+//   done
+// "
+// ""
+// endResult
