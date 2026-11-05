@@ -1039,6 +1039,10 @@ impl GenCtx {
         if qname.starts_with("Absyn.") {
             derives = derives.replacen(")]", ", metamodelica::serial::MMSerial)]", 1);
         }
+        // The read-only view the Julia bridge walks a flat model through.
+        if ["NF", "Absyn.", "SCode.", "DAE."].iter().any(|p| qname.starts_with(p)) {
+            derives = derives.replacen(")]", ", metamodelica::MMReflect)]", 1);
+        }
         derives
     }
 
@@ -5124,7 +5128,7 @@ fn emit_type_item(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::Cla
                 emit_doc_comment(out, indent, class_doc(c));
                 writeln!(
                     out,
-                    "{indent}#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, metamodelica::ReferenceEq)]"
+                    "{indent}#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, metamodelica::ReferenceEq, metamodelica::MMReflect)]"
                 )
                 .unwrap();
                 writeln!(out, "{indent}#[repr(i32)]").unwrap();

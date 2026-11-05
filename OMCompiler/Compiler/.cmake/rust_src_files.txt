@@ -19,6 +19,7 @@ libopenmodelica_compiler/build.rs
 libopenmodelica_compiler/gen/gen-sim-tables.c
 libopenmodelica_compiler/gen/gen-sim-tables.sh
 libopenmodelica_compiler/include/omc_rust_embedding.h
+libopenmodelica_compiler/src/julia_api.rs
 libopenmodelica_compiler/src/lib.rs
 libopenmodelica_compiler/src/mmc_compat.rs
 libopenmodelica_compiler/src/omedit_runtime.rs
@@ -43,6 +44,7 @@ metamodelica/src/list/mod.rs
 metamodelica/src/misc.rs
 metamodelica/src/real/mod.rs
 metamodelica/src/real/ryu.rs
+metamodelica/src/reflect.rs
 metamodelica/src/serial.rs
 metamodelica/src/source_info.rs
 metamodelica/src/string/hash.rs

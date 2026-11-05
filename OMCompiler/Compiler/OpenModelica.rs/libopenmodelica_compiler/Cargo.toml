@@ -35,7 +35,9 @@ libc.workspace = true
 
 # Optional global allocators (native only; see the `mimalloc`/`jemalloc` features).
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-libmimalloc-sys = { version = "0.1", optional = true }
+# local_dynamic_tls: initial-exec TLS makes a dlopen'd library (Julia, Python)
+# fail with "cannot allocate memory in static TLS block".
+libmimalloc-sys = { version = "0.1", optional = true, features = ["local_dynamic_tls"] }
 tikv-jemallocator = { version = "0.7", optional = true }
 # The wasm-jit engine, for `OMC_WASM_PRECOMPILE_CACHE`: the build compiles the
 # model-independent blobs once so no run has to. The wasm build keeps no on-disk
