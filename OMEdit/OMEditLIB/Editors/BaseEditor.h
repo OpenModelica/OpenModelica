@@ -283,6 +283,7 @@ private:
   bool mIsUndoAvailable;
   bool mIsRedoAvailable;
   QString mCompletionCharacters;
+  QCursor mDefaultCursor;
 
   void highlightCurrentLine();
   void highlightParentheses();
