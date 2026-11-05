@@ -5,6 +5,7 @@ adjoint_jacobian1.mos \
 adjoint_jacobian2.mos \
 adjoint_jacobian3.mos \
 adjoint_jacobian4.mos \
+adjoint_jacobian4_evaluation.mos \
 adjoint_jacobian5.mos \
 symbolicJacobianEvaluation.mos \
 allTheBuildins.mos \
