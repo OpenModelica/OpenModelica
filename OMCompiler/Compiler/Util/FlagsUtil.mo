@@ -441,7 +441,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.TEARING_COST_MARGIN,
   Flags.FMU_NATIVE_PLATFORMS,
   Flags.TPL_OUTPUT_DIR,
-  Flags.FMU_DIRECTORY
+  Flags.FMU_DIRECTORY,
+  Flags.FMI_TUNABLE_PARAMETERS
 };
 
 public function new

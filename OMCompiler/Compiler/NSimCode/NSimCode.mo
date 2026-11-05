@@ -675,7 +675,8 @@ public
         partitionData                 = OldSimCode.PARTITIONDATA(-1,{},{},{}),
         daeModeData                   = if isSome(simCode.daeModeData) then SOME(DaeModeData.convert(Util.getOption(simCode.daeModeData))) else NONE(),
         scalarized                    = Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE),
-        fmiFigures                    = {});
+        fmiFigures                    = {},
+        paramDeps                     = OldSimCode.PARAM_DEPS(false, {}, {}));
     end convert;
 
     function indexDelay

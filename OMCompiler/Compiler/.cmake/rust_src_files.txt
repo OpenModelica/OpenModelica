@@ -312,6 +312,7 @@ openmodelica_fmi3_wasm/Cargo.toml
 openmodelica_fmi3_wasm/src/capi.rs
 openmodelica_fmi3_wasm/src/lib.rs
 openmodelica_fmi3_wasm/src/native_ext.rs
+openmodelica_fmi3_wasm/src/param_deps.rs
 openmodelica_fmi3_wasm/src/sim_run.rs
 openmodelica_fmi3_wasm/wit/deps/om-ext/native.wit
 openmodelica_fmi3_wasm/wit/deps/om-sim/simulation.wit

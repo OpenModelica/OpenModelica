@@ -2953,6 +2953,22 @@ algorithm
   eqs := list(e for e guard isScalarLiteralAssignment(e) in eqs);
 end selectScalarLiteralAssignments;
 
+public function runnableParamDepEqs
+  "The equations updateTunableParameters evaluates, with their mask index."
+  input SimCode.ParamDeps deps;
+  output list<tuple<Integer, SimCode.SimEqSystem>> eqs = {};
+protected
+  Integer k = 0;
+algorithm
+  for e in deps.eqs loop
+    if isSome(e.eq) then
+      eqs := (k, Util.getOption(e.eq)) :: eqs;
+    end if;
+    k := k + 1;
+  end for;
+  eqs := listReverse(eqs);
+end runnableParamDepEqs;
+
 public function filterScalarLiteralAssignments
   input output list<SimCode.SimEqSystem> eqs;
 algorithm

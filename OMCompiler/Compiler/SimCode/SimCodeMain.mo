@@ -108,6 +108,7 @@ import HpcOmTaskGraph;
 import NFConvertDAE;
 import RuntimeSources;
 import SemanticVersion;
+import ParamDeps;
 import SerializeFmuInit;
 import SerializeInitXML;
 import SerializeModelInfo;
@@ -1063,6 +1064,9 @@ protected
   // an FMU built under it is the same fmi-ls-wasm component "wasm-jit" emits.
   String fmuTarget = if target == "wasm" then "wasm-jit" else target;
 algorithm
+  if fmuTarget == "C" or fmuTarget == "wasm-jit" then
+    simCode := ParamDeps.add(simCode, FMUVersion);
+  end if;
 
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
   SimCodeFunctionUtil.setTrivialRecords(simCode.recordDecls);
@@ -1168,6 +1172,7 @@ algorithm
         // FMI 1.0 has no resources; it compiles the generated _init_fmu.c instead.
         if FMUVersion <> "1.0" then
           SerializeFmuInit.write(simCode, resourcesDir + simCode.fileNamePrefix + "_init.bin");
+          SerializeFmuInit.writeParamDeps(simCode.paramDeps, resourcesDir + simCode.fileNamePrefix + "_paramdeps.bin");
         end if;
 
         SerializeSparsityPattern.serialize(simCode);
@@ -2558,7 +2563,8 @@ algorithm
       partitionData               = SimCode.emptyPartitionData,
       daeModeData                 = daeModeData,
       scalarized                  = true,
-      fmiFigures                  = {}
+      fmiFigures                  = {},
+      paramDeps                   = SimCode.emptyParamDeps
     );
 
     (simCode, lits) := SimCodeUtil.findSimCodeLiterals(simCode, literals);

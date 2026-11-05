@@ -55,7 +55,7 @@ diffSimulationResults("fmi3_attributes_01_fmpy.csv", "fmi3_attributes_01_res.mat
 //     <Float64 name=\"x\" valueReference=\"0\" initial=\"exact\"  start=\"1.0\"/>
 //     <Float64 name=\"der(x)\" valueReference=\"1\"  derivative=\"0\"/>
 //     <Float64 name=\"y\" valueReference=\"2\" causality=\"output\" />
-//     <Float64 name=\"a\" valueReference=\"3\" causality=\"parameter\" variability=\"fixed\"  start=\"2.0\"/>
+//     <Float64 name=\"a\" valueReference=\"3\" causality=\"parameter\" variability=\"tunable\"  start=\"2.0\"/>
 //   </ModelVariables>
 // "
 // ""

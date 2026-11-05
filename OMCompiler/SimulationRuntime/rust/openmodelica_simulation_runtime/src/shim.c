@@ -197,6 +197,29 @@ int omr_protected_call_zc(int (*f)(void *, void *, double *), void *data, void *
   return rc;
 }
 
+/* Ditto for `updateTunableParameters(data, threadData, const unsigned char* eqMask)`. */
+int omr_protected_call_mask(int (*f)(void *, void *, const unsigned char *), void *data, void *threadData,
+                            const unsigned char *mask, int stage) {
+  jmp_buf buf;
+  void *saved_jb = TD_PTR(threadData, omr_td_off_sim_jumper);
+  void *saved_gj = TD_PTR(threadData, omr_td_off_global_jumper);
+  int saved_stage = TD_INT(threadData, omr_td_off_error_stage);
+  int rc;
+  OMR_RAISING_CALL(rc = f(data, threadData, mask));
+  if (setjmp(buf) == 0) {
+    TD_PTR(threadData, omr_td_off_sim_jumper) = &buf;
+    if (!saved_gj) TD_PTR(threadData, omr_td_off_global_jumper) = &buf;
+    TD_INT(threadData, omr_td_off_error_stage) = stage;
+    rc = f(data, threadData, mask);
+  } else {
+    rc = -1;
+  }
+  TD_PTR(threadData, omr_td_off_sim_jumper) = saved_jb;
+  TD_PTR(threadData, omr_td_off_global_jumper) = saved_gj;
+  TD_INT(threadData, omr_td_off_error_stage) = saved_stage;
+  return rc;
+}
+
 /* Ditto for `function_nextTimeEvent(data, threadData)`, whose result goes to `out`. */
 int omr_protected_call_f64(double (*f)(void *, void *), void *data, void *threadData, double *out,
                            int stage) {

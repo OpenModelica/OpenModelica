@@ -197,6 +197,7 @@ end translateModel;
     extern int <%symbolName(modelNamePrefixStr,"functionInitialEquations_lambda0")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"functionRemovedInitialEquations")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"updateBoundParameters")%>(DATA *data, threadData_t *threadData);
+    extern int <%symbolName(modelNamePrefixStr,"updateTunableParameters")%>(DATA *data, threadData_t *threadData, const unsigned char *eqMask);
     extern int <%symbolName(modelNamePrefixStr,"checkForAsserts")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"function_ZeroCrossingsEquations")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"function_ZeroCrossings")%>(DATA *data, threadData_t *threadData, double* gout);
@@ -867,6 +868,8 @@ template simulationFile_bnd(SimCode simCode)
 
     <%functionUpdateBoundParameters(selectScalarLiteralAssignments(parameterEquations), filterScalarLiteralAssignments(parameterEquations), simCode.fileNamePrefix, simCode.fullPathPrefix, modelNamePrefix(simCode), simCode)%>
 
+    <%functionUpdateTunableParameters(paramDeps, modelNamePrefix(simCode))%>
+
     #if defined(__cplusplus)
     }
     #endif<%\n%>
@@ -1364,6 +1367,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <%if intEq(listLength(initialEquations_lambda0), 0) then "NULL" else '<%symbolName(modelNamePrefixStr,"functionInitialEquations_lambda0")%>'%>,
       <%symbolName(modelNamePrefixStr,"functionRemovedInitialEquations")%>,
       <%symbolName(modelNamePrefixStr,"updateBoundParameters")%>,
+      <%symbolName(modelNamePrefixStr,"updateTunableParameters")%>,
       <%symbolName(modelNamePrefixStr,"checkForAsserts")%>,
       <%symbolName(modelNamePrefixStr,"function_ZeroCrossingsEquations")%>,
       <%symbolName(modelNamePrefixStr,"function_ZeroCrossings")%>,
@@ -4011,9 +4015,9 @@ template functionUpdateBoundVariableAttributes(SimCode simCode, list<SimEqSystem
 let &sub = buffer ""
   <<
   <%(startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl2(-1, -1, eq, contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ false, /* Initial? */ true) ; separator="\n")%>
-  <%(nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => functionUpdateBoundVariableAttributesFunctions(eq, "nominal", contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ false) ; separator="\n") %>
-  <%(minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => functionUpdateBoundVariableAttributesFunctions(eq, "min", contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ false) ; separator="\n") %>
-  <%(maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => functionUpdateBoundVariableAttributesFunctions(eq, "max", contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ false) ; separator="\n") %>
+  <%(nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => functionUpdateBoundVariableAttributesFunctions(eq, "nominal", contextOther, modelNamePrefix, /* Static? */ false, /* No optimization */ false) ; separator="\n") %>
+  <%(minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => functionUpdateBoundVariableAttributesFunctions(eq, "min", contextOther, modelNamePrefix, /* Static? */ false, /* No optimization */ false) ; separator="\n") %>
+  <%(maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => functionUpdateBoundVariableAttributesFunctions(eq, "max", contextOther, modelNamePrefix, /* Static? */ false, /* No optimization */ false) ; separator="\n") %>
   OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"updateBoundVariableAttributes")%>(DATA *data, threadData_t *threadData)
   {
@@ -4152,7 +4156,7 @@ template functionUpdateBoundParameters(list<SimEqSystem> simpleParameterEquation
   let &auxFunction = buffer ""
   let fncalls = functionEquationsMultiFiles(parameterEquations, listLength(parameterEquations),
     Flags.getConfigInt(Flags.EQUATIONS_PER_FILE), fileNamePrefix, fullPathPrefix, modelNamePrefix,
-    "updateBoundParameters", "08bnd", &eqFuncs, /* Static? */ true, true /* No optimization */, /* initial? */ false)
+    "updateBoundParameters", "08bnd", &eqFuncs, /* Static? */ false, true /* No optimization */, /* initial? */ false)
   let extObjsSub = match simCode
     case SIMCODE(extObjInfo = extObjInfo as EXTOBJINFO(__)) then
       (extObjInfo.vars |> var as SIMVAR(varKind=ext as EXTOBJ(__)) =>
@@ -4181,6 +4185,22 @@ template functionUpdateBoundParameters(list<SimEqSystem> simpleParameterEquation
   }
   >>
 end functionUpdateBoundParameters;
+
+template functionUpdateTunableParameters(ParamDeps paramDeps, String modelNamePrefix)
+  "Evaluates the parameter equations k with eqMask[k] set, see SimCode.ParamDeps."
+::=
+    let name = symbolName(modelNamePrefix, "eqFunction")
+    <<
+    <%runnableParamDepEqs(paramDeps) |> (_, eq) => 'extern void <%name%>_<%equationIndexGeneral(eq)%>(DATA *data, threadData_t *threadData);' ; separator="\n"%>
+
+    OMC_DISABLE_OPT
+    int <%symbolName(modelNamePrefix,"updateTunableParameters")%>(DATA *data, threadData_t *threadData, const unsigned char *eqMask)
+    {
+      <%runnableParamDepEqs(paramDeps) |> (k, eq) => 'if (eqMask[<%k%>]) { <%name%>_<%equationIndexGeneral(eq)%>(data, threadData); if (OMC_ERROR_RAISED()) return 1; }' ; separator="\n"%>
+      return 0;
+    }
+    >>
+end functionUpdateTunableParameters;
 
 template functionEquationsMultiFiles(list<SimEqSystem> inEqs, Integer numEqs, Integer equationsPerFile, String fileNamePrefix, String fullPathPrefix, String modelNamePrefix, String funcName, String partName, Text &eqFuncs, Boolean static, Boolean noOpt, Boolean init)
 ::=

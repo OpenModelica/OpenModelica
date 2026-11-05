@@ -722,7 +722,8 @@ algorithm
       partitionData               = SimCode.emptyPartitionData,
       daeModeData                 = NONE(),
       scalarized                  = true,
-      fmiFigures                  = {}
+      fmiFigures                  = {},
+      paramDeps                   = SimCode.emptyParamDeps
     );
 
     (simCode, lits) := findSimCodeLiterals(simCode, literalsAcc);
@@ -9236,7 +9237,7 @@ algorithm
     case (SimCodeVar.FIXED(), SimCodeVar.CALCULATED_PARAMETER()) then getInitialAttributeHelperForParameters(dlow, isFixed, iterationVars);
     case (SimCodeVar.FIXED(), SimCodeVar.LOCAL()) then getInitialAttributeHelperForParameters(dlow, isFixed, iterationVars);
 
-    // TODO varkind= tunable Vs causality = parameter, calculatedParameter and local, same like PARAM()
+    // ParamDeps.add marks tunable parameters later; their initial attribute is the same.
 
     // variability=DISCRETE Vs causality = output and local
     case (SimCodeVar.DISCRETE(), SimCodeVar.OUTPUT()) then getInitialAttributeHelper(dlow, isFixed, iterationVars);
@@ -9317,7 +9318,6 @@ algorithm
     variability := SimCodeVar.CONSTANT();
   elseif BackendVariable.isVarDiscrete(var) or BackendVariable.isClockedStateVar(var) then
     variability := SimCodeVar.DISCRETE();
-  // TODO SimCodeVar.TUNABLE()
   else
     variability := SimCodeVar.CONTINUOUS();
   end if;

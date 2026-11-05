@@ -39,6 +39,7 @@
 
 #include "../simulation/solver/solver_main.h"
 #include "../util/omc_fmu_init.h"
+#include "../util/omc_fmu_paramdeps.h"
 #include "../util/omc_mmap.h"
 #include "../util/omc_file.h"
 
@@ -535,6 +536,120 @@ static inline void setThreadData(ModelInstance* comp)
 static void holdAsserts(ModelInstance *comp, int hold);
 static void releaseAsserts(ModelInstance *comp);
 
+/* The slot (omc_fmu_paramdeps.h) of value reference vr of a variable of type ty,
+ * through aliases; -1 if there is none. */
+static long variableSlot(ModelInstance *comp, int ty, fmiXValueReference vr)
+{
+  MODEL_DATA *md = comp->fmuData->modelData;
+  const int *aliases;
+  long first, nAliases, v = (long) vr;
+  switch (ty) {
+  case OMC_SLOT_REAL:
+    first = md->nVariablesReal + md->nParametersReal;
+    nAliases = md->nAliasReal;
+    aliases = comp->fmuData->callback->fmiRealAliasIndexes;
+    break;
+  case OMC_SLOT_INTEGER:
+    first = md->nVariablesInteger + md->nParametersInteger;
+    nAliases = md->nAliasInteger;
+    aliases = comp->fmuData->callback->fmiIntegerAliasIndexes;
+    break;
+  case OMC_SLOT_BOOLEAN:
+    first = md->nVariablesBoolean + md->nParametersBoolean;
+    nAliases = md->nAliasBoolean;
+    aliases = comp->fmuData->callback->fmiBooleanAliasIndexes;
+    break;
+  default:
+    first = md->nVariablesString + md->nParametersString;
+    nAliases = md->nAliasString;
+    aliases = comp->fmuData->callback->fmiStringAliasIndexes;
+    break;
+  }
+  if (v >= first) {
+    if (!aliases || v - first >= nAliases) {
+      return -1;
+    }
+    v = aliases[v - first];
+    v = v >= 0 ? v : -(v + 1);
+  }
+  return v < first ? (long) OMC_SLOT(v, ty) : -1;
+}
+
+static int isParameterSlot(ModelInstance *comp, long slot)
+{
+  MODEL_DATA *md = comp->fmuData->modelData;
+  long index = slot / 8;
+  switch (slot % 8) {
+  case OMC_SLOT_REAL: return index >= md->nVariablesReal;
+  case OMC_SLOT_INTEGER: return index >= md->nVariablesInteger;
+  case OMC_SLOT_BOOLEAN: return index >= md->nVariablesBoolean;
+  case OMC_SLOT_STRING: return index >= md->nVariablesString;
+  default: return 0;
+  }
+}
+
+/* FMI 2.0 and 3.0: whether the importer may set the variable now, by the
+ * causality, variability and initial attributes of modelDescription.xml. */
+static fmiXBoolean settableNow(ModelInstance *comp, long slot)
+{
+  unsigned char f = slot >= 0 && (size_t) slot < comp->paramDeps->nSlots ? comp->paramDeps->flags[slot] : 0;
+  switch (comp->state) {
+  case model_state_instantiated:
+    return (f & (OMC_PARAMDEPS_INITIAL_EXACT | OMC_PARAMDEPS_INITIAL_APPROX | OMC_PARAMDEPS_INPUT)) != 0;
+  case model_state_initialization_mode:
+    return (f & (OMC_PARAMDEPS_INITIAL_EXACT | OMC_PARAMDEPS_INPUT)) != 0;
+  case model_state_me_event_mode:
+  case model_state_cs_step_complete:
+    return (f & (OMC_PARAMDEPS_INPUT | OMC_PARAMDEPS_TUNABLE)) != 0;
+  case model_state_me_continuous_time_mode:
+    return (f & OMC_PARAMDEPS_INPUT) && (f & OMC_PARAMDEPS_CONTINUOUS);
+  default:
+    return fmiXFalse;
+  }
+}
+
+/* Checks that the importer may set value reference vr now and records the
+ * write: before the end of initialization for SetFMUstate, after it as a
+ * tunable parameter to update. */
+static fmiXStatus recordSet(ModelInstance *comp, const char *func, int ty, fmiXValueReference vr)
+{
+  long slot;
+  if (!comp->paramDeps->checked) {
+    return fmiXOK;
+  }
+  slot = variableSlot(comp, ty, vr);
+  if (!settableNow(comp, slot)) {
+    FILTERED_LOG(comp, fmiXError, LOG_STATUSERROR, "%s: Variable #%u# cannot be set in state %s.", func, vr, stateToString(comp))
+    return fmiXError;
+  }
+  if (comp->state & (model_state_instantiated | model_state_initialization_mode)) {
+    if (isParameterSlot(comp, slot)) {
+      comp->slotSetBeforeInit[slot] = 1;
+    }
+  } else if (comp->paramDeps->flags[slot] & OMC_PARAMDEPS_TUNABLE) {
+    comp->slotDirty[slot] = 1;
+    comp->_tunable_dirty = 1;
+  }
+  return fmiXOK;
+}
+
+/* Evaluates the parameter equations that depend on the tunable parameters set
+ * since the last call. */
+static void applyTunableParameters(ModelInstance *comp)
+{
+  if (!comp->_tunable_dirty) {
+    return;
+  }
+  comp->_tunable_dirty = 0;
+  comp->_tunable_applied = 1;
+  if (omc_fmu_paramdeps_select(comp->paramDeps, comp->slotDirty, comp->eqMask)) {
+    memset(comp->slotDirty, 0, comp->paramDeps->nSlots);
+    comp->fmuData->callback->updateTunableParameters(comp->fmuData, comp->threadData, comp->eqMask);
+  } else {
+    memset(comp->slotDirty, 0, comp->paramDeps->nSlots);
+  }
+}
+
 fmiXStatus internalEventUpdate(fmiXComponent c, fmiXEventInfo* eventInfo)
 {
   int i, done=0;
@@ -562,6 +677,13 @@ fmiXStatus internalEventUpdate(fmiXComponent c, fmiXEventInfo* eventInfo)
      * iteration the master drives, not one pass of it, so `_event_found` and
      * `needToReThrow` accumulate over the passes and are settled by the last. */
     holdAsserts(comp, 1);
+    applyTunableParameters(comp);
+    if (comp->_tunable_applied) {
+      eventInfo->nominalsOfContinuousStatesChanged = fmiXTrue;
+      if (!isCoSimulation(comp)) {
+        comp->_tunable_applied = 0;
+      }
+    }
 
     /* simulationUpdate's order: the timers (a tick coincident with an event samples
      * the values before it), then the event, then the timers again below. */
@@ -819,6 +941,7 @@ fmiXStatus updateIfNeeded(ModelInstance *comp, const char *func)
       /* As in simulationUpdate, a violated assert() is held (needToReThrow);
        * completedIntegratorStep turns it into an event, Event Mode evaluates live. */
       holdAsserts(comp, (comp->state & (model_state_me_continuous_time_mode | model_state_cs_step_in_progress | model_state_cs_step_complete)) != 0);
+      applyTunableParameters(comp);
       comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
       overwriteOldSimulationData(comp->fmuData);
       comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
@@ -1018,6 +1141,21 @@ ModelInstance* FMIX(Instantiate)(fmiXString instanceName, OMC_FmuType fmuType, f
     free(comp);
     return NULL;
   }
+  comp->paramDeps = omc_fmu_paramdeps_load(comp->fmuData->modelData);
+  if (comp->paramDeps->error[0]) {
+    INSTANTIATE_ERROR(FMIX_STR "Instantiate: %s", comp->paramDeps->error);
+    omc_fmu_paramdeps_free(comp->paramDeps);
+    omc_fmu_init_free(init);
+    free(comp->fmuData->modelData->resourcesDir);
+    free(threadData);
+    free(simInfo);
+    free(modelData);
+    free(fmudata);
+    free((void*)comp->GUID);
+    free((void*)comp->instanceName);
+    free(comp);
+    return NULL;
+  }
 #undef INSTANTIATE_ERROR
   /*
    * load the simulation settings before initializing the DataStruct for fmus
@@ -1035,6 +1173,10 @@ ModelInstance* FMIX(Instantiate)(fmiXString instanceName, OMC_FmuType fmuType, f
   /* setup model data with default start data */
   omc_fmu_init_variables(init, comp->fmuData->modelData, 1);
   initializeDataStruc(comp->fmuData, comp->threadData);
+  omc_fmu_paramdeps_resize(comp->paramDeps, comp->fmuData->modelData);
+  comp->slotDirty = (unsigned char*) calloc(comp->paramDeps->nSlots + 1, 1);
+  comp->slotSetBeforeInit = (unsigned char*) calloc(comp->paramDeps->nSlots + 1, 1);
+  comp->eqMask = (unsigned char*) calloc(comp->paramDeps->nEqs + 1, 1);
 
   setAllParamsToStart(comp->fmuData->simulationInfo, comp->fmuData->modelData);
   setAllVarsToStart(comp->fmuData->localData[0], comp->fmuData->simulationInfo, comp->fmuData->modelData);
@@ -1203,6 +1345,10 @@ void FMIX(FreeInstance)(fmiXComponent c)
   free(comp->event_indicators); comp->event_indicators = NULL;
   free(comp->event_indicators_prev); comp->event_indicators_prev = NULL;
   free(comp->input_real_derivative); comp->input_real_derivative = NULL;
+  free(comp->slotDirty);
+  free(comp->slotSetBeforeInit);
+  free(comp->eqMask);
+  omc_fmu_paramdeps_free(comp->paramDeps);
 
   free(comp->fmuData->modelData->resourcesDir);
 
@@ -1463,6 +1609,10 @@ fmiXStatus FMIX(Reset)(fmiXComponent c)
 
   comp->_need_update = 1;
   comp->_terminate_simulation_requested = 0;
+  memset(comp->slotDirty, 0, comp->paramDeps->nSlots);
+  memset(comp->slotSetBeforeInit, 0, comp->paramDeps->nSlots);
+  comp->_tunable_dirty = 0;
+  comp->_tunable_applied = 0;
 #if OMC_FMI_VERSION == 2
   comp->terminated = fmiXFalse;
 #endif
@@ -1643,6 +1793,8 @@ fmiXStatus FMIX(SetReal)(fmiXComponent c, const fmiXValueReference vr[], size_t 
     if (vrOutOfRange(comp, FMIX_STR "SetReal", vr[i], NUMBER_OF_REALS+NUMBER_OF_STATES))
       return fmiXError;
     FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "SetReal: #r%u# = %.16g", vr[i], value[i])
+    if (recordSet(comp, FMIX_STR "SetReal", OMC_SLOT_REAL, vr[i]) != fmiXOK)
+      return fmiXError;
     if (setReal(comp, vr[i], value[i]) != fmiXOK) // to be implemented by the includer of this file
       return fmiXError;
   }
@@ -1670,6 +1822,8 @@ fmiXStatus FMIX(SetInteger)(fmiXComponent c, const fmiXValueReference vr[], size
     if (vrOutOfRange(comp, FMIX_STR "SetInteger", vr[i], NUMBER_OF_INTEGERS))
       return fmiXError;
     FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "SetInteger: #i%u# = %d", vr[i], value[i])
+    if (recordSet(comp, FMIX_STR "SetInteger", OMC_SLOT_INTEGER, vr[i]) != fmiXOK)
+      return fmiXError;
     if (setInteger(comp, vr[i], value[i]) != fmiXOK) // to be implemented by the includer of this file
       return fmiXError;
   }
@@ -1696,6 +1850,8 @@ fmiXStatus FMIX(SetBoolean)(fmiXComponent c, const fmiXValueReference vr[], size
     if (vrOutOfRange(comp, FMIX_STR "SetBoolean", vr[i], NUMBER_OF_BOOLEANS))
       return fmiXError;
     FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "SetBoolean: #b%u# = %s", vr[i], value[i] ? "true" : "false")
+    if (recordSet(comp, FMIX_STR "SetBoolean", OMC_SLOT_BOOLEAN, vr[i]) != fmiXOK)
+      return fmiXError;
     if (setBoolean(comp, vr[i], value[i]) != fmiXOK) // to be implemented by the includer of this file
       return fmiXError;
   }
@@ -1723,6 +1879,8 @@ fmiXStatus FMIX(SetString)(fmiXComponent c, const fmiXValueReference vr[], size_
     if (vrOutOfRange(comp, FMIX_STR "SetString", vr[i], NUMBER_OF_STRINGS))
       return fmiXError;
     FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "SetString: #s%u# = '%s'", vr[i], value[i])
+    if (recordSet(comp, FMIX_STR "SetString", OMC_SLOT_STRING, vr[i]) != fmiXOK)
+      return fmiXError;
     if (setString(comp, vr[i], value[i]) != fmiXOK) // to be implemented by the includer of this file
       return fmiXError;
   }
@@ -1740,6 +1898,13 @@ fmiXStatus FMIX(GetFMUstate)(fmiXComponent c, fmiXFMUstate* FMUstate)
 
   if (invalidState(comp, FMIX_STR "GetFMUstate", meStates, csStates))
     return fmiXError;
+  if (comp->_tunable_dirty) {
+    comp->_need_update = 1;
+    if (updateIfNeeded(comp, FMIX_STR "GetFMUstate") != fmiXOK)
+      return fmiXError;
+  }
+  /* Restoring a state this instance saved restores all its parameters. */
+  memset(comp->slotSetBeforeInit, 0, comp->paramDeps->nSlots);
 
   INTERNAL_FMU_STATE* internal_state = (INTERNAL_FMU_STATE*) calloc(1, sizeof(INTERNAL_FMU_STATE));
   internal_state->simulationData = allocRingBuffer(SIZERINGBUFFER, sizeof(SIMULATION_DATA));
@@ -1835,36 +2000,26 @@ fmiXStatus FMIX(SetFMUstate)(fmiXComponent c, fmiXFMUstate FMUstate)
 
   //printRingBufferSimulationData(internal_state->simulationData, fmudata); // copied ringBuffer data
 
-  // Preserve current parameter values (set by user during initialization)
-  // so they survive the state restoration below. Users commonly initialise
-  // a fresh FMU with new parameters, then restore the simulation state from
-  // a previous run; without this, the saved parameter values would overwrite
-  // the freshly-set ones.
-  modelica_real* savedRealParam = NULL;
-  modelica_integer* savedIntParam = NULL;
-  modelica_boolean* savedBoolParam = NULL;
-  modelica_string* savedStringParam = NULL;
-
-  if (fmudata->modelData->nParametersReal > 0) {
-    savedRealParam = (modelica_real*) calloc(fmudata->modelData->nParametersReal, sizeof(modelica_real));
-    if (!savedRealParam) { status = fmiXError; goto cleanup; }
-    memcpy(savedRealParam, fmudata->simulationInfo->realParameter, fmudata->modelData->nParametersReal * sizeof(modelica_real));
+  /* The parameters come from the state, except those the importer set before
+   * the end of initialization and the values calculated from them: those keep
+   * their current values (#15216). */
+  OMC_FMU_PARAMDEPS *deps = comp->paramDeps;
+  MODEL_DATA *md = fmudata->modelData;
+  unsigned char *keep = (unsigned char*) malloc(deps->nSlots + 1);
+  unsigned char *mask = (unsigned char*) calloc(deps->nEqs + 1, 1);
+  modelica_real *curReal = (modelica_real*) malloc((md->nVariablesReal + 1) * sizeof(modelica_real));
+  modelica_integer *curInt = (modelica_integer*) malloc((md->nVariablesInteger + 1) * sizeof(modelica_integer));
+  modelica_boolean *curBool = (modelica_boolean*) malloc((md->nVariablesBoolean + 1) * sizeof(modelica_boolean));
+  if (!keep || !mask || !curReal || !curInt || !curBool) { status = fmiXError; goto cleanup; }
+  if (deps->checked) {
+    memcpy(keep, comp->slotSetBeforeInit, deps->nSlots);
+    omc_fmu_paramdeps_select(deps, keep, mask);
+  } else {
+    memset(keep, 1, deps->nSlots);
   }
-  if (fmudata->modelData->nParametersInteger > 0) {
-    savedIntParam = (modelica_integer*) calloc(fmudata->modelData->nParametersInteger, sizeof(modelica_integer));
-    if (!savedIntParam) { status = fmiXError; goto cleanup; }
-    memcpy(savedIntParam, fmudata->simulationInfo->integerParameter, fmudata->modelData->nParametersInteger * sizeof(modelica_integer));
-  }
-  if (fmudata->modelData->nParametersBoolean > 0) {
-    savedBoolParam = (modelica_boolean*) calloc(fmudata->modelData->nParametersBoolean, sizeof(modelica_boolean));
-    if (!savedBoolParam) { status = fmiXError; goto cleanup; }
-    memcpy(savedBoolParam, fmudata->simulationInfo->booleanParameter, fmudata->modelData->nParametersBoolean * sizeof(modelica_boolean));
-  }
-  if (fmudata->modelData->nParametersString > 0) {
-    savedStringParam = (modelica_string*) calloc(fmudata->modelData->nParametersString, sizeof(modelica_string));
-    if (!savedStringParam) { status = fmiXError; goto cleanup; }
-    omc_string_slots_store(savedStringParam, fmudata->simulationInfo->stringParameter, fmudata->modelData->nParametersString);
-  }
+  memcpy(curReal, fmudata->localData[0]->realVars, md->nVariablesReal * sizeof(modelica_real));
+  memcpy(curInt, fmudata->localData[0]->integerVars, md->nVariablesInteger * sizeof(modelica_integer));
+  memcpy(curBool, fmudata->localData[0]->booleanVars, md->nVariablesBoolean * sizeof(modelica_boolean));
 
   // override the SIMULATION_DATA with INTERNAL_FMU_STATE
   for (int i = 0; i < ringBufferLength(internal_state->simulationData); i++)
@@ -1885,13 +2040,40 @@ fmiXStatus FMIX(SetFMUstate)(fmiXComponent c, fmiXFMUstate FMUstate)
     }
   }
 
-  // Put the preserved parameter values back. Only simulationInfo holds them;
-  // the value references setReal and friends take are not info.id.
-  if (savedRealParam) memcpy(fmudata->simulationInfo->realParameter, savedRealParam, fmudata->modelData->nParametersReal * sizeof(modelica_real));
-  if (savedIntParam) memcpy(fmudata->simulationInfo->integerParameter, savedIntParam, fmudata->modelData->nParametersInteger * sizeof(modelica_integer));
-  if (savedBoolParam) memcpy(fmudata->simulationInfo->booleanParameter, savedBoolParam, fmudata->modelData->nParametersBoolean * sizeof(modelica_boolean));
-  if (savedStringParam) omc_string_slots_store(fmudata->simulationInfo->stringParameter, savedStringParam, fmudata->modelData->nParametersString);
+  for (long i = 0; i < md->nParametersReal; i++) {
+    if (!keep[OMC_SLOT(md->nVariablesReal + i, OMC_SLOT_REAL)]) fmudata->simulationInfo->realParameter[i] = internal_state->realParameter[i];
+  }
+  for (long i = 0; i < md->nParametersInteger; i++) {
+    if (!keep[OMC_SLOT(md->nVariablesInteger + i, OMC_SLOT_INTEGER)]) fmudata->simulationInfo->integerParameter[i] = internal_state->integerParameter[i];
+  }
+  for (long i = 0; i < md->nParametersBoolean; i++) {
+    if (!keep[OMC_SLOT(md->nVariablesBoolean + i, OMC_SLOT_BOOLEAN)]) fmudata->simulationInfo->booleanParameter[i] = internal_state->booleanParameter[i];
+  }
+  for (long i = 0; i < md->nParametersString; i++) {
+    if (!keep[OMC_SLOT(md->nVariablesString + i, OMC_SLOT_STRING)]) omc_string_store(&fmudata->simulationInfo->stringParameter[i], internal_state->stringParameter[i]);
+  }
+  for (int r = 0; r < ringBufferLength(internal_state->simulationData); r++) {
+    for (long i = 0; i < md->nVariablesReal; i++) {
+      if (keep[OMC_SLOT(i, OMC_SLOT_REAL)]) fmudata->localData[r]->realVars[i] = curReal[i];
+    }
+    for (long i = 0; i < md->nVariablesInteger; i++) {
+      if (keep[OMC_SLOT(i, OMC_SLOT_INTEGER)]) fmudata->localData[r]->integerVars[i] = curInt[i];
+    }
+    for (long i = 0; i < md->nVariablesBoolean; i++) {
+      if (keep[OMC_SLOT(i, OMC_SLOT_BOOLEAN)]) fmudata->localData[r]->booleanVars[i] = curBool[i];
+    }
+  }
+  /* Calculate again what the tunable parameters reach, min, max and nominal too. */
+  for (size_t k = 0; k < deps->nSlots; k++) {
+    comp->slotDirty[k] = (deps->flags[k] & OMC_PARAMDEPS_TUNABLE) != 0;
+  }
+  comp->_tunable_dirty = 1;
   comp->_need_update = 1;
+  if (!(comp->state & (model_state_instantiated | model_state_initialization_mode)) &&
+      updateIfNeeded(comp, FMIX_STR "SetFMUstate") != fmiXOK) {
+    status = fmiXError;
+    goto cleanup;
+  }
 
   // After restoring the FMU state, the internal solver (CVODE/Euler) has
   // outdated step history, Jacobians, and time.  Reinitialize it so that the
@@ -1904,13 +2086,11 @@ fmiXStatus FMIX(SetFMUstate)(fmiXComponent c, fmiXFMUstate FMUstate)
   }
 
 cleanup:
-  free(savedRealParam);
-  free(savedIntParam);
-  free(savedBoolParam);
-  if (savedStringParam) {
-    omc_string_slots_release(savedStringParam, fmudata->modelData->nParametersString);
-    free(savedStringParam);
-  }
+  free(keep);
+  free(mask);
+  free(curReal);
+  free(curInt);
+  free(curBool);
 
 #if OMC_FMI_VERSION == 2
   /* FMI 2.0, 4.2.3: a discarded step is redone by restoring an FMU state. */
@@ -2794,6 +2974,10 @@ static fmiXStatus doStepInternal(ModelInstance* c, fmiXReal currentCommunication
     goto doStep_cleanup;
   }
   if (status != fmiXOK) goto doStep_cleanup;
+  if (comp->_tunable_applied) {
+    comp->_tunable_applied = 0;
+    comp->solverInfo->didEventStep = 1;
+  }
 
   /* Integration loop */
   while (status == fmiXOK && comp->fmuData->localData[0]->timeValue < tEnd)

@@ -34,6 +34,13 @@ unsafe extern "C" {
         gout: *mut f64,
         stage: c_int,
     ) -> c_int;
+    fn omr_protected_call_mask(
+        f: unsafe extern "C" fn(*mut DATA, *mut threadData_t, *const u8) -> c_int,
+        data: *mut DATA,
+        threadData: *mut threadData_t,
+        mask: *const u8,
+        stage: c_int,
+    ) -> c_int;
     fn omr_protected_call_f64(
         f: unsafe extern "C" fn(*mut DATA, *mut threadData_t) -> f64,
         data: *mut DATA,
@@ -592,6 +599,17 @@ impl SimEngine for CEngine {
             Err(e) if e == "the C model has no such entry point" => Ok(()),
             other => other,
         }
+    }
+
+    fn update_tunable_parameters(&mut self, _sim_data: u32, mask: &[u8]) -> Result<()> {
+        let Some(f) = self.rt.callbacks().updateTunableParameters else {
+            return Ok(());
+        };
+        self.publish();
+        let rc = unsafe { omr_protected_call_mask(f, self.rt.data, self.rt.thread_data, mask.as_ptr(), self.stage) };
+        let r = self.absorb(rc);
+        self.sync_attributes();
+        r
     }
 
     fn call2_raw(&mut self, name: &str, _a: u32, b: u32) -> Result<()> {

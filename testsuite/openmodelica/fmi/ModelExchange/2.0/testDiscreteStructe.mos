@@ -124,6 +124,7 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"util/omc_error.c\" />
 //       <File name=\"util/omc_file.c\" />
 //       <File name=\"util/omc_fmu_init.c\" />
+//       <File name=\"util/omc_fmu_paramdeps.c\" />
 //       <File name=\"util/omc_init.c\" />
 //       <File name=\"util/omc_mmap.c\" />
 //       <File name=\"util/omc_msvc.c\" />
@@ -544,7 +545,7 @@ readFile("modelDescription.tmp.xml");
 //   <ScalarVariable
 //     name=\"p\"
 //     valueReference=\"10\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"1.0\"/>
@@ -553,7 +554,7 @@ readFile("modelDescription.tmp.xml");
 //   <ScalarVariable
 //     name=\"y1_start\"
 //     valueReference=\"11\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"1.0\"/>
@@ -562,7 +563,7 @@ readFile("modelDescription.tmp.xml");
 //   <ScalarVariable
 //     name=\"y2_start\"
 //     valueReference=\"12\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"0.0\"/>

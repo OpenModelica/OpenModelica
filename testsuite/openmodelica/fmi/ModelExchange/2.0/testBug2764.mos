@@ -119,6 +119,7 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"util/omc_error.c\" />
 //       <File name=\"util/omc_file.c\" />
 //       <File name=\"util/omc_fmu_init.c\" />
+//       <File name=\"util/omc_fmu_paramdeps.c\" />
 //       <File name=\"util/omc_init.c\" />
 //       <File name=\"util/omc_mmap.c\" />
 //       <File name=\"util/omc_msvc.c\" />
@@ -493,7 +494,7 @@ readFile("modelDescription.tmp.xml");
 //   <ScalarVariable
 //     name=\"p\"
 //     valueReference=\"7\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"23.0\"/>

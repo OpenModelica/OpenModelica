@@ -114,6 +114,7 @@ pub(super) fn build_sim_meta(
         method: settings.method.to_string(),
         cs_method: cs_method.to_string(),
         fmi_solver_flags: fmi_solver_flags.to_string(),
+        param_deps: Vec::new(),
         tolerance: settings.tolerance.into_inner(),
         output_format: settings.outputFormat.to_string(),
         prefix: prefix.to_string(),
