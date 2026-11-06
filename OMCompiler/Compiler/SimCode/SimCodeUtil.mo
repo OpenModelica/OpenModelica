@@ -12323,18 +12323,15 @@ else
   // create empty model structure
   try
     // create empty derivatives dependencies
-    derivatives := list(SimCode.FMIUNKNOWN(SimCodeCodegenUtil.getVariableFMIIndex(v), {}, {})
-                        for v in getScalarVars(inModelInfo.vars.derivativeVars));
+    derivatives := fmiUnknownsWithoutDependencies(getScalarVars(inModelInfo.vars.derivativeVars));
 
     // create empty output dependencies
     varsA := List.filterOnTrue(inModelInfo.vars.algVars, isOutputSimVar);
-    outputs := list(SimCode.FMIUNKNOWN(SimCodeCodegenUtil.getVariableFMIIndex(v), {}, {})
-                    for v in getScalarVars(varsA));
+    outputs := fmiUnknownsWithoutDependencies(getScalarVars(varsA));
 
     // create empty clockedStates dependencies
     clockedStates := List.filterOnTrue(inModelInfo.vars.algVars, isClockedStateSimVar);
-    discreteStates := list(SimCode.FMIUNKNOWN(SimCodeCodegenUtil.getVariableFMIIndex(v), {}, {})
-                           for v in getScalarVars(clockedStates));
+    discreteStates := fmiUnknownsWithoutDependencies(getScalarVars(clockedStates));
 
     // Compute the InitialUnknowns even though the symbolic Jacobian (and thus
     // the dependency information) is missing. Omitting the dependencies is valid
@@ -12358,7 +12355,7 @@ else
     tmpInitialUnknowns := List.filterCons(getScalarVars(inModelInfo.vars.stateVars), isStateInitialUnknownSimVar, tmpInitialUnknowns);
     tmpInitialUnknowns := List.filterCons(getScalarVars(inModelInfo.vars.derivativeVars), isInitialApproxOrCalculatedSimVar, tmpInitialUnknowns);
     tmpInitialUnknowns := Dangerous.listReverseInPlace(tmpInitialUnknowns);
-    allInitialUnknowns := list(SimCode.FMIUNKNOWN(SimCodeCodegenUtil.getVariableFMIIndex(v), {}, {}) for v in tmpInitialUnknowns);
+    allInitialUnknowns := fmiUnknownsWithoutDependencies(tmpInitialUnknowns);
 
     contPartSimDer := NONE();
     initPartSimDer := NONE();
@@ -13307,6 +13304,17 @@ algorithm
   (i,tree) := getValueReferenceMapping2(vars.extObjVars, 0, tree);
 end getValueReferenceMapping;
 
+protected function fmiUnknownsWithoutDependencies
+  "The FMI unknowns of the variables, without dependency information. A
+   variable that is not exported has no FMI index and is left out."
+  input list<SimCodeVar.SimVar> vars;
+  output list<SimCode.FmiUnknown> unknowns;
+protected
+  list<Integer> indices = list(SimCodeCodegenUtil.getVariableFMIIndex(v) for v in vars);
+algorithm
+  unknowns := list(SimCode.FMIUNKNOWN(i, {}, {}) for i guard i > 0 in indices);
+end fmiUnknownsWithoutDependencies;
+
 public function createMinimalFMIModelStructure
   "Build a minimal FMI ModelStructure (continuous state derivatives, outputs and
    initial unknowns, without dependency information) directly from the SimVars.
@@ -13320,8 +13328,8 @@ protected
   list<SimCode.FmiUnknown> derivs, outs, initialUnknowns;
   list<SimCodeVar.SimVar> iu;
 algorithm
-  derivs := list(SimCode.FMIUNKNOWN(SimCodeCodegenUtil.getVariableFMIIndex(v), {}, {}) for v in modelInfo.vars.derivativeVars);
-  outs   := list(SimCode.FMIUNKNOWN(SimCodeCodegenUtil.getVariableFMIIndex(v), {}, {}) for v in modelInfo.vars.outputVars);
+  derivs := fmiUnknownsWithoutDependencies(modelInfo.vars.derivativeVars);
+  outs   := fmiUnknownsWithoutDependencies(modelInfo.vars.outputVars);
 
   // InitialUnknowns according to the FMI specification, but without dependency
   // information (the new backend FMU export does not compute the FMIDER
@@ -13341,7 +13349,7 @@ algorithm
   iu := List.filterCons(modelInfo.vars.stateVars, isStateInitialUnknownSimVar, iu);
   iu := List.filterCons(modelInfo.vars.derivativeVars, isInitialApproxOrCalculatedSimVar, iu);
   iu := Dangerous.listReverseInPlace(iu);
-  initialUnknowns := list(SimCode.FMIUNKNOWN(SimCodeCodegenUtil.getVariableFMIIndex(v), {}, {}) for v in iu);
+  initialUnknowns := fmiUnknownsWithoutDependencies(iu);
 
   outStructure := SOME(SimCode.FMIMODELSTRUCTURE(
     SimCode.FMIOUTPUTS(outs),

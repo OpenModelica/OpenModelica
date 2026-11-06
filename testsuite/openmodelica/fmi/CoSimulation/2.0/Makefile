@@ -7,6 +7,7 @@ ExportCvodeFmu_static.mos \
 fmi_interpolation_01.mos \
 FmuAssertSolverRetry.mos \
 FmuNlsSameTime.mos \
+FmuUnknownsWithoutFmiIndex.mos \
 FmuExportFlags.mos \
 RecompileSourceCodeFMU.mos \
 simpleStiffFMU.mos \
