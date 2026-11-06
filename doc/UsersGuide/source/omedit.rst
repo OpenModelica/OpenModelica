@@ -1355,6 +1355,13 @@ in real-time (with a scaling factor just like simulation flag
 factor during the interactive simulation). In the synchronous mode, the
 speed of the simulation does not directly correspond to real-time.
 
+The interactive simulation uses the OPC UA server of the simulation executable
+(simulation flag ``-embeddedServer=opc-ua``, port ``-embeddedServerPort``,
+default 4841). Other OPC UA clients can also connect to it. The server has a node
+for each Real, Integer and Boolean variable and parameter, with the data types
+Double, Int64 and Boolean. A client can write inputs and states; the other
+nodes are read-only, which their AccessLevel attribute shows.
+
 .. only:: html and not epub
 
    .. raw:: html
