@@ -246,6 +246,7 @@ protected
   Boolean lhs_is_cref, rhs_is_cref;
   Expression e1, e2;
   Integer u;
+  UnorderedSet<ComponentRef> crefs;
 algorithm
   isSimple := match (lhs, rhs)
     // ±a = ±b
@@ -276,13 +277,14 @@ algorithm
     case (_, _)
       guard Type.isReal(ty) or Type.isInteger(ty) or Type.isEnumeration(ty)
       algorithm
-        u := Expression.fold(lhs, countUnknowns_traverser, 0);
+        crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+        crefs := Expression.fold(lhs, countUnknowns_traverser, crefs);
 
-        if u <= 1 then
-          u := Expression.fold(rhs, countUnknowns_traverser, u);
+        if UnorderedSet.size(crefs) <= 1 then
+          crefs := Expression.fold(rhs, countUnknowns_traverser, crefs);
         end if;
       then
-        u == 1;
+        UnorderedSet.size(crefs) == 1;
 
     else false;
   end match;
@@ -322,14 +324,14 @@ end isAddOrSub;
 
 function countUnknowns_traverser
   input Expression exp;
-  input output Integer unknownCount;
+  input output UnorderedSet<ComponentRef> crefs;
 protected
   InstNode node;
   Component comp;
 algorithm
   // This is only used to check if an equation contains exactly one unknown,
   // so return early if we've already found more than that.
-  if unknownCount > 1 then
+  if UnorderedSet.size(crefs) > 1 then
     return;
   end if;
 
@@ -344,7 +346,7 @@ algorithm
 
           if Component.variability(comp) >= Variability.DISCRETE and
              not (Component.isInput(comp) and ComponentRef.isTopLevel(exp.cref)) then
-            unknownCount := unknownCount + Type.sizeOf(exp.ty);
+            UnorderedSet.add(exp.cref, crefs);
           end if;
         end if;
       then
