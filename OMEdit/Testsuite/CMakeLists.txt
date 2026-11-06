@@ -42,8 +42,8 @@ set(OMEDIT_TEST_AUTOCOMPLETION_SOURCES AutoCompletion/AutoCompletionTest.cpp
                                         AutoCompletion/AutoCompletionTest.h)
 add_omedit_test(AutoCompletion "${OMEDIT_TEST_AUTOCOMPLETION_SOURCES}")
 
-set(OMEDIT_TEST_ARRAYPARAMETEREDITOR_SOURCES ArrayParameterEditor/ArrayParameterEditorTest.cpp
-                                             ArrayParameterEditor/ArrayParameterEditorTest.h)
+set(OMEDIT_TEST_ARRAYPARAMETEREDITOR_SOURCES ArrayParameterEditor/ArrayParameterEditor.cpp
+                                             ArrayParameterEditor/ArrayParameterEditor.h)
 add_omedit_test(ArrayParameterEditor "${OMEDIT_TEST_ARRAYPARAMETEREDITOR_SOURCES}")
 
 set(OMEDIT_TEST_BROWSEMSL_SOURCES BrowseMSL/BrowseMSL.cpp

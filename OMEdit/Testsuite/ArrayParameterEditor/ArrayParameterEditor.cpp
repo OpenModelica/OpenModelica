@@ -37,7 +37,7 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include "ArrayParameterEditorTest.h"
+#include "ArrayParameterEditor.h"
 #include "Util.h"
 #include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
@@ -49,7 +49,7 @@
 #include <QSpinBox>
 #include <QTableWidget>
 
-OMEDITTEST_MAIN(ArrayParameterEditorTest)
+OMEDITTEST_MAIN(ArrayParameterEditor)
 
 static QStringList unconstrainedDimensions(int rank)
 {
@@ -60,18 +60,18 @@ static QStringList unconstrainedDimensions(int rank)
   return dimensions;
 }
 
-void ArrayParameterEditorTest::initTestCase()
+void ArrayParameterEditor::initTestCase()
 {
-  const QString fileName = QFINDTESTDATA("ArrayParameterEditorTest.mo");
+  const QString fileName = QFINDTESTDATA("ArrayParameterEditor.mo");
   MainWindow::instance()->getLibraryWidget()->openFile(fileName);
-  if (!MainWindow::instance()->getOMCProxy()->existClass("ArrayParameterEditorTest.System")) {
+  if (!MainWindow::instance()->getOMCProxy()->existClass("ArrayParameterEditor.System")) {
     QFAIL(QString("Failed to load file %1").arg(fileName).toStdString().c_str());
   }
 }
 
-void ArrayParameterEditorTest::arrayEditorButtonExistsForArrayParameters()
+void ArrayParameterEditor::arrayEditorButtonExistsForArrayParameters()
 {
-  LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem("ArrayParameterEditorTest.System");
+  LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem("ArrayParameterEditor.System");
   QVERIFY(pLibraryTreeItem);
   MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
   ModelWidget *pModelWidget = pLibraryTreeItem->getModelWidget();
@@ -117,7 +117,7 @@ void ArrayParameterEditorTest::arrayEditorButtonExistsForArrayParameters()
   delete pElementParameters;
 }
 
-void ArrayParameterEditorTest::arrayParameterEditorDialogSerializesWithBrackets()
+void ArrayParameterEditor::arrayParameterEditorDialogSerializesWithBrackets()
 {
   // matrix literal [[1, 2]; [3, 4]]
   ArrayParameterEditorDialog matrixDialog("[[1, 2]; [3, 4]]", "[[1, 2]; [3, 4]]", "table",
@@ -200,7 +200,7 @@ void ArrayParameterEditorTest::arrayParameterEditorDialogSerializesWithBrackets(
   QCOMPARE(rawDialog.getArrayValue(), QString("2:size(table, 2)"));
 }
 
-void ArrayParameterEditorTest::arrayParameterEditorDialogParsesCurlyBraces()
+void ArrayParameterEditor::arrayParameterEditorDialogParsesCurlyBraces()
 {
   // vector literal {1, 2, 3}
   ArrayParameterEditorDialog vectorDialog("{1, 2, 3}", "{1, 2, 3}", "table",
@@ -242,7 +242,7 @@ void ArrayParameterEditorTest::arrayParameterEditorDialogParsesCurlyBraces()
   QCOMPARE(mixedDialog.getArrayValue(), QString("{{1,2,3},{4,5,9}}"));
 }
 
-void ArrayParameterEditorTest::arrayDimensionsConstrainEditorShape()
+void ArrayParameterEditor::arrayDimensionsConstrainEditorShape()
 {
   ArrayParameterEditorDialog threeDimensionalDialog("", "", "f",
                                                    QStringList() << "2" << "3" << "2",
@@ -321,7 +321,7 @@ void ArrayParameterEditorTest::arrayDimensionsConstrainEditorShape()
   QCOMPARE(vectorExpressionDialog.getArrayValue(), QString("{2,0}"));
 }
 
-void ArrayParameterEditorTest::arrayTableContextMenuDeletesSelection()
+void ArrayParameterEditor::arrayTableContextMenuDeletesSelection()
 {
   ArrayParameterEditorDialog rowDialog("{{1, 2}, {3, 4}, {5, 6}}", "", "table",
                                        QStringList() << ":" << ":", QStringList() << "3" << "2", MainWindow::instance());
@@ -344,7 +344,7 @@ void ArrayParameterEditorTest::arrayTableContextMenuDeletesSelection()
   QCOMPARE(columnDialog.getArrayValue(), QString("{{1,3},{4,6}}"));
 }
 
-void ArrayParameterEditorTest::arrayParameterEditorDialogHandlesThreeDimensionalArray()
+void ArrayParameterEditor::arrayParameterEditorDialogHandlesThreeDimensionalArray()
 {
   // a 3D array literal is shown as a 2D table where each cell holds a nested vector
   ArrayParameterEditorDialog dialog3D("{{{1, 7}, {2, 8}, {3, 9}}, {{4, 10}, {5, 11}, {6, 12}}}",
@@ -367,7 +367,7 @@ void ArrayParameterEditorTest::arrayParameterEditorDialogHandlesThreeDimensional
            QString("{{{1, 7}, {2, 8}, {3, 9}}, {{4, 10}, {5, 11}, {6, 12}}}"));
 }
 
-void ArrayParameterEditorTest::cleanupTestCase()
+void ArrayParameterEditor::cleanupTestCase()
 {
   MainWindow::instance()->close();
 }

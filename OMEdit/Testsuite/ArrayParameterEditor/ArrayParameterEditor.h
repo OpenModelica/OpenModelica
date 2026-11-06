@@ -37,17 +37,17 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#ifndef ARRAYPARAMETEREDITORTEST_H
-#define ARRAYPARAMETEREDITORTEST_H
+#ifndef ARRAYPARAMETEREDITOR_H
+#define ARRAYPARAMETEREDITOR_H
 
 #include <QObject>
 
 /*!
- * \brief The ArrayParameterEditorTest class
+ * \brief The ArrayParameterEditor class
  * Tests the array editor button of the element parameters dialog and the
  * ArrayParameterEditorDialog serialization.
  */
-class ArrayParameterEditorTest : public QObject
+class ArrayParameterEditor : public QObject
 {
   Q_OBJECT
 private slots:
@@ -89,4 +89,4 @@ private slots:
   void cleanupTestCase();
 };
 
-#endif // ARRAYPARAMETEREDITORTEST_H
+#endif // ARRAYPARAMETEREDITOR_H

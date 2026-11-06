@@ -1,4 +1,4 @@
-package ArrayParameterEditorTest
+package ArrayParameterEditor
 
   model Component
     parameter Real matrix[:, :] = [[1, 2]; [3, 4]];
@@ -23,4 +23,4 @@ package ArrayParameterEditorTest
     Component component
       annotation(Placement(transformation(origin = {0, 0}, extent = {{-10, -10}, {10, 10}})));
   end System;
-end ArrayParameterEditorTest;
+end ArrayParameterEditor;
