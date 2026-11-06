@@ -2890,22 +2890,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>閉じる</translation>
     </message>
     <message>
-        <source>Percentage:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Choose Transparency</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Choose Specularity</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Choose Color</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Choose File(s)</source>
         <translation>ファイルの選択</translation>
     </message>
@@ -2944,14 +2928,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <source>Import FMU</source>
         <translation>FMU読込み</translation>
-    </message>
-    <message>
-        <source>Add Path</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Path</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Output</source>
@@ -3067,14 +3043,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Unloads the file without deleting it from the file system</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unload the CRML file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unload the Modelica Script file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3370,10 +3338,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Element</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Font Size:</source>
         <translation>フォントサイズ:</translation>
     </message>
@@ -3434,19 +3398,11 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>コネクションを作成</translation>
     </message>
     <message>
-        <source>Connection Attributes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Create Transition</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Edit Transition</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Find Variables</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3456,30 +3412,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <source>Open Class</source>
         <translation>クラスを開く</translation>
-    </message>
-    <message>
-        <source>View Icon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Opens the class icon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>View Diagram</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Opens the class diagram</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>View Text</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Opens the class text</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Opens the class documentation</source>
@@ -3698,14 +3630,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Simulation Parameters</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Shows the Simulation Parameters dialog</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Send</source>
         <translation>送る</translation>
     </message>
@@ -3803,14 +3727,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Speed:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Terminate Instantiation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Terminates the model instantiation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
