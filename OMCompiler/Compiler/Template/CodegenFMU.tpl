@@ -254,6 +254,7 @@ template fmumodel_identifierHeaderFile(SimCode simCode, String guid, String FMUV
 ::=
 match simCode
 case SIMCODE(__) then
+  let setupDataStruc = if Flags.getConfigBool(Flags.DAE_MODE) then "omc_fmu_setupDataStruc" else symbolName(modelNamePrefix(simCode),"setupDataStruc")
   <<
   #ifndef <%modelNamePrefix(simCode)%>_FMU_H
   #define <%modelNamePrefix(simCode)%>_FMU_H
@@ -271,14 +272,15 @@ case SIMCODE(__) then
   #endif
 
   extern void <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>(DATA *data, threadData_t *threadData);
+  <%if Flags.getConfigBool(Flags.DAE_MODE) then 'extern void omc_fmu_setupDataStruc(DATA *data, threadData_t *threadData);'%>
   <%if isFMIVersion30(FMUVersion) then
     <<
-    #define fmu3_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
+    #define fmu3_model_interface_setupDataStruc <%setupDataStruc%>
     #include "fmi-export/fmu3_model_interface.h"
     >>
   else if isFMIVersion20(FMUVersion) then
     <<
-    #define fmu2_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
+    #define fmu2_model_interface_setupDataStruc <%setupDataStruc%>
     #include "fmi-export/fmu2_model_interface.h"
     >>
   else
@@ -431,8 +433,8 @@ case SIMCODE(__) then
   void omc_fmu_setupDataStruc(DATA *data, threadData_t *threadData) {
     <%if Flags.getConfigBool(Flags.DAE_MODE) then
     <<
-    /* What the generated main says for a simulation: the runtime lays out the
-       DAE residuals (fmi-ls-dae) only for a model translated with --daeMode. */
+    /* What the generated main says for a simulation: the runtime treats the model
+       as a DAE (fmi-ls-dae, or IDA in Co-Simulation) only when translated with --daeMode. */
     compiledInDAEMode = 1;
     >>
     %>

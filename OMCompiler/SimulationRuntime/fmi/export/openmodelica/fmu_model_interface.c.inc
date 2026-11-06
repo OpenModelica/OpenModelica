@@ -220,6 +220,14 @@ int fmuInitializeSolverData(ModelInstance* comp)
     solverInfo->solverMethod = S_EULER;
   }
 
+#ifdef OMC_FMI_HAVE_IDA
+  /* IDA is the only method that integrates the residual form of a --daeMode model. */
+  if (compiledInDAEMode)
+  {
+    solverInfo->solverMethod = S_IDA;
+  }
+  else
+#endif
   /* If no states are present, we can use Euler's method since it is doing nothing. */
   if (data->modelData->nStates < 1)
   {
@@ -255,6 +263,27 @@ int fmuInitializeSolverData(ModelInstance* comp)
       FILTERED_LOG(comp, fmiXFatal, LOG_STATUSFATAL, FMIX_STR "Instantiate: FMU not compiled with SUNDIALS but solver CVODE selected.")
       retValue = -1;
 #endif /* OMC_FMI_HAVE_CVODE */
+      break;
+    case S_IDA:
+#ifdef OMC_FMI_HAVE_IDA
+    {
+      IDA_SOLVER* idaData = (IDA_SOLVER*) calloc(1, sizeof(IDA_SOLVER));
+      if (!idaData) {
+        FILTERED_LOG(comp, fmiXFatal, LOG_STATUSFATAL, FMIX_STR "Instantiate: Out of memory.")
+        freeList(solverInfo->eventLst);
+        free(solverInfo);
+        free(flags_filename);
+        return -1;
+      }
+      FILTERED_LOG(comp, fmiXOK, LOG_ALL, "Initializing IDA DAE Solver")
+      retValue = ida_solver_initial(data, threadData, solverInfo, idaData);
+      solverInfo->solverData = idaData;
+    }
+#else
+      solverInfo->solverData = NULL;
+      FILTERED_LOG(comp, fmiXFatal, LOG_STATUSFATAL, FMIX_STR "Instantiate: FMU not compiled with SUNDIALS IDA but solver IDA selected.")
+      retValue = -1;
+#endif /* OMC_FMI_HAVE_IDA */
       break;
     default:
       FILTERED_LOG(comp, fmiXFatal, LOG_STATUSFATAL, FMIX_STR "Instantiate: Unknown solver method.")
@@ -307,6 +336,15 @@ int fmuDeInitializeSolverData(ModelInstance* comp)
       retValue = -1;
       break;
 #endif /* OMC_FMI_HAVE_CVODE */
+    case S_IDA:
+#ifdef OMC_FMI_HAVE_IDA
+      ida_solver_deinitial(solverInfo->solverData);
+      free(solverInfo->solverData);
+      retValue = 0;
+#else
+      retValue = -1;
+#endif /* OMC_FMI_HAVE_IDA */
+      break;
     default:
       FILTERED_LOG(comp, fmiXFatal, LOG_STATUSFATAL, FMIX_STR "FreeInstance: Unknown solver method.")
       retValue = -1;
@@ -317,6 +355,18 @@ int fmuDeInitializeSolverData(ModelInstance* comp)
   comp->solverInfo = NULL;
 
   return retValue;
+}
+
+/* A --daeMode model has its continuous equations in the DAE residual function,
+ * not in functionODE. IDA owns the states, their derivatives and the algebraic
+ * DAE variables. */
+static void evalDAEModeContinuous(ModelInstance* comp)
+{
+#ifdef OMC_FMI_HAVE_IDA
+  if (compiledInDAEMode) {
+    comp->fmuData->simulationInfo->daeModeData->evaluateDAEResiduals(comp->fmuData, comp->threadData, EVAL_ALGEBRAIC | EVAL_ZEROCROSS);
+  }
+#endif
 }
 
 // ---------------------------------------------------------------------------
@@ -689,6 +739,7 @@ fmiXStatus internalEventUpdate(fmiXComponent c, fmiXEventInfo* eventInfo)
      * the values before it), then the event, then the timers again below. */
     if (comp->_need_update) {
       comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
+      evalDAEModeContinuous(comp);
       comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
       /* the update below raises the same violation again */
       comp->_held_assert_logged |= comp->fmuData->simulationInfo->needToReThrow;
@@ -941,6 +992,7 @@ fmiXStatus updateIfNeeded(ModelInstance *comp, const char *func)
       holdAsserts(comp, (comp->state & (model_state_me_continuous_time_mode | model_state_cs_step_in_progress | model_state_cs_step_complete)) != 0);
       applyTunableParameters(comp);
       comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
+      evalDAEModeContinuous(comp);
       overwriteOldSimulationData(comp->fmuData);
       comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
       comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
@@ -1441,6 +1493,11 @@ fmiXStatus FMIX(ExitInitializationMode)(fmiXComponent c)
   /* As updateSolverNominals: the nominals and the tolerance are known now. */
   if (comp->solverInfo && comp->solverInfo->solverMethod == S_CVODE) {
     cvode_solver_setNominals(comp->fmuData, comp->threadData, comp->solverInfo->solverData);
+  }
+#endif
+#ifdef OMC_FMI_HAVE_IDA
+  if (comp->solverInfo && comp->solverInfo->solverMethod == S_IDA) {
+    ida_solver_setNominals(comp->fmuData, comp->threadData, comp->solverInfo->solverData);
   }
 #endif
 
@@ -2523,6 +2580,7 @@ fmiXStatus internal_CompletedIntegratorStep(fmiXComponent c, const char *func, f
   OMC_TRY_INTERNAL(simulationJumpBuffer)
     threadData->mmc_jumper = threadData->simulationJumpBuffer;
     holdAsserts(comp, 1);
+    evalDAEModeContinuous(comp);
     comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
     comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
     comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
@@ -2648,6 +2706,7 @@ fmiXStatus internalGetDerivatives(fmiXComponent c, const char *func, fmiXReal de
     if (comp->_need_update)
     {
       comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
+      evalDAEModeContinuous(comp);
       overwriteOldSimulationData(comp->fmuData);
     }
     releaseAsserts(comp);
@@ -2705,6 +2764,7 @@ fmiXStatus internalGetEventIndicators(fmiXComponent c, const char *func, fmiXRea
     if (comp->_need_update)
     {
       comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
+      evalDAEModeContinuous(comp);
       comp->_need_update = 0;
     }
     releaseAsserts(comp);
@@ -3066,6 +3126,30 @@ static fmiXStatus doStepInternal(ModelInstance* c, fmiXReal currentCommunication
         status = fmiXFatal;
         goto doStep_cleanup;
 #endif /* OMC_FMI_HAVE_CVODE */
+        break;
+      case S_IDA:
+#ifdef OMC_FMI_HAVE_IDA
+        comp->solverInfo->currentTime = comp->fmuData->localData[0]->timeValue;
+        comp->solverInfo->currentStepSize = tNext - comp->solverInfo->currentTime;
+        flag = ida_solver_step(comp->fmuData, comp->threadData, comp->solverInfo);
+        memcpy(states, comp->fmuData->localData[0]->realVars, NUMBER_OF_STATES * sizeof(fmiXReal));
+        if (flag != 0)
+        {
+          FILTERED_LOG(comp, fmiXFatal, LOG_STATUSFATAL, FMIX_STR "DoStep: IDA integrator step failed with flag %d at time %.15g.", flag, comp->solverInfo->currentTime)
+          status = fmiXFatal;
+          goto doStep_cleanup;
+        }
+        /* IDA stopped at a root of the event indicators */
+        if (comp->solverInfo->currentTime < tNext)
+        {
+          tNext = comp->solverInfo->currentTime;
+          time_event = 0;
+        }
+#else
+        FILTERED_LOG(comp, fmiXFatal, LOG_STATUSFATAL, FMIX_STR "DoStep: FMU not compiled with SUNDIALS IDA but solver IDA selected.")
+        status = fmiXFatal;
+        goto doStep_cleanup;
+#endif /* OMC_FMI_HAVE_IDA */
         break;
       default:
         FILTERED_LOG(comp, fmiXFatal, LOG_STATUSFATAL, FMIX_STR "DoStep: Unknown solver method %d.", comp->solverInfo->solverMethod)

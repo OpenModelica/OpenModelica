@@ -1070,6 +1070,7 @@ algorithm
       String fileprefix, fileNamePrefixHash;
       String install_include_omc_dir, install_include_omc_c_dir, install_share_buildproject_dir, install_fmu_sources_dir, fmu_tmp_sources_dir;
       String cmakelistsStr, needCvode;
+      Boolean needIda;
       String modelDefinesHeaderStr;
       String fmu_dummy_include_defines;
       String needModelicaExternalC, cmakeCode;
@@ -1254,22 +1255,31 @@ algorithm
           Error.addCompilerWarning("OpenModelica exports FMI 1.0 as Model Exchange only (Co-Simulation export requires FMI 2.0). A model-exchange FMU is integrated by the importer, so the in-FMU CVODE integrator does not apply. The 's:cvode' simulation flag is ignored for this FMI 1.0 export.");
         end if;
 
+        // A --daeMode Co-Simulation FMU integrates its residual form with IDA.
+        needIda := isSome(simCode.daeModeData) and not rustRuntime;
+
         // The linear and non-linear solvers of the C runtime use SuiteSparse, SUNDIALS
         // and Lis, as in a simulation.
         if rustRuntime then
           simrt_c_sundials_sources := {};
           solver_library_sources := {};
         else
-          simrt_c_sundials_sources := if SimCodeUtil.cvodeFmiFlagIsSet(simCode.fmiSimulationFlags) and FMUVersion <> "1.0"
-            then listAppend(RuntimeSources.simrt_c_sundials_sources, RuntimeSources.simrt_c_cvode_sources)
-            else RuntimeSources.simrt_c_sundials_sources;
+          simrt_c_sundials_sources := List.flatten({RuntimeSources.simrt_c_sundials_sources,
+            if SimCodeUtil.cvodeFmiFlagIsSet(simCode.fmiSimulationFlags) and FMUVersion <> "1.0" then RuntimeSources.simrt_c_cvode_sources else {},
+            if needIda then RuntimeSources.simrt_c_ida_sources else {}});
           copyFiles(simrt_c_sundials_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
           copyFiles(RuntimeSources.solver_library_files, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-          solver_library_sources := RuntimeSources.solver_library_sources;
+          if needIda then
+            copyFiles(RuntimeSources.solver_library_ida_files, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+            solver_library_sources := listAppend(RuntimeSources.solver_library_sources, RuntimeSources.solver_library_ida_sources);
+          else
+            solver_library_sources := RuntimeSources.solver_library_sources;
+          end if;
           // <SourceFiles> are compiled without definitions: omc_simulation_settings.h
           // carries them, and omc_config.h for a runtime source that includes it first.
           fmu_solver_defines := "#define WITH_SUITESPARSE 1" +
-            (if SimCodeUtil.cvodeFmiFlagIsSet(simCode.fmiSimulationFlags) and FMUVersion <> "1.0" then "\n#define OMC_FMI_HAVE_CVODE 1" else "");
+            (if SimCodeUtil.cvodeFmiFlagIsSet(simCode.fmiSimulationFlags) and FMUVersion <> "1.0" then "\n#define OMC_FMI_HAVE_CVODE 1" else "") +
+            (if needIda then "\n#define OMC_FMI_HAVE_IDA 1" else "");
           System.writeFile(fmu_tmp_sources_dir + "omc_config.h", "#include \"omc_simulation_settings.h\"\n");
         end if;
 
@@ -1446,6 +1456,7 @@ algorithm
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMI_INTERFACE_HEADER_FILES_DIRECTORY@", "\"" + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + "\"");
         needCvode := if FMUVersion <> "1.0" and not rustFmi and SimCodeUtil.cvodeFmiFlagIsSet(simCode.fmiSimulationFlags) then "ON" else "OFF";
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@NEED_CVODE@", needCvode);
+        cmakelistsStr := System.stringReplace(cmakelistsStr, "@NEED_IDA@", if needIda then "ON" else "OFF");
         // --simCodeTarget=C+Rust: name the installed archive, which is what this
         // installation builds the FMU against. Rebuilding the FMU elsewhere finds
         // no such file and falls back to the crates under sources/rust.

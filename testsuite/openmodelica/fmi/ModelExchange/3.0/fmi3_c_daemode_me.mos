@@ -43,7 +43,7 @@ system("unzip -cqq DaeModeMeC.fmu sources/DaeModeMeC_FMU.c | grep \"compiledInDA
 // true
 // ""
 // ""
-// "Error: DAE mode (--daeMode) is not supported by the C simulation runtime, so it cannot build a Model Exchange FMU (fmuType=\"me\") from it. Export with platforms={\"wasm\"}, whose runtime serves the residual form (as fmi-ls-dae for Model Exchange), with --simCodeTarget=C+Rust for an FMI 3.0 Model Exchange FMU (as fmi-ls-dae), or remove the --daeMode flag.
+// "Error: DAE mode (--daeMode) is not supported by the C simulation runtime for a Model Exchange FMU (fmuType=\"me\"). Export a Co-Simulation FMU (fmuType=\"cs\"), export with platforms={\"wasm\"}, whose runtime serves the residual form (as fmi-ls-dae for Model Exchange), with --simCodeTarget=C+Rust for an FMI 3.0 Model Exchange FMU (as fmi-ls-dae), or remove the --daeMode flag.
 // "
 // true
 // ""
