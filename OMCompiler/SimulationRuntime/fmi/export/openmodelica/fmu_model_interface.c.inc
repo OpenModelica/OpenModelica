@@ -529,14 +529,26 @@ static void omc_assert_fmi_common(threadData_t *threadData, fmiXStatus status, i
   }
 }
 
-static void omc_assert_fmi(threadData_t *threadData, FILE_INFO info, const char *msg, ...) __attribute__ ((noreturn));
 static void omc_assert_fmi(threadData_t *threadData, FILE_INFO info, const char *msg, ...)
 {
   va_list args;
+  /* In a nonlinear solve or the integrator's right-hand side the solver may still
+   * recover: return the error to it, as omc_assert_function does. Like -lv LOG_NLS
+   * in the simulation executable, the message is only debug output then. */
+  int toSolver = threadData && (threadData->currentErrorStage == ERROR_NONLINEARSOLVER ||
+                                threadData->currentErrorStage == ERROR_INTEGRATOR);
   va_start(args, msg);
-  omc_assert_fmi_common(threadData, fmiXError, LOG_STATUSERROR, info, msg, args);
+  if (toSolver) {
+    omc_assert_fmi_common(threadData, fmiXOK,
+        threadData->currentErrorStage == ERROR_NONLINEARSOLVER ? LOG_NONLINEARSYSTEMS : LOG_ALL,
+        info, msg, args);
+  } else {
+    omc_assert_fmi_common(threadData, fmiXError, LOG_STATUSERROR, info, msg, args);
+  }
   va_end(args);
-  if (threadData) {
+  if (toSolver) {
+    OMC_ERROR_RAISE();
+  } else if (threadData) {
     OMC_THROW_INTERNAL();
   } else {
     OMC_THROW();

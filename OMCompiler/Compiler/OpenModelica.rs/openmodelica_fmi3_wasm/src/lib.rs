@@ -220,6 +220,7 @@ const CATEGORIES: [&str; 11] = [
     "logFmi3Call",
 ];
 const CAT_EVENTS: u32 = 0;
+const CAT_NONLINEAR: u32 = 2;
 const CAT_WARNING: u32 = 4;
 const CAT_ERROR: u32 = 6;
 const CAT_ALL: u32 = 9;
@@ -331,6 +332,11 @@ pub fn log_status_error(msg: &str) {
 /// C's `omc_assert_fmi_warning`.
 pub fn log_status_warning(msg: &str) {
     fmi_log(Status::Warning, CAT_WARNING, msg);
+}
+
+/// C's `omc_assert_fmi` for an assert a solver gets back: debug output.
+pub fn log_solver_assert(nonlinear: bool, msg: &str) {
+    fmi_log(Status::Ok, if nonlinear { CAT_NONLINEAR } else { CAT_ALL }, msg);
 }
 
 /// C's `FILTERED_LOG` / `isCategoryLogged`. The reason a call fails is not
