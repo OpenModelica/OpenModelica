@@ -546,7 +546,8 @@ public
             daeModeData         := Util.applyOption(daeModeData, function DaeModeData.mapShallow(func = collect_literals));
             literals            := UnorderedMap.keyList(literals_map);
 
-            (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, fileName, directory, functions, linearLoops, nonlinearLoops, eventInfo, bdae.clockedInfo, simCodeIndices);
+            (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, fileName, directory, functions, linearLoops, nonlinearLoops, eventInfo, bdae.clockedInfo,
+              List.sort(program.classes, AbsynUtil.classNameGreater), simCodeIndices);
 
             simCode := SIM_CODE(
               modelInfo                 = modelInfo,
@@ -896,6 +897,7 @@ public
       input list<SimStrongComponent.Block> nonlinearLoops;
       input EventInfo eventInfo;
       input ClockedInfo clockedInfo;
+      input list<Absyn.Class> sortedClasses "where the runtime resolves modelica:// URIs";
       output ModelInfo modelInfo;
       input output SimCodeIndices simCodeIndices;
     protected
@@ -916,7 +918,7 @@ public
         functions                       = functions,
         labels                          = {},
         resourcePaths                   = {},
-        sortedClasses                   = {},
+        sortedClasses                   = sortedClasses,
         nClocks                         = ClockedInfo.baseClockCount(clockedInfo),
         nSubClocks                      = ClockedInfo.subClockCount(clockedInfo),
         nSpatialDistributions           = listLength(eventInfo.spatial_lst),
