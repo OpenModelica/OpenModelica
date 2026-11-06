@@ -2556,6 +2556,23 @@ fn push_runtime_flags(
         let codes = openmodelica_sim_meta::simflags::with_flags(|f| f.solver_codes());
         wts(set.call(&mut *store, codes))?;
     }
+    // `-lss*`/`-nlss*`: the linear and nonlinear solvers pick their format in-wasm.
+    if let Ok(set) =
+        rt_inst.get_typed_func::<(f64, i32, u32, f64, i32, u32), ()>(&mut *store, "rt_set_sparse_thresholds")
+    {
+        let t = openmodelica_sim_meta::simflags::with_flags(openmodelica_sim_meta::simflags::sparse_thresholds);
+        wts(set.call(
+            &mut *store,
+            (
+                t.lss_max_density,
+                t.lss_min_size,
+                t.lss_given as u32,
+                t.nlss_max_density,
+                t.nlss_min_size,
+                t.nlss_given as u32,
+            ),
+        ))?;
+    }
     // `-newtonFTol`/`-newtonXTol`/`-newtonMaxStepFactor`: the nonlinear solvers that
     // read them run in-wasm whichever driver owns the run.
     if let Ok(set) = rt_inst.get_typed_func::<(f64, f64, f64), ()>(&mut *store, "rt_set_newton_tuning") {

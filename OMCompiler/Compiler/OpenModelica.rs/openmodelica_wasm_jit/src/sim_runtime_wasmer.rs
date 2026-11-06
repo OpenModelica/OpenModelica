@@ -850,6 +850,22 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
     // See the wasmtime counterpart.
     if let Ok(set) = rt_inst
         .exports
+        .get_typed_function::<(f64, i32, u32, f64, i32, u32), ()>(&store, "rt_set_sparse_thresholds")
+    {
+        let t = openmodelica_sim_meta::simflags::with_flags(openmodelica_sim_meta::simflags::sparse_thresholds);
+        wts(set.call(
+            &mut store,
+            t.lss_max_density,
+            t.lss_min_size,
+            t.lss_given as u32,
+            t.nlss_max_density,
+            t.nlss_min_size,
+            t.nlss_given as u32,
+        ))?;
+    }
+    // See the wasmtime counterpart.
+    if let Ok(set) = rt_inst
+        .exports
         .get_typed_function::<(f64, f64, f64), ()>(&store, "rt_set_newton_tuning")
     {
         let (ftol, xtol, msf) =

@@ -1,0 +1,48 @@
+// name: lssMinSize
+// status: correct
+
+loadString("
+model M
+  Real x[3](each start = 0);
+equation
+  sin(time+1)*x[1] + x[2] + 2*x[3] = time;
+  x[1] - cos(time)*x[2] + x[3] = 1;
+  x[1] + x[2] + (3+time)*x[3] = 2;
+end M;
+"); getErrorString();
+
+simulate(M, simflags="-lssMinSize=0"); getErrorString();
+val(x[1], 1.0);
+val(x[2], 1.0);
+val(x[3], 1.0);
+simulate(M, simflags="-ls=lapack -lssMinSize=0"); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "M_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lssMinSize=0'",
+//     messages = "LOG_STDOUT        | info    | Minimum system size for using linear sparse solver changed to 0
+// LOG_STDOUT        | info    | Using sparse solver for linear system 0 (9),
+// |                 | |       | because density of 1.000 is under threshold of 0.200 or size of 2 exceeds threshold of 0.
+// LOG_STDOUT        | info    | Using sparse solver for linear system 1 (18),
+// |                 | |       | because density of 1.000 is under threshold of 0.200 or size of 2 exceeds threshold of 0.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.3579258453903291
+// -0.2929962550253368
+// 0.48376760240875194
+// record SimulationResult
+//     resultFile = "M_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls=lapack -lssMinSize=0'",
+//     messages = "LOG_STDOUT        | info    | Minimum system size for using linear sparse solver changed to 0
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

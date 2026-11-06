@@ -596,6 +596,10 @@ Newton:
 :ref:`-newtonMaxStepFactor <simflag-newtonMaxStepFactor>`
 :ref:`-newtonXTol <simflag-newtonXTol>`
 
+Sparse solver:
+:ref:`-nlssMinSize <simflag-nlssMinSize>`
+:ref:`-nlssMaxDensity <simflag-nlssMaxDensity>`
+
 Enable logging:
 :ref:`-lv=LOG_LS <simflag-lv>`
 :ref:`-lv=LOG_LS_V <simflag-lv>`

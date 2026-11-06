@@ -38,7 +38,7 @@ pub fn solver_options() -> Vec<(&'static str, Vec<&'static str>)> {
 
 /// What an exported wasm FMU *could* serve: every solver, each a PIC side module the
 /// FMU linker adds beside the model. What a given FMU carries is narrower —
-/// [`fmu_solver_libraries`] picks from the flags it was exported with.
+/// [`fmu_solver_libraries`] picks.
 fn fmu_capabilities() -> simflags::Capabilities {
     simflags::Capabilities {
         klu: sundials_available(),
@@ -137,39 +137,24 @@ fn fmi_flags(json: &str) -> Vec<(String, String)> {
 }
 
 /// Which solver libraries an FMU exported with these `--fmiFlags` and this
-/// Co-Simulation method can reach; the rest are linked as stubs. Both are fixed
-/// at export, so this is the whole set the FMU will ever select from. `klu` comes
-/// along with any of the others: the shared SUNDIALS core they call into, and
-/// IDA's default linear solver.
+/// Co-Simulation method links; the rest are linked as stubs. kinsol, with the KLU
+/// core it calls into, is always linked: the compiler's density/size rule, `-nls`
+/// and `-nlssMaxDensity` / `-nlssMinSize` can all send a nonlinear system to it,
+/// and the simulation flags can change before the FMU starts.
 ///
 /// `cs` gates only the integrator: Model Exchange never integrates, but its
 /// initialisation and residuals run the same nonlinear and linear solvers.
-///
-/// `sparse_nls` is the one selection no flag records: C's density/size rule sends a
-/// large sparse nonlinear system to kinsol+KLU whatever the flags say, so a model
-/// carrying one needs both however it was exported.
-pub(super) fn fmu_solver_libraries(flags_json: &str, cs_method: &str, cs: bool, sparse_nls: bool) -> Vec<&'static str> {
+pub(super) fn fmu_solver_libraries(flags_json: &str, cs_method: &str, cs: bool) -> Vec<&'static str> {
     let flag = |name: &str| fmi_flag(flags_json, name).unwrap_or_default();
-    let (nls, ls, lss) = (flag("nls"), flag("ls"), flag("lss"));
-    let named = |v: &str| ls == v || lss == v;
     let mut wanted = Vec::new();
     if cs && fmu_needs_sundials(cs_method) {
         wanted.push("sundials_driver");
     }
-    if sparse_nls || matches!(nls.as_str(), "kinsol" | "experimental-kinsol") {
-        wanted.push("kinsol");
-    }
-    if named("lis") {
+    wanted.push("kinsol");
+    if flag("ls") == "lis" || flag("lss") == "lis" {
         wanted.push("lis");
     }
-    // gbode's internal solver factorizes with KLU, as C's does.
-    if !wanted.is_empty()
-        || named("klu")
-        || flag("nlsLS") == "klu"
-        || (cs && (flag("idaLS") == "klu" || cs_method == "gbode"))
-    {
-        wanted.push("klu");
-    }
+    wanted.push("klu");
     wanted
 }
 
