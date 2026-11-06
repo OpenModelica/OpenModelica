@@ -1912,6 +1912,7 @@ function(omc_rust_omedit_qt_web_page)
             ${_qt_bld}/OMEdit-qt.html ${_qt_bld}/OMEdit-qt.js
             ${_qt_bld}/OMEdit-qt.wasm ${_qt_bld}/qtloader.js
             ${_qt_bld}/qtlogo.svg ${_qt_pkgdir}/
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${_qt_bld}/share ${_qt_pkgdir}/share
     COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_DIR}/omshell_omc/omc_worker.js ${_web_dir}/omc_worker.js
     # The OAuth callback goes at the web ROOT, not in the versioned page directory:
     # neither Google nor Microsoft allows a wildcard redirect URI, so one page at
