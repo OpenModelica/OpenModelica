@@ -57,11 +57,11 @@ add_library(OMPlotLib STATIC
   ${OMPLOT}/PlotPanner.cpp ${OMPLOT}/PlotPicker.cpp ${OMPLOT}/PlotGrid.cpp
   ${OMPLOT}/PlotCurve.cpp ${OMPLOT}/PlotWindow.cpp ${OMPLOT}/PlotWindowContainer.cpp
   ${OMPLOT}/PlotMainWindow.cpp ${OMPLOT}/ScaleDraw.cpp ${OMPLOT}/LogScaleEngine.cpp
-  ${OMPLOT}/LinearScaleEngine.cpp ${OMPLOT}/resource_omplot.qrc
+  ${OMPLOT}/LinearScaleEngine.cpp ${OMPLOT}/PlotTranslator.cpp ${OMPLOT}/resource_omplot.qrc
   ${OMPLOT}/OMPlot.h ${OMPLOT}/PlotZoomer.h ${OMPLOT}/Legend.h ${OMPLOT}/PlotPanner.h
   ${OMPLOT}/PlotPicker.h ${OMPLOT}/PlotGrid.h ${OMPLOT}/PlotCurve.h ${OMPLOT}/PlotWindow.h
   ${OMPLOT}/PlotWindowContainer.h ${OMPLOT}/PlotMainWindow.h ${OMPLOT}/ScaleDraw.h
-  ${OMPLOT}/LogScaleEngine.h ${OMPLOT}/LinearScaleEngine.h
+  ${OMPLOT}/LogScaleEngine.h ${OMPLOT}/LinearScaleEngine.h ${OMPLOT}/PlotTranslator.h
   # VisualizationCSV still uses the C csv reader (om_strtod from omc_numbers.c).
   ${SIMRT}/util/read_csv.c ${SIMRT}/util/libcsv.c ${SIMRT}/util/omc_numbers.c
   ${CMAKE_CURRENT_SOURCE_DIR}/omc_file_shim.c)
