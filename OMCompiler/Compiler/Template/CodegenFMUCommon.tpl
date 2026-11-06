@@ -123,8 +123,8 @@ match simCode
 case SIMCODE(modelInfo=modelInfo) then
 match modelInfo
 case MODELINFO(vars=SIMVARS(stateVars=stateVars)) then
+  let scalarVariables =
   <<
-  <ModelVariables>
   <%System.tmpTickReset(0)%>
   <%vars.stateVars |> var =>
     ScalarVariable(var, simCode, stateVars, FMUVersion)
@@ -176,9 +176,30 @@ case MODELINFO(vars=SIMVARS(stateVars=stateVars)) then
   ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%externalFunctions(modelInfo)%>
+  >>
+  <<
+  <ModelVariables>
+  <%if scalarVariables then scalarVariables else if isFMIVersion20(FMUVersion) then fmi2TimeVariable(simCode)%>
   </ModelVariables>
   >>
 end fmiModelVariables;
+
+template fmi2TimeVariable(SimCode simCode)
+ "FMI 2.0 requires at least one ScalarVariable. For a model without variables,
+  list the independent variable time, which is the same as FMI 3.0 lists."
+::=
+  <<
+  <!-- Index of variable = "1" -->
+  <ScalarVariable
+    name="time"
+    valueReference="<%SimCodeCodegenUtil.getFMI3TimeValueReference(simCode)%>"
+    description="Simulation time"
+    causality="independent"
+    variability="continuous">
+    <Real/>
+  </ScalarVariable>
+  >>
+end fmi2TimeVariable;
 
 template ScalarVariable(SimVar simVar, SimCode simCode, list<SimVar> stateVars, String FMUVersion)
  "Generates code for ScalarVariable file for FMU target."
