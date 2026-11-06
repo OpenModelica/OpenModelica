@@ -2879,7 +2879,8 @@ algorithm
 
     case Expression.CREF(cref = ComponentRef.CREF())
       guard InstNode.isComponent(ComponentRef.node(exp.cref)) and
-            Component.variability(InstNode.component(ComponentRef.node(exp.cref))) == Variability.PARAMETER
+            Component.variability(InstNode.component(ComponentRef.node(exp.cref))) == Variability.PARAMETER and
+            not Util.getOptionOrDefault(Component.getEvaluateAnnotation(InstNode.component(ComponentRef.node(exp.cref))), false)
       algorithm
         node := ComponentRef.node(exp.cref);
         comp := InstNode.component(node);
