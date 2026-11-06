@@ -2769,6 +2769,13 @@ extern void dgelss_(const int*, const int*, const int*, double*, const int*,
                     double*, const int*, double*, const double*, int*,
                     double*, const int*, int*);
 
+static void combined_set_lambda(double lam)
+{{
+  int b;
+  for (b = 0; b < combined_n_components; ++b)
+    g_all[b]->simulationInfo->lambda = lam;
+}}
+
 static int combined_ic_lsq(threadData_t *td, double t, double *yv, double *ypv)
 {{
   enum {{ LW = 8*COMBINED_NRED*COMBINED_NRED + 64 }};
@@ -3030,8 +3037,40 @@ int main(int argc, char **argv)
          stall on this stiff fluid network, so disable it. */
       IDASetLineSearchOffIC(ida, SUNTRUE);
       IDASetMaxNumItersIC(ida, 100);
+      combined_set_lambda(1.0);
       fprintf(stderr, "[driver] calling IDACalcIC\\n");
       flag = IDACalcIC(ida, IDA_YA_YDP_INIT, (h > 0.0) ? t0 + h : t0 + 1.0);
+      if (flag < 0) {{
+        /* homotopy continuation of the initial conditions: start from the
+           simplified equations (lambda = 0), continue to the actual ones */
+        double lam = 0.0, dlam = 0.1;
+        N_Vector ys = N_VClone(yy), yps = N_VClone(yp);
+        fprintf(stderr, "[driver] IDACalcIC failed (%d); homotopy continuation\\n", flag);
+        combined_set_lambda(0.0);
+        IDAReInit(ida, t0, yy, yp);
+        flag = IDACalcIC(ida, IDA_YA_YDP_INIT, (h > 0.0) ? t0 + h : t0 + 1.0);
+        if (flag >= 0) {{
+          IDAGetConsistentIC(ida, yy, yp);
+          while (lam < 1.0 && dlam > 1e-4) {{
+            double next = (lam + dlam > 1.0) ? 1.0 : lam + dlam;
+            N_VScale(1.0, yy, ys); N_VScale(1.0, yp, yps);
+            combined_set_lambda(next);
+            IDAReInit(ida, t0, yy, yp);
+            if (IDACalcIC(ida, IDA_YA_YDP_INIT, (h > 0.0) ? t0 + h : t0 + 1.0) >= 0) {{
+              IDAGetConsistentIC(ida, yy, yp);
+              lam = next; dlam *= 1.5;
+            }} else {{
+              N_VScale(1.0, ys, yy); N_VScale(1.0, yps, yp);
+              dlam *= 0.5;
+            }}
+          }}
+          fprintf(stderr, "[driver] homotopy continuation reached lambda = %g\\n", lam);
+          flag = (lam >= 1.0) ? 0 : -1;
+        }}
+        combined_set_lambda(1.0);
+        IDAReInit(ida, t0, yy, yp);
+        N_VDestroy(ys); N_VDestroy(yps);
+      }}
       if (flag < 0 && COMBINED_NRED < COMBINED_N) {{
         /* conservative network with closed loops: after alias-collapse the IC
            system is consistent but its Jacobian is singular (redundant loop KCL),
