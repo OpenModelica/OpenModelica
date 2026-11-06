@@ -24,11 +24,14 @@ equation
   der(z) = x - z;
 end fmi3_cs_assert_solver_retry;
 "); getErrorString();
+setCommandLineOptions("--fmiFlags=s:cvode"); getErrorString();
 buildModelFMU(fmi3_cs_assert_solver_retry, version = "3.0", fmuType = "cs"); getErrorString();
 system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi3_cs_assert_solver_retry.py fmi3_cs_assert_solver_retry.fmu fmi3_cs_assert_solver_retry_out.txt > fmi3_cs_assert_solver_retry.log 2>&1"); getErrorString();
 readFile("fmi3_cs_assert_solver_retry_out.txt"); getErrorString();
 
 // Result:
+// true
+// ""
 // true
 // ""
 // "fmi3_cs_assert_solver_retry.fmu"
@@ -39,6 +42,7 @@ readFile("fmi3_cs_assert_solver_retry_out.txt"); getErrorString();
 // ""
 // "all 12 steps fmi3OK
 // x = -0.982011
+// warnings = 0
 // "
 // ""
 // endResult

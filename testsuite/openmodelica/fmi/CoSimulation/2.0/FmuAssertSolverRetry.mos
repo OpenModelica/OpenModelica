@@ -42,6 +42,7 @@ readFile("FmuAssertSolverRetry_out.txt"); getErrorString();
 // ""
 // "all 12 steps fmi2OK
 // x = -0.982011
+// warnings = 0
 // "
 // ""
 // endResult
