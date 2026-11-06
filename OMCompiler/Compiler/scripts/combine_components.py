@@ -323,11 +323,25 @@ class ComponentInfo:
 # Parsing helpers
 # ---------------------------------------------------------------------------
 
+# Scalarized code indexes the value arrays directly (realVars[N],
+# realParameter[N]); older code generators went through the index maps. The
+# parsers below expect the index-map form, so the direct form is rewritten to
+# it on reading: the maps are the identity for scalarized code.
+_RE_DIRECT_REALVAR   = re.compile(r'\brealVars\[(\d+)\]')
+_RE_DIRECT_REALPARAM = re.compile(r'\brealParameter\[(\d+)\]')
+
+
+def _read_c(path: str) -> str:
+    text = open(path).read()
+    text = _RE_DIRECT_REALVAR.sub(r'realVars[data->simulationInfo->realVarsIndex[\1]]', text)
+    return _RE_DIRECT_REALPARAM.sub(r'realParameter[data->simulationInfo->realParamsIndex[\1]]', text)
+
+
 # realVars[data->simulationInfo->realVarsIndex[N]] /* name variable */
 # Note the double ]] : one closes realVarsIndex[N], one closes realVars[...].
 _RE_REALVAR  = re.compile(
     r'realVarsIndex\[(\d+)\]\]\s*/\*\s*([^\*]+?)\s*'
-    r'(variable|STATE|STATE_DER|DAE_RESIDUAL|DAE_AUX)\s*\*/')
+    r'(variable|STATE(?:\([^)]*\))?|STATE_DER|DAE_RESIDUAL|DAE_AUX)\s*\*/')
 _RE_PARAM    = re.compile(
     r'realParamsIndex\[(\d+)\]\]\s*/\*\s*([^\*]+?)\s*PARAM\s*\*/')
 
@@ -339,6 +353,26 @@ _RE_FDUMMY_CALL = re.compile(
     r'\s*' + _FDUMMY_CFUNC + r'\s*\(threadData,\s*(.+?)\);',
     re.DOTALL
 )
+# newer code generators route the call through a temporary:
+#   tmpK = omc_fM(threadData, args); ... (residualVars[i]) = tmpK;
+_RE_FDUMMY_CALL_TMP = re.compile(
+    r'(\w+)\s*=\s*' + _FDUMMY_CFUNC + r'\s*\(threadData,\s*(.+?)\);'
+    r'.*?\(data->simulationInfo->daeModeData->residualVars\[(\d+)\]\)[^=;]*=\s*\1\s*;',
+    re.DOTALL
+)
+
+
+def _fdummy_call(body):
+    """(residual index, fdummy number, argument text) of a $fdummy residual, else None."""
+    m = _RE_FDUMMY_CALL.search(body)
+    if m:
+        return int(m.group(1)), int(m.group(2)), m.group(3)
+    m = _RE_FDUMMY_CALL_TMP.search(body)
+    if m:
+        return int(m.group(4)), int(m.group(2)), m.group(3)
+    return None
+
+
 _RE_EQFUNC_START = re.compile(
     r'void\s+(\w+)_eqFunction_(\d+)\s*\(DATA\s*\*data,\s*threadData_t\s*\*threadData\)')
 
@@ -457,7 +491,7 @@ def parse_dae_file(path: str, prefix: str) -> Tuple[
     count, algebraic variable indices, nAlgebraicDAEVars, the DAE-mode sparse
     pattern (per-column residual-row lists) and the set of realVars indices the
     component assigns itself."""
-    text = open(path).read()
+    text = _read_c(path)
     assigned_vars = {int(m.group(1)) for m in _RE_ASSIGN_LHS.finditer(text)}
 
     alg_m = _RE_ALG_INDEXES.search(text)
@@ -501,15 +535,14 @@ def parse_dae_file(path: str, prefix: str) -> Tuple[
         body_end   = func_starts[i + 1].start() if i + 1 < len(func_starts) else len(text)
         body       = text[body_start:body_end]
 
-        m = _RE_FDUMMY_CALL.search(body)
-        if not m:
+        fc = _fdummy_call(body)
+        if not fc:
             if 'daeModeData->residualVars[' in body:   # a real residual eqFunction
                 real_residual_vars.update(int(v.group(1)) for v in _RE_VARIDX.finditer(body))
             continue
 
-        res_idx    = int(m.group(1))
-        fdummy_num = int(m.group(2))
-        arg_exprs  = _extract_c_args(m.group(3))
+        res_idx, fdummy_num, args = fc
+        arg_exprs  = _extract_c_args(args)
         fdummy_residuals.append(FdummyResidual(
             residual_idx = res_idx,
             fdummy_num   = fdummy_num,
@@ -1229,7 +1262,7 @@ def build_connection_table(comps, specs, edges):
         dae_c = os.path.join(comp.directory, f'{pfx}_16dae.c')
         if not os.path.exists(dae_c):
             continue
-        text = open(dae_c).read()
+        text = _read_c(dae_c)
         for m in _RE_INSTREAM_CALL.finditer(text):
             inner = m.group(1)
             vm = _RE_VAR_COMMENT.search(inner)
@@ -1383,7 +1416,7 @@ def generate_reusable_dae(comp: ComponentInfo) -> str:
     combined_apply_connections(). Unlike generate_connected_dae this bakes in no
     topology, so the very same C is reusable across instances of the type."""
     prefix = comp.prefix
-    text = open(os.path.join(comp.directory, f'{prefix}_16dae.c')).read()
+    text = _read_c(os.path.join(comp.directory, f'{prefix}_16dae.c'))
     anchor = '#include "simulation/solver/dae_mode.h"'
     if 'combined_setup.h' not in text and anchor in text:
         text = text.replace(anchor, anchor + '\n#include "combined_setup.h"', 1)
@@ -1615,7 +1648,7 @@ def generate_connected_dae(comp: ComponentInfo,
     replaces <pfx>_16dae.o."""
     prefix = comp.prefix
     orig   = os.path.join(comp.directory, f'{prefix}_16dae.c')
-    text   = open(orig).read()
+    text   = _read_c(orig)
 
     # make the cross-component g_<comp>_data pointers visible
     anchor = '#include "simulation/solver/dae_mode.h"'
@@ -2111,6 +2144,12 @@ def generate_jacobian_c(gj: GlobalJacobian, comps) -> str:
         '    threadData->localRoots[LOCAL_ROOT_SIMULATION_DATA] = d;',
         '    dae = d->simulationInfo->daeModeData;',
         '    dae->evaluateDAEResiduals(d, threadData, evalMode);',
+        '    /* the generated code returned early on a runtime error; clear the',
+        '       flag, else every later evaluation stops at its first check */',
+        '    if (OMC_ERROR_RAISED()) {',
+        '      OMC_ERROR_CLEAR();',
+        '      return 1;',
+        '    }',
         '  }',
         '  combined_apply_connections();',
         '  for (b = 0; b < combined_n_components; ++b) {',
@@ -2390,6 +2429,11 @@ def generate_setup_header(comp_prefixes) -> str:
         '   outflow at runtime (called from the components\' base DAE code). */',
         'extern double combined_instream(DATA *data, int my_varidx);',
         '',
+        '/* Identity inStream() of an unconnected stream connector, defined in each',
+        '   component\'s DAE file but also called from its init/bound files: they',
+        '   need the prototype, an implicit declaration would return int. */',
+        'double inStream(double __x);',
+        '',
         '#ifdef __cplusplus',
         '}',
         '#endif',
@@ -2646,6 +2690,9 @@ static void init_component(DATA *d, MODEL_DATA *md, SIMULATION_INFO *si,
     d->callback->updateBoundParameters(d, threadData);
     d->callback->updateBoundVariableAttributes(d, threadData);
     setAllVarsToStart(d->localData[0], d->simulationInfo, d->modelData);
+    /* variables bound to parameters (e.g. Resistor.R_actual) are assigned in
+       updateBoundParameters; setAllVarsToStart reset them to their start value */
+    d->callback->updateBoundParameters(d, threadData);
     updateStaticDataOfNonlinearSystems(d, threadData);
   }}
   d->localData[0]->timeValue = d->simulationInfo->startTime;
@@ -2702,7 +2749,11 @@ static void combined_reduced_residual(threadData_t *td, double t,
   combined_expand(upred, ypf, 1);
   combined_set_unknowns(yf);
   combined_set_derivatives(ypf);
-  combined_eval_residual(td, EVAL_ALL, rf);
+  if (combined_eval_residual(td, EVAL_ALL, rf) != 0) {{
+    int k;
+    for (k = 0; k < COMBINED_NRED; ++k) fred[k] = NAN;
+    return;
+  }}
   combined_compress(rf, fred);
 }}
 
@@ -2758,10 +2809,11 @@ static int combined_ic_lsq(threadData_t *td, double t, double *yv, double *ypv)
 
    The model contains physical-range asserts (e.g. mass fraction in [0,1]) that
    fire when IDA's Newton iterate strays out of the valid region.  These must
-   NOT abort the run: we catch them on the simulation jump buffer (where
-   throwStreamPrint longjmps) and return a RECOVERABLE error (+1) so IDA retries
-   with a smaller step. */
-static int combined_resfn(realtype t, N_Vector yy, N_Vector yp,
+   NOT abort the run: an error reported through threadData->errorState makes
+   combined_eval_residual return nonzero, one that still longjmps is caught on
+   the simulation jump buffer; both return a RECOVERABLE error (+1) so IDA
+   retries with a smaller step. */
+static int combined_resfn(sunrealtype t, N_Vector yy, N_Vector yp,
                           N_Vector rr, void *user_data)
 {{
   threadData_t *threadData = (threadData_t*) user_data;
@@ -2782,11 +2834,12 @@ static int combined_resfn(realtype t, N_Vector yy, N_Vector yp,
   /* route model asserts (range checks etc.) to the simulation jump buffer so a
      bad Newton iterate becomes a recoverable error instead of aborting. */
   threadData->currentErrorStage = ERROR_INTEGRATOR;
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
-    combined_eval_residual(threadData, EVAL_ALL, rfull);
-    combined_compress(rfull, rred);
-    ok = 1;
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
+    if (combined_eval_residual(threadData, EVAL_ALL, rfull) == 0) {{
+      combined_compress(rfull, rred);
+      ok = 1;
+    }}
+  OMC_CATCH_INTERNAL(simulationJumpBuffer)
   threadData->currentErrorStage = saveStage;
   return ok ? 0 : 1;   /* 1 = recoverable: IDA reduces the step and retries */
 }}
@@ -2886,10 +2939,10 @@ int main(int argc, char **argv)
   omc_throw          = omc_throw_simulation;
   measure_time_flag  = 0;
   compiledInDAEMode  = 1;
-  MMC_INIT(0);
+  OMC_INIT(0);
   omc_alloc_interface.init();
   {{
-    MMC_TRY_TOP()
+    OMC_TRY_TOP()
 
 {init_calls}
 {assign}
@@ -2918,10 +2971,12 @@ int main(int argc, char **argv)
 
     {{
       sunindextype N = COMBINED_NRED;
-      N_Vector yy  = N_VNew_Serial(N);
-      N_Vector yp  = N_VNew_Serial(N);
-      N_Vector id  = N_VNew_Serial(N);
-      N_Vector av  = N_VNew_Serial(N);
+      SUNContext sunctx;
+      if (SUNContext_Create(SUN_COMM_NULL, &sunctx)) {{ fprintf(stderr, "SUNContext_Create failed\\n"); return 1; }}
+      N_Vector yy  = N_VNew_Serial(N, sunctx);
+      N_Vector yp  = N_VNew_Serial(N, sunctx);
+      N_Vector id  = N_VNew_Serial(N, sunctx);
+      N_Vector av  = N_VNew_Serial(N, sunctx);
       double *yv  = N_VGetArrayPointer(yy);
       double *idv = N_VGetArrayPointer(id);
       double *atv = N_VGetArrayPointer(av);
@@ -2957,15 +3012,15 @@ int main(int argc, char **argv)
         {{ double s = fabs(yv[i]); atv[i] = 1e-6 * (s > 1.0 ? s : 1.0); }}
       }}
 
-      ida = IDACreate();
+      ida = IDACreate(sunctx);
       flag = IDAInit(ida, combined_resfn, t0, yy, yp);
       if (flag != IDA_SUCCESS) {{ fprintf(stderr, "IDAInit failed: %d\\n", flag); return 1; }}
       IDASVtolerances(ida, 1e-6, av);
       IDASetUserData(ida, threadData);
       IDASetId(ida, id);
       IDASetSuppressAlg(ida, SUNTRUE);    /* don't error-control algebraic vars */
-      A  = SUNDenseMatrix(N, N);
-      LS = SUNLinSol_Dense(yy, A);
+      A  = SUNDenseMatrix(N, N, sunctx);
+      LS = SUNLinSol_Dense(yy, A, sunctx);
       flag = IDASetLinearSolver(ida, LS, A);
       if (flag != IDALS_SUCCESS) {{ fprintf(stderr, "IDASetLinearSolver failed: %d\\n", flag); return 1; }}
       IDASetMaxNumSteps(ida, 500000);
@@ -3035,10 +3090,11 @@ int main(int argc, char **argv)
       SUNLinSolFree(LS);
       SUNMatDestroy(A);
       N_VDestroy(yy); N_VDestroy(yp); N_VDestroy(id); N_VDestroy(av);
+      SUNContext_Free(&sunctx);
       fprintf(stderr, "done.\\n");
     }}
 
-    MMC_CATCH_TOP(fprintf(stderr, "combined driver: execution failed (caught)\\n");
+    OMC_CATCH_TOP(fprintf(stderr, "combined driver: execution failed (caught)\\n");
                   return 1;)
   }}
   return 0;
@@ -3127,9 +3183,9 @@ def generate_makefile(comp_prefixes, output_prefix, directory, comps) -> str:
         f'INC    := {inc}',
         f'LIBS   := {libs}',
         'CC     := gcc',
-        '# -DOM_HAVE_PTHREADS is required by the MMC_INIT/MMC_TRY_TOP macros.',
+        '# -DOM_HAVE_PTHREADS is required by the OMC_INIT/OMC_TRY_TOP macros.',
         'CFLAGS := -O2 -fPIC -DOM_HAVE_PTHREADS -fno-dollars-in-identifiers '
-        '-Wno-parentheses-equality $(INC)',
+        '-Wno-parentheses-equality -include combined_setup.h $(INC)',
         '# Within one component .so, dead connector placeholders + shared Modelica',
         '# helpers can still appear twice; keep the first.  -Bsymbolic isolates the',
         '# per-model symbols from OTHER components.',
@@ -3155,7 +3211,7 @@ def generate_makefile(comp_prefixes, output_prefix, directory, comps) -> str:
         '# for the static archives: dependents before dependencies, before $(LIBS)',
         '# which supplies lapack/blas/m and the -L search paths.',
         'IDALIBS := -lsundials_ida -lsundials_sunlinsoldense '
-        '-lsundials_sunmatrixdense -lsundials_nvecserial',
+        '-lsundials_sunmatrixdense -lsundials_nvecserial -lsundials_core',
         '',
         f'all: {output_prefix} {output_prefix}.so',
         '',
@@ -3163,7 +3219,7 @@ def generate_makefile(comp_prefixes, output_prefix, directory, comps) -> str:
         f'{output_prefix}: combined_main.o combined_glue.o combined_jacobian.o combined_connections.o $(COMP_LIBS)',
         f'\t$(CC) -o $@ combined_main.o combined_glue.o combined_jacobian.o combined_connections.o \\',
         f'\t    -L. -Wl,-rpath,$(CURDIR) {" ".join("-l"+p for p in type_reprs)} \\',
-        f'\t    -L$(OMLIBDIR) $(IDALIBS) \\',
+        f'\t    -L$(OMLIBDIR) -lSimulationRuntimeC $(IDALIBS) \\',
         f'\t    $(LIBS)',
         '',
     ]
