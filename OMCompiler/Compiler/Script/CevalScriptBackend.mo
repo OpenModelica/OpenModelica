@@ -4759,8 +4759,22 @@ protected
   // Reached through the target, the caller still wants an FMU the ordinary
   // tooling can load, so it gets this machine's platform too.
   list<String> nativePlatforms = if wasmRequested then List.select(platforms, isNotWasmPlatform) else {"native"};
+  Boolean withFMI2 = false;
 algorithm
   cache := inCache;
+  // Internal, for OpenModelicaLibraryTesting only: an FMI 3.0 binary that also
+  // serves FMI 2.0, in an FMU laid out for FMI 2.0. modelDescription.fmi3.xml is
+  // the FMI 3.0 description. A wasm simCodeTarget gets the C export, as FMI 1.0 does.
+  if FMUVersion == "2.0+3.0" then
+    if wasmRequested or not (Config.simCodeTarget() == "C" or wasmTarget) then
+      outValue := Values.STRING("");
+      Error.addCompilerError("FMI version 2.0+3.0 needs the C export and native platforms.");
+      return;
+    end if;
+    FMUVersion := "3.0";
+    withFMI2 := true;
+    isWasmFMU := false;
+  end if;
   if not FMI.checkFMIVersion(FMUVersion) then
     outValue := Values.STRING("");
     Error.addMessage(Error.UNKNOWN_FMU_VERSION, {FMUVersion});
@@ -4827,6 +4841,7 @@ algorithm
   end if;
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, true);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, FMUVersion);
+  FlagsUtil.setConfigBool(Flags.FMU_WITH_FMI2, withFMI2);
   // A translateModelFMU of this model, this FMI version and this kind of
   // interface, off the program still loaded and under the flags still set, has
   // already done the translation: render the metadata and link the adapter onto
@@ -4849,10 +4864,12 @@ algorithm
     outValue := Values.STRING("");
     FlagsUtil.setConfigBool(Flags.BUILDING_FMU, false);
     FlagsUtil.setConfigString(Flags.FMI_VERSION, "");
+    FlagsUtil.setConfigBool(Flags.FMU_WITH_FMI2, false);
     return;
   end try;
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, false);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, "");
+  FlagsUtil.setConfigBool(Flags.FMU_WITH_FMI2, false);
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_BUILD_MODEL);
 
