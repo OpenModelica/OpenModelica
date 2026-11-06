@@ -77,6 +77,7 @@ typedef struct OMC_FMU_PARAMDEPS {
 /* Reads <resourcesDir>/<modelFilePrefix>_paramdeps.bin. Never NULL; error[0]
  * is set if it failed. */
 OMC_FMU_PARAMDEPS* omc_fmu_paramdeps_load(const MODEL_DATA *modelData);
+OMC_FMU_PARAMDEPS* omc_fmu_paramdeps_load_file(const char *path);
 /* Makes room for every slot of the model, once its scalar sizes are known. */
 void omc_fmu_paramdeps_resize(OMC_FMU_PARAMDEPS *deps, const MODEL_DATA *modelData);
 void omc_fmu_paramdeps_free(OMC_FMU_PARAMDEPS *deps);

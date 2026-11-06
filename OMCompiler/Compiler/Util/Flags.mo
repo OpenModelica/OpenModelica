@@ -1472,6 +1472,10 @@ constant ConfigFlag FMI_TUNABLE_PARAMETERS = CONFIG_FLAG(172, "fmiTunableParamet
     })),
   "Which parameters an FMU 2.0 or 3.0 exports as tunable.");
 
+constant ConfigFlag TUNABLE_PARAMETERS = CONFIG_FLAG(173, "tunableParameters",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  "Lets the embedded server (-embeddedServer) of a simulation change tunable parameters.");
+
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
   input Boolean initialize = true;

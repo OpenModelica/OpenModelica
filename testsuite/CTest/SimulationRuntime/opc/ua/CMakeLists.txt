@@ -4,5 +4,6 @@ target_compile_definitions(test_opc_ua_embedded_server PRIVATE OMOPCUA_PATH="$<T
 target_link_libraries(test_opc_ua_embedded_server PRIVATE SimulationRuntimeC omc::3rd::opcua)
 add_dependencies(test_opc_ua_embedded_server omopcua)
 add_test(NAME test_opc_ua_embedded_server COMMAND test_opc_ua_embedded_server)
+set_tests_properties(test_opc_ua_embedded_server PROPERTIES TIMEOUT 120)
 
 add_dependencies(ctestsuite-depends test_opc_ua_embedded_server)

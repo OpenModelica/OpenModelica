@@ -34,8 +34,9 @@
  */
 
 encapsulated package ParamDeps
-"Finds the tunable parameters of an FMU 2.0 or 3.0 and the dependencies
- between the parameters, see SimCode.ParamDeps."
+"Finds the tunable parameters of an FMU 2.0 or 3.0, or of a simulation with
+ --tunableParameters, and the dependencies between the parameters, see
+ SimCode.ParamDeps."
 
 import SimCode;
 
@@ -47,7 +48,6 @@ import ComponentReferenceBasics;
 import DAE;
 import DAEUtil;
 import Expression;
-import FMI;
 import HashTableCrefSimVar;
 import Flags;
 import List;
@@ -78,7 +78,6 @@ public
 function add
   "Sets SimCode.paramDeps and marks the tunable parameters."
   input SimCode.SimCode simCode;
-  input String FMUVersion;
   output SimCode.SimCode outSimCode = simCode;
 protected
   SimCode.ModelInfo modelInfo;
@@ -89,9 +88,6 @@ protected
   list<Integer> paramSlots;
   UnorderedMap<String, Boolean> groups;
 algorithm
-  if not (FMI.isFMIVersion20(FMUVersion) or FMI.isFMIVersion30(FMUVersion)) then
-    return;
-  end if;
   modelInfo := simCode.modelInfo;
   vars := modelInfo.vars;
   slots := createSlots(vars);
