@@ -86,6 +86,7 @@ protected
   import NBInitialization;
   import NBVariable.{VariablePointers, VarData};
   import BVariable = NBVariable;
+  import DataReconciliation = NBDataReconciliation;
   import Partition = NBPartition;
   import NBResizable;
 
@@ -376,6 +377,7 @@ public
             // create sim vars before everything else
             residual_vars                       := BackendDAE.getLoopResiduals(bdae);
             (vars, simCodeIndices)              := SimVars.create(varData, residual_vars, simCodeIndices);
+            vars                                := SimVars.addDataReconciliation(vars, bdae.dataReconciliation);
             (extObjInfo, vars, simCodeIndices)  := ExtObjInfo.create(varData.external_objects, vars, simCodeIndices);
             simcode_map                         := SimCodeUtil.createSimCodeMap(vars, extObjInfo);
 
@@ -472,7 +474,7 @@ public
             (jacB, simCodeIndices) := SimJacobian.empty("B", simCodeIndices);
             (jacC, simCodeIndices) := SimJacobian.empty("C", simCodeIndices);
             (jacD, simCodeIndices) := SimJacobian.empty("D", simCodeIndices);
-            (jacF, simCodeIndices) := SimJacobian.empty("F", simCodeIndices);
+            (jacF, simCodeIndices) := SimJacobian.createDataReconciliationJacobian(bdae.dataReconciliation, simCodeIndices, simcode_map);
             (jacH, simCodeIndices) := SimJacobian.empty("H", simCodeIndices);
 
             (jacLfg, jacMrf, jacR0, simCodeIndices) := SimJacobian.createOptimizationJacobian(listAppend(bdae.ode, bdae.ode_event), simCodeIndices, simcode_map);
@@ -548,6 +550,7 @@ public
 
             (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, fileName, directory, functions, linearLoops, nonlinearLoops, eventInfo, bdae.clockedInfo,
               List.sort(program.classes, AbsynUtil.classNameGreater), simCodeIndices);
+            modelInfo := ModelInfo.setRelatedBoundaryConditions(modelInfo, bdae.dataReconciliation);
 
             simCode := SIM_CODE(
               modelInfo                 = modelInfo,
@@ -944,6 +947,22 @@ public
         then fail();
       end match;
     end setSeedVars;
+
+    function setRelatedBoundaryConditions
+      input output ModelInfo modelInfo;
+      input Option<DataReconciliation.ReconciliationData> data_opt;
+    algorithm
+      modelInfo := match (modelInfo, data_opt)
+        local
+          VarInfo varInfo;
+          DataReconciliation.ReconciliationData data;
+        case (MODEL_INFO(varInfo = varInfo as VarInfo.VAR_INFO()), SOME(data as DataReconciliation.RECONCILIATION_DATA())) algorithm
+          varInfo.numRelatedBoundaryConditions := data.relatedBoundaryConditions;
+          modelInfo.varInfo := varInfo;
+        then modelInfo;
+        else modelInfo;
+      end match;
+    end setRelatedBoundaryConditions;
 
     function convert
       input ModelInfo modelInfo;
