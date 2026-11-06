@@ -63,7 +63,7 @@ simulate(SingleBeltInitialize2, stopTime=0.1, simflags="-lv=LOG_EVENTS"); getErr
 //     messages = "LOG_EVENTS        | info    | status of relations at time=0
 // |                 | |       | | [1] (pre: false) false = $spatialDistributionZeroCrossing(0, 0, x, true)
 // LOG_EVENTS        | info    | status of zero crossings at time=0
-// |                 | |       | | [1] (pre:  0)  1 = $spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
+// |                 | |       | | [1] (pre: false)  true = $spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_EVENTS        | info    | state event at time=3.33076252011e-17
 // |                 | |       | | [1] $spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
@@ -83,7 +83,7 @@ simulate(SingleBeltInitialize2, stopTime=0.1, simflags="-lv=LOG_EVENTS"); getErr
 //     messages = "LOG_EVENTS        | info    | status of relations at time=0
 // |                 | |       | | [1] (pre: false) false = $spatialDistributionZeroCrossing(0, 0, x, false)
 // LOG_EVENTS        | info    | status of zero crossings at time=0
-// |                 | |       | | [1] (pre:  0)  1 = $spatialDistributionZeroCrossing(0, 0, x, false) > 0.0
+// |                 | |       | | [1] (pre: false)  true = $spatialDistributionZeroCrossing(0, 0, x, false) > 0.0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_EVENTS        | info    | state event at time=0.01
 // |                 | |       | | [1] $spatialDistributionZeroCrossing(0, 0, x, false) > 0.0
