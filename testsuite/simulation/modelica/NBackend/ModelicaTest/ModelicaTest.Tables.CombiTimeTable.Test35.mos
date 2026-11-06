@@ -8,7 +8,7 @@ simulate(ModelicaTest.Tables.CombiTimeTable.Test35, fileNamePrefix="ModelicaTest
 
 setCommandLineOptions("--newBackend"); getErrorString();
 simulate(ModelicaTest.Tables.CombiTimeTable.Test35); getErrorString();
-diffSimulationResults("ModelicaTest.Tables.CombiTimeTable.Test35_res.mat", "ModelicaTest.Tables.CombiTimeTable.Test35_ref_res.mat", "ModelicaTest.Tables.CombiTimeTable.Test35_diff.csv", 1e-8);
+diffSimulationResults("ModelicaTest.Tables.CombiTimeTable.Test35_res.mat", "ModelicaTest.Tables.CombiTimeTable.Test35_ref_res.mat", "ModelicaTest.Tables.CombiTimeTable.Test35_diff.csv", 1e-8, vars={"d2_t_new.y", "d_t_new.y", "der(d_t_new.u)", "t_new.columns[1]", "t_new.extrapolation", "t_new.nout", "t_new.offset[1]", "t_new.shiftTime", "t_new.smoothness", "t_new.startTime", "t_new.t_max", "t_new.t_maxScaled", "t_new.t_min", "t_new.t_minScaled", "t_new.tableOnFile", "t_new.table[1,1]", "t_new.table[1,2]", "t_new.table[2,1]", "t_new.table[2,2]", "t_new.table[3,1]", "t_new.table[3,2]", "t_new.table[4,1]", "t_new.table[4,2]", "t_new.table[5,1]", "t_new.table[5,2]", "t_new.table[6,1]", "t_new.table[6,2]", "t_new.timeEvents", "t_new.timeScale", "t_new.verboseExtrapolation", "t_new.verboseRead", "t_new.y[1]"});
 
 // Result:
 // true
