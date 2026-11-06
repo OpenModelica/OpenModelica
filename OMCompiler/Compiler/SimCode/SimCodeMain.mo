@@ -518,9 +518,10 @@ end runTpl;
 // TODO: use another switch ... later make it first class option like -target or so
 protected function callTargetTemplates "
   Generate target code by passing the SimCode data structure to templates."
-  input SimCode.SimCode simCode;
+  input SimCode.SimCode inSimCode;
   input String target;
 protected
+  SimCode.SimCode simCode = if target == "C" and Flags.getConfigBool(Flags.TUNABLE_PARAMETERS) then ParamDeps.add(inSimCode) else inSimCode;
   partial function Func
     input Tpl.Text txt;
     input SimCode.SimCode a_simCode;
@@ -610,6 +611,11 @@ algorithm
         System.realtimeTick(ClockIndexes.RT_PROFILER0);
         codegenFuncs := {};
         codegenFuncs := (function runToBoolean(func=function SerializeInitXML.simulationInitFileReturnBool(simCode=simCode, guid=guid))) :: codegenFuncs;
+        if Flags.getConfigBool(Flags.TUNABLE_PARAMETERS) then
+          SerializeFmuInit.writeParamDeps(simCode.paramDeps, simCode.fileNamePrefix + "_paramdeps.bin");
+        elseif System.regularFileExists(simCode.fileNamePrefix + "_paramdeps.bin") then
+          System.removeFile(simCode.fileNamePrefix + "_paramdeps.bin");
+        end if;
         codegenFuncs := (function runTpl(func=function CodegenC.translateModel(in_a_simCode=simCode))) :: codegenFuncs;
         for f in {
           // external objects
@@ -1053,8 +1059,8 @@ protected
   // an FMU built under it is the same fmi-ls-wasm component "wasm-jit" emits.
   String fmuTarget = if target == "wasm" then "wasm-jit" else target;
 algorithm
-  if fmuTarget == "C" or fmuTarget == "wasm-jit" then
-    simCode := ParamDeps.add(simCode, FMUVersion);
+  if (fmuTarget == "C" or fmuTarget == "wasm-jit") and (FMI.isFMIVersion20(FMUVersion) or FMI.isFMIVersion30(FMUVersion)) then
+    simCode := ParamDeps.add(simCode);
   end if;
 
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
