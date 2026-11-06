@@ -21,6 +21,7 @@ class Fmu:
         self.token = re.search(r'instantiationToken="([^"]*)"', md).group(1).encode()
         clock = re.search(r'<Clock name="[^"]*" valueReference="(\d+)"', md)
         self.clock = int(clock.group(1)) if clock else 0
+        self.structural = 'causality="structuralParameter"' in md
         self.vr = {name: int(vr) for name, vr in re.findall(r'name="([^"]*)" valueReference="(\d+)"', md)}
         self.resources = os.path.abspath(os.path.join(folder, "resources")).encode()
         self.lib = C.CDLL(os.path.abspath(glob.glob(os.path.join(folder, "binaries", "*", "*"))[0]))
@@ -92,6 +93,12 @@ STATES = {
 }
 
 
+# Configuration Mode is only open on an FMU with a structural parameter.
+for state in [s for s in STATES if s.endswith(".Configuration")]:
+    if not (se if state.startswith("SE") else me_cs).structural:
+        del STATES[state]
+
+
 def states(*names):
     return set(names)
 
@@ -160,6 +167,9 @@ ANY_STATE = {"SetDebugLogging": (False, 0, None), "Reset": ()}
 
 mismatches = 0
 for call, (allowed, args) in ALLOWED.items():
+    allowed = allowed & set(STATES)
+    if call == "EnterConfigurationMode":
+        allowed = {s for s in allowed if (se if s.startswith("SE") else me_cs).structural}
     legal = set()
     for state, reach in STATES.items():
         i, fmu = reach()

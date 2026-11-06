@@ -66,12 +66,12 @@ readFile("StateMachine.log"); getErrorString();
 // GetBoolean: 14 states
 // GetString: 14 states
 // GetBinary: 14 states
-// SetFloat64: 16 states
-// SetInt32: 15 states
-// SetInt64: 15 states
-// SetBoolean: 15 states
-// SetString: 15 states
-// SetBinary: 15 states
+// SetFloat64: 13 states
+// SetInt32: 12 states
+// SetInt64: 12 states
+// SetBoolean: 12 states
+// SetString: 12 states
+// SetBinary: 12 states
 // GetFloat32: 14 states
 // GetInt8: 14 states
 // GetUInt8: 14 states
@@ -79,13 +79,13 @@ readFile("StateMachine.log"); getErrorString();
 // GetUInt16: 14 states
 // GetUInt32: 14 states
 // GetUInt64: 14 states
-// SetFloat32: 16 states
-// SetInt8: 15 states
-// SetUInt8: 15 states
-// SetInt16: 15 states
-// SetUInt16: 15 states
-// SetUInt32: 15 states
-// SetUInt64: 15 states
+// SetFloat32: 13 states
+// SetInt8: 12 states
+// SetUInt8: 12 states
+// SetInt16: 12 states
+// SetUInt16: 12 states
+// SetUInt32: 12 states
+// SetUInt64: 12 states
 // GetClock: 2 states
 // SetClock: 2 states
 // GetIntervalDecimal: 7 states
@@ -116,8 +116,8 @@ readFile("StateMachine.log"); getErrorString();
 // ActivateModelPartition: 1 states
 // EnterInitializationMode: 3 states
 // ExitInitializationMode: 4 states
-// EnterConfigurationMode: 3 states
-// ExitConfigurationMode: 3 states
+// EnterConfigurationMode: 0 states
+// ExitConfigurationMode: 0 states
 // Terminate: 6 states
 // SetDebugLogging: refused in no state
 // Reset: refused in no state

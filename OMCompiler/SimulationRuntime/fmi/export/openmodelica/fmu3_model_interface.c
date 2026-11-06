@@ -904,11 +904,23 @@ fmi3Status fmi3GetAdjointDerivative(fmi3Instance instance, const fmi3ValueRefere
 /* ---------------------------------------------------------------------------
  * Configuration Mode. Every structural parameter of an exported FMU is `fixed`,
  * so it is only open from Instantiated: there is no Reconfiguration Mode, which
- * a `tunable` one would need, from Event Mode or Step Mode.
+ * a `tunable` one would need, from Event Mode or Step Mode. FMI 3.0 forbids
+ * entering it on an FMU without a structural parameter, and an FMU of this
+ * runtime declares none (FMI3_HAS_STRUCTURAL_PARAMETERS).
  * ------------------------------------------------------------------------- */
+#ifndef FMI3_HAS_STRUCTURAL_PARAMETERS
+#define FMI3_HAS_STRUCTURAL_PARAMETERS 0
+#endif
+
 fmi3Status fmi3EnterConfigurationMode(fmi3Instance instance)
 {
   ModelInstance *comp = fmu3InnerComp(instance);
+  if (!comp) return fmi3Error;
+  if (!FMI3_HAS_STRUCTURAL_PARAMETERS) {
+    FILTERED_LOG(comp, fmi3Error, LOG_STATUSERROR, "fmi3EnterConfigurationMode: Illegal call sequence. fmi3EnterConfigurationMode is not allowed for an FMU without a structural parameter.")
+    comp->state = model_state_error;
+    return fmi3Error;
+  }
   if (invalidState(comp, "fmi3EnterConfigurationMode", model_state_instantiated, model_state_instantiated))
     return fmi3Error;
   FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "fmi3EnterConfigurationMode")

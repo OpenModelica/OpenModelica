@@ -360,13 +360,21 @@ nullary!(
     st::TERMINATED,
     terminate
 );
-nullary!(
-    omc_fmi3EnterConfigurationMode,
-    "fmi3EnterConfigurationMode",
-    st::INSTANTIATED,
-    st::CONFIGURATION,
-    enter_configuration_mode
-);
+/// FMI 3.0 forbids it on an FMU without a structural parameter, which only a
+/// `--daeMode` FMU (fmi-ls-dae's switch) has.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn omc_fmi3EnterConfigurationMode(c: *mut c_void) -> c_int {
+    let func = "fmi3EnterConfigurationMode";
+    let Some(c) = in_state(c, func, st::INSTANTIATED) else {
+        return ERROR;
+    };
+    if !c.n.inst.has_structural_parameters() {
+        refuse(c, func, "an FMU without a structural parameter");
+        return ERROR;
+    }
+    let r = code(c.n.inst.enter_configuration_mode());
+    c.moved(r, st::CONFIGURATION)
+}
 nullary!(
     omc_fmi3ExitConfigurationMode,
     "fmi3ExitConfigurationMode",

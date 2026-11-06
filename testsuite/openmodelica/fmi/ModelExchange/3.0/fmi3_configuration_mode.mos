@@ -1,25 +1,46 @@
 // name: fmi3_configuration_mode.mos
 // keywords: FMI 3.0 export Configuration Mode structural parameter
 // status: correct
-// teardown_command: rm -rf ConfigMode.fmu ConfigMode.fmutmp/ ConfigMode_unzipped/ ConfigMode.log ConfigMode_info.json ConfigMode_FMU.libs ConfigMode_FMU.makefile ConfigMode_external_functions.json
+// teardown_command: rm -rf ConfigMode.fmu ConfigMode.fmutmp/ ConfigMode_unzipped/ ConfigMode.log ConfigMode_info.json ConfigMode_FMU.libs ConfigMode_FMU.makefile ConfigMode_external_functions.json ConfigModeRust* ConfigModeDae*
 //
-// fmi3EnterConfigurationMode and fmi3ExitConfigurationMode of the C runtime: open
-// from Instantiated only, and everything but debug logging, Reset and
-// FreeInstance is refused in between. The model has no structural parameter, so
-// the calling sequence works for an FMU without one, which the spec says an
-// importer must not ask of it.
+// fmi3EnterConfigurationMode and fmi3ExitConfigurationMode. FMI 3.0 forbids
+// entering Configuration Mode on an FMU without a structural parameter, so the C
+// runtime and the Rust one on an ordinary model refuse it. A --daeMode FMU of
+// --simCodeTarget=C+Rust has one, fmi-ls-dae's switch: Configuration Mode is open
+// from Instantiated only and sets the switch, and everything but debug logging,
+// Reset and FreeInstance is refused in between.
 
-setCommandLineOptions("--simCodeTarget=C"); getErrorString();
 loadString("
 model ConfigMode
   Real x(start = 1, fixed = true);
 equation
   der(x) = -x;
 end ConfigMode;
+
+model ConfigModeRust = ConfigMode;
+
+model ConfigModeDae
+  Real x(start = 1, fixed = true);
+  Real y;
+equation
+  der(x) = -y;
+  y + 0.5*y^3 = x;
+end ConfigModeDae;
 "); getErrorString();
+setCommandLineOptions("--simCodeTarget=C"); getErrorString();
 buildModelFMU(ConfigMode, version="3.0", fmuType="me_cs"); getErrorString();
 system("python3 fmi3ConfigurationMode.py ConfigMode > ConfigMode.log 2>&1"); getErrorString();
 readFile("ConfigMode.log"); getErrorString();
+
+setCommandLineOptions("--simCodeTarget=C+Rust"); getErrorString();
+buildModelFMU(ConfigModeRust, version="3.0", fmuType="me_cs"); getErrorString();
+system("python3 fmi3ConfigurationMode.py ConfigModeRust > ConfigModeRust.log 2>&1"); getErrorString();
+readFile("ConfigModeRust.log"); getErrorString();
+
+setCommandLineOptions("--daeMode"); getErrorString();
+buildModelFMU(ConfigModeDae, version="3.0", fmuType="me"); getErrorString();
+system("python3 fmi3ConfigurationMode.py ConfigModeDae > ConfigModeDae.log 2>&1"); getErrorString();
+readFile("ConfigModeDae.log"); getErrorString();
 
 // Result:
 // true
@@ -33,51 +54,50 @@ readFile("ConfigMode.log"); getErrorString();
 // 0
 // ""
 // "Model Exchange:
-//  the sequence a Configuration Mode opens, on to a simulation
-//   EnterConfigurationMode: OK
-//   ExitConfigurationMode: OK
-//   EnterInitializationMode: OK
-//   ExitInitializationMode: OK
-//   GetFloat64 x: OK = 1.0000
-//   Terminate: OK
-//  twice, and the instance can still be freed
-//   EnterConfigurationMode: OK
+//  no structural parameter: refused, into the error state
 //   EnterConfigurationMode: Error
-//  Exit without Enter
-//   ExitConfigurationMode: Error
-//  Enter after initialization: there is no Reconfiguration Mode
-//   EnterInitializationMode: OK
-//   EnterConfigurationMode: Error
-//   EnterInitializationMode: OK
-//   ExitInitializationMode: OK
-//   EnterConfigurationMode: Error
-//  what Configuration Mode refuses, a fresh instance each
 //   EnterInitializationMode: Error
-//   GetFloat64 x: Error
-//   SetFloat64 x: Error
-//   Terminate: Error
-//   EnterEventMode: Error
-//   EnterStepMode: Error
-//   DoStep: Error
-//  what it allows: debug logging, and Reset back to Instantiated
-//   EnterConfigurationMode: OK
-//   SetDebugLogging: OK
-//   Reset: OK
-//   EnterInitializationMode: OK
-//   ExitInitializationMode: OK
-//   GetFloat64 x: OK = 1.0000
-//  freed while in it
-//   EnterConfigurationMode: OK
-//   done
 // Co-Simulation:
+//  no structural parameter: refused, into the error state
+//   EnterConfigurationMode: Error
+//   EnterInitializationMode: Error
+// "
+// ""
+// true
+// ""
+// "ConfigModeRust.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "Model Exchange:
+//  no structural parameter: refused, into the error state
+//   EnterConfigurationMode: Error
+//   EnterInitializationMode: Error
+// Co-Simulation:
+//  no structural parameter: refused, into the error state
+//   EnterConfigurationMode: Error
+//   EnterInitializationMode: Error
+// "
+// ""
+// true
+// ""
+// "ConfigModeDae.fmu"
+// "Notification: The Model Exchange FMU carries a DAE formulation as fmi-ls-dae 1.0.0-alpha.1, implemented against the draft of 2026-09-02 (commit 78313f4). fmi-ls-dae is not a released layered standard yet, so an importer written against another revision of the draft may not read the manifest.
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "Model Exchange:
 //  the sequence a Configuration Mode opens, on to a simulation
 //   EnterConfigurationMode: OK
+//   SetBoolean _D_daeMode: OK
 //   ExitConfigurationMode: OK
 //   EnterInitializationMode: OK
 //   ExitInitializationMode: OK
 //   GetFloat64 x: OK = 1.0000
-//   DoStep: OK
-//   GetFloat64 x: OK = 0.9000
 //   Terminate: OK
 //  twice, and the instance can still be freed
 //   EnterConfigurationMode: OK

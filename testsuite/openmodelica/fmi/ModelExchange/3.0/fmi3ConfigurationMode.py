@@ -1,5 +1,8 @@
 # Drives <name>.fmu through its FMI 3.0 C API to check the calling sequences of
 # Configuration Mode, and prints each call's status. No .mos can call a native FMU.
+# Without a structural parameter the FMU must refuse to enter it; with one, the
+# sequences below run on each interface the FMU has, and Configuration Mode sets
+# the structural parameter but no other variable.
 import ctypes as C, glob, os, re, sys, zipfile
 
 name = sys.argv[1]
@@ -8,6 +11,8 @@ zipfile.ZipFile(name + ".fmu").extractall(folder)
 md = open(os.path.join(folder, "modelDescription.xml")).read()
 token = re.search(r'instantiationToken="([^"]*)"', md).group(1).encode()
 x_vr = int(re.search(r'<Float64 name="x" valueReference="(\d+)"', md).group(1))
+structural = re.search(r'<Boolean name="([^"]*)" valueReference="(\d+)" causality="structuralParameter"', md)
+interfaces = [k for k in ("ModelExchange", "CoSimulation") if re.search(r"<%s\b" % k, md)]
 resources = os.path.abspath(os.path.join(folder, "resources")).encode()
 fmu = C.CDLL(os.path.abspath(glob.glob(os.path.join(folder, "binaries", "*", "*"))[0]))
 
@@ -23,6 +28,7 @@ fmu.fmi3EnterInitializationMode.argtypes = [inst_ptr, C.c_bool, C.c_double, C.c_
 fmu.fmi3GetFloat64.argtypes = [inst_ptr, C.POINTER(C.c_uint32), C.c_size_t, C.POINTER(C.c_double), C.c_size_t]
 fmu.fmi3SetFloat64.argtypes = [inst_ptr, C.POINTER(C.c_uint32), C.c_size_t, C.POINTER(C.c_double), C.c_size_t]
 fmu.fmi3DoStep.argtypes = [inst_ptr, C.c_double, C.c_double, C.c_bool, C.c_void_p, C.c_void_p, C.c_void_p, C.c_void_p]
+fmu.fmi3SetBoolean.argtypes = [inst_ptr, C.POINTER(C.c_uint32), C.c_size_t, C.POINTER(C.c_bool), C.c_size_t]
 fmu.fmi3SetDebugLogging.argtypes = [inst_ptr, C.c_bool, C.c_size_t, C.c_void_p]
 fmu.fmi3FreeInstance.restype = None
 for f in ("EnterConfigurationMode", "ExitConfigurationMode", "ExitInitializationMode", "EnterEventMode",
@@ -52,12 +58,27 @@ def set_x(i):
     vr, v = C.c_uint32(x_vr), C.c_double(2.0)
     print("  SetFloat64 x: %s" % STATUS[fmu.fmi3SetFloat64(i, C.byref(vr), 1, C.byref(v), 1)])
 
+def set_structural(i):
+    vr, v = C.c_uint32(int(structural.group(2))), C.c_bool(False)
+    print("  SetBoolean %s: %s" % (structural.group(1), STATUS[fmu.fmi3SetBoolean(i, C.byref(vr), 1, C.byref(v), 1)]))
+
 for kind, new in (("Model Exchange", me), ("Co-Simulation", cs)):
+    if kind.replace(" ", "").replace("-", "") not in interfaces:
+        continue
     print(kind + ":")
+
+    if not structural:
+        print(" no structural parameter: refused, into the error state")
+        i = new()
+        call("EnterConfigurationMode", i)
+        enter_init(i)
+        fmu.fmi3FreeInstance(i)
+        continue
 
     print(" the sequence a Configuration Mode opens, on to a simulation")
     i = new()
     call("EnterConfigurationMode", i)
+    set_structural(i)
     call("ExitConfigurationMode", i)
     enter_init(i)
     call("ExitInitializationMode", i)

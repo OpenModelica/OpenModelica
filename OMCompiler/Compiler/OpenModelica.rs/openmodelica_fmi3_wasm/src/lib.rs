@@ -2574,6 +2574,11 @@ impl<E: FmiHost + 'static> Instance<E> {
         Some(inst)
     }
 
+    /// Whether the FMU has a structural parameter: only fmi-ls-dae's switch.
+    pub fn has_structural_parameters(&self) -> bool {
+        self.st.borrow().dae_enable_vr != 0
+    }
+
     /// Whether `vr` is a structural parameter, all Configuration Mode may set.
     pub fn is_structural_parameter(&self, vr: u32) -> bool {
         let st = self.st.borrow();
