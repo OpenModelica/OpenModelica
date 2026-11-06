@@ -3372,7 +3372,7 @@ public constant list<String> fmuSourceLibraries = {"ModelicaExternalC", "Modelic
 public function fmuExternalLibraries
   "The libraries of Library annotations that an FMU does not carry as sources,
    by name. zlib and HDF5 are only there for ModelicaMatIO, which the FMU
-   compiles without them."
+   compiles with its own zlib and without HDF5."
   input list<String> libs;
   output list<String> names = {};
 protected
