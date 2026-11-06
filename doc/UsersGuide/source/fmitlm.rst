@@ -235,6 +235,27 @@ The BouncingBall_flags.json for this example is displayed in
   :caption: BouncingBall FMI flags
 
 
+Tunable Parameters
+~~~~~~~~~~~~~~~~~~
+
+A parameter with a literal binding, for example ``parameter Real R_set = 1``,
+is exported as ``causality="parameter"`` and ``variability="tunable"``. An
+importer can set it in Event Mode and, in Co-Simulation, between two steps.
+The FMU then calculates again only the parameters that depend on it, for
+example ``parameter Real R = 2*R_set``. These are exported as
+``causality="calculatedParameter"`` and ``variability="tunable"``. The
+dependencies are in ``resources/<model>_paramdeps.bin``.
+
+A parameter stays ``fixed`` if a value that is calculated only during
+initialization depends on it: a parameter with ``fixed=false``, a variable of
+``when initial()``, an external object, the start or interval of ``sample()``
+or of a clock, the maximum delay of ``delay()`` or the initial values of
+``spatialDistribution()``. An array is tunable only if all its elements are.
+With ``--fmiTunableParameters=none`` all parameters are ``fixed``.
+
+A write that the FMI standard does not allow, for example to a ``fixed``
+parameter after initialization, returns an error.
+
 Compilation Process
 ~~~~~~~~~~~~~~~~~~~
 

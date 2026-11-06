@@ -17,7 +17,7 @@ getErrorString();
 // ""
 // "[flattening/modelica/mosfiles/LookupPackageFail.mo:11:5-11:10:writable] Error: Class P.B not found in scope A.
 // "
-// ""
+// "Check of P.A failed with 1 error(s)."
 // "[flattening/modelica/mosfiles/LookupPackageFail.mo:11:5-11:10:writable] Error: Class P.B not found in scope A.
 // "
 // endResult

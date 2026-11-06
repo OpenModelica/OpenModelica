@@ -16,7 +16,10 @@ fmi3_wasm_flags_restored.mos \
 fmi3_wasm_solver_absent.mos \
 fmi3_wasm_solver_libraries.mos \
 fmi3_wasm_solver_me.mos \
-fmi3_wasm_terminate_init.mos
+fmi3_wasm_terminate_init.mos \
+fmi_cs_daemode.mos \
+fmi_tunable_parameters.mos \
+fmi_tunable_parameters_state.mos
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
@@ -26,6 +29,8 @@ DEPENDENCIES = \
 fmi3_cs_state_event.py \
 fmi3_cs_event_mode_reinit.py \
 fmi3_cs_tolerance.py \
+fmi_tunable_parameters.py \
+fmi_tunable_parameters_state.py \
 Makefile \
 
 CLEAN = `ls | grep -w -v -f deps.tmp`

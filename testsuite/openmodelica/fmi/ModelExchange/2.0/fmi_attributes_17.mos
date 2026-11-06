@@ -143,7 +143,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     name=\"C4.C\"
 //     valueReference=\"9\"
 //     description=\"Capacitance\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Real min=\"0.0\" unit=\"F\"/>
@@ -153,7 +153,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     name=\"R1.R\"
 //     valueReference=\"10\"
 //     description=\"Resistance at temperature T_ref\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"1.0\" unit=\"Ohm\"/>
@@ -163,7 +163,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     name=\"R1.T\"
 //     valueReference=\"11\"
 //     description=\"Fixed device temperature if useHeatPort = false\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Real min=\"0.0\" nominal=\"300.0\" unit=\"K\"/>
@@ -173,7 +173,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     name=\"R1.T_heatPort\"
 //     valueReference=\"12\"
 //     description=\"Temperature of heatPort\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Real min=\"0.0\" nominal=\"300.0\" unit=\"K\"/>
@@ -183,7 +183,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     name=\"R1.T_ref\"
 //     valueReference=\"13\"
 //     description=\"Reference temperature\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"300.15\" min=\"0.0\" nominal=\"300.0\" unit=\"K\"/>
@@ -193,7 +193,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     name=\"R1.alpha\"
 //     valueReference=\"14\"
 //     description=\"Temperature coefficient of resistance (R_actual = R*(1 + alpha*(T_heatPort - T_ref))\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"0.0\" unit=\"1/K\"/>
@@ -203,7 +203,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     name=\"V.V\"
 //     valueReference=\"15\"
 //     description=\"Height of step\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"1.0\" unit=\"V\"/>
@@ -213,7 +213,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     name=\"V.offset\"
 //     valueReference=\"16\"
 //     description=\"Voltage offset\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"0.0\" unit=\"V\"/>
@@ -223,7 +223,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     name=\"V.signalSource.height\"
 //     valueReference=\"17\"
 //     description=\"Height of step\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Real/>
@@ -233,7 +233,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     name=\"V.signalSource.offset\"
 //     valueReference=\"18\"
 //     description=\"Offset of output signal y\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Real/>
@@ -243,7 +243,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     name=\"V.signalSource.startTime\"
 //     valueReference=\"19\"
 //     description=\"Output y = offset for time &lt; startTime\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Real unit=\"s\"/>
@@ -253,7 +253,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     name=\"V.startTime\"
 //     valueReference=\"20\"
 //     description=\"Time offset\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"1.0\" unit=\"s\"/>
@@ -263,7 +263,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     name=\"c1\"
 //     valueReference=\"21\"
 //     description=\"filter coefficient c1\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"1.072\" min=\"0.0\" unit=\"F\"/>
@@ -273,7 +273,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     name=\"c2\"
 //     valueReference=\"22\"
 //     description=\"filter coefficient c2\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Real min=\"0.0\" unit=\"F\"/>
@@ -283,7 +283,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     name=\"c3\"
 //     valueReference=\"23\"
 //     description=\"filter coefficient c3\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"1.682\" min=\"0.0\" unit=\"F\"/>
@@ -293,7 +293,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     name=\"c4\"
 //     valueReference=\"24\"
 //     description=\"filter coefficient c4\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Real min=\"0.0\" unit=\"F\"/>
@@ -303,7 +303,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     name=\"c5\"
 //     valueReference=\"25\"
 //     description=\"filter coefficient c5\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"0.7262\" min=\"0.0\" unit=\"F\"/>
@@ -313,7 +313,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     name=\"l1\"
 //     valueReference=\"26\"
 //     description=\"filter coefficient I1\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"1.304\" unit=\"H\"/>
@@ -323,7 +323,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     name=\"l2\"
 //     valueReference=\"27\"
 //     description=\"filter coefficient I2\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"0.8586\" unit=\"H\"/>

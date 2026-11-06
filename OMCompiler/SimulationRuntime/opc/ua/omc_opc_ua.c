@@ -27,12 +27,18 @@
 
 #define _XOPEN_SOURCE 600
 #include "omc_opc_ua.h"
+#include "simulation/arrayIndex.h"
 #include "open62541.h"
 #include <pthread.h>
 
 #define BAD_RESULT() fprintf(stderr, "%s:%d: Bad OPC result\n", __FILE__, __LINE__);
 
-static volatile int count=0;
+#define N_VARKINDS (VARKIND_BOOL_PARAMETER + 1)
+
+typedef struct {
+  int index;
+  int negate;
+} omc_opc_ua_alias;
 
 typedef struct {
   DATA *data;
@@ -48,29 +54,24 @@ typedef struct {
   pthread_cond_t cond_pause;
   double time[2];
   pthread_t thread;
-  UA_MethodAttributes runAttr;
   double *inputVarsBackup;
   int gotNewInput;
   pthread_mutex_t write_values;
   pthread_mutex_t mutex_values;
   int latestValues;
   UA_Double *realVals[2];
-  int *realValsInputIndex;
+  UA_Int64 *intVals[2];
   UA_Boolean *boolVals[2];
-  int *boolValsInputIndex;
+  /* inputIndex[kind][i] is the index in inputVars of variable i, or -1 */
+  int *inputIndex[N_VARKINDS];
+  omc_opc_ua_alias *aliases[N_VARKINDS];
+  int nAliases[N_VARKINDS];
   int reinitStateFlag;
   int *stateWasUpdatedFlag;
   double *updatedStates;
   double real_time_sync_scaling;
   void (*omc_real_time_sync_update)(DATA *data, double scaling);
 } omc_opc_ua_state;
-
-static UA_StatusCode runMethod(void *handle, const UA_NodeId objectId, size_t inputSize, const UA_Variant *input, size_t outputSize, UA_Variant *output)
-{
-  omc_opc_ua_state *state = (omc_opc_ua_state*) handle;
-  UA_LOG_INFO(state->logger, UA_LOGCATEGORY_SERVER, "run method was called");
-  return UA_STATUSCODE_GOOD;
-}
 
 static void* threadWork(void *data)
 {
@@ -83,20 +84,24 @@ static void* threadWork(void *data)
   return (void*)0;
 }
 
-static void waitForStep(volatile omc_opc_ua_state *state)
+static void waitForStep(omc_opc_ua_state *state)
 {
   int run;
-  state->step = 0;
+  double scaling;
   pthread_mutex_lock(&state->mutex_pause);
+  state->step = 0;
   run = state->run;
   while (!(state->run || state->step)) {
     pthread_cond_wait(&state->cond_pause, &state->mutex_pause);
   }
   pthread_mutex_unlock(&state->mutex_pause);
-  if (!run || state->data->real_time_sync.scaling != state->real_time_sync_scaling) {
+  pthread_mutex_lock(&state->write_values);
+  scaling = state->real_time_sync_scaling;
+  pthread_mutex_unlock(&state->write_values);
+  if (!run || state->data->real_time_sync.scaling != scaling) {
     /* We were not running or the scaling factor changed. Reset the real-time synchronization! */
-    state->omc_real_time_sync_update(state->data, state->real_time_sync_scaling);
-    state->data->real_time_sync.scaling = state->real_time_sync_scaling;
+    state->omc_real_time_sync_update(state->data, scaling);
+    state->data->real_time_sync.scaling = scaling;
   }
 }
 
@@ -109,7 +114,6 @@ static UA_StatusCode
 readBoolean(void *handle, const UA_NodeId nodeid, UA_Boolean sourceTimeStamp, const UA_NumericRange *range, UA_DataValue *dataValue)
 {
   omc_opc_ua_state *state = (omc_opc_ua_state*) handle;
-  MODEL_DATA *modelData = state->data->modelData;
   UA_Boolean val;
   dataValue->hasValue = UA_FALSE;
   if (nodeid.identifierType != UA_NODEIDTYPE_NUMERIC) {
@@ -117,7 +121,6 @@ readBoolean(void *handle, const UA_NodeId nodeid, UA_Boolean sourceTimeStamp, co
     return UA_STATUSCODE_BADNODEIDUNKNOWN;
   }
 
-  dataValue->hasValue = UA_TRUE;
   if (nodeid.identifier.numeric == OMC_OPC_NODEID_STEP) {
     val = state->step;
   } else if (nodeid.identifier.numeric == OMC_OPC_NODEID_RUN) {
@@ -126,17 +129,7 @@ readBoolean(void *handle, const UA_NodeId nodeid, UA_Boolean sourceTimeStamp, co
     val = state->data->simulationInfo->useStopTime;
   } else if (nodeid.identifier.numeric == OMC_OPC_NODEID_TERMINATE) {
     val = state->terminate;
-  } else if (nodeid.identifier.numeric >= VARKIND_BOOL*MAX_VARS_KIND && nodeid.identifier.numeric < (1+VARKIND_BOOL)*MAX_VARS_KIND) {
-    int index1 = nodeid.identifier.numeric-VARKIND_BOOL*MAX_VARS_KIND;
-    int index = index1 >= ALIAS_START_ID ? modelData->booleanAlias[index1-ALIAS_START_ID].nameID : index1;
-    int negate = index1 >= ALIAS_START_ID ? modelData->booleanAlias[index1-ALIAS_START_ID].negate : 0;
-    int latestValues = state->latestValues;
-    pthread_mutex_lock(&state->mutex_values);
-    val = state->boolVals[latestValues][index];
-    pthread_mutex_unlock(&state->mutex_values);
-    val = negate ? !val : val;
   } else {
-    dataValue->hasValue = UA_FALSE;
     BAD_RESULT()
     return UA_STATUSCODE_BADNODEIDUNKNOWN;
   }
@@ -149,7 +142,6 @@ static UA_StatusCode
 writeBoolean(void *handle, const UA_NodeId nodeid, const UA_Variant *data, const UA_NumericRange *range)
 {
   omc_opc_ua_state *state = (omc_opc_ua_state*) handle;
-  MODEL_DATA *modelData = state->data->modelData;
   if (nodeid.identifierType != UA_NODEIDTYPE_NUMERIC) {
     BAD_RESULT()
     return UA_STATUSCODE_BADNODEIDUNKNOWN;
@@ -191,37 +183,20 @@ writeBoolean(void *handle, const UA_NodeId nodeid, const UA_Variant *data, const
       state->terminate = newVal;
 
       pthread_mutex_unlock(&state->mutex_pause);
-    } else if (nodeid.identifier.numeric >= VARKIND_BOOL*MAX_VARS_KIND && nodeid.identifier.numeric < (1+VARKIND_BOOL)*MAX_VARS_KIND) {
-      int index1 = nodeid.identifier.numeric-VARKIND_BOOL*MAX_VARS_KIND;
-      int index = index1 >= ALIAS_START_ID ? modelData->booleanAlias[index1-ALIAS_START_ID].nameID : index1;
-      int negate = index1 >= ALIAS_START_ID ? modelData->booleanAlias[index1-ALIAS_START_ID].negate : 0;
-      int inputIndex = state->boolValsInputIndex[index];
-      newVal = negate ? !newVal : newVal;
-      if (inputIndex != -1) {
-        if (state->data->simulationInfo->inputVars[inputIndex] != newVal) {
-          state->gotNewInput = 1;
-          state->inputVarsBackup[inputIndex] = newVal;
-        }
-      } else {
-        pthread_mutex_unlock(&state->write_values);
-        statusCode = UA_STATUSCODE_BADUNEXPECTEDERROR;
-      }
     } else {
-      pthread_mutex_unlock(&state->write_values);
-      statusCode = UA_STATUSCODE_BADUNEXPECTEDERROR;
+      statusCode = UA_STATUSCODE_BADNODEIDUNKNOWN;
     }
     pthread_mutex_unlock(&state->write_values);
     return statusCode;
   }
   BAD_RESULT()
-  return UA_STATUSCODE_BADUNEXPECTEDERROR;
+  return UA_STATUSCODE_BADTYPEMISMATCH;
 }
 
 static UA_StatusCode
 readReal(void *handle, const UA_NodeId nodeid, UA_Boolean sourceTimeStamp, const UA_NumericRange *range, UA_DataValue *dataValue)
 {
   omc_opc_ua_state *state = (omc_opc_ua_state*) handle;
-  MODEL_DATA *modelData = state->data->modelData;
   UA_Double val;
 
   if (nodeid.identifierType != UA_NODEIDTYPE_NUMERIC) {
@@ -229,21 +204,12 @@ readReal(void *handle, const UA_NodeId nodeid, UA_Boolean sourceTimeStamp, const
     return UA_STATUSCODE_BADNODEIDUNKNOWN;
   }
 
-
   if (nodeid.identifier.numeric==OMC_OPC_NODEID_TIME) {
     pthread_mutex_lock(&state->mutex_values);
     val = state->time[state->latestValues];
     pthread_mutex_unlock(&state->mutex_values);
   } else if (nodeid.identifier.numeric==OMC_OPC_NODEID_REAL_TIME_SCALING_FACTOR) {
     val = state->real_time_sync_scaling;
-  } else if (nodeid.identifier.numeric >= VARKIND_REAL*MAX_VARS_KIND && nodeid.identifier.numeric < (1+VARKIND_REAL)*MAX_VARS_KIND) {
-    int index1 = nodeid.identifier.numeric-VARKIND_REAL*MAX_VARS_KIND;
-    int index = index1 >= ALIAS_START_ID ? modelData->realAlias[index1-ALIAS_START_ID].nameID : index1;
-    int negate = index1 >= ALIAS_START_ID ? modelData->realAlias[index1-ALIAS_START_ID].negate : 0;
-    pthread_mutex_lock(&state->mutex_values);
-    val = state->realVals[state->latestValues][index];
-    pthread_mutex_unlock(&state->mutex_values);
-    val = negate ? -val : val;
   } else {
     BAD_RESULT()
     return UA_STATUSCODE_BADNODEIDUNKNOWN;
@@ -251,7 +217,6 @@ readReal(void *handle, const UA_NodeId nodeid, UA_Boolean sourceTimeStamp, const
 
   dataValue->hasValue = UA_TRUE;
   UA_Variant_setScalarCopy(&dataValue->value, &val, &UA_TYPES[UA_TYPES_DOUBLE]);
-  // UA_LOG_INFO(state->logger, UA_LOGCATEGORY_USERLAND, "read value %.6g", val);
   return UA_STATUSCODE_GOOD;
 }
 
@@ -259,244 +224,343 @@ static UA_StatusCode
 writeReal(void *handle, const UA_NodeId nodeid, const UA_Variant *data, const UA_NumericRange *range)
 {
   omc_opc_ua_state *state = (omc_opc_ua_state*) handle;
-  MODEL_DATA *modelData = state->data->modelData;
-  UA_Double newVal;
 
-  if (nodeid.identifierType != UA_NODEIDTYPE_NUMERIC) {
+  if (nodeid.identifierType != UA_NODEIDTYPE_NUMERIC || nodeid.identifier.numeric != OMC_OPC_NODEID_REAL_TIME_SCALING_FACTOR) {
     BAD_RESULT()
     return UA_STATUSCODE_BADNODEIDUNKNOWN;
   }
-  if (!(UA_Variant_isScalar(data) && (data->type == &UA_TYPES[UA_TYPES_DOUBLE] || data->type == &UA_TYPES[UA_TYPES_FLOAT]) && data->data)) {
+  if (!(UA_Variant_isScalar(data) && data->type == &UA_TYPES[UA_TYPES_DOUBLE] && data->data)) {
     BAD_RESULT()
-    return UA_STATUSCODE_BADUNEXPECTEDERROR;
-  }
-  if (data->type == &UA_TYPES[UA_TYPES_DOUBLE]) {
-    newVal = *(UA_Double*)data->data;
-  } else {
-    newVal = *(UA_Float*)data->data;
+    return UA_STATUSCODE_BADTYPEMISMATCH;
   }
   pthread_mutex_lock(&state->write_values);
-  if (nodeid.identifier.numeric==OMC_OPC_NODEID_REAL_TIME_SCALING_FACTOR) {
-    state->real_time_sync_scaling = newVal;
-  } else if (nodeid.identifier.numeric >= VARKIND_REAL*MAX_VARS_KIND && nodeid.identifier.numeric < (1+VARKIND_REAL)*MAX_VARS_KIND) {
-    int index1 = nodeid.identifier.numeric-VARKIND_REAL*MAX_VARS_KIND;
-    int index = index1 >= ALIAS_START_ID ? modelData->realAlias[index1-ALIAS_START_ID].nameID : index1;
-    int negate = index1 >= ALIAS_START_ID ? modelData->realAlias[index1-ALIAS_START_ID].negate : 0;
-    int inputIndex = state->realValsInputIndex[index];
-    newVal = negate ? -newVal : newVal;
-    if (inputIndex != -1) {
-      if (state->data->simulationInfo->inputVars[inputIndex] != newVal) {
-        state->gotNewInput = 1;
-        state->inputVarsBackup[inputIndex] = newVal;
-      }
-    } else if (index < state->data->modelData->nStates) {
-      state->reinitStateFlag = 1;
-      state->stateWasUpdatedFlag[index] = 1;
-      state->updatedStates[index] = newVal;
-    } else {
-      BAD_RESULT()
-      pthread_mutex_unlock(&state->write_values);
-      return UA_STATUSCODE_BADUNEXPECTEDERROR;
+  state->real_time_sync_scaling = *(UA_Double*)data->data;
+  pthread_mutex_unlock(&state->write_values);
+  return UA_STATUSCODE_GOOD;
+}
+
+static int isVariableKind(var_kind_t kind)
+{
+  return kind == VARKIND_REAL || kind == VARKIND_BOOL || kind == VARKIND_INTEGER;
+}
+
+static long numScalars(const MODEL_DATA *modelData, var_kind_t kind)
+{
+  switch (kind) {
+  case VARKIND_REAL: return modelData->nVariablesReal;
+  case VARKIND_BOOL: return modelData->nVariablesBoolean;
+  case VARKIND_INTEGER: return modelData->nVariablesInteger;
+  case VARKIND_REAL_PARAMETER: return modelData->nParametersReal;
+  case VARKIND_INTEGER_PARAMETER: return modelData->nParametersInteger;
+  case VARKIND_BOOL_PARAMETER: return modelData->nParametersBoolean;
+  }
+  return 0;
+}
+
+static long numArrays(const MODEL_DATA *modelData, var_kind_t kind)
+{
+  switch (kind) {
+  case VARKIND_REAL: return modelData->nVariablesRealArray;
+  case VARKIND_BOOL: return modelData->nVariablesBooleanArray;
+  case VARKIND_INTEGER: return modelData->nVariablesIntegerArray;
+  case VARKIND_REAL_PARAMETER: return modelData->nParametersRealArray;
+  case VARKIND_INTEGER_PARAMETER: return modelData->nParametersIntegerArray;
+  case VARKIND_BOOL_PARAMETER: return modelData->nParametersBooleanArray;
+  }
+  return 0;
+}
+
+/* The dimensions, the info and the index of the first scalar of (array) variable k */
+static size_t arrayInfo(const DATA *data, var_kind_t kind, long k, const DIMENSION_INFO **dim, const VAR_INFO **info)
+{
+  const MODEL_DATA *m = data->modelData;
+  const SIMULATION_INFO *s = data->simulationInfo;
+  switch (kind) {
+  case VARKIND_REAL: *dim = &m->realVarsData[k].dimension; *info = &m->realVarsData[k].info; return s->realVarsIndex[k];
+  case VARKIND_BOOL: *dim = &m->booleanVarsData[k].dimension; *info = &m->booleanVarsData[k].info; return s->booleanVarsIndex[k];
+  case VARKIND_INTEGER: *dim = &m->integerVarsData[k].dimension; *info = &m->integerVarsData[k].info; return s->integerVarsIndex[k];
+  case VARKIND_REAL_PARAMETER: *dim = &m->realParameterData[k].dimension; *info = &m->realParameterData[k].info; return s->realParamsIndex[k];
+  case VARKIND_INTEGER_PARAMETER: *dim = &m->integerParameterData[k].dimension; *info = &m->integerParameterData[k].info; return s->integerParamsIndex[k];
+  case VARKIND_BOOL_PARAMETER: *dim = &m->booleanParameterData[k].dimension; *info = &m->booleanParameterData[k].info; return s->booleanParamsIndex[k];
+  }
+  abort();
+}
+
+static const UA_DataType* dataType(var_kind_t kind)
+{
+  switch (kind) {
+  case VARKIND_REAL: case VARKIND_REAL_PARAMETER: return &UA_TYPES[UA_TYPES_DOUBLE];
+  case VARKIND_INTEGER: case VARKIND_INTEGER_PARAMETER: return &UA_TYPES[UA_TYPES_INT64];
+  default: return &UA_TYPES[UA_TYPES_BOOLEAN];
+  }
+}
+
+/* The kind of a model variable node and the index of its value, or -1 */
+static int resolveNode(omc_opc_ua_state *state, const UA_NodeId *nodeid, var_kind_t *kind, int *negate)
+{
+  UA_UInt32 n;
+  if (nodeid->identifierType != UA_NODEIDTYPE_NUMERIC || nodeid->namespaceIndex != 1) {
+    return -1;
+  }
+  *kind = (var_kind_t) (nodeid->identifier.numeric / MAX_VARS_KIND);
+  if (*kind < VARKIND_REAL || *kind >= N_VARKINDS) {
+    return -1;
+  }
+  n = nodeid->identifier.numeric % MAX_VARS_KIND;
+  *negate = 0;
+  if (n < ALIAS_START_ID) {
+    return n < numScalars(state->data->modelData, *kind) ? (int) n : -1;
+  }
+  n -= ALIAS_START_ID;
+  if ((int) n >= state->nAliases[*kind]) {
+    return -1;
+  }
+  *negate = state->aliases[*kind][n].negate;
+  return state->aliases[*kind][n].index;
+}
+
+static int isWritable(omc_opc_ua_state *state, var_kind_t kind, int index)
+{
+  return (isVariableKind(kind) && state->inputIndex[kind][index] >= 0) ||
+         (kind == VARKIND_REAL && index < state->data->modelData->nStates);
+}
+
+static UA_StatusCode
+readVariable(void *handle, const UA_NodeId nodeid, UA_Boolean sourceTimeStamp, const UA_NumericRange *range, UA_DataValue *dataValue)
+{
+  omc_opc_ua_state *state = (omc_opc_ua_state*) handle;
+  const SIMULATION_INFO *sInfo = state->data->simulationInfo;
+  var_kind_t kind;
+  int negate;
+  int index = resolveNode(state, &nodeid, &kind, &negate);
+  UA_Double r = 0;
+  UA_Int64 i = 0;
+  UA_Boolean b = 0;
+
+  if (index < 0) {
+    return UA_STATUSCODE_BADNODEIDUNKNOWN;
+  }
+  pthread_mutex_lock(&state->mutex_values);
+  switch (kind) {
+  case VARKIND_REAL: r = state->realVals[state->latestValues][index]; break;
+  case VARKIND_INTEGER: i = state->intVals[state->latestValues][index]; break;
+  case VARKIND_BOOL: b = state->boolVals[state->latestValues][index]; break;
+  case VARKIND_REAL_PARAMETER: r = sInfo->realParameter[index]; break;
+  case VARKIND_INTEGER_PARAMETER: i = sInfo->integerParameter[index]; break;
+  case VARKIND_BOOL_PARAMETER: b = sInfo->booleanParameter[index]; break;
+  }
+  pthread_mutex_unlock(&state->mutex_values);
+
+  if (dataType(kind) == &UA_TYPES[UA_TYPES_DOUBLE]) {
+    r = negate ? -r : r;
+    UA_Variant_setScalarCopy(&dataValue->value, &r, dataType(kind));
+  } else if (dataType(kind) == &UA_TYPES[UA_TYPES_INT64]) {
+    i = negate ? -i : i;
+    UA_Variant_setScalarCopy(&dataValue->value, &i, dataType(kind));
+  } else {
+    b = negate ? !b : b;
+    UA_Variant_setScalarCopy(&dataValue->value, &b, dataType(kind));
+  }
+  dataValue->hasValue = UA_TRUE;
+  return UA_STATUSCODE_GOOD;
+}
+
+static UA_StatusCode
+writeVariable(void *handle, const UA_NodeId nodeid, const UA_Variant *data, const UA_NumericRange *range)
+{
+  omc_opc_ua_state *state = (omc_opc_ua_state*) handle;
+  var_kind_t kind;
+  int negate;
+  int index = resolveNode(state, &nodeid, &kind, &negate);
+  double val;
+
+  if (index < 0) {
+    return UA_STATUSCODE_BADNODEIDUNKNOWN;
+  }
+  if (!isWritable(state, kind, index)) {
+    return UA_STATUSCODE_BADNOTWRITABLE;
+  }
+  if (!(UA_Variant_isScalar(data) && data->type == dataType(kind) && data->data)) {
+    return UA_STATUSCODE_BADTYPEMISMATCH;
+  }
+  switch (kind) {
+  case VARKIND_REAL: val = *(UA_Double*)data->data; val = negate ? -val : val; break;
+  case VARKIND_INTEGER: val = (double) *(UA_Int64*)data->data; val = negate ? -val : val; break;
+  default: val = negate ? !*(UA_Boolean*)data->data : *(UA_Boolean*)data->data; break;
+  }
+
+  pthread_mutex_lock(&state->write_values);
+  if (state->inputIndex[kind][index] >= 0) {
+    double *input = &state->inputVarsBackup[state->inputIndex[kind][index]];
+    if (*input != val) {
+      state->gotNewInput = 1;
+      *input = val;
     }
   } else {
-    BAD_RESULT()
-    pthread_mutex_unlock(&state->write_values);
-    return UA_STATUSCODE_BADUNEXPECTEDERROR;
+    state->reinitStateFlag = 1;
+    state->stateWasUpdatedFlag[index] = 1;
+    state->updatedStates[index] = val;
   }
   pthread_mutex_unlock(&state->write_values);
   return UA_STATUSCODE_GOOD;
 }
 
-static inline omc_opc_ua_state* addVars(omc_opc_ua_state *state, var_kind_t varKind, int n, void *vars, int *varIndex)
+static void setAttributes(UA_VariableAttributes *attr, char *name, char *description, const UA_DataType *type, int writable)
 {
-  MODEL_DATA *modelData = state->data->modelData;
-  int i;
-  for (i = 0; i < n; i++, (*varIndex)++) {
-    int nodeIdInt = varKind*MAX_VARS_KIND + *varIndex;
-    UA_NodeId nodeId = UA_NODEID_NUMERIC(1, nodeIdInt);
-    char *nameStr;
-    char *commentStr;
-    UA_QualifiedName name;
-    UA_DataSource dataSource = {0};
-    UA_VariableAttributes attr;
-    UA_VariableAttributes_init(&attr);
-    /* set it to scalar as some clients do not like -2 variant */
-    attr.valueRank = -1; /* scalar */
-    int inputIndex;
-    int isState=0;
-
-    switch (varKind) {
-    case VARKIND_REAL:
-    {
-      STATIC_REAL_DATA *realVarsData = modelData->realVarsData;
-      state->realVals[state->latestValues][*varIndex] = ((double*)vars)[i];
-      inputIndex = realVarsData[i].info.inputIndex;
-      state->realValsInputIndex[*varIndex] = inputIndex;
-      nameStr = (char*) realVarsData[i].info.name;
-      commentStr = (char*) realVarsData[i].info.comment;
-      isState = i < modelData->nStates;
-      dataSource = (UA_DataSource) {.handle = state, .read = readReal, .write = inputIndex >= 0 || isState ? writeReal : NULL};
-      break;
-    }
-    case VARKIND_BOOL:
-    {
-      STATIC_BOOLEAN_DATA *booleanVarsData = modelData->booleanVarsData;
-      state->boolVals[state->latestValues][*varIndex] = ((signed char*)vars)[i];
-      inputIndex = booleanVarsData[i].info.inputIndex;
-      state->boolValsInputIndex[*varIndex] = inputIndex;
-      nameStr = (char*) booleanVarsData[i].info.name;
-      commentStr = (char*) booleanVarsData[i].info.comment;
-      dataSource = (UA_DataSource) {.handle = state, .read = readBoolean, .write = inputIndex >= 0 ? writeBoolean : NULL};
-      break;
-    }
-    default:
-      UA_LOG_INFO(state->logger, UA_LOGCATEGORY_USERLAND, "Unknown varKind %d", varKind);
-      return NULL;
-    }
-
-    if (inputIndex >= 0 || isState) {
-      attr.writeMask = 1;
-      attr.userWriteMask = 1;
-    }
-
-    name = UA_QUALIFIEDNAME(1, nameStr);
-
-    if (!commentStr[0]) {
-      commentStr = nameStr;
-    }
-
-    attr.description = UA_LOCALIZEDTEXT("en_US", commentStr);
-    attr.displayName = UA_LOCALIZEDTEXT("en_US", nameStr);
-
-    UA_StatusCode status =
-      UA_Server_addDataSourceVariableNode(state->server, nodeId,
-                                          UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER),
-                                          UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES),
-                                          name, UA_NODEID_NULL, attr, dataSource, NULL);
-    if (status != UA_STATUSCODE_GOOD) {
-      UA_LOG_INFO(state->logger, UA_LOGCATEGORY_USERLAND, "Failed to add variable %s: 0x%X", nameStr, status);
-      return NULL;
-    } else {
-#if 0
-      UA_LOG_INFO(state->logger, UA_LOGCATEGORY_USERLAND, "Added variable %s=%d, inputIndex=%d", nameStr, nodeIdInt, inputIndex);
-#endif
-    }
-  }
-  return state;
+  UA_VariableAttributes_init(attr);
+  /* set it to scalar as some clients do not like -2 variant */
+  attr->valueRank = -1;
+  attr->dataType = type->typeId;
+  attr->accessLevel = UA_ACCESSLEVELMASK_READ | (writable ? UA_ACCESSLEVELMASK_WRITE : 0);
+  attr->userAccessLevel = attr->accessLevel;
+  /* OMEdit uses the write mask to find the writable variables */
+  attr->writeMask = writable ? 1 : 0;
+  attr->userWriteMask = attr->writeMask;
+  attr->description = UA_LOCALIZEDTEXT("en_US", description[0] ? description : name);
+  attr->displayName = UA_LOCALIZEDTEXT("en_US", name);
 }
 
-static inline omc_opc_ua_state* addAliasVars(omc_opc_ua_state *state, var_kind_t varKind)
+static int addVariableNode(omc_opc_ua_state *state, var_kind_t kind, UA_UInt32 id, const char *name, const char *comment, int writable)
 {
-  MODEL_DATA *modelData = state->data->modelData;
-  DATA_ALIAS *aliases;
-  int i, n, maxIndex;
-  switch (varKind) {
-  case VARKIND_REAL:
-  {
-    n = modelData->nAliasReal;
-    aliases = modelData->realAlias;
-    maxIndex = modelData->nVariablesReal; /* Because we did not add discrete reals, etc. yet */
-    break;
+  UA_VariableAttributes attr;
+  UA_DataSource dataSource = {.handle = state, .read = readVariable, .write = writeVariable};
+  UA_StatusCode status;
+  setAttributes(&attr, (char*) name, (char*) comment, dataType(kind), writable);
+  status = UA_Server_addDataSourceVariableNode(state->server, UA_NODEID_NUMERIC(1, kind*MAX_VARS_KIND + id),
+                                               UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER),
+                                               UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES),
+                                               UA_QUALIFIEDNAME(1, (char*) name), UA_NODEID_NULL, attr, dataSource, NULL);
+  if (status != UA_STATUSCODE_GOOD) {
+    UA_LOG_INFO(state->logger, UA_LOGCATEGORY_USERLAND, "Failed to add variable %s: 0x%X", name, status);
+    return 1;
   }
-  case VARKIND_BOOL:
-  {
-    n = modelData->nAliasBoolean;
-    aliases = modelData->booleanAlias;
-    maxIndex = modelData->nVariablesBoolean;
-    break;
-  }
-  default:
-    UA_LOG_INFO(state->logger, UA_LOGCATEGORY_USERLAND, "Unknown varKind %d", varKind);
-    return NULL;
-  }
-  for (i = 0; i < n; i++) {
-    int nodeIdInt = varKind*MAX_VARS_KIND + ALIAS_START_ID + i;
-    UA_NodeId nodeId = UA_NODEID_NUMERIC(1, nodeIdInt);
-    char *nameStr;
-    char *commentStr;
-    UA_QualifiedName name;
-    UA_DataSource dataSource = {0};
-    UA_VariableAttributes attr;
-    UA_VariableAttributes_init(&attr);
-    /* set it to scalar as some clients do not like -2 variant */
-    attr.valueRank = -1; /* scalar */
-    int inputIndex;
-    int isState = 0;
-
-    if (aliases[i].aliasType != ALIAS_TYPE_VARIABLE) {
-      /* We only alias non-parameter/time variables in OPC */
-      continue;
-    }
-
-    switch (varKind) {
-    case VARKIND_REAL:
-    {
-      int index = aliases[i].nameID;
-      STATIC_REAL_DATA *realVarsData = modelData->realVarsData;
-      if (index >= maxIndex) {
-        continue; /* Because we did not add discrete reals, etc. yet */
-      }
-      inputIndex = realVarsData[index].info.inputIndex;
-      nameStr = (char*) aliases[i].info.name;
-      commentStr = (char*) aliases[i].info.comment;
-      isState = i < modelData->nStates;
-      dataSource = (UA_DataSource) {.handle = state, .read = readReal, .write = inputIndex >= 0 || isState ? writeReal : NULL};
-      break;
-    }
-    case VARKIND_BOOL:
-    {
-      int index = aliases[i].nameID;
-      STATIC_BOOLEAN_DATA *booleanVarsData = modelData->booleanVarsData;
-      if (index >= maxIndex) {
-        continue; /* Because we did not add discrete reals, etc. yet */
-      }
-      inputIndex = booleanVarsData[index].info.inputIndex;
-      nameStr = (char*) aliases[i].info.name;
-      commentStr = (char*) aliases[i].info.comment;
-      dataSource = (UA_DataSource) {.handle = state, .read = readBoolean, .write = inputIndex >= 0 ? writeBoolean : NULL};
-      break;
-    }
-    default:
-      abort();
-    }
-
-    if (inputIndex >= 0 || isState) {
-      attr.writeMask = 1;
-      attr.userWriteMask = 1;
-    }
-
-    name = UA_QUALIFIEDNAME(1, nameStr);
-
-    if (!commentStr[0]) {
-      commentStr = nameStr;
-    }
-
-    attr.description = UA_LOCALIZEDTEXT("en_US", commentStr);
-    attr.displayName = UA_LOCALIZEDTEXT("en_US", nameStr);
-
-    UA_StatusCode status =
-      UA_Server_addDataSourceVariableNode(state->server, nodeId,
-                                          UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER),
-                                          UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES),
-                                          name, UA_NODEID_NULL, attr, dataSource, NULL);
-    if (status != UA_STATUSCODE_GOOD) {
-      UA_LOG_INFO(state->logger, UA_LOGCATEGORY_USERLAND, "Failed to add variable %s: 0x%X", nameStr, status);
-      return NULL;
-    } else {
-#if 0
-      UA_LOG_INFO(state->logger, UA_LOGCATEGORY_USERLAND, "Added variable %s=%d, inputIndex=%d", nameStr, nodeIdInt, inputIndex);
-#endif
-    }
-  }
-  return state;
+  return 0;
 }
+
+static int addVariables(omc_opc_ua_state *state, var_kind_t kind)
+{
+  const MODEL_DATA *modelData = state->data->modelData;
+  const DIMENSION_INFO *dim;
+  const VAR_INFO *info;
+  char name[4096];
+  long k;
+  size_t e, start;
+
+  if (numScalars(modelData, kind) >= ALIAS_START_ID) {
+    UA_LOG_INFO(state->logger, UA_LOGCATEGORY_USERLAND, "Too many variables of kind %d", kind);
+    return 1;
+  }
+  if (isVariableKind(kind)) {
+    state->inputIndex[kind] = (int*) malloc(numScalars(modelData, kind) * sizeof(int));
+  }
+  for (k = 0; k < numArrays(modelData, kind); k++) {
+    start = arrayInfo(state->data, kind, k, &dim, &info);
+    for (e = 0; e < dim->scalar_length; e++) {
+      int index = (int) (start + e);
+      if (isVariableKind(kind)) {
+        state->inputIndex[kind][index] = info->inputIndex >= 0 ? info->inputIndex + (int) e : -1;
+      }
+      printArrayElementName(name, sizeof(name), info->name, dim, e, kind == VARKIND_REAL && modelData->nStatesArray <= k && k < 2*modelData->nStatesArray);
+      if (addVariableNode(state, kind, index, name, info->comment, isWritable(state, kind, index))) {
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
+/* Adds the aliases of the variables of `kind` and the parameters of `paramKind` */
+static int addAliases(omc_opc_ua_state *state, var_kind_t kind, var_kind_t paramKind)
+{
+  const MODEL_DATA *modelData = state->data->modelData;
+  const DATA_ALIAS *aliases;
+  const DIMENSION_INFO *dim;
+  const VAR_INFO *info;
+  char name[4096];
+  long i, n;
+  size_t e, start;
+  int pass;
+
+  switch (kind) {
+  case VARKIND_REAL: aliases = modelData->realAlias; n = modelData->nAliasRealArray; break;
+  case VARKIND_INTEGER: aliases = modelData->integerAlias; n = modelData->nAliasIntegerArray; break;
+  default: aliases = modelData->booleanAlias; n = modelData->nAliasBooleanArray; break;
+  }
+
+  /* The first pass counts the scalars to allocate the tables */
+  for (pass = 0; pass < 2; pass++) {
+    if (pass == 1) {
+      state->aliases[kind] = (omc_opc_ua_alias*) malloc(state->nAliases[kind] * sizeof(omc_opc_ua_alias));
+      state->aliases[paramKind] = (omc_opc_ua_alias*) malloc(state->nAliases[paramKind] * sizeof(omc_opc_ua_alias));
+      state->nAliases[kind] = 0;
+      state->nAliases[paramKind] = 0;
+    }
+    for (i = 0; i < n; i++) {
+      const DATA_ALIAS *a = &aliases[i];
+      var_kind_t targetKind;
+      if (a->aliasType == ALIAS_TYPE_TIME) {
+        continue;
+      }
+      targetKind = a->aliasType == ALIAS_TYPE_PARAMETER ? paramKind : kind;
+      start = arrayInfo(state->data, targetKind, a->nameID, &dim, &info);
+      for (e = 0; e < dim->scalar_length; e++) {
+        int pos = state->nAliases[targetKind]++;
+        int index = (int) (start + e);
+        if (pass == 0) {
+          continue;
+        }
+        if (pos >= MAX_VARS_KIND - ALIAS_START_ID) {
+          UA_LOG_INFO(state->logger, UA_LOGCATEGORY_USERLAND, "Too many aliases of kind %d", targetKind);
+          return 1;
+        }
+        state->aliases[targetKind][pos].index = index;
+        state->aliases[targetKind][pos].negate = a->negate;
+        printArrayElementName(name, sizeof(name), a->info.name, dim, e, targetKind == VARKIND_REAL && modelData->nStatesArray <= a->nameID && a->nameID < 2*modelData->nStatesArray);
+        if (addVariableNode(state, targetKind, ALIAS_START_ID + pos, name, a->info.comment, isWritable(state, targetKind, index))) {
+          return 1;
+        }
+      }
+    }
+  }
+  return 0;
+}
+
+static void addControlNode(omc_opc_ua_state *state, UA_UInt32 id, char *name, char *displayName, char *description,
+                           const UA_DataType *type, UA_DataSource dataSource)
+{
+  UA_VariableAttributes attr;
+  setAttributes(&attr, displayName, description, type, dataSource.write != NULL);
+  UA_Server_addDataSourceVariableNode(state->server, UA_NODEID_NUMERIC(0, id),
+                                      UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER),
+                                      UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES),
+                                      UA_QUALIFIEDNAME(1, name), UA_NODEID_NULL, attr, dataSource, NULL);
+}
+
+static void storeValues(omc_opc_ua_state *state, int buffer)
+{
+  const DATA *data = state->data;
+  const MODEL_DATA *modelData = data->modelData;
+  long i;
+  for (i = 0; i < modelData->nVariablesReal; i++) {
+    state->realVals[buffer][i] = data->localData[0]->realVars[i];
+  }
+  for (i = 0; i < modelData->nVariablesInteger; i++) {
+    state->intVals[buffer][i] = data->localData[0]->integerVars[i];
+  }
+  for (i = 0; i < modelData->nVariablesBoolean; i++) {
+    state->boolVals[buffer][i] = data->localData[0]->booleanVars[i];
+  }
+}
+
 void* omc_embedded_server_init(DATA *data, double t, double step, const char *argv_0, void (*omc_real_time_sync_update)(DATA *data, double scaling), int port)
 {
   MODEL_DATA *modelData = data->modelData;
-  omc_opc_ua_state *state = (omc_opc_ua_state*) malloc(sizeof(omc_opc_ua_state));
+  omc_opc_ua_state *state = (omc_opc_ua_state*) calloc(1, sizeof(omc_opc_ua_state));
   UA_ServerConfig config = UA_ServerConfig_standard;
-  var_kind_t vk;
-  pthread_rwlockattr_t lockattr;
+  UA_DataSource boolSource = {.handle = state, .read = readBoolean, .write = writeBoolean};
+  UA_DataSource realSource = {.handle = state, .read = readReal, .write = writeReal};
+  UA_DataSource timeSource = {.handle = state, .read = readReal, .write = NULL};
+  int i;
   state->logger = UA_Log_Stdout;
   state->nl = UA_ServerNetworkLayerTCP(UA_ConnectionConfig_standard, port);
   config.logger = UA_Log_Stdout;
@@ -528,137 +592,41 @@ void* omc_embedded_server_init(DATA *data, double t, double step, const char *ar
   state->terminate = 0;
   state->oldUseStopTime = data->simulationInfo->useStopTime;
 
-  pthread_create(&state->thread, NULL, (void*) &threadWork, state);
-
-  /* add variable for a simulation step */
-  UA_NodeId stepNodeId = UA_NODEID_NUMERIC(0, OMC_OPC_NODEID_STEP);
-  UA_QualifiedName stepName = UA_QUALIFIEDNAME(1, "OpenModelica.step");
-  UA_DataSource stepDataSource = (UA_DataSource) {
-      .handle = state, .read = readBoolean, .write = writeBoolean};
-  UA_VariableAttributes attr;
-  UA_VariableAttributes_init(&attr);
-  /* set it to scalar as some clients do not like -2 variant */
-  attr.valueRank = -1; /* scalar */
-  attr.description = UA_LOCALIZEDTEXT("en_US","When set to true, the simulator takes a single step");
-  attr.displayName = UA_LOCALIZEDTEXT("en_US","step");
-  attr.writeMask = 1;
-  attr.userWriteMask = 1;
-  UA_Server_addDataSourceVariableNode(state->server, stepNodeId,
-                                      UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER),
-                                      UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES),
-                                      stepName, UA_NODEID_NULL, attr, stepDataSource, NULL);
-
-  /* add variable for simulation run */
-  UA_NodeId runNodeId = UA_NODEID_NUMERIC(0, OMC_OPC_NODEID_RUN);
-  UA_QualifiedName runName = UA_QUALIFIEDNAME(1, "OpenModelica.run");
-  /* set it to scalar as some clients do not like -2 variant */
-  attr.valueRank = -1; /* scalar */
-  attr.description = UA_LOCALIZEDTEXT("en_US","When set to true, the simulator keeps running until run is set to false");
-  attr.displayName = UA_LOCALIZEDTEXT("en_US","run");
-  attr.writeMask = 1;
-  attr.userWriteMask = 1;
-  UA_Server_addDataSourceVariableNode(state->server, runNodeId,
-                                      UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER),
-                                      UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES),
-                                      runName, UA_NODEID_NULL, attr, stepDataSource, NULL);
-
-  { /* add variable for real-time scaling factor */
-    UA_NodeId nodeId = UA_NODEID_NUMERIC(0, OMC_OPC_NODEID_REAL_TIME_SCALING_FACTOR);
-    UA_QualifiedName name = UA_QUALIFIEDNAME(1, "OpenModelica.realTimeScalingFactor");
-    UA_DataSource dataSource = (UA_DataSource) {
-        .handle = state, .read = readReal, .write = writeReal};
-    UA_VariableAttributes attr;
-    UA_VariableAttributes_init(&attr);
-    /* set it to scalar as some clients do not like -2 variant */
-    attr.valueRank = -1; /* scalar */
-    attr.description = UA_LOCALIZEDTEXT("en_US","Real-time scaling factor. 1.0=real-time, 0.0=disabled");
-    attr.displayName = UA_LOCALIZEDTEXT("en_US","realTimeScalingFactor");
-    attr.writeMask = 1;
-    attr.userWriteMask = 1;
-    UA_Server_addDataSourceVariableNode(state->server, nodeId,
-                                        UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER),
-                                        UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES),
-                                        name, UA_NODEID_NULL, attr, dataSource, NULL);
-  }
-
-  { /* add variable for disabling stopTime */
-    UA_NodeId nodeId = UA_NODEID_NUMERIC(0, OMC_OPC_NODEID_ENABLE_STOP_TIME);
-    UA_QualifiedName name = UA_QUALIFIEDNAME(1, "OpenModelica.enableStopTime");
-    UA_DataSource dataSource = (UA_DataSource) {
-        .handle = state, .read = readBoolean, .write = writeBoolean};
-    UA_VariableAttributes attr;
-    UA_VariableAttributes_init(&attr);
-    /* set it to scalar as some clients do not like -2 variant */
-    attr.valueRank = -1; /* scalar */
-    attr.description = UA_LOCALIZEDTEXT("en_US","Enabled when using the stopTime to stop the simulation");
-    attr.displayName = UA_LOCALIZEDTEXT("en_US","enableStopTime");
-    attr.writeMask = 1;
-    attr.userWriteMask = 1;
-    UA_Server_addDataSourceVariableNode(state->server, nodeId,
-                                        UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER),
-                                        UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES),
-                                        name, UA_NODEID_NULL, attr, dataSource, NULL);
-  }
-
-  /* add variable for current simulation time */
-  UA_NodeId timeNodeId = UA_NODEID_NUMERIC(0, OMC_OPC_NODEID_TIME);
-  UA_QualifiedName timeName = UA_QUALIFIEDNAME(1, "time");
-  UA_DataSource timeDataSource = (UA_DataSource) {
-      .handle = state, .read = readReal, .write = NULL};
-  UA_VariableAttributes timeAttr;
-  UA_VariableAttributes_init(&timeAttr);
-  /* set it to scalar as some clients do not like -2 variant */
-  timeAttr.valueRank = -1; /* scalar */
-  timeAttr.description = UA_LOCALIZEDTEXT("en_US","current simulation time");
-  timeAttr.displayName = UA_LOCALIZEDTEXT("en_US","time");
-  UA_Server_addDataSourceVariableNode(state->server, timeNodeId,
-                                      UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER),
-                                      UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES),
-                                      timeName, UA_NODEID_NULL, timeAttr, timeDataSource, NULL);
-
-  {
-    /* add variable for graceful termination of the simulation */
-    UA_NodeId terminateNodeId = UA_NODEID_NUMERIC(0, OMC_OPC_NODEID_TERMINATE);
-    UA_QualifiedName terminateName = UA_QUALIFIEDNAME(1, "OpenModelica.terminate");
-    UA_DataSource dataSource = (UA_DataSource) {
-        .handle = state, .read = readBoolean, .write = writeBoolean};
-    UA_VariableAttributes attr;
-    UA_VariableAttributes_init(&attr);
-    /* set it to scalar as some clients do not like -2 variant */
-    attr.valueRank = -1; /* scalar */
-    attr.description = UA_LOCALIZEDTEXT("en_US", "When set to true, the simulation is terminated gracefully");
-    attr.displayName = UA_LOCALIZEDTEXT("en_US", "terminate");
-    attr.writeMask = 1;
-    attr.userWriteMask = 1;
-    UA_Server_addDataSourceVariableNode(state->server, terminateNodeId,
-                                        UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER),
-                                        UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES),
-                                        terminateName, UA_NODEID_NULL, attr, dataSource, NULL);
-  }
+  addControlNode(state, OMC_OPC_NODEID_STEP, "OpenModelica.step", "step",
+                 "When set to true, the simulator takes a single step", &UA_TYPES[UA_TYPES_BOOLEAN], boolSource);
+  addControlNode(state, OMC_OPC_NODEID_RUN, "OpenModelica.run", "run",
+                 "When set to true, the simulator keeps running until run is set to false", &UA_TYPES[UA_TYPES_BOOLEAN], boolSource);
+  addControlNode(state, OMC_OPC_NODEID_REAL_TIME_SCALING_FACTOR, "OpenModelica.realTimeScalingFactor", "realTimeScalingFactor",
+                 "Real-time scaling factor. 1.0=real-time, 0.0=disabled", &UA_TYPES[UA_TYPES_DOUBLE], realSource);
+  addControlNode(state, OMC_OPC_NODEID_ENABLE_STOP_TIME, "OpenModelica.enableStopTime", "enableStopTime",
+                 "Enabled when using the stopTime to stop the simulation", &UA_TYPES[UA_TYPES_BOOLEAN], boolSource);
+  addControlNode(state, OMC_OPC_NODEID_TIME, "time", "time",
+                 "current simulation time", &UA_TYPES[UA_TYPES_DOUBLE], timeSource);
+  addControlNode(state, OMC_OPC_NODEID_TERMINATE, "OpenModelica.terminate", "terminate",
+                 "When set to true, the simulation is terminated gracefully", &UA_TYPES[UA_TYPES_BOOLEAN], boolSource);
 
   state->gotNewInput = 0;
   state->inputVarsBackup = malloc(modelData->nInputVars * sizeof(double));
   memcpy(state->inputVarsBackup, data->simulationInfo->inputVars, modelData->nInputVars * sizeof(double));
-  state->realVals[0] = malloc(modelData->nVariablesReal * sizeof(UA_Double));
-  state->realVals[1] = malloc(modelData->nVariablesReal * sizeof(UA_Double));
-  state->realValsInputIndex = malloc(modelData->nVariablesReal * sizeof(int));
-  state->boolVals[0] = malloc(modelData->nVariablesBoolean * sizeof(UA_Boolean));
-  state->boolVals[1] = malloc(modelData->nVariablesBoolean * sizeof(UA_Boolean));
-  state->boolValsInputIndex = malloc(modelData->nVariablesBoolean * sizeof(int));
+  for (i = 0; i < 2; i++) {
+    state->realVals[i] = malloc(modelData->nVariablesReal * sizeof(UA_Double));
+    state->intVals[i] = malloc(modelData->nVariablesInteger * sizeof(UA_Int64));
+    state->boolVals[i] = malloc(modelData->nVariablesBoolean * sizeof(UA_Boolean));
+  }
+  storeValues(state, 0);
 
   state->reinitStateFlag = 0;
   state->stateWasUpdatedFlag = (int*) calloc(sizeof(int), modelData->nStates);
   state->updatedStates = (double*) malloc(sizeof(double)*modelData->nStates);
 
-  int realIndex = 0, boolIndex = 0;
-  assert(modelData->nVariablesReal < MAX_VARS_KIND);
-
-  // state = addVars(state, VARKIND_REAL, nInputVars, modelData->realVarsData, &realIndex);
-  state = addVars(state, VARKIND_REAL, modelData->nVariablesReal, (data->localData[0])->realVars, &realIndex);
-  state = addVars(state, VARKIND_BOOL, modelData->nVariablesBoolean, (data->localData[0])->booleanVars, &boolIndex);
-  for (vk=VARKIND_REAL; vk<=VARKIND_BOOL; vk++) {
-    state = addAliasVars(state, vk);
+  if (addVariables(state, VARKIND_REAL) || addVariables(state, VARKIND_BOOL) || addVariables(state, VARKIND_INTEGER) ||
+      addVariables(state, VARKIND_REAL_PARAMETER) || addVariables(state, VARKIND_BOOL_PARAMETER) || addVariables(state, VARKIND_INTEGER_PARAMETER) ||
+      addAliases(state, VARKIND_REAL, VARKIND_REAL_PARAMETER) || addAliases(state, VARKIND_BOOL, VARKIND_BOOL_PARAMETER) ||
+      addAliases(state, VARKIND_INTEGER, VARKIND_INTEGER_PARAMETER)) {
+    UA_LOG_INFO(state->logger, UA_LOGCATEGORY_USERLAND, "Not all variables are available through OPC UA");
   }
+
+  pthread_create(&state->thread, NULL, threadWork, state);
 
   return state;
 }
@@ -667,6 +635,7 @@ void omc_embedded_server_deinit(void *state_vp)
 {
   omc_opc_ua_state *state = (omc_opc_ua_state*) state_vp;
   void *res;
+  int i;
 
   state->server_running = 0;
   if (pthread_join(state->thread, &res)) {
@@ -682,19 +651,24 @@ void omc_embedded_server_deinit(void *state_vp)
   pthread_mutex_destroy(&state->mutex_values);
   pthread_cond_destroy(&state->cond_pause);
   free(state->inputVarsBackup);
-  free(state->realVals[0]);
-  free(state->realVals[1]);
-  free(state->realValsInputIndex);
-  free(state->boolVals[0]);
-  free(state->boolVals[1]);
-  free(state->boolValsInputIndex);
+  for (i = 0; i < 2; i++) {
+    free(state->realVals[i]);
+    free(state->intVals[i]);
+    free(state->boolVals[i]);
+  }
+  for (i = 0; i < N_VARKINDS; i++) {
+    free(state->inputIndex[i]);
+    free(state->aliases[i]);
+  }
+  free(state->stateWasUpdatedFlag);
+  free(state->updatedStates);
   free(state);
 }
 
 int omc_embedded_server_update(void *state_vp, double t, int *terminate)
 {
   omc_opc_ua_state *state = (omc_opc_ua_state*) state_vp;
-  int i, realIndex=0, boolIndex=0, res=0;
+  int i, res=0;
   DATA *data = state->data;
   MODEL_DATA *modelData = data->modelData;
   int latestValues;
@@ -702,12 +676,7 @@ int omc_embedded_server_update(void *state_vp, double t, int *terminate)
   latestValues = state->latestValues ? 0 : 1;
 
   state->time[latestValues] = t;
-  for (i = 0; i < modelData->nVariablesReal; i++, realIndex++) {
-    state->realVals[latestValues][realIndex] = (data->localData[0])->realVars[i];
-  }
-  for (i = 0; i < modelData->nVariablesBoolean; i++, boolIndex++) {
-    state->boolVals[latestValues][boolIndex] = (data->localData[0])->booleanVars[i];
-  }
+  storeValues(state, latestValues);
 
   pthread_mutex_lock(&state->mutex_values);
   state->latestValues = latestValues;

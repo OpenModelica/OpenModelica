@@ -55,6 +55,7 @@ import Util;
 protected
 import AbsynUtil;
 import Array;
+import Autoconf;
 import AvlTreeCRToInt;
 import BaseHashTable;
 import ClassInf;
@@ -2983,6 +2984,22 @@ algorithm
   eqs := list(e for e guard isScalarLiteralAssignment(e) in eqs);
 end selectScalarLiteralAssignments;
 
+public function runnableParamDepEqs
+  "The equations updateTunableParameters evaluates, with their mask index."
+  input SimCode.ParamDeps deps;
+  output list<tuple<Integer, SimCode.SimEqSystem>> eqs = {};
+protected
+  Integer k = 0;
+algorithm
+  for e in deps.eqs loop
+    if isSome(e.eq) then
+      eqs := (k, Util.getOption(e.eq)) :: eqs;
+    end if;
+    k := k + 1;
+  end for;
+  eqs := listReverse(eqs);
+end runnableParamDepEqs;
+
 public function filterScalarLiteralAssignments
   input output list<SimCode.SimEqSystem> eqs;
 algorithm
@@ -3379,6 +3396,29 @@ algorithm
   end for;
   aliases := listReverse(aliases);
 end getFMI3VariableAliases;
+
+public constant list<String> fmuSourceLibraries = {"ModelicaExternalC", "ModelicaStandardTables", "ModelicaIO", "ModelicaMatIO"}
+  "The libraries of Library annotations that an FMU compiles from its sources.";
+
+public function fmuExternalLibraries
+  "The libraries of Library annotations that an FMU does not carry as sources,
+   by name. zlib and HDF5 are only there for ModelicaMatIO, which the FMU
+   compiles without them."
+  input list<String> libs;
+  output list<String> names = {};
+protected
+  String name;
+algorithm
+  for lib in libs loop
+    if StringUtil.startsWith(lib, "-l") and not stringEqual(lib, Autoconf.hdf5Libs) then
+      name := substring(lib, 3, stringLength(lib));
+      if not (name == "zlib" or List.contains(fmuSourceLibraries, name, stringEqual) or List.contains(names, name, stringEqual)) then
+        names := name :: names;
+      end if;
+    end if;
+  end for;
+  names := listReverse(names);
+end fmuExternalLibraries;
 
 public function getFMI3Terminals
   "Collect the FMI 3.0 terminals from the exported SimVars. The flat-model type of

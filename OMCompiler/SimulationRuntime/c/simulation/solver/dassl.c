@@ -440,53 +440,6 @@ int dassl_deinitial(DATA* data, DASSL_DATA *dasslData)
   return 0;
 }
 
-/* \fn printCurrentStatesVector(int logLevel, double* y, DATA* data, double time)
- *
- * \param [in] [logLevel]
- * \param [in] [states]
- * \param [in] [data]
- * \param [in] [time]
- *
- * This function outputs states vector.
- *
- */
-int printCurrentStatesVector(int logLevel, double* states, DATA* data, double time)
-{
-  int i;
-  infoStreamPrint(logLevel, 1, "states at time=%g", time);
-  for(i=0;i<data->modelData->nStates;++i)
-  {
-    infoStreamPrint(logLevel, 0, "%d. %s = %g", i+1, data->modelData->realVarsData[i].info.name, states[i]);
-  }
-  messageClose(logLevel);
-
-  return 0;
-}
-
-/* \fn printVector(int logLevel, double* y, DATA* data, double time)
- *
- * \param [in] [logLevel]
- * \param [in] [name]
- * \param [in] [vec]
- * \param [in] [size]
- * \param [in] [time]
- *
- * This function outputs a vector of size
- *
- */
-int printVector(int logLevel, const char* name,  double* vec, int n, double time)
-{
-  int i;
-  infoStreamPrint(logLevel, 1, "%s at time=%g", name, time);
-  for(i=0; i<n; ++i)
-  {
-    infoStreamPrint(logLevel, 0, "%d. %g", i+1, vec[i]);
-  }
-  messageClose(logLevel);
-
-  return 0;
-}
-
 int printJacobianMatrix(int logLevel, const char* name, double* matrix, DATA* data, int n, double time)
 {
   int row, col;
@@ -552,9 +505,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   threadData->currentErrorStage = ERROR_INTEGRATOR;
 
   /* try */
-#if !defined(OMC_EMCC)
   OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
 
   assertStreamPrint(threadData, 0 != dasslData->rpar, "could not passed to DDASKR");
 
@@ -727,9 +678,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   }
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
 
-#if !defined(OMC_EMCC)
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
   threadData->currentErrorStage = saveJumpState;
 
   if (return_from_small_step) {
@@ -913,9 +862,7 @@ static int functionODE_residual(double *t, double *y, double *yd, double* cj,
   threadData->currentErrorStage = ERROR_INTEGRATOR;
 
   /* try */
-#if !defined(OMC_EMCC)
   OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
 
   /* read input vars */
   externalInputUpdate(data);
@@ -933,9 +880,7 @@ static int functionODE_residual(double *t, double *y, double *yd, double* cj,
   }
   printVector(OMC_LOG_DASSL_STATES, "dd", delta, data->modelData->nStates, *t);
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
-#if !defined(OMC_EMCC)
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
 
   if (!success) {
     *ires = -1;

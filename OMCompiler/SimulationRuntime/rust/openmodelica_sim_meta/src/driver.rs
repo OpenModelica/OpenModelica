@@ -518,6 +518,11 @@ pub trait SimEngine {
         rtclock::accumulate(ix);
         out
     }
+    /// C's `updateTunableParameters`: the parameter equations `k` with `mask[k]`
+    /// set, in the order of the model's parameter dependencies.
+    fn update_tunable_parameters(&mut self, _sim_data: u32, _mask: &[u8]) -> Result<()> {
+        Err("the model cannot update tunable parameters")
+    }
     /// Call the exported `simulate(sim_data, start, stop, n_steps) -> buf`, the
     /// in-wasm Euler driver; returns the result-buffer pointer.
     fn call_simulate(&mut self, sim_data: u32, start: f64, stop: f64, n_steps: u32) -> Result<u32>;
@@ -2095,6 +2100,9 @@ pub const CHATTER_ABORT_ERR: &str = "aborting simulation due to chattering";
 pub const ALARM_ABORT_ERR: &str = "simulation aborted (-alarm)";
 /// What [`enrich_trap`] returns for a trap that was a failed model `assert()`.
 pub const ASSERT_ERR: &str = "assertion failed";
+/// A `-reconcile*` procedure stopped where C calls `exit(1)`: the reason is
+/// already logged.
+pub const RECON_ABORTED_ERR: &str = "dataReconciliation: aborted";
 
 /// Whether an error out of a step is one of C's `longjmp`s; a solver failure, a
 /// cancelled run or a raw wasm trap is not. Which buffer it targeted, and so whether

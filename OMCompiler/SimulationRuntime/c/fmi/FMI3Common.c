@@ -130,7 +130,7 @@ void fmi3GetInteger_OMC(void* in_fmi3, int numberOfValueReferences, double* inte
 void fmi3SetInteger_OMC(void* in_fmi3, int numberOfValueReferences, double* integerValuesReferences, int* integerValues)
 {
   FMI3ModelExchange* FMI3ME = (FMI3ModelExchange*)in_fmi3;
-  if (FMI3ME->FMISolvingMode == fmi3_instantiated_mode || FMI3ME->FMISolvingMode == fmi3_initialization_mode || FMI3ME->FMISolvingMode == fmi3_event_mode || FMI3ME->FMISolvingMode == fmi3_continuousTime_mode) {
+  if (FMI3ME->FMISolvingMode == fmi3_instantiated_mode || FMI3ME->FMISolvingMode == fmi3_initialization_mode || FMI3ME->FMISolvingMode == fmi3_event_mode) {
     fmi3_value_reference_t* valuesReferences_int = real_to_fmi3_value_reference(numberOfValueReferences, integerValuesReferences);
     fmi3_status_t status = fmi3_import_set_int32(FMI3ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences,
                                                  (const fmi3_int32_t*)integerValues, numberOfValueReferences);
@@ -171,7 +171,7 @@ void fmi3GetBoolean_OMC(void* in_fmi3, int numberOfValueReferences, double* bool
 void fmi3SetBoolean_OMC(void* in_fmi3, int numberOfValueReferences, double* booleanValuesReferences, int* booleanValues)
 {
   FMI3ModelExchange* FMI3ME = (FMI3ModelExchange*)in_fmi3;
-  if (FMI3ME->FMISolvingMode == fmi3_instantiated_mode || FMI3ME->FMISolvingMode == fmi3_initialization_mode || FMI3ME->FMISolvingMode == fmi3_event_mode || FMI3ME->FMISolvingMode == fmi3_continuousTime_mode) {
+  if (FMI3ME->FMISolvingMode == fmi3_instantiated_mode || FMI3ME->FMISolvingMode == fmi3_initialization_mode || FMI3ME->FMISolvingMode == fmi3_event_mode) {
     fmi3_value_reference_t* valuesReferences_int = real_to_fmi3_value_reference(numberOfValueReferences, booleanValuesReferences);
     fmi3_boolean_t* fmiBooleans = malloc(sizeof(fmi3_boolean_t)*numberOfValueReferences);
     fmi3_status_t status;
@@ -210,7 +210,7 @@ void fmi3GetString_OMC(void* in_fmi3, int numberOfValueReferences, double* strin
 void fmi3SetString_OMC(void* in_fmi3, int numberOfValueReferences, double* stringValuesReferences, char** stringValues)
 {
   FMI3ModelExchange* FMI3ME = (FMI3ModelExchange*)in_fmi3;
-  if (FMI3ME->FMISolvingMode == fmi3_instantiated_mode || FMI3ME->FMISolvingMode == fmi3_initialization_mode || FMI3ME->FMISolvingMode == fmi3_event_mode || FMI3ME->FMISolvingMode == fmi3_continuousTime_mode) {
+  if (FMI3ME->FMISolvingMode == fmi3_instantiated_mode || FMI3ME->FMISolvingMode == fmi3_initialization_mode || FMI3ME->FMISolvingMode == fmi3_event_mode) {
     fmi3_value_reference_t* valuesReferences_int = real_to_fmi3_value_reference(numberOfValueReferences, stringValuesReferences);
     fmi3_status_t status = fmi3_import_set_string(FMI3ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences,
                                                   (const fmi3_string_t*)stringValues, numberOfValueReferences);

@@ -839,7 +839,7 @@ algorithm
         outVars := List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         funArgs := List.map1(args, typesSimFunctionArg, NONE());
         collectRecDeclsFromElems(daeElts, recDeclsMap);
-        vars := List.filterOnTrue(daeElts, isVarQ);
+        vars := sortVarDecls(List.filterOnTrue(daeElts, isVarQ));
         varDecls := List.map(vars, daeInOutSimVar);
         bodyStmts := listAppend(elaborateStatement(e) for e guard DAEUtil.isAlgorithm(e) in daeElts);
         info := ElementSource.getElementSourceFileInfo(source);
@@ -859,7 +859,7 @@ algorithm
         outVars := List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         funArgs := List.map1(args, typesSimFunctionArg, NONE());
         collectRecDeclsFromElems(daeElts, recDeclsMap);
-        vars := List.filterOnTrue(daeElts, isVarNotInputNotOutput);
+        vars := sortVarDecls(List.filterOnTrue(daeElts, isVarNotInputNotOutput));
         varDecls := List.map(vars, daeInOutSimVar);
         bodyStmts := listAppend(elaborateStatement(e) for e guard DAEUtil.isAlgorithm(e) in daeElts);
         info := ElementSource.getElementSourceFileInfo(source);
@@ -879,7 +879,7 @@ algorithm
         outVars := List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         funArgs := List.map1(args, typesSimFunctionArg, NONE());
         collectRecDeclsFromElems(daeElts, recDeclsMap);
-        vars := List.filterOnTrue(daeElts, isVarQ);
+        vars := sortVarDecls(List.filterOnTrue(daeElts, isVarQ));
         varDecls := List.map(vars, daeInOutSimVar);
         bodyStmts := listAppend(elaborateStatement(e) for e guard DAEUtil.isAlgorithm(e) in daeElts);
         info := ElementSource.getElementSourceFileInfo(source);
@@ -1712,6 +1712,99 @@ algorithm
     else false;
   end match;
 end isVarQ;
+
+protected function sortVarDecls
+  "Sorts the outputs and locals of a function such that each one is initialized
+   after the variables its binding and dimensions use. The declaration order is
+   kept if it is already valid or if the dependencies are cyclic."
+  input list<DAE.Element> inVars;
+  output list<DAE.Element> outVars = inVars;
+protected
+  list<String> names, seen = {};
+  Boolean sorted = true;
+  list<tuple<DAE.Element, list<DAE.Element>>> cycles;
+algorithm
+  names := list(varDeclName(v) for v in inVars);
+  for v in inVars loop
+    for d in varDeclUses(v) loop
+      if listMember(d, names) and not listMember(d, seen) then
+        sorted := false;
+      end if;
+    end for;
+    seen := varDeclName(v) :: seen;
+  end for;
+
+  if not sorted then
+    (outVars, cycles) := Graph.topologicalSort(
+      Graph.buildGraph(inVars, varDeclEdges, inVars), varDeclNameEqual);
+    if not listEmpty(cycles) then
+      outVars := inVars;
+    end if;
+  end if;
+end sortVarDecls;
+
+protected function varDeclEdges
+  input DAE.Element inVar;
+  input list<DAE.Element> inVars;
+  output list<DAE.Element> outEdges;
+protected
+  String name = varDeclName(inVar);
+  list<String> uses = varDeclUses(inVar);
+algorithm
+  outEdges := list(v for v guard not stringEq(varDeclName(v), name) and
+    listMember(varDeclName(v), uses) in inVars);
+end varDeclEdges;
+
+protected function varDeclNameEqual
+  input DAE.Element inVar1;
+  input DAE.Element inVar2;
+  output Boolean outEqual = stringEq(varDeclName(inVar1), varDeclName(inVar2));
+end varDeclNameEqual;
+
+protected function varDeclName
+  input DAE.Element inVar;
+  output String outName;
+protected
+  DAE.ComponentRef cr;
+algorithm
+  DAE.VAR(componentRef = cr) := inVar;
+  outName := ComponentReferenceBasics.crefFirstIdent(cr);
+end varDeclName;
+
+protected function varDeclUses
+  "The first identifiers of the crefs in the binding and dimensions of a
+   variable, except its own name."
+  input DAE.Element inVar;
+  output list<String> outNames = {};
+protected
+  Option<DAE.Exp> binding;
+  DAE.InstDims dims;
+  DAE.Type ty;
+  list<DAE.Exp> exps = {};
+  String name;
+algorithm
+  DAE.VAR(binding = binding, dims = dims, ty = ty) := inVar;
+  if isSome(binding) then
+    exps := {Util.getOption(binding)};
+  end if;
+  for d in listAppend(dims, TypesDump.getDimensions(ty)) loop
+    exps := match d
+      case DAE.DIM_EXP() then d.exp :: exps;
+      else exps;
+    end match;
+  end for;
+
+  name := varDeclName(inVar);
+  for e in exps loop
+    for cr in Expression.extractCrefsFromExp(e) loop
+      outNames := match cr
+        case DAE.CREF_IDENT() guard not stringEq(cr.ident, name) then cr.ident :: outNames;
+        case DAE.CREF_QUAL() guard not stringEq(cr.ident, name) then cr.ident :: outNames;
+        else outNames;
+      end match;
+    end for;
+  end for;
+end varDeclUses;
 
 protected function isVarNotInputNotOutput
 "Succeeds if inElement is a variable or constant that is not input or output.
@@ -2594,9 +2687,10 @@ algorithm
       String str;
       list<String> strs1, strs2, strs3, names1, names2, names3;
 
-    // Lapack is always included
-    case Absyn.STRING("lapack") then ({},{});
-    case Absyn.STRING("Lapack") then ({},{});
+    // Lapack is always included, except in an FMU, which carries only the part
+    // of it the runtime uses.
+    case Absyn.STRING(str) guard str=="lapack" or str=="Lapack"
+      then (if Flags.getConfigBool(Flags.BUILDING_FMU) then {"-llapack"} else {},{});
 
     //pthreads is already linked under windows
     case Absyn.STRING("pthread") guard Autoconf.os=="Windows_NT"
@@ -3106,17 +3200,15 @@ public function createMakefileParams
 protected
   String omhome, ccompiler, cxxcompiler, linker, exeext, dllext, cflags, ldflags, rtlibs, platform, compileDir;
 algorithm
-  ccompiler   := if stringEq(Config.simCodeTarget(),"JavaScript") then "emcc" else
-                 (if Flags.isSet(Flags.HPCOM) then System.getOMPCCompiler() else System.getCCompiler());
-  cxxcompiler := if stringEq(Config.simCodeTarget(),"JavaScript") then "emcc" else System.getCXXCompiler();
-  linker := if stringEq(Config.simCodeTarget(),"JavaScript") then "emcc" else System.getLinker();
-  exeext := if stringEq(Config.simCodeTarget(),"JavaScript") then ".js" else Autoconf.exeExt;
+  ccompiler := if Flags.isSet(Flags.HPCOM) then System.getOMPCCompiler() else System.getCCompiler();
+  cxxcompiler := System.getCXXCompiler();
+  linker := System.getLinker();
+  exeext := Autoconf.exeExt;
   dllext := Autoconf.dllExt;
   omhome := Settings.getInstallationDirectoryPath();
   omhome := System.trim(omhome, "\""); // Remove any quotation marks from omhome.
   cflags := System.getCFlags() + " " +
             (if Flags.isSet(Flags.HPCOM) then "-fopenmp" else "");
-  cflags := if stringEq(Config.simCodeTarget(),"JavaScript") then "-Os -Wno-warn-absolute-paths" else cflags;
   ldflags := System.getLDFlags();
   // The Rust simulation runtime serves ParModelica/auto's own interface, so
   // linking the C++ one beside it would define PM_Model_create and friends twice.

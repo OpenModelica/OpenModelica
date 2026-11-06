@@ -43,7 +43,7 @@ readFile("ticket6262.xml"); getErrorString()
 //   <ScalarVariable
 //     name=\"x_start\"
 //     valueReference=\"1\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"6.0\"/>

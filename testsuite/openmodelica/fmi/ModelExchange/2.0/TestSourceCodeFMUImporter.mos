@@ -1,0 +1,46 @@
+// name:     TestSourceCodeFMUImporter
+// keywords: FMI 2.0 export source code FMU ModelicaExternalC
+// status:   correct
+// suite:    fmuCSources
+// teardown_command: rm -rf TestSourceCodeFMUImporter.fmu TestSourceCodeFMUImporter_* TestSourceCodeFMUImporter.log
+//
+// A source code FMU carries the C sources and headers of the MSL that the
+// model uses, so that an importer can build it from the files listed in
+// modelDescription.xml, with sources/ as the include directory.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+model TestSourceCodeFMUImporter
+  Modelica.Blocks.Sources.CombiTimeTable t(table = [0, 0; 1, 2]);
+  Real x = Modelica.Utilities.Strings.length(String(time > 0.5)) * time;
+  Real y = t.y[1];
+end TestSourceCodeFMUImporter;
+"); getErrorString();
+setCommandLineOptions("--fmiSources=true"); getErrorString();
+buildModelFMU(TestSourceCodeFMUImporter, version = "2.0", fmuType = "me"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../build_fmu_fmpy.py TestSourceCodeFMUImporter.fmu TestSourceCodeFMUImporter_fmpy.fmu > TestSourceCodeFMUImporter.log 2>&1"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py TestSourceCodeFMUImporter_fmpy.fmu TestSourceCodeFMUImporter_fmpy.csv 1.0 x y >> TestSourceCodeFMUImporter.log 2>&1"); getErrorString();
+system("tail -n 1 TestSourceCodeFMUImporter_fmpy.csv > TestSourceCodeFMUImporter_last.txt"); getErrorString();
+readFile("TestSourceCodeFMUImporter_last.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "TestSourceCodeFMUImporter.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// 0
+// ""
+// 0
+// ""
+// "1.0,4.0,2.0
+// "
+// ""
+// endResult

@@ -1,0 +1,45 @@
+// name: simulateAcausalDAE2
+// keywords: acausal DAE separate compilation
+// status: correct
+// suite: cSources
+//
+// Builds and simulates a Buildings fluid network (fans, pressure drops,
+// boundaries) with simulateAcausalDAE, then a rewired network with the same
+// components, and compares both with the monolithic simulation.
+//
+
+loadModel(Buildings, {"12.1.0"}); getErrorString();
+loadFile("AcausalBranches.mo"); getErrorString();
+
+echo(false);
+ref := simulate(AcausalBranches, fileNamePrefix = "AcausalBranches_ref");
+res := simulateAcausalDAE(AcausalBranches);
+copy("combined_res.mat", "AcausalBranches_stitched.mat");
+rew := simulateAcausalDAE(AcausalBranchesRewired);
+vars := {"mov1.m_flow", "mov2.m_flow", "mov1.y_actual", "res1.dp", "res2.dp", "res1.m_flow", "res2.m_flow"};
+getErrorString();
+refMsg := ref.messages;
+resMsg := res.messages;
+rewMsg := rew.messages;
+echo(true);
+regexBool(refMsg, "The simulation finished successfully");
+regexBool(resMsg, "wrote combined_res.mat \\(501 points\\)");
+regexBool(rewMsg, "wrote combined_res.mat \\(501 points\\)");
+diffSimulationResults("AcausalBranches_stitched.mat", "AcausalBranches_ref_res.mat", "AcausalBranches_diff", relTol = 1e-3, vars = vars); getErrorString();
+// branch i ends at sink port 3-i, the branch variables do not change
+diffSimulationResults("combined_res.mat", "AcausalBranches_ref_res.mat", "AcausalBranchesRewired_diff", relTol = 1e-3, vars = vars); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// true
+// true
+// true
+// (true, {})
+// ""
+// (true, {})
+// ""
+// endResult

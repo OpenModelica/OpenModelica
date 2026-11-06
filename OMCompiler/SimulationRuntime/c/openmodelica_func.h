@@ -195,6 +195,13 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   */
   int (*updateBoundParameters)(DATA *data, threadData_t*);
 
+  /*! \fn updateTunableParameters
+  *
+  *  Evaluates the parameter equations k with eqMask[k] set, in the order of
+  *  resources/<prefix>_paramdeps.bin of an FMU.
+  */
+  int (*updateTunableParameters)(DATA *data, threadData_t*, const unsigned char *eqMask);
+
   /* function for checking for asserts and terminate */
   int (*checkForAsserts)(DATA *data, threadData_t*);
 

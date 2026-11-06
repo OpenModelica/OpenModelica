@@ -65,14 +65,51 @@ fn ext_import_sig(sig: &ExtCallSig) -> openmodelica_wasm_jit::sig::FnSig {
 }
 
 /// `fmi_vrs`: also record the FMI value-reference table (FMU export only).
-/// One `<entry>$guard`, per the wrappers `build_sim_model` emits.
-fn build_guard_fn(target: u32, eh: Eh) -> we::Function {
+/// `SimCode.paramDeps` as `<prefix>_paramdeps.bin`
+/// (`SerializeFmuInit.writeParamDeps`). Empty for a model without one.
+fn encode_param_deps(deps: &SimCode::ParamDeps) -> Vec<u8> {
+    fn varint(o: &mut Vec<u8>, mut v: u64) {
+        while v >= 128 {
+            o.push((v & 127) as u8 | 128);
+            v >>= 7;
+        }
+        o.push(v as u8);
+    }
+    if !deps.checked && deps.eqs.is_empty() && deps.settable.is_empty() {
+        return Vec::new();
+    }
+    let mut o = b"OMCFMUP\0".to_vec();
+    o.extend_from_slice(&1u32.to_le_bytes());
+    o.push(deps.checked as u8);
+    varint(&mut o, lst(&deps.eqs).count() as u64);
+    for d in lst(&deps.eqs) {
+        o.push(d.eq.is_some() as u8);
+        for slots in [&d.uses, &d.defines] {
+            varint(&mut o, lst(slots).count() as u64);
+            for &s in lst(slots) {
+                varint(&mut o, s as u64);
+            }
+        }
+    }
+    varint(&mut o, lst(&deps.settable).count() as u64);
+    for &(s, f) in lst(&deps.settable) {
+        varint(&mut o, s as u64);
+        o.push(f as u8);
+    }
+    o
+}
+
+/// One `<entry>$guard`, per the wrappers `build_sim_model` emits, for an entry
+/// point of `n_params` i32 parameters (the first the SimData pointer).
+fn build_guard_fn(target: u32, n_params: u32, eh: Eh) -> we::Function {
     use we::Instruction as I;
     let mut f = we::Function::new([(1, we::ValType::I32)]);
-    let threw = 1; // param 0 is the SimData pointer
+    let threw = n_params;
     if eh == Eh::Legacy {
         f.instruction(&I::Try(we::BlockType::Empty));
-        f.instruction(&I::LocalGet(0));
+        for p in 0..n_params {
+            f.instruction(&I::LocalGet(p));
+        }
         f.instruction(&I::Call(target));
         f.instruction(&I::Catch(0));
         f.instruction(&I::I32Const(1));
@@ -88,7 +125,9 @@ fn build_guard_fn(target: u32, eh: Eh) -> we::Function {
         we::BlockType::Empty,
         vec![we::Catch::OneRef { tag: 0, label: 0 }].into(),
     ));
-    f.instruction(&I::LocalGet(0));
+    for p in 0..n_params {
+        f.instruction(&I::LocalGet(p));
+    }
     f.instruction(&I::Call(target));
     f.instruction(&I::End); // try_table
     f.instruction(&I::I32Const(0));
@@ -704,6 +743,10 @@ pub(super) fn build_sim_model(
     // `<entry>$guard`'s type: (i32 SimData) -> i32, nonzero if it threw.
     let guard_fn_type = types.len();
     types.ty().function([we::ValType::I32], [we::ValType::I32]);
+    let guard2_fn_type = types.len();
+    types
+        .ty()
+        .function([we::ValType::I32, we::ValType::I32], [we::ValType::I32]);
     let mut model_fn_type: Vec<u32> = Vec::with_capacity(model_fns.len());
     for f in &model_fns {
         let (_, sig) = function_signature(f)?;
@@ -1097,6 +1140,7 @@ pub(super) fn build_sim_model(
     // driver / standalone) and kept on the `SimModel` (for the host driver).
     // Only the FMU export needs the vr table; a plain simulation would just carry
     // it around unused.
+    let fmu_export = fmi_vrs;
     let (fmi_vrs, fmi_dae_enable_vr) = if fmi_vrs {
         build_fmi_vrs(sim_code, &var_map, &layout)?
     } else {
@@ -1325,6 +1369,9 @@ pub(super) fn build_sim_model(
         prof_info,
         parmod_info.clone(),
     );
+    if fmu_export {
+        meta.param_deps = encode_param_deps(&sim_code.paramDeps);
+    }
     // `om_meta_ptr` / `om_meta_len`, filled in once every function is emitted: the
     // size table of a resizable model grows until then.
     let meta_fns_at = bodies.len();
@@ -1690,6 +1737,46 @@ pub(super) fn build_sim_model(
         )?);
         idx
     };
+    // C's `updateTunableParameters`: the parameter equations whose byte in the
+    // mask (the second parameter) is set, in `sim_code.paramDeps` order.
+    let attr_eq_ids: HashSet<i32> = [
+        &sim_code.minValueEquations,
+        &sim_code.maxValueEquations,
+        &sim_code.nominalValueEquations,
+    ]
+    .into_iter()
+    .flat_map(|l| lst(l))
+    .filter_map(|eq| match &**eq {
+        SimCode::SimEqSystem::SES_SIMPLE_ASSIGN { index, .. } => Some(*index),
+        _ => None,
+    })
+    .collect();
+    let tunable_units: Vec<EqUnit> = lst(&sim_code.paramDeps.eqs)
+        .enumerate()
+        .filter_map(|(k, d)| d.eq.as_ref().map(|eq| (k, eq)))
+        .filter(|(_, eq)| !matches!(&***eq, SimCode::SimEqSystem::SES_SIMPLE_ASSIGN { index, .. } if attr_eq_ids.contains(index)))
+        .map(|(k, eq)| EqUnit::Masked(eq, k as u32))
+        .collect();
+    let tunable_split = splits.len();
+    let update_tunable_idx = {
+        let idx = import_base + bodies.len() as u32;
+        splits.push(build_split_fn(
+            "functionUpdateTunableParameters",
+            &tunable_units,
+            2,
+            dae_fn_type,
+            &[],
+            &[],
+            &var_map,
+            &eq_index,
+            &by_name,
+            &mut literals,
+            &mut bodies,
+            &mut pool,
+            false,
+        )?);
+        idx
+    };
     // The optimizer's per-real-variable attributes (C reads them out of the
     // `_init.xml`): constants here, parameter-dependent ones through `attr_targets`.
     let opt_attrs = match layout.n_opt_attr {
@@ -1737,6 +1824,25 @@ pub(super) fn build_sim_model(
         )?);
         idx
     };
+    let tunable_masks: HashMap<i32, u32> = lst(&sim_code.paramDeps.eqs)
+        .enumerate()
+        .filter_map(|(k, d)| match d.eq.as_deref() {
+            Some(SimCode::SimEqSystem::SES_SIMPLE_ASSIGN { index, .. }) => Some((*index, k as u32)),
+            _ => None,
+        })
+        .collect();
+    if let Some(f) = build_tunable_attrs_fn(
+        sim_code,
+        &layout,
+        &attr_targets,
+        &var_map,
+        &by_name,
+        &mut literals,
+        &tunable_masks,
+    )? {
+        splits[tunable_split].chunks.push(pool.len());
+        pool.push(f, dae_fn_type, "functionUpdateTunableParameters$attrs".to_string());
+    }
     // C's `setupDataStruc` half: the constant defaults, written before the solver is
     // allocated. The expression-bound ones stay in the update function.
     let attr_defaults_idx = {
@@ -1981,6 +2087,7 @@ pub(super) fn build_sim_model(
     functions.function(eqfn_type); // functionStoreSpatialDistribution: (i32) -> ()
     functions.function(eqfn_type); // functionInitSpatialDistribution: (i32) -> ()
     functions.function(eqfn_type); // functionUpdateBoundParameters: (i32) -> ()
+    functions.function(dae_fn_type); // functionUpdateTunableParameters: (i32, i32 mask) -> ()
     functions.function(eqfn_type); // functionUpdateBoundVariableAttributes: (i32) -> ()
     functions.function(eqfn_type); // functionAttrDefaults: (i32) -> ()
     for _ in 0..4 {
@@ -2126,8 +2233,13 @@ pub(super) fn build_sim_model(
     if error_tag_type.is_some() {
         for (_, target) in &guarded {
             functions.function(guard_fn_type);
-            bodies.push(build_guard_fn(*target, eh));
+            bodies.push(build_guard_fn(*target, 1, eh));
         }
+    }
+    let tunable_guard_idx = import_base + bodies.len() as u32;
+    if error_tag_type.is_some() {
+        functions.function(guard2_fn_type);
+        bodies.push(build_guard_fn(update_tunable_idx, 2, eh));
     }
 
     if let Some(scope) = &size_scope {
@@ -2242,6 +2354,11 @@ pub(super) fn build_sim_model(
         update_bound_params_idx,
     );
     exports.export(
+        "functionUpdateTunableParameters",
+        we::ExportKind::Func,
+        update_tunable_idx,
+    );
+    exports.export(
         "functionUpdateBoundVariableAttributes",
         we::ExportKind::Func,
         update_bound_attrs_idx,
@@ -2276,6 +2393,11 @@ pub(super) fn build_sim_model(
         for (k, (name, _)) in guarded.iter().enumerate() {
             exports.export(&format!("{name}$guard"), we::ExportKind::Func, guard_base + k as u32);
         }
+        exports.export(
+            "functionUpdateTunableParameters$guard",
+            we::ExportKind::Func,
+            tunable_guard_idx,
+        );
     }
 
     // --- Name section: without it a trap backtrace is bare function indices. The

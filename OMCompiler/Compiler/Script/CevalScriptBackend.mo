@@ -4236,7 +4236,8 @@ protected function canExportDaeModeFMU
    the residual form for both FMU kinds. A --simCodeTarget=C+Rust FMU gets its FMI
    API from the same Rust runtime component, so it serves it as fmi-ls-dae for
    FMI 3.0 Model Exchange, where the importer owns the DAE residuals and the
-   algebraic variables. The C simulation runtime of --simCodeTarget=C does not."
+   algebraic variables. The C simulation runtime of --simCodeTarget=C integrates
+   the residual form with IDA, so it serves Co-Simulation only."
   input String FMUType;
   input String FMUVersion;
   input Boolean isWasmFMU;
@@ -4244,8 +4245,25 @@ protected function canExportDaeModeFMU
 algorithm
   canExport := isWasmFMU or
                (FMI.isFMIVersion30(FMUVersion) and FMI.isFMIMEType(FMUType) and
-                Config.simCodeRustRuntime());
+                Config.simCodeRustRuntime()) or
+               (not FMI.isFMIVersion10(FMUVersion) and not FMI.isFMIMEType(FMUType) and
+                not Config.simCodeRustRuntime());
 end canExportDaeModeFMU;
+
+protected function daeModeFMUType
+  "An me_cs export of a --daeMode model whose Model Exchange part the target
+   cannot serve exports Co-Simulation only, with a warning."
+  input String FMUType;
+  input String FMUVersion;
+  input Boolean isWasmFMU;
+  output String outFMUType = FMUType;
+algorithm
+  if FMUType == "me_cs" and not canExportDaeModeFMU(FMUType, FMUVersion, isWasmFMU) and
+     canExportDaeModeFMU("cs", FMUVersion, isWasmFMU) then
+    Error.addMessage(Error.FMU_EXPORT_DAE_MODE_ME_DROPPED, {});
+    outFMUType := "cs";
+  end if;
+end daeModeFMUType;
 
 protected function callTranslateModelFMU
  "Translates a model into target code and writes CMakeLists.txt"
@@ -4294,13 +4312,16 @@ algorithm
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
   end if;
+  if Flags.getConfigBool(Flags.DAE_MODE) then
+    FMUType := daeModeFMUType(FMUType, FMUVersion, isWasmFMU);
+  end if;
   if Flags.getConfigBool(Flags.DAE_MODE) and not canExportDaeModeFMU(FMUType, FMUVersion, isWasmFMU) then
     success := false;
     outValue := Values.STRING("");
     if FMI.isFMIMEType(FMUType) then
       Error.addMessage(Error.FMU_EXPORT_DAE_MODE_ME, {FMUType});
     else
-      Error.addMessage(Error.FMU_EXPORT_DAE_MODE_C_CS, {});
+      Error.addMessage(Error.FMU_EXPORT_DAE_MODE_CS, {});
     end if;
     return;
   end if;
@@ -4772,12 +4793,15 @@ algorithm
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
   end if;
+  if Flags.getConfigBool(Flags.DAE_MODE) then
+    FMUType := daeModeFMUType(FMUType, FMUVersion, isWasmFMU);
+  end if;
   if Flags.getConfigBool(Flags.DAE_MODE) and not canExportDaeModeFMU(FMUType, FMUVersion, isWasmFMU) then
     outValue := Values.STRING("");
     if FMI.isFMIMEType(FMUType) then
       Error.addMessage(Error.FMU_EXPORT_DAE_MODE_ME, {FMUType});
     else
-      Error.addMessage(Error.FMU_EXPORT_DAE_MODE_C_CS, {});
+      Error.addMessage(Error.FMU_EXPORT_DAE_MODE_CS, {});
     end if;
     return;
   end if;
@@ -6790,64 +6814,82 @@ public function checkModel " checks a model and returns number of variables and 
   input Absyn.Path className;
   input Absyn.Msg inMsg;
         output Values.Value outValue;
-algorithm
-  outValue := matchcontinue ()
-    local
-      Option<DAE.DAElist> odae;
-      DAE.DAElist dae;
-      Integer eqnSize,varSize,simpleEqnSize;
-      String retStr,classNameStr, eqnsStr, varsStr;
-      Flags.Flag flags;
-      NFFlatModel flatModel;
-      NFExpression eqnSizeExp, varSizeExp;
+protected
+  DAE.DAElist dae;
+  Integer eqnSize, varSize, simpleEqnSize, warnings, errors;
+  String retStr, classNameStr, eqnsStr, varsStr, errStr;
+  Flags.Flag flags;
+  NFFlatModel flatModel;
+  NFExpression eqnSizeExp, varSizeExp;
 
-    // handle normal models
-    case ()
-      algorithm
-        ExecStat.execStatReset();
-        flags := loadCommandLineOptionsFromModel(className);
-
-        try
-          if Flags.isSet(Flags.SCODE_INST) then
-            flatModel := runFrontEndNF(className);
-            (varSizeExp, eqnSizeExp, simpleEqnSize) := NFCheckModel.checkModel(flatModel);
-            varsStr := NFExpression.toString(varSizeExp);
-            eqnsStr := NFExpression.toString(eqnSizeExp);
-          else
-            (cache, _, odae) := runFrontEnd(cache, env, className, false);
-            SOME(dae) := odae;
-            (varSize, eqnSize, simpleEqnSize) := CheckModel.checkModel(dae);
-            varsStr := String(varSize);
-            eqnsStr := String(eqnSize);
-          end if;
-
-          FlagsUtil.saveFlags(flags);
-        else
-          FlagsUtil.saveFlags(flags);
-          fail();
-        end try;
-
-        classNameStr := AbsynUtil.pathString(className);
-        retStr := stringAppendList({"Check of ",classNameStr," completed successfully.\nClass ",classNameStr," has ",eqnsStr," equation(s) and ",
-          varsStr," variable(s).\n",String(simpleEqnSize)," of these are trivial equation(s)."});
-      then Values.STRING(retStr);
-
-    case ()
-      algorithm
-        false := Interactive.existClass(className, SymbolTable.getAbsyn());
-        Error.addMessage(Error.LOOKUP_ERROR, {AbsynUtil.pathString(className), "<TOP>"});
-      then Values.STRING("");
-
-    // errors
+  function format_errors
+    input Integer warnings;
+    input Integer errors;
+    output String str;
+  algorithm
+    if warnings == 0 and errors == 0 then
+      str := "";
     else
-      algorithm
-        if Error.getNumMessages() == 0 then
-          Error.addMessage(Error.INTERNAL_ERROR,
-            {"Check of " + AbsynUtil.pathString(className) + " failed with no error message","<TOP>"});
-        end if;
-      then Values.STRING("");
+      str := " with ";
+      if warnings > 0 then
+        str := str + String(warnings) + " warning(s)";
+      end if;
 
-  end matchcontinue;
+      if errors > 0 then
+        if warnings > 0 then
+          str := str + " and ";
+        end if;
+
+        str := str + String(errors) + " error(s)";
+      end if;
+    end if;
+  end format_errors;
+algorithm
+  warnings := ErrorExt.getNumWarningMessages();
+  errors := ErrorExt.getNumErrorMessages();
+  classNameStr := AbsynUtil.pathString(className);
+  ExecStat.execStatReset();
+  flags := loadCommandLineOptionsFromModel(className);
+
+  try
+    if Flags.isSet(Flags.SCODE_INST) then
+      flatModel := runFrontEndNF(className);
+      (varSizeExp, eqnSizeExp, simpleEqnSize) := NFCheckModel.checkModel(flatModel);
+      varsStr := NFExpression.toString(varSizeExp);
+      eqnsStr := NFExpression.toString(eqnSizeExp);
+    else
+      (cache, _, SOME(dae), _) := runFrontEnd(cache, env, className, false);
+      (varSize, eqnSize, simpleEqnSize) := CheckModel.checkModel(dae);
+      varsStr := String(varSize);
+      eqnsStr := String(eqnSize);
+    end if;
+
+    warnings := ErrorExt.getNumWarningMessages() - warnings;
+    errors := ErrorExt.getNumErrorMessages() - errors;
+
+    if warnings > 0 or errors > 0 then
+
+    end if;
+
+    retStr := stringAppendList({
+      "Check of ", classNameStr, " completed successfully", format_errors(warnings, errors), ".\n",
+      "Class ", classNameStr, " has ", eqnsStr, " equation(s) and ", varsStr, " variable(s).\n",
+      String(simpleEqnSize), " of these are trivial equation(s)."});
+  else
+    if Interactive.existClass(className, SymbolTable.getAbsyn()) then
+      warnings := ErrorExt.getNumWarningMessages() - warnings;
+      errors := ErrorExt.getNumErrorMessages() - errors;
+
+      retStr := stringAppendList({
+        "Check of ", classNameStr, " failed", format_errors(warnings, errors), "."});
+    else
+      // Return nothing if the class doesn't exist, the frontend will emit an error in that case.
+      retStr := "";
+    end if;
+  end try;
+
+  FlagsUtil.saveFlags(flags);
+  outValue := Values.STRING(retStr);
 end checkModel;
 
 protected function getWithinStatement "To get a correct Within-path with unknown input-path."
