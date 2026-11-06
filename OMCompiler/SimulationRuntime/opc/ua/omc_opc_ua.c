@@ -83,20 +83,24 @@ static void* threadWork(void *data)
   return (void*)0;
 }
 
-static void waitForStep(volatile omc_opc_ua_state *state)
+static void waitForStep(omc_opc_ua_state *state)
 {
   int run;
-  state->step = 0;
+  double scaling;
   pthread_mutex_lock(&state->mutex_pause);
+  state->step = 0;
   run = state->run;
   while (!(state->run || state->step)) {
     pthread_cond_wait(&state->cond_pause, &state->mutex_pause);
   }
   pthread_mutex_unlock(&state->mutex_pause);
-  if (!run || state->data->real_time_sync.scaling != state->real_time_sync_scaling) {
+  pthread_mutex_lock(&state->write_values);
+  scaling = state->real_time_sync_scaling;
+  pthread_mutex_unlock(&state->write_values);
+  if (!run || state->data->real_time_sync.scaling != scaling) {
     /* We were not running or the scaling factor changed. Reset the real-time synchronization! */
-    state->omc_real_time_sync_update(state->data, state->real_time_sync_scaling);
-    state->data->real_time_sync.scaling = state->real_time_sync_scaling;
+    state->omc_real_time_sync_update(state->data, scaling);
+    state->data->real_time_sync.scaling = scaling;
   }
 }
 
@@ -130,9 +134,8 @@ readBoolean(void *handle, const UA_NodeId nodeid, UA_Boolean sourceTimeStamp, co
     int index1 = nodeid.identifier.numeric-VARKIND_BOOL*MAX_VARS_KIND;
     int index = index1 >= ALIAS_START_ID ? modelData->booleanAlias[index1-ALIAS_START_ID].nameID : index1;
     int negate = index1 >= ALIAS_START_ID ? modelData->booleanAlias[index1-ALIAS_START_ID].negate : 0;
-    int latestValues = state->latestValues;
     pthread_mutex_lock(&state->mutex_values);
-    val = state->boolVals[latestValues][index];
+    val = state->boolVals[state->latestValues][index];
     pthread_mutex_unlock(&state->mutex_values);
     val = negate ? !val : val;
   } else {
@@ -203,11 +206,9 @@ writeBoolean(void *handle, const UA_NodeId nodeid, const UA_Variant *data, const
           state->inputVarsBackup[inputIndex] = newVal;
         }
       } else {
-        pthread_mutex_unlock(&state->write_values);
         statusCode = UA_STATUSCODE_BADUNEXPECTEDERROR;
       }
     } else {
-      pthread_mutex_unlock(&state->write_values);
       statusCode = UA_STATUSCODE_BADUNEXPECTEDERROR;
     }
     pthread_mutex_unlock(&state->write_values);
