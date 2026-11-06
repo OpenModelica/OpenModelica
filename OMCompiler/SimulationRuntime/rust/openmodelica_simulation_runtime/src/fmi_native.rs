@@ -10,6 +10,7 @@ use openmodelica_fmi3_wasm::fmi_types::Status;
 
 use crate::abi::*;
 use crate::engine::CEngine;
+use crate::support::FmuAssert;
 
 pub(crate) const OK: c_int = 0;
 pub(crate) const WARNING: c_int = 1;
@@ -92,9 +93,9 @@ fn log_hook(status: Status, category: &str, message: &str) {
 
 /// C's `omc_assert_fmi`: the importer's logger, or stderr when the runtime raised
 /// the assert without a `threadData` to find the instance by.
-fn report_assert(error: bool, info: &FILE_INFO, text: &str, passed_thread_data: bool) {
+fn report_assert(kind: FmuAssert, info: &FILE_INFO, text: &str, passed_thread_data: bool) {
     let file = cstr(info.filename);
-    if error && !passed_thread_data {
+    if matches!(kind, FmuAssert::Error) && !passed_thread_data {
         let pos = format!(
             "[{file}:{}:{}-{}:{}:{}]",
             info.lineStart,
@@ -111,10 +112,10 @@ fn report_assert(error: bool, info: &FILE_INFO, text: &str, passed_thread_data: 
     } else {
         text.to_string()
     };
-    if error {
-        openmodelica_fmi3_wasm::log_status_error(&msg);
-    } else {
-        openmodelica_fmi3_wasm::log_status_warning(&msg);
+    match kind {
+        FmuAssert::Error => openmodelica_fmi3_wasm::log_status_error(&msg),
+        FmuAssert::Warning => openmodelica_fmi3_wasm::log_status_warning(&msg),
+        FmuAssert::Solver { nonlinear } => openmodelica_fmi3_wasm::log_solver_assert(nonlinear, &msg),
     }
 }
 
