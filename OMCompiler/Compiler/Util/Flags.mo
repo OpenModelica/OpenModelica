@@ -1476,6 +1476,10 @@ constant ConfigFlag TUNABLE_PARAMETERS = CONFIG_FLAG(173, "tunableParameters",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Lets the embedded server (-embeddedServer) of a simulation change tunable parameters.");
 
+constant ConfigFlag FMU_WITH_FMI2 = CONFIG_FLAG(174,
+  "", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
+  "buildModelFMU(version=\"2.0+3.0\"): the FMI 3.0 FMU also serves FMI 2.0, for OpenModelicaLibraryTesting only.");
+
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
   input Boolean initialize = true;

@@ -4622,6 +4622,7 @@ package Flags
   constant DebugFlag FMU_EXPERIMENTAL;
   constant DebugFlag MULTIRATE_PARTITION;
   constant ConfigFlag DAE_MODE;
+  constant ConfigFlag FMU_WITH_FMI2;
   constant ConfigFlag EQUATIONS_PER_FILE;
   constant ConfigFlag GENERATE_DYNAMIC_JACOBIAN;
   constant ConfigFlag HOMOTOPY_APPROACH;

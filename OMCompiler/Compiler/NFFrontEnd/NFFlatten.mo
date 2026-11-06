@@ -2793,8 +2793,9 @@ algorithm
   // reconnected into a physical circuit (issue #15686). Restricted to the old
   // backend: the new backend's initialization (NBResolveSingularities) cannot yet
   // balance the model once the zero-flow equations are replaced by boundary inputs.
+  // Skipped when the FMU also serves FMI 2.0, which then gets the FMI 2.0 translation.
   if Flags.getConfigBool(Flags.BUILDING_FMU) and stringEq(Flags.getConfigString(Flags.FMI_VERSION), "3.0")
-     and not settings.newBackend then
+     and not settings.newBackend and not Flags.getConfigBool(Flags.FMU_WITH_FMI2) then
     flatModel := causalizeAcausalConnectors(flatModel);
   end if;
 
