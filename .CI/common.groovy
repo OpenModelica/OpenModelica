@@ -1577,6 +1577,8 @@ void buildGccOMC() {
       "-DCMAKE_BUILD_TYPE=Release",
       "-DOM_COMPILER_CACHE=sccache",
       "-DCMAKE_INSTALL_PREFIX=build",
+      "-DCMAKE_UNITY_BUILD=ON",
+      "-DCMAKE_UNITY_BUILD_BATCH_SIZE=32",
       "-DOM_ENABLE_COVERAGE=ON"])
   }
 
@@ -1626,7 +1628,9 @@ void buildClangOMC() {
       "-DOM_COMPILER_CACHE=sccache",
       "-DCMAKE_INSTALL_PREFIX=build",
       "-DCMAKE_C_COMPILER=clang",
-      "-DCMAKE_CXX_COMPILER=clang++"], 'cmake', false)
+      "-DCMAKE_CXX_COMPILER=clang++",
+      "-DCMAKE_UNITY_BUILD=ON",
+      "-DCMAKE_UNITY_BUILD_BATCH_SIZE=32"], 'cmake', false)
   }
   sh 'find build/lib/*/omc/ -name "*.so" -exec strip {} ";"'
   // Find unused imports
