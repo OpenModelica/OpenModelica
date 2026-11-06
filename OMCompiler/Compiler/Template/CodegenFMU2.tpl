@@ -98,7 +98,7 @@ case SIMCODE(__) then
   <fmiModelDescription
     <%fmiModelDescriptionAttributes(simCode,guid)%>>
     <%if isFMIMEType(FMUType) then ModelExchange(simCode, sourceFiles)%>
-    <%if isFMICSType(FMUType) then CoSimulation(simCode, sourceFiles)%>
+    <%if isFMICSType(FMUType) then CoSimulation(simCode, FMUType, sourceFiles)%>
     <%UnitDefinitions(simCode)%>
     <%fmiTypeDefinitions(simCode, "2.0")%>
     <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then
@@ -171,7 +171,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   >>
 end fmiModelDescriptionAttributes;
 
-template CoSimulation(SimCode simCode, list<String> sourceFiles)
+template CoSimulation(SimCode simCode, String FMUType, list<String> sourceFiles)
  "Generates CoSimulation code for ModelDescription file for FMU target."
 ::=
 match simCode
@@ -183,7 +183,7 @@ case SIMCODE(__) then
     needsExecutionTool="false"
     canHandleVariableCommunicationStepSize="true"
     canInterpolateInputs="true"
-    maxOutputDerivativeOrder="1"
+    maxOutputDerivativeOrder="<%maxOutputDerivativeOrder(simCode, FMUType)%>"
     canRunAsynchronuously="false"
     canBeInstantiatedOnlyOncePerProcess="false"
     canNotUseMemoryManagementFunctions="true"

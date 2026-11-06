@@ -1,0 +1,81 @@
+// name: fmi_daemode_cs_output.mos
+// keywords: FMI 2.0 3.0 export CoSimulation daeMode output
+// status: correct
+// teardown_command: rm -rf DaeModeOutput* fmi_daemode_cs_output_*
+//
+// introduceOutputRealDerivatives gives the output derivatives only to a cs FMU
+// without --daeMode. The other FMUs must not declare or need them (#17892).
+
+loadString("
+model DaeModeOutput
+  Real x(start = 1, fixed = true);
+  output Real y;
+equation
+  der(x) = -x;
+  y = x + 1;
+end DaeModeOutput;
+"); getErrorString();
+setCommandLineOptions("--daeMode"); getErrorString();
+
+simulate(DaeModeOutput, stopTime = 1, fileNamePrefix = "fmi_daemode_cs_output_ref"); getErrorString();
+
+buildModelFMU(DaeModeOutput, version = "2.0", fmuType = "cs", fileNamePrefix = "DaeModeOutput2", platforms = {"static"}); getErrorString();
+buildModelFMU(DaeModeOutput, version = "3.0", fmuType = "cs", fileNamePrefix = "DaeModeOutput3", platforms = {"static"}); getErrorString();
+system("unzip -p DaeModeOutput2.fmu modelDescription.xml | grep -o \"maxOutputDerivativeOrder=.[0-9].\""); getErrorString();
+system("unzip -p DaeModeOutput3.fmu modelDescription.xml | grep -o \"maxOutputDerivativeOrder=.[0-9].\""); getErrorString();
+
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py DaeModeOutput2.fmu fmi_daemode_cs_output_2.csv 1.0 x y > fmi_daemode_cs_output_2.log 2>&1"); getErrorString();
+diffSimulationResults("fmi_daemode_cs_output_2.csv", "fmi_daemode_cs_output_ref_res.mat", "fmi_daemode_cs_output_diff2", vars = {"x", "y"}); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py DaeModeOutput3.fmu fmi_daemode_cs_output_3.csv 1.0 x y > fmi_daemode_cs_output_3.log 2>&1"); getErrorString();
+diffSimulationResults("fmi_daemode_cs_output_3.csv", "fmi_daemode_cs_output_ref_res.mat", "fmi_daemode_cs_output_diff3", vars = {"x", "y"}); getErrorString();
+
+setCommandLineOptions("--daeMode=false"); getErrorString();
+buildModelFMU(DaeModeOutput, version = "2.0", fmuType = "me_cs", fileNamePrefix = "DaeModeOutput_mecs", platforms = {"static"}); getErrorString();
+system("unzip -p DaeModeOutput_mecs.fmu modelDescription.xml | grep -o \"maxOutputDerivativeOrder=.[0-9].\""); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "fmi_daemode_cs_output_ref_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'ida', fileNamePrefix = 'fmi_daemode_cs_output_ref', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_STDOUT        | warning | Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU. Colored numerical Jacobian will be used.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// "DaeModeOutput2.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// "DaeModeOutput3.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// maxOutputDerivativeOrder="0"
+// 0
+// ""
+// maxOutputDerivativeOrder="0"
+// 0
+// ""
+// 0
+// ""
+// (true, {})
+// ""
+// 0
+// ""
+// (true, {})
+// ""
+// true
+// ""
+// "DaeModeOutput_mecs.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// maxOutputDerivativeOrder="0"
+// 0
+// ""
+// endResult

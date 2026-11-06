@@ -1911,6 +1911,12 @@ package SimCodeCodegenUtil
     output Integer vr;
   end lookupVRForRealOutputDerivative;
 
+  function maxOutputDerivativeOrder
+    input SimCode.SimCode simCode;
+    input String fmuType;
+    output Integer order;
+  end maxOutputDerivativeOrder;
+
   function unbalancedEqSystemPartition
     input list<SimCode.SimEqSystem> inList;
     input Integer maxLength;
