@@ -2283,7 +2283,7 @@ end getErrorString;
 
 record SourceInfo
   "Record used to store source location information."
-  String fileName;
+  String filename;
   Boolean readonly;
   Integer lineStart;
   Integer columnStart;
