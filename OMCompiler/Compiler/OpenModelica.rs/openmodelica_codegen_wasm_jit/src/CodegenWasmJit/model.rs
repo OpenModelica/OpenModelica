@@ -2642,11 +2642,89 @@ pub(super) fn build_sim_model(
         tolerance: settings.tolerance.into_inner(),
         state_sets,
         jac_a,
-        sparse_nls: var_map.nls_jobs.values().any(|j| j.sparse_default),
+        nls_systems: nls_threshold_systems(&nls_systems, &var_map.nls_jobs)?,
+        lin_systems: lin_threshold_systems(&nls_scan),
         editable_params,
         meta_compact: meta,
         meta_expanded: Default::default(),
     })
+}
+
+/// The nonlinear systems C's `initializeNonlinearSystemData` may hand to kinsol+KLU
+/// by the `-nlss*` thresholds: a regular pattern, a size fixed at compile time and
+/// no adaptive homotopy.
+fn nls_threshold_systems(
+    systems: &[metamodelica::Ref<SimCode::NonlinearSystem>],
+    jobs: &HashMap<i32, NlsJob>,
+) -> Result<Vec<(i32, i32, u32, u32)>> {
+    use openmodelica_sim_meta::HomotopyMethod as H;
+    let adaptive = matches!(homotopy_method()?, H::GlobalAdaptive | H::LocalAdaptive);
+    let mut out: Vec<(i32, i32, u32, u32)> = systems
+        .iter()
+        .filter(|s| !(adaptive && s.homotopySupport))
+        .filter_map(|s| {
+            let job = jobs.get(&s.index)?;
+            (job.nnz != 0 && job.dyn_n.is_none()).then_some((s.indexNonLinearSystem, s.index, job.n, job.nnz))
+        })
+        .collect();
+    out.sort_by_key(|&(idx, ..)| idx);
+    out.dedup_by_key(|&mut (idx, ..)| idx);
+    Ok(out)
+}
+
+/// `(indexLinearSystem, equationIndex, size, nnz)` of every linear system in
+/// `scan` (the equation lists with their nested systems), in C's array order.
+fn lin_threshold_systems(scan: &[Vec<metamodelica::Ref<SimCode::SimEqSystem>>]) -> Vec<(i32, i32, u32, u32)> {
+    let mut out = Vec::new();
+    for eqs in scan {
+        for e in eqs {
+            if let SimCode::SimEqSystem::SES_LINEAR { lSystem, .. } = &**e {
+                let n = count(&lSystem.vars) as usize;
+                if n > 0 {
+                    let nnz = super::lower_eq::lin_torn_nnz(lSystem, n);
+                    out.push((lSystem.indexLinearSystem, lSystem.index, n as u32, nnz as u32));
+                }
+            }
+        }
+    }
+    out.sort_by_key(|&(idx, ..)| idx);
+    out.dedup_by_key(|&mut (idx, ..)| idx);
+    out
+}
+
+/// C's `initializeLinearSystems` and `initializeNonlinearSystemData`
+/// announcements, made only where `-lss*` or `-nlss*` decide the format.
+pub(super) fn sparse_solver_log(model: &SimModel, flags: &simflags::SimFlags) -> String {
+    use simflags::SparseThresholds as T;
+    let t = simflags::sparse_thresholds(flags);
+    let density = |size: u32, nnz: u32| nnz as f64 / (size as f64 * size as f64);
+    let mut out = String::new();
+    // `-lss` / `-ls` decide before the thresholds, and C announces neither.
+    if t.lss_given && flags.lss.is_none() && flags.ls.is_none() {
+        for &(idx, eq_index, size, nnz) in &model.lin_systems {
+            if T::sparse(size as usize, nnz as usize, t.lss_max_density, t.lss_min_size) {
+                out.push_str(&format_log_stdout(&format!(
+                    "Using sparse solver for linear system {idx} ({eq_index}),\nbecause density of {:.3} is under threshold of {:.3} or size of {size} exceeds threshold of {}.",
+                    density(size, nnz),
+                    t.lss_max_density,
+                    t.lss_min_size
+                )));
+            }
+        }
+    }
+    if t.nlss_given {
+        for &(idx, eq_index, size, nnz) in &model.nls_systems {
+            if T::sparse(size as usize, nnz as usize, t.nlss_max_density, t.nlss_min_size) {
+                out.push_str(&format_log_stdout(&format!(
+                    "Using sparse solver kinsol for nonlinear system {idx} ({eq_index}),\nbecause density of {:.2} is under threshold of {:.2} or size of {size} exceeds threshold of {}.",
+                    density(size, nnz),
+                    t.nlss_max_density,
+                    t.nlss_min_size
+                )));
+            }
+        }
+    }
+    out
 }
 
 /// Wrap a `\n`-separated message in the `LOG_STDOUT`/continuation prefixes.

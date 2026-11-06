@@ -305,10 +305,12 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // b `n` f64 at b_ptr; solution overwrites b), C's `aux_x` at x_ptr for the
     // iterative `-ls lis`, then the equation index and time the fallback warning
     // needs, whether a `rt_ls_check_step` follows, and whether this is a casual
-    // tearing set (which has no fallback). Returns 0 ok, 1 singular.
+    // tearing set (which has no fallback). `nnz` after `n` is the structural count
+    // `-lssMaxDensity` / `-lssMinSize` judge. Returns 0 ok, 1 singular.
     (
         "rt_linsolve",
         &[
+            WTy::I32,
             WTy::I32,
             WTy::I32,
             WTy::I32,
@@ -350,14 +352,24 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
         &[WTy::I32],
     ),
     // Solve `A x = b` from dense column-major A via the sparse solver; see
-    // `rt_solve_lin_dense_sparse`. (a_ptr, b_ptr, x_ptr, n, index, time) -> 0 ok /
-    // 1 singular.
+    // `rt_solve_lin_dense_sparse`. `rt_linsolve`'s arguments -> 0 ok / 1 singular.
     (
         "rt_solve_lin_dense_sparse",
-        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64],
+        &[
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::F64,
+            WTy::I32,
+            WTy::I32,
+        ],
         &[WTy::I32],
     ),
-    // (handle, colptr, rowidx, values, b, x, n, nnz, time) -> 0 ok / 1 singular; cached analysis.
+    // (handle, colptr, rowidx, values, b, x, n, nnz, time, method1, casual) -> 0 ok /
+    // 1 singular; cached analysis.
     (
         "rt_solve_lin_sparse_cached",
         &[
@@ -370,6 +382,8 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
             WTy::I32,
             WTy::I32,
             WTy::F64,
+            WTy::I32,
+            WTy::I32,
         ],
         &[WTy::I32],
     ),
