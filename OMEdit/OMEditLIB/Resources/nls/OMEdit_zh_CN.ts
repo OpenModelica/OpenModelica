@@ -2902,22 +2902,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>关闭</translation>
     </message>
     <message>
-        <source>Percentage:</source>
-        <translation>百分比：</translation>
-    </message>
-    <message>
-        <source>Choose Transparency</source>
-        <translation>选择透明度</translation>
-    </message>
-    <message>
-        <source>Choose Specularity</source>
-        <translation>选择光泽度</translation>
-    </message>
-    <message>
-        <source>Choose Color</source>
-        <translation>选择颜色</translation>
-    </message>
-    <message>
         <source>Choose File(s)</source>
         <translation>选择文件</translation>
     </message>
@@ -2956,14 +2940,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <source>Import FMU</source>
         <translation>导入FMU</translation>
-    </message>
-    <message>
-        <source>Add Path</source>
-        <translation>添加路径</translation>
-    </message>
-    <message>
-        <source>Remove Path</source>
-        <translation>移除路径</translation>
     </message>
     <message>
         <source>Output</source>
@@ -3080,14 +3056,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <source>Unloads the file without deleting it from the file system</source>
         <translation>卸载文件（不从文件系统中删除）</translation>
-    </message>
-    <message>
-        <source>Unload the CRML file</source>
-        <translation>卸载CRML文件</translation>
-    </message>
-    <message>
-        <source>Unload the Modelica Script file</source>
-        <translation>卸载Modelica脚本文件</translation>
     </message>
     <message>
         <source>Refresh</source>
@@ -3382,10 +3350,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>调用Modelica函数</translation>
     </message>
     <message>
-        <source>Element</source>
-        <translation>元件</translation>
-    </message>
-    <message>
         <source>Font Size:</source>
         <translation>字号：</translation>
     </message>
@@ -3446,10 +3410,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>建立连接</translation>
     </message>
     <message>
-        <source>Connection Attributes</source>
-        <translation>链接属性</translation>
-    </message>
-    <message>
         <source>Create Transition</source>
         <translation>创建转换</translation>
     </message>
@@ -3458,40 +3418,12 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>编辑转换</translation>
     </message>
     <message>
-        <source>Find Variables</source>
-        <translation>查找变量</translation>
-    </message>
-    <message>
         <source>Filter Variables</source>
         <translation>筛选器变量</translation>
     </message>
     <message>
         <source>Open Class</source>
         <translation>打开类</translation>
-    </message>
-    <message>
-        <source>View Icon</source>
-        <translation>图标视图</translation>
-    </message>
-    <message>
-        <source>Opens the class icon</source>
-        <translation>打开类图标</translation>
-    </message>
-    <message>
-        <source>View Diagram</source>
-        <translation>结构视图</translation>
-    </message>
-    <message>
-        <source>Opens the class diagram</source>
-        <translation>打开结构视图</translation>
-    </message>
-    <message>
-        <source>View Text</source>
-        <translation>文本视图</translation>
-    </message>
-    <message>
-        <source>Opens the class text</source>
-        <translation>打开文本视图</translation>
     </message>
     <message>
         <source>Opens the class documentation</source>
@@ -3710,14 +3642,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>暂停动画播放</translation>
     </message>
     <message>
-        <source>Simulation Parameters</source>
-        <translation>仿真参数</translation>
-    </message>
-    <message>
-        <source>Shows the Simulation Parameters dialog</source>
-        <translation>显示仿真参数对话框</translation>
-    </message>
-    <message>
         <source>Send</source>
         <translation>发送</translation>
     </message>
@@ -3812,14 +3736,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <source>Speed:</source>
         <translation>速度：</translation>
-    </message>
-    <message>
-        <source>Terminate Instantiation</source>
-        <translation>结束实例化</translation>
-    </message>
-    <message>
-        <source>Terminates the model instantiation</source>
-        <translation>结束模型的实例化</translation>
     </message>
     <message>
         <source>Archived Simulations</source>

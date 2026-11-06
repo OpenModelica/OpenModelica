@@ -2914,22 +2914,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>Fermer</translation>
     </message>
     <message>
-        <source>Percentage:</source>
-        <translation>Pourcentage:</translation>
-    </message>
-    <message>
-        <source>Choose Transparency</source>
-        <translation>Choisir Transparence</translation>
-    </message>
-    <message>
-        <source>Choose Specularity</source>
-        <translation>Choisir Spécularité</translation>
-    </message>
-    <message>
-        <source>Choose Color</source>
-        <translation>Choisir Couleur</translation>
-    </message>
-    <message>
         <source>Choose File(s)</source>
         <translation>Choisir Fichier(s)</translation>
     </message>
@@ -2968,14 +2952,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <source>Import FMU</source>
         <translation>Importer FMU</translation>
-    </message>
-    <message>
-        <source>Add Path</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Path</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Output</source>
@@ -3091,14 +3067,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Unloads the file without deleting it from the file system</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unload the CRML file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unload the Modelica Script file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3398,10 +3366,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Element</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Font Size:</source>
         <translation>Taille de Police:</translation>
     </message>
@@ -3462,10 +3426,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>Créer Connexion</translation>
     </message>
     <message>
-        <source>Connection Attributes</source>
-        <translation>Attributs de Connexion</translation>
-    </message>
-    <message>
         <source>Create Transition</source>
         <translation>Créer Transition</translation>
     </message>
@@ -3474,39 +3434,11 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>Editer Transition</translation>
     </message>
     <message>
-        <source>Find Variables</source>
-        <translation>Rechercher des variables</translation>
-    </message>
-    <message>
         <source>Filter Variables</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Open Class</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>View Icon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Opens the class icon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>View Diagram</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Opens the class diagram</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>View Text</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Opens the class text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3726,14 +3658,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>Mettre en pause l&apos;animation</translation>
     </message>
     <message>
-        <source>Simulation Parameters</source>
-        <translation>Paramètres Simulation</translation>
-    </message>
-    <message>
-        <source>Shows the Simulation Parameters dialog</source>
-        <translation>Affiche la boîte de dialogue Paramètres de simulation</translation>
-    </message>
-    <message>
         <source>Send</source>
         <translation>Envoyer</translation>
     </message>
@@ -3828,14 +3752,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <source>Speed:</source>
         <translation>Vitesse:</translation>
-    </message>
-    <message>
-        <source>Terminate Instantiation</source>
-        <translation>Terminer l&apos;instanciation</translation>
-    </message>
-    <message>
-        <source>Terminates the model instantiation</source>
-        <translation>Termine l&apos;instanciation du modèle</translation>
     </message>
     <message>
         <source>Archived Simulations</source>

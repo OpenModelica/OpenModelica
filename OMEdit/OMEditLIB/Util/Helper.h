@@ -173,10 +173,6 @@ public:
   static QString reset;
   static QString close;
   static QString error;
-  static QString percentageLabel;
-  static QString chooseTransparency;
-  static QString chooseSpecularity;
-  static QString chooseColor;
   static QString chooseFile;
   static QString chooseFiles;
   static QString saveFile;
@@ -192,8 +188,6 @@ public:
   static QString saveTotalTip;
   static QString apply;
   static QString chooseDirectory;
-  static QString addPath;
-  static QString removePath;
   static QString addItem;
   static QString removeItem;
   static QString general;
@@ -263,8 +257,6 @@ public:
   static QString reloadClass;
   static QString reloadClassTip;
   static QString unloadTextFileTip;
-  static QString unloadCRMLTip;
-  static QString unloadMOSTip;
   static QString unloadOMSModelTip;
   static QString refresh;
   static QString simulate;
@@ -301,7 +293,6 @@ public:
   static QString horizontal;
   static QString vertical;
   static QString component;
-  static QString element;
   static QString scaleFactor;
   static QString preserveAspectRatio;
   static QString originX;
@@ -349,19 +340,11 @@ public:
   static QString center;
   static QString right;
   static QString createConnection;
-  static QString connectionAttributes;
   static QString createTransition;
   static QString editTransition;
-  static QString findVariables;
   static QString filterVariables;
   static QString openClass;
   static QString openClassTip;
-  static QString viewIcon;
-  static QString viewIconTip;
-  static QString viewDiagram;
-  static QString viewDiagramTip;
-  static QString viewText;
-  static QString viewTextTip;
   static QString viewDocumentation;
   static QString viewDocumentationTip;
   static QString dontShowThisMessageAgain;
@@ -421,8 +404,6 @@ public:
   static QString animationPauseTip;
   static QString animationRepeat;
   static QString animationRepeatTip;
-  static QString simulationParams;
-  static QString simulationParamsTip;
   static QString newOMSimulatorModel;
   static QString newOMSimulatorModelTip;
   static QString addSystem;
@@ -460,8 +441,6 @@ public:
   static QString stopTime;
   static QString status;
   static QString speed;
-  static QString terminateInstantiation;
-  static QString terminateInstantiationTip;
   static QString archivedSimulations;
   static QString systemSimulationInformation;
   static QString translationFlags;
