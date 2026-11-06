@@ -534,14 +534,15 @@ pub trait SimEngine {
         false
     }
     /// If the last wasm call trapped on a failed `assert()`, take the recorded
-    /// assertion as `[msg, file, sline, scol, eline, ecol, read_only, cond, initial]`
-    /// (handles into shared memory), else `None`. Backed by the engine's `rt_assert`
-    /// host import; lets [`drive`] report a model assertion instead of a bare trap.
-    fn take_pending_assert(&mut self) -> Option<[i32; 9]>;
+    /// assertion as `[msg, file, sline, scol, eline, ecol, read_only, cond, initial,
+    /// eq]` (handles into shared memory), else `None`. Backed by the engine's
+    /// `rt_assert` host import; lets [`drive`] report a model assertion instead of a
+    /// bare trap.
+    fn take_pending_assert(&mut self) -> Option<[i32; 10]>;
     /// Take the violations that did not throw, each as `[kind, cond, msg, file,
-    /// sline, scol, eline, ecol, read_only, initial]` (`kind` per `ASSERT_*`). Drained
-    /// by the drivers to emit C's `LOG_ASSERT` blocks. Default: none.
-    fn take_pending_warnings(&mut self) -> Vec<[i32; 10]> {
+    /// sline, scol, eline, ecol, read_only, initial, eq]` (`kind` per `ASSERT_*`).
+    /// Drained by the drivers to emit C's `LOG_ASSERT` blocks. Default: none.
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 11]> {
         Vec::new()
     }
     /// The String at a string slot (`str_off`/`sparam_off` region). Default: the
@@ -1046,6 +1047,18 @@ pub struct AssertInfo {
     pub col_start: i32,
     pub line_end: i32,
     pub col_end: i32,
+    /// The equation the assertion is in (C's `equationIndexes`), 0 for none.
+    pub eq: i32,
+}
+
+impl AssertInfo {
+    fn used(&self) -> &[i32] {
+        if self.eq > 0 {
+            core::slice::from_ref(&self.eq)
+        } else {
+            &[]
+        }
+    }
 }
 
 static ASSERT_REPORTER: AtomicUsize = AtomicUsize::new(0);
@@ -1159,8 +1172,8 @@ pub fn log_init_assert_notice() {
 }
 
 /// The assertion `rt_assert` recorded, as `[msg, file, sline, scol, eline, ecol,
-/// read_only, cond, initial]` String handles and flags.
-pub fn assert_info(e: &dyn SimEngine, pa: &[i32; 9]) -> (AssertInfo, String) {
+/// read_only, cond, initial, eq]` String handles and flags.
+pub fn assert_info(e: &dyn SimEngine, pa: &[i32; 10]) -> (AssertInfo, String) {
     let info = AssertInfo {
         msg: read_rt_string(e, pa[0]).unwrap_or_default(),
         file: read_rt_string(e, pa[1]).unwrap_or_default(),
@@ -1169,6 +1182,7 @@ pub fn assert_info(e: &dyn SimEngine, pa: &[i32; 9]) -> (AssertInfo, String) {
         col_start: pa[3],
         line_end: pa[4],
         col_end: pa[5],
+        eq: pa[9],
     };
     (info, read_rt_string(e, pa[7]).unwrap_or_default())
 }
@@ -2423,18 +2437,19 @@ fn drain_asserts(e: &mut dyn SimEngine, sim_data: u32, level: omclog::LogType, l
             col_start: sc,
             line_end: el,
             col_end: ec,
+            eq: w[10],
         };
         let line = assert_block(&info, &cond, time, w[9] != 0);
         if suppressed {
             if log {
-                omclog::info(omclog::ASSERT, false, &line);
+                omclog::info_used(omclog::ASSERT, false, &line, info.used());
             }
             rethrow_store::arm(info);
             armed = true;
         } else if level == omclog::WARNING {
-            omclog::warning(omclog::ASSERT, false, &line);
+            omclog::warning_used(omclog::ASSERT, false, &line, info.used());
         } else {
-            omclog::info(omclog::ASSERT, false, &line);
+            omclog::info_used(omclog::ASSERT, false, &line, info.used());
         }
     }
     Ok(armed)
@@ -2449,9 +2464,9 @@ pub fn row_asserts(e: &mut dyn SimEngine, sim_data: u32, warn: i32) -> i32 {
     drain_asserts(e, sim_data, level, true).unwrap_or(true) as i32
 }
 
-/// C's `LOG_ASSERT` block (`omc_error.c` messageText + printInfo). C wraps the
-/// already-parenthesised `assert_cond` in its own `(%s)`, hence the doubled
-/// parentheses; without a source position only the message is printed.
+/// C's `LOG_ASSERT` block (`omc_error.c` messageText + printInfo). `cond` is C's
+/// already-parenthesised `assert_cond` followed by the values of the variables in
+/// it; without a source position only the message is printed.
 fn assert_block(info: &AssertInfo, cond: &str, time: f64, initial: bool) -> String {
     let during = if initial { "during initialization " } else { "" };
     let t = format_f(time);
@@ -2473,7 +2488,7 @@ fn assert_block(info: &AssertInfo, cond: &str, time: f64, initial: bool) -> Stri
             format!("{pos}\n{}", info.msg)
         };
     }
-    let body = format!("(({cond})) --> \"{}\"", info.msg);
+    let body = format!("({cond}) --> \"{}\"", info.msg);
     if info.file.is_empty() {
         return format!("{head}\n{body}");
     }
@@ -2485,10 +2500,10 @@ pub fn log_assert_block(info: &AssertInfo, cond: &str, time: f64, initial: bool)
     // C's generated guard for a backend variable warns (`omc_assert_warning`); a
     // model `assert()` and `omc_assert`'s conditionless message are both errors.
     if info.file.is_empty() && !cond.is_empty() {
-        omclog::warning(omclog::ASSERT, false, &block);
+        omclog::warning_used(omclog::ASSERT, false, &block, info.used());
         return;
     }
-    omclog::error(omclog::ASSERT, false, &block);
+    omclog::error_used(omclog::ASSERT, false, &block, info.used());
 }
 
 /// What the open window has seen: the first assertion suppressed in it, and

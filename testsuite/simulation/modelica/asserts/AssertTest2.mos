@@ -19,7 +19,7 @@ getErrorString(); // simulation failed, check error string.
 //     messages = "Simulation execution failed for model: Test2
 // LOG_ASSERT        | error   | [simulation/modelica/asserts/AssertTest2.mo:13:3-13:70:writable]
 // |                 | |       | The following assertion has been violated during initialization at time 0.000000
-// |                 | |       | ((5.0 >= assertTest.lowlimit and 5.0 <= assertTest.highlimit)) --> \"Variable x out of limit\"
+// |                 | |       | ((5.0 >= assertTest.lowlimit and 5.0 <= assertTest.highlimit), assertTest.lowlimit=6, assertTest.highlimit=20) --> \"Variable x out of limit\"
 // LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
 // "
 // end SimulationResult;

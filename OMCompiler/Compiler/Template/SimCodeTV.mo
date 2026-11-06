@@ -4325,6 +4325,11 @@ end ComponentReference;
 
 package Expression
 
+  function assertConditionValues
+    input DAE.Exp cond;
+    output list<DAE.Exp> exps;
+  end assertConditionValues;
+
   function crefExp
     input DAE.ComponentRef cr;
     output DAE.Exp cref;

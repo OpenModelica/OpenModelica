@@ -97,6 +97,7 @@ pub(crate) const ENV_EXTRA: &[(&str, &[WTy], &[WTy])] = &[
             WTy::I32,
             WTy::I32,
             WTy::I32,
+            WTy::I32,
         ],
         &[WTy::I32],
     ),
@@ -113,12 +114,14 @@ pub(crate) const ENV_EXTRA: &[(&str, &[WTy], &[WTy])] = &[
             WTy::I32,
             WTy::I32,
             WTy::I32,
+            WTy::I32,
         ],
         &[WTy::I32],
     ),
     (
         "rt_assert_warning",
         &[
+            WTy::I32,
             WTy::I32,
             WTy::I32,
             WTy::I32,
@@ -496,6 +499,7 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     (
         "rt_nls_assert_failed",
         &[
+            WTy::I32,
             WTy::I32,
             WTy::I32,
             WTy::I32,

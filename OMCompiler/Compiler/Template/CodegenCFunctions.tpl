@@ -4912,9 +4912,14 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
             case FUNCTION_CONTEXT(__) then ''
             else '_withEquationIndexes'
   let assertExpStr = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(condition,"\""))
+  let &preExpValues = buffer ""
+  let valueFmt = match context case FUNCTION_CONTEXT(__) then "" else
+    (Expression.assertConditionValues(condition) |> e => ', <%assertValueFormat(e)%>')
+  let valueArgs = match context case FUNCTION_CONTEXT(__) then "" else
+    (Expression.assertConditionValues(condition) |> e => ', <%assertValueArg(e, context, &preExpValues, &varDecls, &varFrees, &auxFunction)%>')
   /* Note that our error/log functions split the message on new lines and indent it. So it is better to have one long string
      and send it to them instead of calling them repeatedlly (avoids the 'assert', 'warning' labels printed for each call.) */
-  let infoTextContext = '"The following assertion has been violated %sat time %f\n(%s) --> \"%s\"", initial() ? "during initialization " : "", data->localData[0]->timeValue, assert_cond, <%msgVar%>'
+  let infoTextContext = '"The following assertion has been violated %sat time %f\n(%s<%valueFmt%>) --> \"%s\"", initial() ? "during initialization " : "", data->localData[0]->timeValue, assert_cond<%valueArgs%>, <%msgVar%>'
   let omcAssertFunc = match level case ENUM_LITERAL(index=1) then 'omc_assert_warning<%AddionalFuncName%>(' else 'omc_assert<%AddionalFuncName%>(threadData, '
   let rethrow = match level case ENUM_LITERAL(index=1) then '' else '<%\n%>data->simulationInfo->needToReThrow = 1;'
   // A violated assert leaves the frame; a warning carries on.
@@ -4956,6 +4961,7 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
     if(!<%condVar%>)
     {
       <%preExpMsg%>
+      <%preExpValues%>
       {
         <%assertCode%>
       }
@@ -4964,6 +4970,24 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
   }<%\n%>
   >>
 end assertCommon;
+
+template assertValueFormat(Exp exp)
+::=
+  let name = System.stringReplace(Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp,"\"")), "%", "%%")
+  match typeof(exp)
+  case T_REAL(__) then '<%name%>=%.16g'
+  case T_INTEGER(__) then '<%name%>="OMC_INT_FORMAT"'
+  else '<%name%>=%s'
+end assertValueFormat;
+
+template assertValueArg(Exp exp, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
+::=
+  let v = daeExp(exp, context, &preExp, &varDecls, &varFrees, &auxFunction)
+  match typeof(exp)
+  case T_REAL(__) then '(double) <%v%>'
+  case T_INTEGER(__) then '(modelica_integer) <%v%>'
+  else '<%v%> ? "true" : "false"'
+end assertValueArg;
 
 template expToFormatString(Exp exp, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
 ::=

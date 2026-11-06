@@ -427,12 +427,12 @@ fn assert_message(msg: i32, file: i32, sline: i32) -> String {
 }
 
 /// The `assert()`s a driver window suppressed, drained by `take_pending_warnings`.
-static mut SUPPRESSED: Vec<[i32; 10]> = Vec::new();
+static mut SUPPRESSED: Vec<[i32; 11]> = Vec::new();
 
 /// The `assert()` behind the model's next trap, laid out as the host's
 /// `PendingAssert`. A residual recovers from it silently; the call that ends on it
 /// reports it.
-static mut PENDING: Option<[i32; 9]> = None;
+static mut PENDING: Option<[i32; 10]> = None;
 
 /// C's FMU logs the violation then `longjmp`s out of the FMI call, which returns
 /// `fmi3Error` with the instance usable — so answer that the code must unwind.
@@ -452,9 +452,10 @@ pub extern "C" fn rt_assert(
     cond: i32,
     initial: i32,
     sim_data: i32,
+    eq: i32,
 ) -> i32 {
     assert_failed(
-        true, msg, file, sline, scol, eline, ecol, read_only, cond, initial, sim_data,
+        true, msg, file, sline, scol, eline, ecol, read_only, cond, initial, sim_data, eq,
     )
 }
 
@@ -472,9 +473,10 @@ pub extern "C" fn rt_assert_when(
     cond: i32,
     initial: i32,
     sim_data: i32,
+    eq: i32,
 ) -> i32 {
     assert_failed(
-        false, msg, file, sline, scol, eline, ecol, read_only, cond, initial, sim_data,
+        false, msg, file, sline, scol, eline, ecol, read_only, cond, initial, sim_data, eq,
     )
 }
 
@@ -491,6 +493,7 @@ fn assert_failed(
     cond: i32,
     initial: i32,
     sim_data: i32,
+    eq: i32,
 ) -> i32 {
     if cond != 0 {
         let hold = if holdable {
@@ -513,13 +516,14 @@ fn assert_failed(
                         ecol,
                         read_only,
                         initial,
+                        eq,
                     ]);
                 }
                 return 0;
             }
             driver::AssertHold::Discard => return 0,
         }
-        unsafe { PENDING = Some([msg, file, sline, scol, eline, ecol, read_only, cond, initial]) };
+        unsafe { PENDING = Some([msg, file, sline, scol, eline, ecol, read_only, cond, initial, eq]) };
         return 1;
     }
     fmi_log(Status::Error, CAT_ERROR, &assert_message(msg, file, sline));
@@ -539,6 +543,7 @@ pub extern "C" fn rt_assert_warning(
     _ecol: i32,
     _read_only: i32,
     _initial: i32,
+    _eq: i32,
 ) {
     fmi_log(Status::Warning, CAT_WARNING, &assert_message(msg, file, sline));
 }
@@ -764,10 +769,10 @@ impl SimEngine for Engine {
     fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> driver::Result<u32> {
         Err("fmi3-me: simulate not used")
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 10]> {
         unsafe { PENDING.take() }
     }
-    fn take_pending_warnings(&mut self) -> Vec<[i32; 10]> {
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 11]> {
         unsafe { core::mem::take(&mut SUPPRESSED) }
     }
     fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {

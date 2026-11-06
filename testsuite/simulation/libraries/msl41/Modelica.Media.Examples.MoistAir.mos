@@ -33,7 +33,7 @@ runScript(modelTesting);getErrorString();
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_ASSERT        | info    | [Modelica 4.1.0+maint.om/Media/Air/MoistAir.mo:59:5-60:78:writable]
 // |                 | |       | The following assertion has been violated at time 0.954000
-// |                 | |       | ((medium.x_sat >= 0.0 and medium.x_sat <= 1.0)) --> "Variable violating min/max constraint: 0.0 <= medium.x_sat <= 1.0, has value: 1.00869"
+// |                 | |       | ((medium.x_sat >= 0.0 and medium.x_sat <= 1.0), medium.x_sat=1.008693715949687) --> "Variable violating min/max constraint: 0.0 <= medium.x_sat <= 1.0, has value: 1.00869"
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
