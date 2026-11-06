@@ -1707,16 +1707,24 @@ fmiXStatus FMIX(GetReal)(fmiXComponent c, const fmiXValueReference vr[], size_t 
 #if NUMBER_OF_REALS > 0
   if (updateIfNeeded(comp, FMIX_STR "GetReal") != fmiXOK)
     return fmiXError;
+#endif
 
   for (i = 0; i < nvr; i++)
   {
+#if OMC_FMI_VERSION == 2
+    if (vr[i] == FMI2_TIME_VR) {
+      value[i] = comp->fmuData->localData[0]->timeValue;
+      continue;
+    }
+#endif
     if (vrOutOfRange(comp, FMIX_STR "GetReal", vr[i], NUMBER_OF_REALS)) {
       return fmiXError;
     }
+#if NUMBER_OF_REALS > 0
     value[i] = getReal(comp, vr[i]); // to be implemented by the includer of this file
     FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "GetReal: #r%u# = %.16g", vr[i], value[i])
-  }
 #endif
+  }
   return fmiXOK;
 }
 
