@@ -1,0 +1,42 @@
+// name:     NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows9
+// keywords: extraction algorithm
+// status:   correct
+// The expected result records a known failure, not the correct output. Update it when
+// the model starts working, see https://github.com/OpenModelica/OpenModelica/issues/15384
+// teardown_command: rm -rf TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows9 TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows9_* Reconciled_TSP_DataReconciliationSimpleTests_Models_FourFlows_TSP_FourFlows9.mo TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows9.html
+//
+// TODO: fails because of a loop in the jacobian F, like Splitter5e. SET-S contains
+// algebraic loops with the iteration variables
+//   singularPressureLoss2.h
+//   singularPressureLoss4.h
+//   staticDrum2.Cs2.Q
+// whose derivatives are linear systems inside the jacobian F. The new backend cannot
+// generate them yet and the simulation fails with "residual function pointer is
+// invalid". See the TODO at createJacobian in NBDataReconciliation.mo.
+
+setCommandLineOptions("--newBackend");
+getErrorString();
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadModel(TSP_DataReconciliationSimpleTests, {"4.0.0"});
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows9, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows9, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+// How the simulation fails depends on the runtime (C or wasm-jit), so only
+// record that it fails: resultFile stays empty until the model works.
+echo(false);
+res := simulate(TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows9, simflags=simFlags);
+echo(true);
+res.resultFile;
+echo(false); getErrorString(); echo(true);
+
+// Result:
+// endResult

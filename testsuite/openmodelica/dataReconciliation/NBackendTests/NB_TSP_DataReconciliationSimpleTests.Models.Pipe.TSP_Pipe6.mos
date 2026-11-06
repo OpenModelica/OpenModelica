@@ -1,0 +1,31 @@
+// name:     NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe6
+// keywords: extraction algorithm
+// status:   correct
+// teardown_command: rm -rf TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe6 TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe6_* Reconciled_TSP_DataReconciliationSimpleTests_Models_Pipe_TSP_Pipe6.mo TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe6.html
+
+setCommandLineOptions("--newBackend");
+getErrorString();
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadModel(TSP_DataReconciliationSimpleTests, {"4.0.0"});
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe6, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe6, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+// How the simulation fails depends on the runtime (C or Rust), so only
+// record that it fails: resultFile stays empty until the model works.
+echo(false);
+res := simulate(TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe6, simflags=simFlags);
+echo(true);
+res.resultFile;
+getErrorString();
+
+// Result:
+// endResult

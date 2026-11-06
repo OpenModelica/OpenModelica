@@ -1,0 +1,37 @@
+// name:     NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5f
+// keywords: extraction algorithm
+// status:   correct
+// teardown_command: rm -rf ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5f ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5f_* Reconciled_ModelicaDataReconciliationSimpleTests_Models_Splitter_Splitter5f.mo ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5f.html
+//
+// TODO: fails because of a loop in the jacobian F, like Splitter5e. SET-S contains
+// the algebraic loop
+//   P3 = (T3_P1 + T3_P2) / 2.0
+//   T3_P1 - T3_P2 = Q3 ^ 2.0
+// whose derivative is a linear system inside the jacobian F. The new backend cannot
+// generate it yet and the simulation fails with "residual function pointer is
+// invalid". See the TODO at createJacobian in NBDataReconciliation.mo.
+
+setCommandLineOptions("--newBackend");
+getErrorString();
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadModel(ModelicaDataReconciliationSimpleTests, {"4.0.0"});
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5f, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5f, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+simulate(ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5f, simflags=simFlags);
+getErrorString();
+
+readFile("ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5f_Outputs.csv");
+getErrorString();
+
+// Result:
+// endResult

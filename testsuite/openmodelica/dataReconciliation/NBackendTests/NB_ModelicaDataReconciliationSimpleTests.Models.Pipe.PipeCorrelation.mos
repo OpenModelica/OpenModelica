@@ -1,0 +1,26 @@
+// name:     NB_ModelicaDataReconciliationSimpleTests.Models.Pipe.PipeCorrelation
+// keywords: extraction algorithm
+// status:   correct
+// teardown_command: rm -rf ModelicaDataReconciliationSimpleTests.Models.Pipe.PipeCorrelation ModelicaDataReconciliationSimpleTests.Models.Pipe.PipeCorrelation_* Reconciled_ModelicaDataReconciliationSimpleTests_Models_Pipe_PipeCorrelation.mo ModelicaDataReconciliationSimpleTests.Models.Pipe.PipeCorrelation.html
+
+setCommandLineOptions("--newBackend");
+getErrorString();
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadModel(ModelicaDataReconciliationSimpleTests, {"4.0.0"});
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(ModelicaDataReconciliationSimpleTests.Models.Pipe.PipeCorrelation, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(ModelicaDataReconciliationSimpleTests.Models.Pipe.PipeCorrelation, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+simulate(ModelicaDataReconciliationSimpleTests.Models.Pipe.PipeCorrelation, simflags=simFlags);
+getErrorString();
+
+// Result:
+// endResult
