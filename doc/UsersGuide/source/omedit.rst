@@ -1360,7 +1360,11 @@ The interactive simulation uses the OPC UA server of the simulation executable
 default 4841). Other OPC UA clients can also connect to it. The server has a node
 for each Real, Integer and Boolean variable and parameter, with the data types
 Double, Int64 and Boolean. A client can write inputs and states; the other
-nodes are read-only, which their AccessLevel attribute shows.
+nodes are read-only, which their AccessLevel attribute shows. If the model was
+translated with ``--tunableParameters`` (OMEdit sets it for an interactive
+simulation), a client can also write the tunable parameters, as for an FMU
+(see :ref:`fmi-tunable-parameters`); the parameters calculated from them are
+then calculated again.
 
 .. only:: html and not epub
 

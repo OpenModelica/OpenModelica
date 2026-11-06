@@ -43,7 +43,6 @@
 
 int maxBisectionIterations = 0;
 void bisection(DATA* data, threadData_t *threadData, double*, double*, double*, double*, LIST*, LIST*);
-void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData);
 
 /*! \fn checkForSampleEvent
  *

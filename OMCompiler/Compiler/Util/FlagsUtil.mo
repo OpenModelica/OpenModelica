@@ -443,7 +443,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.FMU_NATIVE_PLATFORMS,
   Flags.TPL_OUTPUT_DIR,
   Flags.FMU_DIRECTORY,
-  Flags.FMI_TUNABLE_PARAMETERS
+  Flags.FMI_TUNABLE_PARAMETERS,
+  Flags.TUNABLE_PARAMETERS
 };
 
 public function new

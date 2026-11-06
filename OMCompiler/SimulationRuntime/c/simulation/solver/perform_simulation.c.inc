@@ -313,9 +313,12 @@ static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, 
 
   if (embedded_server_update(data->embeddedServerState, data->localData[0]->timeValue, &terminate)) {
     solverInfo->didEventStep = 1;
+    data->callback->input_function(data, threadData);
+    updateDiscreteSystem(data, threadData);
+    saveZeroCrossingsAfterEvent(data, threadData);
     overwriteOldSimulationData(data);
-    storePreValues(data); // Maybe??
-    storeOldValues(data); // Maybe??
+    storePreValues(data);
+    storeOldValues(data);
     sim_result.emit(&sim_result, data, threadData);
   }
 
