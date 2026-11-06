@@ -32,7 +32,7 @@ diffSimulationResults("AliasCyclic5_res.mat", "ReferenceFiles/AliasCyclic5_res.m
 // 	### Set Equations:
 // 	[SCAL] (1) 0 = -(a + b); ($RES_SIM_0)
 // 	[SCAL] (1) -1 = c + d; ($RES_SIM_1)
-// 	[SCAL] (1) 0 = 2 * a + 2 * d; ($RES_SIM_2)
+// 	[SCAL] (1) 0 = 2*a + 2*d; ($RES_SIM_2)
 // 	[SCAL] (1) 1 = c + b; ($RES_SIM_3)
 //
 // record SimulationResult

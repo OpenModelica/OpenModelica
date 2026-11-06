@@ -30,10 +30,10 @@ diffSimulationResults("AliasCyclic8_res.mat", "ReferenceFiles/AliasCyclic8_res.m
 // **************
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] (1) 0 = 1001 * b + 1001 * a; ($RES_SIM_0)
-// 	[SCAL] (1) -1001 = 1001 * c + 1001 * d; ($RES_SIM_1)
-// 	[SCAL] (1) 2002 = 2002 * a + 2002 * d; ($RES_SIM_3)
-// 	[SCAL] (1) 0 = 1001 * b + 1001 * c; ($RES_SIM_2)
+// 	[SCAL] (1) 0 = 1001*b + 1001*a; ($RES_SIM_0)
+// 	[SCAL] (1) -1001 = 1001*c + 1001*d; ($RES_SIM_1)
+// 	[SCAL] (1) 2002 = 2002*a + 2002*d; ($RES_SIM_3)
+// 	[SCAL] (1) 0 = 1001*b + 1001*c; ($RES_SIM_2)
 //
 // record SimulationResult
 //     resultFile = "",

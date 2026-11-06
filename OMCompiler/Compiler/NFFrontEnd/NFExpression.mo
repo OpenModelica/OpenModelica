@@ -2470,11 +2470,11 @@ public
       case MULTARY() guard(listEmpty(exp.arguments)) then "1/" + multaryString(exp.inv_arguments, exp, exp.operator);
 
       case MULTARY() then multaryString(exp.arguments, exp, exp.operator) +
-                          Operator.symbol(Operator.invert(exp.operator)) +
+                          Operator.symbolSpaced(Operator.invert(exp.operator)) +
                           multaryString(exp.inv_arguments, exp, exp.operator);
 
       case BINARY() then operandString(exp.exp1, exp, true) +
-                         Operator.symbol(exp.operator) +
+                         Operator.symbolSpaced(exp.operator) +
                          operandString(exp.exp2, exp, false);
 
       case UNARY() then Operator.symbol(exp.operator, "") +
@@ -2575,11 +2575,11 @@ public
       case MULTARY() guard(listEmpty(exp.arguments)) then "1/" + multaryFlatString(exp.inv_arguments, exp, exp.operator, format);
 
       case MULTARY() then multaryFlatString(exp.arguments, exp, exp.operator, format) +
-                          Operator.symbol(Operator.invert(exp.operator)) +
+                          Operator.symbolSpaced(Operator.invert(exp.operator)) +
                           multaryFlatString(exp.inv_arguments, exp, exp.operator, format);
 
       case BINARY() then operandFlatString(exp.exp1, exp, true, format) +
-                         Operator.symbol(exp.operator) +
+                         Operator.symbolSpaced(exp.operator) +
                          operandFlatString(exp.exp2, exp, false, format);
 
       case UNARY() then Operator.symbol(exp.operator, "") +
@@ -2689,7 +2689,7 @@ public
     input Boolean parenthesize = true;
     output String str;
   algorithm
-    str := stringDelimitList(list(operandString(e, exp, false) for e in arguments), Operator.symbol(operator));
+    str := stringDelimitList(list(operandString(e, exp, false) for e in arguments), Operator.symbolSpaced(operator));
     if parenthesize and listLength(arguments) > 1 then
       str := "(" + str + ")";
     end if;
@@ -2703,7 +2703,7 @@ public
     input Boolean parenthesize = true;
     output String str;
   algorithm
-    str := stringDelimitList(list(operandFlatString(e, exp, false, format) for e in arguments), Operator.symbol(operator));
+    str := stringDelimitList(list(operandFlatString(e, exp, false, format) for e in arguments), Operator.symbolSpaced(operator));
     if parenthesize and listLength(arguments) > 1 then
       str := "(" + str + ")";
     end if;

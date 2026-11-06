@@ -20,8 +20,8 @@ end Inline1;
 // package 'Inline1'
 //   model 'Inline1'
 //     Real 'x' = 1.0;
-//     Real 'y' = 2.0 * 'x';
-//     Real 'z' = 1.0 + 2.0 * 'x';
+//     Real 'y' = 2.0*'x';
+//     Real 'z' = 1.0 + 2.0*'x';
 //   end 'Inline1';
 // end 'Inline1';
 // endResult

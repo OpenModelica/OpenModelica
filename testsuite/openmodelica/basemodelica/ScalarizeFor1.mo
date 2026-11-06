@@ -20,9 +20,9 @@ end ScalarizeFor1;
 //     Real 'x[2]';
 //     Real 'x[3]';
 //   algorithm
-//     'x[1]' := 0.1 * 1;
-//     'x[2]' := 0.1 * 2;
-//     'x[3]' := 0.1 * 3;
+//     'x[1]' := 0.1*1;
+//     'x[2]' := 0.1*2;
+//     'x[3]' := 0.1*3;
 //   end 'ScalarizeFor1';
 // end 'ScalarizeFor1';
 // endResult
