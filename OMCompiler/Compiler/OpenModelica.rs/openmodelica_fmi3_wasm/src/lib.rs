@@ -1748,6 +1748,10 @@ macro_rules! cs_instance_methods {
         _no_set_fmu_state_prior_to_current_point: bool,
     ) -> Result<DoStepResult, Status> {
         let mut st = self.st.borrow_mut();
+        // A failed exit-initialization-mode leaves the instance in Init.
+        if st.mode != Mode::Ready {
+            return Err(err_status("fmi3DoStep: only allowed after Initialization Mode"));
+        }
         let target = current_communication_point + communication_step_size;
         let (sim_data, t, defer) = (st.sim_data, st.read_f64(TIME_OFF), st.defer);
         let st = &mut *st;
@@ -1915,9 +1919,6 @@ macro_rules! shared_instance_methods {
         if let Err(status) = st.update_if_needed() {
             return status;
         }
-        st.mode = Mode::Ready;
-        // Exiting Initialization Mode leaves the instance in Event Mode.
-        st.event_mode = true;
         // `run_initialization` has run `initSample`, so the schedule is readable. A
         // relation on `time` is scheduled the same way.
         if st.layout.n_samples > 0 || st.layout.n_zc > 0 {
@@ -1942,6 +1943,9 @@ macro_rules! shared_instance_methods {
                 Err(err) => return err_status(err),
             }
         }
+        st.mode = Mode::Ready;
+        // Exiting Initialization Mode leaves the instance in Event Mode.
+        st.event_mode = true;
         Status::Ok
     }
 

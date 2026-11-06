@@ -5,6 +5,7 @@ fmi3_cs_01.mos \
 fmi3_cs_cvode.mos \
 fmi3_cs_state_event.mos \
 fmi3_cs_event_mode_reinit.mos \
+fmi3_cs_exitinit_assert.mos \
 fmi3_cs_tolerance.mos \
 fmi3_msl_clocked_drive.mos \
 fmi3_wasm_annotation_flags.mos \
@@ -28,6 +29,7 @@ DEPENDENCIES = \
 *.mos \
 fmi3_cs_state_event.py \
 fmi3_cs_event_mode_reinit.py \
+fmi3_cs_exitinit_assert.py \
 fmi3_cs_tolerance.py \
 fmi_tunable_parameters.py \
 fmi_tunable_parameters_state.py \
