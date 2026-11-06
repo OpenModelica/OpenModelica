@@ -809,6 +809,18 @@ if(NOT RUST_OMC_WASM_OPT)
   set(WASM_OPT_EXECUTABLE "")
   message(STATUS "rust_omc: wasm-opt disabled (RUST_OMC_WASM_OPT=OFF)")
 endif()
+# Older wasm-opt cannot parse the wasm-bindgen output (table.fill).
+set(RUST_OMC_WASM_OPT_MIN_VERSION 120)
+if(WASM_OPT_EXECUTABLE)
+  execute_process(COMMAND ${WASM_OPT_EXECUTABLE} --version
+                  OUTPUT_VARIABLE _wasm_opt_version_out ERROR_QUIET)
+  string(REGEX MATCH "version ([0-9]+)" _wasm_opt_version_match "${_wasm_opt_version_out}")
+  if(_wasm_opt_version_match AND CMAKE_MATCH_1 LESS RUST_OMC_WASM_OPT_MIN_VERSION)
+    message(FATAL_ERROR
+      "rust_omc: ${WASM_OPT_EXECUTABLE} is binaryen ${CMAKE_MATCH_1}, need "
+      "${RUST_OMC_WASM_OPT_MIN_VERSION}+. Set -DWASM_OPT_EXECUTABLE or -DRUST_OMC_WASM_OPT=OFF.")
+  endif()
+endif()
 
 # wasm-opt feature flags, shared by every wasm-opt invocation below. rustc/LLVM
 # emit wasm32-unknown-unknown with these post-MVP features on, but the release
