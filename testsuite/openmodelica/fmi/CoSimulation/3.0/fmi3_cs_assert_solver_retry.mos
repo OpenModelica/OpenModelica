@@ -1,0 +1,44 @@
+// name:     fmi3_cs_assert_solver_retry
+// keywords: FMI 3.0 export co-simulation assert nonlinear solver
+// status:   correct
+// teardown_command: rm -rf fmi3_cs_assert_solver_retry.fmu fmi3_cs_assert_solver_retry.fmutmp/ fmi3_cs_assert_solver_retry.log fmi3_cs_assert_solver_retry_out.txt
+//
+// At t = 1 the first Newton step of the nonlinear system goes below -1, where
+// the function g asserts. As in the simulation executable, the solver must get
+// the assert back and recover, instead of the whole fmi3DoStep failing (#17739).
+
+loadString("
+model fmi3_cs_assert_solver_retry
+  function g
+    input Real x;
+    output Real y;
+  algorithm
+    assert(x > -1, \"g: x must exceed -1\");
+    y := log(1 + x);
+  end g;
+  Real c = if time < 1 then 1 else -5;
+  Real x(start = 1);
+  Real z(start = 0, fixed = true);
+equation
+  g(x) + x = c;
+  der(z) = x - z;
+end fmi3_cs_assert_solver_retry;
+"); getErrorString();
+buildModelFMU(fmi3_cs_assert_solver_retry, version = "3.0", fmuType = "cs"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi3_cs_assert_solver_retry.py fmi3_cs_assert_solver_retry.fmu fmi3_cs_assert_solver_retry_out.txt > fmi3_cs_assert_solver_retry.log 2>&1"); getErrorString();
+readFile("fmi3_cs_assert_solver_retry_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// "fmi3_cs_assert_solver_retry.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "all 12 steps fmi3OK
+// x = -0.982011
+// "
+// ""
+// endResult
