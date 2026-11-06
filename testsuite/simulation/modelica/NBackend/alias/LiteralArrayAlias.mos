@@ -36,7 +36,7 @@ val(x[3], 1);
 //
 // Alias Set 1:
 // **************
-// 	Constant/Parameter Binding: [ARRY] (3) a = k * {0.0, 1.0, -1.0}; ($RES_SIM_0)
+// 	Constant/Parameter Binding: [ARRY] (3) a = k*{0.0, 1.0, -1.0}; ($RES_SIM_0)
 // 	###<No Set Equations>
 //
 // Alias Set 2:
@@ -51,7 +51,7 @@ val(x[3], 1);
 // 	b	 ==> 	-c
 // [dumprepl] Nontrivial Alias Replacements:
 // *******************************************
-// 	a	 ==> 	{0.0, 1.0, -1.0} * k
+// 	a	 ==> 	{0.0, 1.0, -1.0}*k
 //
 // ==================================
 //   [dumprepl] Clocked Alias Sets:

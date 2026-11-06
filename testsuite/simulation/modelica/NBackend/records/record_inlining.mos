@@ -35,10 +35,10 @@ simulate(record_inlining); getErrorString();
 // [dumpBackendInline] Inlining operatations for: {NORMAL, BUILTIN_EARLY, EARLY, DEFAULT}
 // ****************************************************************************************
 // [NBReplacements.applyFuncExp] Inlining: Complex.'*'.multiply(a, b)
-// -- Result: Complex.'constructor'.fromReal(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re)
+// -- Result: Complex.'constructor'.fromReal(a.re*b.re - a.im*b.im, a.re*b.im + a.im*b.re)
 //
 // [NBReplacements.applyFuncExp] Inlining: Complex.'^'.complexPower(a, b)
-// -- Result: Complex.'constructor'.fromReal(exp(0.5 * log(a.re * a.re + a.im * a.im) * b.re - atan2(a.im, a.re) * b.im) * cos(0.5 * log(a.re * a.re + a.im * a.im) * b.im + atan2(a.im, a.re) * b.re), exp(0.5 * log(a.re * a.re + a.im * a.im) * b.re - atan2(a.im, a.re) * b.im) * sin(0.5 * log(a.re * a.re + a.im * a.im) * b.im + atan2(a.im, a.re) * b.re))
+// -- Result: Complex.'constructor'.fromReal(exp(0.5*log(a.re*a.re + a.im*a.im)*b.re - atan2(a.im, a.re)*b.im)*cos(0.5*log(a.re*a.re + a.im*a.im)*b.im + atan2(a.im, a.re)*b.re), exp(0.5*log(a.re*a.re + a.im*a.im)*b.re - atan2(a.im, a.re)*b.im)*sin(0.5*log(a.re*a.re + a.im*a.im)*b.im + atan2(a.im, a.re)*b.re))
 //
 //
 // [NBInline.inlineRecordEquation] Inlining: [RECD] (2) a = Complex.'constructor'.fromReal($FUN_1, $FUN_2); ($RES_SIM_7)
@@ -61,13 +61,13 @@ simulate(record_inlining); getErrorString();
 // -- Result: [SCAL] (1) f.re = 1.0; ($RES_SIM_21)
 // -- Result: [SCAL] (1) f.im = 0.0; ($RES_SIM_22)
 //
-// [NBInline.inlineRecordEquation] Inlining: [RECD] (2) $FUN_4 = Complex.'constructor'.fromReal(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re); ($RES_AUX_9)
-// -- Result: [SCAL] (1) $FUN_4.re = a.re * b.re - a.im * b.im; ($RES_SIM_29)
-// -- Result: [SCAL] (1) $FUN_4.im = a.re * b.im + a.im * b.re; ($RES_SIM_30)
+// [NBInline.inlineRecordEquation] Inlining: [RECD] (2) $FUN_4 = Complex.'constructor'.fromReal(a.re*b.re - a.im*b.im, a.re*b.im + a.im*b.re); ($RES_AUX_9)
+// -- Result: [SCAL] (1) $FUN_4.re = a.re*b.re - a.im*b.im; ($RES_SIM_29)
+// -- Result: [SCAL] (1) $FUN_4.im = a.re*b.im + a.im*b.re; ($RES_SIM_30)
 //
-// [NBInline.inlineRecordEquation] Inlining: [RECD] (2) $FUN_5 = Complex.'constructor'.fromReal(exp(0.5 * log(a.re * a.re + a.im * a.im) * b.re - atan2(a.im, a.re) * b.im) * cos(0.5 * log(a.re * a.re + a.im * a.im) * b.im + atan2(a.im, a.re) * b.re), exp(0.5 * log(a.re * a.re + a.im * a.im) * b.re - atan2(a.im, a.re) * b.im) * sin(0.5 * log(a.re * a.re + a.im * a.im) * b.im + atan2(a.im, a.re) * b.re)); ($RES_AUX_8)
-// -- Result: [SCAL] (1) $FUN_5.re = exp(0.5 * log(a.re * a.re + a.im * a.im) * b.re - atan2(a.im, a.re) * b.im) * cos(0.5 * log(a.re * a.re + a.im * a.im) * b.im + atan2(a.im, a.re) * b.re); ($RES_SIM_31)
-// -- Result: [SCAL] (1) $FUN_5.im = exp(0.5 * log(a.re * a.re + a.im * a.im) * b.re - atan2(a.im, a.re) * b.im) * sin(0.5 * log(a.re * a.re + a.im * a.im) * b.im + atan2(a.im, a.re) * b.re); ($RES_SIM_32)
+// [NBInline.inlineRecordEquation] Inlining: [RECD] (2) $FUN_5 = Complex.'constructor'.fromReal(exp(0.5*log(a.re*a.re + a.im*a.im)*b.re - atan2(a.im, a.re)*b.im)*cos(0.5*log(a.re*a.re + a.im*a.im)*b.im + atan2(a.im, a.re)*b.re), exp(0.5*log(a.re*a.re + a.im*a.im)*b.re - atan2(a.im, a.re)*b.im)*sin(0.5*log(a.re*a.re + a.im*a.im)*b.im + atan2(a.im, a.re)*b.re)); ($RES_AUX_8)
+// -- Result: [SCAL] (1) $FUN_5.re = exp(0.5*log(a.re*a.re + a.im*a.im)*b.re - atan2(a.im, a.re)*b.im)*cos(0.5*log(a.re*a.re + a.im*a.im)*b.im + atan2(a.im, a.re)*b.re); ($RES_SIM_31)
+// -- Result: [SCAL] (1) $FUN_5.im = exp(0.5*log(a.re*a.re + a.im*a.im)*b.re - atan2(a.im, a.re)*b.im)*sin(0.5*log(a.re*a.re + a.im*a.im)*b.im + atan2(a.im, a.re)*b.re); ($RES_SIM_32)
 //
 // [dumpBackendInline] Inlining operatations for: {AFTER_INDEX_RED}
 // ******************************************************************

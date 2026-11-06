@@ -81,7 +81,7 @@ print(evaluateProbe("evaluateProbe1.mo", "0", "cCode")); getErrorString();
 // ""
 // {"node":"0.0.4", "property":"checkModel", "result":[{"text":"Check of EP.B failed with 1 error(s)."}, {"severity":"error", "lineStart":24, "columnStart":5, "lineEnd":24, "columnEnd":24, "message":"Variable r2.x not found in scope B."}]}
 // ""
-// {"node":"0.0.2", "property":"flatModelica", "result":[{"text":"//! base 0.1.0"}, {"text":"package 'R'"}, {"text":"  model 'R'"}, {"text":"    parameter Real 'r' = 2.0;"}, {"text":"    Real 'p.v';"}, {"text":"    Real 'p.i';"}, {"text":"    Real 'n.v';"}, {"text":"    Real 'n.i';"}, {"text":"  equation"}, {"text":"    'p.i' = 0.0;"}, {"text":"    'n.i' = 0.0;"}, {"text":"    'p.v' - 'n.v' = 'r' * 'p.i';"}, {"text":"    'p.i' + 'n.i' = 0.0;"}, {"text":"  end 'R';"}, {"text":"end 'R';"}]}
+// {"node":"0.0.2", "property":"flatModelica", "result":[{"text":"//! base 0.1.0"}, {"text":"package 'R'"}, {"text":"  model 'R'"}, {"text":"    parameter Real 'r' = 2.0;"}, {"text":"    Real 'p.v';"}, {"text":"    Real 'p.i';"}, {"text":"    Real 'n.v';"}, {"text":"    Real 'n.i';"}, {"text":"  equation"}, {"text":"    'p.i' = 0.0;"}, {"text":"    'n.i' = 0.0;"}, {"text":"    'p.v' - 'n.v' = 'r'*'p.i';"}, {"text":"    'p.i' + 'n.i' = 0.0;"}, {"text":"  end 'R';"}, {"text":"end 'R';"}]}
 // ""
 // {"node":"0.7", "property":"text", "result":[{"text":"no node 0.7"}]}
 // ""
