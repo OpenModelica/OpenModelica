@@ -1087,6 +1087,7 @@ algorithm
       list<String> rust_crate_roots;
       list<String> simrt_c_sources;
       Boolean rustRuntime, rustFmi;
+      Boolean withFMI2 = Flags.getConfigBool(Flags.FMU_WITH_FMI2);
       SimCode.VarInfo varInfo;
     case (SimCode.SIMCODE(),"wasm-jit")
       algorithm
@@ -1317,6 +1318,12 @@ algorithm
           end if;
           copyFiles(RuntimeSources.fmi3_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
           fmi_export_files := if rustFmi then {} else RuntimeSources.fmi3_sources;
+          if withFMI2 then
+            if not rustFmi then
+              copyFiles(RuntimeSources.fmi2_sources, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+            end if;
+            copyFiles(RuntimeSources.fmi2_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+          end if;
         elseif rustFmi then
           copyFiles(RuntimeSources.fmi2_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
           fmi_export_files := {};
@@ -1362,6 +1369,9 @@ algorithm
         modelica_standard_table_sources := RuntimeSources.modelica_external_c_sources;
 
         System.writeFile(fmutmp+"/sources/isfmi" + (if FMUVersion=="1.0" then "1" elseif FMUVersion=="3.0" then "3" else "2"), "");
+        if withFMI2 then
+          System.writeFile(fmutmp+"/sources/isfmi2", "");
+        end if;
 
         model_gen_files := list(simCode.fileNamePrefix + f for f guard FMUVersion == "1.0" or f <> "_init_fmu.c" in RuntimeSources.defaultFileSuffixes);
 
@@ -1398,6 +1408,11 @@ algorithm
         end if;
         if writeFMUDocumentation(program, simCode, FMUVersion, fmutmp) then
           ExecStat.execStat("FMU documentation");
+        end if;
+        if withFMI2 and not (System.rename(fmutmp + "/modelDescription.xml", fmutmp + "/modelDescription.fmi3.xml")
+                             and System.rename(fmutmp + "/modelDescription.fmi2.xml", fmutmp + "/modelDescription.xml")) then
+          Error.addInternalError("Failed to put the FMI 2.0 modelDescription.xml in place", sourceInfo());
+          fail();
         end if;
 
         // Add the _part*.c files to the list of source files. We do not know how many of them there are until
@@ -1502,6 +1517,11 @@ algorithm
             modelDefinesHeaderStr := System.stringReplace(modelDefinesHeaderStr, fmu_dummy_include_defines, "../" + simCode.fileNamePrefix + "_FMU.h");
             System.writeFile(fmu_tmp_sources_dir + fmuModelInterfaceFile, modelDefinesHeaderStr);
           end for;
+          if withFMI2 then
+            modelDefinesHeaderStr := System.readFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c");
+            modelDefinesHeaderStr := System.stringReplace(modelDefinesHeaderStr, "fmu2_dummy_model_defines.h", "../" + simCode.fileNamePrefix + "_FMU2.h");
+            System.writeFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c", modelDefinesHeaderStr);
+          end if;
         end if;
 
         Tpl.closeFile(Tpl.tplCallWithFailError(

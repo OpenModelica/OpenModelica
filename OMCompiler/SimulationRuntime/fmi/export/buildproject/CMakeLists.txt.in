@@ -203,6 +203,24 @@ if(FMU_GENERATED_INCLUDE_ONLY_SOURCES)
   list(REMOVE_ITEM FMU_GENERATED_MODEL_SOURCES ${FMU_GENERATED_INCLUDE_ONLY_SOURCES})
 endif()
 
+# buildModelFMU(version="2.0+3.0"), for OpenModelicaLibraryTesting only: the
+# FMI 3.0 binary also serves FMI 2.0 and is installed where FMI 2.0 looks for
+# it. libSimulationRuntimeRust serves both. The C interfaces both compile
+# fmu_model_interface.c.inc, so the FMI 2.0 one is linked as one object whose
+# hidden symbols are made local.
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/isfmi2" AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/isfmi3")
+  set(OM_FMU_WITH_FMI2 ON)
+endif()
+if(OM_FMU_WITH_FMI2 AND NOT OMC_RUST_SIMULATION_RUNTIME)
+  set(OM_FMU_FMI2_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/fmi-export/fmu2_model_interface.c
+                          ${CMAKE_CURRENT_SOURCE_DIR}/${FMU_NAME}_FMU2.c)
+  list(REMOVE_ITEM FMU_RUNTIME_SOURCES ${OM_FMU_FMI2_SOURCES})
+  list(REMOVE_ITEM FMU_GENERATED_MODEL_SOURCES ${OM_FMU_FMI2_SOURCES})
+  if(NOT (BUILD_SHARED_LIBS AND UNIX AND NOT APPLE AND CMAKE_OBJCOPY))
+    message(FATAL_ERROR "FMI 2.0+3.0 needs a shared library on Linux and objcopy")
+  endif()
+endif()
+
 # Set install prefix to FMU target system short and architecture
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
   set(FMU_TARGET_SYSTEM_NAME "win")
@@ -228,7 +246,7 @@ elseif(FMU_TARGET_ARCH STREQUAL "")
   endif()
 endif()
 
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/isfmi3")
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/isfmi3" AND NOT OM_FMU_WITH_FMI2)
   # FMI 3.0 uses the platform tuple "{architecture}-{os}" for the binaries folder
   # (e.g. x86_64-linux), unlike FMI 1.0/2.0 which use "{os}{bitness}" (e.g. linux64).
   # The two schemes do not spell Windows the same way: FMI 1.0/2.0 want "win"
@@ -580,6 +598,22 @@ if(BUILD_SHARED_LIBS)
   message(STATUS "Not using FMI2_FUNCTION_PREFIX / FMI3_FUNCTION_PREFIX")
 else()
   message(STATUS "Using FMI2_FUNCTION_PREFIX / FMI3_FUNCTION_PREFIX")
+endif()
+
+if(OM_FMU_FMI2_SOURCES)
+  add_library(omc_fmu_fmi2 OBJECT ${OM_FMU_FMI2_SOURCES})
+  set_target_properties(omc_fmu_fmi2 PROPERTIES POSITION_INDEPENDENT_CODE ON C_VISIBILITY_PRESET hidden)
+  target_compile_definitions(omc_fmu_fmi2 PRIVATE $<TARGET_PROPERTY:${FMU_NAME_HASH},COMPILE_DEFINITIONS>)
+  target_include_directories(omc_fmu_fmi2 PRIVATE $<TARGET_PROPERTY:${FMU_NAME_HASH},INCLUDE_DIRECTORIES>)
+  set(OM_FMU_FMI2_OBJECT "${CMAKE_CURRENT_BINARY_DIR}/fmu2_interface.o")
+  add_custom_command(OUTPUT "${OM_FMU_FMI2_OBJECT}"
+                     COMMAND ${CMAKE_C_COMPILER} -r -nostdlib -o "${OM_FMU_FMI2_OBJECT}" $<TARGET_OBJECTS:omc_fmu_fmi2>
+                     COMMAND ${CMAKE_OBJCOPY} --localize-hidden "${OM_FMU_FMI2_OBJECT}"
+                     DEPENDS omc_fmu_fmi2 $<TARGET_OBJECTS:omc_fmu_fmi2>
+                     COMMAND_EXPAND_LISTS
+                     VERBATIM)
+  set_source_files_properties("${OM_FMU_FMI2_OBJECT}" PROPERTIES EXTERNAL_OBJECT TRUE GENERATED TRUE)
+  target_sources(${FMU_NAME_HASH} PRIVATE "${OM_FMU_FMI2_OBJECT}")
 endif()
 
 # Install target
