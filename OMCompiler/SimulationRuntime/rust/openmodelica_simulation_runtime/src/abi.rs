@@ -487,6 +487,7 @@ pub struct DAEMODE_DATA {
     pub sparsePattern: *mut SPARSE_PATTERN,
     pub evaluateDAEResiduals: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, c_int) -> c_int>,
     pub algIndexes: *mut c_int,
+    pub solverData: *mut c_void,
 }
 
 /// `EQUATION_SECTION`: which generated section an equation belongs to.

@@ -17,6 +17,7 @@ fmi3_wasm_solver_absent.mos \
 fmi3_wasm_solver_libraries.mos \
 fmi3_wasm_solver_me.mos \
 fmi3_wasm_terminate_init.mos \
+fmi_cs_daemode.mos \
 fmi_tunable_parameters.mos \
 fmi_tunable_parameters_state.mos
 

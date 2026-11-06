@@ -82,10 +82,6 @@ static void idaReScaleVector(N_Vector vec, double* factors, unsigned int size);
 
 int ida_event_update(DATA* data, threadData_t *threadData);
 
-/* Static variables */
-/* TODO: Don't use global variables */
-static IDA_SOLVER *idaDataGlobal;
-
 
 /**
  * @brief Return true if flag signals success.
@@ -592,7 +588,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     }
   }
   if (compiledInDAEMode){
-    idaDataGlobal = idaData;
+    data->simulationInfo->daeModeData->solverData = idaData;
     data->callback->functionDAE = ida_event_update;
   }
   messageClose(OMC_LOG_SOLVER);
@@ -679,7 +675,7 @@ static void setDAEVarsFromIDA(DATA* data, IDA_SOLVER* idaData)
  */
 int ida_event_update(DATA* data, threadData_t *threadData)
 {
-  IDA_SOLVER *idaData = idaDataGlobal;
+  IDA_SOLVER *idaData = (IDA_SOLVER*) data->simulationInfo->daeModeData->solverData;
   int flag;
   long nonLinIters;
   double init_h;
@@ -907,6 +903,10 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   {
     tout = solverInfo->currentTime + solverInfo->currentStepSize;
     stepsMode = IDA_NORMAL;
+#ifdef OMC_FMI_RUNTIME
+    /* The inputs of an FMU can change at the communication point */
+    IDASetStopTime(idaData->ida_mem, tout);
+#else
     /* Never step past the next time event */
     if (data->simulationInfo->nextSampleEvent < DBL_MAX)
     {
@@ -916,6 +916,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     {
       IDAClearStopTime(idaData->ida_mem);
     }
+#endif
   }
 
 
@@ -924,9 +925,11 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     infoStreamPrint(OMC_LOG_SOLVER, 1, "##IDA## new step from %.15g to %.15g", solverInfo->currentTime, tout);
 
     if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
+#ifndef OMC_FMI_RUNTIME
     /* read input vars */
     externalInputUpdate(data);
     data->callback->input_function(data, threadData);
+#endif
     if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
     if (omc_flag[FLAG_IDA_SCALING])
@@ -1169,11 +1172,13 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
     }
   }
 
+#ifndef OMC_FMI_RUNTIME
   /* read input vars */
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
+#endif
 
   if (idaData->daeMode)
   {
@@ -1295,8 +1300,10 @@ static int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout,
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
 
   /* Update inputs and evaluate zero crossings */
+#ifndef OMC_FMI_RUNTIME
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
+#endif
   if (idaData->daeMode){
     data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData, EVAL_ZEROCROSS);
   }

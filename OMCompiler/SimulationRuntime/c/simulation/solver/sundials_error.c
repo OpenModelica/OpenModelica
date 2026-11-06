@@ -34,7 +34,7 @@
 #if !defined(OMC_FMI_RUNTIME) || defined(OMC_FMI_HAVE_CVODE)
 #include <cvode/cvode.h>
 #endif
-#ifndef OMC_FMI_RUNTIME
+#if !defined(OMC_FMI_RUNTIME) || defined(OMC_FMI_HAVE_IDA)
 #include <idas/idas.h>
 #endif
 
@@ -47,7 +47,7 @@ static void checkReturnFlag_CVLS(int flag, const char *functionName);
 #endif
 static void checkReturnFlag_KIN(int flag, const char *functionName);
 static void checkReturnFlag_KINLS(int flag, const char *functionName);
-#ifndef OMC_FMI_RUNTIME
+#if !defined(OMC_FMI_RUNTIME) || defined(OMC_FMI_HAVE_IDA)
 static void checkReturnFlag_IDA(int flag, const char *functionName);
 static void checkReturnFlag_IDALS(int flag, const char *functionName);
 #endif
@@ -82,7 +82,7 @@ void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
     checkReturnFlag_CVLS(flag, functionName);
     break;
 #endif
-#ifndef OMC_FMI_RUNTIME
+#if !defined(OMC_FMI_RUNTIME) || defined(OMC_FMI_HAVE_IDA)
   case SUNDIALS_IDA_FLAG:
     checkReturnFlag_IDA(flag, functionName);
     break;
@@ -474,7 +474,7 @@ static void checkReturnFlag_KINLS(int flag, const char *functionName) {
   }
 }
 
-#ifndef OMC_FMI_RUNTIME
+#if !defined(OMC_FMI_RUNTIME) || defined(OMC_FMI_HAVE_IDA)
 /**
  * @brief Checks given IDA/IDAS flag and reports potential error.
  *
