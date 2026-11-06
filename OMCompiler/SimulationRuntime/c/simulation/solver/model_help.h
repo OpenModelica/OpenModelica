@@ -109,6 +109,8 @@ void copyStartValuestoInitValues(DATA *data);
 void printAllVars(DATA *data, int ringSegment, int stream);
 void printRelations(DATA *data, int stream);
 void printZeroCrossings(DATA *data, int stream);
+int printCurrentStatesVector(int logLevel, double* states, DATA* data, double time);
+int printVector(int logLevel, const char* name,  double* vec, int n, double time);
 void printParameters(DATA *data, int stream);
 void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeCols, int stream, const char*);
 modelica_boolean sparsitySanityCheck(SPARSE_PATTERN *sparsePattern, int nlsSize, int stream);

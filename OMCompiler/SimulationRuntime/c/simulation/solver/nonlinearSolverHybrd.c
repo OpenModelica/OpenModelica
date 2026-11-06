@@ -156,7 +156,7 @@ void freeHybrdData(DATA_HYBRD* hybrdData)
   return;
 }
 
-/*! \fn printVector
+/*! \fn printHybrdVector
  *
  *  \param [in]  [vector]
  *  \param [in]  [size]
@@ -165,7 +165,7 @@ void freeHybrdData(DATA_HYBRD* hybrdData)
  *
  *  \author wbraun
  */
-static void printVector(const double *vector, const integer size, const int logLevel, const char *name)
+static void printHybrdVector(const double *vector, const integer size, const int logLevel, const char *name)
 {
   int i;
   if (!OMC_ACTIVE_STREAM(logLevel)) return;
@@ -326,8 +326,8 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
     /* debug output */
     if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_RES)) {
       infoStreamPrint(OMC_LOG_NLS_RES, 0, "-- residual function call %d -- scaling = %d", (int)hybrdData->nfev, hybrdData->useXScaling);
-      printVector(x, n, OMC_LOG_NLS_RES, "x vector (scaled)");
-      printVector(hybrdData->xScaled, n, OMC_LOG_NLS_RES, "x vector");
+      printHybrdVector(x, n, OMC_LOG_NLS_RES, "x vector (scaled)");
+      printHybrdVector(hybrdData->xScaled, n, OMC_LOG_NLS_RES, "x vector");
     }
 
     /* call residual function */
@@ -344,7 +344,7 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
 
     /* debug output */
     if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_RES)) {
-      printVector(f, n, OMC_LOG_NLS_RES, "residuals");
+      printHybrdVector(f, n, OMC_LOG_NLS_RES, "residuals");
       infoStreamPrint(OMC_LOG_NLS_RES, 0, "-- end of residual function call %d --", (int)hybrdData->nfev);
     }
 
@@ -496,8 +496,8 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
 
     /* debug output */
     if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_V)) {
-      printVector(hybrdData->xScalefactors, (hybrdData->n), OMC_LOG_NLS_V, "scaling factors x vector");
-      printVector(hybrdData->x, (hybrdData->n), OMC_LOG_NLS_V, "Iteration variable values");
+      printHybrdVector(hybrdData->xScalefactors, (hybrdData->n), OMC_LOG_NLS_V, "scaling factors x vector");
+      printHybrdVector(hybrdData->x, (hybrdData->n), OMC_LOG_NLS_V, "Iteration variable values");
     }
 
     /* Scaling x vector */
@@ -510,7 +510,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
     /* debug output */
     if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_V))
     {
-      printVector(hybrdData->x, hybrdData->n, OMC_LOG_NLS_V, "Iteration variable values (scaled)");
+      printHybrdVector(hybrdData->x, hybrdData->n, OMC_LOG_NLS_V, "Iteration variable values (scaled)");
     }
 
     /* set residual function continuous */

@@ -401,6 +401,22 @@ foreach(lib core kinsol cvode nvecserial sunmemsys
   list(APPEND _om_sundials_targets sundials_${lib}_obj_static)
 endforeach()
 omc_fmu_add_solver_library_targets(sundials ${_om_sundials_root} "src/sundials" ${_om_sundials_targets})
+# IDAS goes only into a --daeMode FMU, so it gets lists of its own.
+set(_om_files ${SOURCE_FMU_SOLVER_LIBRARY_FILES_LIST})
+set(_om_sources ${SOURCE_FMU_SOLVER_LIBRARY_SOURCES_LIST})
+set(SOURCE_FMU_SOLVER_LIBRARY_FILES_LIST)
+set(SOURCE_FMU_SOLVER_LIBRARY_SOURCES_LIST)
+omc_fmu_add_solver_library_targets(sundials ${_om_sundials_root} "src/sundials" sundials_idas_obj_static)
+foreach(file ${SOURCE_FMU_SOLVER_LIBRARY_FILES_LIST})
+  list(APPEND SOURCE_FMU_SOLVER_LIBRARY_IDA_FILES_QUOTED "\"${file}\"")
+endforeach()
+list(JOIN SOURCE_FMU_SOLVER_LIBRARY_IDA_FILES_QUOTED ",\n                                                      " SOURCE_FMU_SOLVER_LIBRARY_IDA_FILES)
+foreach(file ${SOURCE_FMU_SOLVER_LIBRARY_SOURCES_LIST})
+  list(APPEND SOURCE_FMU_SOLVER_LIBRARY_IDA_SOURCES_QUOTED "\"${file}\"")
+endforeach()
+list(JOIN SOURCE_FMU_SOLVER_LIBRARY_IDA_SOURCES_QUOTED ",\n                                                        " SOURCE_FMU_SOLVER_LIBRARY_IDA_SOURCES)
+set(SOURCE_FMU_SOLVER_LIBRARY_FILES_LIST ${_om_files})
+set(SOURCE_FMU_SOLVER_LIBRARY_SOURCES_LIST ${_om_sources})
 omc_fmu_add_solver_library_include_dir(${_om_sundials_root} include)
 omc_fmu_add_solver_library_include_dir(${_om_sundials_root} src/sundials)
 # The generated headers describe the compiler and platform omc was built with.
@@ -475,6 +491,19 @@ foreach(source_file ${SOURCE_FMU_SUNDIALS_FILES_LIST})
           DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR})
 endforeach()
 list(JOIN SOURCE_FMU_SUNDIALS_FILES_LIST_QUOTED ",\n                                                  " SOURCE_FMU_SUNDIALS_FILES)
+
+######################################################################################################################
+## IDA files, for a --daeMode Co-Simulation FMU
+set(SOURCE_FMU_IDA_RUNTIME_FILES_LIST simulation/solver/dae_mode.c
+                                      simulation/solver/ida_solver.c)
+
+foreach(source_file ${SOURCE_FMU_IDA_RUNTIME_FILES_LIST})
+  list(APPEND SOURCE_FMU_IDA_RUNTIME_FILES_LIST_QUOTED "\"${source_file}\"")
+  get_filename_component(DEST_DIR ${source_file} DIRECTORY)
+  install(FILES ${source_file}
+          DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR})
+endforeach()
+list(JOIN SOURCE_FMU_IDA_RUNTIME_FILES_LIST_QUOTED ",\n                                                " SOURCE_FMU_IDA_RUNTIME_FILES)
 
 ######################################################################################################################
 ## CVODE files

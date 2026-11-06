@@ -615,6 +615,7 @@ typedef struct DAEMODE_DATA
   SPARSE_PATTERN* sparsePattern;       /* daeMode sparse pattern */
   int (*evaluateDAEResiduals)(DATA*, threadData_t*, int); /* function to evaluate dynamic equations for DAE solver */
   int *algIndexes;                     /* index of the algebraic DAE variable in original order */
+  void *solverData;                    /* the DAE solver, for its event update */
 } DAEMODE_DATA;
 
 typedef struct MODEL_DATA_XML

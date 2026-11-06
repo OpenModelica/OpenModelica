@@ -58,9 +58,15 @@ encapsulated package RuntimeSources
 
   constant list<String> simrt_c_cvode_sources={@SOURCE_FMU_CVODE_RUNTIME_FILES@};
 
+  constant list<String> simrt_c_ida_sources={@SOURCE_FMU_IDA_RUNTIME_FILES@};
+
   constant list<String> solver_library_files={@SOURCE_FMU_SOLVER_LIBRARY_FILES@};
 
   constant list<String> solver_library_sources={@SOURCE_FMU_SOLVER_LIBRARY_SOURCES@};
+
+  constant list<String> solver_library_ida_files={@SOURCE_FMU_SOLVER_LIBRARY_IDA_FILES@};
+
+  constant list<String> solver_library_ida_sources={@SOURCE_FMU_SOLVER_LIBRARY_IDA_SOURCES@};
 
   constant list<String> modelica_external_c_sources={"ModelicaExternalC/ModelicaFFT.c",
                                                      "ModelicaExternalC/ModelicaInternal.c",
