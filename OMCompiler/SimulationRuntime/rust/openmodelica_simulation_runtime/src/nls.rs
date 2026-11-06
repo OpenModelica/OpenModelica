@@ -1054,7 +1054,7 @@ impl driver::SimEngine for ReadOnly {
     fn call_simulate(&mut self, _sim_data: u32, _start: f64, _stop: f64, _n: u32) -> driver::Result<u32> {
         Err("the initial-guess writer does not call the model")
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 10]> {
         None
     }
 }

@@ -870,7 +870,7 @@ impl SimEngine for CEngine {
         unsafe { omc_clear_last_suppressed_error() };
     }
 
-    fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 10]> {
         None
     }
 }

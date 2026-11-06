@@ -172,6 +172,7 @@ pub(super) fn emit_runtime_error(ctx: &mut FnCtx, msg: &str) -> Result<()> {
     ctx.emit(we::Instruction::I32Const(0)); // no condition: never suppressed
     emit_initial_flag(ctx)?;
     emit_sim_data_or_zero(ctx);
+    ctx.emit(we::Instruction::I32Const(ctx.eq));
     ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
     ctx.emit(we::Instruction::Drop);
     emit_assert_unwind(ctx);
