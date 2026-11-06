@@ -1,21 +1,21 @@
-// name: ErrorMessageFilename
+// name: ErrorMessageFileName
 // keywords: #17891
 // status: correct
 //
 // The file name of a message from getMessagesStringInternal is read with
-// .info.filename, with and without -d=nfScripting.
+// .info.fileName, with and without -d=nfScripting.
 
 loadString("model M Real x = y; end M;"); getErrorString();
 checkModel(M);
 errors := getMessagesStringInternal();
 e := errors[1];
-e.info.filename; getErrorString();
+e.info.fileName; getErrorString();
 e.info.lineStart; getErrorString();
 setCommandLineOptions("-d=-nfScripting");
 checkModel(M);
 errors2 := getMessagesStringInternal();
 e2 := errors2[1];
-e2.info.filename; getErrorString();
+e2.info.fileName; getErrorString();
 
 // Result:
 // true
@@ -23,7 +23,7 @@ e2.info.filename; getErrorString();
 // "Check of M failed with 1 error(s)."
 // {record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "<interactive>",
+//     fileName = "<interactive>",
 //     readonly = false,
 //     lineStart = 1,
 //     columnStart = 9,
@@ -37,7 +37,7 @@ e2.info.filename; getErrorString();
 // end OpenModelica.Scripting.ErrorMessage;}
 // record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "<interactive>",
+//     fileName = "<interactive>",
 //     readonly = false,
 //     lineStart = 1,
 //     columnStart = 9,
@@ -57,7 +57,7 @@ e2.info.filename; getErrorString();
 // "Check of M failed with 1 error(s)."
 // {record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "<interactive>",
+//     fileName = "<interactive>",
 //     readonly = false,
 //     lineStart = 1,
 //     columnStart = 9,
@@ -71,7 +71,7 @@ e2.info.filename; getErrorString();
 // end OpenModelica.Scripting.ErrorMessage;}
 // record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "<interactive>",
+//     fileName = "<interactive>",
 //     readonly = false,
 //     lineStart = 1,
 //     columnStart = 9,

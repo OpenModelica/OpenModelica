@@ -1560,8 +1560,11 @@ void OMCProxy::setCurrentError(int errorIndex)
   */
 QString OMCProxy::getErrorFileName()
 {
-  sendCommand("currentError.info.filename");
-  QString file = StringHandler::unparse(getResult());
+  // Older omc versions name the field filename, newer ones fileName.
+  // Reading the whole record avoids an error for the other name.
+  static const QRegularExpression fileNameField("\\bfile[nN]ame = (\"(?:[^\"\\\\]|\\\\.)*\")");
+  sendCommand("currentError.info");
+  QString file = StringHandler::unparse(fileNameField.match(getResult()).captured(1));
   if (file.compare("<interactive>") == 0)
     return "";
   else
