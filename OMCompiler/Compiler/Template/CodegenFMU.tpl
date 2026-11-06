@@ -325,6 +325,9 @@ case SIMCODE(__) then
   #define FMI2_FUNCTION_PREFIX <%modelNamePrefix(simCode)%>_
   #include "fmi2Functions.h"
   #include "fmi-export/fmu2_model_interface.h"
+  // The value reference of time, which modelDescription.xml lists only when the
+  // model has no other variable. The same as FMI3_TIME_VR.
+  #define FMI2_TIME_VR (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS + NUMBER_OF_STRINGS + NUMBER_OF_EXTERNALOBJECTS + NUMBER_OF_CLOCKS)
   >>
   %>
 
