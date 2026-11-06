@@ -1,0 +1,37 @@
+// name:     NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6
+// keywords: extraction algorithm
+// status:   correct
+// teardown_command: rm -rf TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6 TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6_* Reconciled_TSP_DataReconciliationSimpleTests_Models_FourFlows_TSP_FourFlows6.mo TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6.html
+//
+// TODO: fails in NSimCode because a tuple equation is not solved:
+//   NSimStrongComponent.Block.createEquation failed with status Solve.UNPROCESSED for
+//   (staticDrum1.lsat, staticDrum1.vsat) = ThermoSysPro.Properties.WaterSteam.IF97.Water_sat_P(staticDrum1.P)
+// The extraction algorithm and its verification succeed, the failure comes later in
+// the new backend.
+
+setCommandLineOptions("--newBackend");
+getErrorString();
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadModel(TSP_DataReconciliationSimpleTests, {"4.0.0"});
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+// How the simulation fails depends on the runtime (C or Rust), so only
+// record that it fails: resultFile stays empty until the model works.
+echo(false);
+res := simulate(TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6, simflags=simFlags);
+echo(true);
+res.resultFile;
+getErrorString();
+
+// Result:
+// endResult

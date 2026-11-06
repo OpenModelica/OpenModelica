@@ -1,0 +1,36 @@
+// name:     NB_TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR
+// keywords: extraction algorithm
+// status:   correct
+// teardown_command: rm -rf TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_Outputs.csv TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_Inputs.csv TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_Correlation_Inputs.csv TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_Reconciled_Sx.csv TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_Reconciled_tmp.mo TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_AuxiliaryConditions.html TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_IntermediateEquations.html TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_relatedBoundaryConditionsEquations.html TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_debug.txt TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_iterationVars.txt TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_NonReconcilcedVars.txt Reconciled_TSP_DataReconciliationSimpleTests_Models_StructuralAnalysis_SG_DR.mo TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR.html
+//
+// TODO: fails in the initialization of the reconciled system with
+//   NBTearing.mo: Internal error UnorderedMap.getSafe failed because the key did not exist.
+//   Internal error NBInitialization.main failed to apply modules!
+// The extraction algorithm and its verification succeed, the failure comes later in
+// the new backend.
+// The old backend fails too, its jacobian F contains non-linear components.
+
+setCommandLineOptions("--newBackend");
+getErrorString();
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadModel(TSP_DataReconciliationSimpleTests, {"4.0.0"});
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+simulate(TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR, simflags=simFlags);
+getErrorString();
+
+readFile("TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_Outputs.csv");
+getErrorString();
+
+// Result:
+// endResult

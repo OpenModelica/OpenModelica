@@ -1,0 +1,38 @@
+// name:     NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows
+// keywords: extraction algorithm
+// status:   correct
+// teardown_command: rm -rf TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows_* Reconciled_TSP_DataReconciliationSimpleTests_Models_FourFlows_TSP_FourFlows.mo TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows.html
+//
+// TODO: fails because of a loop in the jacobian F, like Splitter5e. SET-S contains
+// the algebraic loop of the splitter and the mixer
+//   splitter21.Cs1.Q = splitter21.Ialpha1.signal * splitter21.Ce.Q
+//   0.0 = splitter21.Ce.Q - (splitter21.Cs2.Q + splitter21.Cs1.Q)
+//   0.0 = (mixer21.Ce2.Q + mixer21.Ce1.Q) - mixer21.Cs.Q
+// whose derivative is a linear system inside the jacobian F. The new backend cannot
+// generate it yet and the simulation fails with "residual function pointer is
+// invalid". See the TODO at createJacobian in NBDataReconciliation.mo.
+
+setCommandLineOptions("--newBackend");
+getErrorString();
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadModel(TSP_DataReconciliationSimpleTests, {"4.0.0"});
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+simulate(TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows, simflags=simFlags);
+getErrorString();
+
+readFile("TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows_Outputs.csv");
+getErrorString();
+
+// Result:
+// endResult

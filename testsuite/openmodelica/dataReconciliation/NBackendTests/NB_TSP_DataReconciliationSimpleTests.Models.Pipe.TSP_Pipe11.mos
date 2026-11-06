@@ -1,0 +1,35 @@
+// name:     NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe11
+// keywords: extraction algorithm
+// status:   correct
+// teardown_command: rm -rf TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe11 TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe11_* Reconciled_TSP_DataReconciliationSimpleTests_Models_Pipe_TSP_Pipe11.mo TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe11.html
+//
+// TODO: fails because of a loop in the jacobian F, like Splitter5e. SET-S contains
+// an algebraic loop whose derivative is a linear system inside the jacobian F. The
+// new backend cannot generate it yet and the simulation fails with "residual
+// function pointer is invalid". See the TODO at createJacobian in
+// NBDataReconciliation.mo.
+
+setCommandLineOptions("--newBackend");
+getErrorString();
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadModel(TSP_DataReconciliationSimpleTests, {"4.0.0"});
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe11, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe11, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+simulate(TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe11, simflags=simFlags);
+getErrorString();
+
+readFile("TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe11_Outputs.csv");
+getErrorString();
+
+// Result:
+// endResult

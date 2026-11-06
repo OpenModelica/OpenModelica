@@ -1,0 +1,35 @@
+// name:     NB_TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_WithHARE
+// keywords: extraction algorithm
+// status:   correct
+// teardown_command: rm -rf TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_WithHARE TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_WithHARE_* Reconciled_TSP_DataReconciliationSimpleTests_Models_StructuralAnalysis_SG_DR_WithHARE.mo TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_WithHARE.html
+//
+// TODO: fails in NSimCode because a tuple equation is not solved:
+//   NSimStrongComponent.Block.createEquation failed with status Solve.UNPROCESSED for
+//   (GV.staticDrum.lsat, GV.staticDrum.vsat) = ThermoSysPro.Properties.WaterSteam.IF97.Water_sat_P(GV.staticDrum.P)
+// The extraction algorithm and its verification succeed, the failure comes later in
+// the new backend.
+
+setCommandLineOptions("--newBackend");
+getErrorString();
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadModel(TSP_DataReconciliationSimpleTests, {"4.0.0"});
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_WithHARE, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_WithHARE, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+simulate(TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_WithHARE, simflags=simFlags);
+getErrorString();
+
+readFile("TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_WithHARE_Outputs.csv");
+getErrorString();
+
+// Result:
+// endResult
