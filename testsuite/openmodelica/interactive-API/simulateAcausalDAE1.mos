@@ -29,9 +29,11 @@ end RCStitch;
 echo(false);
 ref := simulate(RCStitch, fileNamePrefix = "RCStitch_ref");
 res := simulateAcausalDAE(RCStitch);
+refMsg := ref.messages;
+resMsg := res.messages;
 echo(true);
-regexBool(ref.messages, "The simulation finished successfully");
-regexBool(res.messages, "wrote combined_res.mat \\(501 points\\)");
+regexBool(refMsg, "The simulation finished successfully");
+regexBool(resMsg, "wrote combined_res.mat \\(501 points\\)");
 diffSimulationResults("combined_res.mat", "RCStitch_ref_res.mat", "RCStitch_diff", relTol = 1e-3,
   vars = {"C1.v", "C1.i", "R1.i", "R2.i", "V.i", "R1.v", "R2.v"}); getErrorString();
 

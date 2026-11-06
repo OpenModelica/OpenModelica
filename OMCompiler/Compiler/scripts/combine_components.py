@@ -2144,6 +2144,12 @@ def generate_jacobian_c(gj: GlobalJacobian, comps) -> str:
         '    threadData->localRoots[LOCAL_ROOT_SIMULATION_DATA] = d;',
         '    dae = d->simulationInfo->daeModeData;',
         '    dae->evaluateDAEResiduals(d, threadData, evalMode);',
+        '    /* the generated code returned early on a runtime error; clear the',
+        '       flag, else every later evaluation stops at its first check */',
+        '    if (OMC_ERROR_RAISED()) {',
+        '      OMC_ERROR_CLEAR();',
+        '      return 1;',
+        '    }',
         '  }',
         '  combined_apply_connections();',
         '  for (b = 0; b < combined_n_components; ++b) {',
@@ -2743,7 +2749,11 @@ static void combined_reduced_residual(threadData_t *td, double t,
   combined_expand(upred, ypf, 1);
   combined_set_unknowns(yf);
   combined_set_derivatives(ypf);
-  combined_eval_residual(td, EVAL_ALL, rf);
+  if (combined_eval_residual(td, EVAL_ALL, rf) != 0) {{
+    int k;
+    for (k = 0; k < COMBINED_NRED; ++k) fred[k] = NAN;
+    return;
+  }}
   combined_compress(rf, fred);
 }}
 
@@ -2799,9 +2809,10 @@ static int combined_ic_lsq(threadData_t *td, double t, double *yv, double *ypv)
 
    The model contains physical-range asserts (e.g. mass fraction in [0,1]) that
    fire when IDA's Newton iterate strays out of the valid region.  These must
-   NOT abort the run: we catch them on the simulation jump buffer (where
-   throwStreamPrint longjmps) and return a RECOVERABLE error (+1) so IDA retries
-   with a smaller step. */
+   NOT abort the run: an error reported through threadData->errorState makes
+   combined_eval_residual return nonzero, one that still longjmps is caught on
+   the simulation jump buffer; both return a RECOVERABLE error (+1) so IDA
+   retries with a smaller step. */
 static int combined_resfn(sunrealtype t, N_Vector yy, N_Vector yp,
                           N_Vector rr, void *user_data)
 {{
@@ -2824,9 +2835,10 @@ static int combined_resfn(sunrealtype t, N_Vector yy, N_Vector yp,
      bad Newton iterate becomes a recoverable error instead of aborting. */
   threadData->currentErrorStage = ERROR_INTEGRATOR;
   OMC_TRY_INTERNAL(simulationJumpBuffer)
-    combined_eval_residual(threadData, EVAL_ALL, rfull);
-    combined_compress(rfull, rred);
-    ok = 1;
+    if (combined_eval_residual(threadData, EVAL_ALL, rfull) == 0) {{
+      combined_compress(rfull, rred);
+      ok = 1;
+    }}
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
   threadData->currentErrorStage = saveStage;
   return ok ? 0 : 1;   /* 1 = recoverable: IDA reduces the step and retries */
