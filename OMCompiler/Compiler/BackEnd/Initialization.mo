@@ -3143,6 +3143,7 @@ algorithm
 
     // replace homotopy(actual, simplified) with actual
     case DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst=actual::_::_)
+      guard not Flags.isSet(Flags.HOMOTOPY_IN_RESIDUALS)
     then (actual, true);
 
     else (inExp, inUseHomotopy);

@@ -4606,6 +4606,7 @@ package Flags
   constant DebugFlag HARDCODED_START_VALUES;
   constant DebugFlag OMC_RECORD_ALLOC_WORDS;
   constant DebugFlag OMC_RELOCATABLE_FUNCTIONS;
+  constant DebugFlag HOMOTOPY_IN_RESIDUALS;
   constant DebugFlag NF_SCALARIZE;
   constant ConfigFlag PARMODAUTO;
   constant ConfigFlag NUM_PROC;
