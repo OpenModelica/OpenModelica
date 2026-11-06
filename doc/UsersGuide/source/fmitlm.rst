@@ -47,7 +47,7 @@ specifications.
      - Planned
    * - `FMI-LS-DAE <https://github.com/modelica/fmi-ls-dae>`_
      - Planned (demonstrator in progress). Export and import follow the
-       ``1.0.0-alpha.1`` draft as of its commit ``78313f4`` (2026-09-02); the
+       ``1.0.0-alpha.1`` draft as of its commit ``e5b8ffa`` (2026-09-11); the
        revision is also reported as a notification when an FMU is exported.
 
 Supported Capability Flags
