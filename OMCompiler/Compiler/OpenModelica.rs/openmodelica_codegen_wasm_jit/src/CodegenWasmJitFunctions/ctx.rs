@@ -85,6 +85,8 @@ pub(crate) struct FnCtx<'a> {
     /// this one, and there is no generated C here to name. Rendered only at the
     /// few sites that can raise one ([`emit_src_loc`]).
     pub(super) src_loc: Option<metamodelica::SourceInfo>,
+    /// The equation being lowered (C's `equationIndexes`), 0 outside one.
+    pub(crate) eq: i32,
     /// Set when lowering *simulation* equations (the `CodegenWasmJit` target): a
     /// resolver that maps model component references not bound as wasm locals to
     /// slots in the shared `SimData` block. `None` for ordinary function bodies.
@@ -873,6 +875,7 @@ impl<'a> FnCtx<'a> {
             null_locals: Vec::new(),
             elem_ptr_tmp: None,
             src_loc: None,
+            eq: 0,
             sim: Some(sim),
             dt_local_cons: false,
             dt_fallback: None,

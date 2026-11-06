@@ -32,7 +32,7 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_ASSERT        | info    | [ThermoSysPro 4.2.0/WaterSolution/Machines/StaticCentrifugalPump.mo:22:3-22:90:writable]
 // |                 | |       | The following assertion has been violated at time 200.000000
-// |                 | |       | ((staticCentrifugalPumpWaterLiBr.deltaP >= 0.0)) --> \"Variable violating min constraint: 0.0 <= staticCentrifugalPumpWaterLiBr.deltaP, has value: -86.9556\"
+// |                 | |       | ((staticCentrifugalPumpWaterLiBr.deltaP >= 0.0), staticCentrifugalPumpWaterLiBr.deltaP=-86.95556554999999) --> \"Variable violating min constraint: 0.0 <= staticCentrifugalPumpWaterLiBr.deltaP, has value: -86.9556\"
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

@@ -17,13 +17,14 @@ pub struct PendingAssert {
     pub ecol: i32,
     pub read_only: bool,
     pub initial: bool,
+    pub eq: i32,
 }
 
 thread_local! {
     static PENDING_ASSERT: std::cell::RefCell<Option<PendingAssert>> = const { std::cell::RefCell::new(None) };
     /// Violations that did not throw: `[kind, cond, msg, file, sline, scol, eline,
-    /// ecol, read_only, initial]`, `kind` per `driver::ASSERT_*`.
-    static PENDING_WARNINGS: std::cell::RefCell<Vec<[i32; 10]>> = const { std::cell::RefCell::new(Vec::new()) };
+    /// ecol, read_only, initial, eq]`, `kind` per `driver::ASSERT_*`.
+    static PENDING_WARNINGS: std::cell::RefCell<Vec<[i32; 11]>> = const { std::cell::RefCell::new(Vec::new()) };
     /// C's `noThrowAsserts`: the driver has the model on a provisional state, so
     /// `rt_assert` holds a violation instead of telling the caller to trap.
     static ASSERT_HOLD: std::cell::Cell<AssertHold> = const { std::cell::Cell::new(AssertHold::Throw) };
@@ -81,9 +82,9 @@ pub fn take_pending_assert_raw() -> Option<PendingAssert> {
 }
 
 /// Take the pending assertion as `[msg, file, sline, scol, eline, ecol, read_only,
-/// cond, initial]` (for the simulation drivers surfacing a failed `assert()` after
-/// a trap).
-pub fn take_pending_assert() -> Option<[i32; 9]> {
+/// cond, initial, eq]` (for the simulation drivers surfacing a failed `assert()`
+/// after a trap).
+pub fn take_pending_assert() -> Option<[i32; 10]> {
     take_pending_assert_raw().map(|pa| {
         [
             pa.msg,
@@ -95,18 +96,19 @@ pub fn take_pending_assert() -> Option<[i32; 9]> {
             pa.read_only as i32,
             pa.cond,
             pa.initial as i32,
+            pa.eq,
         ]
     })
 }
 
 /// Take (and clear) the warning-level assertion violations recorded since the last call.
-pub fn take_pending_warnings() -> Vec<[i32; 10]> {
+pub fn take_pending_warnings() -> Vec<[i32; 11]> {
     PENDING_WARNINGS.with(|p| core::mem::take(&mut *p.borrow_mut()))
 }
 
 /// Take at most `max` of them, oldest first: `rt_host_take_warnings` hands them
 /// to the in-wasm driver a bufferful at a time.
-fn take_pending_warnings_upto(max: usize) -> Vec<[i32; 10]> {
+fn take_pending_warnings_upto(max: usize) -> Vec<[i32; 11]> {
     PENDING_WARNINGS.with(|p| {
         let mut p = p.borrow_mut();
         let n = max.min(p.len());
@@ -114,8 +116,8 @@ fn take_pending_warnings_upto(max: usize) -> Vec<[i32; 10]> {
     })
 }
 
-/// Serialise the records into `dst` (little-endian `[i32; 10]` each).
-fn write_warnings(recs: &[[i32; 10]], dst: &mut [u8]) -> u32 {
+/// Serialise the records into `dst` (little-endian `[i32; 11]` each).
+fn write_warnings(recs: &[[i32; 11]], dst: &mut [u8]) -> u32 {
     let n = recs.len().min(dst.len() / REC_BYTES);
     for (i, rec) in recs[..n].iter().enumerate() {
         for (k, v) in rec.iter().enumerate() {
@@ -127,7 +129,7 @@ fn write_warnings(recs: &[[i32; 10]], dst: &mut [u8]) -> u32 {
 }
 
 /// Wire size of one record, shared with the in-wasm reader.
-const REC_BYTES: usize = 10 * 4;
+const REC_BYTES: usize = 11 * 4;
 
 /// `rt_uri_to_filename` on a host: `metamodelica`'s port of
 /// `OpenModelica_uriToFilename_impl`, resolving `modelica://` against the class
@@ -188,10 +190,10 @@ impl openmodelica_sim_meta::driver::SimEngine for MemEngine<'_> {
     }
     /// Left to the engine that owns the run: taking it here would consume what
     /// `enrich_trap` reports if the loop goes on to trap.
-    fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 10]> {
         None
     }
-    fn take_pending_warnings(&mut self) -> Vec<[i32; 10]> {
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 11]> {
         take_pending_warnings()
     }
 }
@@ -301,6 +303,7 @@ fn record_assert(
     ecol: i32,
     read_only: i32,
     initial: i32,
+    eq: i32,
 ) {
     PENDING_ASSERT.with(|p| {
         *p.borrow_mut() = Some(PendingAssert {
@@ -313,11 +316,12 @@ fn record_assert(
             ecol,
             read_only: read_only != 0,
             initial: initial != 0,
+            eq,
         });
     });
 }
 
-fn record_warning(rec: [i32; 10]) {
+fn record_warning(rec: [i32; 11]) {
     PENDING_WARNINGS.with(|p| p.borrow_mut().push(rec));
 }
 
@@ -336,6 +340,7 @@ fn assert_failed(
     ecol: i32,
     read_only: i32,
     initial: i32,
+    eq: i32,
 ) -> i32 {
     let hold = if cond != 0 && holdable {
         ASSERT_HOLD.with(|n| n.get())
@@ -354,11 +359,12 @@ fn assert_failed(
             ecol,
             read_only,
             initial,
+            eq,
         ]);
     }
     // Also as a pending assertion: if the phase throws, this reports it — the
     // in-wasm driver's own reporter cannot reach the host's error buffer.
-    record_assert(cond, msg, file, sline, scol, eline, ecol, read_only, initial);
+    record_assert(cond, msg, file, sline, scol, eline, ecol, read_only, initial, eq);
     (hold == AssertHold::Throw) as i32
 }
 
@@ -573,8 +579,9 @@ pub fn add_host_builtins(linker: &mut wasmtime::Linker<HostState>) -> Result<()>
          read_only: i32,
          cond: i32,
          initial: i32,
-         _sim_data: i32|
-         -> i32 { assert_failed(true, cond, msg, file, sline, scol, eline, ecol, read_only, initial) },
+         _sim_data: i32,
+         eq: i32|
+         -> i32 { assert_failed(true, cond, msg, file, sline, scol, eline, ecol, read_only, initial, eq) },
     ))?;
     wt(linker.func_wrap(
         "rt",
@@ -588,8 +595,9 @@ pub fn add_host_builtins(linker: &mut wasmtime::Linker<HostState>) -> Result<()>
          read_only: i32,
          cond: i32,
          initial: i32,
-         _sim_data: i32|
-         -> i32 { assert_failed(false, cond, msg, file, sline, scol, eline, ecol, read_only, initial) },
+         _sim_data: i32,
+         eq: i32|
+         -> i32 { assert_failed(false, cond, msg, file, sline, scol, eline, ecol, read_only, initial, eq) },
     ))?;
     wt(linker.func_wrap(
         "rt",
@@ -608,7 +616,16 @@ pub fn add_host_builtins(linker: &mut wasmtime::Linker<HostState>) -> Result<()>
     wt(linker.func_wrap(
         "rt",
         "rt_assert_warning",
-        |cond: i32, msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, initial: i32| {
+        |cond: i32,
+         msg: i32,
+         file: i32,
+         sline: i32,
+         scol: i32,
+         eline: i32,
+         ecol: i32,
+         read_only: i32,
+         initial: i32,
+         eq: i32| {
             record_warning([
                 openmodelica_sim_meta::driver::ASSERT_WARNING,
                 cond,
@@ -620,6 +637,7 @@ pub fn add_host_builtins(linker: &mut wasmtime::Linker<HostState>) -> Result<()>
                 ecol,
                 read_only,
                 initial,
+                eq,
             ]);
         },
     ))?;
@@ -948,8 +966,11 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
              read_only: i32,
              cond: i32,
              initial: i32,
-             _sim_data: i32|
-             -> i32 { assert_failed(true, cond, msg, file, sline, scol, eline, ecol, read_only, initial) },
+             _sim_data: i32,
+             eq: i32|
+             -> i32 {
+                assert_failed(true, cond, msg, file, sline, scol, eline, ecol, read_only, initial, eq)
+            },
         ),
     );
     imports.define(
@@ -966,8 +987,11 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
              read_only: i32,
              cond: i32,
              initial: i32,
-             _sim_data: i32|
-             -> i32 { assert_failed(false, cond, msg, file, sline, scol, eline, ecol, read_only, initial) },
+             _sim_data: i32,
+             eq: i32|
+             -> i32 {
+                assert_failed(false, cond, msg, file, sline, scol, eline, ecol, read_only, initial, eq)
+            },
         ),
     );
     imports.define(
@@ -983,7 +1007,8 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
              eline: i32,
              ecol: i32,
              read_only: i32,
-             initial: i32| {
+             initial: i32,
+             eq: i32| {
                 record_warning([
                     openmodelica_sim_meta::driver::ASSERT_WARNING,
                     cond,
@@ -995,6 +1020,7 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
                     ecol,
                     read_only,
                     initial,
+                    eq,
                 ]);
             },
         ),

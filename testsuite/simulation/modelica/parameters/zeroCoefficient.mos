@@ -73,7 +73,7 @@ val(v, 0.0);
 // |                 | |       | This could lead to numerically dirty solutions or divisions by zero if not tearingStrictness=veryStrict.
 // LOG_ASSERT        | error   | [<interactive>:9:5-9:18:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((L <> 0.0)) --> \"Parameter L cannot be set to zero at run time, because that causes a structural change in the equations; set L = 0 in the model and recompile it.\"
+// |                 | |       | ((L <> 0.0), L=0) --> \"Parameter L cannot be set to zero at run time, because that causes a structural change in the equations; set L = 0 in the model and recompile it.\"
 // LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
 // "
 // end SimulationResult;
