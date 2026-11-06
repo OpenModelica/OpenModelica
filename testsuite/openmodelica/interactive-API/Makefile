@@ -206,6 +206,7 @@ Ticket6307.mos \
 Ticket6406.mos \
 simulateAcausalDAE1.mos \
 simulateAcausalDAE2.mos \
+simulateAcausalDAE3.mos \
 translateAcausalDAE1.mos \
 translateResidualsDAE1.mos \
 translateResidualsDAE2.mos \

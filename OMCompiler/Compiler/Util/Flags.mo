@@ -587,6 +587,8 @@ constant DebugFlag CHECK_USED_ELEMENTS_LOOKUP = DEBUG_FLAG(202, "checkUsedElemen
   "Checks the classes found by the lookup of getDefUseChains and getClassDiagram against the new frontend's lookup.");
 constant DebugFlag NF_SCRIPTING = DEBUG_FLAG(203, "nfScripting", EXTERNAL(), true,
   "Evaluates scripts with the new frontend.");
+constant DebugFlag HOMOTOPY_IN_RESIDUALS = DEBUG_FLAG(204, "homotopyInResiduals", EXTERNAL(), false,
+  "Keeps homotopy() in the DAE residuals, the generated code evaluates the branches that lambda selects.");
 
 public
 // CONFIGURATION FLAGS

@@ -7171,6 +7171,35 @@ template daeExpPartEvalFunctionBoxed(Exp exp, Context context, Text &preExp, Tex
       error(sourceInfo(), 'PARTEVALFUNCTION: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>, ty=<%unparseType(ty)%>, origType=<%unparseType(origType)%>')
 end daeExpPartEvalFunctionBoxed;
 
+template daeExpHomotopyLambda(Exp actual, Exp simplified, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
+ "Generates homotopy(actual, simplified) that evaluates only the branches lambda
+  selects: actual can be singular where only simplified is used (lambda = 0)."
+::=
+  let &preActual = buffer ""
+  let eActual = daeExp(actual, context, &preActual, &varDecls, &varFrees, &auxFunction)
+  let &preSimplified = buffer ""
+  let eSimplified = daeExp(simplified, context, &preSimplified, &varDecls, &varFrees, &auxFunction)
+  let tA = tempDecl("modelica_real", &varDecls, &varFrees)
+  let tS = tempDecl("modelica_real", &varDecls, &varFrees)
+  let lambda = 'data->simulationInfo->lambda'
+  let &preExp +=
+    <<
+    <%tA%> = 0.0;
+    <%tS%> = 0.0;
+    if(<%lambda%> > 0.0)
+    {
+      <%preActual%>
+      <%tA%> = <%eActual%>;
+    }
+    if(<%lambda%> < 1.0)
+    {
+      <%preSimplified%>
+      <%tS%> = <%eSimplified%>;
+    }<%\n%>
+    >>
+  '((<%lambda%> >= 1.0) ? <%tA%> : ((<%lambda%> <= 0.0) ? <%tS%> : <%lambda%> * <%tA%> + (1.0 - <%lambda%>) * <%tS%>))'
+end daeExpHomotopyLambda;
+
 template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates code for a function call."
 ::=
@@ -7182,6 +7211,14 @@ let &sub = buffer ""
     let var1 = daeExp(e1, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &varFrees, &auxFunction)
     var2
+
+  case CALL(path=IDENT(name="homotopy"), expLst={actual, simplified}, attr=CALL_ATTR(ty=T_REAL(__))) then
+    if Flags.isSet(Flags.HOMOTOPY_IN_RESIDUALS) then
+      daeExpHomotopyLambda(actual, simplified, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    else
+      let eActual = daeExp(actual, context, &preExp, &varDecls, &varFrees, &auxFunction)
+      let eSimplified = daeExp(simplified, context, &preExp, &varDecls, &varFrees, &auxFunction)
+      'homotopy(<%eActual%>, <%eSimplified%>)'
 
   case CALL(path=IDENT(name="der"), expLst={arg as CREF(__)}) then
     cref(crefPrefixDer(arg.componentRef), &sub)
