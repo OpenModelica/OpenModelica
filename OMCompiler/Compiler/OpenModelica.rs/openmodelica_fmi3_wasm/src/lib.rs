@@ -1105,7 +1105,8 @@ impl<E: FmiHost + 'static> MeState<E> {
     /// C's `updateIfNeeded`. In Initialization Mode the update is the initial
     /// solve, with the sets made so far as start values.
     fn update_if_needed(&mut self) -> Result<(), Status> {
-        if !self.need_update {
+        // Instantiated has start values only: nothing is evaluated before initialization.
+        if !self.need_update || self.mode == Mode::Instantiated {
             return Ok(());
         }
         // The point moved, so a Jacobian assembled at the old one is stale.

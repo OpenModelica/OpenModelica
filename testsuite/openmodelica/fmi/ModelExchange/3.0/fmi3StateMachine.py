@@ -1,6 +1,7 @@
 # Drives the FMI 3.0 C API of <me_cs.fmu>, <se.fmu> and <events.fmu>: every call below, on a fresh
 # instance, in every state the FMU can reach. The ALLOWED table comes from the
-# "Allowed Function Calls" lists of FMI 3.0.2, sections 2.3, 3.2, 4.2 and 5.2. Each
+# "Allowed Function Calls" lists of FMI 3.0.2, sections 2.3, 3.2, 4.2 and 5.2, with
+# fmi3Get{VariableType} in Instantiated as modelica/fmi-standard#2174 adds it. Each
 # call with variables passes none of them, as the state is all that is under test.
 # A call that is legal in the spec but refused, or the reverse, prints MISMATCH.
 # <events.fmu> has an event indicator and a parameter p, for the per-variable checks
@@ -111,7 +112,8 @@ RUNNING = EVENT | states("ME.ContinuousTime", "CS.Step", "CSE.Step", "SE.ClockAc
 TERMINATED = states("ME.Terminated", "CS.Terminated", "CSE.Terminated", "SE.Terminated")
 ME_INSPECT = states("ME.Initialization", "ME.Event", "ME.ContinuousTime", "ME.Terminated")
 
-GET = INITIALIZATION | RUNNING | TERMINATED
+DERIVATIVE = INITIALIZATION | RUNNING | TERMINATED
+GET = INSTANTIATED | DERIVATIVE
 # Configuration Mode takes structural parameters, so a call with no variable is legal there.
 SET_REAL = INSTANTIATED | CONFIGURATION | INITIALIZATION | RUNNING
 SET_OTHER = SET_REAL - states("ME.ContinuousTime")
@@ -139,7 +141,7 @@ ALLOWED = {
     "GetShiftDecimal": (INITIALIZATION, NO_REFS), "GetShiftFraction": (INITIALIZATION, (None, 0, None, None)),
     "SetIntervalDecimal": (INITIALIZATION, NO_REFS), "SetIntervalFraction": (INITIALIZATION, (None, 0, None, None)),
     "SetShiftDecimal": (INITIALIZATION, NO_REFS), "SetShiftFraction": (INITIALIZATION, (None, 0, None, None)),
-    "GetDirectionalDerivative": (GET, (None, 0, None, 0, None, 0, None, 0)),
+    "GetDirectionalDerivative": (DERIVATIVE, (None, 0, None, 0, None, 0, None, 0)),
     "GetOutputDerivatives": (states("CS.Step", "CSE.Step", "CS.Terminated", "CSE.Terminated"), (None, 0, None, None, 0)),
     "GetContinuousStates": (ME_INSPECT, (C.byref(x), 1)),
     "GetContinuousStateDerivatives": (ME_INSPECT, (C.byref(x), 1)),
@@ -250,4 +252,20 @@ for name, make in (("ME", events.me), ("CS", events.cs)):
     print("%s: SetFloat64 of p in Configuration Mode: %d, then ExitConfigurationMode: %d"
           % (name, events.lib.fmi3SetFloat64(P(i), C.byref(vr), C.c_size_t(1), C.byref(value), C.c_size_t(1)),
              events.lib.fmi3ExitConfigurationMode(P(i))))
+    events.lib.fmi3FreeInstance(i)
+
+# Instantiated: the start values, or what was set, and nothing evaluated yet.
+def get(i, name):
+    vr, value = C.c_uint32(events.vr[name]), C.c_double()
+    status = events.lib.fmi3GetFloat64(P(i), C.byref(vr), C.c_size_t(1), C.byref(value), C.c_size_t(1))
+    return "%s: %d = %g" % (name, status, value.value) if status == 0 else "%s: %d" % (name, status)
+
+
+for name, make in (("ME", events.me), ("CS", events.cs)):
+    i = make()
+    vr, value = C.c_uint32(events.vr["p"]), C.c_double(2.0)
+    before = ", ".join(get(i, n) for n in ("time", "x", "p", "y"))
+    status = events.lib.fmi3SetFloat64(P(i), C.byref(vr), C.c_size_t(1), C.byref(value), C.c_size_t(1))
+    print("%s.Instantiated: GetFloat64 %s; SetFloat64 p = 2: %d, then GetFloat64 %s"
+          % (name, before, status, ", ".join(get(i, n) for n in ("p", "x"))))
     events.lib.fmi3FreeInstance(i)

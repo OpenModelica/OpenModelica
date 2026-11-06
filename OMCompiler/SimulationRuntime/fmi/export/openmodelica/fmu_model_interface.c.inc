@@ -61,19 +61,26 @@
 #if OMC_FMI_VERSION == 2
 #define CONFIGURATION_MODE_STATE 0
 #define CS_EVENT_MODE_STATE 0
+#define GET_INSTANTIATED_STATE 0
 #define SET_TIME_ME_STATES (model_state_me_event_mode|model_state_me_continuous_time_mode)
 #define SET_CONTINUOUS_STATES_ME_STATES (model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode)
 #define GET_NOMINALS_ME_STATES (model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error)
 #else
 #define CONFIGURATION_MODE_STATE model_state_configuration_mode
 #define CS_EVENT_MODE_STATE model_state_cs_event_mode
+/* FMI 3.0 returns the start values, or what was set, in Instantiated
+   (modelica/fmi-standard#2174, after 3.0.2). */
+#define GET_INSTANTIATED_STATE model_state_instantiated
 #define SET_TIME_ME_STATES model_state_me_continuous_time_mode
 #define SET_CONTINUOUS_STATES_ME_STATES model_state_me_continuous_time_mode
 #define GET_NOMINALS_ME_STATES (model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error)
 #endif
 
-#define GET_ME_STATES (model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error)
-#define GET_CS_STATES (model_state_initialization_mode|model_state_cs_step_complete|CS_EVENT_MODE_STATE|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error)
+/* The directional and adjoint derivatives, and fmi3Get{VariableType} after Instantiated. */
+#define DERIVATIVE_ME_STATES (model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error)
+#define DERIVATIVE_CS_STATES (model_state_initialization_mode|model_state_cs_step_complete|CS_EVENT_MODE_STATE|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error)
+#define GET_ME_STATES (GET_INSTANTIATED_STATE|DERIVATIVE_ME_STATES)
+#define GET_CS_STATES (GET_INSTANTIATED_STATE|DERIVATIVE_CS_STATES)
 #define SET_REAL_ME_STATES (model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode)
 #define SET_REAL_CS_STATES (model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|CS_EVENT_MODE_STATE)
 #define GET_OUTPUT_DERIVATIVES_CS_STATES (model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error)
@@ -831,7 +838,8 @@ fmiXStatus updateIfNeeded(ModelInstance *comp, const char *func)
   jmp_buf *old_jmp=threadData->mmc_jumper;
   int success = 0;
 
-  if (comp->_need_update)
+  /* Instantiated has start values only: nothing is evaluated before initialization. */
+  if (comp->_need_update && comp->state != model_state_instantiated)
   {
     setThreadData(comp);
 
@@ -2240,7 +2248,7 @@ fmiXStatus FMIX(GetDirectionalDerivative)(fmiXComponent c,
   int independent = modelData->nStates+modelData->nInputVars;
   int dependent = modelData->nStates+modelData->nOutputVars;
 
-  if (invalidState(comp, FMIX_STR "GetDirectionalDerivative", GET_ME_STATES, GET_CS_STATES))
+  if (invalidState(comp, FMIX_STR "GetDirectionalDerivative", DERIVATIVE_ME_STATES, DERIVATIVE_CS_STATES))
     return fmiXError;
   if (!comp->_has_jacobian)
     return unsupportedFunction(comp, FMIX_STR "GetDirectionalDerivative");

@@ -418,6 +418,11 @@ fmi3Status fmi3GetFloat64(fmi3Instance instance, const fmi3ValueReference valueR
         fmi3Float64 ei[NUMBER_OF_EVENT_INDICATORS];
         fmi3Status s;
         if (evr - (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START >= NUMBER_OF_EVENT_INDICATORS) return fmi3Error;
+        /* Instantiated: the stored value, as nothing is evaluated before initialization. */
+        if (comp->state == model_state_instantiated) {
+          values[k] = (fmi3Float64)comp->fmuData->simulationInfo->zeroCrossings[evr - (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START];
+          continue;
+        }
         s = internalGetEventIndicators((ModelInstance*)comp, "fmi3GetFloat64", ei, NUMBER_OF_EVENT_INDICATORS);
         if (s > fmi3Warning) return (fmi3Status)s;
         values[k] = (fmi3Float64)ei[evr - (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START];
@@ -866,7 +871,7 @@ fmi3Status fmi3GetDirectionalDerivative(fmi3Instance instance, const fmi3ValueRe
   fmi3ValueReference *u, *k;
   fmi3Status status;
   if (!c) return fmi3Error;
-  if (invalidState(c, "fmi3GetDirectionalDerivative", GET_ME_STATES, GET_CS_STATES)) return fmi3Error;
+  if (invalidState(c, "fmi3GetDirectionalDerivative", DERIVATIVE_ME_STATES, DERIVATIVE_CS_STATES)) return fmi3Error;
   if (nUnknowns == 0) return fmi3OK;
   if (nullPointer(c, "fmi3GetDirectionalDerivative", "unknowns", unknowns) ||
       nullPointer(c, "fmi3GetDirectionalDerivative", "knowns", knowns) ||
@@ -897,7 +902,7 @@ fmi3Status fmi3GetAdjointDerivative(fmi3Instance instance, const fmi3ValueRefere
   ModelInstance* c = fmu3InnerComp(instance);
   (void)unknowns; (void)nUnknowns; (void)knowns; (void)nKnowns;
   (void)seed; (void)nSeed; (void)sensitivity; (void)nSensitivity;
-  if (c) invalidState(c, "fmi3GetAdjointDerivative", GET_ME_STATES, GET_CS_STATES);
+  if (c) invalidState(c, "fmi3GetAdjointDerivative", DERIVATIVE_ME_STATES, DERIVATIVE_CS_STATES);
   return fmi3Error;
 }
 

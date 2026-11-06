@@ -35,8 +35,11 @@ mod st {
     pub const TERMINATED: u32 = 1 << 7;
     pub const ERROR: u32 = 1 << 8;
     pub const ANY: u32 = u32::MAX;
-    /// fmi3Get{VariableType} and the directional derivatives.
-    pub const GET: u32 = INIT | EVENT | CONTINUOUS | STEP | CLOCK | TERMINATED | ERROR;
+    /// The directional and adjoint derivatives, and fmi3Get{VariableType} after Instantiated.
+    pub const DERIVATIVE: u32 = INIT | EVENT | CONTINUOUS | STEP | CLOCK | TERMINATED | ERROR;
+    /// fmi3Get{VariableType}. Instantiated returns the start values, or what was
+    /// set (modelica/fmi-standard#2174, after 3.0.2).
+    pub const GET: u32 = INSTANTIATED | DERIVATIVE;
     /// fmi3SetFloat{32,64}. Configuration Mode takes structural parameters only,
     /// see [`in_set_state`].
     pub const SET_REAL: u32 = INSTANTIATED | CONFIGURATION | INIT | EVENT | CONTINUOUS | STEP | CLOCK;
@@ -809,13 +812,13 @@ macro_rules! derivative {
 derivative!(
     omc_fmi3GetDirectionalDerivative,
     "fmi3GetDirectionalDerivative",
-    st::GET,
+    st::DERIVATIVE,
     get_directional_derivative
 );
 derivative!(
     omc_fmi3GetAdjointDerivative,
     "fmi3GetAdjointDerivative",
-    st::GET,
+    st::DERIVATIVE,
     get_adjoint_derivative
 );
 
@@ -825,7 +828,7 @@ pub unsafe extern "C" fn omc_fmi3GetNumberOfVariableDependencies(
     value_reference: u32,
     n_dependencies: *mut usize,
 ) -> c_int {
-    let Some(c) = in_state(c, "fmi3GetNumberOfVariableDependencies", st::INSTANTIATED | st::GET) else {
+    let Some(c) = in_state(c, "fmi3GetNumberOfVariableDependencies", st::GET) else {
         return ERROR;
     };
     match c.n.inst.get_number_of_variable_dependencies(value_reference) {
@@ -844,7 +847,7 @@ pub unsafe extern "C" fn omc_fmi3GetVariableDependencies(
     dependency_kinds: *mut c_int,
     n_dependencies: usize,
 ) -> c_int {
-    let Some(c) = in_state(c, "fmi3GetVariableDependencies", st::INSTANTIATED | st::GET) else {
+    let Some(c) = in_state(c, "fmi3GetVariableDependencies", st::GET) else {
         return ERROR;
     };
     let deps = match c.n.inst.get_variable_dependencies(dependent) {

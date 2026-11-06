@@ -60,25 +60,25 @@ readFile("StateMachine.log"); getErrorString();
 // "
 // 0
 // ""
-// "GetFloat64: 14 states
-// GetInt32: 14 states
-// GetInt64: 14 states
-// GetBoolean: 14 states
-// GetString: 14 states
-// GetBinary: 14 states
+// "GetFloat64: 17 states
+// GetInt32: 17 states
+// GetInt64: 17 states
+// GetBoolean: 17 states
+// GetString: 17 states
+// GetBinary: 17 states
 // SetFloat64: 13 states
 // SetInt32: 12 states
 // SetInt64: 12 states
 // SetBoolean: 12 states
 // SetString: 12 states
 // SetBinary: 12 states
-// GetFloat32: 14 states
-// GetInt8: 14 states
-// GetUInt8: 14 states
-// GetInt16: 14 states
-// GetUInt16: 14 states
-// GetUInt32: 14 states
-// GetUInt64: 14 states
+// GetFloat32: 17 states
+// GetInt8: 17 states
+// GetUInt8: 17 states
+// GetInt16: 17 states
+// GetUInt16: 17 states
+// GetUInt32: 17 states
+// GetUInt64: 17 states
 // SetFloat32: 13 states
 // SetInt8: 12 states
 // SetUInt8: 12 states
@@ -137,6 +137,8 @@ readFile("StateMachine.log"); getErrorString();
 // CSE.Step, after DoStep: GetFloat64 of __zc_0: 0
 // ME: SetFloat64 of p in Configuration Mode: 3, then ExitConfigurationMode: 3
 // CS: SetFloat64 of p in Configuration Mode: 3, then ExitConfigurationMode: 3
+// ME.Instantiated: GetFloat64 time: 0 = 0, x: 0 = 1, p: 0 = 1, y: 0 = 0; SetFloat64 p = 2: 0, then GetFloat64 p: 0 = 2, x: 0 = 1
+// CS.Instantiated: GetFloat64 time: 0 = 0, x: 0 = 1, p: 0 = 1, y: 0 = 0; SetFloat64 p = 2: 0, then GetFloat64 p: 0 = 2, x: 0 = 1
 // "
 // ""
 // endResult
