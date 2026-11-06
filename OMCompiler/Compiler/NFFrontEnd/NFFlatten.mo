@@ -1874,8 +1874,8 @@ algorithm
         algorithm
           // The condition couldn't be evaluated, print an error and fail.
           Error.addSourceMessage(Error.TYPE_MISMATCH_IF_EXP,
-            {"", Expression.toString(tb), Type.toString(Expression.typeOf(tb)),
-                 Expression.toString(fb), Type.toString(Expression.typeOf(fb))}, info);
+            {Expression.toString(tb), Type.toString(Expression.typeOf(tb)),
+             Expression.toString(fb), Type.toString(Expression.typeOf(fb))}, info);
         then
           fail();
     end match;
