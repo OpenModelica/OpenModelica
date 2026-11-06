@@ -59,11 +59,11 @@ private slots:
    */
   void arrayEditorButtonExistsForArrayParameters();
   /*!
-   * \brief arrayParameterEditorDialogSerializesWithBrackets
-   * Checks that ArrayParameterEditorDialog parses square bracket array literals into cells
-   * and serializes them back using curly brace syntax e.g. {{1,2},{3,4}}.
+   * \brief arrayParameterEditorDialogSerializesArrayLiterals
+   * Checks that ArrayParameterEditorDialog parses array literals into cells
+   * and serializes them using curly brace syntax e.g. {{1,2},{3,4}}.
    */
-  void arrayParameterEditorDialogSerializesWithBrackets();
+  void arrayParameterEditorDialogSerializesArrayLiterals();
   /*!
    * \brief arrayParameterEditorDialogParsesCurlyBraces
    * Checks that ArrayParameterEditorDialog parses curly brace array literals and that

@@ -471,9 +471,9 @@ void ArrayParameterEditorDialog::expressionTextEdited(const QString &text)
 /*!
  * \brief ArrayParameterEditorDialog::parseArrayValue
  * Parses a Modelica array expression using the FlatModelica expression parser.
- * Supported are array literals with curly braces e.g. {1, 2, 3}, {{1, 2}, {3, 4}}
- * or square brackets e.g. [1, 2], [1, 2; 3, 4]. Arrays with more than 2 dimensions are flattened into a 2D
- * table where each cell holds a nested array literal.
+ * Supported are array literals with curly braces e.g. {1, 2, 3}, {{1, 2}, {3, 4}}.
+ * Arrays with more than 2 dimensions are flattened into a 2D table where each
+ * cell holds a nested array literal.
  * An empty value is valid: the table stays enabled and the user can edit it.
  * \return true if the value is a supported array expression.
  */
@@ -499,7 +499,7 @@ bool ArrayParameterEditorDialog::parseArrayValue(const QString &arrayValue)
   }
 
   if (exp.isArray()) {
-    // array literal: {1, 2, 3} / {{1, 2}, {3, 4}} / [1, 2] / [1, 2; 3, 4]
+    // array literal: {1, 2, 3} / {{1, 2}, {3, 4}}
     const size_t ndims = exp.ndims();
     if (ndims == 1) {
       // vectors are displayed vertically, with one value in each row.

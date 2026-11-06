@@ -117,10 +117,10 @@ void ArrayParameterEditor::arrayEditorButtonExistsForArrayParameters()
   delete pElementParameters;
 }
 
-void ArrayParameterEditor::arrayParameterEditorDialogSerializesWithBrackets()
+void ArrayParameterEditor::arrayParameterEditorDialogSerializesArrayLiterals()
 {
-  // matrix literal [[1, 2]; [3, 4]]
-  ArrayParameterEditorDialog matrixDialog("[[1, 2]; [3, 4]]", "[[1, 2]; [3, 4]]", "table",
+  // matrix literal {{1, 2}, {3, 4}}
+  ArrayParameterEditorDialog matrixDialog("{{1, 2}, {3, 4}}", "{{1, 2}, {3, 4}}", "table",
                                           unconstrainedDimensions(2), unconstrainedDimensions(2), MainWindow::instance());
   QTableWidget *pTable = matrixDialog.findChild<QTableWidget*>();
   QVERIFY(pTable);
@@ -133,11 +133,11 @@ void ArrayParameterEditor::arrayParameterEditorDialogSerializesWithBrackets()
 
   pTable->item(1, 1)->setText("9");
   QVERIFY(QMetaObject::invokeMethod(&matrixDialog, "okClicked"));
-  // serialization always uses curly braces
+  // serialization uses compact curly brace syntax
   QCOMPARE(matrixDialog.getArrayValue(), QString("{{1,2},{3,9}}"));
 
-  // vector literal [1, 2, 3] with an empty cell
-  ArrayParameterEditorDialog vectorDialog("[1, 2, 3]", "[1, 2, 3]", "table",
+  // vector literal {1, 2, 3} with an empty cell
+  ArrayParameterEditorDialog vectorDialog("{1, 2, 3}", "{1, 2, 3}", "table",
                                           unconstrainedDimensions(1), unconstrainedDimensions(1), MainWindow::instance());
   QTableWidget *pVectorTable = vectorDialog.findChild<QTableWidget*>();
   QVERIFY(pVectorTable);
@@ -147,8 +147,8 @@ void ArrayParameterEditor::arrayParameterEditorDialogSerializesWithBrackets()
   QVERIFY(QMetaObject::invokeMethod(&vectorDialog, "okClicked"));
   QCOMPARE(vectorDialog.getArrayValue(), QString("{1,0,3}"));
 
-  // column vector [1; 2; 3]
-  ArrayParameterEditorDialog columnDialog("[1; 2; 3]", "[1; 2; 3]", "table",
+  // vector literal {1, 2, 3}
+  ArrayParameterEditorDialog columnDialog("{1, 2, 3}", "{1, 2, 3}", "table",
                                           unconstrainedDimensions(1), unconstrainedDimensions(1), MainWindow::instance());
   QTableWidget *pColumnTable = columnDialog.findChild<QTableWidget*>();
   QVERIFY(pColumnTable);
@@ -225,13 +225,13 @@ void ArrayParameterEditor::arrayParameterEditorDialogParsesCurlyBraces()
   QCOMPARE(pTable->item(1, 0)->text(), QString("3"));
   QCOMPARE(pTable->item(1, 1)->text(), QString("4"));
 
-  // serialization always uses curly braces even when loaded with square brackets
+  // serialization uses compact curly brace syntax
   QVERIFY(QMetaObject::invokeMethod(&matrixDialog, "okClicked"));
   // no cell was edited so the expression reverts to the default value (placeholder)
   QCOMPARE(matrixDialog.getArrayValue(), QString("{{1, 2}, {3, 4}}"));
 
-  // mixed: square matrix loaded then edited
-  ArrayParameterEditorDialog mixedDialog("[1, 2, 3; 4, 5, 6]", "[1, 2, 3; 4, 5, 6]", "table",
+  // matrix loaded then edited
+  ArrayParameterEditorDialog mixedDialog("{{1, 2, 3}, {4, 5, 6}}", "{{1, 2, 3}, {4, 5, 6}}", "table",
                                          unconstrainedDimensions(2), unconstrainedDimensions(2), MainWindow::instance());
   QTableWidget *pMixedTable = mixedDialog.findChild<QTableWidget*>();
   QVERIFY(pMixedTable);
@@ -354,12 +354,12 @@ void ArrayParameterEditor::arrayParameterEditorDialogHandlesThreeDimensionalArra
   QVERIFY(pTable);
   QCOMPARE(pTable->rowCount(), 2);
   QCOMPARE(pTable->columnCount(), 3);
-  QCOMPARE(pTable->item(0, 0)->text(), QString("{1, 7}"));
-  QCOMPARE(pTable->item(0, 1)->text(), QString("{2, 8}"));
-  QCOMPARE(pTable->item(0, 2)->text(), QString("{3, 9}"));
-  QCOMPARE(pTable->item(1, 0)->text(), QString("{4, 10}"));
-  QCOMPARE(pTable->item(1, 1)->text(), QString("{5, 11}"));
-  QCOMPARE(pTable->item(1, 2)->text(), QString("{6, 12}"));
+  QCOMPARE(pTable->item(0, 0)->text(), QString("{1,7}"));
+  QCOMPARE(pTable->item(0, 1)->text(), QString("{2,8}"));
+  QCOMPARE(pTable->item(0, 2)->text(), QString("{3,9}"));
+  QCOMPARE(pTable->item(1, 0)->text(), QString("{4,10}"));
+  QCOMPARE(pTable->item(1, 1)->text(), QString("{5,11}"));
+  QCOMPARE(pTable->item(1, 2)->text(), QString("{6,12}"));
 
   // serialization recreates the nested 3D literal
   QVERIFY(QMetaObject::invokeMethod(&dialog3D, "okClicked"));
