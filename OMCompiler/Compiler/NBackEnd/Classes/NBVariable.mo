@@ -53,13 +53,11 @@ public
   import BackendExtension = NFBackendExtension;
   import NFBackendExtension.{BackendInfo, StateSelect, TearingSelect, VariableAttributes, VariableKind, OptimizerExpression};
   import NFBinding.Binding;
-  import Call = NFCall;
   import Ceval = NFCeval;
   import Class = NFClass;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
-  import NFFunction.Function;
   import NFInstNode.InstNode;
   import Prefixes = NFPrefixes;
   import Scalarize = NFScalarize;
@@ -1971,11 +1969,6 @@ function isJacobianResultVar
     protected
       Expression new_exp;
     algorithm
-      // explicitly impure calls are not evaluated during translation
-      if Expression.contains(exp, isExplicitlyImpureCall) then
-        b := false;
-        return;
-      end if;
       b := Expression.isLiteralXML(exp);
       if not b or (resizable and not Expression.isLiteral(exp)) then
         // try to extract literal from array constructor (use dummy map, there should not be any new iterators)
@@ -3164,18 +3157,6 @@ protected
   algorithm
     Pointer.update(acc, getVarName(var) :: Pointer.access(acc));
   end getVarNameTraverse;
-
-  function isExplicitlyImpureCall
-    input Expression exp;
-    output Boolean b;
-  algorithm
-    b := match exp
-      local
-        Function fn;
-      case Expression.CALL(call = Call.TYPED_CALL(fn = fn)) then Function.isExplicitlyImpure(fn);
-      else false;
-    end match;
-  end isExplicitlyImpureCall;
 
   annotation(__OpenModelica_Interface="nbackend");
 end NBVariable;
