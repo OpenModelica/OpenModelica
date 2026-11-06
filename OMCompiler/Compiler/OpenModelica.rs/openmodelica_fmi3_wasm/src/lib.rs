@@ -1242,7 +1242,8 @@ impl<E: FmiHost + 'static> MeState<E> {
     /// C's `updateIfNeeded`. In Initialization Mode the update is the initial
     /// solve, with the sets made so far as start values.
     fn update_if_needed(&mut self) -> Result<(), Status> {
-        if !self.need_update {
+        // Instantiated has start values only: nothing is evaluated before initialization.
+        if !self.need_update || self.mode == Mode::Instantiated {
             return Ok(());
         }
         // The point moved, so a Jacobian assembled at the old one is stale.
@@ -2781,6 +2782,17 @@ impl<E: FmiHost + 'static> Instance<E> {
             driver::log_cs_solver_setup(&st.meta);
         }
         Some(inst)
+    }
+
+    /// Whether the FMU has a structural parameter: only fmi-ls-dae's switch.
+    pub fn has_structural_parameters(&self) -> bool {
+        self.st.borrow().dae_enable_vr != 0
+    }
+
+    /// Whether `vr` is a structural parameter, all Configuration Mode may set.
+    pub fn is_structural_parameter(&self, vr: u32) -> bool {
+        let st = self.st.borrow();
+        vr != 0 && vr == st.dae_enable_vr
     }
 
     /// C's `fmi3ActivateModelPartition`: the importer owns the schedule, so the
