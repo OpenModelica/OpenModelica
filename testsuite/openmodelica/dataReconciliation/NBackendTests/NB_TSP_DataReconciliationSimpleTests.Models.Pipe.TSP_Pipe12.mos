@@ -3,8 +3,9 @@
 // status:   correct
 // teardown_command: rm -rf TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe12 TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe12_* Reconciled_TSP_DataReconciliationSimpleTests_Models_Pipe_TSP_Pipe12.mo TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe12.html
 //
-// TODO: the simulation of the reconciled system fails at initialization:
-//   Solving non-linear system 8 failed at time=0.
+// TODO: the simulation of the reconciled system fails in all runtimes: the C runtime
+// at initialization (non-linear system 8), the Rust runtime when it evaluates the
+// jacobian F ("incorrect fluid number") and wasm-jit with a trap in reconJacF.
 // The extraction algorithm and its verification succeed.
 // Both backends report Condition 2-Failed (ill-posed problem).
 
@@ -24,10 +25,12 @@ for i in 1:size(AnnotationNamedModifiers, 1) loop
 end for;
 print("simFlags: "+simFlags);
 
-simulate(TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe12, simflags=simFlags);
-getErrorString();
-
-readFile("TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe12_Outputs.csv");
+// How the simulation fails depends on the runtime (C or Rust), so only
+// record that it fails: resultFile stays empty until the model works.
+echo(false);
+res := simulate(TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe12, simflags=simFlags);
+echo(true);
+res.resultFile;
 getErrorString();
 
 // Result:
@@ -1156,25 +1159,8 @@ getErrorString();
 // -Passed
 //  Set_S has 11 equations and 11 variables
 //
-// record SimulationResult
-//     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe12', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Pipe12_Inputs.csv'",
-//     messages = "Simulation execution failed for model: TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe12
-// LOG_STDOUT        | warning | While solving non-linear system an assertion failed during initialization.
-// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
-// |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS_V
-// LOG_STDOUT        | warning | While solving non-linear system an assertion failed during initialization.
-// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
-// |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS_V
-// LOG_ASSERT        | debug   | Solving non-linear system 8 failed at time=0.
-// |                 | |       | For more information please use -lv LOG_NLS.
-// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
-// LOG_STDOUT        | info    | DataReconciliation Starting!
-// LOG_STDOUT        | info    | TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe12
-// "
-// end SimulationResult;
+// true
+// ""
 // "[TSP_DataReconciliationSimpleTests 4.0.0/Components/PressureLoss/SingularPressureLoss.mo:39:3-40:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [TSP_DataReconciliationSimpleTests 4.0.0/Components/PressureLoss/SingularPressureLoss.mo:41:3-42:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [TSP_DataReconciliationSimpleTests 4.0.0/Components/PressureLoss/SingularPressureLoss.mo:39:3-40:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
@@ -1192,8 +1178,5 @@ getErrorString();
 // [ThermoSysPro 4.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:118:3-118:151:writable] Warning: 'du2satp_der' is used uninitialized and may cause unexpected behaviour. This is deprecated and will become an error in future releases.
 // [ThermoSysPro 4.2.0/Properties/Fluid/derDensity_derP_derh.mo:56:5-56:88:writable] Warning: 'T' is used uninitialized and may cause unexpected behaviour. This is deprecated and will become an error in future releases.
 // Error: Internal error : Condition 2-Failed: All variables of interest must be involved in Set-C or Set-S: The data reconciliation problem is ill-posed
-// "
-// ""
-// "Error: Error opening file: TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe12_Outputs.csv: No such file or directory.
 // "
 // endResult
