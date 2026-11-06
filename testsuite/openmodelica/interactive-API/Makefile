@@ -22,6 +22,7 @@ Buildings.PartialFlowMachine.mos \
 checkAllModelsRecursive1.mos \
 CheckModel1.mos \
 CheckModel2.mos \
+CheckModel3.mos \
 CheckModelNonexistentClass1.mos \
 CheckModelExtObj1.mos \
 choicesAllMatching.mos \
