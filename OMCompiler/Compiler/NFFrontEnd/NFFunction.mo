@@ -1170,9 +1170,8 @@ uniontype Function
           s.arg := SOME(arg);
           slots[i] := s;
         else
-          // TODO: Improve the error message, should mention function name.
           Error.addSourceMessage(Error.FUNCTION_SLOT_ALREADY_FILLED,
-            {arg_name, ""}, info);
+            {arg_name, InstNode.name(instance(fn))}, info);
           matching := false;
         end if;
 
@@ -1190,7 +1189,7 @@ uniontype Function
       if arg_name == Slot.name(s) then
         // We found a slot, so it must have already been filled.
         Error.addSourceMessage(Error.FUNCTION_SLOT_ALREADY_FILLED,
-          {arg_name, ""}, info);
+          {arg_name, InstNode.name(instance(fn))}, info);
         return;
       end if;
 

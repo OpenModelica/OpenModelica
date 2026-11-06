@@ -13,7 +13,7 @@ end ConditionalArrayExpression1;
 
 // Result:
 // Error processing file: ConditionalArrayExpression1.mo
-// [flattening/modelica/equations/ConditionalArrayExpression1.mo:11:3-11:34:writable] Error: Type mismatch in if-expression in component . True branch: c has type Real[2], false branch: cat(1, {{d}}, {{e}}) has type Real[2, 1].
+// [flattening/modelica/equations/ConditionalArrayExpression1.mo:11:3-11:34:writable] Error: Type mismatch in if-expression. True branch: c has type Real[2], false branch: cat(1, {{d}}, {{e}}) has type Real[2, 1].
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

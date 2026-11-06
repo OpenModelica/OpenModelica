@@ -2899,8 +2899,8 @@ algorithm
 
   if TypeCheck.isIncompatibleMatch(ty_match) then
     Error.addSourceMessage(Error.TYPE_MISMATCH_IF_EXP,
-      {"", Expression.toString(tb), Type.toString(tb_ty),
-           Expression.toString(fb), Type.toString(fb_ty)}, info);
+      {Expression.toString(tb), Type.toString(tb_ty),
+       Expression.toString(fb), Type.toString(fb_ty)}, info);
     fail();
   end if;
 
