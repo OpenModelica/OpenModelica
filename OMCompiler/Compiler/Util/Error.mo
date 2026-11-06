@@ -212,7 +212,7 @@ public constant ErrorTypes.Message MATRIX_EXP_ROW_SIZE = ErrorTypes.MESSAGE(66, 
 public constant ErrorTypes.Message OPERAND_BUILTIN_TYPE = ErrorTypes.MESSAGE(67, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Operand of %s in component %s must be builtin-type in %s.");
 public constant ErrorTypes.Message WRONG_TYPE_OR_NO_OF_ARGS = ErrorTypes.MESSAGE(68, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  "Wrong type or wrong number of arguments to %s (in component %s).");
+  "Wrong type or wrong number of arguments to %s.");
 public constant ErrorTypes.Message DIFFERENT_DIM_SIZE_IN_ARGUMENTS = ErrorTypes.MESSAGE(69, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Different dimension sizes in arguments to %s in component %s.");
 public constant ErrorTypes.Message LOOKUP_IMPORT_ERROR = ErrorTypes.MESSAGE(70, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -226,7 +226,7 @@ public constant ErrorTypes.Message ARGUMENT_MUST_BE_DISCRETE_VAR = ErrorTypes.ME
 public constant ErrorTypes.Message TYPE_MUST_BE_SIMPLE = ErrorTypes.MESSAGE(74, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Type in %s must be simple type in component %s.");
 public constant ErrorTypes.Message ARGUMENT_MUST_BE_VARIABLE = ErrorTypes.MESSAGE(75, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  "%s argument to %s in component %s must be a variable.");
+  "%s argument to %s must be a variable.");
 public constant ErrorTypes.Message NO_MATCHING_FUNCTION_FOUND = ErrorTypes.MESSAGE(76, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "No matching function found for %s in component %s\ncandidates are %s");
 public constant ErrorTypes.Message NO_MATCHING_FUNCTION_FOUND_NO_CANDIDATE = ErrorTypes.MESSAGE(77, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -234,7 +234,7 @@ public constant ErrorTypes.Message NO_MATCHING_FUNCTION_FOUND_NO_CANDIDATE = Err
 public constant ErrorTypes.Message FUNCTION_COMPS_MUST_HAVE_DIRECTION = ErrorTypes.MESSAGE(78, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Component %s in function is neither input nor output.");
 public constant ErrorTypes.Message FUNCTION_SLOT_ALREADY_FILLED = ErrorTypes.MESSAGE(79, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  "Slot %s already filled in a function call in component %s.");
+  "Slot %s is already filled in call of %s.");
 public constant ErrorTypes.Message NO_SUCH_PARAMETER = ErrorTypes.MESSAGE(80, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Function %s has no parameter named %s.");
 public constant ErrorTypes.Message CONSTANT_OR_PARAM_WITH_NONCONST_BINDING = ErrorTypes.MESSAGE(81, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -242,9 +242,9 @@ public constant ErrorTypes.Message CONSTANT_OR_PARAM_WITH_NONCONST_BINDING = Err
 public constant ErrorTypes.Message WRONG_DIMENSION_TYPE = ErrorTypes.MESSAGE(82, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Subscript %s of type %s is not a subtype of Integer, Boolean or enumeration.");
 public constant ErrorTypes.Message TYPE_MISMATCH_IF_EXP = ErrorTypes.MESSAGE(83, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  "Type mismatch in if-expression in component %s. True branch: %s has type %s, false branch: %s has type %s.");
+  "Type mismatch in if-expression. True branch: %s has type %s, false branch: %s has type %s.");
 public constant ErrorTypes.Message UNRESOLVABLE_TYPE = ErrorTypes.MESSAGE(84, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  "Cannot resolve type of expression %s. The operands have types %s in component %s.");
+  "Cannot resolve type of expression %s. The operands have types %s.");
 public constant ErrorTypes.Message INCOMPATIBLE_TYPES = ErrorTypes.MESSAGE(85, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Incompatible argument types to operation %s in component %s, left type: %s, right type: %s");
 public constant ErrorTypes.Message NON_ENCAPSULATED_CLASS_ACCESS = ErrorTypes.MESSAGE(86, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
