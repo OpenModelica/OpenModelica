@@ -37,4 +37,16 @@ translateModel(UncertainAliasSimulation.Plain); getErrorString();
 translateModel(UncertainAliasSimulation.Refine); getErrorString();
 
 // Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// "Warning: NBAlias.selectStartByConfidence: Alias set with conflicting unfixed start values of equal confidence detected. Use -d=dumprepl for more information.
+// "
+// true
+// "Warning: NBAlias.selectStartByConfidence: Alias set with conflicting unfixed start values of equal confidence detected. Use -d=dumprepl for more information.
+// "
 // endResult

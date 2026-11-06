@@ -73,32 +73,24 @@ NB_TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR.mos \
 NB_TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_WithHARE.mos \
 NB_UncertainAliasSimulation.mos
 
-# The tests of TESTFILES whose SET-S has an algebraic loop. The jacobian F
-# then contains a linear system, which the new backend cannot generate yet,
-# and the simulation fails with "residual function pointer is invalid". See
-# the TODO at createJacobian in NBDataReconciliation.mo. They keep the failure
-# as expected result. Run make testJacobianLoops
-JACOBIAN_LOOP_TESTFILES = \
-NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5e.mos \
-NB_ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5f.mos \
-NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows.mos \
-NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows1.mos \
+# The tests of TESTFILES whose reconciled system fails to simulate at
+# initialization. They keep the failure as expected result. Run make testSimulation
+SIMULATION_TESTFILES = \
 NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows3.mos \
 NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows7.mos \
 NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows9.mos \
-NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe7.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows10.mos \
 NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe8.mos \
-NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe10.mos \
-NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe11.mos \
 NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe12.mos \
 
 # The tests of TESTFILES that fail in the initialization of the reconciled
-# system: NBTearing fails with "UnorderedMap.getSafe failed because the key did
-# not exist". They keep the failure as expected result. Run make testInitialization
+# system, in NBTearing or NBResolveSingularities. They keep the failure as
+# expected result. Run make testInitialization
 INITIALIZATION_TESTFILES = \
 NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows2.mos \
 NB_TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows5.mos \
 NB_TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR.mos \
+NB_TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe6.mos \
 
 # The tests of TESTFILES that fail in NSimCode because the tuple equation of
 # Water_sat_P is not solved (Solve.UNPROCESSED). They keep the failure as
@@ -125,7 +117,7 @@ Makefile \
 
 CLEAN = `ls | grep -x -v -f deps.tmp`
 
-.PHONY : test baseline testJacobianLoops testInitialization testTupleEquations clean getdeps failingtest failtestbaseline
+.PHONY : test baseline testSimulation testInitialization testTupleEquations clean getdeps failingtest failtestbaseline
 
 test:
 	@echo
@@ -141,12 +133,12 @@ baseline:
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	@$(BASELINE) $(TESTFILES)
 
-testJacobianLoops:
+testSimulation:
 	@echo
-	@echo Running tests with loops in the jacobian F...
+	@echo Running tests whose simulation fails...
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
-	@$(TEST) $(JACOBIAN_LOOP_TESTFILES)
+	@$(TEST) $(SIMULATION_TESTFILES)
 
 testInitialization:
 	@echo
