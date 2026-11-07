@@ -339,11 +339,11 @@ pub fn log_solver_assert(nonlinear: bool, msg: &str) {
     fmi_log(Status::Ok, if nonlinear { CAT_NONLINEAR } else { CAT_ALL }, msg);
 }
 
-/// C's `FILTERED_LOG` / `isCategoryLogged`. The reason a call fails is not
-/// filtered: the status alone tells the importer nothing.
+/// C's `FILTERED_LOG` / `isCategoryLogged`. FMI 3.0 forbids a call of
+/// `logMessage` for a category that is not enabled, also for an error.
 fn fmi_log(status: Status, cat: u32, msg: &str) {
     let cats = logger().cats;
-    if matches!(status, Status::Error | Status::Fatal) || cats & (1 << cat) != 0 || cats & (1 << CAT_ALL) != 0 {
+    if cats & (1 << cat) != 0 || cats & (1 << CAT_ALL) != 0 {
         log_raw(status, cat, msg);
     }
 }
