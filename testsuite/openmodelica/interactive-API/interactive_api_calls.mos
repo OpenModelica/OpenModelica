@@ -677,7 +677,7 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getMessagesStringInternal()
 // {record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "openmodelica/interactive-API/interactive_api_calls.mo",
+//     fileName = "openmodelica/interactive-API/interactive_api_calls.mo",
 //     readonly = false,
 //     lineStart = 41,
 //     columnStart = 55,
@@ -704,7 +704,7 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getMessagesStringInternal()
 // {record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefXh2o.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefXh2o.mo",
 //     readonly = false,
 //     lineStart = 7,
 //     columnStart = 3,
@@ -717,7 +717,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefXh2o.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefXh2o.mo",
 //     readonly = false,
 //     lineStart = 5,
 //     columnStart = 3,
@@ -730,7 +730,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerXh2o.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerXh2o.mo",
 //     readonly = false,
 //     lineStart = 6,
 //     columnStart = 3,
@@ -743,7 +743,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerXh2o.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerXh2o.mo",
 //     readonly = false,
 //     lineStart = 4,
 //     columnStart = 3,
@@ -756,7 +756,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/PressureLosses/SingularPressureLoss.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/PressureLosses/SingularPressureLoss.mo",
 //     readonly = false,
 //     lineStart = 11,
 //     columnStart = 3,
@@ -769,7 +769,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/PressureLosses/SingularPressureLoss.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/PressureLosses/SingularPressureLoss.mo",
 //     readonly = false,
 //     lineStart = 9,
 //     columnStart = 3,
@@ -782,7 +782,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefT.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefT.mo",
 //     readonly = false,
 //     lineStart = 7,
 //     columnStart = 3,
@@ -795,7 +795,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefT.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefT.mo",
 //     readonly = false,
 //     lineStart = 5,
 //     columnStart = 3,
@@ -808,7 +808,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerT.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerT.mo",
 //     readonly = false,
 //     lineStart = 6,
 //     columnStart = 3,
@@ -821,7 +821,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerT.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerT.mo",
 //     readonly = false,
 //     lineStart = 4,
 //     columnStart = 3,
@@ -834,7 +834,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerQ.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerQ.mo",
 //     readonly = false,
 //     lineStart = 6,
 //     columnStart = 3,
@@ -847,7 +847,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerQ.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerQ.mo",
 //     readonly = false,
 //     lineStart = 4,
 //     columnStart = 3,
@@ -860,7 +860,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/Machines/StaticCentrifugalPump.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/Machines/StaticCentrifugalPump.mo",
 //     readonly = false,
 //     lineStart = 28,
 //     columnStart = 3,
@@ -873,7 +873,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/Machines/StaticCentrifugalPump.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/Machines/StaticCentrifugalPump.mo",
 //     readonly = false,
 //     lineStart = 26,
 //     columnStart = 3,
@@ -886,7 +886,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefP.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefP.mo",
 //     readonly = false,
 //     lineStart = 7,
 //     columnStart = 3,
@@ -899,7 +899,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefP.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefP.mo",
 //     readonly = false,
 //     lineStart = 5,
 //     columnStart = 3,
@@ -916,7 +916,7 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getMessagesStringInternal(unique = false)
 // {record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefXh2o.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefXh2o.mo",
 //     readonly = false,
 //     lineStart = 7,
 //     columnStart = 3,
@@ -929,7 +929,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefXh2o.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefXh2o.mo",
 //     readonly = false,
 //     lineStart = 5,
 //     columnStart = 3,
@@ -942,7 +942,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerXh2o.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerXh2o.mo",
 //     readonly = false,
 //     lineStart = 6,
 //     columnStart = 3,
@@ -955,7 +955,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerXh2o.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerXh2o.mo",
 //     readonly = false,
 //     lineStart = 4,
 //     columnStart = 3,
@@ -968,7 +968,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/PressureLosses/SingularPressureLoss.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/PressureLosses/SingularPressureLoss.mo",
 //     readonly = false,
 //     lineStart = 11,
 //     columnStart = 3,
@@ -981,7 +981,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/PressureLosses/SingularPressureLoss.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/PressureLosses/SingularPressureLoss.mo",
 //     readonly = false,
 //     lineStart = 9,
 //     columnStart = 3,
@@ -994,7 +994,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefT.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefT.mo",
 //     readonly = false,
 //     lineStart = 7,
 //     columnStart = 3,
@@ -1007,7 +1007,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefT.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefT.mo",
 //     readonly = false,
 //     lineStart = 5,
 //     columnStart = 3,
@@ -1020,7 +1020,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerT.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerT.mo",
 //     readonly = false,
 //     lineStart = 6,
 //     columnStart = 3,
@@ -1033,7 +1033,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerT.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerT.mo",
 //     readonly = false,
 //     lineStart = 4,
 //     columnStart = 3,
@@ -1046,7 +1046,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerQ.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerQ.mo",
 //     readonly = false,
 //     lineStart = 6,
 //     columnStart = 3,
@@ -1059,7 +1059,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerQ.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerQ.mo",
 //     readonly = false,
 //     lineStart = 4,
 //     columnStart = 3,
@@ -1072,7 +1072,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/Machines/StaticCentrifugalPump.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/Machines/StaticCentrifugalPump.mo",
 //     readonly = false,
 //     lineStart = 28,
 //     columnStart = 3,
@@ -1085,7 +1085,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/Machines/StaticCentrifugalPump.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/Machines/StaticCentrifugalPump.mo",
 //     readonly = false,
 //     lineStart = 26,
 //     columnStart = 3,
@@ -1098,7 +1098,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefP.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefP.mo",
 //     readonly = false,
 //     lineStart = 7,
 //     columnStart = 3,
@@ -1111,7 +1111,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefP.mo",
+//     fileName = "ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefP.mo",
 //     readonly = false,
 //     lineStart = 5,
 //     columnStart = 3,

@@ -48,6 +48,7 @@ DefaultComponentName.mos \
 DeleteConnection.mos \
 deleteEquation1.mos \
 DialogAnnotation.mos \
+ErrorMessageFileName.mos \
 evaluateProbe1.mos \
 evaluateProbe2.mos \
 evaluateProbe3.mos \
