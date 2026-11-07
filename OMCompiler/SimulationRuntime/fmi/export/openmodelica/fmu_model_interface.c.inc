@@ -2945,6 +2945,10 @@ fmiXStatus FMIX(GetRealOutputDerivatives)(fmiXComponent c, const fmiXValueRefere
       return fmiXError;
     }
     fmiXValueReference mappedVR = mapOutputReference2RealOutputDerivatives(vr[i]);
+    if (mappedVR == (fmiXValueReference)-1) {
+      FILTERED_LOG(comp, fmiXError, LOG_STATUSERROR, FMIX_STR "GetRealOutputDerivatives: #r%u# is not an output with a derivative.", vr[i])
+      return fmiXError;
+    }
     value[i] = getReal(comp, mappedVR); // to be implemented by the includer of this file
     FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "GetRealOutputDerivatives: #r%u# = %.16g", vr[i], value[i])
   }
