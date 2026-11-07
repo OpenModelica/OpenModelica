@@ -36,7 +36,7 @@ use param_deps::ParamDeps;
 #[cfg(feature = "wasm")]
 use openmodelica_sim_meta::decode;
 use openmodelica_sim_meta::driver::{
-    self, EventUpdate, Samples, SimEngine, dae_solve_explicit, eval_stage, event_update, run_initialization,
+    self, DaeConsistent, EventUpdate, Samples, SimEngine, eval_stage, event_update, run_initialization,
     set_param_overrides, set_zc_tolerance,
 };
 #[cfg(feature = "cs")]
@@ -892,6 +892,8 @@ struct MeState<E: FmiHost + 'static> {
     dae_enable_vr: u32,
     dae_mode: bool,
     configuring: bool,
+    /// ODE mode: the IDA block that solves for `x'` and `z`, built on first use.
+    dae_ida: Option<DaeConsistent>,
     /// Set when the embedded solver has just left consistent derivatives and
     /// algebraic unknowns behind, so the refresh below need not solve for them
     /// again. Only a Co-Simulation step can promise that; any set clears it.
@@ -1141,22 +1143,23 @@ impl<E: FmiHost + 'static> MeState<E> {
     /// `F(t, x, x', z) = 0`. In DAE mode the importer has set `x'` and `z` and reads
     /// `F` back; in ODE mode the model owes it `x'` and `z`, solved for here.
     fn eval(&mut self) -> driver::Result<()> {
-        let e = &mut self.engine;
         if self.layout.dae_mode() {
             if !self.dae_mode && !self.dae_current {
-                let dae = self
-                    .meta
-                    .dae
-                    .as_ref()
-                    .ok_or("fmi3: DAE-mode model without DAE metadata")?;
-                dae_solve_explicit(&mut *e, self.sim_data, &self.layout, dae)?;
+                let ida = match &mut self.dae_ida {
+                    Some(ida) => ida,
+                    None => self
+                        .dae_ida
+                        .insert(DaeConsistent::new(&mut self.engine, &self.meta, self.sim_data)?),
+                };
+                ida.solve(&mut self.engine, &self.meta)?;
             }
-            return e.call2(
+            return self.engine.call2(
                 driver::MODEL_FN_DAE,
                 self.sim_data,
                 eval_stage::DYNAMIC | eval_stage::ALGEBRAIC,
             );
         }
+        let e = &mut self.engine;
         e.call1("functionODE", self.sim_data)?;
         e.call1("functionOutputs", self.sim_data)
     }
@@ -1599,6 +1602,7 @@ fn new_state() -> Option<MeState<Engine>> {
         continuous_time: false,
         dae_enable_vr,
         dae_mode: false,
+        dae_ida: None,
         configuring: false,
         dae_current: false,
         need_update: true,
@@ -2038,6 +2042,7 @@ macro_rules! shared_instance_methods {
         st.mode = Mode::Instantiated;
         st.continuous_time = false;
         st.dae_mode = false;
+        st.dae_ida = None;
         st.configuring = false;
         st.need_update = true;
         st.terminated = false;
@@ -2634,6 +2639,7 @@ impl GuestModelExchangeInstance for Instance<Engine> {
         // the FMU's `resources/` as this component's root, not the host path.
         openmodelica_codegen_wasm_jit_runtime::set_resources_dir("/");
         let st = new_state()?;
+        driver::log_me_solver_setup(&st.meta);
         Some(ModelExchangeInstance::new(Instance { st: RefCell::new(st) }))
     }
 
@@ -2749,6 +2755,7 @@ impl<E: FmiHost + 'static> Instance<E> {
             continuous_time: false,
             dae_enable_vr,
             dae_mode: false,
+            dae_ida: None,
             configuring: false,
             dae_current: false,
             need_update: true,

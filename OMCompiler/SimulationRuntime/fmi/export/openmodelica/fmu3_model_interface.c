@@ -328,7 +328,12 @@ fmi3Status fmi3Terminate(fmi3Instance instance)
 
 fmi3Status fmi3Reset(fmi3Instance instance)
 {
-  return (fmi3Status)omcReset(fmu3InnerComp(instance));
+  ModelInstance *comp = fmu3InnerComp(instance);
+  if (comp) {
+    comp->configuring = fmi3False;
+    comp->daeMode = fmi3False;
+  }
+  return (fmi3Status)omcReset(comp);
 }
 
 /* ---------------------------------------------------------------------------
@@ -362,6 +367,32 @@ static size_t fmi3ArrayLength(fmi3ValueReference vr)
   return 1;
 }
 
+/* fmi-ls-dae: the structural parameter that switches DAE mode, then one
+ * residual per value reference. */
+#define FMI3_DAE_MODE_VR (FMI3_EVENT_INDICATOR_VR_START + NUMBER_OF_EVENT_INDICATORS)
+
+static fmi3Boolean isDAEModeVR(fmi3ValueReference vr)
+{
+#ifdef OMC_FMI_LS_DAE
+  return compiledInDAEMode && vr == (fmi3ValueReference)FMI3_DAE_MODE_VR;
+#else
+  (void)vr;
+  return fmi3False;
+#endif
+}
+
+static fmi3Status getDAEResidual(ModelInstance *comp, fmi3ValueReference vr, fmi3Float64 *value)
+{
+#ifdef OMC_FMI_LS_DAE
+  long i = (long)vr - (long)FMI3_DAE_MODE_VR - 1;
+  if (compiledInDAEMode && i >= 0 && i < comp->fmuData->simulationInfo->daeModeData->nResidualVars) {
+    return internalGetDAEResidual(comp, i, value);
+  }
+#endif
+  vrOutOfRange(comp, "fmi3GetFloat64", vr, FMI3_DAE_MODE_VR);
+  return fmi3Error;
+}
+
 static size_t fmi3NumValues(const fmi3ValueReference valueReferences[], size_t nValueReferences)
 {
   size_t i, n = 0;
@@ -385,6 +416,9 @@ fmi3Status fmi3GetFloat64(fmi3Instance instance, const fmi3ValueReference valueR
       fmi3ValueReference evr = vr + (fmi3ValueReference)j;
       if (evr == (fmi3ValueReference)FMI3_TIME_VR) {
         values[k] = (fmi3Float64)comp->fmuData->localData[0]->timeValue;
+      } else if (evr >= (fmi3ValueReference)FMI3_DAE_MODE_VR) {
+        fmi3Status s = getDAEResidual(comp, evr, &values[k]);
+        if (s > fmi3Warning) return s;
       } else if (evr >= (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START) {
 #if NUMBER_OF_EVENT_INDICATORS > 0
         fmi3Float64 ei[NUMBER_OF_EVENT_INDICATORS];
@@ -438,6 +472,10 @@ fmi3Status fmi3GetBoolean(fmi3Instance instance, const fmi3ValueReference valueR
     for (j = 0; j < cnt; j++, k++) {
       fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_BOOLEAN_VR_OFFSET);
       fmi3Boolean value;
+      if (isDAEModeVR(valueReferences[i] + j)) {
+        values[k] = c->daeMode;
+        continue;
+      }
       fmi3Status s = omcGetBoolean(c, &lvr, 1, &value);
       if (s > fmi3Warning) return (fmi3Status)s;
       values[k] = value ? fmi3True : fmi3False;
@@ -524,6 +562,17 @@ fmi3Status fmi3SetBoolean(fmi3Instance instance, const fmi3ValueReference valueR
     for (j = 0; j < cnt; j++, k++) {
       fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_BOOLEAN_VR_OFFSET);
       fmi3Boolean value = values[k] ? fmi3True : fmi3False;
+      if (isDAEModeVR(valueReferences[i] + j)) {
+        if (!c->configuring) {
+          FILTERED_LOG(c, fmi3Error, LOG_STATUSERROR, "fmi3SetBoolean: fmi-ls-dae: the DAE-mode parameter can only be set in Configuration Mode.")
+          return fmi3Error;
+        }
+        c->daeMode = value;
+#ifdef OMC_FMI_LS_DAE
+        setDAEModeEventUpdate(c);
+#endif
+        continue;
+      }
       fmi3Status s = omcSetBoolean(c, &lvr, 1, &value);
       if (s > fmi3Warning) return (fmi3Status)s;
     }
@@ -847,10 +896,27 @@ fmi3Status fmi3GetAdjointDerivative(fmi3Instance instance, const fmi3ValueRefere
 }
 
 /* ---------------------------------------------------------------------------
- * Configuration / Reconfiguration Mode (no structural parameters)
+ * Configuration Mode: fmi-ls-dae's structural parameter
  * ------------------------------------------------------------------------- */
-fmi3Status fmi3EnterConfigurationMode(fmi3Instance instance) { (void)instance; return fmi3OK; }
-fmi3Status fmi3ExitConfigurationMode(fmi3Instance instance) { (void)instance; return fmi3OK; }
+fmi3Status fmi3EnterConfigurationMode(fmi3Instance instance)
+{
+  ModelInstance *comp = fmu3InnerComp(instance);
+  if (!comp || invalidState(comp, "fmi3EnterConfigurationMode", model_state_instantiated, model_state_instantiated) || comp->configuring) {
+    return fmi3Error;
+  }
+  comp->configuring = fmi3True;
+  return fmi3OK;
+}
+
+fmi3Status fmi3ExitConfigurationMode(fmi3Instance instance)
+{
+  ModelInstance *comp = fmu3InnerComp(instance);
+  if (!comp || !comp->configuring) {
+    return fmi3Error;
+  }
+  comp->configuring = fmi3False;
+  return fmi3OK;
+}
 
 /* ---------------------------------------------------------------------------
  * Clock related functions (no clocks exposed yet)

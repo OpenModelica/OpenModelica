@@ -103,6 +103,7 @@ pub extern "C" fn om_fmi3InstantiateModelExchange(name: u32, name_len: u32, logg
     openmodelica_codegen_wasm_jit_runtime::set_resources_dir("/");
     match crate::new_state() {
         Some(st) => {
+            openmodelica_sim_meta::driver::log_me_solver_setup(&st.meta);
             unsafe {
                 INSTANCE = Some(Instance {
                     st: core::cell::RefCell::new(st),

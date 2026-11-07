@@ -146,6 +146,12 @@ typedef struct {
   unsigned char* eqMask;
   int _tunable_dirty;
   int _tunable_applied;
+
+  /* fmi-ls-dae */
+  fmi3Boolean configuring;
+  fmi3Boolean daeMode;              /* the importer sets der(x) and the algebraic variables */
+  int daeSolved;                    /* ODE mode: der(x) and the algebraic variables solved at this point */
+  struct OpenModelicaGeneratedFunctionCallbacks* daeCallbacks;
 } ModelInstance;
 
 typedef struct {

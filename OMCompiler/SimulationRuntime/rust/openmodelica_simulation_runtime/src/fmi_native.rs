@@ -452,7 +452,10 @@ fn setup(
             meta.cs_method = cs_method(data);
             Instance::new_co_simulation(engine, meta, 0, event_mode_used, early_return_allowed)
         }
-        Kind::ModelExchange | Kind::ScheduledExecution => Instance::new(engine, meta, 0),
+        Kind::ModelExchange | Kind::ScheduledExecution => {
+            openmodelica_sim_meta::driver::log_me_solver_setup(&meta);
+            Instance::new(engine, meta, 0)
+        }
     };
     Ok(inst)
 }

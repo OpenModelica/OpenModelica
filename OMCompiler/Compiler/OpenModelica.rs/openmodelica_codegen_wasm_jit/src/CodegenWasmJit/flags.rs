@@ -143,11 +143,12 @@ fn fmi_flags(json: &str) -> Vec<(String, String)> {
 /// and the simulation flags can change before the FMU starts.
 ///
 /// `cs` gates only the integrator: Model Exchange never integrates, but its
-/// initialisation and residuals run the same nonlinear and linear solvers.
-pub(super) fn fmu_solver_libraries(flags_json: &str, cs_method: &str, cs: bool) -> Vec<&'static str> {
+/// initialisation and residuals run the same nonlinear and linear solvers. A
+/// `--daeMode` Model Exchange FMU links IDA too, for `IDACalcIC` in ODE mode.
+pub(super) fn fmu_solver_libraries(flags_json: &str, cs_method: &str, cs: bool, dae_mode: bool) -> Vec<&'static str> {
     let flag = |name: &str| fmi_flag(flags_json, name).unwrap_or_default();
     let mut wanted = Vec::new();
-    if cs && fmu_needs_sundials(cs_method) {
+    if (cs && fmu_needs_sundials(cs_method)) || dae_mode {
         wanted.push("sundials_driver");
     }
     wanted.push("kinsol");

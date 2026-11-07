@@ -515,6 +515,7 @@ unsafe extern "C" {
     fn IDASetMaxNonlinIters(mem: *mut c_void, maxcor: c_int) -> c_int;
     fn IDASetMaxConvFails(mem: *mut c_void, maxncf: c_int) -> c_int;
     fn IDASetNonlinConvCoef(mem: *mut c_void, epcon: f64) -> c_int;
+    fn IDASetNonlinConvCoefIC(mem: *mut c_void, epiccon: f64) -> c_int;
     fn IDASetInitStep(mem: *mut c_void, hin: f64) -> c_int;
     fn IDASetStopTime(mem: *mut c_void, tstop: f64) -> c_int;
     fn IDAClearStopTime(mem: *mut c_void) -> c_int;
@@ -949,6 +950,11 @@ impl Ida {
                 unsafe { IDASensReInit(self.mem, IDA_SIMULTANEOUS, s.ys, s.yps) == IDA_SUCCESS }
             }
         }
+    }
+
+    /// `IDASetNonlinConvCoefIC`: the convergence test of `IDACalcIC`.
+    pub fn set_nonlin_conv_coef_ic(&mut self, epiccon: f64) -> bool {
+        unsafe { IDASetNonlinConvCoefIC(self.mem, epiccon) == IDA_SUCCESS }
     }
 
     /// Rebind the pointer handed to the `res`/`root`/`jac` callbacks. The

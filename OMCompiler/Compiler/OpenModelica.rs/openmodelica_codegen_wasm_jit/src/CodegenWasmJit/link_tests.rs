@@ -245,12 +245,12 @@ fn solver_libraries_follow_the_fmi_flags() {
         (r#"{"s":"cvode"}"#, false, vec!["kinsol", "klu"]),
     ] {
         let method = cs_method_from(json, if cs { "CS" } else { "ME" }, false, "dassl");
-        assert_eq!(fmu_solver_libraries(json, &method, cs), want, "{json} cs={cs}");
+        assert_eq!(fmu_solver_libraries(json, &method, cs, false), want, "{json} cs={cs}");
     }
     // Every name the mapping can produce must be a library that exists.
     let known: Vec<&str> = SOLVER_LIBRARIES.iter().map(|l| l.name).collect();
     let all = r#"{"s":"ida","nls":"kinsol","ls":"lis","lss":"klu"}"#;
-    for name in fmu_solver_libraries(all, "ida", true) {
+    for name in fmu_solver_libraries(all, "ida", true, false) {
         assert!(known.contains(&name), "{name} is not a solver library");
     }
 }
@@ -279,7 +279,7 @@ fn baked_solver_flags_come_from_the_fmi_flags() {
             .chain(baked.split_whitespace().map(str::to_string))
             .collect();
         let f = simflags::parse(&argv).expect(&baked);
-        let libs = fmu_solver_libraries(json, &cs_method_from(json, "CS", false, "dassl"), true);
+        let libs = fmu_solver_libraries(json, &cs_method_from(json, "CS", false, "dassl"), true, false);
         let cap = simflags::Capabilities {
             klu: libs.contains(&"klu"),
             kinsol: libs.contains(&"kinsol"),
