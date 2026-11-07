@@ -6,7 +6,7 @@ loadModel(ModelicaTest);getErrorString();
 setCommandLineOptions("--newBackend"); getErrorString();
 
 simulate(ModelicaTest.Media.TestAllProperties.IncompleteMedia.ReferenceAir_dT); getErrorString();
-diffSimulationResults("ModelicaTest.Media.TestAllProperties.IncompleteMedia.ReferenceAir_dT_res.mat", "ReferenceFiles/ModelicaTest.Media.TestAllProperties.IncompleteMedia.ReferenceAir_dT_res.mat", "ModelicaTest.Media.TestAllProperties.IncompleteMedia.ReferenceAir_dT_diff.csv", 1e-8);
+diffSimulationResults("ModelicaTest.Media.TestAllProperties.IncompleteMedia.ReferenceAir_dT_res.mat", "ReferenceFiles/ModelicaTest.Media.TestAllProperties.IncompleteMedia.ReferenceAir_dT_res.mat", "ModelicaTest.Media.TestAllProperties.IncompleteMedia.ReferenceAir_dT_diff.csv", 1e-8, vars={"MM", "Pr", "a", "beta", "beta2", "cp", "cp2", "cv", "cv2", "d2", "eps", "eps_h_is", "err_T", "err_d", "err_h_is", "err_u", "eta", "f", "g", "h2", "kappa", "kappa2", "lambda", "medium.MM", "medium.R_s", "medium.T_degC", "medium.X[1]", "medium.p_bar", "medium.preferredMediumStates", "medium.standardOrderComponents", "medium.state.T", "medium.state.d", "medium.u", "s", "s_is", "state.p", "state2.T", "state2.d", "state2.h", "state2.p", "state3.T", "state3.d", "state3.h", "state3.p", "state4.T", "state4.d", "state4.h", "state4.p", "state5.T", "state5.d", "state5.h", "state5.p", "state_h_is.T", "state_h_is.d", "state_h_is.h", "state_h_is.p", "u"});
 
 // Result:
 // true
