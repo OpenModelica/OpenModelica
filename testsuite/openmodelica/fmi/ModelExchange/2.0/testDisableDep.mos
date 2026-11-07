@@ -614,22 +614,22 @@ readFile("modelDescription.tmp.xml");
 //   </ModelVariables>
 //   <ModelStructure>
 //     <Outputs>
-//       <Unknown index=\"13\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"14\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"13\" />
+//       <Unknown index=\"14\" />
 //     </Outputs>
 //     <Derivatives>
-//       <Unknown index=\"3\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"4\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"3\" />
+//       <Unknown index=\"4\" />
 //     </Derivatives>
 //     <DiscreteStates>
-//       <Unknown index=\"9\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"10\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"9\" />
+//       <Unknown index=\"10\" />
 //     </DiscreteStates>
 //     <InitialUnknowns>
-//       <Unknown index=\"13\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"14\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"3\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"4\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"3\" />
+//       <Unknown index=\"4\" />
+//       <Unknown index=\"13\" />
+//       <Unknown index=\"14\" />
 //     </InitialUnknowns>
 //   </ModelStructure>
 // </fmiModelDescription>
