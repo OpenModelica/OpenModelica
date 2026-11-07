@@ -25,7 +25,7 @@ To update only the translations: `cmake --build <build-dir> --target update_tran
 - OMNotebook, OMShell and OMPlot have their `TS_FILES` list in their own `CMakeLists.txt`.
 - Open your generated file with `Qt Linguist` for writing translations
 - Mark finished translations (green checkbox)
-- Do not try to edit the ts-files manually. You will forget things.
+- Do not edit the ts-files in a text editor. Use `Qt Linguist`, or `tstool.py` (see [AGENTS.md](../../../AGENTS.md)).
 
 ## Creating a .qm file
 
