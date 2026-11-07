@@ -1713,7 +1713,7 @@ algorithm
       algorithm
         infopath := Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("Scripting",Absyn.IDENT("SourceInfo"))));
         values := {Values.STRING(filename),Values.BOOL(readonly),Values.INTEGER(ls),Values.INTEGER(cs),Values.INTEGER(le),Values.INTEGER(ce)};
-      then Values.RECORD(infopath,values,{"filename","readonly","lineStart","columnStart","lineEnd","columnEnd"},-1);
+      then Values.RECORD(infopath,values,{"fileName","readonly","lineStart","columnStart","lineEnd","columnEnd"},-1);
   end match;
 end infoToValue;
 
