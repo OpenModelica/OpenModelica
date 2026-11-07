@@ -264,6 +264,7 @@ pub(super) fn build_sim_model(
         // Mirroring the last accepted step's reals costs a copy per step, so only
         // a model with a method-1 linear system to read them asks for it.
         has_old_real: has_method1_linear(sim_code),
+        compiled_dae_mode: dae_mode.is_some(),
         resizable,
     };
     let counts_sz = resizable_counts(&counts, &dyn_vars);
@@ -1913,11 +1914,11 @@ pub(super) fn build_sim_model(
         });
         idx
     };
-    // `layout.dae_mode()`, not this function's presence, is what tells a driver
-    // which form the model is in.
+    // `layout.compiled_dae_mode`, not this function's presence, is what tells a
+    // driver which form the model is in.
     let dae_residuals_idx = {
         let idx = import_base + bodies.len() as u32;
-        splits.push(build_split_fn(
+        let mut split = build_split_fn(
             "evaluateDAEResiduals",
             &dae_units(&dae_eqs),
             2,
@@ -1931,7 +1932,20 @@ pub(super) fn build_sim_model(
             &mut bodies,
             &mut pool,
             false,
-        )?);
+        )?;
+        if dae_mode.is_some() {
+            split.chunks.extend(build_stage_pre_store(
+                "evaluateDAEResiduals",
+                openmodelica_sim_meta::driver::eval_stage::ALGEBRAIC,
+                dae_fn_type,
+                &save_pre,
+                &var_map,
+                &by_name,
+                &mut literals,
+                &mut pool,
+            )?);
+        }
+        splits.push(split);
         idx
     };
     // C's `functionDAE`: `functionLocalKnownVars` + `allEquations` in the discrete
