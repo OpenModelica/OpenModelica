@@ -739,6 +739,7 @@ public uniontype FmiModelStructure
     FmiDiscreteStates fmiDiscreteStates;
     FmiInitialUnknowns fmiInitialUnknowns;
     list<FmiArray> fmiArrays;
+    Boolean hasDependencies "false if the dependencies were not computed: the importer must then assume a dependency on all knowns";
   end FMIMODELSTRUCTURE;
 end FmiModelStructure;
 
