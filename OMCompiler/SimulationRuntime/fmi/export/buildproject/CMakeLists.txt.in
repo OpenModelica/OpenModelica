@@ -37,7 +37,7 @@ set(NEED_IDA
 set(SOLVER_LIBRARY_DIRECTORY
     ""
     CACHE PATH
-    "Prebuilt SuiteSparse, SUNDIALS and Lis archives of the exporting installation. Empty compiles them from 3rdParty/.")
+    "Prebuilt SuiteSparse, SUNDIALS, Lis and zlib archives of the exporting installation. Empty compiles them from the sources.")
 # As OM_LIBRARY_ARCH in OpenModelica's top-level CMakeLists.txt.
 if(CMAKE_LIBRARY_ARCHITECTURE)
   set(OM_LIBRARY_ARCH "${CMAKE_LIBRARY_ARCHITECTURE}")
@@ -306,6 +306,23 @@ if(${COMPILE_MODELICA_EXTERNAL_C})
   add_library(omc_fmu_dummy_usertab STATIC ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaStandardTablesDummyUsertab.c)
   set_target_properties(omc_fmu_dummy_usertab PROPERTIES POSITION_INDEPENDENT_CODE ON C_VISIBILITY_PRESET hidden)
   target_link_libraries(${FMU_NAME_HASH} PRIVATE omc_fmu_dummy_usertab)
+
+  # MAT-files v7 are compressed with zlib.
+  set(_om_zlib_dir ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/zlib)
+  set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaMatIO.c PROPERTIES
+                              COMPILE_DEFINITIONS HAVE_ZLIB=1)
+  target_include_directories(${FMU_NAME_HASH} PRIVATE ${_om_zlib_dir})
+  find_library(OM_ZLIB_LIBRARY NAMES zlib zlibstatic
+               PATHS ${SOLVER_LIBRARY_DIRECTORY}
+               NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_FIND_ROOT_PATH)
+  if(SOLVER_LIBRARY_DIRECTORY AND OM_ZLIB_LIBRARY)
+    target_link_libraries(${FMU_NAME_HASH} PRIVATE ${OM_ZLIB_LIBRARY})
+  else()
+    file(GLOB _om_zlib_sources ${_om_zlib_dir}/*.c)
+    add_library(omc_fmu_zlib STATIC ${_om_zlib_sources})
+    set_target_properties(omc_fmu_zlib PROPERTIES POSITION_INDEPENDENT_CODE ON C_VISIBILITY_PRESET hidden)
+    target_link_libraries(${FMU_NAME_HASH} PRIVATE omc_fmu_zlib)
+  endif()
 endif()
 
 # Set output name for the .dll's and .so files to use the full FMU name instead of fmu hash string

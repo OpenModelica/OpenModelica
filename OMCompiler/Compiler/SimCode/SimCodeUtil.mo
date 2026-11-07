@@ -14289,18 +14289,19 @@ algorithm
     // Special handling for ModelicaExternalC, we always copy the sources into the FMU
     if List.contains(SimCodeCodegenUtil.fmuSourceLibraries, lib, stringEqual) then
       needModelicaExternalC := "ON";
-    // zlib is referred to from MSL Tables, but by default not used by ModelicaMatIO
+    // An FMU that compiles ModelicaExternalC has a zlib of its own.
     elseif lib == "zlib" then
-      cmakeCode := cmakeCode + "find_library(" + lib + "\n" +
-                  "             NAMES " + lib + "\n" +
-                  "             PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)\n" +
-                  "if(NOT " + lib + ")\n" +
-                  "  message(WARNING \"Could not find library zlib\")" + "\n" +
-                  "  message(STATUS \"zlib is referred by ModelicaMatIO, but not used by default. Try compiling without linking.\")" + "\n" +
-                  "else()\n" +
-                  "  message(STATUS \"Linking ${" + lib + "}\")" + "\n" +
-                  "  target_link_libraries(${FMU_NAME_HASH} PRIVATE ${" + lib + "})" + "\n" +
-                  "  list(APPEND RUNTIME_DEPENDS ${" + lib + "})" + "\n" +
+      cmakeCode := cmakeCode + "if(NOT COMPILE_MODELICA_EXTERNAL_C)\n" +
+                  "  find_library(" + lib + "\n" +
+                  "               NAMES " + lib + "\n" +
+                  "               PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)\n" +
+                  "  if(NOT " + lib + ")\n" +
+                  "    message(WARNING \"Could not find library zlib\")" + "\n" +
+                  "  else()\n" +
+                  "    message(STATUS \"Linking ${" + lib + "}\")" + "\n" +
+                  "    target_link_libraries(${FMU_NAME_HASH} PRIVATE ${" + lib + "})" + "\n" +
+                  "    list(APPEND RUNTIME_DEPENDS ${" + lib + "})" + "\n" +
+                  "  endif()\n" +
                   "endif()\n";
     elseif lib == "lapack" then
       cmakeCode := cmakeCode + "find_package(LAPACK REQUIRED)\n" +
