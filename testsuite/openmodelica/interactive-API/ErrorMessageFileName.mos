@@ -7,82 +7,28 @@
 
 loadString("model M Real x = y; end M;"); getErrorString();
 checkModel(M);
-errors := getMessagesStringInternal();
-e := errors[1];
+echo(false); errors := getMessagesStringInternal();
+e := errors[1]; echo(true);
 e.info.fileName; getErrorString();
 e.info.lineStart; getErrorString();
 setCommandLineOptions("-d=-nfScripting");
 checkModel(M);
-errors2 := getMessagesStringInternal();
-e2 := errors2[1];
+echo(false); errors2 := getMessagesStringInternal();
+e2 := errors2[1]; echo(true);
 e2.info.fileName; getErrorString();
 
 // Result:
 // true
 // ""
 // "Check of M failed with 1 error(s)."
-// {record OpenModelica.Scripting.ErrorMessage
-//     info = record OpenModelica.Scripting.SourceInfo
-//     fileName = "<interactive>",
-//     readonly = false,
-//     lineStart = 1,
-//     columnStart = 9,
-//     lineEnd = 1,
-//     columnEnd = 18
-// end OpenModelica.Scripting.SourceInfo;,
-//     message = "Variable y not found in scope M.",
-//     kind = .OpenModelica.Scripting.ErrorKind.translation,
-//     level = .OpenModelica.Scripting.ErrorLevel.error,
-//     id = 5
-// end OpenModelica.Scripting.ErrorMessage;}
-// record OpenModelica.Scripting.ErrorMessage
-//     info = record OpenModelica.Scripting.SourceInfo
-//     fileName = "<interactive>",
-//     readonly = false,
-//     lineStart = 1,
-//     columnStart = 9,
-//     lineEnd = 1,
-//     columnEnd = 18
-// end OpenModelica.Scripting.SourceInfo;,
-//     message = "Variable y not found in scope M.",
-//     kind = OpenModelica.Scripting.ErrorKind.translation,
-//     level = OpenModelica.Scripting.ErrorLevel.error,
-//     id = 5
-// end OpenModelica.Scripting.ErrorMessage;
+// true
 // "<interactive>"
 // ""
 // 1
 // ""
 // true
 // "Check of M failed with 1 error(s)."
-// {record OpenModelica.Scripting.ErrorMessage
-//     info = record OpenModelica.Scripting.SourceInfo
-//     fileName = "<interactive>",
-//     readonly = false,
-//     lineStart = 1,
-//     columnStart = 9,
-//     lineEnd = 1,
-//     columnEnd = 18
-// end OpenModelica.Scripting.SourceInfo;,
-//     message = "Variable y not found in scope M.",
-//     kind = .OpenModelica.Scripting.ErrorKind.translation,
-//     level = .OpenModelica.Scripting.ErrorLevel.error,
-//     id = 5
-// end OpenModelica.Scripting.ErrorMessage;}
-// record OpenModelica.Scripting.ErrorMessage
-//     info = record OpenModelica.Scripting.SourceInfo
-//     fileName = "<interactive>",
-//     readonly = false,
-//     lineStart = 1,
-//     columnStart = 9,
-//     lineEnd = 1,
-//     columnEnd = 18
-// end OpenModelica.Scripting.SourceInfo;,
-//     message = "Variable y not found in scope M.",
-//     kind = .OpenModelica.Scripting.ErrorKind.translation,
-//     level = .OpenModelica.Scripting.ErrorLevel.error,
-//     id = 5
-// end OpenModelica.Scripting.ErrorMessage;
+// true
 // "<interactive>"
 // ""
 // endResult
