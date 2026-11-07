@@ -22,6 +22,7 @@ fmi3_configuration_mode.mos \
 fmi3_state_machine.mos \
 fmi3_state_machine_c_rust.mos \
 fmi3_directional_derivatives.mos \
+fmi3_directional_derivatives_unlisted.mos \
 fmi3_documentation.mos \
 fmi3_fmustate.mos \
 fmi3_graphics.mos \

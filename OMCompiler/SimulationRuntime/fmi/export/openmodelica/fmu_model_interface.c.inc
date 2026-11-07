@@ -2491,6 +2491,18 @@ fmiXStatus FMIX(GetDirectionalDerivativeForInitialization)(fmiXComponent c,
   return fmiXOK;
 }
 
+/* Time or a parameter: knowns that the dependencies do not list, so the partial
+ * derivatives with respect to them are zero (FMI 3.0, ModelStructure). */
+static fmiXBoolean isKnownWithoutColumn(const MODEL_DATA *modelData, fmiXValueReference vr)
+{
+#if OMC_FMI_VERSION == 2
+  if (vr == FMI2_TIME_VR) return fmiXTrue;
+#else
+  if (vr == FMI3_TIME_VR) return fmiXTrue;
+#endif
+  return vr >= modelData->nVariablesReal && vr < modelData->nVariablesReal + modelData->nParametersReal;
+}
+
 fmiXStatus FMIX(GetDirectionalDerivative)(fmiXComponent c,
     const fmiXValueReference vUnknown_ref[], size_t nUnknown,
     const fmiXValueReference vKnown_ref[] , size_t nKnown,
@@ -2544,7 +2556,9 @@ fmiXStatus FMIX(GetDirectionalDerivative)(fmiXComponent c,
     /* if idx is > nStates it's an input so we need a mapping */
     if (idx >= modelData->nStates){
       idx = mapInputReference2InputNumber(vKnown_ref[i]);
-      idx = modelData->nStates + idx;
+      if (idx < 0 && isKnownWithoutColumn(modelData, vKnown_ref[i]))
+        continue;
+      idx = idx < 0 ? independent : modelData->nStates + idx;
     }
     if (vrOutOfRange(comp, FMIX_STR "GetDirectionalDerivative input index", idx, independent))
       return fmiXError;
@@ -2564,7 +2578,7 @@ fmiXStatus FMIX(GetDirectionalDerivative)(fmiXComponent c,
     /* if idx is > nStates it's an output so we need a mapping */
     if (idx >= modelData->nStates){
       idx = mapOutputReference2OutputNumber(vUnknown_ref[i]);
-      idx = modelData->nStates + idx;
+      idx = idx < 0 ? dependent : modelData->nStates + idx;
     }
     if (vrOutOfRange(comp, FMIX_STR "GetDirectionalDerivative output index", idx, dependent))
       return fmiXError;
