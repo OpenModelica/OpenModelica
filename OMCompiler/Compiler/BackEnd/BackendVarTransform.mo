@@ -2244,13 +2244,17 @@ algorithm
       VariableReplacements repl;
       Boolean b1,b2;
       case (DAE.BCONST(true), statementLst, _, _, repl)
-        then replaceStatementLst(statementLst, repl, inFuncTypeExpExpToBooleanOption, inAcc, true);
+        algorithm
+          (statementLst_1, _) := replaceStatementLst(statementLst, repl, inFuncTypeExpExpToBooleanOption, {}, true);
+        then (List.append_reverse(statementLst_1, inAcc), true);
       case (DAE.BCONST(false), _, DAE.NOELSE(), _, _)
         then (inAcc, true);
       case (DAE.BCONST(false), _, DAE.ELSEIF(exp=exp_e,statementLst=statementLst_e,else_=else_e), source, repl)
         then replaceSTMT_IF(exp_e,statementLst_e,else_e,source,repl,inFuncTypeExpExpToBooleanOption,inAcc,true);
       case (DAE.BCONST(false), _, DAE.ELSE(statementLst=statementLst_e), _, repl)
-        then replaceStatementLst(statementLst_e, repl, inFuncTypeExpExpToBooleanOption, inAcc, true);
+        algorithm
+          (statementLst_1, _) := replaceStatementLst(statementLst_e, repl, inFuncTypeExpExpToBooleanOption, {}, true);
+        then (List.append_reverse(statementLst_1, inAcc), true);
       case (exp, statementLst, else_, source, repl)
         algorithm
           (statementLst_1,b1) := replaceStatementLst(statementLst, repl,inFuncTypeExpExpToBooleanOption,{},false);
