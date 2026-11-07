@@ -13,6 +13,7 @@ fmi3_wasm_arrays.mos \
 fmi3_wasm_daemode.mos \
 fmi3_wasm_error_reason.mos \
 fmi3_wasm_fmi2_no_platform.mos \
+fmi3_wasm_logging_off.mos \
 fmi3_wasm_flags_restored.mos \
 fmi3_wasm_solver_absent.mos \
 fmi3_wasm_solver_libraries.mos \
@@ -31,6 +32,7 @@ fmi3_cs_assert_solver_retry.py \
 fmi3_cs_state_event.py \
 fmi3_cs_event_mode_reinit.py \
 fmi3_cs_tolerance.py \
+fmi3_wasm_logging_off.py \
 fmi_tunable_parameters.py \
 fmi_tunable_parameters_state.py \
 Makefile \
