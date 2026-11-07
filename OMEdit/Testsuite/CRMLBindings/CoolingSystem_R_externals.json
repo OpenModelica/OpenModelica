@@ -1,0 +1,23 @@
+{
+  "schema": "crml-externals/0.1",
+  "model": "CoolingSystem_R",
+  "source": "CoolingSystem_R.crml",
+  "classes": [
+    {"name": "Pump_R", "line": 4,
+     "externals": [
+       {"name": "inOperation", "type": "Boolean", "line": 5},
+       {"name": "cavitate", "type": "Boolean", "line": 6}
+     ],
+     "requirements": [
+       {"name": "R2", "type": "Boolean", "line": 7}
+     ]}
+  ],
+  "externals": [],
+  "sets": [
+    {"name": "pumps", "type": "Pump_R", "sizeParameter": "pumps_n", "line": 10}
+  ],
+  "instances": [],
+  "requirements": [
+    {"name": "R2", "type": "Boolean", "line": 12}
+  ]
+}

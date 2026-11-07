@@ -57,6 +57,7 @@
 #include "Modeling/ModelicaClassDialog.h"
 #include "OMS/ModelDialog.h"
 #include "CRML/CRMLTranslateAsDialog.h"
+#include "CRML/Bindings/VerificationConfigurationEditor.h"
 #include "Debugger/GDB/GDBAdapter.h"
 #include "Debugger/StackFrames/StackFramesWidget.h"
 #include "Debugger/Locals/LocalsWidget.h"
@@ -3821,6 +3822,16 @@ void MainWindow::exportToClipboard()
  * \brief MainWindow::openTemporaryDirectory
  * Opens the temporary directory
  */
+/*!
+ * \brief MainWindow::showCRMLVerificationConfigurationEditor
+ * Opens the editor of a CRML verification configuration, for the given CRML file if any.
+ */
+void MainWindow::showCRMLVerificationConfigurationEditor(const QString &crmlFile)
+{
+  VerificationConfigurationEditor *pEditor = new VerificationConfigurationEditor(crmlFile, this);
+  pEditor->show();
+}
+
 void MainWindow::openTemporaryDirectory()
 {
   QUrl temporaryDirectory (QString("file:///%1").arg(Utilities::tempDirectory()));
@@ -5053,6 +5064,9 @@ void MainWindow::createActions()
     connect(mpShowOMCDiffWidgetAction, SIGNAL(triggered()), mpOMCProxy, SLOT(openOMCDiffWidget()));
   }
   // open temporary directory action
+  mpCRMLVerificationConfigurationAction = new QAction(tr("CRML Verification Configuration..."), this);
+  mpCRMLVerificationConfigurationAction->setStatusTip(tr("Binds a CRML requirement model to architecture and behaviour models and generates the verification model"));
+  connect(mpCRMLVerificationConfigurationAction, &QAction::triggered, this, [this]() {showCRMLVerificationConfigurationEditor();});
   mpOpenTemporaryDirectoryAction = new QAction(tr("Open Temporary Directory"), this);
   mpOpenTemporaryDirectoryAction->setStatusTip(tr("Opens the temporary directory"));
   connect(mpOpenTemporaryDirectoryAction, SIGNAL(triggered()), SLOT(openTemporaryDirectory()));
@@ -5483,6 +5497,7 @@ void MainWindow::createMenus()
   if (isDebug()) {
     pToolsMenu->addAction(mpShowOMCDiffWidgetAction);
   }
+  pToolsMenu->addAction(mpCRMLVerificationConfigurationAction);
   pToolsMenu->addSeparator();
   pToolsMenu->addAction(mpOpenTemporaryDirectoryAction);
   pToolsMenu->addAction(mpOpenWorkingDirectoryAction);

@@ -160,3 +160,7 @@ add_omedit_test(Utilities "${OMEDIT_TEST_UTILITIES_SOURCES}")
 set(OMEDIT_TEST_VARIABLEVALUE_SOURCES VariableValue/VariableValueTest.cpp
                                       VariableValue/VariableValueTest.h)
 add_omedit_test(VariableValue "${OMEDIT_TEST_VARIABLEVALUE_SOURCES}")
+
+set(OMEDIT_TEST_CRMLBINDINGS_SOURCES CRMLBindings/CRMLBindingsTest.cpp
+                                     CRMLBindings/CRMLBindingsTest.h)
+add_omedit_test(CRMLBindings "${OMEDIT_TEST_CRMLBINDINGS_SOURCES}")
