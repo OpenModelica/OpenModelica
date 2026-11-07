@@ -71,7 +71,7 @@ case SIMCODE(__) then
   <fmiModelDescription
     <%fmiModelDescriptionAttributes(simCode,guid)%>>
     <%if isFMIMEType(FMUType) then ModelExchange3(simCode, sourceFiles)%>
-    <%if isFMICSType(FMUType) then CoSimulation3(simCode, sourceFiles)%>
+    <%if isFMICSType(FMUType) then CoSimulation3(simCode, FMUType, sourceFiles)%>
     <%if isFMISEType(FMUType) then ScheduledExecution3(simCode, sourceFiles)%>
     <%UnitDefinitions(simCode)%>
     <%TypeDefinitions3(simCode)%>
@@ -400,7 +400,7 @@ case SIMCODE(__) then
   >>
 end ModelExchange3;
 
-template CoSimulation3(SimCode simCode, list<String> sourceFiles)
+template CoSimulation3(SimCode simCode, String FMUType, list<String> sourceFiles)
  "Generates the CoSimulation element for FMI 3.0."
 ::=
 match simCode
@@ -412,7 +412,7 @@ case SIMCODE(__) then
     needsExecutionTool="false"
     canHandleVariableCommunicationStepSize="true"
     canBeInstantiatedOnlyOncePerProcess="false"
-    maxOutputDerivativeOrder="1"
+    maxOutputDerivativeOrder="<%maxOutputDerivativeOrder(simCode, FMUType)%>"
     providesIntermediateUpdate="false"
     mightReturnEarlyFromDoStep="true"
     canReturnEarlyAfterIntermediateUpdate="false"
