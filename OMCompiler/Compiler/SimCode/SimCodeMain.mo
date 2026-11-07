@@ -2249,6 +2249,7 @@ protected
   SimCodeFunction.MakefileParams makefileParams;
   SimCode.SpatialDistributionInfo spatialInfo;
   list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
+  list<tuple<DAE.Exp, tuple<DAE.Exp, DAE.Exp, DAE.Exp>, list<BackendDAE.SimIterator>>> delayedLoops;
   Integer maxDelayedExpIndex;
   Integer uniqueEqIndex = 1;
   Boolean tmpB;
@@ -2327,7 +2328,7 @@ algorithm
     // create make file params
     makefileParams := SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
     //create delay exps
-    (delayedExps, maxDelayedExpIndex) := SimCodeUtil.extractDelayedExpressions(inBackendDAE);
+    (delayedExps, maxDelayedExpIndex, delayedLoops) := SimCodeUtil.extractDelayedExpressions(inBackendDAE);
     spatialInfo := SimCodeUtil.extractSpatialDistributionInfo(inBackendDAE);
 
     // created event suff e.g. zeroCrossings, samples, ...
@@ -2570,7 +2571,7 @@ algorithm
       discreteModelVars           = discreteModelVars,
       extObjInfo                  = extObjInfo,
       makefileParams              = makefileParams,
-      delayedExps                 = SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex, {}),
+      delayedExps                 = SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex, delayedLoops),
       spatialInfo                 = spatialInfo,
       jacobianMatrices            = SymbolicJacs,
       simulationSettingsOpt       = simSettingsOpt,
