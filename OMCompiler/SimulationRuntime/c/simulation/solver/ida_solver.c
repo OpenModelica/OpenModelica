@@ -664,40 +664,24 @@ static void setDAEVarsFromIDA(DATA* data, IDA_SOLVER* idaData)
 }
 
 /**
- * @brief EventHandle for DAE mode.
+ * @brief Consistent algebraic variables and derivatives for the states at the current time.
  *
- * Handles events by reinitialize main IDA solver, initializing next step and
- * evaluate DAE residual equations.
+ * Reinitializes IDA at the current time and solves with IDACalcIC for the
+ * algebraic DAE variables and the derivatives, which it leaves in realVars.
  *
  * @param data        Runtime data struct.
  * @param threadData  Thread data for error handling.
- * @return int        Return 0.
+ * @param idaData     IDA solver data.
+ * @return int        IDA flag of the last IDACalcIC, negative on failure.
  */
-int ida_event_update(DATA* data, threadData_t *threadData)
+int ida_solver_consistent_ic(DATA* data, threadData_t *threadData, IDA_SOLVER *idaData)
 {
-  IDA_SOLVER *idaData = (IDA_SOLVER*) data->simulationInfo->daeModeData->solverData;
   int flag;
   long nonLinIters;
   double init_h;
 
-  if (!compiledInDAEMode){
-    throwStreamPrint(threadData, "Function ida_event_update only callable in DAE mode");
-  }
-
-  data->simulationInfo->needToIterate = 0 /* FALSE */;
-
   memcpy(idaData->states, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
   getAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
-  memcpy(idaData->statesDer, data->localData[0]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
-
-  /* update inner algebraic get new values from data */
-  if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
-  evaluateDAEResiduals_wrapperEventUpdate(data, threadData);
-  getAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
-  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
-
-  infoStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## do event update at %.15g", data->localData[0]->timeValue);
-  memcpy(idaData->states, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
   memcpy(idaData->statesDer, data->localData[0]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
   memcpy(NV_DATA_S(idaData->y), idaData->states, idaData->N);
   memcpy(NV_DATA_S(idaData->yp), idaData->statesDer, idaData->N);
@@ -744,15 +728,46 @@ int ida_event_update(DATA* data, threadData_t *threadData)
   /* IDACalcIC leaves its last residual evaluation in realVars, which can be a Jacobian perturbation */
   setDAEVarsFromIDA(data, idaData);
 
+  /* reset initial step size again to default */
+  IDASetInitStep(idaData->ida_mem, 0.0);
+
+  return flag;
+}
+
+/**
+ * @brief EventHandle for DAE mode.
+ *
+ * Handles events by reinitialize main IDA solver, initializing next step and
+ * evaluate DAE residual equations.
+ *
+ * @param data        Runtime data struct.
+ * @param threadData  Thread data for error handling.
+ * @return int        Return 0.
+ */
+int ida_event_update(DATA* data, threadData_t *threadData)
+{
+  IDA_SOLVER *idaData = (IDA_SOLVER*) data->simulationInfo->daeModeData->solverData;
+
+  if (!compiledInDAEMode){
+    throwStreamPrint(threadData, "Function ida_event_update only callable in DAE mode");
+  }
+
+  data->simulationInfo->needToIterate = 0 /* FALSE */;
+
+  /* update inner algebraic get new values from data */
+  if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
+  evaluateDAEResiduals_wrapperEventUpdate(data, threadData);
+  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
+
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## do event update at %.15g", data->localData[0]->timeValue);
+  ida_solver_consistent_ic(data, threadData, idaData);
+
   /* update inner algebraic variables */
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
   evaluateDAEResiduals_wrapperEventUpdate(data, threadData);
 
   setDAEVarsFromIDA(data, idaData);
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
-
-  /* reset initial step size again to default */
-  IDASetInitStep(idaData->ida_mem, 0.0);
 
   return 0;
 }

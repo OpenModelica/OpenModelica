@@ -131,6 +131,9 @@ int ida_solver_setNominals(DATA* data, threadData_t *threadData, IDA_SOLVER* ida
 /* main ida function to make a step */
 int ida_solver_step(DATA* simData, threadData_t *threadData, SOLVER_INFO* solverInfo);
 
+/* consistent algebraic variables and derivatives with IDACalcIC */
+int ida_solver_consistent_ic(DATA* data, threadData_t *threadData, IDA_SOLVER *idaData);
+
 /* event handing reinitialization function  */
 int ida_event_update(DATA* data, threadData_t *threadData);
 
