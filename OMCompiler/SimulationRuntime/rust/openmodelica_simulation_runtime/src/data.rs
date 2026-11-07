@@ -1116,7 +1116,8 @@ fn layout_for(
     let n_states = md.nStates as u32;
     let n_real_alg = (md.nVariablesReal - 2 * md.nStates).max(0) as u32;
     let dae = unsafe { md.nStateSets >= 0 && !_si.daeModeData.is_null() }.then(|| unsafe { &*_si.daeModeData });
-    let compiled_dae_mode = dae.is_some() && unsafe { crate::support::compiledInDAEMode } != 0;
+    let compiled_dae_mode =
+        dae.is_some_and(|d| d.evaluateDAEResiduals.is_some()) && unsafe { crate::support::compiledInDAEMode } != 0;
     let (n_dae_res, n_dae_aux, n_dae_alg) = match dae {
         Some(d) if compiled_dae_mode => (
             d.nResidualVars as u32,

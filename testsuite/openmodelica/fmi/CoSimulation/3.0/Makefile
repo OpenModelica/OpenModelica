@@ -10,6 +10,7 @@ fmi3_msl_clocked_drive.mos \
 fmi3_wasm_annotation_flags.mos \
 fmi3_wasm_arrays.mos \
 fmi3_wasm_daemode.mos \
+fmi3_wasm_daemode_nores.mos \
 fmi3_wasm_error_reason.mos \
 fmi3_wasm_fmi2_no_platform.mos \
 fmi3_wasm_flags_restored.mos \

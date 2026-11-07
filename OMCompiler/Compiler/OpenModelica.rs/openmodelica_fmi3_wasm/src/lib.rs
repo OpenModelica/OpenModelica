@@ -1131,8 +1131,8 @@ impl<E: FmiHost + 'static> MeState<E> {
     /// `F` back; in ODE mode the model owes it `x'` and `z`, solved for here.
     fn eval(&mut self) -> driver::Result<()> {
         let e = &mut self.engine;
-        if self.layout.dae_mode() {
-            if !self.dae_mode && !self.dae_current {
+        if self.layout.compiled_dae_mode {
+            if self.layout.dae_mode() && !self.dae_mode && !self.dae_current {
                 let dae = self
                     .meta
                     .dae
@@ -1153,7 +1153,7 @@ impl<E: FmiHost + 'static> MeState<E> {
     /// `functionODE` for the derivatives and the event indicators: a `--daeMode`
     /// model has no such partial evaluation, so it evaluates whole.
     fn eval_ode(&mut self) -> Result<(), Status> {
-        if self.layout.dae_mode() {
+        if self.layout.compiled_dae_mode {
             return self.update_if_needed();
         }
         self.evaluate(|m| {
