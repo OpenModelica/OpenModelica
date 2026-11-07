@@ -221,6 +221,30 @@ pub(super) fn build_split_fn(
     })
 }
 
+/// A chunk that runs `save_pre` when the stage argument is exactly `stage`, as
+/// C's `updateContinuousSystem` does after `evaluateDAEResiduals(EVAL_ALGEBRAIC)`.
+pub(super) fn build_stage_pre_store(
+    name: &str,
+    stage: u32,
+    ty: u32,
+    save_pre: &[(SimOff, SimOff, Sz)],
+    var_map: &SimVarMap,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Literals,
+    pool: &mut ChunkPool,
+) -> Result<Option<usize>> {
+    if save_pre.is_empty() {
+        return Ok(None);
+    }
+    let mut ctx = FnCtx::new_sim_params(sim_ctx(var_map), by_name, literals, 2);
+    ctx.sim_index_guard(stage);
+    ctx.sim_save_pre_values(save_pre)?;
+    ctx.sim_end_block();
+    let idx = pool.len();
+    pool.push(finish_fn(ctx), ty, format!("{name}$storePreValues"));
+    Ok(Some(idx))
+}
+
 /// [`build_split_fn`] without an entry point of its own.
 #[allow(clippy::too_many_arguments)]
 pub(super) fn build_chunks(

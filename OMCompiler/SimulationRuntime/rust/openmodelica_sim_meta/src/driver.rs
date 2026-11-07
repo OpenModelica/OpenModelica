@@ -958,7 +958,7 @@ impl StepRetry {
             }
         }
         save_old_real(e, sim_data, layout)?; // C's `overwriteOldSimulationData`
-        iterate_discrete(e, sim_data, layout)?;
+        update_discrete_system(e, sim_data, layout)?;
         if first {
             omclog::warning(
                 omclog::STDOUT,
@@ -3743,7 +3743,7 @@ fn eval_event_left(
         write_f64s(e, states_base, y)?;
     }
     // As `capture_pre`: a when-model's `functionAlgebraics` runs the discrete update.
-    if layout.has_history_ops || !layout.has_when {
+    if layout.has_history_ops || !layout.has_when || layout.compiled_dae_mode {
         eval_continuous(e, sim_data, layout)?;
     } else {
         eval_ode(e, sim_data, layout)?;
@@ -3755,7 +3755,7 @@ fn eval_event_left(
 }
 
 pub fn eval_continuous(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
-    if layout.dae_mode() {
+    if layout.compiled_dae_mode {
         return e.call2(MODEL_FN_DAE, sim_data, eval_stage::ALGEBRAIC);
     }
     e.call1("functionODE", sim_data)?;
@@ -3765,7 +3765,7 @@ pub fn eval_continuous(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout)
 /// `functionODE` alone: the derivative slots for the state the integrator last
 /// wrote. In DAE mode `y'` is an unknown, so the dynamic residual stage stands in.
 fn eval_ode(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
-    if layout.dae_mode() {
+    if layout.compiled_dae_mode {
         return e.call2(MODEL_FN_DAE, sim_data, eval_stage::DYNAMIC);
     }
     e.call1("functionODE", sim_data)
@@ -3773,7 +3773,7 @@ fn eval_ode(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<
 
 /// One pass of C's `functionDAE`, which evaluates `allEquations` once.
 fn eval_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
-    if layout.dae_mode() {
+    if layout.compiled_dae_mode {
         return e.call2(MODEL_FN_DAE, sim_data, eval_stage::DISCRETE);
     }
     e.call1("functionDAE", sim_data)
@@ -3781,7 +3781,7 @@ fn eval_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Re
 
 /// C's `function_ZeroCrossingsEquations`: what the crossing functions read.
 pub fn eval_zc_equations(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
-    if layout.dae_mode() {
+    if layout.compiled_dae_mode {
         return e.call2(MODEL_FN_DAE, sim_data, eval_stage::ZEROCROSS);
     }
     e.call1("functionZeroCrossingsEquations", sim_data)
@@ -3964,10 +3964,10 @@ pub(crate) fn emit_initial_row(
 
 /// Evaluate at a point just before a discrete update. Skips `functionAlgebraics`
 /// for `has_when` models — there it saves `pre` early, which would break the
-/// post-event edge test.
+/// post-event edge test. The DAE-mode ALGEBRAIC stage runs no `when`-body.
 fn eval_pre(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, time: f64) -> Result<()> {
     write_time(e, sim_data, time)?;
-    if layout.has_when {
+    if layout.has_when && !layout.compiled_dae_mode {
         eval_ode(e, sim_data, layout)
     } else {
         eval_continuous(e, sim_data, layout)
@@ -5239,13 +5239,13 @@ fn resolve_solver_method<'a>(method: &'a str, dae_mode: bool) -> Result<&'a str>
 /// `startNonInteractiveSimulation` — an FMU steps with the method it was exported
 /// with, so only a standalone run applies it.
 fn resolve_sim_solver_method<'a>(method: &'a str, layout: &SimLayout) -> Result<&'a str> {
-    let method = resolve_solver_method(method, layout.dae_mode())?;
-    // C exempts `optimization`.
-    let nothing_to_solve = match layout.dae_mode() {
+    let method = resolve_solver_method(method, layout.compiled_dae_mode)?;
+    // C exempts `optimization` in ODE mode only.
+    let nothing_to_solve = match layout.compiled_dae_mode {
         true => layout.n_dae_res + layout.n_dae_alg < 1,
-        false => layout.n_states < 1,
+        false => layout.n_states < 1 && method != "optimization",
     };
-    if nothing_to_solve && method != "optimization" {
+    if nothing_to_solve {
         omclog::info(
             omclog::SOLVER,
             false,
@@ -9653,7 +9653,7 @@ impl SolverCore {
                     // system settling on another branch mid-search) is no event.
                     let roots = if left.is_none() {
                         eval_pre(e, sim_data, layout, troot)?;
-                        e.call1_if_present("functionZeroCrossingsEquations", sim_data)?;
+                        eval_zc_equations(e, sim_data, layout)?;
                         save_zero_crossings(e, sim_data, layout)?
                     } else {
                         self.roots_nonzero()
@@ -10246,7 +10246,10 @@ impl CsDriver {
             self.core.t = t_target;
             write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
             write_time(e, sim_data, t_target)?;
-            e.call1_if_present("functionAlgebraics", sim_data)?;
+            match layout.compiled_dae_mode {
+                true => eval_continuous(e, sim_data, layout)?,
+                false => e.call1_if_present("functionAlgebraics", sim_data)?,
+            }
             if terminated(e, sim_data, layout)? {
                 return Ok(CsStep::Terminated);
             }
@@ -10273,8 +10276,13 @@ impl CsDriver {
         // (see `DasslDriver`).
         write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
         write_time(e, sim_data, t_target)?;
-        e.call1("functionODE", sim_data)?;
-        e.call1_if_present("functionAlgebraics", sim_data)?;
+        match layout.compiled_dae_mode {
+            true => eval_continuous(e, sim_data, layout)?,
+            false => {
+                e.call1("functionODE", sim_data)?;
+                e.call1_if_present("functionAlgebraics", sim_data)?;
+            }
+        }
         if dss.reselect(e, sim_data, model)? {
             e.call1("functionODE", sim_data)?;
             self.core.read_states(e)?;

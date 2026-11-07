@@ -1,0 +1,71 @@
+// name: fmi3_wasm_daemode_nores.mos
+// keywords: FMI 3.0 export wasm Co-Simulation daeMode
+// status: correct
+// suite: wasm
+// teardown_command: rm -rf DaeModeNoRes* nores_*.mat diff_nores* om-wasm-include-*
+//
+// A `--daeMode` model with no residual left for IDA. Its equations are only in
+// evaluateDAEResiduals, so the FMU must evaluate that function and not the
+// empty functionODE and functionAlgebraics.
+
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+loadFile("fmi3_wasm_daemode_nores.mo"); getErrorString();
+
+simulate(DaeModeNoRes, fileNamePrefix="nores_plain"); getErrorString();
+val(u, 1.0, "nores_plain_res.mat");
+val(d, 1.0, "nores_plain_res.mat");
+val(k, 1.0, "nores_plain_res.mat");
+
+setCommandLineOptions("--fmuDirectory=true"); getErrorString();
+buildModelFMU(DaeModeNoRes, fileNamePrefix="DaeModeNoRes", fmuType="me_cs", version="3.0", platforms={"wasm"}); getErrorString();
+
+simulate(DaeModeNoRes, simflags="-r=nores_sim.mat", resimulateExecutable="DaeModeNoRes.fmu"); getErrorString();
+simulate(DaeModeNoRes, simflags="-s fmi3:cs -r=nores_cs.mat", resimulateExecutable="DaeModeNoRes.fmu"); getErrorString();
+
+diffSimulationResults("nores_sim.mat", "nores_plain_res.mat", "diff_nores_sim", 1e-6, 1e-6);
+diffSimulationResults("nores_cs.mat", "nores_plain_res.mat", "diff_nores_cs", 1e-6, 1e-6);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nores_plain_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'nores_plain', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// 1.500000000299886
+// 3.0
+// true
+// ""
+// "DaeModeNoRes.fmu"
+// "Notification: The Model Exchange FMU carries a DAE formulation as fmi-ls-dae 1.0.0-alpha.1, implemented against the draft of 2026-09-02 (commit 78313f4). fmi-ls-dae is not a released layered standard yet, so an importer written against another revision of the draft may not read the manifest.
+// Notification: Building FMU for platform 'wasm' (1/1).
+// Notification: Finished FMU for platform 'wasm' (1/1).
+// "
+// record SimulationResult
+//     resultFile = "nores_sim.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DaeModeNoRes', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-r=nores_sim.mat'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "nores_cs.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DaeModeNoRes', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:cs -r=nores_cs.mat'",
+//     messages = "LOG_STDOUT        | info    | wasm artifact loaded (model kernel linked against the cached adapter)
+// LOG_STDOUT        | info    | CoSimulation instantiated
+// LOG_STDOUT        | info    | CoSimulation run: 501 communication steps, 5 events, 1 early returns, 507 samples
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true, {})
+// (true, {})
+// endResult
