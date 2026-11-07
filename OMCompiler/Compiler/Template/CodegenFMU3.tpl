@@ -257,6 +257,7 @@ template fmiBuildDescription(SimCode simCode, list<String> sourceFiles)
 match simCode
 case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   let modelIdentifier = modelNamePrefix(simCode)
+  let hasZlib = (sourceFiles |> file => if stringEq(file, "ModelicaExternalC/ModelicaMatIO.c") then "1")
   <<
   <?xml version="1.0" encoding="UTF-8"?>
   <fmiBuildDescription fmiVersion="3.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/modelica/fmi-standard/v3.0.2/schema/fmi3BuildDescription.xsd">
@@ -265,8 +266,10 @@ case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
         <%sourceFiles |> file => if boolNot(StringUtil.endsWith(file, ".rs")) then '<SourceFile name="<%file%>"/>' ;separator="\n"%>
         <PreprocessorDefinition name="FMI2_OVERRIDE_FUNCTION_PREFIX"/>
         <PreprocessorDefinition name="FMI3_OVERRIDE_FUNCTION_PREFIX"/>
+        <%if hasZlib then '<PreprocessorDefinition name="HAVE_ZLIB" value="1"/>'%>
         <IncludeDirectory name="."/>
         <IncludeDirectory name="fmi"/>
+        <%if hasZlib then '<IncludeDirectory name="ModelicaExternalC/zlib"/>'%>
       </SourceFileSet>
       <%rustSourceFileSet(sourceFiles)%>
       <%SimCodeCodegenUtil.fmuExternalLibraries(makefileParams.libs) |> lib => '<Library name="<%Util.escapeModelicaStringToXmlString(lib)%>" external="true"/>' ;separator="\n"%>
