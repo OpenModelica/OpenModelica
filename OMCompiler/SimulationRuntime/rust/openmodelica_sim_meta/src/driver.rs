@@ -9946,11 +9946,17 @@ pub enum CsStep {
 
 /// C's `FMI2CS_initializeSolverData`: an FMU's solver is set up in
 /// `fmi2Instantiate`, and for CVODE `LOG_SOLVER` is forced on across
-/// `cvode_solver_initial` so the banner reaches the log either way.
+/// `cvode_solver_initial` so the banner reaches the log either way. IDA's
+/// `ida_solver_initial` warns there when it changes the Jacobian method.
 pub fn log_cs_solver_setup(model: &SimModel) {
     let Ok(method) = resolve_solver_method(model.cs_method(), model.layout.dae_mode()) else {
         return;
     };
+    #[cfg(sundials)]
+    if method == "ida" {
+        ida_jacobian_method(cvode_jac_a(model), ida_linear_solver(&model.layout), true);
+        return;
+    }
     // "No states present, continuing without ODE solver": C falls back to euler,
     // which has nothing to set up and nothing to say.
     if method != "cvode" || model.layout.n_states == 0 {

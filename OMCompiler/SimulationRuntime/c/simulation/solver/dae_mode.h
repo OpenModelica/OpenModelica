@@ -53,6 +53,9 @@ void getAlgebraicDAEVarNominals(DATA*, double*);
 void getAlgebraicDAEVars(DATA*, double*);
 void setAlgebraicDAEVars(DATA*, double*);
 
+size_t solveDAEModeExplicitWorkSize(DATA *data);
+int solveDAEModeExplicit(DATA *data, threadData_t *threadData, double *work);
+
 
 #ifdef __cplusplus
 }

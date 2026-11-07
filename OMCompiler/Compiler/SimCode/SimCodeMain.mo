@@ -1262,7 +1262,7 @@ algorithm
           Error.addCompilerWarning("OpenModelica exports FMI 1.0 as Model Exchange only (Co-Simulation export requires FMI 2.0). A model-exchange FMU is integrated by the importer, so the in-FMU CVODE integrator does not apply. The 's:cvode' simulation flag is ignored for this FMI 1.0 export.");
         end if;
 
-        // A --daeMode Co-Simulation FMU integrates its residual form with IDA.
+        // A --daeMode FMU solves its residual form with dae_mode.c, and IDA in Co-Simulation.
         needIda := isSome(simCode.daeModeData) and not rustRuntime;
 
         // The linear and non-linear solvers of the C runtime use SuiteSparse, SUNDIALS

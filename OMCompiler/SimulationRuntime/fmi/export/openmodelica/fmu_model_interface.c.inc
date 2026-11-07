@@ -357,17 +357,77 @@ int fmuDeInitializeSolverData(ModelInstance* comp)
   return retValue;
 }
 
+/* An FMI 3.0 Model Exchange FMU of a --daeMode model serves fmi-ls-dae. A
+ * --daeMode FMU has the sources of dae_mode.c with those of IDA. */
+#if OMC_FMI_VERSION == 3 && defined(OMC_FMI_HAVE_IDA)
+#define OMC_FMI_LS_DAE 1
+#endif
+
+#ifdef OMC_FMI_LS_DAE
+/* ODE mode: der(x) and the algebraic variables from the residual. */
+static void solveDAEModeUnknowns(ModelInstance *comp)
+{
+  if (comp->daeMode || comp->daeSolved) {
+    return;
+  }
+  if (!comp->daeWork || solveDAEModeExplicit(comp->fmuData, comp->threadData, comp->daeWork)) {
+    throwStreamPrint(comp->threadData, "The derivatives of the DAE-mode model could not be solved for (the Newton iteration over the residual did not converge).");
+  }
+  comp->daeSolved = 1;
+}
+#define DAE_MODE_CHANGED(comp) ((comp)->daeSolved = 0)
+#else
+#define DAE_MODE_CHANGED(comp)
+#endif
+
 /* A --daeMode model has its continuous equations in the DAE residual function,
- * not in functionODE. IDA owns the states, their derivatives and the algebraic
- * DAE variables. */
+ * not in functionODE. In Co-Simulation IDA owns the states, their derivatives
+ * and the algebraic DAE variables. In Model Exchange the importer owns them in
+ * DAE mode; in ODE mode the residual is solved for them. */
 static void evalDAEModeContinuous(ModelInstance* comp)
 {
 #ifdef OMC_FMI_HAVE_IDA
-  if (compiledInDAEMode) {
-    comp->fmuData->simulationInfo->daeModeData->evaluateDAEResiduals(comp->fmuData, comp->threadData, EVAL_ALGEBRAIC | EVAL_ZEROCROSS);
+  if (!compiledInDAEMode) {
+    return;
+  }
+#ifdef OMC_FMI_LS_DAE
+  if (FMIX_ME == comp->type) {
+    solveDAEModeUnknowns(comp);
+    comp->fmuData->simulationInfo->daeModeData->evaluateDAEResiduals(comp->fmuData, comp->threadData, EVAL_DYNAMIC | EVAL_ALGEBRAIC);
+    return;
   }
 #endif
+  comp->fmuData->simulationInfo->daeModeData->evaluateDAEResiduals(comp->fmuData, comp->threadData, EVAL_ALGEBRAIC | EVAL_ZEROCROSS);
+#endif
 }
+
+#ifdef OMC_FMI_LS_DAE
+/* The event iteration of a Model Exchange FMU evaluates the discrete part of
+ * the residual function, after the unknowns are solved for again in ODE mode,
+ * as ida_event_update does. */
+static int fmuDAEModeEventUpdate(DATA *data, threadData_t *threadData)
+{
+  ModelInstance *comp = (ModelInstance*) data->simulationInfo->daeModeData->solverData;
+  DAE_MODE_CHANGED(comp);
+  solveDAEModeUnknowns(comp);
+  return evaluateDAEResiduals_wrapperEventUpdate(data, threadData);
+}
+
+/* The instance gets its own callbacks: IDA sets functionDAE in Co-Simulation. */
+static void setupDAEModeCallbacks(ModelInstance *comp)
+{
+  if (!compiledInDAEMode || FMIX_ME != comp->type) {
+    return;
+  }
+  if (!comp->daeCallbacks) {
+    comp->daeCallbacks = malloc(sizeof(*comp->daeCallbacks));
+  }
+  memcpy(comp->daeCallbacks, comp->fmuData->callback, sizeof(*comp->daeCallbacks));
+  comp->daeCallbacks->functionDAE = fmuDAEModeEventUpdate;
+  comp->daeCallbacks->function_ZeroCrossingsEquations = evaluateDAEResiduals_wrapperZeroCrossingsEquations;
+  comp->fmuData->callback = comp->daeCallbacks;
+}
+#endif
 
 // ---------------------------------------------------------------------------
 // Private helpers used below to validate function arguments
@@ -650,11 +710,36 @@ static int isParameterSlot(ModelInstance *comp, long slot)
   }
 }
 
+#ifdef OMC_FMI_LS_DAE
+/* der(x) or an algebraic DAE variable: the unknowns of the residual. */
+static int isDAEModeUnknown(ModelInstance *comp, long index)
+{
+  long i, nStates = comp->fmuData->modelData->nStates;
+  DAEMODE_DATA *daeModeData = comp->fmuData->simulationInfo->daeModeData;
+  if (index >= nStates && index < 2*nStates) {
+    return 1;
+  }
+  for (i = 0; i < daeModeData->nAlgebraicDAEVars; i++) {
+    if (daeModeData->algIndexes[i] == index) {
+      return 1;
+    }
+  }
+  return 0;
+}
+#endif
+
 /* FMI 2.0 and 3.0: whether the importer may set the variable now, by the
  * causality, variability and initial attributes of modelDescription.xml. */
 static fmiXBoolean settableNow(ModelInstance *comp, long slot)
 {
   unsigned char f = slot >= 0 && (size_t) slot < comp->paramDeps->nSlots ? comp->paramDeps->flags[slot] : 0;
+#ifdef OMC_FMI_LS_DAE
+  /* fmi-ls-dae: the importer solves for der(x) and the algebraic variables */
+  if (comp->daeMode && (comp->state & (model_state_me_event_mode | model_state_me_continuous_time_mode)) &&
+      slot >= 0 && slot % 8 == OMC_SLOT_REAL && isDAEModeUnknown(comp, slot / 8)) {
+    return fmiXTrue;
+  }
+#endif
   switch (comp->state) {
   case model_state_instantiated:
     return (f & (OMC_PARAMDEPS_INITIAL_EXACT | OMC_PARAMDEPS_INITIAL_APPROX | OMC_PARAMDEPS_INPUT)) != 0;
@@ -883,6 +968,12 @@ fmiXStatus internalEventUpdate(fmiXComponent c, fmiXEventInfo* eventInfo)
   releaseAsserts(comp);
 
   if (done) {
+#ifdef OMC_FMI_LS_DAE
+    if (compiledInDAEMode && isModelExchange(comp)) {
+      comp->_need_update = 1;
+      DAE_MODE_CHANGED(comp);
+    }
+#endif
     if (comp->_terminate_simulation_requested && !eventInfo->newDiscreteStatesNeeded) {
       comp->_terminate_simulation_requested = 0;
       eventInfo->terminateSimulation = fmiXTrue;
@@ -893,6 +984,7 @@ fmiXStatus internalEventUpdate(fmiXComponent c, fmiXEventInfo* eventInfo)
 
   FILTERED_LOG(comp, fmiXError, LOG_FMIX_CALL, "internalEventUpdate: terminated by an assertion.")
   comp->_need_update = 1;
+  DAE_MODE_CHANGED(comp);
   return fmiXError;
 }
 
@@ -995,6 +1087,7 @@ fmiXStatus updateIfNeeded(ModelInstance *comp, const char *func)
 
     if (model_state_initialization_mode == comp->state)
     {
+      DAE_MODE_CHANGED(comp);
       initialization(comp->fmuData, comp->threadData, "fmi", "", 0.0);
     }
     else
@@ -1033,6 +1126,51 @@ fmiXStatus updateIfNeeded(ModelInstance *comp, const char *func)
   return fmiXOK;
 }
 
+
+#ifdef OMC_FMI_LS_DAE
+/* fmi-ls-dae: residual i at the values the importer set. Outside of
+ * initialization it evaluates only the residual: a DAE-mode importer reads it
+ * at its Newton iterates, which must not reach the delay buffers. */
+static fmiXStatus internalGetDAEResidual(ModelInstance *comp, long i, fmiXReal *value)
+{
+  threadData_t *threadData = comp->threadData;
+  jmp_buf *old_jmp = threadData->mmc_jumper;
+  int done = 0;
+  int meStates = model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error;
+  int csStates = model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error;
+
+  if (invalidState(comp, FMIX_STR "GetFloat64", meStates, csStates))
+    return fmiXError;
+  if (model_state_initialization_mode == comp->state && updateIfNeeded(comp, FMIX_STR "GetFloat64") != fmiXOK)
+    return fmiXError;
+
+  setThreadData(comp);
+  /* try */
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
+    threadData->mmc_jumper = threadData->simulationJumpBuffer;
+    holdAsserts(comp, (comp->state & (model_state_me_continuous_time_mode | model_state_cs_step_complete)) != 0);
+    applyTunableParameters(comp);
+    if (isModelExchange(comp)) {
+      solveDAEModeUnknowns(comp);
+    }
+    comp->fmuData->simulationInfo->daeModeData->evaluateDAEResiduals(comp->fmuData, threadData, EVAL_DYNAMIC);
+    releaseAsserts(comp);
+    *value = comp->fmuData->simulationInfo->daeModeData->residualVars[i];
+    done = 1;
+  /* catch */
+  OMC_CATCH_INTERNAL(simulationJumpBuffer)
+  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
+  threadData->mmc_jumper = old_jmp;
+  releaseAsserts(comp);
+
+  if (!done) {
+    FILTERED_LOG(comp, fmiXError, LOG_FMIX_CALL, FMIX_STR "GetFloat64: terminated by an assertion.")
+    return fmiXError;
+  }
+  FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "GetFloat64: residual %ld = %.16g", i, *value)
+  return fmiXOK;
+}
+#endif
 
 /***************************************************
 Common Functions
@@ -1217,6 +1355,9 @@ ModelInstance* FMIX(Instantiate)(fmiXString instanceName, OMC_FmuType fmuType, f
     return NULL;
   }
 #undef INSTANTIATE_ERROR
+#ifdef OMC_FMI_LS_DAE
+  setupDAEModeCallbacks(comp);
+#endif
   /*
    * load the simulation settings before initializing the DataStruct for fmus
    * fix issue #11855, always take the startTime provided in modeldescription.xml
@@ -1233,6 +1374,12 @@ ModelInstance* FMIX(Instantiate)(fmiXString instanceName, OMC_FmuType fmuType, f
   /* setup model data with default start data */
   omc_fmu_init_variables(init, comp->fmuData->modelData, 1);
   initializeDataStruc(comp->fmuData, comp->threadData);
+#ifdef OMC_FMI_LS_DAE
+  if (compiledInDAEMode && isModelExchange(comp)) {
+    comp->fmuData->simulationInfo->daeModeData->solverData = comp;
+    comp->daeWork = (double*) calloc(solveDAEModeExplicitWorkSize(comp->fmuData) + 1, sizeof(double));
+  }
+#endif
   omc_fmu_paramdeps_resize(comp->paramDeps, comp->fmuData->modelData);
   comp->slotDirty = (unsigned char*) calloc(comp->paramDeps->nSlots + 1, 1);
   comp->slotSetBeforeInit = (unsigned char*) calloc(comp->paramDeps->nSlots + 1, 1);
@@ -1324,6 +1471,7 @@ ModelInstance* FMIX(Instantiate)(fmiXString instanceName, OMC_FmuType fmuType, f
 #endif
 
   comp->_need_update = 1;
+  DAE_MODE_CHANGED(comp);
 
   /* Initialize solverInfo */
   if (isCoSimulation(comp)) {
@@ -1408,6 +1556,10 @@ void FMIX(FreeInstance)(fmiXComponent c)
   free(comp->slotDirty);
   free(comp->slotSetBeforeInit);
   free(comp->eqMask);
+#ifdef OMC_FMI_LS_DAE
+  free(comp->daeWork);
+  free(comp->daeCallbacks);
+#endif
   omc_fmu_paramdeps_free(comp->paramDeps);
 
   free(comp->fmuData->modelData->resourcesDir);
@@ -1491,6 +1643,7 @@ fmiXStatus FMIX(ExitInitializationMode)(fmiXComponent c)
 
   if (comp->_need_update)
   {
+    DAE_MODE_CHANGED(comp);
     if (initialization(comp->fmuData, comp->threadData, "fmi", "", 0.0))
     {
       comp->state = model_state_error;
@@ -1618,6 +1771,9 @@ fmiXStatus FMIX(Reset)(fmiXComponent c)
   omc_useStream[OMC_LOG_STDOUT] = 1;
   omc_useStream[OMC_LOG_ASSERT] = 1;
   FMIX_SETUP_DATA_STRUC(comp->fmuData, comp->threadData);
+#ifdef OMC_FMI_LS_DAE
+  setupDAEModeCallbacks(comp);
+#endif
   init = omc_fmu_init_load(comp->fmuData->modelData);
   if (omc_fmu_init_error(init)) {
     FILTERED_LOG(comp, fmiXError, LOG_STATUSERROR, FMIX_STR "Reset: %s", omc_fmu_init_error(init))
@@ -1637,6 +1793,11 @@ fmiXStatus FMIX(Reset)(fmiXComponent c)
   }
   omc_fmu_init_experiment(init, comp->fmuData->simulationInfo);
   initializeDataStruc(comp->fmuData, comp->threadData);
+#ifdef OMC_FMI_LS_DAE
+  if (compiledInDAEMode && isModelExchange(comp)) {
+    comp->fmuData->simulationInfo->daeModeData->solverData = comp;
+  }
+#endif
 
   /* reset model data with default start data */
   omc_fmu_init_variables(init, comp->fmuData->modelData, 1);
@@ -1673,6 +1834,7 @@ fmiXStatus FMIX(Reset)(fmiXComponent c)
   }
 
   comp->_need_update = 1;
+  DAE_MODE_CHANGED(comp);
   comp->_terminate_simulation_requested = 0;
   memset(comp->slotDirty, 0, comp->paramDeps->nSlots);
   memset(comp->slotSetBeforeInit, 0, comp->paramDeps->nSlots);
@@ -1872,6 +2034,7 @@ fmiXStatus FMIX(SetReal)(fmiXComponent c, const fmiXValueReference vr[], size_t 
       return fmiXError;
   }
   comp->_need_update = 1;
+  DAE_MODE_CHANGED(comp);
   return fmiXOK;
 }
 
@@ -1901,6 +2064,7 @@ fmiXStatus FMIX(SetInteger)(fmiXComponent c, const fmiXValueReference vr[], size
       return fmiXError;
   }
   comp->_need_update = 1;
+  DAE_MODE_CHANGED(comp);
   return fmiXOK;
 }
 
@@ -1929,6 +2093,7 @@ fmiXStatus FMIX(SetBoolean)(fmiXComponent c, const fmiXValueReference vr[], size
       return fmiXError;
   }
   comp->_need_update = 1;
+  DAE_MODE_CHANGED(comp);
   return fmiXOK;
 }
 
@@ -1958,6 +2123,7 @@ fmiXStatus FMIX(SetString)(fmiXComponent c, const fmiXValueReference vr[], size_
       return fmiXError;
   }
   comp->_need_update = 1;
+  DAE_MODE_CHANGED(comp);
   return fmiXOK;
 }
 
@@ -1973,6 +2139,7 @@ fmiXStatus FMIX(GetFMUstate)(fmiXComponent c, fmiXFMUstate* FMUstate)
     return fmiXError;
   if (comp->_tunable_dirty) {
     comp->_need_update = 1;
+    DAE_MODE_CHANGED(comp);
     if (updateIfNeeded(comp, FMIX_STR "GetFMUstate") != fmiXOK)
       return fmiXError;
   }
@@ -2142,6 +2309,7 @@ fmiXStatus FMIX(SetFMUstate)(fmiXComponent c, fmiXFMUstate FMUstate)
   }
   comp->_tunable_dirty = 1;
   comp->_need_update = 1;
+  DAE_MODE_CHANGED(comp);
   if (!(comp->state & (model_state_instantiated | model_state_initialization_mode)) &&
       updateIfNeeded(comp, FMIX_STR "SetFMUstate") != fmiXOK) {
     status = fmiXError;
@@ -2669,6 +2837,7 @@ fmiXStatus FMIX(SetTime)(fmiXComponent c, fmiXReal t)
   FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "SetTime: time=%.16g", t)
   comp->fmuData->localData[0]->timeValue = t;
   comp->_need_update = 1;
+  DAE_MODE_CHANGED(comp);
   return fmiXOK;
 }
 
@@ -2690,6 +2859,7 @@ fmiXStatus internalSetContinuousStates(fmiXComponent c, const fmiXReal x[], size
   }
 #endif
   comp->_need_update = 1;
+  DAE_MODE_CHANGED(comp);
   return fmiXOK;
 }
 
@@ -2918,6 +3088,7 @@ fmiXStatus FMIX(SetRealInputDerivatives)(fmiXComponent c, const fmiXValueReferen
 #endif
 
   comp->_need_update = 1;
+  DAE_MODE_CHANGED(comp);
   return fmiXOK;
 }
 
@@ -3202,6 +3373,7 @@ static fmiXStatus doStepInternal(ModelInstance* c, fmiXReal currentCommunication
     // update time
     comp->fmuData->localData[0]->timeValue = tNext;
     comp->_need_update = 1;
+    DAE_MODE_CHANGED(comp);
 
     // set the real Inputs with output_derivative values
 #if (NUMBER_OF_REAL_INPUTS > 0)
