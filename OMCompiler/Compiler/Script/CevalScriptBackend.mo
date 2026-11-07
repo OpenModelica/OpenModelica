@@ -3911,7 +3911,7 @@ algorithm
       Boolean isTrustedImage;
       Integer uid;
       String cidFile, volumeID, containerID, userID;
-      String dockerLogFile;
+      String dockerLogFile, fmuTarFile;
       String cmake_toolchain;
       list<String> locations;
     case {"dynamic"}
@@ -3958,7 +3958,7 @@ algorithm
         cidFile := fmutmp+".cidfile";
 
         // Temp log file outside of Docker volume
-        dockerLogFile := crossTriple + ".tmp.log";
+        dockerLogFile := fmutmp + "." + crossTriple + ".tmp.log";
         // Remove old log file
         if System.regularFileExists(dockerLogFile) then
           System.removeFile(dockerLogFile);
@@ -3966,11 +3966,11 @@ algorithm
 
         // Only download trusted images automatically, and only if the signature
         // can be verified. Images that are already on this machine are used as is.
-        if isTrustedImage and not ContainerImage.isAvailableLocally(dockerImage) then
-          if ContainerImage.isCosignAvailable() then
+        if isTrustedImage and not ContainerImage.isAvailableLocally(dockerImage, fmutmp) then
+          if ContainerImage.isCosignAvailable(fmutmp) then
             // Verify the image in the registry first, it's only downloaded if the signature is valid.
-            ContainerImage.assertSignature(dockerImage);
-            ContainerImage.pull(dockerImage);
+            ContainerImage.assertSignature(dockerImage, fmutmp);
+            ContainerImage.pull(dockerImage, fmutmp);
           else
             Error.addCompilerError("Refusing to download container image '" + ContainerImage.toString(dockerImage) + "' without verifying its signature.");
             Error.addCompilerNotification("Download the image manually with `" + ContainerImage.pullCommand(dockerImage) + "` and run the FMU export again.");
@@ -4063,16 +4063,17 @@ algorithm
         // Docker cp can't handle too long names on Windows.
         // Workaround: Zip it in the container, copy it to host, unzip it
         if isWindows then
+          fmuTarFile := fmutmp + ".tar.gz";
           cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu " + dockerRunArgs +
-                 " tar -zcf comp-fmutmp.tar.gz " + fmutmp;
+                 " tar -zcf " + fmuTarFile + " " + fmutmp;
           runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
 
-          cmd := "docker cp " + containerID + ":/data/comp-fmutmp.tar.gz .";
+          cmd := "docker cp " + containerID + ":/data/" + fmuTarFile + " .";
           runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
-          if 0 <> System.systemCall("tar zxf comp-fmutmp.tar.gz && rm comp-fmutmp.tar.gz", outFile=dockerLogFile) then
+          if 0 <> System.systemCall("tar zxf " + fmuTarFile + " && rm " + fmuTarFile, outFile=dockerLogFile) then
             // Otherwise the failure only surfaces later as "Build commands returned
             // success, but <name>.fmu does not exist".
-            Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Failed to unpack comp-fmutmp.tar.gz:\n" + System.readFile(dockerLogFile)});
+            Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Failed to unpack " + fmuTarFile + ":\n" + System.readFile(dockerLogFile)});
             fail();
           end if;
         else
