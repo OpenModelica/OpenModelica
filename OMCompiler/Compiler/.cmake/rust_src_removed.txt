@@ -25,3 +25,5 @@ openmodelica_script_util/src/result_readers.rs
 .cmake/x64-windows-xwin.cmake
 openmodelica_script_util/src/Curl_wasm.rs
 openmodelica_script_util/src/Curl.rs
+openmodelica_package_manager/src/legacy.rs
+openmodelica_package_manager/src/version.rs

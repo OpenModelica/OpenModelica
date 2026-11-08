@@ -529,7 +529,7 @@ protected function sameVersion
   input String wanted;
   input String version;
   output Boolean same = wanted == "default" or
-    0 == SemanticVersion.compare(SemanticVersion.parse(wanted), SemanticVersion.parse(version), comparePrerelease=false);
+    0 == SemanticVersion.compare(wanted, version, comparePrerelease=false);
 end sameVersion;
 
 protected function chooseVersions
@@ -702,33 +702,30 @@ protected function checkValidVersion
   input list<String> withConversion;
   input list<String> withoutConversion;
 protected
-  SemanticVersion.Version semverWanted, semverActual;
   String actualVersionStr, pathStr;
 algorithm
-  semverWanted := SemanticVersion.parse(version);
   actualVersionStr := Util.getOptionOrDefault(actualVersion, "");
   pathStr := AbsynUtil.pathString(path);
-  semverActual := SemanticVersion.parse(actualVersionStr);
-  if 0 == SemanticVersion.compare(semverWanted, semverActual, comparePrerelease=false) then
+  if 0 == SemanticVersion.compare(version, actualVersionStr, comparePrerelease=false) then
     return;
   end if;
-  if not (SemanticVersion.isSemVer(semverActual) and SemanticVersion.isSemVer(semverWanted)) then
+  if not (SemanticVersion.isSemVer(actualVersionStr) and SemanticVersion.isSemVer(version)) then
     Error.addMessage(Error.LOAD_MODEL_DIFFERENT_VERSIONS, {pathStr, version, actualVersionStr});
     return;
   end if;
   for ver in withoutConversion loop
-    if 0 == SemanticVersion.compare(semverWanted, SemanticVersion.parse(ver), comparePrerelease=false) then
+    if 0 == SemanticVersion.compare(version, ver, comparePrerelease=false) then
       Error.addMessage(Error.LOAD_MODEL_DIFFERENT_VERSIONS_WITHOUT_CONVERSION, {requestOrigin, pathStr, version, actualVersionStr});
       return;
     end if;
   end for;
   for ver in withConversion loop
-    if 0 == SemanticVersion.compare(semverWanted, SemanticVersion.parse(ver), comparePrerelease=false) then
+    if 0 == SemanticVersion.compare(version, ver, comparePrerelease=false) then
       Error.addMessage(Error.LOAD_MODEL_DIFFERENT_VERSIONS_WITH_CONVERSION, {requestOrigin, pathStr, version, actualVersionStr});
       return;
     end if;
   end for;
-  if SemanticVersion.compare(semverWanted, semverActual) > 0 then
+  if SemanticVersion.compare(version, actualVersionStr) > 0 then
     Error.addMessage(Error.LOAD_MODEL_DIFFERENT_VERSIONS_NEWER, {pathStr, version, actualVersionStr});
   else
     Error.addMessage(Error.LOAD_MODEL_DIFFERENT_VERSIONS_OLDER, {pathStr, version, actualVersionStr});

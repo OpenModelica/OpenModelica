@@ -13,6 +13,7 @@ crate-type = ["staticlib", "rlib"]
 [dependencies]
 openmodelica_zip = { path = "../../OpenModelica.rs/openmodelica_zip" }
 openmodelica_package_manager = { path = "../../OpenModelica.rs/openmodelica_package_manager" }
+openmodelica_version = { path = "../../OpenModelica.rs/openmodelica_version" }
 
 [workspace]
 

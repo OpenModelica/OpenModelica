@@ -122,7 +122,6 @@ import Matching;
 import MetaModelica.Dangerous;
 import Mutable;
 import PriorityQueue;
-import SemanticVersion;
 import SimCodeDump;
 import SimCodeFunctionUtil;
 import SimCodeUtilShared;
@@ -14399,13 +14398,12 @@ public function getCMakeVersion
   "Get CMake version, writing intermediate output to logDirectory (defaults to the current directory)."
   input String pathToCMake = Autoconf.cmake;
   input String logDirectory = "./";
-  output SemanticVersion.Version cmakeVersion;
+  output String cmakeVersion;
 protected
   Integer retVal;
   String cmakeVersionLogFile = logDirectory + "systemCall_cmakeVersion.log";
   list<String> regexOut;
   Integer numMatches;
-  String cmakeVersionString;
 algorithm
   retVal := System.systemCallRestrictedEnv(msvcEnvironment() + pathToCMake + " --version", cmakeVersionLogFile);
   if 0 <> retVal then
@@ -14426,8 +14424,7 @@ algorithm
     Error.addInternalError("Failed to read semantic version from " + pathToCMake, sourceInfo());
     fail();
   end if;
-  cmakeVersionString := listHead(regexOut);
-  cmakeVersion := SemanticVersion.parse(cmakeVersionString);
+  cmakeVersion := listHead(regexOut);
   System.removeFile(cmakeVersionLogFile);
 end getCMakeVersion;
 

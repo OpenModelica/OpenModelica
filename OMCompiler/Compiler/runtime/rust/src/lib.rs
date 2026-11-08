@@ -1,6 +1,6 @@
 //! C ABI of omcruntime's Rust part; see include/omcruntime_rust.h.
 
-use std::ffi::{CStr, CString, c_char};
+use std::ffi::{CStr, CString, c_char, c_int};
 
 /// # Safety
 /// Every pointer is a NUL-terminated string.
@@ -72,6 +72,37 @@ pub unsafe extern "C" fn omcrs_zip_paths(
 pub unsafe extern "C" fn omcrs_package_manager(request: *const c_char) -> *mut c_char {
     let response = openmodelica_package_manager::call(&unsafe { arg(request) });
     CString::new(response.replace('\0', " ")).unwrap_or_default().into_raw()
+}
+
+/// `openmodelica_version::compare_parts` as -1, 0 or 1.
+///
+/// # Safety
+/// `a` and `b` are NUL-terminated strings.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn omcrs_version_compare(a: *const c_char, b: *const c_char, pre: c_int, build: c_int) -> c_int {
+    use openmodelica_version::{Version, compare_parts};
+    let (a, b) = unsafe { (Version::parse(&arg(a)), Version::parse(&arg(b))) };
+    compare_parts(&a, &b, pre != 0, build != 0) as c_int
+}
+
+/// `openmodelica_version::canonical`.
+///
+/// # Safety
+/// `s` is a NUL-terminated string.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn omcrs_version_canonical(s: *const c_char) -> *mut c_char {
+    let text = openmodelica_version::canonical(&unsafe { arg(s) });
+    CString::new(text).unwrap_or_default().into_raw()
+}
+
+/// Whether `s` is a numbered version, not a branch or empty.
+///
+/// # Safety
+/// `s` is a NUL-terminated string.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn omcrs_version_is_numbered(s: *const c_char) -> c_int {
+    let v = openmodelica_version::Version::parse(&unsafe { arg(s) });
+    matches!(v.kind, openmodelica_version::Kind::Numbered { .. }) as c_int
 }
 
 /// # Safety

@@ -2,11 +2,10 @@
 //! of `uses` requirements, with a SAT solver (resolvo). Shared by the C omc
 //! (through runtime/rust), the Rust omc and the web build.
 
-mod legacy;
 mod manager;
 mod scan;
 mod solve;
-pub mod version;
+pub use openmodelica_version as version;
 
 use std::borrow::Cow;
 use std::collections::BTreeMap;
@@ -322,7 +321,7 @@ pub fn call(request: &str) -> String {
                 let versions: Vec<String> = versions
                     .iter()
                     .rev()
-                    .map(|v| legacy::normalize(v))
+                    .map(|v| version::canonical(v))
                     .filter(|v| !v.is_empty())
                     .collect();
                 serde_json::json!({"ok": true, "versions": versions})
