@@ -3351,7 +3351,6 @@ public
       list<Expression> args, inv_args;
       list<list<Expression>> rows;
       list<Subscript> subs;
-      Boolean changed;
 
       case CLKCONST() then CLKCONST(ClockKind.mapExp(exp.clk, func));
 
@@ -3363,16 +3362,9 @@ public
 
       case ARRAY() guard not exp.literal
         algorithm
-          arr := Array.map(exp.elements, function map(func = func));
-          changed := false;
-          for i in 1:arrayLength(arr) loop
-            if not referenceEq(exp.elements[i], arr[i]) then
-              changed := true;
-              break;
-            end if;
-          end for;
+          arr := Array.mapCheckReferenceEq(exp.elements, function map(func = func));
         then
-          if changed then makeArray(exp.ty, arr, exp.literal) else exp;
+          if referenceEq(exp.elements, arr) then exp else makeArray(exp.ty, arr, exp.literal);
 
       case MATRIX()
         algorithm

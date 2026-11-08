@@ -220,6 +220,35 @@ algorithm
   end if;
 end map;
 
+function mapCheckReferenceEq<T>
+  "Like map, but returns the input array if the function returns all elements
+   unchanged (referenceEq). A new array is only created for the first change."
+  input array<T> inArray;
+  input FuncType inFunc;
+  output array<T> outArray = inArray;
+
+  partial function FuncType
+    input T inElement;
+    output T outElement;
+  end FuncType;
+protected
+  Integer len = arrayLength(inArray);
+  T e, res;
+algorithm
+  for i in 1:len loop
+    e := arrayGetNoBoundsChecking(inArray, i);
+    res := inFunc(e);
+    if not referenceEq(e, res) then
+      outArray := arrayCopy(inArray);
+      arrayUpdateNoBoundsChecking(outArray, i, res);
+      for j in i+1:len loop
+        arrayUpdateNoBoundsChecking(outArray, j, inFunc(arrayGetNoBoundsChecking(inArray, j)));
+      end for;
+      return;
+    end if;
+  end for;
+end mapCheckReferenceEq;
+
 function map1<TI, TO, ArgT>
   "Takes an array, an extra arguments, and a function over the elements of the
    array, which is applied to each element. The updated elements will form a new
