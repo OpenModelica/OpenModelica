@@ -150,7 +150,7 @@ pub(crate) const HANDWRITTEN_TOP_PACKAGES: &[&str] = &[
     // `openmodelica_script_util/src/SimulationResults.rs`.
     "SimulationResults",
     // Single `external "C"` wrapper over `runtime/om_curl.c`; hand-written
-    // (using the `curl` crate) in `openmodelica_script_util/src/Curl.rs`.
+    // over `openmodelica_download` in `openmodelica_script_util/src/Curl.rs`.
     "Curl",
     // `external "C"` wrappers over `runtime/om_zip.c`; hand-written over
     // `openmodelica_zip` in `openmodelica_script_util/src/Unzip.rs`.
@@ -2306,8 +2306,6 @@ const WASM_GATED_TOP_MODULES: &[(&str, Option<&str>)] = &[
     ("FFI", Some("FFI_wasm.rs")),
     // dlopens libOMSimulator; only reached from openmodelica_backend_tools.
     ("OMSimulatorExt", None),
-    // downloads via native libcurl (pulls socket2, no wasm target).
-    ("Curl", Some("Curl_wasm.rs")),
     // OMSimulator scripting API; drives the dropped OMSimulatorExt (libOMSimulator).
     ("CevalScriptOMSimulator", Some("CevalScriptOMSimulator_wasm.rs")),
 ];
@@ -2318,13 +2316,11 @@ const WASM_GATED_TOP_MODULES: &[(&str, Option<&str>)] = &[
 /// built from the GNU-syntax `win64.S` with clang-cl — so it keeps the native
 /// module there.)
 ///
-/// Two of them are also optional on native, so a tool that needs neither
-/// downloads nor compile-time `external "C"` evaluation — `omgendoc` — links
-/// neither libcurl (and its TLS/LDAP/SSH tail) nor libffi. The stub reports the
-/// path unavailable, which is what those callers already handle.
+/// `FFI` is also optional on native, so a tool that needs no compile-time
+/// `external "C"` evaluation — `omgendoc` — does not link libffi. The stub
+/// reports the path unavailable, which is what those callers already handle.
 fn stub_active_cfg(name: &str) -> &'static str {
     match name {
-        "Curl" => "any(target_arch = \"wasm32\", not(feature = \"curl\"))",
         "FFI" => "any(target_arch = \"wasm32\", not(feature = \"ffi\"))",
         _ => "target_arch = \"wasm32\"",
     }
