@@ -60,6 +60,7 @@ protected
   import NBEquation.{Equation, EqData, EquationAttributes, EquationKind, EquationPointer, EquationPointers, IfEquationBody, SlicingStatus, Iterator};
   import Initialization = NBInitialization;
   import Matching = NBMatching;
+  import Resizable = NBResizable;
   import Variable = NFVariable;
   import BVariable = NBVariable;
   import PointerWeak;
@@ -423,6 +424,41 @@ public
     end if;
   end indexReduction;
 
+  function keptResizableIterations
+    "the iterations of a resizable for-equation with a scalar body that are not
+     in indices, as for-equations over symbolic sub-ranges"
+    input Pointer<Equation> eqn_ptr;
+    input list<Integer> indices;
+    input Pointer<Integer> eq_index;
+    output Option<list<Pointer<Equation>>> kept = NONE();
+  protected
+    Equation eqn;
+    list<Integer> remaining;
+    list<Option<Iterator>> iters;
+    list<Pointer<Equation>> eqns = {};
+    Pointer<Equation> new_ptr;
+  algorithm
+    eqn := Pointer.access(eqn_ptr);
+    () := match eqn
+      case Equation.FOR_EQUATION() guard Iterator.isResizable(eqn.iter) and
+          Equation.size(eqn_ptr, true) == Iterator.size(eqn.iter, true) algorithm
+        remaining := list(i for i guard not List.contains(indices, i, intEq) in 0:Iterator.size(eqn.iter, true) - 1);
+        iters := list(Resizable.restrictIterator(eqn.iter, part) for part in Resizable.boxes(remaining, Iterator.sizes(eqn.iter, true)));
+        if not List.any(iters, isNone) then
+          for iter in iters loop
+            eqn.iter := Util.getOption(iter);
+            eqn.size := Iterator.size(eqn.iter);
+            new_ptr := Pointer.create(eqn);
+            Equation.createName(new_ptr, eq_index, NBEquation.SIMULATION_STR);
+            eqns := new_ptr :: eqns;
+          end for;
+          kept := SOME(listReverse(eqns));
+        end if;
+      then ();
+      else ();
+    end match;
+  end keptResizableIterations;
+
   function balanceInitialization
     extends Module.resolveSingularitiesInterface;
   protected
@@ -465,8 +501,13 @@ public
         kept_eqns := {};
         for eqn_slice in unmatched_eqns loop
           if not listEmpty(eqn_slice.indices) and Equation.isForEquation(Slice.getT(eqn_slice)) then
-            remaining := list(i for i guard(not List.contains(eqn_slice.indices, i, intEq)) in 0:(Equation.size(Slice.getT(eqn_slice)) - 1));
-            (sliced_eqns, _) := Equation.slice(Slice.getT(eqn_slice), remaining);
+            sliced_eqns := match keptResizableIterations(Slice.getT(eqn_slice), eqn_slice.indices, EqData.getUniqueIndex(eqData))
+              case SOME(sliced_eqns) then sliced_eqns;
+              else algorithm
+                remaining := list(i for i guard(not List.contains(eqn_slice.indices, i, intEq)) in 0:(Equation.size(Slice.getT(eqn_slice)) - 1));
+                (sliced_eqns, _) := Equation.slice(Slice.getT(eqn_slice), remaining);
+              then sliced_eqns;
+            end match;
             kept_eqns := listAppend(sliced_eqns, kept_eqns);
           elseif not listEmpty(eqn_slice.indices) and Equation.isArrayEquation(Slice.getT(eqn_slice)) then
             // keep the other rows of an array equation as scalar equations
