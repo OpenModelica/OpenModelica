@@ -569,7 +569,8 @@ algorithm
     end if;
   end for;
 
-  (success, selected, _, error) := PackageManagement.resolve(listReverse(requirements), loaded, false, requireExactVersion, modelicaPath);
+  (success, selected, _, error) := PackageManagement.resolve(listReverse(requirements), loaded, false, requireExactVersion,
+    Interactive.libraryMetadata, modelicaPath);
   if not success then
     Error.addMessage(Error.LOAD_MODEL_CONFLICT, {stringDelimitList(List.unique(list(r.origin for r in requirements)), ", "), error});
     return;
@@ -621,7 +622,8 @@ algorithm
         pnew := ClassLoader.loadClassFromPath(AbsynUtil.pathFirstIdent(path),
           Util.tuple21(UnorderedMap.getOrFail(AbsynUtil.pathFirstIdent(path), chosen)), encrypted);
       elseif pathToFile=="" then
-        pnew := ClassLoader.loadClass(path, versionsLst, thisModelicaPath, NONE(), requireExactVersion, encrypted);
+        ClassLoader.notifyInstallable(AbsynUtil.pathFirstIdent(path), versionsLst);
+        fail();
       else
         dir := System.dirname(pathToFile);
         cl := ClassLoader.loadClassFromMp(AbsynUtil.pathFirstIdent(path), System.dirname(dir), System.basename(dir), true, NONE(), encrypted);

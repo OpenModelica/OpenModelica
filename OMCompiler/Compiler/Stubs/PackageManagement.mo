@@ -35,6 +35,8 @@
 
 encapsulated package PackageManagement
 
+import JSON;
+
 function versionsThatProvideTheWanted
   input String id;
   input String version;
@@ -73,11 +75,17 @@ uniontype ResolveMessage
   end RESOLVE_MESSAGE;
 end ResolveMessage;
 
+partial function ReadLibraryMetadata
+  input String fileName;
+  output JSON json;
+end ReadLibraryMetadata;
+
 function resolve
   input list<Requirement> requirements;
   input list<tuple<String, String>> loaded;
   input Boolean install;
   input Boolean exactUses;
+  input ReadLibraryMetadata readMetadata;
   input String modelicaPath = "";
   output Boolean ok = true;
   output list<Selection> selected = {};
