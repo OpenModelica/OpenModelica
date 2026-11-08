@@ -3,6 +3,7 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 multary_simplification.mos \
 simplifyIf.mos \
+simplifyResidual.mos \
 simplifyWhen.mos \
 splitIf.mos \
 
