@@ -679,6 +679,11 @@ static fmiXStatus recordSet(ModelInstance *comp, const char *func, int ty, fmiXV
   if (!comp->paramDeps->checked) {
     return fmiXOK;
   }
+  /* FMI 2.0.1 and later, and FMI 3.0.2: also a continuous-time state may be set
+   * in Continuous-Time Mode. The states come first among the Real variables. */
+  if (comp->state == model_state_me_continuous_time_mode && ty == OMC_SLOT_REAL && vr < NUMBER_OF_STATES) {
+    return fmiXOK;
+  }
   slot = variableSlot(comp, ty, vr);
   if (!settableNow(comp, slot)) {
     FILTERED_LOG(comp, fmiXError, LOG_STATUSERROR, "%s: Variable #%u# cannot be set in state %s.", func, vr, stateToString(comp))
