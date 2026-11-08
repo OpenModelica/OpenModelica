@@ -14,7 +14,7 @@ use resolvo::{
 };
 
 use crate::version::{Kind as VersionKind, Version, compare};
-use crate::{Facts, Message, MessageKind, Problem, Selected, Solution};
+use crate::{Conversion, Facts, Message, MessageKind, Problem, Selected, Solution};
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 enum Support {
@@ -42,6 +42,7 @@ struct Candidate {
     version: Version,
     uses: BTreeMap<String, Version>,
     provides: Vec<Version>,
+    converts: Vec<Version>,
     support: Support,
     installed: Option<usize>,
     available: bool,
@@ -179,6 +180,9 @@ impl Universe {
             if let Some(provides) = &inst.provides {
                 cand.provides = provides.iter().map(|p| Version::parse(p)).collect();
             }
+            if let Some(converts) = &inst.converts {
+                cand.converts = converts.iter().map(|p| Version::parse(p)).collect();
+            }
             if inst.support.is_some() {
                 cand.support = support(inst.support.as_deref());
             }
@@ -243,6 +247,7 @@ impl Universe {
             version: Version::parse(version),
             uses: facts.uses.iter().map(|(k, v)| (k.clone(), Version::parse(v))).collect(),
             provides: facts.provides.iter().map(|p| Version::parse(p)).collect(),
+            converts: facts.converts.iter().map(|p| Version::parse(p)).collect(),
             support: support(facts.support.as_deref()),
             installed: None,
             available: false,
@@ -813,6 +818,48 @@ fn solve(u: &Universe, roots: &[Edge]) -> Result<(Vec<usize>, Vec<Edge>), String
     }
 }
 
+/// Whether `from`, a version a candidate has a conversion script from, is
+/// the requested one, as `convertPackageToLibrary` compares them.
+pub(crate) fn converts_from(converts: &[Version], wanted: &Version) -> bool {
+    converts.iter().any(|f| compare(f, wanted, false) == Ordering::Equal)
+}
+
+/// For each requirement of a version that nothing available fits, except
+/// a newer major version, the best available version with a conversion
+/// from it, preferring the chosen one. Not for a loaded library: omc warns
+/// about that when it checks the loaded version.
+fn conversions(u: &Universe, roots: &[Edge], chosen: &[usize]) -> Vec<Conversion> {
+    let mut out = Vec::new();
+    for e in roots {
+        let Some(lib) = e.lib else { continue };
+        if !matches!(e.version.kind, VersionKind::Numbered { .. })
+            || u.libs[lib].loaded.is_some()
+            || u.libs[lib].any_version
+            || !matches!(u.classify(e).kind, Kind::Missing | Kind::Newer)
+        {
+            continue;
+        }
+        let converts = |c: usize| converts_from(&u.cands[c].converts, &e.version);
+        let sel = chosen.iter().copied().find(|&c| u.cands[c].lib == lib);
+        let mut candidates: Vec<usize> = u.libs[lib]
+            .candidates
+            .iter()
+            .copied()
+            .filter(|&c| u.cands[c].available && converts(c))
+            .collect();
+        candidates.sort_by(|&a, &b| u.prefer(a, b));
+        if let Some(c) = sel.filter(|&c| converts(c)).or(candidates.first().copied()) {
+            out.push(Conversion {
+                name: u.libs[lib].name.clone(),
+                version: e.version.text.clone(),
+                to: u.cands[c].version.text.clone(),
+                origin: e.origin.clone(),
+            });
+        }
+    }
+    out
+}
+
 pub fn resolve(problem: &Problem) -> Solution {
     let u = universe(problem);
     let roots = || problem.requirements.iter().map(|r| root(&u, r)).collect::<Vec<_>>();
@@ -823,12 +870,13 @@ pub fn resolve(problem: &Problem) -> Solution {
             ..Default::default()
         };
     }
-    let solved = solve(&u, &roots()).or_else(|error| {
+    let roots = roots();
+    let solved = solve(&u, &roots).or_else(|error| {
         if !u.exact_uses.get() {
             return Err(error);
         }
         u.exact_uses.set(false);
-        solve(&u, &roots())
+        solve(&u, &roots)
     });
     let (chosen, all) = match solved {
         Ok(solved) => solved,
@@ -840,6 +888,7 @@ pub fn resolve(problem: &Problem) -> Solution {
             };
             return Solution {
                 error: Some(error),
+                conversions: conversions(&u, &roots, &[]),
                 ..Default::default()
             };
         }
@@ -871,6 +920,7 @@ pub fn resolve(problem: &Problem) -> Solution {
         error: None,
         selected,
         messages: messages(&u, &all, &chosen),
+        conversions: conversions(&u, &roots, &chosen),
         ..Default::default()
     }
 }
