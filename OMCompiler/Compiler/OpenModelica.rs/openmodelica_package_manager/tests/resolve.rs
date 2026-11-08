@@ -113,7 +113,13 @@ fn issue_8885_highest_declared_compatible() {
     let s = solve(json!({"installed": installed, "requirements": [req("MyLib", "9.6.0")]}));
     assert_eq!(picked(&s), ["MyLib 9.9.0"]);
     let s = solve(json!({"installed": installed, "requirements": [req("MyLib", "8.0.0")]}));
-    assert!(picked(&s).is_empty());
+    assert_eq!(picked(&s), ["MyLib 10.1.0"], "the newest, as nothing knows 8.0.0");
+    let index = json!({"libs": {"MyLib": {"versions": {"8.0.0": {}}}}});
+    let s = solve(json!({"index": index, "installed": installed, "requirements": [req("MyLib", "8.0.0")]}));
+    assert!(
+        picked(&s).is_empty(),
+        "not another major version of a version the index knows"
+    );
     assert_eq!(s.messages[0].kind, MessageKind::Missing);
 }
 
@@ -319,6 +325,13 @@ fn newer_release_with_the_same_major_version() {
     assert_eq!(load("3.0.0"), ["E 3.0.5"]);
     assert_eq!(load("3.1.0"), ["E 3.2.0"]);
     assert_eq!(load("2.0.0"), ["E master"]);
+    let without_branch = json!([{"name": "E", "version": "3.2.0"}, {"name": "E", "version": "4.0.0"}]);
+    let s = solve(json!({"installed": without_branch, "requirements": [req("E", "2.0.0")]}));
+    assert_eq!(
+        picked(&s),
+        ["E 4.0.0"],
+        "another major only when nothing else is available"
+    );
     let s = solve(
         json!({"install": true, "index": {"libs": {"E": {"versions": {"3.2.0": {}}}}},
         "requirements": [req("E", "3.0.0")]}),

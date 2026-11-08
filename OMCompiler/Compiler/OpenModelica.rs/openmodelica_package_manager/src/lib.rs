@@ -2,6 +2,7 @@
 //! of `uses` requirements, with a SAT solver (resolvo). Shared by the C omc
 //! (through runtime/rust), the Rust omc and the web build.
 
+mod library_metadata;
 mod manager;
 mod scan;
 mod solve;
@@ -290,6 +291,7 @@ pub fn call(request: &str) -> String {
     let print_error = arg_bool(&request, "printError");
     let mut response = match arg_str(&request, "op") {
         "resolve" => resolve_request(&mut m, &request),
+        "libraryPath" => library_path(&m, &request),
         "versions" => {
             serde_json::json!({"ok": true, "versions": m.versions(arg_str(&request, "name"), arg_str(&request, "version"), print_error)})
         }
@@ -339,9 +341,86 @@ pub fn call(request: &str) -> String {
     response.to_string()
 }
 
+/// The installed version of `name` that loading `version` of it would
+/// choose, without its uses: where it is in `searchPath`.
+fn library_path(m: &manager::Manager, request: &Value) -> Value {
+    let modelica_path = m.modelica_path(request["searchPath"].as_str().unwrap_or(&m.env().modelica_path));
+    let name = arg_str(request, "name");
+    let problem = Problem {
+        installed: scan::libraries(&modelica_path, false),
+        requirements: vec![Requirement {
+            name: name.to_owned(),
+            versions: vec![arg_str(request, "version").to_owned()],
+            ..Default::default()
+        }],
+        ..Default::default()
+    };
+    match resolve(&problem).selected.into_iter().find(|s| s.name == name) {
+        Some(s) => serde_json::json!({"ok": true, "modelicaPathIndex": s.modelica_path_index, "file": s.file,
+            "modelicaPath": modelica_path}),
+        None => serde_json::json!({"ok": false}),
+    }
+}
+
+/// Fills in the uses and versions of the installed libraries without
+/// package manager metadata that the requirements may reach, from `cache`;
+/// the top-level files whose metadata is not known are added to `need`. A version known this way can equal one
+/// found before; as in [`scan::libraries`], the later one is kept.
+fn complete_metadata(problem: &mut Problem, cache: &library_metadata::Cache, need: &mut Vec<String>) {
+    let mut queue: std::collections::VecDeque<String> = problem.requirements.iter().map(|r| r.name.clone()).collect();
+    let mut seen = std::collections::HashSet::new();
+    while let Some(name) = queue.pop_front() {
+        if !seen.insert(name.clone()) {
+            continue;
+        }
+        let index = problem.index.as_ref().and_then(|i| i.libs.get(&name));
+        for inst in problem.installed.iter_mut().filter(|i| i.name == name) {
+            if let Some(uses) = &inst.uses {
+                queue.extend(uses.keys().cloned());
+                continue;
+            }
+            if let Some(facts) = index.and_then(|l| l.versions.get(&inst.version)) {
+                queue.extend(facts.uses.keys().cloned());
+                continue;
+            }
+            let path = inst.path.clone().unwrap_or_default();
+            let Some(top) = scan::top_file(&path, openmodelica_wasi::fs::is_dir(&path)) else {
+                continue;
+            };
+            match cache.get(&top) {
+                None => need.push(top),
+                Some(None) => {}
+                Some(Some(f)) => {
+                    if inst.version.is_empty() {
+                        inst.version = f.version;
+                    }
+                    queue.extend(f.uses.keys().cloned());
+                    inst.uses = Some(f.uses);
+                    inst.provides = Some(f.provides);
+                }
+            }
+        }
+    }
+    let mut kept: Vec<Installed> = Vec::new();
+    for inst in std::mem::take(&mut problem.installed).into_iter().rev() {
+        let v = version::Version::parse(&inst.version);
+        let same = |k: &Installed| {
+            k.name == inst.name && version::compare(&version::Version::parse(&k.version), &v, true).is_eq()
+        };
+        if !kept.iter().any(same) {
+            kept.push(inst);
+        }
+    }
+    kept.reverse();
+    problem.installed = kept;
+}
+
 /// Chooses versions to load (or with `install`, to install): the libraries
 /// in `searchPath` (the MODELICAPATH by default) and those in the index. Only
-/// `install` downloads a missing index.
+/// `install` downloads a missing index. For a load, the metadata of
+/// libraries the package manager did not install comes from `metadata` or
+/// the cache; the response lists the files whose metadata is missing as
+/// `needMetadata`, instead of a solution.
 fn resolve_request(m: &mut manager::Manager, request: &Value) -> Value {
     let install = arg_bool(request, "install");
     let print_error = request["printError"].as_bool().unwrap_or(install);
@@ -368,6 +447,22 @@ fn resolve_request(m: &mut manager::Manager, request: &Value) -> Value {
         }
     }
     problem.installed.extend(scan::libraries(&modelica_path, true));
+    if !install && !arg_bool(request, "withoutMetadata") {
+        let cache = library_metadata::Cache::new(&m.env().home);
+        let mut answered = std::collections::HashSet::new();
+        for f in request["metadata"].as_array().into_iter().flatten() {
+            if let Some(file) = f["file"].as_str() {
+                cache.put(file, serde_json::from_value(f["metadata"].clone()).ok());
+                answered.insert(file.to_owned());
+            }
+        }
+        let mut need = Vec::new();
+        complete_metadata(&mut problem, &cache, &mut need);
+        need.retain(|f| !answered.contains(f));
+        if !need.is_empty() {
+            return serde_json::json!({"ok": true, "needMetadata": need});
+        }
+    }
     let solution = resolve(&problem);
     serde_json::json!({
         "ok": solution.ok,

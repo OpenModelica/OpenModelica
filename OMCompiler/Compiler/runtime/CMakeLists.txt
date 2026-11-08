@@ -57,6 +57,7 @@ set(OMC_RUNTIME_SOURCES
     OMSimulator_omc.c
     is_utf8.c
     om_zip.c
+    bootstrap_externals.c
     PackageManagerExt_omc.c
     SemanticVersion_omc.c
     ptolemyio_omc.cpp

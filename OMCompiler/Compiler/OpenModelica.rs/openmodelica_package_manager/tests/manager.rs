@@ -72,6 +72,29 @@ impl Drop for Setup {
     }
 }
 
+/// `resolve` as omc runs it: answers `needMetadata` with `metadata` until there
+/// is a solution. Returns it and the files asked for.
+fn resolve(setup: &Setup, args: Value, metadata: impl Fn(&str) -> Value) -> (Value, Vec<String>) {
+    let mut asked = Vec::new();
+    let mut args = args;
+    loop {
+        let r = setup.call("resolve", args.clone());
+        let Some(need) = r["needMetadata"].as_array() else {
+            return (r, asked);
+        };
+        let answers: Vec<Value> = need
+            .iter()
+            .map(|f| {
+                let file = f.as_str().unwrap();
+                asked.push(file.to_owned());
+                json!({"file": file, "metadata": metadata(file)})
+            })
+            .collect();
+        assert!(asked.len() < 100, "{asked:?}");
+        args["metadata"] = json!(answers);
+    }
+}
+
 fn names(response: &Value) -> Vec<&str> {
     response["messages"]
         .as_array()
@@ -428,7 +451,12 @@ fn libraries_in_the_modelica_path() {
     std::fs::write(checkout.join("package.mo"), "").unwrap();
     std::os::unix::fs::symlink(&checkout, second.join("D 3.0.0")).unwrap();
     let search_path = format!("{}:{}", s(&first), s(&second));
-    let solve = |reqs: Value| setup.call("resolve", json!({"searchPath": search_path, "requirements": reqs}));
+    let solve = |reqs: Value| {
+        resolve(&setup, json!({"searchPath": search_path, "requirements": reqs}), |_| {
+            Value::Null
+        })
+        .0
+    };
     let out = solve(json!([
         {"name": "A", "versions": ["1.0.0"], "origin": "t"},
         {"name": "C", "origin": "t"},
@@ -454,4 +482,92 @@ fn libraries_in_the_modelica_path() {
     assert_eq!(names(&out), Vec::<&str>::new(), "a load does not download the index");
     let out = solve(json!([{"name": "NoPackage", "origin": "t"}]));
     assert_eq!(out["selected"], json!([]));
+}
+
+#[test]
+fn metadata_from_top_level_files() {
+    let setup = Setup::new("metadata");
+    let mp = setup.root.join("mp");
+    let metadata: Vec<(&str, Value)> = vec![
+        ("MyLib 9.8.0", json!({"version": "9.8.0", "provides": ["9.7.0"]})),
+        (
+            "MyLib 9.9.0",
+            json!({"version": "9.9.0", "provides": ["9.8.0", "9.7.0"]}),
+        ),
+        ("MyLib 10.0.0", json!({"version": "10.0.0"})),
+        ("MyLib 10.1.0", json!({"version": "10.1.0", "provides": ["10.0.0"]})),
+        ("User", json!({"version": "", "uses": {"Checkout": "2.0.0"}})),
+        ("Checkout", json!({"version": "2.0.0"})),
+    ];
+    for (dir, _) in &metadata {
+        std::fs::create_dir_all(mp.join(dir)).unwrap();
+        std::fs::write(mp.join(dir).join("package.mo"), *dir).unwrap();
+    }
+    let answer = |file: &str| {
+        let dir = file.strip_suffix("/package.mo").unwrap().rsplit('/').next().unwrap();
+        metadata.iter().find(|(d, _)| *d == dir).unwrap().1.clone()
+    };
+    let load = |name: &str, version: &str| {
+        let args =
+            json!({"searchPath": s(&mp), "requirements": [{"name": name, "versions": [version], "origin": "t"}]});
+        let (r, asked) = resolve(&setup, args, answer);
+        let picked: Vec<String> = r["selected"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|s| format!("{} {}", s["name"].as_str().unwrap(), s["file"].as_str().unwrap()))
+            .collect();
+        (picked, asked)
+    };
+    let (picked, asked) = load("MyLib", "9.7.0");
+    assert_eq!(picked, ["MyLib MyLib 9.9.0"]);
+    assert_eq!(asked.len(), 4, "only the candidates: {asked:?}");
+    assert_eq!(
+        load("MyLib", "9.8.0"),
+        (vec!["MyLib MyLib 9.9.0".to_owned()], vec![]),
+        "cached"
+    );
+    assert_eq!(load("MyLib", "10.0.0").0, ["MyLib MyLib 10.1.0"]);
+    assert_eq!(
+        load("User", "").0,
+        ["Checkout Checkout", "User User"],
+        "version from the annotation"
+    );
+    let cached = std::fs::read_dir(setup.home.join(".openmodelica/cache/library-metadata"))
+        .unwrap()
+        .count();
+    assert_eq!(cached, 6);
+    std::fs::write(mp.join("Checkout/package.mo"), "changed").unwrap();
+    assert_eq!(load("User", "").1.len(), 1, "parsed again after a change");
+}
+
+#[test]
+fn library_path_ignores_uses() {
+    let setup = Setup::new("libpath");
+    let mp = setup.root.join("mp");
+    for (dir, meta) in [
+        (
+            "Modelica 4.0.0",
+            r#"{"uses": {"Complex": "4.0.0", "Missing": "1.0.0"}}"#,
+        ),
+        ("Complex 4.0.0", "{}"),
+    ] {
+        std::fs::create_dir_all(mp.join(dir)).unwrap();
+        std::fs::write(mp.join(dir).join("package.mo"), "").unwrap();
+        std::fs::write(mp.join(dir).join("openmodelica.metadata.json"), meta).unwrap();
+    }
+    let r = setup.call(
+        "libraryPath",
+        json!({"searchPath": s(&mp), "name": "Modelica", "version": "default"}),
+    );
+    assert_eq!(
+        (r["ok"].clone(), r["file"].clone()),
+        (json!(true), json!("Modelica 4.0.0")),
+        "{r}"
+    );
+    let r = setup.call(
+        "libraryPath",
+        json!({"searchPath": s(&mp), "name": "Other", "version": "default"}),
+    );
+    assert_eq!(r["ok"], false);
 }

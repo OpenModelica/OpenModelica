@@ -424,6 +424,7 @@ openmodelica_omgraphics/Cargo.toml
 openmodelica_omgraphics/src/OMGraphics.rs
 openmodelica_package_manager/Cargo.toml
 openmodelica_package_manager/src/lib.rs
+openmodelica_package_manager/src/library_metadata.rs
 openmodelica_package_manager/src/manager.rs
 openmodelica_package_manager/src/scan.rs
 openmodelica_package_manager/src/solve.rs

@@ -36,13 +36,14 @@
 encapsulated package PackageManagement
   "The package manager, in OpenModelica.rs/openmodelica_package_manager."
 
+import JSON;
+
 protected
 
 import Autoconf;
 import Config;
 import Error;
 import ErrorTypes;
-import JSON;
 import PackageManagerExt;
 import Settings;
 import Testsuite;
@@ -142,24 +143,34 @@ uniontype ResolveMessage
   end RESOLVE_MESSAGE;
 end ResolveMessage;
 
+partial function ReadLibraryMetadata
+  "The version, uses and noneFromVersion conversions of a library's top-level
+   file, or null; see Interactive.libraryMetadata."
+  input String fileName;
+  output JSON json;
+end ReadLibraryMetadata;
+
 function resolve
   "Chooses the versions of the required libraries and of the libraries they
    use, all together. The loaded libraries are kept. Only installed versions
-   are used, unless install is set."
+   are used, unless install is set. readMetadata reads the metadata of libraries
+   without package manager metadata that the package manager has not cached."
   input list<Requirement> requirements;
   input list<tuple<String, String>> loaded "Names and versions";
   input Boolean install;
   input Boolean exactUses;
+  input ReadLibraryMetadata readMetadata;
   input String modelicaPath = Settings.getModelicaPath(Testsuite.isRunning());
   output Boolean ok;
   output list<Selection> selected = {};
   output list<ResolveMessage> messages = {};
   output String error = "";
 protected
-  JSON solution, entries;
-  list<String> mps;
+  JSON solution = JSON.makeNull(), entries, metadata = JSON.emptyArray();
+  list<String> mps, need;
+  list<tuple<String, JSON>> problem;
 algorithm
-  solution := call("resolve", {
+  problem := {
     ("searchPath", JSON.makeString(modelicaPath)),
     ("install", JSON.makeBoolean(install)),
     ("exactUses", JSON.makeBoolean(exactUses)),
@@ -170,7 +181,21 @@ algorithm
       ("name", JSON.makeString(r.name))}) for r in requirements))),
     ("loaded", JSON.makeList(list(JSON.LIST_OBJECT({
       ("version", JSON.makeString(Util.tuple22(l))),
-      ("name", JSON.makeString(Util.tuple21(l)))}) for l in loaded)))});
+      ("name", JSON.makeString(Util.tuple21(l)))}) for l in loaded)))};
+  // Each round answers new files; files that keep changing are left out.
+  for round in 1:100 loop
+    solution := call("resolve", ("metadata", metadata) :: problem);
+    need := JSON.getStringList(JSON.getOrDefault(solution, "needMetadata", JSON.emptyArray()));
+    if listEmpty(need) then
+      break;
+    elseif round == 100 then
+      solution := call("resolve", ("withoutMetadata", JSON.makeBoolean(true)) :: problem);
+      break;
+    end if;
+    metadata := JSON.makeList(list(JSON.LIST_OBJECT({
+      ("file", JSON.makeString(f)),
+      ("metadata", readMetadata(f))}) for f in need));
+  end for;
   ok := succeeded(solution);
   if not ok then
     error := stringOrEmpty(JSON.getOrDefault(solution, "error", JSON.makeNull()));
@@ -186,6 +211,26 @@ algorithm
     messages := messageFromJSON(JSON.at(entries, i)) :: messages;
   end for;
 end resolve;
+
+function libraryPath
+  "The path of the installed version of a library that loading it would
+   choose, without its uses; fails if there is none."
+  input String name;
+  input String version;
+  input String modelicaPath;
+  output String path;
+protected
+  JSON response;
+  Integer i;
+algorithm
+  response := call("libraryPath", {
+    ("searchPath", JSON.makeString(modelicaPath)),
+    ("name", JSON.makeString(name)),
+    ("version", JSON.makeString(version))}, withEnv = false);
+  true := succeeded(response);
+  JSON.INTEGER(i) := JSON.get(response, "modelicaPathIndex");
+  path := listGet(JSON.getStringList(JSON.get(response, "modelicaPath")), i + 1) + "/" + JSON.getString(JSON.get(response, "file"));
+end libraryPath;
 
 function installPackage
   input String pkg;
@@ -246,22 +291,28 @@ end installWasmToolchain;
 protected
 
 function call
-  "Runs a package manager operation and reports its messages."
+  "Runs a package manager operation and reports its messages. Without
+   withEnv, the operation gets no paths of the installation (omgendoc may
+   run without one)."
   input String op;
   input list<tuple<String, JSON>> args = {};
+  input Boolean withEnv = true;
   output JSON response;
 protected
   JSON messages;
   Boolean testsuite = Testsuite.isRunning();
-algorithm
-  response := JSON.parse(PackageManagerExt.call(JSON.toString(JSON.LIST_OBJECT(listAppend({
+  list<tuple<String, JSON>> env = {
     ("op", JSON.makeString(op)),
-    ("home", JSON.makeString(Settings.getHomeDir(testsuite))),
-    ("installationDir", JSON.makeString(Settings.getInstallationDirectoryPath())),
-    ("modelicaPath", JSON.makeString(Settings.getModelicaPath(testsuite))),
     ("groupDelimiter", JSON.makeString(Autoconf.groupDelimiter)),
-    ("testsuite", JSON.makeBoolean(testsuite)),
-    ("maxParallel", JSON.makeInteger(Config.noProc()))}, args)))));
+    ("testsuite", JSON.makeBoolean(testsuite))};
+algorithm
+  if withEnv then
+    env := ("home", JSON.makeString(Settings.getHomeDir(testsuite))) ::
+      ("installationDir", JSON.makeString(Settings.getInstallationDirectoryPath())) ::
+      ("modelicaPath", JSON.makeString(Settings.getModelicaPath(testsuite))) ::
+      ("maxParallel", JSON.makeInteger(Config.noProc())) :: env;
+  end if;
+  response := JSON.parse(PackageManagerExt.call(JSON.toString(JSON.LIST_OBJECT(listAppend(env, args)))));
   messages := JSON.getOrDefault(response, "messages", JSON.emptyArray());
   for i in 1:JSON.size(messages) loop
     report(JSON.at(messages, i));
