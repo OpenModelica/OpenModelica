@@ -7493,6 +7493,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "openmodelica_download"
+version = "0.1.0"
+dependencies = [
+ "curl",
+ "openmodelica_wasi",
+]
+
+[[package]]
 name = "openmodelica_dump_extra"
 version = "0.1.0"
 dependencies = [
@@ -7893,12 +7901,12 @@ version = "0.1.0"
 dependencies = [
  "arcstr",
  "const-str 1.1.0",
- "curl",
  "loop_unwrap",
  "match_deref",
  "metamodelica",
  "openmodelica_arrow_writer",
  "openmodelica_ast",
+ "openmodelica_download",
  "openmodelica_error",
  "openmodelica_frontend_dump",
  "openmodelica_frontend_types",
