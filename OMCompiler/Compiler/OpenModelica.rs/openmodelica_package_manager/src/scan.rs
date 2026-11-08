@@ -11,6 +11,16 @@ use serde_json::Value;
 use crate::version::{Version, compare};
 use crate::{Index, Installed, string, string_map};
 
+/// The file a library is defined in: `package.mo` of a directory, or the
+/// file itself.
+pub(crate) fn top_file(path: &str, is_dir: bool) -> Option<String> {
+    if !is_dir {
+        return Some(path.to_owned());
+    }
+    let package = format!("{path}/package.mo");
+    fs::is_file(&package).then_some(package)
+}
+
 /// The libraries in the MODELICAPATH: directories (also through symbolic
 /// links) with a `package.mo` and `.mo` files other than `package.mo`, named
 /// `Name` or `Name version`. The files and then the directories are taken
@@ -39,13 +49,13 @@ pub(crate) fn libraries(modelica_path: &[String], metadata: bool) -> Vec<Install
             for (file, is_dir) in entries[k].iter().filter(|e| e.1 == want_dir) {
                 let path = format!("{dir}/{file}");
                 let stem = if *is_dir {
-                    if !fs::is_file(&format!("{path}/package.mo")) {
+                    if top_file(&path, true).is_none() {
                         continue;
                     }
                     file.as_str()
                 } else {
                     match file.strip_suffix(".mo") {
-                        Some(stem) if file != "package.mo" => stem,
+                        Some(stem) if stem != "package" => stem,
                         _ => continue,
                     }
                 };

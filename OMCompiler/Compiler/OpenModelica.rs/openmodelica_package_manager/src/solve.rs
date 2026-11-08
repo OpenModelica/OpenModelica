@@ -66,6 +66,9 @@ enum Kind {
     /// Nothing knows the requested version: whatever else is chosen, else
     /// a branch if that can be added.
     Unknown,
+    /// Newer releases, as nothing else is available and nothing knows the
+    /// requested version (only when loading).
+    Newer,
     Missing,
 }
 
@@ -423,6 +426,23 @@ impl Universe {
             .copied()
             .filter(|&c| self.cands[c].version.is_branch())
             .collect();
+        if branches.is_empty() && !self.install && !self.known(lib, &e.version) {
+            let newer: Vec<usize> = available
+                .iter()
+                .copied()
+                .filter(|&c| {
+                    matches!(self.cands[c].version.kind, VersionKind::Numbered { .. })
+                        && compare(&self.cands[c].version, &e.version, false) == Ordering::Greater
+                        && !self.broken_claim(c, &e.version)
+                })
+                .collect();
+            if !newer.is_empty() {
+                return Classified {
+                    kind: Kind::Newer,
+                    members: newer,
+                };
+            }
+        }
         if self.known(lib, &e.version) {
             if branches.is_empty() {
                 missing
@@ -688,7 +708,7 @@ fn guesses(u: &Universe, e: &Edge) -> Vec<usize> {
     let classified = u.classify(e);
     match classified.kind {
         Kind::Normal | Kind::Missing => Vec::new(),
-        Kind::Fallback | Kind::Unknown => classified.members,
+        Kind::Fallback | Kind::Unknown | Kind::Newer => classified.members,
         Kind::Semver => {
             let mut members = classified.members;
             members.extend(u.branches(e.lib.expect("a classified library")));

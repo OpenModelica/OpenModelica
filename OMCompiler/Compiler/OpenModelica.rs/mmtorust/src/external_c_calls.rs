@@ -467,7 +467,6 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("System_getHasStreamConnectors", Infallible);
         m.insert("System_getLDFlags", Infallible);
         m.insert("System_getLinker", Infallible);
-        m.insert("System_getLoadModelPath", Fallible); // throws when no path matches
         m.insert("System_getMemorySize", Infallible);
         m.insert("System_getOMPCCompiler", Infallible);
         m.insert("System_getPartialInstantiation", Infallible);

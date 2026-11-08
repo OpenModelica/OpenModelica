@@ -541,17 +541,6 @@ public function mocFiles
   external "C" outStringLst=System_mocFiles(inString) annotation(Library = "omcruntime");
 end mocFiles;
 
-public function getLoadModelPath
-  input String className;
-  input list<String> prios;
-  input list<String> mps;
-  input Boolean requireExactVersion = false;
-  output String dir;
-  output String name;
-  output Boolean isDir;
-  external "C" System_getLoadModelPath(className,prios,mps,requireExactVersion,dir,name,isDir) annotation(Library = "omcruntime");
-end getLoadModelPath;
-
 public function time
   output Real outReal;
   external "C" outReal=SystemImpl__time() annotation(Library = "omcruntime");

@@ -7688,6 +7688,7 @@ dependencies = [
  "openmodelica_nf_frontend",
  "openmodelica_omgraphics",
  "openmodelica_revision",
+ "openmodelica_script_util",
  "openmodelica_util",
  "rayon",
  "tikv-jemalloc-sys",
@@ -7865,6 +7866,7 @@ dependencies = [
  "openmodelica_ast",
  "openmodelica_frontend",
  "openmodelica_frontend_dump",
+ "openmodelica_script_util",
  "openmodelica_util",
  "openmodelica_util_datatypes_basic",
 ]
