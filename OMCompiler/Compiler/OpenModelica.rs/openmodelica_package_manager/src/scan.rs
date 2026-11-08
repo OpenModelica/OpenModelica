@@ -8,7 +8,7 @@ use std::time::UNIX_EPOCH;
 use openmodelica_wasi::fs;
 use serde_json::Value;
 
-use crate::legacy::{self, LVersion};
+use crate::version::{Version, compare};
 use crate::{Index, Installed, string, string_map};
 
 /// The libraries in the MODELICAPATH: directories (also through symbolic
@@ -18,7 +18,7 @@ use crate::{Index, Installed, string, string_map};
 /// so a directory in the first entry wins. With `metadata`, the uses and
 /// support level come from the package manager metadata.
 pub(crate) fn libraries(modelica_path: &[String], metadata: bool) -> Vec<Installed> {
-    let mut found: Vec<(Installed, LVersion)> = Vec::new();
+    let mut found: Vec<(Installed, Version)> = Vec::new();
     let entries: Vec<Vec<(String, bool)>> = modelica_path
         .iter()
         .map(|dir| {
@@ -52,7 +52,7 @@ pub(crate) fn libraries(modelica_path: &[String], metadata: bool) -> Vec<Install
                 let mut words = stem.split(' ').filter(|w| !w.is_empty());
                 let Some(name) = words.next() else { continue };
                 let version = words.collect::<Vec<_>>().join(" ");
-                let key = legacy::parse(&version, false);
+                let key = Version::parse(&version);
                 let lib = Installed {
                     name: name.to_owned(),
                     version,
@@ -63,7 +63,7 @@ pub(crate) fn libraries(modelica_path: &[String], metadata: bool) -> Vec<Install
                 };
                 match found
                     .iter()
-                    .position(|(f, v)| f.name == name && legacy::compare(v, &key, true, true) == 0)
+                    .position(|(f, v)| f.name == name && compare(v, &key, true).is_eq())
                 {
                     Some(i) => found[i] = (lib, key),
                     None => found.push((lib, key)),

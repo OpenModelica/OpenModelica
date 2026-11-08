@@ -58,6 +58,7 @@ set(OMC_RUNTIME_SOURCES
     is_utf8.c
     om_zip.c
     PackageManagerExt_omc.c
+    SemanticVersion_omc.c
     ptolemyio_omc.cpp
     SimulationResults_omc.c
     systemimplmisc.cpp

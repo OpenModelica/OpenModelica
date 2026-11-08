@@ -152,6 +152,9 @@ pub(crate) const HANDWRITTEN_TOP_PACKAGES: &[&str] = &[
     // `external "C"` wrappers over `runtime/om_zip.c`; hand-written over
     // `openmodelica_zip` in `openmodelica_script_util/src/Unzip.rs`.
     "Unzip",
+    // `external "C"` wrappers over `runtime/SemanticVersion_omc.c`; hand-written
+    // over `openmodelica_version` in `openmodelica_util/src/SemanticVersion.rs`.
+    "SemanticVersion",
     // `external "C"` wrapper over `runtime/PackageManagerExt_omc.c`; hand-written
     // over `openmodelica_package_manager` in `openmodelica_script_util/src/PackageManagerExt.rs`.
     "PackageManagerExt",
