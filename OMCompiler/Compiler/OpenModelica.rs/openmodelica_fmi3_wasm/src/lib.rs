@@ -1005,11 +1005,14 @@ impl<E: FmiHost + 'static> MeState<E> {
         let f = slot.map_or(0, |s| deps.flags(s));
         // fmi-ls-dae: the importer solves for the algebraic variables and sets them.
         let dae_unknown = self.dae_mode && slot.is_some_and(|s| s % 8 == 0) && !param_deps::is_param(&self.layout, off);
+        // FMI 2.0.1 and later, and FMI 3.0.2: also a continuous-time state may be set in
+        // Continuous-Time Mode. The states come first among the Reals.
+        let state = off >= REAL_OFF && (off - REAL_OFF) / 8 < self.layout.n_states;
         let ok = match self.mode {
             Mode::Instantiated => f & (INITIAL_EXACT | INITIAL_APPROX | INPUT) != 0,
             Mode::Init => f & (INITIAL_EXACT | INPUT) != 0,
             Mode::Ready if dae_unknown => true,
-            Mode::Ready if self.continuous_time => f & INPUT != 0 && f & CONTINUOUS != 0,
+            Mode::Ready if self.continuous_time => state || (f & INPUT != 0 && f & CONTINUOUS != 0),
             Mode::Ready => f & (INPUT | TUNABLE) != 0,
         };
         let Some(s) = slot.filter(|_| ok) else {
