@@ -602,12 +602,12 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("pointerUpdate", Infallible);
         m.insert("pointerAccess", Infallible);
 
-        // ── om_curl.c / om_zip.c ───────────────────────────────────────────
-        m.insert("om_curl_multi_download", Infallible);
+        // ── om_zip.c / PackageManagerExt_omc.c ─────────────────────────────
         m.insert("om_unzip", Infallible);
         m.insert("om_unzip_all", Infallible);
         m.insert("om_zip", Infallible);
         m.insert("om_zip_paths", Infallible);
+        m.insert("om_package_manager", Infallible);
 
         // ── omc_file_ext.h inline file API ─────────────────────────────────
         // open/write* fail through ModelicaFormatError.

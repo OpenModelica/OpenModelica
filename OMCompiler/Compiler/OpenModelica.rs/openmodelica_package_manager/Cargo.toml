@@ -1,0 +1,19 @@
+[package]
+name = "openmodelica_package_manager"
+version = "0.1.0"
+edition = "2024"
+workspace = ".."
+
+# The package manager for both omcs; the C omc links it through runtime/rust.
+# Plain versions, no workspace inheritance: that crate builds it from its own root.
+[dependencies]
+openmodelica_download = { path = "../openmodelica_download", default-features = false }
+openmodelica_wasi = { path = "../openmodelica_wasi" }
+openmodelica_zip = { path = "../openmodelica_zip" }
+resolvo = "0.12"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["raw_value"] }
+
+[features]
+default = ["curl"]
+curl = ["openmodelica_download/curl"]

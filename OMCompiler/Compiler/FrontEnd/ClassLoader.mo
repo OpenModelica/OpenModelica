@@ -58,6 +58,7 @@ import HashTableStringToProgram;
 import List;
 import PackageManagement;
 import Parser;
+import StringUtil;
 import System;
 import Testsuite;
 import Util;
@@ -148,19 +149,22 @@ protected
   Boolean isDir;
   Option<Absyn.Class> cl;
   list<String> versionsThatProvideTheWanted, commands, versions;
+  Boolean exact = requireExactVersion;
 algorithm
   if not requireExactVersion then
     if listEmpty(prios) then
-      versions := PackageManagement.versionsThatProvideTheWanted(id, "default", printError = false);
+      versions := list(v for v guard v <> "" in PackageManagement.versionsThatProvideTheWanted(id, "default", printError = false));
     else
       versions := {};
+      exact := true;
 
       for v in listReverse(prios) loop
         versionsThatProvideTheWanted :=
-          PackageManagement.versionsThatProvideTheWanted(id, v, printError = false);
+          list(w for w guard w <> "" in PackageManagement.versionsThatProvideTheWanted(id, v, printError = false));
 
         if listEmpty(versionsThatProvideTheWanted) then
           versions := v :: versions;
+          exact := false;
         else
           versions := listAppend(versionsThatProvideTheWanted, versions);
         end if;
@@ -171,7 +175,7 @@ algorithm
   end if;
 
   try
-    (mp,name,isDir) := System.getLoadModelPath(id,versions,mps,requireExactVersion);
+    (mp,name,isDir) := System.getLoadModelPath(id,versions,mps,exact);
   else
     version := match prios
       case version::_ then version;
@@ -206,6 +210,24 @@ algorithm
     outProgram := Absyn.PROGRAM({},Absyn.TOP());
   end if;
 end loadClassFromMps;
+
+public function loadClassFromPath
+  "Loads the library id from a directory with a package.mo or from a .mo file,
+   given as a MODELICAPATH entry and a file name separated by /."
+  input String id;
+  input String path;
+  input Boolean encrypted = false;
+  output Absyn.Program outProgram;
+protected
+  Integer i = StringUtil.rfindChar(path, stringCharInt("/"));
+  String name = substring(path, i + 1, stringLength(path));
+  Option<Absyn.Class> cl;
+algorithm
+  Config.setLanguageStandardFromMSL(name);
+  cl := loadClassFromMp(id, substring(path, 1, i - 1), name, System.directoryExists(path), NONE(), encrypted);
+  outProgram := Absyn.PROGRAM(if isSome(cl) then {Util.getOption(cl)} else {}, Absyn.TOP());
+  checkOnLoadMessage(outProgram);
+end loadClassFromPath;
 
 public function loadClassFromMp
   input String id "the actual class name";
