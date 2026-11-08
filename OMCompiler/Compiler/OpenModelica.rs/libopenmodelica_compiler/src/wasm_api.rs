@@ -308,7 +308,7 @@ pub fn wasi_rename(from: &str, to: &str) -> bool {
 #[wasm_bindgen]
 pub fn omc_take_pending_downloads() -> JsValue {
     let arr = js_sys::Array::new();
-    for (urls, filename) in openmodelica_script_util::Curl::take_pending_downloads() {
+    for (urls, filename) in openmodelica_script_util::PackageManagerExt::take_pending_downloads() {
         let item = js_sys::Object::new();
         let mirrors = js_sys::Array::new();
         for u in &urls {

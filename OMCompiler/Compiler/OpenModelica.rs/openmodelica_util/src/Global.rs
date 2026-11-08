@@ -5,11 +5,21 @@
 // backend) cannot be reset here without creating circular dependencies; those
 // crates are responsible for initialising their own globals.
 #![allow(warnings)]
-#![allow(unreachable_patterns, unreachable_code, non_camel_case_types, non_snake_case, dead_code, unused_imports, unused_variables, non_upper_case_globals, unused_mut)]
+#![allow(
+    unreachable_patterns,
+    unreachable_code,
+    non_camel_case_types,
+    non_snake_case,
+    dead_code,
+    unused_imports,
+    unused_variables,
+    non_upper_case_globals,
+    unused_mut
+)]
 
-use std::sync::Arc;
-use metamodelica::{sourceInfo};
 use arcstr::{ArcStr, literal};
+use metamodelica::sourceInfo;
+use std::sync::Arc;
 
 pub const MMToJLListIndex: i32 = 28;
 
@@ -55,7 +65,6 @@ pub fn initialize() -> () {
     crate::Globals::trivialRecords.with(|__root| *__root.borrow_mut() = metamodelica::nil());
     crate::Globals::sharedLibraryCacheIndex.with(|__root| *__root.borrow_mut() = metamodelica::nil());
     crate::Globals::codegenTryThrowIndex.with(|__root| *__root.borrow_mut() = metamodelica::nil());
-    crate::Globals::packageIndexCacheIndex.with(|__root| *__root.borrow_mut() = None);
     crate::Globals::profilerTime1Index.with(|__root| *__root.borrow_mut() = metamodelica::OrderedFloat(0.0_f64));
     crate::Globals::profilerTime2Index.with(|__root| *__root.borrow_mut() = metamodelica::OrderedFloat(0.0_f64));
     // NOTE: flagsIndex must NOT be reset here. MetaModelica's `Global.initialize`
@@ -67,7 +76,8 @@ pub fn initialize() -> () {
     // `getFlags` would then return `NO_FLAGS` *without failing*, so
     // `loadFlags`'s `try … else (re)initialize` never re-creates the defaults,
     // and every `getConfigValue` afterwards fails its `FLAGS(..)` pattern match.
-    crate::Globals::gcProfilingIndex.with(|__root| *__root.borrow_mut() = openmodelica_util_datatypes_basic::GCExt::getProfStats());
+    crate::Globals::gcProfilingIndex
+        .with(|__root| *__root.borrow_mut() = openmodelica_util_datatypes_basic::GCExt::getProfStats());
     // ── Cross-crate roots — reset by the owning crate, not here ───────────
     // openmodelica_frontend::Globals::{rewriteRulesIndex, inlineHashTable,
     //   instNFInstCacheIndex, instNFNodeCacheIndex, instNFLookupCacheIndex}
@@ -100,8 +110,6 @@ pub const operatorOverloadingCache: i32 = 24;
 
 pub const optionSimCode: i32 = 25;
 
-pub const packageIndexCacheIndex: i32 = 29;
-
 pub const profilerTime1Index: i32 = 15;
 
 pub const profilerTime2Index: i32 = 16;
@@ -121,4 +129,3 @@ pub const strongComponent_index: i32 = 24;
 pub const symbolTable: i32 = 3;
 
 pub const tmpVariableIndex: i32 = 4;
-

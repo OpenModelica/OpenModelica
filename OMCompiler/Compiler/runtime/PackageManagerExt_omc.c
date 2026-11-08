@@ -33,16 +33,21 @@
  *
  */
 
-encapsulated package Curl
+#include "meta/meta_modelica.h"
+#include "errorext.h"
+#include "omcruntime_rust.h"
 
-import Config;
+const char* om_package_manager(const char *request)
+{
+  char *response = omcrs_package_manager(request);
+  char *res = omc_alloc_interface.malloc_strdup(response);
+  omcrs_free_string(response);
+  return res;
+}
 
-function multiDownload
-  input list<tuple<list<String>,String>> urlFileList;
-  input Integer maxParallel = Config.noProc();
-  output Boolean success;
-  external "C" success = om_curl_multi_download(urlFileList, maxParallel);
-end multiDownload;
-
-annotation(__OpenModelica_Interface="script_util");
-end Curl;
+/* Only for bomc, whose bootstrap sources still have Util/Curl.mo. */
+int om_curl_multi_download(void *urlPathList, int maxParallel)
+{
+  c_add_message(NULL, -1, ErrorType_runtime, ErrorLevel_error, "bomc cannot download files.", NULL, 0);
+  return 0;
+}
