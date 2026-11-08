@@ -1,0 +1,46 @@
+// name: resizableSlicedDummy
+// keywords: NewBackend resizable index reduction dummy state
+// status: correct
+// cflags: --newBackend --resizableArrays
+// teardown_command: rm -f resizableSlicedDummy resizableSlicedDummy_* resizableSlicedDummy.log
+//
+// p[N] = pSink makes p[1:N-1] states and p[N] a dummy state. The state alias
+// has to be a loop over 1:N-1 and has to be checked at the analysis size.
+
+loadString("
+model resizableSlicedDummy
+  parameter Integer N = 6;
+  parameter Real pSink = 2;
+  Real p[N](each start = 1);
+  Real w[N + 1];
+equation
+  w[1] = 1 + sin(time);
+  for i in 1:N loop
+    der(p[i]) = w[i] - w[i + 1];
+  end for;
+  for i in 1:N - 1 loop
+    w[i + 1] = p[i] - p[i + 1];
+  end for;
+  p[N] = pSink;
+end resizableSlicedDummy;
+"); getErrorString();
+
+simulate(resizableSlicedDummy, stopTime = 1, simflags = "-override=N=8"); getErrorString();
+val(p[1], 1);
+val(p[7], 1);
+val(w[9], 1);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "resizableSlicedDummy_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'resizableSlicedDummy', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=N=8'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0561831459656803
+// 1.476269721395841
+// -0.5237302786041591
+// endResult

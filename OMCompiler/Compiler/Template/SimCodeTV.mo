@@ -1043,6 +1043,7 @@ end SparsityRow;
       FmiDiscreteStates fmiDiscreteStates;
       FmiInitialUnknowns fmiInitialUnknowns;
       list<FmiArray> fmiArrays;
+      Boolean hasDependencies;
     end FMIMODELSTRUCTURE;
   end FmiModelStructure;
 
@@ -1915,6 +1916,12 @@ package SimCodeCodegenUtil
     input String fmuType;
     output Integer vr;
   end lookupVRForRealOutputDerivative;
+
+  function maxOutputDerivativeOrder
+    input SimCode.SimCode simCode;
+    input String fmuType;
+    output Integer order;
+  end maxOutputDerivativeOrder;
 
   function unbalancedEqSystemPartition
     input list<SimCode.SimEqSystem> inList;
@@ -4330,6 +4337,11 @@ end ComponentReference;
 
 package Expression
 
+  function assertConditionValues
+    input DAE.Exp cond;
+    output list<DAE.Exp> exps;
+  end assertConditionValues;
+
   function crefExp
     input DAE.ComponentRef cr;
     output DAE.Exp cref;
@@ -4622,6 +4634,7 @@ package Flags
   constant DebugFlag FMU_EXPERIMENTAL;
   constant DebugFlag MULTIRATE_PARTITION;
   constant ConfigFlag DAE_MODE;
+  constant ConfigFlag FMU_WITH_FMI2;
   constant ConfigFlag EQUATIONS_PER_FILE;
   constant ConfigFlag GENERATE_DYNAMIC_JACOBIAN;
   constant ConfigFlag HOMOTOPY_APPROACH;

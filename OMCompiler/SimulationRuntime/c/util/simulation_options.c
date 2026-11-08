@@ -257,8 +257,8 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_LS */                           "value specifies the linear solver method (default: lapack, totalpivot (fallback))",
   /* FLAG_LS_IPOPT */                     "value specifies the linear solver method for ipopt",
   /* FLAG_LSS */                          "value specifies the linear sparse solver method (default: klu)",
-  /* FLAG_LSS_MAX_DENSITY */              "deprecated and ignored",
-  /* FLAG_LSS_MIN_SIZE */                 "deprecated and ignored",
+  /* FLAG_LSS_MAX_DENSITY */              "[double] value specifies the maximum density for using a linear sparse solver",
+  /* FLAG_LSS_MIN_SIZE */                 "[int] value specifies the minimum system size for using a linear sparse solver",
   /* FLAG_LV */                           "[string list] value specifies the logging level",
   /* FLAG_LV_MAX_WARN */                  "[int (default " EXPANDSTRING(DEFAULT_FLAG_LV_MAX_WARN) ")] maximum times repeating warnings will be displayed",
   /* FLAG_LV_TIME */                      "[double list] specifying time interval to allow loging in",
@@ -283,8 +283,8 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_NLS */                          "value specifies the nonlinear solver",
   /* FLAG_NLS_INFO */                     "outputs detailed information about solving process of non-linear systems into csv files.",
   /* FLAG_NLS_LS */                       "value specifies the linear solver used by the non-linear solver",
-  /* FLAG_NLSS_MAX_DENSITY */             "deprecated and ignored",
-  /* FLAG_NLSS_MIN_SIZE */                "deprecated and ignored",
+  /* FLAG_NLSS_MAX_DENSITY */             "[double] value specifies the maximum density for using a non-linear sparse solver",
+  /* FLAG_NLSS_MIN_SIZE */                "[int] value specifies the minimum system size for using a non-linear sparse solver",
   /* FLAG_NLS_JAC_TEST_ATOL */            "[double] value specifies the absolute tolerance for the Jacobian derivative test.",
   /* FLAG_NLS_JAC_TEST_RTOL */            "[double] value specifies the relative tolerance for the Jacobian derivative test.",
   /* FLAG_NOEMIT */                       "do not emit any results to the result file",
@@ -520,9 +520,17 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_LSS */
   "  Value specifies the linear sparse solver method",
   /* FLAG_LSS_MAX_DENSITY */
-  "  Deprecated and ignored.",
+  "  Value specifies the maximum density for using a linear sparse solver.\n"
+  "  Without this flag and -lssMinSize, the compiler chooses dense or sparse\n"
+  "  for each linear system. When either is given, the runtime chooses\n"
+  "  instead, and the flag not given has its default (" EXPANDSTRING(DEFAULT_FLAG_LSS_MAX_DENSITY) " for the density,\n"
+  "  " EXPANDSTRING(DEFAULT_FLAG_LSS_MIN_SIZE) " for the size).",
   /* FLAG_LSS_MIN_SIZE */
-  "  Deprecated and ignored.",
+  "  Value specifies the minimum system size for using a linear sparse solver.\n"
+  "  Without this flag and -lssMaxDensity, the compiler chooses dense or sparse\n"
+  "  for each linear system. When either is given, the runtime chooses\n"
+  "  instead, and the flag not given has its default (" EXPANDSTRING(DEFAULT_FLAG_LSS_MAX_DENSITY) " for the density,\n"
+  "  " EXPANDSTRING(DEFAULT_FLAG_LSS_MIN_SIZE) " for the size).",
   /* FLAG_LV */
   "  Value (a comma-separated String list) specifies which logging levels to\n"
   "  enable. Multiple options can be enabled at the same time.",
@@ -593,9 +601,17 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_NLS_LS */
   "  Value specifies the linear solver used by the non-linear solver:",
   /* FLAG_NLSS_MAX_DENSITY */
-  "  Deprecated and ignored.",
+  "  Value specifies the maximum density for using a non-linear sparse solver.\n"
+  "  Without this flag and -nlssMinSize, the compiler chooses dense or sparse\n"
+  "  for each nonlinear system. When either is given, the runtime chooses\n"
+  "  instead, and the flag not given has its default (" EXPANDSTRING(DEFAULT_FLAG_NLSS_MAX_DENSITY) " for the density,\n"
+  "  " EXPANDSTRING(DEFAULT_FLAG_NLSS_MIN_SIZE) " for the size).",
   /* FLAG_NLSS_MIN_SIZE */
-  "  Deprecated and ignored.",
+  "  Value specifies the minimum system size for using a non-linear sparse solver.\n"
+  "  Without this flag and -nlssMaxDensity, the compiler chooses dense or sparse\n"
+  "  for each nonlinear system. When either is given, the runtime chooses\n"
+  "  instead, and the flag not given has its default (" EXPANDSTRING(DEFAULT_FLAG_NLSS_MAX_DENSITY) " for the density,\n"
+  "  " EXPANDSTRING(DEFAULT_FLAG_NLSS_MIN_SIZE) " for the size).",
   /* FLAG_NLS_JAC_TEST_ATOL */
   "  Value specifies the absolute tolerance for the Jacobian derivative test.",
   /* FLAG_NLS_JAC_TEST_RTOL */
@@ -1098,10 +1114,6 @@ int omc_flagIsHidden(int flag)
 {
   switch (flag) {
   case FLAG_IPOPT_JAC:
-  case FLAG_LSS_MAX_DENSITY:
-  case FLAG_LSS_MIN_SIZE:
-  case FLAG_NLSS_MAX_DENSITY:
-  case FLAG_NLSS_MIN_SIZE:
     return 1;
   default:
     return 0;

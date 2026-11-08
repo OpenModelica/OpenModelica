@@ -87,6 +87,9 @@ encapsulated package RuntimeSources
                                                      "ModelicaExternalC/uthash.h",
                                                      "ModelicaExternalC/win32_dirent.h"};
 
+  // zlib for ModelicaMatIO.c (MAT-files v7), compiled by the FMU's CMakeLists.txt.
+  constant list<String> modelica_external_c_zlib_files={@SOURCE_FMU_ZLIB_FILES@};
+
   // The headers of the MSL that a model includes: in sources/, which an importer
   // has on its include path, rather than beside the C files.
   constant list<String> modelica_external_c_api_headers={"ModelicaFFT.h",

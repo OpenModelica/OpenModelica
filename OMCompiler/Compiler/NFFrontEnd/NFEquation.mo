@@ -1289,26 +1289,40 @@ public
     input output Integer sz;
     input output list<Expression> exps;
   protected
-    Integer range_sz, body_sz = 0;
+    Integer range_sz, body_sz = 0, known_range_sz = -1;
     list<Expression> range_exps, body_exps = {};
     Expression exp, range_exp;
+    Operator op;
   algorithm
     (range_sz, range_exps) := Type.sizeOfSymbolic(Expression.typeOf(range));
     (body_sz, body_exps) := sizeOfListSymbolic(body, body_sz, body_exps);
 
-    if listEmpty(range_exps) and listEmpty(body_exps) then
+    if listEmpty(range_exps) then
+      // The range is an integer.
       sz := sz + range_sz * body_sz;
-    elseif listEmpty(body_exps) then
-      exps := listAppend(range_exps, exps);
-    else
-      exp := Expression.MULTARY(body_exps, {}, Operator.makeAdd(Type.INTEGER()));
 
-      if range_sz > 1 then
-        exp := Expression.BINARY(Expression.INTEGER(range_sz), Operator.makeMul(Type.INTEGER()), exp);
-      elseif not listEmpty(range_exps) then
-        exp := Expression.BINARY(listHead(range_exps), Operator.makeMul(Type.INTEGER()), exp);
+      if not listEmpty(body_exps) and range_sz > 1 then
+        // Create sum(range_exp .* body_exps) rather than range_exp * product(body_exps),
+        // since it's easier for e.g. checkModel to simplify.
+        range_exp := Expression.INTEGER(range_sz);
+        op := Operator.makeMul(Type.INTEGER());
+        body_exps := list(Expression.BINARY(range_exp, op, e) for e in body_exps);
       end if;
+    else
+      // The range contains expressions.
+      if range_sz > 1 then
+        range_exps := Expression.INTEGER(range_sz) :: range_exps;
+      end if;
+
+      if body_sz > 1 then
+        body_exps := Expression.INTEGER(body_sz) :: body_exps;
+      end if;
+
+      op := Operator.makeMul(Type.INTEGER());
+      body_exps := list(Expression.MULTARY(listAppend(range_exps, {e}), {}, op) for e in body_exps);
     end if;
+
+    exps := listAppend(body_exps, exps);
   end sizeOfSymbolicFor;
 
   function toString

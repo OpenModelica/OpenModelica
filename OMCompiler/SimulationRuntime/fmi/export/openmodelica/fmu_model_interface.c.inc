@@ -529,14 +529,26 @@ static void omc_assert_fmi_common(threadData_t *threadData, fmiXStatus status, i
   }
 }
 
-static void omc_assert_fmi(threadData_t *threadData, FILE_INFO info, const char *msg, ...) __attribute__ ((noreturn));
 static void omc_assert_fmi(threadData_t *threadData, FILE_INFO info, const char *msg, ...)
 {
   va_list args;
+  /* In a nonlinear solve or the integrator's right-hand side the solver may still
+   * recover: return the error to it, as omc_assert_function does. Like -lv LOG_NLS
+   * in the simulation executable, the message is only debug output then. */
+  int toSolver = threadData && (threadData->currentErrorStage == ERROR_NONLINEARSOLVER ||
+                                threadData->currentErrorStage == ERROR_INTEGRATOR);
   va_start(args, msg);
-  omc_assert_fmi_common(threadData, fmiXError, LOG_STATUSERROR, info, msg, args);
+  if (toSolver) {
+    omc_assert_fmi_common(threadData, fmiXOK,
+        threadData->currentErrorStage == ERROR_NONLINEARSOLVER ? LOG_NONLINEARSYSTEMS : LOG_ALL,
+        info, msg, args);
+  } else {
+    omc_assert_fmi_common(threadData, fmiXError, LOG_STATUSERROR, info, msg, args);
+  }
   va_end(args);
-  if (threadData) {
+  if (toSolver) {
+    OMC_ERROR_RAISE();
+  } else if (threadData) {
     OMC_THROW_INTERNAL();
   } else {
     OMC_THROW();
@@ -665,6 +677,11 @@ static fmiXStatus recordSet(ModelInstance *comp, const char *func, int ty, fmiXV
 {
   long slot;
   if (!comp->paramDeps->checked) {
+    return fmiXOK;
+  }
+  /* FMI 2.0.1 and later, and FMI 3.0.2: also a continuous-time state may be set
+   * in Continuous-Time Mode. The states come first among the Real variables. */
+  if (comp->state == model_state_me_continuous_time_mode && ty == OMC_SLOT_REAL && vr < NUMBER_OF_STATES) {
     return fmiXOK;
   }
   slot = variableSlot(comp, ty, vr);
@@ -1707,16 +1724,24 @@ fmiXStatus FMIX(GetReal)(fmiXComponent c, const fmiXValueReference vr[], size_t 
 #if NUMBER_OF_REALS > 0
   if (updateIfNeeded(comp, FMIX_STR "GetReal") != fmiXOK)
     return fmiXError;
+#endif
 
   for (i = 0; i < nvr; i++)
   {
+#if OMC_FMI_VERSION == 2
+    if (vr[i] == FMI2_TIME_VR) {
+      value[i] = comp->fmuData->localData[0]->timeValue;
+      continue;
+    }
+#endif
     if (vrOutOfRange(comp, FMIX_STR "GetReal", vr[i], NUMBER_OF_REALS)) {
       return fmiXError;
     }
+#if NUMBER_OF_REALS > 0
     value[i] = getReal(comp, vr[i]); // to be implemented by the includer of this file
     FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "GetReal: #r%u# = %.16g", vr[i], value[i])
-  }
 #endif
+  }
   return fmiXOK;
 }
 
@@ -2925,6 +2950,10 @@ fmiXStatus FMIX(GetRealOutputDerivatives)(fmiXComponent c, const fmiXValueRefere
       return fmiXError;
     }
     fmiXValueReference mappedVR = mapOutputReference2RealOutputDerivatives(vr[i]);
+    if (mappedVR == (fmiXValueReference)-1) {
+      FILTERED_LOG(comp, fmiXError, LOG_STATUSERROR, FMIX_STR "GetRealOutputDerivatives: #r%u# is not an output with a derivative.", vr[i])
+      return fmiXError;
+    }
     value[i] = getReal(comp, mappedVR); // to be implemented by the includer of this file
     FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "GetRealOutputDerivatives: #r%u# = %.16g", vr[i], value[i])
   }

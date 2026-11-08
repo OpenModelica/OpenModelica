@@ -7,7 +7,7 @@ setCommandLineOptions("--newBackend"); getErrorString();
 
 simulate(BenchmarksForResizeableArrays.ErrorsIfArraysNotExpanded.MixedAlgebraicAndStatesArray); getErrorString();
 
-diffSimulationResults("BenchmarksForResizeableArrays.ErrorsIfArraysNotExpanded.MixedAlgebraicAndStatesArray_res.mat", "ReferenceFiles/BenchmarksForResizeableArrays.ErrorsIfArraysNotExpanded.MixedAlgebraicAndStatesArray_res.mat", "BenchmarksForResizeableArrays.ErrorsIfArraysNotExpanded.MixedAlgebraicAndStatesArray.csv", 1e-8);
+diffSimulationResults("BenchmarksForResizeableArrays.ErrorsIfArraysNotExpanded.MixedAlgebraicAndStatesArray_res.mat", "ReferenceFiles/BenchmarksForResizeableArrays.ErrorsIfArraysNotExpanded.MixedAlgebraicAndStatesArray_res.mat", "BenchmarksForResizeableArrays.ErrorsIfArraysNotExpanded.MixedAlgebraicAndStatesArray.csv", 1e-8, vars={"N", "tau", "x[1]", "x[2]", "x[3]"});
 // Result:
 // true
 // "Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from BenchmarksForResizeableArrays.

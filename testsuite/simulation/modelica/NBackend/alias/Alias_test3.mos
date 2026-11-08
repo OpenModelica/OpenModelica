@@ -35,7 +35,7 @@ simulate(Test3); getErrorString();
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) z = $FUN_1; ($RES_SIM_0)
-// 	[SCAL] (1) x = -2.0 * z; ($RES_SIM_2)
+// 	[SCAL] (1) x = -2.0*z; ($RES_SIM_2)
 //
 // record SimulationResult
 //     resultFile = "",
@@ -46,7 +46,7 @@ simulate(Test3); getErrorString();
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) z = $FUN_1; ($RES_SIM_0)
-// 	[SCAL] (1) x = -2.0 * z; ($RES_SIM_2)
+// 	[SCAL] (1) x = -2.0*z; ($RES_SIM_2)
 //
 // 	StateSelect map after replacements:
 // 	(x, StateSelect = always)

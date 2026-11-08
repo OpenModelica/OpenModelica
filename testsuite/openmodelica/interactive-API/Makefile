@@ -22,6 +22,7 @@ Buildings.PartialFlowMachine.mos \
 checkAllModelsRecursive1.mos \
 CheckModel1.mos \
 CheckModel2.mos \
+CheckModel3.mos \
 CheckModelNonexistentClass1.mos \
 CheckModelExtObj1.mos \
 choicesAllMatching.mos \
@@ -47,6 +48,7 @@ DefaultComponentName.mos \
 DeleteConnection.mos \
 deleteEquation1.mos \
 DialogAnnotation.mos \
+ErrorMessageFileName.mos \
 evaluateProbe1.mos \
 evaluateProbe2.mos \
 evaluateProbe3.mos \

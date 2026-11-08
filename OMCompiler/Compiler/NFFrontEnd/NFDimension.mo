@@ -332,7 +332,10 @@ public
         end if;
 
         sz := 0;
-        exps := {Expression.MULTARY(exps, {}, Operator.makeMul(Type.INTEGER()))};
+
+        if listLength(exps) > 1 then
+          exps := {Expression.MULTARY(exps, {}, Operator.makeMul(Type.INTEGER()))};
+        end if;
       end if;
     end if;
   end sizesProductSymbolic;

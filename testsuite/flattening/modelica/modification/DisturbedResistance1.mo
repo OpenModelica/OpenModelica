@@ -17,7 +17,7 @@ model DisturbedResistance1
 end DisturbedResistance1;
 // Result:
 // Error processing file: DisturbedResistance1.mo
-// [flattening/modelica/modification/DisturbedResistance1.mo:16:20-16:43:writable] Error: Component R of variability parameter has binding '1.0 + 0.1 * sin(time)' of higher variability continuous.
+// [flattening/modelica/modification/DisturbedResistance1.mo:16:20-16:43:writable] Error: Component R of variability parameter has binding '1.0 + 0.1*sin(time)' of higher variability continuous.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

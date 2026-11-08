@@ -54,6 +54,7 @@ protected
   import NFInstNode.InstNode;
   import Component = NFComponent;
   import SimplifyExp = NFSimplifyExp;
+  import MetaModelica.Dangerous.listReverseInPlace;
 
 public
 function checkModel
@@ -362,11 +363,32 @@ function makeSum
   input list<Expression> exps;
   output Expression sumExp;
 protected
-  list<Expression> expl = exps;
+  list<Expression> expl = {};
+  UnorderedMap<Expression, Integer> terms;
+  Expression exp;
+  Integer factor;
 algorithm
   if listEmpty(exps) then
     sumExp := Expression.INTEGER(n);
   else
+    terms := UnorderedMap.new<Integer>(Expression.hash, Expression.isEqual);
+
+    for e in exps loop
+      addTerm(e, terms);
+    end for;
+
+    for term in UnorderedMap.toList(terms) loop
+      (exp, factor) := term;
+
+      if factor > 1 then
+        exp := Expression.BINARY(Expression.INTEGER(factor), Operator.makeMul(Type.INTEGER()), exp);
+      end if;
+
+      expl := exp :: expl;
+    end for;
+
+    expl := listReverseInPlace(expl);
+
     if n <> 0 then
       expl := Expression.INTEGER(n) :: expl;
     end if;
@@ -375,6 +397,45 @@ algorithm
     sumExp := SimplifyExp.simplify(sumExp);
   end if;
 end makeSum;
+
+function addTerm
+  input Expression exp;
+  input UnorderedMap<Expression, Integer> terms;
+protected
+  Integer factor;
+algorithm
+  () := match exp
+    // n * exp
+    case Expression.BINARY(exp1 = Expression.INTEGER(factor),
+                           operator = Operator.OPERATOR(op = NFOperator.Op.MUL))
+      algorithm
+        mergeTerm(exp.exp2, factor, terms);
+      then
+        ();
+
+    // exp * n
+    case Expression.BINARY(exp2 = Expression.INTEGER(factor),
+                           operator = Operator.OPERATOR(op = NFOperator.Op.MUL))
+      algorithm
+        mergeTerm(exp.exp1, factor, terms);
+      then
+        ();
+
+    else
+      algorithm
+        mergeTerm(exp, 1, terms);
+      then
+        ();
+  end match;
+end addTerm;
+
+function mergeTerm
+  input Expression exp;
+  input Integer factor;
+  input UnorderedMap<Expression, Integer> terms;
+algorithm
+  UnorderedMap.addMerge(exp, factor, intAdd, terms);
+end mergeTerm;
 
 annotation(__OpenModelica_Interface="nf_frontend");
 end NFCheckModel;

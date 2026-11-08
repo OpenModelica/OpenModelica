@@ -201,477 +201,477 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 //     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 1e-4, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((singularPressureLossWaterOut.pro.x >= 0.0 and singularPressureLossWaterOut.pro.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= singularPressureLossWaterOut.pro.x <= 1.0, has value: -1\"
+// |                 | |       | ((singularPressureLossWaterOut.pro.x >= 0.0 and singularPressureLossWaterOut.pro.x <= 1.0), singularPressureLossWaterOut.pro.x=-1) --> \"Variable violating min/max constraint: 0.0 <= singularPressureLossWaterOut.pro.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.volumeD.pro.x >= 0.0 and WaterHeating.volumeD.pro.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.volumeD.pro.x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.volumeD.pro.x >= 0.0 and WaterHeating.volumeD.pro.x <= 1.0), WaterHeating.volumeD.pro.x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.volumeD.pro.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_1.proc[1].x >= 0.0 and WaterHeating.pipe_1.proc[1].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.proc[1].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_1.proc[1].x >= 0.0 and WaterHeating.pipe_1.proc[1].x <= 1.0), WaterHeating.pipe_1.proc[1].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.proc[1].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_1.pro2[1].x >= 0.0 and WaterHeating.pipe_1.pro2[1].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro2[1].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_1.pro2[1].x >= 0.0 and WaterHeating.pipe_1.pro2[1].x <= 1.0), WaterHeating.pipe_1.pro2[1].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro2[1].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.proc[1].x >= 0.0 and WaterHeating.pipe_3.proc[1].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.proc[1].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.proc[1].x >= 0.0 and WaterHeating.pipe_3.proc[1].x <= 1.0), WaterHeating.pipe_3.proc[1].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.proc[1].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro2[1].x >= 0.0 and WaterHeating.pipe_3.pro2[1].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[1].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro2[1].x >= 0.0 and WaterHeating.pipe_3.pro2[1].x <= 1.0), WaterHeating.pipe_3.pro2[1].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[1].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((singularPressureLossWaterIn.pro.x >= 0.0 and singularPressureLossWaterIn.pro.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= singularPressureLossWaterIn.pro.x <= 1.0, has value: -1\"
+// |                 | |       | ((singularPressureLossWaterIn.pro.x >= 0.0 and singularPressureLossWaterIn.pro.x <= 1.0), singularPressureLossWaterIn.pro.x=-1) --> \"Variable violating min/max constraint: 0.0 <= singularPressureLossWaterIn.pro.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.volumeD1.pro.x >= 0.0 and WaterHeating.volumeD1.pro.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.volumeD1.pro.x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.volumeD1.pro.x >= 0.0 and WaterHeating.volumeD1.pro.x <= 1.0), WaterHeating.volumeD1.pro.x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.volumeD1.pro.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.volumeC.pro.x >= 0.0 and WaterHeating.volumeC.pro.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.volumeC.pro.x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.volumeC.pro.x >= 0.0 and WaterHeating.volumeC.pro.x <= 1.0), WaterHeating.volumeC.pro.x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.volumeC.pro.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_2.proc[2].x >= 0.0 and WaterHeating.pipe_2.proc[2].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.proc[2].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_2.proc[2].x >= 0.0 and WaterHeating.pipe_2.proc[2].x <= 1.0), WaterHeating.pipe_2.proc[2].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.proc[2].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_2.proc[1].x >= 0.0 and WaterHeating.pipe_2.proc[1].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.proc[1].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_2.proc[1].x >= 0.0 and WaterHeating.pipe_2.proc[1].x <= 1.0), WaterHeating.pipe_2.proc[1].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.proc[1].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_2.pro2[11].x >= 0.0 and WaterHeating.pipe_2.pro2[11].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro2[11].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_2.pro2[11].x >= 0.0 and WaterHeating.pipe_2.pro2[11].x <= 1.0), WaterHeating.pipe_2.pro2[11].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro2[11].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_2.pro2[10].x >= 0.0 and WaterHeating.pipe_2.pro2[10].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro2[10].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_2.pro2[10].x >= 0.0 and WaterHeating.pipe_2.pro2[10].x <= 1.0), WaterHeating.pipe_2.pro2[10].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro2[10].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_2.pro2[9].x >= 0.0 and WaterHeating.pipe_2.pro2[9].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro2[9].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_2.pro2[9].x >= 0.0 and WaterHeating.pipe_2.pro2[9].x <= 1.0), WaterHeating.pipe_2.pro2[9].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro2[9].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_2.pro2[8].x >= 0.0 and WaterHeating.pipe_2.pro2[8].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro2[8].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_2.pro2[8].x >= 0.0 and WaterHeating.pipe_2.pro2[8].x <= 1.0), WaterHeating.pipe_2.pro2[8].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro2[8].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_2.pro2[7].x >= 0.0 and WaterHeating.pipe_2.pro2[7].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro2[7].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_2.pro2[7].x >= 0.0 and WaterHeating.pipe_2.pro2[7].x <= 1.0), WaterHeating.pipe_2.pro2[7].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro2[7].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_2.pro2[6].x >= 0.0 and WaterHeating.pipe_2.pro2[6].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro2[6].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_2.pro2[6].x >= 0.0 and WaterHeating.pipe_2.pro2[6].x <= 1.0), WaterHeating.pipe_2.pro2[6].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro2[6].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_2.pro2[5].x >= 0.0 and WaterHeating.pipe_2.pro2[5].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro2[5].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_2.pro2[5].x >= 0.0 and WaterHeating.pipe_2.pro2[5].x <= 1.0), WaterHeating.pipe_2.pro2[5].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro2[5].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_2.pro2[4].x >= 0.0 and WaterHeating.pipe_2.pro2[4].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro2[4].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_2.pro2[4].x >= 0.0 and WaterHeating.pipe_2.pro2[4].x <= 1.0), WaterHeating.pipe_2.pro2[4].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro2[4].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_2.pro2[3].x >= 0.0 and WaterHeating.pipe_2.pro2[3].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro2[3].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_2.pro2[3].x >= 0.0 and WaterHeating.pipe_2.pro2[3].x <= 1.0), WaterHeating.pipe_2.pro2[3].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro2[3].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_2.pro2[2].x >= 0.0 and WaterHeating.pipe_2.pro2[2].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro2[2].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_2.pro2[2].x >= 0.0 and WaterHeating.pipe_2.pro2[2].x <= 1.0), WaterHeating.pipe_2.pro2[2].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro2[2].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_2.pro2[1].x >= 0.0 and WaterHeating.pipe_2.pro2[1].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro2[1].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_2.pro2[1].x >= 0.0 and WaterHeating.pipe_2.pro2[1].x <= 1.0), WaterHeating.pipe_2.pro2[1].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro2[1].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_2.pro1[10].x >= 0.0 and WaterHeating.pipe_2.pro1[10].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro1[10].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_2.pro1[10].x >= 0.0 and WaterHeating.pipe_2.pro1[10].x <= 1.0), WaterHeating.pipe_2.pro1[10].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro1[10].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_2.pro1[9].x >= 0.0 and WaterHeating.pipe_2.pro1[9].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro1[9].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_2.pro1[9].x >= 0.0 and WaterHeating.pipe_2.pro1[9].x <= 1.0), WaterHeating.pipe_2.pro1[9].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro1[9].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_2.pro1[8].x >= 0.0 and WaterHeating.pipe_2.pro1[8].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro1[8].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_2.pro1[8].x >= 0.0 and WaterHeating.pipe_2.pro1[8].x <= 1.0), WaterHeating.pipe_2.pro1[8].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro1[8].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_2.pro1[7].x >= 0.0 and WaterHeating.pipe_2.pro1[7].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro1[7].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_2.pro1[7].x >= 0.0 and WaterHeating.pipe_2.pro1[7].x <= 1.0), WaterHeating.pipe_2.pro1[7].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro1[7].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_2.pro1[6].x >= 0.0 and WaterHeating.pipe_2.pro1[6].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro1[6].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_2.pro1[6].x >= 0.0 and WaterHeating.pipe_2.pro1[6].x <= 1.0), WaterHeating.pipe_2.pro1[6].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro1[6].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_2.pro1[5].x >= 0.0 and WaterHeating.pipe_2.pro1[5].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro1[5].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_2.pro1[5].x >= 0.0 and WaterHeating.pipe_2.pro1[5].x <= 1.0), WaterHeating.pipe_2.pro1[5].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro1[5].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_2.pro1[4].x >= 0.0 and WaterHeating.pipe_2.pro1[4].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro1[4].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_2.pro1[4].x >= 0.0 and WaterHeating.pipe_2.pro1[4].x <= 1.0), WaterHeating.pipe_2.pro1[4].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro1[4].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_2.pro1[3].x >= 0.0 and WaterHeating.pipe_2.pro1[3].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro1[3].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_2.pro1[3].x >= 0.0 and WaterHeating.pipe_2.pro1[3].x <= 1.0), WaterHeating.pipe_2.pro1[3].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro1[3].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_2.pro1[2].x >= 0.0 and WaterHeating.pipe_2.pro1[2].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro1[2].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_2.pro1[2].x >= 0.0 and WaterHeating.pipe_2.pro1[2].x <= 1.0), WaterHeating.pipe_2.pro1[2].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro1[2].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_2.pro1[1].x >= 0.0 and WaterHeating.pipe_2.pro1[1].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro1[1].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_2.pro1[1].x >= 0.0 and WaterHeating.pipe_2.pro1[1].x <= 1.0), WaterHeating.pipe_2.pro1[1].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_2.pro1[1].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_1.proc[2].x >= 0.0 and WaterHeating.pipe_1.proc[2].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.proc[2].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_1.proc[2].x >= 0.0 and WaterHeating.pipe_1.proc[2].x <= 1.0), WaterHeating.pipe_1.proc[2].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.proc[2].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_1.pro2[11].x >= 0.0 and WaterHeating.pipe_1.pro2[11].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro2[11].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_1.pro2[11].x >= 0.0 and WaterHeating.pipe_1.pro2[11].x <= 1.0), WaterHeating.pipe_1.pro2[11].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro2[11].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_1.pro2[10].x >= 0.0 and WaterHeating.pipe_1.pro2[10].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro2[10].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_1.pro2[10].x >= 0.0 and WaterHeating.pipe_1.pro2[10].x <= 1.0), WaterHeating.pipe_1.pro2[10].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro2[10].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_1.pro2[9].x >= 0.0 and WaterHeating.pipe_1.pro2[9].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro2[9].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_1.pro2[9].x >= 0.0 and WaterHeating.pipe_1.pro2[9].x <= 1.0), WaterHeating.pipe_1.pro2[9].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro2[9].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_1.pro2[8].x >= 0.0 and WaterHeating.pipe_1.pro2[8].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro2[8].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_1.pro2[8].x >= 0.0 and WaterHeating.pipe_1.pro2[8].x <= 1.0), WaterHeating.pipe_1.pro2[8].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro2[8].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_1.pro2[7].x >= 0.0 and WaterHeating.pipe_1.pro2[7].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro2[7].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_1.pro2[7].x >= 0.0 and WaterHeating.pipe_1.pro2[7].x <= 1.0), WaterHeating.pipe_1.pro2[7].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro2[7].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_1.pro2[6].x >= 0.0 and WaterHeating.pipe_1.pro2[6].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro2[6].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_1.pro2[6].x >= 0.0 and WaterHeating.pipe_1.pro2[6].x <= 1.0), WaterHeating.pipe_1.pro2[6].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro2[6].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_1.pro2[5].x >= 0.0 and WaterHeating.pipe_1.pro2[5].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro2[5].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_1.pro2[5].x >= 0.0 and WaterHeating.pipe_1.pro2[5].x <= 1.0), WaterHeating.pipe_1.pro2[5].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro2[5].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_1.pro2[4].x >= 0.0 and WaterHeating.pipe_1.pro2[4].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro2[4].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_1.pro2[4].x >= 0.0 and WaterHeating.pipe_1.pro2[4].x <= 1.0), WaterHeating.pipe_1.pro2[4].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro2[4].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_1.pro2[3].x >= 0.0 and WaterHeating.pipe_1.pro2[3].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro2[3].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_1.pro2[3].x >= 0.0 and WaterHeating.pipe_1.pro2[3].x <= 1.0), WaterHeating.pipe_1.pro2[3].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro2[3].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_1.pro2[2].x >= 0.0 and WaterHeating.pipe_1.pro2[2].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro2[2].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_1.pro2[2].x >= 0.0 and WaterHeating.pipe_1.pro2[2].x <= 1.0), WaterHeating.pipe_1.pro2[2].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro2[2].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_1.pro1[10].x >= 0.0 and WaterHeating.pipe_1.pro1[10].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro1[10].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_1.pro1[10].x >= 0.0 and WaterHeating.pipe_1.pro1[10].x <= 1.0), WaterHeating.pipe_1.pro1[10].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro1[10].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_1.pro1[9].x >= 0.0 and WaterHeating.pipe_1.pro1[9].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro1[9].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_1.pro1[9].x >= 0.0 and WaterHeating.pipe_1.pro1[9].x <= 1.0), WaterHeating.pipe_1.pro1[9].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro1[9].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_1.pro1[8].x >= 0.0 and WaterHeating.pipe_1.pro1[8].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro1[8].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_1.pro1[8].x >= 0.0 and WaterHeating.pipe_1.pro1[8].x <= 1.0), WaterHeating.pipe_1.pro1[8].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro1[8].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_1.pro1[7].x >= 0.0 and WaterHeating.pipe_1.pro1[7].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro1[7].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_1.pro1[7].x >= 0.0 and WaterHeating.pipe_1.pro1[7].x <= 1.0), WaterHeating.pipe_1.pro1[7].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro1[7].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_1.pro1[6].x >= 0.0 and WaterHeating.pipe_1.pro1[6].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro1[6].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_1.pro1[6].x >= 0.0 and WaterHeating.pipe_1.pro1[6].x <= 1.0), WaterHeating.pipe_1.pro1[6].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro1[6].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_1.pro1[5].x >= 0.0 and WaterHeating.pipe_1.pro1[5].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro1[5].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_1.pro1[5].x >= 0.0 and WaterHeating.pipe_1.pro1[5].x <= 1.0), WaterHeating.pipe_1.pro1[5].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro1[5].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_1.pro1[4].x >= 0.0 and WaterHeating.pipe_1.pro1[4].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro1[4].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_1.pro1[4].x >= 0.0 and WaterHeating.pipe_1.pro1[4].x <= 1.0), WaterHeating.pipe_1.pro1[4].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro1[4].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_1.pro1[3].x >= 0.0 and WaterHeating.pipe_1.pro1[3].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro1[3].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_1.pro1[3].x >= 0.0 and WaterHeating.pipe_1.pro1[3].x <= 1.0), WaterHeating.pipe_1.pro1[3].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro1[3].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_1.pro1[2].x >= 0.0 and WaterHeating.pipe_1.pro1[2].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro1[2].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_1.pro1[2].x >= 0.0 and WaterHeating.pipe_1.pro1[2].x <= 1.0), WaterHeating.pipe_1.pro1[2].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro1[2].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_1.pro1[1].x >= 0.0 and WaterHeating.pipe_1.pro1[1].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro1[1].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_1.pro1[1].x >= 0.0 and WaterHeating.pipe_1.pro1[1].x <= 1.0), WaterHeating.pipe_1.pro1[1].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_1.pro1[1].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.proc[2].x >= 0.0 and WaterHeating.pipe_3.proc[2].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.proc[2].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.proc[2].x >= 0.0 and WaterHeating.pipe_3.proc[2].x <= 1.0), WaterHeating.pipe_3.proc[2].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.proc[2].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro2[21].x >= 0.0 and WaterHeating.pipe_3.pro2[21].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[21].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro2[21].x >= 0.0 and WaterHeating.pipe_3.pro2[21].x <= 1.0), WaterHeating.pipe_3.pro2[21].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[21].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro2[20].x >= 0.0 and WaterHeating.pipe_3.pro2[20].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[20].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro2[20].x >= 0.0 and WaterHeating.pipe_3.pro2[20].x <= 1.0), WaterHeating.pipe_3.pro2[20].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[20].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro2[19].x >= 0.0 and WaterHeating.pipe_3.pro2[19].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[19].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro2[19].x >= 0.0 and WaterHeating.pipe_3.pro2[19].x <= 1.0), WaterHeating.pipe_3.pro2[19].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[19].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro2[18].x >= 0.0 and WaterHeating.pipe_3.pro2[18].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[18].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro2[18].x >= 0.0 and WaterHeating.pipe_3.pro2[18].x <= 1.0), WaterHeating.pipe_3.pro2[18].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[18].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro2[17].x >= 0.0 and WaterHeating.pipe_3.pro2[17].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[17].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro2[17].x >= 0.0 and WaterHeating.pipe_3.pro2[17].x <= 1.0), WaterHeating.pipe_3.pro2[17].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[17].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro2[16].x >= 0.0 and WaterHeating.pipe_3.pro2[16].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[16].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro2[16].x >= 0.0 and WaterHeating.pipe_3.pro2[16].x <= 1.0), WaterHeating.pipe_3.pro2[16].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[16].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro2[15].x >= 0.0 and WaterHeating.pipe_3.pro2[15].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[15].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro2[15].x >= 0.0 and WaterHeating.pipe_3.pro2[15].x <= 1.0), WaterHeating.pipe_3.pro2[15].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[15].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro2[14].x >= 0.0 and WaterHeating.pipe_3.pro2[14].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[14].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro2[14].x >= 0.0 and WaterHeating.pipe_3.pro2[14].x <= 1.0), WaterHeating.pipe_3.pro2[14].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[14].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro2[13].x >= 0.0 and WaterHeating.pipe_3.pro2[13].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[13].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro2[13].x >= 0.0 and WaterHeating.pipe_3.pro2[13].x <= 1.0), WaterHeating.pipe_3.pro2[13].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[13].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro2[12].x >= 0.0 and WaterHeating.pipe_3.pro2[12].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[12].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro2[12].x >= 0.0 and WaterHeating.pipe_3.pro2[12].x <= 1.0), WaterHeating.pipe_3.pro2[12].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[12].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro2[11].x >= 0.0 and WaterHeating.pipe_3.pro2[11].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[11].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro2[11].x >= 0.0 and WaterHeating.pipe_3.pro2[11].x <= 1.0), WaterHeating.pipe_3.pro2[11].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[11].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro2[10].x >= 0.0 and WaterHeating.pipe_3.pro2[10].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[10].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro2[10].x >= 0.0 and WaterHeating.pipe_3.pro2[10].x <= 1.0), WaterHeating.pipe_3.pro2[10].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[10].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro2[9].x >= 0.0 and WaterHeating.pipe_3.pro2[9].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[9].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro2[9].x >= 0.0 and WaterHeating.pipe_3.pro2[9].x <= 1.0), WaterHeating.pipe_3.pro2[9].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[9].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro2[8].x >= 0.0 and WaterHeating.pipe_3.pro2[8].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[8].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro2[8].x >= 0.0 and WaterHeating.pipe_3.pro2[8].x <= 1.0), WaterHeating.pipe_3.pro2[8].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[8].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro2[7].x >= 0.0 and WaterHeating.pipe_3.pro2[7].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[7].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro2[7].x >= 0.0 and WaterHeating.pipe_3.pro2[7].x <= 1.0), WaterHeating.pipe_3.pro2[7].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[7].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro2[6].x >= 0.0 and WaterHeating.pipe_3.pro2[6].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[6].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro2[6].x >= 0.0 and WaterHeating.pipe_3.pro2[6].x <= 1.0), WaterHeating.pipe_3.pro2[6].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[6].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro2[5].x >= 0.0 and WaterHeating.pipe_3.pro2[5].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[5].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro2[5].x >= 0.0 and WaterHeating.pipe_3.pro2[5].x <= 1.0), WaterHeating.pipe_3.pro2[5].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[5].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro2[4].x >= 0.0 and WaterHeating.pipe_3.pro2[4].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[4].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro2[4].x >= 0.0 and WaterHeating.pipe_3.pro2[4].x <= 1.0), WaterHeating.pipe_3.pro2[4].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[4].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro2[3].x >= 0.0 and WaterHeating.pipe_3.pro2[3].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[3].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro2[3].x >= 0.0 and WaterHeating.pipe_3.pro2[3].x <= 1.0), WaterHeating.pipe_3.pro2[3].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[3].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro2[2].x >= 0.0 and WaterHeating.pipe_3.pro2[2].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[2].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro2[2].x >= 0.0 and WaterHeating.pipe_3.pro2[2].x <= 1.0), WaterHeating.pipe_3.pro2[2].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro2[2].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro1[20].x >= 0.0 and WaterHeating.pipe_3.pro1[20].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[20].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro1[20].x >= 0.0 and WaterHeating.pipe_3.pro1[20].x <= 1.0), WaterHeating.pipe_3.pro1[20].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[20].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro1[19].x >= 0.0 and WaterHeating.pipe_3.pro1[19].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[19].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro1[19].x >= 0.0 and WaterHeating.pipe_3.pro1[19].x <= 1.0), WaterHeating.pipe_3.pro1[19].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[19].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro1[18].x >= 0.0 and WaterHeating.pipe_3.pro1[18].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[18].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro1[18].x >= 0.0 and WaterHeating.pipe_3.pro1[18].x <= 1.0), WaterHeating.pipe_3.pro1[18].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[18].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro1[17].x >= 0.0 and WaterHeating.pipe_3.pro1[17].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[17].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro1[17].x >= 0.0 and WaterHeating.pipe_3.pro1[17].x <= 1.0), WaterHeating.pipe_3.pro1[17].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[17].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro1[16].x >= 0.0 and WaterHeating.pipe_3.pro1[16].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[16].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro1[16].x >= 0.0 and WaterHeating.pipe_3.pro1[16].x <= 1.0), WaterHeating.pipe_3.pro1[16].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[16].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro1[15].x >= 0.0 and WaterHeating.pipe_3.pro1[15].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[15].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro1[15].x >= 0.0 and WaterHeating.pipe_3.pro1[15].x <= 1.0), WaterHeating.pipe_3.pro1[15].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[15].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro1[14].x >= 0.0 and WaterHeating.pipe_3.pro1[14].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[14].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro1[14].x >= 0.0 and WaterHeating.pipe_3.pro1[14].x <= 1.0), WaterHeating.pipe_3.pro1[14].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[14].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro1[13].x >= 0.0 and WaterHeating.pipe_3.pro1[13].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[13].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro1[13].x >= 0.0 and WaterHeating.pipe_3.pro1[13].x <= 1.0), WaterHeating.pipe_3.pro1[13].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[13].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro1[12].x >= 0.0 and WaterHeating.pipe_3.pro1[12].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[12].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro1[12].x >= 0.0 and WaterHeating.pipe_3.pro1[12].x <= 1.0), WaterHeating.pipe_3.pro1[12].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[12].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro1[11].x >= 0.0 and WaterHeating.pipe_3.pro1[11].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[11].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro1[11].x >= 0.0 and WaterHeating.pipe_3.pro1[11].x <= 1.0), WaterHeating.pipe_3.pro1[11].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[11].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro1[10].x >= 0.0 and WaterHeating.pipe_3.pro1[10].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[10].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro1[10].x >= 0.0 and WaterHeating.pipe_3.pro1[10].x <= 1.0), WaterHeating.pipe_3.pro1[10].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[10].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro1[9].x >= 0.0 and WaterHeating.pipe_3.pro1[9].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[9].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro1[9].x >= 0.0 and WaterHeating.pipe_3.pro1[9].x <= 1.0), WaterHeating.pipe_3.pro1[9].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[9].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro1[8].x >= 0.0 and WaterHeating.pipe_3.pro1[8].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[8].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro1[8].x >= 0.0 and WaterHeating.pipe_3.pro1[8].x <= 1.0), WaterHeating.pipe_3.pro1[8].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[8].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro1[7].x >= 0.0 and WaterHeating.pipe_3.pro1[7].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[7].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro1[7].x >= 0.0 and WaterHeating.pipe_3.pro1[7].x <= 1.0), WaterHeating.pipe_3.pro1[7].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[7].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro1[6].x >= 0.0 and WaterHeating.pipe_3.pro1[6].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[6].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro1[6].x >= 0.0 and WaterHeating.pipe_3.pro1[6].x <= 1.0), WaterHeating.pipe_3.pro1[6].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[6].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro1[5].x >= 0.0 and WaterHeating.pipe_3.pro1[5].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[5].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro1[5].x >= 0.0 and WaterHeating.pipe_3.pro1[5].x <= 1.0), WaterHeating.pipe_3.pro1[5].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[5].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro1[4].x >= 0.0 and WaterHeating.pipe_3.pro1[4].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[4].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro1[4].x >= 0.0 and WaterHeating.pipe_3.pro1[4].x <= 1.0), WaterHeating.pipe_3.pro1[4].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[4].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro1[3].x >= 0.0 and WaterHeating.pipe_3.pro1[3].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[3].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro1[3].x >= 0.0 and WaterHeating.pipe_3.pro1[3].x <= 1.0), WaterHeating.pipe_3.pro1[3].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[3].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro1[2].x >= 0.0 and WaterHeating.pipe_3.pro1[2].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[2].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro1[2].x >= 0.0 and WaterHeating.pipe_3.pro1[2].x <= 1.0), WaterHeating.pipe_3.pro1[2].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[2].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((WaterHeating.pipe_3.pro1[1].x >= 0.0 and WaterHeating.pipe_3.pro1[1].x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[1].x <= 1.0, has value: -1\"
+// |                 | |       | ((WaterHeating.pipe_3.pro1[1].x >= 0.0 and WaterHeating.pipe_3.pro1[1].x <= 1.0), WaterHeating.pipe_3.pro1[1].x=-1) --> \"Variable violating min/max constraint: 0.0 <= WaterHeating.pipe_3.pro1[1].x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse5.x >= 0.0 and $cse5.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse5.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse5.x >= 0.0 and $cse5.x <= 1.0), $cse5.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse5.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse7.x >= 0.0 and $cse7.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse7.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse7.x >= 0.0 and $cse7.x <= 1.0), $cse7.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse7.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse9.x >= 0.0 and $cse9.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse9.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse9.x >= 0.0 and $cse9.x <= 1.0), $cse9.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse9.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse10.x >= 0.0 and $cse10.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse10.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse10.x >= 0.0 and $cse10.x <= 1.0), $cse10.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse10.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse11.x >= 0.0 and $cse11.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse11.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse11.x >= 0.0 and $cse11.x <= 1.0), $cse11.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse11.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse14.x >= 0.0 and $cse14.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse14.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse14.x >= 0.0 and $cse14.x <= 1.0), $cse14.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse14.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse15.x >= 0.0 and $cse15.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse15.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse15.x >= 0.0 and $cse15.x <= 1.0), $cse15.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse15.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse16.x >= 0.0 and $cse16.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse16.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse16.x >= 0.0 and $cse16.x <= 1.0), $cse16.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse16.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse17.x >= 0.0 and $cse17.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse17.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse17.x >= 0.0 and $cse17.x <= 1.0), $cse17.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse17.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse18.x >= 0.0 and $cse18.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse18.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse18.x >= 0.0 and $cse18.x <= 1.0), $cse18.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse18.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse19.x >= 0.0 and $cse19.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse19.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse19.x >= 0.0 and $cse19.x <= 1.0), $cse19.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse19.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse20.x >= 0.0 and $cse20.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse20.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse20.x >= 0.0 and $cse20.x <= 1.0), $cse20.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse20.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse21.x >= 0.0 and $cse21.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse21.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse21.x >= 0.0 and $cse21.x <= 1.0), $cse21.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse21.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse22.x >= 0.0 and $cse22.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse22.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse22.x >= 0.0 and $cse22.x <= 1.0), $cse22.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse22.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse23.x >= 0.0 and $cse23.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse23.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse23.x >= 0.0 and $cse23.x <= 1.0), $cse23.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse23.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse24.x >= 0.0 and $cse24.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse24.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse24.x >= 0.0 and $cse24.x <= 1.0), $cse24.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse24.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse25.x >= 0.0 and $cse25.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse25.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse25.x >= 0.0 and $cse25.x <= 1.0), $cse25.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse25.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse26.x >= 0.0 and $cse26.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse26.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse26.x >= 0.0 and $cse26.x <= 1.0), $cse26.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse26.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse27.x >= 0.0 and $cse27.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse27.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse27.x >= 0.0 and $cse27.x <= 1.0), $cse27.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse27.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse28.x >= 0.0 and $cse28.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse28.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse28.x >= 0.0 and $cse28.x <= 1.0), $cse28.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse28.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse29.x >= 0.0 and $cse29.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse29.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse29.x >= 0.0 and $cse29.x <= 1.0), $cse29.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse29.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse30.x >= 0.0 and $cse30.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse30.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse30.x >= 0.0 and $cse30.x <= 1.0), $cse30.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse30.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse31.x >= 0.0 and $cse31.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse31.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse31.x >= 0.0 and $cse31.x <= 1.0), $cse31.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse31.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse32.x >= 0.0 and $cse32.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse32.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse32.x >= 0.0 and $cse32.x <= 1.0), $cse32.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse32.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse33.x >= 0.0 and $cse33.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse33.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse33.x >= 0.0 and $cse33.x <= 1.0), $cse33.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse33.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse34.x >= 0.0 and $cse34.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse34.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse34.x >= 0.0 and $cse34.x <= 1.0), $cse34.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse34.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse35.x >= 0.0 and $cse35.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse35.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse35.x >= 0.0 and $cse35.x <= 1.0), $cse35.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse35.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse36.x >= 0.0 and $cse36.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse36.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse36.x >= 0.0 and $cse36.x <= 1.0), $cse36.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse36.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse39.x >= 0.0 and $cse39.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse39.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse39.x >= 0.0 and $cse39.x <= 1.0), $cse39.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse39.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse40.x >= 0.0 and $cse40.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse40.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse40.x >= 0.0 and $cse40.x <= 1.0), $cse40.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse40.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse41.x >= 0.0 and $cse41.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse41.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse41.x >= 0.0 and $cse41.x <= 1.0), $cse41.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse41.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse42.x >= 0.0 and $cse42.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse42.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse42.x >= 0.0 and $cse42.x <= 1.0), $cse42.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse42.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse43.x >= 0.0 and $cse43.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse43.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse43.x >= 0.0 and $cse43.x <= 1.0), $cse43.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse43.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse44.x >= 0.0 and $cse44.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse44.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse44.x >= 0.0 and $cse44.x <= 1.0), $cse44.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse44.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse45.x >= 0.0 and $cse45.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse45.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse45.x >= 0.0 and $cse45.x <= 1.0), $cse45.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse45.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse46.x >= 0.0 and $cse46.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse46.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse46.x >= 0.0 and $cse46.x <= 1.0), $cse46.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse46.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse47.x >= 0.0 and $cse47.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse47.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse47.x >= 0.0 and $cse47.x <= 1.0), $cse47.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse47.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse48.x >= 0.0 and $cse48.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse48.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse48.x >= 0.0 and $cse48.x <= 1.0), $cse48.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse48.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse49.x >= 0.0 and $cse49.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse49.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse49.x >= 0.0 and $cse49.x <= 1.0), $cse49.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse49.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse50.x >= 0.0 and $cse50.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse50.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse50.x >= 0.0 and $cse50.x <= 1.0), $cse50.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse50.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse51.x >= 0.0 and $cse51.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse51.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse51.x >= 0.0 and $cse51.x <= 1.0), $cse51.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse51.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse52.x >= 0.0 and $cse52.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse52.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse52.x >= 0.0 and $cse52.x <= 1.0), $cse52.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse52.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse53.x >= 0.0 and $cse53.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse53.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse53.x >= 0.0 and $cse53.x <= 1.0), $cse53.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse53.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse54.x >= 0.0 and $cse54.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse54.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse54.x >= 0.0 and $cse54.x <= 1.0), $cse54.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse54.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse55.x >= 0.0 and $cse55.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse55.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse55.x >= 0.0 and $cse55.x <= 1.0), $cse55.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse55.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse56.x >= 0.0 and $cse56.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse56.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse56.x >= 0.0 and $cse56.x <= 1.0), $cse56.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse56.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse57.x >= 0.0 and $cse57.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse57.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse57.x >= 0.0 and $cse57.x <= 1.0), $cse57.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse57.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse58.x >= 0.0 and $cse58.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse58.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse58.x >= 0.0 and $cse58.x <= 1.0), $cse58.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse58.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse59.x >= 0.0 and $cse59.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse59.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse59.x >= 0.0 and $cse59.x <= 1.0), $cse59.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse59.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse60.x >= 0.0 and $cse60.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse60.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse60.x >= 0.0 and $cse60.x <= 1.0), $cse60.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse60.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse61.x >= 0.0 and $cse61.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse61.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse61.x >= 0.0 and $cse61.x <= 1.0), $cse61.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse61.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse64.x >= 0.0 and $cse64.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse64.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse64.x >= 0.0 and $cse64.x <= 1.0), $cse64.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse64.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse65.x >= 0.0 and $cse65.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse65.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse65.x >= 0.0 and $cse65.x <= 1.0), $cse65.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse65.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse66.x >= 0.0 and $cse66.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse66.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse66.x >= 0.0 and $cse66.x <= 1.0), $cse66.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse66.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse67.x >= 0.0 and $cse67.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse67.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse67.x >= 0.0 and $cse67.x <= 1.0), $cse67.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse67.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse68.x >= 0.0 and $cse68.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse68.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse68.x >= 0.0 and $cse68.x <= 1.0), $cse68.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse68.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse69.x >= 0.0 and $cse69.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse69.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse69.x >= 0.0 and $cse69.x <= 1.0), $cse69.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse69.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse70.x >= 0.0 and $cse70.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse70.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse70.x >= 0.0 and $cse70.x <= 1.0), $cse70.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse70.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse71.x >= 0.0 and $cse71.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse71.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse71.x >= 0.0 and $cse71.x <= 1.0), $cse71.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse71.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse72.x >= 0.0 and $cse72.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse72.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse72.x >= 0.0 and $cse72.x <= 1.0), $cse72.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse72.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse73.x >= 0.0 and $cse73.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse73.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse73.x >= 0.0 and $cse73.x <= 1.0), $cse73.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse73.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse74.x >= 0.0 and $cse74.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse74.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse74.x >= 0.0 and $cse74.x <= 1.0), $cse74.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse74.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse75.x >= 0.0 and $cse75.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse75.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse75.x >= 0.0 and $cse75.x <= 1.0), $cse75.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse75.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse76.x >= 0.0 and $cse76.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse76.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse76.x >= 0.0 and $cse76.x <= 1.0), $cse76.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse76.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse77.x >= 0.0 and $cse77.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse77.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse77.x >= 0.0 and $cse77.x <= 1.0), $cse77.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse77.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse78.x >= 0.0 and $cse78.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse78.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse78.x >= 0.0 and $cse78.x <= 1.0), $cse78.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse78.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse79.x >= 0.0 and $cse79.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse79.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse79.x >= 0.0 and $cse79.x <= 1.0), $cse79.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse79.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse80.x >= 0.0 and $cse80.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse80.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse80.x >= 0.0 and $cse80.x <= 1.0), $cse80.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse80.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse81.x >= 0.0 and $cse81.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse81.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse81.x >= 0.0 and $cse81.x <= 1.0), $cse81.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse81.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse82.x >= 0.0 and $cse82.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse82.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse82.x >= 0.0 and $cse82.x <= 1.0), $cse82.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse82.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse83.x >= 0.0 and $cse83.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse83.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse83.x >= 0.0 and $cse83.x <= 1.0), $cse83.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse83.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse84.x >= 0.0 and $cse84.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse84.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse84.x >= 0.0 and $cse84.x <= 1.0), $cse84.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse84.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse85.x >= 0.0 and $cse85.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse85.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse85.x >= 0.0 and $cse85.x <= 1.0), $cse85.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse85.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse86.x >= 0.0 and $cse86.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse86.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse86.x >= 0.0 and $cse86.x <= 1.0), $cse86.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse86.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse87.x >= 0.0 and $cse87.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse87.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse87.x >= 0.0 and $cse87.x <= 1.0), $cse87.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse87.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse88.x >= 0.0 and $cse88.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse88.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse88.x >= 0.0 and $cse88.x <= 1.0), $cse88.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse88.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse89.x >= 0.0 and $cse89.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse89.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse89.x >= 0.0 and $cse89.x <= 1.0), $cse89.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse89.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse90.x >= 0.0 and $cse90.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse90.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse90.x >= 0.0 and $cse90.x <= 1.0), $cse90.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse90.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse91.x >= 0.0 and $cse91.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse91.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse91.x >= 0.0 and $cse91.x <= 1.0), $cse91.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse91.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse92.x >= 0.0 and $cse92.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse92.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse92.x >= 0.0 and $cse92.x <= 1.0), $cse92.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse92.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse93.x >= 0.0 and $cse93.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse93.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse93.x >= 0.0 and $cse93.x <= 1.0), $cse93.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse93.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse94.x >= 0.0 and $cse94.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse94.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse94.x >= 0.0 and $cse94.x <= 1.0), $cse94.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse94.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse95.x >= 0.0 and $cse95.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse95.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse95.x >= 0.0 and $cse95.x <= 1.0), $cse95.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse95.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse96.x >= 0.0 and $cse96.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse96.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse96.x >= 0.0 and $cse96.x <= 1.0), $cse96.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse96.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse97.x >= 0.0 and $cse97.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse97.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse97.x >= 0.0 and $cse97.x <= 1.0), $cse97.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse97.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse98.x >= 0.0 and $cse98.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse98.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse98.x >= 0.0 and $cse98.x <= 1.0), $cse98.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse98.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse99.x >= 0.0 and $cse99.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse99.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse99.x >= 0.0 and $cse99.x <= 1.0), $cse99.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse99.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse100.x >= 0.0 and $cse100.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse100.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse100.x >= 0.0 and $cse100.x <= 1.0), $cse100.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse100.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse101.x >= 0.0 and $cse101.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse101.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse101.x >= 0.0 and $cse101.x <= 1.0), $cse101.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse101.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse102.x >= 0.0 and $cse102.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse102.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse102.x >= 0.0 and $cse102.x <= 1.0), $cse102.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse102.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse103.x >= 0.0 and $cse103.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse103.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse103.x >= 0.0 and $cse103.x <= 1.0), $cse103.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse103.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse104.x >= 0.0 and $cse104.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse104.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse104.x >= 0.0 and $cse104.x <= 1.0), $cse104.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse104.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse105.x >= 0.0 and $cse105.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse105.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse105.x >= 0.0 and $cse105.x <= 1.0), $cse105.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse105.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
-// |                 | |       | (($cse106.x >= 0.0 and $cse106.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= $cse106.x <= 1.0, has value: -1\"
+// |                 | |       | (($cse106.x >= 0.0 and $cse106.x <= 1.0), $cse106.x=-1) --> \"Variable violating min/max constraint: 0.0 <= $cse106.x <= 1.0, has value: -1\"
 // LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/Properties/WaterSteam/Common.mo:99:5-99:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
-// |                 | |       | ((sourceP1.pro.x >= 0.0 and sourceP1.pro.x <= 1.0)) --> \"Variable violating min/max constraint: 0.0 <= sourceP1.pro.x <= 1.0, has value: -1\"
+// |                 | |       | ((sourceP1.pro.x >= 0.0 and sourceP1.pro.x <= 1.0), sourceP1.pro.x=-1) --> \"Variable violating min/max constraint: 0.0 <= sourceP1.pro.x <= 1.0, has value: -1\"
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

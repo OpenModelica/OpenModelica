@@ -1274,6 +1274,7 @@ pub fn diffSimulationResults(
             Some(d) if !d.is_empty() => d,
             _ => {
                 err(&ERROR_GET_DATA_FAILED, [var.clone(), ref_file.clone()])?;
+                diff_vars.insert(0, var.clone());
                 continue;
             }
         };
@@ -1281,6 +1282,7 @@ pub fn diffSimulationResults(
             Some(d) if !d.is_empty() => d,
             _ => {
                 err(&ERROR_GET_DATA_FAILED, [var.clone(), c_file.clone()])?;
+                diff_vars.insert(0, var.clone());
                 continue;
             }
         };

@@ -809,6 +809,18 @@ if(NOT RUST_OMC_WASM_OPT)
   set(WASM_OPT_EXECUTABLE "")
   message(STATUS "rust_omc: wasm-opt disabled (RUST_OMC_WASM_OPT=OFF)")
 endif()
+# Older wasm-opt cannot parse the wasm-bindgen output (table.fill).
+set(RUST_OMC_WASM_OPT_MIN_VERSION 120)
+if(WASM_OPT_EXECUTABLE)
+  execute_process(COMMAND ${WASM_OPT_EXECUTABLE} --version
+                  OUTPUT_VARIABLE _wasm_opt_version_out ERROR_QUIET)
+  string(REGEX MATCH "version ([0-9]+)" _wasm_opt_version_match "${_wasm_opt_version_out}")
+  if(_wasm_opt_version_match AND CMAKE_MATCH_1 LESS RUST_OMC_WASM_OPT_MIN_VERSION)
+    message(FATAL_ERROR
+      "rust_omc: ${WASM_OPT_EXECUTABLE} is binaryen ${CMAKE_MATCH_1}, need "
+      "${RUST_OMC_WASM_OPT_MIN_VERSION}+. Set -DWASM_OPT_EXECUTABLE or -DRUST_OMC_WASM_OPT=OFF.")
+  endif()
+endif()
 
 # wasm-opt feature flags, shared by every wasm-opt invocation below. rustc/LLVM
 # emit wasm32-unknown-unknown with these post-MVP features on, but the release
@@ -1912,6 +1924,7 @@ function(omc_rust_omedit_qt_web_page)
             ${_qt_bld}/OMEdit-qt.html ${_qt_bld}/OMEdit-qt.js
             ${_qt_bld}/OMEdit-qt.wasm ${_qt_bld}/qtloader.js
             ${_qt_bld}/qtlogo.svg ${_qt_pkgdir}/
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${_qt_bld}/share ${_qt_pkgdir}/share
     COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_DIR}/omshell_omc/omc_worker.js ${_web_dir}/omc_worker.js
     # The OAuth callback goes at the web ROOT, not in the versioned page directory:
     # neither Google nor Microsoft allows a wildcard redirect URI, so one page at

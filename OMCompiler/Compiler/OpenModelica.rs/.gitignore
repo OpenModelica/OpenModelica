@@ -426,7 +426,6 @@ openmodelica_util/src/SBMultiInterval.rs
 openmodelica_util/src/SBPWAtomicLinearMap.rs
 openmodelica_util/src/SBPWLinearMap.rs
 openmodelica_util/src/SBSet.rs
-openmodelica_util/src/SemanticVersion.rs
 openmodelica_util/src/Socket.rs
 openmodelica_util/src/StringUtil.rs
 openmodelica_util/src/Testsuite.rs

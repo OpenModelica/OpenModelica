@@ -10,6 +10,10 @@ target_link_libraries(omopcua PRIVATE omc::3rd::opcua omc::simrt::simruntime)
 if(WIN32)
   target_link_libraries(omopcua PRIVATE ws2_32)
 endif()
+# Like the generated models: the runtime globals come from SimulationRuntimeC.dll.
+if(MSVC)
+  target_compile_definitions(omopcua PRIVATE IMPORT_INTO=1)
+endif()
 
 install(TARGETS omopcua)
 

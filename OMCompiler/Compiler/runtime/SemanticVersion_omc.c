@@ -33,16 +33,23 @@
  *
  */
 
-encapsulated package Curl
+#include "meta/meta_modelica.h"
+#include "omcruntime_rust.h"
 
-import Config;
+int om_semver_compare(const char *v1, const char *v2, int comparePrerelease, int compareBuildInformation)
+{
+  return omcrs_version_compare(v1, v2, comparePrerelease, compareBuildInformation);
+}
 
-function multiDownload
-  input list<tuple<list<String>,String>> urlFileList;
-  input Integer maxParallel = Config.noProc();
-  output Boolean success;
-  external "C" success = om_curl_multi_download(urlFileList, maxParallel);
-end multiDownload;
+const char* om_semver_normalize(const char *v)
+{
+  char *text = omcrs_version_canonical(v);
+  char *res = omc_alloc_interface.malloc_strdup(text);
+  omcrs_free_string(text);
+  return res;
+}
 
-annotation(__OpenModelica_Interface="script_util");
-end Curl;
+int om_semver_is_semver(const char *v)
+{
+  return omcrs_version_is_numbered(v);
+}

@@ -115,7 +115,14 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   // FMI 2.0 and 3.0 read resources/<prefix>_init.bin (SerializeFmuInit) instead.
   let _ = if isFMIVersion10(FMUVersion) then simulationInitFunctionFile(simCode,guid,fileNamePrefixTmpDir)
   let()= textFile(fmumodel_identifierHeaderFile(simCode,guid,FMUVersion,FMUType), '<%fileNamePrefixTmpDir%>_FMU.h')
-  let()= textFile(fmumodel_identifierFile(simCode,guid,FMUVersion,FMUType), '<%fileNamePrefixTmpDir%>_FMU.c')
+  let()= textFile(fmumodel_identifierFile(simCode,guid,FMUVersion,FMUType,'<%fileNamePrefix%>_FMU.h'), '<%fileNamePrefixTmpDir%>_FMU.c')
+  let _ = if Flags.getConfigBool(Flags.FMU_WITH_FMI2) then
+    let _ = if not Config.simCodeRustRuntime() then
+      let()= textFile(fmumodel_identifierHeaderFile(simCode,guid,"2.0",FMUType), '<%fileNamePrefixTmpDir%>_FMU2.h')
+      let()= textFile(fmumodel_identifierFile(simCode,guid,"2.0",FMUType,'<%fileNamePrefix%>_FMU2.h'), '<%fileNamePrefixTmpDir%>_FMU2.c')
+      ""
+    let()= textFile(fmuModelDescriptionFile(simCode, guid, "2.0", FMUType, sourceFiles), '<%fileNamePrefixHash%>.fmutmp/modelDescription.fmi2.xml')
+    ""
 
   /* Doesn't seem to work properly
   let &fmuModelDescription = buffer ""
@@ -325,6 +332,9 @@ case SIMCODE(__) then
   #define FMI2_FUNCTION_PREFIX <%modelNamePrefix(simCode)%>_
   #include "fmi2Functions.h"
   #include "fmi-export/fmu2_model_interface.h"
+  // The value reference of time, which modelDescription.xml lists only when the
+  // model has no other variable. The same as FMI3_TIME_VR.
+  #define FMI2_TIME_VR (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS + NUMBER_OF_STRINGS + NUMBER_OF_EXTERNALOBJECTS + NUMBER_OF_CLOCKS)
   >>
   %>
 
@@ -386,13 +396,13 @@ case SIMCODE(__) then
   >>
 end fmumodel_identifierHeaderFile;
 
-template fmumodel_identifierFile(SimCode simCode, String guid, String FMUVersion, String FMUType)
+template fmumodel_identifierFile(SimCode simCode, String guid, String FMUVersion, String FMUType, String header)
  "Generates code for ModelDescription file for FMU target."
 ::=
 match simCode
 case SIMCODE(__) then
   <<
-  #include "<%fileNamePrefix%>_FMU.h"
+  #include "<%header%>"
 
   // include fmu header files, typedefs and macros
   #include <stdio.h>
@@ -442,6 +452,12 @@ case SIMCODE(__) then
   }
   #if defined(OMC_RUST_SIMULATION_RUNTIME)
   #include "fmi-export/fmu<%if isFMIVersion30(FMUVersion) then "3" else if isFMIVersion20(FMUVersion) then "2" else "1"%>_rust_interface.c.inc"
+  <%if Flags.getConfigBool(Flags.FMU_WITH_FMI2) then
+  <<
+  #include "fmi2Functions.h"
+  #include "fmi-export/fmu2_rust_interface.c.inc"
+  >>
+  %>
   #endif
 
   // implementation of the Model Exchange functions

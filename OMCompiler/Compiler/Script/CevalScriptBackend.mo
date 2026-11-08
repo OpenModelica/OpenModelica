@@ -2358,7 +2358,7 @@ algorithm
     case ("getAvailableLibraries",{})
       algorithm
         PackageManagement.installCachedPackages();
-        files := PackageManagement.AvailableLibraries.listKeys(PackageManagement.getInstalledLibraries());
+        files := PackageManagement.getInstalledLibraries();
       then
         ValuesMake.makeArray(List.map(files, ValuesMake.makeString));
 
@@ -3977,7 +3977,7 @@ algorithm
       Boolean isTrustedImage;
       Integer uid;
       String cidFile, volumeID, containerID, userID;
-      String dockerLogFile;
+      String dockerLogFile, fmuTarFile;
       String cmake_toolchain;
       list<String> locations;
     case {"dynamic"}
@@ -4024,7 +4024,7 @@ algorithm
         cidFile := fmutmp+".cidfile";
 
         // Temp log file outside of Docker volume
-        dockerLogFile := crossTriple + ".tmp.log";
+        dockerLogFile := fmutmp + "." + crossTriple + ".tmp.log";
         // Remove old log file
         if System.regularFileExists(dockerLogFile) then
           System.removeFile(dockerLogFile);
@@ -4032,11 +4032,11 @@ algorithm
 
         // Only download trusted images automatically, and only if the signature
         // can be verified. Images that are already on this machine are used as is.
-        if isTrustedImage and not ContainerImage.isAvailableLocally(dockerImage) then
-          if ContainerImage.isCosignAvailable() then
+        if isTrustedImage and not ContainerImage.isAvailableLocally(dockerImage, fmutmp) then
+          if ContainerImage.isCosignAvailable(fmutmp) then
             // Verify the image in the registry first, it's only downloaded if the signature is valid.
-            ContainerImage.assertSignature(dockerImage);
-            ContainerImage.pull(dockerImage);
+            ContainerImage.assertSignature(dockerImage, fmutmp);
+            ContainerImage.pull(dockerImage, fmutmp);
           else
             Error.addCompilerError("Refusing to download container image '" + ContainerImage.toString(dockerImage) + "' without verifying its signature.");
             Error.addCompilerNotification("Download the image manually with `" + ContainerImage.pullCommand(dockerImage) + "` and run the FMU export again.");
@@ -4124,16 +4124,17 @@ algorithm
         // Docker cp can't handle too long names on Windows.
         // Workaround: Zip it in the container, copy it to host, unzip it
         if isWindows then
+          fmuTarFile := fmutmp + ".tar.gz";
           cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu " + dockerRunArgs +
-                 " tar -zcf comp-fmutmp.tar.gz " + fmutmp;
+                 " tar -zcf " + fmuTarFile + " " + fmutmp;
           runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
 
-          cmd := "docker cp " + containerID + ":/data/comp-fmutmp.tar.gz .";
+          cmd := "docker cp " + containerID + ":/data/" + fmuTarFile + " .";
           runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
-          if 0 <> System.systemCall("tar zxf comp-fmutmp.tar.gz && rm comp-fmutmp.tar.gz", outFile=dockerLogFile) then
+          if 0 <> System.systemCall("tar zxf " + fmuTarFile + " && rm " + fmuTarFile, outFile=dockerLogFile) then
             // Otherwise the failure only surfaces later as "Build commands returned
             // success, but <name>.fmu does not exist".
-            Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Failed to unpack comp-fmutmp.tar.gz:\n" + System.readFile(dockerLogFile)});
+            Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Failed to unpack " + fmuTarFile + ":\n" + System.readFile(dockerLogFile)});
             fail();
           end if;
         else
@@ -4759,8 +4760,22 @@ protected
   // Reached through the target, the caller still wants an FMU the ordinary
   // tooling can load, so it gets this machine's platform too.
   list<String> nativePlatforms = if wasmRequested then List.select(platforms, isNotWasmPlatform) else {"native"};
+  Boolean withFMI2 = false;
 algorithm
   cache := inCache;
+  // Internal, for OpenModelicaLibraryTesting only: an FMI 3.0 binary that also
+  // serves FMI 2.0, in an FMU laid out for FMI 2.0. modelDescription.fmi3.xml is
+  // the FMI 3.0 description. A wasm simCodeTarget gets the C export, as FMI 1.0 does.
+  if FMUVersion == "2.0+3.0" then
+    if wasmRequested or not (Config.simCodeTarget() == "C" or wasmTarget) then
+      outValue := Values.STRING("");
+      Error.addCompilerError("FMI version 2.0+3.0 needs the C export and native platforms.");
+      return;
+    end if;
+    FMUVersion := "3.0";
+    withFMI2 := true;
+    isWasmFMU := false;
+  end if;
   if not FMI.checkFMIVersion(FMUVersion) then
     outValue := Values.STRING("");
     Error.addMessage(Error.UNKNOWN_FMU_VERSION, {FMUVersion});
@@ -4827,6 +4842,7 @@ algorithm
   end if;
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, true);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, FMUVersion);
+  FlagsUtil.setConfigBool(Flags.FMU_WITH_FMI2, withFMI2);
   // A translateModelFMU of this model, this FMI version and this kind of
   // interface, off the program still loaded and under the flags still set, has
   // already done the translation: render the metadata and link the adapter onto
@@ -4849,10 +4865,12 @@ algorithm
     outValue := Values.STRING("");
     FlagsUtil.setConfigBool(Flags.BUILDING_FMU, false);
     FlagsUtil.setConfigString(Flags.FMI_VERSION, "");
+    FlagsUtil.setConfigBool(Flags.FMU_WITH_FMI2, false);
     return;
   end try;
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, false);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, "");
+  FlagsUtil.setConfigBool(Flags.FMU_WITH_FMI2, false);
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_BUILD_MODEL);
 
@@ -10294,7 +10312,7 @@ protected
   Absyn.Class cls, lib_cls;
   Absyn.Within wi;
   Option<String> uses_version;
-  SemanticVersion.Version lib_version, lib_version_used;
+  String lib_version, lib_version_used;
   list<tuple<String, Option<String>, Option<String>>> conversions;
   list<String> scripts;
   String lib_name;
@@ -10306,7 +10324,7 @@ algorithm
     uses_version := Interactive.getUsedVersion(cls, libPath);
 
     if isSome(uses_version) then
-      lib_version_used := SemanticVersion.parse(Util.getOption(uses_version), true);
+      lib_version_used := Util.getOption(uses_version);
     else
       Error.addMessage(Error.CONVERSION_MISSING_USES,
         {AbsynUtil.pathString(clsPath), AbsynUtil.pathString(libPath)});
@@ -10314,11 +10332,11 @@ algorithm
     end if;
 
     lib_name := AbsynUtil.pathFirstIdent(libPath);
-    lib_version := SemanticVersion.parse(CevalScript.getPackageVersion(libPath, p));
+    lib_version := CevalScript.getPackageVersion(libPath, p);
 
     // Check if the wanted version of the library is already loaded, otherwise
     // we need to load it.
-    if SemanticVersion.compare(lib_version, SemanticVersion.parse(libVersion)) <> 0 then
+    if SemanticVersion.compare(lib_version, libVersion) <> 0 then
       // Try to set the language standard to the version needed to load the wanted library.
       if lib_name == "Modelica" then
         Config.setLanguageStandardFromMSL("Modelica " + libVersion, force = true);
@@ -10333,7 +10351,7 @@ algorithm
     end if;
 
     // Get the version of the library.
-    lib_version := SemanticVersion.parse(CevalScript.getPackageVersion(libPath, lib_program));
+    lib_version := CevalScript.getPackageVersion(libPath, lib_program);
 
     // Try to find a sequence of conversion scripts that can be used to convert
     // the class to the desired library version.
@@ -10344,8 +10362,8 @@ algorithm
     if listEmpty(scripts) then
       Error.addMessage(Error.CONVERSION_NO_COMPATIBLE_SCRIPT_FOUND,
         {AbsynUtil.pathString(libPath),
-         SemanticVersion.toString(lib_version_used),
-         SemanticVersion.toString(lib_version)});
+         SemanticVersion.normalize(lib_version_used),
+         SemanticVersion.normalize(lib_version)});
       fail();
     end if;
 
@@ -10356,7 +10374,7 @@ algorithm
     end for;
 
     // Update the uses-annotation in the class to refer to the new version of the library.
-    cls := Interactive.updateUsedVersion(cls, libPath, SemanticVersion.toString(lib_version));
+    cls := Interactive.updateUsedVersion(cls, libPath, SemanticVersion.normalize(lib_version));
 
     // Finally update the class in the global Absyn.
     wi := ProgramUtil.buildWithin(clsPath);
@@ -10374,8 +10392,8 @@ function findConversionPaths
    conversion is needed, but sometimes the conversion might need to be done in
    several steps (e.g. 2.0.0 => 2.3.5 => 2.4.0)."
   input list<tuple<String, Option<String>, Option<String>>> conversions;
-  input SemanticVersion.Version libVersion;
-  input SemanticVersion.Version libVersionUsed;
+  input String libVersion;
+  input String libVersionUsed;
   input Integer depth = 0;
   output list<String> scripts = {};
 protected
@@ -10405,8 +10423,8 @@ end findConversionPaths;
 
 function findConversionPath
   input tuple<String, Option<String>, Option<String>> conversion;
-  input SemanticVersion.Version libVersion;
-  input SemanticVersion.Version libVersionUsed;
+  input String libVersion;
+  input String libVersionUsed;
   input list<tuple<String, Option<String>, Option<String>>> conversions;
   input Integer depth;
   output list<String> scripts = {};
@@ -10414,7 +10432,7 @@ protected
   String from;
   Option<String> to;
   Option<String> script;
-  SemanticVersion.Version from_version, to_version;
+  String from_version, to_version;
 algorithm
   (from, to, script) := conversion;
 
@@ -10422,11 +10440,11 @@ algorithm
     return;
   end if;
 
-  from_version := SemanticVersion.parse(from, true);
+  from_version := from;
 
   if SemanticVersion.compare(libVersionUsed, from_version) == 0 then
     if isSome(to) then
-      to_version := SemanticVersion.parse(Util.getOption(to), true);
+      to_version := Util.getOption(to);
 
       if SemanticVersion.compare(libVersion, to_version) <> 0 then
         scripts := findConversionPaths(conversions, libVersion, to_version, depth + 1);

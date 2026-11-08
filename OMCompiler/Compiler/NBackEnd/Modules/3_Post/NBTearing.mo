@@ -660,7 +660,7 @@ protected
     attrs := var.backendinfo.attributes;
     attrs := match attrs
       case VariableAttributes.VAR_ATTR_REAL() algorithm
-        func := function sliceAttribute(subs = list(Subscript.SLICE(r) for r in ranges));
+        func := function Resizable.sliceAttribute(subs = list(Subscript.SLICE(r) for r in ranges));
         attrs.start   := Util.applyOption(attrs.start, function Binding.mapExpShallow(mapFn = func));
         attrs.nominal := Util.applyOption(attrs.nominal, function Binding.mapExpShallow(mapFn = func));
         attrs.min     := Util.applyOption(attrs.min, function Binding.mapExpShallow(mapFn = func));
@@ -705,42 +705,6 @@ protected
   partial function SliceFunc
     input output Expression exp;
   end SliceFunc;
-
-  function sliceAttribute
-    "the attribute of the box elements, e.g. the start values of x[2:N] for $RZ"
-    input output Expression exp;
-    input list<Subscript> subs;
-  protected
-    Integer n = Type.dimensionCount(Expression.typeOf(exp));
-    Call call;
-    list<tuple<InstNode, Expression>> iters = {};
-    list<Subscript> rest;
-    Expression range;
-    Boolean ok = true;
-  algorithm
-    if n == 0 then return; end if;
-    // an attribute with fewer dimensions applies to the trailing ones
-    rest := List.lastN(subs, n);
-    exp := match exp
-      // {e for i in 1:n}[s:t] -> {e for i in s:t}, the last iterator belongs to the first dimension
-      case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) guard(listLength(call.iters) == n) algorithm
-        for tpl in listReverse(call.iters) loop
-          range := match (Util.tuple22(tpl), listHead(rest))
-            local
-              Expression slice;
-            case (_, Subscript.WHOLE()) then Util.tuple22(tpl);
-            case (Expression.RANGE(start = Expression.INTEGER(1), step = NONE()), Subscript.SLICE(slice = slice as Expression.RANGE())) then slice;
-            else algorithm ok := false; then Util.tuple22(tpl);
-          end match;
-          iters := (Util.tuple21(tpl), range) :: iters;
-          rest := listRest(rest);
-        end for;
-        call.iters := iters;
-        call.ty := Type.ARRAY(Type.arrayElementType(call.ty), list(Type.nthDimension(Expression.typeOf(Util.tuple22(t)), 1) for t in listReverse(iters)));
-      then if ok then Expression.CALL(call) else Expression.applySubscripts(List.lastN(subs, n), exp);
-      else Expression.applySubscripts(rest, exp);
-    end match;
-  end sliceAttribute;
 
   function mergeResizableLoops
     "Adjacent algebraic loops that are parts of the same variables and equations
@@ -1078,6 +1042,7 @@ protected
         else
           locations := bodyElementLocations(eqn, listLength(sizes), slice.indices);
           if listEmpty(locations) then
+            slices := restrictedBodyElementFors(slice, eqn, body, sizes, eq_index);
             return;
           end if;
         end if;
@@ -1098,6 +1063,63 @@ protected
       else ();
     end match;
   end bodyElementFors;
+
+  function restrictedBodyElementFors
+    "a partial slice of a for-equation over a resizable range with a fixed size
+     array body as one for-equation per body element over the symbolic sub-ranges
+     of its iterations, e.g. rows of x[i, :] for i in 1:N-1. the slice itself if
+     the iterations are no boxes."
+    input Slice<EquationPointer> slice;
+    input Equation eqn;
+    input Equation body;
+    input list<Integer> body_sizes;
+    input Pointer<Integer> eq_index;
+    output list<Slice<EquationPointer>> slices = {};
+  protected
+    Iterator iter = Equation.getForIterator(eqn);
+    Integer n_iter = Iterator.size(iter, true), n_body = List.fold(body_sizes, intMul, 1);
+    array<list<Integer>> iterations = arrayCreate(n_body, {});
+    list<Option<Iterator>> iters;
+    list<Subscript> subs;
+    Equation new_eqn, new_body;
+    Pointer<Equation> eqn_ptr;
+  algorithm
+    if not Iterator.isResizable(iter) then
+      slices := {slice};
+      return;
+    end if;
+    for row in List.unique(slice.indices) loop
+      iterations[intDiv(row, n_iter) + 1] := mod(row, n_iter) :: iterations[intDiv(row, n_iter) + 1];
+    end for;
+    for b in 1:n_body loop
+      if not listEmpty(iterations[b]) then
+        iters := restrictedIterators(iter, iterations[b]);
+        if listEmpty(iters) then
+          slices := {slice};
+          return;
+        end if;
+        subs := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in listReverse(Slice.indexToLocation(b - 1, body_sizes)));
+        new_body := Equation.SCALAR_EQUATION(Type.arrayElementType(Equation.getType(body)),
+          SimplifyExp.simplifyDump(Equation.scalarizeElement(Util.getOption(Equation.getLHS(body)), subs), true, getInstanceName()),
+          SimplifyExp.simplifyDump(Equation.scalarizeElement(Util.getOption(Equation.getRHS(body)), subs), true, getInstanceName()),
+          Equation.getSource(body), Equation.getAttributes(body));
+        for o_iter in iters loop
+          new_eqn := match eqn
+            case Equation.FOR_EQUATION() algorithm
+              eqn.iter := Util.getOption(o_iter);
+              eqn.body := {new_body};
+              eqn.size := Iterator.size(eqn.iter);
+            then eqn;
+            else fail();
+          end match;
+          eqn_ptr := Pointer.create(new_eqn);
+          Equation.createName(eqn_ptr, eq_index, NBEquation.SIMULATION_STR);
+          slices := Slice.SLICE(eqn_ptr, {}) :: slices;
+        end for;
+      end if;
+    end for;
+    slices := listReverse(slices);
+  end restrictedBodyElementFors;
 
   function bodyElementLocations
     "the body elements of the rows of a for-equation with an array body, empty if

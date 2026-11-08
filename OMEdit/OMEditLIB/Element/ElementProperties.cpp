@@ -40,9 +40,11 @@
 #include "ElementProperties.h"
 #include "MainWindow.h"
 #include "Modeling/Commands.h"
+#include "Modeling/ItemDelegate.h"
 #include "Options/OptionsDialog.h"
 #include "OMPlot.h"
 #include "FlatModelica/Parser.h"
+#include "FlatModelica/Expression.h"
 
 #include <QApplication>
 #include <QMenu>
@@ -52,8 +54,12 @@
 #include <QDesktopServices>
 #include <QList>
 #include <QScreen>
+#include <QSet>
 #include <QStringList>
 #include <QStringBuilder>
+#include <QTableWidget>
+
+#include <algorithm>
 
 // tabs
 static QString General("General");
@@ -89,7 +95,7 @@ FinalEachToolButton::FinalEachToolButton(bool canHaveEach, QWidget *parent)
   // break action
   mpBreakAction = new QAction(Helper::BREAK);
   mpBreakAction->setCheckable(true);
-  connect(mpBreakAction, SIGNAL(toggled(bool)), SIGNAL(breakToggled(bool)));
+  connect(mpBreakAction, &QAction::toggled, this, &FinalEachToolButton::breakToggled);
   // create a menu
   mpFinalEachMenu = new QMenu;
   mpFinalEachMenu->addAction(mpFinalAction);
@@ -100,7 +106,7 @@ FinalEachToolButton::FinalEachToolButton(bool canHaveEach, QWidget *parent)
   mpFinalEachMenu->addSeparator();
   mpFinalEachMenu->addAction(mpBreakAction);
 
-  connect(this, SIGNAL(clicked()), SLOT(showParameterMenu()));
+  connect(this, &QToolButton::clicked, this, &FinalEachToolButton::showParameterMenu);
 }
 
 void FinalEachToolButton::setFinal(bool final)
@@ -144,6 +150,577 @@ bool FinalEachToolButton::isModified() const
 void FinalEachToolButton::showParameterMenu()
 {
   mpFinalEachMenu->exec(mapToGlobal(QPoint(0, 0)));
+}
+
+/*!
+ * \brief ArrayParameterEditorDialog::ArrayParameterEditorDialog
+ * Creates an editor to enter the cells of an array parameter like a table on paper.
+ * \a arrayValue is shown as text in the expression field.
+ * \a defaultValue is shown as placeholder text and used when clearing the expression.
+ * Dimension expressions control which rows and columns are fixed. Typed dimensions
+ * provide values for symbolic dimensions.
+ * Unfixed dimensions can be changed with the Rows and Columns spin boxes.
+ * Arrays with more than 2 dimensions are shown as a 2D table where each cell
+ * holds a nested array literal e.g. a 3D array is shown as a matrix of vectors.
+ * When \a arrayValue is a supported array literal, the table is filled with the
+ * parsed cells. Unsupported expressions stay in the expression field while the
+ * table remains editable.
+ * \param arrayValue current array value e.g. [[1, 2]; [3, 4]]
+ * \param defaultValue default array value shown as placeholder
+ * \param elementName name of the edited element shown in the window title
+ * \param absynDimensions dimensions as written in the model
+ * \param typedDimensions evaluated dimensions
+ * \param pParent parent widget
+ */
+ArrayParameterEditorDialog::ArrayParameterEditorDialog(const QString &arrayValue, const QString &defaultValue, const QString &elementName,
+                                                       const QStringList &absynDimensions, const QStringList &typedDimensions, QWidget *pParent)
+  : QDialog(pParent)
+{
+  setWindowTitle(tr("%1 - %2 %3").arg(Helper::applicationName, Helper::editArray, elementName));
+  mArrayDimensions = qMax(absynDimensions.size(), typedDimensions.size());
+  mVector = mArrayDimensions == 1;
+  for (int i = 2; i < mArrayDimensions; ++i) {
+    const QString absynDimension = i < absynDimensions.size() ? absynDimensions.at(i).trimmed() : QString();
+    bool ok = false;
+    int dimension = absynDimension.toInt(&ok);
+    if (!ok && i < typedDimensions.size()) {
+      dimension = typedDimensions.at(i).trimmed().toInt(&ok);
+    }
+    if (!ok || dimension < 0) {
+      mCellDimensions.clear();
+      break;
+    }
+    mCellDimensions.append(QString::number(dimension));
+  }
+  mpArrayTableWidget = new QTableWidget;
+  mpArrayTableWidget->setItemDelegate(new ItemDelegate(mpArrayTableWidget));
+  mpArrayTableWidget->setMinimumSize(500, 300);
+  Label *pRowsLabel = new Label(tr("Rows:"));
+  mpRowsSpinBox = new QSpinBox;
+  mpRowsSpinBox->setRange(0, 1000);
+  Label *pColumnsLabel = new Label(tr("Columns:"));
+  mpColumnsSpinBox = new QSpinBox;
+  mpColumnsSpinBox->setRange(0, 1000);
+  for (int i = 0; i < qMin(2, mArrayDimensions); ++i) {
+    const QString absynDimension = i < absynDimensions.size() ? absynDimensions.at(i).trimmed() : QString();
+    if (absynDimension == QLatin1String(":")) {
+      continue;
+    }
+
+    bool ok = false;
+    int dimension = absynDimension.toInt(&ok);
+    if (!ok && i < typedDimensions.size()) {
+      dimension = typedDimensions.at(i).trimmed().toInt(&ok);
+    }
+    if (ok && dimension >= 0) {
+      if (i == 0) {
+        mRowsFixed = true;
+        mFixedRows = dimension;
+        mpRowsSpinBox->setRange(0, qMax(1000, dimension));
+        mpRowsSpinBox->setValue(dimension);
+      } else {
+        mColumnsFixed = true;
+        mFixedColumns = dimension;
+        mpColumnsSpinBox->setRange(0, qMax(1000, dimension));
+        mpColumnsSpinBox->setValue(dimension);
+      }
+    }
+  }
+  if (mVector) {
+    mColumnsFixed = true;
+    mFixedColumns = 1;
+    mpColumnsSpinBox->setValue(1);
+    pColumnsLabel->hide();
+    mpColumnsSpinBox->hide();
+  }
+  mpRowsSpinBox->setEnabled(!mRowsFixed);
+  mpColumnsSpinBox->setEnabled(!mColumnsFixed && !mVector);
+  connect(mpRowsSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &ArrayParameterEditorDialog::rowsChanged);
+  connect(mpColumnsSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &ArrayParameterEditorDialog::columnsChanged);
+  connect(mpArrayTableWidget, &QTableWidget::itemChanged, this, &ArrayParameterEditorDialog::updateExpressionFromTable);
+  mpArrayTableWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
+  mpArrayTableWidget->setContextMenuPolicy(Qt::CustomContextMenu);
+  connect(mpArrayTableWidget, &QTableWidget::customContextMenuRequested,
+          this, &ArrayParameterEditorDialog::showTableContextMenu);
+  Label *pExpressionLabel = new Label(tr("Expression:"));
+  mpExpressionLineEdit = new QLineEdit;
+  mpExpressionLineEdit->setPlaceholderText(defaultValue);
+  connect(mpExpressionLineEdit, &QLineEdit::textEdited, this, &ArrayParameterEditorDialog::expressionTextEdited);
+  QDialogButtonBox *pButtonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+  connect(pButtonBox, &QDialogButtonBox::accepted, this, &ArrayParameterEditorDialog::okClicked);
+  connect(pButtonBox, &QDialogButtonBox::rejected, this, &ArrayParameterEditorDialog::reject);
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->addWidget(pRowsLabel, 0, 0);
+  pMainLayout->addWidget(mpRowsSpinBox, 0, 1);
+  pMainLayout->addWidget(pColumnsLabel, 0, 2);
+  pMainLayout->addWidget(mpColumnsSpinBox, 0, 3);
+  pMainLayout->addWidget(mpArrayTableWidget, 1, 0, 1, 4);
+  pMainLayout->addWidget(pExpressionLabel, 2, 0);
+  pMainLayout->addWidget(mpExpressionLineEdit, 2, 1, 1, 3);
+  pMainLayout->addWidget(pButtonBox, 3, 0, 1, 4);
+  setLayout(pMainLayout);
+  setArrayCells(QList<QStringList>(), mVector ? 1 : 0);
+  mOriginalArrayValue = arrayValue;
+  loadArrayValue(arrayValue);
+  // show the passed value as text so it is clearly visible; clearing the
+  // expression reverts to the placeholder (default value).
+  mpExpressionLineEdit->setText(arrayValue);
+  mInitializing = false;
+}
+
+/*!
+ * \brief ArrayParameterEditorDialog::setArrayCells
+ * Resizes the editor for the given rows and fills the cells with their text.
+ */
+void ArrayParameterEditorDialog::setArrayCells(const QList<QStringList> &rows, int columns)
+{
+  int columnCount = columns;
+  for (int i = 0; i < rows.size(); ++i) {
+    columnCount = qMax(columnCount, rows.at(i).size());
+  }
+  const int rowCount = mRowsFixed ? mFixedRows : rows.size();
+  if (mColumnsFixed) {
+    columnCount = mFixedColumns;
+  }
+  mpRowsSpinBox->setRange(0, qMax(mpRowsSpinBox->maximum(), rowCount));
+  mpColumnsSpinBox->setRange(0, qMax(mpColumnsSpinBox->maximum(), columnCount));
+  mpRowsSpinBox->blockSignals(true);
+  mpColumnsSpinBox->blockSignals(true);
+  mpRowsSpinBox->setValue(rowCount);
+  mpColumnsSpinBox->setValue(columnCount);
+  mpRowsSpinBox->blockSignals(false);
+  mpColumnsSpinBox->blockSignals(false);
+  const bool tableSignalsBlocked = mpArrayTableWidget->blockSignals(true);
+  mpArrayTableWidget->setRowCount(rowCount);
+  mpArrayTableWidget->setColumnCount(columnCount);
+  // fill every cell; empty cells get their default value so the table looks complete
+  // when rows/columns are added.
+  for (int i = 0; i < rowCount; ++i) {
+    for (int j = 0; j < columnCount; ++j) {
+      QString cell;
+      if (i < rows.size() && j < rows.at(i).size()) {
+        cell = rows.at(i).at(j).trimmed();
+      }
+      if (cell.isEmpty()) {
+        cell = getCellText(i, j);
+      }
+      mpArrayTableWidget->setItem(i, j, new QTableWidgetItem(cell));
+    }
+  }
+  mpArrayTableWidget->blockSignals(tableSignalsBlocked);
+}
+
+void ArrayParameterEditorDialog::fillEmptyCells()
+{
+  for (int i = 0; i < mpArrayTableWidget->rowCount(); ++i) {
+    for (int j = 0; j < mpArrayTableWidget->columnCount(); ++j) {
+      if (!mpArrayTableWidget->item(i, j)) {
+        mpArrayTableWidget->setItem(i, j, new QTableWidgetItem(getCellText(i, j)));
+      }
+    }
+  }
+}
+
+/*!
+ * \brief ArrayParameterEditorDialog::showTableContextMenu
+ * Offers deletion when the selection covers complete rows or columns.
+ * Fixed dimensions cannot be deleted.
+ * \param position position of the context-menu request in the table viewport
+ */
+void ArrayParameterEditorDialog::showTableContextMenu(const QPoint &position)
+{
+  QSet<int> selectedRows;
+  QSet<int> selectedColumns;
+  for (const QTableWidgetSelectionRange &range : mpArrayTableWidget->selectedRanges()) {
+    if (range.leftColumn() == 0 && range.rightColumn() == mpArrayTableWidget->columnCount() - 1) {
+      for (int row = range.topRow(); row <= range.bottomRow(); ++row) {
+        selectedRows.insert(row);
+      }
+    }
+    if (range.topRow() == 0 && range.bottomRow() == mpArrayTableWidget->rowCount() - 1) {
+      for (int column = range.leftColumn(); column <= range.rightColumn(); ++column) {
+        selectedColumns.insert(column);
+      }
+    }
+  }
+
+  QMenu menu(this);
+  if (!mRowsFixed && !selectedRows.isEmpty()) {
+    const int rowCount = selectedRows.size();
+    const QString deleteRowsText = rowCount == 1 ? tr("Delete 1 row") : tr("Delete %1 rows").arg(rowCount);
+    QAction *pDeleteRowsAction = menu.addAction(deleteRowsText);
+    connect(pDeleteRowsAction, &QAction::triggered, this, &ArrayParameterEditorDialog::deleteSelectedRows);
+  } else if (!mColumnsFixed && !selectedColumns.isEmpty()) {
+    const int columnCount = selectedColumns.size();
+    const QString deleteColumnsText = columnCount == 1 ? tr("Delete 1 column") : tr("Delete %1 columns").arg(columnCount);
+    QAction *pDeleteColumnsAction = menu.addAction(deleteColumnsText);
+    connect(pDeleteColumnsAction, &QAction::triggered, this, &ArrayParameterEditorDialog::deleteSelectedColumns);
+  }
+  if (!menu.isEmpty()) {
+    menu.exec(mpArrayTableWidget->viewport()->mapToGlobal(position));
+  }
+}
+
+/*!
+ * \brief ArrayParameterEditorDialog::deleteSelectedRows
+ * Removes selected complete rows and synchronizes the Rows spin box.
+ */
+void ArrayParameterEditorDialog::deleteSelectedRows()
+{
+  if (mRowsFixed) {
+    return;
+  }
+  QSet<int> selectedRows;
+  for (const QTableWidgetSelectionRange &range : mpArrayTableWidget->selectedRanges()) {
+    if (range.leftColumn() == 0 && range.rightColumn() == mpArrayTableWidget->columnCount() - 1) {
+      for (int row = range.topRow(); row <= range.bottomRow(); ++row) {
+        selectedRows.insert(row);
+      }
+    }
+  }
+  QList<int> rows = selectedRows.values();
+  // Remove from bottom to top so earlier row indices remain valid.
+  std::sort(rows.begin(), rows.end(), [](int left, int right) {return left > right;});
+  for (int row : rows) {
+    mpArrayTableWidget->removeRow(row);
+  }
+  if (!rows.isEmpty()) {
+    mpRowsSpinBox->setValue(mpArrayTableWidget->rowCount());
+  }
+}
+
+/*!
+ * \brief ArrayParameterEditorDialog::deleteSelectedColumns
+ * Removes selected complete columns and synchronizes the Columns spin box.
+ */
+void ArrayParameterEditorDialog::deleteSelectedColumns()
+{
+  if (mColumnsFixed) {
+    return;
+  }
+  QSet<int> selectedColumns;
+  for (const QTableWidgetSelectionRange &range : mpArrayTableWidget->selectedRanges()) {
+    if (range.topRow() == 0 && range.bottomRow() == mpArrayTableWidget->rowCount() - 1) {
+      for (int column = range.leftColumn(); column <= range.rightColumn(); ++column) {
+        selectedColumns.insert(column);
+      }
+    }
+  }
+  QList<int> columns = selectedColumns.values();
+  // Remove from right to left so earlier column indices remain valid.
+  std::sort(columns.begin(), columns.end(), [](int left, int right) {return left > right;});
+  for (int column : columns) {
+    mpArrayTableWidget->removeColumn(column);
+  }
+  if (!columns.isEmpty()) {
+    mpColumnsSpinBox->setValue(mpArrayTableWidget->columnCount());
+  }
+}
+
+/*!
+ * \brief ArrayParameterEditorDialog::loadArrayValue
+ * Loads \a arrayValue into the editor. When \a arrayValue is empty the
+ * placeholder (default value) is used instead. Returns true when the value
+ * can be parsed into table cells.
+ * \return true if the value is a supported array expression.
+ */
+bool ArrayParameterEditorDialog::loadArrayValue(const QString &arrayValue)
+{
+  // an empty value falls back to the placeholder (default value) so that
+  // clearing the expression still loads a table with default cell values.
+  QString value = arrayValue;
+  if (value.isEmpty()) {
+    value = mpExpressionLineEdit->placeholderText();
+  }
+  return parseArrayValue(value);
+}
+
+/*!
+ * \brief ArrayParameterEditorDialog::updateExpressionFromTable
+ * Keeps the expression field in sync with the table view contents.
+ */
+void ArrayParameterEditorDialog::updateExpressionFromTable()
+{
+  if (!mInitializing) {
+    mExpressionTextModified = true;
+  }
+  mpExpressionLineEdit->blockSignals(true);
+  mpExpressionLineEdit->setText(createArrayValue());
+  mpExpressionLineEdit->blockSignals(false);
+}
+
+/*!
+ * \brief ArrayParameterEditorDialog::expressionTextEdited
+ * Slot activated when the user edits the expression field.
+ * Fills the table view when the expression is supported. Otherwise the current
+ * table contents remain available for editing.
+ */
+void ArrayParameterEditorDialog::expressionTextEdited(const QString &text)
+{
+  mExpressionTextModified = true;
+  const QString value = text.trimmed();
+  const bool isLiteralArray = value.startsWith('{') || value.startsWith('[');
+  const bool parsed = loadArrayValue(value);
+  if (parsed && isLiteralArray) {
+    mpExpressionLineEdit->blockSignals(true);
+    mpExpressionLineEdit->setText(createArrayValue());
+    mpExpressionLineEdit->blockSignals(false);
+  }
+}
+
+/*!
+ * \brief ArrayParameterEditorDialog::parseArrayValue
+ * Parses a Modelica array expression using the FlatModelica expression parser.
+ * Supported are array literals with curly braces e.g. {1, 2, 3}, {{1, 2}, {3, 4}}.
+ * Arrays with more than 2 dimensions are flattened into a 2D table where each
+ * cell holds a nested array literal.
+ * An empty value is valid: the table stays enabled and the user can edit it.
+ * \return true if the value is a supported array expression.
+ */
+bool ArrayParameterEditorDialog::parseArrayValue(const QString &arrayValue)
+{
+  const QString value = arrayValue.trimmed();
+  QList<QStringList> rows;
+
+  // an empty value is not invalid: the table stays enabled and the user can edit it.
+  if (value.isEmpty()) {
+    setArrayCells(rows);
+    return true;
+  }
+
+  FlatModelica::Expression exp;
+  try {
+    exp = FlatModelica::Expression::parse(value);
+  } catch (const std::exception &) {
+    return false;
+  }
+  if (exp.isNull()) {
+    return false;
+  }
+
+  if (exp.isArray()) {
+    // array literal: {1, 2, 3} / {{1, 2}, {3, 4}}
+    const size_t ndims = exp.ndims();
+    if (ndims == 1) {
+      // vectors are displayed vertically, with one value in each row.
+      const auto &elements = exp.elements();
+      rows.reserve(elements.size());
+      for (const auto &element : elements) {
+        rows.append(QStringList() << element.toQString());
+      }
+    } else {
+      // matrix or higher dimensional: rows = size(0), cols = size(1);
+      // cells of higher dimensional arrays hold nested array literals
+      const size_t numRows = exp.size(0);
+      const size_t numCols = exp.size(1);
+      for (size_t i = 0; i < numRows; ++i) {
+        QStringList cells;
+        const auto &rowExp = exp.elements()[i];
+        cells.reserve(numCols);
+        for (size_t j = 0; j < numCols; ++j) {
+          const auto &cellExp = rowExp.elements()[j];
+          cells.append(cellExp.toQString());
+        }
+        rows.append(cells);
+      }
+    }
+    int columnCount = 0;
+    for (const QStringList &row : rows) {
+      columnCount = qMax(columnCount, row.size());
+    }
+    if ((mRowsFixed && rows.size() != mFixedRows) || (mColumnsFixed && columnCount != mFixedColumns)) {
+      return false;
+    }
+    setArrayCells(rows);
+    return true;
+  }
+
+  // Expressions other than array literals cannot be loaded into table cells.
+  return false;
+}
+
+/*!
+ * \brief ArrayParameterEditorDialog::rowsChanged
+ * Slot activated when mpRowsSpinBox valueChanged(int) SIGNAL is raised.
+ * Updates the number of rows in the editor.
+ */
+void ArrayParameterEditorDialog::rowsChanged(int rows)
+{
+  if (!mInitializing) {
+    mExpressionTextModified = true;
+  }
+  mpArrayTableWidget->setRowCount(rows);
+  fillEmptyCells();
+  updateExpressionFromTable();
+}
+
+/*!
+ * \brief ArrayParameterEditorDialog::columnsChanged
+ * Slot activated when mpColumnsSpinBox valueChanged(int) SIGNAL is raised.
+ * Updates the number of columns in the editor.
+ */
+void ArrayParameterEditorDialog::columnsChanged(int columns)
+{
+  if (!mInitializing) {
+    mExpressionTextModified = true;
+  }
+  mpArrayTableWidget->setColumnCount(columns);
+  fillEmptyCells();
+  updateExpressionFromTable();
+}
+
+/*!
+ * \brief ArrayParameterEditorDialog::okClicked
+ * Slot activated when QDialogButtonBox accepted SIGNAL is raised.
+ * Creates the array value for the edited table and closes the dialog.
+ */
+void ArrayParameterEditorDialog::okClicked()
+{
+  if (mExpressionTextModified) {
+    const QString text = mpExpressionLineEdit->text().trimmed();
+    if (text.isEmpty()) {
+      // clearing the expression reverts to the default value (placeholder)
+      mArrayValue = mpExpressionLineEdit->placeholderText();
+    } else {
+      mArrayValue = text;
+    }
+  } else {
+    mArrayValue = mOriginalArrayValue;
+  }
+  accept();
+}
+
+/*!
+ * \brief ArrayParameterEditorDialog::createArrayValue
+ * Creates the Modelica array literal for the edited table using curly braces.
+ * Vectors are serialized as a single-dimensional array and empty tables return an empty value.
+ */
+QString ArrayParameterEditorDialog::createArrayValue() const
+{
+  const int rowCount = mpRowsSpinBox->value();
+  const int columnCount = mpColumnsSpinBox->value();
+  if (rowCount == 0 || columnCount == 0) {
+    return "";
+  }
+  if (mVector) {
+    QStringList cellStrings;
+    for (int i = 0; i < rowCount; ++i) {
+      cellStrings.append(getCellText(i, 0));
+    }
+    return "{" % cellStrings.join(",") % "}";
+  }
+  QStringList rowStrings;
+  for (int i = 0; i < rowCount; ++i) {
+    QStringList cellStrings;
+    for (int j = 0; j < columnCount; ++j) {
+      cellStrings.append(getCellText(i, j));
+    }
+    rowStrings.append("{" % cellStrings.join(",") % "}");
+  }
+  return "{" % rowStrings.join(",") % "}";
+}
+
+QString ArrayParameterEditorDialog::createDefaultCellValue(int dimensionIndex) const
+{
+  if (dimensionIndex == mCellDimensions.size()) {
+    return mArrayDimensions > 3 ? QStringLiteral("0.0") : QStringLiteral("0");
+  }
+  const int dimension = mCellDimensions.at(dimensionIndex).toInt();
+  QStringList elements;
+  elements.reserve(dimension);
+  for (int i = 0; i < dimension; ++i) {
+    elements.append(createDefaultCellValue(dimensionIndex + 1));
+  }
+  return "{" % elements.join(",") % "}";
+}
+
+/*!
+ * \brief ArrayParameterEditorDialog::getCellText
+ * Returns the text of the given cell or an appropriately shaped default value.
+ */
+QString ArrayParameterEditorDialog::getCellText(int row, int column) const
+{
+  const QTableWidgetItem *pItem = mpArrayTableWidget->item(row, column);
+  const QString text = pItem ? pItem->text().trimmed() : "";
+  if (text.isEmpty()) {
+    if (mArrayDimensions > 2 && mCellDimensions.size() == mArrayDimensions - 2) {
+      return createDefaultCellValue(0);
+    }
+    if (mArrayDimensions > 2) {
+      // Infer unknown trailing dimensions from another populated cell.
+      const QString defaultValue = QStringLiteral("0");
+      int cellSize = 0;
+      for (int k = 0; k < mpArrayTableWidget->columnCount(); ++k) {
+        const QTableWidgetItem *pExisting = mpArrayTableWidget->item(row, k);
+        if (pExisting && !pExisting->text().trimmed().isEmpty()) {
+          cellSize = countTopLevelElements(pExisting->text().trimmed());
+          break;
+        }
+      }
+      if (cellSize == 0) {
+        for (int k = 0; k < mpArrayTableWidget->rowCount(); ++k) {
+          if (k == row) {
+            continue;
+          }
+          const QTableWidgetItem *pExisting = mpArrayTableWidget->item(k, column);
+          if (pExisting && !pExisting->text().trimmed().isEmpty()) {
+            cellSize = countTopLevelElements(pExisting->text().trimmed());
+            break;
+          }
+        }
+      }
+      if (cellSize == 0) {
+        for (int i = 0; i < mpArrayTableWidget->rowCount() && cellSize == 0; ++i) {
+          for (int k = 0; k < mpArrayTableWidget->columnCount(); ++k) {
+            const QTableWidgetItem *pExisting = mpArrayTableWidget->item(i, k);
+            if (pExisting && !pExisting->text().trimmed().isEmpty()) {
+              cellSize = countTopLevelElements(pExisting->text().trimmed());
+              break;
+            }
+          }
+        }
+      }
+      if (cellSize == 0) {
+        cellSize = 1;
+      }
+      QStringList cellStrings;
+      for (int k = 0; k < cellSize; ++k) {
+        cellStrings.append(defaultValue);
+      }
+      return "{" % cellStrings.join(",") % "}";
+    }
+    return QStringLiteral("0");
+  }
+  return text;
+}
+
+/*!
+ * \brief ArrayParameterEditorDialog::countTopLevelElements
+ * Counts the top-level comma-separated elements inside a braced cell literal
+ * e.g. "{1, 2}" -> 2, "{0}" -> 1, "{1, {2, 3}}" -> 2.
+ */
+int ArrayParameterEditorDialog::countTopLevelElements(const QString &cellText)
+{
+  QString inner = cellText.trimmed();
+  if ((inner.startsWith('{') && inner.endsWith('}')) ||
+      (inner.startsWith('[') && inner.endsWith(']'))) {
+    inner = inner.mid(1).chopped(1);
+  }
+  if (inner.trimmed().isEmpty()) {
+    return 0;
+  }
+  int count = 1;
+  int depth = 0;
+  for (const QChar &ch : inner) {
+    if (ch == QLatin1Char('{') || ch == QLatin1Char('[')) {
+      ++depth;
+    } else if (ch == QLatin1Char('}') || ch == QLatin1Char(']')) {
+      --depth;
+    } else if (ch == QLatin1Char(',') && depth == 0) {
+      ++count;
+    }
+  }
+  return count;
 }
 
 Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, ElementParameters *pElementParameters)
@@ -192,7 +769,7 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
 
   mpNameLabel = new Label;
   mpFixedCheckBox = new FixedCheckBox;
-  connect(mpFixedCheckBox, SIGNAL(clicked()), SLOT(showFixedMenu()));
+  connect(mpFixedCheckBox, &QAbstractButton::clicked, this, &Parameter::showFixedMenu);
   setFixedState("", true);
   mpFixedFinalEachMenuButton = new FinalEachToolButton((mpElementParameters->hasElement() && mpElementParameters->isElementArray())
                                                        || mpModelInstanceElement->getDimensions().isArray());
@@ -237,13 +814,13 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
   // final and each menu
   mpFinalEachMenuButton = new FinalEachToolButton((mpElementParameters->hasElement() && mpElementParameters->isElementArray())
                                                   || mpModelInstanceElement->getDimensions().isArray());
-  connect(mpFinalEachMenuButton, SIGNAL(breakToggled(bool)), SLOT(setBreakValue(bool)));
+  connect(mpFinalEachMenuButton, &FinalEachToolButton::breakToggled, this, &Parameter::setBreakValue);
   mValueCheckBoxModified = false;
   mDefaultValue = "";
   mpFileSelectorButton = new QToolButton;
   mpFileSelectorButton->setText("...");
   mpFileSelectorButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
-  connect(mpFileSelectorButton, SIGNAL(clicked()), SLOT(fileSelectorButtonClicked()));
+  connect(mpFileSelectorButton, &QToolButton::clicked, this, &Parameter::fileSelectorButtonClicked);
   createValueWidget();
   // Get unit value
   QPair<QString, bool> unit = mpModelInstanceElement->getModifierValueFromType(QStringList() << "unit");
@@ -270,7 +847,7 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
   if (mDisplayUnit.compare(mUnit) != 0) {
     mpUnitComboBox->setCurrentIndex(1);
   }
-  connect(mpUnitComboBox, SIGNAL(currentIndexChanged(int)), SLOT(unitComboBoxChanged(int)));
+  connect(mpUnitComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &Parameter::unitComboBoxChanged);
   /* Issue #11715.
    * Do not add each menu item to displayUnit modifiers.
    * We will automatically add the each prefix for arrays.
@@ -627,7 +1204,7 @@ void Parameter::createEditClassButton()
   mpEditClassButton->setIcon(QIcon(":/Resources/icons/edit-icon.svg"));
   mpEditClassButton->setToolTip(tr("Edit"));
   mpEditClassButton->setAutoRaise(true);
-  connect(mpEditClassButton, SIGNAL(clicked()), SLOT(editClassButtonClicked()));
+  connect(mpEditClassButton, &QToolButton::clicked, this, &Parameter::editClassButtonClicked);
 }
 
 void Parameter::createValueWidget()
@@ -645,7 +1222,7 @@ void Parameter::createValueWidget()
       createValueComboBox();
       mpValueComboBox->addItemWithToolTip("true", "true", "true");
       mpValueComboBox->addItemWithToolTip("false", "false", "false");
-      connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
+      connect(mpValueComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &Parameter::valueComboBoxChanged);
       break;
 
     case Parameter::Enumeration:
@@ -660,12 +1237,12 @@ void Parameter::createValueWidget()
       for (i = 0 ; i < enumerationLiterals.size(); i++) {
         mpValueComboBox->addItemWithToolTip(enumerationLiterals[i], className + "." + enumerationLiterals[i], enumerationLiteralsTooltip[i]);
       }
-      connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
+      connect(mpValueComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &Parameter::valueComboBoxChanged);
       break;
 
     case Parameter::CheckBox:
       mpValueCheckBox = new QCheckBox;
-      connect(mpValueCheckBox, SIGNAL(toggled(bool)), SLOT(valueCheckBoxChanged(bool)));
+      connect(mpValueCheckBox, &QCheckBox::toggled, this, &Parameter::valueCheckBoxChanged);
       break;
 
     case Parameter::ReplaceableComponent:
@@ -755,6 +1332,13 @@ void Parameter::createValueWidget()
       mpValueTextBox = new QLineEdit;
       mpValueTextBox->setMinimumWidth(DefaultMinimumWidthForValue);
       mpValueTextBox->installEventFilter(this);
+      if (mpModelInstanceElement->getDimensions().isArray()) {
+        mpArrayEditorButton = new QToolButton;
+        mpArrayEditorButton->setIcon(QIcon(":/Resources/icons/general.svg"));
+        mpArrayEditorButton->setToolTip(tr("Edit array"));
+        mpArrayEditorButton->setAutoRaise(true);
+        connect(mpArrayEditorButton, &QToolButton::clicked, this, &Parameter::arrayEditorButtonClicked);
+      }
       break;
   }
 }
@@ -1074,6 +1658,25 @@ void Parameter::fileSelectorButtonClicked()
 }
 
 /*!
+ * \brief Parameter::arrayEditorButtonClicked
+ * Slot activated when mpArrayEditorButton clicked SIGNAL is raised.
+ * Opens the array parameter editor dialog so the user can edit array cells.
+ */
+void Parameter::arrayEditorButtonClicked()
+{
+  const ModelInstance::Dimensions &dimensions = mpModelInstanceElement->getDimensions();
+  ArrayParameterEditorDialog dialog(getValue(), mDefaultValue, mName,
+                                    dimensions.getAbsynDimensions(), dimensions.getTypedDimensions(),
+                                    MainWindow::instance());
+  if (dialog.exec() == QDialog::Accepted) {
+    const QString arrayValue = dialog.getArrayValue();
+    if (arrayValue.compare(getValue()) != 0) {
+      setValueWidget(arrayValue, false, mUnit, true);
+    }
+  }
+}
+
+/*!
  * \brief Parameter::unitComboBoxChanged
  * SLOT activated when mpUnitComboBox currentIndexChanged(int) SIGNAL is raised.\n
  * Updates the value according to the unit selected.
@@ -1164,19 +1767,19 @@ void Parameter::showFixedMenu()
   QString trueText = tr("true: start-value is used to initialize");
   QAction *pTrueAction = new QAction(trueText, pFixedActionGroup);
   pTrueAction->setCheckable(true);
-  connect(pTrueAction, SIGNAL(triggered()), SLOT(trueFixedClicked()));
+  connect(pTrueAction, &QAction::triggered, this, &Parameter::trueFixedClicked);
   menu.addAction(pTrueAction);
   // false case action
   QString falseText = tr("false: start-value is only a guess-value");
   QAction *pFalseAction = new QAction(falseText, pFixedActionGroup);
   pFalseAction->setCheckable(true);
-  connect(pFalseAction, SIGNAL(triggered()), SLOT(falseFixedClicked()));
+  connect(pFalseAction, &QAction::triggered, this, &Parameter::falseFixedClicked);
   menu.addAction(pFalseAction);
   // inherited case action
   QString inheritedText = tr("inherited: (%1)").arg(mpFixedCheckBox->getInheritedValue() ? trueText : falseText);
   QAction *pInheritedAction = new QAction(inheritedText, pFixedActionGroup);
   pInheritedAction->setCheckable(true);
-  connect(pInheritedAction, SIGNAL(triggered()), SLOT(inheritedFixedClicked()));
+  connect(pInheritedAction, &QAction::triggered, this, &Parameter::inheritedFixedClicked);
   menu.addAction(pInheritedAction);
   // set the menu actions states
   if (mpFixedCheckBox->getTickStateString().compare("true") == 0) {
@@ -1650,7 +2253,7 @@ void ElementParameters::setUpDialog()
   mpComponentClassCommentTextBox->setTextFormat(Qt::RichText);
   mpComponentClassCommentTextBox->setTextInteractionFlags(mpComponentClassCommentTextBox->textInteractionFlags() | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
   mpComponentClassCommentTextBox->setText(getComponentClassComment());
-  connect(mpComponentClassCommentTextBox, SIGNAL(linkActivated(QString)), SLOT(commentLinkClicked(QString)));
+  connect(mpComponentClassCommentTextBox, &QLabel::linkActivated, this, &ElementParameters::commentLinkClicked);
   QGridLayout *pComponentClassGroupBoxLayout = new QGridLayout;
   pComponentClassGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pComponentClassGroupBoxLayout->addWidget(mpComponentClassNameLabel, 0, 0);
@@ -1711,6 +2314,11 @@ void ElementParameters::setUpDialog()
           }
           pGroupBoxGridLayout->addWidget(pParameter->getValueWidget(), rowIndex, columnIndex++);
 
+          if (pParameter->getArrayEditorButton()) {
+            pGroupBoxGridLayout->addWidget(pParameter->getArrayEditorButton(), rowIndex, columnIndex++);
+          } else {
+            pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+          }
           if (pParameter->getEditClassButton()) {
             pGroupBoxGridLayout->addWidget(pParameter->getEditClassButton(), rowIndex, columnIndex++);
           } else {
@@ -1819,12 +2427,12 @@ void ElementParameters::setUpDialog()
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(updateElementParameters()));
+  connect(mpOkButton, &QPushButton::clicked, this, &ElementParameters::updateElementParameters);
   mpOkButton->setDisabled(!mpGraphicsView->getModelWidget()->isElementMode() && (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary()
                                                                                  || mpGraphicsView->isVisualizationView()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &ElementParameters::reject);
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
@@ -2540,10 +3148,10 @@ void ElementAttributes::setUpDialog()
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(updateElementAttributes()));
+  connect(mpOkButton, &QPushButton::clicked, this, &ElementAttributes::updateElementAttributes);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
+  connect(mpCancelButton, &QPushButton::clicked, this, &ElementAttributes::reject);
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
   if (mpElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() || mpElement->isInheritedElement()) {

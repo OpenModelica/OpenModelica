@@ -220,6 +220,7 @@ const CATEGORIES: [&str; 11] = [
     "logFmi3Call",
 ];
 const CAT_EVENTS: u32 = 0;
+const CAT_NONLINEAR: u32 = 2;
 const CAT_WARNING: u32 = 4;
 const CAT_ERROR: u32 = 6;
 const CAT_ALL: u32 = 9;
@@ -333,11 +334,16 @@ pub fn log_status_warning(msg: &str) {
     fmi_log(Status::Warning, CAT_WARNING, msg);
 }
 
-/// C's `FILTERED_LOG` / `isCategoryLogged`. The reason a call fails is not
-/// filtered: the status alone tells the importer nothing.
+/// C's `omc_assert_fmi` for an assert a solver gets back: debug output.
+pub fn log_solver_assert(nonlinear: bool, msg: &str) {
+    fmi_log(Status::Ok, if nonlinear { CAT_NONLINEAR } else { CAT_ALL }, msg);
+}
+
+/// C's `FILTERED_LOG` / `isCategoryLogged`. FMI 3.0 forbids a call of
+/// `logMessage` for a category that is not enabled, also for an error.
 fn fmi_log(status: Status, cat: u32, msg: &str) {
     let cats = logger().cats;
-    if matches!(status, Status::Error | Status::Fatal) || cats & (1 << cat) != 0 || cats & (1 << CAT_ALL) != 0 {
+    if cats & (1 << cat) != 0 || cats & (1 << CAT_ALL) != 0 {
         log_raw(status, cat, msg);
     }
 }
@@ -421,12 +427,12 @@ fn assert_message(msg: i32, file: i32, sline: i32) -> String {
 }
 
 /// The `assert()`s a driver window suppressed, drained by `take_pending_warnings`.
-static mut SUPPRESSED: Vec<[i32; 10]> = Vec::new();
+static mut SUPPRESSED: Vec<[i32; 11]> = Vec::new();
 
 /// The `assert()` behind the model's next trap, laid out as the host's
 /// `PendingAssert`. A residual recovers from it silently; the call that ends on it
 /// reports it.
-static mut PENDING: Option<[i32; 9]> = None;
+static mut PENDING: Option<[i32; 10]> = None;
 
 /// C's FMU logs the violation then `longjmp`s out of the FMI call, which returns
 /// `fmi3Error` with the instance usable — so answer that the code must unwind.
@@ -446,9 +452,10 @@ pub extern "C" fn rt_assert(
     cond: i32,
     initial: i32,
     sim_data: i32,
+    eq: i32,
 ) -> i32 {
     assert_failed(
-        true, msg, file, sline, scol, eline, ecol, read_only, cond, initial, sim_data,
+        true, msg, file, sline, scol, eline, ecol, read_only, cond, initial, sim_data, eq,
     )
 }
 
@@ -466,9 +473,10 @@ pub extern "C" fn rt_assert_when(
     cond: i32,
     initial: i32,
     sim_data: i32,
+    eq: i32,
 ) -> i32 {
     assert_failed(
-        false, msg, file, sline, scol, eline, ecol, read_only, cond, initial, sim_data,
+        false, msg, file, sline, scol, eline, ecol, read_only, cond, initial, sim_data, eq,
     )
 }
 
@@ -485,6 +493,7 @@ fn assert_failed(
     cond: i32,
     initial: i32,
     sim_data: i32,
+    eq: i32,
 ) -> i32 {
     if cond != 0 {
         let hold = if holdable {
@@ -507,13 +516,14 @@ fn assert_failed(
                         ecol,
                         read_only,
                         initial,
+                        eq,
                     ]);
                 }
                 return 0;
             }
             driver::AssertHold::Discard => return 0,
         }
-        unsafe { PENDING = Some([msg, file, sline, scol, eline, ecol, read_only, cond, initial]) };
+        unsafe { PENDING = Some([msg, file, sline, scol, eline, ecol, read_only, cond, initial, eq]) };
         return 1;
     }
     fmi_log(Status::Error, CAT_ERROR, &assert_message(msg, file, sline));
@@ -533,6 +543,7 @@ pub extern "C" fn rt_assert_warning(
     _ecol: i32,
     _read_only: i32,
     _initial: i32,
+    _eq: i32,
 ) {
     fmi_log(Status::Warning, CAT_WARNING, &assert_message(msg, file, sline));
 }
@@ -758,10 +769,10 @@ impl SimEngine for Engine {
     fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> driver::Result<u32> {
         Err("fmi3-me: simulate not used")
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 10]> {
         unsafe { PENDING.take() }
     }
-    fn take_pending_warnings(&mut self) -> Vec<[i32; 10]> {
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 11]> {
         unsafe { core::mem::take(&mut SUPPRESSED) }
     }
     fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
@@ -994,11 +1005,14 @@ impl<E: FmiHost + 'static> MeState<E> {
         let f = slot.map_or(0, |s| deps.flags(s));
         // fmi-ls-dae: the importer solves for the algebraic variables and sets them.
         let dae_unknown = self.dae_mode && slot.is_some_and(|s| s % 8 == 0) && !param_deps::is_param(&self.layout, off);
+        // FMI 2.0.1 and later, and FMI 3.0.2: also a continuous-time state may be set in
+        // Continuous-Time Mode. The states come first among the Reals.
+        let state = off >= REAL_OFF && (off - REAL_OFF) / 8 < self.layout.n_states;
         let ok = match self.mode {
             Mode::Instantiated => f & (INITIAL_EXACT | INITIAL_APPROX | INPUT) != 0,
             Mode::Init => f & (INITIAL_EXACT | INPUT) != 0,
             Mode::Ready if dae_unknown => true,
-            Mode::Ready if self.continuous_time => f & INPUT != 0 && f & CONTINUOUS != 0,
+            Mode::Ready if self.continuous_time => state || (f & INPUT != 0 && f & CONTINUOUS != 0),
             Mode::Ready => f & (INPUT | TUNABLE) != 0,
         };
         let Some(s) = slot.filter(|_| ok) else {
@@ -1131,8 +1145,8 @@ impl<E: FmiHost + 'static> MeState<E> {
     /// `F` back; in ODE mode the model owes it `x'` and `z`, solved for here.
     fn eval(&mut self) -> driver::Result<()> {
         let e = &mut self.engine;
-        if self.layout.dae_mode() {
-            if !self.dae_mode && !self.dae_current {
+        if self.layout.compiled_dae_mode {
+            if self.layout.dae_mode() && !self.dae_mode && !self.dae_current {
                 let dae = self
                     .meta
                     .dae
@@ -1153,7 +1167,7 @@ impl<E: FmiHost + 'static> MeState<E> {
     /// `functionODE` for the derivatives and the event indicators: a `--daeMode`
     /// model has no such partial evaluation, so it evaluates whole.
     fn eval_ode(&mut self) -> Result<(), Status> {
-        if self.layout.dae_mode() {
+        if self.layout.compiled_dae_mode {
             return self.update_if_needed();
         }
         self.evaluate(|m| {

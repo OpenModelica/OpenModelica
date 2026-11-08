@@ -168,6 +168,7 @@ namespace {
 OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threadData, bool testsuiteRunning)
   : QApplication(argc, argv)
 {
+  setStyle("Fusion");
 #if defined(__EMSCRIPTEN__)
   // Build stamp in the console (stale-artifact diagnosis).
   EM_ASM({ console.log("[OMEdit-wasm] build " + UTF8ToString($0) + " " + UTF8ToString($1)); }, __DATE__, __TIME__);
@@ -291,6 +292,10 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   setAttribute(Qt::AA_DontShowIconsInMenus, false);
   // Localization
   //*a.severin/ add localization
+#if defined(__EMSCRIPTEN__)
+  extern void omeditInstallWebAssetFileEngine(const QString &installationDirectory);
+  omeditInstallWebAssetFileEngine(QString::fromLocal8Bit(installationDirectoryPath));
+#endif
   QSettings *pSettings = Utilities::getApplicationSettings();
   QLocale settingsLocale = QLocale(pSettings->value("language").toString());
   QString locale = settingsLocale.name() == "C" ? QLocale::system().name() : settingsLocale.name();
@@ -301,7 +306,11 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   QMap<QString, QLocale> languagesMap = Utilities::supportedLanguages();
   for (auto i = languagesMap.cbegin(), end = languagesMap.cend(); i != end; ++i) {
     if (i.value().name() == locale) {
+#if defined(__EMSCRIPTEN__)
+      QString qtTranslationsLocation = installationDirectoryPath + QString("/share/qt6/translations");
+#else
       QString qtTranslationsLocation = QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::TranslationsPath);
+#endif
       // install Qt's default translations
       if (mQtTranslator.load("qt_" + locale, qtTranslationsLocation)) {
         installTranslator(&mQtTranslator);

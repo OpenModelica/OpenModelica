@@ -20,7 +20,7 @@ end EnumFuncRel;
 
 // Result:
 // Error processing file: EnumFuncRel.mo
-// [flattening/modelica/enums/EnumFuncRel.mo:17:3-18:9:writable] Error: Cannot resolve type of expression f == E.one. The operands have types f<function>() => enumeration E(one, two, three) e, enumeration E(one, two, three) in component <NO_COMPONENT>.
+// [flattening/modelica/enums/EnumFuncRel.mo:17:3-18:9:writable] Error: Cannot resolve type of expression f == E.one. The operands have types f<function>() => enumeration E(one, two, three) e, enumeration E(one, two, three).
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

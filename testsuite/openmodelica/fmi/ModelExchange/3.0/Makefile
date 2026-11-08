@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+fmi2_and_fmi3.mos \
 fmi3_array_attributes.mos \
 fmi3_array_attributes_nb.mos \
 fmi3_array_nonscalarized.mos \

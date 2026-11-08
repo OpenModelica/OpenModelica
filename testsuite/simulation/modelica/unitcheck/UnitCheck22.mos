@@ -30,9 +30,9 @@ instantiateModel(UnitCheck22); getErrorString();
 //   A = L ^ 3.0;
 // end UnitCheck22;
 // "
-// "[<interactive>:9:5-9:12:writable] Warning: The following equation is INCONSISTENT due to specified unit information: A = L ^ 3.0
+// "[<interactive>:9:5-9:12:writable] Warning: The following equation is INCONSISTENT due to specified unit information: A = L^3.0
 // Warning: The units of following sub-expressions need to be equal:
-// - sub-expression \"L ^ 3.0\" has unit \"m3\"
+// - sub-expression \"L^3.0\" has unit \"m3\"
 // - sub-expression \"A\" has unit \"m2\"
 // "
 // endResult

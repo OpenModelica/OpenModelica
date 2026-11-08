@@ -223,9 +223,19 @@ pub extern "C" fn omr_thread_data() -> *mut threadData_t {
     td
 }
 
-/// Where an FMU reports `omc_assert` (`error`) and `omc_assert_warning`, as C's
-/// `omc_assert_fmi` does: `passed_thread_data` is whether the caller had one.
-pub type FmuAssertReport = fn(error: bool, info: &FILE_INFO, text: &str, passed_thread_data: bool);
+/// What an FMU reports: `omc_assert`, `omc_assert_warning`, or an `omc_assert`
+/// that a solver gets back and may recover from.
+#[derive(Clone, Copy)]
+#[cfg_attr(not(feature = "fmi"), allow(dead_code))]
+pub enum FmuAssert {
+    Error,
+    Warning,
+    Solver { nonlinear: bool },
+}
+
+/// Where an FMU reports an assert, as C's `omc_assert_fmi` does:
+/// `passed_thread_data` is whether the caller had one.
+pub type FmuAssertReport = fn(kind: FmuAssert, info: &FILE_INFO, text: &str, passed_thread_data: bool);
 
 static mut FMU_ASSERT_REPORT: Option<FmuAssertReport> = None;
 
@@ -255,7 +265,14 @@ pub extern "C" fn omr_assert_report(
         _ => false,
     };
     match unsafe { FMU_ASSERT_REPORT } {
-        Some(report) => report(true, &info, &text, passed_thread_data != 0),
+        Some(report) => {
+            let kind = match stage {
+                error_stage::NONLINEARSOLVER => FmuAssert::Solver { nonlinear: true },
+                error_stage::INTEGRATOR => FmuAssert::Solver { nonlinear: false },
+                _ => FmuAssert::Error,
+            };
+            report(kind, &info, &text, passed_thread_data != 0)
+        }
         None if !quiet => omclog::error(omclog::ASSERT, false, &with_position(&info, &text)),
         None => {}
     }
@@ -272,7 +289,7 @@ pub extern "C" fn omr_assert_report(
 #[unsafe(no_mangle)]
 pub extern "C" fn omr_assert_warning_report(info: *const FILE_INFO, text: *const c_char) {
     if let Some(report) = unsafe { FMU_ASSERT_REPORT } {
-        report(false, unsafe { &*info }, &cstr(text), true);
+        report(FmuAssert::Warning, unsafe { &*info }, &cstr(text), true);
         return;
     }
     let text = with_position(unsafe { &*info }, &cstr(text));

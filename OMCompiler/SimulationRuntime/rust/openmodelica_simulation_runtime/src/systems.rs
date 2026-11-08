@@ -136,10 +136,25 @@ pub fn initialize_linear_systems(data: *mut DATA, thread_data: *mut threadData_t
         }
 
         // `-ls` reaches klu too, so naming a solver can override the format.
+        let nnz = ls.nnz.max(0) as usize;
         ls.useSparseSolver = if lss_flag {
             1
         } else if ls_flag {
             0
+        } else if let Some(sparse) = openmodelica_solvers::solverflags::lss_override(size, nnz) {
+            if sparse {
+                let t = openmodelica_solvers::solverflags::sparse_thresholds();
+                omclog::info!(
+                    omclog::STDOUT,
+                    false,
+                    "Using sparse solver for linear system {i} ({}),\nbecause density of {:.3} is under threshold of {:.3} or size of {size} exceeds threshold of {}.",
+                    ls.equationIndex,
+                    nnz as f64 / (size as f64 * size as f64),
+                    t.lss_max_density,
+                    t.lss_min_size,
+                );
+            }
+            sparse as modelica_boolean
         } else {
             (ls.matrixFormat == OMC_MATRIX_SPARSE) as modelica_boolean
         };
@@ -153,7 +168,6 @@ pub fn initialize_linear_systems(data: *mut DATA, thread_data: *mut threadData_t
         }
         ls.setBElement = Some(set_b_element);
         if ls.useSparseSolver != 0 {
-            let nnz = ls.nnz.max(0) as usize;
             ls.setAElement = Some(set_a_element_klu);
             let scratch = Box::new(KluData {
                 ap: vec![0; size + 1],

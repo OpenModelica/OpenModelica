@@ -15,6 +15,7 @@ use wasm_encoder as we;
 
 use super::*;
 use openmodelica_sim_meta::Sz;
+use openmodelica_sim_meta::simflags::SparseThresholds;
 
 /// Emit one residual evaluation for a torn linear system: run the inner
 /// constraint equations (`lower_inner`), then store each residual `r_k` as an f64
@@ -1045,13 +1046,16 @@ pub(crate) fn emit_nls_jac_csc_body(
 /// last accepted step's values; method 0 probes at 0 and writes the solve's result.
 /// The column probes share one emitted residual body run in a wasm loop (`n`
 /// unrolled copies would explode the code). `use_sparse` picks
-/// `rt_solve_lin_dense_sparse` over `rt_linsolve`, matching C's per-system choice.
+/// `rt_solve_lin_dense_sparse` over `rt_linsolve`, matching C's per-system choice;
+/// `nnz` lets the runtime revise it.
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn compile_linear_system(
     ctx: &mut FnCtx,
     iter_vars: &[metamodelica::Ref<DAE::ComponentRef>],
     residuals: &[NlsResidual],
     lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
     use_sparse: bool,
+    nnz: usize,
     method1: bool,
     index: i32,
 ) -> Result<()> {
@@ -1196,6 +1200,7 @@ pub(crate) fn compile_linear_system(
         n,
         &slots,
         use_sparse,
+        nnz,
         m1,
         index,
         lower_inner,
@@ -1346,6 +1351,8 @@ struct Method1<'a> {
 /// with total pivoting — `solve_linear_system`'s `LS_DEFAULT` fallback, whose
 /// `solveTotalPivot` re-assembles `A` and `b` at the stepped unknowns, which is what
 /// `reassemble` emits. The retry is a second pass of this same body.
+/// `dense_a_sparse`: `None` for the CSC layout, which has no dense `A` to retry
+/// with; else whether the codegen solves the dense `A` sparse.
 #[allow(clippy::too_many_arguments)]
 fn emit_lin_step(
     ctx: &mut FnCtx,
@@ -1353,7 +1360,7 @@ fn emit_lin_step(
     b_off: u32,
     n: usize,
     slots: &[SimOff],
-    use_sparse: bool,
+    dense_a_sparse: Option<bool>,
     index: i32,
     m1: &Method1,
     lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
@@ -1362,7 +1369,7 @@ fn emit_lin_step(
     use we::Instruction as I;
     let data = ctx.sim()?.data_local;
     // `retry` guards the second pass: C never checks the total-pivot step.
-    let retry = (!use_sparse).then(|| {
+    let retry = dense_a_sparse.is_some().then(|| {
         let l = ctx.alloc_temp(WTy::I32);
         ctx.emit(I::I32Const(0));
         ctx.emit(I::LocalSet(l));
@@ -1411,7 +1418,8 @@ fn emit_lin_step(
     ctx.emit(I::I32Add);
     ctx.emit(I::I32Const(n as i32));
     emit_linsolve_context(ctx, index)?;
-    ctx.emit(I::I32Const(!use_sparse as i32)); // `dense`: a rejected step can retry
+    // `dense`: 0 no dense `A`, 1 solved dense, 2 solved sparse; see `rt_ls_check_step`.
+    ctx.emit(I::I32Const(dense_a_sparse.map_or(0, |sparse| 1 + sparse as i32)));
     ctx.emit(I::I32Const(ctx.dt_casual() as i32));
     ctx.emit(I::Call(rt_index("rt_ls_check_step")?));
     match retry {
@@ -1463,6 +1471,7 @@ fn emit_lin_solve_scatter(
     n: usize,
     slots: &[SimOff],
     use_sparse: bool,
+    nnz: usize,
     m1: Option<Method1>,
     index: i32,
     lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
@@ -1477,16 +1486,15 @@ fn emit_lin_solve_scatter(
     ctx.emit(I::I32Const(aux_off as i32));
     ctx.emit(I::I32Add); // x_ptr
     ctx.emit(I::I32Const(n as i32));
+    ctx.emit(I::I32Const(nnz as i32));
     emit_linsolve_context(ctx, index)?;
     let solver = if use_sparse {
         "rt_solve_lin_dense_sparse"
     } else {
         "rt_linsolve"
     };
-    if !use_sparse {
-        ctx.emit(I::I32Const(m1.is_some() as i32)); // a step check follows
-        ctx.emit(I::I32Const(ctx.dt_casual() as i32));
-    }
+    ctx.emit(I::I32Const(m1.is_some() as i32)); // a step check follows
+    ctx.emit(I::I32Const(ctx.dt_casual() as i32));
     ctx.emit(I::Call(rt_index(solver)?));
     emit_lin_unsolved(ctx, index, base)?;
     match &m1 {
@@ -1496,7 +1504,7 @@ fn emit_lin_solve_scatter(
             b_off,
             n,
             slots,
-            use_sparse,
+            Some(use_sparse),
             index,
             m1,
             lower_inner,
@@ -1523,6 +1531,7 @@ pub(crate) fn compile_linear_system_analytic(
     lower_constant: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
     lower_column: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
     use_sparse: bool,
+    nnz: usize,
     index: i32,
 ) -> Result<()> {
     use we::Instruction as I;
@@ -1610,6 +1619,7 @@ pub(crate) fn compile_linear_system_analytic(
         n,
         &slots,
         use_sparse,
+        nnz,
         Some(m1),
         index,
         lower_inner,
@@ -2127,7 +2137,8 @@ pub(crate) fn compile_linear_system_analytic_csc(
         ctx.emit(I::F64Store(mem_arg(b_off, 3)));
     });
 
-    // rt_solve_lin_sparse_cached(handle, colptr, rowidx, values, b, x, n, nnz, time).
+    // rt_solve_lin_sparse_cached(handle, colptr, rowidx, values, b, x, n, nnz, time,
+    // method1, casual).
     ctx.emit(I::I32Const(handle));
     ctx.emit(I::LocalGet(base));
     ctx.emit(I::I32Const(colptr_off as i32));
@@ -2145,6 +2156,8 @@ pub(crate) fn compile_linear_system_analytic_csc(
     ctx.emit(I::I32Const(n as i32));
     ctx.emit(I::I32Const(nnz as i32));
     emit_sim_time(ctx)?;
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Const(ctx.dt_casual() as i32));
     ctx.emit(I::Call(rt_index("rt_solve_lin_sparse_cached")?));
     emit_lin_unsolved(ctx, handle, base)?;
     let m1 = Method1 {
@@ -2152,25 +2165,19 @@ pub(crate) fn compile_linear_system_analytic_csc(
         residuals,
         slot_tab_off: Some(slot_tab_off),
     };
-    emit_lin_step(ctx, base, b_off, n, &slots, true, handle, &m1, lower_inner, None)
+    emit_lin_step(ctx, base, b_off, n, &slots, None, handle, &m1, lower_inner, None)
 }
 
-/// C's linear sparse-solver selection: density below `lssMaxDensity` (default
-/// 0.2) OR size above `lssMinSize` (default 1000). See
-/// `SimulationRuntime/c/simulation/solver/linearSystem.c`.
-pub(crate) const LSS_MAX_DENSITY: f64 = 0.2;
-pub(crate) const LSS_MIN_SIZE: usize = 1000;
+/// The compiler's linear sparse-solver choice (`SimCodeCodegenUtil.useSparseSolver`).
 pub(crate) fn lin_use_sparse(size: usize, nnz: usize) -> bool {
-    (nnz as f64) < LSS_MAX_DENSITY * (size * size) as f64 || size > LSS_MIN_SIZE
+    let t = SparseThresholds::DEFAULT;
+    SparseThresholds::sparse(size, nnz, t.lss_max_density, t.lss_min_size)
 }
 
-/// C's nonlinear sparse-solver selection (`nonlinearSystem.c`
-/// `initializeNonlinearSystemData`): kinsol+KLU when the density is below
-/// `nlssMaxDensity` (default 0.1) or the size exceeds `nlssMinSize` (default 1000).
-pub(crate) const NLSS_MAX_DENSITY: f64 = 0.1;
-pub(crate) const NLSS_MIN_SIZE: usize = 1000;
+/// The compiler's nonlinear sparse-solver choice: kinsol+KLU.
 pub(crate) fn nls_use_sparse(size: usize, nnz: usize) -> bool {
-    (nnz as f64) / ((size * size) as f64) < NLSS_MAX_DENSITY || size > NLSS_MIN_SIZE
+    let t = SparseThresholds::DEFAULT;
+    SparseThresholds::sparse(size, nnz, t.nlss_max_density, t.nlss_min_size)
 }
 
 /// Cache key for a sparse nonlinear system's reused symbolic factorization. Torn
@@ -2275,7 +2282,7 @@ pub(crate) fn compile_linear_system_symbolic(
         emit_b_exps(ctx, base, b_off, b_exps)?;
         emit_aux_x(ctx, base, aux_off, &slots)?;
         // rt_solve_lin_sparse_cached(handle, colptr, rowidx, values, b, x, n, nnz,
-        // time). The pattern is a compile-time constant, so the system index keys
+        // time, method1, casual). The pattern is a compile-time constant, so the system index keys
         // the runtime's cache and the symbolic factorization is computed once per
         // run, as in C.
         ctx.emit(I::I32Const(index));
@@ -2295,6 +2302,8 @@ pub(crate) fn compile_linear_system_symbolic(
         ctx.emit(I::I32Const(n as i32));
         ctx.emit(I::I32Const(nnz as i32));
         emit_sim_time(ctx)?;
+        ctx.emit(I::I32Const(0));
+        ctx.emit(I::I32Const(ctx.dt_casual() as i32));
         ctx.emit(I::Call(rt_index("rt_solve_lin_sparse_cached")?));
     } else {
         // Dense layout: A (n*n column-major) | b (n) | aux (n).
@@ -2321,7 +2330,7 @@ pub(crate) fn compile_linear_system_symbolic(
         }
         emit_b_exps(ctx, base, b_off, b_exps)?;
         emit_aux_x(ctx, base, aux_off, &slots)?;
-        // rt_linsolve(a_ptr, b_ptr, x_ptr, n, index, time, method1).
+        // rt_linsolve(a_ptr, b_ptr, x_ptr, n, nnz, index, time, method1, casual).
         ctx.emit(I::LocalGet(base)); // a_ptr (a_off == 0)
         ctx.emit(I::LocalGet(base));
         ctx.emit(I::I32Const(b_off as i32));
@@ -2330,6 +2339,7 @@ pub(crate) fn compile_linear_system_symbolic(
         ctx.emit(I::I32Const(aux_off as i32));
         ctx.emit(I::I32Add);
         ctx.emit(I::I32Const(n as i32));
+        ctx.emit(I::I32Const(a_entries.len() as i32));
         emit_linsolve_context(ctx, index)?;
         ctx.emit(I::I32Const(0)); // method 0: the solution is the unknowns
         ctx.emit(I::I32Const(ctx.dt_casual() as i32));

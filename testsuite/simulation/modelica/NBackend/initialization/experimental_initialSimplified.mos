@@ -71,8 +71,8 @@ simulate(P.experimental_initialSimplified); getErrorString();
 // --------------------------------
 //   (18) u := u_fix0
 //   (17) $FUN_1 := sin(u)
-//   (16) y1 := u ^ 3.0 + $FUN_1
-//   (15) $FUN_3 := sin(1e-6 * u)
+//   (16) y1 := u^3.0 + $FUN_1
+//   (15) $FUN_3 := sin(1e-6*u)
 //   (14) $FUN_2 := sqrt(y1)
 //   (13) y2 := $FUN_2 + $FUN_3
 //
@@ -82,20 +82,20 @@ simulate(P.experimental_initialSimplified); getErrorString();
 //   (11) Nonlinear System (size = 1, homotopy = true, mixed = false, torn = true)
 //   --Iteration Vars:{u}
 //   --(1) $FUN_1 := sin(u)
-//   --(2) $FUN_3 := sin(1e-6 * u)
+//   --(2) $FUN_3 := sin(1e-6*u)
 //   --(3) $FUN_2 := y2 - $FUN_3
-//   --(4) y1 := u ^ 3.0 + $FUN_1
+//   --(4) y1 := u^3.0 + $FUN_1
 //   --(5) 0 = sqrt(y1) - $FUN_2
 //
 // Algebraic Partition 1
 // -----------------------
 //   (31) Nonlinear System (size = 6, homotopy = true, mixed = false, torn = true)
 //   --Iteration Vars:{$FUN_3, u, y2, $FUN_2, y1, $FUN_1}
-//   --(19) 0 = sin(1e-6 * u) - $FUN_3
+//   --(19) 0 = sin(1e-6*u) - $FUN_3
 //   --(20) 0 = y_fix - y2
 //   --(21) 0 = ($FUN_2 + $FUN_3) - y2
 //   --(22) 0 = sqrt(y1) - $FUN_2
-//   --(23) 0 = (u ^ 3.0 + $FUN_1) - y1
+//   --(23) 0 = (u^3.0 + $FUN_1) - y1
 //   --(24) 0 = sin(u) - $FUN_1
 //
 // Event Partition
@@ -121,11 +121,11 @@ simulate(P.experimental_initialSimplified); getErrorString();
 //
 // Column Equations (size = 5)
 // -----------------------------
-//   (10) $pDER_INI_NLS_JAC_1.$FUN_1 := cos(u) * $SEED_INI_NLS_JAC_1.u
-//   (9) $pDER_INI_NLS_JAC_1.$FUN_3 := cos(1e-6 * u) * (1e-6 * $SEED_INI_NLS_JAC_1.u)
+//   (10) $pDER_INI_NLS_JAC_1.$FUN_1 := cos(u)*$SEED_INI_NLS_JAC_1.u
+//   (9) $pDER_INI_NLS_JAC_1.$FUN_3 := cos(1e-6*u)*(1e-6*$SEED_INI_NLS_JAC_1.u)
 //   (8) $pDER_INI_NLS_JAC_1.$FUN_2 := -$pDER_INI_NLS_JAC_1.$FUN_3
-//   (7) $pDER_INI_NLS_JAC_1.y1 := 3.0 * u ^ 2.0 * $SEED_INI_NLS_JAC_1.u + $pDER_INI_NLS_JAC_1.$FUN_1
-//   (6) $pDER_INI_NLS_JAC_1.$RES_AUX_6 := (0.5 / y1 ^ 0.5) * $pDER_INI_NLS_JAC_1.y1 - $pDER_INI_NLS_JAC_1.$FUN_2
+//   (7) $pDER_INI_NLS_JAC_1.y1 := 3.0*u^2.0*$SEED_INI_NLS_JAC_1.u + $pDER_INI_NLS_JAC_1.$FUN_1
+//   (6) $pDER_INI_NLS_JAC_1.$RES_AUX_6 := (0.5/y1^0.5)*$pDER_INI_NLS_JAC_1.y1 - $pDER_INI_NLS_JAC_1.$FUN_2
 //
 // Resizable Sparsity Pattern
 // ----------------------------
@@ -152,12 +152,12 @@ simulate(P.experimental_initialSimplified); getErrorString();
 //
 // Column Equations (size = 6)
 // -----------------------------
-//   (30) $pDER_ALG_NLS_JAC_1.$RES_AUX_5 := cos(1e-6 * u) * (1e-6 * $SEED_ALG_NLS_JAC_1.u) - $SEED_ALG_NLS_JAC_1.$FUN_3
+//   (30) $pDER_ALG_NLS_JAC_1.$RES_AUX_5 := cos(1e-6*u)*(1e-6*$SEED_ALG_NLS_JAC_1.u) - $SEED_ALG_NLS_JAC_1.$FUN_3
 //   (29) $pDER_ALG_NLS_JAC_1.$RES_SIM_4 := -$SEED_ALG_NLS_JAC_1.y2
 //   (28) $pDER_ALG_NLS_JAC_1.$RES_SIM_0 := ($SEED_ALG_NLS_JAC_1.$FUN_2 + $SEED_ALG_NLS_JAC_1.$FUN_3) - $SEED_ALG_NLS_JAC_1.y2
-//   (27) $pDER_ALG_NLS_JAC_1.$RES_AUX_6 := (0.5 / y1 ^ 0.5) * $SEED_ALG_NLS_JAC_1.y1 - $SEED_ALG_NLS_JAC_1.$FUN_2
-//   (26) $pDER_ALG_NLS_JAC_1.$RES_SIM_1 := (3.0 * u ^ 2.0 * $SEED_ALG_NLS_JAC_1.u + $SEED_ALG_NLS_JAC_1.$FUN_1) - $SEED_ALG_NLS_JAC_1.y1
-//   (25) $pDER_ALG_NLS_JAC_1.$RES_AUX_7 := cos(u) * $SEED_ALG_NLS_JAC_1.u - $SEED_ALG_NLS_JAC_1.$FUN_1
+//   (27) $pDER_ALG_NLS_JAC_1.$RES_AUX_6 := (0.5/y1^0.5)*$SEED_ALG_NLS_JAC_1.y1 - $SEED_ALG_NLS_JAC_1.$FUN_2
+//   (26) $pDER_ALG_NLS_JAC_1.$RES_SIM_1 := (3.0*u^2.0*$SEED_ALG_NLS_JAC_1.u + $SEED_ALG_NLS_JAC_1.$FUN_1) - $SEED_ALG_NLS_JAC_1.y1
+//   (25) $pDER_ALG_NLS_JAC_1.$RES_AUX_7 := cos(u)*$SEED_ALG_NLS_JAC_1.u - $SEED_ALG_NLS_JAC_1.$FUN_1
 //
 // Resizable Sparsity Pattern
 // ----------------------------

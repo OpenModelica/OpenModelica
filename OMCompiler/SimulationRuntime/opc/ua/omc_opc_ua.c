@@ -28,6 +28,10 @@
 #define _XOPEN_SOURCE 600
 #include "omc_opc_ua.h"
 #include "simulation/arrayIndex.h"
+#include "simulation/options.h"
+#include "util/omc_error.h"
+#include "util/omc_file.h"
+#include "util/omc_fmu_paramdeps.h"
 #include "open62541.h"
 #include <pthread.h>
 
@@ -66,6 +70,18 @@ typedef struct {
   int *inputIndex[N_VARKINDS];
   omc_opc_ua_alias *aliases[N_VARKINDS];
   int nAliases[N_VARKINDS];
+  /* Values of the parameters, updated by the simulation thread */
+  UA_Double *realParams;
+  UA_Int64 *intParams;
+  UA_Boolean *boolParams;
+  /* Parameter writes that the simulation thread has not applied yet */
+  double *newParams[N_VARKINDS];
+  unsigned char *paramWritten[N_VARKINDS];
+  int gotNewParams;
+  /* NULL if the model was not translated with --tunableParameters */
+  OMC_FMU_PARAMDEPS *paramDeps;
+  unsigned char *slotDirty;
+  unsigned char *eqMask;
   int reinitStateFlag;
   int *stateWasUpdatedFlag;
   double *updatedStates;
@@ -319,17 +335,39 @@ static int resolveNode(omc_opc_ua_state *state, const UA_NodeId *nodeid, var_kin
   return state->aliases[*kind][n].index;
 }
 
+static long paramSlot(const MODEL_DATA *modelData, var_kind_t kind, int index)
+{
+  switch (kind) {
+  case VARKIND_REAL_PARAMETER: return OMC_SLOT(modelData->nVariablesReal + index, OMC_SLOT_REAL);
+  case VARKIND_INTEGER_PARAMETER: return OMC_SLOT(modelData->nVariablesInteger + index, OMC_SLOT_INTEGER);
+  case VARKIND_BOOL_PARAMETER: return OMC_SLOT(modelData->nVariablesBoolean + index, OMC_SLOT_BOOLEAN);
+  default: return -1;
+  }
+}
+
 static int isWritable(omc_opc_ua_state *state, var_kind_t kind, int index)
 {
-  return (isVariableKind(kind) && state->inputIndex[kind][index] >= 0) ||
-         (kind == VARKIND_REAL && index < state->data->modelData->nStates);
+  long slot;
+  if (isVariableKind(kind)) {
+    return state->inputIndex[kind][index] >= 0 || (kind == VARKIND_REAL && index < state->data->modelData->nStates);
+  }
+  slot = paramSlot(state->data->modelData, kind, index);
+  return state->paramDeps && (size_t) slot < state->paramDeps->nSlots && (state->paramDeps->flags[slot] & OMC_PARAMDEPS_TUNABLE);
+}
+
+static double paramValue(omc_opc_ua_state *state, var_kind_t kind, int index)
+{
+  switch (kind) {
+  case VARKIND_REAL_PARAMETER: return state->realParams[index];
+  case VARKIND_INTEGER_PARAMETER: return (double) state->intParams[index];
+  default: return state->boolParams[index];
+  }
 }
 
 static UA_StatusCode
 readVariable(void *handle, const UA_NodeId nodeid, UA_Boolean sourceTimeStamp, const UA_NumericRange *range, UA_DataValue *dataValue)
 {
   omc_opc_ua_state *state = (omc_opc_ua_state*) handle;
-  const SIMULATION_INFO *sInfo = state->data->simulationInfo;
   var_kind_t kind;
   int negate;
   int index = resolveNode(state, &nodeid, &kind, &negate);
@@ -345,9 +383,9 @@ readVariable(void *handle, const UA_NodeId nodeid, UA_Boolean sourceTimeStamp, c
   case VARKIND_REAL: r = state->realVals[state->latestValues][index]; break;
   case VARKIND_INTEGER: i = state->intVals[state->latestValues][index]; break;
   case VARKIND_BOOL: b = state->boolVals[state->latestValues][index]; break;
-  case VARKIND_REAL_PARAMETER: r = sInfo->realParameter[index]; break;
-  case VARKIND_INTEGER_PARAMETER: i = sInfo->integerParameter[index]; break;
-  case VARKIND_BOOL_PARAMETER: b = sInfo->booleanParameter[index]; break;
+  case VARKIND_REAL_PARAMETER: r = state->realParams[index]; break;
+  case VARKIND_INTEGER_PARAMETER: i = state->intParams[index]; break;
+  case VARKIND_BOOL_PARAMETER: b = state->boolParams[index]; break;
   }
   pthread_mutex_unlock(&state->mutex_values);
 
@@ -384,13 +422,27 @@ writeVariable(void *handle, const UA_NodeId nodeid, const UA_Variant *data, cons
     return UA_STATUSCODE_BADTYPEMISMATCH;
   }
   switch (kind) {
-  case VARKIND_REAL: val = *(UA_Double*)data->data; val = negate ? -val : val; break;
-  case VARKIND_INTEGER: val = (double) *(UA_Int64*)data->data; val = negate ? -val : val; break;
+  case VARKIND_REAL: case VARKIND_REAL_PARAMETER: val = *(UA_Double*)data->data; val = negate ? -val : val; break;
+  case VARKIND_INTEGER: case VARKIND_INTEGER_PARAMETER: val = (double) *(UA_Int64*)data->data; val = negate ? -val : val; break;
   default: val = negate ? !*(UA_Boolean*)data->data : *(UA_Boolean*)data->data; break;
   }
 
   pthread_mutex_lock(&state->write_values);
-  if (state->inputIndex[kind][index] >= 0) {
+  if (!isVariableKind(kind)) {
+    double old;
+    if (state->paramWritten[kind][index]) {
+      old = state->newParams[kind][index];
+    } else {
+      pthread_mutex_lock(&state->mutex_values);
+      old = paramValue(state, kind, index);
+      pthread_mutex_unlock(&state->mutex_values);
+    }
+    if (old != val) {
+      state->newParams[kind][index] = val;
+      state->paramWritten[kind][index] = 1;
+      state->gotNewParams = 1;
+    }
+  } else if (state->inputIndex[kind][index] >= 0) {
     double *input = &state->inputVarsBackup[state->inputIndex[kind][index]];
     if (*input != val) {
       state->gotNewInput = 1;
@@ -552,6 +604,93 @@ static void storeValues(omc_opc_ua_state *state, int buffer)
   }
 }
 
+static void storeParams(omc_opc_ua_state *state)
+{
+  const DATA *data = state->data;
+  const MODEL_DATA *modelData = data->modelData;
+  long i;
+  for (i = 0; i < modelData->nParametersReal; i++) {
+    state->realParams[i] = data->simulationInfo->realParameter[i];
+  }
+  for (i = 0; i < modelData->nParametersInteger; i++) {
+    state->intParams[i] = data->simulationInfo->integerParameter[i];
+  }
+  for (i = 0; i < modelData->nParametersBoolean; i++) {
+    state->boolParams[i] = data->simulationInfo->booleanParameter[i];
+  }
+}
+
+/* Sets the parameters that were written and marks them in slotDirty. Returns
+ * 1 if there were any. Called with write_values locked. */
+static int setNewParams(omc_opc_ua_state *state)
+{
+  DATA *data = state->data;
+  SIMULATION_INFO *sInfo = data->simulationInfo;
+  int kind;
+  long i;
+  if (!state->gotNewParams) {
+    return 0;
+  }
+  state->gotNewParams = 0;
+  for (kind = VARKIND_REAL_PARAMETER; kind < N_VARKINDS; kind++) {
+    for (i = 0; i < numScalars(data->modelData, (var_kind_t) kind); i++) {
+      if (!state->paramWritten[kind][i]) {
+        continue;
+      }
+      state->paramWritten[kind][i] = 0;
+      switch (kind) {
+      case VARKIND_REAL_PARAMETER: sInfo->realParameter[i] = state->newParams[kind][i]; break;
+      case VARKIND_INTEGER_PARAMETER: sInfo->integerParameter[i] = (modelica_integer) state->newParams[kind][i]; break;
+      default: sInfo->booleanParameter[i] = state->newParams[kind][i] != 0; break;
+      }
+      state->slotDirty[paramSlot(data->modelData, (var_kind_t) kind, (int) i)] = 1;
+    }
+  }
+  return 1;
+}
+
+static void updateParams(omc_opc_ua_state *state)
+{
+  DATA *data = state->data;
+  threadData_t *threadData = (threadData_t*) pthread_getspecific(mmc_thread_data_key);
+  if (omc_fmu_paramdeps_select(state->paramDeps, state->slotDirty, state->eqMask)) {
+    memset(state->slotDirty, 0, state->paramDeps->nSlots);
+    data->callback->updateTunableParameters(data, threadData, state->eqMask);
+  } else {
+    memset(state->slotDirty, 0, state->paramDeps->nSlots);
+  }
+  pthread_mutex_lock(&state->mutex_values);
+  storeParams(state);
+  pthread_mutex_unlock(&state->mutex_values);
+}
+
+/* Reads <prefix>_paramdeps.bin, which omc writes with --tunableParameters */
+static void loadParamDeps(omc_opc_ua_state *state)
+{
+  const MODEL_DATA *modelData = state->data->modelData;
+  const char *dir = omc_flag[FLAG_INPUT_PATH] ? omc_flagValue[FLAG_INPUT_PATH] : ".";
+  char *path = (char*) malloc(strlen(dir) + strlen(modelData->modelFilePrefix) + 16);
+  OMC_FMU_PARAMDEPS *deps;
+  sprintf(path, "%s/%s_paramdeps.bin", dir, modelData->modelFilePrefix);
+  if (!omc_file_exists(path)) {
+    free(path);
+    return;
+  }
+  deps = omc_fmu_paramdeps_load_file(path);
+  free(path);
+  if (deps->error[0] || !deps->checked) {
+    if (deps->error[0]) {
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "OPC UA: the parameters are read-only: %s", deps->error);
+    }
+    omc_fmu_paramdeps_free(deps);
+    return;
+  }
+  omc_fmu_paramdeps_resize(deps, modelData);
+  state->paramDeps = deps;
+  state->slotDirty = (unsigned char*) calloc(deps->nSlots + 1, 1);
+  state->eqMask = (unsigned char*) calloc(deps->nEqs + 1, 1);
+}
+
 void* omc_embedded_server_init(DATA *data, double t, double step, const char *argv_0, void (*omc_real_time_sync_update)(DATA *data, double scaling), int port)
 {
   MODEL_DATA *modelData = data->modelData;
@@ -615,6 +754,16 @@ void* omc_embedded_server_init(DATA *data, double t, double step, const char *ar
   }
   storeValues(state, 0);
 
+  state->realParams = malloc(modelData->nParametersReal * sizeof(UA_Double));
+  state->intParams = malloc(modelData->nParametersInteger * sizeof(UA_Int64));
+  state->boolParams = malloc(modelData->nParametersBoolean * sizeof(UA_Boolean));
+  storeParams(state);
+  for (i = VARKIND_REAL_PARAMETER; i < N_VARKINDS; i++) {
+    state->newParams[i] = (double*) malloc(numScalars(modelData, (var_kind_t) i) * sizeof(double));
+    state->paramWritten[i] = (unsigned char*) calloc(numScalars(modelData, (var_kind_t) i), 1);
+  }
+  loadParamDeps(state);
+
   state->reinitStateFlag = 0;
   state->stateWasUpdatedFlag = (int*) calloc(sizeof(int), modelData->nStates);
   state->updatedStates = (double*) malloc(sizeof(double)*modelData->nStates);
@@ -656,10 +805,18 @@ void omc_embedded_server_deinit(void *state_vp)
     free(state->intVals[i]);
     free(state->boolVals[i]);
   }
+  free(state->realParams);
+  free(state->intParams);
+  free(state->boolParams);
   for (i = 0; i < N_VARKINDS; i++) {
     free(state->inputIndex[i]);
     free(state->aliases[i]);
+    free(state->newParams[i]);
+    free(state->paramWritten[i]);
   }
+  omc_fmu_paramdeps_free(state->paramDeps);
+  free(state->slotDirty);
+  free(state->eqMask);
   free(state->stateWasUpdatedFlag);
   free(state->updatedStates);
   free(state);
@@ -668,7 +825,7 @@ void omc_embedded_server_deinit(void *state_vp)
 int omc_embedded_server_update(void *state_vp, double t, int *terminate)
 {
   omc_opc_ua_state *state = (omc_opc_ua_state*) state_vp;
-  int i, res=0;
+  int i, res=0, newParams;
   DATA *data = state->data;
   MODEL_DATA *modelData = data->modelData;
   int latestValues;
@@ -707,10 +864,17 @@ int omc_embedded_server_update(void *state_vp, double t, int *terminate)
     state->reinitStateFlag = 0;
   }
 
+  newParams = setNewParams(state);
+
   if (state->terminate)
     *terminate = 1;
 
   pthread_mutex_unlock(&state->write_values);
+
+  if (newParams) {
+    res = 1;
+    updateParams(state);
+  }
 
   return res;
 }

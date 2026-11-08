@@ -3094,7 +3094,8 @@ end isFMUSimCode;
 
 public function lookupVRForRealOutputDerivative
   "function which maps output Real var ValueReference to an internal real variable ValueReference of
-  pattern $X_der where x = varname, this function will be used by fmi2GetRealOutputDerivatives"
+  pattern $X_der where x = varname, this function will be used by fmi2GetRealOutputDerivatives.
+  -1 if there is no such variable, as in DAE mode."
   input DAE.ComponentRef cr;
   input SimCode.SimCode simCode;
   input String fmuType;
@@ -3106,11 +3107,26 @@ algorithm
     // map the cref to the internal real var (e.g) output Real y => $y_der
     outputRealDerivativeCref := ComponentReference.appendStringLastIdent("_der", cr); // append _der
     outputRealDerivativeCref := ComponentReference.prependStringCref("$", outputRealDerivativeCref); // prepend $
-    vr := AvlTreeCRToInt.get(simCode.valueReferences, outputRealDerivativeCref);
+    vr := Util.getOptionOrDefault(AvlTreeCRToInt.getOpt(simCode.valueReferences, outputRealDerivativeCref), -1);
   else
     vr := -1;
   end if;
 end lookupVRForRealOutputDerivative;
+
+public function maxOutputDerivativeOrder
+  "1 if lookupVRForRealOutputDerivative finds a derivative for each Real output, else 0."
+  input SimCode.SimCode simCode;
+  input String fmuType;
+  output Integer order = 1;
+algorithm
+  for v in simCode.modelInfo.vars.outputVars loop
+    order := match v
+      case SimCodeVar.SIMVAR(type_ = DAE.T_REAL())
+        guard lookupVRForRealOutputDerivative(v.name, simCode, fmuType) == -1 then 0;
+      else order;
+    end match;
+  end for;
+end maxOutputDerivativeOrder;
 
 public function fmi3ArrayView
   "The SimCode the FMI 3.0 modelDescription.xml is rendered from: one SimVar
@@ -3403,7 +3419,7 @@ public constant list<String> fmuSourceLibraries = {"ModelicaExternalC", "Modelic
 public function fmuExternalLibraries
   "The libraries of Library annotations that an FMU does not carry as sources,
    by name. zlib and HDF5 are only there for ModelicaMatIO, which the FMU
-   compiles without them."
+   compiles with its own zlib and without HDF5."
   input list<String> libs;
   output list<String> names = {};
 protected

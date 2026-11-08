@@ -45,14 +45,14 @@ readFile("fmi2_arrays_initial_unknowns.xml"); getErrorString();
 // ""
 // "  <ModelStructure>
 //     <Outputs>
-//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"2\" />
 //     </Outputs>
 //     <Derivatives>
-//       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"1\" />
 //     </Derivatives>
 //     <InitialUnknowns>
-//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"1\" />
+//       <Unknown index=\"2\" />
 //     </InitialUnknowns>
 //   </ModelStructure>
 // "

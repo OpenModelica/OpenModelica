@@ -850,6 +850,22 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
     // See the wasmtime counterpart.
     if let Ok(set) = rt_inst
         .exports
+        .get_typed_function::<(f64, i32, u32, f64, i32, u32), ()>(&store, "rt_set_sparse_thresholds")
+    {
+        let t = openmodelica_sim_meta::simflags::with_flags(openmodelica_sim_meta::simflags::sparse_thresholds);
+        wts(set.call(
+            &mut store,
+            t.lss_max_density,
+            t.lss_min_size,
+            t.lss_given as u32,
+            t.nlss_max_density,
+            t.nlss_min_size,
+            t.nlss_given as u32,
+        ))?;
+    }
+    // See the wasmtime counterpart.
+    if let Ok(set) = rt_inst
+        .exports
         .get_typed_function::<(f64, f64, f64), ()>(&store, "rt_set_newton_tuning")
     {
         let (ftol, xtol, msf) =
@@ -1157,10 +1173,10 @@ impl sim_driver::SimEngine for WasmerEngine {
             .get_typed_function::<(u32, f64, f64, u32), u32>(&self.store, "simulate")
             .is_ok()
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 10]> {
         crate::host::take_pending_assert()
     }
-    fn take_pending_warnings(&mut self) -> Vec<[i32; 10]> {
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 11]> {
         crate::host::take_pending_warnings()
     }
     fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
@@ -1481,10 +1497,10 @@ impl sim_driver::SimEngine for InWasmSession {
     fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> Result<u32> {
         Err("CodegenWasmJit: call_simulate on in-wasm session (unreachable)")
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 10]> {
         crate::host::take_pending_assert()
     }
-    fn take_pending_warnings(&mut self) -> Vec<[i32; 10]> {
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 11]> {
         crate::host::take_pending_warnings()
     }
     fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
