@@ -423,12 +423,10 @@ openmodelica_loader/Cargo.toml
 openmodelica_omgraphics/Cargo.toml
 openmodelica_omgraphics/src/OMGraphics.rs
 openmodelica_package_manager/Cargo.toml
-openmodelica_package_manager/src/legacy.rs
 openmodelica_package_manager/src/lib.rs
 openmodelica_package_manager/src/manager.rs
 openmodelica_package_manager/src/scan.rs
 openmodelica_package_manager/src/solve.rs
-openmodelica_package_manager/src/version.rs
 openmodelica_package_manager/tests/manager.rs
 openmodelica_package_manager/tests/resolve.rs
 openmodelica_program_util/Cargo.toml
@@ -471,6 +469,7 @@ openmodelica_util/src/Lapack.rs
 openmodelica_util/src/ModelInstanceReference.rs
 openmodelica_util/src/OMSimulatorExt.rs
 openmodelica_util/src/Print.rs
+openmodelica_util/src/SemanticVersion.rs
 openmodelica_util/src/Settings.rs
 openmodelica_util/src/StackOverflow.rs
 openmodelica_util/src/System.rs
@@ -506,6 +505,8 @@ openmodelica_util_datatypes_basic/src/unittests/list_tests.rs
 openmodelica_util_datatypes_basic/src/unittests/mod.rs
 openmodelica_util_datatypes_basic/src/unittests/mutable_cycle_drop_tests.rs
 openmodelica_util_datatypes_basic/src/unittests/mutable_tests.rs
+openmodelica_version/Cargo.toml
+openmodelica_version/src/lib.rs
 openmodelica_wasi/Cargo.toml
 openmodelica_wasi/src/fs.rs
 openmodelica_wasi/src/lib.rs

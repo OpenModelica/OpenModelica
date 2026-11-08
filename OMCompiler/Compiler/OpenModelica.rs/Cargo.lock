@@ -7838,6 +7838,7 @@ name = "openmodelica_package_manager"
 version = "0.1.0"
 dependencies = [
  "openmodelica_download",
+ "openmodelica_version",
  "openmodelica_wasi",
  "openmodelica_zip",
  "resolvo",
@@ -8105,6 +8106,7 @@ dependencies = [
  "openmodelica_lapack",
  "openmodelica_regex",
  "openmodelica_util_datatypes_basic",
+ "openmodelica_version",
  "openmodelica_wasi",
  "openmodelica_zip",
  "rayon",
@@ -8124,6 +8126,10 @@ dependencies = [
  "match_deref",
  "metamodelica",
 ]
+
+[[package]]
+name = "openmodelica_version"
+version = "0.1.0"
 
 [[package]]
 name = "openmodelica_wasi"

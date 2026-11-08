@@ -59,6 +59,11 @@ char *omcrs_zip_paths(const char *zipFileName, const char *const *paths, const c
 /* The JSON response of the package manager (openmodelica_package_manager) to a
    JSON request. Free the result with omcrs_free_string. */
 char *omcrs_package_manager(const char *request);
+/* Library version numbers (openmodelica_version): compare gives -1, 0 or 1,
+   ignoring prereleases unless pre and build metadata unless build. */
+int omcrs_version_compare(const char *a, const char *b, int pre, int build);
+char *omcrs_version_canonical(const char *s);
+int omcrs_version_is_numbered(const char *s);
 void omcrs_free_string(char *s);
 
 #ifdef __cplusplus

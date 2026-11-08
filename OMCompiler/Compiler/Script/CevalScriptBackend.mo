@@ -10312,7 +10312,7 @@ protected
   Absyn.Class cls, lib_cls;
   Absyn.Within wi;
   Option<String> uses_version;
-  SemanticVersion.Version lib_version, lib_version_used;
+  String lib_version, lib_version_used;
   list<tuple<String, Option<String>, Option<String>>> conversions;
   list<String> scripts;
   String lib_name;
@@ -10324,7 +10324,7 @@ algorithm
     uses_version := Interactive.getUsedVersion(cls, libPath);
 
     if isSome(uses_version) then
-      lib_version_used := SemanticVersion.parse(Util.getOption(uses_version), true);
+      lib_version_used := Util.getOption(uses_version);
     else
       Error.addMessage(Error.CONVERSION_MISSING_USES,
         {AbsynUtil.pathString(clsPath), AbsynUtil.pathString(libPath)});
@@ -10332,11 +10332,11 @@ algorithm
     end if;
 
     lib_name := AbsynUtil.pathFirstIdent(libPath);
-    lib_version := SemanticVersion.parse(CevalScript.getPackageVersion(libPath, p));
+    lib_version := CevalScript.getPackageVersion(libPath, p);
 
     // Check if the wanted version of the library is already loaded, otherwise
     // we need to load it.
-    if SemanticVersion.compare(lib_version, SemanticVersion.parse(libVersion)) <> 0 then
+    if SemanticVersion.compare(lib_version, libVersion) <> 0 then
       // Try to set the language standard to the version needed to load the wanted library.
       if lib_name == "Modelica" then
         Config.setLanguageStandardFromMSL("Modelica " + libVersion, force = true);
@@ -10351,7 +10351,7 @@ algorithm
     end if;
 
     // Get the version of the library.
-    lib_version := SemanticVersion.parse(CevalScript.getPackageVersion(libPath, lib_program));
+    lib_version := CevalScript.getPackageVersion(libPath, lib_program);
 
     // Try to find a sequence of conversion scripts that can be used to convert
     // the class to the desired library version.
@@ -10362,8 +10362,8 @@ algorithm
     if listEmpty(scripts) then
       Error.addMessage(Error.CONVERSION_NO_COMPATIBLE_SCRIPT_FOUND,
         {AbsynUtil.pathString(libPath),
-         SemanticVersion.toString(lib_version_used),
-         SemanticVersion.toString(lib_version)});
+         SemanticVersion.normalize(lib_version_used),
+         SemanticVersion.normalize(lib_version)});
       fail();
     end if;
 
@@ -10374,7 +10374,7 @@ algorithm
     end for;
 
     // Update the uses-annotation in the class to refer to the new version of the library.
-    cls := Interactive.updateUsedVersion(cls, libPath, SemanticVersion.toString(lib_version));
+    cls := Interactive.updateUsedVersion(cls, libPath, SemanticVersion.normalize(lib_version));
 
     // Finally update the class in the global Absyn.
     wi := ProgramUtil.buildWithin(clsPath);
@@ -10392,8 +10392,8 @@ function findConversionPaths
    conversion is needed, but sometimes the conversion might need to be done in
    several steps (e.g. 2.0.0 => 2.3.5 => 2.4.0)."
   input list<tuple<String, Option<String>, Option<String>>> conversions;
-  input SemanticVersion.Version libVersion;
-  input SemanticVersion.Version libVersionUsed;
+  input String libVersion;
+  input String libVersionUsed;
   input Integer depth = 0;
   output list<String> scripts = {};
 protected
@@ -10423,8 +10423,8 @@ end findConversionPaths;
 
 function findConversionPath
   input tuple<String, Option<String>, Option<String>> conversion;
-  input SemanticVersion.Version libVersion;
-  input SemanticVersion.Version libVersionUsed;
+  input String libVersion;
+  input String libVersionUsed;
   input list<tuple<String, Option<String>, Option<String>>> conversions;
   input Integer depth;
   output list<String> scripts = {};
@@ -10432,7 +10432,7 @@ protected
   String from;
   Option<String> to;
   Option<String> script;
-  SemanticVersion.Version from_version, to_version;
+  String from_version, to_version;
 algorithm
   (from, to, script) := conversion;
 
@@ -10440,11 +10440,11 @@ algorithm
     return;
   end if;
 
-  from_version := SemanticVersion.parse(from, true);
+  from_version := from;
 
   if SemanticVersion.compare(libVersionUsed, from_version) == 0 then
     if isSome(to) then
-      to_version := SemanticVersion.parse(Util.getOption(to), true);
+      to_version := Util.getOption(to);
 
       if SemanticVersion.compare(libVersion, to_version) <> 0 then
         scripts := findConversionPaths(conversions, libVersion, to_version, depth + 1);

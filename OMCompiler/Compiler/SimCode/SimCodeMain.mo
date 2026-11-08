@@ -1451,12 +1451,10 @@ algorithm
         // Set CMake runtime dependencies level
         () := match Flags.getConfigString(Flags.FMU_RUNTIME_DEPENDS)
           local
-            SemanticVersion.Version cmakeVersion;
-            SemanticVersion.Version minimumVersion;
+            String cmakeVersion;
           case "default" algorithm
             cmakeVersion := SimCodeUtil.getCMakeVersion(logDirectory=fmu_tmp_sources_dir);
-            minimumVersion := SemanticVersion.SEMVER(3, 21, 0, {}, {}); // v3.21.0
-            if SemanticVersion.compare(minimumVersion, cmakeVersion) <= 0 /* minimumVersion <= cmakeVersion */ then
+            if SemanticVersion.compare("3.21.0", cmakeVersion) <= 0 then
               cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "\"modelica\"");
             else
               cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "\"none\"");

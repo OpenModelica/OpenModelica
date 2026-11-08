@@ -8,6 +8,7 @@ workspace = ".."
 # Plain versions, no workspace inheritance: that crate builds it from its own root.
 [dependencies]
 openmodelica_download = { path = "../openmodelica_download", default-features = false }
+openmodelica_version = { path = "../openmodelica_version" }
 openmodelica_wasi = { path = "../openmodelica_wasi" }
 openmodelica_zip = { path = "../openmodelica_zip" }
 resolvo = "0.12"

@@ -8,7 +8,7 @@ use openmodelica_wasi::fs;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use crate::legacy;
+use crate::version::{Version, canonical, compare};
 use crate::{Index, Installed, Problem, Requirement, Selected, scan};
 
 const INDEX_URL: &str = "https://libraries.openmodelica.org/index/v1/index.json";
@@ -500,7 +500,7 @@ impl<'a> Manager<'a> {
     }
 
     fn package(index: &Option<Arc<Index>>, s: &Selected) -> Option<Package> {
-        let version = legacy::normalize(&s.version);
+        let version = canonical(&s.version);
         let entry = Self::index_entry(index, &s.name, &s.version).cloned();
         if let Some(path) = s.path.as_ref().filter(|_| s.installed) {
             let meta = read_json(&format!("{path}/{METADATA}"));
@@ -741,9 +741,7 @@ impl<'a> Manager<'a> {
             map.entry(lib.name).or_default().push(lib.version);
         }
         for versions in map.values_mut() {
-            versions.sort_by(|a, b| {
-                legacy::compare(&legacy::parse(a, false), &legacy::parse(b, false), true, true).cmp(&0)
-            });
+            versions.sort_by(|a, b| compare(&Version::parse(a), &Version::parse(b), true));
         }
         map
     }
@@ -753,9 +751,7 @@ impl<'a> Manager<'a> {
         let mut success = true;
         for (pkg, versions) in self.installed_versions() {
             for version in versions {
-                success &= self
-                    .install_package(&pkg, &legacy::normalize(&version), true, false, abi)
-                    .0;
+                success &= self.install_package(&pkg, &canonical(&version), true, false, abi).0;
             }
             if newest {
                 success &= self.install_package(&pkg, "", false, false, abi).0;
@@ -798,7 +794,7 @@ impl<'a> Manager<'a> {
             let (Some(version), Some(key)) = (str_of(&installed, "version"), sha_or_zipfile(&installed)) else {
                 continue;
             };
-            let entry = Self::installed_index_entry(&index, &pkg, &legacy::normalize(version), &key);
+            let entry = Self::installed_index_entry(&index, &pkg, &canonical(version), &key);
             let zips = self.wasm_zips(&index, &entry, abi);
             let has_wasm = Self::index_entry(&index, &pkg, version)
                 .and_then(|e| e.get("wasm"))
@@ -886,7 +882,7 @@ impl<'a> Manager<'a> {
 
     /// The versions of `id` that can convert from `version`.
     pub fn conversions_from(&mut self, id: &str, version: &str, print_error: bool) -> Vec<String> {
-        let wanted = legacy::parse(version, true);
+        let wanted = Version::parse(version);
         let mut result = Vec::new();
         for (v, entry) in self.index_versions(id, print_error).unwrap_or_default() {
             for from in entry
@@ -897,7 +893,7 @@ impl<'a> Manager<'a> {
             {
                 if from
                     .as_str()
-                    .is_some_and(|f| legacy::compare(&wanted, &legacy::parse(f, true), true, false) == 0)
+                    .is_some_and(|f| compare(&wanted, &Version::parse(f), false).is_eq())
                 {
                     result.insert(0, v.clone());
                 }
@@ -908,9 +904,9 @@ impl<'a> Manager<'a> {
 
     /// The versions that `version` of `id` can convert from.
     pub fn conversions_to(&mut self, id: &str, version: &str, print_error: bool) -> Vec<String> {
-        let wanted = legacy::parse(version, true);
+        let wanted = Version::parse(version);
         for (v, entry) in self.index_versions(id, print_error).unwrap_or_default() {
-            if legacy::compare(&wanted, &legacy::parse(&v, true), true, false) == 0 {
+            if compare(&wanted, &Version::parse(&v), false).is_eq() {
                 return entry
                     .get("convertFromVersion")
                     .and_then(Value::as_array)

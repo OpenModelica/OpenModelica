@@ -357,6 +357,7 @@ name = "openmodelica_omcruntime"
 version = "0.1.0"
 dependencies = [
  "openmodelica_package_manager",
+ "openmodelica_version",
  "openmodelica_zip",
 ]
 
@@ -365,12 +366,17 @@ name = "openmodelica_package_manager"
 version = "0.1.0"
 dependencies = [
  "openmodelica_download",
+ "openmodelica_version",
  "openmodelica_wasi",
  "openmodelica_zip",
  "resolvo",
  "serde",
  "serde_json",
 ]
+
+[[package]]
+name = "openmodelica_version"
+version = "0.1.0"
 
 [[package]]
 name = "openmodelica_wasi"

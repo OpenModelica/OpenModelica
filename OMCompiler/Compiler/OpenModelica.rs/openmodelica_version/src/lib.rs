@@ -130,6 +130,27 @@ impl Version {
     pub fn same(&self, other: &Version) -> bool {
         compare(self, other, false) == Ordering::Equal
     }
+
+    /// The text with up to three numbers padded to three, `3.2` as `3.2.0`,
+    /// as installed libraries are named.
+    pub fn canonical(&self) -> String {
+        match &self.kind {
+            Kind::Numbered { nums, pre, build } if nums.len() <= 3 && !self.text.contains(' ') => {
+                let mut out = (0..3)
+                    .map(|i| nums.get(i).unwrap_or(&0).to_string())
+                    .collect::<Vec<_>>()
+                    .join(".");
+                if !pre.is_empty() {
+                    out = format!("{out}-{}", pre.join("."));
+                }
+                if !build.is_empty() {
+                    out = format!("{out}+{}", build.join("."));
+                }
+                out
+            }
+            _ => self.text.clone(),
+        }
+    }
 }
 
 fn cmp_nums(a: &[u64], b: &[u64]) -> Ordering {
@@ -156,10 +177,20 @@ fn cmp_identifiers(a: &[String], b: &[String]) -> Ordering {
         .unwrap_or_else(|| a.len().cmp(&b.len()))
 }
 
+/// [`Version::canonical`] of a text.
+pub fn canonical(text: &str) -> String {
+    Version::parse(text).canonical()
+}
+
 /// A total order: any < branches (by name) < numbered versions. A release is
 /// newer than its prereleases (semver) and, with `compare_build`, older than
 /// its builds.
 pub fn compare(a: &Version, b: &Version, compare_build: bool) -> Ordering {
+    compare_parts(a, b, true, compare_build)
+}
+
+/// [`compare`], ignoring prereleases unless `compare_pre`.
+pub fn compare_parts(a: &Version, b: &Version, compare_pre: bool, compare_build: bool) -> Ordering {
     let rank = |k: &Kind| match k {
         Kind::Any => 0,
         Kind::Branch(_) => 1,
@@ -175,12 +206,14 @@ pub fn compare(a: &Version, b: &Version, compare_build: bool) -> Ordering {
                 build: b_build,
             },
         ) => cmp_nums(nums, b_nums)
-            .then_with(|| match (pre.is_empty(), b_pre.is_empty()) {
-                (true, true) => Ordering::Equal,
-                (true, false) => Ordering::Greater,
-                (false, true) => Ordering::Less,
-                (false, false) => cmp_identifiers(pre, b_pre),
-            })
+            .then_with(
+                || match (pre.is_empty() || !compare_pre, b_pre.is_empty() || !compare_pre) {
+                    (true, true) => Ordering::Equal,
+                    (true, false) => Ordering::Greater,
+                    (false, true) => Ordering::Less,
+                    (false, false) => cmp_identifiers(pre, b_pre),
+                },
+            )
             .then_with(|| {
                 if compare_build {
                     cmp_identifiers(build, b_build)
@@ -254,6 +287,38 @@ mod tests {
         }
         assert_eq!(compare(&v("3.2"), &v("3.2.0"), true), Ordering::Equal);
         assert_eq!(compare(&v("4.0.0"), &v("4.0.0+maint.om"), false), Ordering::Equal);
+    }
+
+    #[test]
+    fn canonical() {
+        for (text, canonical) in [
+            ("3.2", "3.2.0"),
+            ("4.0.0+maint.om", "4.0.0+maint.om"),
+            ("1.0-beta.2", "1.0.0-beta.2"),
+            ("01.2.3", "1.2.3"),
+            ("1.0.0.1", "1.0.0.1"),
+            ("3.4 beta1", "3.4 beta1"),
+            ("master", "master"),
+            ("", ""),
+        ] {
+            assert_eq!(v(text).canonical(), canonical, "{text}");
+        }
+    }
+
+    #[test]
+    fn without_prereleases() {
+        assert_eq!(
+            compare_parts(&v("4.0.0-beta"), &v("4.0.0"), false, false),
+            Ordering::Equal
+        );
+        assert_eq!(
+            compare_parts(&v("4.0.0-beta+b"), &v("4.0.0+a"), false, true),
+            Ordering::Greater
+        );
+        assert_eq!(
+            compare_parts(&v("4.0.0-beta"), &v("4.0.0"), true, false),
+            Ordering::Less
+        );
     }
 
     #[test]
