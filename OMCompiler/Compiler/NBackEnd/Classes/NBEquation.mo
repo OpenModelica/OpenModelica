@@ -4969,6 +4969,7 @@ public
       input MapFuncExp funcExp;
       input Option<MapFuncCref> funcCrefOpt = NONE();
       input MapFuncExpWrapper mapFunc = Expression.map;
+      input output list<Pointer<Equation>> changed = {} "the changed equations";
     protected
       Pointer<Equation> eq_ptr;
       Equation eq, new_eq;
@@ -4981,6 +4982,7 @@ public
           if not referenceEq(eq, new_eq) then
             // Do not update the expandable array entry, but the pointer itself
             Pointer.update(eq_ptr, new_eq);
+            changed := eq_ptr :: changed;
           end if;
         end if;
       end for;
@@ -5289,31 +5291,40 @@ public
       input output EqData eqData;
       input MapFuncExp func;
       input Option<MapFuncCref> funcCrefOpt = NONE();
+      input output list<Pointer<Equation>> changed = {} "the changed equations";
+    protected
+      Equation eq, new_eq;
     algorithm
+      // the equation pointers are updated, the arrays stay the same
       eqData := match eqData
         case EqData.EQ_DATA_SIM() algorithm
           // we do not want to traverse removed equations, otherwise we could break them
-          eqData.simulation   := EquationPointers.mapExp(eqData.simulation, func, funcCrefOpt);
-          eqData.continuous   := EquationPointers.mapExp(eqData.continuous, func, funcCrefOpt);
-          eqData.clocked      := EquationPointers.mapExp(eqData.clocked, func, funcCrefOpt);
-          eqData.discretes    := EquationPointers.mapExp(eqData.discretes, func, funcCrefOpt);
-          eqData.initials     := EquationPointers.mapExp(eqData.initials, func, funcCrefOpt);
-          eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, func, funcCrefOpt);
-          eqData.removed      := EquationPointers.mapExp(eqData.removed, func, funcCrefOpt);
+          (_, changed) := EquationPointers.mapExp(eqData.simulation, func, funcCrefOpt, changed = changed);
+          (_, changed) := EquationPointers.mapExp(eqData.continuous, func, funcCrefOpt, changed = changed);
+          (_, changed) := EquationPointers.mapExp(eqData.clocked, func, funcCrefOpt, changed = changed);
+          (_, changed) := EquationPointers.mapExp(eqData.discretes, func, funcCrefOpt, changed = changed);
+          (_, changed) := EquationPointers.mapExp(eqData.initials, func, funcCrefOpt, changed = changed);
+          (_, changed) := EquationPointers.mapExp(eqData.auxiliaries, func, funcCrefOpt, changed = changed);
+          (_, changed) := EquationPointers.mapExp(eqData.removed, func, funcCrefOpt, changed = changed);
         then eqData;
 
         case EqData.EQ_DATA_JAC() algorithm
-          eqData.results      := EquationPointers.mapExp(eqData.results, func, funcCrefOpt);
-          eqData.temporary    := EquationPointers.mapExp(eqData.temporary, func, funcCrefOpt);
-          eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, func, funcCrefOpt);
-          eqData.removed      := EquationPointers.mapExp(eqData.removed, func, funcCrefOpt);
+          (_, changed) := EquationPointers.mapExp(eqData.results, func, funcCrefOpt, changed = changed);
+          (_, changed) := EquationPointers.mapExp(eqData.temporary, func, funcCrefOpt, changed = changed);
+          (_, changed) := EquationPointers.mapExp(eqData.auxiliaries, func, funcCrefOpt, changed = changed);
+          (_, changed) := EquationPointers.mapExp(eqData.removed, func, funcCrefOpt, changed = changed);
         then eqData;
 
         case EqData.EQ_DATA_HES() algorithm
-          Pointer.update(eqData.result, Equation.map(Pointer.access(eqData.result), func, funcCrefOpt));
-          eqData.temporary    := EquationPointers.mapExp(eqData.temporary, func, funcCrefOpt);
-          eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, func, funcCrefOpt);
-          eqData.removed      := EquationPointers.mapExp(eqData.removed, func, funcCrefOpt);
+          eq := Pointer.access(eqData.result);
+          new_eq := Equation.map(eq, func, funcCrefOpt);
+          if not referenceEq(eq, new_eq) then
+            Pointer.update(eqData.result, new_eq);
+            changed := eqData.result :: changed;
+          end if;
+          (_, changed) := EquationPointers.mapExp(eqData.temporary, func, funcCrefOpt, changed = changed);
+          (_, changed) := EquationPointers.mapExp(eqData.auxiliaries, func, funcCrefOpt, changed = changed);
+          (_, changed) := EquationPointers.mapExp(eqData.removed, func, funcCrefOpt, changed = changed);
         then eqData;
       end match;
     end mapExp;

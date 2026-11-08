@@ -171,6 +171,7 @@ public
     input EqData eqData;
     input VarData varData; // bindings
     input UnorderedMap<ComponentRef, Expression> replacements "rules for replacements are stored inside here";
+    output list<Pointer<Equation>> changed = {} "the changed equations";
   protected
     ComponentRef aliasCref;
     Expression replacement;
@@ -179,7 +180,7 @@ public
   algorithm
     // do nothing if replacements are empty
     if UnorderedMap.isEmpty(replacements) then return; end if;
-    EqData.mapExp(eqData, function applySimpleExp(replacements = replacements), SOME(function applySimpleCref(replacements = replacements)));
+    (_, changed) := EqData.mapExp(eqData, function applySimpleExp(replacements = replacements), SOME(function applySimpleCref(replacements = replacements)));
 
     // apply on bindings (is this necessary?)
     () := match varData
