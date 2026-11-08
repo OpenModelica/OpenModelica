@@ -541,6 +541,42 @@ public
     res := SOME(Iterator.fromFrames(List.zip3(names, listReverse(new_ranges), maps)));
   end restrictIterator;
 
+  function sliceAttribute
+    "the attribute of the box elements, e.g. the start values of x[2:N] for $RZ"
+    input output Expression exp;
+    input list<Subscript> subs;
+  protected
+    Integer n = Type.dimensionCount(Expression.typeOf(exp));
+    Call call;
+    list<tuple<InstNode, Expression>> iters = {};
+    list<Subscript> rest;
+    Expression range;
+    Boolean ok = true;
+  algorithm
+    if n == 0 then return; end if;
+    // an attribute with fewer dimensions applies to the trailing ones
+    rest := List.lastN(subs, n);
+    exp := match exp
+      // {e for i in 1:n}[s:t] -> {e for i in s:t}, the last iterator belongs to the first dimension
+      case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) guard(listLength(call.iters) == n) algorithm
+        for tpl in listReverse(call.iters) loop
+          range := match (Util.tuple22(tpl), listHead(rest))
+            local
+              Expression slice;
+            case (_, Subscript.WHOLE()) then Util.tuple22(tpl);
+            case (Expression.RANGE(start = Expression.INTEGER(1), step = NONE()), Subscript.SLICE(slice = slice as Expression.RANGE())) then slice;
+            else algorithm ok := false; then Util.tuple22(tpl);
+          end match;
+          iters := (Util.tuple21(tpl), range) :: iters;
+          rest := listRest(rest);
+        end for;
+        call.iters := iters;
+        call.ty := Type.ARRAY(Type.arrayElementType(call.ty), list(Type.nthDimension(Expression.typeOf(Util.tuple22(t)), 1) for t in listReverse(iters)));
+      then if ok then Expression.CALL(call) else Expression.applySubscripts(List.lastN(subs, n), exp);
+      else Expression.applySubscripts(rest, exp);
+    end match;
+  end sliceAttribute;
+
   function boxes
     "splits flat indices (zero based, last dimension fastest) of an array with
      the given sizes into boxes, ordered by their first index"
@@ -670,7 +706,9 @@ public
         end if;
         size_exp := SimplifyExp.simplify(Expression.MULTARY({Util.getOption(stop), Expression.INTEGER(1)}, {Util.getOption(start)}, Operator.makeAdd(Type.INTEGER())));
         dim := match Type.nthDimension(range.ty, 1)
-          case dim as Dimension.RESIZABLE() then Dimension.RESIZABLE(dim.size - (n - (hi - lo + 1)), SOME(hi - lo + 1), size_exp, dim.var);
+          // the bounds keep their distance to the end they are counted from
+          case dim as Dimension.RESIZABLE()
+          then Dimension.RESIZABLE(originalPosition(hi, n, dim.size) - originalPosition(lo, n, dim.size) + 1, SOME(hi - lo + 1), size_exp, dim.var);
           else Dimension.fromInteger(hi - lo + 1);
         end match;
         res := SOME(Expression.RANGE(Type.ARRAY(Type.INTEGER(), {dim}), Util.getOption(start), NONE(), Util.getOption(stop)));
@@ -678,6 +716,15 @@ public
       else ();
     end match;
   end restrictedRange;
+
+  function originalPosition
+    "position p (zero based) of a range with n elements at the analysis sizes for
+     the original size n_orig, counted from the same end as in rangeBound"
+    input Integer p;
+    input Integer n;
+    input Integer n_orig;
+    output Integer p_orig = if p < n - 1 - p then p else n_orig - n + p;
+  end originalPosition;
 
   function rangeBound
     "position p (zero based) of a range with n elements, counted from the nearer end"

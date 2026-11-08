@@ -1,0 +1,63 @@
+// name: resizableSlicedDummyInit
+// keywords: NewBackend resizable index reduction initial equation cat
+// status: correct
+// cflags: --newBackend --resizableArrays
+// teardown_command: rm -f resizableSlicedDummyInit resizableSlicedDummyInit_* resizableSlicedDummyInit.log
+//
+// The initial equations are only active for 1:N-1, the flags are inlined from
+// cat() as init[N] = false for the symbolic N.
+
+loadString("
+model resizableSlicedDummyInit
+  parameter Integer N = 6;
+  parameter Boolean init[N] = cat(1, fill(true, N - 1), {false});
+  parameter Real pSink = 2;
+  Real p[N](each start = 1);
+  Real w[N + 1];
+equation
+  w[1] = 1 + sin(time);
+  for i in 1:N loop
+    der(p[i]) = w[i] - w[i + 1];
+  end for;
+  for i in 1:N - 1 loop
+    w[i + 1] = p[i] - p[i + 1];
+  end for;
+  p[N] = pSink;
+initial equation
+  for i in 1:N loop
+    if init[i] then
+      der(p[i]) = 0;
+    end if;
+  end for;
+end resizableSlicedDummyInit;
+"); getErrorString();
+
+simulate(resizableSlicedDummyInit, stopTime = 1, simflags = "-override=N=9"); getErrorString();
+val(p[1], 1);
+val(p[8], 1);
+val(w[10], 1);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "resizableSlicedDummyInit_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'resizableSlicedDummyInit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=N=9'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: NBResolveSingularities.balanceInitialization reports an overdetermined initialization!
+// Checking for consistency is not yet supported, following equations had to be removed:
+// [FOR-] (4) ($RES_SIM_0)
+// [----] for $i1 in 1:N loop
+// [----]   [-IF-] (1) ($RES_SIM_1)
+// [----]   [----] if init[$i1] then
+// [----]   [----]   [SCAL] (1) $DER.p[$i1] = 0.0; ($RES_SIM_2)
+// [----]   [----] end if;
+// [----] end for;
+// 	slice: {3}
+// "
+// 10.354322696508497
+// 3.0000006851257046
+// 1.0000006851257046
+// endResult
