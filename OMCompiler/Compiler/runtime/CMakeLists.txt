@@ -1,7 +1,3 @@
-if(COMMAND om_windows_fetch_curl)
-  om_windows_fetch_curl()
-endif()
-find_package(CURL REQUIRED)
 # MSVC builds go without gettext and iconv, see systemimpl.h and systemimpl.c.
 if(NOT MSVC)
   find_package(Intl REQUIRED)
@@ -82,7 +78,6 @@ add_library(omc::compiler::runtime ALIAS omcruntime)
 target_sources(omcruntime PRIVATE ${OMC_RUNTIME_SOURCES})
 
 target_link_libraries(omcruntime PUBLIC omc::config)
-target_link_libraries(omcruntime PUBLIC CURL::libcurl)
 target_link_libraries(omcruntime PUBLIC ${Intl_LIBRARIES})
 if(NOT MSVC)
   target_link_libraries(omcruntime PUBLIC Iconv::Iconv)

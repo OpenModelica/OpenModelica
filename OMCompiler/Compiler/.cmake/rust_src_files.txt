@@ -284,6 +284,8 @@ openmodelica_codegen_wasm_jit_runtime/src/standalone.rs
 openmodelica_codegen_wasm_jit_runtime/src/sundials.rs
 openmodelica_codegen_wasm_jit_runtime/src/uri.rs
 openmodelica_codegen_xml/Cargo.toml
+openmodelica_download/Cargo.toml
+openmodelica_download/src/lib.rs
 openmodelica_dump_extra/Cargo.toml
 openmodelica_error/Cargo.toml
 openmodelica_error/src/ErrorExt.rs
@@ -426,7 +428,6 @@ openmodelica_revision/build.rs
 openmodelica_revision/src/lib.rs
 openmodelica_script_util/Cargo.toml
 openmodelica_script_util/src/Curl.rs
-openmodelica_script_util/src/Curl_wasm.rs
 openmodelica_script_util/src/DynLoadExt.rs
 openmodelica_script_util/src/SimulationResults.rs
 openmodelica_script_util/src/UnitParserExt.rs
