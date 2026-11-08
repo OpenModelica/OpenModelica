@@ -1119,14 +1119,22 @@ public
       input MapFuncExpWrapper mapFunc;
     protected
       MapFuncCref funcCref;
+      ComponentRef name;
+      Expression range;
     algorithm
       iter := match iter
         case SINGLE() algorithm
           if isSome(funcCrefOpt) then
             funcCref := Util.getOption(funcCrefOpt);
-            iter.name := funcCref(iter.name);
+            name := funcCref(iter.name);
+            if not referenceEq(name, iter.name) then
+              iter.name := name;
+            end if;
           end if;
-          iter.range := mapFunc(iter.range, funcExp);
+          range := mapFunc(iter.range, funcExp);
+          if not referenceEq(range, iter.range) then
+            iter.range := range;
+          end if;
         then iter;
 
         case NESTED() algorithm
@@ -1704,6 +1712,7 @@ public
           IfEquationBody ifEqBody;
           WhenEquationBody whenEqBody;
           Equation body, new_body;
+          list<Equation> body_lst;
 
         case SCALAR_EQUATION() algorithm
           lhs := mapFunc(eq.lhs, funcExp);
@@ -1758,7 +1767,10 @@ public
           if not referenceEq(iter, eq.iter) then
             eq.iter := iter;
           end if;
-          eq.body := list(map(body_eqn, funcExp, funcCrefOpt, mapFunc) for body_eqn in eq.body);
+          body_lst := List.mapCheckReferenceEq(eq.body, function map(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc));
+          if not referenceEq(body_lst, eq.body) then
+            eq.body := body_lst;
+          end if;
         then eq;
 
         case WHEN_EQUATION() algorithm
@@ -3432,14 +3444,21 @@ public
     protected
       Expression condition;
       IfEquationBody else_if, old_else_if;
+      list<Equation> old_eqns;
+      list<Pointer<Equation>> eqns;
     algorithm
       condition := mapFunc(ifBody.condition, funcExp);
       if not referenceEq(condition, ifBody.condition) then
         ifBody.condition := condition;
       end if;
 
-      // referenceEq for lists?
-      ifBody.then_eqns := List.map(ifBody.then_eqns, func);
+      // func may update the pointers in place, a new list marks the body as changed
+      old_eqns := list(Pointer.access(eqn) for eqn in ifBody.then_eqns);
+      eqns := List.map(ifBody.then_eqns, func);
+      if not (List.allReferenceEq(eqns, ifBody.then_eqns) and
+              List.allReferenceEq(old_eqns, list(Pointer.access(eqn) for eqn in eqns))) then
+        ifBody.then_eqns := eqns;
+      end if;
 
       if isSome(ifBody.else_if) then
         old_else_if := Util.getOption(ifBody.else_if);
@@ -3930,17 +3949,26 @@ public
       input MapFuncExpWrapper mapFunc;
     protected
       Expression condition;
+      list<WhenStatement> stmts;
+      WhenEquationBody else_when, old_else_when;
     algorithm
       condition := mapFunc(whenBody.condition, funcExp);
       if not referenceEq(condition, whenBody.condition) then
         whenBody.condition := condition;
       end if;
 
-      // ToDo reference eq for lists?
-      whenBody.when_stmts := List.map(whenBody.when_stmts, function WhenStatement.map(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc));
+      stmts := List.mapCheckReferenceEq(whenBody.when_stmts, function WhenStatement.map(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc));
+      if not referenceEq(stmts, whenBody.when_stmts) then
+        whenBody.when_stmts := stmts;
+      end if;
 
-      // map else when
-      whenBody.else_when := Util.applyOption(whenBody.else_when, function map(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc));
+      if isSome(whenBody.else_when) then
+        old_else_when := Util.getOption(whenBody.else_when);
+        else_when := map(old_else_when, funcExp, funcCrefOpt, mapFunc);
+        if not referenceEq(else_when, old_else_when) then
+          whenBody.else_when := SOME(else_when);
+        end if;
+      end if;
     end map;
 
     function mapCondition
