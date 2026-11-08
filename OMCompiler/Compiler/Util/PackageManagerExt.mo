@@ -33,40 +33,15 @@
  *
  */
 
-#include <stdlib.h>
-#include "meta/meta_modelica.h"
-#include "errorext.h"
-#include "omcruntime_rust.h"
+encapsulated package PackageManagerExt
+  "The package manager in OpenModelica.rs/openmodelica_package_manager."
 
-static void report(const char *message)
-{
-  c_add_message(NULL, -1, ErrorType_runtime, ErrorLevel_error, "%s", &message, 1);
-}
+function call
+  "The JSON response to a JSON request; see PackageManagement.call."
+  input String request;
+  output String response;
+  external "C" response = om_package_manager(request) annotation(Library = "omcruntime");
+end call;
 
-int om_curl_multi_download(void *urlPathList, int maxParallel)
-{
-  size_t n = listLength(urlPathList), nUrls = 0, i = 0, j = 0;
-  void *l, *u;
-  const char **urls, **files;
-  size_t *counts;
-  int result;
-  for (l = urlPathList; !listEmpty(l); l = MMC_CDR(l)) {
-    nUrls += listLength(MMC_CAR(MMC_CAR(l)));
-  }
-  urls = (const char **) malloc((nUrls + 1) * sizeof(char *));
-  files = (const char **) malloc((n + 1) * sizeof(char *));
-  counts = (size_t *) malloc((n + 1) * sizeof(size_t));
-  for (l = urlPathList; !listEmpty(l); l = MMC_CDR(l), i++) {
-    counts[i] = 0;
-    for (u = MMC_CAR(MMC_CAR(l)); !listEmpty(u); u = MMC_CDR(u)) {
-      urls[j++] = MMC_STRINGDATA(MMC_CAR(u));
-      counts[i]++;
-    }
-    files[i] = MMC_STRINGDATA(MMC_CDR(MMC_CAR(l)));
-  }
-  result = omcrs_download(urls, counts, files, n, maxParallel > 0 ? maxParallel : 1, report);
-  free(urls);
-  free(files);
-  free(counts);
-  return result;
-}
+annotation(__OpenModelica_Interface="script_util");
+end PackageManagerExt;

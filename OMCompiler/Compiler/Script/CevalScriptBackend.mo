@@ -2358,7 +2358,7 @@ algorithm
     case ("getAvailableLibraries",{})
       algorithm
         PackageManagement.installCachedPackages();
-        files := PackageManagement.AvailableLibraries.listKeys(PackageManagement.getInstalledLibraries());
+        files := PackageManagement.getInstalledLibraries();
       then
         ValuesMake.makeArray(List.map(files, ValuesMake.makeString));
 

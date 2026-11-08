@@ -19,7 +19,8 @@ function(omc_runtime_rust_library)
   file(GLOB_RECURSE _rust_srcs CONFIGURE_DEPENDS
        ${_crate}/src/*.rs ${_zip}/src/*.rs
        ${_crate}/../../OpenModelica.rs/openmodelica_wasi/src/*.rs
-       ${_crate}/../../OpenModelica.rs/openmodelica_download/src/*.rs)
+       ${_crate}/../../OpenModelica.rs/openmodelica_download/src/*.rs
+       ${_crate}/../../OpenModelica.rs/openmodelica_package_manager/src/*.rs)
   add_custom_command(
     OUTPUT ${_lib}
     WORKING_DIRECTORY ${_crate}
@@ -27,6 +28,7 @@ function(omc_runtime_rust_library)
     COMMAND ${_env} ${CARGO_EXECUTABLE} ${_cargo_cmd} --release --locked --target-dir ${_target_dir} ${_target_flag}
     DEPENDS ${_rust_srcs} ${_crate}/Cargo.toml ${_crate}/Cargo.lock ${_zip}/Cargo.toml
             ${_crate}/../../OpenModelica.rs/openmodelica_download/Cargo.toml
+            ${_crate}/../../OpenModelica.rs/openmodelica_package_manager/Cargo.toml
     COMMENT "Rust: building libomcruntime_rust"
     VERBATIM)
   add_custom_target(rust_omcruntime DEPENDS ${_lib})

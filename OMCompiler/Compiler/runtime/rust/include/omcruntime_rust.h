@@ -56,10 +56,9 @@ char *omcrs_unzip_all(const char *zipFileName, const char *destPath);
  * and everything below them, are left out, and so is zipFileName itself. */
 char *omcrs_zip_paths(const char *zipFileName, const char *const *paths, const char *const *entryNames, size_t n,
                       const char *const *excludes, size_t nExcludes);
-/* Downloads n files: files[i] from the next urlCounts[i] entries of urls, tried
- * in order. report gets each error message. Returns 1 on success. */
-int omcrs_download(const char *const *urls, const size_t *urlCounts, const char *const *files, size_t n,
-                   size_t maxParallel, void (*report)(const char *message));
+/* The JSON response of the package manager (openmodelica_package_manager) to a
+   JSON request. Free the result with omcrs_free_string. */
+char *omcrs_package_manager(const char *request);
 void omcrs_free_string(char *s);
 
 #ifdef __cplusplus

@@ -56,8 +56,8 @@ set(OMC_RUNTIME_SOURCES
     getMemorySize.c
     OMSimulator_omc.c
     is_utf8.c
-    om_curl.c
     om_zip.c
+    PackageManagerExt_omc.c
     ptolemyio_omc.cpp
     SimulationResults_omc.c
     systemimplmisc.cpp

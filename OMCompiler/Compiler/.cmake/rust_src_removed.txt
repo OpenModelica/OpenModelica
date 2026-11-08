@@ -24,3 +24,4 @@ openmodelica_backend_main/src/ModelInstanceReference.rs
 openmodelica_script_util/src/result_readers.rs
 .cmake/x64-windows-xwin.cmake
 openmodelica_script_util/src/Curl_wasm.rs
+openmodelica_script_util/src/Curl.rs

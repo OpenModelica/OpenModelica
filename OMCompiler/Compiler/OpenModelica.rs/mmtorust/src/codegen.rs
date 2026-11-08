@@ -149,12 +149,12 @@ pub(crate) const HANDWRITTEN_TOP_PACKAGES: &[&str] = &[
     // comparison runtime (`runtime/SimulationResults*.c`); hand-written in
     // `openmodelica_script_util/src/SimulationResults.rs`.
     "SimulationResults",
-    // Single `external "C"` wrapper over `runtime/om_curl.c`; hand-written
-    // over `openmodelica_download` in `openmodelica_script_util/src/Curl.rs`.
-    "Curl",
     // `external "C"` wrappers over `runtime/om_zip.c`; hand-written over
     // `openmodelica_zip` in `openmodelica_script_util/src/Unzip.rs`.
     "Unzip",
+    // `external "C"` wrapper over `runtime/PackageManagerExt_omc.c`; hand-written
+    // over `openmodelica_package_manager` in `openmodelica_script_util/src/PackageManagerExt.rs`.
+    "PackageManagerExt",
     // All bodies but `statusToString` are `external "C"` wrappers over
     // `runtime/OMSimulator_omc.c`, which `dlopen`s libOMSimulator and
     // forwards each `oms_*` call. Hand-written (libc dlopen/dlsym) in

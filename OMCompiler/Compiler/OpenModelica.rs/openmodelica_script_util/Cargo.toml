@@ -20,11 +20,11 @@ arcstr.workspace = true
 loop_unwrap.workspace = true
 match_deref.workspace = true
 openmodelica_zip.workspace = true
-openmodelica_download.workspace = true
+openmodelica_package_manager.workspace = true
 
 [features]
 # Downloads (installPackage, updatePackageIndex) over libcurl. On by default;
-# without it Curl falls back to the stub that only reports a file already on
-# disk, and the build needs neither libcurl nor its TLS/LDAP/SSH dependencies.
+# without it only files already on disk count as downloaded, and the build
+# needs neither libcurl nor its TLS/LDAP/SSH dependencies.
 default = ["curl"]
-curl = ["openmodelica_download/curl"]
+curl = ["openmodelica_package_manager/curl"]
