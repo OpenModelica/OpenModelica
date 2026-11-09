@@ -2521,6 +2521,7 @@ impure function checkAllModelsRecursive
   "Checks all models recursively and returns number of variables and equations."
   input TypeName className;
   input Boolean checkProtected = false "Checks also protected classes if true";
+  input Boolean reportTimes = true "Reports time elapsed for every checked model if true";
   output String result;
 external "builtin";
 annotation(preferredView="text");
