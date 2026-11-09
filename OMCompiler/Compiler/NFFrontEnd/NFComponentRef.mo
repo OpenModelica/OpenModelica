@@ -2427,10 +2427,11 @@ public
 
       case CREF()
         algorithm
-          subs := list(Subscript.mapExp(s, func) for s in cref.subscripts);
+          subs := List.mapCheckReferenceEq(cref.subscripts, function Subscript.mapExp(func = func));
           rest := mapExp(cref.restCref, func);
         then
-          CREF(cref.node, subs, cref.ty, cref.origin, rest);
+          if referenceEq(cref.subscripts, subs) and referenceEq(cref.restCref, rest)
+            then cref else CREF(cref.node, subs, cref.ty, cref.origin, rest);
 
       else cref;
     end match;
