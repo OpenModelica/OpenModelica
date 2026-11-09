@@ -27,17 +27,17 @@ their characteristic:
 +----------+---------+------+------------+----------+----------+-----------+
 | Solver   | Method  | Type | System     | Sparsity | Order    | Step Size |
 +==========+=========+======+============+==========+==========+===========+
-| `DASSL`_ | BDF     | imp. | stiff      | sparse / | adaptive | adaptive  |
-|          |         |      |            | dense    | 1-5      |           |
-+----------+---------+------+------------+----------+----------+-----------+
-| `IDA`_   | BDF     | imp. | stiff      | sparse / | adaptive | adaptive  |
+| `CVODE`_ | BDF     | imp. | stiff      | sparse / | adaptive | adaptive  |
 |          |         |      |            | dense    | 1-5      |           |
 +----------+---------+------+------------+----------+----------+-----------+
 | `CVODE`_ | Adams-  | imp. | non-stiff  | dense    | adaptive | adaptive  |
 |          | Moulton |      |            |          | 1-12     |           |
 +----------+---------+------+------------+----------+----------+-----------+
-| `CVODE`_ | BDF     | imp. | stiff      | dense    | adaptive | adaptive  |
-|          |         |      |            |          | 1-5      |           |
+| `IDA`_   | BDF     | imp. | stiff      | sparse / | adaptive | adaptive  |
+|          |         |      |            | dense    | 1-5      |           |
++----------+---------+------+------------+----------+----------+-----------+
+| `DASSL`_ | BDF     | imp. | stiff      | sparse / | adaptive | adaptive  |
+|          |         |      |            | dense    | 1-5      |           |
 +----------+---------+------+------------+----------+----------+-----------+
 | `GBODE`_ | RK      | exp. | non-stiff  | sparse / | 1-14     | adaptive  |
 |          |         |      |            | dense    |          |           |
@@ -54,12 +54,84 @@ their characteristic:
 A good introduction on this topic may be found in :cite:`Cellier:2006`
 and a more mathematical approach can be found in :cite:`Hairer:1993`.
 
+.. _sundials_cvode :
+
+CVODE
+~~~~~
+
+The CVODE solver is part of sundials: SUite of Nonlinear and
+DIfferential/ALgebraic equation Solvers :cite:`Hindmarsh:2005`.
+CVODE solves initial value problems for ordinary differential equation (ODE)
+systems with variable-order, variable-step multistep methods.
+
+CVODE is the default solver in OpenModelica. It uses the same BDF methods as
+:ref:`dassl` and :ref:`IDA <sundials_ida>`, but it integrates the ODE
+representation that OpenModelica generates directly, without the overhead of a
+DAE formulation. With its sparse linear solver, the time to solve the linear
+systems does not increase with the cube of the number of states, as it does
+for a dense solver. Thus, CVODE is much faster than DASSL for large models.
+
+CVODE and DASSL use different strategies to select the step size and the
+order of the method. At the same tolerance, the results of the two solvers
+are therefore not identical. To get the results of earlier OpenModelica
+versions, select DASSL with ``method="dassl"`` in :ref:`simulate` or with
+``__OpenModelica_simulationFlags(s="dassl")``.
+A model that is compiled in DAE mode (``--daeMode``) is always simulated with
+IDA.
+
+In OpenModelica, CVODE uses a combination of Backward Differentiation
+Formulas (varying order 1 to 5) as linear multi-step method and a modified
+Newton iteration with fixed Jacobian as non-linear solver per default.
+This setting is advised for stiff problems which are very common for Modelica
+models.
+For non-stiff problems an combination of an Adams-Moulton formula (varying
+order 1 to 12) as linear multi-step method together with a fixed-point
+iteration as non-linear solver method can be chosen.
+
+The Newton iteration solves its linear systems with the sparse linear solver
+KLU :cite:`Davis:2010` when the sparsity pattern of the ODE Jacobian is
+available, which is the default (see the compiler flag
+``--generateDynamicJacobian``). The Jacobian is then computed with a colored
+numerical or symbolic method, selected with the
+:ref:`jacobian <simflag-jacobian>` flag. Without a sparsity pattern, CVODE
+uses its internal dense linear solver and a dense difference quotient
+approximation of the Jacobian.
+
+The following simulation flags of :ref:`dassl` are also valid for CVODE:
+:ref:`jacobian <simflag-jacobian>`,
+:ref:`noRootFinding <simflag-norootfinding>`,
+:ref:`initialStepSize <simflag-initialstepsize>`,
+:ref:`maxIntegrationOrder <simflag-maxintegrationorder>`.
+CVODE has the following solver specific flags:
+:ref:`cvodeNonlinearSolverIteration <simflag-cvodeNonlinearSolverIteration>`,
+:ref:`cvodeLinearMultistepMethod <simflag-cvodeLinearMultistepMethod>`.
+
+.. _sundials_ida :
+
+IDA
+~~~
+
+The IDA solver is part of a software family called sundials: SUite of Nonlinear
+and DIfferential/ALgebraic equation Solvers :cite:`Hindmarsh:2005`. The
+implementation is based on DASPK with an extended linear solver interface, which
+includes an interface to the high performance sparse non-lineaer solver KINSOL
+:cite:`Hindmarsh:2005` and linear solver KLU :cite:`Davis:2010`.
+
+The simulation flags of :ref:`dassl` are also valid for the IDA
+solver and furthermore it has the following IDA specific flags:
+:ref:`idaLS <simflag-idaLS>`,
+:ref:`idaMaxNonLinIters <simflag-idaMaxNonLinIters>`,
+:ref:`idaMaxConvFails <simflag-idaMaxConvFails>`,
+:ref:`idaNonLinConvCoef <simflag-idaNonLinConvCoef>`,
+:ref:`idaMaxErrorTestFails <simflag-idaMaxErrorTestFails>`.
+
+
 .. _dassl :
 
 DASSL
 ~~~~~
 
-DASSL is the default solver in OpenModelica, because of a severals reasons. It
+DASSL was the default solver in OpenModelica up to version 1.27. It
 is an implicit, higher order, multi-step solver with a step-size control and
 with these properties it is quite stable for a wide range of models. Furthermore
 it has a mature source code, which was originally developed in the eighties an
@@ -83,54 +155,6 @@ solver for specific simulation problems:
 :ref:`maxStepSize <simflag-maxstepsize>`,
 :ref:`maxIntegrationOrder <simflag-maxintegrationorder>`,
 :ref:`noEquidistantTimeGrid <simflag-noequidistanttimegrid>`.
-
-.. _sundials_ida :
-
-IDA
-~~~
-
-The IDA solver is part of a software family called sundials: SUite of Nonlinear
-and DIfferential/ALgebraic equation Solvers :cite:`Hindmarsh:2005`. The
-implementation is based on DASPK with an extended linear solver interface, which
-includes an interface to the high performance sparse non-lineaer solver KINSOL
-:cite:`Hindmarsh:2005` and linear solver KLU :cite:`Davis:2010`.
-
-The simulation flags of :ref:`dassl` are also valid for the IDA
-solver and furthermore it has the following IDA specific flags:
-:ref:`idaLS <simflag-idaLS>`,
-:ref:`idaMaxNonLinIters <simflag-idaMaxNonLinIters>`,
-:ref:`idaMaxConvFails <simflag-idaMaxConvFails>`,
-:ref:`idaNonLinConvCoef <simflag-idaNonLinConvCoef>`,
-:ref:`idaMaxErrorTestFails <simflag-idaMaxErrorTestFails>`.
-
-
-.. _sundials_cvode :
-
-CVODE
-~~~~~
-
-The CVODE solver is part of sundials: SUite of Nonlinear and
-DIfferential/ALgebraic equation Solvers :cite:`Hindmarsh:2005`.
-CVODE solves initial value problems for ordinary differential equation (ODE)
-systems with variable-order, variable-step multistep methods.
-
-In OpenModelica, CVODE uses a combination of Backward Differentiation
-Formulas (varying order 1 to 5) as linear multi-step method and a modified
-Newton iteration with fixed Jacobian as non-linear solver per default.
-This setting is advised for stiff problems which are very common for Modelica
-models.
-For non-stiff problems an combination of an Adams-Moulton formula (varying
-order 1 to 12) as linear multi-step method together with a fixed-point
-iteration as non-linear solver method can be chosen.
-
-Both non-linear solver methods are internal functions of CVODE and use its
-internal direct dense linear solver CVDense.
-For the Jacobian of the ODE CVODE will use its internal dense difference
-quotient approximation.
-
-CVODE has the following solver specific flags:
-:ref:`cvodeNonlinearSolverIteration <simflag-cvodeNonlinearSolverIteration>`,
-:ref:`cvodeLinearMultistepMethod <simflag-cvodeLinearMultistepMethod>`.
 
 GBODE
 ~~~~~

@@ -229,7 +229,7 @@ void SimulationDialog::setUpForm()
   mpOptionsGroupBox = new QGroupBox(Helper::options);
   // no root finding
   mpRootFindingCheckBox = new QCheckBox(tr("Root Finding"));
-  mpRootFindingCheckBox->setToolTip(tr("Activates the internal root finding procedure of methods: dassl and ida."));
+  mpRootFindingCheckBox->setToolTip(tr("Activates the internal root finding procedure of methods: dassl, ida and cvode."));
   // no restart
   mpRestartAfterEventCheckBox = new QCheckBox(tr("Restart After Event"));
   mpRestartAfterEventCheckBox->setToolTip(tr("Activates the restart of the integration method after an event is performed, used by the methods: dassl, ida"));
@@ -2351,13 +2351,17 @@ void SimulationDialog::intervalRadioToggled(bool toggle)
 void SimulationDialog::enableDisableOptions(int index)
 {
   const QString method = mpMethodComboBox->itemText(index);
-  if (method.compare(QStringLiteral("dassl")) == 0 || method.compare(QStringLiteral("ida")) == 0 || method.compare(QStringLiteral("gbode")) == 0) {
+  if (method.compare(QStringLiteral("dassl")) == 0 || method.compare(QStringLiteral("ida")) == 0
+      || method.compare(QStringLiteral("cvode")) == 0 || method.compare(QStringLiteral("gbode")) == 0) {
     mpOptionsGroupBox->setEnabled(true);
-    mpEquidistantTimeGridCheckBox->setEnabled(true);
     // gbode doesn't handle following options yet
     bool isGbode = method.compare(QStringLiteral("gbode")) == 0;
+    bool isCvode = method.compare(QStringLiteral("cvode")) == 0;
+    mpEquidistantTimeGridCheckBox->setEnabled(!isCvode);
     mpRootFindingCheckBox->setEnabled(!isGbode);
-    mpRestartAfterEventCheckBox->setEnabled(!isGbode);
+    mpRestartAfterEventCheckBox->setEnabled(!isGbode && !isCvode);
+    mpMaxStepSizeLabel->setEnabled(!isCvode);
+    mpMaxStepSizeTextBox->setEnabled(!isCvode);
     mpMaxIntegrationOrderSpinBox->setEnabled(!isGbode);
   } else {
     mpOptionsGroupBox->setEnabled(false);

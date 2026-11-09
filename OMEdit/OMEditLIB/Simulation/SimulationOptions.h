@@ -62,7 +62,7 @@ public:
     setInteractiveSimulation(false);
     setInteractiveSimulationWithSteps(false);
     setInteractiveSimulationPortNumber(4841);
-    setMethod("dassl");
+    setMethod("cvode");
     setTolerance("1e-6");
     setJacobian("");
     setRootFinding(true);

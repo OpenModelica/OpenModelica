@@ -1367,9 +1367,9 @@ const char *SOLVER_METHOD_NAME[S_MAX] = {
 
 const char *SOLVER_METHOD_DESC[S_MAX] = {
   /* S_UNKNOWN = 0 */   "unknown",
-  /* S_DASSL */         "dassl (default) - BDF method - implicit (dense solver), variable step size control, adaptive order 1-5, event location",
+  /* S_DASSL */         "dassl - BDF method - implicit (dense solver), variable step size control, adaptive order 1-5, event location",
   /* S_IDA */           "ida - SUNDIALS IDA solver - BDF method - implicit (sparse/dense solver, default sparse) variable step size control, adaptive order 1-5, event location - additional simulation flags: -idaMaxErrorTestFails -idaMaxNonLinIters -idaMaxConvFails -idaNonLinConvCoef -idaLS -idaScaling -idaSensitivity",
-  /* S_CVODE */         "cvode - SUNDIALS CVODE solver - BDF or Adams-Moulton solver - implicit (dense solver), variable step-size control, adaptive order 1-12, event location - additional simulation flags -cvodeLinearMultistepMethod -cvodeNonlinearSolverIteration",
+  /* S_CVODE */         "cvode (default) - SUNDIALS CVODE solver - BDF or Adams-Moulton solver - implicit (sparse/dense solver, default sparse), variable step-size control, adaptive order 1-12, event location - additional simulation flags -cvodeLinearMultistepMethod -cvodeNonlinearSolverIteration",
   /* S_GBODE */         "gbode - generic Runge-Kutta ODE solver - implicit (sparse solver)/explicit, fixed/variable step size control, order 1-14, event location, optional bi-rate integration - additional simulation flags -gbm -gbctrl -gbratio - additional advanced flags -gbctrl_filter -gbctrl_fhr -gberr -gbint -gbnls -gbfm -gbfctrl -gbferr -gbfint -gbfnls",
   /* S_EULER */         "euler - explicit Euler, fixed step size, order 1",
   /* S_RUNGEKUTTA */    "rungekutta - classical Runge-Kutta, shorthand for gbode with -gbm=rungekutta - explicit, order 4",

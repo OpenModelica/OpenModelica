@@ -42,7 +42,7 @@ Use `plot(x)` to plot the diagram using OMPlot.
 
 By re-simulating and saving results at many more points, for example using the
 default 500 intervals, a much smoother plot can be obtained.
-Note that the default solver method dassl has more internal points than the output points in the initial plot.
+Note that the default solver method cvode has more internal points than the output points in the initial plot.
 The results are identical, except the detailed plot has a smoother curve.
 
 .. omc-mos ::

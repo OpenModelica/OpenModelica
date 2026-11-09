@@ -1108,7 +1108,7 @@ partial function simulationArguments
   input Integer numberOfIntervals = -1 "number of intervals in the result file. <default> = 500";
   input Real stepSize = nan() "step size that is used for the result file; overrides numberOfIntervals. <default> = 0.002";
   input Real tolerance = nan() "tolerance used by the integration method. <default> = 1e-6";
-  input String method = "<default>" "integration method used for simulation. <default> = dassl";
+  input String method = "<default>" "integration method used for simulation. <default> = cvode";
   input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
   input String options = "<default>" "options. <default> = \"\"";
   input String outputFormat = "<default>" "Format for the result file. <default> = \"mat\"";
@@ -2956,7 +2956,7 @@ impure function buildLabel
   input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
   input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
   input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
-  input String method = "dassl" "integration method used for simulation. <default> = dassl";
+  input String method = "cvode" "integration method used for simulation. <default> = cvode";
   input String fileNamePrefix = "" "fileNamePrefix. <default> = \"\"";
   input String options = "" "options. <default> = \"\"";
   input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
@@ -2975,7 +2975,7 @@ impure function reduceTerms
   input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
   input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
   input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
-  input String method = "dassl" "integration method used for simulation. <default> = dassl";
+  input String method = "cvode" "integration method used for simulation. <default> = cvode";
   input String fileNamePrefix = "" "fileNamePrefix. <default> = \"\"";
   input String options = "" "options. <default> = \"\"";
   input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";

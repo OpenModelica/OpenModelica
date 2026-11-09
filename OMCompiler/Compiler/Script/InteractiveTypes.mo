@@ -52,7 +52,7 @@ uniontype SimulationOptions "these are the simulation/buildModel* options"
     DAE.Exp numberOfIntervals "number of intervals, default 500";
     DAE.Exp stepSize "stepSize, default (stopTime-startTime)/numberOfIntervals";
     DAE.Exp tolerance "tolerance, default 1e-6";
-    DAE.Exp method "method, default 'dassl'";
+    DAE.Exp method "method, default 'cvode'";
     DAE.Exp fileNamePrefix "file name prefix, default ''";
     DAE.Exp options "options, default ''";
     DAE.Exp outputFormat "output format, default 'plt'";
