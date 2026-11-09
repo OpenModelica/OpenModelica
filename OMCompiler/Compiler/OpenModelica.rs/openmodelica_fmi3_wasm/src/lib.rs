@@ -295,6 +295,25 @@ const UNKNOWN_MODEL_FN: &str = "fmi3-me: unknown model function";
 /// `model terminate`), as the standalone driver's reporting also assumes.
 /// A call that ends on a trap: the `assert()` behind it goes to the logger (C's
 /// `omc_assert_fmi`), anything else to [`err_status`].
+/// [`event_update`], where `dae` (the DAE metadata of a `--daeMode` model in ODE
+/// mode) solves for `x'` and `z` after every pass of the event iteration.
+fn event_update_ode(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &Layout,
+    samples: Option<&mut Samples>,
+    time: f64,
+    dae: Option<&openmodelica_sim_meta::DaeInfo>,
+) -> driver::Result<EventUpdate> {
+    match dae {
+        Some(dae) => {
+            let mut solve = |e: &mut dyn SimEngine| dae_solve_explicit(e, sim_data, layout, dae);
+            driver::event_update_dae(e, sim_data, layout, samples, time, Some(&mut solve))
+        }
+        None => event_update(e, sim_data, layout, samples, time),
+    }
+}
+
 fn failed<E: SimEngine>(e: &mut E, sim_data: u32, err: &'static str) -> Status {
     if let Some(pa) = e.take_pending_assert() {
         let (info, cond) = driver::assert_info(e, &pa);
@@ -1318,6 +1337,17 @@ impl<E: FmiHost + 'static> MeState<E> {
             ticked = r?;
         }
 
+        // ODE mode of a `--daeMode` model: `x'` and `z` come from the explicit solve,
+        // so every pass of the event iteration ends with one, as C's
+        // `fmuDAEModeEventUpdate` (and `ida_event_update` for IDA) has it. A when
+        // condition on `z` that the event changes then fires in the same event. In
+        // DAE mode the importer owns them.
+        let dae_ode = if layout.compiled_dae_mode && layout.dae_mode() && !self.dae_mode {
+            self.meta.dae.as_ref()
+        } else {
+            None
+        };
+
         // The CS driver owns the instance's clock schedule and fires the timers
         // itself, so `fmi_handle_timers` below must not fire them a second time.
         #[cfg(feature = "cs")]
@@ -1328,14 +1358,28 @@ impl<E: FmiHost + 'static> MeState<E> {
             (d.do_event_update(&mut self.engine, meta, time)?, true, due)
         } else {
             (
-                event_update(&mut self.engine, sim_data, &layout, self.samples.as_mut(), time)?,
+                event_update_ode(
+                    &mut self.engine,
+                    sim_data,
+                    &layout,
+                    self.samples.as_mut(),
+                    time,
+                    dae_ode,
+                )?,
                 false,
                 sample_due,
             )
         };
         #[cfg(not(feature = "cs"))]
         let (up, clocks_handled, fired) = (
-            event_update(&mut self.engine, sim_data, &layout, self.samples.as_mut(), time)?,
+            event_update_ode(
+                &mut self.engine,
+                sim_data,
+                &layout,
+                self.samples.as_mut(),
+                time,
+                dae_ode,
+            )?,
             false,
             sample_due,
         );
@@ -2054,6 +2098,14 @@ macro_rules! shared_instance_methods {
         };
         if let Err(err) = settled {
             return Err(failed(&mut st.engine, sim_data, err));
+        }
+        // A `--daeMode` model gets `x'` and `z` only from the explicit solve, which the
+        // event update does not run: the next getter solves at the new discrete
+        // values, as C's `internalEventUpdate` has it (`_need_update`,
+        // `DAE_MODE_CHANGED`). Otherwise it returns the `x'` from before the event.
+        if layout.compiled_dae_mode {
+            st.need_update = true;
+            st.dae_current = false;
         }
         Ok(DiscreteStatesInfo {
             new_discrete_states_needed: false,

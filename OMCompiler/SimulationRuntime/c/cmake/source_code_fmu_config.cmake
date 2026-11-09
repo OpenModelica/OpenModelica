@@ -493,9 +493,21 @@ endforeach()
 list(JOIN SOURCE_FMU_SUNDIALS_FILES_LIST_QUOTED ",\n                                                  " SOURCE_FMU_SUNDIALS_FILES)
 
 ######################################################################################################################
-## IDA files, for a --daeMode Co-Simulation FMU
-set(SOURCE_FMU_IDA_RUNTIME_FILES_LIST simulation/solver/dae_mode.c
-                                      simulation/solver/ida_solver.c)
+## DAE-mode files, for an FMU of a --daeMode model: the residual form, and solving it for der(x) and the
+## algebraic variables in fmi-ls-dae's ODE mode
+set(SOURCE_FMU_DAE_MODE_RUNTIME_FILES_LIST simulation/solver/dae_mode.c)
+
+foreach(source_file ${SOURCE_FMU_DAE_MODE_RUNTIME_FILES_LIST})
+  list(APPEND SOURCE_FMU_DAE_MODE_RUNTIME_FILES_LIST_QUOTED "\"${source_file}\"")
+  get_filename_component(DEST_DIR ${source_file} DIRECTORY)
+  install(FILES ${source_file}
+          DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR})
+endforeach()
+list(JOIN SOURCE_FMU_DAE_MODE_RUNTIME_FILES_LIST_QUOTED ",\n                                                     " SOURCE_FMU_DAE_MODE_RUNTIME_FILES)
+
+######################################################################################################################
+## IDA files, for the Co-Simulation part of an FMU of a --daeMode model, which integrates the residual form with IDA
+set(SOURCE_FMU_IDA_RUNTIME_FILES_LIST simulation/solver/ida_solver.c)
 
 foreach(source_file ${SOURCE_FMU_IDA_RUNTIME_FILES_LIST})
   list(APPEND SOURCE_FMU_IDA_RUNTIME_FILES_LIST_QUOTED "\"${source_file}\"")
