@@ -1857,6 +1857,15 @@ algorithm
   end match;
 end reduceEqSystem;
 
+public function outputDerivativeCref
+  "The variable $y_der that introduceOutputRealDerivatives adds for output y."
+  input DAE.ComponentRef outputCref;
+  output DAE.ComponentRef derCref;
+algorithm
+  derCref := ComponentReference.appendStringLastIdent("_der", outputCref);
+  derCref := ComponentReference.prependStringCref("$", derCref);
+end outputDerivativeCref;
+
 public function introduceOutputRealDerivatives
 "Find output variables of Real type and replace them with derivative equation
  (e.g) output Real y;
@@ -1876,8 +1885,7 @@ algorithm
   newEqnlst := {};
   for var in BackendVariable.varList(currentSystem.orderedVars) loop
     if BackendVariable.isOutputVar(var) and BackendVariable.isRealVar(var) then
-      newCref := ComponentReference.appendStringLastIdent("_der", var.varName); // append _der
-      newCref := ComponentReference.prependStringCref("$", newCref); // prepend $
+      newCref := outputDerivativeCref(var.varName);
       daeVarsLst := BackendVariable.makeVar(newCref) :: daeVarsLst;
       lhs := Expression.crefExp(newCref);
       rhs := IndexReduction.makeder(BackendVariable.varExp(var));
@@ -7977,6 +7985,9 @@ algorithm
     dae := BackendDAEOptimize.evaluateOutputsOnly(dae);
     execStat("evaluateOutputsOnly (n=" + intString(oldSize) + " -> n=" + intString(daeSize(dae)) + ")");
   end if;
+
+  // der(input) needed only for the output derivatives of a Co-Simulation FMU
+  dae := SymbolicJacobian.zeroInputDerivativesOfOutputDerivatives(dae);
 
   //generate Jacobian for StateSets for initial state selection
   Error.checkCancel();

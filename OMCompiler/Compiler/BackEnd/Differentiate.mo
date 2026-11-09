@@ -1191,6 +1191,18 @@ algorithm
       then
         (zero, inFunctionTree);
 
+    // Top-level inputs are known variables, but not constant in time:
+    // d(u)/dt = der(u). inputDerivativesUsed reports it later if it is still
+    // needed.
+    case ((e as DAE.CREF(componentRef = cr, ty = tp)), _, BackendDAE.DIFFINPUTDATA(knownVars=SOME(knvars)), BackendDAE.DIFFERENTIATION_TIME())
+      guard Types.isRealOrSubTypeReal(Types.arrayElementType(tp))
+      algorithm
+        (var,_) := BackendVariable.getVarSingle(cr, knvars);
+        true := BackendVariable.isVarOnTopLevelAndInput(var);
+        res := DAE.CALL(Absyn.IDENT("der"),{e},DAE.CALL_ATTR(tp,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS));
+      then
+        (res, inFunctionTree);
+
     // d(discrete)/d(x) = 0
     case ((DAE.CREF(componentRef = cr,ty = tp)), _, BackendDAE.DIFFINPUTDATA(allVars=SOME(timevars)), BackendDAE.DIFFERENTIATION_TIME())
       algorithm

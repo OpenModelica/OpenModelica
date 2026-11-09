@@ -4470,6 +4470,7 @@ algorithm
       Integer index,eindx;
      /* der(var), change algebraic to states */
      case (e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,ilst,eindx,mapIncRowEqn,mt))
+      guard BackendVariable.containsCref(cr, vars)
       algorithm
         (varlst,changedVars) := BackendVariable.getVar(cr,vars);
         (vars,ilst) := algebraicState(varlst,changedVars,vars,ilst);
@@ -4477,6 +4478,7 @@ algorithm
         (e, (vars,eqns,ilst,eindx,mapIncRowEqn,mt));
     /* der(der(var)), set differentiation counter = 2 */
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {e as DAE.CREF(componentRef = cr)})}),(vars,eqns,ilst,eindx,mapIncRowEqn,mt))
+      guard BackendVariable.containsCref(cr, vars)
       algorithm
         (varlst,changedVars) := BackendVariable.getVar(cr,vars);
         (vars,ilst) := increaseDifferentiation(varlst,changedVars,2,vars,ilst);
@@ -4484,11 +4486,14 @@ algorithm
         (DAE.CALL(Absyn.IDENT("der"),{e,DAE.ICONST(2)},DAE.callAttrBuiltinReal), (vars,eqns,ilst,eindx,mapIncRowEqn,mt));
     /* der(var,index), set differentiation counter = index+1 */
     case (e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr),DAE.ICONST(index)}),(vars,eqns,ilst,eindx,mapIncRowEqn,mt))
+      guard BackendVariable.containsCref(cr, vars)
       algorithm
         (varlst,changedVars) := BackendVariable.getVar(cr,vars);
         (vars,ilst) := increaseDifferentiation(varlst,changedVars,index,vars,ilst);
       then
         (e, (vars,eqns,ilst,eindx,mapIncRowEqn,mt));
+    // der() of a cref that is not a variable of the system, e.g. of a
+    // top-level input: keep it, inputDerivativesUsed reports it later.
     else (inExp,inTpl);
   end match;
 end changeDerVariablesToStatesFinder;
