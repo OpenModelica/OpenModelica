@@ -12432,8 +12432,6 @@ else
     tmpInitialUnknowns := {};
     tmpInitialUnknowns := List.filterCons(allOutputVars, isInitialApproxOrCalculatedSimVar, tmpInitialUnknowns);
     tmpInitialUnknowns := List.filterCons(getScalarVars(getAllParamSimVars(inModelInfo)), isCausalityCalculatedParameterSimVar, tmpInitialUnknowns);
-    // A continuous state with a fixed start value has initial = exact (a known),
-    // so it is not an initial unknown; an unfixed start makes it initial = approx.
     tmpInitialUnknowns := List.filterCons(getScalarVars(inModelInfo.vars.stateVars), isStateInitialUnknownSimVar, tmpInitialUnknowns);
     tmpInitialUnknowns := List.filterCons(getScalarVars(inModelInfo.vars.derivativeVars), isInitialApproxOrCalculatedSimVar, tmpInitialUnknowns);
     allInitialUnknowns := List.sort(fmiUnknownsWithoutDependencies(tmpInitialUnknowns), fmiUnknownIndexGt);
@@ -12560,15 +12558,14 @@ algorithm
 end isInitialApproxOrCalculatedSimVar;
 
 protected function isStateInitialUnknownSimVar
-  "A continuous-time state is an FMI initial unknown unless its start value is
-   fixed: a fixed start makes the state initial = exact (a known), an unfixed
-   start makes it initial = approx (an unknown). This mirrors the initial
-   attribute emitted for states by the FMI templates."
+  "A continuous-time state is an FMI initial unknown unless it is initial =
+   exact, see SimCodeCodegenUtil.fmi3StateInitial."
   input SimCodeVar.SimVar simVar;
   output Boolean outBoolean;
 algorithm
   outBoolean := match simVar
-    case SimCodeVar.SIMVAR(varKind = BackendDAE.STATE()) then not simVar.isFixed;
+    case SimCodeVar.SIMVAR(varKind = BackendDAE.STATE())
+      then isInitialApproxOrCalculated(SimCodeCodegenUtil.fmi3StateInitial(simVar));
     else isInitialApproxOrCalculatedSimVar(simVar);
   end match;
 end isStateInitialUnknownSimVar;
@@ -13430,10 +13427,7 @@ algorithm
   iu := {};
   iu := List.filterCons(modelInfo.vars.outputVars, isInitialApproxOrCalculatedSimVar, iu);
   iu := List.filterCons(getAllParamSimVars(modelInfo), isCausalityCalculatedParameterSimVar, iu);
-  // A continuous state with a fixed start value has initial = exact (a known),
-  // so it is not an initial unknown. The fixed attribute is used instead of
-  // initial_ because the non-scalarized array backend does not populate
-  // initial_ for states (see FmiInitialAttribute3 in CodegenFMU3.tpl).
+  // The non-scalarized array backend does not populate initial_ for states.
   iu := List.filterCons(modelInfo.vars.stateVars, isStateInitialUnknownSimVar, iu);
   iu := List.filterCons(modelInfo.vars.derivativeVars, isInitialApproxOrCalculatedSimVar, iu);
   initialUnknowns := List.sort(fmiUnknownsWithoutDependencies(iu), fmiUnknownIndexGt);

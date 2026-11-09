@@ -1643,6 +1643,16 @@ package SimCodeCodegenUtil
     output String out;
   end getFMI3ArrayStart;
 
+  function getFMI3StateInitialStr
+    input SimCodeVar.SimVar var;
+    output String str;
+  end getFMI3StateInitialStr;
+
+  function getFMI3StateStart
+    input SimCodeVar.SimVar var;
+    output String out;
+  end getFMI3StateStart;
+
   function fmuExternalLibraries
     input list<String> libs;
     output list<String> names;

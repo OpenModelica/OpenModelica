@@ -14,6 +14,7 @@ fmi3_import_discrete_inputs.mos \
 fmi3_arrays_approx.mos \
 fmi3_arrays_start_vector.mos \
 fmi3_attributes_01.mos \
+fmi3_attributes_02.mos \
 fmi3_binary_extobj.mos \
 fmi3_builddescription.mos \
 fmi3_c_daemode_me.mos \
