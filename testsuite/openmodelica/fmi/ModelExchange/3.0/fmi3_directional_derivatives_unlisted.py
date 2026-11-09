@@ -1,7 +1,8 @@
 import sys
 
 from fmpy import extract, read_model_description
-from fmpy.fmi3 import FMU3Model
+from fmpy.fmi1 import FMICallException
+from fmpy.fmi3 import FMU3Model, fmi3Error
 
 name, out = sys.argv[1:3]
 md = read_model_description(name + ".fmu")
@@ -20,7 +21,9 @@ def directional(unknowns, knowns):
     try:
         return fmu.getDirectionalDerivative([vr[u] for u in unknowns], [vr[k] for k in knowns],
                                             [1.0] * len(knowns))
-    except Exception:
+    except FMICallException as e:
+        if e.function != "fmi3GetDirectionalDerivative" or e.status != fmi3Error:
+            raise
         return "error"
 
 
