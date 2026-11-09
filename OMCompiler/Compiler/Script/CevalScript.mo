@@ -269,9 +269,9 @@ algorithm
     cdWorkingDir := if stringEmpty(workingDir) then "" else ("cd \"" + workingDir + "\"&& ");
     winCompileMode := if Testsuite.isRunning() then "serial" else "parallel";
     if Flags.getConfigEnum(Flags.LINK_TYPE) == 1 then
-      linkType := "static";
-    elseif Flags.getConfigEnum(Flags.LINK_TYPE) == 2 then
       linkType := "dynamic";
+    elseif Flags.getConfigEnum(Flags.LINK_TYPE) == 2 then
+      linkType := "static";
     end if;
     linkType := if Testsuite.isRunning() then "dynamic" else linkType;
     s_call := stringAppendList({omhome,cdWorkingDir,setMakeVars,"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""," ",fileprefix," ",Config.simulationCodeTarget()," ", System.openModelicaPlatform(), " ", winCompileMode, " ", linkType});
