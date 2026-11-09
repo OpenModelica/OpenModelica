@@ -139,35 +139,35 @@
     <name>ArrayParameterEditorDialog</name>
     <message>
         <source>%1 - %2 %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - %2 %3</translation>
     </message>
     <message>
         <source>Rows:</source>
-        <translation type="unfinished"></translation>
+        <translation>Righe:</translation>
     </message>
     <message>
         <source>Columns:</source>
-        <translation type="unfinished"></translation>
+        <translation>Colonne:</translation>
     </message>
     <message>
         <source>Expression:</source>
-        <translation type="unfinished"></translation>
+        <translation>Espressione:</translation>
     </message>
     <message>
         <source>Delete 1 row</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina 1 riga</translation>
     </message>
     <message>
         <source>Delete %1 rows</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina %1 righe</translation>
     </message>
     <message>
         <source>Delete 1 column</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina 1 colonna</translation>
     </message>
     <message>
         <source>Delete %1 columns</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina %1 colonne</translation>
     </message>
 </context>
 <context>
@@ -2957,7 +2957,7 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
     </message>
     <message>
         <source>Edit Array</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica array</translation>
     </message>
     <message>
         <source>Save a file</source>
@@ -6578,7 +6578,7 @@ Impostare l&apos;eseguibile Python in cui è installato omuq in Strumenti &gt; O
     </message>
     <message>
         <source>Edit array</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica array</translation>
     </message>
     <message>
         <source>Unable to find the redeclare class.</source>
@@ -7962,18 +7962,6 @@ Può causare un elevato overhead, ma nessun valore viene perso.</translation>
     <message>
         <source>Method</source>
         <translation>Metodo</translation>
-    </message>
-    <message>
-        <source>Add</source>
-        <translation>Aggiungi</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation>Rimuovi</translation>
-    </message>
-    <message>
-        <source>Edit</source>
-        <translation>Modifica</translation>
     </message>
     <message>
         <source>Solver Configurations</source>
