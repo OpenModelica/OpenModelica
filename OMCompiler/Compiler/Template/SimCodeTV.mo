@@ -1900,6 +1900,12 @@ package SimCodeCodegenUtil
     output Integer vr;
   end lookupVR;
 
+  function sortedValueReferences
+    input list<tuple<Integer, DAE.ComponentRef>> crefs;
+    input SimCode.SimCode simCode;
+    output list<tuple<Integer, Integer>> vrIndexes;
+  end sortedValueReferences;
+
   function isFMUSimCode
     input SimCode.SimCode simCode;
     output Boolean isFMU;
