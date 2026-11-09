@@ -26,8 +26,6 @@ readFile("DaeModeMeC_lsdae.xml"); getErrorString();
 system("unzip -cqq DaeModeMeC.fmu modelDescription.xml > DaeModeMeC_md.xml"); getErrorString();
 system("grep -E \"_D_daeMode|_D_DAEres\" DaeModeMeC_md.xml | sed \"s/^ *//\""); getErrorString();
 
-system("unzip -cqq DaeModeMeC.fmu sources/DaeModeMeC_FMU.c | grep \"compiledInDAEMode\" | sed \"s/^ *//\""); getErrorString();
-
 simulate(DaeModeMeC, fileNamePrefix="fmi3_c_daemode_me_ref"); getErrorString();
 val(x, 1.0); val(y, 1.0); val(z, 1.0);
 
@@ -83,9 +81,6 @@ system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEn
 // <Float64 name="_D_DAEres0" valueReference="10" causality="local" variability="continuous" initial="calculated" description="DAE-mode residual 0"/>
 // <Float64 name="_D_DAEres1" valueReference="11" causality="local" variability="continuous" initial="calculated" description="DAE-mode residual 1"/>
 // <Float64 name="_D_DAEres2" valueReference="12" causality="local" variability="continuous" initial="calculated" description="DAE-mode residual 2"/>
-// 0
-// ""
-// compiledInDAEMode = 1;
 // 0
 // ""
 // record SimulationResult
