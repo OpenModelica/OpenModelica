@@ -61,18 +61,18 @@ function checkModel
   input FlatModel flatModel;
   output Expression variables;
   output Expression equations;
-  output Integer simpleEquations = 0;
+  output Expression simpleEquations;
 protected
-  Integer vars = 0, eqs = 0;
-  list<Expression> var_exps = {}, eq_exps = {};
+  Integer vars = 0, eqs = 0, simple_eqs = 0;
+  list<Expression> var_exps = {}, eq_exps = {}, simple_eqs_exps = {};
 algorithm
   for v in flatModel.variables loop
-    (vars, var_exps, eqs, eq_exps, simpleEquations) :=
-      countVariableSize(v, vars, var_exps, eqs, eq_exps, simpleEquations);
+    (vars, var_exps, eqs, eq_exps, simple_eqs, simple_eqs_exps) :=
+      countVariableSize(v, vars, var_exps, eqs, eq_exps, simple_eqs, simple_eqs_exps);
   end for;
 
   (eqs, eq_exps) := Equation.sizeOfListSymbolic(flatModel.equations, eqs, eq_exps);
-  simpleEquations := simpleEquations + countSimpleEquations(flatModel.equations);
+  (simple_eqs, simple_eqs_exps) := countSimpleEquations(flatModel.equations, simple_eqs, simple_eqs_exps);
 
   for a in flatModel.algorithms loop
     eqs := eqs + countAlgorithmSize(a);
@@ -80,6 +80,7 @@ algorithm
 
   variables := makeSum(vars, var_exps);
   equations := makeSum(eqs, eq_exps);
+  simpleEquations := makeSum(simple_eqs, simple_eqs_exps);
 end checkModel;
 
 function countVariableSize
@@ -89,6 +90,7 @@ function countVariableSize
   input output Integer equations;
   input output list<Expression> equationsExps;
   input output Integer simpleEquations;
+  input output list<Expression> simpleEquationsExps;
 protected
   Type ty;
   Binding binding;
@@ -121,6 +123,7 @@ algorithm
     if Binding.hasExp(binding) and
        isSimpleEquation(Expression.CREF(ty, var.name), Binding.getExp(binding), ty) then
       simpleEquations := simpleEquations + binding_size;
+      simpleEquationsExps := listAppend(binding_exps, simpleEquationsExps);
     end if;
   end if;
 end countVariableSize;
@@ -207,20 +210,26 @@ end statementOutputCrefFinder2;
 
 function countSimpleEquations
   input list<Equation> eqs;
-  output Integer simpleEquations = 0;
+  input output Integer simpleEquations = 0;
+  input output list<Expression> simpleEquationsExps = {};
 algorithm
   for eq in eqs loop
-    simpleEquations := simpleEquations + countSimpleEquation(eq);
+    (simpleEquations, simpleEquationsExps) :=
+      countSimpleEquation(eq, simpleEquations, simpleEquationsExps);
   end for;
 end countSimpleEquations;
 
 function countSimpleEquation
   input Equation eq;
-  output Integer simpleEquations;
+  input output Integer simpleEquations;
+  input output list<Expression> simpleEquationsExps;
 algorithm
-  simpleEquations := match eq
-    case Equation.EQUALITY() guard isSimpleEquation(eq.lhs, eq.rhs, eq.ty) then Type.sizeOf(eq.ty);
-    else 0;
+  (simpleEquations, simpleEquationsExps) := match eq
+    case Equation.EQUALITY()
+      guard isSimpleEquation(eq.lhs, eq.rhs, eq.ty)
+      then Type.sizeOfSymbolic(eq.ty, simpleEquations, simpleEquationsExps);
+
+    else (simpleEquations, simpleEquationsExps);
   end match;
 end countSimpleEquation;
 
@@ -276,7 +285,7 @@ algorithm
 
     // Any equation involving only one unknown.
     case (_, _)
-      guard Type.isReal(ty) or Type.isInteger(ty) or Type.isEnumeration(ty)
+      guard Type.isNumeric(ty) or Type.isEnumeration(Type.arrayElementType(ty))
       algorithm
         crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
         crefs := Expression.fold(lhs, countUnknowns_traverser, crefs);
@@ -346,7 +355,7 @@ algorithm
           comp := InstNode.component(node);
 
           if Component.variability(comp) >= Variability.DISCRETE and
-             not (Component.isInput(comp) and ComponentRef.isTopLevel(exp.cref)) then
+            not (Component.isInput(comp) and InstNode.isPublic(node) and ComponentRef.isTopLevel(exp.cref)) then
             UnorderedSet.add(exp.cref, crefs);
           end if;
         end if;

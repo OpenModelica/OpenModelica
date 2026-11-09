@@ -26,6 +26,6 @@ getErrorString();
 // true
 // "Check of M completed successfully.
 // Class M has 2*m + 2*n equation(s) and 3 + 3*m + 2*n variable(s).
-// 0 of these are trivial equation(s)."
+// 2*m + 2*n of these are trivial equation(s)."
 // ""
 // endResult

@@ -1,0 +1,24 @@
+// name: CheckModel6
+// keywords:
+// status: correct
+//
+
+loadString("
+  model M
+    Real x[1];
+    parameter Real y = 1.0;
+  equation
+    x = {der(y)};
+  end M;
+");
+
+checkModel(M);
+getErrorString();
+
+// Result:
+// true
+// "Check of M completed successfully.
+// Class M has 1 equation(s) and 1 variable(s).
+// 1 of these are trivial equation(s)."
+// ""
+// endResult

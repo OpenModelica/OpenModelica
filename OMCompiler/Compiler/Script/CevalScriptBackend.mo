@@ -6740,10 +6740,10 @@ public function checkModel " checks a model and returns number of variables and 
 protected
   DAE.DAElist dae;
   Integer eqnSize, varSize, simpleEqnSize, warnings, errors;
-  String retStr, classNameStr, eqnsStr, varsStr, errStr;
+  String retStr, classNameStr, eqnsStr, simpleEqnsStr, varsStr, errStr;
   Flags.Flag flags;
   NFFlatModel flatModel;
-  NFExpression eqnSizeExp, varSizeExp;
+  NFExpression eqnSizeExp, varSizeExp, simpleEqnsExp;
 
   function format_errors
     input Integer warnings;
@@ -6777,14 +6777,16 @@ algorithm
   try
     if Flags.isSet(Flags.SCODE_INST) then
       flatModel := runFrontEndNF(className);
-      (varSizeExp, eqnSizeExp, simpleEqnSize) := NFCheckModel.checkModel(flatModel);
+      (varSizeExp, eqnSizeExp, simpleEqnsExp) := NFCheckModel.checkModel(flatModel);
       varsStr := NFExpression.toString(varSizeExp);
       eqnsStr := NFExpression.toString(eqnSizeExp);
+      simpleEqnsStr := NFExpression.toString(simpleEqnsExp);
     else
       (cache, _, SOME(dae), _) := runFrontEnd(cache, env, className, false);
       (varSize, eqnSize, simpleEqnSize) := CheckModel.checkModel(dae);
       varsStr := String(varSize);
       eqnsStr := String(eqnSize);
+      simpleEqnsStr := String(simpleEqnSize);
     end if;
 
     warnings := ErrorExt.getNumWarningMessages() - warnings;
@@ -6793,7 +6795,7 @@ algorithm
     retStr := stringAppendList({
       "Check of ", classNameStr, " completed successfully", format_errors(warnings, errors), ".\n",
       "Class ", classNameStr, " has ", eqnsStr, " equation(s) and ", varsStr, " variable(s).\n",
-      String(simpleEqnSize), " of these are trivial equation(s)."});
+      simpleEqnsStr, " of these are trivial equation(s)."});
   else
     if Interactive.existClass(className, SymbolTable.getAbsyn()) then
       warnings := ErrorExt.getNumWarningMessages() - warnings;
