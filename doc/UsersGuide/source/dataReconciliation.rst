@@ -5,12 +5,15 @@ Objective of Data Reconciliation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Data reconciliation aims at improving the estimation of the actual state of a physical system by combining:
+
 * measured values and their uncertainties;
 * physical constraints relating the measured quantities;
 * statistical inference methods.
 
 Measured values are adjusted so that the reconciled values satisfy the physical laws while remaining consistent with the uncertainty associated with each measurement. The resulting reconciled values are statistically more likely than the original measurements and generally exhibit reduced uncertainty. [16_IMOC_paper_22 | PDF]
+
 Besides uncertainty reduction, data reconciliation can be used to:
+
 * detect inconsistent measurements;
 * identify possible instrumentation defects;
 * reveal modelling deficiencies.
@@ -19,12 +22,14 @@ Benefits of Performing Reconciliation in OpenModelica
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Implementing data reconciliation in OpenModelica offers several advantages:
-    1.  The equations required for data reconciliation can be automatically extracted from an existing Modelica model;
-    2.  The Modelica model does not need to be simulable (making it possible to perform reconciliation on a model that fails to initialize correctly).
 
-Apart from this "equation extraction" phase — which is specific to OpenModelica — the current implementation of the "reconciliation" component follows the assumptions 
+1. The equations required for data reconciliation can be automatically extracted from an existing Modelica model;
+2. The Modelica model does not need to be simulable (making it possible to perform reconciliation on a model that fails to initialize correctly).
+
+Apart from this "equation extraction" phase — which is specific to OpenModelica — the current implementation of the "reconciliation" component follows the assumptions
 and calculation procedures specified in the VDI 2048 standard.
 Current assumptions are:
+
 - The extracted equations should represent a static model (model featuring algebraic equations only, no differential equation).
 - The uncertainties associated to the measured values follow a Gaussian distribution.
 
@@ -34,33 +39,41 @@ Pieces of Data Reconciliation Theory
 Prior and Reconciled Distributions
 ----------------------------------
 The measurements are assumed to follow a multivariate Gaussian distribution characterised by:
-*	a vector of measured values;
-*	a variance-covariance matrix describing uncertainties and correlations.
 
-The physical constraints extracted from the Modelica model define admissible operating states. 
+* a vector of measured values;
+* a variance-covariance matrix describing uncertainties and correlations.
+
+The physical constraints extracted from the Modelica model define admissible operating states.
 Data reconciliation computes the conditional distribution satisfying these constraints.
 
 The outputs of the reconciliation process are:
+
 * reconciled values;
 * reconciled uncertainties;
 * reconciled covariance matrix.
 
-These quantities represent the best estimate of the system state under the assumptions provided by the model and measurement uncertainty characterisation. 
+These quantities represent the best estimate of the system state under the assumptions provided by the model and measurement uncertainty characterisation.
 
 Statistical Validation
 ----------------------
 The validity of reconciliation results must be assessed using statistical tests.
 
-** Global Consistency Test **
+Global Consistency Test
+^^^^^^^^^^^^^^^^^^^^^^^
+
 A global :math:`\chi^2` test evaluates whether the corrections required to satisfy the physical constraints remain compatible with the uncertainty assumptions.
 A failure of the global test indicates at least one inconsistency among:
+
 * the measurements;
 * the uncertainty model;
 * the physical model
 
-** Local Consistency Tests **
+Local Consistency Tests
+^^^^^^^^^^^^^^^^^^^^^^^
+
 Local tests are performed for individual measurements.
 A reconciled value requiring a correction exceeding its expected uncertainty range may indicate:
+
 * a faulty sensor;
 * underestimated measurement uncertainty;
 * missing physical phenomena in the model.
@@ -71,10 +84,11 @@ Recommended Workflow
 ~~~~~~~~~~~~~~~~~~~~
 
 The complete data reconciliation workflow consists in four main phases:
-    1.  Define the reconciliation problem;
-    2.  Quantify measurement uncertainties;
-    3.  Execute data reconciliation;
-    4.  Analyze the results.
+
+1. Define the reconciliation problem;
+2. Quantify measurement uncertainties;
+3. Execute data reconciliation;
+4. Analyze the results.
 
 The above figure summarizes the workflow: light blue refers to steps implemented in OpenModelica while dark blue highlights steps performed in a third-party tool dedicated to uncertainty quantification.
 
@@ -89,11 +103,14 @@ Step 1: Define the Data Reconciliation Problem in OpenModelica
 --------------------------------------------------------------
 
 To perform data reconciliation, the user first identifies two kinds of variables:
-    1.  The boundary conditions (which represent assumptions on the environment);
-    2.  The variables of interest to be reconciled.
+
+1. The boundary conditions (which represent assumptions on the environment);
+2. The variables of interest to be reconciled.
+
 These two kinds of variables must be manually declared in the Modelica source code
-    1.	With annotations for the boundary conditions;
-    2.	With modifiers for the variables of interest.
+
+1. With annotations for the boundary conditions;
+2. With modifiers for the variables of interest.
 
 The boundary conditions are declared with the annotation: ``annotation(__OpenModelica_BoundaryCondition = true)``.
 The variables of interest are declared with the modifier ``uncertain = Uncertainty.refine``.
@@ -141,11 +158,11 @@ or the temperature T0 of the source (depending on the option chosen by the user)
 
 
 Boundary conditions are declared with **annotations** so that libraries can be modified to accomodate data reconciliation,
- and still can be used with tools that do not support data reconciliation (because annotations not recognized by a tool are ignored by that tool). 
+and still can be used with tools that do not support data reconciliation (because annotations not recognized by a tool are ignored by that tool).
 
 Variables of interest are however marked with **modifiers** instead of annotations so that checks can be performed to detect errors such as declaring a
 variable that does not exist to be a variable to be reconciled. The drawback is that tools that do not support
-data reconciliation will produce an error. 
+data reconciliation will produce an error.
 
 .. hint::
 
@@ -176,15 +193,17 @@ Uncertainty estimates and correlations between measurements should be determined
 External uncertainty quantification method and tools such as GUM and OpenTURNS may be used to construct covariance matrices and estimate correlations.
 
 In practice, when uncertainty charaterization has been done, the user should provide measurement data and correlation information through two input files:
-    1. The measurement input file (mandatory).
-    2. The correlation matrix input file (optional).
+
+1. The measurement input file (mandatory).
+2. The correlation matrix input file (optional).
 
 The **measurement input file** is a ``.csv`` file with three columns:
-    1. One column for the variable names [ident]
-    2. One column for measured values [positive floating point number]
-    3. One column for the half-width confidence intervals [positive floating point number].
-    
-The half-with confidence interval for variable :math:`x_i` is defined as :math:`wi = \lambda_{95\%}\sigma_i`, where :math:`\sigma_i` is the standard deviation of :math:`x_i` and  :math:`\lambda_{95\%} = 1.96`
+
+1. One column for the variable names [ident]
+2. One column for measured values [positive floating point number]
+3. One column for the half-width confidence intervals [positive floating point number].
+
+The half-with confidence interval for variable :math:`x_i` is defined as :math:`w_i = \lambda_{95\%}\sigma_i`, where :math:`\sigma_i` is the standard deviation of :math:`x_i` and  :math:`\lambda_{95\%} = 1.96`
 
 The header of the file is the row:
 
@@ -216,13 +235,13 @@ The above file can be more easily visualized in matrix form:
 The **correlation matrix file** is a ``.csv`` file that contains the off-diagonal lower triangular
 correlation coefficients of the variables of interest:
 
-    1.  The first row contains names of variables of interest [ident].
-    2.  The first column contains names of variables of interest [ident].
-    3.  The names in the first row and first column must be identical in the same order.
-    4.  The first cell in the first row (which is also the first cell in the first column) must not be empty, but can contain any character string (except column separators).
-    5.  The off-diagonal lower triangular matrix cells contain the correlation coefficients [positive or nul floating point number]. The correlation coefficients  :math:`r_{ij}` are defined such that :math:`s_{ij} =r_{ij} \sigma_i \sigma_j` where :math:`\sigma_i` and  :math:`\sigma_j` are respectively the standard deviations of variables :math:`x_i` and :math:`x_j`, and :math:`s_{ij}` is the covariance matrix. :math:`r_{ii} = 1` because :math:`s_{ii} = \sigma_i^2 | r_{ij}| <= 1`
-    6.  The upper triangular and diagonal cells are ignored because the correlation matrix is symmetric :math:`r_{ji} = r_{ij}`, and its diagonal is :math:`r_{ii} = 1`
-    7.  Only variables of interest with positive correlation coefficients must appear in the matrix. Unfilled cells are equal to zero. Variables of interest that do not appear in the matrix have correlation coefficients equal to zero. Therefore, if all correlation coefficients are equal to zero, the matrix can be empty and the correlation matrix file is not needed
+1.  The first row contains names of variables of interest [ident].
+2.  The first column contains names of variables of interest [ident].
+3.  The names in the first row and first column must be identical in the same order.
+4.  The first cell in the first row (which is also the first cell in the first column) must not be empty, but can contain any character string (except column separators).
+5.  The off-diagonal lower triangular matrix cells contain the correlation coefficients [positive or nul floating point number]. The correlation coefficients  :math:`r_{ij}` are defined such that :math:`s_{ij} =r_{ij} \sigma_i \sigma_j` where :math:`\sigma_i` and  :math:`\sigma_j` are respectively the standard deviations of variables :math:`x_i` and :math:`x_j`, and :math:`s_{ij}` is the covariance matrix. :math:`r_{ii} = 1` because :math:`s_{ii} = \sigma_i^2`.
+6.  The upper triangular and diagonal cells are ignored because the correlation matrix is symmetric :math:`r_{ji} = r_{ij}`, and its diagonal is :math:`r_{ii} = 1`
+7.  Only variables of interest with positive correlation coefficients must appear in the matrix. Unfilled cells are equal to zero. Variables of interest that do not appear in the matrix have correlation coefficients equal to zero. Therefore, if all correlation coefficients are equal to zero, the matrix can be empty and the correlation matrix file is not needed
 
 The following correlation file is drawn from the VDI2048 standard example of a heat circuit of a steam turbine plant.
 
@@ -248,20 +267,23 @@ The variables ``mV`` and ``mHK`` could have been omitted because they do not hav
   **The quality of reconciliation results strongly depends on the quality of uncertainty information.**
   For each measurement, uncertainties should be evaluated according to the principles of the Guide to the Expression of Uncertainty in Measurement (GUM).
   Typical uncertainty sources include:
+
   * sensor calibration;
   * acquisition chain accuracy;
   * environmental effects;
   * measurement methodology;
   * repeatability.
+
   When measurements are correlated, correlation coefficients should also be estimated and included in the covariance matrix.
   External uncertainty quantification tools such as OpenTURNS may be used to:
+
   * propagate elementary uncertainty sources;
   * construct covariance matrices;
-  * estimate correlations between measured variables. 
+  * estimate correlations between measured variables.
 
 Step 3: Execute Data Reconciliation
 -----------------------------------
-OpenModelica automatically extracts the auxiliary equations linking the measured variables, constructs the reconciliation problem, 
+OpenModelica automatically extracts the auxiliary equations linking the measured variables, constructs the reconciliation problem,
 computes reconciled values and uncertainties, performs statistical tests and generates a reconciliation report.
 
 In practice the data reconciliation setup is done in OMEdit by:
@@ -318,7 +340,7 @@ The reconciliation report must be analysed to verify the validity of the assumpt
 
 Successful statistical tests indicate that reconciled values provide a more reliable estimate of the actual state of the system and uncertainty reduction can be used for subsequent engineering analyses.
 
-When inconsistencies are detected, measurements, uncertainty assumptions and the physical model should be reviewed. 
+When inconsistencies are detected, measurements, uncertainty assumptions and the physical model should be reviewed.
 
 Data reconciliation should therefore be considered as an iterative process supporting instrumentation validation, uncertainty improvement and model refinement.
 
@@ -332,46 +354,48 @@ In practice, OMEdit displays the results:
    b. The other that contains the reconciled covariance matrix.
 
 These files do not pop up automatically when the calculation is completed. The names of the files are respectively
-  ``| <working directory>\\<model name>\\< model name>_Outputs.csv``
+``<working directory>\<model name>\<model name>_Outputs.csv``
 and
-  ``| <working directory>\\<model name>\\< model name>_Reconciled_Sx.csv``,
-
+``<working directory>\<model name>\<model name>_Reconciled_Sx.csv``,
 where ``<model name>`` denotes the full name of the model, including its path. The name of the working directory can be read with the command ``Tools > Options``.
 
 
 The **Data Reconciliation Report** has three sections:
 
-    1. Overview, with the following information:
-        a. Model file: name of the Modelica model file
-        b. Model name: name of the Modelica model
-        c. Model directory: name of the directory of the Modelica model file
-        d. Measurement input file: name of the measurement input file
-        e. Correlation matrix input file: name of the correlation matrix file (if any)
-        f. Generated: date and time of the generation of the data reconciliation report
+1. Overview, with the following information:
 
-    2. Analysis, with the following information:
-        a. Number of auxiliary conditions, denoted :math:`r` in the sequel.
-        b. Number of variables to be reconciled.
-        c. Number of related boundary conditions: number of boundary conditions related to the variables to be reconciled. This number should be strictly less than the number of variables to be reconciled, otherwise the data reconciliation problem is ill-posed and data reconciliation cannot be performed.
-        d. Number of iterations to convergence: number of iterations of the data reconciliation numerical loop.
-        e. Final value of :math:`J*/r`: final value of the data reconciliation iteration loop. This value is smaller than epsilon when the iterations are completed (cf. below).
-        f. Epsilon: stopping criteria of the data reconciliation iteration loop. The recommended value by VDI 2048 is ``1.e-10``.
-        g. Final value of the objective function :math:`J*`: is equal to :math:`J*/r` multiplied by :math:`r`, where :math:`r` is the number of auxiliary conditions.
-        h. Chi-square value: value of the chi-square distribution for :math:`r` degrees of freedom and statistical certainty of probability of 95%.
-        i. Result of global test: true if :math:`J*` is less than the chi-square value, false otherwise. If false, the results for the reconciled values should be rejected because the vector of contradictions (i.e. the discrepancy between the measured values and the reconciled values) is too large.
-        j. Auxiliary conditions: set of the auxiliary conditions (i.e., the equations that constrain the variables of interest).
-        k. Intermediate equations: set of the intermediate equations (i.e., the equations that compute the intermediate variables from the variables of interest). This set can be empty if there are no intermediate variables.
-        l. Debug log: log of the numerical iteration loop.
+   a. Model file: name of the Modelica model file
+   b. Model name: name of the Modelica model
+   c. Model directory: name of the directory of the Modelica model file
+   d. Measurement input file: name of the measurement input file
+   e. Correlation matrix input file: name of the correlation matrix file (if any)
+   f. Generated: date and time of the generation of the data reconciliation report
 
-    3. Results, which is a table with the following columns:
-        a. Variables to be Reconciled: the names of the variables of interest.
-        b. Initial Measured Values: the measured values entered in the measurement input file.
-        c. Reconciled Values: the reconciled values computed by the data reconciliation algorithm.
-        d. Initial Half-width Confidence Intervals: the half-width confidence intervals entered in the measurement input file.
-        e. Reconciled Half-width Confidence Intervals: the reconciled half-width confidence intervals computed by the data reconciliation algorithm.
-        f. Results of Local Tests: true if the values of local tests (cf. below) are less than the quantile of normal distribution with probability 95% (:math:`\lambda_{95\%}`), false otherwise.
-        g. Values of Local Tests: values of the improvements (i.e., the difference between the initial and the reconciled values) divided by the square root of the diagonal element of the covariance matrix of the improvements.
-        h. Margin to Correctness: :math:`\lambda_{95\%}` minus the values of local tests.
+2. Analysis, with the following information:
+
+   a. Number of auxiliary conditions, denoted :math:`r` in the sequel.
+   b. Number of variables to be reconciled.
+   c. Number of related boundary conditions: number of boundary conditions related to the variables to be reconciled. This number should be strictly less than the number of variables to be reconciled, otherwise the data reconciliation problem is ill-posed and data reconciliation cannot be performed.
+   d. Number of iterations to convergence: number of iterations of the data reconciliation numerical loop.
+   e. Final value of :math:`J*/r`: final value of the data reconciliation iteration loop. This value is smaller than epsilon when the iterations are completed (cf. below).
+   f. Epsilon: stopping criteria of the data reconciliation iteration loop. The recommended value by VDI 2048 is ``1.e-10``.
+   g. Final value of the objective function :math:`J*`: is equal to :math:`J*/r` multiplied by :math:`r`, where :math:`r` is the number of auxiliary conditions.
+   h. Chi-square value: value of the chi-square distribution for :math:`r` degrees of freedom and statistical certainty of probability of 95%.
+   i. Result of global test: true if :math:`J*` is less than the chi-square value, false otherwise. If false, the results for the reconciled values should be rejected because the vector of contradictions (i.e. the discrepancy between the measured values and the reconciled values) is too large.
+   j. Auxiliary conditions: set of the auxiliary conditions (i.e., the equations that constrain the variables of interest).
+   k. Intermediate equations: set of the intermediate equations (i.e., the equations that compute the intermediate variables from the variables of interest). This set can be empty if there are no intermediate variables.
+   l. Debug log: log of the numerical iteration loop.
+
+3. Results, which is a table with the following columns:
+
+   a. Variables to be Reconciled: the names of the variables of interest.
+   b. Initial Measured Values: the measured values entered in the measurement input file.
+   c. Reconciled Values: the reconciled values computed by the data reconciliation algorithm.
+   d. Initial Half-width Confidence Intervals: the half-width confidence intervals entered in the measurement input file.
+   e. Reconciled Half-width Confidence Intervals: the reconciled half-width confidence intervals computed by the data reconciliation algorithm.
+   f. Results of Local Tests: true if the values of local tests (cf. below) are less than the quantile of normal distribution with probability 95% (:math:`\lambda_{95\%}`), false otherwise.
+   g. Values of Local Tests: values of the improvements (i.e., the difference between the initial and the reconciled values) divided by the square root of the diagonal element of the covariance matrix of the improvements.
+   h. Margin to Correctness: :math:`\lambda_{95\%}` minus the values of local tests.
 
 The data reconciliation report for the the VDI2048 standard example of a heat circuit of a steam turbine plant is given below.
 
@@ -424,9 +448,9 @@ The data reconciliation report for the the VDI2048 standard example of a heat ci
 ``mD`` is not reconciled because it does not appear in any of the auxiliary conditions or intermediate equations.
 
 For the VDI2048 example, the name of the ``.csv`` output file is
- ``| <working directory>\\NewDataReconciliationSimpleTests.VDI2048Example\\NewDataReconciliationSimpleTests.VDI2048Example_Outputs.csv``
+``<working directory>\NewDataReconciliationSimpleTests.VDI2048Example\NewDataReconciliationSimpleTests.VDI2048Example_Outputs.csv``
 and the name of the reconciled covariance matrix csv file is
- ``| <working directory>\\NewDataReconciliationSimpleTests.VDI2048Example\\NewDataReconciliationSimpleTests.VDI2048Example_ Reconciled_Sx.csv``
+``<working directory>\NewDataReconciliationSimpleTests.VDI2048Example\NewDataReconciliationSimpleTests.VDI2048Example_Reconciled_Sx.csv``
 
 The Modelica model of the VDI2048 example is given below.
 
@@ -482,6 +506,7 @@ For the splitter, the results are the following:
 
 .. hint::
   When inconsistencies are detected, several causes should be investigated:
+
   - Measurement Issues. Possible causes include: sensor drift, calibration errors, acquisition chain failures, incorrect measured values.
   - Uncertainty Characterisation Issues. Possible causes include: underestimated uncertainties, neglected correlations, incorrect uncertainty propagation assumptions.
   - Model Issues. Possible causes include: missing physical phenomena, invalid operating assumptions, modelling errors.
@@ -492,34 +517,40 @@ Additional Feature: Compute the Boundary Conditions from the Reconciled Values
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The values and uncertainties of the boundary conditions that correspond to the reconciled values of the variables of interest can be computed by:
-    1. Selecting Data Reconciliation > Calculate Data Reconciliation
-    2. Selecting the Boundary Conditions algorithm.
-    3. Filling the Data Reconciliation form with
-        a. The name of the Reconciled Measurement File (mandatory). It is the name of the ``.csv`` output file produced by   the data reconciliation algorithm.
-        b. The name of the Reconciled Correlation Matrix file (mandatory). It is the name of the correlation matrix ``.csv`` file produced by the data reconciliation algorithm.
-    4. Clicking on Save Settings to save the above settings in the Modelica model.
-    5. Clicking on Calculate to launch the calculation.
+
+1. Selecting Data Reconciliation > Calculate Data Reconciliation
+2. Selecting the Boundary Conditions algorithm.
+3. Filling the Data Reconciliation form with
+
+   a. The name of the Reconciled Measurement File (mandatory). It is the name of the ``.csv`` output file produced by the data reconciliation algorithm.
+   b. The name of the Reconciled Correlation Matrix file (mandatory). It is the name of the correlation matrix ``.csv`` file produced by the data reconciliation algorithm.
+4. Clicking on Save Settings to save the above settings in the Modelica model.
+5. Clicking on Calculate to launch the calculation.
 
 At least one boundary condition must be declared in the model, otherwise the computation fails with a difficult to interpret error message such as
-    | Cannot Compute Jacobian Matrix ``F``.
+
+  | Cannot Compute Jacobian Matrix ``F``.
 
 A better error message will be posted in a future version.
 
 The computation of the boundary conditions is performed in three main steps:
-    1. Static analysis is performed on the model to extract the equations that compute the boundary conditions from the variables of interest. This corresponds to automatically inverting the original model. There are two groups of extracted equations:
-        a. The boundary conditions that are the equations that compute the boundary conditions.
-        b. The intermediate equations that solve the intermediate variables from the variables of interest (this is the numeric way of eliminating the intermediate variables).
 
-    2. The model is simulated to compute the Jacobian matrices and eliminate numerically the intermediate equations.
-    At this step, numerical simulation errors can occur, such as divisions by zero, non-convergence, etc. They can be corrected by improving the model or providing better start values.
+1. Static analysis is performed on the model to extract the equations that compute the boundary conditions from the variables of interest. This corresponds to automatically inverting the original model. There are two groups of extracted equations:
 
-    3. The input files are read, the numerical calculations are performed, and the results are displayed. The half-width confidence intervals for the boundary conditions are calculated by propagating the reconciled uncertainties on the variables of interest through the inverted model.
+   a. The boundary conditions that are the equations that compute the boundary conditions.
+   b. The intermediate equations that solve the intermediate variables from the variables of interest (this is the numeric way of eliminating the intermediate variables).
+
+2. The model is simulated to compute the Jacobian matrices and eliminate numerically the intermediate equations.
+   At this step, numerical simulation errors can occur, such as divisions by zero, non-convergence, etc. They can be corrected by improving the model or providing better start values.
+
+3. The input files are read, the numerical calculations are performed, and the results are displayed. The half-width confidence intervals for the boundary conditions are calculated by propagating the reconciled uncertainties on the variables of interest through the inverted model.
 
 The results are displayed:
-    1. In an ``.html`` file with the title: Boundary Condition Report. This file pops up automatically when the calculation is completed.
 
-    2. In a ``.csv`` output file. The name of the ``.csv`` output file is
-    ``<working directory>\\<model name>\\< model name>_ BoundaryConditions_Outputs.csv``
+1. In an ``.html`` file with the title: Boundary Condition Report. This file pops up automatically when the calculation is completed.
+
+2. In a ``.csv`` output file. The name of the ``.csv`` output file is
+   ``<working directory>\<model name>\<model name>_BoundaryConditions_Outputs.csv``
 
 The Boundary Condition Report has three sections:
 
