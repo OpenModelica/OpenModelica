@@ -567,15 +567,14 @@ static void omc_assert_fmi_common(threadData_t *threadData, fmiXStatus status, i
   }
 }
 
-static void omc_assert_fmi(threadData_t *threadData, FILE_INFO info, const char *msg, ...)
+/* Returns whether the error goes back to a solver. In a nonlinear solve or the
+ * integrator's right-hand side the solver may still recover, as with
+ * omc_assert_function. Like -lv LOG_NLS in the simulation executable, the
+ * message is only debug output then. */
+static int va_omc_assert_fmi_report(threadData_t *threadData, FILE_INFO info, const char *msg, va_list args)
 {
-  va_list args;
-  /* In a nonlinear solve or the integrator's right-hand side the solver may still
-   * recover: return the error to it, as omc_assert_function does. Like -lv LOG_NLS
-   * in the simulation executable, the message is only debug output then. */
   int toSolver = threadData && (threadData->currentErrorStage == ERROR_NONLINEARSOLVER ||
                                 threadData->currentErrorStage == ERROR_INTEGRATOR);
-  va_start(args, msg);
   if (toSolver) {
     omc_assert_fmi_common(threadData, fmiXOK,
         threadData->currentErrorStage == ERROR_NONLINEARSOLVER ? LOG_NONLINEARSYSTEMS : LOG_ALL,
@@ -583,6 +582,15 @@ static void omc_assert_fmi(threadData_t *threadData, FILE_INFO info, const char 
   } else {
     omc_assert_fmi_common(threadData, fmiXError, LOG_STATUSERROR, info, msg, args);
   }
+  return toSolver;
+}
+
+static void omc_assert_fmi(threadData_t *threadData, FILE_INFO info, const char *msg, ...)
+{
+  va_list args;
+  int toSolver;
+  va_start(args, msg);
+  toSolver = va_omc_assert_fmi_report(threadData, info, msg, args);
   va_end(args);
   if (toSolver) {
     OMC_ERROR_RAISE();
@@ -593,12 +601,49 @@ static void omc_assert_fmi(threadData_t *threadData, FILE_INFO info, const char 
   }
 }
 
+/* The control flow of omc_assert_simulation_withEquationIndexes. */
+static void omc_assert_fmi_withEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *msg, ...)
+{
+  va_list args;
+  va_start(args, msg);
+  va_omc_assert_fmi_report(threadData, info, msg, args);
+  va_end(args);
+  OMC_ERROR_RAISE();
+}
+
 static void omc_assert_fmi_warning(FILE_INFO info, const char *msg, ...)
 {
   va_list args;
   va_start(args, msg);
   omc_assert_fmi_common((threadData_t*)pthread_getspecific(mmc_thread_data_key), fmiXWarning, LOG_STATUSWARNING, info, msg, args);
   va_end(args);
+}
+
+static void omc_assert_fmi_warning_withEquationIndexes(FILE_INFO info, const int *indexes, const char *msg, ...)
+{
+  va_list args;
+  va_start(args, msg);
+  omc_assert_fmi_common((threadData_t*)pthread_getspecific(mmc_thread_data_key), fmiXWarning, LOG_STATUSWARNING, info, msg, args);
+  va_end(args);
+}
+
+static void (*messageFunctionNext)(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes);
+
+/* A held assert() is only printed. Keep the first one until the event update
+ * settles it, for the logger if it fails the call. */
+static void messageFunctionFMI(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes)
+{
+  threadData_t *threadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key);
+  ModelInstance* c = threadData ? (ModelInstance*) threadData->localRoots[LOCAL_ROOT_FMI_DATA] : NULL;
+  if (c && c->fmuData && c->fmuData->simulationInfo && c->fmuData->simulationInfo->noThrowAsserts &&
+      stream == OMC_LOG_ASSERT && type == OMC_LOG_TYPE_INFO && !c->_held_assert[0]) {
+    if (info.lineStart) {
+      snprintf(c->_held_assert, sizeof(c->_held_assert), "%s:%d: %s", info.filename, info.lineStart, msg);
+    } else {
+      snprintf(c->_held_assert, sizeof(c->_held_assert), "%s", msg);
+    }
+  }
+  messageFunctionNext(type, stream, info, indentNext, msg, subline, indexes);
 }
 
 /* Modelica 8.3.8: the simulation stops once the current step or event
@@ -910,9 +955,14 @@ fmiXStatus internalEventUpdate(fmiXComponent c, fmiXEventInfo* eventInfo)
       comp->fmuData->simulationInfo->needToReThrow = 0;
       comp->_held_assert_logged = 0;
       if (comp->_event_found) {
+        comp->_held_assert[0] = '\0';
         infoStreamPrint(OMC_LOG_ASSERT, 0, "Found event, previous asserts are ignored.");
       } else {
         errorStreamPrint(OMC_LOG_ASSERT, 0, "No event found, but assert was triggered. Throwing now!");
+        if (comp->_held_assert[0]) {
+          FILTERED_LOG(comp, fmiXError, LOG_STATUSERROR, "%s", comp->_held_assert)
+          comp->_held_assert[0] = '\0';
+        }
         omc_throw(threadData);
       }
     }
@@ -1209,7 +1259,13 @@ ModelInstance* FMIX(Instantiate)(fmiXString instanceName, OMC_FmuType fmuType, f
   setThreadData(comp);
   omc_assert = omc_assert_fmi;
   omc_assert_warning = omc_assert_fmi_warning;
+  omc_assert_withEquationIndexes = omc_assert_fmi_withEquationIndexes;
+  omc_assert_warning_withEquationIndexes = omc_assert_fmi_warning_withEquationIndexes;
   omc_terminate = omc_terminate_fmi;
+  if (messageFunction != messageFunctionFMI) {
+    messageFunctionNext = messageFunction;
+    messageFunction = messageFunctionFMI;
+  }
 
   strcpy((char*)comp->instanceName, (const char*)instanceName);
   comp->type = fmuType;

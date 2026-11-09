@@ -299,7 +299,7 @@ fn failed<E: SimEngine>(e: &mut E, sim_data: u32, err: &'static str) -> Status {
     if let Some(pa) = e.take_pending_assert() {
         let (info, cond) = driver::assert_info(e, &pa);
         let time = driver::read_f64(e, sim_data + TIME_OFF).unwrap_or(0.0);
-        driver::log_assert_block(&info, &cond, time, pa[8] != 0);
+        log_status_error(&driver::assert_logger_text(&info, &cond, time, pa[8] != 0));
         return Status::Error;
     }
     err_status(driver::enrich_trap(e, err))
@@ -393,6 +393,7 @@ pub fn init_logging(name: String, logging_on: bool) {
     l.cats = if logging_on { !0 } else { 0 };
     driver::set_log_sink(log_sink);
     driver::set_ext_error_reporter(report_ext_error);
+    driver::set_held_assert_reporter(log_status_error);
     driver::set_terminate_reporter(terminate_fmi);
     omclog::set_mask(omclog::FMU_STREAMS);
 }
@@ -436,9 +437,8 @@ static mut PENDING: Option<[i32; 10]> = None;
 
 /// C's FMU logs the violation then `longjmp`s out of the FMI call, which returns
 /// `fmi3Error` with the instance usable — so answer that the code must unwind.
-/// `cond` picks which C implementation is mirrored: `fmi2Instantiate` swaps in
-/// `omc_assert_fmi` only for the `FUNCTION_CONTEXT` pointer, while an equation
-/// `assert()` stays on `omc_assert_simulation_withEquationIndexes`'s `LOG_ASSERT`.
+/// An equation `assert()` (`cond`) is reported by the call that ends on it, in
+/// [`failed`].
 #[cfg(feature = "wasm")]
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_assert(
@@ -1277,7 +1277,9 @@ impl<E: FmiHost + 'static> MeState<E> {
         // The point moved, so a Jacobian assembled at the old one is stale.
         self.jacobian_valid = false;
         if self.mode == Mode::Init {
-            self.run_init().map_err(err_status)?;
+            if let Err(err) = self.run_init() {
+                return Err(failed(&mut self.engine, self.sim_data, err));
+            }
         } else {
             self.evaluate(|m| {
                 m.apply_tunable()?;

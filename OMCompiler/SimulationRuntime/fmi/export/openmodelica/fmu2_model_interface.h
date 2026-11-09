@@ -96,6 +96,7 @@ typedef struct {
 
   int _need_update;
   int _held_assert_logged;
+  char _held_assert[2048];   /* the first held assert() not yet settled */
   int _event_found;
   int _terminate_simulation_requested;
   fmi2Boolean terminated;

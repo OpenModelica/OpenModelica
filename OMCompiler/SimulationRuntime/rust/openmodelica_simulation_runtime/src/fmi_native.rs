@@ -183,6 +183,7 @@ impl Native {
         openmodelica_fmi3_wasm::set_log_hook(log_hook);
         openmodelica_fmi3_wasm::init_logging(name.to_string(), logging_on);
         crate::support::set_fmu_assert_report(report_assert);
+        crate::support::keep_held_assert_messages();
         crate::support::publish_log_streams();
         let resources = resources.or_else(library_resources);
         let fmi3 = matches!(logger, Logger::Fmi3 { .. });
