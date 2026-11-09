@@ -3401,7 +3401,7 @@ bool OMCProxy::ngspicetoModelica(QString fileName)
  */
 QString OMCProxy::checkAllModelsRecursive(QString className)
 {
-  QString result = mpOMCInterface->checkAllModelsRecursive(className, false);
+  QString result = mpOMCInterface->checkAllModelsRecursive(className, false, true);
   printMessagesStringInternal();
   return result;
 }

@@ -1337,9 +1337,9 @@ algorithm
       then
         ret_val;
 
-    case ("checkAllModelsRecursive",{Values.CODE(Absyn.C_TYPENAME(className)),Values.BOOL(showProtected)})
+    case ("checkAllModelsRecursive",{Values.CODE(Absyn.C_TYPENAME(className)),Values.BOOL(showProtected),Values.BOOL(b)})
       algorithm
-        (outCache, ret_val) := checkAllModelsRecursive(outCache, inEnv, className, showProtected, msg);
+        (outCache, ret_val) := checkAllModelsRecursive(outCache, inEnv, className, showProtected, b, msg);
       then
         ret_val;
 
@@ -6790,10 +6790,6 @@ algorithm
     warnings := ErrorExt.getNumWarningMessages() - warnings;
     errors := ErrorExt.getNumErrorMessages() - errors;
 
-    if warnings > 0 or errors > 0 then
-
-    end if;
-
     retStr := stringAppendList({
       "Check of ", classNameStr, " completed successfully", format_errors(warnings, errors), ".\n",
       "Class ", classNameStr, " has ", eqnsStr, " equation(s) and ", varsStr, " variable(s).\n",
@@ -7123,6 +7119,7 @@ public function checkAllModelsRecursive
   input FCore.Graph inEnv;
   input Absyn.Path className;
   input Boolean inCheckProtected;
+  input Boolean reportTimes;
   input Absyn.Msg inMsg;
   output FCore.Cache outCache;
   output Values.Value outValue;
@@ -7143,7 +7140,7 @@ algorithm
         allClassPaths := getAllClassPathsRecursive(className, b, SymbolTable.getAbsyn());
         print("Number of classes to check: " + intString(listLength(allClassPaths)) + "\n");
         // print ("All paths:\n" + stringDelimitList(List.map(allClassPaths, AbsynUtil.pathString), "\n") + "\n");
-        failed := checkAll(cache, env, allClassPaths, msg, not Testsuite.isRunning(), 0);
+        failed := checkAll(cache, env, allClassPaths, msg, reportTimes and not Testsuite.isRunning(), 0);
         ret := "Number of classes checked / failed: " + intString(listLength(allClassPaths)) + "/" + intString(failed);
       then
         (cache,Values.STRING(ret));
