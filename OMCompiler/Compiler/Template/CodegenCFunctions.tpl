@@ -5448,9 +5448,15 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart,
     case SIMVAR(aliasvar = ALIAS(varName = varName)) then crefToCStr(varName, ix, isPre, isStart, &sub)
     case SIMVAR(aliasvar = NEGATEDALIAS(varName = varName), type_=T_BOOL()) then '!(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
     case SIMVAR(aliasvar = NEGATEDALIAS(varName = varName)) then '-(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
-    case v as SIMVAR(varKind = JAC_VAR()) then '(<%if stringEq(sub, "") then "" else "&"%>parentJacobian->resultVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
-    case v as SIMVAR(varKind = JAC_TMP_VAR()) then '(<%if stringEq(sub, "") then "" else "&"%>parentJacobian->tmpVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
-    case v as SIMVAR(varKind = SEED_VAR()) then '(<%if stringEq(sub, "") then "" else "&"%>parentJacobian->seedVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind = JAC_VAR()) then
+      let field = match v.matrixName case SOME("ADJ") then "resultVarsAdj" else "resultVars"
+      '(<%if stringEq(sub, "") then "" else "&"%>parentJacobian-><%field%>[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind = JAC_TMP_VAR()) then
+      let field = match v.matrixName case SOME("ADJ") then "tmpVarsAdj" else "tmpVars"
+      '(<%if stringEq(sub, "") then "" else "&"%>parentJacobian-><%field%>[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind = SEED_VAR()) then
+      let field = match v.matrixName case SOME("ADJ") then "seedVarsAdj" else "seedVars"
+      '(<%if stringEq(sub, "") then "" else "&"%>parentJacobian-><%field%>[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
     case v as SIMVAR(varKind = DAE_RESIDUAL_VAR()) then '(data->simulationInfo->daeModeData->residualVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
     case v as SIMVAR(varKind = DAE_AUX_VAR()) then '(data->simulationInfo->daeModeData->auxiliaryVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
     case SIMVAR(index = -2) then

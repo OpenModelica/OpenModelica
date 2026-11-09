@@ -483,7 +483,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
     }
   }
 
-  if (!compiledInDAEMode)
+  if (!compiledInDAEMode && OMC_ACTIVE_STREAM(OMC_LOG_SOLVER))
   {
     JACOBIAN* odeJacobian = getSymbolicOdeJacobian(data);
     printSparseStructure(getJacobianCscPattern(odeJacobian),
@@ -491,7 +491,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         odeJacobian->sizeCols,
         OMC_LOG_SOLVER, "ODE sparse pattern");
   }
-  else
+  else if (compiledInDAEMode)
   {
     printSparseStructure(data->simulationInfo->daeModeData->sparsePattern,
         data->simulationInfo->daeModeData->nResidualVars,

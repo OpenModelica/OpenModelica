@@ -1628,7 +1628,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
 
   /* buffer for analytical jacobians */
   data->simulationInfo->analyticJacobians = (JACOBIAN*) omc_alloc_interface.malloc_uncollectable(data->modelData->nJacobians*sizeof(JACOBIAN));
-  /* zero out so the runtime can detect which Jacobian slots were never initialized */
+  /* zero out, so that `availability == JACOBIAN_UNKNOWN` marks an uninitialized Jacobian */
   memset(data->simulationInfo->analyticJacobians, 0, data->modelData->nJacobians*sizeof(JACOBIAN));
   data->simulationInfo->odeJacobian = NULL;
 

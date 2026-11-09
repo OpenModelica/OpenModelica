@@ -6528,26 +6528,24 @@ match sparsity
       <%preExp%>
       <%auxFunction%>
 
-      initJacobian(jacobian, <%nCols%>, <%sizeRows%>, <%tmpvarsSize%>, NULL, <%evalColumn%>, <%constantEqns%>, NULL, <%if isAdjoint then 'TRUE' else 'FALSE'%>);
+      initJacobian(jacobian, <%patternCols%>, <%patternRows%>, <%tmpvarsSize%>, NULL, <%evalColumn%>, <%constantEqns%>, NULL, <%if isAdjoint then 'TRUE' else 'FALSE'%>);
 
       <%fillCode%>
       jacobian->sparsePattern = sparsePatternFromPairs(&_sp_pairs, <%patternCols%>);
       <%jacobianOffsetFrees(context)%>
       <%varFrees%>
 
-      <%if isAdjoint then <<
-      /* Adjoint evaluation traverses rows of the primal Jacobian. Convert the
-       * generated primal CSC structure to CSR before computing row colors. */
-      jacobian->sparsePatternT = cscToCsr(jacobian->sparsePattern, <%patternRows%>);
-      if (!jacobian->sparsePatternT) return 1;
-      >> %>
-
       /* Compute coloring at runtime from the actual sparse pattern.
        * The WHOLEDIM-based C loops over-approximate array equations as dense
        * blocks, so a compile-time coloring (derived from the exact symbolic
        * sparsity) would be invalid for the runtime pattern.  Re-deriving it
        * here guarantees that no two same-color columns share a non-zero row. */
-      computeColumnColoring(jacobian->sparsePattern, <%if isAdjoint then patternCols else patternRows%>, <%if isAdjoint then patternRows else patternCols%>);
+      computeColumnColoring(jacobian->sparsePattern, <%patternRows%>, <%patternCols%>);
+
+      <%if isAdjoint then <<
+      jacobian->sparsePatternT = cscToCsr(jacobian->sparsePattern, <%patternRows%>);
+      if (!jacobian->sparsePatternT) return 1;
+      >> %>
 
       return 0;
     }

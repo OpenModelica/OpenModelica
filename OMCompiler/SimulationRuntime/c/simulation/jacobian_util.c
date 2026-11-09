@@ -743,6 +743,7 @@ void evalJacobianBidirectional(DATA* data, threadData_t *threadData,
   }
 
   /* Row phase (adjoint mode, CSR + row coloring) */
+  memset(jacobian->seedVarsAdj, 0, (size_t)nRows * sizeof(modelica_real));
   for (color = 0; color < (int)spT->maxColors; color++) {
     for (row = 0; row < nRows; row++)
       if ((int)spT->colorCols[row] - 1 == color)
@@ -1034,24 +1035,29 @@ SPARSE_PATTERN* getJacobianCscPattern(JACOBIAN* jac)
    * row evaluation needs one here. */
   if (jac->evalRow && !jac->evalColumn && !jac->csrToCscMap) {
     const SPARSE_PATTERN* csr = jac->sparsePatternT;
-    if (!csr) return NULL;
+    const SPARSE_PATTERN* csc = jac->sparsePattern;
+    if (!csr || csr->sizeCols != jac->sizeRows || csc->sizeCols != jac->sizeCols || csr->nnz != csc->nnz) return NULL;
 
     unsigned int* map = (unsigned int*) malloc((csr->nnz ? csr->nnz : 1) * sizeof(unsigned int));
-    if (!map) return NULL;
-
-    /* Reuse CSC lead pointers as running heads instead of allocating scratch
-     * space or another transposed pattern. Ascending CSR rows match the sorted
-     * row indices in each CSC column. Restore all pointers before returning. */
-    unsigned int* leadindex = jac->sparsePattern->leadindex;
+    unsigned int* next = (unsigned int*) malloc((csc->sizeCols ? csc->sizeCols : 1) * sizeof(unsigned int));
+    if (!map || !next) {
+      free(map);
+      free(next);
+      return NULL;
+    }
+    memcpy(next, csc->leadindex, csc->sizeCols * sizeof(unsigned int));
     for (unsigned int row = 0; row < csr->sizeCols; row++) {
       for (unsigned int nz = csr->leadindex[row]; nz < csr->leadindex[row + 1]; nz++) {
-        map[nz] = leadindex[csr->index[nz]]++;
+        unsigned int col = csr->index[nz];
+        if (col >= csc->sizeCols || next[col] >= csc->leadindex[col + 1] || csc->index[next[col]] != row) {
+          free(map);
+          free(next);
+          return NULL;
+        }
+        map[nz] = next[col]++;
       }
     }
-    for (unsigned int col = jac->sparsePattern->sizeCols; col > 0; col--) {
-      leadindex[col] = leadindex[col - 1];
-    }
-    leadindex[0] = 0;
+    free(next);
     jac->csrToCscMap = map;
   }
   return jac->sparsePattern;
@@ -1551,7 +1557,12 @@ JACOBIAN* initSymbolicOdeJacobian(DATA* data, threadData_t* threadData, JACOBIAN
   if (jacobian->sparsePattern != NULL) {
     infoStreamPrint(OMC_LOG_SIMULATION, 1, "Initialized Jacobian:");
     infoStreamPrint(OMC_LOG_SIMULATION, 0, "columns: %zu rows: %zu", jacobian->sizeCols, jacobian->sizeRows);
-    infoStreamPrint(OMC_LOG_SIMULATION, 0, "NNZ:  %u colors: %u", jacobian->sparsePattern->nnz, jacobian->sparsePattern->maxColors);
+    if (*jacobianMethod == BICOLOREDSYMJAC) {
+      infoStreamPrint(OMC_LOG_SIMULATION, 0, "forward Jacobian: %u colors: %u", jacobian->sparsePattern->nnz, jacobian->sparsePattern->maxColors);
+      infoStreamPrint(OMC_LOG_SIMULATION, 0, "adjoint Jacobian: %u colors: %u", jacobian->sparsePatternT->nnz, jacobian->sparsePatternT->maxColors);
+    } else {
+      infoStreamPrint(OMC_LOG_SIMULATION, 0, "NNZ: %u colors: %u", jacobian->sparsePattern->nnz, jacobian->sparsePattern->maxColors);
+    }
     messageClose(OMC_LOG_SIMULATION);
   }
 
