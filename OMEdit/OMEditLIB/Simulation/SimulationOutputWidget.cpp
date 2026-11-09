@@ -927,10 +927,11 @@ void SimulationOutputWidget::compilationProcessFinishedHelper(int exitCode, QPro
   QString progressStr;
   mpProgressBar->setRange(0, 1);
   mpCancelButton->setEnabled(false);
+  const bool encrypted = usesEncryptedLibrary();
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     mpProgressBar->setValue(1);
     bool profiling = mSimulationOptions.getProfiling().compare(QStringLiteral("none")) != 0;
-    if (mSimulationOptions.getBuildOnly() &&
+    if (!encrypted && mSimulationOptions.getBuildOnly() &&
         (OptionsDialog::instance()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
          mSimulationOptions.getLaunchTransformationalDebugger() || profiling)) {
       MainWindow::instance()->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json", profiling, false);
@@ -945,9 +946,11 @@ void SimulationOutputWidget::compilationProcessFinishedHelper(int exitCode, QPro
   updateMessageTab(progressStr);
   mpArchivedSimulationItem->setStatus(Helper::finished);
   // remove the generated files
-  if (usesEncryptedLibrary()) {
-    // the generated code of an encrypted library must not stay on disk
+  if (encrypted) {
+    // the generated code and the equations of an encrypted library must not stay on disk
     deleteIntermediateCompilationFiles(true);
+    QFile::remove(QString("%1/%2_info.json").arg(mSimulationOptions.getWorkingDirectory(), mSimulationOptions.getOutputFileName()));
+    mpOpenTransformationalDebuggerButton->setEnabled(false);
   } else if (mSimulationOptions.getBuildOnly()) {
     deleteIntermediateCompilationFiles();
   }
