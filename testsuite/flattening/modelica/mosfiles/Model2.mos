@@ -18,6 +18,6 @@ checkModel(Model2); getErrorString();
 // ""
 // "Check of Model2 completed successfully.
 // Class Model2 has 1732 equation(s) and 1732 variable(s).
-// 1319 of these are trivial equation(s)."
+// 1377 of these are trivial equation(s)."
 // ""
 // endResult

@@ -725,6 +725,7 @@ public
     isNumeric := match ty
       case ARRAY() then isBasicNumeric(ty.elementType);
       case CONDITIONAL_ARRAY() then isNumeric(ty.trueType);
+      case METABOXED() then isNumeric(ty.ty);
       else isBasicNumeric(ty);
     end match;
   end isNumeric;

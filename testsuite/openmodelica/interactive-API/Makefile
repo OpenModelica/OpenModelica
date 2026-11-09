@@ -23,6 +23,9 @@ checkAllModelsRecursive1.mos \
 CheckModel1.mos \
 CheckModel2.mos \
 CheckModel3.mos \
+CheckModel4.mos \
+CheckModel5.mos \
+CheckModel6.mos \
 CheckModelNonexistentClass1.mos \
 CheckModelExtObj1.mos \
 choicesAllMatching.mos \

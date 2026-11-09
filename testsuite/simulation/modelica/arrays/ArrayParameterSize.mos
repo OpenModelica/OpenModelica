@@ -14,6 +14,6 @@ getErrorString();
 // true
 // "Check of ArrayParameterSize completed successfully.
 // Class ArrayParameterSize has dimN equation(s) and dimN variable(s).
-// 0 of these are trivial equation(s)."
+// dimN of these are trivial equation(s)."
 // ""
 // endResult
