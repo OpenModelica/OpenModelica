@@ -115,6 +115,8 @@ def problems(source, translations):
             errors.append(f"{mnemonics(t)} & mnemonics, the source has {mnemonics(source)}")
         if Counter((a, b.lower()) for a, b in TAG.findall(t)) != Counter((a, b.lower()) for a, b in TAG.findall(source)):
             errors.append("HTML tags differ")
+        if t.count("\n") != source.count("\n"):
+            errors.append(f"{t.count(chr(10))} line breaks, the source has {source.count(chr(10))}")
         if source[:len(source) - len(source.lstrip())] != t[:len(t) - len(t.lstrip())] or \
            source[len(source.rstrip()):] != t[len(t.rstrip()):]:
             errors.append("leading or trailing whitespace differs")
@@ -235,11 +237,14 @@ def cmd_apply(a):
             for f, x in zip(tr.findall("numerusform") if msg.get("numerus") == "yes" else [tr], guess):
                 f.text = x
             print(f"{name}: {msg.findtext('source')!r}: same-text guess, review it with list --guessed")
-    with tempfile.TemporaryDirectory() as tmp:
-        out = os.path.join(tmp, "out.ts")
-        tree.write(out, encoding="utf-8", xml_declaration=True)
-        subprocess.run([lconvert(), "-locations", "none", "-i", out, "-o", a.file], check=True,
-                       stderr=subprocess.DEVNULL)
+    with tempfile.TemporaryDirectory(dir=os.path.dirname(os.path.abspath(a.file))) as tmp:
+        raw, out = os.path.join(tmp, "raw.ts"), os.path.join(tmp, "out.ts")
+        tree.write(raw, encoding="utf-8", xml_declaration=True)
+        r = subprocess.run([lconvert(), "-locations", "none", "-i", raw, "-o", out])
+        if r.returncode != 0 or not os.path.isfile(out):
+            sys.exit(f"lconvert failed with exit code {r.returncode}, {a.file} not changed")
+        shutil.copymode(a.file, out)
+        os.replace(out, a.file)
     print(f"{a.file}: {len(edits)} messages updated")
 
 

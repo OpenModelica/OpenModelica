@@ -21,8 +21,9 @@ translations of that text agree.
 Use [tstool.py](OMEditLIB/Resources/nls/tstool.py). It writes the file as
 `lupdate` does, including the same-text copies, so the CI check stays clean.
 `apply` refuses a translation whose `%1`/`%n` placeholders, `&` mnemonics,
-HTML tags or leading and trailing whitespace do not match the source. It
-prints the same-text copies it made: review them like any other guess.
+HTML tags, line breaks or leading and trailing whitespace do not match the
+source. It prints the same-text copies it made: review them like any other
+guess.
 
 ```sh
 cd OMEdit/OMEditLIB/Resources/nls
