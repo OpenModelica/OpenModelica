@@ -9946,11 +9946,17 @@ pub enum CsStep {
 
 /// C's `FMI2CS_initializeSolverData`: an FMU's solver is set up in
 /// `fmi2Instantiate`, and for CVODE `LOG_SOLVER` is forced on across
-/// `cvode_solver_initial` so the banner reaches the log either way.
+/// `cvode_solver_initial` so the banner reaches the log either way. IDA's
+/// `ida_solver_initial` warns there when it changes the Jacobian method.
 pub fn log_cs_solver_setup(model: &SimModel) {
     let Ok(method) = resolve_solver_method(model.cs_method(), model.layout.dae_mode()) else {
         return;
     };
+    #[cfg(sundials)]
+    if method == "ida" {
+        ida_jacobian_method(cvode_jac_a(model), ida_linear_solver(&model.layout), true);
+        return;
+    }
     // "No states present, continuing without ODE solver": C falls back to euler,
     // which has nothing to set up and nothing to say.
     if method != "cvode" || model.layout.n_states == 0 {
@@ -12623,14 +12629,144 @@ impl GuessStepper {
 
 // ── A `--daeMode` model evaluated as an explicit ODE ─────────────────────────
 
+/// The DAE-mode system's key in `openmodelica_nls::kinsol`'s solver cache, apart
+/// from the model's own systems, which are numbered from 0.
+const DAE_KINSOL_HANDLE: u32 = u32::MAX - 1;
+
 /// Solve `F(t, x, x', z) = 0` for the derivatives and the algebraic unknowns at
 /// the time and states `SimData` holds — what an FMU exported from a `--daeMode`
-/// model owes an importer that runs it as an ordinary ODE FMU. A damped Newton
-/// iteration over `evaluateDAEResiduals`, started from the values the slots hold
-/// (the previous point, or the initial system's), with a differenced Jacobian: a
-/// colour at a time where the residual sparsity is known, a `der(x)` column taking
-/// its state's pattern since DAE-mode differentiation folds `der(x)` into `x`.
+/// model owes an importer that runs it as an ordinary ODE FMU.
+///
+/// This only describes the system, as C's `initDAEModeExplicitNLS` does: the
+/// unknowns `[der(x); z]`, `evaluateDAEResiduals` as the residual, the residual's
+/// coloured sparsity pattern (a `der(x)` column takes its state's, since DAE-mode
+/// differentiation folds `der(x)` into `x`) and the nominal values of `z`. KINSOL
+/// with KLU solves it, as it solves the model's sparse systems
+/// ([`openmodelica_nls::kinsol::solve_selected`]), from the values the slots hold
+/// (the previous point, or the initial system's). Without SUNDIALS, a dense damped
+/// Newton iteration does.
 pub fn dae_solve_explicit(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, dae: &DaeInfo) -> Result<()> {
+    use openmodelica_nls::kinsol;
+    if !kinsol::AVAILABLE {
+        return dae_newton_dense(e, sim_data, layout, dae);
+    }
+    let n = layout.n_dae_res as usize;
+    let ns = layout.n_states as usize;
+    if n == 0 {
+        return Ok(());
+    }
+    if dae.alg_offs.len() + ns != n {
+        return Err("DAE-mode metadata disagrees with the layout");
+    }
+    let offs: Vec<u32> = (0..ns)
+        .map(|i| layout.real_off + ((ns + i) as u32) * 8)
+        .chain(dae.alg_offs.iter().copied())
+        .collect();
+    let mut nominal = vec![1.0; n];
+    for k in 0..dae.alg_offs.len() {
+        let nom = read_f64(e, sim_data + layout.dae_alg_nom_off + (k as u32) * 8)?.abs();
+        if nom > 0.0 && nom.is_finite() {
+            nominal[ns + k] = nom;
+        }
+    }
+    // The pattern in CSC, with each column's 0-based colour; a full one without.
+    let (mut colptr, mut rowidx, mut colors) = (Vec::with_capacity(n + 1), Vec::new(), Vec::new());
+    colptr.push(0i32);
+    match dae
+        .sparsity
+        .as_ref()
+        .filter(|p| p.n as usize == n && p.rows_by_col.len() == n)
+    {
+        Some(p) => {
+            for rows in &p.rows_by_col {
+                rowidx.extend(rows.iter().map(|&r| r as i32));
+                colptr.push(rowidx.len() as i32);
+            }
+            colors = vec![u32::MAX; n];
+            for (c, cols) in p.colors.iter().enumerate() {
+                for &j in cols {
+                    if let Some(slot) = colors.get_mut(j as usize) {
+                        *slot = c as u32;
+                    }
+                }
+            }
+            if colors.contains(&u32::MAX) {
+                colors.clear(); // incomplete: every column its own colour
+            }
+        }
+        None => {
+            for _ in 0..n {
+                rowidx.extend(0..n as i32);
+                colptr.push(rowidx.len() as i32);
+            }
+        }
+    }
+    let pat = kinsol::Pattern {
+        nnz: rowidx.len(),
+        colptr: &colptr,
+        rowidx: &rowidx,
+        colors: &colors,
+        max: &[],
+        min: &[],
+    };
+    let start: Vec<f64> = offs.iter().map(|&o| read_f64(e, sim_data + o)).collect::<Result<_>>()?;
+    let time = read_f64(e, sim_data + TIME_OFF)?;
+    let res_base = sim_data + layout.dae_res_off;
+    let residual = |e: &mut dyn SimEngine, u: &[f64], out: &mut [f64]| -> Result<()> {
+        for (&o, &v) in offs.iter().zip(u) {
+            write_f64(e, sim_data + o, v)?;
+        }
+        e.call2(MODEL_FN_DAE, sim_data, eval_stage::DYNAMIC)?;
+        read_f64s(e, res_base, out)
+    };
+    // KINSOL's callbacks cannot fail: the first engine error is kept, and the
+    // residual turns NaN so the solve stops.
+    let mut failure: Option<&'static str> = None;
+    let mut x = start.clone();
+    let solved = {
+        let mut eval = |u: &[f64], r: &mut [f64]| {
+            if failure.is_none() {
+                if let Err(err) = residual(&mut *e, u, r) {
+                    failure = Some(err);
+                }
+            }
+            if failure.is_some() {
+                r.iter_mut().for_each(|v| *v = f64::NAN);
+            }
+        };
+        let mut load_guess = |g: &mut [f64]| g.copy_from_slice(&start);
+        let mut assemble = |_: &[f64], _: &mut [f64]| {};
+        kinsol::solve_selected(
+            DAE_KINSOL_HANDLE,
+            n,
+            &pat,
+            &nominal,
+            &start,
+            &start,
+            &mut x,
+            u32::MAX,
+            time,
+            false,
+            &mut load_guess,
+            &mut eval,
+            &mut assemble,
+        )
+    };
+    if let Some(err) = failure {
+        return Err(err);
+    }
+    if !solved {
+        return Err(DAE_EXPLICIT_FAILED);
+    }
+    // The solver's last evaluation need not be at its solution.
+    let mut f = vec![0.0; n];
+    residual(e, &x, &mut f)
+}
+
+/// [`dae_solve_explicit`] without SUNDIALS: a damped Newton iteration over
+/// `evaluateDAEResiduals` with a dense LU, the Jacobian differenced a colour at a
+/// time where the residual sparsity is known.
+fn dae_newton_dense(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, dae: &DaeInfo) -> Result<()> {
     const MAX_ITER: usize = 100;
     const RTOL: f64 = 1e-10;
     let n = layout.n_dae_res as usize;

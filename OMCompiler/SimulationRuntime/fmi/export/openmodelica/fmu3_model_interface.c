@@ -44,9 +44,11 @@
 #ifdef OMC_FMI_HAVE_CVODE
 #include "../simulation/solver/cvode_solver.h"
 #endif
+#ifdef OMC_FMI_DAE_MODE
+#include "../simulation/solver/dae_mode.h"
+#endif
 #ifdef OMC_FMI_HAVE_IDA
 #include "../simulation/solver/ida_solver.h"
-#include "../simulation/solver/dae_mode.h"
 #endif
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
 #include "../simulation/solver/nonlinearSystem.h"
@@ -348,7 +350,11 @@ fmi3Status fmi3Terminate(fmi3Instance instance)
 
 fmi3Status fmi3Reset(fmi3Instance instance)
 {
-  return (fmi3Status)omcReset(fmu3InnerComp(instance));
+  ModelInstance *comp = fmu3InnerComp(instance);
+  if (comp) {
+    comp->daeMode = fmi3False;
+  }
+  return (fmi3Status)omcReset(comp);
 }
 
 /* ---------------------------------------------------------------------------
@@ -382,6 +388,32 @@ static size_t fmi3ArrayLength(fmi3ValueReference vr)
   return 1;
 }
 
+/* fmi-ls-dae: the structural parameter that switches DAE mode, then one
+ * residual per value reference. */
+#define FMI3_DAE_MODE_VR (FMI3_EVENT_INDICATOR_VR_START + NUMBER_OF_EVENT_INDICATORS)
+
+static fmi3Boolean isDAEModeVR(fmi3ValueReference vr)
+{
+#ifdef OMC_FMI_LS_DAE
+  return compiledInDAEMode && vr == (fmi3ValueReference)FMI3_DAE_MODE_VR;
+#else
+  (void)vr;
+  return fmi3False;
+#endif
+}
+
+static fmi3Status getDAEResidual(ModelInstance *comp, fmi3ValueReference vr, fmi3Float64 *value)
+{
+#ifdef OMC_FMI_LS_DAE
+  long i = (long)vr - (long)FMI3_DAE_MODE_VR - 1;
+  if (compiledInDAEMode && i >= 0 && i < comp->fmuData->simulationInfo->daeModeData->nResidualVars) {
+    return internalGetDAEResidual(comp, i, value);
+  }
+#endif
+  vrOutOfRange(comp, "fmi3GetFloat64", vr, FMI3_DAE_MODE_VR);
+  return fmi3Error;
+}
+
 static size_t fmi3NumValues(const fmi3ValueReference valueReferences[], size_t nValueReferences)
 {
   size_t i, n = 0;
@@ -390,11 +422,16 @@ static size_t fmi3NumValues(const fmi3ValueReference valueReferences[], size_t n
 }
 
 /* invalidState for fmi3Set{VariableType}. Configuration Mode takes structural
- * parameters only, and an FMU from this runtime has none, so any variable there
- * is refused while a call with none is legal. */
-static int fmu3InvalidSet(ModelInstance *comp, const char *func, int meStates, int csStates, size_t nValueReferences)
+ * parameters only, the only one being fmi-ls-dae's switch (isDAEModeVR): any
+ * other variable is refused there, while a call with none is legal. */
+static int fmu3InvalidSet(ModelInstance *comp, const char *func, int meStates, int csStates,
+    const fmi3ValueReference valueReferences[], size_t nValueReferences)
 {
-  if (comp->state == model_state_configuration_mode && nValueReferences == 0) return 0;
+  size_t i;
+  if (comp->state == model_state_configuration_mode) {
+    for (i = 0; i < nValueReferences && isDAEModeVR(valueReferences[i]); i++);
+    if (i == nValueReferences) return 0;
+  }
   return invalidState(comp, func, meStates, csStates);
 }
 
@@ -415,6 +452,9 @@ fmi3Status fmi3GetFloat64(fmi3Instance instance, const fmi3ValueReference valueR
       fmi3ValueReference evr = vr + (fmi3ValueReference)j;
       if (evr == (fmi3ValueReference)FMI3_TIME_VR) {
         values[k] = (fmi3Float64)comp->fmuData->localData[0]->timeValue;
+      } else if (evr >= (fmi3ValueReference)FMI3_DAE_MODE_VR) {
+        fmi3Status s = getDAEResidual(comp, evr, &values[k]);
+        if (s > fmi3Warning) return s;
       } else if (evr >= (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START) {
 #if NUMBER_OF_EVENT_INDICATORS > 0
         /* Not omcGetEventIndicators, which is Model Exchange only: these are
@@ -479,6 +519,10 @@ fmi3Status fmi3GetBoolean(fmi3Instance instance, const fmi3ValueReference valueR
     for (j = 0; j < cnt; j++, k++) {
       fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_BOOLEAN_VR_OFFSET);
       fmi3Boolean value;
+      if (isDAEModeVR(valueReferences[i] + j)) {
+        values[k] = c->daeMode;
+        continue;
+      }
       fmi3Status s = omcGetBoolean(c, &lvr, 1, &value);
       if (s > fmi3Warning) return (fmi3Status)s;
       values[k] = value ? fmi3True : fmi3False;
@@ -514,7 +558,7 @@ fmi3Status fmi3SetFloat64(fmi3Instance instance, const fmi3ValueReference valueR
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
-  if (fmu3InvalidSet(c, "fmi3SetFloat64", SET_REAL_ME_STATES, SET_REAL_CS_STATES, nValueReferences)) return fmi3Error;
+  if (fmu3InvalidSet(c, "fmi3SetFloat64", SET_REAL_ME_STATES, SET_REAL_CS_STATES, valueReferences, nValueReferences)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     fmi3ValueReference vr = valueReferences[i];
@@ -542,7 +586,7 @@ fmi3Status fmi3SetInt32(fmi3Instance instance, const fmi3ValueReference valueRef
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
-  if (fmu3InvalidSet(c, "fmi3SetInt32", SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES, nValueReferences)) return fmi3Error;
+  if (fmu3InvalidSet(c, "fmi3SetInt32", SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES, valueReferences, nValueReferences)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     size_t cnt = fmi3ArrayLength(valueReferences[i]);
@@ -562,13 +606,21 @@ fmi3Status fmi3SetBoolean(fmi3Instance instance, const fmi3ValueReference valueR
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
-  if (fmu3InvalidSet(c, "fmi3SetBoolean", SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES, nValueReferences)) return fmi3Error;
+  if (fmu3InvalidSet(c, "fmi3SetBoolean", SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES, valueReferences, nValueReferences)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     size_t cnt = fmi3ArrayLength(valueReferences[i]);
     for (j = 0; j < cnt; j++, k++) {
       fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_BOOLEAN_VR_OFFSET);
       fmi3Boolean value = values[k] ? fmi3True : fmi3False;
+      if (isDAEModeVR(valueReferences[i] + j)) {
+        if (c->state != model_state_configuration_mode) {
+          FILTERED_LOG(c, fmi3Error, LOG_STATUSERROR, "fmi3SetBoolean: fmi-ls-dae: the DAE-mode parameter can only be set in Configuration Mode.")
+          return fmi3Error;
+        }
+        c->daeMode = value;
+        continue;
+      }
       fmi3Status s = omcSetBoolean(c, &lvr, 1, &value);
       if (s > fmi3Warning) return (fmi3Status)s;
     }
@@ -582,7 +634,7 @@ fmi3Status fmi3SetString(fmi3Instance instance, const fmi3ValueReference valueRe
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
-  if (fmu3InvalidSet(c, "fmi3SetString", SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES, nValueReferences)) return fmi3Error;
+  if (fmu3InvalidSet(c, "fmi3SetString", SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES, valueReferences, nValueReferences)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     size_t cnt = fmi3ArrayLength(valueReferences[i]);
@@ -616,7 +668,7 @@ fmi3Status NAME(fmi3Instance instance, const fmi3ValueReference valueReferences[
   ModelInstance* c = fmu3InnerComp(instance);                                                  \
   (void)valueReferences; (void)values; (void)nValues;                                          \
   if (!c) return fmi3Error;                                                                    \
-  if (fmu3InvalidSet(c, #NAME, ME_STATES, CS_STATES, nValueReferences)) return fmi3Error;      \
+  if (fmu3InvalidSet(c, #NAME, ME_STATES, CS_STATES, valueReferences, nValueReferences)) return fmi3Error;      \
   return nValueReferences == 0 ? fmi3OK : fmi3Error;                                           \
 }
 
@@ -667,7 +719,7 @@ fmi3Status fmi3SetInt64(fmi3Instance instance, const fmi3ValueReference valueRef
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
-  if (fmu3InvalidSet(c, "fmi3SetInt64", SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES, nValueReferences)) return fmi3Error;
+  if (fmu3InvalidSet(c, "fmi3SetInt64", SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES, valueReferences, nValueReferences)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     size_t cnt = fmi3ArrayLength(valueReferences[i]);
@@ -718,7 +770,7 @@ fmi3Status fmi3SetBinary(fmi3Instance instance, const fmi3ValueReference valueRe
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i;
   if (!c) return fmi3Error;
-  if (fmu3InvalidSet(c, "fmi3SetBinary", SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES, nValueReferences)) return fmi3Error;
+  if (fmu3InvalidSet(c, "fmi3SetBinary", SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES, valueReferences, nValueReferences)) return fmi3Error;
   if (nValueReferences > 0 && (nullPointer(c, "fmi3SetBinary", "vr[]", valueReferences) ||
       nullPointer(c, "fmi3SetBinary", "valueSizes[]", valueSizes) ||
       nullPointer(c, "fmi3SetBinary", "values[]", values)))
@@ -914,18 +966,23 @@ fmi3Status fmi3GetAdjointDerivative(fmi3Instance instance, const fmi3ValueRefere
  * Configuration Mode. Every structural parameter of an exported FMU is `fixed`,
  * so it is only open from Instantiated: there is no Reconfiguration Mode, which
  * a `tunable` one would need, from Event Mode or Step Mode. FMI 3.0 forbids
- * entering it on an FMU without a structural parameter, and an FMU of this
- * runtime declares none (FMI3_HAS_STRUCTURAL_PARAMETERS).
+ * entering it on an FMU without a structural parameter. The only one is
+ * fmi-ls-dae's switch, which a --daeMode FMU declares.
  * ------------------------------------------------------------------------- */
-#ifndef FMI3_HAS_STRUCTURAL_PARAMETERS
-#define FMI3_HAS_STRUCTURAL_PARAMETERS 0
+static fmi3Boolean fmu3HasStructuralParameters(void)
+{
+#ifdef OMC_FMI_LS_DAE
+  return compiledInDAEMode ? fmi3True : fmi3False;
+#else
+  return fmi3False;
 #endif
+}
 
 fmi3Status fmi3EnterConfigurationMode(fmi3Instance instance)
 {
   ModelInstance *comp = fmu3InnerComp(instance);
   if (!comp) return fmi3Error;
-  if (!FMI3_HAS_STRUCTURAL_PARAMETERS) {
+  if (!fmu3HasStructuralParameters()) {
     FILTERED_LOG(comp, fmi3Error, LOG_STATUSERROR, "fmi3EnterConfigurationMode: Illegal call sequence. fmi3EnterConfigurationMode is not allowed for an FMU without a structural parameter.")
     comp->state = model_state_error;
     return fmi3Error;

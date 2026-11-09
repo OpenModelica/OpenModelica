@@ -332,6 +332,11 @@ pub mod sun {
     }
 
     impl Solver {
+        /// Whether this solver was set up for `n` unknowns and `nnz` nonzeros.
+        pub fn fits(&self, n: usize, nnz: usize) -> bool {
+            self.n == n && self.nnz == nnz
+        }
+
         pub fn new(n: usize, nnz: usize) -> Option<Solver> {
             let ctx = context();
             if ctx.is_null() {
@@ -1584,7 +1589,17 @@ pub fn solve(
     KIN_CACHE.with(
         handle,
         || sun::Solver::new(n, pat.nnz),
-        |solver| solver.solve(guess, nominal, pat, x, eq_index, time, has_jacobian, eval, assemble),
+        |solver| {
+            // A handle another system of a different size used before, e.g. in
+            // another FMU instance in the same process.
+            if !solver.fits(n, pat.nnz) {
+                match sun::Solver::new(n, pat.nnz) {
+                    Some(s) => *solver = s,
+                    None => return false,
+                }
+            }
+            solver.solve(guess, nominal, pat, x, eq_index, time, has_jacobian, eval, assemble)
+        },
     )
 }
 

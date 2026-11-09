@@ -414,7 +414,9 @@ typedef enum {
   NLS_SOLVED_LESS_ACCURACY = 2      /* NLS Solver found a solution with low accuracy */
 } NLS_SOLVER_STATUS;
 
-#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
+/* An FMU of a --daeMode model (OMC_FMI_DAE_MODE) solves its residual as a
+ * nonlinear system (initDAEModeExplicitNLS), also when the model has none of its own. */
+#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0 || defined(OMC_FMI_DAE_MODE)
 typedef struct NONLINEAR_SYSTEM_DATA
 {
   modelica_integer size;

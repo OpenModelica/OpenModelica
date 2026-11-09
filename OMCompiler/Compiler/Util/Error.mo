@@ -1356,13 +1356,11 @@ public constant ErrorTypes.Message DUPLICATE_VARIABLE_ERROR = ErrorTypes.MESSAGE
 public constant ErrorTypes.Message ENCRYPTION_NOT_SUPPORTED = ErrorTypes.MESSAGE(7026, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "File not Found: %s. Compile OpenModelica with Encryption support.");
 public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_ME = ErrorTypes.MESSAGE(7027, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
-  "DAE mode (--daeMode) is not supported by the C simulation runtime for a Model Exchange FMU (fmuType=\"%s\"). Export a Co-Simulation FMU (fmuType=\"cs\"), export with platforms={\"wasm\"}, whose runtime serves the residual form (as fmi-ls-dae for Model Exchange), with --simCodeTarget=C+Rust for an FMI 3.0 Model Exchange FMU (as fmi-ls-dae), or remove the --daeMode flag.");
+  "DAE mode (--daeMode) for a Model Exchange FMU (fmuType=\"%s\") needs FMI 3.0 (as fmi-ls-dae) and the C code generator, or platforms={\"wasm\"}. Export FMI 3.0, a Co-Simulation FMU (fmuType=\"cs\"), or remove the --daeMode flag.");
 public constant ErrorTypes.Message USER_CANCELLED = ErrorTypes.MESSAGE(7028, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "Operation cancelled by user.");
-public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_CS = ErrorTypes.MESSAGE(7030, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
-  "DAE mode (--daeMode) is not supported for a Co-Simulation FMU with --simCodeTarget=C+Rust. Export with --simCodeTarget=C, with platforms={\"wasm\"}, or remove the --daeMode flag.");
 public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_ME_DROPPED = ErrorTypes.MESSAGE(7036, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
-  "DAE mode (--daeMode) is not supported by the C simulation runtime for Model Exchange. Exporting Co-Simulation only.");
+  "DAE mode (--daeMode) for Model Exchange needs FMI 3.0 or platforms={\"wasm\"}. Exporting Co-Simulation only.");
 public constant ErrorTypes.Message ERROR_PKG_CONFLICT = ErrorTypes.MESSAGE(7037, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "No versions of %s %s and the libraries it uses can be used together:\n%s");
 public constant ErrorTypes.Message LOAD_MODEL_CONFLICT = ErrorTypes.MESSAGE(7038, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
