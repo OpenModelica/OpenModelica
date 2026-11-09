@@ -9,7 +9,6 @@ ModelicaCompliance.Classes.Predefined.ReservedClass.String
 ModelicaCompliance.Classes.Predefined.ReservedIntegerComp
 ModelicaCompliance.Classes.Predefined.ReservedRealComp
 ModelicaCompliance.Classes.Predefined.ReservedStringComp
-ModelicaCompliance.Classes.Specialized.BlockNoDirection
 ModelicaCompliance.Classes.Specialized.OperatorConstant
 ModelicaCompliance.Classes.Specialized.OperatorRecordEnclosingExtends
 ModelicaCompliance.Classes.Specialized.OperatorRecordLongExtends
