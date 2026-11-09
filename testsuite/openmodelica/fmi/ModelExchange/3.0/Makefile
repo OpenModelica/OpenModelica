@@ -8,6 +8,7 @@ fmi3_array_nonscalarized.mos \
 fmi3_arrays.mos \
 fmi3_arrays_scalarized.mos \
 fmi3_import_me.mos \
+fmi3_import_exitinit_assert.mos \
 fmi3_import_boolean.mos \
 fmi3_import_discrete_inputs.mos \
 fmi3_arrays_approx.mos \
@@ -24,6 +25,7 @@ fmi3_state_machine_c_rust.mos \
 fmi3_directional_derivatives.mos \
 fmi3_documentation.mos \
 fmi3_fmustate.mos \
+fmi3_me_exitinit_assert.mos \
 fmi3_graphics.mos \
 fmi3_graphics_inherited.mos \
 fmi3_msl_adder4.mos \

@@ -848,6 +848,9 @@ enum Mode {
     Instantiated,
     Init,
     Ready,
+    /// Exit-initialization-mode failed: FMI 2.0's error state, FMI 3.0's
+    /// Terminated. Only the getters, the FMU state functions and reset remain.
+    Failed,
 }
 
 /// What one Event Mode update did (see `MeState::run_event_update`).
@@ -994,10 +997,19 @@ impl Tunable {
 }
 
 impl<E: FmiHost + 'static> MeState<E> {
+    /// C's `invalidState` for its error state.
+    fn refuse_failed(&self, call: &str) -> Result<(), Status> {
+        if self.mode == Mode::Failed {
+            return Err(err_status(&alloc::format!("{call}: not allowed after an error")));
+        }
+        Ok(())
+    }
+
     /// C's `recordSet`: whether FMI lets the importer set the variable at `off`
     /// now, recording the write for the update and for `set_fmu_state`.
     fn check_set(&mut self, call: &str, vr: u32, off: u32) -> Result<(), Status> {
         use param_deps::{CONTINUOUS, INITIAL_APPROX, INITIAL_EXACT, INPUT, TUNABLE};
+        self.refuse_failed(call)?;
         let Some(deps) = &self.tunable.deps else {
             return Ok(());
         };
@@ -1014,6 +1026,7 @@ impl<E: FmiHost + 'static> MeState<E> {
             Mode::Ready if dae_unknown => true,
             Mode::Ready if self.continuous_time => state || (f & INPUT != 0 && f & CONTINUOUS != 0),
             Mode::Ready => f & (INPUT | TUNABLE) != 0,
+            Mode::Failed => false,
         };
         let Some(s) = slot.filter(|_| ok) else {
             return Err(bad_vr(call, vr, "a variable that can be set now"));
@@ -1256,8 +1269,9 @@ impl<E: FmiHost + 'static> MeState<E> {
     /// C's `updateIfNeeded`. In Initialization Mode the update is the initial
     /// solve, with the sets made so far as start values.
     fn update_if_needed(&mut self) -> Result<(), Status> {
-        // Instantiated has start values only: nothing is evaluated before initialization.
-        if !self.need_update || self.mode == Mode::Instantiated {
+        // Instantiated has start values only: nothing is evaluated before
+        // initialization, nor after it failed.
+        if !self.need_update || matches!(self.mode, Mode::Instantiated | Mode::Failed) {
             return Ok(());
         }
         // The point moved, so a Jacobian assembled at the old one is stale.
@@ -1649,6 +1663,9 @@ macro_rules! me_instance_methods {
     (@vis $($vis:tt)?) => {
     $($vis)? fn enter_continuous_time_mode(&self) -> Status {
         let mut st = self.st.borrow_mut();
+        if let Err(s) = st.refuse_failed("EnterContinuousTimeMode") {
+            return s;
+        }
         st.continuous_time = true;
         st.event_mode = false;
         Status::Ok
@@ -1656,6 +1673,9 @@ macro_rules! me_instance_methods {
 
     $($vis)? fn set_time(&self, time: f64) -> Status {
         let mut st = self.st.borrow_mut();
+        if let Err(s) = st.refuse_failed("SetTime") {
+            return s;
+        }
         st.write_f64(TIME_OFF, time);
         st.need_update = true;
         st.dae_current = false;
@@ -1663,6 +1683,9 @@ macro_rules! me_instance_methods {
     }
     $($vis)? fn set_continuous_states(&self, states: Vec<f64>) -> Status {
         let mut st = self.st.borrow_mut();
+        if let Err(s) = st.refuse_failed("SetContinuousStates") {
+            return s;
+        }
         if states.len() != st.layout.n_states as usize {
             return Status::Error;
         }
@@ -1682,7 +1705,7 @@ macro_rules! me_instance_methods {
     /// answers `fmi3Discard` -- C's `IRES = -1` -- for a model error (see `evaluate`).
     $($vis)? fn get_continuous_state_derivatives(&self) -> Result<Vec<f64>, Status> {
         let mut st = self.st.borrow_mut();
-        if st.need_update && (!st.dae_mode || st.mode == Mode::Init) {
+        if st.need_update && st.mode != Mode::Failed && (!st.dae_mode || st.mode == Mode::Init) {
             st.eval_ode()?;
         }
         let n = st.layout.n_states;
@@ -1691,6 +1714,9 @@ macro_rules! me_instance_methods {
     }
     $($vis)? fn get_event_indicators(&self) -> Result<Vec<f64>, Status> {
         let mut st = self.st.borrow_mut();
+        if st.mode == Mode::Failed {
+            return Ok((0..st.layout.n_zc).map(|i| st.read_f64(st.layout.zc_off + i * 8)).collect());
+        }
         if st.need_update {
             st.eval_ode()?;
             st.need_update = false;
@@ -1730,6 +1756,7 @@ macro_rules! me_instance_methods {
         _no_set_fmu_state_prior_to_current_point: bool,
     ) -> Result<CompletedStepResult, Status> {
         let mut st = self.st.borrow_mut();
+        st.refuse_failed("CompletedIntegratorStep")?;
         // C's `internal_CompletedIntegratorStep`; it leaves `_need_update` set.
         st.evaluate(|m| m.eval())?;
         // The only point the importer gives us to record the accepted step.
@@ -1763,9 +1790,9 @@ macro_rules! cs_instance_methods {
         _no_set_fmu_state_prior_to_current_point: bool,
     ) -> Result<DoStepResult, Status> {
         let mut st = self.st.borrow_mut();
-        // A failed exit-initialization-mode leaves the instance in Init.
+        st.refuse_failed("DoStep")?;
         if st.mode != Mode::Ready {
-            return Err(err_status("fmi3DoStep: only allowed after Initialization Mode"));
+            return Err(err_status("DoStep: only allowed after Initialization Mode"));
         }
         let target = current_communication_point + communication_step_size;
         let (sim_data, t, defer) = (st.sim_data, st.read_f64(TIME_OFF), st.defer);
@@ -1841,6 +1868,9 @@ macro_rules! cs_instance_methods {
     /// First order only, as C's `fmi2SetRealInputDerivatives`.
     $($vis)? fn set_input_derivatives(&self, requests: Vec<(u32, u32)>, values: Vec<f64>) -> Status {
         let mut st = self.st.borrow_mut();
+        if let Err(s) = st.refuse_failed("SetRealInputDerivatives") {
+            return s;
+        }
         if requests.len() != values.len() {
             return Status::Error;
         }
@@ -1912,6 +1942,9 @@ macro_rules! shared_instance_methods {
         _stop_time: Option<f64>,
     ) -> Status {
         let mut st = self.st.borrow_mut();
+        if let Err(s) = st.refuse_failed("EnterInitializationMode") {
+            return s;
+        }
         // The sets made while Instantiated stay: C's `setStartValues` here turns
         // the live values into the `start` attributes the initial solve reads.
         st.mode = Mode::Init;
@@ -1929,9 +1962,13 @@ macro_rules! shared_instance_methods {
 
     $($vis)? fn exit_initialization_mode(&self) -> Status {
         let mut st = self.st.borrow_mut();
+        if st.mode != Mode::Init {
+            return err_status("ExitInitializationMode: only allowed in Initialization Mode");
+        }
         // Only when something was set since the last solve: a get in Initialization
         // Mode has already run it otherwise.
         if let Err(status) = st.update_if_needed() {
+            st.mode = Mode::Failed;
             return status;
         }
         // `run_initialization` has run `initSample`, so the schedule is readable. A
@@ -1941,7 +1978,10 @@ macro_rules! shared_instance_methods {
             let (sim_data, layout) = (st.sim_data, st.layout);
             match Samples::load(&st.engine, sim_data, &layout, start_time) {
                 Ok(s) => st.samples = Some(s),
-                Err(err) => return err_status(err),
+                Err(err) => {
+                    st.mode = Mode::Failed;
+                    return err_status(err);
+                }
             }
         }
         // The CS driver is built lazily on the first `do-step` (see there): a me_cs
@@ -1955,7 +1995,10 @@ macro_rules! shared_instance_methods {
             let st = &mut *st;
             match CsDriver::new(&mut st.engine, &st.meta, sim_data, t, st.sync.take()) {
                 Ok(d) => st.cs = Some(d),
-                Err(err) => return err_status(err),
+                Err(err) => {
+                    st.mode = Mode::Failed;
+                    return err_status(err);
+                }
             }
         }
         st.mode = Mode::Ready;
@@ -1966,6 +2009,9 @@ macro_rules! shared_instance_methods {
 
     $($vis)? fn enter_event_mode(&self) -> Status {
         let mut st = self.st.borrow_mut();
+        if let Err(s) = st.refuse_failed("EnterEventMode") {
+            return s;
+        }
         st.continuous_time = false;
         st.event_mode = true;
         st.assert_held = false;
@@ -1981,6 +2027,7 @@ macro_rules! shared_instance_methods {
     /// and fails the call otherwise (`settle_event_asserts`).
     $($vis)? fn update_discrete_states(&self) -> Result<DiscreteStatesInfo, Status> {
         let mut st = self.st.borrow_mut();
+        st.refuse_failed("UpdateDiscreteStates")?;
         let (sim_data, layout) = (st.sim_data, st.layout);
         let time = st.read_f64(TIME_OFF);
         let before = match driver::discrete_snapshot(&st.engine, sim_data, &layout) {
@@ -2022,6 +2069,9 @@ macro_rules! shared_instance_methods {
 
     $($vis)? fn terminate(&self) -> Status {
         let mut st = self.st.borrow_mut();
+        if let Err(s) = st.refuse_failed("Terminate") {
+            return s;
+        }
         #[cfg(feature = "cs")]
         if omclog::active(omclog::STATS) {
             if let Some(d) = &st.cs {
@@ -2599,10 +2649,17 @@ macro_rules! shared_instance_methods {
         if vrs.is_empty() { Status::Ok } else { Status::Error }
     }
     $($vis)? fn evaluate_discrete_states(&self) -> Status {
-        Status::Ok
+        match self.st.borrow().refuse_failed("EvaluateDiscreteStates") {
+            Ok(()) => Status::Ok,
+            Err(s) => s,
+        }
     }
     $($vis)? fn enter_step_mode(&self) -> Status {
-        self.st.borrow_mut().event_mode = false;
+        let mut st = self.st.borrow_mut();
+        if let Err(s) = st.refuse_failed("EnterStepMode") {
+            return s;
+        }
+        st.event_mode = false;
         Status::Ok
     }
 
