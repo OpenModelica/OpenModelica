@@ -1,0 +1,16 @@
+name = "OMCompiler"
+uuid = "5eee2e4c-d6e4-4c2a-a3d5-a5d6acef407f"
+version = "0.1.0"
+authors = ["Martin Sjölund <martin.sjolund@liu.se>"]
+
+[deps]
+Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+
+[compat]
+julia = "1.10"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

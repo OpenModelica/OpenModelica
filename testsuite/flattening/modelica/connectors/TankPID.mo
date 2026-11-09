@@ -8,8 +8,8 @@ partial model BaseController
   parameter Real Ts(unit = "s") = 0.1  "Time period between discrete samples";
   parameter Real K = 2          "Gain";
   parameter Real T(unit = "s") = 10    "Time constant";
-  ReadSignal cIn            "Input sensor level, connector";
-  ActSignal  cOut            "Control to actuator, connector";
+  input ReadSignal cIn  "Input sensor level, connector";
+  output ActSignal cOut "Control to actuator, connector";
   parameter Real ref          "Reference level";
   Real error              "Deviation from reference level";
   Real outCtr              "Output control signal";
@@ -29,7 +29,7 @@ equation
 end PIDcontinuousController;
 
 model LiquidSource
-  LiquidFlow qOut;
+  output LiquidFlow qOut;
   parameter Real flowLevel = 0.02;
 equation
   qOut.lflow = if time > 150 then 3*flowLevel else flowLevel;
@@ -59,10 +59,10 @@ function limitValue
 end limitValue;
 
 model Tank
-  ReadSignal     tSensor     "Connector, sensor reading tank level (m)";
-  ActSignal      tActuator   "Connector, actuator controlling input flow";
-  LiquidFlow     qIn         "Connector, flow (m3/s) through input valve";
-  LiquidFlow     qOut        "Connector, flow (m3/s) through output valve";
+  output ReadSignal tSensor   "Connector, sensor reading tank level (m)";
+  input ActSignal   tActuator "Connector, actuator controlling input flow";
+  input LiquidFlow  qIn       "Connector, flow (m3/s) through input valve";
+  output LiquidFlow qOut      "Connector, flow (m3/s) through output valve";
   parameter Real area(unit = "m2")       =  0.5;
   parameter Real flowGain(unit = "m2/s") = 0.05;
   parameter Real minV= 0, maxV = 10;    // Limits for output valve flow
@@ -82,7 +82,6 @@ equation
   connect(source.qOut, tank.qIn);
   connect(tank.tActuator, pidContinuous.cOut);
   connect(tank.tSensor, pidContinuous.cIn);
-  annotation(__OpenModelica_commandLineOptions="+std=2.x -d=-newInst");
 end TankPID;
 
 // insert expected flat file here. Can be done by issuing the command
@@ -121,6 +120,9 @@ end TankPID;
 //   parameter Real tank.maxV = 10.0;
 //   Real tank.h(unit = "m", start = 0.0) "Tank level";
 // equation
+//   source.qOut.lflow = tank.qIn.lflow;
+//   tank.tActuator.act = pidContinuous.cOut.act;
+//   tank.tSensor.val = pidContinuous.cIn.val;
 //   source.qOut.lflow = if time > 150.0 then 3.0 * source.flowLevel else source.flowLevel;
 //   der(pidContinuous.x) = pidContinuous.error / pidContinuous.T;
 //   pidContinuous.y = pidContinuous.T * der(pidContinuous.error);
@@ -129,10 +131,7 @@ end TankPID;
 //   pidContinuous.cOut.act = pidContinuous.outCtr;
 //   assert(tank.minV >= 0.0, "minV - minimum Valve level must be >= 0 ");
 //   der(tank.h) = (tank.qIn.lflow - tank.qOut.lflow) / tank.area;
-//   tank.qOut.lflow = limitValue(tank.minV, tank.maxV, (-tank.flowGain) * tank.tActuator.act);
+//   tank.qOut.lflow = limitValue(tank.minV, tank.maxV, -tank.flowGain * tank.tActuator.act);
 //   tank.tSensor.val = tank.h;
-//   source.qOut.lflow = tank.qIn.lflow;
-//   pidContinuous.cOut.act = tank.tActuator.act;
-//   pidContinuous.cIn.val = tank.tSensor.val;
 // end TankPID;
 // endResult

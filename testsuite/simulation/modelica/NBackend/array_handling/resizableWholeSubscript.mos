@@ -1,0 +1,31 @@
+// name: resizableWholeSubscript
+// keywords: NewBackend resizable whole subscript
+// status: correct
+// cflags: --newBackend --simCodeScalarize=false --resizableArrays
+// suite: cSources
+// teardown_command: rm -f resizableWholeSubscript_25.mat resizableWholeSubscript_25.log
+//
+// An equation of a whole resizable array with an explicit [:] subscript
+// (LTX large interfaces). The [:] needs no size constraint, the translation
+// failed without an error message.
+
+loadString("
+model resizableWholeSubscript
+  parameter Integer n = 10;
+  Real x[n](each start = 3.14);
+equation
+  x[:] = fill(time, n);
+end resizableWholeSubscript;
+"); getErrorString();
+
+buildModel(resizableWholeSubscript, stopTime = 1); getErrorString();
+system("./resizableWholeSubscript -override=n=25 -r=resizableWholeSubscript_25.mat", "resizableWholeSubscript_25.log");
+abs(val(x[25], 0.5, "resizableWholeSubscript_25.mat") - 0.5) < 1e-8;
+// Result:
+// true
+// ""
+// {"resizableWholeSubscript", "resizableWholeSubscript_init.xml"}
+// ""
+// 0
+// true
+// endResult

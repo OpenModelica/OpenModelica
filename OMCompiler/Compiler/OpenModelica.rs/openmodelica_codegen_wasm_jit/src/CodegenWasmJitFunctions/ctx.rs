@@ -23,7 +23,10 @@ impl Literals {
         bytes.hash(&mut h);
         let key = (h.finish(), bytes.len());
         let offsets = self.seen.entry(key).or_default();
-        if let Some(&off) = offsets.iter().find(|&&o| self.blob[o as usize..][..bytes.len()] == *bytes) {
+        if let Some(&off) = offsets
+            .iter()
+            .find(|&&o| self.blob[o as usize..][..bytes.len()] == *bytes)
+        {
             return off;
         }
         let off = self.blob.len() as u32;
@@ -82,6 +85,8 @@ pub(crate) struct FnCtx<'a> {
     /// this one, and there is no generated C here to name. Rendered only at the
     /// few sites that can raise one ([`emit_src_loc`]).
     pub(super) src_loc: Option<metamodelica::SourceInfo>,
+    /// The equation being lowered (C's `equationIndexes`), 0 outside one.
+    pub(crate) eq: i32,
     /// Set when lowering *simulation* equations (the `CodegenWasmJit` target): a
     /// resolver that maps model component references not bound as wasm locals to
     /// slots in the shared `SimData` block. `None` for ordinary function bodies.
@@ -173,19 +178,19 @@ pub(crate) struct SimCtx {
     pub(crate) extobj_dtors: Arc<HashMap<String, String>>,
     /// `SimData` byte offset of the `terminate` flag, written by a fired
     /// `terminate(...)` when-operator (see `lower_when_op`).
-    pub(crate) terminate_off: u32,
+    pub(crate) terminate_off: SimOff,
     /// `SimData` byte offset of the `terminal()` flag, raised by the driver for
     /// the run's final discrete update.
-    pub(crate) terminal_off: u32,
+    pub(crate) terminal_off: SimOff,
     /// `SimData` byte offset of the `initial()` flag, raised by the driver for
     /// the initialization phase.
-    pub(crate) initial_off: u32,
+    pub(crate) initial_off: SimOff,
     /// `SimData` byte offset of the fired `terminate(...)`'s message + source
     /// position (C's `TermMsg`/`TermInfo`).
-    pub(crate) term_info_off: u32,
+    pub(crate) term_info_off: SimOff,
     /// `SimData` byte offset of the nonlinear-solver failure flag, raised by a
     /// non-converging `SES_NONLINEAR` system (`rt_solve_nls`).
-    pub(crate) nls_fail_off: u32,
+    pub(crate) nls_fail_off: SimOff,
     /// `SES_NONLINEAR` system index -> its `rt_solve_nls` job (shared-table slot
     /// + unknown count). Empty when the model has no nonlinear systems.
     pub(crate) nls_jobs: Arc<HashMap<i32, NlsJob>>,
@@ -195,47 +200,52 @@ pub(crate) struct SimCtx {
     /// Number of `sample(...)` time events, bounding the `active` flag region.
     pub(crate) n_samples: u32,
     /// `SimData` byte offset of the per-sample `active` flags.
-    pub(crate) sample_active_off: u32,
+    pub(crate) sample_active_off: SimOff,
     /// `SimData` byte offset of the held relation values (`relations[]`).
-    pub(crate) relations_off: u32,
+    pub(crate) relations_off: SimOff,
     /// `SimData` byte offset of the relation-evaluation-mode flag.
-    pub(crate) rel_fresh_off: u32,
+    pub(crate) rel_fresh_off: SimOff,
     /// `SimData` byte offset of the held relation snapshot — the hysteresis
     /// *direction* source, held fixed across an event's discrete update.
-    pub(crate) stored_rel_off: u32,
+    pub(crate) stored_rel_off: SimOff,
     /// `SimData` byte offset of `relationsPre` (held-mode relation values).
-    pub(crate) relations_pre_off: u32,
+    pub(crate) relations_pre_off: SimOff,
     /// Number of indexed relations.
     pub(crate) n_relations: u32,
     /// `SimData` byte offset of the held math-event values (`mathEventsValuePre`).
-    pub(crate) mathevents_off: u32,
+    pub(crate) mathevents_off: SimOff,
     /// Number of math-event slots (bounds the `mathEventsValuePre` region).
     pub(crate) n_mathevents: u32,
     /// `SimData` byte offset of the homotopy parameter lambda (`homotopy(a, s)` =
     /// `s + lambda*(a-s)`).
-    pub(crate) lambda_off: u32,
+    pub(crate) lambda_off: SimOff,
+    /// `SimData` byte offset of C's `skipStartEquations` flag (i32).
+    pub(crate) skip_start_off: SimOff,
     /// C's `homotopyMethod` code, handed to `rt_solve_nls`.
     pub(crate) homotopy_method: u8,
     /// True while lowering the `functionZeroCrossings` body: an indexed relation is
     /// then evaluated *fresh* (so a sign change is detectable) rather than held.
     pub(crate) zc_context: bool,
+    /// True while lowering a when-body, which runs only at its event: a violated
+    /// `assert()` there is never held (`rt_assert_when`).
+    pub(crate) when_body: bool,
     /// `SimData` byte offset of the zero-crossing hysteresis tolerance, written by
     /// the driver at run start from the run's tolerance. Continuous (Real) indexed
     /// relations use a ±`tolZC*(max(|a|,|b|)+max(nom))` band at events and in
     /// `functionZeroCrossings` so a relation stays put within the band — this keeps
     /// a bouncing ball from chattering through the floor near rest.
-    pub(crate) zctol_off: u32,
+    pub(crate) zctol_off: SimOff,
     /// C's `data->localData[1]->realVars` as `(one past the live real region, the
     /// mirror's base)`; `None` when no linear system reads it.
-    pub(crate) old_real: Option<(u32, u32, u32)>,
+    pub(crate) old_real: Option<(SimOff, SimOff, SimOff)>,
     /// `SimData` byte offset of `zeroCrossingsPre` — the previous accepted
     /// g-values, read by the `delayZeroCrossing` builtin in `zc_context`.
-    pub(crate) zc_pre_off: u32,
+    pub(crate) zc_pre_off: SimOff,
     /// `SimData` byte offset of the per-base-clock `$_clkfire` flags.
-    pub(crate) clock_fire_off: u32,
+    pub(crate) clock_fire_off: SimOff,
     /// Sub-clock block of the clocked partition being lowered — C's
     /// `baseClockIndex`/`subClockIndex`, resolved to an address. `None` outside one.
-    pub(crate) sub_clock_off: Option<u32>,
+    pub(crate) sub_clock_off: Option<SimOff>,
     /// `+profiling`'s clock plan; `None` for a model translated without it.
     pub(crate) prof: Option<Arc<ProfPlan>>,
 }
@@ -243,12 +253,12 @@ pub(crate) struct SimCtx {
 /// One base clock's `SimData` slots and its parameter-dependent init expressions
 /// (see [`FnCtx::emit_init_synchronous`]).
 pub(crate) struct ClockInit {
-    pub(crate) off: u32,
+    pub(crate) off: SimOff,
     /// `RATIONAL_CLOCK`'s `resolution`; `None` is C's default of 1.
     pub(crate) resolution: Option<metamodelica::Ref<DAE::Exp>>,
     /// `EVENT_CLOCK`'s `startInterval`, C's initial `stats.previousInterval`.
     pub(crate) start_interval: Option<metamodelica::Ref<DAE::Exp>>,
-    pub(crate) sub_offs: Vec<u32>,
+    pub(crate) sub_offs: Vec<SimOff>,
 }
 
 /// What one base clock's arm of `functionUpdateSynchronous` recomputes.
@@ -274,10 +284,10 @@ pub(crate) struct NlsJob {
     pub(crate) n: u32,
     /// C's `NONLINEAR_SYSTEM_DATA::equationIndex`: the number its messages quote.
     pub(crate) eq_index: u32,
-    pub(crate) hist_off: u32,
+    pub(crate) hist_off: SimOff,
     /// Byte offset of this system's `n` nominal values into the nominal block
     /// (`NLS_NOMINAL_GLOBAL`), read by `rt_solve_nls` for x-scaling.
-    pub(crate) nominal_off: u32,
+    pub(crate) nominal_off: SimOff,
     /// The system has a symbolic Jacobian: shared-table slot `4k+2` holds an
     /// `nls_jac` callback and `rt_solve_nls` uses `hybrj`.
     pub(crate) has_jac: bool,
@@ -302,7 +312,22 @@ pub(crate) struct NlsJob {
     /// history, nominal and bounds blocks in `SimData` (`hist_off`, `nominal_off`,
     /// `bounds_off`, tagged offsets) rather than in the module's blocks.
     pub(crate) dyn_n: Option<u32>,
-    pub(crate) bounds_off: u32,
+    pub(crate) bounds_off: SimOff,
+    pub(crate) dyn_pat: Option<DynPattern>,
+}
+
+/// The sparsity of a system with runtime-sized unknowns, which the runtime
+/// expands before the first solve (`rt_nls_sym_pattern`).
+#[derive(Clone, Copy)]
+pub(crate) struct DynPattern {
+    /// `built: u32 | colptr address: u32 | nnz: u32 | colours: u32 | params: [i64]`
+    /// in `SimData`.
+    pub(crate) slot: SimOff,
+    /// The encoded `SymPattern` in the pattern block.
+    pub(crate) sym_off: u32,
+    pub(crate) sym_len: u32,
+    /// How many size parameters its sizes refer to.
+    pub(crate) n_params: u32,
 }
 
 /// Per-system solver state for `n` unknowns: a count (padded to 8), C's
@@ -347,15 +372,15 @@ pub(crate) enum Attr {
 #[derive(Clone, Default)]
 pub(crate) struct AttrTargets {
     pub(crate) nls: Vec<u32>,
-    pub(crate) nom_offs: Vec<u32>,
+    pub(crate) nom_offs: Vec<SimOff>,
     /// A state's `SimData` `max` slot, which the numeric linearization reads.
-    pub(crate) max_offs: Vec<u32>,
+    pub(crate) max_offs: Vec<SimOff>,
     /// C's `realVarsData[i].attribute` as declared (`Layout::real_nom_off` and the
     /// optimizer's arrays): verbatim, without the `fmax(|nominal|, 1e-32)` clamp.
-    pub(crate) raw_min_offs: Vec<u32>,
-    pub(crate) raw_max_offs: Vec<u32>,
-    pub(crate) raw_nom_offs: Vec<u32>,
-    pub(crate) start_offs: Vec<u32>,
+    pub(crate) raw_min_offs: Vec<SimOff>,
+    pub(crate) raw_max_offs: Vec<SimOff>,
+    pub(crate) raw_nom_offs: Vec<SimOff>,
+    pub(crate) start_offs: Vec<SimOff>,
 }
 
 /// The [`AttrTargets`] of the variables an attribute equation assigns, the only
@@ -390,7 +415,7 @@ impl AttrTargetMap {
 #[derive(Clone)]
 pub(crate) struct ArrayGroup {
     /// Byte offset of element `[1,1,…]` (row-major first) within `SimData`.
-    pub(crate) base_off: u32,
+    pub(crate) base_off: SimOff,
     /// Element value type (`F64` for Real, `I32` for Integer/Boolean).
     pub(crate) wty: WTy,
     /// The elements are heap handles (String), so a read borrows and must retain.
@@ -430,7 +455,7 @@ pub(crate) struct ScatterGroup {
     pub(crate) heap: bool,
     pub(crate) dims: Vec<u32>,
     /// `SimData` byte offset and alias negation of each element, row-major.
-    pub(crate) elems: Vec<(u32, Neg)>,
+    pub(crate) elems: Vec<(SimOff, Neg)>,
 }
 
 /// A constant array's elements, row-major; it owns no `SimData` slots.
@@ -455,11 +480,17 @@ impl SlotMap {
     }
 
     pub(crate) fn with_overlay(&self, overlay: Arc<HashMap<String, SimSlot>>) -> Self {
-        SlotMap { model: self.model.clone(), overlay: Some(overlay) }
+        SlotMap {
+            model: self.model.clone(),
+            overlay: Some(overlay),
+        }
     }
 
     pub(crate) fn get(&self, key: &str) -> Option<SimSlot> {
-        self.overlay.as_ref().and_then(|o| o.get(key).copied()).or_else(|| self.model.get(key))
+        self.overlay
+            .as_ref()
+            .and_then(|o| o.get(key).copied())
+            .or_else(|| self.model.get(key))
     }
 
     pub(crate) fn contains_key(&self, key: &str) -> bool {
@@ -532,7 +563,11 @@ pub(crate) struct KeyTable<A: ArrayEntry> {
 
 impl<A: ArrayEntry> Default for KeyTable<A> {
     fn default() -> Self {
-        KeyTable { scalars: HashMap::default(), arrays: HashMap::default(), dyn_arrays: HashMap::default() }
+        KeyTable {
+            scalars: HashMap::default(),
+            arrays: HashMap::default(),
+            dyn_arrays: HashMap::default(),
+        }
     }
 }
 
@@ -574,31 +609,43 @@ impl<A: ArrayEntry> KeyTable<A> {
 impl ArrayEntry for SimSlot {
     type Value = SimSlot;
     fn element(&self, pos: u32, _: &str) -> Option<SimSlot> {
-        if openmodelica_sim_meta::resize::is_dyn(self.off) {
+        if sizes::is_dyn(self.off) {
             return self.dyn_element(&[], &Sz::lit(pos as i64), "");
         }
         let stride = self.wty.bytes();
-        let pre = if self.pre != 0 { self.pre + pos * stride } else { 0 };
-        Some(SimSlot { off: self.off + pos * stride, pre, ..*self })
+        let pre = if self.pre != 0 {
+            self.pre + SimOff::from(pos * stride)
+        } else {
+            0
+        };
+        Some(SimSlot {
+            off: self.off + SimOff::from(pos * stride),
+            pre,
+            ..*self
+        })
     }
     fn dyn_element(&self, _: &[i32], pos: &Sz, _: &str) -> Option<SimSlot> {
         let stride = self.wty.bytes() as i64;
-        let at = |off: u32| sizes::sim_offset(&(sizes::off_sz(off) + pos.clone() * stride)).ok();
+        let at = |off: SimOff| sizes::sim_offset(&(sizes::off_sz(off) + pos.clone() * stride)).ok();
         let pre = if self.pre != 0 { at(self.pre)? } else { 0 };
-        Some(SimSlot { off: at(self.off)?, pre, ..*self })
+        Some(SimSlot {
+            off: at(self.off)?,
+            pre,
+            ..*self
+        })
     }
 }
 
 /// A start-value slot (the realVars `start` attribute region).
 #[derive(Clone, Copy)]
-pub(crate) struct StartSlot(pub(crate) u32);
+pub(crate) struct StartSlot(pub(crate) SimOff);
 
 impl ArrayEntry for StartSlot {
-    type Value = u32;
-    fn element(&self, pos: u32, _: &str) -> Option<u32> {
-        Some(self.0 + pos * 8)
+    type Value = SimOff;
+    fn element(&self, pos: u32, _: &str) -> Option<SimOff> {
+        Some(self.0 + SimOff::from(pos * 8))
     }
-    fn dyn_element(&self, _: &[i32], pos: &Sz, _: &str) -> Option<u32> {
+    fn dyn_element(&self, _: &[i32], pos: &Sz, _: &str) -> Option<SimOff> {
         sizes::sim_offset(&(sizes::off_sz(self.0) + pos.clone() * 8)).ok()
     }
 }
@@ -614,7 +661,12 @@ impl ArrayEntry for StartExps {
     }
     /// A runtime-sized array keeps its one whole-array start expression.
     fn dyn_element(&self, idx: &[i32], _: &Sz, _: &str) -> Option<Self::Value> {
-        Some(self.0.first()?.as_ref().map(|e| crate::CodegenWasmJit::index_exp(e, idx)))
+        Some(
+            self.0
+                .first()?
+                .as_ref()
+                .map(|e| crate::CodegenWasmJit::index_exp(e, idx)),
+        )
     }
 }
 
@@ -634,7 +686,7 @@ impl ArrayEntry for AliasTarget {
 #[derive(Clone, Default)]
 pub(crate) struct VarTable {
     pub(crate) slots: KeyTable<SimSlot>,
-    pub(crate) pre: Option<openmodelica_sim_meta::Layout>,
+    pub(crate) pre: Option<openmodelica_sim_meta::Layout<SimOff>>,
 }
 
 impl VarTable {
@@ -644,9 +696,16 @@ impl VarTable {
         }
         let live = self.get(key.strip_prefix("$PRE.")?)?;
         if live.pre != 0 {
-            return Some(SimSlot { off: live.pre, pre: 0, ..live });
+            return Some(SimSlot {
+                off: live.pre,
+                pre: 0,
+                ..live
+            });
         }
-        Some(SimSlot { off: self.pre.as_ref()?.pre_slot_off(live.off)?, ..live })
+        Some(SimSlot {
+            off: self.pre.as_ref()?.pre_slot_off(live.off)?,
+            ..live
+        })
     }
 
     pub(crate) fn insert(&mut self, key: String, slot: SimSlot) {
@@ -658,7 +717,7 @@ impl VarTable {
 #[derive(Clone, Copy)]
 pub(crate) struct SimSlot {
     /// Byte offset of the value within the `SimData` block.
-    pub(crate) off: u32,
+    pub(crate) off: SimOff,
     /// Value type — `F64` for Real, `I32` for Integer/Boolean/String handle.
     pub(crate) wty: WTy,
     /// Alias negation: the cref is a negated alias of the variable at `off`, so
@@ -670,7 +729,7 @@ pub(crate) struct SimSlot {
     pub(crate) heap: bool,
     /// The `pre()` slot when it is not the layout's mirror of `off` (a resizable
     /// model's); 0 otherwise.
-    pub(crate) pre: u32,
+    pub(crate) pre: SimOff,
 }
 
 impl<'a> FnCtx<'a> {
@@ -715,7 +774,8 @@ impl<'a> FnCtx<'a> {
             we::Instruction::Block(_)
             | we::Instruction::Loop(_)
             | we::Instruction::If(_)
-            | we::Instruction::TryTable(..) => {
+            | we::Instruction::TryTable(..)
+            | we::Instruction::Try(_) => {
                 self.ctrl_depth += 1;
             }
             we::Instruction::End => {
@@ -731,11 +791,15 @@ impl<'a> FnCtx<'a> {
     /// dim word, the array handle being below both on the stack.
     fn set_dim_inline(&mut self) -> bool {
         let n = self.instrs.len();
-        let (Some(we::Instruction::I32Const(axis)), Some(size)) = (self.instrs.get(n.wrapping_sub(2)), self.instrs.get(n.wrapping_sub(1)))
+        let (Some(we::Instruction::I32Const(axis)), Some(size)) =
+            (self.instrs.get(n.wrapping_sub(2)), self.instrs.get(n.wrapping_sub(1)))
         else {
             return false;
         };
-        let simple = matches!(size, we::Instruction::LocalGet(_) | we::Instruction::I32Const(_) | we::Instruction::GlobalGet(_));
+        let simple = matches!(
+            size,
+            we::Instruction::LocalGet(_) | we::Instruction::I32Const(_) | we::Instruction::GlobalGet(_)
+        );
         if !simple || *axis < 0 {
             return false;
         }
@@ -784,11 +848,7 @@ impl<'a> FnCtx<'a> {
     /// `sim` rather than wasm locals. `by_name` resolves calls to model
     /// functions (Modelica functions used by the equations); `literals` is the
     /// module-wide String-literal pool.
-    pub(crate) fn new_sim(
-        sim: SimCtx,
-        by_name: &'a HashMap<String, FnInfo>,
-        literals: &'a mut Literals,
-    ) -> Self {
+    pub(crate) fn new_sim(sim: SimCtx, by_name: &'a HashMap<String, FnInfo>, literals: &'a mut Literals) -> Self {
         Self::new_sim_params(sim, by_name, literals, 1)
     }
 
@@ -815,6 +875,7 @@ impl<'a> FnCtx<'a> {
             null_locals: Vec::new(),
             elem_ptr_tmp: None,
             src_loc: None,
+            eq: 0,
             sim: Some(sim),
             dt_local_cons: false,
             dt_fallback: None,
@@ -858,6 +919,14 @@ impl<'a> FnCtx<'a> {
         self.emit(we::Instruction::If(we::BlockType::Empty));
     }
 
+    /// Open `if (mask[k])` on the byte array the second parameter points at;
+    /// `sim_end_block` closes it.
+    pub(crate) fn sim_mask_guard(&mut self, k: u32) {
+        self.emit(we::Instruction::LocalGet(1));
+        self.emit(we::Instruction::I32Load8U(mem_arg(k, 0)));
+        self.emit(we::Instruction::If(we::BlockType::Empty));
+    }
+
     /// Open `if (idx == v)` on the second parameter, where C dispatches with a
     /// `switch`; `sim_end_block` closes it.
     pub(crate) fn sim_index_guard(&mut self, v: u32) {
@@ -885,7 +954,7 @@ impl<'a> FnCtx<'a> {
 
     /// Point the clock builtins at sub-clock `off` (a `SimData` byte offset) while
     /// the partition it belongs to is lowered.
-    pub(crate) fn set_sub_clock(&mut self, off: Option<u32>) {
+    pub(crate) fn set_sub_clock(&mut self, off: Option<SimOff>) {
         if let Some(s) = self.sim.as_mut() {
             s.sub_clock_off = off;
         }
@@ -904,7 +973,7 @@ impl<'a> FnCtx<'a> {
     /// Emit `savePreValues`: `pre := live` for each `(pre_off, live_off, bytes)`
     /// region (via `memory.copy` within `SimData`). Appended to the per-step
     /// function so a `when` edge test sees the previous step's values.
-    pub(crate) fn sim_save_pre_values(&mut self, regions: &[(u32, u32, Sz)]) -> Result<()> {
+    pub(crate) fn sim_save_pre_values(&mut self, regions: &[(SimOff, SimOff, Sz)]) -> Result<()> {
         for (dst_off, src_off, bytes) in regions {
             if bytes.as_const() == Some(0) {
                 continue;
@@ -925,16 +994,16 @@ impl<'a> FnCtx<'a> {
     pub(crate) fn emit_init_sample(
         &mut self,
         samples: &[(metamodelica::Ref<DAE::Exp>, metamodelica::Ref<DAE::Exp>)],
-        sample_off: u32,
+        sample_off: SimOff,
     ) -> Result<()> {
         let data = self.sim()?.data_local;
         for (k, (start, interval)) in samples.iter().enumerate() {
-            let base = sample_off + k as u32 * 16;
+            let base = sample_off + SimOff::from(k as u32 * 16);
             for (exp, off) in [(start, base), (interval, base + 8)] {
                 self.emit(we::Instruction::LocalGet(data));
                 let w = compile_exp(self, exp)?;
                 coerce(self, w, WTy::F64);
-                self.emit(we::Instruction::F64Store(mem_arg(off, 3)));
+                self.emit(we::Instruction::F64Store(sim_mem(off, 3)?));
             }
         }
         Ok(())
@@ -954,7 +1023,10 @@ impl<'a> FnCtx<'a> {
                 }
                 None => self.emit(we::Instruction::I32Const(1)),
             }
-            self.emit(we::Instruction::I32Store(mem_arg(c.off + clock_field::RESOLUTION, 2)));
+            self.emit(we::Instruction::I32Store(sim_mem(
+                c.off + SimOff::from(clock_field::RESOLUTION),
+                2,
+            )?));
             // C's `(CLOCK_STATS){<startInterval>, 0, -1}`.
             self.emit(we::Instruction::LocalGet(data));
             match &c.start_interval {
@@ -964,33 +1036,45 @@ impl<'a> FnCtx<'a> {
                 }
                 None => self.emit(we::Instruction::F64Const(0.0.into())),
             }
-            self.emit(we::Instruction::F64Store(mem_arg(c.off + clock_field::PREV_INTERVAL, 3)));
+            self.emit(we::Instruction::F64Store(sim_mem(
+                c.off + SimOff::from(clock_field::PREV_INTERVAL),
+                3,
+            )?));
             for (off, v) in [
-                (c.off + clock_field::INTERVAL, -1.0),
-                (c.off + clock_field::LAST_ACTIVATION, -1.0),
+                (c.off + SimOff::from(clock_field::INTERVAL), -1.0),
+                (c.off + SimOff::from(clock_field::LAST_ACTIVATION), -1.0),
             ] {
                 self.emit(we::Instruction::LocalGet(data));
                 self.emit(we::Instruction::F64Const(v.into()));
-                self.emit(we::Instruction::F64Store(mem_arg(off, 3)));
+                self.emit(we::Instruction::F64Store(sim_mem(off, 3)?));
             }
             for (off, v) in [
-                (c.off + clock_field::COUNT, 0),
-                (c.off + clock_field::INTERVAL_COUNTER, -1),
+                (c.off + SimOff::from(clock_field::COUNT), 0),
+                (c.off + SimOff::from(clock_field::INTERVAL_COUNTER), -1),
             ] {
                 self.emit(we::Instruction::LocalGet(data));
                 self.emit(we::Instruction::I32Const(v));
-                self.emit(we::Instruction::I32Store(mem_arg(off, 2)));
+                self.emit(we::Instruction::I32Store(sim_mem(off, 2)?));
             }
             for &sub in &c.sub_offs {
                 self.emit(we::Instruction::LocalGet(data));
                 self.emit(we::Instruction::F64Const(0.0.into()));
-                self.emit(we::Instruction::F64Store(mem_arg(sub + clock_field::SUB_PREV_INTERVAL, 3)));
+                self.emit(we::Instruction::F64Store(sim_mem(
+                    sub + SimOff::from(clock_field::SUB_PREV_INTERVAL),
+                    3,
+                )?));
                 self.emit(we::Instruction::LocalGet(data));
                 self.emit(we::Instruction::F64Const((-1.0).into()));
-                self.emit(we::Instruction::F64Store(mem_arg(sub + clock_field::SUB_LAST_ACTIVATION, 3)));
+                self.emit(we::Instruction::F64Store(sim_mem(
+                    sub + SimOff::from(clock_field::SUB_LAST_ACTIVATION),
+                    3,
+                )?));
                 self.emit(we::Instruction::LocalGet(data));
                 self.emit(we::Instruction::I32Const(0));
-                self.emit(we::Instruction::I32Store(mem_arg(sub + clock_field::SUB_COUNT, 2)));
+                self.emit(we::Instruction::I32Store(sim_mem(
+                    sub + SimOff::from(clock_field::SUB_COUNT),
+                    2,
+                )?));
             }
         }
         Ok(())
@@ -998,7 +1082,7 @@ impl<'a> FnCtx<'a> {
 
     /// One base clock's arm of `functionUpdateSynchronous` (C's `updatePartition`):
     /// re-evaluate the clock's interval, which may depend on a variable.
-    pub(crate) fn emit_update_synchronous(&mut self, off: u32, update: &ClockUpdate) -> Result<()> {
+    pub(crate) fn emit_update_synchronous(&mut self, off: SimOff, update: &ClockUpdate) -> Result<()> {
         let data = self.sim()?.data_local;
         match update {
             ClockUpdate::Nothing => {}
@@ -1006,31 +1090,52 @@ impl<'a> FnCtx<'a> {
                 self.emit(we::Instruction::LocalGet(data));
                 let w = compile_exp(self, counter)?;
                 coerce(self, w, WTy::I32);
-                self.emit(we::Instruction::I32Store(mem_arg(off + clock_field::INTERVAL_COUNTER, 2)));
+                self.emit(we::Instruction::I32Store(sim_mem(
+                    off + SimOff::from(clock_field::INTERVAL_COUNTER),
+                    2,
+                )?));
                 self.emit(we::Instruction::LocalGet(data));
                 self.emit(we::Instruction::LocalGet(data));
-                self.emit(we::Instruction::I32Load(mem_arg(off + clock_field::INTERVAL_COUNTER, 2)));
+                self.emit(we::Instruction::I32Load(sim_mem(
+                    off + SimOff::from(clock_field::INTERVAL_COUNTER),
+                    2,
+                )?));
                 self.emit(we::Instruction::F64ConvertI32S);
                 self.emit(we::Instruction::LocalGet(data));
-                self.emit(we::Instruction::I32Load(mem_arg(off + clock_field::RESOLUTION, 2)));
+                self.emit(we::Instruction::I32Load(sim_mem(
+                    off + SimOff::from(clock_field::RESOLUTION),
+                    2,
+                )?));
                 self.emit(we::Instruction::F64ConvertI32S);
                 self.emit(we::Instruction::F64Div);
-                self.emit(we::Instruction::F64Store(mem_arg(off + clock_field::INTERVAL, 3)));
+                self.emit(we::Instruction::F64Store(sim_mem(
+                    off + SimOff::from(clock_field::INTERVAL),
+                    3,
+                )?));
             }
             ClockUpdate::Real(interval) => {
                 self.emit(we::Instruction::LocalGet(data));
                 let w = compile_exp(self, interval)?;
                 coerce(self, w, WTy::F64);
-                self.emit(we::Instruction::F64Store(mem_arg(off + clock_field::INTERVAL, 3)));
+                self.emit(we::Instruction::F64Store(sim_mem(
+                    off + SimOff::from(clock_field::INTERVAL),
+                    3,
+                )?));
             }
             // C's `INFERRED_CLOCK` default `Clock(intervalCounter=1, resolution=1)`.
             ClockUpdate::Inferred => {
                 self.emit(we::Instruction::LocalGet(data));
                 self.emit(we::Instruction::I32Const(1));
-                self.emit(we::Instruction::I32Store(mem_arg(off + clock_field::INTERVAL_COUNTER, 2)));
+                self.emit(we::Instruction::I32Store(sim_mem(
+                    off + SimOff::from(clock_field::INTERVAL_COUNTER),
+                    2,
+                )?));
                 self.emit(we::Instruction::LocalGet(data));
                 self.emit(we::Instruction::F64Const(1.0.into()));
-                self.emit(we::Instruction::F64Store(mem_arg(off + clock_field::INTERVAL, 3)));
+                self.emit(we::Instruction::F64Store(sim_mem(
+                    off + SimOff::from(clock_field::INTERVAL),
+                    3,
+                )?));
             }
         }
         Ok(())
@@ -1042,9 +1147,10 @@ impl<'a> FnCtx<'a> {
     /// `updateStaticDataOfNonlinearSystems`).
     pub(crate) fn emit_update_bound_attrs(
         &mut self,
-        defaults: &[(u32, ConstSlot)],
-        dyn_defaults: &[(u32, Sz, ConstSlot, u32)],
-        attrs: &[(Attr, metamodelica::Ref<DAE::Exp>, AttrTargets, u32, Option<SimSlot>)],
+        defaults: &[(SimOff, ConstSlot)],
+        dyn_defaults: &[(SimOff, Sz, ConstSlot, u32)],
+        attrs: &[(Attr, metamodelica::Ref<DAE::Exp>, AttrTargets, SimOff, Option<SimSlot>)],
+        masks: &[Option<u32>],
     ) -> Result<()> {
         let data = self.sim()?.data_local;
         emit_const_slots(self, defaults)?;
@@ -1055,96 +1161,123 @@ impl<'a> FnCtx<'a> {
             return Ok(());
         }
         let (raw, val) = (self.alloc_temp(WTy::F64), self.alloc_temp(WTy::F64));
-        for (attr, exp, targets, log_off, var) in attrs {
-            let w = compile_exp(self, exp)?;
-            coerce(self, w, WTy::F64);
-            self.emit(we::Instruction::LocalSet(raw));
-            // C prints the value from inside this function; the driver reads it here.
-            self.emit(we::Instruction::LocalGet(data));
-            self.emit(we::Instruction::LocalGet(raw));
-            self.emit(we::Instruction::F64Store(mem_arg(*log_off, 3)));
-            if matches!(attr, Attr::Nominal) {
-                for off in &targets.nom_offs {
-                    // C's `dassl.c`: `atol[i] = tol * fmax(fabs(nominal), 1e-32)`.
-                    let rel = self.emit_sim_base(*off)?;
-                    self.emit(we::Instruction::LocalGet(raw));
-                    self.emit(we::Instruction::F64Abs);
-                    self.emit(we::Instruction::F64Const(1e-32f64.into()));
-                    self.emit(we::Instruction::F64Max);
-                    self.emit(we::Instruction::F64Store(mem_arg(rel, 3)));
-                }
+        for (i, (attr, exp, targets, log_off, var)) in attrs.iter().enumerate() {
+            let mask = masks.get(i).copied().flatten();
+            if let Some(k) = mask {
+                self.sim_mask_guard(k);
             }
-            if matches!(attr, Attr::Max) {
-                for off in &targets.max_offs {
-                    let rel = self.emit_sim_base(*off)?;
-                    self.emit(we::Instruction::LocalGet(raw));
-                    self.emit(we::Instruction::F64Store(mem_arg(rel, 3)));
-                }
+            self.emit_bound_attr(*attr, exp, targets, *log_off, *var, data, raw, val)?;
+            if mask.is_some() {
+                self.sim_end_block();
             }
-            let raw_offs: &[u32] = match attr {
-                Attr::Min => &targets.raw_min_offs,
-                Attr::Max => &targets.raw_max_offs,
-                Attr::Nominal => &targets.raw_nom_offs,
-                Attr::Start => &targets.start_offs,
-            };
-            for off in raw_offs {
+        }
+        Ok(())
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn emit_bound_attr(
+        &mut self,
+        attr: Attr,
+        exp: &metamodelica::Ref<DAE::Exp>,
+        targets: &AttrTargets,
+        log_off: SimOff,
+        var: Option<SimSlot>,
+        data: u32,
+        raw: u32,
+        val: u32,
+    ) -> Result<()> {
+        let w = compile_exp(self, exp)?;
+        coerce(self, w, WTy::F64);
+        self.emit(we::Instruction::LocalSet(raw));
+        // C prints the value from inside this function; the driver reads it here.
+        self.emit(we::Instruction::LocalGet(data));
+        self.emit(we::Instruction::LocalGet(raw));
+        self.emit(we::Instruction::F64Store(sim_mem(log_off, 3)?));
+        if matches!(attr, Attr::Nominal) {
+            for off in &targets.nom_offs {
+                // C's `dassl.c`: `atol[i] = tol * fmax(fabs(nominal), 1e-32)`.
+                let rel = self.emit_sim_base(*off)?;
+                self.emit(we::Instruction::LocalGet(raw));
+                self.emit(we::Instruction::F64Abs);
+                self.emit(we::Instruction::F64Const(1e-32f64.into()));
+                self.emit(we::Instruction::F64Max);
+                self.emit(we::Instruction::F64Store(mem_arg(rel, 3)));
+            }
+        }
+        if matches!(attr, Attr::Max) {
+            for off in &targets.max_offs {
                 let rel = self.emit_sim_base(*off)?;
                 self.emit(we::Instruction::LocalGet(raw));
                 self.emit(we::Instruction::F64Store(mem_arg(rel, 3)));
             }
-            // C's `postExp`: `<var> = $START.<var>`, but not for a String, whose slot
-            // holds a reference-counted handle.
-            if let Some(slot) = var.filter(|s| s.negate == Neg::None && !s.heap) {
-                let rel = self.emit_sim_base(slot.off)?;
-                self.emit(we::Instruction::LocalGet(raw));
-                match slot.wty {
-                    WTy::F64 => self.emit(we::Instruction::F64Store(mem_arg(rel, 3))),
-                    _ => {
-                        self.emit(we::Instruction::I32TruncSatF64S);
-                        self.emit(we::Instruction::I32Store(mem_arg(rel, 2)));
-                    }
-                }
-            }
-            if targets.nls.is_empty() {
-                continue;
-            }
+        }
+        let raw_offs: &[SimOff] = match attr {
+            Attr::Min => &targets.raw_min_offs,
+            Attr::Max => &targets.raw_max_offs,
+            Attr::Nominal => &targets.raw_nom_offs,
+            Attr::Start => &targets.start_offs,
+        };
+        for off in raw_offs {
+            let rel = self.emit_sim_base(*off)?;
             self.emit(we::Instruction::LocalGet(raw));
-            match attr {
-                // `start` has no nonlinear-solver slot; it only feeds the optimizer.
-                Attr::Start => {}
-                // A nonpositive nominal would collapse the x-scaling; 1 stands in.
-                Attr::Nominal => {
-                    self.emit(we::Instruction::F64Abs);
-                    self.emit(we::Instruction::LocalTee(val));
-                    self.emit(we::Instruction::F64Const(1.0f64.into()));
-                    self.emit(we::Instruction::LocalGet(val));
-                    self.emit(we::Instruction::F64Const(0.0f64.into()));
-                    self.emit(we::Instruction::F64Gt);
-                    self.emit(we::Instruction::Select);
+            self.emit(we::Instruction::F64Store(mem_arg(rel, 3)));
+        }
+        // C's `postExp`: `<var> = $START.<var>`, but not for a String, whose slot
+        // holds a reference-counted handle.
+        if let Some(slot) = var.filter(|s| s.negate == Neg::None && !s.heap) {
+            let rel = self.emit_sim_base(slot.off)?;
+            self.emit(we::Instruction::LocalGet(raw));
+            match slot.wty {
+                WTy::F64 => self.emit(we::Instruction::F64Store(mem_arg(rel, 3))),
+                _ => {
+                    self.emit(we::Instruction::I32TruncSatF64S);
+                    self.emit(we::Instruction::I32Store(mem_arg(rel, 2)));
                 }
-                Attr::Min | Attr::Max => {}
             }
-            self.emit(we::Instruction::LocalSet(val));
-            let (global, stride, slot) = match attr {
-                Attr::Nominal => (NLS_NOMINAL_GLOBAL, 8, 0),
-                Attr::Min => (NLS_BOUNDS_GLOBAL, 16, 0),
-                Attr::Max => (NLS_BOUNDS_GLOBAL, 16, 8),
-                // Not a solver input; `targets.nls` is empty for a `start`.
-                Attr::Start => continue,
-            };
-            for idx in &targets.nls {
-                self.emit(we::Instruction::GlobalGet(global));
+        }
+        if targets.nls.is_empty() {
+            return Ok(());
+        }
+        self.emit(we::Instruction::LocalGet(raw));
+        match attr {
+            // `start` has no nonlinear-solver slot; it only feeds the optimizer.
+            Attr::Start => {}
+            // A nonpositive nominal would collapse the x-scaling; 1 stands in.
+            Attr::Nominal => {
+                self.emit(we::Instruction::F64Abs);
+                self.emit(we::Instruction::LocalTee(val));
+                self.emit(we::Instruction::F64Const(1.0f64.into()));
                 self.emit(we::Instruction::LocalGet(val));
-                self.emit(we::Instruction::F64Store(mem_arg(idx * stride + slot, 3)));
+                self.emit(we::Instruction::F64Const(0.0f64.into()));
+                self.emit(we::Instruction::F64Gt);
+                self.emit(we::Instruction::Select);
             }
+            Attr::Min | Attr::Max => {}
+        }
+        self.emit(we::Instruction::LocalSet(val));
+        let (global, stride, slot) = match attr {
+            Attr::Nominal => (NLS_NOMINAL_GLOBAL, 8, 0),
+            Attr::Min => (NLS_BOUNDS_GLOBAL, 16, 0),
+            Attr::Max => (NLS_BOUNDS_GLOBAL, 16, 8),
+            // Not a solver input; `targets.nls` is empty for a `start`.
+            Attr::Start => return Ok(()),
+        };
+        for idx in &targets.nls {
+            self.emit(we::Instruction::GlobalGet(global));
+            self.emit(we::Instruction::LocalGet(val));
+            self.emit(we::Instruction::F64Store(mem_arg(idx * stride + slot, 3)));
         }
         Ok(())
     }
 
     /// Store each real variable's declared `start` value in its start attribute
     /// slot at `off`.
-    pub(crate) fn emit_init_start_values(&mut self, starts: &[(f64, u32)], fills: &[(u32, Sz, f64)]) -> Result<()> {
-        let mut stores: Vec<(u32, ConstSlot)> = starts.iter().map(|&(v, off)| (off, ConstSlot::f64(v))).collect();
+    pub(crate) fn emit_init_start_values(
+        &mut self,
+        starts: &[(f64, SimOff)],
+        fills: &[(SimOff, Sz, f64)],
+    ) -> Result<()> {
+        let mut stores: Vec<(SimOff, ConstSlot)> = starts.iter().map(|&(v, off)| (off, ConstSlot::f64(v))).collect();
         stores.sort_by_key(|&(off, _)| off);
         emit_const_slots(self, &stores)?;
         for (off, n, v) in fills {
@@ -1196,7 +1329,7 @@ impl<'a> FnCtx<'a> {
     pub(crate) fn emit_update_relations(
         &mut self,
         relations: &[Option<metamodelica::Ref<DAE::Exp>>],
-        relations_off: u32,
+        relations_off: SimOff,
     ) -> Result<()> {
         let data = self.sim()?.data_local;
         if relations.len() > self.sim()?.n_relations as usize {
@@ -1204,13 +1337,19 @@ impl<'a> FnCtx<'a> {
         }
         for (i, rel) in relations.iter().enumerate() {
             let Some(rel) = rel else { continue };
-            let DAE::Exp::RELATION { exp1, operator, exp2, .. } = &**rel else {
+            let DAE::Exp::RELATION {
+                exp1, operator, exp2, ..
+            } = &**rel
+            else {
                 return Err("CodegenWasmJit: non-relation in the relations list");
             };
             self.emit(we::Instruction::LocalGet(data));
             let w = compile_relation_fresh(self, exp1, operator, exp2)?;
             coerce(self, w, WTy::I32);
-            self.emit(we::Instruction::I32Store(mem_arg(relations_off + i as u32 * 4, 2)));
+            self.emit(we::Instruction::I32Store(sim_mem(
+                relations_off + SimOff::from(i as u32 * 4),
+                2,
+            )?));
         }
         Ok(())
     }
@@ -1254,7 +1393,12 @@ impl<'a> FnCtx<'a> {
     /// `delay(...)` expression (C's `function_storeDelayed`).
     pub(crate) fn emit_store_delayed(
         &mut self,
-        delayed: &[(i32, metamodelica::Ref<DAE::Exp>, metamodelica::Ref<DAE::Exp>, metamodelica::Ref<DAE::Exp>)],
+        delayed: &[(
+            i32,
+            metamodelica::Ref<DAE::Exp>,
+            metamodelica::Ref<DAE::Exp>,
+            metamodelica::Ref<DAE::Exp>,
+        )],
     ) -> Result<()> {
         let data = self.sim()?.data_local;
         for (idx, e, d, dmax) in delayed {
@@ -1277,10 +1421,7 @@ impl<'a> FnCtx<'a> {
     /// An operator inside an `if`-branch is guarded by the same condition as the
     /// branch: storing while it is inactive would advance a profile the model is not
     /// reading (#16099).
-    pub(crate) fn emit_store_spatial(
-        &mut self,
-        spatial: &[SimCode::SpatialDistribution],
-    ) -> Result<()> {
+    pub(crate) fn emit_store_spatial(&mut self, spatial: &[SimCode::SpatialDistribution]) -> Result<()> {
         let data = self.sim()?.data_local;
         for sd in spatial {
             if let Some(cond) = &sd.condition {
@@ -1307,11 +1448,7 @@ impl<'a> FnCtx<'a> {
     /// Emit `functionInitSpatialDistribution`: allocate the operators for this run
     /// and fill each from its `initialPoints`/`initialValues` parameter arrays (C's
     /// `allocSpatialDistribution` + `function_initSpatialDistribution`).
-    pub(crate) fn emit_init_spatial(
-        &mut self,
-        n_spatial: u32,
-        spatial: &[SimCode::SpatialDistribution],
-    ) -> Result<()> {
+    pub(crate) fn emit_init_spatial(&mut self, n_spatial: u32, spatial: &[SimCode::SpatialDistribution]) -> Result<()> {
         self.emit(we::Instruction::I32Const(n_spatial as i32));
         self.emit(we::Instruction::Call(rt_index("rt_spatial_init")?));
         for sd in spatial {
@@ -1340,11 +1477,11 @@ impl<'a> FnCtx<'a> {
     }
 
     /// Clear the rejected-residual index, so a re-run never reports a stale verdict.
-    pub(crate) fn emit_removed_init_reset(&mut self, idx_off: u32) -> Result<()> {
+    pub(crate) fn emit_removed_init_reset(&mut self, idx_off: SimOff) -> Result<()> {
         let data = self.sim()?.data_local;
         self.emit(we::Instruction::LocalGet(data));
         self.emit(we::Instruction::I32Const(0));
-        self.emit(we::Instruction::I32Store(mem_arg(idx_off, 2)));
+        self.emit(we::Instruction::I32Store(sim_mem(idx_off, 2)?));
         Ok(())
     }
 
@@ -1355,8 +1492,8 @@ impl<'a> FnCtx<'a> {
         &mut self,
         index: u32,
         exp: &DAE::Exp,
-        res_off: u32,
-        idx_off: u32,
+        res_off: SimOff,
+        idx_off: SimOff,
     ) -> Result<()> {
         use we::Instruction as I;
         let data = self.sim()?.data_local;
@@ -1370,10 +1507,10 @@ impl<'a> FnCtx<'a> {
         self.emit(I::If(we::BlockType::Empty));
         self.emit(I::LocalGet(data));
         self.emit(I::LocalGet(res));
-        self.emit(I::F64Store(mem_arg(res_off, 3)));
+        self.emit(I::F64Store(sim_mem(res_off, 3)?));
         self.emit(I::LocalGet(data));
         self.emit(I::I32Const(index as i32 + 1));
-        self.emit(I::I32Store(mem_arg(idx_off, 2)));
+        self.emit(I::I32Store(sim_mem(idx_off, 2)?));
         self.emit(I::Return);
         self.emit(I::End);
         Ok(())
@@ -1410,14 +1547,19 @@ impl<'a> FnCtx<'a> {
             }
         }
         self.emit(I::If(we::BlockType::Empty));
+        let outer = self.set_when_body(true);
         for op in &**stmts {
             self.lower_when_op(op)?;
         }
+        self.set_when_body(outer);
         if let Some(ew) = else_when {
             self.emit(I::Else);
             match &**ew {
                 openmodelica_simcode_types::SimCode::SimEqSystem::SES_WHEN {
-                    conditions, whenStmtLst, elseWhen, ..
+                    conditions,
+                    whenStmtLst,
+                    elseWhen,
+                    ..
                 } => self.sim_when(conditions, whenStmtLst, elseWhen)?,
                 other => return Err("CodegenWasmJit: elseWhen is not a SES_WHEN"),
             }
@@ -1426,17 +1568,32 @@ impl<'a> FnCtx<'a> {
         Ok(())
     }
 
+    /// Enter or leave a when-body; returns the previous state.
+    pub(super) fn set_when_body(&mut self, on: bool) -> bool {
+        self.sim
+            .as_mut()
+            .is_some_and(|s| core::mem::replace(&mut s.when_body, on))
+    }
+
     fn lower_when_op(&mut self, op: &openmodelica_backend_types::BackendDAE::WhenOperator) -> Result<()> {
         use openmodelica_backend_types::BackendDAE::WhenOperator as W;
         match op {
             W::ASSIGN { left, right, .. } => compile_assign(self, left, right),
             W::REINIT { stateVar, value, .. } => {
-                let lhs = DAE::Exp::CREF { componentRef: stateVar.clone(), ty: crate::CodegenWasmJit::t_real() };
+                let lhs = DAE::Exp::CREF {
+                    componentRef: stateVar.clone(),
+                    ty: crate::CodegenWasmJit::t_real(),
+                };
                 compile_assign(self, &lhs, value)?;
                 emit_reinit_note(self, stateVar)
             }
             W::TERMINATE { message, source } => emit_terminate(self, message, source),
-            W::ASSERT { condition, message, level, source } => emit_assert(self, condition, message, level, source),
+            W::ASSERT {
+                condition,
+                message,
+                level,
+                source,
+            } => emit_assert(self, condition, message, level, source),
             W::NORETCALL { exp, .. } => emit_noretcall(self, exp),
         }
     }
@@ -1480,7 +1637,14 @@ pub(crate) struct OutlineScope;
 
 impl OutlineScope {
     pub(crate) fn begin(types: [u32; 2], table: u32) -> OutlineScope {
-        OUTLINED.with(|o| *o.borrow_mut() = Some(Outlined { types, table, fns: Vec::new(), by_body: HashMap::default() }));
+        OUTLINED.with(|o| {
+            *o.borrow_mut() = Some(Outlined {
+                types,
+                table,
+                fns: Vec::new(),
+                by_body: HashMap::default(),
+            })
+        });
         OutlineScope
     }
 
@@ -1537,13 +1701,17 @@ impl FnCtx<'_> {
             for ins in &instrs {
                 f.instruction(ins);
             }
-            let (slot, ty, table) = outline_fn(f, arg.is_some()).ok_or("CodegenWasmJit: outlined function outside a module")?;
+            let (slot, ty, table) =
+                outline_fn(f, arg.is_some()).ok_or("CodegenWasmJit: outlined function outside a module")?;
             self.emit(we::Instruction::LocalGet(data));
             if let Some(arg) = arg {
                 self.emit(we::Instruction::LocalGet(arg));
             }
             self.emit(we::Instruction::I32Const(slot as i32));
-            self.emit(we::Instruction::CallIndirect { type_index: ty, table_index: table });
+            self.emit(we::Instruction::CallIndirect {
+                type_index: ty,
+                table_index: table,
+            });
         }
         Ok(true)
     }

@@ -1,0 +1,44 @@
+// name: scalarSparsityTables
+// keywords: NewBackend jacobian sparsity pattern code size
+// status: correct
+// suite: cSources
+// cflags: --newBackend
+// teardown_command: rm -f scalarSparsityTables_res.mat
+//
+// Rows of the sparsity pattern that consist of scalars at constant positions
+// are generated as tables instead of one statement per entry (the pattern code
+// of DistrictHeating Grid256Consumer did not compile within 30 min). Values of
+// the old backend.
+
+loadString("
+model scalarSparsityTables
+  Real x(start = 1, fixed = true), y(start = 2, fixed = true), z(start = 0, fixed = true);
+  Real a, b;
+equation
+  a = x - 2 * y;
+  b = a + sin(z);
+  der(x) = -a;
+  der(y) = b - y;
+  der(z) = x * y - z;
+end scalarSparsityTables;
+"); getErrorString();
+
+simulate(scalarSparsityTables, stopTime = 1); getErrorString();
+system("grep -q 'static const unsigned int _sc' scalarSparsityTables_12jac.c");
+abs(val(x, 1, "scalarSparsityTables_res.mat") - 1.6471039077220753) < 1e-5;
+abs(val(z, 1, "scalarSparsityTables_res.mat") - 0.9718731014319052) < 1e-5;
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "scalarSparsityTables_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'scalarSparsityTables', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0
+// true
+// true
+// endResult

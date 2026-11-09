@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+	nameClash.mos \
 	Delay.mos \
 	DelayBufferGrowth.mos \
 	DelayTooSmall.mos \

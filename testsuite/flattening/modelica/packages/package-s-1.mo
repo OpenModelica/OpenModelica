@@ -8,7 +8,7 @@
 
 package P
 
-class C
+model C
   Real x;
 end C;
 
@@ -23,7 +23,6 @@ end Modelica;
 model World
   P.C c;
   Modelica.SIunits.Area a;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end World;
 
 // Result:

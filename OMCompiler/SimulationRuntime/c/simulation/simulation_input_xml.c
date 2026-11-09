@@ -223,6 +223,9 @@ typedef struct omc_ModelInput
   omc_ModelVariables    *sPar; /* string parameters */
   omc_ModelVariables    *sAli; /* string aliases */
 
+  size_t                nEnumerationTypes; /* of TypeDefinitions */
+  ENUMERATION_TYPE      *enumerationTypes;
+
   /* these two we need to know to be able to add
      the stuff in <Real ... />, <String ... /> to
      the correct variable in the correct map */
@@ -275,6 +278,30 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
   if(!strcmp(name, "DefaultExperiment")) {
     for(i = 0; attr[i]; i += 2) {
       addHashStringString(&mi->de, attr[i], attr[i+1]);
+    }
+    return;
+  }
+
+  /* handle the enumeration types of TypeDefinitions: a SimpleType, then its
+     Items, which are numbered 1, 2, ... in order */
+  if(!strcmp(name, "SimpleType") || (!strcmp(name, "Item") && mi->nEnumerationTypes > 0)) {
+    const char *attrName = "";
+    for(i = 0; attr[i]; i += 2) {
+      if(!strcmp(attr[i], "name")) {
+        attrName = attr[i+1];
+      }
+    }
+    if(name[0] == 'S') {
+      ENUMERATION_TYPE *t;
+      mi->enumerationTypes = (ENUMERATION_TYPE*) realloc(mi->enumerationTypes, (mi->nEnumerationTypes + 1) * sizeof(ENUMERATION_TYPE));
+      t = &mi->enumerationTypes[mi->nEnumerationTypes++];
+      t->name = omc_strdup(attrName);
+      t->nLiterals = 0;
+      t->literals = NULL;
+    } else {
+      ENUMERATION_TYPE *t = &mi->enumerationTypes[mi->nEnumerationTypes - 1];
+      t->literals = (char**) realloc(t->literals, (t->nLiterals + 1) * sizeof(char*));
+      t->literals[t->nLiterals++] = omc_strdup(attrName);
     }
     return;
   }
@@ -1060,6 +1087,32 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
 }
 
 /**
+ * @brief Point the Integer variables declared with an enumeration type at it.
+ *
+ * @param modelData     Its `enumerationTypes` are the types to point at.
+ * @param intVarsData   Integer variables or parameters to fill.
+ * @param in            Their hash maps from the XML.
+ * @param numVariables  Number of variables in `intVarsData`.
+ */
+static void read_var_enumeration(MODEL_DATA *modelData, STATIC_INTEGER_DATA *intVarsData, omc_ModelVariables *in, mmc_sint_t numVariables)
+{
+  mmc_sint_t i;
+  size_t k;
+  const char *declaredType;
+
+  for (i = 0; i < numVariables; i++) {
+    intVarsData[i].enumeration = NULL;
+    declaredType = findHashStringStringNull(*findHashLongVar(in, i), "declaredType");
+    for (k = 0; declaredType && k < modelData->nEnumerationTypes; k++) {
+      if (0 == strcmp(declaredType, modelData->enumerationTypes[k].name)) {
+        intVarsData[i].enumeration = &modelData->enumerationTypes[k];
+        break;
+      }
+    }
+  }
+}
+
+/**
  * @brief Read XML file name from user supplied flags
  *
  * @return const char* Filename, needs to be freed.
@@ -1388,6 +1441,8 @@ void read_input_xml(MODEL_DATA* modelData,
   infoStreamPrint(OMC_LOG_SIMULATION, 0, "OPENMODELICAHOME: %s", simulationInfo->OPENMODELICAHOME);
 
   allocModelDataVars(modelData, TRUE, threadData);
+  modelData->nEnumerationTypes = mi->nEnumerationTypes;
+  modelData->enumerationTypes = mi->enumerationTypes;
 
   read_variables(simulationInfo, VAR_TYPE_REAL,    modelData->realVarsData,         mi->rSta, "real states",            0,                    modelData->nStatesArray,                               &mapAlias,      &mapAliasParam, &sensitivityParIndex);
   read_variables(simulationInfo, VAR_TYPE_REAL,    modelData->realVarsData,         mi->rDer, "real state derivatives", modelData->nStatesArray,   modelData->nStatesArray,                               &mapAlias,      &mapAliasParam, &sensitivityParIndex);
@@ -1401,6 +1456,9 @@ void read_input_xml(MODEL_DATA* modelData,
   read_variables(simulationInfo, VAR_TYPE_INTEGER, modelData->integerParameterData, mi->iPar, "integer parameters",     0,                    modelData->nParametersIntegerArray,                    &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
   read_variables(simulationInfo, VAR_TYPE_BOOLEAN, modelData->booleanParameterData, mi->bPar, "boolean parameters",     0,                    modelData->nParametersBooleanArray,                    &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
   read_variables(simulationInfo, VAR_TYPE_STRING,  modelData->stringParameterData,  mi->sPar, "string parameters",      0,                    modelData->nParametersStringArray,                     &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
+
+  read_var_enumeration(modelData, modelData->integerVarsData,      mi->iAlg, modelData->nVariablesIntegerArray);
+  read_var_enumeration(modelData, modelData->integerParameterData, mi->iPar, modelData->nParametersIntegerArray);
 
   if (omc_flag[FLAG_IDAS]) {
     /* allocate memory for sensitivity analysis */

@@ -5,13 +5,12 @@
 // Basic constant definitions.
 //
 
-class Constant1
+model Constant1
   constant Real PI = 3.14159265358979;
   constant Integer N = 17;
   Real x;
 equation
   x = 2.0 * PI;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Constant1;
 
 // Result:

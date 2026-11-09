@@ -1,8 +1,7 @@
 // status: correct
-// cflags: -d=-newInst
 // suite: metamodelica
+// cflags: -g=MetaModelica -d=gen
 
-setCommandLineOptions("-g=MetaModelica -d=gen");getErrorString();
 loadString("
 package P
   replaceable type T1 subtypeof Any;
@@ -40,8 +39,6 @@ end test;
 test();getErrorString();
 
 // Result:
-// true
-// ""
 // true
 // ""
 //

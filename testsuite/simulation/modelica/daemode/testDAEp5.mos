@@ -1,7 +1,6 @@
 // name: testDAE.p5
 // status: correct
 // teardown_command: rm -f testDAE.p5* output.log
-// cflags: -d=-newInst
 
 
 loadFile("./testDAEPackage.mo");

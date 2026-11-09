@@ -64,7 +64,11 @@ fn val_eps(a: f64, b: f64) -> f64 {
 /// Never below the resolution of the position coordinate.
 fn zero_delta_x(a: f64, b: f64) -> f64 {
     let e = pos_eps(a, b);
-    if SPATIAL_ZERO_DELTA_X > e { SPATIAL_ZERO_DELTA_X } else { e }
+    if SPATIAL_ZERO_DELTA_X > e {
+        SPATIAL_ZERO_DELTA_X
+    } else {
+        e
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -138,7 +142,9 @@ fn extrapolate(left: Node, right: Node, at: f64) -> f64 {
 fn warn_step_size_too_big(n_displayed: &mut u64, what: &str, time: f64, index: u32, events: i32) {
     let max_displayed = crate::solverflags::max_warn_displays();
     *n_displayed += 1;
-    if *n_displayed > max_displayed {
+    if *n_displayed > max_displayed
+        || !(omclog::active(omclog::STDOUT) || omclog::mask() & omclog::SHOW_ALL_WARNINGS != 0)
+    {
         return;
     }
     omclog::warning(
@@ -227,7 +233,9 @@ impl Spatial {
         );
         let n = points.len();
         if n < 2 || values.len() != n {
-            fatal("Initialization of spatial distribution failed: initialPoints and initialValues must have the same size >= 2.");
+            fatal(
+                "Initialization of spatial distribution failed: initialPoints and initialValues must have the same size >= 2.",
+            );
         }
         if points[0].abs() > SPATIAL_EPS {
             omclog::error!(
@@ -257,15 +265,13 @@ impl Spatial {
                     true,
                     "Initialization of spatial distribution with index {index} failed.",
                 );
-                omclog::error!(
-                    omclog::STDOUT,
-                    false,
-                    "initialPoints[{i}] > initialPoints[{}]",
-                    i + 1,
-                );
+                omclog::error!(omclog::STDOUT, false, "initialPoints[{i}] > initialPoints[{}]", i + 1,);
                 fatal(&format!("{} > {}", f(points[i]), f(points[i + 1])));
             }
-            self.profile.push_back(Node { pos: points[i], val: values[i] });
+            self.profile.push_back(Node {
+                pos: points[i],
+                val: values[i],
+            });
             if points[i] == points[i + 1] {
                 num_same += 1;
                 if num_same > 1 {
@@ -289,7 +295,10 @@ impl Spatial {
                 num_same = 0;
             }
         }
-        self.profile.push_back(Node { pos: points[n - 1], val: values[n - 1] });
+        self.profile.push_back(Node {
+            pos: points[n - 1],
+            val: values[n - 1],
+        });
         self.initialized = true;
         self.log_lists();
         omclog::close(omclog::SPATIALDISTR);
@@ -355,9 +364,17 @@ impl Spatial {
         );
         self.log_lists();
 
+        // Standing still: only the inflowing boundary value changes. `old_pos_x` is
+        // kept, so small moves add up until they count.
+        let (moved, dx) = self.progress(pos_x);
+        if dx <= zero_delta_x(self.old_pos_x, pos_x) {
+            self.store_boundary(positive, if positive { in0 } else { in1 });
+            omclog::close(omclog::SPATIALDISTR);
+            return;
+        }
+
         // The sign of the actual progress outranks the operator's argument: with
         // `positiveVelocity` inside a `noEvent` the argument can lag a reversal.
-        let (moved, _) = self.progress(pos_x);
         let positive = moved.unwrap_or(positive);
 
         // A node at the input edge, or -- when the edge did not move -- a
@@ -381,6 +398,57 @@ impl Spatial {
         }
         self.old_pos_x = pos_x;
         omclog::close(omclog::SPATIALDISTR);
+    }
+
+    /// C `storeBoundarySpatialDistribution`: while `x` stands still a changed
+    /// boundary value becomes an event at the input edge. If the edge already is
+    /// one its value is overwritten: the values in between occupy no length.
+    fn store_boundary(&mut self, front: bool, val: f64) {
+        let n = self.profile.len();
+        let (edge, neighbor) = if front { (0, 1) } else { (n - 1, n - 2) };
+        let old = self.profile[edge];
+        if (old.val - val).abs() <= val_eps(old.val, val) {
+            return;
+        }
+        let other = self.profile[neighbor].pos;
+        if (old.pos - other).abs() < pos_eps(old.pos, other) {
+            omclog::info!(
+                omclog::SPATIALDISTR,
+                false,
+                "Overwriting {} event value with {}.",
+                if front { "front" } else { "back" },
+                e(val),
+            );
+            self.profile[edge].val = val;
+        } else {
+            self.add_node(front, old.pos, val, true);
+        }
+    }
+
+    /// C `removeStaleEventsSpatialDistribution`: `prune` keeps events up to
+    /// `SPATIAL_ZERO_DELTA_X` outside the profile. When `x` reverses before they
+    /// are dropped, they would be on the wrong side of a new event at that edge.
+    fn remove_stale_events(&mut self, front: bool, pos: f64) {
+        loop {
+            let ev = if front { self.events.front() } else { self.events.back() };
+            let Some(&ev) = ev else { break };
+            if if front { ev.pos >= pos } else { ev.pos <= pos } {
+                break;
+            }
+            omclog::info!(
+                omclog::SPATIALDISTR,
+                false,
+                "Removing stale event ({},{}).",
+                e(ev.pos),
+                e(ev.sign),
+            );
+            self.last_event_sign = ev.sign;
+            if front {
+                self.events.pop_front();
+            } else {
+                self.events.pop_back();
+            }
+        }
     }
 
     /// C `addNewNodeSpatialDistribution`: a new node at the front (positive
@@ -409,6 +477,7 @@ impl Spatial {
             self.log_lists();
             return;
         }
+        self.remove_stale_events(front, pos);
         // The alternation is along the position axis, so the sign comes from the
         // neighbour at the end the node is added to.
         let sign = if front {
@@ -489,7 +558,10 @@ impl Spatial {
             } else {
                 (self.profile[prev], self.profile[i])
             };
-            self.profile[prev] = Node { pos: target, val: interpolate(left, right, target) };
+            self.profile[prev] = Node {
+                pos: target,
+                val: interpolate(left, right, target),
+            };
             omclog::info!(
                 omclog::SPATIALDISTR,
                 false,
@@ -538,16 +610,31 @@ impl Spatial {
         if positive && read < first.pos {
             let inject = Node { pos: -pos_x, val: in0 };
             let out = interpolate(inject, first, read);
-            return Read { out, event_pre: Some(out), events: self.events.len() as i32 };
+            return Read {
+                out,
+                event_pre: Some(out),
+                events: self.events.len() as i32,
+            };
         }
         if !positive && read > last.pos {
-            let inject = Node { pos: 1.0 - pos_x, val: in1 };
+            let inject = Node {
+                pos: 1.0 - pos_x,
+                val: in1,
+            };
             let out = interpolate(last, inject, read);
-            return Read { out, event_pre: Some(out), events: self.events.len() as i32 };
+            return Read {
+                out,
+                event_pre: Some(out),
+                events: self.events.len() as i32,
+            };
         }
 
         // Clamped: `x` may have moved backwards since the last accepted step.
-        let read = if positive { read.min(last.pos) } else { read.max(first.pos) };
+        let read = if positive {
+            read.min(last.pos)
+        } else {
+            read.max(first.pos)
+        };
         let edge_pos = if positive { first.pos } else { last.pos };
         let mut i = if positive { n - 1 } else { 0 };
         if (self.profile[i].pos - edge_pos).abs() + pos_eps(self.profile[i].pos, edge_pos) < 1.0 {
@@ -597,7 +684,11 @@ impl Spatial {
         } else {
             interpolate(self.profile[prev], self.profile[i], read)
         };
-        Read { out, event_pre, events: walked }
+        Read {
+            out,
+            event_pre,
+            events: walked,
+        }
     }
 
     /// C `spatialDistribution`: `(out0, out1)` for the `x` of this call, without
@@ -735,7 +826,11 @@ impl Spatial {
         // absolute `SPATIAL_EPS`: a wider one flips the value before the discontinuity
         // is reached, leaving no sign change to find.
         let below = self.events.partition_point(|ev| ev.pos <= read + SPATIAL_EPS);
-        let value = if below == 0 { self.events[0].sign } else { -self.events[below - 1].sign };
+        let value = if below == 0 {
+            self.events[0].sign
+        } else {
+            -self.events[below - 1].sign
+        };
         omclog::info!(
             omclog::SPATIALDISTR,
             false,
@@ -786,10 +881,16 @@ impl SpatialState {
         for _ in 0..n {
             let mut s = Spatial::new();
             for _ in 0..w.next()? as usize {
-                s.profile.push_back(Node { pos: w.next()?, val: w.next()? });
+                s.profile.push_back(Node {
+                    pos: w.next()?,
+                    val: w.next()?,
+                });
             }
             for _ in 0..w.next()? as usize {
-                s.events.push_back(Event { pos: w.next()?, sign: w.next()? });
+                s.events.push_back(Event {
+                    pos: w.next()?,
+                    sign: w.next()?,
+                });
             }
             s.initialized = w.next()? != 0.0;
             let has_start = w.next()? != 0.0;
@@ -812,7 +913,9 @@ impl SpatialState {
             false,
             "Allocating memory for {n} spatial distribution(s).",
         );
-        SpatialState { ops: (0..n).map(|_| Spatial::new()).collect() }
+        SpatialState {
+            ops: (0..n).map(|_| Spatial::new()).collect(),
+        }
     }
 
     fn at(&mut self, index: u32) -> &mut Spatial {
@@ -1033,6 +1136,33 @@ mod tests {
         // One domain length of material at a 0.001 step is ~1000 nodes plus the
         // edges, not one per step.
         assert!(s.profile.len() < 1100, "profile grew to {}", s.profile.len());
+    }
+
+    #[test]
+    fn standing_still_keeps_one_event_at_the_input_edge() {
+        let mut s = belt(&[0.0, 1.0], &[0.0, 0.0]);
+        for k in 1..=100 {
+            let t = k as f64 * 0.01;
+            s.store(0, t, t, 0.0, 0.0, true);
+        }
+        assert_eq!((s.profile.len(), s.events.len()), (3, 1));
+        assert_eq!(s.front().val, 1.0);
+        // Moving on transports the last boundary value.
+        let (_, o1) = s.eval(0, 2.0, 1.0, 0.0, 0.999, true, MODE_CONTINUOUS);
+        assert!((o1 - 0.0).abs() < 1e-9, "out1={o1}");
+    }
+
+    #[test]
+    fn reversal_drops_events_that_left_the_domain() {
+        let mut s = belt(&[0.0, 1.0], &[0.0, 0.0]);
+        s.store(0, 0.1, 1.0, 0.0, 0.0, true);
+        s.store(0, 0.2, 1.0, 0.0, 2e-12, true);
+        // Back by more than SPATIAL_ZERO_DELTA_X: the event at 0 is cut off the
+        // profile but kept within the tolerance of the front edge.
+        s.store(0, 0.3, 1.0, 0.0, -0.5e-12, false);
+        s.store(0, 0.4, 2.0, 0.0, -0.5e-12, true);
+        assert_eq!(s.events.len(), 1);
+        assert_eq!(s.events[0].pos, s.front().pos);
     }
 
     #[test]

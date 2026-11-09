@@ -1,0 +1,63 @@
+// name: resizableLoopBlocks
+// keywords: NewBackend resizable jacobian sparsity algebraic loop
+// status: correct
+// cflags: --newBackend --simCodeScalarize=false --resizableArrays
+// suite: cSources
+// teardown_command: rm -f resizableLoopBlocks_20.mat resizableLoopBlocks_20.log
+//
+// The algebraic loop of the interface variables Tb[i], Q[i] (with a function
+// alias for sin) consists of independent blocks per i, every block only depends
+// on T[i] and T[i + 1]: the rows der(T[i]) depend on T[i - 1], T[i], T[i + 1]
+// and not on the whole array T.
+
+loadString("
+model resizableLoopBlocks
+  parameter Integer n = 4;
+  Real T[n](start = {i for i in 1:n}, each fixed = true);
+  Real Tb[n - 1] \"interface temperatures\";
+  Real Q[n - 1];
+equation
+  for i in 1:n - 1 loop
+    Q[i] = 2 * (T[i] - Tb[i]) + 0.1 * sin(Tb[i]);
+    Q[i] = 3 * (Tb[i] - T[i + 1]);
+  end for;
+  der(T[1]) = -Q[1];
+  for i in 2:n - 1 loop
+    der(T[i]) = Q[i - 1] - Q[i];
+  end for;
+  der(T[n]) = Q[n - 1];
+end resizableLoopBlocks;
+model resizableLoopBlocksRef20 = resizableLoopBlocks(n = 20);
+"); getErrorString();
+
+buildModel(resizableLoopBlocks, stopTime = 1); getErrorString();
+// no row depends on the whole array T
+system("grep -q 'SEED_ODE_JAC.T\\[WHOLEDIM' resizableLoopBlocks_12jac.c");
+system("./resizableLoopBlocks -override=n=20 -r=resizableLoopBlocks_20.mat", "resizableLoopBlocks_20.log");
+
+setCommandLineOptions("--resizableArrays=false"); getErrorString();
+simulate(resizableLoopBlocksRef20, stopTime = 1); getErrorString();
+abs(val(T[1], 1, "resizableLoopBlocks_20.mat") / val(T[1], 1, "resizableLoopBlocksRef20_res.mat") - 1) < 1e-4;
+abs(val(T[10], 1, "resizableLoopBlocks_20.mat") / val(T[10], 1, "resizableLoopBlocksRef20_res.mat") - 1) < 1e-4;
+abs(val(T[20], 1, "resizableLoopBlocks_20.mat") / val(T[20], 1, "resizableLoopBlocksRef20_res.mat") - 1) < 1e-4;
+// Result:
+// true
+// ""
+// {"resizableLoopBlocks", "resizableLoopBlocks_init.xml"}
+// ""
+// 1
+// 0
+// true
+// ""
+// record SimulationResult
+//     resultFile = "resizableLoopBlocksRef20_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'resizableLoopBlocksRef20', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// true
+// true
+// endResult

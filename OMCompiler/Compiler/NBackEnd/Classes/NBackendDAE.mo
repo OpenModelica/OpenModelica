@@ -82,6 +82,7 @@ protected
   import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
+  import RangeIterator = NFRangeIterator;
 
   // New Backend imports
   import Adjacency = NBAdjacency;
@@ -267,24 +268,41 @@ public
     EqData equationData;
     Events.EventInfo eventInfo = Events.EventInfo.empty();
     Partitioning.ClockedInfo clockedInfo = Partitioning.ClockedInfo.new();
-    FlatModel flat = FlatModel.mapExp(flatModel, lowerFunctionPointers);
+    FlatModel flat = FlatModel.mapExp(flatModel, lowerExp);
   algorithm
+    flat := splitRaggedVariables(flat);
     variableData := lowerVariableData(continuousImplicitDiscretes(flat.variables, listAppend(flat.equations, flat.initialEquations),
       listAppend(flat.algorithms, flat.initialAlgorithms)));
     (equationData, variableData) := lowerEquationData(flat.equations, flat.algorithms, flat.initialEquations, flat.initialAlgorithms, variableData);
     bdae := MAIN({}, {}, {}, {}, {}, {}, NONE(), NONE(), {}, variableData, equationData, eventInfo, clockedInfo, lowerFunctions(funcMap));
   end lower;
 
-  function lowerFunctionPointers
-    "A function pointer such as f in solveOneNonlinearEquation(f, ...) is a cref to
-    the function. Represent it as a function partial application without arguments,
-    so it is not mistaken for a variable anywhere in the backend."
+  function lowerExp
+    "Expressions of the flat model for the backend: function pointers become partial
+    applications (lowerFunctionPointer), literal index slices become ranges
+    (lowerSliceRanges)."
     input output Expression exp;
   algorithm
     exp := Expression.map(exp, lowerFunctionPointer);
-  end lowerFunctionPointers;
+    exp := Expression.map(exp, lowerSliceRanges);
+  end lowerExp;
+
+  function lowerSliceRanges
+    "The frontend evaluates slices of known size such as T[2:n-1] to literal index
+    arrays T[{2, 3, ..., 19}]. Turn them back into ranges, so the slice stays an
+    iteration (elementwise Jacobian sparsity, size of the generated code)."
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      case Expression.CREF() then Expression.CREF(exp.ty, ComponentRef.mapSubscripts(exp.cref, Subscript.sliceToRange));
+      else exp;
+    end match;
+  end lowerSliceRanges;
 
   function lowerFunctionPointer
+    "A function pointer such as f in solveOneNonlinearEquation(f, ...) is a cref to
+    the function. Represent it as a function partial application without arguments,
+    so it is not mistaken for a variable anywhere in the backend."
     input output Expression exp;
   algorithm
     exp := match exp
@@ -293,6 +311,264 @@ public
       else exp;
     end match;
   end lowerFunctionPointer;
+
+  function splitRaggedVariables
+    "A vectorized component array whose elements have arrays of different sizes gives a
+    ragged variable, e.g. Real[3, {2, 3, 2}[$lay1]] lay.T. Every element of the outer
+    dimensions becomes its own variable $RAG_k (Real[2], Real[3], Real[2]) and the
+    for-equations over the outer dimensions are unrolled to address them.
+    TODO: alias the original variable to the $RAG_k variables for the result."
+    input output FlatModel flat;
+  protected
+    UnorderedMap<ComponentRef, RaggedVariable> map = UnorderedMap.new<RaggedVariable>(ComponentRef.hashStrip, ComponentRef.isEqualStrip);
+    list<Variable> vars = {};
+    Pointer<Integer> index = Pointer.create(0);
+  algorithm
+    for var in flat.variables loop
+      vars := splitRaggedVariable(var, map, index, vars);
+    end for;
+    if UnorderedMap.isEmpty(map) then
+      return;
+    end if;
+    flat.variables := list(Variable.mapExp(v, function replaceRaggedCrefs(map = map)) for v in listReverse(vars));
+    flat.equations := splitRaggedEquations(flat.equations, map);
+    flat.initialEquations := splitRaggedEquations(flat.initialEquations, map);
+  end splitRaggedVariables;
+
+  type RaggedVariable = tuple<Integer, UnorderedMap<String, ComponentRef>> "number of split dimensions, element variables by indices";
+
+  function splitRaggedVariable
+    "Splits along the leading dimensions up to the last one that a size depends on, e.g. for
+    Real[2, {2, 3}[$w1], {{2, 3}, {1, 2, 2}}[$w1, $lay1]] w.lay.T along w and lay."
+    input Variable var;
+    input UnorderedMap<ComponentRef, RaggedVariable> map;
+    input Pointer<Integer> index;
+    input output list<Variable> vars;
+  protected
+    list<ComponentRef> parts;
+    list<String> iter_names = {};
+    list<Dimension> dims, inner_dims;
+    list<list<Integer>> elements;
+    UnorderedMap<String, ComponentRef> crefs;
+    Integer split_count = 0, pos = 0;
+    Variable aux;
+    InstNode node;
+    UnorderedMap<String, Expression> values;
+    Type ty;
+  algorithm
+    parts := ComponentRef.toListReverse(var.name, false);
+    for part in List.firstN(parts, listLength(parts) - 1) loop
+      for d in 1:Type.dimensionCount(ComponentRef.nodeType(part)) loop
+        iter_names := "$" + InstNode.name(ComponentRef.node(part)) + intString(d) :: iter_names;
+      end for;
+    end for;
+    iter_names := listReverse(iter_names);
+    dims := Type.arrayDims(var.ty);
+    if listEmpty(iter_names) or Type.isComplex(Type.arrayElementType(var.ty)) then
+      vars := var :: vars;
+      return;
+    end if;
+
+    for d in dims loop
+      split_count := max(split_count, Dimension.lastIteratorDependency(d, iter_names));
+    end for;
+    if split_count == 0 then
+      vars := var :: vars;
+      return;
+    end if;
+
+    elements := raggedElements(List.firstN(dims, split_count), iter_names);
+    inner_dims := List.stripN(dims, split_count);
+    crefs := UnorderedMap.new<ComponentRef>(stringHashDjb2, stringEq);
+    for element in elements loop
+      values := raggedValues(iter_names, element);
+      ty := Type.liftArrayLeftList(Type.arrayElementType(var.ty),
+        list(Dimension.fromExp(SimplifyExp.simplify(Expression.replaceIteratorsByName(Dimension.sizeExp(d), values)), NFPrefixes.Variability.CONSTANT) for d in inner_dims));
+      Pointer.update(index, Pointer.access(index) + 1);
+      node := InstNode.VAR_NODE(RAGGED_STR + "_" + intString(Pointer.access(index)), PointerWeak.downgrade(Pointer.createImmutable(NBVariable.DUMMY_VARIABLE)));
+      aux := var;
+      aux.name := ComponentRef.CREF(ComponentRef.storeNode(node), {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
+      aux.ty := ty;
+      aux.binding := Binding.mapExpShallow(var.binding, function raggedElement(element = element, values = values));
+      aux.typeAttributes := list((Util.tuple21(a), Binding.mapExpShallow(Util.tuple22(a), function raggedElement(element = element, values = values))) for a in var.typeAttributes);
+      aux := Variable.setBooleanAnnotation("HideResult", true, aux);
+      UnorderedMap.add(raggedKey(element), aux.name, crefs);
+      vars := aux :: vars;
+    end for;
+    UnorderedMap.add(ComponentRef.stripSubscriptsAll(var.name), (split_count, crefs), map);
+  end splitRaggedVariable;
+
+  function raggedElements
+    "all index tuples of the given dimensions, a size may depend on the indices before it"
+    input list<Dimension> dims;
+    input list<String> names;
+    output list<list<Integer>> elements = {{}};
+  protected
+    list<list<Integer>> next;
+    Integer size;
+  algorithm
+    for d in dims loop
+      next := {};
+      for e in elements loop
+        size := Expression.toInteger(SimplifyExp.simplify(Expression.replaceIteratorsByName(Dimension.sizeExp(d), raggedValues(names, e))));
+        for k in 1:size loop
+          next := listAppend(e, {k}) :: next;
+        end for;
+      end for;
+      elements := listReverse(next);
+    end for;
+  end raggedElements;
+
+  function raggedValues
+    input list<String> names;
+    input list<Integer> element;
+    output UnorderedMap<String, Expression> values;
+  algorithm
+    values := UnorderedMap.fromLists(List.firstN(names, listLength(element)), list(Expression.INTEGER(e) for e in element), stringHashDjb2, stringEq);
+  end raggedValues;
+
+  function raggedKey
+    input list<Integer> element;
+    output String key = stringDelimitList(list(intString(e) for e in element), ",");
+  end raggedKey;
+
+  constant String RAGGED_STR = "$RAG";
+
+  function raggedElement
+    "the element of a vectorized binding, e.g. array(e($lay1) for $lay1 in 1:3) -> e(2)"
+    input output Expression exp;
+    input list<Integer> element;
+    input UnorderedMap<String, Expression> values;
+  algorithm
+    if Type.dimensionCount(Expression.typeOf(exp)) >= listLength(element) then
+      for e in element loop
+        exp := Expression.applySubscript(Subscript.INDEX(Expression.INTEGER(e)), exp);
+      end for;
+    end if;
+    exp := SimplifyExp.simplify(Expression.replaceIteratorsByName(exp, values));
+  end raggedElement;
+
+  function replaceRaggedCrefs
+    "lay[2].T[i] -> $RAG_2[i] for literal indices of the split dimensions"
+    input output Expression exp;
+    input UnorderedMap<ComponentRef, RaggedVariable> map;
+  algorithm
+    exp := Expression.map(exp, function replaceRaggedCref(map = map));
+  end replaceRaggedCrefs;
+
+  function replaceRaggedCref
+    input output Expression exp;
+    input UnorderedMap<ComponentRef, RaggedVariable> map;
+  protected
+    Integer split_count;
+    UnorderedMap<String, ComponentRef> crefs;
+    list<Subscript> subs, split_subs;
+    ComponentRef cref;
+  algorithm
+    exp := match exp
+      case Expression.CREF() guard(UnorderedMap.contains(exp.cref, map)) algorithm
+        (split_count, crefs) := UnorderedMap.getOrFail(exp.cref, map);
+        subs := ComponentRef.subscriptsAllFlat(exp.cref);
+        if listLength(subs) < split_count then
+          return;
+        end if;
+        (split_subs, subs) := List.split(subs, split_count);
+        if not List.all(split_subs, Subscript.isLiteral) then
+          return;
+        end if;
+        cref := ComponentRef.setSubscripts(subs, UnorderedMap.getOrFail(raggedKey(list(Subscript.toInteger(o) for o in split_subs)), crefs));
+      then Expression.CREF(ComponentRef.getSubscriptedType(cref), cref);
+      else exp;
+    end match;
+  end replaceRaggedCref;
+
+  function splitRaggedEquations
+    input list<FEquation> eqns;
+    input UnorderedMap<ComponentRef, RaggedVariable> map;
+    output list<FEquation> result = {};
+  algorithm
+    for eqn in eqns loop
+      result := splitRaggedEquation(eqn, map, result);
+    end for;
+    result := listReverse(result);
+  end splitRaggedEquations;
+
+  function splitRaggedEquation
+    "unrolls for-equations whose iterator addresses an outer dimension of a ragged variable"
+    input FEquation eqn;
+    input UnorderedMap<ComponentRef, RaggedVariable> map;
+    input output list<FEquation> acc;
+  protected
+    RangeIterator range_iter;
+    Expression range, val;
+    UnorderedMap<String, Expression> values;
+  algorithm
+    acc := match eqn
+      case FEquation.FOR(range = SOME(range))
+        guard(FEquation.containsExpList(eqn.body, function Expression.contains(func = function isRaggedOuterIterator(iterator = eqn.iterator, map = map))))
+        algorithm
+          range_iter := RangeIterator.fromExp(SimplifyExp.simplify(range));
+          while RangeIterator.hasNext(range_iter) loop
+            (range_iter, val) := RangeIterator.next(range_iter);
+            values := UnorderedMap.fromLists({InstNode.name(eqn.iterator)}, {val}, stringHashDjb2, stringEq);
+            for body_eqn in FEquation.mapExpList(eqn.body, function Expression.replaceIteratorsByName(values = values)) loop
+              acc := splitRaggedEquation(body_eqn, map, acc);
+            end for;
+          end while;
+        then acc;
+
+      case FEquation.FOR() algorithm
+        eqn.body := splitRaggedEquations(eqn.body, map);
+        eqn.range := Util.applyOption(eqn.range, function simplifyRaggedExp(map = map));
+      then eqn :: acc;
+
+      else FEquation.mapExp(eqn, function simplifyRaggedExp(map = map)) :: acc;
+    end match;
+  end splitRaggedEquation;
+
+  function simplifyRaggedExp
+    input output Expression exp;
+    input UnorderedMap<ComponentRef, RaggedVariable> map;
+  algorithm
+    if Expression.contains(exp, function isRaggedCref(map = map)) then
+      exp := SimplifyExp.simplify(replaceRaggedCrefs(exp, map));
+    elseif Expression.contains(exp, Expression.isSubscriptedExp) then
+      // e.g. the range 1:{2, 3, 2}[2] of an unrolled inner loop
+      exp := SimplifyExp.simplify(exp);
+    end if;
+  end simplifyRaggedExp;
+
+  function isRaggedCref
+    input Expression exp;
+    input UnorderedMap<ComponentRef, RaggedVariable> map;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case Expression.CREF() then UnorderedMap.contains(exp.cref, map);
+      else false;
+    end match;
+  end isRaggedCref;
+
+  function isRaggedOuterIterator
+    input Expression exp;
+    input InstNode iterator;
+    input UnorderedMap<ComponentRef, RaggedVariable> map;
+    output Boolean b = false;
+  protected
+    Integer split_count;
+    list<Subscript> subs;
+  algorithm
+    b := match exp
+      case Expression.CREF() guard(UnorderedMap.contains(exp.cref, map)) algorithm
+        (split_count, _) := UnorderedMap.getOrFail(exp.cref, map);
+        subs := ComponentRef.subscriptsAllFlat(exp.cref);
+        if listLength(subs) < split_count then
+          return;
+        end if;
+      then List.any(List.firstN(subs, split_count), function Subscript.containsExpShallow(func = function Expression.containsIterator(iterator = iterator)));
+      else false;
+    end match;
+  end isRaggedOuterIterator;
 
   function continuousImplicitDiscretes
     "Real variables assigned in a when-equation are implicitly discrete. The frontend marks them before
@@ -421,10 +697,10 @@ public
       (Bindings.main,      "Bindings"),
       (function FunctionAlias.main(kind = kind), "FunctionAlias"),
       (function Inline.main(inline_types = inline_types, init = false), "Early Inline"),
-      (function simplify(init = false), "Simplify 1"),
+      (function simplify(init = false), "Simplify"),
       (function Alias.main(kind = kind),  "Alias"),
-      (function simplify(init = false), "Simplify 2"), // TODO simplify in Alias only
       (removeStream,       "Remove Stream"),
+      (detectAlgorithmLocals, "Algorithm Locals"),
       (DetectStates.main,  "Detect States"),
       (Events.main,        "Events")
     };
@@ -572,6 +848,153 @@ public
     end match;
   end simplify;
 
+  function detectAlgorithmLocals
+    "Protected discrete variables that only one algorithm uses (e.g. the buffers of
+    Modelica.Blocks.Math.RealFFT) are not part of the system, like the protected
+    variables of a function. The algorithm is not solved for them and does not
+    depend on them. They keep their storage and their value between invocations
+    of the algorithm, which is their pre value (MLS 11.1.2)."
+    input output BackendDAE bdae;
+  algorithm
+    bdae := match bdae
+      local
+        EqData eqData;
+        VarData varData;
+        UnorderedMap<ComponentRef, Integer> uses;
+        UnorderedSet<ComponentRef> excluded, local_set, eqn_crefs;
+        list<ComponentRef> candidates;
+        list<Pointer<Variable>> locals;
+        Pointer<Variable> var_ptr;
+        Equation eqn;
+
+      case MAIN(eqData = eqData as BEquation.EQ_DATA_SIM(), varData = varData as VarData.VAR_DATA_SIM()) algorithm
+        uses      := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+        excluded  := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+        local_set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+
+        // count the equations that use each variable and exclude variables with a pre value
+        for eqn_ptr in EquationPointers.toList(eqData.equations) loop
+          eqn := Pointer.access(eqn_ptr);
+          eqn_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+          Equation.map(eqn, function collectCrefsExp(acc = eqn_crefs));
+          for cref in UnorderedSet.toList(eqn_crefs) loop
+            UnorderedMap.addUpdate(cref, countUse, uses);
+          end for;
+          Equation.map(eqn, function collectPreCrefs(acc = excluded));
+        end for;
+        // start values of other variables must not use them
+        for v in VariablePointers.toList(varData.variables) loop
+          _ := Util.applyOption(BVariable.getStartAttribute(v), function Expression.map(func = function collectCrefsExp(acc = excluded)));
+        end for;
+
+        for eqn_ptr in EquationPointers.toList(eqData.equations) loop
+          eqn := Pointer.access(eqn_ptr);
+          () := match eqn
+            case Equation.ALGORITHM() algorithm
+              candidates := list(cref for cref guard(isAlgorithmLocalCandidate(cref, uses, excluded)) in eqn.alg.outputs);
+              // keep algorithms that would have no output in the system as they are
+              if not listEmpty(candidates) and listLength(candidates) < listLength(eqn.alg.outputs) then
+                for cref in candidates loop
+                  BVariable.setVarKind(BVariable.getVarPointer(cref, sourceInfo()), VariableKind.ALGORITHM_LOCAL());
+                  UnorderedSet.add(cref, local_set);
+                end for;
+                eqn.alg  := Equation.setAlgorithmInputsOutputs(eqn.alg);
+                eqn.size := sum(ComponentRef.size(out, false) for out in eqn.alg.outputs);
+                Pointer.update(eqn_ptr, eqn);
+              end if;
+            then ();
+            else ();
+          end match;
+        end for;
+
+        if not UnorderedSet.isEmpty(local_set) then
+          locals := list(BVariable.getVarPointer(cref, sourceInfo()) for cref in UnorderedSet.toList(local_set));
+          varData.unknowns := VariablePointers.removeList(locals, varData.unknowns);
+          varData.initials := VariablePointers.removeList(locals, varData.initials);
+          bdae.varData := varData;
+        end if;
+      then bdae;
+
+      else bdae;
+    end match;
+  end detectAlgorithmLocals;
+
+  function countUse
+    input Option<Integer> old;
+    output Integer new = Util.getOptionOrDefault(old, 0) + 1;
+  end countUse;
+
+  function isAlgorithmLocalCandidate
+    "protected discrete variable of an algorithm that no other equation, pre() or start value uses"
+    input ComponentRef cref;
+    input UnorderedMap<ComponentRef, Integer> uses;
+    input UnorderedSet<ComponentRef> excluded;
+    output Boolean b;
+  protected
+    Pointer<Variable> var_ptr;
+    Option<Expression> start;
+  algorithm
+    b := UnorderedMap.getOrDefault(cref, uses, 0) == 1 and not UnorderedSet.contains(cref, excluded)
+      and InstNode.isVar(ComponentRef.node(cref));
+    if b then
+      var_ptr := BVariable.getVarPointer(cref, sourceInfo());
+      start := BVariable.getStartAttribute(var_ptr);
+      b := BVariable.isDiscrete(var_ptr) and Variable.isProtected(Pointer.access(var_ptr))
+        and not BVariable.hasPre(var_ptr) and isNone(BVariable.getParent(var_ptr))
+        and (isNone(start) or isParameterExpression(Util.getOption(start)));
+    end if;
+  end isAlgorithmLocalCandidate;
+
+  function isParameterExpression
+    "true if the expression only uses iterators, parameters and constants. the
+    init xml sets such start values, they need no start equation"
+    input Expression exp;
+    output Boolean b;
+  protected
+    UnorderedSet<ComponentRef> crefs = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+  algorithm
+    Expression.map(exp, function collectCrefsExp(acc = crefs));
+    b := List.all(UnorderedSet.toList(crefs), isParameterCref);
+  end isParameterExpression;
+
+  function isParameterCref
+    input ComponentRef cref;
+    output Boolean b;
+  algorithm
+    b := match cref
+      case ComponentRef.CREF() guard(ComponentRef.isIterator(cref)) then true;
+      case ComponentRef.CREF() guard(InstNode.isVar(ComponentRef.node(cref)))
+        then BVariable.isParamOrConst(BVariable.getVarPointer(cref, sourceInfo()));
+      else false;
+    end match;
+  end isParameterCref;
+
+  function collectPreCrefs
+    "collects the crefs used in pre(), previous(), change() and edge()"
+    input output Expression exp;
+    input UnorderedSet<ComponentRef> acc;
+  algorithm
+    () := match exp
+      case Expression.CALL() guard(Call.isNamed(exp.call, "pre") or Call.isNamed(exp.call, "previous")
+                                  or Call.isNamed(exp.call, "change") or Call.isNamed(exp.call, "edge")) algorithm
+        Expression.map(exp, function collectCrefsExp(acc = acc));
+      then ();
+      else ();
+    end match;
+  end collectPreCrefs;
+
+  function collectCrefsExp
+    input output Expression exp;
+    input UnorderedSet<ComponentRef> acc;
+  algorithm
+    () := match exp
+      case Expression.CREF() algorithm
+        UnorderedSet.add(ComponentRef.stripSubscriptsAll(exp.cref), acc);
+      then ();
+      else ();
+    end match;
+  end collectCrefsExp;
+
   function removeStream
     // TODO this does the same as `simplify`
     // except it calls `SimplifyExp.removeStream`,
@@ -620,6 +1043,7 @@ public
           VariablePointers.removeList(ads_accessed, varData.unknowns);
           VariablePointers.removeList(ads_accessed, varData.discretes);
           VariablePointers.removeList(ads_accessed, varData.discrete_states);
+          VariablePointers.removeList(ads_accessed, varData.initials);
 
           VariablePointers.removeList(ap_accessed, varData.previous);
           VariablePointers.removeList(ap_accessed, varData.variables);
@@ -869,7 +1293,7 @@ protected
     variableData := BVariable.VAR_DATA_SIM(Pointer.create(0), variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias,
                       derivatives, algebraics, discretes, discrete_states, clocked_states, previous, clocks,
                       states, inputs, resizables, parameters, constants, records, external_objects, artificials,
-                      UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual));
+                      UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual), false);
 
     if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
       print(StringUtil.headline_4("[stateselection] (" + intString(listLength(forced_states)) + ") Forced states by StateSelect.ALWAYS:"));
@@ -1073,7 +1497,7 @@ protected
     (simulation_lst, continuous_lst, clocked_lst, discretes_lst, initials_lst, auxiliaries_lst, removed_lst) := BEquation.typeList(EquationPointers.toList(equations));
 
     equations := EquationPointers.removeList(clocked_lst, equations);
-    equations := Resizable.resize(equations, varData);
+    (equations, varData) := Resizable.resize(equations, varData);
 
     eqData := BEquation.EQ_DATA_SIM(
       uniqueIndex = idx,
@@ -1592,9 +2016,6 @@ protected
       local
         ComponentRef cref;
         Expression rhs;
-        FEquation.Branch head;
-        list<FEquation.Branch> tail;
-        UnorderedMap<ComponentRef, Expression> if_map;
 
       case FEquation.TERMINATE()                                  then BEquation.TERMINATE(eq.message, eq.source) :: stmts;
       case FEquation.REINIT(cref = Expression.CREF(cref = cref))  then BEquation.REINIT(cref, eq.reinitExp, eq.source) :: stmts;
@@ -1602,17 +2023,7 @@ protected
       case FEquation.ASSERT()                                     then BEquation.ASSERT(eq.condition, eq.message, eq.level, eq.source) :: stmts;
       case FEquation.EQUALITY()                                   then BEquation.ASSIGN(eq.lhs, eq.rhs, eq.source) :: stmts;
       case FEquation.IF() algorithm
-        // create a map to collect all individual assignments. traverse in reverse to create innermost first
-        if_map := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
-        head :: tail := listReverse(eq.branches);
-        // lower the head to initialize each cref
-        lowerWhenBranchIf(head, if_map, true);
-        // lower all remaining branches and collect the if conditions
-        for branch in tail loop
-          lowerWhenBranchIf(branch, if_map, false);
-        end for;
-        // create all assignments from the collected if-expressions
-        for tpl in UnorderedMap.toList(if_map) loop
+        for tpl in lowerWhenIf(eq.branches) loop
           (cref, rhs) := tpl;
           stmts := BEquation.ASSIGN(Expression.fromCref(cref), rhs, eq.source) :: stmts;
         end for;
@@ -1628,55 +2039,169 @@ protected
     end match;
   end lowerWhenBranchStatement;
 
-  function lowerWhenBranchIf
+  function lowerWhenIf
     "inlines IF-equations to IF-expressions in WHEN-equations"
+    input list<FEquation.Branch> branches;
+    output list<tuple<ComponentRef, Expression>> assignments;
+  protected
+    list<list<tuple<ComponentRef, Expression>>> branch_assignments;
+    list<tuple<ComponentRef, Expression>> head;
+    list<Expression> conditions;
+    UnorderedMap<ComponentRef, Expression> if_map = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+    ComponentRef cref;
+    Expression rhs, condition;
+  algorithm
+    // traverse in reverse to create innermost first, the condition of the last branch is not needed
+    branch_assignments := list(lowerWhenIfBranch(branch) for branch in listReverse(branches));
+    _ :: conditions := list(lowerWhenIfCondition(branch) for branch in listReverse(branches));
+
+    // e.g. slices in one branch and the whole array in another one
+    if not List.all(branch_assignments, function sameAssignedCrefs(other = listHead(branch_assignments))) then
+      branch_assignments := splitWholeAssignments(branch_assignments);
+    end if;
+
+    head :: branch_assignments := branch_assignments;
+    for tpl in head loop
+      (cref, rhs) := tpl;
+      if UnorderedMap.contains(cref, if_map) then
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because a branch has multiple assignments for " + ComponentRef.toString(cref) + "."});
+        fail();
+      end if;
+      UnorderedMap.add(cref, rhs, if_map);
+    end for;
+
+    for a in branch_assignments loop
+      condition :: conditions := conditions;
+      if not sameAssignedCrefs(a, head) then
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the branches assign different variables:\n"
+          + assignedCrefsString(head) + "\n" + assignedCrefsString(a)});
+        fail();
+      end if;
+      for tpl in a loop
+        (cref, rhs) := tpl;
+        UnorderedMap.add(cref, Expression.IF(Expression.typeOf(rhs), condition, rhs, UnorderedMap.getSafe(cref, if_map, sourceInfo())), if_map);
+      end for;
+    end for;
+
+    assignments := UnorderedMap.toList(if_map);
+  end lowerWhenIf;
+
+  function lowerWhenIfCondition
     input FEquation.Branch branch;
-    input UnorderedMap<ComponentRef, Expression> if_map;
-    input Boolean first "allow adding new lhs crefs only if its the first observed branch";
+    output Expression condition;
+  algorithm
+    condition := match branch
+      case FEquation.BRANCH() then branch.condition;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + FEquation.Branch.toString(branch, "")});
+      then fail();
+    end match;
+  end lowerWhenIfCondition;
+
+  function lowerWhenIfBranch
+    "the assignments of an if-equation branch in a when-equation, nested if-equations are inlined"
+    input FEquation.Branch branch;
+    output list<tuple<ComponentRef, Expression>> assignments = {};
   algorithm
     () := match branch
       local
         ComponentRef cref;
-        Expression exp;
 
       case FEquation.BRANCH() algorithm
         for eq in branch.body loop
-          () := match eq
-            case FEquation.EQUALITY(lhs = Expression.CREF(cref = cref)) algorithm
-              exp := match UnorderedMap.get(cref, if_map)
-                // we update the saved cref rhs with the branch information
-                case SOME(exp) guard(not first) then Expression.IF(Expression.typeOf(exp), branch.condition, eq.rhs, exp);
-                // we create the first entry for the cref
-                case NONE() guard(first) then eq.rhs;
-                // fail cases
-                case SOME(_) algorithm
-                  Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because branch has multiple assignments for the same cref:\n" + FEquation.Branch.toString(branch, "")});
-                then fail();
-                else algorithm
-                  Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because branch equation has an assignment that is missing in other branches:\n" + FEquation.toString(eq)});
-                then fail();
-              end match;
-              // update the cref -> rhs
-              UnorderedMap.add(cref, exp, if_map);
-            then ();
+          assignments := match eq
+            case FEquation.EQUALITY(lhs = Expression.CREF(cref = cref)) then (cref, eq.rhs) :: assignments;
+            case FEquation.IF() then listAppend(listReverse(lowerWhenIf(eq.branches)), assignments);
 
             // collected into a when-algorithm by lowerWhenIfStatements
-            case FEquation.NORETCALL() then ();
-            case FEquation.ASSERT()    then ();
-            case FEquation.TERMINATE() then ();
-            case FEquation.REINIT()    then ();
+            case FEquation.NORETCALL() then assignments;
+            case FEquation.ASSERT()    then assignments;
+            case FEquation.TERMINATE() then assignments;
+            case FEquation.REINIT()    then assignments;
 
             else algorithm
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for branch equation:\n" + FEquation.toString(eq)});
             then fail();
           end match;
         end for;
+        assignments := listReverse(assignments);
       then ();
+
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + FEquation.Branch.toString(branch, "")});
       then fail();
     end match;
-  end lowerWhenBranchIf;
+  end lowerWhenIfBranch;
+
+  function assignedCrefsString
+    input list<tuple<ComponentRef, Expression>> assignments;
+    output String str = stringDelimitList(list(ComponentRef.toString(Util.tuple21(tpl)) for tpl in assignments), ", ");
+  end assignedCrefsString;
+
+  function sameAssignedCrefs
+    input list<tuple<ComponentRef, Expression>> assignments;
+    input list<tuple<ComponentRef, Expression>> other;
+    output Boolean b;
+  algorithm
+    b := listLength(assignments) == listLength(other) and
+      List.all(assignments, function isAssignedCref(assignments = other)) and
+      List.all(other, function isAssignedCref(assignments = assignments));
+  end sameAssignedCrefs;
+
+  function isAssignedCref
+    input tuple<ComponentRef, Expression> tpl;
+    input list<tuple<ComponentRef, Expression>> assignments;
+    output Boolean b = List.any(assignments, function isAssignmentOf(cref = Util.tuple21(tpl)));
+  end isAssignedCref;
+
+  function isAssignmentOf
+    input tuple<ComponentRef, Expression> tpl;
+    input ComponentRef cref;
+    output Boolean b = ComponentRef.isEqual(Util.tuple21(tpl), cref);
+  end isAssignmentOf;
+
+  function splitWholeAssignments
+    "splits assignments of a whole array into the slices other branches assign,
+    e.g. g = pre(g) into g[{1,2}] = pre(g)[{1,2}] and g[{3,4}] = pre(g)[{3,4}]"
+    input list<list<tuple<ComponentRef, Expression>>> branch_assignments;
+    output list<list<tuple<ComponentRef, Expression>>> result = {};
+  protected
+    list<ComponentRef> slices = {};
+    list<ComponentRef> cref_slices;
+    list<tuple<ComponentRef, Expression>> assignments;
+    ComponentRef cref;
+    Expression rhs;
+  algorithm
+    // slices of the last part of a cref
+    for a in branch_assignments loop
+      for tpl in a loop
+        cref := Util.tuple21(tpl);
+        if ComponentRef.hasSubscripts(cref) and not ComponentRef.hasSubscripts(ComponentRef.rest(cref))
+          and not List.isMemberOnTrue(cref, slices, ComponentRef.isEqual) then
+          slices := cref :: slices;
+        end if;
+      end for;
+    end for;
+
+    for a in branch_assignments loop
+      assignments := {};
+      for tpl in a loop
+        (cref, rhs) := tpl;
+        cref_slices := if ComponentRef.hasSubscripts(cref) then {} else
+          list(c for c guard(ComponentRef.isEqualStrip(c, cref)) in slices);
+        if not listEmpty(cref_slices) and Type.sizeOf(ComponentRef.getSubscriptedType(cref))
+            == sum(Type.sizeOf(ComponentRef.getSubscriptedType(c)) for c in cref_slices) then
+          for c in cref_slices loop
+            assignments := (c, SimplifyExp.simplify(Expression.applySubscripts(ComponentRef.getSubscripts(c), rhs))) :: assignments;
+          end for;
+        else
+          assignments := tpl :: assignments;
+        end if;
+      end for;
+      result := listReverse(assignments) :: result;
+    end for;
+    result := listReverse(result);
+  end splitWholeAssignments;
 
   public function lowerAlgorithm
     input Algorithm alg;
@@ -1930,7 +2455,8 @@ public
           VarData varData;
           EqData eqData;
           String p_ode, p_alg, p_ode_e, p_alg_e, p_clk, p_ini, p_ini_0;
-          String states, discretes, discrete_states, clocked_states, clocks, inputs;
+          String states, discretes, discrete_states, clocked_states, clocks, inputs, alg_locals;
+          VariablePointers alg_local_vars;
 
         case MAIN(varData = varData as VarData.VAR_DATA_SIM(), eqData=EqData.EQ_DATA_SIM()) algorithm
           // collect partition size info
@@ -1949,6 +2475,8 @@ public
           clocked_states  := intString(VariablePointers.scalarSize(varData.clocked_states)) + " (" + intString(VariablePointers.size(varData.clocked_states)) + ")";
           clocks          := intString(VariablePointers.scalarSize(varData.clocks)) + " (" + intString(VariablePointers.size(varData.clocks)) + ")";
           inputs          := intString(VariablePointers.scalarSize(varData.top_level_inputs)) + " (" + intString(VariablePointers.size(varData.top_level_inputs)) + ")";
+          alg_local_vars  := VariablePointers.fromList(List.filterOnTrue(VariablePointers.toList(varData.discretes), BVariable.isAlgorithmLocal));
+          alg_locals      := intString(VariablePointers.scalarSize(alg_local_vars)) + " (" + intString(VariablePointers.size(alg_local_vars)) + ")";
 
           if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
             states := states + " " + List.toString(VariablePointers.toList(varData.states), BVariable.nameString);
@@ -1960,10 +2488,12 @@ public
             discretes := discretes + " " + List.toString(VariablePointers.toList(varData.discretes), BVariable.nameString);
             clocks := clocks + " " + List.toString(VariablePointers.toList(varData.clocks), BVariable.nameString);
             inputs := inputs + " " + List.toString(VariablePointers.toList(varData.top_level_inputs), BVariable.nameString);
+            alg_locals := alg_locals + " " + List.toString(VariablePointers.toList(alg_local_vars), BVariable.nameString);
           else
             discretes := discretes + " ('-d=discreteinfo' for the list of discrete variables)";
             clocks := clocks + " ('-d=discreteinfo' for the list of clocks variables)";
             inputs := inputs + " ('-d=discreteinfo' for the list of top level inputs)";
+            alg_locals := alg_locals + " ('-d=discreteinfo' for the list of algorithm local variables)";
           end if;
 
           if  Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO) then
@@ -1990,6 +2520,7 @@ public
             + " * Number of discrete states: .................... " + discrete_states + "\n"
             + " * Number of clocked states: ..................... " + clocked_states + "\n"
             + " * Number of discrete variables: ................. " + discretes + "\n"
+            + " * Number of algorithm local variables: .......... " + alg_locals + "\n"
             + " * Number of clocks: ............................. " + clocks + "\n"
             + " * Number of top-level inputs: ................... " + inputs);
 

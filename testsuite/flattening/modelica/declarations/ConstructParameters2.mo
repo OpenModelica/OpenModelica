@@ -23,7 +23,6 @@ model ConstructParameters2
 protected
   parameter Prec prec = fc(p1,p2);
   parameter Real p3=prec.p3,p4 = prec.p4;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConstructParameters2;
 
 // Result:
@@ -34,9 +33,9 @@ end ConstructParameters2;
 // end Prec;
 //
 // function fc
-//   output Prec p;
 //   input Real p1;
 //   input Real p2;
+//   output Prec p;
 // algorithm
 //   p.p3 := p1 * p2;
 //   p.p4 := p.p3 * p1 + p2;
@@ -45,9 +44,11 @@ end ConstructParameters2;
 // class ConstructParameters2
 //   parameter Real p1 = 2.0;
 //   parameter Real p2 = 3.0;
-//   protected parameter Real prec.p3 = 6.0;
-//   protected parameter Real prec.p4 = 15.0;
+//   protected parameter Real prec.p3(fixed = false);
+//   protected parameter Real prec.p4(fixed = false);
 //   protected parameter Real p3 = prec.p3;
 //   protected parameter Real p4 = prec.p4;
+// initial equation
+//   prec = fc(p1, p2);
 // end ConstructParameters2;
 // endResult

@@ -6,15 +6,14 @@
 // of 'B.a'.
 //
 
-class Lookup6
+model Lookup6
   constant Real a = 3.0;
-  class B
+  model B
     Real a;
   equation
     a = -a;
   end B;
   B b;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Lookup6;
 
 // Result:

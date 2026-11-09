@@ -4100,7 +4100,7 @@ let &sub = buffer ""
             let cond = daeExp(crefExp(e), context, &sub, &varDecls, &varFrees, &auxFunction)
             let condPre = daeExp(crefExp(crefPrefixPre(e)), context, &sub, &varDecls, &varFrees, &auxFunction)
             '(<%cond%> && !<%condPre%> /* edge */)';separator=" || ") else '0'
-          let statements = (statementLst |> stmt => algStatement(stmt, context, &varDecls, &varFrees, &auxFunction);separator="\n")
+          let statements = algStatementsWhenBody(statementLst, context, &varDecls, &varFrees, &auxFunction)
           let else_clause = algStatementWhenElse(elseWhen, context, &varDecls, &varFrees, &auxFunction)
           <<
           if(data->simulationInfo->discreteCall == 1)
@@ -4116,6 +4116,15 @@ let &sub = buffer ""
   end match
 end algStmtWhen;
 
+template algStatementsWhenBody(list<DAE.Statement> statements, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
+::=
+  match context
+  case SIMULATION_CONTEXT(__) then
+    (statements |> stmt => algStatement(stmt, contextSimulationWhenBody, &varDecls, &varFrees, &auxFunction);separator="\n")
+  else
+    (statements |> stmt => algStatement(stmt, context, &varDecls, &varFrees, &auxFunction);separator="\n")
+end algStatementsWhenBody;
+
 template algStatementWhenElse(Option<DAE.Statement> stmt, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Helper to algStmtWhen."
 ::=
@@ -4126,7 +4135,7 @@ case SOME(when as STMT_WHEN(__)) then
     let cond = daeExp(crefExp(e), context, &sub, &varDecls, &varFrees, &auxFunction)
     let condPre = daeExp(crefExp(crefPrefixPre(e)), context, &sub, &varDecls, &varFrees, &auxFunction)
     '(<%cond%> && !<%condPre%> /* edge */)';separator=" || ") else '0'
-  let statements = (when.statementLst |> stmt => algStatement(stmt, contextSimulationDiscrete, &varDecls, &varFrees, &auxFunction);separator="\n")
+  let statements = (when.statementLst |> stmt => algStatement(stmt, contextSimulationWhenBody, &varDecls, &varFrees, &auxFunction);separator="\n")
   let else = algStatementWhenElse(when.elseWhen, context, &varDecls, &varFrees, &auxFunction)
   <<
   else if(<%else_conditions%>)
@@ -4903,17 +4912,31 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
             case FUNCTION_CONTEXT(__) then ''
             else '_withEquationIndexes'
   let assertExpStr = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(condition,"\""))
+  let &preExpValues = buffer ""
+  let valueFmt = match context case FUNCTION_CONTEXT(__) then "" else
+    (Expression.assertConditionValues(condition) |> e => ', <%assertValueFormat(e)%>')
+  let valueArgs = match context case FUNCTION_CONTEXT(__) then "" else
+    (Expression.assertConditionValues(condition) |> e => ', <%assertValueArg(e, context, &preExpValues, &varDecls, &varFrees, &auxFunction)%>')
   /* Note that our error/log functions split the message on new lines and indent it. So it is better to have one long string
      and send it to them instead of calling them repeatedlly (avoids the 'assert', 'warning' labels printed for each call.) */
-  let infoTextContext = '"The following assertion has been violated %sat time %f\n(%s) --> \"%s\"", initial() ? "during initialization " : "", data->localData[0]->timeValue, assert_cond, <%msgVar%>'
+  let infoTextContext = '"The following assertion has been violated %sat time %f\n(%s<%valueFmt%>) --> \"%s\"", initial() ? "during initialization " : "", data->localData[0]->timeValue, assert_cond<%valueArgs%>, <%msgVar%>'
   let omcAssertFunc = match level case ENUM_LITERAL(index=1) then 'omc_assert_warning<%AddionalFuncName%>(' else 'omc_assert<%AddionalFuncName%>(threadData, '
   let rethrow = match level case ENUM_LITERAL(index=1) then '' else '<%\n%>data->simulationInfo->needToReThrow = 1;'
   // A violated assert leaves the frame; a warning carries on.
   let assertCheck = match level case ENUM_LITERAL(index=1) then '' else errorCheck(context)
+  // A when-body runs only at its event, which would excuse a held error.
+  let neverHeld = match context case SIMULATION_CONTEXT(whenBody=true) then (match level case ENUM_LITERAL(index=1) then '' else '1')
   let assertCode = match context case FUNCTION_CONTEXT(__) then
     <<
     FILE_INFO info = {<%infoArgs(info)%>};
     <%omcAssertFunc%>info, <%msgVar%>);
+    <%assertCheck%>
+    >>
+    else if neverHeld then
+    <<
+    const char* assert_cond = "(<%assertExpStr%>)";
+    FILE_INFO info = {<%infoArgs(info)%>};
+    <%omcAssertFunc%>info, equationIndexes, <%infoTextContext%>);
     <%assertCheck%>
     >>
     else
@@ -4938,6 +4961,7 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
     if(!<%condVar%>)
     {
       <%preExpMsg%>
+      <%preExpValues%>
       {
         <%assertCode%>
       }
@@ -4946,6 +4970,24 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
   }<%\n%>
   >>
 end assertCommon;
+
+template assertValueFormat(Exp exp)
+::=
+  let name = System.stringReplace(Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp,"\"")), "%", "%%")
+  match typeof(exp)
+  case T_REAL(__) then '<%name%>=%.16g'
+  case T_INTEGER(__) then '<%name%>="OMC_INT_FORMAT"'
+  else '<%name%>=%s'
+end assertValueFormat;
+
+template assertValueArg(Exp exp, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
+::=
+  let v = daeExp(exp, context, &preExp, &varDecls, &varFrees, &auxFunction)
+  match typeof(exp)
+  case T_REAL(__) then '(double) <%v%>'
+  case T_INTEGER(__) then '(modelica_integer) <%v%>'
+  else '<%v%> ? "true" : "false"'
+end assertValueArg;
 
 template expToFormatString(Exp exp, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
 ::=
@@ -5314,7 +5356,6 @@ end contextIteratorName;
   match cr
   case CREF_IDENT(ident = "xloc") then CodegenUtil.crefStr(cr)
   case CREF_IDENT(ident = "time") then "data->localData[0]->timeValue"
-  case CREF_IDENT(ident = "__OMC_DT") then "data->simulationInfo->inlineData->dt"
   case CREF_IDENT(ident = "__HOM_LAMBDA") then "data->simulationInfo->lambda"
   case WILD(__) then ''
   else crefToCStr(cr, 0, false, false, &sub)
@@ -5334,7 +5375,6 @@ template crefOldSub(ComponentRef cr, Integer ix, Text &sub)
   match cr
   case CREF_IDENT(ident = "xloc") then CodegenUtil.crefStr(cr)
   case CREF_IDENT(ident = "time") then 'data->localData[<%ix%>]->timeValue'
-  case CREF_IDENT(ident = "__OMC_DT") then "data->simulationInfo->inlineData->dt"
   case CREF_IDENT(ident = "__HOM_LAMBDA") then "data->simulationInfo->lambda"
   case WILD(__) then ''
   else crefToCStr(cr, ix, false, false, &sub)
@@ -5402,13 +5442,12 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart,
     let &elemSub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), contextOther, &preExp, &varDecls, &varFrees, &auxFunction)%>'
     crefToCStr(crefStripSubs(cr), ix, isPre, isStart, &elemSub)
   else match cref2simvar(cr, getSimCode())
-    case SIMVAR(varKind = ALG_STATE_OLD(), index = index) then '(data->simulationInfo->inlineData->algOldVars[<%index%>])<%&sub%>'
     case SIMVAR(aliasvar = ALIAS(varName = varName)) then crefToCStr(varName, ix, isPre, isStart, &sub)
     case SIMVAR(aliasvar = NEGATEDALIAS(varName = varName), type_=T_BOOL()) then '!(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
     case SIMVAR(aliasvar = NEGATEDALIAS(varName = varName)) then '-(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
-    case v as SIMVAR(varKind = JAC_VAR()) then '(parentJacobian->resultVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
-    case v as SIMVAR(varKind = JAC_TMP_VAR()) then '(parentJacobian->tmpVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
-    case v as SIMVAR(varKind = SEED_VAR()) then '(parentJacobian->seedVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind = JAC_VAR()) then '(<%if stringEq(sub, "") then "" else "&"%>parentJacobian->resultVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind = JAC_TMP_VAR()) then '(<%if stringEq(sub, "") then "" else "&"%>parentJacobian->tmpVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind = SEED_VAR()) then '(<%if stringEq(sub, "") then "" else "&"%>parentJacobian->seedVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
     case v as SIMVAR(varKind = DAE_RESIDUAL_VAR()) then '(data->simulationInfo->daeModeData->residualVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
     case v as SIMVAR(varKind = DAE_AUX_VAR()) then '(data->simulationInfo->daeModeData->auxiliaryVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
     case SIMVAR(index = -2) then
@@ -7156,6 +7195,35 @@ template daeExpPartEvalFunctionBoxed(Exp exp, Context context, Text &preExp, Tex
       error(sourceInfo(), 'PARTEVALFUNCTION: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>, ty=<%unparseType(ty)%>, origType=<%unparseType(origType)%>')
 end daeExpPartEvalFunctionBoxed;
 
+template daeExpHomotopyLambda(Exp actual, Exp simplified, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
+ "Generates homotopy(actual, simplified) that evaluates only the branches lambda
+  selects: actual can be singular where only simplified is used (lambda = 0)."
+::=
+  let &preActual = buffer ""
+  let eActual = daeExp(actual, context, &preActual, &varDecls, &varFrees, &auxFunction)
+  let &preSimplified = buffer ""
+  let eSimplified = daeExp(simplified, context, &preSimplified, &varDecls, &varFrees, &auxFunction)
+  let tA = tempDecl("modelica_real", &varDecls, &varFrees)
+  let tS = tempDecl("modelica_real", &varDecls, &varFrees)
+  let lambda = 'data->simulationInfo->lambda'
+  let &preExp +=
+    <<
+    <%tA%> = 0.0;
+    <%tS%> = 0.0;
+    if(<%lambda%> > 0.0)
+    {
+      <%preActual%>
+      <%tA%> = <%eActual%>;
+    }
+    if(<%lambda%> < 1.0)
+    {
+      <%preSimplified%>
+      <%tS%> = <%eSimplified%>;
+    }<%\n%>
+    >>
+  '((<%lambda%> >= 1.0) ? <%tA%> : ((<%lambda%> <= 0.0) ? <%tS%> : <%lambda%> * <%tA%> + (1.0 - <%lambda%>) * <%tS%>))'
+end daeExpHomotopyLambda;
+
 template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates code for a function call."
 ::=
@@ -7167,6 +7235,14 @@ let &sub = buffer ""
     let var1 = daeExp(e1, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &varFrees, &auxFunction)
     var2
+
+  case CALL(path=IDENT(name="homotopy"), expLst={actual, simplified}, attr=CALL_ATTR(ty=T_REAL(__))) then
+    if Flags.isSet(Flags.HOMOTOPY_IN_RESIDUALS) then
+      daeExpHomotopyLambda(actual, simplified, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    else
+      let eActual = daeExp(actual, context, &preExp, &varDecls, &varFrees, &auxFunction)
+      let eSimplified = daeExp(simplified, context, &preExp, &varDecls, &varFrees, &auxFunction)
+      'homotopy(<%eActual%>, <%eSimplified%>)'
 
   case CALL(path=IDENT(name="der"), expLst={arg as CREF(__)}) then
     cref(crefPrefixDer(arg.componentRef), &sub)
@@ -7188,13 +7264,6 @@ let &sub = buffer ""
   case CALL(path=IDENT(name="$_signNoNull"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &varFrees, &auxFunction)
     '(<%var1%> >= 0.0 ? 1.0:-1.0)'
-  // numerical der()
-  case CALL(path=IDENT(name="$_DF$DER"), expLst={arg as CREF(__)}) then
-    let derstr = cref(crefPrefixDer(arg.componentRef), &sub)
-    let nameold0 = crefOld(arg.componentRef, 0)
-    let nameold1 = crefOld(arg.componentRef, 1)
-    let dt = 'data->simulationInfo->inlineData->dt'
-    '(<%dt%> == 0.0 ? <%derstr%> : (<%nameold0%> - <%nameold1%>)/<%dt%>)'
   // round
   case CALL(path=IDENT(name="$_round"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &varFrees, &auxFunction)
@@ -7508,6 +7577,29 @@ let &sub = buffer ""
               >>
     tvar
 
+  case CALL(path=IDENT(name="matrix"), expLst={exp}, attr=CALL_ATTR(ty=ty)) then
+    let val = daeExpAsLValue(exp, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let dim = tempDecl("int", &varDecls, &varFrees)
+    let nElts = tempDecl("modelica_integer", &varDecls, &varFrees)
+    let tvardata = tempDecl("void *", &varDecls, &varFrees)
+    let szElt = 'sizeof(<%expTypeModelica(ty)%>)'
+    let ty_str = expTypeArray(ty)
+    let tvar = tempDecl(ty_str, &varDecls, &varFrees)
+    let &preExp +=
+              <<
+              for (<%dim%> = 3; <%dim%> <= <%val%>.ndims; <%dim%>++) {
+                if (size_of_dimension_base_array(<%val%>, <%dim%>) != 1) {
+                  <%raiseOrThrow()%>(threadData, "Invalid dimension %d of argument to matrix, expected dimension size 1 but got %d.", <%dim%>, (int) size_of_dimension_base_array(<%val%>, <%dim%>));
+                  break;
+                }
+              }
+              <%nElts%> = base_array_nr_of_elements(<%val%>);
+              <%tvardata%> = omc_alloc_interface.malloc(<%szElt%>*<%nElts%>);
+              memcpy(<%tvardata%>, <%val%>.data, <%szElt%>*<%nElts%>);
+              <%rcReleaseBefore(ty_str, tvar)%>simple_alloc_2d_base_array(&<%tvar%>, size_of_dimension_base_array(<%val%>, 1), size_of_dimension_base_array(<%val%>, 2), <%tvardata%>);<%\n%>
+              >>
+    tvar
+
   case CALL(path=IDENT(name="cat"), expLst=dim::arrays, attr=CALL_ATTR(ty = ty)) then
     let dim_exp = daeExp(dim, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let arrays_exp = (arrays |> array =>
@@ -7555,9 +7647,9 @@ let &sub = buffer ""
     let &preExp += '<%rcReleaseBefore(arr_tp_str, tvar)%>cross_alloc_<%arr_tp_str%>(&<%var1%>, &<%var2%>, &<%tvar%>);<%\n%>'
     tvar
 
-  case CALL(path=IDENT(name="identity"), expLst={A}) then
+  case CALL(path=IDENT(name="identity"), expLst={A}, attr=CALL_ATTR(ty=ty)) then
     let var1 = daeExpAsLValue(A, context, &preExp, &varDecls, &varFrees, &auxFunction)
-    let arr_tp_str = expTypeFromExpArray(A)
+    let arr_tp_str = expTypeArray(ty)
     let tvar = tempDecl(arr_tp_str, &varDecls, &varFrees)
     let &preExp += '<%rcReleaseBefore(arr_tp_str, tvar)%>identity_alloc_<%arr_tp_str%>(<%var1%>, &<%tvar%>);<%\n%>'
     tvar
@@ -7609,8 +7701,9 @@ let &sub = buffer ""
     let &preExp += '<%rcReleaseBefore("modelica_string", tvar)%><%tvar%> = modelica_real_to_modelica_string(<%sExp%>, <%signdigExp%>, <%minlenExp%>, <%leftjustExp%>);<%\n%>'
     tvar
 
-  case CALL(path=IDENT(name="delay"), expLst={ICONST(integer=index), e, d, delayMax}) then
+  case CALL(path=IDENT(name="delay"), expLst={idx, e, d, delayMax}) then
     let tvar = tempDecl("modelica_real", &varDecls, &varFrees)
+    let index = daeExp(idx, context, &preExp, &varDecls, &varFrees, &auxFunction)
 
     let var1 = daeExp(e, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let var2 = daeExp(d, context, &preExp, &varDecls, &varFrees, &auxFunction)
@@ -7650,11 +7743,18 @@ let &sub = buffer ""
   case CALL(path=IDENT(name="sample"), expLst={ICONST(integer=index), _, _}) then
     'data->simulationInfo->samples[<%intSub(index, 1)%>]'
 
-  case CALL(path=IDENT(name="delayZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), delay}) then
+  // iterated samples, the index depends on the iterator
+  case CALL(path=IDENT(name="sample"), expLst={index, _, _}) then
+    let index_T = daeExp(index, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    'data->simulationInfo->samples[(<%index_T%>) - 1]'
+
+  case CALL(path=IDENT(name="$delayZeroCrossing"), expLst={idx, ridx, delay}) then
+    let index = daeExp(idx, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    let rindex = daeExp(ridx, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let delay_T = daeExp(delay, context, &preExp, &varDecls, &varFrees, &auxFunction)
     'delayZeroCrossing(data, threadData, <%index%>, <%rindex%>, <%delay_T%>)'
 
-  case CALL(path=IDENT(name="spatialDistributionZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), xPos, dir}) then
+  case CALL(path=IDENT(name="$spatialDistributionZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), xPos, dir}) then
     let xPos_T = daeExp(xPos, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let dir_T = daeExp(dir, context, &preExp, &varDecls, &varFrees, &auxFunction)
     'spatialDistributionZeroCrossing(data, threadData, <%index%>, <%rindex%>, <%xPos_T%>, <%dir_T%>)'
@@ -7916,10 +8016,20 @@ case ARRAY(array = array, scalar = scalar, ty = T_ARRAY(ty = t as T_COMPLEX(__))
       ;separator="\n")
   let &preExp += '<%params%><%\n%>'
   arrayVar
-case ARRAY(array={}) then
-  let arrayVar = tempDecl("base_array_t", &varDecls, &varFrees)
-  let &preExp += '<%rcReleaseBefore("base_array_t", arrayVar)%>simple_alloc_1d_base_array(&<%arrayVar%>, 0, NULL);<%\n%>'
-  arrayVar
+case ARRAY(array={}, ty=arrTy) then
+  match Expression.expDimensions(exp)
+  case dims then
+    if boolOr(listEmpty(dims), Expression.hasUnknownDims(dims)) then
+      let arrayVar = tempDecl("base_array_t", &varDecls, &varFrees)
+      let &preExp += '<%rcReleaseBefore("base_array_t", arrayVar)%>simple_alloc_1d_base_array(&<%arrayVar%>, 0, NULL);<%\n%>'
+      arrayVar
+    else
+      let arrayTypeStr = expTypeArray(arrTy)
+      let arrayVar = tempDecl(arrayTypeStr, &varDecls, &varFrees)
+      let dimsStr = (dims |> d => '(_index_t)<%dimension(d, context, &preExp, &varDecls, &varFrees, &auxFunction)%>' ;separator=", ")
+      let &preExp += '<%rcReleaseBefore(arrayTypeStr, arrayVar)%>alloc_<%arrayTypeStr%>(&<%arrayVar%>, <%listLength(dims)%>, <%dimsStr%>);<%\n%>'
+      arrayVar
+  end match
 case ARRAY(__) then
   let arrayTypeStr = expTypeArray(ty)
   let arrayVar = tempDecl(arrayTypeStr, &varDecls, &varFrees)
@@ -8475,7 +8585,6 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
             case DIM_ENUM(__) then ', (_index_t)<%size%>'
             case DAE.DIM_EXP(exp=e) then ', (_index_t)<%daeExp(e,context,&rangeExpPre,&tmpVarDecls, &tmpVarFrees, &auxFunction)%>'
             else error(sourceInfo(), 'array reduction unable to generate code for element of unknown dimension sizes; type <%unparseType(typeof(r.expr))%>: <%ExpressionDumpTpl.dumpExp(r.expr,"\"")%>')
-            ; separator = ", "
           'alloc_<%arrayTypeResult%>(&<%res%>, <%intAdd(1,listLength(dims))%>, <%length%><%dimSizes%>);'
         else
           'simple_alloc_1d_<%arrayTypeResult%>(&<%res%>,<%length%>);'%>
@@ -8962,7 +9071,7 @@ template startArrayEnsureSize(ComponentRef cr)
   written into it, it has to hold one element per array element."
 ::=
   match getDimensionSizes(crefTypeFull(crefStripSubs(popCref(cr))))
-  case sizes as _::_ then
+  case _::_ then
     match cref2simvar(crefStripSubs(popCref(cr)), getSimCode())
     case var as SIMVAR(__) then
       let ty = crefShortType(name)
@@ -8971,7 +9080,7 @@ template startArrayEnsureSize(ComponentRef cr)
         case "integer"
         case "boolean" then
           let &nosub = buffer ""
-          let size = if isSymbolicArrayVar(var) then varSizeRuntime(var) else (sizes ; separator="*")
+          let size = if isSymbolicArrayVar(var) then varSizeRuntime(var) else typeSizeRuntime(crefTypeFull(crefStripSubs(popCref(cr))))
           '<%ty%>_array_ensure_size(&<%varAttributes(var, &nosub)%>.start, <%size%>);'
         else ""
     else ""
@@ -8987,6 +9096,16 @@ template varSizeRuntime(SimVar var)
   let &aux = buffer ""
   '(<%daeExp(simVarSizeExp(var), contextSimulationNonDiscrete, &preExp, &varDecls, &varFrees, &aux)%>)'
 end varSizeRuntime;
+
+template typeSizeRuntime(DAE.Type ty)
+ "the number of elements of an array type at runtime"
+::=
+  let &preExp = buffer ""
+  let &varDecls = buffer ""
+  let &varFrees = buffer ""
+  let &aux = buffer ""
+  '(<%daeExp(typeSizeExp(ty), contextSimulationNonDiscrete, &preExp, &varDecls, &varFrees, &aux)%>)'
+end typeSizeRuntime;
 
 template startArrayScatterEnsureSize(ComponentRef cr, Text type, Text arr)
  "Without --simCodeScalarize the array is one VarsData entry. Its start
@@ -9057,38 +9176,35 @@ template lsVarKind(SimVar var)
 end lsVarKind;
 
 template initializeStaticLSVars(list<SimVar> vars, Integer index)
+"nominal, min and max of the iteration variables, read per run of consecutive indices
+ (see simVarIndexRuns). The variables can be fixed=false parameters, their index is
+ one of the parameters."
 ::=
-  let len = listLength(vars)
-  let indices = (vars |> var as SIMVAR(__) => '<%index%> /* <%crefCComment(var, crefStrNoUnderscore(name))%> */' ;separator=",\n")
-  // A torn linear system's own iteration variables can be `fixed=false`
-  // PARAMETERS (solved via an initial-equation call, e.g. a filter's
-  // coefficient array) rather than ordinary VARIABLEs -- their scalar
-  // index lives in realParamsIndex/nParametersReal, a completely
-  // different space than realVarsIndex/nVariablesReal. Hardcoding
-  // VAR_KIND_VARIABLE here (as opposed to the equivalent, correct
-  // per-var dispatch in generateStaticInitialData for NONLINEAR_SYSTEM_DATA)
-  // looked up a variable-space index using a parameter-space index value,
-  // failing getNominalFromScalarIdx's out-of-bounds assertion whenever the
-  // parameter index exceeds nVariablesReal.
-  let kinds = (vars |> var as SIMVAR(__) => lsVarKind(var) ;separator=",\n")
+  let len = listLength(simVarIndexRuns(vars))
+  let rows = (simVarIndexRuns(vars) |> (pos, idx, n, kind) =>
+    match listGet(vars, intAdd(pos, 1)) case var as SIMVAR() then
+      '{<%pos%>, <%idx%>, <%n%>, <%kind%>} /* <%crefCComment(var, crefStrNoUnderscore(var.name))%> */'
+    ;separator=",\n")
   <<
   void initializeStaticLSData<%index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern)
   {
-    const int indices[<%len%>] = {
-      <%indices%>
+    /* position, first index, length, kind (0 no index, 1 variable, 2 parameter, 3 other variable) */
+    const int runs[<%len%>][4] = {
+      <%rows%>
     };
-    const enum var_kind kinds[<%len%>] = {
-      <%kinds%>
-    };
-    for (int i = 0; i < <%len%>; ++i) {
-      if (indices[i] < 0) {
-        linearSystemData->nominal[i] = 1.0;
-        linearSystemData->min[i]     = -DBL_MAX;
-        linearSystemData->max[i]     = DBL_MAX;
-      } else {
-        linearSystemData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, kinds[i], indices[i]);
-        linearSystemData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, kinds[i], indices[i]);
-        linearSystemData->max[i]     = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, kinds[i], indices[i]);
+    for (int r = 0; r < <%len%>; ++r) {
+      const enum var_kind kind = runs[r][3] == 2 ? VAR_KIND_PARAMETER : VAR_KIND_VARIABLE;
+      for (int k = 0; k < runs[r][2]; ++k) {
+        const int i = runs[r][0] + k;
+        if (runs[r][3] == 0) {
+          linearSystemData->nominal[i] = 1.0;
+          linearSystemData->min[i]     = -DBL_MAX;
+          linearSystemData->max[i]     = DBL_MAX;
+        } else {
+          linearSystemData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, kind, runs[r][1] + k);
+          linearSystemData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, kind, runs[r][1] + k);
+          linearSystemData->max[i]     = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, kind, runs[r][1] + k);
+        }
       }
     }
   }

@@ -1,0 +1,15 @@
+[package]
+name = "openmodelica_zip"
+version = "0.1.0"
+edition = "2024"
+workspace = ".."
+
+# Zip archives for both omcs; the C omc links it through runtime/rust.
+# Plain versions, no workspace inheritance: that crate builds it from its own root.
+# `workspace` is explicit so a stable cargo there never parses the nightly root.
+[dependencies]
+openmodelica_wasi = { path = "../openmodelica_wasi" }
+zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
+
+[target.'cfg(all(any(unix, windows), not(target_os = "emscripten")))'.dependencies]
+rayon = "1"

@@ -13,7 +13,6 @@ equation
   der(y) = x;
   x_out = x;
   y_out = y;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Circle;
 
 // Result:

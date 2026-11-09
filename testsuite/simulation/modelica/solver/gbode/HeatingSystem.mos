@@ -1,6 +1,7 @@
 // name: HeatingSystem
 // status: correct
 // teardown_command: rm -rf refSimulation.log HeatingSystem_esdirk4.log HeatingSystem_fehlberg78.log HeatingSystem_dopri45.log HeatingSystem_* *.bat
+// suite: gbode
 //
 // Test all discrete event handling for specific configurations.
 

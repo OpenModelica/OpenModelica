@@ -1,6 +1,5 @@
 // name: Modelica.Math.Matrices [Lapack]
 // status: correct
-// cflags: -d=-newInst
 //
 // Checks that the BUG https://openmodelica.org:8443/cb/issue/1370 is now gone! Also, it was way more than this bug!
 // New Frontend not yet supports `Matrices.eigenValues(A)`, see https://github.com/OpenModelica/OpenModelica/issues/9456

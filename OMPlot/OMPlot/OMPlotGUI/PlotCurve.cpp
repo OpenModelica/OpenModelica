@@ -80,6 +80,36 @@ PlotCurve::PlotCurve(const QString &fileName, const QString &absoluteFilePath, c
   mpPointMarker->setSymbol(new QwtSymbol(QwtSymbol::Rect, QColor(Qt::red), QColor(Qt::red), QSize(6, 6)));
 }
 
+PlotCurve::~PlotCurve()
+{
+  // QwtPlotDirectPainter is a QObject without parent that nobody else owns.
+  delete mpPlotDirectPainter;
+  /* As long as the marker is attached, the plot owns it and deletes it together with the other
+   * attached items when it is destroyed. Do not delete it then: QwtPlot::detachItems() iterates
+   * over a copy of its item list while deleting, so an item deleted by another item is a dangling
+   * pointer. Once the curve was detached with PlotCurve::detach() the marker is detached as well
+   * and nobody else owns it.
+   */
+  if (mPointMarkerDetached) {
+    delete mpPointMarker;
+  }
+}
+
+/*!
+ * \brief PlotCurve::detach
+ * Detaches the curve and its point marker from the plot. Like for the curve, neither is deleted
+ * here. A curve that is still attached when the plot is destroyed is deleted by the plot together
+ * with its marker, a detached curve deletes its detached marker in its destructor.
+ */
+void PlotCurve::detach()
+{
+  QwtPlotCurve::detach();
+  if (mpPointMarker) {
+    mpPointMarker->detach();
+    mPointMarkerDetached = true;
+  }
+}
+
 void PlotCurve::setTitleLocal()
 {
   if (mCustomTitle.isEmpty()) {
@@ -377,7 +407,71 @@ void PlotCurve::plotData(bool toggleSign)
       resetPrefixUnit(true);
     }
   }
-  setSamples(mXAxisVector, mYAxisVector);
+  applyStack();
+}
+
+/*!
+ * \brief PlotCurve::applyStack
+ * Hands the values to Qwt, moved into the curve's band when it is stacked.
+ */
+void PlotCurve::applyStack()
+{
+  if (mStacked) {
+    QwtArray<double> stacked(mYAxisVector.size());
+    for (int i = 0 ; i < mYAxisVector.size() ; i++) {
+      stacked[i] = stackedValue(mYAxisVector.at(i));
+    }
+    setSamples(mXAxisVector, stacked);
+  } else {
+    setSamples(mXAxisVector, mYAxisVector);
+  }
+}
+
+/*!
+ * \brief PlotCurve::valueText
+ * The name of a value of a Boolean or an enumeration, else the value itself.
+ * \param value
+ * \return
+ */
+QString PlotCurve::valueText(double value) const
+{
+  const int index = qRound(value) - mValueLabelBase;
+  if (qAbs(value - qRound(value)) < 1e-9 && index >= 0 && index < mValueLabels.size()) {
+    return mValueLabels.at(index);
+  }
+  return QLocale().toString(value, 'g', 4);
+}
+
+/*!
+ * \brief PlotCurve::setStack
+ * Draws the curve in its band of a stacked plot, [offset, offset + height]:
+ * value v at offset + (v - low) * scale.
+ * \param offset
+ * \param low
+ * \param scale
+ * \param height
+ */
+void PlotCurve::setStack(double offset, double low, double scale, double height)
+{
+  mStacked = true;
+  mStackOffset = offset;
+  mStackLow = low;
+  mStackScale = scale;
+  mStackHeight = height;
+}
+
+/*!
+ * \brief PlotCurve::unstackedValue
+ * The value a position of the stacked curve stands for.
+ * \param value
+ * \return
+ */
+double PlotCurve::unstackedValue(double value) const
+{
+  if (!mStacked || mStackScale == 0) {
+    return mStacked ? mStackLow : value;
+  }
+  return mStackLow + (value - mStackOffset) / mStackScale;
 }
 
 #if QWT_VERSION < 0x060000

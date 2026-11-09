@@ -24,7 +24,6 @@
 //! - `wasm-merge runtime.wasm rt model.wasm model` connects both directions,
 //!   leaving only the WASI imports (satisfied by `wasmtime`/the worker shim).
 
-
 use openmodelica_mat_writer::Precision;
 use openmodelica_sim_meta::driver::{self, SimEngine};
 use openmodelica_sim_meta::simflags;
@@ -67,7 +66,6 @@ unsafe extern "C" {
     fn evaluateDAEResiduals(sim_data: u32, stage: u32);
     fn initSample(sim_data: u32);
     fn callExternalObjectDestructors(sim_data: u32);
-    fn symbolicInlineSystem(sim_data: u32);
     fn functionDAE(sim_data: u32);
     fn linearJacA(sim_data: u32);
     fn linearJacB(sim_data: u32);
@@ -144,7 +142,6 @@ impl SimEngine for StandaloneEngine {
                 "functionInitSynchronous" => functionInitSynchronous(arg),
                 "initSample" => initSample(arg),
                 "callExternalObjectDestructors" => callExternalObjectDestructors(arg),
-                "symbolicInlineSystem" => symbolicInlineSystem(arg),
                 "functionDAE" => functionDAE(arg),
                 "linearJacA" => linearJacA(arg),
                 "linearJacB" => linearJacB(arg),
@@ -185,7 +182,7 @@ impl SimEngine for StandaloneEngine {
     fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
         crate::take_reinit_notes()
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 10]> {
         // No host to record it; a failed model assert traps (see `rt_assert`).
         None
     }
@@ -248,13 +245,16 @@ fn run() {
 
     if let Some(f) = &result.lin {
         let path = lin_file(&f.name);
-        std::fs::write(&path, &f.content)
-            .expect("wasm-jit standalone: cannot write the linearized model");
+        std::fs::write(&path, &f.content).expect("wasm-jit standalone: cannot write the linearized model");
         if let Some(lin) = &m.lin {
             use openmodelica_sim_meta::omclog::{STDOUT, error, info};
             let (msgs, is_error) = openmodelica_sim_meta::linearize::write_notice(lin, f, &path);
             for msg in &msgs {
-                if is_error { error(STDOUT, false, msg) } else { info(STDOUT, false, msg) }
+                if is_error {
+                    error(STDOUT, false, msg)
+                } else {
+                    info(STDOUT, false, msg)
+                }
             }
         }
     }
@@ -274,8 +274,13 @@ fn run() {
 /// the model's own filter is the codegen's verdict.
 fn arm_result(m: &SimMeta) {
     // `-single` narrows the real data to 4-byte float (C's `FLAG_SINGLE_PRECISION`).
-    let precision =
-        simflags::with_flags(|f| if f.single_precision { Precision::Single } else { Precision::Double });
+    let precision = simflags::with_flags(|f| {
+        if f.single_precision {
+            Precision::Single
+        } else {
+            Precision::Double
+        }
+    });
     openmodelica_sim_meta::result::file::arm(m.output_keep(None), precision, m.result_file());
 }
 
@@ -301,9 +306,7 @@ fn now_ms() -> f64 {
 pub extern "C" fn _start() {
     unsafe { __wasm_call_ctors() };
     let argv: Vec<String> = std::env::args().collect();
-    match simflags::parse(&argv).and_then(|f| {
-        simflags::check(&f, crate::sundials::capabilities()).map(|()| f)
-    }) {
+    match simflags::parse(&argv).and_then(|f| simflags::check(&f, crate::sundials::capabilities()).map(|()| f)) {
         Ok(f) => {
             openmodelica_solvers::solverflags::apply_flags(&f);
             simflags::set_flags(f);
@@ -320,7 +323,19 @@ pub extern "C" fn _start() {
 /// assertion, so print the message (`msg` is an `rt` String handle:
 /// `[refcount:u32][len:u32][utf8…]`) and trap, which aborts the command.
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_assert(msg: i32, _file: i32, _sline: i32, _scol: i32, _eline: i32, _ecol: i32, _read_only: i32, _cond: i32, _initial: i32, _sim_data: i32) -> i32 {
+pub extern "C" fn rt_assert(
+    msg: i32,
+    _file: i32,
+    _sline: i32,
+    _scol: i32,
+    _eline: i32,
+    _ecol: i32,
+    _read_only: i32,
+    _cond: i32,
+    _initial: i32,
+    _sim_data: i32,
+    _eq: i32,
+) -> i32 {
     if msg != 0 {
         let h = msg as u32;
         let len = unsafe { crate::load_u32(h + 4) } as usize;
@@ -330,6 +345,25 @@ pub extern "C" fn rt_assert(msg: i32, _file: i32, _sline: i32, _scol: i32, _elin
         }
     }
     core::arch::wasm32::unreachable()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_assert_when(
+    msg: i32,
+    file: i32,
+    sline: i32,
+    scol: i32,
+    eline: i32,
+    ecol: i32,
+    read_only: i32,
+    cond: i32,
+    initial: i32,
+    sim_data: i32,
+    eq: i32,
+) -> i32 {
+    rt_assert(
+        msg, file, sline, scol, eline, ecol, read_only, cond, initial, sim_data, eq,
+    )
 }
 
 /// In-wasm `rt_print`: the `print` builtin. Write the String handle's bytes to
@@ -368,6 +402,7 @@ pub extern "C" fn rt_assert_warning(
     _ecol: i32,
     _read_only: i32,
     _initial: i32,
+    _eq: i32,
 ) {
     if msg != 0 {
         let h = msg as u32;

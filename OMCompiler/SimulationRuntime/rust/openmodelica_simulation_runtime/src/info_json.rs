@@ -75,17 +75,43 @@ fn section_code(s: Option<&str>) -> c_int {
 fn load(xml: &MODEL_DATA_XML) -> &'static Table {
     let cell = unsafe { &mut *TABLE.0.get() };
     if cell.is_none() {
-        *cell = Some(read(xml));
+        match read(xml) {
+            Ok(table) => *cell = Some(table),
+            Err(msg) => parse_error(xml, &msg),
+        }
     }
     cell.as_ref().expect("info.json table")
 }
 
-fn read(xml: &MODEL_DATA_XML) -> Table {
-    let empty = Table { entries: Vec::new(), functions: Vec::new(), n_profile_blocks: 0 };
+/// C's `errorStreamPrint` pair + `omc_throw_function(NULL)` of a failed parse.
+fn parse_error(xml: &MODEL_DATA_XML, msg: &str) -> ! {
+    let name = if xml.fileName.is_null() {
+        String::new()
+    } else {
+        unsafe { core::ffi::CStr::from_ptr(xml.fileName) }
+            .to_string_lossy()
+            .into_owned()
+    };
+    omclog::error(omclog::STDOUT, true, &format!("Failed to parse {name}"));
+    omclog::error(omclog::STDOUT, false, msg);
+    omclog::close(omclog::STDOUT);
+    crate::support::rethrow(crate::support::omr_thread_data())
+}
+
+fn read(xml: &MODEL_DATA_XML) -> Result<Table, String> {
+    let empty = Ok(Table {
+        entries: Vec::new(),
+        functions: Vec::new(),
+        n_profile_blocks: 0,
+    });
     let text = if !xml.infoXMLData.is_null() {
-        unsafe { core::ffi::CStr::from_ptr(xml.infoXMLData) }.to_string_lossy().into_owned()
+        unsafe { core::ffi::CStr::from_ptr(xml.infoXMLData) }
+            .to_string_lossy()
+            .into_owned()
     } else if !xml.fileName.is_null() {
-        let mut name = unsafe { core::ffi::CStr::from_ptr(xml.fileName) }.to_string_lossy().into_owned();
+        let mut name = unsafe { core::ffi::CStr::from_ptr(xml.fileName) }
+            .to_string_lossy()
+            .into_owned();
         unsafe {
             if crate::support::omc_flag[crate::abi::FLAG_INPUT_PATH] != 0 {
                 let dir = core::ffi::CStr::from_ptr(crate::support::omc_flagValue[crate::abi::FLAG_INPUT_PATH]);
@@ -106,13 +132,7 @@ fn read(xml: &MODEL_DATA_XML) -> Table {
     } else {
         return empty;
     };
-    let doc: serde_json::Value = match serde_json::from_str(&text) {
-        Ok(v) => v,
-        Err(e) => {
-            omclog::warning!(omclog::STDOUT, false, "could not parse the model's info JSON: {e}");
-            return empty;
-        }
-    };
+    let doc: serde_json::Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
     let Some(eqs) = doc.get("equations").and_then(|v| v.as_array()) else {
         return empty;
     };
@@ -129,6 +149,12 @@ fn read(xml: &MODEL_DATA_XML) -> Table {
         .iter()
         .enumerate()
         .map(|(i, e)| {
+            // Entries are looked up by position.
+            match e.get("eqIndex").and_then(|v| v.as_f64()) {
+                Some(ix) if ix == i as f64 => {}
+                Some(ix) => return Err(format!("Got number {ix:.6}, expected: {:.6}", i as f64)),
+                None => return Err(format!("Expected eqIndex {i}, got: {e}")),
+            }
             let tag = e.get("tag").and_then(|v| v.as_str());
             let system = level & 1 != 0 && matches!(tag, Some("system") | Some("tornsystem"));
             let profile_block = if i > 0 && (level & 2 != 0 || system) {
@@ -139,20 +165,24 @@ fn read(xml: &MODEL_DATA_XML) -> Table {
             } else {
                 0
             };
-            Entry {
+            Ok(Entry {
                 section: section_code(e.get("section").and_then(|v| v.as_str())),
                 profile_block,
                 vars: strings(e.get("defines")),
                 uses: strings(e.get("uses")),
-            }
+            })
         })
-        .collect();
+        .collect::<Result<_, _>>()?;
     let functions = doc
         .get("functions")
         .and_then(|v| v.as_array())
         .map(|a| a.iter().filter_map(|f| f.as_str().map(String::from)).collect())
         .unwrap_or_default();
-    Table { entries, functions, n_profile_blocks }
+    Ok(Table {
+        entries,
+        functions,
+        n_profile_blocks,
+    })
 }
 
 /// C's `modelInfoInit` under `+profiling`: the profile-block count the generated
@@ -176,7 +206,11 @@ pub fn prof_info(data: *mut DATA) -> Option<openmodelica_sim_meta::ProfInfo> {
     let md = unsafe { &*(*data).modelData };
     let table = load(&md.modelDataXml);
     let cstr = |p: *const c_char| -> String {
-        if p.is_null() { String::new() } else { unsafe { core::ffi::CStr::from_ptr(p) }.to_string_lossy().into_owned() }
+        if p.is_null() {
+            String::new()
+        } else {
+            unsafe { core::ffi::CStr::from_ptr(p) }.to_string_lossy().into_owned()
+        }
     };
     let src = |i: &FILE_INFO| SrcInfo {
         file: cstr(i.filename),
@@ -188,7 +222,12 @@ pub fn prof_info(data: *mut DATA) -> Option<openmodelica_sim_meta::ProfInfo> {
     };
     let mut vars = Vec::new();
     let mut push = |info: &VAR_INFO| {
-        vars.push(ProfVar { id: info.id as u32, name: cstr(info.name), comment: cstr(info.comment), info: src(&info.info) });
+        vars.push(ProfVar {
+            id: info.id as u32,
+            name: cstr(info.name),
+            comment: cstr(info.comment),
+            info: src(&info.info),
+        });
     };
     unsafe {
         for i in 0..md.nVariablesRealArray.max(0) as usize {
@@ -216,19 +255,35 @@ pub fn prof_info(data: *mut DATA) -> Option<openmodelica_sim_meta::ProfInfo> {
             push(&(*md.stringParameterData.add(i)).info);
         }
     }
-    let functions = table.functions.iter().map(|n| ProfFn { name: n.clone(), info: SrcInfo::default() }).collect();
+    let functions = table
+        .functions
+        .iter()
+        .map(|n| ProfFn {
+            name: n.clone(),
+            info: SrcInfo::default(),
+        })
+        .collect();
     let equations = table
         .entries
         .iter()
         .enumerate()
-        .map(|(i, e)| ProfEq { id: i as u32, defines: e.vars.iter().map(|p| cstr(*p)).collect() })
+        .map(|(i, e)| ProfEq {
+            id: i as u32,
+            defines: e.vars.iter().map(|p| cstr(*p)).collect(),
+        })
         .collect();
     // C's `modelInfoGetEquationIndexByProfileBlock`: the dummy (index 0) where no
     // equation owns the block.
     let blocks = (0..table.n_profile_blocks)
         .map(|k| table.entries.iter().position(|e| e.profile_block == k).unwrap_or(0) as u32)
         .collect();
-    Some(ProfInfo { level: level as u8, functions, vars, equations, blocks })
+    Some(ProfInfo {
+        level: level as u8,
+        functions,
+        vars,
+        equations,
+        blocks,
+    })
 }
 
 /// C's `modelInfoGetEquation`, by value as the generated code calls it.
@@ -274,8 +329,7 @@ pub fn is_init_diag_section(data: *mut DATA, eq_index: u32) -> bool {
     let xml = unsafe { &mut (*(*data).modelData).modelDataXml };
     match load(xml).entries.get(eq_index as usize) {
         Some(e) => {
-            e.section == EQUATION_SECTION_INIT_LAMBDA0
-                || (e.section == EQUATION_SECTION_INITIAL && !has_lambda0)
+            e.section == EQUATION_SECTION_INIT_LAMBDA0 || (e.section == EQUATION_SECTION_INITIAL && !has_lambda0)
         }
         None => false,
     }

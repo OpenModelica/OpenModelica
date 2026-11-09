@@ -62,6 +62,7 @@ namespace OptionsDefaults
     bool displayNFAPIErrorsWarnings = false;
     bool enableInstanceApiNoJson = false;
     bool enableCRMLSupport = false;
+    int colorSchemeIndex = 0; // GeneralSettingsPage::SystemColorScheme
     int libraryIconSize = 24;
     int libraryIconMaximumTextLength = 3;
     bool showProtectedClasses = false;
@@ -333,6 +334,11 @@ namespace OptionsDefaults
   namespace OMSimulator {
     QString commandLineOptions = "--suppressPath=true";
     int loggingLevel = 0;
+#ifdef Q_OS_WIN
+    QString omuqPython = "python";
+#else
+    QString omuqPython = "python3";
+#endif
   }
 
   namespace SensitivityOptimization {

@@ -466,6 +466,7 @@ end SparsityRow;
   uniontype Sparsity
     record SPARSITY
       list<SparsityRow> rows;
+      Boolean resizable;
     end SPARSITY;
 
     record EMPTY
@@ -555,9 +556,9 @@ end SparsityRow;
       Option<FmiSimulationFlags> fmiSimulationFlags;
       PartitionData partitionData;
       Option<DaeModeData> daeModeData;
-      list<SimEqSystem> inlineEquations;
       Boolean scalarized;
       list<FmiFigure> fmiFigures;
+      ParamDeps paramDeps;
     end SIMCODE;
   end SimCode;
 
@@ -591,6 +592,7 @@ end SparsityRow;
     record DELAYED_EXPRESSIONS
       list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
       Integer maxDelayedIndex;
+      list<tuple<DAE.Exp, tuple<DAE.Exp, DAE.Exp, DAE.Exp>, list<BackendDAE.SimIterator>>> delayedLoops;
     end DELAYED_EXPRESSIONS;
   end DelayedExpression;
 
@@ -713,6 +715,14 @@ end SparsityRow;
       Integer index;
       list<Integer> call_order;
       list<SimEqSystem> single_calls;
+      Integer direction;
+      list<Integer> offsets;
+      list<Integer> start_shifts "per single call: its first iteration is the start of its range plus this";
+      list<Integer> stop_shifts "per single call: its last iteration is the stop of its range minus this";
+      list<Integer> scalar_calls "single calls of scalar slices in call order, each called before or after the call of a period entry";
+      list<Integer> scalar_entries;
+      list<Integer> scalar_positions "iteration value of the entry: start + position if >= 0, stop + position + 1 otherwise";
+      list<Boolean> scalar_after;
       DAE.ElementSource source;
       BackendDAE.EquationAttributes eqAttr;
     end SES_ENTWINED_ASSIGN;
@@ -1033,6 +1043,7 @@ end SparsityRow;
       FmiDiscreteStates fmiDiscreteStates;
       FmiInitialUnknowns fmiInitialUnknowns;
       list<FmiArray> fmiArrays;
+      Boolean hasDependencies;
     end FMIMODELSTRUCTURE;
   end FmiModelStructure;
 
@@ -1052,6 +1063,22 @@ end SparsityRow;
       String variableKind;
     end FMI_TERMINAL_MEMBER;
   end FmiTerminalMember;
+
+  uniontype ParamDeps
+    record PARAM_DEPS
+      Boolean checked;
+      list<ParamDepEq> eqs;
+      list<tuple<Integer, Integer>> settable;
+    end PARAM_DEPS;
+  end ParamDeps;
+
+  uniontype ParamDepEq
+    record PARAM_DEP_EQ
+      Option<SimEqSystem> eq;
+      list<Integer> uses;
+      list<Integer> defines;
+    end PARAM_DEP_EQ;
+  end ParamDepEq;
 
   uniontype FmiFigure
     record FMI_FIGURE
@@ -1266,6 +1293,7 @@ package SimCodeFunction
   uniontype Context
     record SIMULATION_CONTEXT
       Boolean genDiscrete;
+      Boolean whenBody;
     end SIMULATION_CONTEXT;
     record FUNCTION_CONTEXT
       String cref_prefix;
@@ -1294,6 +1322,7 @@ package SimCodeFunction
 
   constant Context contextSimulationNonDiscrete;
   constant Context contextSimulationDiscrete;
+  constant Context contextSimulationWhenBody;
   constant Context contextFunction;
   constant Context contextOther;
   constant Context contextAlgloopJacobian;
@@ -1485,10 +1514,47 @@ package SimCodeCodegenUtil
     output DAE.Exp exp;
   end jacobianIndexExp;
 
+  function scalarSparsityRow
+    input SimCode.SparsityRow row;
+    input HashTableCrefSimVar.HashTable ht;
+    output Option<tuple<list<Integer>, list<Integer>>> result;
+  end scalarSparsityRow;
+
   function isDimensionParameter
     input SimCodeVar.SimVar var;
     output Boolean b;
   end isDimensionParameter;
+
+  function isWholeArrayCref
+    input DAE.ComponentRef cref;
+    output Boolean b;
+  end isWholeArrayCref;
+
+  function isResizableSimVar
+    input SimCodeVar.SimVar var;
+    output Boolean b;
+  end isResizableSimVar;
+
+  function hasResizableVars
+    input SimCode.ModelInfo modelInfo;
+    output Boolean b;
+  end hasResizableVars;
+
+  function resizableFixedSize
+    input SimCode.ModelInfo modelInfo;
+    input Integer varType;
+    output Integer n;
+  end resizableFixedSize;
+
+  function resizableFixedStates
+    input SimCode.ModelInfo modelInfo;
+    output Integer n;
+  end resizableFixedStates;
+
+  function simVarDims
+    input SimCodeVar.SimVar var;
+    output list<DAE.Dimension> dims;
+  end simVarDims;
 
   function jacobianResultVars
     input SimCode.Sparsity sparsity;
@@ -1521,6 +1587,11 @@ package SimCodeCodegenUtil
     input SimCodeVar.SimVar var;
     output DAE.Exp exp;
   end simVarSizeExp;
+
+  function typeSizeExp
+    input DAE.Type ty;
+    output DAE.Exp exp;
+  end typeSizeExp;
 
   function simVarDimExps
     input SimCodeVar.SimVar var;
@@ -1571,6 +1642,11 @@ package SimCodeCodegenUtil
     input SimCodeVar.SimVar var;
     output String out;
   end getFMI3ArrayStart;
+
+  function fmuExternalLibraries
+    input list<String> libs;
+    output list<String> names;
+  end fmuExternalLibraries;
 
   function getFMI3Terminals
     input SimCode.SimCode simCode;
@@ -1705,6 +1781,11 @@ package SimCodeCodegenUtil
     output Integer n;
   end nVariablesReal;
 
+  function simVarIndexRuns
+    input list<SimCodeVar.SimVar> vars;
+    output list<tuple<Integer, Integer, Integer, Integer>> runs;
+  end simVarIndexRuns;
+
   function getSimCode
     output SimCode.SimCode code;
   end getSimCode;
@@ -1792,6 +1873,11 @@ package SimCodeCodegenUtil
     output list<SimCode.SimEqSystem> eqs;
   end selectScalarLiteralAssignments;
 
+  function runnableParamDepEqs
+    input SimCode.ParamDeps deps;
+    output list<tuple<Integer, SimCode.SimEqSystem>> eqs;
+  end runnableParamDepEqs;
+
   function filterScalarLiteralAssignments
     input list<SimCode.SimEqSystem> inEqs;
     output list<SimCode.SimEqSystem> eqs;
@@ -1814,6 +1900,12 @@ package SimCodeCodegenUtil
     output Integer vr;
   end lookupVR;
 
+  function sortedValueReferences
+    input list<tuple<Integer, DAE.ComponentRef>> crefs;
+    input SimCode.SimCode simCode;
+    output list<tuple<Integer, Integer>> vrIndexes;
+  end sortedValueReferences;
+
   function isFMUSimCode
     input SimCode.SimCode simCode;
     output Boolean isFMU;
@@ -1825,6 +1917,12 @@ package SimCodeCodegenUtil
     input String fmuType;
     output Integer vr;
   end lookupVRForRealOutputDerivative;
+
+  function maxOutputDerivativeOrder
+    input SimCode.SimCode simCode;
+    input String fmuType;
+    output Integer order;
+  end maxOutputDerivativeOrder;
 
   function unbalancedEqSystemPartition
     input list<SimCode.SimEqSystem> inList;
@@ -2071,8 +2169,6 @@ package BackendDAE
     end OPT_LOOP_INPUT;
     record ALG_STATE        "algebraic state used by inline solver"
     end ALG_STATE;
-    record ALG_STATE_OLD    "algebraic state old value used by inline solver"
-    end ALG_STATE_OLD;
     record DAE_RESIDUAL_VAR "variable kind used for DAEmode"
     end DAE_RESIDUAL_VAR;
     record DAE_AUX_VAR      "auxiliary variable used for DAEmode"
@@ -2187,7 +2283,6 @@ package BackendDAE
 
   constant String optimizationMayerTermName;
   constant String optimizationLagrangeTermName;
-  constant String symSolverDT;
 
   type Constraints = list<DAE.Constraint> "Constraints on the solvability of the (casual) tearing set; needed for proper Dynamic Tearing";
 
@@ -4243,6 +4338,11 @@ end ComponentReference;
 
 package Expression
 
+  function assertConditionValues
+    input DAE.Exp cond;
+    output list<DAE.Exp> exps;
+  end assertConditionValues;
+
   function crefExp
     input DAE.ComponentRef cr;
     output DAE.Exp cref;
@@ -4524,6 +4624,7 @@ package Flags
   constant DebugFlag HARDCODED_START_VALUES;
   constant DebugFlag OMC_RECORD_ALLOC_WORDS;
   constant DebugFlag OMC_RELOCATABLE_FUNCTIONS;
+  constant DebugFlag HOMOTOPY_IN_RESIDUALS;
   constant DebugFlag NF_SCALARIZE;
   constant ConfigFlag PARMODAUTO;
   constant ConfigFlag NUM_PROC;
@@ -4531,10 +4632,10 @@ package Flags
   constant ConfigFlag PROFILING_LEVEL;
   constant ConfigFlag CPP_FLAGS;
   constant ConfigFlag MATRIX_FORMAT;
-  constant ConfigFlag SYM_SOLVER;
   constant DebugFlag FMU_EXPERIMENTAL;
   constant DebugFlag MULTIRATE_PARTITION;
   constant ConfigFlag DAE_MODE;
+  constant ConfigFlag FMU_WITH_FMI2;
   constant ConfigFlag EQUATIONS_PER_FILE;
   constant ConfigFlag GENERATE_DYNAMIC_JACOBIAN;
   constant ConfigFlag HOMOTOPY_APPROACH;

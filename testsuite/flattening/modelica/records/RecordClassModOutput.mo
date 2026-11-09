@@ -27,28 +27,10 @@ model test
    R1 m3 = m2;
    R1 m4 = out1();
    R1 m5 = out2();
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end test;
 
 
 // Result:
-// function R1 "Automatically generated record constructor for R1"
-//   input Integer i1 = 10;
-//   input Integer r1 = 10;
-//   output R1 res;
-// end R1;
-//
-// function out1
-//   output R1 m = R1(2, 2);
-// end out1;
-//
-// function out2
-//   output R1 m = R1(2, 2);
-//   protected R1 mintern = R1(1, 1);
-// algorithm
-//   m := mintern;
-// end out2;
-//
 // class test
 //   Integer m2.i1 = 9;
 //   Integer m2.r1 = 9;

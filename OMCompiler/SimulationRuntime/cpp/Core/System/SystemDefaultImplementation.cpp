@@ -680,6 +680,14 @@ string& SystemDefaultImplementation::getStringStartValue(string& var)
   return _string_start_values.getGetStartValue(var);
 }
 
+void SystemDefaultImplementation::clearStartValues()
+{
+  _real_start_values.clear();
+  _int_start_values.clear();
+  _bool_start_values.clear();
+  _string_start_values.clear();
+}
+
 void SystemDefaultImplementation::setRealStartValue(double& var, double val, bool overwriteOldValue)
 {
   var = val;

@@ -46,6 +46,7 @@
 #include "util/simulation_options.h"
 
 #include <kinsol/kinsol.h>
+#include <sunmatrix/sunmatrix_sparse.h>
 #include <nvector/nvector_serial.h>
 
 #ifdef __cplusplus

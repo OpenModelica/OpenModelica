@@ -8,13 +8,12 @@
 // This has been changed from Modelica v1.4. Now use before declaration
 //is allowed.
 
-class ScopeDeclaration3
+model ScopeDeclaration3
   Real x;
 equation
   x = y;
 public
   Real y;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ScopeDeclaration3;
 
 // Result:

@@ -62,6 +62,9 @@ public:
     virtual size_t getDimReal() const = 0;
     virtual size_t getDimStateVars() const = 0;
     virtual size_t getStateVectorIndex() const = 0;
+    /// Change the sizes of the variable memory. The values of the first variables
+    /// are kept up to the smaller of both sizes, pointers into the memory become invalid.
+    virtual void resize(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_string, size_t dim_pre_vars, size_t dim_state_vars, size_t state_index) = 0;
 
      /*Methods for initialize model array variables in simvars memory*/
     virtual double* initRealArrayVar(size_t size,size_t start_index)= 0;

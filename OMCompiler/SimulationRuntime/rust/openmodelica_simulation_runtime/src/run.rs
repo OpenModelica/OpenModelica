@@ -77,7 +77,9 @@ fn init_done() {
         success("The initialization finished successfully without homotopy method.");
     } else {
         let local = if driver::init_homotopy_local() { "local " } else { "" };
-        success(&format!("The initialization finished successfully with {steps} {local}homotopy steps."));
+        success(&format!(
+            "The initialization finished successfully with {steps} {local}homotopy steps."
+        ));
     }
 }
 
@@ -85,6 +87,36 @@ fn init_done() {
 /// follows it.
 fn teardown() {
     success("The simulation finished successfully.");
+}
+
+/// The `threadData` of the generated `main`, which holds the class table.
+static MAIN_THREAD_DATA: core::sync::atomic::AtomicUsize = core::sync::atomic::AtomicUsize::new(0);
+
+/// C's `OpenModelica_uriToFilename` for a `modelica://` URI, e.g. of `-sx`,
+/// against the class table the generated `main` installs.
+fn uri_to_filename(uri: &str) -> String {
+    unsafe extern "C" {
+        /// src/shim.c: null where C asserts.
+        fn omr_uri_to_filename(thread_data: *mut threadData_t, uri: *mut core::ffi::c_void) -> *mut core::ffi::c_void;
+    }
+    if uri.len() >= 11 && uri[..11].eq_ignore_ascii_case("modelica://") {
+        let mut td = crate::support::omr_thread_data();
+        if td.is_null() {
+            // omr_thread_data has no fallback on the main thread outside unix.
+            td = MAIN_THREAD_DATA.load(core::sync::atomic::Ordering::Relaxed) as *mut threadData_t;
+        }
+        if !td.is_null() {
+            let path = unsafe { omr_uri_to_filename(td, model_data::mk_scon_persist(uri)) };
+            if !path.is_null() {
+                return model_data::string_value(path);
+            }
+        }
+        return uri.to_string();
+    }
+    match uri.strip_prefix("file://") {
+        Some(path) => path.to_string(),
+        None => uri.to_string(),
+    }
 }
 
 fn argv_strings(argc: c_int, argv: *mut *mut c_char) -> Vec<String> {
@@ -161,6 +193,8 @@ pub extern "C" fn _main_initRuntimeAndSimulation(
     driver::set_init_done_hook(init_done);
     driver::set_teardown_hook(teardown);
     driver::set_stats_hook(openmodelica_sim_meta::stats::log_stats);
+    MAIN_THREAD_DATA.store(thread_data as usize, core::sync::atomic::Ordering::Relaxed);
+    driver::set_uri_resolver(uri_to_filename);
     if let Some(code) = crate::help::serve(&args) {
         std::process::exit(code);
     }
@@ -200,11 +234,9 @@ pub extern "C" fn _main_initRuntimeAndSimulation(
     // C reads `<prefix>_init.xml` from `-inputPath` (else the working directory)
     // unless `-f` names another file; the model may also carry the contents
     // compiled in.
-    let xml_path = simflags::with_flags(|f| f.init_xml.clone()).unwrap_or_else(|| {
-        match flag_value(FLAG_INPUT_PATH) {
-            Some(dir) => format!("{dir}/{prefix}_init.xml"),
-            None => format!("{prefix}_init.xml"),
-        }
+    let xml_path = simflags::with_flags(|f| f.init_xml.clone()).unwrap_or_else(|| match flag_value(FLAG_INPUT_PATH) {
+        Some(dir) => format!("{dir}/{prefix}_init.xml"),
+        None => format!("{prefix}_init.xml"),
     });
     let xml = if !md.initXMLData.is_null() {
         model_data::parse_str(&cstr(md.initXMLData))
@@ -227,9 +259,7 @@ pub extern "C" fn _main_initRuntimeAndSimulation(
     let _ = HOME.set(xml.md("OPENMODELICAHOME").to_string());
     openmodelica_sim_meta::profiling::set_home(|| HOME.get().cloned().filter(|h| !h.is_empty()));
     // `--parmodauto`'s default thread count is capped at the machine's.
-    openmodelica_sim_meta::parmod::set_hw_threads(
-        std::thread::available_parallelism().map(|n| n.get()).unwrap_or(0),
-    );
+    openmodelica_sim_meta::parmod::set_hw_threads(std::thread::available_parallelism().map(|n| n.get()).unwrap_or(0));
     model_data::read_variables(&xml, md);
     // C's `initializeOutputFilter`: `-variableFilter` else the model's own.
     let filter = flag_value(FLAG_VARIABLE_FILTER).unwrap_or_else(|| cstr(si.variableFilter));
@@ -240,9 +270,7 @@ pub extern "C" fn _main_initRuntimeAndSimulation(
     // The per-system clocks cost two clock reads per solve, so they are only armed
     // where `LOG_STATS_V` will print them (C's `measure_time_flag` equivalent).
     // `-nlsInfo` reports the same per-system totals.
-    openmodelica_solvers::sysstat::enable(
-        omclog::active(omclog::STATS_V) || simflags::with_flags(|f| f.nls_info),
-    );
+    openmodelica_solvers::sysstat::enable(omclog::active(omclog::STATS_V) || simflags::with_flags(|f| f.nls_info));
     crate::nls::warn_once_unsupported_nls();
     // C's `modelInfoInit` under `+profiling`: the generated code indexes its block
     // clocks past `nProfileBlocks`, which only the `_info.json` knows.
@@ -259,9 +287,7 @@ pub extern "C" fn _main_initRuntimeAndSimulation(
 
 /// The value `-<name>` was given, if it was.
 fn flag_value(ix: usize) -> Option<String> {
-    unsafe {
-        (crate::support::omc_flag[ix] != 0).then(|| cstr(crate::support::omc_flagValue[ix]))
-    }
+    unsafe { (crate::support::omc_flag[ix] != 0).then(|| cstr(crate::support::omc_flagValue[ix])) }
 }
 
 fn cstr(p: *const c_char) -> String {
@@ -329,8 +355,13 @@ fn start_non_interactive_simulation(
     }
 
     let path = result_path(&meta, data);
-    let precision =
-        simflags::with_flags(|f| if f.single_precision { Precision::Single } else { Precision::Double });
+    let precision = simflags::with_flags(|f| {
+        if f.single_precision {
+            Precision::Single
+        } else {
+            Precision::Double
+        }
+    });
     openmodelica_sim_meta::result::file::arm(meta.output_keep(None), precision, path.clone());
     let method = meta.method.clone();
     let drove = driver::drive(&mut engine, &meta, 0, &method, false, false);
@@ -355,6 +386,7 @@ fn start_non_interactive_simulation(
                     | driver::INIT_FAILED_ERR
                     | driver::SOLVER_FAILED_ERR
                     | driver::CHATTER_ABORT_ERR
+                    | driver::RECON_ABORTED_ERR
             ) {
                 omclog::error(omclog::STDOUT, false, e);
             }
@@ -389,8 +421,7 @@ fn start_non_interactive_simulation(
                     Err(_) => path.clone(),
                 },
             };
-            let (msgs, is_error) =
-                openmodelica_sim_meta::linearize::write_notice(lin, file, &shown);
+            let (msgs, is_error) = openmodelica_sim_meta::linearize::write_notice(lin, file, &shown);
             for msg in &msgs {
                 if is_error {
                     omclog::error(omclog::STDOUT, false, msg)
@@ -438,7 +469,7 @@ pub extern "C" fn _main_OptimizationRuntime(
     omclog::error(
         omclog::STDOUT,
         false,
-        "the Rust simulation runtime does not serve -moo yet; build with --simCodeTarget=C.old",
+        "the Rust simulation runtime does not serve -moo yet; build with --simCodeTarget=C",
     );
     1
 }

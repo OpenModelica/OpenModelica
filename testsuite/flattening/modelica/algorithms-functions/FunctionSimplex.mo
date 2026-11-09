@@ -114,78 +114,9 @@ model FunctionSimplex
   Integer q;
 equation
   (b,z,p,q)=misc_simplex1(a);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionSimplex;
 
 // Result:
-// function misc_simplex1
-//   input Real[:, :] matr;
-//   output Real[-1 + size(matr, 2)] x;
-//   output Real z;
-//   output Integer q;
-//   output Integer p;
-//   protected Integer M;
-//   protected Integer N;
-//   protected Real[size(matr, 1), size(matr, 2)] a;
-// algorithm
-//   N := -1 + size(a, 1);
-//   M := -1 + size(a, 2);
-//   a := matr;
-//   p := 0;
-//   q := 0;
-//   a := pivot1(a, 1 + p, 1 + q);
-//   while not (q == M or p == N) loop
-//     q := 0;
-//     while not (q == M or a[1,1 + q] > 1.0) loop
-//       q := 1 + q;
-//     end while;
-//     p := 0;
-//     while not (p == N or a[1 + p,1 + q] > 0.1) loop
-//       p := 1 + p;
-//     end while;
-//     if q < M and p < N and p > 0 and q > 0 then
-//       a := pivot1(a, p, q);
-//     end if;
-//     if p <= 0 and q <= 0 then
-//       a := pivot1(a, 1 + p, 1 + q);
-//     end if;
-//     if p <= 0 and q > 0 then
-//       a := pivot1(a, 1 + p, q);
-//     end if;
-//     if p > 0 and q <= 0 then
-//       a := pivot1(a, p, 1 + q);
-//     end if;
-//   end while;
-//   z := a[1,M];
-//   x := array(a[1,i] for i in 1:size(x, 1));
-//   for i in 1:10 loop
-//     for j in 1:M loop
-//       x[j] := 1.01 * x[j];
-//     end for;
-//   end for;
-// end misc_simplex1;
-//
-// function pivot1
-//   input Real[:, :] b;
-//   input Integer p;
-//   input Integer q;
-//   output Real[size(b, 1), size(b, 2)] a;
-//   protected Integer M;
-//   protected Integer N;
-// algorithm
-//   a := b;
-//   N := -1 + size(a, 1);
-//   M := -1 + size(a, 2);
-//   for j in 1:N loop
-//     for k in 1:M loop
-//       if j <> p and k <> q then
-//         a[j,k] := a[j,k] + (-0.3) * /*Real*/(j);
-//       end if;
-//     end for;
-//   end for;
-//   a[p,q] := 0.05;
-// end pivot1;
-//
 // class FunctionSimplex
 //   constant Real a[1,1] = -1.0;
 //   constant Real a[1,2] = -1.0;
@@ -223,7 +154,7 @@ end FunctionSimplex;
 //   constant Real a[2,3] = 0.0144618;
 //   constant Real a[2,4] = 0.100862;
 //   constant Real a[2,5] = 0.0527577;
-//   constant Real a[2,6] = 0.5846749999999999;
+//   constant Real a[2,6] = 0.584675;
 //   constant Real a[2,7] = 0.211411;
 //   constant Real a[2,8] = 0.228098;
 //   constant Real a[2,9] = 0.432293;
@@ -235,7 +166,7 @@ end FunctionSimplex;
 //   constant Real a[2,15] = 0.995546;
 //   constant Real a[2,16] = 0.0684201;
 //   constant Real a[2,17] = 0.971113;
-//   constant Real a[2,18] = 0.9079469999999999;
+//   constant Real a[2,18] = 0.907947;
 //   constant Real a[2,19] = 0.345968;
 //   constant Real a[2,20] = 0.435689;
 //   constant Real a[2,21] = 0.903455;
@@ -293,11 +224,11 @@ end FunctionSimplex;
 //   constant Real a[4,11] = 0.24222;
 //   constant Real a[4,12] = 0.831003;
 //   constant Real a[4,13] = 0.267453;
-//   constant Real a[4,14] = 0.5788990000000001;
+//   constant Real a[4,14] = 0.578899;
 //   constant Real a[4,15] = 0.900373;
 //   constant Real a[4,16] = 0.541543;
 //   constant Real a[4,17] = 0.420575;
-//   constant Real a[4,18] = 0.6336580000000001;
+//   constant Real a[4,18] = 0.633658;
 //   constant Real a[4,19] = 0.46198;
 //   constant Real a[4,20] = 0.309461;
 //   constant Real a[4,21] = 0.0532044;
@@ -335,7 +266,7 @@ end FunctionSimplex;
 //   constant Real a[5,22] = 0.296442;
 //   constant Real a[5,23] = 0.581085;
 //   constant Real a[5,24] = 0.149778;
-//   constant Real a[5,25] = 0.07472380000000001;
+//   constant Real a[5,25] = 0.0747238;
 //   constant Real a[5,26] = 0.0;
 //   constant Real a[5,27] = 0.0;
 //   constant Real a[5,28] = 0.0;
@@ -358,7 +289,7 @@ end FunctionSimplex;
 //   constant Real a[6,14] = 0.17782;
 //   constant Real a[6,15] = 0.477401;
 //   constant Real a[6,16] = 0.949589;
-//   constant Real a[6,17] = 0.7392609999999999;
+//   constant Real a[6,17] = 0.739261;
 //   constant Real a[6,18] = 0.465227;
 //   constant Real a[6,19] = 0.176743;
 //   constant Real a[6,20] = 0.266667;
@@ -366,7 +297,7 @@ end FunctionSimplex;
 //   constant Real a[6,22] = 0.884142;
 //   constant Real a[6,23] = 0.026965;
 //   constant Real a[6,24] = 0.191943;
-//   constant Real a[6,25] = 0.09983450000000001;
+//   constant Real a[6,25] = 0.0998345;
 //   constant Real a[6,26] = 0.0;
 //   constant Real a[6,27] = 0.0;
 //   constant Real a[6,28] = 0.0;
@@ -407,6 +338,38 @@ end FunctionSimplex;
 //   Integer p;
 //   Integer q;
 // equation
-//   ({b[1], b[2], b[3], b[4], b[5], b[6], b[7], b[8], b[9], b[10], b[11], b[12], b[13], b[14], b[15], b[16], b[17], b[18], b[19], b[20], b[21], b[22], b[23], b[24], b[25], b[26], b[27], b[28], b[29], b[30]}, z, p, q) = ({0.05523110627056022, -1.104622125411205, -1.104622125411205, -1.104622125411205, -1.104622125411205, -1.104622125411205, -1.104622125411205, -1.104622125411205, -1.104622125411205, -1.104622125411205, -1.104622125411205, -1.104622125411205, -1.104622125411205, -1.104622125411205, -1.104622125411205, -1.104622125411205, -1.104622125411205, -1.104622125411205, -1.104622125411205, -1.104622125411205, -1.104622125411205, -1.104622125411205, -1.104622125411205, -1.104622125411205, -1.104622125411205, 0.0, 0.0, 0.0, 0.0, 0.0}, 0.0, 30, 1);
+//   b[1] = 0.05523110627056022;
+//   b[2] = -1.1046221254112043;
+//   b[3] = -1.1046221254112043;
+//   b[4] = -1.1046221254112043;
+//   b[5] = -1.1046221254112043;
+//   b[6] = -1.1046221254112043;
+//   b[7] = -1.1046221254112043;
+//   b[8] = -1.1046221254112043;
+//   b[9] = -1.1046221254112043;
+//   b[10] = -1.1046221254112043;
+//   b[11] = -1.1046221254112043;
+//   b[12] = -1.1046221254112043;
+//   b[13] = -1.1046221254112043;
+//   b[14] = -1.1046221254112043;
+//   b[15] = -1.1046221254112043;
+//   b[16] = -1.1046221254112043;
+//   b[17] = -1.1046221254112043;
+//   b[18] = -1.1046221254112043;
+//   b[19] = -1.1046221254112043;
+//   b[20] = -1.1046221254112043;
+//   b[21] = -1.1046221254112043;
+//   b[22] = -1.1046221254112043;
+//   b[23] = -1.1046221254112043;
+//   b[24] = -1.1046221254112043;
+//   b[25] = -1.1046221254112043;
+//   b[26] = 0.0;
+//   b[27] = 0.0;
+//   b[28] = 0.0;
+//   b[29] = 0.0;
+//   b[30] = 0.0;
+//   z = 0.0;
+//   p = 30;
+//   q = 1;
 // end FunctionSimplex;
 // endResult

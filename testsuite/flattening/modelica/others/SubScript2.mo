@@ -14,7 +14,6 @@ model Subscript2
 equation
  s = x[:]*y[:,1];
  t = x*y2[2,:];
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Subscript2;
 
 

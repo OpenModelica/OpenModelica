@@ -18,7 +18,6 @@ const SUNDIALS_DRIVER: bool =
 const CAPABILITIES: simflags::Capabilities = simflags::Capabilities {
     klu: openmodelica_wasm_jit::SUNDIALS,
     kinsol: openmodelica_wasm_jit::SUNDIALS,
-    umfpack: openmodelica_wasm_jit::SUNDIALS,
     lis: openmodelica_wasm_jit::SUNDIALS,
     ida: SUNDIALS_DRIVER,
     cvode: SUNDIALS_DRIVER,
@@ -29,7 +28,6 @@ const CAPABILITIES: simflags::Capabilities = simflags::Capabilities {
     // `optimize()`'s solver: the host-driven driver's Ipopt.
     optimization: openmodelica_sim_meta::optimization::AVAILABLE,
     // A `simulate()` run drives the whole trajectory, which is all QSS can do.
-    qss: true,
 };
 
 /// The solver values a caller may offer for this build, so a menu built from it
@@ -40,12 +38,11 @@ pub fn solver_options() -> Vec<(&'static str, Vec<&'static str>)> {
 
 /// What an exported wasm FMU *could* serve: every solver, each a PIC side module the
 /// FMU linker adds beside the model. What a given FMU carries is narrower —
-/// [`fmu_solver_libraries`] picks from the flags it was exported with.
+/// [`fmu_solver_libraries`] picks.
 fn fmu_capabilities() -> simflags::Capabilities {
     simflags::Capabilities {
         klu: sundials_available(),
         kinsol: sundials_available(),
-        umfpack: sundials_available(),
         lis: sundials_available(),
         ida: sundials_available(),
         cvode: sundials_available(),
@@ -55,7 +52,6 @@ fn fmu_capabilities() -> simflags::Capabilities {
         // An FMU has no notion of an optimization problem.
         optimization: false,
         // A Co-Simulation FMU steps to communication points; QSS cannot be stepped.
-        qss: false,
     }
 }
 
@@ -74,7 +70,13 @@ pub(super) fn fmu_solver_flags(flags_json: &str) -> String {
         .into_iter()
         .filter(|(name, _)| name != "s")
         .filter(|(name, value)| fmu_accepts_flag(name, value))
-        .map(|(name, value)| if value.is_empty() { format!("-{name}") } else { format!("-{name}={value}") })
+        .map(|(name, value)| {
+            if value.is_empty() {
+                format!("-{name}")
+            } else {
+                format!("-{name}={value}")
+            }
+        })
         .collect::<Vec<_>>()
         .join(" ")
 }
@@ -100,7 +102,11 @@ fn fmu_accepts_flag(name: &str, value: &str) -> bool {
     if IMPORTER_FLAGS.contains(&name) {
         return false;
     }
-    let arg = if value.is_empty() { format!("-{name}") } else { format!("-{name}={value}") };
+    let arg = if value.is_empty() {
+        format!("-{name}")
+    } else {
+        format!("-{name}={value}")
+    };
     match simflags::parse(&["model".to_string(), arg]) {
         Ok(f) => simflags::check(&f, fmu_capabilities()).is_ok(),
         Err(_) => false,
@@ -115,7 +121,11 @@ fn fmi_flags(json: &str) -> Vec<(String, String)> {
         let Some(len) = rest[start + 1..].find('"') else { break };
         let name = &rest[start + 1..start + 1 + len];
         let after = rest[start + 1 + len + 1..].trim_start();
-        let Some(value_part) = after.strip_prefix(':').map(str::trim_start).and_then(|a| a.strip_prefix('"')) else {
+        let Some(value_part) = after
+            .strip_prefix(':')
+            .map(str::trim_start)
+            .and_then(|a| a.strip_prefix('"'))
+        else {
             rest = &rest[start + 1 + len + 1..];
             continue;
         };
@@ -127,47 +137,24 @@ fn fmi_flags(json: &str) -> Vec<(String, String)> {
 }
 
 /// Which solver libraries an FMU exported with these `--fmiFlags` and this
-/// Co-Simulation method can reach; the rest are linked as stubs. Both are fixed
-/// at export, so this is the whole set the FMU will ever select from. `klu` comes
-/// along with any of the others: the shared SUNDIALS core they call into, and
-/// IDA's default linear solver.
+/// Co-Simulation method links; the rest are linked as stubs. kinsol, with the KLU
+/// core it calls into, is always linked: the compiler's density/size rule, `-nls`
+/// and `-nlssMaxDensity` / `-nlssMinSize` can all send a nonlinear system to it,
+/// and the simulation flags can change before the FMU starts.
 ///
 /// `cs` gates only the integrator: Model Exchange never integrates, but its
 /// initialisation and residuals run the same nonlinear and linear solvers.
-///
-/// `sparse_nls` is the one selection no flag records: C's density/size rule sends a
-/// large sparse nonlinear system to kinsol+KLU whatever the flags say, so a model
-/// carrying one needs both however it was exported.
-pub(super) fn fmu_solver_libraries(
-    flags_json: &str,
-    cs_method: &str,
-    cs: bool,
-    sparse_nls: bool,
-) -> Vec<&'static str> {
+pub(super) fn fmu_solver_libraries(flags_json: &str, cs_method: &str, cs: bool) -> Vec<&'static str> {
     let flag = |name: &str| fmi_flag(flags_json, name).unwrap_or_default();
-    let (nls, ls, lss) = (flag("nls"), flag("ls"), flag("lss"));
-    let named = |v: &str| ls == v || lss == v;
     let mut wanted = Vec::new();
     if cs && fmu_needs_sundials(cs_method) {
         wanted.push("sundials_driver");
     }
-    if sparse_nls || matches!(nls.as_str(), "kinsol" | "experimental-kinsol") {
-        wanted.push("kinsol");
-    }
-    if named("umfpack") {
-        wanted.push("umfpack");
-    }
-    if named("lis") {
+    wanted.push("kinsol");
+    if flag("ls") == "lis" || flag("lss") == "lis" {
         wanted.push("lis");
     }
-    // gbode's internal solver factorizes with KLU, as C's does.
-    if !wanted.is_empty()
-        || named("klu")
-        || flag("nlsLS") == "klu"
-        || (cs && (flag("idaLS") == "klu" || cs_method == "gbode"))
-    {
-        wanted.push("klu");
-    }
+    wanted.push("klu");
     wanted
 }
 
@@ -198,7 +185,9 @@ pub fn fmu_platforms() -> Vec<String> {
 /// see, so the same parser serves this path and a standalone `wasmtime model.wasm …`
 /// run.
 pub(super) fn install_sim_flags(simflags: &str) -> std::result::Result<simflags::SimFlags, String> {
-    let argv: Vec<String> = core::iter::once("model".to_string()).chain(split_simflags(simflags)).collect();
+    let argv: Vec<String> = core::iter::once("model".to_string())
+        .chain(split_simflags(simflags))
+        .collect();
     let f = simflags::parse(&argv)?;
     simflags::check(&f, CAPABILITIES)?;
     simflags::set_flags(f.clone());

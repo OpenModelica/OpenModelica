@@ -42,6 +42,7 @@ protected
   import Operator = NFOperator;
   import Prefixes = NFPrefixes;
   import List;
+  import UnorderedMap;
   import SimplifyExp = NFSimplifyExp;
   import Ceval = NFCeval;
 
@@ -228,7 +229,7 @@ public
     function addExp
       input Expression e1;
       input Expression e2;
-      output Expression res = Expression.BINARY(e1, Operator.OPERATOR(Type.INTEGER(), NFOperator.Op.ADD), e2);
+      output Expression res = Expression.BINARY(e1, Operator.OPERATOR(Type.INTEGER(), NFOperator.Op.ADD, false), e2);
     end addExp;
     function addOpt
       input Option<Integer> s1;
@@ -293,6 +294,51 @@ public
     input Boolean resize = false;
     output Integer outSize = product(Dimension.size(d, resize) for d in dims);
   end sizesProduct;
+
+  function sizesProductSymbolic
+    "Returns the size of a list of dimensions as sz * product(exps).
+     This function assumes that the input sz and exps are for the element type
+     of the array type the dimensions are from, and will include them in the
+     product. The optional variable is used to create a size expressions for
+     any : dimensions."
+    input list<Dimension> dims;
+    input output Integer sz = 1;
+    input output list<Expression> exps = {};
+    input Option<ComponentRef> variable;
+  protected
+    Integer index = 1;
+    ComponentRef cref;
+  algorithm
+    for dim in dims loop
+      if isKnown(dim) then
+        sz := sz * Dimension.size(dim);
+      elseif isUnknown(dim) and isSome(variable) then
+        SOME(cref) := variable;
+        exps := Expression.SIZE(Expression.fromCref(cref), SOME(Expression.INTEGER(index))) :: exps;
+      else
+        exps := sizeExp(dim) :: exps;
+      end if;
+
+      index := index + 1;
+    end for;
+
+    if not listEmpty(exps) then
+      if sz == 0 or List.any(exps, Expression.isZero) then
+        sz := 0;
+        exps := {};
+      else
+        if sz <> 1 then
+          exps := Expression.INTEGER(sz) :: exps;
+        end if;
+
+        sz := 0;
+
+        if listLength(exps) > 1 then
+          exps := {Expression.MULTARY(exps, {}, Operator.makeMul(Type.INTEGER()))};
+        end if;
+      end if;
+    end if;
+  end sizesProductSymbolic;
 
   function isEqual
     input Dimension dim1;
@@ -576,6 +622,16 @@ public
     end match;
   end endExp;
 
+  function containsSplitSubscriptedExp
+    input Dimension dim;
+    output Boolean res;
+  algorithm
+    res := match dim
+      case EXP() then Expression.containsSplitSubscriptedExp(dim.exp);
+      else false;
+    end match;
+  end containsSplitSubscriptedExp;
+
   function sizeExp
     "Returns the size of a dimension as an Expression."
     input Dimension dim;
@@ -765,6 +821,43 @@ public
       else dim;
     end match;
   end simplify;
+
+  function replaceIteratorsByName
+    "see Expression.replaceIteratorsByName"
+    input output Dimension dim;
+    input UnorderedMap<String, Expression> values;
+  algorithm
+    dim := match dim
+      case EXP() guard Expression.contains(dim.exp, function Expression.isIteratorNamed(names = UnorderedMap.keyList(values)))
+        then simplify(EXP(Expression.replaceIteratorsByName(dim.exp, values), dim.var));
+      else dim;
+    end match;
+  end replaceIteratorsByName;
+
+  function lastIteratorDependency
+    "Returns the position of the last of the given iterators the size depends on,
+     or 0 if it depends on none of them, e.g. 2 for {{2, 3}, {1, 2}}[$w1, $lay1]
+     with {$w1, $lay1}."
+    input Dimension dim;
+    input list<String> iterators;
+    output Integer pos = 0;
+  protected
+    Integer i = 1;
+  algorithm
+    () := match dim
+      case EXP()
+        algorithm
+          for name in iterators loop
+            if Expression.contains(dim.exp, function Expression.isIteratorNamed(names = {name})) then
+              pos := i;
+            end if;
+            i := i + 1;
+          end for;
+        then
+          ();
+      else ();
+    end match;
+  end lastIteratorDependency;
 
   function typeOf
     input Dimension dim;

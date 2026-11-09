@@ -1,12 +1,11 @@
 // name:     ModelicaDataReconciliationSimpleTests.Models.assert
 // keywords: extraction algorithm
 // status:   correct
-// depends: ./ModelicaDataReconciliationSimpleTests/resources/model_assert_DR.csv
 // teardown_command: rm -rf ModelicaDataReconciliationSimpleTests.Models.assert ModelicaDataReconciliationSimpleTests.Models.assert_* Reconciled_ModelicaDataReconciliationSimpleTests_Models_assert.mo ModelicaDataReconciliationSimpleTests.Models.assert.html
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
-loadFile("ModelicaDataReconciliationSimpleTests/package.mo");
+loadModel(ModelicaDataReconciliationSimpleTests, {"4.0.0"});
 getErrorString();
 
 AnnotationNamedModifiers:=getAnnotationNamedModifiers(ModelicaDataReconciliationSimpleTests.Models.assert, "__OpenModelica_simulationFlags");
@@ -28,14 +27,11 @@ getErrorString();
 // true
 // ""
 // true
-// "Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from ModelicaDataReconciliationSimpleTests.
-// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
-// "
+// ""
 // {"lv", "eps", "s", "sx"}
 // "-reconcile "
 //
-// simFlags: -reconcile  -lv=LOG_JAC -eps=0.0023 -s=dassl -sx=./ModelicaDataReconciliationSimpleTests/resources/model_assert_DR.csv
+// simFlags: -reconcile  -lv=LOG_JAC -eps=0.0023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/model_assert_DR.csv
 //
 // ModelInfo: ModelicaDataReconciliationSimpleTests.Models.assert
 // ==========================================================================
@@ -233,8 +229,8 @@ getErrorString();
 // -SET_C contains No Intermediate Variables
 //
 // record SimulationResult
-//     resultFile = "econcile",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaDataReconciliationSimpleTests.Models.assert', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.0023 -s=dassl -sx=./ModelicaDataReconciliationSimpleTests/resources/model_assert_DR.csv'",
+//     resultFile = "ModelicaDataReconciliationSimpleTests.Models.assert_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaDataReconciliationSimpleTests.Models.assert', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.0023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/model_assert_DR.csv'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // LOG_STDOUT        | info    | DataReconciliation Starting!
@@ -242,7 +238,7 @@ getErrorString();
 // LOG_STDOUT        | info    | DataReconciliation Completed!
 // "
 // end SimulationResult;
-// "[openmodelica/dataReconciliation/ModelicaDataReconciliationSimpleTests/Models/assert.mo:10:3-10:41:writable] Warning: In relation table_real[1] == 1.0, == on Real operands is deprecated in non-function contexts.
+// "[ModelicaDataReconciliationSimpleTests 4.0.0/Models/assert.mo:10:3-10:41:writable] Warning: In relation table_real[1] == 1.0, == on Real operands is deprecated in non-function contexts.
 // "
 // "Variable to be Estimated ,Initial Measured Value ,Estimated Value ,Initial Uncertainty ,Estimated Uncertainty,Result of Local Test ,Local Quality  ,
 // b,11,11.5,2,1.41421,TRUE,0.353553,

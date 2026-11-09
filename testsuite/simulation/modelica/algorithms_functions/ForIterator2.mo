@@ -39,7 +39,6 @@ end ForIterator2;
 model M
 algorithm
   ForIterator2.func();
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end M;
 
 // class ForIterator2

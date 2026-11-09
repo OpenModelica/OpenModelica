@@ -255,6 +255,16 @@ public
     end match;
   end isModel;
 
+  function isBlock
+    input Restriction res;
+    output Boolean isBlock;
+  algorithm
+    isBlock := match res
+      case BLOCK() then true;
+      else false;
+    end match;
+  end isBlock;
+
   function toString
     input Restriction res;
     output String str;
@@ -445,12 +455,6 @@ public
                 assertNoProtected(cdef.elementLst, restriction);
                 assertNoEquations(cdef.normalEquationLst, cdef.initialEquationLst, restriction);
                 assertNoAlgorithms(cdef.normalAlgorithmLst, cdef.initialAlgorithmLst, restriction);
-              then
-                ();
-
-            case Restriction.BLOCK()
-              algorithm
-                // TODO: Components in any connector components in a block must be input/output.
               then
                 ();
 

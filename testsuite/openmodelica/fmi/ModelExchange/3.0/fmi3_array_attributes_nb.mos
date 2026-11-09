@@ -8,7 +8,6 @@
 // #15926, FMI 3.0, new backend, scalarized (default), C runtime. A scalarized
 // array element must not be dimensioned in the exported FMU init.
 
-setCommandLineOptions("--simCodeTarget=C"); getErrorString();
 setCommandLineOptions("--newBackend"); getErrorString();
 
 loadString("
@@ -23,12 +22,10 @@ end fmi3_array_attributes_nb;
 
 buildModelFMU(fmi3_array_attributes_nb, version="3.0", fmuType="me"); getErrorString();
 
-system("unzip -cqq fmi3_array_attributes_nb.fmu sources/fmi3_array_attributes_nb_init_fmu.c | grep -n 'numberOfDimensions = [1-9]' > fmi3_array_attributes_nb.dims || true"); getErrorString();
+system("python3 fmuInitDims.py fmi3_array_attributes_nb > fmi3_array_attributes_nb.dims || true"); getErrorString();
 readFile("fmi3_array_attributes_nb.dims"); getErrorString();
 
 // Result:
-// true
-// ""
 // true
 // ""
 // true
@@ -39,6 +36,7 @@ readFile("fmi3_array_attributes_nb.dims"); getErrorString();
 // "
 // 0
 // ""
-// ""
+// "0
+// "
 // ""
 // endResult

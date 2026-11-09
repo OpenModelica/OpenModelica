@@ -24,11 +24,8 @@ pub enum Solver {
     Cvode,
     Gbode,
     Euler,
-    RungeKutta,
-    SymSolver,
-    SymSolverSsc,
-    /// C's deprecated experimental QSS1 (`perform_qss_simulation.c.inc`).
-    Qss,
+    /// `rungekutta`, `heun` and the others C runs as gbode.
+    GbodeShorthand,
     /// `optimize()`'s collocation solver; only selectable where Ipopt is linked.
     Optimization,
 }
@@ -68,7 +65,6 @@ pub enum Ls {
     Lapack = 2,
     TotalPivot = 3,
     Klu = 4,
-    Umfpack = 5,
     Lis = 6,
 }
 
@@ -79,7 +75,6 @@ pub enum Lss {
     Default = 1,
     Klu = 2,
     Rsparse = 3,
-    Umfpack = 4,
     Lis = 5,
 }
 
@@ -335,10 +330,18 @@ pub struct SimFlags {
     pub no_equidistant_time: Option<f64>,
     /// `-maxStepSize=h`: DASKR's `INFO(7)` / `RWORK(2)`.
     pub max_step_size: Option<f64>,
+    /// `-maxStepRetries=n`: how often a failed step is retried in a row.
+    pub max_step_retries: Option<u32>,
+    /// `-minRetryStepSize=h`: no failed step is retried below this step size.
+    pub min_retry_step_size: Option<f64>,
     /// `-noEventEmit`: drop the result rows a step that handled an event produces.
     pub no_event_emit: bool,
-    /// One of the four density/size flags was given. The backend decides now.
-    pub deprecated_density_flag: bool,
+    /// `-lssMaxDensity` / `-lssMinSize` / `-nlssMaxDensity` / `-nlssMinSize`: given,
+    /// they replace the backend's dense/sparse choice for that kind of system.
+    pub lss_max_density: Option<f64>,
+    pub lss_min_size: Option<i32>,
+    pub nlss_max_density: Option<f64>,
+    pub nlss_min_size: Option<i32>,
     /// `method="optimization"` (the Ipopt collocation solver): `-optimizerNP=<1|3>`
     /// collocation points per interval, and `-optimizerTimeGrid=<file>` listing the
     /// interval end points instead of an equidistant grid.
@@ -426,7 +429,7 @@ pub struct SimFlags {
 impl SimFlags {
     /// The value of a `-gb*` flag, or `None` when it was not given.
     pub fn gb_flag(&self, name: &str) -> Option<String> {
-        self.gb.iter().find(|(n, _)| n == name).map(|(_, v)| v.clone())
+        self.gb.iter().rev().find(|(n, _)| n == name).map(|(_, v)| v.clone())
     }
 
     /// Whether a value-less `-gb*` flag was given.
@@ -473,8 +476,6 @@ pub struct Capabilities {
     pub klu: bool,
     /// SUNDIALS KINSOL, the `-nls=kinsol` nonlinear solver.
     pub kinsol: bool,
-    /// SuiteSparse UMFPACK.
-    pub umfpack: bool,
     /// Lis, the iterative `-ls=lis`/`-lss=lis`.
     pub lis: bool,
     pub ida: bool,
@@ -485,10 +486,18 @@ pub struct Capabilities {
     pub variable_filter: bool,
     /// Ipopt is linked, so `method="optimization"` / `-s=optimization` can run.
     pub optimization: bool,
-    /// This runtime runs a whole simulation of its own, so `-s=qss` — which has no
-    /// output grid and no stepping interface — can drive it. C throws "Unhandled
-    /// case in solver_main_step" where it cannot.
-    pub qss: bool,
+}
+
+pub const GBODE_DISABLED: &str =
+    "integration method gbode is disabled in the Rust simulation runtime; use --simCodeTarget=C instead";
+pub const GBODE_SHORTHAND_DISABLED: &str = "this integration method is a shorthand for gbode, which is disabled in the \
+     Rust simulation runtime; use --simCodeTarget=C instead";
+
+/// Whether `method` is one of the names C turns into a gbode setup.
+pub fn is_gbode_shorthand(method: &str) -> bool {
+    SOLVERS
+        .iter()
+        .any(|(n, s, _)| *n == method && *s == Solver::GbodeShorthand)
 }
 
 /// Reject flag values this runtime cannot honour.
@@ -496,17 +505,19 @@ pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
     // Each solver library is linked on its own, so each is its own question --
     // the same one `Offer::With*` asks in the tables below.
     for (flag, name, have) in [
-        ("nls", match f.nls {
-            Some(Nls::Kinsol) => Some("kinsol"),
-            Some(Nls::KinsolB) => Some("experimental-kinsol"),
-            _ => None,
-        }, cap.kinsol),
+        (
+            "nls",
+            match f.nls {
+                Some(Nls::Kinsol) => Some("kinsol"),
+                Some(Nls::KinsolB) => Some("experimental-kinsol"),
+                _ => None,
+            },
+            cap.kinsol,
+        ),
         ("nlsLS", (f.nls_ls == Some(NlsLs::Klu)).then_some("klu"), cap.klu),
         ("ls", (f.ls == Some(Ls::Klu)).then_some("klu"), cap.klu),
-        ("ls", (f.ls == Some(Ls::Umfpack)).then_some("umfpack"), cap.umfpack),
         ("ls", (f.ls == Some(Ls::Lis)).then_some("lis"), cap.lis),
         ("lss", (f.lss == Some(Lss::Klu)).then_some("klu"), cap.klu),
-        ("lss", (f.lss == Some(Lss::Umfpack)).then_some("umfpack"), cap.umfpack),
         ("lss", (f.lss == Some(Lss::Lis)).then_some("lis"), cap.lis),
     ] {
         if let (Some(name), false) = (name, have) {
@@ -519,11 +530,16 @@ pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
     if f.variable_filter.is_some() && !cap.variable_filter {
         return Err("-variableFilter: this runtime has no regex engine".to_string());
     }
+    if f.solver == Some(Solver::Gbode) {
+        return Err(GBODE_DISABLED.to_string());
+    }
+    if f.solver == Some(Solver::GbodeShorthand) {
+        return Err(GBODE_SHORTHAND_DISABLED.to_string());
+    }
     let unsupported = match f.solver {
         Some(Solver::Ida) if !cap.ida => "ida",
         Some(Solver::Cvode) if !cap.cvode => "cvode",
         Some(Solver::Optimization) if !cap.optimization => "optimization",
-        Some(Solver::Qss) if !cap.qss => "qss",
         _ => return Ok(()),
     };
     let have: Vec<String> = supported(cap)
@@ -531,7 +547,10 @@ pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
         .find(|(n, _)| *n == "s")
         .map(|(_, v)| v.iter().map(|n| alloc::format!("`{n}`")).collect())
         .unwrap_or_default();
-    Err(format!("-s={unsupported}: this runtime supports {} only", have.join(", ")))
+    Err(format!(
+        "-s={unsupported}: this runtime supports {} only",
+        have.join(", ")
+    ))
 }
 
 /// The values each solver flag accepts on this build, in menu order. A UI offering
@@ -555,7 +574,6 @@ pub fn supported(cap: Capabilities) -> Vec<(&'static str, Vec<&'static str>)> {
     }
     menu
 }
-
 
 /// C's `FLAG_NAME` / `FLAG_TYPE` (`util/simulation_options.c`): every flag the C
 /// runtime knows, and whether it takes a value. A name outside it is C's
@@ -636,6 +654,8 @@ const C_FLAGS: &[(&str, bool)] = &[
     ("mei", true),
     ("maxIntegrationOrder", true),
     ("maxStepSize", true),
+    ("maxStepRetries", true),
+    ("minRetryStepSize", true),
     ("measureTimePlotFormat", true),
     ("moo", false),
     ("moo_l2bn_p1_it", true),
@@ -730,8 +750,10 @@ pub enum InitMethod {
     None,
 }
 
-const INIT_METHODS: &[Value<InitMethod>] =
-    &[("none", InitMethod::None, Offer::Always), ("symbolic", InitMethod::Symbolic, Offer::Always)];
+const INIT_METHODS: &[Value<InitMethod>] = &[
+    ("none", InitMethod::None, Offer::Always),
+    ("symbolic", InitMethod::Symbolic, Offer::Always),
+];
 
 /// C's `JACOBIAN_METHOD` (`jacobian_util.h`).
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -748,20 +770,10 @@ pub enum JacobianMethod {
 impl JacobianMethod {
     /// C's `JACOBIAN_METHOD_NAME`, the `-jacobian` value.
     pub fn name(self) -> &'static str {
-        JACOBIAN_METHODS.iter().find(|(_, m, _)| *m == self).map_or("", |(n, _, _)| n)
-    }
-
-    /// C's `setJacobianMethod` log line, one per enumerator.
-    pub fn desc(self) -> &'static str {
-        match self {
-            JacobianMethod::ColoredNumJac => "Colored numerical Jacobian.",
-            JacobianMethod::InternalNumJac => "Internal numerical Jacobian.",
-            JacobianMethod::ColoredSymJac => "Colored symbolical Jacobian.",
-            JacobianMethod::ColoredSymJacAdj => "Colored symbolical adjoint Jacobian.",
-            JacobianMethod::NumJac => "Numerical Jacobian.",
-            JacobianMethod::SymJac => "Symbolical Jacobian.",
-            JacobianMethod::BicoloredSymJac => "Bicolored symbolical bidirectional Jacobian.",
-        }
+        JACOBIAN_METHODS
+            .iter()
+            .find(|(_, m, _)| *m == self)
+            .map_or("", |(n, _, _)| n)
     }
 }
 
@@ -770,7 +782,11 @@ const JACOBIAN_METHODS: &[Value<JacobianMethod>] = &[
     ("coloredNumerical", JacobianMethod::ColoredNumJac, Offer::Always),
     ("internalNumerical", JacobianMethod::InternalNumJac, Offer::Always),
     ("coloredSymbolical", JacobianMethod::ColoredSymJac, Offer::Always),
-    ("coloredSymbolicalAdjoint", JacobianMethod::ColoredSymJacAdj, Offer::Always),
+    (
+        "coloredSymbolicalAdjoint",
+        JacobianMethod::ColoredSymJacAdj,
+        Offer::Always,
+    ),
     ("numerical", JacobianMethod::NumJac, Offer::Always),
     ("symbolical", JacobianMethod::SymJac, Offer::Always),
     ("bicoloredSymbolical", JacobianMethod::BicoloredSymJac, Offer::Always),
@@ -927,7 +943,11 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "nlsInfo" if executable_served() => f.nls_info = true,
             "port" if executable_served() => {
                 let v = value(name)?;
-                f.port = Some(v.trim().parse().map_err(|_| format!("-port={v}: expected a TCP port"))?);
+                f.port = Some(
+                    v.trim()
+                        .parse()
+                        .map_err(|_| format!("-port={v}: expected a TCP port"))?,
+                );
             }
             "emit_protected" => f.emit_protected = true,
             "ignoreHideResult" => f.ignore_hide_result = true,
@@ -973,11 +993,26 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
                 let m = JACOBIAN_METHODS.iter().find(|(n, ..)| *n == v);
                 f.jacobian = Some(m.ok_or_else(|| format!("Unknown value `{v}` for flag `-jacobian`"))?.1);
             }
-            "nlssMinSize" | "nlssMaxDensity" | "lssMinSize" | "lssMaxDensity" => {
-                f.deprecated_density_flag = true;
-                let _ = value(name)?;
-            }
+            "lssMaxDensity" => f.lss_max_density = Some(real(name, &value(name)?)?),
+            "lssMinSize" => f.lss_min_size = Some(int(name, &value(name)?)?),
+            "nlssMaxDensity" => f.nlss_max_density = Some(real(name, &value(name)?)?),
+            "nlssMinSize" => f.nlss_min_size = Some(int(name, &value(name)?)?),
             "maxStepSize" => f.max_step_size = Some(real(name, &value(name)?)?),
+            "maxStepRetries" => {
+                let n = int(name, &value(name)?)?;
+                f.max_step_retries =
+                    Some(u32::try_from(n).map_err(|_| format!("maximum number of step retries {n} is not allowed"))?);
+            }
+            "minRetryStepSize" => {
+                let h = real(name, &value(name)?)?;
+                if !(h > 0.0) {
+                    return Err(format!(
+                        "minimum step size for retries {} is not allowed",
+                        crate::omclog::g(h, 0, 6)
+                    ));
+                }
+                f.min_retry_step_size = Some(h);
+            }
             "noEquidistantOutputTime" => {
                 f.no_equidistant_time = Some(
                     value(name)?
@@ -994,12 +1029,17 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
                 f.alarm = (secs > 0).then_some(secs);
             }
             "ils" => {
-                f.init_lambda_steps =
-                    Some(value(name)?.parse::<i32>().map_err(|_| "-ils needs an integer".to_string())?)
+                f.init_lambda_steps = Some(
+                    value(name)?
+                        .parse::<i32>()
+                        .map_err(|_| "-ils needs an integer".to_string())?,
+                )
             }
             "stepSize" => {
                 f.step_size = Some(
-                    value(name)?.parse::<f64>().map_err(|_| "-stepSize needs a number".to_string())?,
+                    value(name)?
+                        .parse::<f64>()
+                        .map_err(|_| "-stepSize needs a number".to_string())?,
                 )
             }
             "jacobianNominalFactor" => {
@@ -1010,12 +1050,8 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
                 )
             }
             "idaLS" => f.ida_ls = Some(pick("idaLS", &value(name)?, IDA_LS_VALUES)?),
-            "cvodeLinearMultistepMethod" => {
-                f.cvode_lmm = Some(pick(name, &value(name)?, CVODE_LMM_VALUES)?)
-            }
-            "cvodeNonlinearSolverIteration" => {
-                f.cvode_iter = Some(pick(name, &value(name)?, CVODE_ITER_VALUES)?)
-            }
+            "cvodeLinearMultistepMethod" => f.cvode_lmm = Some(pick(name, &value(name)?, CVODE_LMM_VALUES)?),
+            "cvodeNonlinearSolverIteration" => f.cvode_iter = Some(pick(name, &value(name)?, CVODE_ITER_VALUES)?),
             "idaSensitivity" => f.ida_sensitivity = true,
             "idaMaxErrorTestFails" => f.ida_max_err_test_fails = Some(int(name, &value(name)?)?),
             "idaMaxNonLinIters" => f.ida_max_nonlin_iters = Some(int(name, &value(name)?)?),
@@ -1042,8 +1078,7 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             // The `-gb*` family is stored by name; gbode validates the values when
             // it is built, so an unused one is still rejected (C ignores it).
             _ if name.starts_with("gb") && C_FLAGS.iter().any(|(n, _)| *n == name) => {
-                let takes_value =
-                    C_FLAGS.iter().find(|(n, _)| *n == name).is_some_and(|(_, v)| *v);
+                let takes_value = C_FLAGS.iter().find(|(n, _)| *n == name).is_some_and(|(_, v)| *v);
                 let v = if takes_value { value(name)? } else { String::new() };
                 f.gb.push((name.to_string(), v));
             }
@@ -1081,7 +1116,10 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
     }
     // C's `doOverride` reads `-override` first, then the file; a later entry for the
     // same name wins.
-    for raw in [f.override_raw.as_deref(), f.override_file.as_ref().map(|(_, j)| j.as_str())] {
+    for raw in [
+        f.override_raw.as_deref(),
+        f.override_file.as_ref().map(|(_, j)| j.as_str()),
+    ] {
         for item in raw.into_iter().flat_map(split_top_level) {
             if let Some((n, v)) = item.split_once('=') {
                 f.overrides.push((n.trim().to_string(), v.trim().to_string()));
@@ -1107,9 +1145,8 @@ fn push_raw_str(dst: &mut String, v: String) {
 /// dropped, joined with commas into one `-override` string.
 #[cfg(feature = "std")]
 fn read_override_file(path: &str) -> Result<String, String> {
-    let text = std::fs::read_to_string(path).map_err(|e| {
-        format!("simulation_input_xml.c: could not read overrideFile {path}: {e}")
-    })?;
+    let text = std::fs::read_to_string(path)
+        .map_err(|e| format!("simulation_input_xml.c: could not read overrideFile {path}: {e}"))?;
     let mut out = Vec::new();
     for line in text.split_inclusive('\n').filter(|l| l.ends_with('\n')) {
         let line = line.trim();
@@ -1211,18 +1248,61 @@ pub fn hom_tuning(f: &SimFlags) -> HomTuning {
     }
 }
 
+/// `-lssMaxDensity` / `-lssMinSize` / `-nlssMaxDensity` / `-nlssMinSize`.
+/// `lss_given` / `nlss_given`: either flag of the pair was given, which replaces
+/// the compiler's dense/sparse choice for that kind of system.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SparseThresholds {
+    pub lss_max_density: f64,
+    pub lss_min_size: i32,
+    pub lss_given: bool,
+    pub nlss_max_density: f64,
+    pub nlss_min_size: i32,
+    pub nlss_given: bool,
+}
+
+impl SparseThresholds {
+    /// C's defaults (`simulation_options.h`), which `SimCodeCodegenUtil.useSparseSolver`
+    /// applies too.
+    pub const DEFAULT: Self = Self {
+        lss_max_density: 0.2,
+        lss_min_size: 1000,
+        lss_given: false,
+        nlss_max_density: 0.1,
+        nlss_min_size: 1000,
+        nlss_given: false,
+    };
+
+    /// Sparse when the density is under `max_density` or the size over `min_size`.
+    pub fn sparse(size: usize, nnz: usize, max_density: f64, min_size: i32) -> bool {
+        nnz as f64 / (size as f64 * size as f64) < max_density || size as i64 > min_size as i64
+    }
+}
+
+pub fn sparse_thresholds(f: &SimFlags) -> SparseThresholds {
+    let d = SparseThresholds::DEFAULT;
+    SparseThresholds {
+        lss_max_density: f.lss_max_density.unwrap_or(d.lss_max_density),
+        lss_min_size: f.lss_min_size.unwrap_or(d.lss_min_size),
+        lss_given: f.lss_max_density.is_some() || f.lss_min_size.is_some(),
+        nlss_max_density: f.nlss_max_density.unwrap_or(d.nlss_max_density),
+        nlss_min_size: f.nlss_min_size.unwrap_or(d.nlss_min_size),
+        nlss_given: f.nlss_max_density.is_some() || f.nlss_min_size.is_some(),
+    }
+}
+
 /// C's `simulation_runtime.cpp` startup notices for the flags that move a solver
 /// constant, in its order. Rendered by the caller, which owns the run's log.
 pub fn notices(f: &SimFlags) -> Vec<(crate::omclog::LogType, String)> {
     let g = |v: f64| crate::format_g(v, 6);
     let ff = |v: f64| crate::omclog::f(v, 0, 6);
     let mut out = Vec::new();
-    for (name, v) in [
-        ("homAdaptBend", f.hom.adapt_bend),
-        ("homHEps", f.hom.h_eps),
-    ] {
+    for (name, v) in [("homAdaptBend", f.hom.adapt_bend), ("homHEps", f.hom.h_eps)] {
         if let Some(v) = v {
-            out.push((crate::omclog::INFO, format!("homotopy parameter {name} changed to {}", ff(v))));
+            out.push((
+                crate::omclog::INFO,
+                format!("homotopy parameter {name} changed to {}", ff(v)),
+            ));
         }
     }
     for (name, v) in [
@@ -1244,21 +1324,36 @@ pub fn notices(f: &SimFlags) -> Vec<(crate::omclog::LogType, String)> {
         ("homTauStart", f.hom.tau_start),
     ] {
         if let Some(v) = v {
-            out.push((crate::omclog::INFO, format!("homotopy parameter {name} changed to {}", ff(v))));
+            out.push((
+                crate::omclog::INFO,
+                format!("homotopy parameter {name} changed to {}", ff(v)),
+            ));
         }
     }
-    if f.deprecated_density_flag {
-        out.push((
-            crate::omclog::WARNING,
-            "The flags -lssMaxDensity, -lssMinSize, -nlssMaxDensity and -nlssMinSize are\n\
-             deprecated and ignored: the compiler chooses dense or sparse per system."
-                .to_string(),
-        ));
+    for (kind, density, size) in [
+        ("linear", f.lss_max_density, f.lss_min_size),
+        ("non-linear", f.nlss_max_density, f.nlss_min_size),
+    ] {
+        if let Some(d) = density {
+            out.push((
+                crate::omclog::INFO,
+                format!("Maximum density for using {kind} sparse solver changed to {}", ff(d)),
+            ));
+        }
+        if let Some(n) = size {
+            out.push((
+                crate::omclog::INFO,
+                format!("Minimum system size for using {kind} sparse solver changed to {n}"),
+            ));
+        }
     }
     if let Some(v) = f.newton_xtol {
         out.push((
             crate::omclog::INFO,
-            format!("Tolerance for updating solution vector in Newton solver changed to {}", g(v)),
+            format!(
+                "Tolerance for updating solution vector in Newton solver changed to {}",
+                g(v)
+            ),
         ));
     }
     if let Some(v) = f.newton_ftol {
@@ -1268,13 +1363,19 @@ pub fn notices(f: &SimFlags) -> Vec<(crate::omclog::LogType, String)> {
         ));
     }
     if let Some(n) = f.newton_max_steps {
-        out.push((crate::omclog::INFO, format!("Maximum number of Newton steps for GBODE changed to {n}")));
+        out.push((
+            crate::omclog::INFO,
+            format!("Maximum number of Newton steps for GBODE changed to {n}"),
+        ));
     }
     if f.newton_max_step_factor.is_some() {
         // C prints `newtonFTol` here, not the factor.
         out.push((
             crate::omclog::INFO,
-            format!("Maximum step size factor for a Newton step changed to {}", g(newton_tuning(f).0)),
+            format!(
+                "Maximum step size factor for a Newton step changed to {}",
+                g(newton_tuning(f).0)
+            ),
         ));
     }
     if f.dae_mode {
@@ -1352,7 +1453,11 @@ pub fn delta_x_solver(f: &SimFlags) -> f64 {
 /// `-newton`, `-noScaling` and `-stopAtSystem` as the wire codes
 /// `rt_set_nls_options` takes.
 pub fn nls_option_codes(f: &SimFlags) -> (u32, u32, i32) {
-    (f.newton_strategy.map_or(0, |s| s as u32), f.no_scaling as u32, f.stop_at_system.unwrap_or(-1))
+    (
+        f.newton_strategy.map_or(0, |s| s as u32),
+        f.no_scaling as u32,
+        f.stop_at_system.unwrap_or(-1),
+    )
 }
 
 /// C's `newtonMaxSteps` and `maxJacUpdate`, with C's defaults.
@@ -1471,12 +1576,10 @@ enum Offer {
     Always,
     WithKlu,
     WithKinsol,
-    WithUmfpack,
     WithLis,
     WithIda,
     WithCvode,
     WithIpopt,
-    WithQss,
     /// `default`, an alias of a listed value, or one this runtime substitutes for.
     Never,
 }
@@ -1487,31 +1590,31 @@ impl Offer {
             Offer::Always => true,
             Offer::WithKlu => cap.klu,
             Offer::WithKinsol => cap.kinsol,
-            Offer::WithUmfpack => cap.umfpack,
             Offer::WithLis => cap.lis,
             Offer::WithIda => cap.ida,
             Offer::WithCvode => cap.cvode,
             Offer::WithIpopt => cap.optimization,
-            Offer::WithQss => cap.qss,
             Offer::Never => false,
         }
     }
 }
 
-/// `-s`. `symSolver*` need a model translated with `--symSolver`, so they are
-/// accepted but never offered.
+/// `-s`.
 const SOLVERS: &[Value<Solver>] = &[
     ("dassl", Solver::Dassl, Offer::Always),
     ("dasslrt", Solver::Dassl, Offer::Never),
     ("euler", Solver::Euler, Offer::Always),
-    ("rungekutta", Solver::RungeKutta, Offer::Always),
-    ("gbode", Solver::Gbode, Offer::Always),
+    ("rungekutta", Solver::GbodeShorthand, Offer::Never),
+    ("heun", Solver::GbodeShorthand, Offer::Never),
+    ("impeuler", Solver::GbodeShorthand, Offer::Never),
+    ("trapezoid", Solver::GbodeShorthand, Offer::Never),
+    ("imprungekutta", Solver::GbodeShorthand, Offer::Never),
+    ("irksco", Solver::GbodeShorthand, Offer::Never),
+    ("rungekuttassc", Solver::GbodeShorthand, Offer::Never),
+    ("gbode", Solver::Gbode, Offer::Never),
     ("ida", Solver::Ida, Offer::WithIda),
     ("cvode", Solver::Cvode, Offer::WithCvode),
     ("optimization", Solver::Optimization, Offer::WithIpopt),
-    ("symSolver", Solver::SymSolver, Offer::Never),
-    ("symSolverSsc", Solver::SymSolverSsc, Offer::Never),
-    ("qss", Solver::Qss, Offer::WithQss),
 ];
 
 /// `-nls`. Without the archives `kinsol` runs the runtime's own sparse Newton.
@@ -1541,7 +1644,6 @@ const LS_VALUES: &[Value<Ls>] = &[
     ("lis", Ls::Lis, Offer::WithLis),
     ("totalpivot", Ls::TotalPivot, Offer::Always),
     ("klu", Ls::Klu, Offer::WithKlu),
-    ("umfpack", Ls::Umfpack, Offer::WithUmfpack),
 ];
 
 /// `-lss`
@@ -1550,7 +1652,6 @@ const LSS_VALUES: &[Value<Lss>] = &[
     ("lis", Lss::Lis, Offer::WithLis),
     ("rsparse", Lss::Rsparse, Offer::Always),
     ("klu", Lss::Klu, Offer::WithKlu),
-    ("umfpack", Lss::Umfpack, Offer::WithUmfpack),
 ];
 
 const CVODE_LMM_VALUES: &[Value<CvodeLmm>] = &[
@@ -1596,7 +1697,11 @@ fn pick<T: Copy>(flag: &str, v: &str, table: &[Value<T>]) -> Result<T, String> {
 
 /// The values this build may offer, in table order.
 fn offered<T: Copy>(table: &[Value<T>], cap: Capabilities) -> Vec<&'static str> {
-    table.iter().filter(|&&(.., o)| o.available(cap)).map(|&(n, ..)| n).collect()
+    table
+        .iter()
+        .filter(|&&(.., o)| o.available(cap))
+        .map(|&(n, ..)| n)
+        .collect()
 }
 
 /// Set once per run before the driver starts; read from anywhere, since the NLS/LS
@@ -1686,32 +1791,30 @@ mod tests {
     use super::*;
 
     fn argv(s: &[&str]) -> Vec<String> {
-        core::iter::once("model".to_string()).chain(s.iter().map(|x| x.to_string())).collect()
+        core::iter::once("model".to_string())
+            .chain(s.iter().map(|x| x.to_string()))
+            .collect()
     }
 
     const NOTHING: Capabilities = Capabilities {
         klu: false,
         kinsol: false,
-        umfpack: false,
         lis: false,
         ida: false,
         cvode: false,
         alarm: false,
         variable_filter: false,
         optimization: false,
-        qss: false,
     };
     const EVERYTHING: Capabilities = Capabilities {
         klu: true,
         kinsol: true,
-        umfpack: true,
         lis: true,
         ida: true,
         cvode: true,
         alarm: true,
         variable_filter: true,
         optimization: true,
-        qss: true,
     };
 
     #[test]
@@ -1725,9 +1828,15 @@ mod tests {
 
     #[test]
     fn newton_tuning_flags() {
-        let f = parse(&argv(&["-newton=damped_ls", "-newtonJacUpdates=0,2", "-newtonMaxSteps=7",
-                              "-deltaXSolver=1e-6", "-noScaling", "-stopAtSystem=12"]))
-            .expect("parses");
+        let f = parse(&argv(&[
+            "-newton=damped_ls",
+            "-newtonJacUpdates=0,2",
+            "-newtonMaxSteps=7",
+            "-deltaXSolver=1e-6",
+            "-noScaling",
+            "-stopAtSystem=12",
+        ]))
+        .expect("parses");
         assert_eq!(f.newton_strategy, Some(NewtonStrategy::DampedLs));
         assert_eq!(gb_kinsol_tuning(&f), (7, [0, 2, 1, 1]));
         assert_eq!(delta_x_solver(&f), 1e-6);
@@ -1739,7 +1848,15 @@ mod tests {
 
     #[test]
     fn executable_flags_are_refused_elsewhere() {
-        for arg in ["-cpu", "-steps", "-clock=CPU", "-rt=1", "-lv_system=3", "-nlsInfo", "-f=x.xml"] {
+        for arg in [
+            "-cpu",
+            "-steps",
+            "-clock=CPU",
+            "-rt=1",
+            "-lv_system=3",
+            "-nlsInfo",
+            "-f=x.xml",
+        ] {
             let e = parse(&argv(&[arg])).expect_err(arg);
             assert!(e.contains("not implemented by this runtime"), "{arg}: {e}");
         }
@@ -1754,12 +1871,20 @@ mod tests {
 
     #[test]
     fn unavailable_solvers_are_rejected_with_the_flag_named() {
-        for (arg, needle) in [("-lss=klu", "-lss=klu"), ("-ls=klu", "-ls=klu"),
-                              ("-nlsLS=klu", "-nlsLS=klu"), ("-lss=umfpack", "-lss=umfpack"),
-                              ("-ls=umfpack", "-ls=umfpack"), ("-ls=lis", "-ls=lis"),
-                              ("-lss=lis", "-lss=lis"), ("-nls=kinsol", "-nls=kinsol"),
-                              ("-nls=experimental-kinsol", "-nls=experimental-kinsol"),
-                              ("-s=ida", "dassl"), ("-s=cvode", "dassl")] {
+        for (arg, needle) in [
+            ("-lss=klu", "-lss=klu"),
+            ("-ls=klu", "-ls=klu"),
+            ("-nlsLS=klu", "-nlsLS=klu"),
+            ("-ls=lis", "-ls=lis"),
+            ("-lss=lis", "-lss=lis"),
+            ("-nls=kinsol", "-nls=kinsol"),
+            ("-nls=experimental-kinsol", "-nls=experimental-kinsol"),
+            ("-s=ida", "dassl"),
+            ("-s=cvode", "dassl"),
+            ("-s=gbode", "--simCodeTarget=C instead"),
+            ("-s=rungekutta", "--simCodeTarget=C instead"),
+            ("-s=irksco", "--simCodeTarget=C instead"),
+        ] {
             let f = parse(&argv(&[arg])).expect("parses");
             let e = check(&f, NOTHING).expect_err("must reject");
             assert!(e.contains(needle), "{arg}: {e}");
@@ -1779,23 +1904,30 @@ mod tests {
     fn each_solver_library_is_gated_on_its_own() {
         for (arg, cap) in [
             ("-lss=klu", Capabilities { klu: true, ..NOTHING }),
-            ("-ls=umfpack", Capabilities { umfpack: true, ..NOTHING }),
             ("-lss=lis", Capabilities { lis: true, ..NOTHING }),
-            ("-nls=kinsol", Capabilities { kinsol: true, ..NOTHING }),
+            (
+                "-nls=kinsol",
+                Capabilities {
+                    kinsol: true,
+                    ..NOTHING
+                },
+            ),
         ] {
             let f = parse(&argv(&[arg])).expect("parses");
             assert!(check(&f, cap).is_ok(), "{arg} with its own library");
             // Every other library alone is not enough.
             for other in [
                 Capabilities { klu: true, ..NOTHING },
-                Capabilities { umfpack: true, ..NOTHING },
                 Capabilities { lis: true, ..NOTHING },
-                Capabilities { kinsol: true, ..NOTHING },
+                Capabilities {
+                    kinsol: true,
+                    ..NOTHING
+                },
             ] {
                 if check(&f, other).is_ok() {
                     assert_eq!(
-                        (other.klu, other.umfpack, other.lis, other.kinsol),
-                        (cap.klu, cap.umfpack, cap.lis, cap.kinsol),
+                        (other.klu, other.lis, other.kinsol),
+                        (cap.klu, cap.lis, cap.kinsol),
                         "{arg} accepted by the wrong library"
                     );
                 }
@@ -1808,10 +1940,15 @@ mod tests {
     /// `WithKinsol`.
     #[test]
     fn selectable_solvers_need_no_capability() {
-        for arg in
-            ["-nls=hybrid", "-nls=newton", "-nls=mixed", "-nls=homotopy", "-lss=rsparse",
-             "-s=euler", "-s=dassl", "-s=gbode", "-s=rungekutta"]
-        {
+        for arg in [
+            "-nls=hybrid",
+            "-nls=newton",
+            "-nls=mixed",
+            "-nls=homotopy",
+            "-lss=rsparse",
+            "-s=euler",
+            "-s=dassl",
+        ] {
             let f = parse(&argv(&[arg])).expect("parses");
             assert!(check(&f, NOTHING).is_ok(), "{arg}");
         }
@@ -1829,8 +1966,8 @@ mod tests {
                 }
             }
         }
-        // KLU, UMFPACK and KINSOL come from the archives, so none shows up above.
-        for v in ["klu", "umfpack", "kinsol"] {
+        // KLU and KINSOL come from the archives, so neither shows up above.
+        for v in ["klu", "kinsol"] {
             assert!(!supported(NOTHING).iter().any(|(_, vals)| vals.contains(&v)));
         }
     }
@@ -1868,11 +2005,10 @@ mod tests {
     #[test]
     fn solver_codes_are_stable() {
         assert_eq!(parse(&argv(&[])).expect("parses").solver_codes(), (0, 0, 0, 0));
-        let f = parse(&argv(&["-nls=kinsol", "-nlsLS=totalpivot", "-ls=klu", "-lss=rsparse"]))
-            .expect("parses");
+        let f = parse(&argv(&["-nls=kinsol", "-nlsLS=totalpivot", "-ls=klu", "-lss=rsparse"])).expect("parses");
         assert_eq!(f.solver_codes(), (2, 2, 4, 3));
-        let f = parse(&argv(&["-ls=umfpack", "-lss=umfpack"])).expect("parses");
-        assert_eq!(f.solver_codes(), (0, 0, 5, 4));
+        let f = parse(&argv(&["-ls=lis", "-lss=lis"])).expect("parses");
+        assert_eq!(f.solver_codes(), (0, 0, 6, 5));
     }
 
     #[test]
@@ -1910,11 +2046,9 @@ mod tests {
     // The value of a rejected option must not be read as a flag of its own.
     #[test]
     fn the_no_equidistant_grid_family_parses() {
-        let f = parse(&argv(&["-noEquidistantTimeGrid", "-noEquidistantOutputFrequency=5"]))
-            .expect("parses");
+        let f = parse(&argv(&["-noEquidistantTimeGrid", "-noEquidistantOutputFrequency=5"])).expect("parses");
         assert!(f.no_equidistant_grid && f.no_equidistant_freq == Some(5));
-        let f = parse(&argv(&["-noEquidistantTimeGrid", "-noEquidistantOutputTime=0.5"]))
-            .expect("parses");
+        let f = parse(&argv(&["-noEquidistantTimeGrid", "-noEquidistantOutputTime=0.5"])).expect("parses");
         assert_eq!(f.no_equidistant_time, Some(0.5));
     }
 
@@ -1954,8 +2088,12 @@ mod tests {
     #[test]
     fn the_optimizer_flags_parse() {
         let f = parse(&argv(&[
-            "-optimizerNP=1", "-ipopt_init=const", "-ipopt_max_iter=1e3",
-            "-stateFile", "s.csv", "-ipopt_jac=NUM",
+            "-optimizerNP=1",
+            "-ipopt_init=const",
+            "-ipopt_max_iter=1e3",
+            "-stateFile",
+            "s.csv",
+            "-ipopt_jac=NUM",
         ]))
         .expect("parses");
         assert_eq!(f.optimizer_np, Some(1));
@@ -1981,6 +2119,12 @@ mod tests {
                 ("c".to_string(), "false".to_string())
             ]
         );
+    }
+
+    #[test]
+    fn repeated_gb_flag_keeps_the_last_value() {
+        let f = parse(&argv(&["-gbm=rungekuttaSsc", "-gbm", "radauIIA3"])).expect("parses");
+        assert_eq!(f.gb_flag("gbm").as_deref(), Some("radauIIA3"));
     }
 
     #[test]
@@ -2016,13 +2160,44 @@ mod tests {
 
     #[test]
     fn only_the_writable_output_formats_are_accepted() {
-        assert_eq!(parse(&argv(&["-outputFormat=empty"])).expect("parses").output_format.as_deref(),
-                   Some("empty"));
-        assert_eq!(parse(&argv(&["-outputFormat=csv"])).expect("csv writer").output_format.as_deref(), Some("csv"));
-        assert_eq!(parse(&argv(&["-outputFormat=plt"])).expect("plt writer").output_format.as_deref(), Some("plt"));
-        assert_eq!(parse(&argv(&["-outputFormat=arrow"])).expect("arrow writer").output_format.as_deref(), Some("arrow"));
-        assert!(parse(&argv(&["-outputFormat=ia"])).expect_err("no ia writer").contains("mat"));
-        assert!(parse(&argv(&["-outputFormat=nope"])).expect_err("unknown").contains("Unknown"));
+        assert_eq!(
+            parse(&argv(&["-outputFormat=empty"]))
+                .expect("parses")
+                .output_format
+                .as_deref(),
+            Some("empty")
+        );
+        assert_eq!(
+            parse(&argv(&["-outputFormat=csv"]))
+                .expect("csv writer")
+                .output_format
+                .as_deref(),
+            Some("csv")
+        );
+        assert_eq!(
+            parse(&argv(&["-outputFormat=plt"]))
+                .expect("plt writer")
+                .output_format
+                .as_deref(),
+            Some("plt")
+        );
+        assert_eq!(
+            parse(&argv(&["-outputFormat=arrow"]))
+                .expect("arrow writer")
+                .output_format
+                .as_deref(),
+            Some("arrow")
+        );
+        assert!(
+            parse(&argv(&["-outputFormat=ia"]))
+                .expect_err("no ia writer")
+                .contains("mat")
+        );
+        assert!(
+            parse(&argv(&["-outputFormat=nope"]))
+                .expect_err("unknown")
+                .contains("Unknown")
+        );
         // `-noemit` is C's `sim_noemit`, which it treats exactly as `empty`.
         assert!(parse(&argv(&["-noemit"])).expect("parses").noemit);
     }
@@ -2035,18 +2210,31 @@ mod tests {
 
     #[test]
     fn the_solver_tunables_carry_their_values() {
-        let f = parse(&argv(&["-mei=7", "-mbi=3", "-newtonFTol=1e-10", "-newtonXTol=1e-9",
-                              "-newtonMaxStepFactor=1e6", "-iit=0.5", "-outputPath=/tmp/out"]))
-            .expect("parses");
+        let f = parse(&argv(&[
+            "-mei=7",
+            "-mbi=3",
+            "-newtonFTol=1e-10",
+            "-newtonXTol=1e-9",
+            "-newtonMaxStepFactor=1e6",
+            "-iit=0.5",
+            "-outputPath=/tmp/out",
+        ]))
+        .expect("parses");
         assert_eq!((f.max_event_iter, f.max_bisection_iter), (Some(7), Some(3)));
         assert_eq!(newton_tuning(&f), (1e-10, 1e-9, 1e6));
         assert_eq!(f.init_time, Some(0.5));
         assert_eq!(f.output_path.as_deref(), Some("/tmp/out"));
         // `-steadyStateTol` alone tunes nothing: `-steadyState` is what arms it.
-        assert_eq!(steady_state_tol(&parse(&argv(&["-steadyStateTol=1e-5"])).expect("parses")), None);
+        assert_eq!(
+            steady_state_tol(&parse(&argv(&["-steadyStateTol=1e-5"])).expect("parses")),
+            None
+        );
         let f = parse(&argv(&["-steadyState", "-steadyStateTol=1e-5"])).expect("parses");
         assert_eq!(steady_state_tol(&f), Some(1e-5));
-        assert_eq!(steady_state_tol(&parse(&argv(&["-steadyState"])).expect("parses")), Some(1e-3));
+        assert_eq!(
+            steady_state_tol(&parse(&argv(&["-steadyState"])).expect("parses")),
+            Some(1e-3)
+        );
         // Absent, every tunable is C's default.
         assert_eq!(newton_tuning(&parse(&argv(&[])).expect("parses")), (1e-12, 1e-12, 1e12));
     }

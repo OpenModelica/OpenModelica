@@ -12,10 +12,9 @@
 
 #![allow(non_snake_case)]
 
-
-use metamodelica::Result;
 use arcstr::ArcStr;
 use metamodelica::List;
+use metamodelica::Result;
 
 /// Shared body for the entry points that are NYI in the C runtime too:
 /// report on stderr (like the `fprintf(stderr, "NYI: ...")` there) and
@@ -95,26 +94,15 @@ pub fn appendReversedList(inStringLst: List<ArcStr>) -> ArcStr {
 /// Print a *reversed* list of strings to stdout (`whereToPrint` = 1) or
 /// stderr (= 2); any other destination fails like the C version.
 pub fn printReversedList(inStringLst: List<ArcStr>, whereToPrint: i32) -> Result<()> {
-    use std::io::Write;
-    let chunks: Vec<&ArcStr> = (&*inStringLst).into_iter().collect();
-    match whereToPrint {
-        1 => {
-            let stdout = std::io::stdout();
-            let mut f = stdout.lock();
-            for s in chunks.into_iter().rev() {
-                f.write_all(s.as_bytes()).map_err(|_| "IOStreamExt: write failed")?;
-            }
-            f.flush().map_err(|_| "IOStreamExt: flush failed")?;
-        }
-        2 => {
-            let stderr = std::io::stderr();
-            let mut f = stderr.lock();
-            for s in chunks.into_iter().rev() {
-                f.write_all(s.as_bytes()).map_err(|_| "IOStreamExt: write failed")?;
-            }
-            f.flush().map_err(|_| "IOStreamExt: flush failed")?;
-        }
+    let write: fn(&str) -> bool = match whereToPrint {
+        1 => metamodelica::host_print,
+        2 => metamodelica::host_eprint,
         _ => return Err("IOStreamExt.printReversedList: invalid whereToPrint {whereToPrint}"),
+    };
+    let chunks: Vec<&ArcStr> = (&*inStringLst).into_iter().collect();
+    for s in chunks.into_iter().rev() {
+        write(s);
     }
+    metamodelica::host_flush();
     Ok(())
 }

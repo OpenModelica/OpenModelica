@@ -29,28 +29,10 @@ model FunctionBubblesort
   Real b[8];
 equation
   b=bubblesort(a);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionBubblesort;
 
 
 // Result:
-// function bubblesort
-//   input Real[:] x;
-//   output Real[size(x, 1)] y;
-//   protected Real t;
-// algorithm
-//   y := x;
-//   for i in 1:size(x, 1) loop
-//     for j in 1:size(x, 1) loop
-//       if y[i] > y[j] then
-//         t := y[i];
-//         y[i] := y[j];
-//         y[j] := t;
-//       end if;
-//     end for;
-//   end for;
-// end bubblesort;
-//
 // class FunctionBubblesort
 //   constant Real a[1] = 0.0;
 //   constant Real a[2] = 9.0;

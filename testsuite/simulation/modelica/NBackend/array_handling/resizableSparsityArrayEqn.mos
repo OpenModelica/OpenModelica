@@ -1,0 +1,56 @@
+// name: resizableSparsityArrayEqn
+// keywords: NewBackend resizable jacobian sparsity array equation slice
+// status: correct
+// cflags: --newBackend --simCodeScalarize=false --resizableArrays
+// suite: cSources
+// teardown_command: rm -f resizableSparsityArrayEqn_20.mat resizableSparsityArrayEqn_20.log
+//
+// Array equations of slices (der(T) = Q[1:n] - Q[2:n+1] with
+// Q = cat(1, {a}, k * (T[1:n-1] - T[2:n]), {0})) are elementwise: the row of
+// der(T[i]) depends on T[i - 1], T[i], T[i + 1] (and T[1] through the boundary),
+// not on the whole slices T[1:n-1], T[2:n].
+
+loadString("
+model resizableSparsityArrayEqn
+  parameter Integer n = 10;
+  parameter Real k = 2;
+  Real T[n](start = {i for i in 1:n}, each fixed = true);
+  Real Q[n + 1];
+  Real a;
+equation
+  a = 1 - T[1];
+  Q = cat(1, {a}, k * (T[1:n - 1] - T[2:n]), {0});
+  der(T) = Q[1:n] - Q[2:n + 1];
+end resizableSparsityArrayEqn;
+model resizableSparsityArrayEqnRef20 = resizableSparsityArrayEqn(n = 20);
+"); getErrorString();
+
+buildModel(resizableSparsityArrayEqn, stopTime = 1); getErrorString();
+// no slice of T as dependency of a row
+system("grep -q 'SEED_ODE_JAC.T\\[UNKNOWN_SUBSCRIPT [^]]*:' resizableSparsityArrayEqn_12jac.c");
+system("./resizableSparsityArrayEqn -override=n=20 -r=resizableSparsityArrayEqn_20.mat", "resizableSparsityArrayEqn_20.log");
+
+setCommandLineOptions("--resizableArrays=false"); getErrorString();
+simulate(resizableSparsityArrayEqnRef20, stopTime = 1); getErrorString();
+abs(val(T[1], 1, "resizableSparsityArrayEqn_20.mat") - val(T[1], 1, "resizableSparsityArrayEqnRef20_res.mat")) < 1e-6;
+abs(val(T[20], 1, "resizableSparsityArrayEqn_20.mat") - val(T[20], 1, "resizableSparsityArrayEqnRef20_res.mat")) < 1e-6;
+// Result:
+// true
+// ""
+// {"resizableSparsityArrayEqn", "resizableSparsityArrayEqn_init.xml"}
+// ""
+// 1
+// 0
+// true
+// ""
+// record SimulationResult
+//     resultFile = "resizableSparsityArrayEqnRef20_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'resizableSparsityArrayEqnRef20', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// true
+// endResult

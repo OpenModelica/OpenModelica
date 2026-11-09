@@ -13,6 +13,8 @@ bug3358.mos \
 bug4419.mos \
 ChatteringEventsTest1.mos \
 ChatteringEventsTest2.mos \
+ChatteringEventsTestXML.mos \
+WasmJitInfoJson.mos \
 CheckEvents.mos \
 cseOutsideNoEvent.mos \
 DelayZeroCrossing.mos \
@@ -32,6 +34,7 @@ noEventNotRespected.mos \
 Reinit.mos \
 sample1.mos \
 sample2.mos \
+SampleTimeDrift.mos \
 ServerWithQueue.mos \
 TestNoEventsFlags.mos \
 whenInAlgorithm.mos \

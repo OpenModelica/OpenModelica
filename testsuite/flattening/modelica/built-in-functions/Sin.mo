@@ -9,7 +9,6 @@ model Sin
   Real r;
 equation
   r = sin(45);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Sin;
 
 // Result:

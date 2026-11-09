@@ -5,11 +5,19 @@ ExportCvodeFmu_cmake.mos \
 ExportCvodeFmu_dynamic.mos \
 ExportCvodeFmu_static.mos \
 fmi_interpolation_01.mos \
+FmuAssertSolverRetry.mos \
+FmuMatV7Table.mos \
+FmuZlibLinkOrder.mos \
+FmuNlsSameTime.mos \
+FmuUnknownDependencies.mos \
+FmuUnknownsWithoutFmiIndex.mos \
 FmuExportFlags.mos \
 RecompileSourceCodeFMU.mos \
 simpleStiffFMU.mos \
 issue10523.mos \
 Issue14456.mos \
+CvodeStepTooClose.mos \
+Issue17436.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -20,6 +28,9 @@ FAILINGTESTFILES = \
 DEPENDENCIES = \
 *.mo \
 *.mos \
+FmuAssertSolverRetry.py \
+FmuNlsSameTime.py \
+FmuZlibLinkOrder-f.c \
 Makefile \
 
 CLEAN = `ls | grep -w -v -f deps.tmp`

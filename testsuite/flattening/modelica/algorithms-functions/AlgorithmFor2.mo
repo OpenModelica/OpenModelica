@@ -5,7 +5,7 @@
 // Test for loops in algorithms. The size is a constant.
 //
 
-class AlgorithmFor2
+model AlgorithmFor2
   constant Integer N = 4;
   Real a[N];
 algorithm
@@ -13,7 +13,6 @@ algorithm
   for i in 1:N-1 loop
     a[i+1] := a[i] + 1.0;
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AlgorithmFor2;
 
 // Result:
@@ -26,7 +25,7 @@ end AlgorithmFor2;
 // algorithm
 //   a[1] := 1.0;
 //   for i in 1:3 loop
-//     a[1 + i] := 1.0 + a[i];
+//     a[i + 1] := a[i] + 1.0;
 //   end for;
 // end AlgorithmFor2;
 // endResult

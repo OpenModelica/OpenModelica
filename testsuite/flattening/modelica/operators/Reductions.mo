@@ -2,34 +2,31 @@
 // keywords: reductions
 // status:   correct
 //
-// Tests flattening of non-constant reductions.
+// Tests flattening of reductions.
 //
 
 model Reductions
-  parameter Integer n = 5;
+  constant Integer n = 5;
   Real A[n];
   Real B[n];
   Real c;
   Real d;
-  Real e;
-  Real f;
-  Real g[n,n];
+  constant Real C[n] = {1, 2, 3, 4, 5};
+  constant Real e = max(C[i]^2 for i in 1:n);
+  constant Real f = min(C[i]^2 for i in 1:n);
+  constant Real g[n,n] = {(1/(i+j-1)) for i in 1:n, j in 1:n};
   Real h;
   Real k;
 equation
   c = sum(A[i]^2 + B[i]^2 for i in 1:n);
   d = product(A[i]^2 + B[i]^2 for i in 1:n);
-  e = max(A[i]^2 + B[i]^2 for i in 1:n);
-  f = min(A[i]^2 + B[i]^2 for i in 1:n);
-  g = {(1/(i+j-1)) for i in 1:n, j in 1:n};
   h = sum((1/(i+j-1)) for i in 1:n, j in 1:n);
   k = .sum(i for i in 1:n);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Reductions;
 
 // Result:
 // class Reductions
-//   parameter Integer n = 5;
+//   constant Integer n = 5;
 //   Real A[1];
 //   Real A[2];
 //   Real A[3];
@@ -42,66 +39,44 @@ end Reductions;
 //   Real B[5];
 //   Real c;
 //   Real d;
-//   Real e;
-//   Real f;
-//   Real g[1,1];
-//   Real g[1,2];
-//   Real g[1,3];
-//   Real g[1,4];
-//   Real g[1,5];
-//   Real g[2,1];
-//   Real g[2,2];
-//   Real g[2,3];
-//   Real g[2,4];
-//   Real g[2,5];
-//   Real g[3,1];
-//   Real g[3,2];
-//   Real g[3,3];
-//   Real g[3,4];
-//   Real g[3,5];
-//   Real g[4,1];
-//   Real g[4,2];
-//   Real g[4,3];
-//   Real g[4,4];
-//   Real g[4,5];
-//   Real g[5,1];
-//   Real g[5,2];
-//   Real g[5,3];
-//   Real g[5,4];
-//   Real g[5,5];
+//   constant Real C[1] = 1.0;
+//   constant Real C[2] = 2.0;
+//   constant Real C[3] = 3.0;
+//   constant Real C[4] = 4.0;
+//   constant Real C[5] = 5.0;
+//   constant Real e = 25.0;
+//   constant Real f = 1.0;
+//   constant Real g[1,1] = 1.0;
+//   constant Real g[1,2] = 0.5;
+//   constant Real g[1,3] = 0.3333333333333333;
+//   constant Real g[1,4] = 0.25;
+//   constant Real g[1,5] = 0.2;
+//   constant Real g[2,1] = 0.5;
+//   constant Real g[2,2] = 0.3333333333333333;
+//   constant Real g[2,3] = 0.25;
+//   constant Real g[2,4] = 0.2;
+//   constant Real g[2,5] = 0.16666666666666666;
+//   constant Real g[3,1] = 0.3333333333333333;
+//   constant Real g[3,2] = 0.25;
+//   constant Real g[3,3] = 0.2;
+//   constant Real g[3,4] = 0.16666666666666666;
+//   constant Real g[3,5] = 0.14285714285714285;
+//   constant Real g[4,1] = 0.25;
+//   constant Real g[4,2] = 0.2;
+//   constant Real g[4,3] = 0.16666666666666666;
+//   constant Real g[4,4] = 0.14285714285714285;
+//   constant Real g[4,5] = 0.125;
+//   constant Real g[5,1] = 0.2;
+//   constant Real g[5,2] = 0.16666666666666666;
+//   constant Real g[5,3] = 0.14285714285714285;
+//   constant Real g[5,4] = 0.125;
+//   constant Real g[5,5] = 0.1111111111111111;
 //   Real h;
 //   Real k;
 // equation
 //   c = A[1] ^ 2.0 + B[1] ^ 2.0 + A[2] ^ 2.0 + B[2] ^ 2.0 + A[3] ^ 2.0 + B[3] ^ 2.0 + A[4] ^ 2.0 + B[4] ^ 2.0 + A[5] ^ 2.0 + B[5] ^ 2.0;
 //   d = (A[1] ^ 2.0 + B[1] ^ 2.0) * (A[2] ^ 2.0 + B[2] ^ 2.0) * (A[3] ^ 2.0 + B[3] ^ 2.0) * (A[4] ^ 2.0 + B[4] ^ 2.0) * (A[5] ^ 2.0 + B[5] ^ 2.0);
-//   e = max(A[i] ^ 2.0 + B[i] ^ 2.0 for i in {1, 2, 3, 4, 5});
-//   f = min(A[i] ^ 2.0 + B[i] ^ 2.0 for i in {1, 2, 3, 4, 5});
-//   g[1,1] = 1.0;
-//   g[1,2] = 0.5;
-//   g[1,3] = 0.3333333333333333;
-//   g[1,4] = 0.25;
-//   g[1,5] = 0.2;
-//   g[2,1] = 0.5;
-//   g[2,2] = 0.3333333333333333;
-//   g[2,3] = 0.25;
-//   g[2,4] = 0.2;
-//   g[2,5] = 0.1666666666666667;
-//   g[3,1] = 0.3333333333333333;
-//   g[3,2] = 0.25;
-//   g[3,3] = 0.2;
-//   g[3,4] = 0.1666666666666667;
-//   g[3,5] = 0.1428571428571428;
-//   g[4,1] = 0.25;
-//   g[4,2] = 0.2;
-//   g[4,3] = 0.1666666666666667;
-//   g[4,4] = 0.1428571428571428;
-//   g[4,5] = 0.125;
-//   g[5,1] = 0.2;
-//   g[5,2] = 0.1666666666666667;
-//   g[5,3] = 0.1428571428571428;
-//   g[5,4] = 0.125;
-//   g[5,5] = 0.1111111111111111;
-//   h = 6.456349206349206;
+//   h = 6.456349206349208;
 //   k = 15.0;
 // end Reductions;
 // endResult

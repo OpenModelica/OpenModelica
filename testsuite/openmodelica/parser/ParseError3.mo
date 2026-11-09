@@ -7,7 +7,6 @@ equation
   when time > 1.0 then
     assert;
   end when;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ParseError3;
 
 // Result:

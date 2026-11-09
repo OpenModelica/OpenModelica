@@ -1,0 +1,14 @@
+// status: correct
+// readFile and cd report why they failed (#17654).
+
+readFile("nonexistent/file.txt"); getErrorString();
+cd("nonexistent/dir"); getErrorString();
+
+// Result:
+// ""
+// "Error: Error opening file: nonexistent/file.txt: No such file or directory.
+// "
+// "Error, directory nonexistent/dir does not exist,"
+// "Error: chdir failed.
+// "
+// endResult

@@ -57,11 +57,11 @@ add_library(OMPlotLib STATIC
   ${OMPLOT}/PlotPanner.cpp ${OMPLOT}/PlotPicker.cpp ${OMPLOT}/PlotGrid.cpp
   ${OMPLOT}/PlotCurve.cpp ${OMPLOT}/PlotWindow.cpp ${OMPLOT}/PlotWindowContainer.cpp
   ${OMPLOT}/PlotMainWindow.cpp ${OMPLOT}/ScaleDraw.cpp ${OMPLOT}/LogScaleEngine.cpp
-  ${OMPLOT}/LinearScaleEngine.cpp ${OMPLOT}/resource_omplot.qrc
+  ${OMPLOT}/LinearScaleEngine.cpp ${OMPLOT}/PlotTranslator.cpp ${OMPLOT}/resource_omplot.qrc
   ${OMPLOT}/OMPlot.h ${OMPLOT}/PlotZoomer.h ${OMPLOT}/Legend.h ${OMPLOT}/PlotPanner.h
   ${OMPLOT}/PlotPicker.h ${OMPLOT}/PlotGrid.h ${OMPLOT}/PlotCurve.h ${OMPLOT}/PlotWindow.h
   ${OMPLOT}/PlotWindowContainer.h ${OMPLOT}/PlotMainWindow.h ${OMPLOT}/ScaleDraw.h
-  ${OMPLOT}/LogScaleEngine.h ${OMPLOT}/LinearScaleEngine.h
+  ${OMPLOT}/LogScaleEngine.h ${OMPLOT}/LinearScaleEngine.h ${OMPLOT}/PlotTranslator.h
   # VisualizationCSV still uses the C csv reader (om_strtod from omc_numbers.c).
   ${SIMRT}/util/read_csv.c ${SIMRT}/util/libcsv.c ${SIMRT}/util/omc_numbers.c
   ${CMAKE_CURRENT_SOURCE_DIR}/omc_file_shim.c)
@@ -81,7 +81,7 @@ file(GLOB_RECURSE OMEDITLIB_HEADERS ${LIB}/*.h)
 set(WASM_EXCLUDE_DIRS
   "/generatedfiles/"
   "/Animation/" "/Debugger/" "/FMI/" "/Git/" "/MCP/" "/CrashReport/"
-  "/TransformationalDebugger/" "/Traceability/")
+  "/Traceability/")
 foreach(pat ${WASM_EXCLUDE_DIRS})
   list(FILTER OMEDITLIB_SOURCES EXCLUDE REGEX "${pat}")
   list(FILTER OMEDITLIB_HEADERS EXCLUDE REGEX "${pat}")
@@ -94,10 +94,13 @@ set(WASM_EXCLUDE_FILES
   # Desktop OAuth redirect (QTcpServer loopback); the browser uses a popup instead.
   "Cloud/OAuth2RedirectLoopback.cpp"
   "Simulation/OpcUaClient.cpp"
-  "OMS/OMSSimulationOutputWidget.cpp")
+  "OMS/OMSSimulationOutputWidget.cpp"
+  "OMS/OMSCalibrationDialog.cpp")
 foreach(f ${WASM_EXCLUDE_FILES})
   list(FILTER OMEDITLIB_SOURCES EXCLUDE REGEX "${f}")
 endforeach()
+# Runs OMSimulator as a subprocess and is never used on wasm, so it is not moc'd either.
+list(FILTER OMEDITLIB_HEADERS EXCLUDE REGEX "OMS/OMSCalibrationDialog.h")
 
 # Generated OMCInterface + its worker bridge (gen_bridge.py turns the ABI header
 # into JSON forwarders that define the omc_scripting_*/omc_seq_*/omc_abi_* symbols).
@@ -126,6 +129,8 @@ list(APPEND OMEDITLIB_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/sim_widget_stubs.cpp
   # QAbstractFileEngineHandler that serves worker-VFS files to main-thread QFile.
   ${CMAKE_CURRENT_SOURCE_DIR}/worker_vfs_engine.cpp
+  # Downloads <home>/share/ (the translations) from the web server on first use.
+  ${CMAKE_CURRENT_SOURCE_DIR}/web_assets.cpp
   # Browser file picker / download, for the user's own filesystem.
   ${CMAKE_CURRENT_SOURCE_DIR}/local_files.cpp
   # localStorage persistence: settings, cloud mounts and their sync manifests.
@@ -135,6 +140,7 @@ list(APPEND OMEDITLIB_SOURCES
   # OAuth popup + same-origin callback page (the desktop half is a loopback socket).
   ${CMAKE_CURRENT_SOURCE_DIR}/oauth_redirect_wasm.cpp)
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/worker_vfs_engine.cpp
+                            ${CMAKE_CURRENT_SOURCE_DIR}/web_assets.cpp
                             ${CMAKE_CURRENT_SOURCE_DIR}/local_files.cpp
                             ${CMAKE_CURRENT_SOURCE_DIR}/persist_store.cpp
                             ${CMAKE_CURRENT_SOURCE_DIR}/cloud_cache_idb.cpp
@@ -145,6 +151,11 @@ list(APPEND OMEDITLIB_SOURCES ${SIMRT}/util/simulation_options.c ${SIMRT}/util/o
 # omc_error.c reaches <gc.h> for threadData_t; declarations only, no collector call.
 set_source_files_properties(${SIMRT}/util/omc_error.c PROPERTIES
   INCLUDE_DIRECTORIES ${OM_ROOT}/OMCompiler/3rdParty/gc/include)
+# The transformational debugger parses <model>_info.json with simdjson (its
+# portable fallback kernel on wasm32).
+list(APPEND OMEDITLIB_SOURCES ${OM_ROOT}/OMCompiler/3rdParty/simdjson/singleheader/simdjson.cpp)
+set_source_files_properties(${OM_ROOT}/OMCompiler/3rdParty/simdjson/singleheader/simdjson.cpp
+  PROPERTIES SKIP_AUTOMOC ON)
 # TimeManager drives the result-replay time slider in VariablesWidget.
 list(APPEND OMEDITLIB_SOURCES ${LIB}/Animation/TimeManager.cpp)
 # 3D animation via Qt Quick 3D. FMU animation (VisualizationFMU/FMUWrapper/
@@ -183,12 +194,47 @@ target_include_directories(OMEditLib PUBLIC ${LIB} ${SCRIPTING_API_QT}
   ${OM_ROOT}/OMParser/3rdParty/antlr4/runtime/Cpp/runtime/src
   ${OM_ROOT}/OMParser
   ${OM_ROOT}/OMCompiler/3rdParty/ryu/ryu
+  ${OM_ROOT}/OMCompiler/3rdParty/simdjson/singleheader
   ${OM_ROOT}/OMCompiler/3rdParty/open62541)
 target_link_libraries(OMEditLib PUBLIC
   OMPlotLib Qt6::Widgets Qt6::Xml Qt6::PrintSupport Qt6::Svg Qt6::Concurrent
   Qt6::OpenGL Qt6::OpenGLWidgets Qt6::Core5Compat Qt6::Network Qt6::CorePrivate
   # Qt Quick 3D animation backend
   Qt6::Quick Qt6::Quick3D Qt6::Qml Qt6::QuickWidgets)
+
+# ---- Translations ----
+# Staged as share/ next to the page, which serves it as <home>/share/ (web_assets.cpp).
+find_package(Qt6 REQUIRED COMPONENTS LinguistTools)
+set(WEB_SHARE ${CMAKE_BINARY_DIR}/share)
+file(GLOB OMEDIT_TS_FILES ${LIB}/Resources/nls/OMEdit_*.ts)
+file(GLOB OMPLOT_TS_FILES ${OMPLOT}/Resources/nls/OMPlot_*.ts)
+file(MAKE_DIRECTORY ${WEB_SHARE}/omedit/nls ${WEB_SHARE}/omplot/nls ${WEB_SHARE}/qt6/translations)
+set_source_files_properties(${OMEDIT_TS_FILES} PROPERTIES OUTPUT_LOCATION ${WEB_SHARE}/omedit/nls)
+set_source_files_properties(${OMPLOT_TS_FILES} PROPERTIES OUTPUT_LOCATION ${WEB_SHARE}/omplot/nls)
+qt_add_translation(WEB_QM_FILES ${OMEDIT_TS_FILES} ${OMPLOT_TS_FILES})
+# Qt's own translations; qt_<lang>.qm loads qtbase_<lang>.qm and qtmultimedia_<lang>.qm.
+set(QT_QM_DIR ${QT6_INSTALL_PREFIX}/${QT6_INSTALL_TRANSLATIONS})
+set(WEB_QT_QM_FILES)
+set(_web_languages en)
+foreach(_ts IN LISTS OMEDIT_TS_FILES)
+  get_filename_component(_lang ${_ts} NAME_WE)
+  string(REPLACE "OMEdit_" "" _lang ${_lang})
+  list(APPEND _web_languages ${_lang})
+endforeach()
+foreach(_lang IN LISTS _web_languages)
+  foreach(_catalog qt qtbase qtmultimedia)
+    if(EXISTS ${QT_QM_DIR}/${_catalog}_${_lang}.qm)
+      list(APPEND WEB_QT_QM_FILES ${QT_QM_DIR}/${_catalog}_${_lang}.qm)
+    endif()
+  endforeach()
+endforeach()
+add_custom_command(OUTPUT ${WEB_SHARE}/index.json
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${WEB_QT_QM_FILES} ${WEB_SHARE}/qt6/translations
+  COMMAND ${CMAKE_COMMAND} -DDIR=${WEB_SHARE} -P ${CMAKE_CURRENT_SOURCE_DIR}/web_assets_index.cmake
+  DEPENDS ${WEB_QM_FILES} ${WEB_QT_QM_FILES} ${CMAKE_CURRENT_SOURCE_DIR}/web_assets_index.cmake
+  COMMENT "Staging the translations of the OMEdit web page"
+  VERBATIM)
+add_custom_target(OMEditWebShare ALL DEPENDS ${WEB_SHARE}/index.json)
 
 # ---- OMEdit executable ----
 qt_add_executable(OMEdit-qt ${GUI}/main.cpp)

@@ -145,6 +145,18 @@ is available. By default the solver runs in single-rate mode using the
 embedded RK scheme ESDIRK4 :cite:`KENNEDY2019221` with variable-step-size
 control and efficient event handling.
 
+Some common methods have a shorthand:
+
+.. code-block::
+
+  -s=rungekutta     -s=gbode -gbm=rungekutta
+  -s=heun           -s=gbode -gbm=heun
+  -s=impeuler       -s=gbode -gbm=impl_euler
+  -s=trapezoid      -s=gbode -gbm=trapezoid
+  -s=imprungekutta  -s=gbode -gbm=radauIA2
+  -s=irksco         -s=gbode -gbm=trapezoid
+  -s=rungekuttassc  -s=gbode -gbm=rungekuttaSsc
+
 The bi-rate mode can be utilized using the simulation flag
 :ref:`gbratio <simflag-gbratio>`. This flag determines the percentage of fast
 states with respect to all states. These states will then be automatically
@@ -182,25 +194,6 @@ The basic explicit solvers Euler uses a fixed step-size based on the
 
 - euler - Explicit Euler, fixed step size, order 1
 
-Deprecated Solvers
-~~~~~~~~~~~~~~~~~~~~
-
-The following solvers are deprecated and will be removed in a future version of
-OpenModelica:
-
-- rungekutta - Classic Runge-Kutta method RK4, explicit, fixed step-size, oder 4
-
-.. code-block::
-
-  old: -s=rungekutta
-  new: -s=gbode -gbm=rungekutta -gbctrl=const
-
-- symSolver - Symbolic inline solver
-  (requires :ref:`--symSolver <omcflag-symSolver>`) - fixed step-size, order 1
-- symSolverSsc - Symbolic implicit inline Euler with step-size control
-  (requires :ref:`--symSolver<omcflag-symSolver>`) - step-size control, order 1-2
-- qss - A QSS solver
-
 DAE Mode Simulation
 -------------------
 
@@ -215,27 +208,6 @@ Once a model is compiled in `DAE mode` the simulation can be only performed
 with :ref:`SUNDIALS/IDA <sundials_ida>` integrator and with enabled
 :ref:`-daeMode <simflag-daeMode>` simulation flag. Both are enabled
 automatically by default, when a simulation run is started.
-
-Homotopy support in DAE mode
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-In `DAE mode` the :ref:`homotopy operator <homotopy-method>` is kept in the
-simulation residual (in ODE mode it is only used during initialization). This
-makes `DAE mode` robust against models whose *initial operating point is a
-degenerate point* of a ``homotopy(actual, simplified)`` characteristic — a
-typical example is a fan or pump that starts at zero speed and zero flow, where
-the derivative of the actual pressure characteristic vanishes and the initial
-DAE Jacobian is singular. Such models would otherwise fail at ``time = 0`` with
-``IDA_LSETUP_FAIL``.
-
-When this happens, OpenModelica automatically performs a homotopy continuation:
-the homotopy parameter :math:`\lambda` is ramped from 0 to 1 over the first part
-of the simulation interval (10% by default), so the simulation starts from the
-regularized *simplified* system and continuously transitions to the *actual*
-system once it has moved off the degenerate point. The continuation is activated
-only after a singular initial Jacobian is detected, so models that integrate
-normally are unaffected, and it removes the need for a model-level workaround
-such as giving the mover a non-zero ``m_flow_start``.
 
 
 .. _initialization :
@@ -476,8 +448,6 @@ Finally, when running model `M3`, parameters are handled like in the previous ca
 in this case the solution of the initial equations is skipped, so the state variable gets its initial value `x = 4` straight from the imported `initial.mat` file.
 
 
-.. _homotopy-method:
-
 Homotopy Method
 ~~~~~~~~~~~~~~~
 
@@ -605,7 +575,6 @@ There are dense and sparse solver available.
   - *lapack*     : Non-Sparse LU factorization using :cite:`anderson1999lapack`
   - *lis*        : Iterative linear solver :cite:`nishida2010experience`
   - *klu*        : Sparse LU factorization :cite:`natarajan2005klu`
-  - *umfpack*    : Sparse unsymmetric multifrontal LU factorization :cite:`davis2004algorithm`
   - *totalpivot* : Total pivoting LU factorization for underdetermined systems
 
 **Non-linear solvers**

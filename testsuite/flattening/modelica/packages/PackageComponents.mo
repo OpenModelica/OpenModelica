@@ -7,7 +7,7 @@
 
 package TestPackage
 
-class TestClass
+model TestClass
   Integer i;
 end TestClass;
 
@@ -17,7 +17,6 @@ model PackageComponents
   TestPackage.TestClass tc;
 equation
   tc.i = 1;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end PackageComponents;
 
 // Result:

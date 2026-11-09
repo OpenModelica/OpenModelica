@@ -25,7 +25,6 @@ model Faculty3Model
   Integer y;
 equation
   y = Faculty3(x);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Faculty3Model;
 
 // Result:
@@ -38,7 +37,7 @@ end Faculty3Model;
 //   i := 2;
 //   while i <= x loop
 //     y := i * y;
-//     i := 1 + i;
+//     i := i + 1;
 //   end while;
 // end Faculty3;
 //

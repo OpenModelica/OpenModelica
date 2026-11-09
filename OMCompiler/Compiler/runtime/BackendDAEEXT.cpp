@@ -74,6 +74,16 @@ static int* match=NULL;
 static int* row_match=NULL;
 static int* col_ptrs=NULL;
 static int* col_ids=NULL;
+/* set by setAdjacencyMatrixPieces, used instead of col_ptrs/col_ids if use_pieces */
+static piece_matrix pieces = {NULL, NULL, NULL, NULL, NULL};
+static int use_pieces = 0;
+
+static void freePieces()
+{
+  free(pieces.row_first); free(pieces.row_count); free(pieces.piece_start); free(pieces.piece_len); free(pieces.ids);
+  pieces.row_first = NULL; pieces.row_count = NULL; pieces.piece_start = NULL; pieces.piece_len = NULL; pieces.ids = NULL;
+  use_pieces = 0;
+}
 
 void BackendDAEEXTImpl__initMarks(int nvars, int neqns)
 {
@@ -349,7 +359,11 @@ void BackendDAEExtImpl__matching(int nvars, int neqns, int matchingID, int cheap
     m = nvars;
   }
   if ((match != NULL) && (row_match != NULL)) {
-    matching(col_ptrs,col_ids,match,row_match,neqns,nvars,matchingID,cheapID,relabel_period,0 /*clear_match already done*/);
+    if (use_pieces) {
+      matching_pieces(&pieces,match,row_match,neqns,nvars,matchingID,cheapID,relabel_period,0 /*clear_match already done*/);
+    } else {
+      matching(col_ptrs,col_ids,match,row_match,neqns,nvars,matchingID,cheapID,relabel_period,0 /*clear_match already done*/);
+    }
   }
 }
 

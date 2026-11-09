@@ -72,6 +72,8 @@
 #include <QPrintDialog>
 #include <QDesktopServices>
 #include <QClipboard>
+#include <QTimer>
+#include <QToolButton>
 #include <QStringBuilder>
 
 const QString cutCopyPasteComponentsConnectionsFormat("application/OMEdit.cut-copy-paste-components-connections");
@@ -4479,11 +4481,11 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
   QPen grayPen(QBrush(QColor(192, 192, 192)), 0);
   QPen lightGrayPen(QBrush(QColor(229, 229, 229)), 0);
   if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) {
-    painter->setBrush(QBrush(Qt::white, Qt::SolidPattern));
+    painter->setBrush(QBrush(Style::readOnlyViewBackgroundColor(), Qt::SolidPattern));
   } else if (isIconView()) {
-    painter->setBrush(QBrush(QColor(229, 244, 255), Qt::SolidPattern));
+    painter->setBrush(QBrush(Style::iconViewBackgroundColor(), Qt::SolidPattern));
   } else {
-    painter->setBrush(QBrush(QColor(242, 242, 242), Qt::SolidPattern));
+    painter->setBrush(QBrush(Style::diagramViewBackgroundColor(), Qt::SolidPattern));
   }
   // draw scene rectangle white background
   painter->setPen(Qt::NoPen);
@@ -5331,7 +5333,6 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   mpRecentItemsListWidget->setMovement(QListView::Static);
   mpRecentItemsListWidget->setIconSize(Helper::iconSize);
   mpRecentItemsListWidget->setCurrentRow(0, QItemSelectionModel::Select);
-  connect(mpRecentItemsListWidget, SIGNAL(itemClicked(QListWidgetItem*)), SLOT(openRecentFileItem(QListWidgetItem*)));
   QPushButton *pClearRecentFilesListButton = new QPushButton(tr("Clear Recent Files"));
   pClearRecentFilesListButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
   connect(pClearRecentFilesListButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(clearRecentFilesList()));
@@ -5508,9 +5509,47 @@ void WelcomePageWidget::addRecentFilesListItems()
   for (int i = 0; i < numRecentFiles; ++i) {
     RecentFile recentFile = qvariant_cast<RecentFile>(files[i]);
     QListWidgetItem *listItem = new QListWidgetItem(mpRecentItemsListWidget);
-    listItem->setIcon(ResourceCache::getIcon(":/Resources/icons/next.svg"));
-    listItem->setText(recentFile.fileName);
+    listItem->setText(QString());
     listItem->setData(Qt::UserRole, recentFile.encoding);
+    listItem->setData(Qt::UserRole + 1, recentFile.fileName);
+
+    QWidget *pItemWidget = new QWidget(mpRecentItemsListWidget);
+    QHBoxLayout *pItemLayout = new QHBoxLayout(pItemWidget);
+    pItemLayout->setContentsMargins(0, 0, 0, 0);
+    pItemLayout->setSpacing(0);
+
+    QToolButton *pOpenButton = new QToolButton(pItemWidget);
+    pOpenButton->setObjectName("RecentFileOpenButton");
+    pOpenButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    pOpenButton->setIcon(ResourceCache::getIcon(":/Resources/icons/next.svg"));
+    pOpenButton->setIconSize(Helper::iconSize);
+    pOpenButton->setText(recentFile.fileName);
+    pOpenButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    pOpenButton->setAutoRaise(true);
+    connect(pOpenButton, &QToolButton::clicked, this, [this, listItem]() { openRecentFileItem(listItem); });
+
+    QToolButton *pCopyButton = new QToolButton(pItemWidget);
+    pCopyButton->setObjectName("RecentFileCopyButton");
+    pCopyButton->setIcon(ResourceCache::getIcon(":/Resources/icons/copy.svg"));
+    pCopyButton->setIconSize(Helper::iconSize);
+    pCopyButton->setFixedSize(Helper::iconSize + QSize(8, 0));
+    pCopyButton->setAutoRaise(true);
+    pCopyButton->setToolTip(Helper::copy);
+    QTimer *pCopyTimer = new QTimer(pCopyButton);
+    pCopyTimer->setSingleShot(true);
+    connect(pCopyButton, &QToolButton::clicked, this, [pCopyButton, pCopyTimer, listItem]() {
+      QApplication::clipboard()->setText(listItem->data(Qt::UserRole + 1).toString());
+      pCopyButton->setIcon(ResourceCache::getIcon(":/Resources/icons/check.svg"));
+      pCopyTimer->start(1000);
+    });
+    connect(pCopyTimer, &QTimer::timeout, pCopyButton, [pCopyButton]() {
+      pCopyButton->setIcon(ResourceCache::getIcon(":/Resources/icons/copy.svg"));
+    });
+
+    pItemLayout->addWidget(pOpenButton);
+    pItemLayout->addWidget(pCopyButton);
+    mpRecentItemsListWidget->setItemWidget(listItem, pItemWidget);
+    listItem->setSizeHint(pItemWidget->sizeHint());
   }
   if (numRecentFiles > 0) {
     mpNoRecentFileLabel->setVisible(false);
@@ -5649,7 +5688,8 @@ void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
 
 void WelcomePageWidget::openRecentFileItem(QListWidgetItem *pItem)
 {
-  MainWindow::instance()->openFileFetchingFromCloud(pItem->text(), pItem->data(Qt::UserRole).toString());
+  MainWindow::instance()->openFileFetchingFromCloud(pItem->data(Qt::UserRole + 1).toString(),
+                                                    pItem->data(Qt::UserRole).toString());
 }
 
 void WelcomePageWidget::openRecentModelItem(QListWidgetItem *pItem)

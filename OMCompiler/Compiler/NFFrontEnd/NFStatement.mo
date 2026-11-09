@@ -256,6 +256,16 @@ public
     end match;
   end isFor;
 
+  function isWhen
+    input Statement stmt;
+    output Boolean res;
+  algorithm
+    res := match stmt
+      case WHEN() then true;
+      else false;
+    end match;
+  end isWhen;
+
   function isReturn
     input Statement stmt;
     output Boolean res;
@@ -948,6 +958,16 @@ public
     IOStream.delete(s);
   end toStringList;
 
+  function forKeyword
+    input ForType forType;
+    output String str;
+  algorithm
+    str := match forType
+      case ForType.PARALLEL() then "parfor";
+      else "for";
+    end match;
+  end forKeyword;
+
   function toStream
     input Statement stmt;
     input String indent;
@@ -978,7 +998,8 @@ public
 
       case FOR()
         algorithm
-          s := IOStream.append(s, "for ");
+          s := IOStream.append(s, forKeyword(stmt.forType));
+          s := IOStream.append(s, " ");
           s := IOStream.append(s, InstNode.name(stmt.iterator));
 
           if isSome(stmt.range) then
@@ -989,7 +1010,8 @@ public
           s := IOStream.append(s, " loop\n");
           s := toStreamList(stmt.body, indent + "  ", s);
           s := IOStream.append(s, indent);
-          s := IOStream.append(s, "end for");
+          s := IOStream.append(s, "end ");
+          s := IOStream.append(s, forKeyword(stmt.forType));
         then
           s;
 
@@ -1144,7 +1166,8 @@ public
 
       case FOR()
         algorithm
-          s := IOStream.append(s, "for ");
+          s := IOStream.append(s, forKeyword(stmt.forType));
+          s := IOStream.append(s, " ");
           s := IOStream.append(s, Util.makeQuotedIdentifier(InstNode.name(stmt.iterator)));
 
           if isSome(stmt.range) then
@@ -1155,7 +1178,8 @@ public
           s := IOStream.append(s, " loop\n");
           s := toFlatStreamList(stmt.body, format, indent + "  ", s);
           s := IOStream.append(s, indent);
-          s := IOStream.append(s, "end for");
+          s := IOStream.append(s, "end ");
+          s := IOStream.append(s, forKeyword(stmt.forType));
         then
           s;
 

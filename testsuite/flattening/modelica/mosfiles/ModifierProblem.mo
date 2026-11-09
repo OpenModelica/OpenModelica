@@ -14,7 +14,6 @@ end Prismatic;
 
 model ModifierProblem
   Prismatic p1(s(start=0.1));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ModifierProblem;
 
 // class ModifierProblem

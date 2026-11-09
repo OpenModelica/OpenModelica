@@ -133,5 +133,9 @@ public:
 
   virtual void setSolverThreads(int) = 0;
   virtual int getSolverThreads() = 0;
+
+  ///< Start values of variables that replace those of the init xml: name=value,name=value (-override)
+  virtual string getParameterOverrides() { return ""; }
+  virtual void setParameterOverrides(string) {}
 };
 /** @} */ // end of coreSimulationSettings

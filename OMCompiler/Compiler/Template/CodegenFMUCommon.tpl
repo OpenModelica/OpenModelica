@@ -97,7 +97,7 @@ case SIMCODE(__) then
     needsExecutionTool="false"
     completedIntegratorStepNotNeeded="false"
     canBeInstantiatedOnlyOncePerProcess="false"
-    canNotUseMemoryManagementFunctions="false"
+    canNotUseMemoryManagementFunctions="true"
     canGetAndSetFMUstate="true"
     canSerializeFMUstate="true"
     <% if providesDirectionalDerivative(simCode) then 'providesDirectionalDerivative="true"' else 'providesDirectionalDerivative="false"'%>>
@@ -123,8 +123,8 @@ match simCode
 case SIMCODE(modelInfo=modelInfo) then
 match modelInfo
 case MODELINFO(vars=SIMVARS(stateVars=stateVars)) then
+  let scalarVariables =
   <<
-  <ModelVariables>
   <%System.tmpTickReset(0)%>
   <%vars.stateVars |> var =>
     ScalarVariable(var, simCode, stateVars, FMUVersion)
@@ -176,9 +176,30 @@ case MODELINFO(vars=SIMVARS(stateVars=stateVars)) then
   ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%externalFunctions(modelInfo)%>
+  >>
+  <<
+  <ModelVariables>
+  <%if scalarVariables then scalarVariables else if isFMIVersion20(FMUVersion) then fmi2TimeVariable(simCode)%>
   </ModelVariables>
   >>
 end fmiModelVariables;
+
+template fmi2TimeVariable(SimCode simCode)
+ "FMI 2.0 requires at least one ScalarVariable. For a model without variables,
+  list the independent variable time, which is the same as FMI 3.0 lists."
+::=
+  <<
+  <!-- Index of variable = "1" -->
+  <ScalarVariable
+    name="time"
+    valueReference="<%SimCodeCodegenUtil.getFMI3TimeValueReference(simCode)%>"
+    description="Simulation time"
+    causality="independent"
+    variability="continuous">
+    <Real/>
+  </ScalarVariable>
+  >>
+end fmi2TimeVariable;
 
 template ScalarVariable(SimVar simVar, SimCode simCode, list<SimVar> stateVars, String FMUVersion)
  "Generates code for ScalarVariable file for FMU target."
@@ -366,10 +387,10 @@ match fmiModelStructure
 case SOME(fmistruct as FMIMODELSTRUCTURE(__)) then
   <<
   <ModelStructure>
-    <%ModelStructureOutputs(fmistruct.fmiOutputs)%>
-    <%ModelStructureDerivatives(fmistruct.fmiDerivatives)%>
-    <% if Flags.getConfigBool(Flags.EXPORT_CLOCKS_IN_MODELDESCRIPTION) then ModelStructureDiscreteStates(fmistruct.fmiDiscreteStates) else "" %>
-    <%ModelStructureInitialUnknowns(fmistruct.fmiInitialUnknowns)%>
+    <%ModelStructureOutputs(fmistruct.fmiOutputs, fmistruct.hasDependencies)%>
+    <%ModelStructureDerivatives(fmistruct.fmiDerivatives, fmistruct.hasDependencies)%>
+    <% if Flags.getConfigBool(Flags.EXPORT_CLOCKS_IN_MODELDESCRIPTION) then ModelStructureDiscreteStates(fmistruct.fmiDiscreteStates, fmistruct.hasDependencies) else "" %>
+    <%ModelStructureInitialUnknowns(fmistruct.fmiInitialUnknowns, fmistruct.hasDependencies)%>
   </ModelStructure>
   >>
 else
@@ -434,7 +455,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     >>
 end TypeDefinitionsClocks;
 
-template ModelStructureOutputs(FmiOutputs fmiOutputs)
+template ModelStructureOutputs(FmiOutputs fmiOutputs, Boolean hasDependencies)
  "Generates Model Structure Outputs."
 ::=
 match fmiOutputs
@@ -442,12 +463,12 @@ case FMIOUTPUTS(fmiUnknownsList={}) then ""
 case FMIOUTPUTS(__) then
   <<
   <Outputs>
-    <%ModelStructureUnknowns(fmiUnknownsList)%>
+    <%ModelStructureUnknowns(fmiUnknownsList, hasDependencies)%>
   </Outputs>
   >>
 end ModelStructureOutputs;
 
-template ModelStructureDerivatives(FmiDerivatives fmiDerivatives)
+template ModelStructureDerivatives(FmiDerivatives fmiDerivatives, Boolean hasDependencies)
  "Generates Model Structure Derivatives."
 ::=
 match fmiDerivatives
@@ -455,12 +476,12 @@ case FMIDERIVATIVES(fmiUnknownsList={}) then ""
 case FMIDERIVATIVES(__) then
   <<
   <Derivatives>
-    <%ModelStructureUnknowns(fmiUnknownsList)%>
+    <%ModelStructureUnknowns(fmiUnknownsList, hasDependencies)%>
   </Derivatives>
   >>
 end ModelStructureDerivatives;
 
-template ModelStructureDiscreteStates(FmiDiscreteStates fmiDiscreteStates)
+template ModelStructureDiscreteStates(FmiDiscreteStates fmiDiscreteStates, Boolean hasDependencies)
  "Generates Model Structure DiscreteStates."
 ::=
 match fmiDiscreteStates
@@ -469,12 +490,12 @@ case FMIDISCRETESTATES(fmiUnknownsList={}) then ""
 case FMIDISCRETESTATES(__) then
   <<
   <DiscreteStates>
-    <%ModelStructureUnknowns(fmiUnknownsList)%>
+    <%ModelStructureUnknowns(fmiUnknownsList, hasDependencies)%>
   </DiscreteStates>
   >>
 end ModelStructureDiscreteStates;
 
-template ModelStructureInitialUnknowns(FmiInitialUnknowns fmiInitialUnknowns)
+template ModelStructureInitialUnknowns(FmiInitialUnknowns fmiInitialUnknowns, Boolean hasDependencies)
  "Generates Model Structure InitialUnknowns."
 ::=
 match fmiInitialUnknowns
@@ -482,27 +503,27 @@ case FMIINITIALUNKNOWNS(fmiUnknownsList={}) then ""
 case FMIINITIALUNKNOWNS(__) then
   <<
   <InitialUnknowns>
-    <%ModelStructureUnknowns(fmiUnknownsList)%>
+    <%ModelStructureUnknowns(fmiUnknownsList, hasDependencies)%>
   </InitialUnknowns>
   >>
 end match
 end ModelStructureInitialUnknowns;
 
-template ModelStructureUnknowns(list<FmiUnknown> fmiUnknownsList)
+template ModelStructureUnknowns(list<FmiUnknown> fmiUnknownsList, Boolean hasDependencies)
  "Generates Model Structure Unknowns"
 ::=
   <<
-  <%fmiUnknownsList |> fmiUnknown => FmiUnknownAttributes(fmiUnknown) ;separator="\n"%>
+  <%fmiUnknownsList |> fmiUnknown => FmiUnknownAttributes(fmiUnknown, hasDependencies) ;separator="\n"%>
   >>
 end ModelStructureUnknowns;
 
-template FmiUnknownAttributes(FmiUnknown fmiUnknown)
+template FmiUnknownAttributes(FmiUnknown fmiUnknown, Boolean hasDependencies)
  "Generates Model Structure Unknown attributes"
 ::=
 match fmiUnknown
 case FMIUNKNOWN(__) then
   <<
-  <Unknown index="<%index%>"<%FmiUnknownDependencies(dependencies)%><%FmiUnknownDependenciesKind(dependenciesKind)%> />
+  <Unknown index="<%index%>"<%if hasDependencies then '<%FmiUnknownDependencies(dependencies)%><%FmiUnknownDependenciesKind(dependenciesKind)%>'%> />
   >>
 end FmiUnknownAttributes;
 

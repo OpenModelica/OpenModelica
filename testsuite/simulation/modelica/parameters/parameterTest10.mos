@@ -1,7 +1,6 @@
 // name:      parameterTest10
 // keywords:  parameter evaluation
 // status:    correct
-// cflags: -d=-newInst
 
 loadString("
 model parameterTest10
@@ -108,9 +107,9 @@ simulate(parameterTest10); getErrorString();
 // 21: a[3]:PARAM()  = 3  type: Integer [3]
 // 22: a[2]:PARAM()  = 2  type: Integer [3]
 // 23: a[1]:PARAM()  = 1  type: Integer [3]
-// 24: s:PARAM(final = true )  = p1  type: Integer
-// 25: p2:PARAM()  = 3  type: Integer
-// 26: p1:PARAM()  = p2  type: Integer
+// 24: s:PARAM(final = true )  = 3  type: Integer
+// 25: p2:PARAM(final = true )  = 3  type: Integer
+// 26: p1:PARAM(final = true )  = 3  type: Integer
 // 27: state2:PARAM(final = true )  = true  type: Boolean
 // 28: state:PARAM(final = true )  = true  type: Boolean
 //
@@ -121,9 +120,9 @@ simulate(parameterTest10); getErrorString();
 // START evaluating parameters:
 // ================================================================================
 // Number of parameters: 28
-// Number of parameters selected for evaluation: 6
+// Number of parameters selected for evaluation: 0
 // Selected parameters for evaluation:
-// 28,27,24,20,12,1
+//
 //
 // Adjacency Matrix (row: equation)
 // ========================================
@@ -151,9 +150,9 @@ simulate(parameterTest10); getErrorString();
 // 21:
 // 22:
 // 23:
-// 24: 26
+// 24:
 // 25:
-// 26: 25
+// 26:
 // 27:
 // 28:
 //
@@ -184,8 +183,8 @@ simulate(parameterTest10); getErrorString();
 // 22: 22
 // 23: 23
 // 24: 24
-// 25: 26 25
-// 26: 26 24
+// 25: 25
+// 26: 26
 // 27: 27
 // 28: 28
 //
@@ -194,28 +193,14 @@ simulate(parameterTest10); getErrorString();
 // ================================================================================
 //
 // All replacements:
-// Replacements: (8)
+// Replacements: (0)
 // ========================================
-// state -> true
-// state2 -> true
-// p2 -> 3
-// p1 -> 3
-// s -> 3
-// s2 -> 7
-// s3 -> 10
-// state3 -> true
+//
 //
 // Replacements that will be replaced in the DAE:
-// Replacements: (8)
+// Replacements: (0)
 // ========================================
-// state -> true
-// state2 -> true
-// p2 -> 3
-// p1 -> 3
-// s -> 3
-// s2 -> 7
-// s3 -> 10
-// state3 -> true
+//
 //
 // globalKnownVars (28)
 // ========================================
@@ -244,13 +229,13 @@ simulate(parameterTest10); getErrorString();
 // 23: a[1]:PARAM()  = 1  type: Integer [3]
 // 24: s:PARAM(final = true )  = 3  type: Integer
 // 25: p2:PARAM(final = true )  = 3  type: Integer
-// 26: p1:PARAM(final = true )  = p2  type: Integer
+// 26: p1:PARAM(final = true )  = 3  type: Integer
 // 27: state2:PARAM(final = true )  = true  type: Boolean
 // 28: state:PARAM(final = true )  = true  type: Boolean
 //
 //
 // mark: 1
-// markarr: 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,-1,1,1,1,1,1
+// markarr: -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
 //
 //
 // After sorting parameters:
@@ -258,8 +243,8 @@ simulate(parameterTest10); getErrorString();
 // Order:
 // 28
 // 27
-// 25
 // 26
+// 25
 // 24
 // 23
 // 22
@@ -293,8 +278,8 @@ simulate(parameterTest10); getErrorString();
 // ========================================
 // state -> true
 // state2 -> true
-// p2 -> 3
 // p1 -> 3
+// p2 -> 3
 // s -> 3
 // s2 -> 7
 // s3 -> 10
@@ -305,8 +290,8 @@ simulate(parameterTest10); getErrorString();
 // ========================================
 // state -> true
 // state2 -> true
-// p2 -> 3
 // p1 -> 3
+// p2 -> 3
 // s -> 3
 // s2 -> 7
 // s3 -> 10
@@ -345,7 +330,7 @@ simulate(parameterTest10); getErrorString();
 //
 //
 // mark: 1
-// markarr: 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,-1,1,1,1,1,1
+// markarr: -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
 //
 //
 // After replacing the evaluated parameters in variable bindings and start attributes:
@@ -355,8 +340,8 @@ simulate(parameterTest10); getErrorString();
 // ========================================
 // state -> true
 // state2 -> true
-// p2 -> 3
 // p1 -> 3
+// p2 -> 3
 // s -> 3
 // s2 -> 7
 // s3 -> 10
@@ -367,8 +352,8 @@ simulate(parameterTest10); getErrorString();
 // ========================================
 // state -> true
 // state2 -> true
-// p2 -> 3
 // p1 -> 3
+// p2 -> 3
 // s -> 3
 // s2 -> 7
 // s3 -> 10
@@ -407,7 +392,7 @@ simulate(parameterTest10); getErrorString();
 //
 //
 // mark: 1
-// markarr: 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,-1,1,1,1,1,1
+// markarr: -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
 //
 //
 // ########################################
@@ -479,7 +464,7 @@ simulate(parameterTest10); getErrorString();
 //
 // record SimulationResult
 //     resultFile = "parameterTest10_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'parameterTest10', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'parameterTest10', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

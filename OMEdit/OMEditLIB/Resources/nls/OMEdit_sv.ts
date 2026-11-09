@@ -4,557 +4,858 @@
 <context>
     <name>AboutOMEditDialog</name>
     <message>
-        <location filename="../../MainWindow.cpp" line="4962"/>
         <source>About %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Om %1</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4965"/>
-        <source>&lt;h2&gt;%1 - %2&lt;/h2&gt;&lt;b&gt;Connected to %3 %4 encryption support&lt;/b&gt;&lt;br /&gt;&lt;b&gt;Connected to %5&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Installation path &lt;b&gt;%6&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Copyright &lt;b&gt;Open Source Modelica Consortium (OSMC)&lt;/b&gt;.&lt;br /&gt;Distributed under OSMC-PL and AGPL3, see &lt;u&gt;&lt;a href=&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;.&lt;br /&gt;&lt;em&gt;Compiled without 3D animation support&lt;/em&gt;.</source>
+        <source>&lt;h2&gt;%1 - %2&lt;/h2&gt;&lt;b&gt;Connected to %3 %4 encryption support&lt;/b&gt;&lt;br /&gt;%5&lt;br /&gt;Compiled with &lt;b&gt;Qt %7&lt;/b&gt;, running with &lt;b&gt;Qt %8&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Installation path &lt;b&gt;%6&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Copyright &lt;b&gt;Open Source Modelica Consortium (OSMC)&lt;/b&gt;.&lt;br /&gt;Distributed under OSMC-PL and AGPL3, see &lt;u&gt;&lt;a href=&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;.&lt;br /&gt;&lt;em&gt;Compiled without 3D animation support&lt;/em&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>AbstractAnimationWindow</name>
     <message>
-        <location filename="../../Animation/AbstractAnimationWindow.cpp" line="195"/>
         <source>Time [s]:</source>
-        <translation type="unfinished"></translation>
+        <translation>Tid [s]:</translation>
     </message>
     <message>
-        <location filename="../../Animation/AbstractAnimationWindow.cpp" line="203"/>
         <source>Speed:</source>
-        <translation type="unfinished"></translation>
+        <translation>Hastighet:</translation>
     </message>
     <message>
-        <location filename="../../Animation/AbstractAnimationWindow.cpp" line="222"/>
         <source>Rotate Left</source>
-        <translation type="unfinished"></translation>
+        <translation>Rotera åt vänster</translation>
     </message>
     <message>
-        <location filename="../../Animation/AbstractAnimationWindow.cpp" line="226"/>
         <source>Rotate Right</source>
-        <translation type="unfinished"></translation>
+        <translation>Rotera åt höger</translation>
     </message>
     <message>
-        <location filename="../../Animation/AbstractAnimationWindow.cpp" line="223"/>
         <source>Rotate the camera left</source>
-        <translation type="unfinished"></translation>
+        <translation>Roterar kameran åt vänster</translation>
     </message>
     <message>
-        <location filename="../../Animation/AbstractAnimationWindow.cpp" line="227"/>
         <source>Rotate the camera right</source>
-        <translation type="unfinished"></translation>
+        <translation>Roterar kameran åt höger</translation>
     </message>
     <message>
-        <location filename="../../Animation/AbstractAnimationWindow.cpp" line="232"/>
         <source>Interactive Control</source>
-        <translation type="unfinished"></translation>
+        <translation>Interaktiv styrning</translation>
     </message>
     <message>
-        <location filename="../../Animation/AbstractAnimationWindow.cpp" line="233"/>
         <source>Open the interactive control panel</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppnar panelen för interaktiv styrning</translation>
     </message>
     <message>
-        <location filename="../../Animation/AbstractAnimationWindow.cpp" line="320"/>
         <source>Information about states could not be determined.</source>
-        <translation type="unfinished"></translation>
+        <translation>Information om tillstånd kunde inte bestämmas.</translation>
     </message>
     <message>
-        <location filename="../../Animation/AbstractAnimationWindow.cpp" line="326"/>
         <source>Interactive Control needs an FMU ME 2.0</source>
-        <translation type="unfinished"></translation>
+        <translation>Interaktiv styrning kräver en FMU ME 2.0</translation>
     </message>
     <message>
-        <location filename="../../Animation/AbstractAnimationWindow.cpp" line="391"/>
         <source>Unknown visualization type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Okänd visualiseringstyp.</translation>
     </message>
     <message>
-        <location filename="../../Animation/AbstractAnimationWindow.cpp" line="398"/>
         <source>Could not find the visual XML file %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte hitta den visuella XML-filen %1.</translation>
     </message>
     <message>
-        <location filename="../../Animation/AbstractAnimationWindow.cpp" line="411"/>
         <source>Could not init %1 %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte initiera %1 %2.</translation>
     </message>
-</context>
-<context>
-    <name>AddBusDialog</name>
     <message>
-        <location filename="../../OMS/BusDialog.cpp" line="518"/>
-        <source>Bus</source>
-        <translation type="unfinished"></translation>
+        <source>Could not initialize the 3D scene for %1:
+%2</source>
+        <translation>Kunde inte initiera 3D-scenen för %1:
+%2</translation>
     </message>
 </context>
 <context>
     <name>AddConnectorDialog</name>
     <message>
-        <location filename="../../OMS/ModelDialog.cpp" line="731"/>
-        <location filename="../../OMS/ModelDialog.cpp" line="741"/>
         <source>Connector</source>
-        <translation type="unfinished"></translation>
+        <translation>Koppling</translation>
     </message>
 </context>
 <context>
     <name>AddSubModelDialog</name>
     <message>
-        <location filename="../../OMS/ModelDialog.cpp" line="385"/>
-        <location filename="../../OMS/ModelDialog.cpp" line="405"/>
         <source>SubModel</source>
-        <translation type="unfinished"></translation>
+        <translation>Delmodell</translation>
     </message>
     <message>
-        <location filename="../../OMS/ModelDialog.cpp" line="396"/>
         <source>Unable to find the SubModel file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte hitta delmodellsfilen.</translation>
     </message>
     <message>
-        <location filename="../../OMS/ModelDialog.cpp" line="439"/>
         <source>Failed to add submodel. %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte lägga till delmodellen. %1</translation>
     </message>
 </context>
 <context>
     <name>AddSystemDialog</name>
     <message>
-        <location filename="../../OMS/ModelDialog.cpp" line="229"/>
-        <location filename="../../OMS/ModelDialog.cpp" line="246"/>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>System</translation>
     </message>
     <message>
-        <location filename="../../OMS/ModelDialog.cpp" line="237"/>
         <source>A model already have a system. Only one system is allowed inside a model.</source>
-        <translation type="unfinished"></translation>
+        <translation>Modellen har redan ett system. Endast ett system är tillåtet i en modell.</translation>
     </message>
 </context>
 <context>
     <name>AddSystemLibraryDialog</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3901"/>
         <source>Edit System Library</source>
-        <translation>Redigera Systembibliotek</translation>
+        <translation>Redigera systembibliotek</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3903"/>
         <source>Add System Library</source>
-        <translation>Lägg Till Systembibliotek</translation>
-    </message>
-</context>
-<context>
-    <name>AddTLMBusDialog</name>
-    <message>
-        <location filename="../../OMS/BusDialog.cpp" line="627"/>
-        <source>Domain:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../OMS/BusDialog.cpp" line="643"/>
-        <source>Dimension:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../OMS/BusDialog.cpp" line="651"/>
-        <source>Interpolation:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../OMS/BusDialog.cpp" line="820"/>
-        <source>TLM Bus</source>
-        <translation type="unfinished"></translation>
+        <translation>Lägg till systembibliotek</translation>
     </message>
 </context>
 <context>
     <name>AddUserLibraryDialog</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4057"/>
         <source>Add User Library</source>
-        <translation>Lägg Till Användarbibliotek</translation>
+        <translation>Lägg till användarbibliotek</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4136"/>
         <source>Please enter the file path.</source>
-        <translation>Var god ange filsökvägen.</translation>
+        <translation>Ange sökvägen till filen.</translation>
     </message>
 </context>
 <context>
     <name>ArchivedSimulationsWidget</name>
     <message>
-        <location filename="../../Simulation/ArchivedSimulationsWidget.cpp" line="89"/>
         <source>Model</source>
+        <translation>Modell</translation>
+    </message>
+</context>
+<context>
+    <name>ArrayParameterEditorDialog</name>
+    <message>
+        <source>%1 - %2 %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rows:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Columns:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expression:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete 1 row</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete %1 rows</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete 1 column</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete %1 columns</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>AttachToProcessDialog</name>
     <message>
-        <location filename="../../Debugger/Attach/AttachToProcessDialog.cpp" line="62"/>
         <source>Attach to Process ID:</source>
-        <translation>Anslut till Process-ID:</translation>
+        <translation>Anslut till process-ID:</translation>
     </message>
     <message>
-        <location filename="../../Debugger/Attach/AttachToProcessDialog.cpp" line="66"/>
         <source>Filter Processes</source>
-        <translation>Filtrera Processer</translation>
+        <translation>Filtrera processer</translation>
     </message>
 </context>
 <context>
     <name>BaseEditor</name>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2169"/>
         <source>Shows the Find/Replace window</source>
-        <translation>Visa Sök/Ersätt-fönstret</translation>
+        <translation>Visa sök/ersätt-fönstret</translation>
     </message>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2173"/>
         <source>Clear Find/Replace Texts</source>
-        <translation>Töm Sök/Ersätt-strängar</translation>
+        <translation>Töm sök/ersätt-strängar</translation>
     </message>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2174"/>
         <source>Clears the Find/Replace text items</source>
-        <translation>Tömmer Sök/Ersätt-strängar</translation>
+        <translation>Tömmer sök/ersätt-strängar</translation>
     </message>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2177"/>
         <source>Go to Line</source>
         <translation>Gå till rad</translation>
     </message>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2178"/>
         <source>Shows the Go to Line Number window</source>
-        <translation>Visar Gå-till-rad-fönstret</translation>
+        <translation>Visar gå-till-rad-fönstret</translation>
     </message>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2182"/>
         <source>Show Tabs and Spaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Visa tabbar och blanksteg</translation>
     </message>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2183"/>
         <source>Shows the Tabs and Spaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Visar tabbar och blanksteg</translation>
     </message>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2187"/>
         <source>Toggle Breakpoint</source>
-        <translation>Växla Brytpunkt</translation>
+        <translation>Växla brytpunkt</translation>
     </message>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2215"/>
         <source>Toggle Comment Selection</source>
-        <translation>Växla Kommenteringsval</translation>
+        <translation>Växla kommenteringsval</translation>
     </message>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2226"/>
         <source>Fold All</source>
-        <translation type="unfinished"></translation>
+        <translation>Vik ihop alla</translation>
     </message>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2230"/>
         <source>Unfold All</source>
-        <translation type="unfinished"></translation>
+        <translation>Vik ut alla</translation>
     </message>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2261"/>
         <source>Undo</source>
-        <translation type="unfinished"></translation>
+        <translation>Ångra</translation>
     </message>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2265"/>
         <source>Redo</source>
-        <translation type="unfinished"></translation>
+        <translation>Gör om</translation>
     </message>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2284"/>
         <source>Cu&amp;t</source>
-        <translation type="unfinished"></translation>
+        <translation>Klipp &amp;ut</translation>
     </message>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2291"/>
         <source>&amp;Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Kopiera</translation>
     </message>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2298"/>
         <source>&amp;Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>Klistra &amp;in</translation>
     </message>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2307"/>
         <source>Select All</source>
-        <translation>Välj Alla</translation>
+        <translation>Välj alla</translation>
     </message>
 </context>
 <context>
     <name>BreakpointDialog</name>
     <message>
-        <location filename="../../Debugger/Breakpoints/BreakpointDialog.cpp" line="61"/>
         <source>%1 Breakpoint</source>
-        <translation>%1 Brytpunkt</translation>
+        <translation>%1 brytpunkt</translation>
     </message>
     <message>
-        <location filename="../../Debugger/Breakpoints/BreakpointDialog.cpp" line="66"/>
         <source>File Name:</source>
         <translation>Filnamn:</translation>
     </message>
     <message>
-        <location filename="../../Debugger/Breakpoints/BreakpointDialog.cpp" line="73"/>
         <source>Browse Classes</source>
-        <translation>Bläddra Bland Klasser</translation>
+        <translation>Bläddra bland klasser</translation>
     </message>
     <message>
-        <location filename="../../Debugger/Breakpoints/BreakpointDialog.cpp" line="76"/>
         <source>File System</source>
         <translation>Filsystem</translation>
     </message>
     <message>
-        <location filename="../../Debugger/Breakpoints/BreakpointDialog.cpp" line="81"/>
         <source>Line Number:</source>
         <translation>Radnummer:</translation>
     </message>
     <message>
-        <location filename="../../Debugger/Breakpoints/BreakpointDialog.cpp" line="84"/>
         <source>Enabled:</source>
         <translation>Aktiverad:</translation>
     </message>
     <message>
-        <location filename="../../Debugger/Breakpoints/BreakpointDialog.cpp" line="87"/>
         <source>Ignore Count:</source>
-        <translation>Ignorera Antal:</translation>
+        <translation>Ignorera antal:</translation>
     </message>
     <message>
-        <location filename="../../Debugger/Breakpoints/BreakpointDialog.cpp" line="93"/>
         <source>* Use &quot;%1&quot; to set condition on simulation time.</source>
         <translation>* Använd &quot;%1&quot; för att ange villkor på simuleringstiden.</translation>
     </message>
     <message>
-        <location filename="../../Debugger/Breakpoints/BreakpointDialog.cpp" line="141"/>
         <source>Select Class</source>
-        <translation>Välj Klass</translation>
+        <translation>Välj klass</translation>
     </message>
 </context>
 <context>
     <name>BreakpointsTreeView</name>
     <message>
-        <location filename="../../Debugger/Breakpoints/BreakpointsWidget.cpp" line="98"/>
         <source>Go to File</source>
-        <translation>Gå till Fil</translation>
+        <translation>Gå till fil</translation>
     </message>
     <message>
-        <location filename="../../Debugger/Breakpoints/BreakpointsWidget.cpp" line="99"/>
         <source>Goto file location</source>
         <translation>Gå till filplats</translation>
     </message>
     <message>
-        <location filename="../../Debugger/Breakpoints/BreakpointsWidget.cpp" line="103"/>
         <source>Adds a breakpoint</source>
         <translation>Lägger till en brytpunkt</translation>
     </message>
     <message>
-        <location filename="../../Debugger/Breakpoints/BreakpointsWidget.cpp" line="107"/>
         <source>Edits a breakpoint</source>
         <translation>Redigerar en brytpunkt</translation>
     </message>
     <message>
-        <location filename="../../Debugger/Breakpoints/BreakpointsWidget.cpp" line="111"/>
         <source>Deletes a breakpoint</source>
         <translation>Tar bort en brytpunkt</translation>
     </message>
     <message>
-        <location filename="../../Debugger/Breakpoints/BreakpointsWidget.cpp" line="114"/>
         <source>Delete All</source>
-        <translation>Ta Bort Alla</translation>
+        <translation>Ta bort alla</translation>
     </message>
     <message>
-        <location filename="../../Debugger/Breakpoints/BreakpointsWidget.cpp" line="115"/>
         <source>Deletes all the breakpoints</source>
         <translation>Tar bort alla brytpunkter</translation>
     </message>
 </context>
 <context>
-    <name>BusConnectionDialog</name>
-    <message>
-        <location filename="../../OMS/BusDialog.cpp" line="1523"/>
-        <source>Note: Yellow marked rows are existing connections.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>CRMLPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6736"/>
         <source>Compiler Jar:</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompilatorns jar-fil:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6742"/>
         <source>Compiler Arguments:</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompilatorargument:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6745"/>
         <source>Processor:</source>
-        <translation type="unfinished"></translation>
+        <translation>Processor:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6751"/>
         <source>Resets to default Processor path</source>
-        <translation type="unfinished"></translation>
+        <translation>Återställer till standardsökvägen för processorn</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6754"/>
         <source>Modelica Library Paths:</source>
-        <translation type="unfinished"></translation>
+        <translation>Sökvägar till Modelicabibliotek:</translation>
     </message>
 </context>
 <context>
     <name>CRMLTranslateAsDialog</name>
     <message>
-        <location filename="../../CRML/CRMLTranslateAsDialog.cpp" line="64"/>
         <source>Select the output directory:</source>
-        <translation type="unfinished"></translation>
+        <translation>Välj utdatakatalog:</translation>
     </message>
     <message>
-        <location filename="../../CRML/CRMLTranslateAsDialog.cpp" line="71"/>
         <source>Insert in class - within (optional):</source>
-        <translation type="unfinished"></translation>
+        <translation>Infoga i klass - within (frivillig):</translation>
     </message>
     <message>
-        <location filename="../../CRML/CRMLTranslateAsDialog.cpp" line="129"/>
         <source>Output directory does not exist.</source>
-        <translation type="unfinished"></translation>
+        <translation>Utdatakatalogen finns inte.</translation>
     </message>
 </context>
 <context>
     <name>CRMLTranslatorOutputWidget</name>
     <message>
-        <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="57"/>
         <source>Cancel</source>
-        <translation type="unfinished">Avbryt</translation>
+        <translation>Avbryt</translation>
     </message>
     <message>
-        <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="245"/>
         <source>Translation of the CRML file %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Översättningen av CRML-filen %1 avbröts.</translation>
     </message>
     <message>
-        <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="251"/>
         <source>Testsuite run in directory %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Körningen av testsviten i katalogen %1 avbröts.</translation>
     </message>
     <message>
-        <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="256"/>
         <source>Translation of the CRML file %1 with output directory %2 and within %3 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Översättningen av CRML-filen %1 med utdatakatalogen %2 och within %3 avbröts.</translation>
     </message>
     <message>
-        <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="259"/>
         <source>Translation of the CRML file %1 with output directory %2 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Översättningen av CRML-filen %1 med utdatakatalogen %2 avbröts.</translation>
     </message>
     <message>
-        <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="262"/>
         <source>Translation of the CRML file %1 with within %2 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Översättningen av CRML-filen %1 med within %2 avbröts.</translation>
     </message>
     <message>
-        <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="286"/>
         <source>CRML translator is running. Please wait for a while.</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML-översättaren körs. Vänta en stund.</translation>
     </message>
     <message>
-        <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="341"/>
         <source>Translation of the CRML file %1 failed. Exit code %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Översättningen av CRML-filen %1 misslyckades. Avslutningskod %2</translation>
     </message>
     <message>
-        <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="343"/>
         <source>Translation of CRML file %1 finished. Now loading specified CRML Modelica libraries...</source>
-        <translation type="unfinished"></translation>
+        <translation>Översättningen av CRML-filen %1 är klar. Laddar nu in de angivna Modelicabiblioteken för CRML...</translation>
     </message>
     <message>
-        <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="345"/>
         <source>Testsuite run in directory %1 failed. Exit code %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Körningen av testsviten i katalogen %1 misslyckades. Avslutningskod %2.</translation>
     </message>
     <message>
-        <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="346"/>
         <source>Testsuite run in directory %1 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>Körningen av testsviten i katalogen %1 är klar.</translation>
     </message>
     <message>
-        <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="352"/>
         <source>Translation of the CRML file %1 with output directory %2 and within %3 failed. Exit code %4.</source>
-        <translation type="unfinished"></translation>
+        <translation>Översättningen av CRML-filen %1 med utdatakatalogen %2 och within %3 misslyckades. Avslutningskod %4.</translation>
     </message>
     <message>
-        <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="355"/>
         <source>Translation of CRML file %1 with output directory %2 and within %3 finished. Now loading specified CRML Modelica libraries...</source>
-        <translation type="unfinished"></translation>
+        <translation>Översättningen av CRML-filen %1 med utdatakatalogen %2 och within %3 är klar. Laddar nu in de angivna Modelicabiblioteken för CRML...</translation>
     </message>
     <message>
-        <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="358"/>
         <source>Translation of the CRML file %1 with output directory %2 failed. Exit code %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>Översättningen av CRML-filen %1 med utdatakatalogen %2 misslyckades. Avslutningskod %3.</translation>
     </message>
     <message>
-        <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="360"/>
         <source>Translation of CRML file %1 with output directory %2 finished. Now loading specified CRML Modelica libraries...</source>
-        <translation type="unfinished"></translation>
+        <translation>Översättningen av CRML-filen %1 med utdatakatalogen %2 är klar. Laddar nu in de angivna Modelicabiblioteken för CRML...</translation>
     </message>
     <message>
-        <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="363"/>
         <source>Translation of the CRML file %1 with within %2 failed. Exit code %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>Översättningen av CRML-filen %1 med within %2 misslyckades. Avslutningskod %3.</translation>
     </message>
     <message>
-        <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="365"/>
         <source>Translation of CRML file %1 with within %2 finished. Now loading specified CRML Modelica libraries...</source>
-        <translation type="unfinished"></translation>
+        <translation>Översättningen av CRML-filen %1 med within %2 är klar. Laddar nu in de angivna Modelicabiblioteken för CRML...</translation>
+    </message>
+    <message>
+        <source>The CRML testsuite needs the CRML compiler, which needs Java, so it does not run in the web version.</source>
+        <translation>CRML-testsviten behöver CRML-kompilatorn, som behöver Java, så den kan inte köras i webbversionen.</translation>
+    </message>
+    <message>
+        <source>Translating %1 with crml.js
+</source>
+        <translation>Översätter %1 med crml.js
+</translation>
+    </message>
+    <message>
+        <source>Output Modelica file: %1
+</source>
+        <translation>Utdatafil för Modelica: %1
+</translation>
+    </message>
+    <message>
+        <source>Could not write %1: %2</source>
+        <translation>Kunde inte skriva %1: %2</translation>
+    </message>
+    <message>
+        <source>Translation of the CRML file %1 failed.</source>
+        <translation>Översättningen av CRML-filen %1 misslyckades.</translation>
+    </message>
+</context>
+<context>
+    <name>ClassDiagramWidget</name>
+    <message>
+        <source>Depth:</source>
+        <translation>Djup:</translation>
+    </message>
+    <message>
+        <source>How many levels of used classes to show</source>
+        <translation>Hur många nivåer av använda klasser som ska visas</translation>
+    </message>
+    <message>
+        <source>Show modifiers</source>
+        <translation>Visa modifierare</translation>
+    </message>
+    <message>
+        <source>Save the diagram as a draw.io file</source>
+        <translation>Spara diagrammet som en draw.io-fil</translation>
+    </message>
+    <message>
+        <source>Instances below classes</source>
+        <translation>Instanser under klasser</translation>
+    </message>
+    <message>
+        <source>Hierarchical</source>
+        <translation>Hierarkisk</translation>
+    </message>
+    <message>
+        <source>Class on top</source>
+        <translation>Klassen överst</translation>
+    </message>
+    <message>
+        <source>Base classes on top</source>
+        <translation>Basklasser överst</translation>
+    </message>
+    <message>
+        <source>Rows by inheritance</source>
+        <translation>Rader efter arv</translation>
+    </message>
+    <message>
+        <source>How the classes are laid out</source>
+        <translation>Hur klasserna placeras</translation>
+    </message>
+    <message>
+        <source>Layout:</source>
+        <translation>Layout:</translation>
+    </message>
+    <message>
+        <source>The CRML file &lt;b&gt;%1&lt;/b&gt; is empty or can&apos;t be read.</source>
+        <translation>CRML-filen &lt;b&gt;%1&lt;/b&gt; är tom eller kan inte läsas.</translation>
+    </message>
+    <message>
+        <source>No class diagram of &lt;b&gt;%1&lt;/b&gt;, see the Messages Browser.</source>
+        <translation>Inget klassdiagram för &lt;b&gt;%1&lt;/b&gt;, se fönstret Meddelanden.</translation>
     </message>
 </context>
 <context>
     <name>CleanDialog</name>
     <message>
-        <location filename="../../Git/CleanDialog.cpp" line="29"/>
         <source>Clean Repository</source>
-        <translation type="unfinished"></translation>
+        <translation>Rensa repository</translation>
     </message>
     <message>
-        <location filename="../../Git/CleanDialog.cpp" line="33"/>
         <source>Select All</source>
-        <translation>Välj Alla</translation>
+        <translation>Välj alla</translation>
     </message>
     <message>
-        <location filename="../../Git/CleanDialog.cpp" line="35"/>
         <source>Name</source>
         <translation>Namn</translation>
     </message>
     <message>
-        <location filename="../../Git/CleanDialog.cpp" line="44"/>
         <source>Clean</source>
-        <translation type="unfinished"></translation>
+        <translation>Rensa</translation>
+    </message>
+</context>
+<context>
+    <name>Cloud</name>
+    <message>
+        <source>Google Drive</source>
+        <translation>Google Drive</translation>
+    </message>
+    <message>
+        <source>OneDrive</source>
+        <translation>OneDrive</translation>
+    </message>
+</context>
+<context>
+    <name>CloudAccountManager</name>
+    <message>
+        <source>%1 has not been set up for this installation. Add a client ID on the Cloud Storage page of the options dialog.</source>
+        <translation>%1 har inte konfigurerats för den här installationen. Lägg till ett klient-ID på sidan Molnlagring i alternativdialogen.</translation>
+    </message>
+    <message>
+        <source>The service did not say which account signed in.</source>
+        <translation>Tjänsten angav inte vilket konto som loggade in.</translation>
+    </message>
+</context>
+<context>
+    <name>CloudBrowserDialog</name>
+    <message>
+        <source>%1 - Open from Cloud Storage</source>
+        <translation>%1 - Öppna från molnlagring</translation>
+    </message>
+    <message>
+        <source>%1 - Save to Cloud Storage</source>
+        <translation>%1 - Spara i molnlagring</translation>
+    </message>
+    <message>
+        <source>Folder</source>
+        <translation>Mapp</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation>Öppna</translation>
+    </message>
+    <message>
+        <source>Account:</source>
+        <translation>Konto:</translation>
+    </message>
+    <message>
+        <source>Choose a folder or a file to open:</source>
+        <translation>Välj en mapp eller en fil att öppna:</translation>
+    </message>
+    <message>
+        <source>Choose the folder to save into (right-click for a new folder):</source>
+        <translation>Välj mappen att spara i (högerklicka för en ny mapp):</translation>
+    </message>
+    <message>
+        <source>No cloud accounts yet. Add one on the Cloud Storage page of the options dialog.</source>
+        <translation>Inga molnkonton ännu. Lägg till ett på sidan Molnlagring i alternativdialogen.</translation>
+    </message>
+    <message>
+        <source>Opening %1...</source>
+        <translation>Öppnar %1...</translation>
+    </message>
+    <message>
+        <source>Could not open the cloud folder: %1</source>
+        <translation>Kunde inte öppna molnmappen: %1</translation>
+    </message>
+    <message>
+        <source>Listing %1...</source>
+        <translation>Listar %1...</translation>
+    </message>
+    <message>
+        <source>Could not list the folder: %1</source>
+        <translation>Kunde inte lista mappen: %1</translation>
+    </message>
+    <message>
+        <source>New Folder...</source>
+        <translation>Ny mapp...</translation>
+    </message>
+    <message>
+        <source>New Folder</source>
+        <translation>Ny mapp</translation>
+    </message>
+    <message>
+        <source>Folder name:</source>
+        <translation>Mappnamn:</translation>
+    </message>
+    <message>
+        <source>Creating %1...</source>
+        <translation>Skapar %1...</translation>
+    </message>
+    <message>
+        <source>Could not create the folder: %1</source>
+        <translation>Kunde inte skapa mappen: %1</translation>
+    </message>
+</context>
+<context>
+    <name>CloudConflictDialog</name>
+    <message>
+        <source>Changed here and in the cloud</source>
+        <translation>Ändrad här och i molnet</translation>
+    </message>
+    <message>
+        <source>Created here and in the cloud</source>
+        <translation>Skapad här och i molnet</translation>
+    </message>
+    <message>
+        <source>Deleted here, changed in the cloud</source>
+        <translation>Borttagen här, ändrad i molnet</translation>
+    </message>
+    <message>
+        <source>Changed here, deleted in the cloud</source>
+        <translation>Ändrad här, borttagen i molnet</translation>
+    </message>
+    <message>
+        <source>Delete it in the cloud too</source>
+        <translation>Ta bort den i molnet också</translation>
+    </message>
+    <message>
+        <source>Keep my version</source>
+        <translation>Behåll min version</translation>
+    </message>
+    <message>
+        <source>Delete my copy too</source>
+        <translation>Ta bort min kopia också</translation>
+    </message>
+    <message>
+        <source>Take the cloud version</source>
+        <translation>Använd molnversionen</translation>
+    </message>
+    <message>
+        <source>Keep both</source>
+        <translation>Behåll båda</translation>
+    </message>
+    <message>
+        <source>Synchronisation Conflicts</source>
+        <translation>Synkroniseringskonflikter</translation>
+    </message>
+    <message>
+        <source>These files in &lt;b&gt;%1&lt;/b&gt; changed both here and in the cloud since the last synchronisation. Keeping both writes the cloud version to the original name and yours beside it.</source>
+        <translation>De här filerna i &lt;b&gt;%1&lt;/b&gt; har ändrats både här och i molnet sedan den senaste synkroniseringen. Om du behåller båda skrivs molnversionen till det ursprungliga namnet och din version bredvid den.</translation>
+    </message>
+    <message>
+        <source>File</source>
+        <translation>Fil</translation>
+    </message>
+    <message>
+        <source>What happened</source>
+        <translation>Vad som hänt</translation>
+    </message>
+    <message>
+        <source>What to do</source>
+        <translation>Vad som ska göras</translation>
+    </message>
+    <message>
+        <source>Keep Mine For All</source>
+        <translation>Behåll mina för alla</translation>
+    </message>
+    <message>
+        <source>Take Cloud For All</source>
+        <translation>Använd molnets för alla</translation>
+    </message>
+    <message>
+        <source>Keep Both For All</source>
+        <translation>Behåll båda för alla</translation>
+    </message>
+    <message>
+        <source>Synchronise</source>
+        <translation>Synkronisera</translation>
+    </message>
+</context>
+<context>
+    <name>CloudProvider</name>
+    <message>
+        <source>Cancelled.</source>
+        <translation>Avbrutet.</translation>
+    </message>
+</context>
+<context>
+    <name>CloudReply</name>
+    <message>
+        <source>Cancelled.</source>
+        <translation>Avbrutet.</translation>
+    </message>
+</context>
+<context>
+    <name>CloudStoragePage</name>
+    <message>
+        <source>Accounts</source>
+        <translation>Konton</translation>
+    </message>
+    <message>
+        <source>Add Google Drive Account</source>
+        <translation>Lägg till Google Drive-konto</translation>
+    </message>
+    <message>
+        <source>Add OneDrive Account</source>
+        <translation>Lägg till OneDrive-konto</translation>
+    </message>
+    <message>
+        <source>Sign Out</source>
+        <translation>Logga ut</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Google Drive&lt;/b&gt; shows only folders OMEdit created itself, inside an OpenModelica folder in your Drive. To use a library that is already in your Drive, download it as a .zip, open it in OMEdit, and save it to a cloud folder from there.</source>
+        <translation>&lt;b&gt;Google Drive&lt;/b&gt; visar bara mappar som OMEdit själv har skapat, i en OpenModelica-mapp i din Drive. Om du vill använda ett bibliotek som redan finns i din Drive hämtar du det som en .zip-fil, öppnar det i OMEdit och sparar det i en molnmapp därifrån.</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;OneDrive&lt;/b&gt; can open any folder, including one you uploaded or that the OneDrive desktop client synchronised.</source>
+        <translation>&lt;b&gt;OneDrive&lt;/b&gt; kan öppna vilken mapp som helst, även en som du har laddat upp eller som OneDrive-skrivbordsklienten har synkroniserat.</translation>
+    </message>
+    <message>
+        <source>Advanced: OAuth Applications</source>
+        <translation>Avancerat: OAuth-appar</translation>
+    </message>
+    <message>
+        <source>Normally supplied by the deployment in cloud_config.json. Fill these in to use your own registered applications instead.</source>
+        <translation>Anges normalt av driftsättningen i cloud_config.json. Fyll i dessa för att använda dina egna registrerade appar i stället.</translation>
+    </message>
+    <message>
+        <source>Required by Google even though this is a public client: its token endpoint rejects a PKCE exchange without one. It is not confidential - the web build serves it to every visitor. The registered redirect URI and origin are what protect the application.</source>
+        <translation>Krävs av Google trots att detta är en publik klient: dess token-slutpunkt avvisar ett PKCE-utbyte utan en hemlighet. Den är inte konfidentiell - webbversionen skickar den till varje besökare. Det är den registrerade omdirigerings-URI:n och ursprunget som skyddar appen.</translation>
+    </message>
+    <message>
+        <source>Request access to the whole Google Drive</source>
+        <translation>Begär åtkomst till hela Google Drive</translation>
+    </message>
+    <message>
+        <source>Off, OMEdit sees only what it created. On, it asks for the whole Drive - a restricted scope, which requires your own client to pass Google&apos;s app verification.</source>
+        <translation>Av: OMEdit ser bara det som det själv har skapat. På: OMEdit begär åtkomst till hela Drive - ett begränsat omfång, som kräver att din egen klient klarar Googles appverifiering.</translation>
+    </message>
+    <message>
+        <source>Google Drive client ID:</source>
+        <translation>Klient-ID för Google Drive:</translation>
+    </message>
+    <message>
+        <source>Google Drive client secret:</source>
+        <translation>Klienthemlighet för Google Drive:</translation>
+    </message>
+    <message>
+        <source>OneDrive client ID:</source>
+        <translation>Klient-ID för OneDrive:</translation>
+    </message>
+    <message>
+        <source>Mounted Folders</source>
+        <translation>Molnmappar</translation>
+    </message>
+    <message>
+        <source>A ticked folder is brought up to date after every save. Untick it to synchronise only when asked.</source>
+        <translation>En markerad mapp uppdateras efter varje sparning. Avmarkera den för att bara synkronisera när du ber om det.</translation>
+    </message>
+    <message>
+        <source>Forget Folder</source>
+        <translation>Glöm mappen</translation>
+    </message>
+    <message>
+        <source>Forget %1?
+
+The local copy and its synchronisation state are removed. Nothing in the cloud is touched, and the folder can be opened again at any time.</source>
+        <translation>Glöm %1?
+
+Den lokala kopian och dess synkroniseringsstatus tas bort. Ingenting i molnet påverkas, och mappen kan öppnas igen när som helst.</translation>
+    </message>
+    <message>
+        <source> (signed out)</source>
+        <translation> (utloggad)</translation>
+    </message>
+    <message>
+        <source>Signing in to Google Drive...</source>
+        <translation>Loggar in på Google Drive...</translation>
+    </message>
+    <message>
+        <source>Signing in to OneDrive...</source>
+        <translation>Loggar in på OneDrive...</translation>
+    </message>
+    <message>
+        <source>Signed out.</source>
+        <translation>Utloggad.</translation>
+    </message>
+    <message>
+        <source>Signed in as %1.</source>
+        <translation>Inloggad som %1.</translation>
+    </message>
+    <message>
+        <source>Signed in.</source>
+        <translation>Inloggad.</translation>
+    </message>
+    <message>
+        <source>Sign-in failed: %1</source>
+        <translation>Inloggningen misslyckades: %1</translation>
+    </message>
+</context>
+<context>
+    <name>CloudSyncEngine</name>
+    <message>
+        <source>Looking at %1...</source>
+        <translation>Granskar %1...</translation>
+    </message>
+    <message>
+        <source>%1: the folder holds more than one entry with this name</source>
+        <translation>%1: mappen innehåller mer än en post med det här namnet</translation>
+    </message>
+    <message>
+        <source>%1: %2</source>
+        <translation>%1: %2</translation>
+    </message>
+    <message>
+        <source>Cancelled.</source>
+        <translation>Avbrutet.</translation>
+    </message>
+    <message>
+        <source>Synchronisation cancelled; nothing was changed.</source>
+        <translation>Synkroniseringen avbröts; ingenting ändrades.</translation>
+    </message>
+    <message>
+        <source>Could not write %1.</source>
+        <translation>Kunde inte skriva %1.</translation>
     </message>
 </context>
 <context>
     <name>CodeColorsWidget</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3381"/>
         <source>Item Color:</source>
         <translation>Objektfärg:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3386"/>
         <source>Items:</source>
         <translation>Objekt:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3395"/>
         <source>Preview:</source>
         <translation>Förhandsgranskning:</translation>
     </message>
@@ -562,323 +863,270 @@
 <context>
     <name>CommitChangesDialog</name>
     <message>
-        <location filename="../../Git/CommitChangesDialog.cpp" line="32"/>
         <source>Commit</source>
-        <translation type="unfinished"></translation>
+        <translation>Commit</translation>
     </message>
     <message>
-        <location filename="../../Git/CommitChangesDialog.cpp" line="37"/>
         <source>Repository:</source>
-        <translation type="unfinished"></translation>
+        <translation>Repository:</translation>
     </message>
     <message>
-        <location filename="../../Git/CommitChangesDialog.cpp" line="42"/>
         <source>Branch:</source>
-        <translation type="unfinished"></translation>
+        <translation>Branch:</translation>
     </message>
     <message>
-        <location filename="../../Git/CommitChangesDialog.cpp" line="46"/>
         <source>Repository Information:</source>
-        <translation type="unfinished"></translation>
+        <translation>Information om repository:</translation>
     </message>
     <message>
-        <location filename="../../Git/CommitChangesDialog.cpp" line="54"/>
         <source>Commit Information:</source>
-        <translation type="unfinished"></translation>
+        <translation>Information om commit:</translation>
     </message>
     <message>
-        <location filename="../../Git/CommitChangesDialog.cpp" line="55"/>
         <source>Author:</source>
-        <translation type="unfinished"></translation>
+        <translation>Författare:</translation>
     </message>
     <message>
-        <location filename="../../Git/CommitChangesDialog.cpp" line="58"/>
         <source>Email:</source>
-        <translation type="unfinished"></translation>
+        <translation>E-post:</translation>
     </message>
     <message>
-        <location filename="../../Git/CommitChangesDialog.cpp" line="68"/>
         <source>Description:</source>
-        <translation type="unfinished"></translation>
+        <translation>Beskrivning:</translation>
     </message>
     <message>
-        <location filename="../../Git/CommitChangesDialog.cpp" line="74"/>
         <source>Select All</source>
-        <translation>Välj Alla</translation>
+        <translation>Välj alla</translation>
     </message>
     <message>
-        <location filename="../../Git/CommitChangesDialog.cpp" line="77"/>
         <source>Status</source>
-        <translation type="unfinished"></translation>
+        <translation>Status</translation>
     </message>
     <message>
-        <location filename="../../Git/CommitChangesDialog.cpp" line="77"/>
         <source>File</source>
         <translation>Fil</translation>
     </message>
     <message>
-        <location filename="../../Git/CommitChangesDialog.cpp" line="87"/>
         <source>Files:</source>
-        <translation type="unfinished"></translation>
+        <translation>Filer:</translation>
     </message>
     <message>
-        <location filename="../../Git/CommitChangesDialog.cpp" line="93"/>
         <source>commit</source>
-        <translation type="unfinished"></translation>
+        <translation>Committa</translation>
     </message>
     <message>
-        <location filename="../../Git/CommitChangesDialog.cpp" line="256"/>
         <source>Commit Message </source>
-        <translation type="unfinished"></translation>
+        <translation>Commit-meddelande </translation>
     </message>
 </context>
 <context>
     <name>ComponentNameDialog</name>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="2436"/>
         <source>%1 - Enter Component Name</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Ange komponentnamn</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="2438"/>
         <source>Please choose a meaningful name for this component, to improve the readability of simulation results.</source>
-        <translation type="unfinished"></translation>
+        <translation>Välj ett meningsfullt namn för komponenten, så blir simuleringsresultaten lättare att läsa.</translation>
     </message>
 </context>
 <context>
     <name>ConvertClassUsesAnnotationDialog</name>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1444"/>
         <source>To</source>
-        <translation type="unfinished"></translation>
+        <translation>Till</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1444"/>
         <source>From</source>
-        <translation type="unfinished"></translation>
+        <translation>Från</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1475"/>
         <source>&lt;b&gt;Running conversion(s). Please wait.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Kör konvertering(ar). Vänta.&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1492"/>
         <source>No new versions of the used libraries are found or there is no uses annotation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Inga nya versioner av de använda biblioteken hittades, eller så finns det ingen uses-annotering.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1494"/>
         <source>Following libraries from the uses annotation have new versions available.</source>
-        <translation type="unfinished"></translation>
+        <translation>Följande bibliotek i uses-annoteringen har nya versioner.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1497"/>
         <source>Note: If the library that you want to convert to is missing then please install it using File-&gt;Manage Libraries-&gt;Install Library.</source>
-        <translation type="unfinished"></translation>
+        <translation>Obs! Om biblioteket som du vill konvertera till saknas installerar du det med Arkiv-&gt;Hantera bibliotek-&gt;Installera bibliotek.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1498"/>
         <source>The converted class and used library might be reloaded.</source>
-        <translation type="unfinished"></translation>
+        <translation>Den konverterade klassen och det använda biblioteket kan komma att laddas om.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1499"/>
         <source>This operation can take sometime depending on the conversions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Den här åtgärden kan ta en stund beroende på konverteringarna.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1500"/>
         <source>Backup your work before starting the conversion.</source>
-        <translation type="unfinished"></translation>
+        <translation>Säkerhetskopiera ditt arbete innan du startar konverteringen.</translation>
     </message>
 </context>
 <context>
     <name>CrashReportDialog</name>
     <message>
-        <location filename="../../CrashReport/CrashReportDialog.cpp" line="119"/>
         <source>Send Report</source>
-        <translation>Skicka Rapport</translation>
+        <translation>Skicka rapport</translation>
     </message>
     <message>
-        <location filename="../../CrashReport/CrashReportDialog.cpp" line="69"/>
         <source>Your Email (in case you want us to contact you regarding this issue):</source>
         <translation>Din e-post (om du vill att vi ska kontakta dig angående detta problem):</translation>
     </message>
     <message>
-        <location filename="../../CrashReport/CrashReportDialog.cpp" line="72"/>
         <source>Describe the issue in few words:</source>
         <translation>Beskriv problemet med några ord:</translation>
     </message>
     <message>
-        <location filename="../../CrashReport/CrashReportDialog.cpp" line="90"/>
         <source>Following selected files will be sent along with the report,</source>
-        <translation type="unfinished"></translation>
+        <translation>Följande valda filer skickas med rapporten:</translation>
     </message>
     <message>
-        <location filename="../../CrashReport/CrashReportDialog.cpp" line="129"/>
         <source>&lt;b&gt;Sending crash report. Please wait.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Skickar kraschrapporten. Vänta.&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../../CrashReport/CrashReportDialog.cpp" line="138"/>
         <source>The program crashed unexpectedly. Please report the issue.</source>
-        <translation type="unfinished"></translation>
+        <translation>Programmet kraschade oväntat. Rapportera problemet.</translation>
     </message>
     <message>
-        <location filename="../../CrashReport/CrashReportDialog.cpp" line="200"/>
         <source>Following error has occurred while retrieving detailed gdb backtrace,
 
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Följande fel inträffade när den detaljerade stackspårningen från gdb hämtades:
+
+%1</translation>
     </message>
     <message>
-        <location filename="../../CrashReport/CrashReportDialog.cpp" line="201"/>
         <source>Try again</source>
-        <translation type="unfinished"></translation>
+        <translation>Försök igen</translation>
     </message>
     <message>
-        <location filename="../../CrashReport/CrashReportDialog.cpp" line="202"/>
         <source>Send brief backtrace</source>
-        <translation type="unfinished"></translation>
+        <translation>Skicka kort stackspårning</translation>
     </message>
     <message>
-        <location filename="../../CrashReport/CrashReportDialog.cpp" line="243"/>
         <source>We can&apos;t contact you with a possible solution if you don&apos;t provide a valid e-mail address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vi kan inte kontakta dig med en möjlig lösning om du inte anger en giltig e-postadress.</translation>
     </message>
     <message>
-        <location filename="../../CrashReport/CrashReportDialog.cpp" line="244"/>
         <source>Send without e-mail</source>
-        <translation type="unfinished"></translation>
+        <translation>Skicka utan e-post</translation>
     </message>
     <message>
-        <location filename="../../CrashReport/CrashReportDialog.cpp" line="245"/>
         <source>Let me enter e-mail</source>
-        <translation type="unfinished"></translation>
+        <translation>Låt mig ange e-post</translation>
     </message>
 </context>
 <context>
     <name>CreateConnectionDialog</name>
     <message>
-        <location filename="../../Annotations/LineAnnotation.cpp" line="2043"/>
         <source>Specify the indexes below to connect to the parts of the connectors.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ange indexen nedan för att ansluta till delarna av kopplingarna.</translation>
     </message>
 </context>
 <context>
     <name>CreateModelDialog</name>
     <message>
-        <location filename="../../OMS/ModelDialog.cpp" line="105"/>
         <source>Root System</source>
-        <translation type="unfinished"></translation>
+        <translation>Rotsystem</translation>
     </message>
     <message>
-        <location filename="../../OMS/ModelDialog.cpp" line="143"/>
         <source>Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Modell</translation>
     </message>
     <message>
-        <location filename="../../OMS/ModelDialog.cpp" line="148"/>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>System</translation>
     </message>
 </context>
 <context>
     <name>CreateNewItemDialog</name>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="2246"/>
         <source>Please enter path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ange en sökväg.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="2253"/>
         <source>Path &lt;b&gt;%1&lt;/b&gt; does not exist.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sökvägen &lt;b&gt;%1&lt;/b&gt; finns inte.</translation>
     </message>
 </context>
 <context>
     <name>DataReconciliationDialog</name>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="2252"/>
         <source>Algorithm:</source>
-        <translation type="unfinished"></translation>
+        <translation>Algoritm:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="2254"/>
         <source>Data Reconciliation</source>
-        <translation type="unfinished"></translation>
+        <translation>Dataavstämning</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="2255"/>
         <source>Boundary Conditions</source>
-        <translation type="unfinished"></translation>
+        <translation>Randvillkor</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="2259"/>
         <source>Measurement Input File:</source>
-        <translation type="unfinished"></translation>
+        <translation>Indatafil med mätningar:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="2264"/>
         <source>Correlation Matrix Input File:</source>
-        <translation type="unfinished"></translation>
+        <translation>Indatafil med korrelationsmatris:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="2269"/>
         <source>Epsilon:</source>
-        <translation type="unfinished"></translation>
+        <translation>Epsilon:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="2276"/>
         <source>Reconciled Measurement File:</source>
-        <translation type="unfinished"></translation>
+        <translation>Fil med avstämda mätningar:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="2281"/>
         <source>Reconciled Correlation Matrix File:</source>
-        <translation type="unfinished"></translation>
+        <translation>Fil med avstämd korrelationsmatris:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="2288"/>
         <source>Save Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Spara inställningar</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="2290"/>
         <source>Calculate</source>
-        <translation type="unfinished"></translation>
+        <translation>Beräkna</translation>
+    </message>
+    <message>
+        <source>Generate FMU</source>
+        <translation>Generera FMU</translation>
     </message>
 </context>
 <context>
     <name>DebuggerConfigurationPage</name>
     <message>
-        <location filename="../../Debugger/DebuggerConfigurationsDialog.cpp" line="69"/>
         <source>Program:</source>
         <translation>Program:</translation>
     </message>
     <message>
-        <location filename="../../Debugger/DebuggerConfigurationsDialog.cpp" line="79"/>
         <source>GDB Path:</source>
-        <translation>GDB Sökväg:</translation>
+        <translation>GDB-sökväg:</translation>
     </message>
     <message>
-        <location filename="../../Debugger/DebuggerConfigurationsDialog.cpp" line="85"/>
         <source>Arguments:</source>
         <translation>Argument:</translation>
     </message>
     <message>
-        <location filename="../../Debugger/DebuggerConfigurationsDialog.cpp" line="89"/>
         <source>Saves the debug configuration</source>
-        <translation>Spara debug-konfiguration</translation>
+        <translation>Sparar debug-konfigurationen</translation>
     </message>
     <message>
-        <location filename="../../Debugger/DebuggerConfigurationsDialog.cpp" line="113"/>
         <source>GDB path defined in %1-&gt;Debugger is used if above field is empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>GDB-sökvägen som anges i %1-&gt;Debugger används om fältet ovan är tomt.</translation>
     </message>
     <message>
-        <location filename="../../Debugger/DebuggerConfigurationsDialog.cpp" line="92"/>
         <source>Resets the debug configuration</source>
         <translation>Återställer debug-konfigurationen</translation>
     </message>
@@ -886,27 +1134,22 @@
 <context>
     <name>DebuggerConfigurationsDialog</name>
     <message>
-        <location filename="../../Debugger/DebuggerConfigurationsDialog.cpp" line="259"/>
         <source>New Configuration</source>
-        <translation>Ny Konfiguration</translation>
+        <translation>Ny konfiguration</translation>
     </message>
     <message>
-        <location filename="../../Debugger/DebuggerConfigurationsDialog.cpp" line="264"/>
         <source>Delete Configuration</source>
-        <translation>Ta Bort Konfiguration</translation>
+        <translation>Ta bort konfiguration</translation>
     </message>
     <message>
-        <location filename="../../Debugger/DebuggerConfigurationsDialog.cpp" line="295"/>
         <source>Saves all the debug configurations</source>
         <translation>Sparar alla debug-konfigurationer</translation>
     </message>
     <message>
-        <location filename="../../Debugger/DebuggerConfigurationsDialog.cpp" line="297"/>
         <source>Save &amp;&amp; Debug</source>
         <translation>Spara &amp;&amp; Debugga</translation>
     </message>
     <message>
-        <location filename="../../Debugger/DebuggerConfigurationsDialog.cpp" line="298"/>
         <source>Saves all the debug configurations and starts debugging the active debug configuration</source>
         <translation>Sparar alla debug-konfigurationer och startar debuggern med den aktiva konfigurationen</translation>
     </message>
@@ -914,109 +1157,96 @@
 <context>
     <name>DebuggerPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6108"/>
         <source>GDB Path:</source>
-        <translation>GDB Sökväg:</translation>
+        <translation>GDB-sökväg:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6115"/>
         <source>GDB Command Timeout:</source>
-        <translation>GDB Timeout för Kommandon:</translation>
+        <translation>GDB-timeout för kommandon:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6117"/>
         <source> seconds</source>
         <translation> sekunder</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6122"/>
         <source>GDB Output Limit:</source>
-        <translation type="unfinished"></translation>
+        <translation>Utdatagräns för GDB:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6124"/>
         <source> characters</source>
-        <translation type="unfinished"></translation>
+        <translation> tecken</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6129"/>
         <source>Display C frames</source>
         <translation>Visa C-ramar</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6132"/>
         <source>Display unknown frames</source>
         <translation>Visa okända ramar</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6135"/>
         <source>Clear old output on a new run</source>
         <translation>Rensa gammal utdata vid ny körning</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6138"/>
         <source>Clear old log on a new run</source>
         <translation>Rensa gammal logg vid ny körning</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6147"/>
         <source>Default GDB path is used if above field is empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>Standardsökvägen till GDB används om fältet ovan är tomt.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6159"/>
         <source>Always show %1 after compilation</source>
         <translation>Visa alltid %1 efter kompilering</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6160"/>
         <source>Generate Operations</source>
-        <translation type="unfinished"></translation>
+        <translation>Generera operationer</translation>
     </message>
 </context>
 <context>
     <name>DirectoryOrFileSelector</name>
     <message>
-        <location filename="../../Util/DirectoryOrFileSelector.h" line="48"/>
         <source>List</source>
-        <translation type="unfinished"></translation>
+        <translation>Lista</translation>
     </message>
 </context>
 <context>
     <name>DiscardLocalTranslationFlagsDialog</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6589"/>
         <source>Discard Local Translation Flags</source>
-        <translation type="unfinished"></translation>
+        <translation>Kasta lokala översättningsflaggor</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6591"/>
         <source>You just changed some global translation flags.
 
 The models listed below are currently open and have different local translation flags,that were selected with the Simulation Setup dialog.
 
 Select the models for which you want to discard the local translation flag and apply the new global flags (*).All other models will retain the current local settings until you close OMEdit.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Du har just ändrat några globala översättningsflaggor.
+
+Modellerna nedan är öppna och har andra lokala översättningsflaggor, som valdes i dialogen Simuleringsinställningar.
+
+Välj de modeller för vilka du vill kasta de lokala översättningsflaggorna och använda de nya globala flaggorna (*). Alla andra modeller behåller sina lokala inställningar tills du stänger OMEdit.
+</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6596"/>
         <source>(*) If you discard local settings, the new global settings will first be applied, and then any further settingssaved in the model annotations will be applied. This is the same behaviour you would get if you closed OMEdit,restarted it and reopened all models.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>(*) Om du kastar de lokala inställningarna används först de nya globala inställningarna, och sedan de ytterligare inställningar som är sparade i modellernas annoteringar. Det blir samma resultat som om du stängde OMEdit, startade om det och öppnade alla modeller igen.
+</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6606"/>
         <source>Select/Unselect All</source>
-        <translation type="unfinished"></translation>
+        <translation>Markera/avmarkera alla</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6611"/>
         <source>Yes</source>
         <translation>Ja</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6615"/>
         <source>No</source>
         <translation>Nej</translation>
     </message>
@@ -1024,560 +1254,474 @@ Select the models for which you want to discard the local translation flag and a
 <context>
     <name>DocumentationWidget</name>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="81"/>
         <source>Previous (backspace)</source>
-        <translation type="unfinished"></translation>
+        <translation>Föregående (Backsteg)</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="82"/>
         <source>Moves to previous documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Går till föregående dokumentation</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="86"/>
         <source>Next (shift+backspace)</source>
-        <translation type="unfinished"></translation>
+        <translation>Nästa (Skift+Backsteg)</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="87"/>
         <source>Moves to next documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Går till nästa dokumentation</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="91"/>
         <source>Edit Info Documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Redigera info-dokumentation</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="92"/>
         <source>Starts editing info documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Börjar redigera info-dokumentationen</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="96"/>
         <source>Edit Revisions Documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Redigera revisions-dokumentation</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="97"/>
         <source>Starts editing revisions documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Börjar redigera revisions-dokumentationen</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="101"/>
         <source>Edit __OpenModelica_infoHeader Documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Redigera __OpenModelica_infoHeader-dokumentation</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="102"/>
         <source>Starts editing __OpenModelica_infoHeader documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Börjar redigera __OpenModelica_infoHeader-dokumentationen</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="107"/>
         <source>Saves the edited documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Sparar den redigerade dokumentationen</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="112"/>
         <source>Cancels the documentation editing</source>
-        <translation type="unfinished"></translation>
+        <translation>Avbryter redigeringen av dokumentationen</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="163"/>
         <source>Style</source>
-        <translation type="unfinished"></translation>
+        <translation>Stil</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="164"/>
         <source>Sets the text style</source>
-        <translation type="unfinished"></translation>
+        <translation>Anger textens stil</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="165"/>
         <source>Normal</source>
-        <translation type="unfinished"></translation>
+        <translation>Normal</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="166"/>
         <source>Heading 1</source>
-        <translation type="unfinished"></translation>
+        <translation>Rubrik 1</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="167"/>
         <source>Heading 2</source>
-        <translation type="unfinished"></translation>
+        <translation>Rubrik 2</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="168"/>
         <source>Heading 3</source>
-        <translation type="unfinished"></translation>
+        <translation>Rubrik 3</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="169"/>
         <source>Heading 4</source>
-        <translation type="unfinished"></translation>
+        <translation>Rubrik 4</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="170"/>
         <source>Heading 5</source>
-        <translation type="unfinished"></translation>
+        <translation>Rubrik 5</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="171"/>
         <source>Heading 6</source>
-        <translation type="unfinished"></translation>
+        <translation>Rubrik 6</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="172"/>
         <source>Preformatted</source>
-        <translation type="unfinished"></translation>
+        <translation>Förformaterad</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="177"/>
         <source>Font</source>
-        <translation type="unfinished"></translation>
+        <translation>Teckensnitt</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="178"/>
         <source>Sets the text font</source>
-        <translation type="unfinished"></translation>
+        <translation>Anger textens teckensnitt</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="183"/>
         <source>Font Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Teckenstorlek</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="184"/>
         <source>Sets the text font size</source>
-        <translation type="unfinished"></translation>
+        <translation>Anger textens teckenstorlek</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="191"/>
         <source>Make your text bold</source>
-        <translation type="unfinished"></translation>
+        <translation>Gör texten fet</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="201"/>
         <source>Italicize your text</source>
-        <translation type="unfinished"></translation>
+        <translation>Gör texten kursiv</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="211"/>
         <source>Underline your text</source>
-        <translation type="unfinished"></translation>
+        <translation>Stryker under texten</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="220"/>
         <source>Strikethrough</source>
-        <translation type="unfinished"></translation>
+        <translation>Genomstruken</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="221"/>
         <source>Cross something out by drawing a line through it</source>
-        <translation type="unfinished"></translation>
+        <translation>Stryker över text med en linje genom den</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="232"/>
         <source>Subscript</source>
-        <translation type="unfinished"></translation>
+        <translation>Nedsänkt</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="233"/>
         <source>Type very small letters just below the line of text</source>
-        <translation type="unfinished"></translation>
+        <translation>Skriver mycket små bokstäver precis under textraden</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="241"/>
         <source>Superscript</source>
-        <translation type="unfinished"></translation>
+        <translation>Upphöjd</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="242"/>
         <source>Type very small letters just above the line of text</source>
-        <translation type="unfinished"></translation>
+        <translation>Skriver mycket små bokstäver precis ovanför textraden</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="263"/>
         <source>Text Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Textfärg</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="265"/>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="286"/>
         <source>Change the color of your text</source>
-        <translation type="unfinished"></translation>
+        <translation>Ändrar textens färg</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="284"/>
         <source>Background Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Bakgrundsfärg</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="293"/>
         <source>Align Left</source>
-        <translation type="unfinished"></translation>
+        <translation>Vänsterjustera</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="295"/>
         <source>Aligns the text to the left</source>
-        <translation type="unfinished"></translation>
+        <translation>Justerar texten till vänster</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="302"/>
         <source>Align Center</source>
-        <translation type="unfinished"></translation>
+        <translation>Centrera</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="304"/>
         <source>Aligns the text to the center</source>
-        <translation type="unfinished"></translation>
+        <translation>Centrerar texten</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="310"/>
         <source>Align Right</source>
-        <translation type="unfinished"></translation>
+        <translation>Högerjustera</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="312"/>
         <source>Aligns the text to the right</source>
-        <translation type="unfinished"></translation>
+        <translation>Justerar texten till höger</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="318"/>
         <source>Justify</source>
-        <translation type="unfinished"></translation>
+        <translation>Marginaljustera</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="320"/>
         <source>Justifies the text evenly</source>
-        <translation type="unfinished"></translation>
+        <translation>Justerar texten jämnt mot båda marginalerna</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="332"/>
         <source>Decrease Indent</source>
-        <translation type="unfinished"></translation>
+        <translation>Minska indrag</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="333"/>
         <source>Decreases the indent by moving left</source>
-        <translation type="unfinished"></translation>
+        <translation>Minskar indraget genom att flytta texten åt vänster</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="340"/>
         <source>Increase Indent</source>
-        <translation type="unfinished"></translation>
+        <translation>Öka indrag</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="341"/>
         <source>Increases the indent by moving right</source>
-        <translation type="unfinished"></translation>
+        <translation>Ökar indraget genom att flytta texten åt höger</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="348"/>
         <source>Bullet List</source>
-        <translation type="unfinished"></translation>
+        <translation>Punktlista</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="349"/>
         <source>Creates a bulleted list</source>
-        <translation type="unfinished"></translation>
+        <translation>Skapar en punktlista</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="353"/>
         <source>Numbered List</source>
-        <translation type="unfinished"></translation>
+        <translation>Numrerad lista</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="354"/>
         <source>Creates a numbered list</source>
-        <translation type="unfinished"></translation>
+        <translation>Skapar en numrerad lista</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="358"/>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="1246"/>
         <source>Create Link</source>
-        <translation type="unfinished"></translation>
+        <translation>Skapa länk</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="359"/>
         <source>Creates a link</source>
-        <translation type="unfinished"></translation>
+        <translation>Skapar en länk</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="363"/>
         <source>Remove Link</source>
-        <translation type="unfinished"></translation>
+        <translation>Ta bort länk</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="364"/>
         <source>Removes a link</source>
-        <translation type="unfinished"></translation>
+        <translation>Tar bort en länk</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="816"/>
         <source>Info Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Info-redigerare</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="817"/>
         <source>Info Source</source>
-        <translation type="unfinished"></translation>
+        <translation>Info-källkod</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="851"/>
         <source>Revisions Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Revisions-redigerare</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="852"/>
         <source>Revisions Source</source>
-        <translation type="unfinished"></translation>
+        <translation>Revisions-källkod</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="886"/>
         <source>__OpenModelica_infoHeader Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>__OpenModelica_infoHeader-redigerare</translation>
     </message>
     <message>
-        <location filename="../../Modeling/DocumentationWidget.cpp" line="887"/>
         <source>__OpenModelica_infoHeader Source</source>
-        <translation type="unfinished"></translation>
+        <translation>__OpenModelica_infoHeader-källkod</translation>
+    </message>
+    <message>
+        <source>Warning</source>
+        <translation>Varning</translation>
+    </message>
+    <message>
+        <source>The model instance for %1 is not available; the documentation changes were not saved.</source>
+        <translation>Modellinstansen för %1 är inte tillgänglig; ändringarna i dokumentationen sparades inte.</translation>
     </message>
 </context>
 <context>
     <name>DuplicateClassDialog</name>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="814"/>
         <source>* Note: This operation can take sometime to finish depending on the size of your library.</source>
-        <translation type="unfinished"></translation>
+        <translation>* Obs! Den här åtgärden kan ta en stund beroende på hur stort ditt bibliotek är.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="845"/>
         <source>Select file type for &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Välj filtyp för &lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="849"/>
         <source>Keep Structure</source>
-        <translation type="unfinished"></translation>
+        <translation>Behåll strukturen</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="850"/>
         <source>Keeps the same file type structure for the package and its contents recursively.</source>
-        <translation type="unfinished"></translation>
+        <translation>Behåller samma filtypsstruktur för paketet och dess innehåll rekursivt.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="854"/>
         <source>One File</source>
-        <translation type="unfinished"></translation>
+        <translation>En fil</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="855"/>
         <source>Stores the package and all its contents in one file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lagrar paketet och allt dess innehåll i en fil.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="859"/>
         <source>Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Katalog</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="860"/>
         <source>Creates a directory for the package.</source>
-        <translation type="unfinished"></translation>
+        <translation>Skapar en katalog för paketet.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="864"/>
         <source>Directories For All</source>
-        <translation type="unfinished"></translation>
+        <translation>Kataloger för alla</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="865"/>
         <source>Creates the directories for the package and its contents recursively.</source>
-        <translation type="unfinished"></translation>
+        <translation>Skapar kataloger för paketet och dess innehåll rekursivt.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1114"/>
         <source>Select Path</source>
-        <translation type="unfinished"></translation>
+        <translation>Välj sökväg</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1126"/>
         <source>class</source>
-        <translation type="unfinished"></translation>
+        <translation>klass</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1163"/>
         <source>Cannot duplicate inside system library.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan inte duplicera i ett systembibliotek.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1167"/>
         <source>Can only duplicate inside a package. &lt;b&gt;%1&lt;/b&gt; is not a package.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan bara duplicera i ett paket. &lt;b&gt;%1&lt;/b&gt; är inte ett paket.</translation>
     </message>
 </context>
 <context>
     <name>Element</name>
     <message>
-        <location filename="../../Element/Element.cpp" line="1657"/>
-        <source>Shows the component parameters</source>
-        <translation>Visa komponentparametrarna</translation>
-    </message>
-    <message>
-        <location filename="../../Element/Element.cpp" line="1662"/>
         <source>Shows the component attributes</source>
-        <translation>Visa komponentattributen</translation>
+        <translation>Visar komponentattributen</translation>
     </message>
     <message>
-        <location filename="../../Element/Element.cpp" line="1670"/>
         <source>Shows the Properties dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Visar dialogen Egenskaper</translation>
     </message>
     <message>
-        <location filename="../../Element/Element.cpp" line="1653"/>
         <source>Shows the element</source>
-        <translation type="unfinished"></translation>
+        <translation>Visar elementet</translation>
     </message>
     <message>
-        <location filename="../../Element/Element.cpp" line="1674"/>
         <source>Replaces the SubModel, but retains the connections and parameters if valid</source>
-        <translation type="unfinished"></translation>
+        <translation>Ersätter delmodellen men behåller anslutningarna och parametrarna om de är giltiga</translation>
     </message>
     <message>
-        <location filename="../../Element/Element.cpp" line="1946"/>
         <source>&lt;b&gt;%1&lt;/b&gt; %2&lt;br/&gt;%3&lt;br /&gt;&lt;br /&gt;Element declared in %4</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; %2&lt;br/&gt;%3&lt;br /&gt;&lt;br /&gt;Elementet är deklarerat i %4</translation>
     </message>
     <message>
-        <location filename="../../Element/Element.cpp" line="1950"/>
         <source>&lt;b&gt;%1&lt;/b&gt; %2&lt;br/&gt;%3</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; %2&lt;br/&gt;%3</translation>
     </message>
     <message>
-        <location filename="../../Element/Element.cpp" line="2432"/>
         <source>Opening %1 %2 parameters window</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppnar parameterfönstret för %1 %2</translation>
     </message>
     <message>
-        <location filename="../../Element/Element.cpp" line="2450"/>
         <source>Opening %1 %2 attributes window</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppnar attributfönstret för %1 %2</translation>
     </message>
 </context>
 <context>
     <name>ElementAttributes</name>
     <message>
-        <location filename="../../Element/ElementProperties.cpp" line="2190"/>
         <source>%1 - %2 - %3 in %4</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - %2 - %3 i %4</translation>
     </message>
     <message>
-        <location filename="../../Element/ElementProperties.cpp" line="2190"/>
         <source>Element Attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>Elementattribut</translation>
     </message>
     <message>
-        <location filename="../../Element/ElementProperties.cpp" line="2213"/>
         <source>Dimensions:</source>
-        <translation type="unfinished"></translation>
+        <translation>Dimensioner:</translation>
     </message>
     <message>
-        <location filename="../../Element/ElementProperties.cpp" line="2215"/>
         <source>Array of dimensions e.g [1, 5, 2]</source>
-        <translation type="unfinished"></translation>
+        <translation>Vektor med dimensioner, t.ex. [1, 5, 2]</translation>
+    </message>
+    <message>
+        <source>Conditional Component</source>
+        <translation>Villkorlig komponent</translation>
+    </message>
+    <message>
+        <source>Boolean expression e.g. useSensor</source>
+        <translation>Booleskt uttryck, t.ex. useSensor</translation>
+    </message>
+    <message>
+        <source>A conditional component requires a condition expression.</source>
+        <translation>En villkorlig komponent kräver ett villkorsuttryck.</translation>
+    </message>
+    <message>
+        <source>Invalid condition expression: %1</source>
+        <translation>Ogiltigt villkorsuttryck: %1</translation>
     </message>
 </context>
 <context>
     <name>ElementParameters</name>
     <message>
-        <location filename="../../Element/ElementProperties.cpp" line="1225"/>
         <source>%1 - %2 - %3 in %4</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - %2 - %3 i %4</translation>
     </message>
     <message>
-        <location filename="../../Element/ElementProperties.cpp" line="1225"/>
         <source>Element Parameters</source>
-        <translation type="unfinished"></translation>
+        <translation>Elementparametrar</translation>
     </message>
     <message>
-        <location filename="../../Element/ElementProperties.cpp" line="1227"/>
         <source>%1 - %2 - %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - %2 - %3</translation>
     </message>
     <message>
-        <location filename="../../Element/ElementProperties.cpp" line="1455"/>
         <source>Component</source>
         <translation>Komponent</translation>
     </message>
     <message>
-        <location filename="../../Element/ElementProperties.cpp" line="1469"/>
         <source>Class</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Element/ElementProperties.cpp" line="1577"/>
-        <source>Add new modifiers, e.g., phi(start=1), w(start=2)</source>
-        <translation>Lägg till nya modifierare, t.ex. phi(start=1), w(start=2)</translation>
+        <translation>Klass</translation>
     </message>
 </context>
 <context>
     <name>ElementPropertiesDialog</name>
     <message>
-        <location filename="../../OMS/ElementPropertiesDialog.cpp" line="79"/>
         <source>FMU Kind:</source>
-        <translation type="unfinished"></translation>
+        <translation>FMU-typ:</translation>
     </message>
     <message>
-        <location filename="../../OMS/ElementPropertiesDialog.cpp" line="81"/>
         <source>FMI Version:</source>
-        <translation type="unfinished"></translation>
+        <translation>FMI-version:</translation>
     </message>
     <message>
-        <location filename="../../OMS/ElementPropertiesDialog.cpp" line="83"/>
         <source>Generation Tool:</source>
-        <translation type="unfinished"></translation>
+        <translation>Genereringsverktyg:</translation>
     </message>
     <message>
-        <location filename="../../OMS/ElementPropertiesDialog.cpp" line="85"/>
         <source>Guid:</source>
-        <translation type="unfinished"></translation>
+        <translation>Guid:</translation>
     </message>
     <message>
-        <location filename="../../OMS/ElementPropertiesDialog.cpp" line="87"/>
         <source>Generation Time:</source>
-        <translation type="unfinished"></translation>
+        <translation>Genereringstid:</translation>
     </message>
     <message>
-        <location filename="../../OMS/ElementPropertiesDialog.cpp" line="89"/>
         <source>Model Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Modellnamn:</translation>
     </message>
     <message>
-        <location filename="../../OMS/ElementPropertiesDialog.cpp" line="109"/>
         <source>Capabilities</source>
-        <translation type="unfinished"></translation>
+        <translation>Förmågor</translation>
+    </message>
+</context>
+<context>
+    <name>ElementTreeView</name>
+    <message>
+        <source>Opening %1 %2 parameters window</source>
+        <translation>Öppnar parameterfönstret för %1 %2</translation>
     </message>
 </context>
 <context>
     <name>ExpandableConnectorTreeModel</name>
     <message>
-        <location filename="../../Annotations/LineAnnotation.cpp" line="1774"/>
         <source>Connector</source>
-        <translation type="unfinished"></translation>
+        <translation>Koppling</translation>
     </message>
 </context>
 <context>
     <name>ExportFigaroDialog</name>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="2085"/>
         <source>Figaro Mode:</source>
         <translation>Figaroläge:</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="2126"/>
         <source>Exporting model as Figaro</source>
         <translation>Exporterar modell som Figaro</translation>
     </message>
@@ -1585,338 +1729,322 @@ Select the models for which you want to discard the local translation flag and a
 <context>
     <name>FMIPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6238"/>
         <source>Model Exchange</source>
-        <translation type="unfinished"></translation>
+        <translation>Model Exchange</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6239"/>
         <source>Co-Simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Co-Simulation</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6240"/>
         <source>Model Exchange and Co-Simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Model Exchange och Co-Simulation</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6250"/>
         <source>FMU Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>FMU-namn:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6254"/>
         <source>Move FMU:</source>
-        <translation type="unfinished"></translation>
+        <translation>Flytta FMU:n till:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6256"/>
         <source>&lt;directory name or full file name with placeholders&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;katalognamn eller fullständigt filnamn med platshållare&gt;</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6261"/>
         <source>Placeholders:
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Platshållare:
+</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6262"/>
-        <location filename="../../Options/OptionsDialog.cpp" line="6263"/>
-        <location filename="../../Options/OptionsDialog.cpp" line="6264"/>
         <source> i.e.,</source>
-        <translation type="unfinished"></translation>
+        <translation> t.ex.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6266"/>
         <source>Platforms</source>
-        <translation type="unfinished"></translation>
+        <translation>Plattformar</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6267"/>
         <source>Note: The list of platforms is created by searching for programs in the PATH matching pattern &quot;*-*-*-*cc&quot;.
 In order to run docker platforms add docker to PATH.
 A source-code only FMU is generated if no platform is selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Obs! Listan över plattformar skapas genom att söka efter program i PATH som matchar mönstret &quot;*-*-*-*cc&quot;.
+Lägg till docker i PATH för att köra docker-plattformar.
+En FMU med endast källkod genereras om ingen plattform är vald.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6311"/>
         <source>Comma separated list of additional platforms</source>
-        <translation type="unfinished"></translation>
+        <translation>Kommaseparerad lista med ytterligare plattformar</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6318"/>
         <source>Explicit Euler</source>
-        <translation type="unfinished"></translation>
+        <translation>Explicit Euler</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6319"/>
         <source>CVODE</source>
-        <translation type="unfinished"></translation>
+        <translation>CVODE</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6328"/>
         <source>Include Modelica based resources via loadResource</source>
-        <translation type="unfinished"></translation>
+        <translation>Inkludera Modelicabaserade resurser via loadResource</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6330"/>
         <source>Include Source Code (model description filter &quot;blackBox&quot; will override this, because black box FMUs do never contain their source code.)</source>
-        <translation type="unfinished"></translation>
+        <translation>Inkludera källkod (modellbeskrivningsfiltret &quot;blackBox&quot; åsidosätter detta, eftersom FMU:er av typen black box aldrig innehåller sin källkod.)</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6334"/>
         <source>Generate Debug Symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>Generera felsökningssymboler</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6346"/>
         <source>Solver for Co-Simulation:</source>
-        <translation type="unfinished"></translation>
+        <translation>Lösare för Co-Simulation:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6348"/>
         <source>Model Description Filters:</source>
-        <translation type="unfinished"></translation>
+        <translation>Filter för modellbeskrivning:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6355"/>
         <source>Import</source>
-        <translation type="unfinished"></translation>
+        <translation>Import</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6356"/>
         <source>Delete FMU directory and generated model when OMEdit is closed</source>
-        <translation type="unfinished"></translation>
+        <translation>Ta bort FMU-katalogen och den genererade modellen när OMEdit stängs</translation>
+    </message>
+    <message>
+        <source>1.0 (deprecated)</source>
+        <translation>1.0 (föråldrad)</translation>
+    </message>
+    <message>
+        <source>Note: No native platform is available here, the FMU only contains the WebAssembly binary
+and is exported as FMI 3.0 (fmi-ls-wasm).</source>
+        <translation>Obs! Inga plattformsspecifika binärfiler kan skapas här; FMU:n innehåller bara WebAssembly-binärfilen
+och exporteras som FMI 3.0 (fmi-ls-wasm).</translation>
+    </message>
+    <message>
+        <source>Note: The FMU always contains the WebAssembly binary.
+The listed platforms have a precompiled FMU driver and are added as native binaries.
+With no platform selected, the FMU is exported as FMI 3.0 (fmi-ls-wasm).</source>
+        <translation>Obs! FMU:n innehåller alltid WebAssembly-binärfilen.
+De listade plattformarna har en förkompilerad FMU-drivrutin och läggs till som plattformsspecifika binärfiler.
+Om ingen plattform är vald exporteras FMU:n som FMI 3.0 (fmi-ls-wasm).</translation>
+    </message>
+    <message>
+        <source>Default (the model&apos;s method, else DASSL)</source>
+        <translation>Standard (modellens metod, annars DASSL)</translation>
     </message>
 </context>
 <context>
     <name>FMUSettingsDialog</name>
     <message>
-        <location filename="../../Animation/FMUSettingsDialog.cpp" line="56"/>
         <source>FMU-Simulation Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>FMU-simuleringsinställningar</translation>
     </message>
     <message>
-        <location filename="../../Animation/FMUSettingsDialog.cpp" line="58"/>
         <source>Solver</source>
-        <translation type="unfinished"></translation>
+        <translation>Lösare</translation>
     </message>
     <message>
-        <location filename="../../Animation/FMUSettingsDialog.cpp" line="61"/>
         <source>Step Size [s]</source>
-        <translation type="unfinished"></translation>
+        <translation>Stegstorlek [s]</translation>
     </message>
     <message>
-        <location filename="../../Animation/FMUSettingsDialog.cpp" line="63"/>
         <source>Process Events in FMU</source>
-        <translation type="unfinished"></translation>
+        <translation>Hantera händelser i FMU:n</translation>
     </message>
 </context>
 <context>
     <name>FigaroPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6029"/>
         <source>Figaro Library:</source>
-        <translation type="unfinished"></translation>
+        <translation>Figarobibliotek:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6035"/>
         <source>Tree generation options:</source>
-        <translation type="unfinished"></translation>
+        <translation>Alternativ för trädgenerering:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6041"/>
         <source>Figaro Processor:</source>
-        <translation type="unfinished"></translation>
+        <translation>Figaroprocessor:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6048"/>
         <source>Resets to default Figaro Processor path</source>
-        <translation type="unfinished"></translation>
+        <translation>Återställer till standardsökvägen för Figaroprocessorn</translation>
     </message>
 </context>
 <context>
     <name>FindReplaceWidget</name>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2586"/>
         <source>Find:</source>
         <translation>Sök:</translation>
     </message>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2609"/>
         <source>Replace With:</source>
-        <translation>Ersätt Med:</translation>
+        <translation>Ersätt med:</translation>
     </message>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2613"/>
         <source>Case Sensitive</source>
         <translation>Skiftlägeskänslig</translation>
     </message>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2614"/>
         <source>Whole Words</source>
-        <translation>Hela Ord</translation>
+        <translation>Hela ord</translation>
     </message>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2615"/>
         <source>Regular Expressions</source>
         <translation>Reguljäruttryck</translation>
     </message>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2617"/>
         <source>Replace</source>
         <translation>Ersätt</translation>
     </message>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2619"/>
         <source>Replace All</source>
-        <translation>Ersätt Alla</translation>
+        <translation>Ersätt alla</translation>
+    </message>
+</context>
+<context>
+    <name>FindUsageWidget</name>
+    <message>
+        <source>Enter class name to find its usage</source>
+        <translation>Ange ett klassnamn för att hitta var det används</translation>
+    </message>
+    <message>
+        <source>Enter scope or browse (optional)</source>
+        <translation>Ange omfång eller bläddra (frivilligt)</translation>
+    </message>
+    <message>
+        <source>Select Scope</source>
+        <translation>Välj omfång</translation>
+    </message>
+    <message>
+        <source>Exact Match</source>
+        <translation>Exakt matchning</translation>
+    </message>
+    <message>
+        <source>Find Usage</source>
+        <translation>Hitta användningar</translation>
+    </message>
+    <message>
+        <source>Filter Matches</source>
+        <translation>Filtrera träffar</translation>
+    </message>
+    <message>
+        <source>%1 matches found for &lt;b&gt;%2&lt;/b&gt;</source>
+        <translation>%1 träffar hittades för &lt;b&gt;%2&lt;/b&gt;</translation>
     </message>
 </context>
 <context>
     <name>FmuExportOutputWidget</name>
     <message>
-        <location filename="../../FMI/FMUExportOutputWidget.cpp" line="75"/>
-        <location filename="../../FMI/FMUExportOutputWidget.cpp" line="289"/>
-        <location filename="../../FMI/FMUExportOutputWidget.cpp" line="432"/>
-        <location filename="../../FMI/FMUExportOutputWidget.cpp" line="598"/>
         <source>Cancel Compilation</source>
-        <translation type="unfinished">Avbryt Kompilering</translation>
+        <translation>Avbryt kompilering</translation>
     </message>
     <message>
-        <location filename="../../FMI/FMUExportOutputWidget.cpp" line="89"/>
         <source>Configure</source>
-        <translation type="unfinished"></translation>
+        <translation>Konfigurera</translation>
     </message>
     <message>
-        <location filename="../../FMI/FMUExportOutputWidget.cpp" line="93"/>
         <source>Build</source>
-        <translation type="unfinished"></translation>
+        <translation>Bygg</translation>
     </message>
     <message>
-        <location filename="../../FMI/FMUExportOutputWidget.cpp" line="150"/>
         <source>Generating cmake target files of %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Genereringen av cmake-målfiler för %1 avbröts.</translation>
     </message>
     <message>
-        <location filename="../../FMI/FMUExportOutputWidget.cpp" line="158"/>
         <source>Building of %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bygget av %1 avbröts.</translation>
     </message>
     <message>
-        <location filename="../../FMI/FMUExportOutputWidget.cpp" line="164"/>
-        <source>Zipping of FMU %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../FMI/FMUExportOutputWidget.cpp" line="284"/>
         <source>Generating cmake target files of %1. Please wait for a while.</source>
-        <translation type="unfinished"></translation>
+        <translation>Genererar cmake-målfiler för %1. Vänta en stund.</translation>
     </message>
     <message>
-        <location filename="../../FMI/FMUExportOutputWidget.cpp" line="303"/>
         <source>Generated cmake target files failed. Exited with code %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Genereringen av cmake-målfiler misslyckades. Avslutades med koden %1.</translation>
     </message>
     <message>
-        <location filename="../../FMI/FMUExportOutputWidget.cpp" line="305"/>
         <source>Generated cmake target files successfully.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Genererade cmake-målfiler utan fel.
+</translation>
     </message>
     <message>
-        <location filename="../../FMI/FMUExportOutputWidget.cpp" line="330"/>
         <source>Generating cmake target files of %1 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>Genereringen av cmake-målfiler för %1 är klar.</translation>
     </message>
     <message>
-        <location filename="../../FMI/FMUExportOutputWidget.cpp" line="333"/>
         <source>Generating cmake target files of %1 failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Genereringen av cmake-målfiler för %1 misslyckades.</translation>
     </message>
     <message>
-        <location filename="../../FMI/FMUExportOutputWidget.cpp" line="423"/>
         <source>Building %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Bygger %1</translation>
     </message>
     <message>
-        <location filename="../../FMI/FMUExportOutputWidget.cpp" line="492"/>
         <source>Post compilation process failed. Exited with code %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Efterkompileringen misslyckades. Avslutades med koden %1.</translation>
     </message>
     <message>
-        <location filename="../../FMI/FMUExportOutputWidget.cpp" line="494"/>
         <source>Build finished successfully.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Bygget avslutades utan fel.
+</translation>
     </message>
     <message>
-        <location filename="../../FMI/FMUExportOutputWidget.cpp" line="518"/>
         <source>Build of %1 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bygget av %1 är klart.</translation>
     </message>
     <message>
-        <location filename="../../FMI/FMUExportOutputWidget.cpp" line="520"/>
         <source>Build of %1 failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bygget av %1 misslyckades.</translation>
     </message>
     <message>
-        <location filename="../../FMI/FMUExportOutputWidget.cpp" line="593"/>
         <source>Zipping of %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Packar %1 som zip</translation>
     </message>
     <message>
-        <location filename="../../FMI/FMUExportOutputWidget.cpp" line="645"/>
-        <source>Zip compilation process failed. Exited with code %1.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../FMI/FMUExportOutputWidget.cpp" line="647"/>
         <source>The FMU is generated at: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>FMU:n har genererats i: %1</translation>
     </message>
     <message>
-        <location filename="../../FMI/FMUExportOutputWidget.cpp" line="679"/>
         <source>Export of FMU %1 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>Exporten av FMU:n %1 är klar.</translation>
     </message>
     <message>
-        <location filename="../../FMI/FMUExportOutputWidget.cpp" line="682"/>
         <source>Export of FMU %1 failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Exporten av FMU:n %1 misslyckades.</translation>
     </message>
 </context>
 <context>
     <name>GDBAdapter</name>
     <message>
-        <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="312"/>
         <source>The executable to debug does not exist: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Programmet som ska debuggas finns inte: %1</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1561"/>
         <source>The gdb process has not responded to a command within %n second(s). This could mean it is stuck in an endless loop or taking longer than expected to perform the operation.
 You can choose between waiting longer or abort debugging.</source>
         <translation>
-            <numerusform>GDB-processen svarade inte på ett kommando inom %n sekund. Detta kan betyda att den är fast i en evig loop eller att den tar länge än förväntat på sig att utföra operationen.
-Du kan välja mellan att vänta ett tag till eller att avbryta debuggningen.</numerusform>
-            <numerusform>GDB-processen svarade inte på ett kommando inom %n sekunder. Detta kan betyda att den är fast i en evig loop eller att den tar länge än förväntat på sig att utföra operationen.
-Du kan välja mellan att vänta ett tag till eller att avbryta debuggningen.</numerusform>
+            <numerusform>GDB-processen har inte svarat på ett kommando inom %n sekund. Den kan ha fastnat i en oändlig loop eller ta längre tid än väntat på sig att utföra åtgärden.
+Du kan välja mellan att vänta längre och att avbryta debuggningen.</numerusform>
+            <numerusform>GDB-processen har inte svarat på ett kommando inom %n sekunder. Den kan ha fastnat i en oändlig loop eller ta längre tid än väntat på sig att utföra åtgärden.
+Du kan välja mellan att vänta längre och att avbryta debuggningen.</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1567"/>
         <source>Debugger not responding</source>
         <translation>Debuggern svarar inte</translation>
     </message>
     <message>
-        <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1570"/>
         <source>Give GDB more time</source>
         <translation>Ge GDB mer tid</translation>
     </message>
     <message>
-        <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1571"/>
         <source>Stop debugging</source>
         <translation>Avbryt debuggningen</translation>
     </message>
@@ -1924,2518 +2052,1980 @@ Du kan välja mellan att vänta ett tag till eller att avbryta debuggningen.</nu
 <context>
     <name>GUIMessages</name>
     <message>
-        <location filename="../../Util/Helper.cpp" line="795"/>
         <source>A component with the name &lt;b&gt;%1&lt;/b&gt; already exists or is a Modelica keyword. Please choose another name.</source>
-        <translation type="unfinished"></translation>
+        <translation>En komponent med namnet &lt;b&gt;%1&lt;/b&gt; finns redan eller är ett nyckelord i Modelica. Välj ett annat namn.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="799"/>
         <source>You cannot connect a component to itself.</source>
         <translation>Du kan inte ansluta en komponent till sig själv.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="801"/>
         <source>There is no Modelica Class opened for %1.</source>
-        <translation>Det finns ingen Modelica Klass öppnad för %1.</translation>
+        <translation>Det finns ingen Modelicaklass öppnad för %1.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="803"/>
         <source>Simulation Start Time should be less than or equal to Stop Time.</source>
         <translation>Starttid för simulering bör vara mindre än eller lika med stopptid.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="805"/>
         <source>Please enter &lt;b&gt;%1&lt;/b&gt; Name.</source>
-        <translation>Var god ange &lt;b&gt;%1&lt;/b&gt; Namn.</translation>
+        <translation>Ange ett namn för &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="813"/>
         <source>&lt;b&gt;%1&lt;/b&gt; &lt;i&gt;%2&lt;/i&gt; already exists in &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>&lt;b&gt;%1&lt;/b&gt; &lt;i&gt;%2&lt;/i&gt; existerar redan i &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="837"/>
         <source>The file &lt;b&gt;%1&lt;/b&gt; not found.</source>
         <translation>Filen &lt;b&gt;%1&lt;/b&gt; kunde inte hittas.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="869"/>
         <source>Cannot move FMU to &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan inte flytta FMU:n till &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="871"/>
         <source>A source-only FMU will be generated because an empty list of platforms is selected. If this is not intended, check settings in &lt;b&gt;%1-&gt;FMI-&gt;Platforms&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>En FMU med endast källkod genereras eftersom ingen plattform är vald. Om det inte är meningen, kontrollera inställningarna i &lt;b&gt;%1-&gt;FMI-&gt;Plattformar&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="879"/>
         <source>The read-only package is generated at &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Det skrivskyddade paketet har genererats i &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="893"/>
-        <source>The operations were not generated. Check Generate Operations in &lt;b&gt;%1-&gt;Debugger-&gt;Transformational Debugger&lt;/b&gt; OR you must set the -d=infoXmlOperations flag via &lt;b&gt;%2-&gt;Simulation-&gt;OMC Command Line Options&lt;/b&gt; and simulate again.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="829"/>
         <source>Error has occurred while loading the file/library &lt;b&gt;%1&lt;/b&gt;. Unable to load the file/library.</source>
         <translation>Fel inträffade under inladdning av filen/biblioteket &lt;b&gt;%1&lt;/b&gt;. Kunde inte ladda in filen/biblioteket.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="807"/>
         <source>Extends class &lt;b&gt;%1&lt;/b&gt; does not exist.</source>
         <translation>Den valda klassen &lt;b&gt;%1&lt;/b&gt; för ärvning existerar inte.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="809"/>
         <source>Insert in class &lt;b&gt;%1&lt;/b&gt; does not exist.</source>
         <translation>Klassen &lt;b&gt;%1&lt;/b&gt; att infoga i existerar ej.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="811"/>
         <source>Insert in class &lt;b&gt;%1&lt;/b&gt; is a system library. System libraries are read-only.</source>
         <translation>Klassen &lt;b&gt;%1&lt;/b&gt; att infoga i är ett systembibliotek. Systembibliotek är skrivskyddade.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="817"/>
         <source>Could not find installation directory path. Please make sure OpenModelica is installed properly.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte hitta sökvägen till installationskatalogen. Kontrollera att OpenModelica är korrekt installerat.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="823"/>
         <source>&lt;br /&gt;&lt;br /&gt;If you cannot find the source of the error, you can always &lt;b&gt;revert to the last correct version&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br /&gt;&lt;br /&gt;Om du inte hittar orsaken till felet kan du alltid &lt;b&gt;återgå till senaste korrekta version&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="825"/>
         <source>Please make sure you are not using any OpenModelica/Modelica Keywords like model, package, record, class etc.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrollera att du inte använder några nyckelord i OpenModelica/Modelica, som model, package, record, class osv.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="827"/>
         <source>Unable to create class &lt;b&gt;%1&lt;/b&gt;. Invalid name.&lt;br /&gt;&lt;br /&gt;%2</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte skapa klassen &lt;b&gt;%1&lt;/b&gt;. Ogiltigt namn.&lt;br /&gt;&lt;br /&gt;%2</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="831"/>
         <source>Unable to open file &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte öppna filen &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="839"/>
         <source>Error opening the file &lt;b&gt;%1&lt;/b&gt;. %2</source>
         <translation>Fel vid öppning av filen &lt;b&gt;%1&lt;/b&gt;. %2</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="841"/>
-        <source>Error has occurred while loading the model :
-%1.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="843"/>
         <source>Delete the existing class(es) before loading the file/library &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Ta bort de existerande klasserna före inladdning av filen/biblioteket &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="847"/>
         <source>Only single nonstructured entity is allowed to be stored in the file.&lt;br /&gt;If the file was generated by the API function &lt;b&gt;saveTotalModel()&lt;/b&gt;, you can only load it with the API function &lt;b&gt;loadFile()&lt;/b&gt; in a script or in the interactive environment, not in OMEdit.&lt;br /&gt;&lt;br /&gt;&lt;b&gt;%1&lt;/b&gt; contains following classes &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Endast en enda ostrukturerad enhet får lagras i filen.&lt;br /&gt;Om filen skapades med API-funktionen &lt;b&gt;saveTotalModel()&lt;/b&gt; kan du bara ladda in den med API-funktionen &lt;b&gt;loadFile()&lt;/b&gt; i ett skript eller i den interaktiva miljön, inte i OMEdit.&lt;br /&gt;&lt;br /&gt;&lt;b&gt;%1&lt;/b&gt; innehåller följande klasser &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="851"/>
         <source>You cannot insert &lt;b&gt;%1&lt;/b&gt;, it is a &lt;b&gt;%2&lt;/b&gt;. Only &lt;b&gt;model&lt;/b&gt;, &lt;b&gt;class&lt;/b&gt;, &lt;b&gt;connector&lt;/b&gt;, &lt;b&gt;record&lt;/b&gt; or &lt;b&gt;block&lt;/b&gt; is allowed on the diagram layer.</source>
         <translation>Du kan inte infoga &lt;b&gt;%1&lt;/b&gt;, det är en &lt;b&gt;%2&lt;/b&gt;. Endast &lt;b&gt;model&lt;/b&gt;, &lt;b&gt;class&lt;/b&gt;, &lt;b&gt;connector&lt;/b&gt;, &lt;b&gt;record&lt;/b&gt; eller &lt;b&gt;block&lt;/b&gt; är tillåtna på diagramlagret.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="853"/>
         <source>You cannot insert &lt;b&gt;%1&lt;/b&gt;, it is a &lt;b&gt;%2&lt;/b&gt;. Only &lt;b&gt;connector&lt;/b&gt; is allowed on the icon layer.</source>
         <translation>Du kan inte infoga &lt;b&gt;%1&lt;/b&gt;, det är en &lt;b&gt;%2&lt;/b&gt;. Endast &lt;b&gt;connector&lt;/b&gt; tillåts på ikonlagret.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="857"/>
         <source>Enter a valid number value for &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Ange ett giltigt numeriskt värde för &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="865"/>
         <source>A component with the name &lt;b&gt;%1&lt;/b&gt; already exists. The name is changed from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;This is probably wrong because the component is declared as &lt;b&gt;inner&lt;/b&gt;.</source>
         <translation>En komponent med namn &lt;b&gt;%1&lt;/b&gt; existerar redan. Namnet är ändrat från &lt;b&gt;%1&lt;/b&gt; till &lt;b&gt;%2&lt;/b&gt;. &lt;br /&gt;&lt;br /&gt;Detta är förmodligen fel eftersom komponenten är deklarerad som &lt;b&gt;inner&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="877"/>
         <source>The encrypted package is generated at &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Det krypterade paketet har genererats i &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="913"/>
-        <location filename="../../Util/Helper.cpp" line="917"/>
-        <location filename="../../Util/Helper.cpp" line="921"/>
         <source>Unable to find component %1 while parsing %2 in %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte hitta komponenten %1 vid tolkning av %2 i %3.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="915"/>
         <source>Unable to find component %1 while parsing transition(%2).</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte hitta komponenten %1 vid tolkning av transition(%2).</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="919"/>
         <source>Unable to find component %1 while parsing initialState(%2).</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte hitta komponenten %1 vid tolkning av initialState(%2).</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="923"/>
         <source>Select at least one of the following options, &lt;br /&gt;&lt;br /&gt;* %1&lt;br /&gt;* %2&lt;br /&gt;* %3&lt;br /&gt;* %4</source>
-        <translation type="unfinished"></translation>
+        <translation>Välj minst ett av följande alternativ, &lt;br /&gt;&lt;br /&gt;* %1&lt;br /&gt;* %2&lt;br /&gt;* %3&lt;br /&gt;* %4</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="929"/>
         <source>Please enter a valid condition e.g., x &gt;=0.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ange ett giltigt villkor, t.ex. x &gt;=0.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="935"/>
         <source>Name &lt;b&gt;%1&lt;/b&gt; is not a valid identifier.&lt;br /&gt;A name must start with a letter, and all characters must be letters or digits. It may not be a reserved word.</source>
-        <translation type="unfinished"></translation>
+        <translation>Namnet &lt;b&gt;%1&lt;/b&gt; är inte en giltig identifierare.&lt;br /&gt;Ett namn måste börja med en bokstav och får bara innehålla bokstäver och siffror. Det får inte vara ett reserverat ord.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="937"/>
         <source>Please enter a script file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ange en skriptfil.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="939"/>
         <source>Library index file &lt;b&gt;%1&lt;/b&gt; doesn&apos;t exist.</source>
-        <translation type="unfinished"></translation>
+        <translation>Biblioteksindexfilen &lt;b&gt;%1&lt;/b&gt; finns inte.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="875"/>
         <source>The FIGARO is generated.</source>
         <translation>FIGARO har genererats.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="881"/>
         <source>Are you sure you want to unload &lt;b&gt;%1&lt;/b&gt;? Everything contained inside this class will also be unloaded.</source>
-        <translation>Är du säker på att du vill ladda ur &lt;b&gt;%1&lt;/b&gt;? Allt innehåll i klassen kommer också laddas ur.</translation>
+        <translation>Är du säker på att du vill ladda ur &lt;b&gt;%1&lt;/b&gt;? Allt innehåll i klassen kommer också att laddas ur.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="885"/>
         <source>Are you sure you want to delete &lt;b&gt;%1&lt;/b&gt;? Everything contained inside this class will also be deleted.</source>
-        <translation type="unfinished"></translation>
+        <translation>Är du säker på att du vill ta bort &lt;b&gt;%1&lt;/b&gt;? Allt innehåll i klassen kommer också att tas bort.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="887"/>
         <source>Are you sure you want to unload &lt;b&gt;%1&lt;/b&gt;?</source>
         <translation>Är du säker på att du vill ladda ur &lt;b&gt;%1&lt;/b&gt;?</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="889"/>
         <source>Are you sure you want to delete &lt;b&gt;%1&lt;/b&gt;?&lt;br /&gt;&lt;br /&gt;This will also delete from file system.</source>
-        <translation type="unfinished"></translation>
+        <translation>Är du säker på att du vill ta bort &lt;b&gt;%1&lt;/b&gt;?&lt;br /&gt;&lt;br /&gt;Detta tar även bort den från filsystemet.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="891"/>
         <source>The Modifier &lt;b&gt;%1&lt;/b&gt; format is invalid. The correct format is &lt;b&gt;phi(start=1)&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Formatet för modifieraren &lt;b&gt;%1&lt;/b&gt; är ogiltigt. Rätt format är &lt;b&gt;phi(start=1)&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="909"/>
         <source>Terminal command is not set. You can define a new terminal command in &lt;b&gt;%1-&gt;General-&gt;Terminal Command&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Inget terminalkommando är angivet. Du kan ange ett terminalkommando i &lt;b&gt;%1-&gt;Allmänt-&gt;Terminalkommando&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="895"/>
         <source>A debug configuration with name &lt;b&gt;%1&lt;/b&gt; already exists. Error occurred while saving the debug configuration &lt;b&gt;%2&lt;b&gt;.</source>
         <translation>En debug-konfiguration med namnet &lt;b&gt;%1&lt;/b&gt; existerar redan. Ett fel inträffade när debug-konfigurationen &lt;b&gt;%2&lt;/b&gt; sparades.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="867"/>
         <source>The FMU is generated at &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>FMU:n har genererats i &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="873"/>
         <source>The XML is generated at &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>XML-filen har genererats i &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="897"/>
         <source>Maximum &lt;b&gt;%1&lt;/b&gt; debug configurations are allowed.</source>
         <translation>Max &lt;b&gt;%1&lt;/b&gt; debug-konfigurationer är tillåtna.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="899"/>
         <source>Are you sure you want to delete &lt;b&gt;%1&lt;/b&gt; debug configuration?</source>
         <translation>Är du säker på att du vill ta bort debug-konfigurationen &lt;b&gt;%1&lt;/b&gt;?</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="901"/>
         <source>A debugging session is already running. Only one debugging session is allowed.</source>
         <translation>En debug-session körs redan. Endast en debug-session kan köras i taget.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="903"/>
         <source>Unable to find the class &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Kunde inte hitta klassen &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="905"/>
         <source>The class &lt;b&gt;%1&lt;/b&gt; is not saved. Breakpoints are only allowed on saved classes.</source>
         <translation>Klassen &lt;b&gt;%1&lt;/b&gt; är inte sparad. Brytpunkter är endast tillåtna i sparade klasser.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="907"/>
         <source>The class &lt;b&gt;%1&lt;/b&gt; is not a modelica class. Breakpoints are only allowed on modelica classes.</source>
-        <translation>Klassen &lt;b&gt;%1&lt;/b&gt; är inte en Modelica-klass. Brytpunkter är endast tillåtna i Modelica-klasser.</translation>
+        <translation>Klassen &lt;b&gt;%1&lt;/b&gt; är inte en Modelicaklass. Brytpunkter är endast tillåtna i Modelicaklasser.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="815"/>
         <source>An item with the same name already exists. Please try some other name.</source>
         <translation>Ett objekt med samma namn finns redan. Välj ett annat namn.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="793"/>
         <source>Please check the message browser for more error specific details.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se fönstret Meddelanden för mer information om felet.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="797"/>
         <source>Connectors &lt;b&gt;%1&lt;/b&gt; and &lt;b&gt;%2&lt;/b&gt; are not compatible.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopplingarna &lt;b&gt;%1&lt;/b&gt; och &lt;b&gt;%2&lt;/b&gt; är inte kompatibla.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="819"/>
         <source>Following error has occurred.&lt;br /&gt;%1</source>
-        <translation type="unfinished"></translation>
+        <translation>Följande fel har inträffat.&lt;br /&gt;%1</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="821"/>
         <source>Problems are found in %1 Text. &lt;br /&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Problem hittades i %1-texten. &lt;br /&gt;</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="833"/>
         <source>Unable to save the file &lt;b&gt;%1&lt;/b&gt;. %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte spara filen &lt;b&gt;%1&lt;/b&gt;. %2</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="835"/>
         <source>Unable to delete &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte ta bort &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="845"/>
         <source>Redefining class(es) &lt;b&gt;%1&lt;/b&gt; which already exist(s).</source>
-        <translation type="unfinished"></translation>
+        <translation>Omdefinierar klass(er) &lt;b&gt;%1&lt;/b&gt; som redan finns.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="855"/>
         <source>You cannot do a plot parametric between two different simulation result files. Make sure you select two variables from the same simulation result file.</source>
-        <translation>Du kan inte plotta variabler från två olika simuleringsresultat. Välj två variabler från samma simuleringsresultat.</translation>
+        <translation>Du kan inte göra ett parametriskt diagram av variabler från två olika simuleringsresultat. Välj två variabler från samma simuleringsresultat.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="859"/>
         <source>Enter a value for &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ange ett värde för &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="861"/>
         <source>You cannot drop an item on itself.</source>
         <translation>Du kan inte släppa ett element på sig självt.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="863"/>
         <source>&lt;b&gt;%1&lt;/b&gt; is defined as &lt;b&gt;partial&lt;/b&gt;.&lt;br /&gt;The component will be added as a &lt;b&gt;replaceable&lt;/b&gt; component.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; är deklarerad som &lt;b&gt;partial&lt;/b&gt;.&lt;br /&gt;Komponenten läggs till som en &lt;b&gt;replaceable&lt;/b&gt;-komponent.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="883"/>
-        <source>Are you sure you want to reload &lt;b&gt;%1&lt;/b&gt;? Any unsaved changes to the class and its containing classes will be lost.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="911"/>
         <source>Unable to find component %1 while parsing connection %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte hitta komponenten %1 vid tolkning av anslutningen %2.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="931"/>
         <source>Multiple declarations of component &lt;b&gt;%1&lt;/b&gt; are found.</source>
-        <translation type="unfinished"></translation>
+        <translation>Flera deklarationer av komponenten &lt;b&gt;%1&lt;/b&gt; hittades.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="933"/>
         <source>Following error has occurred &lt;b&gt;%1&lt;/b&gt; GDB arguments are &lt;b&gt;&quot;%2&quot;&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Följande fel har inträffat &lt;b&gt;%1&lt;/b&gt; GDB-argumenten är &lt;b&gt;&quot;%2&quot;&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="941"/>
         <source>Automatically-adjusted vector length scales zoomed out the scene too much. Home position will be reset as if adjustable-length vectors were not drawn.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="944"/>
         <source>CRML support is not enabled. Please enable it in &lt;b&gt;%1-&gt;General-&gt;Enable CRML Support&lt;/b&gt; and restart OMEdit.</source>
-        <translation type="unfinished"></translation>
+        <translation>Stöd för CRML är inte aktiverat. Aktivera det i &lt;b&gt;%1-&gt;Allmänt-&gt;Aktivera stöd för CRML&lt;/b&gt; och starta om OMEdit.</translation>
+    </message>
+    <message>
+        <source>Error has occurred while loading the model : 
+%1.</source>
+        <translation>Ett fel inträffade när modellen lästes in:
+%1.</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reload &lt;b&gt;%1&lt;/b&gt;? Any unsaved changes will be lost.</source>
+        <translation>Är du säker på att du vill ladda om &lt;b&gt;%1&lt;/b&gt;? Alla osparade ändringar går förlorade.</translation>
+    </message>
+    <message>
+        <source>The operations were not generated. Check Generate Operations in &lt;b&gt;%1-&gt;Debugger-&gt;Transformational Debugger&lt;/b&gt; OR you must set the -d=infoXmlOperations flag via &lt;b&gt;Simulation Setup-&gt;Translation Flags-&gt;Additional Translation Flags&lt;/b&gt; and simulate again.</source>
+        <translation>Operationerna genererades inte. Markera Generera operationer i &lt;b&gt;%1-&gt;Debugger-&gt;Transformationsdebugger&lt;/b&gt; ELLER ange flaggan -d=infoXmlOperations via &lt;b&gt;Simuleringsinställningar-&gt;Översättningsflaggor-&gt;Ytterligare översättningsflaggor&lt;/b&gt; och simulera igen.</translation>
     </message>
 </context>
 <context>
     <name>GeneralSettingsPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3452"/>
         <source>Auto Detected</source>
-        <translation>Upptäck Automatiskt</translation>
+        <translation>Automatiskt</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3470"/>
         <source>Toolbar Icon Size: *</source>
-        <translation type="unfinished"></translation>
+        <translation>Ikonstorlek i verktygsfält: *</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3475"/>
         <source>Preserve User&apos;s GUI Customizations</source>
-        <translation>Bevara Användarens Gränssnittsanpassningar</translation>
+        <translation>Bevara användarens gränssnittsanpassningar</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3478"/>
         <source>Terminal Command:</source>
-        <translation type="unfinished"></translation>
+        <translation>Terminalkommando:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3485"/>
         <source>Terminal Command Arguments:</source>
-        <translation type="unfinished"></translation>
+        <translation>Argument för terminalkommando:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3492"/>
         <source>Activate Access Annotations *</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktivera åtkomstannoteringar *</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3495"/>
         <source>Activates the access annotations even for the non-encrypted libraries.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktiverar åtkomstannoteringarna även för okrypterade bibliotek.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3496"/>
         <source>Activates the access annotations even if the .mol contains a non-encrypted library.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktiverar åtkomstannoteringarna även om .mol-filen innehåller ett okrypterat bibliotek.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3497"/>
         <source>Deactivates access annotations except for encrypted libraries.</source>
-        <translation type="unfinished"></translation>
+        <translation>Inaktiverar åtkomstannoteringar utom för krypterade bibliotek.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3498"/>
         <source>Always</source>
-        <translation type="unfinished"></translation>
+        <translation>Alltid</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3499"/>
         <source>When loading .mol file(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>När .mol-filer laddas in</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3500"/>
         <source>Never</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldrig</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3509"/>
         <source>Enable CRML Support *</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktivera stöd för CRML *</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3535"/>
         <source>Library Browser</source>
-        <translation type="unfinished"></translation>
+        <translation>Fönstret Bibliotek</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3549"/>
         <source>Show Hidden Classes if not encrypted</source>
-        <translation type="unfinished"></translation>
+        <translation>Visa dolda klasser om de inte är krypterade</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3551"/>
         <source>Synchronize with Model Widget</source>
-        <translation type="unfinished"></translation>
+        <translation>Synkronisera med modellfönstret</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3600"/>
         <source>Show Latest News &amp;&amp; Events</source>
         <translation>Visa de senaste nyheterna &amp;&amp; evenemang</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3603"/>
         <source>Recent Files and Latest News &amp; Events Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Antal poster för senaste filer, nyheter och evenemang:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3504"/>
         <source>Create a model.bak-mo backup file when deleting a model.</source>
-        <translation type="unfinished"></translation>
+        <translation>Skapa en säkerhetskopia model.bak-mo när en modell tas bort.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3507"/>
         <source>Display errors/warnings when instantiating the graphical annotations</source>
-        <translation type="unfinished"></translation>
+        <translation>Visa fel/varningar vid instansiering av de grafiska annoteringarna</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3542"/>
         <source>Max. Library Icon Text Length to Show: *</source>
-        <translation type="unfinished"></translation>
+        <translation>Max. textlängd i biblioteksikoner: *</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3547"/>
         <source>Show Protected Classes</source>
-        <translation>Visa Skyddade Klasser</translation>
+        <translation>Visa skyddade klasser</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3566"/>
         <source>Enable Auto Save</source>
-        <translation>Slå på Autosparning</translation>
+        <translation>Slå på autosparning</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3570"/>
         <source>Auto Save Interval:</source>
         <translation>Intervall för autosparning:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3572"/>
         <source> seconds</source>
         <translation> sekunder</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3588"/>
         <source>Welcome Page</source>
         <translation>Välkomstsida</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3589"/>
         <source>Horizontal View</source>
-        <translation>Horisontal Vy</translation>
+        <translation>Horisontell vy</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3591"/>
         <source>Vertical View</source>
-        <translation>Vertikal Vy</translation>
+        <translation>Vertikal vy</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3700"/>
         <source>(%1 minute(s))</source>
         <translation>(%1 minut(er))</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3450"/>
         <source>Language: *</source>
-        <translation type="unfinished"></translation>
+        <translation>Språk: *</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3488"/>
         <source>Autohide Variable Browser</source>
-        <translation type="unfinished"></translation>
+        <translation>Dölj fönstret Variabler automatiskt</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3489"/>
         <source>Automatically hide the variable browser when switching away from plotting perspective.</source>
-        <translation type="unfinished"></translation>
+        <translation>Döljer fönstret Variabler automatiskt när du lämnar perspektivet Plottning.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3502"/>
         <source>Options for handling of access annotations</source>
-        <translation type="unfinished"></translation>
+        <translation>Alternativ för hantering av åtkomstannoteringar</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3537"/>
         <source>Library Icon Size: *</source>
-        <translation type="unfinished"></translation>
+        <translation>Storlek på biblioteksikoner: *</translation>
+    </message>
+    <message>
+        <source>Read the model instance directly from memory instead of JSON (faster for large models)</source>
+        <translation>Läs modellinstansen direkt från minnet i stället för från JSON (snabbare för stora modeller)</translation>
+    </message>
+    <message>
+        <source>Color Scheme: *</source>
+        <translation>Färgschema: *</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <translation>System</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation>Ljust</translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation>Mörkt</translation>
+    </message>
+    <message>
+        <source>System follows the operating system color scheme. The --DarkMode command line option overrides this setting.</source>
+        <translation>System följer operativsystemets färgschema. Kommandoradsflaggan --DarkMode åsidosätter den här inställningen.</translation>
     </message>
 </context>
 <context>
     <name>GitCommands</name>
     <message>
-        <location filename="../../Git/GitCommands.cpp" line="132"/>
         <source>Repository Creation Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Det gick inte att skapa repository</translation>
+    </message>
+</context>
+<context>
+    <name>GoogleDriveProvider</name>
+    <message>
+        <source>The file changed in Google Drive since it was last synchronised.</source>
+        <translation>Filen har ändrats i Google Drive sedan den senast synkroniserades.</translation>
     </message>
 </context>
 <context>
     <name>GotoLineDialog</name>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2914"/>
         <source>Enter line number (%1 to %2):</source>
-        <translation type="unfinished"></translation>
+        <translation>Ange radnummer (%1 till %2):</translation>
     </message>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="2917"/>
         <source>Enter line number (1 to %1):</source>
-        <translation type="unfinished"></translation>
+        <translation>Ange radnummer (1 till %1):</translation>
     </message>
 </context>
 <context>
     <name>GraphicalViewsPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5000"/>
         <source>Default Modeling View Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Standardläge för modelleringsvyn</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5001"/>
         <source>Tabbed View</source>
-        <translation>Visa i Flik</translation>
+        <translation>Visa i flik</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5003"/>
         <source>SubWindow View</source>
-        <translation>Visa i Nytt Fönster</translation>
+        <translation>Visa i nytt fönster</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5017"/>
         <source>Default View</source>
         <translation>Standardvy</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5018"/>
         <source>This settings will be used when no preferredView annotation is defined.</source>
-        <translation>Denna inställningar kommer användas när ingen preferredView-annotation är definierad.</translation>
+        <translation>Den här inställningen används när det inte finns någon preferredView-annotering.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5041"/>
         <source>Move connectors together on both icon and diagram layers</source>
-        <translation type="unfinished"></translation>
+        <translation>Flytta kopplingar tillsammans i både ikon- och diagramlagret</translation>
     </message>
 </context>
 <context>
     <name>GraphicsView</name>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2876"/>
         <source>Deletes the item</source>
         <translation>Tar bort objektet</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="876"/>
         <source>You can only drag &amp; drop Modelica models.</source>
-        <translation type="unfinished"></translation>
+        <translation>Du kan bara dra och släppa Modelicamodeller.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="902"/>
         <source>Failed to add component &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte lägga till komponenten &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1335"/>
         <source>Failed to add connection &lt;b&gt;connect(%1, %2)&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte lägga till anslutningen &lt;b&gt;connect(%1, %2)&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1364"/>
         <source>Connection connect(%1, %2) already exists.</source>
-        <translation type="unfinished"></translation>
+        <translation>Anslutningen connect(%1, %2) finns redan.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1785"/>
         <source>Failed to add transition &lt;b&gt;transition(%1, %2)&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte lägga till övergången &lt;b&gt;transition(%1, %2)&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1819"/>
         <source>Failed to update transition &lt;b&gt;transition(%1, %2)&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte uppdatera övergången &lt;b&gt;transition(%1, %2)&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2855"/>
         <source>Shows the class parameters</source>
-        <translation type="unfinished"></translation>
+        <translation>Visar klassens parametrar</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2870"/>
         <source>Manhattanize</source>
-        <translation type="unfinished"></translation>
+        <translation>Räta upp linjer</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2871"/>
         <source>Manhattanize the lines</source>
-        <translation type="unfinished"></translation>
+        <translation>Ritar om linjerna med vågräta och lodräta segment</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2881"/>
         <source>Cut</source>
         <translation>Klipp ut</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2890"/>
         <source>Paste</source>
         <translation>Klistra in</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2901"/>
         <source>Bring to Front</source>
-        <translation type="unfinished"></translation>
+        <translation>Placera längst fram</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2902"/>
         <source>Brings the item to front</source>
-        <translation type="unfinished"></translation>
+        <translation>Placerar objektet längst fram</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2906"/>
         <source>Bring Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>Flytta framåt</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2907"/>
         <source>Brings the item one level forward</source>
-        <translation type="unfinished"></translation>
+        <translation>Flyttar objektet en nivå framåt</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2911"/>
         <source>Send to Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Placera längst bak</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2912"/>
         <source>Sends the item to back</source>
-        <translation type="unfinished"></translation>
+        <translation>Placerar objektet längst bak</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2916"/>
         <source>Send Backward</source>
-        <translation type="unfinished"></translation>
+        <translation>Flytta bakåt</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2917"/>
         <source>Sends the item one level backward</source>
-        <translation type="unfinished"></translation>
+        <translation>Flyttar objektet en nivå bakåt</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2921"/>
         <source>Rotate Clockwise</source>
-        <translation>Rotera Medurs</translation>
+        <translation>Rotera medurs</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2922"/>
         <source>Rotates the item clockwise</source>
         <translation>Roterar objektet medurs</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2928"/>
         <source>Rotates the item anticlockwise</source>
         <translation>Roterar objektet moturs</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2933"/>
         <source>Flip Horizontal</source>
-        <translation>Spegelvänd Horisontellt</translation>
+        <translation>Spegelvänd horisontellt</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2934"/>
         <source>Flips the item horizontally</source>
         <translation>Spegelvänder objektet horisontellt</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2939"/>
         <source>Flip Vertical</source>
-        <translation>Spegelvänd Vertikalt</translation>
+        <translation>Spegelvänd vertikalt</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2940"/>
         <source>Flips the item vertically</source>
         <translation>Spegelvänder objektet vertikalt</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2945"/>
         <source>Create Connector</source>
-        <translation type="unfinished"></translation>
+        <translation>Skapa koppling</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2946"/>
         <source>Creates a connector</source>
-        <translation type="unfinished"></translation>
+        <translation>Skapar en koppling</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2949"/>
         <source>Cancel Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Avbryt anslutning</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2950"/>
         <source>Cancels the current connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Avbryter den pågående anslutningen</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2953"/>
         <source>Set Initial State</source>
-        <translation type="unfinished"></translation>
+        <translation>Ange starttillstånd</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2954"/>
         <source>Sets the state as initial state</source>
-        <translation type="unfinished"></translation>
+        <translation>Anger tillståndet som starttillstånd</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2957"/>
         <source>Cancel Transition</source>
-        <translation type="unfinished"></translation>
+        <translation>Avbryt övergång</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2958"/>
         <source>Cancels the current transition</source>
-        <translation type="unfinished"></translation>
+        <translation>Avbryter den pågående övergången</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="4165"/>
         <source>Error in class annotation %1</source>
-        <translation>Fel i klassannotation %1</translation>
+        <translation>Fel i klassannoteringen %1</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="4178"/>
         <source>Opening %1 parameters window</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppnar parameterfönstret för %1</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="4349"/>
         <source>The Modelica code of this model is invalid, so the graphics cannot be displayed.
 Please check the Messages browser for error messages and possibly undo the latest changes with ctrl-z.</source>
-        <translation type="unfinished"></translation>
+        <translation>Modelicakoden för den här modellen är ogiltig, så grafiken kan inte visas.
+Se fönstret Meddelanden för felmeddelanden och ångra eventuellt de senaste ändringarna med Ctrl+Z.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2927"/>
         <source>Rotate Anticlockwise</source>
-        <translation>Rotera Moturs</translation>
+        <translation>Rotera moturs</translation>
     </message>
 </context>
 <context>
     <name>GraphicsViewProperties</name>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1687"/>
         <source>Copy properties to Diagram layer</source>
-        <translation>Kopiera egenskaper till Diagramlagret</translation>
+        <translation>Kopiera egenskaper till diagramlagret</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1689"/>
         <source>Copy properties to Icon layer</source>
-        <translation>Kopiera egenskaper till Ikonlagret</translation>
+        <translation>Kopiera egenskaper till ikonlagret</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1705"/>
         <source>Graphics</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafik</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1711"/>
         <source>Uses</source>
-        <translation type="unfinished"></translation>
+        <translation>Uses</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1749"/>
         <source>Add new uses annotation</source>
-        <translation type="unfinished"></translation>
+        <translation>Lägg till en ny uses-annotering</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1754"/>
         <source>Remove uses annotation</source>
-        <translation type="unfinished"></translation>
+        <translation>Ta bort uses-annoteringen</translation>
     </message>
 </context>
 <context>
     <name>Helper</name>
     <message>
-        <location filename="../../Util/Helper.cpp" line="640"/>
         <source>Read-Only</source>
         <translation>Skrivskyddad</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="641"/>
         <source>Writable</source>
         <oldsource>Writeable</oldsource>
         <translation>Skrivbar</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="643"/>
         <source>Icon View</source>
         <translation>Ikonvy</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="644"/>
         <source>Diagram View</source>
         <translation>Diagramvy</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="646"/>
         <source>Documentation View</source>
         <translation>Dokumentationsvy</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="649"/>
         <source>Find/Replace...</source>
-        <translation>Sök/Ersätt...</translation>
+        <translation>Sök/ersätt...</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="660"/>
         <source>Opens the class details</source>
         <translation>Öppnar klassdetaljerna</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="667"/>
         <source>View Documentation</source>
-        <translation>Visa Dokumentation</translation>
+        <translation>Visa dokumentation</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="484"/>
         <source>Error</source>
         <translation>Fel</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="466"/>
         <source>Open Model/Library File(s)</source>
-        <translation>Öppna Modell-/Biblioteks-fil(er)</translation>
+        <translation>Öppna modell-/biblioteksfil(er)</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="489"/>
         <source>Choose File</source>
         <translation>Välj fil</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="492"/>
         <source>Attributes</source>
         <translation>Attribut</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="493"/>
         <source>Properties</source>
         <translation>Egenskaper</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="495"/>
         <source>Edit</source>
         <translation>Redigera</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="496"/>
         <source>Save</source>
         <translation>Spara</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="504"/>
         <source>Choose Directory</source>
-        <translation>Välj Katalog</translation>
+        <translation>Välj katalog</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="509"/>
         <source>General</source>
-        <translation>Allmänna</translation>
+        <translation>Allmänt</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="511"/>
         <source>Parameters</source>
         <translation>Parametrar</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="513"/>
         <source>Name:</source>
         <translation>Namn:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="515"/>
         <source>Comment:</source>
         <translation>Kommentar:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="517"/>
         <source>Type</source>
         <translation>Typ</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="518"/>
         <source>Information</source>
         <translation>Information</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="522"/>
         <source>Check Model</source>
-        <translation>Kontrollera Modell</translation>
+        <translation>Kontrollera modell</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="526"/>
         <source>Instantiate Model</source>
-        <translation>Instansiera Modell</translation>
+        <translation>Instansiera modell</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="551"/>
         <source>Delete</source>
         <translation>Ta bort</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="552"/>
         <source>Copy</source>
         <translation>Kopiera</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="553"/>
         <source>Paste</source>
         <translation>Klistra in</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="558"/>
         <source>Loading</source>
         <translation>Laddar</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="559"/>
         <source>Question</source>
         <translation>Fråga</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="560"/>
         <source>Search</source>
         <translation>Sök</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="572"/>
         <source>Simulate</source>
         <translation>Simulera</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="573"/>
         <source>Simulates the Modelica class</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulerar Modelicaklassen</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="577"/>
         <source>Re-simulates the Modelica class</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulerar om Modelicaklassen</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="578"/>
         <source>Re-simulate Setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Inställningar för omsimulering</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="579"/>
         <source>Setup re-simulation settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Ställ in omsimuleringen</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="581"/>
         <source>Simulate with Transformational Debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulera med transformationsdebugger</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="582"/>
         <source>Simulates the Modelica class with Transformational Debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulerar Modelicaklassen med transformationsdebuggern</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="584"/>
         <source>Simulates the Modelica class with Algorithmic Debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulerar Modelicaklassen med den algoritmiska debuggern</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="589"/>
         <source>Simulation</source>
         <translation>Simulering</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="591"/>
         <source>Interactive Simulation</source>
-        <translation>Interaktiv Simulering</translation>
+        <translation>Interaktiv simulering</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="539"/>
         <source>Export to OMNotebook</source>
         <translation>Exportera till OMNotebook</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="105"/>
         <source>OMEdit-&gt;Preferences</source>
-        <translation type="unfinished"></translation>
+        <translation>OMEdit-&gt;Inställningar</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="107"/>
         <source>Tools-&gt;Options</source>
-        <translation type="unfinished"></translation>
+        <translation>Verktyg-&gt;Alternativ</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="463"/>
         <source>Modelica Class</source>
-        <translation type="unfinished"></translation>
+        <translation>Modelicaklass</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="464"/>
         <source>New Modelica Class</source>
         <translation>Ny Modelicaklass</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="465"/>
         <source>Create New Modelica Class</source>
-        <translation>Skapa Ny Modelicaklass</translation>
+        <translation>Skapa ny Modelicaklass</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="467"/>
         <source>Open/Convert Modelica File(s) With Encoding</source>
-        <translation>Öppna/Konvertera Modelica Fil(er) med Teckenkodning</translation>
+        <translation>Öppna/konvertera Modelicafil(er) med teckenkodning</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="468"/>
         <source>CRML Model</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML-modell</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="469"/>
         <source>Creates a new CRML Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Skapar en ny CRML-modell</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="470"/>
         <source>Modelica Script</source>
-        <translation type="unfinished"></translation>
+        <translation>Modelicaskript</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="471"/>
-        <source>Creates a new Modelca Script</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="473"/>
         <source>Elements</source>
-        <translation type="unfinished"></translation>
+        <translation>Element</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="474"/>
         <source>Clear Recent Files</source>
-        <translation>Rensa Senaste Filer</translation>
+        <translation>Rensa senaste filer</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="475"/>
         <source>Encoding:</source>
         <translation>Teckenkodning:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="476"/>
         <source>File:</source>
         <translation>Fil:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="477"/>
         <source>File</source>
         <translation>Fil</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="478"/>
         <source>Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Mapp</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="482"/>
         <source>Reset</source>
         <translation>Återställ</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="483"/>
         <source>Close</source>
         <translation>Stäng</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="485"/>
-        <source>Percentage:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="486"/>
-        <source>Choose Transparency</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="487"/>
-        <source>Choose Specularity</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="488"/>
-        <source>Choose Color</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="490"/>
         <source>Choose File(s)</source>
-        <translation>Väl Fil(er)</translation>
+        <translation>Välj fil(er)</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="491"/>
         <source>Save File</source>
-        <translation>Spara Filen</translation>
+        <translation>Spara filen</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="494"/>
-        <location filename="../../Util/Helper.cpp" line="507"/>
         <source>Add</source>
         <translation>Lägg till</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="497"/>
+        <source>Edit Array</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Save a file</source>
         <translation>Spara en fil</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="498"/>
         <source>Save As</source>
-        <translation>Spara Som</translation>
+        <translation>Spara som</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="499"/>
         <source>Save a copy of the class in a new file</source>
-        <translation type="unfinished"></translation>
+        <translation>Spara en kopia av klassen i en ny fil</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="500"/>
         <source>Save Total</source>
-        <translation type="unfinished"></translation>
+        <translation>Spara komplett</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="501"/>
         <source>Save class with all used classes</source>
-        <translation type="unfinished"></translation>
+        <translation>Spara klassen med alla klasser som den använder</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="502"/>
         <source>Apply</source>
-        <translation>Utför</translation>
+        <translation>Verkställ</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="503"/>
-        <location filename="../../Util/Helper.cpp" line="535"/>
         <source>Import FMU</source>
         <translation>Importera FMU</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="505"/>
-        <source>Add Path</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="506"/>
-        <source>Remove Path</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="510"/>
         <source>Output</source>
         <translation>Utdata</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="516"/>
         <source>Path:</source>
         <translation>Sökväg:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="519"/>
         <source>Rename</source>
-        <translation>Döp om</translation>
+        <translation>Byt namn</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="520"/>
         <source>Renames an item</source>
-        <translation type="unfinished"></translation>
+        <translation>Byter namn på ett objekt</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="523"/>
         <source>Check the Modelica class</source>
         <translation>Kontrollera Modelicaklassen</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="524"/>
         <source>Check All Models</source>
-        <translation>Kontrollera Alla Modeller</translation>
+        <translation>Kontrollera alla modeller</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="525"/>
         <source>Checks all nested modelica classes</source>
-        <translation>Kontrollera alla nästlade Modelica-klasser</translation>
+        <translation>Kontrollerar alla nästlade Modelicaklasser</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="527"/>
         <source>Instantiate/Flatten the Modelica class</source>
-        <translation>Instansiera/Platta ut Modelicaklassen</translation>
+        <translation>Instansiera/platta ut Modelicaklassen</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="530"/>
         <source>Exports the model as Functional Mockup Unit (FMU)</source>
         <translation>Exporterar modellen som en Functional Mockup Unit (FMU)</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="536"/>
         <source>Imports the model from Functional Mockup Interface (FMU)</source>
         <translation>Importerar modellen från en Functional Mockup Interface (FMU)</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="538"/>
         <source>Exports the model as XML</source>
         <translation>Exporterar modellen som XML</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="540"/>
         <source>Exports the current model to OMNotebook</source>
         <translation>Exporterar den aktuella modellen till OMNotebook</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="541"/>
         <source>Import from OMNotebook</source>
         <translation>Importera från OMNotebook</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="542"/>
         <source>Import ngspice netlist</source>
         <translation>Importera ngspice-nätlista</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="543"/>
         <source>Imports the model(s) from OMNotebook</source>
-        <translation>Importerar modell(en) från OMNotebook</translation>
+        <translation>Importerar modell(er) från OMNotebook</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="544"/>
         <source>Converts ngspice netlist(s) to Modelica code</source>
-        <translation>Konvertera ngspice nätlista till Modelica-kod</translation>
+        <translation>Konverterar ngspice-nätlistor till Modelicakod</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="545"/>
         <source>Line</source>
         <translation>Linje</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="546"/>
         <source>Export as an Image</source>
-        <translation>Exportera som en bild</translation>
+        <translation>Exportera som bild</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="547"/>
         <source>Exports the current model to Image</source>
-        <translation>Exporterar den aktuella modellen till bild</translation>
+        <translation>Exporterar den aktuella modellen som bild</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="548"/>
         <source>Export Figaro</source>
-        <translation>Exporta till Figaro</translation>
+        <translation>Exportera till Figaro</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="549"/>
         <source>Exports the current model to Figaro</source>
         <translation>Exporterar den aktuella modellen till Figaro</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="550"/>
         <source>OpenModelica Compiler CLI</source>
-        <translation type="unfinished"></translation>
+        <translation>OpenModelica Compiler CLI</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="557"/>
         <source>Fit to Diagram</source>
-        <translation type="unfinished"></translation>
+        <translation>Anpassa till diagrammet</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="561"/>
         <source>Duplicate</source>
         <translation>Duplicera</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="562"/>
         <source>Duplicates the item</source>
         <translation>Duplicerar objektet</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="563"/>
         <source>Unload</source>
         <translation>Ladda ur</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="564"/>
         <source>Unload the Modelica class</source>
         <translation>Ladda ur Modelicaklassen</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="566"/>
         <source>Reload the Modelica class</source>
-        <translation type="unfinished"></translation>
+        <translation>Ladda om Modelicaklassen</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="567"/>
         <source>Unloads the file without deleting it from the file system</source>
-        <translation type="unfinished"></translation>
+        <translation>Laddar ur filen utan att ta bort den från filsystemet</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="568"/>
-        <source>Unload the CRML file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="569"/>
-        <source>Unload the Modelica Script file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="571"/>
         <source>Refresh</source>
-        <translation>Ladda om</translation>
+        <translation>Uppdatera</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="576"/>
         <source>Re-simulate</source>
-        <translation>Simulera Om</translation>
+        <translation>Simulera om</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="580"/>
         <source>Export Variables</source>
-        <translation type="unfinished"></translation>
+        <translation>Exportera variabler</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="583"/>
         <source>Simulate with Algorithmic Debugger</source>
-        <translation>Simulera med Algoritmisk Debugger</translation>
+        <translation>Simulera med algoritmisk debugger</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="585"/>
         <source>Simulate with Animation</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulera med animering</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="586"/>
         <source>Simulates the Modelica class with Animation</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulerar Modelicaklassen med animering</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="587"/>
         <source>Simulation Setup</source>
         <translation>Simuleringsinställningar</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="588"/>
         <source>Setup simulation settings</source>
         <translation>Ställ in simuleringen</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="590"/>
         <source>Re-simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Omsimulering</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="592"/>
         <source>Translate</source>
-        <translation type="unfinished"></translation>
+        <translation>Översätt</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="593"/>
         <source>Translates the CRML model to Modelica</source>
-        <translation type="unfinished"></translation>
+        <translation>Översätter CRML-modellen till Modelica</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="594"/>
         <source>Translate As</source>
-        <translation type="unfinished"></translation>
+        <translation>Översätt som</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="595"/>
         <source>Translates As the CRML model to Modelica</source>
-        <translation type="unfinished"></translation>
+        <translation>Översätter CRML-modellen till en ny Modelicaklass</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="596"/>
         <source>Run</source>
-        <translation type="unfinished"></translation>
+        <translation>Kör</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="597"/>
         <source>Runs the Modelica Script</source>
-        <translation type="unfinished"></translation>
+        <translation>Kör Modelicaskriptet</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="598"/>
         <source>Options</source>
         <translation>Alternativ</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="599"/>
         <source>Extent</source>
         <translation>Utsträckning</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="600"/>
         <source>Bottom:</source>
         <translation>Botten:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="601"/>
         <source>Top:</source>
         <translation>Toppen:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="602"/>
         <source>Grid</source>
         <translation>Rutnät</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="605"/>
         <source>Component</source>
         <translation>Komponent</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="607"/>
         <source>Scale factor:</source>
         <translation>Skalningsfaktor:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="608"/>
         <source>Preserve aspect ratio</source>
         <translation>Bevara bildförhållande</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="609"/>
         <source>OriginX:</source>
         <translation>OriginX:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="610"/>
         <source>OriginY:</source>
         <translation>OriginY:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="611"/>
         <source>Rotation:</source>
         <translation>Rotation:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="614"/>
         <source>Bezier</source>
         <translation>Bezier</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="615"/>
         <source>Start Arrow:</source>
         <translation>Startpil:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="616"/>
         <source>End Arrow:</source>
         <translation>Slutpil:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="617"/>
         <source>Arrow Size:</source>
         <translation>Pilstorlek:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="618"/>
         <source>Size:</source>
         <translation>Storlek:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="619"/>
         <source>Line Style</source>
         <translation>Linjestil</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="636"/>
         <source>CRML</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="648"/>
         <source>Filter Elements</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtrera element</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="706"/>
         <source>Report Issue</source>
-        <translation type="unfinished"></translation>
+        <translation>Rapportera problem</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="707"/>
         <source>Crash Test</source>
-        <translation type="unfinished"></translation>
+        <translation>Kraschtest</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="711"/>
         <source>Version:</source>
-        <translation type="unfinished"></translation>
+        <translation>Version:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="783"/>
         <source>Replace SubModel</source>
-        <translation type="unfinished"></translation>
+        <translation>Ersätt delmodell</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="784"/>
         <source>List of paths searched while loading a library. Paths are separated by ; on Windows and : on Linux and macOS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lista med sökvägar som genomsöks när ett bibliotek laddas in. Sökvägarna avgränsas med ; i Windows och : i Linux och macOS.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="785"/>
         <source>Select Parent Class</source>
-        <translation type="unfinished">Välj Klass att Infoga i</translation>
+        <translation>Välj klass att infoga i</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="729"/>
         <source>Creates a new SSP Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Skapar en ny SSP-modell</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="748"/>
         <source>&lt;New Variable&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;Ny variabel&gt;</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="749"/>
         <source>Library</source>
-        <translation type="unfinished"></translation>
+        <translation>Bibliotek</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="750"/>
         <source>Move Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Flytta upp</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="751"/>
         <source>Move Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Flytta ned</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="752"/>
         <source>Fix error(s) manually</source>
-        <translation type="unfinished"></translation>
+        <translation>Åtgärda fel manuellt</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="753"/>
         <source>Revert to last correct version</source>
-        <translation type="unfinished"></translation>
+        <translation>Återgå till senaste korrekta version</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="758"/>
         <source>item</source>
-        <translation type="unfinished"></translation>
+        <translation>objekt</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="759"/>
         <source>Bold</source>
         <translation>Fetstil</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="760"/>
         <source>Italic</source>
         <translation>Kursiv</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="761"/>
         <source>Underline</source>
-        <translation>Understrykning</translation>
+        <translation>Understruken</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="779"/>
         <source>Install Library</source>
-        <translation type="unfinished"></translation>
+        <translation>Installera bibliotek</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="780"/>
         <source>Upgrade Installed Libraries</source>
-        <translation type="unfinished"></translation>
+        <translation>Uppgradera installerade bibliotek</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="781"/>
         <source>Update Library Index</source>
-        <translation type="unfinished"></translation>
+        <translation>Uppdatera biblioteksindex</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="782"/>
         <source>Data Reconciliation</source>
-        <translation type="unfinished"></translation>
+        <translation>Dataavstämning</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="622"/>
         <source>Font Family:</source>
         <translation>Teckensnittsfamilj:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="512"/>
         <source>Inputs</source>
-        <translation type="unfinished"></translation>
+        <translation>Indata</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="514"/>
         <source>Start Script:</source>
-        <translation type="unfinished"></translation>
+        <translation>Startskript:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="521"/>
         <source>OMSimulator rename</source>
-        <translation type="unfinished"></translation>
+        <translation>Byt namn i OMSimulator</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="528"/>
         <source>FMU</source>
-        <translation type="unfinished"></translation>
+        <translation>FMU</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="529"/>
         <source>Export</source>
-        <translation type="unfinished"></translation>
+        <translation>Exportera</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="531"/>
         <source>Read-only Package</source>
-        <translation type="unfinished"></translation>
+        <translation>Skrivskyddat paket</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="532"/>
         <source>Exports the package as read-only package</source>
-        <translation type="unfinished"></translation>
+        <translation>Exporterar paketet som ett skrivskyddat paket</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="533"/>
         <source>Encrypted Package</source>
-        <translation type="unfinished"></translation>
+        <translation>Krypterat paket</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="534"/>
         <source>Exports the package as Encrytped package</source>
-        <translation type="unfinished"></translation>
+        <translation>Exporterar paketet som ett krypterat paket</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="537"/>
         <source>XML</source>
-        <translation type="unfinished"></translation>
+        <translation>XML</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="554"/>
         <source>Reset Zoom</source>
-        <translation>Återställ Zoom</translation>
+        <translation>Återställ zoom</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="555"/>
         <source>Zoom In</source>
-        <translation>Zooma In</translation>
+        <translation>Zooma in</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="556"/>
         <source>Zoom Out</source>
-        <translation>Zooma Ut</translation>
+        <translation>Zooma ut</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="570"/>
         <source>Unloads the model</source>
-        <translation type="unfinished"></translation>
+        <translation>Laddar ur modellen</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="574"/>
         <source>Call function</source>
-        <translation type="unfinished"></translation>
+        <translation>Anropa funktion</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="575"/>
         <source>Calls the Modelica function</source>
-        <translation type="unfinished"></translation>
+        <translation>Anropar Modelicafunktionen</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="606"/>
-        <source>Element</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="623"/>
         <source>Font Size:</source>
         <translation>Teckenstorlek:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="625"/>
         <source>Fill Style</source>
-        <translation>Skraffering</translation>
+        <translation>Fyllnadsstil</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="626"/>
         <source>Pattern:</source>
         <translation>Mönster:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="627"/>
         <source>Extent1X:</source>
         <translation>Utsträckning1X:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="628"/>
         <source>Extent1Y:</source>
         <translation>Utsträckning1Y:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="629"/>
         <source>Extent2X:</source>
         <translation>Utsträckning2X:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="630"/>
         <source>Extent2Y:</source>
         <translation>Utsträckning2Y:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="631"/>
         <source>Radius:</source>
         <translation>Radie:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="632"/>
         <source>Start Angle:</source>
         <translation>Startvinkel:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="633"/>
         <source>End Angle:</source>
         <translation>Slutvinkel:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="634"/>
         <source>Curve Style</source>
         <translation>Kurvstil</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="635"/>
         <source>Figaro</source>
         <translation>Figaro</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="642"/>
         <source>Working Directory:</source>
         <translation>Arbetskatalog:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="645"/>
         <source>Text View</source>
         <translation>Textvy</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="653"/>
         <source>Create Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Skapa anslutning</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="654"/>
-        <source>Connection Attributes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="655"/>
         <source>Create Transition</source>
-        <translation type="unfinished"></translation>
+        <translation>Skapa övergång</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="656"/>
         <source>Edit Transition</source>
-        <translation type="unfinished"></translation>
+        <translation>Redigera övergång</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="657"/>
-        <source>Find Variables</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="658"/>
         <source>Filter Variables</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtrera variabler</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="659"/>
         <source>Open Class</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppna klass</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="661"/>
-        <source>View Icon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="662"/>
-        <source>Opens the class icon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="663"/>
-        <source>View Diagram</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="664"/>
-        <source>Opens the class diagram</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="665"/>
-        <source>View Text</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="666"/>
-        <source>Opens the class text</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="668"/>
         <source>Opens the class documentation</source>
         <translation>Öppnar klassdokumentationen</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="669"/>
         <source>Don&apos;t show this message again</source>
         <translation>Visa inte detta meddelande igen</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="670"/>
         <source>Click and drag to resize</source>
         <translation>Klicka och dra för att ändra storlek</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="671"/>
-        <location filename="../../Util/Helper.cpp" line="672"/>
         <source>Variables</source>
         <translation>Variabler</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="673"/>
         <source>Description</source>
         <translation>Beskrivning</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="674"/>
         <source>Previous</source>
         <translation>Föregående</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="675"/>
         <source>Next</source>
         <translation>Nästa</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="565"/>
-        <location filename="../../Util/Helper.cpp" line="676"/>
         <source>Reload</source>
-        <translation>Ladda Om</translation>
+        <translation>Ladda om</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="677"/>
         <source>Index</source>
         <translation>Index</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="678"/>
         <source>Equation</source>
         <translation>Ekvation</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="679"/>
         <source>Transformational Debugger</source>
         <translation>Transformationsdebugger</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="680"/>
         <source>Executions</source>
         <translation>Exekveringar</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="681"/>
         <source>Max time</source>
-        <translation>Max tid</translation>
+        <translation>Maxtid</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="682"/>
         <source>Time</source>
         <translation>Tid</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="683"/>
         <source>Fraction</source>
-        <translation>Bråkdel</translation>
+        <translation>Andel</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="684"/>
         <source>&lt;b&gt;Info: &lt;/b&gt;Update the actual model in &lt;b&gt;Modeling&lt;/b&gt; perspective and simulate again. This is only shown for debugging purpose. Your changes will not be saved.</source>
-        <translation>&lt;b&gt;Info:&lt;/b&gt;Uppdatera den aktuella modellen i &lt;/b&gt;Modellering&lt;/b&gt;-vyn och simulera igen. Detta visas endast för debug-ändamål. Dina ändringar kommer inte att sparas.</translation>
+        <translation>&lt;b&gt;Info: &lt;/b&gt;Uppdatera den aktuella modellen i &lt;b&gt;Modellering&lt;/b&gt;-vyn och simulera igen. Detta visas endast för debug-ändamål. Dina ändringar kommer inte att sparas.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="685"/>
         <source>Algorithmic Debugger</source>
-        <translation>Algoritmisk Debugger</translation>
+        <translation>Algoritmisk debugger</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="686"/>
         <source>Debug Configurations</source>
         <translation>Debug-konfigurationer</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="687"/>
         <source>Manage debug configurations</source>
-        <translation type="unfinished"></translation>
+        <translation>Hantera debug-konfigurationer</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="688"/>
         <source>Create Repository</source>
-        <translation type="unfinished"></translation>
+        <translation>Skapa repository</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="689"/>
         <source>Create a Git repository</source>
-        <translation type="unfinished"></translation>
+        <translation>Skapa ett Git-repository</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="690"/>
         <source>Log Current File</source>
-        <translation type="unfinished"></translation>
+        <translation>Logg för aktuell fil</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="691"/>
         <source>Logging current file</source>
-        <translation type="unfinished"></translation>
+        <translation>Visar Git-loggen för den aktuella filen</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="692"/>
         <source>Stage Current File</source>
-        <translation type="unfinished"></translation>
+        <translation>Stagea aktuell fil</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="693"/>
         <source>Staging current file for next commit</source>
-        <translation type="unfinished"></translation>
+        <translation>Stagear den aktuella filen för nästa commit</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="694"/>
         <source>Unstage Current File</source>
-        <translation type="unfinished"></translation>
+        <translation>Unstagea aktuell fil</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="695"/>
         <source>Unstaging current file from next commit</source>
-        <translation type="unfinished"></translation>
+        <translation>Tar bort den aktuella filen från nästa commit</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="696"/>
         <source>Commit</source>
-        <translation type="unfinished"></translation>
+        <translation>Committa</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="697"/>
         <source>Commiting modified files to the repository</source>
-        <translation type="unfinished"></translation>
+        <translation>Committar ändrade filer till repositoryt</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="698"/>
         <source>Resume</source>
         <translation>Återuppta</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="699"/>
         <source>Interrupt</source>
-        <translation>Avbryt</translation>
+        <translation>Pausa</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="700"/>
         <source>Exit</source>
         <translation>Avsluta</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="701"/>
         <source>Step Over</source>
         <translation>Stega över</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="702"/>
         <source>Step Into</source>
         <translation>Stega in i</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="703"/>
         <source>Step Return</source>
-        <translation>Stega till retur</translation>
+        <translation>Stega ut</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="704"/>
         <source>Attach to Running Process</source>
         <translation>Anslut till körande process</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="705"/>
         <source>Attach the debugger to running process</source>
-        <translation type="unfinished"></translation>
+        <translation>Ansluter debuggern till en körande process</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="708"/>
         <source>Parsing of JSON file failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Tolkningen av JSON-filen misslyckades</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="709"/>
         <source>Expand All</source>
-        <translation>Expandera Alla</translation>
+        <translation>Expandera alla</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="710"/>
         <source>Collapse All</source>
-        <translation>Kollapsa Alla</translation>
+        <translation>Kollapsa alla</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="712"/>
         <source>Version</source>
         <translation>Version</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="713"/>
         <source>unlimited</source>
-        <translation type="unfinished"></translation>
+        <translation>obegränsat</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="714"/>
         <source>Simulation Output</source>
         <translation>Simuleringsutmatning</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="715"/>
         <source>Cancel Simulation</source>
-        <translation>Avbryt Simulering</translation>
+        <translation>Avbryt simulering</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="716"/>
         <source>Animation File</source>
-        <translation type="unfinished"></translation>
+        <translation>Animeringsfil</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="717"/>
         <source>Open an animation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppna en animering.</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="718"/>
         <source>Initialize</source>
-        <translation type="unfinished"></translation>
+        <translation>Initiera</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="719"/>
         <source>Initialize the animation scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Initiera animeringsscenen</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="720"/>
         <source>Play</source>
-        <translation type="unfinished"></translation>
+        <translation>Spela upp</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="721"/>
         <source>Play the animation</source>
-        <translation type="unfinished"></translation>
+        <translation>Spela upp animeringen</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="722"/>
         <source>Repeat</source>
-        <translation type="unfinished"></translation>
+        <translation>Upprepa</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="723"/>
         <source>Repeat the animation</source>
-        <translation type="unfinished"></translation>
+        <translation>Upprepa animeringen</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="724"/>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Pausa</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="725"/>
         <source>Pause the animation</source>
-        <translation type="unfinished"></translation>
+        <translation>Pausa animeringen</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="726"/>
-        <source>Simulation Parameters</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="727"/>
-        <source>Shows the Simulation Parameters dialog</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="778"/>
         <source>Send</source>
         <translation>Skicka</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="730"/>
         <source>Add System</source>
-        <translation type="unfinished"></translation>
+        <translation>Lägg till system</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="728"/>
         <source>SSP Model</source>
-        <translation type="unfinished"></translation>
+        <translation>SSP-modell</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="731"/>
         <source>Adds the System i.e., FMI or TLM</source>
-        <translation type="unfinished"></translation>
+        <translation>Lägger till ett system, dvs. FMI eller TLM</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="732"/>
         <source>Add SubModel</source>
-        <translation type="unfinished"></translation>
+        <translation>Lägg till delmodell</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="733"/>
         <source>Adds the SubModel i.e., FMU or Table</source>
-        <translation type="unfinished"></translation>
+        <translation>Lägger till en delmodell, dvs. FMU eller tabell</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="734"/>
-        <source>Add Bus</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="735"/>
-        <source>Adds the bus</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="736"/>
-        <source>Edit Bus</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="737"/>
-        <source>Add TLM Bus</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="738"/>
-        <source>Adds the TLM bus</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="739"/>
-        <source>Edit TLM Bus</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="740"/>
         <source>Add Connector</source>
-        <translation type="unfinished"></translation>
+        <translation>Lägg till koppling</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="741"/>
         <source>Adds the connector</source>
-        <translation type="unfinished"></translation>
+        <translation>Lägger till en koppling</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="742"/>
-        <source>Add Bus Connection</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="743"/>
-        <source>Edit Bus Connection</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="744"/>
-        <source>Add TLM Connection</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="745"/>
-        <source>Edit TLM Connection</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="746"/>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>Körs</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="747"/>
         <source>Finished</source>
-        <translation type="unfinished"></translation>
+        <translation>Klar</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="754"/>
         <source>Space separated list of OMC command line options e.g., -d=initialization --cheapmatchingAlgorithm=3</source>
-        <translation type="unfinished"></translation>
+        <translation>Mellanslagsseparerad lista av kommandoradsflaggor för OMC, t.ex. -d=initialization --cheapmatchingAlgorithm=3</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="755"/>
         <source>Save experiment annotation inside model i.e., experiment annotation</source>
-        <translation type="unfinished"></translation>
+        <translation>Spara experimentannoteringen i modellen, dvs. annoteringen experiment</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="756"/>
         <source>Save simulation flags inside model i.e., __OpenModelica_simulationFlags annotation</source>
-        <translation type="unfinished"></translation>
+        <translation>Spara simuleringsflaggor i modellen, dvs. annoteringen __OpenModelica_simulationFlags</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="757"/>
         <source>Save translation flags inside model i.e., __OpenModelica_commandLineOptions annotation</source>
-        <translation type="unfinished"></translation>
+        <translation>Spara översättningsflaggor i modellen, dvs. annoteringen __OpenModelica_commandLineOptions</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="762"/>
         <source>Condition:</source>
         <translation>Villkor:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="763"/>
         <source>Immediate</source>
-        <translation type="unfinished"></translation>
+        <translation>Immediate</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="764"/>
         <source>Synchronize</source>
-        <translation type="unfinished"></translation>
+        <translation>Synchronize</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="765"/>
         <source>Priority:</source>
-        <translation type="unfinished"></translation>
+        <translation>Priority:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="766"/>
-        <source>secs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="767"/>
         <source>Save contents in one file</source>
-        <translation>Spara innehåll i en fil</translation>
+        <translation>Spara innehållet i en fil</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="768"/>
         <source>DateTime</source>
-        <translation type="unfinished"></translation>
+        <translation>Datum och tid</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="769"/>
         <source>Start Time</source>
-        <translation type="unfinished"></translation>
+        <translation>Starttid</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="770"/>
         <source>Stop Time</source>
-        <translation type="unfinished"></translation>
+        <translation>Stopptid</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="771"/>
         <source>Status</source>
-        <translation type="unfinished"></translation>
+        <translation>Status</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="772"/>
         <source>Speed:</source>
-        <translation type="unfinished"></translation>
+        <translation>Hastighet:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="773"/>
-        <source>Terminate Instantiation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="774"/>
-        <source>Terminates the model instantiation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="775"/>
         <source>Archived Simulations</source>
-        <translation type="unfinished"></translation>
+        <translation>Arkiverade simuleringar</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="776"/>
         <source>System Simulation Information</source>
-        <translation type="unfinished"></translation>
+        <translation>Information om systemsimulering</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="777"/>
         <source>Translation Flags</source>
-        <translation type="unfinished"></translation>
+        <translation>Översättningsflaggor</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="472"/>
         <source>Libraries</source>
         <translation>Bibliotek</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="620"/>
         <source>Color:</source>
         <translation>Färg:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="624"/>
         <source>Pick Color</source>
-        <translation>Välj Färg</translation>
+        <translation>Välj färg</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="612"/>
         <source>Thickness:</source>
         <translation>Tjocklek:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="613"/>
         <source>Smooth:</source>
-        <translation>Utslätning:</translation>
+        <translation>Utjämning:</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="603"/>
         <source>Horizontal</source>
         <translation>Vågrät</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="604"/>
         <source>Vertical</source>
         <translation>Lodrät</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="621"/>
         <source>Colors</source>
-        <translation type="unfinished"></translation>
+        <translation>Färger</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="508"/>
-        <location filename="../../Util/Helper.cpp" line="637"/>
         <source>Remove</source>
         <translation>Ta bort</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="638"/>
         <source>Location</source>
         <comment>For files</comment>
         <translation>Sökväg</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="639"/>
         <source>Location</source>
         <comment>For errors</comment>
         <translation>Position</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="647"/>
         <source>Filter Classes</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtrera klasser</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="650"/>
         <source>Left</source>
         <translation>Vänster</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="651"/>
         <source>Center</source>
         <translation>Centrerad</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="652"/>
         <source>Right</source>
         <translation>Höger</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="480"/>
         <source>OK</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="481"/>
         <source>Cancel</source>
         <translation>Avbryt</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="479"/>
         <source>Browse...</source>
         <translation>Bläddra...</translation>
+    </message>
+    <message>
+        <source>Create a new Modelica Class</source>
+        <translation>Skapa en ny Modelicaklass</translation>
+    </message>
+    <message>
+        <source>Load Compiled Model</source>
+        <translation>Ladda in kompilerad modell</translation>
+    </message>
+    <message>
+        <source>Creates a new Modelica Script</source>
+        <translation>Skapar ett nytt Modelicaskript</translation>
+    </message>
+    <message>
+        <source>Clear Recent Models</source>
+        <translation>Rensa senaste modeller</translation>
+    </message>
+    <message>
+        <source>Shows the component parameters</source>
+        <translation>Visar komponentparametrarna</translation>
+    </message>
+    <message>
+        <source>Sensitivity Optimization</source>
+        <translation>Känslighetsoptimering</translation>
+    </message>
+    <message>
+        <source>Find Usage</source>
+        <translation>Hitta användningar</translation>
+    </message>
+    <message>
+        <source>Finds the usage of class</source>
+        <translation>Hittar var klassen används</translation>
+    </message>
+    <message>
+        <source>Save with Errors</source>
+        <translation>Spara med fel</translation>
+    </message>
+    <message>
+        <source>s</source>
+        <translation>s</translation>
+    </message>
+    <message>
+        <source>Switch Model</source>
+        <translation>Byt modell</translation>
+    </message>
+    <message>
+        <source>Class Diagram</source>
+        <translation>Klassdiagram</translation>
+    </message>
+    <message>
+        <source>Shows the UML class diagram of the class</source>
+        <translation>Visar klassens UML-klassdiagram</translation>
+    </message>
+    <message>
+        <source>CRML Diagram</source>
+        <translation>CRML-diagram</translation>
+    </message>
+    <message>
+        <source>Shows the class-object diagram of the CRML model</source>
+        <translation>Visar CRML-modellens klass-objektdiagram</translation>
     </message>
 </context>
 <context>
     <name>ImportFMUDialog</name>
     <message>
-        <location filename="../../FMI/ImportFMUDialog.cpp" line="67"/>
         <source>FMU File:</source>
         <translation>FMU-fil:</translation>
     </message>
     <message>
-        <location filename="../../FMI/ImportFMUDialog.cpp" line="73"/>
         <source>Model Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Modellnamn:</translation>
     </message>
     <message>
-        <location filename="../../FMI/ImportFMUDialog.cpp" line="75"/>
         <source>Name of the generated model. If empty then the name is auto generated using FMU information.</source>
-        <translation type="unfinished"></translation>
+        <translation>Namnet på den genererade modellen. Om det är tomt skapas namnet automatiskt från informationen i FMU:n.</translation>
     </message>
     <message>
-        <location filename="../../FMI/ImportFMUDialog.cpp" line="77"/>
         <source>Output Directory (Optional):</source>
-        <translation>Utdatakatalog (Frivillig):</translation>
+        <translation>Utdatakatalog (frivillig):</translation>
     </message>
     <message>
-        <location filename="../../FMI/ImportFMUDialog.cpp" line="79"/>
         <source>If no Output Directory specified then the FMU files are generated in the current working directory.</source>
         <translation>Om ingen utdatakatalog anges skapas FMU-filer i den aktuella arbetskatalogen.</translation>
     </message>
     <message>
-        <location filename="../../FMI/ImportFMUDialog.cpp" line="84"/>
         <source>Log Level:</source>
         <translation>Loggnivå:</translation>
     </message>
     <message>
-        <location filename="../../FMI/ImportFMUDialog.cpp" line="86"/>
         <source>Nothing</source>
         <translation>Ingen</translation>
     </message>
     <message>
-        <location filename="../../FMI/ImportFMUDialog.cpp" line="87"/>
         <source>Fatal</source>
         <translation>Fatal</translation>
     </message>
     <message>
-        <location filename="../../FMI/ImportFMUDialog.cpp" line="88"/>
         <source>Error</source>
         <translation>Fel</translation>
     </message>
     <message>
-        <location filename="../../FMI/ImportFMUDialog.cpp" line="89"/>
         <source>Warning</source>
         <translation>Varning</translation>
     </message>
     <message>
-        <location filename="../../FMI/ImportFMUDialog.cpp" line="91"/>
         <source>Verbose</source>
         <translation>Utförlig</translation>
     </message>
     <message>
-        <location filename="../../FMI/ImportFMUDialog.cpp" line="92"/>
         <source>Debug</source>
         <translation>Debug</translation>
     </message>
     <message>
-        <location filename="../../FMI/ImportFMUDialog.cpp" line="95"/>
         <source>Debug Logging</source>
         <translation>Debug-loggning</translation>
     </message>
     <message>
-        <location filename="../../FMI/ImportFMUDialog.cpp" line="97"/>
         <source>Generate input connector pins</source>
-        <translation>Generera ingångsanslutningsstift</translation>
+        <translation>Generera kopplingar för ingångar</translation>
     </message>
     <message>
-        <location filename="../../FMI/ImportFMUDialog.cpp" line="100"/>
         <source>Generate output connector pins</source>
-        <translation>Generera utgångsanslutningsstift</translation>
+        <translation>Generera kopplingar för utgångar</translation>
     </message>
     <message>
-        <location filename="../../FMI/ImportFMUDialog.cpp" line="107"/>
         <source>* This feature is experimental. Most models are not yet handled by it.</source>
         <translation>* Denna funktion är experimentell. De flesta modeller hanteras ännu inte av den.</translation>
     </message>
     <message>
-        <location filename="../../FMI/ImportFMUDialog.cpp" line="157"/>
         <source>FMU File</source>
         <translation>FMU-fil</translation>
     </message>
@@ -4443,350 +4033,545 @@ Please check the Messages browser for error messages and possibly undo the lates
 <context>
     <name>ImportFMUModelDescriptionDialog</name>
     <message>
-        <location filename="../../FMI/ImportFMUModelDescriptionDialog.cpp" line="59"/>
         <source>Import FMU Model Description</source>
-        <translation type="unfinished"></translation>
+        <translation>Importera FMU-modellbeskrivning</translation>
     </message>
     <message>
-        <location filename="../../FMI/ImportFMUModelDescriptionDialog.cpp" line="63"/>
         <source>FMU Model Description:</source>
-        <translation type="unfinished"></translation>
+        <translation>FMU-modellbeskrivning:</translation>
     </message>
     <message>
-        <location filename="../../FMI/ImportFMUModelDescriptionDialog.cpp" line="69"/>
         <source>Output Directory (Optional):</source>
-        <translation>Utdatakatalog (Frivillig):</translation>
+        <translation>Utdatakatalog (frivillig):</translation>
     </message>
     <message>
-        <location filename="../../FMI/ImportFMUModelDescriptionDialog.cpp" line="75"/>
         <source>* If no Output Directory specified then the Modelica model will be generated in the current working directory.</source>
-        <translation type="unfinished"></translation>
+        <translation>* Om ingen utdatakatalog anges genereras Modelicamodellen i den aktuella arbetskatalogen.</translation>
     </message>
     <message>
-        <location filename="../../FMI/ImportFMUModelDescriptionDialog.cpp" line="121"/>
         <source>FMU Model Description XML file</source>
-        <translation type="unfinished"></translation>
+        <translation>XML-fil med FMU-modellbeskrivning</translation>
     </message>
 </context>
 <context>
     <name>InstallLibraryDialog</name>
     <message>
-        <location filename="../../Modeling/InstallLibraryDialog.cpp" line="54"/>
         <source>The library will be installed using the &lt;u&gt;&lt;a href=&quot;https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/packagemanager.html#the-package-manager&quot;&gt;package manager&lt;/a&gt;&lt;/u&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Biblioteket installeras med &lt;u&gt;&lt;a href=&quot;https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/packagemanager.html#the-package-manager&quot;&gt;pakethanteraren&lt;/a&gt;&lt;/u&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/InstallLibraryDialog.cpp" line="58"/>
         <source>Full</source>
-        <translation type="unfinished"></translation>
+        <translation>Full</translation>
     </message>
     <message>
-        <location filename="../../Modeling/InstallLibraryDialog.cpp" line="61"/>
         <source>Partial</source>
         <translation>Partiell</translation>
     </message>
     <message>
-        <location filename="../../Modeling/InstallLibraryDialog.cpp" line="64"/>
         <source>Experimental</source>
-        <translation type="unfinished"></translation>
+        <translation>Experimentell</translation>
     </message>
     <message>
-        <location filename="../../Modeling/InstallLibraryDialog.cpp" line="66"/>
         <source>Obsolete</source>
-        <translation type="unfinished"></translation>
+        <translation>Föråldrad</translation>
     </message>
     <message>
-        <location filename="../../Modeling/InstallLibraryDialog.cpp" line="68"/>
         <source>None</source>
-        <translation type="unfinished"></translation>
+        <translation>Ingen</translation>
     </message>
     <message>
-        <location filename="../../Modeling/InstallLibraryDialog.cpp" line="70"/>
         <source>Level of support by OpenModelica</source>
-        <translation type="unfinished"></translation>
+        <translation>Stödnivå i OpenModelica</translation>
     </message>
     <message>
-        <location filename="../../Modeling/InstallLibraryDialog.cpp" line="104"/>
         <source>Exact Match (Install only the specified version of dependencies)</source>
-        <translation type="unfinished"></translation>
+        <translation>Exakt matchning (installera endast den angivna versionen av beroenden)</translation>
     </message>
     <message>
-        <location filename="../../Modeling/InstallLibraryDialog.cpp" line="107"/>
         <source>&lt;b&gt;Installing library. Please wait.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Installerar biblioteket. Vänta.&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../../Modeling/InstallLibraryDialog.cpp" line="247"/>
         <source>The library &lt;b&gt;%1&lt;/b&gt; is not installed. See message browser for any possible messages.</source>
-        <translation type="unfinished"></translation>
+        <translation>Biblioteket &lt;b&gt;%1&lt;/b&gt; installerades inte. Se fönstret Meddelanden för eventuella meddelanden.</translation>
+    </message>
+</context>
+<context>
+    <name>LSPClient</name>
+    <message>
+        <source>Failed to start language server: %1</source>
+        <translation>Kunde inte starta språkservern: %1</translation>
+    </message>
+    <message>
+        <source>Watching more than %1 library files. Files added, removed or replaced are still reported to the language server, but a file rewritten in place beyond this limit is not.</source>
+        <translation>Bevakar fler än %1 biblioteksfiler. Filer som läggs till, tas bort eller ersätts rapporteras fortfarande till språkservern, men en fil som skrivs om på plats utöver den här gränsen gör det inte.</translation>
+    </message>
+    <message>
+        <source>Language server process error: %1</source>
+        <translation>Fel i språkserverprocessen: %1</translation>
+    </message>
+    <message>
+        <source>Language server %1 (exit code %2).</source>
+        <translation>Språkservern: %1 (avslutningskod %2).</translation>
+    </message>
+    <message>
+        <source>Language server crashed %1 times in the last %2 minute(s). It will not be restarted. See the language server log for details.</source>
+        <translation>Språkservern har kraschat %1 gånger under de senaste %2 minut(er). Den startas inte om. Se språkserverns logg för detaljer.</translation>
+    </message>
+    <message>
+        <source>Language server %1, restarting (attempt %2 of %3)...</source>
+        <translation>Språkservern: %1, startar om (försök %2 av %3)...</translation>
+    </message>
+    <message>
+        <source>Language server request &apos;%1&apos; failed: %2</source>
+        <translation>Språkserverbegäran &apos;%1&apos; misslyckades: %2</translation>
+    </message>
+</context>
+<context>
+    <name>LanguageServerPage</name>
+    <message>
+        <source>Language Server Protocol (LSP)</source>
+        <translation>Language Server Protocol (LSP)</translation>
+    </message>
+    <message>
+        <source>When enabled, OMEdit uses an external language server for hover information and go-to-definition.</source>
+        <translation>När detta är aktiverat använder OMEdit en extern språkserver för information vid hovring och för att gå till definitioner.</translation>
+    </message>
+    <message>
+        <source>Log language server messages to the Messages Browser</source>
+        <translation>Logga meddelanden från språkservern i fönstret Meddelanden</translation>
+    </message>
+    <message>
+        <source>When enabled, messages from the language server are shown in the Messages Browser, prefixed with &quot;LSP&quot;.</source>
+        <translation>När detta är aktiverat visas meddelanden från språkservern i fönstret Meddelanden, med prefixet &quot;LSP&quot;.</translation>
+    </message>
+    <message>
+        <source>Server Executable:</source>
+        <translation>Serverprogram:</translation>
+    </message>
+    <message>
+        <source>No language server is installed with OMEdit - use Download... or set a path</source>
+        <translation>Ingen språkserver är installerad med OMEdit - använd Hämta... eller ange en sökväg</translation>
+    </message>
+    <message>
+        <source>%1 (installed with OMEdit)</source>
+        <translation>%1 (installerad med OMEdit)</translation>
+    </message>
+    <message>
+        <source>Path to the language server to run. Leave empty to use the one installed with OMEdit.
+
+%1</source>
+        <translation>Sökväg till språkservern som ska köras. Lämna tomt för att använda den som är installerad med OMEdit.
+
+%1</translation>
+    </message>
+    <message>
+        <source>Auto Detect</source>
+        <translation>Hitta automatiskt</translation>
+    </message>
+    <message>
+        <source>Restart Server</source>
+        <translation>Starta om servern</translation>
+    </message>
+    <message>
+        <source>Stops the language server and starts it again with the saved settings. Takes effect immediately; settings edited above apply when you click OK.</source>
+        <translation>Stoppar språkservern och startar den igen med de sparade inställningarna. Gäller direkt; ändrade inställningar ovan gäller när du klickar på OK.</translation>
+    </message>
+    <message>
+        <source>%1 (recommended)</source>
+        <translation>%1 (rekommenderas)</translation>
+    </message>
+    <message>
+        <source>Latest release</source>
+        <translation>Senaste versionen</translation>
+    </message>
+    <message>
+        <source>Which modelica-language-server release to download. %1 is the version installed with OMEdit.</source>
+        <translation>Vilken version av modelica-language-server som ska hämtas. %1 är versionen som är installerad med OMEdit.</translation>
+    </message>
+    <message>
+        <source>Download...</source>
+        <translation>Hämta...</translation>
+    </message>
+    <message>
+        <source>Downloads the standalone Modelica language server for this platform from the selected GitHub release.</source>
+        <translation>Hämtar den fristående språkservern för Modelica för den här plattformen från den valda versionen på GitHub.</translation>
+    </message>
+    <message>
+        <source>The language server could not be started.
+
+Check the server executable above, and the Messages Browser for details.</source>
+        <translation>Språkservern kunde inte startas.
+
+Kontrollera serverprogrammet ovan och fönstret Meddelanden för detaljer.</translation>
+    </message>
+    <message>
+        <source>Checking the release contents...</source>
+        <translation>Kontrollerar innehållet i versionen...</translation>
+    </message>
+    <message>
+        <source>Failed to read release %1 of the Modelica language server:
+%2
+
+The checksums it publishes could not be fetched, so nothing was downloaded.</source>
+        <translation>Kunde inte läsa %1 av språkservern för Modelica:
+%2
+
+De publicerade kontrollsummorna kunde inte hämtas, så ingenting hämtades.</translation>
+    </message>
+    <message>
+        <source>latest</source>
+        <translation>senaste versionen</translation>
+    </message>
+    <message>
+        <source>Downloading %1 (%2 MB)...</source>
+        <translation>Hämtar %1 (%2 MB)...</translation>
+    </message>
+    <message>
+        <source>Release %1 does not provide %2.
+
+A standalone server is not published for this platform in that release. Try another version, or point Server Executable at a server you built yourself.</source>
+        <translation>Det finns ingen %2 i %1.
+
+Ingen fristående server är publicerad för den här plattformen i den versionen. Prova en annan version, eller låt Serverprogram peka på en server som du har byggt själv.</translation>
+    </message>
+    <message>
+        <source>Failed to download %1 securely:
+%2
+
+The connection to github.com could not be verified. The download was not used.</source>
+        <translation>Kunde inte hämta %1 säkert:
+%2
+
+Anslutningen till github.com kunde inte verifieras. Det hämtade användes inte.</translation>
+    </message>
+    <message>
+        <source>Failed to download %1:
+%2</source>
+        <translation>Kunde inte hämta %1:
+%2</translation>
+    </message>
+    <message>
+        <source>Checksum mismatch for %1.
+
+Expected SHA256:
+%2
+
+Got:
+%3
+
+The download was discarded and nothing was installed.</source>
+        <translation>Kontrollsumman för %1 stämmer inte.
+
+Förväntad SHA256:
+%2
+
+Fick:
+%3
+
+Det hämtade kastades och ingenting installerades.</translation>
+    </message>
+    <message>
+        <source>Failed to write %1:
+%2</source>
+        <translation>Kunde inte skriva %1:
+%2</translation>
+    </message>
+    <message>
+        <source>No standalone language server is published for this platform.
+
+Build a server yourself and point Server Executable at it.</source>
+        <translation>Ingen fristående språkserver är publicerad för den här plattformen.
+
+Bygg en server själv och låt Serverprogram peka på den.</translation>
+    </message>
+    <message>
+        <source>Failed to create directory %1.</source>
+        <translation>Kunde inte skapa katalogen %1.</translation>
+    </message>
+    <message>
+        <source>Downloading the Modelica language server...</source>
+        <translation>Hämtar språkservern för Modelica...</translation>
+    </message>
+    <message>
+        <source>Release %1 publishes no checksum for:
+%2
+
+What is downloaded cannot be verified. Download it anyway?</source>
+        <translation>Det finns ingen publicerad kontrollsumma i %1 för:
+%2
+
+Det som hämtas kan inte verifieras. Vill du hämta det ändå?</translation>
+    </message>
+    <message>
+        <source>Failed to install %1 into %2.</source>
+        <translation>Kunde inte installera %1 i %2.</translation>
+    </message>
+    <message>
+        <source>The Modelica language server (%1) was downloaded to:
+%2
+
+Click OK to start using it.</source>
+        <translation>Språkservern för Modelica (%1) har hämtats till:
+%2
+
+Klicka på OK för att börja använda den.</translation>
+    </message>
+    <message>
+        <source>latest release</source>
+        <translation>senaste versionen</translation>
+    </message>
+    <message>
+        <source>No language server found.
+
+Use Download... to fetch one, or point Server Executable at a server you already have.</source>
+        <translation>Ingen språkserver hittades.
+
+Använd Hämta... för att hämta en, eller låt Serverprogram peka på en server som du redan har.</translation>
     </message>
 </context>
 <context>
     <name>LibrariesPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3729"/>
         <source>System libraries loaded automatically on startup *</source>
-        <translation type="unfinished"></translation>
+        <translation>Systembibliotek som laddas in automatiskt vid start *</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3731"/>
         <source>The system libraries are read from OPENMODELICALIBRARY (MODELICAPATH in the language specification) and are always read-only.</source>
-        <translation type="unfinished"></translation>
+        <translation>Systembiblioteken läses från OPENMODELICALIBRARY (MODELICAPATH i språkspecifikationen) och är alltid skrivskyddade.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3734"/>
         <source>Load latest Modelica version on startup</source>
-        <translation type="unfinished"></translation>
+        <translation>Ladda in den senaste Modelicaversionen vid start</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3743"/>
         <source>Name</source>
         <translation>Namn</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3770"/>
         <source>User libraries loaded automatically on startup *</source>
-        <translation type="unfinished"></translation>
+        <translation>Användarbibliotek som laddas in automatiskt vid start *</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3778"/>
         <source>Path</source>
         <translation>Sökväg</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3778"/>
         <source>Encoding</source>
         <translation>Teckenkodning</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3877"/>
         <source>Edit User Library</source>
-        <translation>Redigera Användardefinierade Bibliotek</translation>
+        <translation>Redigera användardefinierade bibliotek</translation>
     </message>
 </context>
 <context>
     <name>LibraryTreeModel</name>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1717"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1996"/>
         <source> while deleting </source>
-        <translation type="unfinished"></translation>
+        <translation> vid borttagning av </translation>
+    </message>
+    <message>
+        <source>Loading system libraries</source>
+        <translation>Laddar in systembibliotek</translation>
     </message>
 </context>
 <context>
     <name>LibraryTreeView</name>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2791"/>
         <source>Opens the class information dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppnar dialogen med klassinformation</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2810"/>
         <source>Copy Path</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiera sökväg</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2812"/>
         <source>Copy the class path</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopierar klassens sökväg</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2817"/>
         <source>Moves the class one level up</source>
-        <translation type="unfinished"></translation>
+        <translation>Flyttar klassen en nivå upp</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2822"/>
         <source>Moves the class one level down</source>
-        <translation type="unfinished"></translation>
+        <translation>Flyttar klassen en nivå ned</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2825"/>
         <source>Move to Top</source>
-        <translation type="unfinished"></translation>
+        <translation>Flytta överst</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2827"/>
         <source>Moves the class to top</source>
-        <translation type="unfinished"></translation>
+        <translation>Flyttar klassen överst</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2830"/>
         <source>Move to Bottom</source>
-        <translation type="unfinished"></translation>
+        <translation>Flytta underst</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2832"/>
         <source>Moves the class to bottom</source>
-        <translation type="unfinished"></translation>
+        <translation>Flyttar klassen underst</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2835"/>
         <source>Order</source>
-        <translation type="unfinished"></translation>
+        <translation>Ordning</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2916"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2920"/>
         <source>New File</source>
-        <translation type="unfinished"></translation>
+        <translation>Ny fil</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2917"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2921"/>
         <source>Creates a new file</source>
-        <translation type="unfinished"></translation>
+        <translation>Skapar en ny fil</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2924"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2928"/>
         <source>New Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Ny mapp</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2925"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2929"/>
         <source>Creates a new folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Skapar en ny mapp</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2938"/>
         <source>Deletes the file</source>
-        <translation type="unfinished"></translation>
+        <translation>Tar bort filen</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2941"/>
         <source>Convert to newer versions of used libraries</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvertera till nyare versioner av använda bibliotek</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2942"/>
         <source>Updates the class to use the newer versions of the uses annotation libraries</source>
-        <translation type="unfinished"></translation>
+        <translation>Uppdaterar klassen så att den använder nyare versioner av biblioteken i uses-annoteringen</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2961"/>
         <source>Figaro</source>
         <translation>Figaro</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2965"/>
         <source>Update Bindings</source>
-        <translation type="unfinished"></translation>
+        <translation>Uppdatera bindningar</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2966"/>
         <source>updates the bindings</source>
-        <translation type="unfinished"></translation>
+        <translation>Uppdaterar bindningarna</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2969"/>
         <source>Generate Verification Scenarios</source>
-        <translation type="unfinished"></translation>
+        <translation>Generera verifieringsscenarier</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2970"/>
         <source>Generates the verification scenarios</source>
-        <translation type="unfinished"></translation>
+        <translation>Genererar verifieringsscenarierna</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3197"/>
+        <source>UQ Activities...</source>
+        <translation>UQ-aktiviteter...</translation>
+    </message>
+    <message>
+        <source>Runs the uncertainty quantification activities attached to the SSP model with omuq</source>
+        <translation>Kör aktiviteterna för osäkerhetskvantifiering som är kopplade till SSP-modellen med omuq</translation>
+    </message>
+    <message>
         <source>Deletes the Modelica class</source>
-        <translation type="unfinished"></translation>
+        <translation>Tar bort Modelicaklassen</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3307"/>
         <source>Version : %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Version: %1</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3308"/>
         <source>Version Date : %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Versionsdatum: %1</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3309"/>
         <source>Version Build : %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Versionsbygge: %1</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3310"/>
         <source>Date Modified : %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Senast ändrad: %1</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3311"/>
         <source>RevisionId : %1</source>
-        <translation type="unfinished"></translation>
+        <translation>RevisionId: %1</translation>
+    </message>
+    <message>
+        <source>Calibrate...</source>
+        <translation>Kalibrera...</translation>
+    </message>
+    <message>
+        <source>Calibrates the parameters of the model against reference data</source>
+        <translation>Kalibrerar modellens parametrar mot referensdata</translation>
     </message>
 </context>
 <context>
     <name>LibraryWidget</name>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4087"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="5197"/>
         <source>Unable to load %1. See messages above for more details.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte ladda in %1. Se meddelandena ovan för mer information.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3962"/>
-        <source>Expanding the Library Browser is a time consuming and non-responsive operation so this button is disabled intentionally.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4477"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4561"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4722"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4814"/>
         <source>Saving %1</source>
         <translation>Sparar %1</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4500"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4548"/>
         <source>Unable to save the file, unknown library type.</source>
         <translation>Kunde inte spara filen, okänd bibliotekstyp.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4534"/>
         <source>It is not possible to save as a Modelica package saved in a directory hierarchy Mapping.</source>
-        <translation type="unfinished"></translation>
+        <translation>Det går inte att använda Spara som för ett Modelicapaket som är sparat i en kataloghierarki.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4580"/>
         <source>Failed to find the class &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte hitta klassen &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4726"/>
         <source>%1 - Save %2 %3 as Modelica File</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Spara %2 %3 som Modelicafil</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4819"/>
         <source>%1 - Save %2 %3 as Modelica Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Spara %2 %3 som Modelicakatalog</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="5069"/>
         <source>The loaded class(es) &lt;b&gt;%1&lt;/b&gt; uses versions of already loaded libraries which are not compatible with the required ones.&lt;br /&gt;&lt;br /&gt;&lt;b&gt;Cancel Operation&lt;/b&gt; does not load class &lt;b&gt;%1&lt;/b&gt; and its dependencies.&lt;br /&gt;&lt;b&gt;Unload All &amp; Reload %1&lt;/b&gt; unloads all previously loaded classes and loads &lt;b&gt;%1&lt;/b&gt; starting from a clean environment. Make sure to save your work.</source>
-        <translation type="unfinished"></translation>
+        <translation>De inlästa klasserna &lt;b&gt;%1&lt;/b&gt; använder versioner av redan inladdade bibliotek som inte är kompatibla med de versioner som krävs.&lt;br /&gt;&lt;br /&gt;&lt;b&gt;Avbryt åtgärden&lt;/b&gt; laddar inte in klassen &lt;b&gt;%1&lt;/b&gt; och dess beroenden.&lt;br /&gt;&lt;b&gt;Ladda ur alla &amp; ladda om %1&lt;/b&gt; laddar ur alla tidigare inladdade klasser och laddar in &lt;b&gt;%1&lt;/b&gt; från en ren miljö. Se till att spara ditt arbete.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="5073"/>
         <source>Cancel Operation</source>
-        <translation type="unfinished"></translation>
+        <translation>Avbryt åtgärden</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="5074"/>
         <source>Unload all &amp;&amp; Reload %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ladda ur alla &amp;&amp; ladda om %1</translation>
+    </message>
+    <message>
+        <source>Opening SSP files is not yet supported in the web version of OMEdit. Use the desktop version of OMEdit to open %1.</source>
+        <translation>Det går ännu inte att öppna SSP-filer i webbversionen av OMEdit. Använd skrivbordsversionen av OMEdit för att öppna %1.</translation>
+    </message>
+</context>
+<context>
+    <name>LoadCompiledModelDialog</name>
+    <message>
+        <source>Executable</source>
+        <translation>Körbar fil</translation>
+    </message>
+    <message>
+        <source>Model init file</source>
+        <translation>Modellens init-fil</translation>
+    </message>
+    <message>
+        <source>Result file</source>
+        <translation>Resultatfil</translation>
     </message>
 </context>
 <context>
     <name>LocalsTreeItem</name>
     <message>
-        <location filename="../../Debugger/Locals/LocalsWidget.cpp" line="277"/>
         <source>&lt;uninitialized variable&gt;</source>
         <translation>&lt;oinitialiserad variabel&gt;</translation>
     </message>
@@ -4794,17 +4579,14 @@ Please check the Messages browser for error messages and possibly undo the lates
 <context>
     <name>LocalsTreeModel</name>
     <message>
-        <location filename="../../Debugger/Locals/LocalsWidget.cpp" line="345"/>
         <source>Name</source>
         <translation>Namn</translation>
     </message>
     <message>
-        <location filename="../../Debugger/Locals/LocalsWidget.cpp" line="345"/>
         <source>Type</source>
         <translation>Typ</translation>
     </message>
     <message>
-        <location filename="../../Debugger/Locals/LocalsWidget.cpp" line="345"/>
         <source>Value</source>
         <translation>Värde</translation>
     </message>
@@ -4812,1560 +4594,1888 @@ Please check the Messages browser for error messages and possibly undo the lates
 <context>
     <name>LogCommitDialog</name>
     <message>
-        <location filename="../../Git/RevertCommitsDialog.cpp" line="157"/>
         <source>Select Commit</source>
-        <translation type="unfinished"></translation>
+        <translation>Välj commit</translation>
     </message>
     <message>
-        <location filename="../../Git/RevertCommitsDialog.cpp" line="163"/>
         <source>Sha1</source>
-        <translation type="unfinished"></translation>
+        <translation>Sha1</translation>
     </message>
     <message>
-        <location filename="../../Git/RevertCommitsDialog.cpp" line="163"/>
         <source>Subject</source>
-        <translation type="unfinished"></translation>
+        <translation>Ämne</translation>
     </message>
     <message>
-        <location filename="../../Git/RevertCommitsDialog.cpp" line="174"/>
         <source>Ok</source>
-        <translation type="unfinished"></translation>
+        <translation>OK</translation>
+    </message>
+</context>
+<context>
+    <name>LoopbackRedirect</name>
+    <message>
+        <source>Timed out waiting for the sign-in to finish.</source>
+        <translation>Tidsgränsen löpte ut i väntan på att inloggningen skulle slutföras.</translation>
+    </message>
+    <message>
+        <source>Could not open a web browser for signing in.</source>
+        <translation>Kunde inte öppna en webbläsare för inloggning.</translation>
+    </message>
+    <message>
+        <source>Sign-in was cancelled.</source>
+        <translation>Inloggningen avbröts.</translation>
+    </message>
+    <message>
+        <source>The sign-in redirect could not be read.</source>
+        <translation>Omdirigeringen från inloggningen kunde inte läsas.</translation>
+    </message>
+    <message>
+        <source>The service refused the sign-in: %1</source>
+        <translation>Tjänsten nekade inloggningen: %1</translation>
+    </message>
+    <message>
+        <source>No authorization code was returned.</source>
+        <translation>Ingen auktoriseringskod returnerades.</translation>
     </message>
 </context>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../MainWindow.cpp" line="3720"/>
         <source>Save All</source>
-        <translation>Spara Alla</translation>
+        <translation>Spara alla</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3721"/>
         <source>Save All Files</source>
-        <translation>Spara Alla Filer</translation>
+        <translation>Spara alla filer</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="232"/>
         <source>Modeling</source>
         <translation>Modellering</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="230"/>
         <source>Changes to welcome perspective (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Byter till perspektivet Välkommen (%1)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="235"/>
         <source>Changes to modeling perspective (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Byter till perspektivet Modellering (%1)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="237"/>
         <source>Plotting</source>
         <translation>Plottning</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="240"/>
         <source>Changes to plotting perspective (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Byter till perspektivet Plottning (%1)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3683"/>
         <source>Opens and converts the Modelica file(s) with encoding</source>
-        <translation>Öppnar och konverterar Modelica-fil(er) med teckenkodning</translation>
+        <translation>Öppnar och konverterar Modelicafil(er) med teckenkodning</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3821"/>
         <source>Grid Lines</source>
         <translation>Rutnät</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3822"/>
         <source>Show/Hide the grid lines</source>
-        <translation>Visa/Dölj rutnät</translation>
+        <translation>Visa/dölj rutnät</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3866"/>
         <source>Tile Windows Horizontally</source>
-        <translation type="unfinished"></translation>
+        <translation>Ordna fönster vågrätt</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3867"/>
         <source>Arranges all child windows in a horizontally tiled pattern</source>
-        <translation type="unfinished"></translation>
+        <translation>Ordnar alla underfönster vågrätt sida vid sida</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3870"/>
         <source>Tile Windows Vertically</source>
-        <translation type="unfinished"></translation>
+        <translation>Ordna fönster lodrätt</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3871"/>
         <source>Arranges all child windows in a vertically tiled pattern</source>
-        <translation type="unfinished"></translation>
+        <translation>Ordnar alla underfönster lodrätt sida vid sida</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4015"/>
         <source>Shows the options window</source>
-        <translation>Visar inställningar</translation>
+        <translation>Visar fönstret Alternativ</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4049"/>
         <source>About OMEdit</source>
         <translation>Om OMEdit</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4050"/>
         <source>Information about OMEdit</source>
         <translation>Information om OMEdit</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4063"/>
         <source>Polygon</source>
         <translation>Polygon</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4068"/>
         <source>Rectangle</source>
         <translation>Rektangel</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4073"/>
         <source>Ellipse</source>
         <translation>Ellips</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="203"/>
         <source>Reading Settings</source>
-        <translation>Läser In Inställningar</translation>
+        <translation>Läser in inställningar</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="211"/>
         <source>Loading Widgets</source>
-        <translation>Laddar Gränssnittskomponenter</translation>
+        <translation>Laddar gränssnittskomponenter</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2144"/>
         <source>Are you sure you want to clear recent files?</source>
-        <translation type="unfinished"></translation>
+        <translation>Är du säker på att du vill rensa listan över senaste filer?</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2654"/>
         <source>Unable to run command &lt;b&gt;%1&lt;/b&gt; with arguments &lt;b&gt;%2&lt;/b&gt;. Process failed with error &lt;b&gt;%3&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte köra kommandot &lt;b&gt;%1&lt;/b&gt; med argumenten &lt;b&gt;%2&lt;/b&gt;. Processen misslyckades med felet &lt;b&gt;%3&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4024"/>
         <source>OpenModelica User&apos;s Guide</source>
-        <translation type="unfinished"></translation>
+        <translation>Användarhandbok för OpenModelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4025"/>
         <source>Opens the OpenModelica User&apos;s Guide</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppnar användarhandboken för OpenModelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4029"/>
         <source>OpenModelica User&apos;s Guide (PDF)</source>
-        <translation type="unfinished"></translation>
+        <translation>Användarhandbok för OpenModelica (PDF)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4030"/>
         <source>Opens the OpenModelica User&apos;s Guide (PDF)</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppnar användarhandboken för OpenModelica (PDF)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4045"/>
         <source>OMSimulator User&apos;s Guide</source>
-        <translation type="unfinished"></translation>
+        <translation>Användarhandbok för OMSimulator</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4046"/>
         <source>Opens the OMSimulator User&apos;s Guide</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppnar användarhandboken för OMSimulator</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4083"/>
         <source>Bitmap</source>
         <translation>Bitmapp</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4089"/>
         <source>Changes to/from connect mode</source>
         <translation>Ändrar till/från anslutningsläge</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4113"/>
         <source>New Plot Window</source>
-        <translation>Nytt diagram</translation>
+        <translation>Nytt diagramfönster</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4114"/>
         <source>Inserts new plot window</source>
-        <translation>Infogar nytt diagram</translation>
+        <translation>Infogar ett nytt diagramfönster</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4150"/>
         <source>Add/Edit Icon</source>
-        <translation type="unfinished"></translation>
+        <translation>Lägg till/redigera ikon</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4151"/>
         <source>Adds/Edits an icon</source>
-        <translation type="unfinished"></translation>
+        <translation>Lägger till/redigerar en ikon</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4153"/>
         <source>Delete Icon</source>
-        <translation type="unfinished"></translation>
+        <translation>Ta bort ikon</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4154"/>
         <source>Deletes an icon</source>
-        <translation type="unfinished"></translation>
+        <translation>Tar bort en ikon</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4177"/>
         <source>&amp;File</source>
         <translation>&amp;Arkiv</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="353"/>
         <source>Creating Widgets</source>
-        <translation>Skapar Gränssnittskomponenter</translation>
+        <translation>Skapar gränssnittskomponenter</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="227"/>
         <source>Welcome</source>
         <translation>Välkommen</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="187"/>
         <source>Initializing</source>
-        <translation type="unfinished"></translation>
+        <translation>Initierar</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="242"/>
         <source>Debugging</source>
-        <translation type="unfinished"></translation>
+        <translation>Debuggning</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="245"/>
         <source>Changes to debugging perspective (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Byter till perspektivet Debuggning (%1)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="317"/>
         <source>Debugger CLI</source>
-        <translation>Debuglogg</translation>
+        <translation>Debugger CLI</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1296"/>
         <source>Exporting the package as encrypted package</source>
-        <translation type="unfinished"></translation>
+        <translation>Exporterar paketet som ett krypterat paket</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1333"/>
         <source>Exporting the package as read-only package</source>
-        <translation type="unfinished"></translation>
+        <translation>Exporterar paketet som ett skrivskyddat paket</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1361"/>
         <source>Exporting model as XML</source>
-        <translation>Exportera modell som XML</translation>
+        <translation>Exporterar modell som XML</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1551"/>
         <source>Unable to find the file &lt;b&gt;%1&lt;/b&gt; with line number &lt;b&gt;%2&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte hitta filen &lt;b&gt;%1&lt;/b&gt; med radnummer &lt;b&gt;%2&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2477"/>
         <source>instantiating</source>
         <translation>instansiering</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2455"/>
-        <location filename="../../MainWindow.cpp" line="2466"/>
         <source>checking</source>
-        <translation>kontrollerar</translation>
+        <translation>kontroll</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2582"/>
         <source>making FMU</source>
-        <translation>skapar FMU</translation>
+        <translation>att skapa en FMU</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1286"/>
         <source>making encrypted package</source>
-        <translation type="unfinished"></translation>
+        <translation>att skapa ett krypterat paket</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="191"/>
         <source>Messages</source>
-        <translation type="unfinished">Meddelanden</translation>
+        <translation>Meddelanden</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="277"/>
         <source>Search</source>
-        <translation type="unfinished">Sök</translation>
+        <translation>Sök</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="288"/>
         <source>Stack Frames</source>
-        <translation type="unfinished"></translation>
+        <translation>Stackramar</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="295"/>
         <source>Breakpoints</source>
-        <translation type="unfinished"></translation>
+        <translation>Brytpunkter</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="303"/>
         <source>Locals</source>
-        <translation type="unfinished"></translation>
+        <translation>Lokala variabler</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="310"/>
         <source>Console Output</source>
-        <translation type="unfinished"></translation>
+        <translation>Konsolutdata</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="326"/>
         <source>Documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Dokumentation</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1185"/>
-        <source>Target Language &lt;b&gt;%1&lt;/b&gt; is not supported for FMU Export. Only &lt;b&gt;C&lt;/b&gt; and &lt;b&gt;Cpp&lt;/b&gt; are supported</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../MainWindow.cpp" line="1186"/>
         <source>FMU_EXPORT Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>FMU-exporten misslyckades</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1197"/>
         <source>Translating model %1 as FMU</source>
-        <translation type="unfinished"></translation>
+        <translation>Översätter modellen %1 som FMU</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2611"/>
         <source>making read-only package</source>
-        <translation type="unfinished"></translation>
+        <translation>att skapa ett skrivskyddat paket</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2623"/>
         <source>making XML</source>
-        <translation>skapar XML</translation>
+        <translation>att skapa XML</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2635"/>
         <source>exporting to Figaro</source>
-        <translation>exporterar till Figaro</translation>
+        <translation>export till Figaro</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2684"/>
         <source>exporting to OMNotebook</source>
-        <translation>exporterar till OMNotebook</translation>
+        <translation>export till OMNotebook</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2744"/>
         <source>Updating library index</source>
-        <translation type="unfinished"></translation>
+        <translation>Uppdaterar biblioteksindex</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2748"/>
         <source>Failed to update the library index. This could be because of bad internet connection.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte uppdatera biblioteksindexet. Det kan bero på en dålig internetanslutning.</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2768"/>
         <source>Importing model(s) from OMNotebook</source>
         <translation>Importerar modell(er) från OMNotebook</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2817"/>
         <source>Importing ngspice netlist and converting to Modelica code</source>
-        <translation>Importerar ngspice nätlista och konverterar till Modelica-kod</translation>
+        <translation>Importerar ngspice-nätlista och konverterar till Modelicakod</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2896"/>
         <source>exporting to Image</source>
-        <translation>exporterar till Bild</translation>
+        <translation>export till bild</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2957"/>
         <source>Unable to run terminal command &lt;b&gt;%1&lt;/b&gt; with arguments &lt;b&gt;%2&lt;/b&gt;. Process failed with error &lt;b&gt;%3&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte köra terminalkommandot &lt;b&gt;%1&lt;/b&gt; med argumenten &lt;b&gt;%2&lt;/b&gt;. Processen misslyckades med felet &lt;b&gt;%3&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2983"/>
         <source>OMSens is not supported on MacOS</source>
-        <translation type="unfinished"></translation>
+        <translation>OMSens stöds inte i macOS</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2994"/>
         <source>Failed to load OMSens plugin. %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte ladda in OMSens-insticksprogrammet. %1</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3007"/>
         <source>Please open a model before starting the OMSens plugin.</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppna en modell innan du startar OMSens-insticksprogrammet.</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3534"/>
         <source>CRML Testsuite</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML-testsvit</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3679"/>
         <source>Opens the Modelica file(s)</source>
-        <translation>Öppnar Modelicafilerna</translation>
+        <translation>Öppnar Modelicafil(er)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3686"/>
         <source>Load Library</source>
-        <translation>Ladda in Bibliotek</translation>
+        <translation>Ladda in bibliotek</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3687"/>
         <source>Loads the Modelica library</source>
-        <translation>Laddar in Modelica-biblioteket</translation>
+        <translation>Laddar in Modelicabiblioteket</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3690"/>
         <source>Load Encrypted Library</source>
-        <translation type="unfinished"></translation>
+        <translation>Ladda in krypterat bibliotek</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3691"/>
         <source>Loads the encrypted Modelica library</source>
-        <translation type="unfinished"></translation>
+        <translation>Laddar in det krypterade Modelicabiblioteket</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3694"/>
         <source>Open Result File(s)</source>
-        <translation>Öppna Resultatfil(er)</translation>
+        <translation>Öppna resultatfil(er)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3696"/>
         <source>Opens the OpenModelica Result file</source>
         <translation>Öppnar OpenModelica-resultatfilen</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3699"/>
         <source>Open Transformations File</source>
-        <translation>Öppna Transformationsfil</translation>
+        <translation>Öppna transformationsfil</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3700"/>
         <source>Opens the class transformations file</source>
         <translation>Öppnar klassens transformationsfil</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3703"/>
         <source>Unload All</source>
-        <translation type="unfinished"></translation>
+        <translation>Ladda ur alla</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3704"/>
         <source>Unloads all loaded classes</source>
-        <translation type="unfinished"></translation>
+        <translation>Laddar ur alla inladdade klasser</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3707"/>
         <source>Open Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppna katalog</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3708"/>
         <source>Opens the directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppnar katalogen</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3732"/>
         <source>FMU Model Description</source>
-        <translation type="unfinished"></translation>
+        <translation>FMU-modellbeskrivning</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3733"/>
         <source>Imports the model from Functional Mockup Interface (FMU) model description</source>
-        <translation type="unfinished"></translation>
+        <translation>Importerar modellen från en FMU-modellbeskrivning</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3736"/>
         <source>From OMNotebook</source>
-        <translation type="unfinished"></translation>
+        <translation>Från OMNotebook</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3740"/>
         <source>Ngspice netlist</source>
-        <translation type="unfinished"></translation>
+        <translation>Ngspice-nätlista</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3744"/>
         <source>To Clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>Till urklipp</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3748"/>
         <source>Image</source>
         <translation>Bild</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3770"/>
         <source>Figaro</source>
         <translation>Figaro</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3775"/>
         <source>To OMNotebook</source>
-        <translation type="unfinished"></translation>
+        <translation>Till OMNotebook</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3781"/>
         <source>Opens the install library window</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppnar fönstret för att installera bibliotek</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3785"/>
         <source>Upgrades the installed libraries</source>
-        <translation type="unfinished"></translation>
+        <translation>Uppgraderar de installerade biblioteken</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3789"/>
         <source>Updates the library index</source>
-        <translation type="unfinished"></translation>
+        <translation>Uppdaterar biblioteksindexet</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3793"/>
         <source>Clears the recent files list</source>
-        <translation>Töm senaste-filer-listan</translation>
+        <translation>Rensar listan över senaste filer</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3796"/>
         <source>Print...</source>
         <translation>Skriv ut...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3799"/>
         <source>Quit</source>
         <translation>Avsluta</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3800"/>
         <source>Quit the </source>
         <translation>Avsluta </translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3806"/>
         <source>Undo</source>
-        <translation type="unfinished"></translation>
+        <translation>Ångra</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3811"/>
         <source>Redo</source>
-        <translation type="unfinished"></translation>
+        <translation>Gör om</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3850"/>
         <source>Close Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Stäng fönster</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3851"/>
         <source>Closes the active window</source>
-        <translation type="unfinished"></translation>
+        <translation>Stänger det aktiva fönstret</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3854"/>
         <source>Close All Windows</source>
-        <translation type="unfinished"></translation>
+        <translation>Stäng alla fönster</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3855"/>
         <source>Closes all windows</source>
-        <translation type="unfinished"></translation>
+        <translation>Stänger alla fönster</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3858"/>
         <source>Close All Windows But This</source>
-        <translation type="unfinished"></translation>
+        <translation>Stäng alla andra fönster</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3859"/>
         <source>Closes all windows except active window</source>
-        <translation type="unfinished"></translation>
+        <translation>Stänger alla fönster utom det aktiva</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3862"/>
         <source>Cascade Windows</source>
-        <translation type="unfinished"></translation>
+        <translation>Ordna fönster överlappande</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3863"/>
         <source>Arranges all the child windows in a cascade pattern</source>
-        <translation type="unfinished"></translation>
+        <translation>Ordnar alla underfönster överlappande</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3874"/>
+        <source>Tile Windows Matrix</source>
+        <translation>Ordna fönster i rutnät</translation>
+    </message>
+    <message>
+        <source>Arranges all child windows in a matrix pattern</source>
+        <translation>Ordnar alla underfönster i ett rutnät</translation>
+    </message>
+    <message>
+        <source>Equate &amp;&amp; Tile Windows Matrix</source>
+        <translation>Utjämna &amp;&amp; ordna fönster i rutnät</translation>
+    </message>
+    <message>
+        <source>Equates the size of all child windows to the size of active window and arranges them in a matrix pattern</source>
+        <translation>Ger alla underfönster samma storlek som det aktiva fönstret och ordnar dem i ett rutnät</translation>
+    </message>
+    <message>
         <source>Toggle Tab/Sub-window View</source>
-        <translation type="unfinished"></translation>
+        <translation>Växla mellan flikar och underfönster</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3875"/>
         <source>Toggle between tab or sub-window view mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Växlar mellan vyläge med flikar och med underfönster</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3889"/>
         <source>Instantiate Model</source>
-        <translation>Instansiera Modell</translation>
+        <translation>Instansiera modell</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3890"/>
         <source>Instantiates the modelica model</source>
-        <translation>Instansierar Modelica-modellen</translation>
+        <translation>Instansierar Modelicamodellen</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3927"/>
         <source>Shows the list of archived simulations</source>
-        <translation type="unfinished"></translation>
+        <translation>Visar listan över arkiverade simuleringar</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3931"/>
         <source>Calculate Data Reconciliation</source>
-        <translation type="unfinished"></translation>
+        <translation>Beräkna dataavstämning</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3932"/>
         <source>Calculates the data reconciliation</source>
-        <translation type="unfinished"></translation>
+        <translation>Beräknar dataavstämningen</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3937"/>
         <source>Run CRML Testsuite</source>
-        <translation type="unfinished"></translation>
+        <translation>Kör CRML-testsviten</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3938"/>
         <source>Runs the CRML Testsuite and display report</source>
-        <translation type="unfinished"></translation>
+        <translation>Kör CRML-testsviten och visar en rapport</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3987"/>
         <source>Shows OpenModelica Compiler CLI</source>
-        <translation type="unfinished"></translation>
+        <translation>Visar OpenModelica Compiler CLI</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3991"/>
         <source>OpenModelica Command Prompt</source>
-        <translation type="unfinished"></translation>
+        <translation>OpenModelica-kommandotolk</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3992"/>
         <source>Open OpenModelica command prompt</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppnar OpenModelica-kommandotolken</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3997"/>
         <source>OpenModelica Compiler Diff</source>
-        <translation type="unfinished"></translation>
+        <translation>OpenModelica Compiler Diff</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3998"/>
         <source>Shows OpenModelica Compiler Diff</source>
-        <translation type="unfinished"></translation>
+        <translation>Visar OpenModelica Compiler Diff</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4002"/>
         <source>Open Temporary Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppna temporär katalog</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4003"/>
         <source>Opens the temporary directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppnar den temporära katalogen</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4006"/>
         <source>Open Working Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppna arbetskatalog</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4007"/>
         <source>Opens the current working directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppnar den aktuella arbetskatalogen</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4010"/>
         <source>Open Terminal</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppna terminal</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4011"/>
         <source>Opens the terminal</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppnar terminalen</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4014"/>
         <source>Options</source>
         <translation>Alternativ</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4019"/>
         <source>Run Sensitivity Analysis and Optimization</source>
-        <translation type="unfinished"></translation>
+        <translation>Kör känslighetsanalys och optimering</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4020"/>
         <source>Runs the sensitivity analysis and optimization</source>
-        <translation type="unfinished"></translation>
+        <translation>Kör känslighetsanalysen och optimeringen</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4033"/>
         <source>OpenModelica System Documentation</source>
-        <translation>OpenModelica Systemdokumentation</translation>
+        <translation>OpenModelicas systemdokumentation</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4034"/>
         <source>Opens the OpenModelica System Documentation</source>
-        <translation>Öppnar OpenModelicas Systemdokumentation</translation>
+        <translation>Öppnar OpenModelicas systemdokumentation</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4037"/>
         <source>OpenModelica Scripting Documentation</source>
-        <translation>OpenModelica Script-dokumentering</translation>
+        <translation>OpenModelicas skriptdokumentation</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4038"/>
         <source>Opens the OpenModelica Scripting Documentation</source>
-        <translation>Öppnar OpenModelicas Script-dokumentation</translation>
+        <translation>Öppnar OpenModelicas skriptdokumentation</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4041"/>
         <source>Modelica Documentation</source>
-        <translation>Modelica-dokumentation</translation>
+        <translation>Modelicadokumentation</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4042"/>
         <source>Opens the Modelica Documentation</source>
-        <translation>Öppnar Modelica-dokumentationen</translation>
+        <translation>Öppnar Modelicadokumentationen</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4059"/>
         <source>Draws a line shape</source>
         <translation>Ritar en linje</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4064"/>
         <source>Draws a polygon shape</source>
         <translation>Ritar en polygon</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4069"/>
         <source>Draws a rectangle shape</source>
         <translation>Ritar en rektangel</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4074"/>
         <source>Draws an ellipse shape</source>
         <translation>Ritar en ellips</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4078"/>
         <source>Text</source>
         <translation>Text</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4079"/>
         <source>Draws a text shape</source>
         <translation>Ritar en textruta</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4084"/>
         <source>Inserts a bitmap</source>
         <translation>Infogar en bitmapp</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4088"/>
         <source>Connect/Unconnect Mode</source>
-        <translation>Växla Lägg till/Ta bort anslutningar</translation>
+        <translation>Anslutningsläge</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4094"/>
         <source>Transition Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Övergångsläge</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4095"/>
         <source>Changes to/from transition mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Ändrar till/från övergångsläge</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4117"/>
         <source>New Parametric Plot Window</source>
         <translation>Nytt fönster för parametriskt diagram</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4118"/>
         <source>Inserts new parametric plot window</source>
         <translation>Infogar nytt fönster för parametriskt diagram</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4121"/>
         <source>New Array Plot Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Nytt fönster för arraydiagram</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4122"/>
         <source>Inserts new array plot window</source>
-        <translation type="unfinished"></translation>
+        <translation>Infogar ett nytt fönster för arraydiagram</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4125"/>
         <source>New Array Parametric Plot Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Nytt fönster för parametriskt arraydiagram</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4126"/>
         <source>Inserts new array parametric plot window</source>
-        <translation type="unfinished"></translation>
+        <translation>Infogar ett nytt fönster för parametriskt arraydiagram</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4130"/>
         <source>New Animation Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Nytt animeringsfönster</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4131"/>
         <source>Inserts new animation window</source>
-        <translation type="unfinished"></translation>
+        <translation>Infogar ett nytt animeringsfönster</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4135"/>
         <source>Diagram Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Fönster för modelldiagram</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4136"/>
         <source>Inserts a diagram window</source>
-        <translation type="unfinished"></translation>
+        <translation>Infogar ett fönster med modelldiagrammet</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4140"/>
         <source>Exports the plotted variables to a CSV file</source>
-        <translation type="unfinished"></translation>
+        <translation>Exporterar de plottade variablerna till en CSV-fil</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4143"/>
         <source>Clear Plot Window</source>
-        <translation>Töm Diagramfönstret</translation>
+        <translation>Töm diagramfönstret</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4144"/>
         <source>Clears all the curves from the plot window</source>
         <translation>Tömmer alla kurvor i diagramfönstret</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4222"/>
         <source>&amp;System Libraries</source>
         <translation>&amp;Systembibliotek</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4228"/>
         <source>&amp;Manage Libraries</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Hantera bibliotek</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4237"/>
         <source>Recent &amp;Files</source>
-        <translation>Senaste &amp;Filer</translation>
+        <translation>Senaste &amp;filer</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4249"/>
         <source>&amp;Edit</source>
         <translation>&amp;Redigera</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4259"/>
         <source>&amp;View</source>
         <translation>&amp;Visa</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4263"/>
         <source>Toolbars</source>
         <translation>Verktygsfält</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4267"/>
         <source>Windows</source>
         <translation>Fönster</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4333"/>
         <source>&amp;Simulation</source>
         <translation>&amp;Simulering</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4352"/>
         <source>&amp;Data Reconciliation</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Dataavstämning</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4360"/>
         <source>&amp;CRML</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;CRML</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4402"/>
         <source>&amp;Debug</source>
         <translation>&amp;Debugga</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4684"/>
         <source>&amp;New</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ny</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4828"/>
         <source>SSP Toolbar</source>
-        <translation type="unfinished"></translation>
+        <translation>SSP</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4377"/>
         <source>&amp;Git</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Git</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4380"/>
         <source>TraceabilityMenu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4381"/>
         <source>Traceability</source>
-        <translation type="unfinished"></translation>
+        <translation>Spårbarhet</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4410"/>
         <source>&amp;Tools</source>
         <translation>&amp;Verktyg</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4429"/>
         <source>&amp;Help</source>
         <translation>&amp;Hjälp</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4676"/>
         <source>File Toolbar</source>
         <translation>Arkiv</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4707"/>
         <source>Edit Toolbar</source>
         <translation>Redigering</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4715"/>
         <source>View Toolbar</source>
         <translation>Vyer</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4728"/>
         <source>Shapes Toolbar</source>
         <translation>Former</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4762"/>
         <source>Check Toolbar</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontroll</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4771"/>
         <source>Simulation Toolbar</source>
         <translation>Simulering</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4744"/>
         <source>ModelSwitcher Toolbar</source>
         <translation>Modellväxlare</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4317"/>
         <source>&amp;SSP</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;SSP</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4369"/>
-        <source>Sensitivity Optimization</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../MainWindow.cpp" line="4812"/>
         <source>Debugger Toolbar</source>
-        <translation type="unfinished"></translation>
+        <translation>Debugger</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4821"/>
         <source>Run the debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Kör debuggern</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1407"/>
         <source>Exporting model to OMNotebook</source>
-        <translation>Exporterar model till OMNotebook</translation>
+        <translation>Exporterar modell till OMNotebook</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2849"/>
         <source>Exporting model as an Image</source>
-        <translation>Exporterar model som en Bild</translation>
+        <translation>Exporterar modell som en bild</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4198"/>
         <source>Import</source>
-        <translation type="unfinished"></translation>
+        <translation>Importera</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4785"/>
         <source>Re-simulation Toolbar</source>
-        <translation type="unfinished"></translation>
+        <translation>Omsimulering</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4794"/>
         <source>Plot Toolbar</source>
         <translation>Diagram</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2785"/>
         <source>Error reading the xml file</source>
-        <translation>Fel vid inläsning av XML filen</translation>
+        <translation>Fel vid inläsning av XML-filen</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2885"/>
         <source>Error saving the image file</source>
         <translation>Fel vid sparning av bildfilen</translation>
+    </message>
+    <message>
+        <source>Language server is missing %1 in %2. It will start but is likely to report no hover or go to definition results.</source>
+        <translation>Språkservern saknar %1 i %2. Den startar, men visar troligen ingen information vid hovring och hittar inga definitioner.</translation>
+    </message>
+    <message>
+        <source>Cancel the running operation</source>
+        <translation>Avbryt den pågående åtgärden</translation>
+    </message>
+    <message>
+        <source>Find Usage</source>
+        <translation>Hitta användningar</translation>
+    </message>
+    <message>
+        <source>Navigation Manager</source>
+        <translation>Navigeringshanterare</translation>
+    </message>
+    <message>
+        <source>Creating widgets</source>
+        <translation>Skapar gränssnittskomponenter</translation>
+    </message>
+    <message>
+        <source>All files must be in the same directory.</source>
+        <translation>Alla filer måste ligga i samma katalog.</translation>
+    </message>
+    <message>
+        <source>Target Language &lt;b&gt;%1&lt;/b&gt; is not supported for FMU Export. Only &lt;b&gt;C&lt;/b&gt;, &lt;b&gt;Cpp&lt;/b&gt;, &lt;b&gt;wasm&lt;/b&gt; and &lt;b&gt;wasm-jit&lt;/b&gt; are supported</source>
+        <translation>Målspråket &lt;b&gt;%1&lt;/b&gt; stöds inte för FMU-export. Endast &lt;b&gt;C&lt;/b&gt;, &lt;b&gt;Cpp&lt;/b&gt;, &lt;b&gt;wasm&lt;/b&gt; och &lt;b&gt;wasm-jit&lt;/b&gt; stöds</translation>
+    </message>
+    <message>
+        <source>Exporting model %1 as FMU</source>
+        <translation>Exporterar modellen %1 som FMU</translation>
+    </message>
+    <message>
+        <source>Exported &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Exporterade &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Could not read the exported FMU &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Kunde inte läsa den exporterade FMU:n &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Unable to open %1</source>
+        <translation>Kunde inte öppna %1</translation>
+    </message>
+    <message>
+        <source>Unable to find the class &lt;b&gt;%1&lt;/b&gt;. It might not be loaded.</source>
+        <translation>Kunde inte hitta klassen &lt;b&gt;%1&lt;/b&gt;. Den kanske inte är inladdad.</translation>
+    </message>
+    <message>
+        <source>%1 is in the cloud folder %2. Sign in to that account to open it.</source>
+        <translation>%1 finns i molnmappen %2. Logga in på det kontot för att öppna den.</translation>
+    </message>
+    <message>
+        <source>Fetching %1...</source>
+        <translation>Hämtar %1...</translation>
+    </message>
+    <message>
+        <source>%1 is no longer in the cloud folder.</source>
+        <translation>%1 finns inte längre i molnmappen.</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to clear recent models?</source>
+        <translation>Är du säker på att du vill rensa listan över senaste modeller?</translation>
+    </message>
+    <message>
+        <source>Loads the compiled model</source>
+        <translation>Laddar in den kompilerade modellen</translation>
+    </message>
+    <message>
+        <source>Open from Cloud Storage...</source>
+        <translation>Öppna från molnlagring...</translation>
+    </message>
+    <message>
+        <source>Opens a package stored in Google Drive or OneDrive</source>
+        <translation>Öppnar ett paket som är lagrat i Google Drive eller OneDrive</translation>
+    </message>
+    <message>
+        <source>Save to Cloud Storage...</source>
+        <translation>Spara i molnlagring...</translation>
+    </message>
+    <message>
+        <source>Saves the active class to Google Drive or OneDrive</source>
+        <translation>Sparar den aktiva klassen i Google Drive eller OneDrive</translation>
+    </message>
+    <message>
+        <source>Clears the recent models list</source>
+        <translation>Rensar listan över senaste modeller</translation>
+    </message>
+    <message>
+        <source>Recent &amp;Models</source>
+        <translation>Senaste &amp;modeller</translation>
+    </message>
+    <message>
+        <source>No active simulation output window. Please select a simulation output window for re-simulate.</source>
+        <translation>Inget fönster för simuleringsutmatning är aktivt. Välj ett fönster för simuleringsutmatning för omsimulering.</translation>
+    </message>
+    <message>
+        <source>Open a Modelica class first; it is the active class that gets saved.</source>
+        <translation>Öppna en Modelicaklass först; det är den aktiva klassen som sparas.</translation>
+    </message>
+    <message>
+        <source>Could not write %1 to the working copy.</source>
+        <translation>Kunde inte skriva %1 till arbetskopian.</translation>
+    </message>
+    <message>
+        <source>%1 was not written to the cloud folder; nothing was uploaded.</source>
+        <translation>%1 skrevs inte till molnmappen; ingenting laddades upp.</translation>
+    </message>
+    <message>
+        <source>Uploading %1...</source>
+        <translation>Laddar upp %1...</translation>
+    </message>
+    <message>
+        <source>%1 holds no Modelica classes.</source>
+        <translation>%1 innehåller inga Modelicaklasser.</translation>
+    </message>
+    <message>
+        <source>Saving %1 to the cloud...</source>
+        <translation>Sparar %1 i molnet...</translation>
+    </message>
+    <message>
+        <source>Confirm Deletions</source>
+        <translation>Bekräfta borttagningar</translation>
+    </message>
+    <message numerus="yes">
+        <source>This will move %n file(s) to the cloud service&apos;s trash:
+
+%1
+
+Continue?</source>
+        <translation>
+            <numerusform>Detta flyttar %n fil till molntjänstens papperskorg:
+
+%1
+
+Vill du fortsätta?</numerusform>
+            <numerusform>Detta flyttar %n filer till molntjänstens papperskorg:
+
+%1
+
+Vill du fortsätta?</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Could not synchronise %1: %2</source>
+        <translation>Kunde inte synkronisera %1: %2</translation>
+    </message>
+    <message>
+        <source>Synchronisation of %1 was cancelled</source>
+        <translation>Synkroniseringen av %1 avbröts</translation>
+    </message>
+    <message>
+        <source>%1 is up to date</source>
+        <translation>%1 är aktuell</translation>
+    </message>
+    <message>
+        <source>Save Figure in Model</source>
+        <translation>Spara figur i modellen</translation>
+    </message>
+    <message>
+        <source>Saves the current plot as a figure in the model annotation</source>
+        <translation>Sparar det aktuella diagrammet som en figur i modellens annotering</translation>
     </message>
 </context>
 <context>
     <name>MessageTab</name>
     <message>
-        <location filename="../../MainWindow.cpp" line="5125"/>
         <source>Click to open message browser.</source>
-        <translation type="unfinished"></translation>
+        <translation>Klicka för att öppna fönstret Meddelanden.</translation>
     </message>
 </context>
 <context>
     <name>MessageWidget</name>
     <message>
-        <location filename="../../Modeling/MessagesWidget.cpp" line="157"/>
         <source>Select All</source>
-        <translation>Välj Alla</translation>
+        <translation>Välj alla</translation>
     </message>
     <message>
-        <location filename="../../Modeling/MessagesWidget.cpp" line="159"/>
         <source>Selects all the Messages</source>
-        <translation>Välj alla Meddelanden</translation>
+        <translation>Välj alla meddelanden</translation>
     </message>
     <message>
-        <location filename="../../Modeling/MessagesWidget.cpp" line="163"/>
         <source>Copy the Message</source>
-        <translation>Kopiera Meddelandet</translation>
+        <translation>Kopiera meddelandet</translation>
     </message>
     <message>
-        <location filename="../../Modeling/MessagesWidget.cpp" line="165"/>
         <source>Clear This Tab</source>
-        <translation type="unfinished"></translation>
+        <translation>Töm den här fliken</translation>
     </message>
     <message>
-        <location filename="../../Modeling/MessagesWidget.cpp" line="166"/>
         <source>clears the messages from this tab</source>
-        <translation type="unfinished"></translation>
+        <translation>Tömmer meddelandena i den här fliken</translation>
     </message>
     <message>
-        <location filename="../../Modeling/MessagesWidget.cpp" line="168"/>
         <source>Clear All Tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>Töm alla flikar</translation>
     </message>
     <message>
-        <location filename="../../Modeling/MessagesWidget.cpp" line="169"/>
         <source>clears the messages from all tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>Tömmer meddelandena i alla flikar</translation>
     </message>
 </context>
 <context>
     <name>MessagesPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5342"/>
         <source>Output size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Utdatastorlek:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5343"/>
         <source>Specifies the maximum number of rows the message browser may have. If there are more rows then the rows are removed from the beginning.</source>
-        <translation type="unfinished"></translation>
+        <translation>Anger det högsta antalet rader som fönstret Meddelanden kan ha. Om det finns fler rader tas raderna bort från början.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5351"/>
         <source>Reset messages number before checking, instantiation, and simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Nollställ meddelandenumreringen före kontroll, instansiering och simulering</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5354"/>
         <source>Clear message browser before checking, instantiation, and simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Töm fönstret Meddelanden före kontroll, instansiering och simulering</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5356"/>
         <source>Do not automatically enlarge message browser when a new message is available</source>
-        <translation type="unfinished"></translation>
+        <translation>Förstora inte fönstret Meddelanden automatiskt när ett nytt meddelande finns</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5382"/>
         <source>Notification Color:</source>
-        <translation type="unfinished"></translation>
+        <translation>Färg för notifikationer:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5389"/>
         <source>Warning Color:</source>
-        <translation type="unfinished"></translation>
+        <translation>Färg för varningar:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5396"/>
         <source>Error Color:</source>
-        <translation type="unfinished"></translation>
+        <translation>Färg för fel:</translation>
     </message>
 </context>
 <context>
     <name>MessagesWidget</name>
     <message>
-        <location filename="../../Modeling/MessagesWidget.cpp" line="440"/>
         <source>All</source>
-        <translation type="unfinished"></translation>
+        <translation>Alla</translation>
     </message>
     <message>
-        <location filename="../../Modeling/MessagesWidget.cpp" line="442"/>
         <source>Notifications</source>
         <translation>Notifikationer</translation>
     </message>
     <message>
-        <location filename="../../Modeling/MessagesWidget.cpp" line="444"/>
         <source>Warnings</source>
-        <translation type="unfinished"></translation>
+        <translation>Varningar</translation>
     </message>
     <message>
-        <location filename="../../Modeling/MessagesWidget.cpp" line="446"/>
         <source>Errors</source>
-        <translation type="unfinished"></translation>
+        <translation>Fel</translation>
     </message>
 </context>
 <context>
     <name>ModelWidget</name>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5957"/>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5959"/>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Bakåt</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5965"/>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5967"/>
         <source>Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>Framåt</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5973"/>
         <source>Exit</source>
-        <translation type="unfinished">Avsluta</translation>
+        <translation>Lämna</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5975"/>
         <source>Exit Element</source>
-        <translation type="unfinished"></translation>
+        <translation>Lämna elementet</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5992"/>
         <source>Writable</source>
         <translation>Skrivbar</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="6001"/>
         <source>Make writable</source>
         <translation>Gör skrivbar</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="6001"/>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="7654"/>
         <source>File is writable</source>
         <translation>Filen är skrivbar</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="6998"/>
         <source>Showing element &lt;b&gt;%1&lt;/b&gt; in &lt;b&gt;%2&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Visar elementet &lt;b&gt;%1&lt;/b&gt; i &lt;b&gt;%2&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="7650"/>
         <source>Cannot Set Permissions</source>
-        <translation>Kan Inte Sätta Behörigheter</translation>
+        <translation>Kan inte sätta behörigheter</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="7650"/>
         <source>Cannot set permissions to writable.</source>
-        <translation>Kan inte sätta behörighet till skrivbar.</translation>
+        <translation>Kan inte göra filen skrivbar.</translation>
     </message>
 </context>
 <context>
     <name>ModelWidgetContainer</name>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="8438"/>
         <source>save as</source>
-        <translation>spara som</translation>
+        <translation>att spara som</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="8525"/>
         <source>Adapting extent to diagram</source>
-        <translation type="unfinished"></translation>
+        <translation>Anpassar utsträckningen till diagrammet</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="8584"/>
         <source>adapting extent to diagram</source>
-        <translation type="unfinished"></translation>
+        <translation>anpassning av utsträckningen till diagrammet</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="8421"/>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="8455"/>
         <source>saving</source>
-        <translation>sparar</translation>
+        <translation>att spara</translation>
     </message>
 </context>
 <context>
     <name>ModelicaClassDialog</name>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="208"/>
         <source>Specialization:</source>
         <translation>Specialisering:</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="227"/>
         <source>Extends (optional):</source>
         <translation>Ärv från klass (frivillig):</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="233"/>
         <source>Insert in class (optional):</source>
         <translation>Infoga i klass (frivillig):</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="239"/>
         <source>Partial</source>
-        <translation>Partiell</translation>
+        <translation>Partial</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="241"/>
         <source>Encapsulated</source>
-        <translation>Inkapslad</translation>
+        <translation>Encapsulated</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="243"/>
         <source>State</source>
-        <translation type="unfinished"></translation>
+        <translation>Tillstånd</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="309"/>
         <source>Select Extends Class</source>
-        <translation>Välj Klass att Ärva från</translation>
+        <translation>Välj klass att ärva från</translation>
     </message>
 </context>
 <context>
     <name>ModelicaEditor</name>
     <message>
-        <location filename="../../Editors/ModelicaEditor.cpp" line="375"/>
         <source>Start and End modifiers are different</source>
-        <translation>Start- och Slut-modifierare är olika</translation>
+        <translation>Start- och slut-modifierare är olika</translation>
     </message>
     <message>
-        <location filename="../../Editors/ModelicaEditor.cpp" line="615"/>
         <source>&lt;b&gt;Warning: &lt;/b&gt;You are changing a system library class. System libraries are always read-only. Your changes will not be saved.</source>
-        <translation>&lt;b&gt;Varning:&lt;/b&gt;Du ändrar en systembiblioteksklass. Systembibliotek är alltid skrivskyddade. Dina ändringar kommer inte sparas.</translation>
+        <translation>&lt;b&gt;Varning: &lt;/b&gt;Du ändrar en systembiblioteksklass. Systembibliotek är alltid skrivskyddade. Dina ändringar sparas inte.</translation>
     </message>
     <message>
-        <location filename="../../Editors/ModelicaEditor.cpp" line="617"/>
         <source>&lt;b&gt;Warning: &lt;/b&gt;Cannot modify the text in the element mode. Your changes will not be saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Varning: &lt;/b&gt;Det går inte att ändra texten i elementläget. Dina ändringar sparas inte.</translation>
     </message>
     <message>
-        <location filename="../../Editors/ModelicaEditor.cpp" line="620"/>
         <source>&lt;b&gt;Warning: &lt;/b&gt;You are changing a read-only class.</source>
-        <translation>&lt;b&gt;Varning:&lt;/b&gt;Du försöker ändra på en skrivskyddad klass.</translation>
+        <translation>&lt;b&gt;Varning: &lt;/b&gt;Du ändrar en skrivskyddad klass.</translation>
+    </message>
+    <message>
+        <source>You can save to file with errors, it will reopen class in text mode.</source>
+        <translation>Du kan spara till fil med fel; klassen öppnas då igen i textläge.</translation>
+    </message>
+    <message>
+        <source>Go to Definition</source>
+        <translation>Gå till definition</translation>
+    </message>
+    <message>
+        <source>Go to the definition of the class under the cursor</source>
+        <translation>Gå till definitionen av klassen under markören</translation>
     </message>
 </context>
 <context>
     <name>ModelicaEditorPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4305"/>
         <source>Preserve Text Indentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Bevara textens indrag</translation>
     </message>
 </context>
 <context>
     <name>NotificationsDialog</name>
     <message>
-        <location filename="../../Options/NotificationsDialog.cpp" line="146"/>
         <source>Confirm Quit</source>
-        <translation>Bekräfta Avsluta</translation>
+        <translation>Bekräfta avsluta</translation>
     </message>
     <message>
-        <location filename="../../Options/NotificationsDialog.cpp" line="169"/>
         <source>Are you sure you want to quit?</source>
         <translation>Är du säker på att du vill avsluta?</translation>
     </message>
     <message>
-        <location filename="../../Options/NotificationsDialog.cpp" line="177"/>
         <source>You must save the class before referencing a bitmap from local directory.</source>
         <translation>Du måste spara klassen innan du kan referera till en bitmapp i den lokala katalogen.</translation>
     </message>
     <message>
-        <location filename="../../Options/NotificationsDialog.cpp" line="194"/>
         <source>Always quit without prompt</source>
-        <translation>Avsluta alltid utan påminnelse</translation>
+        <translation>Avsluta alltid utan att fråga</translation>
     </message>
     <message>
-        <location filename="../../Options/NotificationsDialog.cpp" line="201"/>
         <source>Remember my decision and do not ask again</source>
-        <translation type="unfinished"></translation>
+        <translation>Kom ihåg mitt beslut och fråga inte igen</translation>
     </message>
 </context>
 <context>
     <name>NotificationsPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5516"/>
         <source>Notifications</source>
         <translation>Notifikationer</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5518"/>
         <source>Always quit without prompt</source>
-        <translation>Avsluta alltid utan påminnelse</translation>
+        <translation>Avsluta alltid utan att fråga</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5520"/>
         <source>Show item dropped on itself message</source>
         <translation>Visa meddelande när element släpps på sig själv</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5523"/>
         <source>Show model is partial and component is added as replaceable message</source>
-        <translation>Visa meddelande när modellen är partiell och komponenten läggs till som replaceable</translation>
+        <translation>Visa meddelande när modellen är partial och komponenten läggs till som replaceable</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5526"/>
         <source>Show component is declared as inner message</source>
-        <translation>Visa meddelande för komponenter deklarade som inner</translation>
+        <translation>Visa meddelande när en komponent är deklarerad som inner</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5529"/>
         <source>Show save model for bitmap insertion message</source>
         <translation>Visa meddelande när modeller måste sparas före infogning av bitmappar</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5532"/>
         <source>Always ask for the dragged/duplicated component name</source>
-        <translation type="unfinished"></translation>
+        <translation>Fråga alltid efter namnet på en dragen/duplicerad komponent</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5535"/>
         <source>Always ask for what to do with the text editor error</source>
-        <translation type="unfinished"></translation>
+        <translation>Fråga alltid vad som ska göras vid fel i textredigeraren</translation>
+    </message>
+</context>
+<context>
+    <name>OAuth2Client</name>
+    <message>
+        <source>Not signed in.</source>
+        <translation>Inte inloggad.</translation>
+    </message>
+    <message>
+        <source>Could not set up the sign-in redirect.</source>
+        <translation>Kunde inte konfigurera omdirigeringen för inloggning.</translation>
+    </message>
+    <message>
+        <source>Waiting for you to sign in with the browser...</source>
+        <translation>Väntar på att du loggar in i webbläsaren...</translation>
+    </message>
+    <message>
+        <source>The sign-in response did not match the request.</source>
+        <translation>Svaret från inloggningen stämde inte med begäran.</translation>
+    </message>
+    <message>
+        <source>Exchanging the authorization code...</source>
+        <translation>Byter ut auktoriseringskoden...</translation>
+    </message>
+    <message>
+        <source>The saved sign-in is no longer valid. Sign in again.</source>
+        <translation>Den sparade inloggningen är inte längre giltig. Logga in igen.</translation>
+    </message>
+    <message>
+        <source>The service returned no access token.</source>
+        <translation>Tjänsten returnerade ingen åtkomsttoken.</translation>
     </message>
 </context>
 <context>
     <name>OMCProxy</name>
     <message>
-        <location filename="../../OMC/OMCProxy.cpp" line="105"/>
         <source>OMC Diff</source>
-        <translation type="unfinished"></translation>
+        <translation>OMC Diff</translation>
     </message>
     <message>
-        <location filename="../../OMC/OMCProxy.cpp" line="106"/>
         <source>Before</source>
-        <translation type="unfinished"></translation>
+        <translation>Före</translation>
     </message>
     <message>
-        <location filename="../../OMC/OMCProxy.cpp" line="108"/>
         <source>After</source>
-        <translation type="unfinished"></translation>
+        <translation>Efter</translation>
     </message>
     <message>
-        <location filename="../../OMC/OMCProxy.cpp" line="110"/>
         <source>Merged</source>
-        <translation type="unfinished"></translation>
+        <translation>Sammanslagen</translation>
     </message>
     <message>
-        <location filename="../../OMC/OMCProxy.cpp" line="562"/>
         <source>Connection with the OpenModelica Compiler has been lost.</source>
-        <translation>Anslutningen tll OpenModelica-kompilatorn har tappats.</translation>
+        <translation>Anslutningen till OpenModelica-kompilatorn har brutits.</translation>
     </message>
     <message>
-        <location filename="../../OMC/OMCProxy.cpp" line="773"/>
         <source>Skip loading &lt;b&gt;%1&lt;/b&gt; version &lt;b&gt;%2&lt;/b&gt; since latest version is already loaded because of the setting &lt;b&gt;Load latest Modelica version on startup&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hoppar över inläsningen av &lt;b&gt;%1&lt;/b&gt; version &lt;b&gt;%2&lt;/b&gt; eftersom den senaste versionen redan är inläst på grund av inställningen &lt;b&gt;Ladda in den senaste Modelicaversionen vid start&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../OMC/OMCProxy.cpp" line="1052"/>
         <source>Unable to set the parameter value using command &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte ange parametervärdet med kommandot &lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../../OMC/OMCProxy.cpp" line="1119"/>
-        <location filename="../../OMC/OMCProxy.cpp" line="1150"/>
         <source>Unable to set the element modifier value using command &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte ange elementmodifierarens värde med kommandot &lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../../OMC/OMCProxy.cpp" line="1233"/>
-        <location filename="../../OMC/OMCProxy.cpp" line="1265"/>
         <source>Unable to set the extends modifier value using command &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte ange extends-modifierarens värde med kommandot &lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../../OMC/OMCProxy.cpp" line="1924"/>
         <source>Could not preserve the formatting of the model instead internal pretty-printing algorithm is used.</source>
-        <translation type="unfinished"></translation>
+        <translation>Modellens formatering kunde inte bevaras, så den interna formateringsalgoritmen används i stället.</translation>
     </message>
 </context>
 <context>
     <name>OMEditApplication</name>
     <message>
-        <location filename="../../OMEditApplication.cpp" line="207"/>
-        <source>You have enabled old frontend for code generation which is not recommended. Do you want to switch to new frontend?</source>
-        <translation type="unfinished"></translation>
+        <source>You have enabled the old frontend for code generation. It is deprecated and will be removed after OpenModelica 1.28.0 is released. Do you want to switch to the new frontend?</source>
+        <translation>Du har aktiverat den gamla frontenden för kodgenerering. Den är föråldrad och tas bort efter att OpenModelica 1.28.0 har släppts. Vill du byta till den nya frontenden?</translation>
     </message>
     <message>
-        <location filename="../../OMEditApplication.cpp" line="208"/>
         <source>Switch to new frontend</source>
-        <translation type="unfinished"></translation>
+        <translation>Byt till den nya frontenden</translation>
     </message>
     <message>
-        <location filename="../../OMEditApplication.cpp" line="209"/>
         <source>Keep using old frontend</source>
-        <translation type="unfinished"></translation>
+        <translation>Fortsätt använda den gamla frontenden</translation>
+    </message>
+</context>
+<context>
+    <name>OMSCalibrationDialog</name>
+    <message>
+        <source>Calibrate</source>
+        <translation>Kalibrera</translation>
+    </message>
+    <message>
+        <source>Calibration Activity:</source>
+        <translation>Kalibreringsaktivitet:</translation>
+    </message>
+    <message>
+        <source>the only Calibration activity of the UQ file</source>
+        <translation>den enda kalibreringsaktiviteten i UQ-filen</translation>
+    </message>
+    <message>
+        <source>UQ File:</source>
+        <translation>UQ-fil:</translation>
+    </message>
+    <message>
+        <source>the UQ file referenced by the SSP, e.g. extra/uq.xml</source>
+        <translation>UQ-filen som SSP-filen refererar till, t.ex. extra/uq.xml</translation>
+    </message>
+    <message>
+        <source>Calibrated Model:</source>
+        <translation>Kalibrerad modell:</translation>
+    </message>
+    <message>
+        <source>Select the file to write the calibrated model to.
+</source>
+        <translation>Välj filen som den kalibrerade modellen ska skrivas till.
+</translation>
+    </message>
+    <message>
+        <source>Failed to export %1 to %2.
+</source>
+        <translation>Kunde inte exportera %1 till %2.
+</translation>
+    </message>
+    <message>
+        <source>The calibrated model is written to %1.
+</source>
+        <translation>Den kalibrerade modellen har skrivits till %1.
+</translation>
+    </message>
+    <message>
+        <source>The calibration failed with exit code %1.
+</source>
+        <translation>Kalibreringen misslyckades med avslutningskod %1.
+</translation>
+    </message>
+</context>
+<context>
+    <name>OMSProxy</name>
+    <message>
+        <source>OMSimulator Python GUI server started.
+Script: %1
+Endpoint: %2</source>
+        <translation>Python-GUI-servern för OMSimulator har startats.
+Skript: %1
+Slutpunkt: %2</translation>
+    </message>
+    <message>
+        <source>OMSimulator Python server failed to start. Check the Python executable and script paths.</source>
+        <translation>Python-servern för OMSimulator kunde inte starta. Kontrollera sökvägarna till Python-tolken och skriptet.</translation>
+    </message>
+    <message>
+        <source>OMSimulator Python server crashed.</source>
+        <translation>Python-servern för OMSimulator kraschade.</translation>
+    </message>
+    <message>
+        <source>OMSimulator Python server timed out.</source>
+        <translation>Tidsgränsen för Python-servern för OMSimulator löpte ut.</translation>
+    </message>
+    <message>
+        <source>OMSimulator Python server process error (%1).</source>
+        <translation>Processfel i Python-servern för OMSimulator (%1).</translation>
+    </message>
+    <message>
+        <source>OMSimulator Python server exited unexpectedly (exit code %1).</source>
+        <translation>Python-servern för OMSimulator avslutades oväntat (avslutningskod %1).</translation>
+    </message>
+    <message>
+        <source>OMSimulator Python server is not running. Cannot execute &apos;%1&apos;.</source>
+        <translation>Python-servern för OMSimulator körs inte. Kan inte köra &apos;%1&apos;.</translation>
+    </message>
+    <message>
+        <source>OMSimulator server did not respond to &apos;%1&apos; (timeout or crash). Check the Messages window for Python errors.</source>
+        <translation>OMSimulator-servern svarade inte på &apos;%1&apos; (tidsgräns eller krasch). Se fönstret Meddelanden för Python-fel.</translation>
+    </message>
+    <message>
+        <source>&apos;%1&apos; failed (no details from server).</source>
+        <translation>&apos;%1&apos; misslyckades (servern gav inga detaljer).</translation>
+    </message>
+    <message>
+        <source>&apos;%1&apos; failed: %2</source>
+        <translation>&apos;%1&apos; misslyckades: %2</translation>
     </message>
 </context>
 <context>
     <name>OMSSimulationDialog</name>
     <message>
-        <location filename="../../OMS/OMSSimulationDialog.cpp" line="78"/>
         <source>Result File:</source>
-        <translation type="unfinished"></translation>
+        <translation>Resultatfil:</translation>
     </message>
     <message>
-        <location filename="../../OMS/OMSSimulationDialog.cpp" line="81"/>
         <source>Result File Buffer Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Buffertstorlek för resultatfil:</translation>
     </message>
     <message>
-        <location filename="../../OMS/OMSSimulationDialog.cpp" line="85"/>
         <source>Logging Interval:</source>
-        <translation type="unfinished"></translation>
+        <translation>Loggningsintervall:</translation>
+    </message>
+    <message>
+        <source>Solver Settings</source>
+        <translation>Lösarinställningar</translation>
     </message>
 </context>
 <context>
     <name>OMSSimulationOutputWidget</name>
     <message>
-        <location filename="../../OMS/OMSSimulationOutputWidget.cpp" line="197"/>
         <source>Running simulation of &lt;b&gt;%1&lt;/b&gt;. Please wait for a while.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kör simulering av &lt;b&gt;%1&lt;/b&gt;. Vänta en stund.</translation>
     </message>
     <message>
-        <location filename="../../OMS/OMSSimulationOutputWidget.cpp" line="412"/>
         <source>Running simulation of %1. Please wait for a while.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kör simulering av %1. Vänta en stund.</translation>
     </message>
     <message>
-        <location filename="../../OMS/OMSSimulationOutputWidget.cpp" line="540"/>
         <source>Simulation process failed. Exited with code %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Simuleringsprocessen misslyckades. Avslutades med koden %1.</translation>
     </message>
     <message>
-        <location filename="../../OMS/OMSSimulationOutputWidget.cpp" line="543"/>
         <source>Simulation process finished successfully.</source>
-        <translation type="unfinished"></translation>
+        <translation>Simuleringsprocessen avslutades utan fel.</translation>
     </message>
     <message>
-        <location filename="../../OMS/OMSSimulationOutputWidget.cpp" line="544"/>
         <source>Simulation of %1 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>Simuleringen av %1 är klar.</translation>
     </message>
     <message>
-        <location filename="../../OMS/OMSSimulationOutputWidget.cpp" line="547"/>
-        <location filename="../../OMS/OMSSimulationOutputWidget.cpp" line="550"/>
         <source>Simulation of %1 failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Simuleringen av %1 misslyckades.</translation>
     </message>
     <message>
-        <location filename="../../OMS/OMSSimulationOutputWidget.cpp" line="580"/>
         <source>Simulation of %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Simuleringen av %1 avbröts.</translation>
     </message>
 </context>
 <context>
     <name>OMSimulatorEditor</name>
     <message>
-        <location filename="../../Editors/OMSimulatorEditor.cpp" line="140"/>
         <source>&lt;b&gt;Warning: &lt;/b&gt;You are changing a read-only class.</source>
-        <translation>&lt;b&gt;Varning:&lt;/b&gt;Du försöker ändra på en skrivskyddad klass.</translation>
+        <translation>&lt;b&gt;Varning: &lt;/b&gt;Du ändrar en skrivskyddad klass.</translation>
     </message>
 </context>
 <context>
     <name>OMSimulatorPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6488"/>
         <source>Command Line Options:</source>
-        <translation type="unfinished"></translation>
+        <translation>Kommandoradsflaggor:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6490"/>
         <source>Space separated list of command line options e.g., --suppressPath=true --ignoreInitialUnknowns=true</source>
-        <translation type="unfinished"></translation>
+        <translation>Mellanslagsseparerad lista av kommandoradsflaggor, t.ex. --suppressPath=true --ignoreInitialUnknowns=true</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6492"/>
         <source>Logging Level:</source>
-        <translation type="unfinished"></translation>
+        <translation>Loggningsnivå:</translation>
+    </message>
+    <message>
+        <source>Uncertainty Quantification (omuq)</source>
+        <translation>Osäkerhetskvantifiering (omuq)</translation>
+    </message>
+    <message>
+        <source>UQ activities run the omuq Python package, see the &lt;a href=&quot;https://github.com/adrpo/omuq&quot;&gt;omuq GitHub page&lt;/a&gt;. Specify a Python executable that has omuq and OMSimulator installed.</source>
+        <translation>UQ-aktiviteter kör Python-paketet omuq, se &lt;a href=&quot;https://github.com/adrpo/omuq&quot;&gt;omuqs GitHub-sida&lt;/a&gt;. Ange en Python-tolk som har omuq och OMSimulator installerade.</translation>
+    </message>
+    <message>
+        <source>Python:</source>
+        <translation>Python:</translation>
+    </message>
+</context>
+<context>
+    <name>OMUQDialog</name>
+    <message>
+        <source>UQ Activities</source>
+        <translation>UQ-aktiviteter</translation>
+    </message>
+    <message>
+        <source>Study:</source>
+        <translation>Studie:</translation>
+    </message>
+    <message>
+        <source>Activity:</source>
+        <translation>Aktivitet:</translation>
+    </message>
+    <message>
+        <source>Domain</source>
+        <translation>Domän</translation>
+    </message>
+    <message>
+        <source>Kind</source>
+        <translation>Typ</translation>
+    </message>
+    <message>
+        <source>Boundary</source>
+        <translation>Rand</translation>
+    </message>
+    <message>
+        <source>Variables</source>
+        <translation>Variabler</translation>
+    </message>
+    <message>
+        <source>Study</source>
+        <translation>Studie</translation>
+    </message>
+    <message>
+        <source>Domains:</source>
+        <translation>Domäner:</translation>
+    </message>
+    <message>
+        <source>Step Size:</source>
+        <translation>Stegstorlek:</translation>
+    </message>
+    <message>
+        <source>Show Progress Every:</source>
+        <translation>Förloppsintervall:</translation>
+    </message>
+    <message>
+        <source> samples</source>
+        <translation> stickprov</translation>
+    </message>
+    <message>
+        <source>The result file always has every sample.</source>
+        <translation>Resultatfilen innehåller alltid alla stickprov.</translation>
+    </message>
+    <message>
+        <source>Simulator:</source>
+        <translation>Simulator:</translation>
+    </message>
+    <message>
+        <source>Automatic</source>
+        <translation>Automatisk</translation>
+    </message>
+    <message>
+        <source>Local OMSimulator</source>
+        <translation>Lokal OMSimulator</translation>
+    </message>
+    <message>
+        <source>Docker</source>
+        <translation>Docker</translation>
+    </message>
+    <message>
+        <source>Record the run in the study and save the package as:</source>
+        <translation>Registrera körningen i studien och spara paketet som:</translation>
+    </message>
+    <message>
+        <source>Live View:</source>
+        <translation>Livevy:</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation>Av</translation>
+    </message>
+    <message>
+        <source>In OMEdit</source>
+        <translation>I OMEdit</translation>
+    </message>
+    <message>
+        <source>In the web browser</source>
+        <translation>I webbläsaren</translation>
+    </message>
+    <message>
+        <source>omuq serves the live view until it is stopped from the output tab.</source>
+        <translation>omuq visar livevyn tills den stoppas från utdatafliken.</translation>
+    </message>
+    <message>
+        <source>Run</source>
+        <translation>Kör</translation>
+    </message>
+    <message>
+        <source>Unable to create the directory %1.</source>
+        <translation>Kunde inte skapa katalogen %1.</translation>
+    </message>
+    <message>
+        <source>Failed to start %1: %2</source>
+        <translation>Kunde inte starta %1: %2</translation>
+    </message>
+    <message>
+        <source>omuq is not installed for %1.</source>
+        <translation>omuq är inte installerat för %1.</translation>
+    </message>
+    <message>
+        <source>omuq failed to read the model:
+%1</source>
+        <translation>omuq kunde inte läsa modellen:
+%1</translation>
+    </message>
+    <message>
+        <source>Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMSimulator/SSP.</source>
+        <translation>Ange vilken Python-tolk som har omuq installerat i Verktyg &gt; Alternativ &gt; OMSimulator/SSP.</translation>
+    </message>
+    <message>
+        <source>Unable to read the output of omuq: %1</source>
+        <translation>Kunde inte läsa utdata från omuq: %1</translation>
+    </message>
+    <message>
+        <source>No omuq study is attached to %1.</source>
+        <translation>Ingen omuq-studie är kopplad till %1.</translation>
+    </message>
+    <message>
+        <source>%1 activity %2</source>
+        <translation>Aktivitet %2 (%1)</translation>
+    </message>
+    <message>
+        <source>none</source>
+        <translation>ingen</translation>
+    </message>
+    <message>
+        <source>Observes: %1</source>
+        <translation>Observerar: %1</translation>
+    </message>
+    <message>
+        <source>nothing</source>
+        <translation>ingenting</translation>
+    </message>
+    <message>
+        <source>Recorded results: %1</source>
+        <translation>Registrerade resultat: %1</translation>
+    </message>
+    <message>
+        <source>from the model</source>
+        <translation>från modellen</translation>
+    </message>
+    <message>
+        <source>System Structure and Parameterization Files (*.ssp)</source>
+        <translation>System Structure and Parameterization-filer (*.ssp)</translation>
+    </message>
+    <message>
+        <source>Enter the file the recorded run is saved to.</source>
+        <translation>Ange filen som den registrerade körningen sparas i.</translation>
+    </message>
+</context>
+<context>
+    <name>OMUQOutputWidget</name>
+    <message>
+        <source>Starting omuq for %1.</source>
+        <translation>Startar omuq för %1.</translation>
+    </message>
+    <message>
+        <source>Live view: %1
+</source>
+        <translation>Livevy: %1
+</translation>
+    </message>
+    <message>
+        <source>%1 (not monitored: %2)</source>
+        <translation>%1 (övervakas inte: %2)</translation>
+    </message>
+    <message>
+        <source>Study %1, %2 from %3 to %4 with step %5, driver %6
+</source>
+        <translation>Studie %1, %2 från %3 till %4 med steget %5, simulator %6
+</translation>
+    </message>
+    <message>
+        <source>Observed variables: %1
+</source>
+        <translation>Observerade variabler: %1
+</translation>
+    </message>
+    <message>
+        <source>Monitored domains: %1
+</source>
+        <translation>Övervakade domäner: %1
+</translation>
+    </message>
+    <message>
+        <source>none</source>
+        <translation>ingen</translation>
+    </message>
+    <message>
+        <source>Running %1 of %2.</source>
+        <translation>Kör %1 för %2.</translation>
+    </message>
+    <message>
+        <source>t = %1: left the domain %2 (%3) at (%4)
+</source>
+        <translation>t = %1: lämnade domänen %2 (%3) vid (%4)
+</translation>
+    </message>
+    <message>
+        <source>%1 - %2 - Live View</source>
+        <translation>%1 - %2 - Livevy</translation>
+    </message>
+    <message>
+        <source>The run is recorded in %1
+</source>
+        <translation>Körningen har registrerats i %1
+</translation>
+    </message>
+    <message>
+        <source>Stop Live View</source>
+        <translation>Stoppa livevyn</translation>
+    </message>
+    <message>
+        <source>%1 of %2 finished, the live view is still served.</source>
+        <translation>%1 för %2 är klar, livevyn visas fortfarande.</translation>
+    </message>
+    <message>
+        <source>%1 of %2 finished.</source>
+        <translation>%1 för %2 är klar.</translation>
+    </message>
+    <message>
+        <source>%1 of %2 is cancelled.</source>
+        <translation>%1 för %2 avbröts.</translation>
+    </message>
+    <message>
+        <source>Failed to start %1: %2
+Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMSimulator/SSP.
+</source>
+        <translation>Kunde inte starta %1: %2
+Ange vilken Python-tolk som har omuq installerat i Verktyg &gt; Alternativ &gt; OMSimulator/SSP.
+</translation>
+    </message>
+    <message>
+        <source>%1 of %2 failed.</source>
+        <translation>%1 för %2 misslyckades.</translation>
+    </message>
+    <message>
+        <source>omuq finished without results for %1 of %2.</source>
+        <translation>omuq avslutades utan resultat för %1 för %2.</translation>
+    </message>
+    <message>
+        <source>%1 of %2 failed. Exit code %3.</source>
+        <translation>%1 för %2 misslyckades. Avslutningskod %3.</translation>
+    </message>
+    <message>
+        <source>Is omuq installed for %1?</source>
+        <translation>Är omuq installerat för %1?</translation>
+    </message>
+</context>
+<context>
+    <name>OneDriveProvider</name>
+    <message>
+        <source>%1 is a folder, not a file.</source>
+        <translation>%1 är en mapp, inte en fil.</translation>
+    </message>
+    <message>
+        <source>Cancelled.</source>
+        <translation>Avbrutet.</translation>
+    </message>
+    <message>
+        <source>The file changed in OneDrive since it was last synchronised.</source>
+        <translation>Filen har ändrats i OneDrive sedan den senast synkroniserades.</translation>
+    </message>
+    <message>
+        <source>OneDrive returned no upload URL.</source>
+        <translation>OneDrive returnerade ingen URL för uppladdning.</translation>
     </message>
 </context>
 <context>
     <name>OpcUaClient</name>
     <message>
-        <location filename="../../Simulation/OpcUaClient.cpp" line="102"/>
         <source>Could not connect to the embedded server. Status code %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte ansluta till den inbäddade servern. Statuskod %1.</translation>
     </message>
 </context>
 <context>
     <name>OpenModelicaFile</name>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="448"/>
         <source>Convert all files within the selected directory and sub-directories</source>
         <translation>Konvertera alla filer i den valda katalogen och alla dess underkataloger</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="451"/>
         <source>Open with selected encoding</source>
         <translation>Öppna med vald teckenkodning</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="456"/>
         <source>Open and convert to UTF-8</source>
         <translation>Öppna och konvertera till UTF-8</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="591"/>
         <source>Converting files to UTF-8</source>
         <translation>Konverterar filer till UTF-8</translation>
     </message>
@@ -6373,328 +6483,330 @@ Please check the Messages browser for error messages and possibly undo the lates
 <context>
     <name>OptionsDialog</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3088"/>
         <source>* The changes will take effect after restart.</source>
-        <translation type="unfinished"></translation>
+        <translation>* Ändringarna börjar gälla efter omstart.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3121"/>
         <source>General</source>
-        <translation>Allmänna</translation>
+        <translation>Allmänt</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3130"/>
         <source>Text Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Textredigerare</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3134"/>
         <source>Modelica Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Modelicaredigerare</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3138"/>
         <source>Modelica Script Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Redigerare för Modelicaskript</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3142"/>
         <source>MetaModelica Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>MetaModelica-redigerare</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3146"/>
         <source>SSP Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>SSP-redigerare</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3150"/>
         <source>CRML Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML-redigerare</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3154"/>
         <source>C/C++ Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>C/C++-redigerare</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3158"/>
         <source>HTML Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>HTML-redigerare</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3162"/>
         <source>Graphical Views</source>
-        <translation>Grafisk vy</translation>
+        <translation>Grafiska vyer</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3170"/>
         <source>Messages</source>
         <translation>Meddelanden</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3174"/>
         <source>Notifications</source>
         <translation>Notifikationer</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3186"/>
         <source>Plotting</source>
         <translation>Plottning</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3198"/>
         <source>Debugger</source>
         <translation>Debugger</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3202"/>
         <source>FMI</source>
-        <translation type="unfinished"></translation>
+        <translation>FMI</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3206"/>
         <source>OMSimulator/SSP</source>
-        <translation type="unfinished"></translation>
+        <translation>OMSimulator/SSP</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3355"/>
         <source>Reset to default</source>
-        <translation type="unfinished"></translation>
+        <translation>Återställ standardinställningar</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3356"/>
         <source>Are you sure that you want to reset OMEdit? This operation cannot be undone. </source>
-        <translation type="unfinished"></translation>
+        <translation>Är du säker på att du vill återställa OMEdit? Det går inte att ångra. </translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3210"/>
         <source>Traceability</source>
-        <translation type="unfinished"></translation>
+        <translation>Spårbarhet</translation>
+    </message>
+    <message>
+        <source>Language Server</source>
+        <translation>Språkserver</translation>
+    </message>
+    <message>
+        <source>Cloud Storage</source>
+        <translation>Molnlagring</translation>
     </message>
 </context>
 <context>
     <name>Parameter</name>
     <message>
-        <location filename="../../Element/ElementProperties.cpp" line="601"/>
         <source>Edit</source>
         <translation>Redigera</translation>
     </message>
     <message>
-        <location filename="../../Element/ElementProperties.cpp" line="866"/>
-        <source>Unable to find the redeclare class.</source>
+        <source>Edit array</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Element/ElementProperties.cpp" line="943"/>
+        <source>Unable to find the redeclare class.</source>
+        <translation>Kunde inte hitta den omdeklarerade klassen.</translation>
+    </message>
+    <message>
         <source>Save</source>
         <translation>Spara</translation>
     </message>
     <message>
-        <location filename="../../Element/ElementProperties.cpp" line="953"/>
         <source>Load</source>
-        <translation type="unfinished"></translation>
+        <translation>Ladda in</translation>
     </message>
     <message>
-        <location filename="../../Element/ElementProperties.cpp" line="1039"/>
         <source>true: start-value is used to initialize</source>
-        <translation type="unfinished"></translation>
+        <translation>true: startvärdet används för initiering</translation>
     </message>
     <message>
-        <location filename="../../Element/ElementProperties.cpp" line="1045"/>
         <source>false: start-value is only a guess-value</source>
-        <translation type="unfinished"></translation>
+        <translation>false: startvärdet är bara ett gissat värde</translation>
     </message>
     <message>
-        <location filename="../../Element/ElementProperties.cpp" line="1051"/>
         <source>inherited: (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>ärvt: (%1)</translation>
     </message>
 </context>
 <context>
     <name>PlainTextEdit</name>
     <message>
-        <location filename="../../Editors/BaseEditor.cpp" line="1051"/>
         <source>&lt;b&gt;Information: &lt;/b&gt;Breakpoints are only allowed on saved classes.</source>
-        <translation>&lt;b&gt;Information:&lt;/b&gt;Brytpunkter är endast tillåtna i sparade klasser.</translation>
+        <translation>&lt;b&gt;Information: &lt;/b&gt;Brytpunkter är endast tillåtna i sparade klasser.</translation>
     </message>
 </context>
 <context>
     <name>PlotWindowContainer</name>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="429"/>
         <source>Interactive Plot : %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Interaktivt diagram: %1</translation>
     </message>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="572"/>
         <source>Name Plot Tab</source>
-        <translation type="unfinished"></translation>
+        <translation>Namnge diagramflik</translation>
     </message>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="573"/>
         <source>Name:</source>
         <translation>Namn:</translation>
     </message>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="596"/>
         <source>No plot window is active for clearing curves.</source>
         <translation>Inget diagramfönster är aktivt för tömning av kurvor.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="612"/>
         <source>No plot window is active for exporting variables.</source>
-        <translation type="unfinished"></translation>
+        <translation>Inget diagramfönster är aktivt för export av variabler.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="616"/>
         <source>Cannot export parametric plot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan inte exportera ett parametriskt diagram.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="620"/>
         <source>No variables are selected for exporting.</source>
-        <translation type="unfinished"></translation>
+        <translation>Inga variabler är valda för export.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="638"/>
         <source>Not possible to export variables from different result files.</source>
-        <translation type="unfinished"></translation>
+        <translation>Det går inte att exportera variabler från olika resultatfiler.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="680"/>
         <source>Exported variables in %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Exporterade variabler till %1</translation>
     </message>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="711"/>
         <source>Rename</source>
-        <translation>Döp om</translation>
+        <translation>Byt namn</translation>
     </message>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="712"/>
         <source>Renames the plot tab</source>
-        <translation type="unfinished"></translation>
+        <translation>Byter namn på diagramfliken</translation>
+    </message>
+    <message>
+        <source>Select a plot window before saving a figure in a model.</source>
+        <translation>Välj ett diagramfönster innan du sparar en figur i en modell.</translation>
+    </message>
+    <message>
+        <source>There are no curves to save in the model annotation.</source>
+        <translation>Det finns inga kurvor att spara i modellannoteringen.</translation>
+    </message>
+    <message>
+        <source>Could not find the simulation result associated with curve %1.</source>
+        <translation>Kunde inte hitta simuleringsresultatet som hör till kurvan %1.</translation>
+    </message>
+    <message>
+        <source>There are no valid curves to save in the model annotation.</source>
+        <translation>Det finns inga giltiga kurvor att spara i modellannoteringen.</translation>
+    </message>
+    <message>
+        <source>Cannot save figure %1 in model %2 because the model cannot be annotated.</source>
+        <translation>Kan inte spara figuren %1 i modellen %2 eftersom modellen inte kan annoteras.</translation>
+    </message>
+    <message>
+        <source>The model %1 is not open; the figure was not saved.</source>
+        <translation>Modellen %1 är inte öppen; figuren sparades inte.</translation>
+    </message>
+    <message>
+        <source>The model instance for %1 is not available; the figure was not saved.</source>
+        <translation>Modellinstansen för %1 är inte tillgänglig; figuren sparades inte.</translation>
+    </message>
+    <message>
+        <source>Save Figure in model %1</source>
+        <translation>Spara figur i modellen %1</translation>
+    </message>
+    <message>
+        <source>Saved figure %1 in model %2.</source>
+        <translation>Sparade figuren %1 i modellen %2.</translation>
+    </message>
+    <message>
+        <source>Could not save the figure in any model.</source>
+        <translation>Kunde inte spara figuren i någon modell.</translation>
     </message>
 </context>
 <context>
     <name>PlottingPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5816"/>
         <source>Auto Scale</source>
-        <translation type="unfinished"></translation>
+        <translation>Autoskala</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5818"/>
         <source>Auto scale the plot to fit in view when variable is plotted.</source>
-        <translation type="unfinished"></translation>
+        <translation>Skala diagrammet automatiskt så att det får plats när en variabel plottas.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5820"/>
         <source>Prefix Units</source>
-        <translation type="unfinished"></translation>
+        <translation>Prefix för enheter</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5822"/>
         <source>Automatically pick the right prefix for units.</source>
-        <translation type="unfinished"></translation>
+        <translation>Välj automatiskt rätt prefix för enheter.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5829"/>
         <source>Default Plotting View Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Standardläge för plottningsvyn</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5830"/>
         <source>Tabbed View</source>
-        <translation>Visa i Flik</translation>
+        <translation>Visa i flik</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5832"/>
         <source>SubWindow View</source>
-        <translation>Visa i Nytt Fönster</translation>
+        <translation>Visa i nytt fönster</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5866"/>
         <source>Curve styles are used for new curves. Use plot setup window to update the existing curves.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kurvstilarna används för nya kurvor. Använd fönstret för diagraminställningar för att ändra befintliga kurvor.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5873"/>
         <source>Variable Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Variabelfilter</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5874"/>
         <source>Adds a delay, specified as Filter Interval, in filtering the variables.
 Set the value to 0 if you don&apos;t want any delay.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lägger till en fördröjning, angiven som filterintervall, vid filtrering av variablerna.
+Ange värdet 0 om du inte vill ha någon fördröjning.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5876"/>
         <source>Filter Interval:</source>
-        <translation type="unfinished"></translation>
+        <translation>Filterintervall:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5878"/>
         <source> seconds</source>
         <translation> sekunder</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5890"/>
         <source>Font Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Teckenstorlek</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5891"/>
         <source>Title:</source>
-        <translation type="unfinished"></translation>
+        <translation>Titel:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5897"/>
         <source>Vertical Axis Title:</source>
-        <translation type="unfinished"></translation>
+        <translation>Titel för lodrät axel:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5902"/>
         <source>Vertical Axis Numbers:</source>
-        <translation type="unfinished"></translation>
+        <translation>Tal på lodrät axel:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5907"/>
         <source>Horizontal Axis Title:</source>
-        <translation type="unfinished"></translation>
+        <translation>Titel för vågrät axel:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5912"/>
         <source>Horizontal Axis Numbers:</source>
-        <translation type="unfinished"></translation>
+        <translation>Tal på vågrät axel:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5917"/>
         <source>Footer:</source>
-        <translation type="unfinished"></translation>
+        <translation>Sidfot:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5922"/>
         <source>Legend:</source>
-        <translation type="unfinished"></translation>
+        <translation>Teckenförklaring:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5930"/>
         <source>Font sizes are used for new plot windows. Use plot setup window to update the existing plots.</source>
-        <translation type="unfinished"></translation>
+        <translation>Teckenstorlekarna används för nya diagramfönster. Använd fönstret för diagraminställningar för att ändra befintliga diagram.</translation>
+    </message>
+</context>
+<context>
+    <name>PopupRedirect</name>
+    <message>
+        <source>Sign-in was cancelled.</source>
+        <translation>Inloggningen avbröts.</translation>
+    </message>
+    <message>
+        <source>No authorization code was returned.</source>
+        <translation>Ingen auktoriseringskod returnerades.</translation>
     </message>
 </context>
 <context>
     <name>ProcessListModel</name>
     <message>
-        <location filename="../../Debugger/Attach/ProcessListModel.cpp" line="309"/>
         <source>Process ID</source>
         <translation>Process-ID</translation>
     </message>
     <message>
-        <location filename="../../Debugger/Attach/ProcessListModel.cpp" line="309"/>
         <source>Name</source>
         <translation>Namn</translation>
     </message>
@@ -6702,226 +6814,260 @@ Set the value to 0 if you don&apos;t want any delay.</source>
 <context>
     <name>ProxyCredentialsDialog</name>
     <message>
-        <location filename="../../Util/NetworkAccessManager.cpp" line="99"/>
         <source>Proxy Authentication</source>
-        <translation type="unfinished"></translation>
+        <translation>Proxyautentisering</translation>
     </message>
     <message>
-        <location filename="../../Util/NetworkAccessManager.cpp" line="105"/>
         <source>Save Credentials</source>
-        <translation type="unfinished"></translation>
+        <translation>Spara inloggningsuppgifter</translation>
     </message>
     <message>
-        <location filename="../../Util/NetworkAccessManager.cpp" line="119"/>
         <source>The proxy %1 requires a username and password.</source>
-        <translation type="unfinished"></translation>
+        <translation>Proxyn %1 kräver ett användarnamn och ett lösenord.</translation>
     </message>
     <message>
-        <location filename="../../Util/NetworkAccessManager.cpp" line="120"/>
         <source>Username:</source>
-        <translation type="unfinished"></translation>
+        <translation>Användarnamn:</translation>
     </message>
     <message>
-        <location filename="../../Util/NetworkAccessManager.cpp" line="122"/>
         <source>Password:</source>
-        <translation type="unfinished"></translation>
+        <translation>Lösenord:</translation>
+    </message>
+</context>
+<context>
+    <name>QDetachableProcess</name>
+    <message>
+        <source>Process exited with code %1</source>
+        <translation>Processen avslutades med koden %1</translation>
     </message>
 </context>
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="401"/>
         <source>Path</source>
         <translation>Sökväg</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="417"/>
         <source>FMU Kind</source>
-        <translation type="unfinished"></translation>
+        <translation>FMU-typ</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="418"/>
         <source>FMI Version</source>
-        <translation type="unfinished"></translation>
+        <translation>FMI-version</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="428"/>
         <source>Causality</source>
-        <translation type="unfinished"></translation>
+        <translation>Kausalitet</translation>
     </message>
     <message>
-        <location filename="../../Animation/FMUWrapper.cpp" line="178"/>
-        <location filename="../../Animation/FMUWrapper.cpp" line="389"/>
         <source>Error parsing XML.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fel vid tolkning av XML.</translation>
     </message>
     <message>
-        <location filename="../../Animation/FMUWrapper.cpp" line="183"/>
-        <location filename="../../Animation/FMUWrapper.cpp" line="394"/>
         <source>Only Model-Exchange FMUs are supported right now.</source>
-        <translation type="unfinished"></translation>
+        <translation>Endast FMU:er för Model Exchange stöds för närvarande.</translation>
     </message>
     <message>
-        <location filename="../../Animation/FMUWrapper.cpp" line="191"/>
-        <location filename="../../Animation/FMUWrapper.cpp" line="400"/>
         <source>Could not create the DLL loading mechanism(C-API test).</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte skapa mekanismen för att ladda DLL:er (C-API-test).</translation>
     </message>
     <message>
-        <location filename="../../Animation/FMUWrapper.cpp" line="224"/>
         <source>fmi1_import_get_state_value_references returned failure code %1</source>
-        <translation type="unfinished"></translation>
+        <translation>fmi1_import_get_state_value_references returnerade felkoden %1</translation>
     </message>
     <message>
-        <location filename="../../Animation/FMUWrapper.cpp" line="231"/>
         <source>fmi1_import_instantiate_model failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>fmi1_import_instantiate_model misslyckades.</translation>
     </message>
     <message>
-        <location filename="../../Animation/FMUWrapper.cpp" line="448"/>
         <source>fmi2_import_instantiate_model failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>fmi2_import_instantiate_model misslyckades.</translation>
     </message>
     <message>
-        <location filename="../../Animation/AnimationUtil.h" line="94"/>
         <source>This file extension is not supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Filändelsen stöds inte.</translation>
     </message>
     <message>
-        <location filename="../../Animation/Visualization.cpp" line="244"/>
         <source>Could not find the visual XML file %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte hitta den visuella XML-filen %1.</translation>
     </message>
     <message>
-        <location filename="../../Animation/Visualization.cpp" line="253"/>
         <source>Could not open the visual XML file %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte öppna den visuella XML-filen %1.</translation>
     </message>
     <message>
-        <location filename="../../Animation/Visualization.cpp" line="316"/>
         <source>The type of %1 is not supported right in the visxml file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Typen för %1 i visxml-filen stöds inte.</translation>
     </message>
     <message>
-        <location filename="../../Animation/Visualization.cpp" line="328"/>
         <source>Could not find the file %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte hitta filen %1.</translation>
     </message>
     <message>
-        <location filename="../../Animation/Visualization.cpp" line="534"/>
         <source>Something went wrong in OMVisualBase::setFmuVarRefInVisObjects:
 %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Något gick fel i OMVisualBase::setFmuVarRefInVisObjects:
+%1.</translation>
     </message>
     <message>
-        <location filename="../../Animation/Visualization.cpp" line="657"/>
         <source>Error in OMVisualBase::updateVisObjects at time point %1
 %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fel i OMVisualBase::updateVisObjects vid tidpunkten %1
+%2.</translation>
     </message>
     <message>
-        <location filename="../../Animation/Visualization.cpp" line="1296"/>
         <source>There is nothing left to visualize. Initialize the model first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Det finns inget kvar att visualisera. Initiera modellen först.</translation>
     </message>
     <message>
-        <location filename="../../Animation/Visualization.cpp" line="1551"/>
-        <source>Unknown type %1, we make a capsule.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Animation/VisualizationCSV.cpp" line="64"/>
-        <location filename="../../Animation/VisualizationMAT.cpp" line="66"/>
         <source>Cannot load visualization attributes for time point &lt; 0.0.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan inte ladda in visualiseringsattribut för tidpunkter &lt; 0.0.</translation>
     </message>
     <message>
-        <location filename="../../Animation/VisualizationCSV.cpp" line="76"/>
         <source>Could not find CSV file %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte hitta CSV-filen %1.</translation>
     </message>
     <message>
-        <location filename="../../Animation/VisualizationCSV.cpp" line="83"/>
         <source>Could not read CSV file %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte läsa CSV-filen %1.</translation>
     </message>
     <message>
-        <location filename="../../Animation/VisualizationCSV.cpp" line="121"/>
-        <location filename="../../Animation/VisualizationCSV.cpp" line="130"/>
-        <location filename="../../Animation/VisualizationMAT.cpp" line="138"/>
         <source>Did not get variable from result file. Variable name is %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte läsa variabeln %1 från resultatfilen.</translation>
     </message>
     <message>
-        <location filename="../../Animation/VisualizationFMU.cpp" line="78"/>
         <source>Unknown FMU version.</source>
-        <translation type="unfinished"></translation>
+        <translation>Okänd FMU-version.</translation>
     </message>
     <message>
-        <location filename="../../Animation/VisualizationMAT.cpp" line="79"/>
         <source>Could not find MAT file %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte hitta MAT-filen %1.</translation>
     </message>
     <message>
-        <location filename="../../Util/Utilities.cpp" line="1369"/>
         <source>Chinese</source>
-        <translation type="unfinished">Kinesisk</translation>
+        <translation>Kinesiska</translation>
     </message>
     <message>
-        <location filename="../../Util/Utilities.cpp" line="1370"/>
         <source>English</source>
-        <translation type="unfinished">Engelska</translation>
+        <translation>Engelska</translation>
     </message>
     <message>
-        <location filename="../../Util/Utilities.cpp" line="1371"/>
         <source>French</source>
-        <translation type="unfinished">Franska</translation>
+        <translation>Franska</translation>
     </message>
     <message>
-        <location filename="../../Util/Utilities.cpp" line="1372"/>
         <source>German</source>
-        <translation type="unfinished">Tyska</translation>
+        <translation>Tyska</translation>
     </message>
     <message>
-        <location filename="../../Util/Utilities.cpp" line="1373"/>
         <source>Italian</source>
-        <translation type="unfinished">Italienska</translation>
+        <translation>Italienska</translation>
     </message>
     <message>
-        <location filename="../../Util/Utilities.cpp" line="1374"/>
         <source>Japanese</source>
-        <translation type="unfinished">Japanska</translation>
+        <translation>Japanska</translation>
     </message>
     <message>
-        <location filename="../../Util/Utilities.cpp" line="1375"/>
         <source>Romanian</source>
-        <translation type="unfinished">Rumänska</translation>
+        <translation>Rumänska</translation>
     </message>
     <message>
-        <location filename="../../Util/Utilities.cpp" line="1376"/>
         <source>Russian</source>
-        <translation type="unfinished">Ryska</translation>
+        <translation>Ryska</translation>
     </message>
     <message>
-        <location filename="../../Util/Utilities.cpp" line="1377"/>
         <source>Spanish</source>
-        <translation type="unfinished">Spanska</translation>
+        <translation>Spanska</translation>
     </message>
     <message>
-        <location filename="../../Util/Utilities.cpp" line="1378"/>
         <source>Swedish</source>
-        <translation type="unfinished">Svenska</translation>
+        <translation>Svenska</translation>
+    </message>
+    <message>
+        <source>Downloading…</source>
+        <translation>Hämtar…</translation>
+    </message>
+    <message>
+        <source>Parsing…</source>
+        <translation>Tolkar…</translation>
+    </message>
+    <message>
+        <source>Instantiating…</source>
+        <translation>Instansierar…</translation>
+    </message>
+    <message>
+        <source>Compiling model…</source>
+        <translation>Kompilerar modellen…</translation>
+    </message>
+    <message>
+        <source>Simulating…</source>
+        <translation>Simulerar…</translation>
+    </message>
+</context>
+<context>
+    <name>Quick3DViewerWidget</name>
+    <message>
+        <source>Change Color</source>
+        <translation>Ändra färg</translation>
+    </message>
+    <message>
+        <source>Change Transparency</source>
+        <translation>Ändra transparens</translation>
+    </message>
+    <message>
+        <source>Transparency [%]:</source>
+        <translation>Transparens [%]:</translation>
+    </message>
+    <message>
+        <source>Make Invisible</source>
+        <translation>Gör osynlig</translation>
+    </message>
+    <message>
+        <source>Change Specularity</source>
+        <translation>Ändra spekularitet</translation>
+    </message>
+    <message>
+        <source>Specularity [%]:</source>
+        <translation>Spekularitet [%]:</translation>
+    </message>
+    <message>
+        <source>Reset Visual Properties</source>
+        <translation>Återställ visuella egenskaper</translation>
+    </message>
+</context>
+<context>
+    <name>QuickInsertWidget</name>
+    <message>
+        <source>Search models...</source>
+        <translation>Sök modeller...</translation>
+    </message>
+</context>
+<context>
+    <name>ReloadAsModelicaInfoBar</name>
+    <message>
+        <source>Once they have all been fixed, you can save and reload it in Modelica mode</source>
+        <translation>När alla har åtgärdats kan du spara och läsa in det igen i Modelicaläge</translation>
+    </message>
+    <message>
+        <source>The Modelica package %1 is open in text mode because of syntax errors in the code. %2.</source>
+        <translation>Modelicapaketet %1 är öppet i textläge på grund av syntaxfel i koden. %2.</translation>
+    </message>
+    <message>
+        <source>This Modelica file is open in text mode because of syntax errors in the code. %1.</source>
+        <translation>Den här Modelicafilen är öppen i textläge på grund av syntaxfel i koden. %1.</translation>
+    </message>
+    <message>
+        <source>Save &amp;&amp; Reload</source>
+        <translation>Spara &amp;&amp; ladda om</translation>
     </message>
 </context>
 <context>
     <name>RenameClassDialog</name>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1226"/>
         <source>New Name:</source>
-        <translation>Nytt Namn:</translation>
+        <translation>Nytt namn:</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1231"/>
         <source>&amp;Cancel</source>
         <translation>&amp;Avbryt</translation>
     </message>
@@ -6929,68 +7075,68 @@ Set the value to 0 if you don&apos;t want any delay.</source>
 <context>
     <name>ReplaceSubModelDialog</name>
     <message>
-        <location filename="../../OMS/ModelDialog.cpp" line="473"/>
         <source>dryRun = true will not replace the subModel, you can see the list of warnings and dryRun = false will replace the SubModel</source>
-        <translation type="unfinished"></translation>
+        <translation>dryRun = true ersätter inte delmodellen utan visar listan med varningar, och dryRun = false ersätter delmodellen</translation>
     </message>
     <message>
-        <location filename="../../OMS/ModelDialog.cpp" line="527"/>
         <source>ReplaceSubModel</source>
-        <translation type="unfinished"></translation>
+        <translation>ReplaceSubModel</translation>
     </message>
     <message>
-        <location filename="../../OMS/ModelDialog.cpp" line="533"/>
         <source>Unable to find the SubModel file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte hitta delmodellsfilen.</translation>
     </message>
     <message>
-        <location filename="../../OMS/ModelDialog.cpp" line="566"/>
         <source>Failed to replace submodel. %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte ersätta delmodellen. %1</translation>
+    </message>
+    <message>
+        <source>The submodel was not replaced (dryRun = true). The following changes were detected in the replacing submodel. See the Messages Browser for details.</source>
+        <translation>Delmodellen ersattes inte (dryRun = true). Följande ändringar upptäcktes i den ersättande delmodellen. Se fönstret Meddelanden för detaljer.</translation>
+    </message>
+    <message>
+        <source>The submodel was replaced (dryRun =false). The following changes were detected and applied. See the Messages Browser for details.</source>
+        <translation>Delmodellen ersattes (dryRun = false). Följande ändringar upptäcktes och tillämpades. Se fönstret Meddelanden för detaljer.</translation>
+    </message>
+    <message>
+        <source>Warning</source>
+        <translation>Varning</translation>
     </message>
 </context>
 <context>
     <name>RevertCommitsDialog</name>
     <message>
-        <location filename="../../Git/RevertCommitsDialog.cpp" line="25"/>
         <source>Revert Commit</source>
-        <translation type="unfinished"></translation>
+        <translation>Reverta commit</translation>
     </message>
     <message>
-        <location filename="../../Git/RevertCommitsDialog.cpp" line="30"/>
         <source>Working Directory:</source>
         <translation>Arbetskatalog:</translation>
     </message>
     <message>
-        <location filename="../../Git/RevertCommitsDialog.cpp" line="34"/>
         <source>Browse Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Bläddra efter katalog</translation>
     </message>
     <message>
-        <location filename="../../Git/RevertCommitsDialog.cpp" line="37"/>
         <source>Commit:</source>
-        <translation type="unfinished"></translation>
+        <translation>Commit:</translation>
     </message>
     <message>
-        <location filename="../../Git/RevertCommitsDialog.cpp" line="44"/>
         <source>Browse Commit</source>
-        <translation type="unfinished"></translation>
+        <translation>Bläddra efter commit</translation>
     </message>
     <message>
-        <location filename="../../Git/RevertCommitsDialog.cpp" line="49"/>
         <source>Revert</source>
-        <translation type="unfinished"></translation>
+        <translation>Reverta</translation>
     </message>
 </context>
 <context>
     <name>SaveAsClassDialog</name>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="631"/>
         <source>Save As Modelica Class</source>
-        <translation>Spara Som Modelicaklass</translation>
+        <translation>Spara som Modelicaklass</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="639"/>
         <source>Insert in class (optional):</source>
         <translation>Infoga i klass (frivillig):</translation>
     </message>
@@ -6998,22 +7144,18 @@ Set the value to 0 if you don&apos;t want any delay.</source>
 <context>
     <name>SaveChangesDialog</name>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1965"/>
         <source>Save Changes</source>
-        <translation>Spara Ändringar</translation>
+        <translation>Spara ändringar</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1967"/>
         <source>Save changes to the following items?</source>
-        <translation type="unfinished"></translation>
+        <translation>Spara ändringarna i följande objekt?</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1974"/>
         <source>Yes</source>
         <translation>Ja</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1978"/>
         <source>No</source>
         <translation>Nej</translation>
     </message>
@@ -7021,904 +7163,793 @@ Set the value to 0 if you don&apos;t want any delay.</source>
 <context>
     <name>SaveTotalFileDialog</name>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1303"/>
         <source>Obfuscate output</source>
-        <translation type="unfinished"></translation>
+        <translation>Fördunkla utdata</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1304"/>
         <source>Strip annotations</source>
-        <translation type="unfinished"></translation>
+        <translation>Ta bort annoteringar</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1305"/>
         <source>Strip comments</source>
-        <translation type="unfinished"></translation>
+        <translation>Ta bort kommentarer</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1306"/>
         <source>Use simplified heuristic</source>
-        <translation type="unfinished"></translation>
+        <translation>Använd förenklad heuristik</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1307"/>
         <source>Use a simplified identifier-based heuristic that results in larger models but can succeed when the normal method fails.</source>
-        <translation type="unfinished"></translation>
+        <translation>Använd en förenklad, identifierarbaserad heuristik som ger större modeller men kan lyckas när den vanliga metoden misslyckas.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1335"/>
         <source>%1 - Save %2 %3 as Total File</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Spara %2 %3 som komplett fil</translation>
     </message>
 </context>
 <context>
     <name>SearchResultWidget</name>
     <message>
-        <location filename="../../Search/SearchWidget.cpp" line="390"/>
         <source>Searching &lt;b&gt;%1&lt;/b&gt; of &lt;b&gt;%2&lt;/b&gt; files. Please wait for a while.</source>
-        <translation type="unfinished"></translation>
+        <translation>Söker i &lt;b&gt;%1&lt;/b&gt; av &lt;b&gt;%2&lt;/b&gt; filer. Vänta en stund.</translation>
     </message>
     <message>
-        <location filename="../../Search/SearchWidget.cpp" line="401"/>
         <source>Searched &lt;b&gt;%1&lt;/b&gt; of &lt;b&gt;%2&lt;/b&gt; files. Search Cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sökte i &lt;b&gt;%1&lt;/b&gt; av &lt;b&gt;%2&lt;/b&gt; filer. Sökningen avbröts.</translation>
     </message>
     <message>
-        <location filename="../../Search/SearchWidget.cpp" line="413"/>
         <source>Searched &lt;b&gt;%1&lt;/b&gt; of &lt;b&gt;%2&lt;/b&gt; files. Search Completed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sökte i &lt;b&gt;%1&lt;/b&gt; av &lt;b&gt;%2&lt;/b&gt; filer. Sökningen är klar.</translation>
     </message>
     <message>
-        <location filename="../../Search/SearchWidget.cpp" line="424"/>
         <source>&lt;b&gt;%1&lt;/b&gt; FOUND</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; HITTADE</translation>
     </message>
 </context>
 <context>
     <name>SearchWidget</name>
     <message>
-        <location filename="../../Search/SearchWidget.cpp" line="57"/>
         <source>Scope:</source>
-        <translation type="unfinished"></translation>
+        <translation>Omfång:</translation>
     </message>
     <message>
-        <location filename="../../Search/SearchWidget.cpp" line="58"/>
         <source>Search for:</source>
-        <translation type="unfinished"></translation>
+        <translation>Sök efter:</translation>
     </message>
     <message>
-        <location filename="../../Search/SearchWidget.cpp" line="59"/>
         <source>File Pattern:</source>
-        <translation type="unfinished"></translation>
+        <translation>Filmönster:</translation>
     </message>
     <message>
-        <location filename="../../Search/SearchWidget.cpp" line="84"/>
         <source>Clear All</source>
-        <translation type="unfinished"></translation>
+        <translation>Rensa alla</translation>
     </message>
     <message>
-        <location filename="../../Search/SearchWidget.cpp" line="85"/>
         <source>clears all the result</source>
-        <translation type="unfinished"></translation>
+        <translation>Rensar alla resultat</translation>
     </message>
     <message>
-        <location filename="../../Search/SearchWidget.cpp" line="89"/>
-        <source>Expand All</source>
-        <translation>Expandera Alla</translation>
-    </message>
-    <message>
-        <location filename="../../Search/SearchWidget.cpp" line="90"/>
-        <source>expand</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Search/SearchWidget.cpp" line="94"/>
-        <source>Collapse All</source>
-        <translation>Kollapsa Alla</translation>
-    </message>
-    <message>
-        <location filename="../../Search/SearchWidget.cpp" line="95"/>
-        <source>collapse</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Search/SearchWidget.cpp" line="100"/>
         <source>History:</source>
-        <translation type="unfinished"></translation>
+        <translation>Historik:</translation>
     </message>
     <message>
-        <location filename="../../Search/SearchWidget.cpp" line="206"/>
         <source>Project</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekt</translation>
+    </message>
+</context>
+<context>
+    <name>SensitivityOptimizationPage</name>
+    <message>
+        <source>Sensitivity Optimization relies on the OMSens Python package. Follow the installation instructions on the &lt;a href=&quot;https://github.com/OpenModelica/OMSens&quot;&gt;OMSens GitHub page&lt;/a&gt;.&lt;br /&gt;&lt;br /&gt;Set the OMSens backend to the directory where the OMSens Python package is installed.&lt;br /&gt;Specify the Python executable you want to use for running OMSens scripts.</source>
+        <translation>Känslighetsoptimering bygger på Python-paketet OMSens. Följ installationsanvisningarna på &lt;a href=&quot;https://github.com/OpenModelica/OMSens&quot;&gt;OMSens GitHub-sida&lt;/a&gt;.&lt;br /&gt;&lt;br /&gt;Ange OMSens-backend som katalogen där Python-paketet OMSens är installerat.&lt;br /&gt;Ange den Python-tolk som du vill använda för att köra OMSens-skript.</translation>
+    </message>
+    <message>
+        <source>OMSens Backend Path:</source>
+        <translation>Sökväg till OMSens-backend:</translation>
+    </message>
+    <message>
+        <source>Python:</source>
+        <translation>Python:</translation>
     </message>
 </context>
 <context>
     <name>ShapeAnnotation</name>
     <message>
-        <location filename="../../Annotations/ShapeAnnotation.cpp" line="428"/>
         <source>Shows the shape properties</source>
         <translation>Visar formegenskaper</translation>
     </message>
     <message>
-        <location filename="../../Annotations/ShapeAnnotation.cpp" line="432"/>
         <source>Edits the transition</source>
-        <translation type="unfinished"></translation>
+        <translation>Redigerar övergången</translation>
     </message>
 </context>
 <context>
     <name>ShapePropertiesDialog</name>
     <message>
-        <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="67"/>
         <source>Transformation</source>
         <translation>Transformation</translation>
     </message>
     <message>
-        <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="133"/>
         <source>Border Style</source>
         <translation>Kantstil</translation>
     </message>
     <message>
-        <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="161"/>
         <source>Angle</source>
         <translation>Vinkel</translation>
     </message>
     <message>
-        <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="175"/>
         <source>Closure:</source>
-        <translation type="unfinished"></translation>
+        <translation>Stängning:</translation>
     </message>
     <message>
-        <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="196"/>
         <source>Text</source>
         <translation>Text</translation>
     </message>
     <message>
-        <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="203"/>
         <source>Font &amp;&amp; Text Style</source>
-        <translation>Typsnitt &amp;&amp; Textstil</translation>
+        <translation>Teckensnitt &amp;&amp; textstil</translation>
     </message>
     <message>
-        <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="236"/>
         <source>Style:</source>
         <translation>Stil:</translation>
     </message>
     <message>
-        <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="243"/>
         <source>Horizontal Alignment:</source>
-        <translation>Horisontell Justering:</translation>
+        <translation>Horisontell justering:</translation>
     </message>
     <message>
-        <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="267"/>
         <source>Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Färg</translation>
     </message>
     <message>
-        <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="322"/>
         <source>Arrow Style</source>
         <translation>Pilstil</translation>
     </message>
     <message>
-        <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="378"/>
         <source>Image</source>
         <translation>Bild</translation>
     </message>
     <message>
-        <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="384"/>
         <source>Store image in model</source>
-        <translation>Lagra bild i modell</translation>
+        <translation>Lagra bilden i modellen</translation>
     </message>
     <message>
-        <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="403"/>
         <source>Points</source>
         <translation>Punkter</translation>
     </message>
     <message>
-        <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="446"/>
         <source>Move point up</source>
-        <translation type="unfinished"></translation>
+        <translation>Flytta punkten uppåt</translation>
     </message>
     <message>
-        <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="451"/>
         <source>Move point down</source>
-        <translation type="unfinished"></translation>
+        <translation>Flytta punkten nedåt</translation>
     </message>
     <message>
-        <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="457"/>
         <source>Add new point</source>
-        <translation type="unfinished"></translation>
+        <translation>Lägg till en ny punkt</translation>
     </message>
     <message>
-        <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="462"/>
         <source>Remove point</source>
-        <translation type="unfinished"></translation>
+        <translation>Ta bort punkten</translation>
     </message>
 </context>
 <context>
     <name>SimulationDialog</name>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="155"/>
         <source>Simulation Interval</source>
         <translation>Simuleringsintervall</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="188"/>
         <source>Integration</source>
         <translation>Integrering</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="189"/>
         <source>Method:</source>
         <translation>Metod:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="202"/>
         <source>Tolerance:</source>
         <translation>Tolerans:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="260"/>
         <source>Number of Processors:</source>
-        <translation>Antal Processorkärnor:</translation>
+        <translation>Antal processorkärnor:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="161"/>
         <source>Number of Intervals:</source>
         <translation>Antal intervall:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="168"/>
         <source>Interval:</source>
-        <translation type="unfinished"></translation>
+        <translation>Intervall:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="256"/>
         <source>C/C++ Compiler Flags (Optional):</source>
-        <translation type="unfinished"></translation>
+        <translation>C/C++-kompilatorflaggor (frivillig):</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="257"/>
         <source>Space separated list of C/C++ compiler flags</source>
-        <translation type="unfinished"></translation>
+        <translation>Mellanslagsseparerad lista av C/C++-kompilatorflaggor</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="273"/>
         <source>Launch Animation</source>
-        <translation type="unfinished"></translation>
+        <translation>Starta animering</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="485"/>
         <source>Output Format:</source>
         <translation>Utdataformat:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="493"/>
         <source>The name is used as a prefix for the output files. This is just a name not the path.
 If you want to change the output path then update the working directory in Options/Preferences.</source>
         <translation>Namnet används som prefix för utdata-filerna. Detta är endast ett namn och inte sökvägen.
 Sökvägen kan ändras genom att ställa in arbetskatalog under Verktyg/Alternativ.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="499"/>
         <source>Variable Filter (Optional):</source>
         <translation>Variabelfilter (frivillig):</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="510"/>
         <source>Equidistant Time Grid</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="512"/>
         <source>Store Variables at Events</source>
-        <translation type="unfinished"></translation>
+        <translation>Spara variabler vid händelser</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="345"/>
         <source>Model Setup File (Optional):</source>
         <translation>Initialvärden för modell (frivillig):</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="302"/>
         <source>Interactive Simulation</source>
-        <translation>Interaktiv Simulering</translation>
+        <translation>Interaktiv simulering</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="305"/>
         <source>Simulate with steps</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulera stegvis</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="306"/>
         <source>Activates communication with the simulation remote every time step.
 Can cause high overhead but values will not be missed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktiverar kommunikation med simuleringen vid varje tidssteg.
+Kan ge stor extra belastning men inga värden går förlorade.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="308"/>
         <source>Simulation server port: </source>
-        <translation type="unfinished"></translation>
+        <translation>Port för simuleringsserver: </translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="309"/>
         <source>Specifies the embedded server port.</source>
-        <translation type="unfinished"></translation>
+        <translation>Anger porten för den inbäddade servern.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="218"/>
         <source>Activates the internal root finding procedure of methods: dassl and ida.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktiverar den interna nollställesökningen för metoderna: dassl och ida.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="221"/>
         <source>Activates the restart of the integration method after an event is performed, used by the methods: dassl, ida</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktiverar omstart av integreringsmetoden efter en händelse, används av metoderna: dassl, ida</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="346"/>
         <source>Specifies a new setup XML file to the generated simulation code.</source>
         <translation>Ange en ny XML-fil med initialvärden för den genererade simuleringskoden.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="352"/>
         <source>Initialization Method (Optional):</source>
         <translation>Initieringsmetod (frivillig):</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="353"/>
         <source>Specifies the initialization method.</source>
         <translation>Anger initieringsmetoden.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="363"/>
         <source>Equation System Initialization File (Optional):</source>
         <translation>Initieringsvärden för ekvationssystemet (frivillig):</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="364"/>
         <source>Specifies an external file for the initialization of the model.</source>
         <translation>Anger en extern fil för initiering av modellen.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="370"/>
         <source>Equation System Initialization Time (Optional):</source>
         <translation>Initieringstid för ekvationssystemet (frivillig):</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="371"/>
         <source>Specifies a time for the initialization of the model.</source>
         <translation>Anger en tidpunkt för initiering av modellen.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="374"/>
         <source>Clock (Optional):</source>
         <translation>Klocka (frivillig):</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="378"/>
         <source>Linear Solver (Optional):</source>
         <translation>Linjär lösare (frivillig):</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="388"/>
         <source>Non Linear Solver (Optional):</source>
         <translation>Icke-linjär lösare (frivillig):</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="398"/>
-        <source>Linearization Time (Optional):</source>
-        <translation>Linjäriseringstid (frivillig):</translation>
-    </message>
-    <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="401"/>
         <source>Output Variables (Optional):</source>
         <translation>Utdatavariabler (frivillig):</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="402"/>
         <source>Comma separated list of variables. Output the variables at the end of the simulation to the standard output.</source>
         <translation>Komma-separerad lista av variabler. Skriver ut variablerna till standard ut vid slutet av simuleringen.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="405"/>
-        <source>Profiling (enable performance measurements)</source>
-        <translation>Profilering (slå på prestandamätningar)</translation>
-    </message>
-    <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="414"/>
         <source>Enable All Warnings</source>
-        <translation>Slå På Alla Varningar</translation>
+        <translation>Slå på alla varningar</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="489"/>
         <source>Single Precision</source>
-        <translation type="unfinished"></translation>
+        <translation>Enkel precision</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="506"/>
         <source>Protected Variables if not encrypted</source>
-        <translation type="unfinished"></translation>
+        <translation>Skyddade variabler om de inte är krypterade</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="603"/>
         <source>Simulation of model &lt;b&gt;%1&lt;/b&gt; is already running. Please wait for it to finish or cancel it before running another simulation of the same model.</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulering av modellen &lt;b&gt;%1&lt;/b&gt; pågår redan. Vänta tills den är klar eller avbryt den innan du startar en ny simulering av samma modell.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="843"/>
         <source>Ignoring unknown simulation flag: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ignorerar okänd simuleringsflagga: %1</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="1396"/>
         <source>Port &lt;b&gt;%1&lt;/b&gt; is already in use for interactive simulation of &lt;b&gt;%2&lt;/b&gt;. Cannot run the interactive simulation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Port &lt;b&gt;%1&lt;/b&gt; används redan för interaktiv simulering av &lt;b&gt;%2&lt;/b&gt;. Kan inte köra den interaktiva simuleringen.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="1753"/>
         <source>Generated code for the target build &lt;b&gt;%1&lt;/b&gt; at %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Genererade kod för byggmålet &lt;b&gt;%1&lt;/b&gt; i %2.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="1772"/>
         <source>Translation of &lt;b&gt;%1&lt;/b&gt; failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Översättningen av &lt;b&gt;%1&lt;/b&gt; misslyckades.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="1978"/>
         <source>Animation is only supported with mat result files.</source>
-        <translation type="unfinished"></translation>
+        <translation>Animering stöds bara med resultatfiler i mat-format.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="416"/>
         <source>Logging (Optional)</source>
         <translation>Loggning (frivillig)</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="439"/>
         <source>Space separated list of simulation flags e.g., -abortSlowSimulation -alarm=0</source>
-        <translation type="unfinished"></translation>
+        <translation>Mellanslagsseparerad lista av simuleringsflaggor, t.ex. -abortSlowSimulation -alarm=0</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="443"/>
         <source>Simulation flags help</source>
-        <translation type="unfinished"></translation>
+        <translation>Hjälp för simuleringsflaggor</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="1737"/>
         <source>Translating %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Översätter %1.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="1762"/>
         <source>Generated code for the target language &lt;b&gt;%1&lt;/b&gt; at %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Genererade kod för målspråket &lt;b&gt;%1&lt;/b&gt; i %2.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="199"/>
         <source>Integration help</source>
-        <translation type="unfinished"></translation>
+        <translation>Hjälp för integrering</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="205"/>
         <source>Jacobian:</source>
-        <translation type="unfinished"></translation>
+        <translation>Jacobian:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="217"/>
         <source>Root Finding</source>
-        <translation type="unfinished"></translation>
+        <translation>Nollställesökning</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="220"/>
         <source>Restart After Event</source>
-        <translation type="unfinished"></translation>
+        <translation>Omstart efter händelse</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="223"/>
         <source>Initial Step Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Initial stegstorlek:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="226"/>
         <source>Maximum Step Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Maximal stegstorlek:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="229"/>
         <source>Maximum Integration Order:</source>
-        <translation type="unfinished"></translation>
+        <translation>Maximal integreringsordning:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="263"/>
         <source>Use 1 processor if you encounter problems during compilation.</source>
         <translation>Använd 1 processorkärna om du upplever problem under kompileringen.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="265"/>
         <source>Build Only</source>
-        <translation type="unfinished"></translation>
+        <translation>Bygg endast</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="268"/>
         <source>Launch Transformational Debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Starta transformationsdebugger</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="270"/>
         <source>Launch Algorithmic Debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Starta algoritmisk debugger</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="491"/>
         <source>File Name Prefix (Optional):</source>
-        <translation type="unfinished"></translation>
+        <translation>Prefix för filnamn (frivillig):</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="495"/>
         <source>Result File (Optional):</source>
-        <translation type="unfinished"></translation>
+        <translation>Resultatfil (frivillig):</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="503"/>
         <source>Variable Filter help</source>
-        <translation type="unfinished"></translation>
+        <translation>Hjälp för variabelfilter</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="508"/>
         <source>Ignore HideResult</source>
-        <translation type="unfinished"></translation>
+        <translation>Ignorera HideResult</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="514"/>
         <source>Show Generated Files</source>
-        <translation>Visa Genererade Filer</translation>
+        <translation>Visa genererade filer</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="412"/>
         <source>CPU Time</source>
         <translation>CPU-tid</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="438"/>
         <source>Additional Simulation Flags (Optional):</source>
-        <translation>Ytterligare Simuleringsflaggor (Frivillig):</translation>
+        <translation>Ytterligare simuleringsflaggor (frivillig):</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="481"/>
         <source>Simulation Flags</source>
         <translation>Simuleringsflaggor</translation>
+    </message>
+    <message>
+        <source>Linearize model at time = StopTime</source>
+        <translation>Linjärisera modellen vid tiden = StopTime</translation>
+    </message>
+    <message>
+        <source>Target language for linearized model:</source>
+        <translation>Målspråk för den linjäriserade modellen:</translation>
+    </message>
+    <message>
+        <source>Linearize</source>
+        <translation>Linjärisera</translation>
+    </message>
+    <message>
+        <source>Cannot plot annotated curve because result variable %1 was not found.</source>
+        <translation>Kan inte plotta den annoterade kurvan eftersom resultatvariabeln %1 inte hittades.</translation>
+    </message>
+    <message>
+        <source>Cannot plot annotated curve because x-axis result variable %1 was not found.</source>
+        <translation>Kan inte plotta den annoterade kurvan eftersom resultatvariabeln %1 för x-axeln inte hittades.</translation>
     </message>
 </context>
 <context>
     <name>SimulationOutputTree</name>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="85"/>
         <source>Select All</source>
-        <translation>Välj Alla</translation>
+        <translation>Välj alla</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="87"/>
         <source>Selects all the Messages</source>
-        <translation>Välj alla Meddelanden</translation>
+        <translation>Välj alla meddelanden</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="91"/>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="94"/>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="97"/>
         <source>Copy the Message</source>
-        <translation>Kopiera Meddelandet</translation>
+        <translation>Kopiera meddelandet</translation>
     </message>
 </context>
 <context>
     <name>SimulationOutputWidget</name>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="240"/>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="633"/>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="1069"/>
         <source>Cancel Compilation</source>
-        <translation>Avbryt Kompilering</translation>
+        <translation>Avbryt kompilering</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="245"/>
         <source>Open Transformational Debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppna transformationsdebuggern</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="247"/>
         <source>Open Output File</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppna utdatafilen</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="259"/>
         <source>Compilation</source>
         <translation>Kompilering</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="628"/>
         <source>Post compiling %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Efterkompilerar %1.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="681"/>
         <source>Post compilation process failed. Exited with code %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Efterkompileringen misslyckades. Avslutades med koden %1.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="683"/>
         <source>Post compilation process finished successfully.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Efterkompileringen avslutades utan fel.
+</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="705"/>
         <source>Post compilation of %1 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>Efterkompileringen av %1 är klar.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="708"/>
         <source>Post compilation of %1 failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Efterkompileringen av %1 misslyckades.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="805"/>
         <source>Compilation of %1 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompileringen av %1 är klar.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="808"/>
         <source>Compilation of %1 failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompileringen av %1 misslyckades.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="892"/>
         <source>Simulation process failed. Exited with code %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Simuleringsprocessen misslyckades. Avslutades med koden %1.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="899"/>
         <source>Simulation of %1 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>Simuleringen av %1 är klar.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="920"/>
         <source>Simulation of %1 failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Simuleringen av %1 misslyckades.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="959"/>
         <source>Post compilation of %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Efterkompileringen av %1 avbröts.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="1064"/>
         <source>Compiling %1. Please wait for a while.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompilerar %1. Vänta en stund.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="1150"/>
         <source>Running interactive simulation of %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kör interaktiv simulering av %1.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="1152"/>
         <source>Running simulation of %1. Please wait for a while.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kör simulering av %1. Vänta en stund.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="950"/>
         <source>Compilation of %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompileringen av %1 avbröts.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="968"/>
         <source>Simulation of %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Simuleringen av %1 avbröts.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="1118"/>
         <source>Compilation process failed. Exited with code %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompileringsprocessen misslyckades. Avslutades med koden %1.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="1128"/>
         <source>Compilation process finished successfully.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Kompileringen avslutades utan fel.
+</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="1259"/>
         <source>Url is &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>URL: &lt;b&gt;%1&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>Running simulation of %1.</source>
+        <translation>Kör simulering av %1.</translation>
+    </message>
+    <message>
+        <source>Model translated to the wasm-jit target; running in-process (no external compilation).</source>
+        <translation>Modellen har översatts till målet wasm-jit och körs i samma process (ingen extern kompilering).</translation>
+    </message>
+    <message>
+        <source>Simulation flags: %1</source>
+        <translation>Simuleringsflaggor: %1</translation>
+    </message>
+    <message>
+        <source>(none)</source>
+        <translation>(inga)</translation>
+    </message>
+    <message>
+        <source>Cancel Simulation</source>
+        <translation>Avbryt simulering</translation>
+    </message>
+    <message>
+        <source>Simulation of %1 cancelled.</source>
+        <translation>Simuleringen av %1 avbröts.</translation>
+    </message>
+    <message>
+        <source>Cancelling simulation of %1…</source>
+        <translation>Avbryter simuleringen av %1…</translation>
     </message>
 </context>
 <context>
     <name>SimulationPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5144"/>
         <source>Target Language:</source>
-        <translation type="unfinished"></translation>
+        <translation>Målspråk:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5151"/>
         <source>Target Build:</source>
-        <translation type="unfinished"></translation>
+        <translation>Byggmål:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5169"/>
         <source>C Compiler:</source>
-        <translation type="unfinished"></translation>
+        <translation>C-kompilator:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5180"/>
         <source>CXX Compiler:</source>
-        <translation type="unfinished"></translation>
+        <translation>CXX-kompilator:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5191"/>
         <source>Use static Linking</source>
-        <translation type="unfinished"></translation>
+        <translation>Använd statisk länkning</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5192"/>
         <source>Enables static linking for the simulation executable. Default is dynamic linking.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktiverar statisk länkning för den körbara simuleringsfilen. Standard är dynamisk länkning.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5197"/>
         <source>Post compilation command:</source>
-        <translation type="unfinished"></translation>
+        <translation>Kommando för efterkompilering:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5200"/>
         <source>Ignore __OpenModelica_commandLineOptions annotation</source>
-        <translation type="unfinished"></translation>
+        <translation>Ignorera annoteringen __OpenModelica_commandLineOptions</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5202"/>
         <source>Ignore __OpenModelica_simulationFlags annotation</source>
-        <translation type="unfinished"></translation>
+        <translation>Ignorera annoteringen __OpenModelica_simulationFlags</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5204"/>
         <source>Save class before simulation</source>
         <translation>Spara klass före simulering</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5205"/>
         <source>Disabling this will effect the debugger functionality.</source>
-        <translation>Inaktivering av detta kommer att påverka debugger-funktionaliteten.</translation>
+        <translation>Om du inaktiverar detta påverkas debuggerns funktion.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5208"/>
         <source>Switch to plotting perspective after simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Byt till perspektivet Plottning efter simuleringen</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5211"/>
         <source>Close completed simulation output windows before simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Stäng färdiga fönster för simuleringsutmatning före simulering</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5214"/>
         <source>Delete intermediate compilation files</source>
-        <translation type="unfinished"></translation>
+        <translation>Ta bort mellanliggande kompileringsfiler</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5217"/>
         <source>Delete entire simulation directory of the model when OMEdit is closed</source>
-        <translation type="unfinished"></translation>
+        <translation>Ta bort modellens hela simuleringskatalog när OMEdit stängs</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5220"/>
         <source>Structured</source>
-        <translation type="unfinished"></translation>
+        <translation>Strukturerad</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5221"/>
         <source>Shows the simulation output in the form of tree structure.</source>
-        <translation type="unfinished"></translation>
+        <translation>Visar simuleringsutmatningen som en trädstruktur.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5223"/>
         <source>Formatted Text</source>
-        <translation type="unfinished"></translation>
+        <translation>Formaterad text</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5224"/>
         <source>Shows the simulation output in the form of formatted text.</source>
-        <translation type="unfinished"></translation>
+        <translation>Visar simuleringsutmatningen som formaterad text.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="5233"/>
         <source>Display Limit:</source>
-        <translation type="unfinished"></translation>
+        <translation>Visningsgräns:</translation>
+    </message>
+</context>
+<context>
+    <name>SolverSettingsDialog</name>
+    <message>
+        <source>SolverSettings - %1 (%2)</source>
+        <translation>Lösarinställningar - %1 (%2)</translation>
+    </message>
+    <message>
+        <source>Fixed Step Size:</source>
+        <translation>Fast stegstorlek:</translation>
+    </message>
+    <message>
+        <source>Initial Step Size:</source>
+        <translation>Initial stegstorlek:</translation>
+    </message>
+    <message>
+        <source>Minimum Step Size:</source>
+        <translation>Minimal stegstorlek:</translation>
+    </message>
+    <message>
+        <source>Maximum Step Size:</source>
+        <translation>Maximal stegstorlek:</translation>
     </message>
 </context>
 <context>
     <name>StackFramesTreeWidget</name>
     <message>
-        <location filename="../../Debugger/StackFrames/StackFramesWidget.cpp" line="169"/>
         <source>Function</source>
         <translation>Funktion</translation>
     </message>
     <message>
-        <location filename="../../Debugger/StackFrames/StackFramesWidget.cpp" line="227"/>
         <source>Create Full Backtrace</source>
-        <translation>Skapa Full Backtrace</translation>
+        <translation>Skapa fullständig stackspårning</translation>
     </message>
     <message>
-        <location filename="../../Debugger/StackFrames/StackFramesWidget.cpp" line="228"/>
         <source>Creates a full backtrace of the program</source>
-        <translation>Skapar en full backtrace av ett program</translation>
+        <translation>Skapar en fullständig stackspårning av programmet</translation>
     </message>
 </context>
 <context>
     <name>StackFramesWidget</name>
     <message>
-        <location filename="../../Debugger/StackFrames/StackFramesWidget.cpp" line="382"/>
         <source>Threads:</source>
         <translation>Trådar:</translation>
     </message>
     <message>
-        <location filename="../../Debugger/StackFrames/StackFramesWidget.cpp" line="447"/>
         <source>Not yet supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Stöds inte ännu.</translation>
     </message>
 </context>
 <context>
     <name>StringHandler</name>
     <message>
-        <location filename="../../Util/StringHandler.cpp" line="199"/>
         <source>Syntax</source>
-        <translation type="unfinished"></translation>
+        <translation>Syntax</translation>
     </message>
     <message>
-        <location filename="../../Util/StringHandler.cpp" line="201"/>
         <source>Grammar</source>
-        <translation type="unfinished"></translation>
+        <translation>Grammatik</translation>
     </message>
     <message>
-        <location filename="../../Util/StringHandler.cpp" line="203"/>
         <source>Translation</source>
-        <translation type="unfinished"></translation>
+        <translation>Översättning</translation>
     </message>
     <message>
-        <location filename="../../Util/StringHandler.cpp" line="205"/>
         <source>Symbolic</source>
-        <translation type="unfinished"></translation>
+        <translation>Symbolisk</translation>
     </message>
     <message>
-        <location filename="../../Util/StringHandler.cpp" line="207"/>
         <source>Simulation</source>
         <translation>Simulering</translation>
     </message>
     <message>
-        <location filename="../../Util/StringHandler.cpp" line="209"/>
         <source>Scripting</source>
-        <translation type="unfinished"></translation>
+        <translation>Skript</translation>
     </message>
     <message>
-        <location filename="../../Util/StringHandler.cpp" line="235"/>
         <source>Internal Error</source>
-        <translation type="unfinished"></translation>
+        <translation>Internt fel</translation>
     </message>
     <message>
-        <location filename="../../Util/StringHandler.cpp" line="237"/>
         <source>Notification</source>
-        <translation>Notifiering</translation>
+        <translation>Notifikation</translation>
     </message>
     <message>
-        <location filename="../../Util/StringHandler.cpp" line="239"/>
         <source>Warning</source>
         <translation>Varning</translation>
     </message>
     <message>
-        <location filename="../../Util/StringHandler.cpp" line="241"/>
         <source>Error</source>
         <translation>Fel</translation>
     </message>
     <message>
-        <location filename="../../Util/StringHandler.cpp" line="244"/>
         <source>Unknown</source>
         <translation>Okänd</translation>
     </message>
@@ -7926,754 +7957,594 @@ Can cause high overhead but values will not be missed.</source>
 <context>
     <name>SystemSimulationInformationWidget</name>
     <message>
-        <location filename="../../OMS/SystemSimulationInformationDialog.cpp" line="51"/>
-        <source>IP Adress:</source>
-        <translation type="unfinished"></translation>
+        <source>Name</source>
+        <translation>Namn</translation>
     </message>
     <message>
-        <location filename="../../OMS/SystemSimulationInformationDialog.cpp" line="54"/>
-        <source>Manager Port:</source>
-        <translation type="unfinished"></translation>
+        <source>Method</source>
+        <translation>Metod</translation>
     </message>
     <message>
-        <location filename="../../OMS/SystemSimulationInformationDialog.cpp" line="58"/>
-        <source>Monitor Port:</source>
-        <translation type="unfinished"></translation>
+        <source>Solver Configurations</source>
+        <translation>Lösarkonfigurationer</translation>
     </message>
     <message>
-        <location filename="../../OMS/SystemSimulationInformationDialog.cpp" line="65"/>
-        <source>Solver:</source>
-        <translation type="unfinished"></translation>
+        <source>Component</source>
+        <translation>Komponent</translation>
     </message>
     <message>
-        <location filename="../../OMS/SystemSimulationInformationDialog.cpp" line="68"/>
-        <source>Fixed Step Size:</source>
-        <translation type="unfinished"></translation>
+        <source>Solver</source>
+        <translation>Lösare</translation>
     </message>
     <message>
-        <location filename="../../OMS/SystemSimulationInformationDialog.cpp" line="77"/>
-        <source>Initial Step Size:</source>
-        <translation type="unfinished"></translation>
+        <source>Component Assignments</source>
+        <translation>Komponenttilldelningar</translation>
     </message>
     <message>
-        <location filename="../../OMS/SystemSimulationInformationDialog.cpp" line="81"/>
-        <source>Minimum Step Size:</source>
-        <translation type="unfinished"></translation>
+        <source>(none)</source>
+        <translation>(ingen)</translation>
     </message>
     <message>
-        <location filename="../../OMS/SystemSimulationInformationDialog.cpp" line="85"/>
-        <source>Maximum Step Size:</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>TLMConnectionDialog</name>
-    <message>
-        <location filename="../../OMS/BusDialog.cpp" line="1745"/>
-        <source>Delay:</source>
-        <translation type="unfinished"></translation>
+        <source>Not available for co-simulation FMUs</source>
+        <translation>Inte tillgängligt för FMU:er av typen Co-Simulation</translation>
     </message>
     <message>
-        <location filename="../../OMS/BusDialog.cpp" line="1748"/>
-        <source>Alpha:</source>
-        <translation type="unfinished"></translation>
+        <source>Not available for model-exchange FMUs</source>
+        <translation>Inte tillgängligt för FMU:er av typen Model Exchange</translation>
     </message>
     <message>
-        <location filename="../../OMS/BusDialog.cpp" line="1751"/>
-        <source>Linear Impedance:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../OMS/BusDialog.cpp" line="1754"/>
-        <source>Angular Impedance:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../OMS/BusDialog.cpp" line="1794"/>
-        <source>Delay</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../OMS/BusDialog.cpp" line="1799"/>
-        <source>Alpha</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../OMS/BusDialog.cpp" line="1804"/>
-        <source>Linear Impedance</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../OMS/BusDialog.cpp" line="1809"/>
-        <source>Angular Impedance</source>
-        <translation type="unfinished"></translation>
+        <source>Solver name in row %1 is empty.</source>
+        <translation>Lösarnamnet på rad %1 är tomt.</translation>
     </message>
 </context>
 <context>
     <name>TVariablesTreeModel</name>
     <message>
-        <location filename="../../TransformationalDebugger/TransformationsWidget.cpp" line="172"/>
         <source>Comment</source>
         <translation>Kommentar</translation>
     </message>
     <message>
-        <location filename="../../TransformationalDebugger/TransformationsWidget.cpp" line="172"/>
         <source>Line</source>
         <translation>Rad</translation>
+    </message>
+    <message>
+        <source>Alias</source>
+        <translation>Alias</translation>
     </message>
 </context>
 <context>
     <name>TextEditorPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4174"/>
         <source>Format</source>
-        <translation type="unfinished"></translation>
+        <translation>Format</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4176"/>
         <source>Line Ending:</source>
-        <translation type="unfinished"></translation>
+        <translation>Radslut:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4178"/>
         <source>Windows (CRLF)</source>
-        <translation type="unfinished"></translation>
+        <translation>Windows (CRLF)</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4179"/>
         <source>Unix (LF)</source>
-        <translation type="unfinished"></translation>
+        <translation>Unix (LF)</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4182"/>
         <source>Byte Order Mark (BOM):</source>
-        <translation type="unfinished"></translation>
+        <translation>Byte Order Mark (BOM):</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4185"/>
         <source>Always add a BOM when saving a file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lägg alltid till en BOM när en fil sparas.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4186"/>
         <source>Save the file with a BOM if it already had one when it was loaded.</source>
-        <translation type="unfinished"></translation>
+        <translation>Spara filen med en BOM om den hade en när den lästes in.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4187"/>
         <source>Never write a BOM, possibly deleting a pre-existing one.</source>
-        <translation type="unfinished"></translation>
+        <translation>Skriv aldrig en BOM, och ta eventuellt bort en befintlig.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4188"/>
         <source>Always Add</source>
-        <translation type="unfinished"></translation>
+        <translation>Lägg alltid till</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4189"/>
         <source>Keep If Already Present</source>
-        <translation type="unfinished"></translation>
+        <translation>Behåll om den finns</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4190"/>
         <source>Always Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>Ta alltid bort</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4192"/>
         <source>Note that BOMs are uncommon and treated incorrectly by some editors, so it usually makes little sense to add any</source>
-        <translation type="unfinished"></translation>
+        <translation>BOM är ovanliga och hanteras felaktigt av vissa redigerare, så det är oftast ingen idé att lägga till någon</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4202"/>
         <source>Tabs and Indentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Tabbar och indrag</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4204"/>
         <source>Tab Policy:</source>
-        <translation type="unfinished"></translation>
+        <translation>Indrag med:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4206"/>
         <source>Spaces Only</source>
-        <translation type="unfinished"></translation>
+        <translation>Endast blanksteg</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4207"/>
         <source>Tabs Only</source>
-        <translation type="unfinished"></translation>
+        <translation>Endast tabbar</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4209"/>
         <source>Tab Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Tabbstorlek:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4214"/>
         <source>Indent Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Indragsstorlek:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4229"/>
         <source>Syntax Highlight and Text Wrapping</source>
-        <translation type="unfinished"></translation>
+        <translation>Syntaxmarkering och radbrytning</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4231"/>
         <source>Enable Syntax Highlighting</source>
-        <translation>Aktivera Syntaxmarkering</translation>
+        <translation>Aktivera syntaxmarkering</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4235"/>
         <source>Enable Code Folding</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktivera kodvikning</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4238"/>
         <source>Match Parentheses within Comments and Quotes</source>
-        <translation type="unfinished"></translation>
+        <translation>Matcha parenteser i kommentarer och citattecken</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4245"/>
         <source>Enable Line Wrapping</source>
-        <translation>Aktivera Radbrytning</translation>
+        <translation>Aktivera radbrytning</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4253"/>
         <source>Autocomplete</source>
-        <translation type="unfinished"></translation>
+        <translation>Automatisk komplettering</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4255"/>
         <source>Enable Autocomplete</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktivera automatisk komplettering</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4261"/>
         <source>Font</source>
-        <translation type="unfinished"></translation>
+        <translation>Teckensnitt</translation>
     </message>
 </context>
 <context>
     <name>TraceabilityGraphViewWidget</name>
     <message>
-        <location filename="../../Traceability/TraceabilityGraphViewWidget.cpp" line="14"/>
         <source>Traceability Graph View</source>
-        <translation type="unfinished"></translation>
+        <translation>Spårbarhetsgraf</translation>
     </message>
 </context>
 <context>
     <name>TraceabilityPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6519"/>
         <source>Traceability</source>
-        <translation type="unfinished"></translation>
+        <translation>Spårbarhet</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6523"/>
         <source>User Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Användarnamn:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6526"/>
         <source>Email:</source>
-        <translation type="unfinished"></translation>
+        <translation>E-post:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6529"/>
         <source>Git Repository:</source>
-        <translation type="unfinished"></translation>
+        <translation>Git-repository:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6535"/>
         <source>Traceability Daemon IP Adress:</source>
-        <translation type="unfinished"></translation>
+        <translation>IP-adress för spårbarhetsdemonen:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="6538"/>
         <source>Traceability Daemon Port:</source>
-        <translation type="unfinished"></translation>
+        <translation>Port för spårbarhetsdemonen:</translation>
     </message>
 </context>
 <context>
     <name>TransformationsWidget</name>
     <message>
-        <location filename="../../TransformationalDebugger/TransformationsWidget.cpp" line="612"/>
         <source>Defined In Equations</source>
-        <translation>Definierad i Ekvationer</translation>
+        <translation>Definierad i ekvationer</translation>
     </message>
     <message>
-        <location filename="../../TransformationalDebugger/TransformationsWidget.cpp" line="623"/>
         <source>Used In Equations</source>
-        <translation>Använd i Ekvationer</translation>
+        <translation>Använd i ekvationer</translation>
     </message>
     <message>
-        <location filename="../../TransformationalDebugger/TransformationsWidget.cpp" line="634"/>
         <source>Variable Operations</source>
         <translation>Variabeloperationer</translation>
     </message>
     <message>
-        <location filename="../../TransformationalDebugger/TransformationsWidget.cpp" line="641"/>
-        <location filename="../../TransformationalDebugger/TransformationsWidget.cpp" line="717"/>
         <source>Operations</source>
         <translation>Operationer</translation>
     </message>
     <message>
-        <location filename="../../TransformationalDebugger/TransformationsWidget.cpp" line="663"/>
         <source>Defines</source>
         <translation>Definitioner</translation>
     </message>
     <message>
-        <location filename="../../TransformationalDebugger/TransformationsWidget.cpp" line="673"/>
-        <location filename="../../TransformationalDebugger/TransformationsWidget.cpp" line="692"/>
         <source>Variable</source>
-        <translation>Variabler</translation>
+        <translation>Variabel</translation>
     </message>
     <message>
-        <location filename="../../TransformationalDebugger/TransformationsWidget.cpp" line="683"/>
         <source>Depends</source>
         <translation>Beroenden</translation>
     </message>
     <message>
-        <location filename="../../TransformationalDebugger/TransformationsWidget.cpp" line="701"/>
         <source>Equation Operations</source>
         <translation>Ekvationsoperationer</translation>
     </message>
     <message>
-        <location filename="../../TransformationalDebugger/TransformationsWidget.cpp" line="704"/>
         <source>Diff</source>
-        <translation type="unfinished"></translation>
+        <translation>Diff</translation>
     </message>
     <message>
-        <location filename="../../TransformationalDebugger/TransformationsWidget.cpp" line="705"/>
         <source>After</source>
-        <translation type="unfinished"></translation>
+        <translation>Efter</translation>
     </message>
     <message>
-        <location filename="../../TransformationalDebugger/TransformationsWidget.cpp" line="706"/>
         <source>Before</source>
-        <translation type="unfinished"></translation>
+        <translation>Före</translation>
     </message>
     <message>
-        <location filename="../../TransformationalDebugger/TransformationsWidget.cpp" line="710"/>
         <source>Transformation:</source>
-        <translation type="unfinished"></translation>
+        <translation>Transformation:</translation>
     </message>
     <message>
-        <location filename="../../TransformationalDebugger/TransformationsWidget.cpp" line="727"/>
         <source>Source Browser</source>
         <translation>Källkodsbläddrare</translation>
     </message>
     <message>
-        <location filename="../../TransformationalDebugger/TransformationsWidget.cpp" line="650"/>
-        <location filename="../../TransformationalDebugger/TransformationsWidget.cpp" line="807"/>
         <source>Equations</source>
         <translation>Ekvationer</translation>
+    </message>
+    <message>
+        <source>Filter Equations</source>
+        <translation>Filtrera ekvationer</translation>
     </message>
 </context>
 <context>
     <name>TranslationFlagsWidget</name>
     <message>
-        <location filename="../../Simulation/TranslationFlagsWidget.cpp" line="52"/>
         <source>Matching Algorithm:</source>
         <translation>Matchningsalgoritm:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TranslationFlagsWidget.cpp" line="59"/>
         <source>Index Reduction Method:</source>
         <translation>Indexreduceringsmetod:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TranslationFlagsWidget.cpp" line="65"/>
         <source>Show additional information from the initialization process</source>
-        <translation type="unfinished"></translation>
+        <translation>Visa ytterligare information från initieringen</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TranslationFlagsWidget.cpp" line="66"/>
-        <source>Evaluate all parameters (faster simulation, cannot change them at runtime, does not work with old frontend)</source>
-        <translation type="unfinished"></translation>
+        <source>Enable old frontend for code generation (deprecated)</source>
+        <translation>Aktivera den gamla frontenden för kodgenerering (föråldrad)</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TranslationFlagsWidget.cpp" line="70"/>
+        <source>The old frontend is deprecated and will be removed after OpenModelica 1.28.0 is released.</source>
+        <translation>Den gamla frontenden är föråldrad och tas bort efter att OpenModelica 1.28.0 har släppts.</translation>
+    </message>
+    <message>
         <source>Enable FMU Import</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktivera FMU-import</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TranslationFlagsWidget.cpp" line="67"/>
         <source>Enable analytical jacobian for non-linear strong components</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktivera analytisk jacobian för icke-linjära starka komponenter</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TranslationFlagsWidget.cpp" line="69"/>
-        <source>Enable old frontend for code generation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Simulation/TranslationFlagsWidget.cpp" line="68"/>
         <source>Enable parallelization of independent systems of equations (Experimental)</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktivera parallellisering av oberoende ekvationssystem (experimentell)</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TranslationFlagsWidget.cpp" line="71"/>
         <source>Additional Translation Flags:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ytterligare översättningsflaggor:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TranslationFlagsWidget.cpp" line="77"/>
         <source>Translation flags help</source>
-        <translation type="unfinished"></translation>
+        <translation>Hjälp för översättningsflaggor</translation>
+    </message>
+    <message>
+        <source>Evaluate all parameters (faster simulation, cannot change them at runtime)</source>
+        <translation>Utvärdera alla parametrar (snabbare simulering, de kan inte ändras under körning)</translation>
+    </message>
+    <message>
+        <source>Profiling (enable performance measurements)</source>
+        <translation>Profilering (slå på prestandamätningar)</translation>
     </message>
 </context>
 <context>
     <name>TreeSearchFilters</name>
     <message>
-        <location filename="../../Util/Utilities.cpp" line="99"/>
-        <source>Show/hide filters</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Util/Utilities.cpp" line="109"/>
         <source>Case Sensitive</source>
         <translation>Skiftlägeskänslig</translation>
     </message>
     <message>
-        <location filename="../../Util/Utilities.cpp" line="116"/>
         <source>Regular Expression</source>
         <translation>Reguljäruttryck</translation>
     </message>
     <message>
-        <location filename="../../Util/Utilities.cpp" line="113"/>
         <source>A rich Perl-like pattern matching syntax.</source>
         <translation>Ett Perl-liknande språk för mönstermatchning.</translation>
     </message>
     <message>
-        <location filename="../../Util/Utilities.cpp" line="79"/>
         <source>Scroll to Active</source>
-        <translation type="unfinished"></translation>
+        <translation>Rulla till aktiv</translation>
     </message>
     <message>
-        <location filename="../../Util/Utilities.cpp" line="117"/>
         <source>Wildcard</source>
-        <translation>Wildcard</translation>
+        <translation>Jokertecken</translation>
     </message>
     <message>
-        <location filename="../../Util/Utilities.cpp" line="114"/>
         <source>A simple pattern matching syntax similar to that used by shells (command interpreters) for &quot;file globbing&quot;.</source>
         <translation>En enklare syntax för mönstermatchning liknande den som används av skal (kommandotolkar) för &quot;file globbing&quot;.</translation>
     </message>
     <message>
-        <location filename="../../Util/Utilities.cpp" line="118"/>
         <source>Fixed String</source>
-        <translation>Fast Sträng</translation>
+        <translation>Fast sträng</translation>
     </message>
     <message>
-        <location filename="../../Util/Utilities.cpp" line="115"/>
         <source>Fixed string matching.</source>
         <translation>Matchning av en fast sträng.</translation>
+    </message>
+    <message>
+        <source>Filters help</source>
+        <translation>Hjälp för filter</translation>
+    </message>
+    <message>
+        <source>Filter Setup</source>
+        <translation>Filterinställningar</translation>
     </message>
 </context>
 <context>
     <name>UpgradeInstalledLibrariesDialog</name>
     <message>
-        <location filename="../../Modeling/InstallLibraryDialog.cpp" line="266"/>
         <source>Upgrade the installed libraries that have been registered by the package manager.</source>
-        <translation type="unfinished"></translation>
+        <translation>Uppgradera de installerade bibliotek som har registrerats av pakethanteraren.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/InstallLibraryDialog.cpp" line="268"/>
         <source>Install Newest Versions (may install the latest non-compatible versions)</source>
-        <translation type="unfinished"></translation>
+        <translation>Installera de senaste versionerna (kan installera de senaste icke-kompatibla versionerna)</translation>
     </message>
     <message>
-        <location filename="../../Modeling/InstallLibraryDialog.cpp" line="270"/>
         <source>&lt;b&gt;Upgrading installed libraries. Please wait.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Uppgraderar installerade bibliotek. Vänta.&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../../Modeling/InstallLibraryDialog.cpp" line="273"/>
         <source>Upgrade</source>
-        <translation type="unfinished"></translation>
+        <translation>Uppgradera</translation>
     </message>
     <message>
-        <location filename="../../Modeling/InstallLibraryDialog.cpp" line="311"/>
         <source>Failed to upgrade libraries. See message browser for any possible messages.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte uppgradera biblioteken. Se fönstret Meddelanden för eventuella meddelanden.</translation>
     </message>
 </context>
 <context>
     <name>VariablesTreeModel</name>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="365"/>
         <source>Value</source>
         <translation>Värde</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="365"/>
         <source>Unit</source>
         <translation>Enhet</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="365"/>
         <source>Display Unit</source>
-        <translation type="unfinished"></translation>
+        <translation>Visningsenhet</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="670"/>
         <source>Interactive Simulation
 Port: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Interaktiv simulering
+Port: %1</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="672"/>
         <source>Simulation Result File: %1
 %2: %3/%4</source>
-        <translation>Resultatfil för Simulering: %1
+        <translation>Resultatfil för simulering: %1
 %2: %3/%4</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="934"/>
         <source>Variable: %1
 Variability: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Variabel: %1
+Variabilitet: %2</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="936"/>
         <source>File: %1/%2
 Variable: %3
 Variability: %4</source>
-        <translation type="unfinished"></translation>
+        <translation>Fil: %1/%2
+Variabel: %3
+Variabilitet: %4</translation>
+    </message>
+    <message>
+        <source>Failed to parse %1: %2</source>
+        <translation>Kunde inte tolka %1: %2</translation>
+    </message>
+    <message>
+        <source>The initialization file %1 was not found; the Variable Browser may be incomplete.</source>
+        <translation>Initieringsfilen %1 hittades inte; fönstret Variabler kan vara ofullständigt.</translation>
     </message>
 </context>
 <context>
     <name>VariablesWidget</name>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2832"/>
         <source>Delete Result</source>
-        <translation>Ta Bort Resultat</translation>
+        <translation>Ta bort resultat</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2835"/>
         <source>Delete the result</source>
-        <translation>Tar Bort Resultatet</translation>
+        <translation>Tar bort resultatet</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1763"/>
         <source>You must select a class to re-simulate.</source>
-        <translation type="unfinished"></translation>
+        <translation>Du måste välja en klass att simulera om.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1415"/>
         <source>Simulation Time Unit</source>
-        <translation type="unfinished"></translation>
+        <translation>Tidsenhet för simulering</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1433"/>
         <source>Rewind</source>
-        <translation type="unfinished"></translation>
+        <translation>Spola tillbaka</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1434"/>
         <source>Rewind the visualization to the start</source>
-        <translation type="unfinished"></translation>
+        <translation>Spolar tillbaka visualiseringen till början</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1438"/>
         <source>Play the visualization</source>
-        <translation type="unfinished"></translation>
+        <translation>Spelar upp visualiseringen</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1442"/>
         <source>Pause the visualization</source>
-        <translation type="unfinished"></translation>
+        <translation>Pausar visualiseringen</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1448"/>
         <source>Time:</source>
-        <translation type="unfinished"></translation>
+        <translation>Tid:</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1547"/>
         <source>Loading simulation result variables</source>
-        <translation type="unfinished"></translation>
+        <translation>Läser in variablerna i simuleringsresultatet</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1782"/>
         <source>You cannot re-simulate this class.&lt;br /&gt;This is just a result file loaded via menu &lt;b&gt;File-&gt;Open Result File(s)&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Du kan inte simulera om den här klassen.&lt;br /&gt;Det är bara en resultatfil som har lästs in via menyn &lt;b&gt;Arkiv-&gt;Öppna resultatfil(er)&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1807"/>
         <source>Unable to set the content of QDomDocument from file %1</source>
-        <translation>Kunde inte sätta innehållet i QDomDocument från fil %1</translation>
+        <translation>Kunde inte sätta innehållet i QDomDocument från filen %1</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1861"/>
         <source>Enabled for %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktiverat för %1</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1996"/>
-        <source>No plot window is active for plotting. Please select a plot window or open a new.</source>
-        <translation>Inget diagramfönster är aktivt för plottning. Välj ett existerande diagramfönster eller öppna ett nytt.</translation>
-    </message>
-    <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2009"/>
         <source>Cannot be attached to a plot window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan inte kopplas till ett diagramfönster.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2081"/>
         <source>Cannot be attached to a parametric plot window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan inte kopplas till ett parametriskt diagramfönster.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2090"/>
         <source>Cannot select two consecutive x-axis variables. &lt;b&gt;%1&lt;/b&gt; is already selected as x-axis variable.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan inte välja två x-axelvariabler i följd. &lt;b&gt;%1&lt;/b&gt; är redan vald som x-axelvariabel.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2104"/>
         <source>Select the x-axis variable first. Press and hold the shift key and then check the variable.</source>
-        <translation type="unfinished"></translation>
+        <translation>Välj x-axelvariabeln först. Håll ned Skift och markera sedan variabeln.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2258"/>
         <source>Cannot be attached to an interactive plot window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan inte kopplas till ett interaktivt diagramfönster.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2838"/>
         <source>Enable Time Controls</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktivera tidskontroller</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2840"/>
         <source>Enables the time controls</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktiverar tidskontrollerna</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2857"/>
         <source>Show only direct dependencies</source>
-        <translation type="unfinished"></translation>
+        <translation>Visa endast direkta beroenden</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2862"/>
         <source>Show only variables that depend on this variable</source>
-        <translation type="unfinished"></translation>
+        <translation>Visa endast variabler som beror på den här variabeln</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2864"/>
         <source>Show only direct dependencies (initial)</source>
-        <translation type="unfinished"></translation>
+        <translation>Visa endast direkta beroenden (initiering)</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2869"/>
         <source>Show only variables that depend on this variable in the initial system of equations</source>
-        <translation type="unfinished"></translation>
+        <translation>Visa endast variabler som beror på den här variabeln i ekvationssystemet för initiering</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2882"/>
         <source>Open debugger (equation %1 - %2)</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppna debuggern (ekvation %1 - %2)</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2887"/>
         <source>Open debugger for the equation</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppnar debuggern för ekvationen</translation>
+    </message>
+    <message>
+        <source>No plot window is active for plotting. Please select a plot window or open a new one.</source>
+        <translation>Inget diagramfönster är aktivt för plottning. Välj ett diagramfönster eller öppna ett nytt.</translation>
+    </message>
+    <message>
+        <source>%1 not found in result file. Protected variables are only stored with &lt;b&gt;Simulation Setup-&gt;Output-&gt;Protected Variables if not encrypted&lt;/b&gt;.</source>
+        <translation>%1 hittades inte i resultatfilen. Skyddade variabler sparas bara med &lt;b&gt;Simuleringsinställningar-&gt;Utdata-&gt;Skyddade variabler om de inte är krypterade&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
-    <name>ViewerWidget</name>
+    <name>WasmLocalFiles</name>
     <message>
-        <location filename="../../Animation/ViewerWidget.cpp" line="301"/>
-        <source>Context menu</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Animation/ViewerWidget.cpp" line="306"/>
-        <source>Change Transparency</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Animation/ViewerWidget.cpp" line="308"/>
-        <source>Change Color</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Animation/ViewerWidget.cpp" line="305"/>
-        <source>Reset Visual Properties</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Animation/ViewerWidget.cpp" line="307"/>
-        <source>Make Visualizer Invisible</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Animation/ViewerWidget.cpp" line="309"/>
-        <source>Change Specularity</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Animation/ViewerWidget.cpp" line="310"/>
-        <source>Apply Checker Texture</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Animation/ViewerWidget.cpp" line="311"/>
-        <source>Apply Custom Texture</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Animation/ViewerWidget.cpp" line="312"/>
-        <source>Remove Texture</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Animation/ViewerWidget.cpp" line="423"/>
-        <location filename="../../Animation/ViewerWidget.cpp" line="446"/>
-        <location filename="../../Animation/ViewerWidget.cpp" line="474"/>
-        <source>Texture feature is not applicable for %1 files.</source>
-        <translation type="unfinished"></translation>
+        <source>File name (downloaded once saved):</source>
+        <translation>Filnamn (hämtas när filen har sparats):</translation>
     </message>
 </context>
 <context>
     <name>WelcomePageWidget</name>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5342"/>
         <source>Recent Files</source>
-        <translation>Senaste Filer</translation>
+        <translation>Senaste filer</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5343"/>
         <source>No recent files found.</source>
-        <translation>Inga nya filer hittades.</translation>
+        <translation>Inga senaste filer hittades.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5354"/>
         <source>Clear Recent Files</source>
-        <translation>Rensa Senaste Filer</translation>
+        <translation>Rensa senaste filer</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5375"/>
         <source>Latest News &amp; Events</source>
-        <translation type="unfinished"></translation>
+        <translation>Senaste nyheter och evenemang</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5389"/>
         <source>For more details visit our website &lt;u&gt;&lt;a href=&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;</source>
-        <translation>För mer detaljer, besök vår hemsida &lt;u&gt;&lt;a href=&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;</translation>
+        <translation>Mer information finns på vår webbplats &lt;u&gt;&lt;a href=&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5439"/>
         <source>System Libraries</source>
-        <translation type="unfinished"></translation>
+        <translation>Systembibliotek</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5525"/>
         <source>Sorry, no internet no news items.</source>
-        <translation>Tyvärr, inget internet inga nyheter.</translation>
+        <translation>Ingen internetanslutning, så inga nyheter kan visas.</translation>
+    </message>
+    <message>
+        <source>Recent Models</source>
+        <translation>Senaste modeller</translation>
+    </message>
+    <message>
+        <source>No recent models found.</source>
+        <translation>Inga senaste modeller hittades.</translation>
+    </message>
+    <message>
+        <source>Latest news is unavailable in the web version.</source>
+        <translation>De senaste nyheterna är inte tillgängliga i webbversionen.</translation>
     </message>
 </context>
 </TS>

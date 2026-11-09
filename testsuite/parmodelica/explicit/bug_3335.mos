@@ -1,32 +1,29 @@
 // name: bug_3335
 // status: correct
-// cflags: -d=-newInst
 
-// setGrammarParModelica();
-setCommandLineOptions("+d=noevalfunc,gen +g=ParModelica -v=1");
-getErrorString();
-
+setCommandLineOptions("-g=ParModelica"); getErrorString();
 setDefaultOpenCLDevice(0); // 0 = auto-select a device with double precision support
-getErrorString();
-
-loadFile("bug_3335.mo");
-getErrorString();
-
-x:=ParArray.OneDim(5);
-getErrorString();
-
-y:=ParArray.TwoDim(5);
-getErrorString();
+loadFile("bug_3335.mo"); getErrorString();
+simulate(ParArray.M, stopTime=1, numberOfIntervals=2); getErrorString();
+val(x[3], 0);
+val(y[2,3], 0);
+val(err, 0);
 
 // Result:
 // true
 // ""
 // true
-// ""
 // true
 // ""
-// {5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0}
+// record SimulationResult
+//     resultFile = "ParArray.M_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ParArray.M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
 // ""
-// {{5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0}, {10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0}, {15.0, 30.0, 45.0, 60.0, 75.0, 90.0, 105.0, 120.0, 135.0, 150.0}, {20.0, 40.0, 60.0, 80.0, 100.0, 120.0, 140.0, 160.0, 180.0, 200.0}, {25.0, 50.0, 75.0, 100.0, 125.0, 150.0, 175.0, 200.0, 225.0, 250.0}, {30.0, 60.0, 90.0, 120.0, 150.0, 180.0, 210.0, 240.0, 270.0, 300.0}, {35.0, 70.0, 105.0, 140.0, 175.0, 210.0, 245.0, 280.0, 315.0, 350.0}, {40.0, 80.0, 120.0, 160.0, 200.0, 240.0, 280.0, 320.0, 360.0, 400.0}, {45.0, 90.0, 135.0, 180.0, 225.0, 270.0, 315.0, 360.0, 405.0, 450.0}, {50.0, 100.0, 150.0, 200.0, 250.0, 300.0, 350.0, 400.0, 450.0, 500.0}}
-// ""
+// 15.0
+// 30.0
+// 0.0
 // endResult

@@ -7,8 +7,7 @@ model IntervalTest
   Integer x(start=0);
 equation
   x = previous(x);
-  y = interval(u);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
+  y = {interval(u[1]), interval(u[2])};
 end IntervalTest;
 
 // Result:

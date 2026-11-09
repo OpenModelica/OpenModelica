@@ -3,6 +3,7 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 ParArray.mos\
 der_for_array.mos\
+resizableSparseNewton.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

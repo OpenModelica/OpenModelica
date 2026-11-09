@@ -25,6 +25,7 @@ ModelicaTest.Utilities.TestInternal.mos \
 ModelicaTest.Tables.CombiTable1Ds.Test3.mos \
 ModelicaTest.MultiBody.Parts.Bodies.mos \
 ModelicaTest.MultiBody.Joints.JointUPS.mos \
+ModelicaTest.MultiBody.Forces.Spring2.mos \
 ModelicaTest.Media.TestOnly.DryAirNasa.mos \
 ModelicaTest.Tables.CombiTimeTable.Test35.mos \
 ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.HeatExchanger.kc_flatTube_KC.mos \

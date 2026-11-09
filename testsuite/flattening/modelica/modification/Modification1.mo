@@ -21,7 +21,6 @@ end Motor;
 model Modification1
   Motor m(j = 3.0);
   Motor n(f(q=5.0));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Modification1;
 
 // Result:

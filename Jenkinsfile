@@ -78,13 +78,14 @@ pipeline {
     stage('setup') {
       parallel {
         // Linux build stages
-        stage('jammy-clang') {
+        stage('noble-clang') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
+              image 'docker.openmodelica.org/build-deps:ubuntu-24.04'
               label 'linux'
               alwaysPull true
               args '''
+                --mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty \
                 --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
                 -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
               '''
@@ -99,13 +100,14 @@ pipeline {
             script { common.buildClangOMC() }
           }
         }
-        stage('jammy-gcc') {
+        stage('noble-gcc') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
+              image 'docker.openmodelica.org/build-deps:ubuntu-24.04'
               label 'linux'
               alwaysPull true
               args '''
+                --mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty \
                 --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
                 -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
               '''
@@ -288,6 +290,7 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
               label 'linux && !slow'
               args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
+                   "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
                    "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
                    "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
                    "-v /var/lib/jenkins/MacOSX.sdk:/mnt/MacOSX.sdk:ro " +
@@ -307,7 +310,7 @@ pipeline {
         stage('checks') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
+              image 'docker.openmodelica.org/build-deps:ubuntu-24.04'
               label 'linux'
               alwaysPull true
               args '''
@@ -329,9 +332,9 @@ pipeline {
     }
     stage('tests + extras') {
       parallel {
-        // The only shard that runs the coverage-instrumented CMake build: its
-        // counters become the coverage report in 'check-and-upload'. The clang
-        // shard below runs an uninstrumented build and records none.
+        // One testsuite per simulation runtime: gcc (coverage-instrumented) on
+        // --simCodeTarget=C, clang on --simCodeTarget=C+Rust without the C++
+        // runtime tests and with the old frontend's script loop.
         stage('04 testsuite-gcc 1/2') {
           agent {
             node {
@@ -353,7 +356,7 @@ pipeline {
           steps {
             script { common.checkoutSCM() }
             script {
-              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-24.04',
                                      common.testCacheMounts('runtest-gcc-cache')) {
                 common.ctestStashed('omc-gcc', 1, 2)
               }
@@ -361,7 +364,7 @@ pipeline {
           }
         }
 
-        stage('05 testsuite-clang 2/2') {
+        stage('05 testsuite-gcc 2/2') {
           agent {
             node {
               label 'linux && !slow'
@@ -382,9 +385,67 @@ pipeline {
           steps {
             script { common.checkoutSCM() }
             script {
-              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-24.04',
+                                     common.testCacheMounts('runtest-gcc-cache')) {
+                common.ctestStashed('omc-gcc', 2, 2)
+              }
+            }
+          }
+        }
+
+        stage('06 testsuite-clang C+Rust 1/2') {
+          agent {
+            node {
+              label 'linux && !slow'
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          environment {
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
+          steps {
+            script { common.checkoutSCM() }
+            script {
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-24.04',
                                      common.testCacheMounts('runtest-clang-cache')) {
-                common.partestStashed('omc-clang', 2, 2)
+                common.partestStashed('omc-clang', 1, 2, 'C+Rust', common.rustRuntimeTestSuites(), common.ofScriptingArgs())
+              }
+            }
+          }
+        }
+
+        stage('07 testsuite-clang C+Rust 2/2') {
+          agent {
+            node {
+              label 'linux && !slow'
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          environment {
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
+          steps {
+            script { common.checkoutSCM() }
+            script {
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-24.04',
+                                     common.testCacheMounts('runtest-clang-cache')) {
+                common.partestStashed('omc-clang', 2, 2, 'C+Rust', common.rustRuntimeTestSuites(), common.ofScriptingArgs())
               }
             }
           }
@@ -402,6 +463,7 @@ pipeline {
               // EM_CACHE on a persistent volume so the Qt-wasm sysroot (libc/libc++
               // and the ASYNCIFY/memory-growth variants) is built once, not per run.
               args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
+                   "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
                    "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
                    "--mount type=volume,source=emscripten-cache,target=/cache/emscripten " +
                    "-e EM_CACHE=/cache/emscripten " +
@@ -431,6 +493,7 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust-qt-wasm'
               label 'linux&&!slow'
               args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
+                   "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
                    "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
                    "--mount type=volume,source=emscripten-cache,target=/cache/emscripten " +
                    "-e EM_CACHE=/cache/emscripten " +
@@ -460,6 +523,7 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
               label 'linux'
               args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
+                   "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
                    "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
               customWorkspace 'ws/OpenModelica'
@@ -567,7 +631,7 @@ pipeline {
           agent {
             docker {
               alwaysPull true
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
+              image 'docker.openmodelica.org/build-deps:ubuntu-24.04'
               label 'linux'
               args '''
                 --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
@@ -593,10 +657,11 @@ pipeline {
         stage('17 build-gui-clang + omedit-testsuite') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
+              image 'docker.openmodelica.org/build-deps:ubuntu-24.04'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
               customWorkspace 'ws/OpenModelica'
             }
@@ -624,10 +689,10 @@ pipeline {
           agent {
             node {
               // Intel only: ParModelica compiles its OpenCL kernels through the node's ICD,
-              // which on AMD is PoCL. Jammy's PoCL 1.8 (LLVM 14) cannot name a Zen CPU it
-              // does not know and falls back to the target CPU 'generic', which LLVM
-              // rejects; the POCL_LLVM_CPU_NAME override only exists in later PoCL. Lifting
-              // this needs both the build and the tests on a newer image (Ubunut 26.04 or newer).
+              // which on AMD is PoCL. Jammy's PoCL 1.8 (LLVM 14) could not name a Zen CPU it
+              // did not know and fell back to the target CPU 'generic', which LLVM
+              // rejects. Noble's PoCL 5.0 has the POCL_LLVM_CPU_NAME override, but it is
+              // still built against LLVM 14 and has not been tried on the AMD nodes.
               label 'linux-intel-x64'
               customWorkspace 'ws/OpenModelica'
             }
@@ -646,7 +711,7 @@ pipeline {
           steps {
             script { common.checkoutSCM() }
             script {
-              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-24.04',
                                      common.testCacheMounts('runtest-clang-icon-generator')) {
                 common.testMisc()
               }
@@ -720,7 +785,7 @@ pipeline {
         }
 
         // The C omc cross-compiled to Windows (MSVC) from the C sources
-        // 'cmake-jammy-gcc' translated, and the Windows smoke set run against
+        // 'noble-gcc' translated, and the Windows smoke set run against
         // it under wine. See common.crossBuildOMCWindows().
         stage('21 cross-build-omc-msvc') {
           agent {
@@ -766,7 +831,7 @@ pipeline {
             script { common.fmpyLinux() }
           }
         }
-        // Turns the coverage counters of the testsuite-gcc shard into a
+        // Turns the coverage counters of the testsuite-gcc shards into a
         // report. Unlike the uploads it is not gated on !isPR: the point is to
         // get the number on every PR.
         stage('coverage-report') {
@@ -786,14 +851,14 @@ pipeline {
               // Enters the build image itself: which mounts it needs depends
               // on where the instrumented build ran, which it only learns
               // from the stash.
-              common.coverageReportStage(1)
+              common.coverageReportStage(2)
             }
           }
         }
         stage('upload-compliance') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
+              image 'docker.openmodelica.org/build-deps:ubuntu-24.04'
               label 'linux'
               alwaysPull true
               args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
@@ -815,7 +880,7 @@ pipeline {
         stage('upload-doc') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
+              image 'docker.openmodelica.org/build-deps:ubuntu-24.04'
               label 'linux'
               alwaysPull true
               args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
@@ -837,7 +902,7 @@ pipeline {
         stage('upload-web') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
+              image 'docker.openmodelica.org/build-deps:ubuntu-24.04'
               label 'linux'
               alwaysPull true
               args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"

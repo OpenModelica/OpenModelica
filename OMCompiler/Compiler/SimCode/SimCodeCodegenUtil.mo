@@ -55,6 +55,7 @@ import Util;
 protected
 import AbsynUtil;
 import Array;
+import Autoconf;
 import AvlTreeCRToInt;
 import BaseHashTable;
 import ClassInf;
@@ -64,6 +65,7 @@ import Config;
 import DAEDump;
 import MetaModelica.Dangerous;
 import Error;
+import ErrorExt;
 import Expression;
 import ExpressionDump;
 import Flags;
@@ -95,7 +97,15 @@ public function sortEqSystems
 algorithm
   outEqs := List.flatten(list(expandEntwined(eq) for eq in eqs));
   outEqs := List.sort(outEqs, compareEqSystems);
+  // the new backend also lists the single calls of entwined equations on their own
+  outEqs := List.sortedUnique(outEqs, equalEqSystemIndex);
 end sortEqSystems;
+
+protected function equalEqSystemIndex
+  input SimCode.SimEqSystem eq1;
+  input SimCode.SimEqSystem eq2;
+  output Boolean b = simEqSystemIndex(eq1) == simEqSystemIndex(eq2);
+end equalEqSystemIndex;
 
 protected function expandEntwined
   "expands entwined equations to their body equation systems
@@ -428,6 +438,7 @@ protected
   UnitAbsyn.Unit u1, u2;
   Real factor1, factor2, offset1, offset2;
 algorithm
+  ErrorExt.setCheckpoint(getInstanceName());
   try
     UnitParserExt.initSIUnits();
     (u1, factor1, offset1) := UnitAbsynBuilder.str2unitWithScaleFactor(to, NONE());
@@ -438,6 +449,7 @@ algorithm
     converts := true;
   else
   end try;
+  ErrorExt.rollBack(getInstanceName());
 end unitConversion;
 
 public function createCrefToSimVarHT "author: unknown and marcusw
@@ -843,16 +855,21 @@ protected function getEnumerationTypesHelper
   input list<SimCodeVar.SimVar> inVars;
   input list<SimCodeVar.SimVar> inAccumVars;
   output list<SimCodeVar.SimVar> outVars = inAccumVars;
+protected
+  SimCodeVar.SimVar v;
 algorithm
   for var in inVars loop
     () := match var
       case SimCodeVar.SIMVAR()
         algorithm
           // Add the variable to the list if it's an enumeration variable which
-          // doesn't already exist in the list.
+          // doesn't already exist in the list. An array variable stands for its
+          // element type.
           if Types.isEnumeration(var.type_) and not
              List.exist1(outVars, enumerationTypeExists, var.type_) then
-            outVars := var :: outVars;
+            v := var;
+            v.type_ := Types.arrayElementType(var.type_);
+            outVars := v :: outVars;
           end if;
         then
           ();
@@ -867,12 +884,12 @@ protected function enumerationTypeExists
   input DAE.Type inType;
   output Boolean b;
 algorithm
-  b := match (var, inType)
+  b := match (var, Types.arrayElementType(inType))
     local
-      DAE.Type ty;
+      DAE.Type ty, ety;
 
-    case (SimCodeVar.SIMVAR(type_ = ty as DAE.T_ENUMERATION()), DAE.T_ENUMERATION())
-      then AbsynUtil.pathEqual(ty.path, inType.path);
+    case (SimCodeVar.SIMVAR(type_ = ty as DAE.T_ENUMERATION()), ety as DAE.T_ENUMERATION())
+      then AbsynUtil.pathEqual(ty.path, ety.path);
     else false;
   end match;
 end enumerationTypeExists;
@@ -1117,6 +1134,66 @@ algorithm
   end for;
 end jacobianIndexExp;
 
+public function scalarSparsityRow
+  "The rows and columns of a sparsity row that consists of scalars at constant
+   positions only (no iterators, no subscripts), so the templates can write the
+   pattern as tables instead of one statement per entry. Dependencies without a
+   seed variable or with a negative index are left out, as in the general code.
+   NONE() for any other row."
+  input SimCode.SparsityRow row;
+  input HashTableCrefSimVar.HashTable ht;
+  output Option<tuple<list<Integer>, list<Integer>>> result = NONE();
+protected
+  list<Integer> rows = {}, cols = {};
+  SimCodeVar.SimVar var;
+  DAE.ComponentRef cref;
+  Option<Integer> pos;
+algorithm
+  if not listEmpty(row.equation_iterators) then
+    return;
+  end if;
+  for sc in row.solved_crefs loop
+    if not listEmpty(ComponentReferenceBasics.crefSubs(sc)) or not BaseHashTable.hasKey(sc, ht) then
+      return;
+    end if;
+    pos := constantJacobianIndex(BaseHashTable.get(sc, ht), ht);
+    if isNone(pos) then
+      return;
+    end if;
+    rows := Util.getOption(pos) :: rows;
+  end for;
+  for dep in row.dependencies loop
+    (cref, _, _) := dep;
+    if not listEmpty(ComponentReferenceBasics.crefSubs(cref)) then
+      return;
+    end if;
+    if BaseHashTable.hasKey(cref, ht) then
+      var := BaseHashTable.get(cref, ht);
+      if var.index >= 0 then
+        pos := constantJacobianIndex(var, ht);
+        if isNone(pos) then
+          return;
+        end if;
+        cols := Util.getOption(pos) :: cols;
+      end if;
+    end if;
+  end for;
+  result := SOME((listReverse(rows), listReverse(cols)));
+end scalarSparsityRow;
+
+protected function constantJacobianIndex
+  input SimCodeVar.SimVar var;
+  input HashTableCrefSimVar.HashTable ht;
+  output Option<Integer> index;
+algorithm
+  index := match jacobianIndexExp(var, ht)
+    local
+      Integer i;
+    case DAE.ICONST(integer = i) then SOME(i);
+    else NONE();
+  end match;
+end constantJacobianIndex;
+
 protected function jacobianOffsets
   "The positions of all variables of a Jacobian per kind, cached for the last
    few hash tables since the templates ask for every variable reference. Cache
@@ -1152,11 +1229,12 @@ protected
   list<BackendDAE.VarKind> kinds = {};
   UnorderedSet<Integer> seen;
   UnorderedMap<Integer, DAE.Exp> map;
-  DAE.Exp exp;
+  Integer offset;
+  list<tuple<DAE.Exp, Integer>> terms;
   Boolean symbolic;
 algorithm
   vars := BaseHashTable.hashTableValueList(ht);
-  if not List.any(vars, isSymbolicArrayVar) then
+  if not List.any(vars, hasRuntimeSize) then
     return;
   end if;
   for v in vars loop
@@ -1174,18 +1252,80 @@ algorithm
       end if;
     end for;
     map := UnorderedMap.new<DAE.Exp>(Util.id, intEq);
-    exp := DAE.ICONST(0);
+    offset := 0;
+    terms := {};
     symbolic := false;
     for v in List.sort(kindVars, simVarIndexGt) loop
       if symbolic then
-        UnorderedMap.add(v.index, exp, map);
+        UnorderedMap.add(v.index, linearSumExp(offset, terms), map);
       end if;
-      exp := DAE.BINARY(exp, DAE.ADD(DAE.T_INTEGER_DEFAULT), simVarSizeExp(v));
-      symbolic := symbolic or isSymbolicArrayVar(v);
+      (offset, terms) := addSizeTerm(v, offset, terms);
+      symbolic := symbolic or hasRuntimeSize(v);
     end for;
     offsets := (kind, map) :: offsets;
   end for;
 end computeJacobianOffsets;
+
+protected function addSizeTerm
+  "Adds the size of a SimVar to offset + sum(coefficient * product), merging
+   equal products of symbolic dimensions."
+  input SimCodeVar.SimVar var;
+  input output Integer offset;
+  input output list<tuple<DAE.Exp, Integer>> terms;
+protected
+  Integer coeff = 1;
+  Option<DAE.Exp> product = NONE();
+  DAE.Exp e;
+algorithm
+  for d in Expression.arrayDimension(var.type_) loop
+    () := match d
+      local
+        Integer i;
+      case DAE.DIM_EXP(exp = DAE.ICONST(i)) algorithm
+        coeff := coeff * i;
+      then ();
+      case DAE.DIM_EXP() algorithm
+        product := SOME(match product
+          case SOME(e) then DAE.BINARY(e, DAE.MUL(DAE.T_INTEGER_DEFAULT), d.exp);
+          else d.exp;
+        end match);
+      then ();
+      else algorithm
+        coeff := coeff * Expression.dimensionSize(d);
+      then ();
+    end match;
+  end for;
+  if isNone(product) then
+    offset := offset + coeff;
+    return;
+  end if;
+  e := Util.getOption(product);
+  if List.any(terms, function isTermOf(e = e)) then
+    terms := list(if isTermOf(t, e) then (Util.tuple21(t), Util.tuple22(t) + coeff) else t for t in terms);
+  else
+    terms := (e, coeff) :: terms;
+  end if;
+end addSizeTerm;
+
+protected function isTermOf
+  input tuple<DAE.Exp, Integer> term;
+  input DAE.Exp e;
+  output Boolean b = ExpressionBasics.expEqual(Util.tuple21(term), e);
+end isTermOf;
+
+protected function linearSumExp
+  input Integer offset;
+  input list<tuple<DAE.Exp, Integer>> terms;
+  output DAE.Exp exp = DAE.ICONST(offset);
+protected
+  DAE.Exp term;
+algorithm
+  for t in terms loop
+    term := if Util.tuple22(t) == 1 then Util.tuple21(t)
+      else DAE.BINARY(DAE.ICONST(Util.tuple22(t)), DAE.MUL(DAE.T_INTEGER_DEFAULT), Util.tuple21(t));
+    exp := DAE.BINARY(exp, DAE.ADD(DAE.T_INTEGER_DEFAULT), term);
+  end for;
+end linearSumExp;
 
 public function jacobianOffsetVars
   "The variables of one kind of a Jacobian (\"seed\", \"res\" or \"tmp\"), sorted by
@@ -1214,7 +1354,7 @@ algorithm
       vars := v :: vars;
     end if;
   end for;
-  if List.any(vars, isSymbolicArrayVar) then
+  if List.any(vars, hasRuntimeSize) then
     vars := List.sort(vars, simVarIndexGt);
   else
     vars := {};
@@ -1316,7 +1456,7 @@ algorithm
   end match;
 end simIteratorSizeExp;
 
-protected function typeSizeExp
+public function typeSizeExp
   "the number of scalar elements of a type as an expression"
   input DAE.Type ty;
   output DAE.Exp exp = DAE.ICONST(1);
@@ -1342,6 +1482,44 @@ algorithm
   end for;
 end numScalarElemsBeforeExp;
 
+public function isResizableSimVar
+  "true for an array variable with a size that depends on parameters (--resizableArrays)."
+  input SimCodeVar.SimVar var;
+  output Boolean b = SimCodeUtilShared.isResizableSimVar(var);
+end isResizableSimVar;
+
+public function hasResizableVars
+  input SimCode.ModelInfo modelInfo;
+  output Boolean b = modelInfo.resizable;
+end hasResizableVars;
+
+public function resizableFixedSize
+  input SimCode.ModelInfo modelInfo;
+  input Integer varType "1 = real, 2 = int, 3 = bool, 4 = string";
+  output Integer n = SimCodeUtilShared.resizableFixedSize(modelInfo, varType);
+end resizableFixedSize;
+
+public function resizableFixedStates
+  input SimCode.ModelInfo modelInfo;
+  output Integer n = SimCodeUtilShared.resizableFixedStates(modelInfo);
+end resizableFixedStates;
+
+public function simVarDims
+  "The dimensions of the type of a variable, symbolic ones of resizable arrays included."
+  input SimCodeVar.SimVar var;
+  output list<DAE.Dimension> dims = Expression.arrayDimension(var.type_);
+end simVarDims;
+
+public function isWholeArrayCref
+  "true for a cref of an array variable without any subscripts, e.g. an
+   iteration variable of a resizable algebraic loop of the new backend, which
+   is solved for as a whole."
+  input DAE.ComponentRef cref;
+  output Boolean b;
+algorithm
+  b := not ComponentReference.crefHaveSubs(cref) and Types.isArray(ComponentReference.crefTypeFull(cref));
+end isWholeArrayCref;
+
 public function isDimensionParameter
   "true for a size parameter $DIM_k of a derived dimension of a resizable array,
    see NBResizable.addDimensionParameters. Its start value is the expression of
@@ -1365,19 +1543,18 @@ public function jacobianResultVars
   output list<SimCodeVar.SimVar> vars = {};
 protected
   HashTableCrefSimVar.HashTable ht;
-  list<DAE.ComponentRef> crefs = {};
   list<SimCode.SparsityRow> rows;
+  UnorderedSet<DAE.ComponentRef> crefs = UnorderedSet.new(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
 algorithm
   try
     SOME(ht) := crefsHT;
     SimCode.SPARSITY(rows = rows) := sparsity;
     for row in rows loop
       for cr in row.solved_crefs loop
-        crefs := ComponentReference.crefStripSubs(cr) :: crefs;
+        UnorderedSet.add(ComponentReference.crefStripSubs(cr), crefs);
       end for;
     end for;
-    crefs := List.unique(listReverse(crefs));
-    vars := list(BaseHashTable.get(cr, ht) for cr in crefs);
+    vars := list(BaseHashTable.get(cr, ht) for cr in UnorderedSet.toList(crefs));
   else
     vars := {};
   end try;
@@ -1401,6 +1578,26 @@ algorithm
     else false;
   end match;
 end isSymbolicArrayVar;
+
+public function hasRuntimeSize
+  "true if an array SimVar has a size that is only known at runtime. Unlike
+   isSymbolicArrayVar this also holds for the C++ target, whose numArrayElement
+   are the sizes the model is built with (see NSimVar.layoutSizeExp); the
+   symbolic size stays in the type."
+  input SimCodeVar.SimVar var;
+  output Boolean b = isSymbolicArrayVar(var) or List.any(Expression.arrayDimension(var.type_), isRuntimeDimension);
+end hasRuntimeSize;
+
+protected function isRuntimeDimension
+  input DAE.Dimension dim;
+  output Boolean b;
+algorithm
+  b := match dim
+    case DAE.DIM_EXP(exp = DAE.ICONST()) then false;
+    case DAE.DIM_EXP() then true;
+    else false;
+  end match;
+end isRuntimeDimension;
 
 protected function isIntegerString
   input String s;
@@ -2119,6 +2316,53 @@ algorithm
   n := 2*varInfo.numStateVars+varInfo.numAlgVars+varInfo.numDiscreteReal+varInfo.numOptimizeConstraints+varInfo.numOptimizeFinalConstraints;
 end nVariablesReal;
 
+public function simVarIndexRuns
+  "The variables as runs (position in the list, first index, length, kind): kind 1 for
+   real variables with consecutive indices in realVars, else a run of one variable
+   with kind 0 for variables without index, 2 for parameters and 3 for any other."
+  input list<SimCodeVar.SimVar> vars;
+  output list<tuple<Integer, Integer, Integer, Integer>> runs = {};
+protected
+  Integer pos = 0, start = -1, len = 0, kind, index;
+algorithm
+  for var in vars loop
+    kind := match var.varKind
+      case BackendDAE.JAC_VAR() then 0;
+      case BackendDAE.JAC_TMP_VAR() then 0;
+      case BackendDAE.PARAM() then 2;
+      case BackendDAE.VARIABLE() then if Types.isReal(var.type_) then 1 else 3;
+      case BackendDAE.STATE() then 1;
+      case BackendDAE.STATE_DER() then 1;
+      case BackendDAE.DUMMY_DER() then if Types.isReal(var.type_) then 1 else 3;
+      case BackendDAE.DUMMY_STATE() then if Types.isReal(var.type_) then 1 else 3;
+      else 3;
+    end match;
+    index := var.index;
+    if index < 0 then
+      kind := 0;
+    end if;
+    if kind == 1 and len > 0 and index == start + len then
+      len := len + 1;
+    else
+      if len > 0 then
+        runs := (pos - len, start, len, 1) :: runs;
+        len := 0;
+      end if;
+      if kind == 1 then
+        start := index;
+        len := 1;
+      else
+        runs := (pos, index, 1, kind) :: runs;
+      end if;
+    end if;
+    pos := pos + 1;
+  end for;
+  if len > 0 then
+    runs := (pos - len, start, len, 1) :: runs;
+  end if;
+  runs := listReverse(runs);
+end simVarIndexRuns;
+
 public function getSimCode
   output SimCode.SimCode code;
 protected
@@ -2280,7 +2524,7 @@ public function contiguousSliceStart
   "The subscripts of the first element of a slice that is one block of its
    variable's storage, {} for any other slice. Such a slice has scalar
    subscripts, then optionally one literal range with step 1, then whole
-   dimensions, over constant dimensions."
+   dimensions. Only the sliced dimensions need constant sizes."
   input list<DAE.Subscript> subs;
   input list<DAE.Dimension> dims;
   output list<DAE.Subscript> start;
@@ -2311,18 +2555,18 @@ protected
   Boolean inBlock = false, sliced = false, ok;
 algorithm
   for dim in dims loop
-    d := match dim case DAE.DIM_INTEGER() then dim.integer; else -1; end match;
+    d := match dim case DAE.DIM_INTEGER() then dim.integer; case DAE.DIM_UNKNOWN() then 0; else -1; end match;
     if listEmpty(rest) then
       sub := DAE.WHOLEDIM();
     else
       sub :: rest := rest;
     end if;
-    ok := if d < 1 then false else match sub
-      case DAE.INDEX(exp = DAE.ICONST(integer = i)) guard not inBlock and i >= 1 and i <= d
+    ok := match sub
+      case DAE.INDEX(exp = DAE.ICONST(integer = i)) guard not inBlock and i >= 1 and (d < 0 or i <= d)
         algorithm
           start := sub :: start;
         then true;
-      case DAE.INDEX(exp = e) guard not inBlock and not Expression.isConst(e) and Types.isInteger(Expression.typeof(e))
+      case DAE.INDEX(exp = e) guard not inBlock and d <> 0 and not Expression.isConst(e) and Types.isInteger(Expression.typeof(e))
         algorithm
           start := sub :: start;
         then true;
@@ -2334,7 +2578,7 @@ algorithm
           start := DAE.INDEX(DAE.ICONST(i)) :: start;
           sliceDims := (j - i + 1) :: sliceDims;
         then true;
-      case DAE.WHOLEDIM()
+      case DAE.WHOLEDIM() guard d >= 1
         algorithm
           inBlock := true;
           start := DAE.INDEX(DAE.ICONST(1)) :: start;
@@ -2532,6 +2776,13 @@ algorithm
       SimCode.SimCode simCode;
       SimCodeVar.SimVar prev;
       list<DAE.ComponentRef> crf_lst;
+    // The start attributes of a whole array are never contiguous, but
+    // daeExpCrefRhsSimContext gathers them with a loop. Expanding them here
+    // instead generates one term per element, which C compilers choke on for
+    // large arrays and which cannot follow a resized array (issue #16373).
+    case DAE.CREF(ty=DAE.T_ARRAY())
+      guard ComponentReference.isStartCref(e.componentRef) and not ComponentReference.crefHaveSubs(e.componentRef)
+      then e;
     case DAE.CREF(ty=DAE.T_ARRAY())
       algorithm
         simCode := getSimCode();
@@ -2702,6 +2953,22 @@ algorithm
   eqs := list(e for e guard isScalarLiteralAssignment(e) in eqs);
 end selectScalarLiteralAssignments;
 
+public function runnableParamDepEqs
+  "The equations updateTunableParameters evaluates, with their mask index."
+  input SimCode.ParamDeps deps;
+  output list<tuple<Integer, SimCode.SimEqSystem>> eqs = {};
+protected
+  Integer k = 0;
+algorithm
+  for e in deps.eqs loop
+    if isSome(e.eq) then
+      eqs := (k, Util.getOption(e.eq)) :: eqs;
+    end if;
+    k := k + 1;
+  end for;
+  eqs := listReverse(eqs);
+end runnableParamDepEqs;
+
 public function filterScalarLiteralAssignments
   input output list<SimCode.SimEqSystem> eqs;
 algorithm
@@ -2782,6 +3049,28 @@ algorithm
   vr := AvlTreeCRToInt.get(simCode.valueReferences, cr);
 end lookupVR;
 
+public function sortedValueReferences
+  "The (value reference, index) pairs of the crefs, sorted by value reference."
+  input list<tuple<Integer, DAE.ComponentRef>> crefs;
+  input SimCode.SimCode simCode;
+  output list<tuple<Integer, Integer>> vrIndexes = {};
+protected
+  Integer index;
+  DAE.ComponentRef cr;
+algorithm
+  for t in crefs loop
+    (index, cr) := t;
+    vrIndexes := (lookupVR(cr, simCode), index) :: vrIndexes;
+  end for;
+  vrIndexes := List.sort(vrIndexes, valueReferenceGreater);
+end sortedValueReferences;
+
+protected function valueReferenceGreater
+  input tuple<Integer, Integer> a;
+  input tuple<Integer, Integer> b;
+  output Boolean greater = Util.tuple21(a) > Util.tuple21(b);
+end valueReferenceGreater;
+
 public function isFMUSimCode
   "True when this SimCode was built for an FMU export, so `valueReferences` --
    what lookupVR and the FMI alias tables index -- is filled."
@@ -2796,7 +3085,8 @@ end isFMUSimCode;
 
 public function lookupVRForRealOutputDerivative
   "function which maps output Real var ValueReference to an internal real variable ValueReference of
-  pattern $X_der where x = varname, this function will be used by fmi2GetRealOutputDerivatives"
+  pattern $X_der where x = varname, this function will be used by fmi2GetRealOutputDerivatives.
+  -1 if there is no such variable, as in DAE mode."
   input DAE.ComponentRef cr;
   input SimCode.SimCode simCode;
   input String fmuType;
@@ -2808,11 +3098,26 @@ algorithm
     // map the cref to the internal real var (e.g) output Real y => $y_der
     outputRealDerivativeCref := ComponentReference.appendStringLastIdent("_der", cr); // append _der
     outputRealDerivativeCref := ComponentReference.prependStringCref("$", outputRealDerivativeCref); // prepend $
-    vr := AvlTreeCRToInt.get(simCode.valueReferences, outputRealDerivativeCref);
+    vr := Util.getOptionOrDefault(AvlTreeCRToInt.getOpt(simCode.valueReferences, outputRealDerivativeCref), -1);
   else
     vr := -1;
   end if;
 end lookupVRForRealOutputDerivative;
+
+public function maxOutputDerivativeOrder
+  "1 if lookupVRForRealOutputDerivative finds a derivative for each Real output, else 0."
+  input SimCode.SimCode simCode;
+  input String fmuType;
+  output Integer order = 1;
+algorithm
+  for v in simCode.modelInfo.vars.outputVars loop
+    order := match v
+      case SimCodeVar.SIMVAR(type_ = DAE.T_REAL())
+        guard lookupVRForRealOutputDerivative(v.name, simCode, fmuType) == -1 then 0;
+      else order;
+    end match;
+  end for;
+end maxOutputDerivativeOrder;
 
 public function fmi3ArrayView
   "The SimCode the FMI 3.0 modelDescription.xml is rendered from: one SimVar
@@ -3098,6 +3403,29 @@ algorithm
   end for;
   aliases := listReverse(aliases);
 end getFMI3VariableAliases;
+
+public constant list<String> fmuSourceLibraries = {"ModelicaExternalC", "ModelicaStandardTables", "ModelicaIO", "ModelicaMatIO"}
+  "The libraries of Library annotations that an FMU compiles from its sources.";
+
+public function fmuExternalLibraries
+  "The libraries of Library annotations that an FMU does not carry as sources,
+   by name. zlib and HDF5 are only there for ModelicaMatIO, which the FMU
+   compiles with its own zlib and without HDF5."
+  input list<String> libs;
+  output list<String> names = {};
+protected
+  String name;
+algorithm
+  for lib in libs loop
+    if StringUtil.startsWith(lib, "-l") and not stringEqual(lib, Autoconf.hdf5Libs) then
+      name := substring(lib, 3, stringLength(lib));
+      if not (name == "zlib" or List.contains(fmuSourceLibraries, name, stringEqual) or List.contains(names, name, stringEqual)) then
+        names := name :: names;
+      end if;
+    end if;
+  end for;
+  names := listReverse(names);
+end fmuExternalLibraries;
 
 public function getFMI3Terminals
   "Collect the FMI 3.0 terminals from the exported SimVars. The flat-model type of

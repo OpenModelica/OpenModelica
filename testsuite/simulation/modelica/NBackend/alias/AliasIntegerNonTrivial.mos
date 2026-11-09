@@ -1,0 +1,41 @@
+// name: AliasIntegerNonTrivial
+// keywords: NewBackend, alias, integer
+// status: correct
+//
+// An Integer variable that becomes a non-trivial alias (u = y - p) is an
+// Integer algebraic variable in the simulation code, not a Real one.
+
+loadString("
+model AliasIntegerNonTrivial
+  parameter Integer p = 5;
+  Real r = 3*time;
+  Integer i = integer(r);
+  Integer u;
+  Integer y;
+equation
+  u = i;
+  y = u + p;
+end AliasIntegerNonTrivial;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+simulate(AliasIntegerNonTrivial); getErrorString();
+val(y, 1.0); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "AliasIntegerNonTrivial_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AliasIntegerNonTrivial', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 8.0
+// ""
+// endResult

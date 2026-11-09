@@ -295,6 +295,11 @@ public:
     Loading = 1,
     Never = 2
   };
+  enum ColorScheme {
+    SystemColorScheme = 0,
+    LightColorScheme = 1,
+    DarkColorScheme = 2
+  };
   GeneralSettingsPage(OptionsDialog *pOptionsDialog);
   ComboBox* getLanguageComboBox() {return mpLanguageComboBox;}
   void setWorkingDirectory(QString value) {mpWorkingDirectoryTextBox->setText(value);}
@@ -311,6 +316,7 @@ public:
   QCheckBox* getCreateBackupFileCheckbox() {return mpCreateBackupFileCheckbox;}
   QCheckBox* getDisplayNFAPIErrorsWarningsCheckBox() {return mpDisplayNFAPIErrorsWarningsCheckBox;}
   QCheckBox* getEnableInstanceApiNoJsonCheckBox() {return mpEnableInstanceApiNoJsonCheckBox;}
+  ComboBox* getColorSchemeComboBox() {return mpColorSchemeComboBox;}
   SpinBox* getLibraryIconSizeSpinBox() {return mpLibraryIconSizeSpinBox;}
   SpinBox* getLibraryIconTextLengthSpinBox() {return mpLibraryIconTextLengthSpinBox;}
   void setShowProtectedClasses(bool value) {mpShowProtectedClasses->setChecked(value);}
@@ -350,6 +356,8 @@ private:
   QCheckBox *mpDisplayNFAPIErrorsWarningsCheckBox;
   QCheckBox *mpEnableInstanceApiNoJsonCheckBox;
   QCheckBox *mpEnableCRMLSupportCheckBox;
+  Label *mpColorSchemeLabel;
+  ComboBox *mpColorSchemeComboBox;
   QGroupBox *mpLibraryBrowserGroupBox;
   Label *mpLibraryIconSizeLabel;
   SpinBox *mpLibraryIconSizeSpinBox;
@@ -756,6 +764,9 @@ public:
   QCheckBox* getClearMessagesBrowserBeforeSimulationCheckBox() {return mpClearMessagesBrowserBeforeSimulationCheckBox;}
   QCheckBox* getEnlargeMessageBrowserCheckBox() {return mpEnlargeMessageBrowserCheckBox;}
   QFontComboBox* getFontFamilyComboBox() {return mpFontFamilyComboBox;}
+  QString getDefaultFontFamily() const {return mDefaultFontFamily;}
+  void setFontFamily(const QString &family);
+  QString getFontFamily() const;
   DoubleSpinBox* getFontSizeSpinBox() {return mpFontSizeSpinBox;}
   void setNotificationColor(QColor color) {mNotificaitonColor = color;}
   QColor getNotificationColor() const {return mNotificaitonColor;}
@@ -778,6 +789,7 @@ private:
   QGroupBox *mpFontColorsGroupBox;
   Label *mpFontFamilyLabel;
   QFontComboBox *mpFontFamilyComboBox;
+  QString mDefaultFontFamily;
   Label *mpFontSizeLabel;
   DoubleSpinBox *mpFontSizeSpinBox;
   Label *mpNotificationColorLabel;
@@ -1068,6 +1080,7 @@ public:
   OMSimulatorPage(OptionsDialog *pOptionsDialog);
   ComboBox* getLoggingLevelComboBox() {return mpLoggingLevelComboBox;}
   QLineEdit* getCommandLineOptionsTextBox() {return mpCommandLineOptionsTextBox;}
+  QLineEdit* getOMUQPythonTextBox() {return mpOMUQPythonTextBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralGroupBox;
@@ -1075,6 +1088,12 @@ private:
   ComboBox *mpLoggingLevelComboBox;
   Label *mpCommandLineOptionsLabel;
   QLineEdit *mpCommandLineOptionsTextBox;
+  QGroupBox *mpOMUQGroupBox;
+  Label *mpOMUQPythonLabel;
+  QLineEdit *mpOMUQPythonTextBox;
+  QPushButton *mpOMUQPythonBrowseButton;
+private slots:
+  void browseOMUQPython();
 };
 
 class SensitivityOptimizationPage : public QWidget

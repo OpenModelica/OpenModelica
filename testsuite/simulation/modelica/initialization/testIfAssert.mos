@@ -3,7 +3,6 @@
 // status: correct
 // cflags:
 // teardown_command: rm -rf  output.log
-// cflags: -d=-newInst
 //
 
 loadString("
@@ -37,7 +36,7 @@ getErrorString();
 //     messages = "Simulation execution failed for model: A
 // LOG_ASSERT        | error   | [<interactive>:11:5-11:42:writable]
 // |                 | |       | The following assertion has been violated during initialization at time 0.000000
-// |                 | |       | ((if x < lb then $DER.x < 49.0 else true)) --> \"Call lb assert
+// |                 | |       | ((if x < lb then $DER.x < 49.0 else true), x=0, lb=5, $DER.x=50) --> \"Call lb assert
 // |                 | |       | \"
 // LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
 // "

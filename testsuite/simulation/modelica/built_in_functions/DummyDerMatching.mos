@@ -2,7 +2,6 @@
 // keywords: DummyDer, Matching
 // status: correct
 // teardown_command: rm -rf testDummyDerMatching* output.log
-// cflags: -d=-newInst
 // 
 //  Simulate model containing EventIterations
 //

@@ -5,10 +5,10 @@ package Transformer
     Modelica.Electrical.QuasiStationary.SinglePhase.Sensors.CurrentSensor currentSensor1;
     Modelica.Electrical.QuasiStationary.SinglePhase.Basic.Ground ground2;
     Modelica.Electrical.QuasiStationary.SinglePhase.Sensors.VoltageSensor voltageSensor1;
-    Transformer.SinglePhaseTransformerQS singlePhaseTransformerQS1(N1 = 500, R1 = 2.5, N2 = 250, R2 = 0.6, Gc = 1 / 1942, Lm = 1.79, L1sigma = 0.0636, L2sigma = 0.0165);
+    Transformer.SinglePhaseTransformerQS singlePhaseTransformerQS1(N1 = 500, R1 = 2.5, N2 = 250, R2 = 0.6, TRef = 293.15, Gc = 1 / 1942, Lm = 1.79, L1sigma = 0.0636, L2sigma = 0.0165);
     Modelica.Electrical.QuasiStationary.SinglePhase.Basic.Ground ground1;
     Modelica.Electrical.QuasiStationary.SinglePhase.Sensors.CurrentSensor currentSensor2;
-    Modelica.Electrical.QuasiStationary.SinglePhase.Sources.VoltageSource voltageSource1(f = 50, V = 98.5);
+    Modelica.Electrical.QuasiStationary.SinglePhase.Sources.VoltageSource voltageSource1(f = 50, V = 98.5, phi = 0);
     Modelica.Electrical.QuasiStationary.SinglePhase.Sensors.PowerSensor powerSensor1;
   equation
     connect(currentSensor1.pin_p, voltageSensor1.pin_n);

@@ -228,6 +228,18 @@ public function setAdjacencyMatrixFlat "the adjacency matrix with each row store
   external "C" BackendDAEEXT_setAdjacencyMatrixFlat(nv,ne,nz,start,len,data) annotation(Library = "omcruntime");
 end setAdjacencyMatrixFlat;
 
+public function setAdjacencyMatrixPieces "the adjacency matrix with each row stored as pieces of one flat buffer, pieces of different rows can share a range"
+  input Integer nv;
+  input Integer ne;
+  input array<Integer> first  "row -> 1-based index of its first piece";
+  input array<Integer> count  "row -> number of pieces";
+  input array<Integer> pstart "piece -> 1-based index of its first entry in data";
+  input array<Integer> plen   "piece -> number of entries";
+  input array<Integer> data;
+
+  external "C" BackendDAEEXT_setAdjacencyMatrixPieces(nv,ne,first,count,pstart,plen,data) annotation(Library = "omcruntime");
+end setAdjacencyMatrixPieces;
+
 /* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
 public function cheapmatching
 "author: Frenkel TUD 2012-04

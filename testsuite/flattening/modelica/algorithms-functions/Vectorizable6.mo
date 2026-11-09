@@ -18,7 +18,6 @@ model Vectorizable6
   Real x[3];
 equation
   {x}=foo(1,{{{1,2},{3,4},{5,6}}});
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Vectorizable6;
 
 // function foo
@@ -35,7 +34,7 @@ end Vectorizable6;
 //   input Real[2] x2;
 //   output Real y;
 // algorithm
-//   y := 1.0 + x + x2[1] + 2.0 * x2[2];
+//   y := x + 1.0 + x2[1] + 2.0 * x2[2];
 // end foo;
 //
 // class Vectorizable6
@@ -43,8 +42,6 @@ end Vectorizable6;
 //   Real x[2];
 //   Real x[3];
 // equation
-//   x[1] = 7.0;
-//   x[2] = 13.0;
-//   x[3] = 19.0;
+//   {x} = array(array(foo(1.0, {{{1.0, 2.0}, {3.0, 4.0}, {5.0, 6.0}}}[$i0,$i1]) for $i1 in 1:3) for $i0 in 1:1);
 // end Vectorizable6;
 // endResult

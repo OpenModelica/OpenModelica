@@ -1,6 +1,7 @@
 // name: Burger_01
 // status: correct
 // teardown_command: rm -rf *.log burgerEq_esdirk3_mr.log burgerEq* *.bat
+// suite: gbode
 //
 // Test all available generic Runge-Kutta solvers with all available non-linear solver methods.
 

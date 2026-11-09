@@ -2362,14 +2362,7 @@ algorithm
   // dependency is intended: even when initialization still succeeds, the start value (a guess) is
   // never actually used to initialize the variable.
   for baseCref in cyclicBaseCrefs loop
-    Error.addCompilerWarning("Initialization start-value cycle: the start attribute of '" +
-      ComponentReferenceBasics.printComponentRefStr(baseCref) +
-      "' depends, directly or transitively, on the variable itself. The start attribute defines the " +
-      "initial value of '" + ComponentReferenceBasics.printComponentRefStr(baseCref) + "' and therefore " +
-      "cannot be computed from it, so this start value cannot be used to initialize the variable (see " +
-      "Modelica Specification section 4.9.6). This is possibly a modeling error; if unintended, give '" +
-      ComponentReferenceBasics.printComponentRefStr(baseCref) + "' a start value that does not depend on " +
-      "itself. Use the transformational debugger to inspect the dependency chain.");
+    BackendDAEUtil.warnStartValueCycle(baseCref);
   end for;
   // ticket #15433: a $START.x->x cycle is NECESSARY but NOT SUFFICIENT to need the degree-1
   // forcing. Such a cycle is always an ill-posed start value (the start attribute of x cannot be

@@ -6,12 +6,12 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 usage() {
   cat <<EOF
-Usage: $0 --omc=/full/path/to/omc [--workdir=/path/to/workdir] [--simCodeTarget=C|Cpp] [--help]
+Usage: $0 --omc=/full/path/to/omc [--workdir=/path/to/workdir] [--simCodeTarget=C|C+Rust|Cpp] [--help]
 
 Options:
   --omc           Full path to the omc executable. REQUIRED.
   --workdir       Working directory where to perform the sanity test. Default: current directory
-  --simCodeTarget Sim code target to use: C or Cpp, default: C
+  --simCodeTarget Sim code target to use: C, C+Rust or Cpp, default: C
   --clean         true or false. If true, remove temp files. Default: true
   -h, --help      Show this help and exit
 EOF
@@ -45,12 +45,13 @@ case "$(printf '%s' "$CLEAN" | tr '[:upper:]' '[:lower:]')" in
   *) CLEAN="false";;
 esac
 
-# Normalize simCode target (accepts C or Cpp only)
+# Normalize simCode target (accepts C, C+Rust or Cpp only)
 lc_sim="$(printf '%s' "$SIM_CODE_TARGET" | tr '[:upper:]' '[:lower:]')"
 case "$lc_sim" in
   c) SIM_CODE_TARGET="C";;
+  c+rust) SIM_CODE_TARGET="C+Rust";;
   cpp) SIM_CODE_TARGET="Cpp";;
-  *) echo "Error: --simCodeTarget must be C or Cpp (got: $SIM_CODE_TARGET)"; usage; exit 1;;
+  *) echo "Error: --simCodeTarget must be C, C+Rust or Cpp (got: $SIM_CODE_TARGET)"; usage; exit 1;;
 esac
 
 # Normalize omc
@@ -71,7 +72,7 @@ echo "simCodeTarget: $SIM_CODE_TARGET"
 
 mkdir -p "$WORKDIR/.sanity-check/$SIM_CODE_TARGET"
 pushd "$WORKDIR/.sanity-check/$SIM_CODE_TARGET" >/dev/null
-cp "$SCRIPT_DIR/testSanity.mos" .
+cp "$SCRIPT_DIR/testSanity.mos" "$SCRIPT_DIR/testSanityCvode.mos" .
 
 # Check that a source FMU declares the sources it ships, and ships the ones it declares.
 #
@@ -164,13 +165,15 @@ if [ "$SIM_CODE_TARGET" = "Cpp" ]; then
   check_fmu_sources M_fmi3.fmu
 else
   set -x # echo on
-  "$OMC" --linearizationDumpLanguage=matlab testSanity.mos
+  "$OMC" --simCodeTarget="$SIM_CODE_TARGET" --linearizationDumpLanguage=matlab testSanity.mos
+  "$OMC" --simCodeTarget="$SIM_CODE_TARGET" testSanityCvode.mos
   run_model M
   run_model M -l=1.0
   set +x # echo off
   test -f linearized_model.m || { echo "Error: Expected file linearized_model.m not found"; exit 1; }
   test -f M.fmu || { echo "Error: Expected file M.fmu (FMI 2.0) not found"; exit 1; }
   test -f M_fmi3.fmu || { echo "Error: Expected file M_fmi3.fmu (FMI 3.0) not found"; exit 1; }
+  test -f M_cvode.fmu || { echo "Error: Expected file M_cvode.fmu (FMI 2.0 CS with CVODE) not found"; exit 1; }
   check_fmu_sources M.fmu
   check_fmu_sources M_fmi3.fmu
 fi

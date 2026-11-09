@@ -29,22 +29,30 @@
  */
 
 #include "sundials_error.h"
-
-#ifdef WITH_SUNDIALS
+#include <kinsol/kinsol.h>
+#include <sunmatrix/sunmatrix_sparse.h>
+#if !defined(OMC_FMI_RUNTIME) || defined(OMC_FMI_HAVE_CVODE)
+#include <cvode/cvode.h>
+#endif
+#if !defined(OMC_FMI_RUNTIME) || defined(OMC_FMI_HAVE_IDA)
+#include <idas/idas.h>
+#endif
 
 #define UNUSED(x) (void)(x)   /* Surpress compiler warnings for unused function input */
 
 /* Internal function prototypes */
+#if !defined(OMC_FMI_RUNTIME) || defined(OMC_FMI_HAVE_CVODE)
 static void checkReturnFlag_CV(int flag, const char *functionName);
 static void checkReturnFlag_CVLS(int flag, const char *functionName);
-#ifndef OMC_FMI_RUNTIME
+#endif
 static void checkReturnFlag_KIN(int flag, const char *functionName);
 static void checkReturnFlag_KINLS(int flag, const char *functionName);
+#if !defined(OMC_FMI_RUNTIME) || defined(OMC_FMI_HAVE_IDA)
 static void checkReturnFlag_IDA(int flag, const char *functionName);
 static void checkReturnFlag_IDALS(int flag, const char *functionName);
+#endif
 static void checkReturnFlag_SUNLS(SUNErrCode flag, const char *functionName);
 static void checkReturnFlag_SUNMatrix(SUNErrCode flag, const char *functionName);
-#endif
 
 /**
  * @brief Checks given flag and reports potential error.
@@ -66,19 +74,22 @@ void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
       throwStreamPrint(NULL, "##SUNDIALS##: Some error with value %i occurred in function %s.", flag, functionName);
     }
     break;
+#if !defined(OMC_FMI_RUNTIME) || defined(OMC_FMI_HAVE_CVODE)
   case SUNDIALS_CV_FLAG:
     checkReturnFlag_CV(flag, functionName);
     break;
   case SUNDIALS_CVLS_FLAG:
     checkReturnFlag_CVLS(flag, functionName);
     break;
-#ifndef OMC_FMI_RUNTIME
+#endif
+#if !defined(OMC_FMI_RUNTIME) || defined(OMC_FMI_HAVE_IDA)
   case SUNDIALS_IDA_FLAG:
     checkReturnFlag_IDA(flag, functionName);
     break;
   case SUNDIALS_IDALS_FLAG:
     checkReturnFlag_IDALS(flag, functionName);
     break;
+#endif
   case SUNDIALS_KIN_FLAG:
     checkReturnFlag_KIN(flag, functionName);
     break;
@@ -91,12 +102,12 @@ void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
   case SUNDIALS_MATRIX_FLAG:
     checkReturnFlag_SUNMatrix(flag, functionName);
     break;
-#endif
   default:
     throwStreamPrint(NULL, "In function checkReturnFlag_SUNDIALS: Invalid sundialsFlagType %u.", type);
   }
 }
 
+#if !defined(OMC_FMI_RUNTIME) || defined(OMC_FMI_HAVE_CVODE)
 /**
  * @brief Checks given CVODE flag and reports potential error.
  *
@@ -252,6 +263,8 @@ static void checkReturnFlag_CVLS(int flag, const char *functionName) {
   }
 }
 
+#endif
+
 /**
  * @brief Mute SUNDIALS' own output for a context.
  *
@@ -301,7 +314,6 @@ void sundialsErrorHandlerFunction(int line, const char *func, const char *file,
   }
 }
 
-#ifndef OMC_FMI_RUNTIME
 /**
  * @brief Checks given KINSOL flag and reports potential error.
  *
@@ -462,6 +474,7 @@ static void checkReturnFlag_KINLS(int flag, const char *functionName) {
   }
 }
 
+#if !defined(OMC_FMI_RUNTIME) || defined(OMC_FMI_HAVE_IDA)
 /**
  * @brief Checks given IDA/IDAS flag and reports potential error.
  *
@@ -769,6 +782,7 @@ static void checkReturnFlag_IDALS(int flag, const char *functionName) {
                      functionName, flag);
   }
 }
+#endif
 
 /**
  * @brief Checks given SUNLS flag and reports potential error.
@@ -879,71 +893,3 @@ void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel
     free(tmpBuffer);
   }
 }
-
-/**
- * @brief Error handler function given to KINSOL.
- *
- * @param errorCode   Error code from KINSOL
- * @param module      Name of the KINSOL module reporting the error.
- * @param function    Name of the function in which the error occurred.
- * @param msg         Error Message.
- * @param userData    Pointer to user data given with KINSetUserData.
- */
-void kinsolErrorHandlerFunction(int line, const char *func, const char *file,
-                                const char *msg, SUNErrCode err_code,
-                                void *err_user_data, SUNContext sunctx) {
-  /* Variables */
-  NLS_KINSOL_DATA* kinsolData;
-  DATA* data;
-  NONLINEAR_SYSTEM_DATA* nlsData;
-  long eqSystemNumber = -1;
-
-  UNUSED(sunctx);   /* Disables compiler warning */
-
-  if (err_user_data != NULL) {
-    kinsolData = (NLS_KINSOL_DATA *)err_user_data;
-    data = kinsolData->userData->data;
-    nlsData = kinsolData->userData->nlsData;
-    if (nlsData) {
-      eqSystemNumber = nlsData->equationIndex;
-    }
-  }
-
-  if (OMC_ACTIVE_STREAM(OMC_LOG_NLS)) {
-    if (err_user_data != NULL && eqSystemNumber > 0) {
-      warningStreamPrint(
-          OMC_LOG_NLS, 1, "kinsol failed for system %d",
-          modelInfoGetEquation(&data->modelData->modelDataXml, eqSystemNumber).id);
-    } else {
-      warningStreamPrint(
-          OMC_LOG_NLS, 1, "kinsol failed");
-    }
-
-    warningStreamPrint(OMC_LOG_NLS, 0,
-                       "[function] %s | [at] %s:%d | [error_code] %d",
-                       func, file, line, err_code);
-    /* Package level codes (KIN_* and friends) are not SUNErrCodes, so
-     * SUNGetErrMsg() only makes sense when SUNDIALS did not supply a message. */
-    warningStreamPrint(OMC_LOG_NLS, 0, "%s", msg ? msg : SUNGetErrMsg(err_code));
-
-    messageCloseWarning(OMC_LOG_NLS);
-  }
-}
-
-#endif /* #ifndef OMC_FMI_RUNTIME */
-
-#else
-
-/**
- * @brief Function not supported without WITH_SUNDIALS
- *
- * @param flag
- * @param type
- * @param functionName
- */
-void checkReturnFlag_SUNDIALS(int flag, int type, const char *functionName) {
-  throwStreamPrint(NULL, "No sundials/kinsol support activated.");
-}
-
-
-#endif /* WITH_SUNDIALS */

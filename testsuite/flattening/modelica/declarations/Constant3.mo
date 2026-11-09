@@ -5,13 +5,12 @@
 // Basic constant definitions.
 //
 
-class Constant3
+model Constant3
   constant Integer N = 3;
   Real x[N];
 equation
   x[N-1] = 2.0;
   x[{1,N}] = {1,time};
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Constant3;
 
 // Result:

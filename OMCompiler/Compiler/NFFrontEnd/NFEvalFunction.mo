@@ -188,7 +188,7 @@ algorithm
     case _
       guard not InstContext.inInstanceAPI(target.context)
       // For anything else, try to call the function via FFI.
-      then callExternalFunction(name, fn, args, ext_args, output_ref, ann);
+      then callExternalFunction(name, fn, args, ext_args, output_ref, ann, InstContext.inScripting(target.context));
 
     else
       algorithm
@@ -265,6 +265,13 @@ algorithm
   // Add inputs to the argument map. Inputs are never mutable.
   for i in inputs loop
     arg :: rest_args := rest_args;
+
+    // Clone inputs if using mutable parameters, since they might otherwise be
+    // mutated if they're used in mutable outputs/locals.
+    if mutableParams then
+      arg := Expression.clone(arg);
+    end if;
+
     UnorderedMap.add(i, arg, map);
 
     // If the argument is a function partial application, also add the function
@@ -1245,6 +1252,7 @@ function callExternalFunction
   input list<Expression> extArgs;
   input ComponentRef outputRef;
   input Option<SCode.Annotation> extAnnotation;
+  input Boolean inScript;
   input Boolean debug = false;
   output Expression result;
 protected
@@ -1261,7 +1269,7 @@ algorithm
   checkExtReturnValue(outputRef, info);
 
   pkg_name := InstNode.name(InstNode.libraryScope(InstNode.fromHandle(fn.node)));
-  fn_handle := loadLibraryFunction(pkg_name, extName, extAnnotation, debug, info);
+  fn_handle := loadLibraryFunction(pkg_name, extName, extAnnotation, inScript, debug, info);
 
   try
     (mapped_args, specs) := mapExternalArgs(fn, args, extArgs);
@@ -1338,12 +1346,13 @@ function loadLibraryFunction
   input String libName;
   input String fnName;
   input Option<SCode.Annotation> extAnnotation;
+  input Boolean inScript;
   input Boolean debug;
   input SourceInfo info;
   output Integer fnHandle = -1;
 protected
   SCode.Annotation ann;
-  list<String> libs = {}, dirs = {}, paths = {}, libs2 = {}, failures = {};
+  list<String> libs = {}, dirs = {}, includes = {}, paths = {}, libs2 = {}, failures = {};
   Boolean found = false;
   String installLibDir;
 algorithm
@@ -1358,6 +1367,7 @@ algorithm
     SOME(ann) := extAnnotation;
     libs := parseExternalAnnotation("Library", ann);
     dirs := parseExternalAnnotation("LibraryDirectory", ann);
+    includes := parseExternalAnnotation("Include", ann);
   end if;
 
   // Append the default path and remove any duplicates.
@@ -1416,9 +1426,17 @@ algorithm
     paths := installLibDir + "/" + lib :: paths;
   end for;
 
-  // If no Library annotation was given, append an empty string to search for
-  // functions linked into the compiler itself. A wasm build always searches it:
-  // the shared libraries it carries are what it has in place of those.
+  // If no Library annotation was given, search the functions linked into the
+  // compiler itself, and in a script also ModelicaExternalC, which e.g.
+  // ModelicaStrings_length is called from without one. A wasm build always
+  // searches the compiler: the shared libraries it carries are what it has in
+  // place of those.
+  if inScript and listEmpty(libs) and listEmpty(includes) and not Autoconf.isWasm then
+    for lib in {"ModelicaExternalC", "libModelicaExternalC"} loop
+      paths := (installLibDir + "/ffi/" + lib + Autoconf.dllExt) :: paths;
+    end for;
+  end if;
+
   if listEmpty(libs) or Autoconf.isWasm then
     paths := "" :: paths;
   end if;

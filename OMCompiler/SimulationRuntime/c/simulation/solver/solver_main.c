@@ -48,7 +48,6 @@
 #include "simulation/solver/external_input.h"
 #include "synchronous.h"
 #include "linearSystem.h"
-#include "sym_solver_ssc.h"
 #include "gbode_main.h"
 #include "gbode_util.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
@@ -72,19 +71,7 @@
 
 double** work_states;
 
-typedef struct RK4_DATA
-{
-  double** work_states;
-  int work_states_ndims;
-  const double *b;
-  const double *c;
-  double h;
-}RK4_DATA;
-
-
 static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo);
-static int rungekutta_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
-static int sym_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 
 #ifdef OMC_HAVE_IPOPT
 static int ipopt_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
@@ -100,11 +87,6 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   {
   case S_EULER:
     retVal = euler_ex_step(data, solverInfo);
-    if(omc_flag[FLAG_SOLVER_STEPS])
-      data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
-    return retVal;
-  case S_RUNGEKUTTA:
-    retVal = rungekutta_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
     return retVal;
@@ -129,7 +111,6 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
     return retVal;
 #endif
-#ifdef WITH_SUNDIALS
   case S_IDA:
     retVal = ida_solver_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
@@ -137,17 +118,6 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     return retVal;
   case S_CVODE:
     retVal = cvode_solver_step(data, threadData, solverInfo);
-    if(omc_flag[FLAG_SOLVER_STEPS])
-      data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
-    return retVal;
-#endif
-  case S_SYM_SOLVER:
-    retVal = sym_solver_step(data, threadData, solverInfo);
-    if(omc_flag[FLAG_SOLVER_STEPS])
-      data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
-    return retVal;
-  case S_SYM_SOLVER_SSC:
-    retVal = sym_solver_ssc_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
     return retVal;
@@ -172,7 +142,6 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
 int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   int retValue = 0;
-  int i;
 
   SIMULATION_INFO *simInfo = data->simulationInfo;
 
@@ -192,44 +161,12 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
 
   switch (solverInfo->solverMethod)
   {
-  case S_SYM_SOLVER:
-  case S_EULER:
-  case S_QSS: break;
-  case S_SYM_SOLVER_SSC:
-  {
-    allocateSymSolverSsc(solverInfo, data->modelData->nStates);
-    break;
-  }
+  case S_EULER: break;
   case S_GBODE:
   {
     if (gbode_allocateData(data, threadData, solverInfo) != 0) {
       throwStreamPrint(threadData, "Failed to allocate memory for generic multigrid solver.");
     }
-    break;
-  }
-  case S_RUNGEKUTTA:
-  {
-    /* Allocate RK work arrays */
-
-    static const int rungekutta_s = 4;
-    static const double rungekutta_b[4] = { 1.0 / 6.0, 1.0 / 3.0, 1.0 / 3.0, 1.0 / 6.0 };
-    static const double rungekutta_c[4] = { 0.0, 0.5, 0.5, 1.0 };
-
-    static const int heun_s = 2;
-    static const double heun_b[2] = { 1.0 / 2.0, 1.0 / 2.0 };
-    static const double heun_c[2] = { 0.0, 1.0 };
-
-    RK4_DATA* rungeData = (RK4_DATA*) malloc(sizeof(RK4_DATA));
-
-    rungeData->work_states_ndims = rungekutta_s;
-    rungeData->b = rungekutta_b;
-    rungeData->c = rungekutta_c;
-
-    rungeData->work_states = (double**) malloc((rungeData->work_states_ndims + 1) * sizeof(double*));
-    for (i = 0; i < rungeData->work_states_ndims + 1; i++) {
-      rungeData->work_states[i] = (double*) calloc(data->modelData->nStates, sizeof(double));
-    }
-    solverInfo->solverData = rungeData;
     break;
   }
 #if !defined(OMC_MINIMAL_RUNTIME)
@@ -250,7 +187,6 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     break;
   }
 #endif
-#ifdef WITH_SUNDIALS
   case S_IDA:
   {
     IDA_SOLVER* idaData = NULL;
@@ -267,11 +203,10 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     infoStreamPrint(OMC_LOG_SOLVER, 0, "Initializing CVODE ODE Solver");
     cvodeData = (CVODE_SOLVER*) calloc(1, sizeof(CVODE_SOLVER));
     assertStreamPrint(threadData, cvodeData != NULL, "Out of memory");
-    retValue = cvode_solver_initial(data, threadData, solverInfo, cvodeData, 0 /* not FMI */);
+    retValue = cvode_solver_initial(data, threadData, solverInfo, cvodeData);
     solverInfo->solverData = cvodeData;
     break;
   }
-#endif
   default:
     errorStreamPrint(OMC_LOG_SOLVER, 0, "Solver %s disabled on this configuration", SOLVER_METHOD_NAME[solverInfo->solverMethod]);
     return 1;
@@ -304,12 +239,10 @@ int updateSolverNominals(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     dassl_setNominals(data, solverInfo->solverData);
     break;
 #endif
-#ifdef WITH_SUNDIALS
   case S_IDA:
     return ida_solver_setNominals(data, threadData, solverInfo->solverData);
   case S_CVODE:
     return cvode_solver_setNominals(data, threadData, solverInfo->solverData);
-#endif
   default:
     break;
   }
@@ -327,26 +260,12 @@ int updateSolverNominals(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
 int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
 {
   int retValue = 0;
-  int i;
 
   freeList(solverInfo->eventLst);
   /* deintialize solver related workspace */
   switch (solverInfo->solverMethod)
   {
-  case S_EULER:
-  case S_SYM_SOLVER:
-  case S_QSS: break;
-  case S_SYM_SOLVER_SSC:
-    freeSymSolverSsc(solverInfo);
-    break;
-  case S_RUNGEKUTTA:
-    /* free RK work arrays */
-    for(i = 0; i < ((RK4_DATA*)(solverInfo->solverData))->work_states_ndims + 1; i++) {
-      free(((RK4_DATA*)(solverInfo->solverData))->work_states[i]);
-    }
-    free(((RK4_DATA*)(solverInfo->solverData))->work_states);
-    free((RK4_DATA*)solverInfo->solverData);
-    break;
+  case S_EULER: break;
   case S_GBODE:
     gbode_freeData(data, solverInfo->solverData);
     solverInfo->solverData = NULL;
@@ -363,7 +282,6 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     /*destroyIpopt(solverInfo);*/
     break;
 #endif
-#ifdef WITH_SUNDIALS
   case S_IDA:
     /* free work arrays */
     ida_solver_deinitial(solverInfo->solverData);
@@ -372,7 +290,6 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     /* free work arrays */
     cvode_solver_deinitial(solverInfo->solverData);
     break;
-#endif
   default:
     throwStreamPrint(NULL, "Unknown solver %u encountered. Possibly leaking memory!", solverInfo->solverMethod);
   }
@@ -419,9 +336,7 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
   /* try */
   {
     int success = 0;
-#if !defined(OMC_EMCC)
     OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
     /* A raised error is reported by the catch below. */
     if (initialization(data, threadData, init_initMethod, init_file, init_time) && !OMC_ERROR_RAISED())
     {
@@ -441,9 +356,7 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
     }
 
     if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
-#if !defined(OMC_EMCC)
     OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
 
     if (!success)
     {
@@ -539,8 +452,7 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     infoStreamPrint(OMC_LOG_STATS, 0, "%5ld time events", solverInfo->sampleEvents);
     messageClose(OMC_LOG_STATS);
 
-    if(S_OPTIMIZATION == solverInfo->solverMethod || /* skip solver statistics for optimization */
-       S_QSS == solverInfo->solverMethod) /* skip also for qss, since not available*/
+    if(S_OPTIMIZATION == solverInfo->solverMethod) /* skip solver statistics for optimization */
     {
     }
     else
@@ -671,9 +583,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
     infoStreamPrint(OMC_LOG_STDOUT, 0, "start time: %f, stop time: %f, integrator step size: %f",simInfo->startTime, simInfo->stopTime, simInfo->stepSize);
     messageCloseWarning(OMC_LOG_STDOUT);
   }
-#if !defined(OMC_EMCC)
     OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
 
   /*  initialize external input structure */
   externalInputallocate(data);
@@ -737,20 +647,6 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
       data->localData[0]->timeValue = simInfo->stopTime;
       overwriteOldSimulationData(data);
       retVal = finishSimulation(data, threadData, &solverInfo, outputVariablesAtEnd);
-    } else if(S_QSS == solverInfo.solverMethod) {
-      /* starts the simulation main loop - special solvers */
-      sim_result.emit(&sim_result,data,threadData);
-
-      /* overwrite the whole ring-buffer with initialized values */
-      overwriteOldSimulationData(data);
-
-      infoStreamPrint(OMC_LOG_SOLVER, 0, "Start numerical integration (startTime: %g, stopTime: %g)", simInfo->startTime, simInfo->stopTime);
-      retVal = data->callback->performQSSSimulation(data, threadData, &solverInfo);
-      omc_alloc_interface.collect_a_little();
-
-      /* terminate the simulation */
-      finishSimulation(data, threadData, &solverInfo, outputVariablesAtEnd);
-      omc_alloc_interface.collect_a_little();
     } else {
       /* starts the simulation main loop - standard solver interface */
       if(omc_flag[FLAG_SOLVER_STEPS])
@@ -769,7 +665,6 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
       retVal = data->callback->performSimulation(data, threadData, &solverInfo);
       omc_alloc_interface.collect_a_little();
       /* terminate the simulation */
-      //if (solverInfo.solverMethod == S_SYM_SOLVER_SSC) data->callback->symbolicInlineSystems(data, threadData, 0, 2);
       finishSimulation(data, threadData, &solverInfo, outputVariablesAtEnd);
       omc_alloc_interface.collect_a_little();
     }
@@ -786,9 +681,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
 #endif
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
 
-#if !defined(OMC_EMCC)
     OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
 
   /*  free external input data */
   externalInputFree(data);
@@ -829,123 +722,6 @@ static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo)
   /* function ODE evaluation is done directly after this function */
   solverInfo->solverStatsTmp.nCallsODE += 1;
 
-  if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
-
-  return 0;
-}
-
-/***************************************    SYM_SOLVER     *********************************/
-static int sym_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo){
-  int retVal = 0, i;
-
-  modelica_integer nStates = data->modelData->nStates;
-  SIMULATION_DATA *sData = data->localData[0];
-  SIMULATION_DATA *sDataOld = data->localData[1];
-  modelica_real* stateDer = sDataOld->realVars + data->modelData->nStates;
-
-  if (solverInfo->currentStepSize >= DASSL_STEP_EPS){
-    /* time */
-    solverInfo->currentTime = sDataOld->timeValue + solverInfo->currentStepSize;
-    sData->timeValue = solverInfo->currentTime;
-    /* update dt */
-    data->simulationInfo->inlineData->dt = solverInfo->currentStepSize;
-    /* copy old states to workspace */
-    memcpy(data->simulationInfo->inlineData->algOldVars, sDataOld->realVars, nStates * sizeof(double));
-    memcpy(sData->realVars, sDataOld->realVars, nStates * sizeof(double));
-
-    /* read input vars */
-    externalInputUpdate(data);
-    data->callback->input_function(data, threadData);
-    retVal = data->callback->symbolicInlineSystems(data, threadData);
-
-    if(retVal != 0){
-      return -1;
-    }
-
-
-    /* update der(x) */
-    for(i=0; i<nStates; ++i)
-    {
-      stateDer[i] = (sData->realVars[i]-data->simulationInfo->inlineData->algOldVars[i])/solverInfo->currentStepSize;
-    }
-
-    /* save stats */
-    /* steps */
-    solverInfo->solverStatsTmp.nStepsTaken += 1;
-    /* function ODE evaluation is done directly after this */
-    solverInfo->solverStatsTmp.nCallsODE += 1;
-  }
-  else
-  /* in case desired step size is too small */
-  {
-    infoStreamPrint(OMC_LOG_SOLVER, 0, "Desired step to small try next one");
-    infoStreamPrint(OMC_LOG_SOLVER, 0, "Interpolate linear");
-
-    /* explicit euler step*/
-    for(i = 0; i < nStates; i++)
-    {
-      sData->realVars[i] = sDataOld->realVars[i] + stateDer[i] * solverInfo->currentStepSize;
-    }
-    sData->timeValue = solverInfo->currentTime + solverInfo->currentStepSize;
-    solverInfo->currentTime = sData->timeValue;
-  }
-  return retVal;
-}
-
-/***************************************    RK4      ***********************************/
-static int rungekutta_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
-{
-  RK4_DATA *rk = ((RK4_DATA*)(solverInfo->solverData));
-  double** k = rk->work_states;
-  double sum;
-  int i,j;
-  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
-  SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
-  modelica_real* stateDer = sData->realVars + data->modelData->nStates;
-  modelica_real* stateDerOld = sDataOld->realVars + data->modelData->nStates;
-
-  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
-
-  solverInfo->currentTime = sDataOld->timeValue + solverInfo->currentStepSize;
-
-  /* We calculate k[0] before returning from this function.
-   * We only want to calculate f() 4 times per call */
-  memcpy(k[0], stateDerOld, data->modelData->nStates*sizeof(modelica_real));
-
-  for (j = 1; j < rk->work_states_ndims; j++)
-  {
-    for(i = 0; i < data->modelData->nStates; i++)
-    {
-      sData->realVars[i] = sDataOld->realVars[i] + solverInfo->currentStepSize * rk->c[j] * k[j - 1][i];
-    }
-    sData->timeValue = sDataOld->timeValue + rk->c[j] * solverInfo->currentStepSize;
-    if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
-    /* read input vars */
-    externalInputUpdate(data);
-    data->callback->input_function(data, threadData);
-    /* eval ode equations */
-    data->callback->functionODE(data, threadData);
-    if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
-    memcpy(k[j], stateDer, data->modelData->nStates*sizeof(modelica_real));
-
-  }
-
-  for(i = 0; i < data->modelData->nStates; i++)
-  {
-    sum = 0;
-    for(j = 0; j < rk->work_states_ndims; j++)
-    {
-      sum = sum + rk->b[j] * k[j][i];
-    }
-    sData->realVars[i] = sDataOld->realVars[i] + solverInfo->currentStepSize * sum;
-  }
-  sData->timeValue = solverInfo->currentTime;
-
-  /* save stats */
-  /* steps */
-  solverInfo->solverStatsTmp.nStepsTaken += 1;
-  /* function ODE evaluation is done directly after this */
-  solverInfo->solverStatsTmp.nCallsODE += rk->work_states_ndims+1;
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
 
   return 0;

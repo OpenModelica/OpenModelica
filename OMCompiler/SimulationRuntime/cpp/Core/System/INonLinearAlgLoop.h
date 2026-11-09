@@ -99,6 +99,10 @@ public:
   virtual void setUseSparseFormat(bool value) = 0;
   virtual float queryDensity() = 0;
 
+  /// Provide the structural non-zeros (row, column) of the Jacobian of the residuals with
+  /// respect to the iteration variables for the current sizes; false if not available
+  virtual bool getSparsityPattern(std::vector<std::pair<int, int> >& entries) { return false; }
+
   /*/// Fügt das übergebene Objekt als Across-Kante hinzu
   void addAcrossEdge(IObject& new_obj);
 

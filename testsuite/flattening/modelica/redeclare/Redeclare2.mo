@@ -4,22 +4,21 @@
 //
 // Replaceable classes.
 
-class A
+model A
   Real x;
 equation
   x = 1.0;
 end A;
 
-class B
+model B
   Real x,y;
 equation
   y = x;
 end B;
 
-class Redeclare2
-  replaceable class Q = A;
+model Redeclare2
+  replaceable model Q = A;
   Q x;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Redeclare2;
 
 // Result:

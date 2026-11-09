@@ -5,12 +5,11 @@
 // Tests fix for bug #1210: http://openmodelica.ida.liu.se:8080/cb/issue/1210
 //
 
-class bug1210
+model bug1210
   constant Real i[2,2] = transpose({{1.1,2.2},{3.3,4.4}});
   Real r;
 equation
   r = i[2,2];
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end bug1210;
 
 // Result:

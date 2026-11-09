@@ -1,0 +1,51 @@
+// name: subscriptDependency
+// keywords: NewBackend, adjacency, partitioning, subscript
+// status: correct
+//
+// y depends on idx through the subscript of the parameter table val. The
+// dependency was missing, the initialization sorted y before idx and the
+// partitioning split the when-equation, so y lagged one event behind idx.
+
+loadString("
+model subscriptDependency
+  function getIndex
+    input Real t;
+    output Integer k;
+  algorithm
+    k := if t < 0.25 then 1 elseif t < 0.6 then 2 else 3;
+  end getIndex;
+  parameter Integer val[3, 1] = {{1}, {3}, {5}};
+  Integer y[1];
+  Integer idx(fixed = false);
+  Integer u = y[1];
+initial equation
+  idx = getIndex(time);
+  y[1] = val[idx, 1];
+equation
+  when {sample(0.25, 1), sample(0.6, 1)} then
+    idx = getIndex(time);
+    y[1] = val[idx, 1];
+  end when;
+end subscriptDependency;
+"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(subscriptDependency); getErrorString();
+val(u, 0); val(u, 0.4); val(u, 0.9);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "subscriptDependency_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'subscriptDependency', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 3.0
+// 5.0
+// endResult

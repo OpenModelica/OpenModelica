@@ -1,0 +1,82 @@
+// name:     fmi_tunable_parameters
+// keywords: FMI 2.0 3.0 export tunable parameter
+// status:   correct
+// teardown_command: rm -rf fmi_tunable_parameters_2.fmu fmi_tunable_parameters_3.fmu fmi_tunable_parameters*.fmutmp/ fmi_tunable_parameters*_info.json fmi_tunable_parameters_*.log fmi_tunable_parameters_*.txt fmi_tunable_parameters_*_FMU.libs fmi_tunable_parameters_*_FMU.makefile fmi_tunable_parameters_*_external_functions.json
+//
+// A parameter with a literal binding is tunable, and what is calculated from it
+// is updated when it changes (#17652). k feeds a parameter of the initial
+// system and s a sample interval, so they stay fixed. The nominal of T follows
+// T_nom.
+
+loadString("
+model fmi_tunable_parameters
+  parameter Real R_set = 1;
+  parameter Real R = 2*R_set;
+  parameter Real C = 4000;
+  parameter Real P = 10;
+  parameter Real T_ambient = 20;
+  parameter Real k = 2;
+  parameter Real q(fixed = false);
+  parameter Real s = 1000;
+  parameter Real T_nom = 50;
+  Real T(start = 20, fixed = true, nominal = T_nom);
+  discrete Real n(start = 0, fixed = true);
+initial equation
+  q = 3*k;
+equation
+  C*der(T) = P - (T - T_ambient)/R;
+  when sample(0, s) then
+    n = pre(n) + q;
+  end when;
+end fmi_tunable_parameters;
+"); getErrorString();
+buildModelFMU(fmi_tunable_parameters, version="2.0", fmuType="me_cs", fileNamePrefix="fmi_tunable_parameters_2"); getErrorString();
+buildModelFMU(fmi_tunable_parameters, version="3.0", fmuType="me_cs", fileNamePrefix="fmi_tunable_parameters_3"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi_tunable_parameters.py fmi_tunable_parameters_2.fmu fmi_tunable_parameters_2.txt", "fmi_tunable_parameters_2.log"); getErrorString();
+readFile("fmi_tunable_parameters_2.txt");
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi_tunable_parameters.py fmi_tunable_parameters_3.fmu fmi_tunable_parameters_3.txt", "fmi_tunable_parameters_3.log"); getErrorString();
+readFile("fmi_tunable_parameters_3.txt");
+
+// Result:
+// true
+// ""
+// "fmi_tunable_parameters_2.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// "fmi_tunable_parameters_3.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "C: parameter tunable
+// R: calculatedParameter tunable
+// R_set: parameter tunable
+// k: parameter fixed
+// q: calculatedParameter fixed
+// s: parameter fixed
+// CS set R_set=0.5: ok, T=29.94 R=1
+// CS set R=1: error, T=38.38 R=2
+// CS set k=1: error, T=38.38 R=2
+// ME set R_set=0.5 in continuous-time mode: error, in event mode: ok, T=29.93 R=1
+// rolled back: R_set=1 R=2
+// set before init: R_set=0.25 R=0.5
+// "
+// 0
+// ""
+// "C: parameter tunable
+// R: calculatedParameter tunable
+// R_set: parameter tunable
+// k: parameter fixed
+// q: calculatedParameter fixed
+// s: parameter fixed
+// CS set R_set=0.5: ok, T=29.94 R=1
+// CS set R=1: error, T=38.38 R=2
+// CS set k=1: error, T=38.38 R=2
+// ME set R_set=0.5 in continuous-time mode: error, in event mode: ok, T=29.93 R=1
+// T_nom=100: nominals changed: True, nominal(T)=100
+// rolled back: R_set=1 R=2
+// set before init: R_set=0.25 R=0.5
+// "
+// endResult

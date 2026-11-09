@@ -14,7 +14,6 @@ end A;
 model ShortClassdefExtends1
   model D = A;
   extends D.B;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ShortClassdefExtends1;
 
 // Result:

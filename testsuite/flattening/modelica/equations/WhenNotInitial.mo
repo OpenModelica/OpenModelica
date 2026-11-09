@@ -6,7 +6,6 @@ equation
   when not initial() then
     r=1;
   end when;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WhenNotInitial;
 
 // Result:

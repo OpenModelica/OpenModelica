@@ -212,7 +212,7 @@ public constant ErrorTypes.Message MATRIX_EXP_ROW_SIZE = ErrorTypes.MESSAGE(66, 
 public constant ErrorTypes.Message OPERAND_BUILTIN_TYPE = ErrorTypes.MESSAGE(67, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Operand of %s in component %s must be builtin-type in %s.");
 public constant ErrorTypes.Message WRONG_TYPE_OR_NO_OF_ARGS = ErrorTypes.MESSAGE(68, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  "Wrong type or wrong number of arguments to %s (in component %s).");
+  "Wrong type or wrong number of arguments to %s.");
 public constant ErrorTypes.Message DIFFERENT_DIM_SIZE_IN_ARGUMENTS = ErrorTypes.MESSAGE(69, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Different dimension sizes in arguments to %s in component %s.");
 public constant ErrorTypes.Message LOOKUP_IMPORT_ERROR = ErrorTypes.MESSAGE(70, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -226,7 +226,7 @@ public constant ErrorTypes.Message ARGUMENT_MUST_BE_DISCRETE_VAR = ErrorTypes.ME
 public constant ErrorTypes.Message TYPE_MUST_BE_SIMPLE = ErrorTypes.MESSAGE(74, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Type in %s must be simple type in component %s.");
 public constant ErrorTypes.Message ARGUMENT_MUST_BE_VARIABLE = ErrorTypes.MESSAGE(75, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  "%s argument to %s in component %s must be a variable.");
+  "%s argument to %s must be a variable.");
 public constant ErrorTypes.Message NO_MATCHING_FUNCTION_FOUND = ErrorTypes.MESSAGE(76, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "No matching function found for %s in component %s\ncandidates are %s");
 public constant ErrorTypes.Message NO_MATCHING_FUNCTION_FOUND_NO_CANDIDATE = ErrorTypes.MESSAGE(77, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -234,7 +234,7 @@ public constant ErrorTypes.Message NO_MATCHING_FUNCTION_FOUND_NO_CANDIDATE = Err
 public constant ErrorTypes.Message FUNCTION_COMPS_MUST_HAVE_DIRECTION = ErrorTypes.MESSAGE(78, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Component %s in function is neither input nor output.");
 public constant ErrorTypes.Message FUNCTION_SLOT_ALREADY_FILLED = ErrorTypes.MESSAGE(79, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  "Slot %s already filled in a function call in component %s.");
+  "Slot %s is already filled in call of %s.");
 public constant ErrorTypes.Message NO_SUCH_PARAMETER = ErrorTypes.MESSAGE(80, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Function %s has no parameter named %s.");
 public constant ErrorTypes.Message CONSTANT_OR_PARAM_WITH_NONCONST_BINDING = ErrorTypes.MESSAGE(81, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -242,9 +242,9 @@ public constant ErrorTypes.Message CONSTANT_OR_PARAM_WITH_NONCONST_BINDING = Err
 public constant ErrorTypes.Message WRONG_DIMENSION_TYPE = ErrorTypes.MESSAGE(82, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Subscript %s of type %s is not a subtype of Integer, Boolean or enumeration.");
 public constant ErrorTypes.Message TYPE_MISMATCH_IF_EXP = ErrorTypes.MESSAGE(83, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  "Type mismatch in if-expression in component %s. True branch: %s has type %s, false branch: %s has type %s.");
+  "Type mismatch in if-expression. True branch: %s has type %s, false branch: %s has type %s.");
 public constant ErrorTypes.Message UNRESOLVABLE_TYPE = ErrorTypes.MESSAGE(84, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  "Cannot resolve type of expression %s. The operands have types %s in component %s.");
+  "Cannot resolve type of expression %s. The operands have types %s.");
 public constant ErrorTypes.Message INCOMPATIBLE_TYPES = ErrorTypes.MESSAGE(85, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Incompatible argument types to operation %s in component %s, left type: %s, right type: %s");
 public constant ErrorTypes.Message NON_ENCAPSULATED_CLASS_ACCESS = ErrorTypes.MESSAGE(86, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -438,7 +438,7 @@ public constant ErrorTypes.Message INVALID_TYPE_PREFIX = ErrorTypes.MESSAGE(179,
 public constant ErrorTypes.Message LINEAR_SYSTEM_INVALID = ErrorTypes.MESSAGE(180, ErrorTypes.SYMBOLIC(), ErrorTypes.ERROR(),
   "Linear solver (%s) returned invalid input for linear system %s.");
 public constant ErrorTypes.Message LINEAR_SYSTEM_SINGULAR = ErrorTypes.MESSAGE(181, ErrorTypes.SYMBOLIC(), ErrorTypes.WARNING(),
-  "The linear system: %1\n might be structurally or numerically singular for variable %3 since U(%2,%2) = 0.0. It might be hard to solve. Compilation continues anyway.");
+  "The linear system:\n%1\n might be structurally or numerically singular for variable %3 since U(%2,%2) = 0.0. It might be hard to solve. Compilation continues anyway.");
 public constant ErrorTypes.Message EMPTY_ARRAY = ErrorTypes.MESSAGE(182, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Array constructor may not be empty.");
 public constant ErrorTypes.Message LOAD_MODEL_DIFFERENT_VERSIONS = ErrorTypes.MESSAGE(183, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
@@ -1008,12 +1008,6 @@ public constant ErrorTypes.Message NON_STANDARD_OPERATOR_CLASS_DIRECTORY = Error
   "classDirectory() is a non-standard operator that was replaced by Modelica.Utilities.Files.loadResource(uri) before it was added to the language specification.");
 public constant ErrorTypes.Message PACKAGE_DUPLICATE_CHILDREN = ErrorTypes.MESSAGE(540, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "The same class is defined in multiple files: %s.");
-public constant ErrorTypes.Message INTEGER_ENUMERATION_CONVERSION_WARNING = ErrorTypes.MESSAGE(541, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
-  "Integer (%s) to enumeration (%s) conversion is not valid Modelica, please use enumeration constant (%s) instead.");
-public constant ErrorTypes.Message INTEGER_ENUMERATION_OUT_OF_RANGE = ErrorTypes.MESSAGE(542, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  "The Integer to %s conversion failed, as the Integer %s is outside the range (1, ..., %s) of values corresponding to enumeration constants.");
-public constant ErrorTypes.Message INTEGER_TO_UNKNOWN_ENUMERATION = ErrorTypes.MESSAGE(543, ErrorTypes.TRANSLATION(), ErrorTypes.INTERNAL(),
-  "The Integer (%s) to enumeration conversion failed because information about the the enumeration type is missing.");
 public constant ErrorTypes.Message NORETCALL_INVALID_EXP = ErrorTypes.MESSAGE(544, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Expression %s is not a valid statement - only function calls are allowed.");
 public constant ErrorTypes.Message INVALID_FLAG_TYPE_STRINGS = ErrorTypes.MESSAGE(545, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
@@ -1108,6 +1102,10 @@ public constant ErrorTypes.Message UNITFUL_LITERAL_ABSOLUTE_VALUE = ErrorTypes.M
   "The unitful literal %s can only be converted to the unit \"%s\" of %s if it has an absoluteValue annotation.");
 public constant ErrorTypes.Message EVALUATED_ZERO_COEFFICIENT = ErrorTypes.MESSAGE(632, ErrorTypes.SYMBOLIC(), ErrorTypes.NOTIFICATION(),
   "Evaluated the parameters %s, since an equation would be solved by dividing by zero otherwise. Changing them requires recompiling the model.");
+public constant ErrorTypes.Message NON_CAUSAL_BLOCK_CONNECTOR = ErrorTypes.MESSAGE(633, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "Public connector %s in a block may only have variables that are input or output, but the following are neither: %s.");
+public constant ErrorTypes.Message OLD_FRONTEND_DEPRECATED = ErrorTypes.MESSAGE(634, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  "The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.");
 public constant ErrorTypes.Message NF_VECTOR_INVALID_DIMENSIONS = ErrorTypes.MESSAGE(586, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Invalid dimensions %s in %s, no more than one dimension may have size > 1.");
 public constant ErrorTypes.Message NF_ARRAY_TYPE_MISMATCH = ErrorTypes.MESSAGE(587, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -1160,8 +1158,6 @@ public constant ErrorTypes.Message NOTIFY_PKG_UPGRADE_DONE = ErrorTypes.MESSAGE(
   "Package upgraded successfully (SHA %s from %s).");
 public constant ErrorTypes.Message ERROR_PKG_INSTALL_NO_PACKAGE_MO = ErrorTypes.MESSAGE(611, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
   "After extracting %s, %s does not exist. Removing the failed installation.");
-public constant ErrorTypes.Message WARNING_PKG_CONFLICTING_VERSIONS = ErrorTypes.MESSAGE(612, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
-  "Conflicting versions for loading package %s: %s is to be installed, but another package requires version %s which is not provided by this version.");
 public constant ErrorTypes.Message NOTIFY_PKG_NO_INSTALL = ErrorTypes.MESSAGE(613, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
   "%s %s will not be installed since version %s is installed.");
 public constant ErrorTypes.Message DEPRECATED_FLAG = ErrorTypes.MESSAGE(614, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
@@ -1360,17 +1356,31 @@ public constant ErrorTypes.Message DUPLICATE_VARIABLE_ERROR = ErrorTypes.MESSAGE
 public constant ErrorTypes.Message ENCRYPTION_NOT_SUPPORTED = ErrorTypes.MESSAGE(7026, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "File not Found: %s. Compile OpenModelica with Encryption support.");
 public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_ME = ErrorTypes.MESSAGE(7027, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
-  "DAE mode (--daeMode) is not supported by the C simulation runtime, so it cannot build a Model Exchange FMU (fmuType=\"%s\") from it. Export with platforms={\"wasm\"}, whose runtime serves the residual form (as fmi-ls-dae for Model Exchange), or remove the --daeMode flag.");
+  "DAE mode (--daeMode) is not supported by the C simulation runtime for a Model Exchange FMU (fmuType=\"%s\"). Export a Co-Simulation FMU (fmuType=\"cs\"), export with platforms={\"wasm\"}, whose runtime serves the residual form (as fmi-ls-dae for Model Exchange), with --simCodeTarget=C+Rust for an FMI 3.0 Model Exchange FMU (as fmi-ls-dae), or remove the --daeMode flag.");
 public constant ErrorTypes.Message USER_CANCELLED = ErrorTypes.MESSAGE(7028, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "Operation cancelled by user.");
-public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_C_CS = ErrorTypes.MESSAGE(7030, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
-  "DAE mode (--daeMode) is not supported by the C simulation runtime, so it cannot build a Co-Simulation FMU either. Export with platforms={\"wasm\"}, whose runtime does support it, or remove the --daeMode flag.");
+public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_CS = ErrorTypes.MESSAGE(7030, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  "DAE mode (--daeMode) is not supported for a Co-Simulation FMU with --simCodeTarget=C+Rust. Export with --simCodeTarget=C, with platforms={\"wasm\"}, or remove the --daeMode flag.");
+public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_ME_DROPPED = ErrorTypes.MESSAGE(7036, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  "DAE mode (--daeMode) is not supported by the C simulation runtime for Model Exchange. Exporting Co-Simulation only.");
+public constant ErrorTypes.Message ERROR_PKG_CONFLICT = ErrorTypes.MESSAGE(7037, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  "No versions of %s %s and the libraries it uses can be used together:\n%s");
+public constant ErrorTypes.Message LOAD_MODEL_CONFLICT = ErrorTypes.MESSAGE(7038, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  "No versions of the libraries that %s uses can be loaded together:\n%s");
+public constant ErrorTypes.Message NOTIFY_LOAD_MODEL_CONVERSION = ErrorTypes.MESSAGE(7039, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
+  "%1 uses %2 %3, which is not available, but %2 %4 has a conversion from it. Use convertPackageToLibrary(%1, %2, \"%4\") to convert %1.");
 public constant ErrorTypes.Message ALARM_EXPIRED = ErrorTypes.MESSAGE(7031, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "Operation aborted: the time limit set by the alarm ran out.");
 public constant ErrorTypes.Message FMU_EXPORT_FMI_LS_DAE_DRAFT = ErrorTypes.MESSAGE(7032, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
   "The Model Exchange FMU carries a DAE formulation as fmi-ls-dae %s, implemented against the draft of %s (commit %s). fmi-ls-dae is not a released layered standard yet, so an importer written against another revision of the draft may not read the manifest.");
 public constant ErrorTypes.Message FMU_EXPORT_WASM_FMI1 = ErrorTypes.MESSAGE(7029, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "The wasm FMU export does not serve the deprecated FMI 1.0. Ask for version=\"2.0\" or version=\"3.0\", or drop \"wasm\" from platforms to export a C FMU.");
+public constant ErrorTypes.Message FMU_EXPORT_WASM_FMI2_AS_FMI3 = ErrorTypes.MESSAGE(7033, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  "No native platform was selected for the wasm FMU, so it is exported as FMI 3.0 (fmi-ls-wasm) instead of FMI 2.0. An FMI 2.0 FMU needs a native platform to load the wasm binary.");
+public constant ErrorTypes.Message FMU_EXPORT_FMI1_DEPRECATED = ErrorTypes.MESSAGE(7034, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  "FMI 1.0 export is deprecated and will be removed after OpenModelica 1.28.0 is released. Export FMI 2.0 or 3.0 instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.");
+public constant ErrorTypes.Message FMU_IMPORT_FMI1_DEPRECATED = ErrorTypes.MESSAGE(7035, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  "FMI 1.0 import is deprecated and will be removed after OpenModelica 1.28.0 is released. Import an FMI 2.0 or 3.0 FMU instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.");
 
 constant SourceInfo dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
 

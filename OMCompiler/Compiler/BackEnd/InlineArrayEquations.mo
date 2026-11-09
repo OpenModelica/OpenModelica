@@ -43,6 +43,7 @@ encapsulated package InlineArrayEquations
 public import BackendDAE;
 public import DAE;
 
+protected import Absyn;
 protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import DAEUtil;
@@ -137,30 +138,15 @@ algorithm
   (outEqnLst, outFound) := matchcontinue inEqn
     local
       DAE.ElementSource source;
-      DAE.Exp lhs, rhs, e1, e2;
+      DAE.Exp lhs, rhs;
       list<DAE.Exp> ea1, ea2;
       list<BackendDAE.Equation> eqns;
       BackendDAE.EquationAttributes attr;
 
     case BackendDAE.ARRAY_EQUATION(left = lhs, right = rhs, source = source, attr = attr)
       algorithm
-        if Expression.isArray(lhs) or Expression.isMatrix(lhs) then
-          ea1 := Expression.flattenArrayExpToList(lhs);
-        else
-          e1 := Expression.extendArrExp(lhs);
-          e1 := ExpressionSimplify.simplify(e1);
-          true := Expression.isArray(e1) or Expression.isMatrix(e1);
-          ea1 := Expression.flattenArrayExpToList(e1);
-        end if;
-
-        if Expression.isArray(rhs) or Expression.isMatrix(rhs) then
-          ea2 := Expression.flattenArrayExpToList(rhs);
-        else
-          e2 := Expression.extendArrExp(rhs);
-          e2 := ExpressionSimplify.simplify(e2);
-          true := Expression.isArray(e2) or Expression.isMatrix(e2);
-          ea2 := Expression.flattenArrayExpToList(e2);
-        end if;
+        ea1 := scalarizeArrayExp(lhs);
+        ea2 := scalarizeArrayExp(rhs);
 
         (_, eqns) := List.threadFold3(ea1, ea2, generateScalarArrayEqns2,
           source, attr, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
@@ -179,6 +165,44 @@ algorithm
     else (inEqn :: inAccEqnLst, false);
   end matchcontinue;
 end getScalarArrayEqns1;
+
+protected function scalarizeArrayExp
+  "Returns the scalar elements of an array expression, fails if the expression
+   can't be expanded. Array valued if-expressions and smooth/noEvent calls are
+   expanded element-wise, e.g. `if c then {a, b} else {d, e}` becomes
+   `{if c then a else d, if c then b else e}`."
+  input DAE.Exp inExp;
+  output list<DAE.Exp> outExps;
+algorithm
+  outExps := match inExp
+    local
+      DAE.Exp cond, e, e1, e2, p;
+      list<DAE.Exp> ea1, ea2;
+
+    case _ guard Expression.isArray(inExp) or Expression.isMatrix(inExp)
+    then Expression.flattenArrayExpToList(inExp);
+
+    case DAE.IFEXP(expCond = cond)
+      algorithm
+        ea1 := scalarizeArrayExp(inExp.expThen);
+        ea2 := scalarizeArrayExp(inExp.expElse);
+        true := listLength(ea1) == listLength(ea2);
+      then list(DAE.IFEXP(cond, e1, e2) threaded for e1 in ea1, e2 in ea2);
+
+    case DAE.CALL(path = Absyn.IDENT("smooth"), expLst = {p, e})
+    then list(Expression.makePureBuiltinCall("smooth", {p, e1}, Expression.typeof(e1)) for e1 in scalarizeArrayExp(e));
+
+    case DAE.CALL(path = Absyn.IDENT("noEvent"), expLst = {e})
+    then list(Expression.makePureBuiltinCall("noEvent", {e1}, Expression.typeof(e1)) for e1 in scalarizeArrayExp(e));
+
+    else
+      algorithm
+        e := Expression.extendArrExp(inExp);
+        e := ExpressionSimplify.simplify(e);
+        true := Expression.isArray(e) or Expression.isMatrix(e);
+      then Expression.flattenArrayExpToList(e);
+  end match;
+end scalarizeArrayExp;
 
 protected function generateScalarArrayEqns2
   input DAE.Exp inExp1;

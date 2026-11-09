@@ -14,9 +14,10 @@
 //! The codes are `SimFlags::solver_codes`; 0 means unset, and the enums below
 //! mirror `crate::simflags`, so neither may be renumbered alone.
 
-use core::sync::atomic::{AtomicU32, Ordering};
+use core::sync::atomic::{AtomicI32, AtomicU32, Ordering};
 
 use crate::atomic64::AtomicU64;
+use crate::simflags::SparseThresholds;
 
 /// `-nls`
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -51,7 +52,6 @@ pub enum Ls {
     Lapack,
     TotalPivot,
     Klu,
-    Umfpack,
     Lis,
 }
 
@@ -59,7 +59,6 @@ pub enum Ls {
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Lss {
     Klu,
-    Umfpack,
     Rsparse,
     Lis,
 }
@@ -69,7 +68,6 @@ pub enum Lss {
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Sparse {
     Klu,
-    Umfpack,
     Rsparse,
 }
 
@@ -77,10 +75,54 @@ static NLS: AtomicU32 = AtomicU32::new(0);
 static NLS_LS: AtomicU32 = AtomicU32::new(0);
 static LS: AtomicU32 = AtomicU32::new(0);
 static LSS: AtomicU32 = AtomicU32::new(0);
-/// `-nlssMinSize` / `-nlssMaxDensity`, C's `nonlinearSparseSolverMinSize` /
-/// `nonlinearSparseSolverMaxDensity`, at their defaults until a run sets them.
-static NLSS_MIN_SIZE: AtomicU32 = AtomicU32::new(1000);
-static NLSS_MAX_DENSITY: AtomicU64 = AtomicU64::new(0x3FB999999999999A); // 0.1
+/// `-lssMaxDensity` / `-lssMinSize` / `-nlssMaxDensity` / `-nlssMinSize`, at C's
+/// defaults until a run sets them.
+static LSS_MAX_DENSITY: AtomicU64 = AtomicU64::new(SparseThresholds::DEFAULT.lss_max_density.to_bits());
+static LSS_MIN_SIZE: AtomicI32 = AtomicI32::new(SparseThresholds::DEFAULT.lss_min_size);
+static LSS_GIVEN: AtomicU32 = AtomicU32::new(0);
+static NLSS_MAX_DENSITY: AtomicU64 = AtomicU64::new(SparseThresholds::DEFAULT.nlss_max_density.to_bits());
+static NLSS_MIN_SIZE: AtomicI32 = AtomicI32::new(SparseThresholds::DEFAULT.nlss_min_size);
+static NLSS_GIVEN: AtomicU32 = AtomicU32::new(0);
+
+pub fn set_sparse_thresholds(t: SparseThresholds) {
+    LSS_MAX_DENSITY.store(t.lss_max_density.to_bits(), Ordering::Relaxed);
+    LSS_MIN_SIZE.store(t.lss_min_size, Ordering::Relaxed);
+    LSS_GIVEN.store(t.lss_given as u32, Ordering::Relaxed);
+    NLSS_MAX_DENSITY.store(t.nlss_max_density.to_bits(), Ordering::Relaxed);
+    NLSS_MIN_SIZE.store(t.nlss_min_size, Ordering::Relaxed);
+    NLSS_GIVEN.store(t.nlss_given as u32, Ordering::Relaxed);
+}
+
+pub fn sparse_thresholds() -> SparseThresholds {
+    SparseThresholds {
+        lss_max_density: f64::from_bits(LSS_MAX_DENSITY.load(Ordering::Relaxed)),
+        lss_min_size: LSS_MIN_SIZE.load(Ordering::Relaxed),
+        lss_given: LSS_GIVEN.load(Ordering::Relaxed) != 0,
+        nlss_max_density: f64::from_bits(NLSS_MAX_DENSITY.load(Ordering::Relaxed)),
+        nlss_min_size: NLSS_MIN_SIZE.load(Ordering::Relaxed),
+        nlss_given: NLSS_GIVEN.load(Ordering::Relaxed) != 0,
+    }
+}
+
+/// The linear system format `-lssMaxDensity` / `-lssMinSize` ask for, if given.
+pub fn lss_override(size: usize, nnz: usize) -> Option<bool> {
+    let t = sparse_thresholds();
+    t.lss_given
+        .then(|| SparseThresholds::sparse(size, nnz, t.lss_max_density, t.lss_min_size))
+}
+
+pub fn nlss_given() -> bool {
+    NLSS_GIVEN.load(Ordering::Relaxed) != 0
+}
+
+/// `-ls` / `-lss` was given (code 0 is unset).
+pub fn ls_given() -> bool {
+    LS.load(Ordering::Relaxed) != 0
+}
+
+pub fn lss_given() -> bool {
+    LSS.load(Ordering::Relaxed) != 0
+}
 
 /// C's `newtonFTol` / `newtonXTol` / `maxStepFactor` (`model_help.c`), which
 /// `-newtonFTol` / `-newtonXTol` / `-newtonMaxStepFactor` move. The homotopy Newton
@@ -217,24 +259,22 @@ pub fn homotopy_on_first_try() -> bool {
 /// per run, and the runtime is single-threaded (as `nls`'s own roster).
 struct HomCell(core::cell::UnsafeCell<crate::simflags::HomTuning>);
 unsafe impl Sync for HomCell {}
-static HOM: HomCell = HomCell(core::cell::UnsafeCell::new(
-    crate::simflags::HomTuning {
-        adapt_bend: 0.5,
-        h_eps: 1e-5,
-        tau_dec: 10.0,
-        tau_dec_pred: 2.0,
-        tau_inc: 2.0,
-        tau_inc_threshold: 10.0,
-        tau_max: 10.0,
-        tau_min: 1e-4,
-        tau_start: 0.2,
-        max_lambda_steps: 0,
-        max_newton_steps: 20,
-        max_tries: 10,
-        orthogonal_backtrace: false,
-        neg_start_dir: false,
-    },
-));
+static HOM: HomCell = HomCell(core::cell::UnsafeCell::new(crate::simflags::HomTuning {
+    adapt_bend: 0.5,
+    h_eps: 1e-5,
+    tau_dec: 10.0,
+    tau_dec_pred: 2.0,
+    tau_inc: 2.0,
+    tau_inc_threshold: 10.0,
+    tau_max: 10.0,
+    tau_min: 1e-4,
+    tau_start: 0.2,
+    max_lambda_steps: 0,
+    max_newton_steps: 20,
+    max_tries: 10,
+    orthogonal_backtrace: false,
+    neg_start_dir: false,
+}));
 
 pub fn hom_tuning() -> crate::simflags::HomTuning {
     unsafe { *HOM.0.get() }
@@ -299,16 +339,17 @@ pub fn set_solvers(nls: u32, nls_ls: u32, ls: u32, lss: u32) {
     LSS.store(lss, Ordering::Relaxed);
 }
 
-/// Mirrors `BackendDAEUtil.useSparseSolver`, which chose this system's format.
+/// `SimCodeCodegenUtil.useSparseSolver` at the `-nlssMaxDensity` / `-nlssMinSize`
+/// thresholds.
 pub fn nls_use_sparse(size: usize, nnz: usize) -> bool {
-    let density = nnz as f64 / (size * size) as f64;
-    density < f64::from_bits(NLSS_MAX_DENSITY.load(Ordering::Relaxed))
-        || size > NLSS_MIN_SIZE.load(Ordering::Relaxed) as usize
+    let t = sparse_thresholds();
+    SparseThresholds::sparse(size, nnz, t.nlss_max_density, t.nlss_min_size)
 }
 
 pub fn apply_flags(f: &crate::simflags::SimFlags) {
     let (nls, nls_ls, ls, lss) = f.solver_codes();
     set_solvers(nls, nls_ls, ls, lss);
+    set_sparse_thresholds(crate::simflags::sparse_thresholds(f));
     let (ftol, xtol, msf) = crate::simflags::newton_tuning(f);
     set_newton_tuning(ftol, xtol, msf);
     set_max_warn(f.max_warn.unwrap_or(3));
@@ -322,9 +363,20 @@ pub fn apply_flags(f: &crate::simflags::SimFlags) {
     set_homotopy(steps, first);
     let h = crate::simflags::hom_tuning(f);
     set_homotopy_tuning(
-        h.adapt_bend, h.h_eps, h.tau_dec, h.tau_dec_pred, h.tau_inc, h.tau_inc_threshold,
-        h.tau_max, h.tau_min, h.tau_start, h.max_lambda_steps, h.max_newton_steps, h.max_tries,
-        h.orthogonal_backtrace as u32, h.neg_start_dir as u32,
+        h.adapt_bend,
+        h.h_eps,
+        h.tau_dec,
+        h.tau_dec_pred,
+        h.tau_inc,
+        h.tau_inc_threshold,
+        h.tau_max,
+        h.tau_min,
+        h.tau_start,
+        h.max_lambda_steps,
+        h.max_newton_steps,
+        h.max_tries,
+        h.orthogonal_backtrace as u32,
+        h.neg_start_dir as u32,
     );
 }
 
@@ -357,7 +409,6 @@ pub fn ls() -> Ls {
         2 => Ls::Lapack,
         3 => Ls::TotalPivot,
         4 if cfg!(sundials) => Ls::Klu,
-        5 if cfg!(sundials) => Ls::Umfpack,
         6 if cfg!(sundials) => Ls::Lis,
         _ => Ls::Default, // 0 unset, 1 default — C's dense default
     }
@@ -368,7 +419,6 @@ pub fn lss() -> Lss {
         5 if cfg!(sundials) => Lss::Lis,
         _ if !cfg!(sundials) => Lss::Rsparse,
         3 => Lss::Rsparse,
-        4 => Lss::Umfpack,
         _ => Lss::Klu, // 0 unset, 1 default, 2 klu — C's sparse default
     }
 }
@@ -394,7 +444,14 @@ mod tests {
         assert!(nls() == Nls::Kinsol);
         assert!(ls() == Ls::TotalPivot);
         assert!(lss() == Lss::Rsparse);
-        assert!(nls_ls() == if cfg!(sundials) { NlsLs::TotalPivot } else { NlsLs::Rsparse });
+        assert!(
+            nls_ls()
+                == if cfg!(sundials) {
+                    NlsLs::TotalPivot
+                } else {
+                    NlsLs::Rsparse
+                }
+        );
         set_solvers(0, 0, 0, 0);
     }
 }

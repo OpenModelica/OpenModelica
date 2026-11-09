@@ -16,13 +16,11 @@ end fn;
 encapsulated model Encapsulated4
   Real r1 = abs(-5.0);
   Real r2 = fn(-5.0);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Encapsulated4;
 
 // Result:
 // Error processing file: Encapsulated4.mo
-// [flattening/modelica/packages/Encapsulated4.mo:18:3-18:21:writable] Error: Class fn not found in scope Encapsulated4 (looking for a function or record).
-// Error: Error occurred while flattening model Encapsulated4
+// [flattening/modelica/packages/Encapsulated4.mo:18:3-18:21:writable] Error: Function fn not found in scope Encapsulated4.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

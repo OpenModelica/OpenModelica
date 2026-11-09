@@ -91,7 +91,7 @@ Install the following dependencies with your package manager:
 
 Parts of OpenModelica are written in Rust, so `cargo` and `rustc` are needed to
 build it: result files are read and written through `libomc_result`, and
-`--simCodeTarget=C` links the Rust simulation runtime.
+`--simCodeTarget=C+Rust` links the Rust simulation runtime.
 
 Any reasonably recent stable toolchain will do. The crates use the 2024 edition,
 so `rustc`/`cargo` 1.85 or newer:

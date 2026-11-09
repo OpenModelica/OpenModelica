@@ -5,13 +5,13 @@
 //  components with inner prefix references an outer component with
 //  the same name and one variable is generated for all of them.
 //
-class A
+model A
   outer Real TI;
-  class B
+  model B
     Real TI;
-    class C
+    model C
       Real TI;
-      class D
+      model D
   outer Real TI; //
       end D;
       D d;
@@ -20,13 +20,13 @@ class A
   end B;
   B b;
 end A;
-class E
+model E
   inner Real TI;
-  class F
+  model F
     inner Real TI;
-    class G
+    model G
       Real TI;
-      class H
+      model H
   A a;
       end H;
       H h;
@@ -35,13 +35,12 @@ class E
   end F;
   F f;
 end E;
-class I
+model I
   inner Real TI;
   E e;
   // e.f.g.h.a.TI, e.f.g.h.a.b.c.d.TI, and e.f.TI is the same variable
   // But e.f.TI, e.TI and TI are different variables
   A a; // a.TI, a.b.c.d.TI, and TI is the same variable
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end I;
 
 // Result:

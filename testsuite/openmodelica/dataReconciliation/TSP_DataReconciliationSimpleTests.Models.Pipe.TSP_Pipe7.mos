@@ -1,12 +1,11 @@
 // name:     TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe7
 // keywords: extraction algorithm
 // status:   correct
-// depends: ./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Pipe7_Inputs.csv
 // teardown_command: rm -rf TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe7 TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe7_* Reconciled_TSP_DataReconciliationSimpleTests_Models_Pipe_TSP_Pipe7.mo TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe7.html
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
-loadFile("TSP_DataReconciliationSimpleTests/package.mo");
+loadModel(TSP_DataReconciliationSimpleTests, {"4.0.0"});
 getErrorString();
 
 AnnotationNamedModifiers:=getAnnotationNamedModifiers(TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe7, "__OpenModelica_simulationFlags");
@@ -28,16 +27,11 @@ getErrorString();
 // true
 // ""
 // true
-// "Notification: Automatically loaded package ThermoSysPro 4.2 due to uses annotation from TSP_DataReconciliationSimpleTests.
-// Notification: Skipped loading package ModelicaDataReconciliationSimpleTests (4.0) using OPENMODELICALIBRARY (MODELICAPATH in the language specification) /home/j74082/Documents/Logiciels/OpenModelica/main_2/OpenModelica/testsuite/openmodelica/dataReconciliation:/home/j74082/Documents/Logiciels/OpenModelica/main_2/OpenModelica//libraries/.openmodelica/libraries (uses-annotation may be wrong).
-// Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
-// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
-// "
+// ""
 // {"lv", "eps", "s", "sx"}
 // "-reconcile "
 //
-// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Pipe7_Inputs.csv
+// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Pipe7_Inputs.csv
 //
 // ModelInfo: TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe7
 // ==========================================================================
@@ -1167,8 +1161,8 @@ getErrorString();
 //  Set_S has 19 equations and 19 variables
 //
 // record SimulationResult
-//     resultFile = "econcile",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Pipe7_Inputs.csv'",
+//     resultFile = "TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe7_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Pipe7_Inputs.csv'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // LOG_STDOUT        | info    | DataReconciliation Starting!
@@ -1176,21 +1170,21 @@ getErrorString();
 // LOG_STDOUT        | info    | DataReconciliation Completed!
 // "
 // end SimulationResult;
-// "[openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/BoundaryConditions/Sink.mo:17:3-18:84:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:39:3-40:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:41:3-42:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:39:3-40:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:41:3-42:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/Volumes/VolumeATh.mo:32:3-33:84:writable] Warning: Connector Ce1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/Volumes/VolumeATh.mo:34:3-35:82:writable] Warning: Connector Ce2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/Volumes/VolumeATh.mo:36:3-37:82:writable] Warning: Connector Cs1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/Volumes/VolumeATh.mo:38:3-39:84:writable] Warning: Connector Cs2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/BoundaryConditions/SourcePQ.mo:27:3-28:82:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// "[TSP_DataReconciliationSimpleTests 4.0.0/Components/BoundaryConditions/Sink.mo:17:3-18:84:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [TSP_DataReconciliationSimpleTests 4.0.0/Components/PressureLoss/SingularPressureLoss.mo:39:3-40:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [TSP_DataReconciliationSimpleTests 4.0.0/Components/PressureLoss/SingularPressureLoss.mo:41:3-42:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [TSP_DataReconciliationSimpleTests 4.0.0/Components/PressureLoss/SingularPressureLoss.mo:39:3-40:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [TSP_DataReconciliationSimpleTests 4.0.0/Components/PressureLoss/SingularPressureLoss.mo:41:3-42:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [TSP_DataReconciliationSimpleTests 4.0.0/Components/Volumes/VolumeATh.mo:32:3-33:84:writable] Warning: Connector Ce1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [TSP_DataReconciliationSimpleTests 4.0.0/Components/Volumes/VolumeATh.mo:34:3-35:82:writable] Warning: Connector Ce2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [TSP_DataReconciliationSimpleTests 4.0.0/Components/Volumes/VolumeATh.mo:36:3-37:82:writable] Warning: Connector Cs1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [TSP_DataReconciliationSimpleTests 4.0.0/Components/Volumes/VolumeATh.mo:38:3-39:84:writable] Warning: Connector Cs2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [TSP_DataReconciliationSimpleTests 4.0.0/Components/BoundaryConditions/SourcePQ.mo:27:3-28:82:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // "
 // "Variable to be Estimated ,Initial Measured Value ,Estimated Value ,Initial Uncertainty ,Estimated Uncertainty,Result of Local Test ,Local Quality  ,
 // volumeATh1.h,105000,107500,10000,7071.07,TRUE,0.353553,
 // singularPressureLoss2.h,110000,107500,10000,7071.07,TRUE,0.353553,
-// singularPressureLoss2.Q,99.3,0,1.91,0,FALSE,51.9895,
+// singularPressureLoss2.Q,99.3,0,1.91,2.0652e-08,FALSE,51.9895,
 // singularPressureLoss1.h,100000,100000,10000,10000,TRUE,0,
 // singularPressureLoss1.Q,100.3,0,1.96,0,FALSE,51.1735,
 // "

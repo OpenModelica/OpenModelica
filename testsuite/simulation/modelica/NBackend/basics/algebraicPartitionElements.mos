@@ -1,0 +1,67 @@
+// name: algebraicPartitionElements
+// keywords: NewBackend
+// status: correct
+// teardown_command: rm -f SplitArrayVariable SplitArrayVariable_* SplitArrayVariable.log
+//
+// Only y[1] is needed for der(x). The partitions get whole variables,
+// y must not be split into the ODE and an algebraic partition, otherwise
+// the ODE Jacobian misses the dependency on y[1].
+
+loadString("
+model SplitArrayVariable
+  Real x(start = 1, fixed = true);
+  Real y[2];
+equation
+  y[1] = x + x^3;
+  y[2] = cos(x);
+  der(x) = -1e4 * y[1];
+end SplitArrayVariable;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=backenddaeinfo"); getErrorString();
+simulate(SplitArrayVariable); getErrorString();
+val(y[2], 1);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "SplitArrayVariable_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'SplitArrayVariable', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+//  * Number of equations: 3 (3)
+//  * Number of variables: 3 (2)
+// Notification: Partition statistics after passing the back-end:
+//  * Number of ODE partitions: ..................... 1
+//  * Number of algebraic partitions: ............... 0
+//  * Number of ODE event partitions: ............... 0
+//  * Number of algebraic event partitions: ......... 0
+//  * Number of clocked partitions: ................. 0
+//  * Number of initial partitions: ................. 1
+//  * Number of initial(lambda=0) partitions: ....... 0
+// Notification: Variable statistics after passing the back-end:
+//  * Number of states: ............................. 1 (1) ('-d=stateselection' for the list of states)
+//  * Number of discrete states: .................... 0 (0) ('-d=discreteinfo' or '-d=stateselection' for the list of discrete states)
+//  * Number of clocked states: ..................... 0 (0) ('-d=discreteinfo' or '-d=stateselection' for the list of clocked states)
+//  * Number of discrete variables: ................. 0 (0) ('-d=discreteinfo' for the list of discrete variables)
+//  * Number of algorithm local variables: .......... 0 (0) ('-d=discreteinfo' for the list of algorithm local variables)
+//  * Number of clocks: ............................. 0 (0) ('-d=discreteinfo' for the list of clocks variables)
+//  * Number of top-level inputs: ................... 0 (0) ('-d=discreteinfo' for the list of top level inputs)
+// Notification: [Simulation] Strong Component statistics after passing the back-end:
+//  * Number of single strong components: ........... 4 (scalar:4, array:0, record:0)
+//  * Number of multi strong components: ............ 0 (algorithm:0, when:0, if:0, tuple:0)
+//  * Number of for-loop strong components: ......... 0 (resizable: 0, generic: 0, entwined:0)
+//  * Number of algebraic-loop strong components: ... 0 (linear: 0, nonlinear:0)
+// Notification: [Initialization] Strong Component statistics after passing the back-end:
+//  * Number of single strong components: ........... 5 (scalar:5, array:0, record:0)
+//  * Number of multi strong components: ............ 0 (algorithm:0, when:0, if:0, tuple:0)
+//  * Number of for-loop strong components: ......... 0 (resizable: 0, generic: 0, entwined:0)
+//  * Number of algebraic-loop strong components: ... 0 (linear: 0, nonlinear:0)
+// "
+// 1.0
+// endResult

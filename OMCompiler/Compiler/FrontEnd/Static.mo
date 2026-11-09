@@ -2414,7 +2414,7 @@ algorithm
           e2_str := ExpressionBasics.printExpStr(inStopExp);
           t1_str := TypesDump.unparseTypeNoAttr(inStartType);
           Error.addSourceMessageAndFail(Error.UNRESOLVABLE_TYPE,
-            {e1_str + ":" + e2_str, t1_str + ", " + t1_str, ""}, inInfo);
+            {e1_str + ":" + e2_str, t1_str + ", " + t1_str}, inInfo);
         end if;
       then
         (inStartExp, NONE(), inStopExp, et);
@@ -3199,15 +3199,14 @@ protected function printBuiltinFnArgError
   input DAE.Prefix inPrefix;
   input SourceInfo inInfo;
 protected
-  String args_str, pre_str, msg_str;
+  String args_str, msg_str;
   list<String> pos_args, named_args;
 algorithm
   pos_args := list(Dump.printExpStr(arg) for arg in inPosArgs);
   named_args := list(Dump.printNamedArgStr(arg) for arg in inNamedArgs);
   args_str := stringDelimitList(listAppend(pos_args, named_args), ", ");
-  pre_str := PrefixUtil.printPrefixStr3(inPrefix);
   msg_str := inFnName + "(" + args_str + ")" + inMsg;
-  Error.addSourceMessageAndFail(Error.WRONG_TYPE_OR_NO_OF_ARGS, {msg_str, pre_str}, inInfo);
+  Error.addSourceMessageAndFail(Error.WRONG_TYPE_OR_NO_OF_ARGS, {msg_str}, inInfo);
 end printBuiltinFnArgError;
 
 protected function elabBuiltinSize
@@ -3677,7 +3676,7 @@ algorithm
   // SOME should have exactly one positional argument.
   if listLength(inPosArgs) <> 1 or not listEmpty(inNamedArgs) then
     Error.addSourceMessageAndFail(Error.WRONG_TYPE_OR_NO_OF_ARGS,
-      {"SOME", ""}, inInfo);
+      {"SOME"}, inInfo);
   else
     (outCache, arg, prop) := elabExpInExpression(inCache, inEnv,
       listHead(inPosArgs), inImplicit, true, inPrefix, inInfo);
@@ -3705,7 +3704,7 @@ algorithm
   // NONE shouldn't have any arguments.
   if not listEmpty(inPosArgs) or not listEmpty(inNamedArgs) then
     Error.addSourceMessageAndFail(Error.WRONG_TYPE_OR_NO_OF_ARGS,
-      {"NONE", ""}, inInfo);
+      {"NONE"}, inInfo);
   else
     outExp := DAE.META_OPTION(NONE());
     outProperties := DAE.PROP(DAE.T_METAOPTION(DAE.T_UNKNOWN_DEFAULT), DAE.C_CONST());
@@ -5117,18 +5116,18 @@ algorithm
 
   s1 := strMsg0 + ", named argument \"" + argName + "\" already has a value.";
   Error.assertionOrAddSourceMessage(not (b1 and n >= nPos),Error.WRONG_TYPE_OR_NO_OF_ARGS,
-    {s1, strPre}, info);
+    {s1}, info);
 
   s2 := strMsg0 + ", missing value for " + strPos + " argument \"" + argName + "\".";
   Error.assertionOrAddSourceMessage(b1 or n >= nPos, Error.WRONG_TYPE_OR_NO_OF_ARGS,
-      {s2, strPre}, info);
+      {s2}, info);
 
   arg1 := elabBuiltinTransition5(argName, b1, args, nargs);
   (_, _, prop1) := elabExpInExpression(inCache,inEnv,arg1,inBoolean,true,inPrefix,info);
   ty := Types.getPropType(prop1);
   strMsg1 := strMsg0 + ", " + strPos + "argument needs to be a block instance.";
   Error.assertionOrAddSourceMessage(isBlockTypeWorkaround(ty),Error.WRONG_TYPE_OR_NO_OF_ARGS,
-  {strMsg1, strPre}, info);
+  {strMsg1}, info);
 
 end elabBuiltinTransition2;
 
@@ -5215,16 +5214,15 @@ algorithm
       DAE.Prefix pre;
       DAE.Properties prop1,prop;
       Absyn.Exp astate;
-      String strMsg, strPre;
+      String strMsg;
 
     case (cache, env, {astate}, {}, impl, pre)
       algorithm
         (cache,_, prop1) := elabExpInExpression(cache,env,astate,impl,true,pre,info);
         ty1 := Types.getPropType(prop1);
         strMsg := "initialState(" + Dump.printExpLstStr(args) + "), Argument needs to be a block instance.";
-        strPre := PrefixUtil.printPrefixStr3(pre);
         Error.assertionOrAddSourceMessage(isBlockTypeWorkaround(ty1),Error.WRONG_TYPE_OR_NO_OF_ARGS,
-          {strMsg, strPre}, info);
+          {strMsg}, info);
 
         ty :=  DAE.T_FUNCTION(
                 {DAE.FUNCARG("state",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
@@ -5261,16 +5259,15 @@ algorithm
       DAE.Prefix pre;
       DAE.Properties prop1,prop;
       Absyn.Exp astate;
-      String strMsg, strPre;
+      String strMsg;
 
     case (cache, env, {astate}, {}, impl, pre)
       algorithm
         (cache,_, prop1) := elabExpInExpression(cache,env,astate,impl,true,pre,info);
         ty1 := Types.getPropType(prop1);
         strMsg := "activeState(" + Dump.printExpLstStr(args) + "), Argument needs to be a block instance.";
-        strPre := PrefixUtil.printPrefixStr3(pre);
         Error.assertionOrAddSourceMessage(isBlockTypeWorkaround(ty1), Error.WRONG_TYPE_OR_NO_OF_ARGS,
-          {strMsg, strPre}, info);
+          {strMsg}, info);
 
         ty :=  DAE.T_FUNCTION(
                 {DAE.FUNCARG("state",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
@@ -5536,9 +5533,8 @@ algorithm
 
   // Check that the argument is a variable (i.e. a component reference).
   if not AbsynUtil.isCref(e) then
-    pre_str := PrefixUtil.printPrefixStr3(inPrefix);
     Error.addSourceMessageAndFail(Error.ARGUMENT_MUST_BE_VARIABLE,
-      {"First", "change", pre_str}, inInfo);
+      {"First", "change"}, inInfo);
   end if;
 
   (outCache, outExp, outProperties) := elabExpInExpression(inCache, inEnv, e,
@@ -6614,7 +6610,7 @@ algorithm
       s2 := stringDelimitList(List.map(nargs, Dump.printNamedArgStr), ", ");
       s := if s2 == "" then s1 else s1 + ", " + s2;
       s := stringAppendList({name,"(",s,").\n"});
-      Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,PrefixUtil.printPrefixStr3(pre)}, info);
+      Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s}, info);
       fail();
     end try;
   end if;
@@ -6702,60 +6698,6 @@ algorithm
     case Absyn.CALL() guard isValidDerVariableName(e) then DAE.CODE(Absyn.C_EXPRESSION(e), DAE.T_UNKNOWN_DEFAULT);
   end match for e in inExpl);
 end elabVariablenames;
-
-public function getOptionalNamedArgExpList
-  input String name;
-  input list<Absyn.NamedArg> nargs;
-  output list<DAE.Exp> out;
-algorithm
-  out := matchcontinue nargs
-    local
-      list<Absyn.Exp> absynExpList;
-      String argName;
-      list<Absyn.NamedArg> rest;
-
-    case {} then {};
-
-    case Absyn.NAMEDARG(argName = argName, argValue = Absyn.ARRAY(arrayExp = absynExpList)) :: _
-      algorithm
-        true := stringEq(name, argName);
-      then
-        absynExpListToDaeExpList(absynExpList);
-
-    case _ :: rest
-      then getOptionalNamedArgExpList(name, rest);
-
-  end matchcontinue;
-end getOptionalNamedArgExpList;
-
-protected function absynExpListToDaeExpList
-  input list<Absyn.Exp> absynExpList;
-  output list<DAE.Exp> out;
-algorithm
-  out := match absynExpList
-    local
-      list<DAE.Exp> daeExpList;
-      list<Absyn.Exp> absynRest;
-      Absyn.ComponentRef absynCr;
-      Absyn.Path absynPath;
-      DAE.ComponentRef daeCr;
-      DAE.Exp crefExp;
-
-    case {} then {};
-
-    case Absyn.CREF(componentRef = absynCr) :: absynRest
-      algorithm
-        absynPath := AbsynUtil.crefToPath(absynCr);
-        daeCr := ComponentReference.pathToCref(absynPath);
-        crefExp := Expression.crefExp(daeCr);
-        daeExpList := absynExpListToDaeExpList(absynRest);
-      then
-        crefExp :: daeExpList;
-
-    case _ :: absynRest
-      then absynExpListToDaeExpList(absynRest);
-  end match;
-end absynExpListToDaeExpList;
 
 public function getOptionalNamedArg
   "This function is used to 'elaborate' interactive functions' optional parameters,
@@ -9884,7 +9826,7 @@ protected function fillSlot
   input Absyn.Path fn;
   output list<Slot> outSlotLst = {};
 protected
-  String fa1, fa2, exp_str, c_str, pre_str;
+  String fa1, fa2, exp_str, c_str;
   DAE.Type ty1;
   DAE.Const c1, c2;
   DAE.VarParallelism prl;
@@ -9907,9 +9849,7 @@ algorithm
 
       // Fail if the slot is already filled.
       if filled then
-        pre_str := PrefixUtil.printPrefixStr3(inPrefix);
-        Error.addSourceMessageAndFail(Error.FUNCTION_SLOT_ALREADY_FILLED,
-          {fa2, pre_str}, inInfo);
+        Error.addSourceMessageAndFail(Error.FUNCTION_SLOT_ALREADY_FILLED, {fa2, AbsynUtil.pathString(fn)}, inInfo);
       end if;
 
       // Fail if the variability is wrong.
@@ -11855,7 +11795,7 @@ protected
   Boolean ty_match, cond;
   DAE.Type cond_ty, true_ty, false_ty, exp_ty;
   DAE.Const cond_c, true_c, false_c, exp_c;
-  String cond_str, cond_ty_str, e1_str, e2_str, ty1_str, ty2_str, pre_str;
+  String cond_str, cond_ty_str, e1_str, e2_str, ty1_str, ty2_str;
   DAE.Exp cond_exp, true_exp, false_exp;
 algorithm
   // Check that the condition is a boolean expression.
@@ -11895,9 +11835,8 @@ algorithm
     e2_str := ExpressionBasics.printExpStr(inFalseBranch);
     ty1_str := TypesDump.unparseTypeNoAttr(true_ty);
     ty2_str := TypesDump.unparseTypeNoAttr(false_ty);
-    pre_str := PrefixUtil.printPrefixStr3(inPrefix);
     Error.addSourceMessageAndFail(Error.TYPE_MISMATCH_IF_EXP,
-      {pre_str, e1_str, ty1_str, e2_str, ty2_str}, inInfo);
+      {e1_str, ty1_str, e2_str, ty2_str}, inInfo);
   end if;
 
   if Types.isConstant(cond_c) then

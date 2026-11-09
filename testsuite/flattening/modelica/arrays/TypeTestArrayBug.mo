@@ -1,6 +1,6 @@
-class TypeTestArrayBug
+model TypeTestArrayBug
 
-  type Wrong = Real[2](unit = "m");
+  type Wrong = Real[2](each unit = "m");
   Wrong w;
 
   type Good = Wrong[2](each quantity = "Good");

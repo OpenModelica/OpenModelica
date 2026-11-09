@@ -27,7 +27,20 @@ else()
   set(app_icon_macos "")
 endif()
 
-add_executable(OMShell WIN32 ${OMSHELLL_SOURCES} ${OMSHELLL_HEADERS} ${app_icon_macos})
+# Translations. The translation files are looked up as <omhome>/share/omshell/nls/OMShell_<locale>.qm.
+find_package(Qt6 REQUIRED COMPONENTS LinguistTools)
+set(OMSHELL_TS_FILES ${CMAKE_CURRENT_SOURCE_DIR}/OMShell_de.ts
+                     ${CMAKE_CURRENT_SOURCE_DIR}/OMShell_sv.ts)
+qt_add_translation(OMSHELL_TRANSLATIONS ${OMSHELL_TS_FILES})
+
+add_executable(OMShell WIN32 ${OMSHELLL_SOURCES} ${OMSHELLL_HEADERS} ${OMSHELL_TRANSLATIONS} ${app_icon_macos})
+
+# Update the .ts files (see OM_UPDATE_TRANSLATIONS). The ui_OtherDlg.h next to the sources is a checked-in
+# uic output with the strings of the font size dialog (context Dialog), so all headers are scanned.
+file(GLOB OMSHELL_LUPDATE_SOURCES CONFIGURE_DEPENDS
+     "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
+     "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
+omc_add_qt_lupdate(OMShell TS_FILES ${OMSHELL_TS_FILES} SOURCES ${OMSHELL_LUPDATE_SOURCES})
 
 target_link_libraries(OMShell PRIVATE OpenModelicaCompiler)
 target_link_libraries(OMShell PRIVATE Qt6::Xml)
@@ -35,6 +48,8 @@ target_link_libraries(OMShell PRIVATE Qt6::Widgets)
 target_link_libraries(OMShell PRIVATE Qt6::PrintSupport)
 
 omc_install_gui_client(OMShell)
+install(FILES ${OMSHELL_TRANSLATIONS}
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omshell/nls)
 
 if(MINGW)
   omc_get_msys_prefix(MSYSTEM_PREFIX_ESCAPED)

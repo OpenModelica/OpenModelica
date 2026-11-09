@@ -1,0 +1,44 @@
+// name:     VectorizedCallArrayLhs
+// keywords: vectorized call, array equation
+// status:   correct
+// teardown_command: rm -rf VectorizedCallArrayLhs VectorizedCallArrayLhs.exe VectorizedCallArrayLhs.c VectorizedCallArrayLhs_* VectorizedCallArrayLhs.makefile VectorizedCallArrayLhs.libs VectorizedCallArrayLhs.log output.log
+//
+// A vectorized call in an array equation where the left hand side is an array
+// expression with an array variable as element.
+
+loadString("
+function foo
+  input Real x;
+  input Real x2[2];
+  output Real y;
+algorithm
+  y := x + 1 + x2[1] + 2*x2[2];
+end foo;
+
+model VectorizedCallArrayLhs
+  Real y[3];
+equation
+  {y} = foo(1, {{{1, 2}, {3, 4}, {5, 6}}});
+end VectorizedCallArrayLhs;
+"); getErrorString();
+
+simulate(VectorizedCallArrayLhs, stopTime = 0); getErrorString();
+val(y[1], 0);
+val(y[2], 0);
+val(y[3], 0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "VectorizedCallArrayLhs_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'VectorizedCallArrayLhs', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 7.0
+// 13.0
+// 19.0
+// endResult

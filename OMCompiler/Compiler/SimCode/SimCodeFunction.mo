@@ -323,6 +323,7 @@ public uniontype Context
   generate different code depending on the context it is generated in."
   record SIMULATION_CONTEXT
     Boolean genDiscrete;
+    Boolean whenBody "evaluated only at the event that activates the when";
   end SIMULATION_CONTEXT;
 
   record FUNCTION_CONTEXT
@@ -356,8 +357,9 @@ public uniontype Context
   end DAE_MODE_CONTEXT;
 end Context;
 
-public constant Context contextSimulationNonDiscrete  = SIMULATION_CONTEXT(false);
-public constant Context contextSimulationDiscrete     = SIMULATION_CONTEXT(true);
+public constant Context contextSimulationNonDiscrete  = SIMULATION_CONTEXT(false, false);
+public constant Context contextSimulationDiscrete     = SIMULATION_CONTEXT(true, false);
+public constant Context contextSimulationWhenBody     = SIMULATION_CONTEXT(true, true);
 public constant Context contextFunction               = FUNCTION_CONTEXT("", false);
 public constant Context contextJacobian               = JACOBIAN_CONTEXT("", NONE());
 public constant Context contextAlgloopJacobian        = ALGLOOP_CONTEXT(false,true);

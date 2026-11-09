@@ -1,6 +1,7 @@
 #!/bin/sh
-# A git hook script to find and fix trailing whitespace in your commits. Bypass
-# it with the --no-verify option to git-commit.
+# A git hook script to find and fix trailing whitespace in your commits, and to
+# format the Rust and TOML files of the Rust omc in them. Bypass it with the
+# --no-verify option to git-commit.
 
 # detect platform
 platform="win"
@@ -63,6 +64,12 @@ for line in `git diff --check --cached | sed '/^[+-]/d'` ; do
   [ "$platform" = "mac" ] || e_option="-e" # mac does not understand -e
   /bin/echo $e_option "Removed trailing whitespace in \033[31m$file\033[0m:$line_number"
 done
+
+# format the Rust and TOML files of the Rust omc that are being committed
+format_rust="`git rev-parse --show-toplevel`/OMCompiler/Compiler/OpenModelica.rs/format.sh"
+if [ -x "$format_rust" ]; then
+  "$format_rust" --staged
+fi
 
 echo
 

@@ -1,7 +1,6 @@
 // name:     Modelica.Fluid.Examples.Tanks.TanksWithOverflow
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library
@@ -37,7 +36,8 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Simulation options: startTime = 0.0, stopTime = 25000.0, numberOfIntervals = 5000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.Tanks.TanksWithOverflow', options = '', outputFormat = 'mat', variableFilter = 'time|hysteresis.y|lowerTank.level|lowerTank.medium.h|upperTank.level|upperTank.medium.h', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Fluid.Examples.Tanks.TanksWithOverflow_res.mat
-// Messages: ERROR  : solver: DASSL: failed step at t = 7069.361461: Number of event iteration steps exceeded at time: 7069.361461
+// Messages: ERROR  : solver: DASSL: failed step at t = 1506.420487: Nonlinear solver 440 stopped at time 1506.42 with error in algloop solver:
+// error solving nonlinear system (iteration limit: 50)
 // ERROR  : solver: SimManager: Simulation stopped with errors before t = 25000.000000
 // ERROR  : solver: SimManager: DASSL: solve failed with idid = 5
 // ERROR  : solver: SimController: Simulation failed using nonlinear solver newton

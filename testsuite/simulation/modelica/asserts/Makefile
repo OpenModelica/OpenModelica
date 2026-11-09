@@ -1,6 +1,7 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+AssertInWhen.mos \
 AssertTest.mos \
 AssertTest1.mos \
 AssertTest2.mos \
@@ -10,6 +11,7 @@ AssertTest5.mos \
 AssertTest6.mos \
 AssertTest7.mos \
 AssertTest8.mos \
+AssertValues.mos \
 testAssertSolve.mos \
 TestAssert.mos \
 powAssert1.mos \

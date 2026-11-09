@@ -115,6 +115,25 @@ pub(super) fn collect_zero_crossings(
     Ok(out)
 }
 
+/// The equations each crossing occurs in (`occurEquLst`, C's
+/// `zeroCrossingDescription` out-indexes), 1:1 with [`collect_zero_crossings`]:
+/// every iteration slot of a for-loop crossing names the same equations, and a
+/// `sample()` gets no slot.
+pub(super) fn zc_equations(
+    zcs: &List<openmodelica_backend_types::BackendDAE::ZeroCrossing>,
+) -> Result<Vec<Vec<u32>>> {
+    let mut out = Vec::new();
+    for zc in lst(zcs) {
+        let eqs: Vec<u32> = lst(&zc.occurEquLst).map(|&i| i as u32).collect();
+        for relation in expand_iter_crossing(&zc.relation_, &zc.iter)? {
+            if !matches!(&*relation, DAE::Exp::CALL { path, .. } if path_ident_is(path, "sample")) {
+                out.push(eqs.clone());
+            }
+        }
+    }
+    Ok(out)
+}
+
 /// A for-loop crossing occupies one slot per iteration: C's `forIteratorBody`
 /// offsets `gout` mixed-radix, first iterator least significant. The counts are
 /// constant, so the same slots come from substituting each iterator value in.

@@ -47,6 +47,7 @@ protected
   // NF imports
   import NFBackendExtension.{BackendInfo, VariableAttributes, VariableKind};
   import Binding = NFBinding;
+  import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
@@ -66,7 +67,7 @@ protected
   // Backend imports
   import BVariable = NBVariable;
   import NBEquation.Equation;
-  import NBEvents.{EventInfo, Condition, MathEvent};
+  import NBEvents.{EventInfo, TimeEvent};
   import NBPartition.Partition;
   import Slice = NBSlice;
   import StrongComponent = NBStrongComponent;
@@ -155,6 +156,38 @@ public
       end if;
     end listToString;
 
+    function layoutSizeExp
+      "The size of a dimension for numArrayElement. The C++ runtime lays out its
+      variables with the sizes the model is built with, so a resizable dimension
+      gives the size its parameter has at that point. The symbolic size stays in
+      the type."
+      input Dimension dim;
+      output Expression exp;
+    algorithm
+      exp := match dim
+        case Dimension.RESIZABLE() guard stringEqual(Config.simCodeTarget(), "Cpp") then Expression.INTEGER(dim.size);
+        else Dimension.sizeExp(dim);
+      end match;
+    end layoutSizeExp;
+
+    function eachValue
+      "An array attribute (start, min, max, nominal) that is the same for all
+      elements, {e for i in 1:n}, as its element e. The C++ runtime uses it for all
+      elements of the array and does not build the array, whose sizes in the
+      attribute are those of the declaration and can be resizable parameters of
+      other components (N of an array of components)."
+      input output Expression exp;
+    algorithm
+      exp := match exp
+        local
+          Expression body;
+        case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = body))
+          guard not Expression.contains(body, Expression.isIterator)
+          then eachValue(body);
+        else exp;
+      end match;
+    end eachValue;
+
     function create
       input Variable var;
       output SimVar simVar;
@@ -181,6 +214,12 @@ public
           // for parameters the binding supersedes the start value if it exists and is constant
           // ToDo: also for other cases? (constant, struct param ...)
           (start, isValueChangeable, causality) := parseBinding(start, var);
+          if stringEqual(Config.simCodeTarget(), "Cpp") then
+            start := Util.applyOption(start, eachValue);
+            min := Util.applyOption(min, eachValue);
+            max := Util.applyOption(max, eachValue);
+            nominal := Util.applyOption(nominal, eachValue);
+          end if;
           result := SIMVAR(
             name                = var.name,
             varKind             = varKind,
@@ -202,7 +241,7 @@ public
             variable_index      = SOME(uniqueIndex),
             fmi_index           = SOME(typeIndex),
             // dimension sizes (row-major); empty for scalars. Used for FMI array variables.
-            numArrayElement     = list(Dimension.sizeExp(dim) for dim in Type.arrayDims(var.ty)),
+            numArrayElement     = list(layoutSizeExp(dim) for dim in Type.arrayDims(var.ty)),
             isValueChangeable   = isValueChangeable,
             isProtected         = isProtected,
             hideResult          = var.backendinfo.annotations.hideResult,
@@ -584,6 +623,7 @@ public
         case VariableKind.PARAMETER()      then OldSimCodeVar.FIXED();
         case VariableKind.DISCRETE()       then OldSimCodeVar.DISCRETE();
         case VariableKind.DISCRETE_STATE() then OldSimCodeVar.DISCRETE();
+        case VariableKind.ALGORITHM_LOCAL() then OldSimCodeVar.DISCRETE();
         case VariableKind.CLOCKED()        then OldSimCodeVar.DISCRETE();
         case VariableKind.PREVIOUS()       then OldSimCodeVar.DISCRETE();
         else OldSimCodeVar.CONTINUOUS();
@@ -698,6 +738,7 @@ public
             isDiscrete := match varKind
               case VariableKind.DISCRETE()        then true;
               case VariableKind.DISCRETE_STATE()  then true;
+              case VariableKind.ALGORITHM_LOCAL() then true;
               case VariableKind.PREVIOUS()        then true;
               case VariableKind.PARAMETER()       then true;
               case VariableKind.CONSTANT()        then true;
@@ -833,6 +874,7 @@ public
         case VariableKind.DUMMY_DER()               then OldBackendDAE.DUMMY_DER();
         case VariableKind.DUMMY_STATE()             then OldBackendDAE.DUMMY_STATE();
         case VariableKind.DISCRETE()                then OldBackendDAE.DISCRETE();
+        case VariableKind.ALGORITHM_LOCAL()         then OldBackendDAE.DISCRETE();
         case VariableKind.DISCRETE_STATE()          then OldBackendDAE.DISCRETE(); // we don't distinguish between clocked, discrete states and discretes in the old backend. is this correct?
         case VariableKind.CLOCKED()                 then OldBackendDAE.DISCRETE(); // we don't distinguish between clocked, discrete states and discretes in the old backend. is this correct?
         case VariableKind.PREVIOUS()                then OldBackendDAE.DISCRETE();
@@ -852,7 +894,6 @@ public
         case VariableKind.OPT_LOOP_INPUT()          then OldBackendDAE.OPT_LOOP_INPUT(ComponentRef.toDAE(varKind.replaceCref));
         // ToDo maybe deprecated:
         case VariableKind.ALG_STATE()               then OldBackendDAE.ALG_STATE();
-        case VariableKind.ALG_STATE_OLD()           then OldBackendDAE.ALG_STATE_OLD();
         case VariableKind.RESIDUAL_VAR()            then OldBackendDAE.DAE_RESIDUAL_VAR();
         case VariableKind.DAE_AUX_VAR()             then OldBackendDAE.DAE_AUX_VAR();
         case VariableKind.LOOP_ITERATION()          then OldBackendDAE.LOOP_ITERATION();
@@ -1102,6 +1143,7 @@ public
       input output SimCode.SimCodeIndices simCodeIndices;
     protected
       list<SimVar> stateVars = {}, derivativeVars = {}, algVars = {}, nonTrivialAlias = {};
+      list<SimVar> intNonTrivialAlias = {}, boolNonTrivialAlias = {}, stringNonTrivialAlias = {}, enumNonTrivialAlias = {};
       list<SimVar> discreteAlgVars = {}, intAlgVars = {}, boolAlgVars = {}, stringAlgVars = {}, enumAlgVars = {};
       list<SimVar> discreteAlgVars2 = {}, intAlgVars2 = {}, boolAlgVars2 = {}, stringAlgVars2 = {}, enumAlgVars2 = {};
       list<SimVar> discreteAlgVars3 = {}, intAlgVars3 = {}, boolAlgVars3 = {}, stringAlgVars3 = {}, enumAlgVars3 = {};
@@ -1129,7 +1171,8 @@ public
           ({derivativeVars}, simCodeIndices)                                                              := createSimVarLists(varData.derivatives, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
           ({algVars}, simCodeIndices)                                                                     := createSimVarLists(varData.algebraics, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
           ({inputVars}, simCodeIndices)                                                                   := createSimVarLists(varData.top_level_inputs, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
-          ({nonTrivialAlias}, simCodeIndices)                                                             := createSimVarLists(varData.nonTrivialAlias, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+          ({nonTrivialAlias, intNonTrivialAlias, boolNonTrivialAlias, stringNonTrivialAlias, enumNonTrivialAlias}, simCodeIndices)
+                                                                                                          := createSimVarLists(varData.nonTrivialAlias, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({discreteAlgVars, intAlgVars, boolAlgVars, stringAlgVars, enumAlgVars}, simCodeIndices)        := createSimVarLists(varData.discretes, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({discreteAlgVars2, intAlgVars2, boolAlgVars2, stringAlgVars2, enumAlgVars2}, simCodeIndices)   := createSimVarLists(varData.discrete_states, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({discreteAlgVars3, intAlgVars3, boolAlgVars3, stringAlgVars3, enumAlgVars3}, simCodeIndices)   := createSimVarLists(varData.clocked_states, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
@@ -1167,10 +1210,10 @@ public
         derivativeVars                    = derivativeVars,
         algVars                           = List.flatten({algVars, inputVars, nonTrivialAlias}),
         discreteAlgVars                   = List.flatten({discreteAlgVars, discreteAlgVars2, discreteAlgVars3}),
-        intAlgVars                        = List.flatten({intAlgVars, intAlgVars2, intAlgVars3}),
-        boolAlgVars                       = List.flatten({boolAlgVars, boolAlgVars2, boolAlgVars3}),
-        stringAlgVars                     = List.flatten({stringAlgVars, stringAlgVars2, stringAlgVars3}),
-        enumAlgVars                       = List.flatten({enumAlgVars, enumAlgVars2, enumAlgVars3}),
+        intAlgVars                        = List.flatten({intNonTrivialAlias, intAlgVars, intAlgVars2, intAlgVars3}),
+        boolAlgVars                       = List.flatten({boolNonTrivialAlias, boolAlgVars, boolAlgVars2, boolAlgVars3}),
+        stringAlgVars                     = List.flatten({stringNonTrivialAlias, stringAlgVars, stringAlgVars2, stringAlgVars3}),
+        enumAlgVars                       = List.flatten({enumNonTrivialAlias, enumAlgVars, enumAlgVars2, enumAlgVars3}),
         inputVars                         = inputVars,
         outputVars                        = outputVars,
         aliasVars                         = aliasVars,
@@ -1464,9 +1507,9 @@ public
       output VarInfo varInfo;
     algorithm
       varInfo := VAR_INFO(
-        numZeroCrossings             = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)) + sum(MathEvent.numZeroCrossings(mev) for mev in eventInfo.math_lst),
-        numTimeEvents                = UnorderedSet.size(eventInfo.time_set),
-        numRelations                 = sum(Condition.numRelations(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
+        numZeroCrossings             = EventInfo.numZeroCrossings(eventInfo),
+        numTimeEvents                = TimeEvent.nextIndex(eventInfo.time_set),
+        numRelations                 = EventInfo.numRelations(eventInfo),
         numMathEventFunctions        = eventInfo.numberMathEvents,
         numStateVars                 = listScalarSize(vars.stateVars),
         numAlgVars                   = listScalarSize(vars.algVars),

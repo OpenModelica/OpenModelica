@@ -682,6 +682,11 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     output Boolean isFunction = Restriction.isFunction(restriction(cls));
   end isFunction;
 
+  function isType
+    input Class cls;
+    output Boolean res = isBuiltin(cls) or Restriction.isType(restriction(cls));
+  end isType;
+
   function isEnumeration
     input Class cls;
     output Boolean isEnum;
@@ -889,7 +894,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
       end for;
 
       args := listReverseInPlace(args);
-      exp := Expression.CALL(Call.UNTYPED_CALL(ComponentRef.fromNode(ty_node, ty), args, {}, InstNode.scopeRef(scope)));
+      exp := Expression.CALL(Call.UNTYPED_CALL(ComponentRef.fromNode(ty_node, ty), args, {}));
     end if;
   end makeRecordExp;
 

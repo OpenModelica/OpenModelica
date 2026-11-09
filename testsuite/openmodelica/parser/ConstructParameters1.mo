@@ -21,7 +21,6 @@ model ConstructParameters1
   parameter Real p1=2.0, p2=3.0;
 protected
   parameter Real (p3,p4) = fc(p1,p2);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConstructParameters1;
 
 // function fc

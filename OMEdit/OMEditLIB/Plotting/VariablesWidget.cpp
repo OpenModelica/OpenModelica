@@ -919,6 +919,11 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
     }
   }
 
+#if !defined(__EMSCRIPTEN__)
+  OpcUaClient *pOpcUaClient = simulationOptions.isInteractiveSimulation()
+      ? MainWindow::instance()->getSimulationDialog()->getOpcUaClient(simulationOptions.getInteractiveSimulationPortNumber())
+      : nullptr;
+#endif
   QStringList parts;
   // Shared state between makeData and postCreate — both need changeAble and variability
   // but getVariableInformation fills them inside makeData and postCreate reads them.
@@ -949,6 +954,13 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       /* Get variable information from mat/xml */
       QString type, value, unit, displayUnit, description;
       getVariableInformation(&matReader, variableToFind, &type, &value, &extras.changeAble, &extras.variability, &unit, &displayUnit, &description);
+#if !defined(__EMSCRIPTEN__)
+      /* A running simulation accepts only the writes its OPC UA server allows */
+      if (pOpcUaClient) {
+        Variable *pVariable = pOpcUaClient->getVariables()->value(variableToFind);
+        extras.changeAble = pVariable && pVariable->isWritable();
+      }
+#endif
 
       QVector<QVariant> variableData;
       variableData << filePath << fileName << fullName << displayName;
@@ -1292,9 +1304,21 @@ void VariablesTreeModel::getVariableInformation(ResultFileReader *pMatReader, QS
         }
       }
     }
-    *unit = scalarVariable.unit;
-    *displayUnit = scalarVariable.displayUnit;
     *description = scalarVariable.description;
+  }
+  /* The result file's units win; the init.xml fills in what it lacks. A .mat
+   * written before display units were stored has only the unit.
+   */
+  QString fileUnit, fileDisplayUnit;
+  if (pMatReader->isOpen()) {
+    fileUnit = QString::fromStdString(pMatReader->unit(variableToFind.toStdString()));
+    fileDisplayUnit = QString::fromStdString(pMatReader->displayUnit(variableToFind.toStdString()));
+  }
+  *unit = fileUnit.isEmpty() && found ? scalarVariable.unit : fileUnit;
+  if (!fileDisplayUnit.isEmpty()) {
+    *displayUnit = fileDisplayUnit;
+  } else if (found && scalarVariable.unit.compare(*unit) == 0) {
+    *displayUnit = scalarVariable.displayUnit;
   }
 }
 
@@ -1367,11 +1391,9 @@ void VariablesTreeModel::openTransformationsBrowser()
           checkForProfilingFiles = false;
         }
       }
-#if !defined(__EMSCRIPTEN__)
       TransformationsWidget *pTransformationsWidget = MainWindow::instance()->showTransformationsWidget(fileName, profiling, checkForProfilingFiles);
       pTransformationsWidget->selectEquation(equationIndex);
       pTransformationsWidget->fetchEquationData(equationIndex);
-#endif
     } else {
       QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                             GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), QMessageBox::Ok);
@@ -1915,23 +1937,22 @@ void VariablesWidget::reSimulate(SimulationOptions simulationOptions, VariablesT
   simulationOptions.setReSimulate(true);
   if (pVariablesTreeItem) {
     MainWindow::instance()->getSimulationDialog()->removeInteractiveSimulation(simulationOptions.isInteractiveSimulation(), pVariablesTreeItem->getFileName(), false);
-#if defined(__EMSCRIPTEN__)
-    // wasm-jit takes changes only via -override (it never re-reads _init.xml, which
-    // also lives in the unreachable omc worker VFS): pass the changed values that way.
-    QHash<QString, QHash<QString, QString> > changed;
-    readVariablesAndUpdateXML(pVariablesTreeItem, simulationOptions.getFullResultFileName(), &changed);
-    QStringList overrides;
-    for (auto it = changed.constBegin(); it != changed.constEnd(); ++it) {
-      overrides << QString("%1=%2").arg(it.value().value("name"), it.value().value("value"));
-    }
-    if (!overrides.isEmpty()) {
-      QStringList flags = simulationOptions.getSimulationFlags();
-      flags << QString("-override=%1").arg(overrides.join(","));
-      simulationOptions.setSimulationFlags(flags);
-    }
-#else
     updateInitXmlFile(pVariablesTreeItem, simulationOptions);
-#endif
+    if (simulationOptions.getTargetLanguage().compare("wasm-jit") == 0) {
+      // wasm-jit does not read _init.xml (only the Variables Browser does); it takes changes via -override.
+      QHash<QString, QHash<QString, QString> > changed;
+      readVariablesAndUpdateXML(pVariablesTreeItem, simulationOptions.getFullResultFileName(), &changed);
+      QStringList overrides;
+      for (auto it = changed.constBegin(); it != changed.constEnd(); ++it) {
+        overrides << QString("%1=%2").arg(it.value().value("name"), it.value().value("value"));
+      }
+      if (!overrides.isEmpty()) {
+        const QString overrideFlag = QString("-override=%1").arg(overrides.join(","));
+        simulationOptions.setSimulationFlags(QStringList(simulationOptions.getSimulationFlags()) << overrideFlag);
+        // The setup dialog rebuilds the flags from its fields.
+        simulationOptions.setAdditionalSimulationFlags(QStringList({simulationOptions.getAdditionalSimulationFlags(), overrideFlag}).join(" ").trimmed());
+      }
+    }
   }
 
   if (showSetup) {
@@ -2059,6 +2080,25 @@ QPair<double, bool> VariablesWidget::readVariableValue(QString variable, double 
   }
 
   return qMakePair(value, found);
+}
+
+/*!
+ * \brief VariablesWidget::warnProtectedVariableNotFound
+ * Shows a warning when a protected variable is missing from the active result file.
+ * The warning is emitted once per model and variable until the result file is closed.
+ * \param modelName The model containing the protected variable.
+ * \param variable The qualified variable name missing from the result file.
+ */
+void VariablesWidget::warnProtectedVariableNotFound(const QString &modelName, const QString &variable)
+{
+  QSet<QString> &warnedVariables = mWarnedProtectedVariables[modelName];
+  if (warnedVariables.contains(variable)) {
+    return;
+  }
+  warnedVariables.insert(variable);
+  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+      tr("%1 not found in result file. Protected variables are only stored with <b>Simulation Setup->Output->Protected Variables if not encrypted</b>.")
+          .arg(variable), Helper::simulationKind, Helper::warningLevel));
 }
 
 /*!
@@ -2715,6 +2755,7 @@ void VariablesWidget::closeResultFile()
 {
   mResultFile.close();
   mOpenedResultFileName = "";
+  mWarnedProtectedVariables.clear();
 }
 
 /*!

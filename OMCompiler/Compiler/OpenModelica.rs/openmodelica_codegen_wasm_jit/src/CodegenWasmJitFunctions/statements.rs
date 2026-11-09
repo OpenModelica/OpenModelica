@@ -115,7 +115,9 @@ fn compile_stmt_when(
         }
     }
     ctx.emit(I::If(we::BlockType::Empty));
+    let outer = ctx.set_when_body(true);
     compile_stmts(ctx, stmts)?;
+    ctx.set_when_body(outer);
     if let Some(ew) = else_when {
         ctx.emit(I::Else);
         let DAE::Statement::STMT_WHEN { conditions, statementLst, elseWhen, .. } = &**ew else {

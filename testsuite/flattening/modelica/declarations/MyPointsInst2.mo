@@ -6,25 +6,24 @@
 // Drmodelica: 2.2  Declaring Instances of Classes (p. 26)
 //
 
-class Point                "Point in a three-dimensional space"
+model Point                "Point in a three-dimensional space"
   public
-    parameter Real x;
-    parameter Real y;
-    parameter Real z;
+    parameter Real x(fixed = false);
+    parameter Real y(fixed = false);
+    parameter Real z(fixed = false);
 end Point;
 
-class MyPoints
+model MyPoints
   Point point1(x = 1, y = 2, z = 3);
   Point point2;
   Point point3;
 end MyPoints;
 
-class MyPointsInst2
+model MyPointsInst2
   MyPoints pts(point1.x = 1, point1.y = 2, point1.z = 3);
   Real x=pts.point1.x;
   Real y=pts.point1.y;
   Real z=pts.point1.z;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MyPointsInst2;
 
 
@@ -34,15 +33,15 @@ end MyPointsInst2;
 //
 // Result:
 // class MyPointsInst2
-//   parameter Real pts.point1.x = 1.0;
-//   parameter Real pts.point1.y = 2.0;
-//   parameter Real pts.point1.z = 3.0;
-//   parameter Real pts.point2.x;
-//   parameter Real pts.point2.y;
-//   parameter Real pts.point2.z;
-//   parameter Real pts.point3.x;
-//   parameter Real pts.point3.y;
-//   parameter Real pts.point3.z;
+//   parameter Real pts.point1.x(fixed = false) = 1.0;
+//   parameter Real pts.point1.y(fixed = false) = 2.0;
+//   parameter Real pts.point1.z(fixed = false) = 3.0;
+//   parameter Real pts.point2.x(fixed = false);
+//   parameter Real pts.point2.y(fixed = false);
+//   parameter Real pts.point2.z(fixed = false);
+//   parameter Real pts.point3.x(fixed = false);
+//   parameter Real pts.point3.y(fixed = false);
+//   parameter Real pts.point3.z(fixed = false);
 //   Real x = pts.point1.x;
 //   Real y = pts.point1.y;
 //   Real z = pts.point1.z;

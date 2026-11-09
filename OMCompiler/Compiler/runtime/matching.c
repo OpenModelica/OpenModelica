@@ -348,12 +348,32 @@ void match_pf(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, in
 }
 
 
-void match_pf_fair(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, int m) {
+/* rows (columns in the terms of this file) of a piece matrix, see matchmaker.h */
+static inline int pm_row_len(const piece_matrix* pm, int c) {
+  int p, e = pm->row_first[c] + pm->row_count[c], len = 0;
+  for(p = pm->row_first[c]; p < e; p++) {len += pm->piece_len[p];}
+  return len;
+}
+
+/* the entry at position k (0-based) of row c */
+static inline int pm_entry(const piece_matrix* pm, int c, int k) {
+  int p = pm->row_first[c], e = p + pm->row_count[c];
+  for(; p < e; p++) {
+    if(k < pm->piece_len[p]) {return pm->ids[pm->piece_start[p] + k];}
+    k -= pm->piece_len[p];
+  }
+  return -1;
+}
+
+/* PF+ (fair) on a piece matrix: the pointers of the original algorithm are
+ * positions inside the rows, so rows can share their sections. */
+void match_pf_fair_pieces(const piece_matrix* pm, int* match, int* row_match, int n, int m) {
   int* visited = (int*)malloc(sizeof(int) * m);
   int* stack = (int*)malloc(sizeof(int) * n);
   int* colptrs = (int*)malloc(sizeof(int) * n);
   int* lookahead = (int*)malloc(sizeof(int) * n);
   int* unmatched = (int*)malloc(sizeof(int) * n);
+  int* lens = (int*)malloc(sizeof(int) * n);
 
   int  i, j, row, col, stack_col, temp, ptr, eptr, stack_last,
   stop = 0, pcount = 1, stack_end_ptr, nunmatched = 0, nextunmatched = 0,
@@ -361,10 +381,11 @@ void match_pf_fair(int* col_ptrs, int* col_ids, int* match, int* row_match, int 
   size_t curStackSize = n;
 
   memset(visited, 0, sizeof(int) * m);
-  memcpy(lookahead, col_ptrs, sizeof(int) * n);
+  memset(lookahead, 0, sizeof(int) * n);
 
   for(i = 0; i < n; i++) {
-    if(match[i] == -1 && col_ptrs[i] != col_ptrs[i+1]) {
+    lens[i] = pm_row_len(pm, i);
+    if(match[i] == -1 && lens[i] != 0) {
       unmatched[nunmatched++] = i;
     }
   }
@@ -374,18 +395,18 @@ void match_pf_fair(int* col_ptrs, int* col_ids, int* match, int* row_match, int 
     if(inc) {
       for(i = 0; i < nunmatched; i++) {
         current_col = unmatched[i];
-        stack[0] = current_col; stack_last = 0; colptrs[current_col] = col_ptrs[current_col];
+        stack[0] = current_col; stack_last = 0; colptrs[current_col] = 0;
 
         while(stack_last > -1) {
           stack_col = stack[stack_last];
 
-          eptr = col_ptrs[stack_col + 1];
-          for(ptr = lookahead[stack_col]; ptr < eptr && row_match[col_ids[ptr]] != -1; ptr++){}
+          eptr = lens[stack_col];
+          for(ptr = lookahead[stack_col]; ptr < eptr && row_match[pm_entry(pm, stack_col, ptr)] != -1; ptr++){}
           lookahead[stack_col] = ptr + 1;
 
           if(ptr >= eptr) {
             for(ptr = colptrs[stack_col]; ptr < eptr; ptr++) {
-              temp = visited[col_ids[ptr]];
+              temp = visited[pm_entry(pm, stack_col, ptr)];
               if(temp != pcount && temp != -1) {
                 break;
               }
@@ -398,7 +419,7 @@ void match_pf_fair(int* col_ptrs, int* col_ids, int* match, int* row_match, int 
               continue;
             }
 
-            row = col_ids[ptr];
+            row = pm_entry(pm, stack_col, ptr);
             visited[row] = pcount;
             col = row_match[row];
             if (++stack_last >= curStackSize) {
@@ -408,9 +429,9 @@ void match_pf_fair(int* col_ptrs, int* col_ids, int* match, int* row_match, int 
             if (col >= n) {
               fprintf(stderr, "Reading outside of array row_match[%d]=%d, n=%d, m=%d\n", row, col, n, m);
             }
-            colptrs[col] = col_ptrs[col];
+            colptrs[col] = 0;
           } else {
-            row = col_ids[ptr]; visited[row] = pcount;
+            row = pm_entry(pm, stack_col, ptr); visited[row] = pcount;
             while(row != -1){
               col = stack[stack_last--];
               temp = match[col];
@@ -436,19 +457,19 @@ void match_pf_fair(int* col_ptrs, int* col_ids, int* match, int* row_match, int 
     } else {
       for(i = 0; i < nunmatched; i++) {
         current_col = unmatched[i];
-        stack[0] = current_col; stack_last = 0; colptrs[current_col] = col_ptrs[current_col + 1] - 1;
+        stack[0] = current_col; stack_last = 0; colptrs[current_col] = lens[current_col] - 1;
 
         while(stack_last > -1) {
           stack_col = stack[stack_last];
 
-          eptr = col_ptrs[stack_col + 1];
-          for(ptr = lookahead[stack_col]; ptr < eptr && row_match[col_ids[ptr]] != -1; ptr++){}
+          eptr = lens[stack_col];
+          for(ptr = lookahead[stack_col]; ptr < eptr && row_match[pm_entry(pm, stack_col, ptr)] != -1; ptr++){}
           lookahead[stack_col] = ptr + 1;
 
           if(ptr >= eptr) {
-            eptr = col_ptrs[stack_col] - 1;
+            eptr = -1;
             for(ptr = colptrs[stack_col]; ptr > eptr; ptr--) {
-              temp = visited[col_ids[ptr]];
+              temp = visited[pm_entry(pm, stack_col, ptr)];
               if(temp != pcount && temp != -1) {
                 break;
               }
@@ -461,17 +482,17 @@ void match_pf_fair(int* col_ptrs, int* col_ids, int* match, int* row_match, int 
               continue;
             }
 
-            row = col_ids[ptr];
+            row = pm_entry(pm, stack_col, ptr);
             visited[row] = pcount;
             col = row_match[row];
             if (++stack_last >= curStackSize) {
               stack = realloc(stack, sizeof(int)*(curStackSize*=2));
             }
             stack[stack_last] = col;
-            colptrs[col] = col_ptrs[col + 1] - 1;
+            colptrs[col] = lens[col] - 1;
 
           } else {
-            row = col_ids[ptr]; visited[row] = pcount;
+            row = pm_entry(pm, stack_col, ptr); visited[row] = pcount;
             while(row != -1){
               col = stack[stack_last--];
               temp = match[col];
@@ -498,11 +519,32 @@ void match_pf_fair(int* col_ptrs, int* col_ids, int* match, int* row_match, int 
     pcount++; nunmatched = nextunmatched; nextunmatched = 0; inc = !inc;
   }
 
+  free(lens);
   free(unmatched);
   free(lookahead);
   free(colptrs);
   free(stack);
   free(visited);
+}
+
+/* PF+ (fair) on a compressed column matrix: every column is one piece */
+void match_pf_fair(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, int m) {
+  piece_matrix pm;
+  int i;
+  pm.row_first = (int*)malloc(sizeof(int) * (n + 1));
+  pm.row_count = (int*)malloc(sizeof(int) * (n + 1));
+  pm.piece_start = col_ptrs;
+  pm.piece_len = (int*)malloc(sizeof(int) * (n + 1));
+  pm.ids = col_ids;
+  for(i = 0; i < n; i++) {
+    pm.row_first[i] = i;
+    pm.row_count[i] = 1;
+    pm.piece_len[i] = col_ptrs[i + 1] - col_ptrs[i];
+  }
+  match_pf_fair_pieces(&pm, match, row_match, n, m);
+  free(pm.piece_len);
+  free(pm.row_count);
+  free(pm.row_first);
 }
 
 void match_hk(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids, int* match, int* row_match, int n, int m) {
@@ -1358,4 +1400,35 @@ void matching(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, in
     free(row_ids);
     free(row_ptrs);
   }
+}
+
+/* matching on a piece matrix: PF+ (fair) without cheap matching runs on the
+ * pieces, every other algorithm on the expanded compressed column matrix */
+void matching_pieces(const piece_matrix* pm, int* match, int* row_match, int n, int m, int matching_id, int cheap_id, double relabel_period, int clear_match) {
+  int i, k, nz = 0, len;
+  int* col_ptrs;
+  int* col_ids;
+
+  if(matching_id == do_pf_fair && cheap_id == 0) {
+    if (clear_match==1) {
+      for (i = 0; i < n; i++) {match[i] = -1;}
+      for (i = 0; i < m; i++) {row_match[i] = -1;}
+    }
+    match_pf_fair_pieces(pm, match, row_match, n, m);
+    return;
+  }
+
+  for(i = 0; i < n; i++) {nz += pm_row_len(pm, i);}
+  col_ptrs = (int*)malloc(sizeof(int) * (n + 1));
+  col_ids = (int*)malloc(sizeof(int) * (nz > 0 ? nz : 1));
+  nz = 0;
+  for(i = 0; i < n; i++) {
+    col_ptrs[i] = nz;
+    len = pm_row_len(pm, i);
+    for(k = 0; k < len; k++) {col_ids[nz++] = pm_entry(pm, i, k);}
+  }
+  col_ptrs[n] = nz;
+  matching(col_ptrs, col_ids, match, row_match, n, m, matching_id, cheap_id, relabel_period, clear_match);
+  free(col_ids);
+  free(col_ptrs);
 }

@@ -9,7 +9,6 @@ model Time
   Real x;
 equation
   x = time;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Time;
 
 // class Time

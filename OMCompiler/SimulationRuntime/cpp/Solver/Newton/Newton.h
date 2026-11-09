@@ -40,6 +40,10 @@
 #include "FactoryExport.h"
 #include <Core/Solver/AlgLoopSolverDefaultImplementation.h>
 
+#if defined(USE_KLU)
+  #include <klu.h>
+#endif
+
 
 /*****************************************************************************/
 /**
@@ -92,6 +96,17 @@ class Newton : public INonLinearAlgLoopSolver,  public AlgLoopSolverDefaultImple
   /// Encapsulation of determination of Jacobian
   void calcJacobian(double *jac, double *fNominal);
 
+  /// Set up the sparse Jacobian if the algebraic loop provides a sparsity pattern
+  void initializeSparsity();
+  void freeSparsity();
+  /// Sparse Jacobian by finite differences of column groups (colors); false if an
+  /// analytic Jacobian is available, which is then used by calcJacobian instead
+  bool calcSparseJacobian(double *fNominal);
+  /// Solve the sparse Newton system in place of _f; false if that is not possible
+  bool solveSparse();
+  /// Dense copy of the sparse Jacobian in _jac, for the fallback to Lapack
+  void sparseToDense();
+
   // Member variables
   //---------------------------------------------------------------
   INonLinSolverSettings
@@ -124,5 +139,18 @@ class Newton : public INonLinearAlgLoopSolver,  public AlgLoopSolverDefaultImple
   long int *_iHelp;
   long int *_jHelp;
   LogCategory _lc;              ///< LC_NLS or LC_LS
+
+  // sparse Jacobian in compressed column format, from the sparsity pattern of the algebraic loop
+  bool _sparse;                 ///< sparsity pattern is used
+  bool _analyticJacobian;       ///< an analytic (dense) Jacobian is available instead
+  std::vector<int> _colPtr;     ///< start of each column in _rowIdx, size _dimSys + 1
+  std::vector<int> _rowIdx;     ///< row of each non-zero
+  std::vector<double> _jacValues; ///< value of each non-zero
+  std::vector<std::vector<int> > _colorCols; ///< structurally orthogonal column groups
+#if defined(USE_KLU)
+  klu_common _kluCommon;
+  klu_symbolic* _kluSymbolic;
+  klu_numeric* _kluNumeric;
+#endif
 
 };/** @} */ // end of solverNewton

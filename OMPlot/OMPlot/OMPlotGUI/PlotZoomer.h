@@ -50,6 +50,7 @@ public:
   PlotZoomer(int xAxis, int yAxis, QwtPlotCanvas *pParent);
 #endif
   ~PlotZoomer();
+  void handleMouseEvent(QMouseEvent *event);
 };
 }
 

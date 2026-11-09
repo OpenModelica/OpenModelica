@@ -122,7 +122,6 @@ import SCode;
 import SCodeUtil;
 import Sorting;
 import StackOverflow;
-import SymbolicImplicitSolver;
 import SymbolicJacobian;
 import SynchronousFeatures;
 import System;
@@ -142,6 +141,21 @@ algorithm
     else false;
   end match;
 end isInitializationDAE;
+
+public function warnStartValueCycle
+  "Warns that the start attribute of the variable depends on the variable itself."
+  input DAE.ComponentRef cref;
+protected
+  String name = ComponentReferenceBasics.printComponentRefStr(cref);
+algorithm
+  Error.addCompilerWarning("Initialization start-value cycle: the start attribute of '" + name +
+    "' depends, directly or transitively, on the variable itself. The start attribute defines the " +
+    "initial value of '" + name + "' and therefore " +
+    "cannot be computed from it, so this start value cannot be used to initialize the variable (see " +
+    "Modelica Specification section 4.9.6). This is possibly a modeling error; if unintended, give '" +
+    name + "' a start value that does not depend on " +
+    "itself. Use the transformational debugger to inspect the dependency chain.");
+end warnStartValueCycle;
 
 public function isSimulationDAE
   input BackendDAE.Shared inShared;
@@ -1294,11 +1308,7 @@ protected
   BackendDAE.Variables v;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars = v,m=SOME(m)) := syst;
-  if (Flags.getConfigEnum(Flags.SYM_SOLVER) > 0) then
-    (_,statevarindx_lst) := BackendVariable.getAllVarIndicesFromVariables(v, BackendVariable.isAlgState);
-  else
-    (_,statevarindx_lst) := BackendVariable.getAllVarIndicesFromVariables(v, BackendVariable.isStateVar);
-  end if;
+  (_,statevarindx_lst) := BackendVariable.getAllVarIndicesFromVariables(v, BackendVariable.isStateVar);
   eqns := list(arrayGet(ass1,i) for i guard arrayGet(ass1,i)>0 in statevarindx_lst);
   outIntegerArray := markStateEquationsWork(eqns,m,ass1,arr);
 end markStateEquations;
@@ -1815,11 +1825,7 @@ algorithm
     case syst as BackendDAE.EQSYSTEM( orderedEqs=ordererdEqs, orderedVars=vars,
                                       matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2) )
       algorithm
-        if (Flags.getConfigEnum(Flags.SYM_SOLVER) > 0) then
-          (_,statevarindx_lst) := BackendVariable.getAllVarIndicesFromVariables(vars, BackendVariable.isAlgState);
-        else
-          (_,statevarindx_lst) := BackendVariable.getAllVarIndicesFromVariables(vars, BackendVariable.isStateVar);
-        end if;
+        (_,statevarindx_lst) := BackendVariable.getAllVarIndicesFromVariables(vars, BackendVariable.isStateVar);
         indx_lst_v := BackendVariable.getVarIndexFromVariables(iVars, vars);
 
         indx_lst_v := listAppend(indx_lst_v, statevarindx_lst) "overestimate" annotation(__OpenModelica_DisableListAppendWarning=true);
@@ -2733,6 +2739,13 @@ algorithm
         */
         crefLst := CheckModel.algorithmStatementListOutputs(statementLst, DAE.EXPAND()); // expand as we're in an algorithm
         for cr in crefLst loop
+          /*
+            An algorithm assigns all of its outputs, but the traversal above
+            doesn't find the ones that are only assigned with a subscript it
+            can't evaluate, e.g. a[i+1] in a for loop. Add them the same way
+            as if they occurred on a left hand side.
+          */
+          res := adjacencyRowExp(Expression.crefExp(cr), vars, res, functionTree, inIndexType, isInitial);
           try
             (varslst, p) := BackendVariable.getVar(cr, vars);
             res := adjacencyRowExp1DiscreteOrArray(varslst, p, res);
@@ -6108,9 +6121,13 @@ algorithm
         (nominal,_) := Expression.traverseExpBottomUp(e, replaceVarWithNominal, globalKnownVars);
         (nominal,_) := ExpressionSimplify.simplify(nominal);
         (e1,_) := Expression.traverseExpBottomUp(e, replaceVarWithValue, globalKnownVars);
+        (e1,_) := Expression.traverseExpBottomUp(e1, replaceParamWithoutFixedValueWithStart, globalKnownVars);
         (e1,_) := ExpressionSimplify.simplify(e1);
         b := not Expression.isZeroOrAlmostZero(e1, nominal);
-        b_1 := Expression.isConst(e1) or BackendVariable.isKnownAndParam(e1,globalKnownVars);
+        // A parameter with fixed = false and no start value is computed during
+        // initialization, so its value is unknown here and it can be zero.
+        b_1 := Expression.isConst(e1) or (BackendVariable.isKnownAndParam(e1,globalKnownVars)
+               and not containsParamWithoutFixedValue(e1, globalKnownVars));
       then
        if b_1 then BackendDAE.SOLVABILITY_PARAMETER(b) else BackendDAE.SOLVABILITY_LINEAR(b);
     case(_, _)
@@ -6120,6 +6137,55 @@ algorithm
         BackendDAE.SOLVABILITY_LINEAR(b);
   end match;
 end adjacencyRowEnhanced3;
+
+protected function containsParamWithoutFixedValue
+"Helper function to adjacencyRowEnhanced3. Returns true if the expression
+  contains a parameter with fixed = false."
+  input DAE.Exp exp;
+  input BackendDAE.Variables globalKnownVars;
+  output Boolean b = false;
+protected
+  list<BackendDAE.Var> vars;
+algorithm
+  for cr in Expression.extractCrefsFromExp(exp) loop
+    try
+      (vars, _) := BackendVariable.getVar(cr, globalKnownVars);
+      b := List.any(vars, BackendVariable.isParamWithoutFixedValue);
+    else
+    end try;
+    if b then
+      return;
+    end if;
+  end for;
+end containsParamWithoutFixedValue;
+
+protected function replaceParamWithoutFixedValueWithStart
+"Helper function to adjacencyRowEnhanced3. Traverser to replace parameters with
+  fixed = false by their start value, the initial guess of the initialization."
+  input DAE.Exp inExp;
+  input BackendDAE.Variables inVars;
+  output DAE.Exp outExp;
+  output BackendDAE.Variables outVars;
+algorithm
+  (outExp,outVars) := matchcontinue (inExp,inVars)
+    local
+      DAE.ComponentRef cr;
+      BackendDAE.Variables vars;
+      BackendDAE.Var v;
+      DAE.Exp e;
+
+    case (DAE.CREF(componentRef=cr),vars)
+      algorithm
+        (v::_,_) := BackendVariable.getVar(cr,vars);
+        true := BackendVariable.isParamWithoutFixedValue(v);
+        e := BackendVariable.varStartValueFail(v);
+        (e,_) := Expression.traverseExpBottomUp(e, replaceVarWithValue, vars);
+      then (e, vars);
+
+    else (inExp,inVars);
+
+  end matchcontinue;
+end replaceParamWithoutFixedValueWithStart;
 
 public function replaceVarWithValue
 "Helper function to adjacencyRowEnhanced3. Traverser to replace variables(parameters) with their bind expression."
@@ -6209,6 +6275,7 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
       DAE.Exp e1, e2, e3;
+      BinaryTree.BinTree bt, bt1, bt2;
       list<BackendDAE.Var> varslst;
       Boolean b, b1, b2, bs, isInitial;
       Integer mark, i;
@@ -6290,12 +6357,19 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, _}), (_, _, false, _, _, _))
     then traversingAdjacencyRowExpSolvableEnhancedFinder(e1, inTpl);
 
-    // homotopy operator for initialization system
-    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, true, _, _, _))
+    // homotopy operator for initialization system: like an if-expression,
+    // the equation cannot be solved for a variable that is missing in one of
+    // the two expressions (only one of them is left at lambda = 0 and lambda = 1)
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (vars, bs, true, it, at, pa))
       algorithm
-        (_, b1, tpl) := traversingAdjacencyRowExpSolvableEnhancedFinder(e1, inTpl);
-        (_, b2, tpl) := traversingAdjacencyRowExpSolvableEnhancedFinder(e2, tpl);
-    then (inExp, b1 and b2, tpl);
+        (_, (vars, _, _, _, _, pa)) := Expression.traverseExpTopDown(e1, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, bs, true, it, at, pa));
+        (_, (vars, _, _, _, _, pa)) := Expression.traverseExpTopDown(e2, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, bs, true, it, at, pa));
+        (_, bt1) := Expression.traverseExpTopDown(e1, getIfExpBranchVarOccurency, BinaryTree.emptyBinTree);
+        (_, bt2) := Expression.traverseExpTopDown(e2, getIfExpBranchVarOccurency, BinaryTree.emptyBinTree);
+        bt := BinaryTree.binTreeintersection(bt1, bt2, BinaryTree.emptyBinTree);
+        Expression.traverseExpTopDown(e1, markBranchVars, (it, at, vars, bt));
+        Expression.traverseExpTopDown(e2, markBranchVars, (it, at, vars, bt));
+    then (inExp, false, (vars, bs, true, it, at, pa));
 
     // only traverse position and direction for spatialDistribution, not the inputs!
     case (DAE.CALL(path=Absyn.IDENT(name="spatialDistribution"), expLst = {_, _, _, e1, e2, _, _}), _)
@@ -7852,7 +7926,6 @@ public function getSolvedSystem "Run the equation system pipeline."
   output BackendDAE.BackendDAE outSimDAE;
   output BackendDAE.BackendDAE outInitDAE;
   output Option<BackendDAE.BackendDAE> outInitDAE_lambda0_option;
-  output Option<BackendDAE.InlineData > outInlineData;
   output list<BackendDAE.Equation> outRemovedInitialEquationLst;
 protected
   BackendDAE.BackendDAE dae, simDAE, outInitDAE_lambda0;
@@ -7927,9 +8000,6 @@ algorithm
 
   // remove homotopy and initial calls
   simDAE := Initialization.removeInitializationStuff(simDAE);
-
-  // generate inline solver
-  outInlineData := SymbolicImplicitSolver.symSolver(simDAE);
 
   // post-optimization phase
   simDAE := postOptimizeDAE(simDAE, postOptModules, matchingAlgorithm, daeHandler);

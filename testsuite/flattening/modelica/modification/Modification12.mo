@@ -4,9 +4,8 @@
 //
 //
 
-class Modification12
+model Modification12
   Real x[:] (min = fill(1,size(x,1))) = {1.0};
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Modification12;
 
 // Result:

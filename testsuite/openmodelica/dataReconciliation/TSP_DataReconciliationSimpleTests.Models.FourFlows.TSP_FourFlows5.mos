@@ -1,12 +1,11 @@
 // name:     TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows5
 // keywords: extraction algorithm
 // status:   correct
-// depends: ./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows5_Inputs.csv
 // teardown_command: rm -rf TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows5 TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows5_* Reconciled_TSP_DataReconciliationSimpleTests_Models_FourFlows_TSP_FourFlows5.mo TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows5.html
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
-loadFile("TSP_DataReconciliationSimpleTests/package.mo");
+loadModel(TSP_DataReconciliationSimpleTests, {"4.0.0"});
 getErrorString();
 
 AnnotationNamedModifiers:=getAnnotationNamedModifiers(TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows5, "__OpenModelica_simulationFlags");
@@ -28,16 +27,11 @@ getErrorString();
 // true
 // ""
 // true
-// "Notification: Automatically loaded package ThermoSysPro 4.2 due to uses annotation from TSP_DataReconciliationSimpleTests.
-// Notification: Skipped loading package ModelicaDataReconciliationSimpleTests (4.0) using OPENMODELICALIBRARY (MODELICAPATH in the language specification) /home/j74082/Documents/Logiciels/OpenModelica/main_2/OpenModelica/testsuite/openmodelica/dataReconciliation:/home/j74082/Documents/Logiciels/OpenModelica/main_2/OpenModelica//libraries/.openmodelica/libraries (uses-annotation may be wrong).
-// Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
-// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
-// "
+// ""
 // {"lv", "eps", "s", "sx"}
 // "-reconcile "
 //
-// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows5_Inputs.csv
+// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows5_Inputs.csv
 //
 // ModelInfo: TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows5
 // ==========================================================================
@@ -4312,18 +4306,18 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows5_Inputs.csv'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows5_Inputs.csv'",
 //     messages = "Failed to build model: TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows5"
 // end SimulationResult;
-// "[openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/BoundaryConditions/Sink.mo:17:3-18:84:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:39:3-40:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:41:3-42:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:39:3-40:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:41:3-42:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:39:3-40:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:41:3-42:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:39:3-40:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:41:3-42:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// "[TSP_DataReconciliationSimpleTests 4.0.0/Components/BoundaryConditions/Sink.mo:17:3-18:84:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [TSP_DataReconciliationSimpleTests 4.0.0/Components/PressureLoss/SingularPressureLoss.mo:39:3-40:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [TSP_DataReconciliationSimpleTests 4.0.0/Components/PressureLoss/SingularPressureLoss.mo:41:3-42:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [TSP_DataReconciliationSimpleTests 4.0.0/Components/PressureLoss/SingularPressureLoss.mo:39:3-40:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [TSP_DataReconciliationSimpleTests 4.0.0/Components/PressureLoss/SingularPressureLoss.mo:41:3-42:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [TSP_DataReconciliationSimpleTests 4.0.0/Components/PressureLoss/SingularPressureLoss.mo:39:3-40:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [TSP_DataReconciliationSimpleTests 4.0.0/Components/PressureLoss/SingularPressureLoss.mo:41:3-42:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [TSP_DataReconciliationSimpleTests 4.0.0/Components/PressureLoss/SingularPressureLoss.mo:39:3-40:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [TSP_DataReconciliationSimpleTests 4.0.0/Components/PressureLoss/SingularPressureLoss.mo:41:3-42:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 4.2.0/WaterSteam/Junctions/StaticDrum.mo:9:3-10:81:writable] Warning: Connector Ce_eva is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 4.2.0/WaterSteam/Junctions/StaticDrum.mo:11:3-12:81:writable] Warning: Connector Ce_eco is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 4.2.0/WaterSteam/Junctions/StaticDrum.mo:13:3-14:77:writable] Warning: Connector Cs_sup is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
@@ -4332,19 +4326,19 @@ getErrorString();
 // [ThermoSysPro 4.2.0/WaterSteam/Junctions/StaticDrum.mo:19:3-20:79:writable] Warning: Connector Cs_purg is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 4.2.0/WaterSteam/Junctions/StaticDrum.mo:21:3-22:79:writable] Warning: Connector Ce_steam is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 4.2.0/WaterSteam/Junctions/StaticDrum.mo:23:3-24:79:writable] Warning: Connector Ce_sup is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/Junctions/Mixer2.mo:20:3-21:85:writable] Warning: Connector Ce2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/Junctions/Mixer2.mo:22:3-23:82:writable] Warning: Connector Cs is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/Junctions/Mixer2.mo:24:3-25:83:writable] Warning: Connector Ce1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/BoundaryConditions/SourceQ.mo:22:3-23:82:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/BoundaryConditions/Sink.mo:17:3-18:84:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [TSP_DataReconciliationSimpleTests 4.0.0/Components/Junctions/Mixer2.mo:20:3-21:85:writable] Warning: Connector Ce2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [TSP_DataReconciliationSimpleTests 4.0.0/Components/Junctions/Mixer2.mo:22:3-23:82:writable] Warning: Connector Cs is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [TSP_DataReconciliationSimpleTests 4.0.0/Components/Junctions/Mixer2.mo:24:3-25:83:writable] Warning: Connector Ce1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [TSP_DataReconciliationSimpleTests 4.0.0/Components/BoundaryConditions/SourceQ.mo:22:3-23:82:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [TSP_DataReconciliationSimpleTests 4.0.0/Components/BoundaryConditions/Sink.mo:17:3-18:84:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 4.2.0/WaterSteam/HeatExchangers/SimpleStaticCondenser.mo:31:3-32:81:writable] Warning: Connector Ec is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 4.2.0/WaterSteam/HeatExchangers/SimpleStaticCondenser.mo:33:3-34:80:writable] Warning: Connector Ef is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 4.2.0/WaterSteam/HeatExchangers/SimpleStaticCondenser.mo:35:3-36:77:writable] Warning: Connector Sf is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 4.2.0/WaterSteam/HeatExchangers/SimpleStaticCondenser.mo:37:3-38:79:writable] Warning: Connector Sc is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/BoundaryConditions/SourcePQ.mo:27:3-28:82:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:470:9-470:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:525:9-525:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:708:9-708:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [TSP_DataReconciliationSimpleTests 4.0.0/Components/BoundaryConditions/SourcePQ.mo:27:3-28:82:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:470:9-470:27:writable] Warning: 'cv' is used uninitialized and may cause unexpected behaviour. This is deprecated and will become an error in future releases.
+// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:525:9-525:27:writable] Warning: 'cv' is used uninitialized and may cause unexpected behaviour. This is deprecated and will become an error in future releases.
+// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:708:9-708:27:writable] Warning: 'cv' is used uninitialized and may cause unexpected behaviour. This is deprecated and will become an error in future releases.
 // Error: Jacobian F contains non-linear components. This indicates a singular system or internal generation errors.
 // [BackEnd/BackendDAEOptimize.mo:0:0-0:0:writable] Error: Internal error BackendDAEOptimize.removeUnusedFunctionsSymJacs: Unexpected data reconciliation jacobian structure.
 // "

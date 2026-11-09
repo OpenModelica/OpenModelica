@@ -44,5 +44,4 @@ end ExtObj;
 
 model testextobj
   ExtObj.ExtObjtest t;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end testextobj;

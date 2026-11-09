@@ -22,17 +22,15 @@ if "" == buildModelFMU(ExtLib.Test, version="2.0", fmuType="me_cs", fileNamePref
 end if;
 getErrorString();
 
-// The same model as a CoSimulation FMU with the CVODE integrator linked into it, to
-// check that the SUNDIALS libraries are found inside the container as well.
-// Linux only: OpenModelica ships SUNDIALS only for the platform it was built for, so
-// there is no Windows build of CVODE to link against when cross compiling.
+// The same model as a CoSimulation FMU with the CVODE integrator, which the
+// container compiles from the SUNDIALS sources in the FMU.
 if not setCommandLineOptions("--fmiFlags=s:cvode") then
   print(getErrorString());
   exit(1);
 end if;
 
 if "" == buildModelFMU(ExtLib.Test, version="2.0", fmuType="cs", fileNamePrefix="ExternalDependencyCVode",
-                       platforms={"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.28.0"}) then
+                       platforms=platforms) then
   print(getErrorString());
   exit(1);
 end if;

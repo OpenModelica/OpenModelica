@@ -294,6 +294,22 @@ public
     end match;
   end isComponent;
 
+  function stripGeneratedInnerScope
+    "A generated inner component is placed in the top scope, so the scope it
+     was looked up through, e.g. fixed in fixed.world, is not part of its prefix."
+    input output ComponentRef cref;
+  algorithm
+    () := match cref
+      case CREF() guard InstNode.isGeneratedInner(node(cref))
+        algorithm
+          cref.restCref := EMPTY();
+        then
+          ();
+
+      else ();
+    end match;
+  end stripGeneratedInnerScope;
+
   function stripClassScope
     "Removes the class parts of the scope from a cref, e.g. M.cell.obj => cell.obj."
     input ComponentRef cref;
@@ -2411,10 +2427,11 @@ public
 
       case CREF()
         algorithm
-          subs := list(Subscript.mapExp(s, func) for s in cref.subscripts);
+          subs := List.mapCheckReferenceEq(cref.subscripts, function Subscript.mapExp(func = func));
           rest := mapExp(cref.restCref, func);
         then
-          CREF(cref.node, subs, cref.ty, cref.origin, rest);
+          if referenceEq(cref.subscripts, subs) and referenceEq(cref.restCref, rest)
+            then cref else CREF(cref.node, subs, cref.ty, cref.origin, rest);
 
       else cref;
     end match;

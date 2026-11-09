@@ -9,7 +9,6 @@ model Floor
   Real r;
 equation
   r = floor(4.5);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Floor;
 
 // Result:

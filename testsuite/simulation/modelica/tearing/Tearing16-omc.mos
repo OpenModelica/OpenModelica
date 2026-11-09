@@ -1,7 +1,6 @@
 // name:      Tearing16-omc
 // keywords:  tearing
 // status:    correct
-// cflags: -d=-newInst
 
 loadFile("Tearing16.mo"); getErrorString();
 

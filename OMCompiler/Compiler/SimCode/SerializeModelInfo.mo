@@ -108,7 +108,6 @@ algorithm
           ("max", code.maxValueEquations),
           ("parameter", code.parameterEquations),
           ("assertions", code.algorithmAndEquationAsserts),
-          ("inline", code.inlineEquations),
           ("residuals", List.flatten(SimCodeUtil.getSimCodeDAEModeDataEqns(code.daeModeData))),
           ("jacobian", code.jacobianEquations)
         } loop
@@ -456,6 +455,7 @@ algorithm
       SimCode.NonlinearSystem nlSystem, atNL;
       BackendDAE.WhenOperator whenOp;
       list<DAE.ComponentRef> crefs;
+      list<DAE.Exp> defines, exps;
 
     case SimCode.SES_RESIDUAL() algorithm
       File.write(file, "\n{\"eqIndex\":");
@@ -632,8 +632,7 @@ algorithm
         else {};
       end match;
       if not listEmpty(jeqs) then
-        File.write(file, ",");
-        serializeEquation(file,listHead(jeqs),section,withOperations,parent=lSystem.index,first=true,assign_type=AssignType.JACOBIAN);
+        serializeEquation(file,listHead(jeqs),section,withOperations,parent=lSystem.index,first=listEmpty(eqs),assign_type=AssignType.JACOBIAN);
         for e in listRest(jeqs) loop serializeEquation(file,e,section,withOperations,parent=lSystem.index,assign_type=AssignType.JACOBIAN); end for;
       end if;
 
@@ -858,12 +857,16 @@ algorithm
         else {};
       end match;
       if not listEmpty(jeqs) then
-        File.write(file, ",");
-        serializeEquation(file,listHead(jeqs),section,withOperations,parent=nlSystem.index,first=true,assign_type=AssignType.JACOBIAN);
+        serializeEquation(file,listHead(jeqs),section,withOperations,parent=nlSystem.index,first=listEmpty(eqs),assign_type=AssignType.JACOBIAN);
         for e in listRest(jeqs) loop serializeEquation(file,e,section,withOperations,parent=nlSystem.index,assign_type=AssignType.JACOBIAN); end for;
       end if;
 
-      File.write(file, ",\n{\"eqIndex\":");
+      // a fully torn system has no inner equations
+      if listEmpty(eqs) and listEmpty(jeqs) then
+        File.write(file, "\n{\"eqIndex\":");
+      else
+        File.write(file, ",\n{\"eqIndex\":");
+      end if;
       File.writeInt(file, nlSystem.index);
       if parent <> 0 then
         File.write(file, ",\"parent\":");
@@ -1028,63 +1031,36 @@ algorithm
       end if;
       File.write(file, ",\"section\":\"");
       File.write(file, section);
+      defines := {};
+      crefs := {};
+      exps := {};
       for whenOps in eq.whenStmtLst loop
-        () := match whenOps
-          case whenOp as BackendDAE.ASSIGN() algorithm
-            File.write(file, "\",\"tag\":\"when\",\"defines\":[");
-            serializeExp(file,whenOp.left);
-            File.write(file, "],\"uses\":[");
-            serializeList(file, getWhenUses(eq.conditions, whenOp.right), serializeCref);
-            File.write(file, "],\"equation\":[");
-            serializeExp(file,whenOp.right);
-            File.write(file, "],\"source\":");
-            serializeSource(file,eq.source,withOperations);
-            File.write(file, "}");
-          then ();
-          case whenOp as BackendDAE.REINIT() algorithm
-            File.write(file, "\",\"tag\":\"when\",\"defines\":[");
-            serializeCref(file,whenOp.stateVar);
-            File.write(file, "],\"uses\":[");
-            serializeList(file, getWhenUses(eq.conditions, whenOp.value), serializeCref);
-            File.write(file, "],\"equation\":[");
-            serializeExp(file,whenOp.value);
-            File.write(file, "],\"source\":");
-            serializeSource(file,eq.source,withOperations);
-            File.write(file, "}");
-          then ();
-          case whenOp as BackendDAE.ASSERT() algorithm
-            File.write(file, "\",\"tag\":\"when\"");
-            File.write(file, ",\"uses\":[");
-            crefs := Expression.extractCrefsFromExpDerPreStart(whenOp.condition);
-            serializeList(file, getWhenUses(crefs, whenOp.message), serializeCref);
-            File.write(file, "],\"equation\":[");
-            serializeExp(file,whenOp.message);
-            File.write(file, "],\"source\":");
-            serializeSource(file,eq.source,withOperations);
-            File.write(file, "}");
-          then ();
-          case whenOp as BackendDAE.TERMINATE() algorithm
-            File.write(file, "\",\"tag\":\"when\"");
-            File.write(file, ",\"uses\":[");
-            serializeList(file, getWhenUses(eq.conditions, whenOp.message), serializeCref);
-            File.write(file, "],\"equation\":[");
-            serializeExp(file,whenOp.message);
-            File.write(file, "],\"source\":");
-            serializeSource(file,eq.source,withOperations);
-            File.write(file, "}");
-          then ();
-          case whenOp as BackendDAE.NORETCALL() algorithm
-            File.write(file, "\",\"tag\":\"when\"");
-            File.write(file, ",\"uses\":[");
-            serializeList(file, getWhenUses(eq.conditions, whenOp.exp), serializeCref);
-            File.write(file, "],\"equation\":[");
-            serializeExp(file,whenOp.exp);
-            File.write(file, "],\"source\":");
-            serializeSource(file,eq.source,withOperations);
-            File.write(file, "}");
-          then ();
+        (defines, crefs, exps) := match whenOps
+          case whenOp as BackendDAE.ASSIGN()
+          then (whenOp.left :: defines, listAppend(crefs, getWhenUses(eq.conditions, whenOp.right)), whenOp.right :: exps);
+          case whenOp as BackendDAE.REINIT()
+          then (Expression.crefExp(whenOp.stateVar) :: defines, listAppend(crefs, getWhenUses(eq.conditions, whenOp.value)), whenOp.value :: exps);
+          case whenOp as BackendDAE.ASSERT()
+          then (defines, listAppend(crefs, getWhenUses(Expression.extractCrefsFromExpDerPreStart(whenOp.condition), whenOp.message)), whenOp.message :: exps);
+          case whenOp as BackendDAE.TERMINATE()
+          then (defines, listAppend(crefs, getWhenUses(eq.conditions, whenOp.message)), whenOp.message :: exps);
+          case whenOp as BackendDAE.NORETCALL()
+          then (defines, listAppend(crefs, getWhenUses(eq.conditions, whenOp.exp)), whenOp.exp :: exps);
         end match;
       end for;
+      File.write(file, "\",\"tag\":\"when\"");
+      if not listEmpty(defines) then
+        File.write(file, ",\"defines\":[");
+        serializeList(file, listReverse(defines), serializeExp);
+        File.write(file, "]");
+      end if;
+      File.write(file, ",\"uses\":[");
+      serializeList(file, UnorderedSet.unique_list(crefs, ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual), serializeCref);
+      File.write(file, "],\"equation\":[");
+      serializeList(file, listReverse(exps), serializeExp);
+      File.write(file, "],\"source\":");
+      serializeSource(file,eq.source,withOperations);
+      File.write(file, "}");
       () := match eq.elseWhen
         local
           SimCode.SimEqSystem e;
@@ -1185,8 +1161,7 @@ algorithm
     case BackendDAE.OPT_INPUT_DER() then "derivation of input";
     case BackendDAE.OPT_TGRID() then "time grid for optimization";
     case BackendDAE.OPT_LOOP_INPUT() then "variable for transform loop in constraint";
-    case BackendDAE.ALG_STATE() then "helper variable transform ode for symSolver";
-    case BackendDAE.ALG_STATE_OLD() then "helper variable transform ode for symSolver";
+    case BackendDAE.ALG_STATE() then "helper variable transform ode for daeMode";
     case BackendDAE.LOOP_ITERATION() then "iteration variable for solving an algebraic loop";
     case BackendDAE.DAE_RESIDUAL_VAR() then "residual variable for dae mode";
     else

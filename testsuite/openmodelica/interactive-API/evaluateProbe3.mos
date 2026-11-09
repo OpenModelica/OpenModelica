@@ -1,0 +1,73 @@
+// name: evaluateProbe3
+// keywords: probe tree, CodeProber
+// status: correct
+//
+// Tests evaluateProbe with the model instance, the BLT and the state selection.
+
+writeFile("evaluateProbe3.mo", "package SP
+  connector Pin
+    Real v;
+    flow Real i;
+  end Pin;
+  model R
+    parameter Real r = 2;
+    Pin p, n;
+  equation
+    p.v - n.v = r*p.i;
+    p.i + n.i = 0;
+  end R;
+  model C
+    parameter Real c = 1;
+    Real v(start = 1);
+    Pin p, n;
+  equation
+    v = p.v - n.v;
+    c*der(v) = p.i;
+    p.i + n.i = 0;
+  end C;
+  model G
+    Pin p;
+  equation
+    p.v = 0;
+  end G;
+  model B \"two capacitors in parallel: only one of them is a state\"
+    R r1;
+    C c1, c2(v(stateSelect = StateSelect.prefer));
+    G gnd;
+  equation
+    connect(r1.p, c1.p);
+    connect(c1.p, c2.p);
+    connect(r1.n, gnd.p);
+    connect(c1.n, gnd.p);
+    connect(c2.n, gnd.p);
+  end B;
+end SP;
+");
+getErrorString();
+loadFile("evaluateProbe3.mo"); getErrorString();
+// The getModelInstance JSON of the connector.
+print(evaluateProbe("evaluateProbe3.mo", "0.0.1", "modelInstance")); getErrorString();
+// The blocks of B: the capacitor equations are in a torn linear system.
+print(evaluateProbe("evaluateProbe3.mo", "0.0.5", "blt")); getErrorString();
+// The block the equation c*der(v) = p.i of C is in, in the translation of B.
+print(evaluateProbe("evaluateProbe3.mo", "0.0.3.5", "bltBlock", "SP.B")); getErrorString();
+// c2.v is the state, c1.v a dummy state equal to it.
+print(evaluateProbe("evaluateProbe3.mo", "0.0.5", "stateSelection")); getErrorString();
+print(evaluateProbe("evaluateProbe3.mo", "0.0.3.2", "stateSelection", "SP.B")); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"node":"0.0.1", "property":"modelInstance", "result":[{"text":"{"}, {"text":"  \"name\": \"SP.Pin\","}, {"text":"  \"restriction\": \"connector\","}, {"text":"  \"elements\": ["}, {"text":"    {"}, {"text":"      \"$kind\": \"component\","}, {"text":"      \"name\": \"v\","}, {"text":"      \"type\": \"Real\""}, {"text":"    },"}, {"text":"    {"}, {"text":"      \"$kind\": \"component\","}, {"text":"      \"name\": \"i\","}, {"text":"      \"type\": \"Real\","}, {"text":"      \"prefixes\": {"}, {"text":"        \"connector\": \"flow\""}, {"text":"      }"}, {"text":"    }"}, {"text":"  ],"}, {"text":"  \"source\": {"}, {"text":"    \"filename\": \"openmodelica/interactive-API/evaluateProbe3.mo\","}, {"text":"    \"lineStart\": 2,"}, {"text":"    \"columnStart\": 3,"}, {"text":"    \"lineEnd\": 5,"}, {"text":"    \"columnEnd\": 10"}, {"text":"  }"}, {"text":"}"}]}
+// ""
+// {"node":"0.0.5", "property":"blt", "result":[{"text":"initial equations of SP.B: 5 blocks"}, {"text":"  1. eq 1 [initial, assign] gnd.p.v := 0.0"}, {"text":"  2. eq 2 [initial, alias] the same as eq 12"}, {"text":"  3. eq 3 [initial, assign] c2.v := $START.c2.v"}, {"text":"  4. eq 4 [initial, alias] the same as eq 13"}, {"text":"  5. eq 11 [initial, linear torn system of 3 unknowns] iteration variables der(c2.v)"}, {"text":"         eq 5 [initial, torn] c1.p.i := c1.c * $DER.c2.v"}, {"node":"0.0.3.5"}, {"text":"         eq 6 [initial, torn] c2.p.i := c2.c * $DER.c2.v"}, {"node":"0.0.3.5"}, {"text":"         eq 7 [initial, residual] (-c1.p.i) - c2.p.i - r1.p.i + gnd.p.i"}, {"text":"regular equations of SP.B: 3 blocks"}, {"text":"  1. eq 12 [regular, assign] gnd.p.i := 0.0"}, {"text":"  2. eq 13 [regular, assign] r1.p.i := c2.v / r1.r"}, {"node":"0.0.2.3"}, {"text":"  3. eq 20 [regular, linear torn system of 3 unknowns] iteration variables c1.p.i"}, {"text":"         eq 14 [regular, torn] der(c2.v) := c1.p.i / c1.c"}, {"node":"0.0.3.5"}, {"text":"         eq 15 [regular, torn] c2.p.i := c2.c * der(c2.v)"}, {"node":"0.0.3.5"}, {"text":"         eq 16 [regular, residual] (-r1.p.i) - c1.p.i - c2.p.i"}]}
+// ""
+// {"node":"0.0.3.5", "property":"bltBlock", "result":[{"text":"block 5 of 5 of the initial equations of SP.B:"}, {"text":"  eq 11 [initial, linear torn system of 3 unknowns] iteration variables der(c2.v)"}, {"text":"      eq 5 [initial, torn] c1.p.i := c1.c * $DER.c2.v"}, {"node":"0.0.3.5"}, {"text":"      eq 6 [initial, torn] c2.p.i := c2.c * $DER.c2.v"}, {"node":"0.0.3.5"}, {"text":"      eq 7 [initial, residual] (-c1.p.i) - c2.p.i - r1.p.i + gnd.p.i"}, {"text":"block 3 of 3 of the regular equations of SP.B:"}, {"text":"  eq 20 [regular, linear torn system of 3 unknowns] iteration variables c1.p.i"}, {"text":"      eq 14 [regular, torn] der(c2.v) := c1.p.i / c1.c"}, {"node":"0.0.3.5"}, {"text":"      eq 15 [regular, torn] c2.p.i := c2.c * der(c2.v)"}, {"node":"0.0.3.5"}, {"text":"      eq 16 [regular, residual] (-r1.p.i) - c1.p.i - c2.p.i"}]}
+// ""
+// {"node":"0.0.5", "property":"stateSelection", "result":[{"text":"SP.B: 1 states, 1 dummy states"}, {"text":"c2.v: state, stateSelect = StateSelect.prefer"}, {"text":"der(c2.v): derivative"}, {"text":"c1.v: dummy state, not chosen as a state by index reduction, = c2.v"}, {"text":"    solved: c1.v = c2.v"}, {"text":"    substitution: c1.v  =>  c1.p.v"}, {"text":"    simplify: c1.v = c1.p.v - 0.0  =>  c1.v = c1.p.v"}, {"text":"    substitution: c1.p.v - c1.n.v  =>  c1.p.v - 0.0"}]}
+// ""
+// {"node":"0.0.3.2", "property":"stateSelection", "result":[{"text":"c2.v: state, stateSelect = StateSelect.prefer"}, {"text":"der(c2.v): derivative"}, {"text":"c1.v: dummy state, not chosen as a state by index reduction, = c2.v"}, {"text":"    solved: c1.v = c2.v"}, {"text":"    substitution: c1.v  =>  c1.p.v"}, {"text":"    simplify: c1.v = c1.p.v - 0.0  =>  c1.v = c1.p.v"}, {"text":"    substitution: c1.p.v - c1.n.v  =>  c1.p.v - 0.0"}]}
+// ""
+// endResult

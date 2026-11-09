@@ -14,9 +14,10 @@ model ArrayMulMatrixSimplifier
   Real u[1];
 
 equation
-      x= pre(x)*A + B*u;
+  when sample(0, 1) then
+    x = pre(x)*A + B*u;
+  end when;
       y= A*pre(x) + B*u;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayMulMatrixSimplifier;
 // Result:
 // class ArrayMulMatrixSimplifier
@@ -32,8 +33,10 @@ end ArrayMulMatrixSimplifier;
 //   output Real y[2];
 //   Real u[1];
 // equation
-//   x[1] = pre(x[1]) * A[1,1] + pre(x[2]) * A[2,1] + B[1,1] * u[1];
-//   x[2] = pre(x[1]) * A[1,2] + pre(x[2]) * A[2,2] + B[2,1] * u[1];
+//   when sample(0.0, 1.0) then
+//     x[1] = pre(x[1]) * A[1,1] + pre(x[2]) * A[2,1] + B[1,1] * u[1];
+//     x[2] = pre(x[1]) * A[1,2] + pre(x[2]) * A[2,2] + B[2,1] * u[1];
+//   end when;
 //   y[1] = A[1,1] * pre(x[1]) + A[1,2] * pre(x[2]) + B[1,1] * u[1];
 //   y[2] = A[2,1] * pre(x[1]) + A[2,2] * pre(x[2]) + B[2,1] * u[1];
 // end ArrayMulMatrixSimplifier;

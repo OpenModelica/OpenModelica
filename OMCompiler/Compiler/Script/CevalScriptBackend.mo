@@ -59,15 +59,11 @@ import UnitAbsyn;
 
 // protected imports
 protected
-import AbsynToJulia;
 import AbsynToSCode;
 import Autoconf;
 import BackendDAECreate;
 import BackendDAEOptimize;
 import BackendDAEUtil;
-import BackendDump;
-import BackendEquation;
-import BackendVariable;
 import Binding;
 import BlockCallRewrite;
 import CevalScript;
@@ -77,22 +73,18 @@ import CheckModel;
 import ClassInf;
 import ClockIndexes;
 import CodegenFMU;
-import ComponentReference;
-protected import ComponentReferenceBasics;
 import Config;
 import Conversion;
 import DAEDump;
-import DAEQuery;
 import DAEUtil;
 import Debug;
-import DiffAlgorithm;
 import ContainerImage;
 import Dump;
 import Error;
 import ErrorExt;
 import ExecStat;
 import Expression;
-protected import ExpressionBasics;
+import ExpressionBasics;
 import FBuiltin;
 import FGraph;
 import Figaro;
@@ -109,10 +101,11 @@ import GlobalScript;
 import Graph;
 import InnerOuter;
 import Inst;
-import LexerModelicaDiff;
 import List;
 import Lookup;
+import ModelicaDiff;
 import NFApi;
+import NFCheckModel;
 import NFConvertDAE;
 import NFFlatModel;
 import NFFlatten;
@@ -128,6 +121,7 @@ import OMGraphics;
 import PackageManagement;
 import Parser;
 import Print;
+import ProbeTree;
 import Refactor;
 import ReverseLookup;
 import RewriteRules;
@@ -141,11 +135,9 @@ import SimCodeFunction;
 import SimCodeFunctionUtil;
 import SimCodeUtil;
 import StateMachineFlatten;
-import SimpleModelicaParser;
 import SimulationResults;
 import StaticScript;
 import StringUtil;
-import SymbolicJacobian;
 import SymbolTable;
 import System;
 import TaskGraphResults;
@@ -156,6 +148,7 @@ import Uncertainties;
 import UnitAbsynBuilder;
 import UnitParserExt;
 import UnorderedSet;
+import Unzip;
 import Util;
 import ValuesDump;
 import ValuesMake;
@@ -179,12 +172,6 @@ protected constant DAE.Type simulationResultType_full = DAE.T_COMPLEX(ClassInf.R
   DAE.TYPES_VAR("timeCompile",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE()),
   DAE.TYPES_VAR("timeSimulation",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE()),
   DAE.TYPES_VAR("timeTotal",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE())
-  },NONE(), false);
-
-protected constant DAE.Type simulationResultType_drModelica = DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
-  DAE.TYPES_VAR("messages",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),false,NONE()),
-  DAE.TYPES_VAR("flatteningTime",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE()),
-  DAE.TYPES_VAR("simulationTime",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE())
   },NONE(), false);
 
 //these are in reversed order than above
@@ -211,20 +198,21 @@ protected constant list<tuple<String,Values.Value>> zeroBuildPhaseResultValues =
     ("timeFrontend",   Values.REAL(0.0))
   };
 
-protected constant DAE.Exp defaultStartTime         = DAE.RCONST(0.0)     "default startTime";
-protected constant DAE.Exp defaultStopTime          = DAE.RCONST(1.0)     "default stopTime";
-protected constant DAE.Exp defaultNumberOfIntervals = DAE.ICONST(500)     "default numberOfIntervals";
-protected constant DAE.Exp defaultStepSize          = DAE.RCONST(0.002)   "default stepSize";
-protected constant DAE.Exp defaultTolerance         = DAE.RCONST(1e-6)    "default tolerance";
-protected constant DAE.Exp defaultMethod            = DAE.SCONST("dassl") "default method";
-protected constant DAE.Exp defaultFileNamePrefix    = DAE.SCONST("")      "default fileNamePrefix";
-protected constant DAE.Exp defaultOptions           = DAE.SCONST("")      "default options";
-protected constant DAE.Exp defaultOutputFormat      = DAE.SCONST("mat")   "default outputFormat";
-protected constant DAE.Exp defaultVariableFilter    = DAE.SCONST(".*")    "default variableFilter; does whole string matching, i.e. it becomes ^.*$ in the runtime";
-protected constant DAE.Exp defaultCflags            = DAE.SCONST("")      "default compiler flags";
-protected constant DAE.Exp defaultSimflags          = DAE.SCONST("")      "default simulation flags";
+protected
+constant DAE.Exp defaultStartTime         = DAE.RCONST(0.0)      "default startTime";
+constant DAE.Exp defaultStopTime          = DAE.RCONST(1.0)       "default stopTime";
+constant DAE.Exp defaultNumberOfIntervals = DAE.ICONST(500)       "default numberOfIntervals";
+constant DAE.Exp defaultStepSize          = DAE.RCONST(0.002)       "default stepSize";
+constant DAE.Exp defaultTolerance         = DAE.RCONST(1e-6)       "default tolerance";
+constant DAE.Exp defaultMethod            = DAE.SCONST("dassl")          "default method";
+constant DAE.Exp defaultFileNamePrefix    = DAE.SCONST("") "default fileNamePrefix";
+constant DAE.Exp defaultOptions           = DAE.SCONST("")         "default options";
+constant DAE.Exp defaultOutputFormat      = DAE.SCONST("mat")   "default outputFormat";
+constant DAE.Exp defaultVariableFilter    = DAE.SCONST(".*") "default variableFilter; does whole string matching, i.e. it becomes ^.*$ in the runtime";
+constant DAE.Exp defaultCflags            = DAE.SCONST("")         "default compiler flags";
+constant DAE.Exp defaultSimflags          = DAE.SCONST("")       "default simulation flags";
 
-protected constant InteractiveTypes.SimulationOptions defaultSimulationOptions =
+constant InteractiveTypes.SimulationOptions defaultSimulationOptions =
   InteractiveTypes.SIMULATION_OPTIONS(
     defaultStartTime,
     defaultStopTime,
@@ -240,7 +228,7 @@ protected constant InteractiveTypes.SimulationOptions defaultSimulationOptions =
     defaultSimflags
     ) "default simulation options";
 
-protected constant list<String> simulationOptionsNames =
+constant list<String> simulationOptionsNames =
   {
     "startTime",
     "stopTime",
@@ -260,12 +248,6 @@ public function getSimulationResultType
 algorithm
   t := if Testsuite.isRunning() then simulationResultType_rtest else simulationResultType_full;
 end getSimulationResultType;
-
-public function getDrModelicaSimulationResultType
-  output DAE.Type t;
-algorithm
-  t := if Testsuite.isRunning() then simulationResultType_rtest else simulationResultType_drModelica;
-end getDrModelicaSimulationResultType;
 
 public function createSimulationResult
   input String resultFile;
@@ -298,32 +280,22 @@ algorithm
   res := createSimulationResult("", options, message, zeroAdditionalSimulationResultValues);
 end createSimulationResultFailure;
 
-protected function buildCurrentSimulationResultExp
-  output DAE.Exp outExp;
-protected
-  DAE.ComponentRef cref;
+protected function currentSimulationResult
+  "Returns fileName, or the script variable currentSimulationResult for \"<default>\"."
+  input String fileName;
+  output String outFileName = fileName;
 algorithm
-  cref := ComponentReferenceBasics.makeCrefIdent("currentSimulationResult",DAE.T_UNKNOWN_DEFAULT,{});
-  outExp := Expression.makeCrefExp(cref,DAE.T_UNKNOWN_DEFAULT);
-end buildCurrentSimulationResultExp;
+  if fileName == "<default>" then
+    InteractiveTypes.IVAR(value = Values.STRING(outFileName)) :=
+      List.getMemberOnTrue("currentSimulationResult", SymbolTable.getVars(), isVariableNamed);
+  end if;
+end currentSimulationResult;
 
-protected function cevalCurrentSimulationResultExp
-  input FCore.Cache inCache;
-  input FCore.Graph env;
-  input String inputFilename;
-  input Absyn.Msg msg;
-  output FCore.Cache outCache;
-  output String filename;
-algorithm
-  (outCache,filename) := match (inCache, inputFilename)
-    local FCore.Cache cache;
-    case (cache, "<default>")
-      algorithm
-        (cache,Values.STRING(filename)) := Ceval.ceval(cache,env,buildCurrentSimulationResultExp(),true,msg,0);
-      then (cache,filename);
-    else (inCache,inputFilename);
-  end match;
-end cevalCurrentSimulationResultExp;
+protected function isVariableNamed
+  input String name;
+  input InteractiveTypes.Variable var;
+  output Boolean b = name == var.varIdent;
+end isVariableNamed;
 
 public function convertSimulationOptionsToSimCode "converts SimulationOptions to SimCode.SimulationSettings"
   input InteractiveTypes.SimulationOptions opts;
@@ -427,6 +399,7 @@ public function buildSimulationOptionsFromModelExperimentAnnotation
   input Absyn.Path inModelPath;
   input String inFileNamePrefix;
   input Option<InteractiveTypes.SimulationOptions> defaultOption;
+  input Boolean optimization = false "true for optimize(), which defaults to the optimization method";
   output InteractiveTypes.SimulationOptions outSimOpt;
 algorithm
   outSimOpt := matchcontinue defaultOption
@@ -440,7 +413,7 @@ algorithm
     case _
       algorithm
         loadProgram(inModelPath);
-        defaults := Util.getOptionOrDefault(defaultOption, setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix));
+        defaults := Util.getOptionOrDefault(defaultOption, setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix, optimization));
 
         experiment_ann := InteractiveUtil.getInheritedAnnotation(inModelPath, "experiment", SymbolTable.getAbsyn());
 
@@ -465,20 +438,187 @@ algorithm
     // if we fail, just use the defaults
     else
       algorithm
-        defaults := setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix);
+        defaults := setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix, optimization);
       then defaults;
   end matchcontinue;
 end buildSimulationOptionsFromModelExperimentAnnotation;
 
+public function simulationArguments
+  "Returns the arguments of simulate, buildModel and the other simulation calls
+   in the order they are declared. Arguments that are not given are taken from
+   the experiment annotation. stepSize, if given, sets numberOfIntervals."
+  input Absyn.Path className;
+  input list<tuple<String, Values.Value>> namedArgs;
+  input String callName;
+  input Option<InteractiveTypes.SimulationOptions> defaultOptions = NONE();
+  output list<Values.Value> args;
+protected
+  InteractiveTypes.SimulationOptions opts;
+  Values.Value start_time, stop_time, intervals;
+  list<Values.Value> rest;
+algorithm
+  opts := buildSimulationOptionsFromModelExperimentAnnotation(className,
+    AbsynUtil.pathString(AbsynUtil.unqotePathIdents(className)), defaultOptions,
+    optimization = callName == "optimize");
+
+  args := list(simulationArgument(name, namedArgs, opts) for name in
+    {"startTime", "stopTime", "numberOfIntervals", "tolerance", "method", "fileNamePrefix",
+     "options", "outputFormat", "variableFilter", "cflags", "simflags"});
+
+  for arg in namedArgs loop
+    if Util.tuple21(arg) == "stepSize" then
+      start_time :: stop_time :: intervals :: rest := args;
+      intervals := Values.INTEGER(realInt((ValuesUtil.valueReal(stop_time) - ValuesUtil.valueReal(start_time)) /
+                                          ValuesUtil.valueReal(Util.tuple22(arg))));
+      args := start_time :: stop_time :: intervals :: rest;
+    end if;
+  end for;
+
+  args := ValuesMake.makeCodeTypeName(className) :: args;
+
+  if callName == "simulate" then
+    args := List.appendElt(simulationArgumentOrDefault("resimulateExecutable", namedArgs, Values.STRING("")), args);
+  end if;
+end simulationArguments;
+
+public function declaredSimulationArguments
+  "Returns the arguments of simulate and the other simulation calls in the
+   order they are declared, with a sentinel for each argument not given."
+  input Absyn.Path className;
+  input list<tuple<String, Values.Value>> namedArgs;
+  input String callName;
+  output list<Values.Value> args;
+algorithm
+  args := ValuesMake.makeCodeTypeName(className) ::
+    list(simulationArgumentOrDefault(name, namedArgs, unsetSimulationArgument(name))
+         for name in simulationArgumentNames(callName));
+end declaredSimulationArguments;
+
+protected function simulationCallArguments
+  "Converts the declared arguments of a simulation call to the arguments it is
+   evaluated with. Other calls, and argument lists that do not match the
+   declaration, are returned unchanged."
+  input String callName;
+  input list<Values.Value> inArgs;
+  output list<Values.Value> args = inArgs;
+protected
+  Absyn.Path className;
+  list<Values.Value> rest;
+  list<String> names;
+  list<tuple<String, Values.Value>> named = {};
+algorithm
+  if not listMember(callName, {"simulate", "translateModel", "buildModel", "linearize", "optimize", "moo",
+                               "translateAcausalDAE", "buildAcausalDAE", "simulateAcausalDAE"}) then
+    return;
+  end if;
+
+  names := simulationArgumentNames(callName);
+  args := match inArgs
+    case Values.CODE(Absyn.C_TYPENAME(className)) :: rest guard listLength(rest) == listLength(names)
+      algorithm
+        for arg in List.zip(names, rest) loop
+          if not isUnsetSimulationArgument(Util.tuple22(arg)) then
+            named := arg :: named;
+          end if;
+        end for;
+      then
+        simulationArguments(className, listReverse(named), callName);
+    else inArgs;
+  end match;
+end simulationCallArguments;
+
+protected function simulationArgumentNames
+  input String callName;
+  output list<String> names = {"startTime", "stopTime", "numberOfIntervals", "stepSize", "tolerance",
+    "method", "fileNamePrefix", "options", "outputFormat", "variableFilter", "cflags", "simflags"};
+algorithm
+  if callName == "simulate" then
+    names := List.appendElt("resimulateExecutable", names);
+  end if;
+end simulationArgumentNames;
+
+protected function unsetSimulationArgument
+  input String name;
+  output Values.Value value;
+algorithm
+  value := match name
+    case "numberOfIntervals" then Values.INTEGER(-1);
+    case "resimulateExecutable" then Values.STRING("");
+    case "startTime" then Values.REAL(System.realNaN());
+    case "stopTime" then Values.REAL(System.realNaN());
+    case "stepSize" then Values.REAL(System.realNaN());
+    case "tolerance" then Values.REAL(System.realNaN());
+    else Values.STRING("<default>");
+  end match;
+end unsetSimulationArgument;
+
+protected function isUnsetSimulationArgument
+  input Values.Value value;
+  output Boolean unset;
+algorithm
+  unset := match value
+    case Values.REAL() then System.realIsNaN(value.real);
+    case Values.INTEGER() then value.integer < 0;
+    case Values.STRING() then value.string == "<default>";
+    else false;
+  end match;
+end isUnsetSimulationArgument;
+
+protected function simulationArgument
+  input String name;
+  input list<tuple<String, Values.Value>> namedArgs;
+  input InteractiveTypes.SimulationOptions opts;
+  output Values.Value value;
+algorithm
+  value := simulationArgumentOrDefault(name, namedArgs, ValuesUtil.expValue(getSimulationOption(opts, name)));
+end simulationArgument;
+
+protected function simulationArgumentOrDefault
+  input String name;
+  input list<tuple<String, Values.Value>> namedArgs;
+  input Values.Value defaultValue;
+  output Values.Value value = defaultValue;
+algorithm
+  for arg in namedArgs loop
+    if Util.tuple21(arg) == name then
+      value := Util.tuple22(arg);
+      return;
+    end if;
+  end for;
+end simulationArgumentOrDefault;
+
+protected function setOptimizationFlags
+  "Sets the flags needed to build a dynamic optimization problem (optimize, moo)
+   and returns their previous values, to be given to restoreOptimizationFlags."
+  output Boolean symbolicLinearization = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
+  output Integer grammar = Flags.getConfigEnum(Flags.GRAMMAR);
+  output Boolean dynOptimization = Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM);
+algorithm
+  FlagsUtil.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
+  FlagsUtil.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
+  FlagsUtil.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM, true);
+end setOptimizationFlags;
+
+protected function restoreOptimizationFlags
+  input Boolean symbolicLinearization;
+  input Integer grammar;
+  input Boolean dynOptimization;
+algorithm
+  FlagsUtil.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, symbolicLinearization);
+  FlagsUtil.setConfigEnum(Flags.GRAMMAR, grammar);
+  FlagsUtil.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM, dynOptimization);
+end restoreOptimizationFlags;
+
 protected function setFileNamePrefixInSimulationOptions
   input  InteractiveTypes.SimulationOptions inSimOpt;
   input  String inFileNamePrefix;
+  input  Boolean optimization = false;
   output InteractiveTypes.SimulationOptions outSimOpt;
 protected
   DAE.Exp startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, options, outputFormat, variableFilter, cflags, simflags;
   Boolean UseOtimica;
 algorithm
-  UseOtimica := Config.acceptOptimicaGrammar() or Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM);
+  UseOtimica := optimization or Config.acceptOptimicaGrammar() or Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM);
   InteractiveTypes.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, _, options, outputFormat, variableFilter, cflags, simflags) := inSimOpt;
   if UseOtimica then
     method := DAE.SCONST("optimization");
@@ -618,47 +758,6 @@ algorithm
   end matchcontinue;
 end simOptionsAsString;
 
-protected function diffSanityCheckEqual
-  "Sanity check for the Modelica source diff/merge: returns true when s1 and
-   s2 represent the same Modelica program. Code tokens are compared strictly
-   (ignoring whitespace), while comments are compared as a multiset so the
-   merge step is free to relocate them."
-  input String s1;
-  input String s2;
-  output Boolean b;
-protected
-  import LexerModelicaDiff.{Token,tokenContent,scanString,isLineComment,isBlockComment,blockCommentCanonical,modelicaDiffTokenWhitespace};
-  list<Token> ts1, ts2;
-  list<String> comments1, comments2;
-algorithm
-  (ts1, _) := scanString(s1);
-  (ts2, _) := scanString(s2);
-  if stringAppendList(list(tokenContent(t) for t guard not modelicaDiffTokenWhitespace(t) in ts1)) <>
-     stringAppendList(list(tokenContent(t) for t guard not modelicaDiffTokenWhitespace(t) in ts2)) then
-    b := false;
-    return;
-  end if;
-  comments1 := List.sort(list(diffSanityCheckCommentStr(t)
-                              for t guard isLineComment(t) or isBlockComment(t) in ts1),
-                         Util.strcmpBool);
-  comments2 := List.sort(list(diffSanityCheckCommentStr(t)
-                              for t guard isLineComment(t) or isBlockComment(t) in ts2),
-                         Util.strcmpBool);
-  b := List.isEqualOnTrue(comments1, comments2, stringEq);
-end diffSanityCheckEqual;
-
-protected function diffSanityCheckCommentStr
-  "Canonical string form of a comment token. Block comments are normalised by
-   trimming each line, so that re-indented block comments compare equal."
-  input LexerModelicaDiff.Token t;
-  output String s;
-protected
-  import LexerModelicaDiff.{tokenContent,isBlockComment,blockCommentCanonical};
-algorithm
-  s := if isBlockComment(t) then stringDelimitList(blockCommentCanonical(t), "\n")
-                            else tokenContent(t);
-end diffSanityCheckCommentStr;
-
 public function cevalInteractiveFunctions3
 "defined in the interactive environment."
   input FCore.Cache inCache;
@@ -669,29 +768,21 @@ public function cevalInteractiveFunctions3
   output FCore.Cache outCache = inCache;
   output Values.Value outValue;
 protected
-  import LexerModelicaDiff.{Token,TokenId,tokenContent,scanString,reportErrors,filterModelicaDiff,modelicaDiffTokenEq,modelicaDiffTokenWhitespace};
-  import DiffAlgorithm.{Diff,diff,printActual,printDiffTerminalColor,printDiffXml};
+  list<Values.Value> args = simulationCallArguments(inFunctionName, inVals);
 algorithm
-  outValue := matchcontinue (inFunctionName,inVals)
+  outValue := matchcontinue (inFunctionName,args)
     local
       String simflags,s1,s2,s3,s4,s5,str,str1,str2,str3,str4,executable,
              outputFormat_str,initfilename,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,
              name,errMsg, res,workdir,filenameprefix,compileDir,exeDir, logFile, outputFile,
-             strlinearizeTime, modeldescriptionfilename, tmpDir, tmpFile, bom, description, resimulateExecutable;
+             strlinearizeTime, modeldescriptionfilename, tmpDir, bom, resimulateExecutable;
       list<Values.Value> vals;
       Absyn.Path path,classpath,className;
       SCode.Program sp;
-      FCore.Graph env;
       Absyn.Program p,pnew;
       Absyn.Class absynClass;
       Absyn.Element elem;
       Absyn.Exp aexp;
-      DAE.DAElist dae;
-      BackendDAE.BackendDAE daelow;
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqnarr;
-      array<list<Integer>> m;
-      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       Values.Value ret_val,simValue,v,v1,v2;
       SimCode.SimulationSettings simSettings;
       Integer i,i1,resI;
@@ -705,21 +796,17 @@ algorithm
       list<String> strs,strs1,strs2;
       Real timeTotal,timeSimulation,linearizeTime,offset,offset1,offset2,scaleFactor,scaleFactor1,scaleFactor2;
       Boolean bval, b, b1, b2, b3, b4, b5, showProtected, inputConnectors, outputConnectors, sanityCheckFailed, lineEndingIsCRLF;
+      Boolean symLinFlag, dynOptFlag;
+      Integer grammarFlag;
       list<tuple<String,Values.Value>> resultValues;
       list<Values.Value> cvars;
       list<Absyn.Path> paths;
       list<Absyn.Class> classes;
       list<Absyn.ElementArg> eltargs;
       Absyn.Within within_;
-      BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;
       Boolean dumpExtractionSteps;
       list<Boolean> blst;
       UnitAbsyn.Unit u1,u2;
-      list<Token> tokens1, tokens2, errorTokens;
-      list<SimpleModelicaParser.ParseTree> parseTree1, parseTree2;
-      //list<tuple<Diff, list<Token>>> diffs;
-      list<tuple<Diff, list<SimpleModelicaParser.ParseTree>>> treeDiffs;
       SymbolTable forkedSymbolTable;
       SimCode.SimulationSettings simSettings;
 
@@ -1060,7 +1147,6 @@ algorithm
     case ("diffModelicaFileListings",{Values.STRING(s1),Values.STRING(s2),Values.ENUM_LITERAL(name=path),Values.BOOL(b)})
       algorithm
         ExecStat.execStatReset();
-
         (s1, bom) := StringUtil.stripBOM(s1);
         // Work internally with LF line endings only, so that lines coming from
         // the original file (s1) and lines produced by the listing (s2, always LF)
@@ -1070,104 +1156,62 @@ algorithm
         lineEndingIsCRLF := s1 <> System.stringReplace(s1, "\r\n", "\n"); // removing CRLF changed s1 => it originally contained CRLF
         s1 := System.stringReplace(s1, "\r\n", "\n");
         s1 := System.stringReplace(s1, "\r", "\n"); // also fold any remaining lone CR (old Mac) to LF
-        (tokens1, errorTokens) := scanString(s1);
-        reportErrors(errorTokens);
-
-        if false and s1<>stringAppendList(list(tokenContent(t) for t in tokens1)) then
-          // Debugging code. Make sure the scanner works before debugging the diff.
-          System.writeFile("string.before", s1);
-          System.writeFile("string.after", stringAppendList(list(tokenContent(t) for t in tokens1)));
-          Error.terminate("Lexed string does not match the original. See files string.before and string.after", sourceInfo());
-          fail();
-        end if;
-
-        ExecStat.execStat("diffModelicaFileListings scan string 1");
-        (_,parseTree1) := SimpleModelicaParser.stored_definition(tokens1, {});
-        ExecStat.execStat("diffModelicaFileListings parse string 1");
-
-        if false and s1<>SimpleModelicaParser.parseTreeStr(parseTree1) then
-          // Debugging code. Make sure the parser works before debugging the diff.
-          System.writeFile("string.before", s1);
-          System.writeFile("string.after", SimpleModelicaParser.parseTreeStr(parseTree1));
-          Error.terminate("Parsed string does not match the original. See files string.before and string.after", sourceInfo());
-          fail();
-        end if;
-
-        (s2, bom) := StringUtil.stripBOM(s2);
+        (s2, _) := StringUtil.stripBOM(s2);
         s2 := System.stringReplace(s2, "\r\n", "\n");
         s2 := System.stringReplace(s2, "\r", "\n");
-        (tokens2, errorTokens) := scanString(s2);
-        reportErrors(errorTokens);
-        ExecStat.execStat("diffModelicaFileListings scan string 2");
-        (_,parseTree2) := SimpleModelicaParser.stored_definition(tokens2, {});
-        ExecStat.execStat("diffModelicaFileListings parse string 2");
 
-        if false and s2<>SimpleModelicaParser.parseTreeStr(parseTree2) then
-          // Debugging code. Make sure the parser works before debugging the diff.
-          System.writeFile("string.before", s2);
-          System.writeFile("string.after", SimpleModelicaParser.parseTreeStr(parseTree2));
-          Error.terminate("Parsed string does not match the original. See files string.before and string.after", sourceInfo());
-          fail();
-        end if;
-
-        treeDiffs := SimpleModelicaParser.treeDiff(parseTree1, parseTree2, max(listLength(tokens1),listLength(tokens2)));
-
-        ExecStat.execStat("treeDiff");
-
-        sanityCheckFailed := false;
-
-        if true then
-          // Do a sanity check
-          s3 := Dump.unparseStr(Parser.parsestring(s2));
-          ExecStat.execStat("sanity parsestring(s2)");
-          s5 := printActual(treeDiffs, SimpleModelicaParser.parseTreeNodeStr);
+        // The listing of s1 has the tokens of s1 and the layout of s2, so the
+        // merge sees what the API changed and not what the printer changed.
+        s3 := s1;
+        if s1 <> s2 then
+          ErrorExt.setCheckpoint(getInstanceName());
           try
-            s4 := Dump.unparseStr(Parser.parsestring(s5));
-            ExecStat.execStat("sanity parsestring(s5)");
+            s3 := Dump.unparseStr(Parser.parsestring(s1));
+            ErrorExt.delCheckpoint(getInstanceName());
+          else
+            ErrorExt.rollBack(getInstanceName());
+          end try;
+        end if;
+        ExecStat.execStat("diffModelicaFileListings listing of before");
+        s5 := ModelicaDiff.merge(s1, s3, s2);
+        ExecStat.execStat("diffModelicaFileListings merge");
+
+        // Sanity check: the merged text must have the code of s2. The listings
+        // are compared only if the texts differ, since the printer may change
+        // tokens, e.g. 'abs' to abs.
+        sanityCheckFailed := false;
+        if s5 <> s2 and not ModelicaDiff.codeEqual(s5, s2) then
+          s4 := Dump.unparseStr(Parser.parsestring(s2));
+          try
+            str := Dump.unparseStr(Parser.parsestring(s5));
           else
             System.writeFile("SanityCheckFail.mo", s5);
             Error.addInternalError("Failed to parse merged string (see generated file SanityCheckFail.mo)\n", sourceInfo());
             fail();
           end try;
-          if not diffSanityCheckEqual(s3, s4) then
-            System.writeFile("SanityCheckFailBefore.mo", s3);
-            System.writeFile("SanityCheckFailAfter.mo", s4);
+          sanityCheckFailed := not ModelicaDiff.codeEqual(s4, str);
+          if sanityCheckFailed then
+            System.writeFile("SanityCheckFailBefore.mo", s4);
+            System.writeFile("SanityCheckFailAfter.mo", str);
             if b then
-              Error.addInternalError("After merging the strings, the semantics changed for some reason (see generated files SanityCheckFailBefore.mo SanityCheckFailAfter.mo). Will return the empty string:\ns1:\n"+s1+"\ns2:\n"+s2+"\ns3:\n"+s3+"\ns4:\n"+s4+"\ns5:\n"+s5+"\nparseTree2:"+SimpleModelicaParser.parseTreeStr(parseTree2), sourceInfo());
+              Error.addInternalError("After merging the strings, the semantics changed for some reason (see generated files SanityCheckFailBefore.mo SanityCheckFailAfter.mo). Will return the empty string:\ns1:\n"+s1+"\ns2:\n"+s2+"\nmerged:\n"+s5, sourceInfo());
               fail();
             else
-              Error.addInternalError("After merging the strings, the semantics changed for some reason (see generated files SanityCheckFailBefore.mo SanityCheckFailAfter.mo). Will return s2:\ns1:\n"+s1+"\ns2:\n"+s2+"\ns3:\n"+s3+"\ns4:\n"+s4+"\ns5:\n"+s5, sourceInfo());
+              Error.addInternalError("After merging the strings, the semantics changed for some reason (see generated files SanityCheckFailBefore.mo SanityCheckFailAfter.mo). Will return s2:\ns1:\n"+s1+"\ns2:\n"+s2+"\nmerged:\n"+s5, sourceInfo());
             end if;
-            sanityCheckFailed := true;
           end if;
         end if;
+        ExecStat.execStat("diffModelicaFileListings sanity check");
 
-        /*
-        diffs := diff(tokens1, tokens2, modelicaDiffTokenEq, modelicaDiffTokenWhitespace, tokenContent);
-        ExecStat.execStat("diffModelicaFileListings diff 1");
-        // print("Before filtering:\n"+printDiffTerminalColor(diffs, tokenContent)+"\n");
-        diffs := filterModelicaDiff(diffs,removeWhitespace=false);
-        ExecStat.execStat("diffModelicaFileListings filter diff 1");
-        // Scan a second time, with comments filtered into place
-        str := printActual(diffs, tokenContent);
-        // print("Intermediate string:\n"+printDiffTerminalColor(diffs, tokenContent)+"\n");
-        tokens2 := scanString(str);
-        ExecStat.execStat("diffModelicaFileListings prepare pass 2");
-        diffs := diff(tokens1, tokens2, modelicaDiffTokenEq, modelicaDiffTokenWhitespace, tokenContent);
-        ExecStat.execStat("diffModelicaFileListings diff 2");
-        // print("Before filtering (2):\n"+printDiffTerminalColor(diffs, tokenContent)+"\n");
-        diffs := filterModelicaDiff(diffs);
-        ExecStat.execStat("diffModelicaFileListings filter diff 2");
-        */
-        str := if sanityCheckFailed then s2 else matchcontinue AbsynUtil.pathLastIdent(path)
-          case "plain" then printActual(treeDiffs, SimpleModelicaParser.parseTreeNodeStr);
-          case "color" then printDiffTerminalColor(treeDiffs, SimpleModelicaParser.parseTreeNodeStr);
-          case "xml" then printDiffXml(treeDiffs, SimpleModelicaParser.parseTreeNodeStr);
-          else
-            algorithm
-              Error.addInternalError("Unknown diffModelicaFileListings choice", sourceInfo());
-            then fail();
-        end matchcontinue;
+        if sanityCheckFailed then
+          str := s2;
+        else
+          str := match AbsynUtil.pathLastIdent(path)
+            case "plain" then s5;
+            case "color" then ModelicaDiff.render(s1, s5, ModelicaDiff.Format.Color);
+            case "xml" then ModelicaDiff.render(s1, s5, ModelicaDiff.Format.Xml);
+          end match;
+        end if;
         // Restore the original file's line-ending convention (we processed as LF above).
         str := if lineEndingIsCRLF then System.stringReplace(str, "\n", "\r\n") else str;
       then
@@ -1230,21 +1274,6 @@ algorithm
     case ("rewriteBlockCall", _)
       then Values.BOOL(false);
 
-    case ("jacobian",{Values.CODE(Absyn.C_TYPENAME(path))})
-      algorithm
-        (outCache, env, SOME(dae), _) := runFrontEnd(outCache, inEnv, path, true, transform = true);
-        filenameprefix := AbsynUtil.pathString(path);
-        description := DAEUtil.daeDescription(dae);
-        daelow := BackendDAECreate.lower(dae,outCache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE()));
-        BackendDAE.DAE({syst},shared) := BackendDAEUtil.preOptimizeBackendDAE(daelow,NONE());
-        (syst,m,_) := BackendDAEUtil.getAdjacencyMatrixfromOption(syst,BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
-        vars := BackendVariable.daeVars(syst);
-        eqnarr := BackendEquation.getEqnsFromEqSystem(syst);
-        (jac, _) := SymbolicJacobian.calculateJacobian(vars, eqnarr, m, false,shared);
-        res := BackendDump.dumpJacobianStr(jac);
-      then
-        Values.STRING(res);
-
     case ("translateModel",vals as {Values.CODE(Absyn.C_TYPENAME(className)),_,_,_,_,_,Values.STRING(filenameprefix),_,_,_,_,_})
       algorithm
         (outCache,simSettings) := calculateSimulationSettings(outCache, vals);
@@ -1295,14 +1324,8 @@ algorithm
 
     case ("translateModelXML",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)})
       algorithm
-        filenameprefix := Util.stringReplaceChar(filenameprefix,".","_");
+        filenameprefix := Util.stringReplaceChar(if filenameprefix == "<default>" then AbsynUtil.pathString(className) else filenameprefix, ".", "_");
         (outCache, ret_val) := translateModelXML(outCache, inEnv, className, filenameprefix, true, NONE());
-      then
-        ret_val;
-
-    case ("exportDAEtoMatlab",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)})
-      algorithm
-        (outCache, ret_val, _) := getAdjacencyMatrix(outCache, inEnv, className, msg, filenameprefix);
       then
         ret_val;
 
@@ -1428,89 +1451,26 @@ algorithm
       then
         ValuesMake.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")});
 
-    case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
+    case ("translateAcausalDAE", vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
       algorithm
-        System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+        (outCache, simValue) := runAcausalDAE(outCache, inEnv, vals, msg, 0);
+      then simValue;
 
-        // resimulateExecutable is the last (new) argument; pull it off so the rest
-        // of the pipeline sees the original simulate() argument list.
-        resimulateExecutable := match List.last(vals) case Values.STRING(str) then str; else ""; end match;
-        vals := List.stripLast(vals);
-
-        if resimulateExecutable <> "" then
-          // Skip translation and build; simulate the already-built model directly.
-          b := true;
-          executable := resimulateExecutable;
-          compileDir := System.pwd() + Autoconf.pathDelimiter;
-          simflags := match List.last(vals) case Values.STRING(str) then str; else ""; end match;
-          resultValues := zeroBuildPhaseResultValues;
-        else
-          (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
-        end if;
-
-        if b then
-           exeDir := compileDir;
-           (outCache,simSettings) := calculateSimulationSettings(outCache, vals);
-           SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) := simSettings;
-           result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
-            // result file might have been set by simflags (-r ...)
-
-           result_file := selectResultFile(result_file, simflags);
-
-           executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
-           logFile := stringAppend(executable,".log");
-           // adrpo: log file is deleted by buildModel! do NOT DELETE IT AGAIN!
-           // we should really have different log files for simulation/compilation!
-           // as the buildModel log file will be deleted here and that gives less information to the user!
-           if System.regularFileExists(logFile) then
-             0 := System.removeFile(logFile);
-           end if;
-           sim_call := stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
-           System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
-           SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
-
-           // The wasm-jit target runs the JIT-compiled model in-process and
-           // writes the result file directly, instead of spawning an executable;
-           // the wasm target runs the standalone module in a wasmtime subprocess.
-           if Config.simCodeTarget() == "wasm-jit" then
-             resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
-           elseif Config.simCodeTarget() == "wasm" then
-             resI := CodegenWasmJit.runSimulationWasmtime(executable, result_file, simflags);
-           else
-             resI := System.systemCallRestrictedEnv(sim_call, logFile);
-           end if;
-
-           timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
-
-         else
-           result_file := "";
-           resI := 1;
-           timeSimulation := 0.0;
-           logFile := "";
-         end if;
-
-        timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-
-        (outCache,simValue) := createSimulationResultFromcallModelExecutable(b,resI,timeTotal,timeSimulation,resultValues,outCache,className,vals,result_file,logFile);
-      then
-        simValue;
-
-    case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
+    case ("buildAcausalDAE", vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
       algorithm
-        Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
-        str := AbsynUtil.pathString(className);
-        res := "Failed to build model: " + str;
-      then
-        createSimulationResultFailure(res, simOptionsAsString(List.stripLast(vals)));
+        (outCache, simValue) := runAcausalDAE(outCache, inEnv, vals, msg, 1);
+      then simValue;
 
-    case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
+    case ("simulateAcausalDAE", vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
       algorithm
-        str := AbsynUtil.pathString(className);
+        (outCache, simValue) := runAcausalDAE(outCache, inEnv, vals, msg, 2);
+      then simValue;
+
+    case ("simulate", vals)
+      algorithm
+        (outCache, outValue) := simulate(vals, inCache, inEnv, msg);
       then
-        createSimulationResultFailure(
-          "Simulation failed for model: " + str +
-          "\nEnvironment variable OPENMODELICAHOME not set.",
-          simOptionsAsString(List.stripLast(vals)));
+        outValue;
 
     case ("moveClass", {Values.CODE(Absyn.C_TYPENAME(className)),
                         Values.INTEGER(direction)})
@@ -1575,12 +1535,14 @@ algorithm
         if b then
           Values.REAL(linearizeTime) := getListNthShowError(vals,"try to get stop time",0,2);
           executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
-          logFile := stringAppend(executable,".log");
+          logFile := simulationLogFile(executable, simflags);
           if System.regularFileExists(logFile) then
             0 := System.removeFile(logFile);
           end if;
           strlinearizeTime := realString(linearizeTime);
-          simflags := "-l=" + strlinearizeTime + " " + simflags;
+          if not List.any(System.strtok(simflags, " "), isLinearizeTimeFlag) then
+            simflags := "-l=" + strlinearizeTime + " " + simflags;
+          end if;
           sim_call := stringAppendList({"\"",compileDir,executableSuffixedExe,"\""," ",simflags});
           System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
           SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
@@ -1588,7 +1550,7 @@ algorithm
           // The wasm-jit target runs the JIT-compiled model in-process, as `simulate` does.
           if Config.simCodeTarget() == "wasm-jit" then
             result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
-            resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
+            resI := CodegenWasmJit.runSimulation(executable, result_file, simflags, logFile);
           else
             resI := System.systemCallRestrictedEnv(sim_call, logFile);
           end if;
@@ -1635,18 +1597,23 @@ algorithm
       algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
 
-        FlagsUtil.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION,true);
-        FlagsUtil.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
-        FlagsUtil.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM,true);
-
-        (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
+        // the optimization flags are only needed to build the model, restore them so that
+        // they do not leak into later simulate() calls
+        (symLinFlag, grammarFlag, dynOptFlag) := setOptimizationFlags();
+        try
+          (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
+        else
+          restoreOptimizationFlags(symLinFlag, grammarFlag, dynOptFlag);
+          fail();
+        end try;
+        restoreOptimizationFlags(symLinFlag, grammarFlag, dynOptFlag);
         if b then
           exeDir:=compileDir;
           (outCache,simSettings) := calculateSimulationSettings(outCache, vals);
           SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) := simSettings;
           result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
           executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
-          logFile := stringAppend(executable,".log");
+          logFile := simulationLogFile(executable, simflags);
           // adrpo: log file is deleted by buildModel! do NOT DELTE IT AGAIN!
           // we should really have different log files for simulation/compilation!
           // as the buildModel log file will be deleted here and that gives less information to the user!
@@ -1659,7 +1626,7 @@ algorithm
           // As in the simulate() case: the wasm-jit target runs the JIT-compiled
           // model in-process instead of spawning an executable.
           if Config.simCodeTarget() == "wasm-jit" then
-            resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
+            resI := CodegenWasmJit.runSimulation(executable, result_file, simflags, logFile);
           elseif Config.simCodeTarget() == "wasm" then
             resI := CodegenWasmJit.runSimulationWasmtime(executable, result_file, simflags);
           else
@@ -1694,11 +1661,16 @@ algorithm
       algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
 
-        FlagsUtil.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION,true);
-        FlagsUtil.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
-        FlagsUtil.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM,true);
-
-        (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
+        // the optimization flags are only needed to build the model, restore them so that
+        // they do not leak into later simulate() calls
+        (symLinFlag, grammarFlag, dynOptFlag) := setOptimizationFlags();
+        try
+          (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
+        else
+          restoreOptimizationFlags(symLinFlag, grammarFlag, dynOptFlag);
+          fail();
+        end try;
+        restoreOptimizationFlags(symLinFlag, grammarFlag, dynOptFlag);
         simflags := stringAppend(simflags, " -moo");
         if b then
           exeDir:=compileDir;
@@ -1744,6 +1716,9 @@ algorithm
         /* Initialize FMI objects */
         (b, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) := FMIExt.initializeFMIImport(filename, workdir, fmiLogLevel, inputConnectors, outputConnectors);
         true := b; /* if something goes wrong while initializing */
+        if FMI.isFMIVersion10(FMI.getFMIVersion(fmiInfo)) then
+          Error.addMessage(Error.FMU_IMPORT_FMI1_DEPRECATED, {});
+        end if;
         fmiTypeDefinitionsList := listReverse(fmiTypeDefinitionsList);
         fmiModelVariablesList := listReverse(fmiModelVariablesList);
         s1 := System.tolower(Autoconf.platform);
@@ -1781,15 +1756,15 @@ algorithm
         workdir := if System.directoryExists(workdir) then workdir else System.pwd();
         // create a temporary directory
         tmpDir := System.createTemporaryDirectory(Settings.getTempDirectoryPath() + "/" + "fmuTmp" + intString(System.intRand(1000)));
-        tmpFile := tmpDir + "/" + "modelDescription.xml";
-        System.systemCall("cp -f " + filename + " " + tmpFile);
         modeldescriptionfilename := tmpDir + "/modelDescription.fmu";
-        System.systemCall("zip -j " +  modeldescriptionfilename + " " + tmpFile);
-        true := System.regularFileExists(modeldescriptionfilename);
+        true := Unzip.zipPath(modeldescriptionfilename, filename, "modelDescription.xml");
         /* Initialize FMI objects */
         (b, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) :=
           FMIExt.initializeFMIImport(modeldescriptionfilename, tmpDir, fmiLogLevel, inputConnectors, outputConnectors, true);
         true := b; /* if something goes wrong while initializing */
+        if FMI.isFMIVersion10(FMI.getFMIVersion(fmiInfo)) then
+          Error.addMessage(Error.FMU_IMPORT_FMI1_DEPRECATED, {});
+        end if;
         fmiTypeDefinitionsList := listReverse(fmiTypeDefinitionsList);
         fmiModelVariablesList := listReverse(fmiModelVariablesList);
         s1 := System.tolower(Autoconf.platform);
@@ -1850,9 +1825,6 @@ public function cevalInteractiveFunctions4
   input Absyn.Msg msg;
   output FCore.Cache outCache = inCache;
   output Values.Value outValue;
-protected
-  import LexerModelicaDiff.{Token,TokenId,tokenContent,scanString,reportErrors,filterModelicaDiff,modelicaDiffTokenEq,modelicaDiffTokenWhitespace};
-  import DiffAlgorithm.{Diff,diff,printActual,printDiffTerminalColor,printDiffXml};
 algorithm
   outValue := matchcontinue (inFunctionName, inVals)
     local
@@ -1866,19 +1838,17 @@ algorithm
       Absyn.Program p,newp;
       InteractiveTypes.SimulationOptions simOpt;
       Real startTime,stopTime,tolerance,reltol,reltolDiffMinMax,rangeDelta;
-      DAE.Exp startTimeExp,stopTimeExp,toleranceExp,intervalExp;
-      DAE.Type tp;
       Absyn.Class absynClass;
       Absyn.Exp aexp, aexp2, aexp3;
       Option<DAE.DAElist> odae;
-      Values.Value v,cvar,cvar2,v1,v2;
+      Values.Value v,cvar,cvar2,v1,v2,v3;
       Absyn.ComponentRef cr, cr2;
       Integer size,i,n,curveStyle,numberOfIntervals,x,y;
       Access access;
       list<String> vars_1,args,strings,strs1,strs2,files;
       Real timeStamp,val,x1,x2,y1,y2,y1R,y2R,r1,r2,curveWidth, interval;
       GlobalScript.Statements istmts;
-      Boolean b, b1, b2, b3, externalWindow, logX, logY, autoScale, forceOMPlot, keepRedeclares, hintReadAllVars;
+      Boolean b, b1, b2, b3, externalWindow, logX, logY, autoScale, forceOMPlot, stackCurves, keepRedeclares, hintReadAllVars;
       list<Real> realVals;
       list<Absyn.Path> paths;
       list<Absyn.NamedArg> nargs;
@@ -2209,11 +2179,7 @@ algorithm
         Values.BOOL(b);
 
     case ("getBuiltinType",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      algorithm
-        (_, tp, _) := Lookup.lookupType(outCache, inEnv, classpath, SOME(Absyn.dummyInfo));
-        str := TypesDump.unparseType(tp);
-      then
-        Values.STRING(str);
+      then Values.STRING(NFApi.getBuiltinType(classpath, SymbolTable.getAbsyn()));
 
     // if the lookup fails
     case ("getBuiltinType",{Values.CODE(Absyn.C_TYPENAME(_))})
@@ -2256,16 +2222,15 @@ algorithm
 
     case ("getSimulationOptions",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.REAL(startTime),Values.REAL(stopTime),Values.REAL(tolerance),Values.INTEGER(numberOfIntervals),Values.REAL(interval)})
       algorithm
-        cr := AbsynUtil.pathToCref(classpath);
         // ignore the name of the model
         ErrorExt.setCheckpoint("getSimulationOptions");
         simOpt := InteractiveTypes.SIMULATION_OPTIONS(DAE.RCONST(startTime),DAE.RCONST(stopTime),DAE.ICONST(numberOfIntervals),DAE.RCONST(0.0),DAE.RCONST(tolerance),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""));
         ErrorExt.rollBack("getSimulationOptions");
-        (_, _::startTimeExp::stopTimeExp::intervalExp::toleranceExp::_) := StaticScript.getSimulationArguments(FCore.emptyCache(), FGraph.empty(), {Absyn.CREF(cr)},{},false,DAE.NOPRE(), "getSimulationOptions", Absyn.dummyInfo,SOME(simOpt));
-        startTime := ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,startTimeExp,Values.REAL(startTime)));
-        stopTime := ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,stopTimeExp,Values.REAL(stopTime)));
-        tolerance := ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,toleranceExp,Values.REAL(tolerance)));
-        Values.INTEGER(numberOfIntervals) := Util.makeValueOrDefault(Ceval.cevalSimple,intervalExp,Values.INTEGER(numberOfIntervals)); // number of intervals
+        _ :: v1 :: v2 :: Values.INTEGER(numberOfIntervals) :: v3 :: _ :=
+          simulationArguments(classpath, {}, "getSimulationOptions", SOME(simOpt));
+        startTime := ValuesUtil.valueReal(v1);
+        stopTime := ValuesUtil.valueReal(v2);
+        tolerance := ValuesUtil.valueReal(v3);
         if numberOfIntervals == 0 and interval > 0.0 then
           numberOfIntervals := integer(ceil((stopTime - startTime)/interval));
         else
@@ -2298,7 +2263,7 @@ algorithm
     case ("getAvailableLibraries",{})
       algorithm
         PackageManagement.installCachedPackages();
-        files := PackageManagement.AvailableLibraries.listKeys(PackageManagement.getInstalledLibraries());
+        files := PackageManagement.getInstalledLibraries();
       then
         ValuesMake.makeArray(List.map(files, ValuesMake.makeString));
 
@@ -2340,13 +2305,13 @@ algorithm
       then ValuesMake.makeArray({});
 
     case ("getAvailablePackageConversionsFrom",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1))), Values.STRING(str2)})
-      then ValuesMake.makeStringArray(PackageManagement.versionsThatConvertFromTheWanted(str1, str2, true));
+      then ValuesMake.makeStringArray(PackageManagement.versionsThatConvertFromTheWanted(str1, str2, false, Interactive.libraryMetadata));
 
     case ("getAvailablePackageConversionsFrom",_)
       then ValuesMake.makeArray({});
 
     case ("getAvailablePackageConversionsTo",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1))), Values.STRING(str2)})
-      then ValuesMake.makeStringArray(PackageManagement.versionsThatConvertToTheWanted(str1, str2, true));
+      then ValuesMake.makeStringArray(PackageManagement.versionsThatConvertToTheWanted(str1, str2, false, Interactive.libraryMetadata));
 
     case ("getAvailablePackageConversionsTo",_)
       then ValuesMake.makeArray({});
@@ -2527,13 +2492,14 @@ algorithm
           Values.BOOL(forceOMPlot),
           Values.STRING(yAxis),
           Values.STRING(yLabelRight),
-          Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)})
+          Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)}),
+          Values.BOOL(stackCurves)
         })
       algorithm
         // get OPENMODELICAHOME
         omhome := Settings.getInstallationDirectoryPath();
         // get the simulation filename
-        (outCache,filename) := cevalCurrentSimulationResultExp(outCache,inEnv,filename,msg);
+        filename := currentSimulationResult(filename);
         pd := Autoconf.pathDelimiter;
         // create absolute path of simulation result file
         str1 := System.pwd() + pd + filename;
@@ -2545,7 +2511,7 @@ algorithm
           // create the path till OMPlot
           str2 := stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
           // create the list of arguments for OMPlot
-          str3 := "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotAll --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale);
+          str3 := "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotAll --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " --stack=" + boolString(stackCurves);
           call := stringAppendList({"\"",str2,"\""," ",str3});
           0 := System.spawnCall(str2, call);
         elseif b then
@@ -2588,7 +2554,8 @@ algorithm
           Values.BOOL(forceOMPlot),
           Values.STRING(yAxis),
           Values.STRING(yLabelRight),
-          Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)})
+          Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)}),
+          Values.BOOL(stackCurves)
         })
       algorithm
         // get the variables list
@@ -2596,7 +2563,7 @@ algorithm
         // get OPENMODELICAHOME
         omhome := Settings.getInstallationDirectoryPath();
         // get the simulation filename
-        (outCache,filename) := cevalCurrentSimulationResultExp(outCache,inEnv,filename,msg);
+        filename := currentSimulationResult(filename);
         pd := Autoconf.pathDelimiter;
         // create absolute path of simulation result file
         str1 := System.pwd() + pd + filename;
@@ -2610,7 +2577,7 @@ algorithm
           // create the path till OMPlot
           str2 := stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
           // create the list of arguments for OMPlot
-          str3 := "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plot --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " '" + str + "'";
+          str3 := "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plot --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " --stack=" + boolString(stackCurves) + " '" + str + "'";
           call := stringAppendList({"\"",str2,"\""," ",str3});
           0 := System.spawnCall(str2, call);
         elseif b then
@@ -2633,17 +2600,9 @@ algorithm
     case ("plot",_)
       then Values.BOOL(false);
 
-    case ("val",{cvar,Values.REAL(timeStamp),Values.STRING("<default>")})
-      algorithm
-        (outCache,Values.STRING(filename)) := Ceval.ceval(outCache,inEnv,buildCurrentSimulationResultExp(), true, msg, 0);
-        varNameStr := ValuesUtil.printCodeVariableName(cvar);
-        val := SimulationResults.val(filename,varNameStr,timeStamp);
-      then
-        Values.REAL(val);
-
     case ("val",{cvar,Values.REAL(timeStamp),Values.STRING(filename)})
       algorithm
-        false := stringEq(filename,"<default>");
+        filename := currentSimulationResult(filename);
         varNameStr := ValuesUtil.printCodeVariableName(cvar);
         val := SimulationResults.val(filename,varNameStr,timeStamp);
       then
@@ -3125,7 +3084,7 @@ algorithm
         // get OPENMODELICAHOME
         omhome := Settings.getInstallationDirectoryPath();
         // get the simulation filename
-        (outCache,filename) := cevalCurrentSimulationResultExp(outCache,inEnv,filename,msg);
+        filename := currentSimulationResult(filename);
         pd := Autoconf.pathDelimiter;
         // create absolute path of simulation result file
         str1 := System.pwd() + pd + filename;
@@ -3195,12 +3154,6 @@ algorithm
         b := System.relocateFunctions(str, relocatableFunctionsTuple);
       then
         Values.BOOL(b);
-
-    case ("toJulia",{})
-      algorithm
-        str := Tpl.tplString(AbsynToJulia.dumpProgram, SymbolTable.getAbsyn());
-      then
-        Values.STRING(str);
 
     case ("interactiveDumpAbsynToJL",{})
       algorithm
@@ -3385,6 +3338,9 @@ algorithm
     case ("getNthComponentCondition", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.INTEGER(n)})
       then Interactive.getNthComponentCondition(classpath, n, SymbolTable.getAbsyn());
 
+    case ("getComponentCondition", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))})
+      then Interactive.getComponentCondition(classpath, path, SymbolTable.getAbsyn());
+
     case ("getInheritanceCount", {Values.CODE(Absyn.C_TYPENAME(classpath))})
       then Interactive.getInheritanceCount(classpath, SymbolTable.getAbsyn());
 
@@ -3475,6 +3431,13 @@ algorithm
       then
         ValuesMake.makeBoolean(b);
 
+    case ("setComponentCondition", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(str)})
+      algorithm
+        (p, b) := Interactive.setComponentCondition(classpath, path, str, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        ValuesMake.makeBoolean(b);
+
     case ("renameClass", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
         (p, v) := Interactive.renameClass(classpath, path, SymbolTable.getAbsyn());
@@ -3507,9 +3470,6 @@ algorithm
     case ("getDefaultComponentPrefixes", {Values.CODE(Absyn.C_TYPENAME(classpath))})
       then Interactive.getDefaultComponentPrefixes(classpath, SymbolTable.getAbsyn());
 
-    case ("getDefinitions", {Values.BOOL(b)})
-      then Interactive.getDefinitions(SymbolTable.getAbsyn(), b);
-
     case ("getDefaultOpenCLDevice", {})
       then ValuesMake.makeInteger(Config.getDefaultOpenCLDevice());
 
@@ -3522,9 +3482,19 @@ algorithm
     case ("getDefinitionAt", {Values.STRING(str), Values.INTEGER(x), Values.INTEGER(y), Values.BOOL(b)})
       then ValuesMake.makeString(getDefinitionAt(str, x, y, b));
 
+    case ("getProbeTree", {Values.STRING(str), Values.BOOL(b)})
+      then ValuesMake.makeString(ProbeTree.probeTreeJSON(str, b));
+
+    case ("evaluateProbe", {Values.STRING(str), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3), Values.BOOL(b)})
+      then ValuesMake.makeString(ProbeTree.evaluateProbeJSON(str, str1, str2, str3, b));
+
     case ("getClassDiagram", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str), Values.STRING(str1),
                               Values.INTEGER(i), v as Values.ARRAY(), Values.BOOL(b)})
       then ValuesMake.makeString(getClassDiagram(classpath, str, str1, i, ValuesUtil.arrayValueStrings(v), b));
+
+    case ("getInstanceDiagram", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str), Values.STRING(str1),
+                                 Values.INTEGER(i), v as Values.ARRAY(), Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(b3)})
+      then NFApi.getInstanceDiagram(classpath, str, str1, i, ValuesUtil.arrayValueStrings(v), b1, b2, b3);
 
     case ("reverseLookup", {Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b1), Values.BOOL(b2)})
       then ValuesMake.makeString(ReverseLookup.lookup(path, classpath, SymbolTable.getAbsyn(), b1, b2));
@@ -3562,48 +3532,6 @@ algorithm
     else Autoconf.exeExt;
   end match;
 end getSimulationExtension;
-
-public function getAdjacencyMatrix " author: adrpo
- translates a model and returns the adjacency matrix"
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input Absyn.Path className "path for the model";
-  input Absyn.Msg inMsg;
-  input String filenameprefix;
-  output FCore.Cache outCache;
-  output Values.Value outValue;
-  output String outString;
-algorithm
-  (outCache,outValue,outString):=
-  match (inCache, inEnv)
-    local
-      String filename,file_dir, str;
-      DAE.DAElist dae;
-      FCore.Graph env;
-      BackendDAE.BackendDAE dlow;
-      Absyn.ComponentRef a_cref;
-      FCore.Cache cache;
-      String flatModelicaStr,description;
-
-    case (cache, env) /* mo file directory */
-      algorithm
-        (cache, env, SOME(dae), _) := runFrontEnd(cache, env, className, true, transform = true);
-        description := DAEUtil.daeDescription(dae);
-        a_cref := AbsynUtil.pathToCref(className);
-        file_dir := ProgramUtil.getFileDir(a_cref, SymbolTable.getAbsyn());
-        dlow := BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE()));
-        dlow := FindZeroCrossings.findZeroCrossings(dlow);
-        flatModelicaStr := DAEDump.dumpStr(dae,FCore.getFunctionTree(cache));
-        flatModelicaStr := stringAppend("OldEqStr={'", flatModelicaStr);
-        flatModelicaStr := System.stringReplace(flatModelicaStr, "\n", "%##%");
-        flatModelicaStr := System.stringReplace(flatModelicaStr, "%##%", "','");
-        flatModelicaStr := stringAppend(flatModelicaStr,"'};");
-        filename := DAEQuery.writeAdjacencyMatrix(dlow, filenameprefix, flatModelicaStr);
-        str := stringAppend("The equation system was dumped to Matlab file:", filename);
-      then
-        (cache,Values.STRING(str),file_dir);
-  end match;
-end getAdjacencyMatrix;
 
 /* -------------------------------------------------------------------
                          RUN FRONTEND
@@ -3734,6 +3662,10 @@ algorithm
 
     case (false, false)
       algorithm
+        // MetaModelica is only supported by the old frontend.
+        if not (nf_inst_actual or Config.acceptMetaModelicaGrammar()) then
+          Error.addMessage(Error.OLD_FRONTEND_DEPRECATED, {});
+        end if;
         scodeP := SymbolTable.getSCode();
         ExecStat.execStat("FrontEnd - Absyn->SCode");
 
@@ -3885,14 +3817,13 @@ protected function configureFMU_cmake
   input String logfile;
   input list<String> externalLibLocations;
   input Boolean isWindows;
-  input Boolean needs3rdPartyLibs;
 protected
   String fmuSourceDir;
   String CMAKE_GENERATOR = "", CMAKE_BUILD_TYPE;
   String quote, dquote, defaultFmiIncludeDirectoy;
   String CC;
   SimCodeFunction.MakefileParams makefileParams;
-  String msvcEnv, rmrf;
+  String msvcEnv, rmrf, simrtLib, cflags;
 algorithm
   makefileParams := SimCodeFunctionUtil.createMakefileParams({}, {}, {}, false, true);
   fmuSourceDir := fmutmp+"/sources/";
@@ -3912,6 +3843,17 @@ algorithm
     rmrf := "rm -rf ";
   end if;
   defaultFmiIncludeDirectoy := dquote + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + dquote;
+  // Only this omc, building the FMU it just generated, knows that its archives
+  // fit the sources. A docker build or a later rebuild compiles them instead.
+  simrtLib := "-DSIMULATION_RUNTIME_FMI_LIBRARY=" + dquote + Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc/libSimulationRuntimeFMI.a" + dquote
+            + " -DSOLVER_LIBRARY_DIRECTORY=" + dquote + Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc" + dquote;
+  // As in a simulation executable; its Makefile expands MODELICAUSERCFLAGS itself.
+  // The FMU's CMakeLists.txt defines OM_HAVE_PTHREADS if it finds pthreads.
+  cflags := System.stringReplace(System.getCFlags(), "${MODELICAUSERCFLAGS}",
+                                 Util.makeValueOrDefault(System.readEnv, "MODELICAUSERCFLAGS", ""));
+  cflags := System.stringReplace(cflags, "-DOM_HAVE_PTHREADS", "");
+  cflags := if isWindows then System.stringReplace(cflags, "\"", "\\\"") else System.stringReplace(cflags, "'", "'\\''");
+  cflags := "-DCMAKE_C_FLAGS=" + dquote + cflags + dquote;
 
   // Set build type
   if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
@@ -3940,14 +3882,14 @@ algorithm
       Boolean isTrustedImage;
       Integer uid;
       String cidFile, volumeID, containerID, userID;
-      String dockerLogFile;
+      String dockerLogFile, fmuTarFile;
       String cmake_toolchain;
       list<String> locations;
     case {"dynamic"}
       algorithm
         buildDir := "build_cmake_dynamic";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
-                     CMAKE_BUILD_TYPE + " " + CC +
+                     CMAKE_BUILD_TYPE + " " + CC + " " + simrtLib + " " + cflags +
                      " ..";
         cmd := msvcEnv + "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
@@ -3963,7 +3905,7 @@ algorithm
       algorithm
         buildDir := "build_cmake_static";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
-                     CMAKE_BUILD_TYPE + " " + CC +
+                     CMAKE_BUILD_TYPE + " " + CC + " " + simrtLib + " " + cflags +
                      " ..";
         cmd := msvcEnv + "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
@@ -3987,7 +3929,7 @@ algorithm
         cidFile := fmutmp+".cidfile";
 
         // Temp log file outside of Docker volume
-        dockerLogFile := crossTriple + ".tmp.log";
+        dockerLogFile := fmutmp + "." + crossTriple + ".tmp.log";
         // Remove old log file
         if System.regularFileExists(dockerLogFile) then
           System.removeFile(dockerLogFile);
@@ -3995,11 +3937,11 @@ algorithm
 
         // Only download trusted images automatically, and only if the signature
         // can be verified. Images that are already on this machine are used as is.
-        if isTrustedImage and not ContainerImage.isAvailableLocally(dockerImage) then
-          if ContainerImage.isCosignAvailable() then
+        if isTrustedImage and not ContainerImage.isAvailableLocally(dockerImage, fmutmp) then
+          if ContainerImage.isCosignAvailable(fmutmp) then
             // Verify the image in the registry first, it's only downloaded if the signature is valid.
-            ContainerImage.assertSignature(dockerImage);
-            ContainerImage.pull(dockerImage);
+            ContainerImage.assertSignature(dockerImage, fmutmp);
+            ContainerImage.pull(dockerImage, fmutmp);
           else
             Error.addCompilerError("Refusing to download container image '" + ContainerImage.toString(dockerImage) + "' without verifying its signature.");
             Error.addCompilerNotification("Download the image manually with `" + ContainerImage.pullCommand(dockerImage) + "` and run the FMU export again.");
@@ -4038,11 +3980,6 @@ algorithm
         externalIncludeDirsFile := fmutmp + "/.external_include_dirs";
         if System.regularFileExists(externalIncludeDirsFile) then
           locations := listAppend(System.strtok(System.readFile(externalIncludeDirsFile), "\n"), locations);
-        end if;
-        // CVODE_DIRECTORY is not one of the model's link directories, so nothing would
-        // copy it for a model that has no external libraries of its own.
-        if needs3rdPartyLibs then
-          locations := Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc" :: locations;
         end if;
         for loc in locations loop
           if System.directoryExists(loc) then
@@ -4092,16 +4029,17 @@ algorithm
         // Docker cp can't handle too long names on Windows.
         // Workaround: Zip it in the container, copy it to host, unzip it
         if isWindows then
+          fmuTarFile := fmutmp + ".tar.gz";
           cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu " + dockerRunArgs +
-                 " tar -zcf comp-fmutmp.tar.gz " + fmutmp;
+                 " tar -zcf " + fmuTarFile + " " + fmutmp;
           runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
 
-          cmd := "docker cp " + containerID + ":/data/comp-fmutmp.tar.gz .";
+          cmd := "docker cp " + containerID + ":/data/" + fmuTarFile + " .";
           runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
-          if 0 <> System.systemCall("tar zxf comp-fmutmp.tar.gz && rm comp-fmutmp.tar.gz", outFile=dockerLogFile) then
+          if 0 <> System.systemCall("tar zxf " + fmuTarFile + " && rm " + fmuTarFile, outFile=dockerLogFile) then
             // Otherwise the failure only surfaces later as "Build commands returned
             // success, but <name>.fmu does not exist".
-            Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Failed to unpack comp-fmutmp.tar.gz:\n" + System.readFile(dockerLogFile)});
+            Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Failed to unpack " + fmuTarFile + ":\n" + System.readFile(dockerLogFile)});
             fail();
           end if;
         else
@@ -4155,6 +4093,11 @@ algorithm
   end if;
 end runDockerCmd;
 
+protected function isLinearizeTimeFlag
+  input String flag;
+  output Boolean isLinearizeTime = flag == "-l" or StringUtil.startsWith(flag, "-l=");
+end isLinearizeTimeFlag;
+
 protected function isDockerPlatform
   input String platform;
   output Boolean isDocker;
@@ -4193,6 +4136,40 @@ algorithm
     fail();
   end try;
 end translateModelFMU;
+
+protected function canExportDaeModeFMU
+  "Which targets can export a --daeMode model as an FMU. The wasm runtime serves
+   the residual form for both FMU kinds. A --simCodeTarget=C+Rust FMU gets its FMI
+   API from the same Rust runtime component, so it serves it as fmi-ls-dae for
+   FMI 3.0 Model Exchange, where the importer owns the DAE residuals and the
+   algebraic variables. The C simulation runtime of --simCodeTarget=C integrates
+   the residual form with IDA, so it serves Co-Simulation only."
+  input String FMUType;
+  input String FMUVersion;
+  input Boolean isWasmFMU;
+  output Boolean canExport;
+algorithm
+  canExport := isWasmFMU or
+               (FMI.isFMIVersion30(FMUVersion) and FMI.isFMIMEType(FMUType) and
+                Config.simCodeRustRuntime()) or
+               (not FMI.isFMIVersion10(FMUVersion) and not FMI.isFMIMEType(FMUType) and
+                not Config.simCodeRustRuntime());
+end canExportDaeModeFMU;
+
+protected function daeModeFMUType
+  "An me_cs export of a --daeMode model whose Model Exchange part the target
+   cannot serve exports Co-Simulation only, with a warning."
+  input String FMUType;
+  input String FMUVersion;
+  input Boolean isWasmFMU;
+  output String outFMUType = FMUType;
+algorithm
+  if FMUType == "me_cs" and not canExportDaeModeFMU(FMUType, FMUVersion, isWasmFMU) and
+     canExportDaeModeFMU("cs", FMUVersion, isWasmFMU) then
+    Error.addMessage(Error.FMU_EXPORT_DAE_MODE_ME_DROPPED, {});
+    outFMUType := "cs";
+  end if;
+end daeModeFMUType;
 
 protected function callTranslateModelFMU
  "Translates a model into target code and writes CMakeLists.txt"
@@ -4234,17 +4211,23 @@ algorithm
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED, {FMUType, FMUVersion});
     return;
   end if;
+  if FMI.isFMIVersion10(FMUVersion) then
+    Error.addMessage(Error.FMU_EXPORT_FMI1_DEPRECATED, {});
+  end if;
   if Config.simCodeTarget() == "Cpp" and FMI.isFMICSType(FMUType) then
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
   end if;
-  if Flags.getConfigBool(Flags.DAE_MODE) and not isWasmFMU then
+  if Flags.getConfigBool(Flags.DAE_MODE) then
+    FMUType := daeModeFMUType(FMUType, FMUVersion, isWasmFMU);
+  end if;
+  if Flags.getConfigBool(Flags.DAE_MODE) and not canExportDaeModeFMU(FMUType, FMUVersion, isWasmFMU) then
     success := false;
     outValue := Values.STRING("");
     if FMI.isFMIMEType(FMUType) then
       Error.addMessage(Error.FMU_EXPORT_DAE_MODE_ME, {FMUType});
     else
-      Error.addMessage(Error.FMU_EXPORT_DAE_MODE_C_CS, {});
+      Error.addMessage(Error.FMU_EXPORT_DAE_MODE_CS, {});
     end if;
     return;
   end if;
@@ -4626,7 +4609,6 @@ protected function buildModelFMU
   output Values.Value outValue;
 protected
   Flags.Flag flags;
-  list<String> fmiFlags;
 algorithm
   if isProtectedContentAccess(className) then
     // if AST contains encrypted class show nothing
@@ -4634,20 +4616,14 @@ algorithm
     outValue := Values.STRING("");
   else
     flags := loadCommandLineOptionsFromModel(className);
-    // `method=` reaches the FMU only through --fmiFlags, a global: restore it by
-    // hand so one export does not pick the solver for the next. `saveFlags` will
-    // not — without __OpenModelica_commandLineOptions `flags` aliases the store.
-    fmiFlags := Flags.getConfigStringList(Flags.FMI_FLAGS);
     fmuMethodToSimulationFlag(method, isWasmFMUExport(FMUVersion, platforms));
     fmuAnnotationSimulationFlags(className, isWasmFMUExport(FMUVersion, platforms));
 
     try
       (cache, outValue) := callBuildModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
       // reset to the original flags
-      FlagsUtil.setConfigStringList(Flags.FMI_FLAGS, fmiFlags);
       FlagsUtil.saveFlags(flags);
     else
-      FlagsUtil.setConfigStringList(Flags.FMI_FLAGS, fmiFlags);
       FlagsUtil.saveFlags(flags);
       fail();
     end try;
@@ -4660,7 +4636,7 @@ public function callBuildModelFMU
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.Path className "path for the model";
-  input String FMUVersion;
+  input String inFMUVersion;
   input String inFMUType;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
@@ -4670,14 +4646,14 @@ public function callBuildModelFMU
   output Values.Value outValue;
 protected
   Boolean success;
-  String filenameprefix, fmutmp, logfile, configureLogFile, dir, cmd, msvcEnv;
+  String filenameprefix, fmutmp, logfile, configureLogFile, dir;
   String fmuTargetName;
   SimCode.SimulationSettings simSettings;
   list<String> libs = {} "the reuse path translates nothing, so nothing reports libraries";
   Boolean isWindows;
-  Boolean needs3rdPartyLibs;
   Integer platformIndex, platformCount;
   String platformName;
+  String FMUVersion = inFMUVersion;
   String FMUType = inFMUType;
   // FMI 1.0 is deprecated and the wasm export does not serve it; such a request
   // is the C export's business even under the wasm simCodeTarget.
@@ -4689,8 +4665,22 @@ protected
   // Reached through the target, the caller still wants an FMU the ordinary
   // tooling can load, so it gets this machine's platform too.
   list<String> nativePlatforms = if wasmRequested then List.select(platforms, isNotWasmPlatform) else {"native"};
+  Boolean withFMI2 = false;
 algorithm
   cache := inCache;
+  // Internal, for OpenModelicaLibraryTesting only: an FMI 3.0 binary that also
+  // serves FMI 2.0, in an FMU laid out for FMI 2.0. modelDescription.fmi3.xml is
+  // the FMI 3.0 description. A wasm simCodeTarget gets the C export, as FMI 1.0 does.
+  if FMUVersion == "2.0+3.0" then
+    if wasmRequested or not (Config.simCodeTarget() == "C" or wasmTarget) then
+      outValue := Values.STRING("");
+      Error.addCompilerError("FMI version 2.0+3.0 needs the C export and native platforms.");
+      return;
+    end if;
+    FMUVersion := "3.0";
+    withFMI2 := true;
+    isWasmFMU := false;
+  end if;
   if not FMI.checkFMIVersion(FMUVersion) then
     outValue := Values.STRING("");
     Error.addMessage(Error.UNKNOWN_FMU_VERSION, {FMUVersion});
@@ -4710,16 +4700,28 @@ algorithm
     Error.addMessage(Error.FMU_EXPORT_WASM_FMI1, {});
     return;
   end if;
+  if FMI.isFMIVersion10(FMUVersion) then
+    Error.addMessage(Error.FMU_EXPORT_FMI1_DEPRECATED, {});
+  end if;
+  // without a native binary to load it, the wasm model is only reachable as fmi-ls-wasm,
+  // which is layered on FMI 3.0
+  if wasmRequested and FMUVersion == "2.0" and listEmpty(nativePlatforms) then
+    Error.addMessage(Error.FMU_EXPORT_WASM_FMI2_AS_FMI3, {});
+    FMUVersion := "3.0";
+  end if;
   if Config.simCodeTarget() == "Cpp" and FMI.isFMICSType(FMUType) then
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
   end if;
-  if Flags.getConfigBool(Flags.DAE_MODE) and not isWasmFMU then
+  if Flags.getConfigBool(Flags.DAE_MODE) then
+    FMUType := daeModeFMUType(FMUType, FMUVersion, isWasmFMU);
+  end if;
+  if Flags.getConfigBool(Flags.DAE_MODE) and not canExportDaeModeFMU(FMUType, FMUVersion, isWasmFMU) then
     outValue := Values.STRING("");
     if FMI.isFMIMEType(FMUType) then
       Error.addMessage(Error.FMU_EXPORT_DAE_MODE_ME, {FMUType});
     else
-      Error.addMessage(Error.FMU_EXPORT_DAE_MODE_C_CS, {});
+      Error.addMessage(Error.FMU_EXPORT_DAE_MODE_CS, {});
     end if;
     return;
   end if;
@@ -4745,6 +4747,7 @@ algorithm
   end if;
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, true);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, FMUVersion);
+  FlagsUtil.setConfigBool(Flags.FMU_WITH_FMI2, withFMI2);
   // A translateModelFMU of this model, this FMI version and this kind of
   // interface, off the program still loaded and under the flags still set, has
   // already done the translation: render the metadata and link the adapter onto
@@ -4767,10 +4770,12 @@ algorithm
     outValue := Values.STRING("");
     FlagsUtil.setConfigBool(Flags.BUILDING_FMU, false);
     FlagsUtil.setConfigString(Flags.FMI_VERSION, "");
+    FlagsUtil.setConfigBool(Flags.FMU_WITH_FMI2, false);
     return;
   end try;
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, false);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, "");
+  FlagsUtil.setConfigBool(Flags.FMU_WITH_FMI2, false);
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_BUILD_MODEL);
 
@@ -4799,13 +4804,21 @@ algorithm
     System.removeDirectory("binaries");
     for platform in platforms loop
       if platform == "dynamic" or platform == "static" then
-        CevalScript.compileModel(filenameprefix + "_FMU", libs);
+        CevalScript.compileModel(filenameprefix + "_FMU", libs, makeVars={"ZIP_FMU=NO"});
       else
         CevalScript.compileModel(filenameprefix + "_FMU", libs,
-                                 makeVars={"TARGET_TRIPLET=" + platform});
+                                 makeVars={"TARGET_TRIPLET=" + platform, "ZIP_FMU=NO"});
       end if;
       ExecStat.execStat("buildModelFMU: Generate C++ for platform " + platform);
     end for;
+    System.removeFile(fmuTargetName + ".fmu");
+    if not Unzip.zipPaths(fmuTargetName + ".fmu", System.pwd(),
+        list(f for f guard System.regularFileExists(f) or System.directoryExists(f)
+               in {"modelDescription.xml", "binaries", "sources", "documentation", "extra"})) then
+      ExecStat.execStat("buildModelFMU failed");
+      fail();
+    end if;
+    System.removeDirectory("documentation");
     if 0 <> System.systemCallRestrictedEnv(Autoconf.make + " -f " + filenameprefix + "_FMU.makefile clean", outFile=logfile) then
       // do nothing
     end if;
@@ -4813,9 +4826,6 @@ algorithm
   end if;
   CevalScript.compileModel(filenameprefix+"_FMU" , libs);
   ExecStat.execStat("buildModelFMU: Generate the FMI files");
-
-  // Check flag fmiFlags if we need additional 3rdParty runtime libs and files
-  needs3rdPartyLibs := SimCodeUtil.cvodeFmiFlagIsSet(SimCodeUtil.createFMISimulationFlags(false));
 
   // A docker build compiles the FMU from sources/, which --fmiSources=false only
   // strips when packing, so the Rust half has to be there too.
@@ -4839,7 +4849,7 @@ algorithm
     Error.addCompilerNotification("Building FMU for platform '" + platformName + "' (" + String(platformIndex) + "/" + String(platformCount) + ").");
 
     configureLogFile := System.realpath(fmutmp)+"/resources/"+System.stringReplace(platformName,"/","-")+".log";
-    configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, libs, isWindows, needs3rdPartyLibs);
+    configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, libs, isWindows);
     if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
       System.removeFile(configureLogFile);
     end if;
@@ -4857,20 +4867,10 @@ algorithm
     end if;
   end if;
 
-  msvcEnv := SimCodeUtil.msvcEnvironment();
-  if msvcEnv <> "" then
-    cmd := msvcEnv + Autoconf.cmake + " -E rm -f \"" + fmuTargetName + ".fmu\" && cd \"" + fmutmp + "\" && " +
-           Autoconf.cmake + " -E tar cf \"../" + fmuTargetName + ".fmu\" --format=zip .";
-  else
-    cmd := "rm -f \"" + fmuTargetName + ".fmu\" && cd \"" + fmutmp + "\" && zip -r \"../" + fmuTargetName + ".fmu\" *";
-  end if;
-  if 0 <> System.systemCall(cmd, outFile=logfile) then
-    Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + "\n\n" + System.readFile(logfile)});
+  System.removeFile(fmutmp + "/.external_include_dirs");
+  System.removeFile(fmuTargetName + ".fmu");
+  if not Unzip.zipPath(fmuTargetName + ".fmu", fmutmp, "") then
     ExecStat.execStat("buildModelFMU failed");
-  end if;
-
-  if not System.regularFileExists(fmuTargetName + ".fmu") then
-    Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Build commands returned success, but " + fmuTargetName + ".fmu does not exist"});
     fail();
   end if;
 
@@ -4908,7 +4908,7 @@ protected
   Absyn.Class cls;
   String fileName, logFile, omhome, pd, ext, packageTool, packageToolArgs, command;
   Boolean runCommand;
-  String molName, dirPath, rmCommand, cdCommand, mvCommand, dirOrFileName, zipCommand;
+  String molName, dirPath;
 algorithm
   cls := ProgramUtil.getPathedClassInProgram(className, inProgram);
   fileName := AbsynUtil.classFilename(cls);
@@ -4932,22 +4932,16 @@ algorithm
         command := "";
       end if;
     else
-      molName := AbsynUtil.pathString(className) + ".mol";
-      dirPath := System.dirname(fileName);
-      // commands
-      rmCommand := "rm -f \"" + molName + "\"";
-      cdCommand := "cd \"" +  dirPath + "\"";
-      mvCommand := "mv \"" + molName +"\" \"" + System.pwd() + "\"";
-
-      if (StringUtil.endsWith(fileName, "package.mo")) then
-        dirOrFileName := System.basename(dirPath);
-        zipCommand := "zip -r \"" + System.pwd() + pd + molName + "\" \"" + dirOrFileName + "\"";
-        command := stringAppendList({rmCommand, " && ", cdCommand, " && cd .. && ", zipCommand});
+      molName := System.pwd() + pd + AbsynUtil.pathString(className) + ".mol";
+      System.removeFile(molName);
+      if StringUtil.endsWith(fileName, "package.mo") then
+        dirPath := System.dirname(fileName);
+        success := Unzip.zipPath(molName, dirPath, System.basename(dirPath));
       else
-        dirOrFileName := System.basename(fileName);
-        zipCommand := "zip -r \"" + System.pwd() + pd + molName + "\" \"" + dirOrFileName + "\"";
-        command := stringAppendList({rmCommand, " && ", cdCommand, " && ", zipCommand});
+        success := Unzip.zipPath(molName, fileName, System.basename(fileName));
       end if;
+      runCommand := false;
+      command := "";
     end if;
 
     if runCommand then
@@ -5046,7 +5040,7 @@ algorithm
         (cache, outSimSettings);
     else
       algorithm
-        Error.addMessage(Error.INTERNAL_ERROR, {"CevalScript.calculateSimulationSettings failed: " + ValuesDump.valString(Values.TUPLE(vals))});
+        Error.addMessage(Error.INTERNAL_ERROR, {"CevalScriptBackend.calculateSimulationSettings failed: " + ValuesDump.valString(Values.TUPLE(vals))});
       then
         fail();
   end match;
@@ -6443,6 +6437,239 @@ algorithm
   end match;
 end formatSimulationFlagString;
 
+protected function runAcausalDAE
+  "Orchestrates the acausal-DAE flow for a flowsheet whose top-level components
+   are acausal DAE blocks:
+     1. getModelInstance(flowsheet)                     -> instance JSON
+     2. combine_components.py prepare                   -> Top_<c> wrappers,
+                                                           _connect_<model>.txt,
+                                                           component manifest
+     3. translateResidualsDAE(Top_<c>) per component    -> per-component DAE C
+     4. combine_components.py combine                   -> combined C + makefile
+     5. (mode>=1) make                                  -> simulation executable
+     6. (mode==2) run executable + collect SimulationResult
+   mode: 0 = translate only, 1 = build (no run), 2 = simulate (build + run).
+   Returns Boolean (mode 0), String[2] {exe,init} (mode 1) or a SimulationResult
+   record (mode 2)."
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input list<Values.Value> vals;
+  input Absyn.Msg msg;
+  input Integer mode;
+  output FCore.Cache outCache = inCache;
+  output Values.Value outValue;
+protected
+  Absyn.Path className;
+  String cname, prefix, workdir, scriptPath, instFile, outPrefix, cmd, names,
+         exe, logFile, resultFile, instJson, omhome, wrappersFile, prepLog, combLog, outFmt,
+         flatFile, flatStr;
+  list<String> prefixes;
+  Integer rc;
+  Boolean ok, buildOk;
+  Real timeTotal, timeSim = 0.0;
+algorithm
+  System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+  Values.CODE(Absyn.C_TYPENAME(className)) := listHead(vals);
+  cname := AbsynUtil.pathString(className);
+  omhome := System.stringReplace(Settings.getInstallationDirectoryPath(), "\"", "");
+  scriptPath := omhome + "/share/omc/scripts/combine_components.py";
+
+  // working directory: cwd if writable, otherwise a temp directory (issue: the
+  // directory where omc was started may be read-only).
+  workdir := acausalWorkingDir(cname);
+
+  // 1. dump the model instance (resolves through extends, gives components,
+  //    modifiers incl. redeclares, and the top-level connections).
+  Values.STRING(instJson) := NFApi.getModelInstance(className, Absyn.IDENT("__NoContext"), "", false);
+  instFile := workdir + "/" + cname + "_instance.json";
+  System.writeFile(instFile, instJson);
+
+  // 1b. dump the RESOLVED flat model of the original top-level model. The new
+  //     frontend has already run resolveConnections, so this flat model carries
+  //     OMC's authoritative connection resolution: potential equalities, flow/KCL
+  //     sums with the correct inside/outside signs, stream equations, and broken
+  //     overconstrained loops. The combine reads connect() semantics from here
+  //     rather than reconstructing them from the raw edges. This flattening is
+  //     for metadata only -- the components are still compiled separately.
+  //     getModelInstance (step 1) populates NFInst's global mutable caches and
+  //     leaves them in an instance-API state; a subsequent full instantiation
+  //     fails unless we wipe them first (runFrontEndWorkNF only clears on its own
+  //     failure). So clear the NF caches, then flatten with dumpFlat=true to get
+  //     the flat-Modelica string directly.
+  flatFile := workdir + "/" + cname + "_flat.mo";
+  try
+    NFInst.clearCaches();
+    (outCache, _, _, flatStr) := runFrontEnd(outCache, inEnv, className, false, true);
+    if not stringEmpty(flatStr) then
+      System.writeFile(flatFile, flatStr);
+    end if;
+  else
+    // Non-fatal: the resolved flat model is auxiliary connection metadata; the
+    // combine falls back to the instance-JSON connections if it is absent.
+    flatStr := "";
+  end try;
+
+  // 2. prepare: synthesize per-component wrapper models + connection list.
+  prepLog := workdir + "/_acausal_prepare.log";
+  cmd := "python3 \"" + scriptPath + "\" prepare --instance \"" + instFile +
+         "\" --dir \"" + workdir + "\" --model " + cname;
+  rc := System.systemCall(cmd, prepLog);
+  if rc <> 0 then
+    outValue := acausalFail(mode, "simulateAcausalDAE: prepare step failed:\n" + System.readFile(prepLog));
+    return;
+  end if;
+
+  // 3. load wrappers and generate per-component DAE residual code, reusing
+  //    already-generated code for components whose wrapper signature (type +
+  //    modifications + copied decls) and omc version are unchanged (point 6).
+  wrappersFile := workdir + "/_acausal_wrappers.mo";
+  SymbolTable.setAbsyn(CevalScript.loadFile(wrappersFile, "UTF-8", SymbolTable.getAbsyn(), true, false, false, true));
+  prefixes := {};
+  rc := System.cd(workdir);
+  for entry in acausalReadManifest(workdir + "/_acausal_components.txt") loop
+    (prefix, ok) := acausalGenComponent(entry);
+    if not ok then
+      outValue := acausalFail(mode, "simulateAcausalDAE: translateResidualsDAE failed for component " + prefix);
+      return;
+    end if;
+    prefixes := prefix :: prefixes;
+  end for;
+  prefixes := listReverse(prefixes);
+
+  // 4. stitch the components together with the connection equations.
+  names := stringDelimitList(prefixes, ",");
+  outPrefix := "combined";
+  combLog := workdir + "/_acausal_combine.log";
+  cmd := "python3 \"" + scriptPath + "\" combine --dir \"" + workdir + "\" --comps " +
+         names + " --conn _connect_" + cname + ".txt --out " + outPrefix;
+  rc := System.systemCall(cmd, combLog);
+  if rc <> 0 then
+    outValue := acausalFail(mode, "simulateAcausalDAE: combine step failed:\n" + System.readFile(combLog));
+    return;
+  end if;
+
+  if mode == 0 then
+    outValue := ValuesMake.makeBoolean(true);
+    return;
+  end if;
+
+  // 5. build the combined model.
+  logFile := workdir + "/" + outPrefix + ".log";
+  cmd := Autoconf.make + " -f " + outPrefix + ".makefile OPENMODELICAHOME=\"" + omhome + "\"";
+  buildOk := System.systemCall(cmd, logFile) == 0;
+  exe := workdir + "/" + outPrefix;
+
+  if mode == 1 then
+    outValue := ValuesMake.makeArray({ValuesMake.makeString(if buildOk then exe else ""), ValuesMake.makeString("")});
+    return;
+  end if;
+
+  // 6. run the combined executable and return a SimulationResult like simulate().
+  //    The driver writes both combined_res.mat and combined_res.csv; point the
+  //    result at the one matching outputFormat (vals[9]), defaulting to mat.
+  outFmt := match listGet(vals, 9) case Values.STRING("csv") then "csv"; else "mat"; end match;
+  resultFile := workdir + "/" + outPrefix + "_res." + outFmt;
+  if buildOk then
+    rc := System.systemCallRestrictedEnv("\"" + exe + "\"", logFile);
+  else
+    rc := 1;
+  end if;
+  timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+  (outCache, outValue) := createSimulationResultFromcallModelExecutable(
+    buildOk, rc, timeTotal, timeSim, {}, inCache, className, vals, resultFile, logFile);
+end runAcausalDAE;
+
+protected function acausalFail
+  "Builds the mode-appropriate failure value for runAcausalDAE and records the
+   message so it shows up in getErrorString()."
+  input Integer mode;
+  input String message;
+  output Values.Value v;
+algorithm
+  Error.addInternalError(message, sourceInfo());
+  v := match mode
+    case 0 then ValuesMake.makeBoolean(false);
+    case 1 then ValuesMake.makeArray({ValuesMake.makeString(""), ValuesMake.makeString("")});
+    else createSimulationResultFailure(message, "");
+  end match;
+end acausalFail;
+
+protected function acausalWorkingDir
+  "Returns the current directory if it is writable, otherwise a temp directory."
+  input String cname;
+  output String dir;
+protected
+  String cwd, probe, tmp;
+algorithm
+  cwd := System.pwd();
+  probe := cwd + "/." + cname + "_acausal_probe";
+  try
+    System.writeFile(probe, "");
+    true := System.regularFileExists(probe);
+    System.removeFile(probe);
+    dir := cwd;
+  else
+    tmp := Settings.getTempDirectoryPath() + "/acausalDAE_" + cname;
+    if not System.directoryExists(tmp) then
+      System.createDirectory(tmp);
+    end if;
+    dir := tmp;
+  end try;
+end acausalWorkingDir;
+
+protected function acausalReadManifest
+  "Reads the component manifest ('<name>\\t<signature>' per line) into a list of
+   (name, signature) tuples."
+  input String file;
+  output list<tuple<String, String>> comps = {};
+protected
+  list<String> toks;
+algorithm
+  for line in System.strtok(System.readFile(file), "\n") loop
+    toks := System.strtok(System.trimWhitespace(line), "\t");
+    comps := match toks
+      case {} then comps;
+      case {_} then (listGet(toks, 1), "") :: comps;
+      else (listGet(toks, 1), listGet(toks, 2)) :: comps;
+    end match;
+  end for;
+  comps := listReverse(comps);
+end acausalReadManifest;
+
+protected function acausalGenComponent
+  "Generates the DAE residual code for one component, reusing the previously
+   generated code if a cache sidecar with a matching signature + omc version
+   exists (point 6: avoid re-running translateResidualsDAE for unchanged
+   components). Returns (componentName, success)."
+  input tuple<String, String> entry;
+  output String prefix;
+  output Boolean success;
+protected
+  String sig, cacheFile, daeFile, cacheContent;
+  Boolean ok;
+algorithm
+  (prefix, sig) := entry;
+  cacheFile := prefix + "_acausal_cache.json";
+  daeFile := prefix + "_16dae.c";
+  cacheContent := "{\"component\": \"" + prefix + "\", \"signature\": \"" + sig +
+                  "\", \"omcVersion\": \"" + Settings.getVersionNr() + "\"}";
+
+  // reuse if the per-component code and a matching cache sidecar are present
+  if sig <> "" and System.regularFileExists(cacheFile) and System.regularFileExists(daeFile)
+     and System.trimWhitespace(System.readFile(cacheFile)) == cacheContent then
+    success := true;
+    return;
+  end if;
+
+  // translateResidualsDAE swallows backend errors and returns true regardless,
+  // so verify it actually produced the DAE residual file before trusting it.
+  ok := NFApi.translateResidualsDAE(Absyn.IDENT("Top_" + prefix), prefix);
+  success := ok and System.regularFileExists(daeFile);
+  if success and sig <> "" then
+    System.writeFile(cacheFile, cacheContent);
+  end if;
+end acausalGenComponent;
+
 protected function createSimulationResultFromcallModelExecutable
 "This function calls the compiled simulation executable."
   input Boolean buildSuccess;
@@ -6510,52 +6737,82 @@ public function checkModel " checks a model and returns number of variables and 
   input Absyn.Path className;
   input Absyn.Msg inMsg;
         output Values.Value outValue;
-algorithm
-  outValue := matchcontinue ()
-    local
-      Option<DAE.DAElist> odae;
-      DAE.DAElist dae;
-      Integer eqnSize,varSize,simpleEqnSize;
-      String retStr,classNameStr;
-      Flags.Flag flags;
+protected
+  DAE.DAElist dae;
+  Integer eqnSize, varSize, simpleEqnSize, warnings, errors;
+  String retStr, classNameStr, eqnsStr, varsStr, errStr;
+  Flags.Flag flags;
+  NFFlatModel flatModel;
+  NFExpression eqnSizeExp, varSizeExp;
 
-    // handle normal models
-    case ()
-      algorithm
-        ExecStat.execStatReset();
-        flags := loadCommandLineOptionsFromModel(className);
-
-        try
-          (cache, _, odae) := runFrontEnd(cache, env, className, false);
-          SOME(dae) := odae;
-          (varSize, eqnSize, simpleEqnSize) := CheckModel.checkModel(dae);
-          FlagsUtil.saveFlags(flags);
-        else
-          FlagsUtil.saveFlags(flags);
-          fail();
-        end try;
-
-        classNameStr := AbsynUtil.pathString(className);
-        retStr := stringAppendList({"Check of ",classNameStr," completed successfully.\nClass ",classNameStr," has ",String(eqnSize)," equation(s) and ",
-          String(varSize)," variable(s).\n",String(simpleEqnSize)," of these are trivial equation(s)."});
-      then Values.STRING(retStr);
-
-    case ()
-      algorithm
-        false := Interactive.existClass(className, SymbolTable.getAbsyn());
-        Error.addMessage(Error.LOOKUP_ERROR, {AbsynUtil.pathString(className), "<TOP>"});
-      then Values.STRING("");
-
-    // errors
+  function format_errors
+    input Integer warnings;
+    input Integer errors;
+    output String str;
+  algorithm
+    if warnings == 0 and errors == 0 then
+      str := "";
     else
-      algorithm
-        if Error.getNumMessages() == 0 then
-          Error.addMessage(Error.INTERNAL_ERROR,
-            {"Check of " + AbsynUtil.pathString(className) + " failed with no error message","<TOP>"});
-        end if;
-      then Values.STRING("");
+      str := " with ";
+      if warnings > 0 then
+        str := str + String(warnings) + " warning(s)";
+      end if;
 
-  end matchcontinue;
+      if errors > 0 then
+        if warnings > 0 then
+          str := str + " and ";
+        end if;
+
+        str := str + String(errors) + " error(s)";
+      end if;
+    end if;
+  end format_errors;
+algorithm
+  warnings := ErrorExt.getNumWarningMessages();
+  errors := ErrorExt.getNumErrorMessages();
+  classNameStr := AbsynUtil.pathString(className);
+  ExecStat.execStatReset();
+  flags := loadCommandLineOptionsFromModel(className);
+
+  try
+    if Flags.isSet(Flags.SCODE_INST) then
+      flatModel := runFrontEndNF(className);
+      (varSizeExp, eqnSizeExp, simpleEqnSize) := NFCheckModel.checkModel(flatModel);
+      varsStr := NFExpression.toString(varSizeExp);
+      eqnsStr := NFExpression.toString(eqnSizeExp);
+    else
+      (cache, _, SOME(dae), _) := runFrontEnd(cache, env, className, false);
+      (varSize, eqnSize, simpleEqnSize) := CheckModel.checkModel(dae);
+      varsStr := String(varSize);
+      eqnsStr := String(eqnSize);
+    end if;
+
+    warnings := ErrorExt.getNumWarningMessages() - warnings;
+    errors := ErrorExt.getNumErrorMessages() - errors;
+
+    if warnings > 0 or errors > 0 then
+
+    end if;
+
+    retStr := stringAppendList({
+      "Check of ", classNameStr, " completed successfully", format_errors(warnings, errors), ".\n",
+      "Class ", classNameStr, " has ", eqnsStr, " equation(s) and ", varsStr, " variable(s).\n",
+      String(simpleEqnSize), " of these are trivial equation(s)."});
+  else
+    if Interactive.existClass(className, SymbolTable.getAbsyn()) then
+      warnings := ErrorExt.getNumWarningMessages() - warnings;
+      errors := ErrorExt.getNumErrorMessages() - errors;
+
+      retStr := stringAppendList({
+        "Check of ", classNameStr, " failed", format_errors(warnings, errors), "."});
+    else
+      // Return nothing if the class doesn't exist, the frontend will emit an error in that case.
+      retStr := "";
+    end if;
+  end try;
+
+  FlagsUtil.saveFlags(flags);
+  outValue := Values.STRING(retStr);
 end checkModel;
 
 protected function getWithinStatement "To get a correct Within-path with unknown input-path."
@@ -8460,7 +8717,7 @@ algorithm
   end if;
 end scopeClassPaths;
 
-protected function collectDefUse
+public function collectDefUse
   "Walks the given classes and returns the definitions and uses of the names in
    them, see NFUsedElements.collectUses."
   input list<Absyn.Path> paths "In reverse order.";
@@ -8471,6 +8728,7 @@ protected function collectDefUse
 protected
   SCode.Program builtin_p, annotation_p;
   Boolean nf_inst;
+  list<String> lookup_differences = {};
 algorithm
   // Only the uses are wanted from the lookups, not their messages.
   ErrorExt.setCheckpoint(getInstanceName());
@@ -8481,13 +8739,18 @@ algorithm
     (_, builtin_p) := FBuiltin.getInitialFunctions();
     annotation_p := AbsynToSCode.translateAbsyn2SCode(
       InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion()));
-    (defs, uses, unresolved) := NFUsedElements.collectUses(listReverse(paths),
+    (defs, uses, unresolved, lookup_differences) := NFUsedElements.collectUses(listReverse(paths),
       listAppend(builtin_p, program), annotation_p);
   else
   end try;
 
   FlagsUtil.set(Flags.SCODE_INST, nf_inst);
   ErrorExt.rollBack(getInstanceName());
+
+  // -d=checkUsedElementsLookup, after the rollback so that they're kept.
+  for d in lookup_differences loop
+    Error.addCompilerWarning("checkUsedElementsLookup: " + d);
+  end for;
 end collectDefUse;
 
 protected function getNestedClassPaths
@@ -9795,44 +10058,47 @@ algorithm
   if  System.stringFind(simflags, "-r") < 0 then
     return;
   end if;
-  // never fail!
+  // -r must be a flag of its own, not the start of another one such as -rt
+  // or -reconcile.
   try
-   // match -r="file"
-   (nm, {_, f}) := System.regex(simflags, "-r=\"(.*?)\"", 2, true);
-   if nm == 2 then
-     resultFile := f; return;
-   end if;
-   // match -r='file'
-   (nm, {_, f}) := System.regex(simflags, "-r=\'(.*?)\'", 2, true);
-   if nm == 2 then
-     resultFile := f; return;
-   end if;
-   // match -r 'file'
-   (nm, {_, f}) := System.regex(simflags, "-r[ ]*\"(.*?)\"", 2, true);
-   if nm == 2 then
-     resultFile := f; return;
-   end if;
-   // match -r "file"
-   (nm, {_, f}) := System.regex(simflags, "-r[ ]*\'(.*?)\'", 2, true);
-   if nm == 2 then
-     resultFile := f; return;
-   end if;
-   // match -r=file
-   (nm, {_, f}) := System.regex(simflags, "-r=([^ ]*)", 2, true);
-   if nm == 2 then
-     resultFile := f; return;
-   end if;
-   // match -r file
-   (nm, {_, f}) := System.regex(simflags, "-r[ ]*([^ ]*)", 2, true);
-   if nm == 2 then
-     resultFile := f; return;
-   end if;
+   for re in {"(^|[[:space:]])-r(=|[[:space:]]+)\"([^\"]*)\"",
+              "(^|[[:space:]])-r(=|[[:space:]]+)'([^']*)'",
+              "(^|[[:space:]])-r(=|[[:space:]]+)([^[:space:]]+)"} loop
+     (nm, {_, _, _, f}) := System.regex(simflags, re, 4, true);
+     if nm == 4 then
+       resultFile := f; return;
+     end if;
+   end for;
   else
     // do nothing
   end try;
 end selectResultFile;
 
-function instantiateModel
+function simulationLogFile
+  "A wasm-jit run has omc's cwd, which OMEdit keeps in the user's working
+   directory as for an executable, so its log follows -outputPath."
+  input String executable;
+  input String simflags;
+  output String logFile = executable + ".log";
+protected
+  Integer nm;
+  String dir = "";
+algorithm
+  if Config.simCodeTarget() <> "wasm-jit" then
+    return;
+  end if;
+  try
+    (nm, {_, dir}) := System.regex(simflags, "-outputPath[= ]+(\"[^\"]*\"|'[^']*'|[^ ]*)", 2, true);
+  else
+    nm := 0;
+  end try;
+  dir := System.trim(dir, "\"'");
+  if nm == 2 and dir <> "" then
+    logFile := dir + "/" + logFile;
+  end if;
+end simulationLogFile;
+
+public function instantiateModel
   input output FCore.Cache cache;
   input FCore.Graph env;
   input Absyn.Path path;
@@ -9951,9 +10217,10 @@ protected
   Absyn.Class cls, lib_cls;
   Absyn.Within wi;
   Option<String> uses_version;
-  SemanticVersion.Version lib_version, lib_version_used;
+  String lib_version, lib_version_used;
   list<tuple<String, Option<String>, Option<String>>> conversions;
-  list<String> scripts;
+  list<String> none_from;
+  Option<list<String>> scripts;
   String lib_name;
 algorithm
   try
@@ -9963,7 +10230,7 @@ algorithm
     uses_version := Interactive.getUsedVersion(cls, libPath);
 
     if isSome(uses_version) then
-      lib_version_used := SemanticVersion.parse(Util.getOption(uses_version), true);
+      lib_version_used := Util.getOption(uses_version);
     else
       Error.addMessage(Error.CONVERSION_MISSING_USES,
         {AbsynUtil.pathString(clsPath), AbsynUtil.pathString(libPath)});
@@ -9971,11 +10238,11 @@ algorithm
     end if;
 
     lib_name := AbsynUtil.pathFirstIdent(libPath);
-    lib_version := SemanticVersion.parse(CevalScript.getPackageVersion(libPath, p));
+    lib_version := CevalScript.getPackageVersion(libPath, p);
 
     // Check if the wanted version of the library is already loaded, otherwise
     // we need to load it.
-    if SemanticVersion.compare(lib_version, SemanticVersion.parse(libVersion)) <> 0 then
+    if SemanticVersion.compare(lib_version, libVersion) <> 0 then
       // Try to set the language standard to the version needed to load the wanted library.
       if lib_name == "Modelica" then
         Config.setLanguageStandardFromMSL("Modelica " + libVersion, force = true);
@@ -9990,30 +10257,31 @@ algorithm
     end if;
 
     // Get the version of the library.
-    lib_version := SemanticVersion.parse(CevalScript.getPackageVersion(libPath, lib_program));
+    lib_version := CevalScript.getPackageVersion(libPath, lib_program);
 
     // Try to find a sequence of conversion scripts that can be used to convert
     // the class to the desired library version.
     lib_cls := ProgramUtil.getPathedClassInProgram(libPath, lib_program, showError = true);
     conversions := Interactive.getConversionsInClass(lib_cls);
-    scripts := findConversionPaths(conversions, lib_version, lib_version_used);
+    (none_from, _) := Interactive.getConversionAnnotation(lib_cls);
+    scripts := findConversionPaths(conversions, none_from, lib_version, lib_version_used);
 
-    if listEmpty(scripts) then
+    if isNone(scripts) then
       Error.addMessage(Error.CONVERSION_NO_COMPATIBLE_SCRIPT_FOUND,
         {AbsynUtil.pathString(libPath),
-         SemanticVersion.toString(lib_version_used),
-         SemanticVersion.toString(lib_version)});
+         SemanticVersion.normalize(lib_version_used),
+         SemanticVersion.normalize(lib_version)});
       fail();
     end if;
 
     // Apply the conversion scripts.
-    for script in scripts loop
+    for script in Util.getOption(scripts) loop
       script := uriToFilename(script);
       cls := Conversion.convertPackage(cls, script);
     end for;
 
     // Update the uses-annotation in the class to refer to the new version of the library.
-    cls := Interactive.updateUsedVersion(cls, libPath, SemanticVersion.toString(lib_version));
+    cls := Interactive.updateUsedVersion(cls, libPath, SemanticVersion.normalize(lib_version));
 
     // Finally update the class in the global Absyn.
     wi := ProgramUtil.buildWithin(clsPath);
@@ -10026,71 +10294,66 @@ algorithm
 end convertPackageToLibrary;
 
 function findConversionPaths
-  "Tries to find the shortest path for converting from one version to another
-   and returns the list of conversion scripts for that path. Usually only one
-   conversion is needed, but sometimes the conversion might need to be done in
-   several steps (e.g. 2.0.0 => 2.3.5 => 2.4.0)."
+  "The conversion scripts of the shortest way to convert from one version to
+   another, usually one, but sometimes in several steps (e.g. 2.0.0 => 2.3.5
+   => 2.4.0). A noneFromVersion step needs no script. NONE() if there is no
+   way."
   input list<tuple<String, Option<String>, Option<String>>> conversions;
-  input SemanticVersion.Version libVersion;
-  input SemanticVersion.Version libVersionUsed;
+  input list<String> noneFromVersions;
+  input String libVersion;
+  input String libVersionUsed;
   input Integer depth = 0;
-  output list<String> scripts = {};
+  output Option<list<String>> scripts = NONE();
 protected
-  list<list<String>> paths = {};
-  Integer path_len, path_min = 100;
+  Option<list<String>> path;
 algorithm
   // Abort if we go too deep to avoid crashing on malicious conversion annotations.
   if depth > 100 then
     return;
   end if;
 
-  // Find the possible path for each conversion to the version we're looking for.
   for c in conversions loop
-    paths := findConversionPath(c, libVersion, libVersionUsed, conversions, depth) :: paths;
-  end for;
-
-  // Return the shortest non-empty path.
-  for p in paths loop
-    path_len := listLength(p);
-
-    if path_len > 0 and path_len < path_min then
-      scripts := p;
-      path_min := path_len;
-    end if;
+    path := findConversionPath(c, noneFromVersions, libVersion, libVersionUsed, conversions, depth);
+    scripts := match (path, scripts)
+      case (SOME(_), NONE()) then path;
+      case (SOME(_), SOME(_)) guard listLength(Util.getOption(path)) < listLength(Util.getOption(scripts)) then path;
+      else scripts;
+    end match;
   end for;
 end findConversionPaths;
 
 function findConversionPath
   input tuple<String, Option<String>, Option<String>> conversion;
-  input SemanticVersion.Version libVersion;
-  input SemanticVersion.Version libVersionUsed;
+  input list<String> noneFromVersions;
+  input String libVersion;
+  input String libVersionUsed;
   input list<tuple<String, Option<String>, Option<String>>> conversions;
   input Integer depth;
-  output list<String> scripts = {};
+  output Option<list<String>> scripts = NONE();
 protected
   String from;
   Option<String> to;
   Option<String> script;
-  SemanticVersion.Version from_version, to_version;
 algorithm
   (from, to, script) := conversion;
 
-  if isNone(script) then
+  if SemanticVersion.compare(libVersionUsed, from) <> 0 then
     return;
   end if;
 
-  from_version := SemanticVersion.parse(from, true);
+  // Without a script only noneFromVersion is a step; inline conversion rules
+  // (change) are not supported.
+  if isNone(script) and not listMember(from, noneFromVersions) then
+    return;
+  end if;
 
-  if SemanticVersion.compare(libVersionUsed, from_version) == 0 then
-    if isSome(to) then
-      to_version := SemanticVersion.parse(Util.getOption(to), true);
+  scripts := SOME({});
+  if isSome(to) and SemanticVersion.compare(libVersion, Util.getOption(to)) <> 0 then
+    scripts := findConversionPaths(conversions, noneFromVersions, libVersion, Util.getOption(to), depth + 1);
+  end if;
 
-      if SemanticVersion.compare(libVersion, to_version) <> 0 then
-        scripts := findConversionPaths(conversions, libVersion, to_version, depth + 1);
-      end if;
-    end if;
-
-    scripts := Util.getOption(script) :: scripts;
+  if isSome(script) and isSome(scripts) then
+    scripts := SOME(Util.getOption(script) :: Util.getOption(scripts));
   end if;
 end findConversionPath;
 
@@ -10102,8 +10365,10 @@ protected
   String opts;
   list<String> args;
 algorithm
+  // a copy, not the flags in use: the callers change flags while translating
+  // and restore oldFlags afterwards
+  oldFlags := FlagsUtil.backupFlags();
   if Config.ignoreCommandLineOptionsAnnotation() then
-    oldFlags := FlagsUtil.loadFlags();
     return;
   end if;
 
@@ -10114,12 +10379,8 @@ algorithm
     Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
 
   if not stringEmpty(opts) then
-    // backup the current flags and apply the flags from the annotation
-    oldFlags := FlagsUtil.backupFlags();
     args := System.strtok(opts, " ");
     FlagsUtil.readArgs(args);
-  else
-    oldFlags := FlagsUtil.loadFlags();
   end if;
 end loadCommandLineOptionsFromModel;
 
@@ -10139,6 +10400,118 @@ algorithm
     Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
   end if;
 end isProtectedContentAccess;
+
+function simulateModel
+  input Absyn.Path path;
+  output String result;
+protected
+  list<Values.Value> vals;
+  Values.Value res;
+algorithm
+  vals := simulationArguments(path, {}, "simulate");
+  (_, res) := simulate(vals, FCore.emptyCache(), FGraph.empty(), Absyn.NO_MSG());
+  result := ValuesDump.printValStr(res) + "\n";
+end simulateModel;
+
+function simulate
+  input list<Values.Value> values;
+  input output FCore.Cache cache;
+  input FCore.Graph env;
+  input Absyn.Msg msg;
+        output Values.Value outValue;
+protected
+  Absyn.Path className;
+  list<Values.Value> vals = values;
+  String str, executable, compileDir, simflags, outputFormat_str, exeDir;
+  String resimulateExecutable, result_file, executableSuffixedExe, logFile, sim_call;
+  list<tuple<String,Values.Value>> resultValues;
+  Boolean b;
+  SimCode.SimulationSettings simSettings;
+  Integer resI;
+  Real timeSimulation, timeTotal;
+algorithm
+  Values.CODE(Absyn.C_TYPENAME(className)) :: _ := vals;
+
+  try
+    System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+
+    // resimulateExecutable is the last (new) argument; pull it off so the rest
+    // of the pipeline sees the original simulate() argument list.
+    resimulateExecutable := match List.last(vals) case Values.STRING(str) then str; else ""; end match;
+    vals := List.stripLast(vals);
+
+    if resimulateExecutable <> "" then
+      // Skip translation and build; simulate the already-built model directly.
+      b := true;
+      executable := resimulateExecutable;
+      compileDir := System.pwd() + Autoconf.pathDelimiter;
+      simflags := match List.last(vals) case Values.STRING(str) then str; else ""; end match;
+      resultValues := zeroBuildPhaseResultValues;
+    else
+      (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(cache,env,vals,msg);
+    end if;
+
+    if b then
+       exeDir := compileDir;
+       (cache,simSettings) := calculateSimulationSettings(cache, vals);
+       SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) := simSettings;
+       result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
+        // result file might have been set by simflags (-r ...)
+
+       result_file := selectResultFile(result_file, simflags);
+
+       executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
+       logFile := simulationLogFile(executable, simflags);
+       // adrpo: log file is deleted by buildModel! do NOT DELETE IT AGAIN!
+       // we should really have different log files for simulation/compilation!
+       // as the buildModel log file will be deleted here and that gives less information to the user!
+       if System.regularFileExists(logFile) then
+         0 := System.removeFile(logFile);
+       end if;
+       sim_call := stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
+       System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+       SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
+
+       // The wasm-jit target runs the JIT-compiled model in-process and
+       // writes the result file directly, instead of spawning an executable;
+       // the wasm target runs the standalone module in a wasmtime subprocess.
+       if Config.simCodeTarget() == "wasm-jit" then
+         resI := CodegenWasmJit.runSimulation(executable, result_file, simflags, logFile);
+       elseif Config.simCodeTarget() == "wasm" then
+         resI := CodegenWasmJit.runSimulationWasmtime(executable, result_file, simflags);
+       else
+         resI := System.systemCallRestrictedEnv(sim_call, logFile);
+       end if;
+
+       timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+
+     else
+       result_file := "";
+       resI := 1;
+       timeSimulation := 0.0;
+       logFile := "";
+     end if;
+
+    timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+
+    (cache,outValue) := createSimulationResultFromcallModelExecutable(b,resI,timeTotal,timeSimulation,resultValues,cache,className,vals,result_file,logFile);
+  else
+    str := AbsynUtil.pathString(className);
+
+    try
+      // Simulation failed for some other reason than OPENMODELICAHOME not being set.
+      Settings.getInstallationDirectoryPath();
+      str := "Failed to build model: " + str;
+      outValue := createSimulationResultFailure(str, simOptionsAsString(List.stripLast(values)));
+    else
+      outValue := createSimulationResultFailure(
+          "Simulation failed for model: " + str +
+          "\nEnvironment variable OPENMODELICAHOME not set.",
+          simOptionsAsString(List.stripLast(values))
+        );
+    end try;
+  end try;
+end simulate;
 
 annotation(__OpenModelica_Interface="backend_main");
 

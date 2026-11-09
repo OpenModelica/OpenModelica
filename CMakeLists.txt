@@ -157,6 +157,12 @@ cmake_dependent_option(OM_ENABLE_OMNOTEBOOK "Enable OMNotebook gui client" ON "N
 cmake_dependent_option(OM_ENABLE_OMEDIT     "Enable OMEdit gui client"     ON "NOT OM_OMC_WASM;OM_ENABLE_GUI_CLIENTS" OFF)
 cmake_dependent_option(OM_ENABLE_OMSENS_QT  "Enable OMSens_Qt gui client"  ON "NOT OM_OMC_WASM;OM_ENABLE_GUI_CLIENTS" OFF)
 cmake_dependent_option(OM_OMOPTIM_ENABLE "Enable and build the (legacy) OMOptim optimization GUI." OFF "NOT OM_OMC_WASM" OFF)
+# Translations of the GUI clients. lupdate rewrites the *.ts files in the source tree on every
+# build; they are checked in, so after a normal build `git status` shows whether they were stale.
+# Source locations are not stored (-locations none), a small code change must not touch
+# thousands of lines in the .ts files.
+omc_option(OM_UPDATE_TRANSLATIONS "Run Qt lupdate during the build to update the *.ts translation files of the GUI clients in the source tree." ON)
+set(OM_LUPDATE_OPTIONS -locations none -no-obsolete CACHE STRING "Options passed to lupdate when OM_UPDATE_TRANSLATIONS is ON.")
 omc_add_to_report(OM_ENABLE_OMSHELL)
 omc_add_to_report(OM_ENABLE_OMNOTEBOOK)
 omc_add_to_report(OM_ENABLE_OMEDIT)
@@ -372,10 +378,12 @@ enable_testing()
 # instruments, which read OM_ENABLE_COVERAGE and OM_COVERAGE_COMPILE_OPTIONS.
 include(cmake/modules/OpenModelicaCoverage.cmake)
 
-# libomc_result, after CMAKE_INSTALL_LIBDIR is final and before its users.
+# libomc_result and libomcruntime_rust, after CMAKE_INSTALL_LIBDIR is final and before their users.
 if(NOT OM_OMC_WASM)
   include(OMCompiler/Compiler/.cmake/rust_result_reader.cmake)
   omc_result_reader_library()
+  include(OMCompiler/Compiler/.cmake/rust_omcruntime.cmake)
+  omc_runtime_rust_library()
 endif()
 
 omc_add_subdirectory(OMCompiler)

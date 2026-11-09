@@ -3,7 +3,7 @@
 // status: correct
 //
 
-model CevalSub1
+model CevalMul1
   constant Integer i1 = 2 * 2;
   constant Integer i2[:] = {1, 2, 3} .* {3, 4, 5};
   constant Integer i3[:, :] = {{1, 2}, {3, 4}} .* {{5, 6}, {7, 8}};
@@ -16,11 +16,11 @@ model CevalSub1
   constant Real r3[:, :] = {{1, 2}, {3, 4}} .* {{5, 6}, {7, 8}};
   constant Real r4[:] = 2 .* {1, 2, 3};
   constant Real r5[:] = {1, 2, 3} .* 2;
-  constant Integer r6[:] = zeros(0) .* zeros(0);
-end CevalSub1;
+  constant Real r6[:] = zeros(0) .* zeros(0);
+end CevalMul1;
 
 // Result:
-// class CevalSub1
+// class CevalMul1
 //   constant Integer i1 = 4;
 //   constant Integer i2[1] = 3;
 //   constant Integer i2[2] = 8;
@@ -49,5 +49,5 @@ end CevalSub1;
 //   constant Real r5[1] = 2.0;
 //   constant Real r5[2] = 4.0;
 //   constant Real r5[3] = 6.0;
-// end CevalSub1;
+// end CevalMul1;
 // endResult

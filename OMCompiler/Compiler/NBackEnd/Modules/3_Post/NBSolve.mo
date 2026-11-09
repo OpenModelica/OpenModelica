@@ -44,6 +44,7 @@ import Module = NBModule;
 public
   // OF imports
   import Absyn.Path;
+  import AbsynUtil;
 
   // NF imports
   import Algorithm = NFAlgorithm;
@@ -52,6 +53,7 @@ public
   import Dimension = NFDimension;
   import Expression = NFExpression;
   import NFFunction.Function;
+  import NFInstNode.InstNode;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
   import ExpandExp = NFExpandExp;
@@ -350,7 +352,7 @@ public
         // a single row of an array equation solved for a scalar, e.g. x from row 1 of v = fill(1, 3) .* x
         case StrongComponent.SLICED_COMPONENT() guard(Equation.isArrayEquation(Slice.getT(comp.eqn))
           and List.hasOneElement(comp.eqn.indices) and not Type.isArray(ComponentRef.getSubscriptedType(comp.var_cref, true))) algorithm
-          eqn := arrayRowEquation(Slice.getT(comp.eqn), listHead(comp.eqn.indices));
+          eqn := Equation.arrayRow(Slice.getT(comp.eqn), listHead(comp.eqn.indices));
           (eqn, solve_status, implicit_index) := solveSingleStrongComponent(eqn, Variable.fromCref(comp.var_cref), funcMap, kind, implicit_index, slicing_map, varData, eqData);
           if solve_status < Status.UNSOLVABLE then
             comp.eqn := Slice.SLICE(Pointer.create(eqn), {});
@@ -372,7 +374,8 @@ public
         case StrongComponent.SLICED_COMPONENT() algorithm
           // just a regular equation solved for a sliced variable
           // use cref instead of var because it has subscripts!
-          (eqn, solve_status, implicit_index) := solveSingleStrongComponent(Pointer.access(Slice.getT(comp.eqn)), Variable.fromCref(comp.var_cref), funcMap, kind, implicit_index, slicing_map, varData, eqData);
+          (eqn, solve_status, implicit_index) := solveSingleStrongComponent(Pointer.access(Slice.getT(comp.eqn)),
+            Variable.fromCref(resizedCref(Pointer.access(Slice.getT(comp.eqn)), comp.var_cref)), funcMap, kind, implicit_index, slicing_map, varData, eqData);
           if solve_status == Status.EXPLICIT then
             // successfully solved explicitly; use result directly
             comp.eqn := Slice.SLICE(Pointer.create(eqn), {});
@@ -404,7 +407,26 @@ public
         /* for now handle all entwined equations generically and don't try to solve */
         case StrongComponent.ENTWINED_COMPONENT() algorithm
           for slice in comp.entwined_slices loop
-            (generic_comp, solve_status, implicit_index) := solveGenericEquation(slice, funcMap, kind, implicit_index, slicing_map, varData, eqData);
+            generic_comp := slice;
+            if isSome(comp.periodic_order) then
+              // the order of the iterations is given by the entwined component
+              () := match generic_comp
+                case StrongComponent.RESIZABLE_COMPONENT() algorithm
+                  (eqn, solve_status, implicit_index, _) := solveEquation(Pointer.access(Slice.getT(generic_comp.eqn)), generic_comp.var_cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
+                  generic_comp.eqn := Slice.SLICE(Pointer.create(eqn), generic_comp.eqn.indices);
+                  generic_comp.status := solve_status;
+                then ();
+                case _ guard(not List.any(StrongComponent.getEquations(generic_comp), Equation.isForEquation)) algorithm
+                  // a scalar slice is called once
+                  ({generic_comp}, implicit_index) := solveStrongComponent(generic_comp, funcMap, kind, implicit_index, slicing_map, varData, eqData);
+                then ();
+                else algorithm
+                  (generic_comp, solve_status, implicit_index) := solveGenericEquation(slice, funcMap, kind, implicit_index, slicing_map, varData, eqData);
+                then ();
+              end match;
+            else
+              (generic_comp, solve_status, implicit_index) := solveGenericEquation(slice, funcMap, kind, implicit_index, slicing_map, varData, eqData);
+            end if;
             // make loop on any solve_status != explicit
             entwined_slices := generic_comp :: entwined_slices;
           end for;
@@ -571,7 +593,9 @@ public
     ComponentRef stripped = ComponentRef.stripSubscriptsAll(cref), target = ComponentRef.simplifySubscripts(cref);
     Expression e;
   algorithm
-    Iterator.createLocationReplacements(Equation.getForIterator(Pointer.access(eqn_ptr)), listArray(Slice.indexToLocation(index, Equation.sizes(eqn_ptr, true))), replacements);
+    // the index is row major w.r.t. the frames, the location outermost frame first like the iterator
+    Iterator.createLocationReplacements(Equation.getForIterator(Pointer.access(eqn_ptr)),
+      listArray(listReverse(Slice.indexToLocation(index, listReverse(Equation.sizes(eqn_ptr, true))))), replacements);
     for c in Equation.collectCrefs(Pointer.access(eqn_ptr), function sameVariable(stripped = stripped)) loop
       e := SimplifyExp.simplify(Expression.map(Expression.fromCref(c), function Replacements.applySimpleExp(replacements = replacements)));
       if Expression.isCref(e) and ComponentRef.isEqual(ComponentRef.simplifySubscripts(Expression.toCref(e)), target) then
@@ -629,19 +653,33 @@ public
   end solveSliceElementwise;
 
   function expandReduction
-    "expands sum and product reductions over constant ranges, e.g.
-    sum(x[1, j] for j in 1:3) -> x[1, 1] + x[1, 2] + x[1, 3]"
+    "expands sum and product reductions over constant ranges and of arrays, e.g.
+    sum(x[1, j] for j in 1:3) -> x[1, 1] + x[1, 2] + x[1, 3], sum(x[1, :]) -> x[1, 1] + x[1, 2]"
     input output Expression exp;
   protected
     Call call;
     String name;
     Type ty;
     Operator op;
-    Expression default_exp, range;
+    Expression default_exp, range, arg;
     Boolean expanded;
     list<tuple<NFInstNode.InstNode, Expression>> iters = {};
   algorithm
     exp := match exp
+      case Expression.CALL(call = call as Call.TYPED_CALL(arguments = {arg})) algorithm
+        name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
+        ty := Type.arrayElementType(Expression.typeOf(arg));
+        if not (name == "sum" or name == "product") or not Type.isArray(Expression.typeOf(arg)) or Type.isRecord(ty) then
+          return;
+        end if;
+        (arg, expanded) := ExpandExp.expand(arg, true);
+        if not expanded then
+          return;
+        end if;
+        (default_exp, op) := if name == "sum" then (Expression.makeZero(ty), Operator.makeAdd(ty))
+                             else (Expression.makeOne(ty), Operator.makeMul(ty));
+      then SimplifyExp.simplify(List.fold(Expression.arrayScalarElements(arg), function makeBinary(op = op), default_exp));
+
       case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
         name := AbsynUtil.pathString(Function.name(call.fn));
         ty := Expression.typeOf(call.exp);
@@ -669,6 +707,26 @@ public
     input Operator op;
     output Expression exp = Expression.BINARY(exp1, op, exp2);
   end makeBinary;
+
+  function resizedCref
+    "The cref of the equation that is var_cref at the analysis sizes, e.g. x[N]
+    for the matched x[4]. Without resizable arrays or if there is none, var_cref."
+    input Equation eqn;
+    input output ComponentRef var_cref;
+  protected
+    list<ComponentRef> candidates;
+  algorithm
+    if not Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then
+      return;
+    end if;
+    candidates := Equation.collectCrefs(eqn, function Slice.getSliceCandidates(name = ComponentRef.stripSubscriptsAll(var_cref)));
+    candidates := list(c for c guard(ComponentRef.isEqual(var_cref,
+      ComponentRef.simplifySubscripts(ComponentRef.mapExp(c, Expression.replaceResizableParameter)))) in candidates);
+    candidates := UnorderedSet.unique_list(candidates, ComponentRef.hash, ComponentRef.isEqual);
+    if List.hasOneElement(candidates) then
+      var_cref := listHead(candidates);
+    end if;
+  end resizedCref;
 
   function solvedCref
     "The cref an explicitly solved equation assigns, if it is the variable of
@@ -1310,13 +1368,34 @@ protected
   algorithm
     crefExp := Expression.fromCref(cref);
     ty := ComponentRef.getSubscriptedType(cref, true);
-    numerator := Replacements.single(residual, crefExp, Expression.makeZero(ty));
-    mulOp := Operator.OPERATOR(ty, NFOperator.Op.MUL);
-    uminOp := Operator.OPERATOR(ty, NFOperator.Op.UMINUS);
+    numerator := replaceUndelayed(residual, crefExp, Expression.makeZero(ty));
+    mulOp := Operator.makeMul(ty);
+    uminOp := Operator.makeUMinus(ty);
     // Set eqn: cref = - f/f'
     eqn := Equation.setLHS(eqn, crefExp);
     eqn := Equation.setRHS(eqn, Expression.UNARY(uminOp, Expression.MULTARY({numerator},{derivative}, mulOp)));
   end solveLinear;
+
+  function replaceUndelayed
+    "replaces old by new, but not in the delayed expressions. delay(expr, ...) does not
+    depend on the current value of expr."
+    input output Expression exp;
+    input Expression old;
+    input Expression new;
+  algorithm
+    exp := match exp
+      local
+        Call call;
+        Expression delayed;
+        list<Expression> args;
+      case _ guard(Expression.isEqual(exp, old)) then new;
+      case Expression.CALL(call = call as Call.TYPED_CALL(arguments = delayed :: args))
+        guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "delay") algorithm
+        exp.call := Call.setArguments(call, delayed :: list(replaceUndelayed(arg, old, new) for arg in args));
+      then exp;
+      else Expression.mapShallow(exp, function replaceUndelayed(old = old, new = new));
+    end match;
+  end replaceUndelayed;
 
   function solveUnique
     "author: linuslangenkamp
@@ -1439,6 +1518,11 @@ protected
       case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) guard(List.none(Call.arguments(exp.call), function solveUniqueExpressionNoCref(cref = cref))) then ();
       case Expression.CALL(call = call as Call.TYPED_REDUCTION())         guard(List.none(Call.arguments(exp.call), function solveUniqueExpressionNoCref(cref = cref))) then ();
 
+      // a function with an inverse annotation
+      case Expression.CALL(call = call as Call.TYPED_CALL()) guard(arrayLength(call.fn.inverses) > 0) algorithm
+        (crefFound, inverseInstructions, status) := solveUniqueFindInstructionsCallInverse(substExp, exp, cref, crefFound, inverseInstructions);
+        then ();
+
       // check if invertable if occurs
       case Expression.CALL(call = call as Call.TYPED_CALL()) guard(List.hasOneElement(Call.arguments(exp.call))) algorithm
         (crefFound, inverseInstructions, status) := solveUniqueFindInstructionsCallOneArg(ty, substExp, exp, cref, crefFound, inverseInstructions);
@@ -1539,7 +1623,7 @@ protected
           if Expression.containsCref(exp.exp2, cref) then
             status := Status.IMPLICIT;
           else
-            inverseInstructions := Expression.BINARY(substExp, exp.operator, Expression.MULTARY({}, {exp.exp2}, Operator.OPERATOR(ty, NFOperator.Op.MUL))) :: inverseInstructions;
+            inverseInstructions := Expression.BINARY(substExp, exp.operator, Expression.MULTARY({}, {exp.exp2}, Operator.makeMul(ty))) :: inverseInstructions;
           end if;
         else
           (crefFoundInRecursion, inverseInstructions, status) := solveUniqueFindInstructions(exp.exp2, cref, crefFound, inverseInstructions);
@@ -1562,7 +1646,7 @@ protected
             purity      = NFPrefixes.Purity.PURE
             ));
             // split the instructions, s.t. only top level search for substExp/dummyCref has to be performed in applyInstruction
-            inverseInstructions := local_exp1 :: Expression.MULTARY({substExp}, {local_exp2}, Operator.OPERATOR(ty, NFOperator.Op.MUL)) :: inverseInstructions;
+            inverseInstructions := local_exp1 :: Expression.MULTARY({substExp}, {local_exp2}, Operator.makeMul(ty)) :: inverseInstructions;
           end if;
         end if;
         then ();
@@ -1649,7 +1733,7 @@ protected
             if crefFoundInRecursion then
               // case for -(f(cref)) -> -($SUBST_CREF)
               crefFound := true;
-              inverseInstructions := Expression.UNARY(Operator.OPERATOR(ty, NFOperator.Op.UMINUS), substExp) :: inverseInstructions;
+              inverseInstructions := Expression.UNARY(Operator.makeUMinus(ty), substExp) :: inverseInstructions;
             end if;
             then ();
       else algorithm
@@ -1675,7 +1759,6 @@ protected
   algorithm
     () := match exp
       case Expression.CALL(call = call as Call.TYPED_CALL()) guard List.hasOneElement(Call.arguments(exp.call)) algorithm
-        name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
         argExp := listHead(Call.arguments(call));
         (crefFoundInRecursion, inverseInstructions, status) := solveUniqueFindInstructions(argExp, cref, crefFound, inverseInstructions);
         if status == Status.IMPLICIT then
@@ -1684,9 +1767,10 @@ protected
         if crefFoundInRecursion then
           // case for call(f(cref)) -> call^{-1}($SUBST_CREF)
           crefFound := true;
+          name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
           inverseInstructions := match name
             case "sqrt" then // sqrt(f(cref)) -> $SUBST_CREF^2
-              Expression.BINARY(substExp, Operator.OPERATOR(ty, NFOperator.Op.POW), Expression.REAL(2)) :: inverseInstructions;
+              Expression.BINARY(substExp, Operator.makePow(ty, true), Expression.REAL(2)) :: inverseInstructions;
             case "cos" then // cos(f(cref)) -> acos($SUBST_CREF)
               solveUniqueCreateSubstCall(NFBuiltinFuncs.ACOS_REAL, substExp, inverseInstructions);
             case "sin" then // sin(f(cref)) -> asin($SUBST_CREF)
@@ -1716,7 +1800,7 @@ protected
             case "log" then // log(f(cref)) -> exp($SUBST_CREF)
               solveUniqueCreateSubstCall(NFBuiltinFuncs.EXP_REAL, substExp, inverseInstructions);
             case "log10" then // log_10(f(cref)) -> 10^($SUBST_CREF)
-              Expression.BINARY(Expression.REAL(10), Operator.OPERATOR(ty, NFOperator.Op.POW), substExp) :: inverseInstructions;
+              Expression.BINARY(Expression.REAL(10), Operator.makePow(ty, false), substExp) :: inverseInstructions;
             else algorithm // fallback -> set implicit
               if Flags.isSet(Flags.DUMP_SOLVE) then
                 solveUniquePrintImplicitFallback(exp);
@@ -1763,7 +1847,7 @@ protected
             // calc inverse w.r.t first argument and append to instructions
             inverseInstructions := match name
               case "atan2" algorithm // atan2(x,y) -> x=y*tan($SUBST_CREF)
-                inverseInstructions := Expression.MULTARY({substExp, argExp2}, {}, Operator.OPERATOR(ty, NFOperator.Op.MUL)) :: inverseInstructions;
+                inverseInstructions := Expression.MULTARY({substExp, argExp2}, {}, Operator.makeMul(ty)) :: inverseInstructions;
                 then solveUniqueCreateSubstCall(NFBuiltinFuncs.TAN_REAL, substExp, inverseInstructions);
               else algorithm // fallback -> set implicit
                 if Flags.isSet(Flags.DUMP_SOLVE) then
@@ -1783,7 +1867,7 @@ protected
             // calc inverse w.r.t second argument and append to instructions
             inverseInstructions := match name
               case "atan2" algorithm // atan2(x,y) -> y=x/tan($SUBST_CREF)
-                inverseInstructions := Expression.MULTARY({argExp1}, {substExp}, Operator.OPERATOR(ty, NFOperator.Op.MUL)) :: inverseInstructions;
+                inverseInstructions := Expression.MULTARY({argExp1}, {substExp}, Operator.makeMul(ty)) :: inverseInstructions;
                 then solveUniqueCreateSubstCall(NFBuiltinFuncs.TAN_REAL, substExp, inverseInstructions);
               else algorithm // fallback -> set implicit
                 if Flags.isSet(Flags.DUMP_SOLVE) then
@@ -1800,6 +1884,90 @@ protected
         then fail();
     end match;
   end solveUniqueFindInstructionsCallTwoArgs;
+
+  function solveUniqueFindInstructionsCallInverse
+    "find instructions for a call to a function with an inverse annotation:
+     f(args) -> args[i] = inverse call with the inputs of f replaced by the arguments and its output by $SUBST_CREF"
+    input Expression substExp;
+    input Expression exp;
+    input ComponentRef cref;
+    input output Boolean crefFound;
+    input output list<Expression> inverseInstructions;
+    output Status status = Status.EXPLICIT;
+  protected
+    Function fn;
+    list<Expression> args;
+    Integer i = 0, found = 0;
+    Expression arg, inv;
+    Option<Expression> oinv = NONE();
+    String name;
+    InstNode output_node;
+    UnorderedMap<ComponentRef, Expression> replacements;
+  algorithm
+    Expression.CALL(call = Call.TYPED_CALL(fn = fn, arguments = args)) := exp;
+
+    // the cref has to occur in exactly one argument
+    arg := listHead(args); // HACK makes the Rust compiler happy
+    for a in args loop
+      i := i + 1;
+      if Expression.containsCref(a, cref) then
+        if found <> 0 then
+          if Flags.isSet(Flags.DUMP_SOLVE) then
+            solveUniquePrintImplicitFallback(exp);
+          end if;
+          status := Status.IMPLICIT;
+          return;
+        end if;
+        found := i;
+        arg := a;
+      end if;
+    end for;
+    if found == 0 then
+      return;
+    end if;
+
+    if listLength(fn.inputs) <> listLength(args) or listLength(fn.outputs) <> 1 then
+      // FIXME not sure if these can occur or what should happen in these cases
+      // probably some error or Status.IMPLICIT
+      return;
+    end if;
+
+    // search the inverse for the input that contains the cref
+    name := InstNode.name(listGet(fn.inputs, found));
+    for fnInv in fn.inverses loop
+      if ComponentRef.firstName(fnInv.inputParam) == name then
+        oinv := SOME(fnInv.inverseCall);
+        break;
+      end if;
+    end for;
+    if isNone(oinv) then
+      // there is no inverse
+      // TODO try to invert the function symbolically
+      if Flags.isSet(Flags.DUMP_SOLVE) then
+        solveUniquePrintImplicitFallback(exp);
+      end if;
+      status := Status.IMPLICIT;
+      return;
+    end if;
+
+    (true, inverseInstructions, status) := solveUniqueFindInstructions(arg, cref, crefFound, inverseInstructions);
+    if status == Status.IMPLICIT then
+      return;
+    end if;
+    crefFound := true;
+
+    replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+    // replace the output by $SUBST_CREF
+    output_node := InstNode.fromHandle(listHead(fn.outputs));
+    UnorderedMap.add(ComponentRef.fromNode(output_node, InstNode.getType(output_node)), substExp, replacements);
+    // replace the inputs by the corresponding arguments
+    for node in fn.inputs loop
+      arg :: args := args;
+      UnorderedMap.add(ComponentRef.fromNode(node, InstNode.getType(node)), arg, replacements);
+    end for;
+    inv := Expression.map(Util.getOption(oinv), function Replacements.applySimpleExp(replacements = replacements));
+    inverseInstructions := inv :: inverseInstructions;
+  end solveUniqueFindInstructionsCallInverse;
 
   function solveUniqueCreateSubstCall
     "helper to create call with substitute cref and to the instructions"
@@ -1889,25 +2057,10 @@ protected
     input Expression instruction;
   algorithm
     insertExp := match instruction
-      local
-        list<Expression> argList = {}, invargList = {};
-        Expression exp;
       case Expression.MULTARY() algorithm
-        for arg in instruction.arguments loop
-          if not Expression.isSubstitute(arg) then
-            argList := arg :: argList;
-          else
-            argList := insertExp :: argList;
-          end if;
-        end for;
-        for invarg in instruction.inv_arguments loop
-          if not Expression.isSubstitute(invarg) then
-            invargList := invarg :: invargList;
-          else
-            invargList := insertExp :: invargList;
-          end if;
-        end for;
-      then Expression.MULTARY(argList, invargList, instruction.operator);
+        instruction.arguments     := list(replaceSubstitute(arg, insertExp) for arg in instruction.arguments);
+        instruction.inv_arguments := list(replaceSubstitute(arg, insertExp) for arg in instruction.inv_arguments);
+      then instruction;
       case Expression.BINARY() algorithm
         if Expression.isSubstitute(instruction.exp1) then
           instruction.exp1 := insertExp;
@@ -1921,30 +2074,26 @@ protected
           instruction.exp := insertExp;
         end if;
       then instruction;
-      case exp as Expression.CALL() algorithm
-        () := match instruction.call
-          local Call local_call;
-          case local_call as Call.TYPED_CALL() algorithm
-            for arg in local_call.arguments loop
-              if not Expression.isSubstitute(arg) then
-                argList := arg :: argList;
-              else
-                argList := insertExp :: argList;
-              end if;
-            end for;
-            local_call.arguments := listReverse(argList);
-            exp.call := local_call;
-          then ();
-          else algorithm
-            Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " can only handle TYPED_CALL."});
-          then fail();
-        end match;
-      then exp;
+      // the substitute can be nested in the arguments of an inverse call
+      case Expression.CALL(call = Call.TYPED_CALL())
+      then Expression.map(instruction, function replaceSubstitute(insertExp = insertExp));
+      case Expression.CALL() algorithm
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " can only handle TYPED_CALL."});
+      then fail();
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for instruction: " + Expression.toString(instruction)});
       then fail();
     end match;
   end applyInstruction;
+
+  function replaceSubstitute
+    input output Expression exp;
+    input Expression insertExp;
+  algorithm
+    if Expression.isSubstitute(exp) then
+      exp := insertExp;
+    end if;
+  end replaceSubstitute;
 
   function tupleSolvable
     "checks if the tuple expression contains all variables we need to solve for. other elements
@@ -2102,35 +2251,6 @@ protected
       end if;
     end if;
   end getVarSlice;
-
-  function arrayRowEquation
-    "the scalar equation of one row of an array equation"
-    input Pointer<Equation> eqn_ptr;
-    input Integer index "zero based";
-    output Equation row;
-  protected
-    Equation eqn = Pointer.access(eqn_ptr);
-    list<Subscript> subs;
-    Type ty;
-  algorithm
-    subs := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in Slice.indexToLocation(index, Equation.sizes(eqn_ptr)));
-    ty := Type.arrayElementType(Equation.getType(eqn));
-    row := Equation.SCALAR_EQUATION(ty, rowElement(Util.getOption(Equation.getLHS(eqn)), subs),
-      rowElement(Util.getOption(Equation.getRHS(eqn)), subs), Equation.getSource(eqn), Equation.getAttributes(eqn));
-  end arrayRowEquation;
-
-  function rowElement
-    "the element of an array expression, expanded to make it solvable"
-    input Expression exp;
-    input list<Subscript> subs;
-    output Expression element;
-  protected
-    Expression expanded;
-    Boolean success;
-  algorithm
-    (expanded, success) := ExpandExp.expand(exp, true);
-    element := SimplifyExp.simplify(Expression.applySubscripts(subs, if success then expanded else exp));
-  end rowElement;
 
   function solveForVarSlice
     input output Slice<EquationPointer> eqn_slice;

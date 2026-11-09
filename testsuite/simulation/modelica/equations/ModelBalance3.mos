@@ -2,7 +2,6 @@
 // keywords: balance
 // status: correct
 // teardown_command: rm -rf ModelBalance3_* ModelBalance3 ModelBalance3.exe ModelBalance3.cpp ModelBalance3.makefile ModelBalance3.libs ModelBalance3.log output.log
-// cflags: -d=-newInst
 //
 // Tests an unbalanced model with too many equations
 //

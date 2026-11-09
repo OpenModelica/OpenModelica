@@ -2,7 +2,6 @@
 // keywords: EventHandling, EventIteration
 // status: correct
 // teardown_command: rm -rf EventIteration EventIteration.exe EventIteration.cpp EventIteration.make EventIteration.libs EventIteration.log EventIteration.makefile EventIteration_* output.log
-// cflags: -d=-newInst
 //
 //  Simulate model containing EventIterations
 //

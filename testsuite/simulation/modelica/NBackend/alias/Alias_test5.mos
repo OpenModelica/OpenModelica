@@ -36,7 +36,7 @@ simulate(Test5); getErrorString();
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) z = $FUN_1; ($RES_SIM_0)
-// 	[SCAL] (1) x = -2.0 * z; ($RES_SIM_2)
+// 	[SCAL] (1) x = -2.0*z; ($RES_SIM_2)
 //
 // [dumprepl] Constant Replacements:
 // ***********************************
@@ -45,8 +45,8 @@ simulate(Test5); getErrorString();
 // [dumprepl] Nontrivial Alias Replacements:
 // *******************************************
 // 	y	 ==> 	3.0 + time
-// 	z	 ==> 	-0.5 * x
-// 	$FUN_1	 ==> 	-0.5 * x
+// 	z	 ==> 	-0.5*x
+// 	$FUN_1	 ==> 	-0.5*x
 //
 // ==================================
 //   [dumprepl] Clocked Alias Sets:
@@ -72,7 +72,7 @@ simulate(Test5); getErrorString();
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) z = $FUN_1; ($RES_SIM_0)
-// 	[SCAL] (1) x = -2.0 * z; ($RES_SIM_2)
+// 	[SCAL] (1) x = -2.0*z; ($RES_SIM_2)
 //
 // 	Nominal map after replacements (conflicting array index = 1):
 // 	(x, 2.0)
@@ -81,7 +81,7 @@ simulate(Test5); getErrorString();
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) z = $FUN_1; ($RES_SIM_0)
-// 	[SCAL] (1) x = -2.0 * z; ($RES_SIM_2)
+// 	[SCAL] (1) x = -2.0*z; ($RES_SIM_2)
 //
 // 	Start map after replacements:
 // 	(x, 5.0)

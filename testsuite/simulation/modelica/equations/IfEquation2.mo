@@ -35,5 +35,4 @@ equation
   else
     z = a * x / y;
   end if;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end IfEquation2;

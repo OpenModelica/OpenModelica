@@ -609,7 +609,7 @@ public
       limit := NFBinding.EMPTY_BINDING;
     else
       res := List.reduce(values, reduceFn);
-      limit := Binding.makeFlat(res, Variability.CONSTANT, NFBinding.Source.GENERATED);
+      limit := Binding.makeFlat(res, Variability.CONSTANT, NFBinding.Source.GENERATED, Absyn.dummyInfo);
     end if;
   end computeLimit;
 
@@ -877,7 +877,7 @@ public
       SOME(outVar) := var;
 
       if Variable.isFlow(outVar) then
-        outVar.binding := Binding.makeFlat(value, Variability.CONSTANT, NFBinding.Source.GENERATED);
+        outVar.binding := Binding.makeFlat(value, Variability.CONSTANT, NFBinding.Source.GENERATED, Absyn.dummyInfo);
       end if;
     end update_binding;
   algorithm

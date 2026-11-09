@@ -786,7 +786,6 @@ INPUT                 = @SOURCE_ROOT_DIR@/Include/Core/ \
                          @SOURCE_ROOT_DIR@/Include/Solver/Newton \
                          @SOURCE_ROOT_DIR@/Include/Solver/Peer \
                          @SOURCE_ROOT_DIR@/Include/Solver/RTEuler \
-                         @SOURCE_ROOT_DIR@/Include/Solver/UmfPack \
                          @SOURCE_ROOT_DIR@/Solver/CVode \
                          @SOURCE_ROOT_DIR@/Solver/Euler \
                          @SOURCE_ROOT_DIR@/Solver/IDA \
@@ -794,7 +793,6 @@ INPUT                 = @SOURCE_ROOT_DIR@/Include/Core/ \
                          @SOURCE_ROOT_DIR@/Solver/Newton \
                          @SOURCE_ROOT_DIR@/Solver/Peer \
                          @SOURCE_ROOT_DIR@/Solver/RTEuler \
-                         @SOURCE_ROOT_DIR@/Solver/UmfPack \
                          @SOURCE_ROOT_DIR@/Include/FMU2 \
                          @SOURCE_ROOT_DIR@/Include/SimCoreFactory/ \
                          @SOURCE_ROOT_DIR@/Include/SimCoreFactory/BodasFactory \

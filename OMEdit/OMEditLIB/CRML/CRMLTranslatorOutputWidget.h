@@ -80,8 +80,14 @@ private:
   void translateModel();
   void writeTranslationOutput(QString output, QColor color);
   void translationProcessFinishedHelper();
-// Qt for WebAssembly has no QProcess; CRML translation runs in the omc worker on
-// the web build, so the subprocess-driven slots are unavailable there.
+  QString generatedModelicaFile() const;
+  QString translationFinishedMessage(bool success, const QString &exitCode) const;
+#if defined(__EMSCRIPTEN__)
+  void translateModelInPage();
+#endif
+// Qt for WebAssembly has no QProcess; on the web build the CRML translator
+// compiled to JavaScript runs in the page instead (translateModelInPage), so the
+// subprocess-driven slots are unavailable there.
 #if QT_CONFIG(process)
 private slots:
   void translationProcessStarted();

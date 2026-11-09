@@ -2,6 +2,7 @@
 // keywords: NewBackend, differentiation, jacobian, adjoint, bidirectional, solver
 // status: correct
 // teardown_command: rm -rf dassl_fwd.mat dassl_adj.mat dassl_bi.mat ida_fwd.mat ida_adj.mat ida_bi.mat gbode_fwd.mat gbode_adj.mat gbode_bi.mat
+// suite: gbode
 
 loadString("
 model assymetric

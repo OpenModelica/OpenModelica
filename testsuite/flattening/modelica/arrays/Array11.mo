@@ -7,7 +7,6 @@
 
 model Array11
   Real y[:,:] = [1;2];
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Array11;
 
 // Result:

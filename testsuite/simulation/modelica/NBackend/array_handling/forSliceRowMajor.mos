@@ -1,0 +1,92 @@
+// name: forSliceRowMajor
+// keywords: NewBackend array for-equation slice algebraic loop
+// status: correct
+// suite: cSources
+// cflags: --newBackend --simCodeScalarize=false
+// teardown_command: rm -f forSliceRowMajor_res.mat
+//
+// Single iterations of two-dimensional for-equations in per-element algebraic
+// loops (c.m[i, k] connected to c.e[i, 1, k]): the iteration of a scalar index
+// is row major w.r.t. the frames. The off-diagonal elements r[1, 2], r[2, 1]
+// were computed for the transposed iteration (and not at all). Values of the
+// old backend.
+
+loadString("
+package forSliceRowMajor
+  connector P
+    Real T;
+    flow Real Q;
+  end P;
+  model Elem
+    P s;
+    parameter Real T0 = 1;
+    Real T(start = T0, fixed = true);
+  equation
+    der(T) = s.Q;
+    s.Q = 2 * (s.T - T);
+  end Elem;
+  model Cell
+    Elem e[2, 2, 2](T0 = {{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}});
+    P m[2, 2];
+  equation
+    for i in 1:2 loop
+      for j in 1:2 loop
+        for k in 1:2 loop
+          if j == 1 then
+            connect(e[i, j, k].s, m[i, k]);
+          end if;
+        end for;
+      end for;
+    end for;
+  end Cell;
+  model Res
+    P a, b;
+    parameter Real R = 1;
+    Real dT, Q;
+  equation
+    dT = a.T - b.T;
+    dT = R * Q;
+    a.Q = Q;
+    b.Q = -Q;
+  end Res;
+  model Fix
+    P p;
+  equation
+    p.T = 0;
+  end Fix;
+  model Top
+    Cell c;
+    Res r[2, 2](R = {{1, 2}, {3, 4}});
+    Fix f[2, 2];
+  equation
+    connect(c.m, r.a);
+    connect(r.b, f.p);
+  end Top;
+end forSliceRowMajor;
+"); getErrorString();
+simulate(forSliceRowMajor.Top, stopTime = 1, fileNamePrefix = "forSliceRowMajor"); getErrorString();
+// names of the non-scalarized result file
+abs(val(r.Q[1,1], 1, "forSliceRowMajor_res.mat") - 0.34227841342071147) < 1e-5;
+abs(val(r.Q[1,2], 1, "forSliceRowMajor_res.mat") - 0.5362561911933109) < 1e-5;
+abs(val(r.Q[2,1], 1, "forSliceRowMajor_res.mat") - 1.0735390817178614) < 1e-5;
+abs(val(r.Q[2,2], 1, "forSliceRowMajor_res.mat") - 1.0676499042383214) < 1e-5;
+abs(val(c.e.T[1,1,2], 1, "forSliceRowMajor_res.mat") - 1.3406404779832772) < 1e-5;
+abs(val(c.e.T[2,1,1], 1, "forSliceRowMajor_res.mat") - 3.757386786012515) < 1e-5;
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "forSliceRowMajor_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'forSliceRowMajor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// true
+// true
+// true
+// true
+// true
+// endResult

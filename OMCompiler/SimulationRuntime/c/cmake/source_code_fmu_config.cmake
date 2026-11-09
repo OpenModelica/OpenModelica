@@ -10,7 +10,7 @@
 set(SOURCE_FMU_SOURCES_DIR ${CMAKE_INSTALL_DATAROOTDIR}/omc/sources/c)
 
 ## Where SimulationRuntime/rust/CMakeLists.txt installs the crates a
-## --simCodeTarget=C source FMU carries.
+## --simCodeTarget=C+Rust source FMU carries.
 set(SOURCE_FMU_RUST_SOURCES_DIR ${CMAKE_INSTALL_DATAROOTDIR}/omc/sources/rust)
 
 
@@ -21,7 +21,7 @@ set(SOURCE_FMU_RUST_SOURCES_DIR ${CMAKE_INSTALL_DATAROOTDIR}/omc/sources/rust)
 # Two lists, split along the same line the two runtime libraries are split along:
 # what libOpenModelicaRuntimeC covers (gc/, meta/, util/) and what
 # libSimulationRuntimeC covers (simulation/, math-support/). A source FMU built
-# with --simCodeTarget=C ships only the first, and links the Rust runtime for
+# with --simCodeTarget=C+Rust ships only the first, and links the Rust runtime for
 # the second. See Compiler/SimCode/SimCodeMain.mo.
 set(SOURCE_FMU_RUNTIME_C_FILES_LIST "gc/omc_alloc.c"
                                     "gc/omc_rc.c"
@@ -34,12 +34,15 @@ set(SOURCE_FMU_RUNTIME_C_FILES_LIST "gc/omc_alloc.c"
                                     "util/generic_array.c"
                                     "util/index_spec.c"
                                     "util/integer_array.c"
+                                    "util/libcsv.c"
                                     "util/list.c"
                                     "util/modelica_string_lit.c"
                                     "util/modelica_string.c"
                                     "util/ModelicaUtilities.c"
                                     "util/omc_error.c"
                                     "util/omc_file.c"
+                                    "util/omc_fmu_init.c"
+                                    "util/omc_fmu_paramdeps.c"
                                     "util/omc_init.c"
                                     "util/omc_mmap.c"
                                     "util/omc_msvc.c"
@@ -55,6 +58,7 @@ set(SOURCE_FMU_RUNTIME_C_FILES_LIST "gc/omc_alloc.c"
                                     "util/string_array.c"
                                     "util/utility.c"
                                     "util/varinfo.c"
+                                    "util/write_csv.c"
                                     "meta/meta_modelica_catch.c")
 
 set(SOURCE_FMU_SIMRT_C_FILES_LIST "math-support/pivot.c"
@@ -73,6 +77,7 @@ set(SOURCE_FMU_SIMRT_C_FILES_LIST "math-support/pivot.c"
                                   "simulation/simulation_omc_assert.c"
                                   "simulation/solver/delay.c"
                                   "simulation/solver/discrete_changes.c"
+                                  "simulation/solver/events.c"
                                   "simulation/solver/model_help.c"
                                   "simulation/solver/omc_math.c"
                                   "simulation/solver/spatialDistribution.c"
@@ -137,18 +142,25 @@ set(SOURCE_FMU_COMMON_HEADERS "omc_dll.h"
                               "simulation/solver/external_input.h"
                               "simulation/solver/discrete_changes.h"
                               "simulation/solver/ida_solver.h"
+                              "simulation/solver/jacobian_analysis.h"
+                              "simulation/solver/kinsolSolver.h"
+                              "simulation/solver/kinsol_b.h"
+                              "simulation/solver/linearSolverKlu.h"
                               "simulation/solver/linearSolverLapack.h"
+                              "simulation/solver/linearSolverLis.h"
                               "simulation/solver/linearSolverTotalPivot.h"
                               "simulation/solver/linearSystem.h"
                               "simulation/solver/mixedSearchSolver.h"
                               "simulation/solver/mixedSystem.h"
                               "simulation/solver/model_help.h"
                               "simulation/solver/nonlinearSolverHomotopy.h"
+                              "simulation/solver/newtonIteration.h"
+                              "simulation/solver/newton_diagnostics.h"
                               "simulation/solver/nonlinearSolverHybrd.h"
+                              "simulation/solver/nonlinearSolverNewton.h"
                               "simulation/solver/nonlinearSystem.h"
                               "simulation/solver/nonlinearValuesList.h"
                               "simulation/solver/omc_math.h"
-                              "simulation/solver/perform_qss_simulation.c.inc"
                               "simulation/solver/perform_simulation.c.inc"
                               "simulation/solver/real_time_sync.h"
                               "simulation/solver/solver_main.h"
@@ -175,12 +187,13 @@ set(SOURCE_FMU_COMMON_HEADERS "omc_dll.h"
                               "util/generic_array.h"
                               "util/index_spec.h"
                               "util/integer_array.h"
-                              "meta/java_interface.h"
                               "util/ModelicaUtilitiesExtra.h"
                               "util/modelica.h"
                               "util/modelica_string.h"
                               "util/omc_error.h"
                               "util/omc_file.h"
+                              "util/omc_fmu_init.h"
+                              "util/omc_fmu_paramdeps.h"
                               "util/omc_mmap.h"
                               "util/omc_msvc.h"
                               "util/omc_numbers.h"
@@ -202,6 +215,7 @@ set(SOURCE_FMU_COMMON_HEADERS "omc_dll.h"
                               "util/uthash.h"
                               "util/utility.h"
                               "util/varinfo.h"
+                              "util/write_csv.h"
                               "util/list.h"
                               "util/doubleEndedList.h"
                               "util/rational.h"
@@ -243,7 +257,13 @@ list(JOIN SOURCE_FMU_DGESV_FILES_LIST_QUOTED ",\n                               
 ######################################################################################################################
 ## Non-linear system files
 
-set(SOURCE_FMU_NLS_FILES_LIST simulation/solver/nonlinearSolverHybrd.c
+set(SOURCE_FMU_NLS_FILES_LIST simulation/solver/jacobian_analysis.c
+                              simulation/solver/kinsolSolver.c
+                              simulation/solver/kinsol_b.c
+                              simulation/solver/newtonIteration.c
+                              simulation/solver/newton_diagnostics.c
+                              simulation/solver/nonlinearSolverHybrd.c
+                              simulation/solver/nonlinearSolverNewton.c
                               simulation/solver/nonlinearSystem.c
                               simulation/solver/nonlinearValuesList.c
                               simulation/solver/nonlinearSolverHomotopy.c)
@@ -286,7 +306,9 @@ endif ()
 
 ######################################################################################################################
 ## Linear system files
-set(SOURCE_FMU_LS_FILES_LIST simulation/solver/linearSolverLapack.c
+set(SOURCE_FMU_LS_FILES_LIST simulation/solver/linearSolverKlu.c
+                             simulation/solver/linearSolverLapack.c
+                             simulation/solver/linearSolverLis.c
                              simulation/solver/linearSolverTotalPivot.c
                              simulation/solver/linearSystem.c)
 
@@ -297,6 +319,149 @@ foreach(source_file ${SOURCE_FMU_LS_FILES_LIST})
           DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR})
 endforeach()
 list(JOIN SOURCE_FMU_LS_FILES_LIST_QUOTED ",\n                                                     " SOURCE_FMU_LS_FILES)
+
+
+######################################################################################################################
+## SuiteSparse, SUNDIALS and Lis sources. An FMU compiles them, unless the omc
+## that generated it builds it right away and passes its own archives.
+##
+## They have to compile like the rest of <SourceFiles>: with sources/ as the
+## only include directory and no definitions. The sources go to 3rdParty/<name>
+## with the headers of their own directory, and the headers of every include
+## directory go to sources/ itself.
+set(SOURCE_FMU_SOLVER_LIBRARY_FILES_LIST)
+set(SOURCE_FMU_SOLVER_LIBRARY_SOURCES_LIST)
+
+macro(omc_fmu_add_solver_library_file file dest)
+  install(FILES ${file} DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${dest})
+  get_filename_component(_om_name ${file} NAME)
+  list(APPEND SOURCE_FMU_SOLVER_LIBRARY_FILES_LIST "${dest}${_om_name}")
+endmacro()
+
+# The headers under <root>/<dir>, to sources/ with their path below <dir>,
+# except the ones matching the optional regex.
+function(omc_fmu_add_solver_library_include_dir root dir)
+  set(_om_files ${SOURCE_FMU_SOLVER_LIBRARY_FILES_LIST})
+  file(GLOB_RECURSE _om_headers RELATIVE ${root}/${dir} ${root}/${dir}/*.h)
+  if(ARGN)
+    list(FILTER _om_headers EXCLUDE REGEX "${ARGN}")
+  endif()
+  foreach(header ${_om_headers})
+    get_filename_component(_om_dir ${header} DIRECTORY)
+    install(FILES ${root}/${dir}/${header} DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${_om_dir})
+    list(APPEND _om_files "${header}")
+  endforeach()
+  set(SOURCE_FMU_SOLVER_LIBRARY_FILES_LIST ${_om_files} PARENT_SCOPE)
+endfunction()
+
+# The sources of each target to 3rdParty/<name>, with the headers beside them
+# unless their directory is one of the include directories <include_dirs>.
+function(omc_fmu_add_solver_library_targets name root include_dirs)
+  set(_om_files ${SOURCE_FMU_SOLVER_LIBRARY_FILES_LIST})
+  set(_om_sources ${SOURCE_FMU_SOLVER_LIBRARY_SOURCES_LIST})
+  set(_om_dirs)
+  foreach(target ${ARGN})
+    get_target_property(_om_target_sources ${target} SOURCES)
+    get_target_property(_om_source_dir ${target} SOURCE_DIR)
+    foreach(source ${_om_target_sources})
+      if(NOT source MATCHES "\\.c$")
+        continue()
+      endif()
+      if(NOT IS_ABSOLUTE ${source})
+        set(source ${_om_source_dir}/${source})
+      endif()
+      file(RELATIVE_PATH _om_rel ${root} ${source})
+      get_filename_component(_om_dir ${_om_rel} DIRECTORY)
+      install(FILES ${source} DESTINATION ${SOURCE_FMU_SOURCES_DIR}/3rdParty/${name}/${_om_dir})
+      list(APPEND _om_files "3rdParty/${name}/${_om_rel}")
+      list(APPEND _om_sources "3rdParty/${name}/${_om_rel}")
+      list(APPEND _om_dirs ${_om_dir})
+    endforeach()
+  endforeach()
+  list(REMOVE_DUPLICATES _om_dirs)
+  list(REMOVE_ITEM _om_dirs ${include_dirs})
+  foreach(dir ${_om_dirs})
+    file(GLOB _om_headers RELATIVE ${root} ${root}/${dir}/*.h)
+    foreach(header ${_om_headers})
+      install(FILES ${root}/${header} DESTINATION ${SOURCE_FMU_SOURCES_DIR}/3rdParty/${name}/${dir})
+      list(APPEND _om_files "3rdParty/${name}/${header}")
+    endforeach()
+  endforeach()
+  set(SOURCE_FMU_SOLVER_LIBRARY_FILES_LIST ${_om_files} PARENT_SCOPE)
+  set(SOURCE_FMU_SOLVER_LIBRARY_SOURCES_LIST ${_om_sources} PARENT_SCOPE)
+endfunction()
+
+set(_om_sundials_root ${OMCompiler_3rdParty_SOURCE_DIR}/sundials)
+set(_om_sundials_targets)
+foreach(lib core kinsol cvode nvecserial sunmemsys
+            sunmatrixband sunmatrixdense sunmatrixsparse
+            sunlinsolband sunlinsoldense sunlinsolklu sunlinsollapackdense
+            sunlinsolpcg sunlinsolspbcgs sunlinsolspfgmr sunlinsolspgmr sunlinsolsptfqmr
+            sunnonlinsolauto sunnonlinsolfixedpoint sunnonlinsolnewton)
+  list(APPEND _om_sundials_targets sundials_${lib}_obj_static)
+endforeach()
+omc_fmu_add_solver_library_targets(sundials ${_om_sundials_root} "src/sundials" ${_om_sundials_targets})
+# IDAS goes only into a --daeMode FMU, so it gets lists of its own.
+set(_om_files ${SOURCE_FMU_SOLVER_LIBRARY_FILES_LIST})
+set(_om_sources ${SOURCE_FMU_SOLVER_LIBRARY_SOURCES_LIST})
+set(SOURCE_FMU_SOLVER_LIBRARY_FILES_LIST)
+set(SOURCE_FMU_SOLVER_LIBRARY_SOURCES_LIST)
+omc_fmu_add_solver_library_targets(sundials ${_om_sundials_root} "src/sundials" sundials_idas_obj_static)
+foreach(file ${SOURCE_FMU_SOLVER_LIBRARY_FILES_LIST})
+  list(APPEND SOURCE_FMU_SOLVER_LIBRARY_IDA_FILES_QUOTED "\"${file}\"")
+endforeach()
+list(JOIN SOURCE_FMU_SOLVER_LIBRARY_IDA_FILES_QUOTED ",\n                                                      " SOURCE_FMU_SOLVER_LIBRARY_IDA_FILES)
+foreach(file ${SOURCE_FMU_SOLVER_LIBRARY_SOURCES_LIST})
+  list(APPEND SOURCE_FMU_SOLVER_LIBRARY_IDA_SOURCES_QUOTED "\"${file}\"")
+endforeach()
+list(JOIN SOURCE_FMU_SOLVER_LIBRARY_IDA_SOURCES_QUOTED ",\n                                                        " SOURCE_FMU_SOLVER_LIBRARY_IDA_SOURCES)
+set(SOURCE_FMU_SOLVER_LIBRARY_FILES_LIST ${_om_files})
+set(SOURCE_FMU_SOLVER_LIBRARY_SOURCES_LIST ${_om_sources})
+omc_fmu_add_solver_library_include_dir(${_om_sundials_root} include)
+omc_fmu_add_solver_library_include_dir(${_om_sundials_root} src/sundials)
+# The generated headers describe the compiler and platform omc was built with.
+# Drop the compiler hints and deprecation attributes, link statically and use
+# the profiler's POSIX timers on all but Windows.
+set(_om_sundials_build ${CMAKE_BINARY_DIR}/OMCompiler/3rdParty/sundials)
+foreach(header sundials_config.h sundials_export.h)
+  file(READ ${_om_sundials_build}/include/sundials/${header} _om_text)
+  string(REGEX REPLACE "\n#define SUNDIALS_C_COMPILER_HAS_[A-Z_]+" "\n" _om_text "${_om_text}")
+  string(REPLACE "\n#define SUNDIALS_HAVE_POSIX_TIMERS" "\n#if !defined(_WIN32)\n#define SUNDIALS_HAVE_POSIX_TIMERS\n#endif" _om_text "${_om_text}")
+  string(REGEX REPLACE "__attribute__ \\(\\(__deprecated__(\\(msg\\))?\\)\\)" "" _om_text "${_om_text}")
+  string(REPLACE "#ifdef SUNDIALS_STATIC_DEFINE" "#if 1" _om_text "${_om_text}")
+  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/fmu-solvers/${header} "${_om_text}")
+  omc_fmu_add_solver_library_file(${CMAKE_CURRENT_BINARY_DIR}/fmu-solvers/${header} sundials/)
+endforeach()
+omc_fmu_add_solver_library_file(${_om_sundials_build}/src/sundials/sundials_lapack_defs.h "")
+
+set(_om_suitesparse_root ${OMCompiler_3rdParty_SOURCE_DIR}/SuiteSparse)
+set(_om_suitesparse_include_dirs SuiteSparse_config AMD/Include BTF/Include COLAMD/Include KLU/Include)
+omc_fmu_add_solver_library_targets(SuiteSparse ${_om_suitesparse_root} "${_om_suitesparse_include_dirs}"
+                                   SuiteSparseConfig_static AMD_static BTF_static COLAMD_static KLU_static)
+foreach(dir ${_om_suitesparse_include_dirs})
+  omc_fmu_add_solver_library_include_dir(${_om_suitesparse_root} ${dir} "^SuiteSparse_config\\.h$")
+endforeach()
+# Without a timer, as SuiteSparse_config.h names the one of the platform omc
+# runs on and KLU uses none.
+file(READ ${_om_suitesparse_root}/SuiteSparse_config/SuiteSparse_config.h _om_text)
+string(REGEX REPLACE "\n *#define SUITESPARSE_(TIMER_ENABLED|HAVE_CLOCK_GETTIME|CONFIG_TIMER)[^\n]*" "\n" _om_text "${_om_text}")
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/fmu-solvers/SuiteSparse_config.h "${_om_text}")
+omc_fmu_add_solver_library_file(${CMAKE_CURRENT_BINARY_DIR}/fmu-solvers/SuiteSparse_config.h "")
+
+# Lis compiles without lis_config.h, which describes the platform omc runs on.
+set(_om_lis_root ${OMCompiler_3rdParty_SOURCE_DIR}/lis-1.4.12)
+omc_fmu_add_solver_library_targets(lis ${_om_lis_root} include lis)
+omc_fmu_add_solver_library_include_dir(${_om_lis_root} include "^lis_config\\.h$")
+
+list(REMOVE_DUPLICATES SOURCE_FMU_SOLVER_LIBRARY_FILES_LIST)
+foreach(file ${SOURCE_FMU_SOLVER_LIBRARY_FILES_LIST})
+  list(APPEND SOURCE_FMU_SOLVER_LIBRARY_FILES_LIST_QUOTED "\"${file}\"")
+endforeach()
+list(JOIN SOURCE_FMU_SOLVER_LIBRARY_FILES_LIST_QUOTED ",\n                                                  " SOURCE_FMU_SOLVER_LIBRARY_FILES)
+foreach(file ${SOURCE_FMU_SOLVER_LIBRARY_SOURCES_LIST})
+  list(APPEND SOURCE_FMU_SOLVER_LIBRARY_SOURCES_LIST_QUOTED "\"${file}\"")
+endforeach()
+list(JOIN SOURCE_FMU_SOLVER_LIBRARY_SOURCES_LIST_QUOTED ",\n                                                    " SOURCE_FMU_SOLVER_LIBRARY_SOURCES)
 
 
 ######################################################################################################################
@@ -314,9 +479,35 @@ list(JOIN SOURCE_FMU_MIXED_FILES_LIST_QUOTED ",\n                               
 
 
 ######################################################################################################################
+## SUNDIALS files, for KINSOL and CVODE. Every FMU compiles them itself, as
+## sundials_error.c depends on whether the FMU links CVODE.
+set(SOURCE_FMU_SUNDIALS_FILES_LIST simulation/solver/sundials_error.c
+                                   simulation/solver/sundials_util.c)
+
+foreach(source_file ${SOURCE_FMU_SUNDIALS_FILES_LIST})
+  list(APPEND SOURCE_FMU_SUNDIALS_FILES_LIST_QUOTED "\"${source_file}\"")
+  get_filename_component(DEST_DIR ${source_file} DIRECTORY)
+  install(FILES ${source_file}
+          DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR})
+endforeach()
+list(JOIN SOURCE_FMU_SUNDIALS_FILES_LIST_QUOTED ",\n                                                  " SOURCE_FMU_SUNDIALS_FILES)
+
+######################################################################################################################
+## IDA files, for a --daeMode Co-Simulation FMU
+set(SOURCE_FMU_IDA_RUNTIME_FILES_LIST simulation/solver/dae_mode.c
+                                      simulation/solver/ida_solver.c)
+
+foreach(source_file ${SOURCE_FMU_IDA_RUNTIME_FILES_LIST})
+  list(APPEND SOURCE_FMU_IDA_RUNTIME_FILES_LIST_QUOTED "\"${source_file}\"")
+  get_filename_component(DEST_DIR ${source_file} DIRECTORY)
+  install(FILES ${source_file}
+          DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR})
+endforeach()
+list(JOIN SOURCE_FMU_IDA_RUNTIME_FILES_LIST_QUOTED ",\n                                                " SOURCE_FMU_IDA_RUNTIME_FILES)
+
+######################################################################################################################
 ## CVODE files
-set(SOURCE_FMU_CVODE_RUNTIME_FILES_LIST simulation/solver/cvode_solver.c
-                                        simulation/solver/sundials_error.c)
+set(SOURCE_FMU_CVODE_RUNTIME_FILES_LIST simulation/solver/cvode_solver.c)
 
 foreach(source_file ${SOURCE_FMU_CVODE_RUNTIME_FILES_LIST})
   list(APPEND SOURCE_FMU_CVODE_RUNTIME_FILES_LIST_QUOTED "\"${source_file}\"")
@@ -326,23 +517,58 @@ foreach(source_file ${SOURCE_FMU_CVODE_RUNTIME_FILES_LIST})
 endforeach()
 list(JOIN SOURCE_FMU_CVODE_RUNTIME_FILES_LIST_QUOTED ",\n                                                  " SOURCE_FMU_CVODE_RUNTIME_FILES)
 
+######################################################################################################################
+## zlib, for ModelicaMatIO.c (MAT-files v7). Beside the ModelicaExternalC sources.
+## Without the gz* file API, which needs unistd.h and is not used by ModelicaMatIO.c.
+file(GLOB 3RD_ZLIB_FILES RELATIVE ${OMCompiler_3rdParty_SOURCE_DIR}/zlib
+                                  ${OMCompiler_3rdParty_SOURCE_DIR}/zlib/*.c
+                                  ${OMCompiler_3rdParty_SOURCE_DIR}/zlib/*.h)
+list(FILTER 3RD_ZLIB_FILES EXCLUDE REGEX "^gz.*\\.c$")
+foreach(source_file ${3RD_ZLIB_FILES})
+  install(FILES ${OMCompiler_3rdParty_SOURCE_DIR}/zlib/${source_file}
+          DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ModelicaExternalC/zlib)
+  list(APPEND SOURCE_FMU_ZLIB_FILES_LIST_QUOTED "\"ModelicaExternalC/zlib/${source_file}\"")
+endforeach()
+list(JOIN SOURCE_FMU_ZLIB_FILES_LIST_QUOTED ",\n                                                         " SOURCE_FMU_ZLIB_FILES)
+
 
 # ######################################################################################################################
 # Library: SimulationRuntimeFMI
 add_library(SimulationRuntimeFMI STATIC)
 add_library(omc::simrt::simrtfmi ALIAS SimulationRuntimeFMI)
 
+# Every runtime source an FMU compiles, except fmi-export/, ModelicaExternalC/
+# and the SUNDIALS and CVODE files: buildModelFMU links this archive instead of
+# compiling them for each FMU it builds on this platform.
 target_sources(SimulationRuntimeFMI PRIVATE ${SOURCE_FMU_COMMON_FILES_LIST}
                                             ${SOURCE_FMU_LS_FILES_LIST}
                                             ${SOURCE_FMU_NLS_FILES_LIST}
                                             ${SOURCE_FMU_MIXED_FILES_LIST}
-                                            ${3RD_CMINPACK_FMU_FILES})
+                                            ${3RD_CMINPACK_FMU_FILES}
+                                            ${3RD_DGESV_FILES})
 
-target_compile_definitions(SimulationRuntimeFMI PRIVATE OMC_MINIMAL_RUNTIME=1;OMC_FMI_RUNTIME=1;CMINPACK_NO_DLL)
+target_compile_definitions(SimulationRuntimeFMI PRIVATE OMC_MINIMAL_RUNTIME=1;OMC_FMI_RUNTIME=1;CMINPACK_NO_DLL;WITH_SUITESPARSE)
+
+set_target_properties(SimulationRuntimeFMI PROPERTIES POSITION_INDEPENDENT_CODE ON
+                                                      C_VISIBILITY_PRESET hidden)
+
+# An FMU links this archive without --coverage.
+if(OM_ENABLE_COVERAGE)
+  get_target_property(_om_simrtfmi_options SimulationRuntimeFMI COMPILE_OPTIONS)
+  list(REMOVE_ITEM _om_simrtfmi_options ${OM_COVERAGE_COMPILE_OPTIONS})
+  set_target_properties(SimulationRuntimeFMI PROPERTIES COMPILE_OPTIONS "${_om_simrtfmi_options}")
+endif()
 
 target_include_directories(SimulationRuntimeFMI PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(SimulationRuntimeFMI PRIVATE ${OMCompiler_3rdParty_SOURCE_DIR}/dgesv/include)
 
 target_link_libraries(SimulationRuntimeFMI PUBLIC OMCPThreads::OMCPThreads)
+# For their headers: an FMU links these libraries itself.
+target_link_libraries(SimulationRuntimeFMI PRIVATE omc::3rd::sundials::kinsol
+                                                   omc::3rd::sundials::sunlinsolklu
+                                                   omc::3rd::sundials::sunlinsollapackdense
+                                                   omc::3rd::suitesparse::klu
+                                                   omc::3rd::lis)
 
 install(TARGETS SimulationRuntimeFMI)
 

@@ -9,6 +9,10 @@ for a; do
     configure=1
     args+=("Unix Makefiles"
            "-DCMAKE_TOOLCHAIN_FILE=$here/../../OMCompiler/Compiler/OpenModelica.rs/.cmake/xwin-toolchain.cmake")
+  elif [[ $a == -DCMAKE_C_FLAGS=* ]]; then
+    # The toolchain's flags carry the MSVC headers that INCLUDE provides on
+    # Windows; CMake adds CFLAGS to them, while CMAKE_C_FLAGS replaces them.
+    export CFLAGS="${a#-DCMAKE_C_FLAGS=}"
   else
     args+=("$(unix_path "$a")")
   fi

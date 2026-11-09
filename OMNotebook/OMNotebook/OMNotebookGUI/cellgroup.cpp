@@ -52,6 +52,7 @@
 
 //IAEX Headers
 #include "cellgroup.h"
+#include "cellcursor.h"
 
 
 namespace IAEX{
@@ -115,7 +116,7 @@ namespace IAEX{
    */
   void CellGroup::setStyle(CellStyle style)
   {
-    if(closed_)
+    if(closed_ && hasChilds())
       child()->setStyle(style);
   }
 
@@ -134,7 +135,7 @@ namespace IAEX{
    */
   CellStyle *CellGroup::style()
   {
-    if(closed_)
+    if(closed_ && hasChilds())
       return child()->style();
     else
     {
@@ -336,9 +337,10 @@ namespace IAEX{
    */
   int CellGroup::height()
   {
+    static const int emptyGroupHeight = 20;  // pixels, bracket of an empty group
     int height = 0;
 
-    if( closed_ )
+    if( closed_ && hasChilds() )
     {
       //Height of the first cell.
       height = child()->height();
@@ -355,6 +357,22 @@ namespace IAEX{
 
       height = h;
     }
+
+    // An empty group (all cells deleted) would get height 0, or only the height of the cursor
+    // while the cursor is inside it. Its bracket at the right margin would vanish. Keep a minimum
+    // height so that it is displayed like any other group.
+    bool onlyCursor = true;
+    for( Cell *c = child(); c != 0; c = c->next() )
+    {
+      if( !dynamic_cast<CellCursor *>( c ) )
+      {
+        onlyCursor = false;
+        break;
+      }
+    }
+
+    if( onlyCursor )
+      height = qMax( height, emptyGroupHeight );
 
     return height;
   }
@@ -477,17 +495,13 @@ namespace IAEX{
     if(aCell->parentCell()->last() == aCell)
       aCell->parentCell()->setLast(aCell->previous());
 
+    // Unlink the cell. The neighbours must be updated also if the removed cell was the first
+    // or the last one, otherwise they keep a pointer to the removed (and later deleted) cell.
     if(next)
-    {
-      if(prev)
-        next->setPrevious(prev);
-    }
+      next->setPrevious(prev);
 
     if(prev)
-    {
-      if(next)
-        prev->setNext(next);
-    }
+      prev->setNext(next);
     //Insert all widgets again.
     par->addCellWidgets();
   }
@@ -500,7 +514,7 @@ namespace IAEX{
     newCell->show();
 
     connect(newCell, SIGNAL(heightChanged()),
-      this, SLOT(adjustHeight()));
+      this, SLOT(adjustHeight()), Qt::UniqueConnection);
 
     removeCellWidgets();
     addCellWidgets();
@@ -521,7 +535,25 @@ namespace IAEX{
   void CellGroup::addCellWidgets()
   {
     Cell *current = child();
-    int i = 0;
+
+    // If only the cursor is left in the group, it is placed in the second row below an empty
+    // stretching row, i.e. at the bottom of the (minimum height) empty group.
+    bool onlyCursor = true;
+    for(Cell *c = current; c != 0; c = c->next())
+    {
+      if(!dynamic_cast<CellCursor *>(c))
+      {
+        onlyCursor = false;
+        break;
+      }
+    }
+
+    const int firstRow = (onlyCursor && current != 0) ? 1 : 0;
+    int i = firstRow;
+
+    // Rows keep their stretch factor, so reset them first (the row count never shrinks).
+    for(int r = 0; r < layout_->rowCount(); ++r)
+      layout_->setRowStretch(r, 0);
 
     while(current != 0)
     {
@@ -532,13 +564,17 @@ namespace IAEX{
         current->show();
 
         connect(current, SIGNAL(heightChanged()),
-          this, SLOT(adjustHeight()));
+          this, SLOT(adjustHeight()), Qt::UniqueConnection);
       }
 
       layout_->addWidget(current,i,0);
       ++i;
       current = current->next();
     }
+
+    // Extra space (minimum height of an empty group) goes into one stretching row, so that the
+    // cursor is not centered: above the cursor if it is alone, otherwise below the cells.
+    layout_->setRowStretch(firstRow == 1 ? 0 : i, 1);
 
     adjustHeight();
   }

@@ -17,7 +17,6 @@ algorithm
   when x <= 5 then
     close := false;
   end when;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DoubleWhenConflict;
 
 

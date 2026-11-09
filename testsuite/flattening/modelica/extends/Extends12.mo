@@ -13,7 +13,6 @@ end Package1;
 model Model1
   package Package2 = Package1;
   extends Package2.Model2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Model1;
 
 // Result:

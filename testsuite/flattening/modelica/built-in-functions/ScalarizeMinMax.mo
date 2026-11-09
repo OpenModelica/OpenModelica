@@ -11,7 +11,7 @@ model ScalarizeMinMax
 equation
   r1 = min(x);
   r2 = max(x);
-  annotation(__OpenModelica_commandLineOptions="+scalarizeMinMax -d=-newInst");
+  annotation(__OpenModelica_commandLineOptions="+scalarizeMinMax");
 end ScalarizeMinMax;
 
 // Result:
@@ -24,7 +24,7 @@ end ScalarizeMinMax;
 //   Real r1;
 //   Real r2;
 // equation
-//   r1 = min(x[1], min(x[2], min(x[3], min(x[4], x[5]))));
-//   r2 = max(x[1], max(x[2], max(x[3], max(x[4], x[5]))));
+//   r1 = min(x);
+//   r2 = max(x);
 // end ScalarizeMinMax;
 // endResult

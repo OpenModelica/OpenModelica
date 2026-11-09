@@ -116,6 +116,42 @@ void SimVars::create(size_t dim_real, size_t dim_int, size_t dim_bool, size_t di
 		std::fill(_real_vars, _real_vars + dim_real, 0.0);
 }
 
+void SimVars::resize(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_string, size_t dim_pre_vars, size_t dim_state_vars, size_t state_index)
+{
+	size_t old_real = _dim_real, old_int = _dim_int, old_bool = _dim_bool, old_string = _dim_string;
+	double *real_vars = _real_vars, *pre_real_vars = _pre_real_vars;
+	int *int_vars = _int_vars, *pre_int_vars = _pre_int_vars;
+	bool *bool_vars = _bool_vars, *pre_bool_vars = _pre_bool_vars;
+	string *string_vars = _string_vars, *pre_string_vars = _pre_string_vars;
+
+	create(dim_real, dim_int, dim_bool, dim_string, dim_pre_vars, dim_state_vars, state_index);
+
+	if (real_vars) {
+		std::copy(real_vars, real_vars + std::min(old_real, dim_real), _real_vars);
+		std::copy(pre_real_vars, pre_real_vars + std::min(old_real, dim_real), _pre_real_vars);
+		alignedFree(real_vars);
+		alignedFree(pre_real_vars);
+	}
+	if (int_vars) {
+		std::copy(int_vars, int_vars + std::min(old_int, dim_int), _int_vars);
+		std::copy(pre_int_vars, pre_int_vars + std::min(old_int, dim_int), _pre_int_vars);
+		alignedFree(int_vars);
+		alignedFree(pre_int_vars);
+	}
+	if (bool_vars) {
+		std::copy(bool_vars, bool_vars + std::min(old_bool, dim_bool), _bool_vars);
+		std::copy(pre_bool_vars, pre_bool_vars + std::min(old_bool, dim_bool), _pre_bool_vars);
+		alignedFree(bool_vars);
+		alignedFree(pre_bool_vars);
+	}
+	if (string_vars) {
+		std::copy(string_vars, string_vars + std::min(old_string, dim_string), _string_vars);
+		std::copy(pre_string_vars, pre_string_vars + std::min(old_string, dim_string), _pre_string_vars);
+		delete [] string_vars;
+		delete [] pre_string_vars;
+	}
+}
+
 SimVars::~SimVars()
 {
 	if(_pre_real_vars)
@@ -520,25 +556,25 @@ std::string& SimVars::getPreVar(const std::string& var)
 WrapArray<double> SimVars::getPreArr(const BaseArray<double>& arr)
 {
 	size_t i = arr.getData() - _real_vars;
-	return WrapArray<double>(_pre_real_vars + i, arr.getNumElems());
+	return WrapArray<double>(_pre_real_vars + i, arr.getDims());
 }
 
 WrapArray<int> SimVars::getPreArr(const BaseArray<int>& arr)
 {
 	size_t i = arr.getData() - _int_vars;
-	return WrapArray<int>(_pre_int_vars + i, arr.getNumElems());
+	return WrapArray<int>(_pre_int_vars + i, arr.getDims());
 }
 
 WrapArray<bool> SimVars::getPreArr(const BaseArray<bool>& arr)
 {
 	size_t i = arr.getData() - _bool_vars;
-	return WrapArray<bool>(_pre_bool_vars + i, arr.getNumElems());
+	return WrapArray<bool>(_pre_bool_vars + i, arr.getDims());
 }
 
 WrapArray<std::string> SimVars::getPreArr(const BaseArray<std::string>& arr)
 {
 	size_t i = arr.getData() - _string_vars;
-	return WrapArray<std::string>(_pre_string_vars + i, arr.getNumElems());
+	return WrapArray<std::string>(_pre_string_vars + i, arr.getDims());
 }
 
 /**\brief returns a pointer to a real simvar variable in simvar array

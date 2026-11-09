@@ -205,7 +205,7 @@ public
         for cr in crefs loop
           v.name := cr;
           exp :: expl := expl;
-          v.binding := Binding.makeFlat(exp, bind_var, bind_src);
+          v.binding := Binding.makeFlat(exp, bind_var, bind_src, var.info);
           vars := v :: vars;
         end for;
       else
@@ -493,6 +493,23 @@ public
       end if;
     end if;
   end propagateAnnotation;
+
+  function setBooleanAnnotation
+    input String name;
+    input Boolean value;
+    input output Variable var;
+  protected
+    SCode.Annotation anno;
+  algorithm
+    anno := SCode.ANNOTATION(modification = SCode.MOD(
+      finalPrefix = SCode.NOT_FINAL(),
+      eachPrefix  = SCode.NOT_EACH(),
+      subModLst   = {SCode.SubMod.NAMEMOD(name, SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {}, SOME(Absyn.BOOL(value)), NONE(), sourceInfo()))},
+      binding     = NONE(),
+      comment     = NONE(),
+      info        = sourceInfo()));
+    var.comment := SCodeUtil.appendAnnotationToComment(anno, var.comment, true);
+  end setBooleanAnnotation;
 
   function removeNonTopLevelDirection
     "Removes input/output prefixes from a variable that's not a top-level
@@ -782,7 +799,7 @@ public
     input Binding.Source source = NFBinding.Source.GENERATED;
     output Binding binding;
   algorithm
-    binding := Binding.makeFlat(Expression.fromTypedCref(var.name, var.ty), variability(var), source);
+    binding := Binding.makeFlat(Expression.fromTypedCref(var.name, var.ty), variability(var), source, var.info);
   end asBinding;
 
   annotation(__OpenModelica_Interface="nf_frontend");

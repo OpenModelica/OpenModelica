@@ -41,6 +41,7 @@
 #include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Options/OptionsDialog.h"
+#include "Util/Style.h"
 #include "Debugger/StackFrames/StackFramesWidget.h"
 #include "Debugger/Locals/LocalsWidget.h"
 #include "Debugger/GDB/CommandFactory.h"
@@ -120,7 +121,7 @@ void GDBLoggerWidget::logDebuggerCommand(QString command)
  */
 void GDBLoggerWidget::logDebuggerStandardResponse(QString response)
 {
-  logDebuggerResponse(response, Qt::black);
+  logDebuggerResponse(response, OptionsDialog::instance()->getMessagesPage()->getNotificationColor());
 }
 
 /*!
@@ -130,7 +131,7 @@ void GDBLoggerWidget::logDebuggerStandardResponse(QString response)
  */
 void GDBLoggerWidget::logDebuggerErrorResponse(QString response)
 {
-  logDebuggerResponse(response, Qt::red);
+  logDebuggerResponse(response, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
 }
 
 /*!
@@ -209,7 +210,7 @@ TargetOutputWidget::TargetOutputWidget(QWidget *pParent)
  */
 void TargetOutputWidget::logDebuggerStandardOutput(QString output)
 {
-  logDebuggerOutput(output, Qt::black);
+  logDebuggerOutput(output, OptionsDialog::instance()->getMessagesPage()->getNotificationColor());
 }
 
 /*!
@@ -219,7 +220,7 @@ void TargetOutputWidget::logDebuggerStandardOutput(QString output)
  */
 void TargetOutputWidget::logDebuggerErrorOutput(QString output)
 {
-  logDebuggerOutput(output, Qt::red);
+  logDebuggerOutput(output, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
 }
 
 /*!

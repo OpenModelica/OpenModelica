@@ -1,0 +1,44 @@
+// name: algebraicPartitionArray
+// keywords: NewBackend
+// status: correct
+// teardown_command: rm -f PartialArrayDependency PartialArrayDependency_* PartialArrayDependency.log
+//
+// der(x) depends on all of a, including a[3] which is solved by its own
+// component. a[3] must stay in the ODE partition.
+
+loadString("
+model PartialArrayDependency
+  record R
+    Real i;
+  end R;
+  Real x[3](start = {1, 2, 3}, each fixed = true);
+  Real a[3];
+  R p[3];
+equation
+  der(x) = -x + a;
+  a + p.i = zeros(3);
+  p[1].i = sin(x[1]);
+  p[2].i = sin(x[2]);
+  a[3] = 0.5 * x[3];
+end PartialArrayDependency;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(PartialArrayDependency); getErrorString();
+// x[3] = 3*exp(-0.5*time)
+abs(val(x[3], 1) - 3 * exp(-0.5)) < 1e-5;
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "PartialArrayDependency_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'PartialArrayDependency', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// endResult

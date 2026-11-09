@@ -47,6 +47,7 @@
 typedef omc::ResultFile ResultFileReader;
 
 #include <QDomDocument>
+#include <QSet>
 #include <QTreeView>
 
 class OMCProxy;
@@ -268,6 +269,7 @@ public:
   void updatePlotWindows();
   void updateBrowserTime(double time);
   QPair<double, bool> readVariableValue(QString variable, double time, bool reportError = true);
+  void warnProtectedVariableNotFound(const QString &modelName, const QString &variable);
   void closeResultFile();
 private:
   TreeSearchFilters *mpTreeSearchFilters;
@@ -292,6 +294,7 @@ private:
   QMdiSubWindow *mpLastActiveSubWindow;
   omc::ResultFile mResultFile;
   QString mOpenedResultFileName;
+  QHash<QString, QSet<QString>> mWarnedProtectedVariables;
   void selectInteractivePlotWindow(VariablesTreeItem *pVariablesTreeItem);
   void openResultFile(VariablesTreeItem *pVariablesTreeItem, double &startTime, double &stopTime);
   void checkVariable(const QModelIndex &index, bool checkState);

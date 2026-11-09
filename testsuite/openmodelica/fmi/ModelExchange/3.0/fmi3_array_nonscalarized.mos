@@ -9,7 +9,6 @@
 // C runtime. The array is exported as one native FMI 3.0 Float64 with a
 // <Dimension> and IS dimensioned in the FMU init (numberOfDimensions = 1).
 
-setCommandLineOptions("--simCodeTarget=C"); getErrorString();
 setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
 
 loadString("
@@ -25,7 +24,7 @@ end fmi3_array_nonscalarized;
 buildModelFMU(fmi3_array_nonscalarized, version="3.0", fmuType="me"); getErrorString();
 
 // genuine array is dimensioned in the FMU init (non-empty count)
-system("unzip -cqq fmi3_array_nonscalarized.fmu sources/fmi3_array_nonscalarized_init_fmu.c | grep -c 'numberOfDimensions = [1-9]' > fmi3_array_nonscalarized.dims || true"); getErrorString();
+system("python3 fmuInitDims.py fmi3_array_nonscalarized > fmi3_array_nonscalarized.dims || true"); getErrorString();
 readFile("fmi3_array_nonscalarized.dims"); getErrorString();
 
 // native FMI 3.0 array variable with a Dimension child
@@ -34,8 +33,6 @@ system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi3_array_nonscala
 readFile("fmi3_array_nonscalarized.xml"); getErrorString();
 
 // Result:
-// true
-// ""
 // true
 // ""
 // true

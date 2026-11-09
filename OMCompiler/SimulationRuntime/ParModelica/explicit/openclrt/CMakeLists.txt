@@ -21,8 +21,6 @@ if(OM_OMC_PARMODELICA_OCL_VERBOSE)
 endif()
 
 install(TARGETS ParModelicaExpl)
-install(FILES ParModelicaBuiltin.mo
-            DESTINATION lib/omc)
 
 install(FILES
             omc_ocl_interface.h

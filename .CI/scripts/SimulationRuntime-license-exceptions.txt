@@ -45,7 +45,6 @@ OMCompiler/tools/
 # [build] generated files / build artifacts
 OMCompiler/Compiler/boot/bomc
 OMCompiler/Compiler/Lexers/LexerJSON.mo
-OMCompiler/Compiler/Lexers/LexerModelicaDiff.mo
 OMCompiler/Compiler/OpenModelicaBootstrappingHeader.h
 
 OMCompiler/Compiler/Script/OpenModelicaScriptingAPI.mo
@@ -58,7 +57,6 @@ OMCompiler/Compiler/scripts/ngspicetoModelica.py
 OMCompiler/Compiler/susan_codegen/
 
 OMCompiler/Compiler/Template/AbsynDumpTpl.mo
-OMCompiler/Compiler/Template/AbsynToJulia.mo
 OMCompiler/Compiler/Template/AbsynJLDumpTpl.mo
 OMCompiler/Compiler/Template/Codegen*.mo
 OMCompiler/Compiler/Template/DAEDumpTpl.mo
@@ -66,7 +64,6 @@ OMCompiler/Compiler/Template/ExpressionDumpTpl.mo
 OMCompiler/Compiler/Template/GenerateAPIFunctionsTpl.mo
 OMCompiler/Compiler/Template/GraphMLDumpTpl.mo
 OMCompiler/Compiler/Template/GraphvizDump.mo
-OMCompiler/Compiler/Template/MMToJulia.mo
 OMCompiler/Compiler/Template/NFInstDumpTpl.mo
 OMCompiler/Compiler/Template/SCodeDumpTpl.mo
 OMCompiler/Compiler/Template/SimCodeDump.mo
@@ -79,7 +76,6 @@ OMCompiler/Compiler/Util/Autoconf.mo
 
 OMCompiler/Compiler/*.mos
 OMCompiler/Parser/*.mos
-OMCompiler/toJulia/*.mos
 
 # Dave Gamble - cJSON
 OMCompiler/Compiler/runtime/cJSON.*
@@ -121,12 +117,6 @@ OMCompiler/SimulationRuntime/c/util/libcsv.c
 # [3rd-party] Hiroshima University — TinyMT64 (Mersenne Twister)
 OMCompiler/SimulationRuntime/c/util/tinymt64.h
 OMCompiler/SimulationRuntime/c/util/tinymt64.c
-
-# [3rd-party] Oracle / Sun Microsystems — Java Native Interface headers
-OMCompiler/SimulationRuntime/c/util/jni.h
-OMCompiler/SimulationRuntime/c/util/jni_md.h
-OMCompiler/SimulationRuntime/c/util/jni_md_solaris.h
-OMCompiler/SimulationRuntime/c/util/jni_md_windows.h
 
 # Build manifest — not a compiled runtime source file.
 OMCompiler/SimulationRuntime/c/RuntimeSources.mo
@@ -203,6 +193,7 @@ doc/
 OMCompiler/Examples/
 OMCompiler/Compiler/OpenModelica.rs/wasm/simulator/examples/
 OMCompiler/Compiler/OpenModelica.rs/openmodelica_codegen_wasm_jit/testmodels/
+OMCompiler/Compiler/OpenModelica.rs/openmodelica_modelica_diff/tests/cases/
 !OMCompiler/Examples/GenerateDoc.mos
 
 # =============================================================================

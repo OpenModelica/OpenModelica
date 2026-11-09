@@ -731,6 +731,9 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
       msg[1] = var;
       c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_warning, gettext("Get data of variable %s from file %s failed!\n"), msg, 2);
       ngetfailedvars++;
+      if (!isResultCmp) {
+        res = mmc_mk_cons(mmc_mk_scon(var),res);
+      }
       continue;
     }
     /*  check if in file */
@@ -747,6 +750,9 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
       msg[1] = var;
       c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_warning, gettext("Get data of variable %s from file %s failed!\n"), msg, 2);
       ngetfailedvars++;
+      if (!isResultCmp) {
+        res = mmc_mk_cons(mmc_mk_scon(var),res);
+      }
       continue;
     }
     /* adjust initial data points */
@@ -794,7 +800,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
     }
   } else {
     if (success) {
-      *success = ((ddf.n == 0) && (vardiffindx == 0));
+      *success = ((ddf.n == 0) && (vardiffindx == 0) && (ngetfailedvars == 0));
     }
   }
 

@@ -121,6 +121,27 @@ static std::vector<double> readValues(const QString &windowTitle, const omc::Res
   return values;
 }
 
+/* Names the values of a Boolean or an enumeration curve as the result file does.
+ * A file without types leaves what the caller knows from elsewhere. */
+static void setValueLabels(PlotCurve *pPlotCurve, const omc::ResultFile &result, const std::string &name)
+{
+  const std::string type = result.type(name);
+  if (type == "Boolean") {
+    pPlotCurve->setValueLabels(QStringList() << "false" << "true", 0);
+  } else if (type == "enumeration") {
+    QStringList literals;
+    for (const std::string &literal : result.enumeration(name)) {
+      literals.append(QString::fromStdString(literal));
+    }
+    if (!literals.isEmpty()) {
+      pPlotCurve->setValueLabels(literals, 1);
+    }
+    pPlotCurve->setDiscrete(true);
+  } else if (type == "Integer") {
+    pPlotCurve->setDiscrete(true);
+  }
+}
+
 /* The elements var[1], var[2], ... (der(var[i]) for a derivative) at `time`. */
 static QList<double> readArrayAt(const omc::ResultFile &result, const QString &variable, double time)
 {
@@ -169,6 +190,14 @@ PlotWindow::PlotWindow(QStringList arguments, QWidget *parent, bool isInteractiv
 PlotWindow::~PlotWindow()
 {
 
+}
+
+QSize PlotWindow::sizeHint() const
+{
+  QSize hint = QMainWindow::sizeHint();
+  // Keep the main-window chrome while restoring Qwt's preferred plot size.
+  hint += mpPlot->preferredSizeAdjustment();
+  return hint;
 }
 
 void PlotWindow::setUpWidget(int toolbarIconSize)
@@ -245,10 +274,13 @@ void PlotWindow::initializePlot(QStringList arguments)
   setYRightLabel(QString(arguments[19]));
   setYRightCustomLabel(getYRightLabel());
   setYRightRange(QString(arguments[20]).toDouble(), QString(arguments[21]).toDouble());
+  // stacked when asked to, otherwise as Plot::autoStack decides
+  mStackCurvesSet = QString(arguments[22]) == "true";
+  mStackCurves = mStackCurvesSet;
   setTimeUnit("");
   /* read variables */
   QStringList variablesToRead;
-  for(int i = 22; i < arguments.length(); i++)
+  for(int i = 23; i < arguments.length(); i++)
     variablesToRead.append(QString(arguments[i]));
 
   setVariablesList(variablesToRead);
@@ -258,11 +290,13 @@ void PlotWindow::initializePlot(QStringList arguments)
   {
     setPlotType(PlotWindow::PLOT);
     plot();
+    updatePlot();
   }
   else if(plotType.toLower().compare("plotall") == 0)
   {
     setPlotType(PlotWindow::PLOTALL);
     plot();
+    updatePlot();
   }
   else if(plotType.toLower().compare("plotparametric") == 0)
   {
@@ -317,6 +351,8 @@ void PlotWindow::setVariablesList(QStringList variables)
 void PlotWindow::setPlotType(PlotType type)
 {
   mPlotType = type;
+  // only the curves of a plot over time go in lanes
+  mpStackCurvesAction->setVisible(canStackCurves());
 }
 
 void PlotWindow::initializeFile(QString file)
@@ -462,23 +498,63 @@ void PlotWindow::setupToolbar(int toolbarIconSize)
   toolBar->addSeparator();
   //GRID
   mpGridComboBox = new QComboBox;
-  mpGridComboBox->addItems(QStringList() << tr("Grid") << tr("Detailed Grid") << tr("No Grid") << tr("X Grid"));
+  mpGridComboBox->addItems(QStringList() << tr("Simple") << tr("Detailed") << tr("None") << tr("X-only"));
+  mpGridComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+  mpGridComboBox->setItemData(0, tr("Major grid lines on both axes"), Qt::ToolTipRole);
+  mpGridComboBox->setItemData(1, tr("Major and minor grid lines on both axes"), Qt::ToolTipRole);
+  mpGridComboBox->setItemData(2, tr("Hide the grid"), Qt::ToolTipRole);
+  mpGridComboBox->setItemData(3, tr("Vertical grid lines only"), Qt::ToolTipRole);
+  mpGridComboBox->setToolTip(tr("Grid style:\n"
+                                "Simple: major grid lines on both axes.\n"
+                                "Detailed: major and minor grid lines on both axes.\n"
+                                "None: hide the grid.\n"
+                                "X-only: vertical grid lines only."));
   connect(mpGridComboBox, SIGNAL(currentIndexChanged(int)), SLOT(setGrid(int)));
   toolBar->addWidget(mpGridComboBox);
   toolBar->addSeparator();
   //LOG x LOG y
-  mpLogXCheckBox = new QCheckBox(tr("Log X"), this);
-  connect(mpLogXCheckBox, SIGNAL(toggled(bool)), SLOT(setLogX(bool)));
-  toolBar->addWidget(mpLogXCheckBox);
+  mpLogXButton = new QToolButton(toolBar);
+  mpLogXButton->setText(tr("Log X"));
+  mpLogXButton->setIcon(QIcon(":/Resources/icons/log_x.svg"));
+  mpLogXButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  mpLogXButton->setCheckable(true);
+  mpLogXButton->setAutoRaise(true);
+  mpLogXButton->setToolTip(tr("Logarithmic X axis"));
+  mpLogXButton->setStatusTip(mpLogXButton->toolTip());
+  connect(mpLogXButton, SIGNAL(toggled(bool)), SLOT(setLogX(bool)));
+  toolBar->addWidget(mpLogXButton);
   toolBar->addSeparator();
-  mpLogYCheckBox = new QCheckBox(tr("Log Y"), this);
-  connect(mpLogYCheckBox, SIGNAL(toggled(bool)), SLOT(setLogY(bool)));
-  toolBar->addWidget(mpLogYCheckBox);
+  mpLogYButton = new QToolButton(toolBar);
+  mpLogYButton->setText(tr("Log Y"));
+  mpLogYButton->setIcon(QIcon(":/Resources/icons/log_y.svg"));
+  mpLogYButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  mpLogYButton->setCheckable(true);
+  mpLogYButton->setAutoRaise(true);
+  mpLogYButton->setToolTip(tr("Logarithmic Y axes"));
+  mpLogYButton->setStatusTip(mpLogYButton->toolTip());
+  connect(mpLogYButton, SIGNAL(toggled(bool)), SLOT(setLogY(bool)));
+  toolBar->addWidget(mpLogYButton);
   toolBar->addSeparator();
-  mpAlignZeroCheckBox = new QCheckBox(tr("Align zero"), this);
-  mpAlignZeroCheckBox->setToolTip(tr("Align zero on left and right Y-axes"));
-  connect(mpAlignZeroCheckBox, SIGNAL(toggled(bool)), SLOT(setAlignZero(bool)));
-  toolBar->addWidget(mpAlignZeroCheckBox);
+  mpAlignZeroButton = new QToolButton(toolBar);
+  mpAlignZeroButton->setText(tr("Align zero"));
+  mpAlignZeroButton->setIcon(QIcon(":/Resources/icons/align_zero.svg"));
+  mpAlignZeroButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  mpAlignZeroButton->setCheckable(true);
+  mpAlignZeroButton->setAutoRaise(true);
+  mpAlignZeroButton->setToolTip(tr("Align zero on the left and right Y axes"));
+  mpAlignZeroButton->setStatusTip(mpAlignZeroButton->toolTip());
+  connect(mpAlignZeroButton, SIGNAL(toggled(bool)), SLOT(setAlignZero(bool)));
+  toolBar->addWidget(mpAlignZeroButton);
+  mpStackCurvesButton = new QToolButton(toolBar);
+  mpStackCurvesButton->setText(tr("Stack"));
+  mpStackCurvesButton->setIcon(QIcon(":/Resources/icons/stack_curves.svg"));
+  mpStackCurvesButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  mpStackCurvesButton->setCheckable(true);
+  mpStackCurvesButton->setAutoRaise(true);
+  mpStackCurvesButton->setToolTip(tr("Draw each curve in a band of its own, one below the other"));
+  mpStackCurvesButton->setStatusTip(mpStackCurvesButton->toolTip());
+  connect(mpStackCurvesButton, SIGNAL(toggled(bool)), SLOT(setStackCurves(bool)));
+  mpStackCurvesAction = toolBar->addWidget(mpStackCurvesButton);
   toolBar->addSeparator();
   // setup
   mpSetupButton = new QToolButton(toolBar);
@@ -611,6 +687,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
       }
       pPlotCurve->clearXAxisVector();
       pPlotCurve->clearYAxisVector();
+      setValueLabels(pPlotCurve, result, name);
       if (result.isParameter(name)) {
         double value = 0.0;
         if (!result.valueAt(name, startTime, value)) {
@@ -1155,10 +1232,18 @@ void PlotWindow::updatePlot()
   if (mpAutoScaleButton->isChecked()) {
     fitInView();
   } else {
+    const bool stack = getStackCurves();
+    updateStack(stack);
+    if (stack) {
+      mpPlot->applyValueScales();
+    }
     mpPlot->updateLayout();
     mpPlot->replot();
     if (mpPlot->getPlotZoomer()->zoomStack().size() == 1) {
       mpPlot->getPlotZoomer()->setZoomBase(false);
+      if (stack) {
+        mpPlot->applyValueScales();
+      }
     }
     alignYAxisZero();
     mpPlot->replot();
@@ -1197,14 +1282,14 @@ QString PlotWindow::getGrid()
   return mGridType;
 }
 
-QCheckBox* PlotWindow::getLogXCheckBox()
+QToolButton* PlotWindow::getLogXCheckBox()
 {
-  return mpLogXCheckBox;
+  return mpLogXButton;
 }
 
-QCheckBox* PlotWindow::getLogYCheckBox()
+QToolButton* PlotWindow::getLogYCheckBox()
 {
-  return mpLogYCheckBox;
+  return mpLogYButton;
 }
 
 void PlotWindow::setXRange(double min, double max)
@@ -1334,7 +1419,9 @@ void PlotWindow::setLegendPosition(QString position)
   }
   else if (position.toLower().compare("none") == 0)
   {
+    // insertLegend(0) deletes the old legend, do not keep a dangling pointer to it
     mpPlot->insertLegend(0);
+    mpPlot->setLegend(nullptr);
   }
 }
 
@@ -1404,10 +1491,15 @@ Plot* PlotWindow::getPlot()
 
 void PlotWindow::receiveMessage(QStringList arguments)
 {
-  foreach (PlotCurve *pCurve, mpPlot->getPlotCurvesList())
+  /* detach() does not delete the curve. Delete the curves here (they delete their point markers),
+   * otherwise every message leaks all curves of the previous plot.
+   */
+  const QList<PlotCurve*> curves = mpPlot->getPlotCurvesList();
+  for (PlotCurve *pCurve : curves)
   {
-    pCurve->detach();
     mpPlot->removeCurve(pCurve);
+    pCurve->detach();
+    delete pCurve;
   }
   initializePlot(arguments);
 }
@@ -1418,16 +1510,38 @@ void PlotWindow::closeEvent(QCloseEvent *event)
   event->accept();
 }
 
+/*!
+ * \brief PlotWindow::fitInView
+ * Fits all axes to the current data range.
+ * Temporarily enables auto scale on every axis, replots and aligns the
+ * y-axis zeros, then restores the persistent auto scale flag of each axis
+ * to match the auto scale button. This guarantees that "Fit in View" always
+ * rescales the axes, while a subsequent replot keeps or drops the scaled
+ * range depending on whether auto scale is on.
+ */
 void PlotWindow::fitInView()
 {
+  updateStack(getStackCurves());
   mpPlot->getPlotZoomer()->zoom(0);
   mpPlot->setAxisAutoScale(QwtPlot::yLeft);
   mpPlot->setAxisAutoScale(QwtPlot::yRight);
   mpPlot->setAxisAutoScale(QwtPlot::xBottom);
   mpPlot->replot();
+  mpPlot->applyValueScales();
+  mpPlot->replot();
   alignYAxisZero();
   mpPlot->replot();
+  // Restore the persistent auto scale flag so that a subsequent replot keeps
+  // or drops the scaled range depending on whether auto scale is on.
+  mpPlot->setAxisAutoScale(QwtPlot::yLeft, mpAutoScaleButton->isChecked());
+  mpPlot->setAxisAutoScale(QwtPlot::yRight, mpAutoScaleButton->isChecked());
+  mpPlot->setAxisAutoScale(QwtPlot::xBottom, mpAutoScaleButton->isChecked());
   mpPlot->getPlotZoomer()->setZoomBase(false);
+  // the zoomer has divided the y-axes again
+  if (mpPlot->hasValueScale(false) || mpPlot->hasValueScale(true)) {
+    mpPlot->applyValueScales();
+    mpPlot->replot();
+  }
 }
 
 /*!
@@ -1440,7 +1554,7 @@ void PlotWindow::fitInView()
 void PlotWindow::alignYAxisZero()
 {
   // Zero cannot be aligned on logarithmic axes or when one of the axes is hidden.
-  if (!mAlignZero || mpLogYCheckBox->isChecked() || !mpPlot->axisWidget(QwtPlot::yLeft)->isVisible()
+  if (!mAlignZero || mpLogYButton->isChecked() || !mpPlot->axisWidget(QwtPlot::yLeft)->isVisible()
       || !mpPlot->axisWidget(QwtPlot::yRight)->isVisible()) {
     return;
   }
@@ -1623,6 +1737,14 @@ void PlotWindow::setGrid(int index)
   mpPlot->replot();
 }
 
+/*!
+ * \brief PlotWindow::setLogX
+ * Switches the x-axis scale engine between logarithmic and linear. The
+ * persistent auto scale flag of the x-axis is kept in sync with the auto
+ * scale button so that toggling log scale does not leave auto scale enabled
+ * when it is turned off.
+ * \param on true for logarithmic x-axis, false for linear
+ */
 void PlotWindow::setLogX(bool on)
 {
   if (on) {
@@ -1634,13 +1756,21 @@ void PlotWindow::setLogX(bool on)
   } else {
     mpPlot->setAxisScaleEngine(QwtPlot::xBottom, new LinearScaleEngine);
   }
-  mpPlot->setAxisAutoScale(QwtPlot::xBottom);
-  bool state = mpLogXCheckBox->blockSignals(true);
-  mpLogXCheckBox->setChecked(on);
-  mpLogXCheckBox->blockSignals(state);
+  mpPlot->setAxisAutoScale(QwtPlot::xBottom, mpAutoScaleButton->isChecked());
+  bool state = mpLogXButton->blockSignals(true);
+  mpLogXButton->setChecked(on);
+  mpLogXButton->blockSignals(state);
   updatePlot();
 }
 
+/*!
+ * \brief PlotWindow::setLogY
+ * Switches the left and right y-axis scale engines between logarithmic and
+ * linear. The persistent auto scale flag of both y-axes is kept in sync with
+ * the auto scale button so that toggling log scale does not leave auto scale
+ * enabled when it is turned off.
+ * \param on true for logarithmic y-axes, false for linear
+ */
 void PlotWindow::setLogY(bool on)
 {
   if (on) {
@@ -1655,11 +1785,11 @@ void PlotWindow::setLogY(bool on)
     mpPlot->setAxisScaleEngine(QwtPlot::yLeft, new LinearScaleEngine);
     mpPlot->setAxisScaleEngine(QwtPlot::yRight, new LinearScaleEngine);
   }
-  mpPlot->setAxisAutoScale(QwtPlot::yLeft);
-  mpPlot->setAxisAutoScale(QwtPlot::yRight);
-  bool state = mpLogYCheckBox->blockSignals(true);
-  mpLogYCheckBox->setChecked(on);
-  mpLogYCheckBox->blockSignals(state);
+  mpPlot->setAxisAutoScale(QwtPlot::yLeft, mpAutoScaleButton->isChecked());
+  mpPlot->setAxisAutoScale(QwtPlot::yRight, mpAutoScaleButton->isChecked());
+  bool state = mpLogYButton->blockSignals(true);
+  mpLogYButton->setChecked(on);
+  mpLogYButton->blockSignals(state);
   updatePlot();
 }
 
@@ -1672,12 +1802,55 @@ void PlotWindow::setLogY(bool on)
 void PlotWindow::setAlignZero(bool on)
 {
   mAlignZero = on;
-  if (mpAlignZeroCheckBox) {
-    const bool state = mpAlignZeroCheckBox->blockSignals(true);
-    mpAlignZeroCheckBox->setChecked(on);
-    mpAlignZeroCheckBox->blockSignals(state);
+  if (mpAlignZeroButton) {
+    const bool state = mpAlignZeroButton->blockSignals(true);
+    mpAlignZeroButton->setChecked(on);
+    mpAlignZeroButton->blockSignals(state);
   }
   updatePlot();
+}
+
+/*!
+ * \brief PlotWindow::getStackCurves
+ * Whether each curve is drawn in a band of its own: as set with the toolbar,
+ * otherwise when all curves are Booleans, Integers or enumerations, see Plot::autoStack.
+ * Never for a parametric or an array plot, whose x-axis is not the time.
+ * \return
+ */
+bool PlotWindow::getStackCurves() const
+{
+  if (!canStackCurves()) {
+    return false;
+  }
+  return mStackCurvesSet ? mStackCurves : mpPlot->autoStack();
+}
+
+/*!
+ * \brief PlotWindow::setStackCurves
+ * Sets whether each curve is drawn in a band of its own.
+ * Synchronizes the toolbar control and refreshes the plot.
+ * \param on
+ */
+void PlotWindow::setStackCurves(bool on)
+{
+  mStackCurves = on;
+  mStackCurvesSet = true;
+  updatePlot();
+}
+
+/*!
+ * \brief PlotWindow::updateStack
+ * Stacks the curves or not and shows it on the toolbar control.
+ * \param stack
+ */
+void PlotWindow::updateStack(bool stack)
+{
+  mpPlot->updateStack(stack);
+  if (mpStackCurvesButton) {
+    const bool state = mpStackCurvesButton->blockSignals(true);
+    mpStackCurvesButton->setChecked(stack);
+    mpStackCurvesButton->blockSignals(state);
+  }
 }
 
 void PlotWindow::setAutoScale(bool on)
@@ -1685,6 +1858,12 @@ void PlotWindow::setAutoScale(bool on)
   bool state = mpAutoScaleButton->blockSignals(true);
   mpAutoScaleButton->setChecked(on);
   mpAutoScaleButton->blockSignals(state);
+  mpPlot->setAxisAutoScale(QwtPlot::xBottom, on);
+  mpPlot->setAxisAutoScale(QwtPlot::yLeft, on);
+  mpPlot->setAxisAutoScale(QwtPlot::yRight, on);
+  if (on) {
+    fitInView();
+  }
 }
 
 bool PlotWindow::toggleSign(PlotCurve *pPlotCurve, bool checked)
@@ -2215,12 +2394,13 @@ void SetupDialog::applySetup()
   // set the auto scale
   mpPlotWindow->setAutoScale(mpAutoScaleCheckbox->isChecked());
   mpPlotWindow->setAlignZero(mpAlignZeroCheckbox->isChecked());
-  // set the range
-  if (mpAutoScaleCheckbox->isChecked()) {
-    mpPlotWindow->getPlot()->setAxisAutoScale(QwtPlot::xBottom);
-    mpPlotWindow->getPlot()->setAxisAutoScale(QwtPlot::yLeft);
-    mpPlotWindow->getPlot()->setAxisAutoScale(QwtPlot::yRight);
-  } else {
+  // set the axis auto scale flag to match the auto scale checkbox so that
+  // the next replot fits the data when auto scale is on and keeps explicit
+  // ranges when it is off; apply explicit ranges only when auto scale is off.
+  mpPlotWindow->getPlot()->setAxisAutoScale(QwtPlot::xBottom, mpAutoScaleCheckbox->isChecked());
+  mpPlotWindow->getPlot()->setAxisAutoScale(QwtPlot::yLeft, mpAutoScaleCheckbox->isChecked());
+  mpPlotWindow->getPlot()->setAxisAutoScale(QwtPlot::yRight, mpAutoScaleCheckbox->isChecked());
+  if (!mpAutoScaleCheckbox->isChecked()) {
     mpPlotWindow->setXRange(mpXMinimumTextBox->text().toDouble(), mpXMaximumTextBox->text().toDouble());
     mpPlotWindow->setYRange(mpYMinimumTextBox->text().toDouble(), mpYMaximumTextBox->text().toDouble());
     mpPlotWindow->setYRightRange(mpYRightMinimumTextBox->text().toDouble(), mpYRightMaximumTextBox->text().toDouble());

@@ -13,3 +13,9 @@
 [submodule "OMCompiler/Compiler/boot/bomc"]
 	path = OMCompiler/Compiler/boot/bomc
 	url = ../OMBootstrapping.git
+[submodule "OMCompiler/Examples/ModelicaTutorial"]
+	path = OMCompiler/Examples/ModelicaTutorial
+	url = ../ModelicaTutorial.git
+[submodule "OMEdit/OMEditLIB/Resources/crml-diagram"]
+	path = OMEdit/OMEditLIB/Resources/crml-diagram
+	url = ../CRML-diagram.git

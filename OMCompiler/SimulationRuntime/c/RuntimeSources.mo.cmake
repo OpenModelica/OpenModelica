@@ -1,7 +1,7 @@
 encapsulated package RuntimeSources
   constant String fmu_sources_dir = "/@SOURCE_FMU_SOURCES_DIR@";
 
-  // The Rust crates a --simCodeTarget=C source FMU carries, in the checkout's
+  // The Rust crates a --simCodeTarget=C+Rust source FMU carries, in the checkout's
   // own layout: the manifests reach openmodelica_lapack by a relative path.
   // Installed by SimulationRuntime/rust/CMakeLists.txt.
   constant String fmu_rust_sources_dir = "/@SOURCE_FMU_RUST_SOURCES_DIR@";
@@ -10,7 +10,7 @@ encapsulated package RuntimeSources
   constant list<String> simrt_c_sources={@SOURCE_FMU_COMMON_FILES@};
 
   // The libOpenModelicaRuntimeC half of simrt_c_sources: what a
-  // --simCodeTarget=C FMU still compiles from C, because the Rust runtime
+  // --simCodeTarget=C+Rust FMU still compiles from C, because the Rust runtime
   // replaces only what libSimulationRuntimeC covers.
   constant list<String> simrt_c_runtime_sources={@SOURCE_FMU_RUNTIME_C_FILES@};
 
@@ -20,16 +20,14 @@ encapsulated package RuntimeSources
                                    "fmi-export/fmu1_model_interface.h"};
   constant list<String> fmi1_rust_headers={"fmi-export/fmu1_model_interface.h",
                                            "fmi-export/fmu1_rust_interface.c.inc"};
+  // fmu_model_interface.c.inc is the model interface that FMI 2.0 and 3.0 share.
   constant list<String> fmi2_headers={"fmi-export/fmu2_model_interface.h",
                                       "fmi-export/fmu2_rust_interface.c.inc",
-                                      "fmi-export/fmu_read_flags.h"};
-  constant list<String> fmi2_sources={"fmi-export/fmu2_model_interface.c",
-                                      "fmi-export/fmu_read_flags.c"};
-  // FMI 3.0 export reuses the FMI 2.0 ModelInstance (fmu2_model_interface.h) and
-  // the generated per-base-type get/set helpers, so the FMI 2.0 header is also
-  // required when building an FMI 3.0 FMU.
+                                      "fmi-export/fmu_model_interface.c.inc"};
+  constant list<String> fmi2_sources={"fmi-export/fmu2_model_interface.c"};
   constant list<String> fmi3_headers={"fmi-export/fmu3_model_interface.h",
-                                      "fmi-export/fmu3_rust_interface.c.inc"};
+                                      "fmi-export/fmu3_rust_interface.c.inc",
+                                      "fmi-export/fmu_model_interface.c.inc"};
   constant list<String> fmi3_sources={"fmi-export/fmu3_model_interface.c"};
 
   constant list<String> defaultFileSuffixes={".c",
@@ -51,58 +49,56 @@ encapsulated package RuntimeSources
                                              "_14lnz.c",
                                              "_15syn.c",
                                              "_16dae.c",
-                                             "_17inl.c",
                                              "_18spd.c",
                                              "_init_fmu.c",
                                              "_FMU.c"};
 
 
-  constant list<String> sundials_headers={"sundials/cvode/cvode.h",
-                                          "sundials/cvode/cvode_ls.h",
-                                          "sundials/cvode/cvode_proj.h",
-                                          "sundials/nvector/nvector_serial.h",
-                                          "sundials/sundials/priv/sundials_context_impl.h",
-                                          "sundials/sundials/priv/sundials_errors_impl.h",
-                                          "sundials/sundials/sundials_adaptcontroller.h",
-                                          "sundials/sundials/sundials_adjointcheckpointscheme.h",
-                                          "sundials/sundials/sundials_adjointstepper.h",
-                                          "sundials/sundials/sundials_config.h",
-                                          "sundials/sundials/sundials_context.h",
-                                          "sundials/sundials/sundials_core.h",
-                                          "sundials/sundials/sundials_dense.h",
-                                          "sundials/sundials/sundials_direct.h",
-                                          "sundials/sundials/sundials_domeigestimator.h",
-                                          "sundials/sundials/sundials_errors.h",
-                                          "sundials/sundials/sundials_export.h",
-                                          "sundials/sundials/sundials_iterative.h",
-                                          "sundials/sundials/sundials_linearsolver.h",
-                                          "sundials/sundials/sundials_logger.h",
-                                          "sundials/sundials/sundials_math.h",
-                                          "sundials/sundials/sundials_matrix.h",
-                                          "sundials/sundials/sundials_memory.h",
-                                          "sundials/sundials/sundials_nonlinearsolver.h",
-                                          "sundials/sundials/sundials_nvector.h",
-                                          "sundials/sundials/sundials_profiler.h",
-                                          "sundials/sundials/sundials_stepper.h",
-                                          "sundials/sundials/sundials_types.h",
-                                          "sundials/sundials/sundials_version.h",
-                                          "sundials/sunlinsol/sunlinsol_dense.h",
-                                          "sundials/sunmatrix/sunmatrix_dense.h",
-                                          "sundials/sunnonlinsol/sunnonlinsol_fixedpoint.h"};
+  constant list<String> simrt_c_sundials_sources={@SOURCE_FMU_SUNDIALS_FILES@};
 
-  constant list<String> simrt_c_sundials_sources={@SOURCE_FMU_CVODE_RUNTIME_FILES@};
+  constant list<String> simrt_c_cvode_sources={@SOURCE_FMU_CVODE_RUNTIME_FILES@};
 
-  constant list<String> modelica_external_c_sources={"ModelicaExternalC/ModelicaStandardTables.c",
+  constant list<String> simrt_c_ida_sources={@SOURCE_FMU_IDA_RUNTIME_FILES@};
+
+  constant list<String> solver_library_files={@SOURCE_FMU_SOLVER_LIBRARY_FILES@};
+
+  constant list<String> solver_library_sources={@SOURCE_FMU_SOLVER_LIBRARY_SOURCES@};
+
+  constant list<String> solver_library_ida_files={@SOURCE_FMU_SOLVER_LIBRARY_IDA_FILES@};
+
+  constant list<String> solver_library_ida_sources={@SOURCE_FMU_SOLVER_LIBRARY_IDA_SOURCES@};
+
+  constant list<String> modelica_external_c_sources={"ModelicaExternalC/ModelicaFFT.c",
+                                                     "ModelicaExternalC/ModelicaInternal.c",
+                                                     "ModelicaExternalC/ModelicaRandom.c",
+                                                     "ModelicaExternalC/ModelicaStrings.c",
+                                                     "ModelicaExternalC/ModelicaStandardTables.c",
                                                      "ModelicaExternalC/ModelicaMatIO.c",
                                                      "ModelicaExternalC/ModelicaIO.c",
                                                      "ModelicaExternalC/ModelicaStandardTablesDummyUsertab.c",
-                                                     "ModelicaExternalC/snprintf.c"};
+                                                     "ModelicaExternalC/snprintf.c",
+                                                     "ModelicaExternalC/win32_dirent.c"};
 
-  constant list<String> modelica_external_c_headers={"ModelicaExternalC/ModelicaStandardTables.h",
-                                                     "ModelicaExternalC/ModelicaMatIO.h",
-                                                     "ModelicaExternalC/ModelicaIO.h",
+  constant list<String> modelica_external_c_headers={"ModelicaExternalC/gconstructor.h",
+                                                     "ModelicaExternalC/read_data_impl.h",
                                                      "ModelicaExternalC/safe-math.h",
-                                                     "ModelicaExternalC/read_data_impl.h"};
+                                                     "ModelicaExternalC/stdint_msvc.h",
+                                                     "ModelicaExternalC/stdint_wrap.h",
+                                                     "ModelicaExternalC/uthash.h",
+                                                     "ModelicaExternalC/win32_dirent.h"};
+
+  // zlib for ModelicaMatIO.c (MAT-files v7), compiled by the FMU's CMakeLists.txt.
+  constant list<String> modelica_external_c_zlib_files={@SOURCE_FMU_ZLIB_FILES@};
+
+  // The headers of the MSL that a model includes: in sources/, which an importer
+  // has on its include path, rather than beside the C files.
+  constant list<String> modelica_external_c_api_headers={"ModelicaFFT.h",
+                                                         "ModelicaInternal.h",
+                                                         "ModelicaIO.h",
+                                                         "ModelicaMatIO.h",
+                                                         "ModelicaRandom.h",
+                                                         "ModelicaStandardTables.h",
+                                                         "ModelicaStrings.h"};
 
   constant list<String> dgesv_headers={"./external_solvers/blaswrap.h",
                                        "./external_solvers/clapack.h",

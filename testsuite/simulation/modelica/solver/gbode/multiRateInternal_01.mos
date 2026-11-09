@@ -1,6 +1,7 @@
 // name: multiRateInternal_01
 // status: correct
 // teardown_command: rm -rf SlowFastDynamics_* *.log SlowFastDynamics.bat
+// suite: gbode
 //
 // Fully implicit multirate integration uses the internal solver's decoupled
 // I + J pattern rather than the I otimes I + A otimes J generic NLS pattern.

@@ -137,6 +137,11 @@ public:
     virtual void setIntStartValue(int& var,int val) = 0;
     virtual void setStringStartValue(string& var,string val) = 0;
 
+    /// Position in the variable memory and sizes of the variable with the value reference ref
+    /// of the init xml and the type 'r', 'i', 'b' or 's', if they depend on parameters
+    /// (resizable arrays of the new backend). false if the position is the value reference.
+    virtual bool getVariableLayout(char type, int ref, int& pos, std::vector<int>& dims) const { return false; }
+
     //in case of solver-based activation of system equations
     virtual void setNumPartitions(int numPartitions) = 0;
     virtual int getNumPartitions() = 0;

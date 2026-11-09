@@ -1,0 +1,68 @@
+// name: DiffModelicaFileListings
+// status: correct
+//
+// The merge itself is tested in OMCompiler/Compiler/OpenModelica.rs/openmodelica_modelica_diff.
+
+echo(false);
+s1 := "model M
+  Real x(start = 1,
+         fixed = true) \"x\"; // about x
+  parameter Real p=1;
+equation
+  der(x) = -p*x;
+annotation(Icon(graphics = {
+    // the line
+    Line(points = {{0, 0}, {10, 10}})
+  }));
+end M;
+";
+loadString(s1, "M.mo");
+setElementModifierValue(M, x.start, $Code(=2));
+addClassAnnotation(M, annotate=Icon(graphics = {Line(origin = {5, 5}, points = {{0, 0}, {10, 10}})}));
+s2 := listFile(M);
+echo(true);
+print(diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.plain));
+print(diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.color));
+print(diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.xml));
+getErrorString();
+
+// Result:
+// true
+// model M
+//   Real x(start = 2,
+//          fixed = true) "x"; // about x
+//   parameter Real p=1;
+// equation
+//   der(x) = -p*x;
+// annotation(Icon(graphics = {
+//     // the line
+//     Line(origin = {5, 5}, points = {{0, 0}, {10, 10}})
+//   }));
+// end M;
+//
+// model M
+//   Real x(start = [9;31m1[0m[4;32m2[0m,
+//          fixed = true) "x"; // about x
+//   parameter Real p=1;
+// equation
+//   der(x) = -p*x;
+// annotation(Icon(graphics = {
+//     // the line
+//     Line([4;32morigin = {5, 5}, [0mpoints = {{0, 0}, {10, 10}})
+//   }));
+// end M;
+//
+// <equal>model M
+//   Real x(start = </equal><del>1</del><add>2</add><equal>,
+//          fixed = true) "x"; // about x
+//   parameter Real p=1;
+// equation
+//   der(x) = -p*x;
+// annotation(Icon(graphics = {
+//     // the line
+//     Line(</equal><add>origin = {5, 5}, </add><equal>points = {{0, 0}, {10, 10}})
+//   }));
+// end M;
+// </equal>
+// ""
+// endResult

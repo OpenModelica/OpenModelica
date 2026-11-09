@@ -1,0 +1,46 @@
+// name:     WasmJitInfoJson
+// keywords: wasm-jit transformational debugger info.json
+// status:   correct
+// suite:    wasm
+// teardown_command: rm -rf WasmJitInfoJson_* WasmJitInfoJson.log WasmJitInfoJson.wasm
+//
+// The wasm-jit target writes <model>_info.json, which only the transformational
+// debugger reads, under -d=infoXmlOperations alone, and removes a stale one
+// otherwise (#17235).
+
+loadString("
+model WasmJitInfoJson
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = -x;
+end WasmJitInfoJson;
+"); getErrorString();
+setCommandLineOptions("--simCodeTarget=wasm-jit -d=omedit"); getErrorString();
+translateModel(WasmJitInfoJson); getErrorString();
+regularFileExists("WasmJitInfoJson_info.json");
+setCommandLineOptions("-d=infoXmlOperations"); getErrorString();
+translateModel(WasmJitInfoJson); getErrorString();
+regularFileExists("WasmJitInfoJson_info.json");
+setCommandLineOptions("-d=-infoXmlOperations"); getErrorString();
+translateModel(WasmJitInfoJson); getErrorString();
+regularFileExists("WasmJitInfoJson_info.json");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// false
+// true
+// ""
+// true
+// ""
+// true
+// true
+// ""
+// true
+// ""
+// false
+// endResult

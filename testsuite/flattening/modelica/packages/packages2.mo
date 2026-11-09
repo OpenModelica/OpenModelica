@@ -23,7 +23,6 @@ end Modelica;
 
 model test
   Real x=Modelica.Constants.PI;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end test;
 
 

@@ -1,0 +1,49 @@
+// name: RecordParamOrder
+// keywords: NewBackend, record, parameter, initialization, sorting
+// status: correct
+//
+// Q_flow_small uses an element of the record parameter equFit.per, which the
+// initialization solves as a whole from its binding. The dependency on the
+// element was missing, so Q_flow_small was computed first and was zero
+// (like Buildings.Fluid.HeatPumps.BaseClasses.EquationFitReversible).
+
+loadString("
+model RecordParamOrder
+  record Hea
+    parameter Real Q_flow;
+    parameter Real P;
+  end Hea;
+  record Per
+    parameter Hea hea;
+  end Per;
+  model Fit
+    parameter Per per;
+    parameter Real scaling_factor = 1;
+    parameter Real Q_flow_small = 1e-9 * per.hea.Q_flow * scaling_factor;
+    Real y = Q_flow_small * time;
+  initial equation
+    assert(Q_flow_small > 0, \"Parameter Q_flow_small must be larger than zero.\");
+  end Fit;
+  parameter Per per(hea(Q_flow = 1000, P = 200));
+  Fit equFit(per = per);
+end RecordParamOrder;
+"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(RecordParamOrder); getErrorString();
+val(equFit.y, 1);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "RecordParamOrder_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'RecordParamOrder', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0000000000000002e-6
+// endResult

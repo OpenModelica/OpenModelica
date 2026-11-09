@@ -1,7 +1,6 @@
 // name:     API Classes
 // keywords: Graphical API
 // status:   correct
-// cflags: -d=-newInst
 // 
 //  Subset of the Graphical API.
 //

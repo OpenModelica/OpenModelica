@@ -1,6 +1,6 @@
 // name: UriLookup
 // status: correct
-// cflags: +d=nogen -d=-newInst
+// cflags: +d=nogen
 // depends: UriLookup
 
 setModelicaPath("./UriLookup");getErrorString();

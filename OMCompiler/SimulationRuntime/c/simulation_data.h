@@ -168,6 +168,15 @@ typedef struct SPARSE_PATTERN
   unsigned int sizeCols;          /* Allocated number of columns (= n_leadIndex passed to allocSparsePattern) */
 } SPARSE_PATTERN;
 
+/* (column, row) entries of a sparsity pattern in any order, see sparsePatternFromPairs */
+typedef struct SPARSE_PAIRS
+{
+  unsigned int* cols;
+  unsigned int* rows;
+  size_t size;
+  size_t capacity;
+} SPARSE_PAIRS;
+
 /* NONLINEAR_PATTERN
  *
  * nonlinear pattern used for initial stability analysis.
@@ -350,6 +359,14 @@ typedef struct STATIC_REAL_DATA
   modelica_boolean time_unvarying;     /* true if the value is only computed once during initialization */
 } STATIC_REAL_DATA;
 
+/* An enumeration type: value k is literals[k-1]. */
+typedef struct ENUMERATION_TYPE
+{
+  char *name;
+  size_t nLiterals;
+  char **literals;
+} ENUMERATION_TYPE;
+
 typedef struct STATIC_INTEGER_DATA
 {
   DIMENSION_INFO dimension;
@@ -357,6 +374,7 @@ typedef struct STATIC_INTEGER_DATA
   INTEGER_ATTRIBUTE attribute;
   modelica_boolean filterOutput;       /* true if this variable should be filtered */
   modelica_boolean time_unvarying;     /* true if the value is only computed once during initialization */
+  const ENUMERATION_TYPE *enumeration; /* the declared type of an enumeration variable, NULL otherwise */
 } STATIC_INTEGER_DATA;
 
 typedef struct STATIC_BOOLEAN_DATA
@@ -597,14 +615,8 @@ typedef struct DAEMODE_DATA
   SPARSE_PATTERN* sparsePattern;       /* daeMode sparse pattern */
   int (*evaluateDAEResiduals)(DATA*, threadData_t*, int); /* function to evaluate dynamic equations for DAE solver */
   int *algIndexes;                     /* index of the algebraic DAE variable in original order */
+  void *solverData;                    /* the DAE solver, for its event update */
 } DAEMODE_DATA;
-
-typedef struct INLINE_DATA
-{
-  modelica_real dt;                    /* step size for inline step */
-  modelica_real* algVars;              /* alg-state variables */
-  modelica_real* algOldVars;           /* old alg-state variables */
-} INLINE_DATA;
 
 typedef struct MODEL_DATA_XML
 {
@@ -720,6 +732,9 @@ typedef struct MODEL_DATA
   long ndataReconVars;
   long nSetbVars;
   long nRelatedBoundaryConditions;
+
+  size_t nEnumerationTypes;
+  ENUMERATION_TYPE *enumerationTypes;  /* of the enumeration variables, from the init XML */
 } MODEL_DATA;
 
 /**
@@ -838,6 +853,7 @@ typedef struct SIMULATION_INFO
 
   int homotopySteps;                   /* the number of homotopy lambda steps during initialization, =0 no homotopy was used */
   double lambda;                       /* homotopy parameter E [0, 1.0] */
+  modelica_boolean skipStartEquations; /* global homotopy after lambda=0: keep the iterated start values */
 
   /* indicators for simulations state */
   modelica_boolean initial;            /* true during initialization */
@@ -959,8 +975,6 @@ typedef struct SIMULATION_INFO
   STATE_SET_DATA* stateSetData;
 
   DAEMODE_DATA* daeModeData;
-
-  INLINE_DATA* inlineData;
 
   void* backupSolverData;              /* Used for generic Runge-Kutta methods to get access to some solver details inside callbacks */
 

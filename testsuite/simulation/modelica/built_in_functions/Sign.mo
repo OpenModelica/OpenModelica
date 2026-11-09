@@ -10,7 +10,6 @@ model Sign
 equation
   r1 = sign(time);
   r2 = sign(-time);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Sign;
 
 // class Sign

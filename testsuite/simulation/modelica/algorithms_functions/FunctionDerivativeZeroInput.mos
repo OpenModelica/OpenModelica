@@ -1,0 +1,95 @@
+// name: FunctionDerivativeZeroInput
+// keywords: differentiation, function, derivative
+// status: correct
+// suite: cSources
+//
+// A generated derivative function gets no derivative input for an argument
+// with a zero derivative at the call site, so log(x) of the power rule
+// x^e is not evaluated for a parameter e and x < 0. Calls with a parameter
+// and with a time-varying e get different derivative functions.
+
+loadString("
+package P
+record R
+  Real e;
+  Real c;
+end R;
+
+function f
+  input Real x;
+  input Real c[:];
+  input Real e[:];
+  input R r;
+  output Real s;
+protected
+  Real b[size(e, 1)];
+algorithm
+  b := e;
+  s := r.c*x^r.e;
+  for i in 1:size(c, 1) loop
+    s := s + c[i]*x^e[i];
+  end for;
+  annotation(smoothOrder = 2);
+end f;
+
+model ParameterFirst
+  parameter Real c[4] = {1, 1, 1, 1};
+  parameter Real e[4] = {0, 1, 2, 3};
+  parameter R r(e = 2, c = 1);
+  Real x = log((1 + time)/2);
+  Real y = f(x, c, e, r);
+  Real dy = der(y);
+  Real x2 = 1 + time;
+  Real y2 = f(x2, {1, 1, 1, 1 + time}, {0, 1, 2, 3 + time}, R(2 + time, 1));
+  Real dy2 = der(y2);
+end ParameterFirst;
+
+model VaryingFirst
+  parameter Real c[4] = {1, 1, 1, 1};
+  parameter Real e[4] = {0, 1, 2, 3};
+  parameter R r(e = 2, c = 1);
+  Real x2 = 1 + time;
+  Real y2 = f(x2, {1, 1, 1, 1 + time}, {0, 1, 2, 3 + time}, R(2 + time, 1));
+  Real dy2 = der(y2);
+  Real x = log((1 + time)/2);
+  Real y = f(x, c, e, r);
+  Real dy = der(y);
+end VaryingFirst;
+end P;
+"); getErrorString();
+
+simulate(P.ParameterFirst, stopTime = 1.5); getErrorString();
+val(dy, 0.5);
+val(dy2, 0.5);
+simulate(P.VaryingFirst, stopTime = 1.5); getErrorString();
+val(dy, 0.5);
+val(dy2, 0.5);
+// one derivative function per set of inputs with a zero derivative
+system("grep -c '^modelica_real omc__omcQ_24DER' P.VaryingFirst_functions.h");
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "P.ParameterFirst_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.5, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'P.ParameterFirst', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.06503623818420146
+// 30.82516937264648
+// record SimulationResult
+//     resultFile = "P.VaryingFirst_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.5, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'P.VaryingFirst', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.06503623818420146
+// 30.82516937264648
+// 2
+// 0
+// endResult

@@ -1,0 +1,29 @@
+// name: fmi3_wasm_flags_restored.mos
+// keywords: FMI 3.0 export wasm flags simCodeTarget
+// status: correct
+// suite: wasm
+// teardown_command: rm -rf M_flags.fmu M_flags.fmu.log M_flags.tmpfiles om-wasm-include-*
+//
+// The wasm export switches --simCodeTarget to wasm-jit for itself; the flags are back to
+// what they were afterwards, so a later export or simulation does not inherit them.
+// clearCommandLineOptions also drops --running-testsuite, which keeps the FMU path relative.
+
+clearCommandLineOptions(); getErrorString();
+setCommandLineOptions("--running-testsuite=M_flags.tmpfiles"); getErrorString();
+loadString("model M Real x(start=1, fixed=true); equation der(x) = -x; end M;"); getErrorString();
+buildModelFMU(M, fileNamePrefix="M_flags", fmuType="cs", version="3.0", platforms={"wasm"}); getErrorString();
+getCommandLineOptions(); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "M_flags.fmu"
+// "Notification: Building FMU for platform 'wasm' (1/1).
+// Notification: Finished FMU for platform 'wasm' (1/1).
+// "
+// {"--running-testsuite=M_flags.tmpfiles"}
+// ""
+// endResult

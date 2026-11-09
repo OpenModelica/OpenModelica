@@ -141,6 +141,9 @@ target_sources(OMCppNewton PRIVATE ${OMC_SIMRT_CPP_SOLVER_NEWTON_SOURCES})
 target_link_libraries(OMCppNewton PRIVATE omc::simrt::cpp::core::modelica)
 target_link_libraries(OMCppNewton PRIVATE omc::simrt::cpp::core::solver)
 target_link_libraries(OMCppNewton PRIVATE ${LAPACK_LIBRARIES})
+# sparse Jacobians of algebraic loops with a sparsity pattern are factorized with KLU
+target_compile_definitions(OMCppNewton PRIVATE USE_KLU)
+target_link_libraries(OMCppNewton PRIVATE omc::3rd::suitesparse::klu)
 
 install(TARGETS OMCppNewton)
 

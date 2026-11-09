@@ -107,6 +107,7 @@ class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
     virtual int& initIntVar(size_t i);
     virtual bool& initBoolVar(size_t i);
     virtual string& initStringVar(size_t i);
+    virtual void resize(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_string, size_t dim_pre_vars, size_t dim_state_vars, size_t state_index);
     virtual double* getStateVector();
     virtual double* getDerStateVector();
     virtual double* getRealVarsVector() const;

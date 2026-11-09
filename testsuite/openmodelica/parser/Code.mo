@@ -6,7 +6,6 @@
 //
 
 class Code
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Code;
 // Result:
 // class Code

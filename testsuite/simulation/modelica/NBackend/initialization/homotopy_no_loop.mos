@@ -41,23 +41,23 @@ simulate(homotopy_no_loop); getErrorString();
 // --------------------------------
 //   (11) Nonlinear System (size = 1, homotopy = false, mixed = false, torn = true)
 //   --Iteration Vars:{y}
-//   --(9) 0 = 1.0 - (y + y ^ 2.0)
+//   --(9) 0 = 1.0 - (y + y^2.0)
 //   (8) Nonlinear System (size = 1, homotopy = false, mixed = false, torn = true)
 //   --Iteration Vars:{u}
-//   --(6) 0 = (u ^ 3.0 + u) - y
+//   --(6) 0 = (u^3.0 + u) - y
 //
 // Initial Partition
 // -------------------
 //   (5) Nonlinear System (size = 1, homotopy = true, mixed = false, torn = true)
 //   --Iteration Vars:{u}
-//   --(1) y := u ^ 3.0 + u
-//   --(2) 0 = 1.0 - homotopy(u, y + y ^ 2.0)
+//   --(1) y := u^3.0 + u
+//   --(2) 0 = 1.0 - homotopy(u, y + y^2.0)
 //
 // Algebraic Partition 1
 // -----------------------
 //   (16) Nonlinear System (size = 1, homotopy = true, mixed = false, torn = true)
 //   --Iteration Vars:{u}
-//   --(12) y := u ^ 3.0 + u
+//   --(12) y := u^3.0 + u
 //   --(13) 0 = 1.0 - u
 //
 // Event Partition
@@ -80,8 +80,8 @@ simulate(homotopy_no_loop); getErrorString();
 //
 // Column Equations (size = 2)
 // -----------------------------
-//   (4) $pDER_INI_NLS_JAC_1.y := 3.0 * u ^ 2.0 * $SEED_INI_NLS_JAC_1.u + $SEED_INI_NLS_JAC_1.u
-//   (3) $pDER_INI_NLS_JAC_1.$RES_SIM_1 := -homotopy($SEED_INI_NLS_JAC_1.u, $pDER_INI_NLS_JAC_1.y + 2.0 * y * $pDER_INI_NLS_JAC_1.y)
+//   (4) $pDER_INI_NLS_JAC_1.y := 3.0*u^2.0*$SEED_INI_NLS_JAC_1.u + $SEED_INI_NLS_JAC_1.u
+//   (3) $pDER_INI_NLS_JAC_1.$RES_SIM_1 := -homotopy($SEED_INI_NLS_JAC_1.u, $pDER_INI_NLS_JAC_1.y + 2.0*y*$pDER_INI_NLS_JAC_1.y)
 //
 // Resizable Sparsity Pattern
 // ----------------------------
@@ -103,7 +103,7 @@ simulate(homotopy_no_loop); getErrorString();
 //
 // Column Equations (size = 1)
 // -----------------------------
-//   (10) $pDER_INI_0_NLS_IMPL_1.$RES_SIM_1 := -($SEED_INI_0_NLS_IMPL_1.y + 2.0 * y * $SEED_INI_0_NLS_IMPL_1.y)
+//   (10) $pDER_INI_0_NLS_IMPL_1.$RES_SIM_1 := -($SEED_INI_0_NLS_IMPL_1.y + 2.0*y*$SEED_INI_0_NLS_IMPL_1.y)
 //
 // Resizable Sparsity Pattern
 // ----------------------------
@@ -125,7 +125,7 @@ simulate(homotopy_no_loop); getErrorString();
 //
 // Column Equations (size = 1)
 // -----------------------------
-//   (7) $pDER_INI_0_NLS_IMPL_2.$RES_SIM_0 := 3.0 * u ^ 2.0 * $SEED_INI_0_NLS_IMPL_2.u + $SEED_INI_0_NLS_IMPL_2.u
+//   (7) $pDER_INI_0_NLS_IMPL_2.$RES_SIM_0 := 3.0*u^2.0*$SEED_INI_0_NLS_IMPL_2.u + $SEED_INI_0_NLS_IMPL_2.u
 //
 // Resizable Sparsity Pattern
 // ----------------------------
@@ -148,7 +148,7 @@ simulate(homotopy_no_loop); getErrorString();
 //
 // Column Equations (size = 2)
 // -----------------------------
-//   (15) $pDER_ALG_NLS_JAC_1.y := 3.0 * u ^ 2.0 * $SEED_ALG_NLS_JAC_1.u + $SEED_ALG_NLS_JAC_1.u
+//   (15) $pDER_ALG_NLS_JAC_1.y := 3.0*u^2.0*$SEED_ALG_NLS_JAC_1.u + $SEED_ALG_NLS_JAC_1.u
 //   (14) $pDER_ALG_NLS_JAC_1.$RES_SIM_1 := -$SEED_ALG_NLS_JAC_1.u
 //
 // Resizable Sparsity Pattern

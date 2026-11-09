@@ -3,7 +3,6 @@
 model MissingEquation
   Pin p,n;
   connect(p,n);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MissingEquation;
 // Result:
 // Error processing file: MissingEquation.mo

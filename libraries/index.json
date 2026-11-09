@@ -182,6 +182,20 @@
         }
       }
     },
+    "ModelicaDataReconciliationSimpleTests": {
+      "versions": {
+        "4.0.0": {
+          "path": "ModelicaDataReconciliationSimpleTests",
+          "sha": "6992c50bba60eb150b532a0b0a43aa0e1bc83055",
+          "support": "noSupport",
+          "uses": {
+            "Modelica": "4.1.0"
+          },
+          "version": "4.0.0",
+          "zipfile": "https://github.com/OpenModelica/DataReconciliationLibraries/archive/6992c50bba60eb150b532a0b0a43aa0e1bc83055.zip"
+        }
+      }
+    },
     "ModelicaReference": {
       "versions": {
         "4.0.0+maint.om": {
@@ -349,6 +363,22 @@
           },
           "version": "2.2.0",
           "zipfile": "https://github.com/casella/ScalableTestSuite/archive/e6dcfb489b7e2d07198d93f00858459aa0611267.zip"
+        }
+      }
+    },
+    "TSP_DataReconciliationSimpleTests": {
+      "versions": {
+        "4.0.0": {
+          "path": "TSP_DataReconciliationSimpleTests",
+          "sha": "6992c50bba60eb150b532a0b0a43aa0e1bc83055",
+          "support": "noSupport",
+          "uses": {
+            "Modelica": "4.1.0",
+            "ModelicaDataReconciliationSimpleTests": "4.0.0",
+            "ThermoSysPro": "4.2.0"
+          },
+          "version": "4.0.0",
+          "zipfile": "https://github.com/OpenModelica/DataReconciliationLibraries/archive/6992c50bba60eb150b532a0b0a43aa0e1bc83055.zip"
         }
       }
     },

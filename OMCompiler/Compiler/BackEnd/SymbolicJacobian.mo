@@ -1153,7 +1153,7 @@ algorithm
         rhsStr := stringDelimitList(List.map(rhs, realString)," ;\n  ");
         jacStr := stringDelimitList(List.map1(List.mapList(jac,realString),stringDelimitList," , ")," ;\n  ");
         eqnstr := BackendDump.dumpEqnsStr(eqnlst);
-        syst := stringAppendList({"\n",eqnstr,"\n[\n  ", jacStr, "\n]\n  *\n[\n  ",varnames,"\n]\n  =\n[\n  ",rhsStr,"\n]"});
+        syst := stringAppendList({eqnstr,"\n[\n  ", jacStr, "\n]\n  *\n[\n  ",varnames,"\n]\n  =\n[\n  ",rhsStr,"\n]"});
         Error.addMessage(Error.LINEAR_SYSTEM_SINGULAR, {syst,infoStr,varname});
       then fail();
     case _
@@ -3403,6 +3403,8 @@ algorithm
         (compeqns, compvars) := getStateSetCompVarEqns(inComps, marked, inEqns, inVars);
         // remove the state set equation
         compeqns := List.select(compeqns, removeStateSetEqn);
+        // the residuals are scalar, split the tuple equations
+        compeqns := List.flatten(list(splitTupleEquation(eq) for eq in compeqns));
         // remove the state candidates to geht the other vars
         hs := List.fold(crstates, BaseHashSet.add, HashSet.emptyHashSet());
         compvars := List.select1(compvars, removeStateSetStates, hs);
@@ -3512,6 +3514,33 @@ algorithm
     end if;
   end for;
 end getStateSetCompVarEqns;
+
+protected function splitTupleEquation
+  "Splits (a, b) = f(x) into a = f(x)[1]; b = f(x)[2], skipping wildcards."
+  input BackendDAE.Equation eqn;
+  output list<BackendDAE.Equation> eqns = {};
+protected
+  list<DAE.Exp> lhs, rhs;
+  DAE.Exp r;
+algorithm
+  _ := match eqn
+    case BackendDAE.COMPLEX_EQUATION(left = DAE.TUPLE(PR = lhs))
+      algorithm
+        rhs := BackendEquation.tupleElements(eqn.right, lhs);
+        for l in lhs loop
+          r :: rhs := rhs;
+          if not Expression.isWild(l) then
+            eqns := BackendEquation.generateEquation(l, r, eqn.source, eqn.attr) :: eqns;
+          end if;
+        end for;
+        eqns := listReverse(eqns);
+      then ();
+    else
+      algorithm
+        eqns := {eqn};
+      then ();
+  end match;
+end splitTupleEquation;
 
 protected function createResidualSetEquations
   input list<BackendDAE.Equation> iEqs;

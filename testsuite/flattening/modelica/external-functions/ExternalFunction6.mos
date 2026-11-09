@@ -1,0 +1,26 @@
+// name:     ExternalFunction6
+// keywords: external function, Include
+// status:   correct
+// teardown_command: rm -f ExternalFunction6_*
+//
+// Calls an external function that is a macro defined in an Include
+// annotation.
+//
+
+loadFile("ExternalFunction6.mo"); getErrorString();
+simulate(ExternalFunction6); getErrorString();
+val(i, 0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ExternalFunction6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ExternalFunction6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 4.0
+// endResult

@@ -261,7 +261,10 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.DUMP_CHECK_MODEL,
   Flags.CHECK_DEF_USE,
   Flags.TEARING_COST,
-  Flags.OMEDIT
+  Flags.OMEDIT,
+  Flags.CHECK_USED_ELEMENTS_LOOKUP,
+  Flags.NF_SCRIPTING,
+  Flags.HOMOTOPY_IN_RESIDUALS
 };
 
 protected
@@ -319,7 +322,7 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.REPLACE_HOMOTOPY,
   Flags.GENERATE_DYNAMIC_JACOBIAN,
   Flags.GENERATE_SYMBOLIC_LINEARIZATION,
-  Flags.INT_ENUM_CONVERSION,
+  Flags.RESIZABLE_MAX_PIECES,
   Flags.PROFILING_LEVEL,
   Flags.RESHUFFLE,
   Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM,
@@ -327,7 +330,7 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.CPP_FLAGS,
   Flags.REMOVE_SIMPLE_EQUATIONS,
   Flags.DYNAMIC_TEARING,
-  Flags.SYM_SOLVER,
+  Flags.TPL_INTERFACE_DIR,
   Flags.LOOP2CON,
   Flags.FORCE_TEARING,
   Flags.SIMPLIFY_LOOPS,
@@ -440,7 +443,9 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.FMU_NATIVE_PLATFORMS,
   Flags.TPL_OUTPUT_DIR,
   Flags.FMU_DIRECTORY,
-  Flags.TPL_INTERFACE_DIR
+  Flags.FMI_TUNABLE_PARAMETERS,
+  Flags.TUNABLE_PARAMETERS,
+  Flags.FMU_WITH_FMI2
 };
 
 public function new
@@ -639,10 +644,12 @@ protected function updateConfigFlagArray
   output array<Flags.FlagData> outFlags;
 protected
   Integer index;
+  Flags.FlagData old_value;
 algorithm
   Flags.CONFIG_FLAG(index = index) := inFlag;
+  old_value := arrayGet(inFlags, index);
   outFlags := arrayUpdate(inFlags, index, inValue);
-  applySideEffects(inFlag, inValue);
+  applySideEffects(inFlag, inValue, old_value);
 end updateConfigFlagArray;
 
 public function readArgs
@@ -1229,6 +1236,7 @@ protected function applySideEffects
   "Some flags have side effects, which are handled by this function."
   input Flags.ConfigFlag inFlag;
   input Flags.FlagData inValue;
+  input Flags.FlagData inOldValue;
 algorithm
   () := matchcontinue inValue
     local
@@ -1240,6 +1248,20 @@ algorithm
         true := configFlagsIsEqualIndex(inFlag, Flags.SHOW_ERROR_MESSAGES);
         Flags.BOOL_FLAG(data = value) := inValue;
         ErrorExt.setShowErrorMessages(value);
+      then
+        ();
+
+    // NFInst.resetGlobalFlags overrides these debug flags for the new backend,
+    // restore them when switching back to the old backend.
+    case Flags.BOOL_FLAG(data = false)
+      algorithm
+        true := configFlagsIsEqualIndex(inFlag, Flags.NEW_BACKEND);
+        Flags.BOOL_FLAG(data = true) := inOldValue;
+
+        for f in {Flags.NF_SCALARIZE, Flags.VECTORIZE_BINDINGS,
+                  Flags.NF_EXPAND_OPERATIONS, Flags.NF_EXPAND_FUNC_ARGS} loop
+          set(f, f.default);
+        end for;
       then
         ();
 
@@ -1894,7 +1916,9 @@ protected
 algorithm
   Flags.DEBUG_FLAG(default = default, name = name, description = desc) := inFlag;
   desc_str := desc;
-  if sphinx then
+  if valueEq(inFlag.visibility, Flags.INTERNAL()) then
+    outString := "";
+  elseif sphinx then
     desc_str := stringDelimitList(list(System.trim(s) for s in System.strtok(desc_str, "\n")), "\n  ");
     outString := "\n.. _omcflag-debug-"+name+":\n\n" +
       ":ref:`" + name + " <omcflag-debug-"+name+">`" +

@@ -27,7 +27,7 @@ pub(super) fn build_removed_init_eqs_fn(
 ) -> Result<we::Function> {
     let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
     ctx.emit_removed_init_reset(layout.removed_init_idx_off)?;
-    let mut pending: BTreeMap<u32, Vec<u8>> = BTreeMap::new();
+    let mut pending: BTreeMap<SimOff, Vec<u8>> = BTreeMap::new();
     let mut index = 0u32;
     for eq in lst(&sim_code.removedInitialEquations) {
         match &**eq {
@@ -36,12 +36,7 @@ pub(super) fn build_removed_init_eqs_fn(
                     continue;
                 }
                 emit_sim_const_stores(&mut ctx, &core::mem::take(&mut pending))?;
-                ctx.emit_removed_init_residual(
-                    index,
-                    exp,
-                    layout.removed_init_res_off,
-                    layout.removed_init_idx_off,
-                )?;
+                ctx.emit_removed_init_residual(index, exp, layout.removed_init_res_off, layout.removed_init_idx_off)?;
                 index += 1;
             }
             _ => lower_unit(&mut ctx, &EqUnit::Eq(eq, None), eq_index, &mut pending)?,
@@ -166,15 +161,26 @@ pub(super) fn build_init_start_values_fn(
     literals: &mut Literals,
 ) -> Result<we::Function> {
     let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
-    let starts: Vec<(f64, u32)> = reals
+    let starts: Vec<(f64, SimOff)> = reals
         .iter()
         .enumerate()
-        .map(|(i, sv)| Ok((literal_value(&sv.initialValue).unwrap_or(0.0), at_real(&lz.start_off, &pos.fixed(i))?)))
+        .map(|(i, sv)| {
+            Ok((
+                literal_value(&sv.initialValue).unwrap_or(0.0),
+                at_real(&lz.start_off, &pos.fixed(i))?,
+            ))
+        })
         .collect::<Result<_>>()?;
-    let fills: Vec<(u32, Sz, f64)> = pos
+    let fills: Vec<(SimOff, Sz, f64)> = pos
         .dyn_reals
         .iter()
-        .map(|(dv, idx)| Ok((at_real(&lz.start_off, idx)?, dv.len(), literal_value(&dv.sv.initialValue).unwrap_or(0.0))))
+        .map(|(dv, idx)| {
+            Ok((
+                at_real(&lz.start_off, idx)?,
+                dv.len(),
+                literal_value(&dv.sv.initialValue).unwrap_or(0.0),
+            ))
+        })
         .collect::<Result<_>>()?;
     ctx.emit_init_start_values(&starts, &fills)?;
     let (locals, instrs) = ctx.finish_sim();
@@ -189,7 +195,11 @@ pub(super) fn build_init_start_values_fn(
 /// A start equation assigns `$START.<var>`, i.e. that variable's `start` attribute.
 pub(super) fn bound_attr_equations(
     sim_code: &SimCode::SimCode,
-) -> Vec<(Attr, &metamodelica::Ref<DAE::ComponentRef>, &metamodelica::Ref<DAE::Exp>)> {
+) -> Vec<(
+    Attr,
+    &metamodelica::Ref<DAE::ComponentRef>,
+    &metamodelica::Ref<DAE::Exp>,
+)> {
     let mut out = Vec::new();
     for (attr, eqs) in [
         (Attr::Min, &sim_code.minValueEquations),
@@ -230,26 +240,38 @@ pub(super) fn literal_value(exp: &Option<metamodelica::Ref<DAE::Exp>>) -> Option
 pub(super) fn build_update_bound_attrs_fn(
     sim_code: &SimCode::SimCode,
     layout: &SimLayout,
-    defaults: &[(u32, ConstSlot)],
-    dyn_defaults: &[(u32, Sz, ConstSlot, u32)],
+    defaults: &[(SimOff, ConstSlot)],
+    dyn_defaults: &[(SimOff, Sz, ConstSlot, u32)],
     attr_targets: &AttrTargetMap,
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
-    let mut attrs: Vec<(Attr, metamodelica::Ref<DAE::Exp>, AttrTargets, u32, Option<SimSlot>)> = Vec::new();
+    let mut attrs: Vec<(Attr, metamodelica::Ref<DAE::Exp>, AttrTargets, SimOff, Option<SimSlot>)> = Vec::new();
     for (i, (attr, cref, exp)) in bound_attr_equations(sim_code).into_iter().enumerate() {
-        let key = sim_cref_key(cref).ok().map(|k| k.strip_prefix("$START.").unwrap_or(&k).to_string());
-        let targets = key.as_deref().and_then(|k| attr_targets.get(k)).cloned().unwrap_or_default();
+        let key = sim_cref_key(cref)
+            .ok()
+            .map(|k| k.strip_prefix("$START.").unwrap_or(&k).to_string());
+        let targets = key
+            .as_deref()
+            .and_then(|k| attr_targets.get(k))
+            .cloned()
+            .unwrap_or_default();
         let var = match attr {
             Attr::Start => key.as_deref().and_then(|k| var_map.vars.get(k)),
             _ => None,
         };
-        attrs.push((attr, exp.clone(), targets, layout.attr_log_off + i as u32 * 8, var));
+        attrs.push((
+            attr,
+            exp.clone(),
+            targets,
+            layout.attr_log_off + SimOff::from(i as u32 * 8),
+            var,
+        ));
     }
     let sim = sim_ctx(var_map);
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
-    ctx.emit_update_bound_attrs(defaults, dyn_defaults, &attrs)?;
+    ctx.emit_update_bound_attrs(defaults, dyn_defaults, &attrs, &[])?;
     let (locals, instrs) = ctx.finish_sim();
     let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
     for i in &instrs {
@@ -258,17 +280,67 @@ pub(super) fn build_update_bound_attrs_fn(
     Ok(func)
 }
 
+/// The attribute equations of `functionUpdateTunableParameters(SimData*, mask)`:
+/// each one `mask_of` names, under its byte of the mask. None without any.
+pub(super) fn build_tunable_attrs_fn(
+    sim_code: &SimCode::SimCode,
+    layout: &SimLayout,
+    attr_targets: &AttrTargetMap,
+    var_map: &SimVarMap,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Literals,
+    mask_of: &HashMap<i32, u32>,
+) -> Result<Option<we::Function>> {
+    let mut attrs: Vec<(Attr, metamodelica::Ref<DAE::Exp>, AttrTargets, SimOff, Option<SimSlot>)> = Vec::new();
+    let mut masks = Vec::new();
+    let mut i = 0u32;
+    for (attr, eqs) in [
+        (Attr::Min, &sim_code.minValueEquations),
+        (Attr::Max, &sim_code.maxValueEquations),
+        (Attr::Nominal, &sim_code.nominalValueEquations),
+        (Attr::Start, &sim_code.startValueEquations),
+    ] {
+        for eq in lst(eqs) {
+            let SimCode::SimEqSystem::SES_SIMPLE_ASSIGN { index, cref, exp, .. } = &**eq else {
+                continue;
+            };
+            let log_off = layout.attr_log_off + SimOff::from(i * 8);
+            i += 1;
+            let Some(&k) = mask_of.get(index).filter(|_| attr != Attr::Start) else {
+                continue;
+            };
+            let targets = sim_cref_key(cref)
+                .ok()
+                .and_then(|key| attr_targets.get(&key).cloned())
+                .unwrap_or_default();
+            attrs.push((attr, exp.clone(), targets, log_off, None));
+            masks.push(Some(k));
+        }
+    }
+    if attrs.is_empty() {
+        return Ok(None);
+    }
+    let mut ctx = FnCtx::new_sim_params(sim_ctx(var_map), by_name, literals, 2);
+    ctx.emit_update_bound_attrs(&[], &[], &attrs, &masks)?;
+    let (locals, instrs) = ctx.finish_sim();
+    let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
+    for i in &instrs {
+        func.instruction(i);
+    }
+    Ok(Some(func))
+}
+
 /// Build `functionAttrDefaults(SimData*)`: the constant attribute defaults only, for
 /// a solver built before initialization.
 pub(super) fn build_attr_defaults_fn(
-    defaults: &[(u32, ConstSlot)],
-    dyn_defaults: &[(u32, Sz, ConstSlot, u32)],
+    defaults: &[(SimOff, ConstSlot)],
+    dyn_defaults: &[(SimOff, Sz, ConstSlot, u32)],
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
     let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
-    ctx.emit_update_bound_attrs(defaults, dyn_defaults, &[])?;
+    ctx.emit_update_bound_attrs(defaults, dyn_defaults, &[], &[])?;
     let (locals, instrs) = ctx.finish_sim();
     let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
     for i in &instrs {
@@ -285,7 +357,10 @@ pub(super) fn build_zero_crossings_fn(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
-    let sim = SimCtx { zc_context: true, ..sim_ctx(var_map) };
+    let sim = SimCtx {
+        zc_context: true,
+        ..sim_ctx(var_map)
+    };
     let mut ctx = FnCtx::new_sim_params(sim, by_name, literals, 2);
     ctx.emit_zero_crossings(crossings, 1)?;
     let (locals, instrs) = ctx.finish_sim();
@@ -304,7 +379,10 @@ pub(super) fn build_update_relations_fn(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
-    let sim = SimCtx { zc_context: true, ..sim_ctx(var_map) };
+    let sim = SimCtx {
+        zc_context: true,
+        ..sim_ctx(var_map)
+    };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
     ctx.emit_update_relations(relations, var_map.relations_off)?;
     let (locals, instrs) = ctx.finish_sim();
@@ -333,17 +411,56 @@ pub(super) fn build_next_time_event_fn(
 }
 
 /// Build `functionStoreDelayed(SimData*)` (C's `function_storeDelayed`): append
-/// each `delay(...)` expression's current value to its ring buffer.
+/// each `delay(...)` expression's current value to its ring buffer. The delays of
+/// for-loops are unrolled, one buffer per iteration.
 pub(super) fn build_store_delayed_fn(
     sim_code: &SimCode::SimCode,
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
-    let delayed: Vec<(i32, metamodelica::Ref<DAE::Exp>, metamodelica::Ref<DAE::Exp>, metamodelica::Ref<DAE::Exp>)> =
-        lst(&sim_code.delayedExps.delayedExps)
-            .map(|(i, (e, d, dmax))| (*i, e.clone(), d.clone(), dmax.clone()))
-            .collect();
+    let mut delayed: Vec<(
+        i32,
+        metamodelica::Ref<DAE::Exp>,
+        metamodelica::Ref<DAE::Exp>,
+        metamodelica::Ref<DAE::Exp>,
+    )> = lst(&sim_code.delayedExps.delayedExps)
+        .map(|(i, (e, d, dmax))| (*i, e.clone(), d.clone(), dmax.clone()))
+        .collect();
+    for (idx, (e, d, dmax), iters) in lst(&sim_code.delayedExps.delayedLoops) {
+        let mut combos: Vec<Vec<(String, metamodelica::Ref<DAE::Exp>)>> = vec![Vec::new()];
+        for iter in lst(iters) {
+            let (name, values, sub_iters) = iterator_bindings(iter)?;
+            let mut next = Vec::with_capacity(combos.len() * values.len());
+            for (pos, value) in values.iter().enumerate() {
+                for combo in &combos {
+                    let mut combo = combo.clone();
+                    combo.push((name.clone(), value.clone()));
+                    for (sub_name, table) in &sub_iters {
+                        let v = table
+                            .get(pos)
+                            .ok_or("CodegenWasmJit: dependent iterator range is too short")?;
+                        combo.push((sub_name.clone(), v.clone()));
+                    }
+                    next.push(combo);
+                }
+            }
+            combos = next;
+        }
+        for combo in &combos {
+            let bind = |x: &metamodelica::Ref<DAE::Exp>| -> Result<metamodelica::Ref<DAE::Exp>> {
+                let mut x = x.clone();
+                for (name, value) in combo {
+                    x = subst_iterator(&x, name, value)?;
+                }
+                Ok(x)
+            };
+            let Some(i) = crate::CodegenWasmJitFunctions::fold_int(&bind(idx)?) else {
+                return Err("CodegenWasmJit: `delay` index of a for-loop is not constant");
+            };
+            delayed.push((i, bind(e)?, bind(d)?, bind(dmax)?));
+        }
+    }
     let sim = sim_ctx(var_map);
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
     ctx.emit_store_delayed(&delayed)?;
@@ -363,7 +480,9 @@ pub(super) fn build_init_delay_fn(n_delays: u32) -> we::Function {
     f.instruction(&I::I32Const(n_delays as i32));
     f.instruction(&I::LocalGet(0)); // SimData*
     f.instruction(&I::F64Load(crate::CodegenWasmJitFunctions::mem_arg(0, 3))); // time (TIME_OFF)
-    f.instruction(&I::Call(rt_index("rt_delay_init").expect("rt_delay_init is a runtime builtin")));
+    f.instruction(&I::Call(
+        rt_index("rt_delay_init").expect("rt_delay_init is a runtime builtin"),
+    ));
     f.instruction(&I::End);
     f
 }
@@ -371,8 +490,7 @@ pub(super) fn build_init_delay_fn(n_delays: u32) -> we::Function {
 /// The model's `spatialDistribution(...)` operators, lowest index first (the
 /// backend collects them in reverse).
 fn spatial_ops(sim_code: &SimCode::SimCode) -> Vec<SimCode::SpatialDistribution> {
-    let mut ops: Vec<SimCode::SpatialDistribution> =
-        lst(&sim_code.spatialInfo.spatialDistributions).cloned().collect();
+    let mut ops: Vec<SimCode::SpatialDistribution> = lst(&sim_code.spatialInfo.spatialDistributions).cloned().collect();
     ops.sort_by_key(|sd| sd.index);
     ops
 }
@@ -440,6 +558,12 @@ pub(crate) fn lower_equation(
         }
     }
     let _g = crate::CodegenWasmJitFunctions::PartGuard::new(format!("equation {}", eq_index_of(eq)));
-    lower_equation_inner(ctx, eq, eq_index)?;
+    let outer = ctx.eq;
+    if eq_index_of(eq) > 0 {
+        ctx.eq = eq_index_of(eq);
+    }
+    let r = lower_equation_inner(ctx, eq, eq_index);
+    ctx.eq = outer;
+    r?;
     crate::CodegenWasmJitFunctions::emit_prof(ctx, clock, "rt_prof_acc")
 }

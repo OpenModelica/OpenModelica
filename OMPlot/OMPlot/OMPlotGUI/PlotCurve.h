@@ -64,13 +64,26 @@ private:
   int mStyle;
   bool mToggleSign;
   QString mCustomTitle;
+  // The names of a Boolean's or an enumeration's values: value k is mValueLabels[k - mValueLabelBase].
+  QStringList mValueLabels;
+  int mValueLabelBase = 0;
+  // A Boolean, Integer or enumeration, plotted in lanes when all curves are.
+  bool mDiscrete = false;
+  // Stacked, the curve is drawn at mStackOffset + (value - mStackLow) * mStackScale.
+  bool mStacked = false;
+  double mStackOffset = 0;
+  double mStackLow = 0;
+  double mStackScale = 1;
+  double mStackHeight = 0;
 
   Plot *mpParentPlot;
   QwtPlotDirectPainter *mpPlotDirectPainter;
   QwtPlotMarker *mpPointMarker;
+  bool mPointMarkerDetached = false;
 public:
   PlotCurve(const QString &fileName, const QString &absoluteFilePath, const QString &xVariableName, const QString &xUnit, const QString &xDisplayUnit,
             const QString &yVariableName, const QString &yUnit, const QString &yDisplayUnit, Plot *pParent);
+  ~PlotCurve() override;
 
   QwtArray<double> mXAxisVector;
   QwtArray<double> mYAxisVector;
@@ -96,6 +109,21 @@ public:
   void setToggleSign(bool toggleSign) {mToggleSign = toggleSign;}
   QString getCustomTitle() const {return mCustomTitle;}
   void setCustomTitle(const QString &customTitle) {mCustomTitle = customTitle;}
+  void setValueLabels(const QStringList &labels, int base) {mValueLabels = labels; mValueLabelBase = base;}
+  const QStringList &getValueLabels() const {return mValueLabels;}
+  int getValueLabelBase() const {return mValueLabelBase;}
+  bool hasValueLabels() const {return !mValueLabels.isEmpty();}
+  void setDiscrete(bool discrete) {mDiscrete = discrete;}
+  bool isDiscrete() const {return mDiscrete || hasValueLabels();}
+  QString valueText(double value) const;
+  void setStack(double offset, double low, double scale, double height);
+  double getStackOffset() const {return mStackOffset;}
+  double getStackHeight() const {return mStackHeight;}
+  void applyStack();
+  void clearStack() {mStacked = false;}
+  bool isStacked() const {return mStacked;}
+  double stackedValue(double value) const {return mStacked ? mStackOffset + (value - mStackLow) * mStackScale : value;}
+  double unstackedValue(double value) const;
   void addXAxisValue(double value);
   void updateXAxisValue(int index, double value);
   QPair<QVector<double>*, QVector<double>*> getAxisVectors();
@@ -123,6 +151,8 @@ public:
   void plotData(bool toggleSign = false);
   QwtPlotDirectPainter* getPlotDirectPainter() {return mpPlotDirectPainter;}
   QwtPlotMarker* getPointMarker() const {return mpPointMarker;}
+  // hides QwtPlotItem::detach(): the point marker is detached together with the curve
+  void detach();
 #if QWT_VERSION < 0x060000
   virtual void updateLegend(QwtLegend *legend) const;
 #endif
