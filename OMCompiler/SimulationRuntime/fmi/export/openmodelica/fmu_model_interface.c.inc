@@ -388,9 +388,8 @@ int fmuDeInitializeSolverData(ModelInstance* comp)
   return retValue;
 }
 
-/* An FMI 3.0 Model Exchange FMU of a --daeMode model serves fmi-ls-dae. A
- * --daeMode FMU has the sources of dae_mode.c with those of IDA. */
-#if OMC_FMI_VERSION == 3 && defined(OMC_FMI_HAVE_IDA)
+/* An FMI 3.0 Model Exchange FMU of a --daeMode model serves fmi-ls-dae. */
+#if OMC_FMI_VERSION == 3 && defined(OMC_FMI_DAE_MODE)
 #define OMC_FMI_LS_DAE 1
 #endif
 
@@ -417,7 +416,7 @@ static void solveDAEModeUnknowns(ModelInstance *comp)
  * DAE mode; in ODE mode the residual is solved for them. */
 static void evalDAEModeContinuous(ModelInstance* comp)
 {
-#ifdef OMC_FMI_HAVE_IDA
+#ifdef OMC_FMI_DAE_MODE
   if (!compiledInDAEMode) {
     return;
   }

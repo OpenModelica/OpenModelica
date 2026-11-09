@@ -44,9 +44,11 @@
 #ifdef OMC_FMI_HAVE_CVODE
 #include "../simulation/solver/cvode_solver.h"
 #endif
+#ifdef OMC_FMI_DAE_MODE
+#include "../simulation/solver/dae_mode.h"
+#endif
 #ifdef OMC_FMI_HAVE_IDA
 #include "../simulation/solver/ida_solver.h"
-#include "../simulation/solver/dae_mode.h"
 #endif
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
 #include "../simulation/solver/nonlinearSystem.h"
