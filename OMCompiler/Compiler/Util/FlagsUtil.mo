@@ -1470,7 +1470,7 @@ algorithm
 
         s := IOStream.append(s, "--" + name);
         s := IOStream.append(s, "\n");
-        s := IOStream.append(s, wrapToTerminal(desc));
+        s := IOStream.append(s, wrapToTerminal(removeSphinxMathMode(desc)));
         s := IOStream.append(s, "\n\n");
         s := IOStream.append(s, "Valid arguments:\n");
         s := IOStream.append(s, printFlagValidOptionsDesc(config_flag));
@@ -1600,6 +1600,7 @@ algorithm
   Print.printBuf(sum("-" for e in 1:stringLength(s)));
   Print.printBuf("\n\n");
   for flag in allConfigFlags loop
+    checkEnumFlagOptions(flag);
     Print.printBuf(printConfigFlagSphinx(flag));
   end for;
 
@@ -1639,6 +1640,32 @@ algorithm
   Print.clearBuf();
 end printUsageSphinxAll;
 
+protected function checkEnumFlagOptions
+  "Exits if an enumeration flag lists other valid options than its values.
+   Run by the users guide build, so that CI catches lists that drift apart."
+  input Flags.ConfigFlag inFlag;
+algorithm
+  () := match inFlag
+    local
+      list<tuple<String, Integer>> enums;
+      Flags.ValidOptions valid_options;
+      list<String> values, options;
+
+    case Flags.CONFIG_FLAG(defaultValue = Flags.ENUM_FLAG(validValues = enums), validOptions = SOME(valid_options))
+      algorithm
+        values := list(Util.tuple21(e) for e in enums);
+        options := getValidStringOptions(valid_options);
+        if not List.isEqualOnTrue(values, options, stringEq) then
+          System.fputs("Flag --" + inFlag.name + " lists the valid options {" + stringDelimitList(options, ", ") +
+            "}, but its values are {" + stringDelimitList(values, ", ") + "}.\n", System.StreamType.STDERR);
+          System.exit(1);
+        end if;
+      then ();
+
+    else ();
+  end match;
+end checkEnumFlagOptions;
+
 public function printAllConfigFlags
   "Prints all configuration flags to a string."
   output String outString;
@@ -1661,7 +1688,7 @@ algorithm
 
     case Flags.CONFIG_FLAG(description = desc)
       algorithm
-        desc_str := desc;
+        desc_str := removeSphinxMathMode(desc);
         name := Util.stringPadRight(printConfigFlagName(inFlag), 28, " ");
         flag_str := stringAppendList({name, " ", desc_str});
         delim_str := descriptionIndent + "  ";
@@ -1688,7 +1715,7 @@ algorithm
 
     case Flags.CONFIG_FLAG(description = desc)
       algorithm
-        desc_str := desc;
+        desc_str := System.stringReplace(desc, "\n", "\n\n");
         desc_str := System.stringReplace(desc_str, "--help=debug", ":ref:`--help=debug <omcflag-debug-section>`");
         desc_str := System.stringReplace(desc_str, "--help=optmodules", ":ref:`--help=optmodules <omcflag-optmodules-section>`");
         (name,longName) := printConfigFlagName(inFlag,sphinx=true);
@@ -1787,6 +1814,8 @@ algorithm
       Integer i;
     case Flags.BOOL_FLAG() then "Boolean (default"+" ``" + boolString(flag.data) + "``).";
     case Flags.INT_FLAG() then "Integer (default"+" ``" + intString(flag.data) + "``).";
+    case Flags.INT_LIST_FLAG(data={}) then "Integer list (default *empty*).";
+    case Flags.INT_LIST_FLAG() then "Integer list (default"+" ``" + stringDelimitList(list(intString(d) for d in flag.data), ",") + "``).";
     case Flags.REAL_FLAG() then "Real (default"+" ``" + realString(flag.data) + "``).";
     case Flags.STRING_FLAG("") then "String (default *empty*).";
     case Flags.STRING_FLAG() then "String (default"+" " + flag.data + ").";
@@ -1797,7 +1826,7 @@ algorithm
         for f in flag.validValues loop
           (str,i) := f;
           if i==flag.data then
-            str := "String (default "+" " + str + ").";
+            str := "String (default " + str + ").";
             return;
           end if;
         end for;
@@ -1895,7 +1924,7 @@ algorithm
   (name, desc) := inOption;
   desc_str := desc;
   if sphinx then
-    desc_str := sum(System.trim(s) for s in System.strtok(desc_str, "\n"));
+    desc_str := stringDelimitList(list(System.trim(s) for s in System.strtok(desc_str, "\n")), "\n\n  ");
     outString := "* " + name + " (" + desc_str + ")\n";
   else
     str := Util.stringPadRight(" * " + name + " ", 30, " ") + removeSphinxMathMode(desc_str);
@@ -1919,7 +1948,7 @@ algorithm
   if valueEq(inFlag.visibility, Flags.INTERNAL()) then
     outString := "";
   elseif sphinx then
-    desc_str := stringDelimitList(list(System.trim(s) for s in System.strtok(desc_str, "\n")), "\n  ");
+    desc_str := stringDelimitList(list(System.trim(s) for s in System.strtok(desc_str, "\n")), "\n\n  ");
     outString := "\n.. _omcflag-debug-"+name+":\n\n" +
       ":ref:`" + name + " <omcflag-debug-"+name+">`" +
       " (default: "+(if default then "on" else "off")+")\n  " + desc_str + "\n";
