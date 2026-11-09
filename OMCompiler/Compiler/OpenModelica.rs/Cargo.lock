@@ -7916,6 +7916,7 @@ dependencies = [
  "openmodelica_mat_reader",
  "openmodelica_mat_writer",
  "openmodelica_result_diff",
+ "openmodelica_wasi",
  "serde_json",
 ]
 
@@ -7942,17 +7943,14 @@ dependencies = [
  "loop_unwrap",
  "match_deref",
  "metamodelica",
- "openmodelica_arrow_writer",
  "openmodelica_ast",
  "openmodelica_error",
  "openmodelica_frontend_dump",
  "openmodelica_frontend_types",
- "openmodelica_mat_reader",
  "openmodelica_package_manager",
  "openmodelica_result_files",
  "openmodelica_util",
  "openmodelica_util_datatypes_basic",
- "openmodelica_wasi",
  "openmodelica_zip",
 ]
 

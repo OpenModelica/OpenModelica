@@ -14,6 +14,7 @@ use std::ptr;
 use openmodelica_result_files::cmp::Algorithm;
 use openmodelica_result_files::file::{self, ResultFile, Tolerances, TubeDiff};
 
+pub mod scripting;
 pub mod writer;
 
 #[allow(non_camel_case_types)]
@@ -413,10 +414,10 @@ pub extern "C" fn omc_result_default_tolerances() -> omc_result_tolerances {
 }
 
 /// `diffSimulationResults`: the names of the `n` `vars` (the reference's
-/// compared variables when `n` is 0) whose trajectory in `actual` leaves the
-/// tube around `reference`, `*n_out` of them, to free with
-/// `omc_result_free_strings`. Null with `*error` set on failure (`tol` null
-/// means the defaults).
+/// compared variables when `n` is 0) that are missing in either file or whose
+/// trajectory in `actual` leaves the tube around `reference`, `*n_out` of
+/// them, to free with `omc_result_free_strings`. Null with `*error` set on
+/// failure (`tol` null means the defaults).
 #[unsafe(no_mangle)]
 pub extern "C" fn omc_result_diff(
     actual: *mut omc_result,
