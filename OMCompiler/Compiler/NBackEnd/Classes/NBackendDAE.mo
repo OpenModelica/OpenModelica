@@ -733,6 +733,8 @@ public
 
     // Pre-Partitioning Modules
     // (do not change order SIMPLIFY -> ALIAS -> EVENTS -> DETECTSTATES)
+    // (do not change order BINDINGS -> DATA RECONCILIATION -> FUNCTIONALIAS -> ALIAS, data
+    // reconciliation needs the binding equations, which the alias modules remove)
     preOptModules := listAppend(
       (Bindings.main,      "Bindings") ::
       (if DataReconciliation.isEnabled() then {(DataReconciliation.main, "Data Reconciliation")} else {}),
