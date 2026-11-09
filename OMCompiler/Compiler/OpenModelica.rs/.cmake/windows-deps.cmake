@@ -93,13 +93,11 @@ set(_om_openblas_sha256 "7ad797ef0c9a5c42e28903bf726eaaaade307dafe187ff0e923d90c
 set(_om_openblas_zip "${OM_DOWNLOADS_DIR}/OpenBLAS-${OM_WINDOWS_OPENBLAS_VERSION}-x64.zip")
 set(_om_openblas_prefix "${_om_win_build}/openblas")
 if(NOT EXISTS "${_om_openblas_prefix}/lib/libopenblas.lib")
-  if(NOT EXISTS "${_om_openblas_zip}")
-    message(STATUS "Fetching OpenBLAS ${OM_WINDOWS_OPENBLAS_VERSION} (Windows x64 prebuilt)")
-    file(DOWNLOAD
-      "https://github.com/OpenMathLib/OpenBLAS/releases/download/v${OM_WINDOWS_OPENBLAS_VERSION}/OpenBLAS-${OM_WINDOWS_OPENBLAS_VERSION}-x64.zip"
-      "${_om_openblas_zip}"
-      EXPECTED_HASH SHA256=${_om_openblas_sha256}
-      SHOW_PROGRESS)
+  omc_download(
+    "https://github.com/OpenMathLib/OpenBLAS/releases/download/v${OM_WINDOWS_OPENBLAS_VERSION}/OpenBLAS-${OM_WINDOWS_OPENBLAS_VERSION}-x64.zip"
+    "${_om_openblas_zip}" "${_om_openblas_sha256}" _om_openblas_dl SHOW_PROGRESS)
+  if(_om_openblas_dl)
+    message(FATAL_ERROR "Failed to download OpenBLAS (${_om_openblas_dl})")
   endif()
   file(ARCHIVE_EXTRACT INPUT "${_om_openblas_zip}" DESTINATION "${_om_openblas_prefix}")
 endif()
