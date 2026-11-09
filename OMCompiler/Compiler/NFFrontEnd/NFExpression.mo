@@ -5295,6 +5295,7 @@ public
       case INTEGER() then exp.value > 0;
       case REAL() then exp.value > 0.0;
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "min"), isPositive, false);
+      case ARRAY() then Array.all(exp.elements, isPositive);
       case CALL() then Call.isPositive(exp.call);
       case UNARY() then isNegative(exp.exp);
       case IF() then isPositive(exp.trueBranch) and isPositive(exp.falseBranch);
@@ -5311,6 +5312,7 @@ public
       case INTEGER() then exp.value < 0;
       case REAL() then exp.value < 0.0;
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "max"), isNegative, false);
+      case ARRAY() then Array.all(exp.elements, isNegative);
       case CALL() then Call.isNegative(exp.call);
       case UNARY() then isPositive(exp.exp);
       case IF() then isNegative(exp.trueBranch) and isNegative(exp.falseBranch);
@@ -5344,6 +5346,7 @@ public
       case INTEGER() then exp.value >= 0;
       case REAL() then exp.value >= 0.0;
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "min"), isNonNegative, false);
+      case ARRAY() then Array.all(exp.elements, isNonNegative);
       case CALL() then Call.isNonNegative(exp.call);
       case UNARY() then isNonPositive(exp.exp);
       case IF() then isNonNegative(exp.trueBranch) and isNonNegative(exp.falseBranch);
