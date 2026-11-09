@@ -578,7 +578,7 @@ unsafe extern "C" {
 /// ...)` in generated code prints exactly when `-lv=LOG_DT_CONS` was given. The two
 /// tables are the same list in the same order.
 unsafe extern "C" {
-    static mut messageFunction: unsafe extern "C" fn(c_int, c_int, FILE_INFO, c_int, *mut c_char, c_int, *const c_int);
+    static mut messageFunction: MessageFn;
     static mut messageClose: unsafe extern "C" fn(c_int);
     static mut messageCloseWarning: unsafe extern "C" fn(c_int);
 }
@@ -591,6 +591,46 @@ pub fn install_message_hooks() {
         messageFunction = omr_message_text;
         messageClose = omr_message_close;
         messageCloseWarning = omr_message_close_warning;
+    }
+}
+
+type MessageFn = unsafe extern "C" fn(c_int, c_int, FILE_INFO, c_int, *mut c_char, c_int, *const c_int);
+
+#[cfg(feature = "fmi")]
+static mut MESSAGE_NEXT: Option<MessageFn> = None;
+
+/// C's `messageFunctionFMI`: the generated code only prints a held `assert()`.
+/// Keep it for the logger in case it fails the call.
+#[cfg(feature = "fmi")]
+pub fn keep_held_assert_messages() {
+    unsafe {
+        if messageFunction as usize != held_assert_message as usize {
+            MESSAGE_NEXT = Some(messageFunction);
+            messageFunction = held_assert_message;
+        }
+    }
+}
+
+#[cfg(feature = "fmi")]
+unsafe extern "C" fn held_assert_message(
+    ty: c_int,
+    stream: c_int,
+    info: FILE_INFO,
+    indent_next: c_int,
+    msg: *mut c_char,
+    subline: c_int,
+    indexes: *const c_int,
+) {
+    use openmodelica_sim_meta::driver::{self, AssertHold};
+    if stream == omclog::ASSERT as c_int && ty == omclog::INFO as c_int && driver::assert_hold() == AssertHold::Record {
+        driver::note_held_assert(driver::ext_assert_message(
+            &cstr(info.filename),
+            info.lineStart,
+            &cstr(msg),
+        ));
+    }
+    if let Some(next) = unsafe { MESSAGE_NEXT } {
+        unsafe { next(ty, stream, info, indent_next, msg, subline, indexes) };
     }
 }
 
