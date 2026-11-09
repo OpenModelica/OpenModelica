@@ -546,6 +546,7 @@ protected
   list<PackageManagement.Requirement> requirements = {};
   list<tuple<String, String>> loaded = {};
   list<PackageManagement.Selection> selected;
+  list<PackageManagement.ConversionHint> conversions;
   list<String> names = {}, versions;
   String name, origin, error;
   Absyn.Path path;
@@ -569,10 +570,17 @@ algorithm
     end if;
   end for;
 
-  (success, selected, _, error) := PackageManagement.resolve(listReverse(requirements), loaded, false, requireExactVersion,
-    Interactive.libraryMetadata, modelicaPath);
+  (success, selected, _, error, conversions) := PackageManagement.resolve(listReverse(requirements), loaded, false,
+    requireExactVersion, Interactive.libraryMetadata, modelicaPath);
   if not success then
     Error.addMessage(Error.LOAD_MODEL_CONFLICT, {stringDelimitList(List.unique(list(r.origin for r in requirements)), ", "), error});
+  end if;
+  for c in conversions loop
+    if usesVersion(c.origin, c.name, c.version, program) then
+      Error.addMessage(Error.NOTIFY_LOAD_MODEL_CONVERSION, {c.origin, c.name, c.version, c.to});
+    end if;
+  end for;
+  if not success then
     return;
   end if;
 
@@ -582,6 +590,23 @@ algorithm
     end if;
   end for;
 end chooseVersions;
+
+protected function usesVersion
+  "Whether the top-level class cls uses version of library."
+  input String cls;
+  input String library;
+  input String version;
+  input Absyn.Program program;
+  output Boolean b = false;
+protected
+  Absyn.Class c;
+algorithm
+  try
+    c := List.find(program.classes, function AbsynUtil.isClassNamed(inName = cls));
+    b := Util.getOptionOrDefault(Interactive.getUsedVersion(c, Absyn.IDENT(library)), "") == version;
+  else
+  end try;
+end usesVersion;
 
 protected function loadModel1
   input tuple<Absyn.Path,String,list<String>,Boolean> modelToLoad;

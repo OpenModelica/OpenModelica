@@ -2400,13 +2400,13 @@ algorithm
       then ValuesMake.makeArray({});
 
     case ("getAvailablePackageConversionsFrom",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1))), Values.STRING(str2)})
-      then ValuesMake.makeStringArray(PackageManagement.versionsThatConvertFromTheWanted(str1, str2, true));
+      then ValuesMake.makeStringArray(PackageManagement.versionsThatConvertFromTheWanted(str1, str2, false, Interactive.libraryMetadata));
 
     case ("getAvailablePackageConversionsFrom",_)
       then ValuesMake.makeArray({});
 
     case ("getAvailablePackageConversionsTo",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1))), Values.STRING(str2)})
-      then ValuesMake.makeStringArray(PackageManagement.versionsThatConvertToTheWanted(str1, str2, true));
+      then ValuesMake.makeStringArray(PackageManagement.versionsThatConvertToTheWanted(str1, str2, false, Interactive.libraryMetadata));
 
     case ("getAvailablePackageConversionsTo",_)
       then ValuesMake.makeArray({});
@@ -10314,7 +10314,8 @@ protected
   Option<String> uses_version;
   String lib_version, lib_version_used;
   list<tuple<String, Option<String>, Option<String>>> conversions;
-  list<String> scripts;
+  list<String> none_from;
+  Option<list<String>> scripts;
   String lib_name;
 algorithm
   try
@@ -10357,9 +10358,10 @@ algorithm
     // the class to the desired library version.
     lib_cls := ProgramUtil.getPathedClassInProgram(libPath, lib_program, showError = true);
     conversions := Interactive.getConversionsInClass(lib_cls);
-    scripts := findConversionPaths(conversions, lib_version, lib_version_used);
+    (none_from, _) := Interactive.getConversionAnnotation(lib_cls);
+    scripts := findConversionPaths(conversions, none_from, lib_version, lib_version_used);
 
-    if listEmpty(scripts) then
+    if isNone(scripts) then
       Error.addMessage(Error.CONVERSION_NO_COMPATIBLE_SCRIPT_FOUND,
         {AbsynUtil.pathString(libPath),
          SemanticVersion.normalize(lib_version_used),
@@ -10368,7 +10370,7 @@ algorithm
     end if;
 
     // Apply the conversion scripts.
-    for script in scripts loop
+    for script in Util.getOption(scripts) loop
       script := uriToFilename(script);
       cls := Conversion.convertPackage(cls, script);
     end for;
@@ -10387,71 +10389,66 @@ algorithm
 end convertPackageToLibrary;
 
 function findConversionPaths
-  "Tries to find the shortest path for converting from one version to another
-   and returns the list of conversion scripts for that path. Usually only one
-   conversion is needed, but sometimes the conversion might need to be done in
-   several steps (e.g. 2.0.0 => 2.3.5 => 2.4.0)."
+  "The conversion scripts of the shortest way to convert from one version to
+   another, usually one, but sometimes in several steps (e.g. 2.0.0 => 2.3.5
+   => 2.4.0). A noneFromVersion step needs no script. NONE() if there is no
+   way."
   input list<tuple<String, Option<String>, Option<String>>> conversions;
+  input list<String> noneFromVersions;
   input String libVersion;
   input String libVersionUsed;
   input Integer depth = 0;
-  output list<String> scripts = {};
+  output Option<list<String>> scripts = NONE();
 protected
-  list<list<String>> paths = {};
-  Integer path_len, path_min = 100;
+  Option<list<String>> path;
 algorithm
   // Abort if we go too deep to avoid crashing on malicious conversion annotations.
   if depth > 100 then
     return;
   end if;
 
-  // Find the possible path for each conversion to the version we're looking for.
   for c in conversions loop
-    paths := findConversionPath(c, libVersion, libVersionUsed, conversions, depth) :: paths;
-  end for;
-
-  // Return the shortest non-empty path.
-  for p in paths loop
-    path_len := listLength(p);
-
-    if path_len > 0 and path_len < path_min then
-      scripts := p;
-      path_min := path_len;
-    end if;
+    path := findConversionPath(c, noneFromVersions, libVersion, libVersionUsed, conversions, depth);
+    scripts := match (path, scripts)
+      case (SOME(_), NONE()) then path;
+      case (SOME(_), SOME(_)) guard listLength(Util.getOption(path)) < listLength(Util.getOption(scripts)) then path;
+      else scripts;
+    end match;
   end for;
 end findConversionPaths;
 
 function findConversionPath
   input tuple<String, Option<String>, Option<String>> conversion;
+  input list<String> noneFromVersions;
   input String libVersion;
   input String libVersionUsed;
   input list<tuple<String, Option<String>, Option<String>>> conversions;
   input Integer depth;
-  output list<String> scripts = {};
+  output Option<list<String>> scripts = NONE();
 protected
   String from;
   Option<String> to;
   Option<String> script;
-  String from_version, to_version;
 algorithm
   (from, to, script) := conversion;
 
-  if isNone(script) then
+  if SemanticVersion.compare(libVersionUsed, from) <> 0 then
     return;
   end if;
 
-  from_version := from;
+  // Without a script only noneFromVersion is a step; inline conversion rules
+  // (change) are not supported.
+  if isNone(script) and not listMember(from, noneFromVersions) then
+    return;
+  end if;
 
-  if SemanticVersion.compare(libVersionUsed, from_version) == 0 then
-    if isSome(to) then
-      to_version := Util.getOption(to);
+  scripts := SOME({});
+  if isSome(to) and SemanticVersion.compare(libVersion, Util.getOption(to)) <> 0 then
+    scripts := findConversionPaths(conversions, noneFromVersions, libVersion, Util.getOption(to), depth + 1);
+  end if;
 
-      if SemanticVersion.compare(libVersion, to_version) <> 0 then
-        scripts := findConversionPaths(conversions, libVersion, to_version, depth + 1);
-      end if;
-    end if;
-
-    scripts := Util.getOption(script) :: scripts;
+  if isSome(script) and isSome(scripts) then
+    scripts := SOME(Util.getOption(script) :: Util.getOption(scripts));
   end if;
 end findConversionPath;
 

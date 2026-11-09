@@ -7622,15 +7622,16 @@ algorithm
 end getConversionAnnotation;
 
 public function libraryMetadata
-  "The version, the uses and the versions converted from without changes
-   (noneFromVersion) of a library's top-level file, as JSON for the package
-   manager; null if the file cannot be parsed."
+  "The version, the uses, the versions converted from without changes
+   (noneFromVersion) and the versions with conversion scripts of a library's
+   top-level file, as JSON for the package manager; null if the file cannot
+   be parsed."
   input String fileName;
   output JSON json = JSON.makeNull();
 protected
   String encodingFile, encoding, version;
   Absyn.Class cls;
-  list<String> provides;
+  list<String> provides, converts;
 algorithm
   ErrorExt.setCheckpoint(getInstanceName());
   try
@@ -7638,12 +7639,13 @@ algorithm
     encoding := if System.regularFileExists(encodingFile) then System.trimChar(System.trimChar(System.readFile(encodingFile), "\n"), " ") else "UTF-8";
     Absyn.PROGRAM(classes = {cls}) := Parser.parse(fileName, encoding);
     version := Util.getOptionOrDefault(AbsynUtil.getNamedAnnotationInClass(cls, Absyn.IDENT("version"), getAnnotationStringValueOrFail), "");
-    (provides, _) := getConversionAnnotation(cls);
+    (provides, converts) := getConversionAnnotation(cls);
     json := JSON.LIST_OBJECT({
       ("version", JSON.makeString(version)),
       ("uses", JSON.LIST_OBJECT(list((AbsynUtil.pathString(Util.tuple41(u)), JSON.makeString(listHead(Util.tuple43(u))))
         for u in getUsesAnnotation(Absyn.PROGRAM({cls}, Absyn.TOP()))))),
-      ("provides", JSON.makeList(list(JSON.makeString(p) for p in provides)))});
+      ("provides", JSON.makeList(list(JSON.makeString(p) for p in provides))),
+      ("converts", JSON.makeList(list(JSON.makeString(c) for c in converts)))});
   else
   end try;
   ErrorExt.rollBack(getInstanceName());
