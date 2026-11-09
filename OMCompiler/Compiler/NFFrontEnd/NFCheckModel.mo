@@ -54,6 +54,7 @@ protected
   import NFInstNode.InstNode;
   import Component = NFComponent;
   import SimplifyExp = NFSimplifyExp;
+  import MetaModelica.Dangerous.listReverseInPlace;
 
 public
 function checkModel
@@ -246,6 +247,7 @@ protected
   Boolean lhs_is_cref, rhs_is_cref;
   Expression e1, e2;
   Integer u;
+  UnorderedSet<ComponentRef> crefs;
 algorithm
   isSimple := match (lhs, rhs)
     // ±a = ±b
@@ -276,13 +278,14 @@ algorithm
     case (_, _)
       guard Type.isReal(ty) or Type.isInteger(ty) or Type.isEnumeration(ty)
       algorithm
-        u := Expression.fold(lhs, countUnknowns_traverser, 0);
+        crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+        crefs := Expression.fold(lhs, countUnknowns_traverser, crefs);
 
-        if u <= 1 then
-          u := Expression.fold(rhs, countUnknowns_traverser, u);
+        if UnorderedSet.size(crefs) <= 1 then
+          crefs := Expression.fold(rhs, countUnknowns_traverser, crefs);
         end if;
       then
-        u == 1;
+        UnorderedSet.size(crefs) == 1;
 
     else false;
   end match;
@@ -322,14 +325,14 @@ end isAddOrSub;
 
 function countUnknowns_traverser
   input Expression exp;
-  input output Integer unknownCount;
+  input output UnorderedSet<ComponentRef> crefs;
 protected
   InstNode node;
   Component comp;
 algorithm
   // This is only used to check if an equation contains exactly one unknown,
   // so return early if we've already found more than that.
-  if unknownCount > 1 then
+  if UnorderedSet.size(crefs) > 1 then
     return;
   end if;
 
@@ -344,7 +347,7 @@ algorithm
 
           if Component.variability(comp) >= Variability.DISCRETE and
              not (Component.isInput(comp) and ComponentRef.isTopLevel(exp.cref)) then
-            unknownCount := unknownCount + Type.sizeOf(exp.ty);
+            UnorderedSet.add(exp.cref, crefs);
           end if;
         end if;
       then
@@ -360,11 +363,32 @@ function makeSum
   input list<Expression> exps;
   output Expression sumExp;
 protected
-  list<Expression> expl = exps;
+  list<Expression> expl = {};
+  UnorderedMap<Expression, Integer> terms;
+  Expression exp;
+  Integer factor;
 algorithm
   if listEmpty(exps) then
     sumExp := Expression.INTEGER(n);
   else
+    terms := UnorderedMap.new<Integer>(Expression.hash, Expression.isEqual);
+
+    for e in exps loop
+      addTerm(e, terms);
+    end for;
+
+    for term in UnorderedMap.toList(terms) loop
+      (exp, factor) := term;
+
+      if factor > 1 then
+        exp := Expression.BINARY(Expression.INTEGER(factor), Operator.makeMul(Type.INTEGER()), exp);
+      end if;
+
+      expl := exp :: expl;
+    end for;
+
+    expl := listReverseInPlace(expl);
+
     if n <> 0 then
       expl := Expression.INTEGER(n) :: expl;
     end if;
@@ -373,6 +397,45 @@ algorithm
     sumExp := SimplifyExp.simplify(sumExp);
   end if;
 end makeSum;
+
+function addTerm
+  input Expression exp;
+  input UnorderedMap<Expression, Integer> terms;
+protected
+  Integer factor;
+algorithm
+  () := match exp
+    // n * exp
+    case Expression.BINARY(exp1 = Expression.INTEGER(factor),
+                           operator = Operator.OPERATOR(op = NFOperator.Op.MUL))
+      algorithm
+        mergeTerm(exp.exp2, factor, terms);
+      then
+        ();
+
+    // exp * n
+    case Expression.BINARY(exp2 = Expression.INTEGER(factor),
+                           operator = Operator.OPERATOR(op = NFOperator.Op.MUL))
+      algorithm
+        mergeTerm(exp.exp1, factor, terms);
+      then
+        ();
+
+    else
+      algorithm
+        mergeTerm(exp, 1, terms);
+      then
+        ();
+  end match;
+end addTerm;
+
+function mergeTerm
+  input Expression exp;
+  input Integer factor;
+  input UnorderedMap<Expression, Integer> terms;
+algorithm
+  UnorderedMap.addMerge(exp, factor, intAdd, terms);
+end mergeTerm;
 
 annotation(__OpenModelica_Interface="nf_frontend");
 end NFCheckModel;

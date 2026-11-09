@@ -467,7 +467,6 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("System_getHasStreamConnectors", Infallible);
         m.insert("System_getLDFlags", Infallible);
         m.insert("System_getLinker", Infallible);
-        m.insert("System_getLoadModelPath", Fallible); // throws when no path matches
         m.insert("System_getMemorySize", Infallible);
         m.insert("System_getOMPCCompiler", Infallible);
         m.insert("System_getPartialInstantiation", Infallible);
@@ -602,12 +601,18 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("pointerUpdate", Infallible);
         m.insert("pointerAccess", Infallible);
 
-        // ── om_curl.c / om_zip.c ───────────────────────────────────────────
-        m.insert("om_curl_multi_download", Infallible);
+        // ── om_zip.c / PackageManagerExt_omc.c ─────────────────────────────
         m.insert("om_unzip", Infallible);
         m.insert("om_unzip_all", Infallible);
         m.insert("om_zip", Infallible);
         m.insert("om_zip_paths", Infallible);
+        m.insert("om_package_manager", Infallible);
+        m.insert("om_semver_compare", Infallible);
+        m.insert("om_semver_normalize", Infallible);
+        m.insert("om_semver_is_semver", Infallible);
+        m.insert("om_modelica_diff", Infallible);
+        m.insert("om_modelica_render", Infallible);
+        m.insert("om_modelica_code_equal", Infallible);
 
         // ── omc_file_ext.h inline file API ─────────────────────────────────
         // open/write* fail through ModelicaFormatError.

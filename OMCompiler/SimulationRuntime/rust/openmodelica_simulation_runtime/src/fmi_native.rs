@@ -10,6 +10,7 @@ use openmodelica_fmi3_wasm::fmi_types::Status;
 
 use crate::abi::*;
 use crate::engine::CEngine;
+use crate::support::FmuAssert;
 
 pub(crate) const OK: c_int = 0;
 pub(crate) const WARNING: c_int = 1;
@@ -92,9 +93,9 @@ fn log_hook(status: Status, category: &str, message: &str) {
 
 /// C's `omc_assert_fmi`: the importer's logger, or stderr when the runtime raised
 /// the assert without a `threadData` to find the instance by.
-fn report_assert(error: bool, info: &FILE_INFO, text: &str, passed_thread_data: bool) {
+fn report_assert(kind: FmuAssert, info: &FILE_INFO, text: &str, passed_thread_data: bool) {
     let file = cstr(info.filename);
-    if error && !passed_thread_data {
+    if matches!(kind, FmuAssert::Error) && !passed_thread_data {
         let pos = format!(
             "[{file}:{}:{}-{}:{}:{}]",
             info.lineStart,
@@ -111,10 +112,10 @@ fn report_assert(error: bool, info: &FILE_INFO, text: &str, passed_thread_data: 
     } else {
         text.to_string()
     };
-    if error {
-        openmodelica_fmi3_wasm::log_status_error(&msg);
-    } else {
-        openmodelica_fmi3_wasm::log_status_warning(&msg);
+    match kind {
+        FmuAssert::Error => openmodelica_fmi3_wasm::log_status_error(&msg),
+        FmuAssert::Warning => openmodelica_fmi3_wasm::log_status_warning(&msg),
+        FmuAssert::Solver { nonlinear } => openmodelica_fmi3_wasm::log_solver_assert(nonlinear, &msg),
     }
 }
 
@@ -184,7 +185,8 @@ impl Native {
         crate::support::set_fmu_assert_report(report_assert);
         crate::support::publish_log_streams();
         let resources = resources.or_else(library_resources);
-        let (inst, data, thread_data) = match build(resources.as_ref(), kind, Some(token)) {
+        let fmi3 = matches!(logger, Logger::Fmi3 { .. });
+        let (inst, data, thread_data) = match build(resources.as_ref(), kind, Some(token), fmi3) {
             Ok(b) => b,
             Err(msg) => {
                 logger.log(ERROR, "logStatusError", &format!("{call}: {msg}"));
@@ -207,7 +209,8 @@ impl Native {
 
     /// C's `fmi2Reset`: the model set up again from scratch, as instantiate left it.
     pub(crate) fn reset(&mut self, call: &str) -> c_int {
-        match build(self.resources.as_ref(), self.kind, None) {
+        let fmi3 = matches!(self.logger, Logger::Fmi3 { .. });
+        match build(self.resources.as_ref(), self.kind, None, fmi3) {
             Ok((inst, data, thread_data)) => {
                 let old = core::mem::replace(&mut self.inst, inst);
                 let old_data = core::mem::replace(&mut self.data, data);
@@ -344,7 +347,7 @@ fn fmi3_arrays(table: &mut [openmodelica_sim_meta::FmiVr]) {
 }
 
 /// C's `fmi2Instantiate` up to the solver, then the instance over it.
-fn build(resources: Option<&CString>, kind: Kind, token: Option<&str>) -> Result<Built, String> {
+fn build(resources: Option<&CString>, kind: Kind, token: Option<&str>, fmi3: bool) -> Result<Built, String> {
     let (data, td) = unsafe {
         mmc_init_nogc();
         omc_alloc_interface.init.expect("omc_alloc_interface")();
@@ -366,7 +369,7 @@ fn build(resources: Option<&CString>, kind: Kind, token: Option<&str>) -> Result
     // Nothing above the importer catches a model error while the instance is set
     // up: C's `fmi2Instantiate` runs it under `MMC_TRY_INTERNAL(globalJumpBuffer)`.
     let mut built: Result<Option<Instance<CEngine>>, String> = Ok(None);
-    let ok = crate::support::protected_global(td, || built = setup(data, td, kind, token));
+    let ok = crate::support::protected_global(td, || built = setup(data, td, kind, token, fmi3));
     match built {
         Ok(Some(inst)) if ok => Ok((inst, data, td)),
         Err(msg) => Err(msg),
@@ -379,6 +382,7 @@ fn setup(
     td: *mut threadData_t,
     kind: Kind,
     token: Option<&str>,
+    fmi3: bool,
 ) -> Result<Option<Instance<CEngine>>, String> {
     unsafe {
         omc_fmu_setupDataStruc(data, td);
@@ -431,7 +435,10 @@ fn setup(
         crate::fmi::initializeStateSetJacobians(data, td);
     }
     let (engine, mut meta) = crate::fmi::engine_and_meta(data, td);
-    fmi3_arrays(&mut meta.fmi_vrs);
+    // The FMU of buildModelFMU(version="2.0+3.0") also serves FMI 2.0, which has no arrays.
+    if fmi3 {
+        fmi3_arrays(&mut meta.fmi_vrs);
+    }
     if unsafe { (*(*data).callback).read_input_fmu.is_none() } {
         let md = unsafe { &*(*data).modelData };
         let path = format!("{}/{}_paramdeps.bin", cstr(md.resourcesDir), cstr(md.modelFilePrefix));

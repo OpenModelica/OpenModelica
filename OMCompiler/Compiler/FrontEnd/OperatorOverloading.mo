@@ -1543,7 +1543,7 @@ algorithm
       DAE.Prefix pre;
       DAE.Type ty;
       list<String> exps_str,tps_str;
-      String pre_str, s, tpsstr;
+      String s, tpsstr;
 
     case (((op,params,rtype) :: _), args, pre)
       algorithm
@@ -1574,8 +1574,7 @@ algorithm
         stringDelimitList(exps_str, ", ");
         tps_str := List.map(tps, TypesDump.unparseType);
         tpsstr := stringDelimitList(tps_str, ", ");
-        pre_str := PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s,tpsstr,pre_str}, info);
+        Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s,tpsstr}, info);
       then
         fail();
   end matchcontinue;

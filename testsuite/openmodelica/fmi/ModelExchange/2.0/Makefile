@@ -4,10 +4,12 @@ TESTFILES = \
 EnumerationTest.mos \
 ExportFMUCLI.mos \
 FmuFileNamePrefixDash.mos \
+Fmi2NoVariables.mos \
 FmuSparseSolvers.mos \
 FmuLinkLibraries.mos \
 FmuUserCFlags.mos \
 FmuUserTab.mos \
+FmuValueAccess.mos \
 fmi_attributes_01.mos \
 fmi_attributes_02.mos \
 fmi_attributes_03.mos \

@@ -3107,6 +3107,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "252afb9ae5eaa683babdc6a068b3f5726eb19e05070c731f9b2a23a7c3e8ed34"
 
 [[package]]
+name = "elsa"
+version = "1.11.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9abf33c656a7256451ebb7d0082c5a471820c31269e49d807c538c252352186e"
+dependencies = [
+ "stable_deref_trait",
+]
+
+[[package]]
 name = "emath"
 version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3320,6 +3329,16 @@ checksum = "f1a05365e3b1c6d1650318537c7460c6923f1abdd272ad6842baa2b509957a06"
 dependencies = [
  "num-traits",
  "serde",
+]
+
+[[package]]
+name = "event-listener"
+version = "5.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a23add41df1562121a9393cb065eab5146a1242410f23a644851e90cfd669d2"
+dependencies = [
+ "parking",
+ "pin-project-lite",
 ]
 
 [[package]]
@@ -5269,7 +5288,7 @@ dependencies = [
  "ena",
  "itertools 0.14.0",
  "lalrpop-util",
- "petgraph",
+ "petgraph 0.7.1",
  "regex",
  "regex-syntax",
  "sha3",
@@ -7493,6 +7512,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "openmodelica_download"
+version = "0.1.0"
+dependencies = [
+ "curl",
+ "openmodelica_wasi",
+]
+
+[[package]]
 name = "openmodelica_dump_extra"
 version = "0.1.0"
 dependencies = [
@@ -7661,6 +7688,7 @@ dependencies = [
  "openmodelica_nf_frontend",
  "openmodelica_omgraphics",
  "openmodelica_revision",
+ "openmodelica_script_util",
  "openmodelica_util",
  "rayon",
  "tikv-jemalloc-sys",
@@ -7708,6 +7736,10 @@ dependencies = [
 
 [[package]]
 name = "openmodelica_mat_writer"
+version = "0.1.0"
+
+[[package]]
+name = "openmodelica_modelica_diff"
 version = "0.1.0"
 
 [[package]]
@@ -7807,6 +7839,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "openmodelica_package_manager"
+version = "0.1.0"
+dependencies = [
+ "openmodelica_download",
+ "openmodelica_version",
+ "openmodelica_wasi",
+ "openmodelica_zip",
+ "resolvo",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "openmodelica_plt_writer"
 version = "0.1.0"
 dependencies = [
@@ -7825,6 +7870,7 @@ dependencies = [
  "openmodelica_ast",
  "openmodelica_frontend",
  "openmodelica_frontend_dump",
+ "openmodelica_script_util",
  "openmodelica_util",
  "openmodelica_util_datatypes_basic",
 ]
@@ -7893,7 +7939,6 @@ version = "0.1.0"
 dependencies = [
  "arcstr",
  "const-str 1.1.0",
- "curl",
  "loop_unwrap",
  "match_deref",
  "metamodelica",
@@ -7903,6 +7948,7 @@ dependencies = [
  "openmodelica_frontend_dump",
  "openmodelica_frontend_types",
  "openmodelica_mat_reader",
+ "openmodelica_package_manager",
  "openmodelica_result_files",
  "openmodelica_util",
  "openmodelica_util_datatypes_basic",
@@ -8064,8 +8110,10 @@ dependencies = [
  "openmodelica_error",
  "openmodelica_fmi",
  "openmodelica_lapack",
+ "openmodelica_modelica_diff",
  "openmodelica_regex",
  "openmodelica_util_datatypes_basic",
+ "openmodelica_version",
  "openmodelica_wasi",
  "openmodelica_zip",
  "rayon",
@@ -8085,6 +8133,10 @@ dependencies = [
  "match_deref",
  "metamodelica",
 ]
+
+[[package]]
+name = "openmodelica_version"
+version = "0.1.0"
 
 [[package]]
 name = "openmodelica_wasi"
@@ -8252,6 +8304,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "parking"
+version = "2.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f38d5652c16fde515bb1ecef450ab0f6a219d619a7274976324d5e377f7dceba"
+
+[[package]]
 name = "parking_lot"
 version = "0.12.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8378,6 +8436,18 @@ checksum = "3672b37090dbd86368a4145bc067582552b29c27377cad4e0a306c97f9bd7772"
 dependencies = [
  "fixedbitset",
  "indexmap",
+]
+
+[[package]]
+name = "petgraph"
+version = "0.8.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8701b58ea97060d5e5b155d383a69952a60943f0e6dfe30b04c287beb0b27455"
+dependencies = [
+ "fixedbitset",
+ "hashbrown 0.15.5",
+ "indexmap",
+ "serde",
 ]
 
 [[package]]
@@ -9601,6 +9671,22 @@ dependencies = [
  "wasm-streams",
  "web-sys",
  "webpki-roots",
+]
+
+[[package]]
+name = "resolvo"
+version = "0.12.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b43898f8e970835b603bda424b27fb3b673fe5efb196b7c1bb094c06f061cfa4"
+dependencies = [
+ "ahash",
+ "elsa",
+ "event-listener",
+ "futures",
+ "indexmap",
+ "itertools 0.15.0",
+ "petgraph 0.8.3",
+ "tracing",
 ]
 
 [[package]]

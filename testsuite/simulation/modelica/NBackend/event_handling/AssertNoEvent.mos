@@ -24,7 +24,7 @@ simulate(AssertNoEvent); getErrorString();
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_ASSERT        | info    | [<interactive>:6:3-6:55:writable]
 // |                 | |       | The following assertion has been violated at time 0.524000
-// |                 | |       | ((noEvent(x < 0.5))) --> \"x has to be less than 0.5.\"
+// |                 | |       | ((noEvent(x < 0.5)), x=0.5003474302699141) --> \"x has to be less than 0.5.\"
 // LOG_ASSERT        | error   | No event found, but assert was triggered. Throwing now!
 // "
 // end SimulationResult;

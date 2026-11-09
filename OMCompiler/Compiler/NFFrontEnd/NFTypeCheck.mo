@@ -1545,7 +1545,7 @@ algorithm
   if printError then
     exp_str := Expression.toString(exp);
     ty_str := List.toStringCustom(types, Type.toString, "", "", ", ", "", false);
-    Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {exp_str, ty_str, "<NO_COMPONENT>"}, info);
+    Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {exp_str, ty_str}, info);
   end if;
 
   fail();

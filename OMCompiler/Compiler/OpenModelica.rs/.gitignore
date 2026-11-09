@@ -99,7 +99,6 @@ openmodelica_backend_tools/src/Conversion.rs
 openmodelica_backend_tools/src/DAEToMid.rs
 openmodelica_backend_tools/src/GenerateAPIFunctionsTpl.rs
 openmodelica_backend_tools/src/HashTableMidVar.rs
-openmodelica_backend_tools/src/LexerModelicaDiff.rs
 openmodelica_backend_tools/src/MathematicaDump.rs
 openmodelica_backend_tools/src/MidToMid.rs
 openmodelica_backend_tools/src/Obfuscate.rs
@@ -107,7 +106,6 @@ openmodelica_backend_tools/src/ReverseLookup.rs
 openmodelica_backend_tools/src/SerializeInitXML.rs
 openmodelica_backend_tools/src/SerializeModelInfo.rs
 openmodelica_backend_tools/src/SerializeTaskSystemInfo.rs
-openmodelica_backend_tools/src/SimpleModelicaParser.rs
 openmodelica_backend_tools/src/TotalModelDebug.rs
 openmodelica_backend_tools/src/Uncertainties.rs
 openmodelica_backend_tools/src/Unparsing.rs
@@ -401,7 +399,6 @@ openmodelica_util/src/BaseHashTable.rs
 openmodelica_util/src/ClockIndexes.rs
 openmodelica_util/src/Config.rs
 openmodelica_util/src/Debug.rs
-openmodelica_util/src/DiffAlgorithm.rs
 openmodelica_util/src/DisjointSets.rs
 openmodelica_util/src/Error.rs
 openmodelica_util/src/ExecStat.rs
@@ -426,7 +423,6 @@ openmodelica_util/src/SBMultiInterval.rs
 openmodelica_util/src/SBPWAtomicLinearMap.rs
 openmodelica_util/src/SBPWLinearMap.rs
 openmodelica_util/src/SBSet.rs
-openmodelica_util/src/SemanticVersion.rs
 openmodelica_util/src/Socket.rs
 openmodelica_util/src/StringUtil.rs
 openmodelica_util/src/Testsuite.rs

@@ -421,6 +421,17 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"ModelicaExternalC/ModelicaStrings.c\" />
 //       <File name=\"ModelicaExternalC/snprintf.c\" />
 //       <File name=\"ModelicaExternalC/win32_dirent.c\" />
+//       <File name=\"ModelicaExternalC/zlib/adler32.c\" />
+//       <File name=\"ModelicaExternalC/zlib/compress.c\" />
+//       <File name=\"ModelicaExternalC/zlib/crc32.c\" />
+//       <File name=\"ModelicaExternalC/zlib/deflate.c\" />
+//       <File name=\"ModelicaExternalC/zlib/infback.c\" />
+//       <File name=\"ModelicaExternalC/zlib/inffast.c\" />
+//       <File name=\"ModelicaExternalC/zlib/inflate.c\" />
+//       <File name=\"ModelicaExternalC/zlib/inftrees.c\" />
+//       <File name=\"ModelicaExternalC/zlib/trees.c\" />
+//       <File name=\"ModelicaExternalC/zlib/uncompr.c\" />
+//       <File name=\"ModelicaExternalC/zlib/zutil.c\" />
 //     </SourceFiles>
 //   </ModelExchange>
 //   <LogCategories>

@@ -237,6 +237,16 @@ algorithm
   end match;
 end evaluateOperators;
 
+function insideStreamMixing
+  "inStream of a stream variable in a set of inside connectors: the mixing of
+   the stream variables of the other connectors of the set."
+  input ComponentRef streamCref;
+  input list<Connector> others;
+  input UnorderedMap<ComponentRef, Variable> variables;
+  output Expression exp = streamSumEquationExp({}, others,
+    Expression.REAL(Flags.getConfigReal(Flags.FLOW_THRESHOLD)), Expression.fromCref(streamCref), variables, NONE());
+end insideStreamMixing;
+
 protected
 function evaluateOperatorsShallow
   input Expression exp;

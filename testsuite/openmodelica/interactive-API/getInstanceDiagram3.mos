@@ -29,11 +29,11 @@ getInstanceDiagram(NoSuchModel); getErrorString();
 // hide empty members
 // class \"M\" as I_M <<model>>
 // class \"c : Modelica.Blocks.Sources.Constant\" as I_c <<block>> {
-//   {field} + parameter Real k = 1.0
+//   {field} + parameter Real k = 1
 //   {field} + y : RealOutput
 // }
 // class \"g : Modelica.Blocks.Math.Gain\" as I_g <<block>> {
-//   {field} + parameter Real k = 2.0
+//   {field} + parameter Real k = 2
 //   {field} + u : Interfaces.RealInput
 //   {field} + y : Interfaces.RealOutput
 // }

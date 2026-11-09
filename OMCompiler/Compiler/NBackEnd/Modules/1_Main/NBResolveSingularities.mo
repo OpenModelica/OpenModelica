@@ -50,16 +50,20 @@ protected
   import SimplifyExp = NFSimplifyExp;
   import Call = NFCall;
   import NFFunction.Function;
+  import NFInstNode.InstNode;
+  import Operator = NFOperator;
   import Subscript = NFSubscript;
   import Type = NFType;
 
   // NB imports
   import Adjacency = NBAdjacency;
+  import BackendDAE = NBackendDAE;
   import NBFunctionAlias.Call_Aux;
   import Differentiate = NBDifferentiate;
   import NBEquation.{Equation, EqData, EquationAttributes, EquationKind, EquationPointer, EquationPointers, IfEquationBody, SlicingStatus, Iterator};
   import Initialization = NBInitialization;
   import Matching = NBMatching;
+  import Resizable = NBResizable;
   import Variable = NFVariable;
   import BVariable = NBVariable;
   import PointerWeak;
@@ -423,6 +427,41 @@ public
     end if;
   end indexReduction;
 
+  function keptResizableIterations
+    "the iterations of a resizable for-equation with a scalar body that are not
+     in indices, as for-equations over symbolic sub-ranges"
+    input Pointer<Equation> eqn_ptr;
+    input list<Integer> indices;
+    input Pointer<Integer> eq_index;
+    output Option<list<Pointer<Equation>>> kept = NONE();
+  protected
+    Equation eqn;
+    list<Integer> remaining;
+    list<Option<Iterator>> iters;
+    list<Pointer<Equation>> eqns = {};
+    Pointer<Equation> new_ptr;
+  algorithm
+    eqn := Pointer.access(eqn_ptr);
+    () := match eqn
+      case Equation.FOR_EQUATION() guard Iterator.isResizable(eqn.iter) and
+          Equation.size(eqn_ptr, true) == Iterator.size(eqn.iter, true) algorithm
+        remaining := list(i for i guard not List.contains(indices, i, intEq) in 0:Iterator.size(eqn.iter, true) - 1);
+        iters := list(Resizable.restrictIterator(eqn.iter, part) for part in Resizable.boxes(remaining, Iterator.sizes(eqn.iter, true)));
+        if not List.any(iters, isNone) then
+          for iter in iters loop
+            eqn.iter := Util.getOption(iter);
+            eqn.size := Iterator.size(eqn.iter);
+            new_ptr := Pointer.create(eqn);
+            Equation.createName(new_ptr, eq_index, NBEquation.SIMULATION_STR);
+            eqns := new_ptr :: eqns;
+          end for;
+          kept := SOME(listReverse(eqns));
+        end if;
+      then ();
+      else ();
+    end match;
+  end keptResizableIterations;
+
   function balanceInitialization
     extends Module.resolveSingularitiesInterface;
   protected
@@ -465,8 +504,13 @@ public
         kept_eqns := {};
         for eqn_slice in unmatched_eqns loop
           if not listEmpty(eqn_slice.indices) and Equation.isForEquation(Slice.getT(eqn_slice)) then
-            remaining := list(i for i guard(not List.contains(eqn_slice.indices, i, intEq)) in 0:(Equation.size(Slice.getT(eqn_slice)) - 1));
-            (sliced_eqns, _) := Equation.slice(Slice.getT(eqn_slice), remaining);
+            sliced_eqns := match keptResizableIterations(Slice.getT(eqn_slice), eqn_slice.indices, EqData.getUniqueIndex(eqData))
+              case SOME(sliced_eqns) then sliced_eqns;
+              else algorithm
+                remaining := list(i for i guard(not List.contains(eqn_slice.indices, i, intEq)) in 0:(Equation.size(Slice.getT(eqn_slice)) - 1));
+                (sliced_eqns, _) := Equation.slice(Slice.getT(eqn_slice), remaining);
+              then sliced_eqns;
+            end match;
             kept_eqns := listAppend(sliced_eqns, kept_eqns);
           elseif not listEmpty(eqn_slice.indices) and Equation.isArrayEquation(Slice.getT(eqn_slice)) then
             // keep the other rows of an array equation as scalar equations
@@ -1071,7 +1115,7 @@ protected
       else
         cref      := BVariable.getVarName(Slice.getT(dummy));
         cover_set := UnorderedMap.getSafe(cref, covered, sourceInfo());
-        full_size := BVariable.size(Slice.getT(dummy));
+        full_size := BVariable.size(Slice.getT(dummy), true);
         if UnorderedSet.size(cover_set) == full_size then
           resolved := Slice.SLICE(Slice.getT(dummy), {}) :: resolved;
         elseif UnorderedMap.contains(cref, unreferenced) and
@@ -1193,7 +1237,7 @@ protected
     Variable var = Pointer.access(Slice.getT(dummy));
     ComponentRef orig_cref = BVariable.getVarName(Slice.getT(dummy));
     Type elem_ty = Type.arrayElementType(Variable.typeOf(var));
-    list<Integer> sizes = list(Dimension.size(d) for d in Type.arrayDims(Variable.typeOf(var)));
+    list<Integer> sizes = list(Dimension.size(d, true) for d in Type.arrayDims(Variable.typeOf(var)));
     Integer n = listLength(dummy.indices);
     Type alias_ty;
     ComponentRef alias_cref, elem_cref, alias_elem_cref;
@@ -1202,7 +1246,16 @@ protected
     list<Subscript> subs;
     Integer i = 1;
     Expression rhs;
+    Option<tuple<Pointer<Variable>, Pointer<Equation>>> resizable_alias;
   algorithm
+    if BVariable.isResizable(Slice.getT(dummy)) then
+      resizable_alias := resolveSlicedResizable(dummy, aux_index, eq_index);
+      if isSome(resizable_alias) then
+        SOME((alias_var, alias_eqn)) := resizable_alias;
+        return;
+      end if;
+    end if;
+
     alias_ty := if n == 1 then elem_ty else Type.ARRAY(elem_ty, {Dimension.fromInteger(n)});
     (alias_var, alias_cref) := BVariable.makeAuxVar(NBVariable.DUMMY_ALIAS_STR, Pointer.access(aux_index), alias_ty, false);
     Pointer.update(aux_index, Pointer.access(aux_index) + 1);
@@ -1246,6 +1299,62 @@ protected
       else ();
     end match;
   end resolveSlicedDummy;
+
+  function resolveSlicedResizable
+    "x[1:N-1] of a resizable x becomes the whole alias $DUM[1:N-1] with
+     for i in 1:N-1 loop $DUM[i] = x[i]; end for. The indices only hold for the
+     analysis sizes, the iterator for every size. NONE() if they are no box."
+    input Slice<VariablePointer> slice;
+    input Pointer<Integer> aux_index;
+    input Pointer<Integer> eq_index;
+    output Option<tuple<Pointer<Variable>, Pointer<Equation>>> res = NONE();
+  protected
+    Variable var = Pointer.access(Slice.getT(slice));
+    list<Dimension> dims = Type.arrayDims(var.ty);
+    list<ComponentRef> iters, names;
+    list<Expression> ranges;
+    Option<Iterator> o_iter;
+    Iterator iter;
+    Pointer<Variable> alias_var;
+    ComponentRef alias_cref;
+    list<Subscript> alias_subs = {};
+    Expression start;
+    Pointer<Equation> eqn;
+  algorithm
+    iters := list(BackendDAE.lowerIteratorCref(ComponentRef.makeIterator(InstNode.newUniqueIterator(), Type.INTEGER())) for d in dims);
+    ranges := list(Expression.RANGE(Type.ARRAY(Type.INTEGER(), {d}), Expression.INTEGER(1), NONE(), Dimension.sizeExp(d)) for d in dims);
+    o_iter := Resizable.restrictIterator(Iterator.fromFrames(List.zip3(iters, ranges, list(NONE() for d in dims))), slice.indices);
+    if isNone(o_iter) then
+      return;
+    end if;
+    SOME(iter) := o_iter;
+    (names, ranges, _) := Iterator.getFrames(iter);
+    (alias_var, alias_cref) := BVariable.makeAuxVar(NBVariable.DUMMY_ALIAS_STR, Pointer.access(aux_index),
+      Type.ARRAY(Type.arrayElementType(var.ty), list(Type.nthDimension(Expression.typeOf(r), 1) for r in ranges)), false);
+    Pointer.update(aux_index, Pointer.access(aux_index) + 1);
+
+    for tpl in List.zip(names, ranges) loop
+      Expression.RANGE(start = start) := Util.tuple22(tpl);
+      alias_subs := Subscript.INDEX(SimplifyExp.simplify(Expression.MULTARY({Expression.fromCref(Util.tuple21(tpl)), Expression.INTEGER(1)},
+        {start}, Operator.makeAdd(Type.INTEGER())))) :: alias_subs;
+    end for;
+    eqn := Equation.makeAssignment(
+      Expression.fromCref(ComponentRef.mergeSubscripts(listReverse(alias_subs), alias_cref, true, true)),
+      Expression.fromCref(ComponentRef.mergeSubscripts(list(Subscript.INDEX(Expression.fromCref(i)) for i in iters), var.name, true, true)),
+      eq_index, "DUM", iter, EquationAttributes.default(EquationKind.CONTINUOUS, false));
+    if not Equation.isForEquation(eqn) then
+      Pointer.update(eqn, Equation.simplify(Pointer.access(eqn)));
+    end if;
+
+    () := match BVariable.getStartAttribute(Slice.getT(slice))
+      case SOME(start) algorithm
+        Pointer.update(alias_var, BVariable.setStartAttribute(Pointer.access(alias_var),
+          Resizable.sliceAttribute(start, list(Subscript.SLICE(r) for r in ranges)), true));
+      then ();
+      else ();
+    end match;
+    res := SOME((alias_var, eqn));
+  end resolveSlicedResizable;
 
   function substituteSlicedDummyEqn
     "applies the sliced-dummy alias substitution rules (see resolveSlicedCandidates) to

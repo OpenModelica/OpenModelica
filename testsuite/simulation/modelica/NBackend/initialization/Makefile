@@ -23,6 +23,7 @@ init_if_eq.mos \
 init_if_exp.mos \
 initialNoReturnCall.mos \
 TestInversePlant.mos \
+initParamLinearSystem.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

@@ -1,0 +1,10 @@
+[package]
+name = "openmodelica_modelica_diff"
+version = "0.1.0"
+edition = "2024"
+workspace = ".."
+
+# diffModelicaFileListings: merges a listing of an edited class into the original
+# text. For both omcs; the C omc links it through runtime/rust. No dependencies,
+# so that crate builds it from its own root.
+[dependencies]

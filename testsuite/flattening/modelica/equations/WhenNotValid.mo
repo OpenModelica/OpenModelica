@@ -28,7 +28,7 @@ end WhenNotValid;
 // end WhenNotValid;
 // Result:
 // Error processing file: WhenNotValid.mo
-// [flattening/modelica/equations/WhenNotValid.mo:16:5-16:16:writable] Error: Invalid left-hand side of when-equation: 2 * x + y.
+// [flattening/modelica/equations/WhenNotValid.mo:16:5-16:16:writable] Error: Invalid left-hand side of when-equation: 2*x + y.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

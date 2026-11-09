@@ -14,7 +14,7 @@ end Type3;
 
 // Result:
 // Error processing file: Type3.mo
-// [flattening/modelica/types/Type3.mo:12:3-12:15:writable] Error: Subscript 'CAST(Real, i) / 4.0' has type Real, expected type Integer.
+// [flattening/modelica/types/Type3.mo:12:3-12:15:writable] Error: Subscript 'CAST(Real, i)/4.0' has type Real, expected type Integer.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

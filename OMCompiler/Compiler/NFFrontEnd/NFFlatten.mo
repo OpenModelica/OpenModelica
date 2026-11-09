@@ -1874,8 +1874,8 @@ algorithm
         algorithm
           // The condition couldn't be evaluated, print an error and fail.
           Error.addSourceMessage(Error.TYPE_MISMATCH_IF_EXP,
-            {"", Expression.toString(tb), Type.toString(Expression.typeOf(tb)),
-                 Expression.toString(fb), Type.toString(Expression.typeOf(fb))}, info);
+            {Expression.toString(tb), Type.toString(Expression.typeOf(tb)),
+             Expression.toString(fb), Type.toString(Expression.typeOf(fb))}, info);
         then
           fail();
     end match;
@@ -2793,8 +2793,9 @@ algorithm
   // reconnected into a physical circuit (issue #15686). Restricted to the old
   // backend: the new backend's initialization (NBResolveSingularities) cannot yet
   // balance the model once the zero-flow equations are replaced by boundary inputs.
+  // Skipped when the FMU also serves FMI 2.0, which then gets the FMI 2.0 translation.
   if Flags.getConfigBool(Flags.BUILDING_FMU) and stringEq(Flags.getConfigString(Flags.FMI_VERSION), "3.0")
-     and not settings.newBackend then
+     and not settings.newBackend and not Flags.getConfigBool(Flags.FMU_WITH_FMI2) then
     flatModel := causalizeAcausalConnectors(flatModel);
   end if;
 

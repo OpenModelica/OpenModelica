@@ -6043,6 +6043,62 @@ algorithm
   end match;
 end traversingComponentRefFinder;
 
+public function assertConditionValues
+  "Returns the scalar variables (and pre() of them) of an assert condition,
+   whose values a failed assertion reports. The code generators read them
+   again, so a variable with a call in its subscripts is left out; the
+   variables of its subscripts are not."
+  input DAE.Exp cond;
+  output list<DAE.Exp> exps;
+algorithm
+  (_, exps) := traverseExpTopDown(cond, assertConditionValuesWork, {});
+  exps := listReverse(exps);
+end assertConditionValues;
+
+protected function assertConditionValuesWork
+  input DAE.Exp inExp;
+  input list<DAE.Exp> inExps;
+  output DAE.Exp outExp = inExp;
+  output Boolean cont;
+  output list<DAE.Exp> exps = inExps;
+protected
+  DAE.ComponentRef cr;
+  DAE.Type ty;
+algorithm
+  cont := match inExp
+    case DAE.CREF(componentRef = DAE.CREF_IDENT(ident = "time")) then false;
+    case DAE.CREF(componentRef = cr, ty = ty)
+      algorithm exps := addAssertConditionValue(inExp, cr, ty, exps); then false;
+    case DAE.CALL(path = Absyn.IDENT("pre"), expLst = {DAE.CREF(componentRef = cr)}, attr = DAE.CALL_ATTR(ty = ty))
+      algorithm exps := addAssertConditionValue(inExp, cr, ty, exps); then false;
+    // The iterators are not in scope outside the reduction.
+    case DAE.REDUCTION() then false;
+    else true;
+  end match;
+end assertConditionValuesWork;
+
+protected function addAssertConditionValue
+  input DAE.Exp exp;
+  input DAE.ComponentRef cr;
+  input DAE.Type ty;
+  input output list<DAE.Exp> exps;
+protected
+  list<DAE.Exp> subs;
+algorithm
+  subs := List.filterMap(ComponentReferenceBasics.crefSubs(cr), getSubscriptExp);
+  if not List.any(subs, containsAnyCall) then
+    exps := match ty
+      case DAE.T_REAL() then List.unionEltOnTrue(exp, exps, ExpressionBasics.expEqual);
+      case DAE.T_INTEGER() then List.unionEltOnTrue(exp, exps, ExpressionBasics.expEqual);
+      case DAE.T_BOOL() then List.unionEltOnTrue(exp, exps, ExpressionBasics.expEqual);
+      else exps;
+    end match;
+  end if;
+  for sub in subs loop
+    (_, exps) := traverseExpTopDown(sub, assertConditionValuesWork, exps);
+  end for;
+end addAssertConditionValue;
+
 public function extractUniqueCrefsFromExpDerPreStart
   "author mahge: Same as extractUniqueCrefsFromExp except:
   This function will not treat der(), pre() and start() as calls

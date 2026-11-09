@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 
 set(FMU_NAME @FMU_NAME_IN@)
+# The file name prefix of the generated sources; FMU_NAME is the modelIdentifier.
+set(FMU_FILE_PREFIX "@FMU_FILE_PREFIX_IN@")
 
 set(FMU_NAME_HASH @FMU_NAME_HASH_IN@)
 
@@ -37,7 +39,7 @@ set(NEED_IDA
 set(SOLVER_LIBRARY_DIRECTORY
     ""
     CACHE PATH
-    "Prebuilt SuiteSparse, SUNDIALS and Lis archives of the exporting installation. Empty compiles them from 3rdParty/.")
+    "Prebuilt SuiteSparse, SUNDIALS, Lis and zlib archives of the exporting installation. Empty compiles them from the sources.")
 # As OM_LIBRARY_ARCH in OpenModelica's top-level CMakeLists.txt.
 if(CMAKE_LIBRARY_ARCHITECTURE)
   set(OM_LIBRARY_ARCH "${CMAKE_LIBRARY_ARCHITECTURE}")
@@ -165,7 +167,26 @@ file(GLOB_RECURSE FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/external_solve
                                       ${CMAKE_CURRENT_SOURCE_DIR}/meta/*.c
                                       ${CMAKE_CURRENT_SOURCE_DIR}/simulation/*.c
                                       ${CMAKE_CURRENT_SOURCE_DIR}/util/*.c)
-if(${COMPILE_MODELICA_EXTERNAL_C})
+# The static ModelicaExternalC libraries and zlib of the exporting installation,
+# in link order.
+if(${COMPILE_MODELICA_EXTERNAL_C} AND SOLVER_LIBRARY_DIRECTORY)
+  find_library(OM_ZLIB_LIBRARY NAMES zlib zlibstatic
+               PATHS ${SOLVER_LIBRARY_DIRECTORY}
+               NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_FIND_ROOT_PATH)
+  set(_om_mec_libraries "")
+  foreach(_om_lib ModelicaStandardTables ModelicaIO ModelicaMatIO ModelicaExternalC)
+    find_library(OM_${_om_lib}_LIBRARY NAMES ${_om_lib}
+                 PATHS ${SOLVER_LIBRARY_DIRECTORY}
+                 NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_FIND_ROOT_PATH)
+    list(APPEND _om_mec_libraries ${OM_${_om_lib}_LIBRARY})
+  endforeach()
+  if(OM_ZLIB_LIBRARY AND NOT _om_mec_libraries MATCHES "NOTFOUND")
+    set(OM_FMU_MODELICA_EXTERNAL_C_LIBRARIES ${_om_mec_libraries} ${OM_ZLIB_LIBRARY})
+  endif()
+endif()
+if(OM_FMU_MODELICA_EXTERNAL_C_LIBRARIES)
+  message(STATUS "ModelicaExternalC: ${OM_FMU_MODELICA_EXTERNAL_C_LIBRARIES}")
+elseif(${COMPILE_MODELICA_EXTERNAL_C})
   list(APPEND FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaFFT.c
                                   ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaInternal.c
                                   ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaRandom.c
@@ -203,6 +224,24 @@ if(FMU_GENERATED_INCLUDE_ONLY_SOURCES)
   list(REMOVE_ITEM FMU_GENERATED_MODEL_SOURCES ${FMU_GENERATED_INCLUDE_ONLY_SOURCES})
 endif()
 
+# buildModelFMU(version="2.0+3.0"), for OpenModelicaLibraryTesting only: the
+# FMI 3.0 binary also serves FMI 2.0 and is installed where FMI 2.0 looks for
+# it. libSimulationRuntimeRust serves both. The C interfaces both compile
+# fmu_model_interface.c.inc, so the FMI 2.0 one is linked as one object whose
+# hidden symbols are made local.
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/isfmi2" AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/isfmi3")
+  set(OM_FMU_WITH_FMI2 ON)
+endif()
+if(OM_FMU_WITH_FMI2 AND NOT OMC_RUST_SIMULATION_RUNTIME)
+  set(OM_FMU_FMI2_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/fmi-export/fmu2_model_interface.c
+                          "${CMAKE_CURRENT_SOURCE_DIR}/${FMU_FILE_PREFIX}_FMU2.c")
+  list(REMOVE_ITEM FMU_RUNTIME_SOURCES ${OM_FMU_FMI2_SOURCES})
+  list(REMOVE_ITEM FMU_GENERATED_MODEL_SOURCES ${OM_FMU_FMI2_SOURCES})
+  if(NOT (BUILD_SHARED_LIBS AND UNIX AND NOT APPLE AND CMAKE_OBJCOPY))
+    message(FATAL_ERROR "FMI 2.0+3.0 needs a shared library on Linux and objcopy")
+  endif()
+endif()
+
 # Set install prefix to FMU target system short and architecture
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
   set(FMU_TARGET_SYSTEM_NAME "win")
@@ -228,7 +267,7 @@ elseif(FMU_TARGET_ARCH STREQUAL "")
   endif()
 endif()
 
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/isfmi3")
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/isfmi3" AND NOT OM_FMU_WITH_FMI2)
   # FMI 3.0 uses the platform tuple "{architecture}-{os}" for the binaries folder
   # (e.g. x86_64-linux), unlike FMI 1.0/2.0 which use "{os}{bitness}" (e.g. linux64).
   # The two schemes do not spell Windows the same way: FMI 1.0/2.0 want "win"
@@ -283,11 +322,24 @@ if(OM_LINK_SIMULATION_RUNTIME_FMI)
   target_link_libraries(${FMU_NAME_HASH} PRIVATE "${SIMULATION_RUNTIME_FMI_LIBRARY}")
 endif()
 
-# An archive, so that a usertab of the model takes the place of the dummy one.
-if(${COMPILE_MODELICA_EXTERNAL_C})
+if(${COMPILE_MODELICA_EXTERNAL_C} AND NOT OM_FMU_MODELICA_EXTERNAL_C_LIBRARIES)
+  # An archive, so that a usertab of the model takes the place of the dummy one.
   add_library(omc_fmu_dummy_usertab STATIC ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaStandardTablesDummyUsertab.c)
   set_target_properties(omc_fmu_dummy_usertab PROPERTIES POSITION_INDEPENDENT_CODE ON C_VISIBILITY_PRESET hidden)
-  target_link_libraries(${FMU_NAME_HASH} PRIVATE omc_fmu_dummy_usertab)
+
+  # MAT-files v7 are compressed with zlib.
+  set(_om_zlib_dir ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/zlib)
+  set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaMatIO.c PROPERTIES
+                              COMPILE_DEFINITIONS HAVE_ZLIB=1)
+  target_include_directories(${FMU_NAME_HASH} PRIVATE ${_om_zlib_dir})
+  if(OM_ZLIB_LIBRARY)
+    set(OM_FMU_MODELICA_EXTERNAL_C_LIBRARIES omc_fmu_dummy_usertab ${OM_ZLIB_LIBRARY})
+  else()
+    file(GLOB _om_zlib_sources ${_om_zlib_dir}/*.c)
+    add_library(omc_fmu_zlib STATIC ${_om_zlib_sources})
+    set_target_properties(omc_fmu_zlib PROPERTIES POSITION_INDEPENDENT_CODE ON C_VISIBILITY_PRESET hidden)
+    set(OM_FMU_MODELICA_EXTERNAL_C_LIBRARIES omc_fmu_dummy_usertab omc_fmu_zlib)
+  endif()
 endif()
 
 # Set output name for the .dll's and .so files to use the full FMU name instead of fmu hash string
@@ -507,6 +559,11 @@ endmacro()
 
 @FMU_ADDITIONAL_LIBS@
 
+# After the libraries of the model: they can use zlib too.
+if(OM_FMU_MODELICA_EXTERNAL_C_LIBRARIES)
+  target_link_libraries(${FMU_NAME_HASH} PRIVATE ${OM_FMU_MODELICA_EXTERNAL_C_LIBRARIES})
+endif()
+
 if(NOT OMC_RUST_SIMULATION_RUNTIME)
   if(${NEED_CVODE})
     set(OMC_FMI_HAVE_CVODE ";OMC_FMI_HAVE_CVODE")
@@ -580,6 +637,22 @@ if(BUILD_SHARED_LIBS)
   message(STATUS "Not using FMI2_FUNCTION_PREFIX / FMI3_FUNCTION_PREFIX")
 else()
   message(STATUS "Using FMI2_FUNCTION_PREFIX / FMI3_FUNCTION_PREFIX")
+endif()
+
+if(OM_FMU_FMI2_SOURCES)
+  add_library(omc_fmu_fmi2 OBJECT ${OM_FMU_FMI2_SOURCES})
+  set_target_properties(omc_fmu_fmi2 PROPERTIES POSITION_INDEPENDENT_CODE ON C_VISIBILITY_PRESET hidden)
+  target_compile_definitions(omc_fmu_fmi2 PRIVATE $<TARGET_PROPERTY:${FMU_NAME_HASH},COMPILE_DEFINITIONS>)
+  target_include_directories(omc_fmu_fmi2 PRIVATE $<TARGET_PROPERTY:${FMU_NAME_HASH},INCLUDE_DIRECTORIES>)
+  set(OM_FMU_FMI2_OBJECT "${CMAKE_CURRENT_BINARY_DIR}/fmu2_interface.o")
+  add_custom_command(OUTPUT "${OM_FMU_FMI2_OBJECT}"
+                     COMMAND ${CMAKE_C_COMPILER} -r -nostdlib -o "${OM_FMU_FMI2_OBJECT}" $<TARGET_OBJECTS:omc_fmu_fmi2>
+                     COMMAND ${CMAKE_OBJCOPY} --localize-hidden "${OM_FMU_FMI2_OBJECT}"
+                     DEPENDS omc_fmu_fmi2 $<TARGET_OBJECTS:omc_fmu_fmi2>
+                     COMMAND_EXPAND_LISTS
+                     VERBATIM)
+  set_source_files_properties("${OM_FMU_FMI2_OBJECT}" PROPERTIES EXTERNAL_OBJECT TRUE GENERATED TRUE)
+  target_sources(${FMU_NAME_HASH} PRIVATE "${OM_FMU_FMI2_OBJECT}")
 endif()
 
 # Install target

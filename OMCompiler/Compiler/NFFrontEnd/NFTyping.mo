@@ -475,7 +475,7 @@ algorithm
   vars := listReverseInPlace(findNonCausalConnectorVars(component, InstNode.name(component), {}));
 
   if not listEmpty(vars) then
-    Error.addStrictMessage(Error.NON_CAUSAL_BLOCK_CONNECTOR,
+    Error.addSourceMessageAndFail(Error.NON_CAUSAL_BLOCK_CONNECTOR,
       {InstNode.name(component), stringDelimitList(vars, ", ")}, InstNode.info(component));
   end if;
 end checkBlockConnector;
@@ -2899,8 +2899,8 @@ algorithm
 
   if TypeCheck.isIncompatibleMatch(ty_match) then
     Error.addSourceMessage(Error.TYPE_MISMATCH_IF_EXP,
-      {"", Expression.toString(tb), Type.toString(tb_ty),
-           Expression.toString(fb), Type.toString(fb_ty)}, info);
+      {Expression.toString(tb), Type.toString(tb_ty),
+       Expression.toString(fb), Type.toString(fb_ty)}, info);
     fail();
   end if;
 

@@ -558,6 +558,12 @@ pub(crate) fn lower_equation(
         }
     }
     let _g = crate::CodegenWasmJitFunctions::PartGuard::new(format!("equation {}", eq_index_of(eq)));
-    lower_equation_inner(ctx, eq, eq_index)?;
+    let outer = ctx.eq;
+    if eq_index_of(eq) > 0 {
+        ctx.eq = eq_index_of(eq);
+    }
+    let r = lower_equation_inner(ctx, eq, eq_index);
+    ctx.eq = outer;
+    r?;
     crate::CodegenWasmJitFunctions::emit_prof(ctx, clock, "rt_prof_acc")
 }

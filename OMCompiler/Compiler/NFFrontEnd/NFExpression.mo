@@ -2470,11 +2470,11 @@ public
       case MULTARY() guard(listEmpty(exp.arguments)) then "1/" + multaryString(exp.inv_arguments, exp, exp.operator);
 
       case MULTARY() then multaryString(exp.arguments, exp, exp.operator) +
-                          Operator.symbol(Operator.invert(exp.operator)) +
+                          Operator.symbolSpaced(Operator.invert(exp.operator)) +
                           multaryString(exp.inv_arguments, exp, exp.operator);
 
       case BINARY() then operandString(exp.exp1, exp, true) +
-                         Operator.symbol(exp.operator) +
+                         Operator.symbolSpaced(exp.operator) +
                          operandString(exp.exp2, exp, false);
 
       case UNARY() then Operator.symbol(exp.operator, "") +
@@ -2575,11 +2575,11 @@ public
       case MULTARY() guard(listEmpty(exp.arguments)) then "1/" + multaryFlatString(exp.inv_arguments, exp, exp.operator, format);
 
       case MULTARY() then multaryFlatString(exp.arguments, exp, exp.operator, format) +
-                          Operator.symbol(Operator.invert(exp.operator)) +
+                          Operator.symbolSpaced(Operator.invert(exp.operator)) +
                           multaryFlatString(exp.inv_arguments, exp, exp.operator, format);
 
       case BINARY() then operandFlatString(exp.exp1, exp, true, format) +
-                         Operator.symbol(exp.operator) +
+                         Operator.symbolSpaced(exp.operator) +
                          operandFlatString(exp.exp2, exp, false, format);
 
       case UNARY() then Operator.symbol(exp.operator, "") +
@@ -2689,7 +2689,7 @@ public
     input Boolean parenthesize = true;
     output String str;
   algorithm
-    str := stringDelimitList(list(operandString(e, exp, false) for e in arguments), Operator.symbol(operator));
+    str := stringDelimitList(list(operandString(e, exp, false) for e in arguments), Operator.symbolSpaced(operator));
     if parenthesize and listLength(arguments) > 1 then
       str := "(" + str + ")";
     end if;
@@ -2703,7 +2703,7 @@ public
     input Boolean parenthesize = true;
     output String str;
   algorithm
-    str := stringDelimitList(list(operandFlatString(e, exp, false, format) for e in arguments), Operator.symbol(operator));
+    str := stringDelimitList(list(operandFlatString(e, exp, false, format) for e in arguments), Operator.symbolSpaced(operator));
     if parenthesize and listLength(arguments) > 1 then
       str := "(" + str + ")";
     end if;
@@ -3345,11 +3345,32 @@ public
     outExp := match exp
       local
         Expression e1, e2, e3, e4;
+      ComponentRef cr;
+      Call call;
+      array<Expression> arr;
+      list<Expression> args, inv_args;
+      list<list<Expression>> rows;
+      list<Subscript> subs;
 
       case CLKCONST() then CLKCONST(ClockKind.mapExp(exp.clk, func));
-      case CREF() then CREF(exp.ty, ComponentRef.mapExp(exp.cref, func));
-      case ARRAY() guard not exp.literal then makeArray(exp.ty, Array.map(exp.elements, function map(func = func)), exp.literal);
-      case MATRIX() then MATRIX(list(list(map(e, func) for e in row) for row in exp.elements));
+
+      case CREF()
+        algorithm
+          cr := ComponentRef.mapExp(exp.cref, func);
+        then
+          if referenceEq(exp.cref, cr) then exp else CREF(exp.ty, cr);
+
+      case ARRAY() guard not exp.literal
+        algorithm
+          arr := Array.mapCheckReferenceEq(exp.elements, function map(func = func));
+        then
+          if referenceEq(exp.elements, arr) then exp else makeArray(exp.ty, arr, exp.literal);
+
+      case MATRIX()
+        algorithm
+          rows := List.mapCheckReferenceEq(exp.elements, function List.mapCheckReferenceEq(inFunc = function map(func = func)));
+        then
+          if referenceEq(exp.elements, rows) then exp else MATRIX(rows);
 
       case RANGE(step = SOME(e2))
         algorithm
@@ -3368,12 +3389,23 @@ public
           if referenceEq(exp.start, e1) and referenceEq(exp.stop, e3)
             then exp else RANGE(exp.ty, e1, NONE(), e3);
 
-      case TUPLE() then TUPLE(exp.ty, list(map(e, func) for e in exp.elements));
+      case TUPLE()
+        algorithm
+          args := List.mapCheckReferenceEq(exp.elements, function map(func = func));
+        then
+          if referenceEq(exp.elements, args) then exp else TUPLE(exp.ty, args);
 
       case RECORD()
-        then RECORD(exp.path, exp.ty, list(map(e, func) for e in exp.elements));
+        algorithm
+          args := List.mapCheckReferenceEq(exp.elements, function map(func = func));
+        then
+          if referenceEq(exp.elements, args) then exp else RECORD(exp.path, exp.ty, args);
 
-      case CALL() then CALL(Call.mapExp(exp.call, func));
+      case CALL()
+        algorithm
+          call := Call.mapExp(exp.call, func);
+        then
+          if referenceEq(exp.call, call) then exp else CALL(call);
 
       case SIZE(dimIndex = SOME(e2))
         algorithm
@@ -3398,10 +3430,11 @@ public
 
       case MULTARY()
         algorithm
-          // ToDo: referenceEq ?
-          exp.arguments := list(map(arg, func) for arg in exp.arguments);
-          exp.inv_arguments := list(map(arg, func) for arg in exp.inv_arguments);
-        then exp;
+          args := List.mapCheckReferenceEq(exp.arguments, function map(func = func));
+          inv_args := List.mapCheckReferenceEq(exp.inv_arguments, function map(func = func));
+        then
+          if referenceEq(exp.arguments, args) and referenceEq(exp.inv_arguments, inv_args)
+            then exp else MULTARY(args, inv_args, exp.operator);
 
       case UNARY()
         algorithm
@@ -3459,8 +3492,12 @@ public
           if referenceEq(exp.exp, e1) then exp else unbox(e1);
 
       case SUBSCRIPTED_EXP()
-        then SUBSCRIPTED_EXP(map(exp.exp, func),
-          list(Subscript.mapExp(s, func) for s in exp.subscripts), exp.ty, exp.split);
+        algorithm
+          e1 := map(exp.exp, func);
+          subs := List.mapCheckReferenceEq(exp.subscripts, function Subscript.mapExp(func = func));
+        then
+          if referenceEq(exp.exp, e1) and referenceEq(exp.subscripts, subs)
+            then exp else SUBSCRIPTED_EXP(e1, subs, exp.ty, exp.split);
 
       case TUPLE_ELEMENT()
         algorithm
@@ -3482,13 +3519,19 @@ public
 
       case SHARED_LITERAL()
         algorithm
-          exp.exp := map(exp.exp, func);
+          e1 := map(exp.exp, func);
+          if not referenceEq(exp.exp, e1) then
+            exp.exp := e1;
+          end if;
         then
           exp;
 
       case PARTIAL_FUNCTION_APPLICATION()
         algorithm
-          exp.args := list(map(e, func) for e in exp.args);
+          args := List.mapCheckReferenceEq(exp.args, function map(func = func));
+          if not referenceEq(exp.args, args) then
+            exp.args := args;
+          end if;
         then
           exp;
 
@@ -3519,10 +3562,14 @@ public
       input output Expression e;
     end MapFunc;
   protected
-    Expression e;
+    Expression e, e2;
   algorithm
     outExp := match exp
-      case SOME(e) then SOME(map(e, func));
+      case SOME(e)
+        algorithm
+          e2 := map(e, func);
+        then
+          if referenceEq(e, e2) then exp else SOME(e2);
       else exp;
     end match;
   end mapOpt;

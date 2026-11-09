@@ -56,6 +56,21 @@ char *omcrs_unzip_all(const char *zipFileName, const char *destPath);
  * and everything below them, are left out, and so is zipFileName itself. */
 char *omcrs_zip_paths(const char *zipFileName, const char *const *paths, const char *const *entryNames, size_t n,
                       const char *const *excludes, size_t nExcludes);
+/* The JSON response of the package manager (openmodelica_package_manager) to a
+   JSON request. Free the result with omcrs_free_string. */
+char *omcrs_package_manager(const char *request);
+/* Library version numbers (openmodelica_version): compare gives -1, 0 or 1,
+   ignoring prereleases unless pre and build metadata unless build. */
+int omcrs_version_compare(const char *a, const char *b, int pre, int build);
+char *omcrs_version_canonical(const char *s);
+int omcrs_version_is_numbered(const char *s);
+/* diffModelicaFileListings (openmodelica_modelica_diff): before with the
+   changes from beforeCanonical to after, and the merged text as a diff of
+   before and it (format is the ModelicaDiff.Format literal, 1-based).
+   Never NULL; free the result with omcrs_free_string. */
+char *omcrs_modelica_diff(const char *before, const char *beforeCanonical, const char *after);
+char *omcrs_modelica_render(const char *before, const char *merged, int format);
+int omcrs_modelica_code_equal(const char *a, const char *b);
 void omcrs_free_string(char *s);
 
 #ifdef __cplusplus

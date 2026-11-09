@@ -336,8 +336,12 @@ pub struct SimFlags {
     pub min_retry_step_size: Option<f64>,
     /// `-noEventEmit`: drop the result rows a step that handled an event produces.
     pub no_event_emit: bool,
-    /// One of the four density/size flags was given. The backend decides now.
-    pub deprecated_density_flag: bool,
+    /// `-lssMaxDensity` / `-lssMinSize` / `-nlssMaxDensity` / `-nlssMinSize`: given,
+    /// they replace the backend's dense/sparse choice for that kind of system.
+    pub lss_max_density: Option<f64>,
+    pub lss_min_size: Option<i32>,
+    pub nlss_max_density: Option<f64>,
+    pub nlss_min_size: Option<i32>,
     /// `method="optimization"` (the Ipopt collocation solver): `-optimizerNP=<1|3>`
     /// collocation points per interval, and `-optimizerTimeGrid=<file>` listing the
     /// interval end points instead of an equidistant grid.
@@ -989,10 +993,10 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
                 let m = JACOBIAN_METHODS.iter().find(|(n, ..)| *n == v);
                 f.jacobian = Some(m.ok_or_else(|| format!("Unknown value `{v}` for flag `-jacobian`"))?.1);
             }
-            "nlssMinSize" | "nlssMaxDensity" | "lssMinSize" | "lssMaxDensity" => {
-                f.deprecated_density_flag = true;
-                let _ = value(name)?;
-            }
+            "lssMaxDensity" => f.lss_max_density = Some(real(name, &value(name)?)?),
+            "lssMinSize" => f.lss_min_size = Some(int(name, &value(name)?)?),
+            "nlssMaxDensity" => f.nlss_max_density = Some(real(name, &value(name)?)?),
+            "nlssMinSize" => f.nlss_min_size = Some(int(name, &value(name)?)?),
             "maxStepSize" => f.max_step_size = Some(real(name, &value(name)?)?),
             "maxStepRetries" => {
                 let n = int(name, &value(name)?)?;
@@ -1244,6 +1248,49 @@ pub fn hom_tuning(f: &SimFlags) -> HomTuning {
     }
 }
 
+/// `-lssMaxDensity` / `-lssMinSize` / `-nlssMaxDensity` / `-nlssMinSize`.
+/// `lss_given` / `nlss_given`: either flag of the pair was given, which replaces
+/// the compiler's dense/sparse choice for that kind of system.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SparseThresholds {
+    pub lss_max_density: f64,
+    pub lss_min_size: i32,
+    pub lss_given: bool,
+    pub nlss_max_density: f64,
+    pub nlss_min_size: i32,
+    pub nlss_given: bool,
+}
+
+impl SparseThresholds {
+    /// C's defaults (`simulation_options.h`), which `SimCodeCodegenUtil.useSparseSolver`
+    /// applies too.
+    pub const DEFAULT: Self = Self {
+        lss_max_density: 0.2,
+        lss_min_size: 1000,
+        lss_given: false,
+        nlss_max_density: 0.1,
+        nlss_min_size: 1000,
+        nlss_given: false,
+    };
+
+    /// Sparse when the density is under `max_density` or the size over `min_size`.
+    pub fn sparse(size: usize, nnz: usize, max_density: f64, min_size: i32) -> bool {
+        nnz as f64 / (size as f64 * size as f64) < max_density || size as i64 > min_size as i64
+    }
+}
+
+pub fn sparse_thresholds(f: &SimFlags) -> SparseThresholds {
+    let d = SparseThresholds::DEFAULT;
+    SparseThresholds {
+        lss_max_density: f.lss_max_density.unwrap_or(d.lss_max_density),
+        lss_min_size: f.lss_min_size.unwrap_or(d.lss_min_size),
+        lss_given: f.lss_max_density.is_some() || f.lss_min_size.is_some(),
+        nlss_max_density: f.nlss_max_density.unwrap_or(d.nlss_max_density),
+        nlss_min_size: f.nlss_min_size.unwrap_or(d.nlss_min_size),
+        nlss_given: f.nlss_max_density.is_some() || f.nlss_min_size.is_some(),
+    }
+}
+
 /// C's `simulation_runtime.cpp` startup notices for the flags that move a solver
 /// constant, in its order. Rendered by the caller, which owns the run's log.
 pub fn notices(f: &SimFlags) -> Vec<(crate::omclog::LogType, String)> {
@@ -1283,13 +1330,22 @@ pub fn notices(f: &SimFlags) -> Vec<(crate::omclog::LogType, String)> {
             ));
         }
     }
-    if f.deprecated_density_flag {
-        out.push((
-            crate::omclog::WARNING,
-            "The flags -lssMaxDensity, -lssMinSize, -nlssMaxDensity and -nlssMinSize are\n\
-             deprecated and ignored: the compiler chooses dense or sparse per system."
-                .to_string(),
-        ));
+    for (kind, density, size) in [
+        ("linear", f.lss_max_density, f.lss_min_size),
+        ("non-linear", f.nlss_max_density, f.nlss_min_size),
+    ] {
+        if let Some(d) = density {
+            out.push((
+                crate::omclog::INFO,
+                format!("Maximum density for using {kind} sparse solver changed to {}", ff(d)),
+            ));
+        }
+        if let Some(n) = size {
+            out.push((
+                crate::omclog::INFO,
+                format!("Minimum system size for using {kind} sparse solver changed to {n}"),
+            ));
+        }
     }
     if let Some(v) = f.newton_xtol {
         out.push((

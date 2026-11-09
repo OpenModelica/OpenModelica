@@ -341,27 +341,20 @@ file(WRITE ${_wasi_toolchain}
   "set(CMAKE_C_FLAGS_INIT \"-O2\")\n"
   "set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)\n"
   "set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)\n")
-set(_wasi_libc_src ${OM_DOWNLOADS_DIR}/wasi-libc/wasi-libc-wasi-sdk-32)
+set(_wasi_libc_src ${CMAKE_BINARY_DIR}/rust-wasi-libc-src/wasi-libc-wasi-sdk-32)
 if(NOT RUST_OMC_PREBUILT_WASM_DIR AND NOT EXISTS ${_wasi_libc_src}/CMakeLists.txt)
   set(_wasi_tgz ${OM_DOWNLOADS_DIR}/wasi-libc-wasi-sdk-32.tar.gz)
-  message(STATUS "Downloading wasi-libc (wasi-sdk-32) source…")
-  file(DOWNLOAD
-       https://github.com/WebAssembly/wasi-libc/archive/refs/tags/wasi-sdk-32.tar.gz
-       ${_wasi_tgz}
-       EXPECTED_HASH SHA256=ea9827495c0f35bca3b3d0a953e854cac112c43bea3196b5a4f7f8fc4704b9a4
-       TLS_VERIFY ON STATUS _wasi_dl)
-  list(GET _wasi_dl 0 _wasi_dl_code)
-  if(NOT _wasi_dl_code EQUAL 0)
-    file(REMOVE ${_wasi_tgz})
+  omc_download(https://github.com/WebAssembly/wasi-libc/archive/refs/tags/wasi-sdk-32.tar.gz
+               ${_wasi_tgz} ea9827495c0f35bca3b3d0a953e854cac112c43bea3196b5a4f7f8fc4704b9a4 _wasi_dl)
+  if(_wasi_dl)
     message(FATAL_ERROR "Failed to download wasi-libc source (${_wasi_dl})")
-  else()
-    file(MAKE_DIRECTORY ${OM_DOWNLOADS_DIR}/wasi-libc)
-    execute_process(COMMAND ${CMAKE_COMMAND} -E tar xzf ${_wasi_tgz}
-                    WORKING_DIRECTORY ${OM_DOWNLOADS_DIR}/wasi-libc
-                    RESULT_VARIABLE _wasi_untar)
-    if(NOT _wasi_untar EQUAL 0)
-      message(FATAL_ERROR "Failed to unpack wasi-libc source")
-    endif()
+  endif()
+  file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/rust-wasi-libc-src)
+  execute_process(COMMAND ${CMAKE_COMMAND} -E tar xzf ${_wasi_tgz}
+                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/rust-wasi-libc-src
+                  RESULT_VARIABLE _wasi_untar)
+  if(NOT _wasi_untar EQUAL 0)
+    message(FATAL_ERROR "Failed to unpack wasi-libc source")
   endif()
 endif()
 
@@ -679,16 +672,10 @@ if(RUST_OMC_PREBUILT_WASM_DIR)
 else()
   set(_wasi_p1_adapter ${OM_DOWNLOADS_DIR}/wasi_snapshot_preview1.reactor.wasm)
 endif()
-if(NOT RUST_OMC_PREBUILT_WASM_DIR AND NOT EXISTS ${_wasi_p1_adapter})
-  message(STATUS "Downloading wasi_snapshot_preview1 reactor adapter (wasmtime v27.0.0)…")
-  file(DOWNLOAD
-       https://github.com/bytecodealliance/wasmtime/releases/download/v27.0.0/wasi_snapshot_preview1.reactor.wasm
-       ${_wasi_p1_adapter}
-       EXPECTED_HASH SHA256=cf26d826c3b1b81faa86c5b6352a725fcf55c50a8806fdf58ba658f675971ff2
-       TLS_VERIFY ON STATUS _wasi_p1_dl)
-  list(GET _wasi_p1_dl 0 _wasi_p1_code)
-  if(NOT _wasi_p1_code EQUAL 0)
-    file(REMOVE ${_wasi_p1_adapter})
+if(NOT RUST_OMC_PREBUILT_WASM_DIR)
+  omc_download(https://github.com/bytecodealliance/wasmtime/releases/download/v27.0.0/wasi_snapshot_preview1.reactor.wasm
+               ${_wasi_p1_adapter} cf26d826c3b1b81faa86c5b6352a725fcf55c50a8806fdf58ba658f675971ff2 _wasi_p1_dl)
+  if(_wasi_p1_dl)
     message(FATAL_ERROR "Failed to download the wasi preview1 adapter (${_wasi_p1_dl})")
   endif()
 endif()
@@ -808,6 +795,18 @@ option(RUST_OMC_WASM_OPT "Run wasm-opt -Oz on the produced wasm (slow; OFF for f
 if(NOT RUST_OMC_WASM_OPT)
   set(WASM_OPT_EXECUTABLE "")
   message(STATUS "rust_omc: wasm-opt disabled (RUST_OMC_WASM_OPT=OFF)")
+endif()
+# Older wasm-opt cannot parse the wasm-bindgen output (table.fill).
+set(RUST_OMC_WASM_OPT_MIN_VERSION 120)
+if(WASM_OPT_EXECUTABLE)
+  execute_process(COMMAND ${WASM_OPT_EXECUTABLE} --version
+                  OUTPUT_VARIABLE _wasm_opt_version_out ERROR_QUIET)
+  string(REGEX MATCH "version ([0-9]+)" _wasm_opt_version_match "${_wasm_opt_version_out}")
+  if(_wasm_opt_version_match AND CMAKE_MATCH_1 LESS RUST_OMC_WASM_OPT_MIN_VERSION)
+    message(FATAL_ERROR
+      "rust_omc: ${WASM_OPT_EXECUTABLE} is binaryen ${CMAKE_MATCH_1}, need "
+      "${RUST_OMC_WASM_OPT_MIN_VERSION}+. Set -DWASM_OPT_EXECUTABLE or -DRUST_OMC_WASM_OPT=OFF.")
+  endif()
 endif()
 
 # wasm-opt feature flags, shared by every wasm-opt invocation below. rustc/LLVM
@@ -1874,27 +1873,12 @@ function(omc_rust_omedit_qt_web_page)
       "Where the OMEdit web page gets <release>/crml.js, the CRML translator, from; empty to leave it out.")
   set(_crml_web_copy "")
   if(OMEDIT_CRML_WEB_BASE_URL)
-    set(_crml_js ${CMAKE_CURRENT_BINARY_DIR}/crml-web/${OMEDIT_CRML_WEB_RELEASE}/crml.js)
-    set(_crml_sum "")
-    if(EXISTS ${_crml_js})
-      file(SHA256 ${_crml_js} _crml_sum)
-    endif()
-    if(NOT _crml_sum STREQUAL OMEDIT_CRML_WEB_SHA256)
-      # Checked here, not with EXPECTED_HASH, which makes any failure a configure error.
-      file(DOWNLOAD ${OMEDIT_CRML_WEB_BASE_URL}/${OMEDIT_CRML_WEB_RELEASE}/crml.js ${_crml_js}
-           STATUS _crml_status)
-      list(GET _crml_status 0 _crml_code)
-      if(_crml_code EQUAL 0)
-        file(SHA256 ${_crml_js} _crml_sum)
-        if(NOT _crml_sum STREQUAL OMEDIT_CRML_WEB_SHA256)
-          set(_crml_status "its SHA-256 sum is ${_crml_sum}, not ${OMEDIT_CRML_WEB_SHA256}")
-        endif()
-      endif()
-    endif()
-    if(_crml_sum STREQUAL OMEDIT_CRML_WEB_SHA256)
+    set(_crml_js ${OM_DOWNLOADS_DIR}/crml-web/${OMEDIT_CRML_WEB_RELEASE}/crml.js)
+    omc_download(${OMEDIT_CRML_WEB_BASE_URL}/${OMEDIT_CRML_WEB_RELEASE}/crml.js ${_crml_js}
+                 ${OMEDIT_CRML_WEB_SHA256} _crml_status)
+    if(NOT _crml_status)
       set(_crml_web_copy COMMAND ${CMAKE_COMMAND} -E copy ${_crml_js} ${_qt_pkgdir}/)
     else()
-      file(REMOVE ${_crml_js})
       message(WARNING "Could not get crml.js from ${OMEDIT_CRML_WEB_BASE_URL}/${OMEDIT_CRML_WEB_RELEASE}: "
                       "${_crml_status}. The OMEdit web page will not translate CRML files.")
     endif()
@@ -1912,6 +1896,7 @@ function(omc_rust_omedit_qt_web_page)
             ${_qt_bld}/OMEdit-qt.html ${_qt_bld}/OMEdit-qt.js
             ${_qt_bld}/OMEdit-qt.wasm ${_qt_bld}/qtloader.js
             ${_qt_bld}/qtlogo.svg ${_qt_pkgdir}/
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${_qt_bld}/share ${_qt_pkgdir}/share
     COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_DIR}/omshell_omc/omc_worker.js ${_web_dir}/omc_worker.js
     # The OAuth callback goes at the web ROOT, not in the versioned page directory:
     # neither Google nor Microsoft allows a wildcard redirect URI, so one page at
@@ -2074,29 +2059,21 @@ function(omc_rust_setup_wasm)
     set(_wasm_pkgdir ${_web_dir}/omc)
     set(_web_launcher ${RUST_OMC_DIR}/wasm/index.html)
 
-    # three.js is large minified vendor code, not kept in git. Download and cache
-    # it at configure time, pinned to r169 (matching the vendored OrbitControls.js)
-    # with an integrity hash. Cached in the build tree; re-download only if absent.
+    # three.js is large minified vendor code, not kept in git. Download it at
+    # configure time, pinned to r169 (matching the vendored OrbitControls.js).
     set(_three_js ${OM_DOWNLOADS_DIR}/three.module.min.js)
-    if(NOT EXISTS ${_three_js})
-      message(STATUS "Downloading three.module.min.js (r169)…")
-      file(DOWNLOAD
-           https://unpkg.com/three@0.169.0/build/three.module.min.js ${_three_js}
-           EXPECTED_HASH SHA256=f7cee3c7533449a1505cc12cb5128b89e3d4fd3d7ea62b05f9f5464a217472ee
-           TLS_VERIFY ON STATUS _three_dl)
-      list(GET _three_dl 0 _three_dl_code)
-      if(NOT _three_dl_code EQUAL 0)
-        file(REMOVE ${_three_js})
-        message(FATAL_ERROR "Failed to download three.module.min.js: ${_three_dl}")
-      endif()
+    omc_download(https://unpkg.com/three@0.169.0/build/three.module.min.js ${_three_js}
+                 f7cee3c7533449a1505cc12cb5128b89e3d4fd3d7ea62b05f9f5464a217472ee _three_dl)
+    if(_three_dl)
+      message(FATAL_ERROR "Failed to download three.module.min.js: ${_three_dl}")
     endif()
 
     # The FMI simulator transpiles a Wasm component to JS in the browser using
     # jco's js-component-bindgen, which runs on the WASI preview2 shim. Both are
     # vendor code, not kept in git: download the pinned npm tarballs at configure
     # time and unpack them into the build tree.
-    set(_jco_vendor ${OM_DOWNLOADS_DIR}/jco-transpile/package/vendor)
-    set(_p2_shim ${OM_DOWNLOADS_DIR}/preview2-shim/package/dist/browser)
+    set(_jco_vendor ${CMAKE_CURRENT_BINARY_DIR}/jco-transpile/package/vendor)
+    set(_p2_shim ${CMAKE_CURRENT_BINARY_DIR}/preview2-shim/package/dist/browser)
     foreach(_pkg IN ITEMS
             "jco-transpile|0.4.2|6f65610ecef99501084de896e299885fc6f645ee77413a820c20aa3d53f21bc7"
             "preview2-shim|0.19.0|625d787a571bb1dd4b4e1d0fe51e2ef2f0b24e689d7cfcaff6c47ee866dc3526")
@@ -2104,16 +2081,12 @@ function(omc_rust_setup_wasm)
       list(GET _p 0 _p_name)
       list(GET _p 1 _p_ver)
       list(GET _p 2 _p_hash)
-      set(_p_dir ${OM_DOWNLOADS_DIR}/${_p_name})
+      set(_p_dir ${CMAKE_CURRENT_BINARY_DIR}/${_p_name})
       if(NOT EXISTS ${_p_dir}/package/package.json)
         set(_p_tgz ${OM_DOWNLOADS_DIR}/${_p_name}-${_p_ver}.tgz)
-        message(STATUS "Downloading @bytecodealliance/${_p_name} ${_p_ver}…")
-        file(DOWNLOAD
-             https://registry.npmjs.org/@bytecodealliance/${_p_name}/-/${_p_name}-${_p_ver}.tgz
-             ${_p_tgz} EXPECTED_HASH SHA256=${_p_hash} TLS_VERIFY ON STATUS _p_dl)
-        list(GET _p_dl 0 _p_dl_code)
-        if(NOT _p_dl_code EQUAL 0)
-          file(REMOVE ${_p_tgz})
+        omc_download(https://registry.npmjs.org/@bytecodealliance/${_p_name}/-/${_p_name}-${_p_ver}.tgz
+                     ${_p_tgz} ${_p_hash} _p_dl)
+        if(_p_dl)
           message(FATAL_ERROR "Failed to download @bytecodealliance/${_p_name}: ${_p_dl}")
         endif()
         # cmake -E tar, not file(ARCHIVE_EXTRACT): that needs 3.18, and the web
@@ -2122,7 +2095,7 @@ function(omc_rust_setup_wasm)
         execute_process(COMMAND ${CMAKE_COMMAND} -E tar xzf ${_p_tgz}
                         WORKING_DIRECTORY ${_p_dir} RESULT_VARIABLE _p_untar)
         if(NOT _p_untar EQUAL 0)
-          file(REMOVE_RECURSE ${_p_tgz} ${_p_dir})
+          file(REMOVE_RECURSE ${_p_dir})
           message(FATAL_ERROR "Failed to unpack ${_p_tgz}: ${_p_untar}")
         endif()
       endif()

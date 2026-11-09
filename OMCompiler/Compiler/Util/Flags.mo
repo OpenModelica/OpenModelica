@@ -587,6 +587,8 @@ constant DebugFlag CHECK_USED_ELEMENTS_LOOKUP = DEBUG_FLAG(202, "checkUsedElemen
   "Checks the classes found by the lookup of getDefUseChains and getClassDiagram against the new frontend's lookup.");
 constant DebugFlag NF_SCRIPTING = DEBUG_FLAG(203, "nfScripting", EXTERNAL(), true,
   "Evaluates scripts with the new frontend.");
+constant DebugFlag HOMOTOPY_IN_RESIDUALS = DEBUG_FLAG(204, "homotopyInResiduals", EXTERNAL(), false,
+  "Keeps homotopy() in the DAE residuals, the generated code evaluates the branches that lambda selects.");
 
 public
 // CONFIGURATION FLAGS
@@ -1469,6 +1471,14 @@ constant ConfigFlag FMI_TUNABLE_PARAMETERS = CONFIG_FLAG(172, "fmiTunableParamet
     ("literal", "A parameter with a literal binding is tunable, unless a value that is only calculated during initialization depends on it.")
     })),
   "Which parameters an FMU 2.0 or 3.0 exports as tunable.");
+
+constant ConfigFlag TUNABLE_PARAMETERS = CONFIG_FLAG(173, "tunableParameters",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  "Lets the embedded server (-embeddedServer) of a simulation change tunable parameters.");
+
+constant ConfigFlag FMU_WITH_FMI2 = CONFIG_FLAG(174,
+  "", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
+  "buildModelFMU(version=\"2.0+3.0\"): the FMI 3.0 FMU also serves FMI 2.0, for OpenModelicaLibraryTesting only.");
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

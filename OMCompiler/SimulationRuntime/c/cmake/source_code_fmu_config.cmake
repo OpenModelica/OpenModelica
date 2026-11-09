@@ -517,6 +517,20 @@ foreach(source_file ${SOURCE_FMU_CVODE_RUNTIME_FILES_LIST})
 endforeach()
 list(JOIN SOURCE_FMU_CVODE_RUNTIME_FILES_LIST_QUOTED ",\n                                                  " SOURCE_FMU_CVODE_RUNTIME_FILES)
 
+######################################################################################################################
+## zlib, for ModelicaMatIO.c (MAT-files v7). Beside the ModelicaExternalC sources.
+## Without the gz* file API, which needs unistd.h and is not used by ModelicaMatIO.c.
+file(GLOB 3RD_ZLIB_FILES RELATIVE ${OMCompiler_3rdParty_SOURCE_DIR}/zlib
+                                  ${OMCompiler_3rdParty_SOURCE_DIR}/zlib/*.c
+                                  ${OMCompiler_3rdParty_SOURCE_DIR}/zlib/*.h)
+list(FILTER 3RD_ZLIB_FILES EXCLUDE REGEX "^gz.*\\.c$")
+foreach(source_file ${3RD_ZLIB_FILES})
+  install(FILES ${OMCompiler_3rdParty_SOURCE_DIR}/zlib/${source_file}
+          DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ModelicaExternalC/zlib)
+  list(APPEND SOURCE_FMU_ZLIB_FILES_LIST_QUOTED "\"ModelicaExternalC/zlib/${source_file}\"")
+endforeach()
+list(JOIN SOURCE_FMU_ZLIB_FILES_LIST_QUOTED ",\n                                                         " SOURCE_FMU_ZLIB_FILES)
+
 
 # ######################################################################################################################
 # Library: SimulationRuntimeFMI

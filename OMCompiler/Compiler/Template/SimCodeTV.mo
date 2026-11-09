@@ -1043,6 +1043,7 @@ end SparsityRow;
       FmiDiscreteStates fmiDiscreteStates;
       FmiInitialUnknowns fmiInitialUnknowns;
       list<FmiArray> fmiArrays;
+      Boolean hasDependencies;
     end FMIMODELSTRUCTURE;
   end FmiModelStructure;
 
@@ -1899,6 +1900,12 @@ package SimCodeCodegenUtil
     output Integer vr;
   end lookupVR;
 
+  function sortedValueReferences
+    input list<tuple<Integer, DAE.ComponentRef>> crefs;
+    input SimCode.SimCode simCode;
+    output list<tuple<Integer, Integer>> vrIndexes;
+  end sortedValueReferences;
+
   function isFMUSimCode
     input SimCode.SimCode simCode;
     output Boolean isFMU;
@@ -1910,6 +1917,12 @@ package SimCodeCodegenUtil
     input String fmuType;
     output Integer vr;
   end lookupVRForRealOutputDerivative;
+
+  function maxOutputDerivativeOrder
+    input SimCode.SimCode simCode;
+    input String fmuType;
+    output Integer order;
+  end maxOutputDerivativeOrder;
 
   function unbalancedEqSystemPartition
     input list<SimCode.SimEqSystem> inList;
@@ -4325,6 +4338,11 @@ end ComponentReference;
 
 package Expression
 
+  function assertConditionValues
+    input DAE.Exp cond;
+    output list<DAE.Exp> exps;
+  end assertConditionValues;
+
   function crefExp
     input DAE.ComponentRef cr;
     output DAE.Exp cref;
@@ -4606,6 +4624,7 @@ package Flags
   constant DebugFlag HARDCODED_START_VALUES;
   constant DebugFlag OMC_RECORD_ALLOC_WORDS;
   constant DebugFlag OMC_RELOCATABLE_FUNCTIONS;
+  constant DebugFlag HOMOTOPY_IN_RESIDUALS;
   constant DebugFlag NF_SCALARIZE;
   constant ConfigFlag PARMODAUTO;
   constant ConfigFlag NUM_PROC;
@@ -4616,6 +4635,7 @@ package Flags
   constant DebugFlag FMU_EXPERIMENTAL;
   constant DebugFlag MULTIRATE_PARTITION;
   constant ConfigFlag DAE_MODE;
+  constant ConfigFlag FMU_WITH_FMI2;
   constant ConfigFlag EQUATIONS_PER_FILE;
   constant ConfigFlag GENERATE_DYNAMIC_JACOBIAN;
   constant ConfigFlag HOMOTOPY_APPROACH;

@@ -136,6 +136,41 @@
     </message>
 </context>
 <context>
+    <name>ArrayParameterEditorDialog</name>
+    <message>
+        <source>%1 - %2 %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rows:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Columns:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expression:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete 1 row</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete %1 rows</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete 1 column</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete %1 columns</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>AttachToProcessDialog</name>
     <message>
         <source>Attach to Process ID:</source>
@@ -2909,22 +2944,6 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
         <translation>Chiudi</translation>
     </message>
     <message>
-        <source>Percentage:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Choose Transparency</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Choose Specularity</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Choose Color</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Choose File(s)</source>
         <translation>Scegli i file</translation>
     </message>
@@ -2935,6 +2954,10 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
     <message>
         <source>Add</source>
         <translation>Aggiungi</translation>
+    </message>
+    <message>
+        <source>Edit Array</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Save a file</source>
@@ -2963,14 +2986,6 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
     <message>
         <source>Import FMU</source>
         <translation>Importa FMU</translation>
-    </message>
-    <message>
-        <source>Add Path</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Path</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Output</source>
@@ -3087,14 +3102,6 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
     <message>
         <source>Unloads the file without deleting it from the file system</source>
         <translation>Rimuove il file senza eliminarlo dal file system</translation>
-    </message>
-    <message>
-        <source>Unload the CRML file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unload the Modelica Script file</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Refresh</source>
@@ -3393,10 +3400,6 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
         <translation>Chiama la funzione Modelica</translation>
     </message>
     <message>
-        <source>Element</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Font Size:</source>
         <translation>Dimensione carattere:</translation>
     </message>
@@ -3457,10 +3460,6 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
         <translation>Crea connessione</translation>
     </message>
     <message>
-        <source>Connection Attributes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Create Transition</source>
         <translation>Crea transizione</translation>
     </message>
@@ -3469,40 +3468,12 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
         <translation>Modifica transizione</translation>
     </message>
     <message>
-        <source>Find Variables</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Filter Variables</source>
         <translation>Filtra variabili</translation>
     </message>
     <message>
         <source>Open Class</source>
         <translation>Apri classe</translation>
-    </message>
-    <message>
-        <source>View Icon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Opens the class icon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>View Diagram</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Opens the class diagram</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>View Text</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Opens the class text</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Opens the class documentation</source>
@@ -3721,14 +3692,6 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
         <translation>Mette in pausa l&apos;animazione</translation>
     </message>
     <message>
-        <source>Simulation Parameters</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Shows the Simulation Parameters dialog</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Send</source>
         <translation>Invia</translation>
     </message>
@@ -3823,14 +3786,6 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
     <message>
         <source>Speed:</source>
         <translation>Velocità:</translation>
-    </message>
-    <message>
-        <source>Terminate Instantiation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Terminates the model instantiation</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Archived Simulations</source>
@@ -6620,6 +6575,10 @@ Impostare l&apos;eseguibile Python in cui è installato omuq in Strumenti &gt; O
     <message>
         <source>Edit</source>
         <translation>Modifica</translation>
+    </message>
+    <message>
+        <source>Edit array</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to find the redeclare class.</source>

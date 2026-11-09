@@ -130,9 +130,7 @@ impl ResultList {
     pub(super) fn push_dyn(&mut self, dv: &DynVar, slot: SimSlot, filter_extra: u8) -> Result<()> {
         let ones = vec![1; dv.dims.len()];
         let brackets = !openmodelica_util::Config::modelicaOutput()?;
-        let Some(first) = result_name(&cref_display(&cref_with_indices(&dv.sv.name, &ones))?) else {
-            return Ok(());
-        };
+        let first = cref_display(&cref_with_indices(&dv.sv.name, &ones))?;
         let (name, at) = array_name_template(&first, ones.len(), brackets)
             .ok_or("CodegenWasmJit: cannot name the elements of a resizable array")?;
         let sv = &dv.sv;
@@ -430,9 +428,8 @@ pub(super) fn mark_unvarying(
                     | DAE::Exp::BCONST { .. }
                     | DAE::Exp::ENUM_LITERAL { .. }
             )
-            && let Some(name) = result_name(&cref_display(cref)?)
         {
-            literal.insert(name);
+            literal.insert(cref_display(cref)?);
         }
     }
     if literal.is_empty() {
@@ -456,21 +453,6 @@ pub(super) fn mark_unvarying(
     }
     Ok(())
 }
-
-fn result_name(raw: &str) -> Option<String> {
-    if raw.starts_with('$') && !OPT_RESULT_PREFIXES.iter().any(|p| raw.starts_with(p)) {
-        None
-    } else {
-        Some(raw.to_string())
-    }
-}
-
-/// The `$`-prefixed variables C's result file *does* carry: an `optimization`
-/// model's objective terms (`BackendDAE.optimization{Mayer,Lagrange}TermName`) and
-/// its constraint residuals (`DynamicOptimization`'s `$con$` / `$finalCon$` /
-/// `$EqCon$`). The rest of the `$` namespace is the backend's own bookkeeping,
-/// which C hides through `hideResult` and this port drops by name.
-const OPT_RESULT_PREFIXES: [&str; 4] = ["$OMC$object", "$con$", "$finalCon$", "$EqCon$"];
 
 /// Evaluate a constant variable's binding to a scalar, for the `*ConstVars`
 /// lists (which have no SimData slot). Handles the literal forms model constants
@@ -987,8 +969,7 @@ fn reindex_aliasvar(av: &SimCodeVar::AliasVariable, idx: &[i32]) -> SimCodeVar::
 /// Append the `$Sensitivities.<par>.<state>` result variables — the layout's
 /// sensitivity block, in its order — and return the `SimData` offsets of the
 /// parameters they differentiate against (C's `sensitivityParList`, resolved
-/// through the `paramVars` order the real-parameter region follows). The names
-/// bypass [`result_name`], which filters `$`-prefixed ones; C keeps them.
+/// through the `paramVars` order the real-parameter region follows).
 pub(super) fn push_sensitivity_vars(
     sens_vars: &[&SimCodeVar::SimVar],
     n_sens_par: usize,
@@ -1103,21 +1084,19 @@ pub(super) fn build_var_map(
     let mut string_editable: Vec<EditableParam> = Vec::new();
     let mut push_editable = |sv: &SimCodeVar::SimVar, name: &str, off: SimOff, wty: WTy| -> Result<()> {
         if sv.isValueChangeable && is_result_output(sv) {
-            if let Some(disp) = result_name(name) {
-                editable.push(EditableParam {
-                    name: disp,
-                    comment: sv.comment.to_string(),
-                    unit: sv.unit.to_string(),
-                    display_unit: sv.displayUnit.to_string(),
-                    relative_quantity: sv.relativeQuantity,
-                    off: meta_off(off)?,
-                    wty,
-                    is_start: false,
-                    is_bool: is_boolean_type(&sv.type_),
-                    is_string: false,
-                    enum_names: enumeration_type(&sv.type_).map(|e| e.literals).unwrap_or_default(),
-                });
-            }
+            editable.push(EditableParam {
+                name: name.to_string(),
+                comment: sv.comment.to_string(),
+                unit: sv.unit.to_string(),
+                display_unit: sv.displayUnit.to_string(),
+                relative_quantity: sv.relativeQuantity,
+                off: meta_off(off)?,
+                wty,
+                is_start: false,
+                is_bool: is_boolean_type(&sv.type_),
+                is_string: false,
+                enum_names: enumeration_type(&sv.type_).map(|e| e.literals).unwrap_or_default(),
+            });
         }
         Ok(())
     };
@@ -1143,10 +1122,7 @@ pub(super) fn build_var_map(
     // A primary (non-alias) variable's result signal, carrying why a run would
     // filter it — the overriding flags are not known here.
     let make_result =
-        |sv: &SimCodeVar::SimVar, off: SimOff, wty: WTy, heap: bool, raw_name: String| -> Result<Option<ResultVar>> {
-            let Some(name) = result_name(&raw_name) else {
-                return Ok(None);
-            };
+        |sv: &SimCodeVar::SimVar, off: SimOff, wty: WTy, heap: bool, name: String| -> Result<Option<ResultVar>> {
             let kind = match resizing {
                 true => ResultKind::Param {
                     off: meta_off(off)?,
@@ -1203,21 +1179,19 @@ pub(super) fn build_var_map(
     // States | derivatives | real algebraics -> the realVars region (data_2). Each
     // also owns a `start` attribute slot (C's `realVarsData[i].attribute.start`).
     let mut push_start_editable = |sv: &SimCodeVar::SimVar, start_off: SimOff, name: &str| -> Result<()> {
-        if let Some(disp) = result_name(name) {
-            start_editable.push(EditableParam {
-                name: disp,
-                comment: sv.comment.to_string(),
-                unit: sv.unit.to_string(),
-                display_unit: sv.displayUnit.to_string(),
-                relative_quantity: sv.relativeQuantity,
-                off: meta_off(start_off)?,
-                wty: WTy::F64,
-                is_start: true,
-                is_bool: is_boolean_type(&sv.type_),
-                is_string: false,
-                enum_names: enumeration_type(&sv.type_).map(|e| e.literals).unwrap_or_default(),
-            });
-        }
+        start_editable.push(EditableParam {
+            name: name.to_string(),
+            comment: sv.comment.to_string(),
+            unit: sv.unit.to_string(),
+            display_unit: sv.displayUnit.to_string(),
+            relative_quantity: sv.relativeQuantity,
+            off: meta_off(start_off)?,
+            wty: WTy::F64,
+            is_start: true,
+            is_bool: is_boolean_type(&sv.type_),
+            is_string: false,
+            enum_names: enumeration_type(&sv.type_).map(|e| e.literals).unwrap_or_default(),
+        });
         Ok(())
     };
     let real_algs = real_alg_vars(vars);
@@ -1333,14 +1307,9 @@ pub(super) fn build_var_map(
                 push_editable(sv, &cref_display(&sv.name)?, off, wty)?;
             }
             // Not a result signal, but `_init.xml` lists it and C's `-override` reaches it.
-            if heap
-                && std::ptr::eq(base_sz, &lz.sparam_off)
-                && sv.isValueChangeable
-                && is_result_output(sv)
-                && let Some(disp) = result_name(&cref_display(&sv.name)?)
-            {
+            if heap && std::ptr::eq(base_sz, &lz.sparam_off) && sv.isValueChangeable && is_result_output(sv) {
                 string_editable.push(EditableParam {
-                    name: disp,
+                    name: cref_display(&sv.name)?,
                     comment: sv.comment.to_string(),
                     unit: sv.unit.to_string(),
                     display_unit: String::new(),
@@ -1416,21 +1385,19 @@ pub(super) fn build_var_map(
             continue;
         };
         const_of.insert(key, value);
-        if let Some(name) = result_name(&cref_display(&sv.name)?) {
-            results.vars.push(ResultVar {
-                name,
-                comment: sv.comment.to_string(),
-                kind: ResultKind::Const { value },
-                unit: sv.unit.to_string(),
-                display_unit: sv.displayUnit.to_string(),
-                relative_quantity: sv.relativeQuantity,
-                ty: var_ty(&sv.type_),
-                discrete: sv.isDiscrete,
-                filter: filter_bits(sv),
-                unvarying: false,
-                enumeration: enumeration_type(&sv.type_),
-            });
-        }
+        results.vars.push(ResultVar {
+            name: cref_display(&sv.name)?,
+            comment: sv.comment.to_string(),
+            kind: ResultKind::Const { value },
+            unit: sv.unit.to_string(),
+            display_unit: sv.displayUnit.to_string(),
+            relative_quantity: sv.relativeQuantity,
+            ty: var_ty(&sv.type_),
+            discrete: sv.isDiscrete,
+            filter: filter_bits(sv),
+            unvarying: false,
+            enumeration: enumeration_type(&sv.type_),
+        });
     }
 
     // Aliases: resolve to the target variable's slot (with negation) so equations
@@ -1467,26 +1434,24 @@ pub(super) fn build_var_map(
         let Some(tslot) = map.vars.get(&tkey).or(time_slot) else {
             // Target has no slot: it may be a compile-time constant.
             if let Some(&cval) = const_of.get(&tkey) {
-                if let Some(name) = result_name(&cref_display(&av.name)?) {
-                    let value = if negate {
-                        Neg::None.toggle(is_bool).apply_f64(cval)
-                    } else {
-                        cval
-                    };
-                    results.vars.push(ResultVar {
-                        name,
-                        comment: av.comment.to_string(),
-                        kind: ResultKind::Const { value },
-                        unit: av.unit.to_string(),
-                        display_unit: av.displayUnit.to_string(),
-                        relative_quantity: av.relativeQuantity,
-                        ty: var_ty(&av.type_),
-                        discrete: av.isDiscrete,
-                        filter: filter_bits(av) | var_filter::ALIAS,
-                        unvarying: false,
-                        enumeration: enumeration_type(&av.type_),
-                    });
-                }
+                let value = if negate {
+                    Neg::None.toggle(is_bool).apply_f64(cval)
+                } else {
+                    cval
+                };
+                results.vars.push(ResultVar {
+                    name: cref_display(&av.name)?,
+                    comment: av.comment.to_string(),
+                    kind: ResultKind::Const { value },
+                    unit: av.unit.to_string(),
+                    display_unit: av.displayUnit.to_string(),
+                    relative_quantity: av.relativeQuantity,
+                    ty: var_ty(&av.type_),
+                    discrete: av.isDiscrete,
+                    filter: filter_bits(av) | var_filter::ALIAS,
+                    unvarying: false,
+                    enumeration: enumeration_type(&av.type_),
+                });
             }
             continue;
         };
@@ -1531,14 +1496,11 @@ pub(super) fn build_var_map(
             }
         }
         let make = || -> Result<Option<ResultVar>> {
-            let (Some(name), Some(kind)) = (
-                result_name(&cref_display(&av.name)?),
-                kind_from_slot(slot.off, slot.wty, slot.negate, slot.heap, layout)?,
-            ) else {
+            let Some(kind) = kind_from_slot(slot.off, slot.wty, slot.negate, slot.heap, layout)? else {
                 return Ok(None);
             };
             Ok(Some(ResultVar {
-                name,
+                name: cref_display(&av.name)?,
                 comment: av.comment.to_string(),
                 kind,
                 unit: av.unit.to_string(),

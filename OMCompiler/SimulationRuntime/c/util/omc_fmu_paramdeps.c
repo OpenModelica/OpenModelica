@@ -95,32 +95,44 @@ static size_t* read_slots(READER *r, size_t *start, size_t k, size_t *n, size_t 
   return slots;
 }
 
-OMC_FMU_PARAMDEPS* omc_fmu_paramdeps_load(const MODEL_DATA *md)
+static OMC_FMU_PARAMDEPS* newParamDeps(void)
 {
   OMC_FMU_PARAMDEPS *deps = (OMC_FMU_PARAMDEPS*) calloc(1, sizeof(OMC_FMU_PARAMDEPS));
-  const char *prefix = md->modelFilePrefix;
+  deps->usesStart = (size_t*) calloc(1, sizeof(size_t));
+  deps->definesStart = (size_t*) calloc(1, sizeof(size_t));
+  deps->flags = (unsigned char*) calloc(1, 1);
+  return deps;
+}
+
+OMC_FMU_PARAMDEPS* omc_fmu_paramdeps_load(const MODEL_DATA *md)
+{
+  OMC_FMU_PARAMDEPS *deps;
+  char *path;
+  if (!md->resourcesDir) {
+    deps = newParamDeps();
+    snprintf(deps->error, sizeof(deps->error), "The FMU has no resources directory with %s_paramdeps.bin.", md->modelFilePrefix);
+    return deps;
+  }
+  path = (char*) malloc(strlen(md->resourcesDir) + strlen(md->modelFilePrefix) + 16);
+  sprintf(path, "%s/%s_paramdeps.bin", md->resourcesDir, md->modelFilePrefix);
+  deps = omc_fmu_paramdeps_load_file(path);
+  free(path);
+  return deps;
+}
+
+OMC_FMU_PARAMDEPS* omc_fmu_paramdeps_load_file(const char *path)
+{
+  OMC_FMU_PARAMDEPS *deps = newParamDeps();
   unsigned char *bytes = NULL;
   size_t len = 0, nUses = 0, capUses = 0, nDefines = 0, capDefines = 0, nFlags = 0, capFlags = 0, k;
   size_t *flagSlots = NULL;
   unsigned char *flagValues = NULL;
   uint64_t nEqs, nSettable;
   READER r;
-  char *path;
-  FILE *file;
+  FILE *file = omc_fopen(path, "rb");
 
-  deps->usesStart = (size_t*) calloc(1, sizeof(size_t));
-  deps->definesStart = (size_t*) calloc(1, sizeof(size_t));
-  deps->flags = (unsigned char*) calloc(1, 1);
-  if (!md->resourcesDir) {
-    snprintf(deps->error, sizeof(deps->error), "The FMU has no resources directory with %s_paramdeps.bin.", prefix);
-    return deps;
-  }
-  path = (char*) malloc(strlen(md->resourcesDir) + strlen(prefix) + 16);
-  sprintf(path, "%s/%s_paramdeps.bin", md->resourcesDir, prefix);
-  file = omc_fopen(path, "rb");
   if (!file) {
     snprintf(deps->error, sizeof(deps->error), "Cannot read %s.", path);
-    free(path);
     return deps;
   }
   fseek(file, 0, SEEK_END);
@@ -136,7 +148,7 @@ OMC_FMU_PARAMDEPS* omc_fmu_paramdeps_load(const MODEL_DATA *md)
   r.end = bytes + len;
   r.failed = 0;
   if (len < 13 || memcmp(bytes, "OMCFMUP", 8)) {
-    snprintf(deps->error, sizeof(deps->error), "%s is not a parameter dependency file of an FMU.", path);
+    snprintf(deps->error, sizeof(deps->error), "%s is not a parameter dependency file.", path);
   } else if ((bytes[8] | bytes[9] << 8 | bytes[10] << 16 | (uint32_t) bytes[11] << 24) != VERSION) {
     snprintf(deps->error, sizeof(deps->error), "%s has another version than %d.", path, VERSION);
   } else {
@@ -190,7 +202,6 @@ OMC_FMU_PARAMDEPS* omc_fmu_paramdeps_load(const MODEL_DATA *md)
   free(flagSlots);
   free(flagValues);
   free(bytes);
-  free(path);
   return deps;
 }
 

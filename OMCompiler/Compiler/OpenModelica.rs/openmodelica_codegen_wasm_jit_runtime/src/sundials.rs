@@ -74,8 +74,7 @@ mod groups {
     ask!(driver);
 }
 
-/// Whether KINSOL is linked. Only an FMU answers no: what its export left out is a
-/// stub that traps, and no flag records the density rule's choice of KINSOL.
+/// Whether KINSOL is linked.
 pub(crate) fn have_kinsol() -> bool {
     groups::kinsol()
 }

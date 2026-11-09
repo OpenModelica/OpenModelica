@@ -518,9 +518,10 @@ end runTpl;
 // TODO: use another switch ... later make it first class option like -target or so
 protected function callTargetTemplates "
   Generate target code by passing the SimCode data structure to templates."
-  input SimCode.SimCode simCode;
+  input SimCode.SimCode inSimCode;
   input String target;
 protected
+  SimCode.SimCode simCode = if target == "C" and Flags.getConfigBool(Flags.TUNABLE_PARAMETERS) then ParamDeps.add(inSimCode) else inSimCode;
   partial function Func
     input Tpl.Text txt;
     input SimCode.SimCode a_simCode;
@@ -610,6 +611,11 @@ algorithm
         System.realtimeTick(ClockIndexes.RT_PROFILER0);
         codegenFuncs := {};
         codegenFuncs := (function runToBoolean(func=function SerializeInitXML.simulationInitFileReturnBool(simCode=simCode, guid=guid))) :: codegenFuncs;
+        if Flags.getConfigBool(Flags.TUNABLE_PARAMETERS) then
+          SerializeFmuInit.writeParamDeps(simCode.paramDeps, simCode.fileNamePrefix + "_paramdeps.bin");
+        elseif System.regularFileExists(simCode.fileNamePrefix + "_paramdeps.bin") then
+          System.removeFile(simCode.fileNamePrefix + "_paramdeps.bin");
+        end if;
         codegenFuncs := (function runTpl(func=function CodegenC.translateModel(in_a_simCode=simCode))) :: codegenFuncs;
         for f in {
           // external objects
@@ -1053,8 +1059,8 @@ protected
   // an FMU built under it is the same fmi-ls-wasm component "wasm-jit" emits.
   String fmuTarget = if target == "wasm" then "wasm-jit" else target;
 algorithm
-  if fmuTarget == "C" or fmuTarget == "wasm-jit" then
-    simCode := ParamDeps.add(simCode, FMUVersion);
+  if (fmuTarget == "C" or fmuTarget == "wasm-jit") and (FMI.isFMIVersion20(FMUVersion) or FMI.isFMIVersion30(FMUVersion)) then
+    simCode := ParamDeps.add(simCode);
   end if;
 
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
@@ -1075,12 +1081,13 @@ algorithm
       String fmu_dummy_include_defines;
       String needModelicaExternalC, cmakeCode;
       String fmu_solver_defines = "";
-      list<String> model_desc_src_files, fmi2HeaderFiles, modelica_standard_table_sources;
+      list<String> model_desc_src_files, fmi2HeaderFiles, modelica_standard_table_sources, zlib_sources;
       list<String> dgesv_sources, cminpack_sources, simrt_c_sundials_sources, simrt_linear_solver_sources, simrt_non_linear_solver_sources, solver_library_sources;
       list<String> simrt_mixed_solver_sources, fmi_export_files, model_gen_files, model_all_gen_files, shared_source_files;
       list<String> rust_crate_roots;
       list<String> simrt_c_sources;
       Boolean rustRuntime, rustFmi;
+      Boolean withFMI2 = Flags.getConfigBool(Flags.FMU_WITH_FMI2);
       SimCode.VarInfo varInfo;
     case (SimCode.SIMCODE(),"wasm-jit")
       algorithm
@@ -1311,6 +1318,12 @@ algorithm
           end if;
           copyFiles(RuntimeSources.fmi3_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
           fmi_export_files := if rustFmi then {} else RuntimeSources.fmi3_sources;
+          if withFMI2 then
+            if not rustFmi then
+              copyFiles(RuntimeSources.fmi2_sources, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+            end if;
+            copyFiles(RuntimeSources.fmi2_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+          end if;
         elseif rustFmi then
           copyFiles(RuntimeSources.fmi2_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
           fmi_export_files := {};
@@ -1353,9 +1366,14 @@ algorithm
         copyFiles(RuntimeSources.modelica_external_c_sources, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
         copyFiles(RuntimeSources.modelica_external_c_headers, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
         copyFiles(RuntimeSources.modelica_external_c_api_headers, source=install_include_omc_dir + "/ModelicaExternalC", destination=fmu_tmp_sources_dir);
+        copyFiles(RuntimeSources.modelica_external_c_zlib_files, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
         modelica_standard_table_sources := RuntimeSources.modelica_external_c_sources;
+        zlib_sources := list(f for f guard StringUtil.endsWith(f, ".c") in RuntimeSources.modelica_external_c_zlib_files);
 
         System.writeFile(fmutmp+"/sources/isfmi" + (if FMUVersion=="1.0" then "1" elseif FMUVersion=="3.0" then "3" else "2"), "");
+        if withFMI2 then
+          System.writeFile(fmutmp+"/sources/isfmi2", "");
+        end if;
 
         model_gen_files := list(simCode.fileNamePrefix + f for f guard FMUVersion == "1.0" or f <> "_init_fmu.c" in RuntimeSources.defaultFileSuffixes);
 
@@ -1378,6 +1396,7 @@ algorithm
                                                 List.sort(simrt_c_sundials_sources, Util.strcmpNoCaseBool),
                                                 solver_library_sources,
                                                 List.sort(modelica_standard_table_sources, Util.strcmpNoCaseBool),
+                                                zlib_sources,
                                                 rust_crate_roots
                                     });
         end if;
@@ -1392,6 +1411,11 @@ algorithm
         end if;
         if writeFMUDocumentation(program, simCode, FMUVersion, fmutmp) then
           ExecStat.execStat("FMU documentation");
+        end if;
+        if withFMI2 and not (System.rename(fmutmp + "/modelDescription.xml", fmutmp + "/modelDescription.fmi3.xml")
+                             and System.rename(fmutmp + "/modelDescription.fmi2.xml", fmutmp + "/modelDescription.xml")) then
+          Error.addInternalError("Failed to put the FMI 2.0 modelDescription.xml in place", sourceInfo());
+          fail();
         end if;
 
         // Add the _part*.c files to the list of source files. We do not know how many of them there are until
@@ -1416,6 +1440,7 @@ algorithm
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_NAME_HASH_IN@", fileNamePrefixHash);
 
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_NAME_IN@", System.makeC89Identifier(simCode.fileNamePrefix)); // the modelIdentifier
+        cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_FILE_PREFIX_IN@", simCode.fileNamePrefix);
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_TARGET_NAME@", simCode.fmuTargetName);  // Name with dots
 
         // Include debugging symbols?
@@ -1427,12 +1452,10 @@ algorithm
         // Set CMake runtime dependencies level
         () := match Flags.getConfigString(Flags.FMU_RUNTIME_DEPENDS)
           local
-            SemanticVersion.Version cmakeVersion;
-            SemanticVersion.Version minimumVersion;
+            String cmakeVersion;
           case "default" algorithm
-            cmakeVersion := SimCodeUtil.getCMakeVersion();
-            minimumVersion := SemanticVersion.SEMVER(3, 21, 0, {}, {}); // v3.21.0
-            if SemanticVersion.compare(minimumVersion, cmakeVersion) <= 0 /* minimumVersion <= cmakeVersion */ then
+            cmakeVersion := SimCodeUtil.getCMakeVersion(logDirectory=fmu_tmp_sources_dir);
+            if SemanticVersion.compare("3.21.0", cmakeVersion) <= 0 then
               cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "\"modelica\"");
             else
               cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "\"none\"");
@@ -1496,6 +1519,11 @@ algorithm
             modelDefinesHeaderStr := System.stringReplace(modelDefinesHeaderStr, fmu_dummy_include_defines, "../" + simCode.fileNamePrefix + "_FMU.h");
             System.writeFile(fmu_tmp_sources_dir + fmuModelInterfaceFile, modelDefinesHeaderStr);
           end for;
+          if withFMI2 then
+            modelDefinesHeaderStr := System.readFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c");
+            modelDefinesHeaderStr := System.stringReplace(modelDefinesHeaderStr, "fmu2_dummy_model_defines.h", "../" + simCode.fileNamePrefix + "_FMU2.h");
+            System.writeFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c", modelDefinesHeaderStr);
+          end if;
         end if;
 
         Tpl.closeFile(Tpl.tplCallWithFailError(
