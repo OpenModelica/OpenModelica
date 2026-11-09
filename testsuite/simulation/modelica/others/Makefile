@@ -85,6 +85,7 @@ Ticket5129.mos \
 ResultFileArrow.mos \
 ResultFileArrowTimeAlias.mos \
 FilterSimulationResultsCsvTime.mos \
+FilterSimulationResultsRemoveDescription.mos \
 ResultFileEnumeration.mos \
 ResultFileEnumerationInitXml.mos \
 VariableFilter.mos \

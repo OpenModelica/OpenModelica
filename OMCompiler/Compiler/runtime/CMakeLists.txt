@@ -61,7 +61,6 @@ set(OMC_RUNTIME_SOURCES
     ModelicaDiff_omc.c
     PackageManagerExt_omc.c
     SemanticVersion_omc.c
-    ptolemyio_omc.cpp
     SimulationResults_omc.c
     systemimplmisc.cpp
     ffi_omc.cpp
@@ -86,7 +85,7 @@ if(NOT MSVC)
   target_link_libraries(omcruntime PUBLIC Iconv::Iconv)
 endif()
 target_link_libraries(omcruntime PUBLIC omc::mmc::runtime)
-# The scripting API reads and converts .arrow result files through libomc_result.
+# The scripting API reads, compares and converts result files through libomc_result.
 target_link_libraries(omcruntime PUBLIC omc::result)
 target_link_libraries(omcruntime PUBLIC omc::3rd::ffi)
 target_link_libraries(omcruntime PUBLIC omc::3rd::libzmq)
