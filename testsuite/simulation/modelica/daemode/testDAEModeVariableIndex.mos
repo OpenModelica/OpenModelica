@@ -1,0 +1,93 @@
+// name: testDAEModeVariableIndex
+// keywords: daeMode, symbolic Jacobian, variable subscript
+// status: correct
+// teardown_command: rm -rf DAEModeVariableIndex* output.log
+//
+// A symbolic Jacobian for crefs with a variable index, e.g. u[k + 1].
+// In the first two models the indexed element is the only link from an
+// equation to its unknown, so a wrong derivative makes the Jacobian singular.
+
+loadString("
+model DAEModeVariableIndex
+  parameter Integer k = 1 annotation(Evaluate = false);
+  Real x(start = 1, fixed = true);
+  Real u[3](each start = 1);
+equation
+  der(x) = -u[k + 1];
+  sinh(u[k + 1]) = x;
+  u[1] + u[2] + u[3] = 6*x;
+  u[1] = u[3];
+end DAEModeVariableIndex;
+
+model DAEModeVariableIndex2D
+  parameter Integer i = 2 annotation(Evaluate = false);
+  parameter Integer j = 3 annotation(Evaluate = false);
+  Real x(start = 1, fixed = true);
+  Real A[2, 3](each start = 1);
+equation
+  der(x) = -x;
+  sinh(A[i, j]) = x;
+  for r in 1:2, c in 1:3 loop
+    if r > 1 or c > 1 then
+      A[r, c] = A[1, 1] + (r + c - 2)*x;
+    end if;
+  end for;
+end DAEModeVariableIndex2D;
+
+model DAEModeVariableIndexAlg
+  parameter Integer k = 2 annotation(Evaluate = false);
+  Real x(start = 1, fixed = true);
+  Real u[3];
+  Real w[3];
+  Real y;
+equation
+  der(x) = -0.25*y;
+  for c in 1:3 loop
+    u[c] - 0.1*sin(u[c]) = c*x - 0.1*sin(c*x);
+  end for;
+algorithm
+  for c in 1:3 loop
+    w[c] := c*u[c];
+  end for;
+  y := w[k];
+end DAEModeVariableIndexAlg;
+"); getErrorString();
+
+setCommandLineOptions("--daeMode --generateDynamicJacobian=symbolic"); getErrorString();
+
+echo(false);
+res1 := simulate(DAEModeVariableIndex, stopTime = 0.5, simflags = "-override=k=0");
+err1 := sinh(val(u[1], 0.5)) - val(x, 0.5);
+res2 := simulate(DAEModeVariableIndex, stopTime = 0.5, simflags = "-override=k=2");
+err2 := sinh(val(u[3], 0.5)) - val(x, 0.5);
+res3 := simulate(DAEModeVariableIndex2D, stopTime = 0.5);
+err3 := sinh(val(A[2, 3], 0.5)) - val(x, 0.5);
+res4 := simulate(DAEModeVariableIndexAlg, stopTime = 0.5);
+err4 := val(x, 0.5) - exp(-0.5);
+echo(true);
+getErrorString();
+regexBool(res1.messages, "The simulation finished successfully");
+abs(err1) < 1e-6;
+regexBool(res2.messages, "The simulation finished successfully");
+abs(err2) < 1e-6;
+regexBool(res3.messages, "The simulation finished successfully");
+abs(err3) < 1e-6;
+regexBool(res4.messages, "The simulation finished successfully");
+abs(err4) < 1e-5;
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// endResult
