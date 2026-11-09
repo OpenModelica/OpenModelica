@@ -1440,6 +1440,7 @@ algorithm
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_NAME_HASH_IN@", fileNamePrefixHash);
 
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_NAME_IN@", System.makeC89Identifier(simCode.fileNamePrefix)); // the modelIdentifier
+        cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_FILE_PREFIX_IN@", simCode.fileNamePrefix);
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_TARGET_NAME@", simCode.fmuTargetName);  // Name with dots
 
         // Include debugging symbols?
