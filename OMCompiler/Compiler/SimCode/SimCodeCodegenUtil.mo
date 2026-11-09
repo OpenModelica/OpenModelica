@@ -3049,6 +3049,28 @@ algorithm
   vr := AvlTreeCRToInt.get(simCode.valueReferences, cr);
 end lookupVR;
 
+public function sortedValueReferences
+  "The (value reference, index) pairs of the crefs, sorted by value reference."
+  input list<tuple<Integer, DAE.ComponentRef>> crefs;
+  input SimCode.SimCode simCode;
+  output list<tuple<Integer, Integer>> vrIndexes = {};
+protected
+  Integer index;
+  DAE.ComponentRef cr;
+algorithm
+  for t in crefs loop
+    (index, cr) := t;
+    vrIndexes := (lookupVR(cr, simCode), index) :: vrIndexes;
+  end for;
+  vrIndexes := List.sort(vrIndexes, valueReferenceGreater);
+end sortedValueReferences;
+
+protected function valueReferenceGreater
+  input tuple<Integer, Integer> a;
+  input tuple<Integer, Integer> b;
+  output Boolean greater = Util.tuple21(a) > Util.tuple21(b);
+end valueReferenceGreater;
+
 public function isFMUSimCode
   "True when this SimCode was built for an FMU export, so `valueReferences` --
    what lookupVR and the FMI alias tables index -- is filled."
