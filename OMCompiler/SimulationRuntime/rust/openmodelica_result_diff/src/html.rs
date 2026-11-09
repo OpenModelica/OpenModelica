@@ -1,30 +1,74 @@
-//! The dygraph HTML page `diffSimulationResultsHtml` writes for one variable.
+//! The dygraph HTML page `diffSimulationResultsHtml` returns for one variable,
+//! and the CSV file `diffSimulationResults` writes for it.
 
-use crate::ellipse2014::TubeCmp;
 use crate::format::{format_g_prec, format_g_prec15};
+use crate::{Algorithm, Comparison};
 
-/// The dygraph HTML report for one variable, mirroring the `isHtml=1` output of
-/// C `cmpDataTubes`: a `<html>` page embedding a Dygraph fed an array of
-/// `[time,reference,actual,high,low,error,actual(original)]` rows.
-#[allow(clippy::too_many_arguments)]
+/// The rows `[time,reference,actual,high,low,error,actual(original)]` of an
+/// `Ellipse2014` comparison of the actual `(time, data)`, like C `cmpDataTubes`.
+fn rows(out: &mut String, time: &[f64], data: &[f64], cmp: &Comparison, html: bool) {
+    debug_assert_eq!(cmp.algorithm, Algorithm::Ellipse2014);
+    let (reftime, refdata) = (&cmp.reference.x, &cmp.reference.y);
+    let n = cmp.time.len();
+    let error = (cmp.error_count > 0).then_some(&cmp.error);
+    let (empty, lbracket, rbracket) = if html { ("null", "[", "],") } else { ("", "", "") };
+    let mut j = 0usize;
+    for i in 0..reftime.len() {
+        out.push_str(&format!(
+            "{lbracket}{},{},",
+            format_g_prec15(reftime[i]),
+            format_g_prec15(refdata[i])
+        ));
+        if i < n {
+            let (c, h, l) = (
+                format_g_prec15(cmp.values[i]),
+                format_g_prec15(cmp.high[i]),
+                format_g_prec15(cmp.low[i]),
+            );
+            match error {
+                Some(e) if !e[i].is_nan() => out.push_str(&format!("{c},{h},{l},{}", format_g_prec15(e[i]))),
+                _ => out.push_str(&format!("{c},{h},{l},{empty}")),
+            }
+            if j < data.len() && reftime[i] == time[j] {
+                out.push_str(&format!(",{}{rbracket}\n", format_g_prec15(data[j])));
+                j += 1;
+            } else {
+                out.push_str(&format!(",{empty}{rbracket}\n"));
+            }
+        } else {
+            out.push_str(if html { "null,null,null,null,null],\n" } else { ",,,,\n" });
+        }
+        while j < data.len() && reftime[i] > time[j] {
+            out.push_str(&format!(
+                "{lbracket}{},{empty},{empty},{empty},{empty},{empty},{}{rbracket}\n",
+                format_g_prec15(time[j]),
+                format_g_prec15(data[j])
+            ));
+            j += 1;
+        }
+    }
+}
+
+/// The comparison as `diffSimulationResults` writes it to `<prefix>.<var>.csv`.
+pub fn tube_csv(time: &[f64], data: &[f64], cmp: &Comparison) -> String {
+    let mut csv = String::from("time,reference,actual,high,low,error,actual (raw)\n");
+    rows(&mut csv, time, data, cmp, false);
+    csv.push('\n');
+    csv
+}
+
+/// The dygraph HTML report of the comparison of the actual `(time, data)`.
 pub fn tube_html(
     var_name: &str,
     time: &[f64],
-    reftime: &[f64],
-    refdata: &[f64],
     data: &[f64],
-    cmp: &TubeCmp,
+    cmp: &Comparison,
     reltol: f64,
     reltol_diff_max_min: f64,
     range_delta: f64,
 ) -> String {
-    let TubeCmp { calibrated: calibrated_values, high, low, error, n, abstol } = cmp;
-    let (n, abstol) = (*n, *abstol);
-    let error = error.as_deref();
+    let reftime = &cmp.reference.x;
     let mut html = String::new();
-    let ref_size = reftime.len();
-    // `concat!` preserves the exact leading whitespace of each line (the CSS
-    // block is indented); a `\`-continued string literal would strip it.
     html.push_str(concat!(
         "<html>\n",
         "<head>\n",
@@ -58,11 +102,11 @@ pub fn tube_html(
         "Reference time: {} to {}, actual time: {} to {}. Parameters used for the comparison: \
 Relative tolerance {}. Absolute tolerance {} ({} relative). Range delta {}.",
         format_g_prec15(reftime[0]),
-        format_g_prec15(reftime[ref_size - 1]),
+        format_g_prec15(reftime[reftime.len() - 1]),
         format_g_prec15(time[0]),
         format_g_prec15(time[time.len() - 1]),
         format_g_prec(reltol, 2),
-        format_g_prec(abstol, 2),
+        format_g_prec(cmp.abstol, 2),
         format_g_prec(reltol_diff_max_min, 2),
         format_g_prec(range_delta, 2),
     ));
@@ -73,37 +117,7 @@ g = new Dygraph(document.getElementById(\"graphdiv\"),\n\
 [\n",
     );
 
-    let mut j = 0usize;
-    for i in 0..ref_size {
-        html.push_str(&format!("[{},{},", format_g_prec15(reftime[i]), format_g_prec15(refdata[i])));
-        if i < n {
-            match error {
-                Some(e) if !e[i].is_nan() => html.push_str(&format!(
-                    "{},{},{},{}",
-                    format_g_prec15(calibrated_values[i]), format_g_prec15(high[i]), format_g_prec15(low[i]), format_g_prec15(e[i])
-                )),
-                _ => html.push_str(&format!(
-                    "{},{},{},null",
-                    format_g_prec15(calibrated_values[i]), format_g_prec15(high[i]), format_g_prec15(low[i])
-                )),
-            }
-            if j < data.len() && reftime[i] == time[j] {
-                html.push_str(&format!(",{}],\n", format_g_prec15(data[j])));
-                j += 1;
-            } else {
-                html.push_str(",null],\n");
-            }
-        } else {
-            html.push_str("null,null,null,null,null],\n");
-        }
-        while j < data.len() && reftime[i] > time[j] {
-            html.push_str(&format!(
-                "[{},null,null,null,null,null,{}],\n",
-                format_g_prec15(time[j]), format_g_prec15(data[j])
-            ));
-            j += 1;
-        }
-    }
+    rows(&mut html, time, data, cmp, true);
     html.push_str("],\n");
     html.push_str(&format!(
         "{{title: '{var_name}',\n\

@@ -1,6 +1,7 @@
-//! Port of csv-compare's current `Ellipse.cs` (2014-12-04, still maintained):
-//! around every reference point sits an ellipse of half-width `size.x`, and the
-//! tube curves are the envelopes above / below all of them.
+//! Port of csv-compare's current `Ellipse.cs` (2014-12-04, still maintained;
+//! BSD-3-Clause, see `LICENSE`): around every reference point sits an ellipse
+//! of half-width `size.x`, and the tube curves are the envelopes above / below
+//! all of them.
 //!
 //! It shares [`crate::tubes`] with [`crate::ellipse2014`], the version
 //! OpenModelica ported. What changed since: the slope scale `S` and the tube
@@ -198,5 +199,11 @@ pub fn ellipse_tube(x: &mut [f64], y: &[f64], size: &TubeSize) -> (Curve, Curve)
     p.y_low.truncate(p.count_low);
     p.x_high.truncate(p.count_high);
     p.y_high.truncate(p.count_high);
-    (Curve { x: p.x_low, y: p.y_low }, Curve { x: p.x_high, y: p.y_high })
+    (
+        Curve { x: p.x_low, y: p.y_low },
+        Curve {
+            x: p.x_high,
+            y: p.y_high,
+        },
+    )
 }

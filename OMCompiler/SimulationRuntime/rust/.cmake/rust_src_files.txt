@@ -65,10 +65,12 @@ openmodelica_result_bench/src/writers.rs
 openmodelica_result_capi/Cargo.toml
 openmodelica_result_capi/include/omc_result.h
 openmodelica_result_capi/src/lib.rs
+openmodelica_result_capi/src/scripting.rs
 openmodelica_result_capi/src/writer.rs
 openmodelica_result_cli/Cargo.toml
 openmodelica_result_cli/src/main.rs
 openmodelica_result_diff/Cargo.toml
+openmodelica_result_diff/LICENSE
 openmodelica_result_diff/src/ellipse.rs
 openmodelica_result_diff/src/ellipse2014.rs
 openmodelica_result_diff/src/format.rs
@@ -83,9 +85,13 @@ openmodelica_result_files/Cargo.toml
 openmodelica_result_files/src/arrow.rs
 openmodelica_result_files/src/arrow_json.rs
 openmodelica_result_files/src/file.rs
+openmodelica_result_files/src/fs.rs
 openmodelica_result_files/src/hdf5.rs
 openmodelica_result_files/src/lib.rs
 openmodelica_result_files/src/readers.rs
+openmodelica_result_files/src/scripting/compare.rs
+openmodelica_result_files/src/scripting/filter.rs
+openmodelica_result_files/src/scripting/mod.rs
 openmodelica_result_files/src/threads.rs
 openmodelica_result_files/tests/hdf5.rs
 openmodelica_result_web/Cargo.toml

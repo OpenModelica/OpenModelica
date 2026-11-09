@@ -314,7 +314,8 @@ or online http://opensource.org/licenses/LGPL-2.1.
                            2000-2011 The University of California Berkeley
                            2006-2011 The University of Colorado Denver
 [BSD] TinyMT Copyright (c) 2011, 2013 Mutsuo Saito, Makoto Matsumoto, Hiroshima University and The University of Tokyo
-[BSD] csv-compare Tubes.cs Copyright (c) 2013, ITI GmbH Dresden
+[BSD] csv-compare Copyright (c) 2013, ITI GmbH Dresden
+                  Copyright (c) 2013-2024, ESI ITI GmbH and contributors
 [BSD-2-Clause] is_utf8 Copyright (c) 2013, Palard Julien
 [BSD-1] Copyright (c) 2005-2013, Troy D. Hanson http://troydhanson.github.com/uthash/
 [LGPL 2.1+] Copyright (C) 2008  Robert Gamble libcsv.c
