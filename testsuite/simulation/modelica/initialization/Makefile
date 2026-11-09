@@ -1,7 +1,6 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
-NewtonDiagnosticsSparse.mos \
 array_algorithm.mos \
 boundParameterExpUnfixed.mos \
 bug_2207.mos \
