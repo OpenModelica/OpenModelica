@@ -1013,17 +1013,27 @@ end isDiscreteAssignStatment;
 
 protected function makeDerivedAssignment
   "An assignment to the derivative of a cref with a variable index, which is an
-   if-expression, becomes an if-statement. Assignments to zero are removed."
+   if-expression, becomes an if-statement. The index has a known value in each
+   branch, which simplifies the right-hand side. Assignments to zero are removed."
   input DAE.Type ty;
   input DAE.Exp lhs;
   input DAE.Exp rhs;
   input DAE.ElementSource source;
   output list<DAE.Statement> stmts;
+protected
+  DAE.Exp then_rhs, else_rhs;
 algorithm
   stmts := match lhs
-    case DAE.IFEXP()
-      then {DAE.STMT_IF(lhs.expCond, makeDerivedAssignment(ty, lhs.expThen, rhs, source),
-                        DAE.ELSE(makeDerivedAssignment(ty, lhs.expElse, rhs, source)), source)};
+    local
+      DAE.Exp cond, index, value;
+    case DAE.IFEXP(expCond = cond as DAE.RELATION(exp1 = index, operator = DAE.EQUAL(), exp2 = value))
+      algorithm
+        (then_rhs, _) := Expression.replaceExp(rhs, index, value);
+        (then_rhs, _) := ExpressionSimplify.simplify(then_rhs);
+        (else_rhs, _) := Expression.replaceExp(rhs, cond, DAE.BCONST(false));
+        (else_rhs, _) := ExpressionSimplify.simplify(else_rhs);
+      then {DAE.STMT_IF(cond, makeDerivedAssignment(ty, lhs.expThen, then_rhs, source),
+                        DAE.ELSE(makeDerivedAssignment(ty, lhs.expElse, else_rhs, source)), source)};
     case _ guard Expression.isZero(lhs) then {};
     else {DAE.STMT_ASSIGN(ty, lhs, rhs, source)};
   end match;
