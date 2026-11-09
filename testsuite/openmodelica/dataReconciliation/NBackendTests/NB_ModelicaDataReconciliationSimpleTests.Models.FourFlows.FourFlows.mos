@@ -54,7 +54,7 @@ getErrorString();
 // ========================================
 // 1/1 (1): q0 = 100.0   [binding]
 // 2/2 (1): Q1 = q0   [dynamic]
-// 3/3 (1): Q2 = a * Q1   [dynamic]
+// 3/3 (1): Q2 = a*Q1   [dynamic]
 // 4/4 (1): Q1 = Q2 + Q3   [dynamic]
 // 5/5 (1): Q4 = Q2 + Q3   [dynamic]
 //
@@ -72,7 +72,7 @@ getErrorString();
 //
 // 5: q0: (1/1): (1): q0 = 100.0
 // 4: Q1: (2/2): (1): Q1 = q0
-// 3: Q2: (3/3): (1): Q2 = a * Q1
+// 3: Q2: (3/3): (1): Q2 = a*Q1
 // 2: Q3: (4/4): (1): Q1 = Q2 + Q3
 // 1: Q4: (5/5): (1): Q4 = Q2 + Q3
 //
@@ -101,7 +101,7 @@ getErrorString();
 //
 // 1: Q4: (5/5): (1): Q4 = Q2 + Q3
 // 2: Q3: (4/4): (1): Q1 = Q2 + Q3
-// 3: Q2: (3/3): (1): Q2 = a * Q1
+// 3: Q2: (3/3): (1): Q2 = a*Q1
 // 4: Q1: (2/2): (1): Q1 = q0
 //
 //
@@ -114,7 +114,7 @@ getErrorString();
 // >>>2: Q3: (4/4): (1): Q1 = Q2 + Q3
 // Procedure success
 //
-// >>>3: Q2: (3/3): (1): Q2 = a * Q1
+// >>>3: Q2: (3/3): (1): Q2 = a*Q1
 // Procedure success
 //
 // >>>4: Q1: (2/2): (1): Q1 = q0
@@ -137,7 +137,7 @@ getErrorString();
 // ========================================
 // 1/1 (1): Q1 = 0.0   [binding]
 // 2/2 (1): q0 = 100.0   [binding]
-// 3/3 (1): Q2 = a * Q1   [dynamic]
+// 3/3 (1): Q2 = a*Q1   [dynamic]
 // 4/4 (1): Q1 = Q2 + Q3   [dynamic]
 // 5/5 (1): Q4 = Q2 + Q3   [dynamic]
 //
@@ -155,7 +155,7 @@ getErrorString();
 //
 // 5: q0: (2/2): (1): q0 = 100.0
 // 4: Q1: (1/1): (1): Q1 = 0.0
-// 3: Q2: (3/3): (1): Q2 = a * Q1
+// 3: Q2: (3/3): (1): Q2 = a*Q1
 // 2: Q3: (4/4): (1): Q1 = Q2 + Q3
 // 1: Q4: (5/5): (1): Q4 = Q2 + Q3
 //
@@ -185,7 +185,7 @@ getErrorString();
 //
 // 1: Q4: (5/5): (1): Q4 = Q2 + Q3
 // 2: Q3: (4/4): (1): Q1 = Q2 + Q3
-// 3: Q2: (3/3): (1): Q2 = a * Q1
+// 3: Q2: (3/3): (1): Q2 = a*Q1
 //
 //
 // Extracting SET-C and SET-S from E-BLT
@@ -197,7 +197,7 @@ getErrorString();
 // >>>2: Q3: (4/4): (1): Q1 = Q2 + Q3
 // Procedure success
 //
-// >>>3: Q2: (3/3): (1): Q2 = a * Q1
+// >>>3: Q2: (3/3): (1): Q2 = a*Q1
 // Procedure success
 //
 // Extraction procedure is successfully completed in iteration count: 2
@@ -213,7 +213,7 @@ getErrorString();
 // ========================================
 // 1/1 (1): Q4 = Q2 + Q3   [dynamic]
 // 2/2 (1): Q1 = Q2 + Q3   [dynamic]
-// 3/3 (1): Q2 = a * Q1   [dynamic]
+// 3/3 (1): Q2 = a*Q1   [dynamic]
 //
 //
 // Unknown variables in SET_S (0)

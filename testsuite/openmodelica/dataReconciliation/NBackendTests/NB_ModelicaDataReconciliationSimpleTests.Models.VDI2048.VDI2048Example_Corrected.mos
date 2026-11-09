@@ -62,9 +62,9 @@ getErrorString();
 //
 // OrderedEquation (15, 15)
 // ========================================
-// 1/1 (1): mFD1 = (mFDKELL + mFDKEL) - 0.2 * mV   [dynamic]
-// 2/2 (1): mFD2 = (mSPLL + mSPL) - 0.6 * mV   [dynamic]
-// 3/3 (1): mFD3 = mA5 + mA6 + mA7 + mHK + 0.4 * mV   [dynamic]
+// 1/1 (1): mFD1 = (mFDKELL + mFDKEL) - 0.2*mV   [dynamic]
+// 2/2 (1): mFD2 = (mSPLL + mSPL) - 0.6*mV   [dynamic]
+// 3/3 (1): mFD3 = mA5 + mA6 + mA7 + mHK + 0.4*mV   [dynamic]
 // 4/4 (1): mHDANZ = mA6 + mA7 + mA5   [dynamic]
 // 5/5 (1): 0.0 = mFD1 - mFD2   [dynamic]
 // 6/6 (1): 0.0 = mFD2 - mFD3   [dynamic]
@@ -104,14 +104,14 @@ getErrorString();
 // 14: mFDKELL: (14/14): (1): mFDKELL = 45.668
 // 13: mSPL: (13/13): (1): mSPL = 44.575
 // 12: mSPLL: (12/12): (1): mSPLL = 44.319
-// 11: mV: (2/2): (1): mFD2 = (mSPLL + mSPL) - 0.6 * mV
+// 11: mV: (2/2): (1): mFD2 = (mSPLL + mSPL) - 0.6*mV
 // 10: mHK: (11/11): (1): mHK = 69.978
 // 9: mA7: (10/10): (1): mA7 = 10.364
 // 8: mA6: (9/9): (1): mA6 = 3.744
-// 7: mA5: (3/3): (1): mFD3 = mA5 + mA6 + mA7 + mHK + 0.4 * mV
+// 7: mA5: (3/3): (1): mFD3 = mA5 + mA6 + mA7 + mHK + 0.4*mV
 // 6: mHDNK: (7/7): (1): 0.0 = mHDANZ - mHDNK
 // 5: mD: (8/8): (1): mD = 2.092
-// 4: mFD1: (1/1): (1): mFD1 = (mFDKELL + mFDKEL) - 0.2 * mV
+// 4: mFD1: (1/1): (1): mFD1 = (mFDKELL + mFDKEL) - 0.2*mV
 // 3: mFD2: (5/5): (1): 0.0 = mFD1 - mFD2
 // 2: mFD3: (6/6): (1): 0.0 = mFD2 - mFD3
 // 1: mHDANZ: (4/4): (1): mHDANZ = mA6 + mA7 + mA5
@@ -153,8 +153,8 @@ getErrorString();
 // ============================================================
 //
 // 6: mHDNK: (7/7): (1): 0.0 = mHDANZ - mHDNK
-// 7: mA5: (3/3): (1): mFD3 = mA5 + mA6 + mA7 + mHK + 0.4 * mV
-// 11: mV: (2/2): (1): mFD2 = (mSPLL + mSPL) - 0.6 * mV
+// 7: mA5: (3/3): (1): mFD3 = mA5 + mA6 + mA7 + mHK + 0.4*mV
+// 11: mV: (2/2): (1): mFD2 = (mSPLL + mSPL) - 0.6*mV
 //
 //
 // Extracting SET-C and SET-S from E-BLT
@@ -164,15 +164,15 @@ getErrorString();
 // 1: mHDANZ: (4/4): (1): mHDANZ = mA6 + mA7 + mA5
 // Procedure success
 //
-// >>>7: mA5: (3/3): (1): mFD3 = mA5 + mA6 + mA7 + mHK + 0.4 * mV
+// >>>7: mA5: (3/3): (1): mFD3 = mA5 + mA6 + mA7 + mHK + 0.4*mV
 // 2: mFD3: (6/6): (1): 0.0 = mFD2 - mFD3
 // 3: mFD2: (5/5): (1): 0.0 = mFD1 - mFD2
-// 4: mFD1: (1/1): (1): mFD1 = (mFDKELL + mFDKEL) - 0.2 * mV
+// 4: mFD1: (1/1): (1): mFD1 = (mFDKELL + mFDKEL) - 0.2*mV
 // Procedure success
 //
-// >>>11: mV: (2/2): (1): mFD2 = (mSPLL + mSPL) - 0.6 * mV
+// >>>11: mV: (2/2): (1): mFD2 = (mSPLL + mSPL) - 0.6*mV
 // 3: mFD2: (5/5): (1): 0.0 = mFD1 - mFD2
-// 4: mFD1: (1/1): (1): mFD1 = (mFDKELL + mFDKEL) - 0.2 * mV
+// 4: mFD1: (1/1): (1): mFD1 = (mFDKELL + mFDKEL) - 0.2*mV
 // Procedure success
 //
 // Extraction procedure is successfully completed in iteration count: 1
@@ -187,14 +187,14 @@ getErrorString();
 // SET_C (3, 3)
 // ========================================
 // 1/1 (1): 0.0 = mHDANZ - mHDNK   [dynamic]
-// 2/2 (1): mFD3 = mA5 + mA6 + mA7 + mHK + 0.4 * mV   [dynamic]
-// 3/3 (1): mFD2 = (mSPLL + mSPL) - 0.6 * mV   [dynamic]
+// 2/2 (1): mFD3 = mA5 + mA6 + mA7 + mHK + 0.4*mV   [dynamic]
+// 3/3 (1): mFD2 = (mSPLL + mSPL) - 0.6*mV   [dynamic]
 //
 //
 // SET_S (4, 4)
 // ========================================
 // 1/1 (1): mHDANZ = mA6 + mA7 + mA5   [dynamic]
-// 2/2 (1): mFD1 = (mFDKELL + mFDKEL) - 0.2 * mV   [dynamic]
+// 2/2 (1): mFD1 = (mFDKELL + mFDKEL) - 0.2*mV   [dynamic]
 // 3/3 (1): 0.0 = mFD1 - mFD2   [dynamic]
 // 4/4 (1): 0.0 = mFD2 - mFD3   [dynamic]
 //

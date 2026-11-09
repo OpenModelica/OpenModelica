@@ -58,7 +58,7 @@ getErrorString();
 //
 // OrderedEquation (11, 11)
 // ========================================
-// 1/1 (1): (mFDKELL + mFDKEL + 0.4 * mV) - (mSPLL + mSPL) = 0.0   [dynamic]
+// 1/1 (1): (mFDKELL + mFDKEL + 0.4*mV) - (mSPLL + mSPL) = 0.0   [dynamic]
 // 2/2 (1): (mSPLL + mSPL) - (mA5 + mA6 + mA7 + mHK + mV) = 0.0   [dynamic]
 // 3/3 (1): (mA5 + mA6 + mA7) - mHDNK = 0.0   [dynamic]
 // 4/4 (1): mD = 2.092   [binding]
@@ -92,7 +92,7 @@ getErrorString();
 // 10: mFDKELL: (10/10): (1): mFDKELL = 45.668
 // 9: mSPL: (9/9): (1): mSPL = 44.575
 // 8: mSPLL: (8/8): (1): mSPLL = 44.319
-// 7: mV: (1/1): (1): (mFDKELL + mFDKEL + 0.4 * mV) - (mSPLL + mSPL) = 0.0
+// 7: mV: (1/1): (1): (mFDKELL + mFDKEL + 0.4*mV) - (mSPLL + mSPL) = 0.0
 // 6: mHK: (7/7): (1): mHK = 69.978
 // 5: mA7: (6/6): (1): mA7 = 10.364
 // 4: mA6: (5/5): (1): mA6 = 3.744
@@ -138,7 +138,7 @@ getErrorString();
 //
 // 2: mHDNK: (3/3): (1): (mA5 + mA6 + mA7) - mHDNK = 0.0
 // 3: mA5: (2/2): (1): (mSPLL + mSPL) - (mA5 + mA6 + mA7 + mHK + mV) = 0.0
-// 7: mV: (1/1): (1): (mFDKELL + mFDKEL + 0.4 * mV) - (mSPLL + mSPL) = 0.0
+// 7: mV: (1/1): (1): (mFDKELL + mFDKEL + 0.4*mV) - (mSPLL + mSPL) = 0.0
 //
 //
 // Extracting SET-C and SET-S from E-BLT
@@ -150,7 +150,7 @@ getErrorString();
 // >>>3: mA5: (2/2): (1): (mSPLL + mSPL) - (mA5 + mA6 + mA7 + mHK + mV) = 0.0
 // Procedure success
 //
-// >>>7: mV: (1/1): (1): (mFDKELL + mFDKEL + 0.4 * mV) - (mSPLL + mSPL) = 0.0
+// >>>7: mV: (1/1): (1): (mFDKELL + mFDKEL + 0.4*mV) - (mSPLL + mSPL) = 0.0
 // Procedure success
 //
 // Extraction procedure is successfully completed in iteration count: 1
@@ -166,7 +166,7 @@ getErrorString();
 // ========================================
 // 1/1 (1): (mA5 + mA6 + mA7) - mHDNK = 0.0   [dynamic]
 // 2/2 (1): (mSPLL + mSPL) - (mA5 + mA6 + mA7 + mHK + mV) = 0.0   [dynamic]
-// 3/3 (1): (mFDKELL + mFDKEL + 0.4 * mV) - (mSPLL + mSPL) = 0.0   [dynamic]
+// 3/3 (1): (mFDKELL + mFDKEL + 0.4*mV) - (mSPLL + mSPL) = 0.0   [dynamic]
 //
 //
 // Unknown variables in SET_S (0)

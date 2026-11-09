@@ -233,27 +233,27 @@ getErrorString();
 // 56/56 (1): splitter.pipe1.Q = splitter.pipe1.C1.Q   [dynamic]
 // 57/57 (1): splitter.pipe1.h = splitter.pipe1.C1.h   [dynamic]
 // 58/58 (1): 0.0 = splitter.pipe1.C1.h - splitter.pipe1.C1.h_vol   [dynamic]
-// 59/59 (1): splitter.pipe1.deltaP = ((splitter.pipe1.Q * splitter.pipe1.deltaPnom * splitter.pipe1.CoeffDeltaP) / splitter.pipe1.Qnom) * abs(splitter.pipe1.Q / splitter.pipe1.Qnom)   [dynamic]
-// 60/60 (1): splitter.pipe1.Pm = (splitter.pipe1.C1.P + splitter.pipe1.C2.P) / 2.0   [dynamic]
-// 61/61 (1): splitter.pipe1.h = splitter.pipe1.cp * (splitter.pipe1.T - 273.16) + splitter.pipe1.b * splitter.pipe1.Pm   [dynamic]
+// 59/59 (1): splitter.pipe1.deltaP = ((splitter.pipe1.Q*splitter.pipe1.deltaPnom*splitter.pipe1.CoeffDeltaP)/splitter.pipe1.Qnom)*abs(splitter.pipe1.Q/splitter.pipe1.Qnom)   [dynamic]
+// 60/60 (1): splitter.pipe1.Pm = (splitter.pipe1.C1.P + splitter.pipe1.C2.P)/2.0   [dynamic]
+// 61/61 (1): splitter.pipe1.h = splitter.pipe1.cp*(splitter.pipe1.T - 273.16) + splitter.pipe1.b*splitter.pipe1.Pm   [dynamic]
 // 62/62 (1): splitter.pipe2.C1.P - splitter.pipe2.C2.P = splitter.pipe2.deltaP   [dynamic]
 // 63/63 (1): splitter.pipe2.C2.Q = splitter.pipe2.C1.Q   [dynamic]
 // 64/64 (1): splitter.pipe2.C2.h = splitter.pipe2.C1.h   [dynamic]
 // 65/65 (1): splitter.pipe2.Q = splitter.pipe2.C1.Q   [dynamic]
 // 66/66 (1): splitter.pipe2.h = splitter.pipe2.C1.h   [dynamic]
 // 67/67 (1): 0.0 = splitter.pipe2.C1.h - splitter.pipe2.C1.h_vol   [dynamic]
-// 68/68 (1): splitter.pipe2.deltaP = ((splitter.pipe2.Q * splitter.pipe2.deltaPnom * splitter.pipe2.CoeffDeltaP) / splitter.pipe2.Qnom) * abs(splitter.pipe2.Q / splitter.pipe2.Qnom)   [dynamic]
-// 69/69 (1): splitter.pipe2.Pm = (splitter.pipe2.C1.P + splitter.pipe2.C2.P) / 2.0   [dynamic]
-// 70/70 (1): splitter.pipe2.h = splitter.pipe2.cp * (splitter.pipe2.T - 273.16) + splitter.pipe2.b * splitter.pipe2.Pm   [dynamic]
+// 68/68 (1): splitter.pipe2.deltaP = ((splitter.pipe2.Q*splitter.pipe2.deltaPnom*splitter.pipe2.CoeffDeltaP)/splitter.pipe2.Qnom)*abs(splitter.pipe2.Q/splitter.pipe2.Qnom)   [dynamic]
+// 69/69 (1): splitter.pipe2.Pm = (splitter.pipe2.C1.P + splitter.pipe2.C2.P)/2.0   [dynamic]
+// 70/70 (1): splitter.pipe2.h = splitter.pipe2.cp*(splitter.pipe2.T - 273.16) + splitter.pipe2.b*splitter.pipe2.Pm   [dynamic]
 // 71/71 (1): splitter.pipe3.C1.P - splitter.pipe3.C2.P = splitter.pipe3.deltaP   [dynamic]
 // 72/72 (1): splitter.pipe3.C2.Q = splitter.pipe3.C1.Q   [dynamic]
 // 73/73 (1): splitter.pipe3.C2.h = splitter.pipe3.C1.h   [dynamic]
 // 74/74 (1): splitter.pipe3.Q = splitter.pipe3.C1.Q   [dynamic]
 // 75/75 (1): splitter.pipe3.h = splitter.pipe3.C1.h   [dynamic]
 // 76/76 (1): 0.0 = splitter.pipe3.C1.h - splitter.pipe3.C1.h_vol   [dynamic]
-// 77/77 (1): splitter.pipe3.deltaP = ((splitter.pipe3.Q * splitter.pipe3.deltaPnom * splitter.pipe3.CoeffDeltaP) / splitter.pipe3.Qnom) * abs(splitter.pipe3.Q / splitter.pipe3.Qnom)   [dynamic]
-// 78/78 (1): splitter.pipe3.Pm = (splitter.pipe3.C1.P + splitter.pipe3.C2.P) / 2.0   [dynamic]
-// 79/79 (1): splitter.pipe3.h = splitter.pipe3.cp * (splitter.pipe3.T - 273.16) + splitter.pipe3.b * splitter.pipe3.Pm   [dynamic]
+// 77/77 (1): splitter.pipe3.deltaP = ((splitter.pipe3.Q*splitter.pipe3.deltaPnom*splitter.pipe3.CoeffDeltaP)/splitter.pipe3.Qnom)*abs(splitter.pipe3.Q/splitter.pipe3.Qnom)   [dynamic]
+// 78/78 (1): splitter.pipe3.Pm = (splitter.pipe3.C1.P + splitter.pipe3.C2.P)/2.0   [dynamic]
+// 79/79 (1): splitter.pipe3.h = splitter.pipe3.cp*(splitter.pipe3.T - 273.16) + splitter.pipe3.b*splitter.pipe3.Pm   [dynamic]
 // 80/80 (1): splitter.sourceP.C.P = splitter.sourceP.P   [dynamic]
 // 81/81 (1): splitter.sourceP.C.Q = splitter.sourceP.Q   [dynamic]
 // 82/82 (1): splitter.sourceP.C.h_vol = splitter.sourceP.h   [dynamic]
@@ -281,14 +281,14 @@ getErrorString();
 // 104/104 (1): splitter.volume.P = splitter.volume.Ce2.P   [dynamic]
 // 105/105 (1): splitter.volume.P = splitter.volume.Cs1.P   [dynamic]
 // 106/106 (1): splitter.volume.P = splitter.volume.Cs2.P   [dynamic]
-// 107/107 (1): splitter.volume.BH = (splitter.volume.Ce2.Q * splitter.volume.Ce2.h + splitter.volume.Ce1.Q * splitter.volume.Ce1.h + splitter.volume.Cth.W) - (splitter.volume.Cs2.Q * splitter.volume.Cs2.h + splitter.volume.Cs1.Q * splitter.volume.Cs1.h)   [dynamic]
+// 107/107 (1): splitter.volume.BH = (splitter.volume.Ce2.Q*splitter.volume.Ce2.h + splitter.volume.Ce1.Q*splitter.volume.Ce1.h + splitter.volume.Cth.W) - (splitter.volume.Cs2.Q*splitter.volume.Cs2.h + splitter.volume.Cs1.Q*splitter.volume.Cs1.h)   [dynamic]
 // 108/108 (1): 0.0 = splitter.volume.BH   [dynamic]
 // 109/109 (1): splitter.volume.Ce1.h_vol = splitter.volume.h   [dynamic]
 // 110/110 (1): splitter.volume.Ce2.h_vol = splitter.volume.h   [dynamic]
 // 111/111 (1): splitter.volume.Cs1.h_vol = splitter.volume.h   [dynamic]
 // 112/112 (1): splitter.volume.Cs2.h_vol = splitter.volume.h   [dynamic]
-// 113/113 (1): splitter.volume.h = splitter.volume.cp * (splitter.volume.T - 273.16) + splitter.volume.b * splitter.volume.P   [dynamic]
-// 114/114 (1): splitter.volume.rho = (-(0.0025 * (splitter.volume.T - 273.16) + 0.1992)) * (splitter.volume.T - 273.16) + 1004.4   [dynamic]
+// 113/113 (1): splitter.volume.h = splitter.volume.cp*(splitter.volume.T - 273.16) + splitter.volume.b*splitter.volume.P   [dynamic]
+// 114/114 (1): splitter.volume.rho = (-(0.0025*(splitter.volume.T - 273.16) + 0.1992))*(splitter.volume.T - 273.16) + 1004.4   [dynamic]
 // 115/115 (1): splitter.volume.Cth.T = splitter.volume.T   [dynamic]
 // 116/116 (1): splitter.volume.Cs2.b = true   [binding]
 // 117/117 (1): splitter.volume.Cs1.b = true   [binding]
@@ -457,11 +457,11 @@ getErrorString();
 // 113: splitter.sinkQ1.C.h: (12/12): (1): splitter.pipe3.C2.h = splitter.sinkQ1.C.h
 // 112: splitter.sinkQ1.C.a: (128/128): (1): splitter.sinkQ1.C.a = true
 // 111: splitter.sinkQ1.C.b: (11/11): (1): splitter.pipe3.C2.b = splitter.sinkQ1.C.b
-// 110: splitter.pipe1.deltaP: (59/59): (1): splitter.pipe1.deltaP = ((splitter.pipe1.Q * splitter.pipe1.deltaPnom * splitter.pipe1.CoeffDeltaP) / splitter.pipe1.Qnom) * abs(splitter.pipe1.Q / splitter.pipe1.Qnom)
+// 110: splitter.pipe1.deltaP: (59/59): (1): splitter.pipe1.deltaP = ((splitter.pipe1.Q*splitter.pipe1.deltaPnom*splitter.pipe1.CoeffDeltaP)/splitter.pipe1.Qnom)*abs(splitter.pipe1.Q/splitter.pipe1.Qnom)
 // 109: splitter.pipe1.Q: (56/56): (1): splitter.pipe1.Q = splitter.pipe1.C1.Q
-// 108: splitter.pipe1.Pm: (60/60): (1): splitter.pipe1.Pm = (splitter.pipe1.C1.P + splitter.pipe1.C2.P) / 2.0
+// 108: splitter.pipe1.Pm: (60/60): (1): splitter.pipe1.Pm = (splitter.pipe1.C1.P + splitter.pipe1.C2.P)/2.0
 // 107: splitter.pipe1.h: (57/57): (1): splitter.pipe1.h = splitter.pipe1.C1.h
-// 106: splitter.pipe1.T: (61/61): (1): splitter.pipe1.h = splitter.pipe1.cp * (splitter.pipe1.T - 273.16) + splitter.pipe1.b * splitter.pipe1.Pm
+// 106: splitter.pipe1.T: (61/61): (1): splitter.pipe1.h = splitter.pipe1.cp*(splitter.pipe1.T - 273.16) + splitter.pipe1.b*splitter.pipe1.Pm
 // 105: splitter.pipe1.C1.P: (14/14): (1): splitter.sourceP.C.P = splitter.pipe1.C1.P
 // 104: splitter.pipe1.C1.h_vol: (19/19): (1): splitter.sourceP.C.h_vol = splitter.pipe1.C1.h_vol
 // 103: splitter.pipe1.C1.Q: (54/54): (1): splitter.pipe1.C2.Q = splitter.pipe1.C1.Q
@@ -474,11 +474,11 @@ getErrorString();
 // 96: splitter.pipe1.C2.h: (55/55): (1): splitter.pipe1.C2.h = splitter.pipe1.C1.h
 // 95: splitter.pipe1.C2.a: (28/28): (1): splitter.pipe1.C2.a = splitter.volume.Ce1.a
 // 94: splitter.pipe1.C2.b: (126/126): (1): splitter.pipe1.C2.b = true
-// 93: splitter.pipe2.deltaP: (68/68): (1): splitter.pipe2.deltaP = ((splitter.pipe2.Q * splitter.pipe2.deltaPnom * splitter.pipe2.CoeffDeltaP) / splitter.pipe2.Qnom) * abs(splitter.pipe2.Q / splitter.pipe2.Qnom)
+// 93: splitter.pipe2.deltaP: (68/68): (1): splitter.pipe2.deltaP = ((splitter.pipe2.Q*splitter.pipe2.deltaPnom*splitter.pipe2.CoeffDeltaP)/splitter.pipe2.Qnom)*abs(splitter.pipe2.Q/splitter.pipe2.Qnom)
 // 92: splitter.pipe2.Q: (65/65): (1): splitter.pipe2.Q = splitter.pipe2.C1.Q
-// 91: splitter.pipe2.Pm: (69/69): (1): splitter.pipe2.Pm = (splitter.pipe2.C1.P + splitter.pipe2.C2.P) / 2.0
+// 91: splitter.pipe2.Pm: (69/69): (1): splitter.pipe2.Pm = (splitter.pipe2.C1.P + splitter.pipe2.C2.P)/2.0
 // 90: splitter.pipe2.h: (66/66): (1): splitter.pipe2.h = splitter.pipe2.C1.h
-// 89: splitter.pipe2.T: (70/70): (1): splitter.pipe2.h = splitter.pipe2.cp * (splitter.pipe2.T - 273.16) + splitter.pipe2.b * splitter.pipe2.Pm
+// 89: splitter.pipe2.T: (70/70): (1): splitter.pipe2.h = splitter.pipe2.cp*(splitter.pipe2.T - 273.16) + splitter.pipe2.b*splitter.pipe2.Pm
 // 88: splitter.pipe2.C1.P: (38/38): (1): splitter.volume.Cs1.P = splitter.pipe2.C1.P
 // 87: splitter.pipe2.C1.h_vol: (43/43): (1): splitter.volume.Cs1.h_vol = splitter.pipe2.C1.h_vol
 // 86: splitter.pipe2.C1.Q: (63/63): (1): splitter.pipe2.C2.Q = splitter.pipe2.C1.Q
@@ -491,11 +491,11 @@ getErrorString();
 // 79: splitter.pipe2.C2.h: (64/64): (1): splitter.pipe2.C2.h = splitter.pipe2.C1.h
 // 78: splitter.pipe2.C2.a: (22/22): (1): splitter.pipe2.C2.a = splitter.sinkQ.C.a
 // 77: splitter.pipe2.C2.b: (124/124): (1): splitter.pipe2.C2.b = true
-// 76: splitter.pipe3.deltaP: (77/77): (1): splitter.pipe3.deltaP = ((splitter.pipe3.Q * splitter.pipe3.deltaPnom * splitter.pipe3.CoeffDeltaP) / splitter.pipe3.Qnom) * abs(splitter.pipe3.Q / splitter.pipe3.Qnom)
+// 76: splitter.pipe3.deltaP: (77/77): (1): splitter.pipe3.deltaP = ((splitter.pipe3.Q*splitter.pipe3.deltaPnom*splitter.pipe3.CoeffDeltaP)/splitter.pipe3.Qnom)*abs(splitter.pipe3.Q/splitter.pipe3.Qnom)
 // 75: splitter.pipe3.Q: (74/74): (1): splitter.pipe3.Q = splitter.pipe3.C1.Q
-// 74: splitter.pipe3.Pm: (78/78): (1): splitter.pipe3.Pm = (splitter.pipe3.C1.P + splitter.pipe3.C2.P) / 2.0
+// 74: splitter.pipe3.Pm: (78/78): (1): splitter.pipe3.Pm = (splitter.pipe3.C1.P + splitter.pipe3.C2.P)/2.0
 // 73: splitter.pipe3.h: (75/75): (1): splitter.pipe3.h = splitter.pipe3.C1.h
-// 72: splitter.pipe3.T: (79/79): (1): splitter.pipe3.h = splitter.pipe3.cp * (splitter.pipe3.T - 273.16) + splitter.pipe3.b * splitter.pipe3.Pm
+// 72: splitter.pipe3.T: (79/79): (1): splitter.pipe3.h = splitter.pipe3.cp*(splitter.pipe3.T - 273.16) + splitter.pipe3.b*splitter.pipe3.Pm
 // 71: splitter.pipe3.C1.P: (32/32): (1): splitter.volume.Cs2.P = splitter.pipe3.C1.P
 // 70: splitter.pipe3.C1.h_vol: (76/76): (1): 0.0 = splitter.pipe3.C1.h - splitter.pipe3.C1.h_vol
 // 69: splitter.pipe3.C1.Q: (72/72): (1): splitter.pipe3.C2.Q = splitter.pipe3.C1.Q
@@ -535,10 +535,10 @@ getErrorString();
 // 35: splitter.heatSource.C[1].T: (44/44): (1): splitter.heatSource.C[1].T = splitter.volume.Cth.T
 // 34: splitter.heatSource.C[1].W: (96/96): (1): splitter.heatSource.C.W = -splitter.heatSource.W0
 // 33: splitter.heatSource.ISignal.signal: (97/97): (1): splitter.heatSource.ISignal.signal = 0.0
-// 32: splitter.volume.T: (113/113): (1): splitter.volume.h = splitter.volume.cp * (splitter.volume.T - 273.16) + splitter.volume.b * splitter.volume.P
+// 32: splitter.volume.T: (113/113): (1): splitter.volume.h = splitter.volume.cp*(splitter.volume.T - 273.16) + splitter.volume.b*splitter.volume.P
 // 31: splitter.volume.P: (103/103): (1): splitter.volume.P = splitter.volume.Ce1.P
 // 30: splitter.volume.h: (112/112): (1): splitter.volume.Cs2.h_vol = splitter.volume.h
-// 29: splitter.volume.rho: (114/114): (1): splitter.volume.rho = (-(0.0025 * (splitter.volume.T - 273.16) + 0.1992)) * (splitter.volume.T - 273.16) + 1004.4
+// 29: splitter.volume.rho: (114/114): (1): splitter.volume.rho = (-(0.0025*(splitter.volume.T - 273.16) + 0.1992))*(splitter.volume.T - 273.16) + 1004.4
 // 28: splitter.volume.BQ: (102/102): (1): 0.0 = splitter.volume.BQ
 // 27: splitter.volume.BH: (108/108): (1): 0.0 = splitter.volume.BH
 // 26: splitter.volume.Cth.T: (115/115): (1): splitter.volume.Cth.T = splitter.volume.T
@@ -564,7 +564,7 @@ getErrorString();
 // 6: splitter.volume.Cs2.P: (106/106): (1): splitter.volume.P = splitter.volume.Cs2.P
 // 5: splitter.volume.Cs2.h_vol: (37/37): (1): splitter.volume.Cs2.h_vol = splitter.pipe3.C1.h_vol
 // 4: splitter.volume.Cs2.Q: (33/33): (1): splitter.volume.Cs2.Q = splitter.pipe3.C1.Q
-// 3: splitter.volume.Cs2.h: (107/107): (1): splitter.volume.BH = (splitter.volume.Ce2.Q * splitter.volume.Ce2.h + splitter.volume.Ce1.Q * splitter.volume.Ce1.h + splitter.volume.Cth.W) - (splitter.volume.Cs2.Q * splitter.volume.Cs2.h + splitter.volume.Cs1.Q * splitter.volume.Cs1.h)
+// 3: splitter.volume.Cs2.h: (107/107): (1): splitter.volume.BH = (splitter.volume.Ce2.Q*splitter.volume.Ce2.h + splitter.volume.Ce1.Q*splitter.volume.Ce1.h + splitter.volume.Cth.W) - (splitter.volume.Cs2.Q*splitter.volume.Cs2.h + splitter.volume.Cs1.Q*splitter.volume.Cs1.h)
 // 2: splitter.volume.Cs2.a: (34/34): (1): splitter.volume.Cs2.a = splitter.pipe3.C1.a
 // 1: splitter.volume.Cs2.b: (116/116): (1): splitter.volume.Cs2.b = true
 //
@@ -622,22 +622,22 @@ getErrorString();
 // E-BLT: equations that compute the variables of interest:(10)
 // ============================================================
 //
-// 32: splitter.volume.T: (113/113): (1): splitter.volume.h = splitter.volume.cp * (splitter.volume.T - 273.16) + splitter.volume.b * splitter.volume.P
-// 72: splitter.pipe3.T: (79/79): (1): splitter.pipe3.h = splitter.pipe3.cp * (splitter.pipe3.T - 273.16) + splitter.pipe3.b * splitter.pipe3.Pm
-// 74: splitter.pipe3.Pm: (78/78): (1): splitter.pipe3.Pm = (splitter.pipe3.C1.P + splitter.pipe3.C2.P) / 2.0
+// 32: splitter.volume.T: (113/113): (1): splitter.volume.h = splitter.volume.cp*(splitter.volume.T - 273.16) + splitter.volume.b*splitter.volume.P
+// 72: splitter.pipe3.T: (79/79): (1): splitter.pipe3.h = splitter.pipe3.cp*(splitter.pipe3.T - 273.16) + splitter.pipe3.b*splitter.pipe3.Pm
+// 74: splitter.pipe3.Pm: (78/78): (1): splitter.pipe3.Pm = (splitter.pipe3.C1.P + splitter.pipe3.C2.P)/2.0
 // 75: splitter.pipe3.Q: (74/74): (1): splitter.pipe3.Q = splitter.pipe3.C1.Q
-// 89: splitter.pipe2.T: (70/70): (1): splitter.pipe2.h = splitter.pipe2.cp * (splitter.pipe2.T - 273.16) + splitter.pipe2.b * splitter.pipe2.Pm
-// 91: splitter.pipe2.Pm: (69/69): (1): splitter.pipe2.Pm = (splitter.pipe2.C1.P + splitter.pipe2.C2.P) / 2.0
+// 89: splitter.pipe2.T: (70/70): (1): splitter.pipe2.h = splitter.pipe2.cp*(splitter.pipe2.T - 273.16) + splitter.pipe2.b*splitter.pipe2.Pm
+// 91: splitter.pipe2.Pm: (69/69): (1): splitter.pipe2.Pm = (splitter.pipe2.C1.P + splitter.pipe2.C2.P)/2.0
 // 92: splitter.pipe2.Q: (65/65): (1): splitter.pipe2.Q = splitter.pipe2.C1.Q
-// 106: splitter.pipe1.T: (61/61): (1): splitter.pipe1.h = splitter.pipe1.cp * (splitter.pipe1.T - 273.16) + splitter.pipe1.b * splitter.pipe1.Pm
-// 108: splitter.pipe1.Pm: (60/60): (1): splitter.pipe1.Pm = (splitter.pipe1.C1.P + splitter.pipe1.C2.P) / 2.0
+// 106: splitter.pipe1.T: (61/61): (1): splitter.pipe1.h = splitter.pipe1.cp*(splitter.pipe1.T - 273.16) + splitter.pipe1.b*splitter.pipe1.Pm
+// 108: splitter.pipe1.Pm: (60/60): (1): splitter.pipe1.Pm = (splitter.pipe1.C1.P + splitter.pipe1.C2.P)/2.0
 // 109: splitter.pipe1.Q: (56/56): (1): splitter.pipe1.Q = splitter.pipe1.C1.Q
 //
 //
 // Extracting SET-C and SET-S from E-BLT
 // Procedure is applied on each equation in the E-BLT
 // ==========================================================================
-// >>>32: splitter.volume.T: (113/113): (1): splitter.volume.h = splitter.volume.cp * (splitter.volume.T - 273.16) + splitter.volume.b * splitter.volume.P
+// >>>32: splitter.volume.T: (113/113): (1): splitter.volume.h = splitter.volume.cp*(splitter.volume.T - 273.16) + splitter.volume.b*splitter.volume.P
 // 31: splitter.volume.P: (103/103): (1): splitter.volume.P = splitter.volume.Ce1.P
 // 24: splitter.volume.Ce1.P: (26/26): (1): splitter.pipe1.C2.P = splitter.volume.Ce1.P
 // 99: splitter.pipe1.C2.P: (53/53): (1): splitter.pipe1.C1.P - splitter.pipe1.C2.P = splitter.pipe1.deltaP
@@ -648,10 +648,10 @@ getErrorString();
 // splitter.sourceP.P0 is a boundary condition ---> exit procedure
 // Procedure failed
 //
-// >>>72: splitter.pipe3.T: (79/79): (1): splitter.pipe3.h = splitter.pipe3.cp * (splitter.pipe3.T - 273.16) + splitter.pipe3.b * splitter.pipe3.Pm
+// >>>72: splitter.pipe3.T: (79/79): (1): splitter.pipe3.h = splitter.pipe3.cp*(splitter.pipe3.T - 273.16) + splitter.pipe3.b*splitter.pipe3.Pm
 // 73: splitter.pipe3.h: (75/75): (1): splitter.pipe3.h = splitter.pipe3.C1.h
 // 68: splitter.pipe3.C1.h: (36/36): (1): splitter.volume.Cs2.h = splitter.pipe3.C1.h
-// 3: splitter.volume.Cs2.h: (107/107): (1): splitter.volume.BH = (splitter.volume.Ce2.Q * splitter.volume.Ce2.h + splitter.volume.Ce1.Q * splitter.volume.Ce1.h + splitter.volume.Cth.W) - (splitter.volume.Cs2.Q * splitter.volume.Cs2.h + splitter.volume.Cs1.Q * splitter.volume.Cs1.h)
+// 3: splitter.volume.Cs2.h: (107/107): (1): splitter.volume.BH = (splitter.volume.Ce2.Q*splitter.volume.Ce2.h + splitter.volume.Ce1.Q*splitter.volume.Ce1.h + splitter.volume.Cth.W) - (splitter.volume.Cs2.Q*splitter.volume.Cs2.h + splitter.volume.Cs1.Q*splitter.volume.Cs1.h)
 // 4: splitter.volume.Cs2.Q: (33/33): (1): splitter.volume.Cs2.Q = splitter.pipe3.C1.Q
 // 69: splitter.pipe3.C1.Q: (72/72): (1): splitter.pipe3.C2.Q = splitter.pipe3.C1.Q
 // 63: splitter.pipe3.C2.Q: (9/9): (1): splitter.pipe3.C2.Q = splitter.sinkQ1.C.Q
@@ -661,7 +661,7 @@ getErrorString();
 // splitter.sinkQ1.Q0 is a boundary condition ---> exit procedure
 // Procedure failed
 //
-// >>>74: splitter.pipe3.Pm: (78/78): (1): splitter.pipe3.Pm = (splitter.pipe3.C1.P + splitter.pipe3.C2.P) / 2.0
+// >>>74: splitter.pipe3.Pm: (78/78): (1): splitter.pipe3.Pm = (splitter.pipe3.C1.P + splitter.pipe3.C2.P)/2.0
 // 71: splitter.pipe3.C1.P: (32/32): (1): splitter.volume.Cs2.P = splitter.pipe3.C1.P
 // 6: splitter.volume.Cs2.P: (106/106): (1): splitter.volume.P = splitter.volume.Cs2.P
 // 31: splitter.volume.P: (103/103): (1): splitter.volume.P = splitter.volume.Ce1.P
@@ -683,7 +683,7 @@ getErrorString();
 // splitter.sinkQ1.Q0 is a boundary condition ---> exit procedure
 // Procedure failed
 //
-// >>>89: splitter.pipe2.T: (70/70): (1): splitter.pipe2.h = splitter.pipe2.cp * (splitter.pipe2.T - 273.16) + splitter.pipe2.b * splitter.pipe2.Pm
+// >>>89: splitter.pipe2.T: (70/70): (1): splitter.pipe2.h = splitter.pipe2.cp*(splitter.pipe2.T - 273.16) + splitter.pipe2.b*splitter.pipe2.Pm
 // 90: splitter.pipe2.h: (66/66): (1): splitter.pipe2.h = splitter.pipe2.C1.h
 // 85: splitter.pipe2.C1.h: (67/67): (1): 0.0 = splitter.pipe2.C1.h - splitter.pipe2.C1.h_vol
 // 87: splitter.pipe2.C1.h_vol: (43/43): (1): splitter.volume.Cs1.h_vol = splitter.pipe2.C1.h_vol
@@ -692,7 +692,7 @@ getErrorString();
 // 5: splitter.volume.Cs2.h_vol: (37/37): (1): splitter.volume.Cs2.h_vol = splitter.pipe3.C1.h_vol
 // 70: splitter.pipe3.C1.h_vol: (76/76): (1): 0.0 = splitter.pipe3.C1.h - splitter.pipe3.C1.h_vol
 // 68: splitter.pipe3.C1.h: (36/36): (1): splitter.volume.Cs2.h = splitter.pipe3.C1.h
-// 3: splitter.volume.Cs2.h: (107/107): (1): splitter.volume.BH = (splitter.volume.Ce2.Q * splitter.volume.Ce2.h + splitter.volume.Ce1.Q * splitter.volume.Ce1.h + splitter.volume.Cth.W) - (splitter.volume.Cs2.Q * splitter.volume.Cs2.h + splitter.volume.Cs1.Q * splitter.volume.Cs1.h)
+// 3: splitter.volume.Cs2.h: (107/107): (1): splitter.volume.BH = (splitter.volume.Ce2.Q*splitter.volume.Ce2.h + splitter.volume.Ce1.Q*splitter.volume.Ce1.h + splitter.volume.Cth.W) - (splitter.volume.Cs2.Q*splitter.volume.Cs2.h + splitter.volume.Cs1.Q*splitter.volume.Cs1.h)
 // 4: splitter.volume.Cs2.Q: (33/33): (1): splitter.volume.Cs2.Q = splitter.pipe3.C1.Q
 // 69: splitter.pipe3.C1.Q: (72/72): (1): splitter.pipe3.C2.Q = splitter.pipe3.C1.Q
 // 63: splitter.pipe3.C2.Q: (9/9): (1): splitter.pipe3.C2.Q = splitter.sinkQ1.C.Q
@@ -702,7 +702,7 @@ getErrorString();
 // splitter.sinkQ1.Q0 is a boundary condition ---> exit procedure
 // Procedure failed
 //
-// >>>91: splitter.pipe2.Pm: (69/69): (1): splitter.pipe2.Pm = (splitter.pipe2.C1.P + splitter.pipe2.C2.P) / 2.0
+// >>>91: splitter.pipe2.Pm: (69/69): (1): splitter.pipe2.Pm = (splitter.pipe2.C1.P + splitter.pipe2.C2.P)/2.0
 // 88: splitter.pipe2.C1.P: (38/38): (1): splitter.volume.Cs1.P = splitter.pipe2.C1.P
 // 12: splitter.volume.Cs1.P: (105/105): (1): splitter.volume.P = splitter.volume.Cs1.P
 // 31: splitter.volume.P: (103/103): (1): splitter.volume.P = splitter.volume.Ce1.P
@@ -724,7 +724,7 @@ getErrorString();
 // splitter.sinkQ.Q0 is a boundary condition ---> exit procedure
 // Procedure failed
 //
-// >>>106: splitter.pipe1.T: (61/61): (1): splitter.pipe1.h = splitter.pipe1.cp * (splitter.pipe1.T - 273.16) + splitter.pipe1.b * splitter.pipe1.Pm
+// >>>106: splitter.pipe1.T: (61/61): (1): splitter.pipe1.h = splitter.pipe1.cp*(splitter.pipe1.T - 273.16) + splitter.pipe1.b*splitter.pipe1.Pm
 // 107: splitter.pipe1.h: (57/57): (1): splitter.pipe1.h = splitter.pipe1.C1.h
 // 102: splitter.pipe1.C1.h: (58/58): (1): 0.0 = splitter.pipe1.C1.h - splitter.pipe1.C1.h_vol
 // 104: splitter.pipe1.C1.h_vol: (19/19): (1): splitter.sourceP.C.h_vol = splitter.pipe1.C1.h_vol
@@ -734,7 +734,7 @@ getErrorString();
 // splitter.sourceP.h0 is a boundary condition ---> exit procedure
 // Procedure failed
 //
-// >>>108: splitter.pipe1.Pm: (60/60): (1): splitter.pipe1.Pm = (splitter.pipe1.C1.P + splitter.pipe1.C2.P) / 2.0
+// >>>108: splitter.pipe1.Pm: (60/60): (1): splitter.pipe1.Pm = (splitter.pipe1.C1.P + splitter.pipe1.C2.P)/2.0
 // 105: splitter.pipe1.C1.P: (14/14): (1): splitter.sourceP.C.P = splitter.pipe1.C1.P
 // 53: splitter.sourceP.C.P: (80/80): (1): splitter.sourceP.C.P = splitter.sourceP.P
 // 59: splitter.sourceP.P: (84/84): (1): splitter.sourceP.P = splitter.sourceP.IPressure.signal
@@ -953,27 +953,27 @@ getErrorString();
 // 59/59 (1): splitter.pipe1.Q = splitter.pipe1.C1.Q   [dynamic]
 // 60/60 (1): splitter.pipe1.h = splitter.pipe1.C1.h   [dynamic]
 // 61/61 (1): 0.0 = splitter.pipe1.C1.h - splitter.pipe1.C1.h_vol   [dynamic]
-// 62/62 (1): splitter.pipe1.deltaP = ((splitter.pipe1.Q * splitter.pipe1.deltaPnom * splitter.pipe1.CoeffDeltaP) / splitter.pipe1.Qnom) * abs(splitter.pipe1.Q / splitter.pipe1.Qnom)   [dynamic]
-// 63/63 (1): splitter.pipe1.Pm = (splitter.pipe1.C1.P + splitter.pipe1.C2.P) / 2.0   [dynamic]
-// 64/64 (1): splitter.pipe1.h = splitter.pipe1.cp * (splitter.pipe1.T - 273.16) + splitter.pipe1.b * splitter.pipe1.Pm   [dynamic]
+// 62/62 (1): splitter.pipe1.deltaP = ((splitter.pipe1.Q*splitter.pipe1.deltaPnom*splitter.pipe1.CoeffDeltaP)/splitter.pipe1.Qnom)*abs(splitter.pipe1.Q/splitter.pipe1.Qnom)   [dynamic]
+// 63/63 (1): splitter.pipe1.Pm = (splitter.pipe1.C1.P + splitter.pipe1.C2.P)/2.0   [dynamic]
+// 64/64 (1): splitter.pipe1.h = splitter.pipe1.cp*(splitter.pipe1.T - 273.16) + splitter.pipe1.b*splitter.pipe1.Pm   [dynamic]
 // 65/65 (1): splitter.pipe2.C1.P - splitter.pipe2.C2.P = splitter.pipe2.deltaP   [dynamic]
 // 66/66 (1): splitter.pipe2.C2.Q = splitter.pipe2.C1.Q   [dynamic]
 // 67/67 (1): splitter.pipe2.C2.h = splitter.pipe2.C1.h   [dynamic]
 // 68/68 (1): splitter.pipe2.Q = splitter.pipe2.C1.Q   [dynamic]
 // 69/69 (1): splitter.pipe2.h = splitter.pipe2.C1.h   [dynamic]
 // 70/70 (1): 0.0 = splitter.pipe2.C1.h - splitter.pipe2.C1.h_vol   [dynamic]
-// 71/71 (1): splitter.pipe2.deltaP = ((splitter.pipe2.Q * splitter.pipe2.deltaPnom * splitter.pipe2.CoeffDeltaP) / splitter.pipe2.Qnom) * abs(splitter.pipe2.Q / splitter.pipe2.Qnom)   [dynamic]
-// 72/72 (1): splitter.pipe2.Pm = (splitter.pipe2.C1.P + splitter.pipe2.C2.P) / 2.0   [dynamic]
-// 73/73 (1): splitter.pipe2.h = splitter.pipe2.cp * (splitter.pipe2.T - 273.16) + splitter.pipe2.b * splitter.pipe2.Pm   [dynamic]
+// 71/71 (1): splitter.pipe2.deltaP = ((splitter.pipe2.Q*splitter.pipe2.deltaPnom*splitter.pipe2.CoeffDeltaP)/splitter.pipe2.Qnom)*abs(splitter.pipe2.Q/splitter.pipe2.Qnom)   [dynamic]
+// 72/72 (1): splitter.pipe2.Pm = (splitter.pipe2.C1.P + splitter.pipe2.C2.P)/2.0   [dynamic]
+// 73/73 (1): splitter.pipe2.h = splitter.pipe2.cp*(splitter.pipe2.T - 273.16) + splitter.pipe2.b*splitter.pipe2.Pm   [dynamic]
 // 74/74 (1): splitter.pipe3.C1.P - splitter.pipe3.C2.P = splitter.pipe3.deltaP   [dynamic]
 // 75/75 (1): splitter.pipe3.C2.Q = splitter.pipe3.C1.Q   [dynamic]
 // 76/76 (1): splitter.pipe3.C2.h = splitter.pipe3.C1.h   [dynamic]
 // 77/77 (1): splitter.pipe3.Q = splitter.pipe3.C1.Q   [dynamic]
 // 78/78 (1): splitter.pipe3.h = splitter.pipe3.C1.h   [dynamic]
 // 79/79 (1): 0.0 = splitter.pipe3.C1.h - splitter.pipe3.C1.h_vol   [dynamic]
-// 80/80 (1): splitter.pipe3.deltaP = ((splitter.pipe3.Q * splitter.pipe3.deltaPnom * splitter.pipe3.CoeffDeltaP) / splitter.pipe3.Qnom) * abs(splitter.pipe3.Q / splitter.pipe3.Qnom)   [dynamic]
-// 81/81 (1): splitter.pipe3.Pm = (splitter.pipe3.C1.P + splitter.pipe3.C2.P) / 2.0   [dynamic]
-// 82/82 (1): splitter.pipe3.h = splitter.pipe3.cp * (splitter.pipe3.T - 273.16) + splitter.pipe3.b * splitter.pipe3.Pm   [dynamic]
+// 80/80 (1): splitter.pipe3.deltaP = ((splitter.pipe3.Q*splitter.pipe3.deltaPnom*splitter.pipe3.CoeffDeltaP)/splitter.pipe3.Qnom)*abs(splitter.pipe3.Q/splitter.pipe3.Qnom)   [dynamic]
+// 81/81 (1): splitter.pipe3.Pm = (splitter.pipe3.C1.P + splitter.pipe3.C2.P)/2.0   [dynamic]
+// 82/82 (1): splitter.pipe3.h = splitter.pipe3.cp*(splitter.pipe3.T - 273.16) + splitter.pipe3.b*splitter.pipe3.Pm   [dynamic]
 // 83/83 (1): splitter.sourceP.C.P = splitter.sourceP.P   [dynamic]
 // 84/84 (1): splitter.sourceP.C.Q = splitter.sourceP.Q   [dynamic]
 // 85/85 (1): splitter.sourceP.C.h_vol = splitter.sourceP.h   [dynamic]
@@ -998,14 +998,14 @@ getErrorString();
 // 104/104 (1): splitter.volume.P = splitter.volume.Ce2.P   [dynamic]
 // 105/105 (1): splitter.volume.P = splitter.volume.Cs1.P   [dynamic]
 // 106/106 (1): splitter.volume.P = splitter.volume.Cs2.P   [dynamic]
-// 107/107 (1): splitter.volume.BH = (splitter.volume.Ce2.Q * splitter.volume.Ce2.h + splitter.volume.Ce1.Q * splitter.volume.Ce1.h + splitter.volume.Cth.W) - (splitter.volume.Cs2.Q * splitter.volume.Cs2.h + splitter.volume.Cs1.Q * splitter.volume.Cs1.h)   [dynamic]
+// 107/107 (1): splitter.volume.BH = (splitter.volume.Ce2.Q*splitter.volume.Ce2.h + splitter.volume.Ce1.Q*splitter.volume.Ce1.h + splitter.volume.Cth.W) - (splitter.volume.Cs2.Q*splitter.volume.Cs2.h + splitter.volume.Cs1.Q*splitter.volume.Cs1.h)   [dynamic]
 // 108/108 (1): 0.0 = splitter.volume.BH   [dynamic]
 // 109/109 (1): splitter.volume.Ce1.h_vol = splitter.volume.h   [dynamic]
 // 110/110 (1): splitter.volume.Ce2.h_vol = splitter.volume.h   [dynamic]
 // 111/111 (1): splitter.volume.Cs1.h_vol = splitter.volume.h   [dynamic]
 // 112/112 (1): splitter.volume.Cs2.h_vol = splitter.volume.h   [dynamic]
-// 113/113 (1): splitter.volume.h = splitter.volume.cp * (splitter.volume.T - 273.16) + splitter.volume.b * splitter.volume.P   [dynamic]
-// 114/114 (1): splitter.volume.rho = (-(0.0025 * (splitter.volume.T - 273.16) + 0.1992)) * (splitter.volume.T - 273.16) + 1004.4   [dynamic]
+// 113/113 (1): splitter.volume.h = splitter.volume.cp*(splitter.volume.T - 273.16) + splitter.volume.b*splitter.volume.P   [dynamic]
+// 114/114 (1): splitter.volume.rho = (-(0.0025*(splitter.volume.T - 273.16) + 0.1992))*(splitter.volume.T - 273.16) + 1004.4   [dynamic]
 // 115/115 (1): splitter.volume.Cth.T = splitter.volume.T   [dynamic]
 // 116/116 (1): splitter.volume.Cs2.b = true   [binding]
 // 117/117 (1): splitter.volume.Cs1.b = true   [binding]
@@ -1175,11 +1175,11 @@ getErrorString();
 // 112: splitter.sinkQ1.C.a: (128/128): (1): splitter.sinkQ1.C.a = true
 // 111: splitter.sinkQ1.C.b: (15/15): (1): splitter.pipe3.C2.b = splitter.sinkQ1.C.b
 // 110: splitter.pipe1.deltaP: (56/56): (1): splitter.pipe1.C1.P - splitter.pipe1.C2.P = splitter.pipe1.deltaP
-// 109: splitter.pipe1.Q: (62/62): (1): splitter.pipe1.deltaP = ((splitter.pipe1.Q * splitter.pipe1.deltaPnom * splitter.pipe1.CoeffDeltaP) / splitter.pipe1.Qnom) * abs(splitter.pipe1.Q / splitter.pipe1.Qnom)
-// 108: splitter.pipe1.Pm: (64/64): (1): splitter.pipe1.h = splitter.pipe1.cp * (splitter.pipe1.T - 273.16) + splitter.pipe1.b * splitter.pipe1.Pm
+// 109: splitter.pipe1.Q: (62/62): (1): splitter.pipe1.deltaP = ((splitter.pipe1.Q*splitter.pipe1.deltaPnom*splitter.pipe1.CoeffDeltaP)/splitter.pipe1.Qnom)*abs(splitter.pipe1.Q/splitter.pipe1.Qnom)
+// 108: splitter.pipe1.Pm: (64/64): (1): splitter.pipe1.h = splitter.pipe1.cp*(splitter.pipe1.T - 273.16) + splitter.pipe1.b*splitter.pipe1.Pm
 // 107: splitter.pipe1.h: (60/60): (1): splitter.pipe1.h = splitter.pipe1.C1.h
 // 106: splitter.pipe1.T: (4/4): (1): splitter.pipe1.T = 0.0
-// 105: splitter.pipe1.C1.P: (63/63): (1): splitter.pipe1.Pm = (splitter.pipe1.C1.P + splitter.pipe1.C2.P) / 2.0
+// 105: splitter.pipe1.C1.P: (63/63): (1): splitter.pipe1.Pm = (splitter.pipe1.C1.P + splitter.pipe1.C2.P)/2.0
 // 104: splitter.pipe1.C1.h_vol: (61/61): (1): 0.0 = splitter.pipe1.C1.h - splitter.pipe1.C1.h_vol
 // 103: splitter.pipe1.C1.Q: (59/59): (1): splitter.pipe1.Q = splitter.pipe1.C1.Q
 // 102: splitter.pipe1.C1.h: (58/58): (1): splitter.pipe1.C2.h = splitter.pipe1.C1.h
@@ -1191,11 +1191,11 @@ getErrorString();
 // 96: splitter.pipe1.C2.h: (34/34): (1): splitter.pipe1.C2.h = splitter.volume.Ce1.h
 // 95: splitter.pipe1.C2.a: (32/32): (1): splitter.pipe1.C2.a = splitter.volume.Ce1.a
 // 94: splitter.pipe1.C2.b: (126/126): (1): splitter.pipe1.C2.b = true
-// 93: splitter.pipe2.deltaP: (71/71): (1): splitter.pipe2.deltaP = ((splitter.pipe2.Q * splitter.pipe2.deltaPnom * splitter.pipe2.CoeffDeltaP) / splitter.pipe2.Qnom) * abs(splitter.pipe2.Q / splitter.pipe2.Qnom)
+// 93: splitter.pipe2.deltaP: (71/71): (1): splitter.pipe2.deltaP = ((splitter.pipe2.Q*splitter.pipe2.deltaPnom*splitter.pipe2.CoeffDeltaP)/splitter.pipe2.Qnom)*abs(splitter.pipe2.Q/splitter.pipe2.Qnom)
 // 92: splitter.pipe2.Q: (3/3): (1): splitter.pipe2.Q = 0.0
-// 91: splitter.pipe2.Pm: (72/72): (1): splitter.pipe2.Pm = (splitter.pipe2.C1.P + splitter.pipe2.C2.P) / 2.0
+// 91: splitter.pipe2.Pm: (72/72): (1): splitter.pipe2.Pm = (splitter.pipe2.C1.P + splitter.pipe2.C2.P)/2.0
 // 90: splitter.pipe2.h: (69/69): (1): splitter.pipe2.h = splitter.pipe2.C1.h
-// 89: splitter.pipe2.T: (73/73): (1): splitter.pipe2.h = splitter.pipe2.cp * (splitter.pipe2.T - 273.16) + splitter.pipe2.b * splitter.pipe2.Pm
+// 89: splitter.pipe2.T: (73/73): (1): splitter.pipe2.h = splitter.pipe2.cp*(splitter.pipe2.T - 273.16) + splitter.pipe2.b*splitter.pipe2.Pm
 // 88: splitter.pipe2.C1.P: (42/42): (1): splitter.volume.Cs1.P = splitter.pipe2.C1.P
 // 87: splitter.pipe2.C1.h_vol: (47/47): (1): splitter.volume.Cs1.h_vol = splitter.pipe2.C1.h_vol
 // 86: splitter.pipe2.C1.Q: (68/68): (1): splitter.pipe2.Q = splitter.pipe2.C1.Q
@@ -1208,10 +1208,10 @@ getErrorString();
 // 79: splitter.pipe2.C2.h: (67/67): (1): splitter.pipe2.C2.h = splitter.pipe2.C1.h
 // 78: splitter.pipe2.C2.a: (26/26): (1): splitter.pipe2.C2.a = splitter.sinkQ.C.a
 // 77: splitter.pipe2.C2.b: (124/124): (1): splitter.pipe2.C2.b = true
-// 76: splitter.pipe3.deltaP: (80/80): (1): splitter.pipe3.deltaP = ((splitter.pipe3.Q * splitter.pipe3.deltaPnom * splitter.pipe3.CoeffDeltaP) / splitter.pipe3.Qnom) * abs(splitter.pipe3.Q / splitter.pipe3.Qnom)
+// 76: splitter.pipe3.deltaP: (80/80): (1): splitter.pipe3.deltaP = ((splitter.pipe3.Q*splitter.pipe3.deltaPnom*splitter.pipe3.CoeffDeltaP)/splitter.pipe3.Qnom)*abs(splitter.pipe3.Q/splitter.pipe3.Qnom)
 // 75: splitter.pipe3.Q: (77/77): (1): splitter.pipe3.Q = splitter.pipe3.C1.Q
-// 74: splitter.pipe3.Pm: (81/81): (1): splitter.pipe3.Pm = (splitter.pipe3.C1.P + splitter.pipe3.C2.P) / 2.0
-// 73: splitter.pipe3.h: (82/82): (1): splitter.pipe3.h = splitter.pipe3.cp * (splitter.pipe3.T - 273.16) + splitter.pipe3.b * splitter.pipe3.Pm
+// 74: splitter.pipe3.Pm: (81/81): (1): splitter.pipe3.Pm = (splitter.pipe3.C1.P + splitter.pipe3.C2.P)/2.0
+// 73: splitter.pipe3.h: (82/82): (1): splitter.pipe3.h = splitter.pipe3.cp*(splitter.pipe3.T - 273.16) + splitter.pipe3.b*splitter.pipe3.Pm
 // 72: splitter.pipe3.T: (2/2): (1): splitter.pipe3.T = 0.0
 // 71: splitter.pipe3.C1.P: (36/36): (1): splitter.volume.Cs2.P = splitter.pipe3.C1.P
 // 70: splitter.pipe3.C1.h_vol: (79/79): (1): 0.0 = splitter.pipe3.C1.h - splitter.pipe3.C1.h_vol
@@ -1253,9 +1253,9 @@ getErrorString();
 // 34: splitter.heatSource.C[1].W: (96/96): (1): splitter.heatSource.C.W = -splitter.heatSource.W0
 // 33: splitter.heatSource.ISignal.signal: (97/97): (1): splitter.heatSource.ISignal.signal = 0.0
 // 32: splitter.volume.T: (1/1): (1): splitter.volume.T = 0.0
-// 31: splitter.volume.P: (113/113): (1): splitter.volume.h = splitter.volume.cp * (splitter.volume.T - 273.16) + splitter.volume.b * splitter.volume.P
+// 31: splitter.volume.P: (113/113): (1): splitter.volume.h = splitter.volume.cp*(splitter.volume.T - 273.16) + splitter.volume.b*splitter.volume.P
 // 30: splitter.volume.h: (112/112): (1): splitter.volume.Cs2.h_vol = splitter.volume.h
-// 29: splitter.volume.rho: (114/114): (1): splitter.volume.rho = (-(0.0025 * (splitter.volume.T - 273.16) + 0.1992)) * (splitter.volume.T - 273.16) + 1004.4
+// 29: splitter.volume.rho: (114/114): (1): splitter.volume.rho = (-(0.0025*(splitter.volume.T - 273.16) + 0.1992))*(splitter.volume.T - 273.16) + 1004.4
 // 28: splitter.volume.BQ: (102/102): (1): 0.0 = splitter.volume.BQ
 // 27: splitter.volume.BH: (108/108): (1): 0.0 = splitter.volume.BH
 // 26: splitter.volume.Cth.T: (115/115): (1): splitter.volume.Cth.T = splitter.volume.T
@@ -1263,7 +1263,7 @@ getErrorString();
 // 24: splitter.volume.Ce1.P: (103/103): (1): splitter.volume.P = splitter.volume.Ce1.P
 // 23: splitter.volume.Ce1.h_vol: (109/109): (1): splitter.volume.Ce1.h_vol = splitter.volume.h
 // 22: splitter.volume.Ce1.Q: (31/31): (1): splitter.pipe1.C2.Q = splitter.volume.Ce1.Q
-// 21: splitter.volume.Ce1.h: (107/107): (1): splitter.volume.BH = (splitter.volume.Ce2.Q * splitter.volume.Ce2.h + splitter.volume.Ce1.Q * splitter.volume.Ce1.h + splitter.volume.Cth.W) - (splitter.volume.Cs2.Q * splitter.volume.Cs2.h + splitter.volume.Cs1.Q * splitter.volume.Cs1.h)
+// 21: splitter.volume.Ce1.h: (107/107): (1): splitter.volume.BH = (splitter.volume.Ce2.Q*splitter.volume.Ce2.h + splitter.volume.Ce1.Q*splitter.volume.Ce1.h + splitter.volume.Cth.W) - (splitter.volume.Cs2.Q*splitter.volume.Cs2.h + splitter.volume.Cs1.Q*splitter.volume.Cs1.h)
 // 20: splitter.volume.Ce1.a: (119/119): (1): splitter.volume.Ce1.a = true
 // 19: splitter.volume.Ce1.b: (33/33): (1): splitter.pipe1.C2.b = splitter.volume.Ce1.b
 // 18: splitter.volume.Ce2.P: (104/104): (1): splitter.volume.P = splitter.volume.Ce2.P
@@ -1343,28 +1343,28 @@ getErrorString();
 // E-BLT: equations that compute the variables of interest:(6)
 // ============================================================
 //
-// 74: splitter.pipe3.Pm: (81/81): (1): splitter.pipe3.Pm = (splitter.pipe3.C1.P + splitter.pipe3.C2.P) / 2.0
+// 74: splitter.pipe3.Pm: (81/81): (1): splitter.pipe3.Pm = (splitter.pipe3.C1.P + splitter.pipe3.C2.P)/2.0
 // 75: splitter.pipe3.Q: (77/77): (1): splitter.pipe3.Q = splitter.pipe3.C1.Q
-// 89: splitter.pipe2.T: (73/73): (1): splitter.pipe2.h = splitter.pipe2.cp * (splitter.pipe2.T - 273.16) + splitter.pipe2.b * splitter.pipe2.Pm
-// 91: splitter.pipe2.Pm: (72/72): (1): splitter.pipe2.Pm = (splitter.pipe2.C1.P + splitter.pipe2.C2.P) / 2.0
-// 108: splitter.pipe1.Pm: (64/64): (1): splitter.pipe1.h = splitter.pipe1.cp * (splitter.pipe1.T - 273.16) + splitter.pipe1.b * splitter.pipe1.Pm
-// 109: splitter.pipe1.Q: (62/62): (1): splitter.pipe1.deltaP = ((splitter.pipe1.Q * splitter.pipe1.deltaPnom * splitter.pipe1.CoeffDeltaP) / splitter.pipe1.Qnom) * abs(splitter.pipe1.Q / splitter.pipe1.Qnom)
+// 89: splitter.pipe2.T: (73/73): (1): splitter.pipe2.h = splitter.pipe2.cp*(splitter.pipe2.T - 273.16) + splitter.pipe2.b*splitter.pipe2.Pm
+// 91: splitter.pipe2.Pm: (72/72): (1): splitter.pipe2.Pm = (splitter.pipe2.C1.P + splitter.pipe2.C2.P)/2.0
+// 108: splitter.pipe1.Pm: (64/64): (1): splitter.pipe1.h = splitter.pipe1.cp*(splitter.pipe1.T - 273.16) + splitter.pipe1.b*splitter.pipe1.Pm
+// 109: splitter.pipe1.Q: (62/62): (1): splitter.pipe1.deltaP = ((splitter.pipe1.Q*splitter.pipe1.deltaPnom*splitter.pipe1.CoeffDeltaP)/splitter.pipe1.Qnom)*abs(splitter.pipe1.Q/splitter.pipe1.Qnom)
 //
 //
 // Extracting SET-C and SET-S from E-BLT
 // Procedure is applied on each equation in the E-BLT
 // ==========================================================================
-// >>>74: splitter.pipe3.Pm: (81/81): (1): splitter.pipe3.Pm = (splitter.pipe3.C1.P + splitter.pipe3.C2.P) / 2.0
+// >>>74: splitter.pipe3.Pm: (81/81): (1): splitter.pipe3.Pm = (splitter.pipe3.C1.P + splitter.pipe3.C2.P)/2.0
 // 71: splitter.pipe3.C1.P: (36/36): (1): splitter.volume.Cs2.P = splitter.pipe3.C1.P
 // 6: splitter.volume.Cs2.P: (106/106): (1): splitter.volume.P = splitter.volume.Cs2.P
-// 31: splitter.volume.P: (113/113): (1): splitter.volume.h = splitter.volume.cp * (splitter.volume.T - 273.16) + splitter.volume.b * splitter.volume.P
+// 31: splitter.volume.P: (113/113): (1): splitter.volume.h = splitter.volume.cp*(splitter.volume.T - 273.16) + splitter.volume.b*splitter.volume.P
 // 30: splitter.volume.h: (112/112): (1): splitter.volume.Cs2.h_vol = splitter.volume.h
 // 5: splitter.volume.Cs2.h_vol: (41/41): (1): splitter.volume.Cs2.h_vol = splitter.pipe3.C1.h_vol
 // 70: splitter.pipe3.C1.h_vol: (79/79): (1): 0.0 = splitter.pipe3.C1.h - splitter.pipe3.C1.h_vol
 // 68: splitter.pipe3.C1.h: (78/78): (1): splitter.pipe3.h = splitter.pipe3.C1.h
-// 73: splitter.pipe3.h: (82/82): (1): splitter.pipe3.h = splitter.pipe3.cp * (splitter.pipe3.T - 273.16) + splitter.pipe3.b * splitter.pipe3.Pm
+// 73: splitter.pipe3.h: (82/82): (1): splitter.pipe3.h = splitter.pipe3.cp*(splitter.pipe3.T - 273.16) + splitter.pipe3.b*splitter.pipe3.Pm
 // 65: splitter.pipe3.C2.P: (74/74): (1): splitter.pipe3.C1.P - splitter.pipe3.C2.P = splitter.pipe3.deltaP
-// 76: splitter.pipe3.deltaP: (80/80): (1): splitter.pipe3.deltaP = ((splitter.pipe3.Q * splitter.pipe3.deltaPnom * splitter.pipe3.CoeffDeltaP) / splitter.pipe3.Qnom) * abs(splitter.pipe3.Q / splitter.pipe3.Qnom)
+// 76: splitter.pipe3.deltaP: (80/80): (1): splitter.pipe3.deltaP = ((splitter.pipe3.Q*splitter.pipe3.deltaPnom*splitter.pipe3.CoeffDeltaP)/splitter.pipe3.Qnom)*abs(splitter.pipe3.Q/splitter.pipe3.Qnom)
 // Procedure success
 //
 // >>>75: splitter.pipe3.Q: (77/77): (1): splitter.pipe3.Q = splitter.pipe3.C1.Q
@@ -1379,7 +1379,7 @@ getErrorString();
 // 28: splitter.volume.BQ: (102/102): (1): 0.0 = splitter.volume.BQ
 // Procedure success
 //
-// >>>89: splitter.pipe2.T: (73/73): (1): splitter.pipe2.h = splitter.pipe2.cp * (splitter.pipe2.T - 273.16) + splitter.pipe2.b * splitter.pipe2.Pm
+// >>>89: splitter.pipe2.T: (73/73): (1): splitter.pipe2.h = splitter.pipe2.cp*(splitter.pipe2.T - 273.16) + splitter.pipe2.b*splitter.pipe2.Pm
 // 90: splitter.pipe2.h: (69/69): (1): splitter.pipe2.h = splitter.pipe2.C1.h
 // 85: splitter.pipe2.C1.h: (70/70): (1): 0.0 = splitter.pipe2.C1.h - splitter.pipe2.C1.h_vol
 // 87: splitter.pipe2.C1.h_vol: (47/47): (1): splitter.volume.Cs1.h_vol = splitter.pipe2.C1.h_vol
@@ -1388,30 +1388,30 @@ getErrorString();
 // 5: splitter.volume.Cs2.h_vol: (41/41): (1): splitter.volume.Cs2.h_vol = splitter.pipe3.C1.h_vol
 // 70: splitter.pipe3.C1.h_vol: (79/79): (1): 0.0 = splitter.pipe3.C1.h - splitter.pipe3.C1.h_vol
 // 68: splitter.pipe3.C1.h: (78/78): (1): splitter.pipe3.h = splitter.pipe3.C1.h
-// 73: splitter.pipe3.h: (82/82): (1): splitter.pipe3.h = splitter.pipe3.cp * (splitter.pipe3.T - 273.16) + splitter.pipe3.b * splitter.pipe3.Pm
+// 73: splitter.pipe3.h: (82/82): (1): splitter.pipe3.h = splitter.pipe3.cp*(splitter.pipe3.T - 273.16) + splitter.pipe3.b*splitter.pipe3.Pm
 // Procedure success
 //
-// >>>91: splitter.pipe2.Pm: (72/72): (1): splitter.pipe2.Pm = (splitter.pipe2.C1.P + splitter.pipe2.C2.P) / 2.0
+// >>>91: splitter.pipe2.Pm: (72/72): (1): splitter.pipe2.Pm = (splitter.pipe2.C1.P + splitter.pipe2.C2.P)/2.0
 // 88: splitter.pipe2.C1.P: (42/42): (1): splitter.volume.Cs1.P = splitter.pipe2.C1.P
 // 12: splitter.volume.Cs1.P: (105/105): (1): splitter.volume.P = splitter.volume.Cs1.P
-// 31: splitter.volume.P: (113/113): (1): splitter.volume.h = splitter.volume.cp * (splitter.volume.T - 273.16) + splitter.volume.b * splitter.volume.P
+// 31: splitter.volume.P: (113/113): (1): splitter.volume.h = splitter.volume.cp*(splitter.volume.T - 273.16) + splitter.volume.b*splitter.volume.P
 // 30: splitter.volume.h: (112/112): (1): splitter.volume.Cs2.h_vol = splitter.volume.h
 // 5: splitter.volume.Cs2.h_vol: (41/41): (1): splitter.volume.Cs2.h_vol = splitter.pipe3.C1.h_vol
 // 70: splitter.pipe3.C1.h_vol: (79/79): (1): 0.0 = splitter.pipe3.C1.h - splitter.pipe3.C1.h_vol
 // 68: splitter.pipe3.C1.h: (78/78): (1): splitter.pipe3.h = splitter.pipe3.C1.h
-// 73: splitter.pipe3.h: (82/82): (1): splitter.pipe3.h = splitter.pipe3.cp * (splitter.pipe3.T - 273.16) + splitter.pipe3.b * splitter.pipe3.Pm
+// 73: splitter.pipe3.h: (82/82): (1): splitter.pipe3.h = splitter.pipe3.cp*(splitter.pipe3.T - 273.16) + splitter.pipe3.b*splitter.pipe3.Pm
 // 82: splitter.pipe2.C2.P: (65/65): (1): splitter.pipe2.C1.P - splitter.pipe2.C2.P = splitter.pipe2.deltaP
-// 93: splitter.pipe2.deltaP: (71/71): (1): splitter.pipe2.deltaP = ((splitter.pipe2.Q * splitter.pipe2.deltaPnom * splitter.pipe2.CoeffDeltaP) / splitter.pipe2.Qnom) * abs(splitter.pipe2.Q / splitter.pipe2.Qnom)
+// 93: splitter.pipe2.deltaP: (71/71): (1): splitter.pipe2.deltaP = ((splitter.pipe2.Q*splitter.pipe2.deltaPnom*splitter.pipe2.CoeffDeltaP)/splitter.pipe2.Qnom)*abs(splitter.pipe2.Q/splitter.pipe2.Qnom)
 // Procedure success
 //
-// >>>108: splitter.pipe1.Pm: (64/64): (1): splitter.pipe1.h = splitter.pipe1.cp * (splitter.pipe1.T - 273.16) + splitter.pipe1.b * splitter.pipe1.Pm
+// >>>108: splitter.pipe1.Pm: (64/64): (1): splitter.pipe1.h = splitter.pipe1.cp*(splitter.pipe1.T - 273.16) + splitter.pipe1.b*splitter.pipe1.Pm
 // 107: splitter.pipe1.h: (60/60): (1): splitter.pipe1.h = splitter.pipe1.C1.h
 // 102: splitter.pipe1.C1.h: (58/58): (1): splitter.pipe1.C2.h = splitter.pipe1.C1.h
 // 96: splitter.pipe1.C2.h: (34/34): (1): splitter.pipe1.C2.h = splitter.volume.Ce1.h
-// 21: splitter.volume.Ce1.h: (107/107): (1): splitter.volume.BH = (splitter.volume.Ce2.Q * splitter.volume.Ce2.h + splitter.volume.Ce1.Q * splitter.volume.Ce1.h + splitter.volume.Cth.W) - (splitter.volume.Cs2.Q * splitter.volume.Cs2.h + splitter.volume.Cs1.Q * splitter.volume.Cs1.h)
+// 21: splitter.volume.Ce1.h: (107/107): (1): splitter.volume.BH = (splitter.volume.Ce2.Q*splitter.volume.Ce2.h + splitter.volume.Ce1.Q*splitter.volume.Ce1.h + splitter.volume.Cth.W) - (splitter.volume.Cs2.Q*splitter.volume.Cs2.h + splitter.volume.Cs1.Q*splitter.volume.Cs1.h)
 // 3: splitter.volume.Cs2.h: (40/40): (1): splitter.volume.Cs2.h = splitter.pipe3.C1.h
 // 68: splitter.pipe3.C1.h: (78/78): (1): splitter.pipe3.h = splitter.pipe3.C1.h
-// 73: splitter.pipe3.h: (82/82): (1): splitter.pipe3.h = splitter.pipe3.cp * (splitter.pipe3.T - 273.16) + splitter.pipe3.b * splitter.pipe3.Pm
+// 73: splitter.pipe3.h: (82/82): (1): splitter.pipe3.h = splitter.pipe3.cp*(splitter.pipe3.T - 273.16) + splitter.pipe3.b*splitter.pipe3.Pm
 // 4: splitter.volume.Cs2.Q: (101/101): (1): splitter.volume.BQ = (splitter.volume.Ce2.Q + splitter.volume.Ce1.Q) - (splitter.volume.Cs2.Q + splitter.volume.Cs1.Q)
 // 10: splitter.volume.Cs1.Q: (43/43): (1): splitter.volume.Cs1.Q = splitter.pipe2.C1.Q
 // 86: splitter.pipe2.C1.Q: (68/68): (1): splitter.pipe2.Q = splitter.pipe2.C1.Q
@@ -1433,17 +1433,17 @@ getErrorString();
 // 27: splitter.volume.BH: (108/108): (1): 0.0 = splitter.volume.BH
 // Procedure success
 //
-// >>>109: splitter.pipe1.Q: (62/62): (1): splitter.pipe1.deltaP = ((splitter.pipe1.Q * splitter.pipe1.deltaPnom * splitter.pipe1.CoeffDeltaP) / splitter.pipe1.Qnom) * abs(splitter.pipe1.Q / splitter.pipe1.Qnom)
+// >>>109: splitter.pipe1.Q: (62/62): (1): splitter.pipe1.deltaP = ((splitter.pipe1.Q*splitter.pipe1.deltaPnom*splitter.pipe1.CoeffDeltaP)/splitter.pipe1.Qnom)*abs(splitter.pipe1.Q/splitter.pipe1.Qnom)
 // 110: splitter.pipe1.deltaP: (56/56): (1): splitter.pipe1.C1.P - splitter.pipe1.C2.P = splitter.pipe1.deltaP
 // 99: splitter.pipe1.C2.P: (30/30): (1): splitter.pipe1.C2.P = splitter.volume.Ce1.P
 // 24: splitter.volume.Ce1.P: (103/103): (1): splitter.volume.P = splitter.volume.Ce1.P
-// 31: splitter.volume.P: (113/113): (1): splitter.volume.h = splitter.volume.cp * (splitter.volume.T - 273.16) + splitter.volume.b * splitter.volume.P
+// 31: splitter.volume.P: (113/113): (1): splitter.volume.h = splitter.volume.cp*(splitter.volume.T - 273.16) + splitter.volume.b*splitter.volume.P
 // 30: splitter.volume.h: (112/112): (1): splitter.volume.Cs2.h_vol = splitter.volume.h
 // 5: splitter.volume.Cs2.h_vol: (41/41): (1): splitter.volume.Cs2.h_vol = splitter.pipe3.C1.h_vol
 // 70: splitter.pipe3.C1.h_vol: (79/79): (1): 0.0 = splitter.pipe3.C1.h - splitter.pipe3.C1.h_vol
 // 68: splitter.pipe3.C1.h: (78/78): (1): splitter.pipe3.h = splitter.pipe3.C1.h
-// 73: splitter.pipe3.h: (82/82): (1): splitter.pipe3.h = splitter.pipe3.cp * (splitter.pipe3.T - 273.16) + splitter.pipe3.b * splitter.pipe3.Pm
-// 105: splitter.pipe1.C1.P: (63/63): (1): splitter.pipe1.Pm = (splitter.pipe1.C1.P + splitter.pipe1.C2.P) / 2.0
+// 73: splitter.pipe3.h: (82/82): (1): splitter.pipe3.h = splitter.pipe3.cp*(splitter.pipe3.T - 273.16) + splitter.pipe3.b*splitter.pipe3.Pm
+// 105: splitter.pipe1.C1.P: (63/63): (1): splitter.pipe1.Pm = (splitter.pipe1.C1.P + splitter.pipe1.C2.P)/2.0
 // Procedure success
 //
 // Extraction procedure is successfully completed in iteration count: 2
@@ -1457,24 +1457,24 @@ getErrorString();
 //
 // SET_C (6, 6)
 // ========================================
-// 1/1 (1): splitter.pipe3.Pm = (splitter.pipe3.C1.P + splitter.pipe3.C2.P) / 2.0   [dynamic]
+// 1/1 (1): splitter.pipe3.Pm = (splitter.pipe3.C1.P + splitter.pipe3.C2.P)/2.0   [dynamic]
 // 2/2 (1): splitter.pipe3.Q = splitter.pipe3.C1.Q   [dynamic]
-// 3/3 (1): splitter.pipe2.h = splitter.pipe2.cp * (splitter.pipe2.T - 273.16) + splitter.pipe2.b * splitter.pipe2.Pm   [dynamic]
-// 4/4 (1): splitter.pipe2.Pm = (splitter.pipe2.C1.P + splitter.pipe2.C2.P) / 2.0   [dynamic]
-// 5/5 (1): splitter.pipe1.h = splitter.pipe1.cp * (splitter.pipe1.T - 273.16) + splitter.pipe1.b * splitter.pipe1.Pm   [dynamic]
-// 6/6 (1): splitter.pipe1.deltaP = ((splitter.pipe1.Q * splitter.pipe1.deltaPnom * splitter.pipe1.CoeffDeltaP) / splitter.pipe1.Qnom) * abs(splitter.pipe1.Q / splitter.pipe1.Qnom)   [dynamic]
+// 3/3 (1): splitter.pipe2.h = splitter.pipe2.cp*(splitter.pipe2.T - 273.16) + splitter.pipe2.b*splitter.pipe2.Pm   [dynamic]
+// 4/4 (1): splitter.pipe2.Pm = (splitter.pipe2.C1.P + splitter.pipe2.C2.P)/2.0   [dynamic]
+// 5/5 (1): splitter.pipe1.h = splitter.pipe1.cp*(splitter.pipe1.T - 273.16) + splitter.pipe1.b*splitter.pipe1.Pm   [dynamic]
+// 6/6 (1): splitter.pipe1.deltaP = ((splitter.pipe1.Q*splitter.pipe1.deltaPnom*splitter.pipe1.CoeffDeltaP)/splitter.pipe1.Qnom)*abs(splitter.pipe1.Q/splitter.pipe1.Qnom)   [dynamic]
 //
 //
 // SET_S (41, 41)
 // ========================================
-// 1/1 (1): splitter.pipe3.deltaP = ((splitter.pipe3.Q * splitter.pipe3.deltaPnom * splitter.pipe3.CoeffDeltaP) / splitter.pipe3.Qnom) * abs(splitter.pipe3.Q / splitter.pipe3.Qnom)   [dynamic]
+// 1/1 (1): splitter.pipe3.deltaP = ((splitter.pipe3.Q*splitter.pipe3.deltaPnom*splitter.pipe3.CoeffDeltaP)/splitter.pipe3.Qnom)*abs(splitter.pipe3.Q/splitter.pipe3.Qnom)   [dynamic]
 // 2/2 (1): splitter.pipe3.C1.P - splitter.pipe3.C2.P = splitter.pipe3.deltaP   [dynamic]
-// 3/3 (1): splitter.pipe3.h = splitter.pipe3.cp * (splitter.pipe3.T - 273.16) + splitter.pipe3.b * splitter.pipe3.Pm   [dynamic]
+// 3/3 (1): splitter.pipe3.h = splitter.pipe3.cp*(splitter.pipe3.T - 273.16) + splitter.pipe3.b*splitter.pipe3.Pm   [dynamic]
 // 4/4 (1): splitter.pipe3.h = splitter.pipe3.C1.h   [dynamic]
 // 5/5 (1): 0.0 = splitter.pipe3.C1.h - splitter.pipe3.C1.h_vol   [dynamic]
 // 6/6 (1): splitter.volume.Cs2.h_vol = splitter.pipe3.C1.h_vol   [dynamic]
 // 7/7 (1): splitter.volume.Cs2.h_vol = splitter.volume.h   [dynamic]
-// 8/8 (1): splitter.volume.h = splitter.volume.cp * (splitter.volume.T - 273.16) + splitter.volume.b * splitter.volume.P   [dynamic]
+// 8/8 (1): splitter.volume.h = splitter.volume.cp*(splitter.volume.T - 273.16) + splitter.volume.b*splitter.volume.P   [dynamic]
 // 9/9 (1): splitter.volume.P = splitter.volume.Cs2.P   [dynamic]
 // 10/10 (1): splitter.volume.Cs2.P = splitter.pipe3.C1.P   [dynamic]
 // 11/11 (1): 0.0 = splitter.volume.BQ   [dynamic]
@@ -1490,7 +1490,7 @@ getErrorString();
 // 21/21 (1): splitter.volume.Cs1.h_vol = splitter.pipe2.C1.h_vol   [dynamic]
 // 22/22 (1): 0.0 = splitter.pipe2.C1.h - splitter.pipe2.C1.h_vol   [dynamic]
 // 23/23 (1): splitter.pipe2.h = splitter.pipe2.C1.h   [dynamic]
-// 24/24 (1): splitter.pipe2.deltaP = ((splitter.pipe2.Q * splitter.pipe2.deltaPnom * splitter.pipe2.CoeffDeltaP) / splitter.pipe2.Qnom) * abs(splitter.pipe2.Q / splitter.pipe2.Qnom)   [dynamic]
+// 24/24 (1): splitter.pipe2.deltaP = ((splitter.pipe2.Q*splitter.pipe2.deltaPnom*splitter.pipe2.CoeffDeltaP)/splitter.pipe2.Qnom)*abs(splitter.pipe2.Q/splitter.pipe2.Qnom)   [dynamic]
 // 25/25 (1): splitter.pipe2.C1.P - splitter.pipe2.C2.P = splitter.pipe2.deltaP   [dynamic]
 // 26/26 (1): splitter.volume.P = splitter.volume.Cs1.P   [dynamic]
 // 27/27 (1): splitter.volume.Cs1.P = splitter.pipe2.C1.P   [dynamic]
@@ -1500,11 +1500,11 @@ getErrorString();
 // 31/31 (1): splitter.volume.Ce2.h = 1e5   [dynamic]
 // 32/32 (1): splitter.volume.Cs1.h = splitter.pipe2.C1.h   [dynamic]
 // 33/33 (1): splitter.volume.Cs2.h = splitter.pipe3.C1.h   [dynamic]
-// 34/34 (1): splitter.volume.BH = (splitter.volume.Ce2.Q * splitter.volume.Ce2.h + splitter.volume.Ce1.Q * splitter.volume.Ce1.h + splitter.volume.Cth.W) - (splitter.volume.Cs2.Q * splitter.volume.Cs2.h + splitter.volume.Cs1.Q * splitter.volume.Cs1.h)   [dynamic]
+// 34/34 (1): splitter.volume.BH = (splitter.volume.Ce2.Q*splitter.volume.Ce2.h + splitter.volume.Ce1.Q*splitter.volume.Ce1.h + splitter.volume.Cth.W) - (splitter.volume.Cs2.Q*splitter.volume.Cs2.h + splitter.volume.Cs1.Q*splitter.volume.Cs1.h)   [dynamic]
 // 35/35 (1): splitter.pipe1.C2.h = splitter.volume.Ce1.h   [dynamic]
 // 36/36 (1): splitter.pipe1.C2.h = splitter.pipe1.C1.h   [dynamic]
 // 37/37 (1): splitter.pipe1.h = splitter.pipe1.C1.h   [dynamic]
-// 38/38 (1): splitter.pipe1.Pm = (splitter.pipe1.C1.P + splitter.pipe1.C2.P) / 2.0   [dynamic]
+// 38/38 (1): splitter.pipe1.Pm = (splitter.pipe1.C1.P + splitter.pipe1.C2.P)/2.0   [dynamic]
 // 39/39 (1): splitter.volume.P = splitter.volume.Ce1.P   [dynamic]
 // 40/40 (1): splitter.pipe1.C2.P = splitter.volume.Ce1.P   [dynamic]
 // 41/41 (1): splitter.pipe1.C1.P - splitter.pipe1.C2.P = splitter.pipe1.deltaP   [dynamic]

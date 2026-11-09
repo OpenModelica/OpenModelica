@@ -268,8 +268,8 @@ getErrorString();
 // 44/44 (1): singularPressureLoss1.h = singularPressureLoss1.C1.h   [dynamic]
 // 45/45 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic]
 // 46/46 (1): 0.0 = singularPressureLoss1.C1.h - singularPressureLoss1.C1.h_vol   [dynamic]
-// 47/47 (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q) * singularPressureLoss1.Q * singularPressureLoss1.K) / singularPressureLoss1.rho   [dynamic]
-// 48/48 (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P) / 2.0   [dynamic]
+// 47/47 (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q)*singularPressureLoss1.Q*singularPressureLoss1.K)/singularPressureLoss1.rho   [dynamic]
+// 48/48 (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)/2.0   [dynamic]
 // 49/49 (1): singularPressureLoss1.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 50/50 (1): singularPressureLoss1.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 51/51 (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP   [dynamic]
@@ -278,8 +278,8 @@ getErrorString();
 // 54/54 (1): singularPressureLoss2.h = singularPressureLoss2.C1.h   [dynamic]
 // 55/55 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic]
 // 56/56 (1): 0.0 = singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol   [dynamic]
-// 57/57 (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q) * singularPressureLoss2.Q * singularPressureLoss2.K) / singularPressureLoss2.rho   [dynamic]
-// 58/58 (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P) / 2.0   [dynamic]
+// 57/57 (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q)*singularPressureLoss2.Q*singularPressureLoss2.K)/singularPressureLoss2.rho   [dynamic]
+// 58/58 (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)/2.0   [dynamic]
 // 59/59 (1): singularPressureLoss2.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 60/60 (1): singularPressureLoss2.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 61/61 (1): singularPressureLoss3.C1.P - singularPressureLoss3.C2.P = singularPressureLoss3.deltaP   [dynamic]
@@ -288,8 +288,8 @@ getErrorString();
 // 64/64 (1): singularPressureLoss3.h = singularPressureLoss3.C1.h   [dynamic]
 // 65/65 (1): singularPressureLoss3.Q = singularPressureLoss3.C1.Q   [dynamic]
 // 66/66 (1): 0.0 = singularPressureLoss3.C1.h - singularPressureLoss3.C1.h_vol   [dynamic]
-// 67/67 (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q) * singularPressureLoss3.Q * singularPressureLoss3.K) / singularPressureLoss3.rho   [dynamic]
-// 68/68 (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P) / 2.0   [dynamic]
+// 67/67 (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q)*singularPressureLoss3.Q*singularPressureLoss3.K)/singularPressureLoss3.rho   [dynamic]
+// 68/68 (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P)/2.0   [dynamic]
 // 69/69 (1): singularPressureLoss3.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss3.Pm, singularPressureLoss3.h, 1, singularPressureLoss3.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 70/70 (1): singularPressureLoss3.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss3.Pm, singularPressureLoss3.h, 1, singularPressureLoss3.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 71/71 (1): sourceQ2.C.P = sourceQ2.P   [dynamic]
@@ -329,9 +329,9 @@ getErrorString();
 // 105/105 (1): staticDrum1.Cs_purg.h_vol = staticDrum1.hl   [dynamic]
 // 106/106 (1): staticDrum1.Cs_sup.h_vol = staticDrum1.hl   [dynamic]
 // 107/107 (1): staticDrum1.Cs_eva.h_vol = staticDrum1.hl   [dynamic]
-// 108/108 (1): staticDrum1.Cs_sur.h_vol = (1.0 - staticDrum1.x) * staticDrum1.hl + staticDrum1.x * staticDrum1.hv   [dynamic]
+// 108/108 (1): staticDrum1.Cs_sur.h_vol = (1.0 - staticDrum1.x)*staticDrum1.hl + staticDrum1.x*staticDrum1.hv   [dynamic]
 // 109/109 (1): (staticDrum1.Ce_eva.Q + staticDrum1.Ce_sup.Q + staticDrum1.Ce_steam.Q + staticDrum1.Ce_eco.Q) - (staticDrum1.Cs_sup.Q + staticDrum1.Cs_purg.Q + staticDrum1.Cs_sur.Q + staticDrum1.Cs_eva.Q) = 0.0   [dynamic]
-// 110/110 (1): (staticDrum1.Ce_eva.Q * staticDrum1.Ce_eva.h + staticDrum1.Ce_sup.Q * staticDrum1.Ce_sup.h + staticDrum1.Ce_steam.Q * staticDrum1.Ce_steam.h + staticDrum1.Ce_eco.Q * staticDrum1.Ce_eco.h + staticDrum1.Cth.W) - (staticDrum1.Cs_sup.Q * staticDrum1.Cs_sup.h + staticDrum1.Cs_purg.Q * staticDrum1.Cs_purg.h + staticDrum1.Cs_sur.Q * staticDrum1.Cs_sur.h + staticDrum1.Cs_eva.Q * staticDrum1.Cs_eva.h) = 0.0   [dynamic]
+// 110/110 (1): (staticDrum1.Ce_eva.Q*staticDrum1.Ce_eva.h + staticDrum1.Ce_sup.Q*staticDrum1.Ce_sup.h + staticDrum1.Ce_steam.Q*staticDrum1.Ce_steam.h + staticDrum1.Ce_eco.Q*staticDrum1.Ce_eco.h + staticDrum1.Cth.W) - (staticDrum1.Cs_sup.Q*staticDrum1.Cs_sup.h + staticDrum1.Cs_purg.Q*staticDrum1.Cs_purg.h + staticDrum1.Cs_sur.Q*staticDrum1.Cs_sur.h + staticDrum1.Cs_eva.Q*staticDrum1.Cs_eva.h) = 0.0   [dynamic]
 // 111/111 (14): (staticDrum1.lsat, staticDrum1.vsat) = ThermoSysPro.Properties.WaterSteam.IF97.Water_sat_P(staticDrum1.P)   [dynamic]
 // 112/125 (1): staticDrum1.hl = staticDrum1.lsat.h   [dynamic]
 // 113/126 (1): staticDrum1.hv = staticDrum1.vsat.h   [dynamic]
@@ -551,7 +551,7 @@ getErrorString();
 // 167: sourceQ2.Q0: (1/1): (1): sourceQ2.Q0 = 100.0
 // 166: singularPressureLoss1.deltaP: (41/41): (1): singularPressureLoss1.C1.P - singularPressureLoss1.C2.P = singularPressureLoss1.deltaP
 // 165: singularPressureLoss1.Q: (45/45): (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q
-// 164: singularPressureLoss1.rho: (47/47): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q) * singularPressureLoss1.Q * singularPressureLoss1.K) / singularPressureLoss1.rho
+// 164: singularPressureLoss1.rho: (47/47): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q)*singularPressureLoss1.Q*singularPressureLoss1.K)/singularPressureLoss1.rho
 // 163: singularPressureLoss1.T: (49/49): (1): singularPressureLoss1.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)
 // 162: singularPressureLoss1.Pm: (50/50): (1): singularPressureLoss1.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)
 // 161: singularPressureLoss1.h: (44/44): (1): singularPressureLoss1.h = singularPressureLoss1.C1.h
@@ -561,7 +561,7 @@ getErrorString();
 // 157: singularPressureLoss1.C1.h: (46/46): (1): 0.0 = singularPressureLoss1.C1.h - singularPressureLoss1.C1.h_vol
 // 156: singularPressureLoss1.C1.a: (147/169): (1): singularPressureLoss1.C1.a = true
 // 155: singularPressureLoss1.C1.b: (25/25): (1): staticDrum1.Cs_sup.b = singularPressureLoss1.C1.b
-// 154: singularPressureLoss1.C2.P: (48/48): (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P) / 2.0
+// 154: singularPressureLoss1.C2.P: (48/48): (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)/2.0
 // 153: singularPressureLoss1.C2.h_vol: (33/33): (1): singularPressureLoss1.C2.h_vol = sink1.C.h_vol
 // 152: singularPressureLoss1.C2.Q: (42/42): (1): singularPressureLoss1.C2.Q = singularPressureLoss1.C1.Q
 // 151: singularPressureLoss1.C2.h: (43/43): (1): singularPressureLoss1.C2.h = singularPressureLoss1.C1.h
@@ -569,11 +569,11 @@ getErrorString();
 // 149: singularPressureLoss1.C2.b: (146/168): (1): singularPressureLoss1.C2.b = true
 // 148: singularPressureLoss2.deltaP: (51/51): (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP
 // 147: singularPressureLoss2.Q: (55/55): (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q
-// 146: singularPressureLoss2.rho: (57/57): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q) * singularPressureLoss2.Q * singularPressureLoss2.K) / singularPressureLoss2.rho
+// 146: singularPressureLoss2.rho: (57/57): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q)*singularPressureLoss2.Q*singularPressureLoss2.K)/singularPressureLoss2.rho
 // 145: singularPressureLoss2.T: (59/59): (1): singularPressureLoss2.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)
 // 144: singularPressureLoss2.Pm: (60/60): (1): singularPressureLoss2.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)
 // 143: singularPressureLoss2.h: (54/54): (1): singularPressureLoss2.h = singularPressureLoss2.C1.h
-// 142: singularPressureLoss2.C1.P: (58/58): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P) / 2.0
+// 142: singularPressureLoss2.C1.P: (58/58): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)/2.0
 // 141: singularPressureLoss2.C1.h_vol: (9/9): (1): sourceQ2.C.h_vol = singularPressureLoss2.C1.h_vol
 // 140: singularPressureLoss2.C1.Q: (5/5): (1): sourceQ2.C.Q = singularPressureLoss2.C1.Q
 // 139: singularPressureLoss2.C1.h: (56/56): (1): 0.0 = singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol
@@ -587,7 +587,7 @@ getErrorString();
 // 131: singularPressureLoss2.C2.b: (144/166): (1): singularPressureLoss2.C2.b = true
 // 130: singularPressureLoss3.deltaP: (61/61): (1): singularPressureLoss3.C1.P - singularPressureLoss3.C2.P = singularPressureLoss3.deltaP
 // 129: singularPressureLoss3.Q: (65/65): (1): singularPressureLoss3.Q = singularPressureLoss3.C1.Q
-// 128: singularPressureLoss3.rho: (67/67): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q) * singularPressureLoss3.Q * singularPressureLoss3.K) / singularPressureLoss3.rho
+// 128: singularPressureLoss3.rho: (67/67): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q)*singularPressureLoss3.Q*singularPressureLoss3.K)/singularPressureLoss3.rho
 // 127: singularPressureLoss3.T: (69/69): (1): singularPressureLoss3.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss3.Pm, singularPressureLoss3.h, 1, singularPressureLoss3.mode, 0.0, 0.0, 0.0, 0.0)
 // 126: singularPressureLoss3.Pm: (70/70): (1): singularPressureLoss3.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss3.Pm, singularPressureLoss3.h, 1, singularPressureLoss3.mode, 0.0, 0.0, 0.0, 0.0)
 // 125: singularPressureLoss3.h: (64/64): (1): singularPressureLoss3.h = singularPressureLoss3.C1.h
@@ -597,7 +597,7 @@ getErrorString();
 // 121: singularPressureLoss3.C1.h: (66/66): (1): 0.0 = singularPressureLoss3.C1.h - singularPressureLoss3.C1.h_vol
 // 120: singularPressureLoss3.C1.a: (143/165): (1): singularPressureLoss3.C1.a = true
 // 119: singularPressureLoss3.C1.b: (37/37): (1): sourceP.C.b = singularPressureLoss3.C1.b
-// 118: singularPressureLoss3.C2.P: (68/68): (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P) / 2.0
+// 118: singularPressureLoss3.C2.P: (68/68): (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P)/2.0
 // 117: singularPressureLoss3.C2.h_vol: (21/21): (1): singularPressureLoss3.C2.h_vol = staticDrum1.Ce_eco.h_vol
 // 116: singularPressureLoss3.C2.Q: (17/17): (1): singularPressureLoss3.C2.Q = staticDrum1.Ce_eco.Q
 // 115: singularPressureLoss3.C2.h: (63/63): (1): singularPressureLoss3.C2.h = singularPressureLoss3.C1.h
@@ -632,7 +632,7 @@ getErrorString();
 // 86: staticDrum1.Ce_eco.b: (19/19): (1): singularPressureLoss3.C2.b = staticDrum1.Ce_eco.b
 // 85: staticDrum1.Cs_sup.P: (99/99): (1): staticDrum1.P = staticDrum1.Cs_sup.P
 // 84: staticDrum1.Cs_sup.h_vol: (106/106): (1): staticDrum1.Cs_sup.h_vol = staticDrum1.hl
-// 83: staticDrum1.Cs_sup.Q: (110/110): (1): (staticDrum1.Ce_eva.Q * staticDrum1.Ce_eva.h + staticDrum1.Ce_sup.Q * staticDrum1.Ce_sup.h + staticDrum1.Ce_steam.Q * staticDrum1.Ce_steam.h + staticDrum1.Ce_eco.Q * staticDrum1.Ce_eco.h + staticDrum1.Cth.W) - (staticDrum1.Cs_sup.Q * staticDrum1.Cs_sup.h + staticDrum1.Cs_purg.Q * staticDrum1.Cs_purg.h + staticDrum1.Cs_sur.Q * staticDrum1.Cs_sur.h + staticDrum1.Cs_eva.Q * staticDrum1.Cs_eva.h) = 0.0
+// 83: staticDrum1.Cs_sup.Q: (110/110): (1): (staticDrum1.Ce_eva.Q*staticDrum1.Ce_eva.h + staticDrum1.Ce_sup.Q*staticDrum1.Ce_sup.h + staticDrum1.Ce_steam.Q*staticDrum1.Ce_steam.h + staticDrum1.Ce_eco.Q*staticDrum1.Ce_eco.h + staticDrum1.Cth.W) - (staticDrum1.Cs_sup.Q*staticDrum1.Cs_sup.h + staticDrum1.Cs_purg.Q*staticDrum1.Cs_purg.h + staticDrum1.Cs_sur.Q*staticDrum1.Cs_sur.h + staticDrum1.Cs_eva.Q*staticDrum1.Cs_eva.h) = 0.0
 // 82: staticDrum1.Cs_sup.h: (26/26): (1): staticDrum1.Cs_sup.h = singularPressureLoss1.C1.h
 // 81: staticDrum1.Cs_sup.a: (24/24): (1): staticDrum1.Cs_sup.a = singularPressureLoss1.C1.a
 // 80: staticDrum1.Cs_sup.b: (138/160): (1): staticDrum1.Cs_sup.b = true
@@ -643,7 +643,7 @@ getErrorString();
 // 75: staticDrum1.Cs_eva.a: (86/86): (1): staticDrum1.Cs_eva.a = true
 // 74: staticDrum1.Cs_eva.b: (137/159): (1): staticDrum1.Cs_eva.b = true
 // 73: staticDrum1.Cs_sur.P: (100/100): (1): staticDrum1.P = staticDrum1.Cs_sur.P
-// 72: staticDrum1.Cs_sur.h_vol: (108/108): (1): staticDrum1.Cs_sur.h_vol = (1.0 - staticDrum1.x) * staticDrum1.hl + staticDrum1.x * staticDrum1.hv
+// 72: staticDrum1.Cs_sur.h_vol: (108/108): (1): staticDrum1.Cs_sur.h_vol = (1.0 - staticDrum1.x)*staticDrum1.hl + staticDrum1.x*staticDrum1.hv
 // 71: staticDrum1.Cs_sur.Q: (90/90): (1): staticDrum1.Cs_sur.Q = 0.0
 // 70: staticDrum1.Cs_sur.h: (91/91): (1): staticDrum1.Cs_sur.h = 1e5
 // 69: staticDrum1.Cs_sur.a: (92/92): (1): staticDrum1.Cs_sur.a = true
@@ -792,13 +792,13 @@ getErrorString();
 // 49: staticDrum1.lsat.P: (111/111): (14): (staticDrum1.lsat, staticDrum1.vsat) = ThermoSysPro.Properties.WaterSteam.IF97.Water_sat_P(staticDrum1.P)
 // 100: staticDrum1.P: (96/96): (1): staticDrum1.P = staticDrum1.Ce_eco.P
 // 91: staticDrum1.Ce_eco.P: (16/16): (1): singularPressureLoss3.C2.P = staticDrum1.Ce_eco.P
-// 118: singularPressureLoss3.C2.P: (68/68): (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P) / 2.0
+// 118: singularPressureLoss3.C2.P: (68/68): (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P)/2.0
 // 124: singularPressureLoss3.C1.P: (34/34): (1): sourceP.C.P = singularPressureLoss3.C1.P
 // 7: sourceP.C.P: (121/134): (1): sourceP.C.P = sourceP.P
 // 23: sourceP.P: (125/138): (1): sourceP.P = sourceP.IPressure.signal
 // 9: sourceP.IPressure.signal: (124/137): (1): sourceP.IPressure.signal = sourceP.P0
 // 126: singularPressureLoss3.Pm: (70/70): (1): singularPressureLoss3.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss3.Pm, singularPressureLoss3.h, 1, singularPressureLoss3.mode, 0.0, 0.0, 0.0, 0.0)
-// 128: singularPressureLoss3.rho: (67/67): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q) * singularPressureLoss3.Q * singularPressureLoss3.K) / singularPressureLoss3.rho
+// 128: singularPressureLoss3.rho: (67/67): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q)*singularPressureLoss3.Q*singularPressureLoss3.K)/singularPressureLoss3.rho
 // 130: singularPressureLoss3.deltaP: (61/61): (1): singularPressureLoss3.C1.P - singularPressureLoss3.C2.P = singularPressureLoss3.deltaP
 // Procedure success
 //
@@ -849,7 +849,7 @@ getErrorString();
 //
 // >>>165: singularPressureLoss1.Q: (45/45): (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q
 // 158: singularPressureLoss1.C1.Q: (23/23): (1): staticDrum1.Cs_sup.Q = singularPressureLoss1.C1.Q
-// 83: staticDrum1.Cs_sup.Q: (110/110): (1): (staticDrum1.Ce_eva.Q * staticDrum1.Ce_eva.h + staticDrum1.Ce_sup.Q * staticDrum1.Ce_sup.h + staticDrum1.Ce_steam.Q * staticDrum1.Ce_steam.h + staticDrum1.Ce_eco.Q * staticDrum1.Ce_eco.h + staticDrum1.Cth.W) - (staticDrum1.Cs_sup.Q * staticDrum1.Cs_sup.h + staticDrum1.Cs_purg.Q * staticDrum1.Cs_purg.h + staticDrum1.Cs_sur.Q * staticDrum1.Cs_sur.h + staticDrum1.Cs_eva.Q * staticDrum1.Cs_eva.h) = 0.0
+// 83: staticDrum1.Cs_sup.Q: (110/110): (1): (staticDrum1.Ce_eva.Q*staticDrum1.Ce_eva.h + staticDrum1.Ce_sup.Q*staticDrum1.Ce_sup.h + staticDrum1.Ce_steam.Q*staticDrum1.Ce_steam.h + staticDrum1.Ce_eco.Q*staticDrum1.Ce_eco.h + staticDrum1.Cth.W) - (staticDrum1.Cs_sup.Q*staticDrum1.Cs_sup.h + staticDrum1.Cs_purg.Q*staticDrum1.Cs_purg.h + staticDrum1.Cs_sur.Q*staticDrum1.Cs_sur.h + staticDrum1.Cs_eva.Q*staticDrum1.Cs_eva.h) = 0.0
 // 34: staticDrum1.Cth.W: (40/40): (1): staticDrum1.Cth.W = 0.0
 // 52: staticDrum1.Ce_sup.h: (79/79): (1): staticDrum1.Ce_sup.h = 1e5
 // 53: staticDrum1.Ce_sup.Q: (78/78): (1): staticDrum1.Ce_sup.Q = 0.0
@@ -1089,8 +1089,8 @@ getErrorString();
 // 46/46 (1): singularPressureLoss1.h = singularPressureLoss1.C1.h   [dynamic]
 // 47/47 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic]
 // 48/48 (1): 0.0 = singularPressureLoss1.C1.h - singularPressureLoss1.C1.h_vol   [dynamic]
-// 49/49 (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q) * singularPressureLoss1.Q * singularPressureLoss1.K) / singularPressureLoss1.rho   [dynamic]
-// 50/50 (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P) / 2.0   [dynamic]
+// 49/49 (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q)*singularPressureLoss1.Q*singularPressureLoss1.K)/singularPressureLoss1.rho   [dynamic]
+// 50/50 (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)/2.0   [dynamic]
 // 51/51 (1): singularPressureLoss1.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 52/52 (1): singularPressureLoss1.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 53/53 (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP   [dynamic]
@@ -1099,8 +1099,8 @@ getErrorString();
 // 56/56 (1): singularPressureLoss2.h = singularPressureLoss2.C1.h   [dynamic]
 // 57/57 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic]
 // 58/58 (1): 0.0 = singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol   [dynamic]
-// 59/59 (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q) * singularPressureLoss2.Q * singularPressureLoss2.K) / singularPressureLoss2.rho   [dynamic]
-// 60/60 (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P) / 2.0   [dynamic]
+// 59/59 (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q)*singularPressureLoss2.Q*singularPressureLoss2.K)/singularPressureLoss2.rho   [dynamic]
+// 60/60 (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)/2.0   [dynamic]
 // 61/61 (1): singularPressureLoss2.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 62/62 (1): singularPressureLoss2.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 63/63 (1): singularPressureLoss3.C1.P - singularPressureLoss3.C2.P = singularPressureLoss3.deltaP   [dynamic]
@@ -1109,8 +1109,8 @@ getErrorString();
 // 66/66 (1): singularPressureLoss3.h = singularPressureLoss3.C1.h   [dynamic]
 // 67/67 (1): singularPressureLoss3.Q = singularPressureLoss3.C1.Q   [dynamic]
 // 68/68 (1): 0.0 = singularPressureLoss3.C1.h - singularPressureLoss3.C1.h_vol   [dynamic]
-// 69/69 (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q) * singularPressureLoss3.Q * singularPressureLoss3.K) / singularPressureLoss3.rho   [dynamic]
-// 70/70 (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P) / 2.0   [dynamic]
+// 69/69 (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q)*singularPressureLoss3.Q*singularPressureLoss3.K)/singularPressureLoss3.rho   [dynamic]
+// 70/70 (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P)/2.0   [dynamic]
 // 71/71 (1): singularPressureLoss3.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss3.Pm, singularPressureLoss3.h, 1, singularPressureLoss3.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 72/72 (1): singularPressureLoss3.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss3.Pm, singularPressureLoss3.h, 1, singularPressureLoss3.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 73/73 (1): sourceQ2.C.P = sourceQ2.P   [dynamic]
@@ -1148,9 +1148,9 @@ getErrorString();
 // 105/105 (1): staticDrum1.Cs_purg.h_vol = staticDrum1.hl   [dynamic]
 // 106/106 (1): staticDrum1.Cs_sup.h_vol = staticDrum1.hl   [dynamic]
 // 107/107 (1): staticDrum1.Cs_eva.h_vol = staticDrum1.hl   [dynamic]
-// 108/108 (1): staticDrum1.Cs_sur.h_vol = (1.0 - staticDrum1.x) * staticDrum1.hl + staticDrum1.x * staticDrum1.hv   [dynamic]
+// 108/108 (1): staticDrum1.Cs_sur.h_vol = (1.0 - staticDrum1.x)*staticDrum1.hl + staticDrum1.x*staticDrum1.hv   [dynamic]
 // 109/109 (1): (staticDrum1.Ce_eva.Q + staticDrum1.Ce_sup.Q + staticDrum1.Ce_steam.Q + staticDrum1.Ce_eco.Q) - (staticDrum1.Cs_sup.Q + staticDrum1.Cs_purg.Q + staticDrum1.Cs_sur.Q + staticDrum1.Cs_eva.Q) = 0.0   [dynamic]
-// 110/110 (1): (staticDrum1.Ce_eva.Q * staticDrum1.Ce_eva.h + staticDrum1.Ce_sup.Q * staticDrum1.Ce_sup.h + staticDrum1.Ce_steam.Q * staticDrum1.Ce_steam.h + staticDrum1.Ce_eco.Q * staticDrum1.Ce_eco.h + staticDrum1.Cth.W) - (staticDrum1.Cs_sup.Q * staticDrum1.Cs_sup.h + staticDrum1.Cs_purg.Q * staticDrum1.Cs_purg.h + staticDrum1.Cs_sur.Q * staticDrum1.Cs_sur.h + staticDrum1.Cs_eva.Q * staticDrum1.Cs_eva.h) = 0.0   [dynamic]
+// 110/110 (1): (staticDrum1.Ce_eva.Q*staticDrum1.Ce_eva.h + staticDrum1.Ce_sup.Q*staticDrum1.Ce_sup.h + staticDrum1.Ce_steam.Q*staticDrum1.Ce_steam.h + staticDrum1.Ce_eco.Q*staticDrum1.Ce_eco.h + staticDrum1.Cth.W) - (staticDrum1.Cs_sup.Q*staticDrum1.Cs_sup.h + staticDrum1.Cs_purg.Q*staticDrum1.Cs_purg.h + staticDrum1.Cs_sur.Q*staticDrum1.Cs_sur.h + staticDrum1.Cs_eva.Q*staticDrum1.Cs_eva.h) = 0.0   [dynamic]
 // 111/111 (14): (staticDrum1.lsat, staticDrum1.vsat) = ThermoSysPro.Properties.WaterSteam.IF97.Water_sat_P(staticDrum1.P)   [dynamic]
 // 112/125 (1): staticDrum1.hl = staticDrum1.lsat.h   [dynamic]
 // 113/126 (1): staticDrum1.hv = staticDrum1.vsat.h   [dynamic]
@@ -1370,7 +1370,7 @@ getErrorString();
 // 167: sourceQ2.Q0: (3/3): (1): sourceQ2.Q0 = 100.0
 // 166: singularPressureLoss1.deltaP: (43/43): (1): singularPressureLoss1.C1.P - singularPressureLoss1.C2.P = singularPressureLoss1.deltaP
 // 165: singularPressureLoss1.Q: (47/47): (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q
-// 164: singularPressureLoss1.rho: (49/49): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q) * singularPressureLoss1.Q * singularPressureLoss1.K) / singularPressureLoss1.rho
+// 164: singularPressureLoss1.rho: (49/49): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q)*singularPressureLoss1.Q*singularPressureLoss1.K)/singularPressureLoss1.rho
 // 163: singularPressureLoss1.T: (51/51): (1): singularPressureLoss1.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)
 // 162: singularPressureLoss1.Pm: (52/52): (1): singularPressureLoss1.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)
 // 161: singularPressureLoss1.h: (46/46): (1): singularPressureLoss1.h = singularPressureLoss1.C1.h
@@ -1380,17 +1380,17 @@ getErrorString();
 // 157: singularPressureLoss1.C1.h: (48/48): (1): 0.0 = singularPressureLoss1.C1.h - singularPressureLoss1.C1.h_vol
 // 156: singularPressureLoss1.C1.a: (147/169): (1): singularPressureLoss1.C1.a = true
 // 155: singularPressureLoss1.C1.b: (27/27): (1): staticDrum1.Cs_sup.b = singularPressureLoss1.C1.b
-// 154: singularPressureLoss1.C2.P: (50/50): (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P) / 2.0
+// 154: singularPressureLoss1.C2.P: (50/50): (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)/2.0
 // 153: singularPressureLoss1.C2.h_vol: (35/35): (1): singularPressureLoss1.C2.h_vol = sink1.C.h_vol
 // 152: singularPressureLoss1.C2.Q: (44/44): (1): singularPressureLoss1.C2.Q = singularPressureLoss1.C1.Q
 // 151: singularPressureLoss1.C2.h: (45/45): (1): singularPressureLoss1.C2.h = singularPressureLoss1.C1.h
 // 150: singularPressureLoss1.C2.a: (32/32): (1): singularPressureLoss1.C2.a = sink1.C.a
 // 149: singularPressureLoss1.C2.b: (146/168): (1): singularPressureLoss1.C2.b = true
-// 148: singularPressureLoss2.deltaP: (59/59): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q) * singularPressureLoss2.Q * singularPressureLoss2.K) / singularPressureLoss2.rho
+// 148: singularPressureLoss2.deltaP: (59/59): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q)*singularPressureLoss2.Q*singularPressureLoss2.K)/singularPressureLoss2.rho
 // 147: singularPressureLoss2.Q: (57/57): (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q
 // 146: singularPressureLoss2.rho: (62/62): (1): singularPressureLoss2.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)
 // 145: singularPressureLoss2.T: (61/61): (1): singularPressureLoss2.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)
-// 144: singularPressureLoss2.Pm: (60/60): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P) / 2.0
+// 144: singularPressureLoss2.Pm: (60/60): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)/2.0
 // 143: singularPressureLoss2.h: (2/2): (1): singularPressureLoss2.h = 0.0
 // 142: singularPressureLoss2.C1.P: (53/53): (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP
 // 141: singularPressureLoss2.C1.h_vol: (58/58): (1): 0.0 = singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol
@@ -1406,7 +1406,7 @@ getErrorString();
 // 131: singularPressureLoss2.C2.b: (144/166): (1): singularPressureLoss2.C2.b = true
 // 130: singularPressureLoss3.deltaP: (63/63): (1): singularPressureLoss3.C1.P - singularPressureLoss3.C2.P = singularPressureLoss3.deltaP
 // 129: singularPressureLoss3.Q: (1/1): (1): singularPressureLoss3.Q = 0.0
-// 128: singularPressureLoss3.rho: (69/69): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q) * singularPressureLoss3.Q * singularPressureLoss3.K) / singularPressureLoss3.rho
+// 128: singularPressureLoss3.rho: (69/69): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q)*singularPressureLoss3.Q*singularPressureLoss3.K)/singularPressureLoss3.rho
 // 127: singularPressureLoss3.T: (71/71): (1): singularPressureLoss3.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss3.Pm, singularPressureLoss3.h, 1, singularPressureLoss3.mode, 0.0, 0.0, 0.0, 0.0)
 // 126: singularPressureLoss3.Pm: (72/72): (1): singularPressureLoss3.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss3.Pm, singularPressureLoss3.h, 1, singularPressureLoss3.mode, 0.0, 0.0, 0.0, 0.0)
 // 125: singularPressureLoss3.h: (66/66): (1): singularPressureLoss3.h = singularPressureLoss3.C1.h
@@ -1416,7 +1416,7 @@ getErrorString();
 // 121: singularPressureLoss3.C1.h: (68/68): (1): 0.0 = singularPressureLoss3.C1.h - singularPressureLoss3.C1.h_vol
 // 120: singularPressureLoss3.C1.a: (143/165): (1): singularPressureLoss3.C1.a = true
 // 119: singularPressureLoss3.C1.b: (39/39): (1): sourceP.C.b = singularPressureLoss3.C1.b
-// 118: singularPressureLoss3.C2.P: (70/70): (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P) / 2.0
+// 118: singularPressureLoss3.C2.P: (70/70): (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P)/2.0
 // 117: singularPressureLoss3.C2.h_vol: (23/23): (1): singularPressureLoss3.C2.h_vol = staticDrum1.Ce_eco.h_vol
 // 116: singularPressureLoss3.C2.Q: (64/64): (1): singularPressureLoss3.C2.Q = singularPressureLoss3.C1.Q
 // 115: singularPressureLoss3.C2.h: (65/65): (1): singularPressureLoss3.C2.h = singularPressureLoss3.C1.h
@@ -1462,7 +1462,7 @@ getErrorString();
 // 75: staticDrum1.Cs_eva.a: (86/86): (1): staticDrum1.Cs_eva.a = true
 // 74: staticDrum1.Cs_eva.b: (137/159): (1): staticDrum1.Cs_eva.b = true
 // 73: staticDrum1.Cs_sur.P: (100/100): (1): staticDrum1.P = staticDrum1.Cs_sur.P
-// 72: staticDrum1.Cs_sur.h_vol: (108/108): (1): staticDrum1.Cs_sur.h_vol = (1.0 - staticDrum1.x) * staticDrum1.hl + staticDrum1.x * staticDrum1.hv
+// 72: staticDrum1.Cs_sur.h_vol: (108/108): (1): staticDrum1.Cs_sur.h_vol = (1.0 - staticDrum1.x)*staticDrum1.hl + staticDrum1.x*staticDrum1.hv
 // 71: staticDrum1.Cs_sur.Q: (90/90): (1): staticDrum1.Cs_sur.Q = 0.0
 // 70: staticDrum1.Cs_sur.h: (91/91): (1): staticDrum1.Cs_sur.h = 1e5
 // 69: staticDrum1.Cs_sur.a: (92/92): (1): staticDrum1.Cs_sur.a = true
@@ -1475,7 +1475,7 @@ getErrorString();
 // 62: staticDrum1.Cs_purg.b: (135/157): (1): staticDrum1.Cs_purg.b = true
 // 61: staticDrum1.Ce_steam.P: (93/93): (1): staticDrum1.P = staticDrum1.Ce_steam.P
 // 60: staticDrum1.Ce_steam.h_vol: (104/104): (1): staticDrum1.Ce_steam.h_vol = staticDrum1.hv
-// 59: staticDrum1.Ce_steam.Q: (110/110): (1): (staticDrum1.Ce_eva.Q * staticDrum1.Ce_eva.h + staticDrum1.Ce_sup.Q * staticDrum1.Ce_sup.h + staticDrum1.Ce_steam.Q * staticDrum1.Ce_steam.h + staticDrum1.Ce_eco.Q * staticDrum1.Ce_eco.h + staticDrum1.Cth.W) - (staticDrum1.Cs_sup.Q * staticDrum1.Cs_sup.h + staticDrum1.Cs_purg.Q * staticDrum1.Cs_purg.h + staticDrum1.Cs_sur.Q * staticDrum1.Cs_sur.h + staticDrum1.Cs_eva.Q * staticDrum1.Cs_eva.h) = 0.0
+// 59: staticDrum1.Ce_steam.Q: (110/110): (1): (staticDrum1.Ce_eva.Q*staticDrum1.Ce_eva.h + staticDrum1.Ce_sup.Q*staticDrum1.Ce_sup.h + staticDrum1.Ce_steam.Q*staticDrum1.Ce_steam.h + staticDrum1.Ce_eco.Q*staticDrum1.Ce_eco.h + staticDrum1.Cth.W) - (staticDrum1.Cs_sup.Q*staticDrum1.Cs_sup.h + staticDrum1.Cs_purg.Q*staticDrum1.Cs_purg.h + staticDrum1.Cs_sur.Q*staticDrum1.Cs_sur.h + staticDrum1.Cs_eva.Q*staticDrum1.Cs_eva.h) = 0.0
 // 58: staticDrum1.Ce_steam.h: (16/16): (1): singularPressureLoss2.C2.h = staticDrum1.Ce_steam.h
 // 57: staticDrum1.Ce_steam.a: (134/156): (1): staticDrum1.Ce_steam.a = true
 // 56: staticDrum1.Ce_steam.b: (15/15): (1): singularPressureLoss2.C2.b = staticDrum1.Ce_steam.b
@@ -1611,13 +1611,13 @@ getErrorString();
 // 49: staticDrum1.lsat.P: (111/111): (14): (staticDrum1.lsat, staticDrum1.vsat) = ThermoSysPro.Properties.WaterSteam.IF97.Water_sat_P(staticDrum1.P)
 // 100: staticDrum1.P: (96/96): (1): staticDrum1.P = staticDrum1.Ce_eco.P
 // 91: staticDrum1.Ce_eco.P: (18/18): (1): singularPressureLoss3.C2.P = staticDrum1.Ce_eco.P
-// 118: singularPressureLoss3.C2.P: (70/70): (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P) / 2.0
+// 118: singularPressureLoss3.C2.P: (70/70): (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P)/2.0
 // 124: singularPressureLoss3.C1.P: (36/36): (1): sourceP.C.P = singularPressureLoss3.C1.P
 // 7: sourceP.C.P: (121/134): (1): sourceP.C.P = sourceP.P
 // 23: sourceP.P: (125/138): (1): sourceP.P = sourceP.IPressure.signal
 // 9: sourceP.IPressure.signal: (124/137): (1): sourceP.IPressure.signal = sourceP.P0
 // 126: singularPressureLoss3.Pm: (72/72): (1): singularPressureLoss3.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss3.Pm, singularPressureLoss3.h, 1, singularPressureLoss3.mode, 0.0, 0.0, 0.0, 0.0)
-// 128: singularPressureLoss3.rho: (69/69): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q) * singularPressureLoss3.Q * singularPressureLoss3.K) / singularPressureLoss3.rho
+// 128: singularPressureLoss3.rho: (69/69): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q)*singularPressureLoss3.Q*singularPressureLoss3.K)/singularPressureLoss3.rho
 // 130: singularPressureLoss3.deltaP: (63/63): (1): singularPressureLoss3.C1.P - singularPressureLoss3.C2.P = singularPressureLoss3.deltaP
 // Procedure success
 //
@@ -1632,7 +1632,7 @@ getErrorString();
 // >>>147: singularPressureLoss2.Q: (57/57): (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q
 // 140: singularPressureLoss2.C1.Q: (54/54): (1): singularPressureLoss2.C2.Q = singularPressureLoss2.C1.Q
 // 134: singularPressureLoss2.C2.Q: (13/13): (1): singularPressureLoss2.C2.Q = staticDrum1.Ce_steam.Q
-// 59: staticDrum1.Ce_steam.Q: (110/110): (1): (staticDrum1.Ce_eva.Q * staticDrum1.Ce_eva.h + staticDrum1.Ce_sup.Q * staticDrum1.Ce_sup.h + staticDrum1.Ce_steam.Q * staticDrum1.Ce_steam.h + staticDrum1.Ce_eco.Q * staticDrum1.Ce_eco.h + staticDrum1.Cth.W) - (staticDrum1.Cs_sup.Q * staticDrum1.Cs_sup.h + staticDrum1.Cs_purg.Q * staticDrum1.Cs_purg.h + staticDrum1.Cs_sur.Q * staticDrum1.Cs_sur.h + staticDrum1.Cs_eva.Q * staticDrum1.Cs_eva.h) = 0.0
+// 59: staticDrum1.Ce_steam.Q: (110/110): (1): (staticDrum1.Ce_eva.Q*staticDrum1.Ce_eva.h + staticDrum1.Ce_sup.Q*staticDrum1.Ce_sup.h + staticDrum1.Ce_steam.Q*staticDrum1.Ce_steam.h + staticDrum1.Ce_eco.Q*staticDrum1.Ce_eco.h + staticDrum1.Cth.W) - (staticDrum1.Cs_sup.Q*staticDrum1.Cs_sup.h + staticDrum1.Cs_purg.Q*staticDrum1.Cs_purg.h + staticDrum1.Cs_sur.Q*staticDrum1.Cs_sur.h + staticDrum1.Cs_eva.Q*staticDrum1.Cs_eva.h) = 0.0
 // 34: staticDrum1.Cth.W: (42/42): (1): staticDrum1.Cth.W = 0.0
 // 52: staticDrum1.Ce_sup.h: (79/79): (1): staticDrum1.Ce_sup.h = 1e5
 // 53: staticDrum1.Ce_sup.Q: (78/78): (1): staticDrum1.Ce_sup.Q = 0.0
@@ -1674,7 +1674,7 @@ getErrorString();
 // 158: singularPressureLoss1.C1.Q: (25/25): (1): staticDrum1.Cs_sup.Q = singularPressureLoss1.C1.Q
 // 83: staticDrum1.Cs_sup.Q: (109/109): (1): (staticDrum1.Ce_eva.Q + staticDrum1.Ce_sup.Q + staticDrum1.Ce_steam.Q + staticDrum1.Ce_eco.Q) - (staticDrum1.Cs_sup.Q + staticDrum1.Cs_purg.Q + staticDrum1.Cs_sur.Q + staticDrum1.Cs_eva.Q) = 0.0
 // 53: staticDrum1.Ce_sup.Q: (78/78): (1): staticDrum1.Ce_sup.Q = 0.0
-// 59: staticDrum1.Ce_steam.Q: (110/110): (1): (staticDrum1.Ce_eva.Q * staticDrum1.Ce_eva.h + staticDrum1.Ce_sup.Q * staticDrum1.Ce_sup.h + staticDrum1.Ce_steam.Q * staticDrum1.Ce_steam.h + staticDrum1.Ce_eco.Q * staticDrum1.Ce_eco.h + staticDrum1.Cth.W) - (staticDrum1.Cs_sup.Q * staticDrum1.Cs_sup.h + staticDrum1.Cs_purg.Q * staticDrum1.Cs_purg.h + staticDrum1.Cs_sur.Q * staticDrum1.Cs_sur.h + staticDrum1.Cs_eva.Q * staticDrum1.Cs_eva.h) = 0.0
+// 59: staticDrum1.Ce_steam.Q: (110/110): (1): (staticDrum1.Ce_eva.Q*staticDrum1.Ce_eva.h + staticDrum1.Ce_sup.Q*staticDrum1.Ce_sup.h + staticDrum1.Ce_steam.Q*staticDrum1.Ce_steam.h + staticDrum1.Ce_eco.Q*staticDrum1.Ce_eco.h + staticDrum1.Cth.W) - (staticDrum1.Cs_sup.Q*staticDrum1.Cs_sup.h + staticDrum1.Cs_purg.Q*staticDrum1.Cs_purg.h + staticDrum1.Cs_sur.Q*staticDrum1.Cs_sur.h + staticDrum1.Cs_eva.Q*staticDrum1.Cs_eva.h) = 0.0
 // 34: staticDrum1.Cth.W: (42/42): (1): staticDrum1.Cth.W = 0.0
 // 52: staticDrum1.Ce_sup.h: (79/79): (1): staticDrum1.Ce_sup.h = 1e5
 // 58: staticDrum1.Ce_steam.h: (16/16): (1): singularPressureLoss2.C2.h = staticDrum1.Ce_steam.h
@@ -1725,13 +1725,13 @@ getErrorString();
 // SET_S (44, 57)
 // ========================================
 // 1/1 (1): singularPressureLoss3.C1.P - singularPressureLoss3.C2.P = singularPressureLoss3.deltaP   [dynamic]
-// 2/2 (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q) * singularPressureLoss3.Q * singularPressureLoss3.K) / singularPressureLoss3.rho   [dynamic]
+// 2/2 (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q)*singularPressureLoss3.Q*singularPressureLoss3.K)/singularPressureLoss3.rho   [dynamic]
 // 3/3 (1): singularPressureLoss3.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss3.Pm, singularPressureLoss3.h, 1, singularPressureLoss3.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 4/4 (1): sourceP.IPressure.signal = sourceP.P0   [dynamic]
 // 5/5 (1): sourceP.P = sourceP.IPressure.signal   [dynamic]
 // 6/6 (1): sourceP.C.P = sourceP.P   [dynamic]
 // 7/7 (1): sourceP.C.P = singularPressureLoss3.C1.P   [dynamic]
-// 8/8 (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P) / 2.0   [dynamic]
+// 8/8 (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P)/2.0   [dynamic]
 // 9/9 (1): singularPressureLoss3.C2.P = staticDrum1.Ce_eco.P   [dynamic]
 // 10/10 (1): staticDrum1.P = staticDrum1.Ce_eco.P   [dynamic]
 // 11/11 (14): (staticDrum1.lsat, staticDrum1.vsat) = ThermoSysPro.Properties.WaterSteam.IF97.Water_sat_P(staticDrum1.P)   [dynamic]
@@ -1764,7 +1764,7 @@ getErrorString();
 // 38/51 (1): staticDrum1.Ce_sup.Q = 0.0   [dynamic]
 // 39/52 (1): staticDrum1.Ce_sup.h = 1e5   [dynamic]
 // 40/53 (1): staticDrum1.Cth.W = 0.0   [dynamic]
-// 41/54 (1): (staticDrum1.Ce_eva.Q * staticDrum1.Ce_eva.h + staticDrum1.Ce_sup.Q * staticDrum1.Ce_sup.h + staticDrum1.Ce_steam.Q * staticDrum1.Ce_steam.h + staticDrum1.Ce_eco.Q * staticDrum1.Ce_eco.h + staticDrum1.Cth.W) - (staticDrum1.Cs_sup.Q * staticDrum1.Cs_sup.h + staticDrum1.Cs_purg.Q * staticDrum1.Cs_purg.h + staticDrum1.Cs_sur.Q * staticDrum1.Cs_sur.h + staticDrum1.Cs_eva.Q * staticDrum1.Cs_eva.h) = 0.0   [dynamic]
+// 41/54 (1): (staticDrum1.Ce_eva.Q*staticDrum1.Ce_eva.h + staticDrum1.Ce_sup.Q*staticDrum1.Ce_sup.h + staticDrum1.Ce_steam.Q*staticDrum1.Ce_steam.h + staticDrum1.Ce_eco.Q*staticDrum1.Ce_eco.h + staticDrum1.Cth.W) - (staticDrum1.Cs_sup.Q*staticDrum1.Cs_sup.h + staticDrum1.Cs_purg.Q*staticDrum1.Cs_purg.h + staticDrum1.Cs_sur.Q*staticDrum1.Cs_sur.h + staticDrum1.Cs_eva.Q*staticDrum1.Cs_eva.h) = 0.0   [dynamic]
 // 42/55 (1): singularPressureLoss2.C2.Q = staticDrum1.Ce_steam.Q   [dynamic]
 // 43/56 (1): singularPressureLoss2.C2.Q = singularPressureLoss2.C1.Q   [dynamic]
 // 44/57 (1): staticDrum1.Cs_sup.Q = singularPressureLoss1.C1.Q   [dynamic]

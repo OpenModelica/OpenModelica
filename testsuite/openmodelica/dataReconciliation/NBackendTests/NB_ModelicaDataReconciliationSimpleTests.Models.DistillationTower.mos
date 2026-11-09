@@ -56,8 +56,8 @@ getErrorString();
 //
 // OrderedEquation (9, 9)
 // ========================================
-// 1/1 (1): F * xF1 - (D * xD1 + B * xB1) = 0.0   [dynamic]
-// 2/2 (1): F * xF2 - (D * xD2 + B * xB2) = 0.0   [dynamic]
+// 1/1 (1): F*xF1 - (D*xD1 + B*xB1) = 0.0   [dynamic]
+// 2/2 (1): F*xF2 - (D*xD2 + B*xB2) = 0.0   [dynamic]
 // 3/3 (1): xF1 + xF2 = 100.0   [dynamic]
 // 4/4 (1): xB1 + xB2 = 100.0   [dynamic]
 // 5/5 (1): xD1 + xD2 = 100.0   [dynamic]
@@ -84,8 +84,8 @@ getErrorString();
 //
 // 9: F: (9/9): (1): F = 1095.47
 // 8: B: (8/8): (1): B = 488.23
-// 7: D: (2/2): (1): F * xF2 - (D * xD2 + B * xB2) = 0.0
-// 6: xF1: (1/1): (1): F * xF1 - (D * xD1 + B * xB1) = 0.0
+// 7: D: (2/2): (1): F*xF2 - (D*xD2 + B*xB2) = 0.0
+// 6: xF1: (1/1): (1): F*xF1 - (D*xD1 + B*xB1) = 0.0
 // 5: xF2: (3/3): (1): xF1 + xF2 = 100.0
 // 4: xB1: (7/7): (1): xB1 = 1.97
 // 3: xB2: (4/4): (1): xB1 + xB2 = 100.0
@@ -125,8 +125,8 @@ getErrorString();
 // 1: xD2: (5/5): (1): xD1 + xD2 = 100.0
 // 3: xB2: (4/4): (1): xB1 + xB2 = 100.0
 // 5: xF2: (3/3): (1): xF1 + xF2 = 100.0
-// 6: xF1: (1/1): (1): F * xF1 - (D * xD1 + B * xB1) = 0.0
-// 7: D: (2/2): (1): F * xF2 - (D * xD2 + B * xB2) = 0.0
+// 6: xF1: (1/1): (1): F*xF1 - (D*xD1 + B*xB1) = 0.0
+// 7: D: (2/2): (1): F*xF2 - (D*xD2 + B*xB2) = 0.0
 //
 //
 // Extracting SET-C and SET-S from E-BLT
@@ -141,10 +141,10 @@ getErrorString();
 // >>>5: xF2: (3/3): (1): xF1 + xF2 = 100.0
 // Procedure success
 //
-// >>>6: xF1: (1/1): (1): F * xF1 - (D * xD1 + B * xB1) = 0.0
+// >>>6: xF1: (1/1): (1): F*xF1 - (D*xD1 + B*xB1) = 0.0
 // Procedure success
 //
-// >>>7: D: (2/2): (1): F * xF2 - (D * xD2 + B * xB2) = 0.0
+// >>>7: D: (2/2): (1): F*xF2 - (D*xD2 + B*xB2) = 0.0
 // Procedure success
 //
 // Extraction procedure is successfully completed in iteration count: 1
@@ -161,8 +161,8 @@ getErrorString();
 // 1/1 (1): xD1 + xD2 = 100.0   [dynamic]
 // 2/2 (1): xB1 + xB2 = 100.0   [dynamic]
 // 3/3 (1): xF1 + xF2 = 100.0   [dynamic]
-// 4/4 (1): F * xF1 - (D * xD1 + B * xB1) = 0.0   [dynamic]
-// 5/5 (1): F * xF2 - (D * xD2 + B * xB2) = 0.0   [dynamic]
+// 4/4 (1): F*xF1 - (D*xD1 + B*xB1) = 0.0   [dynamic]
+// 5/5 (1): F*xF2 - (D*xD2 + B*xB2) = 0.0   [dynamic]
 //
 //
 // Unknown variables in SET_S (0)

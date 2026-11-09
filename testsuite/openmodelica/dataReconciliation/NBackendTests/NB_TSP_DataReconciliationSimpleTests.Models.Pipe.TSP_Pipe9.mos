@@ -145,8 +145,8 @@ getErrorString();
 // 28/28 (1): singularPressureLoss1.h = singularPressureLoss1.C1.h   [dynamic]
 // 29/29 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic]
 // 30/30 (1): 0.0 = if singularPressureLoss1.Q > 0.0 then singularPressureLoss1.C1.h - singularPressureLoss1.C1.h_vol else singularPressureLoss1.C2.h - singularPressureLoss1.C2.h_vol   [dynamic]
-// 31/31 (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q) * singularPressureLoss1.Q * singularPressureLoss1.K) / singularPressureLoss1.rho   [dynamic]
-// 32/32 (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P) / 2.0   [dynamic]
+// 31/31 (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q)*singularPressureLoss1.Q*singularPressureLoss1.K)/singularPressureLoss1.rho   [dynamic]
+// 32/32 (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)/2.0   [dynamic]
 // 33/33 (1): singularPressureLoss1.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 34/34 (1): singularPressureLoss1.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 35/35 (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP   [dynamic]
@@ -155,8 +155,8 @@ getErrorString();
 // 38/38 (1): singularPressureLoss2.h = singularPressureLoss2.C1.h   [dynamic]
 // 39/39 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic]
 // 40/40 (1): 0.0 = if singularPressureLoss2.Q > 0.0 then singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol else singularPressureLoss2.C2.h - singularPressureLoss2.C2.h_vol   [dynamic]
-// 41/41 (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q) * singularPressureLoss2.Q * singularPressureLoss2.K) / singularPressureLoss2.rho   [dynamic]
-// 42/42 (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P) / 2.0   [dynamic]
+// 41/41 (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q)*singularPressureLoss2.Q*singularPressureLoss2.K)/singularPressureLoss2.rho   [dynamic]
+// 42/42 (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)/2.0   [dynamic]
 // 43/43 (1): singularPressureLoss2.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 44/44 (1): singularPressureLoss2.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 45/45 (1): sourceP1.C.P = sourceP1.P   [dynamic]
@@ -266,10 +266,10 @@ getErrorString();
 // 64: sourceP1.T0: (2/2): (1): sourceP1.T0 = 290.0
 // 63: sourceP1.P0: (1/1): (1): sourceP1.P0 = 3e5
 // 62: singularPressureLoss1.deltaP: (25/25): (1): singularPressureLoss1.C1.P - singularPressureLoss1.C2.P = singularPressureLoss1.deltaP
-// 61: singularPressureLoss1.Q: (31/31): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q) * singularPressureLoss1.Q * singularPressureLoss1.K) / singularPressureLoss1.rho
+// 61: singularPressureLoss1.Q: (31/31): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q)*singularPressureLoss1.Q*singularPressureLoss1.K)/singularPressureLoss1.rho
 // 60: singularPressureLoss1.rho: (34/34): (1): singularPressureLoss1.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)
 // 59: singularPressureLoss1.T: (33/33): (1): singularPressureLoss1.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)
-// 58: singularPressureLoss1.Pm: (32/32): (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P) / 2.0
+// 58: singularPressureLoss1.Pm: (32/32): (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)/2.0
 // 57: singularPressureLoss1.h: (28/28): (1): singularPressureLoss1.h = singularPressureLoss1.C1.h
 // 56: singularPressureLoss1.C1.P: (7/7): (1): sourceP1.C.P = singularPressureLoss1.C1.P
 // 55: singularPressureLoss1.C1.h_vol: (12/12): (1): sourceP1.C.h_vol = singularPressureLoss1.C1.h_vol
@@ -283,11 +283,11 @@ getErrorString();
 // 47: singularPressureLoss1.C2.h: (23/23): (1): singularPressureLoss1.C2.h = singularPressureLoss2.C1.h
 // 46: singularPressureLoss1.C2.a: (21/21): (1): singularPressureLoss1.C2.a = singularPressureLoss2.C1.a
 // 45: singularPressureLoss1.C2.b: (67/67): (1): singularPressureLoss1.C2.b = true
-// 44: singularPressureLoss2.deltaP: (41/41): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q) * singularPressureLoss2.Q * singularPressureLoss2.K) / singularPressureLoss2.rho
+// 44: singularPressureLoss2.deltaP: (41/41): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q)*singularPressureLoss2.Q*singularPressureLoss2.K)/singularPressureLoss2.rho
 // 43: singularPressureLoss2.Q: (39/39): (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q
 // 42: singularPressureLoss2.rho: (44/44): (1): singularPressureLoss2.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)
 // 41: singularPressureLoss2.T: (43/43): (1): singularPressureLoss2.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)
-// 40: singularPressureLoss2.Pm: (42/42): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P) / 2.0
+// 40: singularPressureLoss2.Pm: (42/42): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)/2.0
 // 39: singularPressureLoss2.h: (38/38): (1): singularPressureLoss2.h = singularPressureLoss2.C1.h
 // 38: singularPressureLoss2.C1.P: (35/35): (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP
 // 37: singularPressureLoss2.C1.h_vol: (24/24): (1): singularPressureLoss1.C2.h_vol = singularPressureLoss2.C1.h_vol
@@ -367,16 +367,16 @@ getErrorString();
 // E-BLT: equations that compute the variables of interest:(4)
 // ============================================================
 //
-// 40: singularPressureLoss2.Pm: (42/42): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P) / 2.0
+// 40: singularPressureLoss2.Pm: (42/42): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)/2.0
 // 43: singularPressureLoss2.Q: (39/39): (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q
-// 58: singularPressureLoss1.Pm: (32/32): (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P) / 2.0
-// 61: singularPressureLoss1.Q: (31/31): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q) * singularPressureLoss1.Q * singularPressureLoss1.K) / singularPressureLoss1.rho
+// 58: singularPressureLoss1.Pm: (32/32): (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)/2.0
+// 61: singularPressureLoss1.Q: (31/31): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q)*singularPressureLoss1.Q*singularPressureLoss1.K)/singularPressureLoss1.rho
 //
 //
 // Extracting SET-C and SET-S from E-BLT
 // Procedure is applied on each equation in the E-BLT
 // ==========================================================================
-// >>>40: singularPressureLoss2.Pm: (42/42): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P) / 2.0
+// >>>40: singularPressureLoss2.Pm: (42/42): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)/2.0
 // 38: singularPressureLoss2.C1.P: (35/35): (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP
 // 32: singularPressureLoss2.C2.P: (13/13): (1): singularPressureLoss2.C2.P = sinkP1.C.P
 // 7: sinkP1.C.P: (54/54): (1): sinkP1.C.P = sinkP1.P
@@ -391,7 +391,7 @@ getErrorString();
 // 54: singularPressureLoss1.C1.Q: (29/29): (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q
 // Procedure success
 //
-// >>>58: singularPressureLoss1.Pm: (32/32): (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P) / 2.0
+// >>>58: singularPressureLoss1.Pm: (32/32): (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)/2.0
 // 56: singularPressureLoss1.C1.P: (7/7): (1): sourceP1.C.P = singularPressureLoss1.C1.P
 // 20: sourceP1.C.P: (45/45): (1): sourceP1.C.P = sourceP1.P
 // 26: sourceP1.P: (49/49): (1): sourceP1.P = sourceP1.IPressure.signal
@@ -399,7 +399,7 @@ getErrorString();
 // sourceP1.P0 is a boundary condition ---> exit procedure
 // Procedure failed
 //
-// >>>61: singularPressureLoss1.Q: (31/31): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q) * singularPressureLoss1.Q * singularPressureLoss1.K) / singularPressureLoss1.rho
+// >>>61: singularPressureLoss1.Q: (31/31): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q)*singularPressureLoss1.Q*singularPressureLoss1.K)/singularPressureLoss1.rho
 // 62: singularPressureLoss1.deltaP: (25/25): (1): singularPressureLoss1.C1.P - singularPressureLoss1.C2.P = singularPressureLoss1.deltaP
 // 50: singularPressureLoss1.C2.P: (19/19): (1): singularPressureLoss1.C2.P = singularPressureLoss2.C1.P
 // 38: singularPressureLoss2.C1.P: (35/35): (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP
@@ -519,8 +519,8 @@ getErrorString();
 // 30/30 (1): singularPressureLoss1.h = singularPressureLoss1.C1.h   [dynamic]
 // 31/31 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic]
 // 32/32 (1): 0.0 = if singularPressureLoss1.Q > 0.0 then singularPressureLoss1.C1.h - singularPressureLoss1.C1.h_vol else singularPressureLoss1.C2.h - singularPressureLoss1.C2.h_vol   [dynamic]
-// 33/33 (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q) * singularPressureLoss1.Q * singularPressureLoss1.K) / singularPressureLoss1.rho   [dynamic]
-// 34/34 (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P) / 2.0   [dynamic]
+// 33/33 (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q)*singularPressureLoss1.Q*singularPressureLoss1.K)/singularPressureLoss1.rho   [dynamic]
+// 34/34 (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)/2.0   [dynamic]
 // 35/35 (1): singularPressureLoss1.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 36/36 (1): singularPressureLoss1.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 37/37 (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP   [dynamic]
@@ -529,8 +529,8 @@ getErrorString();
 // 40/40 (1): singularPressureLoss2.h = singularPressureLoss2.C1.h   [dynamic]
 // 41/41 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic]
 // 42/42 (1): 0.0 = if singularPressureLoss2.Q > 0.0 then singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol else singularPressureLoss2.C2.h - singularPressureLoss2.C2.h_vol   [dynamic]
-// 43/43 (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q) * singularPressureLoss2.Q * singularPressureLoss2.K) / singularPressureLoss2.rho   [dynamic]
-// 44/44 (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P) / 2.0   [dynamic]
+// 43/43 (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q)*singularPressureLoss2.Q*singularPressureLoss2.K)/singularPressureLoss2.rho   [dynamic]
+// 44/44 (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)/2.0   [dynamic]
 // 45/45 (1): singularPressureLoss2.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 46/46 (1): singularPressureLoss2.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 47/47 (1): sourceP1.C.P = sourceP1.P   [dynamic]
@@ -638,12 +638,12 @@ getErrorString();
 // 64: sourceP1.T0: (4/4): (1): sourceP1.T0 = 290.0
 // 63: sourceP1.P0: (3/3): (1): sourceP1.P0 = 3e5
 // 62: singularPressureLoss1.deltaP: (27/27): (1): singularPressureLoss1.C1.P - singularPressureLoss1.C2.P = singularPressureLoss1.deltaP
-// 61: singularPressureLoss1.Q: (33/33): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q) * singularPressureLoss1.Q * singularPressureLoss1.K) / singularPressureLoss1.rho
+// 61: singularPressureLoss1.Q: (33/33): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q)*singularPressureLoss1.Q*singularPressureLoss1.K)/singularPressureLoss1.rho
 // 60: singularPressureLoss1.rho: (36/36): (1): singularPressureLoss1.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)
 // 59: singularPressureLoss1.T: (35/35): (1): singularPressureLoss1.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)
 // 58: singularPressureLoss1.Pm: (2/2): (1): singularPressureLoss1.Pm = 0.0
 // 57: singularPressureLoss1.h: (30/30): (1): singularPressureLoss1.h = singularPressureLoss1.C1.h
-// 56: singularPressureLoss1.C1.P: (34/34): (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P) / 2.0
+// 56: singularPressureLoss1.C1.P: (34/34): (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)/2.0
 // 55: singularPressureLoss1.C1.h_vol: (14/14): (1): sourceP1.C.h_vol = singularPressureLoss1.C1.h_vol
 // 54: singularPressureLoss1.C1.Q: (31/31): (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q
 // 53: singularPressureLoss1.C1.h: (29/29): (1): singularPressureLoss1.C2.h = singularPressureLoss1.C1.h
@@ -655,13 +655,13 @@ getErrorString();
 // 47: singularPressureLoss1.C2.h: (25/25): (1): singularPressureLoss1.C2.h = singularPressureLoss2.C1.h
 // 46: singularPressureLoss1.C2.a: (23/23): (1): singularPressureLoss1.C2.a = singularPressureLoss2.C1.a
 // 45: singularPressureLoss1.C2.b: (67/67): (1): singularPressureLoss1.C2.b = true
-// 44: singularPressureLoss2.deltaP: (43/43): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q) * singularPressureLoss2.Q * singularPressureLoss2.K) / singularPressureLoss2.rho
+// 44: singularPressureLoss2.deltaP: (43/43): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q)*singularPressureLoss2.Q*singularPressureLoss2.K)/singularPressureLoss2.rho
 // 43: singularPressureLoss2.Q: (41/41): (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q
 // 42: singularPressureLoss2.rho: (46/46): (1): singularPressureLoss2.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)
 // 41: singularPressureLoss2.T: (45/45): (1): singularPressureLoss2.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)
 // 40: singularPressureLoss2.Pm: (1/1): (1): singularPressureLoss2.Pm = 0.0
 // 39: singularPressureLoss2.h: (40/40): (1): singularPressureLoss2.h = singularPressureLoss2.C1.h
-// 38: singularPressureLoss2.C1.P: (44/44): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P) / 2.0
+// 38: singularPressureLoss2.C1.P: (44/44): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)/2.0
 // 37: singularPressureLoss2.C1.h_vol: (26/26): (1): singularPressureLoss1.C2.h_vol = singularPressureLoss2.C1.h_vol
 // 36: singularPressureLoss2.C1.Q: (22/22): (1): singularPressureLoss1.C2.Q = singularPressureLoss2.C1.Q
 // 35: singularPressureLoss2.C1.h: (39/39): (1): singularPressureLoss2.C2.h = singularPressureLoss2.C1.h
@@ -742,7 +742,7 @@ getErrorString();
 // ============================================================
 //
 // 43: singularPressureLoss2.Q: (41/41): (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q
-// 61: singularPressureLoss1.Q: (33/33): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q) * singularPressureLoss1.Q * singularPressureLoss1.K) / singularPressureLoss1.rho
+// 61: singularPressureLoss1.Q: (33/33): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q)*singularPressureLoss1.Q*singularPressureLoss1.K)/singularPressureLoss1.rho
 //
 //
 // Extracting SET-C and SET-S from E-BLT
@@ -754,12 +754,12 @@ getErrorString();
 // 54: singularPressureLoss1.C1.Q: (31/31): (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q
 // Procedure success
 //
-// >>>61: singularPressureLoss1.Q: (33/33): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q) * singularPressureLoss1.Q * singularPressureLoss1.K) / singularPressureLoss1.rho
+// >>>61: singularPressureLoss1.Q: (33/33): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q)*singularPressureLoss1.Q*singularPressureLoss1.K)/singularPressureLoss1.rho
 // 62: singularPressureLoss1.deltaP: (27/27): (1): singularPressureLoss1.C1.P - singularPressureLoss1.C2.P = singularPressureLoss1.deltaP
 // 50: singularPressureLoss1.C2.P: (21/21): (1): singularPressureLoss1.C2.P = singularPressureLoss2.C1.P
-// 38: singularPressureLoss2.C1.P: (44/44): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P) / 2.0
+// 38: singularPressureLoss2.C1.P: (44/44): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)/2.0
 // 32: singularPressureLoss2.C2.P: (37/37): (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP
-// 44: singularPressureLoss2.deltaP: (43/43): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q) * singularPressureLoss2.Q * singularPressureLoss2.K) / singularPressureLoss2.rho
+// 44: singularPressureLoss2.deltaP: (43/43): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q)*singularPressureLoss2.Q*singularPressureLoss2.K)/singularPressureLoss2.rho
 // 42: singularPressureLoss2.rho: (46/46): (1): singularPressureLoss2.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)
 // 39: singularPressureLoss2.h: (40/40): (1): singularPressureLoss2.h = singularPressureLoss2.C1.h
 // 35: singularPressureLoss2.C1.h: (39/39): (1): singularPressureLoss2.C2.h = singularPressureLoss2.C1.h
@@ -882,8 +882,8 @@ getErrorString();
 // 31/31 (1): singularPressureLoss1.h = singularPressureLoss1.C1.h   [dynamic]
 // 32/32 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic]
 // 33/33 (1): 0.0 = if singularPressureLoss1.Q > 0.0 then singularPressureLoss1.C1.h - singularPressureLoss1.C1.h_vol else singularPressureLoss1.C2.h - singularPressureLoss1.C2.h_vol   [dynamic]
-// 34/34 (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q) * singularPressureLoss1.Q * singularPressureLoss1.K) / singularPressureLoss1.rho   [dynamic]
-// 35/35 (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P) / 2.0   [dynamic]
+// 34/34 (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q)*singularPressureLoss1.Q*singularPressureLoss1.K)/singularPressureLoss1.rho   [dynamic]
+// 35/35 (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)/2.0   [dynamic]
 // 36/36 (1): singularPressureLoss1.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 37/37 (1): singularPressureLoss1.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 38/38 (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP   [dynamic]
@@ -892,8 +892,8 @@ getErrorString();
 // 41/41 (1): singularPressureLoss2.h = singularPressureLoss2.C1.h   [dynamic]
 // 42/42 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic]
 // 43/43 (1): 0.0 = if singularPressureLoss2.Q > 0.0 then singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol else singularPressureLoss2.C2.h - singularPressureLoss2.C2.h_vol   [dynamic]
-// 44/44 (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q) * singularPressureLoss2.Q * singularPressureLoss2.K) / singularPressureLoss2.rho   [dynamic]
-// 45/45 (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P) / 2.0   [dynamic]
+// 44/44 (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q)*singularPressureLoss2.Q*singularPressureLoss2.K)/singularPressureLoss2.rho   [dynamic]
+// 45/45 (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)/2.0   [dynamic]
 // 46/46 (1): singularPressureLoss2.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 47/47 (1): singularPressureLoss2.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 48/48 (1): sourceP1.C.P = sourceP1.P   [dynamic]
@@ -1001,11 +1001,11 @@ getErrorString();
 // 63: sourceP1.P0: (4/4): (1): sourceP1.P0 = 3e5
 // 62: singularPressureLoss1.deltaP: (28/28): (1): singularPressureLoss1.C1.P - singularPressureLoss1.C2.P = singularPressureLoss1.deltaP
 // 61: singularPressureLoss1.Q: (1/1): (1): singularPressureLoss1.Q = 0.0
-// 60: singularPressureLoss1.rho: (34/34): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q) * singularPressureLoss1.Q * singularPressureLoss1.K) / singularPressureLoss1.rho
+// 60: singularPressureLoss1.rho: (34/34): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q)*singularPressureLoss1.Q*singularPressureLoss1.K)/singularPressureLoss1.rho
 // 59: singularPressureLoss1.T: (36/36): (1): singularPressureLoss1.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)
 // 58: singularPressureLoss1.Pm: (3/3): (1): singularPressureLoss1.Pm = 0.0
 // 57: singularPressureLoss1.h: (37/37): (1): singularPressureLoss1.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)
-// 56: singularPressureLoss1.C1.P: (35/35): (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P) / 2.0
+// 56: singularPressureLoss1.C1.P: (35/35): (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)/2.0
 // 55: singularPressureLoss1.C1.h_vol: (15/15): (1): sourceP1.C.h_vol = singularPressureLoss1.C1.h_vol
 // 54: singularPressureLoss1.C1.Q: (32/32): (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q
 // 53: singularPressureLoss1.C1.h: (31/31): (1): singularPressureLoss1.h = singularPressureLoss1.C1.h
@@ -1017,13 +1017,13 @@ getErrorString();
 // 47: singularPressureLoss1.C2.h: (30/30): (1): singularPressureLoss1.C2.h = singularPressureLoss1.C1.h
 // 46: singularPressureLoss1.C2.a: (24/24): (1): singularPressureLoss1.C2.a = singularPressureLoss2.C1.a
 // 45: singularPressureLoss1.C2.b: (67/67): (1): singularPressureLoss1.C2.b = true
-// 44: singularPressureLoss2.deltaP: (44/44): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q) * singularPressureLoss2.Q * singularPressureLoss2.K) / singularPressureLoss2.rho
+// 44: singularPressureLoss2.deltaP: (44/44): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q)*singularPressureLoss2.Q*singularPressureLoss2.K)/singularPressureLoss2.rho
 // 43: singularPressureLoss2.Q: (42/42): (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q
 // 42: singularPressureLoss2.rho: (47/47): (1): singularPressureLoss2.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)
 // 41: singularPressureLoss2.T: (46/46): (1): singularPressureLoss2.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)
 // 40: singularPressureLoss2.Pm: (2/2): (1): singularPressureLoss2.Pm = 0.0
 // 39: singularPressureLoss2.h: (41/41): (1): singularPressureLoss2.h = singularPressureLoss2.C1.h
-// 38: singularPressureLoss2.C1.P: (45/45): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P) / 2.0
+// 38: singularPressureLoss2.C1.P: (45/45): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)/2.0
 // 37: singularPressureLoss2.C1.h_vol: (27/27): (1): singularPressureLoss1.C2.h_vol = singularPressureLoss2.C1.h_vol
 // 36: singularPressureLoss2.C1.Q: (23/23): (1): singularPressureLoss1.C2.Q = singularPressureLoss2.C1.Q
 // 35: singularPressureLoss2.C1.h: (26/26): (1): singularPressureLoss1.C2.h = singularPressureLoss2.C1.h

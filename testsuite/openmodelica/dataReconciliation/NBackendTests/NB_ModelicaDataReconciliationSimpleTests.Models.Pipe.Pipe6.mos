@@ -54,8 +54,8 @@ getErrorString();
 // ========================================
 // 1/1 (1): P1 = 3.0   [binding]
 // 2/2 (1): P2 = 1.0   [binding]
-// 3/3 (1): P1 - P = k * Q1 ^ 2.0   [dynamic]
-// 4/4 (1): P - P2 = k * Q2 ^ 2.0   [dynamic]
+// 3/3 (1): P1 - P = k*Q1^2.0   [dynamic]
+// 4/4 (1): P - P2 = k*Q2^2.0   [dynamic]
 // 5/5 (1): Q1 = Q2   [dynamic]
 //
 // Matching
@@ -73,8 +73,8 @@ getErrorString();
 // 5: P2: (2/2): (1): P2 = 1.0
 // 4: P1: (1/1): (1): P1 = 3.0
 // 3: Q1: (5/5): (1): Q1 = Q2
-// 2: Q2: (4/4): (1): P - P2 = k * Q2 ^ 2.0
-// 1: P: (3/3): (1): P1 - P = k * Q1 ^ 2.0
+// 2: Q2: (4/4): (1): P - P2 = k*Q2^2.0
+// 1: P: (3/3): (1): P1 - P = k*Q1^2.0
 //
 //
 // Variables of interest (2)
@@ -99,14 +99,14 @@ getErrorString();
 // E-BLT: equations that compute the variables of interest:(2)
 // ============================================================
 //
-// 2: Q2: (4/4): (1): P - P2 = k * Q2 ^ 2.0
+// 2: Q2: (4/4): (1): P - P2 = k*Q2^2.0
 // 3: Q1: (5/5): (1): Q1 = Q2
 //
 //
 // Extracting SET-C and SET-S from E-BLT
 // Procedure is applied on each equation in the E-BLT
 // ==========================================================================
-// >>>2: Q2: (4/4): (1): P - P2 = k * Q2 ^ 2.0
+// >>>2: Q2: (4/4): (1): P - P2 = k*Q2^2.0
 // P2 is a boundary condition ---> exit procedure
 // Procedure failed
 //
@@ -130,7 +130,7 @@ getErrorString();
 // 1/1 (1): Q2 = 0.0   [binding]
 // 2/2 (1): P1 = 3.0   [binding]
 // 3/3 (1): P2 = 1.0   [binding]
-// 4/4 (1): P1 - P = k * Q1 ^ 2.0   [dynamic]
+// 4/4 (1): P1 - P = k*Q1^2.0   [dynamic]
 // 5/5 (1): Q1 = Q2   [dynamic]
 //
 // Matching
@@ -149,7 +149,7 @@ getErrorString();
 // 4: P1: (2/2): (1): P1 = 3.0
 // 3: Q1: (5/5): (1): Q1 = Q2
 // 2: Q2: (1/1): (1): Q2 = 0.0
-// 1: P: (4/4): (1): P1 - P = k * Q1 ^ 2.0
+// 1: P: (4/4): (1): P1 - P = k*Q1^2.0
 //
 //
 // Variables of interest (2)

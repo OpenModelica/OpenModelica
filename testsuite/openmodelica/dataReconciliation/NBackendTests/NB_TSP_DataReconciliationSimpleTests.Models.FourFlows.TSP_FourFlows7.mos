@@ -280,8 +280,8 @@ echo(false); getErrorString(); echo(true);
 // 57/57 (1): singularPressureLoss1.h = singularPressureLoss1.C1.h   [dynamic]
 // 58/58 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic]
 // 59/59 (1): 0.0 = singularPressureLoss1.C1.h - singularPressureLoss1.C1.h_vol   [dynamic]
-// 60/60 (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q) * singularPressureLoss1.Q * singularPressureLoss1.K) / singularPressureLoss1.rho   [dynamic]
-// 61/61 (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P) / 2.0   [dynamic]
+// 60/60 (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q)*singularPressureLoss1.Q*singularPressureLoss1.K)/singularPressureLoss1.rho   [dynamic]
+// 61/61 (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)/2.0   [dynamic]
 // 62/62 (1): singularPressureLoss1.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss1.Pm, singularPressureLoss1.T, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 63/63 (1): singularPressureLoss1.rho = 998.0   [dynamic]
 // 64/64 (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP   [dynamic]
@@ -290,8 +290,8 @@ echo(false); getErrorString(); echo(true);
 // 67/67 (1): singularPressureLoss2.h = singularPressureLoss2.C1.h   [dynamic]
 // 68/68 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic]
 // 69/69 (1): 0.0 = singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol   [dynamic]
-// 70/70 (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q) * singularPressureLoss2.Q * singularPressureLoss2.K) / singularPressureLoss2.rho   [dynamic]
-// 71/71 (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P) / 2.0   [dynamic]
+// 70/70 (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q)*singularPressureLoss2.Q*singularPressureLoss2.K)/singularPressureLoss2.rho   [dynamic]
+// 71/71 (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)/2.0   [dynamic]
 // 72/72 (1): singularPressureLoss2.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss2.Pm, singularPressureLoss2.T, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 73/73 (1): singularPressureLoss2.rho = 998.0   [dynamic]
 // 74/74 (1): singularPressureLoss3.C1.P - singularPressureLoss3.C2.P = singularPressureLoss3.deltaP   [dynamic]
@@ -300,8 +300,8 @@ echo(false); getErrorString(); echo(true);
 // 77/77 (1): singularPressureLoss3.h = singularPressureLoss3.C1.h   [dynamic]
 // 78/78 (1): singularPressureLoss3.Q = singularPressureLoss3.C1.Q   [dynamic]
 // 79/79 (1): 0.0 = singularPressureLoss3.C1.h - singularPressureLoss3.C1.h_vol   [dynamic]
-// 80/80 (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q) * singularPressureLoss3.Q * singularPressureLoss3.K) / singularPressureLoss3.rho   [dynamic]
-// 81/81 (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P) / 2.0   [dynamic]
+// 80/80 (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q)*singularPressureLoss3.Q*singularPressureLoss3.K)/singularPressureLoss3.rho   [dynamic]
+// 81/81 (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P)/2.0   [dynamic]
 // 82/82 (1): singularPressureLoss3.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss3.Pm, singularPressureLoss3.T, 1, singularPressureLoss3.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 83/83 (1): singularPressureLoss3.rho = 998.0   [dynamic]
 // 84/84 (1): singularPressureLoss4.C1.P - singularPressureLoss4.C2.P = singularPressureLoss4.deltaP   [dynamic]
@@ -310,8 +310,8 @@ echo(false); getErrorString(); echo(true);
 // 87/87 (1): singularPressureLoss4.h = singularPressureLoss4.C1.h   [dynamic]
 // 88/88 (1): singularPressureLoss4.Q = singularPressureLoss4.C1.Q   [dynamic]
 // 89/89 (1): 0.0 = singularPressureLoss4.C1.h - singularPressureLoss4.C1.h_vol   [dynamic]
-// 90/90 (1): singularPressureLoss4.deltaP = (abs(singularPressureLoss4.Q) * singularPressureLoss4.Q * singularPressureLoss4.K) / singularPressureLoss4.rho   [dynamic]
-// 91/91 (1): singularPressureLoss4.Pm = (singularPressureLoss4.C1.P + singularPressureLoss4.C2.P) / 2.0   [dynamic]
+// 90/90 (1): singularPressureLoss4.deltaP = (abs(singularPressureLoss4.Q)*singularPressureLoss4.Q*singularPressureLoss4.K)/singularPressureLoss4.rho   [dynamic]
+// 91/91 (1): singularPressureLoss4.Pm = (singularPressureLoss4.C1.P + singularPressureLoss4.C2.P)/2.0   [dynamic]
 // 92/92 (1): singularPressureLoss4.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss4.Pm, singularPressureLoss4.T, 1, singularPressureLoss4.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 93/93 (1): singularPressureLoss4.rho = 998.0   [dynamic]
 // 94/94 (1): splitter21.P = splitter21.Ce.P   [dynamic]
@@ -321,9 +321,9 @@ echo(false); getErrorString(); echo(true);
 // 98/98 (1): splitter21.Cs1.h_vol = splitter21.h   [dynamic]
 // 99/99 (1): splitter21.Cs2.h_vol = splitter21.h   [dynamic]
 // 100/100 (1): 0.0 = splitter21.Ce.Q - (splitter21.Cs2.Q + splitter21.Cs1.Q)   [dynamic]
-// 101/101 (1): 0.0 = splitter21.Ce.Q * splitter21.Ce.h - (splitter21.Cs2.Q * splitter21.Cs2.h + splitter21.Cs1.Q * splitter21.Cs1.h)   [dynamic]
-// 102/102 (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal * splitter21.Ce.Q   [dynamic]
-// 103/103 (1): splitter21.alpha1 = splitter21.Cs1.Q / splitter21.Ce.Q   [dynamic]
+// 101/101 (1): 0.0 = splitter21.Ce.Q*splitter21.Ce.h - (splitter21.Cs2.Q*splitter21.Cs2.h + splitter21.Cs1.Q*splitter21.Cs1.h)   [dynamic]
+// 102/102 (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal*splitter21.Ce.Q   [dynamic]
+// 103/103 (1): splitter21.alpha1 = splitter21.Cs1.Q/splitter21.Ce.Q   [dynamic]
 // 104/104 (1): splitter21.Oalpha1.signal = splitter21.alpha1   [dynamic]
 // 105/105 (10): splitter21.pro = ThermoSysPro.Properties.Fluid.Ph(splitter21.P, splitter21.h, splitter21.mode, splitter21.fluid)   [dynamic]
 // 106/115 (1): splitter21.T = splitter21.pro.T   [dynamic]
@@ -335,8 +335,8 @@ echo(false); getErrorString(); echo(true);
 // 112/121 (1): mixer21.Ce2.h_vol = mixer21.h   [dynamic]
 // 113/122 (1): mixer21.Cs.h_vol = mixer21.h   [dynamic]
 // 114/123 (1): 0.0 = (mixer21.Ce2.Q + mixer21.Ce1.Q) - mixer21.Cs.Q   [dynamic]
-// 115/124 (1): 0.0 = (mixer21.Ce2.Q * mixer21.Ce2.h + mixer21.Ce1.Q * mixer21.Ce1.h) - mixer21.Cs.Q * mixer21.Cs.h   [dynamic]
-// 116/125 (1): mixer21.alpha1 = mixer21.Ce1.Q / mixer21.Cs.Q   [dynamic]
+// 115/124 (1): 0.0 = (mixer21.Ce2.Q*mixer21.Ce2.h + mixer21.Ce1.Q*mixer21.Ce1.h) - mixer21.Cs.Q*mixer21.Cs.h   [dynamic]
+// 116/125 (1): mixer21.alpha1 = mixer21.Ce1.Q/mixer21.Cs.Q   [dynamic]
 // 117/126 (1): mixer21.Oalpha1.signal = mixer21.alpha1   [dynamic]
 // 118/127 (10): mixer21.pro = ThermoSysPro.Properties.Fluid.Ph(mixer21.P, mixer21.h, mixer21.mode, mixer21.fluid)   [dynamic]
 // 119/137 (1): mixer21.T = mixer21.pro.T   [dynamic]
@@ -552,10 +552,10 @@ echo(false); getErrorString(); echo(true);
 // 166: sourceP1.T0: (2/2): (1): sourceP1.T0 = 290.0
 // 165: sourceP1.P0: (1/1): (1): sourceP1.P0 = 3e5
 // 164: singularPressureLoss1.deltaP: (54/54): (1): singularPressureLoss1.C1.P - singularPressureLoss1.C2.P = singularPressureLoss1.deltaP
-// 163: singularPressureLoss1.Q: (60/60): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q) * singularPressureLoss1.Q * singularPressureLoss1.K) / singularPressureLoss1.rho
+// 163: singularPressureLoss1.Q: (60/60): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q)*singularPressureLoss1.Q*singularPressureLoss1.K)/singularPressureLoss1.rho
 // 162: singularPressureLoss1.rho: (63/63): (1): singularPressureLoss1.rho = 998.0
 // 161: singularPressureLoss1.T: (62/62): (1): singularPressureLoss1.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss1.Pm, singularPressureLoss1.T, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)
-// 160: singularPressureLoss1.Pm: (61/61): (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P) / 2.0
+// 160: singularPressureLoss1.Pm: (61/61): (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)/2.0
 // 159: singularPressureLoss1.h: (57/57): (1): singularPressureLoss1.h = singularPressureLoss1.C1.h
 // 158: singularPressureLoss1.C1.P: (42/42): (1): sourceP1.C.P = singularPressureLoss1.C1.P
 // 157: singularPressureLoss1.C1.h_vol: (47/47): (1): sourceP1.C.h_vol = singularPressureLoss1.C1.h_vol
@@ -569,11 +569,11 @@ echo(false); getErrorString(); echo(true);
 // 149: singularPressureLoss1.C2.h: (56/56): (1): singularPressureLoss1.C2.h = singularPressureLoss1.C1.h
 // 148: singularPressureLoss1.C2.a: (37/37): (1): singularPressureLoss1.C2.a = splitter21.Ce.a
 // 147: singularPressureLoss1.C2.b: (149/167): (1): singularPressureLoss1.C2.b = true
-// 146: singularPressureLoss2.deltaP: (70/70): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q) * singularPressureLoss2.Q * singularPressureLoss2.K) / singularPressureLoss2.rho
+// 146: singularPressureLoss2.deltaP: (70/70): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q)*singularPressureLoss2.Q*singularPressureLoss2.K)/singularPressureLoss2.rho
 // 145: singularPressureLoss2.Q: (68/68): (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q
 // 144: singularPressureLoss2.rho: (73/73): (1): singularPressureLoss2.rho = 998.0
 // 143: singularPressureLoss2.T: (72/72): (1): singularPressureLoss2.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss2.Pm, singularPressureLoss2.T, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)
-// 142: singularPressureLoss2.Pm: (71/71): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P) / 2.0
+// 142: singularPressureLoss2.Pm: (71/71): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)/2.0
 // 141: singularPressureLoss2.h: (67/67): (1): singularPressureLoss2.h = singularPressureLoss2.C1.h
 // 140: singularPressureLoss2.C1.P: (64/64): (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP
 // 139: singularPressureLoss2.C1.h_vol: (22/22): (1): splitter21.Cs1.h_vol = singularPressureLoss2.C1.h_vol
@@ -587,11 +587,11 @@ echo(false); getErrorString(); echo(true);
 // 131: singularPressureLoss2.C2.h: (66/66): (1): singularPressureLoss2.C2.h = singularPressureLoss2.C1.h
 // 130: singularPressureLoss2.C2.a: (13/13): (1): singularPressureLoss2.C2.a = mixer21.Ce1.a
 // 129: singularPressureLoss2.C2.b: (147/165): (1): singularPressureLoss2.C2.b = true
-// 128: singularPressureLoss3.deltaP: (80/80): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q) * singularPressureLoss3.Q * singularPressureLoss3.K) / singularPressureLoss3.rho
+// 128: singularPressureLoss3.deltaP: (80/80): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q)*singularPressureLoss3.Q*singularPressureLoss3.K)/singularPressureLoss3.rho
 // 127: singularPressureLoss3.Q: (78/78): (1): singularPressureLoss3.Q = singularPressureLoss3.C1.Q
 // 126: singularPressureLoss3.rho: (83/83): (1): singularPressureLoss3.rho = 998.0
 // 125: singularPressureLoss3.T: (82/82): (1): singularPressureLoss3.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss3.Pm, singularPressureLoss3.T, 1, singularPressureLoss3.mode, 0.0, 0.0, 0.0, 0.0)
-// 124: singularPressureLoss3.Pm: (81/81): (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P) / 2.0
+// 124: singularPressureLoss3.Pm: (81/81): (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P)/2.0
 // 123: singularPressureLoss3.h: (77/77): (1): singularPressureLoss3.h = singularPressureLoss3.C1.h
 // 122: singularPressureLoss3.C1.P: (23/23): (1): splitter21.Cs2.P = singularPressureLoss3.C1.P
 // 121: singularPressureLoss3.C1.h_vol: (79/79): (1): 0.0 = singularPressureLoss3.C1.h - singularPressureLoss3.C1.h_vol
@@ -605,11 +605,11 @@ echo(false); getErrorString(); echo(true);
 // 113: singularPressureLoss3.C2.h: (76/76): (1): singularPressureLoss3.C2.h = singularPressureLoss3.C1.h
 // 112: singularPressureLoss3.C2.a: (7/7): (1): singularPressureLoss3.C2.a = mixer21.Ce2.a
 // 111: singularPressureLoss3.C2.b: (145/163): (1): singularPressureLoss3.C2.b = true
-// 110: singularPressureLoss4.deltaP: (90/90): (1): singularPressureLoss4.deltaP = (abs(singularPressureLoss4.Q) * singularPressureLoss4.Q * singularPressureLoss4.K) / singularPressureLoss4.rho
+// 110: singularPressureLoss4.deltaP: (90/90): (1): singularPressureLoss4.deltaP = (abs(singularPressureLoss4.Q)*singularPressureLoss4.Q*singularPressureLoss4.K)/singularPressureLoss4.rho
 // 109: singularPressureLoss4.Q: (88/88): (1): singularPressureLoss4.Q = singularPressureLoss4.C1.Q
 // 108: singularPressureLoss4.rho: (93/93): (1): singularPressureLoss4.rho = 998.0
 // 107: singularPressureLoss4.T: (92/92): (1): singularPressureLoss4.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss4.Pm, singularPressureLoss4.T, 1, singularPressureLoss4.mode, 0.0, 0.0, 0.0, 0.0)
-// 106: singularPressureLoss4.Pm: (91/91): (1): singularPressureLoss4.Pm = (singularPressureLoss4.C1.P + singularPressureLoss4.C2.P) / 2.0
+// 106: singularPressureLoss4.Pm: (91/91): (1): singularPressureLoss4.Pm = (singularPressureLoss4.C1.P + singularPressureLoss4.C2.P)/2.0
 // 105: singularPressureLoss4.h: (87/87): (1): singularPressureLoss4.h = singularPressureLoss4.C1.h
 // 104: singularPressureLoss4.C1.P: (29/29): (1): mixer21.Cs.P = singularPressureLoss4.C1.P
 // 103: singularPressureLoss4.C1.h_vol: (89/89): (1): 0.0 = singularPressureLoss4.C1.h - singularPressureLoss4.C1.h_vol
@@ -623,7 +623,7 @@ echo(false); getErrorString(); echo(true);
 // 95: singularPressureLoss4.C2.h: (86/86): (1): singularPressureLoss4.C2.h = singularPressureLoss4.C1.h
 // 94: singularPressureLoss4.C2.a: (50/50): (1): singularPressureLoss4.C2.a = sink1.C.a
 // 93: singularPressureLoss4.C2.b: (143/161): (1): singularPressureLoss4.C2.b = true
-// 92: splitter21.alpha1: (103/103): (1): splitter21.alpha1 = splitter21.Cs1.Q / splitter21.Ce.Q
+// 92: splitter21.alpha1: (103/103): (1): splitter21.alpha1 = splitter21.Cs1.Q/splitter21.Ce.Q
 // 91: splitter21.P: (95/95): (1): splitter21.P = splitter21.Cs1.P
 // 90: splitter21.h: (99/99): (1): splitter21.Cs2.h_vol = splitter21.h
 // 89: splitter21.T: (106/115): (1): splitter21.T = splitter21.pro.T
@@ -635,14 +635,14 @@ echo(false); getErrorString(); echo(true);
 // 83: splitter21.Ce.b: (38/38): (1): singularPressureLoss1.C2.b = splitter21.Ce.b
 // 82: splitter21.Cs1.P: (17/17): (1): splitter21.Cs1.P = singularPressureLoss2.C1.P
 // 81: splitter21.Cs1.h_vol: (98/98): (1): splitter21.Cs1.h_vol = splitter21.h
-// 80: splitter21.Cs1.Q: (102/102): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal * splitter21.Ce.Q
+// 80: splitter21.Cs1.Q: (102/102): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal*splitter21.Ce.Q
 // 79: splitter21.Cs1.h: (21/21): (1): splitter21.Cs1.h = singularPressureLoss2.C1.h
 // 78: splitter21.Cs1.a: (19/19): (1): splitter21.Cs1.a = singularPressureLoss2.C1.a
 // 77: splitter21.Cs1.b: (141/159): (1): splitter21.Cs1.b = true
 // 76: splitter21.Cs2.P: (96/96): (1): splitter21.P = splitter21.Cs2.P
 // 75: splitter21.Cs2.h_vol: (28/28): (1): splitter21.Cs2.h_vol = singularPressureLoss3.C1.h_vol
 // 74: splitter21.Cs2.Q: (100/100): (1): 0.0 = splitter21.Ce.Q - (splitter21.Cs2.Q + splitter21.Cs1.Q)
-// 73: splitter21.Cs2.h: (101/101): (1): 0.0 = splitter21.Ce.Q * splitter21.Ce.h - (splitter21.Cs2.Q * splitter21.Cs2.h + splitter21.Cs1.Q * splitter21.Cs1.h)
+// 73: splitter21.Cs2.h: (101/101): (1): 0.0 = splitter21.Ce.Q*splitter21.Ce.h - (splitter21.Cs2.Q*splitter21.Cs2.h + splitter21.Cs1.Q*splitter21.Cs1.h)
 // 72: splitter21.Cs2.a: (25/25): (1): splitter21.Cs2.a = singularPressureLoss3.C1.a
 // 71: splitter21.Cs2.b: (140/158): (1): splitter21.Cs2.b = true
 // 70: splitter21.Ialpha1.signal: (41/41): (1): constante1.y.signal = splitter21.Ialpha1.signal
@@ -657,7 +657,7 @@ echo(false); getErrorString(); echo(true);
 // 61: splitter21.pro.duph: (105/112): (10): splitter21.pro = ThermoSysPro.Properties.Fluid.Ph(splitter21.P, splitter21.h, splitter21.mode, splitter21.fluid)
 // 60: splitter21.pro.duhp: (105/113): (10): splitter21.pro = ThermoSysPro.Properties.Fluid.Ph(splitter21.P, splitter21.h, splitter21.mode, splitter21.fluid)
 // 59: splitter21.pro.x: (105/114): (10): splitter21.pro = ThermoSysPro.Properties.Fluid.Ph(splitter21.P, splitter21.h, splitter21.mode, splitter21.fluid)
-// 58: mixer21.alpha1: (116/125): (1): mixer21.alpha1 = mixer21.Ce1.Q / mixer21.Cs.Q
+// 58: mixer21.alpha1: (116/125): (1): mixer21.alpha1 = mixer21.Ce1.Q/mixer21.Cs.Q
 // 57: mixer21.P: (109/118): (1): mixer21.P = mixer21.Ce2.P
 // 56: mixer21.h: (113/122): (1): mixer21.Cs.h_vol = mixer21.h
 // 55: mixer21.T: (119/137): (1): mixer21.T = mixer21.pro.T
@@ -670,7 +670,7 @@ echo(false); getErrorString(); echo(true);
 // 48: mixer21.Cs.P: (110/119): (1): mixer21.P = mixer21.Cs.P
 // 47: mixer21.Cs.h_vol: (34/34): (1): mixer21.Cs.h_vol = singularPressureLoss4.C1.h_vol
 // 46: mixer21.Cs.Q: (114/123): (1): 0.0 = (mixer21.Ce2.Q + mixer21.Ce1.Q) - mixer21.Cs.Q
-// 45: mixer21.Cs.h: (115/124): (1): 0.0 = (mixer21.Ce2.Q * mixer21.Ce2.h + mixer21.Ce1.Q * mixer21.Ce1.h) - mixer21.Cs.Q * mixer21.Cs.h
+// 45: mixer21.Cs.h: (115/124): (1): 0.0 = (mixer21.Ce2.Q*mixer21.Ce2.h + mixer21.Ce1.Q*mixer21.Ce1.h) - mixer21.Cs.Q*mixer21.Cs.h
 // 44: mixer21.Cs.a: (31/31): (1): mixer21.Cs.a = singularPressureLoss4.C1.a
 // 43: mixer21.Cs.b: (138/156): (1): mixer21.Cs.b = true
 // 42: mixer21.Ce1.P: (108/117): (1): mixer21.P = mixer21.Ce1.P
@@ -769,24 +769,24 @@ echo(false); getErrorString(); echo(true);
 // E-BLT: equations that compute the variables of interest:(12)
 // ============================================================
 //
-// 106: singularPressureLoss4.Pm: (91/91): (1): singularPressureLoss4.Pm = (singularPressureLoss4.C1.P + singularPressureLoss4.C2.P) / 2.0
+// 106: singularPressureLoss4.Pm: (91/91): (1): singularPressureLoss4.Pm = (singularPressureLoss4.C1.P + singularPressureLoss4.C2.P)/2.0
 // 107: singularPressureLoss4.T: (92/92): (1): singularPressureLoss4.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss4.Pm, singularPressureLoss4.T, 1, singularPressureLoss4.mode, 0.0, 0.0, 0.0, 0.0)
 // 109: singularPressureLoss4.Q: (88/88): (1): singularPressureLoss4.Q = singularPressureLoss4.C1.Q
-// 124: singularPressureLoss3.Pm: (81/81): (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P) / 2.0
+// 124: singularPressureLoss3.Pm: (81/81): (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P)/2.0
 // 125: singularPressureLoss3.T: (82/82): (1): singularPressureLoss3.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss3.Pm, singularPressureLoss3.T, 1, singularPressureLoss3.mode, 0.0, 0.0, 0.0, 0.0)
 // 127: singularPressureLoss3.Q: (78/78): (1): singularPressureLoss3.Q = singularPressureLoss3.C1.Q
-// 142: singularPressureLoss2.Pm: (71/71): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P) / 2.0
+// 142: singularPressureLoss2.Pm: (71/71): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)/2.0
 // 143: singularPressureLoss2.T: (72/72): (1): singularPressureLoss2.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss2.Pm, singularPressureLoss2.T, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)
 // 145: singularPressureLoss2.Q: (68/68): (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q
-// 160: singularPressureLoss1.Pm: (61/61): (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P) / 2.0
+// 160: singularPressureLoss1.Pm: (61/61): (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)/2.0
 // 161: singularPressureLoss1.T: (62/62): (1): singularPressureLoss1.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss1.Pm, singularPressureLoss1.T, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)
-// 163: singularPressureLoss1.Q: (60/60): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q) * singularPressureLoss1.Q * singularPressureLoss1.K) / singularPressureLoss1.rho
+// 163: singularPressureLoss1.Q: (60/60): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q)*singularPressureLoss1.Q*singularPressureLoss1.K)/singularPressureLoss1.rho
 //
 //
 // Extracting SET-C and SET-S from E-BLT
 // Procedure is applied on each equation in the E-BLT
 // ==========================================================================
-// >>>106: singularPressureLoss4.Pm: (91/91): (1): singularPressureLoss4.Pm = (singularPressureLoss4.C1.P + singularPressureLoss4.C2.P) / 2.0
+// >>>106: singularPressureLoss4.Pm: (91/91): (1): singularPressureLoss4.Pm = (singularPressureLoss4.C1.P + singularPressureLoss4.C2.P)/2.0
 // 104: singularPressureLoss4.C1.P: (29/29): (1): mixer21.Cs.P = singularPressureLoss4.C1.P
 // 48: mixer21.Cs.P: (110/119): (1): mixer21.P = mixer21.Cs.P
 // 57: mixer21.P: (109/118): (1): mixer21.P = mixer21.Ce2.P
@@ -799,19 +799,19 @@ echo(false); getErrorString(); echo(true);
 // 140: singularPressureLoss2.C1.P: (64/64): (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP
 // 134: singularPressureLoss2.C2.P: (11/11): (1): singularPressureLoss2.C2.P = mixer21.Ce1.P
 // 42: mixer21.Ce1.P: (108/117): (1): mixer21.P = mixer21.Ce1.P
-// 146: singularPressureLoss2.deltaP: (70/70): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q) * singularPressureLoss2.Q * singularPressureLoss2.K) / singularPressureLoss2.rho
+// 146: singularPressureLoss2.deltaP: (70/70): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q)*singularPressureLoss2.Q*singularPressureLoss2.K)/singularPressureLoss2.rho
 // 144: singularPressureLoss2.rho: (73/73): (1): singularPressureLoss2.rho = 998.0
-// 128: singularPressureLoss3.deltaP: (80/80): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q) * singularPressureLoss3.Q * singularPressureLoss3.K) / singularPressureLoss3.rho
+// 128: singularPressureLoss3.deltaP: (80/80): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q)*singularPressureLoss3.Q*singularPressureLoss3.K)/singularPressureLoss3.rho
 // 126: singularPressureLoss3.rho: (83/83): (1): singularPressureLoss3.rho = 998.0
 // 98: singularPressureLoss4.C2.P: (84/84): (1): singularPressureLoss4.C1.P - singularPressureLoss4.C2.P = singularPressureLoss4.deltaP
-// 110: singularPressureLoss4.deltaP: (90/90): (1): singularPressureLoss4.deltaP = (abs(singularPressureLoss4.Q) * singularPressureLoss4.Q * singularPressureLoss4.K) / singularPressureLoss4.rho
+// 110: singularPressureLoss4.deltaP: (90/90): (1): singularPressureLoss4.deltaP = (abs(singularPressureLoss4.Q)*singularPressureLoss4.Q*singularPressureLoss4.K)/singularPressureLoss4.rho
 // 108: singularPressureLoss4.rho: (93/93): (1): singularPressureLoss4.rho = 998.0
 // Procedure success
 //
 // >>>107: singularPressureLoss4.T: (92/92): (1): singularPressureLoss4.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss4.Pm, singularPressureLoss4.T, 1, singularPressureLoss4.mode, 0.0, 0.0, 0.0, 0.0)
 // 105: singularPressureLoss4.h: (87/87): (1): singularPressureLoss4.h = singularPressureLoss4.C1.h
 // 101: singularPressureLoss4.C1.h: (33/33): (1): mixer21.Cs.h = singularPressureLoss4.C1.h
-// 45: mixer21.Cs.h: (115/124): (1): 0.0 = (mixer21.Ce2.Q * mixer21.Ce2.h + mixer21.Ce1.Q * mixer21.Ce1.h) - mixer21.Cs.Q * mixer21.Cs.h
+// 45: mixer21.Cs.h: (115/124): (1): 0.0 = (mixer21.Ce2.Q*mixer21.Ce2.h + mixer21.Ce1.Q*mixer21.Ce1.h) - mixer21.Cs.Q*mixer21.Cs.h
 // 39: mixer21.Ce1.h: (15/15): (1): singularPressureLoss2.C2.h = mixer21.Ce1.h
 // 131: singularPressureLoss2.C2.h: (66/66): (1): singularPressureLoss2.C2.h = singularPressureLoss2.C1.h
 // 137: singularPressureLoss2.C1.h: (69/69): (1): 0.0 = singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol
@@ -821,9 +821,9 @@ echo(false); getErrorString(); echo(true);
 // 75: splitter21.Cs2.h_vol: (28/28): (1): splitter21.Cs2.h_vol = singularPressureLoss3.C1.h_vol
 // 121: singularPressureLoss3.C1.h_vol: (79/79): (1): 0.0 = singularPressureLoss3.C1.h - singularPressureLoss3.C1.h_vol
 // 119: singularPressureLoss3.C1.h: (27/27): (1): splitter21.Cs2.h = singularPressureLoss3.C1.h
-// 73: splitter21.Cs2.h: (101/101): (1): 0.0 = splitter21.Ce.Q * splitter21.Ce.h - (splitter21.Cs2.Q * splitter21.Cs2.h + splitter21.Cs1.Q * splitter21.Cs1.h)
+// 73: splitter21.Cs2.h: (101/101): (1): 0.0 = splitter21.Ce.Q*splitter21.Ce.h - (splitter21.Cs2.Q*splitter21.Cs2.h + splitter21.Cs1.Q*splitter21.Cs1.h)
 // 74: splitter21.Cs2.Q: (100/100): (1): 0.0 = splitter21.Ce.Q - (splitter21.Cs2.Q + splitter21.Cs1.Q)
-// 80: splitter21.Cs1.Q: (102/102): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal * splitter21.Ce.Q
+// 80: splitter21.Cs1.Q: (102/102): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal*splitter21.Ce.Q
 // 70: splitter21.Ialpha1.signal: (41/41): (1): constante1.y.signal = splitter21.Ialpha1.signal
 // 24: constante1.y.signal: (120/138): (1): constante1.y.signal = constante1.k
 // 86: splitter21.Ce.Q: (36/36): (1): singularPressureLoss1.C2.Q = splitter21.Ce.Q
@@ -847,7 +847,7 @@ echo(false); getErrorString(); echo(true);
 // 40: mixer21.Ce1.Q: (12/12): (1): singularPressureLoss2.C2.Q = mixer21.Ce1.Q
 // 132: singularPressureLoss2.C2.Q: (65/65): (1): singularPressureLoss2.C2.Q = singularPressureLoss2.C1.Q
 // 138: singularPressureLoss2.C1.Q: (18/18): (1): splitter21.Cs1.Q = singularPressureLoss2.C1.Q
-// 80: splitter21.Cs1.Q: (102/102): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal * splitter21.Ce.Q
+// 80: splitter21.Cs1.Q: (102/102): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal*splitter21.Ce.Q
 // 70: splitter21.Ialpha1.signal: (41/41): (1): constante1.y.signal = splitter21.Ialpha1.signal
 // 24: constante1.y.signal: (120/138): (1): constante1.y.signal = constante1.k
 // 86: splitter21.Ce.Q: (36/36): (1): singularPressureLoss1.C2.Q = splitter21.Ce.Q
@@ -859,7 +859,7 @@ echo(false); getErrorString(); echo(true);
 // 74: splitter21.Cs2.Q: (100/100): (1): 0.0 = splitter21.Ce.Q - (splitter21.Cs2.Q + splitter21.Cs1.Q)
 // Procedure success
 //
-// >>>124: singularPressureLoss3.Pm: (81/81): (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P) / 2.0
+// >>>124: singularPressureLoss3.Pm: (81/81): (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P)/2.0
 // 122: singularPressureLoss3.C1.P: (23/23): (1): splitter21.Cs2.P = singularPressureLoss3.C1.P
 // 76: splitter21.Cs2.P: (96/96): (1): splitter21.P = splitter21.Cs2.P
 // 91: splitter21.P: (95/95): (1): splitter21.P = splitter21.Cs1.P
@@ -870,18 +870,18 @@ echo(false); getErrorString(); echo(true);
 // 57: mixer21.P: (109/118): (1): mixer21.P = mixer21.Ce2.P
 // 54: mixer21.Ce2.P: (5/5): (1): singularPressureLoss3.C2.P = mixer21.Ce2.P
 // 116: singularPressureLoss3.C2.P: (74/74): (1): singularPressureLoss3.C1.P - singularPressureLoss3.C2.P = singularPressureLoss3.deltaP
-// 128: singularPressureLoss3.deltaP: (80/80): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q) * singularPressureLoss3.Q * singularPressureLoss3.K) / singularPressureLoss3.rho
+// 128: singularPressureLoss3.deltaP: (80/80): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q)*singularPressureLoss3.Q*singularPressureLoss3.K)/singularPressureLoss3.rho
 // 126: singularPressureLoss3.rho: (83/83): (1): singularPressureLoss3.rho = 998.0
-// 146: singularPressureLoss2.deltaP: (70/70): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q) * singularPressureLoss2.Q * singularPressureLoss2.K) / singularPressureLoss2.rho
+// 146: singularPressureLoss2.deltaP: (70/70): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q)*singularPressureLoss2.Q*singularPressureLoss2.K)/singularPressureLoss2.rho
 // 144: singularPressureLoss2.rho: (73/73): (1): singularPressureLoss2.rho = 998.0
 // Procedure success
 //
 // >>>125: singularPressureLoss3.T: (82/82): (1): singularPressureLoss3.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss3.Pm, singularPressureLoss3.T, 1, singularPressureLoss3.mode, 0.0, 0.0, 0.0, 0.0)
 // 123: singularPressureLoss3.h: (77/77): (1): singularPressureLoss3.h = singularPressureLoss3.C1.h
 // 119: singularPressureLoss3.C1.h: (27/27): (1): splitter21.Cs2.h = singularPressureLoss3.C1.h
-// 73: splitter21.Cs2.h: (101/101): (1): 0.0 = splitter21.Ce.Q * splitter21.Ce.h - (splitter21.Cs2.Q * splitter21.Cs2.h + splitter21.Cs1.Q * splitter21.Cs1.h)
+// 73: splitter21.Cs2.h: (101/101): (1): 0.0 = splitter21.Ce.Q*splitter21.Ce.h - (splitter21.Cs2.Q*splitter21.Cs2.h + splitter21.Cs1.Q*splitter21.Cs1.h)
 // 74: splitter21.Cs2.Q: (100/100): (1): 0.0 = splitter21.Ce.Q - (splitter21.Cs2.Q + splitter21.Cs1.Q)
-// 80: splitter21.Cs1.Q: (102/102): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal * splitter21.Ce.Q
+// 80: splitter21.Cs1.Q: (102/102): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal*splitter21.Ce.Q
 // 70: splitter21.Ialpha1.signal: (41/41): (1): constante1.y.signal = splitter21.Ialpha1.signal
 // 24: constante1.y.signal: (120/138): (1): constante1.y.signal = constante1.k
 // 86: splitter21.Ce.Q: (36/36): (1): singularPressureLoss1.C2.Q = splitter21.Ce.Q
@@ -908,7 +908,7 @@ echo(false); getErrorString(); echo(true);
 // >>>127: singularPressureLoss3.Q: (78/78): (1): singularPressureLoss3.Q = singularPressureLoss3.C1.Q
 // 120: singularPressureLoss3.C1.Q: (24/24): (1): splitter21.Cs2.Q = singularPressureLoss3.C1.Q
 // 74: splitter21.Cs2.Q: (100/100): (1): 0.0 = splitter21.Ce.Q - (splitter21.Cs2.Q + splitter21.Cs1.Q)
-// 80: splitter21.Cs1.Q: (102/102): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal * splitter21.Ce.Q
+// 80: splitter21.Cs1.Q: (102/102): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal*splitter21.Ce.Q
 // 70: splitter21.Ialpha1.signal: (41/41): (1): constante1.y.signal = splitter21.Ialpha1.signal
 // 24: constante1.y.signal: (120/138): (1): constante1.y.signal = constante1.k
 // 86: splitter21.Ce.Q: (36/36): (1): singularPressureLoss1.C2.Q = splitter21.Ce.Q
@@ -916,7 +916,7 @@ echo(false); getErrorString(); echo(true);
 // 156: singularPressureLoss1.C1.Q: (58/58): (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q
 // Procedure success
 //
-// >>>142: singularPressureLoss2.Pm: (71/71): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P) / 2.0
+// >>>142: singularPressureLoss2.Pm: (71/71): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)/2.0
 // 140: singularPressureLoss2.C1.P: (64/64): (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP
 // 134: singularPressureLoss2.C2.P: (11/11): (1): singularPressureLoss2.C2.P = mixer21.Ce1.P
 // 42: mixer21.Ce1.P: (108/117): (1): mixer21.P = mixer21.Ce1.P
@@ -927,9 +927,9 @@ echo(false); getErrorString(); echo(true);
 // 76: splitter21.Cs2.P: (96/96): (1): splitter21.P = splitter21.Cs2.P
 // 91: splitter21.P: (95/95): (1): splitter21.P = splitter21.Cs1.P
 // 82: splitter21.Cs1.P: (17/17): (1): splitter21.Cs1.P = singularPressureLoss2.C1.P
-// 128: singularPressureLoss3.deltaP: (80/80): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q) * singularPressureLoss3.Q * singularPressureLoss3.K) / singularPressureLoss3.rho
+// 128: singularPressureLoss3.deltaP: (80/80): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q)*singularPressureLoss3.Q*singularPressureLoss3.K)/singularPressureLoss3.rho
 // 126: singularPressureLoss3.rho: (83/83): (1): singularPressureLoss3.rho = 998.0
-// 146: singularPressureLoss2.deltaP: (70/70): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q) * singularPressureLoss2.Q * singularPressureLoss2.K) / singularPressureLoss2.rho
+// 146: singularPressureLoss2.deltaP: (70/70): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q)*singularPressureLoss2.Q*singularPressureLoss2.K)/singularPressureLoss2.rho
 // 144: singularPressureLoss2.rho: (73/73): (1): singularPressureLoss2.rho = 998.0
 // Procedure success
 //
@@ -942,9 +942,9 @@ echo(false); getErrorString(); echo(true);
 // 75: splitter21.Cs2.h_vol: (28/28): (1): splitter21.Cs2.h_vol = singularPressureLoss3.C1.h_vol
 // 121: singularPressureLoss3.C1.h_vol: (79/79): (1): 0.0 = singularPressureLoss3.C1.h - singularPressureLoss3.C1.h_vol
 // 119: singularPressureLoss3.C1.h: (27/27): (1): splitter21.Cs2.h = singularPressureLoss3.C1.h
-// 73: splitter21.Cs2.h: (101/101): (1): 0.0 = splitter21.Ce.Q * splitter21.Ce.h - (splitter21.Cs2.Q * splitter21.Cs2.h + splitter21.Cs1.Q * splitter21.Cs1.h)
+// 73: splitter21.Cs2.h: (101/101): (1): 0.0 = splitter21.Ce.Q*splitter21.Ce.h - (splitter21.Cs2.Q*splitter21.Cs2.h + splitter21.Cs1.Q*splitter21.Cs1.h)
 // 74: splitter21.Cs2.Q: (100/100): (1): 0.0 = splitter21.Ce.Q - (splitter21.Cs2.Q + splitter21.Cs1.Q)
-// 80: splitter21.Cs1.Q: (102/102): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal * splitter21.Ce.Q
+// 80: splitter21.Cs1.Q: (102/102): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal*splitter21.Ce.Q
 // 70: splitter21.Ialpha1.signal: (41/41): (1): constante1.y.signal = splitter21.Ialpha1.signal
 // 24: constante1.y.signal: (120/138): (1): constante1.y.signal = constante1.k
 // 86: splitter21.Ce.Q: (36/36): (1): singularPressureLoss1.C2.Q = splitter21.Ce.Q
@@ -964,7 +964,7 @@ echo(false); getErrorString(); echo(true);
 //
 // >>>145: singularPressureLoss2.Q: (68/68): (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q
 // 138: singularPressureLoss2.C1.Q: (18/18): (1): splitter21.Cs1.Q = singularPressureLoss2.C1.Q
-// 80: splitter21.Cs1.Q: (102/102): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal * splitter21.Ce.Q
+// 80: splitter21.Cs1.Q: (102/102): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal*splitter21.Ce.Q
 // 70: splitter21.Ialpha1.signal: (41/41): (1): constante1.y.signal = splitter21.Ialpha1.signal
 // 24: constante1.y.signal: (120/138): (1): constante1.y.signal = constante1.k
 // 86: splitter21.Ce.Q: (36/36): (1): singularPressureLoss1.C2.Q = splitter21.Ce.Q
@@ -972,7 +972,7 @@ echo(false); getErrorString(); echo(true);
 // 156: singularPressureLoss1.C1.Q: (58/58): (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q
 // Procedure success
 //
-// >>>160: singularPressureLoss1.Pm: (61/61): (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P) / 2.0
+// >>>160: singularPressureLoss1.Pm: (61/61): (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)/2.0
 // 158: singularPressureLoss1.C1.P: (42/42): (1): sourceP1.C.P = singularPressureLoss1.C1.P
 // 17: sourceP1.C.P: (121/139): (1): sourceP1.C.P = sourceP1.P
 // 23: sourceP1.P: (125/143): (1): sourceP1.P = sourceP1.IPressure.signal
@@ -991,7 +991,7 @@ echo(false); getErrorString(); echo(true);
 // sourceP1.T0 is a boundary condition ---> exit procedure
 // Procedure failed
 //
-// >>>163: singularPressureLoss1.Q: (60/60): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q) * singularPressureLoss1.Q * singularPressureLoss1.K) / singularPressureLoss1.rho
+// >>>163: singularPressureLoss1.Q: (60/60): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q)*singularPressureLoss1.Q*singularPressureLoss1.K)/singularPressureLoss1.rho
 // 164: singularPressureLoss1.deltaP: (54/54): (1): singularPressureLoss1.C1.P - singularPressureLoss1.C2.P = singularPressureLoss1.deltaP
 // 152: singularPressureLoss1.C2.P: (35/35): (1): singularPressureLoss1.C2.P = splitter21.Ce.P
 // 88: splitter21.Ce.P: (94/94): (1): splitter21.P = splitter21.Ce.P
@@ -1005,9 +1005,9 @@ echo(false); getErrorString(); echo(true);
 // 116: singularPressureLoss3.C2.P: (74/74): (1): singularPressureLoss3.C1.P - singularPressureLoss3.C2.P = singularPressureLoss3.deltaP
 // 122: singularPressureLoss3.C1.P: (23/23): (1): splitter21.Cs2.P = singularPressureLoss3.C1.P
 // 76: splitter21.Cs2.P: (96/96): (1): splitter21.P = splitter21.Cs2.P
-// 128: singularPressureLoss3.deltaP: (80/80): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q) * singularPressureLoss3.Q * singularPressureLoss3.K) / singularPressureLoss3.rho
+// 128: singularPressureLoss3.deltaP: (80/80): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q)*singularPressureLoss3.Q*singularPressureLoss3.K)/singularPressureLoss3.rho
 // 126: singularPressureLoss3.rho: (83/83): (1): singularPressureLoss3.rho = 998.0
-// 146: singularPressureLoss2.deltaP: (70/70): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q) * singularPressureLoss2.Q * singularPressureLoss2.K) / singularPressureLoss2.rho
+// 146: singularPressureLoss2.deltaP: (70/70): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q)*singularPressureLoss2.Q*singularPressureLoss2.K)/singularPressureLoss2.rho
 // 144: singularPressureLoss2.rho: (73/73): (1): singularPressureLoss2.rho = 998.0
 // 158: singularPressureLoss1.C1.P: (42/42): (1): sourceP1.C.P = singularPressureLoss1.C1.P
 // 17: sourceP1.C.P: (121/139): (1): sourceP1.C.P = sourceP1.P
@@ -1254,8 +1254,8 @@ echo(false); getErrorString(); echo(true);
 // 59/59 (1): singularPressureLoss1.h = singularPressureLoss1.C1.h   [dynamic]
 // 60/60 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic]
 // 61/61 (1): 0.0 = singularPressureLoss1.C1.h - singularPressureLoss1.C1.h_vol   [dynamic]
-// 62/62 (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q) * singularPressureLoss1.Q * singularPressureLoss1.K) / singularPressureLoss1.rho   [dynamic]
-// 63/63 (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P) / 2.0   [dynamic]
+// 62/62 (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q)*singularPressureLoss1.Q*singularPressureLoss1.K)/singularPressureLoss1.rho   [dynamic]
+// 63/63 (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)/2.0   [dynamic]
 // 64/64 (1): singularPressureLoss1.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss1.Pm, singularPressureLoss1.T, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 65/65 (1): singularPressureLoss1.rho = 998.0   [dynamic]
 // 66/66 (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP   [dynamic]
@@ -1264,8 +1264,8 @@ echo(false); getErrorString(); echo(true);
 // 69/69 (1): singularPressureLoss2.h = singularPressureLoss2.C1.h   [dynamic]
 // 70/70 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic]
 // 71/71 (1): 0.0 = singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol   [dynamic]
-// 72/72 (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q) * singularPressureLoss2.Q * singularPressureLoss2.K) / singularPressureLoss2.rho   [dynamic]
-// 73/73 (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P) / 2.0   [dynamic]
+// 72/72 (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q)*singularPressureLoss2.Q*singularPressureLoss2.K)/singularPressureLoss2.rho   [dynamic]
+// 73/73 (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)/2.0   [dynamic]
 // 74/74 (1): singularPressureLoss2.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss2.Pm, singularPressureLoss2.T, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 75/75 (1): singularPressureLoss2.rho = 998.0   [dynamic]
 // 76/76 (1): singularPressureLoss3.C1.P - singularPressureLoss3.C2.P = singularPressureLoss3.deltaP   [dynamic]
@@ -1274,8 +1274,8 @@ echo(false); getErrorString(); echo(true);
 // 79/79 (1): singularPressureLoss3.h = singularPressureLoss3.C1.h   [dynamic]
 // 80/80 (1): singularPressureLoss3.Q = singularPressureLoss3.C1.Q   [dynamic]
 // 81/81 (1): 0.0 = singularPressureLoss3.C1.h - singularPressureLoss3.C1.h_vol   [dynamic]
-// 82/82 (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q) * singularPressureLoss3.Q * singularPressureLoss3.K) / singularPressureLoss3.rho   [dynamic]
-// 83/83 (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P) / 2.0   [dynamic]
+// 82/82 (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q)*singularPressureLoss3.Q*singularPressureLoss3.K)/singularPressureLoss3.rho   [dynamic]
+// 83/83 (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P)/2.0   [dynamic]
 // 84/84 (1): singularPressureLoss3.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss3.Pm, singularPressureLoss3.T, 1, singularPressureLoss3.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 85/85 (1): singularPressureLoss3.rho = 998.0   [dynamic]
 // 86/86 (1): singularPressureLoss4.C1.P - singularPressureLoss4.C2.P = singularPressureLoss4.deltaP   [dynamic]
@@ -1284,8 +1284,8 @@ echo(false); getErrorString(); echo(true);
 // 89/89 (1): singularPressureLoss4.h = singularPressureLoss4.C1.h   [dynamic]
 // 90/90 (1): singularPressureLoss4.Q = singularPressureLoss4.C1.Q   [dynamic]
 // 91/91 (1): 0.0 = singularPressureLoss4.C1.h - singularPressureLoss4.C1.h_vol   [dynamic]
-// 92/92 (1): singularPressureLoss4.deltaP = (abs(singularPressureLoss4.Q) * singularPressureLoss4.Q * singularPressureLoss4.K) / singularPressureLoss4.rho   [dynamic]
-// 93/93 (1): singularPressureLoss4.Pm = (singularPressureLoss4.C1.P + singularPressureLoss4.C2.P) / 2.0   [dynamic]
+// 92/92 (1): singularPressureLoss4.deltaP = (abs(singularPressureLoss4.Q)*singularPressureLoss4.Q*singularPressureLoss4.K)/singularPressureLoss4.rho   [dynamic]
+// 93/93 (1): singularPressureLoss4.Pm = (singularPressureLoss4.C1.P + singularPressureLoss4.C2.P)/2.0   [dynamic]
 // 94/94 (1): singularPressureLoss4.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss4.Pm, singularPressureLoss4.T, 1, singularPressureLoss4.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 95/95 (1): singularPressureLoss4.rho = 998.0   [dynamic]
 // 96/96 (1): splitter21.P = splitter21.Ce.P   [dynamic]
@@ -1295,9 +1295,9 @@ echo(false); getErrorString(); echo(true);
 // 100/100 (1): splitter21.Cs1.h_vol = splitter21.h   [dynamic]
 // 101/101 (1): splitter21.Cs2.h_vol = splitter21.h   [dynamic]
 // 102/102 (1): 0.0 = splitter21.Ce.Q - (splitter21.Cs2.Q + splitter21.Cs1.Q)   [dynamic]
-// 103/103 (1): 0.0 = splitter21.Ce.Q * splitter21.Ce.h - (splitter21.Cs2.Q * splitter21.Cs2.h + splitter21.Cs1.Q * splitter21.Cs1.h)   [dynamic]
-// 104/104 (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal * splitter21.Ce.Q   [dynamic]
-// 105/105 (1): splitter21.alpha1 = splitter21.Cs1.Q / splitter21.Ce.Q   [dynamic]
+// 103/103 (1): 0.0 = splitter21.Ce.Q*splitter21.Ce.h - (splitter21.Cs2.Q*splitter21.Cs2.h + splitter21.Cs1.Q*splitter21.Cs1.h)   [dynamic]
+// 104/104 (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal*splitter21.Ce.Q   [dynamic]
+// 105/105 (1): splitter21.alpha1 = splitter21.Cs1.Q/splitter21.Ce.Q   [dynamic]
 // 106/106 (1): splitter21.Oalpha1.signal = splitter21.alpha1   [dynamic]
 // 107/107 (10): splitter21.pro = ThermoSysPro.Properties.Fluid.Ph(splitter21.P, splitter21.h, splitter21.mode, splitter21.fluid)   [dynamic]
 // 108/117 (1): splitter21.T = splitter21.pro.T   [dynamic]
@@ -1309,8 +1309,8 @@ echo(false); getErrorString(); echo(true);
 // 114/123 (1): mixer21.Ce2.h_vol = mixer21.h   [dynamic]
 // 115/124 (1): mixer21.Cs.h_vol = mixer21.h   [dynamic]
 // 116/125 (1): 0.0 = (mixer21.Ce2.Q + mixer21.Ce1.Q) - mixer21.Cs.Q   [dynamic]
-// 117/126 (1): 0.0 = (mixer21.Ce2.Q * mixer21.Ce2.h + mixer21.Ce1.Q * mixer21.Ce1.h) - mixer21.Cs.Q * mixer21.Cs.h   [dynamic]
-// 118/127 (1): mixer21.alpha1 = mixer21.Ce1.Q / mixer21.Cs.Q   [dynamic]
+// 117/126 (1): 0.0 = (mixer21.Ce2.Q*mixer21.Ce2.h + mixer21.Ce1.Q*mixer21.Ce1.h) - mixer21.Cs.Q*mixer21.Cs.h   [dynamic]
+// 118/127 (1): mixer21.alpha1 = mixer21.Ce1.Q/mixer21.Cs.Q   [dynamic]
 // 119/128 (1): mixer21.Oalpha1.signal = mixer21.alpha1   [dynamic]
 // 120/129 (10): mixer21.pro = ThermoSysPro.Properties.Fluid.Ph(mixer21.P, mixer21.h, mixer21.mode, mixer21.fluid)   [dynamic]
 // 121/139 (1): mixer21.T = mixer21.pro.T   [dynamic]
@@ -1524,12 +1524,12 @@ echo(false); getErrorString(); echo(true);
 // 166: sourceP1.T0: (4/4): (1): sourceP1.T0 = 290.0
 // 165: sourceP1.P0: (3/3): (1): sourceP1.P0 = 3e5
 // 164: singularPressureLoss1.deltaP: (56/56): (1): singularPressureLoss1.C1.P - singularPressureLoss1.C2.P = singularPressureLoss1.deltaP
-// 163: singularPressureLoss1.Q: (62/62): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q) * singularPressureLoss1.Q * singularPressureLoss1.K) / singularPressureLoss1.rho
+// 163: singularPressureLoss1.Q: (62/62): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q)*singularPressureLoss1.Q*singularPressureLoss1.K)/singularPressureLoss1.rho
 // 162: singularPressureLoss1.rho: (65/65): (1): singularPressureLoss1.rho = 998.0
 // 161: singularPressureLoss1.T: (64/64): (1): singularPressureLoss1.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss1.Pm, singularPressureLoss1.T, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)
 // 160: singularPressureLoss1.Pm: (2/2): (1): singularPressureLoss1.Pm = 0.0
 // 159: singularPressureLoss1.h: (59/59): (1): singularPressureLoss1.h = singularPressureLoss1.C1.h
-// 158: singularPressureLoss1.C1.P: (63/63): (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P) / 2.0
+// 158: singularPressureLoss1.C1.P: (63/63): (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)/2.0
 // 157: singularPressureLoss1.C1.h_vol: (61/61): (1): 0.0 = singularPressureLoss1.C1.h - singularPressureLoss1.C1.h_vol
 // 156: singularPressureLoss1.C1.Q: (60/60): (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q
 // 155: singularPressureLoss1.C1.h: (58/58): (1): singularPressureLoss1.C2.h = singularPressureLoss1.C1.h
@@ -1541,11 +1541,11 @@ echo(false); getErrorString(); echo(true);
 // 149: singularPressureLoss1.C2.h: (41/41): (1): singularPressureLoss1.C2.h = splitter21.Ce.h
 // 148: singularPressureLoss1.C2.a: (39/39): (1): singularPressureLoss1.C2.a = splitter21.Ce.a
 // 147: singularPressureLoss1.C2.b: (149/167): (1): singularPressureLoss1.C2.b = true
-// 146: singularPressureLoss2.deltaP: (72/72): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q) * singularPressureLoss2.Q * singularPressureLoss2.K) / singularPressureLoss2.rho
+// 146: singularPressureLoss2.deltaP: (72/72): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q)*singularPressureLoss2.Q*singularPressureLoss2.K)/singularPressureLoss2.rho
 // 145: singularPressureLoss2.Q: (70/70): (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q
 // 144: singularPressureLoss2.rho: (75/75): (1): singularPressureLoss2.rho = 998.0
 // 143: singularPressureLoss2.T: (74/74): (1): singularPressureLoss2.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss2.Pm, singularPressureLoss2.T, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)
-// 142: singularPressureLoss2.Pm: (73/73): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P) / 2.0
+// 142: singularPressureLoss2.Pm: (73/73): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)/2.0
 // 141: singularPressureLoss2.h: (69/69): (1): singularPressureLoss2.h = singularPressureLoss2.C1.h
 // 140: singularPressureLoss2.C1.P: (66/66): (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP
 // 139: singularPressureLoss2.C1.h_vol: (71/71): (1): 0.0 = singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol
@@ -1559,11 +1559,11 @@ echo(false); getErrorString(); echo(true);
 // 131: singularPressureLoss2.C2.h: (17/17): (1): singularPressureLoss2.C2.h = mixer21.Ce1.h
 // 130: singularPressureLoss2.C2.a: (15/15): (1): singularPressureLoss2.C2.a = mixer21.Ce1.a
 // 129: singularPressureLoss2.C2.b: (147/165): (1): singularPressureLoss2.C2.b = true
-// 128: singularPressureLoss3.deltaP: (82/82): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q) * singularPressureLoss3.Q * singularPressureLoss3.K) / singularPressureLoss3.rho
+// 128: singularPressureLoss3.deltaP: (82/82): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q)*singularPressureLoss3.Q*singularPressureLoss3.K)/singularPressureLoss3.rho
 // 127: singularPressureLoss3.Q: (80/80): (1): singularPressureLoss3.Q = singularPressureLoss3.C1.Q
 // 126: singularPressureLoss3.rho: (85/85): (1): singularPressureLoss3.rho = 998.0
 // 125: singularPressureLoss3.T: (84/84): (1): singularPressureLoss3.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss3.Pm, singularPressureLoss3.T, 1, singularPressureLoss3.mode, 0.0, 0.0, 0.0, 0.0)
-// 124: singularPressureLoss3.Pm: (83/83): (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P) / 2.0
+// 124: singularPressureLoss3.Pm: (83/83): (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P)/2.0
 // 123: singularPressureLoss3.h: (79/79): (1): singularPressureLoss3.h = singularPressureLoss3.C1.h
 // 122: singularPressureLoss3.C1.P: (25/25): (1): splitter21.Cs2.P = singularPressureLoss3.C1.P
 // 121: singularPressureLoss3.C1.h_vol: (30/30): (1): splitter21.Cs2.h_vol = singularPressureLoss3.C1.h_vol
@@ -1577,11 +1577,11 @@ echo(false); getErrorString(); echo(true);
 // 113: singularPressureLoss3.C2.h: (78/78): (1): singularPressureLoss3.C2.h = singularPressureLoss3.C1.h
 // 112: singularPressureLoss3.C2.a: (9/9): (1): singularPressureLoss3.C2.a = mixer21.Ce2.a
 // 111: singularPressureLoss3.C2.b: (145/163): (1): singularPressureLoss3.C2.b = true
-// 110: singularPressureLoss4.deltaP: (92/92): (1): singularPressureLoss4.deltaP = (abs(singularPressureLoss4.Q) * singularPressureLoss4.Q * singularPressureLoss4.K) / singularPressureLoss4.rho
+// 110: singularPressureLoss4.deltaP: (92/92): (1): singularPressureLoss4.deltaP = (abs(singularPressureLoss4.Q)*singularPressureLoss4.Q*singularPressureLoss4.K)/singularPressureLoss4.rho
 // 109: singularPressureLoss4.Q: (90/90): (1): singularPressureLoss4.Q = singularPressureLoss4.C1.Q
 // 108: singularPressureLoss4.rho: (95/95): (1): singularPressureLoss4.rho = 998.0
 // 107: singularPressureLoss4.T: (1/1): (1): singularPressureLoss4.T = 0.0
-// 106: singularPressureLoss4.Pm: (93/93): (1): singularPressureLoss4.Pm = (singularPressureLoss4.C1.P + singularPressureLoss4.C2.P) / 2.0
+// 106: singularPressureLoss4.Pm: (93/93): (1): singularPressureLoss4.Pm = (singularPressureLoss4.C1.P + singularPressureLoss4.C2.P)/2.0
 // 105: singularPressureLoss4.h: (94/94): (1): singularPressureLoss4.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss4.Pm, singularPressureLoss4.T, 1, singularPressureLoss4.mode, 0.0, 0.0, 0.0, 0.0)
 // 104: singularPressureLoss4.C1.P: (31/31): (1): mixer21.Cs.P = singularPressureLoss4.C1.P
 // 103: singularPressureLoss4.C1.h_vol: (91/91): (1): 0.0 = singularPressureLoss4.C1.h - singularPressureLoss4.C1.h_vol
@@ -1595,19 +1595,19 @@ echo(false); getErrorString(); echo(true);
 // 95: singularPressureLoss4.C2.h: (88/88): (1): singularPressureLoss4.C2.h = singularPressureLoss4.C1.h
 // 94: singularPressureLoss4.C2.a: (52/52): (1): singularPressureLoss4.C2.a = sink1.C.a
 // 93: singularPressureLoss4.C2.b: (143/161): (1): singularPressureLoss4.C2.b = true
-// 92: splitter21.alpha1: (105/105): (1): splitter21.alpha1 = splitter21.Cs1.Q / splitter21.Ce.Q
+// 92: splitter21.alpha1: (105/105): (1): splitter21.alpha1 = splitter21.Cs1.Q/splitter21.Ce.Q
 // 91: splitter21.P: (97/97): (1): splitter21.P = splitter21.Cs1.P
 // 90: splitter21.h: (100/100): (1): splitter21.Cs1.h_vol = splitter21.h
 // 89: splitter21.T: (108/117): (1): splitter21.T = splitter21.pro.T
 // 88: splitter21.Ce.P: (96/96): (1): splitter21.P = splitter21.Ce.P
 // 87: splitter21.Ce.h_vol: (99/99): (1): splitter21.Ce.h_vol = splitter21.h
 // 86: splitter21.Ce.Q: (38/38): (1): singularPressureLoss1.C2.Q = splitter21.Ce.Q
-// 85: splitter21.Ce.h: (103/103): (1): 0.0 = splitter21.Ce.Q * splitter21.Ce.h - (splitter21.Cs2.Q * splitter21.Cs2.h + splitter21.Cs1.Q * splitter21.Cs1.h)
+// 85: splitter21.Ce.h: (103/103): (1): 0.0 = splitter21.Ce.Q*splitter21.Ce.h - (splitter21.Cs2.Q*splitter21.Cs2.h + splitter21.Cs1.Q*splitter21.Cs1.h)
 // 84: splitter21.Ce.a: (142/160): (1): splitter21.Ce.a = true
 // 83: splitter21.Ce.b: (40/40): (1): singularPressureLoss1.C2.b = splitter21.Ce.b
 // 82: splitter21.Cs1.P: (19/19): (1): splitter21.Cs1.P = singularPressureLoss2.C1.P
 // 81: splitter21.Cs1.h_vol: (24/24): (1): splitter21.Cs1.h_vol = singularPressureLoss2.C1.h_vol
-// 80: splitter21.Cs1.Q: (104/104): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal * splitter21.Ce.Q
+// 80: splitter21.Cs1.Q: (104/104): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal*splitter21.Ce.Q
 // 79: splitter21.Cs1.h: (23/23): (1): splitter21.Cs1.h = singularPressureLoss2.C1.h
 // 78: splitter21.Cs1.a: (21/21): (1): splitter21.Cs1.a = singularPressureLoss2.C1.a
 // 77: splitter21.Cs1.b: (141/159): (1): splitter21.Cs1.b = true
@@ -1629,7 +1629,7 @@ echo(false); getErrorString(); echo(true);
 // 61: splitter21.pro.duph: (107/114): (10): splitter21.pro = ThermoSysPro.Properties.Fluid.Ph(splitter21.P, splitter21.h, splitter21.mode, splitter21.fluid)
 // 60: splitter21.pro.duhp: (107/115): (10): splitter21.pro = ThermoSysPro.Properties.Fluid.Ph(splitter21.P, splitter21.h, splitter21.mode, splitter21.fluid)
 // 59: splitter21.pro.x: (107/116): (10): splitter21.pro = ThermoSysPro.Properties.Fluid.Ph(splitter21.P, splitter21.h, splitter21.mode, splitter21.fluid)
-// 58: mixer21.alpha1: (118/127): (1): mixer21.alpha1 = mixer21.Ce1.Q / mixer21.Cs.Q
+// 58: mixer21.alpha1: (118/127): (1): mixer21.alpha1 = mixer21.Ce1.Q/mixer21.Cs.Q
 // 57: mixer21.P: (111/120): (1): mixer21.P = mixer21.Ce2.P
 // 56: mixer21.h: (115/124): (1): mixer21.Cs.h_vol = mixer21.h
 // 55: mixer21.T: (121/139): (1): mixer21.T = mixer21.pro.T
@@ -1648,7 +1648,7 @@ echo(false); getErrorString(); echo(true);
 // 42: mixer21.Ce1.P: (110/119): (1): mixer21.P = mixer21.Ce1.P
 // 41: mixer21.Ce1.h_vol: (113/122): (1): mixer21.Ce1.h_vol = mixer21.h
 // 40: mixer21.Ce1.Q: (14/14): (1): singularPressureLoss2.C2.Q = mixer21.Ce1.Q
-// 39: mixer21.Ce1.h: (117/126): (1): 0.0 = (mixer21.Ce2.Q * mixer21.Ce2.h + mixer21.Ce1.Q * mixer21.Ce1.h) - mixer21.Cs.Q * mixer21.Cs.h
+// 39: mixer21.Ce1.h: (117/126): (1): 0.0 = (mixer21.Ce2.Q*mixer21.Ce2.h + mixer21.Ce1.Q*mixer21.Ce1.h) - mixer21.Cs.Q*mixer21.Cs.h
 // 38: mixer21.Ce1.a: (137/155): (1): mixer21.Ce1.a = true
 // 37: mixer21.Ce1.b: (16/16): (1): singularPressureLoss2.C2.b = mixer21.Ce1.b
 // 36: mixer21.Ialpha1.signal: (109/118): (1): mixer21.Ialpha1.signal = 0.5
@@ -1743,22 +1743,22 @@ echo(false); getErrorString(); echo(true);
 // E-BLT: equations that compute the variables of interest:(10)
 // ============================================================
 //
-// 106: singularPressureLoss4.Pm: (93/93): (1): singularPressureLoss4.Pm = (singularPressureLoss4.C1.P + singularPressureLoss4.C2.P) / 2.0
+// 106: singularPressureLoss4.Pm: (93/93): (1): singularPressureLoss4.Pm = (singularPressureLoss4.C1.P + singularPressureLoss4.C2.P)/2.0
 // 109: singularPressureLoss4.Q: (90/90): (1): singularPressureLoss4.Q = singularPressureLoss4.C1.Q
-// 124: singularPressureLoss3.Pm: (83/83): (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P) / 2.0
+// 124: singularPressureLoss3.Pm: (83/83): (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P)/2.0
 // 125: singularPressureLoss3.T: (84/84): (1): singularPressureLoss3.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss3.Pm, singularPressureLoss3.T, 1, singularPressureLoss3.mode, 0.0, 0.0, 0.0, 0.0)
 // 127: singularPressureLoss3.Q: (80/80): (1): singularPressureLoss3.Q = singularPressureLoss3.C1.Q
-// 142: singularPressureLoss2.Pm: (73/73): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P) / 2.0
+// 142: singularPressureLoss2.Pm: (73/73): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)/2.0
 // 143: singularPressureLoss2.T: (74/74): (1): singularPressureLoss2.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss2.Pm, singularPressureLoss2.T, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)
 // 145: singularPressureLoss2.Q: (70/70): (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q
 // 161: singularPressureLoss1.T: (64/64): (1): singularPressureLoss1.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss1.Pm, singularPressureLoss1.T, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)
-// 163: singularPressureLoss1.Q: (62/62): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q) * singularPressureLoss1.Q * singularPressureLoss1.K) / singularPressureLoss1.rho
+// 163: singularPressureLoss1.Q: (62/62): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q)*singularPressureLoss1.Q*singularPressureLoss1.K)/singularPressureLoss1.rho
 //
 //
 // Extracting SET-C and SET-S from E-BLT
 // Procedure is applied on each equation in the E-BLT
 // ==========================================================================
-// >>>106: singularPressureLoss4.Pm: (93/93): (1): singularPressureLoss4.Pm = (singularPressureLoss4.C1.P + singularPressureLoss4.C2.P) / 2.0
+// >>>106: singularPressureLoss4.Pm: (93/93): (1): singularPressureLoss4.Pm = (singularPressureLoss4.C1.P + singularPressureLoss4.C2.P)/2.0
 // 104: singularPressureLoss4.C1.P: (31/31): (1): mixer21.Cs.P = singularPressureLoss4.C1.P
 // 48: mixer21.Cs.P: (112/121): (1): mixer21.P = mixer21.Cs.P
 // 57: mixer21.P: (111/120): (1): mixer21.P = mixer21.Ce2.P
@@ -1771,12 +1771,12 @@ echo(false); getErrorString(); echo(true);
 // 140: singularPressureLoss2.C1.P: (66/66): (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP
 // 134: singularPressureLoss2.C2.P: (13/13): (1): singularPressureLoss2.C2.P = mixer21.Ce1.P
 // 42: mixer21.Ce1.P: (110/119): (1): mixer21.P = mixer21.Ce1.P
-// 146: singularPressureLoss2.deltaP: (72/72): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q) * singularPressureLoss2.Q * singularPressureLoss2.K) / singularPressureLoss2.rho
+// 146: singularPressureLoss2.deltaP: (72/72): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q)*singularPressureLoss2.Q*singularPressureLoss2.K)/singularPressureLoss2.rho
 // 144: singularPressureLoss2.rho: (75/75): (1): singularPressureLoss2.rho = 998.0
-// 128: singularPressureLoss3.deltaP: (82/82): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q) * singularPressureLoss3.Q * singularPressureLoss3.K) / singularPressureLoss3.rho
+// 128: singularPressureLoss3.deltaP: (82/82): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q)*singularPressureLoss3.Q*singularPressureLoss3.K)/singularPressureLoss3.rho
 // 126: singularPressureLoss3.rho: (85/85): (1): singularPressureLoss3.rho = 998.0
 // 98: singularPressureLoss4.C2.P: (86/86): (1): singularPressureLoss4.C1.P - singularPressureLoss4.C2.P = singularPressureLoss4.deltaP
-// 110: singularPressureLoss4.deltaP: (92/92): (1): singularPressureLoss4.deltaP = (abs(singularPressureLoss4.Q) * singularPressureLoss4.Q * singularPressureLoss4.K) / singularPressureLoss4.rho
+// 110: singularPressureLoss4.deltaP: (92/92): (1): singularPressureLoss4.deltaP = (abs(singularPressureLoss4.Q)*singularPressureLoss4.Q*singularPressureLoss4.K)/singularPressureLoss4.rho
 // 108: singularPressureLoss4.rho: (95/95): (1): singularPressureLoss4.rho = 998.0
 // Procedure success
 //
@@ -1786,7 +1786,7 @@ echo(false); getErrorString(); echo(true);
 // 40: mixer21.Ce1.Q: (14/14): (1): singularPressureLoss2.C2.Q = mixer21.Ce1.Q
 // 132: singularPressureLoss2.C2.Q: (67/67): (1): singularPressureLoss2.C2.Q = singularPressureLoss2.C1.Q
 // 138: singularPressureLoss2.C1.Q: (20/20): (1): splitter21.Cs1.Q = singularPressureLoss2.C1.Q
-// 80: splitter21.Cs1.Q: (104/104): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal * splitter21.Ce.Q
+// 80: splitter21.Cs1.Q: (104/104): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal*splitter21.Ce.Q
 // 70: splitter21.Ialpha1.signal: (43/43): (1): constante1.y.signal = splitter21.Ialpha1.signal
 // 24: constante1.y.signal: (122/140): (1): constante1.y.signal = constante1.k
 // 86: splitter21.Ce.Q: (38/38): (1): singularPressureLoss1.C2.Q = splitter21.Ce.Q
@@ -1798,7 +1798,7 @@ echo(false); getErrorString(); echo(true);
 // 74: splitter21.Cs2.Q: (102/102): (1): 0.0 = splitter21.Ce.Q - (splitter21.Cs2.Q + splitter21.Cs1.Q)
 // Procedure success
 //
-// >>>124: singularPressureLoss3.Pm: (83/83): (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P) / 2.0
+// >>>124: singularPressureLoss3.Pm: (83/83): (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P)/2.0
 // 122: singularPressureLoss3.C1.P: (25/25): (1): splitter21.Cs2.P = singularPressureLoss3.C1.P
 // 76: splitter21.Cs2.P: (98/98): (1): splitter21.P = splitter21.Cs2.P
 // 91: splitter21.P: (97/97): (1): splitter21.P = splitter21.Cs1.P
@@ -1809,9 +1809,9 @@ echo(false); getErrorString(); echo(true);
 // 57: mixer21.P: (111/120): (1): mixer21.P = mixer21.Ce2.P
 // 54: mixer21.Ce2.P: (7/7): (1): singularPressureLoss3.C2.P = mixer21.Ce2.P
 // 116: singularPressureLoss3.C2.P: (76/76): (1): singularPressureLoss3.C1.P - singularPressureLoss3.C2.P = singularPressureLoss3.deltaP
-// 128: singularPressureLoss3.deltaP: (82/82): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q) * singularPressureLoss3.Q * singularPressureLoss3.K) / singularPressureLoss3.rho
+// 128: singularPressureLoss3.deltaP: (82/82): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q)*singularPressureLoss3.Q*singularPressureLoss3.K)/singularPressureLoss3.rho
 // 126: singularPressureLoss3.rho: (85/85): (1): singularPressureLoss3.rho = 998.0
-// 146: singularPressureLoss2.deltaP: (72/72): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q) * singularPressureLoss2.Q * singularPressureLoss2.K) / singularPressureLoss2.rho
+// 146: singularPressureLoss2.deltaP: (72/72): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q)*singularPressureLoss2.Q*singularPressureLoss2.K)/singularPressureLoss2.rho
 // 144: singularPressureLoss2.rho: (75/75): (1): singularPressureLoss2.rho = 998.0
 // Procedure success
 //
@@ -1825,11 +1825,11 @@ echo(false); getErrorString(); echo(true);
 // 139: singularPressureLoss2.C1.h_vol: (71/71): (1): 0.0 = singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol
 // 137: singularPressureLoss2.C1.h: (68/68): (1): singularPressureLoss2.C2.h = singularPressureLoss2.C1.h
 // 131: singularPressureLoss2.C2.h: (17/17): (1): singularPressureLoss2.C2.h = mixer21.Ce1.h
-// 39: mixer21.Ce1.h: (117/126): (1): 0.0 = (mixer21.Ce2.Q * mixer21.Ce2.h + mixer21.Ce1.Q * mixer21.Ce1.h) - mixer21.Cs.Q * mixer21.Cs.h
+// 39: mixer21.Ce1.h: (117/126): (1): 0.0 = (mixer21.Ce2.Q*mixer21.Ce2.h + mixer21.Ce1.Q*mixer21.Ce1.h) - mixer21.Cs.Q*mixer21.Cs.h
 // 40: mixer21.Ce1.Q: (14/14): (1): singularPressureLoss2.C2.Q = mixer21.Ce1.Q
 // 132: singularPressureLoss2.C2.Q: (67/67): (1): singularPressureLoss2.C2.Q = singularPressureLoss2.C1.Q
 // 138: singularPressureLoss2.C1.Q: (20/20): (1): splitter21.Cs1.Q = singularPressureLoss2.C1.Q
-// 80: splitter21.Cs1.Q: (104/104): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal * splitter21.Ce.Q
+// 80: splitter21.Cs1.Q: (104/104): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal*splitter21.Ce.Q
 // 70: splitter21.Ialpha1.signal: (43/43): (1): constante1.y.signal = splitter21.Ialpha1.signal
 // 24: constante1.y.signal: (122/140): (1): constante1.y.signal = constante1.k
 // 86: splitter21.Ce.Q: (38/38): (1): singularPressureLoss1.C2.Q = splitter21.Ce.Q
@@ -1850,7 +1850,7 @@ echo(false); getErrorString(); echo(true);
 // >>>127: singularPressureLoss3.Q: (80/80): (1): singularPressureLoss3.Q = singularPressureLoss3.C1.Q
 // 120: singularPressureLoss3.C1.Q: (26/26): (1): splitter21.Cs2.Q = singularPressureLoss3.C1.Q
 // 74: splitter21.Cs2.Q: (102/102): (1): 0.0 = splitter21.Ce.Q - (splitter21.Cs2.Q + splitter21.Cs1.Q)
-// 80: splitter21.Cs1.Q: (104/104): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal * splitter21.Ce.Q
+// 80: splitter21.Cs1.Q: (104/104): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal*splitter21.Ce.Q
 // 70: splitter21.Ialpha1.signal: (43/43): (1): constante1.y.signal = splitter21.Ialpha1.signal
 // 24: constante1.y.signal: (122/140): (1): constante1.y.signal = constante1.k
 // 86: splitter21.Ce.Q: (38/38): (1): singularPressureLoss1.C2.Q = splitter21.Ce.Q
@@ -1858,7 +1858,7 @@ echo(false); getErrorString(); echo(true);
 // 156: singularPressureLoss1.C1.Q: (60/60): (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q
 // Procedure success
 //
-// >>>142: singularPressureLoss2.Pm: (73/73): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P) / 2.0
+// >>>142: singularPressureLoss2.Pm: (73/73): (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)/2.0
 // 140: singularPressureLoss2.C1.P: (66/66): (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP
 // 134: singularPressureLoss2.C2.P: (13/13): (1): singularPressureLoss2.C2.P = mixer21.Ce1.P
 // 42: mixer21.Ce1.P: (110/119): (1): mixer21.P = mixer21.Ce1.P
@@ -1869,9 +1869,9 @@ echo(false); getErrorString(); echo(true);
 // 76: splitter21.Cs2.P: (98/98): (1): splitter21.P = splitter21.Cs2.P
 // 91: splitter21.P: (97/97): (1): splitter21.P = splitter21.Cs1.P
 // 82: splitter21.Cs1.P: (19/19): (1): splitter21.Cs1.P = singularPressureLoss2.C1.P
-// 128: singularPressureLoss3.deltaP: (82/82): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q) * singularPressureLoss3.Q * singularPressureLoss3.K) / singularPressureLoss3.rho
+// 128: singularPressureLoss3.deltaP: (82/82): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q)*singularPressureLoss3.Q*singularPressureLoss3.K)/singularPressureLoss3.rho
 // 126: singularPressureLoss3.rho: (85/85): (1): singularPressureLoss3.rho = 998.0
-// 146: singularPressureLoss2.deltaP: (72/72): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q) * singularPressureLoss2.Q * singularPressureLoss2.K) / singularPressureLoss2.rho
+// 146: singularPressureLoss2.deltaP: (72/72): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q)*singularPressureLoss2.Q*singularPressureLoss2.K)/singularPressureLoss2.rho
 // 144: singularPressureLoss2.rho: (75/75): (1): singularPressureLoss2.rho = 998.0
 // Procedure success
 //
@@ -1879,11 +1879,11 @@ echo(false); getErrorString(); echo(true);
 // 141: singularPressureLoss2.h: (69/69): (1): singularPressureLoss2.h = singularPressureLoss2.C1.h
 // 137: singularPressureLoss2.C1.h: (68/68): (1): singularPressureLoss2.C2.h = singularPressureLoss2.C1.h
 // 131: singularPressureLoss2.C2.h: (17/17): (1): singularPressureLoss2.C2.h = mixer21.Ce1.h
-// 39: mixer21.Ce1.h: (117/126): (1): 0.0 = (mixer21.Ce2.Q * mixer21.Ce2.h + mixer21.Ce1.Q * mixer21.Ce1.h) - mixer21.Cs.Q * mixer21.Cs.h
+// 39: mixer21.Ce1.h: (117/126): (1): 0.0 = (mixer21.Ce2.Q*mixer21.Ce2.h + mixer21.Ce1.Q*mixer21.Ce1.h) - mixer21.Cs.Q*mixer21.Cs.h
 // 40: mixer21.Ce1.Q: (14/14): (1): singularPressureLoss2.C2.Q = mixer21.Ce1.Q
 // 132: singularPressureLoss2.C2.Q: (67/67): (1): singularPressureLoss2.C2.Q = singularPressureLoss2.C1.Q
 // 138: singularPressureLoss2.C1.Q: (20/20): (1): splitter21.Cs1.Q = singularPressureLoss2.C1.Q
-// 80: splitter21.Cs1.Q: (104/104): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal * splitter21.Ce.Q
+// 80: splitter21.Cs1.Q: (104/104): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal*splitter21.Ce.Q
 // 70: splitter21.Ialpha1.signal: (43/43): (1): constante1.y.signal = splitter21.Ialpha1.signal
 // 24: constante1.y.signal: (122/140): (1): constante1.y.signal = constante1.k
 // 86: splitter21.Ce.Q: (38/38): (1): singularPressureLoss1.C2.Q = splitter21.Ce.Q
@@ -1909,7 +1909,7 @@ echo(false); getErrorString(); echo(true);
 //
 // >>>145: singularPressureLoss2.Q: (70/70): (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q
 // 138: singularPressureLoss2.C1.Q: (20/20): (1): splitter21.Cs1.Q = singularPressureLoss2.C1.Q
-// 80: splitter21.Cs1.Q: (104/104): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal * splitter21.Ce.Q
+// 80: splitter21.Cs1.Q: (104/104): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal*splitter21.Ce.Q
 // 70: splitter21.Ialpha1.signal: (43/43): (1): constante1.y.signal = splitter21.Ialpha1.signal
 // 24: constante1.y.signal: (122/140): (1): constante1.y.signal = constante1.k
 // 86: splitter21.Ce.Q: (38/38): (1): singularPressureLoss1.C2.Q = splitter21.Ce.Q
@@ -1921,7 +1921,7 @@ echo(false); getErrorString(); echo(true);
 // 159: singularPressureLoss1.h: (59/59): (1): singularPressureLoss1.h = singularPressureLoss1.C1.h
 // 155: singularPressureLoss1.C1.h: (58/58): (1): singularPressureLoss1.C2.h = singularPressureLoss1.C1.h
 // 149: singularPressureLoss1.C2.h: (41/41): (1): singularPressureLoss1.C2.h = splitter21.Ce.h
-// 85: splitter21.Ce.h: (103/103): (1): 0.0 = splitter21.Ce.Q * splitter21.Ce.h - (splitter21.Cs2.Q * splitter21.Cs2.h + splitter21.Cs1.Q * splitter21.Cs1.h)
+// 85: splitter21.Ce.h: (103/103): (1): 0.0 = splitter21.Ce.Q*splitter21.Ce.h - (splitter21.Cs2.Q*splitter21.Cs2.h + splitter21.Cs1.Q*splitter21.Cs1.h)
 // 73: splitter21.Cs2.h: (29/29): (1): splitter21.Cs2.h = singularPressureLoss3.C1.h
 // 119: singularPressureLoss3.C1.h: (81/81): (1): 0.0 = singularPressureLoss3.C1.h - singularPressureLoss3.C1.h_vol
 // 121: singularPressureLoss3.C1.h_vol: (30/30): (1): splitter21.Cs2.h_vol = singularPressureLoss3.C1.h_vol
@@ -1931,11 +1931,11 @@ echo(false); getErrorString(); echo(true);
 // 139: singularPressureLoss2.C1.h_vol: (71/71): (1): 0.0 = singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol
 // 137: singularPressureLoss2.C1.h: (68/68): (1): singularPressureLoss2.C2.h = singularPressureLoss2.C1.h
 // 131: singularPressureLoss2.C2.h: (17/17): (1): singularPressureLoss2.C2.h = mixer21.Ce1.h
-// 39: mixer21.Ce1.h: (117/126): (1): 0.0 = (mixer21.Ce2.Q * mixer21.Ce2.h + mixer21.Ce1.Q * mixer21.Ce1.h) - mixer21.Cs.Q * mixer21.Cs.h
+// 39: mixer21.Ce1.h: (117/126): (1): 0.0 = (mixer21.Ce2.Q*mixer21.Ce2.h + mixer21.Ce1.Q*mixer21.Ce1.h) - mixer21.Cs.Q*mixer21.Cs.h
 // 40: mixer21.Ce1.Q: (14/14): (1): singularPressureLoss2.C2.Q = mixer21.Ce1.Q
 // 132: singularPressureLoss2.C2.Q: (67/67): (1): singularPressureLoss2.C2.Q = singularPressureLoss2.C1.Q
 // 138: singularPressureLoss2.C1.Q: (20/20): (1): splitter21.Cs1.Q = singularPressureLoss2.C1.Q
-// 80: splitter21.Cs1.Q: (104/104): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal * splitter21.Ce.Q
+// 80: splitter21.Cs1.Q: (104/104): (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal*splitter21.Ce.Q
 // 70: splitter21.Ialpha1.signal: (43/43): (1): constante1.y.signal = splitter21.Ialpha1.signal
 // 24: constante1.y.signal: (122/140): (1): constante1.y.signal = constante1.k
 // 86: splitter21.Ce.Q: (38/38): (1): singularPressureLoss1.C2.Q = splitter21.Ce.Q
@@ -1954,7 +1954,7 @@ echo(false); getErrorString(); echo(true);
 // 79: splitter21.Cs1.h: (23/23): (1): splitter21.Cs1.h = singularPressureLoss2.C1.h
 // Procedure success
 //
-// >>>163: singularPressureLoss1.Q: (62/62): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q) * singularPressureLoss1.Q * singularPressureLoss1.K) / singularPressureLoss1.rho
+// >>>163: singularPressureLoss1.Q: (62/62): (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q)*singularPressureLoss1.Q*singularPressureLoss1.K)/singularPressureLoss1.rho
 // 164: singularPressureLoss1.deltaP: (56/56): (1): singularPressureLoss1.C1.P - singularPressureLoss1.C2.P = singularPressureLoss1.deltaP
 // 152: singularPressureLoss1.C2.P: (37/37): (1): singularPressureLoss1.C2.P = splitter21.Ce.P
 // 88: splitter21.Ce.P: (96/96): (1): splitter21.P = splitter21.Ce.P
@@ -1968,11 +1968,11 @@ echo(false); getErrorString(); echo(true);
 // 116: singularPressureLoss3.C2.P: (76/76): (1): singularPressureLoss3.C1.P - singularPressureLoss3.C2.P = singularPressureLoss3.deltaP
 // 122: singularPressureLoss3.C1.P: (25/25): (1): splitter21.Cs2.P = singularPressureLoss3.C1.P
 // 76: splitter21.Cs2.P: (98/98): (1): splitter21.P = splitter21.Cs2.P
-// 128: singularPressureLoss3.deltaP: (82/82): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q) * singularPressureLoss3.Q * singularPressureLoss3.K) / singularPressureLoss3.rho
+// 128: singularPressureLoss3.deltaP: (82/82): (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q)*singularPressureLoss3.Q*singularPressureLoss3.K)/singularPressureLoss3.rho
 // 126: singularPressureLoss3.rho: (85/85): (1): singularPressureLoss3.rho = 998.0
-// 146: singularPressureLoss2.deltaP: (72/72): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q) * singularPressureLoss2.Q * singularPressureLoss2.K) / singularPressureLoss2.rho
+// 146: singularPressureLoss2.deltaP: (72/72): (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q)*singularPressureLoss2.Q*singularPressureLoss2.K)/singularPressureLoss2.rho
 // 144: singularPressureLoss2.rho: (75/75): (1): singularPressureLoss2.rho = 998.0
-// 158: singularPressureLoss1.C1.P: (63/63): (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P) / 2.0
+// 158: singularPressureLoss1.C1.P: (63/63): (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)/2.0
 // 162: singularPressureLoss1.rho: (65/65): (1): singularPressureLoss1.rho = 998.0
 // Procedure success
 //
@@ -1987,27 +1987,27 @@ echo(false); getErrorString(); echo(true);
 //
 // SET_C (10, 10)
 // ========================================
-// 1/1 (1): singularPressureLoss4.Pm = (singularPressureLoss4.C1.P + singularPressureLoss4.C2.P) / 2.0   [dynamic]
+// 1/1 (1): singularPressureLoss4.Pm = (singularPressureLoss4.C1.P + singularPressureLoss4.C2.P)/2.0   [dynamic]
 // 2/2 (1): singularPressureLoss4.Q = singularPressureLoss4.C1.Q   [dynamic]
-// 3/3 (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P) / 2.0   [dynamic]
+// 3/3 (1): singularPressureLoss3.Pm = (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P)/2.0   [dynamic]
 // 4/4 (1): singularPressureLoss3.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss3.Pm, singularPressureLoss3.T, 1, singularPressureLoss3.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 5/5 (1): singularPressureLoss3.Q = singularPressureLoss3.C1.Q   [dynamic]
-// 6/6 (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P) / 2.0   [dynamic]
+// 6/6 (1): singularPressureLoss2.Pm = (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)/2.0   [dynamic]
 // 7/7 (1): singularPressureLoss2.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss2.Pm, singularPressureLoss2.T, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 8/8 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic]
 // 9/9 (1): singularPressureLoss1.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss1.Pm, singularPressureLoss1.T, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
-// 10/10 (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q) * singularPressureLoss1.Q * singularPressureLoss1.K) / singularPressureLoss1.rho   [dynamic]
+// 10/10 (1): singularPressureLoss1.deltaP = (abs(singularPressureLoss1.Q)*singularPressureLoss1.Q*singularPressureLoss1.K)/singularPressureLoss1.rho   [dynamic]
 //
 //
 // SET_S (61, 61)
 // ========================================
 // 1/1 (1): singularPressureLoss4.rho = 998.0   [dynamic]
-// 2/2 (1): singularPressureLoss4.deltaP = (abs(singularPressureLoss4.Q) * singularPressureLoss4.Q * singularPressureLoss4.K) / singularPressureLoss4.rho   [dynamic]
+// 2/2 (1): singularPressureLoss4.deltaP = (abs(singularPressureLoss4.Q)*singularPressureLoss4.Q*singularPressureLoss4.K)/singularPressureLoss4.rho   [dynamic]
 // 3/3 (1): singularPressureLoss4.C1.P - singularPressureLoss4.C2.P = singularPressureLoss4.deltaP   [dynamic]
 // 4/4 (1): singularPressureLoss3.rho = 998.0   [dynamic]
-// 5/5 (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q) * singularPressureLoss3.Q * singularPressureLoss3.K) / singularPressureLoss3.rho   [dynamic]
+// 5/5 (1): singularPressureLoss3.deltaP = (abs(singularPressureLoss3.Q)*singularPressureLoss3.Q*singularPressureLoss3.K)/singularPressureLoss3.rho   [dynamic]
 // 6/6 (1): singularPressureLoss2.rho = 998.0   [dynamic]
-// 7/7 (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q) * singularPressureLoss2.Q * singularPressureLoss2.K) / singularPressureLoss2.rho   [dynamic]
+// 7/7 (1): singularPressureLoss2.deltaP = (abs(singularPressureLoss2.Q)*singularPressureLoss2.Q*singularPressureLoss2.K)/singularPressureLoss2.rho   [dynamic]
 // 8/8 (1): mixer21.P = mixer21.Ce1.P   [dynamic]
 // 9/9 (1): singularPressureLoss2.C2.P = mixer21.Ce1.P   [dynamic]
 // 10/10 (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP   [dynamic]
@@ -2029,7 +2029,7 @@ echo(false); getErrorString(); echo(true);
 // 26/26 (1): singularPressureLoss1.C2.Q = splitter21.Ce.Q   [dynamic]
 // 27/27 (1): constante1.y.signal = constante1.k   [dynamic]
 // 28/28 (1): constante1.y.signal = splitter21.Ialpha1.signal   [dynamic]
-// 29/29 (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal * splitter21.Ce.Q   [dynamic]
+// 29/29 (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal*splitter21.Ce.Q   [dynamic]
 // 30/30 (1): splitter21.Cs1.Q = singularPressureLoss2.C1.Q   [dynamic]
 // 31/31 (1): singularPressureLoss2.C2.Q = singularPressureLoss2.C1.Q   [dynamic]
 // 32/32 (1): singularPressureLoss2.C2.Q = mixer21.Ce1.Q   [dynamic]
@@ -2040,7 +2040,7 @@ echo(false); getErrorString(); echo(true);
 // 37/37 (1): singularPressureLoss4.h = ThermoSysPro.Properties.Fluid.SpecificEnthalpy_PT(singularPressureLoss4.Pm, singularPressureLoss4.T, 1, singularPressureLoss4.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic]
 // 38/38 (1): singularPressureLoss4.h = singularPressureLoss4.C1.h   [dynamic]
 // 39/39 (1): mixer21.Cs.h = singularPressureLoss4.C1.h   [dynamic]
-// 40/40 (1): 0.0 = (mixer21.Ce2.Q * mixer21.Ce2.h + mixer21.Ce1.Q * mixer21.Ce1.h) - mixer21.Cs.Q * mixer21.Cs.h   [dynamic]
+// 40/40 (1): 0.0 = (mixer21.Ce2.Q*mixer21.Ce2.h + mixer21.Ce1.Q*mixer21.Ce1.h) - mixer21.Cs.Q*mixer21.Cs.h   [dynamic]
 // 41/41 (1): singularPressureLoss2.C2.h = mixer21.Ce1.h   [dynamic]
 // 42/42 (1): singularPressureLoss2.C2.h = singularPressureLoss2.C1.h   [dynamic]
 // 43/43 (1): 0.0 = singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol   [dynamic]
@@ -2053,12 +2053,12 @@ echo(false); getErrorString(); echo(true);
 // 50/50 (1): singularPressureLoss2.h = singularPressureLoss2.C1.h   [dynamic]
 // 51/51 (1): splitter21.Cs1.h = singularPressureLoss2.C1.h   [dynamic]
 // 52/52 (1): splitter21.Cs2.h = singularPressureLoss3.C1.h   [dynamic]
-// 53/53 (1): 0.0 = splitter21.Ce.Q * splitter21.Ce.h - (splitter21.Cs2.Q * splitter21.Cs2.h + splitter21.Cs1.Q * splitter21.Cs1.h)   [dynamic]
+// 53/53 (1): 0.0 = splitter21.Ce.Q*splitter21.Ce.h - (splitter21.Cs2.Q*splitter21.Cs2.h + splitter21.Cs1.Q*splitter21.Cs1.h)   [dynamic]
 // 54/54 (1): singularPressureLoss1.C2.h = splitter21.Ce.h   [dynamic]
 // 55/55 (1): singularPressureLoss1.C2.h = singularPressureLoss1.C1.h   [dynamic]
 // 56/56 (1): singularPressureLoss1.h = singularPressureLoss1.C1.h   [dynamic]
 // 57/57 (1): singularPressureLoss1.rho = 998.0   [dynamic]
-// 58/58 (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P) / 2.0   [dynamic]
+// 58/58 (1): singularPressureLoss1.Pm = (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)/2.0   [dynamic]
 // 59/59 (1): splitter21.P = splitter21.Ce.P   [dynamic]
 // 60/60 (1): singularPressureLoss1.C2.P = splitter21.Ce.P   [dynamic]
 // 61/61 (1): singularPressureLoss1.C1.P - singularPressureLoss1.C2.P = singularPressureLoss1.deltaP   [dynamic]
