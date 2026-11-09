@@ -124,6 +124,7 @@ system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEn
 // Notification: Finished FMU for platform 'static' (1/1).
 // "
 // initial residuals: 0
+// derivatives after events: fresh
 // cnt = 1.0000
 // y = 0.7355
 // 0

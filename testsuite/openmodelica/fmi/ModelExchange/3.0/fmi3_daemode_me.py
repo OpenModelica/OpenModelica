@@ -6,7 +6,8 @@ In DAE mode the importer owns the states, their derivatives and the algebraic
 variables, and solves the residuals that the FMU gives with Newton. In ODE mode
 the FMU solves them. After an event the event indicators are read again, as
 FMI 3.0 says. Prints the residuals after initialization and the variables at
-the stop time.
+the stop time. In ODE mode, also whether the derivatives right after each event
+are those of the new discrete values: the same as a solve forced at that point.
 
 Usage: fmi3_daemode_me.py <fmu> <ode|dae> <stop_time> <steps> <var> [<var> ...]
 """
@@ -78,6 +79,23 @@ def main(fmu, mode, stop, steps, variables):
         inst.getContinuousStateDerivatives(der, nx)
         return u - x - h * np.array(der[:])
 
+    def derivatives():
+        der = (c_double * nx)()
+        inst.getContinuousStateDerivatives(der, nx)
+        return np.array(der[:])
+
+    stale = []
+
+    def check_after_event():
+        """The FMU's derivatives at the event point against a solve forced there:
+        moving the states away and back makes it solve again."""
+        first = derivatives()
+        set_states(x + 1e-3 * (1.0 + np.abs(x)))
+        derivatives()
+        set_states(x)
+        if not np.allclose(first, derivatives(), rtol=1e-8, atol=1e-10):
+            stale.append(t)
+
     for _ in range(steps):
         t += h
         inst.setTime(t)
@@ -102,8 +120,13 @@ def main(fmu, mode, stop, steps, variables):
             inst.enterEventMode()
             event_iteration()
             inst.enterContinuousTimeMode()
+            if not dae:
+                check_after_event()
             ei_new = indicators()
         ei = ei_new
+
+    if not dae:
+        print("derivatives after events: %s" % ("stale at t = %s" % stale if stale else "fresh"))
 
     for name in variables:
         print("%s = %.4f" % (name, inst.getFloat64([vrs[name]])[0]))
