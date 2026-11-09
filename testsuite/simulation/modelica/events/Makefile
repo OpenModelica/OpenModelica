@@ -41,6 +41,7 @@ whenInAlgorithm.mos \
 whenTest1.mos \
 whenTest2.mos \
 ZeroCrossing.mos \
+ZeroCrossingInactiveBranch.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
