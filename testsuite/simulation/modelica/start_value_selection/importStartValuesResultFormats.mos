@@ -1,0 +1,53 @@
+// name:     importStartValuesResultFormats.mos [#14159]
+// keywords: start value selection, initialization file, -iif
+// status:   correct
+// teardown_command: rm -rf importStartValuesResultFormats_model* init_importStartValuesResultFormats.* out_importStartValuesResultFormats_*
+// cflags:
+//
+// -iif accepts result files in every format the simulation writes
+// (.mat, .csv, .plt, .arrow), selected by the file suffix.
+// The .csv results do not store parameters, so p keeps its binding there.
+
+loadString("
+model importStartValuesResultFormats_model
+  Real x(start = 1, fixed = true);
+  parameter Real p = 2;
+equation
+  der(x) = p;
+  annotation(experiment(StopTime = 1));
+end importStartValuesResultFormats_model;
+");getErrorString();
+
+buildModel(importStartValuesResultFormats_model);getErrorString();
+
+for fmt in {"mat", "csv", "plt", "arrow"} loop
+  system(realpath(".") + "/importStartValuesResultFormats_model -override=p=3 -outputFormat=" + fmt
+         + " -r=init_importStartValuesResultFormats." + fmt, "out_importStartValuesResultFormats_init_" + fmt + ".log");
+  system(realpath(".") + "/importStartValuesResultFormats_model -iif=init_importStartValuesResultFormats." + fmt
+         + " -iit=1 -r=out_importStartValuesResultFormats_" + fmt + ".mat", "out_importStartValuesResultFormats_" + fmt + ".log");
+  print(fmt + ": x=" + String(val(x, 0, "out_importStartValuesResultFormats_" + fmt + ".mat"))
+            + ", p=" + String(val(p, 0, "out_importStartValuesResultFormats_" + fmt + ".mat")) + "\n");
+end for;
+getErrorString();
+
+writeFile("init_importStartValuesResultFormats.txt", "");
+system(realpath(".") + "/importStartValuesResultFormats_model -iif=init_importStartValuesResultFormats.txt", "out_importStartValuesResultFormats_txt.log");
+readFile("out_importStartValuesResultFormats_txt.log");
+
+// Result:
+// true
+// ""
+// {"importStartValuesResultFormats_model", "importStartValuesResultFormats_model_init.xml"}
+// ""
+// mat: x=4, p=3
+// csv: x=4, p=2
+// plt: x=4, p=3
+// arrow: x=4, p=3
+//
+// ""
+// true
+// 255
+// "LOG_ASSERT | debug   | unable to read input-file <init_importStartValuesResultFormats.txt> [Unknown result-file suffix of file 'init_importStartValuesResultFormats.txt']
+// LOG_ASSERT | info    | simulation terminated by an assertion at initialization
+// "
+// endResult
