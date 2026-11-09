@@ -170,9 +170,9 @@ SystemSimulationInformationWidget::SystemSimulationInformationWidget(ModelWidget
   mpSolversTable->setSelectionBehavior(QAbstractItemView::SelectRows);
   mpSolversTable->setSelectionMode(QAbstractItemView::SingleSelection);
 
-  mpAddSolverButton    = new QPushButton(tr("Add"));
-  mpRemoveSolverButton = new QPushButton(tr("Remove"));
-  mpEditSolverButton   = new QPushButton(tr("Edit"));
+  mpAddSolverButton    = new QPushButton(Helper::add);
+  mpRemoveSolverButton = new QPushButton(Helper::remove);
+  mpEditSolverButton   = new QPushButton(Helper::edit);
   connect(mpAddSolverButton,    &QPushButton::clicked, this, &SystemSimulationInformationWidget::addSolver);
   connect(mpRemoveSolverButton, &QPushButton::clicked, this, &SystemSimulationInformationWidget::removeSolver);
   connect(mpEditSolverButton,   &QPushButton::clicked, this, &SystemSimulationInformationWidget::editSolverParameters);

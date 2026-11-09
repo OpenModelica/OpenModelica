@@ -166,6 +166,19 @@ static ModelInstance *fmu3InnerComp(fmi3Instance instance)
   return inst ? (ModelInstance *)inst->comp : NULL;
 }
 
+/* Scheduled Execution runs on the Model Exchange code path: after initialization
+   its instance stays in model_state_me_event_mode, which there stands for Clock
+   Activation Mode. Sets the error state and returns true for a call that only
+   Model Exchange or Co-Simulation may make. */
+static fmiXBoolean fmu3InScheduledExecution(fmi3Instance instance, const char *func)
+{
+  ModelInstance3 *inst = (ModelInstance3 *)instance;
+  if (!inst || inst->interfaceType != FMI3_INTERFACE_SE) return fmiXFalse;
+  FILTERED_LOG(inst->comp, fmi3Error, LOG_STATUSERROR, "%s: Illegal call sequence. %s is not allowed in Scheduled Execution.", func, func)
+  inst->comp->state = model_state_error;
+  return fmiXTrue;
+}
+
 /* Generic instantiation shared by ME, CS and SE. */
 static fmi3Instance fmu3InstantiateCommon(int interfaceType, fmi3String instanceName,
     fmi3String instantiationToken, fmi3String resourcePath, fmi3Boolean visible,
@@ -303,7 +316,12 @@ fmi3Status fmi3EnterInitializationMode(fmi3Instance instance, fmi3Boolean tolera
 
 fmi3Status fmi3ExitInitializationMode(fmi3Instance instance)
 {
-  return (fmi3Status)omcExitInitializationMode(fmu3InnerComp(instance));
+  ModelInstance3 *inst = (ModelInstance3 *)instance;
+  fmi3Status status = (fmi3Status)omcExitInitializationMode(fmu3InnerComp(instance));
+  if (inst && inst->eventModeUsed && inst->comp->state == model_state_cs_step_complete) {
+    inst->comp->state = model_state_cs_event_mode;
+  }
+  return status;
 }
 
 fmi3Status fmi3EnterEventMode(fmi3Instance instance)
@@ -311,11 +329,13 @@ fmi3Status fmi3EnterEventMode(fmi3Instance instance)
   ModelInstance3 *inst = (ModelInstance3 *)instance;
   ModelInstance *comp = fmu3InnerComp(instance);
   if (!inst || !comp) return fmi3Error;
+  if (fmu3InScheduledExecution(instance, "fmi3EnterEventMode")) return fmi3Error;
+  /* Only from Step Mode, and only for an importer that said it uses Event Mode. */
+  if (invalidState(comp, "fmi3EnterEventMode", model_state_me_continuous_time_mode,
+      inst->eventModeUsed ? model_state_cs_step_complete : 0))
+    return fmi3Error;
   if (inst->interfaceType == FMI3_INTERFACE_CS) {
-    /* Co-Simulation with Event Mode: the instance stays in Step Mode
-       (model_state_cs_step_complete); the event is resolved by the following
-       fmi3UpdateDiscreteStates calls, which drive the event iteration directly
-       (the Model-Exchange Event Mode state is not valid for a CS instance). */
+    comp->state = model_state_cs_event_mode;
     return fmi3OK;
   }
   return (fmi3Status)omcEnterEventMode(comp);
@@ -330,7 +350,6 @@ fmi3Status fmi3Reset(fmi3Instance instance)
 {
   ModelInstance *comp = fmu3InnerComp(instance);
   if (comp) {
-    comp->configuring = fmi3False;
     comp->daeMode = fmi3False;
   }
   return (fmi3Status)omcReset(comp);
@@ -400,6 +419,20 @@ static size_t fmi3NumValues(const fmi3ValueReference valueReferences[], size_t n
   return n;
 }
 
+/* invalidState for fmi3Set{VariableType}. Configuration Mode takes structural
+ * parameters only, the only one being fmi-ls-dae's switch (isDAEModeVR): any
+ * other variable is refused there, while a call with none is legal. */
+static int fmu3InvalidSet(ModelInstance *comp, const char *func, int meStates, int csStates,
+    const fmi3ValueReference valueReferences[], size_t nValueReferences)
+{
+  size_t i;
+  if (comp->state == model_state_configuration_mode) {
+    for (i = 0; i < nValueReferences && isDAEModeVR(valueReferences[i]); i++);
+    if (i == nValueReferences) return 0;
+  }
+  return invalidState(comp, func, meStates, csStates);
+}
+
 fmi3Status fmi3GetFloat64(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, fmi3Float64 values[], size_t nValues)
 {
@@ -408,6 +441,7 @@ fmi3Status fmi3GetFloat64(fmi3Instance instance, const fmi3ValueReference valueR
   if (!comp) {
     return fmi3Error;
   }
+  if (invalidState(comp, "fmi3GetFloat64", GET_ME_STATES, GET_CS_STATES)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     fmi3ValueReference vr = valueReferences[i];
@@ -421,8 +455,17 @@ fmi3Status fmi3GetFloat64(fmi3Instance instance, const fmi3ValueReference valueR
         if (s > fmi3Warning) return s;
       } else if (evr >= (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START) {
 #if NUMBER_OF_EVENT_INDICATORS > 0
+        /* Not omcGetEventIndicators, which is Model Exchange only: these are
+           ordinary variables here, whatever the interface. */
         fmi3Float64 ei[NUMBER_OF_EVENT_INDICATORS];
-        fmi3Status s = omcGetEventIndicators((ModelInstance*)comp, ei, NUMBER_OF_EVENT_INDICATORS);
+        fmi3Status s;
+        if (evr - (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START >= NUMBER_OF_EVENT_INDICATORS) return fmi3Error;
+        /* Instantiated: the stored value, as nothing is evaluated before initialization. */
+        if (comp->state == model_state_instantiated) {
+          values[k] = (fmi3Float64)comp->fmuData->simulationInfo->zeroCrossings[evr - (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START];
+          continue;
+        }
+        s = internalGetEventIndicators((ModelInstance*)comp, "fmi3GetFloat64", ei, NUMBER_OF_EVENT_INDICATORS);
         if (s > fmi3Warning) return (fmi3Status)s;
         values[k] = (fmi3Float64)ei[evr - (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START];
 #else
@@ -446,6 +489,7 @@ fmi3Status fmi3GetInt32(fmi3Instance instance, const fmi3ValueReference valueRef
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (invalidState(c, "fmi3GetInt32", GET_ME_STATES, GET_CS_STATES)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     size_t cnt = fmi3ArrayLength(valueReferences[i]);
@@ -466,6 +510,7 @@ fmi3Status fmi3GetBoolean(fmi3Instance instance, const fmi3ValueReference valueR
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (invalidState(c, "fmi3GetBoolean", GET_ME_STATES, GET_CS_STATES)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     size_t cnt = fmi3ArrayLength(valueReferences[i]);
@@ -490,6 +535,7 @@ fmi3Status fmi3GetString(fmi3Instance instance, const fmi3ValueReference valueRe
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (invalidState(c, "fmi3GetString", GET_ME_STATES, GET_CS_STATES)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     size_t cnt = fmi3ArrayLength(valueReferences[i]);
@@ -510,6 +556,7 @@ fmi3Status fmi3SetFloat64(fmi3Instance instance, const fmi3ValueReference valueR
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (fmu3InvalidSet(c, "fmi3SetFloat64", SET_REAL_ME_STATES, SET_REAL_CS_STATES, valueReferences, nValueReferences)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     fmi3ValueReference vr = valueReferences[i];
@@ -537,6 +584,7 @@ fmi3Status fmi3SetInt32(fmi3Instance instance, const fmi3ValueReference valueRef
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (fmu3InvalidSet(c, "fmi3SetInt32", SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES, valueReferences, nValueReferences)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     size_t cnt = fmi3ArrayLength(valueReferences[i]);
@@ -556,6 +604,7 @@ fmi3Status fmi3SetBoolean(fmi3Instance instance, const fmi3ValueReference valueR
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (fmu3InvalidSet(c, "fmi3SetBoolean", SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES, valueReferences, nValueReferences)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     size_t cnt = fmi3ArrayLength(valueReferences[i]);
@@ -563,7 +612,7 @@ fmi3Status fmi3SetBoolean(fmi3Instance instance, const fmi3ValueReference valueR
       fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_BOOLEAN_VR_OFFSET);
       fmi3Boolean value = values[k] ? fmi3True : fmi3False;
       if (isDAEModeVR(valueReferences[i] + j)) {
-        if (!c->configuring) {
+        if (c->state != model_state_configuration_mode) {
           FILTERED_LOG(c, fmi3Error, LOG_STATUSERROR, "fmi3SetBoolean: fmi-ls-dae: the DAE-mode parameter can only be set in Configuration Mode.")
           return fmi3Error;
         }
@@ -583,6 +632,7 @@ fmi3Status fmi3SetString(fmi3Instance instance, const fmi3ValueReference valueRe
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (fmu3InvalidSet(c, "fmi3SetString", SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES, valueReferences, nValueReferences)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     size_t cnt = fmi3ArrayLength(valueReferences[i]);
@@ -604,13 +654,19 @@ fmi3Status fmi3SetString(fmi3Instance instance, const fmi3ValueReference valueRe
 #define FMU3_UNSUPPORTED_GETSET(NAME, CTYPE)                                                   \
 fmi3Status NAME(fmi3Instance instance, const fmi3ValueReference valueReferences[],             \
     size_t nValueReferences, CTYPE values[], size_t nValues) {                                 \
-  (void)instance; (void)valueReferences; (void)values; (void)nValues;                         \
+  ModelInstance* c = fmu3InnerComp(instance);                                                  \
+  (void)valueReferences; (void)values; (void)nValues;                                          \
+  if (!c) return fmi3Error;                                                                    \
+  if (invalidState(c, #NAME, GET_ME_STATES, GET_CS_STATES)) return fmi3Error;                  \
   return nValueReferences == 0 ? fmi3OK : fmi3Error;                                           \
 }
-#define FMU3_UNSUPPORTED_SET(NAME, CTYPE)                                                      \
+#define FMU3_UNSUPPORTED_SET(NAME, CTYPE, ME_STATES, CS_STATES)                                \
 fmi3Status NAME(fmi3Instance instance, const fmi3ValueReference valueReferences[],             \
     size_t nValueReferences, const CTYPE values[], size_t nValues) {                           \
-  (void)instance; (void)valueReferences; (void)values; (void)nValues;                         \
+  ModelInstance* c = fmu3InnerComp(instance);                                                  \
+  (void)valueReferences; (void)values; (void)nValues;                                          \
+  if (!c) return fmi3Error;                                                                    \
+  if (fmu3InvalidSet(c, #NAME, ME_STATES, CS_STATES, valueReferences, nValueReferences)) return fmi3Error;      \
   return nValueReferences == 0 ? fmi3OK : fmi3Error;                                           \
 }
 
@@ -621,13 +677,13 @@ FMU3_UNSUPPORTED_GETSET(fmi3GetInt16,  fmi3Int16)
 FMU3_UNSUPPORTED_GETSET(fmi3GetUInt16, fmi3UInt16)
 FMU3_UNSUPPORTED_GETSET(fmi3GetUInt32, fmi3UInt32)
 FMU3_UNSUPPORTED_GETSET(fmi3GetUInt64, fmi3UInt64)
-FMU3_UNSUPPORTED_SET(fmi3SetFloat32, fmi3Float32)
-FMU3_UNSUPPORTED_SET(fmi3SetInt8,   fmi3Int8)
-FMU3_UNSUPPORTED_SET(fmi3SetUInt8,  fmi3UInt8)
-FMU3_UNSUPPORTED_SET(fmi3SetInt16,  fmi3Int16)
-FMU3_UNSUPPORTED_SET(fmi3SetUInt16, fmi3UInt16)
-FMU3_UNSUPPORTED_SET(fmi3SetUInt32, fmi3UInt32)
-FMU3_UNSUPPORTED_SET(fmi3SetUInt64, fmi3UInt64)
+FMU3_UNSUPPORTED_SET(fmi3SetFloat32, fmi3Float32, SET_REAL_ME_STATES, SET_REAL_CS_STATES)
+FMU3_UNSUPPORTED_SET(fmi3SetInt8,   fmi3Int8,   SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES)
+FMU3_UNSUPPORTED_SET(fmi3SetUInt8,  fmi3UInt8,  SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES)
+FMU3_UNSUPPORTED_SET(fmi3SetInt16,  fmi3Int16,  SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES)
+FMU3_UNSUPPORTED_SET(fmi3SetUInt16, fmi3UInt16, SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES)
+FMU3_UNSUPPORTED_SET(fmi3SetUInt32, fmi3UInt32, SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES)
+FMU3_UNSUPPORTED_SET(fmi3SetUInt64, fmi3UInt64, SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES)
 
 /* Modelica enumeration variables are exported as FMI 3.0 <Enumeration>, which
  * are accessed through fmi3Get/SetInt64. OpenModelica stores enumerations in the
@@ -640,6 +696,7 @@ fmi3Status fmi3GetInt64(fmi3Instance instance, const fmi3ValueReference valueRef
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (invalidState(c, "fmi3GetInt64", GET_ME_STATES, GET_CS_STATES)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     size_t cnt = fmi3ArrayLength(valueReferences[i]);
@@ -660,6 +717,7 @@ fmi3Status fmi3SetInt64(fmi3Instance instance, const fmi3ValueReference valueRef
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (fmu3InvalidSet(c, "fmi3SetInt64", SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES, valueReferences, nValueReferences)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     size_t cnt = fmi3ArrayLength(valueReferences[i]);
@@ -684,6 +742,7 @@ fmi3Status fmi3GetBinary(fmi3Instance instance, const fmi3ValueReference valueRe
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i;
   if (!c) return fmi3Error;
+  if (invalidState(c, "fmi3GetBinary", GET_ME_STATES, GET_CS_STATES)) return fmi3Error;
   if (nValueReferences > 0 && (nullPointer(c, "fmi3GetBinary", "vr[]", valueReferences) ||
       nullPointer(c, "fmi3GetBinary", "valueSizes[]", valueSizes) ||
       nullPointer(c, "fmi3GetBinary", "values[]", values)))
@@ -709,6 +768,7 @@ fmi3Status fmi3SetBinary(fmi3Instance instance, const fmi3ValueReference valueRe
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i;
   if (!c) return fmi3Error;
+  if (fmu3InvalidSet(c, "fmi3SetBinary", SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES, valueReferences, nValueReferences)) return fmi3Error;
   if (nValueReferences > 0 && (nullPointer(c, "fmi3SetBinary", "vr[]", valueReferences) ||
       nullPointer(c, "fmi3SetBinary", "valueSizes[]", valueSizes) ||
       nullPointer(c, "fmi3SetBinary", "values[]", values)))
@@ -744,6 +804,9 @@ fmi3Status fmi3GetClock(fmi3Instance instance, const fmi3ValueReference valueRef
   size_t i;
   double t, d;
   if (!c) return fmi3Error;
+  /* Scheduled Execution reads Clocks in Clock Update Mode, which this FMU never enters. */
+  if (fmu3InScheduledExecution(instance, "fmi3GetClock")) return fmi3Error;
+  if (invalidState(c, "fmi3GetClock", model_state_me_event_mode, model_state_cs_event_mode)) return fmi3Error;
   if (nValueReferences > 0 && (nullPointer(c, "fmi3GetClock", "vr[]", valueReferences) ||
       nullPointer(c, "fmi3GetClock", "values[]", values)))
     return fmi3Error;
@@ -767,7 +830,9 @@ fmi3Status fmi3GetClock(fmi3Instance instance, const fmi3ValueReference valueRef
 fmi3Status fmi3SetClock(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, const fmi3Clock values[])
 {
-  (void)instance; (void)valueReferences; (void)values;
+  (void)valueReferences; (void)values;
+  if (fmu3InScheduledExecution(instance, "fmi3SetClock")) return fmi3Error;
+  if (invalidState(fmu3InnerComp(instance), "fmi3SetClock", model_state_me_event_mode, model_state_cs_event_mode)) return fmi3Error;
   return nValueReferences == 0 ? fmi3OK : fmi3Error;
 }
 
@@ -860,6 +925,7 @@ fmi3Status fmi3GetDirectionalDerivative(fmi3Instance instance, const fmi3ValueRe
   fmi3ValueReference *u, *k;
   fmi3Status status;
   if (!c) return fmi3Error;
+  if (invalidState(c, "fmi3GetDirectionalDerivative", DERIVATIVE_ME_STATES, DERIVATIVE_CS_STATES)) return fmi3Error;
   if (nUnknowns == 0) return fmi3OK;
   if (nullPointer(c, "fmi3GetDirectionalDerivative", "unknowns", unknowns) ||
       nullPointer(c, "fmi3GetDirectionalDerivative", "knowns", knowns) ||
@@ -887,31 +953,52 @@ fmi3Status fmi3GetAdjointDerivative(fmi3Instance instance, const fmi3ValueRefere
     size_t nUnknowns, const fmi3ValueReference knowns[], size_t nKnowns, const fmi3Float64 seed[],
     size_t nSeed, fmi3Float64 sensitivity[], size_t nSensitivity)
 {
-  (void)instance; (void)unknowns; (void)nUnknowns; (void)knowns; (void)nKnowns;
+  ModelInstance* c = fmu3InnerComp(instance);
+  (void)unknowns; (void)nUnknowns; (void)knowns; (void)nKnowns;
   (void)seed; (void)nSeed; (void)sensitivity; (void)nSensitivity;
+  if (c) invalidState(c, "fmi3GetAdjointDerivative", DERIVATIVE_ME_STATES, DERIVATIVE_CS_STATES);
   return fmi3Error;
 }
 
 /* ---------------------------------------------------------------------------
- * Configuration Mode: fmi-ls-dae's structural parameter
+ * Configuration Mode. Every structural parameter of an exported FMU is `fixed`,
+ * so it is only open from Instantiated: there is no Reconfiguration Mode, which
+ * a `tunable` one would need, from Event Mode or Step Mode. FMI 3.0 forbids
+ * entering it on an FMU without a structural parameter. The only one is
+ * fmi-ls-dae's switch, which a --daeMode FMU declares.
  * ------------------------------------------------------------------------- */
+static fmi3Boolean fmu3HasStructuralParameters(void)
+{
+#ifdef OMC_FMI_LS_DAE
+  return compiledInDAEMode ? fmi3True : fmi3False;
+#else
+  return fmi3False;
+#endif
+}
+
 fmi3Status fmi3EnterConfigurationMode(fmi3Instance instance)
 {
   ModelInstance *comp = fmu3InnerComp(instance);
-  if (!comp || invalidState(comp, "fmi3EnterConfigurationMode", model_state_instantiated, model_state_instantiated) || comp->configuring) {
+  if (!comp) return fmi3Error;
+  if (!fmu3HasStructuralParameters()) {
+    FILTERED_LOG(comp, fmi3Error, LOG_STATUSERROR, "fmi3EnterConfigurationMode: Illegal call sequence. fmi3EnterConfigurationMode is not allowed for an FMU without a structural parameter.")
+    comp->state = model_state_error;
     return fmi3Error;
   }
-  comp->configuring = fmi3True;
+  if (invalidState(comp, "fmi3EnterConfigurationMode", model_state_instantiated, model_state_instantiated))
+    return fmi3Error;
+  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "fmi3EnterConfigurationMode")
+  comp->state = model_state_configuration_mode;
   return fmi3OK;
 }
 
 fmi3Status fmi3ExitConfigurationMode(fmi3Instance instance)
 {
   ModelInstance *comp = fmu3InnerComp(instance);
-  if (!comp || !comp->configuring) {
+  if (invalidState(comp, "fmi3ExitConfigurationMode", model_state_configuration_mode, model_state_configuration_mode))
     return fmi3Error;
-  }
-  comp->configuring = fmi3False;
+  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "fmi3ExitConfigurationMode")
+  comp->state = model_state_instantiated;
   return fmi3OK;
 }
 
@@ -924,6 +1011,7 @@ fmi3Status fmi3GetIntervalDecimal(fmi3Instance instance, const fmi3ValueReferenc
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i;
   if (!c) return fmi3Error;
+  if (invalidState(c, "fmi3GetIntervalDecimal", model_state_initialization_mode|model_state_me_event_mode, model_state_initialization_mode|model_state_cs_event_mode)) return fmi3Error;
   if (nValueReferences > 0 && (nullPointer(c, "fmi3GetIntervalDecimal", "vr[]", valueReferences) ||
       nullPointer(c, "fmi3GetIntervalDecimal", "intervals[]", intervals)))
     return fmi3Error;
@@ -954,6 +1042,7 @@ fmi3Status fmi3GetIntervalFraction(fmi3Instance instance, const fmi3ValueReferen
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i;
   if (!c) return fmi3Error;
+  if (invalidState(c, "fmi3GetIntervalFraction", model_state_initialization_mode|model_state_me_event_mode, model_state_initialization_mode|model_state_cs_event_mode)) return fmi3Error;
   if (nValueReferences > 0 && (nullPointer(c, "fmi3GetIntervalFraction", "vr[]", valueReferences) ||
       nullPointer(c, "fmi3GetIntervalFraction", "counters[]", counters) ||
       nullPointer(c, "fmi3GetIntervalFraction", "resolutions[]", resolutions)))
@@ -975,31 +1064,58 @@ fmi3Status fmi3GetIntervalFraction(fmi3Instance instance, const fmi3ValueReferen
 
 fmi3Status fmi3GetShiftDecimal(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, fmi3Float64 shifts[])
-{ (void)instance; (void)valueReferences; (void)shifts; return nValueReferences == 0 ? fmi3OK : fmi3Error; }
+{
+  (void)valueReferences; (void)shifts;
+  if (invalidState(fmu3InnerComp(instance), "fmi3GetShiftDecimal", model_state_initialization_mode, model_state_initialization_mode)) return fmi3Error;
+  return nValueReferences == 0 ? fmi3OK : fmi3Error;
+}
 
 fmi3Status fmi3GetShiftFraction(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, fmi3UInt64 counters[], fmi3UInt64 resolutions[])
-{ (void)instance; (void)valueReferences; (void)counters; (void)resolutions; return nValueReferences == 0 ? fmi3OK : fmi3Error; }
+{
+  (void)valueReferences; (void)counters; (void)resolutions;
+  if (invalidState(fmu3InnerComp(instance), "fmi3GetShiftFraction", model_state_initialization_mode, model_state_initialization_mode)) return fmi3Error;
+  return nValueReferences == 0 ? fmi3OK : fmi3Error;
+}
 
 fmi3Status fmi3SetIntervalDecimal(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, const fmi3Float64 intervals[])
-{ (void)instance; (void)valueReferences; (void)intervals; return nValueReferences == 0 ? fmi3OK : fmi3Error; }
+{
+  (void)valueReferences; (void)intervals;
+  if (invalidState(fmu3InnerComp(instance), "fmi3SetIntervalDecimal", model_state_initialization_mode, model_state_initialization_mode)) return fmi3Error;
+  return nValueReferences == 0 ? fmi3OK : fmi3Error;
+}
 
 fmi3Status fmi3SetIntervalFraction(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, const fmi3UInt64 counters[], const fmi3UInt64 resolutions[])
-{ (void)instance; (void)valueReferences; (void)counters; (void)resolutions; return nValueReferences == 0 ? fmi3OK : fmi3Error; }
+{
+  (void)valueReferences; (void)counters; (void)resolutions;
+  if (invalidState(fmu3InnerComp(instance), "fmi3SetIntervalFraction", model_state_initialization_mode, model_state_initialization_mode)) return fmi3Error;
+  return nValueReferences == 0 ? fmi3OK : fmi3Error;
+}
 
 fmi3Status fmi3SetShiftDecimal(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, const fmi3Float64 shifts[])
-{ (void)instance; (void)valueReferences; (void)shifts; return nValueReferences == 0 ? fmi3OK : fmi3Error; }
+{
+  (void)valueReferences; (void)shifts;
+  if (invalidState(fmu3InnerComp(instance), "fmi3SetShiftDecimal", model_state_initialization_mode, model_state_initialization_mode)) return fmi3Error;
+  return nValueReferences == 0 ? fmi3OK : fmi3Error;
+}
 
 fmi3Status fmi3SetShiftFraction(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, const fmi3UInt64 counters[], const fmi3UInt64 resolutions[])
-{ (void)instance; (void)valueReferences; (void)counters; (void)resolutions; return nValueReferences == 0 ? fmi3OK : fmi3Error; }
+{
+  (void)valueReferences; (void)counters; (void)resolutions;
+  if (invalidState(fmu3InnerComp(instance), "fmi3SetShiftFraction", model_state_initialization_mode, model_state_initialization_mode)) return fmi3Error;
+  return nValueReferences == 0 ? fmi3OK : fmi3Error;
+}
 
 fmi3Status fmi3EvaluateDiscreteStates(fmi3Instance instance)
 {
-  (void)instance;
+  ModelInstance *comp = fmu3InnerComp(instance);
+  if (!comp) return fmi3Error;
+  if (fmu3InScheduledExecution(instance, "fmi3EvaluateDiscreteStates")) return fmi3Error;
+  if (invalidState(comp, "fmi3EvaluateDiscreteStates", model_state_me_event_mode, model_state_cs_event_mode)) return fmi3Error;
   return fmi3OK;
 }
 
@@ -1013,12 +1129,13 @@ fmi3Status fmi3UpdateDiscreteStates(fmi3Instance instance, fmi3Boolean* discrete
   EventInfo eventInfo;
   fmi3Status status;
   if (!inst || !c) return fmi3Error;
+  if (fmu3InScheduledExecution(instance, "fmi3UpdateDiscreteStates")) return fmi3Error;
+  if (invalidState(c, "fmi3UpdateDiscreteStates", model_state_me_event_mode, model_state_cs_event_mode)) return fmi3Error;
   memset(&eventInfo, 0, sizeof(eventInfo));
   if (inst->interfaceType == FMI3_INTERFACE_CS) {
-    /* Co-Simulation Event Mode: run one event-update iteration directly. The
-       instance stays in Step Mode, so the Model-Exchange-only state checks of
-       omcNewDiscreteStates must be bypassed. Carry over any pending next event
-       time so time events keep being scheduled. */
+    /* Co-Simulation Event Mode: run one event-update iteration directly, since
+       omcNewDiscreteStates is Model Exchange only. Carry over any pending next
+       event time so time events keep being scheduled. */
     ModelInstance *comp = (ModelInstance *)c;
     eventInfo.nextEventTimeDefined = comp->eventInfo.nextEventTimeDefined;
     eventInfo.nextEventTime        = comp->eventInfo.nextEventTime;
@@ -1041,6 +1158,7 @@ fmi3Status fmi3UpdateDiscreteStates(fmi3Instance instance, fmi3Boolean* discrete
  * ------------------------------------------------------------------------- */
 fmi3Status fmi3EnterContinuousTimeMode(fmi3Instance instance)
 {
+  if (fmu3InScheduledExecution(instance, "fmi3EnterContinuousTimeMode")) return fmi3Error;
   return (fmi3Status)omcEnterContinuousTimeMode(fmu3InnerComp(instance));
 }
 
@@ -1050,7 +1168,9 @@ fmi3Status fmi3CompletedIntegratorStep(fmi3Instance instance, fmi3Boolean noSetF
   ModelInstance* c = fmu3InnerComp(instance);
   fmi3Boolean enterEventMode2 = fmi3False;
   fmi3Boolean terminate2 = fmi3False;
-  fmi3Status status = omcCompletedIntegratorStep(c, noSetFMUStatePriorToCurrentPoint, &enterEventMode2, &terminate2);
+  fmi3Status status;
+  if (fmu3InScheduledExecution(instance, "fmi3CompletedIntegratorStep")) return fmi3Error;
+  status = omcCompletedIntegratorStep(c, noSetFMUStatePriorToCurrentPoint, &enterEventMode2, &terminate2);
   if (enterEventMode)      *enterEventMode = enterEventMode2 ? fmi3True : fmi3False;
   if (terminateSimulation) *terminateSimulation = terminate2 ? fmi3True : fmi3False;
   return (fmi3Status)status;
@@ -1058,37 +1178,44 @@ fmi3Status fmi3CompletedIntegratorStep(fmi3Instance instance, fmi3Boolean noSetF
 
 fmi3Status fmi3SetTime(fmi3Instance instance, fmi3Float64 time)
 {
+  if (fmu3InScheduledExecution(instance, "fmi3SetTime")) return fmi3Error;
   return (fmi3Status)omcSetTime(fmu3InnerComp(instance), (fmi3Float64)time);
 }
 
 fmi3Status fmi3SetContinuousStates(fmi3Instance instance, const fmi3Float64 continuousStates[], size_t nContinuousStates)
 {
+  if (fmu3InScheduledExecution(instance, "fmi3SetContinuousStates")) return fmi3Error;
   return (fmi3Status)omcSetContinuousStates(fmu3InnerComp(instance), (const fmi3Float64*)continuousStates, nContinuousStates);
 }
 
 fmi3Status fmi3GetContinuousStateDerivatives(fmi3Instance instance, fmi3Float64 derivatives[], size_t nContinuousStates)
 {
+  if (fmu3InScheduledExecution(instance, "fmi3GetContinuousStateDerivatives")) return fmi3Error;
   return (fmi3Status)omcGetDerivatives(fmu3InnerComp(instance), (fmi3Float64*)derivatives, nContinuousStates);
 }
 
 fmi3Status fmi3GetEventIndicators(fmi3Instance instance, fmi3Float64 eventIndicators[], size_t nEventIndicators)
 {
+  if (fmu3InScheduledExecution(instance, "fmi3GetEventIndicators")) return fmi3Error;
   return (fmi3Status)omcGetEventIndicators(fmu3InnerComp(instance), (fmi3Float64*)eventIndicators, nEventIndicators);
 }
 
 fmi3Status fmi3GetContinuousStates(fmi3Instance instance, fmi3Float64 continuousStates[], size_t nContinuousStates)
 {
+  if (fmu3InScheduledExecution(instance, "fmi3GetContinuousStates")) return fmi3Error;
   return (fmi3Status)omcGetContinuousStates(fmu3InnerComp(instance), (fmi3Float64*)continuousStates, nContinuousStates);
 }
 
 fmi3Status fmi3GetNominalsOfContinuousStates(fmi3Instance instance, fmi3Float64 nominals[], size_t nContinuousStates)
 {
+  if (fmu3InScheduledExecution(instance, "fmi3GetNominalsOfContinuousStates")) return fmi3Error;
   return (fmi3Status)omcGetNominalsOfContinuousStates(fmu3InnerComp(instance), (fmi3Float64*)nominals, nContinuousStates);
 }
 
 fmi3Status fmi3GetNumberOfEventIndicators(fmi3Instance instance, size_t* nEventIndicators)
 {
-  (void)instance;
+  if (fmu3InScheduledExecution(instance, "fmi3GetNumberOfEventIndicators")) return fmi3Error;
+  if (invalidState(fmu3InnerComp(instance), "fmi3GetNumberOfEventIndicators", model_state_instantiated|model_state_me_event_mode, 0)) return fmi3Error;
   if (!nEventIndicators) return fmi3Error;
   *nEventIndicators = (size_t)NUMBER_OF_EVENT_INDICATORS;
   return fmi3OK;
@@ -1096,7 +1223,8 @@ fmi3Status fmi3GetNumberOfEventIndicators(fmi3Instance instance, size_t* nEventI
 
 fmi3Status fmi3GetNumberOfContinuousStates(fmi3Instance instance, size_t* nContinuousStates)
 {
-  (void)instance;
+  if (fmu3InScheduledExecution(instance, "fmi3GetNumberOfContinuousStates")) return fmi3Error;
+  if (invalidState(fmu3InnerComp(instance), "fmi3GetNumberOfContinuousStates", model_state_instantiated|model_state_me_event_mode, 0)) return fmi3Error;
   if (!nContinuousStates) return fmi3Error;
   *nContinuousStates = (size_t)NUMBER_OF_STATES;
   return fmi3OK;
@@ -1109,8 +1237,9 @@ fmi3Status fmi3EnterStepMode(fmi3Instance instance)
 {
   ModelInstance *comp = fmu3InnerComp(instance);
   if (!comp) return fmi3Error;
-  /* The Co-Simulation instance never left Step Mode (model_state_cs_step_complete).
-     Inputs and states can change discontinuously in Event Mode (FMI 3.0 4.1.1),
+  if (invalidState(comp, "fmi3EnterStepMode", 0, model_state_cs_event_mode)) return fmi3Error;
+  comp->state = model_state_cs_step_complete;
+  /* Inputs and states can change discontinuously in Event Mode (FMI 3.0 4.1.1),
      so the solver restarts. */
   if (comp->solverInfo) {
     comp->solverInfo->didEventStep = 1;
@@ -1125,6 +1254,7 @@ fmi3Status fmi3GetOutputDerivatives(fmi3Instance instance, const fmi3ValueRefere
   size_t i;
   (void)nValues;
   if (!c) return fmi3Error;
+  if (invalidState(c, "fmi3GetOutputDerivatives", 0, GET_OUTPUT_DERIVATIVES_CS_STATES)) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     fmi3ValueReference lvr = (fmi3ValueReference)(valueReferences[i] - FMI3_REAL_VR_OFFSET);
     fmi3Int32 order = (fmi3Int32)orders[i];
@@ -1182,6 +1312,10 @@ fmi3Status fmi3ActivateModelPartition(fmi3Instance instance, fmi3ValueReference 
   if (!comp) {
     return fmi3Error;
   }
+  /* Clock Activation Mode, see fmu3InScheduledExecution. */
+  if (invalidState(comp, "fmi3ActivateModelPartition",
+      ((ModelInstance3 *)instance)->interfaceType == FMI3_INTERFACE_SE ? model_state_me_event_mode : 0, 0))
+    return fmi3Error;
 
   lvr = (fmi3ValueReference)(clockReference - FMI3_CLOCK_VR_OFFSET);
   if (lvr >= (fmi3ValueReference)comp->fmuData->modelData->nBaseClocks) {

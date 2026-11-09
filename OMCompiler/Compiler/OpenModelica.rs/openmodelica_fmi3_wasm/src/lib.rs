@@ -339,11 +339,11 @@ pub fn log_solver_assert(nonlinear: bool, msg: &str) {
     fmi_log(Status::Ok, if nonlinear { CAT_NONLINEAR } else { CAT_ALL }, msg);
 }
 
-/// C's `FILTERED_LOG` / `isCategoryLogged`. The reason a call fails is not
-/// filtered: the status alone tells the importer nothing.
+/// C's `FILTERED_LOG` / `isCategoryLogged`. FMI 3.0 forbids a call of
+/// `logMessage` for a category that is not enabled, also for an error.
 fn fmi_log(status: Status, cat: u32, msg: &str) {
     let cats = logger().cats;
-    if matches!(status, Status::Error | Status::Fatal) || cats & (1 << cat) != 0 || cats & (1 << CAT_ALL) != 0 {
+    if cats & (1 << cat) != 0 || cats & (1 << CAT_ALL) != 0 {
         log_raw(status, cat, msg);
     }
 }
@@ -1005,11 +1005,14 @@ impl<E: FmiHost + 'static> MeState<E> {
         let f = slot.map_or(0, |s| deps.flags(s));
         // fmi-ls-dae: the importer solves for the algebraic variables and sets them.
         let dae_unknown = self.dae_mode && slot.is_some_and(|s| s % 8 == 0) && !param_deps::is_param(&self.layout, off);
+        // FMI 2.0.1 and later, and FMI 3.0.2: also a continuous-time state may be set in
+        // Continuous-Time Mode. The states come first among the Reals.
+        let state = off >= REAL_OFF && (off - REAL_OFF) / 8 < self.layout.n_states;
         let ok = match self.mode {
             Mode::Instantiated => f & (INITIAL_EXACT | INITIAL_APPROX | INPUT) != 0,
             Mode::Init => f & (INITIAL_EXACT | INPUT) != 0,
             Mode::Ready if dae_unknown => true,
-            Mode::Ready if self.continuous_time => f & INPUT != 0 && f & CONTINUOUS != 0,
+            Mode::Ready if self.continuous_time => state || (f & INPUT != 0 && f & CONTINUOUS != 0),
             Mode::Ready => f & (INPUT | TUNABLE) != 0,
         };
         let Some(s) = slot.filter(|_| ok) else {
@@ -1142,8 +1145,8 @@ impl<E: FmiHost + 'static> MeState<E> {
     /// `F` back; in ODE mode the model owes it `x'` and `z`, solved for here.
     fn eval(&mut self) -> driver::Result<()> {
         let e = &mut self.engine;
-        if self.layout.dae_mode() {
-            if !self.dae_mode && !self.dae_current {
+        if self.layout.compiled_dae_mode {
+            if self.layout.dae_mode() && !self.dae_mode && !self.dae_current {
                 let dae = self
                     .meta
                     .dae
@@ -1164,7 +1167,7 @@ impl<E: FmiHost + 'static> MeState<E> {
     /// `functionODE` for the derivatives and the event indicators: a `--daeMode`
     /// model has no such partial evaluation, so it evaluates whole.
     fn eval_ode(&mut self) -> Result<(), Status> {
-        if self.layout.dae_mode() {
+        if self.layout.compiled_dae_mode {
             return self.update_if_needed();
         }
         self.evaluate(|m| {
@@ -1253,7 +1256,8 @@ impl<E: FmiHost + 'static> MeState<E> {
     /// C's `updateIfNeeded`. In Initialization Mode the update is the initial
     /// solve, with the sets made so far as start values.
     fn update_if_needed(&mut self) -> Result<(), Status> {
-        if !self.need_update {
+        // Instantiated has start values only: nothing is evaluated before initialization.
+        if !self.need_update || self.mode == Mode::Instantiated {
             return Ok(());
         }
         // The point moved, so a Jacobian assembled at the old one is stale.
@@ -2792,6 +2796,17 @@ impl<E: FmiHost + 'static> Instance<E> {
             driver::log_cs_solver_setup(&st.meta);
         }
         Some(inst)
+    }
+
+    /// Whether the FMU has a structural parameter: only fmi-ls-dae's switch.
+    pub fn has_structural_parameters(&self) -> bool {
+        self.st.borrow().dae_enable_vr != 0
+    }
+
+    /// Whether `vr` is a structural parameter, all Configuration Mode may set.
+    pub fn is_structural_parameter(&self, vr: u32) -> bool {
+        let st = self.st.borrow();
+        vr != 0 && vr == st.dae_enable_vr
     }
 
     /// C's `fmi3ActivateModelPartition`: the importer owns the schedule, so the

@@ -192,6 +192,11 @@ pub struct Layout<T = u32> {
     /// The model has a `SES_LINEAR` with a symbolic Jacobian, the only reader of
     /// `old_real_off`.
     pub has_old_real: bool,
+    /// C's `compiledInDAEMode` (`--daeMode`): the continuous equations are in
+    /// `evaluateDAEResiduals`, and `functionODE`/`functionAlgebraics`/`functionDAE`
+    /// do not evaluate them. Also set when every equation came out explicit and
+    /// there is no residual left for IDA ([`Layout::dae_mode`] false).
+    pub compiled_dae_mode: bool,
     /// `SimData` offset of the homotopy parameter lambda (f64).
     pub lambda_off: T,
     pub rparam_off: T,
@@ -398,6 +403,7 @@ impl Layout {
         has_init_lambda0: bool,
         has_history_ops: bool,
         has_old_real: bool,
+        compiled_dae_mode: bool,
     ) -> Self {
         let counts = LayoutCounts {
             n_states,
@@ -434,6 +440,7 @@ impl Layout {
             has_init_lambda0,
             has_history_ops,
             has_old_real,
+            compiled_dae_mode,
             resizable: false,
         };
         Layout::build(counts, flags)
@@ -514,6 +521,7 @@ pub struct LayoutFlags {
     pub has_init_lambda0: bool,
     pub has_history_ops: bool,
     pub has_old_real: bool,
+    pub compiled_dae_mode: bool,
     /// The size-table pointer in the header ([`REAL_OFF_RESIZABLE`]), and the
     /// regions of constant size first.
     pub resizable: bool,
@@ -547,6 +555,7 @@ impl<T: sizes::LayoutNum> Layout<T> {
             has_init_lambda0: f.has_init_lambda0,
             has_history_ops: f.has_history_ops,
             has_old_real: f.has_old_real,
+            compiled_dae_mode: f.compiled_dae_mode,
             ..Layout::zero()
         };
         let start = T::lit(if f.resizable { REAL_OFF_RESIZABLE } else { REAL_OFF });
@@ -586,6 +595,7 @@ impl<T: sizes::LayoutNum> Layout<T> {
             has_init_lambda0: false,
             has_history_ops: false,
             has_old_real: false,
+            compiled_dae_mode: false,
             lambda_off: z.clone(),
             rparam_off: z.clone(),
             int_off: z.clone(),
@@ -770,6 +780,7 @@ impl<T> Layout<T> {
             has_init_lambda0: self.has_init_lambda0,
             has_history_ops: self.has_history_ops,
             has_old_real: self.has_old_real,
+            compiled_dae_mode: self.compiled_dae_mode,
             lambda_off: off(&self.lambda_off)?,
             rparam_off: off(&self.rparam_off)?,
             int_off: off(&self.int_off)?,
@@ -866,8 +877,10 @@ impl<T: sizes::LayoutOff> Layout<T> {
         self.real_nom_off + T::from(i * 8)
     }
 
-    /// C's `compiledInDAEMode`: the integrator solves `F(t, y, y') = 0` over states
-    /// *and* algebraic unknowns through `evaluateDAEResiduals`, not `functionODE`.
+    /// `--daeMode` with a residual system: the integrator solves `F(t, y, y') = 0`
+    /// over states *and* algebraic unknowns through `evaluateDAEResiduals`, not
+    /// `functionODE`. Which entry points hold the equations is
+    /// [`Layout::compiled_dae_mode`].
     pub fn dae_mode(&self) -> bool {
         self.n_dae_res > T::from(0)
     }
@@ -2147,7 +2160,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 28;
+const VERSION: u32 = 29;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -2255,6 +2268,7 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
     o.push(l.has_init_lambda0 as u8);
     o.push(l.has_history_ops as u8);
     o.push(l.has_old_real as u8);
+    o.push(l.compiled_dae_mode as u8);
 }
 fn put_jac(o: &mut Vec<u8>, j: &Option<JacAInfo>) {
     match j {
@@ -2830,6 +2844,7 @@ impl<'a> Reader<'a> {
             has_init_lambda0: false,
             has_history_ops: false,
             has_old_real: false,
+            compiled_dae_mode: false,
             extra_cols: 0,
         };
         l.has_when = self.u8()? != 0;
@@ -2838,6 +2853,7 @@ impl<'a> Reader<'a> {
         l.has_init_lambda0 = self.u8()? != 0;
         l.has_history_ops = self.u8()? != 0;
         l.has_old_real = self.u8()? != 0;
+        l.compiled_dae_mode = self.u8()? != 0;
         Ok(l)
     }
     fn enumeration(&mut self) -> Result<Option<Enumeration>, &'static str> {
@@ -3430,6 +3446,7 @@ mod tests {
                 true,
                 true,
                 HomotopyMethod::LocalAdaptive,
+                true,
                 true,
                 true,
                 true,

@@ -42,6 +42,7 @@
 
 #include "Element.h"
 
+#include <QPoint>
 #include <QRadioButton>
 
 class FinalEachToolButton : public QToolButton
@@ -71,6 +72,53 @@ signals:
   void breakToggled(bool breakValue);
 public slots:
   void showParameterMenu();
+};
+
+class QLineEdit;
+class QSpinBox;
+class QTableWidget;
+class ArrayParameterEditorDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  ArrayParameterEditorDialog(const QString &arrayValue, const QString &defaultValue, const QString &elementName,
+                             const QStringList &absynDimensions, const QStringList &typedDimensions,
+                             QWidget *pParent = nullptr);
+  QString getArrayValue() const {return mArrayValue;}
+public slots:
+  void okClicked();
+private slots:
+  void rowsChanged(int rows);
+  void columnsChanged(int columns);
+  void expressionTextEdited(const QString &text);
+  void updateExpressionFromTable();
+  void fillEmptyCells();
+  void showTableContextMenu(const QPoint &position);
+  void deleteSelectedRows();
+  void deleteSelectedColumns();
+private:
+  bool parseArrayValue(const QString &arrayValue);
+  QString createArrayValue() const;
+  QString createDefaultCellValue(int dimensionIndex) const;
+  QString getCellText(int row, int column) const;
+  static int countTopLevelElements(const QString &cellText);
+  void setArrayCells(const QList<QStringList> &rows, int columns = 0);
+  bool loadArrayValue(const QString &arrayValue);
+  QLineEdit *mpExpressionLineEdit;
+  QSpinBox *mpRowsSpinBox;
+  QSpinBox *mpColumnsSpinBox;
+  QTableWidget *mpArrayTableWidget;
+  QString mArrayValue;
+  QString mOriginalArrayValue;
+  bool mExpressionTextModified = false;
+  bool mInitializing = true;
+  bool mRowsFixed = false;
+  bool mColumnsFixed = false;
+  bool mVector = false;
+  int mFixedRows = 0;
+  int mFixedColumns = 0;
+  int mArrayDimensions;
+  QStringList mCellDimensions;
 };
 
 class ElementParameters;
@@ -127,6 +175,7 @@ public:
   QToolButton *getEditClassButton() const {return mpEditClassButton;}
   FinalEachToolButton *getFinalEachMenu() const {return mpFinalEachMenuButton;}
   QToolButton* getFileSelectorButton() {return mpFileSelectorButton;}
+  QToolButton* getArrayEditorButton() const {return mpArrayEditorButton;}
   void setLoadSelectorFilter(QString loadSelectorFilter) {mLoadSelectorFilter = loadSelectorFilter;}
   QString getLoadSelectorFilter() {return mLoadSelectorFilter;}
   void setLoadSelectorCaption(QString loadSelectorCaption) {mLoadSelectorCaption = loadSelectorCaption;}
@@ -186,6 +235,7 @@ private:
   QToolButton *mpEditClassButton = 0;
   FinalEachToolButton *mpFinalEachMenuButton = 0;
   QToolButton *mpFileSelectorButton;
+  QToolButton *mpArrayEditorButton = 0;
   bool mHasDisplayUnit = false;
   QString mUnit;
   QString mDisplayUnit;
@@ -209,6 +259,7 @@ private slots:
 public slots:
   void editClassButtonClicked();
   void fileSelectorButtonClicked();
+  void arrayEditorButtonClicked();
   void unitComboBoxChanged(int index);
   void valueComboBoxChanged(int index);
   void valueCheckBoxChanged(bool toggle);

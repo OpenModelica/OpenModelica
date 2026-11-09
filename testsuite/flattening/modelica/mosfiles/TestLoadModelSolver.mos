@@ -1,0 +1,59 @@
+// name: TestLoadModelSolver
+// status: correct
+// Test that the uses of a class are loaded together: conflicting uses give
+// an error and a loaded library is kept. Without a package index (as in the
+// testsuite), a version only provides itself.
+// depends: PackageResolverLibs
+
+setModelicaPath("PackageResolverLibs/");
+getAvailablePackageVersions(ExternalMedia, "3.3.2");
+getAvailablePackageVersions(Modelica, "3.2.2");
+clearMessages();
+
+loadString("model M1 annotation(uses(ExternalMedia(version=\"3.3.2\"))); end M1;");
+getErrorString();
+getNamedAnnotation(ExternalMedia, version);
+getNamedAnnotation(Modelica, version);
+clear();
+
+loadString("model M2 annotation(uses(ExternalMedia(version=\"3.3.2\"), Modelica(version=\"4.0.0\"))); end M2;");
+getErrorString();
+clear();
+
+loadModel(Modelica, {"4.0.0"});
+loadString("model M1 annotation(uses(ExternalMedia(version=\"3.3.2\"))); end M1;");
+getErrorString();
+getNamedAnnotation(ExternalMedia, version);
+getNamedAnnotation(Modelica, version);
+
+// Result:
+// true
+// {}
+// {}
+// true
+// true
+// "Notification: Automatically loaded package ExternalMedia 3.3.2 due to uses annotation from M1.
+// Notification: Automatically loaded package Modelica 3.2.3 due to uses annotation from ExternalMedia.
+// "
+// {"3.3.2"}
+// {"3.2.3"}
+// true
+// true
+// "Error: No versions of the libraries that M2 uses can be loaded together:
+// The following packages are incompatible
+// ├─ Modelica 4.0.0 can be loaded with any of the following options:
+// │  └─ Modelica 4.0.0
+// └─ ExternalMedia 3.3.2 cannot be loaded because there are no viable options:
+//    └─ ExternalMedia 3.3.2 would require
+//       └─ Modelica 3.2.3, which cannot be loaded because there are no viable options:
+//          └─ Modelica 3.2.3, which conflicts with the versions reported above.
+// "
+// true
+// true
+// true
+// "Notification: Automatically loaded package ExternalMedia 3.3.2 due to uses annotation from M1.
+// Warning: Requested package Modelica of version 3.2.3, but this package was already loaded with version 4.0.0. There are no conversion annotations and 3.2.3 is older than 4.0.0, so the libraries are probably incompatible.
+// "
+// {"3.3.2"}
+// {"4.0.0"}
+// endResult

@@ -18,13 +18,19 @@ function(omc_runtime_rust_library)
   endif()
   file(GLOB_RECURSE _rust_srcs CONFIGURE_DEPENDS
        ${_crate}/src/*.rs ${_zip}/src/*.rs
-       ${_crate}/../../OpenModelica.rs/openmodelica_wasi/src/*.rs)
+       ${_crate}/../../OpenModelica.rs/openmodelica_wasi/src/*.rs
+       ${_crate}/../../OpenModelica.rs/openmodelica_download/src/*.rs
+       ${_crate}/../../OpenModelica.rs/openmodelica_package_manager/src/*.rs
+       ${_crate}/../../OpenModelica.rs/openmodelica_version/src/*.rs)
   add_custom_command(
     OUTPUT ${_lib}
     WORKING_DIRECTORY ${_crate}
     ${OMC_JOB_SERVER_AWARE}
     COMMAND ${_env} ${CARGO_EXECUTABLE} ${_cargo_cmd} --release --locked --target-dir ${_target_dir} ${_target_flag}
     DEPENDS ${_rust_srcs} ${_crate}/Cargo.toml ${_crate}/Cargo.lock ${_zip}/Cargo.toml
+            ${_crate}/../../OpenModelica.rs/openmodelica_download/Cargo.toml
+            ${_crate}/../../OpenModelica.rs/openmodelica_package_manager/Cargo.toml
+            ${_crate}/../../OpenModelica.rs/openmodelica_version/Cargo.toml
     COMMENT "Rust: building libomcruntime_rust"
     VERBATIM)
   add_custom_target(rust_omcruntime DEPENDS ${_lib})
@@ -40,5 +46,13 @@ function(omc_runtime_rust_library)
   elseif(NOT APPLE AND NOT RUST_OMC_TARGET MATCHES "apple-darwin$")
     find_package(Threads REQUIRED)
     set_property(TARGET omc::runtime_rust PROPERTY INTERFACE_LINK_LIBRARIES Threads::Threads ${CMAKE_DL_LIBS} m)
+  endif()
+  # openmodelica_download links the system libcurl; Windows builds compile
+  # libcurl in, with schannel, which needs these system libraries instead.
+  if(WIN32 OR RUST_OMC_TARGET MATCHES "windows")
+    set_property(TARGET omc::runtime_rust APPEND PROPERTY INTERFACE_LINK_LIBRARIES crypt32 secur32 iphlpapi normaliz wldap32)
+  else()
+    find_package(CURL REQUIRED)
+    set_property(TARGET omc::runtime_rust APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${CURL_LIBRARIES})
   endif()
 endfunction()

@@ -38,10 +38,10 @@ readFile("FmuUnknownsWithoutFmiIndex.xml"); getErrorString();
 // ""
 // "  <ModelStructure>
 //     <Derivatives>
-//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"2\" />
 //     </Derivatives>
 //     <InitialUnknowns>
-//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"2\" />
 //     </InitialUnknowns>
 //   </ModelStructure>
 // "

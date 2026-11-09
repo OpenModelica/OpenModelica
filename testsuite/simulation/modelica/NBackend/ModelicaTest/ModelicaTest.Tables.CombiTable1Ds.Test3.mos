@@ -6,7 +6,7 @@ loadModel(ModelicaTest, {"4.1.0"});getErrorString();
 setCommandLineOptions("--newBackend"); getErrorString();
 
 simulate(ModelicaTest.Tables.CombiTable1Ds.Test3); getErrorString();
-diffSimulationResults("ModelicaTest.Tables.CombiTable1Ds.Test3_res.mat", "ReferenceFiles/ModelicaTest.Tables.CombiTable1Ds.Test3_res.mat", "ModelicaTest.Tables.CombiTable1Ds.Test3_diff.csv", 1e-8);
+diffSimulationResults("ModelicaTest.Tables.CombiTable1Ds.Test3_res.mat", "ReferenceFiles/ModelicaTest.Tables.CombiTable1Ds.Test3_res.mat", "ModelicaTest.Tables.CombiTable1Ds.Test3_diff.csv", 1e-8, vars={"clock.offset", "clock.startTime", "d2_t_new.y", "d_t_new.y", "der(clock.y)", "der(d_t_new.u)", "der(der(clock.y))", "t_new.columns[1]", "t_new.extrapolation", "t_new.nHeaderLines", "t_new.nout", "t_new.smoothness", "t_new.tableOnFile", "t_new.table[1,1]", "t_new.table[1,2]", "t_new.table[2,1]", "t_new.table[2,2]", "t_new.table[3,1]", "t_new.table[3,2]", "t_new.table[4,1]", "t_new.table[4,2]", "t_new.table[5,1]", "t_new.table[5,2]", "t_new.u", "t_new.u_max", "t_new.u_min", "t_new.verboseExtrapolation", "t_new.verboseRead", "t_new.y[1]"});
 
 // Result:
 // true

@@ -71,7 +71,7 @@ case SIMCODE(__) then
   <fmiModelDescription
     <%fmiModelDescriptionAttributes(simCode,guid)%>>
     <%if isFMIMEType(FMUType) then ModelExchange3(simCode, sourceFiles)%>
-    <%if isFMICSType(FMUType) then CoSimulation3(simCode, sourceFiles)%>
+    <%if isFMICSType(FMUType) then CoSimulation3(simCode, FMUType, sourceFiles)%>
     <%if isFMISEType(FMUType) then ScheduledExecution3(simCode, sourceFiles)%>
     <%UnitDefinitions(simCode)%>
     <%TypeDefinitions3(simCode)%>
@@ -257,6 +257,7 @@ template fmiBuildDescription(SimCode simCode, list<String> sourceFiles)
 match simCode
 case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   let modelIdentifier = modelNamePrefix(simCode)
+  let hasZlib = (sourceFiles |> file => if stringEq(file, "ModelicaExternalC/ModelicaMatIO.c") then "1")
   <<
   <?xml version="1.0" encoding="UTF-8"?>
   <fmiBuildDescription fmiVersion="3.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/modelica/fmi-standard/v3.0.2/schema/fmi3BuildDescription.xsd">
@@ -265,8 +266,10 @@ case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
         <%sourceFiles |> file => if boolNot(StringUtil.endsWith(file, ".rs")) then '<SourceFile name="<%file%>"/>' ;separator="\n"%>
         <PreprocessorDefinition name="FMI2_OVERRIDE_FUNCTION_PREFIX"/>
         <PreprocessorDefinition name="FMI3_OVERRIDE_FUNCTION_PREFIX"/>
+        <%if hasZlib then '<PreprocessorDefinition name="HAVE_ZLIB" value="1"/>'%>
         <IncludeDirectory name="."/>
         <IncludeDirectory name="fmi"/>
+        <%if hasZlib then '<IncludeDirectory name="ModelicaExternalC/zlib"/>'%>
       </SourceFileSet>
       <%rustSourceFileSet(sourceFiles)%>
       <%SimCodeCodegenUtil.fmuExternalLibraries(makefileParams.libs) |> lib => '<Library name="<%Util.escapeModelicaStringToXmlString(lib)%>" external="true"/>' ;separator="\n"%>
@@ -397,7 +400,7 @@ case SIMCODE(__) then
   >>
 end ModelExchange3;
 
-template CoSimulation3(SimCode simCode, list<String> sourceFiles)
+template CoSimulation3(SimCode simCode, String FMUType, list<String> sourceFiles)
  "Generates the CoSimulation element for FMI 3.0."
 ::=
 match simCode
@@ -409,7 +412,7 @@ case SIMCODE(__) then
     needsExecutionTool="false"
     canHandleVariableCommunicationStepSize="true"
     canBeInstantiatedOnlyOncePerProcess="false"
-    maxOutputDerivativeOrder="1"
+    maxOutputDerivativeOrder="<%maxOutputDerivativeOrder(simCode, FMUType)%>"
     providesIntermediateUpdate="false"
     mightReturnEarlyFromDoStep="true"
     canReturnEarlyAfterIntermediateUpdate="false"

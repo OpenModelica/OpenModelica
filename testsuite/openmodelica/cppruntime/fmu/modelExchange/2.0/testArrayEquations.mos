@@ -952,59 +952,59 @@ readFile("modelDescription.tmp.xml");
 //   </ModelVariables>
 //   <ModelStructure>
 //     <Outputs>
-//       <Unknown index=\"101\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"102\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"103\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"104\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"101\" />
+//       <Unknown index=\"102\" />
+//       <Unknown index=\"103\" />
+//       <Unknown index=\"104\" />
 //     </Outputs>
 //     <DiscreteStates>
-//       <Unknown index=\"61\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"62\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"63\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"64\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"65\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"66\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"67\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"68\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"69\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"70\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"71\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"72\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"73\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"74\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"75\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"76\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"77\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"78\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"79\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"80\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"81\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"82\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"83\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"84\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"85\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"86\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"87\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"88\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"89\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"90\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"91\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"92\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"93\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"94\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"95\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"96\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"97\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"98\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"99\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"100\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"61\" />
+//       <Unknown index=\"62\" />
+//       <Unknown index=\"63\" />
+//       <Unknown index=\"64\" />
+//       <Unknown index=\"65\" />
+//       <Unknown index=\"66\" />
+//       <Unknown index=\"67\" />
+//       <Unknown index=\"68\" />
+//       <Unknown index=\"69\" />
+//       <Unknown index=\"70\" />
+//       <Unknown index=\"71\" />
+//       <Unknown index=\"72\" />
+//       <Unknown index=\"73\" />
+//       <Unknown index=\"74\" />
+//       <Unknown index=\"75\" />
+//       <Unknown index=\"76\" />
+//       <Unknown index=\"77\" />
+//       <Unknown index=\"78\" />
+//       <Unknown index=\"79\" />
+//       <Unknown index=\"80\" />
+//       <Unknown index=\"81\" />
+//       <Unknown index=\"82\" />
+//       <Unknown index=\"83\" />
+//       <Unknown index=\"84\" />
+//       <Unknown index=\"85\" />
+//       <Unknown index=\"86\" />
+//       <Unknown index=\"87\" />
+//       <Unknown index=\"88\" />
+//       <Unknown index=\"89\" />
+//       <Unknown index=\"90\" />
+//       <Unknown index=\"91\" />
+//       <Unknown index=\"92\" />
+//       <Unknown index=\"93\" />
+//       <Unknown index=\"94\" />
+//       <Unknown index=\"95\" />
+//       <Unknown index=\"96\" />
+//       <Unknown index=\"97\" />
+//       <Unknown index=\"98\" />
+//       <Unknown index=\"99\" />
+//       <Unknown index=\"100\" />
 //     </DiscreteStates>
 //     <InitialUnknowns>
-//       <Unknown index=\"101\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"102\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"103\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"104\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"105\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"101\" />
+//       <Unknown index=\"102\" />
+//       <Unknown index=\"103\" />
+//       <Unknown index=\"104\" />
+//       <Unknown index=\"105\" />
 //     </InitialUnknowns>
 //   </ModelStructure>
 // </fmiModelDescription>

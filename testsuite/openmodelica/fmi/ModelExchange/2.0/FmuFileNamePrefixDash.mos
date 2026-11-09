@@ -13,7 +13,7 @@ equation
 end FmuFileNamePrefixDash;
 "); getErrorString();
 buildModelFMU(FmuFileNamePrefixDash, version = "2.0", fmuType = "me", fileNamePrefix = "FmuFileNamePrefix-Dash"); getErrorString();
-system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py FmuFileNamePrefix-Dash.fmu FmuFileNamePrefix-Dash_fmpy.csv 1.0 x > FmuFileNamePrefix-Dash.log 2>&1"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py --set-states FmuFileNamePrefix-Dash.fmu FmuFileNamePrefix-Dash_fmpy.csv 1.0 x > FmuFileNamePrefix-Dash.log 2>&1"); getErrorString();
 system("tail -n 1 FmuFileNamePrefix-Dash_fmpy.csv > FmuFileNamePrefix-Dash_last.txt"); getErrorString();
 readFile("FmuFileNamePrefix-Dash_last.txt"); getErrorString();
 

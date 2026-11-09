@@ -1158,8 +1158,6 @@ public constant ErrorTypes.Message NOTIFY_PKG_UPGRADE_DONE = ErrorTypes.MESSAGE(
   "Package upgraded successfully (SHA %s from %s).");
 public constant ErrorTypes.Message ERROR_PKG_INSTALL_NO_PACKAGE_MO = ErrorTypes.MESSAGE(611, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
   "After extracting %s, %s does not exist. Removing the failed installation.");
-public constant ErrorTypes.Message WARNING_PKG_CONFLICTING_VERSIONS = ErrorTypes.MESSAGE(612, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
-  "Conflicting versions for loading package %s: %s is to be installed, but another package requires version %s which is not provided by this version.");
 public constant ErrorTypes.Message NOTIFY_PKG_NO_INSTALL = ErrorTypes.MESSAGE(613, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
   "%s %s will not be installed since version %s is installed.");
 public constant ErrorTypes.Message DEPRECATED_FLAG = ErrorTypes.MESSAGE(614, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
@@ -1363,6 +1361,10 @@ public constant ErrorTypes.Message USER_CANCELLED = ErrorTypes.MESSAGE(7028, Err
   "Operation cancelled by user.");
 public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_ME_DROPPED = ErrorTypes.MESSAGE(7036, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
   "DAE mode (--daeMode) for Model Exchange needs FMI 3.0 or platforms={\"wasm\"}. Exporting Co-Simulation only.");
+public constant ErrorTypes.Message ERROR_PKG_CONFLICT = ErrorTypes.MESSAGE(7037, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  "No versions of %s %s and the libraries it uses can be used together:\n%s");
+public constant ErrorTypes.Message LOAD_MODEL_CONFLICT = ErrorTypes.MESSAGE(7038, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  "No versions of the libraries that %s uses can be loaded together:\n%s");
 public constant ErrorTypes.Message ALARM_EXPIRED = ErrorTypes.MESSAGE(7031, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "Operation aborted: the time limit set by the alarm ran out.");
 public constant ErrorTypes.Message FMU_EXPORT_FMI_LS_DAE_DRAFT = ErrorTypes.MESSAGE(7032, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),

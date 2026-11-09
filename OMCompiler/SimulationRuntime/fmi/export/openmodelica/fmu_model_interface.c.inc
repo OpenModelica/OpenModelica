@@ -49,11 +49,42 @@
 #define FMU_STATE_ME_STATES (model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error)
 #define FMU_STATE_CS_STATES (model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error)
 #else
-#define SET_DISCRETE_ME_STATES (model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated)
-#define SET_DISCRETE_CS_STATES (model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_terminated)
+#define SET_DISCRETE_ME_STATES (model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode)
+#define SET_DISCRETE_CS_STATES (model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_event_mode)
 #define FMU_STATE_ME_STATES (model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated)
-#define FMU_STATE_CS_STATES (model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_terminated)
+#define FMU_STATE_CS_STATES (model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_event_mode|model_state_terminated)
 #endif
+
+/* FMI 3.0 Configuration Mode and Co-Simulation Event Mode, for the calls that are
+   legal in them. FMI 2.0 has no such states. FMI 3.0 narrowed these three ME calls
+   to Continuous-Time Mode (SetTime, SetContinuousStates) and to after Instantiated
+   (GetNominalsOfContinuousStates). */
+#if OMC_FMI_VERSION == 2
+#define CONFIGURATION_MODE_STATE 0
+#define CS_EVENT_MODE_STATE 0
+#define GET_INSTANTIATED_STATE 0
+#define SET_TIME_ME_STATES (model_state_me_event_mode|model_state_me_continuous_time_mode)
+#define SET_CONTINUOUS_STATES_ME_STATES (model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode)
+#define GET_NOMINALS_ME_STATES (model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error)
+#else
+#define CONFIGURATION_MODE_STATE model_state_configuration_mode
+#define CS_EVENT_MODE_STATE model_state_cs_event_mode
+/* FMI 3.0 returns the start values, or what was set, in Instantiated
+   (modelica/fmi-standard#2174, after 3.0.2). */
+#define GET_INSTANTIATED_STATE model_state_instantiated
+#define SET_TIME_ME_STATES model_state_me_continuous_time_mode
+#define SET_CONTINUOUS_STATES_ME_STATES model_state_me_continuous_time_mode
+#define GET_NOMINALS_ME_STATES (model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error)
+#endif
+
+/* The directional and adjoint derivatives, and fmi3Get{VariableType} after Instantiated. */
+#define DERIVATIVE_ME_STATES (model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error)
+#define DERIVATIVE_CS_STATES (model_state_initialization_mode|model_state_cs_step_complete|CS_EVENT_MODE_STATE|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error)
+#define GET_ME_STATES (GET_INSTANTIATED_STATE|DERIVATIVE_ME_STATES)
+#define GET_CS_STATES (GET_INSTANTIATED_STATE|DERIVATIVE_CS_STATES)
+#define SET_REAL_ME_STATES (model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode)
+#define SET_REAL_CS_STATES (model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|CS_EVENT_MODE_STATE)
+#define GET_OUTPUT_DERIVATIVES_CS_STATES (model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error)
 
 /**
   * @brief Skips to a given character or end of string.
@@ -444,6 +475,13 @@ static fmiXBoolean isCoSimulation(ModelInstance *comp)
 
 const char* stateToString(ModelInstance *comp)
 {
+#if OMC_FMI_VERSION != 2
+  if (comp->state == model_state_configuration_mode)
+    return "model_state_configuration_mode";
+  if (comp->state == model_state_cs_event_mode)
+    return "model_state_cs_event_mode";
+#endif
+
   if (isModelExchange(comp))
   {
     switch (comp->state)
@@ -764,6 +802,11 @@ static fmiXStatus recordSet(ModelInstance *comp, const char *func, int ty, fmiXV
   if (!comp->paramDeps->checked) {
     return fmiXOK;
   }
+  /* FMI 2.0.1 and later, and FMI 3.0.2: also a continuous-time state may be set
+   * in Continuous-Time Mode. The states come first among the Real variables. */
+  if (comp->state == model_state_me_continuous_time_mode && ty == OMC_SLOT_REAL && vr < NUMBER_OF_STATES) {
+    return fmiXOK;
+  }
   slot = variableSlot(comp, ty, vr);
   if (!settableNow(comp, slot)) {
     FILTERED_LOG(comp, fmiXError, LOG_STATUSERROR, "%s: Variable #%u# cannot be set in state %s.", func, vr, stateToString(comp))
@@ -1077,7 +1120,8 @@ fmiXStatus updateIfNeeded(ModelInstance *comp, const char *func)
   jmp_buf *old_jmp=threadData->mmc_jumper;
   int success = 0;
 
-  if (comp->_need_update)
+  /* Instantiated has start values only: nothing is evaluated before initialization. */
+  if (comp->_need_update && comp->state != model_state_instantiated)
   {
     setThreadData(comp);
 
@@ -1180,7 +1224,7 @@ fmiXStatus FMIX(SetDebugLogging)(fmiXComponent c, fmiXBoolean loggingOn, size_t 
   int i, j;
   ModelInstance *comp = (ModelInstance *)c;
 
-  if (invalidState(comp, FMIX_STR "SetDebugLogging", model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_in_progress|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error))
+  if (invalidState(comp, FMIX_STR "SetDebugLogging", CONFIGURATION_MODE_STATE|model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, CONFIGURATION_MODE_STATE|model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|CS_EVENT_MODE_STATE|model_state_cs_step_in_progress|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error))
     return fmiXError;
 
   comp->loggingOn = loggingOn;
@@ -1488,8 +1532,8 @@ void FMIX(FreeInstance)(fmiXComponent c)
 {
   ModelInstance *comp = (ModelInstance *)c;
 
-  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error;
-  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error;
+  int meStates = CONFIGURATION_MODE_STATE|model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error;
+  int csStates = CONFIGURATION_MODE_STATE|model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|CS_EVENT_MODE_STATE|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error;
 
   if (invalidState(comp, FMIX_STR "FreeInstance", meStates, csStates))
     return;
@@ -1718,7 +1762,7 @@ fmiXStatus FMIX(ExitInitializationMode)(fmiXComponent c)
 fmiXStatus FMIX(Terminate)(fmiXComponent c)
 {
   ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, FMIX_STR "Terminate", model_state_me_event_mode|model_state_me_continuous_time_mode, model_state_cs_step_complete|model_state_cs_step_failed))
+  if (invalidState(comp, FMIX_STR "Terminate", model_state_me_event_mode|model_state_me_continuous_time_mode, model_state_cs_step_complete|CS_EVENT_MODE_STATE|model_state_cs_step_failed))
     return fmiXError;
   FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "Terminate...")
 
@@ -1734,7 +1778,7 @@ fmiXStatus FMIX(Reset)(fmiXComponent c)
   ModelInstance* comp = (ModelInstance *)c;
   modelica_boolean modelDataVarsFreed = FALSE;
   OMC_FMU_INIT *init;
-  if (invalidState(comp, FMIX_STR "Reset", model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error))
+  if (invalidState(comp, FMIX_STR "Reset", CONFIGURATION_MODE_STATE|model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, CONFIGURATION_MODE_STATE|model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|CS_EVENT_MODE_STATE|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error))
     return fmiXError;
   FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "Reset")
 
@@ -1859,7 +1903,7 @@ fmiXStatus FMIX(GetReal)(fmiXComponent c, const fmiXValueReference vr[], size_t 
   // - continuous-time mode
   // - terminated
   // - error (7) always, but retrieved values are usable for debugging only
-  int meStates = model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error;
+  int meStates = GET_ME_STATES;
 
   // Co-simulation
   // - initialization mode (2) for a variable with causality = "output" or continuous-time states or state derivatives (if element <Derivatives> is present)
@@ -1868,7 +1912,7 @@ fmiXStatus FMIX(GetReal)(fmiXComponent c, const fmiXValueReference vr[], size_t 
   // - stepCanceled (7) always, but retrieved values are usable for debugging only
   // - terminated
   // - error (7) always, but retrieved values are usable for debugging only
-  int csStates = model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error;
+  int csStates = GET_CS_STATES;
 
   /* Check for valid call sequence */
   if (invalidState(comp, FMIX_STR "GetReal", meStates, csStates))
@@ -1909,8 +1953,8 @@ fmiXStatus FMIX(GetInteger)(fmiXComponent c, const fmiXValueReference vr[], size
   ModelInstance *comp = (ModelInstance *)c;
 
   /* Check for valid call sequence */
-  int meStates = model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error;
-  int csStates = model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error;
+  int meStates = GET_ME_STATES;
+  int csStates = GET_CS_STATES;
   if (invalidState(comp, FMIX_STR "GetInteger", meStates, csStates))
     return fmiXError;
   if (nvr > 0 && nullPointer(comp, FMIX_STR "GetInteger", "vr[]", vr))
@@ -1941,8 +1985,8 @@ fmiXStatus FMIX(GetBoolean)(fmiXComponent c, const fmiXValueReference vr[], size
   ModelInstance *comp = (ModelInstance *)c;
 
   /* Check for valid call sequence */
-  int meStates = model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error;
-  int csStates = model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error;
+  int meStates = GET_ME_STATES;
+  int csStates = GET_CS_STATES;
   if (invalidState(comp, FMIX_STR "GetBoolean", meStates, csStates))
     return fmiXError;
   if (nvr > 0 && nullPointer(comp, FMIX_STR "GetBoolean", "vr[]", vr))
@@ -1973,8 +2017,8 @@ fmiXStatus FMIX(GetString)(fmiXComponent c, const fmiXValueReference vr[], size_
   ModelInstance *comp = (ModelInstance *)c;
 
   /* Check for valid call sequence */
-  int meStates = model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error;
-  int csStates = model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error;
+  int meStates = GET_ME_STATES;
+  int csStates = GET_CS_STATES;
   if (invalidState(comp, FMIX_STR "GetString", meStates, csStates))
     return fmiXError;
   if (nvr>0 && nullPointer(comp, FMIX_STR "GetString", "vr[]", vr))
@@ -2007,13 +2051,13 @@ fmiXStatus FMIX(SetReal)(fmiXComponent c, const fmiXValueReference vr[], size_t 
   // - initialization mode (3) for a variable with variability != "constant" that has initial = "exact", or causality = "input"
   // - event mode (4) for a variable with causality = "input", or (causality = "parameter" and variability = "tunable")
   // - continuous-time mode (5) for a variable with causality = "input" and variability = "continuous"
-  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode;
+  int meStates = SET_REAL_ME_STATES;
 
   // Co-simulation
   // - instantiated (1) for a variable with variability != "constant" that has initial = "exact" or "approx"
   // - initialization mode (3) for a variable with variability != "constant" that has initial = "exact", or causality = "input"
   // - stepComplete (6) for a variable with causality = "input" or (causality = "parameter" and variability = "tunable")
-  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete;
+  int csStates = SET_REAL_CS_STATES;
 
   if (invalidState(comp, FMIX_STR "SetReal", meStates, csStates))
     return fmiXError;
@@ -2630,7 +2674,7 @@ fmiXStatus FMIX(GetDirectionalDerivative)(fmiXComponent c,
   int independent = modelData->nStates+modelData->nInputVars;
   int dependent = modelData->nStates+modelData->nOutputVars;
 
-  if (invalidState(comp, FMIX_STR "GetDirectionalDerivative", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error))
+  if (invalidState(comp, FMIX_STR "GetDirectionalDerivative", DERIVATIVE_ME_STATES, DERIVATIVE_CS_STATES))
     return fmiXError;
   if (!comp->_has_jacobian)
     return unsupportedFunction(comp, FMIX_STR "GetDirectionalDerivative");
@@ -2832,7 +2876,7 @@ fmiXStatus FMIX(CompletedIntegratorStep)(fmiXComponent c, fmiXBoolean noSetFMUSt
 fmiXStatus FMIX(SetTime)(fmiXComponent c, fmiXReal t)
 {
   ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, FMIX_STR "SetTime", model_state_me_event_mode|model_state_me_continuous_time_mode, 0))
+  if (invalidState(comp, FMIX_STR "SetTime", SET_TIME_ME_STATES, 0))
     return fmiXError;
   FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "SetTime: time=%.16g", t)
   comp->fmuData->localData[0]->timeValue = t;
@@ -2869,7 +2913,7 @@ fmiXStatus FMIX(SetContinuousStates)(fmiXComponent c, const fmiXReal x[], size_t
   /* According to FMI RC2 specification SetContinuousStates should only be allowed in Continuous-Time Mode.
    * The following code is done only to make the FMUs compatible with Dymola because Dymola is trying to call SetContinuousStates after EnterInitializationMode.
    */
-  if (invalidState(comp, FMIX_STR "SetContinuousStates", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode, 0))
+  if (invalidState(comp, FMIX_STR "SetContinuousStates", SET_CONTINUOUS_STATES_ME_STATES, 0))
     return fmiXError;
 
   return internalSetContinuousStates(c, x, nx);
@@ -3045,7 +3089,7 @@ fmiXStatus internalGetNominalsOfContinuousStates(fmiXComponent c, fmiXReal x_nom
 fmiXStatus FMIX(GetNominalsOfContinuousStates)(fmiXComponent c, fmiXReal x_nominal[], size_t nx)
 {
   ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, FMIX_STR "GetNominalsOfContinuousStates", model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, 0))
+  if (invalidState(comp, FMIX_STR "GetNominalsOfContinuousStates", GET_NOMINALS_ME_STATES, 0))
     return fmiXError;
 
   return internalGetNominalsOfContinuousStates(c, x_nominal, nx);
@@ -3099,7 +3143,7 @@ fmiXStatus FMIX(GetRealOutputDerivatives)(fmiXComponent c, const fmiXValueRefere
   ModelInstance *comp = (ModelInstance*)c;
 
   /* Check for valid call sequence */
-  if (invalidState(comp, FMIX_STR "GetRealOutputDerivatives", 0, model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error))
+  if (invalidState(comp, FMIX_STR "GetRealOutputDerivatives", 0, GET_OUTPUT_DERIVATIVES_CS_STATES))
     return fmiXError;
   if (nvr > 0 && nullPointer(comp, FMIX_STR "GetRealOutputDerivatives", "vr[]", vr))
     return fmiXError;
@@ -3116,6 +3160,10 @@ fmiXStatus FMIX(GetRealOutputDerivatives)(fmiXComponent c, const fmiXValueRefere
       return fmiXError;
     }
     fmiXValueReference mappedVR = mapOutputReference2RealOutputDerivatives(vr[i]);
+    if (mappedVR == (fmiXValueReference)-1) {
+      FILTERED_LOG(comp, fmiXError, LOG_STATUSERROR, FMIX_STR "GetRealOutputDerivatives: #r%u# is not an output with a derivative.", vr[i])
+      return fmiXError;
+    }
     value[i] = getReal(comp, mappedVR); // to be implemented by the includer of this file
     FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "GetRealOutputDerivatives: #r%u# = %.16g", vr[i], value[i])
   }

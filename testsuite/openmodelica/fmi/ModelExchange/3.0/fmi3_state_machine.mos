@@ -1,0 +1,144 @@
+// name: fmi3_state_machine.mos
+// keywords: FMI 3.0 export state machine illegal call sequence
+// status: correct
+// teardown_command: rm -rf SmBase.fmu SmBase.fmutmp/ SmBase_unzipped/ SmClocked.fmu SmClocked.fmutmp/ SmClocked_unzipped/ SmEvents.fmu SmEvents.fmutmp/ SmEvents_unzipped/ StateMachine.log SmBase_* SmClocked_*
+//
+// Every FMI 3.0 call in every state of the C runtime, against the spec's lists of
+// allowed calls: a call is accepted exactly where the spec allows it. Co-Simulation
+// runs with and without eventModeUsed, as only the former has an Event Mode.
+// fmi3_state_machine_c_rust.mos holds --simCodeTarget=C+Rust to the same output.
+
+setCommandLineOptions("--simCodeTarget=C"); getErrorString();
+loadString("
+model SmBase
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = -x;
+end SmBase;
+
+model SmClocked
+  Real x(start = 0, fixed = true);
+  Real xd;
+equation
+  xd = sample(x, Clock(0.1));
+  der(x) = 1.0 - x;
+end SmClocked;
+
+model SmEvents
+  parameter Real p = 1;
+  Real x(start = 1, fixed = true);
+  discrete Real y(start = 0, fixed = true);
+equation
+  der(x) = -p * x;
+  when x < 0.5 then
+    y = time;
+  end when;
+end SmEvents;
+"); getErrorString();
+buildModelFMU(SmBase, version="3.0", fmuType="me_cs"); getErrorString();
+buildModelFMU(SmClocked, version="3.0", fmuType="se"); getErrorString();
+buildModelFMU(SmEvents, version="3.0", fmuType="me_cs"); getErrorString();
+system("python3 fmi3StateMachine.py SmBase SmClocked SmEvents > StateMachine.log 2>&1"); getErrorString();
+readFile("StateMachine.log"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "SmBase.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// "SmClocked.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// "SmEvents.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "GetFloat64: 17 states
+// GetInt32: 17 states
+// GetInt64: 17 states
+// GetBoolean: 17 states
+// GetString: 17 states
+// GetBinary: 17 states
+// SetFloat64: 13 states
+// SetInt32: 12 states
+// SetInt64: 12 states
+// SetBoolean: 12 states
+// SetString: 12 states
+// SetBinary: 12 states
+// GetFloat32: 17 states
+// GetInt8: 17 states
+// GetUInt8: 17 states
+// GetInt16: 17 states
+// GetUInt16: 17 states
+// GetUInt32: 17 states
+// GetUInt64: 17 states
+// SetFloat32: 13 states
+// SetInt8: 12 states
+// SetUInt8: 12 states
+// SetInt16: 12 states
+// SetUInt16: 12 states
+// SetUInt32: 12 states
+// SetUInt64: 12 states
+// GetClock: 2 states
+// SetClock: 2 states
+// GetIntervalDecimal: 7 states
+// GetIntervalFraction: 7 states
+// GetShiftDecimal: 4 states
+// GetShiftFraction: 4 states
+// SetIntervalDecimal: 4 states
+// SetIntervalFraction: 4 states
+// SetShiftDecimal: 4 states
+// SetShiftFraction: 4 states
+// GetDirectionalDerivative: 14 states
+// GetOutputDerivatives: 4 states
+// GetContinuousStates: 4 states
+// GetContinuousStateDerivatives: 4 states
+// GetNominalsOfContinuousStates: 4 states
+// GetEventIndicators: 4 states
+// GetNumberOfContinuousStates: 2 states
+// GetNumberOfEventIndicators: 2 states
+// SetTime: 1 states
+// SetContinuousStates: 1 states
+// CompletedIntegratorStep: 1 states
+// EnterContinuousTimeMode: 1 states
+// EvaluateDiscreteStates: 2 states
+// UpdateDiscreteStates: 2 states
+// EnterEventMode: 2 states
+// EnterStepMode: 1 states
+// DoStep: 2 states
+// ActivateModelPartition: 1 states
+// EnterInitializationMode: 3 states
+// ExitInitializationMode: 4 states
+// EnterConfigurationMode: 0 states
+// ExitConfigurationMode: 0 states
+// Terminate: 6 states
+// SetDebugLogging: refused in no state
+// Reset: refused in no state
+// 0 mismatches
+// illegal EnterEventMode: 3, then EnterInitializationMode: 3, then GetFloat64: 0
+// illegal GetAdjointDerivative: 3, then EnterInitializationMode: 3
+// ME.Initialization: GetFloat64 of __zc_0: 0
+// ME.Event: GetFloat64 of __zc_0: 0
+// ME.ContinuousTime: GetFloat64 of __zc_0: 0
+// ME.Terminated: GetFloat64 of __zc_0: 0
+// CS.Initialization: GetFloat64 of __zc_0: 0
+// CS.Step: GetFloat64 of __zc_0: 0
+// CS.Step, after DoStep: GetFloat64 of __zc_0: 0
+// CS.Terminated: GetFloat64 of __zc_0: 0
+// CSE.Event: GetFloat64 of __zc_0: 0
+// CSE.Step: GetFloat64 of __zc_0: 0
+// CSE.Step, after DoStep: GetFloat64 of __zc_0: 0
+// ME: SetFloat64 of p in Configuration Mode: 3, then ExitConfigurationMode: 3
+// CS: SetFloat64 of p in Configuration Mode: 3, then ExitConfigurationMode: 3
+// ME.Instantiated: GetFloat64 time: 0 = 0, x: 0 = 1, p: 0 = 1, y: 0 = 0; SetFloat64 p = 2: 0, then GetFloat64 p: 0 = 2, x: 0 = 1
+// CS.Instantiated: GetFloat64 time: 0 = 0, x: 0 = 1, p: 0 = 1, y: 0 = 0; SetFloat64 p = 2: 0, then GetFloat64 p: 0 = 2, x: 0 = 1
+// "
+// ""
+// endResult

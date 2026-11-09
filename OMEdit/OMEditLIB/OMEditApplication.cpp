@@ -168,6 +168,7 @@ namespace {
 OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threadData, bool testsuiteRunning)
   : QApplication(argc, argv)
 {
+  setStyle("Fusion");
 #if defined(__EMSCRIPTEN__)
   // Build stamp in the console (stale-artifact diagnosis).
   EM_ASM({ console.log("[OMEdit-wasm] build " + UTF8ToString($0) + " " + UTF8ToString($1)); }, __DATE__, __TIME__);

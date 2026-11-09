@@ -84,7 +84,9 @@ typedef enum {
   model_state_me_continuous_time_mode = 1<<8,  /* ME only */
   model_state_terminated              = 1<<9,  /* ME and CS */
   model_state_error                   = 1<<10, /* ME and CS */
-  model_state_fatal                   = 1<<11  /* ME and CS */
+  model_state_fatal                   = 1<<11, /* ME and CS */
+  model_state_configuration_mode      = 1<<12, /* ME and CS, FMI 3.0 Configuration Mode */
+  model_state_cs_event_mode           = 1<<13  /* CS only, FMI 3.0 Event Mode */
 } ModelState;
 
 /* Which FMI 3.0 interface kind an instance implements. */
@@ -148,7 +150,6 @@ typedef struct {
   int _tunable_applied;
 
   /* fmi-ls-dae */
-  fmi3Boolean configuring;
   fmi3Boolean daeMode;              /* the importer sets der(x) and the algebraic variables */
   int daeSolved;                    /* ODE mode: der(x) and the algebraic variables solved at this point */
   double* daeWork;                  /* solveDAEModeExplicit */

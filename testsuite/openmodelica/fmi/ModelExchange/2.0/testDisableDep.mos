@@ -430,6 +430,17 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"ModelicaExternalC/ModelicaStrings.c\" />
 //       <File name=\"ModelicaExternalC/snprintf.c\" />
 //       <File name=\"ModelicaExternalC/win32_dirent.c\" />
+//       <File name=\"ModelicaExternalC/zlib/adler32.c\" />
+//       <File name=\"ModelicaExternalC/zlib/compress.c\" />
+//       <File name=\"ModelicaExternalC/zlib/crc32.c\" />
+//       <File name=\"ModelicaExternalC/zlib/deflate.c\" />
+//       <File name=\"ModelicaExternalC/zlib/infback.c\" />
+//       <File name=\"ModelicaExternalC/zlib/inffast.c\" />
+//       <File name=\"ModelicaExternalC/zlib/inflate.c\" />
+//       <File name=\"ModelicaExternalC/zlib/inftrees.c\" />
+//       <File name=\"ModelicaExternalC/zlib/trees.c\" />
+//       <File name=\"ModelicaExternalC/zlib/uncompr.c\" />
+//       <File name=\"ModelicaExternalC/zlib/zutil.c\" />
 //     </SourceFiles>
 //   </ModelExchange>
 //   <TypeDefinitions>
@@ -603,22 +614,22 @@ readFile("modelDescription.tmp.xml");
 //   </ModelVariables>
 //   <ModelStructure>
 //     <Outputs>
-//       <Unknown index=\"13\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"14\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"13\" />
+//       <Unknown index=\"14\" />
 //     </Outputs>
 //     <Derivatives>
-//       <Unknown index=\"3\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"4\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"3\" />
+//       <Unknown index=\"4\" />
 //     </Derivatives>
 //     <DiscreteStates>
-//       <Unknown index=\"9\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"10\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"9\" />
+//       <Unknown index=\"10\" />
 //     </DiscreteStates>
 //     <InitialUnknowns>
-//       <Unknown index=\"13\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"14\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"3\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"4\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"3\" />
+//       <Unknown index=\"4\" />
+//       <Unknown index=\"13\" />
+//       <Unknown index=\"14\" />
 //     </InitialUnknowns>
 //   </ModelStructure>
 // </fmiModelDescription>

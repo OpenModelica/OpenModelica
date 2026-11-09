@@ -1081,7 +1081,7 @@ algorithm
       String fmu_dummy_include_defines;
       String needModelicaExternalC, cmakeCode;
       String fmu_solver_defines = "";
-      list<String> model_desc_src_files, fmi2HeaderFiles, modelica_standard_table_sources;
+      list<String> model_desc_src_files, fmi2HeaderFiles, modelica_standard_table_sources, zlib_sources;
       list<String> dgesv_sources, cminpack_sources, simrt_c_sundials_sources, simrt_linear_solver_sources, simrt_non_linear_solver_sources, solver_library_sources;
       list<String> simrt_mixed_solver_sources, fmi_export_files, model_gen_files, model_all_gen_files, shared_source_files;
       list<String> rust_crate_roots;
@@ -1366,7 +1366,9 @@ algorithm
         copyFiles(RuntimeSources.modelica_external_c_sources, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
         copyFiles(RuntimeSources.modelica_external_c_headers, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
         copyFiles(RuntimeSources.modelica_external_c_api_headers, source=install_include_omc_dir + "/ModelicaExternalC", destination=fmu_tmp_sources_dir);
+        copyFiles(RuntimeSources.modelica_external_c_zlib_files, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
         modelica_standard_table_sources := RuntimeSources.modelica_external_c_sources;
+        zlib_sources := list(f for f guard StringUtil.endsWith(f, ".c") in RuntimeSources.modelica_external_c_zlib_files);
 
         System.writeFile(fmutmp+"/sources/isfmi" + (if FMUVersion=="1.0" then "1" elseif FMUVersion=="3.0" then "3" else "2"), "");
         if withFMI2 then
@@ -1394,6 +1396,7 @@ algorithm
                                                 List.sort(simrt_c_sundials_sources, Util.strcmpNoCaseBool),
                                                 solver_library_sources,
                                                 List.sort(modelica_standard_table_sources, Util.strcmpNoCaseBool),
+                                                zlib_sources,
                                                 rust_crate_roots
                                     });
         end if;
@@ -1448,12 +1451,10 @@ algorithm
         // Set CMake runtime dependencies level
         () := match Flags.getConfigString(Flags.FMU_RUNTIME_DEPENDS)
           local
-            SemanticVersion.Version cmakeVersion;
-            SemanticVersion.Version minimumVersion;
+            String cmakeVersion;
           case "default" algorithm
-            cmakeVersion := SimCodeUtil.getCMakeVersion();
-            minimumVersion := SemanticVersion.SEMVER(3, 21, 0, {}, {}); // v3.21.0
-            if SemanticVersion.compare(minimumVersion, cmakeVersion) <= 0 /* minimumVersion <= cmakeVersion */ then
+            cmakeVersion := SimCodeUtil.getCMakeVersion(logDirectory=fmu_tmp_sources_dir);
+            if SemanticVersion.compare("3.21.0", cmakeVersion) <= 0 then
               cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "\"modelica\"");
             else
               cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "\"none\"");

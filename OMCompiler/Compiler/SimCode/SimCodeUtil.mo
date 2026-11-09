@@ -122,7 +122,6 @@ import Matching;
 import MetaModelica.Dangerous;
 import Mutable;
 import PriorityQueue;
-import SemanticVersion;
 import SimCodeDump;
 import SimCodeFunctionUtil;
 import SimCodeUtilShared;
@@ -12318,16 +12317,20 @@ algorithm
           initPartSimDer,
           SimCode.FMIDISCRETESTATES(discreteStates),
           SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns, sortedUnknownCrefs, sortedknownCrefs),
-          fmi3ArrayGroups(inModelInfo, derivatives)));
+          fmi3ArrayGroups(inModelInfo, derivatives),
+          true));
 else
   // create empty model structure
   try
     // create empty derivatives dependencies
     derivatives := fmiUnknownsWithoutDependencies(getScalarVars(inModelInfo.vars.derivativeVars));
 
-    // create empty output dependencies
     varsA := List.filterOnTrue(inModelInfo.vars.algVars, isOutputSimVar);
-    outputs := fmiUnknownsWithoutDependencies(getScalarVars(varsA));
+    varsB := List.filterOnTrue(inModelInfo.vars.intAlgVars, isOutputSimVar);
+    varsC := List.filterOnTrue(inModelInfo.vars.boolAlgVars, isOutputSimVar);
+    varsD := List.filterOnTrue(inModelInfo.vars.stringAlgVars, isOutputSimVar);
+    allOutputVars := getScalarVars(listAppend(listAppend(varsA, varsB), listAppend(varsC, varsD)));
+    outputs := fmiUnknownsWithoutDependencies(allOutputVars);
 
     // create empty clockedStates dependencies
     clockedStates := List.filterOnTrue(inModelInfo.vars.algVars, isClockedStateSimVar);
@@ -12342,11 +12345,6 @@ else
     //  2. calculatedParameters
     //  3. continuous-time states with initial = approx or calculated
     //  4. state derivatives with initial = approx or calculated
-    varsA := List.filterOnTrue(inModelInfo.vars.algVars, isOutputSimVar);
-    varsB := List.filterOnTrue(inModelInfo.vars.intAlgVars, isOutputSimVar);
-    varsC := List.filterOnTrue(inModelInfo.vars.boolAlgVars, isOutputSimVar);
-    varsD := List.filterOnTrue(inModelInfo.vars.stringAlgVars, isOutputSimVar);
-    allOutputVars := getScalarVars(listAppend(listAppend(varsA, varsB), listAppend(varsC, varsD)));
     tmpInitialUnknowns := {};
     tmpInitialUnknowns := List.filterCons(allOutputVars, isInitialApproxOrCalculatedSimVar, tmpInitialUnknowns);
     tmpInitialUnknowns := List.filterCons(getScalarVars(getAllParamSimVars(inModelInfo)), isCausalityCalculatedParameterSimVar, tmpInitialUnknowns);
@@ -12354,8 +12352,7 @@ else
     // so it is not an initial unknown; an unfixed start makes it initial = approx.
     tmpInitialUnknowns := List.filterCons(getScalarVars(inModelInfo.vars.stateVars), isStateInitialUnknownSimVar, tmpInitialUnknowns);
     tmpInitialUnknowns := List.filterCons(getScalarVars(inModelInfo.vars.derivativeVars), isInitialApproxOrCalculatedSimVar, tmpInitialUnknowns);
-    tmpInitialUnknowns := Dangerous.listReverseInPlace(tmpInitialUnknowns);
-    allInitialUnknowns := fmiUnknownsWithoutDependencies(tmpInitialUnknowns);
+    allInitialUnknowns := List.sort(fmiUnknownsWithoutDependencies(tmpInitialUnknowns), fmiUnknownIndexGt);
 
     contPartSimDer := NONE();
     initPartSimDer := NONE();
@@ -12368,7 +12365,8 @@ else
           initPartSimDer,
           SimCode.FMIDISCRETESTATES(discreteStates),
           SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns, {}, {}),
-          fmi3ArrayGroups(inModelInfo)));
+          fmi3ArrayGroups(inModelInfo),
+          false));
   else
     Error.addInternalError("SimCodeUtil.createFMIModelStructure failed", sourceInfo());
     fail();
@@ -13315,6 +13313,12 @@ algorithm
   unknowns := list(SimCode.FMIUNKNOWN(i, {}, {}) for i guard i > 0 in indices);
 end fmiUnknownsWithoutDependencies;
 
+protected function fmiUnknownIndexGt
+  input SimCode.FmiUnknown u1;
+  input SimCode.FmiUnknown u2;
+  output Boolean gt = u1.index > u2.index;
+end fmiUnknownIndexGt;
+
 public function createMinimalFMIModelStructure
   "Build a minimal FMI ModelStructure (continuous state derivatives, outputs and
    initial unknowns, without dependency information) directly from the SimVars.
@@ -13348,8 +13352,7 @@ algorithm
   // initial_ for states (see FmiInitialAttribute3 in CodegenFMU3.tpl).
   iu := List.filterCons(modelInfo.vars.stateVars, isStateInitialUnknownSimVar, iu);
   iu := List.filterCons(modelInfo.vars.derivativeVars, isInitialApproxOrCalculatedSimVar, iu);
-  iu := Dangerous.listReverseInPlace(iu);
-  initialUnknowns := fmiUnknownsWithoutDependencies(iu);
+  initialUnknowns := List.sort(fmiUnknownsWithoutDependencies(iu), fmiUnknownIndexGt);
 
   outStructure := SOME(SimCode.FMIMODELSTRUCTURE(
     SimCode.FMIOUTPUTS(outs),
@@ -13358,7 +13361,8 @@ algorithm
     NONE(),
     SimCode.FMIDISCRETESTATES({}),
     SimCode.FMIINITIALUNKNOWNS(initialUnknowns, {}, {}),
-    fmi3ArrayGroups(modelInfo)));
+    fmi3ArrayGroups(modelInfo),
+    false));
 end createMinimalFMIModelStructure;
 
 protected function fmi3ArrayGroups
@@ -14289,18 +14293,19 @@ algorithm
     // Special handling for ModelicaExternalC, we always copy the sources into the FMU
     if List.contains(SimCodeCodegenUtil.fmuSourceLibraries, lib, stringEqual) then
       needModelicaExternalC := "ON";
-    // zlib is referred to from MSL Tables, but by default not used by ModelicaMatIO
+    // An FMU that compiles ModelicaExternalC has a zlib of its own.
     elseif lib == "zlib" then
-      cmakeCode := cmakeCode + "find_library(" + lib + "\n" +
-                  "             NAMES " + lib + "\n" +
-                  "             PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)\n" +
-                  "if(NOT " + lib + ")\n" +
-                  "  message(WARNING \"Could not find library zlib\")" + "\n" +
-                  "  message(STATUS \"zlib is referred by ModelicaMatIO, but not used by default. Try compiling without linking.\")" + "\n" +
-                  "else()\n" +
-                  "  message(STATUS \"Linking ${" + lib + "}\")" + "\n" +
-                  "  target_link_libraries(${FMU_NAME_HASH} PRIVATE ${" + lib + "})" + "\n" +
-                  "  list(APPEND RUNTIME_DEPENDS ${" + lib + "})" + "\n" +
+      cmakeCode := cmakeCode + "if(NOT COMPILE_MODELICA_EXTERNAL_C)\n" +
+                  "  find_library(" + lib + "\n" +
+                  "               NAMES " + lib + "\n" +
+                  "               PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)\n" +
+                  "  if(NOT " + lib + ")\n" +
+                  "    message(WARNING \"Could not find library zlib\")" + "\n" +
+                  "  else()\n" +
+                  "    message(STATUS \"Linking ${" + lib + "}\")" + "\n" +
+                  "    target_link_libraries(${FMU_NAME_HASH} PRIVATE ${" + lib + "})" + "\n" +
+                  "    list(APPEND RUNTIME_DEPENDS ${" + lib + "})" + "\n" +
+                  "  endif()\n" +
                   "endif()\n";
     elseif lib == "lapack" then
       cmakeCode := cmakeCode + "find_package(LAPACK REQUIRED)\n" +
@@ -14390,15 +14395,15 @@ algorithm
 end msvcEnvironment;
 
 public function getCMakeVersion
-  "Get CMake version"
+  "Get CMake version, writing intermediate output to logDirectory (defaults to the current directory)."
   input String pathToCMake = Autoconf.cmake;
-  output SemanticVersion.Version cmakeVersion;
+  input String logDirectory = "./";
+  output String cmakeVersion;
 protected
   Integer retVal;
-  String cmakeVersionLogFile = "systemCall_cmakeVersion.log";
+  String cmakeVersionLogFile = logDirectory + "systemCall_cmakeVersion.log";
   list<String> regexOut;
   Integer numMatches;
-  String cmakeVersionString;
 algorithm
   retVal := System.systemCallRestrictedEnv(msvcEnvironment() + pathToCMake + " --version", cmakeVersionLogFile);
   if 0 <> retVal then
@@ -14419,8 +14424,7 @@ algorithm
     Error.addInternalError("Failed to read semantic version from " + pathToCMake, sourceInfo());
     fail();
   end if;
-  cmakeVersionString := listHead(regexOut);
-  cmakeVersion := SemanticVersion.parse(cmakeVersionString);
+  cmakeVersion := listHead(regexOut);
   System.removeFile(cmakeVersionLogFile);
 end getCMakeVersion;
 
