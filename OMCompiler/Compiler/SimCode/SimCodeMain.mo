@@ -1287,10 +1287,7 @@ algorithm
           // carries them, and omc_config.h for a runtime source that includes it first.
           fmu_solver_defines := "#define WITH_SUITESPARSE 1" +
             (if SimCodeUtil.cvodeFmiFlagIsSet(simCode.fmiSimulationFlags) and FMUVersion <> "1.0" then "\n#define OMC_FMI_HAVE_CVODE 1" else "") +
-            (if needIda then "\n#define OMC_FMI_HAVE_IDA 1" else "") +
-            // the nonlinear solvers for dae_mode.c, also for a model without nonlinear systems
-            (if needIda and varInfo.numNonLinearSystems == 0 then
-               "\n#undef OMC_NUM_NONLINEAR_SYSTEMS\n#define OMC_NUM_NONLINEAR_SYSTEMS 1" else "");
+            (if needIda then "\n#define OMC_FMI_HAVE_IDA 1" else "");
           System.writeFile(fmu_tmp_sources_dir + "omc_config.h", "#include \"omc_simulation_settings.h\"\n");
         end if;
 
