@@ -67,6 +67,7 @@ resizableAlgebraicLoops.mos \
 resizableFill.mos \
 resizableStreams.mos \
 resizableEvaluate.mos \
+resizableEvaluateAlias.mos \
 resizableStreamMixing.mos \
 resizableWholeSubscript.mos \
 resizableArrayBinding.mos \
