@@ -543,6 +543,7 @@ void buildRustOMC() {
       -DRUST_OMC_WORK_DIR=${rustWorkDir()} \
       -DRUST_OMC_FMU_NATIVE_TARGETS=${fmuNativeTargets()} \
       -DRUST_OMC_MACOS_SDK=${fmuMacosSdk()} \
+      -DOM_DOWNLOADS_DIR=/cache/thirdparty \
       -DRUST_OMC_WASM_RUNTIME_OUT=${env.WORKSPACE}/runtime.wasm
   """
   withSccache(cheapReleaseProfile()) {
@@ -576,6 +577,8 @@ void buildRustOMC() {
     find . -path '*/src/*.rs' -print0 |
       tar --null -T - -cf - | tar -C ${env.WORKSPACE}/rust-generated-src -xf -
   """
+  // stash reaches only inside the workspace, and OM_DOWNLOADS_DIR is not.
+  sh 'mkdir -p build_cmake/downloads && cp /cache/thirdparty/wasi_snapshot_preview1.reactor.wasm build_cmake/downloads/'
   stash name: 'rust-generated-src',
         includes: 'rust-generated-src/**,' +
                   'build_cmake/rust-wasi-pic-sysroot/**,' +
@@ -631,6 +634,7 @@ void configureWeb(String extra) {
       -DRUST_OMC_FMU_LOADERS=${env.WORKSPACE}/fmu-loaders \
       -DRUST_OMC_MACOS_SDK=${fmuMacosSdk()} \
       -DOM_USE_CCACHE=OFF \
+      -DOM_DOWNLOADS_DIR=/cache/thirdparty \
       -DCMAKE_INSTALL_PREFIX=install_web \
       ${extra}
   """
@@ -723,6 +727,7 @@ void buildRustGUI() {
       -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
       -DCMAKE_C_COMPILER=clang \
       -DCMAKE_CXX_COMPILER=clang++ \
+      -DOM_DOWNLOADS_DIR=/cache/thirdparty \
       -DCMAKE_INSTALL_PREFIX=build_gui_install
   """
   withSccache {
@@ -1335,6 +1340,7 @@ void buildGUIAndRunOMEditTestsuite() {
       "-DCMAKE_INSTALL_PREFIX=build",
       "-DCMAKE_C_COMPILER=clang",
       "-DCMAKE_CXX_COMPILER=clang++",
+      "-DOM_DOWNLOADS_DIR=/cache/thirdparty",
       "-DOM_OMEDIT_ENABLE_TESTS=ON"], 'cmake', false)
   }
 
@@ -1577,6 +1583,7 @@ void buildGccOMC() {
       "-DCMAKE_BUILD_TYPE=Release",
       "-DOM_COMPILER_CACHE=sccache",
       "-DCMAKE_INSTALL_PREFIX=build",
+      "-DOM_DOWNLOADS_DIR=/cache/thirdparty",
       "-DOM_ENABLE_COVERAGE=ON"])
   }
 
@@ -1625,6 +1632,7 @@ void buildClangOMC() {
       "-DCMAKE_BUILD_TYPE=Release",
       "-DOM_COMPILER_CACHE=sccache",
       "-DCMAKE_INSTALL_PREFIX=build",
+      "-DOM_DOWNLOADS_DIR=/cache/thirdparty",
       "-DCMAKE_C_COMPILER=clang",
       "-DCMAKE_CXX_COMPILER=clang++"], 'cmake', false)
   }

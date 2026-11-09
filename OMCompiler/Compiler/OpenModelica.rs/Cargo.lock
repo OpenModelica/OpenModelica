@@ -7739,6 +7739,10 @@ name = "openmodelica_mat_writer"
 version = "0.1.0"
 
 [[package]]
+name = "openmodelica_modelica_diff"
+version = "0.1.0"
+
+[[package]]
 name = "openmodelica_modelica_utilities"
 version = "0.1.0"
 dependencies = [
@@ -8106,6 +8110,7 @@ dependencies = [
  "openmodelica_error",
  "openmodelica_fmi",
  "openmodelica_lapack",
+ "openmodelica_modelica_diff",
  "openmodelica_regex",
  "openmodelica_util_datatypes_basic",
  "openmodelica_version",

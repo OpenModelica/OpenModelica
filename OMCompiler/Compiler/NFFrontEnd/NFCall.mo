@@ -1954,6 +1954,7 @@ public
         list<tuple<InstNode, Expression>> iters;
         Option<Expression> default_exp;
         tuple<Option<Expression>, String, String> fold_exp;
+        Option<Expression> fold_opt;
 
       case UNTYPED_CALL()
         algorithm
@@ -1987,39 +1988,47 @@ public
 
       case TYPED_CALL()
         algorithm
-          args := list(Expression.map(arg, func) for arg in call.arguments);
+          args := List.mapCheckReferenceEq(call.arguments, function Expression.map(func = func));
         then
-          TYPED_CALL(call.fn, call.ty, call.var, call.purity, args, call.attributes);
+          if referenceEq(call.arguments, args) then call
+            else TYPED_CALL(call.fn, call.ty, call.var, call.purity, args, call.attributes);
 
       case UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
           e := Expression.map(call.exp, func);
           iters := mapIteratorsExp(call.iters, func);
         then
-          UNTYPED_ARRAY_CONSTRUCTOR(e, iters);
+          if referenceEq(call.exp, e) and referenceEq(call.iters, iters) then call
+            else UNTYPED_ARRAY_CONSTRUCTOR(e, iters);
 
       case TYPED_ARRAY_CONSTRUCTOR()
         algorithm
           e := Expression.map(call.exp, func);
           iters := mapIteratorsExp(call.iters, func);
         then
-          TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, call.purity, e, iters);
+          if referenceEq(call.exp, e) and referenceEq(call.iters, iters) then call
+            else TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, call.purity, e, iters);
 
       case UNTYPED_REDUCTION()
         algorithm
           e := Expression.map(call.exp, func);
           iters := mapIteratorsExp(call.iters, func);
         then
-          UNTYPED_REDUCTION(call.ref, e, iters);
+          if referenceEq(call.exp, e) and referenceEq(call.iters, iters) then call
+            else UNTYPED_REDUCTION(call.ref, e, iters);
 
       case TYPED_REDUCTION()
         algorithm
           e := Expression.map(call.exp, func);
           iters := mapIteratorsExp(call.iters, func);
-          default_exp := Util.applyOption(call.defaultExp, function Expression.map(func = func));
-          fold_exp := Util.applyTuple31(call.foldExp, function Expression.mapOpt(func = func));
+          default_exp := Expression.mapOpt(call.defaultExp, func);
+          fold_opt := Expression.mapOpt(Util.tuple31(call.foldExp), func);
+          fold_exp := if referenceEq(fold_opt, Util.tuple31(call.foldExp)) then call.foldExp
+            else (fold_opt, Util.tuple32(call.foldExp), Util.tuple33(call.foldExp));
         then
-          TYPED_REDUCTION(call.fn, call.ty, call.var, call.purity, e, iters, default_exp, fold_exp);
+          if referenceEq(call.exp, e) and referenceEq(call.iters, iters) and
+             referenceEq(call.defaultExp, default_exp) and referenceEq(call.foldExp, fold_exp) then call
+            else TYPED_REDUCTION(call.fn, call.ty, call.var, call.purity, e, iters, default_exp, fold_exp);
 
     end match;
   end mapExp;
@@ -2035,14 +2044,16 @@ public
   protected
     InstNode node;
     Expression exp, new_exp;
+    Boolean changed = false;
   algorithm
     for i in iters loop
       (node, exp) := i;
       new_exp := Expression.map(exp, func);
+      changed := changed or not referenceEq(new_exp, exp);
       outIters := (if referenceEq(new_exp, exp) then i else (node, new_exp)) :: outIters;
     end for;
 
-    outIters := listReverseInPlace(outIters);
+    outIters := if changed then listReverseInPlace(outIters) else iters;
   end mapIteratorsExp;
 
   function mapExpShallow

@@ -78,7 +78,6 @@ import Conversion;
 import DAEDump;
 import DAEUtil;
 import Debug;
-import DiffAlgorithm;
 import ContainerImage;
 import Dump;
 import Error;
@@ -102,9 +101,9 @@ import GlobalScript;
 import Graph;
 import InnerOuter;
 import Inst;
-import LexerModelicaDiff;
 import List;
 import Lookup;
+import ModelicaDiff;
 import NFApi;
 import NFCheckModel;
 import NFConvertDAE;
@@ -136,7 +135,6 @@ import SimCodeFunction;
 import SimCodeFunctionUtil;
 import SimCodeUtil;
 import StateMachineFlatten;
-import SimpleModelicaParser;
 import SimulationResults;
 import StaticScript;
 import StringUtil;
@@ -760,47 +758,6 @@ algorithm
   end matchcontinue;
 end simOptionsAsString;
 
-protected function diffSanityCheckEqual
-  "Sanity check for the Modelica source diff/merge: returns true when s1 and
-   s2 represent the same Modelica program. Code tokens are compared strictly
-   (ignoring whitespace), while comments are compared as a multiset so the
-   merge step is free to relocate them."
-  input String s1;
-  input String s2;
-  output Boolean b;
-protected
-  import LexerModelicaDiff.{Token,tokenContent,scanString,isLineComment,isBlockComment,blockCommentCanonical,modelicaDiffTokenWhitespace};
-  list<Token> ts1, ts2;
-  list<String> comments1, comments2;
-algorithm
-  (ts1, _) := scanString(s1);
-  (ts2, _) := scanString(s2);
-  if stringAppendList(list(tokenContent(t) for t guard not modelicaDiffTokenWhitespace(t) in ts1)) <>
-     stringAppendList(list(tokenContent(t) for t guard not modelicaDiffTokenWhitespace(t) in ts2)) then
-    b := false;
-    return;
-  end if;
-  comments1 := List.sort(list(diffSanityCheckCommentStr(t)
-                              for t guard isLineComment(t) or isBlockComment(t) in ts1),
-                         Util.strcmpBool);
-  comments2 := List.sort(list(diffSanityCheckCommentStr(t)
-                              for t guard isLineComment(t) or isBlockComment(t) in ts2),
-                         Util.strcmpBool);
-  b := List.isEqualOnTrue(comments1, comments2, stringEq);
-end diffSanityCheckEqual;
-
-protected function diffSanityCheckCommentStr
-  "Canonical string form of a comment token. Block comments are normalised by
-   trimming each line, so that re-indented block comments compare equal."
-  input LexerModelicaDiff.Token t;
-  output String s;
-protected
-  import LexerModelicaDiff.{tokenContent,isBlockComment,blockCommentCanonical};
-algorithm
-  s := if isBlockComment(t) then stringDelimitList(blockCommentCanonical(t), "\n")
-                            else tokenContent(t);
-end diffSanityCheckCommentStr;
-
 public function cevalInteractiveFunctions3
 "defined in the interactive environment."
   input FCore.Cache inCache;
@@ -811,8 +768,6 @@ public function cevalInteractiveFunctions3
   output FCore.Cache outCache = inCache;
   output Values.Value outValue;
 protected
-  import LexerModelicaDiff.{Token,TokenId,tokenContent,scanString,reportErrors,filterModelicaDiff,modelicaDiffTokenEq,modelicaDiffTokenWhitespace};
-  import DiffAlgorithm.{Diff,diff,printActual,printDiffTerminalColor,printDiffXml};
   list<Values.Value> args = simulationCallArguments(inFunctionName, inVals);
 algorithm
   outValue := matchcontinue (inFunctionName,args)
@@ -852,10 +807,6 @@ algorithm
       Boolean dumpExtractionSteps;
       list<Boolean> blst;
       UnitAbsyn.Unit u1,u2;
-      list<Token> tokens1, tokens2, errorTokens;
-      list<SimpleModelicaParser.ParseTree> parseTree1, parseTree2;
-      //list<tuple<Diff, list<Token>>> diffs;
-      list<tuple<Diff, list<SimpleModelicaParser.ParseTree>>> treeDiffs;
       SymbolTable forkedSymbolTable;
       SimCode.SimulationSettings simSettings;
 
@@ -1196,7 +1147,6 @@ algorithm
     case ("diffModelicaFileListings",{Values.STRING(s1),Values.STRING(s2),Values.ENUM_LITERAL(name=path),Values.BOOL(b)})
       algorithm
         ExecStat.execStatReset();
-
         (s1, bom) := StringUtil.stripBOM(s1);
         // Work internally with LF line endings only, so that lines coming from
         // the original file (s1) and lines produced by the listing (s2, always LF)
@@ -1206,104 +1156,62 @@ algorithm
         lineEndingIsCRLF := s1 <> System.stringReplace(s1, "\r\n", "\n"); // removing CRLF changed s1 => it originally contained CRLF
         s1 := System.stringReplace(s1, "\r\n", "\n");
         s1 := System.stringReplace(s1, "\r", "\n"); // also fold any remaining lone CR (old Mac) to LF
-        (tokens1, errorTokens) := scanString(s1);
-        reportErrors(errorTokens);
-
-        if false and s1<>stringAppendList(list(tokenContent(t) for t in tokens1)) then
-          // Debugging code. Make sure the scanner works before debugging the diff.
-          System.writeFile("string.before", s1);
-          System.writeFile("string.after", stringAppendList(list(tokenContent(t) for t in tokens1)));
-          Error.terminate("Lexed string does not match the original. See files string.before and string.after", sourceInfo());
-          fail();
-        end if;
-
-        ExecStat.execStat("diffModelicaFileListings scan string 1");
-        (_,parseTree1) := SimpleModelicaParser.stored_definition(tokens1, {});
-        ExecStat.execStat("diffModelicaFileListings parse string 1");
-
-        if false and s1<>SimpleModelicaParser.parseTreeStr(parseTree1) then
-          // Debugging code. Make sure the parser works before debugging the diff.
-          System.writeFile("string.before", s1);
-          System.writeFile("string.after", SimpleModelicaParser.parseTreeStr(parseTree1));
-          Error.terminate("Parsed string does not match the original. See files string.before and string.after", sourceInfo());
-          fail();
-        end if;
-
-        (s2, bom) := StringUtil.stripBOM(s2);
+        (s2, _) := StringUtil.stripBOM(s2);
         s2 := System.stringReplace(s2, "\r\n", "\n");
         s2 := System.stringReplace(s2, "\r", "\n");
-        (tokens2, errorTokens) := scanString(s2);
-        reportErrors(errorTokens);
-        ExecStat.execStat("diffModelicaFileListings scan string 2");
-        (_,parseTree2) := SimpleModelicaParser.stored_definition(tokens2, {});
-        ExecStat.execStat("diffModelicaFileListings parse string 2");
 
-        if false and s2<>SimpleModelicaParser.parseTreeStr(parseTree2) then
-          // Debugging code. Make sure the parser works before debugging the diff.
-          System.writeFile("string.before", s2);
-          System.writeFile("string.after", SimpleModelicaParser.parseTreeStr(parseTree2));
-          Error.terminate("Parsed string does not match the original. See files string.before and string.after", sourceInfo());
-          fail();
-        end if;
-
-        treeDiffs := SimpleModelicaParser.treeDiff(parseTree1, parseTree2, max(listLength(tokens1),listLength(tokens2)));
-
-        ExecStat.execStat("treeDiff");
-
-        sanityCheckFailed := false;
-
-        if true then
-          // Do a sanity check
-          s3 := Dump.unparseStr(Parser.parsestring(s2));
-          ExecStat.execStat("sanity parsestring(s2)");
-          s5 := printActual(treeDiffs, SimpleModelicaParser.parseTreeNodeStr);
+        // The listing of s1 has the tokens of s1 and the layout of s2, so the
+        // merge sees what the API changed and not what the printer changed.
+        s3 := s1;
+        if s1 <> s2 then
+          ErrorExt.setCheckpoint(getInstanceName());
           try
-            s4 := Dump.unparseStr(Parser.parsestring(s5));
-            ExecStat.execStat("sanity parsestring(s5)");
+            s3 := Dump.unparseStr(Parser.parsestring(s1));
+            ErrorExt.delCheckpoint(getInstanceName());
+          else
+            ErrorExt.rollBack(getInstanceName());
+          end try;
+        end if;
+        ExecStat.execStat("diffModelicaFileListings listing of before");
+        s5 := ModelicaDiff.merge(s1, s3, s2);
+        ExecStat.execStat("diffModelicaFileListings merge");
+
+        // Sanity check: the merged text must have the code of s2. The listings
+        // are compared only if the texts differ, since the printer may change
+        // tokens, e.g. 'abs' to abs.
+        sanityCheckFailed := false;
+        if s5 <> s2 and not ModelicaDiff.codeEqual(s5, s2) then
+          s4 := Dump.unparseStr(Parser.parsestring(s2));
+          try
+            str := Dump.unparseStr(Parser.parsestring(s5));
           else
             System.writeFile("SanityCheckFail.mo", s5);
             Error.addInternalError("Failed to parse merged string (see generated file SanityCheckFail.mo)\n", sourceInfo());
             fail();
           end try;
-          if not diffSanityCheckEqual(s3, s4) then
-            System.writeFile("SanityCheckFailBefore.mo", s3);
-            System.writeFile("SanityCheckFailAfter.mo", s4);
+          sanityCheckFailed := not ModelicaDiff.codeEqual(s4, str);
+          if sanityCheckFailed then
+            System.writeFile("SanityCheckFailBefore.mo", s4);
+            System.writeFile("SanityCheckFailAfter.mo", str);
             if b then
-              Error.addInternalError("After merging the strings, the semantics changed for some reason (see generated files SanityCheckFailBefore.mo SanityCheckFailAfter.mo). Will return the empty string:\ns1:\n"+s1+"\ns2:\n"+s2+"\ns3:\n"+s3+"\ns4:\n"+s4+"\ns5:\n"+s5+"\nparseTree2:"+SimpleModelicaParser.parseTreeStr(parseTree2), sourceInfo());
+              Error.addInternalError("After merging the strings, the semantics changed for some reason (see generated files SanityCheckFailBefore.mo SanityCheckFailAfter.mo). Will return the empty string:\ns1:\n"+s1+"\ns2:\n"+s2+"\nmerged:\n"+s5, sourceInfo());
               fail();
             else
-              Error.addInternalError("After merging the strings, the semantics changed for some reason (see generated files SanityCheckFailBefore.mo SanityCheckFailAfter.mo). Will return s2:\ns1:\n"+s1+"\ns2:\n"+s2+"\ns3:\n"+s3+"\ns4:\n"+s4+"\ns5:\n"+s5, sourceInfo());
+              Error.addInternalError("After merging the strings, the semantics changed for some reason (see generated files SanityCheckFailBefore.mo SanityCheckFailAfter.mo). Will return s2:\ns1:\n"+s1+"\ns2:\n"+s2+"\nmerged:\n"+s5, sourceInfo());
             end if;
-            sanityCheckFailed := true;
           end if;
         end if;
+        ExecStat.execStat("diffModelicaFileListings sanity check");
 
-        /*
-        diffs := diff(tokens1, tokens2, modelicaDiffTokenEq, modelicaDiffTokenWhitespace, tokenContent);
-        ExecStat.execStat("diffModelicaFileListings diff 1");
-        // print("Before filtering:\n"+printDiffTerminalColor(diffs, tokenContent)+"\n");
-        diffs := filterModelicaDiff(diffs,removeWhitespace=false);
-        ExecStat.execStat("diffModelicaFileListings filter diff 1");
-        // Scan a second time, with comments filtered into place
-        str := printActual(diffs, tokenContent);
-        // print("Intermediate string:\n"+printDiffTerminalColor(diffs, tokenContent)+"\n");
-        tokens2 := scanString(str);
-        ExecStat.execStat("diffModelicaFileListings prepare pass 2");
-        diffs := diff(tokens1, tokens2, modelicaDiffTokenEq, modelicaDiffTokenWhitespace, tokenContent);
-        ExecStat.execStat("diffModelicaFileListings diff 2");
-        // print("Before filtering (2):\n"+printDiffTerminalColor(diffs, tokenContent)+"\n");
-        diffs := filterModelicaDiff(diffs);
-        ExecStat.execStat("diffModelicaFileListings filter diff 2");
-        */
-        str := if sanityCheckFailed then s2 else matchcontinue AbsynUtil.pathLastIdent(path)
-          case "plain" then printActual(treeDiffs, SimpleModelicaParser.parseTreeNodeStr);
-          case "color" then printDiffTerminalColor(treeDiffs, SimpleModelicaParser.parseTreeNodeStr);
-          case "xml" then printDiffXml(treeDiffs, SimpleModelicaParser.parseTreeNodeStr);
-          else
-            algorithm
-              Error.addInternalError("Unknown diffModelicaFileListings choice", sourceInfo());
-            then fail();
-        end matchcontinue;
+        if sanityCheckFailed then
+          str := s2;
+        else
+          str := match AbsynUtil.pathLastIdent(path)
+            case "plain" then s5;
+            case "color" then ModelicaDiff.render(s1, s5, ModelicaDiff.Format.Color);
+            case "xml" then ModelicaDiff.render(s1, s5, ModelicaDiff.Format.Xml);
+          end match;
+        end if;
         // Restore the original file's line-ending convention (we processed as LF above).
         str := if lineEndingIsCRLF then System.stringReplace(str, "\n", "\r\n") else str;
       then
@@ -1917,9 +1825,6 @@ public function cevalInteractiveFunctions4
   input Absyn.Msg msg;
   output FCore.Cache outCache = inCache;
   output Values.Value outValue;
-protected
-  import LexerModelicaDiff.{Token,TokenId,tokenContent,scanString,reportErrors,filterModelicaDiff,modelicaDiffTokenEq,modelicaDiffTokenWhitespace};
-  import DiffAlgorithm.{Diff,diff,printActual,printDiffTerminalColor,printDiffXml};
 algorithm
   outValue := matchcontinue (inFunctionName, inVals)
     local
@@ -2400,13 +2305,13 @@ algorithm
       then ValuesMake.makeArray({});
 
     case ("getAvailablePackageConversionsFrom",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1))), Values.STRING(str2)})
-      then ValuesMake.makeStringArray(PackageManagement.versionsThatConvertFromTheWanted(str1, str2, true));
+      then ValuesMake.makeStringArray(PackageManagement.versionsThatConvertFromTheWanted(str1, str2, false, Interactive.libraryMetadata));
 
     case ("getAvailablePackageConversionsFrom",_)
       then ValuesMake.makeArray({});
 
     case ("getAvailablePackageConversionsTo",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1))), Values.STRING(str2)})
-      then ValuesMake.makeStringArray(PackageManagement.versionsThatConvertToTheWanted(str1, str2, true));
+      then ValuesMake.makeStringArray(PackageManagement.versionsThatConvertToTheWanted(str1, str2, false, Interactive.libraryMetadata));
 
     case ("getAvailablePackageConversionsTo",_)
       then ValuesMake.makeArray({});
@@ -10314,7 +10219,8 @@ protected
   Option<String> uses_version;
   String lib_version, lib_version_used;
   list<tuple<String, Option<String>, Option<String>>> conversions;
-  list<String> scripts;
+  list<String> none_from;
+  Option<list<String>> scripts;
   String lib_name;
 algorithm
   try
@@ -10357,9 +10263,10 @@ algorithm
     // the class to the desired library version.
     lib_cls := ProgramUtil.getPathedClassInProgram(libPath, lib_program, showError = true);
     conversions := Interactive.getConversionsInClass(lib_cls);
-    scripts := findConversionPaths(conversions, lib_version, lib_version_used);
+    (none_from, _) := Interactive.getConversionAnnotation(lib_cls);
+    scripts := findConversionPaths(conversions, none_from, lib_version, lib_version_used);
 
-    if listEmpty(scripts) then
+    if isNone(scripts) then
       Error.addMessage(Error.CONVERSION_NO_COMPATIBLE_SCRIPT_FOUND,
         {AbsynUtil.pathString(libPath),
          SemanticVersion.normalize(lib_version_used),
@@ -10368,7 +10275,7 @@ algorithm
     end if;
 
     // Apply the conversion scripts.
-    for script in scripts loop
+    for script in Util.getOption(scripts) loop
       script := uriToFilename(script);
       cls := Conversion.convertPackage(cls, script);
     end for;
@@ -10387,71 +10294,66 @@ algorithm
 end convertPackageToLibrary;
 
 function findConversionPaths
-  "Tries to find the shortest path for converting from one version to another
-   and returns the list of conversion scripts for that path. Usually only one
-   conversion is needed, but sometimes the conversion might need to be done in
-   several steps (e.g. 2.0.0 => 2.3.5 => 2.4.0)."
+  "The conversion scripts of the shortest way to convert from one version to
+   another, usually one, but sometimes in several steps (e.g. 2.0.0 => 2.3.5
+   => 2.4.0). A noneFromVersion step needs no script. NONE() if there is no
+   way."
   input list<tuple<String, Option<String>, Option<String>>> conversions;
+  input list<String> noneFromVersions;
   input String libVersion;
   input String libVersionUsed;
   input Integer depth = 0;
-  output list<String> scripts = {};
+  output Option<list<String>> scripts = NONE();
 protected
-  list<list<String>> paths = {};
-  Integer path_len, path_min = 100;
+  Option<list<String>> path;
 algorithm
   // Abort if we go too deep to avoid crashing on malicious conversion annotations.
   if depth > 100 then
     return;
   end if;
 
-  // Find the possible path for each conversion to the version we're looking for.
   for c in conversions loop
-    paths := findConversionPath(c, libVersion, libVersionUsed, conversions, depth) :: paths;
-  end for;
-
-  // Return the shortest non-empty path.
-  for p in paths loop
-    path_len := listLength(p);
-
-    if path_len > 0 and path_len < path_min then
-      scripts := p;
-      path_min := path_len;
-    end if;
+    path := findConversionPath(c, noneFromVersions, libVersion, libVersionUsed, conversions, depth);
+    scripts := match (path, scripts)
+      case (SOME(_), NONE()) then path;
+      case (SOME(_), SOME(_)) guard listLength(Util.getOption(path)) < listLength(Util.getOption(scripts)) then path;
+      else scripts;
+    end match;
   end for;
 end findConversionPaths;
 
 function findConversionPath
   input tuple<String, Option<String>, Option<String>> conversion;
+  input list<String> noneFromVersions;
   input String libVersion;
   input String libVersionUsed;
   input list<tuple<String, Option<String>, Option<String>>> conversions;
   input Integer depth;
-  output list<String> scripts = {};
+  output Option<list<String>> scripts = NONE();
 protected
   String from;
   Option<String> to;
   Option<String> script;
-  String from_version, to_version;
 algorithm
   (from, to, script) := conversion;
 
-  if isNone(script) then
+  if SemanticVersion.compare(libVersionUsed, from) <> 0 then
     return;
   end if;
 
-  from_version := from;
+  // Without a script only noneFromVersion is a step; inline conversion rules
+  // (change) are not supported.
+  if isNone(script) and not listMember(from, noneFromVersions) then
+    return;
+  end if;
 
-  if SemanticVersion.compare(libVersionUsed, from_version) == 0 then
-    if isSome(to) then
-      to_version := Util.getOption(to);
+  scripts := SOME({});
+  if isSome(to) and SemanticVersion.compare(libVersion, Util.getOption(to)) <> 0 then
+    scripts := findConversionPaths(conversions, noneFromVersions, libVersion, Util.getOption(to), depth + 1);
+  end if;
 
-      if SemanticVersion.compare(libVersion, to_version) <> 0 then
-        scripts := findConversionPaths(conversions, libVersion, to_version, depth + 1);
-      end if;
-    end if;
-
-    scripts := Util.getOption(script) :: scripts;
+  if isSome(script) and isSome(scripts) then
+    scripts := SOME(Util.getOption(script) :: Util.getOption(scripts));
   end if;
 end findConversionPath;
 

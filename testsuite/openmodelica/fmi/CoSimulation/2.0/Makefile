@@ -8,6 +8,7 @@ fmi_interpolation_01.mos \
 FmuAssertSolverRetry.mos \
 FmuExitInitAssert.mos \
 FmuMatV7Table.mos \
+FmuZlibLinkOrder.mos \
 FmuNlsSameTime.mos \
 FmuUnknownDependencies.mos \
 FmuUnknownsWithoutFmiIndex.mos \
@@ -31,6 +32,7 @@ DEPENDENCIES = \
 FmuAssertSolverRetry.py \
 FmuExitInitAssert.py \
 FmuNlsSameTime.py \
+FmuZlibLinkOrder-f.c \
 Makefile \
 
 CLEAN = `ls | grep -w -v -f deps.tmp`

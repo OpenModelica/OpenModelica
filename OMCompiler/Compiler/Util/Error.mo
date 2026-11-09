@@ -1102,7 +1102,7 @@ public constant ErrorTypes.Message UNITFUL_LITERAL_ABSOLUTE_VALUE = ErrorTypes.M
   "The unitful literal %s can only be converted to the unit \"%s\" of %s if it has an absoluteValue annotation.");
 public constant ErrorTypes.Message EVALUATED_ZERO_COEFFICIENT = ErrorTypes.MESSAGE(632, ErrorTypes.SYMBOLIC(), ErrorTypes.NOTIFICATION(),
   "Evaluated the parameters %s, since an equation would be solved by dividing by zero otherwise. Changing them requires recompiling the model.");
-public constant ErrorTypes.Message NON_CAUSAL_BLOCK_CONNECTOR = ErrorTypes.MESSAGE(633, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+public constant ErrorTypes.Message NON_CAUSAL_BLOCK_CONNECTOR = ErrorTypes.MESSAGE(633, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Public connector %s in a block may only have variables that are input or output, but the following are neither: %s.");
 public constant ErrorTypes.Message OLD_FRONTEND_DEPRECATED = ErrorTypes.MESSAGE(634, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   "The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.");
@@ -1367,6 +1367,8 @@ public constant ErrorTypes.Message ERROR_PKG_CONFLICT = ErrorTypes.MESSAGE(7037,
   "No versions of %s %s and the libraries it uses can be used together:\n%s");
 public constant ErrorTypes.Message LOAD_MODEL_CONFLICT = ErrorTypes.MESSAGE(7038, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "No versions of the libraries that %s uses can be loaded together:\n%s");
+public constant ErrorTypes.Message NOTIFY_LOAD_MODEL_CONVERSION = ErrorTypes.MESSAGE(7039, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
+  "%1 uses %2 %3, which is not available, but %2 %4 has a conversion from it. Use convertPackageToLibrary(%1, %2, \"%4\") to convert %1.");
 public constant ErrorTypes.Message ALARM_EXPIRED = ErrorTypes.MESSAGE(7031, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "Operation aborted: the time limit set by the alarm ran out.");
 public constant ErrorTypes.Message FMU_EXPORT_FMI_LS_DAE_DRAFT = ErrorTypes.MESSAGE(7032, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),

@@ -45,7 +45,6 @@ OMCompiler/tools/
 # [build] generated files / build artifacts
 OMCompiler/Compiler/boot/bomc
 OMCompiler/Compiler/Lexers/LexerJSON.mo
-OMCompiler/Compiler/Lexers/LexerModelicaDiff.mo
 OMCompiler/Compiler/OpenModelicaBootstrappingHeader.h
 
 OMCompiler/Compiler/Script/OpenModelicaScriptingAPI.mo
@@ -194,6 +193,7 @@ doc/
 OMCompiler/Examples/
 OMCompiler/Compiler/OpenModelica.rs/wasm/simulator/examples/
 OMCompiler/Compiler/OpenModelica.rs/openmodelica_codegen_wasm_jit/testmodels/
+OMCompiler/Compiler/OpenModelica.rs/openmodelica_modelica_diff/tests/cases/
 !OMCompiler/Examples/GenerateDoc.mos
 
 # =============================================================================
