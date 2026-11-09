@@ -205,9 +205,7 @@ fn ty_has_type_var(ty: &Ty) -> bool {
         Ty::Option(t) | Ty::List(t) | Ty::Array(t) | Ty::Range(t) => ty_has_type_var(t),
         Ty::Tuple(ts) => ts.iter().any(ty_has_type_var),
         Ty::Generic(_, args) => args.iter().any(ty_has_type_var),
-        Ty::Function { inputs, output, .. } => {
-            inputs.iter().any(|i| ty_has_type_var(&i.ty)) || ty_has_type_var(output)
-        }
+        Ty::Function { inputs, output, .. } => inputs.iter().any(|i| ty_has_type_var(&i.ty)) || ty_has_type_var(output),
         _ => false,
     }
 }
@@ -233,8 +231,20 @@ fn visit_exp(e: &TypedExp, info: Option<&Absyn::Info>, f: &mut CallVisit<'_>) {
             visit_exp(rhs, info, f);
         }
         TypedExp::UnOp { operand, .. } => visit_exp(operand, info, f),
-        TypedExp::Call { func, args, named_args, ty, .. }
-        | TypedExp::PartEval { func, args, named_args, ty, .. } => {
+        TypedExp::Call {
+            func,
+            args,
+            named_args,
+            ty,
+            ..
+        }
+        | TypedExp::PartEval {
+            func,
+            args,
+            named_args,
+            ty,
+            ..
+        } => {
             let mut all: Vec<&TypedExp> = args.iter().collect();
             all.extend(named_args.iter().map(|(_, v)| v));
             f(func, all, ty, info);
@@ -253,7 +263,13 @@ fn visit_exp(e: &TypedExp, info: Option<&Absyn::Info>, f: &mut CallVisit<'_>) {
                 visit_exp(v, info, f);
             }
         }
-        TypedExp::If { cond, then_, elseif, else_, .. } => {
+        TypedExp::If {
+            cond,
+            then_,
+            elseif,
+            else_,
+            ..
+        } => {
             visit_exp(cond, info, f);
             visit_exp(then_, info, f);
             for (c, t) in elseif {
@@ -270,7 +286,14 @@ fn visit_exp(e: &TypedExp, info: Option<&Absyn::Info>, f: &mut CallVisit<'_>) {
         TypedExp::Array { elems, .. } => elems.iter().for_each(|e| visit_exp(e, info, f)),
         TypedExp::Match { input, cases, .. } => {
             visit_exp(input, info, f);
-            for TypedCase { guard, locals, stmts, result, .. } in cases {
+            for TypedCase {
+                guard,
+                locals,
+                stmts,
+                result,
+                ..
+            } in cases
+            {
                 if let Some(g) = guard {
                     visit_exp(g, info, f);
                 }
@@ -308,7 +331,12 @@ fn visit_stmt(s: &TypedStmt, f: &mut CallVisit<'_>) {
     match s {
         TypedStmt::Assign { rhs, info, .. } => visit_exp(rhs, Some(info), f),
         TypedStmt::NoRetCall { call, info, .. } => visit_exp(call, Some(info), f),
-        TypedStmt::If { cond, then_, elseif, else_ } => {
+        TypedStmt::If {
+            cond,
+            then_,
+            elseif,
+            else_,
+        } => {
             let info: Option<&Absyn::Info> = None;
             visit_exp(cond, info, f);
             then_.iter().for_each(|s| visit_stmt(s, f));
@@ -353,9 +381,7 @@ fn ty_contains_cell(ty: &Ty, kinds: &[CellKind], tainted: &BTreeSet<String>) -> 
             let dotted = name.replace("::", ".");
             tainted.contains(&dotted) || args.iter().any(|a| ty_contains_cell(a, kinds, tainted))
         }
-        Ty::Option(t) | Ty::List(t) | Ty::Array(t) | Ty::Range(t) => {
-            ty_contains_cell(t, kinds, tainted)
-        }
+        Ty::Option(t) | Ty::List(t) | Ty::Array(t) | Ty::Range(t) => ty_contains_cell(t, kinds, tainted),
         Ty::Tuple(ts) => ts.iter().any(|t| ty_contains_cell(t, kinds, tainted)),
         Ty::RustStruct(q) | Ty::RustEnum(q) | Ty::AliasTo(q) => tainted.contains(q),
         Ty::UnionTypeVariant(q, _) => tainted.contains(q),
@@ -363,10 +389,7 @@ fn ty_contains_cell(ty: &Ty, kinds: &[CellKind], tainted: &BTreeSet<String>) -> 
     }
 }
 
-fn types_containing_cell(
-    graph: &BTreeMap<String, Vec<Ty>>,
-    kinds: &[CellKind],
-) -> BTreeSet<String> {
+fn types_containing_cell(graph: &BTreeMap<String, Vec<Ty>>, kinds: &[CellKind]) -> BTreeSet<String> {
     let mut tainted = BTreeSet::new();
     loop {
         let mut changed = false;
@@ -436,9 +459,7 @@ fn tv_under_cells(graph: &BTreeMap<String, Vec<Ty>>) -> BTreeMap<String, BTreeSe
         }
         match ty {
             Ty::TypeVar(_) => out.extend(crossed.iter().copied()),
-            Ty::Option(t) | Ty::List(t) | Ty::Array(t) | Ty::Range(t) => {
-                collect(t, crossed, tv_under, out)
-            }
+            Ty::Option(t) | Ty::List(t) | Ty::Array(t) | Ty::Range(t) => collect(t, crossed, tv_under, out),
             Ty::Tuple(ts) => ts.iter().for_each(|t| collect(t, crossed, tv_under, out)),
             Ty::Generic(name, args) => {
                 let dotted = name.replace("::", ".");
@@ -494,9 +515,7 @@ fn collect_edges(
         return;
     }
     match ty {
-        Ty::Option(t) | Ty::List(t) | Ty::Array(t) | Ty::Range(t) => {
-            collect_edges(t, crossed, tv_under, out)
-        }
+        Ty::Option(t) | Ty::List(t) | Ty::Array(t) | Ty::Range(t) => collect_edges(t, crossed, tv_under, out),
         Ty::Tuple(ts) => ts.iter().for_each(|t| collect_edges(t, crossed, tv_under, out)),
         Ty::Generic(name, args) => {
             let dotted = name.replace("::", ".");
@@ -714,8 +733,10 @@ fn cell_cyclic_types(
             if !scc_cyclic[scc] {
                 continue;
             }
-            let members: Vec<&str> =
-                (0..n).filter(|&v| scc_of[v] == scc).map(|v| names[v].as_str()).collect();
+            let members: Vec<&str> = (0..n)
+                .filter(|&v| scc_of[v] == scc)
+                .map(|v| names[v].as_str())
+                .collect();
             out.push_str(&format!("SCC of {} types:\n", members.len()));
             for m in &members {
                 out.push_str(&format!("    {m}\n"));
@@ -886,23 +907,18 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> Report {
     // cells actually get updated (the downward reach from update contents).
     let tv_under = tv_under_cells(&graph);
     let cyclic_mutable = cell_cyclic_types(&graph, &tv_under, &[CellKind::Mutable]);
-    let cyclic_cells =
-        cell_cyclic_types(&graph, &tv_under, &[CellKind::Mutable, CellKind::Pointer]);
+    let cyclic_cells = cell_cyclic_types(&graph, &tv_under, &[CellKind::Mutable, CellKind::Pointer]);
     let cyclic_all = cell_cyclic_types(
         &graph,
         &tv_under,
         &[CellKind::Mutable, CellKind::Pointer, CellKind::Array],
     );
 
-    let known = |set: BTreeSet<String>| -> BTreeSet<String> {
-        set.into_iter().filter(|q| graph.contains_key(q)).collect()
-    };
-    let gc_types_mutable_only: BTreeSet<String> =
-        known(reach_mutable.intersection(&cyclic_mutable).cloned().collect());
-    let gc_types_full: BTreeSet<String> =
-        known(reach_cells.intersection(&cyclic_cells).cloned().collect());
-    let gc_types_with_arrays: BTreeSet<String> =
-        known(reach_all.intersection(&cyclic_all).cloned().collect());
+    let known =
+        |set: BTreeSet<String>| -> BTreeSet<String> { set.into_iter().filter(|q| graph.contains_key(q)).collect() };
+    let gc_types_mutable_only: BTreeSet<String> = known(reach_mutable.intersection(&cyclic_mutable).cloned().collect());
+    let gc_types_full: BTreeSet<String> = known(reach_cells.intersection(&cyclic_cells).cloned().collect());
+    let gc_types_with_arrays: BTreeSet<String> = known(reach_all.intersection(&cyclic_all).cloned().collect());
     let gc_types_with_dyn_fn: BTreeSet<String> = gc_types_full
         .intersection(&hier.types_containing_dyn_fn)
         .cloned()
@@ -913,11 +929,10 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> Report {
         .filter(|(q, _)| !primitives.contains(&q.as_str()))
         .collect();
 
-    let traced_cells_only: BTreeSet<String> =
-        types_containing_cell(&graph, &[CellKind::Mutable, CellKind::Pointer])
-            .into_iter()
-            .filter(|q| graph.contains_key(q))
-            .collect();
+    let traced_cells_only: BTreeSet<String> = types_containing_cell(&graph, &[CellKind::Mutable, CellKind::Pointer])
+        .into_iter()
+        .filter(|q| graph.contains_key(q))
+        .collect();
     let traced_types: BTreeSet<String> = traced_cells_only
         .union(&hier.types_containing_dyn_fn)
         .filter(|q| graph.contains_key(*q))
@@ -961,8 +976,7 @@ pub fn print_report(report: &Report) {
         for q in &report.traced_types {
             per_pkg.entry(top_package(q)).or_default().0 += 1;
         }
-        let mut rows: Vec<(&str, usize, usize)> =
-            per_pkg.iter().map(|(p, (t, n))| (*p, *t, *n)).collect();
+        let mut rows: Vec<(&str, usize, usize)> = per_pkg.iter().map(|(p, (t, n))| (*p, *t, *n)).collect();
         rows.sort_by_key(|(p, t, n)| (std::cmp::Reverse(*t), std::cmp::Reverse(*n), *p));
         println!(
             "  packages holding traced types ({} of {} packages):",
@@ -1039,10 +1053,7 @@ pub fn print_report(report: &Report) {
         "Arc→Gc set, Mutable-only scope (reachable from Mutable.update contents ∧ on a Mutable-crossing containment cycle)",
         &report.gc_types_mutable_only,
     );
-    print_set(
-        "Arc→Gc set, Mutable+Pointer scope",
-        &report.gc_types_full,
-    );
+    print_set("Arc→Gc set, Mutable+Pointer scope", &report.gc_types_full);
     print_set(
         "of those, types transitively embedding Arc<dyn Fn> (untraceable edges — Trace-derive problem cases)",
         &report.gc_types_with_dyn_fn,
