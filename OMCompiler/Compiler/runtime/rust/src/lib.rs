@@ -106,6 +106,55 @@ pub unsafe extern "C" fn omcrs_version_is_numbered(s: *const c_char) -> c_int {
 }
 
 /// # Safety
+/// `p` is a NUL-terminated string.
+unsafe fn bytes<'a>(p: *const c_char) -> &'a [u8] {
+    unsafe { CStr::from_ptr(p) }.to_bytes()
+}
+
+fn c_bytes(text: Vec<u8>) -> *mut c_char {
+    CString::new(text).unwrap_or_default().into_raw()
+}
+
+/// `openmodelica_modelica_diff::merge_bytes`. Never NULL.
+///
+/// # Safety
+/// Every pointer is a NUL-terminated string.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn omcrs_modelica_diff(
+    before: *const c_char,
+    before_canonical: *const c_char,
+    after: *const c_char,
+) -> *mut c_char {
+    use openmodelica_modelica_diff::merge_bytes;
+    c_bytes(unsafe { merge_bytes(bytes(before), bytes(before_canonical), bytes(after)) })
+}
+
+/// `openmodelica_modelica_diff::render_bytes`, with `format` the
+/// `ModelicaDiff.Format` literal (1-based). Never NULL.
+///
+/// # Safety
+/// Every pointer is a NUL-terminated string.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn omcrs_modelica_render(before: *const c_char, merged: *const c_char, format: c_int) -> *mut c_char {
+    use openmodelica_modelica_diff::{Format, render_bytes};
+    let format = match format {
+        2 => Format::Color,
+        3 => Format::Xml,
+        _ => Format::Plain,
+    };
+    c_bytes(unsafe { render_bytes(bytes(before), bytes(merged), format) })
+}
+
+/// `openmodelica_modelica_diff::code_equal_bytes`.
+///
+/// # Safety
+/// `a` and `b` are NUL-terminated strings.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn omcrs_modelica_code_equal(a: *const c_char, b: *const c_char) -> c_int {
+    unsafe { openmodelica_modelica_diff::code_equal_bytes(bytes(a), bytes(b)) as c_int }
+}
+
+/// # Safety
 /// `s` is NULL or a string returned by this library.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omcrs_free_string(s: *mut c_char) {

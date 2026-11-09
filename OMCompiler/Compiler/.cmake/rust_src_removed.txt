@@ -27,3 +27,4 @@ openmodelica_script_util/src/Curl_wasm.rs
 openmodelica_script_util/src/Curl.rs
 openmodelica_package_manager/src/legacy.rs
 openmodelica_package_manager/src/version.rs
+openmodelica_util/src/unittests/diff_algorithm_tests.rs

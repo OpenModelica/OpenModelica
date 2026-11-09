@@ -85,6 +85,7 @@ members = [
   "openmodelica_download",
   "openmodelica_package_manager",
   "openmodelica_version",
+  "openmodelica_modelica_diff",
   "openmodelica_animation",
   "openmodelica_animation_wasm",
   "openmodelica_scripting_api_gen",
@@ -207,6 +208,7 @@ openmodelica_zip = { path = "openmodelica_zip" }
 openmodelica_download = { path = "openmodelica_download", default-features = false }
 openmodelica_package_manager = { path = "openmodelica_package_manager", default-features = false }
 openmodelica_version = { path = "openmodelica_version" }
+openmodelica_modelica_diff = { path = "openmodelica_modelica_diff" }
 # LAPACK for every target, in place of the system `liblapack.so`: the same
 # `d*_` Fortran-ABI symbols `Lapack.rs` already binds, so one implementation
 # serves native, Windows (no MSVC-ABI LAPACK) and wasm (nothing to link) alike.

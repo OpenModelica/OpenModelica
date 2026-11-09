@@ -26,6 +26,7 @@ serde_json.workspace = true
 # FMU extraction in the hand-written FMIExt.rs.
 openmodelica_zip.workspace = true
 openmodelica_version.workspace = true
+openmodelica_modelica_diff.workspace = true
 # The port's FMU reader, which `importFMU` reads an FMI 3.0 model description
 # with. `component` is the wasm-tools half, which nothing here looks at.
 openmodelica_fmi = { path = "../openmodelica_fmi", default-features = false }
