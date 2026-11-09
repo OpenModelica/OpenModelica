@@ -85,6 +85,7 @@ pipeline {
               label 'linux'
               alwaysPull true
               args '''
+                --mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty \
                 --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
                 -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
               '''
@@ -106,6 +107,7 @@ pipeline {
               label 'linux'
               alwaysPull true
               args '''
+                --mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty \
                 --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
                 -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
               '''
@@ -288,6 +290,7 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
               label 'linux && !slow'
               args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
+                   "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
                    "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
                    "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
                    "-v /var/lib/jenkins/MacOSX.sdk:/mnt/MacOSX.sdk:ro " +
@@ -460,6 +463,7 @@ pipeline {
               // EM_CACHE on a persistent volume so the Qt-wasm sysroot (libc/libc++
               // and the ASYNCIFY/memory-growth variants) is built once, not per run.
               args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
+                   "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
                    "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
                    "--mount type=volume,source=emscripten-cache,target=/cache/emscripten " +
                    "-e EM_CACHE=/cache/emscripten " +
@@ -489,6 +493,7 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust-qt-wasm'
               label 'linux&&!slow'
               args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
+                   "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
                    "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
                    "--mount type=volume,source=emscripten-cache,target=/cache/emscripten " +
                    "-e EM_CACHE=/cache/emscripten " +
@@ -518,6 +523,7 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
               label 'linux'
               args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
+                   "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
                    "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
               customWorkspace 'ws/OpenModelica'
@@ -655,6 +661,7 @@ pipeline {
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
               customWorkspace 'ws/OpenModelica'
             }
