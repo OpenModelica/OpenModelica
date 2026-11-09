@@ -24,22 +24,22 @@ translateModel(SimplifyResidual); getErrorString();
 // true
 // ""
 // ### dumpSimplify | NBackendDAE.simplify ###
-// [BEFORE] (x - 1.0) / p
-// [AFTER ] ((-1.0) + x) / p
+// [BEFORE] (x - 1.0)/p
+// [AFTER ] ((-1.0) + x)/p
 //
 // ### dumpSimplify | NBackendDAE.simplify ###
 // [BEFORE]
-//   [SCAL] (1) 0.0 = ((-1.0) + x) / p; ($RES_SIM_1)
+//   [SCAL] (1) 0.0 = ((-1.0) + x)/p; ($RES_SIM_1)
 // [AFTER ]
 //   [SCAL] (1) 0.0 = ((-1.0) + x); ($RES_SIM_1)
 //
 // ### dumpSimplify | NBackendDAE.simplify ###
-// [BEFORE] (y - 2.0) * 3.0
-// [AFTER ] 3.0 * ((-2.0) + y)
+// [BEFORE] (y - 2.0)*3.0
+// [AFTER ] 3.0*((-2.0) + y)
 //
 // ### dumpSimplify | NBackendDAE.simplify ###
 // [BEFORE]
-//   [SCAL] (1) 0.0 = 3.0 * ((-2.0) + y); ($RES_SIM_2)
+//   [SCAL] (1) 0.0 = 3.0*((-2.0) + y); ($RES_SIM_2)
 // [AFTER ]
 //   [SCAL] (1) 0.0 = ((-2.0) + y); ($RES_SIM_2)
 //
