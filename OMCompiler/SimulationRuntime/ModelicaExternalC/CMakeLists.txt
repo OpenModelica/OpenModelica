@@ -75,10 +75,11 @@ set(libModelicaMatIO_SOURCES C-Sources/ModelicaMatIO.c C-Sources/snprintf.c)
 add_library(ModelicaMatIO STATIC ${libModelicaMatIO_SOURCES})
 add_library(omc::simrt::Modelica::MatIO ALIAS ModelicaMatIO)
 
+# Without HDF5: FMUs link the static libraries. Simulation executables that
+# need MAT v7.3 link the shared ones in ffi/.
 target_compile_definitions(ModelicaMatIO PRIVATE HAVE_ZLIB)
 target_link_libraries(ModelicaMatIO PUBLIC omc::3rd::zlib)
 target_link_libraries(ModelicaMatIO PUBLIC omc::simrt::runtime)
-omc_modelica_matio_hdf5(ModelicaMatIO PRIVATE)
 
 # Shared version
 add_library(ModelicaMatIO_shared SHARED ${libModelicaMatIO_SOURCES})
