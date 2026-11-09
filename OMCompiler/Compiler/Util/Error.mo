@@ -1367,6 +1367,8 @@ public constant ErrorTypes.Message ERROR_PKG_CONFLICT = ErrorTypes.MESSAGE(7037,
   "No versions of %s %s and the libraries it uses can be used together:\n%s");
 public constant ErrorTypes.Message LOAD_MODEL_CONFLICT = ErrorTypes.MESSAGE(7038, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "No versions of the libraries that %s uses can be loaded together:\n%s");
+public constant ErrorTypes.Message NOTIFY_LOAD_MODEL_CONVERSION = ErrorTypes.MESSAGE(7039, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
+  "%1 uses %2 %3, which is not available, but %2 %4 has a conversion from it. Use convertPackageToLibrary(%1, %2, \"%4\") to convert %1.");
 public constant ErrorTypes.Message ALARM_EXPIRED = ErrorTypes.MESSAGE(7031, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "Operation aborted: the time limit set by the alarm ran out.");
 public constant ErrorTypes.Message FMU_EXPORT_FMI_LS_DAE_DRAFT = ErrorTypes.MESSAGE(7032, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),

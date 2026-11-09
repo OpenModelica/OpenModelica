@@ -43,6 +43,8 @@ pub struct IndexLibrary {
 pub struct Facts {
     pub uses: BTreeMap<String, String>,
     pub provides: Vec<String>,
+    /// The versions it has conversions from (`convertFromVersion`).
+    pub converts: Vec<String>,
     pub support: Option<String>,
 }
 
@@ -56,7 +58,7 @@ pub(crate) fn string_map(v: &Value) -> BTreeMap<String, String> {
         .unwrap_or_default()
 }
 
-fn strings(v: &Value) -> Vec<String> {
+pub(crate) fn strings(v: &Value) -> Vec<String> {
     v.as_array()
         .map(|a| a.iter().filter_map(|v| Some(v.as_str()?.to_owned())).collect())
         .unwrap_or_default()
@@ -71,6 +73,7 @@ impl From<&Value> for Facts {
         Facts {
             uses: string_map(&v["uses"]),
             provides: strings(&v["provides"]),
+            converts: strings(&v["convertFromVersion"]),
             support: string(&v["support"]),
         }
     }
@@ -135,6 +138,8 @@ pub struct Installed {
     pub uses: Option<BTreeMap<String, String>>,
     #[serde(deserialize_with = "some_strings")]
     pub provides: Option<Vec<String>>,
+    #[serde(deserialize_with = "some_strings")]
+    pub converts: Option<Vec<String>>,
     #[serde(deserialize_with = "lenient_string")]
     pub support: Option<String>,
 }
@@ -224,6 +229,17 @@ pub struct Solution {
     pub messages: Vec<Message>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub versions: Vec<String>,
+    /// For the requirements that the selection does not satisfy, a version
+    /// that has a conversion from the requested one.
+    pub conversions: Vec<Conversion>,
+}
+
+#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+pub struct Conversion {
+    pub name: String,
+    pub version: String,
+    pub to: String,
+    pub origin: String,
 }
 
 /// Makes the escapes of omc's `System.escapedString` valid JSON: `\a` and
@@ -295,10 +311,8 @@ pub fn call(request: &str) -> String {
         "versions" => {
             serde_json::json!({"ok": true, "versions": m.versions(arg_str(&request, "name"), arg_str(&request, "version"), print_error)})
         }
-        "convertFrom" => serde_json::json!({"ok": true,
-            "versions": m.conversions_from(arg_str(&request, "name"), arg_str(&request, "version"), print_error)}),
-        "convertTo" => serde_json::json!({"ok": true,
-            "versions": m.conversions_to(arg_str(&request, "name"), arg_str(&request, "version"), print_error)}),
+        "convertFrom" => conversions(&mut m, &request, print_error, true),
+        "convertTo" => conversions(&mut m, &request, print_error, false),
         "installPackage" => {
             let (ok, dirs) = m.install_package(
                 arg_str(&request, "pkg"),
@@ -397,6 +411,7 @@ fn complete_metadata(problem: &mut Problem, cache: &library_metadata::Cache, nee
                     queue.extend(f.uses.keys().cloned());
                     inst.uses = Some(f.uses);
                     inst.provides = Some(f.provides);
+                    inst.converts = Some(f.converts);
                 }
             }
         }
@@ -447,21 +462,8 @@ fn resolve_request(m: &mut manager::Manager, request: &Value) -> Value {
         }
     }
     problem.installed.extend(scan::libraries(&modelica_path, true));
-    if !install && !arg_bool(request, "withoutMetadata") {
-        let cache = library_metadata::Cache::new(&m.env().home);
-        let mut answered = std::collections::HashSet::new();
-        for f in request["metadata"].as_array().into_iter().flatten() {
-            if let Some(file) = f["file"].as_str() {
-                cache.put(file, serde_json::from_value(f["metadata"].clone()).ok());
-                answered.insert(file.to_owned());
-            }
-        }
-        let mut need = Vec::new();
-        complete_metadata(&mut problem, &cache, &mut need);
-        need.retain(|f| !answered.contains(f));
-        if !need.is_empty() {
-            return serde_json::json!({"ok": true, "needMetadata": need});
-        }
+    if !install && let Some(need) = request_metadata(m, request, &mut problem) {
+        return need;
     }
     let solution = resolve(&problem);
     serde_json::json!({
@@ -469,6 +471,93 @@ fn resolve_request(m: &mut manager::Manager, request: &Value) -> Value {
         "error": solution.error,
         "selected": solution.selected,
         "resolveMessages": solution.messages,
+        "conversions": solution.conversions,
         "modelicaPath": modelica_path,
     })
+}
+
+/// Fills in the metadata of `problem`'s installed libraries from the
+/// `metadata` of the request and the cache; the `needMetadata` response if
+/// some is missing.
+fn request_metadata(m: &manager::Manager, request: &Value, problem: &mut Problem) -> Option<Value> {
+    if arg_bool(request, "withoutMetadata") {
+        return None;
+    }
+    let cache = library_metadata::Cache::new(&m.env().home);
+    let mut answered = std::collections::HashSet::new();
+    for f in request["metadata"].as_array().into_iter().flatten() {
+        if let Some(file) = f["file"].as_str() {
+            cache.put(file, serde_json::from_value(f["metadata"].clone()).ok());
+            answered.insert(file.to_owned());
+        }
+    }
+    let mut need = Vec::new();
+    complete_metadata(problem, &cache, &mut need);
+    need.retain(|f| !answered.contains(f));
+    (!need.is_empty()).then(|| serde_json::json!({"ok": true, "needMetadata": need}))
+}
+
+/// The installed versions of `name`, with their metadata; for the versions
+/// that the index does not know, also from their top-level file.
+fn installed_versions_of(m: &mut manager::Manager, request: &Value, name: &str) -> Result<Vec<Installed>, Value> {
+    let mut problem = Problem {
+        index: m.index(false),
+        installed: m
+            .installed(false)
+            .into_iter()
+            .filter(|i| i.name == name)
+            .map(scan::with_metadata)
+            .collect(),
+        requirements: vec![Requirement {
+            name: name.to_owned(),
+            ..Default::default()
+        }],
+        ..Default::default()
+    };
+    match request_metadata(m, request, &mut problem) {
+        Some(need) => Err(need),
+        None => Ok(problem.installed),
+    }
+}
+
+/// The versions of `name` that convert from `version` (`convertFrom`), or
+/// that `version` converts from (`convertTo`): from the index, then from
+/// the installed versions.
+fn conversions(m: &mut manager::Manager, request: &Value, print_error: bool, from: bool) -> Value {
+    let (name, version) = (arg_str(request, "name"), arg_str(request, "version"));
+    let installed = match installed_versions_of(m, request, name) {
+        Ok(installed) => installed,
+        Err(need) => return need,
+    };
+    let wanted = version::Version::parse(version);
+    let mut versions = if from {
+        m.conversions_from(name, version, print_error)
+    } else {
+        m.conversions_to(name, version, print_error)
+    };
+    for inst in installed.into_iter().filter(|i| !i.version.is_empty()) {
+        let converts: Vec<version::Version> = inst
+            .converts
+            .unwrap_or_default()
+            .iter()
+            .map(|f| version::Version::parse(f))
+            .collect();
+        let found = if from {
+            if solve::converts_from(&converts, &wanted) {
+                vec![inst.version]
+            } else {
+                Vec::new()
+            }
+        } else if version::compare(&version::Version::parse(&inst.version), &wanted, false).is_eq() {
+            converts.into_iter().map(|f| f.text).collect()
+        } else {
+            Vec::new()
+        };
+        for v in found {
+            if !versions.contains(&v) {
+                versions.push(v);
+            }
+        }
+    }
+    serde_json::json!({"ok": true, "versions": versions})
 }

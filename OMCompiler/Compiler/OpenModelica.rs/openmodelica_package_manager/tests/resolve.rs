@@ -420,3 +420,81 @@ fn every_index_version_installs() {
         eprintln!("{f}");
     }
 }
+
+#[test]
+fn conversions_for_unsatisfied_requirements() {
+    let installed = json!([{"name": "A", "version": "4.0.0", "converts": ["3.2.3"]},
+        {"name": "B", "version": "1.0.0"}]);
+    let conversions = |s: &Solution| -> Vec<(String, String, String)> {
+        s.conversions
+            .iter()
+            .map(|c| (c.name.clone(), c.version.clone(), c.to.clone()))
+            .collect()
+    };
+    let s = solve(json!({"installed": installed, "requirements": [req("A", "3.2.3"), req("B", "1.0.0")]}));
+    assert_eq!(
+        picked(&s),
+        ["A 4.0.0", "B 1.0.0"],
+        "the newer version as nothing knows 3.2.3"
+    );
+    assert_eq!(conversions(&s), [("A".into(), "3.2.3".into(), "4.0.0".into())]);
+    assert_eq!(s.conversions[0].origin, "test");
+    let index = json!({"libs": {"A": {"versions": {"3.2.3": {}, "4.0.0": {"convertFromVersion": ["3.2.3"]}}}}});
+    let s = solve(json!({"index": index, "installed": [{"name": "A", "version": "4.0.0"}],
+        "requirements": [req("A", "3.2.3")]}));
+    assert!(picked(&s).is_empty());
+    assert_eq!(
+        conversions(&s),
+        [("A".into(), "3.2.3".into(), "4.0.0".into())],
+        "from the index entry"
+    );
+    let s = solve(json!({"installed": installed, "requirements": [req("A", "4.0.0")]}));
+    assert!(s.conversions.is_empty());
+    let s = solve(json!({"installed": installed, "requirements": [req("A", "2.0.0")]}));
+    assert!(s.conversions.is_empty(), "no conversion from 2.0.0");
+    let with_patch =
+        json!([{"name": "A", "version": "3.2.4"}, {"name": "A", "version": "4.0.0", "converts": ["3.2.3"]}]);
+    let s = solve(json!({"installed": with_patch, "requirements": [req("A", "3.2.3")]}));
+    assert_eq!(picked(&s), ["A 3.2.4"]);
+    assert!(
+        s.conversions.is_empty(),
+        "a newer release of the same major version is loaded"
+    );
+    let prerelease = json!([{"name": "A", "version": "4.0.0", "converts": ["3.2.3-beta"]}]);
+    let s = solve(json!({"installed": prerelease, "requirements": [req("A", "3.2.3")]}));
+    assert!(s.conversions.is_empty(), "convertPackageToLibrary compares prereleases");
+    let index =
+        json!({"libs": {"Shim": {"anyVersion": true, "versions": {"1.0.0": {"convertFromVersion": ["0.9.0"]}}}}});
+    let s = solve(
+        json!({"index": index, "installed": [{"name": "Shim", "version": "1.0.0"}],
+        "requirements": [req("Shim", "0.9.0")]}),
+    );
+    assert!(s.conversions.is_empty(), "not for a stand-in library");
+}
+
+#[test]
+fn conversions_with_a_conflict() {
+    let installed = json!([
+        {"name": "A", "version": "4.0.0", "converts": ["3.2.3"], "uses": {"C": "2.0.0"}},
+        {"name": "C", "version": "1.0.0"},
+        {"name": "C", "version": "2.0.0"}]);
+    let s = solve(json!({"installed": installed,
+        "requirements": [req("A", "4.0.0"), {"name": "C", "versions": ["1.0.0"], "exact": true, "origin": "test"}]}));
+    assert!(!s.ok);
+    assert!(s.conversions.is_empty());
+    let with_d = json!([
+        {"name": "A", "version": "4.0.0", "uses": {"C": "2.0.0"}},
+        {"name": "C", "version": "1.0.0"}, {"name": "C", "version": "2.0.0"},
+        {"name": "D", "version": "3.2.3"}, {"name": "D", "version": "4.0.0", "converts": ["3.2.3"]}]);
+    let s = solve(
+        json!({"installed": with_d, "requirements": [req("D", "3.2.3"), req("A", "4.0.0"),
+        {"name": "C", "versions": ["1.0.0"], "exact": true, "origin": "test"}]}),
+    );
+    assert!(!s.ok);
+    assert!(s.conversions.is_empty(), "D 3.2.3 is installed: {:?}", s.conversions);
+    let s = solve(
+        json!({"installed": installed, "loaded": [{"name": "A", "version": "4.0.0"}],
+        "requirements": [req("A", "3.2.3")]}),
+    );
+    assert!(s.conversions.is_empty(), "omc warns about a loaded version itself");
+}

@@ -65,6 +65,15 @@ uniontype Selection
   end SELECTION;
 end Selection;
 
+uniontype ConversionHint
+  record CONVERSION_HINT
+    String name;
+    String version;
+    String to;
+    String origin;
+  end CONVERSION_HINT;
+end ConversionHint;
+
 uniontype ResolveMessage
   record RESOLVE_MESSAGE
     String kind;
@@ -91,6 +100,7 @@ function resolve
   output list<Selection> selected = {};
   output list<ResolveMessage> messages = {};
   output String error = "";
+  output list<ConversionHint> conversions = {};
 end resolve;
 
 function getInstalledLibraries
