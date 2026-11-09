@@ -152,7 +152,7 @@ typedef struct {
   /* fmi-ls-dae */
   fmi3Boolean daeMode;              /* the importer sets der(x) and the algebraic variables */
   int daeSolved;                    /* ODE mode: der(x) and the algebraic variables solved at this point */
-  double* daeWork;                  /* solveDAEModeExplicit */
+  struct NONLINEAR_SYSTEM_DATA* daeNLS; /* ODE mode: F = 0 in der(x) and z, see initDAEModeExplicitNLS */
   struct OpenModelicaGeneratedFunctionCallbacks* daeCallbacks;
 } ModelInstance;
 

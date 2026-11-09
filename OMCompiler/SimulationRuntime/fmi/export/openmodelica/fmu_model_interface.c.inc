@@ -401,7 +401,7 @@ static void solveDAEModeUnknowns(ModelInstance *comp)
   if (comp->daeMode || comp->daeSolved) {
     return;
   }
-  if (!comp->daeWork || solveDAEModeExplicit(comp->fmuData, comp->threadData, comp->daeWork)) {
+  if (solveDAEModeExplicit(comp->fmuData, comp->threadData, comp->daeNLS)) {
     throwStreamPrint(comp->threadData, "The derivatives of the DAE-mode model could not be solved for (the Newton iteration over the residual did not converge).");
   }
   comp->daeSolved = 1;
@@ -1421,7 +1421,7 @@ ModelInstance* FMIX(Instantiate)(fmiXString instanceName, OMC_FmuType fmuType, f
 #ifdef OMC_FMI_LS_DAE
   if (compiledInDAEMode && isModelExchange(comp)) {
     comp->fmuData->simulationInfo->daeModeData->solverData = comp;
-    comp->daeWork = (double*) calloc(solveDAEModeExplicitWorkSize(comp->fmuData) + 1, sizeof(double));
+    comp->daeNLS = initDAEModeExplicitNLS(comp->fmuData, comp->threadData);
   }
 #endif
   omc_fmu_paramdeps_resize(comp->paramDeps, comp->fmuData->modelData);
@@ -1601,7 +1601,7 @@ void FMIX(FreeInstance)(fmiXComponent c)
   free(comp->slotSetBeforeInit);
   free(comp->eqMask);
 #ifdef OMC_FMI_LS_DAE
-  free(comp->daeWork);
+  freeDAEModeExplicitNLS(comp->daeNLS);
   free(comp->daeCallbacks);
 #endif
   omc_fmu_paramdeps_free(comp->paramDeps);
@@ -1840,6 +1840,9 @@ fmiXStatus FMIX(Reset)(fmiXComponent c)
 #ifdef OMC_FMI_LS_DAE
   if (compiledInDAEMode && isModelExchange(comp)) {
     comp->fmuData->simulationInfo->daeModeData->solverData = comp;
+    /* The system points into daeModeData, which initializeDataStruc made anew. */
+    freeDAEModeExplicitNLS(comp->daeNLS);
+    comp->daeNLS = initDAEModeExplicitNLS(comp->fmuData, comp->threadData);
   }
 #endif
 

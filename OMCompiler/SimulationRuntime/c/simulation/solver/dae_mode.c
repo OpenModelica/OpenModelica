@@ -32,6 +32,8 @@
 #include "../arrayIndex.h"
 
 #include "dae_mode.h"
+#include "kinsolSolver.h"
+#include "nonlinearSystem.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -116,64 +118,12 @@ void setAlgebraicDAEVars(DATA *data, double* algebraic)
   }
 }
 
-/* Gaussian elimination with partial pivoting on the row-major a; b becomes the
- * solution. Returns 0 for a singular matrix. */
-static int luSolve(double *a, double *b, size_t n)
-{
-  size_t i, j, k, p;
-  double best, v, f, s;
-  for (k = 0; k < n; k++) {
-    p = k;
-    best = fabs(a[k*n+k]);
-    for (i = k+1; i < n; i++) {
-      v = fabs(a[i*n+k]);
-      if (v > best) {
-        best = v;
-        p = i;
-      }
-    }
-    if (!(best > 0.0) || !isfinite(best)) {
-      return 0;
-    }
-    if (p != k) {
-      for (j = 0; j < n; j++) {
-        v = a[k*n+j]; a[k*n+j] = a[p*n+j]; a[p*n+j] = v;
-      }
-      v = b[k]; b[k] = b[p]; b[p] = v;
-    }
-    for (i = k+1; i < n; i++) {
-      f = a[i*n+k] / a[k*n+k];
-      if (f == 0.0) {
-        continue;
-      }
-      for (j = k; j < n; j++) {
-        a[i*n+j] -= f * a[k*n+j];
-      }
-      b[i] -= f * b[k];
-    }
-  }
-  for (k = n; k-- > 0;) {
-    s = b[k];
-    for (j = k+1; j < n; j++) {
-      s -= a[k*n+j] * b[j];
-    }
-    b[k] = s / a[k*n+k];
-  }
-  return 1;
-}
-
-/* NaN when an element is NaN */
-static double maxNorm(const double *f, int n)
-{
-  int i;
-  double m = 0.0;
-  for (i = 0; i < n; i++) {
-    if (!(fabs(f[i]) <= m)) {
-      m = fabs(f[i]);
-    }
-  }
-  return m;
-}
+/* ---------------------------------------------------------------------------
+ * A --daeMode model run as an ODE (fmi-ls-dae's ODE mode): at the time and
+ * states the model holds, F(t, x, der(x), z) = 0 is a nonlinear system in
+ * der(x) and the algebraic DAE variables z. This part only describes that
+ * system as a NONLINEAR_SYSTEM_DATA; solveNLS solves it like any other.
+ * ------------------------------------------------------------------------- */
 
 /* The unknowns of the residual: der(x), then the algebraic DAE variables. */
 static double* daeUnknown(DATA *data, int j)
@@ -183,22 +133,26 @@ static double* daeUnknown(DATA *data, int j)
                      : &data->localData[0]->realVars[data->simulationInfo->daeModeData->algIndexes[j - nStates]];
 }
 
-static void daeResidual(DATA *data, threadData_t *threadData, const double *u, double *f, int n)
+/* residualFunc of the system: F at the unknowns x. */
+static void daeModeExplicitResidual(RESIDUAL_USERDATA *userData, const double *x, double *res, const int *iflag)
 {
-  int j;
+  DATA *data = userData->data;
   DAEMODE_DATA *daeModeData = data->simulationInfo->daeModeData;
+  int j, n = (int) daeModeData->nResidualVars;
+  (void) iflag;
   for (j = 0; j < n; j++) {
-    *daeUnknown(data, j) = u[j];
+    *daeUnknown(data, j) = x[j];
   }
-  daeModeData->evaluateDAEResiduals(data, threadData, EVAL_DYNAMIC);
-  memcpy(f, daeModeData->residualVars, n * sizeof(double));
+  daeModeData->evaluateDAEResiduals(data, userData->threadData, EVAL_DYNAMIC);
+  memcpy(res, daeModeData->residualVars, n * sizeof(double));
 }
 
-/* The coloring of the residual's sparsity pattern, or NULL to difference each
- * column on its own. */
-static const SPARSE_PATTERN* usablePattern(DAEMODE_DATA *daeModeData)
+/* The residual's sparsity pattern, if it is complete and colored. Its columns
+ * are the unknowns: DAE-mode differentiation folds der(x) into x, so a der(x)
+ * column has the pattern of x's. NULL for a dense Jacobian. */
+static SPARSE_PATTERN* usablePattern(DAEMODE_DATA *daeModeData)
 {
-  const SPARSE_PATTERN *sp = daeModeData->sparsePattern;
+  SPARSE_PATTERN *sp = daeModeData->sparsePattern;
   unsigned int c, k, n = daeModeData->nResidualVars;
   if (!sp || sp->sizeCols != n || sp->maxColors == 0) {
     return NULL;
@@ -216,128 +170,119 @@ static const SPARSE_PATTERN* usablePattern(DAEMODE_DATA *daeModeData)
   return sp;
 }
 
-size_t solveDAEModeExplicitWorkSize(DATA *data)
+/*! \fn initDAEModeExplicitNLS
+ *
+ *  The nonlinear system F(t, x, der(x), z) = 0 in der(x) and z, for an FMU of a
+ *  --daeMode model that runs as an ODE, with the KINSOL data to solve it: KLU
+ *  on the residual's sparsity pattern, or a dense Jacobian without one.
+ *  Free it with freeDAEModeExplicitNLS.
+ *
+ *  Returns NULL if the residuals are not der(x) and z.
+ */
+NONLINEAR_SYSTEM_DATA* initDAEModeExplicitNLS(DATA *data, threadData_t *threadData)
 {
-  size_t n = data->simulationInfo->daeModeData->nResidualVars;
-  return n*n + 7*n;
+  DAEMODE_DATA *daeModeData = data->simulationInfo->daeModeData;
+  long j, n = daeModeData->nResidualVars, nStates = data->modelData->nStates;
+  NONLINEAR_SYSTEM_DATA *nlsData;
+  struct dataSolver *solverData;
+  NLS_USERDATA *userData;
+  double nom;
+
+  if (n <= 0 || daeModeData->nAlgebraicDAEVars + nStates != n) {
+    return NULL;
+  }
+
+  nlsData = (NONLINEAR_SYSTEM_DATA*) calloc(1, sizeof(NONLINEAR_SYSTEM_DATA));
+  assertStreamPrint(threadData, nlsData != NULL, "Out of memory");
+  nlsData->size = n;
+  nlsData->equationIndex = -1;
+  nlsData->nlsx = (double*) calloc(n, sizeof(double));
+  nlsData->nlsxExtrapolation = (double*) calloc(n, sizeof(double));
+  nlsData->nlsxOld = (double*) calloc(n, sizeof(double));
+  nlsData->resValues = (double*) calloc(n, sizeof(double));
+  nlsData->nominal = (double*) calloc(n, sizeof(double));
+  nlsData->min = (double*) calloc(n, sizeof(double));
+  nlsData->max = (double*) calloc(n, sizeof(double));
+
+  /* der(x) has no nominal of its own; z has its variable's. No bounds. */
+  for (j = 0; j < n; j++) {
+    nlsData->nominal[j] = 1.0;
+    nlsData->min[j] = -DBL_MAX;
+    nlsData->max[j] = DBL_MAX;
+  }
+  getAlgebraicDAEVarNominals(data, nlsData->nominal + nStates);
+  for (j = nStates; j < n; j++) {
+    nom = fabs(nlsData->nominal[j]);
+    nlsData->nominal[j] = nom > 0.0 && isfinite(nom) ? nom : 1.0;
+  }
+
+  nlsData->residualFunc = daeModeExplicitResidual;
+  nlsData->sparsePattern = usablePattern(daeModeData);
+  nlsData->analyticalJacobianColumn = NULL;
+  nlsData->jacobianIndex = -1;
+
+  userData = initNlsUserData(data, threadData, -1, nlsData, NULL);
+  solverData = (struct dataSolver*) calloc(1, sizeof(struct dataSolver));
+  nlsData->nlsMethod = NLS_KINSOL;
+  nlsData->nlsLinearSolver = nlsData->sparsePattern ? NLS_LS_KLU : NLS_LS_DEFAULT;
+  solverData->ordinaryData = (void*) nlsKinsolAllocate(n, userData, FALSE, nlsData->sparsePattern != NULL);
+  nlsData->solverData = solverData;
+  return nlsData;
+}
+
+/*! \fn freeDAEModeExplicitNLS
+ *
+ *  Frees what initDAEModeExplicitNLS allocated. The sparsity pattern belongs
+ *  to daeModeData.
+ */
+void freeDAEModeExplicitNLS(NONLINEAR_SYSTEM_DATA *nlsData)
+{
+  struct dataSolver *solverData;
+  if (!nlsData) {
+    return;
+  }
+  solverData = (struct dataSolver*) nlsData->solverData;
+  if (solverData) {
+    nlsKinsolFree((NLS_KINSOL_DATA*) solverData->ordinaryData); /* and its NLS_USERDATA */
+    free(solverData);
+  }
+  free(nlsData->nlsx);
+  free(nlsData->nlsxExtrapolation);
+  free(nlsData->nlsxOld);
+  free(nlsData->resValues);
+  free(nlsData->nominal);
+  free(nlsData->min);
+  free(nlsData->max);
+  free(nlsData);
 }
 
 /*! \fn solveDAEModeExplicit
  *
- *  Solves F(t, x, der(x), z) = 0 for der(x) and the algebraic DAE variables z,
- *  for an FMU of a --daeMode model that runs as an ODE. Damped Newton from the
- *  current values, with a difference-quotient Jacobian by the colors of the
- *  residual's sparsity pattern; a der(x) column has the pattern of x's column.
- *  work holds solveDAEModeExplicitWorkSize doubles.
+ *  Solves the system of initDAEModeExplicitNLS with solveNLS, from the values
+ *  der(x) and z hold, and leaves the model evaluated at the solution.
  *
  *  Returns 0 on success.
  */
-int solveDAEModeExplicit(DATA *data, threadData_t *threadData, double *work)
+int solveDAEModeExplicit(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *nlsData)
 {
-  const int maxIter = 100;
-  const double rtol = 1e-10;
-  DAEMODE_DATA *daeModeData = data->simulationInfo->daeModeData;
-  const SPARSE_PATTERN *sp = usablePattern(daeModeData);
-  int n = daeModeData->nResidualVars, nStates = data->modelData->nStates;
-  int i, j, k, iter, ls, color, nColors, accepted, converged;
-  size_t nn = (size_t) n * (size_t) n;
-  double *jac = work, *u = jac + nn, *scale = u + n, *f0 = scale + n, *f1 = f0 + n;
-  double *delta = f1 + n, *trial = delta + n, *saved = trial + n;
-  double fnorm, fn1, lambda, nom, *tmp;
+  RESIDUAL_USERDATA userData = {.data = data, .threadData = threadData, .solverData = NULL};
+  NLS_SOLVER_STATUS status;
+  long j, n;
 
-  if (n <= 0) {
-    return 0;
-  }
-  if (daeModeData->nAlgebraicDAEVars + nStates != n) {
+  if (!nlsData) {
     return -1;
   }
+  n = nlsData->size;
   for (j = 0; j < n; j++) {
-    u[j] = *daeUnknown(data, j);
-    scale[j] = 1.0;
+    nlsData->nlsx[j] = nlsData->nlsxExtrapolation[j] = nlsData->nlsxOld[j] = *daeUnknown(data, j);
   }
-  getAlgebraicDAEVarNominals(data, scale + nStates);
-  for (j = nStates; j < n; j++) {
-    nom = fabs(scale[j]);
-    scale[j] = nom > 0.0 && isfinite(nom) ? nom : 1.0;
+  status = solveNLS(data, threadData, nlsData);
+  if (status == NLS_FAILED) {
+    return -1;
   }
-  nColors = sp ? (int) sp->maxColors : n;
-
-  daeResidual(data, threadData, u, f0, n);
-  fnorm = maxNorm(f0, n);
-  for (iter = 0; iter < maxIter; iter++) {
-    if (!isfinite(fnorm)) {
-      return -1;
-    }
-    if (fnorm == 0.0) {
-      return 0;
-    }
-    memset(jac, 0, nn*sizeof(double));
-    for (color = 0; color < nColors; color++) {
-      for (j = 0; j < n; j++) {
-        if (sp ? (int) sp->colorCols[j] == color + 1 : j == color) {
-          saved[j] = u[j];
-          u[j] += sqrt(DBL_EPSILON) * fmax(fabs(u[j]), scale[j]);
-        }
-      }
-      daeResidual(data, threadData, u, f1, n);
-      for (j = 0; j < n; j++) {
-        if (sp ? (int) sp->colorCols[j] == color + 1 : j == color) {
-          double h = u[j] - saved[j];
-          u[j] = saved[j];
-          if (sp) {
-            for (k = sp->leadindex[j]; k < (int) sp->leadindex[j+1]; k++) {
-              i = sp->index[k];
-              jac[(size_t)i*n+j] = (f1[i] - f0[i]) / h;
-            }
-          } else {
-            for (i = 0; i < n; i++) {
-              jac[(size_t)i*n+j] = (f1[i] - f0[i]) / h;
-            }
-          }
-        }
-      }
-    }
-    for (i = 0; i < n; i++) {
-      delta[i] = -f0[i];
-    }
-    if (!luSolve(jac, delta, n)) {
-      return -1;
-    }
-    lambda = 1.0;
-    accepted = 0;
-    for (ls = 0; ls < 8; ls++) {
-      for (i = 0; i < n; i++) {
-        trial[i] = u[i] + lambda * delta[i];
-      }
-      daeResidual(data, threadData, trial, f1, n);
-      fn1 = maxNorm(f1, n);
-      if (isfinite(fn1) && fn1 < fnorm * (1.0 - 1e-4 * lambda)) {
-        accepted = 1;
-        break;
-      }
-      lambda *= 0.5;
-    }
-    if (!accepted) {
-      lambda = 1.0;
-      for (i = 0; i < n; i++) {
-        trial[i] = u[i] + delta[i];
-      }
-      daeResidual(data, threadData, trial, f1, n);
-    }
-    converged = 1;
-    for (i = 0; i < n; i++) {
-      if (!(fabs(lambda * delta[i]) <= rtol * fmax(fabs(u[i]), scale[i]))) {
-        converged = 0;
-      }
-    }
-    memcpy(u, trial, n*sizeof(double));
-    tmp = f0; f0 = f1; f1 = tmp;
-    fnorm = maxNorm(f0, n);
-    if (converged && isfinite(fnorm)) {
-      return 0;
-    }
-  }
-  return fnorm == 0.0 ? 0 : -1;
+  /* The solver's last evaluation need not be at its solution. */
+  daeModeExplicitResidual(&userData, nlsData->nlsx, nlsData->resValues, NULL);
+  return 0;
 }
 
 #ifdef __cplusplus

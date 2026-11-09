@@ -1263,6 +1263,7 @@ algorithm
         end if;
 
         // A --daeMode FMU solves its residual form with dae_mode.c, and IDA in Co-Simulation.
+        // dae_mode.c hands the residual to the nonlinear solvers, see initDAEModeExplicitNLS.
         needIda := isSome(simCode.daeModeData) and not rustRuntime;
 
         // The linear and non-linear solvers of the C runtime use SuiteSparse, SUNDIALS
@@ -1286,7 +1287,10 @@ algorithm
           // carries them, and omc_config.h for a runtime source that includes it first.
           fmu_solver_defines := "#define WITH_SUITESPARSE 1" +
             (if SimCodeUtil.cvodeFmiFlagIsSet(simCode.fmiSimulationFlags) and FMUVersion <> "1.0" then "\n#define OMC_FMI_HAVE_CVODE 1" else "") +
-            (if needIda then "\n#define OMC_FMI_HAVE_IDA 1" else "");
+            (if needIda then "\n#define OMC_FMI_HAVE_IDA 1" else "") +
+            // the nonlinear solvers for dae_mode.c, also for a model without nonlinear systems
+            (if needIda and varInfo.numNonLinearSystems == 0 then
+               "\n#undef OMC_NUM_NONLINEAR_SYSTEMS\n#define OMC_NUM_NONLINEAR_SYSTEMS 1" else "");
           System.writeFile(fmu_tmp_sources_dir + "omc_config.h", "#include \"omc_simulation_settings.h\"\n");
         end if;
 
@@ -1294,7 +1298,7 @@ algorithm
         simrt_linear_solver_sources := if varInfo.numLinearSystems > 0 and not rustRuntime then RuntimeSources.simrt_linear_solver_sources else {};
         copyFiles(simrt_linear_solver_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
 
-        simrt_non_linear_solver_sources := if varInfo.numNonLinearSystems > 0 and not rustRuntime then RuntimeSources.simrt_non_linear_solver_sources else {};
+        simrt_non_linear_solver_sources := if (varInfo.numNonLinearSystems > 0 or needIda) and not rustRuntime then RuntimeSources.simrt_non_linear_solver_sources else {};
         copyFiles(simrt_non_linear_solver_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
 
         simrt_mixed_solver_sources := if varInfo.numMixedSystems > 0 and not rustRuntime then RuntimeSources.simrt_mixed_solver_sources else {};
