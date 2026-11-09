@@ -1808,11 +1808,11 @@ protected
       obexp := Binding.getExpOpt(var.binding);
       if isSome(obexp) and Type.isInteger(var.ty) then
         SOME(bexp) := obexp;
-        if Expression.isInteger(bexp) and Variable.variability(var) <= Variability.CONSTANT then
+        if Expression.isInteger(bexp) and Variable.variability(var) <= Variability.STRUCTURAL_PARAMETER then
           alias := SOME(bexp);
           return;
         end if;
-        // only an expression of resizable parameters and constants, like NFFlatten.resizableDimensionAlias
+        // only an expression of resizable and structural parameters and constants, like NFFlatten.resizableDimensionAlias
         if not Expression.isInteger(bexp) and isAffineExp(bexp) and onlyResizableCrefs(bexp) then
           alias := SOME(bexp);
           return;
@@ -1844,7 +1844,7 @@ protected
   algorithm
     b := match exp
       case Expression.CREF() then not (ComponentRef.isResizable(exp.cref) or
-        ComponentRef.nodeVariability(exp.cref) <= Variability.CONSTANT);
+        ComponentRef.nodeVariability(exp.cref) <= Variability.STRUCTURAL_PARAMETER);
       else false;
     end match;
   end isNonResizableCref;
