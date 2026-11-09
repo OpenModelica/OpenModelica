@@ -8,9 +8,11 @@
 // cannot translate. The FMUs, run by FMPy, give the result of the simulation,
 // the event included. me_cs of FMI 2.0 exports Co-Simulation only: fmi-ls-dae
 // needs FMI 3.0. So does me_cs of 2.0+3.0, whose modelDescription.xml is the
-// FMI 2.0 one.
+// FMI 2.0 one. A wasm target would export wasm FMUs, which also serve Model
+// Exchange of FMI 2.0; fmi3_wasm_daemode*.mos test those.
 
 loadFile("fmi3_wasm_daemode.mo"); getErrorString();
+setCommandLineOptions(if regexBool(getEnvironmentVar("OPENMODELICA_TEST_SIMCODETARGET"), "^wasm") then "--simCodeTarget=C" else ""); getErrorString();
 
 simulate(DaeModeWhenLoop, fileNamePrefix="fmi_cs_daemode_ref"); getErrorString();
 
@@ -28,6 +30,8 @@ buildModelFMU(DaeModeWhenLoop, version="2.0+3.0", fmuType="me_cs", fileNamePrefi
 system("unzip -cqq DaeModeWhenLoop_both.fmu modelDescription.xml | grep -cE \"<(ModelExchange|CoSimulation)\""); getErrorString();
 
 // Result:
+// true
+// ""
 // true
 // ""
 // record SimulationResult
