@@ -1,0 +1,69 @@
+// Name:     DerivativeOfInput
+// keywords: index reduction, input, derivative
+// status:   correct
+// teardown_command: rm -rf Feedthrough.fmu Feedthrough.log Feedthrough_info.json Feedthrough.fmutmp InverseWithOutput.log InverseWithOutput.fmutmp
+//
+// Derivatives of top-level inputs are not supported. Check that omc reports
+// them instead of taking them as zero, see #9802.
+// A Co-Simulation FMU provides the derivatives of its outputs. If an output
+// depends on an input, that needs der(u), which is 0 for inputs held constant
+// between communication points. This alone must not stop the export.
+
+loadFile("DerivativeOfInput.mo"); getErrorString();
+
+translateModel(DerivativeOfInput.Alias); getErrorString();
+translateModel(DerivativeOfInput.NegatedAliasChain); getErrorString();
+translateModel(DerivativeOfInput.IndexReduction); getErrorString();
+translateModel(DerivativeOfInput.SecondDerivative); getErrorString();
+translateModel(DerivativeOfInput.DerOfExpression); getErrorString();
+translateModel(DerivativeOfInput.NoDerivative); getErrorString();
+
+buildModelFMU(DerivativeOfInput.Feedthrough, version = "2.0", fmuType = "cs", platforms = {"static"}); getErrorString();
+buildModelFMU(DerivativeOfInput.InverseWithOutput, version = "2.0", fmuType = "cs", platforms = {"static"}); getErrorString();
+
+// Result:
+// true
+// ""
+// false
+// "Error: The model requires derivatives of some inputs as listed below:
+// der(u_top)
+// Error: post-optimization module inputDerivativesUsed (simulation) failed.
+// "
+// false
+// "Error: The model requires derivatives of some inputs as listed below:
+// der(u_top)
+// Error: post-optimization module inputDerivativesUsed (simulation) failed.
+// "
+// false
+// "Error: The model requires derivatives of some inputs as listed below:
+// der(u_top)
+// Error: post-optimization module inputDerivativesUsed (simulation) failed.
+// "
+// false
+// "Warning: IndexReduction.replaceDummyDerivativesExp failed for der(u_top, 2)!
+// Error: The model requires derivatives of some inputs as listed below:
+// der(u_top)
+// der(u_top, 2)
+// Error: post-optimization module inputDerivativesUsed (simulation) failed.
+// "
+// false
+// "Error: The model requires derivatives of some inputs as listed below:
+// der(u_top)
+// Error: post-optimization module inputDerivativesUsed (simulation) failed.
+// "
+// true
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// "Feedthrough.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// ""
+// "Warning: IndexReduction.replaceDummyDerivativesExp failed for der(u_top, 2)!
+// Error: The model requires derivatives of some inputs as listed below:
+// der(u_top)
+// der(u_top, 2)
+// der(u_top)
+// Error: post-optimization module inputDerivativesUsed (simulation) failed.
+// "
+// endResult

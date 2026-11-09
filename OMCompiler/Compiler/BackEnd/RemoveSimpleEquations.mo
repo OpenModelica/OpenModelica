@@ -2577,16 +2577,20 @@ algorithm
        // generate exp from cref an negate if necessary
        exp := Expression.crefExp(cr2);
        exp2 := negateExpression(negated, exp, exp, " PARAMETERALIAS ");
+       pv := BackendVariable.getVarSharedAt(i2, ishared);
+       // A top-level input is a known variable, but it is not constant in
+       // time: the derivative of an alias of it is der(input), not 0.
+       // inputDerivativesUsed reports it later if it is still needed.
+       dexp := if BackendVariable.isVarOnTopLevelAndInput(pv) then Expression.expDer(exp) else DAE.RCONST(0.0);
        v := BackendVariable.getVarAt(iVars, i1);
        (replaceable_, replaceble1) := replaceableAlias(v, unReplaceable); // (isreplaceable, isNotInUnreplaceblaHashMap)
-       (vars, eqnslst, shared, repl) := handleSetVar(replaceable_ and replaceble1, SOME(DAE.RCONST(0.0)), v, i1, eqnAttributes, exp2, iMT, iVars, iEqnslst, ishared, iRepl);
+       (vars, eqnslst, shared, repl) := handleSetVar(replaceable_ and replaceble1, SOME(negateExpression(negated, dexp, dexp, " PARAMETERALIAS der ")), v, i1, eqnAttributes, exp2, iMT, iVars, iEqnslst, ishared, iRepl);
        expcr := Expression.crefExp(cr1);
-       pv := BackendVariable.getVarSharedAt(i2, ishared);
        vsattr := addVarSetAttributes(pv, negated, mark, simpleeqnsarr, EMPTYVARSETATTRIBUTES);
        vsattr := if replaceable_ and replaceble1 then addVarSetAttributes(v, negated, mark, simpleeqnsarr, vsattr) else vsattr;
        rows := List.removeOnTrue(r, intEq, iMT[i1]);
        arrayUpdate(iMT, i1, {});
-       (vars, eqnslst, shared, repl, vsattr) := traverseAliasTree(rows, i1, exp, SOME(expcr), negated, SOME(DAE.RCONST(0.0)), mark, simpleeqnsarr, iMT, unReplaceable, vars, eqnslst, shared, repl, vsattr);
+       (vars, eqnslst, shared, repl, vsattr) := traverseAliasTree(rows, i1, exp, SOME(expcr), negated, SOME(dexp), mark, simpleeqnsarr, iMT, unReplaceable, vars, eqnslst, shared, repl, vsattr);
      then
        (vars, eqnslst, shared, repl);
 

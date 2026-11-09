@@ -472,31 +472,129 @@ protected function inputDerivativesUsedWork "author: Frenkel TUD 2012-10"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared inShared;
   input Boolean inChanged;
-  output BackendDAE.EqSystem osyst;
+  output BackendDAE.EqSystem osyst = isyst;
   output BackendDAE.Shared outShared = inShared "unused";
-  output Boolean outChanged;
+  output Boolean outChanged = inChanged;
 protected
-  Boolean hasFailed = false;
+  list<DAE.Exp> explst;
 algorithm
-  (osyst, outChanged) := matchcontinue isyst
-    local
-      BackendDAE.EquationArray orderedEqs;
-      list<DAE.Exp> explst;
-      String s;
-    case BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) algorithm
-      (_, explst as _::_) := BackendDAEUtil.traverseBackendDAEExpsEqns(orderedEqs, traverserinputDerivativesUsed, (BackendVariable.daeGlobalKnownVars(inShared), {}));
-      s := stringDelimitList(List.map(explst, ExpressionBasics.printExpStr), "\n");
-      Error.addMessage(Error.DERIVATIVE_INPUT, {s});
-      hasFailed := true;
-    then (BackendDAEUtil.setEqSystEqs(isyst, orderedEqs), true);
-
-    else (isyst, inChanged);
-  end matchcontinue;
-
-  // Fail after error is displayed.
-  // We do it this way, because I was to lazy to rewrite all of this function.
-  if hasFailed then fail(); end if;
+  (_, explst) := BackendDAEUtil.traverseBackendDAEExpsEqns(isyst.orderedEqs, traverserinputDerivativesUsed, (BackendVariable.daeGlobalKnownVars(inShared), {}));
+  if not listEmpty(explst) then
+    Error.addMessage(Error.DERIVATIVE_INPUT, {stringDelimitList(List.map(explst, ExpressionBasics.printExpStr), "\n")});
+    fail();
+  end if;
 end inputDerivativesUsedWork;
+
+public function zeroInputDerivativesOfOutputDerivatives
+  "For a Co-Simulation FMU, introduceOutputRealDerivatives adds $y_der = der(y)
+   for each Real output y. If y depends on an input u, index reduction makes
+   der(y) depend on der(u). The importer holds the inputs constant between
+   communication points, so der(u) = 0 there.
+   Replaces der(u) by 0 if only dummy derivatives and the variables $y_der
+   depend on it. Every other der(u) is kept, inputDerivativesUsed reports it.
+   Runs on the matched system, before the initialization system is created."
+  input output BackendDAE.BackendDAE dae;
+algorithm
+  dae := BackendDAEUtil.mapEqSystem(dae, zeroInputDerivativesOfOutputDerivativesWork);
+end zeroInputDerivativesOfOutputDerivatives;
+
+protected function zeroInputDerivativesOfOutputDerivativesWork
+  input output BackendDAE.EqSystem syst;
+  input output BackendDAE.Shared shared;
+protected
+  BackendDAE.Variables globalKnownVars;
+  list<DAE.Exp> explst;
+algorithm
+  globalKnownVars := BackendVariable.daeGlobalKnownVars(shared);
+  (_, explst) := BackendDAEUtil.traverseBackendDAEExpsEqns(syst.orderedEqs, traverserinputDerivativesUsed, (globalKnownVars, {}));
+  if not listEmpty(explst) and onlyOutputDerivativesNeedInputDerivatives(syst, shared, globalKnownVars) then
+    syst.orderedEqs := BackendEquation.traverseEquationArray_WithUpdate(syst.orderedEqs,
+      function BackendEquation.traverseExpsOfEquation(inFunc = replaceInputDerivativesByZero), globalKnownVars);
+  end if;
+end zeroInputDerivativesOfOutputDerivativesWork;
+
+protected function onlyOutputDerivativesNeedInputDerivatives
+  "True if every variable that depends on a derivative of an input is a dummy
+   derivative or a variable $y_der of introduceOutputRealDerivatives. Follows
+   the strong components in their order, so the system has to be matched."
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input BackendDAE.Variables globalKnownVars;
+  output Boolean onlyOutputDerivatives = false;
+protected
+  list<BackendDAE.StrongComponent> comps;
+  UnorderedSet<DAE.ComponentRef> outputDerivatives, dependent;
+  list<BackendDAE.Var> compVars;
+  list<BackendDAE.Equation> compEqns;
+  list<DAE.Exp> explst;
+  Boolean isDependent;
+algorithm
+  if not BackendDAEUtil.hasEqSystemMatching(syst) then
+    return;
+  end if;
+  BackendDAE.MATCHING(comps = comps) := syst.matching;
+
+  outputDerivatives := UnorderedSet.new(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
+  for v in listAppend(BackendVariable.varList(syst.orderedVars), BackendVariable.varList(shared.aliasVars)) loop
+    if BackendVariable.isOutputVar(v) and BackendVariable.isRealVar(v) then
+      UnorderedSet.add(BackendDAEUtil.outputDerivativeCref(v.varName), outputDerivatives);
+    end if;
+  end for;
+  if UnorderedSet.isEmpty(outputDerivatives) then
+    return;
+  end if;
+
+  dependent := UnorderedSet.new(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
+  for comp in comps loop
+    (compVars, _, compEqns, _) := BackendDAEUtil.getStrongComponentVarsAndEquations(comp, syst.orderedVars, syst.orderedEqs);
+    isDependent := false;
+    for eqn in compEqns loop
+      (_, (_, explst)) := BackendEquation.traverseExpsOfEquation(eqn, traverserinputDerivativesUsed, (globalKnownVars, {}));
+      isDependent := not listEmpty(explst) or
+        List.any(BackendEquation.equationVars(eqn, syst.orderedVars), function isVarInSet(set = dependent));
+      if isDependent then
+        break;
+      end if;
+    end for;
+    if isDependent then
+      for v in compVars loop
+        if not (BackendVariable.isDummyDerVar(v) or UnorderedSet.contains(v.varName, outputDerivatives)) then
+          return;
+        end if;
+        UnorderedSet.add(v.varName, dependent);
+      end for;
+    end if;
+  end for;
+  onlyOutputDerivatives := true;
+end onlyOutputDerivativesNeedInputDerivatives;
+
+protected function isVarInSet
+  input BackendDAE.Var var;
+  input UnorderedSet<DAE.ComponentRef> set;
+  output Boolean res = UnorderedSet.contains(var.varName, set);
+end isVarInSet;
+
+protected function replaceInputDerivativesByZero
+  input output DAE.Exp exp;
+  input output BackendDAE.Variables globalKnownVars;
+algorithm
+  exp := Expression.traverseExpBottomUp(exp, replaceInputDerivativeByZero, globalKnownVars);
+end replaceInputDerivativesByZero;
+
+protected function replaceInputDerivativeByZero
+  input output DAE.Exp exp;
+  input output BackendDAE.Variables globalKnownVars;
+protected
+  list<DAE.Exp> explst;
+algorithm
+  exp := match exp
+    case DAE.CALL(path = Absyn.IDENT(name = "der"))
+      algorithm
+        (_, _, (_, explst)) := traverserExpinputDerivativesUsed(exp, (globalKnownVars, {}));
+      then if listEmpty(explst) then exp else Expression.makeConstZero(Expression.typeof(exp));
+    else exp;
+  end match;
+end replaceInputDerivativeByZero;
 
 protected function traverserinputDerivativesUsed "author: Frenkel TUD 2012-10"
   input DAE.Exp inExp;
@@ -522,6 +620,12 @@ algorithm
       BackendDAE.Var var;
       list<DAE.Exp> explst;
     case (e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)})}),(vars,explst))
+      algorithm
+        (var,_) := BackendVariable.getVarSingle(cr, vars);
+        true := BackendVariable.isVarOnTopLevelAndInput(var);
+      then (e,false,(vars,e::explst));
+    // der(u, n) is the n-th derivative, created by repeated differentiation
+    case (e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr), _}),(vars,explst))
       algorithm
         (var,_) := BackendVariable.getVarSingle(cr, vars);
         true := BackendVariable.isVarOnTopLevelAndInput(var);
