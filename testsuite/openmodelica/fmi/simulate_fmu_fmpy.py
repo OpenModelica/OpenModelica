@@ -16,7 +16,9 @@ Usage:
 
 With --set-states, a Model Exchange FMU gets its continuous states set again
 after each step, one by one with fmi2SetReal or fmi3SetFloat64, as FMI 2.0.1
-and later and FMI 3.0.2 allow in Continuous-Time Mode.
+and later and FMI 3.0.2 allow in Continuous-Time Mode. The states with
+initial="exact" or "approx" are also set to their start values before the
+initialization, as FMI allows in Instantiated Mode.
 
 The variable names are the ones to record (and later compare against the
 OpenModelica reference); they must be passed explicitly because FMPy's default
@@ -62,6 +64,17 @@ def set_states_again(model_description):
     return step_finished
 
 
+def start_states(model_description):
+    """The start values of the scalar continuous states that may be set before
+    the initialization."""
+    values = {}
+    for d in model_description.derivatives:
+        v = d.variable.derivative
+        if v.initial in ("exact", "approx") and v.start is not None and not getattr(v, "dimensions", None):
+            values[v.name] = float(v.start)
+    return values
+
+
 def main(argv):
     set_states = len(argv) > 1 and argv[1] == "--set-states"
     if set_states:
@@ -92,7 +105,8 @@ def main(argv):
 
     options = {}
     if set_states:
-        options = dict(fmi_type="ModelExchange", step_finished=set_states_again(model_description))
+        options = dict(fmi_type="ModelExchange", step_finished=set_states_again(model_description),
+                       start_values=start_states(model_description))
     result = flatten_arrays(simulate_fmu(fmu, stop_time=stop_time, output=outputs, **options), dims)
     write_csv(output_csv, result)
     return 0

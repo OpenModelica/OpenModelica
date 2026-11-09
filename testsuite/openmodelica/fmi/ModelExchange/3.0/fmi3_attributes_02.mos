@@ -1,0 +1,74 @@
+// name: fmi3_attributes_02.mos
+// keywords: FMI 3.0 export
+// status: correct
+// teardown_command: rm -rf fmi3_attributes_02.fmu fmi3_attributes_02.xml fmi3_attributes_02_tmp.xml fmi3_attributes_02.fmutmp/ fmi3_attributes_02_info.json fmi3_attributes_02.log fmi3_attributes_02_*.bin index.html fmi3_attributes_02_FMU.libs fmi3_attributes_02_FMU.makefile fmi3_attributes_02_external_functions.json resources
+//
+// #17636, without the dependency analysis: a state that is not initial="exact"
+// is an InitialUnknown, also the fixed state w with a start expression.
+
+setCommandLineOptions("-d=newInst,disableFMIDependency"); getErrorString();
+
+loadString("
+model fmi3_attributes_02
+  parameter Real a = 2.0;
+  Real x(start=1.0, fixed=true);
+  Real w(start=a, fixed=true);
+  Real z;
+initial equation
+  z = 3.0;
+equation
+  der(x) = -a*x;
+  der(w) = -w;
+  der(z) = -z;
+end fmi3_attributes_02;
+"); getErrorString();
+
+buildModelFMU(fmi3_attributes_02, version="3.0", fmuType="me"); getErrorString();
+
+system("unzip -cqq fmi3_attributes_02.fmu modelDescription.xml > fmi3_attributes_02_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi3_attributes_02_tmp.xml > fmi3_attributes_02.xml"); getErrorString();
+readFile("fmi3_attributes_02.xml"); getErrorString();
+
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" fmi3_attributes_02_tmp.xml > fmi3_attributes_02.xml"); getErrorString();
+readFile("fmi3_attributes_02.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3_attributes_02.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//     <Float64 name=\"time\" valueReference=\"7\" causality=\"independent\" variability=\"continuous\" description=\"Simulation time\"/>
+//     <Float64 name=\"w\" valueReference=\"0\" />
+//     <Float64 name=\"x\" valueReference=\"1\" initial=\"exact\"  start=\"1.0\"/>
+//     <Float64 name=\"z\" valueReference=\"2\" initial=\"approx\"  start=\"0.0\"/>
+//     <Float64 name=\"der(w)\" valueReference=\"3\"  derivative=\"0\"/>
+//     <Float64 name=\"der(x)\" valueReference=\"4\"  derivative=\"1\"/>
+//     <Float64 name=\"der(z)\" valueReference=\"5\"  derivative=\"2\"/>
+//     <Float64 name=\"a\" valueReference=\"6\" causality=\"parameter\" variability=\"tunable\"  start=\"2.0\"/>
+//   </ModelVariables>
+// "
+// ""
+// 0
+// ""
+// "  <ModelStructure>
+//     <ContinuousStateDerivative valueReference=\"3\"/>
+//     <ContinuousStateDerivative valueReference=\"4\"/>
+//     <ContinuousStateDerivative valueReference=\"5\"/>
+//     <InitialUnknown valueReference=\"0\"/>
+//     <InitialUnknown valueReference=\"2\"/>
+//     <InitialUnknown valueReference=\"3\"/>
+//     <InitialUnknown valueReference=\"4\"/>
+//     <InitialUnknown valueReference=\"5\"/>
+//   </ModelStructure>
+// "
+// ""
+// endResult

@@ -5,14 +5,31 @@
 
 setCommandLineOptions("-d=newInst"); getErrorString();
 
+// The states z, v, w and u test the FMI 3.0 initial and start attributes
+// (#17636). z and v are not fixed, so they are initial="approx" with the default
+// and the literal start. w and u start at the parameter a, which has no literal
+// value in modelDescription.xml, so they are initial="calculated" without a
+// start, fixed or not.
 loadString("
 model fmi3_attributes_01
   Real x(start=1.0);
   output Real y;
   parameter Real a = 2.0;
+  Real z;
+  Real v(start=1.5, fixed=false);
+  Real w(start=a, fixed=true);
+  Real u(start=a, fixed=false);
+initial equation
+  z = 3.0;
+  v = 4.0;
+  u = 5.0;
 equation
   der(x) = -a*x;
   y = 2*x + a;
+  der(z) = -z;
+  der(w) = -w;
+  der(v) = -v;
+  der(u) = -u;
 end fmi3_attributes_01;
 "); getErrorString();
 
@@ -33,8 +50,8 @@ simulate(fmi3_attributes_01, stopTime=1.0); getErrorString();
 // Which interpreter can import fmpy is a property of the machine, not of the
 // test, so rtest hands it over in FMPY_TOOL; python3 is the default. Kept as one
 // expression so the script prints nothing extra.
-system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py --set-states fmi3_attributes_01.fmu fmi3_attributes_01_fmpy.csv 1.0 x y"); getErrorString();
-diffSimulationResults("fmi3_attributes_01_fmpy.csv", "fmi3_attributes_01_res.mat", "fmi3_attributes_01_diff", vars={"x","y"}); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py --set-states fmi3_attributes_01.fmu fmi3_attributes_01_fmpy.csv 1.0 x y z w v u"); getErrorString();
+diffSimulationResults("fmi3_attributes_01_fmpy.csv", "fmi3_attributes_01_res.mat", "fmi3_attributes_01_diff", vars={"x","y","z","w","v","u"}); getErrorString();
 
 // Result:
 // true
@@ -51,21 +68,41 @@ diffSimulationResults("fmi3_attributes_01_fmpy.csv", "fmi3_attributes_01_res.mat
 // 0
 // ""
 // "  <ModelVariables>
-//     <Float64 name=\"time\" valueReference=\"5\" causality=\"independent\" variability=\"continuous\" description=\"Simulation time\"/>
-//     <Float64 name=\"x\" valueReference=\"0\" initial=\"exact\"  start=\"1.0\"/>
-//     <Float64 name=\"der(x)\" valueReference=\"1\"  derivative=\"0\"/>
-//     <Float64 name=\"y\" valueReference=\"2\" causality=\"output\" />
-//     <Float64 name=\"a\" valueReference=\"3\" causality=\"parameter\" variability=\"tunable\"  start=\"2.0\"/>
+//     <Float64 name=\"time\" valueReference=\"13\" causality=\"independent\" variability=\"continuous\" description=\"Simulation time\"/>
+//     <Float64 name=\"u\" valueReference=\"0\" />
+//     <Float64 name=\"v\" valueReference=\"1\" initial=\"approx\"  start=\"1.5\"/>
+//     <Float64 name=\"w\" valueReference=\"2\" />
+//     <Float64 name=\"x\" valueReference=\"3\" initial=\"exact\"  start=\"1.0\"/>
+//     <Float64 name=\"z\" valueReference=\"4\" initial=\"approx\"  start=\"0.0\"/>
+//     <Float64 name=\"der(u)\" valueReference=\"5\"  derivative=\"0\"/>
+//     <Float64 name=\"der(v)\" valueReference=\"6\"  derivative=\"1\"/>
+//     <Float64 name=\"der(w)\" valueReference=\"7\"  derivative=\"2\"/>
+//     <Float64 name=\"der(x)\" valueReference=\"8\"  derivative=\"3\"/>
+//     <Float64 name=\"der(z)\" valueReference=\"9\"  derivative=\"4\"/>
+//     <Float64 name=\"y\" valueReference=\"10\" causality=\"output\" />
+//     <Float64 name=\"a\" valueReference=\"11\" causality=\"parameter\" variability=\"tunable\"  start=\"2.0\"/>
 //   </ModelVariables>
 // "
 // ""
 // 0
 // ""
 // "  <ModelStructure>
-//     <Output valueReference=\"2\" dependencies=\"0\" dependenciesKind=\"dependent\"/>
-//     <ContinuousStateDerivative valueReference=\"1\" dependencies=\"0\" dependenciesKind=\"dependent\"/>
-//     <InitialUnknown valueReference=\"1\" dependencies=\"0 3\" dependenciesKind=\"dependent dependent\"/>
-//     <InitialUnknown valueReference=\"2\" dependencies=\"0 3\" dependenciesKind=\"dependent dependent\"/>
+//     <Output valueReference=\"10\" dependencies=\"3\" dependenciesKind=\"dependent\"/>
+//     <ContinuousStateDerivative valueReference=\"5\" dependencies=\"0\" dependenciesKind=\"dependent\"/>
+//     <ContinuousStateDerivative valueReference=\"6\" dependencies=\"1\" dependenciesKind=\"dependent\"/>
+//     <ContinuousStateDerivative valueReference=\"7\" dependencies=\"2\" dependenciesKind=\"dependent\"/>
+//     <ContinuousStateDerivative valueReference=\"8\" dependencies=\"3\" dependenciesKind=\"dependent\"/>
+//     <ContinuousStateDerivative valueReference=\"9\" dependencies=\"4\" dependenciesKind=\"dependent\"/>
+//     <InitialUnknown valueReference=\"0\"/>
+//     <InitialUnknown valueReference=\"1\"/>
+//     <InitialUnknown valueReference=\"2\" dependencies=\"11\" dependenciesKind=\"dependent\"/>
+//     <InitialUnknown valueReference=\"4\"/>
+//     <InitialUnknown valueReference=\"5\"/>
+//     <InitialUnknown valueReference=\"6\"/>
+//     <InitialUnknown valueReference=\"7\" dependencies=\"11\" dependenciesKind=\"dependent\"/>
+//     <InitialUnknown valueReference=\"8\" dependencies=\"3 11\" dependenciesKind=\"dependent dependent\"/>
+//     <InitialUnknown valueReference=\"9\"/>
+//     <InitialUnknown valueReference=\"10\" dependencies=\"3 11\" dependenciesKind=\"dependent dependent\"/>
 //   </ModelStructure>
 // "
 // ""

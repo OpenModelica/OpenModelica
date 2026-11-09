@@ -49,6 +49,7 @@ import DAE;
 import DAEUtil;
 import Expression;
 import HashTableCrefSimVar;
+import FMI;
 import Flags;
 import List;
 import SimCodeCodegenUtil;
@@ -829,9 +830,11 @@ function varFlags
   output Integer f = 0;
 algorithm
   f := match v
+    case SimCodeVar.SIMVAR(varKind = BackendDAE.STATE()) guard FMI.isFMIVersion30()
+      then initialFlag(SimCodeCodegenUtil.fmi3StateInitial(v));
     case SimCodeVar.SIMVAR(initial_ = SOME(SimCodeVar.EXACT())) then SimCode.PARAM_DEPS_INITIAL_EXACT;
     case SimCodeVar.SIMVAR(initial_ = SOME(SimCodeVar.APPROX())) then SimCode.PARAM_DEPS_INITIAL_APPROX;
-    // As CodegenFMU3.FmiInitialAttribute3 for a state the non-scalarized backend left without one.
+    // FMI 2.0: a state the non-scalarized backend left without one.
     case SimCodeVar.SIMVAR(initial_ = NONE(), varKind = BackendDAE.STATE())
       then if v.isFixed then SimCode.PARAM_DEPS_INITIAL_EXACT else SimCode.PARAM_DEPS_INITIAL_APPROX;
     else 0;
@@ -844,6 +847,17 @@ algorithm
     else f;
   end match;
 end varFlags;
+
+function initialFlag
+  input SimCodeVar.Initial initial_;
+  output Integer f;
+algorithm
+  f := match initial_
+    case SimCodeVar.EXACT() then SimCode.PARAM_DEPS_INITIAL_EXACT;
+    case SimCodeVar.APPROX() then SimCode.PARAM_DEPS_INITIAL_APPROX;
+    else 0;
+  end match;
+end initialFlag;
 
 annotation(__OpenModelica_Interface="backend");
 end ParamDeps;
