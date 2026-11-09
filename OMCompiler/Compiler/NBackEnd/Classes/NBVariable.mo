@@ -62,6 +62,7 @@ public
   import NFFunction.Function;
   import NFInstNode.InstNode;
   import Prefixes = NFPrefixes;
+  import Record = NFRecord;
   import Scalarize = NFScalarize;
   import SimplifyExp = NFSimplifyExp;
   import Subscript = NFSubscript;
@@ -1344,17 +1345,28 @@ function isJacobianResultVar
   end hasDerVar;
 
   function addRecordChild
-    "adds a child to the records children. use with care, only when creating new records!"
+    "adds a child to the records children in the order of the record fields.
+    use with care, only when creating new records!"
     input Pointer<Variable> var_ptr;
     input Pointer<Variable> child;
   protected
     Variable var = Pointer.access(var_ptr);
+    list<String> fields;
+    Integer index;
+    list<PointerWeak<Variable>> before = {}, after;
   algorithm
     var := match var
       local
         VariableKind varKind;
       case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = varKind as VariableKind.RECORD())) algorithm
-        varKind.children := PointerWeak.downgrade(child) :: varKind.children;
+        fields := list(Record.Field.name(f) for f in Type.recordFields(Type.arrayElementType(var.ty)));
+        index := recordFieldIndex(child, fields);
+        after := varKind.children;
+        while not listEmpty(after) and recordFieldIndex(PointerWeak.upgrade(listHead(after)), fields) < index loop
+          before := listHead(after) :: before;
+          after := listRest(after);
+        end while;
+        varKind.children := List.append_reverse(before, PointerWeak.downgrade(child) :: after);
         var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
       then var;
       else algorithm
@@ -1364,6 +1376,20 @@ function isJacobianResultVar
     end match;
     Pointer.update(var_ptr, var);
   end addRecordChild;
+
+  function recordFieldIndex
+    "the position of the child in the record fields, unknown fields go last"
+    input Pointer<Variable> child;
+    input list<String> fields;
+    output Integer index = 1;
+  protected
+    String name = ComponentRef.firstName(getVarName(child));
+  algorithm
+    for field in fields loop
+      if field == name then return; end if;
+      index := index + 1;
+    end for;
+  end recordFieldIndex;
 
   function setRecordChildren
     "sets the records children. use with care, only when creating new records!"

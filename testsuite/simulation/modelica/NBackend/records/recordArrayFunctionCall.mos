@@ -1,0 +1,58 @@
+// name: recordArrayFunctionCall
+// keywords: NewBackend
+// status: correct
+//
+// Record array elements from a function call in an algebraic loop: the
+// $START and $pDER records keep the order of the record fields.
+
+loadString("
+record R
+  Real X[2];
+  Real T;
+  Real p;
+end R;
+
+function f
+  input Real a;
+  input Real b;
+  output R r;
+algorithm
+  r.X := {a, 2*b};
+  r.T := a + b;
+  r.p := a*b;
+  annotation(Inline = false);
+end f;
+
+model recordArrayFunctionCall
+  R s[2];
+  Real a(start = 1);
+  Real b(start = 1);
+equation
+  s[1] = f(a, b);
+  s[2] = f(b, a);
+  a = 1 + 0.1*sin(s[1].p) + time;
+  b = 2 + 0.1*cos(s[1].X[2]) + 0.01*s[2].T;
+end recordArrayFunctionCall;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+simulate(recordArrayFunctionCall); getErrorString();
+val(s[1].p, 1.0); val(s[1].X[1], 1.0); val(s[2].T, 1.0);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "recordArrayFunctionCall_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'recordArrayFunctionCall', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 3.815449356924642
+// 1.9375995671141664
+// 3.906762557074635
+// endResult
