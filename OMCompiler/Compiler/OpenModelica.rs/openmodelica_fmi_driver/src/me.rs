@@ -159,7 +159,7 @@ impl FmuOde<'_> {
             self.inst.set_continuous_states(y)?;
             if self.inputs.is_time_varying() {
                 let inst: &mut dyn Fmi3 = self.inst;
-                self.inputs.apply(inst, self.opts, t)?;
+                self.inputs.apply(inst, self.opts, t, false)?;
             }
             self.committed = Some((t, y.to_vec(), Vec::new()));
             return Ok(());
@@ -188,7 +188,7 @@ impl FmuOde<'_> {
         }
         if self.inputs.is_time_varying() {
             let inst: &mut dyn Fmi3 = self.inst;
-            self.inputs.apply(inst, self.opts, t)?;
+            self.inputs.apply(inst, self.opts, t, false)?;
         }
         self.committed = Some((t, y.to_vec(), ders.to_vec()));
         Ok(())
@@ -1083,6 +1083,9 @@ pub fn simulate(inst: &mut dyn Fmi3ModelExchange, md: &ModelDescription, opts: &
                 let common: &mut dyn Fmi3 = ode.inst;
                 rec.sample(common, t)?;
                 common.enter_event_mode()?;
+                if ode.inputs.is_time_varying() {
+                    ode.inputs.apply(common, ode.opts, t, true)?;
+                }
                 info = event_iteration(common)?;
                 if ode.dae.is_none() {
                     rec.sample(common, t)?;

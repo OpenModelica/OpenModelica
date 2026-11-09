@@ -121,6 +121,9 @@ mod sim_metadata;
 #[cfg(not(target_arch = "wasm32"))]
 mod omedit_runtime;
 
+#[cfg(not(target_arch = "wasm32"))]
+mod julia_api;
+
 // malloc + copy rather than `libc::strdup`, for the reason `omc_strdup` exists.
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) unsafe fn malloc_dup(s: *const std::ffi::c_char) -> *mut std::ffi::c_char {

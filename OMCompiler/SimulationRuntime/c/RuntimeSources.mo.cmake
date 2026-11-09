@@ -58,21 +58,47 @@ encapsulated package RuntimeSources
 
   constant list<String> simrt_c_cvode_sources={@SOURCE_FMU_CVODE_RUNTIME_FILES@};
 
+  constant list<String> simrt_c_ida_sources={@SOURCE_FMU_IDA_RUNTIME_FILES@};
+
   constant list<String> solver_library_files={@SOURCE_FMU_SOLVER_LIBRARY_FILES@};
 
   constant list<String> solver_library_sources={@SOURCE_FMU_SOLVER_LIBRARY_SOURCES@};
 
-  constant list<String> modelica_external_c_sources={"ModelicaExternalC/ModelicaStandardTables.c",
+  constant list<String> solver_library_ida_files={@SOURCE_FMU_SOLVER_LIBRARY_IDA_FILES@};
+
+  constant list<String> solver_library_ida_sources={@SOURCE_FMU_SOLVER_LIBRARY_IDA_SOURCES@};
+
+  constant list<String> modelica_external_c_sources={"ModelicaExternalC/ModelicaFFT.c",
+                                                     "ModelicaExternalC/ModelicaInternal.c",
+                                                     "ModelicaExternalC/ModelicaRandom.c",
+                                                     "ModelicaExternalC/ModelicaStrings.c",
+                                                     "ModelicaExternalC/ModelicaStandardTables.c",
                                                      "ModelicaExternalC/ModelicaMatIO.c",
                                                      "ModelicaExternalC/ModelicaIO.c",
                                                      "ModelicaExternalC/ModelicaStandardTablesDummyUsertab.c",
-                                                     "ModelicaExternalC/snprintf.c"};
+                                                     "ModelicaExternalC/snprintf.c",
+                                                     "ModelicaExternalC/win32_dirent.c"};
 
-  constant list<String> modelica_external_c_headers={"ModelicaExternalC/ModelicaStandardTables.h",
-                                                     "ModelicaExternalC/ModelicaMatIO.h",
-                                                     "ModelicaExternalC/ModelicaIO.h",
+  constant list<String> modelica_external_c_headers={"ModelicaExternalC/gconstructor.h",
+                                                     "ModelicaExternalC/read_data_impl.h",
                                                      "ModelicaExternalC/safe-math.h",
-                                                     "ModelicaExternalC/read_data_impl.h"};
+                                                     "ModelicaExternalC/stdint_msvc.h",
+                                                     "ModelicaExternalC/stdint_wrap.h",
+                                                     "ModelicaExternalC/uthash.h",
+                                                     "ModelicaExternalC/win32_dirent.h"};
+
+  // zlib for ModelicaMatIO.c (MAT-files v7), compiled by the FMU's CMakeLists.txt.
+  constant list<String> modelica_external_c_zlib_files={@SOURCE_FMU_ZLIB_FILES@};
+
+  // The headers of the MSL that a model includes: in sources/, which an importer
+  // has on its include path, rather than beside the C files.
+  constant list<String> modelica_external_c_api_headers={"ModelicaFFT.h",
+                                                         "ModelicaInternal.h",
+                                                         "ModelicaIO.h",
+                                                         "ModelicaMatIO.h",
+                                                         "ModelicaRandom.h",
+                                                         "ModelicaStandardTables.h",
+                                                         "ModelicaStrings.h"};
 
   constant list<String> dgesv_headers={"./external_solvers/blaswrap.h",
                                        "./external_solvers/clapack.h",

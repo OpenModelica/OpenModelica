@@ -548,9 +548,56 @@ void printZeroCrossings(DATA *data, int stream)
   {
     int *eq_indexes;
     const char *exp_str = data->callback->zeroCrossingDescription(i,&eq_indexes);
-    infoStreamPrintWithEquationIndexes(stream, omc_dummyFileInfo, 0, eq_indexes, "[%ld] (pre: %2.g) %2.g = %s", i+1, data->simulationInfo->zeroCrossingsPre[i], data->simulationInfo->zeroCrossings[i], exp_str);
+    infoStreamPrintWithEquationIndexes(stream, omc_dummyFileInfo, 0, eq_indexes, "[%ld] (pre: %s) %s = %s", i+1, (data->simulationInfo->zeroCrossingsPre[i] > 0.0) ? " true" : "false", (data->simulationInfo->zeroCrossings[i] > 0.0) ? " true" : "false", exp_str);
   }
   messageClose(stream);
+}
+
+/* \fn printCurrentStatesVector(int logLevel, double* y, DATA* data, double time)
+ *
+ * \param [in] [logLevel]
+ * \param [in] [states]
+ * \param [in] [data]
+ * \param [in] [time]
+ *
+ * This function outputs states vector.
+ *
+ */
+int printCurrentStatesVector(int logLevel, double* states, DATA* data, double time)
+{
+  int i;
+  infoStreamPrint(logLevel, 1, "states at time=%g", time);
+  for(i=0;i<data->modelData->nStates;++i)
+  {
+    infoStreamPrint(logLevel, 0, "%d. %s = %g", i+1, data->modelData->realVarsData[i].info.name, states[i]);
+  }
+  messageClose(logLevel);
+
+  return 0;
+}
+
+/* \fn printVector(int logLevel, double* y, DATA* data, double time)
+ *
+ * \param [in] [logLevel]
+ * \param [in] [name]
+ * \param [in] [vec]
+ * \param [in] [size]
+ * \param [in] [time]
+ *
+ * This function outputs a vector of size
+ *
+ */
+int printVector(int logLevel, const char* name,  double* vec, int n, double time)
+{
+  int i;
+  infoStreamPrint(logLevel, 1, "%s at time=%g", name, time);
+  for(i=0; i<n; ++i)
+  {
+    infoStreamPrint(logLevel, 0, "%d. %g", i+1, vec[i]);
+  }
+  messageClose(logLevel);
+
+  return 0;
 }
 
 /*! \fn overwriteOldSimulationData

@@ -72,9 +72,9 @@ diffSimulationResults("fmi3_arrays_scalarized_fmpy.csv", "fmi3_arrays_scalarized
 //     <Float64 name=\"y\" valueReference=\"10\" causality=\"output\" ><Dimension start=\"3\"/></Float64>
 //     <Float64 name=\"z[1]\" valueReference=\"13\"  min=\"-1.0\"/>
 //     <Float64 name=\"z[2]\" valueReference=\"14\"  min=\"-2.0\"/>
-//     <Float64 name=\"a\" valueReference=\"15\" causality=\"parameter\" variability=\"fixed\"  start=\"0.5\"/>
-//     <Float64 name=\"p\" valueReference=\"16\" causality=\"calculatedParameter\" variability=\"fixed\" ><Dimension start=\"3\"/></Float64>
-//     <Float64 name=\"q\" valueReference=\"19\" causality=\"parameter\" variability=\"fixed\"  start=\"1.0 2.0 3.0\"><Dimension start=\"3\"/></Float64>
+//     <Float64 name=\"a\" valueReference=\"15\" causality=\"parameter\" variability=\"tunable\"  start=\"0.5\"/>
+//     <Float64 name=\"p\" valueReference=\"16\" causality=\"calculatedParameter\" variability=\"tunable\" ><Dimension start=\"3\"/></Float64>
+//     <Float64 name=\"q\" valueReference=\"19\" causality=\"parameter\" variability=\"tunable\"  start=\"1.0 2.0 3.0\"><Dimension start=\"3\"/></Float64>
 //   </ModelVariables>
 // "
 // ""

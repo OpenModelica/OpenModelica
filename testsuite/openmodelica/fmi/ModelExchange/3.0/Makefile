@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+fmi2_and_fmi3.mos \
 fmi3_array_attributes.mos \
 fmi3_array_attributes_nb.mos \
 fmi3_array_nonscalarized.mos \
@@ -8,6 +9,7 @@ fmi3_arrays.mos \
 fmi3_arrays_scalarized.mos \
 fmi3_import_me.mos \
 fmi3_import_boolean.mos \
+fmi3_import_discrete_inputs.mos \
 fmi3_arrays_approx.mos \
 fmi3_arrays_start_vector.mos \
 fmi3_attributes_01.mos \

@@ -575,16 +575,29 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
             openmodelica_solvers::solverflags::set_no_scaling();
         }
 
-        // A system sized at run time (resizable arrays) has its pattern only now;
-        // the codegen could not count its nonzeros and chose dense. Choose as
-        // `SimCodeCodegenUtil.useSparseSolver` does for a known size.
-        if sys.updateSize.is_some() && !sys.sparsePattern.is_null() && size > 0 && !adaptive_homotopy(data, sys) {
+        // `-nlssMaxDensity` / `-nlssMinSize` replace the compiler's choice. A system
+        // sized at run time (resizable arrays) has its pattern only now; the codegen
+        // could not count its nonzeros and chose dense.
+        if (sys.updateSize.is_some() || solverflags::nlss_given())
+            && !sys.sparsePattern.is_null()
+            && size > 0
+            && !adaptive_homotopy(data, sys)
+        {
             let nnz = unsafe { (*sys.sparsePattern).nnz } as usize;
-            sys.matrixFormat = if solverflags::nls_use_sparse(size, nnz) {
-                OMC_MATRIX_SPARSE
-            } else {
-                OMC_MATRIX_DENSE
-            };
+            let sparse = solverflags::nls_use_sparse(size, nnz);
+            sys.matrixFormat = if sparse { OMC_MATRIX_SPARSE } else { OMC_MATRIX_DENSE };
+            if sparse && solverflags::nlss_given() {
+                let t = solverflags::sparse_thresholds();
+                omclog::info!(
+                    omclog::STDOUT,
+                    false,
+                    "Using sparse solver kinsol for nonlinear system {i} ({}),\nbecause density of {:.2} is under threshold of {:.2} or size of {size} exceeds threshold of {}.",
+                    sys.equationIndex,
+                    nnz as f64 / (size as f64 * size as f64),
+                    t.nlss_max_density,
+                    t.nlss_min_size,
+                );
+            }
         }
 
         register_names(data, sys);
@@ -1041,7 +1054,7 @@ impl driver::SimEngine for ReadOnly {
     fn call_simulate(&mut self, _sim_data: u32, _start: f64, _stop: f64, _n: u32) -> driver::Result<u32> {
         Err("the initial-guess writer does not call the model")
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 10]> {
         None
     }
 }

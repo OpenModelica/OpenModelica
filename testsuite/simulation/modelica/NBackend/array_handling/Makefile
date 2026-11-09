@@ -65,10 +65,15 @@ resizableJacobianOffsets.mos \
 resizableAlgebraicLoops.mos \
 resizableFill.mos \
 resizableStreams.mos \
+resizableEvaluate.mos \
+resizableStreamMixing.mos \
 resizableWholeSubscript.mos \
 resizableArrayBinding.mos \
 resizableArrayAlias.mos \
 resizableArrayBodyFor.mos \
+resizableInitOverdetermined.mos \
+resizableSlicedDummy.mos \
+resizableSlicedDummyInit.mos \
 array_start_vector.mos\
 array_start_int_bool_string.mos\
 array_inputs.mos\

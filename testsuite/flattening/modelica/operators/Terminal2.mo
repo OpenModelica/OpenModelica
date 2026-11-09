@@ -6,14 +6,14 @@
 //
 
 model Terminal2
-
   Real t;
 equation
  t=2.0*terminal();
 end Terminal2;
+
 // Result:
 // Error processing file: Terminal2.mo
-// [flattening/modelica/operators/Terminal2.mo:12:2-12:18:writable] Error: Cannot resolve type of expression 2.0 * terminal(). The operands have types Real, Boolean in component <NO_COMPONENT>.
+// [flattening/modelica/operators/Terminal2.mo:11:2-11:18:writable] Error: Cannot resolve type of expression 2.0*terminal(). The operands have types Real, Boolean.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

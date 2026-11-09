@@ -5,8 +5,12 @@ ExportCvodeFmu_cmake.mos \
 ExportCvodeFmu_dynamic.mos \
 ExportCvodeFmu_static.mos \
 fmi_interpolation_01.mos \
+FmuAssertSolverRetry.mos \
 FmuExitInitAssert.mos \
+FmuMatV7Table.mos \
 FmuNlsSameTime.mos \
+FmuUnknownDependencies.mos \
+FmuUnknownsWithoutFmiIndex.mos \
 FmuExportFlags.mos \
 RecompileSourceCodeFMU.mos \
 simpleStiffFMU.mos \
@@ -24,6 +28,7 @@ FAILINGTESTFILES = \
 DEPENDENCIES = \
 *.mo \
 *.mos \
+FmuAssertSolverRetry.py \
 FmuExitInitAssert.py \
 FmuNlsSameTime.py \
 Makefile \

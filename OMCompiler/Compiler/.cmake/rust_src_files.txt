@@ -19,6 +19,7 @@ libopenmodelica_compiler/build.rs
 libopenmodelica_compiler/gen/gen-sim-tables.c
 libopenmodelica_compiler/gen/gen-sim-tables.sh
 libopenmodelica_compiler/include/omc_rust_embedding.h
+libopenmodelica_compiler/src/julia_api.rs
 libopenmodelica_compiler/src/lib.rs
 libopenmodelica_compiler/src/mmc_compat.rs
 libopenmodelica_compiler/src/omedit_runtime.rs
@@ -43,6 +44,7 @@ metamodelica/src/list/mod.rs
 metamodelica/src/misc.rs
 metamodelica/src/real/mod.rs
 metamodelica/src/real/ryu.rs
+metamodelica/src/reflect.rs
 metamodelica/src/serial.rs
 metamodelica/src/source_info.rs
 metamodelica/src/string/hash.rs
@@ -282,6 +284,8 @@ openmodelica_codegen_wasm_jit_runtime/src/standalone.rs
 openmodelica_codegen_wasm_jit_runtime/src/sundials.rs
 openmodelica_codegen_wasm_jit_runtime/src/uri.rs
 openmodelica_codegen_xml/Cargo.toml
+openmodelica_download/Cargo.toml
+openmodelica_download/src/lib.rs
 openmodelica_dump_extra/Cargo.toml
 openmodelica_error/Cargo.toml
 openmodelica_error/src/ErrorExt.rs
@@ -310,6 +314,7 @@ openmodelica_fmi3_wasm/Cargo.toml
 openmodelica_fmi3_wasm/src/capi.rs
 openmodelica_fmi3_wasm/src/lib.rs
 openmodelica_fmi3_wasm/src/native_ext.rs
+openmodelica_fmi3_wasm/src/param_deps.rs
 openmodelica_fmi3_wasm/src/sim_run.rs
 openmodelica_fmi3_wasm/wit/deps/om-ext/native.wit
 openmodelica_fmi3_wasm/wit/deps/om-sim/simulation.wit
@@ -417,16 +422,23 @@ openmodelica_nf_frontend/src/ffi_catch.cpp
 openmodelica_loader/Cargo.toml
 openmodelica_omgraphics/Cargo.toml
 openmodelica_omgraphics/src/OMGraphics.rs
+openmodelica_package_manager/Cargo.toml
+openmodelica_package_manager/src/lib.rs
+openmodelica_package_manager/src/library_metadata.rs
+openmodelica_package_manager/src/manager.rs
+openmodelica_package_manager/src/scan.rs
+openmodelica_package_manager/src/solve.rs
+openmodelica_package_manager/tests/manager.rs
+openmodelica_package_manager/tests/resolve.rs
 openmodelica_program_util/Cargo.toml
 openmodelica_revision/Cargo.toml
 openmodelica_revision/build.rs
 openmodelica_revision/src/lib.rs
 openmodelica_script_util/Cargo.toml
-openmodelica_script_util/src/Curl.rs
-openmodelica_script_util/src/Curl_wasm.rs
 openmodelica_script_util/src/DynLoadExt.rs
 openmodelica_script_util/src/SimulationResults.rs
 openmodelica_script_util/src/UnitParserExt.rs
+openmodelica_script_util/src/PackageManagerExt.rs
 openmodelica_script_util/src/Unzip.rs
 openmodelica_scripting_api_gen/Cargo.toml
 openmodelica_scripting_api_gen/src/main.rs
@@ -458,6 +470,7 @@ openmodelica_util/src/Lapack.rs
 openmodelica_util/src/ModelInstanceReference.rs
 openmodelica_util/src/OMSimulatorExt.rs
 openmodelica_util/src/Print.rs
+openmodelica_util/src/SemanticVersion.rs
 openmodelica_util/src/Settings.rs
 openmodelica_util/src/StackOverflow.rs
 openmodelica_util/src/System.rs
@@ -493,6 +506,8 @@ openmodelica_util_datatypes_basic/src/unittests/list_tests.rs
 openmodelica_util_datatypes_basic/src/unittests/mod.rs
 openmodelica_util_datatypes_basic/src/unittests/mutable_cycle_drop_tests.rs
 openmodelica_util_datatypes_basic/src/unittests/mutable_tests.rs
+openmodelica_version/Cargo.toml
+openmodelica_version/src/lib.rs
 openmodelica_wasi/Cargo.toml
 openmodelica_wasi/src/fs.rs
 openmodelica_wasi/src/lib.rs

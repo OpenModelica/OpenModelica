@@ -36,7 +36,7 @@ simulate(function_diff); getErrorString();
 // ""
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
 // [BEFORE] [SCAL] (1) y = sin(x); ($RES_AUX_5)
-// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.y = cos(x) * $SEED_ODE_JAC.x; ($RES_AUX_5)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.y = cos(x)*$SEED_ODE_JAC.x; ($RES_AUX_5)
 //
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
 // [BEFORE] [SCAL] (1) $FUN_2 = f(y); ($RES_AUX_4)
@@ -46,7 +46,7 @@ simulate(function_diff); getErrorString();
 //   output Real 'b';
 // algorithm
 //   if 'a' >= 0.0 then
-//     'b' := 'a' ^ 2.0;
+//     'b' := 'a'^2.0;
 //   else
 //     'b' := 'f'(-'a');
 //   end if;
@@ -60,8 +60,8 @@ simulate(function_diff); getErrorString();
 //   Real 'b';
 // algorithm
 //   if 'a' >= 0.0 then
-//     '$fDER_b' := 2.0 * 'a' * '$fDER_a';
-//     'b' := 'a' ^ 2.0;
+//     '$fDER_b' := 2.0*'a'*'$fDER_a';
+//     'b' := 'a'^2.0;
 //   else
 //     '$fDER_b' := '$fDER0.f'(-'a', -'$fDER_a');
 //     'b' := 'f'(-'a');

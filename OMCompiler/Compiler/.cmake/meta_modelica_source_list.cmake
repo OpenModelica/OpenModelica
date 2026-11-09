@@ -435,6 +435,7 @@ set(OMC_MM_BACKEND_SOURCES
 
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/HpcOmCodegenUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/HpcOmSimCodeMain.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/ParamDeps.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeFmuInit.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeInitXML.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeModelInfo.mo
@@ -463,7 +464,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUModelDescription.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCpp.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCppHpcom.mo
-    ${OMC_GENERATED_MO_DIR}/Template/CodegenJS.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenMidToC.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenUtilSimulation.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenWasmJitFunctions.mo
@@ -480,7 +480,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/AvlSetInt.mo
 
     # ${CMAKE_CURRENT_SOURCE_DIR}/Util/BasePVector.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/Curl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/ContainerImage.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/DiffAlgorithm.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/DisjointSets.mo
@@ -514,6 +513,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/UnorderedMap.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/UnorderedSet.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Unzip.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/PackageManagerExt.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Vector.mo
 
     ${CMAKE_CURRENT_SOURCE_DIR}/../SimulationRuntime/c/RuntimeSources.mo

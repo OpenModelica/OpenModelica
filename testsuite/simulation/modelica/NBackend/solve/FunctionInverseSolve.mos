@@ -161,13 +161,13 @@ translateModel(FunctionInverseSolve.TestImplicit); getErrorString();
 // ### Variable:
 // 	$FUN_1
 // ### Equation:
-// 	[SCAL] (1) 2.0 * $FUN_1 + z = 7.0; ($RES_SIM_0)
+// 	[SCAL] (1) 2.0*$FUN_1 + z = 7.0; ($RES_SIM_0)
 //
 // SolveUnique Instructions (substitute from top to bottom):
 // 	0 (is initial)
 // 	7.0 - $SUBST_CREF
 // 	$SUBST_CREF - z
-// 	$SUBST_CREF / 2.0
+// 	$SUBST_CREF/2.0
 // ### Status:
 // 	Solve.EXPLICIT
 //
@@ -175,7 +175,7 @@ translateModel(FunctionInverseSolve.TestImplicit); getErrorString();
 // ### Status:
 // 	Solve.EXPLICIT
 // ### Equation:
-// 	[SCAL] (1) $FUN_1 = 0.5 * (7.0 - z); ($RES_SIM_0)
+// 	[SCAL] (1) $FUN_1 = 0.5*(7.0 - z); ($RES_SIM_0)
 //
 // END - Solve
 // ##########################################
@@ -188,11 +188,11 @@ translateModel(FunctionInverseSolve.TestImplicit); getErrorString();
 // ### Variable:
 // 	x
 // ### Equation:
-// 	[SCAL] (1) 0.5 * (7.0 - time) = FunctionInverseSolve.f(a, x); ($RES_AUX_2)
+// 	[SCAL] (1) 0.5*(7.0 - time) = FunctionInverseSolve.f(a, x); ($RES_AUX_2)
 //
 // SolveUnique Instructions (substitute from top to bottom):
 // 	0 (is initial)
-// 	$SUBST_CREF + 0.5 * (7.0 - time)
+// 	$SUBST_CREF + 0.5*(7.0 - time)
 // 	FunctionInverseSolve.f_inv(a, $SUBST_CREF)
 // ### Status:
 // 	Solve.EXPLICIT
@@ -201,7 +201,7 @@ translateModel(FunctionInverseSolve.TestImplicit); getErrorString();
 // ### Status:
 // 	Solve.EXPLICIT
 // ### Equation:
-// 	[SCAL] (1) x = FunctionInverseSolve.f_inv(a, 0.5 * (7.0 - time)); ($RES_AUX_2)
+// 	[SCAL] (1) x = FunctionInverseSolve.f_inv(a, 0.5*(7.0 - time)); ($RES_AUX_2)
 //
 // END - Solve
 // ##########################################

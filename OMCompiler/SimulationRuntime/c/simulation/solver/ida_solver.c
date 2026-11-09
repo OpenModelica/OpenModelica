@@ -82,10 +82,6 @@ static void idaReScaleVector(N_Vector vec, double* factors, unsigned int size);
 
 int ida_event_update(DATA* data, threadData_t *threadData);
 
-/* Static variables */
-/* TODO: Don't use global variables */
-static IDA_SOLVER *idaDataGlobal;
-
 
 /**
  * @brief Return true if flag signals success.
@@ -592,7 +588,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     }
   }
   if (compiledInDAEMode){
-    idaDataGlobal = idaData;
+    data->simulationInfo->daeModeData->solverData = idaData;
     data->callback->functionDAE = ida_event_update;
   }
   messageClose(OMC_LOG_SOLVER);
@@ -655,6 +651,19 @@ void ida_solver_deinitial(IDA_SOLVER *idaData)
 
 
 /**
+ * @brief Copy states, algebraic variables and state derivatives from IDA to realVars.
+ *
+ * @param data     Runtime data struct.
+ * @param idaData  IDA solver data.
+ */
+static void setDAEVarsFromIDA(DATA* data, IDA_SOLVER* idaData)
+{
+  memcpy(data->localData[0]->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
+  setAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
+  memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
+}
+
+/**
  * @brief EventHandle for DAE mode.
  *
  * Handles events by reinitialize main IDA solver, initializing next step and
@@ -666,7 +675,7 @@ void ida_solver_deinitial(IDA_SOLVER *idaData)
  */
 int ida_event_update(DATA* data, threadData_t *threadData)
 {
-  IDA_SOLVER *idaData = idaDataGlobal;
+  IDA_SOLVER *idaData = (IDA_SOLVER*) data->simulationInfo->daeModeData->solverData;
   int flag;
   long nonLinIters;
   double init_h;
@@ -732,14 +741,14 @@ int ida_event_update(DATA* data, threadData_t *threadData)
   /* obtain consistent values of y_algebraic and y_prime */
   IDAGetConsistentIC(idaData->ida_mem, idaData->y, idaData->yp);
 
+  /* IDACalcIC leaves its last residual evaluation in realVars, which can be a Jacobian perturbation */
+  setDAEVarsFromIDA(data, idaData);
+
   /* update inner algebraic variables */
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
   evaluateDAEResiduals_wrapperEventUpdate(data, threadData);
 
-  memcpy(data->localData[0]->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
-  // and  also algebraic vars
-  setAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
-  memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
+  setDAEVarsFromIDA(data, idaData);
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
   /* reset initial step size again to default */
@@ -848,9 +857,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   threadData->currentErrorStage = ERROR_INTEGRATOR;
 
   /* try */
-#if !defined(OMC_EMCC)
   OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
 
 
   /* Check that tout is not less than timeValue otherwise the solver
@@ -896,6 +903,10 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   {
     tout = solverInfo->currentTime + solverInfo->currentStepSize;
     stepsMode = IDA_NORMAL;
+#ifdef OMC_FMI_RUNTIME
+    /* The inputs of an FMU can change at the communication point */
+    IDASetStopTime(idaData->ida_mem, tout);
+#else
     /* Never step past the next time event */
     if (data->simulationInfo->nextSampleEvent < DBL_MAX)
     {
@@ -905,6 +916,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     {
       IDAClearStopTime(idaData->ida_mem);
     }
+#endif
   }
 
 
@@ -913,9 +925,11 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     infoStreamPrint(OMC_LOG_SOLVER, 1, "##IDA## new step from %.15g to %.15g", solverInfo->currentTime, tout);
 
     if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
+#ifndef OMC_FMI_RUNTIME
     /* read input vars */
     externalInputUpdate(data);
     data->callback->input_function(data, threadData);
+#endif
     if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
     if (omc_flag[FLAG_IDA_SCALING])
@@ -1000,9 +1014,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   } while(!finished && !OMC_ERROR_RAISED());
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
 
-#if !defined(OMC_EMCC)
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
   threadData->currentErrorStage = saveJumpState;
 
   /* if a state event occurs than no sample event does need to be activated  */
@@ -1132,9 +1144,7 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
   threadData->currentErrorStage = ERROR_INTEGRATOR;
 
   /* try */
-#if !defined(OMC_EMCC)
   OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
 
   /* if sensitivity mode update also bound parameters*/
   if (idaData->idaSmode)
@@ -1162,11 +1172,13 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
     }
   }
 
+#ifndef OMC_FMI_RUNTIME
   /* read input vars */
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
+#endif
 
   if (idaData->daeMode)
   {
@@ -1219,9 +1231,7 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
 
   printVector(OMC_LOG_DASSL_STATES, "delta", delta, idaData->N, time);
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
-#if !defined(OMC_EMCC)
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
 
   if (!success) {
     retVal = 1;  /* Recoverable error, reduce step size and retry */
@@ -1290,8 +1300,10 @@ static int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout,
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
 
   /* Update inputs and evaluate zero crossings */
+#ifndef OMC_FMI_RUNTIME
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
+#endif
   if (idaData->daeMode){
     data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData, EVAL_ZEROCROSS);
   }

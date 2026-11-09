@@ -263,7 +263,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.TEARING_COST,
   Flags.OMEDIT,
   Flags.CHECK_USED_ELEMENTS_LOOKUP,
-  Flags.NF_SCRIPTING
+  Flags.NF_SCRIPTING,
+  Flags.HOMOTOPY_IN_RESIDUALS
 };
 
 protected
@@ -441,7 +442,10 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.TEARING_COST_MARGIN,
   Flags.FMU_NATIVE_PLATFORMS,
   Flags.TPL_OUTPUT_DIR,
-  Flags.FMU_DIRECTORY
+  Flags.FMU_DIRECTORY,
+  Flags.FMI_TUNABLE_PARAMETERS,
+  Flags.TUNABLE_PARAMETERS,
+  Flags.FMU_WITH_FMI2
 };
 
 public function new
@@ -1912,7 +1916,9 @@ protected
 algorithm
   Flags.DEBUG_FLAG(default = default, name = name, description = desc) := inFlag;
   desc_str := desc;
-  if sphinx then
+  if valueEq(inFlag.visibility, Flags.INTERNAL()) then
+    outString := "";
+  elseif sphinx then
     desc_str := stringDelimitList(list(System.trim(s) for s in System.strtok(desc_str, "\n")), "\n  ");
     outString := "\n.. _omcflag-debug-"+name+":\n\n" +
       ":ref:`" + name + " <omcflag-debug-"+name+">`" +

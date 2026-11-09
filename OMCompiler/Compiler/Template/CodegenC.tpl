@@ -197,6 +197,7 @@ end translateModel;
     extern int <%symbolName(modelNamePrefixStr,"functionInitialEquations_lambda0")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"functionRemovedInitialEquations")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"updateBoundParameters")%>(DATA *data, threadData_t *threadData);
+    extern int <%symbolName(modelNamePrefixStr,"updateTunableParameters")%>(DATA *data, threadData_t *threadData, const unsigned char *eqMask);
     extern int <%symbolName(modelNamePrefixStr,"checkForAsserts")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"function_ZeroCrossingsEquations")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"function_ZeroCrossings")%>(DATA *data, threadData_t *threadData, double* gout);
@@ -867,6 +868,8 @@ template simulationFile_bnd(SimCode simCode)
 
     <%functionUpdateBoundParameters(selectScalarLiteralAssignments(parameterEquations), filterScalarLiteralAssignments(parameterEquations), simCode.fileNamePrefix, simCode.fullPathPrefix, modelNamePrefix(simCode), simCode)%>
 
+    <%functionUpdateTunableParameters(paramDeps, modelNamePrefix(simCode))%>
+
     #if defined(__cplusplus)
     }
     #endif<%\n%>
@@ -1238,11 +1241,6 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
                      mmc_init_nogc();
                      omc_alloc_interface.init();
                      >>
-                   else if stringEq(Config.simCodeTarget(),"JavaScript") then
-                     <<
-                     mmc_init_nogc();
-                     omc_alloc_interface.init();
-                     >>
                    else
                      <<
                      OMC_INIT(0);
@@ -1364,6 +1362,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <%if intEq(listLength(initialEquations_lambda0), 0) then "NULL" else '<%symbolName(modelNamePrefixStr,"functionInitialEquations_lambda0")%>'%>,
       <%symbolName(modelNamePrefixStr,"functionRemovedInitialEquations")%>,
       <%symbolName(modelNamePrefixStr,"updateBoundParameters")%>,
+      <%symbolName(modelNamePrefixStr,"updateTunableParameters")%>,
       <%symbolName(modelNamePrefixStr,"checkForAsserts")%>,
       <%symbolName(modelNamePrefixStr,"function_ZeroCrossingsEquations")%>,
       <%symbolName(modelNamePrefixStr,"function_ZeroCrossings")%>,
@@ -4011,9 +4010,9 @@ template functionUpdateBoundVariableAttributes(SimCode simCode, list<SimEqSystem
 let &sub = buffer ""
   <<
   <%(startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl2(-1, -1, eq, contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ false, /* Initial? */ true) ; separator="\n")%>
-  <%(nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => functionUpdateBoundVariableAttributesFunctions(eq, "nominal", contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ false) ; separator="\n") %>
-  <%(minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => functionUpdateBoundVariableAttributesFunctions(eq, "min", contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ false) ; separator="\n") %>
-  <%(maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => functionUpdateBoundVariableAttributesFunctions(eq, "max", contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ false) ; separator="\n") %>
+  <%(nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => functionUpdateBoundVariableAttributesFunctions(eq, "nominal", contextOther, modelNamePrefix, /* Static? */ false, /* No optimization */ false) ; separator="\n") %>
+  <%(minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => functionUpdateBoundVariableAttributesFunctions(eq, "min", contextOther, modelNamePrefix, /* Static? */ false, /* No optimization */ false) ; separator="\n") %>
+  <%(maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => functionUpdateBoundVariableAttributesFunctions(eq, "max", contextOther, modelNamePrefix, /* Static? */ false, /* No optimization */ false) ; separator="\n") %>
   OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"updateBoundVariableAttributes")%>(DATA *data, threadData_t *threadData)
   {
@@ -4152,7 +4151,7 @@ template functionUpdateBoundParameters(list<SimEqSystem> simpleParameterEquation
   let &auxFunction = buffer ""
   let fncalls = functionEquationsMultiFiles(parameterEquations, listLength(parameterEquations),
     Flags.getConfigInt(Flags.EQUATIONS_PER_FILE), fileNamePrefix, fullPathPrefix, modelNamePrefix,
-    "updateBoundParameters", "08bnd", &eqFuncs, /* Static? */ true, true /* No optimization */, /* initial? */ false)
+    "updateBoundParameters", "08bnd", &eqFuncs, /* Static? */ false, true /* No optimization */, /* initial? */ false)
   let extObjsSub = match simCode
     case SIMCODE(extObjInfo = extObjInfo as EXTOBJINFO(__)) then
       (extObjInfo.vars |> var as SIMVAR(varKind=ext as EXTOBJ(__)) =>
@@ -4181,6 +4180,22 @@ template functionUpdateBoundParameters(list<SimEqSystem> simpleParameterEquation
   }
   >>
 end functionUpdateBoundParameters;
+
+template functionUpdateTunableParameters(ParamDeps paramDeps, String modelNamePrefix)
+  "Evaluates the parameter equations k with eqMask[k] set, see SimCode.ParamDeps."
+::=
+    let name = symbolName(modelNamePrefix, "eqFunction")
+    <<
+    <%runnableParamDepEqs(paramDeps) |> (_, eq) => 'extern void <%name%>_<%equationIndexGeneral(eq)%>(DATA *data, threadData_t *threadData);' ; separator="\n"%>
+
+    OMC_DISABLE_OPT
+    int <%symbolName(modelNamePrefix,"updateTunableParameters")%>(DATA *data, threadData_t *threadData, const unsigned char *eqMask)
+    {
+      <%runnableParamDepEqs(paramDeps) |> (k, eq) => 'if (eqMask[<%k%>]) { <%name%>_<%equationIndexGeneral(eq)%>(data, threadData); if (OMC_ERROR_RAISED()) return 1; }' ; separator="\n"%>
+      return 0;
+    }
+    >>
+end functionUpdateTunableParameters;
 
 template functionEquationsMultiFiles(list<SimEqSystem> inEqs, Integer numEqs, Integer equationsPerFile, String fileNamePrefix, String fullPathPrefix, String modelNamePrefix, String funcName, String partName, Text &eqFuncs, Boolean static, Boolean noOpt, Boolean init)
 ::=
@@ -5648,8 +5663,6 @@ template zeroCrossingsTpl(list<ZeroCrossing> zeroCrossings, Text &varDecls, Text
   ;separator="\n";empty)
 end zeroCrossingsTpl;
 
-
-
 template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>> iter, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates code for a zero crossing."
 ::=
@@ -5701,30 +5714,30 @@ template zeroCrossingValue(Integer index1, Exp relation, Text &preExp, Text &var
 ::=
   match relation
   case exp as RELATION(__) then
-    '(<%daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)%>) ? 1 : -1;'
+    '(<%daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)%>) ? 1 : -1'
 
   case exp as LBINARY(__) then
-    '(<%daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)%>) ? 1 : -1;'
+    '(<%daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)%>) ? 1 : -1'
 
   case exp as LUNARY(__) then
-    '(<%daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)%>) ? 1 : -1;'
+    '(<%daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)%>) ? 1 : -1'
 
-  case CALL(path=IDENT(name="sample"), expLst={_, start, interval}) then ''
+  case CALL(path=IDENT(name="sample"), expLst={_, _, _}) then ''
 
   case CALL(path=IDENT(name="integer"), expLst={exp, idx}) then
     let e1 = daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
     let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
-    '(floor(<%e1%>) != floor(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1;'
+    '(floor(<%e1%>) != floor(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1'
 
   case CALL(path=IDENT(name="floor"), expLst={exp, idx}) then
     let e1 = daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
     let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
-    '(floor(<%e1%>) != floor(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1;'
+    '(floor(<%e1%>) != floor(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1'
 
   case CALL(path=IDENT(name="ceil"), expLst={exp, idx}) then
     let e1 = daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
     let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
-    '(ceil(<%e1%>) != ceil(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1;'
+    '(ceil(<%e1%>) != ceil(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1'
 
   case CALL(path=IDENT(name="mod"), expLst={exp1, exp2, idx}) then
     let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
@@ -5734,18 +5747,17 @@ template zeroCrossingValue(Integer index1, Exp relation, Text &preExp, Text &var
     let tvar2 = tempDecl("modelica_real", &varDecls, &varFrees)
     let &preExp += '<%tvar1%> = floor((<%e1%>) / (<%e2%>));<%\n%>'
     let &preExp += '<%tvar2%> = floor((data->simulationInfo->mathEventsValuePre[<%indx%>]) / (data->simulationInfo->mathEventsValuePre[<%indx%>+1]));<%\n%>'
-    '(<%tvar1%> != <%tvar2%>) ? 1 : -1;'
+    '(<%tvar1%> != <%tvar2%>) ? 1 : -1'
 
   case CALL(path=IDENT(name="div"), expLst={exp1, exp2, idx}) then
     let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
     let e2 = daeExp(exp2, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
     let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)
-    '(trunc((<%e1%>)/(<%e2%>)) != trunc(data->simulationInfo->mathEventsValuePre[<%indx%>]/data->simulationInfo->mathEventsValuePre[<%indx%>+1])) ? 1 : -1;'
+    '(trunc((<%e1%>)/(<%e2%>)) != trunc(data->simulationInfo->mathEventsValuePre[<%indx%>]/data->simulationInfo->mathEventsValuePre[<%indx%>+1])) ? 1 : -1'
 
   else
     error(sourceInfo(), ' UNKNOWN ZERO CROSSING for <%index1%>')
 end zeroCrossingValue;
-
 
 template functionRelations(list<ZeroCrossing> relations, String modelNamePrefix) "template functionRelations
   Generates function in simulation file.
@@ -8780,15 +8792,11 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   OMC_CFLAGS_OPTIMIZATION=-O2
   DEBUG_FLAGS=<% if boolOr(Testsuite.isRunning(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then "-O0" else "$(OMC_CFLAGS_OPTIMIZATION)"%><% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g" %>
   CFLAGS=<%ExtraUnicodeFlag%> $(CFLAGS_BASED_ON_INIT_FILE) $(DEBUG_FLAGS) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then '<%s.cflags%> ' /* From the simulate() command */%>
-  <% if stringEq(Config.simCodeTarget(),"JavaScript") then 'OMC_EMCC_PRE_JS=<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc/emcc/pre.js<%\n%>'
-  %>CPPFLAGS=<%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I"<%makefileParams.omhome%>/include/omc" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME<% if stringEq(Config.simCodeTarget(),"JavaScript") then " -DOMC_EMCC"%><% if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then " -DOMC_GENERATE_RELOCATABLE_CODE"%> -DOMC_MODEL_PREFIX=<%modelNamePrefix(simCode)%> -DOMC_NUM_MIXED_SYSTEMS=<%varInfo.numMixedSystems%> -DOMC_NUM_LINEAR_SYSTEMS=<%varInfo.numLinearSystems%> -DOMC_NUM_NONLINEAR_SYSTEMS=<%varInfo.numNonLinearSystems%> -DOMC_NDELAY_EXPRESSIONS=<%maxDelayedIndex%> -DOMC_NVAR_STRING=<%varInfo.numStringAlgVars%><% if Config.simCodeRustRuntime() then " -DOMC_RUST_SIMULATION_RUNTIME"%>
+  CPPFLAGS=<%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I"<%makefileParams.omhome%>/include/omc" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME<% if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then " -DOMC_GENERATE_RELOCATABLE_CODE"%> -DOMC_MODEL_PREFIX=<%modelNamePrefix(simCode)%> -DOMC_NUM_MIXED_SYSTEMS=<%varInfo.numMixedSystems%> -DOMC_NUM_LINEAR_SYSTEMS=<%varInfo.numLinearSystems%> -DOMC_NUM_NONLINEAR_SYSTEMS=<%varInfo.numNonLinearSystems%> -DOMC_NDELAY_EXPRESSIONS=<%maxDelayedIndex%> -DOMC_NVAR_STRING=<%varInfo.numStringAlgVars%><% if Config.simCodeRustRuntime() then " -DOMC_RUST_SIMULATION_RUNTIME"%>
   # define OMC_LDFLAGS_LINK_TYPE env variable to "static" to override this
   OMC_LDFLAGS_LINK_TYPE=dynamic
   RUNTIME_LIBS=<%makefileParams.runtimelibs%>
-  LDFLAGS=<%
-  if stringEq(Config.simCodeTarget(),"JavaScript") then <<-L'<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc/emcc' -lblas -llapack -lexpat -lSimulationRuntimeC -s TOTAL_MEMORY=805306368 -s OUTLINING_LIMIT=20000 --pre-js $(OMC_EMCC_PRE_JS)>>
-  else <<-L"<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc" -L"<%makefileParams.omhome%>/lib" -Wl,<%ExtraStack%>-rpath,"<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc" <%linkBinDirWindows%> -Wl,-rpath,"<%makefileParams.omhome%>/lib" <%ParModelicaExpLibs%> <%makefileParams.ldflags%> $(RUNTIME_LIBS) >>
-  %>
+  LDFLAGS=-L"<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc" -L"<%makefileParams.omhome%>/lib" -Wl,<%ExtraStack%>-rpath,"<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc" <%linkBinDirWindows%> -Wl,-rpath,"<%makefileParams.omhome%>/lib" <%ParModelicaExpLibs%> <%makefileParams.ldflags%> $(RUNTIME_LIBS)
   DIREXTRA=<%stringReplace(dirExtra,"#","\\#") /* make strips everything after # */%>
   MAINFILE=<%fileNamePrefix%>.c
   MAINOBJ=<%fileNamePrefix%>.o
@@ -8807,9 +8815,6 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
 
   omc_main_target: $(MAINOBJ) <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES)
   <%\t%><% if Flags.getConfigBool(Flags.PARMODAUTO) then '$(CXX)' else '$(CC)'%> -I. -o <%fileNamePrefix%>$(EXEEXT) $(MAINOBJ) $(OFILES) $(DIREXTRA) <%libsPos1%> <%libsPos2%> $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
-  <% if stringEq(Config.simCodeTarget(),"JavaScript") then '<%\t%>rm -f <%fileNamePrefix%>'%>
-  <% if stringEq(Config.simCodeTarget(),"JavaScript") then '<%\t%>ln -s <%fileNamePrefix%>_node.js <%fileNamePrefix%>'%>
-  <% if stringEq(Config.simCodeTarget(),"JavaScript") then '<%\t%>chmod +x <%fileNamePrefix%>_node.js'%>
 
   omc_dll_target: $(MAINOBJ) <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES)
   <%\t%>$(CC) -DOMC_DLL_MAIN_DEFINE -o $(MAINOBJ) -c $(MAINFILE) $(DIREXTRA) <%libsPos1%> <%libsPos2%> $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)

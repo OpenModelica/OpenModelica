@@ -1,0 +1,38 @@
+// name: TestLoadModelMetadata
+// status: correct
+// Libraries without package manager metadata: their version, uses and
+// noneFromVersion conversions are read from their top-level file (#8885).
+// depends: PackageMetadataLibs
+
+setModelicaPath("PackageMetadataLibs/");
+loadModel(MyLib, {"9.7.0"}); getErrorString();
+getNamedAnnotation(MyLib, version);
+clear();
+loadModel(MyLib, {"9.8.0"}); getErrorString();
+getNamedAnnotation(MyLib, version);
+clear();
+loadModel(MyLib, {"10.0.0"}); getErrorString();
+getNamedAnnotation(MyLib, version);
+clear();
+loadModel(User); getErrorString();
+getNamedAnnotation(Checkout, version);
+getNamedAnnotation(MyLib, version);
+// Result:
+// true
+// true
+// ""
+// {"9.9.0"}
+// true
+// true
+// ""
+// {"9.9.0"}
+// true
+// true
+// ""
+// {"10.1.0"}
+// true
+// true
+// ""
+// {"2.0.0"}
+// {"9.9.0"}
+// endResult

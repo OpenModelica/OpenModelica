@@ -119,6 +119,7 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"util/omc_error.c\" />
 //       <File name=\"util/omc_file.c\" />
 //       <File name=\"util/omc_fmu_init.c\" />
+//       <File name=\"util/omc_fmu_paramdeps.c\" />
 //       <File name=\"util/omc_init.c\" />
 //       <File name=\"util/omc_mmap.c\" />
 //       <File name=\"util/omc_msvc.c\" />
@@ -410,11 +411,27 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"3rdParty/lis/src/precision/lis_precision.c\" />
 //       <File name=\"3rdParty/lis/src/precision/lis_precision_matvec.c\" />
 //       <File name=\"3rdParty/lis/src/precision/lis_precision_vec.c\" />
+//       <File name=\"ModelicaExternalC/ModelicaFFT.c\" />
+//       <File name=\"ModelicaExternalC/ModelicaInternal.c\" />
 //       <File name=\"ModelicaExternalC/ModelicaIO.c\" />
 //       <File name=\"ModelicaExternalC/ModelicaMatIO.c\" />
+//       <File name=\"ModelicaExternalC/ModelicaRandom.c\" />
 //       <File name=\"ModelicaExternalC/ModelicaStandardTables.c\" />
 //       <File name=\"ModelicaExternalC/ModelicaStandardTablesDummyUsertab.c\" />
+//       <File name=\"ModelicaExternalC/ModelicaStrings.c\" />
 //       <File name=\"ModelicaExternalC/snprintf.c\" />
+//       <File name=\"ModelicaExternalC/win32_dirent.c\" />
+//       <File name=\"ModelicaExternalC/zlib/adler32.c\" />
+//       <File name=\"ModelicaExternalC/zlib/compress.c\" />
+//       <File name=\"ModelicaExternalC/zlib/crc32.c\" />
+//       <File name=\"ModelicaExternalC/zlib/deflate.c\" />
+//       <File name=\"ModelicaExternalC/zlib/infback.c\" />
+//       <File name=\"ModelicaExternalC/zlib/inffast.c\" />
+//       <File name=\"ModelicaExternalC/zlib/inflate.c\" />
+//       <File name=\"ModelicaExternalC/zlib/inftrees.c\" />
+//       <File name=\"ModelicaExternalC/zlib/trees.c\" />
+//       <File name=\"ModelicaExternalC/zlib/uncompr.c\" />
+//       <File name=\"ModelicaExternalC/zlib/zutil.c\" />
 //     </SourceFiles>
 //   </ModelExchange>
 //   <LogCategories>
@@ -488,7 +505,7 @@ readFile("modelDescription.tmp.xml");
 //   <ScalarVariable
 //     name=\"p\"
 //     valueReference=\"7\"
-//     variability=\"fixed\"
+//     variability=\"tunable\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"23.0\"/>

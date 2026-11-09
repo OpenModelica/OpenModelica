@@ -489,6 +489,38 @@ public
     symbol := spacing + symbol + spacing;
   end symbol;
 
+  function symbolSpaced
+    "Like symbol but automatically determines whether the symbol should be spaced or not.
+     Used to make it easier to print readable expressions such as 2*n + 3*m."
+    input Operator op;
+    output String str;
+  protected
+    Boolean should_space;
+  algorithm
+    should_space := match op.op
+      case Op.MUL               then false;
+      case Op.DIV               then false;
+      case Op.POW               then false;
+      case Op.MUL_EW            then false;
+      case Op.DIV_EW            then false;
+      case Op.POW_EW            then false;
+      case Op.MUL_SCALAR_ARRAY  then false;
+      case Op.MUL_ARRAY_SCALAR  then false;
+      case Op.MUL_VECTOR_MATRIX then false;
+      case Op.MUL_MATRIX_VECTOR then false;
+      case Op.SCALAR_PRODUCT    then false;
+      case Op.MATRIX_PRODUCT    then false;
+      case Op.DIV_SCALAR_ARRAY  then false;
+      case Op.DIV_ARRAY_SCALAR  then false;
+      case Op.POW_SCALAR_ARRAY  then false;
+      case Op.POW_ARRAY_SCALAR  then false;
+      case Op.POW_MATRIX        then false;
+      else true;
+    end match;
+
+    str := symbol(op, if should_space then " " else "");
+  end symbolSpaced;
+
   function toJSON
     input Operator operator;
     output JSON json;

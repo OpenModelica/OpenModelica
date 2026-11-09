@@ -202,6 +202,7 @@ uniontype SimCode
     Option<DaeModeData> daeModeData;
     Boolean scalarized;
     list<FmiFigure> fmiFigures "set by SimCodeUtil.addFMI3Figures for an FMI 3.0 export";
+    ParamDeps paramDeps "set by ParamDeps.add for an FMI 2.0 or 3.0 export";
   end SIMCODE;
 end SimCode;
 
@@ -326,6 +327,7 @@ uniontype ModelInfo "Container for metadata about a Modelica model."
     list<SimEqSystem> linearSystems;
     list<SimEqSystem> nonLinearSystems;
     list<UnitDefinition> unitDefinitions "export unitDefintion in modelDescription.xml";
+    Boolean resizable "the model has variables with resizable dimensions";
   end MODELINFO;
 end ModelInfo;
 
@@ -737,6 +739,7 @@ public uniontype FmiModelStructure
     FmiDiscreteStates fmiDiscreteStates;
     FmiInitialUnknowns fmiInitialUnknowns;
     list<FmiArray> fmiArrays;
+    Boolean hasDependencies "false if the dependencies were not computed: the importer must then assume a dependency on all knowns";
   end FMIMODELSTRUCTURE;
 end FmiModelStructure;
 
@@ -757,6 +760,34 @@ public uniontype FmiTerminalMember
     String variableKind     "role of the member, derived from causality (input/output/...)";
   end FMI_TERMINAL_MEMBER;
 end FmiTerminalMember;
+
+public uniontype ParamDeps
+  "How the parameters of an FMU depend on each other, and which variables the
+   importer may set. A slot is 8 * index + type (0 Real, 1 Integer, 2 Boolean,
+   3 String, 4 external object), the index counting the variables of that
+   type, then the parameters."
+  record PARAM_DEPS
+    Boolean checked "false: the runtime neither checks writes nor updates parameters";
+    list<ParamDepEq> eqs "in evaluation order; position k is mask entry k of updateTunableParameters";
+    list<tuple<Integer, Integer>> settable "slot and PARAM_DEPS_* flags of each variable an importer may set";
+  end PARAM_DEPS;
+end ParamDeps;
+
+public constant Integer PARAM_DEPS_INITIAL_EXACT = 1;
+public constant Integer PARAM_DEPS_INITIAL_APPROX = 2;
+public constant Integer PARAM_DEPS_INPUT = 4;
+public constant Integer PARAM_DEPS_CONTINUOUS = 8;
+public constant Integer PARAM_DEPS_TUNABLE = 16;
+
+public uniontype ParamDepEq
+  record PARAM_DEP_EQ
+    Option<SimEqSystem> eq "NONE() if it is not evaluated again after initialization";
+    list<Integer> uses;
+    list<Integer> defines;
+  end PARAM_DEP_EQ;
+end ParamDepEq;
+
+public constant ParamDeps emptyParamDeps = PARAM_DEPS(false, {}, {});
 
 /* The Documentation(figures=...) annotation resolved against the exported
    variables; emitted by CodegenFMU3 as the OpenModelica <Figures> vendor

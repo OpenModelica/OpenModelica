@@ -1,0 +1,16 @@
+// name: CheckModelNonexistentClass1
+// keywords:
+// status: correct
+//
+
+setModelicaPath("libraries");
+checkModel(NonexistentClass);
+getErrorString();
+
+// Result:
+// true
+// ""
+// "Error: Failed to load package NonexistentClass (default) using OPENMODELICALIBRARY (MODELICAPATH in the language specification) libraries.
+// Error: Class NonexistentClass not found in scope <top>.
+// "
+// endResult

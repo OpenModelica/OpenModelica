@@ -182,7 +182,7 @@ impl SimEngine for StandaloneEngine {
     fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
         crate::take_reinit_notes()
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 10]> {
         // No host to record it; a failed model assert traps (see `rt_assert`).
         None
     }
@@ -334,6 +334,7 @@ pub extern "C" fn rt_assert(
     _cond: i32,
     _initial: i32,
     _sim_data: i32,
+    _eq: i32,
 ) -> i32 {
     if msg != 0 {
         let h = msg as u32;
@@ -358,8 +359,11 @@ pub extern "C" fn rt_assert_when(
     cond: i32,
     initial: i32,
     sim_data: i32,
+    eq: i32,
 ) -> i32 {
-    rt_assert(msg, file, sline, scol, eline, ecol, read_only, cond, initial, sim_data)
+    rt_assert(
+        msg, file, sline, scol, eline, ecol, read_only, cond, initial, sim_data, eq,
+    )
 }
 
 /// In-wasm `rt_print`: the `print` builtin. Write the String handle's bytes to
@@ -398,6 +402,7 @@ pub extern "C" fn rt_assert_warning(
     _ecol: i32,
     _read_only: i32,
     _initial: i32,
+    _eq: i32,
 ) {
     if msg != 0 {
         let h = msg as u32;

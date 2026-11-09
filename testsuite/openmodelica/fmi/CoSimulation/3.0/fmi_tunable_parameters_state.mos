@@ -1,0 +1,63 @@
+// name:     fmi_tunable_parameters_state
+// keywords: FMI 3.0 export tunable parameter FMU state
+// status:   correct
+// teardown_command: rm -rf fmi_tunable_parameters_state.fmu fmi_tunable_parameters_state.fmutmp/ fmi_tunable_parameters_state_FMU.libs fmi_tunable_parameters_state_FMU.makefile fmi_tunable_parameters_state_external_functions.json fmi_tunable_parameters_state_info.json fmi_tunable_parameters_state.log fmi_tunable_parameters_state.txt
+//
+// Tunable parameters after an external object, in FMU states and in arrays
+// (#17652). An array is tunable only if all its elements are: q[2] feeds a
+// parameter of the initial system. p feeds a variable of `when initial()`.
+// ra only the initial equations calculate.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+model fmi_tunable_parameters_state
+  Modelica.Blocks.Sources.CombiTimeTable table(table = [0, 0; 1, 0]);
+  parameter Real k = 2;
+  parameter Real k2 = 2*k;
+  parameter Real T_nom = 50;
+  parameter Real q[2] = {1, 2};
+  parameter Real r(fixed = false);
+  parameter Real p = 1;
+  discrete Real d;
+  Real x(start = 1, fixed = true, nominal = T_nom);
+  Real y;
+  Real ra = 2*k;
+initial equation
+  r = q[2];
+equation
+  der(x) = -x + table.y[1];
+  y = time + k2;
+  when initial() then
+    d = p;
+  end when;
+end fmi_tunable_parameters_state;
+"); getErrorString();
+buildModelFMU(fmi_tunable_parameters_state, version="3.0", fmuType="me_cs"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi_tunable_parameters_state.py fmi_tunable_parameters_state.fmu fmi_tunable_parameters_state.txt", "fmi_tunable_parameters_state.log"); getErrorString();
+readFile("fmi_tunable_parameters_state.txt");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi_tunable_parameters_state.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "T_nom: parameter tunable
+// k: parameter tunable
+// k2: calculatedParameter tunable
+// p: parameter fixed
+// q: parameter fixed
+// r: calculatedParameter fixed
+// tuned: k=7 k2=14 y=14.2 ra=14
+// rolled back past a set before init: k=3 k2=6
+// state saved after a set: k=5 k2=10
+// step after it: y=10.2
+// T_nom=100: nominal(x)=100
+// restored: T_nom=50 nominal(x)=50
+// "
+// endResult

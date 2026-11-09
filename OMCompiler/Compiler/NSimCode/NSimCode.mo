@@ -361,7 +361,7 @@ public
           algorithm
             // somehow this cannot be set at definition (metamodelica bug?)
             simCodeIndices := EMPTY_SIM_CODE_INDICES();
-            simCodeIndices.resizable := List.any(VariablePointers.toList(varData.variables), BVariable.isResizable);
+            simCodeIndices.resizable := varData.resizable;
             funcMap := BackendDAE.getFunctionMap(bdae);
 
             // get and replace all literals in functions
@@ -546,7 +546,8 @@ public
             daeModeData         := Util.applyOption(daeModeData, function DaeModeData.mapShallow(func = collect_literals));
             literals            := UnorderedMap.keyList(literals_map);
 
-            (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, fileName, directory, functions, linearLoops, nonlinearLoops, eventInfo, bdae.clockedInfo, simCodeIndices);
+            (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, fileName, directory, functions, linearLoops, nonlinearLoops, eventInfo, bdae.clockedInfo,
+              List.sort(program.classes, AbsynUtil.classNameGreater), simCodeIndices);
 
             simCode := SIM_CODE(
               modelInfo                 = modelInfo,
@@ -675,7 +676,8 @@ public
         partitionData                 = OldSimCode.PARTITIONDATA(-1,{},{},{}),
         daeModeData                   = if isSome(simCode.daeModeData) then SOME(DaeModeData.convert(Util.getOption(simCode.daeModeData))) else NONE(),
         scalarized                    = Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE),
-        fmiFigures                    = {});
+        fmiFigures                    = {},
+        paramDeps                     = OldSimCode.PARAM_DEPS(false, {}, {}));
     end convert;
 
     function indexDelay
@@ -875,6 +877,7 @@ public
       list<SimStrongComponent.Block> linearLoops;
       list<SimStrongComponent.Block> nonlinearLoops;
       //list<UnitDefinition> unitDefinitions "export unitDefintion in modelDescription.xml";
+      Boolean resizable                           "the model has variables with resizable dimensions";
     end MODEL_INFO;
 
     function toString
@@ -894,6 +897,7 @@ public
       input list<SimStrongComponent.Block> nonlinearLoops;
       input EventInfo eventInfo;
       input ClockedInfo clockedInfo;
+      input list<Absyn.Class> sortedClasses "where the runtime resolves modelica:// URIs";
       output ModelInfo modelInfo;
       input output SimCodeIndices simCodeIndices;
     protected
@@ -914,13 +918,14 @@ public
         functions                       = functions,
         labels                          = {},
         resourcePaths                   = {},
-        sortedClasses                   = {},
+        sortedClasses                   = sortedClasses,
         nClocks                         = ClockedInfo.baseClockCount(clockedInfo),
         nSubClocks                      = ClockedInfo.subClockCount(clockedInfo),
         nSpatialDistributions           = listLength(eventInfo.spatial_lst),
         hasLargeLinearEquationSystems   = true,
         linearLoops                     = linearLoops,
-        nonlinearLoops                  = nonlinearLoops);
+        nonlinearLoops                  = nonlinearLoops,
+        resizable                       = simCodeIndices.resizable);
     end create;
 
     function setSeedVars
@@ -970,7 +975,8 @@ public
         hasLargeLinearEquationSystems   = modelInfo.hasLargeLinearEquationSystems,
         linearSystems                   = SimStrongComponent.Block.convertList(modelInfo.linearLoops),
         nonLinearSystems                = SimStrongComponent.Block.convertList(modelInfo.nonlinearLoops),
-        unitDefinitions                 = {} // ToDo: add this once unit definitions are supported
+        unitDefinitions                 = {}, // ToDo: add this once unit definitions are supported
+        resizable                       = modelInfo.resizable
       );
     end convert;
   end ModelInfo;

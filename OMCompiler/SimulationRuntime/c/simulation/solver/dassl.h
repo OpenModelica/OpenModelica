@@ -96,7 +96,4 @@ void dassl_setNominals(DATA* data, DASSL_DATA *dasslData);
 /* deinitial main dassl Data */
 int dassl_deinitial(DATA* data, DASSL_DATA *dasslData);
 
-int printCurrentStatesVector(int logLevel, double* states, DATA* data, double time);
-int printVector(int logLevel, const char* name,  double* vec, int n, double time);
-
 #endif

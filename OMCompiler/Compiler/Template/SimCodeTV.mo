@@ -558,6 +558,7 @@ end SparsityRow;
       Option<DaeModeData> daeModeData;
       Boolean scalarized;
       list<FmiFigure> fmiFigures;
+      ParamDeps paramDeps;
     end SIMCODE;
   end SimCode;
 
@@ -1042,6 +1043,7 @@ end SparsityRow;
       FmiDiscreteStates fmiDiscreteStates;
       FmiInitialUnknowns fmiInitialUnknowns;
       list<FmiArray> fmiArrays;
+      Boolean hasDependencies;
     end FMIMODELSTRUCTURE;
   end FmiModelStructure;
 
@@ -1061,6 +1063,22 @@ end SparsityRow;
       String variableKind;
     end FMI_TERMINAL_MEMBER;
   end FmiTerminalMember;
+
+  uniontype ParamDeps
+    record PARAM_DEPS
+      Boolean checked;
+      list<ParamDepEq> eqs;
+      list<tuple<Integer, Integer>> settable;
+    end PARAM_DEPS;
+  end ParamDeps;
+
+  uniontype ParamDepEq
+    record PARAM_DEP_EQ
+      Option<SimEqSystem> eq;
+      list<Integer> uses;
+      list<Integer> defines;
+    end PARAM_DEP_EQ;
+  end ParamDepEq;
 
   uniontype FmiFigure
     record FMI_FIGURE
@@ -1625,6 +1643,11 @@ package SimCodeCodegenUtil
     output String out;
   end getFMI3ArrayStart;
 
+  function fmuExternalLibraries
+    input list<String> libs;
+    output list<String> names;
+  end fmuExternalLibraries;
+
   function getFMI3Terminals
     input SimCode.SimCode simCode;
     output list<SimCode.FmiTerminal> terminals;
@@ -1850,6 +1873,11 @@ package SimCodeCodegenUtil
     output list<SimCode.SimEqSystem> eqs;
   end selectScalarLiteralAssignments;
 
+  function runnableParamDepEqs
+    input SimCode.ParamDeps deps;
+    output list<tuple<Integer, SimCode.SimEqSystem>> eqs;
+  end runnableParamDepEqs;
+
   function filterScalarLiteralAssignments
     input list<SimCode.SimEqSystem> inEqs;
     output list<SimCode.SimEqSystem> eqs;
@@ -1883,6 +1911,12 @@ package SimCodeCodegenUtil
     input String fmuType;
     output Integer vr;
   end lookupVRForRealOutputDerivative;
+
+  function maxOutputDerivativeOrder
+    input SimCode.SimCode simCode;
+    input String fmuType;
+    output Integer order;
+  end maxOutputDerivativeOrder;
 
   function unbalancedEqSystemPartition
     input list<SimCode.SimEqSystem> inList;
@@ -4298,6 +4332,11 @@ end ComponentReference;
 
 package Expression
 
+  function assertConditionValues
+    input DAE.Exp cond;
+    output list<DAE.Exp> exps;
+  end assertConditionValues;
+
   function crefExp
     input DAE.ComponentRef cr;
     output DAE.Exp cref;
@@ -4579,6 +4618,7 @@ package Flags
   constant DebugFlag HARDCODED_START_VALUES;
   constant DebugFlag OMC_RECORD_ALLOC_WORDS;
   constant DebugFlag OMC_RELOCATABLE_FUNCTIONS;
+  constant DebugFlag HOMOTOPY_IN_RESIDUALS;
   constant DebugFlag NF_SCALARIZE;
   constant ConfigFlag PARMODAUTO;
   constant ConfigFlag NUM_PROC;
@@ -4589,6 +4629,7 @@ package Flags
   constant DebugFlag FMU_EXPERIMENTAL;
   constant DebugFlag MULTIRATE_PARTITION;
   constant ConfigFlag DAE_MODE;
+  constant ConfigFlag FMU_WITH_FMI2;
   constant ConfigFlag EQUATIONS_PER_FILE;
   constant ConfigFlag GENERATE_DYNAMIC_JACOBIAN;
   constant ConfigFlag HOMOTOPY_APPROACH;

@@ -1,0 +1,66 @@
+// name: FunctionOutputBindingOrder
+// status: correct
+//
+// Bindings of function outputs that use protected variables declared after
+// them.
+
+loadString("
+model FunctionOutputBindingOrder
+  function constAfter
+    input Real u;
+    output Real y = u/sigma;
+  protected
+    constant Real sigma = 2;
+  end constAfter;
+
+  function localAfter
+    input Real u;
+    output Real y = u/s;
+  protected
+    Real s = 4;
+  end localAfter;
+
+  function dimAfter
+    input Real u[:];
+    output Real y[n] = 2*u;
+  protected
+    Integer n = size(u, 1);
+  end dimAfter;
+
+  function twoOutputs
+    input Real u;
+    output Real y1 = u + s;
+    output Real y2 = y1 + s;
+  protected
+    Real s = 10;
+  end twoOutputs;
+
+  Real a = constAfter(time + 1);
+  Real b = localAfter(time + 1);
+  Real c[2] = dimAfter({time, time + 1});
+  Real d1, d2;
+equation
+  (d1, d2) = twoOutputs(time);
+end FunctionOutputBindingOrder;
+"); getErrorString();
+simulate(FunctionOutputBindingOrder, stopTime = 1); getErrorString();
+val(a, 1); val(b, 1); val(c[1], 1); val(c[2], 1); val(d1, 1); val(d2, 1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "FunctionOutputBindingOrder_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'FunctionOutputBindingOrder', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 0.5
+// 2.0
+// 4.0
+// 11.0
+// 21.0
+// endResult

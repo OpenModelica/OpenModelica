@@ -2099,10 +2099,10 @@ impl sim_driver::SimEngine for WasmtimeEngine {
             .get_typed_func::<(u32, f64, f64, u32), u32>(&mut self.store, "simulate")
             .is_ok()
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 10]> {
         crate::host::take_pending_assert()
     }
-    fn take_pending_warnings(&mut self) -> Vec<[i32; 10]> {
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 11]> {
         crate::host::take_pending_warnings()
     }
     fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
@@ -2396,10 +2396,10 @@ impl sim_driver::SimEngine for InWasmSession {
     fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> Result<u32> {
         Err("CodegenWasmJit: call_simulate on in-wasm session (unreachable)")
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 10]> {
         crate::host::take_pending_assert()
     }
-    fn take_pending_warnings(&mut self) -> Vec<[i32; 10]> {
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 11]> {
         crate::host::take_pending_warnings()
     }
     fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
@@ -2555,6 +2555,23 @@ fn push_runtime_flags(
     if let Ok(set) = rt_inst.get_typed_func::<(u32, u32, u32, u32), ()>(&mut *store, "rt_set_solvers") {
         let codes = openmodelica_sim_meta::simflags::with_flags(|f| f.solver_codes());
         wts(set.call(&mut *store, codes))?;
+    }
+    // `-lss*`/`-nlss*`: the linear and nonlinear solvers pick their format in-wasm.
+    if let Ok(set) =
+        rt_inst.get_typed_func::<(f64, i32, u32, f64, i32, u32), ()>(&mut *store, "rt_set_sparse_thresholds")
+    {
+        let t = openmodelica_sim_meta::simflags::with_flags(openmodelica_sim_meta::simflags::sparse_thresholds);
+        wts(set.call(
+            &mut *store,
+            (
+                t.lss_max_density,
+                t.lss_min_size,
+                t.lss_given as u32,
+                t.nlss_max_density,
+                t.nlss_min_size,
+                t.nlss_given as u32,
+            ),
+        ))?;
     }
     // `-newtonFTol`/`-newtonXTol`/`-newtonMaxStepFactor`: the nonlinear solvers that
     // read them run in-wasm whichever driver owns the run.

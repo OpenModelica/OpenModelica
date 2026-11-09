@@ -149,12 +149,15 @@ pub(crate) const HANDWRITTEN_TOP_PACKAGES: &[&str] = &[
     // comparison runtime (`runtime/SimulationResults*.c`); hand-written in
     // `openmodelica_script_util/src/SimulationResults.rs`.
     "SimulationResults",
-    // Single `external "C"` wrapper over `runtime/om_curl.c`; hand-written
-    // (using the `curl` crate) in `openmodelica_script_util/src/Curl.rs`.
-    "Curl",
     // `external "C"` wrappers over `runtime/om_zip.c`; hand-written over
     // `openmodelica_zip` in `openmodelica_script_util/src/Unzip.rs`.
     "Unzip",
+    // `external "C"` wrappers over `runtime/SemanticVersion_omc.c`; hand-written
+    // over `openmodelica_version` in `openmodelica_util/src/SemanticVersion.rs`.
+    "SemanticVersion",
+    // `external "C"` wrapper over `runtime/PackageManagerExt_omc.c`; hand-written
+    // over `openmodelica_package_manager` in `openmodelica_script_util/src/PackageManagerExt.rs`.
+    "PackageManagerExt",
     // All bodies but `statusToString` are `external "C"` wrappers over
     // `runtime/OMSimulator_omc.c`, which `dlopen`s libOMSimulator and
     // forwards each `oms_*` call. Hand-written (libc dlopen/dlsym) in
@@ -1038,6 +1041,10 @@ impl GenCtx {
         // The parse cache stores Absyn programs.
         if qname.starts_with("Absyn.") {
             derives = derives.replacen(")]", ", metamodelica::serial::MMSerial)]", 1);
+        }
+        // The read-only view the Julia bridge walks a flat model through.
+        if ["NF", "Absyn.", "SCode.", "DAE."].iter().any(|p| qname.starts_with(p)) {
+            derives = derives.replacen(")]", ", metamodelica::MMReflect)]", 1);
         }
         derives
     }
@@ -2302,8 +2309,6 @@ const WASM_GATED_TOP_MODULES: &[(&str, Option<&str>)] = &[
     ("FFI", Some("FFI_wasm.rs")),
     // dlopens libOMSimulator; only reached from openmodelica_backend_tools.
     ("OMSimulatorExt", None),
-    // downloads via native libcurl (pulls socket2, no wasm target).
-    ("Curl", Some("Curl_wasm.rs")),
     // OMSimulator scripting API; drives the dropped OMSimulatorExt (libOMSimulator).
     ("CevalScriptOMSimulator", Some("CevalScriptOMSimulator_wasm.rs")),
 ];
@@ -2314,13 +2319,11 @@ const WASM_GATED_TOP_MODULES: &[(&str, Option<&str>)] = &[
 /// built from the GNU-syntax `win64.S` with clang-cl — so it keeps the native
 /// module there.)
 ///
-/// Two of them are also optional on native, so a tool that needs neither
-/// downloads nor compile-time `external "C"` evaluation — `omgendoc` — links
-/// neither libcurl (and its TLS/LDAP/SSH tail) nor libffi. The stub reports the
-/// path unavailable, which is what those callers already handle.
+/// `FFI` is also optional on native, so a tool that needs no compile-time
+/// `external "C"` evaluation — `omgendoc` — does not link libffi. The stub
+/// reports the path unavailable, which is what those callers already handle.
 fn stub_active_cfg(name: &str) -> &'static str {
     match name {
-        "Curl" => "any(target_arch = \"wasm32\", not(feature = \"curl\"))",
         "FFI" => "any(target_arch = \"wasm32\", not(feature = \"ffi\"))",
         _ => "target_arch = \"wasm32\"",
     }
@@ -5124,7 +5127,7 @@ fn emit_type_item(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::Cla
                 emit_doc_comment(out, indent, class_doc(c));
                 writeln!(
                     out,
-                    "{indent}#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, metamodelica::ReferenceEq)]"
+                    "{indent}#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, metamodelica::ReferenceEq, metamodelica::MMReflect)]"
                 )
                 .unwrap();
                 writeln!(out, "{indent}#[repr(i32)]").unwrap();

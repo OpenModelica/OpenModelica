@@ -73,7 +73,6 @@ constant Integer optionSimCode = 25;
 constant Integer interactiveCache = 26;
 constant Integer isInStream = 27;
 constant Integer MMToJLListIndex = 28;
-constant Integer packageIndexCacheIndex = 29;
 constant Integer sharedLibraryCacheIndex = 30;
 constant Integer backendInterface = 31;
 constant Integer backendCevalInterface = 32;

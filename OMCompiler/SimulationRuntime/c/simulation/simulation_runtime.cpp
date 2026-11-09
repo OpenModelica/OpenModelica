@@ -31,6 +31,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <climits>
 #include <limits>
 #include <list>
 #include <cmath>
@@ -326,6 +327,22 @@ static double getFlagReal(enum _FLAG flag, double res)
     throwStreamPrint(NULL, "Simulation flag %s expects a real number, got: %s", FLAG_NAME[flag], flagStr);
   }
   return res;
+}
+
+static int getFlagInt(enum _FLAG flag, int res)
+{
+  const char *flagStr = omc_flagValue[flag];
+  char *endptr;
+  long val;
+  if (flagStr==NULL || *flagStr=='\0') {
+    return res;
+  }
+  errno = 0;
+  val = strtol(flagStr, &endptr, 10);
+  if (*endptr || errno || val < INT_MIN || val > INT_MAX) {
+    throwStreamPrint(NULL, "Simulation flag %s expects an integer, got: %s", FLAG_NAME[flag], flagStr);
+  }
+  return (int) val;
 }
 
 /**
@@ -972,6 +989,9 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
 
     for(i=1; i<FLAG_MAX; ++i)
     {
+      if(omc_flagIsHidden(i)) {
+        continue;
+      }
       if(FLAG_TYPE[i] == FLAG_TYPE_FLAG) {
         infoStreamPrint(OMC_LOG_STDOUT, 0, "<-%s>\n  %s", FLAG_NAME[i], FLAG_DESC[i]);
       } else if(FLAG_TYPE[i] == FLAG_TYPE_OPTION) {
@@ -1174,10 +1194,21 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     infoStreamPrint(OMC_LOG_STDOUT, 0, "homotopy parameter homTauStart changed to %f", homTauStart);
   }
 
-  if(omc_flag[FLAG_LSS_MAX_DENSITY] || omc_flag[FLAG_LSS_MIN_SIZE] ||
-     omc_flag[FLAG_NLSS_MAX_DENSITY] || omc_flag[FLAG_NLSS_MIN_SIZE]) {
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "The flags -lssMaxDensity, -lssMinSize, -nlssMaxDensity and -nlssMinSize are\n"
-                                          "deprecated and ignored: the compiler chooses dense or sparse per system.");
+  if(omc_flag[FLAG_LSS_MAX_DENSITY]) {
+    linearSparseSolverMaxDensity = getFlagReal(FLAG_LSS_MAX_DENSITY, linearSparseSolverMaxDensity);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Maximum density for using linear sparse solver changed to %f", linearSparseSolverMaxDensity);
+  }
+  if(omc_flag[FLAG_LSS_MIN_SIZE]) {
+    linearSparseSolverMinSize = getFlagInt(FLAG_LSS_MIN_SIZE, linearSparseSolverMinSize);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Minimum system size for using linear sparse solver changed to %d", linearSparseSolverMinSize);
+  }
+  if(omc_flag[FLAG_NLSS_MAX_DENSITY]) {
+    nonlinearSparseSolverMaxDensity = getFlagReal(FLAG_NLSS_MAX_DENSITY, nonlinearSparseSolverMaxDensity);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Maximum density for using non-linear sparse solver changed to %f", nonlinearSparseSolverMaxDensity);
+  }
+  if(omc_flag[FLAG_NLSS_MIN_SIZE]) {
+    nonlinearSparseSolverMinSize = getFlagInt(FLAG_NLSS_MIN_SIZE, nonlinearSparseSolverMinSize);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Minimum system size for using non-linear sparse solver changed to %d", nonlinearSparseSolverMinSize);
   }
   if(omc_flag[FLAG_NEWTON_XTOL]) {
     newtonXTol = atof(omc_flagValue[FLAG_NEWTON_XTOL]);

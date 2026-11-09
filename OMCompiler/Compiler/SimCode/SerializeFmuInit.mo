@@ -55,6 +55,7 @@ import UnorderedMap;
 import Util;
 
 constant Integer VERSION = 1;
+constant Integer PARAM_DEPS_VERSION = 1;
 
 type Kind = enumeration(REAL, INTEGER, BOOLEAN, STRING);
 
@@ -110,6 +111,38 @@ algorithm
     end for;
   end for;
 end write;
+
+function writeParamDeps
+  "Writes resources/<prefix>_paramdeps.bin, see SimCode.ParamDeps. The format
+   is described in SimulationRuntime/c/util/omc_fmu_paramdeps.h."
+  input SimCode.ParamDeps deps;
+  input String fileName;
+protected
+  File.File file = File.File();
+algorithm
+  File.open(file, fileName, File.Mode.Write);
+  File.write(file, "OMCFMUP");
+  File.writeBinaryInteger(file, 0, 1);
+  File.writeBinaryInteger(file, PARAM_DEPS_VERSION, 4);
+  File.writeBinaryInteger(file, if deps.checked then 1 else 0, 1);
+  writeUnsigned(file, listLength(deps.eqs));
+  for eq in deps.eqs loop
+    File.writeBinaryInteger(file, if isSome(eq.eq) then 1 else 0, 1);
+    writeUnsigned(file, listLength(eq.uses));
+    for s in eq.uses loop
+      writeUnsigned(file, s);
+    end for;
+    writeUnsigned(file, listLength(eq.defines));
+    for s in eq.defines loop
+      writeUnsigned(file, s);
+    end for;
+  end for;
+  writeUnsigned(file, listLength(deps.settable));
+  for t in deps.settable loop
+    writeUnsigned(file, Util.tuple21(t));
+    File.writeBinaryInteger(file, Util.tuple22(t), 1);
+  end for;
+end writeParamDeps;
 
 protected
 

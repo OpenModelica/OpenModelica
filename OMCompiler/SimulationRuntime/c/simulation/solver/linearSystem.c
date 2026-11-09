@@ -119,6 +119,15 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
       linsys[i].useSparseSolver = 1;
     } else if (omc_flag[FLAG_LS]) {
       linsys[i].useSparseSolver = 0;
+    } else if (omc_flag[FLAG_LSS_MAX_DENSITY] || omc_flag[FLAG_LSS_MIN_SIZE]) {
+      double density = nnz / ((double) size * (double) size);
+      linsys[i].useSparseSolver = density < linearSparseSolverMaxDensity || size > linearSparseSolverMinSize;
+      if (linsys[i].useSparseSolver) {
+        infoStreamPrint(OMC_LOG_STDOUT, 0,
+                        "Using sparse solver for linear system %d (%d),\n"
+                        "because density of %.3f is under threshold of %.3f or size of %d exceeds threshold of %d.",
+                        i, (int)linsys[i].equationIndex, density, linearSparseSolverMaxDensity, size, linearSparseSolverMinSize);
+      }
     } else if (linsys[i].matrixFormat == OMC_MATRIX_SPARSE) {
       linsys[i].useSparseSolver = 1;
     }

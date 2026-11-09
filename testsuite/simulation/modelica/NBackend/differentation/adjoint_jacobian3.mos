@@ -50,8 +50,8 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 //   (6) y := $START.y
 //   (5) Nonlinear System (size = 2, homotopy = false, mixed = false, torn = true)
 //   --Iteration Vars:{$DER.y, $DER.x}
-//   --(1) 0 = -(($DER.x ^ 2.0 + $DER.y ^ 3.0) - x * y)
-//   --(2) 0 = -($DER.x ^ 3.0 - (x + y + $DER.y ^ 2.0))
+//   --(1) 0 = -(($DER.x^2.0 + $DER.y^3.0) - x*y)
+//   --(2) 0 = -($DER.x^3.0 - (x + y + $DER.y^2.0))
 //
 // ODE Partition 1
 // -----------------
@@ -77,8 +77,8 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 //
 // Column Equations (size = 2)
 // -----------------------------
-//   (13) $pDER_JAC_LS_JAC_4.$RES_ODE_JAC_ADJ_2 := -(2.0 * $SEED_JAC_LS_JAC_4.$pDER_ODE_JAC_ADJ.$TMP_2 * $DER.y - 3.0 * $SEED_JAC_LS_JAC_4.$pDER_ODE_JAC_ADJ.$TMP_1 * $DER.y ^ 2.0)
-//   (12) $pDER_JAC_LS_JAC_4.$RES_ODE_JAC_ADJ_3 := -(-(3.0 * $SEED_JAC_LS_JAC_4.$pDER_ODE_JAC_ADJ.$TMP_2 * $DER.x ^ 2.0 + 2.0 * $SEED_JAC_LS_JAC_4.$pDER_ODE_JAC_ADJ.$TMP_1 * $DER.x))
+//   (13) $pDER_JAC_LS_JAC_4.$RES_ODE_JAC_ADJ_2 := -(2.0*$SEED_JAC_LS_JAC_4.$pDER_ODE_JAC_ADJ.$TMP_2*$DER.y - 3.0*$SEED_JAC_LS_JAC_4.$pDER_ODE_JAC_ADJ.$TMP_1*$DER.y^2.0)
+//   (12) $pDER_JAC_LS_JAC_4.$RES_ODE_JAC_ADJ_3 := -(-(3.0*$SEED_JAC_LS_JAC_4.$pDER_ODE_JAC_ADJ.$TMP_2*$DER.x^2.0 + 2.0*$SEED_JAC_LS_JAC_4.$pDER_ODE_JAC_ADJ.$TMP_1*$DER.x))
 //
 // Resizable Sparsity Pattern
 // ----------------------------
@@ -102,8 +102,8 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 //
 // Column Equations (size = 2)
 // -----------------------------
-//   (4) $pDER_INI_NLS_JAC_1.$RES_SIM_1 := -(2.0 * $DER.x * $SEED_INI_NLS_JAC_1.$DER.x + 3.0 * $DER.y ^ 2.0 * $SEED_INI_NLS_JAC_1.$DER.y)
-//   (3) $pDER_INI_NLS_JAC_1.$RES_SIM_0 := -(3.0 * $DER.x ^ 2.0 * $SEED_INI_NLS_JAC_1.$DER.x - 2.0 * $DER.y * $SEED_INI_NLS_JAC_1.$DER.y)
+//   (4) $pDER_INI_NLS_JAC_1.$RES_SIM_1 := -(2.0*$DER.x*$SEED_INI_NLS_JAC_1.$DER.x + 3.0*$DER.y^2.0*$SEED_INI_NLS_JAC_1.$DER.y)
+//   (3) $pDER_INI_NLS_JAC_1.$RES_SIM_0 := -(3.0*$DER.x^2.0*$SEED_INI_NLS_JAC_1.$DER.x - 2.0*$DER.y*$SEED_INI_NLS_JAC_1.$DER.y)
 //
 // Resizable Sparsity Pattern
 // ----------------------------
@@ -154,11 +154,11 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 // Column Equations (size = 2)
 // -----------------------------
 //   (14) Linear System (size = 2, jacobian = true, mixed = false, torn = true)
-//   --(10) 0 = $SEED_ODE_JAC_ADJ.$DER.y - (2.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.y - 3.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.y ^ 2.0)
-//   --(11) 0 = $SEED_ODE_JAC_ADJ.$DER.x - (-(3.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.x ^ 2.0 + 2.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.x))
+//   --(10) 0 = $SEED_ODE_JAC_ADJ.$DER.y - (2.0*$pDER_ODE_JAC_ADJ.$TMP_2*$DER.y - 3.0*$pDER_ODE_JAC_ADJ.$TMP_1*$DER.y^2.0)
+//   --(11) 0 = $SEED_ODE_JAC_ADJ.$DER.x - (-(3.0*$pDER_ODE_JAC_ADJ.$TMP_2*$DER.x^2.0 + 2.0*$pDER_ODE_JAC_ADJ.$TMP_1*$DER.x))
 //   (9) Algorithm
-//   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x - ($pDER_ODE_JAC_ADJ.$TMP_2 + $pDER_ODE_JAC_ADJ.$TMP_1 * y);
-//   $pDER_ODE_JAC_ADJ.y := $pDER_ODE_JAC_ADJ.y - ($pDER_ODE_JAC_ADJ.$TMP_2 + $pDER_ODE_JAC_ADJ.$TMP_1 * x);
+//   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x - ($pDER_ODE_JAC_ADJ.$TMP_2 + $pDER_ODE_JAC_ADJ.$TMP_1*y);
+//   $pDER_ODE_JAC_ADJ.y := $pDER_ODE_JAC_ADJ.y - ($pDER_ODE_JAC_ADJ.$TMP_2 + $pDER_ODE_JAC_ADJ.$TMP_1*x);
 //
 // Resizable Sparsity Pattern
 // ----------------------------

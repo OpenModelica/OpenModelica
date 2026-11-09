@@ -3,8 +3,12 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 EnumerationTest.mos \
 ExportFMUCLI.mos \
+FmuFileNamePrefixDash.mos \
+Fmi2NoVariables.mos \
 FmuSparseSolvers.mos \
+FmuLinkLibraries.mos \
 FmuUserCFlags.mos \
+FmuUserTab.mos \
 fmi_attributes_01.mos \
 fmi_attributes_02.mos \
 fmi_attributes_03.mos \
@@ -71,6 +75,7 @@ testDiscreteStructe.mos \
 testInitialEquationsFMI.mos \
 testModelicaStandardTables.mos \
 TestSourceCodeFMU.mos \
+TestSourceCodeFMUImporter.mos \
 ticket5670.mos \
 ticket6262.mos \
 ZeroStates.mos \

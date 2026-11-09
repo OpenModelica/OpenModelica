@@ -1,0 +1,29 @@
+[package]
+name = "openmodelica_download"
+version = "0.1.0"
+edition = "2024"
+workspace = ".."
+
+# Downloads for both omcs; the C omc links it through runtime/rust. Plain
+# versions, no workspace inheritance: that crate builds it from its own root.
+[dependencies]
+openmodelica_wasi = { path = "../openmodelica_wasi" }
+
+# libcurl has no wasm target: there the host fetches the files (see lib.rs).
+# Without curl-rust's default `ssl` feature the crate only links the system
+# libcurl, whose own TLS backend serves https; that feature would drag
+# openssl-sys in on unix.
+[target.'cfg(not(any(target_arch = "wasm32", target_os = "windows")))'.dependencies]
+curl = { version = "0.4", default-features = false, optional = true }
+
+# curl-sys never uses a system libcurl on Windows except through vcpkg (MSVC):
+# build it from source, with the OS TLS backend and certificate store
+# (schannel) that the `ssl` feature selects there.
+[target.'cfg(target_os = "windows")'.dependencies]
+curl = { version = "0.4", default-features = false, features = ["static-curl", "ssl"], optional = true }
+
+[features]
+default = ["curl"]
+# Without it nothing is downloaded: a file already on disk counts as
+# downloaded, anything else is an error (omgendoc needs no libcurl).
+curl = ["dep:curl"]

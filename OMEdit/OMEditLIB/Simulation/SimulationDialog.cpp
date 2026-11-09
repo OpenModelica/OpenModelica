@@ -1131,6 +1131,9 @@ bool SimulationDialog::translateModel(QString simulationParameters)
     // pass the -sx flag via simflags to be used in the data reconciliation, boundary conditions and state estimation algorithms (#14864)
     simulationParameters.append(", simflags=").append("\"").append(QString("-sx=%1").arg(measurementInputFile).append("\""));
   }
+  if (mpInteractiveSimulationGroupBox->isChecked()) {
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("--tunableParameters");
+  }
   // set linearization dump language
   if (mpLinearizationDumpLanguageComboBox->currentText() != QStringLiteral("none")) {
     MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+linearizationDumpLanguage=" + mpLinearizationDumpLanguageComboBox->currentText());

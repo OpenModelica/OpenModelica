@@ -115,7 +115,14 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   // FMI 2.0 and 3.0 read resources/<prefix>_init.bin (SerializeFmuInit) instead.
   let _ = if isFMIVersion10(FMUVersion) then simulationInitFunctionFile(simCode,guid,fileNamePrefixTmpDir)
   let()= textFile(fmumodel_identifierHeaderFile(simCode,guid,FMUVersion,FMUType), '<%fileNamePrefixTmpDir%>_FMU.h')
-  let()= textFile(fmumodel_identifierFile(simCode,guid,FMUVersion,FMUType), '<%fileNamePrefixTmpDir%>_FMU.c')
+  let()= textFile(fmumodel_identifierFile(simCode,guid,FMUVersion,FMUType,'<%fileNamePrefix%>_FMU.h'), '<%fileNamePrefixTmpDir%>_FMU.c')
+  let _ = if Flags.getConfigBool(Flags.FMU_WITH_FMI2) then
+    let _ = if not Config.simCodeRustRuntime() then
+      let()= textFile(fmumodel_identifierHeaderFile(simCode,guid,"2.0",FMUType), '<%fileNamePrefixTmpDir%>_FMU2.h')
+      let()= textFile(fmumodel_identifierFile(simCode,guid,"2.0",FMUType,'<%fileNamePrefix%>_FMU2.h'), '<%fileNamePrefixTmpDir%>_FMU2.c')
+      ""
+    let()= textFile(fmuModelDescriptionFile(simCode, guid, "2.0", FMUType, sourceFiles), '<%fileNamePrefixHash%>.fmutmp/modelDescription.fmi2.xml')
+    ""
 
   /* Doesn't seem to work properly
   let &fmuModelDescription = buffer ""
@@ -254,6 +261,7 @@ template fmumodel_identifierHeaderFile(SimCode simCode, String guid, String FMUV
 ::=
 match simCode
 case SIMCODE(__) then
+  let setupDataStruc = if Flags.getConfigBool(Flags.DAE_MODE) then "omc_fmu_setupDataStruc" else symbolName(modelNamePrefix(simCode),"setupDataStruc")
   <<
   #ifndef <%modelNamePrefix(simCode)%>_FMU_H
   #define <%modelNamePrefix(simCode)%>_FMU_H
@@ -271,14 +279,15 @@ case SIMCODE(__) then
   #endif
 
   extern void <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>(DATA *data, threadData_t *threadData);
+  <%if Flags.getConfigBool(Flags.DAE_MODE) then 'extern void omc_fmu_setupDataStruc(DATA *data, threadData_t *threadData);'%>
   <%if isFMIVersion30(FMUVersion) then
     <<
-    #define fmu3_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
+    #define fmu3_model_interface_setupDataStruc <%setupDataStruc%>
     #include "fmi-export/fmu3_model_interface.h"
     >>
   else if isFMIVersion20(FMUVersion) then
     <<
-    #define fmu2_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
+    #define fmu2_model_interface_setupDataStruc <%setupDataStruc%>
     #include "fmi-export/fmu2_model_interface.h"
     >>
   else
@@ -323,6 +332,9 @@ case SIMCODE(__) then
   #define FMI2_FUNCTION_PREFIX <%modelNamePrefix(simCode)%>_
   #include "fmi2Functions.h"
   #include "fmi-export/fmu2_model_interface.h"
+  // The value reference of time, which modelDescription.xml lists only when the
+  // model has no other variable. The same as FMI3_TIME_VR.
+  #define FMI2_TIME_VR (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS + NUMBER_OF_STRINGS + NUMBER_OF_EXTERNALOBJECTS + NUMBER_OF_CLOCKS)
   >>
   %>
 
@@ -384,13 +396,13 @@ case SIMCODE(__) then
   >>
 end fmumodel_identifierHeaderFile;
 
-template fmumodel_identifierFile(SimCode simCode, String guid, String FMUVersion, String FMUType)
+template fmumodel_identifierFile(SimCode simCode, String guid, String FMUVersion, String FMUType, String header)
  "Generates code for ModelDescription file for FMU target."
 ::=
 match simCode
 case SIMCODE(__) then
   <<
-  #include "<%modelNamePrefix(simCode)%>_FMU.h"
+  #include "<%header%>"
 
   // include fmu header files, typedefs and macros
   #include <stdio.h>
@@ -431,8 +443,8 @@ case SIMCODE(__) then
   void omc_fmu_setupDataStruc(DATA *data, threadData_t *threadData) {
     <%if Flags.getConfigBool(Flags.DAE_MODE) then
     <<
-    /* What the generated main says for a simulation: the runtime lays out the
-       DAE residuals (fmi-ls-dae) only for a model translated with --daeMode. */
+    /* What the generated main says for a simulation: the runtime treats the model
+       as a DAE (fmi-ls-dae, or IDA in Co-Simulation) only when translated with --daeMode. */
     compiledInDAEMode = 1;
     >>
     %>
@@ -440,6 +452,12 @@ case SIMCODE(__) then
   }
   #if defined(OMC_RUST_SIMULATION_RUNTIME)
   #include "fmi-export/fmu<%if isFMIVersion30(FMUVersion) then "3" else if isFMIVersion20(FMUVersion) then "2" else "1"%>_rust_interface.c.inc"
+  <%if Flags.getConfigBool(Flags.FMU_WITH_FMI2) then
+  <<
+  #include "fmi2Functions.h"
+  #include "fmi-export/fmu2_rust_interface.c.inc"
+  >>
+  %>
   #endif
 
   // implementation of the Model Exchange functions

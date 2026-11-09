@@ -32,6 +32,10 @@ fn build_stub_model_calling(ext: Option<(&str, usize)>) -> Vec<u8> {
     if let Some((_, params)) = ext {
         types.ty().function(vec![we::ValType::I32; params], []); // 6: the external
     }
+    let guard2_type = 6 + u32::from(ext.is_some());
+    types
+        .ty()
+        .function([we::ValType::I32, we::ValType::I32], [we::ValType::I32]);
     m.section(&types);
 
     let mut imports = we::ImportSection::new();
@@ -87,6 +91,7 @@ fn build_stub_model_calling(ext: Option<(&str, usize)>) -> Vec<u8> {
     for _ in &one_arg {
         funcs.function(0); // <entry>$guard: (i32)->i32, like rt_alloc's type
     }
+    funcs.function(guard2_type); // functionUpdateTunableParameters$guard
     m.section(&funcs);
 
     let mut exports = we::ExportSection::new();
@@ -110,6 +115,11 @@ fn build_stub_model_calling(ext: Option<(&str, usize)>) -> Vec<u8> {
     for (i, name) in one_arg.iter().enumerate() {
         exports.export(&format!("{name}$guard"), we::ExportKind::Func, guard_base + i as u32);
     }
+    exports.export(
+        "functionUpdateTunableParameters$guard",
+        we::ExportKind::Func,
+        guard_base + one_arg.len() as u32,
+    );
     m.section(&exports);
 
     let mut code = we::CodeSection::new();
@@ -146,7 +156,7 @@ fn build_stub_model_calling(ext: Option<(&str, usize)>) -> Vec<u8> {
     throw.instruction(&I::End);
     code.function(&throw);
     // Each guard: nothing threw.
-    for _ in &one_arg {
+    for _ in 0..=one_arg.len() {
         let mut f = we::Function::new([]);
         f.instruction(&I::I32Const(0));
         f.instruction(&I::End);
@@ -216,42 +226,31 @@ fn fmu_component_links_the_carried_libraries() {
 
 /// The mapping has to name `klu`, the shared core, whenever anything else is named.
 /// Only the integrator is Co-Simulation's alone: a Model Exchange FMU runs the same
-/// nonlinear and linear solvers during initialisation. A model with a sparse
-/// nonlinear system needs kinsol+KLU with no flag saying so.
+/// nonlinear and linear solvers during initialisation. kinsol is always there.
 #[test]
 fn solver_libraries_follow_the_fmi_flags() {
-    for (json, cs, sparse_nls, want) in [
-        ("{}", true, false, vec![]),
-        (r#"{"s":"euler"}"#, true, false, vec![]),
-        (r#"{"s":"cvode"}"#, true, false, vec!["sundials_driver", "klu"]),
-        (r#"{"s":"ida"}"#, true, false, vec!["sundials_driver", "klu"]),
-        (r#"{"nls":"kinsol"}"#, true, false, vec!["kinsol", "klu"]),
-        (r#"{"lss":"lis"}"#, true, false, vec!["lis", "klu"]),
-        (r#"{"nlsLS":"klu"}"#, true, false, vec!["klu"]),
-        (r#"{"ls":"lapack"}"#, true, false, vec![]),
-        (r#"{"s":"gbode"}"#, true, false, vec!["klu"]),
-        (r#"{"s":"gbode"}"#, false, false, vec![]),
+    for (json, cs, want) in [
+        ("{}", true, vec!["kinsol", "klu"]),
+        (r#"{"s":"euler"}"#, true, vec!["kinsol", "klu"]),
+        (r#"{"s":"cvode"}"#, true, vec!["sundials_driver", "kinsol", "klu"]),
+        (r#"{"s":"ida"}"#, true, vec!["sundials_driver", "kinsol", "klu"]),
+        (r#"{"nls":"kinsol"}"#, true, vec!["kinsol", "klu"]),
+        (r#"{"lss":"lis"}"#, true, vec!["kinsol", "lis", "klu"]),
+        (r#"{"nlsLS":"klu"}"#, true, vec!["kinsol", "klu"]),
+        (r#"{"ls":"lapack"}"#, true, vec!["kinsol", "klu"]),
+        (r#"{"s":"gbode"}"#, true, vec!["kinsol", "klu"]),
         // ME: the same solvers, never the integrator.
-        (r#"{"nls":"kinsol"}"#, false, false, vec!["kinsol", "klu"]),
-        (r#"{"lss":"lis"}"#, false, false, vec!["lis", "klu"]),
-        (r#"{"s":"cvode"}"#, false, false, vec![]),
-        // The density rule's own choice, which no flag records.
-        ("{}", false, true, vec!["kinsol", "klu"]),
-        ("{}", true, true, vec!["kinsol", "klu"]),
-        (r#"{"nls":"kinsol"}"#, true, true, vec!["kinsol", "klu"]),
-        (r#"{"s":"ida"}"#, true, true, vec!["sundials_driver", "kinsol", "klu"]),
+        ("{}", false, vec!["kinsol", "klu"]),
+        (r#"{"lss":"lis"}"#, false, vec!["kinsol", "lis", "klu"]),
+        (r#"{"s":"cvode"}"#, false, vec!["kinsol", "klu"]),
     ] {
         let method = cs_method_from(json, if cs { "CS" } else { "ME" }, false, "dassl");
-        assert_eq!(
-            fmu_solver_libraries(json, &method, cs, sparse_nls),
-            want,
-            "{json} cs={cs} sparse_nls={sparse_nls}"
-        );
+        assert_eq!(fmu_solver_libraries(json, &method, cs), want, "{json} cs={cs}");
     }
     // Every name the mapping can produce must be a library that exists.
     let known: Vec<&str> = SOLVER_LIBRARIES.iter().map(|l| l.name).collect();
     let all = r#"{"s":"ida","nls":"kinsol","ls":"lis","lss":"klu"}"#;
-    for name in fmu_solver_libraries(all, "ida", true, true) {
+    for name in fmu_solver_libraries(all, "ida", true) {
         assert!(known.contains(&name), "{name} is not a solver library");
     }
 }
@@ -280,7 +279,7 @@ fn baked_solver_flags_come_from_the_fmi_flags() {
             .chain(baked.split_whitespace().map(str::to_string))
             .collect();
         let f = simflags::parse(&argv).expect(&baked);
-        let libs = fmu_solver_libraries(json, &cs_method_from(json, "CS", false, "dassl"), true, false);
+        let libs = fmu_solver_libraries(json, &cs_method_from(json, "CS", false, "dassl"), true);
         let cap = simflags::Capabilities {
             klu: libs.contains(&"klu"),
             kinsol: libs.contains(&"kinsol"),

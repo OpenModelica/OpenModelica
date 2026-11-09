@@ -45,6 +45,7 @@
 #include "fmi3Functions.h"
 #include "../simulation_data.h"
 #include "../simulation/solver/solver_main.h"
+#include "../util/omc_fmu_paramdeps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -138,6 +139,13 @@ typedef struct {
   fmi3Float64* event_indicators;
   fmi3Float64* event_indicators_prev;
   fmi3Float64* input_real_derivative;
+
+  OMC_FMU_PARAMDEPS* paramDeps;
+  unsigned char* slotDirty;         /* tunable parameters set since the last update, and what depends on them */
+  unsigned char* slotSetBeforeInit; /* set by the importer before the end of initialization */
+  unsigned char* eqMask;
+  int _tunable_dirty;
+  int _tunable_applied;
 } ModelInstance;
 
 typedef struct {

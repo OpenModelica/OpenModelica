@@ -135,6 +135,41 @@
     </message>
 </context>
 <context>
+    <name>ArrayParameterEditorDialog</name>
+    <message>
+        <source>%1 - %2 %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rows:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Columns:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expression:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete 1 row</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete %1 rows</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete 1 column</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete %1 columns</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>AttachToProcessDialog</name>
     <message>
         <source>Attach to Process ID:</source>
@@ -2921,22 +2956,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>Закрыть</translation>
     </message>
     <message>
-        <source>Percentage:</source>
-        <translation>Процент:</translation>
-    </message>
-    <message>
-        <source>Choose Transparency</source>
-        <translation>Выбор прозрачности</translation>
-    </message>
-    <message>
-        <source>Choose Specularity</source>
-        <translation>Выбор зеркальности</translation>
-    </message>
-    <message>
-        <source>Choose Color</source>
-        <translation>Выбор цвета</translation>
-    </message>
-    <message>
         <source>Choose File(s)</source>
         <translation>Выбор файла (файлов)</translation>
     </message>
@@ -2947,6 +2966,10 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <source>Add</source>
         <translation>Добавить</translation>
+    </message>
+    <message>
+        <source>Edit Array</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Save a file</source>
@@ -2975,14 +2998,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <source>Import FMU</source>
         <translation>Импортировать FMU</translation>
-    </message>
-    <message>
-        <source>Add Path</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Path</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Output</source>
@@ -3098,14 +3113,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Unloads the file without deleting it from the file system</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unload the CRML file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unload the Modelica Script file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3405,10 +3412,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>Вызывает функцию Modelica</translation>
     </message>
     <message>
-        <source>Element</source>
-        <translation>Элемент</translation>
-    </message>
-    <message>
         <source>Font Size:</source>
         <translation>Размер шрифта:</translation>
     </message>
@@ -3469,10 +3472,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>Создать соединение</translation>
     </message>
     <message>
-        <source>Connection Attributes</source>
-        <translation>Атрибуты соединения</translation>
-    </message>
-    <message>
         <source>Create Transition</source>
         <translation>Создать переход</translation>
     </message>
@@ -3481,40 +3480,12 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>Редактировать переход</translation>
     </message>
     <message>
-        <source>Find Variables</source>
-        <translation>Поиск переменных</translation>
-    </message>
-    <message>
         <source>Filter Variables</source>
         <translation>Фильтр переменных</translation>
     </message>
     <message>
         <source>Open Class</source>
         <translation>Открыть класс</translation>
-    </message>
-    <message>
-        <source>View Icon</source>
-        <translation>Просмотр значка</translation>
-    </message>
-    <message>
-        <source>Opens the class icon</source>
-        <translation>Открывает значок класса</translation>
-    </message>
-    <message>
-        <source>View Diagram</source>
-        <translation>Просмотр диаграммы</translation>
-    </message>
-    <message>
-        <source>Opens the class diagram</source>
-        <translation>Открывает диаграмму класса</translation>
-    </message>
-    <message>
-        <source>View Text</source>
-        <translation>Просмотр текста</translation>
-    </message>
-    <message>
-        <source>Opens the class text</source>
-        <translation>Открывает текст класса</translation>
     </message>
     <message>
         <source>Opens the class documentation</source>
@@ -3733,14 +3704,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>Пауза воспроизведения анимации</translation>
     </message>
     <message>
-        <source>Simulation Parameters</source>
-        <translation>Параметры моделирования</translation>
-    </message>
-    <message>
-        <source>Shows the Simulation Parameters dialog</source>
-        <translation>Выводит диалоговое окно установки параметров моделирования</translation>
-    </message>
-    <message>
         <source>Send</source>
         <translation>Отправить</translation>
     </message>
@@ -3835,14 +3798,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <source>Speed:</source>
         <translation>Скорость:</translation>
-    </message>
-    <message>
-        <source>Terminate Instantiation</source>
-        <translation>Удалить экземпляр</translation>
-    </message>
-    <message>
-        <source>Terminates the model instantiation</source>
-        <translation>Удаляет экземпляр модели</translation>
     </message>
     <message>
         <source>Archived Simulations</source>
@@ -6558,6 +6513,10 @@ Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMS
         <translation>Редактировать</translation>
     </message>
     <message>
+        <source>Edit array</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Unable to find the redeclare class.</source>
         <translation>Не удалось найти переопределяемый класс.</translation>
     </message>
@@ -7949,18 +7908,6 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <source>Method</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add</source>
-        <translation type="unfinished">Добавить</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation type="unfinished">Удалить</translation>
-    </message>
-    <message>
-        <source>Edit</source>
-        <translation type="unfinished">Редактировать</translation>
     </message>
     <message>
         <source>Solver Configurations</source>

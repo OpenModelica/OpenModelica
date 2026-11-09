@@ -14,9 +14,10 @@
 //! The codes are `SimFlags::solver_codes`; 0 means unset, and the enums below
 //! mirror `crate::simflags`, so neither may be renumbered alone.
 
-use core::sync::atomic::{AtomicU32, Ordering};
+use core::sync::atomic::{AtomicI32, AtomicU32, Ordering};
 
 use crate::atomic64::AtomicU64;
+use crate::simflags::SparseThresholds;
 
 /// `-nls`
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -74,10 +75,54 @@ static NLS: AtomicU32 = AtomicU32::new(0);
 static NLS_LS: AtomicU32 = AtomicU32::new(0);
 static LS: AtomicU32 = AtomicU32::new(0);
 static LSS: AtomicU32 = AtomicU32::new(0);
-/// `-nlssMinSize` / `-nlssMaxDensity`, C's `nonlinearSparseSolverMinSize` /
-/// `nonlinearSparseSolverMaxDensity`, at their defaults until a run sets them.
-static NLSS_MIN_SIZE: AtomicU32 = AtomicU32::new(1000);
-static NLSS_MAX_DENSITY: AtomicU64 = AtomicU64::new(0x3FB999999999999A); // 0.1
+/// `-lssMaxDensity` / `-lssMinSize` / `-nlssMaxDensity` / `-nlssMinSize`, at C's
+/// defaults until a run sets them.
+static LSS_MAX_DENSITY: AtomicU64 = AtomicU64::new(SparseThresholds::DEFAULT.lss_max_density.to_bits());
+static LSS_MIN_SIZE: AtomicI32 = AtomicI32::new(SparseThresholds::DEFAULT.lss_min_size);
+static LSS_GIVEN: AtomicU32 = AtomicU32::new(0);
+static NLSS_MAX_DENSITY: AtomicU64 = AtomicU64::new(SparseThresholds::DEFAULT.nlss_max_density.to_bits());
+static NLSS_MIN_SIZE: AtomicI32 = AtomicI32::new(SparseThresholds::DEFAULT.nlss_min_size);
+static NLSS_GIVEN: AtomicU32 = AtomicU32::new(0);
+
+pub fn set_sparse_thresholds(t: SparseThresholds) {
+    LSS_MAX_DENSITY.store(t.lss_max_density.to_bits(), Ordering::Relaxed);
+    LSS_MIN_SIZE.store(t.lss_min_size, Ordering::Relaxed);
+    LSS_GIVEN.store(t.lss_given as u32, Ordering::Relaxed);
+    NLSS_MAX_DENSITY.store(t.nlss_max_density.to_bits(), Ordering::Relaxed);
+    NLSS_MIN_SIZE.store(t.nlss_min_size, Ordering::Relaxed);
+    NLSS_GIVEN.store(t.nlss_given as u32, Ordering::Relaxed);
+}
+
+pub fn sparse_thresholds() -> SparseThresholds {
+    SparseThresholds {
+        lss_max_density: f64::from_bits(LSS_MAX_DENSITY.load(Ordering::Relaxed)),
+        lss_min_size: LSS_MIN_SIZE.load(Ordering::Relaxed),
+        lss_given: LSS_GIVEN.load(Ordering::Relaxed) != 0,
+        nlss_max_density: f64::from_bits(NLSS_MAX_DENSITY.load(Ordering::Relaxed)),
+        nlss_min_size: NLSS_MIN_SIZE.load(Ordering::Relaxed),
+        nlss_given: NLSS_GIVEN.load(Ordering::Relaxed) != 0,
+    }
+}
+
+/// The linear system format `-lssMaxDensity` / `-lssMinSize` ask for, if given.
+pub fn lss_override(size: usize, nnz: usize) -> Option<bool> {
+    let t = sparse_thresholds();
+    t.lss_given
+        .then(|| SparseThresholds::sparse(size, nnz, t.lss_max_density, t.lss_min_size))
+}
+
+pub fn nlss_given() -> bool {
+    NLSS_GIVEN.load(Ordering::Relaxed) != 0
+}
+
+/// `-ls` / `-lss` was given (code 0 is unset).
+pub fn ls_given() -> bool {
+    LS.load(Ordering::Relaxed) != 0
+}
+
+pub fn lss_given() -> bool {
+    LSS.load(Ordering::Relaxed) != 0
+}
 
 /// C's `newtonFTol` / `newtonXTol` / `maxStepFactor` (`model_help.c`), which
 /// `-newtonFTol` / `-newtonXTol` / `-newtonMaxStepFactor` move. The homotopy Newton
@@ -294,16 +339,17 @@ pub fn set_solvers(nls: u32, nls_ls: u32, ls: u32, lss: u32) {
     LSS.store(lss, Ordering::Relaxed);
 }
 
-/// Mirrors `BackendDAEUtil.useSparseSolver`, which chose this system's format.
+/// `SimCodeCodegenUtil.useSparseSolver` at the `-nlssMaxDensity` / `-nlssMinSize`
+/// thresholds.
 pub fn nls_use_sparse(size: usize, nnz: usize) -> bool {
-    let density = nnz as f64 / (size * size) as f64;
-    density < f64::from_bits(NLSS_MAX_DENSITY.load(Ordering::Relaxed))
-        || size > NLSS_MIN_SIZE.load(Ordering::Relaxed) as usize
+    let t = sparse_thresholds();
+    SparseThresholds::sparse(size, nnz, t.nlss_max_density, t.nlss_min_size)
 }
 
 pub fn apply_flags(f: &crate::simflags::SimFlags) {
     let (nls, nls_ls, ls, lss) = f.solver_codes();
     set_solvers(nls, nls_ls, ls, lss);
+    set_sparse_thresholds(crate::simflags::sparse_thresholds(f));
     let (ftol, xtol, msf) = crate::simflags::newton_tuning(f);
     set_newton_tuning(ftol, xtol, msf);
     set_max_warn(f.max_warn.unwrap_or(3));
