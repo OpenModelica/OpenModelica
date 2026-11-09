@@ -6,6 +6,7 @@ ExportCvodeFmu_dynamic.mos \
 ExportCvodeFmu_static.mos \
 fmi_interpolation_01.mos \
 FmuAssertSolverRetry.mos \
+FmuExitInitAssert.mos \
 FmuMatV7Table.mos \
 FmuZlibLinkOrder.mos \
 FmuNlsSameTime.mos \
@@ -29,6 +30,7 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 FmuAssertSolverRetry.py \
+FmuExitInitAssert.py \
 FmuNlsSameTime.py \
 FmuZlibLinkOrder-f.c \
 Makefile \

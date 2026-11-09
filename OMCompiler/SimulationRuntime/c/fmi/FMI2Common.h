@@ -58,8 +58,10 @@ typedef struct {
   double FMIRelativeTolerance;
   fmi2_event_info_t* FMIEventInfo;
   fmi2_solving_mode_t FMISolvingMode;
+  int FMIFailed;  /* a call returned an error: fmi2Terminate is not allowed */
 } FMI2ModelExchange;
 
+MODELICA_NORETURN void fmi2Failed(FMI2ModelExchange* FMI2ME, const char* function, fmi2_status_t status) MODELICA_NORETURNATTR;
 void fmi2logger(fmi2_component_t c, fmi2_string_t instanceName, fmi2_status_t status, fmi2_string_t category, fmi2_string_t message, ...);
 
 #endif
