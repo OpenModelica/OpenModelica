@@ -3782,6 +3782,7 @@ fn local_clause(input: &mut TokenInput) -> ModalResult<List<metamodelica::Ref<Ab
             ClassBodyItem::Annotation(ann) => Absyn::ElementItem::LEXER_COMMENT {
                 comment: arcstr::format!("{ann:?}"),
             },
+            ClassBodyItem::LexerComment(text) => Absyn::ElementItem::LEXER_COMMENT { comment: text.clone() },
             _ => continue,
         };
         result = cons(metamodelica::Ref::new(ei), result);
@@ -5707,6 +5708,52 @@ end P;\n\
             }
         }
         assert!(saw_wrapper, "expected an EXPRESSIONCOMMENT wrapper around the RHS");
+    }
+
+    #[test]
+    fn match_local_comments_are_kept() {
+        // ANTLR3 `local_clause` returns its `element_list` with the comments.
+        let code = "\
+function f\n\
+algorithm\n\
+  x := match y\n\
+    local\n\
+      Integer a; // between locals\n\
+      Integer b;\n\
+      // before the first case\n\
+    case _ then 1;\n\
+  end match;\n\
+end f;\n\
+";
+        let prog = parse(code, "t.mo", "t.mo", Grammar::MetaModelica, false, 0.0).expect("parse");
+        let Program { classes, .. } = prog;
+        let first = match &*classes {
+            metamodelica::ListNode::Cons { head, .. } => head.clone(),
+            _ => panic!("no classes"),
+        };
+        let Class { body, .. } = &*first;
+        let ClassDef::PARTS { classParts, .. } = &**body else {
+            panic!("expected PARTS");
+        };
+        let mut comments = Vec::new();
+        for cp in &**classParts {
+            if let ClassPart::ALGORITHMS { contents } = &**cp {
+                for ai in &**contents {
+                    if let AlgorithmItem::ALGORITHMITEM { algorithm_, .. } = &**ai
+                        && let Algorithm::ALG_ASSIGN { value, .. } = &**algorithm_
+                        && let Exp::MATCHEXP { localDecls, .. } = &**value
+                    {
+                        for item in &**localDecls {
+                            if let ElementItem::LEXER_COMMENT { comment } = &**item {
+                                comments.push(comment.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        assert_eq!(comments.len(), 2, "comments = {comments:?}");
+        assert!(comments[0].contains("between locals") && comments[1].contains("before the first case"));
     }
 
     #[test]

@@ -89,6 +89,10 @@ pub struct TypedCase {
     pub locals: Vec<(String, Ty, Option<TypedExp>, Option<Absyn::TypeSpec>)>,
     pub stmts: Vec<TypedStmt>,
     pub result: TypedExp,
+    /// Comments before the arm: around the pattern and the guard.
+    pub comments: Vec<String>,
+    /// Comments before the result: at the end of the body and around the result.
+    pub end_comments: Vec<String>,
     /// Names live at the start of the arm body, set by
     /// [`crate::codegen::mark_last_uses`].
     pub live_in: Option<std::collections::HashSet<String>>,
@@ -2390,6 +2394,7 @@ pub fn infer_exp<'a>(
             // bodies can refer to the un-decomposed value. Lift the `AS`
             // wrapper out into an explicit `as_binding`; the real scrutinee
             // is the inner expression.
+            note_exp_comments(inputExp);
             let (real_input, as_binding): (&Absyn::Exp, Option<String>) = match strip_exp_wrappers(inputExp) {
                 Absyn::Exp::AS { id, exp } => (exp.as_ref(), Some(id.to_string())),
                 other => (other, None),
@@ -2468,7 +2473,7 @@ pub fn infer_exp<'a>(
                     .collect(),
                 _ => Vec::new(),
             };
-            let typed_cases: Vec<TypedCase> = (&**cases)
+            let mut typed_cases: Vec<TypedCase> = (&**cases)
                 .into_iter()
                 .map(|c| {
                     infer_case(
@@ -2499,6 +2504,10 @@ pub fn infer_exp<'a>(
                 .map(|c| promote_variant_to_enum_ty(c.result.ty(), top_level))
                 .find(|t| *t != Ty::Unknown)
                 .unwrap_or(Ty::Unknown);
+            // Comments after the last local are above the first case.
+            if let Some(first) = typed_cases.first_mut() {
+                first.comments.splice(0..0, local_comments(localDecls).1);
+            }
             TypedExp::Match {
                 kind,
                 input: Box::new(input),
@@ -2523,17 +2532,9 @@ pub fn infer_exp<'a>(
             }
         }
 
-        // EXPRESSIONCOMMENT is a transparent wrapper added by the parser to
-        // preserve `//` / `/*…*/` comments that appear immediately before /
-        // after an expression. The codegen's typed expression layer does not
-        // (yet) carry per-expression comments, so we recurse into the inner
-        // expression. Comments are still retained at the surrounding item
-        // level (LEXER_COMMENT, *ITEMCOMMENT, commentsBeforeClass, …) which
-        // is where the code generator actually emits them. If we later want
-        // comments anchored to individual expressions in the generated
-        // source, extend TypedExp with a `Commented { before, exp, after }`
-        // variant and propagate it through `emit_exp`.
-        Absyn::Exp::EXPRESSIONCOMMENT { exp, .. } => infer_exp(exp, env, top_level, pkg_prefix, type_vars),
+        Absyn::Exp::EXPRESSIONCOMMENT { .. } => {
+            infer_exp(note_exp_comments(exp), env, top_level, pkg_prefix, type_vars)
+        }
 
         other => TypedExp::Todo(format!("{other:?}").chars().take(80).collect()),
     }
@@ -2725,6 +2726,7 @@ fn infer_case<'a>(
         pkg_prefix: &str,
     ) -> Vec<(String, Ty, Option<Absyn::Exp>, Option<Absyn::TypeSpec>)> {
         let mut out = Vec::new();
+        note_local_comments(local_decls, true);
         for item in (&**local_decls).into_iter() {
             let Absyn::ElementItem::ELEMENTITEM { element } = item.as_ref() else {
                 continue;
@@ -2943,6 +2945,7 @@ fn infer_case<'a>(
             result,
             ..
         } => {
+            let window = CommentWindow::open();
             // Case-level locals (`local list<X> M;`) must be visible to
             // `infer_pat` so that a pattern reference like `node::M` resolves
             // `M` to the locally-declared variable rather than being
@@ -2956,6 +2959,8 @@ fn infer_case<'a>(
             for (n, t, _, _) in &case_locals_pre {
                 pat_env.insert(n.clone(), t.clone());
             }
+            let mut comments = Vec::new();
+            let pattern = peel_comments(pattern, &mut comments);
             let pat = infer_pat(pattern, &pat_env, top_level, pkg_prefix, type_vars);
             let mut inner_env = env.clone();
             // Use the typed scrutinee (when we have one) so constructor-field
@@ -3045,11 +3050,20 @@ fn infer_case<'a>(
                 }
                 inner_env.insert(n.clone(), t.clone());
             }
-            let guard = patternGuard
-                .as_ref()
-                .map(|g| infer_exp(g, &inner_env, top_level, pkg_prefix, type_vars));
+            let guard = patternGuard.as_ref().map(|g| {
+                infer_exp(
+                    peel_comments(g, &mut comments),
+                    &inner_env,
+                    top_level,
+                    pkg_prefix,
+                    type_vars,
+                )
+            });
+            comments.extend(window.take());
             let mut case_env = inner_env.clone();
-            let stmts = infer_case_class_part(classPart, &mut case_env, top_level, pkg_prefix, type_vars);
+            let mut stmts = infer_case_class_part(classPart, &mut case_env, top_level, pkg_prefix, type_vars);
+            let mut end_comments = take_trailing_comments(&mut stmts);
+            let result = peel_comments(result, &mut end_comments);
             // Discover any new variables first assigned inside the arm body (not declared
             // anywhere). These arise when the MetaModelica source omits explicit local
             // declarations for intermediate variables that are only assigned once.
@@ -3065,12 +3079,16 @@ fn infer_case<'a>(
             for (n, t) in discovered {
                 locals.push((n.clone(), t.clone(), None, None));
             }
+            let result = infer_exp(result, &case_env, top_level, pkg_prefix, type_vars);
+            end_comments.extend(window.take());
             TypedCase {
                 pattern: pat,
                 guard,
                 locals,
                 stmts,
-                result: infer_exp(result, &case_env, top_level, pkg_prefix, type_vars),
+                result,
+                comments,
+                end_comments,
                 live_in: None,
                 live_out: None,
             }
@@ -3081,6 +3099,7 @@ fn infer_case<'a>(
             result,
             ..
         } => {
+            let window = CommentWindow::open();
             let mut case_env = env.clone();
             let mut locals: Vec<(String, Ty, Option<TypedExp>, Option<Absyn::TypeSpec>)> = extra_locals.to_vec();
             let case_locals = infer_case_locals(localDecls, type_vars, top_level, pkg_prefix);
@@ -3103,7 +3122,15 @@ fn infer_case<'a>(
             for (n, t, _, _) in &locals {
                 case_env.insert(n.clone(), t.clone());
             }
-            let stmts = infer_case_class_part(classPart, &mut case_env, top_level, pkg_prefix, type_vars);
+            let mut stmts = infer_case_class_part(classPart, &mut case_env, top_level, pkg_prefix, type_vars);
+            let mut end_comments = take_trailing_comments(&mut stmts);
+            // Without a body, the comments of the result were written before `else`.
+            let mut comments = Vec::new();
+            let result = if stmts.is_empty() && end_comments.is_empty() {
+                peel_comments(result, &mut comments)
+            } else {
+                peel_comments(result, &mut end_comments)
+            };
             // See the MATCH-case branch above: sort the HashMap-discovered
             // locals by name so the generated declaration order is stable.
             let mut discovered: Vec<(&String, &Ty)> = case_env
@@ -3114,12 +3141,20 @@ fn infer_case<'a>(
             for (n, t) in discovered {
                 locals.push((n.clone(), t.clone(), None, None));
             }
+            let result = infer_exp(result, &case_env, top_level, pkg_prefix, type_vars);
+            if stmts.is_empty() && end_comments.is_empty() {
+                comments.extend(window.take());
+            } else {
+                end_comments.extend(window.take());
+            }
             TypedCase {
                 pattern: TypedPat::Wildcard,
                 guard: None,
                 locals,
                 stmts,
-                result: infer_exp(result, &case_env, top_level, pkg_prefix, type_vars),
+                result,
+                comments,
+                end_comments,
                 live_in: None,
                 live_out: None,
             }
@@ -3218,6 +3253,7 @@ fn infer_case_locals_standalone(
     }
 
     let mut out = Vec::new();
+    note_local_comments(local_decls, false);
     for item in (&**local_decls).into_iter() {
         let Absyn::ElementItem::ELEMENTITEM { element } = item.as_ref() else {
             continue;
@@ -3734,13 +3770,9 @@ pub fn infer_pat<'a>(
             other => TypedPat::Todo(format!("{other:?}").chars().take(40).collect()),
         },
 
-        // Patterns are written using the same Exp grammar as expressions, so
-        // a comment immediately before/after a pattern gets wrapped in
-        // EXPRESSIONCOMMENT by the parser. Strip the wrapper here — the
-        // comment is preserved at the surrounding `case`/algorithm level
-        // (or as a `LEXER_COMMENT` element) so we lose nothing at this
-        // layer.
-        Absyn::Exp::EXPRESSIONCOMMENT { exp, .. } => infer_pat(exp, env, top_level, pkg_prefix, type_vars),
+        Absyn::Exp::EXPRESSIONCOMMENT { .. } => {
+            infer_pat(note_exp_comments(exp), env, top_level, pkg_prefix, type_vars)
+        }
 
         other => TypedPat::Todo(format!("{other:?}").chars().take(80).collect()),
     }
@@ -4000,6 +4032,8 @@ pub enum TypedStmt {
     Return,
     Break,
     Continue,
+    /// A `//` or `/* */` comment, with its delimiters. It generates no code.
+    Comment(String),
     Todo(String),
 }
 
@@ -4030,6 +4064,119 @@ pub(crate) fn comment_has_boolean_named_annotation(
                 if matches!(exp.as_ref(), Absyn::Exp::BOOL { value: true })
         )
     })
+}
+
+thread_local! {
+    /// Comments of the `EXPRESSIONCOMMENT`s met by `infer_exp`/`infer_pat`
+    /// while a [`CommentWindow`] is open, keyed by node.
+    static EXP_COMMENTS: std::cell::RefCell<Vec<(usize, Vec<String>)>> = const { std::cell::RefCell::new(Vec::new()) };
+    static OPEN_WINDOWS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
+/// Collects the comments of the expressions inferred while it is open, for a
+/// statement, a case or a declaration to emit. Analyses infer expressions
+/// outside any window, so they record nothing.
+pub(crate) struct CommentWindow(usize);
+
+impl CommentWindow {
+    pub(crate) fn open() -> Self {
+        OPEN_WINDOWS.set(OPEN_WINDOWS.get() + 1);
+        CommentWindow(EXP_COMMENTS.with(|c| c.borrow().len()))
+    }
+
+    /// The comments recorded since the window was opened or last taken.
+    pub(crate) fn take(&self) -> Vec<String> {
+        EXP_COMMENTS.with(|c| {
+            let mut c = c.borrow_mut();
+            let start = self.0.min(c.len());
+            c.drain(start..).flat_map(|(_, v)| v).collect()
+        })
+    }
+}
+
+impl Drop for CommentWindow {
+    fn drop(&mut self) {
+        OPEN_WINDOWS.set(OPEN_WINDOWS.get() - 1);
+        EXP_COMMENTS.with(|c| c.borrow_mut().truncate(self.0));
+    }
+}
+
+/// Records the comments of the `EXPRESSIONCOMMENT` wrappers of `exp` and returns
+/// what they wrap.
+pub(crate) fn note_exp_comments(exp: &Absyn::Exp) -> &Absyn::Exp {
+    let mut comments = Vec::new();
+    let inner = peel_comments(exp, &mut comments);
+    note_comments(exp as *const Absyn::Exp as usize, comments);
+    inner
+}
+
+fn note_comments(key: usize, comments: Vec<String>) {
+    if comments.is_empty() || OPEN_WINDOWS.get() == 0 {
+        return;
+    }
+    EXP_COMMENTS.with(|c| {
+        let mut c = c.borrow_mut();
+        if !c.iter().any(|(k, _)| *k == key) {
+            c.push((key, comments));
+        }
+    });
+}
+
+/// The comments in a `local` declaration list: those between the
+/// declarations and those after the last one.
+fn local_comments(
+    local_decls: &metamodelica::List<metamodelica::Ref<Absyn::ElementItem>>,
+) -> (Vec<String>, Vec<String>) {
+    let mut between = Vec::new();
+    let mut after = Vec::new();
+    for item in (&**local_decls).into_iter() {
+        match item.as_ref() {
+            Absyn::ElementItem::LEXER_COMMENT { comment } => after.push(comment.to_string()),
+            _ => between.append(&mut after),
+        }
+    }
+    (between, after)
+}
+
+/// Records the comments in a `local` declaration list, like [`note_exp_comments`];
+/// those after the last declaration only if `trailing`.
+fn note_local_comments(local_decls: &metamodelica::List<metamodelica::Ref<Absyn::ElementItem>>, trailing: bool) {
+    let (mut comments, after) = local_comments(local_decls);
+    if trailing {
+        comments.extend(after);
+    }
+    note_comments(&**local_decls as *const _ as usize, comments);
+}
+
+/// `exp` without its `EXPRESSIONCOMMENT` wrappers, whose comments are appended to `out`.
+fn peel_comments<'e>(mut exp: &'e Absyn::Exp, out: &mut Vec<String>) -> &'e Absyn::Exp {
+    let mut after = Vec::new();
+    while let Absyn::Exp::EXPRESSIONCOMMENT {
+        commentsBefore,
+        exp: inner,
+        commentsAfter,
+    } = exp
+    {
+        out.extend((&**commentsBefore).into_iter().map(|c| c.to_string()));
+        after.splice(0..0, (&**commentsAfter).into_iter().map(|c| c.to_string()));
+        exp = inner;
+    }
+    out.append(&mut after);
+    exp
+}
+
+fn take_trailing_comments(stmts: &mut Vec<TypedStmt>) -> Vec<String> {
+    let code_end = stmts
+        .iter()
+        .rposition(|s| !matches!(s, TypedStmt::Comment(_)))
+        .map_or(0, |i| i + 1);
+    stmts
+        .drain(code_end..)
+        .map(|s| match s {
+            TypedStmt::Comment(c) => c,
+            _ => unreachable!(),
+        })
+        .collect()
 }
 
 /// Lower one algorithm item, appending the resulting statement(s) to `out`.
@@ -4063,9 +4210,10 @@ fn infer_stmt_into<'a>(
         });
         return;
     }
-    if let Some(s) = infer_stmt(item, env, top_level, pkg_prefix, type_vars) {
-        out.push(s);
-    }
+    let window = CommentWindow::open();
+    let s = infer_stmt(item, env, top_level, pkg_prefix, type_vars);
+    out.extend(window.take().into_iter().map(TypedStmt::Comment));
+    out.extend(s);
 }
 
 /// Infer a list of algorithm items into typed statements, threading the env so that
@@ -4093,7 +4241,7 @@ fn infer_stmt<'a>(
 ) -> Option<TypedStmt> {
     let (alg, info) = match item {
         Absyn::AlgorithmItem::ALGORITHMITEM { algorithm_, info, .. } => (algorithm_.as_ref(), info.clone()),
-        Absyn::AlgorithmItem::ALGORITHMITEMCOMMENT { .. } => return None,
+        Absyn::AlgorithmItem::ALGORITHMITEMCOMMENT { comment } => return Some(TypedStmt::Comment(comment.to_string())),
     };
     Some(match alg {
         Absyn::Algorithm::ALG_ASSIGN { assignComponent, value } => {

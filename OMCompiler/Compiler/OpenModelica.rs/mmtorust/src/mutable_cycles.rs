@@ -361,7 +361,7 @@ fn visit_stmt(s: &TypedStmt, f: &mut CallVisit<'_>) {
             else_body.iter().for_each(|s| visit_stmt(s, f));
         }
         TypedStmt::Failure { body } => body.iter().for_each(|s| visit_stmt(s, f)),
-        TypedStmt::Return | TypedStmt::Break | TypedStmt::Continue | TypedStmt::Todo(_) => {}
+        TypedStmt::Return | TypedStmt::Break | TypedStmt::Continue | TypedStmt::Todo(_) | TypedStmt::Comment(_) => {}
     }
 }
 

@@ -401,7 +401,8 @@ impl Scan<'_, '_> {
                 self.stmts(else_body);
             }
             TypedStmt::Failure { body } => self.stmts(body),
-            TypedStmt::Return | TypedStmt::Break | TypedStmt::Continue | TypedStmt::Todo(_) => {}
+            TypedStmt::Return | TypedStmt::Break | TypedStmt::Continue | TypedStmt::Todo(_) | TypedStmt::Comment(_) => {
+            }
         }
     }
 
