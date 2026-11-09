@@ -353,9 +353,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "openmodelica_modelica_diff"
+version = "0.1.0"
+
+[[package]]
 name = "openmodelica_omcruntime"
 version = "0.1.0"
 dependencies = [
+ "openmodelica_modelica_diff",
  "openmodelica_package_manager",
  "openmodelica_version",
  "openmodelica_zip",

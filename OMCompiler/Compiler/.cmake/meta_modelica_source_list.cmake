@@ -412,9 +412,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NSimCode/NSimVar.mo
 
     ${CMAKE_CURRENT_SOURCE_DIR}/Lexers/LexerJSON.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Lexers/LexerModelicaDiff.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Parsers/JSON.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Parsers/SimpleModelicaParser.mo
 
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/CevalScriptOMSimulator.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/ProbeTree.mo
@@ -481,7 +479,6 @@ set(OMC_MM_BACKEND_SOURCES
 
     # ${CMAKE_CURRENT_SOURCE_DIR}/Util/BasePVector.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/ContainerImage.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/DiffAlgorithm.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/DisjointSets.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/ExpandableArray.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/FFI.mo
@@ -495,6 +492,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableCrToCrEqLst.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableSimCodeEqCache.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableSM1.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/ModelicaDiff.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/OMGraphics.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/OMSimulatorExt.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/PriorityQueue.mo
