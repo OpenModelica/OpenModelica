@@ -1,0 +1,76 @@
+// name: Obfuscation6
+// keywords:
+// status: correct
+// cflags: -d=newInst
+// teardown_command: rm -rf P.Test* output.log
+//
+// Checks that the public components of an encrypted class that the access
+// level does not show are obfuscated too, #17938.
+//
+
+loadString("
+package P
+  connector RealInput = input Real;
+  connector RealOutput = output Real;
+
+  block Gain
+    parameter Real k \"gain\";
+    RealInput u;
+    RealOutput y;
+  equation
+    y = k*u;
+  end Gain;
+
+  model Secret \"default access is Access.documentation\"
+    parameter Real g \"visible gain\";
+    RealInput u \"visible input\";
+    RealOutput y \"visible output\";
+    Gain gain(k = g) annotation(Placement(transformation(extent = {{-10, -10}, {10, 10}})));
+    Real s \"secret variable\";
+  equation
+    gain.u = u;
+    s = sin(gain.y);
+    y = s;
+  end Secret;
+
+  model SecretDiagram
+    parameter Real g;
+    RealInput u;
+    RealOutput y;
+    Gain gain(k = g) annotation(Placement(transformation(extent = {{-10, -10}, {10, 10}})));
+    Real s \"secret variable\";
+  equation
+    gain.u = u;
+    s = sin(gain.y);
+    y = s;
+    annotation(Protection(access = Access.diagram));
+  end SecretDiagram;
+
+  model Test
+    Secret c1(g = 2);
+    SecretDiagram c2(g = 3);
+  equation
+    c1.u = time;
+    c2.u = c1.y;
+    annotation(Protection(access = Access.nonPackageText));
+  end Test;
+end P;
+", "P.moc"); getErrorString();
+
+simulate(P.Test, stopTime = 0.1); getErrorString();
+readSimulationResultVars("P.Test_res.mat"); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "P.Test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'P.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"c1.g", "c1.n1.n2", "c1.n1.n3", "c1.n1.n4", "c1.n5", "c1.u", "c1.y", "c2.g", "c2.gain.k", "c2.gain.u", "c2.gain.y", "c2.n6", "c2.u", "c2.y", "time"}
+// ""
+// endResult

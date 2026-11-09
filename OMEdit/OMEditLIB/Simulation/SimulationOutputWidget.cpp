@@ -945,19 +945,55 @@ void SimulationOutputWidget::compilationProcessFinishedHelper(int exitCode, QPro
   updateMessageTab(progressStr);
   mpArchivedSimulationItem->setStatus(Helper::finished);
   // remove the generated files
-  if (mSimulationOptions.getBuildOnly()) {
+  if (usesEncryptedLibrary()) {
+    // the generated code of an encrypted library must not stay on disk
+    deleteIntermediateCompilationFiles(true);
+  } else if (mSimulationOptions.getBuildOnly()) {
     deleteIntermediateCompilationFiles();
   }
 }
 #endif // QT_CONFIG(process)
 
 /*!
+ * \brief SimulationOutputWidget::usesEncryptedLibrary
+ * Returns true if the simulated class uses an encrypted library.
+ */
+bool SimulationOutputWidget::usesEncryptedLibrary() const
+{
+  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  LibraryTreeItem *pRootLibraryTreeItem = pLibraryTreeModel->getRootLibraryTreeItem();
+  bool encryptedLibraryLoaded = false;
+  for (int i = 0; i < pRootLibraryTreeItem->childrenSize(); i++) {
+    if (pRootLibraryTreeItem->childAt(i)->isEncryptedClass()) {
+      encryptedLibraryLoaded = true;
+      break;
+    }
+  }
+  if (!encryptedLibraryLoaded) {
+    return false;
+  }
+  const QList<QString> usedClassNames = MainWindow::instance()->getOMCProxy()->getUsedClassNames(mSimulationOptions.getClassName());
+  // omc could not tell which classes are used, so assume the encrypted library is one of them
+  if (usedClassNames.isEmpty()) {
+    return true;
+  }
+  foreach (const QString &usedClassName, usedClassNames) {
+    LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItemOneLevel(StringHandler::getFirstWordBeforeDot(usedClassName));
+    if (pLibraryTreeItem && pLibraryTreeItem->isEncryptedClass()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/*!
  * \brief SimulationOutputWidget::deleteIntermediateCompilationFiles
  * Deletes the intermediate compilation files
+ * \param force - delete the files even if the user wants to keep them.
  */
-void SimulationOutputWidget::deleteIntermediateCompilationFiles()
+void SimulationOutputWidget::deleteIntermediateCompilationFiles(bool force)
 {
-  if (OptionsDialog::instance()->getSimulationPage()->getDeleteIntermediateCompilationFilesCheckBox()->isChecked()) {
+  if (force || OptionsDialog::instance()->getSimulationPage()->getDeleteIntermediateCompilationFilesCheckBox()->isChecked()) {
     const QString workingDirectory = mSimulationOptions.getWorkingDirectory();
 
     QStringList filesList = QDir(workingDirectory).entryList(mGeneratedFilesList, QDir::Files | QDir::NoSymLinks |
