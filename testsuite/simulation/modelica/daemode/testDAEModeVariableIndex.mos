@@ -64,15 +64,19 @@ res3 := simulate(DAEModeVariableIndex2D, stopTime = 0.5);
 err3 := sinh(val(A[2, 3], 0.5)) - val(x, 0.5);
 res4 := simulate(DAEModeVariableIndexAlg, stopTime = 0.5);
 err4 := val(x, 0.5) - exp(-0.5);
+msg1 := res1.messages;
+msg2 := res2.messages;
+msg3 := res3.messages;
+msg4 := res4.messages;
 echo(true);
 getErrorString();
-regexBool(res1.messages, "The simulation finished successfully");
+regexBool(msg1, "The simulation finished successfully");
 abs(err1) < 1e-6;
-regexBool(res2.messages, "The simulation finished successfully");
+regexBool(msg2, "The simulation finished successfully");
 abs(err2) < 1e-6;
-regexBool(res3.messages, "The simulation finished successfully");
+regexBool(msg3, "The simulation finished successfully");
 abs(err3) < 1e-6;
-regexBool(res4.messages, "The simulation finished successfully");
+regexBool(msg4, "The simulation finished successfully");
 abs(err4) < 1e-5;
 
 // Result:
