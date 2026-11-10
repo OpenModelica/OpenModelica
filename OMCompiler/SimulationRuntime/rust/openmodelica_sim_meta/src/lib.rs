@@ -3243,7 +3243,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
                     });
                 }
             }
-            let mut jac = |r: &mut Reader| -> core::result::Result<Option<ReconJac>, &'static str> {
+            let jac = |r: &mut Reader| -> core::result::Result<Option<ReconJac>, &'static str> {
                 Ok(match r.u8()? {
                     0 => None,
                     _ => Some(ReconJac {
@@ -3268,7 +3268,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
             })
         }
     };
-    let mut info = |r: &mut Reader| -> core::result::Result<SrcInfo, &'static str> {
+    let info = |r: &mut Reader| -> core::result::Result<SrcInfo, &'static str> {
         Ok(SrcInfo {
             file: r.string()?,
             line_start: r.u32()? as i32,

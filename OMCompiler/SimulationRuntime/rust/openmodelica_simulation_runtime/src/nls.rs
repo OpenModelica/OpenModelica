@@ -33,7 +33,7 @@ fn stage(outer: c_int) -> c_int {
 /// The driver's failed-system slot (`Layout::nls_fail_off`): the equation index
 /// plus one of the first system a pass could not solve, 0 for none. Mapped into the
 /// layout by `data::build_regions`.
-pub static mut nls_fail_slot: i32 = 0;
+pub static mut NLS_FAIL_SLOT: i32 = 0;
 
 /// `NLS_SOLVER_STATUS` (simulation_data.h).
 const NLS_FAILED: c_int = 0;
@@ -394,8 +394,8 @@ impl nls::NlsState for CState {
             (*self.sys).solved = NLS_FAILED;
             // First-writer-wins, as C throws out of the equation list at the first
             // failure and never reports a later one.
-            if nls_fail_slot == 0 {
-                nls_fail_slot = eq_index as i32 + 1;
+            if NLS_FAIL_SLOT == 0 {
+                NLS_FAIL_SLOT = eq_index as i32 + 1;
             }
         }
     }
