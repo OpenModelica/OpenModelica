@@ -47,8 +47,8 @@ use std::fs::OpenOptions;
 use std::io::{BufWriter, Seek, SeekFrom, Write};
 use std::sync::{Arc, Mutex};
 
+use arcstr::{ArcStr, literal};
 use metamodelica::Result;
-use arcstr::{literal, ArcStr};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(i32)]
@@ -101,16 +101,25 @@ impl FileInner {
         #[cfg(not(target_arch = "wasm32"))]
         {
             match self.file.as_mut() {
-                Some(f) => f
-                    .write_all(bytes)
-                    .map_err(|e| fail(format!("File.{what}: Failed to write to file: {} error: {e}", self.name))),
-                None => Err(fail(format!("File.{what}: Failed to write to file: {} (not open)", self.name))),
+                Some(f) => f.write_all(bytes).map_err(|e| {
+                    fail(format!(
+                        "File.{what}: Failed to write to file: {} error: {e}",
+                        self.name
+                    ))
+                }),
+                None => Err(fail(format!(
+                    "File.{what}: Failed to write to file: {} (not open)",
+                    self.name
+                ))),
             }
         }
         #[cfg(target_arch = "wasm32")]
         {
             if self.mode != Some(Mode::Write) {
-                return Err(fail(format!("File.{what}: Failed to write to file: {} (not open)", self.name)));
+                return Err(fail(format!(
+                    "File.{what}: Failed to write to file: {} (not open)",
+                    self.name
+                )));
             }
             let end = self.pos + bytes.len();
             if self.buf.len() < end {
@@ -196,11 +205,7 @@ impl File {
                     name: literal!("[no open file]"),
                 })),
             }),
-            Some(id) => FILE_REGISTRY.with(|r| {
-                r.borrow().get(&id).cloned().ok_or_else(|| {
-                    "error"
-                })
-            }),
+            Some(id) => FILE_REGISTRY.with(|r| r.borrow().get(&id).cloned().ok_or_else(|| "error")),
         }
     }
 }
@@ -233,7 +238,12 @@ pub fn open(file: File, filename: ArcStr, mode: Mode) -> Result<()> {
                 .truncate(true)
                 .open(filename.as_str()),
         }
-        .map_err(|e| fail(format!("File.open: Failed to open file {filename} with mode {}: {e}", mode as i32)))?;
+        .map_err(|e| {
+            fail(format!(
+                "File.open: Failed to open file {filename} with mode {}: {e}",
+                mode as i32
+            ))
+        })?;
         guard.file = Some(BufWriter::with_capacity(64 * 1024, handle));
         guard.name = filename;
         Ok(())
@@ -245,7 +255,10 @@ pub fn open(file: File, filename: ArcStr, mode: Mode) -> Result<()> {
         match mode {
             Mode::Read => {
                 let bytes = openmodelica_wasi::read(filename.as_str()).ok_or_else(|| {
-                    fail(format!("File.open: Failed to open file {filename} with mode {}: No such file or directory", mode as i32))
+                    fail(format!(
+                        "File.open: Failed to open file {filename} with mode {}: No such file or directory",
+                        mode as i32
+                    ))
                 })?;
                 guard.buf = bytes;
             }
@@ -341,6 +354,21 @@ pub fn writeReal(file: File, data: metamodelica::Real, format: ArcStr) -> Result
         _ => data.to_string(),
     };
     guard.write_bytes(s.as_bytes(), "writeReal")
+}
+
+pub fn writeBinaryInteger(file: File, data: i32, bytes: i32) -> Result<()> {
+    if !matches!(bytes, 1 | 2 | 4 | 8) {
+        return Err(fail(format!(
+            "File.writeBinaryInteger: Invalid number of bytes: {bytes}"
+        )));
+    }
+    let mut guard = file.inner.lock().unwrap();
+    guard.write_bytes(&(data as i64).to_le_bytes()[..bytes as usize], "writeBinaryInteger")
+}
+
+pub fn writeBinaryReal(file: File, data: metamodelica::Real) -> Result<()> {
+    let mut guard = file.inner.lock().unwrap();
+    guard.write_bytes(&data.0.to_le_bytes(), "writeBinaryReal")
 }
 
 pub fn writeEscape(file: File, data: ArcStr, escape: Escape) -> Result<()> {
@@ -478,8 +506,15 @@ pub fn releaseReference(file: File) -> Result<()> {
     // file that was never registered is an accounting bug upstream).
     let released = FILE_REGISTRY.with(|r| {
         let mut reg = r.borrow_mut();
-        match reg.iter().find(|(_, f)| Arc::ptr_eq(&f.inner, &file.inner)).map(|(id, _)| *id) {
-            Some(id) => { reg.remove(&id); true }
+        match reg
+            .iter()
+            .find(|(_, f)| Arc::ptr_eq(&f.inner, &file.inner))
+            .map(|(id, _)| *id)
+        {
+            Some(id) => {
+                reg.remove(&id);
+                true
+            }
             None => false,
         }
     });

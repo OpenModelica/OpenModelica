@@ -76,7 +76,7 @@ abs(val(r[12].n.i, 0.1, "literalConnects_SameAC_res.mat") + 1/16) < 1e-10;
 // Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
 // Notification: Automatically loaded package Modelica 4.1.0 due to usage.
 // "
-// ""
+// "Check of literalConnects.Gaps failed with 1 error(s)."
 // "[NFFrontEnd/NFResizableConnections.mo:0:0-0:0:writable] Error: Internal error NFResizableConnections.splitPieces: --resizableArrays: a connector array is split into more than 3 pieces (connections of many single elements, or shifted connections around a cycle).
 // "
 // record SimulationResult

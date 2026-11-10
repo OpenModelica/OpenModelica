@@ -52,7 +52,7 @@ readFile("fmi_attributes_25.xml"); getErrorString();
 //     needsExecutionTool=\"false\"
 //     completedIntegratorStepNotNeeded=\"false\"
 //     canBeInstantiatedOnlyOncePerProcess=\"false\"
-//     canNotUseMemoryManagementFunctions=\"false\"
+//     canNotUseMemoryManagementFunctions=\"true\"
 //     canGetAndSetFMUstate=\"true\"
 //     canSerializeFMUstate=\"true\"
 //     providesDirectionalDerivative=\"false\">

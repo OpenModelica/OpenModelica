@@ -307,7 +307,7 @@ simulate(ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_ev
 // ""
 // "Check of ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar completed successfully.
 // Class ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar has 137 equation(s) and 137 variable(s).
-// 110 of these are trivial equation(s)."
+// 113 of these are trivial equation(s)."
 // ""
 // record SimulationResult
 //     resultFile = "ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar_res.mat",

@@ -57,6 +57,8 @@
 #include <QMap>
 #include <QVariant>
 
+#include <cmath>
+
 using namespace OMPlot;
 
 /*!
@@ -769,10 +771,10 @@ void PlotWindowContainer::saveFigureInModel()
     min.toDouble(&minOk);
     max.toDouble(&maxOk);
     if (minOk) {
-      fields.append(QString("min={%1}").arg(min));
+      fields.append(QString("min=%1").arg(min));
     }
     if (maxOk) {
-      fields.append(QString("max={%1}").arg(max));
+      fields.append(QString("max=%1").arg(max));
     }
     if (!label.isEmpty()) {
       fields.append(QString("label=\"%1\"").arg(StringHandler::escapeString(label)));
@@ -783,10 +785,15 @@ void PlotWindowContainer::saveFigureInModel()
     return fields.isEmpty() ? QString() : QString("Axis(%1)").arg(fields.join(","));
   };
 
-  const QString xAxis = makeAxisAnnotation(pPlotWindow->getXCustomLabel(), pPlotWindow->getXRangeMin(),
-                                           pPlotWindow->getXRangeMax(), pPlotWindow->getLogXCheckBox()->isChecked());
-  const QString yAxis = makeAxisAnnotation(pPlotWindow->getYCustomLabel(), pPlotWindow->getYRangeMin(),
-                                           pPlotWindow->getYRangeMax(), pPlotWindow->getLogYCheckBox()->isChecked());
+  const QwtScaleDiv &xScale = pPlotWindow->getPlot()->axisScaleDiv(QwtPlot::xBottom);
+  const QwtScaleDiv &yScale = pPlotWindow->getPlot()->axisScaleDiv(QwtPlot::yLeft);
+  const bool isZoomed = pPlotWindow->getPlot()->getPlotZoomer()->zoomRectIndex() > 0;
+  const QRectF zoomRect = pPlotWindow->getPlot()->getPlotZoomer()->zoomRect();
+  const double xMinimum = isZoomed ? zoomRect.left() : xScale.lowerBound();
+  const double xMaximum = isZoomed ? zoomRect.right() : xScale.upperBound();
+  const double yMinimum = isZoomed ? qMin(zoomRect.top(), zoomRect.bottom()) : yScale.lowerBound();
+  const double yMaximum = isZoomed ? qMax(zoomRect.top(), zoomRect.bottom()) : yScale.upperBound();
+  const bool yAxisAutoScale = pPlotWindow->getPlot()->axisAutoScale(QwtPlot::yLeft);
   const QString plotTitle = pPlotWindow->getPlot()->title().text();
   const QVariant figureTitleProperty = pPlotWindow->property(Helper::modelicaFigureTitle.toStdString().c_str());
   const QString figureTitle = figureTitleProperty.isValid() ? figureTitleProperty.toString() : pPlotWindow->windowTitle();
@@ -794,9 +801,29 @@ void PlotWindowContainer::saveFigureInModel()
   foreach (const QString &className, curvesByModel.keys()) {
     QStringList curveAnnotations;
     const QList<PlotCurve*> modelCurves = curvesByModel.value(className);
+    bool timeXAxis = pPlotWindow->isPlot();
+    bool hasTimeValues = false;
+    double timeStart = 0.0;
+    double timeStop = 0.0;
     for (int i = 0; i < modelCurves.size(); ++i) {
       PlotCurve *pPlotCurve = modelCurves.at(i);
       const QString xVariable = pPlotCurve->getXVariable().isEmpty() ? QStringLiteral("time") : pPlotCurve->getXVariable();
+      if (xVariable != QStringLiteral("time")) {
+        timeXAxis = false;
+      } else {
+        for (double time : pPlotCurve->mXAxisVector) {
+          if (!std::isfinite(time)) {
+            continue;
+          }
+          if (!hasTimeValues) {
+            timeStart = timeStop = time;
+            hasTimeValues = true;
+          } else {
+            timeStart = qMin(timeStart, time);
+            timeStop = qMax(timeStop, time);
+          }
+        }
+      }
       QStringList curveFields;
       if (xVariable != QStringLiteral("time")) {
         curveFields.append(QString("x=\"%1\"").arg(StringHandler::escapeString(xVariable)));
@@ -810,6 +837,17 @@ void PlotWindowContainer::saveFigureInModel()
       }
       curveAnnotations.append(QString("Curve(%1)").arg(curveFields.join(",")));
     }
+    const bool showsFullTimeRange = timeXAxis && hasTimeValues
+        && xMinimum <= timeStart && xMaximum >= timeStop;
+    const double timeUnitFactor = timeXAxis && !showsFullTimeRange ? pPlotWindow->getTimeUnitFactor() : 1.0;
+    const QString xMin = showsFullTimeRange ? QString() : StringHandler::number(xMinimum / timeUnitFactor);
+    const QString xMax = showsFullTimeRange ? QString() : StringHandler::number(xMaximum / timeUnitFactor);
+    const QString xAxis = makeAxisAnnotation(pPlotWindow->getXCustomLabel(), xMin, xMax,
+                                             pPlotWindow->getLogXCheckBox()->isChecked());
+    const QString yMin = yAxisAutoScale ? QString() : StringHandler::number(yMinimum);
+    const QString yMax = yAxisAutoScale ? QString() : StringHandler::number(yMaximum);
+    const QString yAxis = makeAxisAnnotation(pPlotWindow->getYCustomLabel(), yMin, yMax,
+                                             pPlotWindow->getLogYCheckBox()->isChecked());
 
     LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(className);
     if (!pLibraryTreeItem || !pLibraryTreeItem->isModelica() || pLibraryTreeItem->isSystemLibrary()) {

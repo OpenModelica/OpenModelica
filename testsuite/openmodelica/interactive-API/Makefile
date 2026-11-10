@@ -20,6 +20,13 @@ Bug3979.mos \
 Bug4248.mos \
 Buildings.PartialFlowMachine.mos \
 checkAllModelsRecursive1.mos \
+CheckModel1.mos \
+CheckModel2.mos \
+CheckModel3.mos \
+CheckModel4.mos \
+CheckModel5.mos \
+CheckModel6.mos \
+CheckModelNonexistentClass1.mos \
 CheckModelExtObj1.mos \
 choicesAllMatching.mos \
 Cmd1.mos \
@@ -44,6 +51,7 @@ DefaultComponentName.mos \
 DeleteConnection.mos \
 deleteEquation1.mos \
 DialogAnnotation.mos \
+ErrorMessageFileName.mos \
 evaluateProbe1.mos \
 evaluateProbe2.mos \
 evaluateProbe3.mos \
@@ -74,6 +82,7 @@ getInstanceDiagram3.mos \
 getInstanceDiagram4.mos \
 getClassNames.mos \
 getCommandLineOptions.mos \
+NewBackendFlagsReset.mos \
 getComponentCondition.mos \
 GetComponents.mos \
 getComponentsTestNF.mos \
@@ -142,6 +151,7 @@ Modelica.Media.Examples.getComponents.mos \
 MoveClass2.mos \
 MoveClass.mos \
 ModelicaError.mos \
+ModelicaPathReset.mos \
 Obfuscation1.mos \
 Obfuscation2.mos \
 Obfuscation3.mos \
@@ -160,6 +170,7 @@ ReverseLookup2.mos \
 ReverseLookup3.mos \
 RunScript.mos \
 saveShort.mos \
+ScriptTypeNameIterators.mos \
 saveTotalModel.mos \
 saveTotalModel2.mos \
 saveTotalModel3.mos \
@@ -199,6 +210,9 @@ Ticket6287and6288.mos \
 Ticket6300.mos \
 Ticket6307.mos \
 Ticket6406.mos \
+simulateAcausalDAE1.mos \
+simulateAcausalDAE2.mos \
+simulateAcausalDAE3.mos \
 translateAcausalDAE1.mos \
 translateResidualsDAE1.mos \
 translateResidualsDAE2.mos \

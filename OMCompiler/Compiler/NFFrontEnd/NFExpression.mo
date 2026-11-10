@@ -1683,8 +1683,7 @@ public
       case BINARY() guard List.all(subscript :: restSubscripts, isCheapSubscript)
         then applySubscriptBinary(subscript, exp, restSubscripts, applyToScope);
 
-      case UNARY() guard Type.isArray(Operator.typeOf(exp.operator)) and
-                         List.all(subscript :: restSubscripts, isCheapSubscript)
+      case UNARY() guard Type.isArray(Operator.typeOf(exp.operator))
         algorithm
           outExp := applySubscript(subscript, exp.exp, restSubscripts, applyToScope);
         then
@@ -2293,6 +2292,39 @@ public
     res := contains(exp, function containsIterator2(iterator = iterator));
   end containsIterator;
 
+  function isIteratorNamed
+    input Expression exp;
+    input list<String> names;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case CREF() guard ComponentRef.isIterator(exp.cref)
+        then List.isMemberOnTrue(ComponentRef.firstName(exp.cref), names, stringEq);
+      else false;
+    end match;
+  end isIteratorNamed;
+
+  function replaceIteratorsByName
+    "Replaces iterators by name, also in the dimensions of the types. Unlike
+     replaceIterator this also works for different iterator nodes with the same
+     name, e.g. the binding iterators of a vectorized component."
+    input output Expression exp;
+    input UnorderedMap<String, Expression> values;
+  algorithm
+    exp := map(exp, function replaceIteratorByName(values = values));
+  end replaceIteratorsByName;
+
+  function replaceIteratorByName
+    input output Expression exp;
+    input UnorderedMap<String, Expression> values;
+  algorithm
+    exp := match exp
+      case CREF() guard ComponentRef.isIterator(exp.cref)
+        then UnorderedMap.getOrDefault(ComponentRef.firstName(exp.cref), values, exp);
+      else applyToType(exp, function Type.replaceIteratorsByName(values = values));
+    end match;
+  end replaceIteratorByName;
+
   function arrayFromList
     input list<Expression> inExps;
     input Type elemTy;
@@ -2438,11 +2470,11 @@ public
       case MULTARY() guard(listEmpty(exp.arguments)) then "1/" + multaryString(exp.inv_arguments, exp, exp.operator);
 
       case MULTARY() then multaryString(exp.arguments, exp, exp.operator) +
-                          Operator.symbol(Operator.invert(exp.operator)) +
+                          Operator.symbolSpaced(Operator.invert(exp.operator)) +
                           multaryString(exp.inv_arguments, exp, exp.operator);
 
       case BINARY() then operandString(exp.exp1, exp, true) +
-                         Operator.symbol(exp.operator) +
+                         Operator.symbolSpaced(exp.operator) +
                          operandString(exp.exp2, exp, false);
 
       case UNARY() then Operator.symbol(exp.operator, "") +
@@ -2543,11 +2575,11 @@ public
       case MULTARY() guard(listEmpty(exp.arguments)) then "1/" + multaryFlatString(exp.inv_arguments, exp, exp.operator, format);
 
       case MULTARY() then multaryFlatString(exp.arguments, exp, exp.operator, format) +
-                          Operator.symbol(Operator.invert(exp.operator)) +
+                          Operator.symbolSpaced(Operator.invert(exp.operator)) +
                           multaryFlatString(exp.inv_arguments, exp, exp.operator, format);
 
       case BINARY() then operandFlatString(exp.exp1, exp, true, format) +
-                         Operator.symbol(exp.operator) +
+                         Operator.symbolSpaced(exp.operator) +
                          operandFlatString(exp.exp2, exp, false, format);
 
       case UNARY() then Operator.symbol(exp.operator, "") +
@@ -2657,7 +2689,7 @@ public
     input Boolean parenthesize = true;
     output String str;
   algorithm
-    str := stringDelimitList(list(operandString(e, exp, false) for e in arguments), Operator.symbol(operator));
+    str := stringDelimitList(list(operandString(e, exp, false) for e in arguments), Operator.symbolSpaced(operator));
     if parenthesize and listLength(arguments) > 1 then
       str := "(" + str + ")";
     end if;
@@ -2671,7 +2703,7 @@ public
     input Boolean parenthesize = true;
     output String str;
   algorithm
-    str := stringDelimitList(list(operandFlatString(e, exp, false, format) for e in arguments), Operator.symbol(operator));
+    str := stringDelimitList(list(operandFlatString(e, exp, false, format) for e in arguments), Operator.symbolSpaced(operator));
     if parenthesize and listLength(arguments) > 1 then
       str := "(" + str + ")";
     end if;
@@ -3313,11 +3345,32 @@ public
     outExp := match exp
       local
         Expression e1, e2, e3, e4;
+      ComponentRef cr;
+      Call call;
+      array<Expression> arr;
+      list<Expression> args, inv_args;
+      list<list<Expression>> rows;
+      list<Subscript> subs;
 
       case CLKCONST() then CLKCONST(ClockKind.mapExp(exp.clk, func));
-      case CREF() then CREF(exp.ty, ComponentRef.mapExp(exp.cref, func));
-      case ARRAY() guard not exp.literal then makeArray(exp.ty, Array.map(exp.elements, function map(func = func)), exp.literal);
-      case MATRIX() then MATRIX(list(list(map(e, func) for e in row) for row in exp.elements));
+
+      case CREF()
+        algorithm
+          cr := ComponentRef.mapExp(exp.cref, func);
+        then
+          if referenceEq(exp.cref, cr) then exp else CREF(exp.ty, cr);
+
+      case ARRAY() guard not exp.literal
+        algorithm
+          arr := Array.mapCheckReferenceEq(exp.elements, function map(func = func));
+        then
+          if referenceEq(exp.elements, arr) then exp else makeArray(exp.ty, arr, exp.literal);
+
+      case MATRIX()
+        algorithm
+          rows := List.mapCheckReferenceEq(exp.elements, function List.mapCheckReferenceEq(inFunc = function map(func = func)));
+        then
+          if referenceEq(exp.elements, rows) then exp else MATRIX(rows);
 
       case RANGE(step = SOME(e2))
         algorithm
@@ -3336,12 +3389,23 @@ public
           if referenceEq(exp.start, e1) and referenceEq(exp.stop, e3)
             then exp else RANGE(exp.ty, e1, NONE(), e3);
 
-      case TUPLE() then TUPLE(exp.ty, list(map(e, func) for e in exp.elements));
+      case TUPLE()
+        algorithm
+          args := List.mapCheckReferenceEq(exp.elements, function map(func = func));
+        then
+          if referenceEq(exp.elements, args) then exp else TUPLE(exp.ty, args);
 
       case RECORD()
-        then RECORD(exp.path, exp.ty, list(map(e, func) for e in exp.elements));
+        algorithm
+          args := List.mapCheckReferenceEq(exp.elements, function map(func = func));
+        then
+          if referenceEq(exp.elements, args) then exp else RECORD(exp.path, exp.ty, args);
 
-      case CALL() then CALL(Call.mapExp(exp.call, func));
+      case CALL()
+        algorithm
+          call := Call.mapExp(exp.call, func);
+        then
+          if referenceEq(exp.call, call) then exp else CALL(call);
 
       case SIZE(dimIndex = SOME(e2))
         algorithm
@@ -3366,10 +3430,11 @@ public
 
       case MULTARY()
         algorithm
-          // ToDo: referenceEq ?
-          exp.arguments := list(map(arg, func) for arg in exp.arguments);
-          exp.inv_arguments := list(map(arg, func) for arg in exp.inv_arguments);
-        then exp;
+          args := List.mapCheckReferenceEq(exp.arguments, function map(func = func));
+          inv_args := List.mapCheckReferenceEq(exp.inv_arguments, function map(func = func));
+        then
+          if referenceEq(exp.arguments, args) and referenceEq(exp.inv_arguments, inv_args)
+            then exp else MULTARY(args, inv_args, exp.operator);
 
       case UNARY()
         algorithm
@@ -3427,8 +3492,12 @@ public
           if referenceEq(exp.exp, e1) then exp else unbox(e1);
 
       case SUBSCRIPTED_EXP()
-        then SUBSCRIPTED_EXP(map(exp.exp, func),
-          list(Subscript.mapExp(s, func) for s in exp.subscripts), exp.ty, exp.split);
+        algorithm
+          e1 := map(exp.exp, func);
+          subs := List.mapCheckReferenceEq(exp.subscripts, function Subscript.mapExp(func = func));
+        then
+          if referenceEq(exp.exp, e1) and referenceEq(exp.subscripts, subs)
+            then exp else SUBSCRIPTED_EXP(e1, subs, exp.ty, exp.split);
 
       case TUPLE_ELEMENT()
         algorithm
@@ -3450,13 +3519,19 @@ public
 
       case SHARED_LITERAL()
         algorithm
-          exp.exp := map(exp.exp, func);
+          e1 := map(exp.exp, func);
+          if not referenceEq(exp.exp, e1) then
+            exp.exp := e1;
+          end if;
         then
           exp;
 
       case PARTIAL_FUNCTION_APPLICATION()
         algorithm
-          exp.args := list(map(e, func) for e in exp.args);
+          args := List.mapCheckReferenceEq(exp.args, function map(func = func));
+          if not referenceEq(exp.args, args) then
+            exp.args := args;
+          end if;
         then
           exp;
 
@@ -3487,10 +3562,14 @@ public
       input output Expression e;
     end MapFunc;
   protected
-    Expression e;
+    Expression e, e2;
   algorithm
     outExp := match exp
-      case SOME(e) then SOME(map(e, func));
+      case SOME(e)
+        algorithm
+          e2 := map(e, func);
+        then
+          if referenceEq(e, e2) then exp else SOME(e2);
       else exp;
     end match;
   end mapOpt;
@@ -5215,10 +5294,12 @@ public
     positive := match exp
       case INTEGER() then exp.value > 0;
       case REAL() then exp.value > 0.0;
-      case CAST() then isPositive(exp.exp);
-      case UNARY() then isNegative(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "min"), isPositive, false);
+      case ARRAY() then Array.all(exp.elements, isPositive);
       case CALL() then Call.isPositive(exp.call);
+      case UNARY() then isNegative(exp.exp);
+      case IF() then isPositive(exp.trueBranch) and isPositive(exp.falseBranch);
+      case CAST() then isPositive(exp.exp);
       else false;
     end match;
   end isPositive;
@@ -5230,10 +5311,12 @@ public
     negative := match exp
       case INTEGER() then exp.value < 0;
       case REAL() then exp.value < 0.0;
-      case CAST() then isNegative(exp.exp);
-      case UNARY() then isPositive(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "max"), isNegative, false);
+      case ARRAY() then Array.all(exp.elements, isNegative);
       case CALL() then Call.isNegative(exp.call);
+      case UNARY() then isPositive(exp.exp);
+      case IF() then isNegative(exp.trueBranch) and isNegative(exp.falseBranch);
+      case CAST() then isNegative(exp.exp);
       else false;
     end match;
   end isNegative;
@@ -5245,11 +5328,12 @@ public
     res := match exp
       case INTEGER() then exp.value <= 0;
       case REAL() then exp.value <= 0.0;
-      case CAST() then isNonPositive(exp.exp);
-      case UNARY() then isNonNegative(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "max"), isNonPositive, false);
-      case CALL() then Call.isNonPositive(exp.call);
       case ARRAY() then Array.all(exp.elements, isNonPositive);
+      case CALL() then Call.isNonPositive(exp.call);
+      case UNARY() then isNonNegative(exp.exp);
+      case IF() then isNonPositive(exp.trueBranch) and isNonPositive(exp.falseBranch);
+      case CAST() then isNonPositive(exp.exp);
       else false;
     end match;
   end isNonPositive;
@@ -5261,10 +5345,12 @@ public
     res := match exp
       case INTEGER() then exp.value >= 0;
       case REAL() then exp.value >= 0.0;
-      case CAST() then isNonNegative(exp.exp);
-      case UNARY() then isNonPositive(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "min"), isNonNegative, false);
+      case ARRAY() then Array.all(exp.elements, isNonNegative);
       case CALL() then Call.isNonNegative(exp.call);
+      case UNARY() then isNonPositive(exp.exp);
+      case IF() then isNonNegative(exp.trueBranch) and isNonNegative(exp.falseBranch);
+      case CAST() then isNonNegative(exp.exp);
       else false;
     end match;
   end isNonNegative;
@@ -6767,6 +6853,46 @@ public
       else false;
     end match;
   end filterSplitIndices2;
+
+  function isSplitSubscriptedExpOf
+    "Returns true if the expression is a split subscripted expression with a
+     split index of the given node."
+    input Expression exp;
+    input InstNode node;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case SUBSCRIPTED_EXP(split = true)
+        then List.any(exp.subscripts, function filterSplitIndices2(node = node));
+      else false;
+    end match;
+  end isSplitSubscriptedExpOf;
+
+  function replaceSplitIndicesOfNode
+    "Replaces the split indices of the given node, the n:th with the n:th of the
+     given subscripts, e.g. {2, 3}[<lay, 1>] -> {2, 3}[$i1]."
+    input output Expression exp;
+    input InstNode node;
+    input list<Subscript> subscripts;
+  algorithm
+    exp := map(exp, function replaceSplitIndicesOfNode2(node = node, subscripts = subscripts));
+  end replaceSplitIndicesOfNode;
+
+  function replaceSplitIndicesOfNode2
+    input output Expression exp;
+    input InstNode node;
+    input list<Subscript> subscripts;
+  algorithm
+    () := match exp
+      case SUBSCRIPTED_EXP(split = true) guard isSplitSubscriptedExpOf(exp, node)
+        algorithm
+          exp.subscripts := list(match s case Subscript.SPLIT_INDEX() guard filterSplitIndices2(s, node)
+            then listGet(subscripts, s.dimIndex); else s; end match for s in exp.subscripts);
+        then
+          ();
+      else ();
+    end match;
+  end replaceSplitIndicesOfNode2;
 
   function expandSplitIndices
     "Replaces split indices in a subscripted expression with : subscripts."

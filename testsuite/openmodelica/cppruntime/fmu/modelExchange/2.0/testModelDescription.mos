@@ -54,7 +54,7 @@ readFile("modelDescription.tmp.xml");
 //     needsExecutionTool=\"false\"
 //     completedIntegratorStepNotNeeded=\"false\"
 //     canBeInstantiatedOnlyOncePerProcess=\"false\"
-//     canNotUseMemoryManagementFunctions=\"false\"
+//     canNotUseMemoryManagementFunctions=\"true\"
 //     canGetAndSetFMUstate=\"true\"
 //     canSerializeFMUstate=\"true\"
 //     providesDirectionalDerivative=\"false\">

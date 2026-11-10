@@ -40,8 +40,10 @@ getErrorString();
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_ASSERT        | info    | [<interactive>:7:3-7:60:writable]
 // |                 | |       | The following assertion has been violated at time 0.204000
-// |                 | |       | ((x < 1.5)) --> \"x is too big at time = 0.204\"
+// |                 | |       | ((x < 1.5), x=1.50381043166378) --> \"x is too big at time = 0.204\"
 // LOG_ASSERT        | error   | No event found, but assert was triggered. Throwing now!
+// module = testAssertFMI, log level = ERROR: [logStatusError][FMU status:Error] <interactive>:7: The following assertion has been violated at time 0.204000
+// ((x < 1.5), x=1.50381043166378) --> \"x is too big at time = 0.204\"
 // module = testAssertFMI, log level = ERROR: [logFmi2Call][FMU status:Error] internalEventUpdate: terminated by an assertion.
 // LOG_ASSERT        | debug   | fmi2NewDiscreteStates failed with status : Error
 // "

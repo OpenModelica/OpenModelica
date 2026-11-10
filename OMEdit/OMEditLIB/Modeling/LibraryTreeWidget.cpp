@@ -54,6 +54,7 @@
 #if !defined(__EMSCRIPTEN__)
 #include "OMS/OMSCalibrationDialog.h"
 #endif
+#include "OMUQ/OMUQDialog.h"
 #include "Git/GitCommands.h"
 #include "Git/CommitChangesDialog.h"
 #include "Util/ResourceCache.h"
@@ -2949,6 +2950,10 @@ void LibraryTreeView::createActions()
   mpOMSCalibrateAction->setStatusTip(tr("Calibrates the parameters of the model against reference data"));
   connect(mpOMSCalibrateAction, &QAction::triggered, this, &LibraryTreeView::OMSCalibrate);
 #endif
+  // omuq UQ activities Action
+  mpOMUQActivitiesAction = new QAction(tr("UQ Activities..."), this);
+  mpOMUQActivitiesAction->setStatusTip(tr("Runs the uncertainty quantification activities attached to the SSP model with omuq"));
+  connect(mpOMUQActivitiesAction, &QAction::triggered, this, &LibraryTreeView::runOMUQActivities);
 }
 
 /*!
@@ -3240,6 +3245,8 @@ void LibraryTreeView::showContextMenu(QPoint point)
 #if !defined(__EMSCRIPTEN__)
             menu.addSeparator();
             menu.addAction(mpOMSCalibrateAction);
+            menu.addSeparator();
+            menu.addAction(mpOMUQActivitiesAction);
 #endif
             menu.addSeparator();
             menu.addAction(mpUnloadOMSModelAction);
@@ -3877,6 +3884,19 @@ void LibraryTreeView::OMSCalibrate()
     pOMSCalibrationDialog->show();
   }
 #endif
+}
+
+/*!
+ * \brief LibraryTreeView::runOMUQActivities
+ * Opens the OMUQDialog to run the UQ activities of the SSP model.
+ */
+void LibraryTreeView::runOMUQActivities()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    OMUQDialog *pOMUQDialog = new OMUQDialog(pLibraryTreeItem, MainWindow::instance());
+    pOMUQDialog->exec();
+  }
 }
 
 /*!

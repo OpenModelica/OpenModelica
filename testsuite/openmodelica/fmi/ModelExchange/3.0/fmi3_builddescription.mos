@@ -38,8 +38,10 @@ system("grep -c \"<SourceFile name=.Mbd.c./>\" Mbd_bd.xml"); getErrorString();
 // <SourceFileSet language="C17">
 // <PreprocessorDefinition name="FMI2_OVERRIDE_FUNCTION_PREFIX"/>
 // <PreprocessorDefinition name="FMI3_OVERRIDE_FUNCTION_PREFIX"/>
+// <PreprocessorDefinition name="HAVE_ZLIB" value="1"/>
 // <IncludeDirectory name="."/>
 // <IncludeDirectory name="fmi"/>
+// <IncludeDirectory name="ModelicaExternalC/zlib"/>
 // 0
 // ""
 // 1

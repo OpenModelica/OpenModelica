@@ -129,10 +129,9 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/revision.h.in ${CMAKE_CURRENT_SOURCE_
 
 
 ## Subdirectories ##########################################################################################
-# We always link a Fortran-ABI BLAS, but SuiteSparse guesses *no* underscore
-# without a Fortran compiler to probe, leaving UMFPACK calling `dgemm` where the
-# BLAS exports `dgemm_`. Pinned, not left to whichever platform configured last:
-# SuiteSparse writes SuiteSparse_config.h into its shared source tree.
+# SuiteSparse writes SuiteSparse_config.h into its shared source tree. Pin its
+# Fortran name mangling so that the header does not depend on which platform
+# configured last.
 set(SUITESPARSE_C_TO_FORTRAN "(name,NAME) name##_" CACHE STRING "C to Fortran name mangling" FORCE)
 
 # The FMI platform tuples, which name the binaries/<platform> subdirectory omc

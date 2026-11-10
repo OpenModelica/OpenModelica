@@ -1883,7 +1883,7 @@ impure function getInstallationDirectoryPath
   output String installationDirectoryPath;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>This returns OPENMODELICAHOME if it is set; on some platforms the default path is returned if it is not set.</p>
+<p>Returns the directory OpenModelica is installed in. omc finds it from the location of its own files and sets the environment variable OPENMODELICAHOME to it.</p>
 </html>"),
   preferredView="text");
 end getInstallationDirectoryPath;
@@ -1894,8 +1894,8 @@ impure function setModelicaPath
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Sets the OPENMODELICALIBRARY (MODELICAPATH in the language specification) environment variable in OpenModelica. See <a href=\"modelica://OpenModelica.Scripting.loadModel\">loadModel()</a> for a description of what OPENMODELICALIBRARY is used for.</p>
-<p>Set it to empty string to clear it: setModelicaPath(\"\");</p>
+<p>Sets the OPENMODELICALIBRARY (MODELICAPATH in the language specification) in OpenModelica and the environment variable with the same name. See <a href=\"modelica://OpenModelica.Scripting.loadModel\">loadModel()</a> for a description of what OPENMODELICALIBRARY is used for.</p>
+<p>Set it to the empty string to reset it to the default: setModelicaPath(\"\"); <a href=\"modelica://OpenModelica.Scripting.getModelicaPath\">getModelicaPath()</a> tells what the default is.</p>
 </html>"),
   preferredView="text");
 end setModelicaPath;
@@ -1906,8 +1906,9 @@ impure function getModelicaPath
 external "builtin";
 annotation(Documentation(info="<html>
 <p>The OPENMODELICALIBRARY (MODELICAPATH in the language specification) is a list of paths to search when trying to  <a href=\"modelica://OpenModelica.Scripting.loadModel\">load a library</a>. It is a string separated by colon (:) on all OSes except Windows, which uses semicolon (;).</p>
-<p>To override the default path (<a href=\"modelica://OpenModelica.Scripting.getInstallationDirectoryPath\">OPENMODELICAHOME</a>/lib/omlibrary/:~/.openmodelica/libraries/), set the environment variable OPENMODELICALIBRARY=...</p>
-<p>On Windows the HOME directory '~' is replaced by %APPDATA%</p>
+<p>The default is the value of the environment variable OPENMODELICALIBRARY when omc starts, or ~/.openmodelica/libraries/ if it is not set. The environment variable MODELICAPATH is not used. To change the path while omc runs, use <a href=\"modelica://OpenModelica.Scripting.setModelicaPath\">setModelicaPath()</a>.</p>
+<p>The <a href=\"modelica://OpenModelica.Scripting.installPackage\">package manager</a> installs libraries into ~/.openmodelica/libraries/. It can only be used if this directory is in the OPENMODELICALIBRARY as the same text, with or without the last '/'.</p>
+<p>'~' is the directory that <a href=\"modelica://OpenModelica.Scripting.getHomeDirectoryPath\">getHomeDirectoryPath()</a> returns. On Windows it is %APPDATA%.</p>
 </html>"),
   preferredView="text");
 end getModelicaPath;
@@ -2521,6 +2522,7 @@ impure function checkAllModelsRecursive
   "Checks all models recursively and returns number of variables and equations."
   input TypeName className;
   input Boolean checkProtected = false "Checks also protected classes if true";
+  input Boolean reportTimes = true "Reports time elapsed for every checked model if true";
   output String result;
 external "builtin";
 annotation(preferredView="text");
@@ -3080,7 +3082,7 @@ end importFMUModelDescription;
 impure function translateModelFMU
   "Translates a model into C code for a FMU without building it."
   input TypeName className "the class that should translated";
-  input String version = "2.0" "FMU version, 1.0 or 2.0.";
+  input String version = "2.0" "FMU version, 2.0 or 3.0 (1.0 is deprecated).";
   input String fmuType = "me" "FMU type, me (model exchange), cs (co-simulation), me_cs (both model exchange and co-simulation)";
   input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"className\"";
   input String platforms[:] = {"static"} "The list of platforms to generate code for.
@@ -3104,7 +3106,7 @@ end translateModelFMU;
 impure function buildModelFMU
   "Translates a Modelica model into a Functional Mockup Unit."
   input TypeName className "the class that should translated";
-  input String version = "2.0" "FMU version, 1.0 or 2.0.";
+  input String version = "2.0" "FMU version, 2.0 or 3.0 (1.0 is deprecated).";
   input String fmuType = "me" "FMU type, me (model exchange), cs (co-simulation), me_cs (both model exchange and co-simulation)";
   input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"className\"";
   input String platforms[:] = {"static"} "The list of platforms to generate code for.
@@ -5421,6 +5423,7 @@ external "builtin";
 annotation(
   Documentation(info="<html>
   Installs the package with the best matching version (or only the specified version if exactMatch is given).
+  The package is installed into ~/.openmodelica/libraries/, which must be in the <a href=\"modelica://OpenModelica.Scripting.getModelicaPath\">OPENMODELICALIBRARY</a>.
   To update the index, call <code>updatePackageIndex()</code>.
 </html>"),
   preferredView="text");

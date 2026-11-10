@@ -2,6 +2,7 @@ TEST = ../../../rtest -v
 
 
 TESTFILES = \
+lssMinSize.mos \
 nlssMaxDensity.mos \
 nlssMinSize.mos \
 testIDAnoEquidistantTimeEvent.mos \

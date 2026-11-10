@@ -48,6 +48,7 @@
 #include "OMS/OMSSimulationOutputWidget.h"
 #include "FMI/FMUExportOutputWidget.h"
 #include "CRML/CRMLTranslatorOutputWidget.h"
+#include "OMUQ/OMUQOutputWidget.h"
 
 #include <QMenu>
 #include <QMessageBox>
@@ -639,6 +640,13 @@ bool MessagesWidget::closeTab(int index)
   // Close CRMLTranslatorOutputWidget
   CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = qobject_cast<CRMLTranslatorOutputWidget*>(mpMessagesTabWidget->widget(index));
   if (pCRMLTranslatorOutputWidget && !pCRMLTranslatorOutputWidget->isTranslationProcessRunning()) {
+    mpMessagesTabWidget->removeTab(index);
+    emit messageTabClosed(index);
+    return true;
+  }
+  // Close OMUQOutputWidget
+  OMUQOutputWidget *pOMUQOutputWidget = qobject_cast<OMUQOutputWidget*>(mpMessagesTabWidget->widget(index));
+  if (pOMUQOutputWidget && !pOMUQOutputWidget->isProcessRunning()) {
     mpMessagesTabWidget->removeTab(index);
     emit messageTabClosed(index);
     return true;

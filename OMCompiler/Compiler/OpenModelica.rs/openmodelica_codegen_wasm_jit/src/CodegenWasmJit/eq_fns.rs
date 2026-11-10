@@ -21,6 +21,9 @@ pub(super) enum EqUnit<'a> {
     ),
     /// A SimCode equation; `Some(mask)` adds the DAE-mode stage guard.
     Eq(&'a metamodelica::Ref<SimCode::SimEqSystem>, Option<u32>),
+    /// A SimCode equation evaluated only if byte `k` of the mask the second
+    /// parameter points at is set (`updateTunableParameters`).
+    Masked(&'a metamodelica::Ref<SimCode::SimEqSystem>, u32),
 }
 
 impl EqUnit<'_> {
@@ -33,7 +36,7 @@ impl EqUnit<'_> {
                 SimCode::SimEqSystem::SES_SIMPLE_ASSIGN { cref, exp, .. } => Some((cref, exp)),
                 _ => None,
             },
-            EqUnit::Eq(_, Some(_)) => None,
+            EqUnit::Eq(_, Some(_)) | EqUnit::Masked(..) => None,
         }
     }
 }
@@ -71,6 +74,12 @@ pub(super) fn lower_unit(
             if stages.is_some() {
                 ctx.sim_end_block();
             }
+            Ok(())
+        }
+        EqUnit::Masked(eq, k) => {
+            ctx.sim_mask_guard(*k);
+            lower_equation(ctx, eq, eq_index)?;
+            ctx.sim_end_block();
             Ok(())
         }
     }
@@ -210,6 +219,30 @@ pub(super) fn build_split_fn(
         n_params,
         pre_calls: Vec::new(),
     })
+}
+
+/// A chunk that runs `save_pre` when the stage argument is exactly `stage`, as
+/// C's `updateContinuousSystem` does after `evaluateDAEResiduals(EVAL_ALGEBRAIC)`.
+pub(super) fn build_stage_pre_store(
+    name: &str,
+    stage: u32,
+    ty: u32,
+    save_pre: &[(SimOff, SimOff, Sz)],
+    var_map: &SimVarMap,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Literals,
+    pool: &mut ChunkPool,
+) -> Result<Option<usize>> {
+    if save_pre.is_empty() {
+        return Ok(None);
+    }
+    let mut ctx = FnCtx::new_sim_params(sim_ctx(var_map), by_name, literals, 2);
+    ctx.sim_index_guard(stage);
+    ctx.sim_save_pre_values(save_pre)?;
+    ctx.sim_end_block();
+    let idx = pool.len();
+    pool.push(finish_fn(ctx), ty, format!("{name}$storePreValues"));
+    Ok(Some(idx))
 }
 
 /// [`build_split_fn`] without an entry point of its own.

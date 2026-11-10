@@ -1,7 +1,3 @@
-if(COMMAND om_windows_fetch_curl)
-  om_windows_fetch_curl()
-endif()
-find_package(CURL REQUIRED)
 # MSVC builds go without gettext and iconv, see systemimpl.h and systemimpl.c.
 if(NOT MSVC)
   find_package(Intl REQUIRED)
@@ -60,9 +56,11 @@ set(OMC_RUNTIME_SOURCES
     getMemorySize.c
     OMSimulator_omc.c
     is_utf8.c
-    om_curl.c
     om_zip.c
-    ptolemyio_omc.cpp
+    bootstrap_externals.c
+    ModelicaDiff_omc.c
+    PackageManagerExt_omc.c
+    SemanticVersion_omc.c
     SimulationResults_omc.c
     systemimplmisc.cpp
     ffi_omc.cpp
@@ -82,13 +80,12 @@ add_library(omc::compiler::runtime ALIAS omcruntime)
 target_sources(omcruntime PRIVATE ${OMC_RUNTIME_SOURCES})
 
 target_link_libraries(omcruntime PUBLIC omc::config)
-target_link_libraries(omcruntime PUBLIC CURL::libcurl)
 target_link_libraries(omcruntime PUBLIC ${Intl_LIBRARIES})
 if(NOT MSVC)
   target_link_libraries(omcruntime PUBLIC Iconv::Iconv)
 endif()
 target_link_libraries(omcruntime PUBLIC omc::mmc::runtime)
-# The scripting API reads and converts .arrow result files through libomc_result.
+# The scripting API reads, compares and converts result files through libomc_result.
 target_link_libraries(omcruntime PUBLIC omc::result)
 target_link_libraries(omcruntime PUBLIC omc::3rd::ffi)
 target_link_libraries(omcruntime PUBLIC omc::3rd::libzmq)

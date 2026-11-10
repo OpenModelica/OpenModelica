@@ -374,7 +374,8 @@ public
         case StrongComponent.SLICED_COMPONENT() algorithm
           // just a regular equation solved for a sliced variable
           // use cref instead of var because it has subscripts!
-          (eqn, solve_status, implicit_index) := solveSingleStrongComponent(Pointer.access(Slice.getT(comp.eqn)), Variable.fromCref(comp.var_cref), funcMap, kind, implicit_index, slicing_map, varData, eqData);
+          (eqn, solve_status, implicit_index) := solveSingleStrongComponent(Pointer.access(Slice.getT(comp.eqn)),
+            Variable.fromCref(resizedCref(Pointer.access(Slice.getT(comp.eqn)), comp.var_cref)), funcMap, kind, implicit_index, slicing_map, varData, eqData);
           if solve_status == Status.EXPLICIT then
             // successfully solved explicitly; use result directly
             comp.eqn := Slice.SLICE(Pointer.create(eqn), {});
@@ -706,6 +707,26 @@ public
     input Operator op;
     output Expression exp = Expression.BINARY(exp1, op, exp2);
   end makeBinary;
+
+  function resizedCref
+    "The cref of the equation that is var_cref at the analysis sizes, e.g. x[N]
+    for the matched x[4]. Without resizable arrays or if there is none, var_cref."
+    input Equation eqn;
+    input output ComponentRef var_cref;
+  protected
+    list<ComponentRef> candidates;
+  algorithm
+    if not Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then
+      return;
+    end if;
+    candidates := Equation.collectCrefs(eqn, function Slice.getSliceCandidates(name = ComponentRef.stripSubscriptsAll(var_cref)));
+    candidates := list(c for c guard(ComponentRef.isEqual(var_cref,
+      ComponentRef.simplifySubscripts(ComponentRef.mapExp(c, Expression.replaceResizableParameter)))) in candidates);
+    candidates := UnorderedSet.unique_list(candidates, ComponentRef.hash, ComponentRef.isEqual);
+    if List.hasOneElement(candidates) then
+      var_cref := listHead(candidates);
+    end if;
+  end resizedCref;
 
   function solvedCref
     "The cref an explicitly solved equation assigns, if it is the variable of
@@ -2257,7 +2278,7 @@ protected
       eqn := Equation.map(eqn, function expandArraySumExp(arrayCref = var_cref));
       (eqn, solve_status, implicit_index, _) := solveEquation(eqn, cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
       if solve_status < Status.UNSOLVABLE then
-        eqn_slice := Slice.SLICE(Pointer.create(eqn), {});
+        eqn_slice := Slice.SLICE(Pointer.create(eqn), eqn_slice.indices);
       else
         // all expansion tactics failed; allow implicit solution as last resort
         solve_status := Status.IMPLICIT;

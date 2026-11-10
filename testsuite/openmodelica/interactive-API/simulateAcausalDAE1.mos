@@ -1,0 +1,50 @@
+// name: simulateAcausalDAE1
+// keywords: acausal DAE separate compilation
+// status: correct
+// suite: cSources
+//
+// Builds and simulates an electrical circuit whose top-level components are
+// compiled separately and stitched together by simulateAcausalDAE, and
+// compares the result with the monolithic simulation.
+//
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+model RCStitch
+  Modelica.Electrical.Analog.Sources.SineVoltage V(V = 10, f = 2);
+  Modelica.Electrical.Analog.Basic.Resistor R1(R = 10);
+  Modelica.Electrical.Analog.Basic.Capacitor C1(C = 0.01, v(start = 0, fixed = true));
+  Modelica.Electrical.Analog.Basic.Resistor R2(R = 20);
+  Modelica.Electrical.Analog.Basic.Ground G;
+equation
+  connect(V.p, R1.p);
+  connect(R1.n, C1.p);
+  connect(C1.p, R2.p);
+  connect(C1.n, G.p);
+  connect(R2.n, G.p);
+  connect(V.n, G.p);
+end RCStitch;
+"); getErrorString();
+
+echo(false);
+ref := simulate(RCStitch, fileNamePrefix = "RCStitch_ref");
+res := simulateAcausalDAE(RCStitch);
+refMsg := ref.messages;
+resMsg := res.messages;
+echo(true);
+regexBool(refMsg, "The simulation finished successfully");
+regexBool(resMsg, "wrote combined_res.mat \\(501 points\\)");
+diffSimulationResults("combined_res.mat", "RCStitch_ref_res.mat", "RCStitch_diff", relTol = 1e-3,
+  vars = {"C1.v", "C1.i", "R1.i", "R2.i", "V.i", "R1.v", "R2.v"}); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// true
+// true
+// (true, {})
+// ""
+// endResult

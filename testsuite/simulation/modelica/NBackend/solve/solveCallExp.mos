@@ -43,16 +43,16 @@ translateModel(solveCallExp); getErrorString();
 // ### Variable:
 // 	x
 // ### Equation:
-// 	[SCAL] (1) 0.9092974268256817 = exp(-(2.0 ^ x) ^ 2.0); ($RES_AUX_1)
+// 	[SCAL] (1) 0.9092974268256817 = exp(-(2.0^x)^2.0); ($RES_AUX_1)
 //
 // SolveUnique Instructions (substitute from top to bottom):
 // 	0 (is initial)
 // 	$SUBST_CREF - (-0.9092974268256817)
 // 	log($SUBST_CREF)
 // 	-$SUBST_CREF
-// 	$SUBST_CREF ^ (1/2.0)
+// 	$SUBST_CREF^(1/2.0)
 // 	log($SUBST_CREF)
-// 	$SUBST_CREF / log(2.0)
+// 	$SUBST_CREF/log(2.0)
 // ### Status:
 // 	Solve.EXPLICIT
 //

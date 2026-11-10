@@ -86,7 +86,6 @@ simulationtypes.log \
 msl41simulation.log \
 simulation-start-value-selection.log \
 simulationinitialization.log \
-simulationqss.log \
 simulationunitcheck.log \
 simulationtearing.log \
 simulationDrModelica.log \
@@ -485,8 +484,6 @@ expandable.log: omc-diff
 simulationinitialization.log: omc-diff
 	$(MAKE) -C simulation/modelica/initialization -f Makefile test > $@
 	@echo $@ done
-simulationqss.log: omc-diff
-	$(MAKE) -C simulation/modelica/qss -f Makefile test > $@
 	@echo $@ done
 newFrontEndUnitCheck.log: omc-diff
 	$(MAKE) -C simulation/modelica/unitcheck -f Makefile test > $@
@@ -757,7 +754,6 @@ clean_g_2 :
 	$(MAKE) -C simulation/modelica/external_functions -f Makefile clean
 	$(MAKE) -C simulation/modelica/inheritances -f Makefile clean
 	$(MAKE) -C simulation/modelica/initialization -f Makefile clean
-	$(MAKE) -C simulation/modelica/qss -f Makefile clean
 	$(MAKE) -C simulation/modelica/tearing -f Makefile clean
 	$(MAKE) -C simulation/modelica/japaneselanguage -f Makefile clean
 	$(MAKE) -C simulation/modelica/linear_system -f Makefile clean

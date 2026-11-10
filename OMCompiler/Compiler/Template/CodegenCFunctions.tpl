@@ -4912,9 +4912,14 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
             case FUNCTION_CONTEXT(__) then ''
             else '_withEquationIndexes'
   let assertExpStr = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(condition,"\""))
+  let &preExpValues = buffer ""
+  let valueFmt = match context case FUNCTION_CONTEXT(__) then "" else
+    (Expression.assertConditionValues(condition) |> e => ', <%assertValueFormat(e)%>')
+  let valueArgs = match context case FUNCTION_CONTEXT(__) then "" else
+    (Expression.assertConditionValues(condition) |> e => ', <%assertValueArg(e, context, &preExpValues, &varDecls, &varFrees, &auxFunction)%>')
   /* Note that our error/log functions split the message on new lines and indent it. So it is better to have one long string
      and send it to them instead of calling them repeatedlly (avoids the 'assert', 'warning' labels printed for each call.) */
-  let infoTextContext = '"The following assertion has been violated %sat time %f\n(%s) --> \"%s\"", initial() ? "during initialization " : "", data->localData[0]->timeValue, assert_cond, <%msgVar%>'
+  let infoTextContext = '"The following assertion has been violated %sat time %f\n(%s<%valueFmt%>) --> \"%s\"", initial() ? "during initialization " : "", data->localData[0]->timeValue, assert_cond<%valueArgs%>, <%msgVar%>'
   let omcAssertFunc = match level case ENUM_LITERAL(index=1) then 'omc_assert_warning<%AddionalFuncName%>(' else 'omc_assert<%AddionalFuncName%>(threadData, '
   let rethrow = match level case ENUM_LITERAL(index=1) then '' else '<%\n%>data->simulationInfo->needToReThrow = 1;'
   // A violated assert leaves the frame; a warning carries on.
@@ -4956,6 +4961,7 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
     if(!<%condVar%>)
     {
       <%preExpMsg%>
+      <%preExpValues%>
       {
         <%assertCode%>
       }
@@ -4964,6 +4970,24 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
   }<%\n%>
   >>
 end assertCommon;
+
+template assertValueFormat(Exp exp)
+::=
+  let name = System.stringReplace(Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp,"\"")), "%", "%%")
+  match typeof(exp)
+  case T_REAL(__) then '<%name%>=%.16g'
+  case T_INTEGER(__) then '<%name%>="OMC_INT_FORMAT"'
+  else '<%name%>=%s'
+end assertValueFormat;
+
+template assertValueArg(Exp exp, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
+::=
+  let v = daeExp(exp, context, &preExp, &varDecls, &varFrees, &auxFunction)
+  match typeof(exp)
+  case T_REAL(__) then '(double) <%v%>'
+  case T_INTEGER(__) then '(modelica_integer) <%v%>'
+  else '<%v%> ? "true" : "false"'
+end assertValueArg;
 
 template expToFormatString(Exp exp, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
 ::=
@@ -5332,7 +5356,6 @@ end contextIteratorName;
   match cr
   case CREF_IDENT(ident = "xloc") then CodegenUtil.crefStr(cr)
   case CREF_IDENT(ident = "time") then "data->localData[0]->timeValue"
-  case CREF_IDENT(ident = "__OMC_DT") then "data->simulationInfo->inlineData->dt"
   case CREF_IDENT(ident = "__HOM_LAMBDA") then "data->simulationInfo->lambda"
   case WILD(__) then ''
   else crefToCStr(cr, 0, false, false, &sub)
@@ -5352,7 +5375,6 @@ template crefOldSub(ComponentRef cr, Integer ix, Text &sub)
   match cr
   case CREF_IDENT(ident = "xloc") then CodegenUtil.crefStr(cr)
   case CREF_IDENT(ident = "time") then 'data->localData[<%ix%>]->timeValue'
-  case CREF_IDENT(ident = "__OMC_DT") then "data->simulationInfo->inlineData->dt"
   case CREF_IDENT(ident = "__HOM_LAMBDA") then "data->simulationInfo->lambda"
   case WILD(__) then ''
   else crefToCStr(cr, ix, false, false, &sub)
@@ -5420,7 +5442,6 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart,
     let &elemSub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), contextOther, &preExp, &varDecls, &varFrees, &auxFunction)%>'
     crefToCStr(crefStripSubs(cr), ix, isPre, isStart, &elemSub)
   else match cref2simvar(cr, getSimCode())
-    case SIMVAR(varKind = ALG_STATE_OLD(), index = index) then '(data->simulationInfo->inlineData->algOldVars[<%index%>])<%&sub%>'
     case SIMVAR(aliasvar = ALIAS(varName = varName)) then crefToCStr(varName, ix, isPre, isStart, &sub)
     case SIMVAR(aliasvar = NEGATEDALIAS(varName = varName), type_=T_BOOL()) then '!(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
     case SIMVAR(aliasvar = NEGATEDALIAS(varName = varName)) then '-(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
@@ -7174,6 +7195,35 @@ template daeExpPartEvalFunctionBoxed(Exp exp, Context context, Text &preExp, Tex
       error(sourceInfo(), 'PARTEVALFUNCTION: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>, ty=<%unparseType(ty)%>, origType=<%unparseType(origType)%>')
 end daeExpPartEvalFunctionBoxed;
 
+template daeExpHomotopyLambda(Exp actual, Exp simplified, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
+ "Generates homotopy(actual, simplified) that evaluates only the branches lambda
+  selects: actual can be singular where only simplified is used (lambda = 0)."
+::=
+  let &preActual = buffer ""
+  let eActual = daeExp(actual, context, &preActual, &varDecls, &varFrees, &auxFunction)
+  let &preSimplified = buffer ""
+  let eSimplified = daeExp(simplified, context, &preSimplified, &varDecls, &varFrees, &auxFunction)
+  let tA = tempDecl("modelica_real", &varDecls, &varFrees)
+  let tS = tempDecl("modelica_real", &varDecls, &varFrees)
+  let lambda = 'data->simulationInfo->lambda'
+  let &preExp +=
+    <<
+    <%tA%> = 0.0;
+    <%tS%> = 0.0;
+    if(<%lambda%> > 0.0)
+    {
+      <%preActual%>
+      <%tA%> = <%eActual%>;
+    }
+    if(<%lambda%> < 1.0)
+    {
+      <%preSimplified%>
+      <%tS%> = <%eSimplified%>;
+    }<%\n%>
+    >>
+  '((<%lambda%> >= 1.0) ? <%tA%> : ((<%lambda%> <= 0.0) ? <%tS%> : <%lambda%> * <%tA%> + (1.0 - <%lambda%>) * <%tS%>))'
+end daeExpHomotopyLambda;
+
 template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates code for a function call."
 ::=
@@ -7185,6 +7235,14 @@ let &sub = buffer ""
     let var1 = daeExp(e1, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &varFrees, &auxFunction)
     var2
+
+  case CALL(path=IDENT(name="homotopy"), expLst={actual, simplified}, attr=CALL_ATTR(ty=T_REAL(__))) then
+    if Flags.isSet(Flags.HOMOTOPY_IN_RESIDUALS) then
+      daeExpHomotopyLambda(actual, simplified, context, &preExp, &varDecls, &varFrees, &auxFunction)
+    else
+      let eActual = daeExp(actual, context, &preExp, &varDecls, &varFrees, &auxFunction)
+      let eSimplified = daeExp(simplified, context, &preExp, &varDecls, &varFrees, &auxFunction)
+      'homotopy(<%eActual%>, <%eSimplified%>)'
 
   case CALL(path=IDENT(name="der"), expLst={arg as CREF(__)}) then
     cref(crefPrefixDer(arg.componentRef), &sub)
@@ -7206,13 +7264,6 @@ let &sub = buffer ""
   case CALL(path=IDENT(name="$_signNoNull"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &varFrees, &auxFunction)
     '(<%var1%> >= 0.0 ? 1.0:-1.0)'
-  // numerical der()
-  case CALL(path=IDENT(name="$_DF$DER"), expLst={arg as CREF(__)}) then
-    let derstr = cref(crefPrefixDer(arg.componentRef), &sub)
-    let nameold0 = crefOld(arg.componentRef, 0)
-    let nameold1 = crefOld(arg.componentRef, 1)
-    let dt = 'data->simulationInfo->inlineData->dt'
-    '(<%dt%> == 0.0 ? <%derstr%> : (<%nameold0%> - <%nameold1%>)/<%dt%>)'
   // round
   case CALL(path=IDENT(name="$_round"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &varFrees, &auxFunction)

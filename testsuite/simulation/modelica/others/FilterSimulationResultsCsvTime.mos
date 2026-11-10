@@ -1,0 +1,31 @@
+// name: FilterSimulationResultsCsvTime
+// keywords: filterSimulationResults csv time
+// status: correct
+// teardown_command: rm -f FilterSimulationResultsCsvTime.csv FilterSimulationResultsCsvTime_filtered.mat FilterSimulationResultsCsvTime_filtered.csv
+//
+// A CSV result file whose time column is called "Time", as in the MAP-LIB
+// reference files, is filtered like one with a "time" column (#17793).
+
+writeFile("FilterSimulationResultsCsvTime.csv", "\"Time\",\"x\",\"y\"\n0,1,10\n0.5,2,20\n1,3,30\n");
+filterSimulationResults("FilterSimulationResultsCsvTime.csv", "FilterSimulationResultsCsvTime_filtered.mat", {"y"}); getErrorString();
+readSimulationResultVars("FilterSimulationResultsCsvTime_filtered.mat", readParameters=true, openmodelicaStyle=true); getErrorString();
+val(y, 0.5, "FilterSimulationResultsCsvTime_filtered.mat"); getErrorString();
+filterSimulationResults("FilterSimulationResultsCsvTime.csv", "FilterSimulationResultsCsvTime_filtered.csv", {"x"}); getErrorString();
+readFile("FilterSimulationResultsCsvTime_filtered.csv");
+
+// Result:
+// true
+// true
+// ""
+// {"time", "y"}
+// ""
+// 20.0
+// ""
+// true
+// ""
+// "time,\"x\"
+// 0,1
+// 0.5,2
+// 1,3
+// "
+// endResult

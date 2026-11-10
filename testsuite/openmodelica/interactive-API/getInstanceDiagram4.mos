@@ -39,13 +39,13 @@ getInstanceDiagram(Q.T, expandArrays = true); getErrorString();
 // }
 // class \"arr[2] : Q.A\" as I_arr <<model>> {
 //   {field} + parameter Real k = {1, p} (= {1, 3.0})
-//   {field} + parameter Real v[2] = {arr.k, 2.0 * arr.k} (= {{1, 3.0}, {2.0, 6.0}})
+//   {field} + parameter Real v[2] = {arr.k, 2.0*arr.k} (= {{1, 3.0}, {2.0, 6.0}})
 //   {field} + p : Pin
 //   {field} + n : Pin
 // }
 // class \"m[2, 2] : Q.A\" as I_m <<model>> {
 //   {field} + parameter Real k = 4
-//   {field} + parameter Real v[2] = {m.k, 2.0 * m.k} (= {4.0, 8.0})
+//   {field} + parameter Real v[2] = {m.k, 2.0*m.k} (= {4.0, 8.0})
 //   {field} + p : Pin
 //   {field} + n : Pin
 // }
@@ -62,37 +62,37 @@ getInstanceDiagram(Q.T, expandArrays = true); getErrorString();
 // }
 // class \"arr[1] : Q.A\" as I_arr_1_ <<model>> {
 //   {field} + parameter Real k = {1, p} (= 1)
-//   {field} + parameter Real v[2] = {arr[1].k, 2.0 * arr[1].k} (= {1, 2.0})
+//   {field} + parameter Real v[2] = {arr[1].k, 2.0*arr[1].k} (= {1, 2.0})
 //   {field} + p : Pin
 //   {field} + n : Pin
 // }
 // class \"arr[2] : Q.A\" as I_arr_2_ <<model>> {
 //   {field} + parameter Real k = {1, p} (= 3.0)
-//   {field} + parameter Real v[2] = {arr[2].k, 2.0 * arr[2].k} (= {3.0, 6.0})
+//   {field} + parameter Real v[2] = {arr[2].k, 2.0*arr[2].k} (= {3.0, 6.0})
 //   {field} + p : Pin
 //   {field} + n : Pin
 // }
 // class \"m[1,1] : Q.A\" as I_m_1_1_ <<model>> {
 //   {field} + parameter Real k = 4
-//   {field} + parameter Real v[2] = {m[1, 1].k, 2.0 * m[1, 1].k} (= {4.0, 8.0})
+//   {field} + parameter Real v[2] = {m[1, 1].k, 2.0*m[1, 1].k} (= {4.0, 8.0})
 //   {field} + p : Pin
 //   {field} + n : Pin
 // }
 // class \"m[1,2] : Q.A\" as I_m_1_2_ <<model>> {
 //   {field} + parameter Real k = 4
-//   {field} + parameter Real v[2] = {m[1, 2].k, 2.0 * m[1, 2].k} (= {4.0, 8.0})
+//   {field} + parameter Real v[2] = {m[1, 2].k, 2.0*m[1, 2].k} (= {4.0, 8.0})
 //   {field} + p : Pin
 //   {field} + n : Pin
 // }
 // class \"m[2,1] : Q.A\" as I_m_2_1_ <<model>> {
 //   {field} + parameter Real k = 4
-//   {field} + parameter Real v[2] = {m[2, 1].k, 2.0 * m[2, 1].k} (= {4.0, 8.0})
+//   {field} + parameter Real v[2] = {m[2, 1].k, 2.0*m[2, 1].k} (= {4.0, 8.0})
 //   {field} + p : Pin
 //   {field} + n : Pin
 // }
 // class \"m[2,2] : Q.A\" as I_m_2_2_ <<model>> {
 //   {field} + parameter Real k = 4
-//   {field} + parameter Real v[2] = {m[2, 2].k, 2.0 * m[2, 2].k} (= {4.0, 8.0})
+//   {field} + parameter Real v[2] = {m[2, 2].k, 2.0*m[2, 2].k} (= {4.0, 8.0})
 //   {field} + p : Pin
 //   {field} + n : Pin
 // }

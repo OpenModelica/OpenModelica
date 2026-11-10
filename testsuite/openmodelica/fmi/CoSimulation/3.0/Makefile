@@ -3,17 +3,29 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 fmi3_cs_01.mos \
 fmi3_cs_start_event_error.mos \
+fmi3_cs_assert_solver_retry.mos \
+fmi3_cs_cvode.mos \
+fmi3_cs_state_event.mos \
+fmi3_cs_event_mode_reinit.mos \
+fmi3_cs_exitinit_assert.mos \
+fmi3_cs_tolerance.mos \
 fmi3_msl_clocked_drive.mos \
 fmi3_wasm_annotation_flags.mos \
 fmi3_wasm_arrays.mos \
 fmi3_wasm_daemode.mos \
+fmi3_wasm_daemode_nores.mos \
 fmi3_wasm_error_reason.mos \
 fmi3_wasm_fmi2_no_platform.mos \
+fmi3_wasm_logging_off.mos \
 fmi3_wasm_flags_restored.mos \
 fmi3_wasm_solver_absent.mos \
 fmi3_wasm_solver_libraries.mos \
 fmi3_wasm_solver_me.mos \
-fmi3_wasm_terminate_init.mos
+fmi3_wasm_terminate_init.mos \
+fmi_cs_daemode.mos \
+fmi_cs_output_no_der.mos \
+fmi_tunable_parameters.mos \
+fmi_tunable_parameters_state.mos
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
@@ -21,6 +33,14 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 fmi3_cs_start_event_error.py \
+fmi3_cs_assert_solver_retry.py \
+fmi3_cs_state_event.py \
+fmi3_cs_event_mode_reinit.py \
+fmi3_cs_exitinit_assert.py \
+fmi3_cs_tolerance.py \
+fmi3_wasm_logging_off.py \
+fmi_tunable_parameters.py \
+fmi_tunable_parameters_state.py \
 Makefile \
 
 CLEAN = `ls | grep -w -v -f deps.tmp`

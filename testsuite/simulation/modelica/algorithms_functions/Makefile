@@ -20,12 +20,14 @@ bug_2286_literal.mos \
 bug2888.mos \
 bug_5659.mos \
 bug_6068.mos \
+bug_17335.mos \
 ComplexSystem.mos \
 DoubleWhenSequential.mos \
 ForIterator1.mos \
 ForIterator2.mos \
 FuncDer.mos  \
 FunctionDerivativeZeroInput.mos \
+FunctionOutputBindingOrder.mos \
 FunctionIndirectRecursion.mos \
 FunctionIndirectRecursion2.mos \
 FunctionInReinit.mos \

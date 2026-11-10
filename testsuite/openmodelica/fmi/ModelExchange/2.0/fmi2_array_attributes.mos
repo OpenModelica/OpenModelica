@@ -27,9 +27,9 @@ end fmi2_array_attributes;
 
 buildModelFMU(fmi2_array_attributes, version="2.0", fmuType="me"); getErrorString();
 
-// Scalarized elements must not be dimensioned in the generated FMU init
-// (empty result = no scalar element wrongly marked as an array).
-system("unzip -cqq fmi2_array_attributes.fmu sources/fmi2_array_attributes_init_fmu.c | grep -n 'numberOfDimensions = [1-9]' > fmi2_array_attributes.dims || true"); getErrorString();
+// Scalarized elements must not be dimensioned in the FMU init data
+// (0 = no scalar element wrongly marked as an array).
+system("python3 fmuInitDims.py fmi2_array_attributes > fmi2_array_attributes.dims || true"); getErrorString();
 readFile("fmi2_array_attributes.dims"); getErrorString();
 
 // The exported FMU must initialize and simulate without the array-attribute throw.
@@ -49,7 +49,8 @@ val(y, 0.0); getErrorString();
 // "
 // 0
 // ""
-// ""
+// "0
+// "
 // ""
 // "fmi2_array_attributes_me_FMU.mo"
 // ""

@@ -3,6 +3,8 @@ TEST = ../../../rtest -v
 TESTFILES = \
 world.mos \
 noemit.mos \
+resultFileFlag.mos \
+resultFileFlagRealTime.mos \
 Bug1687.mos \
 Bug1728.mos \
 Bug1987.mos \
@@ -82,6 +84,8 @@ TestSolve19.mos \
 Ticket5129.mos \
 ResultFileArrow.mos \
 ResultFileArrowTimeAlias.mos \
+FilterSimulationResultsCsvTime.mos \
+FilterSimulationResultsRemoveDescription.mos \
 ResultFileEnumeration.mos \
 ResultFileEnumerationInitXml.mos \
 VariableFilter.mos \

@@ -58,7 +58,7 @@ simulate(function_annotation_der); getErrorString();
 // ""
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
 // [BEFORE] [SCAL] (1) a = sin(b); ($RES_AUX_9)
-// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.a = cos(b) * $SEED_ODE_JAC.b; ($RES_AUX_9)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.a = cos(b)*$SEED_ODE_JAC.b; ($RES_AUX_9)
 //
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
 // [BEFORE] [SCAL] (1) $FUN_4 = f(a, 0, b, b); ($RES_AUX_6)
@@ -70,7 +70,7 @@ simulate(function_annotation_der); getErrorString();
 //   input Real 'm';
 //   output Real 'y';
 // algorithm
-//   'y' := 'k' * 'x' ^ 2.0 + 'm';
+//   'y' := 'k'*'x'^2.0 + 'm';
 //   annotation(derivative(order = 1, zeroDerivative = 'k') = 'df', derivative(order = 1, zeroDerivative = 'n') = '$fDER1.f', Inline = false);
 // end 'f'
 //
@@ -85,8 +85,8 @@ simulate(function_annotation_der); getErrorString();
 //   output Real '$fDER_y';
 //   Real 'y';
 // algorithm
-//   '$fDER_y' := ('$fDER_k' * 'x' ^ 2.0 + 'k' * (2.0 * 'x' * '$fDER_x')) + '$fDER_m';
-//   'y' := 'k' * 'x' ^ 2.0 + 'm';
+//   '$fDER_y' := ('$fDER_k'*'x'^2.0 + 'k'*(2.0*'x'*'$fDER_x')) + '$fDER_m';
+//   'y' := 'k'*'x'^2.0 + 'm';
 //   annotation(Inline = false);
 // end '$fDER1.f'
 //

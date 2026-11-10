@@ -567,7 +567,7 @@ protected
 
     if not Expression.isCref(arg) then
       Error.addSourceMessage(Error.ARGUMENT_MUST_BE_VARIABLE,
-            {"First", ComponentRef.toString(fn_ref), "<REMOVE ME>"}, info);
+            {"First", ComponentRef.toString(fn_ref)}, info);
       fail();
     end if;
 
@@ -673,8 +673,7 @@ protected
 
     {arg} := args;
     if not Expression.isCref(arg.value) then
-      Error.addSourceMessage(Error.ARGUMENT_MUST_BE_VARIABLE,
-            {"First", "edge", "<REMOVE ME>"}, info);
+      Error.addSourceMessage(Error.ARGUMENT_MUST_BE_VARIABLE, {"First", "edge"}, info);
       fail();
     end if;
   end typeEdgeCall;
@@ -2060,7 +2059,7 @@ protected
 
       else
         algorithm
-          Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {Call.toString(call), "<NO COMPONENT>"}, info);
+          Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {Call.toString(call)}, info);
         then
           fail();
     end match;

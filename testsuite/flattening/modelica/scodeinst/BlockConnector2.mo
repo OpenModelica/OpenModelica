@@ -1,8 +1,8 @@
 // name: BlockConnector2
 // keywords:
-// status: correct
+// status: incorrect
 //
-// Checks that a warning is given for a public connector in a block that is
+// Checks that an error is given for a public connector in a block that is
 // missing the input/output prefix.
 //
 
@@ -16,13 +16,12 @@ equation
 end BlockConnector2;
 
 // Result:
-// class BlockConnector2
-//   Real u;
-//   output Real y;
-// equation
-//   y = 2.0 * u;
-// end BlockConnector2;
+// Error processing file: BlockConnector2.mo
 // [flattening/modelica/scodeinst/BlockConnector2.mo:12:3-12:12:writable] Warning: Connector u is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
-// [flattening/modelica/scodeinst/BlockConnector2.mo:12:3-12:12:writable] Warning: Public connector u in a block may only have variables that are input or output, but the following are neither: u.
+// [flattening/modelica/scodeinst/BlockConnector2.mo:12:3-12:12:writable] Error: Public connector u in a block may only have variables that are input or output, but the following are neither: u.
 //
+// # Error encountered! Exiting...
+// # Please check the error message and the flags.
+//
+// Execution failed!
 // endResult

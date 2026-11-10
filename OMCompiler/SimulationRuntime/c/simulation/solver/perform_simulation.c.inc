@@ -29,7 +29,6 @@
 #include "events.h"
 #include "epsilon.h"
 #include "dassl.h"
-#include "sym_solver_ssc.h"
 
 #include "../simulation_runtime.h"
 #include "../results/simulation_result.h"
@@ -117,12 +116,6 @@ static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVE
   if (OMC_ERROR_RAISED()) {
     data->simulationInfo->noThrowAsserts = 0 /* false */;
     return NO_TIMER_FIRED;
-  }
-
-  if (solverInfo->solverMethod == S_SYM_SOLVER_SSC) {
-    DATA_SYM_SOLVER_SSC* solverData = (DATA_SYM_SOLVER_SSC*) solverInfo->solverData;
-    data->simulationInfo->inlineData->dt = solverData->solverStepSize;
-    //data->callback->symbolicInlineSystems(data, threadData);
   }
 
   saveZeroCrossings(data, threadData);
@@ -320,9 +313,12 @@ static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, 
 
   if (embedded_server_update(data->embeddedServerState, data->localData[0]->timeValue, &terminate)) {
     solverInfo->didEventStep = 1;
+    data->callback->input_function(data, threadData);
+    updateDiscreteSystem(data, threadData);
+    saveZeroCrossingsAfterEvent(data, threadData);
     overwriteOldSimulationData(data);
-    storePreValues(data); // Maybe??
-    storeOldValues(data); // Maybe??
+    storePreValues(data);
+    storeOldValues(data);
     sim_result.emit(&sim_result, data, threadData);
   }
 
@@ -432,7 +428,7 @@ static void saveIntegratorStats(SOLVER_INFO* solverInfo)
   if (!(omc_flag[FLAG_NO_RESTART] && (solverInfo->solverMethod==S_DASSL || solverInfo->solverMethod==S_GBODE)) && solverInfo->didEventStep)
   {
     addSolverStats(&(solverInfo->solverStats), &(solverInfo->solverStatsTmp));
-    /* euler, rungekutta and the sym solvers accumulate into solverStatsTmp
+    /* euler accumulates into solverStatsTmp
      * instead of overwriting it, so keeping it would count it twice. */
     resetSolverStats(&(solverInfo->solverStatsTmp));
   }
@@ -559,9 +555,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
       omc_alloc_interface.collect_a_little();
 
       /* try */
-#if !defined(OMC_EMCC)
       OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
       {
         printAllVars(data, 0, OMC_LOG_SOLVER_V);
 
@@ -692,9 +686,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         }
       }
       if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
-#if !defined(OMC_EMCC)
       OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
       if (!success) { /* catch */
         /* halve the step size until the step succeeds, there is no step size to
          * halve for the optimization though */

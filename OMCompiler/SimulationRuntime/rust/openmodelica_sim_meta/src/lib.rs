@@ -54,7 +54,6 @@ pub mod parmod;
 /// `+profiling`, whose files go out through [`files`] like every other side file,
 /// so an artifact's in-wasm driver reports as the host does.
 pub mod profiling;
-pub(crate) mod qss;
 #[cfg(feature = "result-files")]
 pub mod result;
 pub mod rtclock;
@@ -193,6 +192,11 @@ pub struct Layout<T = u32> {
     /// The model has a `SES_LINEAR` with a symbolic Jacobian, the only reader of
     /// `old_real_off`.
     pub has_old_real: bool,
+    /// C's `compiledInDAEMode` (`--daeMode`): the continuous equations are in
+    /// `evaluateDAEResiduals`, and `functionODE`/`functionAlgebraics`/`functionDAE`
+    /// do not evaluate them. Also set when every equation came out explicit and
+    /// there is no residual left for IDA ([`Layout::dae_mode`] false).
+    pub compiled_dae_mode: bool,
     /// `SimData` offset of the homotopy parameter lambda (f64).
     pub lambda_off: T,
     pub rparam_off: T,
@@ -340,15 +344,6 @@ pub struct Layout<T = u32> {
     /// prints those values from inside that function, which the driver cannot.
     pub n_attr_log: T,
     pub attr_log_off: T,
-    /// C's `compiledWithSymSolver` (`--symSolver`): 0 none, 1 `impEuler`, 2
-    /// `expEuler`. Nonzero ⇒ the module exports `symbolicInlineSystem` and the two
-    /// regions below exist.
-    pub sym_solver: u8,
-    /// C's `simulationInfo->inlineData`: the step size `__OMC_DT` (f64) the inline
-    /// equations read, and the `<state>$Old` values (one f64 per state) they step
-    /// from.
-    pub inline_dt_off: T,
-    pub alg_old_off: T,
     /// Residuals `functionRemovedInitialEquations` checks; 0 ⇒ it is a stub.
     pub n_removed_init: T,
     /// The rejected residual (f64) and its 1-based index (i32); index 0 ⇒ consistent.
@@ -402,13 +397,13 @@ impl Layout {
         n_opt_attr: u32,
         n_attr_log: u32,
         n_removed_init: u32,
-        sym_solver: u8,
         has_when: bool,
         has_homotopy: bool,
         homotopy_method: HomotopyMethod,
         has_init_lambda0: bool,
         has_history_ops: bool,
         has_old_real: bool,
+        compiled_dae_mode: bool,
     ) -> Self {
         let counts = LayoutCounts {
             n_states,
@@ -439,13 +434,13 @@ impl Layout {
             n_removed_init,
         };
         let flags = LayoutFlags {
-            sym_solver,
             has_when,
             has_homotopy,
             homotopy_method,
             has_init_lambda0,
             has_history_ops,
             has_old_real,
+            compiled_dae_mode,
             resizable: false,
         };
         Layout::build(counts, flags)
@@ -520,13 +515,13 @@ impl LayoutCounts<Sz> {
 /// The parts of a [`Layout`] that are not counts.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub struct LayoutFlags {
-    pub sym_solver: u8,
     pub has_when: bool,
     pub has_homotopy: bool,
     pub homotopy_method: HomotopyMethod,
     pub has_init_lambda0: bool,
     pub has_history_ops: bool,
     pub has_old_real: bool,
+    pub compiled_dae_mode: bool,
     /// The size-table pointer in the header ([`REAL_OFF_RESIZABLE`]), and the
     /// regions of constant size first.
     pub resizable: bool,
@@ -560,7 +555,7 @@ impl<T: sizes::LayoutNum> Layout<T> {
             has_init_lambda0: f.has_init_lambda0,
             has_history_ops: f.has_history_ops,
             has_old_real: f.has_old_real,
-            sym_solver: f.sym_solver,
+            compiled_dae_mode: f.compiled_dae_mode,
             ..Layout::zero()
         };
         let start = T::lit(if f.resizable { REAL_OFF_RESIZABLE } else { REAL_OFF });
@@ -573,17 +568,16 @@ impl<T: sizes::LayoutNum> Layout<T> {
                 let at = l.attrs(at, &c);
                 let at = l.clocks(at, &c);
                 let at = l.opt(at, &c);
-                let at = l.log(at, &c, &f);
-                l.inline_old(at, &c, &f)
+                l.log(at, &c)
             }
             true => {
                 let at = l.flags_events(start, &c);
                 let at = l.clocks(at, &c);
-                let at = l.log(at, &c, &f);
+                let at = l.log(at, &c);
                 let at = l.vars(at.align8(), &c, &f);
                 let at = l.attrs(at, &c);
                 let at = l.opt(at, &c);
-                l.inline_old(at.align8(), &c, &f)
+                at.align8()
             }
         };
         l.total = at;
@@ -601,6 +595,7 @@ impl<T: sizes::LayoutNum> Layout<T> {
             has_init_lambda0: false,
             has_history_ops: false,
             has_old_real: false,
+            compiled_dae_mode: false,
             lambda_off: z.clone(),
             rparam_off: z.clone(),
             int_off: z.clone(),
@@ -668,9 +663,6 @@ impl<T: sizes::LayoutNum> Layout<T> {
             n_removed_init: z.clone(),
             removed_init_res_off: z.clone(),
             removed_init_idx_off: z.clone(),
-            sym_solver: 0,
-            inline_dt_off: z.clone(),
-            alg_old_off: z.clone(),
             total: z.clone(),
             real_off: z.clone(),
             table_off: z,
@@ -762,22 +754,12 @@ impl<T: sizes::LayoutNum> Layout<T> {
         (self.opt_use_nom_off.clone() + c.n_opt_attr.clone().times(4)).align8()
     }
 
-    fn log(&mut self, at: T, c: &LayoutCounts<T>, f: &LayoutFlags) -> T {
+    fn log(&mut self, at: T, c: &LayoutCounts<T>) -> T {
         let lit = T::lit;
         self.attr_log_off = at;
         self.removed_init_res_off = self.attr_log_off.clone() + c.n_attr_log.clone().times(8);
         self.removed_init_idx_off = self.removed_init_res_off.clone() + lit(8);
-        self.inline_dt_off = (self.removed_init_idx_off.clone() + lit(4)).align8();
-        self.inline_dt_off.clone() + lit(if f.sym_solver > 0 { 8 } else { 0 })
-    }
-
-    fn inline_old(&mut self, at: T, c: &LayoutCounts<T>, f: &LayoutFlags) -> T {
-        self.alg_old_off = at.clone();
-        at + if f.sym_solver > 0 {
-            c.n_states.clone().times(8)
-        } else {
-            T::lit(0)
-        }
+        (self.removed_init_idx_off.clone() + lit(4)).align8()
     }
 }
 
@@ -798,6 +780,7 @@ impl<T> Layout<T> {
             has_init_lambda0: self.has_init_lambda0,
             has_history_ops: self.has_history_ops,
             has_old_real: self.has_old_real,
+            compiled_dae_mode: self.compiled_dae_mode,
             lambda_off: off(&self.lambda_off)?,
             rparam_off: off(&self.rparam_off)?,
             int_off: off(&self.int_off)?,
@@ -865,9 +848,6 @@ impl<T> Layout<T> {
             n_removed_init: count(&self.n_removed_init)?,
             removed_init_res_off: off(&self.removed_init_res_off)?,
             removed_init_idx_off: off(&self.removed_init_idx_off)?,
-            sym_solver: self.sym_solver,
-            inline_dt_off: off(&self.inline_dt_off)?,
-            alg_old_off: off(&self.alg_old_off)?,
             total: off(&self.total)?,
             real_off: off(&self.real_off)?,
             table_off: off(&self.table_off)?,
@@ -897,8 +877,10 @@ impl<T: sizes::LayoutOff> Layout<T> {
         self.real_nom_off + T::from(i * 8)
     }
 
-    /// C's `compiledInDAEMode`: the integrator solves `F(t, y, y') = 0` over states
-    /// *and* algebraic unknowns through `evaluateDAEResiduals`, not `functionODE`.
+    /// `--daeMode` with a residual system: the integrator solves `F(t, y, y') = 0`
+    /// over states *and* algebraic unknowns through `evaluateDAEResiduals`, not
+    /// `functionODE`. Which entry points hold the equations is
+    /// [`Layout::compiled_dae_mode`].
     pub fn dae_mode(&self) -> bool {
         self.n_dae_res > T::from(0)
     }
@@ -1649,6 +1631,9 @@ pub struct SimMeta {
     /// instantiates; the export links exactly the solver libraries they reach.
     /// Empty except for an FMU export.
     pub fmi_solver_flags: String,
+    /// An FMU's `<prefix>_paramdeps.bin`: the parameter dependencies and the
+    /// variables an importer may set. Empty except for an FMU export.
+    pub param_deps: Vec<u8>,
     /// Relative/absolute tolerance for the adaptive integrators.
     pub tolerance: f64,
     /// Result file format (`"mat"`, `"empty"`).
@@ -2175,7 +2160,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 26;
+const VERSION: u32 = 29;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -2270,8 +2255,6 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
         l.n_removed_init,
         l.removed_init_res_off,
         l.removed_init_idx_off,
-        l.inline_dt_off,
-        l.alg_old_off,
         l.total,
         l.real_off,
         l.table_off,
@@ -2279,13 +2262,13 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
     ] {
         put_u32(o, v);
     }
-    o.push(l.sym_solver);
     o.push(l.has_when as u8);
     o.push(l.has_homotopy as u8);
     o.push(l.homotopy_method.code());
     o.push(l.has_init_lambda0 as u8);
     o.push(l.has_history_ops as u8);
     o.push(l.has_old_real as u8);
+    o.push(l.compiled_dae_mode as u8);
 }
 fn put_jac(o: &mut Vec<u8>, j: &Option<JacAInfo>) {
     match j {
@@ -2351,6 +2334,8 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
     put_str(&mut o, &m.method);
     put_str(&mut o, &m.cs_method);
     put_str(&mut o, &m.fmi_solver_flags);
+    put_u32(&mut o, m.param_deps.len() as u32);
+    o.extend_from_slice(&m.param_deps);
     put_f64(&mut o, m.tolerance);
     put_str(&mut o, &m.output_format);
     put_str(&mut o, &m.prefix);
@@ -2849,28 +2834,26 @@ impl<'a> Reader<'a> {
             n_removed_init: self.u32()?,
             removed_init_res_off: self.u32()?,
             removed_init_idx_off: self.u32()?,
-            inline_dt_off: self.u32()?,
-            alg_old_off: self.u32()?,
             total: self.u32()?,
             real_off: self.u32()?,
             table_off: self.u32()?,
             n_table: self.u32()?,
-            sym_solver: 0,
             has_when: false,
             has_homotopy: false,
             homotopy_method: HomotopyMethod::default(),
             has_init_lambda0: false,
             has_history_ops: false,
             has_old_real: false,
+            compiled_dae_mode: false,
             extra_cols: 0,
         };
-        l.sym_solver = self.u8()?;
         l.has_when = self.u8()? != 0;
         l.has_homotopy = self.u8()? != 0;
         l.homotopy_method = HomotopyMethod::from_code(self.u8()?);
         l.has_init_lambda0 = self.u8()? != 0;
         l.has_history_ops = self.u8()? != 0;
         l.has_old_real = self.u8()? != 0;
+        l.compiled_dae_mode = self.u8()? != 0;
         Ok(l)
     }
     fn enumeration(&mut self) -> Result<Option<Enumeration>, &'static str> {
@@ -2916,6 +2899,8 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     let method = r.string()?;
     let cs_method = r.string()?;
     let fmi_solver_flags = r.string()?;
+    let n_param_deps = r.u32()? as usize;
+    let param_deps = r.take(n_param_deps)?.to_vec();
     let tolerance = r.f64()?;
     let output_format = r.string()?;
     let prefix = r.string()?;
@@ -3384,6 +3369,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         method,
         cs_method,
         fmi_solver_flags,
+        param_deps,
         tolerance,
         output_format,
         prefix,
@@ -3457,10 +3443,10 @@ mod tests {
                 5,
                 2,
                 1,
-                2,
                 true,
                 true,
                 HomotopyMethod::LocalAdaptive,
+                true,
                 true,
                 true,
                 true,
@@ -3471,6 +3457,7 @@ mod tests {
             method: "dassl".to_string(),
             cs_method: "euler".to_string(),
             fmi_solver_flags: "-nls=kinsol -lss=klu".to_string(),
+            param_deps: vec![1, 2, 3],
             tolerance: 1e-6,
             output_format: "mat".to_string(),
             prefix: "MyModel".to_string(),

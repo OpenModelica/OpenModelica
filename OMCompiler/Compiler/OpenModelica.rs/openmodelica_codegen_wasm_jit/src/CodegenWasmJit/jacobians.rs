@@ -484,7 +484,6 @@ fn lin_jac_systems(sim_code: &SimCode::SimCode) -> Vec<metamodelica::Ref<SimCode
     scan(flatten_eqs_ll(&sim_code.odeEquations));
     scan(flatten_eqs_ll(&sim_code.algebraicEquations));
     scan(flatten_eqs(&sim_code.allEquations));
-    scan(flatten_eqs(&sim_code.inlineEquations));
     scan(clocked_eqs(sim_code));
     if let Some(d) = &sim_code.daeModeData {
         scan(flatten_eqs_ll(&d.daeEquations));

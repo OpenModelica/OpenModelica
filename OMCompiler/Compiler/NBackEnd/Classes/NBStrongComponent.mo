@@ -630,7 +630,7 @@ public
     if not List.any(UnorderedMap.valueList(order), Resizable.orderFailed) and listLength(eqn_scal_indices) == eqn_size
        and not solvesInsideReduction(eqn_ptr, cref_to_solve) then
       comp := RESIZABLE_COMPONENT(
-        var_cref  = cref_to_solve,
+        var_cref  = subscriptConstantDimensions(cref_to_solve, var_slice),
         var       = var_slice,
         eqn       = eqn_slice,
         order     = order,
@@ -1523,12 +1523,59 @@ public
         status    = NBSolve.Status.UNPROCESSED);
     else
       comp := SLICED_COMPONENT(
-        var_cref  = cref,
+        var_cref  = subscriptConstantDimensions(cref, var_slice),
         var       = var_slice,
         eqn       = eqn_slice,
         status    = NBSolve.Status.UNPROCESSED);
     end if;
   end createSliceOrSingle;
+
+  function subscriptConstantDimensions
+    "subscripts the non-scalar dimensions of the cref in which all elements of the variable slice
+    have the same index, e.g. x[$i1].y for the slice {x[1].y[2], x[2].y[2]} -> x[$i1].y[2]"
+    input output ComponentRef cref;
+    input Slice<VariablePointer> var_slice;
+  protected
+    list<Subscript> subs, new_subs = {};
+    list<Dimension> dims;
+    list<Integer> sizes;
+    list<list<Integer>> locations;
+    Integer value;
+    Boolean changed = false;
+  algorithm
+    if listEmpty(var_slice.indices) then return; end if;
+    subs := ComponentRef.subscriptsAllWithWholeFlat(cref);
+    dims := Type.arrayDims(Variable.typeOf(Pointer.access(Slice.getT(var_slice))));
+    sizes := list(Dimension.size(dim, true) for dim in dims);
+    if List.all(subs, Subscript.isScalar) or List.compareLength(subs, sizes) <> 0 then return; end if;
+
+    // locations with the outermost dimension first
+    locations := list(listReverse(Slice.indexToLocation(i, sizes)) for i in var_slice.indices);
+    for sub in subs loop
+      // the slice of a resizable dimension refers to the analysis size, size one dimensions are kept
+      if not Subscript.isScalar(sub) and not Dimension.isResizable(listHead(dims)) and listHead(sizes) > 1 then
+        value := listHead(listHead(locations));
+        if List.all(locations, function locationHeadEquals(value = value)) then
+          sub := Subscript.INDEX(Expression.INTEGER(value + 1));
+          changed := true;
+        end if;
+      end if;
+      new_subs := sub :: new_subs;
+      dims := listRest(dims);
+      sizes := listRest(sizes);
+      locations := list(listRest(l) for l in locations);
+    end for;
+
+    if changed then
+      cref := ComponentRef.mergeSubscripts(listReverse(new_subs), ComponentRef.stripSubscriptsAll(cref), true, true);
+    end if;
+  end subscriptConstantDimensions;
+
+  function locationHeadEquals
+    input list<Integer> location;
+    input Integer value;
+    output Boolean b = listHead(location) == value;
+  end locationHeadEquals;
 
   // ############################################################
   //                Protected Functions and Types

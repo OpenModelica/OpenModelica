@@ -47,16 +47,16 @@ simulate(init_if_eq); getErrorString();
 // -------------------
 //   (6) Nonlinear System (size = 1, homotopy = false, mixed = false, torn = true)
 //   --Iteration Vars:{y}
-//   --(4) 0 = 1.0 - (y + y ^ 2.0)
+//   --(4) 0 = 1.0 - (y + y^2.0)
 //   (3) Nonlinear System (size = 1, homotopy = false, mixed = false, torn = true)
 //   --Iteration Vars:{u}
-//   --(1) 0 = (u ^ 3.0 + u) - y
+//   --(1) 0 = (u^3.0 + u) - y
 //
 // Algebraic Partition 1
 // -----------------------
 //   (11) Nonlinear System (size = 2, homotopy = false, mixed = false, torn = true)
 //   --Iteration Vars:{y, u}
-//   --(7) 0 = (u ^ 3.0 + u) - y
+//   --(7) 0 = (u^3.0 + u) - y
 //   --(8) 0 = 1.0 - u
 //
 // Event Partition
@@ -78,7 +78,7 @@ simulate(init_if_eq); getErrorString();
 //
 // Column Equations (size = 1)
 // -----------------------------
-//   (5) $pDER_INI_NLS_IMPL_1.$RES_SIM_2 := -($SEED_INI_NLS_IMPL_1.y + 2.0 * y * $SEED_INI_NLS_IMPL_1.y)
+//   (5) $pDER_INI_NLS_IMPL_1.$RES_SIM_2 := -($SEED_INI_NLS_IMPL_1.y + 2.0*y*$SEED_INI_NLS_IMPL_1.y)
 //
 // Resizable Sparsity Pattern
 // ----------------------------
@@ -100,7 +100,7 @@ simulate(init_if_eq); getErrorString();
 //
 // Column Equations (size = 1)
 // -----------------------------
-//   (2) $pDER_INI_NLS_IMPL_2.$RES_SIM_0 := 3.0 * u ^ 2.0 * $SEED_INI_NLS_IMPL_2.u + $SEED_INI_NLS_IMPL_2.u
+//   (2) $pDER_INI_NLS_IMPL_2.$RES_SIM_0 := 3.0*u^2.0*$SEED_INI_NLS_IMPL_2.u + $SEED_INI_NLS_IMPL_2.u
 //
 // Resizable Sparsity Pattern
 // ----------------------------
@@ -123,7 +123,7 @@ simulate(init_if_eq); getErrorString();
 //
 // Column Equations (size = 2)
 // -----------------------------
-//   (10) $pDER_ALG_NLS_JAC_1.$RES_SIM_0 := (3.0 * u ^ 2.0 * $SEED_ALG_NLS_JAC_1.u + $SEED_ALG_NLS_JAC_1.u) - $SEED_ALG_NLS_JAC_1.y
+//   (10) $pDER_ALG_NLS_JAC_1.$RES_SIM_0 := (3.0*u^2.0*$SEED_ALG_NLS_JAC_1.u + $SEED_ALG_NLS_JAC_1.u) - $SEED_ALG_NLS_JAC_1.y
 //   (9) $pDER_ALG_NLS_JAC_1.$RES_SIM_3 := -$SEED_ALG_NLS_JAC_1.u
 //
 // Resizable Sparsity Pattern

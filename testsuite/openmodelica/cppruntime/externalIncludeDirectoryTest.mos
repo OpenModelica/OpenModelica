@@ -1,0 +1,48 @@
+// name: externalIncludeDirectoryTest
+// keywords: external IncludeDirectory makefile
+// status: correct
+// teardown_command: rm -rf ExternalIncludeDirectory* OMCppExternalIncludeDirectory* externalIncludeDirectoryTest.inc
+//
+// Two IncludeDirectory annotations: the generated makefile must keep both.
+
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+
+mkdir("externalIncludeDirectoryTest.inc");
+writeFile("externalIncludeDirectoryTest.inc/externalIncludeDirectory.h", "static double externalIncludeDirectory_twice(double x) { return 2*x; }\n");
+loadString("
+model ExternalIncludeDirectory
+  function twice
+    input Real x;
+    output Real y;
+    external \"C\" y = externalIncludeDirectory_twice(x)
+      annotation(Include=\"#include \\\"externalIncludeDirectory.h\\\"\", IncludeDirectory=\"file://" + cd() + "/externalIncludeDirectoryTest.inc\");
+  end twice;
+  Real x(start = 1, fixed = true);
+  Real y = twice(x);
+  Integer n = Modelica.Utilities.Strings.length(String(time));
+equation
+  der(x) = -x;
+end ExternalIncludeDirectory;
+"); getErrorString();
+
+simulate(ExternalIncludeDirectory); getErrorString();
+val(y, 0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ExternalIncludeDirectory_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ExternalIncludeDirectory', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 2.0
+// endResult

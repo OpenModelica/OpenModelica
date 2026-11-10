@@ -543,6 +543,7 @@ void buildRustOMC() {
       -DRUST_OMC_WORK_DIR=${rustWorkDir()} \
       -DRUST_OMC_FMU_NATIVE_TARGETS=${fmuNativeTargets()} \
       -DRUST_OMC_MACOS_SDK=${fmuMacosSdk()} \
+      -DOM_DOWNLOADS_DIR=/cache/thirdparty \
       -DRUST_OMC_WASM_RUNTIME_OUT=${env.WORKSPACE}/runtime.wasm
   """
   withSccache(cheapReleaseProfile()) {
@@ -576,6 +577,8 @@ void buildRustOMC() {
     find . -path '*/src/*.rs' -print0 |
       tar --null -T - -cf - | tar -C ${env.WORKSPACE}/rust-generated-src -xf -
   """
+  // stash reaches only inside the workspace, and OM_DOWNLOADS_DIR is not.
+  sh 'mkdir -p build_cmake/downloads && cp /cache/thirdparty/wasi_snapshot_preview1.reactor.wasm build_cmake/downloads/'
   stash name: 'rust-generated-src',
         includes: 'rust-generated-src/**,' +
                   'build_cmake/rust-wasi-pic-sysroot/**,' +
@@ -631,6 +634,7 @@ void configureWeb(String extra) {
       -DRUST_OMC_FMU_LOADERS=${env.WORKSPACE}/fmu-loaders \
       -DRUST_OMC_MACOS_SDK=${fmuMacosSdk()} \
       -DOM_USE_CCACHE=OFF \
+      -DOM_DOWNLOADS_DIR=/cache/thirdparty \
       -DCMAKE_INSTALL_PREFIX=install_web \
       ${extra}
   """
@@ -723,6 +727,7 @@ void buildRustGUI() {
       -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
       -DCMAKE_C_COMPILER=clang \
       -DCMAKE_CXX_COMPILER=clang++ \
+      -DOM_DOWNLOADS_DIR=/cache/thirdparty \
       -DCMAKE_INSTALL_PREFIX=build_gui_install
   """
   withSccache {
@@ -1237,12 +1242,13 @@ void partestRust(String simCodeTarget, partition, partitionmodulo) {
   // themselves, which only this build has.
   // hdf5: the CMake build this stage uses links the system HDF5, so MAT v7.3
   // works. gbode: disabled in the Rust simulation runtime. ofScripting and
-  // nfScripting: see nfScriptingArgs().
-  String suites = '-cpp,-hpcom,-metamodelica,-63bit,-antlr,-stackoverflow,+wasm,+hdf5,-gbode,-ofScripting,+nfScripting'
+  // nfScripting: see ofScriptingArgs().
+  String suites = '-cpp,-hpcom,-metamodelica,-63bit,-antlr,-stackoverflow,+wasm,+hdf5,-gbode,+ofScripting,-nfScripting'
   // cSources/fmuCSources inspect generated C, which a wasm target does not write.
   // nativeSharedLib links a native shared library, which a wasm target cannot load.
+  // realTime passes -rt, which only a simulation executable accepts.
   if (isWasmTarget) {
-    suites += ',-cSources,-fmuCSources,-nativeSharedLib'
+    suites += ',-cSources,-fmuCSources,-nativeSharedLib,-realTime'
   }
   // wasmtime reserves ~4 GiB of address space per wasm memory, and shrinking that
   // reservation to fit an RLIMIT_AS costs the bounds-check-free fast path.
@@ -1257,7 +1263,7 @@ void partestRust(String simCodeTarget, partition, partitionmodulo) {
       .CI/scripts/cgroup-memory.sh check
       cd testsuite/partest
       set -x
-      ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/${partitionmodulo} -nocolour -with-xml -suites=${suites}${simCodeTargetArg} ${nfScriptingArgs()} 2>&1 | tee runtests-${partition}.log
+      ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/${partitionmodulo} -nocolour -with-xml -suites=${suites}${simCodeTargetArg} ${ofScriptingArgs()} 2>&1 | tee runtests-${partition}.log
       CODE=\${PIPESTATUS[0]}
       set +x
       ../../.CI/scripts/cgroup-memory.sh report
@@ -1334,6 +1340,7 @@ void buildGUIAndRunOMEditTestsuite() {
       "-DCMAKE_INSTALL_PREFIX=build",
       "-DCMAKE_C_COMPILER=clang",
       "-DCMAKE_CXX_COMPILER=clang++",
+      "-DOM_DOWNLOADS_DIR=/cache/thirdparty",
       "-DOM_OMEDIT_ENABLE_TESTS=ON"], 'cmake', false)
   }
 
@@ -1576,6 +1583,7 @@ void buildGccOMC() {
       "-DCMAKE_BUILD_TYPE=Release",
       "-DOM_COMPILER_CACHE=sccache",
       "-DCMAKE_INSTALL_PREFIX=build",
+      "-DOM_DOWNLOADS_DIR=/cache/thirdparty",
       "-DOM_ENABLE_COVERAGE=ON"])
   }
 
@@ -1624,6 +1632,7 @@ void buildClangOMC() {
       "-DCMAKE_BUILD_TYPE=Release",
       "-DOM_COMPILER_CACHE=sccache",
       "-DCMAKE_INSTALL_PREFIX=build",
+      "-DOM_DOWNLOADS_DIR=/cache/thirdparty",
       "-DCMAKE_C_COMPILER=clang",
       "-DCMAKE_CXX_COMPILER=clang++"], 'cmake', false)
   }
@@ -1681,17 +1690,17 @@ String sharedTestSuites() {
 // The clang shards run --simCodeTarget=C+Rust, which does not change the C++
 // runtime, so its tests run in the gcc shards only. fmuCSources expects the
 // sources of a C FMU. The Rust runtime has gbode disabled. The clang shards
-// evaluate scripts with the new frontend, see nfScriptingArgs().
+// evaluate scripts with the old frontend, see ofScriptingArgs().
 String rustRuntimeTestSuites() {
-  return "${sharedTestSuites()},-cpp,-fmuCSources,-gbode,-ofScripting,+nfScripting"
+  return "${sharedTestSuites()},-cpp,-fmuCSources,-gbode,+ofScripting,-nfScripting"
 }
 
-// The C+Rust and wasm-jit lanes evaluate scripts with the new frontend
-// (#17473): they run the nfScripting tests in place of the ofScripting ones,
-// whose expected output is the old frontend's. The gcc lanes keep the old
-// frontend.
-String nfScriptingArgs() {
-  return '-omcflags=-d=nfScripting'
+// The C+Rust and wasm-jit lanes evaluate scripts with the old frontend
+// (#17473): they run the ofScripting tests in place of the nfScripting ones,
+// whose expected output is the new frontend's. The gcc lanes use the new
+// frontend, the default.
+String ofScriptingArgs() {
+  return '-omcflags=-d=-nfScripting'
 }
 
 // A partest shard against a stashed CMake install tree (see buildClangOMC).

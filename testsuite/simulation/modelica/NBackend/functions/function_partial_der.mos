@@ -38,8 +38,8 @@ simulate(function_partial_der); getErrorString();
 //   Real '$fDER_b' = 0.0;
 //   Real 'y';
 // algorithm
-//   '$fDER_y' := cos('x') * 1.0 * 'b' + sin('x') * '$fDER_b';
-//   'y' := sin('x') * 'b';
+//   '$fDER_y' := cos('x')*1.0*'b' + sin('x')*'$fDER_b';
+//   'y' := sin('x')*'b';
 // end 'function_partial_der.coswave'
 //
 // record SimulationResult

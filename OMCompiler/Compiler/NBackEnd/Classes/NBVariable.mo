@@ -53,13 +53,16 @@ public
   import BackendExtension = NFBackendExtension;
   import NFBackendExtension.{BackendInfo, StateSelect, TearingSelect, VariableAttributes, VariableKind, OptimizerExpression};
   import NFBinding.Binding;
+  import Call = NFCall;
   import Ceval = NFCeval;
   import Class = NFClass;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
+  import NFFunction.Function;
   import NFInstNode.InstNode;
   import Prefixes = NFPrefixes;
+  import Record = NFRecord;
   import Scalarize = NFScalarize;
   import SimplifyExp = NFSimplifyExp;
   import Subscript = NFSubscript;
@@ -1342,17 +1345,28 @@ function isJacobianResultVar
   end hasDerVar;
 
   function addRecordChild
-    "adds a child to the records children. use with care, only when creating new records!"
+    "adds a child to the records children in the order of the record fields.
+    use with care, only when creating new records!"
     input Pointer<Variable> var_ptr;
     input Pointer<Variable> child;
   protected
     Variable var = Pointer.access(var_ptr);
+    list<String> fields;
+    Integer index;
+    list<PointerWeak<Variable>> before = {}, after;
   algorithm
     var := match var
       local
         VariableKind varKind;
       case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = varKind as VariableKind.RECORD())) algorithm
-        varKind.children := PointerWeak.downgrade(child) :: varKind.children;
+        fields := list(Record.Field.name(f) for f in Type.recordFields(Type.arrayElementType(var.ty)));
+        index := recordFieldIndex(child, fields);
+        after := varKind.children;
+        while not listEmpty(after) and recordFieldIndex(PointerWeak.upgrade(listHead(after)), fields) < index loop
+          before := listHead(after) :: before;
+          after := listRest(after);
+        end while;
+        varKind.children := List.append_reverse(before, PointerWeak.downgrade(child) :: after);
         var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
       then var;
       else algorithm
@@ -1362,6 +1376,20 @@ function isJacobianResultVar
     end match;
     Pointer.update(var_ptr, var);
   end addRecordChild;
+
+  function recordFieldIndex
+    "the position of the child in the record fields, unknown fields go last"
+    input Pointer<Variable> child;
+    input list<String> fields;
+    output Integer index = 1;
+  protected
+    String name = ComponentRef.firstName(getVarName(child));
+  algorithm
+    for field in fields loop
+      if field == name then return; end if;
+      index := index + 1;
+    end for;
+  end recordFieldIndex;
 
   function setRecordChildren
     "sets the records children. use with care, only when creating new records!"
@@ -1969,6 +1997,11 @@ function isJacobianResultVar
     protected
       Expression new_exp;
     algorithm
+      // explicitly impure calls are not evaluated during translation
+      if Expression.contains(exp, isExplicitlyImpureCall) then
+        b := false;
+        return;
+      end if;
       b := Expression.isLiteralXML(exp);
       if not b or (resizable and not Expression.isLiteral(exp)) then
         // try to extract literal from array constructor (use dummy map, there should not be any new iterators)
@@ -2763,6 +2796,7 @@ function isJacobianResultVar
 
       /* state order for differentiation and index reduction */
       UnorderedMap<ComponentRef, ComponentRef> state_order;
+      Boolean resizable                   "true if the model has resizable parameters, set by Resizable.resize";
     end VAR_DATA_SIM;
 
     record VAR_DATA_JAC
@@ -3156,6 +3190,18 @@ protected
   algorithm
     Pointer.update(acc, getVarName(var) :: Pointer.access(acc));
   end getVarNameTraverse;
+
+  function isExplicitlyImpureCall
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      local
+        Function fn;
+      case Expression.CALL(call = Call.TYPED_CALL(fn = fn)) then Function.isExplicitlyImpure(fn);
+      else false;
+    end match;
+  end isExplicitlyImpureCall;
 
   annotation(__OpenModelica_Interface="nbackend");
 end NBVariable;

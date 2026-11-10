@@ -57,10 +57,12 @@ check-ExternalDependency-files:
 # on a machine that doesn't have the Modelica library installed.
 	@test -f ExternalDependency.fmutmp/binaries/linux64/libaddOne.so || (ls -l ExternalDependency.fmutmp/binaries/linux64/ ; false)
 	@test -f ExternalDependency.fmutmp/binaries/win64/addOne.dll || (ls -l ExternalDependency.fmutmp/binaries/win64/ ; false)
-# CoSimulation FMU with CVODE linked in, Linux only. SUNDIALS is a static library, so it
+# CoSimulation FMU with CVODE linked in. SUNDIALS is a static library, so it
 # leaves no trace in binaries/ and a successful build is what is being checked here.
 	$(call assert-binary,ExternalDependencyCVode.fmutmp/binaries/linux64/ExternalDependencyCVode.so,ELF 64-bit .*shared object,x86-64)
+	$(call assert-binary,ExternalDependencyCVode.fmutmp/binaries/win64/ExternalDependencyCVode.dll,PE32\+ .*\(DLL\),x86-64)
 	@test -f ExternalDependencyCVode.fmutmp/binaries/linux64/libaddOne.so || (ls -l ExternalDependencyCVode.fmutmp/binaries/linux64/ ; false)
+	@test -f ExternalDependencyCVode.fmutmp/binaries/win64/addOne.dll || (ls -l ExternalDependencyCVode.fmutmp/binaries/win64/ ; false)
 	@grep -q cvode ExternalDependencyCVode.fmutmp/resources/ExternalDependencyCVode_flags.json || (cat ExternalDependencyCVode.fmutmp/resources/ExternalDependencyCVode_flags.json ; false)
 
 check-FmuExportCrossCompile-files:

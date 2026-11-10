@@ -1,0 +1,69 @@
+// name:     fmi3_cs_exitinit_assert
+// keywords: FMI 3.0 export co-simulation initialization assert
+// status:   correct
+// teardown_command: rm -rf fmi3_cs_exitinit_assert*.fmu fmi3_cs_exitinit_assert*.fmutmp/ fmi3_cs_exitinit_assert*.log fmi3_cs_exitinit_assert*_out.txt
+//
+// An assert during initialization makes fmi3ExitInitializationMode fail.
+// The instance must then refuse fmi3DoStep, whether the assert is in an
+// equation or in a function (#17740).
+
+loadString("
+model fmi3_cs_exitinit_assert_equation
+  parameter Real p = 1;
+  Real x(start = 0, fixed = true);
+initial algorithm
+  assert(p > 2, \"p must exceed 2\");
+equation
+  der(x) = 1;
+end fmi3_cs_exitinit_assert_equation;
+
+model fmi3_cs_exitinit_assert_function
+  function f
+    input Real p;
+    output Real y;
+  algorithm
+    assert(p > 2, \"p must exceed 2\");
+    y := p;
+  end f;
+  parameter Real p = 1;
+  parameter Real q(fixed = false);
+  Real x(start = 0, fixed = true);
+initial equation
+  q = f(p);
+equation
+  der(x) = q;
+end fmi3_cs_exitinit_assert_function;
+"); getErrorString();
+
+buildModelFMU(fmi3_cs_exitinit_assert_equation, version = "3.0", fmuType = "cs"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi3_cs_exitinit_assert.py fmi3_cs_exitinit_assert_equation.fmu fmi3_cs_exitinit_assert_equation_out.txt > fmi3_cs_exitinit_assert_equation.log 2>&1"); getErrorString();
+readFile("fmi3_cs_exitinit_assert_equation_out.txt"); getErrorString();
+
+buildModelFMU(fmi3_cs_exitinit_assert_function, version = "3.0", fmuType = "cs"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi3_cs_exitinit_assert.py fmi3_cs_exitinit_assert_function.fmu fmi3_cs_exitinit_assert_function_out.txt > fmi3_cs_exitinit_assert_function.log 2>&1"); getErrorString();
+readFile("fmi3_cs_exitinit_assert_function_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// "fmi3_cs_exitinit_assert_equation.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "fmi3ExitInitializationMode: fmi3Error
+// fmi3DoStep: fmi3Error
+// "
+// ""
+// "fmi3_cs_exitinit_assert_function.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "fmi3ExitInitializationMode: fmi3Error
+// fmi3DoStep: fmi3Error
+// "
+// ""
+// endResult

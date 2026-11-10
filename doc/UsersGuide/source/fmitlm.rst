@@ -19,7 +19,7 @@ FMI Standards
    * - Version
      - Support in OpenModelica
    * - `1.0.1 <https://fmi-standard.org/assets/releases/FMI_for_ModelExchange_v1.0.1.pdf>`_
-     - Deprecated
+     - Deprecated, will be removed after OpenModelica 1.28.0 is released
    * - `2.0.5 <https://github.com/modelica/fmi-standard/releases/download/v2.0.5/FMI-Specification-2.0.5.pdf>`_
      - Supported
    * - `3.0.2 <https://fmi-standard.org/docs/3.0.2/>`_
@@ -187,17 +187,21 @@ If there are some errors while creating the FMU, they will be shown in the comma
 window and logged in this log file as well.
 
 By default an FMU that can be used for both Model Exchange and Co-Simulation is generated.
-We support FMI 1.0 (deprecated) and FMI 2.0 for Model Exchange and Co-Simulation FMUs,
+We support FMI 2.0 for Model Exchange and Co-Simulation FMUs,
 with experimental support for FMI 3.0 (see the version table above).
+FMI 1.0 export and import are deprecated and give a warning; they will be
+removed after OpenModelica 1.28.0 is released.
 
 For the Co-Simulation FMU two integrator methods are available:
 
 * Forward Euler [default]
 * SUNDIALS CVODE (see [#f1]_)
 
-Forward Euler uses root finding, which does an Euler step of ``communicationStepSize``
-in ``fmi2DoStep``. Events are checked for before and after the call to
-``fmi2GetDerivatives``.
+Forward Euler does an Euler step of ``communicationStepSize`` in ``fmi2DoStep``.
+Both integrators find the time of a state event inside the step: CVODE with its
+root finding, as in the simulation, and Forward Euler by bisection between the
+two ends of the step. The FMU handles the event at that time. An FMI 3.0 FMU
+that is used with Event Mode and early return stops there instead.
 
 If CVODE is chosen as integrator the FMU should also include runtime dependencies
 (:ref:`--fmuRuntimeDepends=modelica<omcflag-fmuRuntimeDepends>`) to copy all used dynamic
@@ -230,6 +234,29 @@ The BouncingBall_flags.json for this example is displayed in
   :name: BouncingBall-FMI-flags
   :caption: BouncingBall FMI flags
 
+
+.. _fmi-tunable-parameters:
+
+Tunable Parameters
+~~~~~~~~~~~~~~~~~~
+
+A parameter with a literal binding, for example ``parameter Real R_set = 1``,
+is exported as ``causality="parameter"`` and ``variability="tunable"``. An
+importer can set it in Event Mode and, in Co-Simulation, between two steps.
+The FMU then calculates again only the parameters that depend on it, for
+example ``parameter Real R = 2*R_set``. These are exported as
+``causality="calculatedParameter"`` and ``variability="tunable"``. The
+dependencies are in ``resources/<model>_paramdeps.bin``.
+
+A parameter stays ``fixed`` if a value that is calculated only during
+initialization depends on it: a parameter with ``fixed=false``, a variable of
+``when initial()``, an external object, the start or interval of ``sample()``
+or of a clock, the maximum delay of ``delay()`` or the initial values of
+``spatialDistribution()``. An array is tunable only if all its elements are.
+With ``--fmiTunableParameters=none`` all parameters are ``fixed``.
+
+A write that the FMI standard does not allow, for example to a ``fixed``
+parameter after initialization, returns an error.
 
 Compilation Process
 ~~~~~~~~~~~~~~~~~~~

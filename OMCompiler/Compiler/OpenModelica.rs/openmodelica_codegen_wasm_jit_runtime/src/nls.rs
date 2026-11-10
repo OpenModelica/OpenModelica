@@ -164,6 +164,7 @@ pub extern "C" fn rt_nls_assert_failed(
     cond: i32,
     initial: i32,
     sim_data: i32,
+    eq: i32,
 ) {
     // C's `longjmp` ends the evaluation at its first model error, so the asserts
     // after it never run. Here every frame returns and the rest carries on, so
@@ -184,6 +185,7 @@ pub extern "C" fn rt_nls_assert_failed(
             col_start: scol,
             line_end: eline,
             col_end: ecol,
+            eq,
         };
         // A function's `assert()` (no condition) inside an FMU is `omc_assert_fmi`,
         // which reports to the importer instead, as `rt_assert` does for one that

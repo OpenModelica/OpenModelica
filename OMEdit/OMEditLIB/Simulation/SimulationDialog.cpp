@@ -58,6 +58,7 @@
 #include <QDockWidget>
 #include <QMessageBox>
 #include <QRegularExpression>
+#include <cmath>
 #include <limits>
 
 static bool isSinglePrecisionFormat(const QString &outputFormat)
@@ -1130,6 +1131,9 @@ bool SimulationDialog::translateModel(QString simulationParameters)
     // pass the -sx flag via simflags to be used in the data reconciliation, boundary conditions and state estimation algorithms (#14864)
     simulationParameters.append(", simflags=").append("\"").append(QString("-sx=%1").arg(measurementInputFile).append("\""));
   }
+  if (mpInteractiveSimulationGroupBox->isChecked()) {
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("--tunableParameters");
+  }
   // set linearization dump language
   if (mpLinearizationDumpLanguageComboBox->currentText() != QStringLiteral("none")) {
     MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+linearizationDumpLanguage=" + mpLinearizationDumpLanguageComboBox->currentText());
@@ -2154,6 +2158,51 @@ void SimulationDialog::plotAnnotatedFigures(const QString &className, const QStr
     }
     return pPlotWindowContainer->addPlotWindow();
   };
+  auto getAxisBound = [](const FlatModelica::Expression &expression, double &bound) {
+    const FlatModelica::Expression *pValue = &expression;
+    if (pValue->isArray()) {
+      if (pValue->size() != 1) {
+        return false;
+      }
+      pValue = &pValue->elements().front();
+    }
+    if (!pValue->isNumber()) {
+      return false;
+    }
+    bound = pValue->realValue();
+    return std::isfinite(bound);
+  };
+  auto applyAxis = [getAxisBound](OMPlot::PlotWindow *pPlotWindow, const ModelInstance::Axis *pAxis, bool isXAxis) {
+    const int axis = isXAxis ? QwtPlot::xBottom : QwtPlot::yLeft;
+    QwtPlot *pPlot = pPlotWindow->getPlot();
+    pPlot->setAxisAutoScale(axis, pPlotWindow->getAutoScaleButton()->isChecked());
+    double min = 0.0;
+    double max = 0.0;
+    const bool hasMin = pAxis && getAxisBound(pAxis->getMin(), min);
+    const bool hasMax = pAxis && getAxisBound(pAxis->getMax(), max);
+    if (!hasMin && !hasMax) {
+      return;
+    }
+    if (!hasMin || !hasMax) {
+      pPlot->replot();
+    }
+    const QwtScaleDiv &scaleDiv = pPlot->axisScaleDiv(axis);
+    if (!hasMin) {
+      min = scaleDiv.lowerBound();
+    }
+    if (!hasMax) {
+      max = scaleDiv.upperBound();
+    }
+    if (!std::isfinite(min) || !std::isfinite(max) || min >= max) {
+      return;
+    }
+    pPlot->setAxisAutoScale(axis, false);
+    if (isXAxis) {
+      pPlotWindow->setXRange(min, max);
+    } else {
+      pPlotWindow->setYRange(min, max);
+    }
+  };
 
   for (int figureIndex = 0; figureIndex < static_cast<int>(pDocumentation->getFigures().size()); ++figureIndex) {
     const auto &figure = pDocumentation->getFigures().at(figureIndex);
@@ -2249,6 +2298,9 @@ void SimulationDialog::plotAnnotatedFigures(const QString &className, const QStr
             pPlotWindow->updatePlot();
           }
         }
+        applyAxis(pPlotWindow, pXAxis, true);
+        applyAxis(pPlotWindow, pYAxis, false);
+        pPlotWindow->getPlot()->replot();
       }
     }
   }

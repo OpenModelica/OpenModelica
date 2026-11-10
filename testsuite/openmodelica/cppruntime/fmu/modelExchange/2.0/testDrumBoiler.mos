@@ -70,7 +70,7 @@ val(evaporator_qm_S, 100);
 //     needsExecutionTool=\"false\"
 //     completedIntegratorStepNotNeeded=\"false\"
 //     canBeInstantiatedOnlyOncePerProcess=\"false\"
-//     canNotUseMemoryManagementFunctions=\"false\"
+//     canNotUseMemoryManagementFunctions=\"true\"
 //     canGetAndSetFMUstate=\"true\"
 //     canSerializeFMUstate=\"true\"
 //     providesDirectionalDerivative=\"true\">

@@ -1,0 +1,34 @@
+// name:      resultFileFlag
+// keywords:  simflags resultFile #17817
+// status:    correct
+// teardown_command: rm -rf ResultFileFlag ResultFileFlag.* ResultFileFlag_* ResultFileFlagR*.mat
+//
+// simulate takes the result file from -r, given as -r=f, -r f or a quoted
+// name, also after another flag. resultFileFlagRealTime.mos has a flag that
+// starts with -r.
+
+loadString("model ResultFileFlag
+  Real x(start=1, fixed=true);
+equation
+  der(x) = -x;
+end ResultFileFlag;"); getErrorString();
+
+echo(false);
+r1 := simulate(ResultFileFlag, simflags="-r=ResultFileFlagR1.mat");
+r2 := simulate(ResultFileFlag, simflags="-lv=LOG_STATS -r ResultFileFlagR2.mat");
+r3 := simulate(ResultFileFlag, simflags="-r=\"ResultFileFlagR3.mat\" -lv=LOG_STATS");
+echo(true);
+r1.resultFile;
+r2.resultFile;
+r3.resultFile;
+{regularFileExists(f) for f in {"ResultFileFlagR1.mat", "ResultFileFlagR2.mat", "ResultFileFlagR3.mat"}};
+
+// Result:
+// true
+// ""
+// true
+// "ResultFileFlagR1.mat"
+// "ResultFileFlagR2.mat"
+// "ResultFileFlagR3.mat"
+// {true, true, true}
+// endResult

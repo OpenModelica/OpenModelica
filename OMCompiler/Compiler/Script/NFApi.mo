@@ -1513,6 +1513,7 @@ function translateResidualsDAE
   output Boolean success = true;
 protected
   Boolean disable_single_flow_eq;
+  Boolean homotopy_in_residuals;
   Boolean nls_analytic_jac;
   list<String> non_std_flags;
   FlatModel flat_model;
@@ -1520,6 +1521,8 @@ protected
   Option<SimCode.SimulationSettings> simSettings;
 algorithm
   disable_single_flow_eq := FlagsUtil.set(Flags.DISABLE_SINGLE_FLOW_EQ, true);
+  // the initialization of the combined components runs the homotopy
+  homotopy_in_residuals := FlagsUtil.set(Flags.HOMOTOPY_IN_RESIDUALS, true);
   // Components with bidirectional stream connectors keep unevaluated inStream()
   // calls (the connector inflow, resolved when the component is coupled). These
   // form small nonlinear systems whose symbolic Jacobian cannot be computed
@@ -1541,6 +1544,7 @@ algorithm
 
   FlagsUtil.setConfigStringList(Flags.ALLOW_NON_STANDARD_MODELICA, non_std_flags);
   FlagsUtil.set(Flags.NLS_ANALYTIC_JACOBIAN, nls_analytic_jac);
+  FlagsUtil.set(Flags.HOMOTOPY_IN_RESIDUALS, homotopy_in_residuals);
   FlagsUtil.set(Flags.DISABLE_SINGLE_FLOW_EQ, disable_single_flow_eq);
 end translateResidualsDAE;
 

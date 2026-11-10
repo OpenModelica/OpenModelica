@@ -122,7 +122,6 @@ import Matching;
 import MetaModelica.Dangerous;
 import Mutable;
 import PriorityQueue;
-import SemanticVersion;
 import SimCodeDump;
 import SimCodeFunctionUtil;
 import SimCodeUtilShared;
@@ -206,7 +205,6 @@ public function createSimCode "entry point to create SimCode from BackendDAE."
   input BackendDAE.BackendDAE inBackendDAE;
   input BackendDAE.BackendDAE inInitDAE;
   input Option<BackendDAE.BackendDAE> inInitDAE_lambda0;
-  input Option<BackendDAE.InlineData> inInlineData;
   input list<BackendDAE.Equation> inRemovedInitialEquationLst;
   input Absyn.Path inClassName;
   input String filenamePrefix;
@@ -282,8 +280,6 @@ protected
   list<SimCodeVar.SimVar> tempvars, jacobianSimvars, seedVars;
   list<list<SimCode.SimEqSystem>> algebraicEquations;   // --> functionAlgebraics
   list<list<SimCode.SimEqSystem>> odeEquations;         // --> functionODE
-  list<list<SimCode.SimEqSystem>> inlineEquationsTemp;  // --> symbolicInlineSystemTemp
-  list<SimCode.SimEqSystem> inlineEquations;            // --> symbolicInlineSystem
   SimCodeVar.SimVars tmpSimVars;
   SimCode.VarInfo varInfo;
   list<SimCodeVar.SimVar> sensitivityVars;
@@ -291,12 +287,7 @@ protected
   list<tuple<Integer, Integer>> equationSccMapping, eqBackendSimCodeMapping;
   list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
   SimCode.SpatialDistributionInfo spatialInfo;
-  BackendDAE.InlineData inlineData;
-  list<SimCodeVar.SimVar> inlineSimKnVars;
   BackendDAE.Variables emptyVars;
-  Integer SymEuler_help = 0;
-  SimCodeVar.SimVar dtSimVar;
-  BackendDAE.Var dtVar;
   HashTableSimCodeEqCache.HashTable eqCache;
   BackendDAE.Jacobian dataReconJac;
   Option<BackendDAE.Jacobian> dataReconJacH;
@@ -374,25 +365,12 @@ algorithm
     (clockedSysts, contSysts) := List.splitOnTrue(dlow.eqs, BackendDAEUtil.isClockedSyst);
     execStat("simCode: created event and clocks part");
 
-    // ToDo: fix this ugly flag switchting
-    if (Flags.getConfigEnum(Flags.SYM_SOLVER) > 0) then
-      SymEuler_help := Flags.getConfigEnum(Flags.SYM_SOLVER);
-      FlagsUtil.setConfigEnum(Flags.SYM_SOLVER, 0);
-    end if;
-
-
     (uniqueEqIndex, odeEquations, algebraicEquations, localKnownVars, allEquations, equationsForZeroCrossings, tempvars,
       equationSccMapping, eqBackendSimCodeMapping, backendMapping, sccOffset) :=
          createEquationsForSystems(contSysts, shared, uniqueEqIndex, zeroCrossings, tempvars, 1, backendMapping, true);
     if debug then execStat("simCode: createEquationsForSystems"); end if;
 
 
-    if (SymEuler_help > 0) then
-      FlagsUtil.setConfigEnum(Flags.SYM_SOLVER, SymEuler_help);
-    end if;
-
-    //List.map1_0(inlineEquations, dumpSimEqSystemLst,"\n");
-    if debug then execStat("simCode: createEquationsForSystems for inline module"); end if;
 
     outMapping := (uniqueEqIndex /* highestSimEqIndex */, equationSccMapping);
     execStat("simCode: created simulation system equations");
@@ -449,18 +427,6 @@ algorithm
     algebraicEquations := List.appendElt(listReverse(removedEquations), listReverse(algebraicEquations));
     allEquations := List.append_reverse(allEquations, removedEquations);
 
-    // create inline equations if present
-    if isSome(inInlineData) then
-      SOME(inlineData) := inInlineData;
-      (uniqueEqIndex, inlineEquationsTemp, _, _, _, _, tempvars, _, _, _, _) :=
-            createEquationsForSystems(inlineData.inlineSystems,
-                                      shared, uniqueEqIndex, {}, tempvars, uniqueEqIndex,
-                                      SimCode.NO_MAPPING(), false);
-      inlineEquations := List.flatten(inlineEquationsTemp);
-    else
-      inlineEquations := {};
-    end if;
-
     // state set stuff
     (dlow, stateSets, uniqueEqIndex, tempvars, numStateSets) := createStateSets(dlow, {}, uniqueEqIndex, tempvars);
     if debug then execStat("simCode: createStateSets"); end if;
@@ -513,8 +479,6 @@ algorithm
     (allEquations, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfo(allEquations, modelInfo);
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
     (clockedPartitions, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsClockPartitions(clockedPartitions, modelInfo);
-    SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
-    (inlineEquations, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfo(inlineEquations, modelInfo);
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
 
     // Generate jacobian code for DataReconciliation
@@ -614,19 +578,6 @@ algorithm
     if Flags.isSet(Flags.EXEC_HASH) then
       print("*** SimCode -> generate cref2simVar hashtable done!: " + realString(clock()) + "\n");
     end if;
-    // add known inline vars to simVarHT
-    if (Flags.getConfigEnum(Flags.SYM_SOLVER) > 0) then
-      SOME(inlineData) := inInlineData;
-      emptyVars := BackendVariable.emptyVars();
-      inlineSimKnVars := adjustStatesForInlineSolver(modelInfo.vars.stateVars);
-      // omc dt
-      ({dtVar},_) := BackendVariable.getVar(ComponentReferenceBasics.makeCrefIdent(BackendDAE.symSolverDT, DAE.T_REAL_DEFAULT, {}), inlineData.knownVariables);
-      dtSimVar := dlowvarToSimvar(dtVar, NONE(), emptyVars);
-      dtSimVar.index := listLength(inlineSimKnVars);
-      inlineSimKnVars := dtSimVar::inlineSimKnVars;
-      crefToSimVarHT := List.fold(inlineSimKnVars,HashTableCrefSimVar.addSimVarToHashTable,crefToSimVarHT);
-    end if;
-
     if Flags.getConfigBool(Flags.CALCULATE_SENSITIVITIES) then
       tmpSimVars := modelInfo.vars;
       (sensitivityVars, countSenParams) := createSimVarsForSensitivities(tmpSimVars.stateVars, tmpSimVars.paramVars, numberofFixedParameters);
@@ -769,9 +720,9 @@ algorithm
       fmiSimulationFlags          = fmiSimulationFlags,
       partitionData               = SimCode.emptyPartitionData,
       daeModeData                 = NONE(),
-      inlineEquations             = inlineEquations,
       scalarized                  = true,
-      fmiFigures                  = {}
+      fmiFigures                  = {},
+      paramDeps                   = SimCode.emptyParamDeps
     );
 
     (simCode, lits) := findSimCodeLiterals(simCode, literalsAcc);
@@ -6911,7 +6862,7 @@ algorithm
                                    arrayLength(dlow.shared.partitionsInfo.basePartitions),
                                    arrayLength(dlow.shared.partitionsInfo.subPartitions),
                                    numSpatialDistributions + 1,
-                                   hasLargeEqSystems, {}, {}, unitDefinitions);
+                                   hasLargeEqSystems, {}, {}, unitDefinitions, false);
   else
     Error.addInternalError("createModelInfo failed", sourceInfo());
     fail();
@@ -7689,9 +7640,7 @@ protected function extractVarsFromList
 algorithm
   if if ComponentReference.isPreCref(var.varName) or ComponentReference.isStartCref(var.varName) then false else not BaseHashSet.has(var.varName, Mutable.access(hs)) then
     /* ignore variable, since they are treated by kind in the codegen */
-    if not BackendVariable.isAlgebraicOldState(var) then
-      extractVarFromVar(var, aliasVars, vars, simVars, hs, timeInterval, iterationVars, unitStrings);
-    end if;
+    extractVarFromVar(var, aliasVars, vars, simVars, hs, timeInterval, iterationVars, unitStrings);
   //  print("Added  " + ComponentReferenceBasics.printComponentRefStr(inVar.varName) + "\n");
   //else
   //  print("Skiped " + ComponentReferenceBasics.printComponentRefStr(inVar.varName) + "\n");
@@ -8631,10 +8580,6 @@ algorithm
   print(UNDERLINE + "\n\n\n");
   print("\ninitialEquations_lambda0: ("+intString(listLength(simCode.initialEquations_lambda0))+")\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.initialEquations_lambda0,"\n");
-  if (Flags.getConfigEnum(Flags.SYM_SOLVER) > 0) then
-    print("\ninlineEquations: ("+intString(listLength(simCode.inlineEquations))+" systems)\n" + UNDERLINE + "\n");
-    dumpSimEqSystemLst(simCode.inlineEquations,"\n");
-  end if;
   print("\nremovedInitialEquations:\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.removedInitialEquations,"\n");
   print("\nstartValueEquations:\n" + UNDERLINE + "\n");
@@ -9291,7 +9236,7 @@ algorithm
     case (SimCodeVar.FIXED(), SimCodeVar.CALCULATED_PARAMETER()) then getInitialAttributeHelperForParameters(dlow, isFixed, iterationVars);
     case (SimCodeVar.FIXED(), SimCodeVar.LOCAL()) then getInitialAttributeHelperForParameters(dlow, isFixed, iterationVars);
 
-    // TODO varkind= tunable Vs causality = parameter, calculatedParameter and local, same like PARAM()
+    // ParamDeps.add marks tunable parameters later; their initial attribute is the same.
 
     // variability=DISCRETE Vs causality = output and local
     case (SimCodeVar.DISCRETE(), SimCodeVar.OUTPUT()) then getInitialAttributeHelper(dlow, isFixed, iterationVars);
@@ -9372,7 +9317,6 @@ algorithm
     variability := SimCodeVar.CONSTANT();
   elseif BackendVariable.isVarDiscrete(var) or BackendVariable.isClockedStateVar(var) then
     variability := SimCodeVar.DISCRETE();
-  // TODO SimCodeVar.TUNABLE()
   else
     variability := SimCodeVar.CONTINUOUS();
   end if;
@@ -9652,23 +9596,6 @@ algorithm
     case SimCodeFunction.RECORD_CONSTRUCTOR(name=name) then name;
   end match;
 end functionPath;
-
-
-protected function adjustStatesForInlineSolver
-  input list<SimCodeVar.SimVar> inStates;
-  output list<SimCodeVar.SimVar> outStates = {};
-algorithm
-try
-  for var in inStates loop
-    var.name := ComponentReference.appendStringLastIdent("$Old", var.name);
-    var.varKind := BackendDAE.ALG_STATE_OLD();
-    outStates := var::outStates;
-  end for;
-else
-  Error.addMessage(Error.INTERNAL_ERROR,{"SimCodeUtil.adjustStatesForInlineSolver failed"});
-  fail();
-end try;
-end adjustStatesForInlineSolver;
 
 /**************************************/
 /************* for index ***************/
@@ -12390,23 +12317,24 @@ algorithm
           initPartSimDer,
           SimCode.FMIDISCRETESTATES(discreteStates),
           SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns, sortedUnknownCrefs, sortedknownCrefs),
-          fmi3ArrayGroups(inModelInfo, derivatives)));
+          fmi3ArrayGroups(inModelInfo, derivatives),
+          true));
 else
   // create empty model structure
   try
     // create empty derivatives dependencies
-    derivatives := list(SimCode.FMIUNKNOWN(SimCodeCodegenUtil.getVariableFMIIndex(v), {}, {})
-                        for v in getScalarVars(inModelInfo.vars.derivativeVars));
+    derivatives := fmiUnknownsWithoutDependencies(getScalarVars(inModelInfo.vars.derivativeVars));
 
-    // create empty output dependencies
     varsA := List.filterOnTrue(inModelInfo.vars.algVars, isOutputSimVar);
-    outputs := list(SimCode.FMIUNKNOWN(SimCodeCodegenUtil.getVariableFMIIndex(v), {}, {})
-                    for v in getScalarVars(varsA));
+    varsB := List.filterOnTrue(inModelInfo.vars.intAlgVars, isOutputSimVar);
+    varsC := List.filterOnTrue(inModelInfo.vars.boolAlgVars, isOutputSimVar);
+    varsD := List.filterOnTrue(inModelInfo.vars.stringAlgVars, isOutputSimVar);
+    allOutputVars := getScalarVars(listAppend(listAppend(varsA, varsB), listAppend(varsC, varsD)));
+    outputs := fmiUnknownsWithoutDependencies(allOutputVars);
 
     // create empty clockedStates dependencies
     clockedStates := List.filterOnTrue(inModelInfo.vars.algVars, isClockedStateSimVar);
-    discreteStates := list(SimCode.FMIUNKNOWN(SimCodeCodegenUtil.getVariableFMIIndex(v), {}, {})
-                           for v in getScalarVars(clockedStates));
+    discreteStates := fmiUnknownsWithoutDependencies(getScalarVars(clockedStates));
 
     // Compute the InitialUnknowns even though the symbolic Jacobian (and thus
     // the dependency information) is missing. Omitting the dependencies is valid
@@ -12417,11 +12345,6 @@ else
     //  2. calculatedParameters
     //  3. continuous-time states with initial = approx or calculated
     //  4. state derivatives with initial = approx or calculated
-    varsA := List.filterOnTrue(inModelInfo.vars.algVars, isOutputSimVar);
-    varsB := List.filterOnTrue(inModelInfo.vars.intAlgVars, isOutputSimVar);
-    varsC := List.filterOnTrue(inModelInfo.vars.boolAlgVars, isOutputSimVar);
-    varsD := List.filterOnTrue(inModelInfo.vars.stringAlgVars, isOutputSimVar);
-    allOutputVars := getScalarVars(listAppend(listAppend(varsA, varsB), listAppend(varsC, varsD)));
     tmpInitialUnknowns := {};
     tmpInitialUnknowns := List.filterCons(allOutputVars, isInitialApproxOrCalculatedSimVar, tmpInitialUnknowns);
     tmpInitialUnknowns := List.filterCons(getScalarVars(getAllParamSimVars(inModelInfo)), isCausalityCalculatedParameterSimVar, tmpInitialUnknowns);
@@ -12429,8 +12352,7 @@ else
     // so it is not an initial unknown; an unfixed start makes it initial = approx.
     tmpInitialUnknowns := List.filterCons(getScalarVars(inModelInfo.vars.stateVars), isStateInitialUnknownSimVar, tmpInitialUnknowns);
     tmpInitialUnknowns := List.filterCons(getScalarVars(inModelInfo.vars.derivativeVars), isInitialApproxOrCalculatedSimVar, tmpInitialUnknowns);
-    tmpInitialUnknowns := Dangerous.listReverseInPlace(tmpInitialUnknowns);
-    allInitialUnknowns := list(SimCode.FMIUNKNOWN(SimCodeCodegenUtil.getVariableFMIIndex(v), {}, {}) for v in tmpInitialUnknowns);
+    allInitialUnknowns := List.sort(fmiUnknownsWithoutDependencies(tmpInitialUnknowns), fmiUnknownIndexGt);
 
     contPartSimDer := NONE();
     initPartSimDer := NONE();
@@ -12443,7 +12365,8 @@ else
           initPartSimDer,
           SimCode.FMIDISCRETESTATES(discreteStates),
           SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns, {}, {}),
-          fmi3ArrayGroups(inModelInfo)));
+          fmi3ArrayGroups(inModelInfo),
+          false));
   else
     Error.addInternalError("SimCodeUtil.createFMIModelStructure failed", sourceInfo());
     fail();
@@ -13379,6 +13302,23 @@ algorithm
   (i,tree) := getValueReferenceMapping2(vars.extObjVars, 0, tree);
 end getValueReferenceMapping;
 
+protected function fmiUnknownsWithoutDependencies
+  "The FMI unknowns of the variables, without dependency information. A
+   variable that is not exported has no FMI index and is left out."
+  input list<SimCodeVar.SimVar> vars;
+  output list<SimCode.FmiUnknown> unknowns;
+protected
+  list<Integer> indices = list(SimCodeCodegenUtil.getVariableFMIIndex(v) for v in vars);
+algorithm
+  unknowns := list(SimCode.FMIUNKNOWN(i, {}, {}) for i guard i > 0 in indices);
+end fmiUnknownsWithoutDependencies;
+
+protected function fmiUnknownIndexGt
+  input SimCode.FmiUnknown u1;
+  input SimCode.FmiUnknown u2;
+  output Boolean gt = u1.index > u2.index;
+end fmiUnknownIndexGt;
+
 public function createMinimalFMIModelStructure
   "Build a minimal FMI ModelStructure (continuous state derivatives, outputs and
    initial unknowns, without dependency information) directly from the SimVars.
@@ -13392,8 +13332,8 @@ protected
   list<SimCode.FmiUnknown> derivs, outs, initialUnknowns;
   list<SimCodeVar.SimVar> iu;
 algorithm
-  derivs := list(SimCode.FMIUNKNOWN(SimCodeCodegenUtil.getVariableFMIIndex(v), {}, {}) for v in modelInfo.vars.derivativeVars);
-  outs   := list(SimCode.FMIUNKNOWN(SimCodeCodegenUtil.getVariableFMIIndex(v), {}, {}) for v in modelInfo.vars.outputVars);
+  derivs := fmiUnknownsWithoutDependencies(modelInfo.vars.derivativeVars);
+  outs   := fmiUnknownsWithoutDependencies(modelInfo.vars.outputVars);
 
   // InitialUnknowns according to the FMI specification, but without dependency
   // information (the new backend FMU export does not compute the FMIDER
@@ -13412,8 +13352,7 @@ algorithm
   // initial_ for states (see FmiInitialAttribute3 in CodegenFMU3.tpl).
   iu := List.filterCons(modelInfo.vars.stateVars, isStateInitialUnknownSimVar, iu);
   iu := List.filterCons(modelInfo.vars.derivativeVars, isInitialApproxOrCalculatedSimVar, iu);
-  iu := Dangerous.listReverseInPlace(iu);
-  initialUnknowns := list(SimCode.FMIUNKNOWN(SimCodeCodegenUtil.getVariableFMIIndex(v), {}, {}) for v in iu);
+  initialUnknowns := List.sort(fmiUnknownsWithoutDependencies(iu), fmiUnknownIndexGt);
 
   outStructure := SOME(SimCode.FMIMODELSTRUCTURE(
     SimCode.FMIOUTPUTS(outs),
@@ -13422,7 +13361,8 @@ algorithm
     NONE(),
     SimCode.FMIDISCRETESTATES({}),
     SimCode.FMIINITIALUNKNOWNS(initialUnknowns, {}, {}),
-    fmi3ArrayGroups(modelInfo)));
+    fmi3ArrayGroups(modelInfo),
+    false));
 end createMinimalFMIModelStructure;
 
 protected function fmi3ArrayGroups
@@ -14351,48 +14291,43 @@ algorithm
   cmakeCode := cmakeCode + getCmakeCrossPlatformSuffixes() + "\n";
   for lib in libraries loop
     // Special handling for ModelicaExternalC, we always copy the sources into the FMU
-    if List.contains({"ModelicaStandardTables", "ModelicaIO", "ModelicaMatIO"}, lib, stringEqual) then
+    if List.contains(SimCodeCodegenUtil.fmuSourceLibraries, lib, stringEqual) then
       needModelicaExternalC := "ON";
-    // zlib is referred to from MSL Tables, but by default not used by ModelicaMatIO
+    // An FMU that compiles ModelicaExternalC has a zlib of its own.
     elseif lib == "zlib" then
-      cmakeCode := cmakeCode + "find_library(" + lib + "\n" +
-                  "             NAMES " + lib + "\n" +
-                  "             PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)\n" +
-                  "if(NOT " + lib + ")\n" +
-                  "  message(WARNING \"Could not find library zlib\")" + "\n" +
-                  "  message(STATUS \"zlib is referred by ModelicaMatIO, but not used by default. Try compiling without linking.\")" + "\n" +
-                  "else()\n" +
-                  "  message(STATUS \"Linking ${" + lib + "}\")" + "\n" +
-                  "  target_link_libraries(${FMU_NAME_HASH} PRIVATE ${" + lib + "})" + "\n" +
-                  "  list(APPEND RUNTIME_DEPENDS ${" + lib + "})" + "\n" +
+      cmakeCode := cmakeCode + "if(NOT COMPILE_MODELICA_EXTERNAL_C)\n" +
+                  "  find_library(" + lib + "\n" +
+                  "               NAMES " + lib + "\n" +
+                  "               PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)\n" +
+                  "  if(NOT " + lib + ")\n" +
+                  "    message(WARNING \"Could not find library zlib\")" + "\n" +
+                  "  else()\n" +
+                  "    message(STATUS \"Linking ${" + lib + "}\")" + "\n" +
+                  "    target_link_libraries(${FMU_NAME_HASH} PRIVATE ${" + lib + "})" + "\n" +
+                  "    list(APPEND RUNTIME_DEPENDS ${" + lib + "})" + "\n" +
+                  "  endif()\n" +
                   "endif()\n";
+    elseif lib == "lapack" then
+      cmakeCode := cmakeCode + "find_package(LAPACK REQUIRED)\n" +
+                  "message(STATUS \"Linking ${LAPACK_LIBRARIES}\")\n" +
+                  "target_link_libraries(${FMU_NAME_HASH} PRIVATE ${LAPACK_LIBRARIES})\n";
     else
+      // Not in a Modelica library: a system library (rt, python3.8), linked by
+      // name as in a simulation executable and not copied into the FMU.
       cmakeCode := cmakeCode + "find_library(" + lib + "\n" +
                   "             NAMES " + lib + "\n" +
                   "             PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)\n" +
-                  "if(NOT " + lib + ")\n" +
-                  "  message(FATAL_ERROR \"Could not find library " + lib + "\")\n" +
-                  "endif()\n" +
-                  "message(STATUS \"Linking ${" + lib + "}\")\n" +
-                  "target_link_libraries(${FMU_NAME_HASH} PRIVATE ${" + lib + "})\n" +
-                  "list(APPEND RUNTIME_DEPENDS ${" + lib + "})\n";
+                  "if(" + lib + ")\n" +
+                  "  message(STATUS \"Linking ${" + lib + "}\")\n" +
+                  "  target_link_libraries(${FMU_NAME_HASH} PRIVATE ${" + lib + "})\n" +
+                  "  list(APPEND RUNTIME_DEPENDS ${" + lib + "})\n" +
+                  "else()\n" +
+                  "  message(STATUS \"Linking system library " + lib + "\")\n" +
+                  "  target_link_libraries(${FMU_NAME_HASH} PRIVATE " + lib + ")\n" +
+                  "endif()\n";
     end if;
   end for;
 end getCmakeLinkLibrariesCode;
-
-public function getCmakeSundialsLinkCode
-  "Code for FMU CMakeLists.txt to specify if CVODE is needed."
-  input Option<SimCode.FmiSimulationFlags> fmiSimulationFlags;
-  output String needCvode = "OFF";
-  output String cvodeDirectory = "\"\"";
-algorithm
-  if cvodeFmiFlagIsSet(fmiSimulationFlags) then
-    needCvode := "ON";
-    // ${DOCKER_VOL_DIR} so the path also resolves inside the container when cross compiling,
-    // see getCmakeLinkLibrariesCode. It is empty for a normal build.
-    cvodeDirectory := "\"${DOCKER_VOL_DIR}" + Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc\"";
-  end if;
-end getCmakeSundialsLinkCode;
 
 public function cvodeFmiFlagIsSet
   "Checks if s:cvode is part of FMI_FLAGS.
@@ -14460,15 +14395,15 @@ algorithm
 end msvcEnvironment;
 
 public function getCMakeVersion
-  "Get CMake version"
+  "Get CMake version, writing intermediate output to logDirectory (defaults to the current directory)."
   input String pathToCMake = Autoconf.cmake;
-  output SemanticVersion.Version cmakeVersion;
+  input String logDirectory = "./";
+  output String cmakeVersion;
 protected
   Integer retVal;
-  String cmakeVersionLogFile = "systemCall_cmakeVersion.log";
+  String cmakeVersionLogFile = logDirectory + "systemCall_cmakeVersion.log";
   list<String> regexOut;
   Integer numMatches;
-  String cmakeVersionString;
 algorithm
   retVal := System.systemCallRestrictedEnv(msvcEnvironment() + pathToCMake + " --version", cmakeVersionLogFile);
   if 0 <> retVal then
@@ -14489,8 +14424,7 @@ algorithm
     Error.addInternalError("Failed to read semantic version from " + pathToCMake, sourceInfo());
     fail();
   end if;
-  cmakeVersionString := listHead(regexOut);
-  cmakeVersion := SemanticVersion.parse(cmakeVersionString);
+  cmakeVersion := listHead(regexOut);
   System.removeFile(cmakeVersionLogFile);
 end getCMakeVersion;
 

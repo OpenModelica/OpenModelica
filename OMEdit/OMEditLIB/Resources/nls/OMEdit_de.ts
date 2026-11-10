@@ -135,6 +135,41 @@
     </message>
 </context>
 <context>
+    <name>ArrayParameterEditorDialog</name>
+    <message>
+        <source>%1 - %2 %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rows:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Columns:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expression:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete 1 row</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete %1 rows</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete 1 column</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete %1 columns</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>AttachToProcessDialog</name>
     <message>
         <source>Attach to Process ID:</source>
@@ -2957,16 +2992,12 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>Hinzufügen</translation>
     </message>
     <message>
+        <source>Edit Array</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Apply</source>
         <translation>Anwenden</translation>
-    </message>
-    <message>
-        <source>Add Path</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Path</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Output</source>
@@ -3062,14 +3093,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Unloads the file without deleting it from the file system</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unload the CRML file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unload the Modelica Script file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3257,22 +3280,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>Schriftart:</translation>
     </message>
     <message>
-        <source>Percentage:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Choose Transparency</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Choose Specularity</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Choose Color</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Save File</source>
         <translation>Datei Speichern</translation>
     </message>
@@ -3345,10 +3352,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Element</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Font Size:</source>
         <translation>Schriftgröße:</translation>
     </message>
@@ -3409,10 +3412,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Connection Attributes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Create Transition</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3421,39 +3420,11 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Find Variables</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Filter Variables</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Open Class</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>View Icon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Opens the class icon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>View Diagram</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Opens the class diagram</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>View Text</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Opens the class text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3685,14 +3656,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Simulation Parameters</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Shows the Simulation Parameters dialog</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Send</source>
         <translation>Senden</translation>
     </message>
@@ -3787,14 +3750,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <source>Speed:</source>
         <translation>Geschwindigkeit:</translation>
-    </message>
-    <message>
-        <source>Terminate Instantiation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Terminates the model instantiation</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Archived Simulations</source>
@@ -4452,6 +4407,14 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>Generates the verification scenarios</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UQ Activities...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Runs the uncertainty quantification activities attached to the SSP model with omuq</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6128,6 +6091,269 @@ Endpoint: %2</source>
         <source>Logging Level:</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Uncertainty Quantification (omuq)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UQ activities run the omuq Python package, see the &lt;a href=&quot;https://github.com/adrpo/omuq&quot;&gt;omuq GitHub page&lt;/a&gt;. Specify a Python executable that has omuq and OMSimulator installed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Python:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>OMUQDialog</name>
+    <message>
+        <source>UQ Activities</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Study:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Activity:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Domain</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Kind</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Boundary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Variables</source>
+        <translation type="unfinished">Variablen</translation>
+    </message>
+    <message>
+        <source>Study</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Domains:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Step Size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Progress Every:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> samples</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The result file always has every sample.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Simulator:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Automatic</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Local OMSimulator</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Docker</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Record the run in the study and save the package as:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Live View:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>In OMEdit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>In the web browser</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>omuq serves the live view until it is stopped from the output tab.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Run</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to create the directory %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to start %1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>omuq is not installed for %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>omuq failed to read the model:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMSimulator/SSP.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to read the output of omuq: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No omuq study is attached to %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 activity %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>none</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Observes: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>nothing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recorded results: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>from the model</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>System Structure and Parameterization Files (*.ssp)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter the file the recorded run is saved to.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>OMUQOutputWidget</name>
+    <message>
+        <source>Starting omuq for %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Live view: %1
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 (not monitored: %2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Study %1, %2 from %3 to %4 with step %5, driver %6
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Observed variables: %1
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Monitored domains: %1
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>none</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Running %1 of %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>t = %1: left the domain %2 (%3) at (%4)
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 - %2 - Live View</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The run is recorded in %1
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stop Live View</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 of %2 finished, the live view is still served.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 of %2 finished.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 of %2 is cancelled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to start %1: %2
+Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMSimulator/SSP.
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 of %2 failed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>omuq finished without results for %1 of %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 of %2 failed. Exit code %3.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Is omuq installed for %1?</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>OneDriveProvider</name>
@@ -6270,6 +6496,10 @@ Endpoint: %2</source>
     <message>
         <source>Edit</source>
         <translation>Bearbeiten</translation>
+    </message>
+    <message>
+        <source>Edit array</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to find the redeclare class.</source>
@@ -7646,18 +7876,6 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <source>Method</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add</source>
-        <translation type="unfinished">Hinzufügen</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation type="unfinished">Entfernen</translation>
-    </message>
-    <message>
-        <source>Edit</source>
-        <translation type="unfinished">Bearbeiten</translation>
     </message>
     <message>
         <source>Solver Configurations</source>

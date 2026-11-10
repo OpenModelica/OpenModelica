@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+sumRecordArraySlice.mos \
 nlsArrayElementNominal.mos \
 resizableAliasMin.mos \
 reductionSkips.mos \
@@ -10,6 +11,8 @@ forNestedElseIf.mos \
 forSliceRowMajor.mos \
 sliceRangeSparsity.mos \
 sparsityScalarTemplates.mos \
+sparsityNegatedAlias.mos \
+raggedComponentArrays.mos \
 scalarDivArray.mos \
 arrayRowScalar.mos \
 emptyArrayTupleArgument.mos \
@@ -63,10 +66,16 @@ resizableJacobianOffsets.mos \
 resizableAlgebraicLoops.mos \
 resizableFill.mos \
 resizableStreams.mos \
+resizableEvaluate.mos \
+resizableEvaluateAlias.mos \
+resizableStreamMixing.mos \
 resizableWholeSubscript.mos \
 resizableArrayBinding.mos \
 resizableArrayAlias.mos \
 resizableArrayBodyFor.mos \
+resizableInitOverdetermined.mos \
+resizableSlicedDummy.mos \
+resizableSlicedDummyInit.mos \
 array_start_vector.mos\
 array_start_int_bool_string.mos\
 array_inputs.mos\

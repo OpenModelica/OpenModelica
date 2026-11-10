@@ -1,0 +1,38 @@
+// name:     FmuMatV7Table
+// keywords: FMI 2.0 export ModelicaMatIO zlib CombiTimeTable
+// status:   correct
+// teardown_command: rm -rf FmuMatV7Table.fmu FmuMatV7Table.fmutmp/ FmuMatV7Table.log FmuMatV7Table_*
+//
+// A table in a MAT-file v7 is compressed with zlib. The FMU must read it as the
+// simulation does (#17882).
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+model FmuMatV7Table
+  Modelica.Blocks.Sources.CombiTimeTable t(tableOnFile = true, tableName = \"a\",
+    fileName = Modelica.Utilities.Files.loadResource(\"modelica://Modelica/Resources/Data/Tables/test_v7.mat\"));
+  output Real y = t.y[1];
+  annotation(experiment(StopTime = 1));
+end FmuMatV7Table;
+"); getErrorString();
+echo(false); simulate(FmuMatV7Table, fileNamePrefix = "FmuMatV7Table_ref"); echo(true); getErrorString();
+buildModelFMU(FmuMatV7Table, version = "2.0", fmuType = "cs", platforms = {"static"}); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py FmuMatV7Table.fmu FmuMatV7Table_fmpy.csv 1.0 y > FmuMatV7Table_fmpy.log 2>&1"); getErrorString();
+diffSimulationResults("FmuMatV7Table_fmpy.csv", "FmuMatV7Table_ref_res.mat", "FmuMatV7Table_diff", vars = {"y"}); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "FmuMatV7Table.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// (true, {})
+// ""
+// endResult
