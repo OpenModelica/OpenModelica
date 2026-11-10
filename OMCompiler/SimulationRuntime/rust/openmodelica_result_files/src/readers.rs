@@ -4,6 +4,8 @@
 //! `openmodelica_mat_reader`; [`crate::ResultReader`] dispatches between the
 //! three by file suffix exactly like `SimulationResultsImpl__openFile`.
 
+use openmodelica_mat_reader::{find_sorted_by, iws_cmp};
+
 fn read_result_bytes(filename: &str) -> Result<Vec<u8>, String> {
     openmodelica_mat_reader::fs::read(filename).map_err(|e| e.to_string())
 }
@@ -18,6 +20,8 @@ pub struct CsvReader {
     /// column count lines up with the data rows, and filtered where the C
     /// code filters them (readVariables).
     pub variables: Vec<String>,
+    /// The column of each non-empty name, sorted by [`iws_cmp`] of the name.
+    sorted: Vec<usize>,
     /// Var-major trajectories: `data[var][step]`.
     data: Vec<Vec<f64>>,
     pub numsteps: usize,
@@ -59,17 +63,23 @@ impl CsvReader {
             }
         }
         let numsteps = data.first().map(|c| c.len()).unwrap_or(0);
+        let mut sorted: Vec<usize> = (0..numvars).filter(|&i| !variables[i].is_empty()).collect();
+        sorted.sort_by(|&a, &b| iws_cmp(&variables[a], &variables[b]));
         Ok(CsvReader {
             variables,
+            sorted,
             data,
             numsteps,
         })
     }
 
-    /// `read_csv_dataset`: the trajectory of `var` (exact name match), or
-    /// `None` when the variable is not a column of the file.
+    /// The trajectory of `var`, or `None` when the variable is not a column
+    /// of the file. Found as in a `.mat` file: [`find_sorted_by`].
     pub fn dataset(&self, var: &str) -> Option<&[f64]> {
-        let idx = self.variables.iter().position(|v| v == var)?;
+        let idx = match self.variables.iter().position(|v| v == var) {
+            Some(idx) => idx,
+            None => self.sorted[find_sorted_by(&self.sorted, |&i| &self.variables[i], var)?],
+        };
         Some(&self.data[idx])
     }
 }
