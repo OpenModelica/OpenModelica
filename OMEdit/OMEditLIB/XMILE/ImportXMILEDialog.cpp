@@ -54,7 +54,7 @@
 #include <QRegularExpression>
 
 namespace {
-const char *blocksKey = "xmileImport/blocks";
+const char *formKey = "xmileImport/form";
 }
 
 /*!
@@ -83,12 +83,16 @@ ImportXMILEDialog::ImportXMILEDialog(QWidget *pParent)
   mpModelNameLabel = new Label(tr("Model Name:"));
   mpModelNameTextBox = new QLineEdit;
   mpModelNameTextBox->setPlaceholderText(tr("If empty then the name of the XMILE file."));
-  // blocks with the diagram or the flat model
+  // blocks with the diagram (in sectors) or the flat model
   mpOutputLabel = new Label(tr("Output:"));
   mpOutputComboBox = new QComboBox;
-  mpOutputComboBox->addItem(tr("Blocks with the stock and flow diagram"), QVariant(true));
-  mpOutputComboBox->addItem(tr("Flat model (equations only)"), QVariant(false));
-  mpOutputComboBox->setCurrentIndex(Utilities::getApplicationSettings()->value(blocksKey, true).toBool() ? 0 : 1);
+  mpOutputComboBox->addItem(tr("Blocks with the stock and flow diagram (in sectors when large)"), QVariant(XMILETranslator::Blocks));
+  mpOutputComboBox->addItem(tr("Blocks in sectors"), QVariant(XMILETranslator::BlocksInSectors));
+  mpOutputComboBox->addItem(tr("Blocks without sectors"), QVariant(XMILETranslator::BlocksWithoutSectors));
+  mpOutputComboBox->addItem(tr("Flat model (equations only)"), QVariant(XMILETranslator::Flat));
+  mpOutputComboBox->setToolTip(tr("Sectors: groups of closely connected variables, each a model with its own diagram."));
+  int index = mpOutputComboBox->findData(Utilities::getApplicationSettings()->value(formKey, XMILETranslator::Blocks).toInt());
+  mpOutputComboBox->setCurrentIndex(index < 0 ? 0 : index);
   // Excel data
   mpExcelFilesLabel = new Label(tr("Excel Data (Optional):"));
   mpExcelFilesTextBox = new QLineEdit;
@@ -213,7 +217,7 @@ void ImportXMILEDialog::importXMILE()
                                tr("%1 exists. Overwrite it?").arg(options.output), QMessageBox::Yes | QMessageBox::No) != QMessageBox::Yes) {
     return;
   }
-  options.blocks = mpOutputComboBox->currentData().toBool();
+  options.form = (XMILETranslator::Form)mpOutputComboBox->currentData().toInt();
   const QStringList excelFiles = mpExcelFilesTextBox->text().split(";");
   for (const QString &file : excelFiles) {
     if (!file.trimmed().isEmpty()) {
@@ -221,7 +225,7 @@ void ImportXMILEDialog::importXMILE()
     }
   }
   XMILETranslator::setTranslator(mpTranslatorTextBox->text().trimmed());
-  Utilities::getApplicationSettings()->setValue(blocksKey, options.blocks);
+  Utilities::getApplicationSettings()->setValue(formKey, (int)options.form);
   QString error;
   QApplication::setOverrideCursor(Qt::WaitCursor);
   bool ok = XMILETranslator::translate(options, &error);

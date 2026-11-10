@@ -51,11 +51,14 @@
 class XMILETranslator
 {
 public:
+  // The form of the Modelica model (the values of the argument modular of xmile2mo_translate): a block per variable with
+  // the stock and flow diagram (Blocks: the blocks of a large model without a diagram in sectors), or the flat model
+  enum Form {Flat = 0, Blocks = 1, BlocksWithoutSectors = 2, BlocksInSectors = 3};
   struct Options {
     QString input;         // the XMILE file
     QString output;        // the Modelica file to write
     QString name;          // the name of the Modelica model
-    bool blocks = true;    // a block per variable with the stock and flow diagram, else the flat model
+    Form form = Blocks;
     QStringList excel;     // Excel workbooks with time series the model uses but does not define
   };
   static QString translator();

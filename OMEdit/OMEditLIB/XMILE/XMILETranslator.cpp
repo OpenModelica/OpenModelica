@@ -190,7 +190,7 @@ bool XMILETranslator::translateWithLibrary(const QString &library, const Options
   for (const QByteArray &file : excel) {
     excelPointers.push_back(file.constData());
   }
-  int status = translateFunction(input.constData(), output.constData(), options.blocks ? 1 : 0, name.constData(),
+  int status = translateFunction(input.constData(), output.constData(), (int)options.form, name.constData(),
                                  excelPointers.empty() ? 0 : excelPointers.data(), (int)excelPointers.size());
   if (status != 0) {
     *pError = QString::fromUtf8(errorFunction());
@@ -201,13 +201,18 @@ bool XMILETranslator::translateWithLibrary(const QString &library, const Options
 
 /*!
  * \brief XMILETranslator::translateWithExecutable
- * Runs xmile2mo [--modular] --name NAME [--excel FILE]... -o OUTPUT INPUT.
+ * Runs xmile2mo [--modular [--sectors never|always]] --name NAME [--excel FILE]... -o OUTPUT INPUT.
  */
 bool XMILETranslator::translateWithExecutable(const QString &executable, const Options &options, QString *pError)
 {
   QStringList arguments;
-  if (options.blocks) {
+  if (options.form != Flat) {
     arguments << "--modular";
+  }
+  if (options.form == BlocksWithoutSectors) {
+    arguments << "--sectors" << "never";
+  } else if (options.form == BlocksInSectors) {
+    arguments << "--sectors" << "always";
   }
   if (!options.name.isEmpty()) {
     arguments << "--name" << options.name;
