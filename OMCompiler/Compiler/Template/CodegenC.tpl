@@ -7059,6 +7059,24 @@ template resizableColFillBase(ComponentRef seed, String nCols, String rowExpr, C
               }
             }
             >>
+          case SLICE(exp=sliceExp) :: {WHOLEDIM()} then
+            // reversed [SLICE, WHOLEDIM] = original [WHOLEDIM, SLICE]: outer WHOLE, inner SLICE
+            let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &varFrees, &auxFunction)
+            let nSlice = tempDecl("modelica_integer", &varDecls, &varFrees)
+            let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
+            let szOuter = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
+            let szInner = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
+            <<
+            <%seedComment%>
+            {
+              unsigned int _wo<%v.index%>, _sc<%v.index%>;
+              for (_wo<%v.index%> = 0; _wo<%v.index%> < (unsigned int)(<%szOuter%>); _wo<%v.index%>++) {
+                for (_sc<%v.index%> = 0; _sc<%v.index%> < (unsigned int)(<%nSlice%>); _sc<%v.index%>++) {
+                  addSparsePair(&_sp_pairs, <%jacobianVarOffset(v, context)%> + _wo<%v.index%> * (unsigned int)(<%szInner%>) + (((modelica_integer*)<%sliceArr%>.data)[_sc<%v.index%>] - 1), <%rowExpr%>);
+                }
+              }
+            }
+            >>
           case SLICE(exp=sliceExp) :: outer_rev_subs then
             // inner SLICE (e.g. module[i].T[1:9]) - outer dims are INDEX subs
             let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &varFrees, &auxFunction)

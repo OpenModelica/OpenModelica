@@ -1,0 +1,43 @@
+// name: arrayEquationRowLoop
+// keywords: NewBackend
+// status: correct
+//
+// One row of an array equation in an initial algebraic loop, the sparsity of v[:, {1, 2}].
+
+loadString("
+model arrayEquationRowLoop
+  Real v[3, 3];
+  Real f[3, 2];
+initial equation
+  der(v) = zeros(3, 3);
+equation
+  f = v[:, {1, 2}] - v[:, {2, 3}];
+  der(v[1, :]) = {1, 2, 3} - v[1, :];
+  der(v[2, :]) = {3, 2, 1} - v[2, :];
+  der(v[3, 1]) = 0.5*sin(f[3, 2]) + 1 - v[3, 1];
+  der(v[3, 2]) = 0.5*sin(f[3, 1]) + 2 - v[3, 2];
+  der(v[3, 3]) = 3 - v[3, 3];
+end arrayEquationRowLoop;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+simulate(arrayEquationRowLoop); getErrorString();
+val(v[3, 1], 0.0);
+val(v[3, 2], 0.0);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "arrayEquationRowLoop_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'arrayEquationRowLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.5045330812635441
+// 1.5639619379675889
+// endResult

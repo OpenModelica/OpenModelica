@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 sumRecordArraySlice.mos \
+arrayEquationRowLoop.mos \
 nlsArrayElementNominal.mos \
 resizableAliasMin.mos \
 reductionSkips.mos \
