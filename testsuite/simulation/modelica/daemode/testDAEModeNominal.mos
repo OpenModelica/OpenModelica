@@ -1,0 +1,63 @@
+// name: testDAEModeNominal
+// keywords: daeMode nominal parameter
+// status: correct
+// teardown_command: rm -f DAEModeNominal* output.log
+//
+// In daeMode, nominal attributes that depend on parameters must be set at
+// runtime, as without daeMode.
+
+loadString("
+model DAEModeNominal
+  parameter Real UNom = 400e3;
+  final parameter Real VBase = UNom/sqrt(3);
+  Real x(start = 1, nominal = VBase);
+  Real y(start = 1, nominal = VBase);
+  Real z(start = 1, nominal = VBase);
+equation
+  x^2 + y^2 = 2*VBase^2;
+  x - y = time;
+  der(z) = x - z;
+end DAEModeNominal;
+"); getErrorString();
+
+setCommandLineOptions("--daeMode"); getErrorString();
+simulate(DAEModeNominal, stopTime=0.1, simflags="-lv=LOG_INIT_V"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DAEModeNominal_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'ida', fileNamePrefix = 'DAEModeNominal', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V'",
+//     messages = "LOG_STDOUT        | warning | Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU. Colored numerical Jacobian will be used.
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT_V        | info    | z(nominal=230940)
+// LOG_INIT_V        | info    | y(nominal=230940)
+// LOG_INIT_V        | info    | x(nominal=230940)
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT_V        | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real UNom(start=400000, fixed=true) = 400000
+// |                 | |       | | | [2] parameter Real VBase(start=0, fixed=true) = 230940
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | states variables
+// |                 | |       | | | [1] Real z(start=1, nominal=230940) = 1 (pre: 1)
+// |                 | |       | | derivatives variables
+// |                 | |       | | | [2] Real der(z) = 230939 (pre: 0)
+// |                 | |       | | other real variables
+// |                 | |       | | | [3] Real x(start=1, nominal=230940) = 230940 (pre: 1)
+// |                 | |       | | | [4] Real y(start=1, nominal=230940) = 230940 (pre: 1)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// endResult

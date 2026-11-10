@@ -32,6 +32,7 @@
 #include "fmi2FunctionTypes.h"
 #include "../simulation_data.h"
 #include "../simulation/solver/solver_main.h"
+#include "../util/omc_fmu_paramdeps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,7 +78,7 @@ typedef struct {
   fmi2String instanceName;
   fmi2Type type;
   fmi2String GUID;
-  const fmi2CallbackFunctions *functions;
+  fmi2CallbackLogger logger;
   fmi2Boolean loggingOn;
   fmi2Boolean logCategories[NUMBER_OF_CATEGORIES];
   fmi2ComponentEnvironment componentEnvironment;
@@ -95,8 +96,11 @@ typedef struct {
 
   int _need_update;
   int _held_assert_logged;
+  char _held_assert[2048];   /* the first held assert() not yet settled */
   int _event_found;
   int _terminate_simulation_requested;
+  fmi2Boolean terminated;
+  fmi2Real lastSuccessfulTime;
   int _has_jacobian;
   int _has_jacobian_intialization;
   JACOBIAN* fmiDerJac;
@@ -107,6 +111,13 @@ typedef struct {
   fmi2Real* event_indicators;
   fmi2Real* event_indicators_prev;
   fmi2Real* input_real_derivative;
+
+  OMC_FMU_PARAMDEPS* paramDeps;
+  unsigned char* slotDirty;         /* tunable parameters set since the last update, and what depends on them */
+  unsigned char* slotSetBeforeInit; /* set by the importer before the end of initialization */
+  unsigned char* eqMask;
+  int _tunable_dirty;
+  int _tunable_applied;
 } ModelInstance;
 
 typedef struct {
@@ -140,7 +151,7 @@ static fmi2String logCategoriesNames[] = {"logEvents", "logSingularLinearSystems
  * @param ...             Arguments specifying data to log.
  */
 #define FILTERED_LOG(instance, status, categoryIndex, message, ...) if (isCategoryLogged(instance, categoryIndex)) { \
-    instance->functions->logger(instance->functions->componentEnvironment, instance->instanceName, status, \
+    instance->logger(instance->componentEnvironment, instance->instanceName, status, \
         logCategoriesNames[categoryIndex], message, ##__VA_ARGS__); }
 #endif
 

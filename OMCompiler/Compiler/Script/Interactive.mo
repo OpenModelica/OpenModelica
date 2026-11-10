@@ -92,6 +92,7 @@ import InstHashTable;
 import InstTypes;
 import InstUtil;
 import InteractiveUtil;
+import JSON;
 import List;
 import Lookup;
 import MetaUtil;
@@ -7619,6 +7620,36 @@ algorithm
     else ({},{});
   end match;
 end getConversionAnnotation;
+
+public function libraryMetadata
+  "The version, the uses, the versions converted from without changes
+   (noneFromVersion) and the versions with conversion scripts of a library's
+   top-level file, as JSON for the package manager; null if the file cannot
+   be parsed."
+  input String fileName;
+  output JSON json = JSON.makeNull();
+protected
+  String encodingFile, encoding, version;
+  Absyn.Class cls;
+  list<String> provides, converts;
+algorithm
+  ErrorExt.setCheckpoint(getInstanceName());
+  try
+    encodingFile := System.dirname(fileName) + "/package.encoding";
+    encoding := if System.regularFileExists(encodingFile) then System.trimChar(System.trimChar(System.readFile(encodingFile), "\n"), " ") else "UTF-8";
+    Absyn.PROGRAM(classes = {cls}) := Parser.parse(fileName, encoding);
+    version := Util.getOptionOrDefault(AbsynUtil.getNamedAnnotationInClass(cls, Absyn.IDENT("version"), getAnnotationStringValueOrFail), "");
+    (provides, converts) := getConversionAnnotation(cls);
+    json := JSON.LIST_OBJECT({
+      ("version", JSON.makeString(version)),
+      ("uses", JSON.LIST_OBJECT(list((AbsynUtil.pathString(Util.tuple41(u)), JSON.makeString(listHead(Util.tuple43(u))))
+        for u in getUsesAnnotation(Absyn.PROGRAM({cls}, Absyn.TOP()))))),
+      ("provides", JSON.makeList(list(JSON.makeString(p) for p in provides))),
+      ("converts", JSON.makeList(list(JSON.makeString(c) for c in converts)))});
+  else
+  end try;
+  ErrorExt.rollBack(getInstanceName());
+end libraryMetadata;
 
 protected function getConversionAnnotationString
   input Option<Absyn.Modification> mod;

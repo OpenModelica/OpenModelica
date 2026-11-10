@@ -38,7 +38,7 @@ simulate(implicitEquation); getErrorString();
 //   (4) $FUN_1 := sin(time)
 //   (3) Nonlinear System (size = 1, homotopy = false, mixed = false, torn = true)
 //   --Iteration Vars:{x}
-//   --(1) 0 = $FUN_1 - ((x + x ^ 3.0) - x ^ 2.0)
+//   --(1) 0 = $FUN_1 - ((x + x^3.0) - x^2.0)
 //
 // Algebraic Partition 1
 // -----------------------
@@ -64,7 +64,7 @@ simulate(implicitEquation); getErrorString();
 //
 // Column Equations (size = 1)
 // -----------------------------
-//   (2) $pDER_INI_NLS_IMPL_1.$RES_SIM_0 := -(($SEED_INI_NLS_IMPL_1.x + 3.0 * x ^ 2.0 * $SEED_INI_NLS_IMPL_1.x) - 2.0 * x * $SEED_INI_NLS_IMPL_1.x)
+//   (2) $pDER_INI_NLS_IMPL_1.$RES_SIM_0 := -(($SEED_INI_NLS_IMPL_1.x + 3.0*x^2.0*$SEED_INI_NLS_IMPL_1.x) - 2.0*x*$SEED_INI_NLS_IMPL_1.x)
 //
 // Resizable Sparsity Pattern
 // ----------------------------

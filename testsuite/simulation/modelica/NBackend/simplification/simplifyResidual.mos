@@ -1,0 +1,64 @@
+// name: simplifyResidual
+// keywords: NewBackend
+// status: correct
+// cflags: --newBackend
+
+loadString("
+model SimplifyResidual
+  Real p;
+  Real x;
+  Real y;
+equation
+  0 = (y - 2) * 3;
+  0 = (x - 1) / p;
+  p = exp(time);
+end SimplifyResidual;
+"); getErrorString();
+
+setCommandLineOptions("-d=dumpSimplify"); getErrorString();
+translateModel(SimplifyResidual); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// ### dumpSimplify | NBackendDAE.simplify ###
+// [BEFORE] (x - 1.0)/p
+// [AFTER ] ((-1.0) + x)/p
+//
+// ### dumpSimplify | NBackendDAE.simplify ###
+// [BEFORE]
+//   [SCAL] (1) 0.0 = ((-1.0) + x)/p; ($RES_SIM_1)
+// [AFTER ]
+//   [SCAL] (1) 0.0 = ((-1.0) + x); ($RES_SIM_1)
+//
+// ### dumpSimplify | NBackendDAE.simplify ###
+// [BEFORE] (y - 2.0)*3.0
+// [AFTER ] 3.0*((-2.0) + y)
+//
+// ### dumpSimplify | NBackendDAE.simplify ###
+// [BEFORE]
+//   [SCAL] (1) 0.0 = 3.0*((-2.0) + y); ($RES_SIM_2)
+// [AFTER ]
+//   [SCAL] (1) 0.0 = ((-2.0) + y); ($RES_SIM_2)
+//
+// ### dumpSimplify | NBEquation.Equation.getResidualExp ###
+// [BEFORE] ((-1.0) + x) - 0.0
+// [AFTER ] (-1.0) + x
+//
+// ### dumpSimplify | NBSolve.solveBody ###
+// [BEFORE] 0.0 - (-1.0)
+// [AFTER ] 1.0
+//
+// ### dumpSimplify | NBEquation.Equation.getResidualExp ###
+// [BEFORE] ((-2.0) + y) - 0.0
+// [AFTER ] (-2.0) + y
+//
+// ### dumpSimplify | NBSolve.solveBody ###
+// [BEFORE] 0.0 - (-2.0)
+// [AFTER ] 2.0
+//
+// true
+// ""
+// endResult

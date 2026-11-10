@@ -12,7 +12,11 @@ or the simulation fails, the script exits with a non-zero status so the test
 fails loudly instead of silently skipping the validation.
 
 Usage:
-    simulate_fmu_fmpy.py <fmu> <output_csv> <stop_time> <var> [<var> ...]
+    simulate_fmu_fmpy.py [--set-states] <fmu> <output_csv> <stop_time> <var> [<var> ...]
+
+With --set-states, a Model Exchange FMU gets its continuous states set again
+after each step, one by one with fmi2SetReal or fmi3SetFloat64, as FMI 2.0.1
+and later and FMI 3.0.2 allow in Continuous-Time Mode.
 
 The variable names are the ones to record (and later compare against the
 OpenModelica reference); they must be passed explicitly because FMPy's default
@@ -43,10 +47,28 @@ def flatten_arrays(result, dims):
     return np.rec.fromarrays(columns, names=names)
 
 
+def set_states_again(model_description):
+    """A step_finished callback that sets each continuous state to its value."""
+    vrs = [d.variable.derivative.valueReference for d in model_description.derivatives]
+
+    def step_finished(time, recorder):
+        fmu = recorder.fmu
+        if model_description.fmiVersion.startswith("3"):
+            fmu.setFloat64(vrs, fmu.getFloat64(vrs))
+        else:
+            fmu.setReal(vrs, fmu.getReal(vrs))
+        return True
+
+    return step_finished
+
+
 def main(argv):
+    set_states = len(argv) > 1 and argv[1] == "--set-states"
+    if set_states:
+        argv = argv[:1] + argv[2:]
     if len(argv) < 5:
         sys.stderr.write(
-            "usage: simulate_fmu_fmpy.py <fmu> <output_csv> <stop_time> "
+            "usage: simulate_fmu_fmpy.py [--set-states] <fmu> <output_csv> <stop_time> "
             "<var> [<var> ...]\n")
         return 2
 
@@ -56,8 +78,9 @@ def main(argv):
     variables = argv[4:]
 
     # An element of an array variable is recorded through the array.
+    model_description = read_model_description(fmu)
     dims = {}
-    for v in read_model_description(fmu).modelVariables:
+    for v in model_description.modelVariables:
         if getattr(v, "dimensions", None):
             dims[v.name] = [int(d.start) for d in v.dimensions]
     outputs = []
@@ -67,7 +90,10 @@ def main(argv):
         if recorded not in outputs:
             outputs.append(recorded)
 
-    result = flatten_arrays(simulate_fmu(fmu, stop_time=stop_time, output=outputs), dims)
+    options = {}
+    if set_states:
+        options = dict(fmi_type="ModelExchange", step_finished=set_states_again(model_description))
+    result = flatten_arrays(simulate_fmu(fmu, stop_time=stop_time, output=outputs, **options), dims)
     write_csv(output_csv, result)
     return 0
 

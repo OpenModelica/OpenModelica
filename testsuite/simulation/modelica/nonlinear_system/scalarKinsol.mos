@@ -1,0 +1,38 @@
+// name: scalarKinsol
+// keywords: kinsol, sparsity pattern
+// status: correct
+// teardown_command: rm -f ScalarNLS*
+//
+// A scalar nonlinear equation has no generated sparsity pattern.
+// The selected solver must solve it, without a change to hybrid.
+
+loadString("
+model ScalarNLS
+  Real x(start = 1);
+equation
+  x^3 + x = 1 + time;
+end ScalarNLS;
+"); getErrorString();
+
+echo(false); res := simulate(ScalarNLS, stopTime = 1, numberOfIntervals = 2, simflags = "-nls=kinsol -lv=LOG_NLS_V"); messages := res.messages; echo(true);
+OpenModelica.Scripting.regexBool(messages, "changing the method");
+OpenModelica.Scripting.regexBool(messages, "simulation finished successfully");
+val(x, 1.0);
+
+echo(false); res := simulate(ScalarNLS, stopTime = 1, numberOfIntervals = 2, simflags = "-nls=experimental-kinsol -lv=LOG_NLS_V"); messages := res.messages; echo(true);
+OpenModelica.Scripting.regexBool(messages, "changing the method");
+OpenModelica.Scripting.regexBool(messages, "simulation finished successfully");
+val(x, 1.0);
+
+// Result:
+// true
+// ""
+// true
+// false
+// true
+// 1.0
+// true
+// false
+// true
+// 1.0
+// endResult

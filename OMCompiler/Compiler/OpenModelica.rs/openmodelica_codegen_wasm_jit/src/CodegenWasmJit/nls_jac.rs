@@ -506,7 +506,6 @@ pub(super) fn nls_jac_scratch_f64(sim_code: &SimCode::SimCode) -> u32 {
     scan(flatten_eqs_ll(&sim_code.odeEquations));
     scan(flatten_eqs_ll(&sim_code.algebraicEquations));
     scan(flatten_eqs(&sim_code.allEquations));
-    scan(flatten_eqs(&sim_code.inlineEquations));
     scan(clocked_eqs(sim_code));
     if let Some(d) = &sim_code.daeModeData {
         scan(flatten_eqs_ll(&d.daeEquations));

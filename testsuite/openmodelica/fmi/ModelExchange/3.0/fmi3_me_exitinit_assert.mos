@@ -1,0 +1,44 @@
+// name:     fmi3_me_exitinit_assert
+// keywords: FMI 3.0 export model exchange initialization assert
+// status:   correct
+// teardown_command: rm -rf fmi3_me_exitinit_assert.fmu fmi3_me_exitinit_assert.fmutmp/ fmi3_me_exitinit_assert.log fmi3_me_exitinit_assert_out.txt
+//
+// An assert during initialization makes fmi3ExitInitializationMode fail, and
+// the FMU enters the Terminated state. It must then refuse a second
+// fmi3ExitInitializationMode and the Model Exchange calls (#17740).
+
+loadString("
+model fmi3_me_exitinit_assert
+  parameter Real p = 1;
+  Real x(start = 0, fixed = true);
+initial algorithm
+  assert(p > 2, \"p must exceed 2\");
+equation
+  der(x) = 1;
+end fmi3_me_exitinit_assert;
+"); getErrorString();
+
+buildModelFMU(fmi3_me_exitinit_assert, version = "3.0", fmuType = "me"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi3_me_exitinit_assert.py fmi3_me_exitinit_assert.fmu fmi3_me_exitinit_assert_out.txt > fmi3_me_exitinit_assert.log 2>&1"); getErrorString();
+readFile("fmi3_me_exitinit_assert_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// "fmi3_me_exitinit_assert.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "fmi3ExitInitializationMode: fmi3Error
+// fmi3ExitInitializationMode: fmi3Error
+// fmi3EnterContinuousTimeMode: fmi3Error
+// fmi3SetTime: fmi3Error
+// fmi3CompletedIntegratorStep: fmi3Error
+// fmi3EnterEventMode: fmi3Error
+// fmi3UpdateDiscreteStates: fmi3Error
+// fmi3Terminate: fmi3Error
+// "
+// ""
+// endResult

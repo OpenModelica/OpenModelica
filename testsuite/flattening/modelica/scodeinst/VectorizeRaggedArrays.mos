@@ -1,0 +1,112 @@
+// name: VectorizeRaggedArrays
+// keywords: vectorize, component array, ragged
+// status: correct
+// Vectorized component arrays whose elements have arrays of different sizes.
+
+loadString("
+model RaggedEnd
+  model Layer
+    parameter Integer n;
+    Real T[n];
+    Real Q[n + 1];
+  equation
+    for i in 1:n loop
+      der(T[i]) = Q[i] - Q[i + 1];
+    end for;
+    Q[1] = 1;
+    Q[end] = T[end];
+  end Layer;
+  Layer lay[2](n = {2, 3});
+end RaggedEnd;
+
+model RaggedIfStart
+  type Temp = Real(start = 288.15);
+  model Layer
+    parameter Integer n;
+    parameter Boolean s;
+    Temp T[n](start = if s then cat(1, {1.0}, {1.0 + i for i in 2:n}) else {2.0 + i for i in 1:n});
+  equation
+    for i in 1:n loop
+      der(T[i]) = -T[i];
+    end for;
+  end Layer;
+  Layer lay[2](n = {2, 3}, s = {true, false});
+end RaggedIfStart;
+
+model RaggedNested
+  model Layer
+    parameter Integer n;
+    Real T[n](each start = 1);
+  equation
+    for i in 1:n loop
+      der(T[i]) = -T[i];
+    end for;
+  end Layer;
+  model Wall
+    parameter Integer nLay;
+    parameter Integer nn[nLay];
+    Layer lay[nLay](n = nn);
+  end Wall;
+  Wall w[2](nLay = {2, 3}, nn = {{2, 3}, {1, 2, 2}});
+end RaggedNested;
+"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+
+instantiateModel(RaggedEnd); getErrorString();
+instantiateModel(RaggedIfStart); getErrorString();
+instantiateModel(RaggedNested); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "class RaggedEnd
+//   final parameter Integer[2] lay.n = {2, 3};
+//   Real[2, {2, 3}[$lay1]] lay.T;
+//   Real[2, {3, 4}[$lay1]] lay.Q;
+// equation
+//   for $i2 in 1:2 loop
+//     for i in 1:{2, 3}[$i2] loop
+//       der(lay[$i2].T[i]) = lay[$i2].Q[i] - lay[$i2].Q[i + 1];
+//     end for;
+//   end for;
+//   for $i1 in 1:2 loop
+//     lay[$i1].Q[1] = 1.0;
+//   end for;
+//   for $i0 in 1:2 loop
+//     lay[$i0].Q[{3, 4}[$i0]] = lay[$i0].T[{2, 3}[$i0]];
+//   end for;
+// end RaggedEnd;
+// "
+// ""
+// "class RaggedIfStart
+//   final parameter Integer[2] lay.n = {2, 3};
+//   final parameter Boolean[2] lay.s = {true, false};
+//   Real[2, {2, 3}[$lay1]] lay.T(start = array(if {true, false}[$lay1] then cat(1, {1.0}, array(1.0 + /*Real*/(i) for i in 2:{2, 3}[$lay1])) else array(2.0 + /*Real*/(i) for i in 1:{2, 3}[$lay1]) for $lay1 in 1:2));
+// equation
+//   for $i3 in 1:2 loop
+//     for i in 1:{2, 3}[$i3] loop
+//       der(lay[$i3].T[i]) = -lay[$i3].T[i];
+//     end for;
+//   end for;
+// end RaggedIfStart;
+// "
+// ""
+// "class RaggedNested
+//   final parameter Integer[2] w.nLay = {2, 3};
+//   final parameter Integer[2, {2, 3}[$w1]] w.nn = {{2, 3}, {1, 2, 2}};
+//   final parameter Integer[2, {2, 3}[$w1]] w.lay.n = {{2, 3}, {1, 2, 2}};
+//   Real[2, {2, 3}[$w1], {{2, 3}, {1, 2, 2}}[$w1,$lay1]] w.lay.T(start = array(array(array(1.0 for $f1 in 1:{{2, 3}, {1, 2, 2}}[$w1,$lay1]) for $lay1 in 1:{2, 3}[$w1]) for $w1 in 1:2));
+// equation
+//   for $i5 in 1:2 loop
+//     for $i4 in 1:{2, 3}[$i5] loop
+//       for i in 1:{{2, 3}, {1, 2, 2}}[$i5,$i4] loop
+//         der(w[$i5].lay[$i4].T[i]) = -w[$i5].lay[$i4].T[i];
+//       end for;
+//     end for;
+//   end for;
+// end RaggedNested;
+// "
+// ""
+// endResult

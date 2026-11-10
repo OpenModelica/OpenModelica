@@ -1,0 +1,59 @@
+// name:     FmuEquationAssertLog
+// keywords: FMI 2.0 export co-simulation assert logger
+// status:   correct
+// teardown_command: rm -rf FmuEquationAssertLog*.fmu FmuEquationAssertLog*.fmutmp/ FmuEquationAssertLog*.log FmuEquationAssertLog*_out.txt
+//
+// The logger gets the message of an equation assert that fails an FMI call
+// (#17900): in fmi2DoStep, where the assert is held until the event update
+// at the end of the step, and in fmi2ExitInitializationMode.
+
+loadString("
+model FmuEquationAssertLogStep
+  Real x(start = 1.05, fixed = true);
+equation
+  der(x) = -1;
+  assert(x > 0, \"x must be positive\");
+end FmuEquationAssertLogStep;
+
+model FmuEquationAssertLogInit
+  Real x(start = -1, fixed = true);
+equation
+  der(x) = 1;
+  assert(x > 0, \"x must be positive at start\");
+end FmuEquationAssertLogInit;
+"); getErrorString();
+
+buildModelFMU(FmuEquationAssertLogStep, version = "2.0", fmuType = "cs"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" FmuEquationAssertLog.py FmuEquationAssertLogStep.fmu 2 FmuEquationAssertLogStep_out.txt > FmuEquationAssertLogStep.log 2>&1"); getErrorString();
+readFile("FmuEquationAssertLogStep_out.txt"); getErrorString();
+
+buildModelFMU(FmuEquationAssertLogInit, version = "2.0", fmuType = "cs"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" FmuEquationAssertLog.py FmuEquationAssertLogInit.fmu 0 FmuEquationAssertLogInit_out.txt > FmuEquationAssertLogInit.log 2>&1"); getErrorString();
+readFile("FmuEquationAssertLogInit_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// "FmuEquationAssertLogStep.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "stopped at t = 1
+// status 3: <interactive>:6: The following assertion has been violated at time 1.100000
+// ((x > 0.0), x=-0.04999999999999982) --> \"x must be positive\"
+// "
+// ""
+// "FmuEquationAssertLogInit.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "stopped at t = 0
+// status 3: <interactive>:13: The following assertion has been violated during initialization at time 0.000000
+// ((x > 0.0), x=-1) --> \"x must be positive at start\"
+// "
+// ""
+// endResult

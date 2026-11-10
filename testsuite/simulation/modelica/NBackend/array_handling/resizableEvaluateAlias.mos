@@ -1,0 +1,52 @@
+// name: resizableEvaluateAlias
+// keywords: NewBackend resizable Evaluate annotation connect
+// status: correct
+// cflags: --newBackend --resizableArrays
+// teardown_command: rm -f resizableEvaluateAlias.M_* resizableEvaluateAlias.M.*
+//
+// A resizable dimension bound to a parameter with annotation(Evaluate = true)
+// has the value of that parameter in connections.
+
+loadString("
+package resizableEvaluateAlias
+  connector RealOutput = output Real;
+  connector RealInput = input Real;
+  block MO
+    parameter Integer nout = 1;
+    RealOutput y[nout];
+  end MO;
+  block Ramp
+    extends MO(final nout = nX);
+    parameter Integer nX annotation(Evaluate = true);
+  equation
+    y = {i*time for i in 1:nX};
+  end Ramp;
+  model Sink
+    parameter Integer nX = 3 annotation(Evaluate = true);
+    RealInput X[nX];
+    Real s = sum(X);
+  end Sink;
+  model M
+    Ramp r(nX = 3);
+    Sink k;
+  equation
+    connect(r.y, k.X);
+  end M;
+end resizableEvaluateAlias;
+"); getErrorString();
+
+simulate(resizableEvaluateAlias.M, stopTime = 1); getErrorString();
+val(k.s, 1);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "resizableEvaluateAlias.M_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'resizableEvaluateAlias.M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 6.0
+// endResult

@@ -78,14 +78,13 @@ import Conversion;
 import DAEDump;
 import DAEUtil;
 import Debug;
-import DiffAlgorithm;
 import ContainerImage;
 import Dump;
 import Error;
 import ErrorExt;
 import ExecStat;
 import Expression;
-protected import ExpressionBasics;
+import ExpressionBasics;
 import FBuiltin;
 import FGraph;
 import Figaro;
@@ -102,10 +101,11 @@ import GlobalScript;
 import Graph;
 import InnerOuter;
 import Inst;
-import LexerModelicaDiff;
 import List;
 import Lookup;
+import ModelicaDiff;
 import NFApi;
+import NFCheckModel;
 import NFConvertDAE;
 import NFFlatModel;
 import NFFlatten;
@@ -135,7 +135,6 @@ import SimCodeFunction;
 import SimCodeFunctionUtil;
 import SimCodeUtil;
 import StateMachineFlatten;
-import SimpleModelicaParser;
 import SimulationResults;
 import StaticScript;
 import StringUtil;
@@ -759,47 +758,6 @@ algorithm
   end matchcontinue;
 end simOptionsAsString;
 
-protected function diffSanityCheckEqual
-  "Sanity check for the Modelica source diff/merge: returns true when s1 and
-   s2 represent the same Modelica program. Code tokens are compared strictly
-   (ignoring whitespace), while comments are compared as a multiset so the
-   merge step is free to relocate them."
-  input String s1;
-  input String s2;
-  output Boolean b;
-protected
-  import LexerModelicaDiff.{Token,tokenContent,scanString,isLineComment,isBlockComment,blockCommentCanonical,modelicaDiffTokenWhitespace};
-  list<Token> ts1, ts2;
-  list<String> comments1, comments2;
-algorithm
-  (ts1, _) := scanString(s1);
-  (ts2, _) := scanString(s2);
-  if stringAppendList(list(tokenContent(t) for t guard not modelicaDiffTokenWhitespace(t) in ts1)) <>
-     stringAppendList(list(tokenContent(t) for t guard not modelicaDiffTokenWhitespace(t) in ts2)) then
-    b := false;
-    return;
-  end if;
-  comments1 := List.sort(list(diffSanityCheckCommentStr(t)
-                              for t guard isLineComment(t) or isBlockComment(t) in ts1),
-                         Util.strcmpBool);
-  comments2 := List.sort(list(diffSanityCheckCommentStr(t)
-                              for t guard isLineComment(t) or isBlockComment(t) in ts2),
-                         Util.strcmpBool);
-  b := List.isEqualOnTrue(comments1, comments2, stringEq);
-end diffSanityCheckEqual;
-
-protected function diffSanityCheckCommentStr
-  "Canonical string form of a comment token. Block comments are normalised by
-   trimming each line, so that re-indented block comments compare equal."
-  input LexerModelicaDiff.Token t;
-  output String s;
-protected
-  import LexerModelicaDiff.{tokenContent,isBlockComment,blockCommentCanonical};
-algorithm
-  s := if isBlockComment(t) then stringDelimitList(blockCommentCanonical(t), "\n")
-                            else tokenContent(t);
-end diffSanityCheckCommentStr;
-
 public function cevalInteractiveFunctions3
 "defined in the interactive environment."
   input FCore.Cache inCache;
@@ -810,8 +768,6 @@ public function cevalInteractiveFunctions3
   output FCore.Cache outCache = inCache;
   output Values.Value outValue;
 protected
-  import LexerModelicaDiff.{Token,TokenId,tokenContent,scanString,reportErrors,filterModelicaDiff,modelicaDiffTokenEq,modelicaDiffTokenWhitespace};
-  import DiffAlgorithm.{Diff,diff,printActual,printDiffTerminalColor,printDiffXml};
   list<Values.Value> args = simulationCallArguments(inFunctionName, inVals);
 algorithm
   outValue := matchcontinue (inFunctionName,args)
@@ -851,10 +807,6 @@ algorithm
       Boolean dumpExtractionSteps;
       list<Boolean> blst;
       UnitAbsyn.Unit u1,u2;
-      list<Token> tokens1, tokens2, errorTokens;
-      list<SimpleModelicaParser.ParseTree> parseTree1, parseTree2;
-      //list<tuple<Diff, list<Token>>> diffs;
-      list<tuple<Diff, list<SimpleModelicaParser.ParseTree>>> treeDiffs;
       SymbolTable forkedSymbolTable;
       SimCode.SimulationSettings simSettings;
 
@@ -1195,7 +1147,6 @@ algorithm
     case ("diffModelicaFileListings",{Values.STRING(s1),Values.STRING(s2),Values.ENUM_LITERAL(name=path),Values.BOOL(b)})
       algorithm
         ExecStat.execStatReset();
-
         (s1, bom) := StringUtil.stripBOM(s1);
         // Work internally with LF line endings only, so that lines coming from
         // the original file (s1) and lines produced by the listing (s2, always LF)
@@ -1205,104 +1156,62 @@ algorithm
         lineEndingIsCRLF := s1 <> System.stringReplace(s1, "\r\n", "\n"); // removing CRLF changed s1 => it originally contained CRLF
         s1 := System.stringReplace(s1, "\r\n", "\n");
         s1 := System.stringReplace(s1, "\r", "\n"); // also fold any remaining lone CR (old Mac) to LF
-        (tokens1, errorTokens) := scanString(s1);
-        reportErrors(errorTokens);
-
-        if false and s1<>stringAppendList(list(tokenContent(t) for t in tokens1)) then
-          // Debugging code. Make sure the scanner works before debugging the diff.
-          System.writeFile("string.before", s1);
-          System.writeFile("string.after", stringAppendList(list(tokenContent(t) for t in tokens1)));
-          Error.terminate("Lexed string does not match the original. See files string.before and string.after", sourceInfo());
-          fail();
-        end if;
-
-        ExecStat.execStat("diffModelicaFileListings scan string 1");
-        (_,parseTree1) := SimpleModelicaParser.stored_definition(tokens1, {});
-        ExecStat.execStat("diffModelicaFileListings parse string 1");
-
-        if false and s1<>SimpleModelicaParser.parseTreeStr(parseTree1) then
-          // Debugging code. Make sure the parser works before debugging the diff.
-          System.writeFile("string.before", s1);
-          System.writeFile("string.after", SimpleModelicaParser.parseTreeStr(parseTree1));
-          Error.terminate("Parsed string does not match the original. See files string.before and string.after", sourceInfo());
-          fail();
-        end if;
-
-        (s2, bom) := StringUtil.stripBOM(s2);
+        (s2, _) := StringUtil.stripBOM(s2);
         s2 := System.stringReplace(s2, "\r\n", "\n");
         s2 := System.stringReplace(s2, "\r", "\n");
-        (tokens2, errorTokens) := scanString(s2);
-        reportErrors(errorTokens);
-        ExecStat.execStat("diffModelicaFileListings scan string 2");
-        (_,parseTree2) := SimpleModelicaParser.stored_definition(tokens2, {});
-        ExecStat.execStat("diffModelicaFileListings parse string 2");
 
-        if false and s2<>SimpleModelicaParser.parseTreeStr(parseTree2) then
-          // Debugging code. Make sure the parser works before debugging the diff.
-          System.writeFile("string.before", s2);
-          System.writeFile("string.after", SimpleModelicaParser.parseTreeStr(parseTree2));
-          Error.terminate("Parsed string does not match the original. See files string.before and string.after", sourceInfo());
-          fail();
-        end if;
-
-        treeDiffs := SimpleModelicaParser.treeDiff(parseTree1, parseTree2, max(listLength(tokens1),listLength(tokens2)));
-
-        ExecStat.execStat("treeDiff");
-
-        sanityCheckFailed := false;
-
-        if true then
-          // Do a sanity check
-          s3 := Dump.unparseStr(Parser.parsestring(s2));
-          ExecStat.execStat("sanity parsestring(s2)");
-          s5 := printActual(treeDiffs, SimpleModelicaParser.parseTreeNodeStr);
+        // The listing of s1 has the tokens of s1 and the layout of s2, so the
+        // merge sees what the API changed and not what the printer changed.
+        s3 := s1;
+        if s1 <> s2 then
+          ErrorExt.setCheckpoint(getInstanceName());
           try
-            s4 := Dump.unparseStr(Parser.parsestring(s5));
-            ExecStat.execStat("sanity parsestring(s5)");
+            s3 := Dump.unparseStr(Parser.parsestring(s1));
+            ErrorExt.delCheckpoint(getInstanceName());
+          else
+            ErrorExt.rollBack(getInstanceName());
+          end try;
+        end if;
+        ExecStat.execStat("diffModelicaFileListings listing of before");
+        s5 := ModelicaDiff.merge(s1, s3, s2);
+        ExecStat.execStat("diffModelicaFileListings merge");
+
+        // Sanity check: the merged text must have the code of s2. The listings
+        // are compared only if the texts differ, since the printer may change
+        // tokens, e.g. 'abs' to abs.
+        sanityCheckFailed := false;
+        if s5 <> s2 and not ModelicaDiff.codeEqual(s5, s2) then
+          s4 := Dump.unparseStr(Parser.parsestring(s2));
+          try
+            str := Dump.unparseStr(Parser.parsestring(s5));
           else
             System.writeFile("SanityCheckFail.mo", s5);
             Error.addInternalError("Failed to parse merged string (see generated file SanityCheckFail.mo)\n", sourceInfo());
             fail();
           end try;
-          if not diffSanityCheckEqual(s3, s4) then
-            System.writeFile("SanityCheckFailBefore.mo", s3);
-            System.writeFile("SanityCheckFailAfter.mo", s4);
+          sanityCheckFailed := not ModelicaDiff.codeEqual(s4, str);
+          if sanityCheckFailed then
+            System.writeFile("SanityCheckFailBefore.mo", s4);
+            System.writeFile("SanityCheckFailAfter.mo", str);
             if b then
-              Error.addInternalError("After merging the strings, the semantics changed for some reason (see generated files SanityCheckFailBefore.mo SanityCheckFailAfter.mo). Will return the empty string:\ns1:\n"+s1+"\ns2:\n"+s2+"\ns3:\n"+s3+"\ns4:\n"+s4+"\ns5:\n"+s5+"\nparseTree2:"+SimpleModelicaParser.parseTreeStr(parseTree2), sourceInfo());
+              Error.addInternalError("After merging the strings, the semantics changed for some reason (see generated files SanityCheckFailBefore.mo SanityCheckFailAfter.mo). Will return the empty string:\ns1:\n"+s1+"\ns2:\n"+s2+"\nmerged:\n"+s5, sourceInfo());
               fail();
             else
-              Error.addInternalError("After merging the strings, the semantics changed for some reason (see generated files SanityCheckFailBefore.mo SanityCheckFailAfter.mo). Will return s2:\ns1:\n"+s1+"\ns2:\n"+s2+"\ns3:\n"+s3+"\ns4:\n"+s4+"\ns5:\n"+s5, sourceInfo());
+              Error.addInternalError("After merging the strings, the semantics changed for some reason (see generated files SanityCheckFailBefore.mo SanityCheckFailAfter.mo). Will return s2:\ns1:\n"+s1+"\ns2:\n"+s2+"\nmerged:\n"+s5, sourceInfo());
             end if;
-            sanityCheckFailed := true;
           end if;
         end if;
+        ExecStat.execStat("diffModelicaFileListings sanity check");
 
-        /*
-        diffs := diff(tokens1, tokens2, modelicaDiffTokenEq, modelicaDiffTokenWhitespace, tokenContent);
-        ExecStat.execStat("diffModelicaFileListings diff 1");
-        // print("Before filtering:\n"+printDiffTerminalColor(diffs, tokenContent)+"\n");
-        diffs := filterModelicaDiff(diffs,removeWhitespace=false);
-        ExecStat.execStat("diffModelicaFileListings filter diff 1");
-        // Scan a second time, with comments filtered into place
-        str := printActual(diffs, tokenContent);
-        // print("Intermediate string:\n"+printDiffTerminalColor(diffs, tokenContent)+"\n");
-        tokens2 := scanString(str);
-        ExecStat.execStat("diffModelicaFileListings prepare pass 2");
-        diffs := diff(tokens1, tokens2, modelicaDiffTokenEq, modelicaDiffTokenWhitespace, tokenContent);
-        ExecStat.execStat("diffModelicaFileListings diff 2");
-        // print("Before filtering (2):\n"+printDiffTerminalColor(diffs, tokenContent)+"\n");
-        diffs := filterModelicaDiff(diffs);
-        ExecStat.execStat("diffModelicaFileListings filter diff 2");
-        */
-        str := if sanityCheckFailed then s2 else matchcontinue AbsynUtil.pathLastIdent(path)
-          case "plain" then printActual(treeDiffs, SimpleModelicaParser.parseTreeNodeStr);
-          case "color" then printDiffTerminalColor(treeDiffs, SimpleModelicaParser.parseTreeNodeStr);
-          case "xml" then printDiffXml(treeDiffs, SimpleModelicaParser.parseTreeNodeStr);
-          else
-            algorithm
-              Error.addInternalError("Unknown diffModelicaFileListings choice", sourceInfo());
-            then fail();
-        end matchcontinue;
+        if sanityCheckFailed then
+          str := s2;
+        else
+          str := match AbsynUtil.pathLastIdent(path)
+            case "plain" then s5;
+            case "color" then ModelicaDiff.render(s1, s5, ModelicaDiff.Format.Color);
+            case "xml" then ModelicaDiff.render(s1, s5, ModelicaDiff.Format.Xml);
+          end match;
+        end if;
         // Restore the original file's line-ending convention (we processed as LF above).
         str := if lineEndingIsCRLF then System.stringReplace(str, "\n", "\r\n") else str;
       then
@@ -1428,9 +1337,9 @@ algorithm
       then
         ret_val;
 
-    case ("checkAllModelsRecursive",{Values.CODE(Absyn.C_TYPENAME(className)),Values.BOOL(showProtected)})
+    case ("checkAllModelsRecursive",{Values.CODE(Absyn.C_TYPENAME(className)),Values.BOOL(showProtected),Values.BOOL(b)})
       algorithm
-        (outCache, ret_val) := checkAllModelsRecursive(outCache, inEnv, className, showProtected, msg);
+        (outCache, ret_val) := checkAllModelsRecursive(outCache, inEnv, className, showProtected, b, msg);
       then
         ret_val;
 
@@ -1807,6 +1716,9 @@ algorithm
         /* Initialize FMI objects */
         (b, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) := FMIExt.initializeFMIImport(filename, workdir, fmiLogLevel, inputConnectors, outputConnectors);
         true := b; /* if something goes wrong while initializing */
+        if FMI.isFMIVersion10(FMI.getFMIVersion(fmiInfo)) then
+          Error.addMessage(Error.FMU_IMPORT_FMI1_DEPRECATED, {});
+        end if;
         fmiTypeDefinitionsList := listReverse(fmiTypeDefinitionsList);
         fmiModelVariablesList := listReverse(fmiModelVariablesList);
         s1 := System.tolower(Autoconf.platform);
@@ -1850,6 +1762,9 @@ algorithm
         (b, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) :=
           FMIExt.initializeFMIImport(modeldescriptionfilename, tmpDir, fmiLogLevel, inputConnectors, outputConnectors, true);
         true := b; /* if something goes wrong while initializing */
+        if FMI.isFMIVersion10(FMI.getFMIVersion(fmiInfo)) then
+          Error.addMessage(Error.FMU_IMPORT_FMI1_DEPRECATED, {});
+        end if;
         fmiTypeDefinitionsList := listReverse(fmiTypeDefinitionsList);
         fmiModelVariablesList := listReverse(fmiModelVariablesList);
         s1 := System.tolower(Autoconf.platform);
@@ -1910,9 +1825,6 @@ public function cevalInteractiveFunctions4
   input Absyn.Msg msg;
   output FCore.Cache outCache = inCache;
   output Values.Value outValue;
-protected
-  import LexerModelicaDiff.{Token,TokenId,tokenContent,scanString,reportErrors,filterModelicaDiff,modelicaDiffTokenEq,modelicaDiffTokenWhitespace};
-  import DiffAlgorithm.{Diff,diff,printActual,printDiffTerminalColor,printDiffXml};
 algorithm
   outValue := matchcontinue (inFunctionName, inVals)
     local
@@ -2351,7 +2263,7 @@ algorithm
     case ("getAvailableLibraries",{})
       algorithm
         PackageManagement.installCachedPackages();
-        files := PackageManagement.AvailableLibraries.listKeys(PackageManagement.getInstalledLibraries());
+        files := PackageManagement.getInstalledLibraries();
       then
         ValuesMake.makeArray(List.map(files, ValuesMake.makeString));
 
@@ -2393,13 +2305,13 @@ algorithm
       then ValuesMake.makeArray({});
 
     case ("getAvailablePackageConversionsFrom",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1))), Values.STRING(str2)})
-      then ValuesMake.makeStringArray(PackageManagement.versionsThatConvertFromTheWanted(str1, str2, true));
+      then ValuesMake.makeStringArray(PackageManagement.versionsThatConvertFromTheWanted(str1, str2, false, Interactive.libraryMetadata));
 
     case ("getAvailablePackageConversionsFrom",_)
       then ValuesMake.makeArray({});
 
     case ("getAvailablePackageConversionsTo",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1))), Values.STRING(str2)})
-      then ValuesMake.makeStringArray(PackageManagement.versionsThatConvertToTheWanted(str1, str2, true));
+      then ValuesMake.makeStringArray(PackageManagement.versionsThatConvertToTheWanted(str1, str2, false, Interactive.libraryMetadata));
 
     case ("getAvailablePackageConversionsTo",_)
       then ValuesMake.makeArray({});
@@ -3905,7 +3817,6 @@ protected function configureFMU_cmake
   input String logfile;
   input list<String> externalLibLocations;
   input Boolean isWindows;
-  input Boolean needs3rdPartyLibs;
 protected
   String fmuSourceDir;
   String CMAKE_GENERATOR = "", CMAKE_BUILD_TYPE;
@@ -3932,8 +3843,10 @@ algorithm
     rmrf := "rm -rf ";
   end if;
   defaultFmiIncludeDirectoy := dquote + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + dquote;
-  // Only a build for this platform can link the runtime omc was built with.
-  simrtLib := "-DSIMULATION_RUNTIME_FMI_LIBRARY=" + dquote + Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc/libSimulationRuntimeFMI.a" + dquote;
+  // Only this omc, building the FMU it just generated, knows that its archives
+  // fit the sources. A docker build or a later rebuild compiles them instead.
+  simrtLib := "-DSIMULATION_RUNTIME_FMI_LIBRARY=" + dquote + Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc/libSimulationRuntimeFMI.a" + dquote
+            + " -DSOLVER_LIBRARY_DIRECTORY=" + dquote + Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc" + dquote;
   // As in a simulation executable; its Makefile expands MODELICAUSERCFLAGS itself.
   // The FMU's CMakeLists.txt defines OM_HAVE_PTHREADS if it finds pthreads.
   cflags := System.stringReplace(System.getCFlags(), "${MODELICAUSERCFLAGS}",
@@ -3969,7 +3882,7 @@ algorithm
       Boolean isTrustedImage;
       Integer uid;
       String cidFile, volumeID, containerID, userID;
-      String dockerLogFile;
+      String dockerLogFile, fmuTarFile;
       String cmake_toolchain;
       list<String> locations;
     case {"dynamic"}
@@ -4016,7 +3929,7 @@ algorithm
         cidFile := fmutmp+".cidfile";
 
         // Temp log file outside of Docker volume
-        dockerLogFile := crossTriple + ".tmp.log";
+        dockerLogFile := fmutmp + "." + crossTriple + ".tmp.log";
         // Remove old log file
         if System.regularFileExists(dockerLogFile) then
           System.removeFile(dockerLogFile);
@@ -4024,11 +3937,11 @@ algorithm
 
         // Only download trusted images automatically, and only if the signature
         // can be verified. Images that are already on this machine are used as is.
-        if isTrustedImage and not ContainerImage.isAvailableLocally(dockerImage) then
-          if ContainerImage.isCosignAvailable() then
+        if isTrustedImage and not ContainerImage.isAvailableLocally(dockerImage, fmutmp) then
+          if ContainerImage.isCosignAvailable(fmutmp) then
             // Verify the image in the registry first, it's only downloaded if the signature is valid.
-            ContainerImage.assertSignature(dockerImage);
-            ContainerImage.pull(dockerImage);
+            ContainerImage.assertSignature(dockerImage, fmutmp);
+            ContainerImage.pull(dockerImage, fmutmp);
           else
             Error.addCompilerError("Refusing to download container image '" + ContainerImage.toString(dockerImage) + "' without verifying its signature.");
             Error.addCompilerNotification("Download the image manually with `" + ContainerImage.pullCommand(dockerImage) + "` and run the FMU export again.");
@@ -4067,11 +3980,6 @@ algorithm
         externalIncludeDirsFile := fmutmp + "/.external_include_dirs";
         if System.regularFileExists(externalIncludeDirsFile) then
           locations := listAppend(System.strtok(System.readFile(externalIncludeDirsFile), "\n"), locations);
-        end if;
-        // CVODE_DIRECTORY is not one of the model's link directories, so nothing would
-        // copy it for a model that has no external libraries of its own.
-        if needs3rdPartyLibs then
-          locations := Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc" :: locations;
         end if;
         for loc in locations loop
           if System.directoryExists(loc) then
@@ -4121,16 +4029,17 @@ algorithm
         // Docker cp can't handle too long names on Windows.
         // Workaround: Zip it in the container, copy it to host, unzip it
         if isWindows then
+          fmuTarFile := fmutmp + ".tar.gz";
           cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu " + dockerRunArgs +
-                 " tar -zcf comp-fmutmp.tar.gz " + fmutmp;
+                 " tar -zcf " + fmuTarFile + " " + fmutmp;
           runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
 
-          cmd := "docker cp " + containerID + ":/data/comp-fmutmp.tar.gz .";
+          cmd := "docker cp " + containerID + ":/data/" + fmuTarFile + " .";
           runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
-          if 0 <> System.systemCall("tar zxf comp-fmutmp.tar.gz && rm comp-fmutmp.tar.gz", outFile=dockerLogFile) then
+          if 0 <> System.systemCall("tar zxf " + fmuTarFile + " && rm " + fmuTarFile, outFile=dockerLogFile) then
             // Otherwise the failure only surfaces later as "Build commands returned
             // success, but <name>.fmu does not exist".
-            Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Failed to unpack comp-fmutmp.tar.gz:\n" + System.readFile(dockerLogFile)});
+            Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Failed to unpack " + fmuTarFile + ":\n" + System.readFile(dockerLogFile)});
             fail();
           end if;
         else
@@ -4229,20 +4138,38 @@ algorithm
 end translateModelFMU;
 
 protected function canExportDaeModeFMU
-  "Which targets can export a --daeMode model as an FMU. The wasm runtime serves
-   the residual form for both FMU kinds. A --simCodeTarget=C+Rust FMU gets its FMI
-   API from the same Rust runtime component, so it serves it as fmi-ls-dae for
-   FMI 3.0 Model Exchange, where the importer owns the DAE residuals and the
-   algebraic variables. The C simulation runtime of --simCodeTarget=C does not."
+  "Which FMUs of a --daeMode model can be exported. The wasm runtime serves the
+   residual form for both FMU kinds. Natively, an FMI 3.0 Model Exchange FMU
+   serves it as fmi-ls-dae, where the importer owns the DAE residuals and the
+   algebraic variables, and a Co-Simulation FMU of FMI 2.0 or 3.0 integrates it
+   with IDA. A wasm simCodeTarget gets the C export for a native FMU."
   input String FMUType;
   input String FMUVersion;
   input Boolean isWasmFMU;
   output Boolean canExport;
+protected
+  String target = Config.simCodeTarget();
 algorithm
   canExport := isWasmFMU or
-               (FMI.isFMIVersion30(FMUVersion) and FMI.isFMIMEType(FMUType) and
-                Config.simCodeRustRuntime());
+               (target == "C" or target == "wasm-jit" or target == "wasm") and
+               ((FMI.isFMIVersion30(FMUVersion) and FMI.isFMIMEType(FMUType)) or
+                (not FMI.isFMIVersion10(FMUVersion) and not FMI.isFMIMEType(FMUType)));
 end canExportDaeModeFMU;
+
+protected function daeModeFMUType
+  "An me_cs export of a --daeMode model whose Model Exchange part the target
+   cannot serve exports Co-Simulation only, with a warning."
+  input String FMUType;
+  input String FMUVersion;
+  input Boolean isWasmFMU;
+  output String outFMUType = FMUType;
+algorithm
+  if FMUType == "me_cs" and not canExportDaeModeFMU(FMUType, FMUVersion, isWasmFMU) and
+     canExportDaeModeFMU("cs", FMUVersion, isWasmFMU) then
+    Error.addMessage(Error.FMU_EXPORT_DAE_MODE_ME_DROPPED, {});
+    outFMUType := "cs";
+  end if;
+end daeModeFMUType;
 
 protected function callTranslateModelFMU
  "Translates a model into target code and writes CMakeLists.txt"
@@ -4284,18 +4211,20 @@ algorithm
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED, {FMUType, FMUVersion});
     return;
   end if;
+  if FMI.isFMIVersion10(FMUVersion) then
+    Error.addMessage(Error.FMU_EXPORT_FMI1_DEPRECATED, {});
+  end if;
   if Config.simCodeTarget() == "Cpp" and FMI.isFMICSType(FMUType) then
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
   end if;
+  if Flags.getConfigBool(Flags.DAE_MODE) then
+    FMUType := daeModeFMUType(FMUType, FMUVersion, isWasmFMU);
+  end if;
   if Flags.getConfigBool(Flags.DAE_MODE) and not canExportDaeModeFMU(FMUType, FMUVersion, isWasmFMU) then
     success := false;
     outValue := Values.STRING("");
-    if FMI.isFMIMEType(FMUType) then
-      Error.addMessage(Error.FMU_EXPORT_DAE_MODE_ME, {FMUType});
-    else
-      Error.addMessage(Error.FMU_EXPORT_DAE_MODE_C_CS, {});
-    end if;
+    Error.addMessage(Error.FMU_EXPORT_DAE_MODE_ME, {FMUType});
     return;
   end if;
 
@@ -4718,7 +4647,6 @@ protected
   SimCode.SimulationSettings simSettings;
   list<String> libs = {} "the reuse path translates nothing, so nothing reports libraries";
   Boolean isWindows;
-  Boolean needs3rdPartyLibs;
   Integer platformIndex, platformCount;
   String platformName;
   String FMUVersion = inFMUVersion;
@@ -4733,8 +4661,22 @@ protected
   // Reached through the target, the caller still wants an FMU the ordinary
   // tooling can load, so it gets this machine's platform too.
   list<String> nativePlatforms = if wasmRequested then List.select(platforms, isNotWasmPlatform) else {"native"};
+  Boolean withFMI2 = false;
 algorithm
   cache := inCache;
+  // Internal, for OpenModelicaLibraryTesting only: an FMI 3.0 binary that also
+  // serves FMI 2.0, in an FMU laid out for FMI 2.0. modelDescription.fmi3.xml is
+  // the FMI 3.0 description. A wasm simCodeTarget gets the C export, as FMI 1.0 does.
+  if FMUVersion == "2.0+3.0" then
+    if wasmRequested or not (Config.simCodeTarget() == "C" or wasmTarget) then
+      outValue := Values.STRING("");
+      Error.addCompilerError("FMI version 2.0+3.0 needs the C export and native platforms.");
+      return;
+    end if;
+    FMUVersion := "3.0";
+    withFMI2 := true;
+    isWasmFMU := false;
+  end if;
   if not FMI.checkFMIVersion(FMUVersion) then
     outValue := Values.STRING("");
     Error.addMessage(Error.UNKNOWN_FMU_VERSION, {FMUVersion});
@@ -4754,6 +4696,9 @@ algorithm
     Error.addMessage(Error.FMU_EXPORT_WASM_FMI1, {});
     return;
   end if;
+  if FMI.isFMIVersion10(FMUVersion) then
+    Error.addMessage(Error.FMU_EXPORT_FMI1_DEPRECATED, {});
+  end if;
   // without a native binary to load it, the wasm model is only reachable as fmi-ls-wasm,
   // which is layered on FMI 3.0
   if wasmRequested and FMUVersion == "2.0" and listEmpty(nativePlatforms) then
@@ -4764,13 +4709,13 @@ algorithm
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
   end if;
-  if Flags.getConfigBool(Flags.DAE_MODE) and not canExportDaeModeFMU(FMUType, FMUVersion, isWasmFMU) then
+  // The FMI 2.0 side of a 2.0+3.0 FMU has no fmi-ls-dae.
+  if Flags.getConfigBool(Flags.DAE_MODE) then
+    FMUType := daeModeFMUType(FMUType, if withFMI2 then "2.0" else FMUVersion, isWasmFMU);
+  end if;
+  if Flags.getConfigBool(Flags.DAE_MODE) and not canExportDaeModeFMU(FMUType, if withFMI2 then "2.0" else FMUVersion, isWasmFMU) then
     outValue := Values.STRING("");
-    if FMI.isFMIMEType(FMUType) then
-      Error.addMessage(Error.FMU_EXPORT_DAE_MODE_ME, {FMUType});
-    else
-      Error.addMessage(Error.FMU_EXPORT_DAE_MODE_C_CS, {});
-    end if;
+    Error.addMessage(Error.FMU_EXPORT_DAE_MODE_ME, {FMUType});
     return;
   end if;
 
@@ -4795,6 +4740,7 @@ algorithm
   end if;
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, true);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, FMUVersion);
+  FlagsUtil.setConfigBool(Flags.FMU_WITH_FMI2, withFMI2);
   // A translateModelFMU of this model, this FMI version and this kind of
   // interface, off the program still loaded and under the flags still set, has
   // already done the translation: render the metadata and link the adapter onto
@@ -4817,10 +4763,12 @@ algorithm
     outValue := Values.STRING("");
     FlagsUtil.setConfigBool(Flags.BUILDING_FMU, false);
     FlagsUtil.setConfigString(Flags.FMI_VERSION, "");
+    FlagsUtil.setConfigBool(Flags.FMU_WITH_FMI2, false);
     return;
   end try;
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, false);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, "");
+  FlagsUtil.setConfigBool(Flags.FMU_WITH_FMI2, false);
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_BUILD_MODEL);
 
@@ -4872,9 +4820,6 @@ algorithm
   CevalScript.compileModel(filenameprefix+"_FMU" , libs);
   ExecStat.execStat("buildModelFMU: Generate the FMI files");
 
-  // Check flag fmiFlags if we need additional 3rdParty runtime libs and files
-  needs3rdPartyLibs := SimCodeUtil.cvodeFmiFlagIsSet(SimCodeUtil.createFMISimulationFlags(false));
-
   // A docker build compiles the FMU from sources/, which --fmiSources=false only
   // strips when packing, so the Rust half has to be there too.
   if Config.simCodeRustRuntime() and not System.directoryExists(fmutmp + "/sources/rust")
@@ -4897,7 +4842,7 @@ algorithm
     Error.addCompilerNotification("Building FMU for platform '" + platformName + "' (" + String(platformIndex) + "/" + String(platformCount) + ").");
 
     configureLogFile := System.realpath(fmutmp)+"/resources/"+System.stringReplace(platformName,"/","-")+".log";
-    configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, libs, isWindows, needs3rdPartyLibs);
+    configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, libs, isWindows);
     if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
       System.removeFile(configureLogFile);
     end if;
@@ -6785,52 +6730,80 @@ public function checkModel " checks a model and returns number of variables and 
   input Absyn.Path className;
   input Absyn.Msg inMsg;
         output Values.Value outValue;
-algorithm
-  outValue := matchcontinue ()
-    local
-      Option<DAE.DAElist> odae;
-      DAE.DAElist dae;
-      Integer eqnSize,varSize,simpleEqnSize;
-      String retStr,classNameStr;
-      Flags.Flag flags;
+protected
+  DAE.DAElist dae;
+  Integer eqnSize, varSize, simpleEqnSize, warnings, errors;
+  String retStr, classNameStr, eqnsStr, simpleEqnsStr, varsStr, errStr;
+  Flags.Flag flags;
+  NFFlatModel flatModel;
+  NFExpression eqnSizeExp, varSizeExp, simpleEqnsExp;
 
-    // handle normal models
-    case ()
-      algorithm
-        ExecStat.execStatReset();
-        flags := loadCommandLineOptionsFromModel(className);
-
-        try
-          (cache, _, odae) := runFrontEnd(cache, env, className, false);
-          SOME(dae) := odae;
-          (varSize, eqnSize, simpleEqnSize) := CheckModel.checkModel(dae);
-          FlagsUtil.saveFlags(flags);
-        else
-          FlagsUtil.saveFlags(flags);
-          fail();
-        end try;
-
-        classNameStr := AbsynUtil.pathString(className);
-        retStr := stringAppendList({"Check of ",classNameStr," completed successfully.\nClass ",classNameStr," has ",String(eqnSize)," equation(s) and ",
-          String(varSize)," variable(s).\n",String(simpleEqnSize)," of these are trivial equation(s)."});
-      then Values.STRING(retStr);
-
-    case ()
-      algorithm
-        false := Interactive.existClass(className, SymbolTable.getAbsyn());
-        Error.addMessage(Error.LOOKUP_ERROR, {AbsynUtil.pathString(className), "<TOP>"});
-      then Values.STRING("");
-
-    // errors
+  function format_errors
+    input Integer warnings;
+    input Integer errors;
+    output String str;
+  algorithm
+    if warnings == 0 and errors == 0 then
+      str := "";
     else
-      algorithm
-        if Error.getNumMessages() == 0 then
-          Error.addMessage(Error.INTERNAL_ERROR,
-            {"Check of " + AbsynUtil.pathString(className) + " failed with no error message","<TOP>"});
-        end if;
-      then Values.STRING("");
+      str := " with ";
+      if warnings > 0 then
+        str := str + String(warnings) + " warning(s)";
+      end if;
 
-  end matchcontinue;
+      if errors > 0 then
+        if warnings > 0 then
+          str := str + " and ";
+        end if;
+
+        str := str + String(errors) + " error(s)";
+      end if;
+    end if;
+  end format_errors;
+algorithm
+  warnings := ErrorExt.getNumWarningMessages();
+  errors := ErrorExt.getNumErrorMessages();
+  classNameStr := AbsynUtil.pathString(className);
+  ExecStat.execStatReset();
+  flags := loadCommandLineOptionsFromModel(className);
+
+  try
+    if Flags.isSet(Flags.SCODE_INST) then
+      flatModel := runFrontEndNF(className);
+      (varSizeExp, eqnSizeExp, simpleEqnsExp) := NFCheckModel.checkModel(flatModel);
+      varsStr := NFExpression.toString(varSizeExp);
+      eqnsStr := NFExpression.toString(eqnSizeExp);
+      simpleEqnsStr := NFExpression.toString(simpleEqnsExp);
+    else
+      (cache, _, SOME(dae), _) := runFrontEnd(cache, env, className, false);
+      (varSize, eqnSize, simpleEqnSize) := CheckModel.checkModel(dae);
+      varsStr := String(varSize);
+      eqnsStr := String(eqnSize);
+      simpleEqnsStr := String(simpleEqnSize);
+    end if;
+
+    warnings := ErrorExt.getNumWarningMessages() - warnings;
+    errors := ErrorExt.getNumErrorMessages() - errors;
+
+    retStr := stringAppendList({
+      "Check of ", classNameStr, " completed successfully", format_errors(warnings, errors), ".\n",
+      "Class ", classNameStr, " has ", eqnsStr, " equation(s) and ", varsStr, " variable(s).\n",
+      simpleEqnsStr, " of these are trivial equation(s)."});
+  else
+    if Interactive.existClass(className, SymbolTable.getAbsyn()) then
+      warnings := ErrorExt.getNumWarningMessages() - warnings;
+      errors := ErrorExt.getNumErrorMessages() - errors;
+
+      retStr := stringAppendList({
+        "Check of ", classNameStr, " failed", format_errors(warnings, errors), "."});
+    else
+      // Return nothing if the class doesn't exist, the frontend will emit an error in that case.
+      retStr := "";
+    end if;
+  end try;
+
+  FlagsUtil.saveFlags(flags);
+  outValue := Values.STRING(retStr);
 end checkModel;
 
 protected function getWithinStatement "To get a correct Within-path with unknown input-path."
@@ -7141,6 +7114,7 @@ public function checkAllModelsRecursive
   input FCore.Graph inEnv;
   input Absyn.Path className;
   input Boolean inCheckProtected;
+  input Boolean reportTimes;
   input Absyn.Msg inMsg;
   output FCore.Cache outCache;
   output Values.Value outValue;
@@ -7161,7 +7135,7 @@ algorithm
         allClassPaths := getAllClassPathsRecursive(className, b, SymbolTable.getAbsyn());
         print("Number of classes to check: " + intString(listLength(allClassPaths)) + "\n");
         // print ("All paths:\n" + stringDelimitList(List.map(allClassPaths, AbsynUtil.pathString), "\n") + "\n");
-        failed := checkAll(cache, env, allClassPaths, msg, not Testsuite.isRunning(), 0);
+        failed := checkAll(cache, env, allClassPaths, msg, reportTimes and not Testsuite.isRunning(), 0);
         ret := "Number of classes checked / failed: " + intString(listLength(allClassPaths)) + "/" + intString(failed);
       then
         (cache,Values.STRING(ret));
@@ -10076,38 +10050,17 @@ algorithm
   if  System.stringFind(simflags, "-r") < 0 then
     return;
   end if;
-  // never fail!
+  // -r must be a flag of its own, not the start of another one such as -rt
+  // or -reconcile.
   try
-   // match -r="file"
-   (nm, {_, f}) := System.regex(simflags, "-r=\"(.*?)\"", 2, true);
-   if nm == 2 then
-     resultFile := f; return;
-   end if;
-   // match -r='file'
-   (nm, {_, f}) := System.regex(simflags, "-r=\'(.*?)\'", 2, true);
-   if nm == 2 then
-     resultFile := f; return;
-   end if;
-   // match -r 'file'
-   (nm, {_, f}) := System.regex(simflags, "-r[ ]*\"(.*?)\"", 2, true);
-   if nm == 2 then
-     resultFile := f; return;
-   end if;
-   // match -r "file"
-   (nm, {_, f}) := System.regex(simflags, "-r[ ]*\'(.*?)\'", 2, true);
-   if nm == 2 then
-     resultFile := f; return;
-   end if;
-   // match -r=file
-   (nm, {_, f}) := System.regex(simflags, "-r=([^ ]*)", 2, true);
-   if nm == 2 then
-     resultFile := f; return;
-   end if;
-   // match -r file
-   (nm, {_, f}) := System.regex(simflags, "-r[ ]*([^ ]*)", 2, true);
-   if nm == 2 then
-     resultFile := f; return;
-   end if;
+   for re in {"(^|[[:space:]])-r(=|[[:space:]]+)\"([^\"]*)\"",
+              "(^|[[:space:]])-r(=|[[:space:]]+)'([^']*)'",
+              "(^|[[:space:]])-r(=|[[:space:]]+)([^[:space:]]+)"} loop
+     (nm, {_, _, _, f}) := System.regex(simflags, re, 4, true);
+     if nm == 4 then
+       resultFile := f; return;
+     end if;
+   end for;
   else
     // do nothing
   end try;
@@ -10256,9 +10209,10 @@ protected
   Absyn.Class cls, lib_cls;
   Absyn.Within wi;
   Option<String> uses_version;
-  SemanticVersion.Version lib_version, lib_version_used;
+  String lib_version, lib_version_used;
   list<tuple<String, Option<String>, Option<String>>> conversions;
-  list<String> scripts;
+  list<String> none_from;
+  Option<list<String>> scripts;
   String lib_name;
 algorithm
   try
@@ -10268,7 +10222,7 @@ algorithm
     uses_version := Interactive.getUsedVersion(cls, libPath);
 
     if isSome(uses_version) then
-      lib_version_used := SemanticVersion.parse(Util.getOption(uses_version), true);
+      lib_version_used := Util.getOption(uses_version);
     else
       Error.addMessage(Error.CONVERSION_MISSING_USES,
         {AbsynUtil.pathString(clsPath), AbsynUtil.pathString(libPath)});
@@ -10276,11 +10230,11 @@ algorithm
     end if;
 
     lib_name := AbsynUtil.pathFirstIdent(libPath);
-    lib_version := SemanticVersion.parse(CevalScript.getPackageVersion(libPath, p));
+    lib_version := CevalScript.getPackageVersion(libPath, p);
 
     // Check if the wanted version of the library is already loaded, otherwise
     // we need to load it.
-    if SemanticVersion.compare(lib_version, SemanticVersion.parse(libVersion)) <> 0 then
+    if SemanticVersion.compare(lib_version, libVersion) <> 0 then
       // Try to set the language standard to the version needed to load the wanted library.
       if lib_name == "Modelica" then
         Config.setLanguageStandardFromMSL("Modelica " + libVersion, force = true);
@@ -10295,30 +10249,31 @@ algorithm
     end if;
 
     // Get the version of the library.
-    lib_version := SemanticVersion.parse(CevalScript.getPackageVersion(libPath, lib_program));
+    lib_version := CevalScript.getPackageVersion(libPath, lib_program);
 
     // Try to find a sequence of conversion scripts that can be used to convert
     // the class to the desired library version.
     lib_cls := ProgramUtil.getPathedClassInProgram(libPath, lib_program, showError = true);
     conversions := Interactive.getConversionsInClass(lib_cls);
-    scripts := findConversionPaths(conversions, lib_version, lib_version_used);
+    (none_from, _) := Interactive.getConversionAnnotation(lib_cls);
+    scripts := findConversionPaths(conversions, none_from, lib_version, lib_version_used);
 
-    if listEmpty(scripts) then
+    if isNone(scripts) then
       Error.addMessage(Error.CONVERSION_NO_COMPATIBLE_SCRIPT_FOUND,
         {AbsynUtil.pathString(libPath),
-         SemanticVersion.toString(lib_version_used),
-         SemanticVersion.toString(lib_version)});
+         SemanticVersion.normalize(lib_version_used),
+         SemanticVersion.normalize(lib_version)});
       fail();
     end if;
 
     // Apply the conversion scripts.
-    for script in scripts loop
+    for script in Util.getOption(scripts) loop
       script := uriToFilename(script);
       cls := Conversion.convertPackage(cls, script);
     end for;
 
     // Update the uses-annotation in the class to refer to the new version of the library.
-    cls := Interactive.updateUsedVersion(cls, libPath, SemanticVersion.toString(lib_version));
+    cls := Interactive.updateUsedVersion(cls, libPath, SemanticVersion.normalize(lib_version));
 
     // Finally update the class in the global Absyn.
     wi := ProgramUtil.buildWithin(clsPath);
@@ -10331,71 +10286,66 @@ algorithm
 end convertPackageToLibrary;
 
 function findConversionPaths
-  "Tries to find the shortest path for converting from one version to another
-   and returns the list of conversion scripts for that path. Usually only one
-   conversion is needed, but sometimes the conversion might need to be done in
-   several steps (e.g. 2.0.0 => 2.3.5 => 2.4.0)."
+  "The conversion scripts of the shortest way to convert from one version to
+   another, usually one, but sometimes in several steps (e.g. 2.0.0 => 2.3.5
+   => 2.4.0). A noneFromVersion step needs no script. NONE() if there is no
+   way."
   input list<tuple<String, Option<String>, Option<String>>> conversions;
-  input SemanticVersion.Version libVersion;
-  input SemanticVersion.Version libVersionUsed;
+  input list<String> noneFromVersions;
+  input String libVersion;
+  input String libVersionUsed;
   input Integer depth = 0;
-  output list<String> scripts = {};
+  output Option<list<String>> scripts = NONE();
 protected
-  list<list<String>> paths = {};
-  Integer path_len, path_min = 100;
+  Option<list<String>> path;
 algorithm
   // Abort if we go too deep to avoid crashing on malicious conversion annotations.
   if depth > 100 then
     return;
   end if;
 
-  // Find the possible path for each conversion to the version we're looking for.
   for c in conversions loop
-    paths := findConversionPath(c, libVersion, libVersionUsed, conversions, depth) :: paths;
-  end for;
-
-  // Return the shortest non-empty path.
-  for p in paths loop
-    path_len := listLength(p);
-
-    if path_len > 0 and path_len < path_min then
-      scripts := p;
-      path_min := path_len;
-    end if;
+    path := findConversionPath(c, noneFromVersions, libVersion, libVersionUsed, conversions, depth);
+    scripts := match (path, scripts)
+      case (SOME(_), NONE()) then path;
+      case (SOME(_), SOME(_)) guard listLength(Util.getOption(path)) < listLength(Util.getOption(scripts)) then path;
+      else scripts;
+    end match;
   end for;
 end findConversionPaths;
 
 function findConversionPath
   input tuple<String, Option<String>, Option<String>> conversion;
-  input SemanticVersion.Version libVersion;
-  input SemanticVersion.Version libVersionUsed;
+  input list<String> noneFromVersions;
+  input String libVersion;
+  input String libVersionUsed;
   input list<tuple<String, Option<String>, Option<String>>> conversions;
   input Integer depth;
-  output list<String> scripts = {};
+  output Option<list<String>> scripts = NONE();
 protected
   String from;
   Option<String> to;
   Option<String> script;
-  SemanticVersion.Version from_version, to_version;
 algorithm
   (from, to, script) := conversion;
 
-  if isNone(script) then
+  if SemanticVersion.compare(libVersionUsed, from) <> 0 then
     return;
   end if;
 
-  from_version := SemanticVersion.parse(from, true);
+  // Without a script only noneFromVersion is a step; inline conversion rules
+  // (change) are not supported.
+  if isNone(script) and not listMember(from, noneFromVersions) then
+    return;
+  end if;
 
-  if SemanticVersion.compare(libVersionUsed, from_version) == 0 then
-    if isSome(to) then
-      to_version := SemanticVersion.parse(Util.getOption(to), true);
+  scripts := SOME({});
+  if isSome(to) and SemanticVersion.compare(libVersion, Util.getOption(to)) <> 0 then
+    scripts := findConversionPaths(conversions, noneFromVersions, libVersion, Util.getOption(to), depth + 1);
+  end if;
 
-      if SemanticVersion.compare(libVersion, to_version) <> 0 then
-        scripts := findConversionPaths(conversions, libVersion, to_version, depth + 1);
-      end if;
-    end if;
-
-    scripts := Util.getOption(script) :: scripts;
+  if isSome(script) and isSome(scripts) then
+    scripts := SOME(Util.getOption(script) :: Util.getOption(scripts));
   end if;
 end findConversionPath;
 

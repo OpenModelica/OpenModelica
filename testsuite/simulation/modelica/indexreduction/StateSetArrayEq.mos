@@ -98,7 +98,7 @@ val(a, 1);
 //     messages = "LOG_EVENTS        | info    | status of relations at time=0
 // |                 | |       | | [1] (pre:  true)  true = r[1] > 0.0
 // LOG_EVENTS        | info    | status of zero crossings at time=0
-// |                 | |       | | [1] (pre:  0)  1 = r[1] > 0.0
+// |                 | |       | | [1] (pre: false)  true = r[1] > 0.0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

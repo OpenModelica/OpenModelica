@@ -1,13 +1,16 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+fmi2_and_fmi3.mos \
 fmi3_array_attributes.mos \
 fmi3_array_attributes_nb.mos \
 fmi3_array_nonscalarized.mos \
 fmi3_arrays.mos \
 fmi3_arrays_scalarized.mos \
 fmi3_import_me.mos \
+fmi3_import_exitinit_assert.mos \
 fmi3_import_boolean.mos \
+fmi3_import_discrete_inputs.mos \
 fmi3_arrays_approx.mos \
 fmi3_arrays_start_vector.mos \
 fmi3_attributes_01.mos \
@@ -16,9 +19,14 @@ fmi3_builddescription.mos \
 fmi3_c_daemode_me.mos \
 fmi3_causalize_protected.mos \
 fmi3_clocks.mos \
+fmi3_configuration_mode.mos \
+fmi3_state_machine.mos \
+fmi3_state_machine_c_rust.mos \
 fmi3_directional_derivatives.mos \
+fmi3_directional_derivatives_unlisted.mos \
 fmi3_documentation.mos \
 fmi3_fmustate.mos \
+fmi3_me_exitinit_assert.mos \
 fmi3_graphics.mos \
 fmi3_graphics_inherited.mos \
 fmi3_msl_adder4.mos \
@@ -37,6 +45,7 @@ fmi3_wasm_output_record.mos
 DEPENDENCIES = \
 *.mo \
 *.mos \
+*.py \
 *.c \
 Makefile \
 

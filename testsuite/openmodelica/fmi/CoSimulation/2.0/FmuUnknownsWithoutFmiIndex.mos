@@ -1,0 +1,49 @@
+// name:     FmuUnknownsWithoutFmiIndex
+// keywords: FMI 2.0 export ModelStructure InitialUnknowns daeMode
+// status:   correct
+// teardown_command: rm -rf FmuUnknownsWithoutFmiIndex.fmu FmuUnknownsWithoutFmiIndex.fmutmp/ FmuUnknownsWithoutFmiIndex.log FmuUnknownsWithoutFmiIndex_tmp.xml FmuUnknownsWithoutFmiIndex.xml
+//
+// A --daeMode FMU has no FMIDER Jacobian, so the ModelStructure is made
+// without dependencies. The protected calculated parameter q is not exported
+// with --fmiFilter=protected and must not be listed (it was index="0", #17881).
+
+loadString("
+model FmuUnknownsWithoutFmiIndex
+  Real x(start = 1, fixed = true);
+  parameter Real p = 1;
+protected
+  parameter Real q = 2*p;
+equation
+  der(x) = -q*x;
+end FmuUnknownsWithoutFmiIndex;
+"); getErrorString();
+setCommandLineOptions("--daeMode --fmiFilter=protected"); getErrorString();
+buildModelFMU(FmuUnknownsWithoutFmiIndex, version = "2.0", fmuType = "cs", platforms = {"static"}); getErrorString();
+system("unzip -cqq FmuUnknownsWithoutFmiIndex.fmu modelDescription.xml > FmuUnknownsWithoutFmiIndex_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" FmuUnknownsWithoutFmiIndex_tmp.xml > FmuUnknownsWithoutFmiIndex.xml"); getErrorString();
+readFile("FmuUnknownsWithoutFmiIndex.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "FmuUnknownsWithoutFmiIndex.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// 0
+// ""
+// "  <ModelStructure>
+//     <Derivatives>
+//       <Unknown index=\"2\" />
+//     </Derivatives>
+//     <InitialUnknowns>
+//       <Unknown index=\"2\" />
+//     </InitialUnknowns>
+//   </ModelStructure>
+// "
+// ""
+// endResult

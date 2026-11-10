@@ -64,6 +64,7 @@ import FCore;
 import Interactive;
 import Interactive.Access;
 import SimCode;
+import UnorderedMap;
 import Values;
 
 // protected imports
@@ -126,7 +127,6 @@ import SymbolTable;
 import System;
 import Tpl;
 import Types;
-import UnorderedMap;
 import Unparsing;
 import Unzip;
 import Util;
@@ -269,9 +269,9 @@ algorithm
     cdWorkingDir := if stringEmpty(workingDir) then "" else ("cd \"" + workingDir + "\"&& ");
     winCompileMode := if Testsuite.isRunning() then "serial" else "parallel";
     if Flags.getConfigEnum(Flags.LINK_TYPE) == 1 then
-      linkType := "static";
-    elseif Flags.getConfigEnum(Flags.LINK_TYPE) == 2 then
       linkType := "dynamic";
+    elseif Flags.getConfigEnum(Flags.LINK_TYPE) == 2 then
+      linkType := "static";
     end if;
     linkType := if Testsuite.isRunning() then "dynamic" else linkType;
     s_call := stringAppendList({omhome,cdWorkingDir,setMakeVars,"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""," ",fileprefix," ",Config.simulationCodeTarget()," ", System.openModelicaPlatform(), " ", winCompileMode, " ", linkType});
@@ -454,6 +454,8 @@ algorithm
   (p, _) := loadModel(modelsToLoad, modelicaPath, p, false, notifyLoad, checkUses, requireExactVersion, false);
 end checkUsesAndUpdateProgram;
 
+public type ChosenVersion = tuple<String, String> "The path and the version of a library to load";
+
 public function loadModel
   input list<tuple<Absyn.Path,String,list<String>,Boolean /* Only use the first entry on the OPENMODELICALIBRARY (MODELICAPATH in the language specification) */>> imodelsToLoad;
   input String modelicaPath;
@@ -464,19 +466,147 @@ public function loadModel
   input Boolean requireExactVersion;
   input Boolean encrypted = false;
   input String pathToFile = "";
+  input Option<UnorderedMap<String, ChosenVersion>> inherited = NONE() "The versions chosen for the library that uses these";
   output Absyn.Program pnew = ip;
   output Boolean success = true;
 protected
   Boolean b;
+  UnorderedMap<String, ChosenVersion> chosen;
 algorithm
   PackageManagement.installCachedPackages();
+  if pathToFile == "" and not forceLoad and inheritedCovers(inherited, imodelsToLoad, pnew) then
+    SOME(chosen) := inherited;
+  elseif pathToFile == "" then
+    (chosen, success) := chooseVersions(imodelsToLoad, modelicaPath, pnew, forceLoad, requireExactVersion);
+    if not success then
+      return;
+    end if;
+  else
+    chosen := UnorderedMap.new<ChosenVersion>(stringHashDjb2, stringEq);
+  end if;
 
   for m in imodelsToLoad loop
     (pnew, b) := loadModel1(m, modelicaPath, forceLoad, notifyLoad,
-      checkUses, requireExactVersion, encrypted, pathToFile, pnew);
+      checkUses, requireExactVersion, encrypted, pathToFile, chosen, pnew);
     success := b and success;
   end for;
 end loadModel;
+
+protected function inheritedCovers
+  "Whether the versions chosen for the library that uses these include all
+   of them that are not loaded yet, in the versions they ask for. The solver
+   may not have known these uses, e.g. for a library without metadata."
+  input Option<UnorderedMap<String, ChosenVersion>> inherited;
+  input list<tuple<Absyn.Path,String,list<String>,Boolean>> modelsToLoad;
+  input Absyn.Program program;
+  output Boolean covers = false;
+protected
+  UnorderedMap<String, ChosenVersion> chosen;
+  String name, version;
+  list<String> versions;
+algorithm
+  if isNone(inherited) then
+    return;
+  end if;
+  SOME(chosen) := inherited;
+  for m in modelsToLoad loop
+    (_, _, versions, _) := m;
+    name := AbsynUtil.pathFirstIdent(Util.tuple41(m));
+    if not List.any(program.classes, function AbsynUtil.isClassNamed(inName = name)) then
+      if not UnorderedMap.contains(name, chosen) then
+        return;
+      end if;
+      (_, version) := UnorderedMap.getOrFail(name, chosen);
+      if not (listEmpty(versions) or List.any(versions, function sameVersion(version = version))) then
+        return;
+      end if;
+    end if;
+  end for;
+  covers := true;
+end inheritedCovers;
+
+protected function sameVersion
+  input String wanted;
+  input String version;
+  output Boolean same = wanted == "default" or
+    0 == SemanticVersion.compare(wanted, version, comparePrerelease=false);
+end sameVersion;
+
+protected function chooseVersions
+  "The paths of the versions that the package solver chooses for the
+   libraries to load and the libraries they use, all together."
+  input list<tuple<Absyn.Path,String,list<String>,Boolean>> modelsToLoad;
+  input String modelicaPath;
+  input Absyn.Program program;
+  input Boolean forceLoad;
+  input Boolean requireExactVersion;
+  output UnorderedMap<String, ChosenVersion> paths = UnorderedMap.new<ChosenVersion>(stringHashDjb2, stringEq);
+  output Boolean success = true;
+protected
+  list<PackageManagement.Requirement> requirements = {};
+  list<tuple<String, String>> loaded = {};
+  list<PackageManagement.Selection> selected;
+  list<PackageManagement.ConversionHint> conversions;
+  list<String> names = {}, versions;
+  String name, origin, error;
+  Absyn.Path path;
+  Boolean missing = false;
+algorithm
+  for m in modelsToLoad loop
+    (path, origin, versions, _) := m;
+    name := AbsynUtil.pathFirstIdent(path);
+    names := name :: names;
+    missing := missing or forceLoad or not List.any(program.classes, function AbsynUtil.isClassNamed(inName = name));
+    requirements := PackageManagement.REQUIREMENT(name, versions, requireExactVersion, origin) :: requirements;
+  end for;
+  if not missing then
+    return;
+  end if;
+
+  for cls in program.classes loop
+    if not (forceLoad and listMember(AbsynUtil.className(cls), names)) then
+      loaded := (AbsynUtil.className(cls), Util.getOptionOrDefault(AbsynUtil.getNamedAnnotationInClass(cls,
+        Absyn.IDENT("version"), Interactive.getAnnotationStringValueOrFail), "")) :: loaded;
+    end if;
+  end for;
+
+  (success, selected, _, error, conversions) := PackageManagement.resolve(listReverse(requirements), loaded, false,
+    requireExactVersion, Interactive.libraryMetadata, modelicaPath);
+  if not success then
+    Error.addMessage(Error.LOAD_MODEL_CONFLICT, {stringDelimitList(List.unique(list(r.origin for r in requirements)), ", "), error});
+  end if;
+  for c in conversions loop
+    if usesVersion(c.origin, c.name, c.version, program) then
+      Error.addMessage(Error.NOTIFY_LOAD_MODEL_CONVERSION, {c.origin, c.name, c.version, c.to});
+    end if;
+  end for;
+  if not success then
+    return;
+  end if;
+
+  for s in selected loop
+    if not s.loaded and s.path <> "" then
+      UnorderedMap.add(s.name, (s.path, s.version), paths);
+    end if;
+  end for;
+end chooseVersions;
+
+protected function usesVersion
+  "Whether the top-level class cls uses version of library."
+  input String cls;
+  input String library;
+  input String version;
+  input Absyn.Program program;
+  output Boolean b = false;
+protected
+  Absyn.Class c;
+algorithm
+  try
+    c := List.find(program.classes, function AbsynUtil.isClassNamed(inName = cls));
+    b := Util.getOptionOrDefault(Interactive.getUsedVersion(c, Absyn.IDENT(library)), "") == version;
+  else
+  end try;
+end usesVersion;
 
 protected function loadModel1
   input tuple<Absyn.Path,String,list<String>,Boolean> modelToLoad;
@@ -487,6 +617,7 @@ protected function loadModel1
   input Boolean requireExactVersion;
   input Boolean encrypted;
   input String pathToFile;
+  input UnorderedMap<String, ChosenVersion> chosen "Paths and versions to load";
   input output Absyn.Program program;
         output Boolean success = true;
 protected
@@ -512,8 +643,12 @@ algorithm
       version := "";
       return;
     else
-      if pathToFile=="" then
-        pnew := ClassLoader.loadClass(path, versionsLst, thisModelicaPath, NONE(), requireExactVersion, encrypted);
+      if pathToFile=="" and UnorderedMap.contains(AbsynUtil.pathFirstIdent(path), chosen) then
+        pnew := ClassLoader.loadClassFromPath(AbsynUtil.pathFirstIdent(path),
+          Util.tuple21(UnorderedMap.getOrFail(AbsynUtil.pathFirstIdent(path), chosen)), encrypted);
+      elseif pathToFile=="" then
+        ClassLoader.notifyInstallable(AbsynUtil.pathFirstIdent(path), versionsLst);
+        fail();
       else
         dir := System.dirname(pathToFile);
         cl := ClassLoader.loadClassFromMp(AbsynUtil.pathFirstIdent(path), System.dirname(dir), System.basename(dir), true, NONE(), encrypted);
@@ -538,7 +673,8 @@ algorithm
 
     if checkUses then
       modelsToLoad := Interactive.getUsesAnnotationOrDefault(pnew, requireExactVersion);
-      (program, success) := loadModel(modelsToLoad, modelicaPath, program, false, notifyLoad, checkUses, requireExactVersion, false);
+      (program, success) := loadModel(modelsToLoad, modelicaPath, program, false, notifyLoad, checkUses,
+        requireExactVersion, false, inherited = SOME(chosen));
     end if;
   else
     pathStr := AbsynUtil.pathString(path);
@@ -593,33 +729,30 @@ protected function checkValidVersion
   input list<String> withConversion;
   input list<String> withoutConversion;
 protected
-  SemanticVersion.Version semverWanted, semverActual;
   String actualVersionStr, pathStr;
 algorithm
-  semverWanted := SemanticVersion.parse(version);
   actualVersionStr := Util.getOptionOrDefault(actualVersion, "");
   pathStr := AbsynUtil.pathString(path);
-  semverActual := SemanticVersion.parse(actualVersionStr);
-  if 0 == SemanticVersion.compare(semverWanted, semverActual, comparePrerelease=false) then
+  if 0 == SemanticVersion.compare(version, actualVersionStr, comparePrerelease=false) then
     return;
   end if;
-  if not (SemanticVersion.isSemVer(semverActual) and SemanticVersion.isSemVer(semverWanted)) then
+  if not (SemanticVersion.isSemVer(actualVersionStr) and SemanticVersion.isSemVer(version)) then
     Error.addMessage(Error.LOAD_MODEL_DIFFERENT_VERSIONS, {pathStr, version, actualVersionStr});
     return;
   end if;
   for ver in withoutConversion loop
-    if 0 == SemanticVersion.compare(semverWanted, SemanticVersion.parse(ver), comparePrerelease=false) then
+    if 0 == SemanticVersion.compare(version, ver, comparePrerelease=false) then
       Error.addMessage(Error.LOAD_MODEL_DIFFERENT_VERSIONS_WITHOUT_CONVERSION, {requestOrigin, pathStr, version, actualVersionStr});
       return;
     end if;
   end for;
   for ver in withConversion loop
-    if 0 == SemanticVersion.compare(semverWanted, SemanticVersion.parse(ver), comparePrerelease=false) then
+    if 0 == SemanticVersion.compare(version, ver, comparePrerelease=false) then
       Error.addMessage(Error.LOAD_MODEL_DIFFERENT_VERSIONS_WITH_CONVERSION, {requestOrigin, pathStr, version, actualVersionStr});
       return;
     end if;
   end for;
-  if SemanticVersion.compare(semverWanted, semverActual) > 0 then
+  if SemanticVersion.compare(version, actualVersionStr) > 0 then
     Error.addMessage(Error.LOAD_MODEL_DIFFERENT_VERSIONS_NEWER, {pathStr, version, actualVersionStr});
   else
     Error.addMessage(Error.LOAD_MODEL_DIFFERENT_VERSIONS_OLDER, {pathStr, version, actualVersionStr});
@@ -913,7 +1046,6 @@ algorithm
       algorithm
         // cmd = Util.rawStringToInputString(cmd);
         Settings.setModelicaPath(cmd);
-        setGlobalRoot(Global.packageIndexCacheIndex, 0);
       then
         Values.BOOL(true);
 
@@ -1713,7 +1845,7 @@ algorithm
       algorithm
         infopath := Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("Scripting",Absyn.IDENT("SourceInfo"))));
         values := {Values.STRING(filename),Values.BOOL(readonly),Values.INTEGER(ls),Values.INTEGER(cs),Values.INTEGER(le),Values.INTEGER(ce)};
-      then Values.RECORD(infopath,values,{"filename","readonly","lineStart","columnStart","lineEnd","columnEnd"},-1);
+      then Values.RECORD(infopath,values,{"fileName","readonly","lineStart","columnStart","lineEnd","columnEnd"},-1);
   end match;
 end infoToValue;
 

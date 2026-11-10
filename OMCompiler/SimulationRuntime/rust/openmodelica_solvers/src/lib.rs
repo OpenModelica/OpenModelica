@@ -80,7 +80,6 @@ pub mod spatial;
 pub mod sundials;
 #[cfg(sundials)]
 pub mod sundials_ode;
-pub mod symsolver;
 pub mod sysstat;
 
 /// Whether this build has the real CVODE and IDA linked in (`build.rs`).

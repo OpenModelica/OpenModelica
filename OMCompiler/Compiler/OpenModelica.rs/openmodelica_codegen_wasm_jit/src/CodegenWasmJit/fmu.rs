@@ -589,8 +589,7 @@ pub(super) fn emit_fmu(
         let cs = kind != "ME";
         // Both adapters import every solver, real or stubbed; only the integrator is
         // Co-Simulation's alone.
-        let solvers = sundials_available()
-            .then(|| fmu_solver_libraries(&simulation_flags_json, &cs_method, cs, model.sparse_nls));
+        let solvers = sundials_available().then(|| fmu_solver_libraries(&simulation_flags_json, &cs_method, cs));
         // An unzipped export is for an OpenModelica importer: it holds the model
         // description and the model kernel and nothing else, and the host links
         // that kernel against an adapter it compiled once into

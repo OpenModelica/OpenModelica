@@ -8,7 +8,7 @@ use openmodelica_arrow_writer::units::{self, UnitDef};
 use openmodelica_arrow_writer::{Affine, ArrowKind, ArrowVar, ColTy, FileMeta, VarTy};
 use openmodelica_mat_writer::{MatKind, MatVar, Neg, Precision, write_mat4};
 
-use crate::cmp::{self, Algorithm, Settings, compare, format_g_prec15};
+use crate::cmp::{self, Algorithm, Comparison, Settings, compare, format_g_prec15};
 use crate::{OpenError, ResultReader, drop_leading_dups, leading_dup_count, time_var_name};
 
 pub struct ResultFile {
@@ -25,12 +25,16 @@ impl ResultFile {
             OpenError::UnknownSuffix => format!("Unknown result-file suffix of file '{base}'"),
             OpenError::Failed(msg) => format!("Failed to open simulation result {base}: {msg}"),
         })?;
+        Ok(ResultFile::from_reader(reader))
+    }
+
+    pub fn from_reader(reader: ResultReader) -> ResultFile {
         let time_name = time_var_name(&reader.vars_filter_aliases());
-        Ok(ResultFile {
+        ResultFile {
             reader,
             time_name,
             time: None,
-        })
+        }
     }
 
     /// Every variable name in the file, parameters and aliases included.
@@ -203,9 +207,21 @@ impl ResultFile {
     /// with `vars` (all of them when empty), optionally resampled onto
     /// `intervals` equidistant steps; `single` stores the reals as f32.
     pub fn write(&mut self, suffix: &str, vars: Vec<String>, intervals: u32, single: bool) -> Result<Vec<u8>, String> {
+        self.write_described(suffix, vars, intervals, single, true)
+    }
+
+    /// [`write`](Self::write), leaving the descriptions empty unless `descriptions`.
+    pub fn write_described(
+        &mut self,
+        suffix: &str,
+        vars: Vec<String>,
+        intervals: u32,
+        single: bool,
+        descriptions: bool,
+    ) -> Result<Vec<u8>, String> {
         match suffix.trim_start_matches('.') {
-            "mat" => self.write_mat(vars, intervals, single),
-            "arrow" => self.write_arrow(vars, intervals, single),
+            "mat" => self.mat(vars, intervals, single, descriptions),
+            "arrow" => self.arrow(vars, intervals, single, descriptions),
             "csv" => self.write_csv(vars, intervals).map(String::into_bytes),
             other => Err(format!("Unknown result-file suffix '{other}'")),
         }
@@ -214,7 +230,11 @@ impl ResultFile {
     /// The file as MATLAB v4. Aliases of one column in a `.mat` or `.arrow`
     /// source stay one column.
     pub fn write_mat(&mut self, vars: Vec<String>, intervals: u32, single: bool) -> Result<Vec<u8>, String> {
-        let p = self.plan_columns(vars, intervals)?;
+        self.mat(vars, intervals, single, true)
+    }
+
+    fn mat(&mut self, vars: Vec<String>, intervals: u32, single: bool, descriptions: bool) -> Result<Vec<u8>, String> {
+        let p = self.plan_columns(vars, intervals, descriptions)?;
         let mat_vars: Vec<MatVar> = p
             .signals
             .iter()
@@ -239,7 +259,17 @@ impl ResultFile {
 
     /// The file as Arrow IPC; units and types carry over from an `.arrow` source.
     pub fn write_arrow(&mut self, vars: Vec<String>, intervals: u32, single: bool) -> Result<Vec<u8>, String> {
-        let p = self.plan_columns(vars, intervals)?;
+        self.arrow(vars, intervals, single, true)
+    }
+
+    fn arrow(
+        &mut self,
+        vars: Vec<String>,
+        intervals: u32,
+        single: bool,
+        descriptions: bool,
+    ) -> Result<Vec<u8>, String> {
+        let p = self.plan_columns(vars, intervals, descriptions)?;
         let real = if single { ColTy::F32 } else { ColTy::F64 };
         let mut col_types = vec![real; p.n_reals];
         let arrow_vars: Vec<ArrowVar> = p
@@ -302,7 +332,7 @@ impl ResultFile {
 
     /// The selected signals over the distinct columns they read (time first),
     /// with the rows they need — the common part of the column-store writers.
-    fn plan_columns(&mut self, vars: Vec<String>, intervals: u32) -> Result<ColumnPlan, String> {
+    fn plan_columns(&mut self, vars: Vec<String>, intervals: u32, descriptions: bool) -> Result<ColumnPlan, String> {
         let vars = self.selection(vars);
         let time = self.time()?.to_vec();
         let (start, stop) = (time[0], time[time.len() - 1]);
@@ -329,7 +359,11 @@ impl ResultFile {
         let mut params: Vec<f64> = Vec::new();
         let mut column_of: HashMap<u32, u32> = HashMap::new();
         for var in &vars {
-            let descr = self.description(var);
+            let descr = if descriptions {
+                self.description(var)
+            } else {
+                String::new()
+            };
             let relative_quantity = self.relative_quantity(var);
             let discrete = self.discrete(var);
             let (storage, unit, display_unit, ty, enumeration) = match self.info(var, |t, i| {
@@ -588,6 +622,13 @@ struct Pair<'a> {
     offset_ref: usize,
 }
 
+/// Which file of a comparison lacks a variable.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Missing {
+    Reference,
+    Actual,
+}
+
 impl Pair<'_> {
     fn new<'a>(actual: &'a mut ResultFile, reference: &'a mut ResultFile) -> Result<Pair<'a>, String> {
         let offset = leading_dup_count(actual.time()?);
@@ -600,76 +641,114 @@ impl Pair<'_> {
         })
     }
 
-    /// Both trajectories of `var`, leading duplicates dropped; `None` when
-    /// either file lacks it.
-    fn data(&mut self, var: &str) -> Option<(Vec<f64>, Vec<f64>)> {
+    /// Both trajectories of `var`, leading duplicates dropped.
+    fn data(&mut self, var: &str) -> Result<(Vec<f64>, Vec<f64>), Missing> {
         let var = var.replace('"', "");
-        let mut dataref = self.reference.reader.trajectory(&var).filter(|d| !d.is_empty())?;
-        let mut data = self.actual.reader.trajectory(&var).filter(|d| !d.is_empty())?;
+        let mut dataref = self
+            .reference
+            .reader
+            .trajectory(&var)
+            .filter(|d| !d.is_empty())
+            .ok_or(Missing::Reference)?;
+        let mut data = self
+            .actual
+            .reader
+            .trajectory(&var)
+            .filter(|d| !d.is_empty())
+            .ok_or(Missing::Actual)?;
         drop_leading_dups(&mut data, self.offset);
         drop_leading_dups(&mut dataref, self.offset_ref);
-        Some((data, dataref))
+        Ok((data, dataref))
+    }
+
+    fn compare(&mut self, var: &str, settings: &Settings) -> Result<Compared, Missing> {
+        let (data, dataref) = self.data(var)?;
+        let timeref = self.reference.time.as_deref().unwrap();
+        let time = self.actual.time.clone().unwrap();
+        let cmp = compare(&time, &data, timeref, &dataref, settings);
+        Ok(Compared { time, data, cmp })
     }
 }
 
+/// One variable compared: the actual `(time, data)` and the outcome.
+pub struct Compared {
+    pub time: Vec<f64>,
+    pub data: Vec<f64>,
+    pub cmp: Result<Comparison, String>,
+}
+
+impl Compared {
+    /// Whether the variable fails the comparison; one that could not be
+    /// compared fails too.
+    pub fn differs(&self) -> bool {
+        self.cmp.as_ref().map_or(true, Comparison::differs)
+    }
+}
+
+/// Compare each of `vars` (every reference variable when empty) in `actual`
+/// against `reference`, the way `diffSimulationResults` does.
+pub fn diff_each(
+    actual: &mut ResultFile,
+    reference: &mut ResultFile,
+    vars: Vec<String>,
+    tol: Tolerances,
+    mut f: impl FnMut(&str, Result<Compared, Missing>),
+) -> Result<(), String> {
+    let vars = if vars.is_empty() {
+        reference.reader.vars_filter_aliases()
+    } else {
+        vars
+    };
+    if vars.len() > 1 {
+        actual.reader.read_all();
+        reference.reader.read_all();
+    }
+    let mut pair = Pair::new(actual, reference)?;
+    let settings = tol.settings();
+    for var in &vars {
+        f(var, pair.compare(var, &settings));
+    }
+    Ok(())
+}
+
 /// `diffSimulationResults`: the variables of `vars` (every reference variable
-/// when empty) whose trajectory in `actual` leaves the tube around `reference`.
+/// when empty) that are missing in either file or whose trajectory in `actual`
+/// leaves the tube around `reference`.
 pub fn diff_all(
     actual: &mut ResultFile,
     reference: &mut ResultFile,
     vars: Vec<String>,
     tol: Tolerances,
 ) -> Result<Vec<String>, String> {
-    let vars = if vars.is_empty() {
-        reference.reader.vars_filter_aliases()
-    } else {
-        vars
-    };
-    let mut pair = Pair::new(actual, reference)?;
     let mut out = Vec::new();
-    let settings = tol.settings();
-    for var in vars {
-        let Some((data, dataref)) = pair.data(&var) else {
-            continue;
-        };
-        let timeref = pair.reference.time.clone().unwrap();
-        let time = pair.actual.time.clone().unwrap();
-        match compare(&time, &data, &timeref, &dataref, &settings) {
-            Ok(cmp) if cmp.differs() => out.push(var),
-            _ => {}
+    diff_each(actual, reference, vars, tol, |var, c| {
+        if c.map_or(true, |c| c.differs()) {
+            out.push(var.to_owned());
         }
-    }
+    })?;
     Ok(out)
 }
 
 /// Every compared variable's verdict: its name, the number of points outside
-/// the tube (-1 when it could not be compared) and the relative error. One pass
-/// over both files, for a caller that shows the whole table rather than only
-/// which variables differ.
+/// the tube (-1 when it is missing in either file or could not be compared)
+/// and the relative error. One pass over both files, for a caller that shows
+/// the whole table rather than only which variables differ.
 pub fn verdicts(
     actual: &mut ResultFile,
     reference: &mut ResultFile,
     tol: Tolerances,
 ) -> Result<Vec<(String, i64, f64)>, String> {
-    let vars = reference.reader.vars_filter_aliases();
     let time_name = reference.time_name().to_owned();
-    let mut pair = Pair::new(actual, reference)?;
-    let settings = tol.settings();
     let mut out = Vec::new();
-    for var in vars {
+    diff_each(actual, reference, Vec::new(), tol, |var, c| {
         if var == time_name {
-            continue;
+            return;
         }
-        let Some((data, dataref)) = pair.data(&var) else {
-            continue;
-        };
-        let timeref = pair.reference.time.clone().unwrap();
-        let time = pair.actual.time.clone().unwrap();
-        out.push(match compare(&time, &data, &timeref, &dataref, &settings) {
-            Ok(c) => (var, c.error_count as i64, c.delta_error),
-            Err(_) => (var, -1, 0.0),
+        out.push(match c.map(|c| c.cmp) {
+            Ok(Ok(c)) => (var.to_owned(), c.error_count as i64, c.delta_error),
+            _ => (var.to_owned(), -1, 0.0),
         });
-    }
+    })?;
     Ok(out)
 }
 
@@ -681,10 +760,10 @@ pub fn diff_variable(
     tol: Tolerances,
 ) -> Result<TubeDiff, String> {
     let mut pair = Pair::new(actual, reference)?;
-    let (data, dataref) = pair.data(var).ok_or_else(|| format!("{var} is not in both files"))?;
-    let time = pair.actual.time.clone().unwrap();
-    let timeref = pair.reference.time.clone().unwrap();
-    let cmp = compare(&time, &data, &timeref, &dataref, &tol.settings())?;
+    let Compared { time, data, cmp } = pair
+        .compare(var, &tol.settings())
+        .map_err(|_| format!("{var} is not in both files"))?;
+    let cmp = cmp?;
     let n = cmp.time.len();
     Ok(TubeDiff {
         differs: cmp.differs(),

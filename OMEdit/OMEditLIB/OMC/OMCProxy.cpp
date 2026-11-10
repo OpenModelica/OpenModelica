@@ -883,6 +883,25 @@ OMCLongOperation::~OMCLongOperation()
 }
 
 /*!
+ * \brief OMCProxy::simulationProgress
+ * \return The in-process simulation's progress in permille, or -1 when no simulation reports it.
+ */
+int OMCProxy::simulationProgress()
+{
+#if defined(__EMSCRIPTEN__)
+  const int phase = omedit_progress_phase();
+  const int permille = omedit_progress_permille();
+#elif defined(OMC_RUST_ABI)
+  const int phase = omc_compiler_progress_phase();
+  const int permille = omc_compiler_progress_permille();
+#else
+  const int phase = System_progressPhase();
+  const int permille = System_progressPermille();
+#endif
+  return phase == 5 ? permille : -1;
+}
+
+/*!
  * \class OMCProxy
  * \brief Interface to send commands to OpenModelica Compiler.
  */
@@ -1541,8 +1560,11 @@ void OMCProxy::setCurrentError(int errorIndex)
   */
 QString OMCProxy::getErrorFileName()
 {
-  sendCommand("currentError.info.filename");
-  QString file = StringHandler::unparse(getResult());
+  // Older omc versions name the field filename, newer ones fileName.
+  // Reading the whole record avoids an error for the other name.
+  static const QRegularExpression fileNameField("\\bfile[nN]ame = (\"(?:[^\"\\\\]|\\\\.)*\")");
+  sendCommand("currentError.info");
+  QString file = StringHandler::unparse(fileNameField.match(getResult()).captured(1));
   if (file.compare("<interactive>") == 0)
     return "";
   else
@@ -3379,7 +3401,7 @@ bool OMCProxy::ngspicetoModelica(QString fileName)
  */
 QString OMCProxy::checkAllModelsRecursive(QString className)
 {
-  QString result = mpOMCInterface->checkAllModelsRecursive(className, false);
+  QString result = mpOMCInterface->checkAllModelsRecursive(className, false, true);
   printMessagesStringInternal();
   return result;
 }

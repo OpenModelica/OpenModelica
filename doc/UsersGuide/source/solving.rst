@@ -145,6 +145,18 @@ is available. By default the solver runs in single-rate mode using the
 embedded RK scheme ESDIRK4 :cite:`KENNEDY2019221` with variable-step-size
 control and efficient event handling.
 
+Some common methods have a shorthand:
+
+.. code-block::
+
+  -s=rungekutta     -s=gbode -gbm=rungekutta
+  -s=heun           -s=gbode -gbm=heun
+  -s=impeuler       -s=gbode -gbm=impl_euler
+  -s=trapezoid      -s=gbode -gbm=trapezoid
+  -s=imprungekutta  -s=gbode -gbm=radauIA2
+  -s=irksco         -s=gbode -gbm=trapezoid
+  -s=rungekuttassc  -s=gbode -gbm=rungekuttaSsc
+
 The bi-rate mode can be utilized using the simulation flag
 :ref:`gbratio <simflag-gbratio>`. This flag determines the percentage of fast
 states with respect to all states. These states will then be automatically
@@ -181,25 +193,6 @@ The basic explicit solvers Euler uses a fixed step-size based on the
 :math:`\mbox{stepSize} \approx \cfrac{\mbox{stopTime} - \mbox{startTime}}{\mbox{numberOfIntervals}}`
 
 - euler - Explicit Euler, fixed step size, order 1
-
-Deprecated Solvers
-~~~~~~~~~~~~~~~~~~~~
-
-The following solvers are deprecated and will be removed in a future version of
-OpenModelica:
-
-- rungekutta - Classic Runge-Kutta method RK4, explicit, fixed step-size, oder 4
-
-.. code-block::
-
-  old: -s=rungekutta
-  new: -s=gbode -gbm=rungekutta -gbctrl=const
-
-- symSolver - Symbolic inline solver
-  (requires :ref:`--symSolver <omcflag-symSolver>`) - fixed step-size, order 1
-- symSolverSsc - Symbolic implicit inline Euler with step-size control
-  (requires :ref:`--symSolver<omcflag-symSolver>`) - step-size control, order 1-2
-- qss - A QSS solver
 
 DAE Mode Simulation
 -------------------
@@ -582,7 +575,6 @@ There are dense and sparse solver available.
   - *lapack*     : Non-Sparse LU factorization using :cite:`anderson1999lapack`
   - *lis*        : Iterative linear solver :cite:`nishida2010experience`
   - *klu*        : Sparse LU factorization :cite:`natarajan2005klu`
-  - *umfpack*    : Sparse unsymmetric multifrontal LU factorization :cite:`davis2004algorithm`
   - *totalpivot* : Total pivoting LU factorization for underdetermined systems
 
 **Non-linear solvers**

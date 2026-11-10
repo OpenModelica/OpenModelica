@@ -39,9 +39,13 @@ impl Inputs {
         self.time_varying
     }
 
-    /// Evaluate every input at `time` and set it.
-    pub fn apply(&mut self, inst: &mut dyn Fmi3, opts: &Options<'_>, time: f64) -> Result<()> {
+    /// Evaluate the inputs at `time` and set them. Continuous-Time Mode takes only
+    /// the real ones; the others wait for Event Mode.
+    pub fn apply(&mut self, inst: &mut dyn Fmi3, opts: &Options<'_>, time: f64, discrete: bool) -> Result<()> {
         for (ty, vrs, indices) in &self.groups {
+            if !discrete && !matches!(ty, VarType::Float32 | VarType::Float64) {
+                continue;
+            }
             let values: Vec<f64> = indices
                 .iter()
                 .flat_map(|&i| opts.inputs[i].values.iter().map(|e| e.eval(time)))
@@ -55,19 +59,17 @@ impl Inputs {
 /// `fmi3EnterInitializationMode` … `fmi3ExitInitializationMode`, with the
 /// parameters and the inputs at the start time in between — the only place FMI
 /// lets a parameter be set.
-pub fn initialize(
-    inst: &mut dyn Fmi3,
-    md: &ModelDescription,
-    inputs: &mut Inputs,
-    opts: &Options<'_>,
-) -> Result<()> {
+pub fn initialize(inst: &mut dyn Fmi3, md: &ModelDescription, inputs: &mut Inputs, opts: &Options<'_>) -> Result<()> {
     // Without the full trace, still ask for the status categories: the message
     // behind an error status is the only account of what failed.
     let declared = |name: &str| md.log_categories.iter().any(|c| c.name == name);
     let mut categories: Vec<&str> = Vec::new();
     if !opts.logging_on {
         categories.extend(
-            md.log_categories.iter().map(|c| c.name.as_str()).filter(|c| c.starts_with("logStatus")),
+            md.log_categories
+                .iter()
+                .map(|c| c.name.as_str())
+                .filter(|c| c.starts_with("logStatus")),
         );
     }
     categories.extend(opts.log_streams.iter().map(String::as_str).filter(|s| declared(s)));
@@ -78,7 +80,7 @@ pub fn initialize(
     for p in &opts.parameters {
         inst.set_numeric(p.ty.wire(), &[p.value_reference], &p.values)?;
     }
-    inputs.apply(inst, opts, opts.start_time)?;
+    inputs.apply(inst, opts, opts.start_time, true)?;
     inst.exit_initialization_mode()
 }
 

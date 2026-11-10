@@ -1959,7 +1959,7 @@ algorithm
   rdcl_node := Mutable.access(redeclareComp);
   repl_node := Mutable.access(replaceableComp);
   instComponent(repl_node, NFAttributes.DEFAULT_ATTR, Modifier.NOMOD(), true, instLevel, context);
-  redeclareComponent(rdcl_node, repl_node, Modifier.NOMOD(), Modifier.NOMOD(), {}, NFAttributes.DEFAULT_ATTR, rdcl_node, instLevel, context);
+  redeclareComponent(rdcl_node, repl_node, Modifier.NOMOD(), Modifier.NOMOD(), {}, NFAttributes.DEFAULT_ATTR, rdcl_node, true, instLevel, context);
   outComp := Mutable.create(rdcl_node);
 end redeclareComponentElement;
 
@@ -2200,7 +2200,7 @@ algorithm
 
     outer_mod := Modifier.merge(InstNode.getModifier(rdcl_node), outer_mod);
     InstNode.setModifier(outer_mod, rdcl_node);
-    redeclareComponent(rdcl_node, node, Modifier.NOMOD(), cc_mod, propagated_subs, attributes, node, instLevel, context);
+    redeclareComponent(rdcl_node, node, Modifier.NOMOD(), cc_mod, propagated_subs, attributes, node, useBinding, instLevel, context);
   else
     instComponentDef(def, outer_mod, innerMod, attributes, useBinding, comp_node, parent, instLevel, originalAttr, propagatedSubs, context);
   end if;
@@ -2459,6 +2459,7 @@ function redeclareComponent
   input list<Subscript> propagatedSubs;
   input Attributes outerAttr;
   input InstNode redeclaredNode;
+  input Boolean useBinding;
   input Integer instLevel;
   input InstContext.Type context;
 protected
@@ -2499,7 +2500,7 @@ algorithm
   rdcl_node := InstNode.setNodeType(rdcl_type, redeclareNode);
   rdcl_node := InstNode.copyInstancePtr(orig_node, rdcl_node);
   rdcl_node := InstNode.updateComponent(InstNode.component(redeclareNode), rdcl_node);
-  instComponent(rdcl_node, outerAttr, constrainingMod, true, instLevel, context,
+  instComponent(rdcl_node, outerAttr, constrainingMod, useBinding, instLevel, context,
     SOME(Component.getAttributes(orig_comp)), propagatedSubs);
   rdcl_comp := InstNode.component(rdcl_node);
 
@@ -2878,7 +2879,8 @@ algorithm
 
     case Expression.CREF(cref = ComponentRef.CREF())
       guard InstNode.isComponent(ComponentRef.node(exp.cref)) and
-            Component.variability(InstNode.component(ComponentRef.node(exp.cref))) == Variability.PARAMETER
+            Component.variability(InstNode.component(ComponentRef.node(exp.cref))) == Variability.PARAMETER and
+            not Util.getOptionOrDefault(Component.getEvaluateAnnotation(InstNode.component(ComponentRef.node(exp.cref))), false)
       algorithm
         node := ComponentRef.node(exp.cref);
         comp := InstNode.component(node);

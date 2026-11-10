@@ -492,13 +492,7 @@ pub struct DAEMODE_DATA {
     pub sparsePattern: *mut SPARSE_PATTERN,
     pub evaluateDAEResiduals: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, c_int) -> c_int>,
     pub algIndexes: *mut c_int,
-}
-
-#[repr(C)]
-pub struct INLINE_DATA {
-    pub dt: modelica_real,
-    pub algVars: *mut modelica_real,
-    pub algOldVars: *mut modelica_real,
+    pub solverData: *mut c_void,
 }
 
 /// `EQUATION_SECTION`: which generated section an equation belongs to.
@@ -829,7 +823,6 @@ pub struct SIMULATION_INFO {
     pub mixedSystemData: *mut MIXED_SYSTEM_DATA,
     pub stateSetData: *mut STATE_SET_DATA,
     pub daeModeData: *mut DAEMODE_DATA,
-    pub inlineData: *mut INLINE_DATA,
 
     pub backupSolverData: *mut c_void,
 
@@ -900,7 +893,6 @@ pub type sim_fn = Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t) -> c
 #[repr(C)]
 pub struct OpenModelicaGeneratedFunctionCallbacks {
     pub performSimulation: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, *mut c_void) -> c_int>,
-    pub performQSSSimulation: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, *mut c_void) -> c_int>,
     pub updateContinuousSystem: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t)>,
     pub callExternalObjectDestructors: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t)>,
 
@@ -934,6 +926,7 @@ pub struct OpenModelicaGeneratedFunctionCallbacks {
     pub functionInitialEquations_lambda0: sim_fn,
     pub functionRemovedInitialEquations: sim_fn,
     pub updateBoundParameters: sim_fn,
+    pub updateTunableParameters: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, *const u8) -> c_int>,
     pub checkForAsserts: sim_fn,
     pub function_ZeroCrossingsEquations: sim_fn,
     pub function_ZeroCrossings: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, *mut f64) -> c_int>,
@@ -990,8 +983,6 @@ pub struct OpenModelicaGeneratedFunctionCallbacks {
     pub getTimeGrid:
         Option<unsafe extern "C" fn(*mut DATA, *mut modelica_integer, *mut *mut modelica_integer) -> c_int>,
 
-    pub symbolicInlineSystems: sim_fn,
-
     pub function_initSynchronous: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t)>,
     pub function_updateSynchronous: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, c_long)>,
     pub function_equationsSynchronous:
@@ -1032,9 +1023,8 @@ pub struct OpenModelicaGeneratedFunctionCallbacks {
 pub const LS_LAPACK: c_int = 1;
 pub const LS_LIS: c_int = 2;
 pub const LS_KLU: c_int = 3;
-pub const LS_UMFPACK: c_int = 4;
-pub const LS_TOTALPIVOT: c_int = 5;
-pub const LS_DEFAULT: c_int = 6;
+pub const LS_TOTALPIVOT: c_int = 4;
+pub const LS_DEFAULT: c_int = 5;
 pub const NLS_HYBRID: c_int = 1;
 pub const NLS_KINSOL: c_int = 2;
 pub const NLS_KINSOL_B: c_int = 3;
@@ -1048,14 +1038,13 @@ pub const NLS_LS_KLU: c_int = 4;
 pub const LSS_DEFAULT: c_int = 1;
 pub const LSS_LIS: c_int = 2;
 pub const LSS_KLU: c_int = 3;
-pub const LSS_UMFPACK: c_int = 4;
 pub const MIXED_SEARCH: c_int = 1;
 pub const NEWTON_DAMPED2: c_int = 2;
 /// The `*_MAX` sizes of the name/description tables `-help` prints.
-pub const S_MAX: c_int = 11;
+pub const S_MAX: c_int = 14;
 pub const IIM_MAX: c_int = 3;
-pub const LS_MAX: c_int = 7;
-pub const LSS_MAX: c_int = 5;
+pub const LS_MAX: c_int = 6;
+pub const LSS_MAX: c_int = 4;
 pub const NLS_MAX: c_int = 7;
 pub const NLS_LS_MAX: c_int = 5;
 pub const NEWTON_MAX: c_int = 6;

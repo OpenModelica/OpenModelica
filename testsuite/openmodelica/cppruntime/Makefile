@@ -17,6 +17,7 @@ clockedSolverTest.mos \
 clockedTypesTest.mos \
 clockedTest.mos \
 externalArrayInputTest.mos \
+externalIncludeDirectoryTest.mos \
 externalRecordTest.mos \
 mathFunctionsTest.mos \
 mslDistributionsTest.mos \

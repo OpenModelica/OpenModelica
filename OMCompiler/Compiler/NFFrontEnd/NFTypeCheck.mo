@@ -1545,7 +1545,7 @@ algorithm
   if printError then
     exp_str := Expression.toString(exp);
     ty_str := List.toStringCustom(types, Type.toString, "", "", ", ", "", false);
-    Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {exp_str, ty_str, "<NO_COMPONENT>"}, info);
+    Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {exp_str, ty_str}, info);
   end if;
 
   fail();
@@ -1650,8 +1650,13 @@ algorithm
     return;
   end if;
 
-  if Type.isUnknown(actualType) and Expression.isCode(expression) and Type.codeName(expectedType) <> "" then
-    expression := Expression.quoteCode(Expression.toAbsyn(expression), expectedType, Absyn.dummyInfo);
+  if Type.isUnknown(actualType) and Type.codeName(expectedType) <> "" then
+    // Anything else of unknown type is an element of a script variable, e.g.
+    // cl in {typeNameString(cl) for cl in cls}, whose value is only known when
+    // the call is evaluated.
+    if Expression.isCode(expression) then
+      expression := Expression.quoteCode(Expression.toAbsyn(expression), expectedType, Absyn.dummyInfo);
+    end if;
     compatibleType := expectedType;
     matchKind := MatchKind.EXACT;
     return;

@@ -43,15 +43,15 @@ getInstanceDiagram(P.T, showProtected = true); getErrorString();
 // }
 // class \"a1 : P.A\" as I_a1 <<model>> {
 //   {field} + parameter Real k = p (= 3.0)
-//   {field} + parameter Real g = 2.0 * a1.k (= 6.0)
+//   {field} + parameter Real g = 2.0*a1.k (= 6.0)
 // }
 // class \"a2 : P.A\" as I_a2 <<model>> {
 //   {field} + parameter Real k = 2
-//   {field} + parameter Real g = 2.0 * a2.k (= 4.0)
+//   {field} + parameter Real g = 2.0*a2.k (= 4.0)
 // }
 // class \"arr[2] : P.A\" as I_arr <<model>> {
 //   {field} + parameter Real k = 7
-//   {field} + parameter Real g = 2.0 * arr.k (= 14.0)
+//   {field} + parameter Real g = 2.0*arr.k (= 14.0)
 // }
 // I_P_T *-- I_a1 : a1
 // I_P_T *-- I_a2 : a2
@@ -67,17 +67,17 @@ getInstanceDiagram(P.T, showProtected = true); getErrorString();
 //   class I_a1[\"a1 : P.A\"] {
 //     <<model>>
 //     + parameter Real k = p #40;= 3.0#41;
-//     + parameter Real g = 2.0 * a1.k #40;= 6.0#41;
+//     + parameter Real g = 2.0*a1.k #40;= 6.0#41;
 //   }
 //   class I_a2[\"a2 : P.A\"] {
 //     <<model>>
 //     + parameter Real k = 2
-//     + parameter Real g = 2.0 * a2.k #40;= 4.0#41;
+//     + parameter Real g = 2.0*a2.k #40;= 4.0#41;
 //   }
 //   class I_arr[\"arr[2] : P.A\"] {
 //     <<model>>
 //     + parameter Real k = 7
-//     + parameter Real g = 2.0 * arr.k #40;= 14.0#41;
+//     + parameter Real g = 2.0*arr.k #40;= 14.0#41;
 //   }
 //   I_P_T *-- I_a1 : a1
 //   I_P_T *-- I_a2 : a2
@@ -106,17 +106,17 @@ getInstanceDiagram(P.T, showProtected = true); getErrorString();
 // class \"a1 : P.A\" as I_a1 <<model>> {
 //   {field} + parameter Real k = p (= 3.0)
 //   {field} - parameter Real h = 1
-//   {field} + parameter Real g = 2.0 * a1.k (= 6.0)
+//   {field} + parameter Real g = 2.0*a1.k (= 6.0)
 // }
 // class \"a2 : P.A\" as I_a2 <<model>> {
 //   {field} + parameter Real k = 2
 //   {field} - parameter Real h = 1
-//   {field} + parameter Real g = 2.0 * a2.k (= 4.0)
+//   {field} + parameter Real g = 2.0*a2.k (= 4.0)
 // }
 // class \"arr[2] : P.A\" as I_arr <<model>> {
 //   {field} + parameter Real k = 7
 //   {field} - parameter Real h = 1
-//   {field} + parameter Real g = 2.0 * arr.k (= 14.0)
+//   {field} + parameter Real g = 2.0*arr.k (= 14.0)
 // }
 // I_P_T *-- I_a1 : a1
 // I_P_T *-- I_a2 : a2

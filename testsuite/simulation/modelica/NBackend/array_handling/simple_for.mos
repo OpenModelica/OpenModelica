@@ -64,7 +64,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_2)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) x[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_3)
+// 	[----]   [SCAL] (1) x[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_3)
 // 	[----] end for;
 //
 // #################################################
@@ -84,7 +84,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_2)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) x[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_3)
+// 	[----]   [SCAL] (1) x[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_3)
 // 	[----] end for;
 //
 // #########################################
@@ -104,7 +104,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_2)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) x[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_3)
+// 	[----]   [SCAL] (1) x[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_3)
 // 	[----] end for;
 //
 // ################################
@@ -125,7 +125,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_2)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) x[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_3)
+// 	[----]   [SCAL] (1) x[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_3)
 // 	[----] end for;
 //
 // #####################################
@@ -145,7 +145,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_2)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) x[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_3)
+// 	[----]   [SCAL] (1) x[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_3)
 // 	[----] end for;
 //
 // record SimulationResult
@@ -188,7 +188,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_4)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_5)
+// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_5)
 // 	[----] end for;
 //
 // BLOCK 4: Resizable Component (status = Solve.UNPROCESSED, size = 10)
@@ -232,7 +232,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_4)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_5)
+// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_5)
 // 	[----] end for;
 //
 // BLOCK 4: Resizable Component (status = Solve.UNPROCESSED, size = 10)
@@ -276,7 +276,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_4)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_5)
+// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_5)
 // 	[----] end for;
 //
 // BLOCK 4: Resizable Component (status = Solve.UNPROCESSED, size = 10)
@@ -323,7 +323,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_4)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_5)
+// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_5)
 // 	[----] end for;
 //
 // --- Alias of INI[1 | 4] ---
@@ -368,7 +368,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_4)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_5)
+// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_5)
 // 	[----] end for;
 //
 // BLOCK 4: Resizable Component (status = Solve.EXPLICIT, size = 10)
@@ -421,7 +421,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_4)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_5)
+// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_5)
 // 	[----] end for;
 //
 // BLOCK 4: Resizable Component (status = Solve.UNPROCESSED, size = 10)
@@ -465,7 +465,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_4)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_5)
+// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_5)
 // 	[----] end for;
 //
 // BLOCK 4: Resizable Component (status = Solve.UNPROCESSED, size = 10)
@@ -509,7 +509,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_4)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_5)
+// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_5)
 // 	[----] end for;
 //
 // BLOCK 4: Resizable Component (status = Solve.UNPROCESSED, size = 10)
@@ -556,7 +556,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_4)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_5)
+// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_5)
 // 	[----] end for;
 //
 // --- Alias of INI[1 | 4] ---
@@ -601,7 +601,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_AUX_4)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1) * time); ($RES_AUX_5)
+// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin(CAST(Real, $i1)*time); ($RES_AUX_5)
 // 	[----] end for;
 //
 // BLOCK 4: Resizable Component (status = Solve.EXPLICIT, size = 10)

@@ -285,7 +285,6 @@ public
     end OPT_LOOP_INPUT;
     // ToDo maybe deprecated:
     record ALG_STATE        "algebraic state used by inline solver" end ALG_STATE;
-    record ALG_STATE_OLD    "algebraic state old value used by inline solver" end ALG_STATE_OLD;
     record RESIDUAL_VAR end RESIDUAL_VAR;
     record DAE_AUX_VAR      "auxiliary variable used for DAEmode" end DAE_AUX_VAR;
     record LOOP_ITERATION   "used in SIMCODE, iteration variables in algebraic loops" end LOOP_ITERATION;

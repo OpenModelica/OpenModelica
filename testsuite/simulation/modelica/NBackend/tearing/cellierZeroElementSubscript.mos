@@ -1,0 +1,41 @@
+// name: cellierZeroElementSubscript
+// keywords: NewBackend tearing
+// status: correct
+// cflags: --newBackend
+//
+// The coefficient c[i].k^2 of c[i].x has to use the element of the binding
+// {2.0, 3.0}, not the whole array.
+
+loadString("
+model cellierZeroElementSubscript
+  model C
+    parameter Real k;
+    Real x;
+  end C;
+  C c[2](k = {2.0, 3.0});
+  Real y[2];
+equation
+  for i in 1:2 loop
+    c[i].k^2 * c[i].x + y[i] = sin(time);
+    y[i] = c[i].x^3 + 1;
+  end for;
+end cellierZeroElementSubscript;
+"); getErrorString();
+
+simulate(cellierZeroElementSubscript, stopTime = 1); getErrorString();
+val(c[1].x, 1);
+val(c[2].x, 1);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "cellierZeroElementSubscript_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'cellierZeroElementSubscript', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -0.03961670935352751
+// -0.017613727849903796
+// endResult

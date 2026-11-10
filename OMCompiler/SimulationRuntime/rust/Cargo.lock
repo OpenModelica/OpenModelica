@@ -864,6 +864,7 @@ dependencies = [
  "openmodelica_mat_reader",
  "openmodelica_mat_writer",
  "openmodelica_result_diff",
+ "openmodelica_wasi",
  "serde_json",
 ]
 

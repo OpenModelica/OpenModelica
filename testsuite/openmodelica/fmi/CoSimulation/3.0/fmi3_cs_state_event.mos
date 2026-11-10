@@ -1,0 +1,50 @@
+// name:     fmi3_cs_state_event
+// keywords: FMI 2.0 3.0 export CoSimulation CVODE state event
+// status:   correct
+// teardown_command: rm -rf fmi3_cs_state_event*.fmu fmi3_cs_state_event*.fmutmp/ fmi3_cs_state_event*_info.json fmi3_cs_state_event.log fmi3_cs_state_event_out.txt
+//
+// CVODE in a Co-Simulation FMU finds the time of a state event inside the
+// communication step: the ball bounces at t = 0.4515, between 0.45 and 0.46,
+// and v(0.5) = 3.068.
+
+loadString("
+model fmi3_cs_state_event
+  Real h(start = 1, fixed = true);
+  Real v(start = 0, fixed = true);
+equation
+  der(h) = v;
+  der(v) = -9.81;
+  when h < 0 then
+    reinit(v, -0.8*pre(v));
+  end when;
+end fmi3_cs_state_event;
+"); getErrorString();
+setCommandLineOptions("--fmiFlags=s:cvode"); getErrorString();
+buildModelFMU(fmi3_cs_state_event, version="2.0", fmuType="cs", fileNamePrefix="fmi3_cs_state_event2"); getErrorString();
+buildModelFMU(fmi3_cs_state_event, version="3.0", fmuType="cs"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi3_cs_state_event.py fmi3_cs_state_event2.fmu fmi3_cs_state_event.fmu fmi3_cs_state_event_out.txt > fmi3_cs_state_event.log 2>&1"); getErrorString();
+readFile("fmi3_cs_state_event_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3_cs_state_event2.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// "fmi3_cs_state_event.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "FMI 2.0: v(0.5) = 3.0680
+// FMI 3.0: v(0.5) = 3.0680
+// FMI 3.0 Event Mode: v(0.5) = 3.0680
+// FMI 3.0 early return at the bounce: True
+// FMI 3.0 early return: v(0.5) = 3.0680
+// "
+// ""
+// endResult

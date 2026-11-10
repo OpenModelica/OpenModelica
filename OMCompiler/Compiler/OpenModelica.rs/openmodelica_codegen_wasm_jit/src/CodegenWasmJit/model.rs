@@ -65,14 +65,51 @@ fn ext_import_sig(sig: &ExtCallSig) -> openmodelica_wasm_jit::sig::FnSig {
 }
 
 /// `fmi_vrs`: also record the FMI value-reference table (FMU export only).
-/// One `<entry>$guard`, per the wrappers `build_sim_model` emits.
-fn build_guard_fn(target: u32, eh: Eh) -> we::Function {
+/// `SimCode.paramDeps` as `<prefix>_paramdeps.bin`
+/// (`SerializeFmuInit.writeParamDeps`). Empty for a model without one.
+fn encode_param_deps(deps: &SimCode::ParamDeps) -> Vec<u8> {
+    fn varint(o: &mut Vec<u8>, mut v: u64) {
+        while v >= 128 {
+            o.push((v & 127) as u8 | 128);
+            v >>= 7;
+        }
+        o.push(v as u8);
+    }
+    if !deps.checked && deps.eqs.is_empty() && deps.settable.is_empty() {
+        return Vec::new();
+    }
+    let mut o = b"OMCFMUP\0".to_vec();
+    o.extend_from_slice(&1u32.to_le_bytes());
+    o.push(deps.checked as u8);
+    varint(&mut o, lst(&deps.eqs).count() as u64);
+    for d in lst(&deps.eqs) {
+        o.push(d.eq.is_some() as u8);
+        for slots in [&d.uses, &d.defines] {
+            varint(&mut o, lst(slots).count() as u64);
+            for &s in lst(slots) {
+                varint(&mut o, s as u64);
+            }
+        }
+    }
+    varint(&mut o, lst(&deps.settable).count() as u64);
+    for &(s, f) in lst(&deps.settable) {
+        varint(&mut o, s as u64);
+        o.push(f as u8);
+    }
+    o
+}
+
+/// One `<entry>$guard`, per the wrappers `build_sim_model` emits, for an entry
+/// point of `n_params` i32 parameters (the first the SimData pointer).
+fn build_guard_fn(target: u32, n_params: u32, eh: Eh) -> we::Function {
     use we::Instruction as I;
     let mut f = we::Function::new([(1, we::ValType::I32)]);
-    let threw = 1; // param 0 is the SimData pointer
+    let threw = n_params;
     if eh == Eh::Legacy {
         f.instruction(&I::Try(we::BlockType::Empty));
-        f.instruction(&I::LocalGet(0));
+        for p in 0..n_params {
+            f.instruction(&I::LocalGet(p));
+        }
         f.instruction(&I::Call(target));
         f.instruction(&I::Catch(0));
         f.instruction(&I::I32Const(1));
@@ -88,7 +125,9 @@ fn build_guard_fn(target: u32, eh: Eh) -> we::Function {
         we::BlockType::Empty,
         vec![we::Catch::OneRef { tag: 0, label: 0 }].into(),
     ));
-    f.instruction(&I::LocalGet(0));
+    for p in 0..n_params {
+        f.instruction(&I::LocalGet(p));
+    }
     f.instruction(&I::Call(target));
     f.instruction(&I::End); // try_table
     f.instruction(&I::I32Const(0));
@@ -180,7 +219,6 @@ pub(super) fn build_sim_model(
     let mut linz = build_linz_plan(sim_code, vars, n_states)?;
     // `-reconcile`: F/H, laid out right behind them.
     let mut recon = datarecon::build_plan(sim_code, vars);
-    let sym_solver = sym_solver_kind()?;
     let counts = openmodelica_sim_meta::LayoutCounts {
         n_states,
         n_real_alg,
@@ -216,7 +254,6 @@ pub(super) fn build_sim_model(
         n_removed_init: removed_init_residuals(sim_code).len() as u32,
     };
     let flags = openmodelica_sim_meta::LayoutFlags {
-        sym_solver,
         has_when,
         has_homotopy,
         homotopy_method: homotopy_method()?,
@@ -227,6 +264,7 @@ pub(super) fn build_sim_model(
         // Mirroring the last accepted step's reals costs a copy per step, so only
         // a model with a method-1 linear system to read them asks for it.
         has_old_real: has_method1_linear(sim_code),
+        compiled_dae_mode: dae_mode.is_some(),
         resizable,
     };
     let counts_sz = resizable_counts(&counts, &dyn_vars);
@@ -252,37 +290,6 @@ pub(super) fn build_sim_model(
     // group needs finalizing too.
     if dae_mode.is_some() {
         finalize_array_groups(&mut var_map)?;
-    }
-    // The inline equations' `__OMC_DT` and `<state>$Old` operands: `SimCodeUtil`
-    // only ever put them in the cref->SimVar table, so no `modelInfo.vars` walk
-    // reaches them.
-    if sym_solver > 0 {
-        Arc::make_mut(&mut var_map.vars).insert(
-            "__OMC_DT".to_string(),
-            SimSlot {
-                off: layout.inline_dt_off,
-                wty: WTy::F64,
-                negate: Neg::None,
-                heap: false,
-                pre: 0,
-            },
-        );
-        for (i, sv) in states.iter().enumerate() {
-            let old = openmodelica_frontend_base::ComponentReference::appendStringLastIdent(
-                &arcstr::literal!("$Old"),
-                &sv.name,
-            )?;
-            Arc::make_mut(&mut var_map.vars).insert(
-                sim_cref_key(&old)?,
-                SimSlot {
-                    off: layout.alg_old_off + SimOff::from((i as u32) * 8),
-                    wty: WTy::F64,
-                    negate: Neg::None,
-                    heap: false,
-                    pre: 0,
-                },
-            );
-        }
     }
     let sens_params = push_sensitivity_vars(&sens_vars, n_sens_par, vars, &layout, &mut result_vars.vars)?;
     var_map.n_samples = samples.len() as u32;
@@ -317,7 +324,6 @@ pub(super) fn build_sim_model(
     index_list(&sim_code.startValueEquations, &mut eq_index);
     index_list(&sim_code.algorithmAndEquationAsserts, &mut eq_index);
     index_list(&sim_code.equationsForZeroCrossings, &mut eq_index);
-    index_list(&sim_code.inlineEquations, &mut eq_index);
     for e in dae_eqs.iter() {
         index_eq_recursive(&e.0, &mut eq_index);
     }
@@ -597,7 +603,6 @@ pub(super) fn build_sim_model(
         false => None,
     };
     let zc_eqs = flatten_eqs(&sim_code.equationsForZeroCrossings);
-    let inline_eqs = flatten_eqs(&sim_code.inlineEquations);
     // Register every nonlinear system with the runtime solver `rt_solve_nls`
     // *before* lowering the equation functions (which call it): assign each a
     // shared-table job and thread the map through `var_map`. The systems' own
@@ -621,7 +626,6 @@ pub(super) fn build_sim_model(
         &assert_eqs,
         &removed_init_eqs,
         &clocked,
-        &inline_eqs,
     ]
     .iter()
     .map(|l| eqs_with_nested(l.as_slice()))
@@ -740,6 +744,10 @@ pub(super) fn build_sim_model(
     // `<entry>$guard`'s type: (i32 SimData) -> i32, nonzero if it threw.
     let guard_fn_type = types.len();
     types.ty().function([we::ValType::I32], [we::ValType::I32]);
+    let guard2_fn_type = types.len();
+    types
+        .ty()
+        .function([we::ValType::I32, we::ValType::I32], [we::ValType::I32]);
     let mut model_fn_type: Vec<u32> = Vec::with_capacity(model_fns.len());
     for f in &model_fns {
         let (_, sig) = function_signature(f)?;
@@ -1133,6 +1141,7 @@ pub(super) fn build_sim_model(
     // driver / standalone) and kept on the `SimModel` (for the host driver).
     // Only the FMU export needs the vr table; a plain simulation would just carry
     // it around unused.
+    let fmu_export = fmi_vrs;
     let (fmi_vrs, fmi_dae_enable_vr) = if fmi_vrs {
         build_fmi_vrs(sim_code, &var_map, &layout)?
     } else {
@@ -1361,6 +1370,9 @@ pub(super) fn build_sim_model(
         prof_info,
         parmod_info.clone(),
     );
+    if fmu_export {
+        meta.param_deps = encode_param_deps(&sim_code.paramDeps);
+    }
     // `om_meta_ptr` / `om_meta_len`, filled in once every function is emitted: the
     // size table of a resizable model grows until then.
     let meta_fns_at = bodies.len();
@@ -1726,6 +1738,46 @@ pub(super) fn build_sim_model(
         )?);
         idx
     };
+    // C's `updateTunableParameters`: the parameter equations whose byte in the
+    // mask (the second parameter) is set, in `sim_code.paramDeps` order.
+    let attr_eq_ids: HashSet<i32> = [
+        &sim_code.minValueEquations,
+        &sim_code.maxValueEquations,
+        &sim_code.nominalValueEquations,
+    ]
+    .into_iter()
+    .flat_map(|l| lst(l))
+    .filter_map(|eq| match &**eq {
+        SimCode::SimEqSystem::SES_SIMPLE_ASSIGN { index, .. } => Some(*index),
+        _ => None,
+    })
+    .collect();
+    let tunable_units: Vec<EqUnit> = lst(&sim_code.paramDeps.eqs)
+        .enumerate()
+        .filter_map(|(k, d)| d.eq.as_ref().map(|eq| (k, eq)))
+        .filter(|(_, eq)| !matches!(&***eq, SimCode::SimEqSystem::SES_SIMPLE_ASSIGN { index, .. } if attr_eq_ids.contains(index)))
+        .map(|(k, eq)| EqUnit::Masked(eq, k as u32))
+        .collect();
+    let tunable_split = splits.len();
+    let update_tunable_idx = {
+        let idx = import_base + bodies.len() as u32;
+        splits.push(build_split_fn(
+            "functionUpdateTunableParameters",
+            &tunable_units,
+            2,
+            dae_fn_type,
+            &[],
+            &[],
+            &var_map,
+            &eq_index,
+            &by_name,
+            &mut literals,
+            &mut bodies,
+            &mut pool,
+            false,
+        )?);
+        idx
+    };
     // The optimizer's per-real-variable attributes (C reads them out of the
     // `_init.xml`): constants here, parameter-dependent ones through `attr_targets`.
     let opt_attrs = match layout.n_opt_attr {
@@ -1773,6 +1825,25 @@ pub(super) fn build_sim_model(
         )?);
         idx
     };
+    let tunable_masks: HashMap<i32, u32> = lst(&sim_code.paramDeps.eqs)
+        .enumerate()
+        .filter_map(|(k, d)| match d.eq.as_deref() {
+            Some(SimCode::SimEqSystem::SES_SIMPLE_ASSIGN { index, .. }) => Some((*index, k as u32)),
+            _ => None,
+        })
+        .collect();
+    if let Some(f) = build_tunable_attrs_fn(
+        sim_code,
+        &layout,
+        &attr_targets,
+        &var_map,
+        &by_name,
+        &mut literals,
+        &tunable_masks,
+    )? {
+        splits[tunable_split].chunks.push(pool.len());
+        pool.push(f, dae_fn_type, "functionUpdateTunableParameters$attrs".to_string());
+    }
     // C's `setupDataStruc` half: the constant defaults, written before the solver is
     // allocated. The expression-bound ones stay in the update function.
     let attr_defaults_idx = {
@@ -1843,11 +1914,11 @@ pub(super) fn build_sim_model(
         });
         idx
     };
-    // `layout.dae_mode()`, not this function's presence, is what tells a driver
-    // which form the model is in.
+    // `layout.compiled_dae_mode`, not this function's presence, is what tells a
+    // driver which form the model is in.
     let dae_residuals_idx = {
         let idx = import_base + bodies.len() as u32;
-        splits.push(build_split_fn(
+        let mut split = build_split_fn(
             "evaluateDAEResiduals",
             &dae_units(&dae_eqs),
             2,
@@ -1861,31 +1932,22 @@ pub(super) fn build_sim_model(
             &mut bodies,
             &mut pool,
             false,
-        )?);
+        )?;
+        if dae_mode.is_some() {
+            split.chunks.extend(build_stage_pre_store(
+                "evaluateDAEResiduals",
+                openmodelica_sim_meta::driver::eval_stage::ALGEBRAIC,
+                dae_fn_type,
+                &save_pre,
+                &var_map,
+                &by_name,
+                &mut literals,
+                &mut pool,
+            )?);
+        }
+        splits.push(split);
         idx
     };
-    // C's `symbolicInlineSystem`. Emitted (empty without `--symSolver`) either way,
-    // so every module's entry points sit at the same indices.
-    let sym_inline_idx = {
-        let idx = import_base + bodies.len() as u32;
-        splits.push(build_split_fn(
-            "symbolicInlineSystem",
-            &eq_units(&inline_eqs),
-            1,
-            eqfn_type,
-            &[],
-            &[],
-            &var_map,
-            &eq_index,
-            &by_name,
-            &mut literals,
-            &mut bodies,
-            &mut pool,
-            false,
-        )?);
-        idx
-    };
-
     // C's `functionDAE`: `functionLocalKnownVars` + `allEquations` in the discrete
     // context, and the discrete pass wherever `functionAlgebraics` is not already the
     // full list: the sorted order interleaves the two subsets, so `functionODE` then
@@ -2039,6 +2101,7 @@ pub(super) fn build_sim_model(
     functions.function(eqfn_type); // functionStoreSpatialDistribution: (i32) -> ()
     functions.function(eqfn_type); // functionInitSpatialDistribution: (i32) -> ()
     functions.function(eqfn_type); // functionUpdateBoundParameters: (i32) -> ()
+    functions.function(dae_fn_type); // functionUpdateTunableParameters: (i32, i32 mask) -> ()
     functions.function(eqfn_type); // functionUpdateBoundVariableAttributes: (i32) -> ()
     functions.function(eqfn_type); // functionAttrDefaults: (i32) -> ()
     for _ in 0..4 {
@@ -2055,7 +2118,6 @@ pub(super) fn build_sim_model(
     functions.function(sync_fn_type); // functionEquationsSynchronous: (i32, i32) -> ()
     functions.function(eqfn_type); // functionRemovedInitialEquations: (i32) -> ()
     functions.function(dae_fn_type); // evaluateDAEResiduals: (i32, i32) -> ()
-    functions.function(eqfn_type); // symbolicInlineSystem: (i32) -> ()
     functions.function(eqfn_type); // functionDAE: (i32) -> ()
     if parmod_fns.is_some() {
         functions.function(eqfn_type); // functionLocalKnownVars: (i32) -> ()
@@ -2175,7 +2237,6 @@ pub(super) fn build_sim_model(
         ("functionAttrDefaults", attr_defaults_idx),
         ("functionRemovedInitialEquations", removed_init_idx),
         ("functionInitSynchronous", sync_idx.0),
-        ("symbolicInlineSystem", sym_inline_idx),
         ("functionDAE", dae_entry_idx),
         ("linearJacA", linz_jac_idx),
         ("linearJacB", linz_jac_idx + 1),
@@ -2186,8 +2247,13 @@ pub(super) fn build_sim_model(
     if error_tag_type.is_some() {
         for (_, target) in &guarded {
             functions.function(guard_fn_type);
-            bodies.push(build_guard_fn(*target, eh));
+            bodies.push(build_guard_fn(*target, 1, eh));
         }
+    }
+    let tunable_guard_idx = import_base + bodies.len() as u32;
+    if error_tag_type.is_some() {
+        functions.function(guard2_fn_type);
+        bodies.push(build_guard_fn(update_tunable_idx, 2, eh));
     }
 
     if let Some(scope) = &size_scope {
@@ -2302,6 +2368,11 @@ pub(super) fn build_sim_model(
         update_bound_params_idx,
     );
     exports.export(
+        "functionUpdateTunableParameters",
+        we::ExportKind::Func,
+        update_tunable_idx,
+    );
+    exports.export(
         "functionUpdateBoundVariableAttributes",
         we::ExportKind::Func,
         update_bound_attrs_idx,
@@ -2332,11 +2403,15 @@ pub(super) fn build_sim_model(
     exports.export("functionUpdateSynchronous", we::ExportKind::Func, sync_update);
     exports.export("functionEquationsSynchronous", we::ExportKind::Func, sync_eqs);
     exports.export("evaluateDAEResiduals", we::ExportKind::Func, dae_residuals_idx);
-    exports.export("symbolicInlineSystem", we::ExportKind::Func, sym_inline_idx);
     if error_tag_type.is_some() {
         for (k, (name, _)) in guarded.iter().enumerate() {
             exports.export(&format!("{name}$guard"), we::ExportKind::Func, guard_base + k as u32);
         }
+        exports.export(
+            "functionUpdateTunableParameters$guard",
+            we::ExportKind::Func,
+            tunable_guard_idx,
+        );
     }
 
     // --- Name section: without it a trap backtrace is bare function indices. The
@@ -2414,7 +2489,6 @@ pub(super) fn build_sim_model(
     names.push((sync_update, "functionUpdateSynchronous".to_string()));
     names.push((sync_eqs, "functionEquationsSynchronous".to_string()));
     names.push((dae_residuals_idx, "evaluateDAEResiduals".to_string()));
-    names.push((sym_inline_idx, "symbolicInlineSystem".to_string()));
     if let Some((lk_idx, task_idx)) = parmod_fns {
         names.push((lk_idx, "functionLocalKnownVars".to_string()));
         names.push((task_idx, "parmodTask".to_string()));
@@ -2582,11 +2656,89 @@ pub(super) fn build_sim_model(
         tolerance: settings.tolerance.into_inner(),
         state_sets,
         jac_a,
-        sparse_nls: var_map.nls_jobs.values().any(|j| j.sparse_default),
+        nls_systems: nls_threshold_systems(&nls_systems, &var_map.nls_jobs)?,
+        lin_systems: lin_threshold_systems(&nls_scan),
         editable_params,
         meta_compact: meta,
         meta_expanded: Default::default(),
     })
+}
+
+/// The nonlinear systems C's `initializeNonlinearSystemData` may hand to kinsol+KLU
+/// by the `-nlss*` thresholds: a regular pattern, a size fixed at compile time and
+/// no adaptive homotopy.
+fn nls_threshold_systems(
+    systems: &[metamodelica::Ref<SimCode::NonlinearSystem>],
+    jobs: &HashMap<i32, NlsJob>,
+) -> Result<Vec<(i32, i32, u32, u32)>> {
+    use openmodelica_sim_meta::HomotopyMethod as H;
+    let adaptive = matches!(homotopy_method()?, H::GlobalAdaptive | H::LocalAdaptive);
+    let mut out: Vec<(i32, i32, u32, u32)> = systems
+        .iter()
+        .filter(|s| !(adaptive && s.homotopySupport))
+        .filter_map(|s| {
+            let job = jobs.get(&s.index)?;
+            (job.nnz != 0 && job.dyn_n.is_none()).then_some((s.indexNonLinearSystem, s.index, job.n, job.nnz))
+        })
+        .collect();
+    out.sort_by_key(|&(idx, ..)| idx);
+    out.dedup_by_key(|&mut (idx, ..)| idx);
+    Ok(out)
+}
+
+/// `(indexLinearSystem, equationIndex, size, nnz)` of every linear system in
+/// `scan` (the equation lists with their nested systems), in C's array order.
+fn lin_threshold_systems(scan: &[Vec<metamodelica::Ref<SimCode::SimEqSystem>>]) -> Vec<(i32, i32, u32, u32)> {
+    let mut out = Vec::new();
+    for eqs in scan {
+        for e in eqs {
+            if let SimCode::SimEqSystem::SES_LINEAR { lSystem, .. } = &**e {
+                let n = count(&lSystem.vars) as usize;
+                if n > 0 {
+                    let nnz = super::lower_eq::lin_torn_nnz(lSystem, n);
+                    out.push((lSystem.indexLinearSystem, lSystem.index, n as u32, nnz as u32));
+                }
+            }
+        }
+    }
+    out.sort_by_key(|&(idx, ..)| idx);
+    out.dedup_by_key(|&mut (idx, ..)| idx);
+    out
+}
+
+/// C's `initializeLinearSystems` and `initializeNonlinearSystemData`
+/// announcements, made only where `-lss*` or `-nlss*` decide the format.
+pub(super) fn sparse_solver_log(model: &SimModel, flags: &simflags::SimFlags) -> String {
+    use simflags::SparseThresholds as T;
+    let t = simflags::sparse_thresholds(flags);
+    let density = |size: u32, nnz: u32| nnz as f64 / (size as f64 * size as f64);
+    let mut out = String::new();
+    // `-lss` / `-ls` decide before the thresholds, and C announces neither.
+    if t.lss_given && flags.lss.is_none() && flags.ls.is_none() {
+        for &(idx, eq_index, size, nnz) in &model.lin_systems {
+            if T::sparse(size as usize, nnz as usize, t.lss_max_density, t.lss_min_size) {
+                out.push_str(&format_log_stdout(&format!(
+                    "Using sparse solver for linear system {idx} ({eq_index}),\nbecause density of {:.3} is under threshold of {:.3} or size of {size} exceeds threshold of {}.",
+                    density(size, nnz),
+                    t.lss_max_density,
+                    t.lss_min_size
+                )));
+            }
+        }
+    }
+    if t.nlss_given {
+        for &(idx, eq_index, size, nnz) in &model.nls_systems {
+            if T::sparse(size as usize, nnz as usize, t.nlss_max_density, t.nlss_min_size) {
+                out.push_str(&format_log_stdout(&format!(
+                    "Using sparse solver kinsol for nonlinear system {idx} ({eq_index}),\nbecause density of {:.2} is under threshold of {:.2} or size of {size} exceeds threshold of {}.",
+                    density(size, nnz),
+                    t.nlss_max_density,
+                    t.nlss_min_size
+                )));
+            }
+        }
+    }
+    out
 }
 
 /// Wrap a `\n`-separated message in the `LOG_STDOUT`/continuation prefixes.
@@ -2626,12 +2778,6 @@ pub(super) fn homotopy_method() -> Result<openmodelica_sim_meta::HomotopyMethod>
     } else {
         H::LocalEquidistant
     })
-}
-
-/// C's `compiledWithSymSolver`: which `--symSolver` variant generated the model's
-/// inline update equations, 0 for none.
-fn sym_solver_kind() -> Result<u8> {
-    Ok(openmodelica_util::Flags::getConfigEnum(openmodelica_util::Flags::SYM_SOLVER.clone())?.clamp(0, 2) as u8)
 }
 
 /// C's `LOG_STDOUT` "… changed to …" lines, ahead of everything the run prints.

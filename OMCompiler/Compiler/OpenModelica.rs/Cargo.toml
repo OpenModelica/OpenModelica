@@ -82,6 +82,10 @@ members = [
   "openmodelica_wasi",
   "openmodelica_wasi_libc",
   "openmodelica_zip",
+  "openmodelica_download",
+  "openmodelica_package_manager",
+  "openmodelica_version",
+  "openmodelica_modelica_diff",
   "openmodelica_animation",
   "openmodelica_animation_wasm",
   "openmodelica_scripting_api_gen",
@@ -144,10 +148,6 @@ libc = "0.2"
 libffi = "5"
 # Build-time C/C++ compilation for the FFI exception-catch shim (FFI.rs).
 cc = "1"
-# Links the system libcurl (the same library om_curl.c uses). On Windows the
-# bundled `static-curl` feature will be needed; add it when the Windows build
-# is set up (see Curl.rs).
-curl = "0.4"
 # Read-only XML DOM for the `*_prof.xml` profiling files written by the
 # simulation runtime (HpcOmBenchmarkExt.rs, replacing the expat parser of
 # runtime/HpcOmBenchmarkExt.cpp).
@@ -205,6 +205,10 @@ openmodelica_modelica_utilities = { path = "openmodelica_modelica_utilities" }
 openmodelica_wasi = { path = "openmodelica_wasi" }
 openmodelica_wasi_libc = { path = "openmodelica_wasi_libc" }
 openmodelica_zip = { path = "openmodelica_zip" }
+openmodelica_download = { path = "openmodelica_download", default-features = false }
+openmodelica_package_manager = { path = "openmodelica_package_manager", default-features = false }
+openmodelica_version = { path = "openmodelica_version" }
+openmodelica_modelica_diff = { path = "openmodelica_modelica_diff" }
 # LAPACK for every target, in place of the system `liblapack.so`: the same
 # `d*_` Fortran-ABI symbols `Lapack.rs` already binds, so one implementation
 # serves native, Windows (no MSVC-ABI LAPACK) and wasm (nothing to link) alike.

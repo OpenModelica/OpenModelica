@@ -919,6 +919,11 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
     }
   }
 
+#if !defined(__EMSCRIPTEN__)
+  OpcUaClient *pOpcUaClient = simulationOptions.isInteractiveSimulation()
+      ? MainWindow::instance()->getSimulationDialog()->getOpcUaClient(simulationOptions.getInteractiveSimulationPortNumber())
+      : nullptr;
+#endif
   QStringList parts;
   // Shared state between makeData and postCreate — both need changeAble and variability
   // but getVariableInformation fills them inside makeData and postCreate reads them.
@@ -949,6 +954,13 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       /* Get variable information from mat/xml */
       QString type, value, unit, displayUnit, description;
       getVariableInformation(&matReader, variableToFind, &type, &value, &extras.changeAble, &extras.variability, &unit, &displayUnit, &description);
+#if !defined(__EMSCRIPTEN__)
+      /* A running simulation accepts only the writes its OPC UA server allows */
+      if (pOpcUaClient) {
+        Variable *pVariable = pOpcUaClient->getVariables()->value(variableToFind);
+        extras.changeAble = pVariable && pVariable->isWritable();
+      }
+#endif
 
       QVector<QVariant> variableData;
       variableData << filePath << fileName << fullName << displayName;

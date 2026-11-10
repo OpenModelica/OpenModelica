@@ -1115,17 +1115,6 @@ protected function unifyFunCallsWork
        e := DAE.IFEXP(DAE.RELATION(e1,DAE.GREATEREQ(tp), Expression.makeConstZero(tp),-1,NONE()),Expression.expMul(e1,e2), Expression.expMul(e1,e3));
      then (e,true, iT);
 
-   // df_der(x) = (x-old(x))/dt
-   case(DAE.CALL(path = Absyn.IDENT(name = "$_DF$DER"),expLst = {e1}),X)
-     guard expHasCref(e1, X)
-     algorithm
-      tp := Expression.typeof(e1);
-      e2 := Expression.crefExp(ComponentReferenceBasics.makeCrefIdent(BackendDAE.symSolverDT, DAE.T_REAL_DEFAULT, {}));
-      e3 := Expression.makePureBuiltinCall("pre", {e1}, tp);
-      e3 := Expression.expSub(e1,e3);
-      e := Expression.expDiv(e3,e2);
-     then (e,true, iT);
-
    else (inExp, true, iT);
    end match;
 
@@ -1750,13 +1739,6 @@ algorithm
 
     // sign(x) is not invertible
     case "sign" then (rhs, false, {}, {}, idepth);
-
-    // $_DF$DER(x) = y  ->  (x - pre(x))/dt = y  ->  x = y*dt + pre(x)
-    case "$_DF$DER" algorithm
-      e1 := Expression.crefExp(ComponentReferenceBasics.makeCrefIdent(BackendDAE.symSolverDT, DAE.T_REAL_DEFAULT, {})); // dt
-      exP := Expression.makePureBuiltinCall("pre", {arg}, Expression.typeof(arg)); // pre(x)
-      e1 := Expression.expAdd(Expression.expMul(rhs, e1), exP); // y*dt + pre(x)
-    then(e1, true, {}, {}, idepth + 1);
 
     // don't know inverse of this function
     else (rhs, false, {}, {}, idepth);

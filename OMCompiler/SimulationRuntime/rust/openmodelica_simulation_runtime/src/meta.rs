@@ -585,6 +585,7 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
         method: cstr(si.solverMethod),
         cs_method: String::new(),
         fmi_solver_flags: String::new(),
+        param_deps: Vec::new(),
         tolerance: si.tolerance,
         output_format: cstr(si.outputFormat),
         prefix: prefix.to_string(),

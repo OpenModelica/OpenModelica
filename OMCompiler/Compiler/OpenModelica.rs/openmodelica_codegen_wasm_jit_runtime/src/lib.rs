@@ -104,6 +104,27 @@ pub extern "C" fn rt_set_solvers(nls: u32, nls_ls: u32, ls: u32, lss: u32) {
     openmodelica_solvers::solverflags::set_solvers(nls, nls_ls, ls, lss);
 }
 
+/// `-lssMaxDensity` / `-lssMinSize` / `-nlssMaxDensity` / `-nlssMinSize`, as
+/// `simflags::sparse_thresholds`.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_set_sparse_thresholds(
+    lss_max_density: f64,
+    lss_min_size: i32,
+    lss_given: u32,
+    nlss_max_density: f64,
+    nlss_min_size: i32,
+    nlss_given: u32,
+) {
+    openmodelica_solvers::solverflags::set_sparse_thresholds(openmodelica_sim_meta::simflags::SparseThresholds {
+        lss_max_density,
+        lss_min_size,
+        lss_given: lss_given != 0,
+        nlss_max_density,
+        nlss_min_size,
+        nlss_given: nlss_given != 0,
+    });
+}
+
 /// `-newtonFTol` / `-newtonXTol` / `-newtonMaxStepFactor`.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_set_newton_tuning(ftol: f64, xtol: f64, max_step_factor: f64) {
@@ -3238,11 +3259,13 @@ pub extern "C" fn rt_stats_start(on: u32) {
 /// iterative `-ls lis`.
 ///
 /// LU with partial pivoting (like C's `dgesv`), then a total-pivot search on a
-/// singular matrix, mirroring C's `LS_DEFAULT`; `-ls=klu`/`-ls=umfpack` use
-/// SuiteSparse instead and `-ls=lis` the real Lis. `method1`: a
-/// [`rt_ls_check_step`] follows, and is what decides whether the system is solved.
+/// singular matrix, mirroring C's `LS_DEFAULT`; `-ls=klu` uses KLU instead and
+/// `-ls=lis` the real Lis. `method1`: a [`rt_ls_check_step`] follows, and is what
+/// decides whether the system is solved.
 /// `casual`: this is dynamic tearing's casual set, whose fallback is the strict
 /// tearing set rather than total pivoting (C's `strictTearingFunctionCall`).
+/// `nnz`, the structural nonzero count, lets `-lssMaxDensity` / `-lssMinSize`
+/// send the system to [`rt_solve_lin_dense_sparse`] instead.
 #[unsafe(no_mangle)]
 #[allow(clippy::too_many_arguments)]
 pub extern "C" fn rt_linsolve(
@@ -3250,6 +3273,7 @@ pub extern "C" fn rt_linsolve(
     b_ptr: u32,
     x_ptr: u32,
     n: u32,
+    nnz: u32,
     eq_index: i32,
     time: f64,
     method1: i32,
@@ -3257,12 +3281,58 @@ pub extern "C" fn rt_linsolve(
 ) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     openmodelica_solvers::sysstat::mark_assembly_done();
-    let n = n as usize;
+    let sparse = ls_choose_format(eq_index, n, nnz, false);
+    if sparse {
+        lin_dense_sparse(a_ptr, b_ptr, x_ptr, n as usize, eq_index, time)
+    } else {
+        lin_dense(a_ptr, b_ptr, x_ptr, n as usize, eq_index, time, method1, casual)
+    }
+}
+
+/// The format a linear system is solved in, in C's order: `-lss` and `-ls` force
+/// it, then `-lssMaxDensity` / `-lssMinSize`, else the codegen's `sparse_default`.
+/// Recorded for [`rt_ls_check_step`] whenever a flag could have moved it.
+fn ls_choose_format(eq_index: i32, n: u32, nnz: u32, sparse_default: bool) -> bool {
+    use openmodelica_solvers::solverflags as sf;
+    let sparse = if sf::lss_given() {
+        true
+    } else if sf::ls_given() {
+        false
+    } else if let Some(sparse) = sf::lss_override(n as usize, nnz as usize) {
+        sparse
+    } else {
+        return sparse_default;
+    };
+    ls_failure_entry(eq_index).sparse = sparse;
+    sparse
+}
+
+/// Whether [`ls_choose_format`] recorded the format, which then overrides the codegen's.
+fn ls_format_forced() -> bool {
+    use openmodelica_solvers::solverflags as sf;
+    sf::lss_given() || sf::ls_given() || sf::sparse_thresholds().lss_given
+}
+
+/// Scatter CSC (`colptr` `n+1`, `rowidx`/`values` `nnz`) into a dense column-major `n×n`.
+fn csc_to_dense(colptr: u32, rowidx: u32, values: u32, n: usize, nnz: usize) -> alloc::vec::Vec<f64> {
+    let colp = unsafe { core::slice::from_raw_parts(colptr as *const i32, n + 1) };
+    let rowi = unsafe { core::slice::from_raw_parts(rowidx as *const i32, nnz) };
+    let vals = unsafe { core::slice::from_raw_parts(values as *const f64, nnz) };
+    let mut dense = alloc::vec![0.0f64; n * n];
+    for col in 0..n {
+        for k in colp[col] as usize..colp[col + 1] as usize {
+            dense[col * n + rowi[k] as usize] = vals[k];
+        }
+    }
+    dense
+}
+
+#[allow(clippy::too_many_arguments)]
+fn lin_dense(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: usize, eq_index: i32, time: f64, method1: i32, casual: i32) -> i32 {
     // C prints this from the solver it dispatched to; `solveTotalPivot` prints its own.
     match openmodelica_solvers::solverflags::ls() {
         openmodelica_solvers::solverflags::Ls::TotalPivot => {}
         openmodelica_solvers::solverflags::Ls::Klu => ls_start_log(eq_index, n, time, "Klu"),
-        openmodelica_solvers::solverflags::Ls::Umfpack => ls_start_log(eq_index, n, time, "UMFPACK"),
         openmodelica_solvers::solverflags::Ls::Lis => ls_start_log(eq_index, n, time, "Lis"),
         openmodelica_solvers::solverflags::Ls::Default | openmodelica_solvers::solverflags::Ls::Lapack => {
             ls_start_log(eq_index, n, time, "Lapack")
@@ -3283,15 +3353,11 @@ pub extern "C" fn rt_linsolve(
         return ret;
     }
     #[cfg(sundials)]
-    match openmodelica_solvers::solverflags::ls() {
-        openmodelica_solvers::solverflags::Ls::Klu => return sundials::klu_solve_dense(a_ptr, b_ptr, n),
-        // Singular: fall through to the total-pivot search, C's own fallback.
-        openmodelica_solvers::solverflags::Ls::Umfpack => match sundials::umfpack_solve_dense(a_ptr, b_ptr, n) {
-            0 => return 0,
-            2 => return 1,
-            _ => {}
-        },
-        _ => {}
+    if matches!(
+        openmodelica_solvers::solverflags::ls(),
+        openmodelica_solvers::solverflags::Ls::Klu
+    ) {
+        return sundials::klu_solve_dense(a_ptr, b_ptr, n);
     }
     let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
     let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
@@ -3305,11 +3371,10 @@ pub extern "C" fn rt_linsolve(
         ls_print_vector("Vector b", b);
     }
     // `-ls=totalpivot` skips straight to the total-pivot search; LAPACK (C's
-    // `dgesv`, and the default) is partial-pivot LU with that as its singular
-    // fallback. `-ls=umfpack` only gets here having found the matrix singular.
+    // `dgesv`, and the default) is partial-pivot LU with that as its fallback.
     let lu_first = !matches!(
         openmodelica_solvers::solverflags::ls(),
-        openmodelica_solvers::solverflags::Ls::TotalPivot | openmodelica_solvers::solverflags::Ls::Umfpack
+        openmodelica_solvers::solverflags::Ls::TotalPivot
     );
     if lu_first {
         match nls::lu_solve_singular_pivot(a, b, n) {
@@ -3447,7 +3512,7 @@ pub extern "C" fn rt_ls_failed(eq_index: i32, time: f64) {
 /// Returns 0 when the step stands, 1 when the solve must be redone with total
 /// pivoting (`-res` left in `b` to step on from where the unknowns now are), and 2
 /// when the system is unsolved with no retry to make. Only C's `LS_DEFAULT` has
-/// that fallback: `-ls=lapack`, the sparse solvers and `-ls=klu`/`umfpack`/`lis`
+/// that fallback: `-ls=lapack`, the sparse solvers and `-ls=klu`/`lis`
 /// all leave a rejected step unsolved.
 #[unsafe(no_mangle)]
 #[allow(clippy::too_many_arguments)]
@@ -3460,6 +3525,16 @@ pub extern "C" fn rt_ls_check_step(
     dense: i32,
     casual: i32,
 ) -> i32 {
+    // `dense`: 0 the CSC layout, which has no dense `A` to retry with; 1 a dense
+    // `A` the codegen solves dense; 2 a dense `A` it solves sparse.
+    let solved_dense = if ls_format_forced() {
+        !unsafe { &*LS_FAILURES.0.get() }
+            .get(&eq_index)
+            .is_some_and(|e| e.sparse)
+    } else {
+        dense == 1
+    };
+    let dense = (dense != 0 && solved_dense) as i32;
     // `-ls=totalpivot` has no check, and a fallback solve's step already is one.
     if dense != 0
         && matches!(
@@ -3512,6 +3587,8 @@ struct LsFailure {
     failures: u64,
     /// The last solve was the total-pivot fallback, whose step C takes unchecked.
     fell_back: bool,
+    /// The last solve used the sparse solver.
+    sparse: bool,
 }
 /// Keyed, not scanned: [`ls_solved`] runs per solve, and a model can solve O(n)
 /// systems per `functionODE`.
@@ -3574,13 +3651,13 @@ pub extern "C" fn rt_solve_lin_sparse(colptr: u32, rowidx: u32, values: u32, b_p
     openmodelica_solvers::sysstat::mark_assembly_done();
     let n = n as usize;
     let nnz = nnz as usize;
-    let colp = unsafe { core::slice::from_raw_parts(colptr as *const i32, n + 1) };
-    let rowi = unsafe { core::slice::from_raw_parts(rowidx as *const i32, nnz) };
-    let vals = unsafe { core::slice::from_raw_parts(values as *const f64, nnz) };
     let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
 
     #[cfg(all(target_os = "wasi", feature = "inwasm_solve"))]
     if inwasm_rsparse() {
+        let colp = unsafe { core::slice::from_raw_parts(colptr as *const i32, n + 1) };
+        let rowi = unsafe { core::slice::from_raw_parts(rowidx as *const i32, nnz) };
+        let vals = unsafe { core::slice::from_raw_parts(values as *const f64, nnz) };
         let a = rsparse::data::Sprs {
             nzmax: nnz,
             m: n,
@@ -3595,13 +3672,7 @@ pub extern "C" fn rt_solve_lin_sparse(colptr: u32, rowidx: u32, values: u32, b_p
             Err(_) => 1,
         };
     }
-    // Densify + dense LU.
-    let mut dense = alloc::vec![0.0f64; n * n];
-    for col in 0..n {
-        for k in colp[col] as usize..colp[col + 1] as usize {
-            dense[col * n + rowi[k] as usize] = vals[k];
-        }
-    }
+    let dense = csc_to_dense(colptr, rowidx, values, n, nnz);
     if nls::lu_solve(&dense, b, n) || nls::total_pivot_solve(&dense, b, n) {
         0
     } else {
@@ -3621,36 +3692,51 @@ fn inwasm_rsparse() -> bool {
 /// `-lss` solver: its structural nonzeros are scanned into CSC first. The direct
 /// solvers cache no factorization here (they are handed no pattern to analyse).
 /// 0 ok, 1 singular. `x_ptr` is C's `aux_x`, read only by the iterative `-lss lis`.
+/// The other arguments are [`rt_linsolve`]'s, which `-lssMaxDensity` /
+/// `-lssMinSize` can send the system to instead.
 #[unsafe(no_mangle)]
+#[allow(clippy::too_many_arguments)]
 pub extern "C" fn rt_solve_lin_dense_sparse(
     a_ptr: u32,
     b_ptr: u32,
     x_ptr: u32,
     n: u32,
+    nnz: u32,
     eq_index: i32,
     time: f64,
+    method1: i32,
+    casual: i32,
 ) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     openmodelica_solvers::sysstat::mark_assembly_done();
-    let n = n as usize;
-    #[cfg(sundials)]
-    if matches!(
+    if ls_choose_format(eq_index, n, nnz, true) {
+        lin_dense_sparse(a_ptr, b_ptr, x_ptr, n as usize, eq_index, time)
+    } else {
+        lin_dense(a_ptr, b_ptr, x_ptr, n as usize, eq_index, time, method1, casual)
+    }
+}
+
+fn lin_dense_sparse(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: usize, eq_index: i32, time: f64) -> i32 {
+    let lis = matches!(
         openmodelica_solvers::solverflags::lss(),
         openmodelica_solvers::solverflags::Lss::Lis
-    ) {
+    );
+    ls_start_log(eq_index, n, time, if lis { "Lis" } else { "Klu" });
+    #[cfg(sundials)]
+    if lis {
         let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
         let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
         let x0 = lis_initial_guess(x_ptr, n);
         return lis::solve_dense(a, b, &x0, n, eq_index, time);
     }
-    let _ = (eq_index, time);
+    #[cfg(not(sundials))]
+    let _ = x_ptr;
     #[cfg(sundials)]
-    match openmodelica_solvers::solverflags::lss() {
-        openmodelica_solvers::solverflags::Lss::Klu => return sundials::klu_solve_dense(a_ptr, b_ptr, n),
-        openmodelica_solvers::solverflags::Lss::Umfpack => {
-            return (sundials::umfpack_solve_dense(a_ptr, b_ptr, n) != 0) as i32;
-        }
-        _ => {} // rsparse below; Lis returned above
+    if matches!(
+        openmodelica_solvers::solverflags::lss(),
+        openmodelica_solvers::solverflags::Lss::Klu
+    ) {
+        return sundials::klu_solve_dense(a_ptr, b_ptr, n);
     }
     let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
 
@@ -3716,7 +3802,10 @@ thread_local! {
 
 /// Solve the CSC system with the `-lss` solver, reusing `handle`'s cached symbolic
 /// analysis (the pattern is read only to seed the cache on the first call).
+/// `-lssMaxDensity` / `-lssMinSize` can ask for the dense solver instead, which
+/// gets `method1` and `casual` as in [`rt_linsolve`].
 #[unsafe(no_mangle)]
+#[allow(clippy::too_many_arguments)]
 pub extern "C" fn rt_solve_lin_sparse_cached(
     handle: u32,
     colptr: u32,
@@ -3727,9 +3816,25 @@ pub extern "C" fn rt_solve_lin_sparse_cached(
     n: u32,
     nnz: u32,
     time: f64,
+    method1: i32,
+    casual: i32,
 ) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     openmodelica_solvers::sysstat::mark_assembly_done();
+    if !ls_choose_format(handle as i32, n, nnz, true) {
+        let n = n as usize;
+        let dense = csc_to_dense(colptr, rowidx, values, n, nnz as usize);
+        return lin_dense(
+            dense.as_ptr() as u32,
+            b_ptr,
+            x_ptr,
+            n,
+            handle as i32,
+            time,
+            method1,
+            casual,
+        );
+    }
     #[cfg(sundials)]
     if matches!(
         openmodelica_solvers::solverflags::lss(),
@@ -3745,9 +3850,6 @@ pub extern "C" fn rt_solve_lin_sparse_cached(
         return lis::solve_csc(handle, colp, rowi, vals, b, &x0, n, handle as i32, time);
     }
     let (backend, name) = match openmodelica_solvers::solverflags::lss() {
-        openmodelica_solvers::solverflags::Lss::Umfpack => {
-            (openmodelica_solvers::solverflags::Sparse::Umfpack, "UMFPACK")
-        }
         // rsparse stands in for KLU where SuiteSparse is absent; C's name for it.
         openmodelica_solvers::solverflags::Lss::Rsparse => (openmodelica_solvers::solverflags::Sparse::Rsparse, "Klu"),
         _ => (openmodelica_solvers::solverflags::Sparse::Klu, "Klu"), // Lis returned above
@@ -3776,14 +3878,8 @@ pub(crate) fn lin_sparse_cached(
     // An FMU may have stubbed these out, and the density rule picks them, not a
     // flag: `Rsparse` stands in.
     #[cfg(sundials)]
-    match backend {
-        openmodelica_solvers::solverflags::Sparse::Klu if sundials::have_klu() => {
-            return sundials::klu_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz);
-        }
-        openmodelica_solvers::solverflags::Sparse::Umfpack if sundials::have_umfpack() => {
-            return sundials::umfpack_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz);
-        }
-        _ => {}
+    if backend == openmodelica_solvers::solverflags::Sparse::Klu && sundials::have_klu() {
+        return sundials::klu_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz);
     }
     #[cfg(not(sundials))]
     let _ = backend;

@@ -43,7 +43,6 @@
 
 int maxBisectionIterations = 0;
 void bisection(DATA* data, threadData_t *threadData, double*, double*, double*, double*, LIST*, LIST*);
-void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData);
 
 /*! \fn checkForSampleEvent
  *
@@ -326,7 +325,13 @@ double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double ti
   memcpy(data->localData[0]->realVars, states_left, data->modelData->nStates * sizeof(double));
 
   /* determined continuous system */
+#ifdef OMC_FMI_RUNTIME
+  /* An FMU has no updateContinuousSystem; the importer sets the inputs. */
+  data->callback->functionODE(data, threadData);
+  data->callback->functionAlgebraics(data, threadData);
+#else
   data->callback->updateContinuousSystem(data, threadData);
+#endif
   updateRelationsPre(data);
   /*sim_result_emit(data);*/
 
@@ -376,8 +381,10 @@ void bisection(DATA* data, threadData_t *threadData, double* a, double* b, doubl
 
     /*calculates Values dependents on new states*/
     /* read input vars */
+#ifndef OMC_FMI_RUNTIME
     externalInputUpdate(data);
     data->callback->input_function(data, threadData);
+#endif
     /* eval needed equations*/
     data->callback->function_ZeroCrossingsEquations(data, threadData);
 
@@ -422,10 +429,10 @@ int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList)
     /* found event in left section */
     if(sign(data->simulationInfo->zeroCrossings[i]) != sign(data->simulationInfo->zeroCrossingsPre[i]))
     {
-      infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "%ld changed from %s to current %s",
+      infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "%ld changed from %g to current %g",
             i,
-            (data->simulationInfo->zeroCrossingsPre[i] > 0) ? "TRUE" : "FALSE",
-            (data->simulationInfo->zeroCrossings[i] > 0) ? "TRUE" : "FALSE");
+            data->simulationInfo->zeroCrossingsPre[i],
+            data->simulationInfo->zeroCrossings[i]);
       listPushFront(tmpEventList, listNodeData(it));
     }
   }

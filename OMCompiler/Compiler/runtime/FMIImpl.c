@@ -895,7 +895,8 @@ void FMIImpl__initializeFMI2Import(fmi2_import_t* fmi, void** fmiInfo, fmi_versi
     int hasStartValue = fmi2_import_get_variable_has_start(model_variable);
     void* variable_has_start_value = mmc_mk_bcon(hasStartValue);
     void* variable_start_value = getFMI2ModelVariableStartValue(model_variable, hasStartValue);
-    void* variable_is_fixed = (fmi2_import_get_variability(model_variable) == fmi2_variability_enu_fixed) ? mmc_mk_bcon(1) : mmc_mk_bcon(0);
+    fmi2_variability_enu_t variability = fmi2_import_get_variability(model_variable);
+    void* variable_is_fixed = (variability == fmi2_variability_enu_fixed || variability == fmi2_variability_enu_tunable) ? mmc_mk_bcon(1) : mmc_mk_bcon(0);
     void* variable_value_reference = mmc_mk_rcon((double)model_variables_value_reference_list[i]);
     void* variable_x1_placement = mmc_mk_icon(0);
     void* variable_x2_placement = mmc_mk_icon(0);
@@ -1093,7 +1094,8 @@ void FMIImpl__initializeFMI3Import(fmi3_import_t* fmi, void** fmiInfo, fmi_versi
     int hasStartValue = fmi3_import_get_variable_has_start(model_variable);
     void* variable_has_start_value = mmc_mk_bcon(hasStartValue);
     void* variable_start_value = getFMI3ModelVariableStartValue(model_variable, hasStartValue);
-    void* variable_is_fixed = (fmi3_import_get_variable_variability(model_variable) == fmi3_variability_enu_fixed) ? mmc_mk_bcon(1) : mmc_mk_bcon(0);
+    fmi3_variability_enu_t variability = fmi3_import_get_variable_variability(model_variable);
+    void* variable_is_fixed = (variability == fmi3_variability_enu_fixed || variability == fmi3_variability_enu_tunable) ? mmc_mk_bcon(1) : mmc_mk_bcon(0);
     /* FMI 3.0 value references are UInt32, so they stay integers here */
     void* variable_value_reference = mmc_mk_icon((int)fmi3_import_get_variable_vr(model_variable));
     void* variable_dimensions = getFMI3ModelVariableDimensions(model_variable);

@@ -65,10 +65,12 @@ openmodelica_result_bench/src/writers.rs
 openmodelica_result_capi/Cargo.toml
 openmodelica_result_capi/include/omc_result.h
 openmodelica_result_capi/src/lib.rs
+openmodelica_result_capi/src/scripting.rs
 openmodelica_result_capi/src/writer.rs
 openmodelica_result_cli/Cargo.toml
 openmodelica_result_cli/src/main.rs
 openmodelica_result_diff/Cargo.toml
+openmodelica_result_diff/LICENSE
 openmodelica_result_diff/src/ellipse.rs
 openmodelica_result_diff/src/ellipse2014.rs
 openmodelica_result_diff/src/format.rs
@@ -83,9 +85,13 @@ openmodelica_result_files/Cargo.toml
 openmodelica_result_files/src/arrow.rs
 openmodelica_result_files/src/arrow_json.rs
 openmodelica_result_files/src/file.rs
+openmodelica_result_files/src/fs.rs
 openmodelica_result_files/src/hdf5.rs
 openmodelica_result_files/src/lib.rs
 openmodelica_result_files/src/readers.rs
+openmodelica_result_files/src/scripting/compare.rs
+openmodelica_result_files/src/scripting/filter.rs
+openmodelica_result_files/src/scripting/mod.rs
 openmodelica_result_files/src/threads.rs
 openmodelica_result_files/tests/hdf5.rs
 openmodelica_result_web/Cargo.toml
@@ -112,7 +118,6 @@ openmodelica_sim_meta/src/optimization/model.rs
 openmodelica_sim_meta/src/optimization/setup.rs
 openmodelica_sim_meta/src/parmod.rs
 openmodelica_sim_meta/src/profiling.rs
-openmodelica_sim_meta/src/qss.rs
 openmodelica_sim_meta/src/resize.rs
 openmodelica_sim_meta/src/result.rs
 openmodelica_sim_meta/src/rtclock.rs
@@ -188,7 +193,6 @@ openmodelica_solvers/src/solverflags.rs
 openmodelica_solvers/src/spatial.rs
 openmodelica_solvers/src/sundials.rs
 openmodelica_solvers/src/sundials_ode.rs
-openmodelica_solvers/src/symsolver.rs
 openmodelica_solvers/src/sysstat.rs
 src/lib.rs
 rustfmt.toml

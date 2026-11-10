@@ -6,7 +6,7 @@ loadModel(ModelicaTest, {"4.1.0"});getErrorString();
 setCommandLineOptions("--newBackend"); getErrorString();
 
 simulate(ModelicaTest.Media.TestAllProperties.IncompleteMedia.Essotherm650); getErrorString();
-diffSimulationResults("ModelicaTest.Media.TestAllProperties.IncompleteMedia.Essotherm650_res.mat", "ReferenceFiles/ModelicaTest.Media.TestAllProperties.IncompleteMedia.Essotherm650_res.mat", "ModelicaTest.Media.TestAllProperties.IncompleteMedia.Essotherm650_diff.csv", 1e-8);
+diffSimulationResults("ModelicaTest.Media.TestAllProperties.IncompleteMedia.Essotherm650_res.mat", "ReferenceFiles/ModelicaTest.Media.TestAllProperties.IncompleteMedia.Essotherm650_res.mat", "ModelicaTest.Media.TestAllProperties.IncompleteMedia.Essotherm650_diff.csv", 1e-8, vars={"Pr", "cp", "cp2", "cv", "cv2", "d", "d2", "eps_h_is", "err_T", "err_d", "err_u", "eta", "h2", "lambda", "medium.MM", "medium.R_s", "medium.T_degC", "medium.T_start", "medium.X[1]", "medium.cp", "medium.d", "medium.h", "medium.p_bar", "medium.preferredMediumStates", "medium.standardOrderComponents", "medium.state.T", "medium.u", "s", "state2.T", "state2.p", "state3.T", "state3.p", "state4.T", "state4.p", "state5.T", "state5.p", "u"});
 
 // Result:
 // true

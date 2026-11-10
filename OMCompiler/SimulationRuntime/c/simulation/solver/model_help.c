@@ -70,7 +70,6 @@ int maxJacUpdate[4] = {10,3,1,1};
 double steadyStateTol = 1e-3;
 const size_t SIZERINGBUFFER = 3;
 int compiledInDAEMode = 0;
-int compiledWithSymSolver = 0;
 double numericalDifferentiationDeltaXlinearize = 1e-8;
 double numericalDifferentiationDeltaXsolver = 1e-8;
 double homAdaptBend = 0.5;
@@ -549,9 +548,56 @@ void printZeroCrossings(DATA *data, int stream)
   {
     int *eq_indexes;
     const char *exp_str = data->callback->zeroCrossingDescription(i,&eq_indexes);
-    infoStreamPrintWithEquationIndexes(stream, omc_dummyFileInfo, 0, eq_indexes, "[%ld] (pre: %2.g) %2.g = %s", i+1, data->simulationInfo->zeroCrossingsPre[i], data->simulationInfo->zeroCrossings[i], exp_str);
+    infoStreamPrintWithEquationIndexes(stream, omc_dummyFileInfo, 0, eq_indexes, "[%ld] (pre: %s) %s = %s", i+1, (data->simulationInfo->zeroCrossingsPre[i] > 0.0) ? " true" : "false", (data->simulationInfo->zeroCrossings[i] > 0.0) ? " true" : "false", exp_str);
   }
   messageClose(stream);
+}
+
+/* \fn printCurrentStatesVector(int logLevel, double* y, DATA* data, double time)
+ *
+ * \param [in] [logLevel]
+ * \param [in] [states]
+ * \param [in] [data]
+ * \param [in] [time]
+ *
+ * This function outputs states vector.
+ *
+ */
+int printCurrentStatesVector(int logLevel, double* states, DATA* data, double time)
+{
+  int i;
+  infoStreamPrint(logLevel, 1, "states at time=%g", time);
+  for(i=0;i<data->modelData->nStates;++i)
+  {
+    infoStreamPrint(logLevel, 0, "%d. %s = %g", i+1, data->modelData->realVarsData[i].info.name, states[i]);
+  }
+  messageClose(logLevel);
+
+  return 0;
+}
+
+/* \fn printVector(int logLevel, double* y, DATA* data, double time)
+ *
+ * \param [in] [logLevel]
+ * \param [in] [name]
+ * \param [in] [vec]
+ * \param [in] [size]
+ * \param [in] [time]
+ *
+ * This function outputs a vector of size
+ *
+ */
+int printVector(int logLevel, const char* name,  double* vec, int n, double time)
+{
+  int i;
+  infoStreamPrint(logLevel, 1, "%s at time=%g", name, time);
+  for(i=0; i<n; ++i)
+  {
+    infoStreamPrint(logLevel, 0, "%d. %g", i+1, vec[i]);
+  }
+  messageClose(logLevel);
+
+  return 0;
 }
 
 /*! \fn overwriteOldSimulationData
@@ -828,6 +874,51 @@ void setAllParamsToStart(SIMULATION_INFO *simulationInfo, const MODEL_DATA *mode
       modelData->stringParameterData[array_idx].attribute.start,
       &simulationInfo->stringParameter[simulationInfo->stringParamsIndex[array_idx]],
       modelData->stringParameterData[array_idx].dimension.scalar_length);
+  }
+}
+
+/**
+ * @brief Set the start attribute of all variables and parameters to their
+ * current value. For an array only the first element.
+ *
+ * @param data  Runtime data struct.
+ */
+void setStartToCurrentValues(DATA *data)
+{
+  MODEL_DATA *modelData = data->modelData;
+  SIMULATION_INFO *simulationInfo = data->simulationInfo;
+  SIMULATION_DATA *simulationData = data->localData[0];
+  long i;
+
+  for (i = 0; i < modelData->nVariablesRealArray; ++i) {
+    const char *name = modelData->realVarsData[i].info.name;
+    if (name && (0 == strcmp(name, "$dummy") || 0 == strcmp(name, "der($dummy)"))) {
+      continue;
+    }
+    put_real_element(simulationData->realVars[simulationInfo->realVarsIndex[i]], 0, &modelData->realVarsData[i].attribute.start);
+  }
+  for (i = 0; i < modelData->nVariablesIntegerArray; ++i) {
+    put_integer_element(simulationData->integerVars[simulationInfo->integerVarsIndex[i]], 0, &modelData->integerVarsData[i].attribute.start);
+  }
+  for (i = 0; i < modelData->nVariablesBooleanArray; ++i) {
+    put_boolean_element(simulationData->booleanVars[simulationInfo->booleanVarsIndex[i]], 0, &modelData->booleanVarsData[i].attribute.start);
+  }
+#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING > 0
+  for (i = 0; i < modelData->nVariablesStringArray; ++i) {
+    put_string_element(simulationData->stringVars[simulationInfo->stringVarsIndex[i]], 0, &modelData->stringVarsData[i].attribute.start);
+  }
+#endif
+  for (i = 0; i < modelData->nParametersRealArray; ++i) {
+    put_real_element(simulationInfo->realParameter[simulationInfo->realParamsIndex[i]], 0, &modelData->realParameterData[i].attribute.start);
+  }
+  for (i = 0; i < modelData->nParametersIntegerArray; ++i) {
+    put_integer_element(simulationInfo->integerParameter[simulationInfo->integerParamsIndex[i]], 0, &modelData->integerParameterData[i].attribute.start);
+  }
+  for (i = 0; i < modelData->nParametersBooleanArray; ++i) {
+    put_boolean_element(simulationInfo->booleanParameter[simulationInfo->booleanParamsIndex[i]], 0, &modelData->booleanParameterData[i].attribute.start);
+  }
+  for (i = 0; i < modelData->nParametersStringArray; ++i) {
+    put_string_element(simulationInfo->stringParameter[simulationInfo->stringParamsIndex[i]], 0, &modelData->stringParameterData[i].attribute.start);
   }
 }
 
@@ -1440,11 +1531,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo->spatialDistributionData = allocSpatialDistribution(data->modelData->nSpatialDistributions);
 
   /* set default solvers for algebraic loops */
-#if !defined(OMC_MINIMAL_RUNTIME)
   data->simulationInfo->nlsMethod = NLS_MIXED;
-#else
-  data->simulationInfo->nlsMethod = NLS_HOMOTOPY;
-#endif
   data->simulationInfo->nlsLinearSolver = NLS_LS_DEFAULT;
   data->simulationInfo->lsMethod = LS_DEFAULT;
   data->simulationInfo->lssMethod = LSS_DEFAULT;
@@ -1538,11 +1625,6 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   /* buffer for daeMode */
   data->simulationInfo->daeModeData = (DAEMODE_DATA*) omc_alloc_interface.malloc_uncollectable(sizeof(DAEMODE_DATA));
   data->callback->initializeDAEmodeData(data, data->simulationInfo->daeModeData);
-
-  /* buffer for inline Data */
-  data->simulationInfo->inlineData = (INLINE_DATA*) omc_alloc_interface.malloc_uncollectable(sizeof(INLINE_DATA));
-  data->simulationInfo->inlineData->algVars = (modelica_real*) calloc(data->modelData->nStates, sizeof(modelica_real));
-  data->simulationInfo->inlineData->algOldVars = (modelica_real*) calloc(data->modelData->nStates, sizeof(modelica_real));
 
   /* buffer for analytical jacobians */
   data->simulationInfo->analyticJacobians = (JACOBIAN*) omc_alloc_interface.malloc_uncollectable(data->modelData->nJacobians*sizeof(JACOBIAN));
@@ -1640,7 +1722,7 @@ void deInitializeDataStruc(DATA *data)
   freeRingBuffer(data->simulationData);
 
   if (data->callback->read_input_fmu) {
-    /* FMU: `read_input_fmu` points the VAR_INFO strings at literals in the generated code,
+    /* FMI 1.0: `read_input_fmu` points the VAR_INFO strings at literals in the generated code,
      * but the arrays were still allocated by `allocModelDataVars` in `fmi2Instantiate`. */
     freeModelDataVarArrays(data->modelData);
   } else {
@@ -1725,11 +1807,6 @@ void deInitializeDataStruc(DATA *data)
 
   /* free buffer for state sets */
   omc_alloc_interface.free_uncollectable(data->simulationInfo->daeModeData);
-
-  /* buffer for inline Data */
-  free(data->simulationInfo->inlineData->algVars);
-  free(data->simulationInfo->inlineData->algOldVars);
-  omc_alloc_interface.free_uncollectable(data->simulationInfo->inlineData);
 
   /* free inputs and output */
   free(data->simulationInfo->inputVars);

@@ -102,7 +102,7 @@ val(T[1], 1);
 // ### Equation:
 // 	[FOR-] (4) ($RES_SIM_1)
 // 	[----] for $i1 in 1:4 loop
-// 	[----]   [SCAL] (1) T[$i1] = 0.5 * p[$i1] + 0.1 * $FUN_1; ($RES_SIM_2)
+// 	[----]   [SCAL] (1) T[$i1] = 0.5*p[$i1] + 0.1*$FUN_1; ($RES_SIM_2)
 // 	[----] end for;
 // ### Variable:
 // 	p[1]
@@ -148,7 +148,7 @@ val(T[1], 1);
 // ### Equation:
 // 	[FOR-] (4) ($RES_SIM_1)
 // 	[----] for $i1 in 1:4 loop
-// 	[----]   [SCAL] (1) T[$i1] = 0.5 * p[$i1] + 0.1 * $FUN_1; ($RES_SIM_2)
+// 	[----]   [SCAL] (1) T[$i1] = 0.5*p[$i1] + 0.1*$FUN_1; ($RES_SIM_2)
 // 	[----] end for;
 // ### Variable:
 // 	p[1]

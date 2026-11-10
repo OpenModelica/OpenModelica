@@ -853,6 +853,13 @@ public
       end match;
     end isNumericJacobian;
 
+    function hasRuntimeSize
+      "a resizable dimension whose size depends on the resizable parameters,
+      unlike e.g. the range N:N (same as SimCodeCodegenUtil.isSymbolicArrayVar)"
+      input Dimension dim;
+      output Boolean b = Dimension.isResizable(dim) and not Expression.isInteger(Dimension.sizeExp(dim));
+    end hasRuntimeSize;
+
     function solvesConstant
       "true if the strong component solves a constant variable"
       input StrongComponent comp;
@@ -1041,7 +1048,7 @@ public
           for slice in strict.iteration_vars loop
             var := Pointer.access(Slice.getT(slice));
             if listEmpty(slice.indices) and Type.isArray(var.ty) and
-               List.any(Type.arrayDims(var.ty), Dimension.isResizable) then
+               List.any(Type.arrayDims(var.ty), hasRuntimeSize) then
               // a whole resizable array: its elements are only known at runtime,
               // the system is sized at runtime (no linear solver, see below)
               crefs := var.name :: crefs;

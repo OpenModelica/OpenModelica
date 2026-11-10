@@ -190,7 +190,6 @@ if true then /* Suppress output */
     generatedPath + "Template/CodegenCppHpcom.mo",
     generatedPath + "Template/CodegenFMU.mo",
     generatedPath + "Template/CodegenFMUCpp.mo",
-    generatedPath + "Template/CodegenJS.mo",
     generatedPath + "Template/CodegenUtil.mo",
     generatedPath + "Template/CodegenXML.mo",
     generatedPath + "Template/DAEDumpTpl.mo",

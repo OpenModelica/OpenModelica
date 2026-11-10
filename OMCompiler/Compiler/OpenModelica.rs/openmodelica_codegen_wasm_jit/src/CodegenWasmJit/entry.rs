@@ -135,6 +135,12 @@ pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcSt
         {
             format!("{init_seg}{sim_output}")
         }
+        // A failed `-reconcile*` procedure runs after the simulation finished and
+        // has logged its reason, as C does before its exit(1).
+        Err(e) if *e == sim_driver::RECON_ABORTED_ERR => format!(
+            "{init_seg}{sim_output}{}{post_output}",
+            success_line("The simulation finished successfully.")
+        ),
         Err(e) => {
             let msg = format!("wasm-jit simulation failed: {}", with_engine_detail(e));
             let line = log_line(

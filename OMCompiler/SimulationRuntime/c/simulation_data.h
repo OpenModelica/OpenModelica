@@ -409,7 +409,9 @@ typedef enum {
   NLS_SOLVED_LESS_ACCURACY = 2      /* NLS Solver found a solution with low accuracy */
 } NLS_SOLVER_STATUS;
 
-#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
+/* An FMU of a --daeMode model (OMC_FMI_DAE_MODE) solves its residual as a
+ * nonlinear system (initDAEModeExplicitNLS), also when the model has none of its own. */
+#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0 || defined(OMC_FMI_DAE_MODE)
 typedef struct NONLINEAR_SYSTEM_DATA
 {
   modelica_integer size;
@@ -610,14 +612,8 @@ typedef struct DAEMODE_DATA
   SPARSE_PATTERN* sparsePattern;       /* daeMode sparse pattern */
   int (*evaluateDAEResiduals)(DATA*, threadData_t*, int); /* function to evaluate dynamic equations for DAE solver */
   int *algIndexes;                     /* index of the algebraic DAE variable in original order */
+  void *solverData;                    /* the DAE solver, for its event update */
 } DAEMODE_DATA;
-
-typedef struct INLINE_DATA
-{
-  modelica_real dt;                    /* step size for inline step */
-  modelica_real* algVars;              /* alg-state variables */
-  modelica_real* algOldVars;           /* old alg-state variables */
-} INLINE_DATA;
 
 typedef struct MODEL_DATA_XML
 {
@@ -976,8 +972,6 @@ typedef struct SIMULATION_INFO
   STATE_SET_DATA* stateSetData;
 
   DAEMODE_DATA* daeModeData;
-
-  INLINE_DATA* inlineData;
 
   void* backupSolverData;              /* Used for generic Runge-Kutta methods to get access to some solver details inside callbacks */
 

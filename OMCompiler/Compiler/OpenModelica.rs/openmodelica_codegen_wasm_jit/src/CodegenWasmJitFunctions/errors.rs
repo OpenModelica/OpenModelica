@@ -92,8 +92,11 @@ pub(super) fn emit_assert(
         // The dumped condition (C's `assert_cond`), then the message, then the
         // source position — all consumed by `rt_assert_warning`; execution
         // continues afterwards (no trap).
-        let dumped = if in_function { String::new() } else { dumped_exp(cond)? };
-        emit_str_literal(ctx, dumped.as_bytes())?; // dumped condition
+        if in_function {
+            emit_str_literal(ctx, b"")?;
+        } else {
+            emit_assert_cond(ctx, cond)?;
+        }
         let mw = compile_exp(ctx, msg)?; // owned message String handle
         if mw != WTy::I32 {
             return Err("CodegenWasmJit: assert message is not a String");
@@ -105,6 +108,7 @@ pub(super) fn emit_assert(
         ctx.emit(we::Instruction::I32Const(info.columnNumberEnd));
         ctx.emit(we::Instruction::I32Const(info.isReadOnly as i32));
         emit_initial_flag(ctx)?;
+        ctx.emit(we::Instruction::I32Const(ctx.eq));
         ctx.emit(we::Instruction::Call(env_extra_index("rt_assert_warning")?));
         ctx.emit(we::Instruction::I32Const(1));
         ctx.emit(we::Instruction::GlobalSet(g));
@@ -125,7 +129,7 @@ pub(super) fn emit_assert(
     // The dumped condition, for the report.
     let cond_h = ctx.alloc_temp(WTy::I32);
     if !in_function {
-        emit_str_literal(ctx, dumped_exp(cond)?.as_bytes())?;
+        emit_assert_cond(ctx, cond)?;
         ctx.emit(we::Instruction::LocalSet(cond_h));
     }
     // Only one arm runs, and it consumes the Strings; `initial` and `sim_data` follow.
@@ -155,6 +159,7 @@ pub(super) fn emit_assert(
     report_args(ctx)?;
     emit_initial_flag(ctx)?;
     emit_sim_data_or_zero(ctx);
+    ctx.emit(we::Instruction::I32Const(ctx.eq));
     ctx.emit(we::Instruction::Call(rt_index("rt_nls_assert_failed")?));
     release_heap_locals(ctx)?;
     push_outputs(ctx)?;
@@ -163,6 +168,7 @@ pub(super) fn emit_assert(
     report_args(ctx)?;
     emit_initial_flag(ctx)?;
     emit_sim_data_or_zero(ctx);
+    ctx.emit(we::Instruction::I32Const(ctx.eq));
     let report = if when_body { "rt_assert_when" } else { "rt_assert" };
     ctx.emit(we::Instruction::Call(env_extra_index(report)?));
     // Unwind unless the driver took it (suppressed during the event search).
@@ -171,6 +177,36 @@ pub(super) fn emit_assert(
     ctx.emit(we::Instruction::End);
     ctx.emit(we::Instruction::End);
     Ok(())
+}
+
+/// C's `assert_cond` followed by the values of the variables in it, as an owned
+/// String handle on the stack.
+fn emit_assert_cond(ctx: &mut FnCtx, cond: &metamodelica::Ref<DAE::Exp>) -> Result<()> {
+    emit_str_literal(ctx, format!("({})", dumped_exp(cond)?).as_bytes())?;
+    for v in Expression::assertConditionValues(cond.clone())?.iter() {
+        let ty = match exp_sigty(&v) {
+            Ok(ty @ (SigTy::Real | SigTy::Int | SigTy::Bool)) => ty,
+            _ => continue,
+        };
+        emit_str_literal(ctx, format!(", {}=", dumped_exp(&v)?).as_bytes())?;
+        emit_str_append(ctx)?;
+        format_scalar_string(ctx, &v, ty)?;
+        emit_str_append(ctx)?;
+    }
+    Ok(())
+}
+
+/// Replace the two String handles on the stack by their concatenation.
+fn emit_str_append(ctx: &mut FnCtx) -> Result<()> {
+    let b = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(b));
+    let a = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(a));
+    ctx.emit(we::Instruction::LocalGet(a));
+    ctx.emit(we::Instruction::LocalGet(b));
+    ctx.emit(we::Instruction::Call(rt_index("rt_concat")?));
+    release_temp(ctx, a)?;
+    release_temp(ctx, b)
 }
 
 /// The running `SimData` pointer, or 0 outside a simulation.
@@ -214,6 +250,7 @@ fn emit_model_error(ctx: &mut FnCtx) -> Result<()> {
             ctx.emit(I::I32Const(0)); // no condition: never suppressed
             emit_initial_flag(ctx)?;
             emit_sim_data_or_zero(ctx);
+            ctx.emit(I::I32Const(0));
             Ok(())
         };
         ctx.emit(I::Call(rt_index("rt_nls_recovering")?));

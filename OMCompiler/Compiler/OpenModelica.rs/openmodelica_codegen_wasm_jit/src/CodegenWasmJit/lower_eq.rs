@@ -309,7 +309,8 @@ fn lower_linear_system_body(
     if !torn {
         return Err("CodegenWasmJit: SES_LINEAR has neither a usable simJac nor residual equations");
     }
-    let use_sparse = lin_torn_use_sparse(lsystem, n);
+    let nnz = lin_torn_nnz(lsystem, n);
+    let use_sparse = n > 0 && crate::CodegenWasmJitFunctions::lin_use_sparse(n, nnz);
     let mut lower_inner = |c: &mut FnCtx| -> Result<()> { lower_eq_list(c, &inner, eq_index) };
 
     // Prefer analytic-Jacobian assembly (C's method 1); probe only when there is no
@@ -357,6 +358,7 @@ fn lower_linear_system_body(
             &mut lower_constant,
             &mut lower_column,
             use_sparse,
+            nnz,
             lsystem.index,
         );
     }
@@ -369,6 +371,7 @@ fn lower_linear_system_body(
         &residuals,
         &mut lower_inner,
         use_sparse,
+        nnz,
         lsystem.jacobianMatrix.is_some(),
         lsystem.index,
     )
@@ -393,21 +396,16 @@ fn lower_eq_list(
     Ok(())
 }
 
-/// Whether a torn linear system uses the sparse solver: C's
-/// `linearSystemMatrixFormat`, an unknown nonzero count counting as dense.
-fn lin_torn_use_sparse(lsystem: &SimCode::LinearSystem, n: usize) -> bool {
-    use crate::CodegenWasmJitFunctions::lin_use_sparse;
-    if n == 0 {
-        return false;
-    }
+/// A torn linear system's nonzero count as C's `linearSystemMatrixFormat` takes it,
+/// an unknown one counting as dense.
+pub(super) fn lin_torn_nnz(lsystem: &SimCode::LinearSystem, n: usize) -> usize {
     let sim_jac = count(&lsystem.simJac);
-    let nnz = lsystem
+    lsystem
         .jacobianMatrix
         .as_ref()
         .and_then(|jm| sparsity_nonzeros(jm))
         .or((sim_jac > 0).then_some(sim_jac))
-        .unwrap_or(n * n);
-    lin_use_sparse(n, nnz)
+        .unwrap_or(n * n)
 }
 
 /// Total f64 count of the state-set Jacobian scratch region: the seeds plus every

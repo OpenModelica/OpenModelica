@@ -1,3 +1,0 @@
-within ModelicaDataReconciliationSimpleTests;
-package Components
-end Components;

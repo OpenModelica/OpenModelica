@@ -233,7 +233,7 @@ pub static FLAG_DETAILED_DESC: CStrTable<159> = CStrTable([
     c"  Value specifies a path for reading the input files i.e., model_init.xml and model_info.json".as_ptr(),
     c"  Value specifies the hessematrix for Ipopt(OMC, BFGS, const).".as_ptr(),
     c"  Value specifies the initial guess for optimization (sim, const).".as_ptr(),
-    c"  Value specifies the Jacobian for Ipopt(SYM, NUM, NUMDENSE).".as_ptr(),
+    c"  Deprecated and ignored.".as_ptr(),
     c"  Value specifies the max number of iteration for ipopt.".as_ptr(),
     c"  Value specifies lvl for a warm start in ipopt: 1,2,3,...".as_ptr(),
     c"  Select the calculation method for Jacobian used by the integration method:\x0a".as_ptr(),
@@ -244,8 +244,8 @@ pub static FLAG_DETAILED_DESC: CStrTable<159> = CStrTable([
     c"  Value specifies the linear solver method".as_ptr(),
     c"  Value specifies the linear solver method for Ipopt, default mumps.\x0a  Note: Use if you build ipopt with other linear solver like ma27".as_ptr(),
     c"  Value specifies the linear sparse solver method".as_ptr(),
-    c"  Value specifies the maximum density for using a linear sparse solver.\x0a  The value is a Double with default value 0.2.".as_ptr(),
-    c"  Value specifies the minimum system size for using a linear sparse solver.\x0a  The value is an Integer with default value 1000.".as_ptr(),
+    c"  Value specifies the maximum density for using a linear sparse solver.\x0a  Without this flag and -lssMinSize, the compiler chooses dense or sparse\x0a  for each linear system. When either is given, the runtime chooses\x0a  instead, and the flag not given has its default (0.2 for the density,\x0a  1000 for the size).".as_ptr(),
+    c"  Value specifies the minimum system size for using a linear sparse solver.\x0a  Without this flag and -lssMaxDensity, the compiler chooses dense or sparse\x0a  for each linear system. When either is given, the runtime chooses\x0a  instead, and the flag not given has its default (0.2 for the density,\x0a  1000 for the size).".as_ptr(),
     c"  Value (a comma-separated String list) specifies which logging levels to\x0a  enable. Multiple options can be enabled at the same time.".as_ptr(),
     c"  Maximum number of times some repeating warnings are displayed.\x0a  Default value 3.".as_ptr(),
     c"  Interval (a comma-separated Double list with two elements) specifies in which\x0a  time interval logging is active. Doesn't affect LOG_STDOUT, LOG_ASSERT, and\x0a  LOG_SUCCESS, LOG_STATS, LOG_STATS_V.".as_ptr(),
@@ -270,8 +270,8 @@ pub static FLAG_DETAILED_DESC: CStrTable<159> = CStrTable([
     c"  Value specifies the nonlinear solver:".as_ptr(),
     c"  Outputs detailed information about solving process of non-linear systems into csv files.".as_ptr(),
     c"  Value specifies the linear solver used by the non-linear solver:".as_ptr(),
-    c"  Value specifies the maximum density for using a non-linear sparse solver.\x0a  The value is a Double with default value 0.1.".as_ptr(),
-    c"  Value specifies the minimum system size for using a non-linear sparse solver.\x0a  The value is an Integer with default value 1000.".as_ptr(),
+    c"  Value specifies the maximum density for using a non-linear sparse solver.\x0a  Without this flag and -nlssMinSize, the compiler chooses dense or sparse\x0a  for each nonlinear system. When either is given, the runtime chooses\x0a  instead, and the flag not given has its default (0.1 for the density,\x0a  1000 for the size).".as_ptr(),
+    c"  Value specifies the minimum system size for using a non-linear sparse solver.\x0a  Without this flag and -nlssMaxDensity, the compiler chooses dense or sparse\x0a  for each nonlinear system. When either is given, the runtime chooses\x0a  instead, and the flag not given has its default (0.1 for the density,\x0a  1000 for the size).".as_ptr(),
     c"  Value specifies the absolute tolerance for the Jacobian derivative test.".as_ptr(),
     c"  Value specifies the relative tolerance for the Jacobian derivative test.".as_ptr(),
     c"  Do not emit any results to the result file.".as_ptr(),
@@ -342,7 +342,7 @@ pub static FLAG_DETAILED_DESC: CStrTable<159> = CStrTable([
 ]);
 
 #[unsafe(no_mangle)]
-pub static SOLVER_METHOD_NAME: CStrTable<11> = CStrTable([
+pub static SOLVER_METHOD_NAME: CStrTable<14> = CStrTable([
     c"unknown".as_ptr(),
     c"dassl".as_ptr(),
     c"ida".as_ptr(),
@@ -350,24 +350,30 @@ pub static SOLVER_METHOD_NAME: CStrTable<11> = CStrTable([
     c"gbode".as_ptr(),
     c"euler".as_ptr(),
     c"rungekutta".as_ptr(),
-    c"symSolver".as_ptr(),
-    c"symSolverSsc".as_ptr(),
-    c"qss".as_ptr(),
+    c"heun".as_ptr(),
+    c"impeuler".as_ptr(),
+    c"trapezoid".as_ptr(),
+    c"imprungekutta".as_ptr(),
+    c"irksco".as_ptr(),
+    c"rungekuttassc".as_ptr(),
     c"optimization".as_ptr(),
 ]);
 
 #[unsafe(no_mangle)]
-pub static SOLVER_METHOD_DESC: CStrTable<11> = CStrTable([
+pub static SOLVER_METHOD_DESC: CStrTable<14> = CStrTable([
     c"unknown".as_ptr(),
     c"dassl (default) - BDF method - implicit (dense solver), variable step size control, adaptive order 1-5, event location".as_ptr(),
     c"ida - SUNDIALS IDA solver - BDF method - implicit (sparse/dense solver, default sparse) variable step size control, adaptive order 1-5, event location - additional simulation flags: -idaMaxErrorTestFails -idaMaxNonLinIters -idaMaxConvFails -idaNonLinConvCoef -idaLS -idaScaling -idaSensitivity".as_ptr(),
     c"cvode - SUNDIALS CVODE solver - BDF or Adams-Moulton solver - implicit (dense solver), variable step-size control, adaptive order 1-12, event location - additional simulation flags -cvodeLinearMultistepMethod -cvodeNonlinearSolverIteration".as_ptr(),
     c"gbode - generic Runge-Kutta ODE solver - implicit (sparse solver)/explicit, fixed/variable step size control, order 1-14, event location, optional bi-rate integration - additional simulation flags -gbm -gbctrl -gbratio - additional advanced flags -gbctrl_filter -gbctrl_fhr -gberr -gbint -gbnls -gbfm -gbfctrl -gbferr -gbfint -gbfnls".as_ptr(),
     c"euler - explicit Euler, fixed step size, order 1".as_ptr(),
-    c"rungekutta - classical Runge-Kutta - explicit, fixed step, order 4".as_ptr(),
-    c"symSolver - symbolic inline Solver [compiler flag '--symSolver' needed] - fixed step size, order 1".as_ptr(),
-    c"symSolverSsc - symbolic implicit Euler with step size control [compiler flag '--symSolver' needed] - step size control, order 1".as_ptr(),
-    c"qss - A QSS solver [experimental]".as_ptr(),
+    c"rungekutta - classical Runge-Kutta, shorthand for gbode with -gbm=rungekutta -gbctrl=const - explicit, fixed step, order 4".as_ptr(),
+    c"heun - shorthand for gbode with -gbm=heun -gbctrl=const".as_ptr(),
+    c"impeuler - shorthand for gbode with -gbm=impl_euler -gbctrl=const".as_ptr(),
+    c"trapezoid - shorthand for gbode with -gbm=trapezoid -gbctrl=const".as_ptr(),
+    c"imprungekutta - shorthand for gbode with -gbm=radauIA2 -gbctrl=const".as_ptr(),
+    c"irksco - shorthand for gbode with -gbm=trapezoid".as_ptr(),
+    c"rungekuttassc - shorthand for gbode with -gbm=rungekuttaSsc".as_ptr(),
     c"optimization - Special solver for dynamic optimization".as_ptr(),
 ]);
 
@@ -406,23 +412,21 @@ pub static JACOBIAN_METHOD_DESC: CStrTable<8> = CStrTable([
 ]);
 
 #[unsafe(no_mangle)]
-pub static LS_NAME: CStrTable<7> = CStrTable([
+pub static LS_NAME: CStrTable<6> = CStrTable([
     c"LS_UNKNOWN".as_ptr(),
     c"lapack".as_ptr(),
     c"lis".as_ptr(),
     c"klu".as_ptr(),
-    c"umfpack".as_ptr(),
     c"totalpivot".as_ptr(),
     c"default".as_ptr(),
 ]);
 
 #[unsafe(no_mangle)]
-pub static LS_DESC: CStrTable<7> = CStrTable([
+pub static LS_DESC: CStrTable<6> = CStrTable([
     c"unknown".as_ptr(),
     c"method using LAPACK LU factorization".as_ptr(),
     c"method using iterative solver Lis".as_ptr(),
     c"method using KLU sparse linear solver".as_ptr(),
-    c"method using UMFPACK sparse linear solver".as_ptr(),
     c"method using a total pivoting LU factorization for underdetermination systems".as_ptr(),
     c"default method - LAPACK with total pivoting as fallback".as_ptr(),
 ]);

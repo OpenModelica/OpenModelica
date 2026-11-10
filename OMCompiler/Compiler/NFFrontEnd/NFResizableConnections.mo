@@ -60,6 +60,7 @@ protected
   import Binding = NFBinding;
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
+  import ConnectEquations = NFConnectEquations;
   import Connector = NFConnector;
   import DAE;
   import Dimension = NFDimension;
@@ -67,6 +68,7 @@ protected
   import ElementSource;
   import MetaModelica.Dangerous.*;
   import Expression = NFExpression;
+  import Face = NFConnector.Face;
   import NFFunction.Function;
   import NFInstNode.InstNode;
   import NFInstNode;
@@ -1806,11 +1808,11 @@ protected
       obexp := Binding.getExpOpt(var.binding);
       if isSome(obexp) and Type.isInteger(var.ty) then
         SOME(bexp) := obexp;
-        if Expression.isInteger(bexp) and Variable.variability(var) <= Variability.CONSTANT then
+        if Expression.isInteger(bexp) and Variable.variability(var) <= Variability.STRUCTURAL_PARAMETER then
           alias := SOME(bexp);
           return;
         end if;
-        // only an expression of resizable parameters and constants, like NFFlatten.resizableDimensionAlias
+        // only an expression of resizable and structural parameters and constants, like NFFlatten.resizableDimensionAlias
         if not Expression.isInteger(bexp) and isAffineExp(bexp) and onlyResizableCrefs(bexp) then
           alias := SOME(bexp);
           return;
@@ -1842,7 +1844,7 @@ protected
   algorithm
     b := match exp
       case Expression.CREF() then not (ComponentRef.isResizable(exp.cref) or
-        ComponentRef.nodeVariability(exp.cref) <= Variability.CONSTANT);
+        ComponentRef.nodeVariability(exp.cref) <= Variability.STRUCTURAL_PARAMETER);
       else false;
     end match;
   end isNonResizableCref;
@@ -4395,7 +4397,8 @@ public
 
   function resolveStreams
     "replaces inStream(c[i].s) of connectors in the symbolic sets: the connector
-     itself if it is not connected, the other connector of a set of two"
+     itself if it is not connected, the other connector of a set of two, the
+     mixing of the other connectors of a larger set"
     input output FlatModel flatModel;
     input Sets sets;
     input Context ctx;
@@ -4404,14 +4407,18 @@ public
     input UnorderedSet<String> fixed;
   protected
     UnorderedMap<Integer, Pieces> groups = UnorderedMap.new<Pieces>(Util.id, intEq) "set root -> pieces";
+    UnorderedMap<ComponentRef, Variable> variables = UnorderedMap.new<Variable>(ComponentRef.hash, ComponentRef.isEqual);
     Integer r;
   algorithm
+    for var in flatModel.variables loop
+      UnorderedMap.add(var.name, var, variables);
+    end for;
     for p in Vector.size(sets.pieceVertex):-1:1 loop
       r := pieceFind(sets, p);
       UnorderedMap.add(r, p :: UnorderedMap.getOrDefault(r, groups, {}), groups);
     end for;
     flatModel := FlatModel.mapExp(flatModel, function Expression.map(func =
-      function evalInStream(sets = sets, ctx = ctx, streams = streams, facts = facts, groups = groups, fixed = fixed)));
+      function evalInStream(sets = sets, ctx = ctx, streams = streams, facts = facts, groups = groups, fixed = fixed, variables = variables)));
   end resolveStreams;
 
   function evalInStream
@@ -4422,6 +4429,7 @@ public
     input list<Aff> facts;
     input UnorderedMap<Integer, Pieces> groups;
     input UnorderedSet<String> fixed;
+    input UnorderedMap<ComponentRef, Variable> variables;
   algorithm
     exp := match exp
       local
@@ -4429,7 +4437,7 @@ public
       case Expression.CALL() guard Call.isNamed(exp.call, "inStream") algorithm
         {arg} := Call.arguments(exp.call);
       then match arg
-        case Expression.CREF() then inStreamExp(arg.cref, sets, ctx, streams, facts, groups, fixed);
+        case Expression.CREF() then inStreamExp(arg.cref, sets, ctx, streams, facts, groups, fixed, variables);
         else exp;
       end match;
       case Expression.CALL() guard Call.isNamed(exp.call, "actualStream") algorithm
@@ -4448,6 +4456,7 @@ public
     input list<Aff> facts;
     input UnorderedMap<Integer, Pieces> groups;
     input UnorderedSet<String> fixed;
+    input UnorderedMap<ComponentRef, Variable> variables;
     output Expression exp;
   protected
     ComponentRef cr, c;
@@ -4493,7 +4502,7 @@ public
     for p in sets.vertexPieces[v] loop
       box := Vector.get(sets.pieceBox, p);
       if boxEmpty(box, facts) <> YES and not fixedEmpty(p, sets, fixed, ctx.params) then
-        val := pieceInStream(p, idx, cref, cv, sets, ctx, streams, facts, groups, fixed);
+        val := pieceInStream(p, idx, cref, cv, sets, ctx, streams, facts, groups, fixed, variables);
         ocond := pieceCondition(idx, box, vbox, ctx.params);
         branches := (Util.getOptionOrDefault(ocond, Expression.BOOLEAN(true)), val) :: branches;
       end if;
@@ -4546,7 +4555,8 @@ public
 
   function pieceInStream
     "inStream of an element of a piece: the element itself if it is the only
-     connector of its set, the other connector of a set of two (element-wise)"
+     connector of its set, the other connector of a set of two (element-wise),
+     the mixing of the other connectors of a larger set of inside connectors"
     input Integer p;
     input list<Expression> idx;
     input ComponentRef cref;
@@ -4557,17 +4567,17 @@ public
     input list<Aff> facts;
     input UnorderedMap<Integer, Pieces> groups;
     input UnorderedSet<String> fixed;
+    input UnorderedMap<ComponentRef, Variable> variables;
     output Expression exp;
   protected
     list<Integer> members, real, free;
-    Integer q, c, cq, qv;
-    Sym off, offq;
-    list<Subscript> qsubs = {}, msubs;
-    Boolean found, elementwise;
+    Integer c;
+    Boolean elementwise;
     Iv iv;
     Connector conn;
-    list<ConnVar> qcvs;
-    ConnVar qcv;
+    list<Connector> inside = {};
+    Expression e;
+    ComponentRef cr;
   algorithm
     members := UnorderedMap.getOrFail(pieceFind(sets, p), groups);
     real := list(m for m guard isSome(vertexConn(ctx.vertices, Vector.get(sets.pieceVertex, m))) in members);
@@ -4587,11 +4597,55 @@ public
         end if;
       end for;
     end for;
-    if listLength(real) <> 2 or not elementwise then
-      unsupported("inStream of " + ComponentRef.toString(cref) + " (a connection set of more than two connectors)", DAE.emptyElementSource);
+    if not elementwise then
+      unsupported("inStream of " + ComponentRef.toString(cref) + " (a connection set that is not element-wise)", DAE.emptyElementSource);
     end if;
 
-    q := listHead(list(m for m guard m <> p in real));
+    if listLength(real) == 2 then
+      (exp, conn) := memberStream(listHead(list(m for m guard m <> p in real)), p, idx, cref, cv, sets, ctx, streams, facts);
+      // one inside and one outside connector: inStream(c1.s) = inStream(c2.s)
+      if Connector.isOutside(conn) then
+        exp := inStreamExp(Expression.toCref(exp), sets, ctx, streams, facts, groups, fixed, variables);
+      end if;
+      return;
+    end if;
+
+    for q in real loop
+      if q <> p then
+        (e, conn) := memberStream(q, p, idx, cref, cv, sets, ctx, streams, facts);
+        if Connector.isOutside(conn) then
+          unsupported("inStream of " + ComponentRef.toString(cref) + " (a connection set of more than two connectors with an outside connector)", DAE.emptyElementSource);
+        end if;
+        cr := Expression.toCref(e);
+        inside := Connector.fromFacedCref(cr, ComponentRef.getSubscriptedType(cr), Face.INSIDE, DAE.emptyElementSource) :: inside;
+      end if;
+    end for;
+    exp := ConnectEquations.insideStreamMixing(cref, listReverseInPlace(inside), variables);
+  end pieceInStream;
+
+  function memberStream
+    "the stream variable of the element of member q of a set that is connected to
+     the element idx of piece p"
+    input Integer q;
+    input Integer p;
+    input list<Expression> idx;
+    input ComponentRef cref;
+    input ConnVar cv;
+    input Sets sets;
+    input Context ctx;
+    input array<list<ConnVar>> streams;
+    input list<Aff> facts;
+    output Expression exp;
+    output Connector conn;
+  protected
+    Integer c, cq, qv;
+    Sym off, offq;
+    list<Subscript> qsubs = {}, msubs;
+    Boolean found;
+    Iv iv;
+    list<ConnVar> qcvs;
+    ConnVar qcv;
+  algorithm
     qv := Vector.get(sets.pieceVertex, q);
     SOME(conn) := vertexConn(ctx.vertices, qv);
 
@@ -4632,11 +4686,7 @@ public
     if not List.all(msubs, Subscript.isWhole) then
       exp := Expression.applySubscripts(msubs, exp);
     end if;
-    // one inside and one outside connector: inStream(c1.s) = inStream(c2.s)
-    if Connector.isOutside(conn) then
-      exp := inStreamExp(Expression.toCref(exp), sets, ctx, streams, facts, groups, fixed);
-    end if;
-  end pieceInStream;
+  end memberStream;
 
   function resolve
     "Generates the connection equations of the connect equations of the model

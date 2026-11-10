@@ -276,8 +276,8 @@ public
     eq := match eq
       case Equation.EQUALITY(rhs = e1)
         algorithm
-          e1:= Expression.map(e1, addTrailingWholeIndices);
-          e2 := Expression.map(e1, expandSlicedCrefsExp);
+          e2 := Expression.map(e1, addTrailingWholeIndices);
+          e2 := Expression.map(e2, expandSlicedCrefsExp);
 
           if not referenceEq(e1, e2) then
             eq.rhs := e2;
@@ -309,8 +309,8 @@ public
       case Statement.ASSIGNMENT(rhs = e1)
         algorithm
           stmt.lhs := Expression.map(stmt.lhs, addTrailingWholeIndices);
-          e1 := Expression.map(e1, addTrailingWholeIndices);
-          e2 := Expression.map(e1, expandSlicedCrefsExp);
+          e2 := Expression.map(e1, addTrailingWholeIndices);
+          e2 := Expression.map(e2, expandSlicedCrefsExp);
 
           if not referenceEq(e1, e2) then
             stmt.rhs := e2;

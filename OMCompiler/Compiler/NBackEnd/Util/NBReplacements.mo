@@ -168,11 +168,11 @@ public
     This should be applied before partitioning. Otherwise all systems have to be checked for jacobians
     and hessians on which this also has to be applied. Can be applied on single jacobians and hessians
     while removing simple equations on them."
-    input output EqData eqData;
-    input output VarData varData; // bindings
+    input EqData eqData;
+    input VarData varData; // bindings
     input UnorderedMap<ComponentRef, Expression> replacements "rules for replacements are stored inside here";
+    output list<Pointer<Equation>> changed = {} "the changed equations";
   protected
-    list<tuple<ComponentRef, Expression>> entries;
     ComponentRef aliasCref;
     Expression replacement;
     Pointer<Variable> var_ptr;
@@ -180,25 +180,24 @@ public
   algorithm
     // do nothing if replacements are empty
     if UnorderedMap.isEmpty(replacements) then return; end if;
-    eqData := EqData.mapExp(eqData, function applySimpleExp(replacements = replacements), SOME(function applySimpleCref(replacements = replacements)));
+    (_, changed) := EqData.mapExp(eqData, function applySimpleExp(replacements = replacements), SOME(function applySimpleCref(replacements = replacements)));
 
     // apply on bindings (is this necessary?)
-    varData := match varData
+    () := match varData
       case VarData.VAR_DATA_SIM() algorithm
-        varData.variables := VariablePointers.map(varData.variables, function applySimpleVar(replacements = replacements));
-        varData.aliasVars := VariablePointers.map(varData.aliasVars, function applySimpleVar(replacements = replacements));
-      then varData;
+        VariablePointers.map(varData.variables, function applySimpleVar(replacements = replacements));
+        VariablePointers.map(varData.aliasVars, function applySimpleVar(replacements = replacements));
+      then ();
       case VarData.VAR_DATA_JAC() algorithm
-        varData.variables := VariablePointers.map(varData.variables, function applySimpleVar(replacements = replacements));
-      then varData;
+        VariablePointers.map(varData.variables, function applySimpleVar(replacements = replacements));
+      then ();
       case VarData.VAR_DATA_HES() algorithm
-        varData.variables := VariablePointers.map(varData.variables, function applySimpleVar(replacements = replacements));
-      then varData;
+        VariablePointers.map(varData.variables, function applySimpleVar(replacements = replacements));
+      then ();
     end match;
 
     // update alias variable bindings
-    entries := UnorderedMap.toList(replacements);
-    for entry in entries loop
+    for entry in UnorderedMap.toList(replacements) loop
       (aliasCref, replacement) := entry;
       var_ptr := BVariable.getVarPointer(aliasCref, sourceInfo());
       var := Pointer.access(var_ptr);

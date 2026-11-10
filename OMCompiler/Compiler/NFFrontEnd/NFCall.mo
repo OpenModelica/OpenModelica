@@ -711,8 +711,13 @@ public
       case TYPED_CALL()
         then match functionNameFirst(call)
           case "abs" then Expression.isNonZero(listHead(call.arguments));
+          case "cosh" then true;
+          case "exp" then true;
           case "max" then List.any(call.arguments, Expression.isPositive);
           case "min" then List.all(call.arguments, Expression.isPositive);
+          case "sign" then Expression.isPositive(listHead(call.arguments));
+          case "sinh" then Expression.isPositive(listHead(call.arguments));
+          case "sqrt" then Expression.isPositive(listHead(call.arguments));
           else false;
         end match;
 
@@ -728,9 +733,14 @@ public
     negative := match call
       case TYPED_CALL()
         then match functionNameFirst(call)
-          case "abs" then false;
-          case "min" then List.any(call.arguments, Expression.isNegative);
+          //case "abs" then false;
+          //case "cosh" then false;
+          //case "exp" then false;
           case "max" then List.all(call.arguments, Expression.isNegative);
+          case "min" then List.any(call.arguments, Expression.isNegative);
+          case "sign" then Expression.isNegative(listHead(call.arguments));
+          case "sinh" then Expression.isNegative(listHead(call.arguments));
+          //case "sqrt" then false;
           else false;
         end match;
 
@@ -747,8 +757,13 @@ public
       case TYPED_CALL()
         then match functionNameFirst(call)
           case "abs" then Expression.isZero(listHead(call.arguments));
+          //case "cosh" then false;
+          //case "exp" then false;
           case "max" then List.all(call.arguments, Expression.isNonPositive);
           case "min" then List.any(call.arguments, Expression.isNonPositive);
+          case "sign" then Expression.isNonPositive(listHead(call.arguments));
+          case "sinh" then Expression.isNonPositive(listHead(call.arguments));
+          case "sqrt" then Expression.isZero(listHead(call.arguments));
           else false;
         end match;
 
@@ -765,8 +780,13 @@ public
       case TYPED_CALL()
         then match functionNameFirst(call)
           case "abs" then true;
+          case "cosh" then true;
+          case "exp" then true;
           case "max" then List.any(call.arguments, Expression.isNonNegative);
           case "min" then List.all(call.arguments, Expression.isNonNegative);
+          case "sign" then Expression.isNonNegative(listHead(call.arguments));
+          case "sinh" then Expression.isNonNegative(listHead(call.arguments));
+          case "sqrt" then true;
           else false;
         end match;
 
@@ -1447,38 +1467,76 @@ public
           cast_ty := Type.setArrayElementType(call.ty, ty);
         then
           match AbsynUtil.pathFirstIdent(Function.name(call.fn))
+            case "cat" then typeCastRestArgs(call, ty, cast_ty);
             // For 'fill' we can type cast the first argument rather than the
             // whole array that 'fill' constructs.
-            case "fill"
-              algorithm
-                call.arguments := Expression.typeCast(listHead(call.arguments), ty) ::
-                                  listRest(call.arguments);
-                call.ty := cast_ty;
-              then
-                Expression.CALL(call);
-
+            case "fill" then typeCastFirstArg(call, ty, cast_ty);
             // For diagonal we can type cast the argument rather than the
             // matrix that diagonal constructs.
-            case "diagonal"
-              algorithm
-                call.arguments := {Expression.typeCast(listHead(call.arguments), ty)};
-                call.ty := cast_ty;
-              then
-                Expression.CALL(call);
-
+            case "diagonal" then typeCastArgs(call, ty, cast_ty);
             // For DynamicSelect we type cast both of the arguments.
-            case "DynamicSelect"
-              algorithm
-                call.arguments := list(Expression.typeCast(arg, ty) for arg in call.arguments);
-              then
-                Expression.CALL(call);
-
+            case "DynamicSelect" then typeCastArgs(call, ty, cast_ty);
+            // Cast the argument of matrix unless it's more expensive than casting the result.
+            case "matrix" guard Type.dimensionCount(ty) <= 2 then typeCastArgs(call, ty, cast_ty);
+            case "promote" then typeCastFirstArg(call, ty, cast_ty);
+            case "transpose" then typeCastArgs(call, ty, cast_ty);
+            // Cast the argument of vector unless it's more expensive than casting the result.
+            case "vector" guard Type.dimensionCount(ty) <= 1 then typeCastArgs(call, ty, cast_ty);
             else Expression.CAST(cast_ty, callExp);
           end match;
 
       else Expression.typeCastGeneric(callExp, ty);
     end match;
   end typeCast;
+
+  function typeCastArgs
+    input Call call;
+    input Type ty;
+    input Type callTy;
+    output Expression result;
+  algorithm
+    result := match call
+      case TYPED_CALL()
+        algorithm
+          call.arguments := list(Expression.typeCast(arg, ty) for arg in call.arguments);
+          call.ty := callTy;
+        then
+          Expression.CALL(call);
+    end match;
+  end typeCastArgs;
+
+  function typeCastFirstArg
+    input Call call;
+    input Type ty;
+    input Type callTy;
+    output Expression result;
+  algorithm
+    result := match call
+      case TYPED_CALL()
+        algorithm
+          call.arguments := Expression.typeCast(listHead(call.arguments), ty) :: listRest(call.arguments);
+          call.ty := callTy;
+        then
+          Expression.CALL(call);
+    end match;
+  end typeCastFirstArg;
+
+  function typeCastRestArgs
+    input Call call;
+    input Type ty;
+    input Type callTy;
+    output Expression result;
+  algorithm
+    result := match call
+      case TYPED_CALL()
+        algorithm
+          call.arguments := listHead(call.arguments) ::
+            list(Expression.typeCast(arg, ty) for arg in listRest(call.arguments));
+          call.ty := callTy;
+        then
+          Expression.CALL(call);
+    end match;
+  end typeCastRestArgs;
 
   function containsExp
     input Call call;
@@ -1896,6 +1954,7 @@ public
         list<tuple<InstNode, Expression>> iters;
         Option<Expression> default_exp;
         tuple<Option<Expression>, String, String> fold_exp;
+        Option<Expression> fold_opt;
 
       case UNTYPED_CALL()
         algorithm
@@ -1929,39 +1988,47 @@ public
 
       case TYPED_CALL()
         algorithm
-          args := list(Expression.map(arg, func) for arg in call.arguments);
+          args := List.mapCheckReferenceEq(call.arguments, function Expression.map(func = func));
         then
-          TYPED_CALL(call.fn, call.ty, call.var, call.purity, args, call.attributes);
+          if referenceEq(call.arguments, args) then call
+            else TYPED_CALL(call.fn, call.ty, call.var, call.purity, args, call.attributes);
 
       case UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
           e := Expression.map(call.exp, func);
           iters := mapIteratorsExp(call.iters, func);
         then
-          UNTYPED_ARRAY_CONSTRUCTOR(e, iters);
+          if referenceEq(call.exp, e) and referenceEq(call.iters, iters) then call
+            else UNTYPED_ARRAY_CONSTRUCTOR(e, iters);
 
       case TYPED_ARRAY_CONSTRUCTOR()
         algorithm
           e := Expression.map(call.exp, func);
           iters := mapIteratorsExp(call.iters, func);
         then
-          TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, call.purity, e, iters);
+          if referenceEq(call.exp, e) and referenceEq(call.iters, iters) then call
+            else TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, call.purity, e, iters);
 
       case UNTYPED_REDUCTION()
         algorithm
           e := Expression.map(call.exp, func);
           iters := mapIteratorsExp(call.iters, func);
         then
-          UNTYPED_REDUCTION(call.ref, e, iters);
+          if referenceEq(call.exp, e) and referenceEq(call.iters, iters) then call
+            else UNTYPED_REDUCTION(call.ref, e, iters);
 
       case TYPED_REDUCTION()
         algorithm
           e := Expression.map(call.exp, func);
           iters := mapIteratorsExp(call.iters, func);
-          default_exp := Util.applyOption(call.defaultExp, function Expression.map(func = func));
-          fold_exp := Util.applyTuple31(call.foldExp, function Expression.mapOpt(func = func));
+          default_exp := Expression.mapOpt(call.defaultExp, func);
+          fold_opt := Expression.mapOpt(Util.tuple31(call.foldExp), func);
+          fold_exp := if referenceEq(fold_opt, Util.tuple31(call.foldExp)) then call.foldExp
+            else (fold_opt, Util.tuple32(call.foldExp), Util.tuple33(call.foldExp));
         then
-          TYPED_REDUCTION(call.fn, call.ty, call.var, call.purity, e, iters, default_exp, fold_exp);
+          if referenceEq(call.exp, e) and referenceEq(call.iters, iters) and
+             referenceEq(call.defaultExp, default_exp) and referenceEq(call.foldExp, fold_exp) then call
+            else TYPED_REDUCTION(call.fn, call.ty, call.var, call.purity, e, iters, default_exp, fold_exp);
 
     end match;
   end mapExp;
@@ -1977,14 +2044,16 @@ public
   protected
     InstNode node;
     Expression exp, new_exp;
+    Boolean changed = false;
   algorithm
     for i in iters loop
       (node, exp) := i;
       new_exp := Expression.map(exp, func);
+      changed := changed or not referenceEq(new_exp, exp);
       outIters := (if referenceEq(new_exp, exp) then i else (node, new_exp)) :: outIters;
     end for;
 
-    outIters := listReverseInPlace(outIters);
+    outIters := if changed then listReverseInPlace(outIters) else iters;
   end mapIteratorsExp;
 
   function mapExpShallow
@@ -2697,7 +2766,7 @@ protected
     if isSome(inputNode) then
       ty := InstNode.getType(Component.classInstance(InstNode.component(Util.getOption(inputNode))));
 
-      if Type.codeName(ty) <> "" and not isNameCall(exp, ty) then
+      if Type.codeName(ty) <> "" and not isNameCall(exp, ty) and not isValueName(exp, scope) then
         arg := Expression.quoteCode(scriptCode(exp), ty, info);
         return;
       end if;
@@ -2705,6 +2774,49 @@ protected
 
     arg := Inst.instExp(exp, scope, context, info);
   end instCodeArg;
+
+  function isValueName
+    "Whether a name passed for a $Code input stands for a value rather than
+     for itself: an iterator, e.g. getSourceFile(cl) in
+     {getSourceFile(cl) for cl in getClassNames()}, or a subscripted script
+     variable, e.g. cls[i]."
+    input Absyn.Exp exp;
+    input InstNode scope;
+    output Boolean res = false;
+  protected
+    Absyn.ComponentRef cref;
+    String name;
+    InstNode s = scope, parent;
+    list<InstNode> locals;
+  algorithm
+    if not AbsynUtil.isCref(exp) then
+      return;
+    end if;
+
+    Absyn.CREF(componentRef = cref) := exp;
+    name := AbsynUtil.crefFirstIdent(cref);
+
+    // Only the iterator scopes are searched, a general lookup could load a
+    // library for a class name.
+    while InstNode.isImplicit(s) loop
+      InstNode.IMPLICIT_SCOPE(parentScope = parent, locals = locals) := s;
+
+      if List.any(locals, function InstNode.isNamed(name = name)) then
+        res := true;
+        return;
+      end if;
+
+      s := parent;
+    end while;
+
+    if AbsynUtil.crefHasSubscripts(cref) then
+      try
+        _ := BackendInterface.lookupScriptVariable(Absyn.CREF_IDENT(name, {}));
+        res := true;
+      else
+      end try;
+    end if;
+  end isValueName;
 
   function lookupScriptingInputs
     "In a script, returns the inputs of the OpenModelica.Scripting function a
@@ -2854,8 +2966,9 @@ protected
         algorithm
           variability := Variability.CONSTANT;
           purity := Purity.PURE;
-          // The size of the expression must be known unless we're in a function.
-          is_structural := not InstContext.inFunction(context);
+          // The size of the expression must be known unless we're in a function
+          // or a script, where the range is only evaluated when the call is.
+          is_structural := not (InstContext.inFunction(context) or InstContext.inScripting(context));
           next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
 
           for i in listReverse(call.iters) loop

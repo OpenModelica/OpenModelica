@@ -129,6 +129,11 @@ static void svd_dense_free(SVD_DATA* svd_data)
  */
 static int svd_dense_compute_lapack(SVD_DATA* svd_data)
 {
+#if defined(OMC_FMI_RUNTIME)
+    /* The LAPACK subset an FMU carries has no dgesvd. */
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Dense SVD analysis is not available in an FMU.");
+    return -1;
+#else
     int rows = svd_data->rows;
     int cols = svd_data->cols;
     int lda = rows;
@@ -163,6 +168,7 @@ static int svd_dense_compute_lapack(SVD_DATA* svd_data)
     // VT = V^T - column major
 
     return info;
+#endif
 }
 
 /**

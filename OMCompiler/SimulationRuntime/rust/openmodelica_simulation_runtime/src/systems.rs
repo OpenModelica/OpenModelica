@@ -135,12 +135,26 @@ pub fn initialize_linear_systems(data: *mut DATA, thread_data: *mut threadData_t
             ls.jacobian = jacobian;
         }
 
-        // `-ls` reaches klu and umfpack too, so naming a solver can override the
-        // format.
+        // `-ls` reaches klu too, so naming a solver can override the format.
+        let nnz = ls.nnz.max(0) as usize;
         ls.useSparseSolver = if lss_flag {
             1
         } else if ls_flag {
             0
+        } else if let Some(sparse) = openmodelica_solvers::solverflags::lss_override(size, nnz) {
+            if sparse {
+                let t = openmodelica_solvers::solverflags::sparse_thresholds();
+                omclog::info!(
+                    omclog::STDOUT,
+                    false,
+                    "Using sparse solver for linear system {i} ({}),\nbecause density of {:.3} is under threshold of {:.3} or size of {size} exceeds threshold of {}.",
+                    ls.equationIndex,
+                    nnz as f64 / (size as f64 * size as f64),
+                    t.lss_max_density,
+                    t.lss_min_size,
+                );
+            }
+            sparse as modelica_boolean
         } else {
             (ls.matrixFormat == OMC_MATRIX_SPARSE) as modelica_boolean
         };
@@ -154,7 +168,6 @@ pub fn initialize_linear_systems(data: *mut DATA, thread_data: *mut threadData_t
         }
         ls.setBElement = Some(set_b_element);
         if ls.useSparseSolver != 0 {
-            let nnz = ls.nnz.max(0) as usize;
             ls.setAElement = Some(set_a_element_klu);
             let scratch = Box::new(KluData {
                 ap: vec![0; size + 1],
@@ -311,7 +324,7 @@ pub fn eval_jacobian(
 }
 
 /// C's `solve_linear_system`: the `-ls` ladder over the dense solvers. A sparse
-/// `-lss` and `-ls=klu`/`umfpack`/`lis` are not served; they are warned about once
+/// `-lss` and `-ls=klu`/`lis` are not served; they are warned about once
 /// and factored densely.
 /// C's `readFlag`s in `initRuntimeAndSimulation`: `-ls`, `-nls` and `-nlsLS` onto
 /// `simulationInfo`, in `simulation_options.h`'s enumerations. The generated code
@@ -325,7 +338,6 @@ pub fn apply_solver_flags(si: &mut SIMULATION_INFO, f: &openmodelica_sim_meta::s
             Ls::Lapack => LS_LAPACK,
             Ls::Lis => LS_LIS,
             Ls::Klu => LS_KLU,
-            Ls::Umfpack => LS_UMFPACK,
             Ls::TotalPivot => LS_TOTALPIVOT,
         };
     }
@@ -343,7 +355,6 @@ pub fn apply_solver_flags(si: &mut SIMULATION_INFO, f: &openmodelica_sim_meta::s
         si.lssMethod = match lss {
             Lss::Default => LSS_DEFAULT,
             Lss::Klu | Lss::Rsparse => LSS_KLU,
-            Lss::Umfpack => LSS_UMFPACK,
             Lss::Lis => LSS_LIS,
         };
     }
@@ -450,7 +461,6 @@ fn warn_once_unsupported_ls(method: c_int) {
     let name = match method {
         LS_LIS => "lis",
         LS_KLU => "klu",
-        LS_UMFPACK => "umfpack",
         _ => "the requested",
     };
     omclog::info!(
@@ -469,7 +479,6 @@ fn warn_once_unsupported_lss(method: c_int) {
     }
     let name = match method {
         LSS_LIS => "lis",
-        LSS_UMFPACK => "umfpack",
         _ => "the requested",
     };
     omclog::info!(

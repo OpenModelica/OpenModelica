@@ -113,17 +113,17 @@ buildModel(AdjointJacobian2); getErrorString();
 //   (14) z := $START.z
 //   (13) l := $START.l
 //   (12) m := $START.m
-//   (11) q := x * y
+//   (11) q := x*y
 //   (10) t := q + z
 //   (9) $FUN_1 := sin(x)
 //   (8) $FUN_2 := cos(y)
-//   (7) $DER.x := a * x + b * q
-//   (6) $DER.y := c * y - d * q
-//   (5) $DER.z := x / y
-//   (4) $DER.l := x ^ y
-//   (3) $DER.m := $FUN_1 * $FUN_2 + t
+//   (7) $DER.x := a*x + b*q
+//   (6) $DER.y := c*y - d*q
+//   (5) $DER.z := x/y
+//   (4) $DER.l := x^y
+//   (3) $DER.m := $FUN_1*$FUN_2 + t
 //   (2) k := $START.k
-//   (1) $DER.k := A * B * k
+//   (1) $DER.k := A*B*k
 //
 // ODE Partition 1
 // -----------------
@@ -196,33 +196,33 @@ buildModel(AdjointJacobian2); getErrorString();
 // Column Equations (size = 10)
 // ------------------------------
 //   (36) Algorithm
-//   $pDER_ODE_JAC_ADJ.$FUN_2 := $pDER_ODE_JAC_ADJ.$FUN_2 + $SEED_ODE_JAC_ADJ.$DER.m * $FUN_1;
-//   $pDER_ODE_JAC_ADJ.$FUN_1 := $pDER_ODE_JAC_ADJ.$FUN_1 + $SEED_ODE_JAC_ADJ.$DER.m * $FUN_2;
+//   $pDER_ODE_JAC_ADJ.$FUN_2 := $pDER_ODE_JAC_ADJ.$FUN_2 + $SEED_ODE_JAC_ADJ.$DER.m*$FUN_1;
+//   $pDER_ODE_JAC_ADJ.$FUN_1 := $pDER_ODE_JAC_ADJ.$FUN_1 + $SEED_ODE_JAC_ADJ.$DER.m*$FUN_2;
 //   $pDER_ODE_JAC_ADJ.t := $pDER_ODE_JAC_ADJ.t + $SEED_ODE_JAC_ADJ.$DER.m;
 //   (35) Algorithm
-//   $pDER_ODE_JAC_ADJ.y := $pDER_ODE_JAC_ADJ.y - $SEED_ODE_JAC_ADJ.$DER.z * (x / (y * y));
-//   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x + $SEED_ODE_JAC_ADJ.$DER.z * (1/y);
+//   $pDER_ODE_JAC_ADJ.y := $pDER_ODE_JAC_ADJ.y - $SEED_ODE_JAC_ADJ.$DER.z*(x/(y*y));
+//   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x + $SEED_ODE_JAC_ADJ.$DER.z*(1/y);
 //   (34) Algorithm
 //   $pDER_ODE_JAC_ADJ.q := $pDER_ODE_JAC_ADJ.q + $pDER_ODE_JAC_ADJ.t;
 //   $pDER_ODE_JAC_ADJ.z := $pDER_ODE_JAC_ADJ.z + $pDER_ODE_JAC_ADJ.t;
 //   (33) Algorithm
-//   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x + $pDER_ODE_JAC_ADJ.$FUN_1 * cos(x);
+//   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x + $pDER_ODE_JAC_ADJ.$FUN_1*cos(x);
 //   (32) Algorithm
-//   $pDER_ODE_JAC_ADJ.y := $pDER_ODE_JAC_ADJ.y - $pDER_ODE_JAC_ADJ.$FUN_2 * sin(y);
+//   $pDER_ODE_JAC_ADJ.y := $pDER_ODE_JAC_ADJ.y - $pDER_ODE_JAC_ADJ.$FUN_2*sin(y);
 //   (31) Algorithm
-//   $pDER_ODE_JAC_ADJ.y := $pDER_ODE_JAC_ADJ.y + $SEED_ODE_JAC_ADJ.$DER.l * x ^ y * log(x);
-//   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x + $SEED_ODE_JAC_ADJ.$DER.l * y * x ^ ((-1.0) + y);
+//   $pDER_ODE_JAC_ADJ.y := $pDER_ODE_JAC_ADJ.y + $SEED_ODE_JAC_ADJ.$DER.l*x^y*log(x);
+//   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x + $SEED_ODE_JAC_ADJ.$DER.l*y*x^((-1.0) + y);
 //   (30) Algorithm
-//   $pDER_ODE_JAC_ADJ.q := $pDER_ODE_JAC_ADJ.q - $SEED_ODE_JAC_ADJ.$DER.y * d;
-//   $pDER_ODE_JAC_ADJ.y := $pDER_ODE_JAC_ADJ.y + $SEED_ODE_JAC_ADJ.$DER.y * c;
+//   $pDER_ODE_JAC_ADJ.q := $pDER_ODE_JAC_ADJ.q - $SEED_ODE_JAC_ADJ.$DER.y*d;
+//   $pDER_ODE_JAC_ADJ.y := $pDER_ODE_JAC_ADJ.y + $SEED_ODE_JAC_ADJ.$DER.y*c;
 //   (29) Algorithm
-//   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x + $SEED_ODE_JAC_ADJ.$DER.x * a;
-//   $pDER_ODE_JAC_ADJ.q := $pDER_ODE_JAC_ADJ.q + $SEED_ODE_JAC_ADJ.$DER.x * b;
+//   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x + $SEED_ODE_JAC_ADJ.$DER.x*a;
+//   $pDER_ODE_JAC_ADJ.q := $pDER_ODE_JAC_ADJ.q + $SEED_ODE_JAC_ADJ.$DER.x*b;
 //   (28) Algorithm
-//   $pDER_ODE_JAC_ADJ.y := $pDER_ODE_JAC_ADJ.y + $pDER_ODE_JAC_ADJ.q * x;
-//   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x + $pDER_ODE_JAC_ADJ.q * y;
+//   $pDER_ODE_JAC_ADJ.y := $pDER_ODE_JAC_ADJ.y + $pDER_ODE_JAC_ADJ.q*x;
+//   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x + $pDER_ODE_JAC_ADJ.q*y;
 //   (27) Algorithm
-//   $pDER_ODE_JAC_ADJ.k := $pDER_ODE_JAC_ADJ.k .+ transpose(A * B) * $SEED_ODE_JAC_ADJ.$DER.k;
+//   $pDER_ODE_JAC_ADJ.k := $pDER_ODE_JAC_ADJ.k .+ transpose(A*B)*$SEED_ODE_JAC_ADJ.$DER.k;
 //
 // Resizable Sparsity Pattern
 // ----------------------------

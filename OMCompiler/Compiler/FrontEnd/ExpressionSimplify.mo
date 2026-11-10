@@ -1410,11 +1410,6 @@ algorithm
    guard Expression.isConst(e1)
      then e1;
 
-   // df_der(const) --> 0
-   case DAE.CALL(path=Absyn.IDENT("$_DF$DER"),expLst={e1})
-   guard Expression.isConst(e1)
-     then Expression.makeConstZeroE(e1);
-
    // We only match delay with 3 arguments in most places...
    case e as DAE.CALL(path=Absyn.IDENT("delay"),expLst={e1,e2})
      algorithm

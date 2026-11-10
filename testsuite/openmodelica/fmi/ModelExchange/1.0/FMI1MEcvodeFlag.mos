@@ -28,8 +28,8 @@ end ExpDecayCvode;
 // Export must succeed (FMU compiles) and emit a warning that s:cvode is ignored.
 buildModelFMU(ExpDecayCvode, version="1.0", fmuType="me"); getErrorString();
 
-// The generated FMU CMake project must keep NEED_CVODE OFF, so the sundials
-// sources are not compiled into the FMI 1.0 FMU.
+// The generated FMU CMake project must keep NEED_CVODE OFF, so CVODE is not
+// compiled into the FMI 1.0 FMU.
 system("unzip -p ExpDecayCvode.fmu sources/CMakeLists.txt | grep -A1 'set(NEED_CVODE' > ExpDecayCvode_cmake.txt"); getErrorString();
 readFile("ExpDecayCvode_cmake.txt"); getErrorString();
 
@@ -39,7 +39,8 @@ readFile("ExpDecayCvode_cmake.txt"); getErrorString();
 // true
 // ""
 // "ExpDecayCvode.fmu"
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: FMI 1.0 export is deprecated and will be removed after OpenModelica 1.28.0 is released. Export FMI 2.0 or 3.0 instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // Warning: OpenModelica exports FMI 1.0 as Model Exchange only (Co-Simulation export requires FMI 2.0). A model-exchange FMU is integrated by the importer, so the in-FMU CVODE integrator does not apply. The 's:cvode' simulation flag is ignored for this FMI 1.0 export.
 // Notification: Building FMU for platform 'static' (1/1).
 // Notification: Finished FMU for platform 'static' (1/1).

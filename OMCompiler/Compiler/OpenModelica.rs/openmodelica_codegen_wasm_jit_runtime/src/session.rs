@@ -32,12 +32,13 @@ use openmodelica_sim_meta::{SimMeta, SolveStats};
 unsafe extern "C" {
     fn rt_host_now_ms() -> f64;
     fn rt_host_cancel() -> i32;
+    fn rt_host_progress(permille: i32);
     /// Copy up to `max` of the violations the model left with the host's
     /// `rt_assert`/`rt_assert_warning` (which it imports either way) to `ptr`.
     fn rt_host_take_warnings(ptr: u32, max: u32) -> u32;
     /// Same for the `reinit`s the model recorded with `rt_reinit_note`.
     fn rt_host_take_reinits(ptr: u32, max: u32) -> u32;
-    /// Move the host's pending failed assertion (`[i32; 9]`) to `ptr`; 0 if none.
+    /// Move the host's pending failed assertion (`[i32; 10]`) to `ptr`; 0 if none.
     fn rt_host_take_assert(ptr: u32) -> i32;
     /// The driver's `AssertHold` mode, on the host: that is where `rt_assert`
     /// lives, whichever driver runs.
@@ -57,6 +58,9 @@ pub(crate) fn now_ms_hook() -> f64 {
 }
 fn cancel_hook() -> bool {
     unsafe { rt_host_cancel() != 0 }
+}
+fn progress_hook(permille: i32) {
+    unsafe { rt_host_progress(permille) };
 }
 
 // A model error unwinds to its `<entry>$guard` past any runtime frames between,
@@ -179,10 +183,10 @@ impl SimEngine for InWasmEngine {
     fn has_simulate_entry(&mut self) -> bool {
         slot_of("simulate").is_some_and(|s| self.present(s))
     }
-    fn take_pending_warnings(&mut self) -> Vec<[i32; 10]> {
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 11]> {
         let mut out = Vec::new();
         loop {
-            let mut buf = [[0i32; 10]; 8];
+            let mut buf = [[0i32; 11]; 8];
             let n = unsafe { rt_host_take_warnings(buf.as_mut_ptr() as u32, buf.len() as u32) } as usize;
             out.extend_from_slice(&buf[..n.min(buf.len())]);
             if n < buf.len() {
@@ -201,8 +205,8 @@ impl SimEngine for InWasmEngine {
             }
         }
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
-        let mut buf = [0i32; 9];
+    fn take_pending_assert(&mut self) -> Option<[i32; 10]> {
+        let mut buf = [0i32; 10];
         (unsafe { rt_host_take_assert(buf.as_mut_ptr() as u32) } != 0).then_some(buf)
     }
     fn rt_stats(&mut self) -> [u64; driver::RT_STATS] {
@@ -588,6 +592,7 @@ pub extern "C" fn rt_sim_start(
         &model,
     );
     driver::set_cancel_hook(cancel_hook);
+    driver::set_progress_hook(progress_hook);
     driver::set_init_done_hook(init_done_hook);
     openmodelica_sim_meta::files::set_writer(|path, bytes| {
         crate::files::write_file(path, &alloc::string::String::from_utf8_lossy(bytes));

@@ -64,6 +64,7 @@ protected
   import MutableWeak;
   import NFModifier.Modifier;
   import Operator = NFOperator;
+  import SimplifyExp = NFSimplifyExp;
   import Statement = NFStatement;
   import Subscript = NFSubscript;
   import Type = NFType;
@@ -1286,30 +1287,43 @@ protected
   end inlineCatCallLiterals;
 
   function bumpShift
+    "shift + new_size as one flat sum, so that resizable sizes cancel, e.g. 1 + (N - 1) -> N"
     input output Expression shift;
     input Expression new_size;
+  protected
+    list<Expression> args = {}, inv_args = {};
   algorithm
-    shift := match(shift, new_size)
-      local
-        Integer value;
-        Expression arg;
-        list<Expression> args;
-      // two integers, just add them
-      case (Expression.INTEGER(), Expression.INTEGER()) then Expression.INTEGER(shift.value + new_size.value);
-      // add integer to multary. first argument of multary is the integer (the algorithm here makes sure of it)
-      case (Expression.MULTARY(arguments = Expression.INTEGER(value) :: args), Expression.INTEGER())
-        guard(Operator.getMathClassification(shift.operator) == NFOperator.MathClassification.ADDITION) algorithm
-        shift.arguments := Expression.INTEGER(value + new_size.value) :: args;
-      then shift;
-      // add anything to multary. make sure the first argument is untouched
-      case (Expression.MULTARY(arguments = arg :: args), _)
-        guard(Operator.getMathClassification(shift.operator) == NFOperator.MathClassification.ADDITION) algorithm
-        shift.arguments := arg :: new_size :: args;
-      then shift;
-      // add anything else, just create multary
-      else Expression.MULTARY({shift, new_size}, {}, Operator.makeAdd(Type.INTEGER()));
-    end match;
+    (args, inv_args) := sumTerms(shift, args, inv_args);
+    (args, inv_args) := sumTerms(new_size, args, inv_args);
+    shift := SimplifyExp.simplify(Expression.MULTARY(args, inv_args, Operator.makeAdd(Type.INTEGER())));
   end bumpShift;
+
+  function sumTerms
+    "collects the added and subtracted terms of a nested sum"
+    input Expression exp;
+    input output list<Expression> args;
+    input output list<Expression> inv_args;
+  algorithm
+    (args, inv_args) := match exp
+      case Expression.MULTARY() guard(Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.ADDITION) algorithm
+        for e in exp.arguments loop
+          (args, inv_args) := sumTerms(e, args, inv_args);
+        end for;
+        for e in exp.inv_arguments loop
+          (inv_args, args) := sumTerms(e, inv_args, args);
+        end for;
+      then (args, inv_args);
+      case Expression.BINARY() guard(Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.ADDITION) algorithm
+        (args, inv_args) := sumTerms(exp.exp1, args, inv_args);
+        (args, inv_args) := sumTerms(exp.exp2, args, inv_args);
+      then (args, inv_args);
+      case Expression.BINARY() guard(Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.SUBTRACTION) algorithm
+        (args, inv_args) := sumTerms(exp.exp1, args, inv_args);
+        (inv_args, args) := sumTerms(exp.exp2, inv_args, args);
+      then (args, inv_args);
+      else (exp :: args, inv_args);
+    end match;
+  end sumTerms;
 
   function createInlinedEquation
     "used for inlining record, tuple and array equations.

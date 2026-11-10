@@ -53,7 +53,6 @@ extern "C" {
 struct OpenModelicaGeneratedFunctionCallbacks {
   /* Defined in perform_simulation.c and omp_perform_simulation.c */
   int (*performSimulation)(DATA* data, threadData_t*, void* solverInfo);
-  int (*performQSSSimulation)(DATA* data, threadData_t*, void* solverInfo);
   void (*updateContinuousSystem)(DATA *data, threadData_t*);
   /* Function for calling external object deconstructors */
   void (*callExternalObjectDestructors)(DATA *_data, threadData_t*);
@@ -196,6 +195,13 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   */
   int (*updateBoundParameters)(DATA *data, threadData_t*);
 
+  /*! \fn updateTunableParameters
+  *
+  *  Evaluates the parameter equations k with eqMask[k] set, in the order of
+  *  resources/<prefix>_paramdeps.bin of an FMU.
+  */
+  int (*updateTunableParameters)(DATA *data, threadData_t*, const unsigned char *eqMask);
+
   /* function for checking for asserts and terminate */
   int (*checkForAsserts)(DATA *data, threadData_t*);
 
@@ -337,12 +343,6 @@ struct OpenModelicaGeneratedFunctionCallbacks {
 
 
   /*
-  * update parameter for symSolver
-  */
-
-  int (*symbolicInlineSystems)(DATA * data, threadData_t *threadData);
-
-  /*
   * initialize clocks and subclocks info in modelData
   */
   void (*function_initSynchronous)(DATA * data, threadData_t *threadData);
@@ -373,12 +373,13 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   int (*dataReconciliationUnmeasuredVariables)(DATA* modelData, char ** names);
 
   /*
-  * FMU's have simulation settings in <DefaultExperiment> and we need to read those settings during instantiation
+  * FMI 1.0 FMUs: the default experiment, read during instantiation. FMI 2.0 and
+  * 3.0 FMUs read it from resources/<prefix>_init.bin (util/omc_fmu_init.h).
   */
   void (*read_simulation_info)(SIMULATION_INFO* simulationSettings);
 
   /*
-  * FMU's do not need the XML-file; they use this callback instead.
+  * FMI 1.0 FMUs: the variable info and attributes, instead of the XML file.
   */
   void (*read_input_fmu)(MODEL_DATA* modelData);
 

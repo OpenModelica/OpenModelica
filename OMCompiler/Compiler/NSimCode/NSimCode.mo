@@ -245,7 +245,6 @@ public
       //PartitionData partitionData;
       EventInfo eventInfo;
       Option<DaeModeData> daeModeData                   "Simulation system in case of DAEMode";
-      list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
     end SIM_CODE;
 
     function toString
@@ -353,7 +352,6 @@ public
           UnorderedMap<ComponentRef, SimStrongComponent.Block> equation_map;
           Option<DaeModeData> daeModeData;
           SimJacobian jacA, jacB, jacC, jacD, jacF, jacH, jacAdjoint, jacLfg, jacMrf, jacR0;
-          list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
           mapExp collect_literals, index_delays;
           UnorderedMap<Expression, DelayBuffers> delay_map = UnorderedMap.new<DelayBuffers>(Expression.hash, Expression.isEqual);
           Pointer<Integer> delay_size = Pointer.create(0);
@@ -363,7 +361,7 @@ public
           algorithm
             // somehow this cannot be set at definition (metamodelica bug?)
             simCodeIndices := EMPTY_SIM_CODE_INDICES();
-            simCodeIndices.resizable := List.any(VariablePointers.toList(varData.variables), BVariable.isResizable);
+            simCodeIndices.resizable := varData.resizable;
             funcMap := BackendDAE.getFunctionMap(bdae);
 
             // get and replace all literals in functions
@@ -439,7 +437,6 @@ public
             allSim := listAppend(List.flatten(list(SimStrongComponent.Block.collectEntwinedEquations(blck) for blck in allSim)), allSim);
 
             // ToDo add event system
-            inlineEquations := {};
 
             // ToDo:
             // this has to be adapted at some point SimCodeFuntion needs to be translated
@@ -549,7 +546,8 @@ public
             daeModeData         := Util.applyOption(daeModeData, function DaeModeData.mapShallow(func = collect_literals));
             literals            := UnorderedMap.keyList(literals_map);
 
-            (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, fileName, directory, functions, linearLoops, nonlinearLoops, eventInfo, bdae.clockedInfo, simCodeIndices);
+            (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, fileName, directory, functions, linearLoops, nonlinearLoops, eventInfo, bdae.clockedInfo,
+              List.sort(program.classes, AbsynUtil.classNameGreater), simCodeIndices);
 
             simCode := SIM_CODE(
               modelInfo                 = modelInfo,
@@ -584,8 +582,7 @@ public
               simcode_map               = simcode_map,
               equation_map              = equation_map,
               eventInfo                 = eventInfo,
-              daeModeData               = daeModeData,
-              inlineEquations           = inlineEquations
+              daeModeData               = daeModeData
             );
         then simCode;
 
@@ -678,9 +675,9 @@ public
         fmiSimulationFlags            = NONE(), // FMI stuff
         partitionData                 = OldSimCode.PARTITIONDATA(-1,{},{},{}),
         daeModeData                   = if isSome(simCode.daeModeData) then SOME(DaeModeData.convert(Util.getOption(simCode.daeModeData))) else NONE(),
-        inlineEquations               = {},
         scalarized                    = Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE),
-        fmiFigures                    = {});
+        fmiFigures                    = {},
+        paramDeps                     = OldSimCode.PARAM_DEPS(false, {}, {}));
     end convert;
 
     function indexDelay
@@ -880,6 +877,7 @@ public
       list<SimStrongComponent.Block> linearLoops;
       list<SimStrongComponent.Block> nonlinearLoops;
       //list<UnitDefinition> unitDefinitions "export unitDefintion in modelDescription.xml";
+      Boolean resizable                           "the model has variables with resizable dimensions";
     end MODEL_INFO;
 
     function toString
@@ -899,6 +897,7 @@ public
       input list<SimStrongComponent.Block> nonlinearLoops;
       input EventInfo eventInfo;
       input ClockedInfo clockedInfo;
+      input list<Absyn.Class> sortedClasses "where the runtime resolves modelica:// URIs";
       output ModelInfo modelInfo;
       input output SimCodeIndices simCodeIndices;
     protected
@@ -919,13 +918,14 @@ public
         functions                       = functions,
         labels                          = {},
         resourcePaths                   = {},
-        sortedClasses                   = {},
+        sortedClasses                   = sortedClasses,
         nClocks                         = ClockedInfo.baseClockCount(clockedInfo),
         nSubClocks                      = ClockedInfo.subClockCount(clockedInfo),
         nSpatialDistributions           = listLength(eventInfo.spatial_lst),
         hasLargeLinearEquationSystems   = true,
         linearLoops                     = linearLoops,
-        nonlinearLoops                  = nonlinearLoops);
+        nonlinearLoops                  = nonlinearLoops,
+        resizable                       = simCodeIndices.resizable);
     end create;
 
     function setSeedVars
@@ -975,7 +975,8 @@ public
         hasLargeLinearEquationSystems   = modelInfo.hasLargeLinearEquationSystems,
         linearSystems                   = SimStrongComponent.Block.convertList(modelInfo.linearLoops),
         nonLinearSystems                = SimStrongComponent.Block.convertList(modelInfo.nonlinearLoops),
-        unitDefinitions                 = {} // ToDo: add this once unit definitions are supported
+        unitDefinitions                 = {}, // ToDo: add this once unit definitions are supported
+        resizable                       = modelInfo.resizable
       );
     end convert;
   end ModelInfo;

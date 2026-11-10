@@ -46,9 +46,7 @@
 #include "../../util/omc_file.h"
 #include "../../util/varinfo.h"
 #include "model_help.h"
-#if !defined(OMC_MINIMAL_RUNTIME)
 #include "../../util/write_csv.h"
-#endif
 
 #include "nonlinearSystem.h"
 #include "nonlinearSolverHomotopy.h"
@@ -1439,9 +1437,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
           vecAddScal(solverData->n, x, solverData->dy0, lambda1, solverData->x1);
           assert = 1;
         }
-#ifndef OMC_EMCC
     OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
         if (solverData->casualTearingSet){
           constraintViolated = solverData->f_con(solverData, solverData->x1, solverData->f1);
           if (constraintViolated){
@@ -1453,9 +1449,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
           solverData->f(solverData, solverData->x1, solverData->f1);
 
         if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { assert = 0; }
-#ifndef OMC_EMCC
     OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
         firstrun = 0;
         if (assert) {
           debugDouble(OMC_LOG_NLS_V, "Assert of Newton step: lambda1 =", lambda1);
@@ -1491,9 +1485,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
         debugDouble(OMC_LOG_NLS_V, "Need to damp this!! lambda2 = ", lambda2);
         vecAddScal(solverData->n, x, solverData->dy0, lambda2, solverData->x1);
         assert= 1;
-#ifndef OMC_EMCC
         OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
         if (solverData->casualTearingSet){
           constraintViolated = solverData->f_con(solverData, solverData->x1, solverData->f1);
           if (constraintViolated){
@@ -1507,9 +1499,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
         error_f2_sqrd = vec2NormSqrd(solverData->n, solverData->f1);
         debugDouble(OMC_LOG_NLS_V, "Need to damp, error_f2 = ", sqrt(error_f2_sqrd));
         if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { assert = 0; }
-#ifndef OMC_EMCC
         OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
         if (assert)
         {
           debugDouble(OMC_LOG_NLS_V, "UPS! MUST HANDLE A PROBLEM (Newton method), time : ", solverData->timeValue);
@@ -1540,9 +1530,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
           debugDouble(OMC_LOG_NLS_V, "Need to damp this!! lambda = ", lambda);
           vecAddScal(solverData->n, x, solverData->dy0, lambda, solverData->x1);
           assert= 1;
-#ifndef OMC_EMCC
           OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
           if (solverData->casualTearingSet){
             constraintViolated = solverData->f_con(solverData, solverData->x1, solverData->f1);
             if (constraintViolated){
@@ -1556,9 +1544,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
           error_f1_sqrd = vec2NormSqrd(solverData->n, solverData->f1);
           debugDouble(OMC_LOG_NLS_V, "Need to damp, error_f1 = ", sqrt(error_f1_sqrd));
           if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { assert = 0; }
-#ifndef OMC_EMCC
           OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
           if (assert)
           {
             debugDouble(OMC_LOG_NLS_V, "UPS! MUST HANDLE A PROBLEM (Newton method), time : ", solverData->timeValue);
@@ -1619,7 +1605,6 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       debugDouble(OMC_LOG_NLS_V, "newtonFTol          =", sqrt(solverData->ftol_sqrd));
     }
 
-#if !defined(OMC_MINIMAL_RUNTIME)
     if (data->simulationInfo->nlsCsvInfomation){
       print_csvLineIterStats(((struct csvStats*) nlsData->csvData)->iterStats,
                              nlsData->size,
@@ -1634,7 +1619,6 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
                              lambda
       );
     }
-#endif
     /* away from any solution: no 1% improvement for long, or only heavily damped steps */
     if (countNegativeSteps > 20 || countCycles > 20 || ((countStalls > 400 || countCreeps > 400) && error_f_sqrd >= solverData->ftol_sqrd*1e6 && error_f_sqrd_scaled >= solverData->ftol_sqrd*1e6))
     {
@@ -1727,18 +1711,14 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       break;
     }
     assert = 1;
-#ifndef OMC_EMCC
     OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
     /* updating x */
     vecCopy(solverData->n, solverData->x1, x);
 
     /* calculate jacobian and function values (both stored in fJac, last column is fvec) */
     solverData->fJac_f(solverData, x, solverData->fJac);
     if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { assert = 0; }
-#ifndef OMC_EMCC
     OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
     if (assert)
     {
       /* report solver abortion */
@@ -1828,14 +1808,10 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
   solverData->dy2[solverData->n]= solverData->startDirection;
   printHomotopyUnknowns(OMC_LOG_NLS_V, solverData);
   assert = 1;
-#ifndef OMC_EMCC
     OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
     solverData->h_function(solverData, solverData->y0, solverData->hvec);
     if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { assert = 0; }
-#ifndef OMC_EMCC
     OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
   /* start iteration; stop, if lambda = solverData->y0[solverData->n] == 1 */
   while (solverData->y0[solverData->n]<1)
   {
@@ -1886,9 +1862,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
     {
     /* Handle asserts of function calls, mainly necessary for fluid stuff */
       assert = 1;
-#ifndef OMC_EMCC
     OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
       solverData->hJac_dh(solverData, solverData->y0, solverData->hJac);
       debugMatrixDouble(OMC_LOG_NLS_JAC,"Jacobian hJac:",solverData->hJac, solverData->n, solverData->n+1);
       scaleMatrixRows(solverData->n, solverData->m, solverData->hJac);
@@ -1896,9 +1870,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       assert = 0;
       pos = -1; /* stable solution algorithm for solving a generalized over-determined linear system */
     if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
-#ifndef OMC_EMCC
     OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
 
       if (assert || (solveSystemWithTotalPivotSearch(data, solverData->n, solverData->dy0, solverData->hJac, solverData->indRow, solverData->indCol, &pos, &rank, solverData->casualTearingSet) == -1))
       {
@@ -1956,16 +1928,12 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       vecAddScal(solverData->m, solverData->y0, solverData->dy0, tau,  solverData->y1);
 
       /* update function value */
-#ifndef OMC_EMCC
       OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
       debugVectorDouble(OMC_LOG_NLS_HOMOTOPY,"y1 (predictor step):",solverData->y1, m);
       solverData->h_function(solverData, solverData->y1, solverData->hvec);
       debugVectorDouble(OMC_LOG_NLS_HOMOTOPY,"hvec (predictor step):",solverData->hvec, n);
       if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { assert = 0; }
-#ifndef OMC_EMCC
       OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
       if (assert){
         debugString(OMC_LOG_NLS_HOMOTOPY, "Assert, when calculating function value!");
         debugString(OMC_LOG_NLS_HOMOTOPY, "--- decreasing step size tau in predictor step!");
@@ -2029,9 +1997,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
         break;
       }
       assert = 1;
-#ifndef OMC_EMCC
     OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
       /* calculate homotopy jacobian */
       solverData->hJac_dh(solverData, solverData->y1, solverData->hJac);
       debugMatrixDouble(OMC_LOG_NLS_JAC,"Jacobian hJac:",solverData->hJac, solverData->n, solverData->n+1);
@@ -2044,9 +2010,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       }
 
       if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { assert = 0; }
-#ifndef OMC_EMCC
     OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
       if (assert)
       {
         debugString(OMC_LOG_NLS_HOMOTOPY, "step NOT accepted, because hJac_dh could not be calculated!");
@@ -2093,15 +2057,11 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       vecCopy(solverData->m, solverData->y2, solverData->y1);
       debugVectorDouble(OMC_LOG_NLS_HOMOTOPY, "new y in newton:", solverData->y1, solverData->m);
       assert = 1;
-#ifndef OMC_EMCC
     OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
       /* calculate homotopy function */
       solverData->h_function(solverData, solverData->y1, solverData->hvec);
       if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { assert = 0; }
-#ifndef OMC_EMCC
     OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
       if (assert)
       {
         debugString(OMC_LOG_NLS_HOMOTOPY, "step NOT accepted, because h_function could not be calculated!");
@@ -2324,9 +2284,7 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
         data->simulationInfo->solveContinuous = 0;
       }
       /* evaluate with discontinuities */
-#ifndef OMC_EMCC
       OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
       if (mixedSystem)
         memcpy(relationsPreBackup, data->simulationInfo->relations, sizeof(modelica_boolean)*data->modelData->nRelations);
 
@@ -2379,9 +2337,7 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
       }
       giveUp = 0;
       if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
-#ifndef OMC_EMCC
       OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
       if (assert && homotopyData->casualTearingSet)
       {
         giveUp = 1;
@@ -2574,9 +2530,7 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
 
     else {
       assert = 1;
-#ifndef OMC_EMCC
       OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
       if (homotopyData->casualTearingSet){
         constraintViolated = homotopyData->f_con(homotopyData, homotopyData->x, homotopyData->f1);
         if (constraintViolated){
@@ -2600,9 +2554,7 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
         debugString(OMC_LOG_NLS_V, "regular initial point!!!");
     /* As above: a raised residual leaves the retry armed. */
     if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); assert = 1; }
-#ifndef OMC_EMCC
     OMC_CATCH_INTERNAL(simulationJumpBuffer)
- #endif
       if (assert)
       {
         giveUp = 1;

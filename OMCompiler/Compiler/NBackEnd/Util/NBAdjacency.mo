@@ -4218,7 +4218,7 @@ public
           var_ptr := BVariable.getVarPointer(exp.cref, sourceInfo());
           var := Pointer.access(var_ptr);
         then if Binding.hasExp(var.binding) then
-            Expression.applySubscripts(ComponentRef.getSubscripts(exp.cref), Binding.getExp(var.binding))
+            Expression.applySubscripts(ComponentRef.subscriptsAllWithWholeFlat(exp.cref), Binding.getExp(var.binding))
           else exp;
         else exp;
       end match;

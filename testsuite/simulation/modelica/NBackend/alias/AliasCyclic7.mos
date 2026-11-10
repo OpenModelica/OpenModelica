@@ -32,7 +32,7 @@ diffSimulationResults("AliasCyclic7_res.mat", "ReferenceFiles/AliasCyclic7_res.m
 // 	### Set Equations:
 // 	[SCAL] (1) 0 = b + a; ($RES_SIM_0)
 // 	[SCAL] (1) -1 = c + d; ($RES_SIM_1)
-// 	[SCAL] (1) 2 = 2 * a + 2 * d; ($RES_SIM_3)
+// 	[SCAL] (1) 2 = 2*a + 2*d; ($RES_SIM_3)
 // 	[SCAL] (1) 0 = b + c; ($RES_SIM_2)
 //
 // record SimulationResult
