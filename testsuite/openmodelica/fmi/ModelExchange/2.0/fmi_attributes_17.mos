@@ -330,13 +330,29 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //   </ScalarVariable>
 //   <!-- Index of variable = \"29\" -->
 //   <ScalarVariable
+//     name=\"der(C4.p.v)\"
+//     valueReference=\"1\"
+//     description=\"der(Potential at the pin)\"
+//     >
+//     <Real unit=\"km2.s-4.A-1.g\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"30\" -->
+//   <ScalarVariable
+//     name=\"der(R1.n.v)\"
+//     valueReference=\"1\"
+//     description=\"der(Potential at the pin)\"
+//     >
+//     <Real unit=\"km2.s-4.A-1.g\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"31\" -->
+//   <ScalarVariable
 //     name=\"C4.n.i\"
-//     valueReference=\"28\"
+//     valueReference=\"30\"
 //     description=\"Current flowing into the pin\"
 //     >
 //     <Real unit=\"A\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"30\" -->
+//   <!-- Index of variable = \"32\" -->
 //   <ScalarVariable
 //     name=\"C4.n.v\"
 //     valueReference=\"4\"
@@ -344,7 +360,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     >
 //     <Real unit=\"V\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"31\" -->
+//   <!-- Index of variable = \"33\" -->
 //   <ScalarVariable
 //     name=\"C4.p.i\"
 //     valueReference=\"2\"
@@ -352,7 +368,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     >
 //     <Real unit=\"A\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"32\" -->
+//   <!-- Index of variable = \"34\" -->
 //   <ScalarVariable
 //     name=\"C4.p.v\"
 //     valueReference=\"0\"
@@ -360,7 +376,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     >
 //     <Real unit=\"V\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"33\" -->
+//   <!-- Index of variable = \"35\" -->
 //   <ScalarVariable
 //     name=\"R1.i\"
 //     valueReference=\"2\"
@@ -368,15 +384,15 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     >
 //     <Real unit=\"A\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"34\" -->
+//   <!-- Index of variable = \"36\" -->
 //   <ScalarVariable
 //     name=\"R1.n.i\"
-//     valueReference=\"33\"
+//     valueReference=\"35\"
 //     description=\"Current flowing into the pin\"
 //     >
 //     <Real unit=\"A\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"35\" -->
+//   <!-- Index of variable = \"37\" -->
 //   <ScalarVariable
 //     name=\"R1.n.v\"
 //     valueReference=\"0\"
@@ -384,7 +400,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     >
 //     <Real unit=\"V\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"36\" -->
+//   <!-- Index of variable = \"38\" -->
 //   <ScalarVariable
 //     name=\"R1.p.i\"
 //     valueReference=\"2\"
@@ -392,7 +408,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     >
 //     <Real unit=\"A\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"37\" -->
+//   <!-- Index of variable = \"39\" -->
 //   <ScalarVariable
 //     name=\"R1.p.v\"
 //     valueReference=\"8\"
@@ -400,15 +416,15 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     >
 //     <Real unit=\"V\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"38\" -->
+//   <!-- Index of variable = \"40\" -->
 //   <ScalarVariable
 //     name=\"V.i\"
-//     valueReference=\"37\"
+//     valueReference=\"39\"
 //     description=\"Current flowing from pin p to pin n\"
 //     >
 //     <Real unit=\"A\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"39\" -->
+//   <!-- Index of variable = \"41\" -->
 //   <ScalarVariable
 //     name=\"V.n.i\"
 //     valueReference=\"2\"
@@ -416,7 +432,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     >
 //     <Real unit=\"A\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"40\" -->
+//   <!-- Index of variable = \"42\" -->
 //   <ScalarVariable
 //     name=\"V.n.v\"
 //     valueReference=\"4\"
@@ -424,15 +440,15 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     >
 //     <Real unit=\"V\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"41\" -->
+//   <!-- Index of variable = \"43\" -->
 //   <ScalarVariable
 //     name=\"V.p.i\"
-//     valueReference=\"40\"
+//     valueReference=\"42\"
 //     description=\"Current flowing into the pin\"
 //     >
 //     <Real unit=\"A\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"42\" -->
+//   <!-- Index of variable = \"44\" -->
 //   <ScalarVariable
 //     name=\"V.p.v\"
 //     valueReference=\"8\"
@@ -440,7 +456,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     >
 //     <Real unit=\"V\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"43\" -->
+//   <!-- Index of variable = \"45\" -->
 //   <ScalarVariable
 //     name=\"V.signalSource.y\"
 //     valueReference=\"8\"
@@ -448,7 +464,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     >
 //     <Real/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"44\" -->
+//   <!-- Index of variable = \"46\" -->
 //   <ScalarVariable
 //     name=\"R1.useHeatPort\"
 //     valueReference=\"0\"
@@ -477,7 +493,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //       <Unknown index=\"20\" dependencies=\"21\" dependenciesKind=\"dependent\" />
 //       <Unknown index=\"23\" dependencies=\"27\" dependenciesKind=\"dependent\" />
 //       <Unknown index=\"25\" dependencies=\"28\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"44\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"46\" dependencies=\"\" dependenciesKind=\"\" />
 //     </InitialUnknowns>
 //   </ModelStructure>
 // "

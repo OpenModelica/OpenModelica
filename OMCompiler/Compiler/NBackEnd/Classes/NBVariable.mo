@@ -1334,6 +1334,18 @@ function isJacobianResultVar
     end match;
   end makeDerVar;
 
+  function makeDerCref
+    "The name makeDerVar gives the derivative of cref, without a variable for it."
+    input ComponentRef cref;
+    output ComponentRef der_cref;
+  protected
+    ComponentRef stripped = ComponentRef.stripSubscriptsAll(cref);
+    PointerWeak<Variable> dummy_ptr = PointerWeak.downgrade(Pointer.createImmutable(DUMMY_VARIABLE));
+  algorithm
+    der_cref := ComponentRef.append(stripped, ComponentRef.fromNode(InstNode.VAR_NODE(DERIVATIVE_STR, dummy_ptr), ComponentRef.scalarType(stripped)));
+    der_cref := ComponentRef.copySubscripts(cref, der_cref);
+  end makeDerCref;
+
   function hasDerVar
     input Pointer<Variable> state_var;
     output Boolean b;

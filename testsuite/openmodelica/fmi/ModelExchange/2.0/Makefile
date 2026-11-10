@@ -10,6 +10,7 @@ FmuLinkLibraries.mos \
 FmuUserCFlags.mos \
 FmuUserTab.mos \
 FmuValueAccess.mos \
+StateDerivativeAliases.mos \
 fmi_attributes_01.mos \
 fmi_attributes_02.mos \
 fmi_attributes_03.mos \

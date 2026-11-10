@@ -1,0 +1,63 @@
+// name: StateDerivativeAliases
+// keywords: result file alias derivative state
+// status: correct
+// teardown_command: rm -f StateDerivativeAliases_* StateDerivativeAliases StateDerivativeAliases.c StateDerivativeAliases.exe StateDerivativeAliases.libs StateDerivativeAliases.log StateDerivativeAliases.makefile StateDerivativeAliases.o output.log
+//
+// The result file has der(y) and der(z) for the aliases y = x and z = -x of
+// the state x, with the old and the new backend.
+
+loadString("
+model StateDerivativeAliases
+  Real x(start = 1, fixed = true);
+  Real y = x;
+  Real z = -x;
+equation
+  der(x) = -x;
+end StateDerivativeAliases;
+"); getErrorString();
+
+simulate(StateDerivativeAliases, variableFilter="der.y.|der.z."); getErrorString();
+readSimulationResultVars("StateDerivativeAliases_res.mat", readParameters=false); getErrorString();
+val(der(y), 1.0, "StateDerivativeAliases_res.mat"); getErrorString();
+val(der(z), 1.0, "StateDerivativeAliases_res.mat"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(StateDerivativeAliases, variableFilter="der.y.|der.z."); getErrorString();
+readSimulationResultVars("StateDerivativeAliases_res.mat", readParameters=false); getErrorString();
+val(der(y), 1.0, "StateDerivativeAliases_res.mat"); getErrorString();
+val(der(z), 1.0, "StateDerivativeAliases_res.mat"); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "StateDerivativeAliases_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'StateDerivativeAliases', options = '', outputFormat = 'mat', variableFilter = 'der.y.|der.z.', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"der(x)", "der(y)", "der(z)", "time"}
+// ""
+// -0.36787945153397683
+// ""
+// 0.36787945153397683
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "StateDerivativeAliases_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'StateDerivativeAliases', options = '', outputFormat = 'mat', variableFilter = 'der.y.|der.z.', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"der(y)", "der(z)", "time"}
+// ""
+// -0.36787945153397683
+// ""
+// 0.36787945153397683
+// ""
+// endResult
