@@ -1498,7 +1498,10 @@ getErrorString();
 // [ThermoSysPro 4.2.0/Properties/Fluid/derDensity_derP_derh.mo:56:5-56:88:writable] Warning: 'T' is used uninitialized and may cause unexpected behaviour. This is deprecated and will become an error in future releases.
 // Notification: It was not possible to check the given initialization system for consistency symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.
 // Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
-// Warning: SimCodeUtil.makeSES_SIMPLE_ASSIGN failed for: 0.0 = $TMP_ThermoSysPro_Properties_WaterSteam_Common_ThermoProperties__ph29.T
-// Error: Internal error - Expression.expandExpression failed for 0.0
+// Error: The model requires derivatives of some inputs as listed below:
+// der(volumeB1.T)
+// der(volumeB1.P)
+// Use --inputDerivatives=input to make them additional inputs.
+// Error: post-optimization module inputDerivativesUsed (simulation) failed.
 // "
 // endResult
