@@ -82,8 +82,7 @@ class ArrayParameterEditorDialog : public QDialog
   Q_OBJECT
 public:
   ArrayParameterEditorDialog(const QString &arrayValue, const QString &defaultValue, const QString &elementName,
-                             const QStringList &absynDimensions, const QStringList &typedDimensions,
-                             QWidget *pParent = nullptr);
+                             const QStringList &absynDimensions, const QStringList &typedDimensions, QWidget *pParent = nullptr);
   QString getArrayValue() const {return mArrayValue;}
 public slots:
   void okClicked();
@@ -108,6 +107,8 @@ private:
   QSpinBox *mpRowsSpinBox;
   QSpinBox *mpColumnsSpinBox;
   QTableWidget *mpArrayTableWidget;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
   QString mArrayValue;
   QString mOriginalArrayValue;
   bool mExpressionTextModified = false;

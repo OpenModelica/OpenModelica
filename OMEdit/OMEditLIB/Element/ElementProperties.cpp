@@ -240,15 +240,20 @@ ArrayParameterEditorDialog::ArrayParameterEditorDialog(const QString &arrayValue
   connect(mpArrayTableWidget, &QTableWidget::itemChanged, this, &ArrayParameterEditorDialog::updateExpressionFromTable);
   mpArrayTableWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
   mpArrayTableWidget->setContextMenuPolicy(Qt::CustomContextMenu);
-  connect(mpArrayTableWidget, &QTableWidget::customContextMenuRequested,
-          this, &ArrayParameterEditorDialog::showTableContextMenu);
+  connect(mpArrayTableWidget, &QTableWidget::customContextMenuRequested, this, &ArrayParameterEditorDialog::showTableContextMenu);
   Label *pExpressionLabel = new Label(tr("Expression:"));
   mpExpressionLineEdit = new QLineEdit;
   mpExpressionLineEdit->setPlaceholderText(defaultValue);
   connect(mpExpressionLineEdit, &QLineEdit::textEdited, this, &ArrayParameterEditorDialog::expressionTextEdited);
-  QDialogButtonBox *pButtonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-  connect(pButtonBox, &QDialogButtonBox::accepted, this, &ArrayParameterEditorDialog::okClicked);
-  connect(pButtonBox, &QDialogButtonBox::rejected, this, &ArrayParameterEditorDialog::reject);
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, &QPushButton::clicked, this, &ArrayParameterEditorDialog::okClicked);
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, &QPushButton::clicked, this, &ArrayParameterEditorDialog::reject);
+  QDialogButtonBox *pButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  pButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  pButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->addWidget(pRowsLabel, 0, 0);
   pMainLayout->addWidget(mpRowsSpinBox, 0, 1);
@@ -1168,6 +1173,10 @@ void Parameter::setEnabled(bool enable)
       mpValueTextBox->setEnabled(enable);
       break;
   }
+  // enable/disable array editor button
+  if (mpArrayEditorButton) {
+    mpArrayEditorButton->setEnabled(enable);
+  }
   // enable/disable final each menu button
   mpFinalEachMenuButton->setEnabled(enable);
   // enable/disable unit combobox
@@ -1665,9 +1674,7 @@ void Parameter::fileSelectorButtonClicked()
 void Parameter::arrayEditorButtonClicked()
 {
   const ModelInstance::Dimensions &dimensions = mpModelInstanceElement->getDimensions();
-  ArrayParameterEditorDialog dialog(getValue(), mDefaultValue, mName,
-                                    dimensions.getAbsynDimensions(), dimensions.getTypedDimensions(),
-                                    MainWindow::instance());
+  ArrayParameterEditorDialog dialog(getValue(), mDefaultValue, mName, dimensions.getAbsynDimensions(), dimensions.getTypedDimensions(), MainWindow::instance());
   if (dialog.exec() == QDialog::Accepted) {
     const QString arrayValue = dialog.getArrayValue();
     if (arrayValue.compare(getValue()) != 0) {
