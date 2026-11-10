@@ -1528,7 +1528,9 @@ public
                 dep_map := UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual);
                 rep_set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
                 (iter_names, _, _) := Iterator.getFrames(eqn_iter);
-                own_iters := UnorderedSet.fromList(iter_names, ComponentRef.hash, ComponentRef.isEqual);
+                // the rows of an algebraic loop are its variables, not the iterations of this equation
+                own_iters := if StrongComponent.isAlgebraicLoop(comp) then no_iters
+                  else UnorderedSet.fromList(iter_names, ComponentRef.hash, ComponentRef.isEqual);
                 for tpl in local_deps loop
                   // this might lead to duplicate occurrences. can and should not be optimized here
                   // as dependency information might not be combinable. optimize afterwards!
