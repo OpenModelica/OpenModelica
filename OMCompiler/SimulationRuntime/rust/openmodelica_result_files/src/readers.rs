@@ -59,7 +59,11 @@ impl CsvReader {
             }
         }
         let numsteps = data.first().map(|c| c.len()).unwrap_or(0);
-        Ok(CsvReader { variables, data, numsteps })
+        Ok(CsvReader {
+            variables,
+            data,
+            numsteps,
+        })
     }
 
     /// `read_csv_dataset`: the trajectory of `var` (exact name match), or
@@ -71,13 +75,20 @@ impl CsvReader {
 }
 
 /// A CSV cell as a double: empty / pure-whitespace cells are 0.0 (strtod
-/// consumes nothing and the C code accepts that); anything else must parse
+/// consumes nothing and the C code accepts that); `true` and `false` in any
+/// case are 1.0 and 0.0, as FMPy writes Booleans; anything else must parse
 /// completely (`*endptr` must be NUL), so trailing garbage — including
 /// trailing whitespace — is an error. (C's strtod would additionally accept
 /// hex floats; nothing writes those into result CSVs.)
 fn parse_csv_cell(cell: &str) -> Option<f64> {
     let t = cell.trim_start();
     if t.is_empty() {
+        return Some(0.0);
+    }
+    if t.eq_ignore_ascii_case("true") {
+        return Some(1.0);
+    }
+    if t.eq_ignore_ascii_case("false") {
         return Some(0.0);
     }
     t.parse::<f64>().ok()
@@ -189,7 +200,9 @@ impl PltReader {
         let bytes = read_result_bytes(filename)?;
         // .plt is ASCII; tolerate stray non-UTF8 bytes instead of failing.
         let text = String::from_utf8_lossy(&bytes);
-        Ok(PltReader { lines: text.lines().map(str::to_owned).collect() })
+        Ok(PltReader {
+            lines: text.lines().map(str::to_owned).collect(),
+        })
     }
 
     /// `read_ptolemy_dataset_size`: the value after `#IntervalSize=`;
