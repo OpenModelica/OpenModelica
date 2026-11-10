@@ -163,12 +163,15 @@ void fmi2ExitInitializationModel_OMC(void* in_fmi2me)
 
 /*
  * Wrapper for the FMI function fmi2SetTime.
- * Returns status.
+ *
+ * The FMI 2.0 call table allows fmi2SetTime in Continuous-Time Mode, and in Event Mode
+ * only for a pure discrete-time FMU. Call it only in Continuous-Time Mode, as the FMI 3.0
+ * import does.
  */
 void fmi2SetTime_OMC(void* in_fmi2me, double time)
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  if (FMI2ME->FMISolvingMode == fmi2_instantiated_mode || FMI2ME->FMISolvingMode == fmi2_event_mode || FMI2ME->FMISolvingMode == fmi2_continuousTime_mode) {
+  if (FMI2ME->FMISolvingMode == fmi2_continuousTime_mode) {
     fmi2_status_t status = fmi2_import_set_time(FMI2ME->FMIImportInstance, time);
     if (status != fmi2_status_ok && status != fmi2_status_warning) {
       fmi2Failed(FMI2ME, "fmi2SetTime", status);
@@ -193,12 +196,15 @@ void fmi2GetContinuousStates_OMC(void* in_fmi2me, int numberOfContinuousStates, 
 /*
  * Wrapper for the FMI function fmi2SetContinuousStates.
  * parameter flowParams is dummy and is only used to run the equations in sequence.
- * Returns status.
+ *
+ * The FMI 2.0 call table allows fmi2SetContinuousStates only in Continuous-Time Mode.
+ * In Event Mode the FMU itself changes the states, and the import reads them with
+ * fmi2GetContinuousStates.
  */
 double fmi2SetContinuousStates_OMC(void* in_fmi2me, int numberOfContinuousStates, double flowParams, double* states)
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  if (numberOfContinuousStates > 0) {
+  if (numberOfContinuousStates > 0 && FMI2ME->FMISolvingMode == fmi2_continuousTime_mode) {
     fmi2_status_t status = fmi2_import_set_continuous_states(FMI2ME->FMIImportInstance, (fmi2_real_t*)states, numberOfContinuousStates);
     if (status != fmi2_status_ok && status != fmi2_status_warning) {
       fmi2Failed(FMI2ME, "fmi2SetContinuousStates", status);
@@ -225,11 +231,14 @@ void fmi2GetEventIndicators_OMC(void* in_fmi2me, int numberOfEventIndicators, do
  * Wrapper for the FMI function fmi2GetDerivatives.
  * parameter flowStates is dummy and is only used to run the equations in sequence.
  * Returns states.
+ *
+ * The FMI 2.0 call table allows fmi2GetDerivatives also in Initialization Mode and in
+ * Event Mode, where the solver needs the derivatives too.
  */
 void fmi2GetDerivatives_OMC(void* in_fmi2me, int numberOfContinuousStates, double flowStates, double* states)
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  if (FMI2ME->FMISolvingMode == fmi2_continuousTime_mode){
+  if (FMI2ME->FMISolvingMode == fmi2_initialization_mode || FMI2ME->FMISolvingMode == fmi2_event_mode || FMI2ME->FMISolvingMode == fmi2_continuousTime_mode) {
     fmi2_status_t status = fmi2_import_get_derivatives(FMI2ME->FMIImportInstance, (fmi2_real_t*)states, numberOfContinuousStates);
     if (status != fmi2_status_ok && status != fmi2_status_warning) {
       fmi2Failed(FMI2ME, "fmi2GetDerivatives", status);
