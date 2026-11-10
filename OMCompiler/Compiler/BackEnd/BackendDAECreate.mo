@@ -1117,12 +1117,8 @@ algorithm
         (es, arg) := List.mapFold(es, function BackendDAEUtil.traverseExpWithIterators(iters = iters, func = transformBuiltinExpression), arg);
         exp := DAE.CALL(path, es, attr);
         (ht, iDelay, iSample, iSpatial, timeEvents) := arg;
-        index := UnorderedMap.tryAdd(exp, iSpatial, ht);
-        if index == iSpatial then
-          iSpatial := iSpatial + 1;
-        end if;
       then
-        (DAE.CALL(path, DAE.ICONST(index) :: es, attr), false, (ht, iDelay, iSample, iSpatial, timeEvents));
+        (DAE.CALL(path, DAE.ICONST(iSpatial) :: es, attr), false, (ht, iDelay, iSample, iSpatial + 1, timeEvents));
 
     case DAE.CALL(path = path as Absyn.IDENT("sample"), expLst = es as {_, interval}, attr = attr)
       guard not Types.isClockOrSubTypeClock(Expression.typeof(interval))

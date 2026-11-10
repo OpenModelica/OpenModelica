@@ -4957,7 +4957,8 @@ end updateDelayExpressions;
 
 public function extractDelayedExpressions
   "Returns the delay calls with a constant index, the number of buffers, and the
-   delay calls whose index depends on iterators."
+   delay calls whose index depends on iterators. Equal calls share an index and
+   are returned once, so that each buffer is stored once per step."
   input BackendDAE.BackendDAE dlow;
   output list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps = {};
   output Integer maxDelayedExpIndex = -1;
@@ -4968,11 +4969,15 @@ protected
   list<String> names;
   DAE.Exp index, last, e, delay, delayMax, stop;
   Integer i;
+  UnorderedSet<DAE.Exp> indices = UnorderedSet.new(ExpressionBasics.hashExp, ExpressionBasics.expEqual);
 algorithm
   exps := BackendDAEUtil.traverseBackendDAEExpsWithIterators(dlow, collectDelayExpressions, {});
   for tpl in exps loop
     (DAE.CALL(expLst = {index, e, delay, delayMax}), iters) := tpl;
     index := ExpressionSimplify.simplify(index);
+    if not UnorderedSet.add(index, indices) then
+      continue;
+    end if;
     names := {};
     delay_iters := {};
     for it in iters loop

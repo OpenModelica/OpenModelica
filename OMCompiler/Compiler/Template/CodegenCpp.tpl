@@ -14439,20 +14439,38 @@ end algStmtAssignArr;
 template functionInitDelay(DelayedExpression delayed,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
   "Generates function in simulation file."
 ::=
+  match delayed
+  case DELAYED_EXPRESSIONS(__) then
   let &varDecls = buffer "" /*BUFD*/
-   let &preExp = buffer "" /*BUFD*/
-  let delay_id = (match delayed case DELAYED_EXPRESSIONS(__) then (delayedExps |> (id, (e, d, delayMax)) =>
-     '<%id%>';separator=" LIST_SEP "))
-  let delay_max = (match delayed case DELAYED_EXPRESSIONS(__) then (delayedExps |> (id, (e, d, delayMax)) =>
+  let &preExp = buffer "" /*BUFD*/
+  let delay_id = (delayedExps |> (id, (e, d, delayMax)) =>
+     '<%id%>';separator=" LIST_SEP ")
+  let delay_max = (delayedExps |> (id, (e, d, delayMax)) =>
       let delayExpMax = daeExp(delayMax, contextSimulationNonDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-     '<%delayExpMax%>';separator=" LIST_SEP "))
-  if delay_id then
+     '<%delayExpMax%>';separator=" LIST_SEP ")
+  let delay_loops = (delayedLoops |> (idx, (e, d, delayMax), iters) =>
+      let &iterExp = buffer ""
+      let &loopPreExp = buffer ""
+      let forHead = (iters |> it => forIteratorCpp(it, contextSimulationNonDiscrete, &iterExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="\n")
+      let id = daeExp(idx, contextSimulationNonDiscrete, &loopPreExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      let delayExpMax = daeExp(delayMax, contextSimulationNonDiscrete, &loopPreExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      <<
+      <%iterExp%>
+      <%forHead%>
+      <%loopPreExp%>
+      delay_ids.push_back(<%id%>);
+      delay_max.push_back(<%delayExpMax%>);
+      <%iters |> it => "}" ;separator="\n"%>
+      >>
+    ;separator="\n")
+  if '<%delay_id%><%delay_loops%>' then
     <<
     //init delay expressions
     <%varDecls%>
     <%preExp%>
     vector<double> delay_max = LIST_OF <%delay_max%> LIST_END;
     vector<unsigned int> delay_ids = LIST_OF <%delay_id%> LIST_END;
+    <%delay_loops%>
     intDelay(delay_ids, delay_max);
     >>
   else " "
@@ -14462,8 +14480,10 @@ end functionInitDelay;
 template functionStoreDelay(DelayedExpression delayed,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
   "Generates function in simulation file."
 ::=
+  match delayed
+  case DELAYED_EXPRESSIONS(__) then
   let &varDecls = buffer "" /*BUFD*/
-   let storePart = (match delayed case DELAYED_EXPRESSIONS(__) then (delayedExps |> (id, (e, d, delayMax)) =>
+  let storePart = (delayedExps |> (id, (e, d, delayMax)) =>
       let &preExp = buffer "" /*BUFD*/
       let eRes = daeExp(e, contextSimulationNonDiscrete,
                       &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
@@ -14472,12 +14492,27 @@ template functionStoreDelay(DelayedExpression delayed,SimCode simCode ,Text& ext
       <%preExp%>
        storeDelay(<%id%>, <%eRes%>,time);<%\n%>
       >>
-    ))
+    )
+  let storeLoops = (delayedLoops |> (idx, (e, d, delayMax), iters) =>
+      let &iterExp = buffer ""
+      let &preExp = buffer ""
+      let forHead = (iters |> it => forIteratorCpp(it, contextSimulationNonDiscrete, &iterExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="\n")
+      let id = daeExp(idx, contextSimulationNonDiscrete, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      let eRes = daeExp(e, contextSimulationNonDiscrete, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      <<
+      <%iterExp%>
+      <%forHead%>
+      <%preExp%>
+      storeDelay(<%id%>, <%eRes%>, time);
+      <%iters |> it => "}" ;separator="\n"%>
+      >>
+    ;separator="\n")
   <<
 
     <%varDecls%>
     storeTime(time);
     <%storePart%>
+    <%storeLoops%>
   >>
 end functionStoreDelay;
 // generate Member Function get Real
