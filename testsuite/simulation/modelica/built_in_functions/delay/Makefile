@@ -4,6 +4,7 @@ TESTFILES = \
 	nameClash.mos \
 	Delay.mos \
 	DelayBufferGrowth.mos \
+	DelayDerivative.mos \
 	DelayTooSmall.mos \
 	DelayVectorized.mos \
 
