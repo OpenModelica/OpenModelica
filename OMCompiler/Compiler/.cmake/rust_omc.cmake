@@ -2120,6 +2120,8 @@ function(omc_rust_setup_wasm)
         ${RUST_OMC_DIR}/wasm/wasm-blobs.js
         ${RUST_OMC_DIR}/wasm/wasm-stack.js
         ${RUST_OMC_DIR}/wasm/symbolize.html
+        ${RUST_OMC_DIR}/wasm/README.md
+        ${RUST_OMC_DIR}/wasm/coi_server.py
         # Shared 3D animation view (anim/), used by both simulator pages.
         ${RUST_OMC_DIR}/wasm/anim/animation.js
         ${RUST_OMC_DIR}/wasm/anim/OrbitControls.js
@@ -2168,6 +2170,8 @@ function(omc_rust_setup_wasm)
                 ${RUST_OMC_DIR}/wasm/wasm-blobs.js
                 ${RUST_OMC_DIR}/wasm/wasm-stack.js
                 ${RUST_OMC_DIR}/wasm/symbolize.html
+                ${RUST_OMC_DIR}/wasm/README.md
+                ${RUST_OMC_DIR}/wasm/coi_server.py
                 ${_web_dir}/
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/omc-terminal
         COMMAND ${CMAKE_COMMAND} -E copy

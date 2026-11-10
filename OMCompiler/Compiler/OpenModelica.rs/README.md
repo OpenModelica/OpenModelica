@@ -381,6 +381,10 @@ python3 OMCompiler/Compiler/OpenModelica.rs/wasm/coi_server.py 8000 \
 # Then open a browser at http://localhost:8000
 ```
 
+[wasm/README.md](wasm/README.md) tells how to deploy the bundle with Python or
+Apache, and what can be customized after the build. It is installed into the
+bundle and the zip files at <https://playground.openmodelica.org>.
+
 The bundle also carries `fmu-aot.wasm`, `openmodelica_fmi_ls_wasm_aot` built for
 `wasm32-wasip1`: wasmtime's compiler half, which
 `buildModelFMU(..., platforms={"wasm","linux64"})` runs in a worker to compile the

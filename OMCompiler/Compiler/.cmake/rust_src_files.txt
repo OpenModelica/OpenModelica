@@ -757,10 +757,12 @@ openmodelica_zip/src/lib.rs
 rust-toolchain.toml
 rustfmt.toml
 susanSources.txt
+wasm/README.md
 wasm/anim/OrbitControls.js
 wasm/anim/anim-core.js
 wasm/anim/anim-view.js
 wasm/anim/animation.js
+wasm/coi_server.py
 wasm/fmi-simulator/.gitignore
 wasm/fmi-simulator/README.md
 wasm/fmi-simulator/driver.js
@@ -788,6 +790,7 @@ wasm/omc-terminal/index.html
 wasm/omplot/README.md
 wasm/omplot/index.html
 wasm/omplot/omplot-cli.js
+wasm/playground/README.html
 wasm/plot.js
 wasm/simulator/.gitignore
 wasm/simulator/config.json
