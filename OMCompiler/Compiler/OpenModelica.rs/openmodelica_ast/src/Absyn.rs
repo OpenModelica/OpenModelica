@@ -51,18 +51,19 @@ use const_str;
 use loop_unwrap::unwrap_break_err;
 use metamodelica::Result;
 use metamodelica::*; // Built-in types and functions
+use std::sync::Arc;
 
 /// An identifier, for example a variable name
 pub type Ident = ArcStr;
 
 /// For Iterator - these are used in:
-///   * for loops where the expression part can be NONE() and then the range
-///     is taken from an array variable that the iterator is used to index,
-///     see 3.3.3.2 Several Iterators from Modelica Specification.
-///   * in array iterators where the expression should always be SOME(Exp),
-///     see 3.4.4.2 Array constructor with iterators from Specification
-///   * the guard is a MetaModelica extension; it's a Boolean expression that
-///     filters out items in the range.
+/// * for loops where the expression part can be NONE() and then the range
+///   is taken from an array variable that the iterator is used to index,
+///   see 3.3.3.2 Several Iterators from Modelica Specification.
+/// * in array iterators where the expression should always be SOME(Exp),
+///   see 3.4.4.2 Array constructor with iterators from Specification
+/// * the guard is a MetaModelica extension; it's a Boolean expression that
+///   filters out items in the range.
 #[derive(
     Clone,
     Debug,
@@ -72,6 +73,7 @@ pub type Ident = ArcStr;
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub struct ForIterator {
     pub name: ArcStr,
@@ -100,18 +102,18 @@ impl Default for ForIterator {
 pub type ITERATOR = ForIterator;
 
 /// For Iterators -
-///   these are used in:
-///   * for loops where the expression part can be NONE() and then the range
-///     is taken from an array variable that the iterator is used to index,
-///     see 3.3.3.2 Several Iterators from Modelica Specification.
-///   * in array iterators where the expression should always be SOME(Exp),
-///     see 3.4.4.2 Array constructor with iterators from Specification
+/// these are used in:
+/// * for loops where the expression part can be NONE() and then the range
+///   is taken from an array variable that the iterator is used to index,
+///   see 3.3.3.2 Several Iterators from Modelica Specification.
+/// * in array iterators where the expression should always be SOME(Exp),
+///   see 3.4.4.2 Array constructor with iterators from Specification
 pub type ForIterators = metamodelica::List<metamodelica::Ref<ForIterator>>;
 
 /// - Programs, the top level construct
-///   A program is simply a list of class definitions declared at top
-///   level in the source file, combined with a within statement that
-///   indicates the hieractical position of the program.
+/// A program is simply a list of class definitions declared at top
+/// level in the source file, combined with a within statement that
+/// indicates the hieractical position of the program.
 /// PROGRAM, the top level construct
 #[derive(
     Clone,
@@ -122,6 +124,7 @@ pub type ForIterators = metamodelica::List<metamodelica::Ref<ForIterator>>;
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub struct Program {
     /// List of classes
@@ -158,6 +161,7 @@ pub type PROGRAM = Program;
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum Within {
     /// the within clause
@@ -188,8 +192,8 @@ pub use self::Within::{TOP, WITHIN};
 pub type Info = SourceInfo;
 
 /// A class definition consists of a name, a flag to indicate
-///  if this class is declared as partial, the declared class restriction,
-///  and the body of the declaration.
+/// if this class is declared as partial, the declared class restriction,
+/// and the body of the declaration.
 #[derive(
     Clone,
     Debug,
@@ -199,6 +203,7 @@ pub type Info = SourceInfo;
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub struct Class {
     pub name: Ident,
@@ -218,8 +223,8 @@ pub struct Class {
     /// when the class has comments after its end, before the next class or the end of the file
     pub commentsAfterEnd: metamodelica::List<ArcStr>,
     /// Information: FileName is the class is defined in +
-    ///               isReadOnly bool + start line no + start column no +
-    ///               end line no + end column no
+    /// isReadOnly bool + start line no + start column no +
+    /// end line no + end column no
     pub info: Info,
 }
 
@@ -263,7 +268,6 @@ pub type CLASS = Class;
 /// derived from another class or an enumeration type.
 /// For a derived type, the  type contains the name of the derived class
 /// and an optional array dimension and a list of modifications.
-///
 #[derive(
     Clone,
     Debug,
@@ -273,13 +277,14 @@ pub type CLASS = Class;
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum ClassDef {
     PARTS {
         /// class A<B,C> ... has type variables B,C
         typeVars: metamodelica::List<ArcStr>,
         /// optimization Op (objective=...) end Op. A list arguments attributing a
-        ///    class declaration. Currently used only for Optimica extensions
+        /// class declaration. Currently used only for Optimica extensions
         classAttrs: metamodelica::List<metamodelica::Ref<NamedArg>>,
         classParts: metamodelica::List<metamodelica::Ref<ClassPart>>,
         /// Modelica2 allowed multiple class-annotations
@@ -397,12 +402,12 @@ impl Default for ClassDef {
 pub use self::ClassDef::{CLASS_EXTENDS, DERIVED, ENUMERATION, OVERLOAD, PARTS, PDER};
 
 /// Component attributes are
-///  properties of components which are applied by type prefixes.
-///  As an example, declaring a component as `input Real x;\' will
-///  give the attributes `ATTR({},false,VAR,INPUT)\'.
-///  Components in Modelica can be scalar or arrays with one or more
-///  dimensions. This type is used to indicate the dimensionality
-///  of a component or a type definition.
+///   properties of components which are applied by type prefixes.
+///   As an example, declaring a component as `input Real x;\' will
+///   give the attributes `ATTR({},false,VAR,INPUT)\'.
+///   Components in Modelica can be scalar or arrays with one or more
+///   dimensions. This type is used to indicate the dimensionality
+///   of a component or a type definition.
 /// - Array dimensions
 pub type ArrayDim = metamodelica::List<metamodelica::Ref<Subscript>>;
 
@@ -416,6 +421,7 @@ pub type ArrayDim = metamodelica::List<metamodelica::Ref<Subscript>>;
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum TypeSpec {
     TPATH {
@@ -460,7 +466,7 @@ impl Default for TypeSpec {
 pub use self::TypeSpec::{TCOMPLEX, TPATH};
 
 /// The definition of an enumeration is either a list of literals
-///     or a colon, \':\', which defines a supertype of all enumerations
+/// or a colon, \':\', which defines a supertype of all enumerations
 #[derive(
     Clone,
     Debug,
@@ -470,6 +476,7 @@ pub use self::TypeSpec::{TCOMPLEX, TPATH};
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum EnumDef {
     ENUMLITERALS {
@@ -506,7 +513,7 @@ impl Default for EnumDef {
 pub use self::EnumDef::{ENUM_COLON, ENUMLITERALS};
 
 /// EnumLiteral, which is a name in an enumeration and an optional
-///   Comment.
+/// Comment.
 #[derive(
     Clone,
     Debug,
@@ -516,6 +523,7 @@ pub use self::EnumDef::{ENUM_COLON, ENUMLITERALS};
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub struct EnumLiteral {
     pub literal: Ident,
@@ -532,10 +540,10 @@ impl metamodelica::gc::MMTrace for EnumLiteral {
 pub type ENUMLITERAL = EnumLiteral;
 
 /// A class definition contains several parts.  There are public and
-///  protected component declarations, type definitions and `extends\'
-///  clauses, collectively called elements.  There are also equation
-///  sections and algorithm sections. The EXTERNAL part is used only by functions
-///  which can be declared as external C or FORTRAN functions.
+/// protected component declarations, type definitions and `extends\'
+/// clauses, collectively called elements.  There are also equation
+/// sections and algorithm sections. The EXTERNAL part is used only by functions
+/// which can be declared as external C or FORTRAN functions.
 #[derive(
     Clone,
     Debug,
@@ -545,6 +553,7 @@ pub type ENUMLITERAL = EnumLiteral;
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum ClassPart {
     PUBLIC {
@@ -638,6 +647,7 @@ pub use self::ClassPart::{
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum ElementItem {
     ELEMENTITEM { element: metamodelica::Ref<Element> },
@@ -667,7 +677,7 @@ impl Default for ElementItem {
 pub use self::ElementItem::{ELEMENTITEM, LEXER_COMMENT};
 
 /// Elements
-///  The basic element type in Modelica
+/// The basic element type in Modelica
 #[derive(
     Clone,
     Debug,
@@ -677,6 +687,7 @@ pub use self::ElementItem::{ELEMENTITEM, LEXER_COMMENT};
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum Element {
     ELEMENT {
@@ -699,7 +710,7 @@ pub enum Element {
     },
     TEXT {
         /// optName : optional name of text, e.g. model with syntax error.
-        ///                                       We need the name to be able to browse it...
+        /// We need the name to be able to browse it...
         optName: Option<ArcStr>,
         string: ArcStr,
         info: Info,
@@ -760,6 +771,7 @@ pub use self::Element::{DEFINEUNIT, ELEMENT, TEXT};
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub struct ConstrainClass {
     /// must be extends
@@ -787,14 +799,14 @@ impl Default for ConstrainClass {
 pub type CONSTRAINCLASS = ConstrainClass;
 
 /// An element is something that occurs in a public or protected
-///    section in a class definition.  There is one constructor in the
-///    `ElementSpec\' type for each possible element type.  There are
-///    class definitions (`CLASSDEF\'), `extends\' clauses (`EXTENDS\')
-///    and component declarations (`COMPONENTS\').
+/// section in a class definition.  There is one constructor in the
+/// `ElementSpec\' type for each possible element type.  There are
+/// class definitions (`CLASSDEF\'), `extends\' clauses (`EXTENDS\')
+/// and component declarations (`COMPONENTS\').
 ///
-///    As an example, if the element `extends TwoPin;\' appears
-///    in the source, it is represented in the AST as
-///    `EXTENDS(IDENT(\"TwoPin\"),{})\'.
+/// As an example, if the element `extends TwoPin;\' appears
+/// in the source, it is represented in the AST as
+/// `EXTENDS(IDENT(\"TwoPin\"),{})\'.
 #[derive(
     Clone,
     Debug,
@@ -804,6 +816,7 @@ pub type CONSTRAINCLASS = ConstrainClass;
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum ElementSpec {
     CLASSDEF {
@@ -884,7 +897,7 @@ impl Default for ElementSpec {
 pub use self::ElementSpec::{CLASSDEF, COMPONENTS, EXTENDS, IMPORT};
 
 /// One of the keyword inner and outer CAN be given to reference an
-///   inner or outer element. Thus there are three disjoint possibilities.
+/// inner or outer element. Thus there are three disjoint possibilities.
 #[derive(
     Clone,
     Copy,
@@ -895,6 +908,7 @@ pub use self::ElementSpec::{CLASSDEF, COMPONENTS, EXTENDS, IMPORT};
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum InnerOuter {
     /// an inner prefix
@@ -933,8 +947,11 @@ pub use self::InnerOuter::{INNER, INNER_OUTER, NOT_INNER_OUTER, OUTER};
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum Import {
+    // A named import is a import statement to a variable ex;
+    // NAMED_IMPORT("SI",QUALIFIED("Modelica",IDENT("SIunits")));
     NAMED_IMPORT {
         /// name
         name: Ident,
@@ -996,6 +1013,7 @@ pub use self::Import::{GROUP_IMPORT, NAMED_IMPORT, QUAL_IMPORT, UNQUAL_IMPORT};
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum GroupImport {
     GROUP_IMPORT_NAME { name: ArcStr },
@@ -1026,7 +1044,7 @@ impl Default for GroupImport {
 pub use self::GroupImport::{GROUP_IMPORT_NAME, GROUP_IMPORT_RENAME};
 
 /// A componentItem can have a condition that must be fulfilled if
-///  the component should be instantiated.
+/// the component should be instantiated.
 pub type ComponentCondition = metamodelica::Ref<Exp>;
 
 /// Collection of component and an optional comment
@@ -1039,6 +1057,7 @@ pub type ComponentCondition = metamodelica::Ref<Exp>;
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub struct ComponentItem {
     /// component
@@ -1079,6 +1098,7 @@ pub type COMPONENTITEM = ComponentItem;
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub struct Component {
     /// name
@@ -1110,8 +1130,8 @@ impl Default for Component {
 pub type COMPONENT = Component;
 
 /// Several component declarations can be grouped together in one
-///  `ElementSpec\' by writing them on the same line in the source.
-///  This type contains the information specific to one component.
+/// `ElementSpec\' by writing them on the same line in the source.
+/// This type contains the information specific to one component.
 #[derive(
     Clone,
     Debug,
@@ -1121,6 +1141,7 @@ pub type COMPONENT = Component;
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum EquationItem {
     EQUATIONITEM {
@@ -1174,6 +1195,7 @@ pub use self::EquationItem::{EQUATIONITEM, EQUATIONITEMCOMMENT};
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum AlgorithmItem {
     ALGORITHMITEM {
@@ -1217,7 +1239,7 @@ impl Default for AlgorithmItem {
 pub use self::AlgorithmItem::{ALGORITHMITEM, ALGORITHMITEMCOMMENT};
 
 /// Information on one (kind) of equation, different constructors for different
-///     kinds of equations
+/// kinds of equations
 #[derive(
     Clone,
     Debug,
@@ -1227,6 +1249,7 @@ pub use self::AlgorithmItem::{ALGORITHMITEM, ALGORITHMITEMCOMMENT};
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum Equation {
     EQ_IF {
@@ -1366,9 +1389,9 @@ impl Default for Equation {
 pub use self::Equation::{EQ_CONNECT, EQ_EQUALS, EQ_FAILURE, EQ_FOR, EQ_IF, EQ_NORETCALL, EQ_PDE, EQ_WHEN_E};
 
 /// The Algorithm type describes one algorithm statement in an
-///  algorithm section.  It does not describe a whole algorithm.  The
-///  reason this type is named like this is that the name of the
-///  grammar rule for algorithm statements is `algorithm\'.
+/// algorithm section.  It does not describe a whole algorithm.  The
+/// reason this type is named like this is that the name of the
+/// grammar rule for algorithm statements is `algorithm\'.
 #[derive(
     Clone,
     Debug,
@@ -1378,6 +1401,7 @@ pub use self::Equation::{EQ_CONNECT, EQ_EQUALS, EQ_FAILURE, EQ_FOR, EQ_IF, EQ_NO
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum Algorithm {
     ALG_ASSIGN {
@@ -1434,8 +1458,10 @@ pub enum Algorithm {
     },
     ALG_RETURN,
     ALG_BREAK,
+    // MetaModelica extensions
     ALG_FAILURE {
         equ: metamodelica::List<metamodelica::Ref<AlgorithmItem>>,
+        // TODO: This is only 1 AlgorithmItem in the parser
     },
     ALG_TRY {
         body: metamodelica::List<metamodelica::Ref<AlgorithmItem>>,
@@ -1555,9 +1581,9 @@ pub static emptyMod: std::sync::LazyLock<metamodelica::Ref<Modification>> = std:
 });
 
 /// Modifications are described by the `Modification\' type.  There
-///  are two forms of modifications: redeclarations and component
-///  modifications.
-///  - Modifications
+/// are two forms of modifications: redeclarations and component
+/// modifications.
+/// - Modifications
 #[derive(
     Clone,
     Debug,
@@ -1567,6 +1593,7 @@ pub static emptyMod: std::sync::LazyLock<metamodelica::Ref<Modification>> = std:
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub struct Modification {
     pub elementArgLst: metamodelica::List<metamodelica::Ref<ElementArg>>,
@@ -1600,6 +1627,7 @@ pub type CLASSMOD = Modification;
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum EqMod {
     NOMOD,
@@ -1644,6 +1672,7 @@ pub use self::EqMod::{EQMOD, NOMOD};
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum ElementArg {
     MODIFICATION {
@@ -1675,7 +1704,7 @@ pub enum ElementArg {
     /// A lexer comment
     ELEMENTARGCOMMENT { comment: ArcStr },
     /// break is either an ident or an equation
-    ///    we save the ident as connect(ident, break) to keep it simple
+    /// we save the ident as connect(ident, break) to keep it simple
     INHERITANCEBREAK {
         cnct: metamodelica::Ref<Equation>,
         info: Info,
@@ -1748,6 +1777,7 @@ pub use self::ElementArg::{ELEMENTARGCOMMENT, INHERITANCEBREAK, MODIFICATION, RE
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum RedeclareKeywords {
     REDECLARE,
@@ -1771,7 +1801,7 @@ impl Default for RedeclareKeywords {
 pub use self::RedeclareKeywords::{REDECLARE, REDECLARE_REPLACEABLE, REPLACEABLE};
 
 /// The each keyword can be present in both MODIFICATION\'s and REDECLARATION\'s.
-///  - Each attribute
+/// - Each attribute
 #[derive(
     Clone,
     Copy,
@@ -1782,6 +1812,7 @@ pub use self::RedeclareKeywords::{REDECLARE, REDECLARE_REPLACEABLE, REPLACEABLE}
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum Each {
     EACH,
@@ -1812,6 +1843,7 @@ pub use self::Each::{EACH, NON_EACH};
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub struct ElementAttributes {
     /// flow
@@ -1869,6 +1901,7 @@ pub type ATTR = ElementAttributes;
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum IsField {
     /// variable is not a field
@@ -1902,6 +1935,7 @@ pub use self::IsField::{FIELD, NONFIELD};
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum Parallelism {
     /// Global variables for CUDA and OpenCL
@@ -1937,6 +1971,7 @@ pub use self::Parallelism::{NON_PARALLEL, PARGLOBAL, PARLOCAL};
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub(crate) enum FlowStream {
     FLOW,
@@ -1965,6 +2000,7 @@ pub(crate) use self::FlowStream::{FLOW, NOT_FLOW_STREAM, STREAM};
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum Variability {
     VAR,
@@ -2000,6 +2036,7 @@ pub use self::Variability::{CONST, DISCRETE, PARAM, VAR};
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum Direction {
     /// direction is input
@@ -2029,7 +2066,7 @@ impl Default for Direction {
 pub use self::Direction::{BIDIR, INPUT, INPUT_OUTPUT, OUTPUT};
 
 /// The Exp uniontype is the container of a Modelica expression.
-///  - Expressions
+/// - Expressions
 #[derive(
     Clone,
     Debug,
@@ -2039,6 +2076,7 @@ pub use self::Direction::{BIDIR, INPUT, INPUT_OUTPUT, OUTPUT};
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum Exp {
     INTEGER {
@@ -2108,6 +2146,7 @@ pub enum Exp {
         functionArgs: metamodelica::Ref<FunctionArgs>,
         typeVars: metamodelica::List<metamodelica::Ref<Path>>,
     },
+    // stefan
     /// Partially evaluated function
     PARTEVALFUNCTION {
         /// function
@@ -2142,6 +2181,7 @@ pub enum Exp {
     CODE {
         code: metamodelica::Ref<CodeNode>,
     },
+    // MetaModelica expressions follow below!
     /// as operator
     AS {
         /// only an id
@@ -2169,6 +2209,7 @@ pub enum Exp {
         /// TODO: Remove this as it was removed from the grammar
         comment: Option<ArcStr>,
     },
+    // The following are only used internally in the compiler
     /// Part of MetaModelica extension
     LIST {
         exps: metamodelica::List<metamodelica::Ref<Exp>>,
@@ -2396,6 +2437,7 @@ pub use self::Exp::{
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum Case {
     CASE {
@@ -2501,6 +2543,7 @@ pub use self::Case::{CASE, ELSE};
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum MatchType {
     MATCH,
@@ -2531,6 +2574,7 @@ pub use self::MatchType::{MATCH, MATCHCONTINUE};
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum CodeNode {
     /// Cannot be parsed; used by Static for API calls
@@ -2626,7 +2670,7 @@ pub use self::CodeNode::{
 };
 
 /// The FunctionArgs uniontype consists of a list of positional arguments
-///  followed by a list of named arguments (Modelica v2.0)
+/// followed by a list of named arguments (Modelica v2.0)
 #[derive(
     Clone,
     Debug,
@@ -2636,6 +2680,7 @@ pub use self::CodeNode::{
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum FunctionArgs {
     FUNCTIONARGS {
@@ -2699,6 +2744,7 @@ pub static emptyFunctionArgs: std::sync::LazyLock<metamodelica::Ref<FunctionArgs
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum ReductionIterType {
     /// Reductions are by default calculated as all combinations of the iterators
@@ -2717,7 +2763,7 @@ impl metamodelica::gc::MMTrace for ReductionIterType {
 pub use self::ReductionIterType::{COMBINE, THREAD};
 
 /// The NamedArg uniontype consist of an Identifier for the argument and an expression
-///  giving the value of the argument
+/// giving the value of the argument
 #[derive(
     Clone,
     Debug,
@@ -2727,6 +2773,7 @@ pub use self::ReductionIterType::{COMBINE, THREAD};
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub struct NamedArg {
     /// argName
@@ -2764,8 +2811,10 @@ pub type NAMEDARG = NamedArg;
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum Operator {
+    /* arithmetic operators */
     /// addition
     ADD,
     /// subtraction
@@ -2780,6 +2829,7 @@ pub enum Operator {
     UPLUS,
     /// unary minus
     UMINUS,
+    /* element-wise arithmetic operators */
     /// element-wise addition
     ADD_EW,
     /// element-wise subtraction
@@ -2794,12 +2844,14 @@ pub enum Operator {
     UPLUS_EW,
     /// element-wise unary plus
     UMINUS_EW,
+    /* logical operators */
     /// logical and
     AND,
     /// logical or
     OR,
     /// logical not
     NOT,
+    /* relational operators */
     /// less than
     LESS,
     /// less than or equal
@@ -2853,12 +2905,12 @@ pub use self::Operator::{
 };
 
 /// The Subscript uniontype is used both in array declarations and
-///  component references.  This might seem strange, but it is
-///  inherited from the grammar.  The NOSUB constructor means that
-///  the dimension size is undefined when used in a declaration, and
-///  when it is used in a component reference it means a slice of the
-///  whole dimension.
-///  - Subscripts
+/// component references.  This might seem strange, but it is
+/// inherited from the grammar.  The NOSUB constructor means that
+/// the dimension size is undefined when used in a declaration, and
+/// when it is used in a component reference it means a slice of the
+/// whole dimension.
+/// - Subscripts
 #[derive(
     Clone,
     Debug,
@@ -2868,6 +2920,7 @@ pub use self::Operator::{
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum Subscript {
     /// unknown array dimension
@@ -2907,9 +2960,9 @@ impl Default for Subscript {
 pub use self::Subscript::{NOSUB, SUBSCRIPT};
 
 /// A component reference is the fully or partially qualified name of
-///  a component.  It is represented as a list of
-///  identifier--subscript pairs.
-///  - Component references and paths
+/// a component.  It is represented as a list of
+/// identifier--subscript pairs.
+/// - Component references and paths
 #[derive(
     Clone,
     Debug,
@@ -2919,6 +2972,7 @@ pub use self::Subscript::{NOSUB, SUBSCRIPT};
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum ComponentRef {
     CREF_FULLYQUALIFIED {
@@ -2994,8 +3048,8 @@ impl Default for ComponentRef {
 pub use self::ComponentRef::{ALLWILD, CREF_FULLYQUALIFIED, CREF_IDENT, CREF_QUAL, WILD};
 
 /// The type `Path\', on the other hand,
-///  is used to store references to class names, or names inside
-///  class definitions.
+/// is used to store references to class names, or names inside
+/// class definitions.
 #[derive(
     Clone,
     Debug,
@@ -3005,6 +3059,7 @@ pub use self::ComponentRef::{ALLWILD, CREF_FULLYQUALIFIED, CREF_IDENT, CREF_QUAL
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum Path {
     QUALIFIED {
@@ -3018,9 +3073,8 @@ pub enum Path {
         name: Ident,
     },
     /// Used during instantiation for names that are fully qualified,
-    ///    i.e. the names are looked up from top scope directly like for instance Modelica.SIunits.Voltage
-    ///    Note: Not created during parsing, only during instantation to speedup/simplify lookup.
-    ///
+    /// i.e. the names are looked up from top scope directly like for instance Modelica.SIunits.Voltage
+    /// Note: Not created during parsing, only during instantation to speedup/simplify lookup.
     FULLYQUALIFIED { path: metamodelica::Ref<Path> },
 }
 impl metamodelica::gc::MMTrace for Path {
@@ -3052,13 +3106,12 @@ impl Default for Path {
 pub use self::Path::{FULLYQUALIFIED, IDENT, QUALIFIED};
 
 /// These constructors each correspond to a different kind of class
-///  declaration in Modelica, except the last four, which are used
-///  for the predefined types.  The parser assigns each class
-///  declaration one of the restrictions, and the actual class
-///  definition is checked for conformance during translation.  The
-///  predefined types are created in the Builtin module and are
-///  assigned special restrictions.
-///
+/// declaration in Modelica, except the last four, which are used
+/// for the predefined types.  The parser assigns each class
+/// declaration one of the restrictions, and the actual class
+/// definition is checked for conformance during translation.  The
+/// predefined types are created in the Builtin module and are
+/// assigned special restrictions.
 #[derive(
     Clone,
     Debug,
@@ -3068,6 +3121,7 @@ pub use self::Path::{FULLYQUALIFIED, IDENT, QUALIFIED};
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum Restriction {
     R_CLASS,
@@ -3094,15 +3148,21 @@ pub enum Restriction {
     R_PREDEFINED_STRING,
     R_PREDEFINED_BOOLEAN,
     R_PREDEFINED_ENUMERATION,
+    // BTH
     R_PREDEFINED_CLOCK,
+    // MetaModelica
     /// MetaModelica uniontype
     R_UNIONTYPE,
     /// Metamodelica record
     R_METARECORD {
+        //MetaModelica extension, added by simbj
         name: metamodelica::Ref<Path>,
+        //Name of the uniontype
         index: i32,
+        //Index in the uniontype
         singleton: bool,
         moved: bool,
+        // true if moved outside uniontype, otherwise false.
         typeVars: metamodelica::List<ArcStr>,
     },
     /// Helper restriction
@@ -3162,6 +3222,7 @@ pub use self::Restriction::{
     R_OPERATOR_RECORD, R_OPTIMIZATION, R_PACKAGE, R_PREDEFINED_BOOLEAN, R_PREDEFINED_CLOCK, R_PREDEFINED_ENUMERATION,
     R_PREDEFINED_INTEGER, R_PREDEFINED_REAL, R_PREDEFINED_STRING, R_RECORD, R_TYPE, R_UNIONTYPE, R_UNKNOWN,
 };
+/* added by simbj */
 
 /// function purity
 #[derive(
@@ -3174,6 +3235,7 @@ pub use self::Restriction::{
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum FunctionPurity {
     PURE,
@@ -3206,6 +3268,7 @@ pub use self::FunctionPurity::{IMPURE, NO_PURITY, PURE};
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum FunctionRestriction {
     /// a normal function
@@ -3238,7 +3301,7 @@ pub use self::FunctionRestriction::{
 };
 
 /// An Annotation is a class_modification.
-///  - Annotation
+/// - Annotation
 #[derive(
     Clone,
     Debug,
@@ -3248,6 +3311,7 @@ pub use self::FunctionRestriction::{
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub struct Annotation {
     /// elementArgs
@@ -3280,6 +3344,7 @@ pub type ANNOTATION = Annotation;
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub struct Comment {
     /// annotation
@@ -3316,6 +3381,7 @@ pub type COMMENT = Comment;
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub struct ExternalDecl {
     /// The name of the external function
@@ -3362,6 +3428,7 @@ pub type EXTERNALDECL = ExternalDecl;
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum Ref {
     RCR { cr: metamodelica::Ref<ComponentRef> },
@@ -3398,6 +3465,7 @@ pub use self::Ref::{RCR, RIM, RTS};
     metamodelica::MetaCmp,
     metamodelica::ReferenceEq,
     metamodelica::serial::MMSerial,
+    metamodelica::MMReflect,
 )]
 pub enum Msg {
     /// Give error message
