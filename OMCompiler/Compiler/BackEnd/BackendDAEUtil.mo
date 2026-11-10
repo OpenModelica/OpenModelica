@@ -7916,6 +7916,63 @@ end traverseZeroCrossingExps;
  * Equation System Pipeline
  ************************************************/
 
+public function indexDifferentiatedDelays
+  "Differentiate.mo gives each delay() call that it creates the placeholder
+   index -1, because it does not know which indices are in use. The
+   pre-optimization modules (for example introduceOutputRealDerivatives for
+   the outputs of a CS FMU) and index reduction put such calls into the
+   simulation DAE. Give them new indices after the indices from
+   BackendDAECreate.processBuiltinExpressions. This must be done before
+   findZeroCrossings copies the index into $delayZeroCrossing() and before
+   SimCode counts the delayed expressions. Called after the index reduction
+   in getSolvedSystem and DAEMode.getEqSystemDAEmode. See ticket #15532."
+  input output BackendDAE.BackendDAE dae;
+protected
+  Integer maxIndex;
+  Boolean hasPlaceholder;
+algorithm
+  (_, (maxIndex, hasPlaceholder)) := traverseBackendDAEExps(dae, Expression.traverseSubexpressionsHelper, (findMaxDelayIndex, (-1, false)));
+  if hasPlaceholder then
+    _ := traverseBackendDAEExpsNoCopyWithUpdate(dae, Expression.traverseSubexpressionsHelper, (setDelayIndex, maxIndex));
+  end if;
+end indexDifferentiatedDelays;
+
+protected function findMaxDelayIndex
+  "Helper for indexDifferentiatedDelays: finds the largest delay index and
+   whether a placeholder index is present."
+  input output DAE.Exp exp;
+  input output tuple<Integer, Boolean> acc;
+protected
+  Integer i, maxIndex;
+  Boolean hasPlaceholder;
+algorithm
+  acc := match exp
+    case DAE.CALL(path = Absyn.IDENT("delay"), expLst = DAE.ICONST(i)::_)
+      algorithm
+        (maxIndex, hasPlaceholder) := acc;
+      then (intMax(i, maxIndex), hasPlaceholder or i < 0);
+    else acc;
+  end match;
+end findMaxDelayIndex;
+
+protected function setDelayIndex
+  "Helper for indexDifferentiatedDelays: replaces a placeholder index with
+   the next free index."
+  input output DAE.Exp exp;
+  input output Integer maxIndex;
+algorithm
+  exp := match exp
+    local
+      Integer i;
+      list<DAE.Exp> args;
+    case DAE.CALL(path = Absyn.IDENT("delay"), expLst = DAE.ICONST(i)::args) guard i < 0
+      algorithm
+        maxIndex := maxIndex + 1;
+      then DAE.CALL(exp.path, DAE.ICONST(maxIndex)::args, exp.attr);
+    else exp;
+  end match;
+end setDelayIndex;
+
 public function getSolvedSystem "Run the equation system pipeline."
   input BackendDAE.BackendDAE inDAE;
   input String fileNamePrefix;
@@ -7961,6 +8018,10 @@ algorithm
   Error.checkCancel();
   dae := causalizeDAE(dae, NONE(), matchingAlgorithm, daeHandler, true);
   execStat("matching and sorting (n="+String(daeSize(dae))+")");
+
+  // index reduction is the last step that differentiates delay() calls into
+  // the simulation DAE, give them their indices now
+  dae := indexDifferentiatedDelays(dae);
 
   // synchronous features post-phase
   dae := SynchronousFeatures.synchronousFeatures(dae);

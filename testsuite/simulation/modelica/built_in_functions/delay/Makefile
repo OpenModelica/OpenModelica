@@ -4,6 +4,7 @@ TESTFILES = \
 	nameClash.mos \
 	Delay.mos \
 	DelayBufferGrowth.mos \
+	DelayDerivative.mos \
 	DelayTooSmall.mos \
 
 # test that currently fail. Move up when fixed.

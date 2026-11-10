@@ -1,0 +1,89 @@
+// name:     DelayDerivative
+// keywords: builtin delay derivative index reduction
+// status:   correct
+// teardown_command: rm -rf DelayDerivative1* DelayDerivative2* DelayDerivative3*
+//
+// der() of a delay() expression makes a new delay() call by differentiation.
+// This call must get its own delay index, also when the delay time is a
+// state and delay() makes a zero crossing, and also in DAE mode. With the
+// placeholder index -1 the simulation crashed (#15532).
+
+loadString("
+model DelayDerivative1
+  Real y = delay(time, 1);
+  Real d = der(y);
+end DelayDerivative1;
+
+model DelayDerivative2
+  Real y = delay(sin(time), 1, 2);
+  Real d = der(y);
+end DelayDerivative2;
+
+model DelayDerivative3
+  Real td(start = 0.5, fixed = true);
+  Real y = if time < td then 0 else delay(time, td, 10);
+  Real d = der(y);
+equation
+  der(td) = 0.1;
+end DelayDerivative3;
+"); getErrorString();
+
+simulate(DelayDerivative1, stopTime = 2); getErrorString();
+val(d, 1.5);
+simulate(DelayDerivative2, stopTime = 2); getErrorString();
+val(y, 1.5);
+val(d, 1.5);
+simulate(DelayDerivative3, stopTime = 2); getErrorString();
+val(y, 1.5);
+val(d, 1.5);
+setCommandLineOptions("--daeMode"); getErrorString();
+simulate(DelayDerivative3, stopTime = 2, fileNamePrefix = "DelayDerivative3_dae"); getErrorString();
+val(y, 1.5);
+val(d, 1.5);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DelayDerivative1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DelayDerivative1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// record SimulationResult
+//     resultFile = "DelayDerivative2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DelayDerivative2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.479425538604203
+// 0.8775825618903728
+// record SimulationResult
+//     resultFile = "DelayDerivative3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DelayDerivative3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.85
+// 0.9
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DelayDerivative3_dae_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'ida', fileNamePrefix = 'DelayDerivative3_dae', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_STDOUT        | warning | Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU. Colored numerical Jacobian will be used.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.85
+// 0.9
+// endResult
