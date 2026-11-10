@@ -361,6 +361,7 @@ openmodelica_gendoc/src/index.rs
 openmodelica_gendoc/src/links.rs
 openmodelica_gendoc/src/main.rs
 openmodelica_gendoc/src/packages.rs
+openmodelica_gendoc/src/rst.rs
 openmodelica_gendoc/src/style.css
 openmodelica_frontend/Cargo.toml
 openmodelica_frontend/src/Globals.rs
