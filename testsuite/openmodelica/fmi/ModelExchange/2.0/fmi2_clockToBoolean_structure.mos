@@ -1,0 +1,62 @@
+// name: fmi2_clockToBoolean_structure.mos
+// keywords: FMI 2.0 export ModelStructure clocked sample hold ClockToBoolean
+// status: correct
+// teardown_command: rm -rf fmi2_clockToBoolean_structure.fmu fmi2_clockToBoolean_structure.xml fmi2_clockToBoolean_structure_tmp.xml fmi2_clockToBoolean_structure.fmutmp/ fmi2_clockToBoolean_structure.log fmi2_clockToBoolean_structure_info.json
+// ClockToBoolean closes a loop over a sample/hold pair. The sample reads the
+// discrete hold output from before the clock tick, so the loop is legal, but
+// the FMI derivatives merge all partitions and saw a purely discrete algebraic
+// loop: internal errors, and a ModelStructure with empty dependencies, #16888.
+// The dependencies have to be those of the continuous part alone.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+model fmi2_clockToBoolean_structure
+  Modelica.Clocked.ClockSignals.Clocks.EventClock ec;
+  Modelica.Clocked.BooleanSignals.NonPeriodic.ClockToBoolean c2b;
+  input Real u;
+  Real x(start=1, fixed=true);
+  output Real y;
+equation
+  ec.u = time > 4.5;
+  connect(ec.y, c2b.u);
+  der(x) = -x + u;
+  y = 2*x;
+end fmi2_clockToBoolean_structure;
+"); getErrorString();
+
+buildModelFMU(fmi2_clockToBoolean_structure, version="2.0", fmuType="me"); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq fmi2_clockToBoolean_structure.fmu modelDescription.xml > fmi2_clockToBoolean_structure_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" fmi2_clockToBoolean_structure_tmp.xml > fmi2_clockToBoolean_structure.xml"); getErrorString();
+readFile("fmi2_clockToBoolean_structure.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi2_clockToBoolean_structure.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// 0
+// ""
+// "  <ModelStructure>
+//     <Outputs>
+//       <Unknown index=\"4\" dependencies=\"1\" dependenciesKind=\"dependent\" />
+//     </Outputs>
+//     <Derivatives>
+//       <Unknown index=\"2\" dependencies=\"1 3\" dependenciesKind=\"dependent dependent\" />
+//     </Derivatives>
+//     <InitialUnknowns>
+//       <Unknown index=\"2\" dependencies=\"1 3\" dependenciesKind=\"dependent dependent\" />
+//       <Unknown index=\"4\" dependencies=\"1\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"14\" dependencies=\"\" dependenciesKind=\"\" />
+//     </InitialUnknowns>
+//   </ModelStructure>
+// "
+// ""
+// endResult
