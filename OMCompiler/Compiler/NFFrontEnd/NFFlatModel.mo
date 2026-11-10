@@ -70,6 +70,7 @@ protected
   import NFPrefixes.Visibility;
   import NFSubscript.Subscript;
   import Prefixes = NFPrefixes;
+  import Restriction = NFRestriction;
   import Scalarize = NFScalarize;
   import SCode;
   import SCodeUtil;
@@ -87,6 +88,8 @@ protected
 public
   record FLAT_MODEL
     Absyn.Path name;
+    Restriction restriction;
+    Boolean isPartial;
     list<Variable> variables;
     list<Equation> equations;
     list<Equation> initialEquations;

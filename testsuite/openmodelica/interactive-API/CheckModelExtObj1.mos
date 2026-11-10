@@ -27,14 +27,10 @@ getErrorString();
 
 // Result:
 // true
-// "Check of ExternalObject1.constructor completed successfully.
-// Class ExternalObject1.constructor has 0 equation(s) and 0 variable(s).
-// 0 of these are trivial equation(s)."
-// "Check of ExternalObject1.destructor completed successfully.
-// Class ExternalObject1.destructor has 0 equation(s) and 0 variable(s).
-// 0 of these are trivial equation(s)."
+// "Check of ExternalObject1.constructor completed successfully."
+// "Check of ExternalObject1.destructor completed successfully."
 // "Check of ExternalObject1 completed successfully.
-// Class ExternalObject1 has 0 equation(s) and 0 variable(s).
+// The ExternalObject is globally balanced with 0 equation(s) and variable(s).
 // 0 of these are trivial equation(s)."
 // ""
 // endResult

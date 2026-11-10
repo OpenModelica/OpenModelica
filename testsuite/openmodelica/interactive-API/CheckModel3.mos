@@ -25,7 +25,8 @@ getErrorString();
 // Result:
 // true
 // "Check of M completed successfully.
-// Class M has 2*m + 2*n equation(s) and 3 + 3*m + 2*n variable(s).
-// 2*m + 2*n of these are trivial equation(s)."
+// The model has 2*m + 2*n equation(s) and 3 + 3*m + 2*n variables(s).
+// 2*m + 2*n of these are trivial equation(s).
+// The global balance of the model depends on parameters with no default values."
 // ""
 // endResult
