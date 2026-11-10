@@ -29,6 +29,15 @@ else
     @test OMCompiler.apply("Equation.toString", eq) == "der(x) = -k * x"
     @test OMCompiler.nodeid(eq) == OMCompiler.nodeid(only(fm.equations))
 
+    @test OMCompiler.evaluate("""loadString("
+      model E
+        type T = enumeration(a, b);
+        T t = T.a;
+      end E;")""") == "true\n"
+    local ty = only(first(OMCompiler.instantiate("E")).variables).ty
+    @test OMCompiler.ctor(ty) === :ENUMERATION
+    @test OMCompiler.apply("Path.toString", ty.typePath) == "T"
+
     @test_throws ErrorException OMCompiler.instantiate("NoSuchModel")
   end
 end
