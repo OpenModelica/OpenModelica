@@ -564,12 +564,6 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
       infoStreamPrint(OMC_LOG_SOLVER, 0, "overwrite solver method: %s [from command line]", data->simulationInfo->solverMethod);
     }
   }
-  /* if the model is compiled in daeMode then we have to use ida solver */
-  if (compiledInDAEMode && std::string("ida") != data->simulationInfo->solverMethod) {
-    omc_rc_release((void*) data->simulationInfo->solverMethod);
-    data->simulationInfo->solverMethod = GC_strdup(std::string("ida").c_str());
-    infoStreamPrint(OMC_LOG_SIMULATION, 0, "overwrite solver method: %s [DAEmode works only with IDA solver]", data->simulationInfo->solverMethod);
-  }
 
   // Create a result file
   const char *result_file = omc_flagValue[FLAG_R];
@@ -789,10 +783,35 @@ static enum SOLVER_METHOD resolveGbodeShorthand(enum SOLVER_METHOD solverID)
 }
 
 /**
+ * @brief Choose the integration method for -s=auto.
+ *
+ * @param solverID  Integration method.
+ * @return          The chosen method for S_AUTO, otherwise solverID.
+ */
+static enum SOLVER_METHOD resolveAutoSolver(enum SOLVER_METHOD solverID)
+{
+  if (solverID != S_AUTO) {
+    return solverID;
+  }
+  if (compiledInDAEMode) {
+    solverID = S_IDA;
+  } else {
+#if defined(WITH_DASSL)
+    solverID = S_DASSL;
+#else
+    solverID = S_RUNGEKUTTA;
+#endif
+  }
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "-s=auto chooses solver method %s", SOLVER_METHOD_NAME[solverID]);
+  return solverID;
+}
+
+/**
  * Calls the solver which is selected in the parameter string "method"
  * This function is used for interactive and non-interactive simulation
  * Parameter method:
- * "" & "dassl" calls a DASSL Solver
+ * "" & "auto" choose a solver, see resolveAutoSolver
+ * "dassl" calls a DASSL Solver
  * "euler" calls an Euler solver
  * "rungekutta" and other shorthands call GBODE, see resolveGbodeShorthand
  */
@@ -812,11 +831,7 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
   simData->real_time_sync.scaling = getFlagReal(FLAG_RT, 0.0);
 
   if(std::string("") == simData->simulationInfo->solverMethod) {
-#if defined(WITH_DASSL)
-    solverID = S_DASSL;
-#else
-    solverID = S_RUNGEKUTTA;
-#endif
+    solverID = S_AUTO;
   } else {
     for(i=1; i<S_MAX; ++i) {
       if(std::string(SOLVER_METHOD_NAME[i]) == simData->simulationInfo->solverMethod) {
@@ -825,6 +840,7 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
     }
   }
 
+  solverID = resolveAutoSolver(solverID);
   solverID = resolveGbodeShorthand(solverID);
 
   /* if no states are present, then we can
@@ -844,6 +860,8 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
       simData->callback->functionDAE = evaluateDAEResiduals_wrapperEventUpdate;
       simData->callback->function_ZeroCrossingsEquations = evaluateDAEResiduals_wrapperZeroCrossingsEquations;
     }
+  } else if (compiledInDAEMode && solverID != S_IDA && solverID != S_UNKNOWN) {
+    throwStreamPrint(threadData, "The model was compiled with --daeMode, which works only with -s=ida or -s=auto.");
   }
 
   if(S_UNKNOWN == solverID) {

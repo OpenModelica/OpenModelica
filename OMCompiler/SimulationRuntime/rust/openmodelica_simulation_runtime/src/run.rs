@@ -387,6 +387,7 @@ fn start_non_interactive_simulation(
                     | driver::SOLVER_FAILED_ERR
                     | driver::CHATTER_ABORT_ERR
                     | driver::RECON_ABORTED_ERR
+                    | driver::DAE_MODE_NEEDS_IDA
             ) {
                 omclog::error(omclog::STDOUT, false, e);
             }

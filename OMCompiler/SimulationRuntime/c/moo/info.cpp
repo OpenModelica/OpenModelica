@@ -44,7 +44,7 @@ void InfoGDOP::set_user_solver() {
     const char* flag_solver = (data->simulationInfo->solverMethod ? data->simulationInfo->solverMethod : omc_flagValue[FLAG_S]);
     if (!flag_solver) return;
 
-    for (int solver = 1; solver < S_MAX; solver++) {
+    for (int solver = S_AUTO + 1; solver < S_MAX; solver++) {
         if (std::string(SOLVER_METHOD_NAME[solver]) == flag_solver) {
             user_ode_solver = static_cast<SOLVER_METHOD>(solver);
             return;

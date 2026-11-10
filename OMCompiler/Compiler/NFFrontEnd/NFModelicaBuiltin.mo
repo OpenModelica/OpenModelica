@@ -1382,7 +1382,7 @@ The declared values <code>nan()</code>, <code>-1</code> and <code>\"&lt;default&
 or <code>NumberOfIntervals</code>, else 500. For optimize(), 50.</td></tr>
 <tr><td><code>stepSize</code></td><td>Not used. If it is given, numberOfIntervals is (stopTime - startTime) / stepSize, rounded down.</td></tr>
 <tr><td><code>tolerance</code></td><td><code>Tolerance</code>, else 1e-6.</td></tr>
-<tr><td><code>method</code></td><td>\"dassl\". With <code>--daeMode</code>, \"ida\". For optimize(), \"optimization\".</td></tr>
+<tr><td><code>method</code></td><td>\"auto\": the simulation runtime chooses the method (see <code>-s</code>). With <code>--daeMode</code>, \"ida\". For optimize(), \"optimization\".</td></tr>
 <tr><td><code>fileNamePrefix</code></td><td>The name of the class. The result file is <code>&lt;fileNamePrefix&gt;_res.&lt;outputFormat&gt;</code>.</td></tr>
 <tr><td><code>options</code></td><td>Not used.</td></tr>
 <tr><td><code>outputFormat</code></td><td>\"mat\". The other formats are \"csv\", \"plt\", \"arrow\" and \"empty\", which writes no result file.</td></tr>
@@ -3236,7 +3236,7 @@ impure function buildLabel
   input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
   input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
   input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
-  input String method = "dassl" "integration method used for simulation. <default> = dassl";
+  input String method = "auto" "integration method used for simulation. <default> = auto";
   input String fileNamePrefix = "" "fileNamePrefix. <default> = \"\"";
   input String options = "" "options. <default> = \"\"";
   input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
@@ -3255,7 +3255,7 @@ impure function reduceTerms
   input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
   input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
   input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
-  input String method = "dassl" "integration method used for simulation. <default> = dassl";
+  input String method = "auto" "integration method used for simulation. <default> = auto";
   input String fileNamePrefix = "" "fileNamePrefix. <default> = \"\"";
   input String options = "" "options. <default> = \"\"";
   input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";

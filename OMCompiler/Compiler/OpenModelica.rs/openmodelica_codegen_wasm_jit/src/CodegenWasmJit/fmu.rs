@@ -358,7 +358,7 @@ pub(super) fn cs_method_from(simulation_flags_json: &str, kind: &str, dae_mode: 
     if let Some(s) = fmi_flag(simulation_flags_json, "s") {
         return s;
     }
-    let own = if own.is_empty() {
+    let own = if own.is_empty() || own == "auto" {
         "dassl".to_string()
     } else {
         own.to_string()

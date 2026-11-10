@@ -1,0 +1,73 @@
+// name: testDAEModeSolverMethod
+// keywords: daeMode, solver, auto
+// status: correct
+// teardown_command: rm -rf SolverMethod* output.log
+//
+// The default method auto chooses dassl, or ida for --daeMode. A method given
+// explicitly is never replaced: --daeMode with dassl is an error. See #17727.
+
+loadString("
+model SolverMethod
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = -x;
+end SolverMethod;
+"); getErrorString();
+
+echo(false);
+res := simulate(SolverMethod, simflags = "-lv=LOG_SOLVER");
+messages := res.messages;
+echo(true);
+getErrorString();
+res.simulationOptions;
+regexBool(messages, "-s=auto chooses solver method dassl");
+val(x, 1.0);
+
+setCommandLineOptions("--daeMode"); getErrorString();
+
+simulate(SolverMethod); getErrorString();
+val(x, 1.0);
+
+simulate(SolverMethod, method = "dassl"); getErrorString();
+
+echo(false);
+res := simulate(SolverMethod, method = "dassl", simflags = "-s=auto -lv=LOG_SOLVER");
+messages := res.messages;
+echo(true);
+getErrorString();
+regexBool(messages, "-s=auto chooses solver method ida");
+val(x, 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'SolverMethod', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_SOLVER'"
+// true
+// 0.36787945153397683
+// true
+// ""
+// record SimulationResult
+//     resultFile = "SolverMethod_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'ida', fileNamePrefix = 'SolverMethod', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_STDOUT        | warning | Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU. Colored numerical Jacobian will be used.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.3678794515335972
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'SolverMethod', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: SolverMethod
+// LOG_ASSERT        | debug   | The model was compiled with --daeMode, which works only with -s=ida or -s=auto.
+// "
+// end SimulationResult;
+// ""
+// true
+// ""
+// true
+// 0.3678794515335972
+// endResult
