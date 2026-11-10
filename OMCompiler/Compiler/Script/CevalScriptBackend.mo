@@ -1719,7 +1719,7 @@ algorithm
         if FMI.isFMIVersion10(FMI.getFMIVersion(fmiInfo)) then
           Error.addMessage(Error.FMU_IMPORT_FMI1_DEPRECATED, {});
         end if;
-        fmiTypeDefinitionsList := list(quoteFMIEnumerationItems(td) for td in listReverse(fmiTypeDefinitionsList));
+        fmiTypeDefinitionsList := listReverse(quoteFMIEnumerationItems(td) for td in fmiTypeDefinitionsList);
         fmiModelVariablesList := listReverse(fmiModelVariablesList);
         s1 := System.tolower(Autoconf.platform);
         name := AbsynUtil.pathString(classpath);
@@ -1765,7 +1765,7 @@ algorithm
         if FMI.isFMIVersion10(FMI.getFMIVersion(fmiInfo)) then
           Error.addMessage(Error.FMU_IMPORT_FMI1_DEPRECATED, {});
         end if;
-        fmiTypeDefinitionsList := list(quoteFMIEnumerationItems(td) for td in listReverse(fmiTypeDefinitionsList));
+        fmiTypeDefinitionsList := listReverse(quoteFMIEnumerationItems(td) for td in fmiTypeDefinitionsList);
         fmiModelVariablesList := listReverse(fmiModelVariablesList);
         s1 := System.tolower(Autoconf.platform);
         str := Tpl.tplString(CodegenFMU.importFMUModelDescription, FMI.FMIIMPORT(s1, modeldescriptionfilename, workdir, fmiLogLevel, b2, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList, inputConnectors, outputConnectors));
