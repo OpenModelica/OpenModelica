@@ -37,7 +37,7 @@ runScript(modelTesting);getErrorString();
 // Modelica.Electrical.Machines.Examples.InductionMachines.IMC_YD
 // {"aimc.is[1]", "aimc.is[2]", "aimc.idq_rr[1]", "aimc.idq_rr[2]", "aimc.idq_sr[1]", "aimc.idq_sr[2]", "loadInertia.phi", "loadInertia.w"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 2.5, numberOfIntervals = 25000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.InductionMachines.IMC_YD', options = '', outputFormat = 'mat', variableFilter = 'time|aimc.is.1.|aimc.is.2.|aimc.idq_rr.1.|aimc.idq_rr.2.|aimc.idq_sr.1.|aimc.idq_sr.2.|loadInertia.phi|loadInertia.w', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 2.5, numberOfIntervals = 25000, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.InductionMachines.IMC_YD', options = '', outputFormat = 'mat', variableFilter = 'time|aimc.is.1.|aimc.is.2.|aimc.idq_rr.1.|aimc.idq_rr.2.|aimc.idq_sr.1.|aimc.idq_sr.2.|loadInertia.phi|loadInertia.w', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.InductionMachines.IMC_YD_res.mat
 // Files Equal!
 // "true

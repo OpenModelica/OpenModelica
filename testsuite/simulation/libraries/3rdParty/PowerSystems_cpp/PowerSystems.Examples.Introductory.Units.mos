@@ -49,7 +49,7 @@ runScript(modelTesting);getErrorString();
 // \"PowerSystems\"
 // "
 // ""
-// Simulation options: startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.Introductory.Units', options = '', outputFormat = 'mat', variableFilter = 'time|meter_SI.p.1.|meter_SI.p.2.|meter_SI.p.3.|meter_SI.v.1.|meter_SI.v.2.|meter_SI.v.3.|meter_SI.i.1.|meter_SI.i.2.|meter_SI.i.3.|meter_pu.p.1.|meter_pu.p.2.|meter_pu.p.3.|meter_pu.v.1.|meter_pu.v.2.|meter_pu.v.3.|meter_pu.i.1.|meter_pu.i.2.|meter_pu.i.3.', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'PowerSystems.Examples.Introductory.Units', options = '', outputFormat = 'mat', variableFilter = 'time|meter_SI.p.1.|meter_SI.p.2.|meter_SI.p.3.|meter_SI.v.1.|meter_SI.v.2.|meter_SI.v.3.|meter_SI.i.1.|meter_SI.i.2.|meter_SI.i.3.|meter_pu.p.1.|meter_pu.p.2.|meter_pu.p.3.|meter_pu.v.1.|meter_pu.v.2.|meter_pu.v.3.|meter_pu.i.1.|meter_pu.i.2.|meter_pu.i.3.', cflags = '', simflags = ' -emit_protected'
 // Result file: PowerSystems.Examples.Introductory.Units_res.mat
 // Files Equal!
 // "true

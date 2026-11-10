@@ -35,7 +35,7 @@ runScript(modelTesting);getErrorString();
 // Modelica.Magnetic.FundamentalWave.Examples.Components.PolyphaseInductance
 // {"resistor_e.i[1]", "resistor_e.i[2]", "resistor_s.i[1]", "resistor_s.i[2]", "resistor_m.i[1]", "resistor_m.i[2]"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 100.0, numberOfIntervals = 10000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.Components.PolyphaseInductance', options = '', outputFormat = 'mat', variableFilter = 'time|resistor_e.i.1.|resistor_e.i.2.|resistor_s.i.1.|resistor_s.i.2.|resistor_m.i.1.|resistor_m.i.2.', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 100.0, numberOfIntervals = 10000, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.Components.PolyphaseInductance', options = '', outputFormat = 'mat', variableFilter = 'time|resistor_e.i.1.|resistor_e.i.2.|resistor_s.i.1.|resistor_s.i.2.|resistor_m.i.1.|resistor_m.i.2.', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Magnetic.FundamentalWave.Examples.Components.PolyphaseInductance_res.mat
 // Files Equal!
 // "true

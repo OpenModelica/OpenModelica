@@ -39,7 +39,7 @@ runScript(modelTesting);getErrorString();
 // \"PowerSystems\"
 // "
 // ""
-// Simulation options: startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC3ph.Precalculation.Z_matrixTrDat0', options = '', outputFormat = 'mat', variableFilter = 'time|zr_d.1.|zr_d.2.|zr_q.1.|zx_d.1,1.|zx_d.1,2.|zx_d.2,1.|zx_d.2,2.|zx_q.1,1.', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'PowerSystems.Examples.AC3ph.Precalculation.Z_matrixTrDat0', options = '', outputFormat = 'mat', variableFilter = 'time|zr_d.1.|zr_d.2.|zr_q.1.|zx_d.1,1.|zx_d.1,2.|zx_d.2,1.|zx_d.2,2.|zx_q.1,1.', cflags = '', simflags = ' -emit_protected'
 // Result file: PowerSystems.Examples.AC3ph.Precalculation.Z_matrixTrDat0_res.mat
 // Files Equal!
 // "true

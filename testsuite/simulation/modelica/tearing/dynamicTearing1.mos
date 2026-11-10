@@ -65,7 +65,7 @@ val(z2,1.1); getErrorString();  // 10.0 or -2.0
 // ""
 // record SimulationResult
 //     resultFile = "dynamicTearing1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'dynamicTearing1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_DT_CONS'",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'dynamicTearing1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_DT_CONS'",
 //     messages = "LOG_DT_CONS       | info    | The following local constraint is violated:
 // |                 | |       | abs(y1) > 1e-12
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.

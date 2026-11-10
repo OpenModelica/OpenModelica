@@ -39,7 +39,7 @@ runScript(modelTesting);getErrorString();
 // \"PowerSystems\"
 // "
 // ""
-// Simulation options: startTime = 0.0, stopTime = 0.5, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC3ph.Generation.GenOrder3and7', options = '', outputFormat = 'mat', variableFilter = 'time|turboGen1.generator.i.1.|turboGen1.generator.i.2.|turboGen1.generator.i.3.|turboGen1.generator.tau_el|turboGen2.generator.i.1.|turboGen2.generator.i.2.|turboGen2.generator.i.3.|turboGen2.generator.tau_el', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 0.5, numberOfIntervals = 1000, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'PowerSystems.Examples.AC3ph.Generation.GenOrder3and7', options = '', outputFormat = 'mat', variableFilter = 'time|turboGen1.generator.i.1.|turboGen1.generator.i.2.|turboGen1.generator.i.3.|turboGen1.generator.tau_el|turboGen2.generator.i.1.|turboGen2.generator.i.2.|turboGen2.generator.i.3.|turboGen2.generator.tau_el', cflags = '', simflags = ' -emit_protected'
 // Result file: PowerSystems.Examples.AC3ph.Generation.GenOrder3and7_res.mat
 // Files Equal!
 // "true

@@ -111,7 +111,7 @@ val(i2, 1.0);
 // ""
 // record SimulationResult
 //     resultFile = "linear_system.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -123,7 +123,7 @@ val(i2, 1.0);
 // 0.2804903282692988
 // record SimulationResult
 //     resultFile = "linear_system.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls lapack'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls lapack'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -135,7 +135,7 @@ val(i2, 1.0);
 // 0.2804903282692988
 // record SimulationResult
 //     resultFile = "linear_system.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls lis'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls lis'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -147,7 +147,7 @@ val(i2, 1.0);
 // 0.2804903282692988
 // record SimulationResult
 //     resultFile = "linear_system.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls klu'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls klu'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -159,7 +159,7 @@ val(i2, 1.0);
 // 0.2804903282692988
 // record SimulationResult
 //     resultFile = "linear_system.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls totalpivot'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls totalpivot'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -198,7 +198,7 @@ val(i2, 1.0);
 // ****************
 // record SimulationResult
 //     resultFile = "linear_system.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls lis'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls lis'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -211,7 +211,7 @@ val(i2, 1.0);
 // true
 // record SimulationResult
 //     resultFile = "linear_system.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -223,7 +223,7 @@ val(i2, 1.0);
 // 0.2804903282692989
 // record SimulationResult
 //     resultFile = "linear_system.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls lapack'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls lapack'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -235,7 +235,7 @@ val(i2, 1.0);
 // 0.2804903282692989
 // record SimulationResult
 //     resultFile = "linear_system.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls lis'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls lis'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -247,7 +247,7 @@ val(i2, 1.0);
 // 0.2804903282692989
 // record SimulationResult
 //     resultFile = "linear_system.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls klu'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls klu'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -259,7 +259,7 @@ val(i2, 1.0);
 // 0.2804903282692989
 // record SimulationResult
 //     resultFile = "linear_system.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls totalpivot'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls totalpivot'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

@@ -32,7 +32,7 @@ val(x[7], 0.1);
 // ""
 // record SimulationResult
 //     resultFile = "resizableInitOverdetermined_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'resizableInitOverdetermined', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=N=8'",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'resizableInitOverdetermined', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=N=8'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
