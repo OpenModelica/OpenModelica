@@ -471,11 +471,6 @@ package FMI
     output String outEnumerationType;
   end getEnumerationTypeFromTypes;
 
-  function enumerationItemIdent
-    input String name;
-    output String ident;
-  end enumerationItemIdent;
-
   function filterModelVariables
     input list<ModelVariables> inModelVariables;
     input String tipe;

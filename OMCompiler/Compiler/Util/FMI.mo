@@ -38,12 +38,8 @@ encapsulated package FMI
   package:     FMI
   description: This file contains FMI's import specific function, which are implemented in C."
 
-protected import Absyn;
-protected import ErrorExt;
 protected import Flags;
 protected import List;
-protected import Parser;
-protected import Util;
 
 public uniontype Info
   record INFO
@@ -519,29 +515,6 @@ algorithm
     case ({}, _) then "";
   end match;
 end getEnumerationTypeFromTypes;
-
-public function enumerationItemIdent
-  "Returns the name of an FMI enumeration item as a Modelica identifier.
-   FMI allows any string as the name, for example \"Option 1\". A name that
-   is not a valid Modelica identifier, or that is a keyword, becomes a quoted
-   identifier, for example 'Option 1'. A valid name stays unchanged."
-  input String name;
-  output String ident;
-protected
-  String id;
-algorithm
-  // Use the Modelica parser: it knows the identifier rules and the keywords.
-  ErrorExt.setCheckpoint(getInstanceName());
-  try
-    Absyn.IDENT(name = id) := Parser.stringPath(name);
-    // The parser ignores white space and comments around the identifier.
-    true := id == name;
-    ident := name;
-  else
-    ident := Util.makeQuotedIdentifier(name);
-  end try;
-  ErrorExt.rollBack(getInstanceName());
-end enumerationItemIdent;
 
 public function filterModelVariables
   input list<ModelVariables> inModelVariables;

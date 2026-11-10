@@ -3171,7 +3171,7 @@ template dumpFMITypeDefinitionsItem(EnumerationItem item)
 match item
 case ENUMERATIONITEM(__) then
   <<
-  <%enumerationItemIdent(name)%>
+  <%name%>
   >>
 end dumpFMITypeDefinitionsItem;
 
@@ -3206,11 +3206,11 @@ match item
 case ENUMERATIONITEM(__) then
   if intEq(i, 1) then
   <<
-  if i == <%i%> then outType := <%typeName%>.<%enumerationItemIdent(name)%>;
+  if i == <%i%> then outType := <%typeName%>.<%name%>;
   >>
   else
   <<
-  elseif i == <%i%> then outType := <%typeName%>.<%enumerationItemIdent(name)%>;
+  elseif i == <%i%> then outType := <%typeName%>.<%name%>;
   >>
 end dumpFMITypeDefinitionMappingFunctionItems;
 

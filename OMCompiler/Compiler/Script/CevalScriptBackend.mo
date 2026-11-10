@@ -1719,7 +1719,7 @@ algorithm
         if FMI.isFMIVersion10(FMI.getFMIVersion(fmiInfo)) then
           Error.addMessage(Error.FMU_IMPORT_FMI1_DEPRECATED, {});
         end if;
-        fmiTypeDefinitionsList := listReverse(fmiTypeDefinitionsList);
+        fmiTypeDefinitionsList := list(quoteFMIEnumerationItems(td) for td in listReverse(fmiTypeDefinitionsList));
         fmiModelVariablesList := listReverse(fmiModelVariablesList);
         s1 := System.tolower(Autoconf.platform);
         name := AbsynUtil.pathString(classpath);
@@ -1765,7 +1765,7 @@ algorithm
         if FMI.isFMIVersion10(FMI.getFMIVersion(fmiInfo)) then
           Error.addMessage(Error.FMU_IMPORT_FMI1_DEPRECATED, {});
         end if;
-        fmiTypeDefinitionsList := listReverse(fmiTypeDefinitionsList);
+        fmiTypeDefinitionsList := list(quoteFMIEnumerationItems(td) for td in listReverse(fmiTypeDefinitionsList));
         fmiModelVariablesList := listReverse(fmiModelVariablesList);
         s1 := System.tolower(Autoconf.platform);
         str := Tpl.tplString(CodegenFMU.importFMUModelDescription, FMI.FMIIMPORT(s1, modeldescriptionfilename, workdir, fmiLogLevel, b2, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList, inputConnectors, outputConnectors));
@@ -1815,6 +1815,44 @@ algorithm
 
   end matchcontinue;
 end cevalInteractiveFunctions3;
+
+protected function quoteFMIEnumerationItems
+  "Makes each item name of an FMI enumeration type a Modelica identifier
+   for importFMU. See fmiEnumerationItemIdent."
+  input output FMI.TypeDefinitions typeDefinition;
+algorithm
+  () := match typeDefinition
+    case FMI.ENUMERATIONTYPE()
+      algorithm
+        typeDefinition.items := list(FMI.ENUMERATIONITEM(fmiEnumerationItemIdent(item.name), item.description)
+          for item in typeDefinition.items);
+      then
+        ();
+  end match;
+end quoteFMIEnumerationItems;
+
+protected function fmiEnumerationItemIdent
+  "Returns the name of an FMI enumeration item as a Modelica identifier.
+   FMI allows any string as the name, for example \"Option 1\". A name that
+   is not a Modelica identifier becomes a quoted identifier, for example
+   'Option 1'. A name that is an identifier stays unchanged."
+  input String name;
+  output String ident;
+protected
+  String id;
+algorithm
+  // Use the Modelica parser: it knows the identifier rules and the keywords.
+  ErrorExt.setCheckpoint(getInstanceName());
+  try
+    Absyn.IDENT(name = id) := Parser.stringPath(name);
+    // The parser ignores white space and comments around the identifier.
+    true := id == name;
+    ident := name;
+  else
+    ident := Util.makeQuotedIdentifier(name);
+  end try;
+  ErrorExt.rollBack(getInstanceName());
+end fmiEnumerationItemIdent;
 
 public function cevalInteractiveFunctions4
 "defined in the interactive environment."
