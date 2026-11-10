@@ -47,6 +47,16 @@ fn diff_all_reports_missing_variables() {
 }
 
 #[test]
+fn csv_booleans_are_numbers() {
+    let d = dir("booleans");
+    let file = path(&d, "fmpy.csv");
+    std::fs::write(&file, "\"time\",\"b\"\n0.0,True\n1.0,False\n").unwrap();
+    let mut f = ResultFile::open(&file).unwrap();
+    assert_eq!(f.trajectory("b").unwrap(), [1.0, 0.0]);
+    std::fs::remove_dir_all(d).unwrap();
+}
+
+#[test]
 fn filter_without_descriptions_reads_back() {
     let d = dir("filter");
     let input = path(&d, "in.mat");
