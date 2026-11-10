@@ -4274,6 +4274,19 @@ QList<QList<QString > > OMCProxy::getUses(QString className)
 }
 
 /*!
+ * \brief OMCProxy::getUsedClassNames
+ * Returns the classes used by the total program of the class.
+ * \param className
+ * \return
+ */
+QList<QString> OMCProxy::getUsedClassNames(QString className)
+{
+  QList<QString> result = mpOMCInterface->getUsedClassNames(className);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
  * \brief OMCProxy::buildEncryptedPackage
  * Builds the encrypted package.
  * \param className
