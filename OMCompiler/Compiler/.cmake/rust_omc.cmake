@@ -182,12 +182,12 @@ option(RUST_OMC_PREBUILT_GENERATED_SRC
   "Assume the mmtorust-generated *.rs are already present (e.g. unstashed from an earlier CI stage) and skip the transpile."
   OFF)
 
-# Each client is a separate cargo build resolving the workspace to a different
+# The client is a separate cargo build resolving the workspace to a different
 # feature set than the cdylib, sharing one target directory: cargo cannot reuse
-# the fingerprints, so every compiler crate is rebuilt per client, every build.
-# The browser OMShell pages come from the wasm target and are not affected.
+# the fingerprints, so every compiler crate is rebuilt for it, every build.
+# The browser OMShell page comes from the wasm target and is not affected.
 option(RUST_OMC_OMSHELL_CLIENTS
-  "Build the desktop egui + dioxus/Blitz OMShell clients. Off by default: each is a separate cargo feature resolution and rebuilds every compiler crate."
+  "Build the desktop egui OMShell client. Off by default: it is a separate cargo feature resolution and rebuilds every compiler crate."
   OFF)
 
 # The target always exists (`--target rust_omgendoc`); this adds it to ALL and
@@ -1434,21 +1434,6 @@ function(omc_rust_setup_codegen)
       VERBATIM)
     install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/OMShell-egui${RUST_OMC_EXE_SUFFIX}
             DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omc)
-
-    # The native dioxus client uses Blitz (dioxus-native), not a webview, so the
-    # Help -> WebGPU test can composite a real wgpu scene. Drop the default `web`
-    # feature, select `native`. Same in-process compiler link as egui, so it also
-    # DEPENDS on rust_codegen.
-    add_custom_target(rust_omshell_dioxus ALL
-      WORKING_DIRECTORY ${RUST_OMC_DIR}
-      ${OMC_JOB_SERVER_AWARE}
-      COMMAND ${CARGO_BUILD_ARTIFACT} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG}
-              -p omshell_dioxus --bin OMShell-dioxus --no-default-features --features native
-      DEPENDS rust_codegen rust_omshell_egui
-      COMMENT "Rust: building OMShell-dioxus (native/Blitz, ${RUST_OMC_PROFILE})"
-      VERBATIM)
-    install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/OMShell-dioxus${RUST_OMC_EXE_SUFFIX}
-            DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omc)
   endif()
   # The library-documentation generator. Frontend-only, so it does not link the
   # cdylib and only DEPENDS on the transpile.
@@ -1593,8 +1578,8 @@ endfunction()
 # already built it alongside the compiler (see _wasm_common). This step only runs
 # wasm-bindgen + assembly, so it just waits for rust_wasm, not a second cargo build.
 #
-# `_label` is a clean token for the cmake target name (egui/dioxus); `_binname`
-# is the GUI's bin/artifact name (OMShell-egui/OMShell-dioxus), which is also the
+# `_label` is a clean token for the cmake target name (egui); `_binname`
+# is the GUI's bin/artifact name (OMShell-egui), which is also the
 # web dir and <name>.html so the page paths are self-consistent.
 #
 # Called from inside omc_rust_setup_wasm, so it reads that function's locals
@@ -1704,7 +1689,7 @@ function(omc_rust_fmi_driver_module)
   endif()
 endfunction()
 
-# Assemble the Qt OMShell web page. Unlike the egui/dioxus pages (Rust crates the
+# Assemble the Qt OMShell web page. Unlike the egui page (a Rust crate the
 # rust_wasm cargo invocation already built), this is the C++ Qt OMShell compiled
 # with Qt for WebAssembly — a separate toolchain, so it is a nested cmake build
 # (OMShellGUI/wasm) driven here. The result is staged in web/OMShell-qt/ next to
@@ -1994,11 +1979,11 @@ function(omc_rust_setup_wasm)
   # description templates only, not `codegen_fmu_c`/`codegen_c` -- the wasm-jit
   # target emits the model itself.
   #
-  # When the OMShell web pages are wanted (GUI clients on, browser host) their
-  # crates are added to this *same* cargo invocation, so eframe/dioxus and their
-  # deps compile in parallel with the compiler rather than serially after it.
+  # When the OMShell web page is wanted (GUI clients on, browser host) its
+  # crate is added to this *same* cargo invocation, so eframe and its deps
+  # compile in parallel with the compiler rather than serially after it.
   # --no-default-features then applies to all selected packages, so the features
-  # are package-qualified (omshell_egui has none; omshell_dioxus needs `web`).
+  # are package-qualified.
   set(_build_omshell_web FALSE)
   if(OM_ENABLE_GUI_CLIENTS AND _host STREQUAL "web")
     set(_build_omshell_web TRUE)
@@ -2023,9 +2008,9 @@ function(omc_rust_setup_wasm)
   endif()
   if(_build_omshell_web)
     set(_wasm_common --target ${_wasm_target}
-                     -p libopenmodelica_compiler -p omshell_egui -p omshell_dioxus ${_anim_pkg}
+                     -p libopenmodelica_compiler -p omshell_egui ${_anim_pkg}
                      --no-default-features
-                     --features libopenmodelica_compiler/engine-wasmer,libopenmodelica_compiler/codegen_fmu,omshell_dioxus/web${_wasm_scripting_feature}${_wasm_sundials_feature})
+                     --features libopenmodelica_compiler/engine-wasmer,libopenmodelica_compiler/codegen_fmu${_wasm_scripting_feature}${_wasm_sundials_feature})
   else()
     set(_wasm_common --target ${_wasm_target} -p libopenmodelica_compiler ${_anim_pkg}
                      --no-default-features
@@ -2049,7 +2034,6 @@ function(omc_rust_setup_wasm)
   #   web/home/index.html                             (default client: getVersion() splash)
   #   web/omc-terminal/index.html                     (the omc REPL, one OMShell variant)
   #   web/omshell_egui.html      + web/omshell_egui/*   (added by the page helper)
-  #   web/omshell_dioxus.html    + web/omshell_dioxus/*
   # index.html is an SPA that loads each client in an iframe (hash-routed for
   # shareable links). The browser launcher imports ./omc/; Node keeps
   # pkg-nodejs/ + omc-cli.js.
@@ -2294,7 +2278,7 @@ function(omc_rust_setup_wasm)
           DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omc/web
           COMPONENT web)
 
-  # OMShell web GUIs (egui + dioxus): in the wasm build the GUI-clients flag
+  # OMShell web GUI (egui): in the wasm build the GUI-clients flag
   # (OM_ENABLE_GUI_CLIENTS, the Qt clients being unavailable here) selects the
   # OMShell web pages instead. Each is assembled next to a copy of the omc module
   # above so the page drives omc in-browser, and installed to
@@ -2308,8 +2292,7 @@ function(omc_rust_setup_wasm)
 
   if(OM_ENABLE_GUI_CLIENTS)
     if(_host STREQUAL "web")
-      omc_rust_omshell_web_page(egui   OMShell-egui   ${RUST_OMC_DIR}/omshell_egui/web/index.html)
-      omc_rust_omshell_web_page(dioxus OMShell-dioxus ${RUST_OMC_DIR}/omshell_dioxus/web/index.html)
+      omc_rust_omshell_web_page(egui OMShell-egui ${RUST_OMC_DIR}/omshell_egui/web/index.html)
       if(RUST_OMC_WEB_QT OR RUST_OMC_WEB_QT_STANDALONE)
         omc_rust_omshell_qt_web_page()
         omc_rust_omnotebook_qt_web_page()

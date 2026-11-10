@@ -82,10 +82,6 @@ omshell_core/src/completion.rs
 omshell_core/src/driver.rs
 omshell_core/src/lib.rs
 omshell_core/src/shell.rs
-omshell_dioxus/Cargo.toml
-omshell_dioxus/src/blitz_demo.rs
-omshell_dioxus/src/main.rs
-omshell_dioxus/web/index.html
 omshell_egui/Cargo.toml
 omshell_egui/index.html
 omshell_egui/src/app.rs

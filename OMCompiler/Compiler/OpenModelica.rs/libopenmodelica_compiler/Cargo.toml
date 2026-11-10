@@ -48,7 +48,7 @@ openmodelica_wasm_jit.workspace = true
 # wasm-bindgen the wasmer `js` backend targets (see the workspace Cargo.lock);
 # since wasmer 7.2 this is the same recent wasm-bindgen the OMShell GUIs use.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = "=0.2.128"
+wasm-bindgen = "=0.2.130"
 openmodelica_wasi.workspace = true
 # Read the last simulation's results straight out of the runtime (src/wasm_api.rs
 # omc_sim_*), so the web simulator plots without an intermediate result file.
@@ -60,10 +60,10 @@ openmodelica_wasm_jit.workspace = true
 openmodelica_frontend_types.workspace = true
 # Unzip a library archive in-wasm and populate the VFS (pure-Rust deflate, no C
 # zlib, so it builds for wasm32).
-zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
+zip = { version = "9.5.0", default-features = false, features = ["deflate"] }
 # Renders `plot(...)` as an SVG chart in-browser (src/wasm_plot.rs); pure-Rust
 # SVG backend (default features), so it builds for wasm32.
-charton = "0.6"
+charton = "0.9"
 # DOM access to insert the rendered SVG into the page's #log element.
 web-sys = { version = "0.3.105", features = ["Window", "Document", "Element", "Node"] }
 # Building the {urls, filename} pending-download list for the JS host (omc_take_pending_downloads).

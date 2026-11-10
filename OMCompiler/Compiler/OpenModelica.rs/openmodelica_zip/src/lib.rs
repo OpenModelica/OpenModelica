@@ -57,9 +57,12 @@ fn select_path(names: &[String], path: &str) -> Vec<Option<String>> {
 fn extract(zip_file: &str, dest: &str, select: impl FnOnce(&[String]) -> Vec<Option<String>>) -> Result<()> {
     #[allow(unused_mut)]
     let mut archive = open(zip_file)?;
-    let names: Vec<String> = (0..archive.len())
-        .map(|i| archive.name_for_index(i).unwrap_or("").to_string())
-        .collect();
+    let names = (0..archive.len())
+        .map(|i| match archive.name_for_index(i) {
+            Some(name) => name.map(|n| n.into_owned()).map_err(|e| open_failed(zip_file, e)),
+            None => Ok(String::new()),
+        })
+        .collect::<Result<Vec<String>>>()?;
     let mut dirs = BTreeSet::new();
     let mut files = Vec::new();
     for (i, (name, rel)) in names.iter().zip(select(&names)).enumerate() {
@@ -112,7 +115,7 @@ fn extract_entry<R: Read + Seek>(
     loop {
         let n = entry
             .read(&mut buf)
-            .map_err(|e| format!("Failed to read {} in {zip_file}: {e}", entry.name()))?;
+            .map_err(|e| format!("Failed to read {} in {zip_file}: {e}", entry.name().unwrap_or_default()))?;
         if n == 0 {
             break;
         }
@@ -358,6 +361,10 @@ mod tests {
         p.display().to_string()
     }
 
+    fn entry_names<R: Read + Seek>(archive: &zip::ZipArchive<R>) -> Vec<String> {
+        archive.file_names().map(|n| n.unwrap().into_owned()).collect()
+    }
+
     fn write_zip(path: &std::path::Path, dirs: &[&str], files: &[(&str, &str)]) {
         let mut w = zip::ZipWriter::new(std::fs::File::create(path).unwrap());
         let opts = zip::write::SimpleFileOptions::default();
@@ -448,8 +455,8 @@ mod tests {
         let mol = dir.join("P.mol");
         zip_path(&s(&mol), &s(&src), "P").unwrap();
         let archive = zip::ZipArchive::new(std::fs::File::open(&mol).unwrap()).unwrap();
-        assert!(archive.file_names().all(|n| n.starts_with("P/")));
-        assert!(archive.file_names().any(|n| n == "P/empty/"));
+        assert!(entry_names(&archive).iter().all(|n| n.starts_with("P/")));
+        assert!(entry_names(&archive).iter().any(|n| n == "P/empty/"));
 
         let out = dir.join("out");
         unzip_all(&s(&mol), &s(&out)).unwrap();
@@ -480,7 +487,7 @@ mod tests {
         let fmu = dir.join("M.fmu");
         zip_paths(&s(&fmu), &[(&s(&dir), "")], &["sources/build_cmake"]).unwrap();
         let archive = zip::ZipArchive::new(std::fs::File::open(&fmu).unwrap()).unwrap();
-        let mut names: Vec<&str> = archive.file_names().collect();
+        let mut names = entry_names(&archive);
         names.sort();
         assert_eq!(names, ["modelDescription.xml", "sources/", "sources/a.c"]);
 
@@ -494,7 +501,7 @@ mod tests {
         )
         .unwrap();
         let archive = zip::ZipArchive::new(std::fs::File::open(&two).unwrap()).unwrap();
-        assert_eq!(archive.file_names().collect::<Vec<_>>(), ["modelDescription.xml"]);
+        assert_eq!(entry_names(&archive), ["modelDescription.xml"]);
         let _ = std::fs::remove_dir_all(&dir);
     }
 
