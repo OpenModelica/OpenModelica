@@ -1,8 +1,6 @@
 // status: correct
-// cflags: -d=-newInst
 // suite: metamodelica
-
-setCommandLineOptions("-g=MetaModelica -d=noevalfunc,gen");
+// cflags: -g=MetaModelica -d=noevalfunc,gen
 
 loadString("
 function f
@@ -31,7 +29,6 @@ end g;
 g(1.5);getErrorString();
 
 // Result:
-// true
 // true
 // b1 false
 // b2 false

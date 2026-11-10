@@ -726,9 +726,9 @@ package Modelica "Modelica Standard Library"
  "));
 
        block BooleanPulse "Generate pulse signals of type Boolean"
-          parameter Real width[:](final min=Modelica.Constants.small,final max=100)={50}
+          parameter Real width[:](each final min=Modelica.Constants.small,each final max=100)={50}
         "Widths of pulses in % of period";
-          parameter SI.Time period[:](final min=Modelica.Constants.small)={1}
+          parameter SI.Time period[:](each final min=Modelica.Constants.small)={1}
         "Times for one period";
           parameter SI.Time startTime[:]={0} "Iime instants of first pulse";
           extends Interfaces.BooleanSignalSource(final nout=max([size(width,1); size(period,1); size(startTime,1)]));
@@ -1217,7 +1217,6 @@ model BS16
 
 equation
   connect(booleanPulse1.outPort,booleanChange1.inPort) annotation(Line(visible=true,points={{-14.4,12.88},{-0.41,11.66}}));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BS16;
 // class BS16
 // parameter Integer booleanPulse1.nout(min = 1) = 1 "Number of Boolean outputs";
@@ -1249,36 +1248,31 @@ end BS16;
 // end BS16;
 // Result:
 // class BS16
-//   parameter Integer booleanPulse1.nout(min = 1) = 1 "Number of Boolean outputs";
-//   parameter Integer booleanPulse1.outPort.n = booleanPulse1.nout "Dimension of signal vector";
-//   Boolean booleanPulse1.outPort.signal[1] "Boolean output signals";
 //   parameter Real booleanPulse1.width[1](min = 1e-60, max = 100.0) = 50.0 "Widths of pulses in % of period";
 //   parameter Real booleanPulse1.period[1](quantity = "Time", unit = "s", min = 1e-60) = 1.0 "Times for one period";
 //   parameter Real booleanPulse1.startTime[1](quantity = "Time", unit = "s") = 0.0 "Iime instants of first pulse";
+//   final parameter Integer booleanPulse1.nout(min = 1) = 1 "Number of Boolean outputs";
+//   final parameter Integer booleanPulse1.outPort.n = 1 "Dimension of signal vector";
+//   Boolean booleanPulse1.outPort.signal[1] "Boolean output signals";
 //   protected parameter Real booleanPulse1.p_period[1](quantity = "Time", unit = "s") = booleanPulse1.period[1];
-//   protected parameter Real booleanPulse1.Twidth[1](quantity = "Time", unit = "s") = 0.01 * booleanPulse1.width[1] "width of one pulse";
+//   protected parameter Real booleanPulse1.Twidth[1](quantity = "Time", unit = "s") = booleanPulse1.p_period[1] * booleanPulse1.width[1] / 100.0 "width of one pulse";
 //   protected parameter Real booleanPulse1.p_startTime[1](quantity = "Time", unit = "s") = booleanPulse1.startTime[1];
 //   protected Real booleanPulse1.T0[1](quantity = "Time", unit = "s", start = booleanPulse1.p_startTime[1]) "Start time of current period";
-//   parameter Integer booleanChange1.n = 1 "Number of inputs (= number of outputs)";
-//   parameter Integer booleanChange1.inPort.n = booleanChange1.n "Dimension of signal vector";
+//   final parameter Integer booleanChange1.n = 1 "Number of inputs (= number of outputs)";
+//   final parameter Integer booleanChange1.inPort.n = 1 "Dimension of signal vector";
 //   Boolean booleanChange1.inPort.signal[1] "Boolean input signals";
-//   parameter Integer booleanChange1.outPort.n = booleanChange1.n "Dimension of signal vector";
+//   final parameter Integer booleanChange1.outPort.n = 1 "Dimension of signal vector";
 //   Boolean booleanChange1.outPort.signal[1] "Boolean output signals";
 //   Boolean booleanChange1.y[1] "Output signals";
 //   protected Boolean booleanChange1.u[1] "Input signals";
 // equation
+//   booleanPulse1.outPort.signal[1] = booleanChange1.inPort.signal[1];
 //   when sample(booleanPulse1.p_startTime[1], booleanPulse1.p_period[1]) then
 //     booleanPulse1.T0[1] = time;
 //   end when;
 //   booleanPulse1.outPort.signal[1] = time >= booleanPulse1.T0[1] and time < booleanPulse1.T0[1] + booleanPulse1.Twidth[1];
-//   booleanChange1.u = {booleanChange1.inPort.signal[1]};
+//   booleanChange1.u = booleanChange1.inPort.signal;
 //   booleanChange1.y[1] = change(booleanChange1.u[1]);
 //   booleanChange1.y[1] = booleanChange1.outPort.signal[1];
-//   assert(booleanPulse1.outPort.n == booleanChange1.inPort.n, "automatically generated from connect");
-//   booleanChange1.inPort.signal[1] = booleanPulse1.outPort.signal[1];
 // end BS16;
-// [flattening/modelica/msl/BS16.mo:729:41-729:69:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
-// [flattening/modelica/msl/BS16.mo:729:76-729:83:writable] Warning: Non-array modification '100' for array component, possibly due to missing 'each'.
-// [flattening/modelica/msl/BS16.mo:731:45-731:73:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
-//
 // endResult

@@ -246,7 +246,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_INPUT_PATH */                   "value specifies a path for reading the input files i.e., model_init.xml and model_info.json",
   /* FLAG_IPOPT_HESSE */                  "value specifies the hessian for Ipopt",
   /* FLAG_IPOPT_INIT */                   "value specifies the initial guess for optimization",
-  /* FLAG_IPOPT_JAC */                    "value specifies the Jacobian for Ipopt",
+  /* FLAG_IPOPT_JAC */                    "deprecated and ignored",
   /* FLAG_IPOPT_MAX_ITER */               "value specifies the max number of iteration for ipopt",
   /* FLAG_IPOPT_WARM_START */             "value specifies lvl for a warm start in ipopt: 1,2,3,...",
   /* FLAG_JACOBIAN */                     "select the calculation method of the Jacobian used only by ida and dassl solver.",
@@ -256,9 +256,9 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_LOG_FORMAT */                   "value specifies the log format of the executable. -logFormat=text (default), -logFormat=xml or -logFormat=xmltcp",
   /* FLAG_LS */                           "value specifies the linear solver method (default: lapack, totalpivot (fallback))",
   /* FLAG_LS_IPOPT */                     "value specifies the linear solver method for ipopt",
-  /* FLAG_LSS */                          "value specifies the linear sparse solver method (default: umfpack)",
-  /* FLAG_LSS_MAX_DENSITY */              "[double (default " EXPANDSTRING(DEFAULT_FLAG_LSS_MAX_DENSITY) ")] value specifies the maximum density for using a linear sparse solver",
-  /* FLAG_LSS_MIN_SIZE */                 "[int (default " EXPANDSTRING(DEFAULT_FLAG_LSS_MIN_SIZE) ")] value specifies the minimum system size for using a linear sparse solver",
+  /* FLAG_LSS */                          "value specifies the linear sparse solver method (default: klu)",
+  /* FLAG_LSS_MAX_DENSITY */              "[double] value specifies the maximum density for using a linear sparse solver",
+  /* FLAG_LSS_MIN_SIZE */                 "[int] value specifies the minimum system size for using a linear sparse solver",
   /* FLAG_LV */                           "[string list] value specifies the logging level",
   /* FLAG_LV_MAX_WARN */                  "[int (default " EXPANDSTRING(DEFAULT_FLAG_LV_MAX_WARN) ")] maximum times repeating warnings will be displayed",
   /* FLAG_LV_TIME */                      "[double list] specifying time interval to allow loging in",
@@ -283,8 +283,8 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_NLS */                          "value specifies the nonlinear solver",
   /* FLAG_NLS_INFO */                     "outputs detailed information about solving process of non-linear systems into csv files.",
   /* FLAG_NLS_LS */                       "value specifies the linear solver used by the non-linear solver",
-  /* FLAG_NLSS_MAX_DENSITY */             "[double (default " EXPANDSTRING(DEFAULT_FLAG_NLSS_MAX_DENSITY) ")] value specifies the maximum density for using a non-linear sparse solver",
-  /* FLAG_NLSS_MIN_SIZE */                "[int (default " EXPANDSTRING(DEFAULT_FLAG_NLSS_MIN_SIZE) ")] value specifies the minimum system size for using a non-linear sparse solver",
+  /* FLAG_NLSS_MAX_DENSITY */             "[double] value specifies the maximum density for using a non-linear sparse solver",
+  /* FLAG_NLSS_MIN_SIZE */                "[int] value specifies the minimum system size for using a non-linear sparse solver",
   /* FLAG_NLS_JAC_TEST_ATOL */            "[double] value specifies the absolute tolerance for the Jacobian derivative test.",
   /* FLAG_NLS_JAC_TEST_RTOL */            "[double] value specifies the relative tolerance for the Jacobian derivative test.",
   /* FLAG_NOEMIT */                       "do not emit any results to the result file",
@@ -487,7 +487,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_IPOPT_INIT */
   "  Value specifies the initial guess for optimization (sim, const).",
   /* FLAG_IPOPT_JAC */
-  "  Value specifies the Jacobian for Ipopt(SYM, NUM, NUMDENSE).",
+  "  Deprecated and ignored.",
   /* FLAG_IPOPT_MAX_ITER */
   "  Value specifies the max number of iteration for ipopt.",
   /* FLAG_IPOPT_WARM_START */
@@ -521,10 +521,16 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies the linear sparse solver method",
   /* FLAG_LSS_MAX_DENSITY */
   "  Value specifies the maximum density for using a linear sparse solver.\n"
-  "  The value is a Double with default value " EXPANDSTRING(DEFAULT_FLAG_LSS_MAX_DENSITY) ".",
+  "  Without this flag and -lssMinSize, the compiler chooses dense or sparse\n"
+  "  for each linear system. When either is given, the runtime chooses\n"
+  "  instead, and the flag not given has its default (" EXPANDSTRING(DEFAULT_FLAG_LSS_MAX_DENSITY) " for the density,\n"
+  "  " EXPANDSTRING(DEFAULT_FLAG_LSS_MIN_SIZE) " for the size).",
   /* FLAG_LSS_MIN_SIZE */
   "  Value specifies the minimum system size for using a linear sparse solver.\n"
-  "  The value is an Integer with default value " EXPANDSTRING(DEFAULT_FLAG_LSS_MIN_SIZE) ".",
+  "  Without this flag and -lssMaxDensity, the compiler chooses dense or sparse\n"
+  "  for each linear system. When either is given, the runtime chooses\n"
+  "  instead, and the flag not given has its default (" EXPANDSTRING(DEFAULT_FLAG_LSS_MAX_DENSITY) " for the density,\n"
+  "  " EXPANDSTRING(DEFAULT_FLAG_LSS_MIN_SIZE) " for the size).",
   /* FLAG_LV */
   "  Value (a comma-separated String list) specifies which logging levels to\n"
   "  enable. Multiple options can be enabled at the same time.",
@@ -596,10 +602,16 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies the linear solver used by the non-linear solver:",
   /* FLAG_NLSS_MAX_DENSITY */
   "  Value specifies the maximum density for using a non-linear sparse solver.\n"
-  "  The value is a Double with default value " EXPANDSTRING(DEFAULT_FLAG_NLSS_MAX_DENSITY) ".",
+  "  Without this flag and -nlssMinSize, the compiler chooses dense or sparse\n"
+  "  for each nonlinear system. When either is given, the runtime chooses\n"
+  "  instead, and the flag not given has its default (" EXPANDSTRING(DEFAULT_FLAG_NLSS_MAX_DENSITY) " for the density,\n"
+  "  " EXPANDSTRING(DEFAULT_FLAG_NLSS_MIN_SIZE) " for the size).",
   /* FLAG_NLSS_MIN_SIZE */
   "  Value specifies the minimum system size for using a non-linear sparse solver.\n"
-  "  The value is an Integer with default value " EXPANDSTRING(DEFAULT_FLAG_NLSS_MIN_SIZE) ".",
+  "  Without this flag and -nlssMaxDensity, the compiler chooses dense or sparse\n"
+  "  for each nonlinear system. When either is given, the runtime chooses\n"
+  "  instead, and the flag not given has its default (" EXPANDSTRING(DEFAULT_FLAG_NLSS_MAX_DENSITY) " for the density,\n"
+  "  " EXPANDSTRING(DEFAULT_FLAG_NLSS_MIN_SIZE) " for the size).",
   /* FLAG_NLS_JAC_TEST_ATOL */
   "  Value specifies the absolute tolerance for the Jacobian derivative test.",
   /* FLAG_NLS_JAC_TEST_RTOL */
@@ -890,22 +902,22 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_DATA_RECONCILE  */              FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_DATA_RECONCILE_BOUNDARY */      FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_DATA_RECONCILE_STATE  */        FLAG_REPEAT_POLICY_FORBID,
-  /* FLAG_SR */                           FLAG_REPEAT_POLICY_FORBID,
-  /* FLAG_SR_CTRL */                      FLAG_REPEAT_POLICY_FORBID,
-  /* FLAG_SR_CTRL_EVNT_REINIT */          FLAG_REPEAT_POLICY_FORBID,
-  /* FLAG_SR_CTRL_FILTER */               FLAG_REPEAT_POLICY_FORBID,
-  /* FLAG_SR_CTRL_FHR */                  FLAG_REPEAT_POLICY_FORBID,
-  /* FLAG_SR_ERR */                       FLAG_REPEAT_POLICY_FORBID,
-  /* FLAG_SR_INT */                       FLAG_REPEAT_POLICY_FORBID,
-  /* FLAG_SR_NLS */                       FLAG_REPEAT_POLICY_FORBID,
-  /* FLAG_SR_NLS_INTERNAL_DAMPING_FAC */  FLAG_REPEAT_POLICY_FORBID,
-  /* FLAG_SR_NLS_INTERNAL_JACKEEP */      FLAG_REPEAT_POLICY_FORBID,
-  /* FLAG_MR */                           FLAG_REPEAT_POLICY_FORBID,
-  /* FLAG_MR_CTRL */                      FLAG_REPEAT_POLICY_FORBID,
-  /* FLAG_MR_ERR */                       FLAG_REPEAT_POLICY_FORBID,
-  /* FLAG_MR_INT */                       FLAG_REPEAT_POLICY_FORBID,
-  /* FLAG_MR_NLS */                       FLAG_REPEAT_POLICY_FORBID,
-  /* FLAG_MR_PAR */                       FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_SR */                           FLAG_REPEAT_POLICY_REPLACE,
+  /* FLAG_SR_CTRL */                      FLAG_REPEAT_POLICY_REPLACE,
+  /* FLAG_SR_CTRL_EVNT_REINIT */          FLAG_REPEAT_POLICY_REPLACE,
+  /* FLAG_SR_CTRL_FILTER */               FLAG_REPEAT_POLICY_REPLACE,
+  /* FLAG_SR_CTRL_FHR */                  FLAG_REPEAT_POLICY_REPLACE,
+  /* FLAG_SR_ERR */                       FLAG_REPEAT_POLICY_REPLACE,
+  /* FLAG_SR_INT */                       FLAG_REPEAT_POLICY_REPLACE,
+  /* FLAG_SR_NLS */                       FLAG_REPEAT_POLICY_REPLACE,
+  /* FLAG_SR_NLS_INTERNAL_DAMPING_FAC */  FLAG_REPEAT_POLICY_REPLACE,
+  /* FLAG_SR_NLS_INTERNAL_JACKEEP */      FLAG_REPEAT_POLICY_REPLACE,
+  /* FLAG_MR */                           FLAG_REPEAT_POLICY_REPLACE,
+  /* FLAG_MR_CTRL */                      FLAG_REPEAT_POLICY_REPLACE,
+  /* FLAG_MR_ERR */                       FLAG_REPEAT_POLICY_REPLACE,
+  /* FLAG_MR_INT */                       FLAG_REPEAT_POLICY_REPLACE,
+  /* FLAG_MR_NLS */                       FLAG_REPEAT_POLICY_REPLACE,
+  /* FLAG_MR_PAR */                       FLAG_REPEAT_POLICY_REPLACE,
   /* FLAG_RT */                           FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_S */                            FLAG_REPEAT_POLICY_REPLACE,
   /* FLAG_SAVE_INITIAL_GUESS_SYSTEM */    FLAG_REPEAT_POLICY_FORBID,
@@ -1096,6 +1108,17 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_PARMOD_IMPORT_CLUSTERING */     FLAG_TYPE_OPTION,
   /* FLAG_PARMOD_DUMP_STAGES */           FLAG_TYPE_OPTION,
 };
+
+/* Accepted but ignored; left out of the help text and the documentation. */
+int omc_flagIsHidden(int flag)
+{
+  switch (flag) {
+  case FLAG_IPOPT_JAC:
+    return 1;
+  default:
+    return 0;
+  }
+}
 
 const char *GB_METHOD_NAME[RK_MAX] = {
   /* GB_UNKNOWN = 0 */     "unknown",
@@ -1333,9 +1356,12 @@ const char *SOLVER_METHOD_NAME[S_MAX] = {
   /* S_GBODE */         "gbode",
   /* S_EULER */         "euler",
   /* S_RUNGEKUTTA */    "rungekutta",
-  /* S_SYM_SOLVER */    "symSolver",
-  /* S_SYM_SOLVER_SSC */"symSolverSsc",
-  /* S_QSS */           "qss",
+  /* S_HEUN */ "heun",
+  /* S_IMPEULER */ "impeuler",
+  /* S_TRAPEZOID */ "trapezoid",
+  /* S_IMPRUNGEKUTTA */ "imprungekutta",
+  /* S_IRKSCO */ "irksco",
+  /* S_RUNGEKUTTASSC */ "rungekuttassc",
   /* S_OPTIMIZATION */  "optimization"
 };
 
@@ -1346,10 +1372,13 @@ const char *SOLVER_METHOD_DESC[S_MAX] = {
   /* S_CVODE */         "cvode - SUNDIALS CVODE solver - BDF or Adams-Moulton solver - implicit (dense solver), variable step-size control, adaptive order 1-12, event location - additional simulation flags -cvodeLinearMultistepMethod -cvodeNonlinearSolverIteration",
   /* S_GBODE */         "gbode - generic Runge-Kutta ODE solver - implicit (sparse solver)/explicit, fixed/variable step size control, order 1-14, event location, optional bi-rate integration - additional simulation flags -gbm -gbctrl -gbratio - additional advanced flags -gbctrl_filter -gbctrl_fhr -gberr -gbint -gbnls -gbfm -gbfctrl -gbferr -gbfint -gbfnls",
   /* S_EULER */         "euler - explicit Euler, fixed step size, order 1",
-  /* S_RUNGEKUTTA */    "rungekutta - classical Runge-Kutta - explicit, fixed step, order 4",
-  /* S_SYM_SOLVER */    "symSolver - symbolic inline Solver [compiler flag '--symSolver' needed] - fixed step size, order 1",
-  /* S_SYM_SOLVER_SSC */"symSolverSsc - symbolic implicit Euler with step size control [compiler flag '--symSolver' needed] - step size control, order 1",
-  /* S_QSS */           "qss - A QSS solver [experimental]",
+  /* S_RUNGEKUTTA */    "rungekutta - classical Runge-Kutta, shorthand for gbode with -gbm=rungekutta - explicit, order 4",
+  /* S_HEUN */ "heun - shorthand for gbode with -gbm=heun",
+  /* S_IMPEULER */ "impeuler - shorthand for gbode with -gbm=impl_euler",
+  /* S_TRAPEZOID */ "trapezoid - shorthand for gbode with -gbm=trapezoid",
+  /* S_IMPRUNGEKUTTA */ "imprungekutta - shorthand for gbode with -gbm=radauIA2",
+  /* S_IRKSCO */ "irksco - shorthand for gbode with -gbm=trapezoid",
+  /* S_RUNGEKUTTASSC */ "rungekuttassc - shorthand for gbode with -gbm=rungekuttaSsc",
   /* S_OPTIMIZATION */  "optimization - Special solver for dynamic optimization"
 };
 
@@ -1369,13 +1398,8 @@ const char *LS_NAME[LS_MAX] = {
   "LS_UNKNOWN",
 
   /* LS_LAPACK */       "lapack",
-#if !defined(OMC_MINIMAL_RUNTIME)
   /* LS_LIS */          "lis",
-#else
-  /* LS_LIS */          "lis-not-available",
-#endif
   /* LS_KLU */          "klu",
-  /* LS_UMFPACK */      "umfpack",
   /* LS_TOTALPIVOT */   "totalpivot",
   /* LS_DEFAULT */      "default"
 };
@@ -1384,13 +1408,8 @@ const char *LS_DESC[LS_MAX] = {
   "unknown",
 
   /* LS_LAPACK */       "method using LAPACK LU factorization",
-#if !defined(OMC_MINIMAL_RUNTIME)
   /* LS_LIS */          "method using iterative solver Lis",
-#else
-  /* LS_LIS */          "iterative solver Lis is not available",
-#endif
   /* LS_KLU */          "method using KLU sparse linear solver",
-  /* LS_UMFPACK */      "method using UMFPACK sparse linear solver",
   /* LS_TOTALPIVOT */   "method using a total pivoting LU factorization for underdetermination systems",
   /* LS_DEFAULT */      "default method - LAPACK with total pivoting as fallback"
 };
@@ -1398,62 +1417,36 @@ const char *LS_DESC[LS_MAX] = {
 const char *LSS_NAME[LSS_MAX] = {
   "LS_UNKNOWN",
   /* LSS_DEFAULT */     "default",
-#if !defined(OMC_MINIMAL_RUNTIME)
   /* LSS_LIS */         "lis",
-#else
-  /* LSS_LIS */         "lis-not-available",
-#endif
-  /* LSS_KLU */         "klu",
-  /* LSS_UMFPACK */     "umfpack"
+  /* LSS_KLU */         "klu"
 };
 
 const char *LSS_DESC[LSS_MAX] = {
   "unknown",
   /* LSS_DEFAULT */     "the default sparse linear solver (or a dense solver if there is none available) ",
-#if !defined(OMC_MINIMAL_RUNTIME)
   /* LSS_LIS */         "method using iterative solver Lis",
-#else
-  /* LSS_LIS */         "iterative solver Lis not available",
-#endif
-  /* LSS_KLU */         "method using klu sparse linear solver",
-  /* LSS_UMFPACK */     "method using umfpack sparse linear solver"
+  /* LSS_KLU */         "method using klu sparse linear solver"
 };
 
 const char *NLS_NAME[NLS_MAX] = {
   "NLS_UNKNOWN",
 
-#if !defined(OMC_MINIMAL_RUNTIME)
   /* NLS_HYBRID */       "hybrid",
   /* NLS_KINSOL */       "kinsol",
   /* NLS_KINSOL_B */     "experimental-kinsol",
   /* NLS_NEWTON */       "newton",
   /* NLS_MIXED */        "mixed",
-#else
-  /* NLS_HYBRID */       "hybrid-not-available",
-  /* NLS_KINSOL */       "kinsol-not-available",
-  /* NLS_KINSOL_B */     "kinsol-experimental-not-available",
-  /* NLS_NEWTON */       "newton-not-available",
-  /* NLS_MIXED */        "mixed-not-available",
-#endif
   /* NLS_HOMOTOPY */     "homotopy"
 };
 
 const char *NLS_DESC[NLS_MAX] = {
   "unknown",
 
-#if !defined(OMC_MINIMAL_RUNTIME)
   /* NLS_HYBRID */       "Modification of the Powell hybrid method from minpack - former default solver",
   /* NLS_KINSOL */       "SUNDIALS/KINSOL includes an interface to the sparse direct solver, KLU. See simulation option -nlsLS for more information.",
   /* NLS_KINSOL_B */     "SUNDIALS/KINSOL (with internal scaling) includes an interface to the sparse direct solver, KLU. See simulation option -nlsLS for more information.",
   /* NLS_NEWTON */       "Newton Raphson - prototype implementation",
   /* NLS_MIXED */        "Mixed strategy. First the homotopy solver is tried and then as fallback the hybrid solver.",
-#else
-  /* NLS_HYBRID */       "Modification of the Powell hybrid method from minpack - former default solver. Not available in minimal runtime.",
-  /* NLS_KINSOL */       "SUNDIALS/KINSOL includes interface to the sparse direct solver, KLU. See simulation option -nlsLS for more information."
-  /* NLS_KINSOL_B */     "SUNDIALS/KINSOL (with internal scaling) includes interface to the sparse direct solver, KLU. See simulation option -nlsLS for more information."
-  /* NLS_NEWTON */       "Newton Raphson - prototype implementation. Not available in minimal runtime.",
-  /* NLS_MIXED */        "Mixed strategy. First the homotopy solver is tried and then as fallback the hybrid solver. Not available in minimal runtime.",
-#endif
   /* NLS_HOMOTOPY */     "Damped Newton solver if failing case fixed-point and Newton homotopies are tried."
 };
 

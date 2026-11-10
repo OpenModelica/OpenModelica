@@ -14,7 +14,6 @@ equation
   B = vector({1,2,3,4});
   C = vector({{1},{2},{3},{4}});
   D = vector({{{1}},{{2}},{{3}},{{4}}});
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end VectorBuiltin;
 
 // Result:

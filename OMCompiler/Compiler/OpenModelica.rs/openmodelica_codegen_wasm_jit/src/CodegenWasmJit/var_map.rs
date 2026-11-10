@@ -74,6 +74,8 @@ pub(crate) struct SimVarMap {
     pub(super) n_mathevents: u32,
     /// `SimData` byte offset of the homotopy parameter lambda (`SimLayout`).
     pub(super) lambda_off: SimOff,
+    /// `SimData` byte offset of C's `skipStartEquations` flag (`SimLayout`).
+    pub(super) skip_start_off: SimOff,
     /// C's `homotopyMethod` code (`SimLayout::homotopy_method`).
     pub(super) homotopy_method: u8,
     /// `SimCtx::old_real`.
@@ -128,9 +130,7 @@ impl ResultList {
     pub(super) fn push_dyn(&mut self, dv: &DynVar, slot: SimSlot, filter_extra: u8) -> Result<()> {
         let ones = vec![1; dv.dims.len()];
         let brackets = !openmodelica_util::Config::modelicaOutput()?;
-        let Some(first) = result_name(&cref_display(&cref_with_indices(&dv.sv.name, &ones))?) else {
-            return Ok(());
-        };
+        let first = cref_display(&cref_with_indices(&dv.sv.name, &ones))?;
         let (name, at) = array_name_template(&first, ones.len(), brackets)
             .ok_or("CodegenWasmJit: cannot name the elements of a resizable array")?;
         let sv = &dv.sv;
@@ -156,7 +156,7 @@ impl ResultList {
             discrete: sv.isDiscrete,
             filter: filter_bits(sv) | filter_extra,
             unvarying: false,
-            enumeration: enumeration_names(&sv.type_),
+            enumeration: enumeration_type(&sv.type_),
         });
         Ok(())
     }
@@ -393,11 +393,16 @@ fn is_boolean_type(ty: &DAE::Type) -> bool {
 
 /// Literal names of an enumeration type; the stored value is the 1-based index
 /// into these.
-fn enumeration_names(ty: &DAE::Type) -> Option<Vec<String>> {
+fn enumeration_type(ty: &DAE::Type) -> Option<openmodelica_sim_meta::Enumeration> {
     match ty {
-        DAE::Type::T_ENUMERATION { names, .. } => Some(lst(names).map(|n| n.to_string()).collect()),
-        DAE::Type::T_SUBTYPE_BASIC { complexType, .. } => enumeration_names(complexType),
-        DAE::Type::T_ARRAY { ty, .. } => enumeration_names(ty),
+        DAE::Type::T_ENUMERATION { path, names, .. } => Some(openmodelica_sim_meta::Enumeration {
+            name: openmodelica_frontend_dump::AbsynUtil::pathString(path.clone(), arcstr::literal!("."), false, false)
+                .map(|s| s.to_string())
+                .unwrap_or_default(),
+            literals: lst(names).map(|n| n.to_string()).collect(),
+        }),
+        DAE::Type::T_SUBTYPE_BASIC { complexType, .. } => enumeration_type(complexType),
+        DAE::Type::T_ARRAY { ty, .. } => enumeration_type(ty),
         _ => None,
     }
 }
@@ -423,9 +428,8 @@ pub(super) fn mark_unvarying(
                     | DAE::Exp::BCONST { .. }
                     | DAE::Exp::ENUM_LITERAL { .. }
             )
-            && let Some(name) = result_name(&cref_display(cref)?)
         {
-            literal.insert(name);
+            literal.insert(cref_display(cref)?);
         }
     }
     if literal.is_empty() {
@@ -449,21 +453,6 @@ pub(super) fn mark_unvarying(
     }
     Ok(())
 }
-
-fn result_name(raw: &str) -> Option<String> {
-    if raw.starts_with('$') && !OPT_RESULT_PREFIXES.iter().any(|p| raw.starts_with(p)) {
-        None
-    } else {
-        Some(raw.to_string())
-    }
-}
-
-/// The `$`-prefixed variables C's result file *does* carry: an `optimization`
-/// model's objective terms (`BackendDAE.optimization{Mayer,Lagrange}TermName`) and
-/// its constraint residuals (`DynamicOptimization`'s `$con$` / `$finalCon$` /
-/// `$EqCon$`). The rest of the `$` namespace is the backend's own bookkeeping,
-/// which C hides through `hideResult` and this port drops by name.
-const OPT_RESULT_PREFIXES: [&str; 4] = ["$OMC$object", "$con$", "$finalCon$", "$EqCon$"];
 
 /// Evaluate a constant variable's binding to a scalar, for the `*ConstVars`
 /// lists (which have no SimData slot). Handles the literal forms model constants
@@ -636,18 +625,7 @@ fn scalarize_var_list(
             continue;
         }
         let first = out.len();
-        for idx in row_major_indices(&dims) {
-            let mut e = (**sv).clone();
-            e.name = cref_with_indices(&sv.name, &idx);
-            e.numArrayElement = metamodelica::nil();
-            e.arrayCref = None;
-            e.aliasvar = reindex_aliasvar(&sv.aliasvar, &idx);
-            e.initialValue = index_attr(&sv.initialValue, &idx);
-            e.nominalValue = index_attr(&sv.nominalValue, &idx);
-            e.minValue = index_attr(&sv.minValue, &idx);
-            e.maxValue = index_attr(&sv.maxValue, &idx);
-            out.push(metamodelica::Ref::new(e));
-        }
+        out.extend(sim_var_elements(sv, &dims));
         if let (Some(e), Some(base)) = (out.get(first), run_base(&sv.name)) {
             runs.insert(
                 run_key(e),
@@ -660,6 +638,49 @@ fn scalarize_var_list(
         }
     }
     Ok(out.into_iter().collect::<List<metamodelica::Ref<SimCodeVar::SimVar>>>())
+}
+
+/// The row-major scalar elements of the array variable `sv` of shape `dims`.
+fn sim_var_elements(sv: &SimCodeVar::SimVar, dims: &[u32]) -> Vec<metamodelica::Ref<SimCodeVar::SimVar>> {
+    row_major_indices(dims)
+        .into_iter()
+        .map(|idx| {
+            let mut e = sv.clone();
+            e.name = cref_with_indices(&sv.name, &idx);
+            e.numArrayElement = metamodelica::nil();
+            e.arrayCref = None;
+            e.aliasvar = reindex_aliasvar(&sv.aliasvar, &idx);
+            e.initialValue = index_attr(&sv.initialValue, &idx);
+            e.nominalValue = index_attr(&sv.nominalValue, &idx);
+            e.minValue = index_attr(&sv.minValue, &idx);
+            e.maxValue = index_attr(&sv.maxValue, &idx);
+            metamodelica::Ref::new(e)
+        })
+        .collect()
+}
+
+/// A whole-array Jacobian variable (`--simCodeScalarize=false`) as its elements,
+/// numbered from its own index as C lays them out in `tmpVars`/`resultVars`; any
+/// other variable, or one sized at runtime, as itself.
+pub(super) fn jac_var_elements(
+    sv: &metamodelica::Ref<SimCodeVar::SimVar>,
+) -> Vec<metamodelica::Ref<SimCodeVar::SimVar>> {
+    let whole = matches!(&*sv.type_, DAE::Type::T_ARRAY { .. })
+        && run_base(&sv.name).is_some()
+        && !openmodelica_util::Flags::getConfigBool(openmodelica_util::Flags::SIM_CODE_SCALARIZE.clone())
+            .unwrap_or(true);
+    let dims: Option<Vec<u32>> = lst(&sv.numArrayElement).map(|d| d.trim().parse().ok()).collect();
+    match dims {
+        Some(dims) if whole && !dims.is_empty() => sim_var_elements(sv, &dims)
+            .into_iter()
+            .zip(sv.index..)
+            .map(|(mut e, index)| {
+                metamodelica::Ref::make_mut(&mut e).index = index;
+                e
+            })
+            .collect(),
+        _ => vec![sv.clone()],
+    }
 }
 
 /// The key the elements of an array variable named `cr` extend with their
@@ -948,8 +969,7 @@ fn reindex_aliasvar(av: &SimCodeVar::AliasVariable, idx: &[i32]) -> SimCodeVar::
 /// Append the `$Sensitivities.<par>.<state>` result variables — the layout's
 /// sensitivity block, in its order — and return the `SimData` offsets of the
 /// parameters they differentiate against (C's `sensitivityParList`, resolved
-/// through the `paramVars` order the real-parameter region follows). The names
-/// bypass [`result_name`], which filters `$`-prefixed ones; C keeps them.
+/// through the `paramVars` order the real-parameter region follows).
 pub(super) fn push_sensitivity_vars(
     sens_vars: &[&SimCodeVar::SimVar],
     n_sens_par: usize,
@@ -1044,6 +1064,7 @@ pub(super) fn build_var_map(
         mathevents_off: layout.mathevents_off,
         n_mathevents: layout.n_math as u32,
         lambda_off: layout.lambda_off,
+        skip_start_off: layout.skip_start_off,
         homotopy_method: layout.homotopy_method.code(),
         old_real: layout
             .has_old_real
@@ -1063,21 +1084,19 @@ pub(super) fn build_var_map(
     let mut string_editable: Vec<EditableParam> = Vec::new();
     let mut push_editable = |sv: &SimCodeVar::SimVar, name: &str, off: SimOff, wty: WTy| -> Result<()> {
         if sv.isValueChangeable && is_result_output(sv) {
-            if let Some(disp) = result_name(name) {
-                editable.push(EditableParam {
-                    name: disp,
-                    comment: sv.comment.to_string(),
-                    unit: sv.unit.to_string(),
-                    display_unit: sv.displayUnit.to_string(),
-                    relative_quantity: sv.relativeQuantity,
-                    off: meta_off(off)?,
-                    wty,
-                    is_start: false,
-                    is_bool: is_boolean_type(&sv.type_),
-                    is_string: false,
-                    enum_names: enumeration_names(&sv.type_).unwrap_or_default(),
-                });
-            }
+            editable.push(EditableParam {
+                name: name.to_string(),
+                comment: sv.comment.to_string(),
+                unit: sv.unit.to_string(),
+                display_unit: sv.displayUnit.to_string(),
+                relative_quantity: sv.relativeQuantity,
+                off: meta_off(off)?,
+                wty,
+                is_start: false,
+                is_bool: is_boolean_type(&sv.type_),
+                is_string: false,
+                enum_names: enumeration_type(&sv.type_).map(|e| e.literals).unwrap_or_default(),
+            });
         }
         Ok(())
     };
@@ -1103,10 +1122,7 @@ pub(super) fn build_var_map(
     // A primary (non-alias) variable's result signal, carrying why a run would
     // filter it — the overriding flags are not known here.
     let make_result =
-        |sv: &SimCodeVar::SimVar, off: SimOff, wty: WTy, heap: bool, raw_name: String| -> Result<Option<ResultVar>> {
-            let Some(name) = result_name(&raw_name) else {
-                return Ok(None);
-            };
+        |sv: &SimCodeVar::SimVar, off: SimOff, wty: WTy, heap: bool, name: String| -> Result<Option<ResultVar>> {
             let kind = match resizing {
                 true => ResultKind::Param {
                     off: meta_off(off)?,
@@ -1129,7 +1145,7 @@ pub(super) fn build_var_map(
                 discrete: sv.isDiscrete,
                 filter: filter_bits(sv),
                 unvarying: false,
-                enumeration: enumeration_names(&sv.type_),
+                enumeration: enumeration_type(&sv.type_),
             }))
         };
     // The elements of an array variable resolve through one entry per table,
@@ -1163,21 +1179,19 @@ pub(super) fn build_var_map(
     // States | derivatives | real algebraics -> the realVars region (data_2). Each
     // also owns a `start` attribute slot (C's `realVarsData[i].attribute.start`).
     let mut push_start_editable = |sv: &SimCodeVar::SimVar, start_off: SimOff, name: &str| -> Result<()> {
-        if let Some(disp) = result_name(name) {
-            start_editable.push(EditableParam {
-                name: disp,
-                comment: sv.comment.to_string(),
-                unit: sv.unit.to_string(),
-                display_unit: sv.displayUnit.to_string(),
-                relative_quantity: sv.relativeQuantity,
-                off: meta_off(start_off)?,
-                wty: WTy::F64,
-                is_start: true,
-                is_bool: is_boolean_type(&sv.type_),
-                is_string: false,
-                enum_names: enumeration_names(&sv.type_).unwrap_or_default(),
-            });
-        }
+        start_editable.push(EditableParam {
+            name: name.to_string(),
+            comment: sv.comment.to_string(),
+            unit: sv.unit.to_string(),
+            display_unit: sv.displayUnit.to_string(),
+            relative_quantity: sv.relativeQuantity,
+            off: meta_off(start_off)?,
+            wty: WTy::F64,
+            is_start: true,
+            is_bool: is_boolean_type(&sv.type_),
+            is_string: false,
+            enum_names: enumeration_type(&sv.type_).map(|e| e.literals).unwrap_or_default(),
+        });
         Ok(())
     };
     let real_algs = real_alg_vars(vars);
@@ -1293,14 +1307,9 @@ pub(super) fn build_var_map(
                 push_editable(sv, &cref_display(&sv.name)?, off, wty)?;
             }
             // Not a result signal, but `_init.xml` lists it and C's `-override` reaches it.
-            if heap
-                && std::ptr::eq(base_sz, &lz.sparam_off)
-                && sv.isValueChangeable
-                && is_result_output(sv)
-                && let Some(disp) = result_name(&cref_display(&sv.name)?)
-            {
+            if heap && std::ptr::eq(base_sz, &lz.sparam_off) && sv.isValueChangeable && is_result_output(sv) {
                 string_editable.push(EditableParam {
-                    name: disp,
+                    name: cref_display(&sv.name)?,
                     comment: sv.comment.to_string(),
                     unit: sv.unit.to_string(),
                     display_unit: String::new(),
@@ -1376,21 +1385,19 @@ pub(super) fn build_var_map(
             continue;
         };
         const_of.insert(key, value);
-        if let Some(name) = result_name(&cref_display(&sv.name)?) {
-            results.vars.push(ResultVar {
-                name,
-                comment: sv.comment.to_string(),
-                kind: ResultKind::Const { value },
-                unit: sv.unit.to_string(),
-                display_unit: sv.displayUnit.to_string(),
-                relative_quantity: sv.relativeQuantity,
-                ty: var_ty(&sv.type_),
-                discrete: sv.isDiscrete,
-                filter: filter_bits(sv),
-                unvarying: false,
-                enumeration: enumeration_names(&sv.type_),
-            });
-        }
+        results.vars.push(ResultVar {
+            name: cref_display(&sv.name)?,
+            comment: sv.comment.to_string(),
+            kind: ResultKind::Const { value },
+            unit: sv.unit.to_string(),
+            display_unit: sv.displayUnit.to_string(),
+            relative_quantity: sv.relativeQuantity,
+            ty: var_ty(&sv.type_),
+            discrete: sv.isDiscrete,
+            filter: filter_bits(sv),
+            unvarying: false,
+            enumeration: enumeration_type(&sv.type_),
+        });
     }
 
     // Aliases: resolve to the target variable's slot (with negation) so equations
@@ -1427,26 +1434,24 @@ pub(super) fn build_var_map(
         let Some(tslot) = map.vars.get(&tkey).or(time_slot) else {
             // Target has no slot: it may be a compile-time constant.
             if let Some(&cval) = const_of.get(&tkey) {
-                if let Some(name) = result_name(&cref_display(&av.name)?) {
-                    let value = if negate {
-                        Neg::None.toggle(is_bool).apply_f64(cval)
-                    } else {
-                        cval
-                    };
-                    results.vars.push(ResultVar {
-                        name,
-                        comment: av.comment.to_string(),
-                        kind: ResultKind::Const { value },
-                        unit: av.unit.to_string(),
-                        display_unit: av.displayUnit.to_string(),
-                        relative_quantity: av.relativeQuantity,
-                        ty: var_ty(&av.type_),
-                        discrete: av.isDiscrete,
-                        filter: filter_bits(av) | var_filter::ALIAS,
-                        unvarying: false,
-                        enumeration: enumeration_names(&av.type_),
-                    });
-                }
+                let value = if negate {
+                    Neg::None.toggle(is_bool).apply_f64(cval)
+                } else {
+                    cval
+                };
+                results.vars.push(ResultVar {
+                    name: cref_display(&av.name)?,
+                    comment: av.comment.to_string(),
+                    kind: ResultKind::Const { value },
+                    unit: av.unit.to_string(),
+                    display_unit: av.displayUnit.to_string(),
+                    relative_quantity: av.relativeQuantity,
+                    ty: var_ty(&av.type_),
+                    discrete: av.isDiscrete,
+                    filter: filter_bits(av) | var_filter::ALIAS,
+                    unvarying: false,
+                    enumeration: enumeration_type(&av.type_),
+                });
             }
             continue;
         };
@@ -1491,14 +1496,11 @@ pub(super) fn build_var_map(
             }
         }
         let make = || -> Result<Option<ResultVar>> {
-            let (Some(name), Some(kind)) = (
-                result_name(&cref_display(&av.name)?),
-                kind_from_slot(slot.off, slot.wty, slot.negate, slot.heap, layout)?,
-            ) else {
+            let Some(kind) = kind_from_slot(slot.off, slot.wty, slot.negate, slot.heap, layout)? else {
                 return Ok(None);
             };
             Ok(Some(ResultVar {
-                name,
+                name: cref_display(&av.name)?,
                 comment: av.comment.to_string(),
                 kind,
                 unit: av.unit.to_string(),
@@ -1508,7 +1510,7 @@ pub(super) fn build_var_map(
                 discrete: av.isDiscrete,
                 filter: filter_bits(av) | var_filter::ALIAS,
                 unvarying: false,
-                enumeration: enumeration_names(&av.type_),
+                enumeration: enumeration_type(&av.type_),
             }))
         };
         results.push_at(pos, make, &mut compact, brackets)?;
@@ -1656,6 +1658,25 @@ fn register_dyn(map: &mut SimVarMap, dv: &DynVar, slot: SimSlot, start_off: Opti
         Arc::make_mut(&mut map.start_slots).insert_dyn_array(key.clone(), StartSlot(s), dims.clone());
     }
     add_groups(map, &key, dims, slot, (slot.pre != 0).then_some(slot.pre))
+}
+
+/// Register a Real variable of a runtime-sized system's Jacobian at `off`.
+pub(super) fn register_jac_var(map: &mut SimVarMap, key: &str, off: SimOff, dims: &[Sz]) -> Result<()> {
+    let slot = SimSlot {
+        off,
+        wty: WTy::F64,
+        negate: Neg::None,
+        heap: false,
+        pre: 0,
+    };
+    if dims.is_empty() {
+        Arc::make_mut(&mut map.vars).slots.insert(key.to_string(), slot);
+        return Ok(());
+    }
+    Arc::make_mut(&mut map.vars)
+        .slots
+        .insert_dyn_array(key.to_string(), slot, dims.to_vec());
+    add_groups(map, key, dims.to_vec(), slot, None)
 }
 
 /// Register an [`ArrayRun`] whole: its element slots start at `off`.

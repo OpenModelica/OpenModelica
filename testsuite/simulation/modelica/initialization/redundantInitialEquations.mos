@@ -4,7 +4,6 @@
 // cflags:
 //
 // ticket:4525
-// cflags: -d=-newInst
 //
 
 loadString("

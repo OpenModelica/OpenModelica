@@ -9,7 +9,6 @@ model Div
   Real r;
 equation
   r = div(45, 4);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Div;
 
 // Result:

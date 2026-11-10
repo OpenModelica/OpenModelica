@@ -5,6 +5,8 @@
 //
 // A purely algebraic model can only follow a sharp transition between two
 // output points when a failed step is retried with a small enough step size.
+// The homotopy solver of the default -nls=mixed solves the system without
+// retries, so the tests use -nls=hybrid.
 
 loadString("
 model AlgebraicStepRetry
@@ -27,17 +29,17 @@ end AlgebraicStepRetry;
 "); getErrorString();
 
 // Models without states retry a failed step 20 times by default.
-echo(false); res := simulate(AlgebraicStepRetry); resultFile := res.resultFile; echo(true); getErrorString();
+echo(false); res := simulate(AlgebraicStepRetry, simflags="-nls=hybrid"); resultFile := res.resultFile; echo(true); getErrorString();
 resultFile <> "";
 abs(val(x, 0.4) + 100) < 1e-5; abs(val(x, 0.6) - 100) < 1e-5; getErrorString();
 
 // A few retries are enough.
-echo(false); res := simulate(AlgebraicStepRetry, simflags="-maxStepRetries=3"); resultFile := res.resultFile; echo(true); getErrorString();
+echo(false); res := simulate(AlgebraicStepRetry, simflags="-nls=hybrid -maxStepRetries=3"); resultFile := res.resultFile; echo(true); getErrorString();
 resultFile <> "";
 abs(val(x, 0.4) + 100) < 1e-5; abs(val(x, 0.6) - 100) < 1e-5; getErrorString();
 
 // A single retry is not.
-echo(false); res := simulate(AlgebraicStepRetry, simflags="-maxStepRetries=1"); resultFile := res.resultFile; echo(true); getErrorString();
+echo(false); res := simulate(AlgebraicStepRetry, simflags="-nls=hybrid -maxStepRetries=1"); resultFile := res.resultFile; echo(true); getErrorString();
 resultFile <> "";
 
 // Result:

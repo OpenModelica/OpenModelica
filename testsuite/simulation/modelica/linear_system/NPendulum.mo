@@ -63,6 +63,5 @@ model pendulum40
 end pendulum40;
 
 annotation(uses(Modelica(version="4.1.0")));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end NPendulum;
 

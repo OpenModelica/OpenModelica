@@ -1,0 +1,59 @@
+// name: sampleFor
+// keywords: NewBackend events sample for-equation reinit
+// status: correct
+// suite: cSources
+//
+// sample(start, interval) in for-equations is a time event, not a clock. Each
+// iteration has its own sample slot, also for nested loops and time > t relations.
+
+loadString("
+  model sampleFor
+    parameter Real t0[3] = {0.1, 0.2, 0.3};
+    parameter Real t2[2,3] = {{0.05, 0.15, 0.25}, {0.35, 0.45, 0.55}};
+    discrete Real x[3](each start = 0, each fixed = true);
+    discrete Real z[3](each start = 0, each fixed = true);
+    discrete Real w[2,3](each start = 0, each fixed = true);
+    Real s[3](each start = 0, each fixed = true);
+  equation
+    for i in 1:3 loop
+      der(s[i]) = 1;
+      when sample(t0[i], 0.5) then
+        x[i] = pre(x[i]) + i;
+        reinit(s[i], 0);
+      end when;
+      when time > t0[i] + 0.5 then
+        z[i] = i;
+      end when;
+    end for;
+    for i in 1:2, j in 1:3 loop
+      when sample(t2[i,j], 0.4) then
+        w[i,j] = pre(w[i,j]) + 1;
+      end when;
+    end for;
+  end sampleFor;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend");
+simulate(sampleFor); getErrorString();
+{val(x[1], 1.0), val(x[2], 1.0), val(x[3], 1.0)};
+{val(z[1], 0.65), val(z[2], 0.65), val(z[3], 0.65)};
+{val(w[1,1], 1.0), val(w[1,2], 1.0), val(w[1,3], 1.0), val(w[2,1], 1.0), val(w[2,2], 1.0), val(w[2,3], 1.0)};
+abs(val(s[1], 1.0) - 0.4) + abs(val(s[2], 1.0) - 0.3) + abs(val(s[3], 1.0) - 0.2) < 1e-8;
+
+// Result:
+// true
+// ""
+// true
+// record SimulationResult
+//     resultFile = "sampleFor_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'sampleFor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {2.0, 4.0, 6.0}
+// {1.0, 0.0, 0.0}
+// {3.0, 3.0, 2.0, 2.0, 2.0, 2.0}
+// true
+// endResult

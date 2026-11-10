@@ -1697,7 +1697,7 @@ algorithm
         (exp_1, funcs) := differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType, inFuncs, maxIter);
         exp_2 := Expression.makePureBuiltinCall("cosh", {exp}, tp);
       then (DAE.BINARY(exp_1, DAE.DIV(tp),
-                      DAE.BINARY(exp_2, DAE.POW(tp), DAE.RCONST(2.0))), funcs);
+                      DAE.BINARY(exp_2, DAE.POW(tp, true), DAE.RCONST(2.0))), funcs);
 
     // diff(exp(x)) = der(x)*exp(x)
     case ("exp",_)
@@ -1991,22 +1991,15 @@ protected function differentiateBinary
 algorithm
   (outDiffedExp, outFunctionTree) := match inExp
     local
-
-
-
       DAE.ComponentRef cr;
       DAE.Exp e, e0, e1, e2, zero, etmp;
       DAE.Exp de1, de2;
       AvlTreePathFunction.Tree funcs;
       DAE.Type tp, tp1;
-
       Integer i;
-
-
-
       Real r;
-
       String s1, s2, serr;
+      Boolean int_rhs;
 
     case DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = tp),exp2 = e2)
       algorithm
@@ -2138,22 +2131,22 @@ algorithm
           DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(tp),de2)),DAE.DIV_ARR(tp),DAE.BINARY(e2,DAE.MUL_ARR(tp),e2)), funcs);
 
     // x^r
-    case DAE.BINARY(exp1 = e1,operator = DAE.POW(tp),exp2 = (e2 as DAE.RCONST(real=r)))
+    case DAE.BINARY(exp1 = e1,operator = DAE.POW(tp,int_rhs),exp2 = (e2 as DAE.RCONST(real=r)))
       algorithm
         (de1, funcs) := differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
         r := r - 1.0;
         e := DAE.BINARY(DAE.BINARY(e2,DAE.MUL(tp),
-                       DAE.BINARY(e1,DAE.POW(tp),DAE.RCONST(r))),
+                       DAE.BINARY(e1,DAE.POW(tp,int_rhs),DAE.RCONST(r))),
                        DAE.MUL(tp),de1);
       then
         (e, funcs);
     // x^i
-  case DAE.BINARY(exp1 = e1,operator = DAE.POW(tp),exp2 = (e2 as DAE.ICONST(integer = i)))
+  case DAE.BINARY(exp1 = e1,operator = DAE.POW(tp,int_rhs),exp2 = (e2 as DAE.ICONST(integer = i)))
       algorithm
         (de1, funcs) := differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
         i := i - 1;
         e := DAE.BINARY(DAE.BINARY(e2,DAE.MUL(tp),
-                       DAE.BINARY(e1,DAE.POW(tp),DAE.ICONST(i))),
+                       DAE.BINARY(e1,DAE.POW(tp,int_rhs),DAE.ICONST(i))),
                        DAE.MUL(tp),de1);
       then
         (e, funcs);
@@ -2176,7 +2169,7 @@ algorithm
     // added for ticket #6068
     // (p is a parameter)
     // x^p
-    case DAE.BINARY(exp1 = e1,operator = DAE.POW(tp),exp2 = (e2 as DAE.CREF(componentRef = cr)))
+    case DAE.BINARY(exp1 = e1,operator = DAE.POW(tp,int_rhs),exp2 = (e2 as DAE.CREF(componentRef = cr)))
       guard(isParamOrConstant(cr, inInputData))
       algorithm
         etmp := match tp
@@ -2185,7 +2178,7 @@ algorithm
         end match;
         (de1, funcs) := differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
         e := DAE.BINARY(DAE.BINARY(e2,DAE.MUL(tp),
-                       DAE.BINARY(e1,DAE.POW(tp),etmp)),
+                       DAE.BINARY(e1,DAE.POW(tp,int_rhs),etmp)),
                        DAE.MUL(tp),de1);
       then
         (e, funcs);
@@ -2209,14 +2202,14 @@ algorithm
 
     // der(x^y) = x^(y-1) * ( x*ln(x)*der(y)+(y*der(x)))
     // if x == 0 then 0;
-    case DAE.BINARY(exp1 = e1,operator = DAE.POW(tp), exp2 = e2)
+    case DAE.BINARY(exp1 = e1,operator = DAE.POW(tp, int_rhs), exp2 = e2)
       algorithm
         (de1, funcs) := differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
         (de2, funcs) := differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
         etmp := Expression.makePureBuiltinCall("log", {e1}, tp);
         // if x is equal to zero, then return zero (do not search for event)
         e := Expression.addNoEventToRelations(DAE.IFEXP(DAE.RELATION(e1, DAE.EQUAL(tp), DAE.RCONST(0.0), -1, NONE()),
-                       DAE.RCONST(0.0), DAE.BINARY(DAE.BINARY(e1, DAE.POW(tp), DAE.BINARY(e2, DAE.SUB(tp), DAE.RCONST(1.0))),
+                       DAE.RCONST(0.0), DAE.BINARY(DAE.BINARY(e1, DAE.POW(tp, int_rhs), DAE.BINARY(e2, DAE.SUB(tp), DAE.RCONST(1.0))),
                        DAE.MUL(tp), DAE.BINARY(DAE.BINARY(DAE.BINARY(e1, DAE.MUL(tp), etmp), DAE.MUL(tp), de2),
                                     DAE.ADD(tp), DAE.BINARY(e2, DAE.MUL(tp), de1)))));
       then

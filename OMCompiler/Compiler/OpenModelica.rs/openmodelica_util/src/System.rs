@@ -526,9 +526,12 @@ pub fn appendFile(file: ArcStr, data: ArcStr) -> Result<()> {
 }
 
 pub fn readFile(inString: ArcStr) -> Result<ArcStr> {
-    let bytes =
-        openmodelica_wasi::fs::read(inString.as_str()).map_err(|_| "System.readFile: cannot read {inString}")?;
-    let s = String::from_utf8(bytes).map_err(|_| "System.readFile: {inString} is not valid UTF-8")?;
+    // mirrors SystemImpl__readFile: ERROR_OPENING_FILE, then fail
+    let bytes = openmodelica_wasi::fs::read(inString.as_str()).map_err(|e| {
+        add_scripting_error_id(85, "Error opening file: %s: %s.", &[&inString, &io_error_text(&e)]);
+        "System.readFile: cannot read the file"
+    })?;
+    let s = String::from_utf8(bytes).map_err(|_| "System.readFile: the file is not valid UTF-8")?;
     Ok(ArcStr::from(s))
 }
 
@@ -552,14 +555,10 @@ pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
     // Spawn the command through the platform shell; if outFile is non-empty,
     // redirect both stdout and stderr there. Returns the child's exit code, or
     // -1 on spawn failure.
-    use std::io::Write;
     use std::process::{Command, Stdio};
     // C's `fflush(NULL)` around the call: the child writes to the same fd 1, so
     // whatever `print()` left in the buffer has to be out first.
-    let flush = || {
-        let _ = std::io::stdout().flush();
-    };
-    flush();
+    metamodelica::host_flush();
     #[cfg(windows)]
     let mut cmd = {
         use std::os::windows::process::CommandExt;
@@ -600,7 +599,7 @@ pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
         Ok(s) => s.code().unwrap_or(-1),
         Err(_) => -1,
     };
-    flush();
+    metamodelica::host_flush();
     status
 }
 
@@ -842,7 +841,19 @@ pub fn cd(inString: ArcStr) -> i32 {
     // fs facade so it also sets the store cwd on wasm (set_current_dir is a no-op there).
     match openmodelica_wasi::fs::set_cwd(inString.as_str()) {
         Ok(()) => 0,
-        Err(_) => -1,
+        Err(_) => {
+            // mirrors SystemImpl__chdir
+            add_scripting_error_id(
+                -1,
+                if cfg!(windows) {
+                    "SetCurrentDirectoryW failed."
+                } else {
+                    "chdir failed."
+                },
+                &[],
+            );
+            -1
+        }
     }
 }
 
@@ -980,241 +991,6 @@ pub fn moFiles(inString: ArcStr) -> List<ArcStr> {
 }
 pub fn mocFiles(inString: ArcStr) -> List<ArcStr> {
     list_from_vec(files_with_ext(&inString, "moc"))
-}
-
-// ───────────────────────── getLoadModelPath ──────────────────────────
-// Port of the modelicaPathEntry machinery in `runtime/systemimpl.c`
-// (`System_getLoadModelPath` and helpers).
-
-/// `MODELICAPATH_LEVELS` in systemimpl.c: how many dotted numeric version
-/// components are tracked ("3.2.1" == "3.2.1.0.0.0").
-const MODELICAPATH_LEVELS: usize = 6;
-
-/// One library candidate found on the load path: `dir` is the MODELICAPATH
-/// entry it lives in, `file` the directory or file name (including any
-/// " <version>" suffix and `.mo`/`.moc` extension).
-struct ModelicaPathEntry {
-    dir: ArcStr,
-    file: String,
-    version: [i64; MODELICAPATH_LEVELS],
-    version_extra: String,
-    file_is_dir: bool,
-}
-
-/// Mirror of `splitVersion`: parse up to [`MODELICAPATH_LEVELS`] dotted
-/// numbers, then keep the remainder as the "extra" part (pre-release tag
-/// etc.). Returns `(numbers, extra, had_digit_version)`. Quirks preserved
-/// from C: a single leading space before the extra is skipped, a `+`
-/// remainder means "any build of this version" and clears the extra, and a
-/// trailing `mo` is chopped off (this is how the `.mo` file extension is
-/// stripped after the dot terminates number parsing).
-fn split_version(version: &str) -> ([i64; MODELICAPATH_LEVELS], String, bool) {
-    let mut nums = [0i64; MODELICAPATH_LEVELS];
-    if !version.starts_with(|c: char| c.is_ascii_digit()) {
-        return (nums, version.to_string(), false);
-    }
-    let mut buf = version;
-    for slot in nums.iter_mut() {
-        let digits = buf.len() - buf.trim_start_matches(|c: char| c.is_ascii_digit()).len();
-        if digits == 0 {
-            break;
-        }
-        // More digits than fit in i64 would be a pathological name; stop
-        // parsing numbers there like strtol's clamp effectively would.
-        let Ok(l) = buf[..digits].parse::<i64>() else { break };
-        *slot = l;
-        buf = &buf[digits..];
-        if let Some(rest) = buf.strip_prefix('.') {
-            buf = rest;
-        }
-    }
-    let buf = buf.strip_prefix(' ').unwrap_or(buf);
-    let mut extra = if buf.starts_with('+') {
-        String::new()
-    } else {
-        buf.to_string()
-    };
-    if extra.len() >= 2 && extra.ends_with("mo") {
-        extra.truncate(extra.len() - 2);
-    }
-    (nums, extra, true)
-}
-
-/// Mirror of `getAllModelicaPaths`: scan every directory in `mps` for
-/// entries whose name is `name`, `name.<ext>` or `name <version>[.<ext>]`,
-/// either as a library directory (containing `package.mo`/`package.moc`)
-/// or as a plain `.mo`/`.moc` file.
-fn get_all_modelica_paths(name: &str, mps: &List<ArcStr>) -> Vec<ModelicaPathEntry> {
-    let mut res = Vec::new();
-    for mp in &**mps {
-        for (file, _) in dir_entries(mp.as_str()) {
-            if !file.starts_with(name) || !matches!(file.as_bytes().get(name.len()), None | Some(b' ') | Some(b'.')) {
-                continue;
-            }
-            let is_package_dir = ["package.mo", "package.moc"]
-                .iter()
-                .any(|pkg| path_is_file(&format!("{mp}/{file}/{pkg}")));
-            let file_is_dir = if is_package_dir {
-                true
-            } else if (file.ends_with(".mo") || file.ends_with(".moc")) && path_is_file(&format!("{mp}/{file}")) {
-                false
-            } else {
-                continue;
-            };
-            let (version, version_extra) = match file.as_bytes().get(name.len()) {
-                Some(b' ') => {
-                    let (v, e, _) = split_version(&file[name.len() + 1..]);
-                    (v, e)
-                }
-                _ => ([0; MODELICAPATH_LEVELS], String::new()),
-            };
-            res.push(ModelicaPathEntry {
-                dir: mp.clone(),
-                file,
-                version,
-                version_extra,
-                file_is_dir,
-            });
-        }
-    }
-    res
-}
-
-/// Immediate children of `dir` as `(name, is_dir)`: the OS filesystem natively,
-/// the in-memory VFS on wasm. Used by the MODELICAPATH scan.
-fn dir_entries(dir: &str) -> Vec<(String, bool)> {
-    openmodelica_wasi::fs::read_dir(dir)
-        .unwrap_or_default()
-        .into_iter()
-        .map(|e| (e.name, e.is_dir))
-        .collect()
-}
-
-/// True when `path` is an existing regular file: the OS filesystem natively, the
-/// VFS on wasm.
-fn path_is_file(path: &str) -> bool {
-    openmodelica_wasi::fs::is_file(path)
-}
-
-fn version_equal(v1: &[i64], v2: &[i64], num_to_test: usize) -> bool {
-    v1[..num_to_test] == v2[..num_to_test]
-}
-
-/// `modelicaPathEntryVersionGreater`: lexicographic >=. (Equal versions
-/// also return true, exactly like the C helper.)
-fn version_greater(v1: &[i64], v2: &[i64]) -> bool {
-    for (a, b) in v1.iter().zip(v2.iter()) {
-        if a > b {
-            return true;
-        }
-        if a < b {
-            return false;
-        }
-    }
-    true
-}
-
-/// Mirror of `getLoadModelPathFromSingleTarget`: find the entry matching a
-/// specific requested version, relaxing one trailing version level at a
-/// time unless `exact_version` is set.
-fn load_model_path_single_target<'e>(
-    search_target: &str,
-    entries: &'e [ModelicaPathEntry],
-    exact_version: bool,
-) -> Option<&'e ModelicaPathEntry> {
-    let (version, version_extra, found_digit_version) = split_version(search_target);
-    if found_digit_version && version_extra.is_empty() {
-        // Makes us load 3.2.1 when 3.2.0.0 is not available: drop one more
-        // trailing version level from the comparison on each failure.
-        let min_level = if exact_version { MODELICAPATH_LEVELS } else { 0 };
-        for j in (min_level..=MODELICAPATH_LEVELS).rev() {
-            let mut found: Option<&ModelicaPathEntry> = None;
-            let mut found_version = [0i64; MODELICAPATH_LEVELS];
-            for e in entries {
-                if version_equal(&e.version, &version, j)
-                    && (j == MODELICAPATH_LEVELS || version_greater(&e.version, &version))
-                    && matches!(e.version_extra.as_bytes().first(), None | Some(b'+') | Some(b'-'))
-                    && version_greater(&e.version, &found_version)
-                {
-                    found_version = e.version;
-                    found = Some(e);
-                }
-            }
-            if found.is_some() {
-                return found;
-            }
-        }
-    }
-    for e in entries {
-        // Note: like the C code, only the first three levels are checked
-        // for zero here (a request like "0.0.0.1" takes this branch too).
-        if version[..3] == [0, 0, 0] {
-            let entry_extra = if e.version_extra.starts_with('-') && !version_extra.starts_with('-') {
-                &e.version_extra[1..]
-            } else {
-                &e.version_extra
-            };
-            if entry_extra.starts_with(&version_extra) {
-                return Some(e);
-            }
-        }
-        if version_equal(&e.version, &version, MODELICAPATH_LEVELS) && e.version_extra.starts_with(&version_extra) {
-            return Some(e);
-        }
-    }
-    None
-}
-
-/// Mirror of `getLoadModelPathFromDefaultTarget`: prefer the highest
-/// release version (no pre-release tag, or a `+`/`-` build/maintenance
-/// tag), falling back to the highest version of any kind.
-fn load_model_path_default_target(entries: &[ModelicaPathEntry]) -> Option<&ModelicaPathEntry> {
-    let mut found: Option<&ModelicaPathEntry> = None;
-    let mut found_version = [-1i64, -1, -1, 0, 0, 0];
-    for e in entries {
-        if version_greater(&e.version, &found_version)
-            && matches!(e.version_extra.as_bytes().first(), None | Some(b'+') | Some(b'-'))
-        {
-            found_version = e.version;
-            found = Some(e);
-        }
-    }
-    if found.is_none() {
-        // (The C fallback also tries a versionExtra string tie-break, but
-        // it is guarded by `entries[i].version == foundVersion`, which
-        // compares two distinct arrays *by pointer* — never true — so the
-        // condition reduces to the version comparison alone.)
-        for e in entries {
-            if version_greater(&e.version, &found_version) {
-                found_version = e.version;
-                found = Some(e);
-            }
-        }
-    }
-    found
-}
-
-/// Locate a Modelica package on the load path. Port of
-/// `System_getLoadModelPath`: try each priority in order ("default" means
-/// best available version); fails (MMC_THROW in C) when nothing matches.
-pub fn getLoadModelPath(
-    className: ArcStr,
-    prios: List<ArcStr>,
-    mps: List<ArcStr>,
-    requireExactVersion: bool,
-) -> Result<(ArcStr, ArcStr, bool)> {
-    let entries = get_all_modelica_paths(&className, &mps);
-    for prio in &*prios {
-        let found = if prio.as_str() == "default" {
-            load_model_path_default_target(&entries)
-        } else {
-            load_model_path_single_target(prio, &entries, requireExactVersion)
-        };
-        if let Some(e) = found {
-            return Ok((e.dir.clone(), ArcStr::from(e.file.clone()), e.file_is_dir));
-        }
-    }
-    return Err("System.getLoadModelPath: no match for {className} on the MODELICAPATH");
 }
 
 pub fn time() -> metamodelica::Real {
@@ -1844,6 +1620,15 @@ pub fn realMaxLit() -> metamodelica::Real {
     metamodelica::OrderedFloat(f64::MAX / 2048.0)
 }
 
+pub fn realNaN() -> metamodelica::Real {
+    metamodelica::OrderedFloat(f64::NAN)
+}
+
+/// `OrderedFloat` treats NaN as equal to itself, so `r <> r` cannot detect it.
+pub fn realIsNaN(r: metamodelica::Real) -> bool {
+    r.0.is_nan()
+}
+
 // ───────────────────────────────── URI / platform info ───────────────────────
 
 /// Percent-decode a URI component, mirroring `decodeUri2` in
@@ -1871,15 +1656,33 @@ fn decode_uri_component(src: &str) -> String {
 /// `c_add_message(NULL, -1, ErrorType_scripting, ErrorLevel_error, ...)`
 /// equivalent for the URI errors below.
 fn add_scripting_error(template: &str, token: &str) {
+    add_scripting_error_id(-1, template, &[token]);
+}
+
+/// `c_add_message(NULL, id, ErrorType_scripting, ErrorLevel_error, ...)`. The
+/// tokens are in the order they appear in the message.
+fn add_scripting_error_id(id: i32, template: &str, tokens: &[&str]) {
     let _ = crate::Error::addMessage(
         openmodelica_error::ErrorTypes::Message {
-            id: -1,
+            id,
             ty: openmodelica_error::ErrorTypes::MessageType::SCRIPTING,
             severity: openmodelica_error::ErrorTypes::Severity::ERROR,
             message: ArcStr::from(template),
         },
-        metamodelica::cons(ArcStr::from(token), metamodelica::nil()),
+        tokens
+            .iter()
+            .rev()
+            .fold(metamodelica::nil(), |l, t| metamodelica::cons(ArcStr::from(*t), l)),
     );
+}
+
+/// `strerror(errno)` for an I/O error: its text without " (os error N)".
+fn io_error_text(e: &std::io::Error) -> String {
+    let s = e.to_string();
+    match s.rfind(" (os error ") {
+        Some(i) => s[..i].to_string(),
+        None => s,
+    }
 }
 
 /// Split `modelica://Pkg.Sub/dir/file` / `file:///some/path` URIs into
@@ -3025,9 +2828,7 @@ pub fn relocateFunctions(_fileName: ArcStr, _names: List<(ArcStr, ArcStr)>) -> b
 }
 
 pub fn fflush() {
-    use std::io::Write as _;
-    let _ = std::io::stdout().flush();
-    let _ = std::io::stderr().flush();
+    metamodelica::host_flush();
 }
 
 pub fn updateUriMapping(namesAndDirs: metamodelica::Array<ArcStr>) {
@@ -3065,12 +2866,11 @@ impl Ord for StreamType {
 }
 
 pub fn fputs(r#str: ArcStr, streamType: StreamType) -> i32 {
-    use std::io::Write as _;
-    let res = match streamType {
-        StreamType::STDOUT => std::io::stdout().write_all(r#str.as_bytes()),
-        StreamType::STDERR => std::io::stderr().write_all(r#str.as_bytes()),
+    let ok = match streamType {
+        StreamType::STDOUT => metamodelica::host_print(&r#str),
+        StreamType::STDERR => metamodelica::host_eprint(&r#str),
     };
-    if res.is_ok() { 0 } else { -1 }
+    if ok { 0 } else { -1 }
 }
 
 pub fn waitForInput() {

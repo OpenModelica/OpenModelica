@@ -1,0 +1,55 @@
+// name: NewBackendFlagsReset
+// keywords: newBackend, flags
+// status: correct
+// teardown_command: rm -f NBFlagsResetModel*
+//
+// Checks that switching --newBackend off restores the frontend flags the new
+// backend overrides, so the old backend gets a scalarized model again.
+//
+
+loadString("
+model NBFlagsResetModel
+  Real x[2](each start = 1);
+equation
+  der(x) = -x;
+end NBFlagsResetModel;
+"); getErrorString();
+
+clearCommandLineOptions();
+setCommandLineOptions("--newBackend"); getErrorString();
+translateModel(NBFlagsResetModel); getErrorString();
+setCommandLineOptions("--newBackend=false"); getErrorString();
+getCommandLineOptions();
+instantiateModel(NBFlagsResetModel); getErrorString();
+
+// A flag set by the user is kept when the new backend was not on.
+setCommandLineOptions("-d=-nfScalarize"); getErrorString();
+setCommandLineOptions("--newBackend=false"); getErrorString();
+getCommandLineOptions();
+
+// Result:
+// true
+// ""
+// true
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// {}
+// "class NBFlagsResetModel
+//   Real x[1](start = 1.0);
+//   Real x[2](start = 1.0);
+// equation
+//   der(x[1]) = -x[1];
+//   der(x[2]) = -x[2];
+// end NBFlagsResetModel;
+// "
+// ""
+// true
+// ""
+// true
+// ""
+// {"-d=nonfScalarize"}
+// endResult

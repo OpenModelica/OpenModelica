@@ -1,14 +1,12 @@
 
 #Files for meta folder
-META_OBJS = java_interface$(OBJ_EXT) \
-            meta_modelica_builtin$(OBJ_EXT) \
+META_OBJS = meta_modelica_builtin$(OBJ_EXT) \
             meta_modelica_segv$(OBJ_EXT) \
             meta_modelica_string_lit$(OBJ_EXT) \
             meta_modelica$(OBJ_EXT) \
             realString$(OBJ_EXT)
 
-META_HFILES = java_interface.h \
-              meta_modelica_string_lit.h \
+META_HFILES = meta_modelica_string_lit.h \
               meta_modelica_string.h \
               meta_modelica_builtin_boxptr.h \
               meta_modelica_builtin_boxvar.h \
@@ -100,10 +98,6 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
             write_csv$(OBJ_EXT)
   UTIL_HFILES=$(UTIL_HFILES_MINIMAL) \
               omc_stackoverflow.h \
-              jni_md_solaris.h \
-              jni_md_windows.h \
-              jni_md.h \
-              jni.h \
               libcsv.h \
               read_csv.h \
               read_matlab4.h \
@@ -184,13 +178,11 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
               kinsolSolver$(OBJ_EXT) \
               linearSolverKlu$(OBJ_EXT) \
               linearSolverLis$(OBJ_EXT) \
-              linearSolverUmfpack$(OBJ_EXT) \
               newton_diagnostics$(OBJ_EXT) \
               newtonIteration$(OBJ_EXT) \
               nonlinearSolverNewton$(OBJ_EXT) \
               sundials_error$(OBJ_EXT) \
-              sundials_util$(OBJ_EXT) \
-              sym_solver_ssc$(OBJ_EXT)
+              sundials_util$(OBJ_EXT)
 else
   SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL)
 endif
@@ -212,8 +204,7 @@ SOLVER_HFILES = cvode_solver.h \
                 spatialDistribution.h \
                 stateset.h \
                 sundials_error.h \
-                sundials_util.h \
-                sym_solver_ssc.h
+                sundials_util.h
 
 INITIALIZATION_OBJS = initialization$(OBJ_EXT)
 INITIALIZATION_HFILES = initialization.h

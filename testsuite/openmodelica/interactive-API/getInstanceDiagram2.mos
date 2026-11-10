@@ -48,14 +48,14 @@ getInstanceDiagram(C.Top, depth = 2, exclude = {"C.R"}, showConnections = false)
 // hide empty members
 // class \"C.Top\" as I_C_Top <<model>>
 // class \"t : C.Two\" as I_t <<model>> {
-//   {field} + parameter Real r = 5.0
+//   {field} + parameter Real r = 5
 //   {field} + r1 : R
 //   {field} + r2 : R
 //   {field} + a : Pin
 //   {field} + b : Pin
 // }
 // class \"load : C.R\" as I_load <<model>> {
-//   {field} + parameter Real r = 1.0
+//   {field} + parameter Real r = 1
 //   {field} + p : Pin
 //   {field} + n : Pin
 // }
@@ -71,7 +71,7 @@ getInstanceDiagram(C.Top, depth = 2, exclude = {"C.R"}, showConnections = false)
 // hide empty members
 // class \"C.Top\" as I_C_Top <<model>>
 // class \"t : C.Two\" as I_t <<model>> {
-//   {field} + parameter Real r = 5.0
+//   {field} + parameter Real r = 5
 //   {field} + a : Pin
 //   {field} + b : Pin
 // }
@@ -81,12 +81,12 @@ getInstanceDiagram(C.Top, depth = 2, exclude = {"C.R"}, showConnections = false)
 //   {field} + n : Pin
 // }
 // class \"r2 : C.R\" as I_t_r2 <<model>> {
-//   {field} + parameter Real r = 2.0 * t.r (= 10.0)
+//   {field} + parameter Real r = 2.0*t.r (= 10.0)
 //   {field} + p : Pin
 //   {field} + n : Pin
 // }
 // class \"load : C.R\" as I_load <<model>> {
-//   {field} + parameter Real r = 1.0
+//   {field} + parameter Real r = 1
 //   {field} + p : Pin
 //   {field} + n : Pin
 // }
@@ -107,7 +107,7 @@ getInstanceDiagram(C.Top, depth = 2, exclude = {"C.R"}, showConnections = false)
 // hide empty members
 // class \"C.Top\" as I_C_Top <<model>>
 // class \"t : C.Two\" as I_t <<model>> {
-//   {field} + parameter Real r = 5.0
+//   {field} + parameter Real r = 5
 //   {field} + a : Pin
 //   {field} + b : Pin
 // }

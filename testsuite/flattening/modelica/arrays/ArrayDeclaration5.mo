@@ -7,7 +7,6 @@
 
 model ArrayDeclaration5
   Real realArray[:] = {1,2,3,4};
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayDeclaration5;
 
 // Result:

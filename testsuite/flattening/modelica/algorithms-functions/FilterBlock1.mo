@@ -19,7 +19,6 @@ equation
   y = k*x;
 initial algorithm
   x := u; // if x is u since der(x) = (u - x)/T
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FilterBlock1;
 
 // Result:

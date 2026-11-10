@@ -656,7 +656,7 @@ algorithm
     rhsStr := stringDelimitList(List.map(beqs, ExpressionBasics.printExpStr), " ;\n  ");
     jacStr := stringDelimitList(List.map1(List.mapList(jacVals, realString), stringDelimitList, " , "), " ;\n  ");
     eqnstr := BackendDump.dumpEqnsStr(inEqns);
-    syst := "\n" + eqnstr + "\n[\n  " + jacStr + "\n]\n  *\n[\n  " + varnames + "\n]\n  =\n[\n  " + rhsStr + "\n]";
+    syst := eqnstr + "\n[\n  " + jacStr + "\n]\n  *\n[\n  " + varnames + "\n]\n  =\n[\n  " + rhsStr + "\n]";
     Error.addMessage(Error.LINEAR_SYSTEM_SINGULAR, {syst, infoStr, varname});
     //outValid := false;
   end if;

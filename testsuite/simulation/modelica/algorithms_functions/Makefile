@@ -20,15 +20,18 @@ bug_2286_literal.mos \
 bug2888.mos \
 bug_5659.mos \
 bug_6068.mos \
+bug_17335.mos \
 ComplexSystem.mos \
 DoubleWhenSequential.mos \
 ForIterator1.mos \
 ForIterator2.mos \
 FuncDer.mos  \
 FunctionDerivativeZeroInput.mos \
+FunctionOutputBindingOrder.mos \
 FunctionIndirectRecursion.mos \
 FunctionIndirectRecursion2.mos \
 FunctionInReinit.mos \
+FunctionInverseSolve.mos \
 FunctionPointer.mos \
 FunctionPointerArray.mos \
 FunctionPointerArrayOutput.mos \
@@ -62,7 +65,6 @@ ZeroCross.mos \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES = \
-StatementCall.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

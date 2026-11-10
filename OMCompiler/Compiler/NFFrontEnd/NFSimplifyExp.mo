@@ -130,6 +130,13 @@ algorithm
     case Expression.BOX()               then Expression.box(simplify(exp.exp));
     case Expression.MUTABLE()           then simplify(Mutable.access(exp.exp));
     case Expression.INSTANCE_NAME()     then Ceval.evalGetInstanceName(exp.scope);
+
+    case Expression.PARTIAL_FUNCTION_APPLICATION()
+      algorithm
+        exp.args := list(simplify(a) for a in exp.args);
+      then
+        exp;
+
                                         else exp;
   end match;
 
@@ -1981,7 +1988,7 @@ algorithm
       exp1 := Expression.applySubscripts(subs, exp.exp1);
       subs := list(Subscript.INDEX(index = Expression.INTEGER(1)) for d in Type.arrayDims(Expression.typeOf(exp.exp2)));
       exp2 := Expression.applySubscripts(subs, exp.exp2);
-    then Expression.BINARY(exp1, Operator.OPERATOR(ty, op = NFOperator.Op.MUL), exp2);
+    then Expression.BINARY(exp1, Operator.OPERATOR(ty, NFOperator.Op.MUL, false), exp2);
     else exp;
   end match;
 end removeTrivialScalarProduct;

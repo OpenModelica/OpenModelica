@@ -1,7 +1,6 @@
 TEST=../../../rtest -v
 
 TESTFILES=\
-IntegerToEnumeration.mo \
 modelica_1_1_Type9.mo \
 modelica_1_1_Type10.mo \
 PredefinedTypes.mo \
@@ -24,6 +23,7 @@ Type11.mo \
 TypeArray.mo \
 TypeClass1.mo \
 TypeClass2.mo \
+TypeClass3.mo \
 TypeDeclArray.mo \
 TypeEnumeration.mo \
 TypeSimple.mo \
@@ -31,8 +31,7 @@ TypeSimple.mo \
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
-FAILINGTESTFILES=\
-ColorPixel.mo 
+FAILINGTESTFILES=
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

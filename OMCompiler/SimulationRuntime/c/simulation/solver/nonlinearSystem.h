@@ -83,6 +83,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
 
 NLS_USERDATA* initNlsUserData(DATA* data, threadData_t* threadData, int sysNumber, NONLINEAR_SYSTEM_DATA* nlsData, JACOBIAN* analyticJacobian);
 void freeNlsUserData(NLS_USERDATA* userData);
+int nlsResidualEquationIndex(NONLINEAR_SYSTEM_DATA* nlsData, long row);
 
 extern void debugMatrixPermutedDouble(int logName, char* matrixName, double* matrix, int n, int m, int* indRow, int* indCol);
 extern void debugMatrixDouble(int logName, char* matrixName, double* matrix, int n, int m);

@@ -89,7 +89,6 @@ model RefinedResistorCircuit2Expanded
 equation
   connect(R1.p, R2.p);
   connect(R1.p, R3.p);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RefinedResistorCircuit2Expanded;
 
 // Result:
@@ -122,14 +121,14 @@ end RefinedResistorCircuit2Expanded;
 //   Real R3.Temp;
 //   Real R3.RT;
 // equation
+//   R1.p.v = R3.p.v;
+//   R1.p.v = R2.p.v;
+//   R1.n.i = 0.0;
+//   R3.p.i + R2.p.i + R1.p.i = 0.0;
+//   R2.n.i = 0.0;
+//   R3.n.i = 0.0;
 //   R1.v = R1.i * R1.R;
 //   R2.v = R2.i * R2.R;
 //   R3.v = R3.i * R3.R;
-//   R1.p.i + R2.p.i + R3.p.i = 0.0;
-//   R1.n.i = 0.0;
-//   R2.n.i = 0.0;
-//   R3.n.i = 0.0;
-//   R1.p.v = R2.p.v;
-//   R1.p.v = R3.p.v;
 // end RefinedResistorCircuit2Expanded;
 // endResult

@@ -19,7 +19,9 @@ ArrayReduce.mos \
 ArrayReturn.mos \
 ArraySlice.mos \
 ArraySlice2.mos \
+ArrayArgElementReplaced.mos \
 ArraySliceAssigmentFunction.mos \
+SlicedArrayEquationLhs.mos \
 ArrayWithImplicitSubscripts.mos \
 AsubCrefExpType.mos \
 BooleanArray.mos \
@@ -39,6 +41,7 @@ FunctionArraySlices.mos \
 gc.mos \
 gc2980.mos \
 Issue14470.mos \
+MatrixUnknownDims.mos \
 NPendulum.mos \
 PolynomialEvaluator1.mos \
 PolynomialEvaluator2.mos \

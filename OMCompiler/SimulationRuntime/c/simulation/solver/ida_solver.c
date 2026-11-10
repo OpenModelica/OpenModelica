@@ -60,9 +60,6 @@
 #include "simulation/simulation_runtime.h"
 #include "solver_main.h"
 
-#ifdef WITH_SUNDIALS
-
-
 /* Private function prototypes */
 static int callDenseJacobian(sunrealtype tt, sunrealtype cj, N_Vector yy,
                              N_Vector yp, N_Vector rr, SUNMatrix Jac,
@@ -84,10 +81,6 @@ static void idaScaleVector(N_Vector vec, double* factors, unsigned int size);
 static void idaReScaleVector(N_Vector vec, double* factors, unsigned int size);
 
 int ida_event_update(DATA* data, threadData_t *threadData);
-
-/* Static variables */
-/* TODO: Don't use global variables */
-static IDA_SOLVER *idaDataGlobal;
 
 
 /**
@@ -186,8 +179,6 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
 
   /* Initialize constants */
   idaData->setInitialSolution = FALSE;
-  idaData->homotopyRampActive = 0;
-  idaData->homotopyTramp = -1.0;
 
   /* Instantiate IDA solver object */
   /* Create the SUNDIALS context every other SUNDIALS object is created with */
@@ -597,7 +588,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     }
   }
   if (compiledInDAEMode){
-    idaDataGlobal = idaData;
+    data->simulationInfo->daeModeData->solverData = idaData;
     data->callback->functionDAE = ida_event_update;
   }
   messageClose(OMC_LOG_SOLVER);
@@ -660,6 +651,19 @@ void ida_solver_deinitial(IDA_SOLVER *idaData)
 
 
 /**
+ * @brief Copy states, algebraic variables and state derivatives from IDA to realVars.
+ *
+ * @param data     Runtime data struct.
+ * @param idaData  IDA solver data.
+ */
+static void setDAEVarsFromIDA(DATA* data, IDA_SOLVER* idaData)
+{
+  memcpy(data->localData[0]->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
+  setAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
+  memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
+}
+
+/**
  * @brief EventHandle for DAE mode.
  *
  * Handles events by reinitialize main IDA solver, initializing next step and
@@ -671,7 +675,7 @@ void ida_solver_deinitial(IDA_SOLVER *idaData)
  */
 int ida_event_update(DATA* data, threadData_t *threadData)
 {
-  IDA_SOLVER *idaData = idaDataGlobal;
+  IDA_SOLVER *idaData = (IDA_SOLVER*) data->simulationInfo->daeModeData->solverData;
   int flag;
   long nonLinIters;
   double init_h;
@@ -737,14 +741,14 @@ int ida_event_update(DATA* data, threadData_t *threadData)
   /* obtain consistent values of y_algebraic and y_prime */
   IDAGetConsistentIC(idaData->ida_mem, idaData->y, idaData->yp);
 
+  /* IDACalcIC leaves its last residual evaluation in realVars, which can be a Jacobian perturbation */
+  setDAEVarsFromIDA(data, idaData);
+
   /* update inner algebraic variables */
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
   evaluateDAEResiduals_wrapperEventUpdate(data, threadData);
 
-  memcpy(data->localData[0]->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
-  // and  also algebraic vars
-  setAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
-  memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
+  setDAEVarsFromIDA(data, idaData);
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
   /* reset initial step size again to default */
@@ -763,38 +767,6 @@ int ida_event_update(DATA* data, threadData_t *threadData)
  * @param solverInfo  Main ODE/DAE solver info.
  * @return int        Return 0 on success or IDA flag on failure.
  */
-/* Activate the daeMode homotopy ramp after a singular initial DAE Jacobian was
-   detected (IDA_LSETUP_FAIL). Sets the ramp window and caps the integrator step
-   so the lambda 0->1 transition is resolved gradually regardless of the
-   requested output interval count; the cap is lifted again in ida_solver_step
-   once the ramp is complete. */
-static void idaActivateHomotopyRamp(IDA_SOLVER *idaData, DATA *data)
-{
-  const char *e = getenv("OMC_DAE_HOMOTOPY_TRAMP");
-  idaData->homotopyTramp = (e != NULL) ? atof(e)
-      : 0.1 * (data->simulationInfo->stopTime - data->simulationInfo->startTime);
-  idaData->homotopyRampActive = 1;
-  if (idaData->homotopyTramp > 0.0)
-    IDASetMaxStep(idaData->ida_mem, idaData->homotopyTramp / 50.0);
-}
-
-/* Whether a failed IDASolve is the degenerate initial operating point the ramp
-   above recovers from. The Jacobian there is singular, but a numerical one is
-   only singular to the accuracy of its finite difference: a step that reaches
-   past the regularized region gives a matrix that factorizes, and the corrector
-   fails to converge instead. lambda is ramped over [startTime, startTime +
-   t_ramp], so this only applies while still at startTime. */
-static modelica_boolean idaHomotopyRampRecovers(IDA_SOLVER *idaData, DATA *data,
-                                                SOLVER_INFO *solverInfo, int flag)
-{
-  if (!idaData->daeMode || idaData->homotopyRampActive ||
-      data->simulationInfo->homotopySteps <= 0)
-    return FALSE;
-  if (flag != IDA_LSETUP_FAIL && flag != IDA_CONV_FAIL && flag != IDA_ERR_FAIL)
-    return FALSE;
-  return solverInfo->currentTime <= data->simulationInfo->startTime;
-}
-
 int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   double tout = 0;
@@ -805,7 +777,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   static unsigned int stepsOutputCounter = 1;
   int stepsMode;    /* Has to be IDA_NORMAL (1) or IDA_ONE_STEP (2) */
   int restartAfterLSFail = 0;
-  modelica_boolean rampRecovery;
+  int workRetries = 0;
 
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
@@ -814,18 +786,6 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   SIMULATION_DATA *sData = data->localData[0];
   SIMULATION_DATA *sDataOld = data->localData[1];
   MODEL_DATA *mData = (MODEL_DATA*) data->modelData;
-
-  /* DAE-mode homotopy ramp: lambda is set smoothly as a function of time in the
-     residual callback (residualFunctionIDA). Once the ramp window has elapsed,
-     lift the step-size cap that was applied while ramping and pin lambda to 1
-     (the actual model) for the rest of the integration. */
-  if (idaData->homotopyRampActive && idaData->homotopyTramp > 0.0 &&
-      solverInfo->currentTime >= data->simulationInfo->startTime + idaData->homotopyTramp)
-  {
-    IDASetMaxStep(idaData->ida_mem, 0.0);   /* 0 = no limit */
-    data->simulationInfo->lambda = 1.0;
-    idaData->homotopyRampActive = 0;
-  }
 
 
   /* alloc all work arrays */
@@ -897,17 +857,16 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   threadData->currentErrorStage = ERROR_INTEGRATOR;
 
   /* try */
-#if !defined(OMC_EMCC)
   OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
 
 
   /* Check that tout is not less than timeValue otherwise the solver
    * will come in trouble.
    * If that is the case we skip the current step. */
-  if (solverInfo->currentStepSize < DASSL_STEP_EPS)
+  if ((solverInfo->currentStepSize < DASSL_STEP_EPS) ||
+      (solverInfo->currentStepSize < DASSL_STEP_EPS*(data->simulationInfo->stopTime - data->simulationInfo->startTime)))
   {
-    infoStreamPrint(OMC_LOG_SOLVER, 0, "Desired step to small try next one");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Desired step too small try next one");
     infoStreamPrint(OMC_LOG_SOLVER, 0, "Interpolate linear");
 
     /* linear extrapolation */
@@ -944,6 +903,10 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   {
     tout = solverInfo->currentTime + solverInfo->currentStepSize;
     stepsMode = IDA_NORMAL;
+#ifdef OMC_FMI_RUNTIME
+    /* The inputs of an FMU can change at the communication point */
+    IDASetStopTime(idaData->ida_mem, tout);
+#else
     /* Never step past the next time event */
     if (data->simulationInfo->nextSampleEvent < DBL_MAX)
     {
@@ -953,6 +916,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     {
       IDAClearStopTime(idaData->ida_mem);
     }
+#endif
   }
 
 
@@ -961,9 +925,11 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     infoStreamPrint(OMC_LOG_SOLVER, 1, "##IDA## new step from %.15g to %.15g", solverInfo->currentTime, tout);
 
     if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
+#ifndef OMC_FMI_RUNTIME
     /* read input vars */
     externalInputUpdate(data);
     data->callback->input_function(data, threadData);
+#endif
     if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
     if (omc_flag[FLAG_IDA_SCALING])
@@ -983,8 +949,6 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     /* set time to current time */
     sData->timeValue = solverInfo->currentTime;
 
-    rampRecovery = idaHomotopyRampRecovers(idaData, data, solverInfo, flag);
-
     /* error handling */
     if (IDAflagIsSuccess(flag) && solverInfo->currentTime >= tout)
     {
@@ -1000,23 +964,18 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     {
       infoStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## continue integration time = %.15g", solverInfo->currentTime);
     }
-    else if (flag == IDA_TOO_MUCH_WORK)
+    else if (flag == IDA_TOO_MUCH_WORK && workRetries++ < SOLVER_WORK_RETRIES)
     {
-      warningStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## has done too much work with small steps at time = %.15g", solverInfo->currentTime);
+      warningStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## has done too much work with small steps at time = %.15g. Continuing to solve anyway.", solverInfo->currentTime);
     }
-    else if ((flag == IDA_LSETUP_FAIL || rampRecovery) && !restartAfterLSFail)
+    else if (flag == IDA_LSETUP_FAIL && !restartAfterLSFail)
     {
-      if (rampRecovery)
-      {
-        idaActivateHomotopyRamp(idaData, data);
-        warningStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## degenerate DAE operating point at t = %.15g (flag %d); activating homotopy ramp", solverInfo->currentTime, flag);
-      }
       flag = IDAReInit(idaData->ida_mem,
           solverInfo->currentTime,
           idaData->y,
           idaData->yp);
       restartAfterLSFail = 1;
-      warningStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## solver failed, try once again at time = %.15g", solverInfo->currentTime);
+      warningStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## linear solver failed try once again = %.15g", solverInfo->currentTime);
     }
     else
     {
@@ -1055,9 +1014,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   } while(!finished && !OMC_ERROR_RAISED());
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
 
-#if !defined(OMC_EMCC)
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
   threadData->currentErrorStage = saveJumpState;
 
   /* if a state event occurs than no sample event does need to be activated  */
@@ -1170,20 +1127,6 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
   double *statesDer = N_VGetArrayPointer_Serial(yp);
   double *delta  = N_VGetArrayPointer_Serial(rr);
 
-  /* DAE-mode homotopy ramp for a degenerate initial operating point: a
-     homotopy()-regularized characteristic (e.g. a pump at zero flow/speed) makes
-     the actual (lambda=1) DAE Jacobian singular near t=0, so IDA's LU
-     factorization fails. The simplified (lambda<1) branch is non-singular, so
-     once such a failure is detected (homotopyRampActive set in ida_solver_step)
-     we ramp lambda 0->1 smoothly over [startTime, startTime+t_ramp]. This is
-     activated only on failure, so models that integrate normally are unaffected.
-     t_ramp defaults to 10% of the simulation interval (tunable via env var). */
-  if (idaData->daeMode && idaData->homotopyRampActive && data->simulationInfo->homotopySteps > 0) {
-    double tRamp = idaData->homotopyTramp;
-    data->simulationInfo->lambda = (tRamp > 0.0 && time < data->simulationInfo->startTime + tRamp)
-                                 ? ((time - data->simulationInfo->startTime) / tRamp) : 1.0;
-  }
-
   infoStreamPrint(OMC_LOG_SOLVER_V, 1, "### eval residualFunctionIDA ###");
   /* rescale idaData->y and idaData->yp */
   if ((omc_flag[FLAG_IDA_SCALING] && idaData->useScaling))
@@ -1201,9 +1144,7 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
   threadData->currentErrorStage = ERROR_INTEGRATOR;
 
   /* try */
-#if !defined(OMC_EMCC)
   OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
 
   /* if sensitivity mode update also bound parameters*/
   if (idaData->idaSmode)
@@ -1231,11 +1172,13 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
     }
   }
 
+#ifndef OMC_FMI_RUNTIME
   /* read input vars */
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
+#endif
 
   if (idaData->daeMode)
   {
@@ -1288,9 +1231,7 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
 
   printVector(OMC_LOG_DASSL_STATES, "delta", delta, idaData->N, time);
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
-#if !defined(OMC_EMCC)
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
 
   if (!success) {
     retVal = 1;  /* Recoverable error, reduce step size and retry */
@@ -1359,8 +1300,10 @@ static int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout,
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
 
   /* Update inputs and evaluate zero crossings */
+#ifndef OMC_FMI_RUNTIME
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
+#endif
   if (idaData->daeMode){
     data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData, EVAL_ZEROCROSS);
   }
@@ -1961,5 +1904,3 @@ static void idaReScaleData(IDA_SOLVER *idaData)
   idaReScaleVector(idaData->yp, idaData->ypScale, idaData->N);
   messageClose(OMC_LOG_SOLVER_V);
 }
-
-#endif /* #ifdef WITH_SUNDIALS */

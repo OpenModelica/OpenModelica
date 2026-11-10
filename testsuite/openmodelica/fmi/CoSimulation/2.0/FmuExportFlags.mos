@@ -2,7 +2,6 @@
 // keywords: fmu export simulation flags
 // status: correct
 // teardown_command: rm -rf BouncingBallFMI20* exampleFlags.json BouncingBallFMI20-tmp/
-// cflags: -d=-newInst
 //
 // Export of 2.0 CS FMU with simulation flags.
 // Also tests example from users guide.
@@ -159,7 +158,7 @@ val(v, 1.0, "BouncingBallFMI20_res.mat"); getErrorString();
 // LOG_SOLVER        | info    | CVODE Using relative error tolerance 1.000000e-06
 // LOG_SOLVER        | info    | CVODE Using sparse linear solver SUNLinSol_KLU.
 // LOG_SOLVER        | info    | CVODE Use sparse Jacobian method coloredNumerical
-// LOG_SOLVER        | info    | CVODE uses internal root finding method NO
+// LOG_SOLVER        | info    | CVODE uses internal root finding method YES
 // LOG_SOLVER        | info    | CVODE maximum absolut step size 0
 // LOG_SOLVER        | info    | CVODE initial step size is set automatically
 // LOG_SOLVER        | info    | CVODE maximum integration order 5
@@ -178,8 +177,8 @@ val(v, 1.0, "BouncingBallFMI20_res.mat"); getErrorString();
 // ""
 // 0.0
 // ""
-// 0.22582352276085654
+// 0.22505888261091253
 // ""
-// -2.2719959999999926
+// -2.279940863040485
 // ""
 // endResult

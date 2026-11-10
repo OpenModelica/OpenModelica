@@ -1,7 +1,6 @@
 // name:     ParseFullModelica
 // keywords: parse
 // status:   correct
-// cflags: -d=-newInst
 //
 // Parse/Unparse entire MSL (default version)
 //

@@ -18,7 +18,7 @@ simulate(STest1, tolerance=1e-5, numberOfIntervals=100);
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_ASSERT        | info    | [simulation/modelica/others/StringTest.mo:8:1-14:56:writable]
 // |                 | |       | The following assertion has been violated at time 0.110000
-// |                 | |       | ((x < 0.1)) --> \"x reached 0.11 at time 0.11 b =true i =     66\"
+// |                 | |       | ((x < 0.1), x=0.1097783008371748) --> \"x reached 0.11 at time 0.11 b =true i =     66\"
 // LOG_ASSERT        | error   | No event found, but assert was triggered. Throwing now!
 // "
 // end SimulationResult;

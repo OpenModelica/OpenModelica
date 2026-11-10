@@ -31,15 +31,15 @@
 #include "kinsolSolver.h"
 
 #include "nonlinearSystem.h"
+#if !defined(OMC_FMI_RUNTIME)
 #include "omc_config.h"
+#endif
 #include "omc_math.h"
 #include "../options.h"
 #include "../simulation_info_json.h"
 #include "../jacobian_util.h"
 #include "sundials_util.h"
 #include "util/omc_error.h"
-
-#ifdef WITH_SUNDIALS
 
 #include "events.h"
 #include "model_help.h"
@@ -191,6 +191,56 @@ void initKinsolMemory(NLS_KINSOL_DATA *kinsolData) {
 }
 
 /**
+ * @brief Error handler function given to KINSOL.
+ *
+ * @param errorCode   Error code from KINSOL
+ * @param module      Name of the KINSOL module reporting the error.
+ * @param function    Name of the function in which the error occurred.
+ * @param msg         Error Message.
+ * @param userData    Pointer to user data given with KINSetUserData.
+ */
+static void kinsolErrorHandlerFunction(int line, const char *func, const char *file,
+                                const char *msg, SUNErrCode err_code,
+                                void *err_user_data, SUNContext sunctx) {
+  /* Variables */
+  NLS_KINSOL_DATA* kinsolData;
+  DATA* data;
+  NONLINEAR_SYSTEM_DATA* nlsData;
+  long eqSystemNumber = -1;
+
+  (void) sunctx;
+
+  if (err_user_data != NULL) {
+    kinsolData = (NLS_KINSOL_DATA *)err_user_data;
+    data = kinsolData->userData->data;
+    nlsData = kinsolData->userData->nlsData;
+    if (nlsData) {
+      eqSystemNumber = nlsData->equationIndex;
+    }
+  }
+
+  if (OMC_ACTIVE_STREAM(OMC_LOG_NLS)) {
+    if (err_user_data != NULL && eqSystemNumber > 0) {
+      warningStreamPrint(
+          OMC_LOG_NLS, 1, "kinsol failed for system %d",
+          modelInfoGetEquation(&data->modelData->modelDataXml, eqSystemNumber).id);
+    } else {
+      warningStreamPrint(
+          OMC_LOG_NLS, 1, "kinsol failed");
+    }
+
+    warningStreamPrint(OMC_LOG_NLS, 0,
+                       "[function] %s | [at] %s:%d | [error_code] %d",
+                       func, file, line, err_code);
+    /* Package level codes (KIN_* and friends) are not SUNErrCodes, so
+     * SUNGetErrMsg() only makes sense when SUNDIALS did not supply a message. */
+    warningStreamPrint(OMC_LOG_NLS, 0, "%s", msg ? msg : SUNGetErrMsg(err_code));
+
+    messageCloseWarning(OMC_LOG_NLS);
+  }
+}
+
+/**
  * @brief Allocate memory for kinsol solver data and initialize KINSOL solver.
  *
  * @param size                  Size of non-linear problem.
@@ -315,17 +365,13 @@ static int nlsKinsolResiduals(N_Vector x, N_Vector f, void* userData) {
   /* Update statistics */
   kinsolData->countResCalls++;
 
-#ifndef OMC_EMCC
   OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
 
   /* call residual function */
   nlsData->residualFunc(&resUserData, xdata, fdata, (const int *)&iflag);
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { iflag = 0 /* success */; }
 
-#ifndef OMC_EMCC
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
 
   return iflag;
 }
@@ -558,7 +604,7 @@ static int nlsKinsolDenseDerivativeTest(DATA *data, NONLINEAR_SYSTEM_DATA *nlsDa
           if (!errorFound)
           {
             infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "Column / Variable: %i, Name: %s",
-            col + 1, modelInfoGetEquation(&data->modelData->modelDataXml, nlsData->equationIndex).vars[col]);
+            col + 1, modelInfoGetEquationVar(&data->modelData->modelDataXml, nlsData->equationIndex, col));
             infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "%-12s %-6s %-6s %-15s  %-15s  %-8s",
                             "Type", "Col", "Row", "Symbolic", "Numerical", "RelError");
             errorFound = TRUE;
@@ -574,7 +620,7 @@ static int nlsKinsolDenseDerivativeTest(DATA *data, NONLINEAR_SYSTEM_DATA *nlsDa
         if (!errorFound)
         {
           infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "Column / Variable: %i, Name: %s",
-                          col + 1, modelInfoGetEquation(&data->modelData->modelDataXml, nlsData->equationIndex).vars[col]);
+                          col + 1, modelInfoGetEquationVar(&data->modelData->modelDataXml, nlsData->equationIndex, col));
           infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "%-12s %-6s %-6s %-15s  %-15s  %-8s",
                           "Type", "Col", "Row", "Symbolic", "Numerical", "RelError");
           errorFound = TRUE;
@@ -1313,18 +1359,10 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
 }
 
 /**
- * @brief Solve non-linear system with KINSol
- *
- * @param data                Runtime data struct.
- * @param threadData          Thread data for error handling.
- * @param nlsData             Pointer to non-linear system data.
- * @return NLS_SOLVER_STATUS  Return NLS_SOLVED on success and NLS_FAILED otherwise.
- */
-/**
  * @brief Set sign constraints from the min and max attributes of the iteration variables.
  *
- * Only for variables whose initial guess already fulfills the constraint,
- * otherwise KINSol() rejects the initial guess.
+ * Only for variables whose initial guess fulfills the constraint clearly,
+ * otherwise KINSol() rejects the initial guess or cannot leave the bound.
  *
  * @param kinsolData  Kinsol data with the initial guess.
  * @param nlsData     Nonlinear system data with min and max values.
@@ -1333,6 +1371,7 @@ static void nlsKinsolSetConstraints(NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTE
   int i, flag;
   double *x = NV_DATA_S(kinsolData->initialGuess);
   double *c = NV_DATA_S(kinsolData->constraints);
+  double tol;
 
   if (nlsData->min == NULL || nlsData->max == NULL) {
     return;
@@ -1340,10 +1379,11 @@ static void nlsKinsolSetConstraints(NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTE
 
   for (i = 0; i < kinsolData->size; i++) {
     c[i] = 0.0;
-    /* a variable on the bound would block every step that points outside */
-    if (nlsData->min[i] >= 0.0 && x[i] > 0.0) {
+    /* a variable on the bound, up to rounding, would block every step that points outside */
+    tol = sqrt(DBL_EPSILON) * fabs(nlsData->nominal[i]);
+    if (nlsData->min[i] >= 0.0 && x[i] > tol) {
       c[i] = nlsData->min[i] > 0.0 ? 2.0 : 1.0;    /* x > 0 or x >= 0 */
-    } else if (nlsData->max[i] <= 0.0 && x[i] < 0.0) {
+    } else if (nlsData->max[i] <= 0.0 && x[i] < -tol) {
       c[i] = nlsData->max[i] < 0.0 ? -2.0 : -1.0;  /* x < 0 or x <= 0 */
     }
   }
@@ -1351,6 +1391,14 @@ static void nlsKinsolSetConstraints(NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTE
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetConstraints");
 }
 
+/**
+ * @brief Solve non-linear system with KINSol
+ *
+ * @param data                Runtime data struct.
+ * @param threadData          Thread data for error handling.
+ * @param nlsData             Pointer to non-linear system data.
+ * @return NLS_SOLVER_STATUS  Return NLS_SOLVED on success and NLS_FAILED otherwise.
+ */
 NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DATA* nlsData) {
 
   NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
@@ -1423,10 +1471,9 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
     } else {
       infoStreamPrint(OMC_LOG_NLS_V, 0, "KINSol finished with errorCode %d.", flag);
     }
-    /* a step below the tolerance without any iteration only solves the system if the residual is small */
+    /* a step below the tolerance only solves the system if the residual is small */
     stalled = FALSE;
-    KINGetNumNonlinSolvIters(kinsolData->kinsolMemory, &nFEval);
-    if (flag == KIN_STEP_LT_STPTOL && nFEval == 0) {
+    if (flag == KIN_STEP_LT_STPTOL) {
       /* KINGetFuncNorm is not set if no step was taken, evaluate the scaled residual */
       nlsKinsolResiduals(kinsolData->initialGuess, kinsolData->fRes, kinsolData->userData);
       fNormValue = N_VWL2Norm(kinsolData->fRes, kinsolData->fScale);
@@ -1480,25 +1527,3 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
 
   return kinsolData->solved;
 }
-
-#else /* WITH_SUNDIALS */
-
-void* nlsKinsolAllocate(int size, void* userData, int attemptRetry, modelica_boolean isPatternAvailable) {
-
-  throwStreamPrint(NULL, "No sundials/kinsol support activated.");
-  return 0;
-}
-
-int nlsKinsolFree(void* kinsolData) {
-
-  throwStreamPrint(NULL, "No sundials/kinsol support activated.");
-  return 0;
-}
-
-int nlsKinsolSolve(void *data, threadData_t *threadData, void* nlsData) {
-
-  throwStreamPrint(threadData, "No sundials/kinsol support activated.");
-  return 0;
-}
-
-#endif /* WITH_SUNDIALS */

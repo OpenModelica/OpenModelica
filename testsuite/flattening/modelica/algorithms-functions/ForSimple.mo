@@ -11,7 +11,6 @@ algorithm
   for i in 1:4 loop
     rarr[i] := i + 1.0;
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ForSimple;
 
 // Result:
@@ -22,7 +21,7 @@ end ForSimple;
 //   Real rarr[4];
 // algorithm
 //   for i in 1:4 loop
-//     rarr[i] := 1.0 + /*Real*/(i);
+//     rarr[i] := /*Real*/(i) + 1.0;
 //   end for;
 // end ForSimple;
 // endResult

@@ -249,16 +249,17 @@ pub(crate) mod shared_lits;
 mod generic_calls;
 pub(crate) use generic_calls::{
     emit_entwined_assign, emit_generic_assign, emit_index_list_loop, emit_resizable_assign,
+    emit_resizable_entwined_assign,
 };
 
 #[path = "CodegenWasmJitFunctions/sim_systems.rs"]
 mod sim_systems;
 pub(crate) use sim_systems::{
-    IterBlock, IterSlot, LSS_MAX_DENSITY, LSS_MIN_SIZE, NLSS_MAX_DENSITY, NLSS_MIN_SIZE, NlsResidual, NlsResiduals,
-    backup_known_outputs, compile_linear_system, compile_linear_system_analytic, compile_linear_system_analytic_csc,
-    compile_linear_system_symbolic, emit_dt_local_constraint, emit_dt_solving, emit_dynamic_tearing,
-    emit_linz_jac_body, emit_ls_bracket, emit_nls_jac_body, emit_nls_jac_csc_body, emit_nls_load_body,
-    emit_nls_residual_body, emit_nls_residual_epilogue, emit_nls_residual_prologue, emit_nls_residual_store,
-    emit_nls_strict_body, emit_solve_nls_call, lin_jac_coloring, lin_use_sparse, nls_residuals_all_scalar,
-    nls_use_sparse, residual_rows, restore_known_outputs,
+    IterBlock, IterSlot, NlsResidual, NlsResiduals, backup_known_outputs, compile_linear_system,
+    compile_linear_system_analytic, compile_linear_system_analytic_csc, compile_linear_system_symbolic,
+    emit_dt_local_constraint, emit_dt_solving, emit_dynamic_tearing, emit_linz_jac_body, emit_ls_bracket,
+    emit_nls_jac_body, emit_nls_jac_csc_body, emit_nls_jac_dyn_body, emit_nls_load_body, emit_nls_residual_body,
+    emit_nls_residual_epilogue, emit_nls_residual_prologue, emit_nls_residual_store, emit_nls_strict_body,
+    emit_solve_nls_call, lin_jac_coloring, lin_use_sparse, nls_residuals_all_scalar, nls_use_sparse, residual_rows,
+    restore_known_outputs,
 };

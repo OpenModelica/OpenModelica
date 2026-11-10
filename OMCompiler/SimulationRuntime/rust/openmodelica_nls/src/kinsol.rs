@@ -332,6 +332,11 @@ pub mod sun {
     }
 
     impl Solver {
+        /// Whether this solver was set up for `n` unknowns and `nnz` nonzeros.
+        pub fn fits(&self, n: usize, nnz: usize) -> bool {
+            self.n == n && self.nnz == nnz
+        }
+
         pub fn new(n: usize, nnz: usize) -> Option<Solver> {
             let ctx = context();
             if ctx.is_null() {
@@ -460,8 +465,8 @@ pub mod sun {
         }
 
         /// C's `nlsKinsolSetConstraints`: keep the sign of a variable with a
-        /// non-negative min or non-positive max, if the start point has it.
-        fn set_constraints(&mut self, min: &[f64], max: &[f64]) {
+        /// non-negative min or non-positive max, if the start point has it clearly.
+        fn set_constraints(&mut self, min: &[f64], max: &[f64], nominal: &[f64]) {
             let x = data(self.u, self.n);
             let c = data(self.constraints, self.n);
             for i in 0..self.n {
@@ -469,10 +474,11 @@ pub mod sun {
                     min.get(i).copied().unwrap_or(f64::MIN),
                     max.get(i).copied().unwrap_or(f64::MAX),
                 );
-                // a variable on the bound would block every step that points outside
-                c[i] = if lo >= 0.0 && x[i] > 0.0 {
+                // a variable on the bound, up to rounding, would block every step that points outside
+                let tol = fmath::sqrt(f64::EPSILON) * fmath::fabs(nominal.get(i).copied().unwrap_or(1.0));
+                c[i] = if lo >= 0.0 && x[i] > tol {
                     if lo > 0.0 { 2.0 } else { 1.0 }
-                } else if hi <= 0.0 && x[i] < 0.0 {
+                } else if hi <= 0.0 && x[i] < -tol {
                     if hi < 0.0 { -2.0 } else { -1.0 }
                 } else {
                     0.0
@@ -588,15 +594,15 @@ pub mod sun {
                 self.x_scaling(nominal);
                 self.f_scaling(&mut ud);
                 self.max_newton_step();
-                self.set_constraints(pat.min, pat.max);
+                self.set_constraints(pat.min, pat.max, nominal);
                 let flag = unsafe { KINSol(self.kin, self.u, self.strategy, self.xscale, self.fscale) };
                 let mut iters: c_long = 0;
                 unsafe { KINGetNumNonlinSolvIters(self.kin, &mut iters) };
                 crate::note_nls_iters(iters.max(0) as u64);
-                // a step below the tolerance without any iteration only solves the system if the residual
-                // is small (KINGetFuncNorm is not set if no step was taken, evaluate the scaled residual)
+                // a step below the tolerance only solves the system if the residual is small
+                // (KINGetFuncNorm is not set if no step was taken, evaluate the scaled residual)
                 let mut stalled = false;
-                if flag == KIN_STEP_LT_STPTOL && iters == 0 {
+                if flag == KIN_STEP_LT_STPTOL {
                     let x = data(self.u, self.n).to_vec();
                     let mut f = vec![0.0f64; self.n];
                     (ud.eval)(&x, &mut f);
@@ -1583,7 +1589,17 @@ pub fn solve(
     KIN_CACHE.with(
         handle,
         || sun::Solver::new(n, pat.nnz),
-        |solver| solver.solve(guess, nominal, pat, x, eq_index, time, has_jacobian, eval, assemble),
+        |solver| {
+            // A handle another system of a different size used before, e.g. in
+            // another FMU instance in the same process.
+            if !solver.fits(n, pat.nnz) {
+                match sun::Solver::new(n, pat.nnz) {
+                    Some(s) => *solver = s,
+                    None => return false,
+                }
+            }
+            solver.solve(guess, nominal, pat, x, eq_index, time, has_jacobian, eval, assemble)
+        },
     )
 }
 

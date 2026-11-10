@@ -12,7 +12,6 @@ algorithm
   for i in 1:3 loop
     x[p[i]] := i;
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end NestedSubscriptFor;
 
 // Result:
@@ -20,12 +19,12 @@ end NestedSubscriptFor;
 //   Integer x[1];
 //   Integer x[2];
 //   Integer x[3];
-//   parameter Integer p[1] = 1;
-//   parameter Integer p[2] = 2;
-//   parameter Integer p[3] = 3;
+//   final parameter Integer p[1] = 1;
+//   final parameter Integer p[2] = 2;
+//   final parameter Integer p[3] = 3;
 // algorithm
 //   for i in 1:3 loop
-//     x[p[i]] := i;
+//     x[{1, 2, 3}[i]] := i;
 //   end for;
 // end NestedSubscriptFor;
 // endResult

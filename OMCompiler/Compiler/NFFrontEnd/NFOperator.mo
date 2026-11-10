@@ -94,6 +94,7 @@ public
   record OPERATOR
     Type ty;
     Op op;
+    Boolean integerRHS; // Only used for ^ to keep track of whether the rhs was an Integer or not.
   end OPERATOR;
 
   function compare
@@ -309,7 +310,7 @@ public
       case Absyn.NEQUAL()    then Op.NEQUAL;
     end match;
 
-    outOperator := OPERATOR(Type.UNKNOWN(), op);
+    outOperator := OPERATOR(Type.UNKNOWN(), op, false);
   end fromAbsyn;
 
   function toAbsyn
@@ -373,7 +374,7 @@ public
       case Op.SUB               then if Type.isArray(op.ty) then DAE.SUB_ARR(ty) else DAE.SUB(ty);
       case Op.MUL               then if Type.isArray(op.ty) then DAE.MUL_ARR(ty) else DAE.MUL(ty);
       case Op.DIV               then if Type.isArray(op.ty) then DAE.DIV_ARR(ty) else DAE.DIV(ty);
-      case Op.POW               then if Type.isArray(op.ty) then DAE.POW_ARR2(ty) else DAE.POW(ty);
+      case Op.POW               then if Type.isArray(op.ty) then DAE.POW_ARR2(ty, op.integerRHS) else DAE.POW(ty, op.integerRHS);
       case Op.ADD_SCALAR_ARRAY  algorithm swapArguments := true; then DAE.ADD_ARRAY_SCALAR(ty);
       case Op.ADD_ARRAY_SCALAR  then DAE.ADD_ARRAY_SCALAR(ty);
       case Op.SUB_SCALAR_ARRAY  then DAE.SUB_SCALAR_ARRAY(ty);
@@ -391,8 +392,8 @@ public
       case Op.MATRIX_PRODUCT    then DAE.MUL_MATRIX_PRODUCT(ty);
       case Op.DIV_SCALAR_ARRAY  then DAE.DIV_SCALAR_ARRAY(ty);
       case Op.DIV_ARRAY_SCALAR  then DAE.DIV_ARRAY_SCALAR(ty);
-      case Op.POW_SCALAR_ARRAY  then DAE.POW_SCALAR_ARRAY(ty);
-      case Op.POW_ARRAY_SCALAR  then DAE.POW_ARRAY_SCALAR(ty);
+      case Op.POW_SCALAR_ARRAY  then DAE.POW_SCALAR_ARRAY(ty, op.integerRHS);
+      case Op.POW_ARRAY_SCALAR  then DAE.POW_ARRAY_SCALAR(ty, op.integerRHS);
       case Op.POW_MATRIX        then DAE.POW_ARR(ty);
       case Op.UMINUS            then if Type.isArray(op.ty) then DAE.UMINUS_ARR(ty) else DAE.UMINUS(ty);
       case Op.AND               then DAE.AND(ty);
@@ -487,6 +488,38 @@ public
 
     symbol := spacing + symbol + spacing;
   end symbol;
+
+  function symbolSpaced
+    "Like symbol but automatically determines whether the symbol should be spaced or not.
+     Used to make it easier to print readable expressions such as 2*n + 3*m."
+    input Operator op;
+    output String str;
+  protected
+    Boolean should_space;
+  algorithm
+    should_space := match op.op
+      case Op.MUL               then false;
+      case Op.DIV               then false;
+      case Op.POW               then false;
+      case Op.MUL_EW            then false;
+      case Op.DIV_EW            then false;
+      case Op.POW_EW            then false;
+      case Op.MUL_SCALAR_ARRAY  then false;
+      case Op.MUL_ARRAY_SCALAR  then false;
+      case Op.MUL_VECTOR_MATRIX then false;
+      case Op.MUL_MATRIX_VECTOR then false;
+      case Op.SCALAR_PRODUCT    then false;
+      case Op.MATRIX_PRODUCT    then false;
+      case Op.DIV_SCALAR_ARRAY  then false;
+      case Op.DIV_ARRAY_SCALAR  then false;
+      case Op.POW_SCALAR_ARRAY  then false;
+      case Op.POW_ARRAY_SCALAR  then false;
+      case Op.POW_MATRIX        then false;
+      else true;
+    end match;
+
+    str := symbol(op, if should_space then " " else "");
+  end symbolSpaced;
 
   function toJSON
     input Operator operator;
@@ -602,107 +635,109 @@ public
 
   function makeAdd
     input Type ty;
-    output Operator op = OPERATOR(ty, Op.ADD);
+    output Operator op = OPERATOR(ty, Op.ADD, false);
   end makeAdd;
 
   function makeSub
     input Type ty;
-    output Operator op = OPERATOR(ty, Op.SUB);
+    output Operator op = OPERATOR(ty, Op.SUB, false);
   end makeSub;
 
   function makeMul
     input Type ty;
-    output Operator op = OPERATOR(ty, Op.MUL);
+    output Operator op = OPERATOR(ty, Op.MUL, false);
   end makeMul;
 
   function makeScalarProduct
     input Type ty;
-    output Operator op = OPERATOR(ty, Op.SCALAR_PRODUCT);
+    output Operator op = OPERATOR(ty, Op.SCALAR_PRODUCT, false);
   end makeScalarProduct;
 
   function makeDiv
     input Type ty;
-    output Operator op = OPERATOR(ty, Op.DIV);
+    output Operator op = OPERATOR(ty, Op.DIV, false);
   end makeDiv;
 
   function makePow
     input Type ty;
-    output Operator op = OPERATOR(ty, Op.POW);
+    input Boolean integerRHS = false;
+    output Operator op = OPERATOR(ty, Op.POW, integerRHS);
   end makePow;
 
   function makeAddEW
     input Type ty;
-    output Operator op = OPERATOR(ty, Op.ADD_EW);
+    output Operator op = OPERATOR(ty, Op.ADD_EW, false);
   end makeAddEW;
 
   function makeSubEW
     input Type ty;
-    output Operator op = OPERATOR(ty, Op.SUB_EW);
+    output Operator op = OPERATOR(ty, Op.SUB_EW, false);
   end makeSubEW;
 
   function makeMulEW
     input Type ty;
-    output Operator op = OPERATOR(ty, Op.MUL_EW);
+    output Operator op = OPERATOR(ty, Op.MUL_EW, false);
   end makeMulEW;
 
   function makeDivEW
     input Type ty;
-    output Operator op = OPERATOR(ty, Op.DIV_EW);
+    output Operator op = OPERATOR(ty, Op.DIV_EW, false);
   end makeDivEW;
 
   function makeUMinus
     input Type ty;
-    output Operator op = OPERATOR(ty, Op.UMINUS);
+    output Operator op = OPERATOR(ty, Op.UMINUS, false);
   end makeUMinus;
 
   function makeAnd
     input Type ty;
-    output Operator op = OPERATOR(ty, Op.AND);
+    output Operator op = OPERATOR(ty, Op.AND, false);
   end makeAnd;
 
   function makeOr
     input Type ty;
-    output Operator op = OPERATOR(ty, Op.OR);
+    output Operator op = OPERATOR(ty, Op.OR, false);
   end makeOr;
 
   function makeNot
     input Type ty;
-    output Operator op = OPERATOR(ty, Op.NOT);
+    output Operator op = OPERATOR(ty, Op.NOT, false);
   end makeNot;
 
   function makeLess
     input Type ty;
-    output Operator op = OPERATOR(ty, Op.LESS);
+    output Operator op = OPERATOR(ty, Op.LESS, false);
   end makeLess;
 
   function makeLessEq
     input Type ty;
-    output Operator op = OPERATOR(ty, Op.LESSEQ);
+    output Operator op = OPERATOR(ty, Op.LESSEQ, false);
   end makeLessEq;
 
   function makeGreater
     input Type ty;
-    output Operator op = OPERATOR(ty, Op.GREATER);
+    output Operator op = OPERATOR(ty, Op.GREATER, false);
   end makeGreater;
 
   function makeGreaterEq
     input Type ty;
-    output Operator op = OPERATOR(ty, Op.GREATEREQ);
+    output Operator op = OPERATOR(ty, Op.GREATEREQ, false);
   end makeGreaterEq;
 
   function makeEqual
     input Type ty;
-    output Operator op = OPERATOR(ty, Op.EQUAL);
+    output Operator op = OPERATOR(ty, Op.EQUAL, false);
   end makeEqual;
 
   function makeNotEqual
     input Type ty;
-    output Operator op = OPERATOR(ty, Op.NEQUAL);
+    output Operator op = OPERATOR(ty, Op.NEQUAL, false);
   end makeNotEqual;
 
   function makeScalarArray
     input Type ty;
     input Op op;
+    input Boolean integerRHS;
     output Operator outOp;
   protected
     Op o;
@@ -715,12 +750,13 @@ public
       case Op.POW then Op.POW_SCALAR_ARRAY;
     end match;
 
-    outOp := OPERATOR(ty, o);
+    outOp := OPERATOR(ty, o, integerRHS);
   end makeScalarArray;
 
   function makeArrayScalar
     input Type ty;
     input Op op;
+    input Boolean integerRHS;
     output Operator outOp;
   protected
     Op o;
@@ -733,7 +769,7 @@ public
       case Op.POW then Op.POW_ARRAY_SCALAR;
     end match;
 
-    outOp := OPERATOR(ty, o);
+    outOp := OPERATOR(ty, o, integerRHS);
   end makeArrayScalar;
 
   function makeEW
@@ -897,6 +933,7 @@ public
     "Only works for non-logical operators!"
     input Classification cl "mathematical and size classification";
     input Type ty           "Type information";
+    input Boolean integerRHS = true;
     output Operator result        "Resulting operator";
   protected
     Op op;
@@ -938,7 +975,7 @@ public
         Error.addInternalError(getInstanceName() + ": Don't know how to handle math class and size class combination: " + classificationString(cl), sourceInfo());
       then fail();
     end match;
-    result := OPERATOR(ty, op);
+    result := OPERATOR(ty, op, integerRHS);
   end fromClassification;
 
   function getMathClassification

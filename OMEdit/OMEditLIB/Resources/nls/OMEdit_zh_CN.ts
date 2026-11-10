@@ -135,6 +135,41 @@
     </message>
 </context>
 <context>
+    <name>ArrayParameterEditorDialog</name>
+    <message>
+        <source>%1 - %2 %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rows:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Columns:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expression:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete 1 row</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete %1 rows</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete 1 column</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete %1 columns</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>AttachToProcessDialog</name>
     <message>
         <source>Attach to Process ID:</source>
@@ -393,6 +428,83 @@
     <message>
         <source>Translation of CRML file %1 with within %2 finished. Now loading specified CRML Modelica libraries...</source>
         <translation>CRML文件 %1（范围：%2）转换完成，正在加载指定的CRML Modelica库...</translation>
+    </message>
+    <message>
+        <source>The CRML testsuite needs the CRML compiler, which needs Java, so it does not run in the web version.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Translating %1 with crml.js
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Output Modelica file: %1
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not write %1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Translation of the CRML file %1 failed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ClassDiagramWidget</name>
+    <message>
+        <source>Depth:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>How many levels of used classes to show</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show modifiers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the diagram as a draw.io file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Instances below classes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hierarchical</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Class on top</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Base classes on top</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rows by inheritance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>How the classes are laid out</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Layout:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The CRML file &lt;b&gt;%1&lt;/b&gt; is empty or can&apos;t be read.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No class diagram of &lt;b&gt;%1&lt;/b&gt;, see the Messages Browser.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1392,6 +1504,14 @@ Select the models for which you want to discard the local translation flag and a
         <source>__OpenModelica_infoHeader Source</source>
         <translation>__OpenModelica_infoHeader 源文件</translation>
     </message>
+    <message>
+        <source>Warning</source>
+        <translation type="unfinished">警告</translation>
+    </message>
+    <message>
+        <source>The model instance for %1 is not available; the documentation changes were not saved.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DuplicateClassDialog</name>
@@ -1504,6 +1624,22 @@ Select the models for which you want to discard the local translation flag and a
     <message>
         <source>Array of dimensions e.g [1, 5, 2]</source>
         <translation>数组大小，例如[1,5,2]</translation>
+    </message>
+    <message>
+        <source>Conditional Component</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Boolean expression e.g. useSensor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A conditional component requires a condition expression.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid condition expression: %1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1673,6 +1809,25 @@ A source-code only FMU is generated if no platform is selected.</source>
         <source>Delete FMU directory and generated model when OMEdit is closed</source>
         <translation>关闭OMEdit时删除 FMU 目录并且生成模型</translation>
     </message>
+    <message>
+        <source>1.0 (deprecated)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Note: No native platform is available here, the FMU only contains the WebAssembly binary
+and is exported as FMI 3.0 (fmi-ls-wasm).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Note: The FMU always contains the WebAssembly binary.
+The listed platforms have a precompiled FMU driver and are added as native binaries.
+With no platform selected, the FMU is exported as FMI 3.0 (fmi-ls-wasm).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Default (the model&apos;s method, else DASSL)</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>FMUSettingsDialog</name>
@@ -1797,10 +1952,6 @@ A source-code only FMU is generated if no platform is selected.</source>
         <translation>已取消构建 %1。</translation>
     </message>
     <message>
-        <source>Zipping of FMU %1 is cancelled.</source>
-        <translation>已取消FMU %1的压缩。</translation>
-    </message>
-    <message>
         <source>Generating cmake target files of %1. Please wait for a while.</source>
         <translation>正在生成 %1 的cmake目标文件，请稍候。</translation>
     </message>
@@ -1847,10 +1998,6 @@ A source-code only FMU is generated if no platform is selected.</source>
     <message>
         <source>Zipping of %1</source>
         <translation>正在压缩 %1</translation>
-    </message>
-    <message>
-        <source>Zip compilation process failed. Exited with code %1.</source>
-        <translation>压缩过程失败，退出代码：%1。</translation>
     </message>
     <message>
         <source>The FMU is generated at: %1</source>
@@ -2322,6 +2469,26 @@ You can choose between waiting longer or abort debugging.</source>
         <source>Read the model instance directly from memory instead of JSON (faster for large models)</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Color Scheme: *</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>System</source>
+        <translation type="unfinished">系统</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>System follows the operating system color scheme. The --DarkMode command line option overrides this setting.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>GitCommands</name>
@@ -2770,22 +2937,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>关闭</translation>
     </message>
     <message>
-        <source>Percentage:</source>
-        <translation>百分比：</translation>
-    </message>
-    <message>
-        <source>Choose Transparency</source>
-        <translation>选择透明度</translation>
-    </message>
-    <message>
-        <source>Choose Specularity</source>
-        <translation>选择光泽度</translation>
-    </message>
-    <message>
-        <source>Choose Color</source>
-        <translation>选择颜色</translation>
-    </message>
-    <message>
         <source>Choose File(s)</source>
         <translation>选择文件</translation>
     </message>
@@ -2796,6 +2947,10 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <source>Add</source>
         <translation>添加</translation>
+    </message>
+    <message>
+        <source>Edit Array</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Save a file</source>
@@ -2824,14 +2979,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <source>Import FMU</source>
         <translation>导入FMU</translation>
-    </message>
-    <message>
-        <source>Add Path</source>
-        <translation>添加路径</translation>
-    </message>
-    <message>
-        <source>Remove Path</source>
-        <translation>移除路径</translation>
     </message>
     <message>
         <source>Output</source>
@@ -2948,14 +3095,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <source>Unloads the file without deleting it from the file system</source>
         <translation>卸载文件（不从文件系统中删除）</translation>
-    </message>
-    <message>
-        <source>Unload the CRML file</source>
-        <translation>卸载CRML文件</translation>
-    </message>
-    <message>
-        <source>Unload the Modelica Script file</source>
-        <translation>卸载Modelica脚本文件</translation>
     </message>
     <message>
         <source>Refresh</source>
@@ -3250,10 +3389,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>调用Modelica函数</translation>
     </message>
     <message>
-        <source>Element</source>
-        <translation>元件</translation>
-    </message>
-    <message>
         <source>Font Size:</source>
         <translation>字号：</translation>
     </message>
@@ -3314,10 +3449,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>建立连接</translation>
     </message>
     <message>
-        <source>Connection Attributes</source>
-        <translation>链接属性</translation>
-    </message>
-    <message>
         <source>Create Transition</source>
         <translation>创建转换</translation>
     </message>
@@ -3326,40 +3457,12 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>编辑转换</translation>
     </message>
     <message>
-        <source>Find Variables</source>
-        <translation>查找变量</translation>
-    </message>
-    <message>
         <source>Filter Variables</source>
         <translation>筛选器变量</translation>
     </message>
     <message>
         <source>Open Class</source>
         <translation>打开类</translation>
-    </message>
-    <message>
-        <source>View Icon</source>
-        <translation>图标视图</translation>
-    </message>
-    <message>
-        <source>Opens the class icon</source>
-        <translation>打开类图标</translation>
-    </message>
-    <message>
-        <source>View Diagram</source>
-        <translation>结构视图</translation>
-    </message>
-    <message>
-        <source>Opens the class diagram</source>
-        <translation>打开结构视图</translation>
-    </message>
-    <message>
-        <source>View Text</source>
-        <translation>文本视图</translation>
-    </message>
-    <message>
-        <source>Opens the class text</source>
-        <translation>打开文本视图</translation>
     </message>
     <message>
         <source>Opens the class documentation</source>
@@ -3578,14 +3681,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>暂停动画播放</translation>
     </message>
     <message>
-        <source>Simulation Parameters</source>
-        <translation>仿真参数</translation>
-    </message>
-    <message>
-        <source>Shows the Simulation Parameters dialog</source>
-        <translation>显示仿真参数对话框</translation>
-    </message>
-    <message>
         <source>Send</source>
         <translation>发送</translation>
     </message>
@@ -3680,14 +3775,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <source>Speed:</source>
         <translation>速度：</translation>
-    </message>
-    <message>
-        <source>Terminate Instantiation</source>
-        <translation>结束实例化</translation>
-    </message>
-    <message>
-        <source>Terminates the model instantiation</source>
-        <translation>结束模型的实例化</translation>
     </message>
     <message>
         <source>Archived Simulations</source>
@@ -3843,6 +3930,22 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Switch Model</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Class Diagram</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shows the UML class diagram of the class</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CRML Diagram</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shows the class-object diagram of the CRML model</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4322,6 +4425,14 @@ Use Download... to fetch one, or point Server Executable at a server you already
         <translation>生成检查方案</translation>
     </message>
     <message>
+        <source>UQ Activities...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Runs the uncertainty quantification activities attached to the SSP model with omuq</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Deletes the Modelica class</source>
         <translation>删除 Modelica 类</translation>
     </message>
@@ -4344,6 +4455,14 @@ Use Download... to fetch one, or point Server Executable at a server you already
     <message>
         <source>RevisionId : %1</source>
         <translation>修订ID：%1</translation>
+    </message>
+    <message>
+        <source>Calibrate...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Calibrates the parameters of the model against reference data</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4387,6 +4506,10 @@ Use Download... to fetch one, or point Server Executable at a server you already
     <message>
         <source>Unload all &amp;&amp; Reload %1</source>
         <translation>部卸载并重载 %1</translation>
+    </message>
+    <message>
+        <source>Opening SSP files is not yet supported in the web version of OMEdit. Use the desktop version of OMEdit to open %1.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4967,6 +5090,22 @@ Use Download... to fetch one, or point Server Executable at a server you already
         <translation>堆叠所有子窗口</translation>
     </message>
     <message>
+        <source>Tile Windows Matrix</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Arranges all child windows in a matrix pattern</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Equate &amp;&amp; Tile Windows Matrix</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Equates the size of all child windows to the size of active window and arranges them in a matrix pattern</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Toggle Tab/Sub-window View</source>
         <translation>切换选项卡/子窗口视图</translation>
     </message>
@@ -5424,6 +5563,14 @@ Continue?</source>
         <source>%1 is up to date</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Save Figure in Model</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Saves the current plot as a figure in the model annotation</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>MessageTab</name>
@@ -5783,8 +5930,8 @@ Continue?</source>
 <context>
     <name>OMEditApplication</name>
     <message>
-        <source>You have enabled old frontend for code generation which is not recommended. Do you want to switch to new frontend?</source>
-        <translation>您已启用不推荐的旧版前端代码生成功能，是否切换至新版前端？</translation>
+        <source>You have enabled the old frontend for code generation. It is deprecated and will be removed after OpenModelica 1.28.0 is released. Do you want to switch to the new frontend?</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Switch to new frontend</source>
@@ -5793,6 +5940,53 @@ Continue?</source>
     <message>
         <source>Keep using old frontend</source>
         <translation>继续使用旧版前端</translation>
+    </message>
+</context>
+<context>
+    <name>OMSCalibrationDialog</name>
+    <message>
+        <source>Calibrate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Calibration Activity:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>the only Calibration activity of the UQ file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UQ File:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>the UQ file referenced by the SSP, e.g. extra/uq.xml</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Calibrated Model:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select the file to write the calibrated model to.
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to export %1 to %2.
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The calibrated model is written to %1.
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The calibration failed with exit code %1.
+</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5910,6 +6104,269 @@ Endpoint: %2</source>
     <message>
         <source>Logging Level:</source>
         <translation>日志级别：</translation>
+    </message>
+    <message>
+        <source>Uncertainty Quantification (omuq)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UQ activities run the omuq Python package, see the &lt;a href=&quot;https://github.com/adrpo/omuq&quot;&gt;omuq GitHub page&lt;/a&gt;. Specify a Python executable that has omuq and OMSimulator installed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Python:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>OMUQDialog</name>
+    <message>
+        <source>UQ Activities</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Study:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Activity:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Domain</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Kind</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Boundary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Variables</source>
+        <translation type="unfinished">变量</translation>
+    </message>
+    <message>
+        <source>Study</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Domains:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Step Size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Progress Every:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> samples</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The result file always has every sample.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Simulator:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Automatic</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Local OMSimulator</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Docker</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Record the run in the study and save the package as:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Live View:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>In OMEdit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>In the web browser</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>omuq serves the live view until it is stopped from the output tab.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Run</source>
+        <translation type="unfinished">运行</translation>
+    </message>
+    <message>
+        <source>Unable to create the directory %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to start %1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>omuq is not installed for %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>omuq failed to read the model:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMSimulator/SSP.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to read the output of omuq: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No omuq study is attached to %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 activity %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>none</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Observes: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>nothing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recorded results: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>from the model</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>System Structure and Parameterization Files (*.ssp)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter the file the recorded run is saved to.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>OMUQOutputWidget</name>
+    <message>
+        <source>Starting omuq for %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Live view: %1
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 (not monitored: %2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Study %1, %2 from %3 to %4 with step %5, driver %6
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Observed variables: %1
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Monitored domains: %1
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>none</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Running %1 of %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>t = %1: left the domain %2 (%3) at (%4)
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 - %2 - Live View</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The run is recorded in %1
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stop Live View</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 of %2 finished, the live view is still served.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 of %2 finished.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 of %2 is cancelled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to start %1: %2
+Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMSimulator/SSP.
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 of %2 failed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>omuq finished without results for %1 of %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 of %2 failed. Exit code %3.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Is omuq installed for %1?</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6055,6 +6512,10 @@ Endpoint: %2</source>
         <translation>编辑</translation>
     </message>
     <message>
+        <source>Edit array</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Unable to find the redeclare class.</source>
         <translation>无法找到重声明类。</translation>
     </message>
@@ -6131,6 +6592,46 @@ Endpoint: %2</source>
     <message>
         <source>Renames the plot tab</source>
         <translation>重命名绘图标签</translation>
+    </message>
+    <message>
+        <source>Select a plot window before saving a figure in a model.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are no curves to save in the model annotation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not find the simulation result associated with curve %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are no valid curves to save in the model annotation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot save figure %1 in model %2 because the model cannot be annotated.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The model %1 is not open; the figure was not saved.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The model instance for %1 is not available; the figure was not saved.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save Figure in model %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Saved figure %1 in model %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not save the figure in any model.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7056,6 +7557,14 @@ Can cause high overhead but values will not be missed.</source>
         <source>Linearize</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Cannot plot annotated curve because result variable %1 was not found.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot plot annotated curve because x-axis result variable %1 was not found.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SimulationOutputTree</name>
@@ -7389,18 +7898,6 @@ Can cause high overhead but values will not be missed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add</source>
-        <translation type="unfinished">添加</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation type="unfinished">移除</translation>
-    </message>
-    <message>
-        <source>Edit</source>
-        <translation type="unfinished">编辑</translation>
-    </message>
-    <message>
         <source>Solver Configurations</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7667,16 +8164,20 @@ Can cause high overhead but values will not be missed.</source>
         <translation>显示初始化过程中的附加信息</translation>
     </message>
     <message>
+        <source>Enable old frontend for code generation (deprecated)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The old frontend is deprecated and will be removed after OpenModelica 1.28.0 is released.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Enable FMU Import</source>
         <translation>启用FMU导入功能</translation>
     </message>
     <message>
         <source>Enable analytical jacobian for non-linear strong components</source>
         <translation>对强非线性模型启用分析雅可比</translation>
-    </message>
-    <message>
-        <source>Enable old frontend for code generation</source>
-        <translation>启用旧前端代码生成模式</translation>
     </message>
     <message>
         <source>Enable parallelization of independent systems of equations (Experimental)</source>
@@ -7735,6 +8236,10 @@ Can cause high overhead but values will not be missed.</source>
     </message>
     <message>
         <source>Filters help</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Filter Setup</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7917,6 +8422,10 @@ Variability: %4</source>
     </message>
     <message>
         <source>No plot window is active for plotting. Please select a plot window or open a new one.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 not found in result file. Protected variables are only stored with &lt;b&gt;Simulation Setup-&gt;Output-&gt;Protected Variables if not encrypted&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

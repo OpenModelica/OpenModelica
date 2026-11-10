@@ -50,16 +50,20 @@ protected
   import SimplifyExp = NFSimplifyExp;
   import Call = NFCall;
   import NFFunction.Function;
+  import NFInstNode.InstNode;
+  import Operator = NFOperator;
   import Subscript = NFSubscript;
   import Type = NFType;
 
   // NB imports
   import Adjacency = NBAdjacency;
+  import BackendDAE = NBackendDAE;
   import NBFunctionAlias.Call_Aux;
   import Differentiate = NBDifferentiate;
   import NBEquation.{Equation, EqData, EquationAttributes, EquationKind, EquationPointer, EquationPointers, IfEquationBody, SlicingStatus, Iterator};
   import Initialization = NBInitialization;
   import Matching = NBMatching;
+  import Resizable = NBResizable;
   import Variable = NFVariable;
   import BVariable = NBVariable;
   import PointerWeak;
@@ -147,7 +151,9 @@ public
     // (model-wide, already used for equation naming below) instead of a fresh counter,
     // to avoid colliding with an alias from an earlier indexReduction call.
     UnorderedMap<ComponentRef, Expression> alias_subst = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
-    list<Pointer<Equation>> alias_eqns;
+    list<Pointer<Equation>> alias_eqns, dummy_alias_eqns;
+    UnorderedSet<ComponentRef> dummy_aliased;
+    UnorderedMap<ComponentRef, SliceSet> unreferenced;
 
     Boolean debug = false;
   algorithm
@@ -287,15 +293,21 @@ public
       // sliced state/dummy candidates have to be resolved before differentiation, so the
       // constraint equations reference the whole alias rather than a slice of the
       // original by the time they get differentiated below. Dummy and state sides are
-      // not symmetric: only a sliced state gets its own alias (resolveSlicedCandidates);
+      // not symmetric: a sliced state gets its own alias (resolveSlicedCandidates);
       // a sliced dummy is upgraded to the whole variable instead once its sibling state
-      // slice(s) cover the rest (resolveSlicedDummyStates) -- see their docstrings.
-      dummy_states := resolveSlicedDummyStates(dummy_states, states);
+      // slice(s) cover the rest, and only gets an alias if the rest occurs in no
+      // constraint equation (resolveSlicedDummyStates) -- see their docstrings.
+      // Elements that occur in no constraint equation are never selected as states.
+      unreferenced := getUnreferencedElements(Adjacency.Matrix.fullToFinal(full_local, candidate_ptrs.map, constraint_ptrs.map, constraint_ptrs, NBAdjacency.MatrixStrictness.SORTING), candidate_ptrs);
+      states := removeUnreferencedElements(states, unreferenced);
+      (dummy_states, dummy_alias_eqns, dummy_aliased) := resolveSlicedDummyStates(dummy_states, states, unreferenced, alias_subst, VarData.getUniqueIndex(varData), VarData.getUniqueIndex(varData));
+      new_eqns := listAppend(dummy_alias_eqns, new_eqns);
       (states, alias_eqns) := resolveSlicedCandidates(states, alias_subst, VarData.getUniqueIndex(varData), VarData.getUniqueIndex(varData));
       if not UnorderedMap.isEmpty(alias_subst) then
         for constraint in EquationPointers.toList(constraint_ptrs) loop
           substituteSlicedDummyEqn(constraint, alias_subst);
         end for;
+        checkSlicedDummySubstitution(constraint_ptrs, dummy_aliased);
       end if;
       new_eqns := listAppend(alias_eqns, new_eqns);
       // alias linking equations must be differentiated too (their derivative side needs
@@ -415,6 +427,41 @@ public
     end if;
   end indexReduction;
 
+  function keptResizableIterations
+    "the iterations of a resizable for-equation with a scalar body that are not
+     in indices, as for-equations over symbolic sub-ranges"
+    input Pointer<Equation> eqn_ptr;
+    input list<Integer> indices;
+    input Pointer<Integer> eq_index;
+    output Option<list<Pointer<Equation>>> kept = NONE();
+  protected
+    Equation eqn;
+    list<Integer> remaining;
+    list<Option<Iterator>> iters;
+    list<Pointer<Equation>> eqns = {};
+    Pointer<Equation> new_ptr;
+  algorithm
+    eqn := Pointer.access(eqn_ptr);
+    () := match eqn
+      case Equation.FOR_EQUATION() guard Iterator.isResizable(eqn.iter) and
+          Equation.size(eqn_ptr, true) == Iterator.size(eqn.iter, true) algorithm
+        remaining := list(i for i guard not List.contains(indices, i, intEq) in 0:Iterator.size(eqn.iter, true) - 1);
+        iters := list(Resizable.restrictIterator(eqn.iter, part) for part in Resizable.boxes(remaining, Iterator.sizes(eqn.iter, true)));
+        if not List.any(iters, isNone) then
+          for iter in iters loop
+            eqn.iter := Util.getOption(iter);
+            eqn.size := Iterator.size(eqn.iter);
+            new_ptr := Pointer.create(eqn);
+            Equation.createName(new_ptr, eq_index, NBEquation.SIMULATION_STR);
+            eqns := new_ptr :: eqns;
+          end for;
+          kept := SOME(listReverse(eqns));
+        end if;
+      then ();
+      else ();
+    end match;
+  end keptResizableIterations;
+
   function balanceInitialization
     extends Module.resolveSingularitiesInterface;
   protected
@@ -457,8 +504,13 @@ public
         kept_eqns := {};
         for eqn_slice in unmatched_eqns loop
           if not listEmpty(eqn_slice.indices) and Equation.isForEquation(Slice.getT(eqn_slice)) then
-            remaining := list(i for i guard(not List.contains(eqn_slice.indices, i, intEq)) in 0:(Equation.size(Slice.getT(eqn_slice)) - 1));
-            (sliced_eqns, _) := Equation.slice(Slice.getT(eqn_slice), remaining);
+            sliced_eqns := match keptResizableIterations(Slice.getT(eqn_slice), eqn_slice.indices, EqData.getUniqueIndex(eqData))
+              case SOME(sliced_eqns) then sliced_eqns;
+              else algorithm
+                remaining := list(i for i guard(not List.contains(eqn_slice.indices, i, intEq)) in 0:(Equation.size(Slice.getT(eqn_slice)) - 1));
+                (sliced_eqns, _) := Equation.slice(Slice.getT(eqn_slice), remaining);
+              then sliced_eqns;
+            end match;
             kept_eqns := listAppend(sliced_eqns, kept_eqns);
           elseif not listEmpty(eqn_slice.indices) and Equation.isArrayEquation(Slice.getT(eqn_slice)) then
             // keep the other rows of an array equation as scalar equations
@@ -1020,10 +1072,18 @@ protected
     resolved to one slice. Instead, once the combined state+dummy indices for a variable
     cover its full extent, the candidate is upgraded to the whole variable so the
     existing whole-variable BVariable.makeDummyState/isDummyState exclusion applies.
-    Fails loudly if coverage is incomplete rather than wrongly excluding the rest of the
-    variable from future candidacy."
+    If the rest of the variable occurs in no constraint equation, the candidate gets
+    its own alias instead (resolveSlicedDummy), so that only the referenced elements
+    get a derivative. Fails loudly if coverage is incomplete rather than wrongly
+    excluding the rest of the variable from future candidacy."
     input output list<Slice<VariablePointer>> dummy_states;
     input list<Slice<VariablePointer>> states;
+    input UnorderedMap<ComponentRef, UnorderedSet<Integer>> unreferenced;
+    input UnorderedMap<ComponentRef, Expression> subst;
+    input Pointer<Integer> aux_index;
+    input Pointer<Integer> eq_index;
+    output list<Pointer<Equation>> alias_eqns = {};
+    output UnorderedSet<ComponentRef> aliased = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
   protected
     type SliceSet = UnorderedSet<Integer>;
     UnorderedMap<ComponentRef, SliceSet> covered = UnorderedMap.new<SliceSet>(ComponentRef.hash, ComponentRef.isEqual);
@@ -1031,6 +1091,8 @@ protected
     SliceSet cover_set;
     Integer full_size;
     list<Slice<VariablePointer>> resolved = {};
+    Pointer<Variable> alias_var;
+    Pointer<Equation> alias_eqn;
   algorithm
     // gather, per variable, every index matched as either state or dummy in this call
     for cand in listAppend(states, dummy_states) loop
@@ -1053,9 +1115,15 @@ protected
       else
         cref      := BVariable.getVarName(Slice.getT(dummy));
         cover_set := UnorderedMap.getSafe(cref, covered, sourceInfo());
-        full_size := BVariable.size(Slice.getT(dummy));
+        full_size := BVariable.size(Slice.getT(dummy), true);
         if UnorderedSet.size(cover_set) == full_size then
           resolved := Slice.SLICE(Slice.getT(dummy), {}) :: resolved;
+        elseif UnorderedMap.contains(cref, unreferenced) and
+               UnorderedSet.size(cover_set) + UnorderedSet.size(UnorderedMap.getSafe(cref, unreferenced, sourceInfo())) == full_size then
+          (alias_var, alias_eqn) := resolveSlicedDummy(dummy, subst, aux_index, eq_index);
+          alias_eqns := alias_eqn :: alias_eqns;
+          UnorderedSet.add(cref, aliased);
+          resolved := Slice.SLICE(alias_var, {}) :: resolved;
         else
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the partially matched array variable "
             + ComponentRef.toString(cref) + " could not be fully accounted for during index reduction ("
@@ -1068,6 +1136,64 @@ protected
     end for;
     dummy_states := listReverse(resolved);
   end resolveSlicedDummyStates;
+
+  function getUnreferencedElements
+    "returns the local indices of the candidate elements that occur in none of the
+    constraint equations, e.g. the second ports of an array of volumes whose first
+    ports form the constraints. They are not part of the singular subset."
+    input Adjacency.Matrix adj                "final sorting matrix of the constraints";
+    input VariablePointers candidates;
+    output UnorderedMap<ComponentRef, UnorderedSet<Integer>> unreferenced;
+  protected
+    type SliceSet = UnorderedSet<Integer>;
+    Integer start, size;
+    SliceSet set;
+  algorithm
+    unreferenced := UnorderedMap.new<SliceSet>(ComponentRef.hash, ComponentRef.isEqual);
+    () := match adj
+      case Adjacency.Matrix.FINAL() algorithm
+        for i in 1:arrayLength(adj.mapping.var_AtS) loop
+          // all elements of a state have a derivative, even if they are not referenced
+          if BVariable.isState(VariablePointers.getVarAt(candidates, i)) then continue; end if;
+          (start, size) := adj.mapping.var_AtS[i];
+          set := UnorderedSet.new(Util.id, intEq);
+          for j in start:start + size - 1 loop
+            if Adjacency.IntMatrix.rowLength(adj.mT, j) == 0 then
+              UnorderedSet.add(j - start, set);
+            end if;
+          end for;
+          if not UnorderedSet.isEmpty(set) then
+            UnorderedMap.add(BVariable.getVarName(VariablePointers.getVarAt(candidates, i)), set, unreferenced);
+          end if;
+        end for;
+      then ();
+      else ();
+    end match;
+  end getUnreferencedElements;
+
+  function removeUnreferencedElements
+    "removes the elements that occur in no constraint equation from the state candidates"
+    input output list<Slice<VariablePointer>> states;
+    input UnorderedMap<ComponentRef, UnorderedSet<Integer>> unreferenced;
+  protected
+    UnorderedSet<Integer> set;
+    list<Integer> indices;
+    list<Slice<VariablePointer>> result = {};
+  algorithm
+    for state in states loop
+      set := UnorderedMap.getOrDefault(BVariable.getVarName(Slice.getT(state)), unreferenced, UnorderedSet.new(Util.id, intEq));
+      if UnorderedSet.isEmpty(set) then
+        result := state :: result;
+      else
+        indices := if listEmpty(state.indices) then List.intRange2(0, BVariable.size(Slice.getT(state), true) - 1) else state.indices;
+        indices := list(i for i guard(not UnorderedSet.contains(i, set)) in indices);
+        if not listEmpty(indices) then
+          result := Slice.simplify(Slice.SLICE(Slice.getT(state), indices), function BVariable.size(resize = true)) :: result;
+        end if;
+      end if;
+    end for;
+    states := listReverse(result);
+  end removeUnreferencedElements;
 
   function resolveSlicedCandidates
     "resolves sliced entries of a *state* candidate list into a whole alias variable
@@ -1111,7 +1237,7 @@ protected
     Variable var = Pointer.access(Slice.getT(dummy));
     ComponentRef orig_cref = BVariable.getVarName(Slice.getT(dummy));
     Type elem_ty = Type.arrayElementType(Variable.typeOf(var));
-    list<Integer> sizes = list(Dimension.size(d) for d in Type.arrayDims(Variable.typeOf(var)));
+    list<Integer> sizes = list(Dimension.size(d, true) for d in Type.arrayDims(Variable.typeOf(var)));
     Integer n = listLength(dummy.indices);
     Type alias_ty;
     ComponentRef alias_cref, elem_cref, alias_elem_cref;
@@ -1120,7 +1246,16 @@ protected
     list<Subscript> subs;
     Integer i = 1;
     Expression rhs;
+    Option<tuple<Pointer<Variable>, Pointer<Equation>>> resizable_alias;
   algorithm
+    if BVariable.isResizable(Slice.getT(dummy)) then
+      resizable_alias := resolveSlicedResizable(dummy, aux_index, eq_index);
+      if isSome(resizable_alias) then
+        SOME((alias_var, alias_eqn)) := resizable_alias;
+        return;
+      end if;
+    end if;
+
     alias_ty := if n == 1 then elem_ty else Type.ARRAY(elem_ty, {Dimension.fromInteger(n)});
     (alias_var, alias_cref) := BVariable.makeAuxVar(NBVariable.DUMMY_ALIAS_STR, Pointer.access(aux_index), alias_ty, false);
     Pointer.update(aux_index, Pointer.access(aux_index) + 1);
@@ -1149,10 +1284,12 @@ protected
         Expression start_exp;
         list<Expression> starts;
       case SOME(start_exp) guard(Type.isArray(Expression.typeOf(start_exp))) algorithm
-        starts := list(SimplifyExp.simplify(Expression.applySubscripts(list(Subscript.INDEX(Expression.INTEGER(l + 1))
-          for l in Slice.indexToLocation(idx, sizes)), start_exp, true)) for idx in dummy.indices);
-        Pointer.update(alias_var, BVariable.setStartAttribute(Pointer.access(alias_var),
-          if n == 1 then listHead(starts) else Expression.makeArray(alias_ty, listArray(starts)), true));
+        starts := list(BVariable.startElement(list(Subscript.INDEX(Expression.INTEGER(l + 1))
+          for l in Slice.indexToLocation(idx, sizes)), start_exp, Variable.typeOf(var)) for idx in dummy.indices);
+        if not List.any(starts, Expression.isEmpty) then
+          Pointer.update(alias_var, BVariable.setStartAttribute(Pointer.access(alias_var),
+            if n == 1 then listHead(starts) else Expression.makeArray(alias_ty, listArray(starts)), true));
+        end if;
       then ();
       case SOME(start_exp) algorithm
         // a scalar start value applies to all elements
@@ -1162,6 +1299,62 @@ protected
       else ();
     end match;
   end resolveSlicedDummy;
+
+  function resolveSlicedResizable
+    "x[1:N-1] of a resizable x becomes the whole alias $DUM[1:N-1] with
+     for i in 1:N-1 loop $DUM[i] = x[i]; end for. The indices only hold for the
+     analysis sizes, the iterator for every size. NONE() if they are no box."
+    input Slice<VariablePointer> slice;
+    input Pointer<Integer> aux_index;
+    input Pointer<Integer> eq_index;
+    output Option<tuple<Pointer<Variable>, Pointer<Equation>>> res = NONE();
+  protected
+    Variable var = Pointer.access(Slice.getT(slice));
+    list<Dimension> dims = Type.arrayDims(var.ty);
+    list<ComponentRef> iters, names;
+    list<Expression> ranges;
+    Option<Iterator> o_iter;
+    Iterator iter;
+    Pointer<Variable> alias_var;
+    ComponentRef alias_cref;
+    list<Subscript> alias_subs = {};
+    Expression start;
+    Pointer<Equation> eqn;
+  algorithm
+    iters := list(BackendDAE.lowerIteratorCref(ComponentRef.makeIterator(InstNode.newUniqueIterator(), Type.INTEGER())) for d in dims);
+    ranges := list(Expression.RANGE(Type.ARRAY(Type.INTEGER(), {d}), Expression.INTEGER(1), NONE(), Dimension.sizeExp(d)) for d in dims);
+    o_iter := Resizable.restrictIterator(Iterator.fromFrames(List.zip3(iters, ranges, list(NONE() for d in dims))), slice.indices);
+    if isNone(o_iter) then
+      return;
+    end if;
+    SOME(iter) := o_iter;
+    (names, ranges, _) := Iterator.getFrames(iter);
+    (alias_var, alias_cref) := BVariable.makeAuxVar(NBVariable.DUMMY_ALIAS_STR, Pointer.access(aux_index),
+      Type.ARRAY(Type.arrayElementType(var.ty), list(Type.nthDimension(Expression.typeOf(r), 1) for r in ranges)), false);
+    Pointer.update(aux_index, Pointer.access(aux_index) + 1);
+
+    for tpl in List.zip(names, ranges) loop
+      Expression.RANGE(start = start) := Util.tuple22(tpl);
+      alias_subs := Subscript.INDEX(SimplifyExp.simplify(Expression.MULTARY({Expression.fromCref(Util.tuple21(tpl)), Expression.INTEGER(1)},
+        {start}, Operator.makeAdd(Type.INTEGER())))) :: alias_subs;
+    end for;
+    eqn := Equation.makeAssignment(
+      Expression.fromCref(ComponentRef.mergeSubscripts(listReverse(alias_subs), alias_cref, true, true)),
+      Expression.fromCref(ComponentRef.mergeSubscripts(list(Subscript.INDEX(Expression.fromCref(i)) for i in iters), var.name, true, true)),
+      eq_index, "DUM", iter, EquationAttributes.default(EquationKind.CONTINUOUS, false));
+    if not Equation.isForEquation(eqn) then
+      Pointer.update(eqn, Equation.simplify(Pointer.access(eqn)));
+    end if;
+
+    () := match BVariable.getStartAttribute(Slice.getT(slice))
+      case SOME(start) algorithm
+        Pointer.update(alias_var, BVariable.setStartAttribute(Pointer.access(alias_var),
+          Resizable.sliceAttribute(start, list(Subscript.SLICE(r) for r in ranges)), true));
+      then ();
+      else ();
+    end match;
+    res := SOME((alias_var, eqn));
+  end resolveSlicedResizable;
 
   function substituteSlicedDummyEqn
     "applies the sliced-dummy alias substitution rules (see resolveSlicedCandidates) to
@@ -1174,6 +1367,38 @@ protected
     eqn := Equation.map(eqn, function substituteSlicedDummyExp(subst = subst));
     Pointer.update(eqn_ptr, eqn);
   end substituteSlicedDummyEqn;
+
+  function checkSlicedDummySubstitution
+    "fails if a constraint equation still references a variable that was replaced by a
+    sliced dummy alias. The substitution only replaces crefs with constant subscripts."
+    input EquationPointers constraints;
+    input UnorderedSet<ComponentRef> aliased;
+  protected
+    function collectAliased
+      input output ComponentRef cref;
+      input UnorderedSet<ComponentRef> acc;
+      input UnorderedSet<ComponentRef> aliased;
+    algorithm
+      if UnorderedSet.contains(ComponentRef.stripSubscriptsAll(cref), aliased) then
+        UnorderedSet.add(cref, acc);
+      end if;
+    end collectAliased;
+    list<ComponentRef> remaining;
+  algorithm
+    if UnorderedSet.isEmpty(aliased) then
+      return;
+    end if;
+    for constraint in EquationPointers.toList(constraints) loop
+      remaining := Equation.collectCrefs(Pointer.access(constraint), function collectAliased(aliased = aliased));
+      if not listEmpty(remaining) then
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the partially matched array variable "
+          + ComponentRef.toString(ComponentRef.stripSubscriptsAll(listHead(remaining)))
+          + " is accessed with non-constant subscripts in a constraint equation, which is not yet supported for dummy states.\n"
+          + Equation.toString(Pointer.access(constraint))});
+        fail();
+      end if;
+    end for;
+  end checkSlicedDummySubstitution;
 
   function substituteSlicedDummyExp
     input output Expression exp;

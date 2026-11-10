@@ -216,10 +216,23 @@ char* Settings_getHomeDir(int runningTestsuite)
 }
 
 
+/* OPENMODELICALIBRARY as omc was started with; setModelicaPath overwrites the variable */
+static const char* startupModelicaPath(void)
+{
+  static char *path = NULL;
+  static int done = 0;
+  if (!done) {
+    const char *env = getenv("OPENMODELICALIBRARY");
+    path = env ? omc_strdup(env) : NULL;
+    done = 1;
+  }
+  return path;
+}
+
 /*
  * - if already set, use it
  * - if not set, use OPENMODELICALIBRARY
- * - if not set, get the installation path and use that
+ * - if not set, use ~/.openmodelica/libraries/
  */
 char* SettingsImpl__getModelicaPath(int runningTestsuite) {
   if (omc_modelicaPath) {
@@ -227,8 +240,7 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
   }
 
   {
-    /* if we are running the testsuite, use the default */
-    const char *path = getenv("OPENMODELICALIBRARY");
+    const char *path = startupModelicaPath();
     if (path != NULL)
     {
       omc_modelicaPath = omc_strdup(path);
@@ -291,9 +303,11 @@ extern void SettingsImpl__setInstallationDirectoryPath(const char *value)
 
 extern void SettingsImpl__setModelicaPath(const char *value)
 {
-  if (value[0] == '\0') /* clear it if is empty */
+  startupModelicaPath();
+  if (value[0] == '\0') /* reset to the default */
   {
     omc_modelicaPath = NULL;
+    SettingsImpl__getModelicaPath(0);
     return;
   }
   omc_modelicaPath = omc_strdup(value);

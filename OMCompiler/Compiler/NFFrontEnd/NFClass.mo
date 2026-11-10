@@ -682,6 +682,11 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     output Boolean isFunction = Restriction.isFunction(restriction(cls));
   end isFunction;
 
+  function isType
+    input Class cls;
+    output Boolean res = isBuiltin(cls) or Restriction.isType(restriction(cls));
+  end isType;
+
   function isEnumeration
     input Class cls;
     output Boolean isEnum;

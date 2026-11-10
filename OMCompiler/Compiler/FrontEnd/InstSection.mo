@@ -829,7 +829,7 @@ algorithm
     local
       Absyn.ComponentRef cr;
       Integer p;
-      String s1, s2;
+      String s1;
 
     case Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {}) then (cr, 0);
     case Absyn.FUNCTIONARGS({Absyn.CREF(cr), Absyn.INTEGER(p)}, {}) then (cr, p);
@@ -837,8 +837,7 @@ algorithm
     else
       algorithm
         s1 := SCodeDump.equationStr(inEquation);
-        s2 := PrefixUtil.printPrefixStr3(inPrefix);
-        Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s1, s2}, info);
+        Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s1}, info);
       then
         fail();
   end match;
@@ -856,7 +855,7 @@ algorithm
     local
       Absyn.ComponentRef cr;
       Absyn.Exp msg;
-      String s1, s2;
+      String s1;
 
     case Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {}) then (cr, Absyn.STRING(""));
     case Absyn.FUNCTIONARGS({Absyn.CREF(cr), msg}, {}) then (cr, msg);
@@ -864,8 +863,7 @@ algorithm
     else
       algorithm
         s1 := SCodeDump.equationStr(inEquation);
-        s2 := PrefixUtil.printPrefixStr3(inPrefix);
-        Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s1, s2}, info);
+        Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s1}, info);
       then
         fail();
   end match;

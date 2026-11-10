@@ -33,7 +33,6 @@ encapsulated package P
   equation
     connect(pin1, pin2);
   end M;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end P;
 
 // Result:

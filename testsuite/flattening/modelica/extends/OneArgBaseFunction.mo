@@ -24,21 +24,13 @@ algorithm
   result := x + 10;
 end addTen;
 
-class myTanCall
+model myTanCall
   Real t;
 equation
   t = myTan(1.0);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end myTanCall;
 
 // Result:
-// function myTan
-//   input Real x;
-//   output Real result;
-// algorithm
-//   result := tan(x);
-// end myTan;
-//
 // class myTanCall
 //   Real t;
 // equation

@@ -1,0 +1,91 @@
+// name: fmi2_and_fmi3.mos
+// keywords: FMI 2.0 FMI 3.0 export
+// status: correct
+// teardown_command: rm -rf fmi2_and_fmi3.fmu fmi2_and_fmi3_fmu/ fmi2_and_fmi3.fmutmp/ fmi2_and_fmi3_res.mat fmi2_and_fmi3_fmpy*.csv fmi2_and_fmi3_diff*.csv fmi2_and_fmi3_info.json fmi2_and_fmi3.log fmi2_and_fmi3_*.bin fmi2_and_fmi3_FMU.libs fmi2_and_fmi3_FMU.makefile fmi2_and_fmi3_external_functions.json fmi2-and-fmi3*
+//
+// version="2.0+3.0" (internal, for OpenModelicaLibraryTesting only): one binary
+// serves FMI 2.0 and 3.0.
+// The FMU is laid out for FMI 2.0. To load it as FMI 3.0, modelDescription.fmi3.xml
+// replaces modelDescription.xml and binaries/linux64 becomes binaries/x86_64-linux.
+// The model is translated as for FMI 2.0: the unconnected connector p does not
+// become an FMI 3.0 input and output.
+
+loadString("
+model fmi2_and_fmi3
+  connector Pin
+    Real v;
+    flow Real i;
+  end Pin;
+  Pin p;
+  Real x[2](each start = 1.0, each fixed = true);
+  output Real y;
+  parameter Real a = 2.0;
+equation
+  der(x) = {-a*x[1] + p.i, -x[2]};
+  p.v = y;
+  y = x[1] + x[2];
+end fmi2_and_fmi3;
+"); getErrorString();
+
+buildModelFMU(fmi2_and_fmi3, version="2.0+3.0", fmuType="me_cs"); getErrorString();
+simulate(fmi2_and_fmi3, stopTime=1.0); getErrorString();
+
+system("unzip -qo fmi2_and_fmi3.fmu -d fmi2_and_fmi3_fmu"); getErrorString();
+system("grep -ho 'fmiVersion=\"[^\"]*\"' fmi2_and_fmi3_fmu/modelDescription.xml fmi2_and_fmi3_fmu/modelDescription.fmi3.xml"); getErrorString();
+system("ls fmi2_and_fmi3_fmu/binaries"); getErrorString();
+system("grep -c 'causality=\"input\"' fmi2_and_fmi3_fmu/modelDescription.fmi3.xml"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py fmi2_and_fmi3.fmu fmi2_and_fmi3_fmpy2.csv 1.0 x[1] x[2] y"); getErrorString();
+diffSimulationResults("fmi2_and_fmi3_fmpy2.csv", "fmi2_and_fmi3_res.mat", "fmi2_and_fmi3_diff2", vars={"x[1]","x[2]","y"}); getErrorString();
+
+writeFile("fmi2_and_fmi3_fmu/modelDescription.xml", readFile("fmi2_and_fmi3_fmu/modelDescription.fmi3.xml")); getErrorString();
+system("mv fmi2_and_fmi3_fmu/binaries/linux64 fmi2_and_fmi3_fmu/binaries/x86_64-linux"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py \"" + cd() + "/fmi2_and_fmi3_fmu\" fmi2_and_fmi3_fmpy3.csv 1.0 x[1] x[2] y"); getErrorString();
+diffSimulationResults("fmi2_and_fmi3_fmpy3.csv", "fmi2_and_fmi3_res.mat", "fmi2_and_fmi3_diff3", vars={"x[1]","x[2]","y"}); getErrorString();
+
+// A fileNamePrefix that is not a C identifier.
+buildModelFMU(fmi2_and_fmi3, version="2.0+3.0", fmuType="me_cs", fileNamePrefix="fmi2-and-fmi3"); getErrorString();
+
+// Result:
+// true
+// ""
+// "fmi2_and_fmi3.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// record SimulationResult
+//     resultFile = "fmi2_and_fmi3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'fmi2_and_fmi3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0
+// ""
+// fmiVersion="2.0"
+// fmiVersion="3.0"
+// 0
+// ""
+// linux64
+// 0
+// ""
+// 0
+// 1
+// ""
+// 0
+// ""
+// (true, {})
+// ""
+// true
+// ""
+// 0
+// ""
+// 0
+// ""
+// (true, {})
+// ""
+// "fmi2-and-fmi3.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// endResult

@@ -13,7 +13,6 @@ model Constant2
   constant Real D = C - A;
   constant Integer E = 3;
   constant Integer F = E + 4;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Constant2;
 
 // Result:

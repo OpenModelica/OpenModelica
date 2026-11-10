@@ -10,6 +10,8 @@ static_index_3.mos\
 aux_states.mos\
 stateOrderDummySelection.mos\
 numericDummySelection.mos\
+partialArrayCandidate.mos\
+partialArrayState.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

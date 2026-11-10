@@ -13,8 +13,8 @@ use alloc::string::String;
 use alloc::vec::Vec;
 
 use openmodelica_arrow_writer::{ArrowStream, ArrowVar, ColTy, FileMeta};
-use openmodelica_mat_writer::{Mat4Stream, MatVar};
 pub use openmodelica_mat_writer::Precision;
+use openmodelica_mat_writer::{Mat4Stream, MatVar};
 use openmodelica_plt_writer::{PltKind, PltVar};
 
 use crate::{MetaKind, Neg, SimMeta, VarTy, WTy};
@@ -88,7 +88,16 @@ pub fn open_stream(
     let params = crate::driver::read_params(e, model, sim_data)?;
     let mut first = Vec::new();
     crate::driver::capture_full_row(e, &mut first, sim_data, &model.layout)?;
-    Ok(ResultStream::open(model, format, keep, &params, &first, crate::driver::row_width(&model.layout), precision, out))
+    Ok(ResultStream::open(
+        model,
+        format,
+        keep,
+        &params,
+        &first,
+        crate::driver::row_width(&model.layout),
+        precision,
+        out,
+    ))
 }
 
 struct MatOut<'a> {
@@ -124,7 +133,11 @@ enum Kind {
     Arrow(ArrowStream),
     /// `(column, negation, integer-valued)` per kept signal.
     Csv(Vec<(u32, Neg, bool)>),
-    Plt { signals: Vec<(String, PltKind)>, params: Vec<f64>, rows: Vec<f64> },
+    Plt {
+        signals: Vec<(String, PltKind)>,
+        params: Vec<f64>,
+        rows: Vec<f64>,
+    },
     Empty,
 }
 
@@ -161,8 +174,12 @@ impl ResultStream {
         let kind = match format {
             "mat" => {
                 let kept = kept_params(meta, params, |i, _| keep_num[i]);
-                let vars = mat_vars(meta, &keep_num);
-                let mut mo = MatOut { out: &mut *out, ok: &mut ok };
+                let descs = meta.mat_descriptions();
+                let vars = mat_vars(meta, &keep_num, &descs);
+                let mut mo = MatOut {
+                    out: &mut *out,
+                    ok: &mut ok,
+                };
                 let mut s = Mat4Stream::begin(
                     &mut mo,
                     &vars,
@@ -174,13 +191,17 @@ impl ResultStream {
                     precision,
                 );
                 s.set_sync(sync);
+                s.set_enumerations(meta.mat_enumerations(&keep_num));
                 Kind::Mat(s)
             }
             "arrow" => {
                 let kept = kept_params(meta, params, |i, _| keep[i]);
                 let vars = arrow_vars(meta, keep);
                 let units = openmodelica_arrow_writer::units::declared(meta.units.iter().cloned());
-                let mut ao = ArrowOut { out: &mut *out, ok: &mut ok };
+                let mut ao = ArrowOut {
+                    out: &mut *out,
+                    ok: &mut ok,
+                };
                 let mut s = ArrowStream::begin(
                     &mut ao,
                     &vars,
@@ -190,7 +211,11 @@ impl ResultStream {
                     &col_types(meta, precision),
                     openmodelica_arrow_writer::block_rows(sync),
                     resolve_strings(),
-                    &FileMeta { span: Some((meta.start_time, meta.stop_time)), units: &units, zstd: None },
+                    &FileMeta {
+                        span: Some((meta.start_time, meta.stop_time)),
+                        units: &units,
+                        zstd: None,
+                    },
                 );
                 s.set_sync(sync > 0);
                 Kind::Arrow(s)
@@ -221,7 +246,14 @@ impl ResultStream {
             }
             _ => Kind::Empty,
         };
-        ResultStream { out, kind, n_reals: n_reals as usize, n_rows: 0, first_row: first_row.to_vec(), ok }
+        ResultStream {
+            out,
+            kind,
+            n_reals: n_reals as usize,
+            n_rows: 0,
+            first_row: first_row.to_vec(),
+            ok,
+        }
     }
 
     /// Append `rows` (row-major, `n_reals` values each).
@@ -230,11 +262,17 @@ impl ResultStream {
         self.n_rows += rows.len() / n_reals;
         match &mut self.kind {
             Kind::Mat(s) => {
-                let mut mo = MatOut { out: &mut *self.out, ok: &mut self.ok };
+                let mut mo = MatOut {
+                    out: &mut *self.out,
+                    ok: &mut self.ok,
+                };
                 s.push_rows(&mut mo, rows);
             }
             Kind::Arrow(s) => {
-                let mut ao = ArrowOut { out: &mut *self.out, ok: &mut self.ok };
+                let mut ao = ArrowOut {
+                    out: &mut *self.out,
+                    ok: &mut self.ok,
+                };
                 s.push_rows(&mut ao, rows);
             }
             Kind::Csv(cols) => {
@@ -253,11 +291,17 @@ impl ResultStream {
     pub fn finish(&mut self) -> bool {
         match &mut self.kind {
             Kind::Mat(s) => {
-                let mut mo = MatOut { out: &mut *self.out, ok: &mut self.ok };
-                s.finish(&mut mo);
+                let mut mo = MatOut {
+                    out: &mut *self.out,
+                    ok: &mut self.ok,
+                };
+                s.close(&mut mo);
             }
             Kind::Arrow(s) => {
-                let mut ao = ArrowOut { out: &mut *self.out, ok: &mut self.ok };
+                let mut ao = ArrowOut {
+                    out: &mut *self.out,
+                    ok: &mut self.ok,
+                };
                 s.finish(&mut ao);
             }
             Kind::Plt { signals, params, rows } => {
@@ -298,7 +342,10 @@ pub fn decode_first_row(b: &[u8]) -> Vec<f64> {
     let Some(head) = b.get(..4) else { return Vec::new() };
     let n = u32::from_le_bytes(head.try_into().expect("4 bytes")) as usize;
     (0..n)
-        .map_while(|i| b.get(4 + i * 8..12 + i * 8).map(|w| f64::from_le_bytes(w.try_into().expect("8 bytes"))))
+        .map_while(|i| {
+            b.get(4 + i * 8..12 + i * 8)
+                .map(|w| f64::from_le_bytes(w.try_into().expect("8 bytes")))
+        })
         .collect()
 }
 
@@ -339,31 +386,39 @@ fn kept_params(meta: &SimMeta, params: &[f64], emit: impl Fn(usize, &MetaKind) -
     out
 }
 
-fn mat_vars<'a>(meta: &'a SimMeta, keep: &[bool]) -> Vec<MatVar<'a>> {
+/// The kept signals, described by `descs` ([`SimMeta::mat_descriptions`]).
+fn mat_vars<'a>(meta: &'a SimMeta, keep: &[bool], descs: &'a [String]) -> Vec<MatVar<'a>> {
     meta.vars
         .iter()
+        .zip(descs)
         .zip(keep)
         .filter(|(_, k)| **k)
-        .map(|(v, _)| MatVar { name: &v.name, comment: &v.comment, kind: v.kind.mat(), unvarying: v.unvarying })
+        .map(|((v, d), _)| MatVar {
+            name: &v.name,
+            comment: d,
+            kind: v.kind.mat(),
+            unvarying: v.unvarying,
+        })
         .collect()
 }
 
-pub fn mat(
-    meta: &SimMeta,
-    rows: &[f64],
-    n_reals: u32,
-    params: &[f64],
-    keep: &[bool],
-    precision: Precision,
-) -> Vec<u8> {
+pub fn mat(meta: &SimMeta, rows: &[f64], n_reals: u32, params: &[f64], keep: &[bool], precision: Precision) -> Vec<u8> {
     let kept = kept_params(meta, params, |i, _| keep[i]);
-    let vars = mat_vars(meta, keep);
-    openmodelica_mat_writer::write_mat4(&vars, meta.start_time, meta.stop_time, rows, n_reals, &kept, precision)
+    let descs = meta.mat_descriptions();
+    let vars = mat_vars(meta, keep, &descs);
+    let mut bytes =
+        openmodelica_mat_writer::write_mat4(&vars, meta.start_time, meta.stop_time, rows, n_reals, &kept, precision);
+    openmodelica_mat_writer::write_enumerations(&mut bytes, &meta.mat_enumerations(keep));
+    bytes
 }
 
 /// `keep` without the String signals, for the formats that cannot hold them.
 fn numeric_keep(meta: &SimMeta, keep: &[bool]) -> Vec<bool> {
-    meta.vars.iter().zip(keep).map(|(v, &k)| k && v.ty != VarTy::String).collect()
+    meta.vars
+        .iter()
+        .zip(keep)
+        .map(|(v, &k)| k && v.ty != VarTy::String)
+        .collect()
 }
 
 fn resolve_strings() -> openmodelica_arrow_writer::Resolve {
@@ -385,7 +440,7 @@ fn arrow_vars<'a>(meta: &'a SimMeta, keep: &[bool]) -> Vec<ArrowVar<'a>> {
             discrete: v.discrete,
             kind: v.kind.arrow(),
             unvarying: v.unvarying,
-            enumeration: v.enumeration.as_deref(),
+            enumeration: v.enumeration.as_ref().map(|e| e.literals.as_slice()),
         })
         .collect()
 }
@@ -407,11 +462,30 @@ fn col_types(meta: &SimMeta, precision: Precision) -> Vec<ColTy> {
     t
 }
 
-pub fn arrow(meta: &SimMeta, rows: &[f64], n_reals: u32, params: &[f64], keep: &[bool], precision: Precision) -> Vec<u8> {
+pub fn arrow(
+    meta: &SimMeta,
+    rows: &[f64],
+    n_reals: u32,
+    params: &[f64],
+    keep: &[bool],
+    precision: Precision,
+) -> Vec<u8> {
     let kept = kept_params(meta, params, |i, _| keep[i]);
     let vars = arrow_vars(meta, keep);
     let units = openmodelica_arrow_writer::units::declared(meta.units.iter().cloned());
-    openmodelica_arrow_writer::write_arrow(&vars, rows, n_reals, &kept, &col_types(meta, precision), resolve_strings(), &FileMeta { span: Some((meta.start_time, meta.stop_time)), units: &units, zstd: None })
+    openmodelica_arrow_writer::write_arrow(
+        &vars,
+        rows,
+        n_reals,
+        &kept,
+        &col_types(meta, precision),
+        resolve_strings(),
+        &FileMeta {
+            span: Some((meta.start_time, meta.stop_time)),
+            units: &units,
+            zstd: None,
+        },
+    )
 }
 
 /// C's `simulation_result_plt` omits integer and boolean parameters.
@@ -427,7 +501,10 @@ pub fn plt(meta: &SimMeta, rows: &[f64], n_reals: u32, params: &[f64], keep: &[b
         .iter()
         .enumerate()
         .filter(|(i, v)| emit(*i, &v.kind))
-        .map(|(_, v)| PltVar { name: &v.name, kind: v.kind.plt() })
+        .map(|(_, v)| PltVar {
+            name: &v.name,
+            kind: v.kind.plt(),
+        })
         .collect();
     openmodelica_plt_writer::write_plt(&signals, rows, n_reals, &kept)
 }
@@ -494,8 +571,8 @@ pub mod file {
     use std::io::{BufWriter, Seek, SeekFrom, Write};
 
     use super::{Precision, ResultOut, ResultStream};
-    use crate::driver::{self, SimEngine};
     use crate::SimMeta;
+    use crate::driver::{self, SimEngine};
 
     struct FileOut(BufWriter<std::fs::File>);
 
@@ -546,7 +623,9 @@ pub mod file {
     }
 
     fn open_result(e: &mut dyn SimEngine, m: &SimMeta, sim_data: u32) -> driver::Result<()> {
-        let Some((keep, precision, path)) = (unsafe { (*ARMED.0.get()).0.take() }) else { return Ok(()) };
+        let Some((keep, precision, path)) = (unsafe { (*ARMED.0.get()).0.take() }) else {
+            return Ok(());
+        };
         let format = super::format_of(&path, &m.output_format);
         let st = super::open_stream(e, m, sim_data, format, &keep, precision, || open(&path))?;
         *stream() = Some(st);

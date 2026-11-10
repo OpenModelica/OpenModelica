@@ -5,12 +5,12 @@
 // Test the public and protected access keywords
 // Drmodelica: 3.4 Access Control (p. 88)
 
-class AccessDemo "Illustration of access prefixes"
+model AccessDemo "Illustration of access prefixes"
       parameter Real a = 2;
   public   Real x, z;
-      parameter Real y;
+      parameter Real y(fixed = false);
   protected
-      parameter Real w, u;
+      parameter Real w(fixed = false), u(fixed = false);
       Real u2;
   public   Real u3;
 equation
@@ -20,13 +20,12 @@ equation
   u3 = 8;    // Legal, since code inside the class
 end AccessDemo;
 
-class B
+model B
   extends AccessDemo;
   Real p, q;
 equation
   u2 = p;  // Legal, since AccessDemo is inherited
   u3 = q;    // Legal, since u3 is public
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end B;
 
 // Result:
@@ -34,9 +33,9 @@ end B;
 //   parameter Real a = 2.0;
 //   Real x;
 //   Real z;
-//   parameter Real y;
-//   protected parameter Real w;
-//   protected parameter Real u;
+//   parameter Real y(fixed = false);
+//   protected parameter Real w(fixed = false);
+//   protected parameter Real u(fixed = false);
 //   protected Real u2;
 //   Real u3;
 //   Real p;

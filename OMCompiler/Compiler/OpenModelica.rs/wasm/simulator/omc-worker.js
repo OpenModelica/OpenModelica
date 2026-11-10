@@ -23,6 +23,7 @@ import { buildAnimData, attachCadMeshes } from '../anim/anim-core.js';
 // Compiles an exported FMU's component for a native platform, in its own worker.
 import { installFmuAot } from '../fmu-aot.js';
 import { installWasmBlobs } from '../wasm-blobs.js';
+import { describeError } from '../wasm-stack.js';
 
 // Set by a {cmd:'cancelSim'} message; honored by `runResumable` between chunks, so a
 // long sim is cancelled without killing the worker (which would drop the MSL + JIT).
@@ -529,6 +530,6 @@ self.onmessage = async (ev) => {
     }
   } catch (e) {
     wlog('EXCEPTION in ' + cmd + ': ' + (e && e.message || e));
-    self.postMessage({ type: 'reply', id, ok: false, error: '' + (e && e.message || e) });
+    self.postMessage({ type: 'reply', id, ok: false, error: describeError(e, '' + (e && e.message || e)) });
   }
 };

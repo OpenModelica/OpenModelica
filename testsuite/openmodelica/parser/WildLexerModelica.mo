@@ -2,9 +2,8 @@
 // status: correct
 //
 
-class WildLexerModelica
+model WildLexerModelica
 Real _ = 1.0;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WildLexerModelica;
 // Result:
 // class WildLexerModelica

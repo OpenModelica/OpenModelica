@@ -31,6 +31,7 @@ function(omc_result_reader_library)
   file(GLOB_RECURSE _rust_srcs CONFIGURE_DEPENDS
        ${_crate}/src/*.rs ${_crate}/Cargo.toml ${_crate}/include/omc_result.h
        ${_workspace}/openmodelica_result_files/src/*.rs
+       ${_workspace}/openmodelica_result_diff/src/*.rs
        ${_workspace}/openmodelica_mat_reader/src/*.rs
        ${_workspace}/openmodelica_arrow_writer/src/*.rs
        ${_workspace}/openmodelica_mat_writer/src/*.rs

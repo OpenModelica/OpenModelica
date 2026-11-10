@@ -37,7 +37,6 @@ model ComplexBinding1
   parameter Complex Z1 = Complex(1, 1);
   parameter Complex Z2 = Z1;
   Complex Z3 = F(Z1, Z2);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ComplexBinding1;
 
 // Result:
@@ -52,8 +51,14 @@ end ComplexBinding1;
 //   input Complex c2;
 //   output Complex c3;
 // algorithm
-//   c3 := Complex(c1.re + c2.re, c1.im + c2.im);
+//   c3 := Complex.'constructor'.fromReal(c1.re + c2.re, c1.im + c2.im);
 // end Complex.'+';
+//
+// function Complex.'constructor'.fromReal
+//   input Real re;
+//   input Real im = 0.0;
+//   output Complex result;
+// end Complex.'constructor'.fromReal;
 //
 // function F
 //   input Complex Z1;

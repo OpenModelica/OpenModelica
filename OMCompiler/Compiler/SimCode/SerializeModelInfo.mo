@@ -108,7 +108,6 @@ algorithm
           ("max", code.maxValueEquations),
           ("parameter", code.parameterEquations),
           ("assertions", code.algorithmAndEquationAsserts),
-          ("inline", code.inlineEquations),
           ("residuals", List.flatten(SimCodeUtil.getSimCodeDAEModeDataEqns(code.daeModeData))),
           ("jacobian", code.jacobianEquations)
         } loop
@@ -633,8 +632,7 @@ algorithm
         else {};
       end match;
       if not listEmpty(jeqs) then
-        File.write(file, ",");
-        serializeEquation(file,listHead(jeqs),section,withOperations,parent=lSystem.index,first=true,assign_type=AssignType.JACOBIAN);
+        serializeEquation(file,listHead(jeqs),section,withOperations,parent=lSystem.index,first=listEmpty(eqs),assign_type=AssignType.JACOBIAN);
         for e in listRest(jeqs) loop serializeEquation(file,e,section,withOperations,parent=lSystem.index,assign_type=AssignType.JACOBIAN); end for;
       end if;
 
@@ -859,12 +857,16 @@ algorithm
         else {};
       end match;
       if not listEmpty(jeqs) then
-        File.write(file, ",");
-        serializeEquation(file,listHead(jeqs),section,withOperations,parent=nlSystem.index,first=true,assign_type=AssignType.JACOBIAN);
+        serializeEquation(file,listHead(jeqs),section,withOperations,parent=nlSystem.index,first=listEmpty(eqs),assign_type=AssignType.JACOBIAN);
         for e in listRest(jeqs) loop serializeEquation(file,e,section,withOperations,parent=nlSystem.index,assign_type=AssignType.JACOBIAN); end for;
       end if;
 
-      File.write(file, ",\n{\"eqIndex\":");
+      // a fully torn system has no inner equations
+      if listEmpty(eqs) and listEmpty(jeqs) then
+        File.write(file, "\n{\"eqIndex\":");
+      else
+        File.write(file, ",\n{\"eqIndex\":");
+      end if;
       File.writeInt(file, nlSystem.index);
       if parent <> 0 then
         File.write(file, ",\"parent\":");
@@ -1159,8 +1161,7 @@ algorithm
     case BackendDAE.OPT_INPUT_DER() then "derivation of input";
     case BackendDAE.OPT_TGRID() then "time grid for optimization";
     case BackendDAE.OPT_LOOP_INPUT() then "variable for transform loop in constraint";
-    case BackendDAE.ALG_STATE() then "helper variable transform ode for symSolver";
-    case BackendDAE.ALG_STATE_OLD() then "helper variable transform ode for symSolver";
+    case BackendDAE.ALG_STATE() then "helper variable transform ode for daeMode";
     case BackendDAE.LOOP_ITERATION() then "iteration variable for solving an algebraic loop";
     case BackendDAE.DAE_RESIDUAL_VAR() then "residual variable for dae mode";
     else

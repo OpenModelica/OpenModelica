@@ -2,7 +2,6 @@
 // keywords: FMI 2.0 export array Cpp
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml fmi2_array_cpp.fmu fmi2_array_cpp.fmutmp fmi2_array_cpp.log fmi2_array_cpp_info.json output.log index.html
-// cflags: -d=-newInst
 //
 // #15926, FMI 2.0 export with the C++ (Cpp) simulation runtime and an array
 // variable carrying a parameter-bound nominal/min attribute. The FMU must build

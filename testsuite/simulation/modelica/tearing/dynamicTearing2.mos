@@ -1,7 +1,6 @@
 // name:      dynamicTearing2
 // keywords:  linear, dynamic tearing
 // status:    correct
-// cflags: -d=-newInst
 
 loadString("
 model dynamicTearing2

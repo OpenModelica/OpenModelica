@@ -32,7 +32,6 @@ simulate(TerminateAtInit, stopTime=1.0, numberOfIntervals=10, resimulateExecutab
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TerminateAtInit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:cs'",
 //     messages = "LOG_STDOUT        | info    | wasm artifact loaded (compiled from the component)
 // LOG_STDOUT        | info    | CoSimulation instantiated
-// [<interactive>:6:3-6:40:writable]Modelica Terminate: nothing left to simulate!
 // LOG_STDOUT        | info    | CoSimulation run: 0 communication steps, 0 events, 0 early returns, 1 samples
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -43,7 +42,6 @@ simulate(TerminateAtInit, stopTime=1.0, numberOfIntervals=10, resimulateExecutab
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TerminateAtInit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:me'",
 //     messages = "LOG_STDOUT        | info    | wasm artifact loaded (compiled from the component)
 // LOG_STDOUT        | info    | ModelExchange instantiated
-// [<interactive>:6:3-6:40:writable]Modelica Terminate: nothing left to simulate!
 // LOG_STDOUT        | info    | ModelExchange run: 0 steps, 0 evaluations, 0 Jacobians, 0 state events, 0 time events, 1 samples
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

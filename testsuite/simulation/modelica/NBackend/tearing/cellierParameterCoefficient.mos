@@ -1,0 +1,40 @@
+// name: cellierParameterCoefficient
+// keywords: NewBackend, tearing
+// status: correct
+// teardown_command: rm -f ZeroFeedthrough ZeroFeedthrough_* ZeroFeedthrough.log ZeroFeedthrough.c ZeroFeedthrough.o ZeroFeedthrough.makefile ZeroFeedthrough.libs
+//
+// The feedthrough d of a strictly proper transfer function is zero. Cellier tearing solves
+// tf.u from the loop equation with coefficient -1 and not from y = ... + d*u.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+model ZeroFeedthrough
+  Modelica.Blocks.Continuous.TransferFunction tf(b = {1}, a = {0.1, 1}, initType = Modelica.Blocks.Types.Init.InitialOutput, y_start = 1);
+  Real lim, ceil;
+equation
+  ceil = 0.1*exp(abs(tf.y))*tf.y;
+  tf.u = lim - ceil;
+  lim = min(max(2 - 0.5*tf.y, -5), 5);
+end ZeroFeedthrough;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(ZeroFeedthrough); getErrorString();
+val(tf.y, 1.0);
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ZeroFeedthrough_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ZeroFeedthrough', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.1091523952630922
+// endResult

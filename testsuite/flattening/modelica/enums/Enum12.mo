@@ -5,13 +5,11 @@ model Enum12
   type E1 = enumeration(A);
   type E2 = enumeration(A,B);
   E1 e = E2.B;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Enum12;
 
 // Result:
 // Error processing file: Enum12.mo
-// [flattening/modelica/enums/Enum12.mo:7:3-7:14:writable] Error: Type mismatch in binding e = Enum12.E2.B, expected subtype of enumeration(A), got type enumeration(A, B).
-// Error: Error occurred while flattening model Enum12
+// [flattening/modelica/enums/Enum12.mo:7:3-7:14:writable] Error: Type mismatch in binding e = E2.B, expected subtype of enumeration E1(A), got type enumeration E2(A, B).
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

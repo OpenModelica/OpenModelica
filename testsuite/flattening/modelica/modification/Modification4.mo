@@ -14,13 +14,11 @@ end B;
 
 class Modification4
   B b(a(p=2));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Modification4;
 
 // Result:
 // Error processing file: Modification4.mo
-// [flattening/modelica/modification/Modification4.mo:12:3-12:6:writable] Error: Variable b.a: In modifier (p = 2), class or component p not found in <A$b$a>.
-// Error: Error occurred while flattening model Modification4
+// [flattening/modelica/modification/Modification4.mo:16:9-16:12:writable] Error: Modified element p not found in class A.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

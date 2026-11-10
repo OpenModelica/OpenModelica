@@ -1,6 +1,7 @@
-//! Port of csv-compare's `Tube.cs`: the tube is interpolated onto the curve
-//! under test and each of its points has to lie between the two curves. Note the
-//! direction -- [`crate::ellipse2014`] resamples the other way.
+//! Port of csv-compare's `Tube.cs` (BSD-3-Clause, see `LICENSE`): the tube is
+//! interpolated onto the curve under test and each of its points has to lie
+//! between the two curves. Note the direction -- [`crate::ellipse2014`]
+//! resamples the other way.
 
 /// `low`/`high` are the tube on `time`, `error` the distance outside it (0
 /// inside), `n` how many points could be tested before the tube ran out.
@@ -27,7 +28,13 @@ pub fn validate(time: &[f64], values: &[f64], lower: &crate::Curve, upper: &crat
             error_count += 1;
         }
     }
-    Validation { low, high, error, error_count, n }
+    Validation {
+        low,
+        high,
+        error,
+        error_count,
+        n,
+    }
 }
 
 /// `InterpolateValues`: linear interpolation of the tube onto `target`,
@@ -51,7 +58,11 @@ fn interpolate_values(source_time: &[f64], source_values: &[f64], target: &[f64]
         }
         let x0 = source_time[j - 1];
         let y0 = source_values[j - 1];
-        out.push(if (x1 - x0) * (x - x0) != 0.0 { y0 + (y1 - y0) / (x1 - x0) * (x - x0) } else { y0 });
+        out.push(if (x1 - x0) * (x - x0) != 0.0 {
+            y0 + (y1 - y0) / (x1 - x0) * (x - x0)
+        } else {
+            y0
+        });
     }
     out
 }

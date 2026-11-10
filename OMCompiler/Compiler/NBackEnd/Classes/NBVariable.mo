@@ -53,13 +53,16 @@ public
   import BackendExtension = NFBackendExtension;
   import NFBackendExtension.{BackendInfo, StateSelect, TearingSelect, VariableAttributes, VariableKind, OptimizerExpression};
   import NFBinding.Binding;
+  import Call = NFCall;
   import Ceval = NFCeval;
   import Class = NFClass;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
+  import NFFunction.Function;
   import NFInstNode.InstNode;
   import Prefixes = NFPrefixes;
+  import Record = NFRecord;
   import Scalarize = NFScalarize;
   import SimplifyExp = NFSimplifyExp;
   import Subscript = NFSubscript;
@@ -416,6 +419,7 @@ public
     b := match var.backendinfo.varKind
       case VariableKind.DISCRETE_STATE()  then false; // like parameter?
       case VariableKind.DISCRETE()        then false; // like parameter?
+      case VariableKind.ALGORITHM_LOCAL() then false;
       case VariableKind.PREVIOUS()        then false; // like parameter?
       case VariableKind.CONSTANT()        then false;
       case VariableKind.ITERATOR()        then false;
@@ -460,6 +464,26 @@ public
       else false;
     end match;
   end isDiscrete;
+
+  function isAlgorithmLocal extends checkVar;
+  algorithm
+    b := match var.backendinfo.varKind
+      case VariableKind.ALGORITHM_LOCAL() then true;
+      else false;
+    end match;
+  end isAlgorithmLocal;
+
+  function isAlgorithmLocalCref
+    "true if the cref belongs to a variable that only one algorithm uses (crefs without variable are not)"
+    input ComponentRef cref;
+    output Boolean b;
+  algorithm
+    b := match cref
+      case ComponentRef.CREF() guard InstNode.isVar(ComponentRef.node(cref))
+        then isAlgorithmLocal(PointerWeak.upgrade(InstNode.varPointer(ComponentRef.node(cref))));
+      else false;
+    end match;
+  end isAlgorithmLocalCref;
 
   function isPrevious extends checkVar;
   algorithm
@@ -1206,6 +1230,19 @@ function isJacobianResultVar
     b := StringUtil.startsWith(ComponentRef.firstName(getVarName(var_ptr)), FUNCTION_STR);
   end isFunctionAlias;
 
+  function isFunctionAliasOrElement
+    "true for function alias variables and the elements of function alias records"
+    input Pointer<Variable> var_ptr;
+    output Boolean b;
+  algorithm
+    b := match getParent(var_ptr)
+      local
+        Pointer<Variable> parent;
+      case SOME(parent) then isFunctionAliasOrElement(parent);
+      else isFunctionAlias(var_ptr);
+    end match;
+  end isFunctionAliasOrElement;
+
   function isClockAlias
     extends checkVar;
   algorithm
@@ -1308,17 +1345,28 @@ function isJacobianResultVar
   end hasDerVar;
 
   function addRecordChild
-    "adds a child to the records children. use with care, only when creating new records!"
+    "adds a child to the records children in the order of the record fields.
+    use with care, only when creating new records!"
     input Pointer<Variable> var_ptr;
     input Pointer<Variable> child;
   protected
     Variable var = Pointer.access(var_ptr);
+    list<String> fields;
+    Integer index;
+    list<PointerWeak<Variable>> before = {}, after;
   algorithm
     var := match var
       local
         VariableKind varKind;
       case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = varKind as VariableKind.RECORD())) algorithm
-        varKind.children := PointerWeak.downgrade(child) :: varKind.children;
+        fields := list(Record.Field.name(f) for f in Type.recordFields(Type.arrayElementType(var.ty)));
+        index := recordFieldIndex(child, fields);
+        after := varKind.children;
+        while not listEmpty(after) and recordFieldIndex(PointerWeak.upgrade(listHead(after)), fields) < index loop
+          before := listHead(after) :: before;
+          after := listRest(after);
+        end while;
+        varKind.children := List.append_reverse(before, PointerWeak.downgrade(child) :: after);
         var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
       then var;
       else algorithm
@@ -1328,6 +1376,20 @@ function isJacobianResultVar
     end match;
     Pointer.update(var_ptr, var);
   end addRecordChild;
+
+  function recordFieldIndex
+    "the position of the child in the record fields, unknown fields go last"
+    input Pointer<Variable> child;
+    input list<String> fields;
+    output Integer index = 1;
+  protected
+    String name = ComponentRef.firstName(getVarName(child));
+  algorithm
+    for field in fields loop
+      if field == name then return; end if;
+      index := index + 1;
+    end for;
+  end recordFieldIndex;
 
   function setRecordChildren
     "sets the records children. use with care, only when creating new records!"
@@ -1836,7 +1898,7 @@ function isJacobianResultVar
     // create variable and add optional binding
     if isSome(binding) then
       bnd := Util.getOption(binding);
-      var := fromCref(cref, NFAttributes.DEFAULT_ATTR, Binding.makeFlat(bnd, Expression.variability(bnd), NFBinding.Source.BINDING));
+      var := fromCref(cref, NFAttributes.DEFAULT_ATTR, Binding.makeFlat(bnd, Expression.variability(bnd), NFBinding.Source.BINDING, Absyn.dummyInfo));
     else
       var := fromCref(cref);
     end if;
@@ -1930,23 +1992,31 @@ function isJacobianResultVar
     Expression binding;
     function isEvaluable
       input Expression exp;
+      input Boolean resizable;
       output Boolean b;
     protected
       Expression new_exp;
     algorithm
+      // explicitly impure calls are not evaluated during translation
+      if Expression.contains(exp, isExplicitlyImpureCall) then
+        b := false;
+        return;
+      end if;
       b := Expression.isLiteralXML(exp);
-      if not b then
+      if not b or (resizable and not Expression.isLiteral(exp)) then
         // try to extract literal from array constructor (use dummy map, there should not be any new iterators)
         (_, new_exp) := Iterator.extract(exp);
         new_exp := SimplifyExp.simplifyDump(new_exp, true, getInstanceName());
-        b := Expression.isLiteralXML(Ceval.tryEvalExp(new_exp));
+        // the start value of a resizable array has to be a scalar that is broadcast to all elements
+        b := Expression.isLiteralXML(Ceval.tryEvalExp(new_exp)) and
+             not (resizable and Type.isArray(Expression.typeOf(new_exp)));
       end if;
     end isEvaluable;
   algorithm
     // check binding
     if isBound(var_ptr) then
       binding := Binding.getExp(var.binding);
-      b := isEvaluable(binding);
+      b := isEvaluable(binding, Type.isResizable(var.ty));
     else
       b := false;
     end if;
@@ -2050,6 +2120,38 @@ function isJacobianResultVar
     input Pointer<Variable> var_ptr;
     output Option<Expression> start =  VariableAttributes.getStartAttribute(Variable.getVariableAttributes(Pointer.access(var_ptr)));
   end getStartAttribute;
+
+  function startElement
+    "the element of a start value at the subscripts of its variable. the start value can have
+    less dimensions than the variable, e.g. {1.0 for i in 1:2} for each start = 1.0 of x[2, 3],
+    then it only has the leading dimensions. returns EMPTY() if the dimensions do not fit."
+    input list<Subscript> subs;
+    input Expression start;
+    input Type varTy;
+    output Expression exp;
+  protected
+    list<Dimension> start_dims = Type.arrayDims(Expression.typeOf(start));
+    Integer n = listLength(start_dims);
+  algorithm
+    if listLength(subs) <= n then
+      exp := applySubscriptsSimplify(subs, start);
+    elseif listLength(subs) == Type.dimensionCount(varTy)
+      and List.isEqualOnTrue(start_dims, List.firstN(Type.arrayDims(varTy), n), Dimension.isEqual) then
+      exp := applySubscriptsSimplify(List.firstN(subs, n), start);
+    else
+      exp := Expression.EMPTY(Type.UNKNOWN());
+    end if;
+  end startElement;
+
+  function applySubscriptsSimplify
+    "one subscript at a time, so that nested array constructors are reduced"
+    input list<Subscript> subs;
+    input output Expression exp;
+  algorithm
+    for sub in subs loop
+      exp := SimplifyExp.simplify(Expression.applySubscripts({sub}, exp, true));
+    end for;
+  end applySubscriptsSimplify;
 
   function hasNonTrivialAliasBinding
     "returns true if the binding does not represent a cref, a negated cref or a constant.
@@ -2694,6 +2796,7 @@ function isJacobianResultVar
 
       /* state order for differentiation and index reduction */
       UnorderedMap<ComponentRef, ComponentRef> state_order;
+      Boolean resizable                   "true if the model has resizable parameters, set by Resizable.resize";
     end VAR_DATA_SIM;
 
     record VAR_DATA_JAC
@@ -3087,6 +3190,18 @@ protected
   algorithm
     Pointer.update(acc, getVarName(var) :: Pointer.access(acc));
   end getVarNameTraverse;
+
+  function isExplicitlyImpureCall
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      local
+        Function fn;
+      case Expression.CALL(call = Call.TYPED_CALL(fn = fn)) then Function.isExplicitlyImpure(fn);
+      else false;
+    end match;
+  end isExplicitlyImpureCall;
 
   annotation(__OpenModelica_Interface="nbackend");
 end NBVariable;

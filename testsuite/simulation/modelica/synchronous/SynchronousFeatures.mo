@@ -30,8 +30,8 @@ package SynchronousFeatures "Fundamentals of Synchronous Control in Modelica,  H
     extends BaseClasses.MassWithSpringDamper;
     parameter Real K=20 "Gain of speed P controller";
     parameter SynchronousFeatures.Velocity vref=100 "Speed ref.";
-    discrete Real vd;
-    discrete Real u(start=0);
+    Real vd;
+    Real u(start=0);
   equation
     // speed sensor
     vd = sample(v, Clock(0.01));
@@ -47,13 +47,13 @@ package SynchronousFeatures "Fundamentals of Synchronous Control in Modelica,  H
     parameter Real KInner = 20 "Gain of speed P controller";
     parameter Real Ti = 10 "Integral time for pos. PI controller";
     parameter Real xref = 10 "Position reference";
-    discrete Real xd;
-    discrete Real eOuter;
-    discrete Real intE(start=0);
-    discrete Real uOuter;
-    discrete Real vd;
-    discrete Real vref;
-    discrete Real uInner(start=0);
+    Real xd;
+    Real eOuter;
+    Real intE(start=0);
+    Real uOuter;
+    Real vd;
+    Real vref;
+    Real uInner(start=0);
   equation
     // position sensor
     xd = sample(x, Clock(0.01));
@@ -76,14 +76,14 @@ package SynchronousFeatures "Fundamentals of Synchronous Control in Modelica,  H
     parameter Real KInner = 20 "Gain of speed P controller";
     parameter Real Ti = 10 "Integral time for pos. PI controller";
     parameter Real xref = 10 "Position reference";
-    discrete Real xd;
-    discrete Real eOuter;
-    discrete Real intE(start=0);
-    discrete Real uOuter(start=0);
-    discrete Real xdFast;
-    discrete Real vd;
-    discrete Real vref;
-    discrete Real uInner(start=0);
+    Real xd;
+    Real eOuter;
+    Real intE(start=0);
+    Real uOuter(start=0);
+    Real xdFast;
+    Real vd;
+    Real vref;
+    Real uInner(start=0);
     Clock cControl = Clock(0.01);
     Clock cOuter = subSample(shiftSample(cControl, 2, 3), 5);
     Clock cFast = superSample(cControl, 2);

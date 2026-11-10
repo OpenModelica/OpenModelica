@@ -48,6 +48,7 @@ protected
   import BuiltinCall = NFBuiltinCall;
   import Ceval = NFCeval;
   import ComplexType = NFComplexType;
+  import Dump;
   import ExpandExp = NFExpandExp;
   import Expression = NFExpression;
   import Function = NFFunction;
@@ -59,6 +60,7 @@ protected
   import SimplifyExp = NFSimplifyExp;
   import TypeCheck = NFTypeCheck;
   import UnorderedSet;
+  import ValuesDump;
   import ValuesMake;
   import Variable = NFVariable;
 
@@ -257,6 +259,12 @@ public
     String filename;
   end FILENAME;
 
+  record CODE
+    "A quoted argument of a scripting function, e.g. the class name in simulate(M)."
+    Absyn.CodeNode code;
+    Type ty;
+  end CODE;
+
   record SHARED_LITERAL
     "Before code generation, we make a pass that replaces constant literals
     with a SHARED_LITERAL expression. Any immutable type can be shared:
@@ -309,6 +317,16 @@ public
       else false;
     end match;
   end isCref;
+
+  function isSubscriptedExp
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case SUBSCRIPTED_EXP() then true;
+      else false;
+    end match;
+  end isSubscriptedExp;
 
   function isFunctionInputCref
     input Expression exp;
@@ -673,6 +691,7 @@ public
         then hash;
 
       case FILENAME() then stringHashDjb2Continue(exp.filename, hash);
+      case CODE() then AbsynUtil.codeHashContinue(exp.code, hash);
 
       case SHARED_LITERAL()
         algorithm
@@ -737,6 +756,7 @@ public
         list<list<Expression>> mat;
         array<Expression> arr;
         InstNode node;
+        Absyn.CodeNode code;
 
       case INTEGER()
         algorithm
@@ -1013,6 +1033,12 @@ public
         then
           stringCompare(exp1.filename, s);
 
+      case CODE()
+        algorithm
+          CODE(code = code) := exp2;
+        then
+          valueCompare(exp1.code, code);
+
       case INSTANCE_NAME()
         algorithm
           INSTANCE_NAME(scope = node) := exp2;
@@ -1089,6 +1115,7 @@ public
       case PARTIAL_FUNCTION_APPLICATION() then exp.ty;
       case FILENAME()        then Type.STRING();
       case INSTANCE_NAME()   then Type.STRING();
+      case CODE()            then exp.ty;
       else Type.UNKNOWN();
     end match;
   end typeOf;
@@ -1656,8 +1683,7 @@ public
       case BINARY() guard List.all(subscript :: restSubscripts, isCheapSubscript)
         then applySubscriptBinary(subscript, exp, restSubscripts, applyToScope);
 
-      case UNARY() guard Type.isArray(Operator.typeOf(exp.operator)) and
-                         List.all(subscript :: restSubscripts, isCheapSubscript)
+      case UNARY() guard Type.isArray(Operator.typeOf(exp.operator))
         algorithm
           outExp := applySubscript(subscript, exp.exp, restSubscripts, applyToScope);
         then
@@ -1853,6 +1879,14 @@ public
         outExp := applySubscripts(restSubscripts, expl[idx]);
         return;
       end if;
+    end if;
+
+    // Literal indices of the inner dimensions can still be applied to the
+    // elements, e.g. {{1, 2}, {3, 4}}[i, 2] => {2, 4}[i].
+    if not listEmpty(restSubscripts) and List.all(restSubscripts, Subscript.isScalarLiteral) then
+      outExp := applySubscriptArray(Subscript.WHOLE(), exp, restSubscripts, false);
+      outExp := makeSubscriptedExp({Subscript.INDEX(index)}, outExp);
+      return;
     end if;
 
     // Otherwise create a subscript expression.
@@ -2258,6 +2292,39 @@ public
     res := contains(exp, function containsIterator2(iterator = iterator));
   end containsIterator;
 
+  function isIteratorNamed
+    input Expression exp;
+    input list<String> names;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case CREF() guard ComponentRef.isIterator(exp.cref)
+        then List.isMemberOnTrue(ComponentRef.firstName(exp.cref), names, stringEq);
+      else false;
+    end match;
+  end isIteratorNamed;
+
+  function replaceIteratorsByName
+    "Replaces iterators by name, also in the dimensions of the types. Unlike
+     replaceIterator this also works for different iterator nodes with the same
+     name, e.g. the binding iterators of a vectorized component."
+    input output Expression exp;
+    input UnorderedMap<String, Expression> values;
+  algorithm
+    exp := map(exp, function replaceIteratorByName(values = values));
+  end replaceIteratorsByName;
+
+  function replaceIteratorByName
+    input output Expression exp;
+    input UnorderedMap<String, Expression> values;
+  algorithm
+    exp := match exp
+      case CREF() guard ComponentRef.isIterator(exp.cref)
+        then UnorderedMap.getOrDefault(ComponentRef.firstName(exp.cref), values, exp);
+      else applyToType(exp, function Type.replaceIteratorsByName(values = values));
+    end match;
+  end replaceIteratorByName;
+
   function arrayFromList
     input list<Expression> inExps;
     input Type elemTy;
@@ -2403,11 +2470,11 @@ public
       case MULTARY() guard(listEmpty(exp.arguments)) then "1/" + multaryString(exp.inv_arguments, exp, exp.operator);
 
       case MULTARY() then multaryString(exp.arguments, exp, exp.operator) +
-                          Operator.symbol(Operator.invert(exp.operator)) +
+                          Operator.symbolSpaced(Operator.invert(exp.operator)) +
                           multaryString(exp.inv_arguments, exp, exp.operator);
 
       case BINARY() then operandString(exp.exp1, exp, true) +
-                         Operator.symbol(exp.operator) +
+                         Operator.symbolSpaced(exp.operator) +
                          operandString(exp.exp2, exp, false);
 
       case UNARY() then Operator.symbol(exp.operator, "") +
@@ -2445,6 +2512,7 @@ public
 
       case FILENAME() then "\"" + System.escapedString(exp.filename, false) + "\"";
       case INSTANCE_NAME() then "getInstanceName()";
+      case CODE() then codeString(exp.code);
       else anyString(exp);
     end match;
   end toString;
@@ -2507,11 +2575,11 @@ public
       case MULTARY() guard(listEmpty(exp.arguments)) then "1/" + multaryFlatString(exp.inv_arguments, exp, exp.operator, format);
 
       case MULTARY() then multaryFlatString(exp.arguments, exp, exp.operator, format) +
-                          Operator.symbol(Operator.invert(exp.operator)) +
+                          Operator.symbolSpaced(Operator.invert(exp.operator)) +
                           multaryFlatString(exp.inv_arguments, exp, exp.operator, format);
 
       case BINARY() then operandFlatString(exp.exp1, exp, true, format) +
-                         Operator.symbol(exp.operator) +
+                         Operator.symbolSpaced(exp.operator) +
                          operandFlatString(exp.exp2, exp, false, format);
 
       case UNARY() then Operator.symbol(exp.operator, "") +
@@ -2546,6 +2614,7 @@ public
 
       case FILENAME() then "\"" + Util.escapeModelicaStringToCString(exp.filename) + "\"";
       case INSTANCE_NAME() then "getInstanceName()";
+      case CODE() then codeString(exp.code);
       else anyString(exp);
     end match;
   end toFlatString;
@@ -2620,7 +2689,7 @@ public
     input Boolean parenthesize = true;
     output String str;
   algorithm
-    str := stringDelimitList(list(operandString(e, exp, false) for e in arguments), Operator.symbol(operator));
+    str := stringDelimitList(list(operandString(e, exp, false) for e in arguments), Operator.symbolSpaced(operator));
     if parenthesize and listLength(arguments) > 1 then
       str := "(" + str + ")";
     end if;
@@ -2634,7 +2703,7 @@ public
     input Boolean parenthesize = true;
     output String str;
   algorithm
-    str := stringDelimitList(list(operandFlatString(e, exp, false, format) for e in arguments), Operator.symbol(operator));
+    str := stringDelimitList(list(operandFlatString(e, exp, false, format) for e in arguments), Operator.symbolSpaced(operator));
     if parenthesize and listLength(arguments) > 1 then
       str := "(" + str + ")";
     end if;
@@ -2805,6 +2874,7 @@ public
         then Absyn.Exp.PARTEVALFUNCTION(ComponentRef.toAbsyn(exp.fn),
           Absyn.FunctionArgs.FUNCTIONARGS(list(toAbsyn(e) for e in exp.args), {}));
       case FILENAME() then Absyn.Exp.STRING(exp.filename);
+      case CODE() then Absyn.Exp.CODE(exp.code);
       case INSTANCE_NAME() then AbsynUtil.makeCall(Absyn.ComponentRef.CREF_IDENT("getInstanceName", {}), {});
 
       else
@@ -2924,6 +2994,7 @@ public
           DAE.EMPTY("", DAE.CREF_IDENT("$dummy", dty, {}), dty, Type.toString(exp.ty));
 
       case SHARED_LITERAL() then DAE.SHARED_LITERAL(exp.index, toDAE(exp.exp));
+      case CODE() then DAE.CODE(exp.code, DAE.T_UNKNOWN_DEFAULT);
       case FILENAME()
         then if Flags.getConfigBool(Flags.BUILDING_FMU) then
                DAE.CALL(Absyn.Path.IDENT("OpenModelica_fmuLoadResource"),
@@ -3002,7 +3073,10 @@ public
         then Values.ENUM_LITERAL(AbsynUtil.suffixPath(ty.typePath, exp.name), exp.index);
       case ARRAY() then ValuesMake.makeArray(list(toDAEValue(e) for e in exp.elements));
       case RECORD() then toDAEValueRecord(exp.ty, exp.path, exp.elements);
+      case TUPLE() then Values.TUPLE(list(toDAEValue(e) for e in exp.elements));
       case FILENAME() then Values.STRING(exp.filename);
+      case CODE() then codeToDAEValue(exp.code, exp.ty);
+      case EMPTY(ty = Type.NORETCALL()) then Values.NORETCALL();
 
       else
         algorithm
@@ -3042,6 +3116,194 @@ public
     values := listReverseInPlace(values);
     value := Values.RECORD(path, values, field_names, -1);
   end toDAEValueRecord;
+
+  function fromDAEValue
+    "Converts a value to an expression of the given type. The type supplies
+     what the value lacks: the literals of an enumeration and the fields of a
+     record. An enumeration literal's index is taken from the type, since the
+     scripting API does not number all of its enumerations as declared."
+    input Values.Value value;
+    input Type ty;
+    output Expression exp;
+  algorithm
+    exp := match (value, ty)
+      local
+        Type elem_ty;
+        list<Type> tys;
+        String name;
+
+      case (Values.INTEGER(), _) then INTEGER(value.integer);
+      case (Values.REAL(), _) then REAL(value.real);
+      case (Values.STRING(), _) then STRING(value.string);
+      case (Values.BOOL(), _) then BOOLEAN(value.boolean);
+      case (Values.ENUM_LITERAL(), Type.ENUMERATION())
+        algorithm
+          name := AbsynUtil.pathLastIdent(value.name);
+        then
+          ENUM_LITERAL(ty, name, List.position(name, ty.literals));
+
+      case (Values.ARRAY(), Type.ARRAY())
+        algorithm
+          elem_ty := Type.unliftArray(ty);
+        then
+          makeArray(Type.ARRAY(ty.elementType, list(Dimension.fromInteger(d) for d in value.dimLst)),
+                    listArray(list(fromDAEValue(v, elem_ty) for v in value.valueLst)), literal = true);
+
+      case (Values.RECORD(), Type.COMPLEX()) then fromDAEValueRecord(value, ty);
+
+      case (Values.TUPLE(), Type.TUPLE(types = tys))
+        then TUPLE(ty, list(fromDAEValue(v, t) threaded for v in value.valueLst, t in tys));
+
+      case (Values.NORETCALL(), _) then EMPTY(ty);
+      case (Values.CODE(), _) then CODE(value.A, ty);
+
+      else
+        algorithm
+          Error.addInternalError(getInstanceName() + " got unhandled value " +
+            ValuesDump.valString(value) + " of type " + Type.toString(ty), sourceInfo());
+        then
+          fail();
+    end match;
+  end fromDAEValue;
+
+  function fromDAEValueRecord
+    input Values.Value value;
+    input Type ty;
+    output Expression exp;
+  protected
+    Absyn.Path path;
+    list<Values.Value> values;
+    list<String> names;
+    list<Expression> fields = {};
+  algorithm
+    Values.RECORD(record_ = path, orderd = values, comp = names) := value;
+
+    for field in Type.recordFields(ty) loop
+      fields := match field
+        case Record.Field.INPUT()
+          then fromDAEValue(listGet(values, List.position(field.name, names)),
+                            Type.lookupRecordFieldType(field.name, ty)) :: fields;
+      end match;
+    end for;
+
+    exp := RECORD(path, ty, listReverseInPlace(fields));
+  end fromDAEValueRecord;
+
+  function quoteCode
+    "Quotes an argument or binding of a $Code type, as Static.elabCodeExp does:
+     a TypeName is a path, a VariableName a component reference or der of
+     one, VariableNames an array of those, and an Expression or
+     ExpressionOrModification is kept as written."
+    input Absyn.Exp exp;
+    input Type ty;
+    input SourceInfo info;
+    output Expression outExp;
+  protected
+    String kind = Type.codeName(ty);
+    Absyn.Exp e;
+    Absyn.CodeNode code;
+  algorithm
+    code := match exp
+      case Absyn.Exp.CODE(code = Absyn.CodeNode.C_TYPENAME()) guard kind == "TypeName" then exp.code;
+      case Absyn.Exp.CODE(code = Absyn.CodeNode.C_VARIABLENAME()) guard kind == "VariableName" then exp.code;
+      case Absyn.Exp.CODE(code = Absyn.CodeNode.C_MODIFICATION()) guard kind == "ExpressionOrModification"
+        then exp.code;
+      case Absyn.Exp.CODE(code = Absyn.CodeNode.C_EXPRESSION(exp = e)) then quoteCodeExp(e, kind, exp, info);
+      else quoteCodeExp(exp, kind, exp, info);
+    end match;
+
+    outExp := CODE(code, ty);
+  end quoteCode;
+
+  function quoteCodeExp
+    input Absyn.Exp exp;
+    input String kind;
+    input Absyn.Exp quotedExp;
+    input SourceInfo info;
+    output Absyn.CodeNode code;
+  algorithm
+    code := match (kind, exp)
+      case ("TypeName", Absyn.Exp.CREF()) then Absyn.CodeNode.C_TYPENAME(AbsynUtil.crefToPath(exp.componentRef));
+      case ("VariableName", Absyn.Exp.CREF()) then Absyn.CodeNode.C_VARIABLENAME(exp.componentRef);
+      case ("VariableName", _) guard isQuotableVariableName(exp) then Absyn.CodeNode.C_EXPRESSION(exp);
+      case ("VariableNames", Absyn.Exp.ARRAY()) guard List.all(exp.arrayExp, isQuotableVariableName)
+        then Absyn.CodeNode.C_EXPRESSION(exp);
+      case ("VariableNames", _) guard isQuotableVariableName(exp)
+        then Absyn.CodeNode.C_EXPRESSION(Absyn.Exp.ARRAY({exp}));
+      case ("Expression", _) then Absyn.CodeNode.C_EXPRESSION(exp);
+      case ("ExpressionOrModification", _) then Absyn.CodeNode.C_EXPRESSION(exp);
+      else
+        algorithm
+          Error.addSourceMessage(Error.ELAB_CODE_EXP_FAILED, {Dump.printExpStr(quotedExp), kind}, info);
+        then
+          fail();
+    end match;
+  end quoteCodeExp;
+
+  function isCode
+    input Expression exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case CODE() then true;
+      else false;
+    end match;
+  end isCode;
+
+  function isQuotableVariableName
+    input Absyn.Exp exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      local
+        Absyn.Exp arg;
+      case Absyn.Exp.CREF() then true;
+      case Absyn.Exp.CALL(function_ = Absyn.ComponentRef.CREF_IDENT(name = "der"),
+                          functionArgs = Absyn.FunctionArgs.FUNCTIONARGS(args = {arg}, argNames = {}))
+        then isQuotableVariableName(arg);
+      else false;
+    end match;
+  end isQuotableVariableName;
+
+  function codeString
+    "Prints a TypeName or VariableName as the name it quotes, and other code as $Code(...)."
+    input Absyn.CodeNode code;
+    output String str;
+  algorithm
+    str := match code
+      case Absyn.CodeNode.C_TYPENAME() then AbsynUtil.pathString(code.path);
+      case Absyn.CodeNode.C_VARIABLENAME() then Dump.printComponentRefStr(code.componentRef);
+      else "$Code(" + Dump.printCodeStr(code) + ")";
+    end match;
+  end codeString;
+
+  function codeToDAEValue
+    "The scripting API takes VariableNames as an array of VariableName values."
+    input Absyn.CodeNode code;
+    input Type ty;
+    output Values.Value value;
+  algorithm
+    value := match code
+      local
+        list<Absyn.Exp> names;
+
+      case Absyn.CodeNode.C_EXPRESSION(exp = Absyn.Exp.ARRAY(arrayExp = names))
+        guard Type.codeName(ty) == "VariableNames"
+        then ValuesMake.makeArray(list(Values.CODE(variableNameCode(n)) for n in names));
+
+      else Values.CODE(code);
+    end match;
+  end codeToDAEValue;
+
+  function variableNameCode
+    input Absyn.Exp exp;
+    output Absyn.CodeNode code;
+  algorithm
+    code := match exp
+      case Absyn.Exp.CREF() then Absyn.CodeNode.C_VARIABLENAME(exp.componentRef);
+      else Absyn.CodeNode.C_EXPRESSION(exp);
+    end match;
+  end variableNameCode;
 
   function dimensionCount
     input Expression exp;
@@ -3083,11 +3345,32 @@ public
     outExp := match exp
       local
         Expression e1, e2, e3, e4;
+      ComponentRef cr;
+      Call call;
+      array<Expression> arr;
+      list<Expression> args, inv_args;
+      list<list<Expression>> rows;
+      list<Subscript> subs;
 
       case CLKCONST() then CLKCONST(ClockKind.mapExp(exp.clk, func));
-      case CREF() then CREF(exp.ty, ComponentRef.mapExp(exp.cref, func));
-      case ARRAY() guard not exp.literal then makeArray(exp.ty, Array.map(exp.elements, function map(func = func)), exp.literal);
-      case MATRIX() then MATRIX(list(list(map(e, func) for e in row) for row in exp.elements));
+
+      case CREF()
+        algorithm
+          cr := ComponentRef.mapExp(exp.cref, func);
+        then
+          if referenceEq(exp.cref, cr) then exp else CREF(exp.ty, cr);
+
+      case ARRAY() guard not exp.literal
+        algorithm
+          arr := Array.mapCheckReferenceEq(exp.elements, function map(func = func));
+        then
+          if referenceEq(exp.elements, arr) then exp else makeArray(exp.ty, arr, exp.literal);
+
+      case MATRIX()
+        algorithm
+          rows := List.mapCheckReferenceEq(exp.elements, function List.mapCheckReferenceEq(inFunc = function map(func = func)));
+        then
+          if referenceEq(exp.elements, rows) then exp else MATRIX(rows);
 
       case RANGE(step = SOME(e2))
         algorithm
@@ -3106,12 +3389,23 @@ public
           if referenceEq(exp.start, e1) and referenceEq(exp.stop, e3)
             then exp else RANGE(exp.ty, e1, NONE(), e3);
 
-      case TUPLE() then TUPLE(exp.ty, list(map(e, func) for e in exp.elements));
+      case TUPLE()
+        algorithm
+          args := List.mapCheckReferenceEq(exp.elements, function map(func = func));
+        then
+          if referenceEq(exp.elements, args) then exp else TUPLE(exp.ty, args);
 
       case RECORD()
-        then RECORD(exp.path, exp.ty, list(map(e, func) for e in exp.elements));
+        algorithm
+          args := List.mapCheckReferenceEq(exp.elements, function map(func = func));
+        then
+          if referenceEq(exp.elements, args) then exp else RECORD(exp.path, exp.ty, args);
 
-      case CALL() then CALL(Call.mapExp(exp.call, func));
+      case CALL()
+        algorithm
+          call := Call.mapExp(exp.call, func);
+        then
+          if referenceEq(exp.call, call) then exp else CALL(call);
 
       case SIZE(dimIndex = SOME(e2))
         algorithm
@@ -3136,10 +3430,11 @@ public
 
       case MULTARY()
         algorithm
-          // ToDo: referenceEq ?
-          exp.arguments := list(map(arg, func) for arg in exp.arguments);
-          exp.inv_arguments := list(map(arg, func) for arg in exp.inv_arguments);
-        then exp;
+          args := List.mapCheckReferenceEq(exp.arguments, function map(func = func));
+          inv_args := List.mapCheckReferenceEq(exp.inv_arguments, function map(func = func));
+        then
+          if referenceEq(exp.arguments, args) and referenceEq(exp.inv_arguments, inv_args)
+            then exp else MULTARY(args, inv_args, exp.operator);
 
       case UNARY()
         algorithm
@@ -3197,8 +3492,12 @@ public
           if referenceEq(exp.exp, e1) then exp else unbox(e1);
 
       case SUBSCRIPTED_EXP()
-        then SUBSCRIPTED_EXP(map(exp.exp, func),
-          list(Subscript.mapExp(s, func) for s in exp.subscripts), exp.ty, exp.split);
+        algorithm
+          e1 := map(exp.exp, func);
+          subs := List.mapCheckReferenceEq(exp.subscripts, function Subscript.mapExp(func = func));
+        then
+          if referenceEq(exp.exp, e1) and referenceEq(exp.subscripts, subs)
+            then exp else SUBSCRIPTED_EXP(e1, subs, exp.ty, exp.split);
 
       case TUPLE_ELEMENT()
         algorithm
@@ -3220,13 +3519,19 @@ public
 
       case SHARED_LITERAL()
         algorithm
-          exp.exp := map(exp.exp, func);
+          e1 := map(exp.exp, func);
+          if not referenceEq(exp.exp, e1) then
+            exp.exp := e1;
+          end if;
         then
           exp;
 
       case PARTIAL_FUNCTION_APPLICATION()
         algorithm
-          exp.args := list(map(e, func) for e in exp.args);
+          args := List.mapCheckReferenceEq(exp.args, function map(func = func));
+          if not referenceEq(exp.args, args) then
+            exp.args := args;
+          end if;
         then
           exp;
 
@@ -3257,10 +3562,14 @@ public
       input output Expression e;
     end MapFunc;
   protected
-    Expression e;
+    Expression e, e2;
   algorithm
     outExp := match exp
-      case SOME(e) then SOME(map(e, func));
+      case SOME(e)
+        algorithm
+          e2 := map(e, func);
+        then
+          if referenceEq(e, e2) then exp else SOME(e2);
       else exp;
     end match;
   end mapOpt;
@@ -4985,10 +5294,12 @@ public
     positive := match exp
       case INTEGER() then exp.value > 0;
       case REAL() then exp.value > 0.0;
-      case CAST() then isPositive(exp.exp);
-      case UNARY() then isNegative(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "min"), isPositive, false);
+      case ARRAY() then Array.all(exp.elements, isPositive);
       case CALL() then Call.isPositive(exp.call);
+      case UNARY() then isNegative(exp.exp);
+      case IF() then isPositive(exp.trueBranch) and isPositive(exp.falseBranch);
+      case CAST() then isPositive(exp.exp);
       else false;
     end match;
   end isPositive;
@@ -5000,10 +5311,12 @@ public
     negative := match exp
       case INTEGER() then exp.value < 0;
       case REAL() then exp.value < 0.0;
-      case CAST() then isNegative(exp.exp);
-      case UNARY() then isPositive(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "max"), isNegative, false);
+      case ARRAY() then Array.all(exp.elements, isNegative);
       case CALL() then Call.isNegative(exp.call);
+      case UNARY() then isPositive(exp.exp);
+      case IF() then isNegative(exp.trueBranch) and isNegative(exp.falseBranch);
+      case CAST() then isNegative(exp.exp);
       else false;
     end match;
   end isNegative;
@@ -5015,11 +5328,12 @@ public
     res := match exp
       case INTEGER() then exp.value <= 0;
       case REAL() then exp.value <= 0.0;
-      case CAST() then isNonPositive(exp.exp);
-      case UNARY() then isNonNegative(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "max"), isNonPositive, false);
-      case CALL() then Call.isNonPositive(exp.call);
       case ARRAY() then Array.all(exp.elements, isNonPositive);
+      case CALL() then Call.isNonPositive(exp.call);
+      case UNARY() then isNonNegative(exp.exp);
+      case IF() then isNonPositive(exp.trueBranch) and isNonPositive(exp.falseBranch);
+      case CAST() then isNonPositive(exp.exp);
       else false;
     end match;
   end isNonPositive;
@@ -5031,10 +5345,12 @@ public
     res := match exp
       case INTEGER() then exp.value >= 0;
       case REAL() then exp.value >= 0.0;
-      case CAST() then isNonNegative(exp.exp);
-      case UNARY() then isNonPositive(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "min"), isNonNegative, false);
+      case ARRAY() then Array.all(exp.elements, isNonNegative);
       case CALL() then Call.isNonNegative(exp.call);
+      case UNARY() then isNonPositive(exp.exp);
+      case IF() then isNonNegative(exp.trueBranch) and isNonNegative(exp.falseBranch);
+      case CAST() then isNonNegative(exp.exp);
       else false;
     end match;
   end isNonNegative;
@@ -5310,6 +5626,7 @@ public
       case Type.REAL()    then REAL(0.0);
       case Type.INTEGER() then INTEGER(0);
       case Type.BOOLEAN() then BOOLEAN(false);
+      case Type.STRING()  then STRING("");
       case Type.ARRAY()   then fillType(ty, makeZero(Type.arrayElementType(ty)));
       case Type.COMPLEX() then makeOperatorRecordZero(Type.complexNode(ty));
       else algorithm
@@ -5895,6 +6212,7 @@ public
       case PARTIAL_FUNCTION_APPLICATION() then Variability.CONTINUOUS;
       case FILENAME() then Variability.CONSTANT;
       case INSTANCE_NAME() then Variability.CONSTANT;
+      case CODE() then Variability.CONSTANT;
       else
         algorithm
           Error.terminate(getInstanceName() + " got unknown expression.", sourceInfo());
@@ -5976,6 +6294,7 @@ public
       case PARTIAL_FUNCTION_APPLICATION() then Purity.PURE;
       case FILENAME() then Purity.PURE;
       case INSTANCE_NAME() then Purity.PURE;
+      case CODE() then Purity.PURE;
       else
         algorithm
           Error.terminate(getInstanceName() + " got unknown expression.", sourceInfo());
@@ -6149,7 +6468,7 @@ public
           cls_tree := Class.classTree(InstNode.getClass(node));
           (node, false) := ClassTree.lookupElement(elementName, cls_tree);
           ty := InstNode.getType(node);
-          cref := ComponentRef.prefixCref(node, ty, {}, recordExp.cref);
+          cref := ComponentRef.prefixCref(recordFieldNode(node, recordExp.cref), ty, {}, recordExp.cref);
           ty := Type.liftArrayLeftList(ty, Type.arrayDims(recordExp.ty));
         then
           CREF(ty, cref);
@@ -6199,6 +6518,35 @@ public
     end match;
   end recordElement;
 
+  function recordFieldNode
+    "Returns the node of a record field. For backend record variables this is
+     the node of the child variable, otherwise the class component."
+    input InstNode fieldNode;
+    input ComponentRef recordCref;
+    output InstNode node = fieldNode;
+  protected
+    PointerWeak<Variable> var_ptr;
+    list<PointerWeak<Variable>> children;
+    InstNode child_node;
+  algorithm
+    if not (ComponentRef.isCref(recordCref) and InstNode.isVar(ComponentRef.node(recordCref))) then
+      return;
+    end if;
+    InstNode.VAR_NODE(varPointer = var_ptr) := ComponentRef.node(recordCref);
+    () := match Pointer.access(PointerWeak.upgrade(var_ptr))
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.RECORD(children = children))) algorithm
+        for child in children loop
+          child_node := ComponentRef.node(Variable.name(Pointer.access(PointerWeak.upgrade(child))));
+          if InstNode.name(child_node) == InstNode.name(fieldNode) then
+            node := child_node;
+            break;
+          end if;
+        end for;
+      then ();
+      else ();
+    end match;
+  end recordFieldNode;
+
   function nthRecordElement
     "Returns the nth field of a record expression. If the expression is an array
      it will return an array with the nth field in each array element."
@@ -6220,7 +6568,7 @@ public
           node := Type.complexNode(Type.arrayElementType(typeOf(recordExp)));
           node := Class.nthComponent(index, InstNode.getClass(node));
         then
-          fromCref(ComponentRef.prefixCref(node, InstNode.getType(node), {}, recordExp.cref));
+          fromCref(ComponentRef.prefixCref(recordFieldNode(node, recordExp.cref), InstNode.getType(node), {}, recordExp.cref));
 
       case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX()))
         guard arrayEmpty(recordExp.elements)
@@ -6506,6 +6854,46 @@ public
     end match;
   end filterSplitIndices2;
 
+  function isSplitSubscriptedExpOf
+    "Returns true if the expression is a split subscripted expression with a
+     split index of the given node."
+    input Expression exp;
+    input InstNode node;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case SUBSCRIPTED_EXP(split = true)
+        then List.any(exp.subscripts, function filterSplitIndices2(node = node));
+      else false;
+    end match;
+  end isSplitSubscriptedExpOf;
+
+  function replaceSplitIndicesOfNode
+    "Replaces the split indices of the given node, the n:th with the n:th of the
+     given subscripts, e.g. {2, 3}[<lay, 1>] -> {2, 3}[$i1]."
+    input output Expression exp;
+    input InstNode node;
+    input list<Subscript> subscripts;
+  algorithm
+    exp := map(exp, function replaceSplitIndicesOfNode2(node = node, subscripts = subscripts));
+  end replaceSplitIndicesOfNode;
+
+  function replaceSplitIndicesOfNode2
+    input output Expression exp;
+    input InstNode node;
+    input list<Subscript> subscripts;
+  algorithm
+    () := match exp
+      case SUBSCRIPTED_EXP(split = true) guard isSplitSubscriptedExpOf(exp, node)
+        algorithm
+          exp.subscripts := list(match s case Subscript.SPLIT_INDEX() guard filterSplitIndices2(s, node)
+            then listGet(subscripts, s.dimIndex); else s; end match for s in exp.subscripts);
+        then
+          ();
+      else ();
+    end match;
+  end replaceSplitIndicesOfNode2;
+
   function expandSplitIndices
     "Replaces split indices in a subscripted expression with : subscripts."
     input Expression exp;
@@ -6765,10 +7153,15 @@ public
     b := match exp
       local
         Call call;
-        Expression arg;
-      case CALL(call = call as Call.TYPED_CALL(arguments = arg :: _))
+        Expression clk;
+      case CALL(call = call as Call.TYPED_CALL(arguments = _ :: _))
       then match AbsynUtil.pathString(Function.Function.nameConsiderBuiltin(call.fn))
-        case "sample"       then not isLiteral(arg); // sample has a non clocked meaning as well
+        // sample(start, interval) is the non clocked event sample, the clocked one has a clock argument or none
+        case "sample"       then match call.arguments
+            case {_}            then true;
+            case {_, clk}       then Type.isClock(typeOf(clk));
+            else false;
+          end match;
         case "subSample"    then true;
         case "superSample"  then true;
         case "shiftSample"  then true;
@@ -7078,6 +7471,10 @@ public
 
       case MULTARY() algorithm
         exp.operator := Operator.repairMultary(exp.operator, list(typeOf(e) for e in listAppend(exp.arguments, exp.inv_arguments)));
+      then exp;
+
+      case UNARY() algorithm
+        exp.operator := Operator.setType(typeOf(exp.exp), exp.operator);
       then exp;
 
       else exp;

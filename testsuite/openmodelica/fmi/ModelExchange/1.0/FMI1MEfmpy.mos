@@ -2,7 +2,6 @@
 // keywords: fmu export fmi 1.0 model exchange fmpy
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml *.fmu *_FMU.* *.fmutmp *.libs *.lib *.so *.dll *_res.mat *_fmpy.csv *_diff.*.csv *_info.json ExpDecay* SampleCount* Oscillator* StateEvent* DirectFeedthrough*
-// cflags: -d=-newInst
 //
 // Exports a few FMI 1.0 Model-Exchange FMUs and validates them with an
 // *independent* FMI importer (FMPy): each model is simulated both by
@@ -96,7 +95,8 @@ diffSimulationResults("DirectFeedthrough_fmpy.csv", "DirectFeedthrough_res.mat",
 // true
 // ""
 // "ExpDecay.fmu"
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: FMI 1.0 export is deprecated and will be removed after OpenModelica 1.28.0 is released. Export FMI 2.0 or 3.0 instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // Notification: Building FMU for platform 'static' (1/1).
 // Notification: Finished FMU for platform 'static' (1/1).
 // "
@@ -114,7 +114,8 @@ diffSimulationResults("DirectFeedthrough_fmpy.csv", "DirectFeedthrough_res.mat",
 // (true, {})
 // ""
 // "SampleCount.fmu"
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: FMI 1.0 export is deprecated and will be removed after OpenModelica 1.28.0 is released. Export FMI 2.0 or 3.0 instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // Notification: Building FMU for platform 'static' (1/1).
 // Notification: Finished FMU for platform 'static' (1/1).
 // "
@@ -132,7 +133,8 @@ diffSimulationResults("DirectFeedthrough_fmpy.csv", "DirectFeedthrough_res.mat",
 // (true, {})
 // ""
 // "Oscillator.fmu"
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: FMI 1.0 export is deprecated and will be removed after OpenModelica 1.28.0 is released. Export FMI 2.0 or 3.0 instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // Notification: Building FMU for platform 'static' (1/1).
 // Notification: Finished FMU for platform 'static' (1/1).
 // "
@@ -150,7 +152,8 @@ diffSimulationResults("DirectFeedthrough_fmpy.csv", "DirectFeedthrough_res.mat",
 // (true, {})
 // ""
 // "StateEvent.fmu"
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: FMI 1.0 export is deprecated and will be removed after OpenModelica 1.28.0 is released. Export FMI 2.0 or 3.0 instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // Notification: Building FMU for platform 'static' (1/1).
 // Notification: Finished FMU for platform 'static' (1/1).
 // "
@@ -168,7 +171,8 @@ diffSimulationResults("DirectFeedthrough_fmpy.csv", "DirectFeedthrough_res.mat",
 // (true, {})
 // ""
 // "DirectFeedthrough.fmu"
-// "Notification: Building FMU for platform 'static' (1/1).
+// "Warning: FMI 1.0 export is deprecated and will be removed after OpenModelica 1.28.0 is released. Export FMI 2.0 or 3.0 instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.
+// Notification: Building FMU for platform 'static' (1/1).
 // Notification: Finished FMU for platform 'static' (1/1).
 // "
 // record SimulationResult

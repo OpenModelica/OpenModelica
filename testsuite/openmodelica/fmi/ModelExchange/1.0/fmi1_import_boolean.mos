@@ -2,7 +2,6 @@
 // keywords: fmu export import boolean
 // status:   correct
 // teardown_command: rm -rf binaries sources modelDescription.xml resources BooleanImportFMU* BooleanImport* output.log
-// cflags:   -d=-newInst
 //
 // A Modelica boolean is a modelica_boolean, i.e. an int, but the FMI import runtime used to
 // exchange the boolean arrays with the generated wrapper as signed char, so it wrote one byte
@@ -47,11 +46,13 @@ val(fmu.bo3, 0.0);
 // true
 // ""
 // "BooleanImportFMU.fmu"
-// "Notification: Building FMU for platform 'static' (1/1).
+// "Warning: FMI 1.0 export is deprecated and will be removed after OpenModelica 1.28.0 is released. Export FMI 2.0 or 3.0 instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.
+// Notification: Building FMU for platform 'static' (1/1).
 // Notification: Finished FMU for platform 'static' (1/1).
 // "
 // "BooleanImportFMU_me_FMU.mo"
-// ""
+// "Warning: FMI 1.0 import is deprecated and will be removed after OpenModelica 1.28.0 is released. Import an FMI 2.0 or 3.0 FMU instead, see https://github.com/OpenModelica/OpenModelica/issues/6143.
+// "
 // true
 // ""
 // true

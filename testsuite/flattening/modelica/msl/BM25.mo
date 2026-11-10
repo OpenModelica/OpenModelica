@@ -1064,7 +1064,6 @@ model BM25
 
 equation
   connect(tan1.inPort,constant1.outPort) annotation(Line(visible=true,points={{-27.87,16.95},{-49.71,16.95}}));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM25;
 // function Modelica.Math.tan
 // input Real u(quantity = "Angle", unit = "rad", displayUnit = "deg");
@@ -1095,33 +1094,25 @@ end BM25;
 // tan1.inPort.signal[1] = constant1.outPort.signal[1];
 // end BM25;
 // Result:
-// function Modelica.Math.tan "tangent (u shall not be -pi/2, pi/2, 3*pi/2, ...)"
-//   input Real u(quantity = "Angle", unit = "rad", displayUnit = "deg");
-//   output Real y;
-//
-//   external "C" y = tan(u);
-// end Modelica.Math.tan;
-//
 // class BM25
-//   parameter Integer tan1.n = 1 "Number of inputs (= number of outputs)";
-//   parameter Integer tan1.inPort.n = tan1.n "Dimension of signal vector";
+//   final parameter Integer tan1.n = 1 "Number of inputs (= number of outputs)";
+//   final parameter Integer tan1.inPort.n = 1 "Dimension of signal vector";
 //   Real tan1.inPort.signal[1] "Real input signals";
-//   parameter Integer tan1.outPort.n = tan1.n "Dimension of signal vector";
+//   final parameter Integer tan1.outPort.n = 1 "Dimension of signal vector";
 //   Real tan1.outPort.signal[1] "Real output signals";
 //   Real tan1.y[1] "Output signals";
 //   protected Real tan1.u[1] "Input signals";
-//   parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
-//   parameter Integer constant1.outPort.n = constant1.nout "Dimension of signal vector";
+//   parameter Real constant1.k[1] = 1.0 "Constant output values";
+//   final parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
+//   final parameter Integer constant1.outPort.n = 1 "Dimension of signal vector";
 //   Real constant1.outPort.signal[1] "Real output signals";
 //   Real constant1.y[1];
-//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 // equation
-//   tan1.u = {tan1.inPort.signal[1]};
+//   tan1.inPort.signal[1] = constant1.outPort.signal[1];
+//   tan1.u = tan1.inPort.signal;
 //   tan1.y[1] = tan(tan1.u[1]);
 //   tan1.y[1] = tan1.outPort.signal[1];
 //   constant1.outPort.signal[1] = constant1.k[1];
 //   constant1.y[1] = constant1.outPort.signal[1];
-//   assert(tan1.inPort.n == constant1.outPort.n, "automatically generated from connect");
-//   constant1.outPort.signal[1] = tan1.inPort.signal[1];
 // end BM25;
 // endResult

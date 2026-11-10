@@ -134,6 +134,7 @@ algorithm
   next_context := InstContext.set(context, NFInstContext.CLASS);
   typeClassType(cls, NFBinding.EMPTY_BINDING, next_context, cls);
   typeComponents(cls, next_context);
+  checkStreamConnectorClass(cls);
   execStat("NFTyping.typeComponents");
   typeBindings(cls, next_context);
   execStat("NFTyping.typeBindings");
@@ -291,6 +292,9 @@ algorithm
     case Class.INSTANCED_CLASS(restriction = Restriction.FUNCTION())
         guard InstNode.isComponent(instanceNode)
       algorithm
+        // The function is normally instantiated when a call of the parameter is
+        // instantiated, but the parameter might not be called anywhere.
+        Function.instFunctionNode(clsNode, context, InstNode.info(clsNode));
         fn :: _ := Function.typeNodeCache(clsNode);
         ty := Type.FUNCTION(fn, NFType.FunctionType.FUNCTIONAL_PARAMETER);
         cls.ty := ty;
@@ -326,6 +330,7 @@ end typeClassType;
 function makeConnectorType
   input ClassTree ctree;
   input Boolean isExpandable;
+  input Boolean onlyPresent = false;
   output ComplexType connectorTy;
 protected
   list<NFInstNode.ScopeRef> pots = {}, flows = {}, streams = {}, exps = {};
@@ -346,6 +351,10 @@ algorithm
   else
     for c in ClassTree.enumerateComponents(ctree) loop
       cty := Component.connectorType(InstNode.component(InstNode.resolveInner(c)));
+
+      if onlyPresent and ConnectorType.isPotentiallyPresent(cty) then
+        continue;
+      end if;
 
       if intBitAnd(cty, ConnectorType.FLOW) > 0 then
         flows := InstNode.scopeRef(c) :: flows;
@@ -410,6 +419,37 @@ algorithm
   end if;
 end checkConnectorTypeBalance;
 
+function checkStreamConnectorClass
+  "A stream connector must have exactly one flow variable, MLS 3.7 section
+   15.1. Connector components are checked in checkConnectorTypeBalance, this
+   checks a connector that is itself the class being instantiated."
+  input InstNode cls;
+protected
+  Class c = InstNode.getClass(cls);
+  Integer flows = 0, streams = 0;
+  ConnectorType.Type cty;
+algorithm
+  if not Restriction.isConnector(Class.restriction(c)) then
+    return;
+  end if;
+
+  for comp in ClassTree.enumerateComponents(Class.classTree(c)) loop
+    cty := Component.connectorType(InstNode.component(comp));
+
+    if ConnectorType.isFlow(cty) then
+      flows := flows + 1;
+    elseif ConnectorType.isStream(cty) then
+      streams := streams + 1;
+    end if;
+  end for;
+
+  if streams > 0 and flows <> 1 then
+    Error.addSourceMessage(Error.MISMATCHED_FLOW_IN_STREAM_CONNECTOR,
+      {InstNode.name(cls), String(flows)}, InstNode.info(cls));
+    fail();
+  end if;
+end checkStreamConnectorClass;
+
 function checkBlockConnector
   "Checks that all variables in a public connector component of a block are
    input, output, parameter, or constant."
@@ -435,7 +475,7 @@ algorithm
   vars := listReverseInPlace(findNonCausalConnectorVars(component, InstNode.name(component), {}));
 
   if not listEmpty(vars) then
-    Error.addStrictMessage(Error.NON_CAUSAL_BLOCK_CONNECTOR,
+    Error.addSourceMessageAndFail(Error.NON_CAUSAL_BLOCK_CONNECTOR,
       {InstNode.name(component), stringDelimitList(vars, ", ")}, InstNode.info(component));
   end if;
 end checkBlockConnector;
@@ -532,6 +572,8 @@ algorithm
         ty := Type.liftArrayLeftList(ty, arrayList(dims));
 
         if Binding.isBound(c.condition) then
+          c.condition := markConditionProcessing(c.condition, node);
+          InstNode.updateComponent(c, node);
           c.condition := typeComponentCondition(c.condition, context, evaluate = true);
           is_deleted := Expression.isFalse(Binding.getExp(c.condition));
         else
@@ -572,6 +614,30 @@ algorithm
 
   end match;
 end typeComponent;
+
+function markConditionProcessing
+  "Marks an untyped condition as being typed, and fails if it already is since
+   the condition then depends on itself."
+  input output Binding condition;
+  input InstNode node;
+algorithm
+  () := match condition
+    case Binding.UNTYPED_BINDING()
+      algorithm
+        if condition.isProcessing then
+          Error.addSourceMessage(Error.CIRCULAR_PARAM, {InstNode.name(node),
+            Prefixes.variabilityString(Component.variability(InstNode.component(node)))},
+            Binding.getInfo(condition));
+          fail();
+        end if;
+
+        condition.isProcessing := true;
+      then
+        ();
+
+    else ();
+  end match;
+end markConditionProcessing;
 
 function typeComponentTry
   input InstNode componentNode;
@@ -1219,7 +1285,7 @@ algorithm
       },
       Binding.getInfo(binding));
 
-    if not InstContext.inRelaxed(context) then
+    if not InstContext.inInstanceAPI(context) then
       fail();
     end if;
   end if;
@@ -2394,7 +2460,7 @@ algorithm
     // If the array is empty it probably already has a type, since empty arrays
     // can't be created in Modelica without evaluating some expression. So use
     // that type instead of an unknown type so we don't lose it.
-    ty1 := Type.arrayElementType(ty);
+    ty1 := if Type.isArray(ty) then Type.unliftArray(ty) else Type.arrayElementType(ty);
   end if;
 
   // Give the actual error-messages here after we got the super-type of the array
@@ -2699,7 +2765,10 @@ algorithm
             exp := Expression.SIZE(exp, SOME(index));
           end if;
 
-          if not InstContext.inFunction(context) or Dimension.isKnown(dim) then
+          if Dimension.isResizable(dim) and evaluate then
+            // the size of a resizable dimension is its symbolic size, it must not be evaluated.
+            variability := Dimension.variability(dim);
+          elseif not InstContext.inFunction(context) or Dimension.isKnown(dim) then
             // size is constant outside functions, or for known dimensions inside functions.
             variability := Variability.CONSTANT;
           else
@@ -2830,8 +2899,8 @@ algorithm
 
   if TypeCheck.isIncompatibleMatch(ty_match) then
     Error.addSourceMessage(Error.TYPE_MISMATCH_IF_EXP,
-      {"", Expression.toString(tb), Type.toString(tb_ty),
-           Expression.toString(fb), Type.toString(fb_ty)}, info);
+      {Expression.toString(tb), Type.toString(tb_ty),
+       Expression.toString(fb), Type.toString(fb_ty)}, info);
     fail();
   end if;
 
@@ -3993,11 +4062,31 @@ algorithm
   (cr, dim_index) := range_cr;
 
   // Deduced iteration range is 1:size(cr, dim_index)
-  dim := Type.nthDimension(InstNode.getType(ComponentRef.node(cr)), dim_index);
+  dim := iteratorCrefDim(ComponentRef.node(cr), dim_index, info);
   start_exp := Dimension.lowerBoundExp(dim);
   stop_exp := Dimension.endExp(dim, Expression.CREF(Type.UNKNOWN(), cr), dim_index);
   iterationRange := Expression.RANGE(Type.UNKNOWN(), start_exp, NONE(), stop_exp);
 end deduceIterationRange;
+
+function iteratorCrefDim
+  "Returns a dimension of a component subscripted with an implicit iterator.
+   The dimensions of e.g. package constants might not have been typed yet."
+  input InstNode node;
+  input Integer index;
+  input SourceInfo info;
+  output Dimension dim;
+protected
+  Type ty = InstNode.getType(node);
+algorithm
+  dim := Type.nthDimension(ty, index);
+
+  dim := match dim
+    case Dimension.UNTYPED()
+      then typeDimension(listArray(Type.arrayDims(ty)), index, node,
+        Component.getBinding(InstNode.component(node)), NFInstContext.CLASS, info);
+    else dim;
+  end match;
+end iteratorCrefDim;
 
 function collectIteratorCrefs
   "Traverses an expression and return a list of crefs that the given iterator
@@ -4068,8 +4157,8 @@ algorithm
   end if;
 
   // The crefs are probably untyped here, so use the type of the instance nodes instead.
-  dim1 := Type.nthDimension(InstNode.getType(node1), index1);
-  dim2 := Type.nthDimension(InstNode.getType(node2), index2);
+  dim1 := iteratorCrefDim(node1, index1, info);
+  dim2 := iteratorCrefDim(node2, index2, info);
 
   if not Dimension.isEqualKnownSize(dim1, node1, index1, dim2, node2, index2) then
     Error.addSourceMessage(Error.INCOMPATIBLE_IMPLICIT_RANGES,

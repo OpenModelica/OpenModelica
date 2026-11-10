@@ -1,7 +1,6 @@
 // name:      Circuit3x
 // keywords:  resolveLoops
 // status:    correct
-// cflags: -d=-newInst
 //
 
 loadModel(Modelica, {"4.1.0"}); getErrorString();

@@ -6,14 +6,13 @@
 // der(expr): For Real parameters and constants the result is a zero scalar or array of the same size as the variable.
 //
 
-class DerConstant1
+model DerConstant1
   constant Real pa = 1;
   Real a = der(pa);
   Real b = der(1.0);
   parameter Real[1,2,1,2] pc = {{{{1,2}},{{3,4}}}};
   Real[1,2,1,2] c = der(pc);
   Real[1,2,1,2] d = der({{{{1.0,2.0}},{{3.0,4.0}}}});
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DerConstant1;
 
 // Result:

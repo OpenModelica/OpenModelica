@@ -5,13 +5,12 @@
 // Names are looked up in a partially defined class.
 //
 
-class Lookup1
+model Lookup1
   constant Real a = 3.0;
-  class B
+  model B
     Real c = a;
   end B;
   B b;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Lookup1;
 
 

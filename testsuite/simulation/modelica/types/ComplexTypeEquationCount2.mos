@@ -55,5 +55,5 @@ checkModel(ExtendedThermodynamicState);
 // true
 // "Check of ExtendedThermodynamicState completed successfully.
 // Class ExtendedThermodynamicState has 7 equation(s) and 7 variable(s).
-// 4 of these are trivial equation(s)."
+// 2 of these are trivial equation(s)."
 // endResult

@@ -45,7 +45,6 @@ equation
   else if (time < thrustEndTime) then force2
   else 0;
   apollo.gravity = moon.g*moon.mass/(apollo.altitude + moon.radius)^2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MoonLanding;
 
 // insert expected flat file here. Can be done by issuing the command

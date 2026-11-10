@@ -1,0 +1,56 @@
+// name:      guruTearing2
+// keywords:  NewBackend, tearing, guru
+// status:    correct
+//
+// Loops without tearing select annotations stay untorn, loops whose annotated variables do not tear them get more tear variables.
+
+loadString("
+model guruTearing2
+  Real x1, x2 annotation(__OpenModelica_tearingSelect = TearingSelect.always);
+  Real y1, y2;
+  Real z1 annotation(__OpenModelica_tearingSelect = TearingSelect.always);
+  Real z2, z3;
+equation
+  x1 = cos(x2);
+  x2 = x1 + time;
+  y1 = sin(y2) + time;
+  y2 = 0.5*cos(y1);
+  z1 = z2 + z3 + time;
+  z2 = cos(z3) + 0.1*z1;
+  z3 = sin(z2) - 0.1*z1;
+end guruTearing2;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --tearingMethod=cellier"); getErrorString();
+simulate(guruTearing2, fileNamePrefix = "guruTearing2_cellier"); getErrorString();
+
+setCommandLineOptions("--tearingMethod=guruTearing"); getErrorString();
+simulate(guruTearing2); getErrorString();
+
+diffSimulationResults("guruTearing2_res.mat", "guruTearing2_cellier_res.mat", "guruTearing2_diff.csv", 1e-8);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "guruTearing2_cellier_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'guruTearing2_cellier', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "guruTearing2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'guruTearing2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true, {})
+// endResult

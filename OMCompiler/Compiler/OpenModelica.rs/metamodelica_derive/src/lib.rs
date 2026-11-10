@@ -21,16 +21,17 @@
 
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, Data, DeriveInput, Fields, Index};
+use syn::{Data, DeriveInput, Fields, Index, parse_macro_input};
 
 /// True if the field type is syntactically `Arc<…>` (the MMC boxed-value
 /// handle). Used by [`derive_meta_cmp`] to give such fields a pointer-identity
 /// fast path.
 fn is_arc(ty: &syn::Type) -> bool {
     if let syn::Type::Path(tp) = ty
-        && let Some(seg) = tp.path.segments.last() {
-            return seg.ident == "Arc";
-        }
+        && let Some(seg) = tp.path.segments.last()
+    {
+        return seg.ident == "Arc";
+    }
     false
 }
 
@@ -90,10 +91,7 @@ pub fn derive_meta_cmp(input: TokenStream) -> TokenStream {
     let (eq_body, cmp_body) = match &input.data {
         Data::Struct(data) => {
             let (eqs, cmps) = struct_field_cmps(&data.fields, &eq_one, &cmp_one);
-            (
-                quote! { #(#eqs)&&* },
-                chain_cmps(&cmps),
-            )
+            (quote! { #(#eqs)&&* }, chain_cmps(&cmps))
         }
         Data::Enum(data) => {
             let mut eq_arms = Vec::new();
@@ -110,20 +108,54 @@ pub fn derive_meta_cmp(input: TokenStream) -> TokenStream {
                         let arcs: Vec<bool> = named.named.iter().map(|f| is_arc(&f.ty)).collect();
                         let l: Vec<_> = names.iter().map(|n| quote::format_ident!("__l_{}", n)).collect();
                         let r: Vec<_> = names.iter().map(|n| quote::format_ident!("__r_{}", n)).collect();
-                        let eqs: Vec<_> = (0..names.len()).map(|i| { let (li,ri)=(&l[i],&r[i]); eq_one(&quote!(#li), &quote!(#ri), arcs[i]) }).collect();
-                        let cmps: Vec<_> = (0..names.len()).map(|i| { let (li,ri)=(&l[i],&r[i]); cmp_one(&quote!(#li), &quote!(#ri), arcs[i]) }).collect();
-                        let eq_all = if eqs.is_empty() { quote!(true) } else { quote!(#(#eqs)&&*) };
+                        let eqs: Vec<_> = (0..names.len())
+                            .map(|i| {
+                                let (li, ri) = (&l[i], &r[i]);
+                                eq_one(&quote!(#li), &quote!(#ri), arcs[i])
+                            })
+                            .collect();
+                        let cmps: Vec<_> = (0..names.len())
+                            .map(|i| {
+                                let (li, ri) = (&l[i], &r[i]);
+                                cmp_one(&quote!(#li), &quote!(#ri), arcs[i])
+                            })
+                            .collect();
+                        let eq_all = if eqs.is_empty() {
+                            quote!(true)
+                        } else {
+                            quote!(#(#eqs)&&*)
+                        };
                         let cmp_all = chain_cmps(&cmps);
-                        eq_arms.push(quote! { (Self::#vname { #(#names: #l),* }, Self::#vname { #(#names: #r),* }) => #eq_all, });
+                        eq_arms.push(
+                            quote! { (Self::#vname { #(#names: #l),* }, Self::#vname { #(#names: #r),* }) => #eq_all, },
+                        );
                         cmp_arms.push(quote! { (Self::#vname { #(#names: #l),* }, Self::#vname { #(#names: #r),* }) => #cmp_all, });
                     }
                     Fields::Unnamed(unnamed) => {
                         let arcs: Vec<bool> = unnamed.unnamed.iter().map(|f| is_arc(&f.ty)).collect();
-                        let l: Vec<_> = (0..unnamed.unnamed.len()).map(|i| quote::format_ident!("__l{}", i)).collect();
-                        let r: Vec<_> = (0..unnamed.unnamed.len()).map(|i| quote::format_ident!("__r{}", i)).collect();
-                        let eqs: Vec<_> = (0..l.len()).map(|i| { let (li,ri)=(&l[i],&r[i]); eq_one(&quote!(#li), &quote!(#ri), arcs[i]) }).collect();
-                        let cmps: Vec<_> = (0..l.len()).map(|i| { let (li,ri)=(&l[i],&r[i]); cmp_one(&quote!(#li), &quote!(#ri), arcs[i]) }).collect();
-                        let eq_all = if eqs.is_empty() { quote!(true) } else { quote!(#(#eqs)&&*) };
+                        let l: Vec<_> = (0..unnamed.unnamed.len())
+                            .map(|i| quote::format_ident!("__l{}", i))
+                            .collect();
+                        let r: Vec<_> = (0..unnamed.unnamed.len())
+                            .map(|i| quote::format_ident!("__r{}", i))
+                            .collect();
+                        let eqs: Vec<_> = (0..l.len())
+                            .map(|i| {
+                                let (li, ri) = (&l[i], &r[i]);
+                                eq_one(&quote!(#li), &quote!(#ri), arcs[i])
+                            })
+                            .collect();
+                        let cmps: Vec<_> = (0..l.len())
+                            .map(|i| {
+                                let (li, ri) = (&l[i], &r[i]);
+                                cmp_one(&quote!(#li), &quote!(#ri), arcs[i])
+                            })
+                            .collect();
+                        let eq_all = if eqs.is_empty() {
+                            quote!(true)
+                        } else {
+                            quote!(#(#eqs)&&*)
+                        };
                         let cmp_all = chain_cmps(&cmps);
                         eq_arms.push(quote! { (Self::#vname(#(#l),*), Self::#vname(#(#r),*)) => #eq_all, });
                         cmp_arms.push(quote! { (Self::#vname(#(#l),*), Self::#vname(#(#r),*)) => #cmp_all, });
@@ -133,15 +165,20 @@ pub fn derive_meta_cmp(input: TokenStream) -> TokenStream {
             // Different variants: order by declaration index (== the
             // discriminant the builtin derive uses). `__variant_index` is a
             // local closure so the fallback arm stays simple.
-            let idx_arms = data.variants.iter().enumerate().map(|(i, v)| {
-                let vname = &v.ident;
-                let i = i as isize;
-                match &v.fields {
-                    Fields::Unit => quote! { Self::#vname => #i, },
-                    Fields::Named(_) => quote! { Self::#vname { .. } => #i, },
-                    Fields::Unnamed(_) => quote! { Self::#vname(..) => #i, },
-                }
-            }).collect::<Vec<_>>();
+            let idx_arms = data
+                .variants
+                .iter()
+                .enumerate()
+                .map(|(i, v)| {
+                    let vname = &v.ident;
+                    let i = i as isize;
+                    match &v.fields {
+                        Fields::Unit => quote! { Self::#vname => #i, },
+                        Fields::Named(_) => quote! { Self::#vname { .. } => #i, },
+                        Fields::Unnamed(_) => quote! { Self::#vname(..) => #i, },
+                    }
+                })
+                .collect::<Vec<_>>();
             let idx_fn = quote! {
                 let __idx = |__s: &Self| -> isize { match __s { #(#idx_arms)* } };
             };
@@ -220,7 +257,9 @@ fn struct_field_cmps(
                 eqs.push(eq_one(&l, &r, is_arc(&f.ty)));
                 cmps.push(cmp_one(&l, &r, is_arc(&f.ty)));
             }
-            if eqs.is_empty() { eqs.push(quote! { true }); }
+            if eqs.is_empty() {
+                eqs.push(quote! { true });
+            }
             (eqs, cmps)
         }
         Fields::Unnamed(unnamed) => {
@@ -233,7 +272,9 @@ fn struct_field_cmps(
                 eqs.push(eq_one(&l, &r, is_arc(&f.ty)));
                 cmps.push(cmp_one(&l, &r, is_arc(&f.ty)));
             }
-            if eqs.is_empty() { eqs.push(quote! { true }); }
+            if eqs.is_empty() {
+                eqs.push(quote! { true });
+            }
             (eqs, cmps)
         }
     }
@@ -248,9 +289,7 @@ pub fn derive_reference_eq(input: TokenStream) -> TokenStream {
     // builtin derives bound their own trait.
     let mut generics = input.generics.clone();
     for param in generics.type_params_mut() {
-        param
-            .bounds
-            .push(syn::parse_quote!(metamodelica::ReferenceEq));
+        param.bounds.push(syn::parse_quote!(metamodelica::ReferenceEq));
     }
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
@@ -267,19 +306,9 @@ pub fn derive_reference_eq(input: TokenStream) -> TokenStream {
                         (Self::#vname, Self::#vname) => true,
                     },
                     Fields::Named(named) => {
-                        let names: Vec<_> = named
-                            .named
-                            .iter()
-                            .map(|f| f.ident.as_ref().unwrap())
-                            .collect();
-                        let lhs: Vec<_> = names
-                            .iter()
-                            .map(|n| quote::format_ident!("__refeq_l_{}", n))
-                            .collect();
-                        let rhs: Vec<_> = names
-                            .iter()
-                            .map(|n| quote::format_ident!("__refeq_r_{}", n))
-                            .collect();
+                        let names: Vec<_> = named.named.iter().map(|f| f.ident.as_ref().unwrap()).collect();
+                        let lhs: Vec<_> = names.iter().map(|n| quote::format_ident!("__refeq_l_{}", n)).collect();
+                        let rhs: Vec<_> = names.iter().map(|n| quote::format_ident!("__refeq_r_{}", n)).collect();
                         quote! {
                             (Self::#vname { #(#names: #lhs),* }, Self::#vname { #(#names: #rhs),* }) =>
                                 true #(&& metamodelica::ReferenceEq::reference_eq(#lhs, #rhs))*,
@@ -398,7 +427,10 @@ pub fn derive_mm_serial(input: TokenStream) -> TokenStream {
     let name = &input.ident;
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
-    fn encode_fields(fields: &Fields, bind: impl Fn(usize, &syn::Field) -> proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    fn encode_fields(
+        fields: &Fields,
+        bind: impl Fn(usize, &syn::Field) -> proc_macro2::TokenStream,
+    ) -> proc_macro2::TokenStream {
         let calls = fields.iter().enumerate().map(|(i, f)| {
             let b = bind(i, f);
             quote! { metamodelica::serial::MMSerial::mm_encode(#b, __e); }
@@ -415,7 +447,10 @@ pub fn derive_mm_serial(input: TokenStream) -> TokenStream {
                 quote! { { #(#fs)* } }
             }
             Fields::Unnamed(unnamed) => {
-                let fs = unnamed.unnamed.iter().map(|_| quote! { metamodelica::serial::MMSerial::mm_decode(__d), });
+                let fs = unnamed
+                    .unnamed
+                    .iter()
+                    .map(|_| quote! { metamodelica::serial::MMSerial::mm_decode(__d), });
                 quote! { ( #(#fs)* ) }
             }
             Fields::Unit => quote! {},
@@ -437,7 +472,10 @@ pub fn derive_mm_serial(input: TokenStream) -> TokenStream {
     fn binding(i: usize, f: &syn::Field) -> proc_macro2::TokenStream {
         match &f.ident {
             Some(n) => quote! { #n },
-            None => { let n = quote::format_ident!("__f{}", i); quote! { #n } }
+            None => {
+                let n = quote::format_ident!("__f{}", i);
+                quote! { #n }
+            }
         }
     }
 
@@ -445,7 +483,10 @@ pub fn derive_mm_serial(input: TokenStream) -> TokenStream {
         Data::Struct(data) => {
             let enc = encode_fields(&data.fields, |i, f| match &f.ident {
                 Some(n) => quote! { &self.#n },
-                None => { let idx = Index::from(i); quote! { &self.#idx } }
+                None => {
+                    let idx = Index::from(i);
+                    quote! { &self.#idx }
+                }
             });
             let dec = decode_fields(&data.fields);
             (enc, quote! { Self #dec })
@@ -464,8 +505,10 @@ pub fn derive_mm_serial(input: TokenStream) -> TokenStream {
                 let fields = decode_fields(&v.fields);
                 quote! { #tag => Self::#vname #fields, }
             });
-            (quote! { match self { #(#enc_arms)* } },
-             quote! { match __d.varint() { #(#dec_arms)* _ => panic!("invalid variant tag") } })
+            (
+                quote! { match self { #(#enc_arms)* } },
+                quote! { match __d.varint() { #(#dec_arms)* _ => panic!("invalid variant tag") } },
+            )
         }
         Data::Union(_) => {
             return syn::Error::new_spanned(name, "MMSerial cannot be derived for unions")
@@ -478,6 +521,144 @@ pub fn derive_mm_serial(input: TokenStream) -> TokenStream {
         impl #impl_generics metamodelica::serial::MMSerial for #name #ty_generics #where_clause {
             fn mm_encode(&self, __e: &mut metamodelica::serial::Encoder) { #encode }
             fn mm_decode(__d: &mut metamodelica::serial::Decoder) -> Self { #decode }
+        }
+    })
+}
+
+/// `#[derive(MMReflect)]` — [`metamodelica::reflect::MMReflect`] for a record
+/// or uniontype, and `ToMMField` for it as an inline field. A `#[repr(i32)]`
+/// fieldless enum is a Modelica enumeration and only gets `ToMMField`.
+/// Generic types get nothing; their fields read as opaque.
+#[proc_macro_derive(MMReflect)]
+pub fn derive_mm_reflect(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    let name = &input.ident;
+    if !input.generics.params.is_empty() {
+        return TokenStream::new();
+    }
+    let type_name = name.to_string();
+
+    let is_repr_i32 = input
+        .attrs
+        .iter()
+        .any(|a| a.path().is_ident("repr") && a.parse_args::<syn::Ident>().map(|i| i == "i32").unwrap_or(false));
+    if let (true, Data::Enum(data)) = (is_repr_i32, &input.data) {
+        let arms = data.variants.iter().map(|v| {
+            let vname = &v.ident;
+            let lit = vname.to_string();
+            quote! { Self::#vname => #lit, }
+        });
+        return TokenStream::from(quote! {
+            impl metamodelica::reflect::ToMMField for #name {
+                fn to_mm_field(&self) -> metamodelica::reflect::MMField {
+                    metamodelica::reflect::MMField::Enum {
+                        type_name: #type_name,
+                        literal: match self { #(#arms)* },
+                        index: *self as i32,
+                    }
+                }
+            }
+        });
+    }
+
+    fn field_names(fields: &Fields) -> Vec<String> {
+        fields
+            .iter()
+            .enumerate()
+            .map(|(i, f)| match &f.ident {
+                Some(n) => n.to_string().trim_start_matches("r#").to_owned(),
+                None => format!("_{i}"),
+            })
+            .collect()
+    }
+    fn probe(e: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+        quote! { (&metamodelica::reflect::Probe(#e)).mm_probe() }
+    }
+    fn field_arms(
+        fields: &Fields,
+        bind: impl Fn(usize, &syn::Field) -> proc_macro2::TokenStream,
+    ) -> proc_macro2::TokenStream {
+        let arms = fields.iter().enumerate().map(|(i, f)| {
+            let p = probe(bind(i, f));
+            quote! { #i => #p, }
+        });
+        quote! { match __i { #(#arms)* _ => return None } }
+    }
+
+    let (ctor, names, field) = match &input.data {
+        Data::Struct(data) => {
+            let names = field_names(&data.fields);
+            let arms = field_arms(&data.fields, |i, f| match &f.ident {
+                Some(n) => quote! { &self.#n },
+                None => {
+                    let idx = Index::from(i);
+                    quote! { &self.#idx }
+                }
+            });
+            (quote! { #type_name }, quote! { &[#(#names),*] }, arms)
+        }
+        Data::Enum(data) => {
+            let ctor_arms = data.variants.iter().map(|v| {
+                let vname = &v.ident;
+                let lit = vname.to_string();
+                quote! { Self::#vname { .. } => #lit, }
+            });
+            let name_arms = data.variants.iter().map(|v| {
+                let vname = &v.ident;
+                let names = field_names(&v.fields);
+                quote! { Self::#vname { .. } => &[#(#names),*], }
+            });
+            let field_arms_all = data.variants.iter().map(|v| {
+                let vname = &v.ident;
+                let binds: Vec<_> = v
+                    .fields
+                    .iter()
+                    .enumerate()
+                    .map(|(i, _)| quote::format_ident!("__f{}", i))
+                    .collect();
+                let pat = match &v.fields {
+                    Fields::Named(named) => {
+                        let ns = named.named.iter().map(|f| f.ident.as_ref().unwrap());
+                        quote! { { #(#ns: #binds),* } }
+                    }
+                    Fields::Unnamed(_) => quote! { ( #(#binds),* ) },
+                    Fields::Unit => quote! {},
+                };
+                let arms = field_arms(&v.fields, |i, _| {
+                    let b = &binds[i];
+                    quote! { #b }
+                });
+                quote! { Self::#vname #pat => #arms, }
+            });
+            (
+                quote! { match self { #(#ctor_arms)* } },
+                quote! { match self { #(#name_arms)* } },
+                quote! { match self { #(#field_arms_all)* } },
+            )
+        }
+        Data::Union(_) => {
+            return syn::Error::new_spanned(name, "MMReflect cannot be derived for unions")
+                .to_compile_error()
+                .into();
+        }
+    };
+
+    TokenStream::from(quote! {
+        impl metamodelica::reflect::MMReflect for #name {
+            fn mm_type_name(&self) -> &'static str { #type_name }
+            fn mm_ctor_name(&self) -> &'static str { #ctor }
+            fn mm_field_names(&self) -> &'static [&'static str] { #names }
+            #[allow(unused_variables, unreachable_code)]
+            fn mm_field(&self, __i: usize) -> Option<metamodelica::reflect::MMField> {
+                #[allow(unused_imports)]
+                use metamodelica::reflect::{ProbeField as _, ProbeOpaque as _};
+                Some(#field)
+            }
+        }
+        impl metamodelica::reflect::ToMMField for #name {
+            fn to_mm_field(&self) -> metamodelica::reflect::MMField {
+                metamodelica::reflect::MMField::Node(std::sync::Arc::new(self.clone()))
+            }
         }
     })
 }

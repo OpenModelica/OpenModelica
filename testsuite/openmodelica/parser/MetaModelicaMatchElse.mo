@@ -1,6 +1,6 @@
 // name: MetaModelicaMatchElse
 // status: correct
-// cflags: -g=MetaModelica -i=MetaModelicaMatchElse.A -d=-newInst
+// cflags: -g=MetaModelica -i=MetaModelicaMatchElse.A
 //
 // Tests that the parser can handle all sorts of match/matchcontinue
 
@@ -23,7 +23,7 @@ algorithm
   _ := matchcontinue (x) case 1 then fail(); else 2; end matchcontinue;
 end f1;
 
-class A
+model A
 constant Real x = 1.0;
 end A;
 end MetaModelicaMatchElse;

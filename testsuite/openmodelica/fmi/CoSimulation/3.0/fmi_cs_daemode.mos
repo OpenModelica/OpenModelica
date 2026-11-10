@@ -1,0 +1,80 @@
+// name: fmi_cs_daemode.mos
+// keywords: FMI 2.0 3.0 export CoSimulation daeMode IDA
+// status: correct
+// teardown_command: rm -rf DaeModeWhenLoop* fmi_cs_daemode_*
+//
+// The Co-Simulation FMU of a --daeMode model integrates the residual form with
+// IDA. The model is the one of fmi3_wasm_daemode.mos, which the ODE backend
+// cannot translate. The FMUs, run by FMPy, give the result of the simulation,
+// the event included. me_cs of FMI 2.0 exports Co-Simulation only: fmi-ls-dae
+// needs FMI 3.0. So does me_cs of 2.0+3.0, whose modelDescription.xml is the
+// FMI 2.0 one. A wasm target would export wasm FMUs, which also serve Model
+// Exchange of FMI 2.0; fmi3_wasm_daemode*.mos test those.
+
+loadFile("fmi3_wasm_daemode.mo"); getErrorString();
+setCommandLineOptions(if regexBool(getEnvironmentVar("OPENMODELICA_TEST_SIMCODETARGET"), "^wasm") then "--simCodeTarget=C" else ""); getErrorString();
+
+simulate(DaeModeWhenLoop, fileNamePrefix="fmi_cs_daemode_ref"); getErrorString();
+
+buildModelFMU(DaeModeWhenLoop, version="2.0", fmuType="cs", fileNamePrefix="DaeModeWhenLoop2"); getErrorString();
+buildModelFMU(DaeModeWhenLoop, version="3.0", fmuType="cs", fileNamePrefix="DaeModeWhenLoop3"); getErrorString();
+
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py DaeModeWhenLoop2.fmu fmi_cs_daemode_2.csv 5.0 x y tSwitch"); getErrorString();
+diffSimulationResults("fmi_cs_daemode_2.csv", "fmi_cs_daemode_ref_res.mat", "fmi_cs_daemode_diff2", vars={"x","y","tSwitch"}); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py DaeModeWhenLoop3.fmu fmi_cs_daemode_3.csv 5.0 x y tSwitch"); getErrorString();
+diffSimulationResults("fmi_cs_daemode_3.csv", "fmi_cs_daemode_ref_res.mat", "fmi_cs_daemode_diff3", vars={"x","y","tSwitch"}); getErrorString();
+
+buildModelFMU(DaeModeWhenLoop, version="2.0", fmuType="me_cs", fileNamePrefix="DaeModeWhenLoop_mecs"); getErrorString();
+system("unzip -cqq DaeModeWhenLoop_mecs.fmu modelDescription.xml | grep -cE \"<(ModelExchange|CoSimulation)\""); getErrorString();
+buildModelFMU(DaeModeWhenLoop, version="2.0+3.0", fmuType="me_cs", fileNamePrefix="DaeModeWhenLoop_both"); getErrorString();
+system("unzip -cqq DaeModeWhenLoop_both.fmu modelDescription.xml | grep -cE \"<(ModelExchange|CoSimulation)\""); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "fmi_cs_daemode_ref_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'fmi_cs_daemode_ref', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_STDOUT        | warning | Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU. Colored numerical Jacobian will be used.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// "DaeModeWhenLoop2.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// "DaeModeWhenLoop3.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// LOG_STDOUT        | warning | Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU. Colored numerical Jacobian will be used.
+// 0
+// ""
+// (true, {})
+// ""
+// LOG_STDOUT        | warning | Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU. Colored numerical Jacobian will be used.
+// 0
+// ""
+// (true, {})
+// ""
+// "DaeModeWhenLoop_mecs.fmu"
+// "Warning: DAE mode (--daeMode) for Model Exchange needs FMI 3.0 or platforms={\"wasm\"}. Exporting Co-Simulation only.
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 1
+// 0
+// ""
+// "DaeModeWhenLoop_both.fmu"
+// "Warning: DAE mode (--daeMode) for Model Exchange needs FMI 3.0 or platforms={\"wasm\"}. Exporting Co-Simulation only.
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 1
+// 0
+// ""
+// endResult

@@ -122,7 +122,6 @@ import SCode;
 import SCodeUtil;
 import Sorting;
 import StackOverflow;
-import SymbolicImplicitSolver;
 import SymbolicJacobian;
 import SynchronousFeatures;
 import System;
@@ -1309,11 +1308,7 @@ protected
   BackendDAE.Variables v;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars = v,m=SOME(m)) := syst;
-  if (Flags.getConfigEnum(Flags.SYM_SOLVER) > 0) then
-    (_,statevarindx_lst) := BackendVariable.getAllVarIndicesFromVariables(v, BackendVariable.isAlgState);
-  else
-    (_,statevarindx_lst) := BackendVariable.getAllVarIndicesFromVariables(v, BackendVariable.isStateVar);
-  end if;
+  (_,statevarindx_lst) := BackendVariable.getAllVarIndicesFromVariables(v, BackendVariable.isStateVar);
   eqns := list(arrayGet(ass1,i) for i guard arrayGet(ass1,i)>0 in statevarindx_lst);
   outIntegerArray := markStateEquationsWork(eqns,m,ass1,arr);
 end markStateEquations;
@@ -1830,11 +1825,7 @@ algorithm
     case syst as BackendDAE.EQSYSTEM( orderedEqs=ordererdEqs, orderedVars=vars,
                                       matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2) )
       algorithm
-        if (Flags.getConfigEnum(Flags.SYM_SOLVER) > 0) then
-          (_,statevarindx_lst) := BackendVariable.getAllVarIndicesFromVariables(vars, BackendVariable.isAlgState);
-        else
-          (_,statevarindx_lst) := BackendVariable.getAllVarIndicesFromVariables(vars, BackendVariable.isStateVar);
-        end if;
+        (_,statevarindx_lst) := BackendVariable.getAllVarIndicesFromVariables(vars, BackendVariable.isStateVar);
         indx_lst_v := BackendVariable.getVarIndexFromVariables(iVars, vars);
 
         indx_lst_v := listAppend(indx_lst_v, statevarindx_lst) "overestimate" annotation(__OpenModelica_DisableListAppendWarning=true);
@@ -6130,9 +6121,13 @@ algorithm
         (nominal,_) := Expression.traverseExpBottomUp(e, replaceVarWithNominal, globalKnownVars);
         (nominal,_) := ExpressionSimplify.simplify(nominal);
         (e1,_) := Expression.traverseExpBottomUp(e, replaceVarWithValue, globalKnownVars);
+        (e1,_) := Expression.traverseExpBottomUp(e1, replaceParamWithoutFixedValueWithStart, globalKnownVars);
         (e1,_) := ExpressionSimplify.simplify(e1);
         b := not Expression.isZeroOrAlmostZero(e1, nominal);
-        b_1 := Expression.isConst(e1) or BackendVariable.isKnownAndParam(e1,globalKnownVars);
+        // A parameter with fixed = false and no start value is computed during
+        // initialization, so its value is unknown here and it can be zero.
+        b_1 := Expression.isConst(e1) or (BackendVariable.isKnownAndParam(e1,globalKnownVars)
+               and not containsParamWithoutFixedValue(e1, globalKnownVars));
       then
        if b_1 then BackendDAE.SOLVABILITY_PARAMETER(b) else BackendDAE.SOLVABILITY_LINEAR(b);
     case(_, _)
@@ -6142,6 +6137,55 @@ algorithm
         BackendDAE.SOLVABILITY_LINEAR(b);
   end match;
 end adjacencyRowEnhanced3;
+
+protected function containsParamWithoutFixedValue
+"Helper function to adjacencyRowEnhanced3. Returns true if the expression
+  contains a parameter with fixed = false."
+  input DAE.Exp exp;
+  input BackendDAE.Variables globalKnownVars;
+  output Boolean b = false;
+protected
+  list<BackendDAE.Var> vars;
+algorithm
+  for cr in Expression.extractCrefsFromExp(exp) loop
+    try
+      (vars, _) := BackendVariable.getVar(cr, globalKnownVars);
+      b := List.any(vars, BackendVariable.isParamWithoutFixedValue);
+    else
+    end try;
+    if b then
+      return;
+    end if;
+  end for;
+end containsParamWithoutFixedValue;
+
+protected function replaceParamWithoutFixedValueWithStart
+"Helper function to adjacencyRowEnhanced3. Traverser to replace parameters with
+  fixed = false by their start value, the initial guess of the initialization."
+  input DAE.Exp inExp;
+  input BackendDAE.Variables inVars;
+  output DAE.Exp outExp;
+  output BackendDAE.Variables outVars;
+algorithm
+  (outExp,outVars) := matchcontinue (inExp,inVars)
+    local
+      DAE.ComponentRef cr;
+      BackendDAE.Variables vars;
+      BackendDAE.Var v;
+      DAE.Exp e;
+
+    case (DAE.CREF(componentRef=cr),vars)
+      algorithm
+        (v::_,_) := BackendVariable.getVar(cr,vars);
+        true := BackendVariable.isParamWithoutFixedValue(v);
+        e := BackendVariable.varStartValueFail(v);
+        (e,_) := Expression.traverseExpBottomUp(e, replaceVarWithValue, vars);
+      then (e, vars);
+
+    else (inExp,inVars);
+
+  end matchcontinue;
+end replaceParamWithoutFixedValueWithStart;
 
 public function replaceVarWithValue
 "Helper function to adjacencyRowEnhanced3. Traverser to replace variables(parameters) with their bind expression."
@@ -7882,7 +7926,6 @@ public function getSolvedSystem "Run the equation system pipeline."
   output BackendDAE.BackendDAE outSimDAE;
   output BackendDAE.BackendDAE outInitDAE;
   output Option<BackendDAE.BackendDAE> outInitDAE_lambda0_option;
-  output Option<BackendDAE.InlineData > outInlineData;
   output list<BackendDAE.Equation> outRemovedInitialEquationLst;
 protected
   BackendDAE.BackendDAE dae, simDAE, outInitDAE_lambda0;
@@ -7957,9 +8000,6 @@ algorithm
 
   // remove homotopy and initial calls
   simDAE := Initialization.removeInitializationStuff(simDAE);
-
-  // generate inline solver
-  outInlineData := SymbolicImplicitSolver.symSolver(simDAE);
 
   // post-optimization phase
   simDAE := postOptimizeDAE(simDAE, postOptModules, matchingAlgorithm, daeHandler);

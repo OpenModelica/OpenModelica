@@ -551,13 +551,13 @@ The script generates more than 1 page.</source>
     <message>
         <source>In OpenFile(), Exception: 
 </source>
-        <translation>In OpenFile(), Ausnahme: 
+        <translation>In OpenFile(), Ausnahme:
 </translation>
     </message>
     <message>
         <source>In HelpText(), Exception: 
 </source>
-        <translation>In HelpText(), Ausnahme: 
+        <translation>In HelpText(), Ausnahme:
 </translation>
     </message>
     <message>
@@ -1081,6 +1081,43 @@ Diese Aktion kann nicht rückgängig gemacht werden!</translation>
     <message>
         <source>Cells cannot be moved inside or outside another hierarchy.</source>
         <translation>Zellen können nicht in eine andere Ebene verschoben werden.</translation>
+    </message>
+    <message>
+        <source>&amp;View</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Zoom &amp;In</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enlarge the displayed text of the cells (the notebook is not changed)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Zoom &amp;Out</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reduce the displayed text of the cells (the notebook is not changed)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Reset Zoom</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display the text of the cells in its original size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Zoom: %1%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The file does not exist anymore:
+%1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

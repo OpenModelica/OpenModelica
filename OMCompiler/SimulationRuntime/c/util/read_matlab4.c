@@ -307,7 +307,8 @@ static int read_double(int type, size_t n, FILE *file, double *val)
  *
  * This function opens `filename`, validates that it contains the expected
  * set of MATLAB v4 matrices for OpenModelica (`Aclass`, `name`,
- * `description`, `dataInfo`, `data_1`, `data_2`) and populates the
+ * `description`, `dataInfo`, `data_1`, `data_2`, in this order; other
+ * matrices between them, such as `enumerations`, are skipped) and populates the
  * provided `reader` structure with metadata and file offsets for later
  * value reads. The reader is initialized (zeroed) by this call.
  *
@@ -342,7 +343,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
   reader->fileName = omc_strdup(filename);
   reader->readAll = 0;
   reader->stopTime = NAN;
-  for(i=0; i<nMatrix;i++) {
+  for(i=0; i<nMatrix;) {
     MHeader_t hdr;
     int nr = omc_fread(&hdr,sizeof(MHeader_t),1,reader->file, 0);
     size_t matrix_length,element_length;
@@ -364,8 +365,14 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
     /* fprintf(stderr, "  Name of matrix: %s\n", name); */
     matrix_length = hdr.mrows*hdr.ncols*(1+hdr.imagf)*element_length;
     if(0 != strcmp(name,matrixNames[i])) {
+      int known = 0, k;
+      for(k=0; k<nMatrix; k++) {
+        known = known || 0 == strcmp(name,matrixNames[k]);
+      }
       free(name);
-      return matrixNamesMismatch[i];
+      if(known) return matrixNamesMismatch[i];
+      if(-1==omc_fseek(reader->file,matrix_length,SEEK_CUR)) return "Corrupt header (4)";
+      continue;
     }
     free(name);
     name=NULL;
@@ -589,6 +596,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
     default:
       return "Implementation error: Unknown case";
     }
+    i++;
   }
   return 0;
 }

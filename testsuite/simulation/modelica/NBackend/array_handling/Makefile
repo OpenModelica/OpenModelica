@@ -1,13 +1,21 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+sumRecordArraySlice.mos \
+nlsArrayElementNominal.mos \
+resizableAliasMin.mos \
 reductionSkips.mos \
 nestedForConnectRange.mos \
+sparsityMatrixResidual.mos \
 forNestedElseIf.mos \
 forSliceRowMajor.mos \
 sliceRangeSparsity.mos \
+sparsityScalarTemplates.mos \
+sparsityNegatedAlias.mos \
+raggedComponentArrays.mos \
 scalarDivArray.mos \
 arrayRowScalar.mos \
+emptyArrayTupleArgument.mos \
 algorithmForSubscript.mos \
 eachScalarProduct.mos \
 ifBranchSizes.mos \
@@ -16,29 +24,58 @@ arrayZeroDivisionInitial.mos \
 arrayPreValues.mos \
 jacobianElementSeed.mos \
 jacobianArrayIndices.mos \
+jacobianLiterals.mos \
+blockLiterals.mos \
 scalarSparsityTables.mos \
 array_constructor_if.mos \
 resizableConnectFor.mos \
+resizableNLSLogging.mos \
+resizableNLSNominal.mos \
 resizableSparsity.mos \
+resizableCoveredSparsity.mos \
 resizableSparsityArrayEqn.mos \
+resizableSparsityInner.mos \
+resizablePartialBodyFor.mos \
 resizableConnectChain.mos \
 resizableConnectIf.mos \
 arrayConnectOutside.mos \
 mixedDependencyFrames.mos \
 arrayConnectRooted.mos \
 entwinedOrder.mos \
+entwinedScalarAnchors.mos \
+entwinedOrderResizable.mos \
 resizableOverride.mos \
+resizableSizeDimension.mos \
+resizableDiffIteratorArray.mos \
 resizableOverrideDerived.mos \
 resizableAliasStart.mos \
+resizableStartSize.mos \
 resizablePartialLoops.mos \
+resizableArrayJacobian.mos \
+resizableMergedJacobian.mos \
 resizableLoopBlocks.mos \
+resizableTearStart.mos \
 resizableConnectArrays.mos \
+resizableConnectSizeAlias.mos \
 resizableManySizes.mos \
+resizableContiguousSlice.mos \
+literalConnects.mos \
+resizableSparseLoop.mos \
 resizableInputs.mos \
+resizableJacobianOffsets.mos \
 resizableAlgebraicLoops.mos \
 resizableFill.mos \
 resizableStreams.mos \
+resizableEvaluate.mos \
+resizableEvaluateAlias.mos \
+resizableStreamMixing.mos \
 resizableWholeSubscript.mos \
+resizableArrayBinding.mos \
+resizableArrayAlias.mos \
+resizableArrayBodyFor.mos \
+resizableInitOverdetermined.mos \
+resizableSlicedDummy.mos \
+resizableSlicedDummyInit.mos \
 array_start_vector.mos\
 array_start_int_bool_string.mos\
 array_inputs.mos\
@@ -91,8 +128,10 @@ BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder4_Resizable.mos\
 BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder_Resizable.mos\
 BenchmarksForResizeableArrays.Resizable.FiltersInSeries_Resizable.mos \
 arrayStartSlice.mos \
+componentArraySlicedStart.mos \
 resizableConnectDeleted.mos \
 EmptyArrayInComponentArray.mos \
+sparsityRowsArrayComponents.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

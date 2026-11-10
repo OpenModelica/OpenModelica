@@ -8,12 +8,11 @@
 model Symmetric2
   parameter Integer n =3;
   Real A[:,:] = symmetric(2*identity(n)-[[0,time,0];[0,0,time];zeros(1,n)]);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Symmetric2;
 
 // Result:
 // class Symmetric2
-//   parameter Integer n = 3;
+//   final parameter Integer n = 3;
 //   Real A[1,1];
 //   Real A[1,2];
 //   Real A[1,3];
@@ -24,6 +23,6 @@ end Symmetric2;
 //   Real A[3,2];
 //   Real A[3,3];
 // equation
-//   A = {{2.0, -time, 0.0}, {-time, 2.0, -time}, {0.0, -time, 2.0}};
+//   A = symmetric({{2.0, -time, 0.0}, {0.0, 2.0, -time}, {0.0, 0.0, 2.0}});
 // end Symmetric2;
 // endResult

@@ -5,13 +5,12 @@
 // Test for multiple loops in equations.
 //
 
-class EquationFor7
+model EquationFor7
   Real a[2,3];
 equation
   for i in 1:2, j in 1:3 loop
     a[i,j] =  i+j;
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EquationFor7;
 
 // Result:

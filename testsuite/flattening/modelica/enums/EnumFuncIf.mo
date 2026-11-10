@@ -10,6 +10,7 @@ function f
   input Real x;
   output Boolean out;
 algorithm
+  out := x > 0;
 end f;
 
 type E = enumeration(A, B, C);
@@ -18,14 +19,15 @@ model EnumFuncIf
   Real x[E];
   Real y;
 equation
-  x = if f(y) then zeros(size(E, 1)) else x / y;
-  annotation(__OpenModelica_commandLineOptions="--condenseArrays=false -d=-newInst");
+  x = if f(y) then {0.0 for e in E} else x / y;
 end EnumFuncIf;
 
 // Result:
 // function f
 //   input Real x;
 //   output Boolean out;
+// algorithm
+//   out := x > 0.0;
 // end f;
 //
 // class EnumFuncIf
@@ -34,8 +36,6 @@ end EnumFuncIf;
 //   Real x[E.C];
 //   Real y;
 // equation
-//   x[E.A] = if f(y) then 0.0 else x[E.A] / y;
-//   x[E.B] = if f(y) then 0.0 else x[E.B] / y;
-//   x[E.C] = if f(y) then 0.0 else x[E.C] / y;
+//   x = if f(y) then array(0.0 for e in {E.A, E.B, E.C}) else {x[E.A] / y, x[E.B] / y, x[E.C] / y};
 // end EnumFuncIf;
 // endResult

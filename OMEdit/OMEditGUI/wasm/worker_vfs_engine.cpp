@@ -71,6 +71,8 @@ QStringList omcWorkerListDir(const char *path);
 bool omcWorkerWriteFile(const char *path, const QByteArray &data);
 bool omcWorkerRemoveFile(const char *path);
 bool omcWorkerRenameFile(const char *from, const char *to);
+// Defined in web_assets.cpp.
+bool omeditFetchWebAsset(const QString &fileName);
 
 // True if the page MEMFS already has the path (then the default engine handles it).
 EM_JS(int, omedit_memfs_exists, (const char *path), {
@@ -311,6 +313,7 @@ public:
     // are the main thread's own and are mirrored to IndexedDB, so they must stay in
     // MEMFS — the "already exists" test below cannot see a file being created.
     if (fileName.startsWith(QLatin1String("/persist/"))) return nullptr;
+    if (omeditFetchWebAsset(fileName)) return nullptr;
     if (omedit_memfs_exists(fileName.toUtf8().constData())) return nullptr;
     return std::make_unique<WorkerVfsFileEngine>(fileName);
   }

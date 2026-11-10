@@ -50,33 +50,53 @@ protected
   import Util;
   import ExpandExp = NFExpandExp;
   import Attributes = NFAttributes;
+  import Operator = NFOperator;
+  import NFInstNode.InstNode;
+  import Component = NFComponent;
+  import SimplifyExp = NFSimplifyExp;
+  import MetaModelica.Dangerous.listReverseInPlace;
 
 public
 function checkModel
   input FlatModel flatModel;
-  output Integer variables = 0;
-  output Integer equations = 0;
+  output Expression variables;
+  output Expression equations;
+  output Expression simpleEquations;
+protected
+  Integer vars = 0, eqs = 0, simple_eqs = 0;
+  list<Expression> var_exps = {}, eq_exps = {}, simple_eqs_exps = {};
 algorithm
   for v in flatModel.variables loop
-    (variables, equations) := countVariableSize(v, variables, equations);
+    (vars, var_exps, eqs, eq_exps, simple_eqs, simple_eqs_exps) :=
+      countVariableSize(v, vars, var_exps, eqs, eq_exps, simple_eqs, simple_eqs_exps);
   end for;
 
-  equations := equations + Equation.sizeOfList(flatModel.equations);
+  (eqs, eq_exps) := Equation.sizeOfListSymbolic(flatModel.equations, eqs, eq_exps);
+  (simple_eqs, simple_eqs_exps) := countSimpleEquations(flatModel.equations, simple_eqs, simple_eqs_exps);
 
   for a in flatModel.algorithms loop
-    equations := equations + countAlgorithmSize(a);
+    eqs := eqs + countAlgorithmSize(a);
   end for;
+
+  variables := makeSum(vars, var_exps);
+  equations := makeSum(eqs, eq_exps);
+  simpleEquations := makeSum(simple_eqs, simple_eqs_exps);
 end checkModel;
 
 function countVariableSize
   input Variable var;
   input output Integer variables;
+  input output list<Expression> variablesExps;
   input output Integer equations;
+  input output list<Expression> equationsExps;
+  input output Integer simpleEquations;
+  input output list<Expression> simpleEquationsExps;
 protected
   Type ty;
   Binding binding;
   Attributes attr;
-  Integer var_size;
+  Integer var_size, binding_size;
+  list<Expression> var_exps, binding_exps;
 algorithm
   Variable.VARIABLE(ty = ty, binding = binding, attributes = attr) := var;
 
@@ -88,13 +108,23 @@ algorithm
     return;
   end if;
 
-  var_size := Type.sizeOf(ty);
+  (var_size, var_exps) := Type.sizeOfSymbolic(ty, 0, {}, SOME(var.name));
   variables := variables + var_size;
+  variablesExps := listAppend(var_exps, variablesExps);
 
-  if Variable.isTopLevelInput(var) then
+  if Variable.isInput(var) and Variable.isPublic(var) then
     equations := equations + var_size;
   else
-    equations := equations + Type.sizeOf(Binding.getType(binding));
+    (binding_size, binding_exps) := Type.sizeOfSymbolic(Binding.getType(binding));
+    equations := equations + binding_size;
+    equationsExps := listAppend(binding_exps, equationsExps);
+
+    // Check if var = binding counts as a simple equation.
+    if Binding.hasExp(binding) and
+       isSimpleEquation(Expression.CREF(ty, var.name), Binding.getExp(binding), ty) then
+      simpleEquations := simpleEquations + binding_size;
+      simpleEquationsExps := listAppend(binding_exps, simpleEquationsExps);
+    end if;
   end if;
 end countVariableSize;
 
@@ -107,11 +137,6 @@ algorithm
   crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
   crefs := List.fold(alg.statements, statementOutputs, crefs);
   equations := equations + UnorderedSet.size(crefs);
-
-  print("Algorithm size: " + String(UnorderedSet.size(crefs)) + "\n");
-  for cr in UnorderedSet.toList(crefs) loop
-    print(ComponentRef.toString(cr) + "\n");
-  end for;
 end countAlgorithmSize;
 
 protected
@@ -158,7 +183,9 @@ algorithm
   crefs := match exp
     case Expression.CREF()
       algorithm
-        cref := ComponentRef.stripSubscripts(exp.cref);
+        // Assigning to an array element counts as initializing the whole array, except for arrays
+        // of models where each model instance is considered to have their own variables.
+        cref := ComponentRef.stripSubscriptsExceptModel(exp.cref);
       then Expression.fold(ExpandExp.expand(Expression.fromCref(cref)), statementOutputCrefFinder2, crefs);
 
     else crefs;
@@ -179,8 +206,245 @@ algorithm
 
     else ();
   end match;
-
 end statementOutputCrefFinder2;
+
+function countSimpleEquations
+  input list<Equation> eqs;
+  input output Integer simpleEquations = 0;
+  input output list<Expression> simpleEquationsExps = {};
+algorithm
+  for eq in eqs loop
+    (simpleEquations, simpleEquationsExps) :=
+      countSimpleEquation(eq, simpleEquations, simpleEquationsExps);
+  end for;
+end countSimpleEquations;
+
+function countSimpleEquation
+  input Equation eq;
+  input output Integer simpleEquations;
+  input output list<Expression> simpleEquationsExps;
+algorithm
+  (simpleEquations, simpleEquationsExps) := match eq
+    case Equation.EQUALITY()
+      guard isSimpleEquation(eq.lhs, eq.rhs, eq.ty)
+      then Type.sizeOfSymbolic(eq.ty, simpleEquations, simpleEquationsExps);
+
+    else (simpleEquations, simpleEquationsExps);
+  end match;
+end countSimpleEquation;
+
+function isSimpleEquation
+  input Expression lhs;
+  input Expression rhs;
+  input Type ty;
+  output Boolean isSimple;
+algorithm
+  if Expression.isLiteral(lhs) then
+    // Flip literal = x to x = literal to reduce the number of cases.
+    isSimple := isSimpleEquation2(rhs, lhs, ty);
+  else
+    isSimple := isSimpleEquation2(lhs, rhs, ty);
+  end if;
+end isSimpleEquation;
+
+function isSimpleEquation2
+  input Expression lhs;
+  input Expression rhs;
+  input Type ty;
+  output Boolean isSimple;
+protected
+  Boolean lhs_is_cref, rhs_is_cref;
+  Expression e1, e2;
+  Integer u;
+  UnorderedSet<ComponentRef> crefs;
+algorithm
+  isSimple := match (lhs, rhs)
+    // ±a = ±b
+    // ±a = literal
+    case (_, _)
+      guard isCrefOrNegatedCref(lhs) and (isCrefOrNegatedCref(rhs) or Expression.isLiteral(rhs))
+      then true;
+
+    // ±a ± ±b = 0
+    case (Expression.BINARY(), _)
+      guard isAddOrSub(lhs.operator) and isCrefOrNegatedCref(lhs.exp1) and
+            isCrefOrNegatedCref(lhs.exp2) and Expression.isZero(rhs)
+      then true;
+
+    case (Expression.MULTARY(), _)
+      guard isAddOrSub(lhs.operator) and Expression.isZero(rhs) and
+            listLength(lhs.arguments) + listLength(lhs.inv_arguments) == 2 and
+            List.all(lhs.arguments, isCrefOrNegatedCref) and List.all(lhs.inv_arguments, isCrefOrNegatedCref)
+      then true;
+
+    // ±a = ±der(b) or ±der(a) = ±b
+    case (_, _)
+      guard isCrefOrNegatedCref(lhs) and isDerOrNegatedDer(rhs) or
+            isCrefOrNegatedCref(rhs) and isDerOrNegatedDer(lhs)
+      then true;
+
+    // Any equation involving only one unknown.
+    case (_, _)
+      guard Type.isNumeric(ty) or Type.isEnumeration(Type.arrayElementType(ty))
+      algorithm
+        crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+        crefs := Expression.fold(lhs, countUnknowns_traverser, crefs);
+
+        if UnorderedSet.size(crefs) <= 1 then
+          crefs := Expression.fold(rhs, countUnknowns_traverser, crefs);
+        end if;
+      then
+        UnorderedSet.size(crefs) == 1;
+
+    else false;
+  end match;
+end isSimpleEquation2;
+
+function isCrefOrNegatedCref
+  input Expression exp;
+  output Boolean cref;
+algorithm
+  cref := match exp
+    case Expression.CREF() then true;
+    case Expression.UNARY(exp = Expression.CREF()) then true;
+    else false;
+  end match;
+end isCrefOrNegatedCref;
+
+function isDerOrNegatedDer
+  input Expression exp;
+  output Boolean cref;
+algorithm
+  cref := match exp
+    case Expression.UNARY() then Expression.isCallNamed(exp.exp, "der");
+    else Expression.isCallNamed(exp, "der");
+  end match;
+end isDerOrNegatedDer;
+
+function isAddOrSub
+  input Operator op;
+  output Boolean res;
+algorithm
+  res := match op.op
+    case NFOperator.Op.ADD then true;
+    case NFOperator.Op.SUB then true;
+    else false;
+  end match;
+end isAddOrSub;
+
+function countUnknowns_traverser
+  input Expression exp;
+  input output UnorderedSet<ComponentRef> crefs;
+protected
+  InstNode node;
+  Component comp;
+algorithm
+  // This is only used to check if an equation contains exactly one unknown,
+  // so return early if we've already found more than that.
+  if UnorderedSet.size(crefs) > 1 then
+    return;
+  end if;
+
+  () := match exp
+    case Expression.CREF()
+      guard ComponentRef.isCref(exp.cref) and not Type.isExternalObject(exp.ty)
+      algorithm
+        node := ComponentRef.node(exp.cref);
+
+        if InstNode.isComponent(node) then
+          comp := InstNode.component(node);
+
+          if Component.variability(comp) >= Variability.DISCRETE and
+            not (Component.isInput(comp) and InstNode.isPublic(node) and ComponentRef.isTopLevel(exp.cref)) then
+            UnorderedSet.add(exp.cref, crefs);
+          end if;
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end countUnknowns_traverser;
+
+function makeSum
+  "Constructs n + sum(exps)."
+  input Integer n;
+  input list<Expression> exps;
+  output Expression sumExp;
+protected
+  list<Expression> expl = {};
+  UnorderedMap<Expression, Integer> terms;
+  Expression exp;
+  Integer factor;
+algorithm
+  if listEmpty(exps) then
+    sumExp := Expression.INTEGER(n);
+  else
+    terms := UnorderedMap.new<Integer>(Expression.hash, Expression.isEqual);
+
+    for e in exps loop
+      addTerm(e, terms);
+    end for;
+
+    for term in UnorderedMap.toList(terms) loop
+      (exp, factor) := term;
+
+      if factor > 1 then
+        exp := Expression.BINARY(Expression.INTEGER(factor), Operator.makeMul(Type.INTEGER()), exp);
+      end if;
+
+      expl := exp :: expl;
+    end for;
+
+    expl := listReverseInPlace(expl);
+
+    if n <> 0 then
+      expl := Expression.INTEGER(n) :: expl;
+    end if;
+
+    sumExp := Expression.MULTARY(expl, {}, Operator.makeAdd(Type.INTEGER()));
+    sumExp := SimplifyExp.simplify(sumExp);
+  end if;
+end makeSum;
+
+function addTerm
+  input Expression exp;
+  input UnorderedMap<Expression, Integer> terms;
+protected
+  Integer factor;
+algorithm
+  () := match exp
+    // n * exp
+    case Expression.BINARY(exp1 = Expression.INTEGER(factor),
+                           operator = Operator.OPERATOR(op = NFOperator.Op.MUL))
+      algorithm
+        mergeTerm(exp.exp2, factor, terms);
+      then
+        ();
+
+    // exp * n
+    case Expression.BINARY(exp2 = Expression.INTEGER(factor),
+                           operator = Operator.OPERATOR(op = NFOperator.Op.MUL))
+      algorithm
+        mergeTerm(exp.exp1, factor, terms);
+      then
+        ();
+
+    else
+      algorithm
+        mergeTerm(exp, 1, terms);
+      then
+        ();
+  end match;
+end addTerm;
+
+function mergeTerm
+  input Expression exp;
+  input Integer factor;
+  input UnorderedMap<Expression, Integer> terms;
+algorithm
+  UnorderedMap.addMerge(exp, factor, intAdd, terms);
+end mergeTerm;
 
 annotation(__OpenModelica_Interface="nf_frontend");
 end NFCheckModel;

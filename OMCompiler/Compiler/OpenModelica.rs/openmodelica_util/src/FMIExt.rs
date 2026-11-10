@@ -590,8 +590,8 @@ fn parse_fmi2(
                 "constant" => arcstr::literal!("constant"),
                 _ => arcstr::literal!(""),
             };
-            // FMI2 isFixed: variability attribute equals "fixed".
-            let is_fixed = variability_attr == "fixed";
+            // FMI2 isFixed: a fixed or tunable parameter has its value at the start.
+            let is_fixed = variability_attr == "fixed" || variability_attr == "tunable";
             variables.push(build_variable(
                 &sv,
                 &vt,
@@ -1143,7 +1143,7 @@ fn parse_fmi3(xml: &str, input_connectors: bool, output_connectors: bool) -> Opt
                     variability,
                     causality,
                     hasStartValue: v.start.is_some(),
-                    isFixed: v.variability == Variability::Fixed,
+                    isFixed: matches!(v.variability, Variability::Fixed | Variability::Tunable),
                     valueReference: v.value_reference as i32,
                     dimensions,
                     $($extra: $value,)*
@@ -1198,7 +1198,7 @@ fn parse_fmi3(xml: &str, input_connectors: bool, output_connectors: bool) -> Opt
                 variability,
                 causality,
                 hasStartValue: v.start.is_some(),
-                isFixed: v.variability == Variability::Fixed,
+                isFixed: matches!(v.variability, Variability::Fixed | Variability::Tunable),
                 valueReference: v.value_reference as i32,
                 dimensions,
                 intervalVariability: ArcStr::from(

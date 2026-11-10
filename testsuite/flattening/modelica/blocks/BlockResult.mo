@@ -26,7 +26,6 @@ model BlockResult
   foo f1(foo1=mod1, foo2=mod2);
 equation
   result = f1.result;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BlockResult;
 
 // Result:
@@ -50,8 +49,8 @@ end BlockResult;
 //   Real f1.result[2];
 //   Real f1.result[3];
 // equation
-//   f1.foo1 = {mod1[1], mod1[2], mod1[3]};
-//   f1.foo2 = {mod2[1], mod2[2], mod2[3]};
+//   f1.foo1 = mod1;
+//   f1.foo2 = mod2;
 //   result[1] = f1.result[1];
 //   result[2] = f1.result[2];
 //   result[3] = f1.result[3];

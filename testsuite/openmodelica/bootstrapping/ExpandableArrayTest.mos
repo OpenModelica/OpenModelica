@@ -1,6 +1,6 @@
 // name: ExpandableArray Unit Testing
 // status: correct
-// cflags: -d=-newInst
+// cflags: -d=-newInst -g=MetaModelica
 // suite: metamodelica
 
 runScript("LoadCompilerSources.mos"); getErrorString();

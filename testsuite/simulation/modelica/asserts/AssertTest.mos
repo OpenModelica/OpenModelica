@@ -6,7 +6,6 @@
 // Error! Assertion does not cancel simulation.
 // Simulation should fail! Update case after implementation of assert.
 // Drmodelica: 8.2 Assert (p. 249)
-// cflags: -d=-newInst
 //
 
 loadFile("AssertTest.mo");
@@ -30,7 +29,7 @@ getErrorString();
 //     messages = "Simulation execution failed for model: AssertTestInst
 // LOG_ASSERT        | error   | [simulation/modelica/asserts/AssertTest.mo:13:3-13:70:writable]
 // |                 | |       | The following assertion has been violated during initialization at time 0.000000
-// |                 | |       | ((7.0 >= assertTest.lowlimit and 7.0 <= assertTest.highlimit)) --> \"Variable x out of limit\"
+// |                 | |       | ((7.0 >= assertTest.lowlimit and 7.0 <= assertTest.highlimit), assertTest.lowlimit=-2, assertTest.highlimit=6) --> \"Variable x out of limit\"
 // LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
 // "
 // end SimulationResult;

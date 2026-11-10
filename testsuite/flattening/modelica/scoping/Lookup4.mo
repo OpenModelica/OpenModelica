@@ -7,13 +7,12 @@
 //
 // Note that Container must satisfy the requirement of a package.
 
-class Container
+model Container
   constant Real a = 3.0;
 end Container;
 
-class Lookup4
+model Lookup4
   Real b = Container.a;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Lookup4;
 
 

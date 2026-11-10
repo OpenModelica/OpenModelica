@@ -1741,7 +1741,7 @@ package Modelica
 
           redeclare function extends specificEntropy
           protected
-            Real[nX] Y(unit = "mol/mol") = massToMoleFractions(state.X, data.MM);
+            Real[nX] Y(each unit = "mol/mol") = massToMoleFractions(state.X, data.MM);
           algorithm
             s := s_TX(state.T, state.X) - sum(state.X[i] * Modelica.Constants.R / MMX[i] * (if state.X[i] < Modelica.Constants.eps then Y[i] else Modelica.Math.log(Y[i] * state.p / reference_p)) for i in 1:nX);
           end specificEntropy;
@@ -1951,7 +1951,7 @@ package Modelica
               redeclare function extends f_nonlinear
               protected
                 MassFraction[nX] Xfull = if size(X, 1) == nX then X else cat(1, X, {1 - sum(X)});
-                Real[nX] Y(unit = "mol/mol") = massToMoleFractions(if size(X, 1) == nX then X else cat(1, X, {1 - sum(X)}), data.MM);
+                Real[nX] Y(each unit = "mol/mol") = massToMoleFractions(if size(X, 1) == nX then X else cat(1, X, {1 - sum(X)}), data.MM);
               algorithm
                 y := s_TX(x, Xfull) - sum(Xfull[i] * Modelica.Constants.R / MMX[i] * (if Xfull[i] < Modelica.Constants.eps then Y[i] else Modelica.Math.log(Y[i] * p / reference_p)) for i in 1:nX);
               end f_nonlinear;

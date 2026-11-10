@@ -1,0 +1,29 @@
+// name: resizableSparseLoop
+// keywords: NewBackend resizable sparsity
+// status: correct
+// cflags: --newBackend --resizableArrays -d=arrayConnect
+// teardown_command: rm -f resizableSparseLoop_res.mat
+//
+// The grid's loop is one system of 2*N*M unknowns. Translated at N = M = 10 and
+// run at N = M = 100, it is too large for a dense Jacobian: its sparsity has to
+// be expanded for the sizes it runs with.
+
+loadModel(ScalableTestSuite); getErrorString();
+simulate(ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelica_N_10_M_10,
+  stopTime = 0.01, numberOfIntervals = 10, fileNamePrefix = "resizableSparseLoop",
+  variableFilter = "V_source.i", simflags = "-override=N=100,M=100"); getErrorString();
+val(V_source.i, 0.01);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "resizableSparseLoop_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.01, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'resizableSparseLoop', options = '', outputFormat = 'mat', variableFilter = 'V_source.i', cflags = '', simflags = '-override=N=100,M=100'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -51477.252612741606
+// endResult

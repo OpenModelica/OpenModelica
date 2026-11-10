@@ -24,7 +24,6 @@ model fCall
 equation
   (a, b, c) = f(1.0, 2.0);
   (x[1], x[2], x[3]) = f(3.0, 4.0);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end fCall;
 
 // function f
@@ -51,18 +50,6 @@ end fCall;
 //   (x[1],x[2],x[3]) = (3.0,4.0,12.0);
 // end fCall;
 // Result:
-// function f
-//   input Real x;
-//   input Real y;
-//   output Real r1;
-//   output Real r2;
-//   output Real r3;
-// algorithm
-//   r1 := x;
-//   r2 := y;
-//   r3 := x * y;
-// end f;
-//
 // class fCall
 //   Real x[1];
 //   Real x[2];
@@ -71,7 +58,11 @@ end fCall;
 //   Real b;
 //   Real c;
 // equation
-//   (a, b, c) = (1.0, 2.0, 2.0);
-//   (x[1], x[2], x[3]) = (3.0, 4.0, 12.0);
+//   a = 1.0;
+//   b = 2.0;
+//   c = 2.0;
+//   x[1] = 3.0;
+//   x[2] = 4.0;
+//   x[3] = 12.0;
 // end fCall;
 // endResult

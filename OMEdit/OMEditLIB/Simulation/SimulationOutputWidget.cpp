@@ -63,6 +63,7 @@
 #include <QTextDocumentFragment>
 #include <QClipboard>
 #include <QDesktopServices>
+#include <QTimer>
 
 extern "C" {
 extern const char* System_openModelicaPlatform();
@@ -360,8 +361,6 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
                         << "%1_16dae*.c"
                         << "%1_16dae*.o"
                         << "%1_16dae*.h"
-                        << "%1_17inl*.c"
-                        << "%1_17inl*.o"
                         << "%1_18spd*.c"
                         << "%1_18spd*.o"
                         << "%1_functions.c"
@@ -521,6 +520,15 @@ void SimulationOutputWidget::runWasmJitSimulation(const QString &simulationParam
 #endif
   {
     OMCLongOperation longOperation;
+    QTimer progressTimer;
+    connect(&progressTimer, &QTimer::timeout, this, [this]() {
+      const int permille = OMCProxy::simulationProgress();
+      if (permille >= 0) {
+        mpProgressBar->setRange(0, 1000);
+        mpProgressBar->setValue(permille);
+      }
+    });
+    progressTimer.start(100);
     pOMCProxy->sendCommand(command);
   }
 #if defined(__EMSCRIPTEN__)

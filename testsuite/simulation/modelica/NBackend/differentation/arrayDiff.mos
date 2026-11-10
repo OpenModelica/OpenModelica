@@ -24,8 +24,8 @@ diffSimulationResults("MWE_14574_res.mat", "ReferenceFiles/MWE_14574_res.mat", "
 // true
 // ""
 // ### dumpSimplify | NBSolve.solveBody ###
-// [BEFORE] (y .* x .- {0.0, 0.0}) ./ M
-// [AFTER ] (y .* x) ./ M
+// [BEFORE] (y.*x .- {0.0, 0.0})./M
+// [AFTER ] (y.*x)./M
 //
 // record SimulationResult
 //     resultFile = "MWE_14574_res.mat",

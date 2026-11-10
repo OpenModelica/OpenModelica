@@ -567,7 +567,7 @@ protected
 
     if not Expression.isCref(arg) then
       Error.addSourceMessage(Error.ARGUMENT_MUST_BE_VARIABLE,
-            {"First", ComponentRef.toString(fn_ref), "<REMOVE ME>"}, info);
+            {"First", ComponentRef.toString(fn_ref)}, info);
       fail();
     end if;
 
@@ -673,8 +673,7 @@ protected
 
     {arg} := args;
     if not Expression.isCref(arg.value) then
-      Error.addSourceMessage(Error.ARGUMENT_MUST_BE_VARIABLE,
-            {"First", "edge", "<REMOVE ME>"}, info);
+      Error.addSourceMessage(Error.ARGUMENT_MUST_BE_VARIABLE, {"First", "edge"}, info);
       fail();
     end if;
   end typeEdgeCall;
@@ -966,7 +965,7 @@ protected
         if arg_pur == Purity.PURE and not Structural.isExpressionNotFixed(arg) and
            not Expression.contains(arg, Expression.isResizableCref) then
           Structural.markExp(arg);
-          arg := if InstContext.inInstanceAPI(context) then Ceval.tryEvalExp(arg) else Ceval.tryEvalExpResizable(arg);
+          arg := if InstContext.inRelaxed(context) then Ceval.tryEvalExp(arg) else Ceval.tryEvalExpResizable(arg);
           arg_ty := Expression.typeOf(arg);
         end if;
       end if;
@@ -1147,6 +1146,8 @@ protected
     list<Dimension> dims;
     Dimension dim1, dim2;
     Integer i, ndims;
+    list<Subscript> subs;
+    Boolean known = true;
     InstContext.Type arg_context = InstContext.set(context, NFInstContext.SUBEXPRESSION);
   algorithm
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
@@ -1168,22 +1169,33 @@ protected
       // matrix(A) where A is a matrix just returns A.
       callExp := arg;
     else
-      // matrix requires all but the first two dimensions to have size 1.
+      // matrix requires all but the first two dimensions to have size 1, so
+      // matrix(A) is A[:, :, 1, ..., 1]. Sizes that are not known yet are
+      // checked by the call at runtime.
       dim1 :: dim2 :: dims := dims;
       i := 3;
+      subs := {};
 
       for dim in dims loop
-        if Dimension.isKnown(dim) and Dimension.size(dim) > 1 then
+        if not Dimension.isKnown(dim) then
+          known := false;
+        elseif Dimension.size(dim) <> 1 then
           Error.addSourceMessageAndFail(Error.INVALID_ARRAY_DIM_IN_CONVERSION_OP,
             {String(i), "matrix", "1", Dimension.toString(dim)}, info);
         end if;
 
+        subs := Subscript.INDEX(Expression.INTEGER(1)) :: subs;
         i := i + 1;
       end for;
 
       ty := Type.ARRAY(Type.arrayElementType(ty), {dim1, dim2});
-      {fn} := Function.typeRefCache(fn_ref);
-      callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, purity, ty));
+
+      if known then
+        callExp := Expression.applySubscripts(Subscript.WHOLE() :: Subscript.WHOLE() :: subs, arg);
+      else
+        {fn} := Function.typeRefCache(fn_ref);
+        callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, purity, ty));
+      end if;
     end if;
   end typeMatrixCall;
 
@@ -1967,7 +1979,7 @@ protected
     list<TypedArg> namedArgs;
     Expression e1, e2;
     Type t1;
-    Variability v1;
+    Variability v1, v2;
     ComponentRef fn_ref;
     Function normalSample, clockedSample;
     InstNode recopnode;
@@ -1982,9 +1994,11 @@ protected
     (callExp, outType, var) := match(args, namedArgs)
 
       // sample(start, Real interval) - the usual stuff
-      case ({TypedArg.TYPED_ARG(value = e1, ty = t1),
-             TypedArg.TYPED_ARG(value = e2, ty = Type.INTEGER())}, {})
+      case ({TypedArg.TYPED_ARG(value = e1, ty = t1, var = v1),
+             TypedArg.TYPED_ARG(value = e2, ty = Type.INTEGER(), var = v2)}, {})
         algorithm
+          checkSampleArgVariability("start", e1, v1, info);
+          checkSampleArgVariability("interval", e2, v2, info);
           if Type.isInteger(t1) then
             e1 := Expression.CAST(Type.REAL(), e1);
           end if;
@@ -1994,9 +2008,11 @@ protected
           (Expression.CALL(ty_call), Type.BOOLEAN(), Variability.PARAMETER);
 
       // sample(start, Real interval) - the usual stuff
-      case ({TypedArg.TYPED_ARG(value = e1, ty = t1),
-             TypedArg.TYPED_ARG(value = e2, ty = Type.REAL())}, {})
+      case ({TypedArg.TYPED_ARG(value = e1, ty = t1, var = v1),
+             TypedArg.TYPED_ARG(value = e2, ty = Type.REAL(), var = v2)}, {})
         algorithm
+          checkSampleArgVariability("start", e1, v1, info);
+          checkSampleArgVariability("interval", e2, v2, info);
           if Type.isInteger(t1) then
             e1 := Expression.CAST(Type.REAL(), e1);
           end if;
@@ -2005,9 +2021,11 @@ protected
           (Expression.CALL(ty_call), Type.BOOLEAN(), Variability.PARAMETER);
 
       // sample(start, Real interval = value) - the usual stuff
-      case ({TypedArg.TYPED_ARG(value = e1, ty = t1)},
-            {TypedArg.TYPED_ARG(name = SOME("interval"), value = e2, ty = Type.REAL())})
+      case ({TypedArg.TYPED_ARG(value = e1, ty = t1, var = v1)},
+            {TypedArg.TYPED_ARG(name = SOME("interval"), value = e2, ty = Type.REAL(), var = v2)})
         algorithm
+          checkSampleArgVariability("start", e1, v1, info);
+          checkSampleArgVariability("interval", e2, v2, info);
           if Type.isInteger(t1) then
             e1 := Expression.CAST(Type.REAL(), e1);
           end if;
@@ -2041,11 +2059,25 @@ protected
 
       else
         algorithm
-          Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {Call.toString(call), "<NO COMPONENT>"}, info);
+          Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {Call.toString(call)}, info);
         then
           fail();
     end match;
   end typeSampleCall;
+
+  function checkSampleArgVariability
+    "sample(start, interval) requires parameter expressions, MLS 3.7 section 3.7.5."
+    input String name;
+    input Expression arg;
+    input Variability var;
+    input SourceInfo info;
+  algorithm
+    if var > Variability.PARAMETER then
+      Error.addSourceMessage(Error.FUNCTION_SLOT_VARIABILITY,
+        {name, Expression.toString(arg), "sample", Prefixes.variabilityString(var), "parameter"}, info);
+      fail();
+    end if;
+  end checkSampleArgVariability;
 
   function typeActualInStreamCall
     input String name;

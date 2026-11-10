@@ -453,11 +453,17 @@ end mkFullyQual;
 public function clearCache
   "Release every tree the instance API is holding. A session that has dropped
    its program otherwise keeps its last models instantiated until something
-   instantiates again."
+   instantiates again. Without releaseNodes the nodes stay until
+   MutableWeak.clearRoots, see NFInstanceAPI.dropTopScopeCache."
+  input Boolean releaseNodes = true;
 algorithm
   setGlobalRoot(Global.instNFInstCacheIndex, {});
   setGlobalRoot(Global.instNFLookupCacheIndex, {});
-  NFInstanceAPI.clearTopScopeCache();
+  if releaseNodes then
+    NFInstanceAPI.clearTopScopeCache();
+  else
+    NFInstanceAPI.dropTopScopeCache();
+  end if;
 end clearCache;
 
 protected
@@ -738,6 +744,40 @@ algorithm
 
   result := ValuesMake.makeCodeTypeName(InstNode.fullPath(exts[index], true));
 end getNthInheritedClass;
+
+function getBuiltinType
+  "Returns the builtin type the class is derived from, or \"\" if there is none."
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output String name;
+protected
+  InstNode cls_node;
+algorithm
+  (_, _, cls_node) := frontEndLookup(program, classPath);
+  name := builtinTypeName(cls_node);
+end getBuiltinType;
+
+function builtinTypeName
+  input InstNode clsNode;
+  output String name;
+algorithm
+  if not InstNode.isClass(clsNode) then
+    name := "";
+    return;
+  end if;
+
+  name := match InstNode.getClass(clsNode)
+    local
+      Class cls;
+      Type ty;
+
+    case cls as Class.EXPANDED_DERIVED() then builtinTypeName(cls.baseClass);
+    case Class.PARTIAL_BUILTIN(ty = ty as Type.ENUMERATION())
+      then "enumeration(" + stringDelimitList(ty.literals, ", ") + ")";
+    case Class.PARTIAL_BUILTIN(ty = ty) guard Type.isBasic(ty) then Type.toString(ty);
+    else "";
+  end match;
+end builtinTypeName;
 
 function getModelInstance
   input Absyn.Path classPath;
@@ -1473,12 +1513,22 @@ function translateResidualsDAE
   output Boolean success = true;
 protected
   Boolean disable_single_flow_eq;
+  Boolean homotopy_in_residuals;
+  Boolean nls_analytic_jac;
   list<String> non_std_flags;
   FlatModel flat_model;
   Flatten.FunctionTree funcs;
   Option<SimCode.SimulationSettings> simSettings;
 algorithm
   disable_single_flow_eq := FlagsUtil.set(Flags.DISABLE_SINGLE_FLOW_EQ, true);
+  // the initialization of the combined components runs the homotopy
+  homotopy_in_residuals := FlagsUtil.set(Flags.HOMOTOPY_IN_RESIDUALS, true);
+  // Components with bidirectional stream connectors keep unevaluated inStream()
+  // calls (the connector inflow, resolved when the component is coupled). These
+  // form small nonlinear systems whose symbolic Jacobian cannot be computed
+  // (inStream is not differentiable here); the consumer builds its own Jacobian,
+  // so disable analytic NLS Jacobians to avoid spurious internal errors.
+  nls_analytic_jac := FlagsUtil.set(Flags.NLS_ANALYTIC_JACOBIAN, false);
   non_std_flags := FlagsUtil.appendConfigStringList(Flags.ALLOW_NON_STANDARD_MODELICA, "implicitParameterStartAttribute");
 
   try
@@ -1493,6 +1543,8 @@ algorithm
   end try;
 
   FlagsUtil.setConfigStringList(Flags.ALLOW_NON_STANDARD_MODELICA, non_std_flags);
+  FlagsUtil.set(Flags.NLS_ANALYTIC_JACOBIAN, nls_analytic_jac);
+  FlagsUtil.set(Flags.HOMOTOPY_IN_RESIDUALS, homotopy_in_residuals);
   FlagsUtil.set(Flags.DISABLE_SINGLE_FLOW_EQ, disable_single_flow_eq);
 end translateResidualsDAE;
 

@@ -1,7 +1,6 @@
 // name:      partialConstArray
 // keywords:  evalConstFunc
 // status:    correct
-// cflags: -d=-newInst
 //
 
 

@@ -1,8 +1,12 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+startCycleJacobian.mos \
+impureParameterBinding.mos \
 attributeInitParameter.mos \
+whenAlgorithmArray.mos \
 whenAlgorithmPre.mos \
+whenAlgorithmPreCondition.mos \
 experimental_initialSimplified.mos \
 discreteCallArgument.mos \
 functionOutputStart.mos \
@@ -14,10 +18,12 @@ resizableParameterBinding.mos \
 primaryParameterRecordArray.mos \
 homotopy_indirect.mos \
 homotopy_no_loop.mos \
+homotopyStartValue.mos \
 init_if_eq.mos \
 init_if_exp.mos \
 initialNoReturnCall.mos \
 TestInversePlant.mos \
+initParamLinearSystem.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

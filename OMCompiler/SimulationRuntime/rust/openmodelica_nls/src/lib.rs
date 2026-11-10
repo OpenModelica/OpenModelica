@@ -1618,8 +1618,7 @@ impl Homotopy for FixpointHom<'_, '_> {
             for i in 0..n {
                 out[i + j * n] *= lam;
             }
-            // Unscaled, as C adds it.
-            out[j + j * n] += 1.0 - lam;
+            out[j + j * n] += (1.0 - lam) * xs[j];
         }
         for i in 0..n {
             out[i + n * n] = fbase[i] - (y[i] - self.x0[i]);
@@ -2570,8 +2569,14 @@ fn hybrj_scaled(
 /// is unbounded and reaches 40+, but the entry `getValues` picks is never past 5.
 pub const HIST_DEPTH: usize = 10;
 
-/// C's `MINIMAL_STEP_SIZE` (`epsilon.h`): times within this count as the same time.
+/// C's `MINIMAL_STEP_SIZE` (`epsilon.h`): times within this, relative to their
+/// size, count as the same time.
 const MINIMAL_STEP_SIZE: f64 = 1.0e-12;
+/// C's `sameTime`: two solutions a few ULPs apart at a large time are one time,
+/// so they never form an extrapolation pair.
+fn same_time(a: f64, b: f64) -> bool {
+    fmath::fabs(a - b) <= MINIMAL_STEP_SIZE * fmath::fabs(a).max(fmath::fabs(b)).max(1.0)
+}
 
 /// C's `LOCAL_EQUIDISTANT_HOMOTOPY`, the one method the sweep below serves.
 const HOM_LOCAL_EQUIDISTANT: u32 = 0;
@@ -2652,7 +2657,7 @@ pub struct Pick {
 /// away even at `f == 1`, which costs a Newton iteration on a linear residual.
 pub fn history_pick(h: &dyn History, time: f64) -> Pick {
     for k in 0..h.len() {
-        if fmath::fabs(h.time(k) - time) <= MINIMAL_STEP_SIZE {
+        if same_time(h.time(k), time) {
             return Pick {
                 old: Some(k),
                 old2: None,
@@ -2691,7 +2696,11 @@ pub fn history_guess(h: &dyn History, pick: &Pick, time: f64, guess: &mut [f64])
             let f = (time - t_b) / (t_a - t_b);
             for (i, g) in guess.iter_mut().enumerate() {
                 let (va, vb) = (h.value(a, i), h.value(b, i));
-                *g = if t_a == t_b || va == vb { va } else { vb + f * (va - vb) };
+                *g = if same_time(t_a, t_b) || va == vb {
+                    va
+                } else {
+                    vb + f * (va - vb)
+                };
             }
         }
         (Some(a), None) => {
@@ -2707,7 +2716,7 @@ pub fn history_guess(h: &dyn History, pick: &Pick, time: f64, guess: &mut [f64])
 /// C's, the oldest entry falls off at [`HIST_DEPTH`].
 pub fn history_store(h: &mut dyn History, time: f64, x: &[f64]) {
     let count = h.len();
-    if count > 0 && fmath::fabs(h.time(0) - time) <= MINIMAL_STEP_SIZE {
+    if count > 0 && same_time(h.time(0), time) {
         h.put(0, count, time, x);
         return;
     }
@@ -4304,11 +4313,11 @@ pub fn solve_nls(
         };
     // A dense solver over a CSC-emitting `jac`: C's `evalJacobian` with `isDense`.
     let scatter = !sparse && jac_csc;
-    let pat: &[u32] = if scatter { spec.pattern } else { &[] };
+    let pat: &[u32] = if jac_csc { spec.pattern } else { &[] };
     let colors: &[u32] = if lambda_unknown { &[] } else { spec.colors() };
     let max = || bounds.chunks_exact(2).map(|b| b[1]).collect::<alloc::vec::Vec<f64>>();
     let min = || bounds.chunks_exact(2).map(|b| b[0]).collect::<alloc::vec::Vec<f64>>();
-    let mut jaceval = |xs: &[f64], fj: &mut [f64]| {
+    let mut jaceval_layout = |xs: &[f64], fj: &mut [f64], dense: bool| {
         stat_inc(STAT_NLS_JAC);
         note_jac_eval();
         // Keep asserts recoverable here too so a probe never traps. C's
@@ -4316,7 +4325,7 @@ pub fn solve_nls(
         let saved = enter_eval();
         model.borrow_mut().jacobian(xs, &mut jacbuf);
         leave_eval(saved);
-        if scatter {
+        if jac_csc && dense {
             fj.fill(0.0);
             for c in 0..n {
                 for k in pat[c] as usize..pat[c + 1] as usize {
@@ -4426,7 +4435,9 @@ pub fn solve_nls(
                     eval(xs, r);
                     eval_threw()
                 };
-                let mut jacobian = |xs: &[f64], fj: &mut [f64]| jaceval(xs, fj);
+                // Diagnostics always consume a dense column-major Jacobian,
+                // independently of the solver selected for this system.
+                let mut jacobian = |xs: &[f64], fj: &mut [f64]| jaceval_layout(xs, fj, true);
                 newton_diagnostics::newton_diagnostics(
                     eq_index,
                     &nlsx_old,
@@ -4444,6 +4455,7 @@ pub fn solve_nls(
             }
         }
     }
+    let mut jaceval = |xs: &[f64], fj: &mut [f64]| jaceval_layout(xs, fj, scatter);
     let maxfev = n * 10000;
     // Last residual eval was at the returned `x`, so the epilogue need not repeat
     // it to leave the slots and torn variables set.
@@ -4970,7 +4982,7 @@ pub fn solve_nls(
         // `updateInitialGuessDB`: record the solution, unless this evaluation is a
         // Jacobian assembly — those are at perturbed states.
         if context_stores_guess() {
-            if hist.len() > 0 && time < hist.time(0) - MINIMAL_STEP_SIZE {
+            if hist.len() > 0 && time < hist.time(0) && !same_time(time, hist.time(0)) {
                 stat_inc(STAT_NLS_STORE_BACK);
             }
             history_store(hist, time, &x);
@@ -5118,6 +5130,28 @@ mod tests {
         assert_eq!((pick.old, pick.old2, pick.exact), (Some(0), Some(1), false));
         history_guess(&h, &pick, 4.0, &mut guess);
         assert_eq!(guess, [40.0, 5.0]);
+    }
+    // Solutions a few ULPs apart at a large time are one entry, so they never form
+    // an extrapolation pair (#17738). Below |t| = 1 the absolute
+    // `MINIMAL_STEP_SIZE` decides.
+    #[test]
+    fn history_same_time_is_relative() {
+        let mut h = VecHistory::default();
+        let t1 = 4097.0_f64;
+        let t2 = f64::from_bits(t1.to_bits() + 3);
+        history_store(&mut h, 4096.75, &[1.0e6]);
+        history_store(&mut h, t1, &[1.0e6 + 1.0]);
+        history_store(&mut h, t2, &[1.0e6 + 2.0]);
+        assert_eq!(h.len(), 2);
+        let mut guess = [f64::NAN];
+        let pick = history_pick(&h, 4097.25);
+        history_guess(&h, &pick, 4097.25, &mut guess);
+        assert!(fmath::fabs(guess[0] - (1.0e6 + 4.0)) < 1e-3, "guess {}", guess[0]);
+        let mut h = VecHistory::default();
+        for (t, v) in [(0.25, 1.0), (0.5, 2.0), (0.5 + 2e-12, 3.0)] {
+            history_store(&mut h, t, &[v]);
+        }
+        assert_eq!(h.len(), 3);
     }
 
     // An event before every stored entry empties the list.
@@ -5300,5 +5334,33 @@ mod tests {
             r[1] = xs[0] + xs[1] - 2.0; // parallel: no solution, singular J
         };
         assert!(!newton_solve(2, &mut x, &mut eval));
+    }
+
+    // The fixpoint homotopy's Jacobian is `∂H/∂y·S`, the identity term included.
+    #[test]
+    fn fixpoint_jacobian_is_column_scaled() {
+        let n = 2;
+        let xscaling = [10.0, 100.0, 1.0];
+        let mut eval = |xs: &[f64], r: &mut [f64]| {
+            r[0] = xs[0] * xs[0] + xs[1] - 3.0;
+            r[1] = xs[0] - 2.0 * xs[1] * xs[1];
+        };
+        let mut hom = FixpointHom {
+            n,
+            x0: vec![1.0, -2.0],
+            fx: vec![0.0; n],
+            xscaling: &xscaling,
+            eval: &mut eval,
+        };
+        let y = [3.0, 5.0, 0.25];
+        let mut hbase = vec![0.0; n];
+        hom.h(&y, &mut hbase);
+        let mut jac = vec![0.0; n * (n + 1)];
+        hom.jac(&y, &hbase, &mut jac);
+        let mut fd = vec![0.0; n * (n + 1)];
+        fd_homotopy_jacobian(&mut hom, n, n + 1, &y, &hbase, &xscaling, None, &mut fd);
+        for (k, (a, b)) in jac.iter().zip(&fd).enumerate() {
+            assert!((a - b).abs() <= 1e-5 * (1.0 + b.abs()), "entry {k}: {a} vs {b}");
+        }
     }
 }

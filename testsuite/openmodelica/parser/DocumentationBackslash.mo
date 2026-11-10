@@ -8,7 +8,6 @@
 model DocumentationBackslash
   annotation(Diagram(coordinateSystem(extent={{-100.0,-100.0},{100.0,100.0}}, preserveAspectRatio=true, initialScale=0.1, grid={10,10})), Documentation(info="
  <em>Extras\Libraries\CommunicationMSWindows.dll</em>", revisions=""));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DocumentationBackslash;
 
 // Result:

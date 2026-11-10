@@ -43,4 +43,10 @@ package DivTest
     end parfor;
     dst := parDst;
   end bar;
+
+  model M
+    Real x[nx,ny] = foo(4);
+    Real y[nx,ny] = bar(4);
+    Real err = max(abs(x - {i*j for i in 1:nx, j in 1:ny})) + max(abs(y - {i*j for i in 1:nx, j in 1:ny}));
+  end M;
 end DivTest;

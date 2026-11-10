@@ -133,7 +133,7 @@ checkModel(SaveTotalBroken_total); getErrorString();
 // ""
 // true
 // ""
-// ""
+// "Check of SaveTotalBroken_total failed with 1 error(s)."
 // "[openmodelica/interactive-API/SaveTotalBroken_total.mo:23:18-23:26:writable] Notification: From here:
 // [openmodelica/interactive-API/SaveTotalBroken_total.mo:15:5-15:25:writable] Error: Type mismatch in binding R = true, expected subtype of Real, got type Boolean.
 // "

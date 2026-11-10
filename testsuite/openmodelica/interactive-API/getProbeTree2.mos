@@ -1,0 +1,22 @@
+// name: getProbeTree2
+// keywords: probe tree, CodeProber
+// status: correct
+// suite: antlr
+//
+// Tests the syntax errors getProbeTree returns for a file that doesn't parse.
+
+writeFile("getProbeTree2.mo", "model S
+  Real x
+equation
+  x = 1;
+end S;
+");
+getErrorString();
+print(getProbeTree("getProbeTree2.mo")); getErrorString();
+
+// Result:
+// true
+// ""
+// {"file":"getProbeTree2.mo", "root":null, "errors":[{"severity":"error", "lineStart":3, "columnStart":1, "lineEnd":3, "columnEnd":1, "message":"Missing token: SEMICOLON"}]}
+// ""
+// endResult

@@ -142,13 +142,13 @@ impl SimMeta {
         }
         let Some(mut r) = self.resize.take() else { return Ok(()) };
         let flags = LayoutFlags {
-            sym_solver: self.layout.sym_solver,
             has_when: self.layout.has_when,
             has_homotopy: self.layout.has_homotopy,
             homotopy_method: self.layout.homotopy_method,
             has_init_lambda0: self.layout.has_init_lambda0,
             has_history_ops: self.layout.has_history_ops,
             has_old_real: self.layout.has_old_real,
+            compiled_dae_mode: self.layout.compiled_dae_mode,
             resizable: true,
         };
         let mut layout = Layout::build(r.counts.eval(&values), flags);

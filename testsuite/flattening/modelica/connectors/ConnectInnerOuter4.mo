@@ -14,13 +14,16 @@ model World
     Pin pin;
   end SubWorld;
   SubWorld subWorld;
+  Pin pin;
+equation
+  connect(subWorld.pin, pin);
 end World;
 
 model A
   outer World world;
   Pin aPin;
 equation
-  connect(world.subWorld.pin, aPin);
+  connect(world.pin, aPin);
 end A;
 
 model Top
@@ -28,14 +31,15 @@ model Top
   Pin topPin;
   A a1,a2;
 equation
-  connect(world.subWorld.pin, topPin);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
+  connect(world.pin, topPin);
 end Top;
 
 // Result:
 // class Top
 //   Real world.subWorld.pin.i;
 //   Real world.subWorld.pin.v;
+//   Real world.pin.i;
+//   Real world.pin.v;
 //   Real topPin.i;
 //   Real topPin.v;
 //   Real a1.aPin.i;
@@ -43,12 +47,14 @@ end Top;
 //   Real a2.aPin.i;
 //   Real a2.aPin.v;
 // equation
-//   world.subWorld.pin.i + (-topPin.i) + (-a1.aPin.i) + (-a2.aPin.i) = 0.0;
+//   world.subWorld.pin.v = world.pin.v;
+//   world.pin.v = topPin.v;
+//   world.pin.v = a2.aPin.v;
+//   world.pin.v = a1.aPin.v;
+//   world.pin.i - topPin.i - a2.aPin.i - a1.aPin.i = 0.0;
+//   world.subWorld.pin.i - world.pin.i = 0.0;
 //   topPin.i = 0.0;
 //   a1.aPin.i = 0.0;
 //   a2.aPin.i = 0.0;
-//   a1.aPin.v = a2.aPin.v;
-//   a1.aPin.v = topPin.v;
-//   a1.aPin.v = world.subWorld.pin.v;
 // end Top;
 // endResult

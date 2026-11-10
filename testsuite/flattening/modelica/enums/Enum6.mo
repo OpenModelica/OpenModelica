@@ -45,14 +45,13 @@ equation
    end for;
    ee = EE.frame_a;
    f = E.b;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Enumeration6;
 
 // Result:
 // class Enumeration6
-//   Real t.hh[P.h.E.j];
-//   Real t.hh[P.h.E.l];
-//   Real t.hh[P.h.E.k];
+//   Real t.hh[t.E.j];
+//   Real t.hh[t.E.l];
+//   Real t.hh[t.E.k];
 //   parameter enumeration(world, frame_a, frame_resolve) frame_r_in = P.EE.frame_a;
 //   parameter enumeration(world, frame_a, frame_resolve) frame_r_out = frame_r_in;
 //   Real x(stateSelect = StateSelect.default);
@@ -62,9 +61,9 @@ end Enumeration6;
 //   enumeration(world, frame_a, frame_resolve) ee(start = P.EE.world);
 //   enumeration(a, b, c) f(quantity = "quant_str_enumeration", min = P.E.a, max = P.E.b, start = P.E.c, fixed = true);
 // equation
-//   t.hh[P.h.E.j] = 1.0;
-//   t.hh[P.h.E.l] = 2.0;
-//   t.hh[P.h.E.k] = 3.0;
+//   t.hh[t.E.j] = 1.0;
+//   t.hh[t.E.l] = 2.0;
+//   t.hh[t.E.k] = 3.0;
 //   x = if frame_r_out == P.EE.frame_a then 0.0 else 1.0;
 //   z[P.EE.world] = if frame_r_out <= P.EE.frame_a then 0.0 else 1.0;
 //   z[P.EE.frame_a] = if frame_r_out <= P.EE.frame_a then 0.0 else 1.0;

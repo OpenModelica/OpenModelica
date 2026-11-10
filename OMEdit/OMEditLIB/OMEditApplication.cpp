@@ -47,6 +47,7 @@
 //! @todo Remove this once new frontend is used as default and old frontend is removed.
 #include "Options/OptionsDialog.h"
 #include "Simulation/TranslationFlagsWidget.h"
+#include "PlotTranslator.h"
 
 #include <locale.h>
 #include <QDir>
@@ -167,6 +168,7 @@ namespace {
 OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threadData, bool testsuiteRunning)
   : QApplication(argc, argv)
 {
+  setStyle("Fusion");
 #if defined(__EMSCRIPTEN__)
   // Build stamp in the console (stale-artifact diagnosis).
   EM_ASM({ console.log("[OMEdit-wasm] build " + UTF8ToString($0) + " " + UTF8ToString($1)); }, __DATE__, __TIME__);
@@ -195,14 +197,17 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   // is dzn naming the NVIDIA adapter behind D3D12, so QtWebEngine drops GBM and
   // renders through dzn, which cannot create a GrContext. GBM needs a render
   // node; without one the D3D12 EGL has no dma_buf import either and the
-  // Documentation view stays blank, so only --disable-gpu paints.
+  // Documentation view stays blank. Render in software then: --disable-gpu would
+  // also paint, but it turns off WebGL, which the omuq live view needs.
+  // swiftshader-webgl keeps GPU compositing off (QtWebEngine warns about it on
+  // Mesa llvmpipe) and only gives WebGL a software implementation.
   if (QFile::exists("/dev/dxg")) {
     if (!QDir("/dev/dri").entryList(QStringList("renderD*"), QDir::System).isEmpty()) {
       if (!qEnvironmentVariableIsSet("QTWEBENGINE_FORCE_USE_GBM")) {
         qputenv("QTWEBENGINE_FORCE_USE_GBM", "1");
       }
     } else if (!qEnvironmentVariableIsSet("QTWEBENGINE_CHROMIUM_FLAGS")) {
-      qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--disable-gpu --disable-gpu-compositing");
+      qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--use-angle=swiftshader-webgl --enable-unsafe-swiftshader --disable-gpu-compositing");
     }
   }
 #endif // #ifdef Q_OS_LINUX
@@ -287,6 +292,10 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   setAttribute(Qt::AA_DontShowIconsInMenus, false);
   // Localization
   //*a.severin/ add localization
+#if defined(__EMSCRIPTEN__)
+  extern void omeditInstallWebAssetFileEngine(const QString &installationDirectory);
+  omeditInstallWebAssetFileEngine(QString::fromLocal8Bit(installationDirectoryPath));
+#endif
   QSettings *pSettings = Utilities::getApplicationSettings();
   QLocale settingsLocale = QLocale(pSettings->value("language").toString());
   QString locale = settingsLocale.name() == "C" ? QLocale::system().name() : settingsLocale.name();
@@ -297,7 +306,11 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   QMap<QString, QLocale> languagesMap = Utilities::supportedLanguages();
   for (auto i = languagesMap.cbegin(), end = languagesMap.cend(); i != end; ++i) {
     if (i.value().name() == locale) {
+#if defined(__EMSCRIPTEN__)
+      QString qtTranslationsLocation = installationDirectoryPath + QString("/share/qt6/translations");
+#else
       QString qtTranslationsLocation = QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::TranslationsPath);
+#endif
       // install Qt's default translations
       if (mQtTranslator.load("qt_" + locale, qtTranslationsLocation)) {
         installTranslator(&mQtTranslator);
@@ -312,6 +325,10 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
           installTranslator(&mTranslator);
         } else {
           translatorLoadError = QString("Failed to load translation file %1 from location %2").arg("OMEdit_" + locale, translationsLocation);
+        }
+        // install the translations of the OMPlot widgets, they are maintained in OMPlot
+        if (OMPlot::loadTranslation(mPlotTranslator, QString::fromLocal8Bit(installationDirectoryPath), locale)) {
+          installTranslator(&mPlotTranslator);
         }
       }
       break;
@@ -473,7 +490,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
       pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::question));
       pMessageBox->setIcon(QMessageBox::Question);
       pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-      pMessageBox->setText(tr("You have enabled old frontend for code generation which is not recommended. Do you want to switch to new frontend?"));
+      pMessageBox->setText(tr("You have enabled the old frontend for code generation. It is deprecated and will be removed after OpenModelica 1.28.0 is released. Do you want to switch to the new frontend?"));
       pMessageBox->addButton(tr("Switch to new frontend"), QMessageBox::AcceptRole);
       pMessageBox->addButton(tr("Keep using old frontend"), QMessageBox::RejectRole);
       int answer = pMessageBox->exec();

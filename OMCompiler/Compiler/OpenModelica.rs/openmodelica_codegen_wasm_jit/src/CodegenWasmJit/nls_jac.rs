@@ -65,6 +65,11 @@ pub(crate) fn jac_column_vars(jm: &Arc<SimCode::JacobianMatrix>) -> Arc<Vec<meta
 
 fn compute_jac_column_vars(jm: &SimCode::JacobianMatrix) -> Vec<metamodelica::Ref<SimCodeVar::SimVar>> {
     use openmodelica_backend_types::BackendDAE::VarKind;
+    let elements: Vec<_> = jac_listed_vars(jm).iter().flat_map(jac_var_elements).collect();
+    let bases: HashSet<_> = elements
+        .iter()
+        .filter_map(|sv| array_element_of(&sv.name).ok().flatten().map(|(base, _)| base))
+        .collect();
     let mut seen: HashSet<String> = HashSet::default();
     let mut out: Vec<metamodelica::Ref<SimCodeVar::SimVar>> = Vec::new();
     let mut push = |sv: &metamodelica::Ref<SimCodeVar::SimVar>| {
@@ -72,12 +77,12 @@ fn compute_jac_column_vars(jm: &SimCode::JacobianMatrix) -> Vec<metamodelica::Re
             return;
         }
         if let Ok(key) = sim_cref_key(&sv.name) {
-            if seen.insert(key) {
+            if !bases.contains(&key) && seen.insert(key) {
                 out.push(sv.clone());
             }
         }
     };
-    for sv in jac_listed_vars(jm) {
+    for sv in elements {
         push(&sv);
     }
     out
@@ -172,7 +177,12 @@ fn jac_eq_lowerable(eq: &metamodelica::Ref<SimCode::SimEqSystem>) -> bool {
         // `lower_linear_system` needs either a usable `simJac` or the residuals of a
         // torn system; the inner equations run through `lower_equation` too.
         E::SES_LINEAR { lSystem, .. } => {
-            let torn = lst(&lSystem.residual).any(|e| matches!(&**e, E::SES_RESIDUAL { .. }));
+            let torn = lst(&lSystem.residual).any(|e| {
+                matches!(
+                    &**e,
+                    E::SES_RESIDUAL { .. } | E::SES_FOR_RESIDUAL { .. } | E::SES_GENERIC_RESIDUAL { .. }
+                )
+            });
             let sim_jac = lst(&lSystem.simJac).next().is_some()
                 && lst(&lSystem.simJac).all(|(_, _, e)| matches!(&**e, E::SES_RESIDUAL { .. }))
                 && count(&lSystem.beqs) == count(&lSystem.vars);
@@ -209,7 +219,9 @@ fn jac_eq_crefs(eq: &SimCode::SimEqSystem) -> Option<Vec<metamodelica::Ref<DAE::
             exp(rhs, &mut out).then_some(out)
         }
         E::SES_ARRAY_CALL_ASSIGN { lhs, exp: rhs, .. } => (exp(lhs, &mut out) && exp(rhs, &mut out)).then_some(out),
-        E::SES_RESIDUAL { exp: e, .. } => exp(e, &mut out).then_some(out),
+        E::SES_RESIDUAL { exp: e, .. }
+        | E::SES_FOR_RESIDUAL { exp: e, .. }
+        | E::SES_GENERIC_RESIDUAL { exp: e, .. } => exp(e, &mut out).then_some(out),
         E::SES_RESIZABLE_ASSIGN { .. } | E::SES_GENERIC_ASSIGN { .. } => Some(out),
         // `traverseDAEEquationsStmts` visits a statement's left-hand side too.
         E::SES_ALGORITHM { statements, .. } => {
@@ -320,7 +332,7 @@ pub(super) fn nls_jac_usable(nlsystem: &SimCode::NonlinearSystem) -> bool {
     {
         return false;
     }
-    let n = lst(&nlsystem.crefs).count();
+    let n = nls_crefs(nlsystem).len();
     let rows = n - nls_lambda_extra(nlsystem) as usize;
     n > 0 && count(&jm.seedVars) as usize == n && nls_jac_result_rows(jm, rows).is_some()
 }
@@ -387,7 +399,7 @@ pub(super) fn jac_seed_scalar_count(jm: &SimCode::JacobianMatrix) -> Option<usiz
 }
 
 pub(super) fn nls_lambda_extra(nlsystem: &SimCode::NonlinearSystem) -> u32 {
-    u32::from(is_homotopy_lambda(lst(&nlsystem.crefs).last()))
+    u32::from(is_homotopy_lambda(nls_crefs(nlsystem).last()))
 }
 
 /// `nls_parts` for a linear system: the residuals, which may be array-valued and so
@@ -494,7 +506,6 @@ pub(super) fn nls_jac_scratch_f64(sim_code: &SimCode::SimCode) -> u32 {
     scan(flatten_eqs_ll(&sim_code.odeEquations));
     scan(flatten_eqs_ll(&sim_code.algebraicEquations));
     scan(flatten_eqs(&sim_code.allEquations));
-    scan(flatten_eqs(&sim_code.inlineEquations));
     scan(clocked_eqs(sim_code));
     if let Some(d) = &sim_code.daeModeData {
         scan(flatten_eqs_ll(&d.daeEquations));

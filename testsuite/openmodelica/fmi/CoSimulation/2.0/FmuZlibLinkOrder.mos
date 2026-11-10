@@ -1,0 +1,50 @@
+// name:     FmuZlibLinkOrder
+// keywords: FMI 2.0 export zlib Library
+// status:   correct
+// setup_command: $OMC_NATIVE_CC $OMC_NATIVE_CFLAGS $OMC_NATIVE_EXTLIB_FLAGS -o FmuZlibLinkOrder-f.o FmuZlibLinkOrder-f.c && $OMC_NATIVE_AR rcs libFmuZlibLinkOrder.a FmuZlibLinkOrder-f.o
+// teardown_command: rm -rf FmuZlibLinkOrder.fmu FmuZlibLinkOrder.fmutmp/ FmuZlibLinkOrder.log FmuZlibLinkOrder_* FmuZlibLinkOrder-f.o libFmuZlibLinkOrder.a
+// depends: FmuZlibLinkOrder-f.c
+//
+// A library of the model uses the zlib of the FMU, which must come after it on
+// the link line.
+
+setCommandLineOptions("--simCodeTarget=C"); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+model FmuZlibLinkOrder
+  function missing
+    input Real t;
+    output Real r;
+    external \"C\" r = FmuZlibLinkOrder_missing(t)
+      annotation(Library = {\"FmuZlibLinkOrder\", \"zlib\"}, LibraryDirectory = \"file://" + cd() + "\");
+  end missing;
+  Modelica.Blocks.Sources.CombiTimeTable table(table = [0, 0; 1, 1]);
+  output Real y = table.y[1];
+  output Real r = missing(time);
+  annotation(experiment(StopTime = 1));
+end FmuZlibLinkOrder;
+"); getErrorString();
+buildModelFMU(FmuZlibLinkOrder, version = "2.0", fmuType = "cs", platforms = {"static"}); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py FmuZlibLinkOrder.fmu FmuZlibLinkOrder_fmpy.csv 1.0 y r > FmuZlibLinkOrder.log 2>&1"); getErrorString();
+system("tail -n 1 FmuZlibLinkOrder_fmpy.csv > FmuZlibLinkOrder_last.txt"); getErrorString();
+readFile("FmuZlibLinkOrder_last.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "FmuZlibLinkOrder.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// 0
+// ""
+// "1.0,1.0,1.0
+// "
+// ""
+// endResult

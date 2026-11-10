@@ -26,8 +26,8 @@ buildModel(MWE_14636); getErrorString();
 // [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.q = $SEED_ODE_JAC.q; ($RES_SIM_0)
 //
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
-// [BEFORE] [ARRY] (3) $DER.e = e / q; ($RES_SIM_1)
-// [AFTER ] [ARRY] (3) $pDER_ODE_JAC.$DER.e = ($SEED_ODE_JAC.e .* q .- $SEED_ODE_JAC.q .* e) / q ^ 2.0; ($RES_SIM_1)
+// [BEFORE] [ARRY] (3) $DER.e = e/q; ($RES_SIM_1)
+// [AFTER ] [ARRY] (3) $pDER_ODE_JAC.$DER.e = ($SEED_ODE_JAC.e.*q .- $SEED_ODE_JAC.q.*e)/q^2.0; ($RES_SIM_1)
 //
 // {"MWE_14636", "MWE_14636_init.xml"}
 // ""

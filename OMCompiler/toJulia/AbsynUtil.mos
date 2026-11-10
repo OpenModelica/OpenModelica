@@ -1,6 +1,0 @@
-//Simply translating Absyn
-setCommandLineOptions("-g=MetaModelica");getErrorString();
-loadFile("Compiler/FrontEnd/AbsynUtil.mo");getErrorString();
-writeFile("toJulia/toJuliaOutput/AbsynUtil.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
-//Test Absyn
-system("julia toJulia/toJuliaOutput/AbsynUtil.jl");

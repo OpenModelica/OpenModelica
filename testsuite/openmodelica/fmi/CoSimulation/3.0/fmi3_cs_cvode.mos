@@ -1,0 +1,61 @@
+// name: fmi3_cs_cvode.mos
+// keywords: FMI 3.0 export CoSimulation CVODE
+// status: correct
+// teardown_command: rm -rf fmi3_cs_cvode.fmu fmi3_cs_cvode.fmutmp/ fmi3_cs_cvode_res.mat fmi3_cs_cvode_fmpy.csv fmi3_cs_cvode_diff.*.csv fmi3_cs_cvode_info.json fmi3_cs_cvode_*.bin
+//
+// An FMI 3.0 Co-Simulation FMU with s:cvode gets the result of the simulation.
+
+loadString("
+model fmi3_cs_cvode
+  Real x(start = 1, fixed = true);
+  Real y(start = 0, fixed = true);
+  discrete Real k(start = 1, fixed = true);
+equation
+  der(x) = -1000*(x - cos(time));
+  der(y) = -k*y + x;
+  when time > 0.55 then
+    k = 3;
+  end when;
+end fmi3_cs_cvode;
+"); getErrorString();
+setCommandLineOptions("--fmiFlags=s:cvode"); getErrorString();
+
+buildModelFMU(fmi3_cs_cvode, version="3.0", fmuType="cs"); getErrorString();
+simulate(fmi3_cs_cvode, stopTime=1.0); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py fmi3_cs_cvode.fmu fmi3_cs_cvode_fmpy.csv 1.0 x y"); getErrorString();
+diffSimulationResults("fmi3_cs_cvode_fmpy.csv", "fmi3_cs_cvode_res.mat", "fmi3_cs_cvode_diff", vars={"x","y"}); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3_cs_cvode.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// record SimulationResult
+//     resultFile = "fmi3_cs_cvode_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'fmi3_cs_cvode', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// LOG_SOLVER        | info    | CVODE linear multistep method CV_BDF
+// LOG_SOLVER        | info    | CVODE maximum integration order CV_ITER_NEWTON
+// LOG_SOLVER        | info    | CVODE use equidistant time grid YES
+// LOG_SOLVER        | info    | CVODE Using relative error tolerance 1.000000e-06
+// LOG_SOLVER        | info    | CVODE Using sparse linear solver SUNLinSol_KLU.
+// LOG_SOLVER        | info    | CVODE Use sparse Jacobian method coloredNumerical
+// LOG_SOLVER        | info    | CVODE uses internal root finding method YES
+// LOG_SOLVER        | info    | CVODE maximum absolut step size 0
+// LOG_SOLVER        | info    | CVODE initial step size is set automatically
+// LOG_SOLVER        | info    | CVODE maximum integration order 5
+// LOG_SOLVER        | info    | CVODE maximum number of nonlinear convergence failures permitted during one step 10
+// LOG_SOLVER        | info    | CVODE BDF stability limit detection algorithm ON
+// 0
+// ""
+// (true, {})
+// ""
+// endResult

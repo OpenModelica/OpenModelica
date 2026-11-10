@@ -2,7 +2,6 @@
 // keywords: mixed nonlinear problem
 // status:   correct
 // teardown_command: rm -f ASubIfExp_*
-// cflags: -d=-newInst
 // 
 
 loadString("

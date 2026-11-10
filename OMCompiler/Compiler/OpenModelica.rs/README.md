@@ -65,6 +65,7 @@ CMake mirrors both trees into one per-build working copy reproducing the
 
 ```bash
 apt install rustup binaryen
+# binaryen 120+ (else -DWASM_OPT_EXECUTABLE=<newer wasm-opt>)
 # We use this toolchain in Jenkins
 rustup toolchain install nightly-2026-05-31 \
   --profile minimal \

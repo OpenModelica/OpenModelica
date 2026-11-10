@@ -21,7 +21,6 @@ model UnknownDimensionMod "check that we can deduce unknown dimensions from arra
 
   A a(b = matrix);
 
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end UnknownDimensionMod;
 
 // Result:

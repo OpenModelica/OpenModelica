@@ -541,17 +541,6 @@ public function mocFiles
   external "C" outStringLst=System_mocFiles(inString) annotation(Library = "omcruntime");
 end mocFiles;
 
-public function getLoadModelPath
-  input String className;
-  input list<String> prios;
-  input list<String> mps;
-  input Boolean requireExactVersion = false;
-  output String dir;
-  output String name;
-  output Boolean isDir;
-  external "C" System_getLoadModelPath(className,prios,mps,requireExactVersion,dir,name,isDir) annotation(Library = "omcruntime");
-end getLoadModelPath;
-
 public function time
   output Real outReal;
   external "C" outReal=SystemImpl__time() annotation(Library = "omcruntime");
@@ -1037,6 +1026,17 @@ public function realMaxLit "Returns the maximum real that can be represent using
   output Real outReal;
   external "builtin" outReal=realMaxLit();
 end realMaxLit;
+
+public function realNaN
+  output Real nan;
+  external "C" nan=System_realNaN() annotation(Library = "omcruntime");
+end realNaN;
+
+public function realIsNaN
+  input Real r;
+  output Boolean isNaN;
+  external "C" isNaN=System_realIsNaN(r) annotation(Library = "omcruntime");
+end realIsNaN;
 
 public function uriToClassAndPath "Handles modelica:// and file:// URI's. The result is an absolute path on the local system.
   The result depends on the current OPENMODELICALIBRARY (MODELICAPATH in the language specification). Sets the error buffer on failure."

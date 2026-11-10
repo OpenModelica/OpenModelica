@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 zeroSizeRecordField.mos \
+RecordParamOrder.mos \
 constantRecordField.mos \
 simple_record.mos \
 nestedRecordBinding.mos \
@@ -13,6 +14,7 @@ record_arrays.mos \
 RecordCausality.mos \
 AliasRecord.mos \
 recordConstantArgument.mos \
+recordArrayFunctionCall.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

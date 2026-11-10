@@ -1,6 +1,7 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+kinsolBoundStart.mos \
 bug_2841.mos \
 bug_3527.mos \
 externalErrorThenThrow.mos \
@@ -55,6 +56,7 @@ TestInputIteration.mos \
 TestFalseIterationNLS.mos \
 ScalingTest1.mos \
 inverseTest.mos \
+scalarKinsol.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

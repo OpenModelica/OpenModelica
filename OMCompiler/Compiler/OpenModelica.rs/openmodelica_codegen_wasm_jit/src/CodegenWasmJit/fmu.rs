@@ -385,7 +385,7 @@ fn lower_fmu_kernel(
     fmi_solver_flags: &str,
 ) -> Result<SimModel> {
     let model = crate::CodegenWasmJitFunctions::with_shared_externals(|| {
-        build_sim_model(sim_code, true, ExtHost::Wasm, cs_method, fmi_solver_flags)
+        build_sim_model(sim_code, true, ExtHost::Wasm, Eh::Exnref, cs_method, fmi_solver_flags)
     })?;
     if let Some(func) = first_external_import(&model.wasm) {
         if !external_c_available() {
@@ -479,6 +479,7 @@ pub fn translateFmu(
             &sim_code,
             true,
             ExtHost::SIM,
+            Eh::sim(),
             &cs_method,
             &fmi_solver_flags,
         )?);
@@ -488,8 +489,9 @@ pub fn translateFmu(
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .insert(prefix.clone(), model.clone());
-        // With `external "C"` the two differ, and the export lowers its own.
-        if first_external_import(&model.wasm).is_none() {
+        // With `external "C"` or legacy exceptions the two differ, and the export
+        // lowers its own.
+        if first_external_import(&model.wasm).is_none() && Eh::sim() == Eh::Exnref {
             keep_fmu_kernel(&prefix, &model);
         }
         Ok(())
@@ -517,11 +519,12 @@ fn keep_translated_model(sim_code: &SimCode::SimCode, kernel: &Arc<SimModel>) ->
         .cloned();
     let model = match kept {
         Some(m) => m,
-        None if first_external_import(&kernel.wasm).is_none() => kernel.clone(),
+        None if first_external_import(&kernel.wasm).is_none() && Eh::sim() == Eh::Exnref => kernel.clone(),
         None => Arc::new(build_sim_model(
             sim_code,
             true,
             ExtHost::SIM,
+            Eh::sim(),
             &kernel.meta_compact.cs_method,
             &kernel.meta_compact.fmi_solver_flags,
         )?),
@@ -586,8 +589,7 @@ pub(super) fn emit_fmu(
         let cs = kind != "ME";
         // Both adapters import every solver, real or stubbed; only the integrator is
         // Co-Simulation's alone.
-        let solvers = sundials_available()
-            .then(|| fmu_solver_libraries(&simulation_flags_json, &cs_method, cs, model.sparse_nls));
+        let solvers = sundials_available().then(|| fmu_solver_libraries(&simulation_flags_json, &cs_method, cs));
         // An unzipped export is for an OpenModelica importer: it holds the model
         // description and the model kernel and nothing else, and the host links
         // that kernel against an adapter it compiled once into

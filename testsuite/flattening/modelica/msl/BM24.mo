@@ -987,7 +987,6 @@ model BM24
 
 equation
   connect(sum1.inPort,constant1.outPort) annotation(Line(visible=true,points={{-53.63,31.73},{-74.92,32.95},{-74.61,33.86}}));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM24;
 
 // class BM24
@@ -1014,26 +1013,25 @@ end BM24;
 // end BM24;
 // Result:
 // class BM24
-//   parameter Integer sum1.nin = 1 "Number of inputs";
-//   parameter Integer sum1.inPort.n = sum1.nin "Dimension of signal vector";
+//   final parameter Integer sum1.nin = 1 "Number of inputs";
+//   final parameter Integer sum1.inPort.n = 1 "Dimension of signal vector";
 //   Real sum1.inPort.signal[1] "Real input signals";
-//   parameter Integer sum1.outPort.n = 1 "Dimension of signal vector";
+//   final parameter Integer sum1.outPort.n = 1 "Dimension of signal vector";
 //   Real sum1.outPort.signal[1] "Real output signals";
 //   Real sum1.y "Output signal";
 //   protected Real sum1.u[1] "Input signals";
 //   parameter Real sum1.k[1] = 1.0 "Optional: sum coefficients";
-//   parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
-//   parameter Integer constant1.outPort.n = constant1.nout "Dimension of signal vector";
+//   parameter Real constant1.k[1] = 1.0 "Constant output values";
+//   final parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
+//   final parameter Integer constant1.outPort.n = 1 "Dimension of signal vector";
 //   Real constant1.outPort.signal[1] "Real output signals";
 //   Real constant1.y[1];
-//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 // equation
-//   sum1.u = {sum1.inPort.signal[1]};
+//   sum1.inPort.signal[1] = constant1.outPort.signal[1];
+//   sum1.u = sum1.inPort.signal;
 //   sum1.y = sum1.k[1] * sum1.u[1];
 //   sum1.y = sum1.outPort.signal[1];
 //   constant1.outPort.signal[1] = constant1.k[1];
 //   constant1.y[1] = constant1.outPort.signal[1];
-//   assert(sum1.inPort.n == constant1.outPort.n, "automatically generated from connect");
-//   constant1.outPort.signal[1] = sum1.inPort.signal[1];
 // end BM24;
 // endResult

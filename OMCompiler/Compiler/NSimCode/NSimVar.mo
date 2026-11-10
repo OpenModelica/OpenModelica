@@ -67,7 +67,7 @@ protected
   // Backend imports
   import BVariable = NBVariable;
   import NBEquation.Equation;
-  import NBEvents.{EventInfo, Condition, MathEvent};
+  import NBEvents.{EventInfo, TimeEvent};
   import NBPartition.Partition;
   import Slice = NBSlice;
   import StrongComponent = NBStrongComponent;
@@ -623,6 +623,7 @@ public
         case VariableKind.PARAMETER()      then OldSimCodeVar.FIXED();
         case VariableKind.DISCRETE()       then OldSimCodeVar.DISCRETE();
         case VariableKind.DISCRETE_STATE() then OldSimCodeVar.DISCRETE();
+        case VariableKind.ALGORITHM_LOCAL() then OldSimCodeVar.DISCRETE();
         case VariableKind.CLOCKED()        then OldSimCodeVar.DISCRETE();
         case VariableKind.PREVIOUS()       then OldSimCodeVar.DISCRETE();
         else OldSimCodeVar.CONTINUOUS();
@@ -737,6 +738,7 @@ public
             isDiscrete := match varKind
               case VariableKind.DISCRETE()        then true;
               case VariableKind.DISCRETE_STATE()  then true;
+              case VariableKind.ALGORITHM_LOCAL() then true;
               case VariableKind.PREVIOUS()        then true;
               case VariableKind.PARAMETER()       then true;
               case VariableKind.CONSTANT()        then true;
@@ -872,6 +874,7 @@ public
         case VariableKind.DUMMY_DER()               then OldBackendDAE.DUMMY_DER();
         case VariableKind.DUMMY_STATE()             then OldBackendDAE.DUMMY_STATE();
         case VariableKind.DISCRETE()                then OldBackendDAE.DISCRETE();
+        case VariableKind.ALGORITHM_LOCAL()         then OldBackendDAE.DISCRETE();
         case VariableKind.DISCRETE_STATE()          then OldBackendDAE.DISCRETE(); // we don't distinguish between clocked, discrete states and discretes in the old backend. is this correct?
         case VariableKind.CLOCKED()                 then OldBackendDAE.DISCRETE(); // we don't distinguish between clocked, discrete states and discretes in the old backend. is this correct?
         case VariableKind.PREVIOUS()                then OldBackendDAE.DISCRETE();
@@ -891,7 +894,6 @@ public
         case VariableKind.OPT_LOOP_INPUT()          then OldBackendDAE.OPT_LOOP_INPUT(ComponentRef.toDAE(varKind.replaceCref));
         // ToDo maybe deprecated:
         case VariableKind.ALG_STATE()               then OldBackendDAE.ALG_STATE();
-        case VariableKind.ALG_STATE_OLD()           then OldBackendDAE.ALG_STATE_OLD();
         case VariableKind.RESIDUAL_VAR()            then OldBackendDAE.DAE_RESIDUAL_VAR();
         case VariableKind.DAE_AUX_VAR()             then OldBackendDAE.DAE_AUX_VAR();
         case VariableKind.LOOP_ITERATION()          then OldBackendDAE.LOOP_ITERATION();
@@ -1505,9 +1507,9 @@ public
       output VarInfo varInfo;
     algorithm
       varInfo := VAR_INFO(
-        numZeroCrossings             = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)) + sum(MathEvent.numZeroCrossings(mev) for mev in eventInfo.math_lst),
-        numTimeEvents                = UnorderedSet.size(eventInfo.time_set),
-        numRelations                 = sum(Condition.numRelations(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
+        numZeroCrossings             = EventInfo.numZeroCrossings(eventInfo),
+        numTimeEvents                = TimeEvent.nextIndex(eventInfo.time_set),
+        numRelations                 = EventInfo.numRelations(eventInfo),
         numMathEventFunctions        = eventInfo.numberMathEvents,
         numStateVars                 = listScalarSize(vars.stateVars),
         numAlgVars                   = listScalarSize(vars.algVars),

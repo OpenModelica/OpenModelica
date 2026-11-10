@@ -20,20 +20,20 @@ simulate(multary_simplification); getErrorString();
 // ""
 // true
 // ### dumpSimplify | NBackendDAE.simplify ###
-// [BEFORE] ((y + time) - time) / y
+// [BEFORE] ((y + time) - time)/y
 // [AFTER ] 1.0
 //
 // ### dumpSimplify | NBackendDAE.simplify ###
-// [BEFORE] (-2.0) * time * 4.0
-// [AFTER ] -8.0 * time
+// [BEFORE] (-2.0)*time*4.0
+// [AFTER ] -8.0*time
 //
 // ### dumpSimplify | NBackendDAE.simplify ###
-// [BEFORE] 2.0 * (time - (3.0 + 4.0))
-// [AFTER ] 2.0 * ((-7.0) + time)
+// [BEFORE] 2.0*(time - (3.0 + 4.0))
+// [AFTER ] 2.0*((-7.0) + time)
 //
 // ### dumpSimplify | NBEquation.Equation.generateBindingEquation ###
-// [BEFORE] 2.0 * ((-7.0) + time)
-// [AFTER ] 2.0 * (time - 7.0)
+// [BEFORE] 2.0*((-7.0) + time)
+// [AFTER ] 2.0*(time - 7.0)
 //
 // record SimulationResult
 //     resultFile = "multary_simplification_res.mat",

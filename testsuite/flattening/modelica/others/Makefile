@@ -6,7 +6,6 @@ BooleanDim.mo \
 BooleanEnumDims.mo \
 BooleanLiterals.mo \
 BooleanRanges.mo \
-CheckInstantiationLimit.mo \
 Circuit1.mo \
 Class1.mo \
 Class2.mo \
@@ -22,7 +21,6 @@ CyclicBindingParam.mo \
 Derivative1.mo \
 DiagonalBlock.mo \
 DocString.mo \
-DotOperator.mo \
 DuplicateElements.mo \
 DuplicateElementsNonEquivalent.mo \
 DuplicateElementsExtends.mo \
@@ -48,7 +46,6 @@ IfExpCombiTable1.mo \
 IfExpCombiTable2.mo \
 IllegalSubscript.mo \
 Influenza.mo \
-InvertedPendulumTotal.mo \
 ModelAccess.mo \
 ModelSimple.mo \
 NamedArguments.mo \
@@ -86,7 +83,7 @@ StringConcatenation.mo \
 StringConversion.mo \
 StringInteger.mo \
 StringLiterals.mo \
-StringPool.mo \
+StringPool.mos \
 StringReal.mo \
 StructuralParameter1.mo \
 SubScript1.mo \

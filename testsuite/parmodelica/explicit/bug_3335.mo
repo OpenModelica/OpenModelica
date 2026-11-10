@@ -33,4 +33,10 @@ package ParArray
     end parfor;
     result := presult;
   end TwoDim;
+
+  model M
+    Real x[nx] = OneDim(5);
+    Real y[nx,ny] = TwoDim(5);
+    Real err = max(abs(x - {5*i for i in 1:nx})) + max(abs(y - {5*i*j for i in 1:nx, j in 1:ny}));
+  end M;
 end ParArray;

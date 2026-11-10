@@ -2,7 +2,6 @@
 // keywords: complex equation record system
 // status: correct
 // teardown_command: rm -rf ComplexSystem_*  ComplexSystem ComplexSystem.exe ComplexSystem.cpp ComplexSystem.makefile ComplexSystem.libs ComplexSystem.log output.log
-// cflags: -d=-newInst
 //
 // Tests complex equations in strong components.
 //

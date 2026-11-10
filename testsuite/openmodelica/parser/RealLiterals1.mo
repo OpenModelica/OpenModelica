@@ -9,7 +9,6 @@ model RealLiterals1
   Real x_min2 = 4.940656458412465e-324;
   Real x_underflow1 = -4.9e-325;
   Real x_underflow2 = 4.9e-325;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RealLiterals1;
 
 // Result:

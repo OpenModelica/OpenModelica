@@ -26,12 +26,9 @@
  */
 
 /*
- * FMI 3.0 model interface for OpenModelica generated FMUs.
- *
- * This file is self-contained and does NOT depend on fmu2_model_interface.* or
- * fmu_read_flags.*, so that the FMI 3.0 and FMI 2.0 interfaces can evolve
- * independently. It bundles its own copy of the model engine, the Co-Simulation
- * solver setup, and the FMI 3.0 C API layered on top.
+ * FMI 3.0 model interface for OpenModelica generated FMUs: the FMI 3.0 C API
+ * on top of the model interface that it shares with FMI 2.0
+ * (fmu_model_interface.c.inc).
  */
 
 #include <stdio.h>
@@ -44,8 +41,14 @@
 #include "../simulation/solver/initialization/initialization.h"
 #include "../simulation/solver/stateset.h"
 #include "../simulation/solver/model_help.h"
-#ifdef WITH_SUNDIALS
+#ifdef OMC_FMI_HAVE_CVODE
 #include "../simulation/solver/cvode_solver.h"
+#endif
+#ifdef OMC_FMI_DAE_MODE
+#include "../simulation/solver/dae_mode.h"
+#endif
+#ifdef OMC_FMI_HAVE_IDA
+#include "../simulation/solver/ida_solver.h"
 #endif
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
 #include "../simulation/solver/nonlinearSystem.h"
@@ -59,6 +62,7 @@
 #include "../simulation/solver/delay.h"
 #include "../simulation/solver/spatialDistribution.h"
 #include "../simulation/solver/discrete_changes.h"
+#include "../simulation/solver/events.h"
 #include "../simulation/simulation_info_json.h"
 #include "../simulation/simulation_input_xml.h"
 #include "../simulation/solver/synchronous.h"
@@ -72,11 +76,6 @@
 /* gets replaced by SimCodeMain.mo with the model specific ../<model>_FMU.h */
 #include "fmu3_dummy_model_defines.h"
 
-/* forward declarations for the inlined Co-Simulation solver setup (below) */
-void parseFlags(SOLVER_INFO *solverInfo, const char *str);
-int FMI3CS_initializeSolverData(ModelInstance* comp);
-int FMI3CS_deInitializeSolverData(ModelInstance* comp);
- // get's replaced in SimCodeMain.mo
 
 /*
 DLLExport pthread_key_t fmu3_thread_data_key;
@@ -123,2971 +122,33 @@ void omc_fmi3_logMessage(ModelInstance* comp, fmi3Status status, int categoryInd
   comp->logMessage(comp->instanceEnvironment, status, logCategoriesNames[categoryIndex], buffer);
 }
 
-// ---------------------------------------------------------------------------
-// Private helpers used below to validate function arguments
-// ---------------------------------------------------------------------------
-static fmi3Boolean isModelExchange(ModelInstance *comp)
-{
-  return (OMC_ME == comp->type);
-}
-
-static fmi3Boolean isCoSimulation(ModelInstance *comp)
-{
-  return (OMC_CS == comp->type);
-}
-
-const char* stateToString(ModelInstance *comp)
-{
-  if (isModelExchange(comp))
-  {
-    switch (comp->state)
-    {
-      case model_state_start_end:               return "model_state_start_end";
-      case model_state_instantiated:            return "model_state_instantiated";
-      case model_state_initialization_mode:     return "model_state_initialization_mode";
-      case model_state_cs_step_complete:        return "model_state_cs_step_complete (invalid!)";
-      case model_state_cs_step_in_progress:     return "model_state_cs_step_in_progress (invalid!)";
-      case model_state_cs_step_failed:          return "model_state_cs_step_failed (invalid!)";
-      case model_state_cs_step_canceled:        return "model_state_cs_step_canceled (invalid!)";
-      case model_state_me_event_mode:           return "model_state_me_event_mode";
-      case model_state_me_continuous_time_mode: return "model_state_me_continuous_time_mode";
-      case model_state_terminated:              return "model_state_terminated";
-      case model_state_error:                   return "model_state_error";
-      case model_state_fatal:                   return "model_state_fatal";
-    }
-  }
-
-  if (isCoSimulation(comp))
-  {
-    switch (comp->state)
-    {
-      case model_state_start_end:               return "model_state_start_end";
-      case model_state_instantiated:            return "model_state_instantiated";
-      case model_state_initialization_mode:     return "model_state_initialization_mode";
-      case model_state_cs_step_complete:        return "model_state_cs_step_complete";
-      case model_state_cs_step_in_progress:     return "model_state_cs_step_in_progress";
-      case model_state_cs_step_failed:          return "model_state_cs_step_failed";
-      case model_state_cs_step_canceled:        return "model_state_cs_step_canceled";
-      case model_state_me_event_mode:           return "model_state_me_event_mode (invalid!)";
-      case model_state_me_continuous_time_mode: return "model_state_me_continuous_time_mode (invalid!)";
-      case model_state_terminated:              return "model_state_terminated";
-      case model_state_error:                   return "model_state_error";
-      case model_state_fatal:                   return "model_state_fatal";
-    }
-  }
-
-  return "Unknown";
-}
-
-static fmi3Boolean invalidNumber(ModelInstance *comp, const char *func, const char *arg, int n, int nExpected)
-{
-  if (n != nExpected)
-  {
-    comp->state = model_state_error;
-    FILTERED_LOG(comp, fmi3Error, LOG_STATUSERROR, "%s: Invalid argument %s = %d. Expected %d.", func, arg, n, nExpected)
-    return fmi3True;
-  }
-  return fmi3False;
-}
-
-static fmi3Boolean invalidState(ModelInstance *comp, const char *func, int meStates, int csStates)
-{
-  if (!comp)
-    return fmi3True;
-
-  if (isModelExchange(comp))
-  {
-    if (!(comp->state & meStates))
-    {
-      FILTERED_LOG(comp, fmi3Error, LOG_STATUSERROR, "%s: Illegal model exchange call sequence. %s is not allowed in %s state.", func, func, stateToString(comp))
-      comp->state = model_state_error;
-      return fmi3True;
-    }
-  }
-
-  if (isCoSimulation(comp))
-  {
-    if (!(comp->state & csStates))
-    {
-      FILTERED_LOG(comp, fmi3Error, LOG_STATUSERROR, "%s: Illegal co-simulation call sequence. %s is not allowed in %s state.", func, func, stateToString(comp))
-      comp->state = model_state_error;
-      return fmi3True;
-    }
-  }
-
-  return fmi3False;
-}
-
-static fmi3Boolean nullPointer(ModelInstance* comp, const char *func, const char *arg, const void *p)
-{
-  if (!p)
-  {
-    comp->state = model_state_error;
-    FILTERED_LOG(comp, fmi3Error, LOG_STATUSERROR, "%s: Invalid argument %s = NULL.", func, arg)
-    return fmi3True;
-  }
-  return fmi3False;
-}
-
-static fmi3Boolean vrOutOfRange(ModelInstance *comp, const char *func, fmi3ValueReference vr, int end)
-{
-  if (vr >= end) {
-    comp->state = model_state_error;
-    FILTERED_LOG(comp, fmi3Error, LOG_STATUSERROR, "%s: Illegal value reference %u.", func, vr)
-    return fmi3True;
-  }
-  return fmi3False;
-}
-
-static fmi3Status unsupportedFunction(ModelInstance *comp, const char *func)
-{
-  FILTERED_LOG(comp, fmi3Error, LOG_STATUSERROR, "%s: Function not implemented.", func)
-  return fmi3Error;
-}
-
-/**
- * @brief Helper for macro FILTERED_LOG
- *
- * @param comp            Pointer to FMU component.
- * @param categoryIndex   Logging category index.
- * @return fmi3Boolean    Return `fmi3True` if logging category is enabled,
- *                        otherwise return `fmi3False`.
- */
-fmi3Boolean isCategoryLogged(ModelInstance *comp, int categoryIndex)
-{
-  if (categoryIndex < NUMBER_OF_CATEGORIES && (comp->logCategories[categoryIndex] || comp->logCategories[LOG_ALL])) {
-    return fmi3True;
-  }
-  return fmi3False;
-}
-
-static void omc_assert_fmi_common(threadData_t *threadData, fmi3Status status, int categoryIndex, FILE_INFO info, const char *msg, va_list args)
-{
-  const char *str;
-  GC_vasprintf(&str, msg, args);
-  if (threadData) {
-    ModelInstance* c = (ModelInstance*) threadData->localRoots[LOCAL_ROOT_FMI_DATA];
-    if (info.lineStart) {
-      FILTERED_LOG(c, status, categoryIndex, "%s:%d: %s", info.filename, info.lineStart, str)
-    } else {
-      FILTERED_LOG(c, status, categoryIndex, "%s", str)
-    }
-  } else {
-    printInfo(stderr, info);
-    fputs("Modelica Assert: ", stderr);
-    fputs(str, stderr);
-    fputs("!\n", stderr);
-  }
-}
-
-static void omc_assert_fmi(threadData_t *threadData, FILE_INFO info, const char *msg, ...) __attribute__ ((noreturn));
-static void omc_assert_fmi(threadData_t *threadData, FILE_INFO info, const char *msg, ...)
-{
-  va_list args;
-  va_start(args, msg);
-  omc_assert_fmi_common(threadData, fmi3Error, LOG_STATUSERROR, info, msg, args);
-  va_end(args);
-  if (threadData) {
-    OMC_THROW_INTERNAL();
-  } else {
-    OMC_THROW();
-  }
-}
-
-static void omc_assert_fmi_warning(FILE_INFO info, const char *msg, ...)
-{
-  va_list args;
-  va_start(args, msg);
-  omc_assert_fmi_common((threadData_t*)pthread_getspecific(mmc_thread_data_key), fmi3Warning, LOG_STATUSWARNING, info, msg, args);
-  va_end(args);
-}
-
-static void omc_terminate_fmi(FILE_INFO info, const char *msg, ...)
-{
-  va_list ap;
-  va_start(ap,msg);
-  printInfo(stderr, info);
-  fputs("Modelica Terminate: ", stderr);
-  vfprintf(stderr,msg,ap);
-  fputs("!\n", stderr);
-  va_end(ap);
-  fflush(NULL);
-
-  threadData_t *threadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key);
-  if (threadData) {
-    ModelInstance* c = (ModelInstance*) threadData->localRoots[LOCAL_ROOT_FMI_DATA];
-    if (c) {
-      c->_terminate_simulation_requested = 1;
-    }
-  }
-
-  OMC_THROW();
-}
-
-// ---------------------------------------------------------------------------
-// Private helpers functions
-// ---------------------------------------------------------------------------
-static inline void resetThreadData(ModelInstance* comp)
-{
-#if defined(OM_HAVE_PTHREADS)
-  if (comp->threadDataParent) {
-    pthread_setspecific(mmc_thread_data_key, comp->threadDataParent);
-  }
-#endif
-}
-
-static inline void setThreadData(ModelInstance* comp)
-{
-#if defined(OM_HAVE_PTHREADS)
-  if (comp->threadDataParent) {
-    pthread_setspecific(mmc_thread_data_key, comp->threadData);
-  }
-#endif
-}
-
-static void holdAsserts(ModelInstance *comp, int hold);
-static void releaseAsserts(ModelInstance *comp);
-
-fmi3Status internalEventUpdate(ModelInstance* c, EventInfo* eventInfo)
-{
-  int i, done=0;
-  ModelInstance* comp = (ModelInstance *)c;
-  threadData_t *threadData = comp->threadData;
-  jmp_buf *old_jmp = threadData->mmc_jumper;
-  fmi3Float64 nextSampleEvent;
-  fmi3Boolean nextSampleEventDefined;
-  modelica_boolean nextTimerDefined;
-  fmi3Float64 nextTimerActivationTime;
-  int syncRet;
-
-  if (nullPointer(comp, "internalEventUpdate", "eventInfo", eventInfo)) {
-    return fmi3Error;
-  }
-
-  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "internalEventUpdate: Start Event Update! Next Sample Event %g", eventInfo->nextEventTime)
-
-  setThreadData(comp);
-  /* try */
-  OMC_TRY_INTERNAL(simulationJumpBuffer)
-    threadData->mmc_jumper = threadData->simulationJumpBuffer;
-    /* As simulationUpdate does, hold a violated assert() over the event: the event
-     * makes the point it was raised for obsolete. The window spans the whole
-     * iteration the master drives, not one pass of it, so `_event_found` and
-     * `needToReThrow` accumulate over the passes and are settled by the last. */
-    holdAsserts(comp, 1);
-
-    /* simulationUpdate's order: the timers (a tick coincident with an event samples
-     * the values before it), then the event, then the timers again below. */
-    if (comp->_need_update) {
-      comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
-      comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
-      /* the update below raises the same violation again */
-      comp->_held_assert_logged |= comp->fmuData->simulationInfo->needToReThrow;
-      holdAsserts(comp, 1);
-    }
-    syncRet = handleTimersFMI(comp->fmuData, comp->threadData, comp->fmuData->localData[0]->timeValue, &nextTimerDefined, &nextTimerActivationTime);
-    if (syncRet != 0) {
-      eventInfo->valuesOfContinuousStatesChanged = fmi3True;
-      comp->_event_found = 1;
-    }
-
-#if !defined(OMC_NO_STATESELECTION)
-    if (stateSelection(comp->fmuData, comp->threadData, 1, 1)) {
-      FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "internalEventUpdate: Need to iterate state values changed!")
-      /* if new set is calculated reinit the solver */
-      eventInfo->valuesOfContinuousStatesChanged = fmi3True;
-    }
-#endif
-
-    /* store pre-values after events are handled, this will override pre values
-     * soon and there is no chance of event triggering for conditons change(u) (i.e) u <> pre(u)
-     *https://github.com/OpenModelica/OpenModelica/issues/13811
-     */
-    //storePreValues(comp->fmuData);
-
-    /* activate sample event */
-    for(i=0; i<comp->fmuData->modelData->nSamples; ++i) {
-      if (comp->fmuData->simulationInfo->nextSampleTimes[i] <= comp->fmuData->localData[0]->timeValue) {
-        comp->fmuData->simulationInfo->samples[i] = 1;
-        comp->_event_found = 1;
-        infoStreamPrint(LOG_EVENTS, 0, "[%ld] sample(%g, %g)", comp->fmuData->modelData->samplesInfo[i].index, comp->fmuData->modelData->samplesInfo[i].start, comp->fmuData->modelData->samplesInfo[i].interval);
-      }
-    }
-
-    /* fix issue https://github.com/OpenModelica/OpenModelica/issues/12350
-     * we need to update discreteSystem during event update, before evaluating functionDAE
-    */
-    comp->_held_assert_logged |= comp->fmuData->simulationInfo->needToReThrow;
-    holdAsserts(comp, 1);
-    updateDiscreteSystem(comp->fmuData, threadData);
-    /* The event iteration moved something, so this really is an event: the FMU has
-     * no checkEvents() of its own, and by the time updateDiscreteSystem returns the
-     * pre-values it settled make the checks below see nothing. */
-    if (comp->fmuData->simulationInfo->discreteStateChanged) {
-      comp->_event_found = 1;
-    }
-
-    comp->fmuData->callback->functionDAE(comp->fmuData, comp->threadData);
-
-    /* deactivate sample events */
-    for(i=0; i<comp->fmuData->modelData->nSamples; ++i) {
-      if (comp->fmuData->simulationInfo->samples[i]) {
-        comp->fmuData->simulationInfo->samples[i] = 0;
-        comp->fmuData->simulationInfo->nextSampleTimes[i] += comp->fmuData->modelData->samplesInfo[i].interval;
-      }
-    }
-
-    /* Handle clock timers */
-    syncRet = handleTimersFMI(comp->fmuData, comp->threadData, comp->fmuData->localData[0]->timeValue, &nextTimerDefined, &nextTimerActivationTime);
-
-    if (syncRet != 0) {
-      comp->_event_found = 1;
-    }
-
-    if (checkForDiscreteChanges(comp->fmuData, comp->threadData) || comp->fmuData->simulationInfo->needToIterate || checkRelations(comp->fmuData) || syncRet==2 ) {
-      FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "internalEventUpdate: Need to iterate(discrete changes)!")
-      comp->_event_found = 1;
-      eventInfo->newDiscreteStatesNeeded = fmi3True;
-      eventInfo->valuesOfContinuousStatesChanged = fmi3True;
-      eventInfo->terminateSimulation = fmi3False;
-    } else {
-      eventInfo->newDiscreteStatesNeeded = fmi3False;
-      eventInfo->terminateSimulation = fmi3False;
-    }
-    FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "internalEventUpdate: newDiscreteStatesNeeded %s",eventInfo->newDiscreteStatesNeeded?"true":"false");
-
-
-    /* TODO: check the event iteration for relation
-     * in FMI import and export. This is an workaround,
-     * since the iteration seem not starting.
-     */
-    storePreValues(comp->fmuData);
-    updateRelationsPre(comp->fmuData);
-    /* due to an event overwrite old values */
-    overwriteOldSimulationData(comp->fmuData);
-
-    updateNextSampleEvent(comp->fmuData, comp->threadData);
-    nextSampleEventDefined = getNextSampleTimeFMU(comp->fmuData, &nextSampleEvent);
-
-    /* Get next event time */
-    if (nextSampleEventDefined && !nextTimerDefined) {
-      eventInfo->nextEventTimeDefined = fmi3True;
-      eventInfo->nextEventTime = nextSampleEvent;
-    }
-    else if (!nextSampleEventDefined && nextTimerDefined) {
-      eventInfo->nextEventTimeDefined = fmi3True;
-      eventInfo->nextEventTime = nextTimerActivationTime;
-    }
-    else if (nextSampleEventDefined && nextTimerDefined) {
-      eventInfo->nextEventTimeDefined = fmi3True;
-      eventInfo->nextEventTime = fmin(nextSampleEvent,nextTimerActivationTime);
-    }
-    else {
-      if (eventInfo->nextEventTime <= comp->fmuData->localData[0]->timeValue) {
-        eventInfo->nextEventTimeDefined = fmi3False;
-      }
-    }
-    FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "internalEventUpdate: Checked for Sample Events! Next Sample Event %g",eventInfo->nextEventTime)
-
-    /* Check if ignored assert throw was actually a valid throw */
-    releaseAsserts(comp);
-    if (comp->fmuData->simulationInfo->needToReThrow && !eventInfo->newDiscreteStatesNeeded) {
-      comp->fmuData->simulationInfo->needToReThrow = 0;
-      comp->_held_assert_logged = 0;
-      if (comp->_event_found) {
-        infoStreamPrint(OMC_LOG_ASSERT, 0, "Found event, previous asserts are ignored.");
-      } else {
-        errorStreamPrint(OMC_LOG_ASSERT, 0, "No event found, but assert was triggered. Throwing now!");
-        omc_throw(threadData);
-      }
-    }
-
-    done=1;
-
-  /* catch */
-  OMC_CATCH_INTERNAL(simulationJumpBuffer)
-  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
-  threadData->mmc_jumper = old_jmp;
-  releaseAsserts(comp);
-  resetThreadData(comp);
-
-  if (done) {
-    return fmi3OK;
-  }
-
-  if (comp->_terminate_simulation_requested) {
-    comp->_terminate_simulation_requested = 0;
-    eventInfo->newDiscreteStatesNeeded = fmi3False;
-    eventInfo->terminateSimulation = fmi3True;
-    FILTERED_LOG(comp, fmi3OK, LOG_EVENTS, "internalEventUpdate: terminate simulation requested by the model.")
-    return fmi3OK;
-  }
-
-  FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "internalEventUpdate: terminated by an assertion.")
-  comp->_need_update = 1;
-  return fmi3Error;
-}
-
-
-fmi3Status internalEventIteration(ModelInstance* c, EventInfo *eventInfo)
-{
-  fmi3Status status = fmi3OK;
-  c->_event_found = 0;
-  eventInfo->newDiscreteStatesNeeded = fmi3True;
-  eventInfo->terminateSimulation     = fmi3False;
-  while (eventInfo->newDiscreteStatesNeeded && !eventInfo->terminateSimulation && status != fmi3Error) {
-    status = internalEventUpdate((ModelInstance *)c, eventInfo);
-  }
-  return status;
-}
-
-/********************************************************************
- * Private helpers for (modelica_)string array handling             *
- ********************************************************************/
-
-  /* size of array of strings is not known at compile-time!      */
-  /* figure out total size by repeatedly scanning with strlen(). */
-  /* this code relies on the assumption of 1 char = 1 byte.      */
-
-/* A modelica_string array is an array of pointers; what goes into the serialized
-   state is the bytes they point at, one NUL-terminated run per element. */
-size_t getStringArraySize(const modelica_string *stringArray, int elements) {
-    size_t totalSize = 0;
-    for (int j = 0; j < elements; j++) {
-        totalSize += (stringArray[j] ? omc_string_len(stringArray[j]) : 0) + 1;
-    }
-    return totalSize;
-}
-
-size_t copyStringArray(char* destination, const modelica_string *stringArray, int elements) {
-    size_t copiedBytes = 0;
-    for (int j = 0; j < elements; j++) {
-        const char *str = stringArray[j] ? omc_string_data(stringArray[j]) : "";
-        size_t len = strlen(str) + 1;
-        memcpy(destination + copiedBytes, str, len);
-        copiedBytes += len;
-    }
-    return copiedBytes;
-}
-
-/* The dual of copyStringArray: rebuild counted strings the state buffer owns. */
-size_t readStringArray(modelica_string *destination, const char *bytes, int elements) {
-    size_t readBytes = 0;
-    for (int j = 0; j < elements; j++) {
-        const char *str = bytes + readBytes;
-        omc_string_move(destination + j, omc_string_new(str));
-        readBytes += strlen(str) + 1;
-    }
-    return readBytes;
-}
-
-/**
- * @brief Open C's `noThrowAsserts` for one evaluation.
- *
- * The master cannot say which of its evaluations is an accepted point, so a held
- * violation is logged once and stays quiet until an event settles it.
- */
-static void holdAsserts(ModelInstance *comp, int hold)
-{
-  comp->fmuData->simulationInfo->noThrowAsserts = hold;
-  omc_useStream[OMC_LOG_ASSERT] = !hold || !comp->_held_assert_logged;
-}
-
-/**
- * @brief Close the window, latching whether it caught a violation.
- */
-static void releaseAsserts(ModelInstance *comp)
-{
-  comp->_held_assert_logged |= comp->fmuData->simulationInfo->needToReThrow;
-  comp->fmuData->simulationInfo->noThrowAsserts = 0;
-  omc_useStream[OMC_LOG_ASSERT] = 1;
-}
-
-/**
- * @brief Helper function for omcGetXXX to update the component if needed.
- *
- * @param comp          FMI component
- * @param func          Name of omcGetXXX function calling this function.
- * @return fmi3Status   Returns fmi3Error if an error was caught, fmi3OK otherwise.
- */
-fmi3Status updateIfNeeded(ModelInstance *comp, const char *func)
-{
-  /* Variables */
-  threadData_t *threadData = comp->threadData;
-  jmp_buf *old_jmp=threadData->mmc_jumper;
-  int success = 0;
-
-  if (comp->_need_update)
-  {
-    setThreadData(comp);
-
-    /* TRY */
-#if !defined(OMC_EMCC)
-    OMC_TRY_INTERNAL(simulationJumpBuffer)
-    threadData->mmc_jumper = threadData->simulationJumpBuffer;
-#endif
-
-    if (model_state_initialization_mode == comp->state)
-    {
-      initialization(comp->fmuData, comp->threadData, "fmi", "", 0.0);
-    }
-    else
-    {
-      /* As in simulationUpdate, a violated assert() is held (needToReThrow);
-       * completedIntegratorStep turns it into an event, Event Mode evaluates live. */
-      holdAsserts(comp, (comp->state & (model_state_me_continuous_time_mode | model_state_cs_step_in_progress | model_state_cs_step_complete)) != 0);
-      comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
-      overwriteOldSimulationData(comp->fmuData);
-      comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
-      comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
-      comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
-      comp->fmuData->callback->function_storeSpatialDistribution(comp->fmuData, threadData);
-      storePreValues(comp->fmuData);
-      releaseAsserts(comp);
-    }
-    comp->_need_update = 0;
-    success = 1;
-
-    /* CATCH */
-#if !defined(OMC_EMCC)
-    OMC_CATCH_INTERNAL(simulationJumpBuffer)
-    threadData->mmc_jumper = old_jmp;
-#endif
-    if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); success = 0; }
-
-    resetThreadData(comp);
-    releaseAsserts(comp);
-    if (!success)
-    {
-      FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "%s: terminated by an assertion.", func)
-      // TODO: Check if fmi3Error or fmi3Discard should be returned
-      return fmi3Error;
-    }
-  }
-
-  return fmi3OK;
-}
-
-
-/***************************************************
-Common Functions
-****************************************************/
-fmi3Status omcSetDebugLogging(ModelInstance* c, fmi3Boolean loggingOn, size_t nCategories, const fmi3String categories[])
-{
-  int i, j;
-  ModelInstance *comp = (ModelInstance *)c;
-
-  if (invalidState(comp, "omcSetDebugLogging", model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_in_progress|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error))
-    return fmi3Error;
-
-  comp->loggingOn = loggingOn;
-  for (j = 0; j < NUMBER_OF_CATEGORIES; j++) {
-    comp->logCategories[j] = fmi3False;
-  }
-  for (i = 0; i < nCategories; i++) {
-    fmi3Boolean categoryFound = fmi3False;
-    for (j = 0; j < NUMBER_OF_CATEGORIES; j++) {
-      if (strcmp(logCategoriesNames[j], categories[i]) == 0) {
-        comp->logCategories[j] = loggingOn;
-        categoryFound = fmi3True;
-        break;
-      }
-    }
-    if (!categoryFound) {
-      omc_fmi3_logMessage(comp, fmi3Warning, LOG_STATUSERROR,
-          "logging category '%s' is not supported by model", categories[i]);
-    }
-  }
-
-  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcSetDebugLogging")
-  return fmi3OK;
-}
-
-ModelInstance* omcInstantiate(fmi3String instanceName, OMC_FmuType fmuType, fmi3String fmuGUID, fmi3String fmuResourceLocation,
-    fmi3InstanceEnvironment instanceEnvironment, fmi3LogMessageCallback logMessage, fmi3Boolean visible, fmi3Boolean loggingOn)
-{
-  /*
-  TODO: We should set the interface, but we can't until it's no longer a global variable.
-  * The problem is that we might overwrite the main simulation's copy of the interface...
-  */
-  threadData_t *threadDataParent = (threadData_t*) pthread_getspecific(mmc_thread_data_key);
-  ModelInstance *comp;
-  if (!logMessage) {
-    return NULL;
-  }
-  mmc_init_nogc();
-  omc_alloc_interface.init();
-
-  // ignoring arguments: fmuResourceLocation, visible
-  if (!instanceName || strlen(instanceName) == 0) {
-    omc_fmi3_logCallback(logMessage, instanceEnvironment, fmi3Error, "logStatusError", "omcInstantiate: Missing instance name.");
-    return NULL;
-  }
-  if (strcmp(fmuGUID, MODEL_GUID) != 0) {
-    omc_fmi3_logCallback(logMessage, instanceEnvironment, fmi3Error, "logStatusError", "omcInstantiate: Wrong GUID %s. Expected %s.", fmuGUID, MODEL_GUID);
-    return NULL;
-  }
-  comp = (ModelInstance *)calloc(1, sizeof(ModelInstance));
-  if (!comp) {
-    omc_fmi3_logCallback(logMessage, instanceEnvironment, fmi3Error, "logStatusError", "omcInstantiate: Out of memory.");
-    return NULL;
-  }
-
-  DATA* fmudata = NULL;
-  MODEL_DATA* modelData = NULL;
-  SIMULATION_INFO* simInfo = NULL;
-  threadData_t *threadData = NULL;
-  int i;
-
-  comp->state = model_state_start_end;
-  comp->instanceName = (fmi3String)calloc(1 + strlen(instanceName), sizeof(char));
-  comp->GUID = (fmi3String)calloc(1 + strlen(fmuGUID), sizeof(char));
-  fmudata = (DATA *)calloc(1, sizeof(DATA));
-  modelData = (MODEL_DATA *)calloc(1, sizeof(MODEL_DATA));
-  simInfo = (SIMULATION_INFO *)calloc(1, sizeof(SIMULATION_INFO));
-  threadData = (threadData_t *)calloc(1, sizeof(threadData_t));
-
-  /* Every allocation has to be checked before any of them is dereferenced below. */
-  if (!comp->instanceName || !comp->GUID || !fmudata || !modelData || !simInfo || !threadData) {
-    omc_fmi3_logCallback(logMessage, instanceEnvironment, fmi3Error, "logStatusError", "omcInstantiate: Out of memory.");
-    free(threadData);
-    free(simInfo);
-    free(modelData);
-    free(fmudata);
-    free((void*)comp->GUID);
-    free((void*)comp->instanceName);
-    free(comp);
-    return NULL;
-  }
-
-  memset(threadData, 0, sizeof(threadData_t));
-  fmudata->modelData = modelData;
-  fmudata->simulationInfo = simInfo;
-  /*
-  pthread_key_create(&fmu3_thread_data_key,NULL);
-  pthread_setspecific(fmu3_thread_data_key, threadData);
-  */
-
-  comp->threadData = threadData;
-  comp->threadDataParent = threadDataParent;
-  comp->fmuData = fmudata;
-  threadData->localRoots[LOCAL_ROOT_FMI_DATA] = comp;
-
-  // set all categories to on or off. omcSetDebugLogging should be called to choose specific categories.
-  for (i = 0; i < NUMBER_OF_CATEGORIES; i++) {
-    comp->logCategories[i] = loggingOn;
-  }
-
-#if defined(OM_HAVE_PTHREADS)
-  pthread_setspecific(mmc_thread_data_key, comp->threadData);
-#endif
-  omc_assert = omc_assert_fmi;
-  omc_assert_warning = omc_assert_fmi_warning;
-  omc_terminate = omc_terminate_fmi;
-
-  strcpy((char*)comp->instanceName, (const char*)instanceName);
-  comp->type = fmuType;
-  strcpy((char*)comp->GUID, (const char*)fmuGUID);
-  comp->logMessage = logMessage;
-  comp->instanceEnvironment = instanceEnvironment;
-  comp->loggingOn = loggingOn;
-  comp->state = model_state_instantiated;
-
-  /* Add the resourcesDir */
-  fmuResourceLocation = OpenModelica_parseFmuResourcePath(fmuResourceLocation);
-  if (fmuResourceLocation) {
-    comp->fmuData->modelData->resourcesDir = calloc(1 + strlen(fmuResourceLocation), sizeof(char));
-    strcpy(comp->fmuData->modelData->resourcesDir, fmuResourceLocation);
-    free((void*)fmuResourceLocation);
-  } else {
-    FILTERED_LOG(comp, fmi3OK, LOG_STATUSWARNING, "omcInstantiate: Ignoring unknown resource URI: %s", fmuResourceLocation)
-  }
-
-  /* initialize modelData */
-  omc_useStream[OMC_LOG_STDOUT] = 1;
-  omc_useStream[OMC_LOG_ASSERT] = 1;
-  fmu3_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
-  /*
-   * load the simulation settings before initializing the DataStruct for fmus
-   * fix issue #11855, always take the startTime provided in modeldescription.xml
-   * to handle model that have startTime > 0 (e.g) startTime = 0.2
-   */
-  comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
-  allocModelDataVars(comp->fmuData->modelData, FALSE, comp->threadData);
-  scalarAllocArrayAttributes(comp->fmuData->modelData);
-  if (comp->fmuData->callback->updateStructuralParameters) {
-    comp->fmuData->callback->updateStructuralParameters(comp->fmuData, comp->threadData);
-  }
-  calculateAllScalarLength(comp->fmuData->modelData);
-
-  /* setup model data with default start data */
-  setDefaultStartValues(comp);
-  initializeDataStruc(comp->fmuData, comp->threadData);
-
-  setAllParamsToStart(comp->fmuData->simulationInfo, comp->fmuData->modelData);
-  setAllVarsToStart(comp->fmuData->localData[0], comp->fmuData->simulationInfo, comp->fmuData->modelData);
-  /* read_input_fmu sets the per-variable info and attribute values (parameter
-     start values etc.). It must run AFTER initializeDataStruc/computeVarIndices
-     has built the variable->global-array index maps, otherwise the start values
-     it writes never reach simulationInfo->realParameter[realParamsIndex[...]]
-     and parameters stay 0 (issue #15686). This mirrors fmu2_model_interface.c /
-     fmu1_model_interface.c.inc (#15838). */
-  comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData);
-
-
-#if !defined(OMC_MINIMAL_METADATA)
-  modelInfoInit(&(comp->fmuData->modelData->modelDataXml));
-#endif
-
-#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
-  /* allocate memory for non-linear system solvers */
-  initializeNonlinearSystems(comp->fmuData, comp->threadData);
-#endif
-#if !defined(OMC_NUM_LINEAR_SYSTEMS) || OMC_NUM_LINEAR_SYSTEMS>0
-  /* allocate memory for non-linear system solvers */
-  initializeLinearSystems(comp->fmuData, comp->threadData);
-#endif
-#if !defined(OMC_NUM_MIXED_SYSTEMS) || OMC_NUM_MIXED_SYSTEMS>0
-  /* allocate memory for mixed system solvers */
-  initializeMixedSystems(comp->fmuData, comp->threadData);
-#endif
-#if !defined(OMC_NO_STATESELECTION)
-  /* allocate memory for state selection */
-  initializeStateSetJacobians(comp->fmuData, comp->threadData);
-#endif
-
-  /* allocate memory for Jacobian */
-  comp->_has_jacobian = 0;
-  comp->fmiDerJac = NULL;
-  if (comp->fmuData->callback->initialPartialFMIDER != NULL)
-  {
-    comp->fmiDerJac = (JACOBIAN*) calloc(1, sizeof(JACOBIAN));
-    if (! comp->fmuData->callback->initialPartialFMIDER(comp->fmuData, comp->threadData, comp->fmiDerJac))
-    {
-      comp->_has_jacobian = 1;
-    }
-  }
-
-  /* allocate memory for Jacobian during initialization DAE */
-  comp->_has_jacobian_intialization = 0;
-  comp->fmiDerJacInitialization = NULL;
-  if (comp->fmuData->callback->initialPartialFMIDERINIT != NULL)
-  {
-    comp->fmiDerJacInitialization = (JACOBIAN*) calloc(1, sizeof(JACOBIAN));
-    if (! comp->fmuData->callback->initialPartialFMIDERINIT(comp->fmuData, comp->threadData, comp->fmiDerJacInitialization))
-    {
-      comp->_has_jacobian_intialization = 1;
-    }
-  }
-
-  // int cols = comp->fmiDerJac->sizeCols;
-  // int rows = comp->fmiDerJac->sizeRows;
-  // printf("\nFMIDER number of rows and colums");
-  // printf("\nNumber of rows   : %i", rows);
-  // printf("\nNumber of columns: %i", cols);
-  // printf("\n");
-
-  // int cols_ = comp->fmiDerJacInitialization->sizeCols;
-  // int rows_ = comp->fmiDerJacInitialization->sizeRows;
-  // printf("\nFMIDER INITIALIZATION number of rows and colums");
-  // printf("\nNumber of rows   : %i", rows_);
-  // printf("\nNumber of columns: %i", cols_);
-  // printf("\n");
-
-#if NUMBER_OF_STATES > 0
-  comp->states = (fmi3Float64*)calloc(NUMBER_OF_STATES, sizeof(fmi3Float64));
-  comp->states_der = (fmi3Float64*)calloc(NUMBER_OF_STATES, sizeof(fmi3Float64));
-#else
-  comp->states = NULL;
-  comp->states_der = NULL;
-#endif
-#if NUMBER_OF_EVENT_INDICATORS > 0
-  comp->event_indicators = (fmi3Float64*)calloc(NUMBER_OF_EVENT_INDICATORS, sizeof(fmi3Float64));
-  comp->event_indicators_prev = (fmi3Float64*)calloc(NUMBER_OF_EVENT_INDICATORS, sizeof(fmi3Float64));
-#else
-  comp->event_indicators = NULL;
-  comp->event_indicators_prev = NULL;
-#endif
-#if NUMBER_OF_REAL_INPUTS > 0
-  comp->input_real_derivative = (fmi3Float64*)calloc(NUMBER_OF_REAL_INPUTS, sizeof(fmi3Float64));
-#else
-  comp->input_real_derivative = NULL;
-#endif
-
-  comp->_need_update = 1;
-
-  /* Initialize solverInfo */
-  if (OMC_CS == comp->type) {
-    FMI3CS_initializeSolverData(comp);
-  } else {
-    comp->solverInfo = NULL;
-  }
-
-  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcInstantiate: GUID=%s", fmuGUID)
-  resetThreadData(comp);
-  return comp;
-}
-
-void omcFreeInstance(ModelInstance* c)
-{
-  ModelInstance *comp = (ModelInstance *)c;
-
-  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error;
-  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error;
-
-  if (invalidState(comp, "omcFreeInstance", meStates, csStates))
-    return;
-  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcFreeInstance...")
-
-  /* Free CS simulator (CVODE & co) first, while the model data it references
-   * (e.g. the states array wrapped by the solver's N_Vector y) is still alive. */
-  if (comp->solverInfo) {
-    FMI3CS_deInitializeSolverData(comp);
-  }
-
-  /* call external objects destructors */
-  comp->fmuData->callback->callExternalObjectDestructors(comp->fmuData, comp->threadData);
-#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
-  /* free nonlinear system data */
-  freeNonlinearSystems(comp->fmuData, comp->threadData);
-#endif
-#if !defined(OMC_NUM_MIXED_SYSTEMS) || OMC_NUM_MIXED_SYSTEMS>0
-  /* free mixed system data */
-  freeMixedSystems(comp->fmuData, comp->threadData);
-#endif
-#if !defined(OMC_NUM_LINEAR_SYSTEMS) || OMC_NUM_LINEAR_SYSTEMS>0
-  /* free linear system data */
-  freeLinearSystems(comp->fmuData, comp->threadData);
-#endif
-  /* free data struct */
-  deInitializeDataStruc(comp->fmuData);     /* TODO: Use free inside deInitializeDataStruc to be FMI comform */
-
-  /* Free jacobian data */
-  if (comp->_has_jacobian == 1) {
-    /* TODO: Use free insted of free,
-     * but generated code uses malloc / calloc instead of comp->calloc */
-    free(comp->fmiDerJac->seedVars); comp->fmiDerJac->seedVars = NULL;
-    free(comp->fmiDerJac->resultVars); comp->fmiDerJac->resultVars = NULL;
-    free(comp->fmiDerJac->tmpVars); comp->fmiDerJac->tmpVars = NULL;
-
-    free(comp->fmiDerJac->sparsePattern->leadindex); comp->fmiDerJac->sparsePattern->leadindex = NULL;
-    free(comp->fmiDerJac->sparsePattern->index); comp->fmiDerJac->sparsePattern->index = NULL;
-    free(comp->fmiDerJac->sparsePattern->colorCols); comp->fmiDerJac->sparsePattern->colorCols = NULL;
-    free(comp->fmiDerJac->sparsePattern); comp->fmiDerJac->sparsePattern = NULL;
-
-    free(comp->fmiDerJac); comp->fmiDerJac=NULL;
-  }
-
-
-  /* Free jacobian data */
-  if (comp->_has_jacobian_intialization == 1) {
-    /* TODO: Use free insted of free,
-     * but generated code uses malloc / calloc instead of comp->calloc */
-    free(comp->fmiDerJacInitialization->seedVars); comp->fmiDerJacInitialization->seedVars = NULL;
-    free(comp->fmiDerJacInitialization->resultVars); comp->fmiDerJacInitialization->resultVars = NULL;
-    free(comp->fmiDerJacInitialization->tmpVars); comp->fmiDerJacInitialization->tmpVars = NULL;
-
-    free(comp->fmiDerJacInitialization->sparsePattern->leadindex); comp->fmiDerJacInitialization->sparsePattern->leadindex = NULL;
-    free(comp->fmiDerJacInitialization->sparsePattern->index); comp->fmiDerJacInitialization->sparsePattern->index = NULL;
-    free(comp->fmiDerJacInitialization->sparsePattern->colorCols); comp->fmiDerJacInitialization->sparsePattern->colorCols = NULL;
-    free(comp->fmiDerJacInitialization->sparsePattern); comp->fmiDerJacInitialization->sparsePattern = NULL;
-
-    free(comp->fmiDerJacInitialization); comp->fmiDerJacInitialization=NULL;
-  }
-
-  free(comp->states); comp->states = NULL;
-  free(comp->states_der); comp->states_der = NULL;
-  free(comp->event_indicators); comp->event_indicators = NULL;
-  free(comp->event_indicators_prev); comp->event_indicators_prev = NULL;
-  free(comp->input_real_derivative); comp->input_real_derivative = NULL;
-
-  free(comp->fmuData->modelData->resourcesDir);
-
-  /* free simuation data */
-  free(comp->fmuData->modelData);
-  free(comp->fmuData->simulationInfo);
-
-  /* free fmuData */
-  free(comp->threadData);
-  free(comp->fmuData);
-  /* free instanceName & GUID */
-  free((void*)comp->instanceName);
-  free((void*)comp->GUID);
-  /* free comp */
-  free(comp);
-}
-
-fmi3Status omcSetupExperiment(ModelInstance* c, fmi3Boolean toleranceDefined, fmi3Float64 tolerance, fmi3Float64 startTime, fmi3Boolean stopTimeDefined, fmi3Float64 stopTime)
-{
-  ModelInstance *comp = (ModelInstance *)c;
-
-  if (invalidState(comp, "omcSetupExperiment", model_state_instantiated, model_state_instantiated))
-    return fmi3Error;
-
-  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL,
-    "omcSetupExperiment: toleranceDefined=%d tolerance=%g startTime=%g stopTimeDefined=%d stopTime=%g",
-    toleranceDefined, tolerance, startTime, stopTimeDefined, stopTime)
-
-  comp->toleranceDefined = toleranceDefined;
-  comp->tolerance = tolerance;
-  comp->startTime = startTime;
-  comp->stopTimeDefined = stopTimeDefined;
-  comp->stopTime = stopTime;
-  /* fix issue https://github.com/OpenModelica/OpenModelica/issues/12561
-    update the startTime values provided by users (e.g) OMSimulator test.fmu --startTime=2.5
-  */
-  comp->fmuData->localData[0]->timeValue = startTime;
-  return fmi3OK;
-}
-
-fmi3Status omcEnterInitializationMode(ModelInstance* c)
-{
-  ModelInstance *comp = (ModelInstance *)c;
-
-  if (invalidState(comp, "omcEnterInitializationMode", model_state_instantiated, model_state_instantiated))
-    return fmi3Error;
-  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcEnterInitializationMode...")
-
-  setZCtol(comp->tolerance); /* set zero-crossing tolerance */
-  setStartValues(comp);
-  copyStartValuestoInitValues(comp->fmuData);
-  comp->state = model_state_initialization_mode;
-
-  return fmi3OK;
-}
-
-fmi3Status omcExitInitializationMode(ModelInstance* c)
-{
-  fmi3Status res = fmi3Error;
-  ModelInstance *comp = (ModelInstance *)c;
-  threadData_t *threadData = comp->threadData;
-  jmp_buf *old_jmp = threadData->mmc_jumper;
-  fmi3Float64 nextSampleEvent;
-  fmi3Boolean nextSampleEventDefined;
-  int done=0;
-
-  threadData->currentErrorStage = ERROR_SIMULATION;
-  if (invalidState(comp, "omcExitInitializationMode", model_state_initialization_mode, model_state_initialization_mode))
-    return fmi3Error;
-  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcExitInitializationMode...")
-
-  setThreadData(comp);
-
-  /* try */
-  OMC_TRY_INTERNAL(simulationJumpBuffer)
-  threadData->mmc_jumper = threadData->simulationJumpBuffer;
-
-  if (comp->_need_update)
-  {
-    if (initialization(comp->fmuData, comp->threadData, "fmi", "", 0.0))
-    {
-      comp->state = model_state_error;
-      OMC_RESTORE_INTERNAL(simulationJumpBuffer);
-      threadData->mmc_jumper = old_jmp;
-      resetThreadData(comp);
-      FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "omcExitInitializationMode: failed")
-      return fmi3Error;
-    }
-  }
-
-  /* use defined stopTime, if stopTimeDefined is given to calculate the sample events beforehand.
-   * TODO: when stopTime is not defined we use an arbitrary constant 100.0, maybe issue a warning
-   */
-  initSample(comp->fmuData, comp->threadData, comp->fmuData->localData[0]->timeValue, comp->stopTimeDefined ? comp->stopTime : 100.0 /* default stopTime */);
-  /* overwrite old values due to an event */
-  overwriteOldSimulationData(comp->fmuData);
-
-  comp->eventInfo.terminateSimulation = fmi3False;
-  comp->eventInfo.valuesOfContinuousStatesChanged = fmi3True;
-
-  /* get next event time (sample calls) */
-  nextSampleEventDefined = getNextSampleTimeFMU(comp->fmuData, &nextSampleEvent);
-  if (nextSampleEventDefined)
-  {
-    comp->eventInfo.nextEventTimeDefined = fmi3True;
-    comp->eventInfo.nextEventTime = nextSampleEvent;
-    internalEventUpdate(comp, &(comp->eventInfo));
-  }
-  else
-  {
-    comp->eventInfo.nextEventTimeDefined = fmi3False;
-  }
-  res = fmi3OK;
-
-  done = 1;
-  /* catch */
-  OMC_CATCH_INTERNAL(simulationJumpBuffer)
-  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
-  threadData->mmc_jumper = old_jmp;
-
-  if (!done)
-  {
-    FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "omcExitInitializationMode: terminated by an assertion.")
-  }
-
-  comp->state = isCoSimulation(comp) ? model_state_cs_step_complete : model_state_me_event_mode;
-  resetThreadData(comp);
-
-  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcExitInitializationMode: succeed")
-  return res;
-}
-
-/*
- * fmi3Status omcTerminate(ModelInstance* c);
- * Informs the FMU that the simulation run is terminated. After calling this function, the final
- * values of all variables can be inquired with the omcGetXXX(..) functions. It is not allowed
- * to call this function after one of the functions returned with a status flag of fmi3Error or
- * fmi3Fatal.
- *
- */
-fmi3Status omcTerminate(ModelInstance* c)
-{
-  ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, "omcTerminate", model_state_me_event_mode|model_state_me_continuous_time_mode, model_state_cs_step_complete|model_state_cs_step_failed))
-    return fmi3Error;
-  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcTerminate...")
-
-  setThreadData(comp);
-  comp->state = model_state_terminated;
-  resetThreadData(comp);
-  return fmi3OK;
-}
-
-/*!
- * Is called by the environment to reset the FMU after a simulation run. Before starting a new run, omcEnterInitializationMode has to be called.
- */
-fmi3Status omcReset(ModelInstance* c)
-{
-  ModelInstance* comp = (ModelInstance *)c;
-  modelica_boolean modelDataVarsFreed = FALSE;
-  if (invalidState(comp, "omcReset", model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error))
-    return fmi3Error;
-  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcReset")
-
-  setThreadData(comp);
-  /* Free CS simulator (CVODE & co) first, while the model data it references
-   * (e.g. the states array wrapped by the solver's N_Vector y) is still alive,
-   * see #16319/#14074/#8615. */
-  if (comp->solverInfo) {
-    FMI3CS_deInitializeSolverData(comp);
-  }
-
-  /* Free modelData */
-  if (!(comp->state & model_state_terminated)) {
-    /* call external objects destructors */
-    comp->fmuData->callback->callExternalObjectDestructors(comp->fmuData, comp->threadData);
-#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
-    /* free nonlinear system data */
-    freeNonlinearSystems(comp->fmuData, comp->threadData);
-#endif
-#if !defined(OMC_NUM_MIXED_SYSTEMS) || OMC_NUM_MIXED_SYSTEMS>0
-    /* free mixed system data */
-    freeMixedSystems(comp->fmuData, comp->threadData);
-#endif
-#if !defined(OMC_NUM_LINEAR_SYSTEMS) || OMC_NUM_LINEAR_SYSTEMS>0
-    /* free linear system data */
-    freeLinearSystems(comp->fmuData, comp->threadData);
-#endif
-    /* free data struct */
-    deInitializeDataStruc(comp->fmuData);
-    modelDataVarsFreed = TRUE;
-  }
-
-  /* Initialize modelData */
-  omc_useStream[OMC_LOG_STDOUT] = 1;
-  omc_useStream[OMC_LOG_ASSERT] = 1;
-  fmu3_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
-  if (modelDataVarsFreed) {
-    /* deInitializeDataStruc freed the var data arrays; re-allocate them before they are
-     * initialized and filled again, mirroring fmi3Instantiate. */
-    allocModelDataVars(comp->fmuData->modelData, FALSE, comp->threadData);
-    scalarAllocArrayAttributes(comp->fmuData->modelData);
-    if (comp->fmuData->callback->updateStructuralParameters) {
-      comp->fmuData->callback->updateStructuralParameters(comp->fmuData, comp->threadData);
-    }
-    calculateAllScalarLength(comp->fmuData->modelData);
-  }
-  comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
-  initializeDataStruc(comp->fmuData, comp->threadData);
-
-  /* reset model data with default start data */
-  setDefaultStartValues(comp);
-  setAllParamsToStart(comp->fmuData->simulationInfo, comp->fmuData->modelData);
-  setAllVarsToStart(comp->fmuData->localData[0], comp->fmuData->simulationInfo ,comp->fmuData->modelData);
-  comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData);
-#if !defined(OMC_MINIMAL_METADATA)
-  modelInfoInit(&(comp->fmuData->modelData->modelDataXml));
-#endif
-
-#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
-  /* allocate memory for non-linear system solvers */
-  initializeNonlinearSystems(comp->fmuData, comp->threadData);
-#endif
-#if !defined(OMC_NUM_LINEAR_SYSTEMS) || OMC_NUM_LINEAR_SYSTEMS>0
-  /* allocate memory for non-linear system solvers */
-  initializeLinearSystems(comp->fmuData, comp->threadData);
-#endif
-#if !defined(OMC_NUM_MIXED_SYSTEMS) || OMC_NUM_MIXED_SYSTEMS>0
-  /* allocate memory for mixed system solvers */
-  initializeMixedSystems(comp->fmuData, comp->threadData);
-#endif
-#if !defined(OMC_NO_STATESELECTION)
-  /* allocate memory for state selection */
-  initializeStateSetJacobians(comp->fmuData, comp->threadData);
-#endif
-
-  /* Initialize solverInfo */
-  if (OMC_CS == comp->type) {
-    FMI3CS_initializeSolverData(comp);
-  } else {
-    comp->solverInfo = NULL;
-  }
-
-  comp->_need_update = 1;
-  comp->state = model_state_instantiated;
-  resetThreadData(comp);
-  return fmi3OK;
-}
-
-fmi3Status omcGetReal(ModelInstance* c, const fmi3ValueReference vr[], size_t nvr, fmi3Float64 value[])
-{
-  /* Variables */
-  int i;
-  ModelInstance *comp = (ModelInstance *)c;
-
-  // Model exchange
-  // - initialization mode (2) for a variable with causality = "output", or continuous-time states or state derivatives
-  // - event mode
-  // - continuous-time mode
-  // - terminated
-  // - error (7) always, but retrieved values are usable for debugging only
-  int meStates = model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error;
-
-  // Co-simulation
-  // - initialization mode (2) for a variable with causality = "output" or continuous-time states or state derivatives (if element <Derivatives> is present)
-  // - stepComplete
-  // - stepFailed (8) always, but if status is other than terminated, retrieved values are useable for debugging only
-  // - stepCanceled (7) always, but retrieved values are usable for debugging only
-  // - terminated
-  // - error (7) always, but retrieved values are usable for debugging only
-  int csStates = model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error;
-
-  /* Check for valid call sequence */
-  if (invalidState(comp, "omcGetReal", meStates, csStates))
-    return fmi3Error;
-  if (nvr > 0 && nullPointer(comp, "omcGetReal", "vr[]", vr))
-    return fmi3Error;
-  if (nvr > 0 && nullPointer(comp, "omcGetReal", "value[]", value))
-    return fmi3Error;
-
-#if NUMBER_OF_REALS > 0
-  if (updateIfNeeded(comp, "omcGetReal") != fmi3OK)
-    return fmi3Error;
-
-  for (i = 0; i < nvr; i++)
-  {
-    if (vrOutOfRange(comp, "omcGetReal", vr[i], NUMBER_OF_REALS)) {
-      return fmi3Error;
-    }
-    value[i] = getReal(comp, vr[i]); // to be implemented by the includer of this file
-    FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcGetReal: #r%u# = %.16g", vr[i], value[i])
-  }
-#endif
-  return fmi3OK;
-}
-
-fmi3Status omcGetInteger(ModelInstance* c, const fmi3ValueReference vr[], size_t nvr, fmi3Int32 value[])
-{
-  /* Variables */
-  int i;
-  ModelInstance *comp = (ModelInstance *)c;
-
-  /* Check for valid call sequence */
-  int meStates = model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error;
-  int csStates = model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error;
-  if (invalidState(comp, "omcGetInteger", meStates, csStates))
-    return fmi3Error;
-  if (nvr > 0 && nullPointer(comp, "omcGetInteger", "vr[]", vr))
-    return fmi3Error;
-  if (nvr > 0 && nullPointer(comp, "omcGetInteger", "value[]", value))
-    return fmi3Error;
-
-#if NUMBER_OF_INTEGERS > 0
-  if (updateIfNeeded(comp, "omcGetInteger") != fmi3OK)
-    return fmi3Error;
-
-  for (i = 0; i < nvr; i++)
-  {
-    if (vrOutOfRange(comp, "omcGetInteger", vr[i], NUMBER_OF_INTEGERS)) {
-      return fmi3Error;
-    }
-    value[i] = getInteger(comp, vr[i]); // to be implemented by the includer of this file
-    FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcGetInteger: #i%u# = %d", vr[i], value[i])
-  }
-#endif
-  return fmi3OK;
-}
-
-fmi3Status omcGetBoolean(ModelInstance* c, const fmi3ValueReference vr[], size_t nvr, fmi3Boolean value[])
-{
-  /* Variables */
-  int i;
-  ModelInstance *comp = (ModelInstance *)c;
-
-  /* Check for valid call sequence */
-  int meStates = model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error;
-  int csStates = model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error;
-  if (invalidState(comp, "omcGetBoolean", meStates, csStates))
-    return fmi3Error;
-  if (nvr > 0 && nullPointer(comp, "omcGetBoolean", "vr[]", vr))
-    return fmi3Error;
-  if (nvr > 0 && nullPointer(comp, "omcGetBoolean", "value[]", value))
-    return fmi3Error;
-
-#if NUMBER_OF_BOOLEANS > 0
-  if (updateIfNeeded(comp, "omcGetBoolean") != fmi3OK)
-    return fmi3Error;
-
-  for (i = 0; i < nvr; i++)
-  {
-    if (vrOutOfRange(comp, "omcGetBoolean", vr[i], NUMBER_OF_BOOLEANS)) {
-      return fmi3Error;
-    }
-    value[i] = getBoolean(comp, vr[i]); // to be implemented by the includer of this file
-    FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcGetBoolean: #b%u# = %s", vr[i], value[i]? "true" : "false")
-  }
-#endif
-  return fmi3OK;
-}
-
-fmi3Status omcGetString(ModelInstance* c, const fmi3ValueReference vr[], size_t nvr, fmi3String value[])
-{
-  /* Variables */
-  int i;
-  ModelInstance *comp = (ModelInstance *)c;
-
-  /* Check for valid call sequence */
-  int meStates = model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error;
-  int csStates = model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error;
-  if (invalidState(comp, "omcGetString", meStates, csStates))
-    return fmi3Error;
-  if (nvr>0 && nullPointer(comp, "omcGetString", "vr[]", vr))
-    return fmi3Error;
-  if (nvr>0 && nullPointer(comp, "omcGetString", "value[]", value))
-    return fmi3Error;
-
-#if NUMBER_OF_STRINGS > 0
-  if (updateIfNeeded(comp, "omcGetString") != fmi3OK)
-    return fmi3Error;
-
-  for (i=0; i<nvr; i++)
-  {
-    if (vrOutOfRange(comp, "omcGetString", vr[i], NUMBER_OF_STRINGS))
-      return fmi3Error;
-    value[i] = getString(comp, vr[i]); // to be implemented by the includer of this file
-    FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcGetString: #s%u# = '%s'", vr[i], value[i])
-  }
-#endif
-  return fmi3OK;
-}
-
-fmi3Status omcSetReal(ModelInstance* c, const fmi3ValueReference vr[], size_t nvr, const fmi3Float64 value[])
-{
-  int i;
-  ModelInstance *comp = (ModelInstance *)c;
-
-  // Model exchange
-  // - instantiated (1) for a variable with variability != "constant" that has initial = "exact" or "approx"
-  // - initialization mode (3) for a variable with variability != "constant" that has initial = "exact", or causality = "input"
-  // - event mode (4) for a variable with causality = "input", or (causality = "parameter" and variability = "tunable")
-  // - continuous-time mode (5) for a variable with causality = "input" and variability = "continuous"
-  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode;
-
-  // Co-simulation
-  // - instantiated (1) for a variable with variability != "constant" that has initial = "exact" or "approx"
-  // - initialization mode (3) for a variable with variability != "constant" that has initial = "exact", or causality = "input"
-  // - stepComplete (6) for a variable with causality = "input" or (causality = "parameter" and variability = "tunable")
-  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete;
-
-  if (invalidState(comp, "omcSetReal", meStates, csStates))
-    return fmi3Error;
-  if (nvr > 0 && nullPointer(comp, "omcSetReal", "vr[]", vr))
-    return fmi3Error;
-  if (nvr > 0 && nullPointer(comp, "omcSetReal", "value[]", value))
-    return fmi3Error;
-  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcSetReal: nvr = %zu", nvr)
-  // no check whether setting the value is allowed in the current state
-  for (i = 0; i < nvr; i++)
-  {
-    if (vrOutOfRange(comp, "omcSetReal", vr[i], NUMBER_OF_REALS+NUMBER_OF_STATES))
-      return fmi3Error;
-    FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcSetReal: #r%u# = %.16g", vr[i], value[i])
-    if (setReal(comp, vr[i], value[i]) != fmi3OK) // to be implemented by the includer of this file
-      return fmi3Error;
-  }
-  comp->_need_update = 1;
-  return fmi3OK;
-}
-
-fmi3Status omcSetInteger(ModelInstance* c, const fmi3ValueReference vr[], size_t nvr, const fmi3Int32 value[])
-{
-  int i;
-  ModelInstance *comp = (ModelInstance *)c;
-  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated;
-  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_terminated;
-
-  if (invalidState(comp, "omcSetInteger", meStates, csStates))
-    return fmi3Error;
-  if (nvr > 0 && nullPointer(comp, "omcSetInteger", "vr[]", vr))
-    return fmi3Error;
-  if (nvr > 0 && nullPointer(comp, "omcSetInteger", "value[]", value))
-    return fmi3Error;
-  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcSetInteger: nvr = %zu", nvr)
-
-  for (i = 0; i < nvr; i++)
-  {
-    if (vrOutOfRange(comp, "omcSetInteger", vr[i], NUMBER_OF_INTEGERS))
-      return fmi3Error;
-    FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcSetInteger: #i%u# = %d", vr[i], value[i])
-    if (setInteger(comp, vr[i], value[i]) != fmi3OK) // to be implemented by the includer of this file
-      return fmi3Error;
-  }
-  comp->_need_update = 1;
-  return fmi3OK;
-}
-
-fmi3Status omcSetBoolean(ModelInstance* c, const fmi3ValueReference vr[], size_t nvr, const fmi3Boolean value[]) {
-  int i;
-  ModelInstance *comp = (ModelInstance *)c;
-  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated;
-  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_terminated;
-
-  if (invalidState(comp, "omcSetBoolean", meStates, csStates))
-    return fmi3Error;
-  if (nvr>0 && nullPointer(comp, "omcSetBoolean", "vr[]", vr))
-    return fmi3Error;
-  if (nvr>0 && nullPointer(comp, "omcSetBoolean", "value[]", value))
-    return fmi3Error;
-  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcSetBoolean: nvr = %zu", nvr)
-
-  for (i = 0; i < nvr; i++)
-  {
-    if (vrOutOfRange(comp, "omcSetBoolean", vr[i], NUMBER_OF_BOOLEANS))
-      return fmi3Error;
-    FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcSetBoolean: #b%u# = %s", vr[i], value[i] ? "true" : "false")
-    if (setBoolean(comp, vr[i], value[i]) != fmi3OK) // to be implemented by the includer of this file
-      return fmi3Error;
-  }
-  comp->_need_update = 1;
-  return fmi3OK;
-}
-
-fmi3Status omcSetString(ModelInstance* c, const fmi3ValueReference vr[], size_t nvr, const fmi3String value[])
-{
-  int i;
-  ModelInstance *comp = (ModelInstance *)c;
-  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated;
-  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_terminated;
-
-  if (invalidState(comp, "omcSetString", meStates, csStates))
-    return fmi3Error;
-  if (nvr>0 && nullPointer(comp, "omcSetString", "vr[]", vr))
-    return fmi3Error;
-  if (nvr>0 && nullPointer(comp, "omcSetString", "value[]", value))
-    return fmi3Error;
-  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcSetString: nvr = %zu", nvr)
-
-  for (i = 0; i < nvr; i++)
-  {
-    if (vrOutOfRange(comp, "omcSetString", vr[i], NUMBER_OF_STRINGS))
-      return fmi3Error;
-    FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcSetString: #s%u# = '%s'", vr[i], value[i])
-    if (setString(comp, vr[i], value[i]) != fmi3OK) // to be implemented by the includer of this file
-      return fmi3Error;
-  }
-  comp->_need_update = 1;
-  return fmi3OK;
-}
-
-fmi3Status omcFreeFMUstate(ModelInstance* c, fmi3FMUState* FMUstate);
-
-fmi3Status omcGetFMUstate(ModelInstance* c, fmi3FMUState* FMUstate)
-{
-  ModelInstance *comp = (ModelInstance *) c;
-
-  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated;
-  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_terminated;
-
-  if (invalidState(comp, "omcGetFMUstate", meStates, csStates))
-    return fmi3Error;
-
-  INTERNAL_FMU_STATE* internal_state = (INTERNAL_FMU_STATE*) calloc(1, sizeof(INTERNAL_FMU_STATE));
-  internal_state->simulationData = allocRingBuffer(SIZERINGBUFFER, sizeof(SIMULATION_DATA));
-
-  DATA* fmudata = (DATA *) comp->fmuData;
-
-  /* prepare RingBuffer, by allocating memory for real Vars
-   * copy the ring buffer data to INTERNAL_FMU_STATE
-  */
-  SIMULATION_DATA tmpSimData = {0};
-  for (int i = 0; i < SIZERINGBUFFER; i++)
-  {
-    tmpSimData.timeValue = fmudata->localData[i]->timeValue;
-    /* allocate memory for all Real variables */
-    tmpSimData.realVars = (modelica_real *)calloc(fmudata->modelData->nVariablesReal, sizeof(modelica_real));
-    memcpy(tmpSimData.realVars, fmudata->localData[i]->realVars, sizeof(modelica_real)*fmudata->modelData->nVariablesReal);
-    /* allocate memory for all Integer variables */
-    tmpSimData.integerVars = (modelica_integer*)calloc(fmudata->modelData->nVariablesInteger, sizeof(modelica_integer));
-    memcpy(tmpSimData.integerVars, fmudata->localData[i]->integerVars, sizeof(modelica_integer)*fmudata->modelData->nVariablesInteger);
-    /* allocate memory for all boolean variables */
-    tmpSimData.booleanVars = (modelica_boolean*)calloc(fmudata->modelData->nVariablesBoolean, sizeof(modelica_boolean));
-    memcpy(tmpSimData.booleanVars, fmudata->localData[i]->booleanVars, sizeof(modelica_boolean)*fmudata->modelData->nVariablesBoolean);
-    /* allocate memory for all string variables */
-    #if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
-      tmpSimData.stringVars = (modelica_string*) omc_alloc_interface.malloc_uncollectable(fmudata->modelData->nVariablesString * sizeof(modelica_string));
-      omc_string_slots_store(tmpSimData.stringVars, fmudata->localData[i]->stringVars, fmudata->modelData->nVariablesString);
-    #endif
-    appendRingData(internal_state->simulationData, &tmpSimData);
-  }
-
-  // copy real parameter variables
-  internal_state->realParameter = (modelica_real*)calloc(fmudata->modelData->nParametersReal, sizeof(modelica_real));
-  for (int i = 0; i < fmudata->modelData->nParametersReal; ++i)
-  {
-    internal_state->realParameter[i] = fmudata->simulationInfo->realParameter[i];
-    // infoStreamPrint(LOG_STDOUT, 0, "Copy Real parameter %s = %g", fmudata->modelData->realParameterData[i].info.name, internal_state->realParameters[i]);
-  }
-
-  // copy Integer parameter variables
-  internal_state->integerParameter = (modelica_integer*)calloc(fmudata->modelData->nParametersInteger, sizeof(modelica_integer));
-  for (int i = 0; i < fmudata->modelData->nParametersInteger; ++i)
-  {
-    internal_state->integerParameter[i] = fmudata->simulationInfo->integerParameter[i];
-    // infoStreamPrint(LOG_STDOUT, 0, "Copy Integer parameter %s = %ld", fmudata->modelData->integerParameterData[i].info.name, internal_state->integerParameters[i]);
-  }
-
-  // copy Boolean parameter variables
-  internal_state->booleanParameter = (modelica_boolean*)calloc(fmudata->modelData->nParametersBoolean, sizeof(modelica_boolean));
-  for (int i = 0; i < fmudata->modelData->nParametersBoolean; ++i)
-  {
-    internal_state->booleanParameter[i] = fmudata->simulationInfo->booleanParameter[i];
-    //infoStreamPrint(LOG_STDOUT, 0, "copy Boolean parameter %s = %s", fmudata->modelData->booleanParameterData[i].info.name, internal_state->booleanParameters[i] ? "true" : "false");
-  }
-
-  // copy String parameter variables
-  internal_state->stringParameter = (modelica_string*) omc_alloc_interface.malloc_uncollectable(fmudata->modelData->nParametersString * sizeof(modelica_string));
-  for (int i = 0; i < fmudata->modelData->nParametersString; ++i)
-  {
-    omc_string_store(&internal_state->stringParameter[i], fmudata->simulationInfo->stringParameter[i]);
-    //infoStreamPrint(LOG_STDOUT, 0, "copy String parameter %s = %s", fmudata->modelData->stringParameterData[i].info.name, MMC_STRINGDATA(internal_state->stringParameters[i]));
-  }
-
-  //infoRingBuffer( fmudata->simulationData);
-  //printRingBufferSimulationData(fmudata->simulationData, fmudata); // original ringBuffer data
-  //printRingBufferSimulationData(internal_state->simulationData, fmudata); // copied ringBuffer data
-
-  internal_state->nHistory = delayStateWords(fmudata, NULL) + spatialDistributionStateWords(fmudata, NULL);
-  internal_state->history = (double*) calloc(internal_state->nHistory ? internal_state->nHistory : 1, sizeof(double));
-  spatialDistributionStateWords(fmudata, internal_state->history + delayStateWords(fmudata, internal_state->history));
-
-  /* release previous fmu state if existent */
-  /* TODO: ideally, previous state's memory should be re-used instead of re-allocation */
-  if (*FMUstate != NULL) omcFreeFMUstate(c, FMUstate);
-
-  // return the fmu state
-  *FMUstate = (fmi3FMUState) internal_state;
-  return fmi3OK;
-}
-
-fmi3Status omcSetFMUstate(ModelInstance* c, fmi3FMUState FMUstate)
-{
-  ModelInstance *comp = (ModelInstance *) c;
-  fmi3Status status = fmi3OK;
-
-  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated;
-  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_terminated;
-
-  if (invalidState(comp, "omcSetFMUstate", meStates, csStates))
-    return fmi3Error;
-
-  INTERNAL_FMU_STATE * internal_state = (INTERNAL_FMU_STATE *) FMUstate;
-  DATA* fmudata = (DATA *) comp->fmuData;
-
-  //printRingBufferSimulationData(internal_state->simulationData, fmudata); // copied ringBuffer data
-
-  // Preserve current parameter values (set by user during initialization)
-  // so they survive the state restoration below.
-  //
-  // OpenModelica only maps the four Modelica base types (Real, Integer,
-  // Boolean, String) to FMI 3.0 (Float64, Int32, Boolean, String).
-  // Other FMI 3.0 numeric types (Float32, Int64, Int8, UInt8, UInt16,
-  // UInt32, UInt64, Int16) are unsupported -- their setter functions
-  // return fmi3Error immediately, and there is no corresponding storage
-  // in MODEL_DATA or SIMULATION_INFO, so nothing to preserve.
-  modelica_real* savedRealParam = NULL;
-  modelica_integer* savedIntParam = NULL;
-  modelica_boolean* savedBoolParam = NULL;
-  modelica_string* savedStringParam = NULL;
-
-  if (fmudata->modelData->nParametersReal > 0) {
-    savedRealParam = (modelica_real*) calloc(fmudata->modelData->nParametersReal, sizeof(modelica_real));
-    if (!savedRealParam) { status = fmi3Error; goto cleanup; }
-    memcpy(savedRealParam, fmudata->simulationInfo->realParameter, fmudata->modelData->nParametersReal * sizeof(modelica_real));
-  }
-  if (fmudata->modelData->nParametersInteger > 0) {
-    savedIntParam = (modelica_integer*) calloc(fmudata->modelData->nParametersInteger, sizeof(modelica_integer));
-    if (!savedIntParam) { status = fmi3Error; goto cleanup; }
-    memcpy(savedIntParam, fmudata->simulationInfo->integerParameter, fmudata->modelData->nParametersInteger * sizeof(modelica_integer));
-  }
-  if (fmudata->modelData->nParametersBoolean > 0) {
-    savedBoolParam = (modelica_boolean*) calloc(fmudata->modelData->nParametersBoolean, sizeof(modelica_boolean));
-    if (!savedBoolParam) { status = fmi3Error; goto cleanup; }
-    memcpy(savedBoolParam, fmudata->simulationInfo->booleanParameter, fmudata->modelData->nParametersBoolean * sizeof(modelica_boolean));
-  }
-  if (fmudata->modelData->nParametersString > 0) {
-    savedStringParam = (modelica_string*) calloc(fmudata->modelData->nParametersString, sizeof(modelica_string));
-    if (!savedStringParam) { status = fmi3Error; goto cleanup; }
-    omc_string_slots_store(savedStringParam, fmudata->simulationInfo->stringParameter, fmudata->modelData->nParametersString);
-  }
-
-  // override the SIMULATION_DATA with INTERNAL_FMU_STATE
-  for (int i = 0; i < ringBufferLength(internal_state->simulationData); i++)
-  {
-    SIMULATION_DATA *sdata = (SIMULATION_DATA *)getRingData(internal_state->simulationData, i);
-    fmudata->localData[i]->timeValue = sdata->timeValue;
-    memcpy(fmudata->localData[i]->realVars, sdata->realVars, sizeof(modelica_real)*fmudata->modelData->nVariablesReal);
-    memcpy(fmudata->localData[i]->integerVars, sdata->integerVars, sizeof(modelica_integer)*fmudata->modelData->nVariablesInteger);
-    memcpy(fmudata->localData[i]->booleanVars, sdata->booleanVars, sizeof(modelica_boolean)*fmudata->modelData->nVariablesBoolean);
-    omc_string_slots_store(fmudata->localData[i]->stringVars, sdata->stringVars, fmudata->modelData->nVariablesString);
-  }
-
-  {
-    long k = setDelayStateWords(fmudata, internal_state->history, internal_state->nHistory);
-    if (k < 0 || setSpatialDistributionStateWords(fmudata, internal_state->history + k, internal_state->nHistory - k) < 0) {
-      status = fmi3Error;
-      goto cleanup;
-    }
-  }
-
-  // Put the preserved parameter values back. Only simulationInfo holds them;
-  // the value references setReal and friends take are not info.id.
-  if (savedRealParam) memcpy(fmudata->simulationInfo->realParameter, savedRealParam, fmudata->modelData->nParametersReal * sizeof(modelica_real));
-  if (savedIntParam) memcpy(fmudata->simulationInfo->integerParameter, savedIntParam, fmudata->modelData->nParametersInteger * sizeof(modelica_integer));
-  if (savedBoolParam) memcpy(fmudata->simulationInfo->booleanParameter, savedBoolParam, fmudata->modelData->nParametersBoolean * sizeof(modelica_boolean));
-  if (savedStringParam) omc_string_slots_store(fmudata->simulationInfo->stringParameter, savedStringParam, fmudata->modelData->nParametersString);
-  comp->_need_update = 1;
-
-  // After restoring the FMU state, the internal solver (CVODE/Euler) has
-  // outdated step history, Jacobians, and time.  Reinitialize it so that the
-  // next doStep starts from a clean solver state.
-  if (status == fmi3OK && isCoSimulation(comp) && comp->solverInfo) {
-    FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcSetFMUstate: reinitialising solver")
-    FMI3CS_deInitializeSolverData(comp);
-    FMI3CS_initializeSolverData(comp);
-    comp->solverInfo->currentTime = comp->fmuData->localData[0]->timeValue;
-  }
-
-cleanup:
-  free(savedRealParam);
-  free(savedIntParam);
-  free(savedBoolParam);
-  if (savedStringParam) {
-    omc_string_slots_release(savedStringParam, fmudata->modelData->nParametersString);
-    free(savedStringParam);
-  }
-
-  return status;
-}
-
-fmi3Status omcFreeFMUstate(ModelInstance* c, fmi3FMUState* FMUstate)
-{
-  ModelInstance *comp = (ModelInstance *) c;
-
-  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated;
-  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_terminated;
-
-  if (invalidState(comp, "omcFreeFMUstate", meStates, csStates))
-    return fmi3Error;
-
-  if (*FMUstate)
-  {
-    INTERNAL_FMU_STATE* internal_state = (INTERNAL_FMU_STATE*) *FMUstate;
-    // free the SIMULATION_DATA variable buffers
-    for (int i = 0; i < ringBufferLength(internal_state->simulationData); i++)
-    {
-      SIMULATION_DATA *sdata = (SIMULATION_DATA *)getRingData(internal_state->simulationData, i);
-      free(sdata->realVars);
-      free(sdata->integerVars);
-      free(sdata->booleanVars);
-      omc_string_slots_release(sdata->stringVars, c->fmuData->modelData->nVariablesString);
-      free(sdata->stringVars);
-    }
-    freeRingBuffer(internal_state->simulationData);
-    free(internal_state->realParameter);
-    free(internal_state->integerParameter);
-    free(internal_state->booleanParameter);
-    omc_string_slots_release(internal_state->stringParameter, c->fmuData->modelData->nParametersString);
-    free(internal_state->stringParameter);
-    free(internal_state->history);
-    free(*FMUstate);
-    *FMUstate = NULL;
-  }
-  return fmi3OK;
-}
-
-fmi3Status omcSerializedFMUstateSize(ModelInstance* c, fmi3FMUState FMUstate, size_t *size)
-{
-  /* portable serialization is tricky. for now only x86_64 tested!          */
-  /* TODO: make serialization format architecture- & endianness-independent */
-
-  ModelInstance *comp = (ModelInstance *) c;
-  DATA *fmudata = (DATA *) comp->fmuData;
-  INTERNAL_FMU_STATE *internal_state = (INTERNAL_FMU_STATE *) FMUstate;
-
-  size_t stateSize = 0;
-
-  /* space for ringbuffer / simulation data contents */
-  stateSize += ringBufferLength(internal_state->simulationData)    /* timeValue */
-                   * sizeof(modelica_real);
-  stateSize += ringBufferLength(internal_state->simulationData)    /* realVars */
-                   * fmudata->modelData->nVariablesReal
-                   * sizeof(modelica_real);
-  stateSize += ringBufferLength(internal_state->simulationData)    /* integerVars */
-                   * fmudata->modelData->nVariablesInteger
-                   * sizeof(modelica_integer);
-  stateSize += ringBufferLength(internal_state->simulationData)    /* booleanVars */
-                   * fmudata->modelData->nVariablesBoolean
-                   * sizeof(modelica_boolean);
-                                                            /* stringVars */
-  for (int i = 0; i < ringBufferLength(internal_state->simulationData); i++) {
-    SIMULATION_DATA *sdata = (SIMULATION_DATA *)getRingData(internal_state->simulationData, i);
-    stateSize += getStringArraySize(sdata->stringVars,
-                                    fmudata->modelData->nVariablesString);
-  }
-
-  /* space for model parameters */
-  stateSize += fmudata->modelData->nParametersReal * sizeof(modelica_real);
-  stateSize += fmudata->modelData->nParametersInteger * sizeof(modelica_integer);
-  stateSize += fmudata->modelData->nParametersBoolean * sizeof(modelica_boolean);
-  stateSize += getStringArraySize(internal_state->stringParameter,
-                                  fmudata->modelData->nParametersString);
-
-  stateSize += sizeof(size_t) + internal_state->nHistory * sizeof(double);
-
-  *size = stateSize;
-  return fmi3OK;
-}
-
-fmi3Status omcSerializeFMUstate(ModelInstance* c, fmi3FMUState FMUstate, fmi3Byte serializedState[], size_t size)
-{
-  /* portable serialization is tricky. for now only x86_64 tested!          */
-  /* TODO: make serialization format architecture- & endianness-independent */
-
-  ModelInstance *comp = (ModelInstance *) c;
-  DATA *fmudata = (DATA *) comp->fmuData;
-  INTERNAL_FMU_STATE *internal_state = (INTERNAL_FMU_STATE *) FMUstate;
-
-  /* assumption sizeof(fmi3Byte) == sizeof(char) */
-  /* probably true for most modern platforms     */
-  fmi3Byte *serialVec = serializedState;
-
-  fmi3Byte *currElement = serialVec;
-  char *currStr;
-  int currStrLen;
-  for (int i = 0; i < ringBufferLength(internal_state->simulationData); i++) {
-    SIMULATION_DATA *sdata =
-                        (SIMULATION_DATA *)getRingData(internal_state->simulationData, i);
-    memcpy(currElement, &(sdata->timeValue), sizeof(modelica_real));
-    currElement += sizeof(modelica_real);
-    memcpy(currElement, sdata->realVars,
-                        sizeof(modelica_real)*fmudata->modelData->nVariablesReal);
-    currElement += sizeof(modelica_real)*fmudata->modelData->nVariablesReal;
-    memcpy(currElement, sdata->integerVars,
-                        sizeof(modelica_integer)*fmudata->modelData->nVariablesInteger);
-    currElement += sizeof(modelica_integer)*fmudata->modelData->nVariablesInteger;
-    memcpy(currElement, sdata->booleanVars,
-                        sizeof(modelica_boolean)*fmudata->modelData->nVariablesBoolean);
-    currElement += sizeof(modelica_boolean)*fmudata->modelData->nVariablesBoolean;
-
-    currElement += copyStringArray((char *)currElement, sdata->stringVars,
-                                    fmudata->modelData->nVariablesString);
-  }
-  memcpy(currElement, internal_state->realParameter,
-                      sizeof(modelica_real)*fmudata->modelData->nParametersReal);
-  currElement += sizeof(modelica_real)*fmudata->modelData->nParametersReal;
-  memcpy(currElement, internal_state->integerParameter,
-                      sizeof(modelica_integer)*fmudata->modelData->nParametersInteger);
-  currElement += sizeof(modelica_integer)*fmudata->modelData->nParametersInteger;
-  memcpy(currElement, internal_state->booleanParameter,
-                      sizeof(modelica_boolean)*fmudata->modelData->nParametersBoolean);
-  currElement += sizeof(modelica_boolean)*fmudata->modelData->nParametersBoolean;
-  currElement += copyStringArray((char *)currElement, internal_state->stringParameter,
-                                  fmudata->modelData->nParametersString);
-  memcpy(currElement, &internal_state->nHistory, sizeof(size_t));
-  currElement += sizeof(size_t);
-  memcpy(currElement, internal_state->history, internal_state->nHistory * sizeof(double));
-
-  return fmi3OK;
-}
-
-fmi3Status omcDeSerializeFMUstate(ModelInstance* c, const fmi3Byte serializedState[], size_t size, fmi3FMUState* FMUstate)
-{
-  /* portable serialization is tricky. for now only x86_64 tested!          */
-  /* TODO: make serialization format architecture- & endianness-independent */
-
-  ModelInstance *comp = (ModelInstance *) c;
-  INTERNAL_FMU_STATE *internal_state =
-            (INTERNAL_FMU_STATE *) calloc(1, sizeof(INTERNAL_FMU_STATE));
-  internal_state->simulationData = allocRingBuffer(SIZERINGBUFFER, sizeof(SIMULATION_DATA));
-  DATA *fmudata = (DATA *) comp->fmuData;
-
-  fmi3Byte *currElement = (fmi3Byte *) serializedState;
-
-  SIMULATION_DATA tmpSimData = {0};
-  for (int i = 0; i < SIZERINGBUFFER; i++) {
-
-    /* timeValue */
-    memcpy(&(tmpSimData.timeValue), currElement, sizeof(modelica_real));
-    currElement += sizeof(modelica_real);
-
-    /* realVars */
-    tmpSimData.realVars = (modelica_real *) calloc(fmudata->modelData->nVariablesReal, sizeof(modelica_real));
-    memcpy(tmpSimData.realVars, currElement,
-                                sizeof(modelica_real)*fmudata->modelData->nVariablesReal);
-    currElement += sizeof(modelica_real)*fmudata->modelData->nVariablesReal;
-
-    /* integerVars */
-    tmpSimData.integerVars = (modelica_integer *) calloc(fmudata->modelData->nVariablesInteger, sizeof(modelica_integer));
-    memcpy(tmpSimData.integerVars, currElement,
-                                   sizeof(modelica_integer)*fmudata->modelData->nVariablesInteger);
-    currElement += sizeof(modelica_integer)*fmudata->modelData->nVariablesInteger;
-
-    /* booleanVars */
-    tmpSimData.booleanVars = (modelica_boolean *) calloc(fmudata->modelData->nVariablesBoolean, sizeof(modelica_boolean));
-    memcpy(tmpSimData.booleanVars, currElement,
-                                   sizeof(modelica_boolean)*fmudata->modelData->nVariablesBoolean);
-    currElement += sizeof(modelica_boolean)*fmudata->modelData->nVariablesBoolean;
-
-    /* stringVars */
-    tmpSimData.stringVars = (modelica_string *) calloc(fmudata->modelData->nVariablesString, sizeof(modelica_string));
-    currElement += readStringArray(tmpSimData.stringVars, (const char *)currElement,
-                                   fmudata->modelData->nVariablesString);
-
-    appendRingData(internal_state->simulationData, &tmpSimData);
-  }
-
-  /* realParameter */
-  internal_state->realParameter = (modelica_real *) calloc(fmudata->modelData->nParametersReal, sizeof(modelica_real));
-  memcpy(internal_state->realParameter, currElement,
-                                        sizeof(modelica_real)*fmudata->modelData->nParametersReal);
-  currElement += sizeof(modelica_real)*fmudata->modelData->nParametersReal;
-
-  /* integerParameter */
-  internal_state->integerParameter = (modelica_integer *) calloc(fmudata->modelData->nParametersInteger, sizeof(modelica_integer));
-  memcpy(internal_state->integerParameter, currElement,
-                                   sizeof(modelica_integer)*fmudata->modelData->nParametersInteger);
-  currElement += sizeof(modelica_integer)*fmudata->modelData->nParametersInteger;
-
-  /* booleanParameter */
-  internal_state->booleanParameter = (modelica_boolean *) calloc(fmudata->modelData->nParametersBoolean, sizeof(modelica_boolean));
-  memcpy(internal_state->booleanParameter, currElement,
-                                   sizeof(modelica_boolean)*fmudata->modelData->nParametersBoolean);
-  currElement += sizeof(modelica_boolean)*fmudata->modelData->nParametersBoolean;
-
-  /* stringParameter */
-  internal_state->stringParameter = (modelica_string *) calloc(fmudata->modelData->nParametersString, sizeof(modelica_string));
-  currElement += readStringArray(internal_state->stringParameter, (const char *)currElement,
-                                 fmudata->modelData->nParametersString);
-
-  /* delay() and spatialDistribution() histories */
-  memcpy(&internal_state->nHistory, currElement, sizeof(size_t));
-  currElement += sizeof(size_t);
-  internal_state->history = (double*) calloc(internal_state->nHistory ? internal_state->nHistory : 1, sizeof(double));
-  memcpy(internal_state->history, currElement, internal_state->nHistory * sizeof(double));
-
-  *FMUstate = (fmi3FMUState) internal_state;
-  return fmi3OK;
-}
-
-fmi3Status omcGetDirectionalDerivativeForInitialization(ModelInstance* c,
-    const fmi3ValueReference vUnknown_ref[], size_t nUnknown,
-    const fmi3ValueReference vKnown_ref[] , size_t nKnown,
-    const fmi3Float64 dvKnown[], fmi3Float64 dvUnknown[])
-{
-  ModelInstance *comp = (ModelInstance *)c;
-  DATA* fmudata = (DATA *) comp->fmuData;
-  threadData_t* td = comp->threadData;
-
-  /***************************************/
-  /* This code assumes that the FMU variables are always sorted,
-     states first and then derivatives.
-     This is true for the actual OMC FMUs.
-     The input values references are mapped with mapInputReference2InputNumber
-     and mapOutputReference2OutputNumber functions
-  */
-  /* eval constant part of jacobian */
-
-  int i,j;
-
-  int independent = comp->fmiDerJacInitialization->sizeCols;
-  int dependent = comp->fmiDerJacInitialization->sizeRows;
-
-  /* TODO: Evaluate only once for one evaluation of jacobian */
-  if (comp->fmiDerJacInitialization->constantEqns != NULL) {
-    comp->fmiDerJacInitialization->constantEqns(fmudata, td, comp->fmiDerJacInitialization, NULL);
-  }
-
-  /* clear out the seeds */
-  for (i = 0; i < independent; i++)
-  {
-    comp->fmiDerJacInitialization->seedVars[i] = 0;
-  }
-
-  for (i = 0; i < nKnown; i++)
-  {
-    // map the known ValueReferences to an internal index
-    int idx = mapInitialUnknownsIndependentIndex(vKnown_ref[i]);
-    if (vrOutOfRange(comp, "omcGetDirectionalDerivative input index during initialization", idx, independent))
-      return fmi3Error;
-    /* Put the supplied value in the seeds */
-    comp->fmiDerJacInitialization->seedVars[idx] = dvKnown[i];
-  }
-
-  /* Call the Jacobian evaluation function. This function evaluates the whole column of the Jacobian.
-   * More efficient code could only evaluate the equations needed for the
-   * known variables only */
-  setThreadData(comp);
-  fmudata->callback->functionJacFMIDERINIT_column(fmudata, td, comp->fmiDerJacInitialization, NULL);
-  resetThreadData(comp);
-
-  /* Write the results to dvUnknown array */
-  for (i=0;i<nUnknown; i++)
-  {
-    // map the Unknown ValueReferences to an internal index
-    int idx = mapInitialUnknownsdependentIndex(vUnknown_ref[i]);
-    if (vrOutOfRange(comp, "omcGetDirectionalDerivative output index during initialization", idx, dependent))
-      return fmi3Error;
-    dvUnknown[i] = comp->fmiDerJacInitialization->resultVars[idx];
-  }
-
-  return fmi3OK;
-}
-
-fmi3Status omcGetDirectionalDerivative(ModelInstance* c,
-    const fmi3ValueReference vUnknown_ref[], size_t nUnknown,
-    const fmi3ValueReference vKnown_ref[] , size_t nKnown,
-    const fmi3Float64 dvKnown[], fmi3Float64 dvUnknown[])
-{
-  ModelInstance *comp = (ModelInstance *)c;
-  DATA* fmudata = (DATA *) comp->fmuData;
-  MODEL_DATA* modelData = (MODEL_DATA*) fmudata->modelData;
-  threadData_t* td = comp->threadData;
-
-  int i;
-
-  int independent = modelData->nStates+modelData->nInputVars;
-  int dependent = modelData->nStates+modelData->nOutputVars;
-
-  if (invalidState(comp, "omcGetDirectionalDerivative", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error))
-    return fmi3Error;
-  if (!comp->_has_jacobian)
-    return unsupportedFunction(comp, "omcGetDirectionalDerivative");
-
-  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcGetDirectionalDerivative")
-
-  if (updateIfNeeded(comp, "omcGetDirectionalDerivative") != fmi3OK)
-    return fmi3Error;
-
-  if (model_state_initialization_mode == comp->state)
-  {
-    // directional derivative in initialization mode
-    return omcGetDirectionalDerivativeForInitialization(c, vUnknown_ref, nUnknown, vKnown_ref, nKnown, dvKnown, dvUnknown);
-  }
-
-  /***************************************/
-  /* This code assumes that the FMU variables are always sorted,
-     states first and then derivatives.
-     This is true for the actual OMC FMUs.
-     The input values references are mapped with mapInputReference2InputNumber
-     and mapOutputReference2OutputNumber functions
-  */
-  /* eval constant part of jacobian */
-  /* TODO: Evaluate only once for one evaluation of jacobian */
-  if (comp->fmiDerJac->constantEqns != NULL) {
-    comp->fmiDerJac->constantEqns(fmudata, td, comp->fmiDerJac, NULL);
-  }
-
-  /* clear out the seeds */
-  for (i=0;i<independent; i++) {
-    comp->fmiDerJac->seedVars[i]=0;
-  }
-  for (i=0;i<nKnown; i++) {
-    int idx = vKnown_ref[i];
-    /* if idx is > nStates it's an input so we need a mapping */
-    if (idx >= modelData->nStates){
-      idx = mapInputReference2InputNumber(vKnown_ref[i]);
-      idx = modelData->nStates + idx;
-    }
-    if (vrOutOfRange(comp, "omcGetDirectionalDerivative input index", idx, independent))
-      return fmi3Error;
-    /* Put the supplied value in the seeds */
-    comp->fmiDerJac->seedVars[idx]=dvKnown[i];
-  }
-  /* Call the Jacobian evaluation function. This function evaluates the whole column of the Jacobian.
-   * More efficient code could only evaluate the equations needed for the
-   * known variables only */
-  setThreadData(comp);
-  fmudata->callback->functionJacFMIDER_column(fmudata, td, comp->fmiDerJac, NULL);
-  resetThreadData(comp);
-
-  /* Write the results to dvUnknown array */
-  for (i=0;i<nUnknown; i++) {
-    /* derivatives are behind the states */
-    int idx = vUnknown_ref[i] - modelData->nStates;
-    /* if idx is > nStates it's an output so we need a mapping */
-    if (idx >= modelData->nStates){
-      idx = mapOutputReference2OutputNumber(vUnknown_ref[i]);
-      idx = modelData->nStates + idx;
-    }
-    if (vrOutOfRange(comp, "omcGetDirectionalDerivative output index", idx, dependent))
-      return fmi3Error;
-    dvUnknown[i] = comp->fmiDerJac->resultVars[idx];
-  }
-  /***************************************/
-  return fmi3OK;
-}
-
-
-
-/***************************************************
-Functions for FMI3 for Model Exchange
-****************************************************/
-fmi3Status omcEnterEventMode(ModelInstance* c)
-{
-  ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, "omcEnterEventMode", model_state_me_event_mode|model_state_me_continuous_time_mode, 0))
-    return fmi3Error;
-  FILTERED_LOG(comp, fmi3OK, LOG_EVENTS, "omcEnterEventMode")
-  comp->state = model_state_me_event_mode;
-  comp->fmuData->simulationInfo->needToReThrow = 0;
-  comp->_event_found = 0;
-
-  // Reset eventInfo
-  comp->eventInfo.newDiscreteStatesNeeded = fmi3False;
-  comp->eventInfo.terminateSimulation = fmi3False;
-  comp->eventInfo.nominalsOfContinuousStatesChanged = fmi3False;
-  comp->eventInfo.valuesOfContinuousStatesChanged = fmi3False;
-  comp->eventInfo.nextEventTimeDefined = fmi3False;
-  comp->eventInfo.nextEventTime = 0;
-
-  return fmi3OK;
-}
-
-fmi3Status omcNewDiscreteStates(ModelInstance* c, EventInfo* eventInfo)
-{
-  ModelInstance *comp = (ModelInstance *)c;
-  double nextSampleEvent = 0;
-  fmi3Status returnValue = fmi3OK;
-
-  if (invalidState(comp, "omcNewDiscreteStates", model_state_me_event_mode, 0))
-    return fmi3Error;
-  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcNewDiscreteStates")
-
-  returnValue = internalEventUpdate(comp, eventInfo);
-
-  return returnValue;
-}
-
-fmi3Status omcEnterContinuousTimeMode(ModelInstance* c)
-{
-  ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, "omcEnterContinuousTimeMode", model_state_me_event_mode, 0))
-    return fmi3Error;
-  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcEnterContinuousTimeMode")
-  comp->state = model_state_me_continuous_time_mode;
-  return fmi3OK;
-}
-
-fmi3Status internal_CompletedIntegratorStep(ModelInstance* c, const char *func, fmi3Boolean noSetFMUStatePriorToCurrentPoint, fmi3Boolean* enterEventMode, fmi3Boolean* terminateSimulation)
-{
-  int done=0;
-  ModelInstance *comp = (ModelInstance *)c;
-  threadData_t *threadData = comp->threadData;
-  jmp_buf *old_jmp=threadData->mmc_jumper;
-
-  if (nullPointer(comp, func, "enterEventMode", enterEventMode))
-    return fmi3Error;
-  if (nullPointer(comp, func, "terminateSimulation", terminateSimulation))
-    return fmi3Error;
-  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, func)
-
-  setThreadData(comp);
-
-  /* try */
-  OMC_TRY_INTERNAL(simulationJumpBuffer)
-    threadData->mmc_jumper = threadData->simulationJumpBuffer;
-    holdAsserts(comp, 1);
-    comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
-    comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
-    comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
-    comp->fmuData->callback->function_storeSpatialDistribution(comp->fmuData, threadData);
-    storePreValues(comp->fmuData);
-    releaseAsserts(comp);
-    *enterEventMode = fmi3False;
-    *terminateSimulation = fmi3False;
-    if (comp->fmuData->simulationInfo->needToReThrow)
-    {
-      /* A held assert() asks for Event Mode. */
-      comp->fmuData->simulationInfo->needToReThrow = 0;
-      *enterEventMode = fmi3True;
-      FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "%s: Need to iterate, an assertion was violated at this point!", func)
-    }
-    /******** check state selection ********/
-#if !defined(OMC_NO_STATESELECTION)
-    if (stateSelection(comp->fmuData, comp->threadData, 1, 0))
-    {
-      /* if new set is calculated reinit the solver */
-      *enterEventMode = fmi3True;
-      FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "%s: Need to iterate state values changed!", func)
-    }
-#endif
-    /* TODO: fix the extrapolation in non-linear system
-     *       then we can stop to save all variables in
-     *       in the whole ringbuffer
-     */
-    overwriteOldSimulationData(comp->fmuData);
-    comp->_need_update = 1;
-    done=1;
-  /* catch */
-  OMC_CATCH_INTERNAL(simulationJumpBuffer)
-  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
-  threadData->mmc_jumper = old_jmp;
-  resetThreadData(comp);
-  releaseAsserts(comp);
-
-  if (done) {
-    return fmi3OK;
-  }
-  if (comp->_terminate_simulation_requested) {
-    comp->_terminate_simulation_requested = 0;
-    *terminateSimulation = fmi3True;
-    FILTERED_LOG(comp, fmi3OK, LOG_EVENTS, "%s: terminate simulation requested by the model.", func)
-    return fmi3OK;
-  }
-
-  FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "%s: terminated by an assertion.", func)
-  return fmi3Error;
-}
-
-fmi3Status omcCompletedIntegratorStep(ModelInstance* c, fmi3Boolean noSetFMUStatePriorToCurrentPoint, fmi3Boolean* enterEventMode, fmi3Boolean* terminateSimulation)
-{
-  ModelInstance *comp = (ModelInstance *)c;
-
-  if (invalidState(comp, "omcCompletedIntegratorStep", model_state_me_continuous_time_mode, 0))
-    return fmi3Error;
-
-  return internal_CompletedIntegratorStep(c, "omcCompletedIntegratorStep", noSetFMUStatePriorToCurrentPoint, enterEventMode, terminateSimulation);
-}
-
-fmi3Status omcSetTime(ModelInstance* c, fmi3Float64 t)
-{
-  ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, "omcSetTime", model_state_me_event_mode|model_state_me_continuous_time_mode, 0))
-    return fmi3Error;
-  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcSetTime: time=%.16g", t)
-  comp->fmuData->localData[0]->timeValue = t;
-  comp->_need_update = 1;
-  return fmi3OK;
-}
-
-fmi3Status internalSetContinuousStates(ModelInstance* c, const fmi3Float64 x[], size_t nx)
-{
-  ModelInstance *comp = (ModelInstance *)c;
-  int i;
-  if (invalidNumber(comp, "omcSetContinuousStates", "nx", nx, NUMBER_OF_STATES))
-    return fmi3Error;
-  if (nullPointer(comp, "omcSetContinuousStates", "x[]", x))
-    return fmi3Error;
-#if NUMBER_OF_STATES > 0
-  for (i = 0; i < nx; i++) {
-    fmi3ValueReference vr = vrStates[i];
-    FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcSetContinuousStates: #r%u# = %.16g", vr, x[i])
-    if (vr < 0 || vr >= NUMBER_OF_REALS|| setReal(comp, vr, x[i]) != fmi3OK) { // to be implemented by the includer of this file
-      return fmi3Error;
-    }
-  }
-#endif
-  comp->_need_update = 1;
-  return fmi3OK;
-}
-
-fmi3Status omcSetContinuousStates(ModelInstance* c, const fmi3Float64 x[], size_t nx)
-{
-  ModelInstance *comp = (ModelInstance *)c;
-  /* According to FMI RC2 specification omcSetContinuousStates should only be allowed in Continuous-Time Mode.
-   * The following code is done only to make the FMUs compatible with Dymola because Dymola is trying to call omcSetContinuousStates after omcEnterInitializationMode.
-   */
-  if (invalidState(comp, "omcSetContinuousStates", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode, 0))
-    return fmi3Error;
-
-  return internalSetContinuousStates(c, x, nx);
-}
-
-fmi3Status internalGetDerivatives(ModelInstance* c, const char *func, fmi3Float64 derivatives[], size_t nx)
-{
-  int i, done=0;
-  ModelInstance* comp = (ModelInstance *)c;
-  threadData_t *threadData = comp->threadData;
-  jmp_buf *old_jmp = threadData->mmc_jumper;
-  if (invalidNumber(comp, func, "nx", nx, NUMBER_OF_STATES))
-    return fmi3Error;
-  if (nullPointer(comp, func, "derivatives[]", derivatives))
-    return fmi3Error;
-
-  setThreadData(comp);
-  /* try */
-  OMC_TRY_INTERNAL(simulationJumpBuffer)
-    threadData->mmc_jumper = threadData->simulationJumpBuffer;
-
-    /* A violated assert() is held, see updateIfNeeded. */
-    holdAsserts(comp, (comp->state & (model_state_me_continuous_time_mode | model_state_cs_step_in_progress | model_state_cs_step_complete)) != 0);
-    if (comp->_need_update)
-    {
-      comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
-      overwriteOldSimulationData(comp->fmuData);
-    }
-    releaseAsserts(comp);
-
-#if NUMBER_OF_STATES > 0
-    for (i = 0; i < nx; i++) {
-      fmi3ValueReference vr = vrStatesDerivatives[i];
-      derivatives[i] = getReal(comp, vr); // to be implemented by the includer of this file
-      FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "%s: #r%u# = %.16g", func, vr, derivatives[i])
-    }
-#endif
-
-    done=1;
-  /* catch */
-  OMC_CATCH_INTERNAL(simulationJumpBuffer)
-  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
-
-  threadData->mmc_jumper = old_jmp;
-  resetThreadData(comp);
-  releaseAsserts(comp);
-
-  if (done) {
-    return fmi3OK;
-  }
-  FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "%s: terminated by an assertion.", func)
-  return fmi3Error;
-}
-
-fmi3Status omcGetDerivatives(ModelInstance* c, fmi3Float64 derivatives[], size_t nx)
-{
-  ModelInstance* comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmi3GetContinuousStateDerivatives", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, 0))
-    return fmi3Error;
-
-  return internalGetDerivatives(c, "fmi3GetContinuousStateDerivatives", derivatives, nx);
-}
-
-fmi3Status internalGetEventIndicators(ModelInstance* c, const char *func, fmi3Float64 eventIndicators[], size_t nx)
-{
-  int i, done=0;
-  ModelInstance *comp = (ModelInstance *)c;
-  threadData_t *threadData = comp->threadData;
-  jmp_buf *old_jmp = threadData->mmc_jumper;
-  if (invalidNumber(comp, func, "nx", nx, NUMBER_OF_EVENT_INDICATORS))
-    return fmi3Error;
-
-  setThreadData(comp);
-  /* try */
-  OMC_TRY_INTERNAL(simulationJumpBuffer)
-    threadData->mmc_jumper = threadData->simulationJumpBuffer;
-
-#if NUMBER_OF_EVENT_INDICATORS > 0
-    /* eval needed equations*/
-    /* A violated assert() is held, see updateIfNeeded. */
-    holdAsserts(comp, (comp->state & (model_state_me_continuous_time_mode | model_state_cs_step_in_progress | model_state_cs_step_complete)) != 0);
-    if (comp->_need_update)
-    {
-      comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
-      comp->_need_update = 0;
-    }
-    releaseAsserts(comp);
-    comp->fmuData->callback->function_ZeroCrossings(comp->fmuData, comp->threadData, comp->fmuData->simulationInfo->zeroCrossings);
-    for (i = 0; i < nx; i++) {
-      eventIndicators[i] = comp->fmuData->simulationInfo->zeroCrossings[i];
-      FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "%s: z%d = %.16g", func, i, eventIndicators[i])
-    }
-#endif
-    done=1;
-
-  /* catch */
-  OMC_CATCH_INTERNAL(simulationJumpBuffer)
-  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
-  threadData->mmc_jumper = old_jmp;
-  resetThreadData(comp);
-  releaseAsserts(comp);
-
-  if (done) {
-    return fmi3OK;
-  }
-  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "%s: terminated by an assertion.", func)
-  return fmi3Error;
-}
-
-fmi3Status omcGetEventIndicators(ModelInstance* c, fmi3Float64 eventIndicators[], size_t nx)
-{
-  ModelInstance *comp = (ModelInstance *)c;
-  /* According to FMI RC2 specification omcGetEventIndicators should only be allowed in Event Mode, Continuous-Time Mode & terminated.
-   * The following code is done only to make the FMUs compatible with Dymola because Dymola is trying to call omcGetEventIndicators after omcEnterInitializationMode.
-   */
-  if (invalidState(comp, "omcGetEventIndicators", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, 0))
-  /*if (invalidState(comp, "omcGetEventIndicators", model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error))*/
-    return fmi3Error;
-
-  return internalGetEventIndicators(c, "omcGetEventIndicators", eventIndicators, nx);
-}
-
-fmi3Status internalGetContinuousStates(ModelInstance* c, fmi3Float64 x[], size_t nx)
-{
-  int i;
-  ModelInstance *comp = (ModelInstance *)c;
-  if (invalidNumber(comp, "omcGetContinuousStates", "nx", nx, NUMBER_OF_STATES))
-    return fmi3Error;
-  if (nullPointer(comp, "omcGetContinuousStates", "states[]", x))
-    return fmi3Error;
-#if NUMBER_OF_STATES > 0
-  for (i = 0; i < nx; i++)
-  {
-    fmi3ValueReference vr = vrStates[i];
-    x[i] = getReal(comp, vr); // to be implemented by the includer of this file
-    FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcGetContinuousStates: #r%u# = %.16g", vr, x[i])
-  }
-#endif
-  return fmi3OK;
-}
-
-fmi3Status omcGetContinuousStates(ModelInstance* c, fmi3Float64 x[], size_t nx)
-{
-  int i;
-  ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, "omcGetContinuousStates", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, 0))
-    return fmi3Error;
-
-  return internalGetContinuousStates(c, x, nx);
-}
-
-fmi3Status internalGetNominalsOfContinuousStates(ModelInstance* c, fmi3Float64 x_nominal[], size_t nx)
-{
-  int i;
-  ModelInstance *comp = (ModelInstance *)c;
-  if (invalidNumber(comp, "omcGetNominalsOfContinuousStates", "nx", nx, NUMBER_OF_STATES))
-    return fmi3Error;
-  if (nullPointer(comp, "omcGetNominalsOfContinuousStates", "x_nominal[]", x_nominal))
-    return fmi3Error;
-#if NUMBER_OF_STATES > 0
-  DATA* fmudata = (DATA *) comp->fmuData;
-  for (i = 0; i < nx; i++)
-  {
-    /* Floored as ida_solver_setNominals floors it. */
-    modelica_real nominal = getNominalFromScalarIdx(fmudata->simulationInfo, fmudata->modelData, VAR_KIND_STATE, i);
-    x_nominal[i] = fmax(fabs(nominal), 1e-32);
-    FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcGetNominalsOfContinuousStates: x_nominal[%d] = %.16g", i, x_nominal[i])
-  }
-#endif
-  return fmi3OK;
-}
-
-fmi3Status omcGetNominalsOfContinuousStates(ModelInstance* c, fmi3Float64 x_nominal[], size_t nx)
-{
-  ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, "omcGetNominalsOfContinuousStates", model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, 0))
-    return fmi3Error;
-
-  return internalGetNominalsOfContinuousStates(c, x_nominal, nx);
-}
-
-/***************************************************
-Functions for FMI2 for Co-Simulation
-****************************************************/
-fmi3Status omcSetRealInputDerivatives(ModelInstance* c, const fmi3ValueReference vr[], size_t nvr, const fmi3Int32 order[], const fmi3Float64 value[])
-{
-  /* Variables */
-  int i;
-  int mappedIndex;
-  ModelInstance *comp = (ModelInstance *)c;
-
-  /* Check for valid call sequence */
-  if (invalidState(comp, "omcSetRealInputDerivatives", 0, model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete))
-    return fmi3Error;
-  if (nvr > 0 && nullPointer(comp, "omcSetRealInputDerivatives", "vr[]", vr))
-    return fmi3Error;
-  if (nvr > 0 && nullPointer(comp, "omcSetRealInputDerivatives", "value[]", value))
-    return fmi3Error;
-
-  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcSetRealInputDerivatives: nvr = %zu", nvr)
-
-#if NUMBER_OF_REAL_INPUTS > 0
-  for (i = 0; i < nvr; i++)
-  {
-    if (order[i] > 1) // currently first order derivative is supported
-      return fmi3Error;
-    if (vrOutOfRange(comp, "omcSetRealInputDerivatives", vr[i], NUMBER_OF_REALS))
-      return fmi3Error;
-    // check valueReference is an input of type Real
-    mappedIndex = mapInputReference2InputNumber(vr[i]);
-    if (mappedIndex == -1)
-      return fmi3Error;
-    comp->input_real_derivative[mappedIndex] = value[i]; // store the values in an external array
-    FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcSetRealInputDerivatives: #r%u# = %.16g", vr[i], value[i])
-  }
-#endif
-
-  comp->_need_update = 1;
-  return fmi3OK;
-}
-
-fmi3Status omcGetRealOutputDerivatives(ModelInstance* c, const fmi3ValueReference vr[], size_t nvr, const fmi3Int32 order[], fmi3Float64 value[])
-{
-  /* Variables */
-  int i;
-  ModelInstance *comp = (ModelInstance *)c;
-
-  /* Check for valid call sequence */
-  if (invalidState(comp, "omcGetRealOutputDerivatives", 0, model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error))
-    return fmi3Error;
-  if (nvr > 0 && nullPointer(comp, "omcGetRealOutputDerivatives", "vr[]", vr))
-    return fmi3Error;
-  if (nvr > 0 && nullPointer(comp, "omcGetRealOutputDerivatives", "value[]", value))
-    return fmi3Error;
-
-#if NUMBER_OF_REALS > 0
-  if (updateIfNeeded(comp, "omcGetRealOutputDerivatives") != fmi3OK)
-    return fmi3Error;
-
-  for (i = 0; i < nvr; i++)
-  {
-    if (vrOutOfRange(comp, "omcGetRealOutputDerivatives", vr[i], NUMBER_OF_REALS)) {
-      return fmi3Error;
-    }
-    fmi3ValueReference mappedVR = mapOutputReference2RealOutputDerivatives(vr[i]);
-    value[i] = getReal(comp, mappedVR); // to be implemented by the includer of this file
-    FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcGetRealOutputDerivatives: #r%u# = %.16g", vr[i], value[i])
-  }
-#endif
-  return fmi3OK;
-}
-
-/**
- * @brief Internal Co-Simulation step, called from fmi3DoStep.
- *
- * Compute time step to next communication point with explicit Euler or CVODE.
- *
- * When @p eventModeUsed and @p earlyReturnAllowed are both true (FMI 3.0
- * Co-Simulation with Event Mode), the step stops at the first encountered event
- * (state event, time event or state-selection event) and reports it through
- * @p eventEncountered / @p earlyReturn / @p lastSuccessfulTime instead of
- * resolving it internally. The master is then expected to call
- * fmi3EnterEventMode / fmi3UpdateDiscreteStates / fmi3EnterStepMode and resume
- * with a new step from @p lastSuccessfulTime. Otherwise events are handled
- * internally (FMI 2.0 behaviour) and the step always advances to the
- * communication point.
- *
- * @param c                                  FMU component instance.
- * @param currentCommunicationPoint          Current communication point of the master algorithm.
- * @param communicationStepSize              Communication step size.
- * @param noSetFMUStatePriorToCurrentPoint   Unused.
- * @param eventModeUsed                      True if the importer uses FMI 3.0 Co-Simulation Event Mode for this instance.
- * @param earlyReturnAllowed                 True if the master allows the step to return early on a deferred event; only relevant when @p eventModeUsed is true.
- * @param eventEncountered                   Output, may be NULL. Set to fmi3True if an event was encountered and deferred to the master.
- * @param terminateSimulationOut             Output, may be NULL. Set to fmi3True if the simulation should terminate.
- * @param earlyReturn                        Output, may be NULL. Set to fmi3True if the step returned before reaching the requested communication point due to a deferred event.
- * @param lastSuccessfulTime                 Output, may be NULL. Simulation time actually reached by this step.
- * @return fmi3Status                        Returns fmi3OK if the step (or partial step up to a deferred event) completed successfully, fmi3Error/fmi3Fatal otherwise.
- */
-static fmi3Status doStepInternal(ModelInstance* c, fmi3Float64 currentCommunicationPoint,
-    fmi3Float64 communicationStepSize, fmi3Boolean noSetFMUStatePriorToCurrentPoint,
-    fmi3Boolean eventModeUsed, fmi3Boolean earlyReturnAllowed,
-    fmi3Boolean* eventEncountered, fmi3Boolean* terminateSimulationOut,
-    fmi3Boolean* earlyReturn, fmi3Float64* lastSuccessfulTime)
-{
-  ModelInstance *comp = (ModelInstance *)c;
-  threadData_t *threadData = comp->threadData;
-  jmp_buf *old_jmp = threadData->mmc_jumper;
-  int i, zc_event = 0, time_event = 0;
-  int flag;
-  int done = 0;
-  fmi3Boolean ev = fmi3False;   /* event encountered and deferred to the master */
-  fmi3Boolean term = fmi3False; /* simulation terminated by an internal event */
-
-  fmi3Status status = fmi3OK;
-  fmi3Float64* states = comp->states;
-  fmi3Float64* states_der = comp->states_der;
-  fmi3Float64* event_indicators = comp->event_indicators;
-  fmi3Float64* event_indicators_prev = comp->event_indicators_prev;
-  fmi3Float64 t = comp->fmuData->localData[0]->timeValue;
-  fmi3Float64 tNext, tEnd;
-  fmi3Boolean enterEventMode = fmi3False, terminateSimulation = fmi3False;
-
-  EventInfo eventInfo;
-
-  if (eventEncountered)       *eventEncountered = fmi3False;
-  if (terminateSimulationOut) *terminateSimulationOut = fmi3False;
-  if (earlyReturn)            *earlyReturn = fmi3False;
-  if (lastSuccessfulTime)     *lastSuccessfulTime = currentCommunicationPoint + communicationStepSize;
-
-  if (invalidState(comp, "fmi3DoStep", 0, model_state_cs_step_complete))
-    return fmi3Error;
-
-
-  setThreadData(comp);
-
-  /* try */
-  OMC_TRY_INTERNAL(simulationJumpBuffer)
-    threadData->mmc_jumper = threadData->simulationJumpBuffer;
-
-  eventInfo.newDiscreteStatesNeeded           = fmi3False;
-  eventInfo.terminateSimulation               = fmi3False;
-  eventInfo.nominalsOfContinuousStatesChanged = fmi3False;
-  eventInfo.valuesOfContinuousStatesChanged   = fmi3True;
-  eventInfo.nextEventTimeDefined              = fmi3False;
-  eventInfo.nextEventTime                     = 0.0;
-
-  comp->fmuData->localData[0]->timeValue = currentCommunicationPoint;
-  tEnd = currentCommunicationPoint + communicationStepSize;
-  if (comp->stopTimeDefined && (tEnd > comp->stopTime))
-    status=fmi3Error;
-
-  // copy the input values
-#if NUMBER_OF_REAL_INPUTS > 0
-  fmi3Float64 realInputDerivatives[NUMBER_OF_REAL_INPUTS];
-  for (int i = 0; i < NUMBER_OF_REALS; ++i)
-  {
-    int mappedIndex = mapInputReference2InputNumber(i);
-    if (mappedIndex != -1)
-      realInputDerivatives[mappedIndex] = getReal(comp, i);
-  }
-#endif
-
-  status = internalEventIteration(c, &eventInfo);
-  if (eventInfo.terminateSimulation) {
-    term = fmi3True;
-    done = 1;
-    goto doStep_cleanup;
-  }
-  if (status != fmi3OK) goto doStep_cleanup;
-
-  /* Integration loop */
-  while (status == fmi3OK && comp->fmuData->localData[0]->timeValue < tEnd)
-  {
-    /* fprintf(stderr, "DoStep %g -> %g State: %s\n", comp->fmuData->localData[0]->timeValue, tNext, stateToString(comp)); */
-
-    /* Both describe this sub-step only. Left set, a time event or zero
-       crossing in an earlier sub-step would make every later one end in a
-       spurious event iteration (and, in Event Mode, report an event that
-       is not there). */
-    zc_event = 0;
-    time_event = 0;
-
-    // set the real Inputs with output_derivative values
-#if NUMBER_OF_REAL_INPUTS > 0
-    for (int i = 0; i < NUMBER_OF_REALS; ++i)
-    {
-      int mappedIndex = mapInputReference2InputNumber(i);
-      if (mapInputReference2InputNumber(i) != -1)
-      {
-        double dt = comp->fmuData->localData[0]->timeValue - t;
-        double new_input_value = realInputDerivatives[mappedIndex] + comp->input_real_derivative[mappedIndex] * dt;
-        if (setReal(comp, i, new_input_value) != fmi3OK) // to be implemented by the includer of this file
-        {
-          status = fmi3Error;
-          goto doStep_cleanup;
-        }
-      }
-    }
-#endif
-
-#if NUMBER_OF_STATES > 0
-    status = internalGetDerivatives(c, "fmi3DoStep", states_der, NUMBER_OF_STATES);
-  if (status != fmi3OK) goto doStep_cleanup;
-
-    status = internalGetContinuousStates(c, states, NUMBER_OF_STATES);
-  if (status != fmi3OK) goto doStep_cleanup;
-#endif
-
-#if NUMBER_OF_EVENT_INDICATORS > 0
-    status = internalGetEventIndicators(c, "fmi3DoStep", event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
-  if (status != fmi3OK) goto doStep_cleanup;
-#endif
-
-    /* adjust for time events */
-    if (eventInfo.nextEventTimeDefined && (eventInfo.nextEventTime <= tEnd))
-    {
-      tNext = eventInfo.nextEventTime;
-      time_event = 1;
-    }
-    else
-    {
-      tNext = tEnd;
-    }
-
-    /* integrate */
-    switch(comp->solverInfo->solverMethod)
-    {
-      case S_EULER:
-        for (i = 0; i < NUMBER_OF_STATES; i++)
-        {
-          states[i] = states[i] + (tNext - comp->fmuData->localData[0]->timeValue) * states_der[i];
-        }
-        break;
-      case S_CVODE:
-#ifdef WITH_SUNDIALS
-        flag = cvode_solver_fmi_step(comp, tNext, states);
-        if (flag < 0)
-        {
-          FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "fmi3DoStep: CVODE integrator step failed.")
-          status = fmi3Fatal;
-          goto doStep_cleanup;
-        }
-#else
-        FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "fmi3DoStep: FMU not compiled with SUNDIALS but solver CVODE selected.")
-        status = fmi3Fatal;
-        goto doStep_cleanup;
-#endif /* WITH_SUNDIALS */
-        break;
-      default:
-        FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "fmi3DoStep: Unknown solver method %d.", comp->solverInfo->solverMethod)
-        status = fmi3Fatal;
-        goto doStep_cleanup;
-    }
-
-    // update time
-    comp->fmuData->localData[0]->timeValue = tNext;
-    comp->_need_update = 1;
-
-    // set the real Inputs with output_derivative values
-#if (NUMBER_OF_REAL_INPUTS > 0)
-    for (int i = 0; i < NUMBER_OF_REALS; ++i)
-    {
-      int mappedIndex = mapInputReference2InputNumber(i);
-      if (mapInputReference2InputNumber(i) != -1)
-      {
-        double dt = comp->fmuData->localData[0]->timeValue - t;
-        double new_input_value = realInputDerivatives[mappedIndex] + comp->input_real_derivative[mappedIndex] * dt;
-        if (setReal(comp, i, new_input_value) != fmi3OK) // to be implemented by the includer of this file
-        {
-          status = fmi3Error;
-          goto doStep_cleanup;
-        }
-      }
-    }
-#endif
-
-    /* set the continuous states */
-#if NUMBER_OF_STATES > 0
-    status = internalSetContinuousStates(c, states, NUMBER_OF_STATES);
-    if (status != fmi3OK) goto doStep_cleanup;
-#endif
-
-    /* signal completed integrator step */
-    status = internal_CompletedIntegratorStep(c, "fmi3DoStep", fmi3True, &enterEventMode, &terminateSimulation);
-    if (terminateSimulation) {
-      term = fmi3True;
-      done = 1;
-      goto doStep_cleanup;
-    }
-    if (status != fmi3OK) goto doStep_cleanup;
-
-    /* check for events */
-#if NUMBER_OF_EVENT_INDICATORS > 0
-    status = internalGetEventIndicators(c, "fmi3DoStep", event_indicators, NUMBER_OF_EVENT_INDICATORS);
-  if (status != fmi3OK) goto doStep_cleanup;
-
-    for (i = 0; i < NUMBER_OF_EVENT_INDICATORS; i++)
-    {
-      if (event_indicators[i]*event_indicators_prev[i] < 0)
-      {
-        zc_event = 1;
-        break;
-      }
-    }
-#endif
-
-    comp->solverInfo->didEventStep = 0;
-
-    if (enterEventMode || zc_event || time_event)
-    {
-      /* fprintf(stderr, "enterEventMode = %d, zc_event = %d, time_event = %d\n", enterEventMode, zc_event, time_event); */
-
-      if (eventModeUsed &&
-          (earlyReturnAllowed || comp->fmuData->localData[0]->timeValue >= tEnd))
-      {
-        /* FMI 3.0 Co-Simulation with Event Mode: do not resolve the event here.
-           Stop the step at the event and let the master handle it via
-           fmi3EnterEventMode / fmi3UpdateDiscreteStates / fmi3EnterStepMode. The
-           continuous states have already been advanced to and stored at this
-           point, so the deferred event update operates on a consistent state.
-           An event landing exactly at the communication point is reported
-           without an early return; an event strictly inside the step is only
-           deferred when the master allows early return, otherwise it is handled
-           internally below. */
-        ev = fmi3True;
-        FILTERED_LOG(comp, fmi3OK, LOG_EVENTS, "fmi3DoStep: event encountered at %g, deferring to the master", comp->fmuData->localData[0]->timeValue)
-        break;
-      }
-
-      // Reset eventInfo
-      eventInfo.newDiscreteStatesNeeded           = fmi3False;
-      eventInfo.terminateSimulation               = fmi3False;
-      eventInfo.nominalsOfContinuousStatesChanged = fmi3False;
-      eventInfo.valuesOfContinuousStatesChanged   = fmi3True;
-      eventInfo.nextEventTimeDefined              = fmi3False;
-      eventInfo.nextEventTime                     = 0.0;
-      status = internalEventIteration(c, &eventInfo);
-      if (eventInfo.terminateSimulation) {
-        term = fmi3True;
-        done = 1;
-        goto doStep_cleanup;
-      }
-      if (status != fmi3OK) goto doStep_cleanup;
-
-      if (eventInfo.valuesOfContinuousStatesChanged)
-      {
-        #if NUMBER_OF_STATES > 0
-          status = internalGetContinuousStates(c, states, NUMBER_OF_STATES);
-          if (status != fmi3OK) goto doStep_cleanup;
-        #endif
-      }
-
-      if (eventInfo.nominalsOfContinuousStatesChanged)
-      {
-        #if NUMBER_OF_STATES > 0
-          status = internalGetNominalsOfContinuousStates(c, states, NUMBER_OF_STATES);
-          if (status != fmi3OK) goto doStep_cleanup;
-        #endif
-      }
-
-      #if NUMBER_OF_EVENT_INDICATORS > 0
-        status = internalGetEventIndicators(c, "fmi3DoStep", event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
-        if (status != fmi3OK) goto doStep_cleanup;
-      #endif
-
-      comp->solverInfo->didEventStep = 1;
-
-      if (eventInfo.terminateSimulation)
-      {
-        term = fmi3True;
-        break;
-      }
-    }
-  }
-
-  done = 1;
-
-  /* catch */
-  OMC_CATCH_INTERNAL(simulationJumpBuffer)
-
-doStep_cleanup:
-  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
-  threadData->mmc_jumper = old_jmp;
-  resetThreadData(comp);
-
-  if (!done)
-  {
-    if (comp->_terminate_simulation_requested) {
-      comp->_terminate_simulation_requested = 0;
-      term = fmi3True;
-      FILTERED_LOG(comp, fmi3OK, LOG_EVENTS, "fmi3DoStep: terminate simulation requested by the model.")
-      status = fmi3OK;
-    } else if (status == fmi3OK) {
-      FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "fmi3DoStep: terminated by an assertion.")
-      status = fmi3Error;
-    }
-  }
-
-  if (status <= fmi3Warning)
-  {
-    fmi3Float64 reached = comp->fmuData->localData[0]->timeValue;
-    if (lastSuccessfulTime)     *lastSuccessfulTime = reached;
-    if (eventEncountered)       *eventEncountered = ev;
-    if (terminateSimulationOut) *terminateSimulationOut = term;
-    /* An early return happened when the step stopped (for an event) before the
-       requested communication point. */
-    if (earlyReturn)            *earlyReturn = (ev && reached < tEnd) ? fmi3True : fmi3False;
-  }
-
-  return status;
-}
-
-// ---------------------------------------------------------------------------
-// FMI functions: set external functions
-// ---------------------------------------------------------------------------
-
-/* =====================================================================
- * Co-Simulation solver setup (previously in fmu_read_flags.c, inlined here
- * to keep the FMI 3.0 interface independent of the FMI 2.0 files).
- * ===================================================================== */
-
-static inline const char* skipTo(const char *str, char c)
-{
-  while(*str != c && *str != '\0') {
-    str++;
-  }
-  return str;
-}
-
-/**
-  * @brief Puts double quotes around a string
- *
-  * @param str      Null terminated string.
-  * @return char*   Newly allocated string with double quotes around `str`.
-  *                 Needs to be freed with `free`
- */
-static inline char* quote(const char *str)
-{
-  size_t len = strlen(str) + 3; // +2 for quotes, +1 for null terminator
-  char* tmp = (char*) malloc(len);
-  if (tmp == NULL) {
-    return NULL;
-  }
-  snprintf(tmp, len, "\"%s\"", str);
-  return tmp;
- }
-
-/**
- * @brief Parse and sets the solver method string
- *
- * @param  solverInfo   Solver info to set solver method in.
- * @param  str          string that starts at solver method string
- * @return const char*  input string skipped to endline
- */
-static inline const char* setSolverMethod(SOLVER_INFO *solverInfo, const char *str)
-{
-  /* Variables */
-  int i;
-  char* value;
-  for(i=1; i<S_MAX; i++)
-  {
-    value = quote(SOLVER_METHOD_NAME[i]);
-    if (value == NULL) {
-      continue;
-    }
-    if (strncmp(str, value, strlen(SOLVER_METHOD_NAME[i]) + 2) == 0)
-    {
-      solverInfo->solverMethod = i;
-      free(value);
-      break;
-    }
-    free(value);
-  }
-  return skipTo(str, '\n');
-}
-
-/**
- * @brief parses flags from resources/modelName_flags.json
- *
- * @param solverInfo
- * @param str           string read from file
- */
-void parseFlags(SOLVER_INFO *solverInfo, const char *str)
-{
-  /* Variables */
-  int i, k;
-  const int k_max = 1000;
-  char* value;
-
-  str = skipTo(str, '\"');
-  k = 0;
-  while(*str != '\0' && k < k_max)
-  {
-    k++;
-    for(i=1; i<FMU_FLAG_MAX; i++)
-    {
-      // map the fmu flags to regular flags
-      value = quote(FLAG_NAME[FMU_FLAG_MAP[i]]);
-      if (value == NULL) {
-        /* If allocation failed, skip this entry */
-        continue;
-      }
-
-      if (strncmp(str, value, strlen(FLAG_NAME[FMU_FLAG_MAP[i]]) + 2) == 0)
-      {
-        str = skipTo(str, ':');
-        str = skipTo(str, '\"');
-
-        switch(i) {
-          case FMU_FLAG_SOLVER: str = setSolverMethod(solverInfo, str); break;
-          default: str = skipTo(str, '\n'); break;
-        }
-      }
-
-      free(value);
-    }
-    str = skipTo(str, '\"');
-   }
-}
-
-/**
- * @brief Initialize solver data.
- *
- * Reads optional FMU simulation flags from <fmiPrefix>.fmu/resources/<fmiPrefix>_flags.json.
- * Initialize solver euler or CVODE.
- *
- * @param comp          FMU component.
- * @return int          Return 0 on success and -1 when an error occurred.
- */
-int FMI3CS_initializeSolverData(ModelInstance* comp)
-{
-  /* Variables */
-  DATA* data;
-  threadData_t* threadData;
-  SOLVER_INFO* solverInfo;
-
-  int retValue;
-
-  data = comp->fmuData;
-  threadData = comp->threadData;
-
-  /* Allocate memory */
-  solverInfo = (SOLVER_INFO*) calloc(1, sizeof(SOLVER_INFO));
-
-  /* Initialize solverInfo */
-  solverInfo->currentTime = 0;
-  solverInfo->currentStepSize = 0;
-  solverInfo->laststep = 0;
-  solverInfo->solverMethod = 0;
-  solverInfo->solverRootFinding = 0;
-  solverInfo->solverNoEquidistantGrid = FALSE;
-  solverInfo->lastdesiredStep = solverInfo->currentTime + solverInfo->currentStepSize;
-  solverInfo->eventLst = NULL;
-  solverInfo->didEventStep = 0;
-  solverInfo->stateEvents = 0;
-  solverInfo->sampleEvents = 0;
-
-  /* read fmu flags from flags.json */
-  size_t filename_len = strlen(comp->fmuData->modelData->resourcesDir) + strlen(comp->fmuData->modelData->modelFilePrefix) + 13;
-  char* flags_filename = calloc(filename_len, sizeof(char));
-  snprintf(flags_filename, filename_len, "%s/%s_flags.json",
-           comp->fmuData->modelData->resourcesDir,
-           comp->fmuData->modelData->modelFilePrefix);
-  FILTERED_LOG(comp, fmi3OK, LOG_ALL, "omcInstantiate: Trying to find simulation settings %s.", flags_filename)
-
-  if( omc_file_exists( flags_filename) )
-  {
-    FILTERED_LOG(comp, fmi3OK, LOG_ALL, "omcInstantiate: Found simulation settings %s.", flags_filename)
-    omc_mmap_read mmap_reader = {0};
-    mmap_reader = omc_mmap_open_read(flags_filename);
-    parseFlags(solverInfo, mmap_reader.data);
-    omc_mmap_close_read(mmap_reader);
-  }
-  else
-  {
-    FILTERED_LOG(comp, fmi3OK, LOG_ALL, "omcInstantiate: Using default simulation settings.")
-    solverInfo->solverMethod = S_EULER;
-  }
-
-  /* If no states are present, we can use Euler's method since it is doing nothing. */
-  if (data->modelData->nStates < 1)
-  {
-    FILTERED_LOG(comp, fmi3OK, LOG_ALL, "omcInstantiate: No states present, continuing without ODE solver.")
-    solverInfo->solverMethod = S_EULER;
-  }
-
-  switch (solverInfo->solverMethod)
-  {
-    case S_EULER:
-      /* Needs no initialization */
-      retValue = 0;
-      break;
-      case S_CVODE:
-#ifdef WITH_SUNDIALS
-      omc_useStream[OMC_LOG_SOLVER] = 1;
-      CVODE_SOLVER* cvodeData = NULL;
-      FILTERED_LOG(comp, fmi3OK, LOG_ALL, "Initializing CVODE ODE Solver")
-      cvodeData = (CVODE_SOLVER*) calloc(1, sizeof(CVODE_SOLVER));
-      if (!cvodeData) {
-        FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "omcInstantiate: Out of memory.")
-        free(solverInfo);
-        return -1;
-      } else {
-        /* FMI 3.0 has no memory callbacks, so plain free matches the calloc
-         * above. Must be set: cvode_solver_deinitial frees the struct through
-         * this pointer, which calloc left NULL. */
-        cvodeData->freeSolverMemory = free;
-        retValue = cvode_solver_initial(data, threadData, solverInfo, cvodeData, 1 /* is FMI */);   /* TODO: cvode_solver_initial needs to use malloc and free */
-      }
-      solverInfo->solverData = cvodeData;
-      omc_useStream[OMC_LOG_SOLVER] = 0;
-#else
-      solverInfo->solverData = NULL;
-      FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "omcInstantiate: FMU not compiled with SUNDIALS but solver CVODE selected.")
-      retValue = -1;
-#endif /* WITH_SUNDIALS */
-      break;
-    default:
-      FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "omcInstantiate: Unknown solver method.")
-      retValue = -1;
-  }
-
-  free(flags_filename);
-
-  comp->solverInfo = solverInfo;
-
-  return retValue;
-}
-
-/**
- * @brief Deinitialize solver data.
- *
- * Use for solver data allocated with FMI3CS_initializeSolverData.
- * Frees everything inside comp->solverInfo.
- *
- * @param comp          FMU component.
- * @return int          Return 0 on success and -1 else.
- */
-int FMI3CS_deInitializeSolverData(ModelInstance* comp)
-{
-  /* Variables */
-  DATA* data;
-  threadData_t* threadData;
-  SOLVER_INFO* solverInfo;
-  int retValue;
-
-  data = comp->fmuData;
-  threadData = comp->threadData;
-  solverInfo = comp->solverInfo;
-
-  /* Log function call */
-  FILTERED_LOG(comp, fmi3OK, LOG_ALL, "omcFreeInstance: Freeing solver data.")
-
-  switch (solverInfo->solverMethod)
-  {
-    case S_EULER:
-      /* Needs no freeing */
-      retValue = 0;
-      break;
-    case S_CVODE:
-#ifdef WITH_SUNDIALS
-      retValue = cvode_solver_deinitial(solverInfo->solverData);
-      break;
-#else
-      FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "omcInstantiate: FMU not compiled with SUNDIALS but solver CVODE selected.")
-      retValue = -1;
-      break;
-#endif /* WITH_SUNDIALS */
-    default:
-      FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "omcFreeInstance: Unknown solver method.")
-      retValue = -1;
-  }
-
-  free(comp->solverInfo);
-  comp->solverInfo = NULL;
-
-  return retValue;
-}
-
+#define OMC_FMI_VERSION 3
+typedef fmi3Status fmiXStatus;
+typedef ModelInstance* fmiXComponent;
+typedef fmi3Float64 fmiXReal;
+typedef fmi3Int32 fmiXInteger;
+typedef fmi3Boolean fmiXBoolean;
+typedef fmi3String fmiXString;
+typedef fmi3Byte fmiXByte;
+typedef fmi3ValueReference fmiXValueReference;
+typedef fmi3FMUState fmiXFMUstate;
+typedef EventInfo fmiXEventInfo;
+#define fmiXOK fmi3OK
+#define fmiXWarning fmi3Warning
+#define fmiXDiscard fmi3Discard
+#define fmiXError fmi3Error
+#define fmiXFatal fmi3Fatal
+#define fmiXTrue fmi3True
+#define fmiXFalse fmi3False
+#define FMIX(name) omc##name
+#define FMIX_STR "fmi3"
+#define FMIX_ME OMC_ME
+#define FMIX_CS OMC_CS
+#define FMIX_LOG(comp, status, categoryIndex, message, ...) omc_fmi3_logMessage(comp, status, categoryIndex, message, ##__VA_ARGS__)
+#define LOG_FMIX_CALL LOG_FMI3_CALL
+#define FMIX_SETUP_DATA_STRUC fmu3_model_interface_setupDataStruc
+
+#include "fmu_model_interface.c.inc"
 
 /* =====================================================================
  * FMI 3.0 public API (layered on the engine above).
@@ -3105,6 +166,19 @@ static ModelInstance *fmu3InnerComp(fmi3Instance instance)
 {
   ModelInstance3 *inst = (ModelInstance3 *)instance;
   return inst ? (ModelInstance *)inst->comp : NULL;
+}
+
+/* Scheduled Execution runs on the Model Exchange code path: after initialization
+   its instance stays in model_state_me_event_mode, which there stands for Clock
+   Activation Mode. Sets the error state and returns true for a call that only
+   Model Exchange or Co-Simulation may make. */
+static fmiXBoolean fmu3InScheduledExecution(fmi3Instance instance, const char *func)
+{
+  ModelInstance3 *inst = (ModelInstance3 *)instance;
+  if (!inst || inst->interfaceType != FMI3_INTERFACE_SE) return fmiXFalse;
+  FILTERED_LOG(inst->comp, fmi3Error, LOG_STATUSERROR, "%s: Illegal call sequence. %s is not allowed in Scheduled Execution.", func, func)
+  inst->comp->state = model_state_error;
+  return fmiXTrue;
 }
 
 /* Generic instantiation shared by ME, CS and SE. */
@@ -3244,7 +318,12 @@ fmi3Status fmi3EnterInitializationMode(fmi3Instance instance, fmi3Boolean tolera
 
 fmi3Status fmi3ExitInitializationMode(fmi3Instance instance)
 {
-  return (fmi3Status)omcExitInitializationMode(fmu3InnerComp(instance));
+  ModelInstance3 *inst = (ModelInstance3 *)instance;
+  fmi3Status status = (fmi3Status)omcExitInitializationMode(fmu3InnerComp(instance));
+  if (inst && inst->eventModeUsed && inst->comp->state == model_state_cs_step_complete) {
+    inst->comp->state = model_state_cs_event_mode;
+  }
+  return status;
 }
 
 fmi3Status fmi3EnterEventMode(fmi3Instance instance)
@@ -3252,11 +331,13 @@ fmi3Status fmi3EnterEventMode(fmi3Instance instance)
   ModelInstance3 *inst = (ModelInstance3 *)instance;
   ModelInstance *comp = fmu3InnerComp(instance);
   if (!inst || !comp) return fmi3Error;
+  if (fmu3InScheduledExecution(instance, "fmi3EnterEventMode")) return fmi3Error;
+  /* Only from Step Mode, and only for an importer that said it uses Event Mode. */
+  if (invalidState(comp, "fmi3EnterEventMode", model_state_me_continuous_time_mode,
+      inst->eventModeUsed ? model_state_cs_step_complete : 0))
+    return fmi3Error;
   if (inst->interfaceType == FMI3_INTERFACE_CS) {
-    /* Co-Simulation with Event Mode: the instance stays in Step Mode
-       (model_state_cs_step_complete); the event is resolved by the following
-       fmi3UpdateDiscreteStates calls, which drive the event iteration directly
-       (the Model-Exchange Event Mode state is not valid for a CS instance). */
+    comp->state = model_state_cs_event_mode;
     return fmi3OK;
   }
   return (fmi3Status)omcEnterEventMode(comp);
@@ -3269,7 +350,11 @@ fmi3Status fmi3Terminate(fmi3Instance instance)
 
 fmi3Status fmi3Reset(fmi3Instance instance)
 {
-  return (fmi3Status)omcReset(fmu3InnerComp(instance));
+  ModelInstance *comp = fmu3InnerComp(instance);
+  if (comp) {
+    comp->daeMode = fmi3False;
+  }
+  return (fmi3Status)omcReset(comp);
 }
 
 /* ---------------------------------------------------------------------------
@@ -3303,11 +388,51 @@ static size_t fmi3ArrayLength(fmi3ValueReference vr)
   return 1;
 }
 
+/* fmi-ls-dae: the structural parameter that switches DAE mode, then one
+ * residual per value reference. */
+#define FMI3_DAE_MODE_VR (FMI3_EVENT_INDICATOR_VR_START + NUMBER_OF_EVENT_INDICATORS)
+
+static fmi3Boolean isDAEModeVR(fmi3ValueReference vr)
+{
+#ifdef OMC_FMI_LS_DAE
+  return compiledInDAEMode && vr == (fmi3ValueReference)FMI3_DAE_MODE_VR;
+#else
+  (void)vr;
+  return fmi3False;
+#endif
+}
+
+static fmi3Status getDAEResidual(ModelInstance *comp, fmi3ValueReference vr, fmi3Float64 *value)
+{
+#ifdef OMC_FMI_LS_DAE
+  long i = (long)vr - (long)FMI3_DAE_MODE_VR - 1;
+  if (compiledInDAEMode && i >= 0 && i < comp->fmuData->simulationInfo->daeModeData->nResidualVars) {
+    return internalGetDAEResidual(comp, i, value);
+  }
+#endif
+  vrOutOfRange(comp, "fmi3GetFloat64", vr, FMI3_DAE_MODE_VR);
+  return fmi3Error;
+}
+
 static size_t fmi3NumValues(const fmi3ValueReference valueReferences[], size_t nValueReferences)
 {
   size_t i, n = 0;
   for (i = 0; i < nValueReferences; i++) n += fmi3ArrayLength(valueReferences[i]);
   return n;
+}
+
+/* invalidState for fmi3Set{VariableType}. Configuration Mode takes structural
+ * parameters only, the only one being fmi-ls-dae's switch (isDAEModeVR): any
+ * other variable is refused there, while a call with none is legal. */
+static int fmu3InvalidSet(ModelInstance *comp, const char *func, int meStates, int csStates,
+    const fmi3ValueReference valueReferences[], size_t nValueReferences)
+{
+  size_t i;
+  if (comp->state == model_state_configuration_mode) {
+    for (i = 0; i < nValueReferences && isDAEModeVR(valueReferences[i]); i++);
+    if (i == nValueReferences) return 0;
+  }
+  return invalidState(comp, func, meStates, csStates);
 }
 
 fmi3Status fmi3GetFloat64(fmi3Instance instance, const fmi3ValueReference valueReferences[],
@@ -3318,6 +443,7 @@ fmi3Status fmi3GetFloat64(fmi3Instance instance, const fmi3ValueReference valueR
   if (!comp) {
     return fmi3Error;
   }
+  if (invalidState(comp, "fmi3GetFloat64", GET_ME_STATES, GET_CS_STATES)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     fmi3ValueReference vr = valueReferences[i];
@@ -3326,10 +452,22 @@ fmi3Status fmi3GetFloat64(fmi3Instance instance, const fmi3ValueReference valueR
       fmi3ValueReference evr = vr + (fmi3ValueReference)j;
       if (evr == (fmi3ValueReference)FMI3_TIME_VR) {
         values[k] = (fmi3Float64)comp->fmuData->localData[0]->timeValue;
+      } else if (evr >= (fmi3ValueReference)FMI3_DAE_MODE_VR) {
+        fmi3Status s = getDAEResidual(comp, evr, &values[k]);
+        if (s > fmi3Warning) return s;
       } else if (evr >= (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START) {
 #if NUMBER_OF_EVENT_INDICATORS > 0
+        /* Not omcGetEventIndicators, which is Model Exchange only: these are
+           ordinary variables here, whatever the interface. */
         fmi3Float64 ei[NUMBER_OF_EVENT_INDICATORS];
-        fmi3Status s = omcGetEventIndicators((ModelInstance*)comp, ei, NUMBER_OF_EVENT_INDICATORS);
+        fmi3Status s;
+        if (evr - (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START >= NUMBER_OF_EVENT_INDICATORS) return fmi3Error;
+        /* Instantiated: the stored value, as nothing is evaluated before initialization. */
+        if (comp->state == model_state_instantiated) {
+          values[k] = (fmi3Float64)comp->fmuData->simulationInfo->zeroCrossings[evr - (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START];
+          continue;
+        }
+        s = internalGetEventIndicators((ModelInstance*)comp, "fmi3GetFloat64", ei, NUMBER_OF_EVENT_INDICATORS);
         if (s > fmi3Warning) return (fmi3Status)s;
         values[k] = (fmi3Float64)ei[evr - (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START];
 #else
@@ -3353,6 +491,7 @@ fmi3Status fmi3GetInt32(fmi3Instance instance, const fmi3ValueReference valueRef
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (invalidState(c, "fmi3GetInt32", GET_ME_STATES, GET_CS_STATES)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     size_t cnt = fmi3ArrayLength(valueReferences[i]);
@@ -3373,12 +512,17 @@ fmi3Status fmi3GetBoolean(fmi3Instance instance, const fmi3ValueReference valueR
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (invalidState(c, "fmi3GetBoolean", GET_ME_STATES, GET_CS_STATES)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     size_t cnt = fmi3ArrayLength(valueReferences[i]);
     for (j = 0; j < cnt; j++, k++) {
       fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_BOOLEAN_VR_OFFSET);
       fmi3Boolean value;
+      if (isDAEModeVR(valueReferences[i] + j)) {
+        values[k] = c->daeMode;
+        continue;
+      }
       fmi3Status s = omcGetBoolean(c, &lvr, 1, &value);
       if (s > fmi3Warning) return (fmi3Status)s;
       values[k] = value ? fmi3True : fmi3False;
@@ -3393,6 +537,7 @@ fmi3Status fmi3GetString(fmi3Instance instance, const fmi3ValueReference valueRe
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (invalidState(c, "fmi3GetString", GET_ME_STATES, GET_CS_STATES)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     size_t cnt = fmi3ArrayLength(valueReferences[i]);
@@ -3413,6 +558,7 @@ fmi3Status fmi3SetFloat64(fmi3Instance instance, const fmi3ValueReference valueR
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (fmu3InvalidSet(c, "fmi3SetFloat64", SET_REAL_ME_STATES, SET_REAL_CS_STATES, valueReferences, nValueReferences)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     fmi3ValueReference vr = valueReferences[i];
@@ -3440,6 +586,7 @@ fmi3Status fmi3SetInt32(fmi3Instance instance, const fmi3ValueReference valueRef
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (fmu3InvalidSet(c, "fmi3SetInt32", SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES, valueReferences, nValueReferences)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     size_t cnt = fmi3ArrayLength(valueReferences[i]);
@@ -3459,12 +606,21 @@ fmi3Status fmi3SetBoolean(fmi3Instance instance, const fmi3ValueReference valueR
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (fmu3InvalidSet(c, "fmi3SetBoolean", SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES, valueReferences, nValueReferences)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     size_t cnt = fmi3ArrayLength(valueReferences[i]);
     for (j = 0; j < cnt; j++, k++) {
       fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_BOOLEAN_VR_OFFSET);
       fmi3Boolean value = values[k] ? fmi3True : fmi3False;
+      if (isDAEModeVR(valueReferences[i] + j)) {
+        if (c->state != model_state_configuration_mode) {
+          FILTERED_LOG(c, fmi3Error, LOG_STATUSERROR, "fmi3SetBoolean: fmi-ls-dae: the DAE-mode parameter can only be set in Configuration Mode.")
+          return fmi3Error;
+        }
+        c->daeMode = value;
+        continue;
+      }
       fmi3Status s = omcSetBoolean(c, &lvr, 1, &value);
       if (s > fmi3Warning) return (fmi3Status)s;
     }
@@ -3478,6 +634,7 @@ fmi3Status fmi3SetString(fmi3Instance instance, const fmi3ValueReference valueRe
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (fmu3InvalidSet(c, "fmi3SetString", SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES, valueReferences, nValueReferences)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     size_t cnt = fmi3ArrayLength(valueReferences[i]);
@@ -3499,13 +656,19 @@ fmi3Status fmi3SetString(fmi3Instance instance, const fmi3ValueReference valueRe
 #define FMU3_UNSUPPORTED_GETSET(NAME, CTYPE)                                                   \
 fmi3Status NAME(fmi3Instance instance, const fmi3ValueReference valueReferences[],             \
     size_t nValueReferences, CTYPE values[], size_t nValues) {                                 \
-  (void)instance; (void)valueReferences; (void)values; (void)nValues;                         \
+  ModelInstance* c = fmu3InnerComp(instance);                                                  \
+  (void)valueReferences; (void)values; (void)nValues;                                          \
+  if (!c) return fmi3Error;                                                                    \
+  if (invalidState(c, #NAME, GET_ME_STATES, GET_CS_STATES)) return fmi3Error;                  \
   return nValueReferences == 0 ? fmi3OK : fmi3Error;                                           \
 }
-#define FMU3_UNSUPPORTED_SET(NAME, CTYPE)                                                      \
+#define FMU3_UNSUPPORTED_SET(NAME, CTYPE, ME_STATES, CS_STATES)                                \
 fmi3Status NAME(fmi3Instance instance, const fmi3ValueReference valueReferences[],             \
     size_t nValueReferences, const CTYPE values[], size_t nValues) {                           \
-  (void)instance; (void)valueReferences; (void)values; (void)nValues;                         \
+  ModelInstance* c = fmu3InnerComp(instance);                                                  \
+  (void)valueReferences; (void)values; (void)nValues;                                          \
+  if (!c) return fmi3Error;                                                                    \
+  if (fmu3InvalidSet(c, #NAME, ME_STATES, CS_STATES, valueReferences, nValueReferences)) return fmi3Error;      \
   return nValueReferences == 0 ? fmi3OK : fmi3Error;                                           \
 }
 
@@ -3516,13 +679,13 @@ FMU3_UNSUPPORTED_GETSET(fmi3GetInt16,  fmi3Int16)
 FMU3_UNSUPPORTED_GETSET(fmi3GetUInt16, fmi3UInt16)
 FMU3_UNSUPPORTED_GETSET(fmi3GetUInt32, fmi3UInt32)
 FMU3_UNSUPPORTED_GETSET(fmi3GetUInt64, fmi3UInt64)
-FMU3_UNSUPPORTED_SET(fmi3SetFloat32, fmi3Float32)
-FMU3_UNSUPPORTED_SET(fmi3SetInt8,   fmi3Int8)
-FMU3_UNSUPPORTED_SET(fmi3SetUInt8,  fmi3UInt8)
-FMU3_UNSUPPORTED_SET(fmi3SetInt16,  fmi3Int16)
-FMU3_UNSUPPORTED_SET(fmi3SetUInt16, fmi3UInt16)
-FMU3_UNSUPPORTED_SET(fmi3SetUInt32, fmi3UInt32)
-FMU3_UNSUPPORTED_SET(fmi3SetUInt64, fmi3UInt64)
+FMU3_UNSUPPORTED_SET(fmi3SetFloat32, fmi3Float32, SET_REAL_ME_STATES, SET_REAL_CS_STATES)
+FMU3_UNSUPPORTED_SET(fmi3SetInt8,   fmi3Int8,   SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES)
+FMU3_UNSUPPORTED_SET(fmi3SetUInt8,  fmi3UInt8,  SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES)
+FMU3_UNSUPPORTED_SET(fmi3SetInt16,  fmi3Int16,  SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES)
+FMU3_UNSUPPORTED_SET(fmi3SetUInt16, fmi3UInt16, SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES)
+FMU3_UNSUPPORTED_SET(fmi3SetUInt32, fmi3UInt32, SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES)
+FMU3_UNSUPPORTED_SET(fmi3SetUInt64, fmi3UInt64, SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES)
 
 /* Modelica enumeration variables are exported as FMI 3.0 <Enumeration>, which
  * are accessed through fmi3Get/SetInt64. OpenModelica stores enumerations in the
@@ -3535,6 +698,7 @@ fmi3Status fmi3GetInt64(fmi3Instance instance, const fmi3ValueReference valueRef
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (invalidState(c, "fmi3GetInt64", GET_ME_STATES, GET_CS_STATES)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     size_t cnt = fmi3ArrayLength(valueReferences[i]);
@@ -3555,6 +719,7 @@ fmi3Status fmi3SetInt64(fmi3Instance instance, const fmi3ValueReference valueRef
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (fmu3InvalidSet(c, "fmi3SetInt64", SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES, valueReferences, nValueReferences)) return fmi3Error;
   if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     size_t cnt = fmi3ArrayLength(valueReferences[i]);
@@ -3579,6 +744,7 @@ fmi3Status fmi3GetBinary(fmi3Instance instance, const fmi3ValueReference valueRe
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i;
   if (!c) return fmi3Error;
+  if (invalidState(c, "fmi3GetBinary", GET_ME_STATES, GET_CS_STATES)) return fmi3Error;
   if (nValueReferences > 0 && (nullPointer(c, "fmi3GetBinary", "vr[]", valueReferences) ||
       nullPointer(c, "fmi3GetBinary", "valueSizes[]", valueSizes) ||
       nullPointer(c, "fmi3GetBinary", "values[]", values)))
@@ -3604,6 +770,7 @@ fmi3Status fmi3SetBinary(fmi3Instance instance, const fmi3ValueReference valueRe
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i;
   if (!c) return fmi3Error;
+  if (fmu3InvalidSet(c, "fmi3SetBinary", SET_DISCRETE_ME_STATES, SET_DISCRETE_CS_STATES, valueReferences, nValueReferences)) return fmi3Error;
   if (nValueReferences > 0 && (nullPointer(c, "fmi3SetBinary", "vr[]", valueReferences) ||
       nullPointer(c, "fmi3SetBinary", "valueSizes[]", valueSizes) ||
       nullPointer(c, "fmi3SetBinary", "values[]", values)))
@@ -3639,6 +806,9 @@ fmi3Status fmi3GetClock(fmi3Instance instance, const fmi3ValueReference valueRef
   size_t i;
   double t, d;
   if (!c) return fmi3Error;
+  /* Scheduled Execution reads Clocks in Clock Update Mode, which this FMU never enters. */
+  if (fmu3InScheduledExecution(instance, "fmi3GetClock")) return fmi3Error;
+  if (invalidState(c, "fmi3GetClock", model_state_me_event_mode, model_state_cs_event_mode)) return fmi3Error;
   if (nValueReferences > 0 && (nullPointer(c, "fmi3GetClock", "vr[]", valueReferences) ||
       nullPointer(c, "fmi3GetClock", "values[]", values)))
     return fmi3Error;
@@ -3662,7 +832,9 @@ fmi3Status fmi3GetClock(fmi3Instance instance, const fmi3ValueReference valueRef
 fmi3Status fmi3SetClock(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, const fmi3Clock values[])
 {
-  (void)instance; (void)valueReferences; (void)values;
+  (void)valueReferences; (void)values;
+  if (fmu3InScheduledExecution(instance, "fmi3SetClock")) return fmi3Error;
+  if (invalidState(fmu3InnerComp(instance), "fmi3SetClock", model_state_me_event_mode, model_state_cs_event_mode)) return fmi3Error;
   return nValueReferences == 0 ? fmi3OK : fmi3Error;
 }
 
@@ -3755,6 +927,7 @@ fmi3Status fmi3GetDirectionalDerivative(fmi3Instance instance, const fmi3ValueRe
   fmi3ValueReference *u, *k;
   fmi3Status status;
   if (!c) return fmi3Error;
+  if (invalidState(c, "fmi3GetDirectionalDerivative", DERIVATIVE_ME_STATES, DERIVATIVE_CS_STATES)) return fmi3Error;
   if (nUnknowns == 0) return fmi3OK;
   if (nullPointer(c, "fmi3GetDirectionalDerivative", "unknowns", unknowns) ||
       nullPointer(c, "fmi3GetDirectionalDerivative", "knowns", knowns) ||
@@ -3782,16 +955,54 @@ fmi3Status fmi3GetAdjointDerivative(fmi3Instance instance, const fmi3ValueRefere
     size_t nUnknowns, const fmi3ValueReference knowns[], size_t nKnowns, const fmi3Float64 seed[],
     size_t nSeed, fmi3Float64 sensitivity[], size_t nSensitivity)
 {
-  (void)instance; (void)unknowns; (void)nUnknowns; (void)knowns; (void)nKnowns;
+  ModelInstance* c = fmu3InnerComp(instance);
+  (void)unknowns; (void)nUnknowns; (void)knowns; (void)nKnowns;
   (void)seed; (void)nSeed; (void)sensitivity; (void)nSensitivity;
+  if (c) invalidState(c, "fmi3GetAdjointDerivative", DERIVATIVE_ME_STATES, DERIVATIVE_CS_STATES);
   return fmi3Error;
 }
 
 /* ---------------------------------------------------------------------------
- * Configuration / Reconfiguration Mode (no structural parameters)
+ * Configuration Mode. Every structural parameter of an exported FMU is `fixed`,
+ * so it is only open from Instantiated: there is no Reconfiguration Mode, which
+ * a `tunable` one would need, from Event Mode or Step Mode. FMI 3.0 forbids
+ * entering it on an FMU without a structural parameter. The only one is
+ * fmi-ls-dae's switch, which a --daeMode FMU declares.
  * ------------------------------------------------------------------------- */
-fmi3Status fmi3EnterConfigurationMode(fmi3Instance instance) { (void)instance; return fmi3OK; }
-fmi3Status fmi3ExitConfigurationMode(fmi3Instance instance) { (void)instance; return fmi3OK; }
+static fmi3Boolean fmu3HasStructuralParameters(void)
+{
+#ifdef OMC_FMI_LS_DAE
+  return compiledInDAEMode ? fmi3True : fmi3False;
+#else
+  return fmi3False;
+#endif
+}
+
+fmi3Status fmi3EnterConfigurationMode(fmi3Instance instance)
+{
+  ModelInstance *comp = fmu3InnerComp(instance);
+  if (!comp) return fmi3Error;
+  if (!fmu3HasStructuralParameters()) {
+    FILTERED_LOG(comp, fmi3Error, LOG_STATUSERROR, "fmi3EnterConfigurationMode: Illegal call sequence. fmi3EnterConfigurationMode is not allowed for an FMU without a structural parameter.")
+    comp->state = model_state_error;
+    return fmi3Error;
+  }
+  if (invalidState(comp, "fmi3EnterConfigurationMode", model_state_instantiated, model_state_instantiated))
+    return fmi3Error;
+  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "fmi3EnterConfigurationMode")
+  comp->state = model_state_configuration_mode;
+  return fmi3OK;
+}
+
+fmi3Status fmi3ExitConfigurationMode(fmi3Instance instance)
+{
+  ModelInstance *comp = fmu3InnerComp(instance);
+  if (invalidState(comp, "fmi3ExitConfigurationMode", model_state_configuration_mode, model_state_configuration_mode))
+    return fmi3Error;
+  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "fmi3ExitConfigurationMode")
+  comp->state = model_state_instantiated;
+  return fmi3OK;
+}
 
 /* ---------------------------------------------------------------------------
  * Clock related functions (no clocks exposed yet)
@@ -3802,6 +1013,7 @@ fmi3Status fmi3GetIntervalDecimal(fmi3Instance instance, const fmi3ValueReferenc
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i;
   if (!c) return fmi3Error;
+  if (invalidState(c, "fmi3GetIntervalDecimal", model_state_initialization_mode|model_state_me_event_mode, model_state_initialization_mode|model_state_cs_event_mode)) return fmi3Error;
   if (nValueReferences > 0 && (nullPointer(c, "fmi3GetIntervalDecimal", "vr[]", valueReferences) ||
       nullPointer(c, "fmi3GetIntervalDecimal", "intervals[]", intervals)))
     return fmi3Error;
@@ -3832,6 +1044,7 @@ fmi3Status fmi3GetIntervalFraction(fmi3Instance instance, const fmi3ValueReferen
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i;
   if (!c) return fmi3Error;
+  if (invalidState(c, "fmi3GetIntervalFraction", model_state_initialization_mode|model_state_me_event_mode, model_state_initialization_mode|model_state_cs_event_mode)) return fmi3Error;
   if (nValueReferences > 0 && (nullPointer(c, "fmi3GetIntervalFraction", "vr[]", valueReferences) ||
       nullPointer(c, "fmi3GetIntervalFraction", "counters[]", counters) ||
       nullPointer(c, "fmi3GetIntervalFraction", "resolutions[]", resolutions)))
@@ -3853,31 +1066,58 @@ fmi3Status fmi3GetIntervalFraction(fmi3Instance instance, const fmi3ValueReferen
 
 fmi3Status fmi3GetShiftDecimal(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, fmi3Float64 shifts[])
-{ (void)instance; (void)valueReferences; (void)shifts; return nValueReferences == 0 ? fmi3OK : fmi3Error; }
+{
+  (void)valueReferences; (void)shifts;
+  if (invalidState(fmu3InnerComp(instance), "fmi3GetShiftDecimal", model_state_initialization_mode, model_state_initialization_mode)) return fmi3Error;
+  return nValueReferences == 0 ? fmi3OK : fmi3Error;
+}
 
 fmi3Status fmi3GetShiftFraction(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, fmi3UInt64 counters[], fmi3UInt64 resolutions[])
-{ (void)instance; (void)valueReferences; (void)counters; (void)resolutions; return nValueReferences == 0 ? fmi3OK : fmi3Error; }
+{
+  (void)valueReferences; (void)counters; (void)resolutions;
+  if (invalidState(fmu3InnerComp(instance), "fmi3GetShiftFraction", model_state_initialization_mode, model_state_initialization_mode)) return fmi3Error;
+  return nValueReferences == 0 ? fmi3OK : fmi3Error;
+}
 
 fmi3Status fmi3SetIntervalDecimal(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, const fmi3Float64 intervals[])
-{ (void)instance; (void)valueReferences; (void)intervals; return nValueReferences == 0 ? fmi3OK : fmi3Error; }
+{
+  (void)valueReferences; (void)intervals;
+  if (invalidState(fmu3InnerComp(instance), "fmi3SetIntervalDecimal", model_state_initialization_mode, model_state_initialization_mode)) return fmi3Error;
+  return nValueReferences == 0 ? fmi3OK : fmi3Error;
+}
 
 fmi3Status fmi3SetIntervalFraction(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, const fmi3UInt64 counters[], const fmi3UInt64 resolutions[])
-{ (void)instance; (void)valueReferences; (void)counters; (void)resolutions; return nValueReferences == 0 ? fmi3OK : fmi3Error; }
+{
+  (void)valueReferences; (void)counters; (void)resolutions;
+  if (invalidState(fmu3InnerComp(instance), "fmi3SetIntervalFraction", model_state_initialization_mode, model_state_initialization_mode)) return fmi3Error;
+  return nValueReferences == 0 ? fmi3OK : fmi3Error;
+}
 
 fmi3Status fmi3SetShiftDecimal(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, const fmi3Float64 shifts[])
-{ (void)instance; (void)valueReferences; (void)shifts; return nValueReferences == 0 ? fmi3OK : fmi3Error; }
+{
+  (void)valueReferences; (void)shifts;
+  if (invalidState(fmu3InnerComp(instance), "fmi3SetShiftDecimal", model_state_initialization_mode, model_state_initialization_mode)) return fmi3Error;
+  return nValueReferences == 0 ? fmi3OK : fmi3Error;
+}
 
 fmi3Status fmi3SetShiftFraction(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, const fmi3UInt64 counters[], const fmi3UInt64 resolutions[])
-{ (void)instance; (void)valueReferences; (void)counters; (void)resolutions; return nValueReferences == 0 ? fmi3OK : fmi3Error; }
+{
+  (void)valueReferences; (void)counters; (void)resolutions;
+  if (invalidState(fmu3InnerComp(instance), "fmi3SetShiftFraction", model_state_initialization_mode, model_state_initialization_mode)) return fmi3Error;
+  return nValueReferences == 0 ? fmi3OK : fmi3Error;
+}
 
 fmi3Status fmi3EvaluateDiscreteStates(fmi3Instance instance)
 {
-  (void)instance;
+  ModelInstance *comp = fmu3InnerComp(instance);
+  if (!comp) return fmi3Error;
+  if (fmu3InScheduledExecution(instance, "fmi3EvaluateDiscreteStates")) return fmi3Error;
+  if (invalidState(comp, "fmi3EvaluateDiscreteStates", model_state_me_event_mode, model_state_cs_event_mode)) return fmi3Error;
   return fmi3OK;
 }
 
@@ -3891,12 +1131,13 @@ fmi3Status fmi3UpdateDiscreteStates(fmi3Instance instance, fmi3Boolean* discrete
   EventInfo eventInfo;
   fmi3Status status;
   if (!inst || !c) return fmi3Error;
+  if (fmu3InScheduledExecution(instance, "fmi3UpdateDiscreteStates")) return fmi3Error;
+  if (invalidState(c, "fmi3UpdateDiscreteStates", model_state_me_event_mode, model_state_cs_event_mode)) return fmi3Error;
   memset(&eventInfo, 0, sizeof(eventInfo));
   if (inst->interfaceType == FMI3_INTERFACE_CS) {
-    /* Co-Simulation Event Mode: run one event-update iteration directly. The
-       instance stays in Step Mode, so the Model-Exchange-only state checks of
-       omcNewDiscreteStates must be bypassed. Carry over any pending next event
-       time so time events keep being scheduled. */
+    /* Co-Simulation Event Mode: run one event-update iteration directly, since
+       omcNewDiscreteStates is Model Exchange only. Carry over any pending next
+       event time so time events keep being scheduled. */
     ModelInstance *comp = (ModelInstance *)c;
     eventInfo.nextEventTimeDefined = comp->eventInfo.nextEventTimeDefined;
     eventInfo.nextEventTime        = comp->eventInfo.nextEventTime;
@@ -3919,6 +1160,7 @@ fmi3Status fmi3UpdateDiscreteStates(fmi3Instance instance, fmi3Boolean* discrete
  * ------------------------------------------------------------------------- */
 fmi3Status fmi3EnterContinuousTimeMode(fmi3Instance instance)
 {
+  if (fmu3InScheduledExecution(instance, "fmi3EnterContinuousTimeMode")) return fmi3Error;
   return (fmi3Status)omcEnterContinuousTimeMode(fmu3InnerComp(instance));
 }
 
@@ -3928,7 +1170,9 @@ fmi3Status fmi3CompletedIntegratorStep(fmi3Instance instance, fmi3Boolean noSetF
   ModelInstance* c = fmu3InnerComp(instance);
   fmi3Boolean enterEventMode2 = fmi3False;
   fmi3Boolean terminate2 = fmi3False;
-  fmi3Status status = omcCompletedIntegratorStep(c, noSetFMUStatePriorToCurrentPoint, &enterEventMode2, &terminate2);
+  fmi3Status status;
+  if (fmu3InScheduledExecution(instance, "fmi3CompletedIntegratorStep")) return fmi3Error;
+  status = omcCompletedIntegratorStep(c, noSetFMUStatePriorToCurrentPoint, &enterEventMode2, &terminate2);
   if (enterEventMode)      *enterEventMode = enterEventMode2 ? fmi3True : fmi3False;
   if (terminateSimulation) *terminateSimulation = terminate2 ? fmi3True : fmi3False;
   return (fmi3Status)status;
@@ -3936,37 +1180,44 @@ fmi3Status fmi3CompletedIntegratorStep(fmi3Instance instance, fmi3Boolean noSetF
 
 fmi3Status fmi3SetTime(fmi3Instance instance, fmi3Float64 time)
 {
+  if (fmu3InScheduledExecution(instance, "fmi3SetTime")) return fmi3Error;
   return (fmi3Status)omcSetTime(fmu3InnerComp(instance), (fmi3Float64)time);
 }
 
 fmi3Status fmi3SetContinuousStates(fmi3Instance instance, const fmi3Float64 continuousStates[], size_t nContinuousStates)
 {
+  if (fmu3InScheduledExecution(instance, "fmi3SetContinuousStates")) return fmi3Error;
   return (fmi3Status)omcSetContinuousStates(fmu3InnerComp(instance), (const fmi3Float64*)continuousStates, nContinuousStates);
 }
 
 fmi3Status fmi3GetContinuousStateDerivatives(fmi3Instance instance, fmi3Float64 derivatives[], size_t nContinuousStates)
 {
+  if (fmu3InScheduledExecution(instance, "fmi3GetContinuousStateDerivatives")) return fmi3Error;
   return (fmi3Status)omcGetDerivatives(fmu3InnerComp(instance), (fmi3Float64*)derivatives, nContinuousStates);
 }
 
 fmi3Status fmi3GetEventIndicators(fmi3Instance instance, fmi3Float64 eventIndicators[], size_t nEventIndicators)
 {
+  if (fmu3InScheduledExecution(instance, "fmi3GetEventIndicators")) return fmi3Error;
   return (fmi3Status)omcGetEventIndicators(fmu3InnerComp(instance), (fmi3Float64*)eventIndicators, nEventIndicators);
 }
 
 fmi3Status fmi3GetContinuousStates(fmi3Instance instance, fmi3Float64 continuousStates[], size_t nContinuousStates)
 {
+  if (fmu3InScheduledExecution(instance, "fmi3GetContinuousStates")) return fmi3Error;
   return (fmi3Status)omcGetContinuousStates(fmu3InnerComp(instance), (fmi3Float64*)continuousStates, nContinuousStates);
 }
 
 fmi3Status fmi3GetNominalsOfContinuousStates(fmi3Instance instance, fmi3Float64 nominals[], size_t nContinuousStates)
 {
+  if (fmu3InScheduledExecution(instance, "fmi3GetNominalsOfContinuousStates")) return fmi3Error;
   return (fmi3Status)omcGetNominalsOfContinuousStates(fmu3InnerComp(instance), (fmi3Float64*)nominals, nContinuousStates);
 }
 
 fmi3Status fmi3GetNumberOfEventIndicators(fmi3Instance instance, size_t* nEventIndicators)
 {
-  (void)instance;
+  if (fmu3InScheduledExecution(instance, "fmi3GetNumberOfEventIndicators")) return fmi3Error;
+  if (invalidState(fmu3InnerComp(instance), "fmi3GetNumberOfEventIndicators", model_state_instantiated|model_state_me_event_mode, 0)) return fmi3Error;
   if (!nEventIndicators) return fmi3Error;
   *nEventIndicators = (size_t)NUMBER_OF_EVENT_INDICATORS;
   return fmi3OK;
@@ -3974,7 +1225,8 @@ fmi3Status fmi3GetNumberOfEventIndicators(fmi3Instance instance, size_t* nEventI
 
 fmi3Status fmi3GetNumberOfContinuousStates(fmi3Instance instance, size_t* nContinuousStates)
 {
-  (void)instance;
+  if (fmu3InScheduledExecution(instance, "fmi3GetNumberOfContinuousStates")) return fmi3Error;
+  if (invalidState(fmu3InnerComp(instance), "fmi3GetNumberOfContinuousStates", model_state_instantiated|model_state_me_event_mode, 0)) return fmi3Error;
   if (!nContinuousStates) return fmi3Error;
   *nContinuousStates = (size_t)NUMBER_OF_STATES;
   return fmi3OK;
@@ -3987,9 +1239,13 @@ fmi3Status fmi3EnterStepMode(fmi3Instance instance)
 {
   ModelInstance *comp = fmu3InnerComp(instance);
   if (!comp) return fmi3Error;
-  /* The Co-Simulation instance never left Step Mode (model_state_cs_step_complete);
-     the continuous states and event indicators changed by the event are re-read
-     at the start of the next fmi3DoStep, so nothing needs to be restored here. */
+  if (invalidState(comp, "fmi3EnterStepMode", 0, model_state_cs_event_mode)) return fmi3Error;
+  comp->state = model_state_cs_step_complete;
+  /* Inputs and states can change discontinuously in Event Mode (FMI 3.0 4.1.1),
+     so the solver restarts. */
+  if (comp->solverInfo) {
+    comp->solverInfo->didEventStep = 1;
+  }
   return fmi3OK;
 }
 
@@ -4000,6 +1256,7 @@ fmi3Status fmi3GetOutputDerivatives(fmi3Instance instance, const fmi3ValueRefere
   size_t i;
   (void)nValues;
   if (!c) return fmi3Error;
+  if (invalidState(c, "fmi3GetOutputDerivatives", 0, GET_OUTPUT_DERIVATIVES_CS_STATES)) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     fmi3ValueReference lvr = (fmi3ValueReference)(valueReferences[i] - FMI3_REAL_VR_OFFSET);
     fmi3Int32 order = (fmi3Int32)orders[i];
@@ -4057,6 +1314,10 @@ fmi3Status fmi3ActivateModelPartition(fmi3Instance instance, fmi3ValueReference 
   if (!comp) {
     return fmi3Error;
   }
+  /* Clock Activation Mode, see fmu3InScheduledExecution. */
+  if (invalidState(comp, "fmi3ActivateModelPartition",
+      ((ModelInstance3 *)instance)->interfaceType == FMI3_INTERFACE_SE ? model_state_me_event_mode : 0, 0))
+    return fmi3Error;
 
   lvr = (fmi3ValueReference)(clockReference - FMI3_CLOCK_VR_OFFSET);
   if (lvr >= (fmi3ValueReference)comp->fmuData->modelData->nBaseClocks) {
@@ -4125,9 +1386,14 @@ fmi3Status fmi3ActivateModelPartition(fmi3Instance instance, fmi3ValueReference 
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
   threadData->mmc_jumper = old_jmp;
-  resetThreadData(comp);
 
   if (done) {
+    /* FMI 3.0, 5.2: after fmi3Discard the importer starts no new model partition. */
+    if (comp->_terminate_simulation_requested) {
+      comp->_terminate_simulation_requested = 0;
+      FILTERED_LOG(comp, fmi3Discard, LOG_EVENTS, "fmi3ActivateModelPartition: terminate simulation requested by the model.")
+      return fmi3Discard;
+    }
     return fmi3OK;
   }
   FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "fmi3ActivateModelPartition: terminated by an assertion.")

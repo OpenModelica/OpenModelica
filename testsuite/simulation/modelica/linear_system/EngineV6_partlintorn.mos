@@ -1,7 +1,6 @@
 // name:     EngineV6_partlintorn
 // keywords: simulation MSL Examples partlintorn
 // status: correct
-// cflags: -d=-newInst
 //
 
 loadModel(Modelica,{"4.1.0"});
@@ -24,6 +23,7 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Multi
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// "
 // {"Files Equal!"}
 // endResult

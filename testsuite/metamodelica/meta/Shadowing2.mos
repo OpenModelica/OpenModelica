@@ -1,7 +1,7 @@
 // name:     Shadowing2
 // keywords: Shadowing
 // status:   incorrect
-// cflags:   +g=MetaModelica -d=-newInst
+// cflags:   +g=MetaModelica
 // suite: metamodelica
 //
 // Local Delcaration Shadowing

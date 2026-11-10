@@ -1279,6 +1279,13 @@ algorithm
   end match;
 end isParam;
 
+public function isParamWithoutFixedValue
+"Return true if variable is a parameter with fixed = false, i.e. its value is
+  computed during initialization."
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean = isParam(inVar) and not varFixed(inVar);
+end isParamWithoutFixedValue;
+
 public function makeParam
   "Change variable to parameter"
   input output BackendDAE.Var var;
@@ -1440,17 +1447,6 @@ algorithm
     else false;
   end match;
 end isRealOptimizeDerInput;
-
-public function isAlgebraicOldState
-"Return true if variable is old algebraic variable for inline integration."
-  input BackendDAE.Var inVar;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := match inVar
-    case BackendDAE.VAR(varKind =  BackendDAE.ALG_STATE_OLD()) then true;
-    else false;
-  end match;
-end isAlgebraicOldState;
 
 public function isCSEVar
 "Return true if variable is introduced by wrapFunctionCall and prefixed with '$cse'"

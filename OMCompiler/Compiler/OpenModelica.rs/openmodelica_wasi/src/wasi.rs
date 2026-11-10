@@ -94,8 +94,13 @@ fn write_std(bytes: &[u8], is_err: bool) {
         None => false,
     });
     if !captured {
-        let s = String::from_utf8_lossy(bytes);
-        if is_err { eprint!("{s}") } else { print!("{s}") }
+        #[cfg(not(target_arch = "wasm32"))]
+        let _ = crate::stdio::write(if is_err { 2 } else { 1 }, bytes);
+        #[cfg(target_arch = "wasm32")]
+        {
+            let s = String::from_utf8_lossy(bytes);
+            if is_err { eprint!("{s}") } else { print!("{s}") }
+        }
     }
 }
 

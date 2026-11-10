@@ -12,7 +12,6 @@ model ConnectTwoSources
   RealInput ri1, ri2;
 equation
   connect(ri1, ri2);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConnectTwoSources;
 
 // Result:
@@ -22,6 +21,4 @@ end ConnectTwoSources;
 // equation
 //   ri1 = ri2;
 // end ConnectTwoSources;
-// [flattening/modelica/connectors/ConnectTwoSources.mo:14:3-14:20:writable] Warning: Connecting two signal sources while connecting ri1 to ri2.
-//
 // endResult

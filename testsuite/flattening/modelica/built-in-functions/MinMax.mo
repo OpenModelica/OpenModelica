@@ -17,7 +17,6 @@ model MinMax
   constant Boolean b6 = max(bemptyarr);
 equation
   x= fill(1.0,max(n,m));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MinMax;
 // Result:
 // class MinMax
@@ -29,8 +28,8 @@ end MinMax;
 //   Real y[2];
 //   Real y[3];
 //   Real y[4];
-//   parameter Integer n = min(m, 3);
-//   parameter Integer m = 4;
+//   final parameter Integer n = 3;
+//   final parameter Integer m = 4;
 //   constant Boolean b1 = false;
 //   constant Boolean b2 = false;
 //   constant Boolean b3 = true;
