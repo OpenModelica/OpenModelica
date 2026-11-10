@@ -165,30 +165,23 @@ pub(super) fn resolve_overrides(
 pub(super) fn resolve_start_imports(meta: &SimMeta, flags: &simflags::SimFlags) -> Option<sim_driver::StartImports> {
     let file = flags.init_file.as_ref()?;
     let time = flags.init_time.unwrap_or(meta.start_time);
-    let mut reader = match openmodelica_mat_reader::MatReader::open(file) {
+    let mut reader = match openmodelica_result_files::ResultFile::open(file) {
         Ok(r) => r,
         Err(e) => {
             record_error(format!("wasm-jit: unable to read input-file <{file}> [{e}]"));
             return None;
         }
     };
+    let range = (reader.start_time(), reader.stop_time());
     let overridden = |n: &str| flags.overrides.iter().any(|(o, _)| o == n);
-    let values = meta
-        .import_roster()
-        .iter()
-        .flatten()
-        .enumerate()
-        .filter(|(_, (name, _, _))| !overridden(name))
-        .filter_map(|(i, (name, _, _))| {
-            let v = reader.find_var(name).and_then(|idx| reader.val(idx, time))?;
-            Some((i as u32, v))
-        })
-        .collect();
-    Some(sim_driver::StartImports {
-        file: file.clone(),
+    Some(sim_driver::collect_start_imports(
+        meta,
+        file.clone(),
         time,
-        values,
-    })
+        range,
+        overridden,
+        |name| reader.value_at(name, time),
+    ))
 }
 
 /// The driver's [`sim_driver::ResultFileReader`]: C's `importStartValues` for the

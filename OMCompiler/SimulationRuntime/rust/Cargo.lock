@@ -904,6 +904,7 @@ dependencies = [
  "openmodelica_nls",
  "openmodelica_plt_writer",
  "openmodelica_regex",
+ "openmodelica_result_files",
  "openmodelica_sim_meta",
  "openmodelica_solvers",
  "roxmltree",

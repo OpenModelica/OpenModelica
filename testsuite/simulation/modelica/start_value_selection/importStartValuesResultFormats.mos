@@ -18,26 +18,24 @@ equation
 end importStartValuesResultFormats_model;
 ");getErrorString();
 
-buildModel(importStartValuesResultFormats_model);getErrorString();
-
 for fmt in {"mat", "csv", "plt", "arrow"} loop
-  system(realpath(".") + "/importStartValuesResultFormats_model -override=p=3 -outputFormat=" + fmt
-         + " -r=init_importStartValuesResultFormats." + fmt, "out_importStartValuesResultFormats_init_" + fmt + ".log");
-  system(realpath(".") + "/importStartValuesResultFormats_model -iif=init_importStartValuesResultFormats." + fmt
-         + " -iit=1 -r=out_importStartValuesResultFormats_" + fmt + ".mat", "out_importStartValuesResultFormats_" + fmt + ".log");
+  simulate(importStartValuesResultFormats_model,
+           simflags="-override=p=3 -outputFormat=" + fmt + " -r=init_importStartValuesResultFormats." + fmt);
+  simulate(importStartValuesResultFormats_model,
+           simflags="-iif=init_importStartValuesResultFormats." + fmt + " -iit=1 -r=out_importStartValuesResultFormats_" + fmt + ".mat");
   print(fmt + ": x=" + String(val(x, 0, "out_importStartValuesResultFormats_" + fmt + ".mat"))
             + ", p=" + String(val(p, 0, "out_importStartValuesResultFormats_" + fmt + ".mat")) + "\n");
 end for;
 getErrorString();
 
 writeFile("init_importStartValuesResultFormats.txt", "");
-system(realpath(".") + "/importStartValuesResultFormats_model -iif=init_importStartValuesResultFormats.txt", "out_importStartValuesResultFormats_txt.log");
-readFile("out_importStartValuesResultFormats_txt.log");
+echo(false);
+res := simulate(importStartValuesResultFormats_model, simflags="-iif=init_importStartValuesResultFormats.txt");
+echo(true);
+regexBool(res.messages + getErrorString(), "Unknown result-file suffix of file 'init_importStartValuesResultFormats.txt'");
 
 // Result:
 // true
-// ""
-// {"importStartValuesResultFormats_model", "importStartValuesResultFormats_model_init.xml"}
 // ""
 // mat: x=4, p=3
 // csv: x=4, p=2
@@ -46,8 +44,6 @@ readFile("out_importStartValuesResultFormats_txt.log");
 //
 // ""
 // true
-// 255
-// "LOG_ASSERT | debug   | unable to read input-file <init_importStartValuesResultFormats.txt> [Unknown result-file suffix of file 'init_importStartValuesResultFormats.txt']
-// LOG_ASSERT | info    | simulation terminated by an assertion at initialization
-// "
+// true
+// true
 // endResult

@@ -1939,6 +1939,42 @@ pub struct StartImports {
     pub file: String,
     pub time: f64,
     pub values: Vec<(u32, f64)>,
+    /// The time range of the file when `time` lies outside of it: only the
+    /// parameters are imported then, as in C.
+    pub out_of_range: Option<(f64, f64)>,
+}
+
+/// Look up every quantity of the [`SimMeta::import_roster`] with `value(name)`,
+/// except those `-override` names. `range` is the time range of the file; outside
+/// of it only the parameters are looked up.
+pub fn collect_start_imports(
+    model: &SimMeta,
+    file: String,
+    time: f64,
+    range: (f64, f64),
+    overridden: impl Fn(&str) -> bool,
+    mut value: impl FnMut(&str) -> Option<f64>,
+) -> StartImports {
+    let out_of_range = (!(time >= range.0 && time <= range.1)).then_some(range);
+    let mut values = Vec::new();
+    let mut flat = 0u32;
+    for (group, entries) in crate::IMPORT_GROUP.iter().zip(model.import_roster()) {
+        let skip = out_of_range.is_some() && group.ends_with("variables");
+        for (name, _, _) in entries {
+            if !skip && !overridden(name) {
+                if let Some(v) = value(name) {
+                    values.push((flat, v));
+                }
+            }
+            flat += 1;
+        }
+    }
+    StartImports {
+        file,
+        time,
+        values,
+        out_of_range,
+    }
 }
 
 mod imports_store {
@@ -2010,6 +2046,17 @@ fn import_start_values(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) ->
         imports.file,
         format_g(imports.time, 6),
     );
+    if let Some((start, stop)) = imports.out_of_range {
+        omclog::warning!(
+            omclog::STDOUT,
+            false,
+            "Initialization time {} is outside of the time range [{}, {}] of input-file <{}>. Only parameters are imported.",
+            format_g(imports.time, 6),
+            format_g(start, 6),
+            format_g(stop, 6),
+            imports.file,
+        );
+    }
     // `values` is in roster order, so one cursor walks both.
     let mut next = 0usize;
     let mut flat = 0u32;
@@ -2018,6 +2065,10 @@ fn import_start_values(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) ->
         // C's headers are plural, its per-quantity lines singular.
         let one = group.trim_end_matches('s');
         let variables = group.ends_with("variables");
+        if variables && imports.out_of_range.is_some() {
+            flat += entries.len() as u32;
+            continue;
+        }
         for (i, (name, off, wty)) in entries.into_iter().enumerate() {
             let found = imports.values.get(next).filter(|(i, _)| *i == flat).map(|&(_, v)| v);
             if found.is_some() {
