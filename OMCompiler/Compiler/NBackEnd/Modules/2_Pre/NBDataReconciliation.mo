@@ -53,6 +53,7 @@ protected
   import ComponentRef = NFComponentRef;
   import NBEquation.{Equation, EqData, EquationAttributes, EquationKind, EquationPointers, Iterator};
   import Expression = NFExpression;
+  import NFInstNode.InstNode;
   import NBMatching.Matching;
   import NFBackendExtension.Uncertainty;
   import Attributes = NFAttributes;
@@ -943,9 +944,54 @@ protected function dumpExtractedEquations
 algorithm
   for eqn in eqns loop
     // the residual variables are declared without $
-    str := str + "\n  " + System.stringReplace(equationString(eqn), "$", "") + ";";
+    str := str + "\n  " + System.stringReplace(modelicaEquationString(eqn), "$", "") + ";";
   end for;
 end dumpExtractedEquations;
+
+protected function modelicaEquationString
+  "equationString with the variable names of the reconciled model"
+  input Pointer<Equation> eqn_ptr;
+  output String str;
+protected
+  Equation eqn = Pointer.access(eqn_ptr);
+algorithm
+  str := match (Equation.getLHS(eqn), Equation.getRHS(eqn))
+    local
+      Expression lhs, rhs;
+    case (SOME(lhs), SOME(rhs))
+      then Expression.toString(Expression.map(lhs, modelicaCrefExp)) + " = " + Expression.toString(Expression.map(rhs, modelicaCrefExp));
+    else equationString(eqn_ptr);
+  end match;
+end modelicaEquationString;
+
+protected function modelicaCrefExp
+  input output Expression exp;
+algorithm
+  exp := match exp
+    case Expression.CREF()
+      then Expression.CREF(exp.ty, ComponentRef.fromNode(InstNode.NAME_NODE(modelicaCrefString(exp.cref)), exp.ty));
+    else exp;
+  end match;
+end modelicaCrefExp;
+
+protected function modelicaCrefString
+  "the variable name with _ instead of ., same as modelicaName; a record is declared
+  as a whole, so its fields are accessed with ., e.g. a_b_rec.field"
+  input ComponentRef cref;
+  output String str = ComponentRef.toString(cref);
+protected
+  String rec_str;
+algorithm
+  for c in ComponentRef.toListReverse(cref) loop
+    if Type.isRecord(ComponentRef.nodeType(c)) then
+      rec_str := ComponentRef.toString(c);
+      str := System.stringReplace(rec_str, ".", "_")
+        + (if stringLength(str) > stringLength(rec_str) then substring(str, stringLength(rec_str) + 1, stringLength(str)) else "");
+      return;
+    end if;
+  end for;
+  str := System.stringReplace(str, ".", "_");
+end modelicaCrefString;
 
 protected function dumpReconciliationData
   "same headings as the debug dump of the old backend"
