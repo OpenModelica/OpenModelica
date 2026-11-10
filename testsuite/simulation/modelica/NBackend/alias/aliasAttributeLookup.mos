@@ -1,0 +1,85 @@
+// name: aliasAttributeLookup
+// keywords: NewBackend, alias, start, fixed, stateSelect
+// status: correct
+// teardown_command: rm -f aliasAttribute*_*
+//
+// Alias sets with a StateSelect.always variable without start value, a
+// fixed variable without start value, and a parameter element selected by
+// a discrete variable (no alias equation).
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+loadString("
+model aliasAttributeAlways
+  Real x(stateSelect = StateSelect.always);
+  Real y;
+initial equation
+  x = 0.5;
+equation
+  y = x;
+  der(x) = 1 - y;
+end aliasAttributeAlways;
+
+model aliasAttributeFixed
+  Real x(fixed = true);
+  Real y;
+equation
+  y = x;
+  der(y) = 1 - y;
+end aliasAttributeFixed;
+
+model aliasAttributeSubscript
+  parameter Real p[2] = {1, 2};
+  Integer i(start = 1, fixed = true);
+  Real y;
+  Real z;
+equation
+  when time > 0.5 then
+    i = 2;
+  end when;
+  y = p[i];
+  z = y;
+end aliasAttributeSubscript;
+"); getErrorString();
+
+simulate(aliasAttributeAlways, stopTime = 1); getErrorString();
+val(y, 1);
+simulate(aliasAttributeFixed, stopTime = 1); getErrorString();
+val(x, 1);
+simulate(aliasAttributeSubscript, stopTime = 1); getErrorString();
+val(z, 0.2);
+val(z, 1);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "aliasAttributeAlways_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'aliasAttributeAlways', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.8160598044071
+// record SimulationResult
+//     resultFile = "aliasAttributeFixed_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'aliasAttributeFixed', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.6321217723555973
+// record SimulationResult
+//     resultFile = "aliasAttributeSubscript_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'aliasAttributeSubscript', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 2.0
+// endResult
