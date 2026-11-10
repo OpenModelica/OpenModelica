@@ -693,15 +693,15 @@ General
 
   -  *Jacobian* - the jacobian method to use.
 
-  -  DASSL/IDA Options
+  -  CVODE/DASSL/IDA Options
 
-    -  *Root Finding* - Activates the internal root finding procedure of dassl.
+    -  *Root Finding* - Activates the internal root finding procedure of the solver.
 
-    -  *Restart After Event* - Activates the restart of dassl after an event is performed.
+    -  *Restart After Event* - Activates the restart of dassl or ida after an event is performed.
 
     -  *Initial Step Size*
 
-    -  *Maximum Step Size*
+    -  *Maximum Step Size* - Used by dassl, ida and gbode.
 
     -  *Maximum Integration Order*
 
@@ -883,7 +883,7 @@ Output
 
 -  *Protected Variables if not encrypted* - adds the protected variables in result file.
 
--  *Equidistant Time Grid -* output the internal steps given by dassl instead of
+-  *Equidistant Time Grid -* output the internal steps given by dassl or ida instead of
    interpolating results into an equidistant time grid as given by stepSize or
    numberOfIntervals.
 
@@ -2214,7 +2214,7 @@ __OpenModelica_simulationFlags Annotation
 
 OpenModelica specific annotation to define the simulation options needed to simulate the model.
 For example if you always want to simulate the model with a specific solver instead of the
-default DASSL and would also like to see the cpu time then you can write the following code,
+default CVODE and would also like to see the cpu time then you can write the following code,
 
 .. code-block :: modelica
 

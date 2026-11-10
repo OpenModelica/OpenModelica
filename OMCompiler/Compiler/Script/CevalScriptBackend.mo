@@ -204,7 +204,7 @@ constant DAE.Exp defaultStopTime          = DAE.RCONST(1.0)       "default stopT
 constant DAE.Exp defaultNumberOfIntervals = DAE.ICONST(500)       "default numberOfIntervals";
 constant DAE.Exp defaultStepSize          = DAE.RCONST(0.002)       "default stepSize";
 constant DAE.Exp defaultTolerance         = DAE.RCONST(1e-6)       "default tolerance";
-constant DAE.Exp defaultMethod            = DAE.SCONST("dassl")          "default method";
+constant DAE.Exp defaultMethod            = DAE.SCONST("cvode")          "default method";
 constant DAE.Exp defaultFileNamePrefix    = DAE.SCONST("") "default fileNamePrefix";
 constant DAE.Exp defaultOptions           = DAE.SCONST("")         "default options";
 constant DAE.Exp defaultOutputFormat      = DAE.SCONST("mat")   "default outputFormat";
@@ -334,7 +334,7 @@ public function buildSimulationOptions
   input DAE.Exp numberOfIntervals "number of intervals, default 500";
   input DAE.Exp stepSize "stepSize, default (stopTime-startTime)/numberOfIntervals";
   input DAE.Exp tolerance "tolerance, default 1e-6";
-  input DAE.Exp method "method, default 'dassl'";
+  input DAE.Exp method "method, default 'cvode'";
   input DAE.Exp fileNamePrefix "file name prefix, default ''";
   input DAE.Exp options "options, default ''";
   input DAE.Exp outputFormat "output format, default 'plt'";
