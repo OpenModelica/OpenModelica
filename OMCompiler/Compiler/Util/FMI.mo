@@ -38,8 +38,11 @@ encapsulated package FMI
   package:     FMI
   description: This file contains FMI's import specific function, which are implemented in C."
 
+protected import Absyn;
+protected import ErrorExt;
 protected import Flags;
 protected import List;
+protected import Parser;
 protected import Util;
 
 public uniontype Info
@@ -524,64 +527,21 @@ public function enumerationItemIdent
    identifier, for example 'Option 1'. A valid name stays unchanged."
   input String name;
   output String ident;
-algorithm
-  ident := if isModelicaIdent(name) then name else Util.makeQuotedIdentifier(name);
-end enumerationItemIdent;
-
-protected constant list<String> MODELICA_KEYWORDS = {
-  "algorithm", "and", "annotation", "block", "break", "class", "connect",
-  "connector", "constant", "constrainedby", "der", "discrete", "each", "else",
-  "elseif", "elsewhen", "encapsulated", "end", "enumeration", "equation",
-  "expandable", "extends", "external", "false", "final", "flow", "for",
-  "function", "if", "import", "impure", "in", "initial", "inner", "input",
-  "loop", "model", "not", "operator", "or", "outer", "output", "package",
-  "parameter", "partial", "protected", "public", "pure", "record", "redeclare",
-  "replaceable", "return", "stream", "then", "true", "type", "when", "while",
-  "within"};
-
-protected function isModelicaIdent
-  "Returns true if the string is an IDENT that is not a keyword, or a Q-IDENT,
-   as in the lexical grammar of the Modelica Language Specification."
-  input String str;
-  output Boolean res;
 protected
-  Integer n = stringLength(str), i, c;
+  String id;
 algorithm
-  if n == 0 then
-    res := false;
-  elseif stringGet(str, 1) == 39 /* ' */ then
-    // Q-IDENT: ' (Q-CHAR | S-ESCAPE) { Q-CHAR | S-ESCAPE } '
-    res := n > 2 and stringGet(str, n) == 39;
-    i := 2;
-    while res and i < n loop
-      c := stringGet(str, i);
-      if c == 92 /* backslash */ then
-        // S-ESCAPE: a backslash and one of ' " ? backslash a b f n r t v
-        res := i + 1 < n and listMember(stringGet(str, i + 1), {39, 34, 63, 92, 97, 98, 102, 110, 114, 116, 118});
-        i := i + 2;
-      else
-        // Q-CHAR: a printable ASCII character other than ' and `
-        res := c >= 32 and c <= 126 and c <> 39 and c <> 96;
-        i := i + 1;
-      end if;
-    end while;
+  // Use the Modelica parser: it knows the identifier rules and the keywords.
+  ErrorExt.setCheckpoint(getInstanceName());
+  try
+    Absyn.IDENT(name = id) := Parser.stringPath(name);
+    // The parser ignores white space and comments around the identifier.
+    true := id == name;
+    ident := name;
   else
-    // IDENT: NONDIGIT { DIGIT | NONDIGIT }
-    res := isNonDigit(stringGet(str, 1));
-    i := 2;
-    while res and i <= n loop
-      c := stringGet(str, i);
-      res := isNonDigit(c) or (c >= 48 and c <= 57);
-      i := i + 1;
-    end while;
-    res := res and not listMember(str, MODELICA_KEYWORDS);
-  end if;
-end isModelicaIdent;
-
-protected function isNonDigit
-  input Integer c;
-  output Boolean res = c == 95 or (c >= 65 and c <= 90) or (c >= 97 and c <= 122);
-end isNonDigit;
+    ident := Util.makeQuotedIdentifier(name);
+  end try;
+  ErrorExt.rollBack(getInstanceName());
+end enumerationItemIdent;
 
 public function filterModelVariables
   input list<ModelVariables> inModelVariables;

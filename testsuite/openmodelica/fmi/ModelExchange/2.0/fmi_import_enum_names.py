@@ -12,7 +12,7 @@ modelDescription.xml, so no binary is necessary.
 """
 import zipfile
 
-ITEMS = ["Option 1", "x-y", "der", "a'b", r"a\b", "'q r'", "Valid_7"]
+ITEMS = ["Option 1", "x-y", "der", "a'b", r"a\b", "'q r'", "Valid_7", " pad"]
 
 ITEMS_XML = "\n".join(
     '        <Item name="%s" value="%d"/>' % (name, i + 1) for i, name in enumerate(ITEMS))

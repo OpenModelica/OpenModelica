@@ -40,7 +40,8 @@ translateModel(ImportEnum3_me_FMU); getErrorString();
 //     'a\\'b',
 //     'a\\\\b',
 //     'q r',
-//     Valid_7);
+//     Valid_7,
+//     ' pad');
 //     if i == 1 then outType := Option.'Option 1';
 //     elseif i == 2 then outType := Option.'x-y';
 //     elseif i == 3 then outType := Option.'der';
@@ -48,6 +49,7 @@ translateModel(ImportEnum3_me_FMU); getErrorString();
 //     elseif i == 5 then outType := Option.'a\\\\b';
 //     elseif i == 6 then outType := Option.'q r';
 //     elseif i == 7 then outType := Option.Valid_7;
+//     elseif i == 8 then outType := Option.' pad';
 // "
 // true
 // ""
@@ -67,7 +69,8 @@ translateModel(ImportEnum3_me_FMU); getErrorString();
 //     'a\\'b',
 //     'a\\\\b',
 //     'q r',
-//     Valid_7);
+//     Valid_7,
+//     ' pad');
 //     if i == 1 then outType := Option.'Option 1';
 //     elseif i == 2 then outType := Option.'x-y';
 //     elseif i == 3 then outType := Option.'der';
@@ -75,6 +78,7 @@ translateModel(ImportEnum3_me_FMU); getErrorString();
 //     elseif i == 5 then outType := Option.'a\\\\b';
 //     elseif i == 6 then outType := Option.'q r';
 //     elseif i == 7 then outType := Option.Valid_7;
+//     elseif i == 8 then outType := Option.' pad';
 // "
 // true
 // ""
