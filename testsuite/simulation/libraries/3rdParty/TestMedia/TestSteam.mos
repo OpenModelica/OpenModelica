@@ -1642,7 +1642,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 // "
 // ""
 // "Check of TestMedia.TestModels.TestSteam completed successfully.
-// Class TestMedia.TestModels.TestSteam has 9 equation(s) and 9 variable(s).
+// The model is globally balanced with 9 equation(s) and variable(s).
 // 2 of these are trivial equation(s)."
 // ""
 // record SimulationResult

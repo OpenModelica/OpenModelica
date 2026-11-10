@@ -40,6 +40,7 @@ encapsulated uniontype NFConnections
   import ComponentRef = NFComponentRef;
   import Equation = NFEquation;
   import NFPrefixes.ConnectorType;
+  import Variable = NFVariable;
 
 protected
   import Connections = NFConnections;
@@ -104,9 +105,10 @@ public
   end addBroken;
 
   function collectConnections
-    input output FlatModel flatModel;
+    input list<Equation> equations;
     input IsDeleted isDeleted;
-          output Connections conns = new();
+    output list<Equation> nonConnections = {};
+    output Connections conns = new();
 
     partial function IsDeleted
       input ComponentRef cref;
@@ -119,8 +121,8 @@ public
     Type ty1, ty2;
   algorithm
     // Collect all connects.
-    for eq in flatModel.equations loop
-      eql := match eq
+    for eq in equations loop
+      nonConnections := match eq
         case Equation.CONNECT(lhs = Expression.CREF(ty = ty1, cref = lhs),
                               rhs = Expression.CREF(ty = ty2, cref = rhs), source = source)
           algorithm
@@ -128,17 +130,17 @@ public
             rhs := ComponentRef.evaluateSubscripts(rhs);
             conns.connections := makeConnections(lhs, ty1, rhs, ty2, source, isDeleted, conns.connections);
           then
-            eql;
+            nonConnections;
 
-        else eq :: eql;
+        else eq :: nonConnections;
       end match;
     end for;
 
-    flatModel.equations := listReverseInPlace(eql);
+    nonConnections := listReverseInPlace(nonConnections);
   end collectConnections;
 
   function collectFlows
-    input FlatModel flatModel;
+    input list<Variable> variables;
     input output Connections conns;
   protected
     Component comp;
@@ -146,7 +148,7 @@ public
     DAE.ElementSource src;
   algorithm
     // Collect all flow variables.
-    for var in flatModel.variables loop
+    for var in variables loop
       comp := InstNode.component(ComponentRef.node(var.name));
 
       if Component.isFlow(comp) then

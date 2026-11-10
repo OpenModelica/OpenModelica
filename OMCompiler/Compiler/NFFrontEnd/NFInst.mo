@@ -385,6 +385,7 @@ algorithm
   System.setUsesCardinality(false);
   System.setHasOverconstrainedConnectors(false);
   System.setHasStreamConnectors(false);
+  System.setHasPartialInstances(false);
 end resetGlobalFlags;
 
 function clearCaches
@@ -533,8 +534,8 @@ algorithm
     functions := Flatten.flattenFunction(fn, functions);
   end for;
 
-  flatModel := FlatModel.FLAT_MODEL(Absyn.Path.IDENT(InstNode.name(funcNode)), {}, {}, {}, {}, {}, {}, {},
-    ElementSource.createElementSource(InstNode.info(funcNode)));
+  flatModel := FlatModel.FLAT_MODEL(Absyn.Path.IDENT(InstNode.name(funcNode)), InstNode.restriction(funcNode),
+    InstNode.isPartial(funcNode), {}, {}, {}, {}, {}, {}, {}, ElementSource.createElementSource(InstNode.info(funcNode)));
 end instantiateRootFunction;
 
 function instantiate
@@ -2418,12 +2419,17 @@ algorithm
         {AbsynUtil.pathString(InstNode.scopePath(clsNode))}, info);
       fail();
     end if;
-  elseif isPartial and compAttr.innerOuter <> InnerOuter.OUTER and not InstContext.inRelaxed(context) then
-    // The type of a component may not be a partial class.
-    Error.addMultiSourceMessage(Error.PARTIAL_COMPONENT_TYPE,
-      {AbsynUtil.pathString(InstNode.scopePath(compNode)), InstNode.name(clsNode)},
-      {InstNode.info(clsNode), info});
-    fail();
+  elseif isPartial and compAttr.innerOuter <> InnerOuter.OUTER then
+    if InstContext.inRelaxed(context) and (InstNode.isReplaceable(compNode) or InstNode.isReplaceable(clsNode)) then
+      // Used by checkModel.
+      System.setHasPartialInstances(true);
+    else
+      // The type of a component may not be a partial class.
+      Error.addMultiSourceMessage(Error.PARTIAL_COMPONENT_TYPE,
+        {AbsynUtil.pathString(InstNode.scopePath(compNode)), InstNode.name(clsNode)},
+        {InstNode.info(clsNode), info});
+      fail();
+    end if;
   end if;
 end checkPartialComponent;
 

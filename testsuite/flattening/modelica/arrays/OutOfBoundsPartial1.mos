@@ -19,7 +19,7 @@ getErrorString();
 // Result:
 // true
 // "Check of M completed successfully with 1 error(s).
-// Class M has 1 equation(s) and 1 variable(s).
+// The model is globally balanced with 1 equation(s) and variable(s).
 // 1 of these are trivial equation(s)."
 // "[<interactive>:5:5-5:13:writable] Error: Subscript '2' for dimension 1 (size = 1) of x is out of bounds.
 // "

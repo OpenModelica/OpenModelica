@@ -464,6 +464,7 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("System_getHasExpandableConnectors", Infallible);
         m.insert("System_getHasInnerOuterDefinitions", Infallible);
         m.insert("System_getHasOverconstrainedConnectors", Infallible);
+        m.insert("System_getHasPartialInstances", Infallible);
         m.insert("System_getHasStreamConnectors", Infallible);
         m.insert("System_getLDFlags", Infallible);
         m.insert("System_getLinker", Infallible);
@@ -515,6 +516,7 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("System_setHasExpandableConnectors", Infallible);
         m.insert("System_setHasInnerOuterDefinitions", Infallible);
         m.insert("System_setHasOverconstrainedConnectors", Infallible);
+        m.insert("System_setHasPartialInstances", Infallible);
         m.insert("System_setHasStreamConnectors", Infallible);
         m.insert("System_setPartialInstantiation", Infallible);
         m.insert("System_setUsesCardinality", Infallible);

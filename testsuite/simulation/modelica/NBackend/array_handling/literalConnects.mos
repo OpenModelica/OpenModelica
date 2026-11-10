@@ -70,7 +70,7 @@ abs(val(r[12].n.i, 0.1, "literalConnects_SameAC_res.mat") + 1/16) < 1e-10;
 // true
 // ""
 // "Check of literalConnects.Separate completed successfully.
-// Class literalConnects.Separate has 143 equation(s) and 143 variable(s).
+// The model is globally balanced with 143 equation(s) and variable(s).
 // 32 of these are trivial equation(s)."
 // "Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
 // Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
@@ -100,7 +100,7 @@ abs(val(r[12].n.i, 0.1, "literalConnects_SameAC_res.mat") + 1/16) < 1e-10;
 // true
 // ""
 // "Check of literalConnects.Separate completed successfully.
-// Class literalConnects.Separate has 143 equation(s) and 143 variable(s).
+// The model is globally balanced with 143 equation(s) and variable(s).
 // 10 of these are trivial equation(s)."
 // ""
 // record SimulationResult

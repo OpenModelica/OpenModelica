@@ -113,7 +113,7 @@ simulate(TestMedia.TestModels.TestFlueGas); getErrorString();
 // "
 // ""
 // "Check of TestMedia.TestModels.TestFlueGas completed successfully.
-// Class TestMedia.TestModels.TestFlueGas has 12 equation(s) and 12 variable(s).
+// The model is globally balanced with 12 equation(s) and variable(s).
 // 2 of these are trivial equation(s)."
 // ""
 // record SimulationResult

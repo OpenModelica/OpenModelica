@@ -25,7 +25,7 @@ simulate(ZeroSizeLoopTest); getErrorString();
 // "
 // ""
 // "Check of ZeroSizeLoopTest completed successfully.
-// Class ZeroSizeLoopTest has 2 equation(s) and 2 variable(s).
+// The model is globally balanced with 2 equation(s) and variable(s).
 // 1 of these are trivial equation(s)."
 // ""
 // record SimulationResult
