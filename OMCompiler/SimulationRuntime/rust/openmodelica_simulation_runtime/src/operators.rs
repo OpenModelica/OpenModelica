@@ -53,9 +53,11 @@ pub fn to_words(data: *mut DATA, out: &mut Vec<f64>) {
 pub fn set_from_words(data: *mut DATA, w: &mut dyn Iterator<Item = f64>) -> bool {
     let state = match w.next() {
         Some(0.0) => None,
+        // One buffer per delay() of the model, as `init` allocates them: the model
+        // indexes them by its expression numbers.
         Some(_) => match DelayState::from_words(w) {
-            Some(s) => Some(s),
-            None => return false,
+            Some(s) if s.n_buffers() == unsafe { (*(*data).modelData).nDelayExpressions } as usize => Some(s),
+            _ => return false,
         },
         None => return false,
     };

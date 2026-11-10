@@ -123,6 +123,11 @@ impl DelayState {
         DelayState { buffers, start_time }
     }
 
+    /// The number of buffers, one per `delay(...)` expression.
+    pub fn n_buffers(&self) -> usize {
+        self.buffers.len()
+    }
+
     /// The buffers as flat words, for an FMU state.
     pub fn to_words(&self, out: &mut Vec<f64>) {
         out.push(self.start_time);
@@ -136,14 +141,16 @@ impl DelayState {
         }
     }
 
-    /// [`DelayState::to_words`]'s inverse.
+    /// [`DelayState::to_words`]'s inverse. The counts come from the words, which
+    /// can be damaged, so nothing is reserved for them: a count larger than the
+    /// words runs out of words and gives `None`.
     pub fn from_words(w: &mut dyn Iterator<Item = f64>) -> Option<Self> {
         let start_time = w.next()?;
         let n = w.next()? as usize;
-        let mut buffers = Vec::with_capacity(n);
+        let mut buffers = Vec::new();
         for _ in 0..n {
             let len = w.next()? as usize;
-            let mut b = VecDeque::with_capacity(len);
+            let mut b = VecDeque::new();
             for _ in 0..len {
                 b.push_back((w.next()?, w.next()?));
             }
@@ -369,5 +376,24 @@ mod tests {
         s.store(0, 0.5, 9.0, 10.0);
         let b = &s.buffers[0];
         assert_eq!(b.back().copied(), Some((0.5, 9.0)));
+    }
+
+    #[test]
+    fn from_words_refuses_counts_beyond_the_words() {
+        let mut s = DelayState::new(1, 0.0);
+        s.store(0, 0.0, 1.0, 1.0);
+        let mut w = Vec::new();
+        s.to_words(&mut w);
+        let back = DelayState::from_words(&mut w.into_iter()).expect("round trip");
+        assert_eq!(back.buffers.len(), 1);
+        assert_eq!(back.buffers[0].len(), 1);
+        // A damaged FMU state: the counts promise more words than there are.
+        for bad in [
+            vec![0.0, 1e300],
+            vec![0.0, f64::INFINITY],
+            vec![0.0, 1.0, 1e300, 0.0, 0.0],
+        ] {
+            assert!(DelayState::from_words(&mut bad.into_iter()).is_none());
+        }
     }
 }

@@ -874,10 +874,12 @@ impl SpatialState {
         }
     }
 
-    /// [`SpatialState::to_words`]'s inverse.
+    /// [`SpatialState::to_words`]'s inverse. The counts come from the words, which
+    /// can be damaged, so nothing is reserved for them: a count larger than the
+    /// words runs out of words and gives `None`.
     pub fn from_words(w: &mut dyn Iterator<Item = f64>) -> Option<Self> {
         let n = w.next()? as usize;
-        let mut ops = Vec::with_capacity(n);
+        let mut ops = Vec::new();
         for _ in 0..n {
             let mut s = Spatial::new();
             for _ in 0..w.next()? as usize {
@@ -904,6 +906,11 @@ impl SpatialState {
             ops.push(s);
         }
         Some(SpatialState { ops })
+    }
+
+    /// The number of operators, one per `spatialDistribution(...)` call.
+    pub fn n_operators(&self) -> usize {
+        self.ops.len()
     }
 
     /// C `allocSpatialDistribution`: `n` uninitialized operators for a fresh run.
@@ -1184,5 +1191,17 @@ mod tests {
         }
         // What went in on the left comes back out of the left.
         assert!((seen - 1.0).abs() < 1e-9, "out0 peaked at {seen}");
+    }
+
+    #[test]
+    fn from_words_refuses_counts_beyond_the_words() {
+        let mut w = Vec::new();
+        SpatialState::new(2).to_words(&mut w);
+        let back = SpatialState::from_words(&mut w.into_iter()).expect("round trip");
+        assert_eq!(back.ops.len(), 2);
+        // A damaged FMU state: the counts promise more words than there are.
+        for bad in [vec![1e300], vec![f64::INFINITY], vec![1.0, 1e300, 0.0, 0.0]] {
+            assert!(SpatialState::from_words(&mut bad.into_iter()).is_none());
+        }
     }
 }

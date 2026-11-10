@@ -12,6 +12,7 @@ FmuExitInitAssert.mos \
 FmuMatV7Table.mos \
 FmuZlibLinkOrder.mos \
 FmuNlsSameTime.mos \
+FmuStateDamagedRust.mos \
 FmuUnknownDependencies.mos \
 FmuUnknownsWithoutFmiIndex.mos \
 FmuExportFlags.mos \
@@ -37,6 +38,7 @@ FmuEquationAssertLog.py \
 FmuExitInitAssert.py \
 FmuNlsSameTime.py \
 FmuStartEventError.py \
+FmuStateDamagedRust.py \
 FmuZlibLinkOrder-f.c \
 Makefile \
 

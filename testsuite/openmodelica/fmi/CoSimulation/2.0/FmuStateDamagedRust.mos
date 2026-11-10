@@ -1,0 +1,41 @@
+// name:     FmuStateDamagedRust
+// keywords: FMI 2.0 export co-simulation FMU state C+Rust
+// status:   correct
+// teardown_command: rm -rf FmuStateDamagedRust.fmu FmuStateDamagedRust.fmutmp/ FmuStateDamagedRust.log FmuStateDamagedRust_*.json FmuStateDamagedRust_FMU.* FmuStateDamagedRust_out.txt
+//
+// A damaged FMU state must make fmi2DeSerializeFMUstate or fmi2SetFMUstate
+// return fmi2Error. The Rust simulation runtime must not abort the process,
+// also not later in fmi2DoStep.
+setCommandLineOptions("--simCodeTarget=C+Rust"); getErrorString();
+loadString("
+model FmuStateDamagedRust
+  Real x(start = 1, fixed = true);
+  Real y;
+equation
+  der(x) = -x;
+  y = delay(x, 0.1);
+end FmuStateDamagedRust;
+"); getErrorString();
+buildModelFMU(FmuStateDamagedRust, version = "2.0", fmuType = "cs"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" FmuStateDamagedRust.py FmuStateDamagedRust.fmu FmuStateDamagedRust_out.txt"); getErrorString();
+readFile("FmuStateDamagedRust_out.txt"); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// "FmuStateDamagedRust.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "saved state: fmi2DeSerializeFMUstate fmi2OK, fmi2SetFMUstate fmi2OK, fmi2DoStep fmi2OK
+// huge number of delay buffers: fmi2DeSerializeFMUstate fmi2OK, fmi2SetFMUstate fmi2Error
+// infinite number of delay buffers: fmi2DeSerializeFMUstate fmi2OK, fmi2SetFMUstate fmi2Error
+// huge delay buffer length: fmi2DeSerializeFMUstate fmi2OK, fmi2SetFMUstate fmi2Error
+// no delay buffer: fmi2DeSerializeFMUstate fmi2OK, fmi2SetFMUstate fmi2Error
+// huge number of spatialDistribution operators: fmi2DeSerializeFMUstate fmi2OK, fmi2SetFMUstate fmi2Error
+// "
+// ""
+// endResult
