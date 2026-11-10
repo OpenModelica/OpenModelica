@@ -95,8 +95,8 @@ diffSimulationResults("ResultFileArrow_ym_res.mat", "ResultFileArrow_m_res.mat",
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // 26
-// {"b", "bp", "d", "der(x)", "e", "ep", "ip", "m", "n", "nb", "p", "q", "s", "sp", "time", "v[1]", "v[2]", "x", "y", "z"}
-// {"b", "d", "der(x)", "e", "m", "n", "nb", "s", "time", "v[1]", "v[2]", "x", "y", "z"}
+// {"b", "bp", "d", "der(v[1])", "der(x)", "der(y)", "der(z)", "e", "ep", "ip", "m", "n", "nb", "p", "q", "s", "sp", "time", "v[1]", "v[2]", "x", "y", "z"}
+// {"b", "d", "der(v[1])", "der(x)", "der(y)", "der(z)", "e", "m", "n", "nb", "s", "time", "v[1]", "v[2]", "x", "y", "z"}
 // {0.5776677898139123, 0.5776677898139123}
 // {-0.5776677898139123, -0.5776677898139123}
 // {0.5776677898139123, 0.5776677898139123}

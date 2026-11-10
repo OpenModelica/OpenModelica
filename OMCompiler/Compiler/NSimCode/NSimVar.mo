@@ -1150,7 +1150,7 @@ public
       list<SimVar> discreteAlgVars3 = {}, intAlgVars3 = {}, boolAlgVars3 = {}, stringAlgVars3 = {}, enumAlgVars3 = {};
       list<SimVar> inputVars = {};
       list<SimVar> outputVars = {};
-      list<SimVar> aliasVars = {}, intAliasVars = {}, boolAliasVars = {}, stringAliasVars = {}, enumAliasVars = {};
+      list<SimVar> aliasVars = {}, intAliasVars = {}, boolAliasVars = {}, stringAliasVars = {}, enumAliasVars = {}, derAliasVars = {};
       list<SimVar> paramVars = {}, intParamVars = {}, boolParamVars = {}, stringParamVars = {}, enumParamVars = {};
       list<SimVar> paramVarsR = {}, intParamVarsR = {}, boolParamVarsR = {}, stringParamVarsR = {}, enumParamVarsR = {};
       list<SimVar> constVars = {}, intConstVars = {}, boolConstVars = {}, stringConstVars = {}, enumConstVars = {};
@@ -1178,6 +1178,7 @@ public
           ({discreteAlgVars2, intAlgVars2, boolAlgVars2, stringAlgVars2, enumAlgVars2}, simCodeIndices)   := createSimVarLists(varData.discrete_states, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({discreteAlgVars3, intAlgVars3, boolAlgVars3, stringAlgVars3, enumAlgVars3}, simCodeIndices)   := createSimVarLists(varData.clocked_states, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({aliasVars, intAliasVars, boolAliasVars, stringAliasVars, enumAliasVars}, simCodeIndices)      := createSimVarLists(varData.aliasVars, simCodeIndices, SplitType.TYPE, VarType.ALIAS);
+          (derAliasVars, simCodeIndices)                                                                  := createStateDerivativeAliases(aliasVars, derivativeVars, simCodeIndices);
           // enums are appended to the integer variables, constants do not take part in the shift
           enum_shift := simCodeIndices.integerVarIndex;
           ({paramVars, intParamVars, boolParamVars, stringParamVars, enumParamVars}, simCodeIndices)      := createSimVarLists(varData.parameters, simCodeIndices, SplitType.TYPE, VarType.PARAMETER);
@@ -1217,7 +1218,7 @@ public
         enumAlgVars                       = List.flatten({enumNonTrivialAlias, enumAlgVars, enumAlgVars2, enumAlgVars3}),
         inputVars                         = inputVars,
         outputVars                        = outputVars,
-        aliasVars                         = aliasVars,
+        aliasVars                         = listAppend(aliasVars, derAliasVars),
         intAliasVars                      = intAliasVars,
         boolAliasVars                     = boolAliasVars,
         stringAliasVars                   = stringAliasVars,
@@ -1384,6 +1385,61 @@ public
         dataReconinputVars                = SimVar.convertListMemo(simVars.dataReconinputVars, memo),
         dataReconSetBVars                 = SimVar.convertListMemo(simVars.dataReconSetBVars, memo));
     end convert;
+
+    function createStateDerivativeAliases
+      "der(v) as an alias of der(x) for each scalar alias v = x or v = -x of a state x."
+      input list<SimVar> aliasVars;
+      input list<SimVar> derivativeVars;
+      output list<SimVar> simVars = {};
+      input output SimCode.SimCodeIndices indices;
+    protected
+      UnorderedMap<ComponentRef, SimVar> ders;
+      Option<SimVar> state_der;
+      SimVar der_var;
+      ComponentRef state;
+      Real gain, offset;
+    algorithm
+      if Config.simCodeTarget() == "Cpp" then
+        return;
+      end if;
+      ders := UnorderedMap.new<SimVar>(ComponentRef.hash, ComponentRef.isEqual);
+      for var in derivativeVars loop
+        if listEmpty(var.numArrayElement) then
+          UnorderedMap.add(var.name, var, ders);
+        end if;
+      end for;
+      for alias_var in aliasVars loop
+        () := match alias_var.aliasvar
+          case Alias.ALIAS(alias = state, gain = gain, offset = offset)
+            guard listEmpty(alias_var.numArrayElement) and realEq(offset, 0.0) and (realEq(gain, 1.0) or realEq(gain, -1.0))
+              and not StringUtil.startsWith(ComponentRef.toString(alias_var.name), "$")
+            algorithm
+              state_der := UnorderedMap.get(BVariable.makeDerCref(state), ders);
+              if isSome(state_der) then
+                SOME(der_var) := state_der;
+                der_var.aliasvar := Alias.ALIAS(der_var.name, gain, 0.0);
+                der_var.name := BVariable.makeDerCref(alias_var.name);
+                der_var.comment := if alias_var.comment == "" then "" else "der(" + alias_var.comment + ")";
+                der_var.varKind := VariableKind.ALGEBRAIC();
+                der_var.info := alias_var.info;
+                der_var.index := indices.realAliasIndex;
+                der_var.variable_index := SOME(indices.uniqueIndex);
+                der_var.fmi_index := SOME(indices.realAliasIndex);
+                der_var.arrayCref := NONE();
+                der_var.isProtected := alias_var.isProtected;
+                der_var.hideResult := alias_var.hideResult;
+                der_var.isEncrypted := alias_var.isEncrypted;
+                der_var.exportVar := if isSome(alias_var.exportVar) then SOME(der_var.name) else NONE();
+                indices.uniqueIndex := indices.uniqueIndex + 1;
+                indices.realAliasIndex := indices.realAliasIndex + 1;
+                simVars := der_var :: simVars;
+              end if;
+            then ();
+          else ();
+        end match;
+      end for;
+      simVars := listReverseInPlace(simVars);
+    end createStateDerivativeAliases;
 
     function createSimVarLists
       "creates a list of simvar lists. SplitType.NONE always returns a list with only

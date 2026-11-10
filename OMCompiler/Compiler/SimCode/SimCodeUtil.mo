@@ -931,6 +931,57 @@ algorithm
   end match;
 end collectClockedVars1;
 
+protected function addStateDerivativeAliases
+  "Adds der(v) as an alias of der(x) for each alias v = x or v = -x of a state x."
+  input array<list<SimCodeVar.SimVar>> simVars;
+  input Mutable<HashSet.HashSet> hs;
+protected
+  UnorderedMap<DAE.ComponentRef, SimCodeVar.SimVar> ders;
+  list<SimCodeVar.SimVar> aliases = {};
+  SimCodeVar.SimVar derVar;
+  DAE.ComponentRef name, state;
+  Option<SimCodeVar.SimVar> stateDer;
+algorithm
+  if Config.simCodeTarget() == "Cpp" then
+    return;
+  end if;
+  ders := UnorderedMap.new<SimCodeVar.SimVar>(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
+  for v in Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.derivative)) loop
+    UnorderedMap.add(v.name, v, ders);
+  end for;
+  for alias in Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.alias)) loop
+    stateDer := match alias.aliasvar
+      case SimCodeVar.ALIAS(varName = state) then UnorderedMap.get(ComponentReference.crefPrefixDer(state), ders);
+      case SimCodeVar.NEGATEDALIAS(varName = state) then UnorderedMap.get(ComponentReference.crefPrefixDer(state), ders);
+      else NONE();
+    end match;
+    name := ComponentReference.crefPrefixDer(alias.name);
+    if isSome(stateDer) and not StringUtil.startsWith(ComponentReferenceBasics.crefFirstIdent(alias.name), "$")
+       and not BaseHashSet.has(name, Mutable.access(hs)) then
+      SOME(derVar) := stateDer;
+      derVar.aliasvar := match alias.aliasvar
+        case SimCodeVar.NEGATEDALIAS() then SimCodeVar.NEGATEDALIAS(derVar.name);
+        else SimCodeVar.ALIAS(derVar.name);
+      end match;
+      derVar.name := name;
+      derVar.comment := if alias.comment == "" then "" else "der(" + alias.comment + ")";
+      derVar.varKind := BackendDAE.VARIABLE();
+      derVar.source := alias.source;
+      derVar.arrayCref := NONE();
+      derVar.numArrayElement := {};
+      derVar.isProtected := alias.isProtected;
+      derVar.hideResult := alias.hideResult;
+      derVar.isEncrypted := alias.isEncrypted;
+      derVar.exportVar := if isSome(alias.exportVar) then SOME(name) else NONE();
+      aliases := derVar :: aliases;
+      Mutable.update(hs, BaseHashSet.add(name, Mutable.access(hs)));
+    end if;
+  end for;
+  for v in aliases loop
+    addSimVar(v, SimVarsIndex.alias, simVars);
+  end for;
+end addStateDerivativeAliases;
+
 protected function addTempVars
   input array<list<SimCodeVar.SimVar>> simVars;
   input list<SimCodeVar.SimVar> tempVars;
@@ -7572,6 +7623,7 @@ algorithm
     if debug then execStat("createVars: variable list (init lambda0)"); end if;
   end if;
 
+  addStateDerivativeAliases(simVars, hs);
   addTempVars(simVars, tempvars);
   if debug then execStat("createVars: addTempVars"); end if;
   //BaseHashSet.printHashSet(hs);
