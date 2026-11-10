@@ -1830,7 +1830,6 @@ fn homotopy_steps() -> i32 {
 // computed start). Set per run by the host before `drive`.
 mod overrides_store {
     use super::WTy;
-    use alloc::vec::Vec;
 
     #[cfg(feature = "std")]
     mod imp {
@@ -3238,7 +3237,7 @@ fn print_parameters(e: &dyn SimEngine, sim_data: u32, model: &SimMeta) {
             .unwrap_or(v)
     };
     omclog::info(omclog::INIT_V, true, "parameter values");
-    let mut group = |header: &str, lines: alloc::vec::Vec<String>| {
+    let group = |header: &str, lines: alloc::vec::Vec<String>| {
         if lines.is_empty() {
             return;
         }
@@ -12841,7 +12840,7 @@ fn dae_newton_dense(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, da
     }
     let mut u: Vec<f64> = offs.iter().map(|&o| read_f64(e, sim_data + o)).collect::<Result<_>>()?;
     let res_base = sim_data + layout.dae_res_off;
-    let mut residual = |e: &mut dyn SimEngine, u: &[f64], out: &mut [f64]| -> Result<()> {
+    let residual = |e: &mut dyn SimEngine, u: &[f64], out: &mut [f64]| -> Result<()> {
         for (&o, &v) in offs.iter().zip(u) {
             write_f64(e, sim_data + o, v)?;
         }

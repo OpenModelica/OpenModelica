@@ -3138,7 +3138,7 @@ fn newton_c(
     let mut fvec = carve(&mut rest, n);
     let mut rp = carve(&mut rest, n);
     let mut step = carve(&mut rest, n); // C's dy0 (the full Newton step −J⁻¹f)
-    let mut x1 = carve(&mut rest, n);
+    let x1 = carve(&mut rest, n);
     let mut jac = carve(&mut rest, n * n);
     let mut aug = carve(&mut rest, n * (n + 1)); // C's `fJac`, whose last column is `fvec`
     for i in 0..n {
@@ -4220,17 +4220,17 @@ pub fn solve_nls(
     let (mut work_stack, mut work_heap) = (core::mem::MaybeUninit::<[f64; 512]>::uninit(), alloc::vec::Vec::new());
     let mut rest = zeroed(&mut work_stack, &mut work_heap, 10 * n + m + mem.res_scaling.len());
     let mut warm = carve(&mut rest, n);
-    let mut xbuf = carve(&mut rest, m);
+    let xbuf = carve(&mut rest, m);
     let mut rbuf = carve(&mut rest, n);
     let mut res_scaling = carve(&mut rest, mem.res_scaling.len());
     let mut guess = carve(&mut rest, n);
     let mut nlsx_old = carve(&mut rest, n);
     let mut scratch = carve(&mut rest, n);
     let mut x = carve(&mut rest, n);
-    let mut start_point = carve(&mut rest, n);
-    let mut start = carve(&mut rest, n);
+    let start_point = carve(&mut rest, n);
+    let start = carve(&mut rest, n);
     let mut nlsx = carve(&mut rest, n);
-    let mut best = carve(&mut rest, n);
+    let best = carve(&mut rest, n);
     load_guess(&mut warm);
 
     stat_inc(STAT_NLS_SOLVE);
