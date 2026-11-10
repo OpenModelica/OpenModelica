@@ -57,6 +57,23 @@ fn csv_booleans_are_numbers() {
 }
 
 #[test]
+fn diff_all_finds_csv_names_as_in_mat_files() {
+    let d = dir("names");
+    let actual = path(&d, "actual.csv");
+    let reference = path(&d, "reference.csv");
+    std::fs::write(&actual, "time,\"a[1,2]\",der(b.x)\n0,1,0\n1,2,0\n").unwrap();
+    std::fs::write(&reference, "time,\"a[1, 2]\",b.der(x)\n0,1,0\n1,2,0\n").unwrap();
+    let mut a = ResultFile::open(&actual).unwrap();
+    let mut r = ResultFile::open(&reference).unwrap();
+    assert!(
+        diff_all(&mut a, &mut r, Vec::new(), Tolerances::default())
+            .unwrap()
+            .is_empty()
+    );
+    std::fs::remove_dir_all(d).unwrap();
+}
+
+#[test]
 fn filter_without_descriptions_reads_back() {
     let d = dir("filter");
     let input = path(&d, "in.mat");
