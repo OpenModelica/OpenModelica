@@ -3752,6 +3752,30 @@ algorithm
   end for;
 end dumpNonReconciledVars;
 
+protected function crefModelicaStr
+  "the variable name with _ instead of ., same as in dumpExtractedVars; a record
+  is declared as a whole, so its fields are accessed with ., e.g. a_b_rec.field"
+  input DAE.ComponentRef cr;
+  input Integer dummy;
+  output String str;
+protected
+  DAE.ComponentRef rec;
+  Boolean isRec;
+algorithm
+  (rec, isRec) := ComponentReference.crefGetFirstRec(cr);
+  if isRec and not ComponentReferenceBasics.crefEqual(rec, cr) then
+    str := System.stringReplace(ComponentReferenceBasics.printComponentRefStr(rec), ".", "_") + "."
+      + ComponentReferenceBasics.printComponentRefStr(ComponentReference.crefStripPrefix(cr, rec));
+  else
+    str := System.stringReplace(ComponentReferenceBasics.printComponentRefStr(cr), ".", "_");
+  end if;
+end crefModelicaStr;
+
+protected function expModelicaStr
+  input DAE.Exp exp;
+  output String str = ExpressionDump.printExp2Str(exp, "", SOME((crefModelicaStr, 0)), NONE());
+end expModelicaStr;
+
 protected function dumpEquationString "Helper function to e.g. dump equations"
   input BackendDAE.Equation inEquation;
   output String outString;
@@ -3770,31 +3794,29 @@ algorithm
       list<BackendDAE.Equation> eqnsfalse, eqns;
     case BackendDAE.EQUATION(exp = e1, scalar = e2)
       algorithm
-        s1 := ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
-        s2 := ExpressionDump.printExp2Str(e2, "", NONE(), NONE());
+        s1 := expModelicaStr(e1);
+        s2 := expModelicaStr(e2);
         res := stringAppendList({s1," = ",s2});
       then
         res;
     case BackendDAE.COMPLEX_EQUATION(left = e1, right = e2)
       algorithm
-        s1 := ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
-        s2 := ExpressionDump.printExp2Str(e2, "", NONE(), NONE());
+        s1 := expModelicaStr(e1);
+        s2 := expModelicaStr(e2);
         res := stringAppendList({s1," = ",s2});
       then
         res;
     case BackendDAE.ARRAY_EQUATION(left = e1, right = e2)
       algorithm
-        s1 := ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
-        s2 := ExpressionDump.printExp2Str(e2, "", NONE(), NONE());
+        s1 := expModelicaStr(e1);
+        s2 := expModelicaStr(e2);
         res := stringAppendList({s1," = ",s2});
       then
         res;
     case BackendDAE.SOLVED_EQUATION(componentRef = cr, exp = e2)
       algorithm
-        s1 := ComponentReferenceBasics.printComponentRefStr(cr);
-        s1 := System.stringReplace(s1, ".", "_");
-        s1 := System.stringReplace(s1, "$", "");
-        s2 := ExpressionDump.printExp2Str(e2, "", NONE(), NONE());
+        s1 := System.stringReplace(crefModelicaStr(cr, 0), "$", "");
+        s2 := expModelicaStr(e2);
         res := stringAppendList({s1," = ",s2});
       then
         res;
@@ -3805,7 +3827,7 @@ algorithm
         res;
     case BackendDAE.RESIDUAL_EQUATION(exp = e)
       algorithm
-        s1 := ExpressionDump.printExp2Str(e, "", NONE(), NONE());
+        s1 := expModelicaStr(e);
         res := stringAppendList({s1, "= 0"});
       then
         res;
@@ -3816,7 +3838,7 @@ algorithm
         res;
     case BackendDAE.IF_EQUATION(conditions=e1::expl, eqnstrue=eqns::eqnstrue, eqnsfalse=eqnsfalse)
       algorithm
-        s1 := ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
+        s1 := expModelicaStr(e1);
         s2 := stringDelimitList(List.map(eqns, dumpEquationString),"\n  ");
         s3 := stringAppendList({"if ",s1," then\n  ",s2});
         res := BackendDump.ifequationString(expl, eqnstrue, eqnsfalse, s3);
@@ -3824,7 +3846,7 @@ algorithm
         res;
     case BackendDAE.FOR_EQUATION(iter = iter, start = start, stop = stop, body = eqn)
       algorithm
-        s1 := ExpressionDump.printExp2Str(iter, "", NONE(), NONE()) + " in " + ExpressionDump.printExp2Str(start, "", NONE(), NONE()) + " : " + ExpressionDump.printExp2Str(stop, "", NONE(), NONE());
+        s1 := expModelicaStr(iter) + " in " + expModelicaStr(start) + " : " + expModelicaStr(stop);
         s2 := dumpEquationString(eqn);
         res := stringAppendList({"for ", s1, " loop\n    ", s2, "; end for; "});
       then
