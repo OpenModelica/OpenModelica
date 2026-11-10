@@ -136,6 +136,10 @@ protected
   Boolean status = false;
   Integer procedureCount = 1;
 algorithm
+  if not isEnabled() then
+    return;
+  end if;
+
   print("\nModelInfo: " + fileNamePrefix + "\n" + UNDERLINE + "\n\n");
 
   () := match bdae

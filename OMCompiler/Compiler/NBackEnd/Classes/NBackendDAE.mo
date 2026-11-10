@@ -735,10 +735,9 @@ public
     // (do not change order SIMPLIFY -> ALIAS -> EVENTS -> DETECTSTATES)
     // (do not change order BINDINGS -> DATA RECONCILIATION -> FUNCTIONALIAS -> ALIAS, data
     // reconciliation needs the binding equations, which the alias modules remove)
-    preOptModules := listAppend(
-      (Bindings.main,      "Bindings") ::
-      (if DataReconciliation.isEnabled() then {(DataReconciliation.main, "Data Reconciliation")} else {}),
-    {
+    preOptModules := {
+      (Bindings.main,      "Bindings"),
+      (DataReconciliation.main, "Data Reconciliation"),
       (function FunctionAlias.main(kind = kind), "FunctionAlias"),
       (function Inline.main(inline_types = inline_types, init = false), "Early Inline"),
       (function simplify(init = false), "Simplify"),
@@ -747,7 +746,7 @@ public
       (detectAlgorithmLocals, "Algorithm Locals"),
       (DetectStates.main,  "Detect States"),
       (Events.main,        "Events")
-    });
+    };
 
     // all main modules are always done in ODE mode
     mainModules := listAppend({
@@ -758,19 +757,16 @@ public
     }, mainModules);
 
     // (do not change order SOLVE -> JACOBIAN)
+    // (data reconciliation jacobian needs the solved strong components)
     postOptModules := {
       (Evaluation.removeDummies,              "Remove Dummies"),
       (function Tearing.main(kind = kind),    "Tearing"),
       (Partitioning.categorize,               "Categorize"),
       (Solve.main,                            "Solve"),
       (function Jacobian.main(kind = kind),   "Jacobian"),
-      (Initialization.minimizeHomotopySystem, "Minimize Homotopy System")
+      (Initialization.minimizeHomotopySystem, "Minimize Homotopy System"),
+      (DataReconciliation.createJacobian,     "Data Reconciliation Jacobian")
     };
-
-    // needs the solved strong components
-    if DataReconciliation.isEnabled() then
-      postOptModules := listAppend(postOptModules, {(DataReconciliation.createJacobian, "Data Reconciliation Jacobian")}) annotation(__OpenModelica_DisableListAppendWarning=true);
-    end if;
 
     (bdae, preOptClocks)  := applyModules(bdae, preOptModules, eq_filter_opt, ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE);
     (bdae, mainClocks)    := applyModules(bdae, mainModules, eq_filter_opt, ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE);
