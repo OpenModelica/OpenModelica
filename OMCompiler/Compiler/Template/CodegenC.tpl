@@ -8557,23 +8557,16 @@ match ty
     <%assign%>
     >>
   case T_COMPLEX(varLst = varLst, complexClassType=RECORD(__)) then
-    error(sourceInfo(), 'No runtime support for this record assignment: <%dumpExp(left,"\"")%> = <%dumpExp(right,"\"")%>')
-    // let &preExp = buffer ""
-    // let exp = daeExp(right, context, &preExp, &varDecls, &auxFunction)
-    // let tmp = tempDecl(expTypeModelica(ty),&varDecls)
-    // <<
-    // <%preExp%>
-    // <%tmp%> = <%exp%>;
-    // <% varLst |> var as TYPES_VAR(__) =>
-    //   match var.ty
-    //   case T_ARRAY(__) then
-    //     copyArrayData(var.ty, '<%tmp%>._<%var.name%>', appendStringCref(var.name,left), context, &preExp, &varDecls, &auxFunction)
-    //   else
-    //     let varPart = contextCref(appendStringCref(var.name,left), context, &preExp, &varDecls, &auxFunction)
-    //     '<%varPart%> = <%tmp%>._<%var.name%>;'
-    // ; separator="\n"
-    // %>
-    // >>
+    match left
+      case CREF(componentRef=cr) then
+        let &preExp = buffer ""
+        let assign = assignRhsExpToRecordCref(cr, right, ty, context, &preExp, &varDecls, &varFrees, &auxFunction)
+        <<
+        <%preExp%>
+        <%assign%>
+        >>
+      else
+        error(sourceInfo(), 'No runtime support for this record assignment: <%dumpExp(left,"\"")%> = <%dumpExp(right,"\"")%>')
   else
     let &preExp = buffer ""
     let varPart = daeExp(left, context, &preExp, &varDecls, &varFrees, &auxFunction)
