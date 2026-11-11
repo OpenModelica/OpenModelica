@@ -616,6 +616,40 @@ match c
   /*TODO! Handle "independent" causality.*/
 end getCausality2;
 
+template CppLogCategories3(Boolean withDescription)
+ "The FMI 2.0 categories that an FMI 3.0 FMU of the C++ runtime still has."
+::=
+  match Config.simCodeTarget()
+    case "Cpp" then
+      if withDescription then
+        <<
+        <Category name="logStatusPending" description="logStatusPending" />
+        <Category name="logAll" description="logAll" />
+        >>
+      else
+        <<
+        <Category name="logStatusPending" />
+        <Category name="logAll" />
+        >>
+    else ""
+  end match
+end CppLogCategories3;
+
+template LogStreamCategories()
+ "The categories of the runtime streams, which an FMU of the C runtime logs."
+::=
+  match Config.simCodeTarget()
+    case "Cpp" then ""
+    else
+      <<
+      <Category name="LOG_STDOUT" description="Output of the model and the runtime" />
+      <Category name="LOG_ASSERT" description="Messages of assert()" />
+      <Category name="LOG_INIT" description="Initialization" />
+      <Category name="LOG_SOLVER" description="Integration in Co-Simulation" />
+      >>
+  end match
+end LogStreamCategories;
+
 template getNumberOfEventIndicators(SimCode simCode)
  "Get the number of event indicators, which depends on the selected code target (c or cpp)."
 ::=

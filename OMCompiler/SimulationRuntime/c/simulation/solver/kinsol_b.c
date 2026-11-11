@@ -80,7 +80,7 @@ static void B_print_jac(NONLINEAR_SYSTEM_DATA* nlsData, SUNMatrix J, const char*
   if (SUNMatGetID(J) == SUNMATRIX_DENSE) {
     for (col = 0; col < size; col++) {
         for (row = 0; row < size; row++) {
-        infoStreamPrint(OMC_LOG_STDOUT, 0, "%s(row = %d, col = %d) = %.3e", name, row, col, SM_ELEMENT_D(J, row, col));
+        infoStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_NLS), 0, "%s(row = %d, col = %d) = %.3e", name, row, col, SM_ELEMENT_D(J, row, col));
         }
     }
   }
@@ -88,7 +88,7 @@ static void B_print_jac(NONLINEAR_SYSTEM_DATA* nlsData, SUNMatrix J, const char*
     for (col = 0; col < size; col++) {
       for (nz = sp->leadindex[col]; nz < sp->leadindex[col + 1]; nz++) {
         row = sp->index[nz];
-        infoStreamPrint(OMC_LOG_STDOUT, 0, "%s(row = %d, col = %d) = %.3e", name, row, col, SM_DATA_S(J)[nz]);
+        infoStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_NLS), 0, "%s(row = %d, col = %d) = %.3e", name, row, col, SM_DATA_S(J)[nz]);
       }
     }
   }
@@ -102,7 +102,7 @@ static void B_print_X(B_NLS_KINSOL_DATA* kinsolData, N_Vector x, const char* nam
   size = kinsolData->size;
   values = N_VGetArrayPointer(x);
   for (i = 0; i < size; i++) {
-      infoStreamPrint(OMC_LOG_STDOUT, 0, "%s(%d) = %.3e", name, i, values[i]);
+      infoStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_NLS), 0, "%s(%d) = %.3e", name, i, values[i]);
   }
 }
 
@@ -651,7 +651,7 @@ static void finishSparseColPtr(SUNMatrix A, int nnz) {
   /* Check for empty rows */
   for (i = 1; i < SM_COLUMNS_S(A) + 1; ++i) {
     if (SM_INDEXPTRS_S(A)[i] == SM_INDEXPTRS_S(A)[i - 1]) {
-      warningStreamPrint(OMC_LOG_STDOUT, 0,
+      warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_NLS), 0,
                          "experimental-kinsol: Jacobian row %d singular. See OMC_LOG_NLS for "
                          "more information.",
                          i);
@@ -1010,7 +1010,7 @@ static int B_nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
 
           // (IN)SANITY CHECK
           if (isnan(result) || isinf(result)) {
-            warningStreamPrint(OMC_LOG_STDOUT, 0,
+            warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_NLS), 0,
                 "WARNING: NaN (%d) or Inf (%d) detected at col %ld row %ld: fRes=%g, fx=%g, delta_hh=%g, x=%g, xsave=%g\n"
                 "ACTION: setting Jacobian entry := 0.0 and trying to recover...",
                 isnan(result), isinf(result), ii, j, fRes[j], fx[j], delta_hh[ii], x[ii], xsave[ii]);

@@ -98,8 +98,6 @@ typedef fmi2EventInfo fmiXEventInfo;
 #define FMIX_STR "fmi2"
 #define FMIX_ME fmi2ModelExchange
 #define FMIX_CS fmi2CoSimulation
-#define FMIX_LOG(comp, status, categoryIndex, message, ...) \
-  (comp)->logger((comp)->componentEnvironment, (comp)->instanceName, status, logCategoriesNames[categoryIndex], message, ##__VA_ARGS__)
 #define LOG_FMIX_CALL LOG_FMI2_CALL
 #define FMIX_SETUP_DATA_STRUC fmu2_model_interface_setupDataStruc
 
@@ -149,6 +147,7 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
     comp->terminated = fmi2True;
     comp->state = model_state_cs_step_failed;
     status = fmi2Discard;
+    FILTERED_LOG(comp, fmi2Discard, LOG_STATUSDISCARD, "fmi2DoStep: the model terminated the simulation at time %.15g.", comp->lastSuccessfulTime)
   }
 
   return status;
@@ -174,8 +173,10 @@ fmi2Status fmi2GetRealStatus(fmi2Component c, const fmi2StatusKind s, fmi2Real* 
   ModelInstance *comp = (ModelInstance *)c;
   if (invalidState(comp, "fmi2GetRealStatus", 0, CS_STATUS_STATES) || nullPointer(comp, "fmi2GetRealStatus", "value", value))
     return fmi2Error;
-  if (s != fmi2LastSuccessfulTime)
+  if (s != fmi2LastSuccessfulTime) {
+    FILTERED_LOG(comp, fmi2Discard, LOG_STATUSDISCARD, "fmi2GetRealStatus: status kind %d is not supported.", (int)s)
     return fmi2Discard;
+  }
   *value = comp->lastSuccessfulTime;
   return fmi2OK;
 }
@@ -191,8 +192,10 @@ fmi2Status fmi2GetBooleanStatus(fmi2Component c, const fmi2StatusKind s, fmi2Boo
   ModelInstance *comp = (ModelInstance *)c;
   if (invalidState(comp, "fmi2GetBooleanStatus", 0, CS_STATUS_STATES) || nullPointer(comp, "fmi2GetBooleanStatus", "value", value))
     return fmi2Error;
-  if (s != fmi2Terminated)
+  if (s != fmi2Terminated) {
+    FILTERED_LOG(comp, fmi2Discard, LOG_STATUSDISCARD, "fmi2GetBooleanStatus: status kind %d is not supported.", (int)s)
     return fmi2Discard;
+  }
   *value = comp->terminated;
   return fmi2OK;
 }
@@ -217,7 +220,7 @@ fmi2Status fmi2SetExternalFunction(fmi2Component c, fmi2ValueReference vr[], siz
     return fmi2Error;
   if (nvr>0 && nullPointer(comp, "fmi2SetExternalFunction", "value[]", value))
     return fmi2Error;
-  if (comp->loggingOn) comp->logger(comp->componentEnvironment, comp->instanceName, fmi2OK, "log", "fmi2SetExternalFunction");
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetExternalFunction")
   // no check whether setting the value is allowed in the current state
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmi2SetExternalFunction", vr[i], NUMBER_OF_EXTERNALFUNCTIONS))

@@ -66,11 +66,14 @@ extern "C" {
 #define LOG_STATUSDISCARD               5
 #define LOG_STATUSERROR                 6
 #define LOG_STATUSFATAL                 7
-#define LOG_STATUSPENDING               8
-#define LOG_ALL                         9
-#define LOG_FMI3_CALL                   10
+#define LOG_FMI3_CALL                   8
+/* The runtime streams of the same name */
+#define LOG_STREAM_STDOUT               9
+#define LOG_STREAM_ASSERT               10
+#define LOG_STREAM_INIT                 11
+#define LOG_STREAM_SOLVER               12
 
-#define NUMBER_OF_CATEGORIES 11
+#define NUMBER_OF_CATEGORIES 13
 
 typedef enum {
   model_state_start_end               = 1<<0,  /* ME and CS */
@@ -171,7 +174,8 @@ typedef struct {
 fmi3Boolean isCategoryLogged(ModelInstance *comp, int categoryIndex);
 
 static fmi3String logCategoriesNames[] = {"logEvents", "logSingularLinearSystems", "logNonlinearSystems", "logDynamicStateSelection",
-    "logStatusWarning", "logStatusDiscard", "logStatusError", "logStatusFatal", "logStatusPending", "logAll", "logFmi3Call"};
+    "logStatusWarning", "logStatusDiscard", "logStatusError", "logStatusFatal", "logFmi3Call",
+    "LOG_STDOUT", "LOG_ASSERT", "LOG_INIT", "LOG_SOLVER"};
 
 /* Format a printf-style message and forward it to the instance log callback.
    The FMI 3.0 logger takes a pre-formatted message, so FILTERED_LOG routes

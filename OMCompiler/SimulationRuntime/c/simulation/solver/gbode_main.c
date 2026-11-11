@@ -129,7 +129,7 @@ static JACOBIAN_METHOD getGbodeJacobianMethod(threadData_t* threadData, enum GB_
    * because they only request single columns of the ODE Jacobian and not the whole matrix at once. */
   if ((jacobianMethod == COLOREDSYMJACADJ || jacobianMethod == BICOLOREDSYMJAC)
       && nlsSolverMethod != GB_NLS_INTERNAL) {
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "Jacobian method %s requires the internal non-linear solver of GBODE. "
+    warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "Jacobian method %s requires the internal non-linear solver of GBODE. "
                                           "Use `-gbnls=internal` / `-gbfnls=internal`. "
                                           "Switching to the forward symbolic Jacobian.",
                        JACOBIAN_METHOD_NAME[jacobianMethod]);
@@ -208,7 +208,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
 
   gbfData->ctrl_method = getControllerMethod(FLAG_MR_CTRL);
   if (gbfData->ctrl_method == GB_CTRL_CNST) {
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "Constant step size not supported for inner integration. Using IController.");
+    warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "Constant step size not supported for inner integration. Using IController.");
     gbfData->ctrl_method = GB_CTRL_I;
   }
   gbfData->currentErrorOrder = gbfData->tableau->error_order;
@@ -277,10 +277,10 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
       gbfData->symJacAvailable = jacobian->availability == JACOBIAN_AVAILABLE;
       // change GBODE specific jacobian method
       if (jacobianMethod == SYMJAC) {
-        warningStreamPrint(OMC_LOG_STDOUT, 0, "Symbolic Jacobians without coloring are currently not supported by GBODE."
+        warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "Symbolic Jacobians without coloring are currently not supported by GBODE."
                                           " Colored symbolical Jacobian will be used.");
       } else if(jacobianMethod == NUMJAC || jacobianMethod == COLOREDNUMJAC || jacobianMethod == INTERNALNUMJAC) {
-        warningStreamPrint(OMC_LOG_STDOUT, 0, "Numerical Jacobians without coloring are currently not supported by GBODE."
+        warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "Numerical Jacobians without coloring are currently not supported by GBODE."
                                           " Colored numerical Jacobian will be used.");
         gbfData->symJacAvailable = FALSE;
       }
@@ -342,7 +342,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
     char filename[bufSize];
     snprintf(filename, bufSize, "%s_ActiveStates.txt", data->modelData->modelFilePrefix);
     gbfData->fastStatesDebugFile = omc_fopen(filename, "w");
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "LOG_GBODE_STATES sets -noEquidistantTimeGrid for emitting results!");
+    warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "LOG_GBODE_STATES sets -noEquidistantTimeGrid for emitting results!");
     solverInfo->solverNoEquidistantGrid = TRUE;
   } else {
     gbfData->fastStatesDebugFile = NULL;
@@ -533,10 +533,10 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     gbData->symJacAvailable = jacobian->availability == JACOBIAN_AVAILABLE;
     // change GBODE specific jacobian method
     if (jacobianMethod == SYMJAC) {
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "Symbolic Jacobians without coloring are currently not supported by GBODE."
+      warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "Symbolic Jacobians without coloring are currently not supported by GBODE."
                                         " Colored symbolical Jacobian will be used.");
     } else if (jacobianMethod == NUMJAC || jacobianMethod == COLOREDNUMJAC || jacobianMethod == INTERNALNUMJAC) {
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "Numerical Jacobians without coloring are currently not supported by GBODE."
+      warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "Numerical Jacobians without coloring are currently not supported by GBODE."
                                         " Colored numerical Jacobian will be used.");
       gbData->symJacAvailable = FALSE;
     }

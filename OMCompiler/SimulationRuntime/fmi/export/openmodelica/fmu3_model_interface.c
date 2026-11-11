@@ -144,7 +144,6 @@ typedef EventInfo fmiXEventInfo;
 #define FMIX_STR "fmi3"
 #define FMIX_ME OMC_ME
 #define FMIX_CS OMC_CS
-#define FMIX_LOG(comp, status, categoryIndex, message, ...) omc_fmi3_logMessage(comp, status, categoryIndex, message, ##__VA_ARGS__)
 #define LOG_FMIX_CALL LOG_FMI3_CALL
 #define FMIX_SETUP_DATA_STRUC fmu3_model_interface_setupDataStruc
 
@@ -1397,7 +1396,7 @@ fmi3Status fmi3ActivateModelPartition(fmi3Instance instance, fmi3ValueReference 
     /* FMI 3.0, 5.2: after fmi3Discard the importer starts no new model partition. */
     if (comp->_terminate_simulation_requested) {
       comp->_terminate_simulation_requested = 0;
-      FILTERED_LOG(comp, fmi3Discard, LOG_EVENTS, "fmi3ActivateModelPartition: terminate simulation requested by the model.")
+      FILTERED_LOG(comp, fmi3Discard, LOG_STATUSDISCARD, "fmi3ActivateModelPartition: terminate simulation requested by the model.")
       return fmi3Discard;
     }
     return fmi3OK;

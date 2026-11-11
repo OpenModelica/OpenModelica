@@ -148,19 +148,19 @@ fn warn_step_size_too_big(n_displayed: &mut u64, what: &str, time: f64, index: u
         return;
     }
     omclog::warning(
-        omclog::STDOUT,
+        omclog::stdout_of(omclog::EVENTS),
         true,
         &format!("{what} more then one event from spatialDistribution. Step size to big!"),
     );
     omclog::warning!(
-        omclog::STDOUT,
+        omclog::stdout_of(omclog::EVENTS),
         false,
         "time: {}, spatialDistribution index: {index}, number of events: {events}",
         f(time),
     );
     omclog::close_warning(omclog::STDOUT);
     if *n_displayed == max_displayed {
-        omclog::warning_limit_reached(omclog::STDOUT, max_displayed);
+        omclog::warning_limit_reached(omclog::stdout_of(omclog::EVENTS), max_displayed);
     }
 }
 

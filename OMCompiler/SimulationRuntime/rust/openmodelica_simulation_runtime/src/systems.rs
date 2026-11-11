@@ -437,7 +437,11 @@ fn solve_default(
     }
     // C reports the fallback on stdout the first time a system needs it and on
     // LOG_LS from then on, so a system that fails at every step says so once.
-    let stream = if ls.failed != 0 { omclog::LS } else { omclog::STDOUT };
+    let stream = if ls.failed != 0 {
+        omclog::LS
+    } else {
+        omclog::stdout_of(omclog::LS)
+    };
     let time = unsafe { (**(*data).localData).timeValue };
     omclog::warning_with_limit!(
         stream,
@@ -527,7 +531,7 @@ fn solve_klu(data: *mut DATA, thread_data: *mut threadData_t, ls: &mut LINEAR_SY
             // C's `getAnalyticalJacobian` writes `-J` column by column through
             // `setAElement(col, row, ..)`: the pattern's own CSC, negated.
             if let Err(e) = eval_jacobian(data, thread_data, ls.jacobian, ls.parentJacobian, &mut d.ax, false) {
-                omclog::warning(omclog::STDOUT, false, e);
+                omclog::warning(omclog::stdout_of(omclog::LS), false, e);
                 return false;
             }
             let sp = unsafe { &*(*ls.jacobian).sparsePattern };
@@ -578,7 +582,7 @@ fn solve_klu(data: *mut DATA, thread_data: *mut threadData_t, ls: &mut LINEAR_SY
     if !solved {
         ls.numberOfFailures += 1;
         omclog::warning_with_limit!(
-            omclog::STDOUT,
+            omclog::stdout_of(omclog::LS),
             ls.numberOfFailures as u64,
             si.maxWarnDisplays as u64,
             "Failed to solve linear system of equations (no. {eq}) at time {time:.6}, system status {status}.",
@@ -616,7 +620,7 @@ fn solve_klu(data: *mut DATA, thread_data: *mut threadData_t, ls: &mut LINEAR_SY
 
 /// C's `solveTotalPivot` (`linearSolverTotalPivot.c`): the same `A`/`b`
 /// assembly as the LAPACK solver, factored by
-/// [`openmodelica_nls::total_pivot_solve`], which is C's
+/// [`openmodelica_nls::total_pivot_solve_ls`], which is C's
 /// `solveSystemWithTotalPivotSearchLS`.
 fn solve_total_pivot(
     data: *mut DATA,
@@ -659,7 +663,7 @@ fn solve_total_pivot(
             crate::throw(thread_data, "jacobian function pointer is invalid");
         }
         if let Err(e) = eval_jacobian(data, thread_data, ls.jacobian, ls.parentJacobian, &mut a, true) {
-            omclog::warning(omclog::STDOUT, false, e);
+            omclog::warning(omclog::stdout_of(omclog::LS), false, e);
             return false;
         }
         // C writes the residual itself into `Ab`'s last column, i.e. the negated
@@ -686,9 +690,10 @@ fn solve_total_pivot(
         omclog::close(omclog::LS_V);
     }
 
-    if !openmodelica_nls::total_pivot_solve(&a, &mut b, size) {
+    let initial = unsafe { (*(*data).simulationInfo).initial } != 0;
+    if !openmodelica_nls::total_pivot_solve_ls(&a, &mut b, size, (!initial).then_some(time)) {
         omclog::warning!(
-            omclog::STDOUT,
+            omclog::stdout_of(omclog::LS),
             false,
             "Error solving linear system of equations (no. {eq}) at time {time:.6}.",
         );
@@ -871,7 +876,7 @@ fn solve_lapack(
         }
     }
     if let Some(e) = lapack_err {
-        omclog::warning(omclog::STDOUT, false, e);
+        omclog::warning(omclog::stdout_of(omclog::LS), false, e);
         return false;
     }
     if omclog::active(omclog::LS_V) {
@@ -894,8 +899,7 @@ fn solve_lapack(
             omclog::LS,
             ls.numberOfFailures as u64,
             unsafe { (*(*data).simulationInfo).maxWarnDisplays as u64 },
-            "Failed to solve linear system of equations (no. {eq}) at time {}, system is singular for U[{}, {}].",
-            openmodelica_sim_meta::driver::format_g(time, 6),
+            "Failed to solve linear system of equations (no. {eq}) at time {time:.6}, system is singular for U[{}, {}].",
             info + 1,
             info + 1,
         );
@@ -960,7 +964,7 @@ fn check_linear_solution(data: *mut DATA, print: c_int, sys_number: c_int) -> c_
     if print != 0 {
         let time = unsafe { (**(*data).localData).timeValue };
         omclog::warning!(
-            omclog::STDOUT,
+            omclog::stdout_of(omclog::LS),
             false,
             "Solving linear system {} fails at time {}. For more information use -lv LOG_LS.",
             ls.equationIndex,

@@ -157,12 +157,23 @@ pub(crate) struct Native {
     pub kind: Kind,
 }
 
+/// The error stage of the runtime, for a thrown error's category.
+fn solver_stage() -> Option<bool> {
+    use crate::support::error_stage;
+    match crate::support::current_stage(crate::support::omr_thread_data()) {
+        error_stage::NONLINEARSOLVER => Some(true),
+        error_stage::INTEGRATOR => Some(false),
+        _ => None,
+    }
+}
+
 impl Native {
     /// Also C's `setThreadData`: an external function finds `threadData` through
     /// the key, and the importer may have driven another instance since.
     pub(crate) fn enter(&self) {
         unsafe { CURRENT = &self.logger };
         openmodelica_fmi3_wasm::restore_logging(&self.log.borrow());
+        crate::support::publish_log_streams();
         #[cfg(unix)]
         unsafe {
             libc::pthread_setspecific(mmc_thread_data_key, self.thread_data as *const c_void)
@@ -181,8 +192,13 @@ impl Native {
     ) -> Option<Box<Native>> {
         unsafe { CURRENT = &logger };
         openmodelica_fmi3_wasm::set_log_hook(log_hook);
-        openmodelica_fmi3_wasm::init_logging(name.to_string(), logging_on);
+        openmodelica_fmi3_wasm::set_solver_stage(solver_stage);
+        let fmi2 = matches!(logger, Logger::Fmi2 { .. });
+        openmodelica_fmi3_wasm::init_logging(name.to_string(), logging_on, fmi2);
         crate::support::set_fmu_assert_report(report_assert);
+        // The generated code's messages go to the logger as the runtime's do.
+        crate::support::install_message_hooks();
+        crate::info_json::set_in_fmu();
         crate::support::keep_held_assert_messages();
         crate::support::publish_log_streams();
         let resources = resources.or_else(library_resources);
@@ -222,14 +238,15 @@ impl Native {
                 OK
             }
             Err(msg) => {
-                self.logger.log(ERROR, "logStatusError", &format!("{call}: {msg}"));
+                openmodelica_fmi3_wasm::log_status_error(&format!("{call}: {msg}"));
                 ERROR
             }
         }
     }
 
     pub(crate) fn set_debug_logging(&self, logging_on: bool, categories: Vec<String>) -> Status {
-        let s = self.inst.set_debug_logging(logging_on, categories);
+        let s = openmodelica_fmi3_wasm::debug_logging(logging_on, categories);
+        crate::support::publish_log_streams();
         *self.log.borrow_mut() = openmodelica_fmi3_wasm::save_logging();
         s
     }

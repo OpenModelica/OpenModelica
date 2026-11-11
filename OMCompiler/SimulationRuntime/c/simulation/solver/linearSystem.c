@@ -441,7 +441,7 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, dou
         if (linsys->failed){
           logLevel = OMC_LOG_LS;
         } else {
-          logLevel = OMC_LOG_STDOUT;
+          logLevel = OMC_LOG_STDOUT_OF(OMC_LOG_LS);
         }
         warningStreamPrintWithLimit(logLevel, 0, linsys->numberOfFailures, data->simulationInfo->maxWarnDisplays,
                                     "The default linear solver fails, the fallback solver with total pivoting is started at time %f. That might raise performance issues, for more information use -lv LOG_LS.", data->localData[0]->timeValue);
@@ -524,7 +524,7 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
     {
       return 1;
     }
-    warningStreamPrintWithEquationIndexes(OMC_LOG_STDOUT, omc_dummyFileInfo, 1, indexes, "Solving linear system %d fails at time %g. For more information use -lv LOG_LS.", index, data->localData[0]->timeValue);
+    warningStreamPrintWithEquationIndexes(OMC_LOG_STDOUT_OF(OMC_LOG_LS), omc_dummyFileInfo, 1, indexes, "Solving linear system %d fails at time %g. For more information use -lv LOG_LS.", index, data->localData[0]->timeValue);
 
     start_buffer = (char*) malloc(buff_size * sizeof(char));
     assertStreamPrint(NULL, start_buffer != NULL, "Out of memory.");

@@ -86,9 +86,9 @@ case SIMCODE(__) then
       <Category name="logStatusDiscard" description="logStatusDiscard" />
       <Category name="logStatusError" description="logStatusError" />
       <Category name="logStatusFatal" description="logStatusFatal" />
-      <Category name="logStatusPending" description="logStatusPending" />
-      <Category name="logAll" description="logAll" />
+      <%CppLogCategories3(true)%>
       <Category name="logFmi3Call" description="logFmi3Call" />
+      <%LogStreamCategories()%>
     </LogCategories>
     >> else
     <<
@@ -101,9 +101,9 @@ case SIMCODE(__) then
       <Category name="logStatusDiscard" />
       <Category name="logStatusError" />
       <Category name="logStatusFatal" />
-      <Category name="logStatusPending" />
-      <Category name="logAll" />
+      <%CppLogCategories3(false)%>
       <Category name="logFmi3Call" />
+      <%LogStreamCategories()%>
     </LogCategories>
     >> %>
     <%DefaultExperiment3(simulationSettingsOpt)%>

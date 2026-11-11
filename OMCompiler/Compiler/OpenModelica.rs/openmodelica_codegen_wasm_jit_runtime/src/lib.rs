@@ -3479,7 +3479,7 @@ fn ls_total_pivot(a: &[f64], b: &mut [f64], n: usize, eq_index: i32, time: f64) 
         return 0;
     }
     omclog::warning!(
-        omclog::STDOUT,
+        omclog::stdout_of(omclog::LS),
         false,
         "Error solving linear system of equations (no. {eq_index}) at time {time:.6}.",
     );
@@ -3493,7 +3493,7 @@ pub extern "C" fn rt_ls_failed(eq_index: i32, time: f64) {
     use openmodelica_sim_meta::driver::format_g;
     if nls::throw_reports() {
         omclog::warning!(
-            omclog::STDOUT,
+            omclog::stdout_of(omclog::LS),
             true,
             "Solving linear system {eq_index} fails at time {}. For more information use -lv LOG_LS.",
             format_g(time, 6),
@@ -3625,7 +3625,11 @@ fn ls_note_failure(eq_index: i32) -> u64 {
 /// C's `solve_linear_system` `LS_DEFAULT` branch.
 fn ls_report_fallback(eq_index: i32, time: f64, count: u64) {
     let e = ls_failure_entry(eq_index);
-    let stream = if e.failed { omclog::LS } else { omclog::STDOUT };
+    let stream = if e.failed {
+        omclog::LS
+    } else {
+        omclog::stdout_of(omclog::LS)
+    };
     e.failed = true;
     omclog::warning_with_limit!(
         stream,

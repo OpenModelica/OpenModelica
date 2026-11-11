@@ -320,9 +320,26 @@ static LOG_SINK: AtomicUsize = AtomicUsize::new(0);
 
 pub fn set_log_sink(f: LogSink) {
     LOG_SINK.store(f as usize, Ordering::Relaxed);
+    MESSAGE_SINK.store(0, Ordering::Relaxed);
     // DASKR's own messages (`xerrwd`) belong in the same log, in call order.
     #[cfg(feature = "std")]
     daskr::auxiliary::set_print_hook(|s| log_line(omclog::STDOUT, omclog::INFO, s));
+}
+
+// The FMI logger takes a message as C's `messageFunctionFMI` gets it: without
+// the header columns and the indentation of its block. Cleared by
+// [`set_log_sink`].
+static MESSAGE_SINK: AtomicUsize = AtomicUsize::new(0);
+
+pub fn set_message_sink(f: LogSink) {
+    MESSAGE_SINK.store(f as usize, Ordering::Relaxed);
+}
+
+pub(crate) fn message_sink() -> Option<LogSink> {
+    match MESSAGE_SINK.load(Ordering::Relaxed) {
+        0 => None,
+        p => Some(unsafe { core::mem::transmute::<usize, LogSink>(p) }),
+    }
 }
 
 /// Whether the installed sink writes to the process's own `stdout`.

@@ -1,0 +1,44 @@
+// name:     fmi2_log_categories
+// keywords: FMI 2.0 export logging fmi2SetDebugLogging
+// status:   correct
+// teardown_command: rm -rf fmi2_log_categories.fmu fmi2_log_categories.fmutmp/ fmi2_log_categories_info.json fmi2_log_categories.log fmi2_log_categories.txt
+//
+// The runtime's messages go to the logger in the category of their stream
+// (#11500), and fmi2SetDebugLogging enables only the named categories.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+model fmi2_log_categories
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = -x;
+  when time > 0.5 then
+    Modelica.Utilities.Streams.print(\"event at \" + String(time));
+  end when;
+end fmi2_log_categories;
+"); getErrorString();
+buildModelFMU(fmi2_log_categories, version="2.0", fmuType="cs"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi2_log_categories.py fmi2_log_categories.fmu fmi2_log_categories.txt", "fmi2_log_categories.log"); getErrorString();
+readFile("fmi2_log_categories.txt");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi2_log_categories.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "logging off: LOG_STDOUT=False LOG_SOLVER=False logEvents=False
+// no names: LOG_STDOUT=True LOG_SOLVER=True logEvents=True
+//   LOG_STDOUT: event at 0.5
+// LOG_STDOUT, then logEvents: LOG_STDOUT=False LOG_SOLVER=False logEvents=True
+// logAll: LOG_STDOUT=True LOG_SOLVER=True logEvents=True
+//   LOG_STDOUT: event at 0.5
+// unknown category: LOG_STDOUT=False LOG_SOLVER=False logEvents=False
+//   logStatusWarning: logging category 'noSuchCategory' is not supported by model
+// "
+// endResult

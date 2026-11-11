@@ -74,26 +74,6 @@ fn announce_directional_derivatives(model_description: &str, model: &SimModel) -
     )
 }
 
-/// The runtime's `-lv` streams as log categories of an FMI 3.0 export, so an
-/// importer can ask the FMU for the trace `simulate()` would print.
-fn declare_log_streams(model_description: &str) -> String {
-    let end = model_description
-        .find("</LogCategories>")
-        .filter(|_| fmi_version() == "3.0");
-    let Some(end) = end else {
-        return model_description.to_string();
-    };
-    let categories: String = omclog::STREAM_NAME[1..]
-        .iter()
-        .map(|s| format!("      <Category name=\"{s}\" />\n"))
-        .collect();
-    format!(
-        "{}{categories}    {}",
-        &model_description[..end],
-        &model_description[end..]
-    )
-}
-
 /// The FMI version being exported, `"3.0"` unless `buildModelFMU` asked otherwise.
 fn fmi_version() -> String {
     let v =
@@ -620,7 +600,7 @@ pub(super) fn emit_fmu(
         let model_id = model_name_prefix(&sim_code);
         let mut entries = vec![(
             "modelDescription.xml".to_string(),
-            declare_log_streams(&announce_directional_derivatives(&model_description, &model)).into_bytes(),
+            announce_directional_derivatives(&model_description, &model).into_bytes(),
         )];
         if !ls_dae_manifest.is_empty() {
             entries.push((LS_DAE_MANIFEST.to_string(), ls_dae_manifest.as_bytes().to_vec()));

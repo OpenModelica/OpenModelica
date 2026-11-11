@@ -1139,7 +1139,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
     }
     else
     {
-      infoStreamPrint(OMC_LOG_STDOUT, 0, "##CVODE## %d error occurred at time = %.15g", flag, solverInfo->currentTime);
+      infoStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "##CVODE## %d error occurred at time = %.15g", flag, solverInfo->currentTime);
       finished = TRUE;
       retVal = flag;
     }

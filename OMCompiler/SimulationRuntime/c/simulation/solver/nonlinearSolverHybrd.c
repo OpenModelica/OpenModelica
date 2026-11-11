@@ -558,13 +558,13 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
           if (OMC_ACTIVE_WARNING_STREAM(OMC_LOG_STDOUT))
           {
             if(data->simulationInfo->initial)
-              warningStreamPrint(OMC_LOG_STDOUT, 1, "While solving non-linear system an assertion failed during initialization.");
+              warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_NLS), 1, "While solving non-linear system an assertion failed during initialization.");
             else
-              warningStreamPrint(OMC_LOG_STDOUT, 1, "While solving non-linear system an assertion failed at time %g.", data->localData[0]->timeValue);
-            warningStreamPrint(OMC_LOG_STDOUT, 0, "The non-linear solver tries to solve the problem that could take some time.");
-            warningStreamPrint(OMC_LOG_STDOUT, 0, "It could help to provide better start-values for the iteration variables.");
+              warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_NLS), 1, "While solving non-linear system an assertion failed at time %g.", data->localData[0]->timeValue);
+            warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_NLS), 0, "The non-linear solver tries to solve the problem that could take some time.");
+            warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_NLS), 0, "It could help to provide better start-values for the iteration variables.");
             if (!OMC_ACTIVE_STREAM(OMC_LOG_NLS_V))
-              warningStreamPrint(OMC_LOG_STDOUT, 0, "For more information simulate with -lv LOG_NLS_V");
+              warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_NLS), 0, "For more information simulate with -lv LOG_NLS_V");
             messageCloseWarning(OMC_LOG_STDOUT);
           }
           assertMessage = 1;
@@ -610,7 +610,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
         /* catch */
         if (catchedError)
         {
-          warningStreamPrint(OMC_LOG_STDOUT, 0, "Non-Linear Solver try to handle a problem with a called assert.");
+          warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_NLS), 0, "Non-Linear Solver try to handle a problem with a called assert.");
 
           hybrdData->info = -1;
           xerror_scaled = 1;
@@ -713,7 +713,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
         OMC_CATCH_INTERNAL(simulationJumpBuffer)
         /* catch */
         if (catchedError) {
-          warningStreamPrint(OMC_LOG_STDOUT, 0, "Non-Linear Solver try to handle a problem with a called assert.");
+          warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_NLS), 0, "Non-Linear Solver try to handle a problem with a called assert.");
 
           hybrdData->info = 4;
           xerror_scaled = 1;

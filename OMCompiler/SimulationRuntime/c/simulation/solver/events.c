@@ -228,7 +228,7 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
         long ix = *((long*) listNodeData(listFirstNode(eventLst)));
         int *eq_indexes;
         const char *exp_str = data->callback->zeroCrossingDescription(ix,&eq_indexes);
-        infoStreamPrintWithEquationIndexes(OMC_LOG_STDOUT, omc_dummyFileInfo, 0, eq_indexes, "Chattering detected around time %.12g..%.12g (%d state events in a row with a total time delta less than %.12g, the smaller of the step size and %g times the simulation interval). This can be a performance bottleneck. Use -lv LOG_EVENTS for more information. The zero-crossing was: %s", t0, time, numEvents, limit, chatteringLimits[i].intervalFraction, exp_str);
+        infoStreamPrintWithEquationIndexes(OMC_LOG_STDOUT_OF(OMC_LOG_EVENTS), omc_dummyFileInfo, 0, eq_indexes, "Chattering detected around time %.12g..%.12g (%d state events in a row with a total time delta less than %.12g, the smaller of the step size and %g times the simulation interval). This can be a performance bottleneck. Use -lv LOG_EVENTS for more information. The zero-crossing was: %s", t0, time, numEvents, limit, chatteringLimits[i].intervalFraction, exp_str);
         chattering->messageEmitted = 1;
         if (omc_flag[FLAG_ABORT_SLOW])
         {

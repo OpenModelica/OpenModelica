@@ -14,6 +14,15 @@ use openmodelica_solvers::omclog;
 
 use crate::abi::*;
 
+/// An FMU carries `_info.json` only with a lenient `--fmiFilter`, so its
+/// absence is no news there.
+static IN_FMU: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
+
+#[cfg(feature = "fmi")]
+pub fn set_in_fmu() {
+    IN_FMU.store(true, core::sync::atomic::Ordering::Relaxed);
+}
+
 /// One equation's decoded entry. The `CString`s and the `*const c_char` array over
 /// them are leaked with the table, so a handed-out `EQUATION_INFO` stays valid.
 struct Entry {
@@ -121,11 +130,13 @@ fn read(xml: &MODEL_DATA_XML) -> Result<Table, String> {
         match std::fs::read_to_string(&name) {
             Ok(s) => s,
             Err(e) => {
-                omclog::warning!(
-                    omclog::STDOUT,
-                    false,
-                    "could not read {name}: {e}; equation names are unavailable",
-                );
+                if !(IN_FMU.load(core::sync::atomic::Ordering::Relaxed) && e.kind() == std::io::ErrorKind::NotFound) {
+                    omclog::warning!(
+                        omclog::STDOUT,
+                        false,
+                        "could not read {name}: {e}; equation names are unavailable",
+                    );
+                }
                 return empty;
             }
         }

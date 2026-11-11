@@ -1442,7 +1442,7 @@ static inline void sendXMLTCPIfClosed()
 static void messageXMLTCP(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes)
 {
   numOpenTags++;
-  xmlTcpStream << "<message stream=\"" << OMC_LOG_STREAM_NAME[stream] << "\" type=\"" << OMC_LOG_TYPE_DESC[type] << "\" text=\"";
+  xmlTcpStream << "<message stream=\"" << OMC_LOG_STREAM_NAME[OMC_LOG_SHOWN(stream)] << "\" type=\"" << OMC_LOG_TYPE_DESC[type] << "\" text=\"";
   printEscapedXMLTCP(&xmlTcpStream, msg);
   if (indexes) {
     int i;
@@ -1498,7 +1498,7 @@ static void printEscapedXML(const char *msg)
 
 static void messageXML(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes)
 {
-  printf("<message stream=\"%s\" type=\"%s\" text=\"", OMC_LOG_STREAM_NAME[stream], OMC_LOG_TYPE_DESC[type]);
+  printf("<message stream=\"%s\" type=\"%s\" text=\"", OMC_LOG_STREAM_NAME[OMC_LOG_SHOWN(stream)], OMC_LOG_TYPE_DESC[type]);
   printEscapedXML(msg);
   if (indexes) {
     int i;

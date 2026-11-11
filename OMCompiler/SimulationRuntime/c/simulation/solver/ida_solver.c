@@ -327,7 +327,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     }
 
     if (omc_flag[FLAG_NOEQUIDISTANT_OUT_FREQ] && omc_flag[FLAG_NOEQUIDISTANT_OUT_TIME]) {
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "The flags are  \"noEquidistantOutputFrequency\" "
+      warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "The flags are  \"noEquidistantOutputFrequency\" "
                                      "and \"noEquidistantOutputTime\" are in opposition "
                                      "to each other. The flag \"noEquidistantOutputFrequency\" superiors.");
      }
@@ -366,18 +366,18 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
 
   // change IDA specific jacobian method
   if(idaData->jacobianMethod == SYMJAC) {
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "Symbolic Jacobians without coloring are currently not supported by IDA."
+    warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "Symbolic Jacobians without coloring are currently not supported by IDA."
                                       " Colored symbolical Jacobian will be used.");
     idaData->jacobianMethod = COLOREDSYMJAC;
   }else if(idaData->jacobianMethod == NUMJAC) {
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "Numerical Jacobians without coloring are currently not supported by IDA."
+    warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "Numerical Jacobians without coloring are currently not supported by IDA."
                                       " Colored numerical Jacobian will be used.");
     idaData->jacobianMethod = COLOREDNUMJAC;
   }else if(idaData->jacobianMethod == INTERNALNUMJAC && idaData->linearSolverMethod == IDA_LS_KLU) {
     if ((!idaData->daeMode && jacobian->sparsePattern == NULL) || (idaData->daeMode && data->simulationInfo->daeModeData->sparsePattern == NULL)) {
       throwStreamPrint(threadData, "##IDA## Internal Numerical Jacobians require a sparse pattern for the jacobian but no sparse pattern is generated.");
     } else {
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU."
+      warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU."
                                         " Colored numerical Jacobian will be used.");
       idaData->jacobianMethod = COLOREDNUMJAC;
     }
@@ -979,7 +979,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     }
     else
     {
-      infoStreamPrint(OMC_LOG_STDOUT, 0, "##IDA## %d error occurred at time = %.15g", flag, solverInfo->currentTime);
+      infoStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "##IDA## %d error occurred at time = %.15g", flag, solverInfo->currentTime);
       finished = 1 /* TRUE */;
       retVal = flag;
     }

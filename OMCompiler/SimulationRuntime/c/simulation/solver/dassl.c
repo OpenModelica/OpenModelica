@@ -326,7 +326,7 @@ int dassl_initial(DATA* data, threadData_t *threadData,
     }
 
     if  (omc_flag[FLAG_NOEQUIDISTANT_OUT_FREQ] && omc_flag[FLAG_NOEQUIDISTANT_OUT_TIME]){
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "The flags are  \"noEquidistantOutputFrequency\" "
+      warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "The flags are  \"noEquidistantOutputFrequency\" "
                                      "and \"noEquidistantOutputTime\" are in opposition "
                                      "to each other. The flag \"noEquidistantOutputFrequency\" superiors.");
      }
@@ -638,7 +638,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
         fflush(stderr);
         fflush(stdout);
         retVal = continue_DASSL(&dasslData->idid, &data->simulationInfo->tolerance);
-        warningStreamPrint(OMC_LOG_STDOUT, 0, "can't continue. time = %f", sData->timeValue);
+        warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "can't continue. time = %f", sData->timeValue);
         break;
       }
       else if(dasslStuck(dasslData, solverInfo->currentTime))
@@ -747,7 +747,7 @@ static int dasslStuck(DASSL_DATA* dasslData, double t)
   errorStreamPrint(OMC_LOG_STDOUT, 1, "The integrator is stuck at time %.15g: its last %d steps were each shorter than %g, too short to move time forward. The model is probably singular or discontinuous here.", t, DASSL_STUCK_STEPS, tiny);
   suppressed = omc_last_suppressed_error();
   if (suppressed[0]) {
-    infoStreamPrint(OMC_LOG_STDOUT, 0, "The last error a nonlinear solver recovered from: %s", suppressed);
+    infoStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "The last error a nonlinear solver recovered from: %s", suppressed);
   }
   messageClose(OMC_LOG_STDOUT);
   return 1;
@@ -765,11 +765,11 @@ static int continue_DASSL(int* idid, double* atol)
     /* 1-4 means success */
     break;
   case -1:
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "DDASKR has done too much work with small steps.");
+    warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "DDASKR has done too much work with small steps.");
     retValue = -1;
     break;
   case -2:
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "The error tolerances are too stringent");
+    warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "The error tolerances are too stringent");
     retValue = -2;
     break;
   case -3:
@@ -778,35 +778,35 @@ static int continue_DASSL(int* idid, double* atol)
     retValue = -3;
     break;
   case -6:
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "DDASSL had repeated error test failures on the last attempted step.");
+    warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "DDASSL had repeated error test failures on the last attempted step.");
     retValue = -6;
     break;
   case -7:
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "The corrector could not converge.");
+    warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "The corrector could not converge.");
     retValue = -7;
     break;
   case -8:
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "The matrix of partial derivatives is singular.");
+    warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "The matrix of partial derivatives is singular.");
     retValue = -8;
     break;
   case -9:
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "The corrector could not converge. There were repeated error test failures in this step.");
+    warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "The corrector could not converge. There were repeated error test failures in this step.");
     retValue = -9;
     break;
   case -10:
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "A Modelica assert prevents the integrator to continue. For more information use -lv LOG_SOLVER");
+    warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "A Modelica assert prevents the integrator to continue. For more information use -lv LOG_SOLVER");
     retValue = -10;
     break;
   case -11:
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "IRES equal to -2 was encountered and control is being returned to the calling program.");
+    warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "IRES equal to -2 was encountered and control is being returned to the calling program.");
     retValue = -11;
     break;
   case -12:
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "DDASSL failed to compute the initial YPRIME.");
+    warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "DDASSL failed to compute the initial YPRIME.");
     retValue = -12;
     break;
   case -33:
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "The code has encountered trouble from which it cannot recover.");
+    warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "The code has encountered trouble from which it cannot recover.");
     retValue = -33;
     break;
   }

@@ -229,7 +229,7 @@ void setContractiveDefectError(BUTCHER_TABLEAU *tableau, const double *dT_A, mod
 {
   if (tableau->t_transform == NULL && !only_filter)
   {
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "Cannot set contractive error, if T-Transformation is NULL and filtering is disabled. Defaulting to standard embedded scheme.");
+    warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "Cannot set contractive error, if T-Transformation is NULL and filtering is disabled. Defaulting to standard embedded scheme.");
     return;
   }
 
@@ -4476,7 +4476,7 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD method, enum _FLAG flag)
 
   if (tableau->error_method == GB_ERROR_RICHARDSON && !tableau->richardson)
   {
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "Richardson extrapolation is not available for method %s. Using the default error estimator instead.", GB_METHOD_NAME[method]);
+    warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "Richardson extrapolation is not available for method %s. Using the default error estimator instead.", GB_METHOD_NAME[method]);
     tableau->error_method = GB_ERROR_DEFAULT;
   }
 

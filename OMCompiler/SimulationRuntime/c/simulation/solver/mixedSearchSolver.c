@@ -260,7 +260,7 @@ int solveMixedSearch(DATA *data, int sysNumber)
         /* while the initialization it's okay not a solution */
         if(!data->simulationInfo->initial)
         {
-          warningStreamPrint(OMC_LOG_STDOUT, 0,
+          warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_MIXED), 0,
               "Error solving mixed equation system with index %d at time %e",
               eqSystemNumber, data->localData[0]->timeValue);
         }

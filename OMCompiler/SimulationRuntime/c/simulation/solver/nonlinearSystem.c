@@ -416,7 +416,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
      * columns would not be the iteration variables either. */
     else if(jacobian->sizeRows != (adaptiveHomotopy(data, nonlinsys) ? size - 1 : size) || jacobian->sizeCols != size)
     {
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "Analytic Jacobian of non-linear system %d is %ux%u, but the system has " OMC_INT_FORMAT " iteration variables. "
+      warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_NLS), 0, "Analytic Jacobian of non-linear system %d is %ux%u, but the system has " OMC_INT_FORMAT " iteration variables. "
                                             "This indicates that something went wrong during Jacobian generation. "
                                             "Using a numeric Jacobian instead.",
                          sysNum, jacobian->sizeRows, jacobian->sizeCols, size);
@@ -453,7 +453,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
     modelica_boolean useSparsityPattern = sparsitySanityCheck(nonlinsys->sparsePattern, nonlinsys->size, OMC_LOG_NLS);
     if (!useSparsityPattern) {
       // free sparsity pattern and don't use scaling
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "Sparsity pattern for non-linear system %d is not regular. "
+      warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_NLS), 0, "Sparsity pattern for non-linear system %d is not regular. "
                                         "This indicates that something went wrong during sparsity pattern generation. "
                                         "Removing sparsity pattern and disabling NLS scaling.", sysNum);
       /* DEBUG */
@@ -472,7 +472,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
     double density = (double) nonlinsys->sparsePattern->nnz / ((double) size * (double) size);
     nonlinsys->matrixFormat = (density < nonlinearSparseSolverMaxDensity || size > nonlinearSparseSolverMinSize) ? OMC_MATRIX_SPARSE : OMC_MATRIX_DENSE;
     if (nonlinsys->matrixFormat == OMC_MATRIX_SPARSE && (omc_flag[FLAG_NLSS_MAX_DENSITY] || omc_flag[FLAG_NLSS_MIN_SIZE])) {
-      infoStreamPrint(OMC_LOG_STDOUT, 0,
+      infoStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_NLS), 0,
                       "Using sparse solver kinsol for nonlinear system %d (%d),\n"
                       "because density of %.2f is under threshold of %.2f or size of %d exceeds threshold of %d.",
                       sysNum, (int)nonlinsys->equationIndex, density, nonlinearSparseSolverMaxDensity,
@@ -985,7 +985,7 @@ int updateInnerEquation(RESIDUAL_USERDATA* resUserData, int sysNumber, int discr
 
   if (!success && !constraintViolated)
   {
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "Non-Linear Solver try to handle a problem with a called assert.");
+    warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_NLS), 0, "Non-Linear Solver try to handle a problem with a called assert.");
   }
 
   if(discrete)
@@ -1290,7 +1290,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
      use the HOMOTOPY SOLVER */
   if (solveWithHomotopySolver && nonlinsys->solved != NLS_SOLVED) {
     if (!omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY] && !kinsol)
-      warningStreamPrint(OMC_LOG_ASSERT, 0, "Failed to solve the initial system %d without homotopy method.", sysNumber);
+      warningStreamPrint(OMC_LOG_ASSERT_OF(OMC_LOG_NLS), 0, "Failed to solve the initial system %d without homotopy method.", sysNumber);
     data->simulationInfo->lambda = 0.0;
     if (data->callback->homotopyMethod == LOCAL_ADAPTIVE_HOMOTOPY ) {
       // First solve the lambda0-system separately
@@ -1322,7 +1322,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
      use EQUIDISTANT LOCAL HOMOTOPY */
   if (equidistantHomotopy && nonlinsys->solved != NLS_SOLVED) {
     if (!omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY])
-      warningStreamPrint(OMC_LOG_ASSERT, 0, "Failed to solve the initial system %d without homotopy method. The local homotopy method with equidistant step size is used now.", sysNumber);
+      warningStreamPrint(OMC_LOG_ASSERT_OF(OMC_LOG_NLS), 0, "Failed to solve the initial system %d without homotopy method. The local homotopy method with equidistant step size is used now.", sysNumber);
     else
       infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "Local homotopy with equidistant step size started for nonlinear system %d.", sysNumber);
 #if !defined(OMC_NO_FILESYSTEM)

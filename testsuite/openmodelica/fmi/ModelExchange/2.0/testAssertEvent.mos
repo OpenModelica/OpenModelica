@@ -51,7 +51,12 @@ end R134a_pTX_phX_all;
 "); getErrorString();
 
 buildModelFMU(R134a_pTX_phX_all, version="2.0"); getErrorString();
-importFMU("R134a_pTX_phX_all.fmu"); getErrorString();
+// loglevel_info: the FMU logs that the event forgives the assert as information.
+// The import then also reports a path, which is left out.
+echo(false);
+importFMU("R134a_pTX_phX_all.fmu", loglevel=4);
+getErrorString();
+echo(true);
 setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString();
 loadFile("R134a_pTX_phX_all_me_FMU.mo"); getErrorString();
 // The rejected solver steps before the event differ between runtimes, so
@@ -74,8 +79,7 @@ regexBool(messages, {"The following assertion has been violated at time 0.230204
 // "Notification: Building FMU for platform 'static' (1/1).
 // Notification: Finished FMU for platform 'static' (1/1).
 // "
-// "R134a_pTX_phX_all_me_FMU.mo"
-// ""
+// true
 // true
 // ""
 // true

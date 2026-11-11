@@ -295,11 +295,11 @@ static void warnStepSizeTooBig(DATA* data, unsigned long* nDisplayed, const char
   if (++*nDisplayed > maxWarnDisplays || !OMC_ACTIVE_WARNING_STREAM(OMC_LOG_STDOUT)) {
     return;
   }
-  warningStreamPrint(OMC_LOG_STDOUT, 1, "%s more then one event from spatialDistribution. Step size to big!", what);
-  warningStreamPrint(OMC_LOG_STDOUT, 0, "time: %f, spatialDistribution index: %i, number of events: %i", data->localData[0]->timeValue, index, nEvents);
+  warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_EVENTS), 1, "%s more then one event from spatialDistribution. Step size to big!", what);
+  warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_EVENTS), 0, "time: %f, spatialDistribution index: %i, number of events: %i", data->localData[0]->timeValue, index, nEvents);
   messageCloseWarning(OMC_LOG_STDOUT);
   if (*nDisplayed == maxWarnDisplays) {
-    warningStreamPrintLimitReached(OMC_LOG_STDOUT, 0, maxWarnDisplays);
+    warningStreamPrintLimitReached(OMC_LOG_STDOUT_OF(OMC_LOG_EVENTS), 0, maxWarnDisplays);
   }
 }
 

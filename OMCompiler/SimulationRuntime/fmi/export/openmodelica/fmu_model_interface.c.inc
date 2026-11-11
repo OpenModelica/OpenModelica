@@ -33,7 +33,6 @@
  *   fmiX<Type>, fmiX<Status> the FMI types and constants of that version
  *   FMIX(name), FMIX_STR     the function names and the prefix in log messages
  *   FMIX_ME, FMIX_CS         the ModelInstance type values
- *   FMIX_LOG                 a log message that is always sent
  *   LOG_FMIX_CALL, FMIX_SETUP_DATA_STRUC
  */
 
@@ -237,11 +236,11 @@ int fmuInitializeSolverData(ModelInstance* comp)
   snprintf(flags_filename, filename_len, "%s/%s_flags.json",
            comp->fmuData->modelData->resourcesDir,
            comp->fmuData->modelData->modelFilePrefix);
-  FILTERED_LOG(comp, fmiXOK, LOG_ALL, FMIX_STR "Instantiate: Trying to find simulation settings %s.", flags_filename)
+  FILTERED_LOG(comp, fmiXOK, LOG_STREAM_SOLVER, FMIX_STR "Instantiate: Trying to find simulation settings %s.", flags_filename)
 
   if( omc_file_exists( flags_filename) )
   {
-    FILTERED_LOG(comp, fmiXOK, LOG_ALL, FMIX_STR "Instantiate: Found simulation settings %s.", flags_filename)
+    FILTERED_LOG(comp, fmiXOK, LOG_STREAM_SOLVER, FMIX_STR "Instantiate: Found simulation settings %s.", flags_filename)
     omc_mmap_read mmap_reader = {0};
     mmap_reader = omc_mmap_open_read(flags_filename);
     parseFlags(solverInfo, mmap_reader.data);
@@ -249,7 +248,7 @@ int fmuInitializeSolverData(ModelInstance* comp)
   }
   else
   {
-    FILTERED_LOG(comp, fmiXOK, LOG_ALL, FMIX_STR "Instantiate: Using default simulation settings.")
+    FILTERED_LOG(comp, fmiXOK, LOG_STREAM_SOLVER, FMIX_STR "Instantiate: Using default simulation settings.")
   }
 
 #ifdef OMC_FMI_HAVE_IDA
@@ -263,7 +262,7 @@ int fmuInitializeSolverData(ModelInstance* comp)
   /* If no states are present, we can use Euler's method since it is doing nothing. */
   if (data->modelData->nStates < 1)
   {
-    FILTERED_LOG(comp, fmiXOK, LOG_ALL, FMIX_STR "Instantiate: No states present, continuing without ODE solver.")
+    FILTERED_LOG(comp, fmiXOK, LOG_STREAM_SOLVER, FMIX_STR "Instantiate: No states present, continuing without ODE solver.")
     solverInfo->solverMethod = S_EULER;
   }
 
@@ -276,7 +275,7 @@ int fmuInitializeSolverData(ModelInstance* comp)
     case S_CVODE:
     {
       CVODE_SOLVER* cvodeData = NULL;
-      FILTERED_LOG(comp, fmiXOK, LOG_ALL, "Initializing CVODE ODE Solver")
+      FILTERED_LOG(comp, fmiXOK, LOG_STREAM_SOLVER, "Initializing CVODE ODE Solver")
       cvodeData = (CVODE_SOLVER*) calloc(1, sizeof(CVODE_SOLVER));
       if (!cvodeData) {
         FILTERED_LOG(comp, fmiXFatal, LOG_STATUSFATAL, FMIX_STR "Instantiate: Out of memory.")
@@ -301,7 +300,7 @@ int fmuInitializeSolverData(ModelInstance* comp)
         free(flags_filename);
         return -1;
       }
-      FILTERED_LOG(comp, fmiXOK, LOG_ALL, "Initializing IDA DAE Solver")
+      FILTERED_LOG(comp, fmiXOK, LOG_STREAM_SOLVER, "Initializing IDA DAE Solver")
       retValue = ida_solver_initial(data, threadData, solverInfo, idaData);
       solverInfo->solverData = idaData;
     }
@@ -345,7 +344,7 @@ int fmuDeInitializeSolverData(ModelInstance* comp)
   solverInfo = comp->solverInfo;
 
   /* Log function call */
-  FILTERED_LOG(comp, fmiXOK, LOG_ALL, FMIX_STR "FreeInstance: Freeing solver data.")
+  FILTERED_LOG(comp, fmiXOK, LOG_STREAM_SOLVER, FMIX_STR "FreeInstance: Freeing solver data.")
 
   switch (solverInfo->solverMethod)
   {
@@ -601,10 +600,50 @@ static fmiXStatus unsupportedFunction(ModelInstance *comp, const char *func)
  */
 fmiXBoolean isCategoryLogged(ModelInstance *comp, int categoryIndex)
 {
-  if (categoryIndex < NUMBER_OF_CATEGORIES && (comp->logCategories[categoryIndex] || comp->logCategories[LOG_ALL])) {
+  if (categoryIndex < 0 || categoryIndex >= NUMBER_OF_CATEGORIES) {
+    return fmiXFalse;
+  }
+#if OMC_FMI_VERSION == 2
+  /* FMI 2.0 has logAll for all messages; FMI 3.0 has no such category. */
+  if (comp->logCategories[LOG_ALL]) {
     return fmiXTrue;
   }
-  return fmiXFalse;
+#endif
+  return comp->logCategories[categoryIndex];
+}
+
+/* A message for the logger: '#' escaped, since it marks a value reference
+ * (FMI 2.0 2.1.5, FMI 3.0 2.3.1), and without a trailing line break. */
+static void logRuntimeMessage(ModelInstance *c, fmiXStatus status, int categoryIndex, FILE_INFO info, const char *msg)
+{
+  size_t len = strlen(msg), hashes = 0, i, j;
+  char *escaped = NULL;
+  if (len > 0 && msg[len - 1] == '\n') {
+    len--;
+  }
+  for (i = 0; i < len; i++) {
+    hashes += msg[i] == '#';
+  }
+  if (hashes > 0 || msg[len] != '\0') {
+    escaped = (char*) malloc(len + hashes + 1);
+    if (!escaped) {
+      return;
+    }
+    for (i = j = 0; i < len; i++) {
+      if (msg[i] == '#') {
+        escaped[j++] = '#';
+      }
+      escaped[j++] = msg[i];
+    }
+    escaped[j] = '\0';
+    msg = escaped;
+  }
+  if (info.lineStart) {
+    FILTERED_LOG(c, status, categoryIndex, "%s:%d: %s", info.filename, info.lineStart, msg)
+  } else {
+    FILTERED_LOG(c, status, categoryIndex, "%s", msg)
+  }
+  free(escaped);
 }
 
 static void omc_assert_fmi_common(threadData_t *threadData, fmiXStatus status, int categoryIndex, FILE_INFO info, const char *msg, va_list args)
@@ -616,11 +655,7 @@ static void omc_assert_fmi_common(threadData_t *threadData, fmiXStatus status, i
   }
   vsnprintf(str, sizeof(str), msg, args);
   if (c) {
-    if (info.lineStart) {
-      FILTERED_LOG(c, status, categoryIndex, "%s:%d: %s", info.filename, info.lineStart, str)
-    } else {
-      FILTERED_LOG(c, status, categoryIndex, "%s", str)
-    }
+    logRuntimeMessage(c, status, categoryIndex, info, str);
   } else {
     printInfo(stderr, info);
     fputs("Modelica Assert: ", stderr);
@@ -639,7 +674,7 @@ static int va_omc_assert_fmi_report(threadData_t *threadData, FILE_INFO info, co
                                 threadData->currentErrorStage == ERROR_INTEGRATOR);
   if (toSolver) {
     omc_assert_fmi_common(threadData, fmiXOK,
-        threadData->currentErrorStage == ERROR_NONLINEARSOLVER ? LOG_NONLINEARSYSTEMS : LOG_ALL,
+        threadData->currentErrorStage == ERROR_NONLINEARSOLVER ? LOG_NONLINEARSYSTEMS : LOG_STREAM_SOLVER,
         info, msg, args);
   } else {
     omc_assert_fmi_common(threadData, fmiXError, LOG_STATUSERROR, info, msg, args);
@@ -691,21 +726,78 @@ static void omc_assert_fmi_warning_withEquationIndexes(FILE_INFO info, const int
 
 static void (*messageFunctionNext)(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes);
 
-/* A held assert() is only printed. Keep the first one until the event update
- * settles it, for the logger if it fails the call. */
+/* The runtime streams that have a log category: the FMI category of their
+ * messages (FMI 3.0, 2.4.5), or an FMU specific one of the same name. A mixed
+ * system has discrete unknowns, which make it nonlinear. */
+static const struct { int stream; int category; } fmuStreamCategories[] = {
+  {OMC_LOG_EVENTS, LOG_EVENTS},
+  {OMC_LOG_LS, LOG_SINGULARLINEARSYSTEMS},
+  {OMC_LOG_NLS, LOG_NONLINEARSYSTEMS},
+  {OMC_LOG_MIXED, LOG_NONLINEARSYSTEMS},
+  {OMC_LOG_DSS, LOG_DYNAMICSTATESELECTION},
+  {OMC_LOG_STDOUT, LOG_STREAM_STDOUT},
+  {OMC_LOG_ASSERT, LOG_STREAM_ASSERT},
+  {OMC_LOG_INIT, LOG_STREAM_INIT},
+  {OMC_LOG_SOLVER, LOG_STREAM_SOLVER}
+};
+#define NUMBER_OF_STREAM_CATEGORIES (sizeof(fmuStreamCategories) / sizeof(fmuStreamCategories[0]))
+
+static int streamCategory(int stream)
+{
+  size_t i;
+  for (i = 0; i < NUMBER_OF_STREAM_CATEGORIES; i++) {
+    if (fmuStreamCategories[i].stream == stream) {
+      return fmuStreamCategories[i].category;
+    }
+  }
+  return -1;
+}
+
+/* The runtime's messages go to the logger, in the category of the stream they
+ * belong to (OMC_LOG_OWNER). Errors go to logStatusError, and the warnings of
+ * LOG_STDOUT and LOG_ASSERT themselves to logStatusWarning. The information of
+ * LOG_LS is not about singular systems. A held assert() is only logged. Keep
+ * the first one until the event update settles it, for the logger if it fails
+ * the call. */
 static void messageFunctionFMI(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes)
 {
   threadData_t *threadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key);
   ModelInstance* c = threadData ? (ModelInstance*) threadData->localRoots[LOCAL_ROOT_FMI_DATA] : NULL;
-  if (c && c->fmuData && c->fmuData->simulationInfo && c->fmuData->simulationInfo->noThrowAsserts &&
-      stream == OMC_LOG_ASSERT && type == OMC_LOG_TYPE_INFO && !c->_held_assert[0]) {
+  int shown = OMC_LOG_SHOWN(stream), owner = OMC_LOG_OWNER(stream);
+  fmiXStatus status = fmiXOK;
+  int category = -1;
+  if (!c) {
+    messageFunctionNext(type, stream, info, indentNext, msg, subline, indexes);
+    return;
+  }
+  if (c->fmuData && c->fmuData->simulationInfo && c->fmuData->simulationInfo->noThrowAsserts &&
+      shown == OMC_LOG_ASSERT && type == OMC_LOG_TYPE_INFO && !c->_held_assert[0]) {
     if (info.lineStart) {
       snprintf(c->_held_assert, sizeof(c->_held_assert), "%s:%d: %s", info.filename, info.lineStart, msg);
     } else {
       snprintf(c->_held_assert, sizeof(c->_held_assert), "%s", msg);
     }
   }
-  messageFunctionNext(type, stream, info, indentNext, msg, subline, indexes);
+  if ((type == OMC_LOG_TYPE_ERROR || type == OMC_LOG_TYPE_DEBUG) && shown == OMC_LOG_ASSERT &&
+      (threadData->currentErrorStage == ERROR_NONLINEARSOLVER || threadData->currentErrorStage == ERROR_INTEGRATOR)) {
+    /* An assert or the reason of throwStreamPrint, which a solver may still
+     * recover from, as in va_omc_assert_fmi_report. */
+    category = threadData->currentErrorStage == ERROR_NONLINEARSOLVER ? LOG_NONLINEARSYSTEMS : LOG_STREAM_SOLVER;
+  } else if (type == OMC_LOG_TYPE_ERROR || (type == OMC_LOG_TYPE_DEBUG && shown == OMC_LOG_ASSERT)) {
+    status = fmiXError;
+    category = LOG_STATUSERROR;
+  } else if (type == OMC_LOG_TYPE_WARNING) {
+    status = fmiXWarning;
+    category = owner == OMC_LOG_STDOUT || owner == OMC_LOG_ASSERT ? -1 : streamCategory(owner);
+    if (category < 0) {
+      category = LOG_STATUSWARNING;
+    }
+  } else if (owner != OMC_LOG_LS) {
+    category = streamCategory(owner);
+  }
+  if (category >= 0 && isCategoryLogged(c, category)) {
+    logRuntimeMessage(c, status, category, info, msg);
+  }
 }
 
 /* Modelica 8.3.8: the simulation stops once the current step or event
@@ -721,7 +813,11 @@ static void omc_terminate_fmi(FILE_INFO info, const char *msg, ...)
   va_end(ap);
   if (c) {
     c->_terminate_simulation_requested = 1;
-    FILTERED_LOG(c, fmiXOK, LOG_EVENTS, "%s:%d: terminate(): %s", info.filename, info.lineStart, str)
+    if (isCategoryLogged(c, LOG_EVENTS)) {
+      char line[2048];
+      snprintf(line, sizeof(line), "terminate(): %s", str);
+      logRuntimeMessage(c, fmiXOK, LOG_EVENTS, info, line);
+    }
   } else {
     printInfo(stderr, info);
     fprintf(stderr, "Modelica Terminate: %s!\n", str);
@@ -735,9 +831,17 @@ static void omc_terminate_fmi(FILE_INFO info, const char *msg, ...)
    finds it through the key. The importer may call from any thread. */
 static inline void setThreadData(ModelInstance* comp)
 {
+  size_t i;
 #if defined(OM_HAVE_PTHREADS)
   pthread_setspecific(mmc_thread_data_key, comp->threadData);
 #endif
+  /* The instances share omc_useStream. LOG_STDOUT and LOG_ASSERT stay on:
+   * messageFunctionFMI filters them, and holdAsserts uses LOG_ASSERT. */
+  for (i = 0; i < NUMBER_OF_STREAM_CATEGORIES; i++) {
+    if (fmuStreamCategories[i].stream != OMC_LOG_STDOUT && fmuStreamCategories[i].stream != OMC_LOG_ASSERT) {
+      omc_useStream[fmuStreamCategories[i].stream] = isCategoryLogged(comp, fmuStreamCategories[i].category);
+    }
+  }
 }
 
 static void holdAsserts(ModelInstance *comp, int hold);
@@ -957,7 +1061,7 @@ fmiXStatus internalEventUpdate(fmiXComponent c, fmiXEventInfo* eventInfo)
       if (comp->fmuData->simulationInfo->nextSampleTimes[i] <= comp->fmuData->localData[0]->timeValue) {
         comp->fmuData->simulationInfo->samples[i] = 1;
         comp->_event_found = 1;
-        infoStreamPrint(LOG_EVENTS, 0, "[%ld] sample(%g, %g)", comp->fmuData->modelData->samplesInfo[i].index, comp->fmuData->modelData->samplesInfo[i].start, comp->fmuData->modelData->samplesInfo[i].interval);
+        infoStreamPrint(OMC_LOG_EVENTS, 0, "[%ld] sample(%g, %g)", comp->fmuData->modelData->samplesInfo[i].index, comp->fmuData->modelData->samplesInfo[i].start, comp->fmuData->modelData->samplesInfo[i].interval);
       }
     }
 
@@ -1047,7 +1151,7 @@ fmiXStatus internalEventUpdate(fmiXComponent c, fmiXEventInfo* eventInfo)
       } else {
         errorStreamPrint(OMC_LOG_ASSERT, 0, "No event found, but assert was triggered. Throwing now!");
         if (comp->_held_assert[0]) {
-          FILTERED_LOG(comp, fmiXError, LOG_STATUSERROR, "%s", comp->_held_assert)
+          logRuntimeMessage(comp, fmiXError, LOG_STATUSERROR, omc_dummyFileInfo, comp->_held_assert);
           comp->_held_assert[0] = '\0';
         }
         omc_throw(threadData);
@@ -1077,7 +1181,7 @@ fmiXStatus internalEventUpdate(fmiXComponent c, fmiXEventInfo* eventInfo)
     return fmiXOK;
   }
 
-  FILTERED_LOG(comp, fmiXError, LOG_FMIX_CALL, "internalEventUpdate: terminated by an assertion.")
+  FILTERED_LOG(comp, fmiXError, LOG_STATUSERROR, "internalEventUpdate: terminated by an assertion.")
   comp->_need_update = 1;
   DAE_MODE_CHANGED(comp);
   return fmiXError;
@@ -1213,7 +1317,7 @@ fmiXStatus updateIfNeeded(ModelInstance *comp, const char *func)
     releaseAsserts(comp);
     if (!success)
     {
-      FILTERED_LOG(comp, fmiXError, LOG_FMIX_CALL, "%s: terminated by an assertion.", func)
+      FILTERED_LOG(comp, fmiXError, LOG_STATUSERROR, "%s: terminated by an assertion.", func)
       // TODO: Check if fmiXError or fmiXDiscard should be returned
       return fmiXError;
     }
@@ -1260,7 +1364,7 @@ static fmiXStatus internalGetDAEResidual(ModelInstance *comp, long i, fmiXReal *
   releaseAsserts(comp);
 
   if (!done) {
-    FILTERED_LOG(comp, fmiXError, LOG_FMIX_CALL, FMIX_STR "GetFloat64: terminated by an assertion.")
+    FILTERED_LOG(comp, fmiXError, LOG_STATUSERROR, FMIX_STR "GetFloat64: terminated by an assertion.")
     return fmiXError;
   }
   FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "GetFloat64: residual %ld = %.16g", i, *value)
@@ -1280,21 +1384,33 @@ fmiXStatus FMIX(SetDebugLogging)(fmiXComponent c, fmiXBoolean loggingOn, size_t 
     return fmiXError;
 
   comp->loggingOn = loggingOn;
+#if OMC_FMI_VERSION == 2
+  /* FMI 2.0: only the named categories, all of them without names. */
   for (j = 0; j < NUMBER_OF_CATEGORIES; j++) {
-    comp->logCategories[j] = fmiXFalse;
+    comp->logCategories[j] = loggingOn && nCategories == 0;
   }
+#else
+  /* FMI 3.0: the named categories change, all of them without names. */
+  if (nCategories == 0) {
+    for (j = 0; j < NUMBER_OF_CATEGORIES; j++) {
+      comp->logCategories[j] = loggingOn;
+    }
+  }
+#endif
   for (i = 0; i < nCategories; i++) {
-    fmiXBoolean categoryFound = fmiXFalse;
     for (j = 0; j < NUMBER_OF_CATEGORIES; j++) {
       if (strcmp(logCategoriesNames[j], categories[i]) == 0) {
         comp->logCategories[j] = loggingOn;
-        categoryFound = fmiXTrue;
-        break;
       }
     }
-    if (!categoryFound) {
-      FMIX_LOG(comp, fmiXWarning, LOG_STATUSERROR,
-          "logging category '%s' is not supported by model", categories[i]);
+  }
+  /* Unknown names, logged if logStatusWarning is on after the update. */
+  for (i = 0; i < nCategories; i++) {
+    for (j = 0; j < NUMBER_OF_CATEGORIES && strcmp(logCategoriesNames[j], categories[i]) != 0; j++);
+    if (j == NUMBER_OF_CATEGORIES && isCategoryLogged(comp, LOG_STATUSWARNING)) {
+      char msg[512];
+      snprintf(msg, sizeof(msg), "logging category '%s' is not supported by model", categories[i]);
+      logRuntimeMessage(comp, fmiXWarning, LOG_STATUSWARNING, omc_dummyFileInfo, msg);
     }
   }
 
@@ -1302,10 +1418,33 @@ fmiXStatus FMIX(SetDebugLogging)(fmiXComponent c, fmiXBoolean loggingOn, size_t 
   return fmiXOK;
 }
 
+/* An FMU has no -lv_system and no -lvMaxWarn: every system logs while it is
+ * solved, and a repeated warning shows as often as in a simulation. */
+static void initSystemLogging(DATA *data)
+{
+  long i;
+  data->simulationInfo->maxWarnDisplays = DEFAULT_FLAG_LV_MAX_WARN;
+#if !defined(OMC_NUM_LINEAR_SYSTEMS) || OMC_NUM_LINEAR_SYSTEMS>0
+  for (i = 0; i < data->modelData->nLinearSystems; i++) {
+    data->simulationInfo->linearSystemData[i].logActive = 1;
+  }
+#endif
+#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
+  for (i = 0; i < data->modelData->nNonLinearSystems; i++) {
+    data->simulationInfo->nonlinearSystemData[i].logActive = 1;
+  }
+#endif
+#if !defined(OMC_NUM_MIXED_SYSTEMS) || OMC_NUM_MIXED_SYSTEMS>0
+  for (i = 0; i < data->modelData->nMixedSystems; i++) {
+    data->simulationInfo->mixedSystemData[i].logActive = 1;
+  }
+#endif
+}
+
 #if OMC_FMI_VERSION == 2
 fmiXComponent FMIX(Instantiate)(fmiXString instanceName, fmi2Type fmuType, fmiXString fmuGUID, fmiXString fmuResourceLocation, const fmi2CallbackFunctions* functions,
     fmiXBoolean visible, fmiXBoolean loggingOn)
-#define INSTANTIATE_ERROR(...) functions->logger(functions->componentEnvironment, instanceName, fmiXError, "error", __VA_ARGS__)
+#define INSTANTIATE_ERROR(...) functions->logger(functions->componentEnvironment, instanceName, fmiXError, "logStatusError", __VA_ARGS__)
 #else
 ModelInstance* FMIX(Instantiate)(fmiXString instanceName, OMC_FmuType fmuType, fmiXString fmuGUID, fmiXString fmuResourceLocation,
     fmi3InstanceEnvironment instanceEnvironment, fmi3LogMessageCallback logMessage, fmiXBoolean visible, fmiXBoolean loggingOn)
@@ -1515,6 +1654,7 @@ ModelInstance* FMIX(Instantiate)(fmiXString instanceName, OMC_FmuType fmuType, f
   /* allocate memory for mixed system solvers */
   initializeMixedSystems(comp->fmuData, comp->threadData);
 #endif
+  initSystemLogging(comp->fmuData);
 #if !defined(OMC_NO_STATESELECTION)
   /* allocate memory for state selection */
   initializeStateSetJacobians(comp->fmuData, comp->threadData);
@@ -1758,7 +1898,7 @@ fmiXStatus FMIX(ExitInitializationMode)(fmiXComponent c)
       comp->state = model_state_error;
       OMC_RESTORE_INTERNAL(simulationJumpBuffer);
       threadData->mmc_jumper = old_jmp;
-      FILTERED_LOG(comp, fmiXError, LOG_FMIX_CALL, FMIX_STR "ExitInitializationMode: failed")
+      FILTERED_LOG(comp, fmiXError, LOG_STATUSERROR, FMIX_STR "ExitInitializationMode: failed")
       return fmiXError;
     }
   }
@@ -1800,7 +1940,7 @@ fmiXStatus FMIX(ExitInitializationMode)(fmiXComponent c)
 
   if (!done)
   {
-    FILTERED_LOG(comp, fmiXError, LOG_FMIX_CALL, FMIX_STR "ExitInitializationMode: terminated by an assertion.")
+    FILTERED_LOG(comp, fmiXError, LOG_STATUSERROR, FMIX_STR "ExitInitializationMode: terminated by an assertion.")
     comp->state = model_state_error;
     return fmiXError;
   }
@@ -1930,6 +2070,7 @@ fmiXStatus FMIX(Reset)(fmiXComponent c)
   /* allocate memory for mixed system solvers */
   initializeMixedSystems(comp->fmuData, comp->threadData);
 #endif
+  initSystemLogging(comp->fmuData);
 #if !defined(OMC_NO_STATESELECTION)
   /* allocate memory for state selection */
   initializeStateSetJacobians(comp->fmuData, comp->threadData);
@@ -2937,7 +3078,7 @@ fmiXStatus internal_CompletedIntegratorStep(fmiXComponent c, const char *func, f
     return fmiXOK;
   }
 
-  FILTERED_LOG(comp, fmiXError, LOG_FMIX_CALL, "%s: terminated by an assertion.", func)
+  FILTERED_LOG(comp, fmiXError, LOG_STATUSERROR, "%s: terminated by an assertion.", func)
   return fmiXError;
 }
 
@@ -3042,7 +3183,7 @@ fmiXStatus internalGetDerivatives(fmiXComponent c, const char *func, fmiXReal de
   if (done) {
     return fmiXOK;
   }
-  FILTERED_LOG(comp, fmiXError, LOG_FMIX_CALL, "%s: terminated by an assertion.", func)
+  FILTERED_LOG(comp, fmiXError, LOG_STATUSERROR, "%s: terminated by an assertion.", func)
   return fmiXError;
 }
 
@@ -3624,7 +3765,7 @@ doStep_cleanup:
 
   if (!done && status == fmiXOK)
   {
-    FILTERED_LOG(comp, fmiXError, LOG_FMIX_CALL, FMIX_STR "DoStep: terminated by an assertion.")
+    FILTERED_LOG(comp, fmiXError, LOG_STATUSERROR, FMIX_STR "DoStep: terminated by an assertion.")
     status = fmiXError;
   }
 

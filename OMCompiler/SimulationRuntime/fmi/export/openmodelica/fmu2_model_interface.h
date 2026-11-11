@@ -56,8 +56,13 @@ extern "C" {
 #define LOG_STATUSPENDING               8
 #define LOG_ALL                         9
 #define LOG_FMI2_CALL                   10
+/* The runtime streams of the same name */
+#define LOG_STREAM_STDOUT               11
+#define LOG_STREAM_ASSERT               12
+#define LOG_STREAM_INIT                 13
+#define LOG_STREAM_SOLVER               14
 
-#define NUMBER_OF_CATEGORIES 11
+#define NUMBER_OF_CATEGORIES 15
 
 typedef enum {
   model_state_start_end               = 1<<0,  /* ME and CS */
@@ -134,7 +139,8 @@ typedef struct {
 fmi2Boolean isCategoryLogged(ModelInstance *comp, int categoryIndex);
 
 static fmi2String logCategoriesNames[] = {"logEvents", "logSingularLinearSystems", "logNonlinearSystems", "logDynamicStateSelection",
-    "logStatusWarning", "logStatusDiscard", "logStatusError", "logStatusFatal", "logStatusPending", "logAll", "logFmi2Call"};
+    "logStatusWarning", "logStatusDiscard", "logStatusError", "logStatusFatal", "logStatusPending", "logAll", "logFmi2Call",
+    "LOG_STDOUT", "LOG_ASSERT", "LOG_INIT", "LOG_SOLVER"};
 
 #ifndef FILTERED_LOG
 /**

@@ -390,7 +390,7 @@ pub(crate) fn rethrow(threadData: *mut threadData_t) -> ! {
     unreachable!("omr_jump returned")
 }
 
-fn current_stage(threadData: *mut threadData_t) -> c_int {
+pub(crate) fn current_stage(threadData: *mut threadData_t) -> c_int {
     if threadData.is_null() {
         error_stage::SIMULATION
     } else {
@@ -622,7 +622,10 @@ unsafe extern "C" fn held_assert_message(
     indexes: *const c_int,
 ) {
     use openmodelica_sim_meta::driver::{self, AssertHold};
-    if stream == omclog::ASSERT as c_int && ty == omclog::INFO as c_int && driver::assert_hold() == AssertHold::Record {
+    if omclog::shown(stream as omclog::Stream) == omclog::ASSERT
+        && ty == omclog::INFO as c_int
+        && driver::assert_hold() == AssertHold::Record
+    {
         driver::note_held_assert(driver::ext_assert_message(
             &cstr(info.filename),
             info.lineStart,

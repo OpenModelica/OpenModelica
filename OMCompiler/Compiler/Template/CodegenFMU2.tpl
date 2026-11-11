@@ -115,6 +115,7 @@ case SIMCODE(__) then
       <Category name="logStatusPending" description="logStatusPending" />
       <Category name="logAll" description="logAll" />
       <Category name="logFmi2Call" description="logFmi2Call" />
+      <%LogStreamCategories()%>
     </LogCategories>
     >> else
     <<
@@ -130,6 +131,7 @@ case SIMCODE(__) then
       <Category name="logStatusPending" />
       <Category name="logAll" />
       <Category name="logFmi2Call" />
+      <%LogStreamCategories()%>
     </LogCategories>
     >> %>
     <%DefaultExperiment(simulationSettingsOpt, "2.0")%>
