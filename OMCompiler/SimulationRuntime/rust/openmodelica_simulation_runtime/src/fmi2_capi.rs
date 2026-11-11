@@ -563,17 +563,16 @@ pub unsafe extern "C" fn omc_fmi2SetFMUstate(c: *mut c_void, state: *mut c_void)
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi2FreeFMUstate(c: *mut c_void, state: *mut *mut c_void) -> c_int {
+    // A null pointer is ignored (FMI 2.0, 2.1.8).
+    if state.is_null() || unsafe { *state }.is_null() {
+        return OK;
+    }
     if in_state(c, "fmi2FreeFMUstate", st::ME_ANY, st::CS_ANY).is_none() {
         return ERROR;
     }
-    if state.is_null() {
-        return ERROR;
-    }
     unsafe {
-        if !(*state).is_null() {
-            drop(Box::from_raw(*state as *mut Vec<u8>));
-            *state = core::ptr::null_mut();
-        }
+        drop(Box::from_raw(*state as *mut Vec<u8>));
+        *state = core::ptr::null_mut();
     }
     OK
 }

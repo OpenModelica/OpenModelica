@@ -38,6 +38,7 @@ fmi_attributes_24.mos \
 fmi_attributes_25.mos \
 fmi2_array_attributes_nb.mos \
 fmi2_array_attributes.mos \
+fmi2_fmustate_free_null_c_rust.mos \
 Issue13905.mos \
 Issue13905_pool_expand.mos \
 Issue16354.mos \
