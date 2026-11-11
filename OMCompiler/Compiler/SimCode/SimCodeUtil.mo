@@ -14413,41 +14413,6 @@ algorithm
   end for;
 end getCmakeLinkLibrariesCode;
 
-public function cvodeFmiFlagIsSet
-  "Checks if s:cvode is part of FMI_FLAGS.
-   If a *.json exists we don't check and assume cvode will be needed at some point."
-  input Option<SimCode.FmiSimulationFlags> fmiSimulationFlags;
-  output Boolean needsCvode = false;
-algorithm
-  () := match fmiSimulationFlags
-    local
-      list<tuple<String,String>> nameValueTuples;
-      String setting, value;
-      String configFile;
-      String fileContent;
-    case SOME(SimCode.FMI_SIMULATION_FLAGS(nameValueTuples))
-      algorithm
-        if not listEmpty(nameValueTuples) then
-          for tpl in nameValueTuples loop
-            (setting, value) := tpl;
-            if stringEqual(setting, "s") and stringEqual(value, "cvode") then
-              needsCvode := true;
-              break;
-            end if;
-          end for;
-        end if;
-      then();
-    case SOME(SimCode.FMI_SIMULATION_FLAGS_FILE(configFile))
-      algorithm
-        fileContent := System.readFile(configFile);
-        if not -1 == System.stringFind(fileContent, "\"cvode\"") then
-          needsCvode := true;
-        end if;
-      then();
-    else then();
-  end match;
-end cvodeFmiFlagIsSet;
-
 public function stripIncludeFlag
   "Directory of a makefileParams include entry, which is of the form \"-I<directory>\",
    quotes included. Strips exactly the first 3 characters and the trailing quote, e.g.

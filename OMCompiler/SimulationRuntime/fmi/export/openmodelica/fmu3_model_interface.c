@@ -41,7 +41,7 @@
 #include "../simulation/solver/initialization/initialization.h"
 #include "../simulation/solver/stateset.h"
 #include "../simulation/solver/model_help.h"
-#ifdef OMC_FMI_HAVE_CVODE
+#ifdef OMC_FMI_CO_SIMULATION
 #include "../simulation/solver/cvode_solver.h"
 #endif
 #ifdef OMC_FMI_DAE_MODE
@@ -1273,6 +1273,11 @@ fmi3Status fmi3DoStep(fmi3Instance instance, fmi3Float64 currentCommunicationPoi
     fmi3Boolean* eventHandlingNeeded, fmi3Boolean* terminateSimulation, fmi3Boolean* earlyReturn,
     fmi3Float64* lastSuccessfulTime)
 {
+#ifndef OMC_FMI_CO_SIMULATION
+  ModelInstance* comp = fmu3InnerComp(instance);
+  if (!comp) return fmi3Error;
+  return unsupportedFunction(comp, "fmi3DoStep");
+#else
   ModelInstance3 *inst = (ModelInstance3 *)instance;
   ModelInstance* c = fmu3InnerComp(instance);
   fmi3Boolean eventEncountered = fmi3False;
@@ -1291,6 +1296,7 @@ fmi3Status fmi3DoStep(fmi3Instance instance, fmi3Float64 currentCommunicationPoi
   if (earlyReturn)          *earlyReturn = early2 ? fmi3True : fmi3False;
   if (lastSuccessfulTime)   *lastSuccessfulTime = (fmi3Float64)lastTime;
   return (fmi3Status)status;
+#endif
 }
 
 /* ---------------------------------------------------------------------------

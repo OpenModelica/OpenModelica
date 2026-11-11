@@ -312,12 +312,14 @@ fn calloc<T>(n: usize) -> *mut T {
 }
 
 /// C's `FMI2CS_initializeSolverData`: `s` in `resources/<model>_flags.json` picks
-/// the Co-Simulation solver, Euler without one. Nothing else in it is read.
+/// the Co-Simulation solver, CVODE without one if this build has it, else Euler.
+/// Nothing else in it is read.
 fn cs_method(data: *mut DATA) -> String {
+    let default = if openmodelica_sim_meta::CVODE { "cvode" } else { "euler" };
     let md = unsafe { &*(*data).modelData };
     let path = format!("{}/{}_flags.json", cstr(md.resourcesDir), cstr(md.modelFilePrefix));
     let Ok(text) = std::fs::read_to_string(path) else {
-        return "euler".into();
+        return default.into();
     };
     let value = text.find("\"s\"").and_then(|k| {
         let rest = &text[k + 3..];
@@ -325,7 +327,7 @@ fn cs_method(data: *mut DATA) -> String {
         let rest = &rest[rest.find('"')? + 1..];
         Some(rest[..rest.find('"')?].to_string())
     });
-    value.unwrap_or_else(|| "euler".into())
+    value.unwrap_or_else(|| default.into())
 }
 
 type Built = (Instance<CEngine>, *mut DATA, *mut threadData_t);
