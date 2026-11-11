@@ -37,6 +37,7 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
+#include "Layout/AutoLayoutDialog.h"
 #include "MainWindow.h"
 #include "Plotting/PlotWindowContainer.h"
 #include "Modeling/ModelWidgetContainer.h"
@@ -3326,6 +3327,48 @@ void MainWindow::checkModel()
   }
 }
 
+//! Gives the components of the current class a placement and its connections a line (mocoal).
+void MainWindow::autoLayout()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget && pModelWidget->getLibraryTreeItem() && pModelWidget->getLibraryTreeItem()->isModelica()) {
+    AutoLayoutDialog *pAutoLayoutDialog = new AutoLayoutDialog(pModelWidget->getLibraryTreeItem(), this);
+    pAutoLayoutDialog->exec();
+  } else {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                .arg(tr("laying out")), Helper::scriptingKind, Helper::notificationLevel));
+  }
+}
+
+//! Puts the current class back as it was before its last auto layout.
+void MainWindow::undoAutoLayout()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (!pModelWidget || !pModelWidget->getLibraryTreeItem()) {
+    return;
+  }
+  LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
+  // what the user typed in the text view counts as a change since the layout
+  if (!pModelWidget->validateText(&pLibraryTreeItem)) {
+    return;
+  }
+  bool force = false;
+  if (AutoLayoutDialog::changedSinceLayout(pLibraryTreeItem)) {
+    if (QMessageBox::question(this, QString("%1 - %2").arg(Helper::applicationName, Helper::question),
+                              tr("%1 was changed after the auto layout. Undoing the layout discards those changes too. Continue?")
+                              .arg(pLibraryTreeItem->getNameStructure()), QMessageBox::Yes | QMessageBox::No) != QMessageBox::Yes) {
+      return;
+    }
+    force = true;
+  }
+  QString message;
+  if (AutoLayoutDialog::undo(pLibraryTreeItem, force, &message)) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, message, Helper::scriptingKind, Helper::notificationLevel));
+  } else {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), message, QMessageBox::Ok);
+  }
+}
+
 void MainWindow::checkAllModels()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
@@ -4986,6 +5029,15 @@ void MainWindow::createActions()
   mpCheckModelAction->setStatusTip(Helper::checkModelTip);
   mpCheckModelAction->setEnabled(false);
   connect(mpCheckModelAction, SIGNAL(triggered()), SLOT(checkModel()));
+  // auto layout action
+  mpAutoLayoutAction = new QAction(tr("Auto Layout..."), this);
+  mpAutoLayoutAction->setStatusTip(tr("Gives the components of the class a placement and its connections a line (mocoal)"));
+  mpAutoLayoutAction->setEnabled(false);
+  connect(mpAutoLayoutAction, SIGNAL(triggered()), SLOT(autoLayout()));
+  mpUndoAutoLayoutAction = new QAction(tr("Undo Auto Layout"), this);
+  mpUndoAutoLayoutAction->setStatusTip(tr("Puts the class back as it was before the last auto layout"));
+  mpUndoAutoLayoutAction->setEnabled(false);
+  connect(mpUndoAutoLayoutAction, SIGNAL(triggered()), SLOT(undoAutoLayout()));
   // check all models action
   mpCheckAllModelsAction = new QAction(QIcon(":/Resources/icons/check-all.svg"), Helper::checkAllModels, this);
   mpCheckAllModelsAction->setStatusTip(Helper::checkAllModelsTip);
@@ -5322,6 +5374,12 @@ void MainWindow::createMenus()
   pExportMenu->addAction(mpExportFigaroAction);
   pExportMenu->addAction(mpExportToOMNotebookAction);
   mpFileMenu->addMenu(pExportMenu);
+  // Format menu
+  QMenu *pFormatMenu = new QMenu(menuBar());
+  pFormatMenu->setTitle(tr("Format"));
+  pFormatMenu->addAction(mpAutoLayoutAction);
+  pFormatMenu->addAction(mpUndoAutoLayoutAction);
+  mpFileMenu->addMenu(pFormatMenu);
   mpFileMenu->addSeparator();
   // System libraries menu
   mpLibrariesMenu = new QMenu(menuBar());

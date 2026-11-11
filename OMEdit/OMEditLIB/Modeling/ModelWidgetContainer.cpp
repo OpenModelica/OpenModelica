@@ -37,6 +37,7 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
+#include "Layout/AutoLayoutDialog.h"
 #include "Modeling/ModelWidgetContainer.h"
 #include "MainWindow.h"
 #include "LibraryTreeWidget.h"
@@ -8466,6 +8467,8 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   }
   MainWindow::instance()->getInstantiateModelAction()->setEnabled(enabled && modelica && accessAnnotation);
   MainWindow::instance()->getCheckModelAction()->setEnabled(enabled && modelica);
+  MainWindow::instance()->getAutoLayoutAction()->setEnabled(enabled && modelica && !pLibraryTreeItem->isSystemLibrary());
+  MainWindow::instance()->getUndoAutoLayoutAction()->setEnabled(enabled && modelica && AutoLayoutDialog::canUndo(pLibraryTreeItem));
   MainWindow::instance()->getCheckAllModelsAction()->setEnabled(enabled && modelica);
   MainWindow::instance()->getExportToClipboardAction()->setEnabled(enabled && (modelica || oms));
   MainWindow::instance()->getExportAsImageAction()->setEnabled(enabled && (modelica || oms));

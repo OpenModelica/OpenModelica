@@ -210,6 +210,8 @@ public:
 #endif
   QAction* getSimulateModelInteractiveAction() {return mpSimulateModelInteractiveAction;}
   QAction* getCheckModelAction() {return mpCheckModelAction;}
+  QAction* getAutoLayoutAction() {return mpAutoLayoutAction;}
+  QAction* getUndoAutoLayoutAction() {return mpUndoAutoLayoutAction;}
   QAction* getCheckAllModelsAction() {return mpCheckAllModelsAction;}
   QAction* getInstantiateModelAction() {return mpInstantiateModelAction;}
   QAction* getCalculateDataReconciliationAction() {return mpCalculateDataReconciliationAction;}
@@ -427,6 +429,8 @@ private:
   QAction *mpToggleTabOrSubWindowView;
   // Simulation Menu
   QAction *mpCheckModelAction;
+  QAction *mpAutoLayoutAction;
+  QAction *mpUndoAutoLayoutAction;
   QAction *mpCheckAllModelsAction;
   QAction *mpInstantiateModelAction;
   QAction *mpSimulationSetupAction;
@@ -591,6 +595,8 @@ public slots:
   void equateAndTileSubWindowsMatrix();
   void toggleTabOrSubWindowView();
   void checkModel();
+  void autoLayout();
+  void undoAutoLayout();
   void checkAllModels();
   void instantiateModel();
   void openSimulationDialog();

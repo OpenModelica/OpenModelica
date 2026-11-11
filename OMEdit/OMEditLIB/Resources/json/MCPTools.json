@@ -73,6 +73,41 @@
         }
     },
     {
+        "name": "autoLayout",
+        "description": "Gives the components of a class a placement and its connections a line (automatic diagram layout, mocoal). The layout of the class and of the classes in it is replaced, or with keep=true only what is missing is added. Needs the program mocoal (environment variable MOCOAL, beside OMEdit, OPENMODELICAHOME/bin or the PATH; OpenModelica installs it in bin); it runs as a child process. The class is changed in OMEdit and marked as not saved.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {"type": "string", "description": "The fully-qualified name of the class."},
+                "layout": {"type": "string", "description": "Placement: \"layered\" (signal flow, default), \"spring\" or \"grid\"."},
+                "route": {"type": "string", "description": "Connection lines: \"orthogonal\" (default), \"straight\", \"bezier\" or \"none\"."},
+                "direction": {"type": "string", "description": "Direction of the signal flow: \"right\" (default) or \"down\"."},
+                "dx": {"type": "number", "description": "Horizontal space between components. Default 30."},
+                "dy": {"type": "number", "description": "Vertical space between components. Default 20."},
+                "scale": {"type": "number", "description": "Factor on the size of components without a size. Default 1."},
+                "keep": {"type": "boolean", "description": "Keep existing placements and lines, add what is missing. Default false."},
+                "rotate": {"type": "boolean", "description": "Turn two-pin components along the connections. Default true."},
+                "graphics": {"type": "string", "description": "Shapes of the diagram (frames, texts): \"move\" with the components (default), \"keep\" or \"drop\"."},
+                "stackMB": {"type": "number", "description": "Stack of the layout in MB, 1 to 65536. A level of nesting in the model takes about 3 KB. Default 256."}
+            },
+            "required": ["className"]
+        },
+        "annotations": {"readOnlyHint": false, "destructiveHint": false}
+    },
+    {
+        "name": "undoAutoLayout",
+        "description": "Puts the class back as it was before its last autoLayout (one level; also File > Format > Undo Auto Layout in OMEdit). Refused when the class was changed after the layout, unless force is true. A class that was saved before the layout is saved again afterwards.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {"type": "string", "description": "The fully-qualified name of the class."},
+                "force": {"type": "boolean", "description": "Discard changes made after the layout too. Default false."}
+            },
+            "required": ["className"]
+        },
+        "annotations": {"readOnlyHint": false, "destructiveHint": false}
+    },
+    {
         "name": "createClass",
         "description": "Creates a new Modelica class, optionally with an extends clause and/or inside a parent package.",
         "inputSchema": {
