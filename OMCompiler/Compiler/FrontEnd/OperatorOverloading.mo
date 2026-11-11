@@ -2014,9 +2014,9 @@ algorithm
         verifyOp(op);
         opString := ExpressionDump.relopSymbol(op);
         stmtString := ExpressionBasics.printExpStr(e1) + opString + ExpressionBasics.printExpStr(e2);
-        Error.addSourceMessage(Error.WARNING_RELATION_ON_REAL, {stmtString,opString}, inInfo);
+        Error.addSourceMessage(Error.REAL_EQUALITY_RELATION_ERROR, {stmtString,opString}, inInfo);
       then
-        ();
+        fail();
     else ();
   end matchcontinue;
 end warnUnsafeRelations;

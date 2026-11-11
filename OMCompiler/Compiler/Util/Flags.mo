@@ -1324,7 +1324,8 @@ constant ConfigFlag ALLOW_NON_STANDARD_MODELICA = CONFIG_FLAG(141, "allowNonStan
     ("unbalancedModel", "Allow models to be locally unbalanced and to have unbalanced connectors"),
     ("implicitParameterStartAttribute", "Allow fixed parameters with no binding or start attribute"),
     ("initialSimplified", "Allow use of experimental operator `initialSimplified()`"),
-    ("illegalConditionalContext", "Allow use of components with false conditions in illegal contexts")
+    ("illegalConditionalContext", "Allow use of components with false conditions in illegal contexts"),
+    ("realEquality", "Allow == and <> with Real operands")
     })),
   "Flags to allow non-standard Modelica.");
 constant ConfigFlag EXPORT_CLOCKS_IN_MODELDESCRIPTION = CONFIG_FLAG(142, "exportClocksInModelDescription",
