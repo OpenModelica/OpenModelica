@@ -1133,6 +1133,34 @@ size_t readStringArray(modelica_string *destination, const char *bytes, int elem
     return readBytes;
 }
 
+/* Skip `elements` NUL-terminated strings at bytes[*pos]. False if one does not end before size. */
+static int skipStringArray(const char *bytes, size_t size, size_t *pos, long elements) {
+    for (long j = 0; j < elements; j++) {
+        const char *end = (const char *) memchr(bytes + *pos, '\0', size - *pos);
+        if (!end) return 0;
+        *pos = (size_t) (end - bytes) + 1;
+    }
+    return 1;
+}
+
+/* True if a serialized state with the layout DeSerializeFMUstate reads is exactly size bytes. */
+static int serializedStateFits(const MODEL_DATA *md, const char *bytes, size_t size) {
+    size_t pos = 0, nHistory;
+    size_t vars = sizeof(modelica_real) * (1 + md->nVariablesReal) + sizeof(modelica_integer) * md->nVariablesInteger + sizeof(modelica_boolean) * md->nVariablesBoolean;
+    size_t params = sizeof(modelica_real) * md->nParametersReal + sizeof(modelica_integer) * md->nParametersInteger + sizeof(modelica_boolean) * md->nParametersBoolean;
+    for (int i = 0; i < SIZERINGBUFFER; i++) {
+        if (size - pos < vars) return 0;
+        pos += vars;
+        if (!skipStringArray(bytes, size, &pos, md->nVariablesString)) return 0;
+    }
+    if (size - pos < params) return 0;
+    pos += params;
+    if (!skipStringArray(bytes, size, &pos, md->nParametersString) || size - pos < sizeof(size_t)) return 0;
+    memcpy(&nHistory, bytes + pos, sizeof(size_t));
+    pos += sizeof(size_t);
+    return nHistory <= (size - pos) / sizeof(double) && size - pos == nHistory * sizeof(double);
+}
+
 /**
  * @brief Open C's `noThrowAsserts` for one evaluation.
  *
@@ -2241,6 +2269,8 @@ fmiXStatus FMIX(GetFMUstate)(fmiXComponent c, fmiXFMUstate* FMUstate)
 
   if (invalidState(comp, FMIX_STR "GetFMUstate", meStates, csStates))
     return fmiXError;
+  if (nullPointer(comp, FMIX_STR "GetFMUstate", "FMUstate", FMUstate))
+    return fmiXError;
   if (comp->_tunable_dirty) {
     comp->_need_update = 1;
     DAE_MODE_CHANGED(comp);
@@ -2337,6 +2367,8 @@ fmiXStatus FMIX(SetFMUstate)(fmiXComponent c, fmiXFMUstate FMUstate)
   int csStates = FMU_STATE_CS_STATES;
 
   if (invalidState(comp, FMIX_STR "SetFMUstate", meStates, csStates))
+    return fmiXError;
+  if (nullPointer(comp, FMIX_STR "SetFMUstate", "FMUstate", FMUstate))
     return fmiXError;
 
   INTERNAL_FMU_STATE * internal_state = (INTERNAL_FMU_STATE *) FMUstate;
@@ -2453,6 +2485,9 @@ fmiXStatus FMIX(FreeFMUstate)(fmiXComponent c, fmiXFMUstate* FMUstate)
   int meStates = FMU_STATE_ME_STATES;
   int csStates = FMU_STATE_CS_STATES;
 
+  /* A null pointer is ignored (FMI 2.0, 2.1.8). */
+  if (FMUstate == NULL || *FMUstate == NULL)
+    return fmiXOK;
   if (invalidState(comp, FMIX_STR "FreeFMUstate", meStates, csStates))
     return fmiXError;
 
@@ -2488,6 +2523,9 @@ fmiXStatus FMIX(SerializedFMUstateSize)(fmiXComponent c, fmiXFMUstate FMUstate, 
   /* TODO: make serialization format architecture- & endianness-independent */
 
   ModelInstance *comp = (ModelInstance *) c;
+  if (!comp || nullPointer(comp, FMIX_STR "SerializedFMUstateSize", "FMUstate", FMUstate) ||
+      nullPointer(comp, FMIX_STR "SerializedFMUstateSize", "size", size))
+    return fmiXError;
   DATA *fmudata = (DATA *) comp->fmuData;
   INTERNAL_FMU_STATE *internal_state = (INTERNAL_FMU_STATE *) FMUstate;
 
@@ -2531,6 +2569,15 @@ fmiXStatus FMIX(SerializeFMUstate)(fmiXComponent c, fmiXFMUstate FMUstate, fmiXB
   /* TODO: make serialization format architecture- & endianness-independent */
 
   ModelInstance *comp = (ModelInstance *) c;
+  size_t needed = 0;
+  if (FMIX(SerializedFMUstateSize)(c, FMUstate, &needed) != fmiXOK ||
+      nullPointer(comp, FMIX_STR "SerializeFMUstate", "serializedState", serializedState))
+    return fmiXError;
+  if (size < needed) {
+    comp->state = model_state_error;
+    FILTERED_LOG(comp, fmiXError, LOG_STATUSERROR, FMIX_STR "SerializeFMUstate: Invalid argument size = %zu. Expected %zu.", size, needed)
+    return fmiXError;
+  }
   DATA *fmudata = (DATA *) comp->fmuData;
   INTERNAL_FMU_STATE *internal_state = (INTERNAL_FMU_STATE *) FMUstate;
 
@@ -2583,6 +2630,14 @@ fmiXStatus FMIX(DeSerializeFMUstate)(fmiXComponent c, const fmiXByte serializedS
   /* TODO: make serialization format architecture- & endianness-independent */
 
   ModelInstance *comp = (ModelInstance *) c;
+  if (!comp || nullPointer(comp, FMIX_STR "DeSerializeFMUstate", "serializedState", serializedState) ||
+      nullPointer(comp, FMIX_STR "DeSerializeFMUstate", "FMUstate", FMUstate))
+    return fmiXError;
+  if (!serializedStateFits(comp->fmuData->modelData, (const char *) serializedState, size)) {
+    comp->state = model_state_error;
+    FILTERED_LOG(comp, fmiXError, LOG_STATUSERROR, FMIX_STR "DeSerializeFMUstate: The serialized state does not match size = %zu or this model.", size)
+    return fmiXError;
+  }
   INTERNAL_FMU_STATE *internal_state =
             (INTERNAL_FMU_STATE *) calloc(1, sizeof(INTERNAL_FMU_STATE));
   internal_state->simulationData = allocRingBuffer(SIZERINGBUFFER, sizeof(SIMULATION_DATA));

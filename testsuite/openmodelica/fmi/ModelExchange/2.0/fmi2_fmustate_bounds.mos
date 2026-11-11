@@ -1,0 +1,49 @@
+// name:     fmi2_fmustate_bounds
+// keywords: FMI 2.0 export FMU state serialization NULL
+// status:   correct
+// teardown_command: rm -rf fmi2_fmustate_bounds*.fmu fmi2_fmustate_bounds*.fmutmp/ fmi2_fmustate_bounds*.log fmi2_fmustate_bounds*_out.txt
+//
+// fmi2SerializeFMUstate must not write more than size bytes, and
+// fmi2DeSerializeFMUstate must refuse a byte vector that does not fit size.
+// The FMU state calls must return fmi2Error for a NULL argument, and
+// fmi2FreeFMUstate must ignore a NULL pointer.
+loadString("
+model fmi2_fmustate_bounds
+  parameter String s = \"abc\";
+  parameter Real k = 2;
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = -k*x;
+end fmi2_fmustate_bounds;
+"); getErrorString();
+buildModelFMU(fmi2_fmustate_bounds, version = "2.0", fmuType = "me"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi2_fmustate_bounds.py fmi2_fmustate_bounds.fmu fmi2_fmustate_bounds_out.txt > fmi2_fmustate_bounds.log 2>&1"); getErrorString();
+readFile("fmi2_fmustate_bounds_out.txt"); getErrorString();
+// Result:
+// true
+// ""
+// "fmi2_fmustate_bounds.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "serialize, size half of the state: fmi2Error
+// serialize, size 0: fmi2Error
+// deserialize, exact size, then set: fmi2OK, fmi2SetFMUstate: fmi2OK
+// deserialize, one byte short: fmi2Error
+// deserialize, one byte too many: fmi2Error
+// deserialize, all bytes 0xFF: fmi2Error
+// fmi2FreeFMUstate(c, NULL): fmi2OK
+// fmi2FreeFMUstate(c, &NULL): fmi2OK
+// fmi2GetFMUstate(c, NULL): fmi2Error
+// fmi2SetFMUstate(c, NULL): fmi2Error
+// fmi2SerializedFMUstateSize(c, NULL, &size): fmi2Error
+// fmi2SerializedFMUstateSize(c, s, NULL): fmi2Error
+// fmi2SerializeFMUstate(c, NULL, buffer, size): fmi2Error
+// fmi2SerializeFMUstate(c, s, NULL, size): fmi2Error
+// fmi2DeSerializeFMUstate(c, NULL, size, &s): fmi2Error
+// fmi2DeSerializeFMUstate(c, buffer, size, NULL): fmi2Error
+// "
+// ""
+// endResult

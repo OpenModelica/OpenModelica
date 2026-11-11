@@ -1,0 +1,37 @@
+// name:     fmi3_fmustate_bounds
+// keywords: FMI 3.0 export FMU state serialization
+// status:   correct
+// teardown_command: rm -rf fmi3_fmustate_bounds.fmu fmi3_fmustate_bounds.fmutmp/ fmi3_fmustate_bounds.log fmi3_fmustate_bounds_out.txt
+//
+// fmi3SerializeFMUState must not write more than size bytes, and
+// fmi3DeserializeFMUState must refuse a byte vector that does not fit size.
+loadString("
+model fmi3_fmustate_bounds
+  parameter String s = \"abc\";
+  parameter Real k = 2;
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = -k*x;
+end fmi3_fmustate_bounds;
+"); getErrorString();
+buildModelFMU(fmi3_fmustate_bounds, version = "3.0", fmuType = "me"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi3_fmustate_bounds.py fmi3_fmustate_bounds.fmu fmi3_fmustate_bounds_out.txt > fmi3_fmustate_bounds.log 2>&1"); getErrorString();
+readFile("fmi3_fmustate_bounds_out.txt"); getErrorString();
+// Result:
+// true
+// ""
+// "fmi3_fmustate_bounds.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "serialize, size half of the state: fmi3Error
+// serialize, size 0: fmi3Error
+// deserialize, exact size, then set: fmi3OK, fmi3SetFMUState: fmi3OK
+// deserialize, one byte short: fmi3Error
+// deserialize, one byte too many: fmi3Error
+// deserialize, all bytes 0xFF: fmi3Error
+// "
+// ""
+// endResult
