@@ -86,6 +86,7 @@
 #define SET_REAL_CS_STATES (model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|CS_EVENT_MODE_STATE)
 #define GET_OUTPUT_DERIVATIVES_CS_STATES (model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error)
 
+#ifdef OMC_FMI_CO_SIMULATION
 /**
   * @brief Skips to a given character or end of string.
  *
@@ -131,6 +132,7 @@ static inline const char* setSolverMethod(SOLVER_INFO *solverInfo, const char *s
   /* Variables */
   int i;
   char* value;
+  solverInfo->solverMethod = S_UNKNOWN;
   for(i=1; i<S_MAX; i++)
   {
     value = quote(SOLVER_METHOD_NAME[i]);
@@ -196,7 +198,7 @@ void parseFlags(SOLVER_INFO *solverInfo, const char *str)
  * @brief Initialize solver data.
  *
  * Reads optional FMU simulation flags from <fmiPrefix>.fmu/resources/<fmiPrefix>_flags.json.
- * Initialize solver euler or CVODE.
+ * Initialize solver euler or CVODE (the default).
  *
  * @param comp          FMU component.
  * @return int          Return 0 on success and -1 when an error occurred.
@@ -220,7 +222,7 @@ int fmuInitializeSolverData(ModelInstance* comp)
   solverInfo->currentTime = 0;
   solverInfo->currentStepSize = 0;
   solverInfo->laststep = 0;
-  solverInfo->solverMethod = 0;
+  solverInfo->solverMethod = S_CVODE;
   solverInfo->solverRootFinding = 0;
   solverInfo->solverNoEquidistantGrid = FALSE;
   solverInfo->lastdesiredStep = solverInfo->currentTime + solverInfo->currentStepSize;
@@ -248,7 +250,6 @@ int fmuInitializeSolverData(ModelInstance* comp)
   else
   {
     FILTERED_LOG(comp, fmiXOK, LOG_ALL, FMIX_STR "Instantiate: Using default simulation settings.")
-    solverInfo->solverMethod = S_EULER;
   }
 
 #ifdef OMC_FMI_HAVE_IDA
@@ -272,9 +273,8 @@ int fmuInitializeSolverData(ModelInstance* comp)
       /* Needs no initialization */
       retValue = 0;
       break;
-      case S_CVODE:
-#ifdef OMC_FMI_HAVE_CVODE
-      omc_useStream[OMC_LOG_SOLVER] = 1;
+    case S_CVODE:
+    {
       CVODE_SOLVER* cvodeData = NULL;
       FILTERED_LOG(comp, fmiXOK, LOG_ALL, "Initializing CVODE ODE Solver")
       cvodeData = (CVODE_SOLVER*) calloc(1, sizeof(CVODE_SOLVER));
@@ -288,12 +288,7 @@ int fmuInitializeSolverData(ModelInstance* comp)
         retValue = cvode_solver_initial(data, threadData, solverInfo, cvodeData);
       }
       solverInfo->solverData = cvodeData;
-      omc_useStream[OMC_LOG_SOLVER] = 0;
-#else
-      solverInfo->solverData = NULL;
-      FILTERED_LOG(comp, fmiXFatal, LOG_STATUSFATAL, FMIX_STR "Instantiate: FMU not compiled with SUNDIALS but solver CVODE selected.")
-      retValue = -1;
-#endif /* OMC_FMI_HAVE_CVODE */
+    }
       break;
     case S_IDA:
 #ifdef OMC_FMI_HAVE_IDA
@@ -359,14 +354,8 @@ int fmuDeInitializeSolverData(ModelInstance* comp)
       retValue = 0;
       break;
     case S_CVODE:
-#ifdef OMC_FMI_HAVE_CVODE
       retValue = cvode_solver_deinitial(solverInfo->solverData);
       break;
-#else
-      FILTERED_LOG(comp, fmiXFatal, LOG_STATUSFATAL, FMIX_STR "Instantiate: FMU not compiled with SUNDIALS but solver CVODE selected.")
-      retValue = -1;
-      break;
-#endif /* OMC_FMI_HAVE_CVODE */
     case S_IDA:
 #ifdef OMC_FMI_HAVE_IDA
       ida_solver_deinitial(solverInfo->solverData);
@@ -387,6 +376,20 @@ int fmuDeInitializeSolverData(ModelInstance* comp)
 
   return retValue;
 }
+
+/* As updateSolverNominals: the solver gets the nominals and the tolerance. */
+static void fmuSetSolverNominals(ModelInstance* comp)
+{
+  if (comp->solverInfo && comp->solverInfo->solverMethod == S_CVODE) {
+    cvode_solver_setNominals(comp->fmuData, comp->threadData, comp->solverInfo->solverData);
+  }
+#ifdef OMC_FMI_HAVE_IDA
+  if (comp->solverInfo && comp->solverInfo->solverMethod == S_IDA) {
+    ida_solver_setNominals(comp->fmuData, comp->threadData, comp->solverInfo->solverData);
+  }
+#endif
+}
+#endif /* OMC_FMI_CO_SIMULATION */
 
 /* An FMI 3.0 Model Exchange FMU of a --daeMode model serves fmi-ls-dae. */
 #if OMC_FMI_VERSION == 3 && defined(OMC_FMI_DAE_MODE)
@@ -1336,6 +1339,12 @@ ModelInstance* FMIX(Instantiate)(fmiXString instanceName, OMC_FmuType fmuType, f
     INSTANTIATE_ERROR(FMIX_STR "Instantiate: Wrong GUID %s. Expected %s.", fmuGUID, MODEL_GUID);
     return NULL;
   }
+#ifndef OMC_FMI_CO_SIMULATION
+  if (fmuType == FMIX_CS) {
+    INSTANTIATE_ERROR(FMIX_STR "Instantiate: The FMU has no Co-Simulation interface.");
+    return NULL;
+  }
+#endif
   comp = (ModelInstance *)calloc(1, sizeof(ModelInstance));
   if (!comp) {
     INSTANTIATE_ERROR(FMIX_STR "Instantiate: Out of memory.");
@@ -1572,12 +1581,11 @@ ModelInstance* FMIX(Instantiate)(fmiXString instanceName, OMC_FmuType fmuType, f
   comp->_need_update = 1;
   DAE_MODE_CHANGED(comp);
 
-  /* Initialize solverInfo */
+#ifdef OMC_FMI_CO_SIMULATION
   if (isCoSimulation(comp)) {
     fmuInitializeSolverData(comp);
-  } else {
-    comp->solverInfo = NULL;
   }
+#endif
 
   FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "Instantiate: GUID=%s", fmuGUID)
   return comp;
@@ -1594,11 +1602,13 @@ void FMIX(FreeInstance)(fmiXComponent c)
     return;
   FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "FreeInstance...")
 
+#ifdef OMC_FMI_CO_SIMULATION
   /* Free CS simulator (CVODE & co) first, while the model data it references
    * (e.g. the states array wrapped by the solver's N_Vector y) is still alive. */
   if (comp->solverInfo) {
     fmuDeInitializeSolverData(comp);
   }
+#endif
 
   setThreadData(comp);
   /* call external objects destructors */
@@ -1753,16 +1763,9 @@ fmiXStatus FMIX(ExitInitializationMode)(fmiXComponent c)
     }
   }
 
-#ifdef OMC_FMI_HAVE_CVODE
-  /* As updateSolverNominals: the nominals and the tolerance are known now. */
-  if (comp->solverInfo && comp->solverInfo->solverMethod == S_CVODE) {
-    cvode_solver_setNominals(comp->fmuData, comp->threadData, comp->solverInfo->solverData);
-  }
-#endif
-#ifdef OMC_FMI_HAVE_IDA
-  if (comp->solverInfo && comp->solverInfo->solverMethod == S_IDA) {
-    ida_solver_setNominals(comp->fmuData, comp->threadData, comp->solverInfo->solverData);
-  }
+#ifdef OMC_FMI_CO_SIMULATION
+  /* The nominals and the tolerance are known now. */
+  fmuSetSolverNominals(comp);
 #endif
 
   /* use defined stopTime, if stopTimeDefined is given to calculate the sample events beforehand.
@@ -1840,12 +1843,14 @@ fmiXStatus FMIX(Reset)(fmiXComponent c)
   FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "Reset")
 
   setThreadData(comp);
+#ifdef OMC_FMI_CO_SIMULATION
   /* Free CS simulator (CVODE & co) first, while the model data it references
    * (e.g. the states array wrapped by the solver's N_Vector y) is still alive,
    * see #16319/#14074/#8615. */
   if (comp->solverInfo) {
     fmuDeInitializeSolverData(comp);
   }
+#endif
 
   /* Free modelData */
   if (!(comp->state & model_state_terminated)) {
@@ -1930,12 +1935,11 @@ fmiXStatus FMIX(Reset)(fmiXComponent c)
   initializeStateSetJacobians(comp->fmuData, comp->threadData);
 #endif
 
-  /* Initialize solverInfo */
+#ifdef OMC_FMI_CO_SIMULATION
   if (isCoSimulation(comp)) {
     fmuInitializeSolverData(comp);
-  } else {
-    comp->solverInfo = NULL;
   }
+#endif
 
   comp->_need_update = 1;
   DAE_MODE_CHANGED(comp);
@@ -2420,15 +2424,15 @@ fmiXStatus FMIX(SetFMUstate)(fmiXComponent c, fmiXFMUstate FMUstate)
     goto cleanup;
   }
 
-  // After restoring the FMU state, the internal solver (CVODE/Euler) has
-  // outdated step history, Jacobians, and time.  Reinitialize it so that the
-  // next doStep starts from a clean solver state.
+#ifdef OMC_FMI_CO_SIMULATION
+  /* The next step restarts the solver from the restored states, as after an event. */
   if (status == fmiXOK && isCoSimulation(comp) && comp->solverInfo) {
-    FILTERED_LOG(comp, fmiXOK, LOG_FMIX_CALL, FMIX_STR "SetFMUstate: reinitialising solver")
-    fmuDeInitializeSolverData(comp);
-    fmuInitializeSolverData(comp);
     comp->solverInfo->currentTime = comp->fmuData->localData[0]->timeValue;
+    comp->solverInfo->didEventStep = 1;
+    listClear(comp->solverInfo->eventLst);
+    fmuSetSolverNominals(comp);
   }
+#endif
 
 cleanup:
   free(keep);
@@ -3245,6 +3249,7 @@ fmiXStatus FMIX(GetRealOutputDerivatives)(fmiXComponent c, const fmiXValueRefere
   return fmiXOK;
 }
 
+#ifdef OMC_FMI_CO_SIMULATION
 /**
  * @brief Internal Co-Simulation step, called from fmi2DoStep and fmi3DoStep.
  *
@@ -3417,7 +3422,6 @@ static fmiXStatus doStepInternal(ModelInstance* c, fmiXReal currentCommunication
         }
         break;
       case S_CVODE:
-#ifdef OMC_FMI_HAVE_CVODE
         comp->solverInfo->currentTime = comp->fmuData->localData[0]->timeValue;
         comp->solverInfo->currentStepSize = tNext - comp->solverInfo->currentTime;
         flag = cvode_solver_step(comp->fmuData, comp->threadData, comp->solverInfo);
@@ -3434,11 +3438,6 @@ static fmiXStatus doStepInternal(ModelInstance* c, fmiXReal currentCommunication
           tNext = comp->solverInfo->currentTime;
           time_event = 0;
         }
-#else
-        FILTERED_LOG(comp, fmiXFatal, LOG_STATUSFATAL, FMIX_STR "DoStep: FMU not compiled with SUNDIALS but solver CVODE selected.")
-        status = fmiXFatal;
-        goto doStep_cleanup;
-#endif /* OMC_FMI_HAVE_CVODE */
         break;
       case S_IDA:
 #ifdef OMC_FMI_HAVE_IDA
@@ -3642,3 +3641,4 @@ doStep_cleanup:
 
   return status;
 }
+#endif /* OMC_FMI_CO_SIMULATION */

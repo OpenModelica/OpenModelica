@@ -9995,8 +9995,7 @@ pub enum CsStep {
 }
 
 /// C's `FMI2CS_initializeSolverData`: an FMU's solver is set up in
-/// `fmi2Instantiate`, and for CVODE `LOG_SOLVER` is forced on across
-/// `cvode_solver_initial` so the banner reaches the log either way. IDA's
+/// `fmi2Instantiate`, where CVODE logs its configuration to `LOG_SOLVER`. IDA's
 /// `ida_solver_initial` warns there when it changes the Jacobian method.
 pub fn log_cs_solver_setup(model: &SimModel) {
     let Ok(method) = resolve_solver_method(model.cs_method(), model.layout.dae_mode()) else {
@@ -10015,15 +10014,12 @@ pub fn log_cs_solver_setup(model: &SimModel) {
     #[cfg(sundials)]
     {
         let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
-        let mask = omclog::mask();
-        omclog::set_mask(mask | (1 << omclog::SOLVER));
         log_cvode_configuration(
             tol,
             true,
             crate::simflags::with_flags(|f| crate::simflags::cvode_config(&f)),
             cvode_jacobian_method(cvode_jac_a(model)),
         );
-        omclog::set_mask(mask);
     }
 }
 

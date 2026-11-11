@@ -4489,7 +4489,7 @@ protected function fmuMethodToSimulationFlag
    takes `euler`/`cvode` and rejects the rest at instantiation (so a model's own
    `dassl` default must not become `s:dassl`); a wasm FMU serves the whole
    wasm-jit driver set. An unaccepted method is left out, and the FMU falls back
-   to what it defaults to without one: euler for C, the model's own method (else
+   to what it defaults to without one: CVODE for C, the model's own method (else
    DASKR) for wasm."
   input String method;
   input Boolean isWasmFMU;

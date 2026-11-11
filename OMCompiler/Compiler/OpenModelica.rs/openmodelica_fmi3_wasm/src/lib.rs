@@ -2586,7 +2586,7 @@ macro_rules! shared_instance_methods {
                 return s;
             }
         }
-        // C's `fmi2SetFMUstate` sets the internal solver up again: its history
+        // As in C's `fmi2SetFMUstate`, the internal solver restarts: its history
         // belongs to the state left behind.
         #[cfg(feature = "cs")]
         if let Some(d) = st.cs.take() {
