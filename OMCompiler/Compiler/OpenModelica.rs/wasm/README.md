@@ -111,7 +111,9 @@ parsed library files in the storage that the browser gives to the address of
 your server. The next session then starts without a download. All versions
 that you serve from one address use the same storage, in the same way as
 installed versions of OpenModelica use the same `~/.openmodelica`. The Storage
-page (`storage/index.html`) shows what is stored and removes it.
+page (`storage/index.html`) shows what is stored, removes it, and installs a
+library that is not in the package index from a .mo file, a .zip file or a
+folder.
 
 ## Customization
 

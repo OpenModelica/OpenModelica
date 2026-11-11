@@ -2106,6 +2106,7 @@ function(omc_rust_setup_wasm)
         ${RUST_OMC_DIR}/wasm/omc-store.js
         ${RUST_OMC_DIR}/wasm/storage/index.html
         ${RUST_OMC_DIR}/wasm/storage/worker.js
+        ${RUST_OMC_DIR}/wasm/storage/upload.js
         ${RUST_OMC_DIR}/wasm/symbolize.html
         ${RUST_OMC_DIR}/wasm/README.md
         ${RUST_OMC_DIR}/wasm/coi_server.py
@@ -2165,6 +2166,7 @@ function(omc_rust_setup_wasm)
         COMMAND ${CMAKE_COMMAND} -E copy
                 ${RUST_OMC_DIR}/wasm/storage/index.html
                 ${RUST_OMC_DIR}/wasm/storage/worker.js
+                ${RUST_OMC_DIR}/wasm/storage/upload.js
                 ${_web_dir}/storage/
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/omc-terminal
         COMMAND ${CMAKE_COMMAND} -E copy

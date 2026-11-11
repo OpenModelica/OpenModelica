@@ -45,6 +45,7 @@
 #include <QComboBox>
 #include <QCheckBox>
 #include <QDialogButtonBox>
+#include <QListWidget>
 
 typedef struct {
   QString source;
@@ -94,6 +95,26 @@ private:
   QDialogButtonBox *mpButtonBox;
 private slots:
   void upgradeInstalledLibraries();
+};
+
+class InstallLibraryFromPathDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  InstallLibraryFromPathDialog(const QString &path, const QString &librariesDirectory, QWidget *parent = nullptr);
+  bool hasPackages() const {return mpPackagesListWidget->count() > 0;}
+private:
+  QString mZipFile;
+  bool mMove;
+  QString mLibrariesDirectory;
+  QListWidget *mpPackagesListWidget;
+  Label *mpProgressLabel;
+  QPushButton *mpInstallButton;
+  void addPackage(const QString &path, bool isFile, const QString &text);
+  bool installPackage(const QString &name, const QString &path, bool isFile);
+private slots:
+  void updateInstallButton();
+  void installPackages();
 };
 
 #endif // INSTALLLIBRARYDIALOG_H
