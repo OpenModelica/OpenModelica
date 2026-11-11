@@ -5,6 +5,9 @@
 //
 // fmi3SerializeFMUState must not write more than size bytes, and
 // fmi3DeserializeFMUState must refuse a byte vector that does not fit size.
+// This tests the C runtime.
+
+setCommandLineOptions("--simCodeTarget=C"); getErrorString();
 loadString("
 model fmi3_fmustate_bounds
   parameter String s = \"abc\";
@@ -18,6 +21,8 @@ buildModelFMU(fmi3_fmustate_bounds, version = "3.0", fmuType = "me"); getErrorSt
 system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi3_fmustate_bounds.py fmi3_fmustate_bounds.fmu fmi3_fmustate_bounds_out.txt > fmi3_fmustate_bounds.log 2>&1"); getErrorString();
 readFile("fmi3_fmustate_bounds_out.txt"); getErrorString();
 // Result:
+// true
+// ""
 // true
 // ""
 // "fmi3_fmustate_bounds.fmu"

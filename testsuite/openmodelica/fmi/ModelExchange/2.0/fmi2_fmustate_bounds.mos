@@ -7,6 +7,10 @@
 // fmi2DeSerializeFMUstate must refuse a byte vector that does not fit size.
 // The FMU state calls must return fmi2Error for a NULL argument, and
 // fmi2FreeFMUstate must ignore a NULL pointer.
+// This tests the C runtime. The C+Rust runtime is in
+// fmi2_fmustate_free_null_c_rust.mos.
+
+setCommandLineOptions("--simCodeTarget=C"); getErrorString();
 loadString("
 model fmi2_fmustate_bounds
   parameter String s = \"abc\";
@@ -20,6 +24,8 @@ buildModelFMU(fmi2_fmustate_bounds, version = "2.0", fmuType = "me"); getErrorSt
 system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi2_fmustate_bounds.py fmi2_fmustate_bounds.fmu fmi2_fmustate_bounds_out.txt > fmi2_fmustate_bounds.log 2>&1"); getErrorString();
 readFile("fmi2_fmustate_bounds_out.txt"); getErrorString();
 // Result:
+// true
+// ""
 // true
 // ""
 // "fmi2_fmustate_bounds.fmu"
