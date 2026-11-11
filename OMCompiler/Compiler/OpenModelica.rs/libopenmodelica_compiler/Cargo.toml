@@ -49,6 +49,8 @@ openmodelica_wasm_jit.workspace = true
 # since wasmer 7.2 this is the same recent wasm-bindgen the OMShell GUIs use.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "=0.2.130"
+# The global allocator, with a coarser growth step than std's (src/lib.rs).
+dlmalloc = "0.2.14"
 openmodelica_wasi.workspace = true
 # Read the last simulation's results straight out of the runtime (src/wasm_api.rs
 # omc_sim_*), so the web simulator plots without an intermediate result file.

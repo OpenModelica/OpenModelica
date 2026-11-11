@@ -31,8 +31,8 @@
 
 use std::sync::Arc;
 
-use metamodelica::Result;
 use arcstr::ArcStr;
+use metamodelica::Result;
 
 use crate::Absyn;
 use crate::GlobalScript;
@@ -68,8 +68,7 @@ fn select_grammar(acceptedGram: i32, languageStandardInt: i32) -> Grammar {
 fn regular_file_writable(path: &str) -> bool {
     // access(2) answers it without opening the file for writing.
     #[cfg(unix)]
-    return std::ffi::CString::new(path)
-        .is_ok_and(|p| unsafe { libc::access(p.as_ptr(), libc::W_OK) } == 0);
+    return std::ffi::CString::new(path).is_ok_and(|p| unsafe { libc::access(p.as_ptr(), libc::W_OK) } == 0);
     #[cfg(not(unix))]
     openmodelica_wasi::fs::is_writable(path)
 }
@@ -114,7 +113,14 @@ fn report_messages(info_filename: &str, messages: &[parser::SyntaxMessage]) {
 /// `info_filename` (the possibly testsuite-friendly name) is only used to
 /// display syntax errors — same split as the C parser's `filename_C` vs
 /// `filename_C_testsuiteFriendly` (Parser/parse.c).
-fn run_parse(src: &str, filename: &str, info_filename: &str, grammar: Grammar, readonly: bool, timestamp: f64) -> Result<Absyn::Program> {
+fn run_parse(
+    src: &str,
+    filename: &str,
+    info_filename: &str,
+    grammar: Grammar,
+    readonly: bool,
+    timestamp: f64,
+) -> Result<Absyn::Program> {
     let result = parser::parse(src, filename, info_filename, grammar, readonly, timestamp).map_err(|_| "error");
     report_syntax_messages(info_filename);
     result
@@ -126,16 +132,19 @@ fn run_parse(src: &str, filename: &str, info_filename: &str, grammar: Grammar, r
 /// and its header records the source's size and mtime, so editing the source
 /// replaces it. A writer thread stores entries and sweeps the cache once a day:
 /// entries whose source changed or is gone, and schemas unused for a week.
-#[cfg(not(target_arch = "wasm32"))]
+///
+/// On the web target the cache is `cache/ast` below the persistent store's root
+/// and holds only sources below that root. Entries are written, and the cache
+/// swept, when the host takes a store snapshot. A panic aborts there, so a
+/// checksum guards each entry instead of `catch_unwind`.
 mod parse_cache {
     use super::*;
     use metamodelica::serial::{Decoder, Encoder, MMSerial};
     use parser::{SyntaxMessage, SyntaxSeverity};
     use std::hash::{Hash, Hasher};
     use std::path::{Path, PathBuf};
-    use std::sync::mpsc;
     use std::sync::OnceLock;
-    use std::time::{Duration, SystemTime};
+    use std::time::Duration;
 
     const fn fnv(bytes: &[u8]) -> u64 {
         let mut h: u64 = 0xcbf29ce484222325;
@@ -147,7 +156,9 @@ mod parse_cache {
         h
     }
 
-    const SCHEMA: u64 = fnv(include_bytes!("Absyn.rs")) ^ fnv(include_bytes!("../../metamodelica/src/serial.rs"));
+    const SCHEMA: u64 = fnv(include_bytes!("Absyn.rs"))
+        ^ fnv(include_bytes!("../../metamodelica/src/serial.rs"))
+        ^ fnv(include_bytes!("../../metamodelica_derive/src/lib.rs"));
     const DAY: Duration = Duration::from_secs(24 * 3600);
     const USED: &str = ".used";
 
@@ -160,73 +171,150 @@ mod parse_cache {
 
     struct Cache {
         dir: PathBuf,
-        writer: mpsc::Sender<Job>,
+        #[cfg(not(target_arch = "wasm32"))]
+        writer: std::sync::mpsc::Sender<Job>,
+        #[cfg(target_arch = "wasm32")]
+        root: String,
     }
 
     static CACHE: OnceLock<Option<Cache>> = OnceLock::new();
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn base_dir(running_testsuite: bool) -> Option<PathBuf> {
         match std::env::var_os("OPENMODELICA_PARSE_CACHE") {
             Some(d) if d.is_empty() => None,
             Some(d) => Some(d.into()),
             None if running_testsuite => None,
             None => {
-                let home = if cfg!(windows) { std::env::var_os("APPDATA").or_else(|| std::env::var_os("HOME")) } else { std::env::var_os("HOME") };
+                let home = if cfg!(windows) {
+                    std::env::var_os("APPDATA").or_else(|| std::env::var_os("HOME"))
+                } else {
+                    std::env::var_os("HOME")
+                };
                 let home = home.filter(|h| !h.is_empty())?;
                 Some(Path::new(&home).join(".openmodelica").join("cache").join("ast"))
             }
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn cache(running_testsuite: bool) -> Option<&'static Cache> {
-        CACHE.get_or_init(|| {
-            let base = base_dir(running_testsuite)?;
-            let dir = base.join(format!("{SCHEMA:016x}"));
-            std::fs::create_dir_all(&dir).ok()?;
-            let (writer, jobs) = mpsc::channel::<Job>();
-            let thread_dir = dir.clone();
-            std::thread::Builder::new()
-                .name("parse-cache".into())
-                .stack_size(metamodelica::thread_stack_size())
-                .spawn(move || {
-                    maintain(&base, &thread_dir);
-                    for (entry, program, messages) in jobs {
-                        let _ = std::panic::catch_unwind(|| write(&entry, &program, &messages));
-                    }
-                })
-                .ok()?;
-            Some(Cache { dir, writer })
-        }).as_ref()
+        CACHE
+            .get_or_init(|| {
+                let base = base_dir(running_testsuite)?;
+                let dir = base.join(format!("{SCHEMA:016x}"));
+                std::fs::create_dir_all(&dir).ok()?;
+                let (writer, jobs) = std::sync::mpsc::channel::<Job>();
+                let thread_dir = dir.clone();
+                std::thread::Builder::new()
+                    .name("parse-cache".into())
+                    .stack_size(metamodelica::thread_stack_size())
+                    .spawn(move || {
+                        maintain(&base, &thread_dir);
+                        for (entry, program, messages) in jobs {
+                            let _ = std::panic::catch_unwind(|| write(&entry, &program, &messages));
+                        }
+                    })
+                    .ok()?;
+                Some(Cache { dir, writer })
+            })
+            .as_ref()
     }
 
-    fn header(filename: &str, meta: &std::fs::Metadata) -> Option<Vec<u8>> {
-        let mtime = meta.modified().ok()?.duration_since(SystemTime::UNIX_EPOCH).ok()?;
+    #[cfg(target_arch = "wasm32")]
+    thread_local! {
+        static JOBS: std::cell::RefCell<Vec<Job>> = const { std::cell::RefCell::new(Vec::new()) };
+        static SWEPT: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn cache(running_testsuite: bool) -> Option<&'static Cache> {
+        CACHE
+            .get_or_init(|| {
+                let root = openmodelica_wasi::persistent_root().filter(|_| !running_testsuite)?;
+                let dir = Path::new(&root)
+                    .join("cache")
+                    .join("ast")
+                    .join(format!("{SCHEMA:016x}"));
+                openmodelica_wasi::on_snapshot(flush);
+                Some(Cache {
+                    dir,
+                    root: format!("{root}/"),
+                })
+            })
+            .as_ref()
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn flush() {
+        let Some(Some(cache)) = CACHE.get() else { return };
+        if !SWEPT.replace(true)
+            && let Some(base) = cache.dir.parent()
+        {
+            maintain(base, &cache.dir);
+        }
+        for (entry, program, messages) in JOBS.take() {
+            write(&entry, &program, &messages);
+        }
+    }
+
+    fn header(filename: &str, len: u64, mtime: Duration) -> Vec<u8> {
         let mut h = Vec::with_capacity(24 + filename.len());
-        h.extend_from_slice(&meta.len().to_le_bytes());
+        h.extend_from_slice(&len.to_le_bytes());
         h.extend_from_slice(&mtime.as_secs().to_le_bytes());
         h.extend_from_slice(&mtime.subsec_nanos().to_le_bytes());
         h.extend_from_slice(&(filename.len() as u32).to_le_bytes());
         h.extend_from_slice(filename.as_bytes());
-        Some(h)
+        h
     }
 
     pub fn entry(filename: &str, key: impl Hash, running_testsuite: bool) -> Option<Entry> {
         let cache = cache(running_testsuite)?;
-        let header = header(filename, &std::fs::metadata(filename).ok()?)?;
+        #[cfg(target_arch = "wasm32")]
+        if !filename.starts_with(&cache.root) {
+            return None;
+        }
+        let (len, mtime) = io::meta(filename)?;
         let mut h = std::collections::hash_map::DefaultHasher::new();
         (filename, key).hash(&mut h);
-        Some(Entry { path: cache.dir.join(format!("{:016x}.ast", h.finish())), header })
+        Some(Entry {
+            path: cache.dir.join(format!("{:016x}.ast", h.finish())),
+            header: header(filename, len, mtime),
+        })
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn checksum(bytes: &[u8]) -> u64 {
+        const K: u64 = 0x517cc1b727220a95;
+        let mut h = bytes.len() as u64;
+        let mut words = bytes.chunks_exact(8);
+        for w in &mut words {
+            h = (h.rotate_left(5) ^ u64::from_le_bytes(w.try_into().unwrap())).wrapping_mul(K);
+        }
+        for &b in words.remainder() {
+            h = (h.rotate_left(5) ^ b as u64).wrapping_mul(K);
+        }
+        h
     }
 
     /// A stale entry or one that does not decode counts as a miss.
     pub fn load(entry: &Entry) -> Option<(Absyn::Program, Vec<SyntaxMessage>)> {
-        let bytes = std::fs::read(&entry.path).ok()?;
+        let bytes = io::read(&entry.path)?;
         let body = bytes.strip_prefix(entry.header.as_slice())?;
+        #[cfg(target_arch = "wasm32")]
+        let body = {
+            let (sum, body) = body.split_at_checked(8)?;
+            (u64::from_le_bytes(sum.try_into().ok()?) == checksum(body)).then_some(body)?
+        };
         std::panic::catch_unwind(|| {
             let mut d = Decoder::new(body);
             let messages = (0..d.varint())
                 .map(|_| SyntaxMessage {
-                    severity: if bool::mm_decode(&mut d) { SyntaxSeverity::Error } else { SyntaxSeverity::Warning },
+                    severity: if bool::mm_decode(&mut d) {
+                        SyntaxSeverity::Error
+                    } else {
+                        SyntaxSeverity::Warning
+                    },
                     line1: d.varint() as u32,
                     col1: d.varint() as u32,
                     line2: d.varint() as u32,
@@ -240,14 +328,21 @@ mod parse_cache {
     }
 
     pub fn store(entry: Entry, program: &Absyn::Program, messages: Vec<SyntaxMessage>) {
+        #[cfg(not(target_arch = "wasm32"))]
         if let Some(Some(cache)) = CACHE.get() {
             let _ = cache.writer.send((entry, program.clone(), messages));
+        }
+        #[cfg(target_arch = "wasm32")]
+        if openmodelica_wasi::persistent_root().is_some() {
+            JOBS.with(|jobs| jobs.borrow_mut().push((entry, program.clone(), messages)));
         }
     }
 
     fn write(entry: &Entry, program: &Absyn::Program, messages: &[SyntaxMessage]) {
         let mut e = Encoder::new();
         e.buf.extend_from_slice(&entry.header);
+        #[cfg(target_arch = "wasm32")]
+        e.buf.extend_from_slice(&[0; 8]);
         e.varint(messages.len() as u64);
         for m in messages {
             (m.severity == SyntaxSeverity::Error).mm_encode(&mut e);
@@ -257,60 +352,171 @@ mod parse_cache {
             ArcStr::from(m.message.as_str()).mm_encode(&mut e);
         }
         program.mm_encode(&mut e);
-        let tmp = entry.path.with_extension(format!("{}.tmp", std::process::id()));
-        if std::fs::write(&tmp, &e.buf).is_ok() && std::fs::rename(&tmp, &entry.path).is_err() {
-            let _ = std::fs::remove_file(&tmp);
+        #[cfg(target_arch = "wasm32")]
+        {
+            let at = entry.header.len();
+            let sum = checksum(&e.buf[at + 8..]);
+            e.buf[at..at + 8].copy_from_slice(&sum.to_le_bytes());
         }
-    }
-
-    fn age(path: &Path) -> Option<Duration> {
-        std::fs::metadata(path).ok()?.modified().ok()?.elapsed().ok()
+        io::write(&entry.path, &e.buf);
     }
 
     fn touch(path: &Path) {
-        if age(path).map_or(true, |a| a > DAY / 2) {
-            if let Ok(f) = std::fs::File::create(path) {
-                let _ = f.set_modified(SystemTime::now());
-            }
+        if io::age(path).map_or(true, |a| a > DAY / 2) {
+            io::touch(path);
         }
     }
 
     /// The source an entry was parsed from still has the size and mtime in its header.
     fn up_to_date(entry: &Path) -> Option<bool> {
         use std::io::Read;
-        let mut f = std::fs::File::open(entry).ok()?;
+        let mut f = io::open(entry)?;
         let mut fixed = [0u8; 24];
         f.read_exact(&mut fixed).ok()?;
         let mut name = vec![0u8; u32::from_le_bytes(fixed[20..24].try_into().ok()?) as usize];
         f.read_exact(&mut name).ok()?;
         let name = String::from_utf8(name).ok()?;
-        let current = std::fs::metadata(&name).ok().and_then(|m| header(&name, &m));
+        let current = io::meta(&name).map(|(len, mtime)| header(&name, len, mtime));
         Some(current.is_some_and(|h| h[..24] == fixed))
     }
 
     fn maintain(base: &Path, dir: &Path) {
         touch(&dir.join(USED));
         let swept = base.join(".swept");
-        if age(&swept).is_some_and(|a| a < DAY) {
+        if io::age(&swept).is_some_and(|a| a < DAY) {
             return;
         }
         touch(&swept);
-        for d in std::fs::read_dir(base).into_iter().flatten().flatten() {
-            let p = d.path();
-            let schema_dir = d.file_name().to_str().is_some_and(|n| n.len() == 16 && n.bytes().all(|b| b.is_ascii_hexdigit()));
-            if p != dir && schema_dir && age(&p.join(USED)).is_some_and(|a| a > 7 * DAY) {
-                let _ = std::fs::remove_dir_all(&p);
+        for p in io::dir(base) {
+            let schema_dir = p
+                .file_name()
+                .and_then(|n| n.to_str())
+                .is_some_and(|n| n.len() == 16 && n.bytes().all(|b| b.is_ascii_hexdigit()));
+            if p != dir && schema_dir && io::age(&p.join(USED)).is_some_and(|a| a > 7 * DAY) {
+                io::remove_dir_all(&p);
             }
         }
-        for f in std::fs::read_dir(dir).into_iter().flatten().flatten() {
-            let p = f.path();
+        for p in io::dir(dir) {
             let stale = match p.extension().and_then(|e| e.to_str()) {
                 Some("ast") => up_to_date(&p) == Some(false),
-                Some("tmp") => age(&p).map_or(true, |a| a > DAY),
+                Some("tmp") => io::age(&p).map_or(true, |a| a > DAY),
                 _ => false,
             };
             if stale {
-                let _ = std::fs::remove_file(&p);
+                io::remove_file(&p);
+            }
+        }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    mod io {
+        use std::path::{Path, PathBuf};
+        use std::time::{Duration, SystemTime};
+
+        pub fn meta(path: &str) -> Option<(u64, Duration)> {
+            let m = std::fs::metadata(path).ok()?;
+            Some((m.len(), m.modified().ok()?.duration_since(SystemTime::UNIX_EPOCH).ok()?))
+        }
+
+        pub fn read(path: &Path) -> Option<Vec<u8>> {
+            std::fs::read(path).ok()
+        }
+
+        pub fn open(path: &Path) -> Option<std::fs::File> {
+            std::fs::File::open(path).ok()
+        }
+
+        pub fn write(path: &Path, bytes: &[u8]) {
+            let tmp = path.with_extension(format!("{}.tmp", std::process::id()));
+            if std::fs::write(&tmp, bytes).is_ok() && std::fs::rename(&tmp, path).is_err() {
+                let _ = std::fs::remove_file(&tmp);
+            }
+        }
+
+        pub fn age(path: &Path) -> Option<Duration> {
+            std::fs::metadata(path).ok()?.modified().ok()?.elapsed().ok()
+        }
+
+        pub fn touch(path: &Path) {
+            if let Ok(f) = std::fs::File::create(path) {
+                let _ = f.set_modified(SystemTime::now());
+            }
+        }
+
+        pub fn dir(path: &Path) -> Vec<PathBuf> {
+            std::fs::read_dir(path)
+                .into_iter()
+                .flatten()
+                .flatten()
+                .map(|e| e.path())
+                .collect()
+        }
+
+        pub fn remove_file(path: &Path) {
+            let _ = std::fs::remove_file(path);
+        }
+
+        pub fn remove_dir_all(path: &Path) {
+            let _ = std::fs::remove_dir_all(path);
+        }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    mod io {
+        use openmodelica_wasi::fs;
+        use std::path::{Path, PathBuf};
+        use std::time::{Duration, SystemTime};
+
+        fn mtime(path: &str) -> Option<Duration> {
+            fs::modified(path).ok()?.duration_since(SystemTime::UNIX_EPOCH).ok()
+        }
+
+        /// None for an embedded builtin, whose mtime is the epoch whatever its contents.
+        pub fn meta(path: &str) -> Option<(u64, Duration)> {
+            let mtime = mtime(path).filter(|t| !t.is_zero())?;
+            Some((fs::len(path).ok()?, mtime))
+        }
+
+        pub fn read(path: &Path) -> Option<Vec<u8>> {
+            fs::read(path.to_str()?).ok()
+        }
+
+        pub fn open(path: &Path) -> Option<std::io::Cursor<Vec<u8>>> {
+            read(path).map(std::io::Cursor::new)
+        }
+
+        pub fn write(path: &Path, bytes: &[u8]) {
+            if let Some(p) = path.to_str() {
+                let _ = fs::write(p, bytes);
+            }
+        }
+
+        pub fn age(path: &Path) -> Option<Duration> {
+            Duration::from_nanos(openmodelica_wasi::realtime_nanos()).checked_sub(mtime(path.to_str()?)?)
+        }
+
+        pub fn touch(path: &Path) {
+            write(path, &[]);
+        }
+
+        pub fn dir(path: &Path) -> Vec<PathBuf> {
+            let Some(p) = path.to_str() else { return Vec::new() };
+            fs::read_dir(p)
+                .unwrap_or_default()
+                .into_iter()
+                .map(|e| path.join(e.name))
+                .collect()
+        }
+
+        pub fn remove_file(path: &Path) {
+            if let Some(p) = path.to_str() {
+                let _ = fs::remove_file(p);
+            }
+        }
+
+        pub fn remove_dir_all(path: &Path) {
+            if let Some(p) = path.to_str() {
+                let _ = fs::remove_dir_all(p);
             }
         }
     }
@@ -367,7 +573,8 @@ fn file_timestamp(filename: &str) -> f64 {
     if std::env::var_os("OPENMODELICA_BACKEND_STUBS").is_some_and(|v| v == "1") {
         return 0.0;
     }
-    openmodelica_wasi::fs::modified(filename).ok()
+    openmodelica_wasi::fs::modified(filename)
+        .ok()
         .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
         .map(|d| d.as_secs() as f64)
         .unwrap_or(0.0)
@@ -380,7 +587,6 @@ fn now_timestamp() -> f64 {
     (openmodelica_wasi::realtime_nanos() / 1_000_000_000) as f64
 }
 
-#[cfg_attr(target_arch = "wasm32", allow(unused_variables))]
 pub fn parse(
     filename: ArcStr,
     infoFilename: ArcStr,
@@ -405,27 +611,42 @@ pub fn parse(
     // cannot write to are flagged read-only in their SOURCEINFO, so the
     // interactive API refuses to modify them.
     let readonly = !regular_file_writable(filename.as_str());
-    #[cfg(not(target_arch = "wasm32"))]
-    let cache_entry = parse_cache::entry(filename.as_str(), (acceptedGram, languageStandardInt, strict, readonly, encoding.as_str(), file_timestamp(filename.as_str()).to_bits()), runningTestsuite);
-    #[cfg(not(target_arch = "wasm32"))]
+    let cache_entry = parse_cache::entry(
+        filename.as_str(),
+        (
+            acceptedGram,
+            languageStandardInt,
+            strict,
+            readonly,
+            encoding.as_str(),
+            file_timestamp(filename.as_str()).to_bits(),
+        ),
+        runningTestsuite,
+    );
     if let Some((program, messages)) = cache_entry.as_ref().and_then(parse_cache::load) {
         report_messages(infoFilename.as_str(), &messages);
         return Ok(program);
     }
-    let (src, orig_bytes) = read_source_file(filename.as_str())
-        .map_err(|_| "ParserExt::parse: cannot read {filename}")?;
+    let (src, orig_bytes) =
+        read_source_file(filename.as_str()).map_err(|_| "ParserExt::parse: cannot read {filename}")?;
     parser::set_language_standard(languageStandardInt, strict);
     // Outside string literals the grammar allows nothing but ASCII, so only
     // the literals are transcoded from `encoding`.
     parser::set_non_utf8_source_bytes(orig_bytes);
     parser::set_source_encoding(encoding.as_str());
-    let result = parser::parse(&src, filename.as_str(), infoFilename.as_str(), grammar, readonly, file_timestamp(filename.as_str()))
-        .map_err(|_| "error");
+    let result = parser::parse(
+        &src,
+        filename.as_str(),
+        infoFilename.as_str(),
+        grammar,
+        readonly,
+        file_timestamp(filename.as_str()),
+    )
+    .map_err(|_| "error");
     parser::set_source_encoding("");
     parser::set_non_utf8_source_bytes(None);
     let messages = parser::take_syntax_messages();
     report_messages(infoFilename.as_str(), &messages);
-    #[cfg(not(target_arch = "wasm32"))]
     if let (Ok(program), Some(entry)) = (&result, cache_entry) {
         parse_cache::store(entry, program, messages);
     }
@@ -444,7 +665,14 @@ pub fn parsestring(
     parser::set_language_standard(languageStandardInt, strict);
     // String input has no on-disk path; the interactive name serves as both
     // the SOURCEINFO and the error-display name (like the C `parseString`).
-    run_parse(r#str.as_str(), infoFilename.as_str(), infoFilename.as_str(), grammar, /*readonly=*/false, now_timestamp())
+    run_parse(
+        r#str.as_str(),
+        infoFilename.as_str(),
+        infoFilename.as_str(),
+        grammar,
+        /*readonly=*/ false,
+        now_timestamp(),
+    )
 }
 
 // ---------------------------------------------------------------------
@@ -461,12 +689,20 @@ pub fn parseexp(
     languageStandardInt: i32,
     _runningTestsuite: bool,
 ) -> Result<GlobalScript::Statements> {
-    let (src, orig_bytes) = read_source_file(filename.as_str())
-        .map_err(|_| "ParserExt::parseexp: cannot read {filename}")?;
+    let (src, orig_bytes) =
+        read_source_file(filename.as_str()).map_err(|_| "ParserExt::parseexp: cannot read {filename}")?;
     let grammar = select_grammar(acceptedGram, languageStandardInt);
     let readonly = !regular_file_writable(filename.as_str());
     parser::set_non_utf8_source_bytes(orig_bytes);
-    let result = parser::parse_statements(&src, filename.as_str(), infoFilename.as_str(), grammar, readonly, file_timestamp(filename.as_str())).map_err(|_| "error");
+    let result = parser::parse_statements(
+        &src,
+        filename.as_str(),
+        infoFilename.as_str(),
+        grammar,
+        readonly,
+        file_timestamp(filename.as_str()),
+    )
+    .map_err(|_| "error");
     report_syntax_messages(infoFilename.as_str());
     parser::set_non_utf8_source_bytes(None);
     result
@@ -480,7 +716,15 @@ pub fn parsestringexp(
     _runningTestsuite: bool,
 ) -> Result<GlobalScript::Statements> {
     let grammar = select_grammar(acceptedGram, languageStandardInt);
-    let result = parser::parse_statements(r#str.as_str(), infoFilename.as_str(), infoFilename.as_str(), grammar, /*readonly=*/false, now_timestamp()).map_err(|_| "error");
+    let result = parser::parse_statements(
+        r#str.as_str(),
+        infoFilename.as_str(),
+        infoFilename.as_str(),
+        grammar,
+        /*readonly=*/ false,
+        now_timestamp(),
+    )
+    .map_err(|_| "error");
     report_syntax_messages(infoFilename.as_str());
     result
 }
@@ -565,6 +809,4 @@ pub fn checkLVEToolFeature(_lveInstance: Option<i32>, _feature: ArcStr) -> bool 
     false
 }
 
-pub fn stopLibraryVendorExecutable(_lveInstance: Option<i32>) {
-
-}
+pub fn stopLibraryVendorExecutable(_lveInstance: Option<i32>) {}

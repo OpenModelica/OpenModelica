@@ -104,6 +104,15 @@ playground.openmodelica.org, which do not work at another address.
 - If you do not want cloud storage, delete `OMEdit-qt/cloud_config.json`.
   OMEdit then tells the user that cloud storage is not set up.
 
+## Storage in the browser
+
+The clients keep the installed libraries, the package index and a cache of the
+parsed library files in the storage that the browser gives to the address of
+your server. The next session then starts without a download. All versions
+that you serve from one address use the same storage, in the same way as
+installed versions of OpenModelica use the same `~/.openmodelica`. The Storage
+page (`storage/index.html`) shows what is stored and removes it.
+
 ## Customization
 
 You can change these files after you extract the zip file. The pages read them
