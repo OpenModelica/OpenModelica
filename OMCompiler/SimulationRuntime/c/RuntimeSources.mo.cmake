@@ -58,6 +58,8 @@ encapsulated package RuntimeSources
 
   constant list<String> simrt_c_cvode_sources={@SOURCE_FMU_CVODE_RUNTIME_FILES@};
 
+  constant list<String> simrt_c_dae_mode_sources={@SOURCE_FMU_DAE_MODE_RUNTIME_FILES@};
+
   constant list<String> simrt_c_ida_sources={@SOURCE_FMU_IDA_RUNTIME_FILES@};
 
   constant list<String> solver_library_files={@SOURCE_FMU_SOLVER_LIBRARY_FILES@};

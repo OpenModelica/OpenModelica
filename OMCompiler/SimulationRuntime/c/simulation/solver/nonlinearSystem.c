@@ -1230,6 +1230,9 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     EQUATION_INFO eqInfo = modelInfoGetEquation(&data->modelData->modelDataXml, nonlinsys->equationIndex);
     if (eqInfo.section == EQUATION_SECTION_INIT_LAMBDA0 || (eqInfo.section == EQUATION_SECTION_INITIAL && data->callback->functionInitialEquations_lambda0 == NULL)) {
       newtonDiagnostics(data, threadData, sysNumber);
+      /* The diagnostics leave the model at their last trial point. The solvers
+       * expect it at nlsx, e.g. KINSOL's symbolic sparse Jacobian for scaling. */
+      nonlinsys->residualFunc(&resUserData, nonlinsys->nlsx, nonlinsys->resValues, (int*)&nonlinsys->size);
     }
   }
 

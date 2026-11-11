@@ -9,7 +9,7 @@ use openmodelica_wasi::fs;
 use serde_json::Value;
 
 use crate::version::{Version, compare};
-use crate::{Index, Installed, string, string_map};
+use crate::{Index, Installed, string, string_map, strings};
 
 /// The file a library is defined in: `package.mo` of a directory, or the
 /// file itself.
@@ -83,19 +83,21 @@ pub(crate) fn libraries(modelica_path: &[String], metadata: bool) -> Vec<Install
     }
     found
         .into_iter()
-        .map(|(mut lib, _)| {
-            if !metadata {
-                return lib;
-            }
-            let path = lib.path.clone().unwrap_or_default();
-            let meta = fs::read_to_string(&format!("{path}/openmodelica.metadata.json"))
-                .ok()
-                .and_then(|text| serde_json::from_str::<Value>(&text).ok());
-            lib.uses = meta.as_ref().map(|m| string_map(&m["uses"]));
-            lib.support = meta.as_ref().and_then(|m| string(&m["support"]));
-            lib
-        })
+        .map(|(lib, _)| if metadata { with_metadata(lib) } else { lib })
         .collect()
+}
+
+/// The library with the uses, conversions and support level of its package
+/// manager metadata, if it has any.
+pub(crate) fn with_metadata(mut lib: Installed) -> Installed {
+    let path = lib.path.clone().unwrap_or_default();
+    let meta = fs::read_to_string(&format!("{path}/openmodelica.metadata.json"))
+        .ok()
+        .and_then(|text| serde_json::from_str::<Value>(&text).ok());
+    lib.uses = meta.as_ref().map(|m| string_map(&m["uses"]));
+    lib.converts = meta.as_ref().map(|m| strings(&m["convertFromVersion"]));
+    lib.support = meta.as_ref().and_then(|m| string(&m["support"]));
+    lib
 }
 
 static INDEX_FILE: Mutex<Option<(u64, Option<Arc<Index>>)>> = Mutex::new(None);

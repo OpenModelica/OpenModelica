@@ -81,7 +81,8 @@ endfunction()
 macro(omc_install_gui_client target)
   # On macOS we want BUNDLEs (.app) to go to an 'Applications/' directory instead of a 'bin/' directory
   if(APPLE AND OM_MACOS_APP_BUNDLE)
-    set_target_properties(${target} PROPERTIES MACOSX_BUNDLE TRUE)
+    set_target_properties(${target} PROPERTIES MACOSX_BUNDLE TRUE
+                                               MACOSX_BUNDLE_GUI_IDENTIFIER org.openmodelica.${target})
   endif ()
   set(OM_MACOS_INSTALL_BUNDLEDIR "Applications")
   install(TARGETS ${target} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -112,4 +113,54 @@ function(omc_get_msys_prefix out_var)
   endif()
 
   set(${out_var} "${msys_prefix}" PARENT_SCOPE)
+endfunction()
+
+# Download <url> to <dest>, with retries, and set ${error_var} to "" or to why
+# it failed. The caller decides if that is fatal; EXPECTED_HASH would make it a
+# configure error. An existing <dest> is kept if its SHA-256 sum is <sha256>
+# (or <sha256> is empty). Extra arguments go to file(DOWNLOAD). The rename keeps
+# builds that share OM_DOWNLOADS_DIR from seeing a partial file.
+function(omc_download url dest sha256 error_var)
+  if(EXISTS "${dest}")
+    if(sha256 STREQUAL "")
+      set(${error_var} "" PARENT_SCOPE)
+      return()
+    endif()
+    file(SHA256 "${dest}" sum)
+    if(sum STREQUAL sha256)
+      set(${error_var} "" PARENT_SCOPE)
+      return()
+    endif()
+    message(WARNING "${dest} has the wrong SHA-256 sum; downloading it again")
+  endif()
+
+  message(STATUS "Downloading ${url}")
+  string(RANDOM LENGTH 8 tag)
+  set(part "${dest}.part-${tag}")
+  set(delay 5)
+  foreach(attempt RANGE 1 4)
+    file(DOWNLOAD "${url}" "${part}" TLS_VERIFY ON STATUS status ${ARGN})
+    list(GET status 0 code)
+    if(code EQUAL 0)
+      break()
+    endif()
+    file(REMOVE "${part}")
+    # 6: could not resolve the host. There is no network; do not wait for it.
+    if(code EQUAL 6 OR attempt EQUAL 4)
+      set(${error_var} "${status}" PARENT_SCOPE)
+      return()
+    endif()
+    message(STATUS "Download failed (${status}); retrying in ${delay} s")
+    execute_process(COMMAND ${CMAKE_COMMAND} -E sleep ${delay})
+    math(EXPR delay "${delay} * 3")
+  endforeach()
+
+  file(SHA256 "${part}" sum)
+  if(NOT sha256 STREQUAL "" AND NOT sum STREQUAL sha256)
+    file(REMOVE "${part}")
+    set(${error_var} "SHA-256 sum of ${url} is ${sum}, not ${sha256}" PARENT_SCOPE)
+    return()
+  endif()
+  file(RENAME "${part}" "${dest}")
+  set(${error_var} "" PARENT_SCOPE)
 endfunction()

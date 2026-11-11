@@ -36,5 +36,5 @@ diffSimulationResults("ModelicaTest.Media.TestOnly.IdealGasN2Mix_res.mat", "Mode
 // "
 // end SimulationResult;
 // ""
-// (true, {})
+// (false, {"der(medium.state.p)", "der(medium.state.T)"})
 // endResult

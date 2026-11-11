@@ -109,6 +109,10 @@ else()
   message(STATUS "LanguageServerNavigation not registered: no runnable staged language server")
 endif()
 
+set(OMEDIT_TEST_INSTALLLIBRARYFROMPATH_SOURCES InstallLibraryFromPath/InstallLibraryFromPathTest.cpp
+                                               InstallLibraryFromPath/InstallLibraryFromPathTest.h)
+add_omedit_test(InstallLibraryFromPath "${OMEDIT_TEST_INSTALLLIBRARYFROMPATH_SOURCES}")
+
 set(OMEDIT_TEST_MERGEEXTENDSMODIFIERS_SOURCES MergeExtendsModifiers/MergeExtendsModifiersTest.cpp
                                               MergeExtendsModifiers/MergeExtendsModifiersTest.h)
 add_omedit_test(MergeExtendsModifiers "${OMEDIT_TEST_MERGEEXTENDSMODIFIERS_SOURCES}")

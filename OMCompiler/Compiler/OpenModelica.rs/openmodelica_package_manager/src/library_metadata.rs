@@ -1,6 +1,7 @@
 //! Metadata of libraries that the package manager did not install, read by
-//! omc from their top-level file: the version, the uses and the versions they
-//! convert from without changes. Kept in memory and in the user's cache directory,
+//! omc from their top-level file: the version, the uses, the versions they
+//! convert from without changes and the versions they have conversion
+//! scripts from. Kept in memory and in the user's cache directory,
 //! keyed by the path and checked against a hash of the content, so that each
 //! file is parsed once per change.
 
@@ -17,13 +18,20 @@ pub struct LibraryMetadata {
     pub version: String,
     pub uses: BTreeMap<String, String>,
     pub provides: Vec<String>,
+    /// The versions it has conversion scripts from.
+    pub converts: Vec<String>,
 }
 
 /// None for a file omc could not read the metadata from.
 type Known = Option<LibraryMetadata>;
 
+/// Entries of another format are read again.
+const FORMAT: u32 = 1;
+
 #[derive(Serialize, Deserialize)]
 struct Entry {
+    #[serde(default)]
+    format: u32,
     path: String,
     hash: u64,
     metadata: Known,
@@ -52,9 +60,14 @@ pub(crate) struct Cache {
 }
 
 impl Cache {
-    /// Without a home directory (as in the testsuite), only in memory.
+    /// Without a home directory (as in the testsuite), only in memory, unless
+    /// the store keeps a tree across sessions (the web omc).
     pub fn new(home: &str) -> Cache {
-        let dir = (!home.is_empty() && home != "/").then(|| format!("{home}/.openmodelica/cache/library-metadata/"));
+        let dir = if !home.is_empty() && home != "/" {
+            Some(format!("{home}/.openmodelica/cache/library-metadata/"))
+        } else {
+            openmodelica_wasi::persistent_root().map(|root| format!("{root}/cache/library-metadata/"))
+        };
         Cache { dir }
     }
 
@@ -73,7 +86,7 @@ impl Cache {
         }
         let file = format!("{}{}", self.dir.as_ref()?, file_name(path));
         let entry: Entry = serde_json::from_str(&fs::read_to_string(&file).ok()?).ok()?;
-        if (entry.path.as_str(), entry.hash) != (path, hash) {
+        if (entry.format, entry.path.as_str(), entry.hash) != (FORMAT, path, hash) {
             return None;
         }
         memory.insert(path.to_owned(), (hash, entry.metadata.clone()));
@@ -89,6 +102,7 @@ impl Cache {
             .insert(path.to_owned(), (hash, metadata.clone()));
         let Some(dir) = &self.dir else { return };
         let entry = Entry {
+            format: FORMAT,
             path: path.to_owned(),
             hash,
             metadata,

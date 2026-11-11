@@ -42,12 +42,18 @@ import init, {
   omc_set_env, omc_init, omc_eval, omc_enable_wasm_blobs,
   omc_take_pending_downloads, omc_take_plot_commands, wasi_write_file,
 } from '../omc/OpenModelicaCompiler.js';
+import * as omc from '../omc/OpenModelicaCompiler.js';
+import { openStore } from '../omc-store.js';
 import { installWasmBlobs } from '../wasm-blobs.js';
 import { describeError, setErrorText } from '../wasm-stack.js';
 
 const log = document.getElementById('log');
 const input = document.getElementById('input');
 const form = document.getElementById('form');
+// Installed libraries and parsed files, kept between sessions (omc-store.js).
+let store = null;
+let saving = Promise.resolve();
+const save = () => { if (store) saving = saving.then(() => store.flush()); };
 
 function line(text, cls) {
   const div = document.createElement('div');
@@ -96,6 +102,7 @@ async function evalWithDownloads(src) {
   line('Loading wasm module…', 'meta');
   await init();                                   // fetch + instantiate the wasm
   omc_set_env('OPENMODELICAHOME', '/usr');         // builtins resolve by basename
+  store = await openStore(omc);
   if (!omc_init()) {
     line('omc_init() failed — see the devtools console.', 'err');
     return;
@@ -106,6 +113,7 @@ async function evalWithDownloads(src) {
   // is immediately usable (mirrors the worker-hosted terminals' init).
   line('Installing Modelica library…', 'meta');
   await evalWithDownloads('installPackage(Modelica)');
+  save();
   const msg = omc_eval('getErrorString()').trim();
   if (msg && msg !== '""') line(msg, 'meta');
   line('Ready. ' + omc_eval('getVersion()'), 'meta');
@@ -122,9 +130,11 @@ form.addEventListener('submit', async (ev) => {
   line(cmd, 'cmd');
   if (cmd === 'quit()' || cmd === 'exit') { input.disabled = true; line('session closed', 'meta'); return; }
   input.disabled = true;
+  await saving;
   let reply;
   try { reply = await evalWithDownloads(cmd); }
   catch (e) { line(describeError(e), 'err'); input.disabled = false; input.focus(); return; }
+  save();
   line(reply, reply.startsWith('Error:') ? 'err' : 'reply');
   input.disabled = false;
   input.focus();

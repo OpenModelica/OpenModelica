@@ -1,6 +1,8 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+sumRecordArraySlice.mos \
+arrayEquationRowLoop.mos \
 nlsArrayElementNominal.mos \
 resizableAliasMin.mos \
 reductionSkips.mos \
@@ -66,6 +68,7 @@ resizableAlgebraicLoops.mos \
 resizableFill.mos \
 resizableStreams.mos \
 resizableEvaluate.mos \
+resizableEvaluateAlias.mos \
 resizableStreamMixing.mos \
 resizableWholeSubscript.mos \
 resizableArrayBinding.mos \

@@ -90,6 +90,46 @@ static GLOBAL: Limited<tikv_jemallocator::Jemalloc> = Limited(tikv_jemallocator:
 #[global_allocator]
 static GLOBAL: Limited<std::alloc::System> = Limited(std::alloc::System);
 
+// std's wasm heap grows the linear memory 64 KB at a time, and every
+// memory.grow is expensive in a browser: loading MSL took thousands of them.
+#[cfg(target_arch = "wasm32")]
+mod heap {
+    use std::alloc::{GlobalAlloc, Layout};
+    use std::cell::UnsafeCell;
+
+    struct Heap(UnsafeCell<dlmalloc::Dlmalloc>);
+
+    // The web module has no threads.
+    unsafe impl Sync for Heap {}
+
+    #[global_allocator]
+    static HEAP: Heap = Heap(UnsafeCell::new(
+        const {
+            let mut heap = dlmalloc::Dlmalloc::new();
+            assert!(heap.set_granularity(16 << 20));
+            heap
+        },
+    ));
+
+    unsafe impl GlobalAlloc for Heap {
+        unsafe fn alloc(&self, l: Layout) -> *mut u8 {
+            unsafe { (*self.0.get()).malloc(l.size(), l.align()) }
+        }
+
+        unsafe fn alloc_zeroed(&self, l: Layout) -> *mut u8 {
+            unsafe { (*self.0.get()).calloc(l.size(), l.align()) }
+        }
+
+        unsafe fn dealloc(&self, ptr: *mut u8, l: Layout) {
+            unsafe { (*self.0.get()).free(ptr, l.size(), l.align()) }
+        }
+
+        unsafe fn realloc(&self, ptr: *mut u8, l: Layout, new_size: usize) -> *mut u8 {
+            unsafe { (*self.0.get()).realloc(ptr, l.size(), l.align(), new_size) }
+        }
+    }
+}
+
 // MetaModelica-ABI compatibility shims (`omc_Main_init` / `omc_Main_handleCommand`
 // / GC + Windows no-ops) OMEdit links against. Implemented over the embedding ABI
 // below; the `#[no_mangle]` entry points are exported from this cdylib directly.

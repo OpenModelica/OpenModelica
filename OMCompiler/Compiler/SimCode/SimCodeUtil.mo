@@ -286,6 +286,7 @@ protected
   Integer countSenParams;
   list<tuple<Integer, Integer>> equationSccMapping, eqBackendSimCodeMapping;
   list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
+  list<tuple<DAE.Exp, tuple<DAE.Exp, DAE.Exp, DAE.Exp>, list<BackendDAE.SimIterator>>> delayedLoops;
   SimCode.SpatialDistributionInfo spatialInfo;
   BackendDAE.Variables emptyVars;
   HashTableSimCodeEqCache.HashTable eqCache;
@@ -415,7 +416,7 @@ algorithm
     discreteModelVars := BackendDAEUtil.foldEqSystem(dlow, extractDiscreteModelVars, {});
     if debug then execStat("simCode: extractDiscreteModelVars"); end if;
     makefileParams := SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, isFMU);
-    (delayedExps, maxDelayedExpIndex) := extractDelayedExpressions(dlow);
+    (delayedExps, maxDelayedExpIndex, delayedLoops) := extractDelayedExpressions(dlow);
     spatialInfo := extractSpatialDistributionInfo(dlow);
     execStat("simCode: created of all other equations (e.g. parameter, nominal, assert, etc)");
 
@@ -702,7 +703,7 @@ algorithm
       discreteModelVars           = discreteModelVars,
       extObjInfo                  = extObjInfo,
       makefileParams              = makefileParams,
-      delayedExps                 = SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex, {}),
+      delayedExps                 = SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex, delayedLoops),
       spatialInfo                 = spatialInfo,
       jacobianMatrices            = SymbolicJacs,
       simulationSettingsOpt       = simSettingsOpt,
@@ -930,6 +931,57 @@ algorithm
     else (inVar, inTpl);
   end match;
 end collectClockedVars1;
+
+protected function addStateDerivativeAliases
+  "Adds der(v) as an alias of der(x) for each alias v = x or v = -x of a state x."
+  input array<list<SimCodeVar.SimVar>> simVars;
+  input Mutable<HashSet.HashSet> hs;
+protected
+  UnorderedMap<DAE.ComponentRef, SimCodeVar.SimVar> ders;
+  list<SimCodeVar.SimVar> aliases = {};
+  SimCodeVar.SimVar derVar;
+  DAE.ComponentRef name, state;
+  Option<SimCodeVar.SimVar> stateDer;
+algorithm
+  if Config.simCodeTarget() == "Cpp" then
+    return;
+  end if;
+  ders := UnorderedMap.new<SimCodeVar.SimVar>(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
+  for v in Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.derivative)) loop
+    UnorderedMap.add(v.name, v, ders);
+  end for;
+  for alias in Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.alias)) loop
+    stateDer := match alias.aliasvar
+      case SimCodeVar.ALIAS(varName = state) then UnorderedMap.get(ComponentReference.crefPrefixDer(state), ders);
+      case SimCodeVar.NEGATEDALIAS(varName = state) then UnorderedMap.get(ComponentReference.crefPrefixDer(state), ders);
+      else NONE();
+    end match;
+    name := ComponentReference.crefPrefixDer(alias.name);
+    if isSome(stateDer) and not StringUtil.startsWith(ComponentReferenceBasics.crefFirstIdent(alias.name), "$")
+       and not BaseHashSet.has(name, Mutable.access(hs)) then
+      SOME(derVar) := stateDer;
+      derVar.aliasvar := match alias.aliasvar
+        case SimCodeVar.NEGATEDALIAS() then SimCodeVar.NEGATEDALIAS(derVar.name);
+        else SimCodeVar.ALIAS(derVar.name);
+      end match;
+      derVar.name := name;
+      derVar.comment := if alias.comment == "" then "" else "der(" + alias.comment + ")";
+      derVar.varKind := BackendDAE.VARIABLE();
+      derVar.source := alias.source;
+      derVar.arrayCref := NONE();
+      derVar.numArrayElement := {};
+      derVar.isProtected := alias.isProtected;
+      derVar.hideResult := alias.hideResult;
+      derVar.isEncrypted := alias.isEncrypted;
+      derVar.exportVar := if isSome(alias.exportVar) then SOME(name) else NONE();
+      aliases := derVar :: aliases;
+      Mutable.update(hs, BaseHashSet.add(name, Mutable.access(hs)));
+    end if;
+  end for;
+  for v in aliases loop
+    addSimVar(v, SimVarsIndex.alias, simVars);
+  end for;
+end addStateDerivativeAliases;
 
 protected function addTempVars
   input array<list<SimCodeVar.SimVar>> simVars;
@@ -4922,17 +4974,16 @@ algorithm
 end isSimEqSys;
 
 protected function collectDelayExpressions
-"Put expression into a list if it is a call to delay().
-Useable as a function parameter for Expression.traverseExpression."
-  input DAE.Exp e;
-  input list<DAE.Exp> acc;
-  output DAE.Exp outExp;
-  output list<DAE.Exp> outAcc;
+  "Collects the delay calls and the iterators of the enclosing reductions and
+   for-loops. Use with BackendDAEUtil.traverseBackendDAEExpsWithIterators."
+  input output DAE.Exp e;
+  input list<DAE.ReductionIterator> iters;
+  output Boolean cont = true;
+  input output list<tuple<DAE.Exp, list<DAE.ReductionIterator>>> acc;
 algorithm
-  (outExp,outAcc) := match e
-    case DAE.CALL(path = Absyn.IDENT("delay"))
-      then (e, e :: acc);
-    else (e,acc);
+  acc := match e
+    case DAE.CALL(path = Absyn.IDENT("delay")) then (e, iters) :: acc;
+    else acc;
   end match;
 end collectDelayExpressions;
 
@@ -4955,26 +5006,58 @@ algorithm
 end updateDelayExpressions;
 
 public function extractDelayedExpressions
+  "Returns the delay calls with a constant index, the number of buffers, and the
+   delay calls whose index depends on iterators. Equal calls share an index and
+   are returned once, so that each buffer is stored once per step."
   input BackendDAE.BackendDAE dlow;
-  output list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
-  output Integer maxDelayedExpIndex;
+  output list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps = {};
+  output Integer maxDelayedExpIndex = -1;
+  output list<tuple<DAE.Exp, tuple<DAE.Exp, DAE.Exp, DAE.Exp>, list<BackendDAE.SimIterator>>> delayedLoops = {};
+protected
+  list<tuple<DAE.Exp, list<DAE.ReductionIterator>>> exps;
+  list<DAE.ReductionIterator> iters, delay_iters;
+  list<String> names;
+  DAE.Exp index, last, e, delay, delayMax, stop;
+  Integer i;
+  UnorderedSet<DAE.Exp> indices = UnorderedSet.new(ExpressionBasics.hashExp, ExpressionBasics.expEqual);
 algorithm
-  (delayedExps, maxDelayedExpIndex) := matchcontinue dlow
-    local
-      list<DAE.Exp> exps;
-    case _
-      algorithm
-        (_,exps) := BackendDAEUtil.traverseBackendDAEExps(dlow, Expression.traverseSubexpressionsHelper, (collectDelayExpressions, {}));
-        delayedExps := List.map(exps, extractIdAndExpFromDelayExp);
-        maxDelayedExpIndex := List.applyAndFold(delayedExps, intMax, Util.tuple21, -1);
-      then
-        (delayedExps, maxDelayedExpIndex+1);
+  exps := BackendDAEUtil.traverseBackendDAEExpsWithIterators(dlow, collectDelayExpressions, {});
+  for tpl in exps loop
+    (DAE.CALL(expLst = {index, e, delay, delayMax}), iters) := tpl;
+    index := ExpressionSimplify.simplify(index);
+    if not UnorderedSet.add(index, indices) then
+      continue;
+    end if;
+    names := {};
+    delay_iters := {};
+    for it in iters loop
+      if not listMember(it.id, names) and Expression.expHasCrefName(index, it.id) then
+        names := it.id :: names;
+        delay_iters := it :: delay_iters;
+      end if;
+    end for;
+
+    if listEmpty(delay_iters) then
+      i := match index
+        case DAE.ICONST(i) then i;
+        else algorithm
+          Error.addInternalError(getInstanceName() + " failed for " + ExpressionBasics.printExpStr(Util.tuple21(tpl)), sourceInfo());
+        then fail();
+      end match;
+      delayedExps := (i, (e, delay, delayMax)) :: delayedExps;
     else
-      algorithm
-        Error.addInternalError("function extractDelayedExpressions failed", sourceInfo());
-      then
-        fail();
-  end matchcontinue;
+      delayedLoops := (index, (e, delay, delayMax), list(FindZeroCrossings.createIterator(it) for it in delay_iters)) :: delayedLoops;
+      last := index;
+      for it in delay_iters loop
+        DAE.RANGE(stop = stop) := it.exp;
+        last := Expression.replaceCrefBottomUp(last, ComponentReferenceBasics.makeCrefIdent(it.id, DAE.T_INTEGER_DEFAULT, {}), stop);
+      end for;
+      (DAE.ICONST(i), _) := ExpressionSimplify.simplify(last);
+    end if;
+    maxDelayedExpIndex := max(i, maxDelayedExpIndex);
+  end for;
+  delayedExps := listReverse(delayedExps);
+  maxDelayedExpIndex := maxDelayedExpIndex + 1;
 end extractDelayedExpressions;
 
 public function extractJacobianDelayedExpressions
@@ -7572,6 +7655,7 @@ algorithm
     if debug then execStat("createVars: variable list (init lambda0)"); end if;
   end if;
 
+  addStateDerivativeAliases(simVars, hs);
   addTempVars(simVars, tempvars);
   if debug then execStat("createVars: addTempVars"); end if;
   //BaseHashSet.printHashSet(hs);

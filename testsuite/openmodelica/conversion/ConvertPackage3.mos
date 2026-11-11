@@ -1,0 +1,60 @@
+// name:   ConvertPackage3
+// status: correct
+// cflags: -d=newInst
+// depends: libs
+//
+// Conversions of a library that the package manager did not install: the
+// versions it converts from, a hint when a class uses one of them, a
+// conversion through a noneFromVersion step, and one with only that step.
+//
+
+setModelicaPath("libs/");
+getAvailablePackageConversionsFrom(convlib, "1.0.0");
+getAvailablePackageConversionsTo(convlib, "2.1.0");
+getErrorString();
+
+loadString("
+  model UsesOld
+    convlib.OldReal x;
+    annotation(uses(convlib(version = \"1.0.0\")));
+  end UsesOld;
+");
+getErrorString();
+convertPackageToLibrary(UsesOld, convlib, "2.1.0");
+getErrorString();
+list(UsesOld);
+
+loadString("
+  model UsesCompatible
+    convlib.NewReal x;
+    annotation(uses(convlib(version = \"2.0.0\")));
+  end UsesCompatible;
+", uses=false);
+convertPackageToLibrary(UsesCompatible, convlib, "2.1.0");
+getErrorString();
+list(UsesCompatible);
+// Result:
+// true
+// {"2.1.0"}
+// {"1.0.0"}
+// ""
+// true
+// "Notification: UsesOld uses convlib 1.0.0, which is not available, but convlib 2.1.0 has a conversion from it. Use convertPackageToLibrary(UsesOld, convlib, \"2.1.0\") to convert UsesOld.
+// Notification: Automatically loaded package convlib 2.1.0 due to uses annotation from UsesOld.
+// "
+// true
+// ""
+// "model UsesOld
+//   convlib.NewReal x;
+//   annotation(
+//     uses(convlib(version = \"2.1.0\")));
+// end UsesOld;"
+// true
+// true
+// ""
+// "model UsesCompatible
+//   convlib.NewReal x;
+//   annotation(
+//     uses(convlib(version = \"2.1.0\")));
+// end UsesCompatible;"
+// endResult

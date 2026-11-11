@@ -1830,7 +1830,6 @@ fn homotopy_steps() -> i32 {
 // computed start). Set per run by the host before `drive`.
 mod overrides_store {
     use super::WTy;
-    use alloc::vec::Vec;
 
     #[cfg(feature = "std")]
     mod imp {
@@ -2444,6 +2443,7 @@ fn drain_asserts(e: &mut dyn SimEngine, sim_data: u32, level: omclog::LogType, l
             if log {
                 omclog::info_used(omclog::ASSERT, false, &line, info.used());
             }
+            note_held_assert(assert_logger_text(&info, &cond, time, w[9] != 0));
             rethrow_store::arm(info);
             armed = true;
         } else if level == omclog::WARNING {
@@ -2468,31 +2468,57 @@ pub fn row_asserts(e: &mut dyn SimEngine, sim_data: u32, warn: i32) -> i32 {
 /// already-parenthesised `assert_cond` followed by the values of the variables in
 /// it; without a source position only the message is printed.
 fn assert_block(info: &AssertInfo, cond: &str, time: f64, initial: bool) -> String {
+    let text = assert_text(info, cond, time, initial);
+    if info.file.is_empty() {
+        return text;
+    }
+    let ro_str = if info.read_only { "readonly" } else { "writable" };
+    format!(
+        "[{}:{}:{}-{}:{}:{ro_str}]\n{text}",
+        info.file, info.line_start, info.col_start, info.line_end, info.col_end,
+    )
+}
+
+/// The block without its position. An equation `assert()` always names its
+/// condition, and C prints it with the message as one message's second line —
+/// including for a backend-generated variable, whose `FILE_INFO` is empty
+/// (`$finalCon$…`'s min/max guard). Without a condition it is C's
+/// `FUNCTION_CONTEXT` `omc_assert`: the message only.
+fn assert_text(info: &AssertInfo, cond: &str, time: f64, initial: bool) -> String {
+    if cond.is_empty() {
+        return info.msg.clone();
+    }
     let during = if initial { "during initialization " } else { "" };
     let t = format_f(time);
-    let head = format!("The following assertion has been violated {during}at time {t}");
-    let ro_str = if info.read_only { "readonly" } else { "writable" };
-    let pos = format!(
-        "[{}:{}:{}-{}:{}:{ro_str}]",
-        info.file, info.line_start, info.col_start, info.line_end, info.col_end,
-    );
-    // An equation `assert()` always names its condition, and C prints it with the
-    // message as one message's second line — including for a backend-generated
-    // variable, whose `FILE_INFO` is empty (`$finalCon$…`'s min/max guard). Without
-    // a condition it is C's `FUNCTION_CONTEXT` `omc_assert`: the message, under the
-    // position where there is one (`omc_dummyFileInfo` has none).
-    if cond.is_empty() {
-        return if info.file.is_empty() {
-            info.msg.clone()
-        } else {
-            format!("{pos}\n{}", info.msg)
-        };
+    format!(
+        "The following assertion has been violated {during}at time {t}\n({cond}) --> \"{}\"",
+        info.msg
+    )
+}
+
+/// The assertion as C's `omc_assert_fmi` gives it to an FMU's logger.
+pub fn assert_logger_text(info: &AssertInfo, cond: &str, time: f64, initial: bool) -> String {
+    ext_assert_message(&info.file, info.line_start, &assert_text(info, cond, time, initial))
+}
+
+/// Keep the first `assert()` held since the hold was last settled, as the
+/// logger gets it: later evaluations of the same stretch hold it quietly.
+pub fn note_held_assert(text: String) {
+    rethrow_store::note_reason(text);
+}
+
+static HELD_ASSERT_REPORTER: AtomicUsize = AtomicUsize::new(0);
+/// Where a held `assert()` that fails the run goes; an FMU's logger.
+pub fn set_held_assert_reporter(f: fn(&str)) {
+    HELD_ASSERT_REPORTER.store(f as usize, Ordering::Relaxed);
+}
+
+fn report_held_assert(reason: Option<String>) {
+    let p = HELD_ASSERT_REPORTER.load(Ordering::Relaxed);
+    if let Some(text) = reason.filter(|_| p != 0) {
+        let f: fn(&str) = unsafe { core::mem::transmute(p) };
+        f(&text);
     }
-    let body = format!("({cond}) --> \"{}\"", info.msg);
-    if info.file.is_empty() {
-        return format!("{head}\n{body}");
-    }
-    format!("{pos}\n{head}\n{body}")
 }
 
 pub fn log_assert_block(info: &AssertInfo, cond: &str, time: f64, initial: bool) {
@@ -2513,11 +2539,21 @@ mod rethrow_store {
     #[cfg(feature = "std")]
     mod imp {
         use super::AssertInfo;
+        use alloc::string::String;
         use core::cell::{Cell, RefCell};
         std::thread_local! {
             static PENDING: RefCell<Option<AssertInfo>> = const { RefCell::new(None) };
             static EVENT: Cell<bool> = const { Cell::new(false) };
             static NOTED: Cell<bool> = const { Cell::new(false) };
+            static REASON: RefCell<Option<String>> = const { RefCell::new(None) };
+        }
+        pub fn note_reason(text: String) {
+            REASON.with(|r| {
+                r.borrow_mut().get_or_insert(text);
+            });
+        }
+        pub fn take_reason() -> Option<String> {
+            REASON.with(|r| r.borrow_mut().take())
         }
         pub fn arm(info: AssertInfo) {
             PENDING.with(|p| {
@@ -2544,10 +2580,20 @@ mod rethrow_store {
     #[cfg(not(feature = "std"))]
     mod imp {
         use super::AssertInfo;
+        use alloc::string::String;
         use core::cell::UnsafeCell;
         struct Store(UnsafeCell<(Option<AssertInfo>, bool, bool)>);
         unsafe impl Sync for Store {}
         static PENDING: Store = Store(UnsafeCell::new((None, false, false)));
+        struct Reason(UnsafeCell<Option<String>>);
+        unsafe impl Sync for Reason {}
+        static REASON: Reason = Reason(UnsafeCell::new(None));
+        pub fn note_reason(text: String) {
+            unsafe { (*REASON.0.get()).get_or_insert(text) };
+        }
+        pub fn take_reason() -> Option<String> {
+            unsafe { (*REASON.0.get()).take() }
+        }
         pub fn arm(info: AssertInfo) {
             unsafe {
                 let st = &mut *PENDING.0.get();
@@ -2573,7 +2619,7 @@ mod rethrow_store {
             }
         }
     }
-    pub use imp::{arm, note, note_event, take};
+    pub use imp::{arm, note, note_event, note_reason, take, take_reason};
 }
 
 /// C's `assertCommonVar` under `noThrowAsserts`, and the C host's `needToReThrow`
@@ -2638,6 +2684,7 @@ pub fn settle_event_asserts(
     if !take_suppressed_assert(e, sim_data, log)? {
         return Ok(false);
     }
+    let reason = rethrow_store::take_reason();
     if fired || discrete_snapshot(e, sim_data, layout)? != before {
         omclog::info(omclog::ASSERT, false, "Found event, previous asserts are ignored.");
         return Ok(true);
@@ -2647,6 +2694,7 @@ pub fn settle_event_asserts(
         false,
         "No event found, but assert was triggered. Throwing now!",
     );
+    report_held_assert(reason);
     Err(ASSERT_ERR)
 }
 
@@ -2656,6 +2704,7 @@ fn close_assert_window(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
     set_assert_hold(AssertHold::Throw);
     drain_asserts(e, sim_data, omclog::INFO, true)?;
     let (info, found_event, noted) = rethrow_store::take();
+    let reason = rethrow_store::take_reason();
     if info.is_none() && !noted {
         return Ok(());
     }
@@ -2668,6 +2717,7 @@ fn close_assert_window(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
         false,
         "No event found, but assert was triggered. Throwing now!",
     );
+    report_held_assert(reason);
     // Reported here; the trap this becomes has nothing left to report.
     let _ = e.take_pending_assert();
     let p = ASSERT_REPORTER.load(Ordering::Relaxed);
@@ -3187,7 +3237,7 @@ fn print_parameters(e: &dyn SimEngine, sim_data: u32, model: &SimMeta) {
             .unwrap_or(v)
     };
     omclog::info(omclog::INIT_V, true, "parameter values");
-    let mut group = |header: &str, lines: alloc::vec::Vec<String>| {
+    let group = |header: &str, lines: alloc::vec::Vec<String>| {
         if lines.is_empty() {
             return;
         }
@@ -9946,11 +9996,17 @@ pub enum CsStep {
 
 /// C's `FMI2CS_initializeSolverData`: an FMU's solver is set up in
 /// `fmi2Instantiate`, and for CVODE `LOG_SOLVER` is forced on across
-/// `cvode_solver_initial` so the banner reaches the log either way.
+/// `cvode_solver_initial` so the banner reaches the log either way. IDA's
+/// `ida_solver_initial` warns there when it changes the Jacobian method.
 pub fn log_cs_solver_setup(model: &SimModel) {
     let Ok(method) = resolve_solver_method(model.cs_method(), model.layout.dae_mode()) else {
         return;
     };
+    #[cfg(sundials)]
+    if method == "ida" {
+        ida_jacobian_method(cvode_jac_a(model), ida_linear_solver(&model.layout), true);
+        return;
+    }
     // "No states present, continuing without ODE solver": C falls back to euler,
     // which has nothing to set up and nothing to say.
     if method != "cvode" || model.layout.n_states == 0 {
@@ -12623,14 +12679,144 @@ impl GuessStepper {
 
 // ── A `--daeMode` model evaluated as an explicit ODE ─────────────────────────
 
+/// The DAE-mode system's key in `openmodelica_nls::kinsol`'s solver cache, apart
+/// from the model's own systems, which are numbered from 0.
+const DAE_KINSOL_HANDLE: u32 = u32::MAX - 1;
+
 /// Solve `F(t, x, x', z) = 0` for the derivatives and the algebraic unknowns at
 /// the time and states `SimData` holds — what an FMU exported from a `--daeMode`
-/// model owes an importer that runs it as an ordinary ODE FMU. A damped Newton
-/// iteration over `evaluateDAEResiduals`, started from the values the slots hold
-/// (the previous point, or the initial system's), with a differenced Jacobian: a
-/// colour at a time where the residual sparsity is known, a `der(x)` column taking
-/// its state's pattern since DAE-mode differentiation folds `der(x)` into `x`.
+/// model owes an importer that runs it as an ordinary ODE FMU.
+///
+/// This only describes the system, as C's `initDAEModeExplicitNLS` does: the
+/// unknowns `[der(x); z]`, `evaluateDAEResiduals` as the residual, the residual's
+/// coloured sparsity pattern (a `der(x)` column takes its state's, since DAE-mode
+/// differentiation folds `der(x)` into `x`) and the nominal values of `z`. KINSOL
+/// with KLU solves it, as it solves the model's sparse systems
+/// ([`openmodelica_nls::kinsol::solve_selected`]), from the values the slots hold
+/// (the previous point, or the initial system's). Without SUNDIALS, a dense damped
+/// Newton iteration does.
 pub fn dae_solve_explicit(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, dae: &DaeInfo) -> Result<()> {
+    use openmodelica_nls::kinsol;
+    if !kinsol::AVAILABLE {
+        return dae_newton_dense(e, sim_data, layout, dae);
+    }
+    let n = layout.n_dae_res as usize;
+    let ns = layout.n_states as usize;
+    if n == 0 {
+        return Ok(());
+    }
+    if dae.alg_offs.len() + ns != n {
+        return Err("DAE-mode metadata disagrees with the layout");
+    }
+    let offs: Vec<u32> = (0..ns)
+        .map(|i| layout.real_off + ((ns + i) as u32) * 8)
+        .chain(dae.alg_offs.iter().copied())
+        .collect();
+    let mut nominal = vec![1.0; n];
+    for k in 0..dae.alg_offs.len() {
+        let nom = read_f64(e, sim_data + layout.dae_alg_nom_off + (k as u32) * 8)?.abs();
+        if nom > 0.0 && nom.is_finite() {
+            nominal[ns + k] = nom;
+        }
+    }
+    // The pattern in CSC, with each column's 0-based colour; a full one without.
+    let (mut colptr, mut rowidx, mut colors) = (Vec::with_capacity(n + 1), Vec::new(), Vec::new());
+    colptr.push(0i32);
+    match dae
+        .sparsity
+        .as_ref()
+        .filter(|p| p.n as usize == n && p.rows_by_col.len() == n)
+    {
+        Some(p) => {
+            for rows in &p.rows_by_col {
+                rowidx.extend(rows.iter().map(|&r| r as i32));
+                colptr.push(rowidx.len() as i32);
+            }
+            colors = vec![u32::MAX; n];
+            for (c, cols) in p.colors.iter().enumerate() {
+                for &j in cols {
+                    if let Some(slot) = colors.get_mut(j as usize) {
+                        *slot = c as u32;
+                    }
+                }
+            }
+            if colors.contains(&u32::MAX) {
+                colors.clear(); // incomplete: every column its own colour
+            }
+        }
+        None => {
+            for _ in 0..n {
+                rowidx.extend(0..n as i32);
+                colptr.push(rowidx.len() as i32);
+            }
+        }
+    }
+    let pat = kinsol::Pattern {
+        nnz: rowidx.len(),
+        colptr: &colptr,
+        rowidx: &rowidx,
+        colors: &colors,
+        max: &[],
+        min: &[],
+    };
+    let start: Vec<f64> = offs.iter().map(|&o| read_f64(e, sim_data + o)).collect::<Result<_>>()?;
+    let time = read_f64(e, sim_data + TIME_OFF)?;
+    let res_base = sim_data + layout.dae_res_off;
+    let residual = |e: &mut dyn SimEngine, u: &[f64], out: &mut [f64]| -> Result<()> {
+        for (&o, &v) in offs.iter().zip(u) {
+            write_f64(e, sim_data + o, v)?;
+        }
+        e.call2(MODEL_FN_DAE, sim_data, eval_stage::DYNAMIC)?;
+        read_f64s(e, res_base, out)
+    };
+    // KINSOL's callbacks cannot fail: the first engine error is kept, and the
+    // residual turns NaN so the solve stops.
+    let mut failure: Option<&'static str> = None;
+    let mut x = start.clone();
+    let solved = {
+        let mut eval = |u: &[f64], r: &mut [f64]| {
+            if failure.is_none() {
+                if let Err(err) = residual(&mut *e, u, r) {
+                    failure = Some(err);
+                }
+            }
+            if failure.is_some() {
+                r.iter_mut().for_each(|v| *v = f64::NAN);
+            }
+        };
+        let mut load_guess = |g: &mut [f64]| g.copy_from_slice(&start);
+        let mut assemble = |_: &[f64], _: &mut [f64]| {};
+        kinsol::solve_selected(
+            DAE_KINSOL_HANDLE,
+            n,
+            &pat,
+            &nominal,
+            &start,
+            &start,
+            &mut x,
+            u32::MAX,
+            time,
+            false,
+            &mut load_guess,
+            &mut eval,
+            &mut assemble,
+        )
+    };
+    if let Some(err) = failure {
+        return Err(err);
+    }
+    if !solved {
+        return Err(DAE_EXPLICIT_FAILED);
+    }
+    // The solver's last evaluation need not be at its solution.
+    let mut f = vec![0.0; n];
+    residual(e, &x, &mut f)
+}
+
+/// [`dae_solve_explicit`] without SUNDIALS: a damped Newton iteration over
+/// `evaluateDAEResiduals` with a dense LU, the Jacobian differenced a colour at a
+/// time where the residual sparsity is known.
+fn dae_newton_dense(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, dae: &DaeInfo) -> Result<()> {
     const MAX_ITER: usize = 100;
     const RTOL: f64 = 1e-10;
     let n = layout.n_dae_res as usize;
@@ -12654,7 +12840,7 @@ pub fn dae_solve_explicit(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayo
     }
     let mut u: Vec<f64> = offs.iter().map(|&o| read_f64(e, sim_data + o)).collect::<Result<_>>()?;
     let res_base = sim_data + layout.dae_res_off;
-    let mut residual = |e: &mut dyn SimEngine, u: &[f64], out: &mut [f64]| -> Result<()> {
+    let residual = |e: &mut dyn SimEngine, u: &[f64], out: &mut [f64]| -> Result<()> {
         for (&o, &v) in offs.iter().zip(u) {
             write_f64(e, sim_data + o, v)?;
         }

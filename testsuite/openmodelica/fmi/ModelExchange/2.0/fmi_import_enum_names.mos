@@ -1,0 +1,87 @@
+// name:     fmi_import_enum_names
+// keywords: FMI 2.0 3.0 import enumeration item name quoted identifier
+// status:   correct
+// teardown_command: rm -rf ImportEnum2* ImportEnum3* output.log
+//
+// FMI allows any string as the name of an enumeration item, for example
+// "Option 1". importFMU must write a name that is not a valid Modelica
+// identifier as a quoted identifier, in the type and in the mapping
+// function, else the wrapper does not parse. A valid name stays unchanged,
+// also a quoted identifier such as 'q r', which OpenModelica itself exports.
+//
+
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi_import_enum_names.py"); getErrorString();
+
+// FMI 2.0
+importFMU("ImportEnum2.fmu"); getErrorString();
+system("sed -n -e \"/type Option = enumeration/,/);/p\" -e \"/outType := /p\" ImportEnum2_me_FMU.mo > ImportEnum2_enum.txt"); getErrorString();
+readFile("ImportEnum2_enum.txt");
+loadFile("ImportEnum2_me_FMU.mo"); getErrorString();
+translateModel(ImportEnum2_me_FMU); getErrorString();
+
+// FMI 3.0
+importFMU("ImportEnum3.fmu"); getErrorString();
+system("sed -n -e \"/type Option = enumeration/,/);/p\" -e \"/outType := /p\" ImportEnum3_me_FMU.mo > ImportEnum3_enum.txt"); getErrorString();
+readFile("ImportEnum3_enum.txt");
+loadFile("ImportEnum3_me_FMU.mo"); getErrorString();
+translateModel(ImportEnum3_me_FMU); getErrorString();
+
+// Result:
+// 0
+// ""
+// "ImportEnum2_me_FMU.mo"
+// ""
+// 0
+// ""
+// "  type Option = enumeration(
+//     'Option 1',
+//     'x-y',
+//     'der',
+//     'a\\'b',
+//     'a\\\\b',
+//     'q r',
+//     Valid_7,
+//     ' pad');
+//     if i == 1 then outType := Option.'Option 1';
+//     elseif i == 2 then outType := Option.'x-y';
+//     elseif i == 3 then outType := Option.'der';
+//     elseif i == 4 then outType := Option.'a\\'b';
+//     elseif i == 5 then outType := Option.'a\\\\b';
+//     elseif i == 6 then outType := Option.'q r';
+//     elseif i == 7 then outType := Option.Valid_7;
+//     elseif i == 8 then outType := Option.' pad';
+// "
+// true
+// ""
+// true
+// "Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package Modelica 4.1.0 due to usage.
+// "
+// "ImportEnum3_me_FMU.mo"
+// ""
+// 0
+// ""
+// "  type Option = enumeration(
+//     'Option 1',
+//     'x-y',
+//     'der',
+//     'a\\'b',
+//     'a\\\\b',
+//     'q r',
+//     Valid_7,
+//     ' pad');
+//     if i == 1 then outType := Option.'Option 1';
+//     elseif i == 2 then outType := Option.'x-y';
+//     elseif i == 3 then outType := Option.'der';
+//     elseif i == 4 then outType := Option.'a\\'b';
+//     elseif i == 5 then outType := Option.'a\\\\b';
+//     elseif i == 6 then outType := Option.'q r';
+//     elseif i == 7 then outType := Option.Valid_7;
+//     elseif i == 8 then outType := Option.' pad';
+// "
+// true
+// ""
+// true
+// ""
+// endResult

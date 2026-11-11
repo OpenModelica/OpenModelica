@@ -610,6 +610,9 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("om_semver_compare", Infallible);
         m.insert("om_semver_normalize", Infallible);
         m.insert("om_semver_is_semver", Infallible);
+        m.insert("om_modelica_diff", Infallible);
+        m.insert("om_modelica_render", Infallible);
+        m.insert("om_modelica_code_equal", Infallible);
 
         // ── omc_file_ext.h inline file API ─────────────────────────────────
         // open/write* fail through ModelicaFormatError.

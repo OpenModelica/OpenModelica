@@ -75,10 +75,15 @@ impl Drop for Setup {
 /// `resolve` as omc runs it: answers `needMetadata` with `metadata` until there
 /// is a solution. Returns it and the files asked for.
 fn resolve(setup: &Setup, args: Value, metadata: impl Fn(&str) -> Value) -> (Value, Vec<String>) {
+    ask(setup, "resolve", args, metadata)
+}
+
+/// `op`, answering `needMetadata` with `metadata`.
+fn ask(setup: &Setup, op: &str, args: Value, metadata: impl Fn(&str) -> Value) -> (Value, Vec<String>) {
     let mut asked = Vec::new();
     let mut args = args;
     loop {
-        let r = setup.call("resolve", args.clone());
+        let r = setup.call(op, args.clone());
         let Some(need) = r["needMetadata"].as_array() else {
             return (r, asked);
         };
@@ -570,4 +575,33 @@ fn library_path_ignores_uses() {
         json!({"searchPath": s(&mp), "name": "Other", "version": "default"}),
     );
     assert_eq!(r["ok"], false);
+}
+
+#[test]
+fn conversions_of_installed_libraries() {
+    let setup = Setup::new("convertinstalled");
+    let mp = setup.libraries();
+    std::fs::create_dir_all(mp.join("Managed 2.0.0")).unwrap();
+    std::fs::write(mp.join("Managed 2.0.0/package.mo"), "").unwrap();
+    std::fs::write(
+        mp.join("Managed 2.0.0/openmodelica.metadata.json"),
+        r#"{"convertFromVersion": ["1.0.0"]}"#,
+    )
+    .unwrap();
+    std::fs::create_dir_all(mp.join("Vendor")).unwrap();
+    std::fs::write(mp.join("Vendor/package.mo"), "").unwrap();
+    setup.write_index(&json!({"libs": {}}));
+    let query = |op: &str, name: &str, version: &str| {
+        let answer = |_: &str| json!({"version": "3.0.0", "converts": ["2.5.0"]});
+        ask(&setup, op, json!({"name": name, "version": version}), answer).0["versions"].clone()
+    };
+    assert_eq!(query("convertFrom", "Managed", "1.0.0"), json!(["2.0.0"]));
+    assert_eq!(query("convertTo", "Managed", "2.0.0"), json!(["1.0.0"]));
+    assert_eq!(
+        query("convertFrom", "Vendor", "2.5.0"),
+        json!(["3.0.0"]),
+        "from package.mo"
+    );
+    assert_eq!(query("convertTo", "Vendor", "3.0.0"), json!(["2.5.0"]));
+    assert_eq!(query("convertFrom", "Vendor", "1.0.0"), json!([]));
 }

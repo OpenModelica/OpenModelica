@@ -22,6 +22,9 @@ getErrorString();
 readFile("TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_WithHARE_Outputs.csv");
 getErrorString();
 
+loadFile("Reconciled_TSP_DataReconciliationSimpleTests_Models_StructuralAnalysis_SG_DR_WithHARE.mo");
+getErrorString();
+
 
 // Result:
 // true
@@ -2096,5 +2099,7 @@ getErrorString();
 // GV.staticDrum.x,1,1,1e-06,1e-06,TRUE,0,
 // GV.singularPressureLoss_VVP.K,11,11,3.6,3.6,TRUE,9.33243e-06,
 // "
+// ""
+// true
 // ""
 // endResult

@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 
 set(FMU_NAME @FMU_NAME_IN@)
+# The file name prefix of the generated sources; FMU_NAME is the modelIdentifier.
+set(FMU_FILE_PREFIX "@FMU_FILE_PREFIX_IN@")
 
 set(FMU_NAME_HASH @FMU_NAME_HASH_IN@)
 
@@ -30,6 +32,10 @@ set(NEED_CVODE
     @NEED_CVODE@
     CACHE BOOL
     "FMU needs to link to SUNDIALS CVODE if 'ON'. Used for CoSimulation FMUs that want to use CVODE as integrator. Use 'OFF' otherwise.")
+set(NEED_DAE_MODE
+    @NEED_DAE_MODE@
+    CACHE BOOL
+    "FMU of a --daeMode model, which evaluates the residual form (dae_mode.c) if 'ON'. Use 'OFF' otherwise.")
 set(NEED_IDA
     @NEED_IDA@
     CACHE BOOL
@@ -165,7 +171,26 @@ file(GLOB_RECURSE FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/external_solve
                                       ${CMAKE_CURRENT_SOURCE_DIR}/meta/*.c
                                       ${CMAKE_CURRENT_SOURCE_DIR}/simulation/*.c
                                       ${CMAKE_CURRENT_SOURCE_DIR}/util/*.c)
-if(${COMPILE_MODELICA_EXTERNAL_C})
+# The static ModelicaExternalC libraries and zlib of the exporting installation,
+# in link order.
+if(${COMPILE_MODELICA_EXTERNAL_C} AND SOLVER_LIBRARY_DIRECTORY)
+  find_library(OM_ZLIB_LIBRARY NAMES zlib zlibstatic
+               PATHS ${SOLVER_LIBRARY_DIRECTORY}
+               NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_FIND_ROOT_PATH)
+  set(_om_mec_libraries "")
+  foreach(_om_lib ModelicaStandardTables ModelicaIO ModelicaMatIO ModelicaExternalC)
+    find_library(OM_${_om_lib}_LIBRARY NAMES ${_om_lib}
+                 PATHS ${SOLVER_LIBRARY_DIRECTORY}
+                 NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_FIND_ROOT_PATH)
+    list(APPEND _om_mec_libraries ${OM_${_om_lib}_LIBRARY})
+  endforeach()
+  if(OM_ZLIB_LIBRARY AND NOT _om_mec_libraries MATCHES "NOTFOUND")
+    set(OM_FMU_MODELICA_EXTERNAL_C_LIBRARIES ${_om_mec_libraries} ${OM_ZLIB_LIBRARY})
+  endif()
+endif()
+if(OM_FMU_MODELICA_EXTERNAL_C_LIBRARIES)
+  message(STATUS "ModelicaExternalC: ${OM_FMU_MODELICA_EXTERNAL_C_LIBRARIES}")
+elseif(${COMPILE_MODELICA_EXTERNAL_C})
   list(APPEND FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaFFT.c
                                   ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaInternal.c
                                   ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaRandom.c
@@ -179,9 +204,11 @@ endif()
 if(NOT ${NEED_CVODE})
   list(REMOVE_ITEM FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/cvode_solver.c)
 endif()
+if(NOT ${NEED_DAE_MODE})
+  list(REMOVE_ITEM FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/dae_mode.c)
+endif()
 if(NOT ${NEED_IDA})
-  list(REMOVE_ITEM FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/ida_solver.c
-                                       ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/dae_mode.c)
+  list(REMOVE_ITEM FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/ida_solver.c)
 endif()
 # The archive holds the rest of the runtime, built with OM_HAVE_PTHREADS and
 # for the platform omc runs on.
@@ -213,7 +240,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/isfmi2" AND EXISTS "${CMAKE_CURRENT_SOURC
 endif()
 if(OM_FMU_WITH_FMI2 AND NOT OMC_RUST_SIMULATION_RUNTIME)
   set(OM_FMU_FMI2_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/fmi-export/fmu2_model_interface.c
-                          ${CMAKE_CURRENT_SOURCE_DIR}/${FMU_NAME}_FMU2.c)
+                          "${CMAKE_CURRENT_SOURCE_DIR}/${FMU_FILE_PREFIX}_FMU2.c")
   list(REMOVE_ITEM FMU_RUNTIME_SOURCES ${OM_FMU_FMI2_SOURCES})
   list(REMOVE_ITEM FMU_GENERATED_MODEL_SOURCES ${OM_FMU_FMI2_SOURCES})
   if(NOT (BUILD_SHARED_LIBS AND UNIX AND NOT APPLE AND CMAKE_OBJCOPY))
@@ -301,27 +328,23 @@ if(OM_LINK_SIMULATION_RUNTIME_FMI)
   target_link_libraries(${FMU_NAME_HASH} PRIVATE "${SIMULATION_RUNTIME_FMI_LIBRARY}")
 endif()
 
-# An archive, so that a usertab of the model takes the place of the dummy one.
-if(${COMPILE_MODELICA_EXTERNAL_C})
+if(${COMPILE_MODELICA_EXTERNAL_C} AND NOT OM_FMU_MODELICA_EXTERNAL_C_LIBRARIES)
+  # An archive, so that a usertab of the model takes the place of the dummy one.
   add_library(omc_fmu_dummy_usertab STATIC ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaStandardTablesDummyUsertab.c)
   set_target_properties(omc_fmu_dummy_usertab PROPERTIES POSITION_INDEPENDENT_CODE ON C_VISIBILITY_PRESET hidden)
-  target_link_libraries(${FMU_NAME_HASH} PRIVATE omc_fmu_dummy_usertab)
 
   # MAT-files v7 are compressed with zlib.
   set(_om_zlib_dir ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/zlib)
   set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaMatIO.c PROPERTIES
                               COMPILE_DEFINITIONS HAVE_ZLIB=1)
   target_include_directories(${FMU_NAME_HASH} PRIVATE ${_om_zlib_dir})
-  find_library(OM_ZLIB_LIBRARY NAMES zlib zlibstatic
-               PATHS ${SOLVER_LIBRARY_DIRECTORY}
-               NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_FIND_ROOT_PATH)
-  if(SOLVER_LIBRARY_DIRECTORY AND OM_ZLIB_LIBRARY)
-    target_link_libraries(${FMU_NAME_HASH} PRIVATE ${OM_ZLIB_LIBRARY})
+  if(OM_ZLIB_LIBRARY)
+    set(OM_FMU_MODELICA_EXTERNAL_C_LIBRARIES omc_fmu_dummy_usertab ${OM_ZLIB_LIBRARY})
   else()
     file(GLOB _om_zlib_sources ${_om_zlib_dir}/*.c)
     add_library(omc_fmu_zlib STATIC ${_om_zlib_sources})
     set_target_properties(omc_fmu_zlib PROPERTIES POSITION_INDEPENDENT_CODE ON C_VISIBILITY_PRESET hidden)
-    target_link_libraries(${FMU_NAME_HASH} PRIVATE omc_fmu_zlib)
+    set(OM_FMU_MODELICA_EXTERNAL_C_LIBRARIES omc_fmu_dummy_usertab omc_fmu_zlib)
   endif()
 endif()
 
@@ -542,9 +565,17 @@ endmacro()
 
 @FMU_ADDITIONAL_LIBS@
 
+# After the libraries of the model: they can use zlib too.
+if(OM_FMU_MODELICA_EXTERNAL_C_LIBRARIES)
+  target_link_libraries(${FMU_NAME_HASH} PRIVATE ${OM_FMU_MODELICA_EXTERNAL_C_LIBRARIES})
+endif()
+
 if(NOT OMC_RUST_SIMULATION_RUNTIME)
   if(${NEED_CVODE})
     set(OMC_FMI_HAVE_CVODE ";OMC_FMI_HAVE_CVODE")
+  endif()
+  if(${NEED_DAE_MODE})
+    set(OMC_FMI_DAE_MODE ";OMC_FMI_DAE_MODE")
   endif()
   if(${NEED_IDA})
     set(OMC_FMI_HAVE_IDA ";OMC_FMI_HAVE_IDA")
@@ -594,7 +625,7 @@ if(NOT OMC_RUST_SIMULATION_RUNTIME)
     set(SOLVER_LIBRARIES omc_fmu_solvers)
   endif()
   target_link_libraries(${FMU_NAME_HASH} PRIVATE ${SOLVER_LIBRARIES})
-  set(OMC_FMI_SOLVER_DEFINITIONS ";WITH_SUITESPARSE${OMC_FMI_HAVE_CVODE}${OMC_FMI_HAVE_IDA}")
+  set(OMC_FMI_SOLVER_DEFINITIONS ";WITH_SUITESPARSE${OMC_FMI_HAVE_CVODE}${OMC_FMI_DAE_MODE}${OMC_FMI_HAVE_IDA}")
   message(STATUS "Solver libraries: ${SOLVER_LIBRARIES}")
 endif()
 

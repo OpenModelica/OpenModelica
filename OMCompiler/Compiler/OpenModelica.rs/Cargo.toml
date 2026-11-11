@@ -85,6 +85,7 @@ members = [
   "openmodelica_download",
   "openmodelica_package_manager",
   "openmodelica_version",
+  "openmodelica_modelica_diff",
   "openmodelica_animation",
   "openmodelica_animation_wasm",
   "openmodelica_scripting_api_gen",
@@ -92,7 +93,6 @@ members = [
   "omshell_omc",
   "omshell_wgpu",
   "omshell_egui",
-  "omshell_dioxus",
   "openmodelica_fmi",
   "openmodelica_fmi_driver",
   "openmodelica_ext_native_marshal",
@@ -124,7 +124,7 @@ exclude = [
   "openmodelica_codegen_wasm_jit_runtime",
   "../../SimulationRuntime/rust/openmodelica_result_web_embed",
 ]
-# The OMShell GUI crates pull modern UI frameworks (eframe/dioxus) that require a
+# The OMShell GUI crate pulls a modern UI framework (eframe) that requires a
 # recent wasm-bindgen. Since wasmer 7.2 the compiler's wasm build uses the same
 # recent wasm-bindgen, so they share one resolution and are ordinary members.
 [workspace.dependencies]
@@ -168,7 +168,7 @@ zmq = "0.10"
 # the native `sys`/cranelift backend. wasmer errors are wrapped with
 # anyhow::anyhow! via the `wt` helper (their Debug formatting), since the
 # crate's many engine error types do not share one anyhow-convertible type.
-wasm-encoder = "0.259"
+wasm-encoder = "0.263"
 # Engine backends for the wasm-jit target, selected by feature/target in
 # openmodelica_codegen_wasm_jit: wasmtime (native default, fastest cranelift),
 # or wasmer — whose `js` backend is the only one that can JIT inside a
@@ -207,6 +207,7 @@ openmodelica_zip = { path = "openmodelica_zip" }
 openmodelica_download = { path = "openmodelica_download", default-features = false }
 openmodelica_package_manager = { path = "openmodelica_package_manager", default-features = false }
 openmodelica_version = { path = "openmodelica_version" }
+openmodelica_modelica_diff = { path = "openmodelica_modelica_diff" }
 # LAPACK for every target, in place of the system `liblapack.so`: the same
 # `d*_` Fortran-ABI symbols `Lapack.rs` already binds, so one implementation
 # serves native, Windows (no MSVC-ABI LAPACK) and wasm (nothing to link) alike.

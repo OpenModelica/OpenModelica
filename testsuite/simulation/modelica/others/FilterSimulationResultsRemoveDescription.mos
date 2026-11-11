@@ -1,0 +1,39 @@
+// name: FilterSimulationResultsRemoveDescription
+// keywords: filterSimulationResults removeDescription
+// status: correct
+// teardown_command: rm -f FilterSimulationResultsRemoveDescription_* FilterSimulationResultsRemoveDescription FilterSimulationResultsRemoveDescription.c FilterSimulationResultsRemoveDescription.exe FilterSimulationResultsRemoveDescription.libs FilterSimulationResultsRemoveDescription.log FilterSimulationResultsRemoveDescription.makefile FilterSimulationResultsRemoveDescription.o output.log
+//
+// A result file filtered with removeDescription=true reads back (#17958).
+
+loadString("
+model FilterSimulationResultsRemoveDescription
+  parameter Real k = 2 \"a parameter\";
+  Real x(start = 1, fixed = true) \"a state\";
+equation
+  der(x) = -k * x;
+end FilterSimulationResultsRemoveDescription;
+"); getErrorString();
+
+simulate(FilterSimulationResultsRemoveDescription, stopTime=1.0, numberOfIntervals=10); getErrorString();
+filterSimulationResults("FilterSimulationResultsRemoveDescription_res.mat", "FilterSimulationResultsRemoveDescription_f.mat", {"x", "k"}, removeDescription=true); getErrorString();
+readSimulationResultVars("FilterSimulationResultsRemoveDescription_f.mat", readParameters=true, openmodelicaStyle=true); getErrorString();
+{val(x, 1.0, "FilterSimulationResultsRemoveDescription_f.mat"), val(k, 1.0, "FilterSimulationResultsRemoveDescription_f.mat")}; getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "FilterSimulationResultsRemoveDescription_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'FilterSimulationResultsRemoveDescription', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// ""
+// {"k", "time", "x"}
+// ""
+// {0.13533632115673702, 2.0}
+// ""
+// endResult

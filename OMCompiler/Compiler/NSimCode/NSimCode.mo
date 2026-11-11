@@ -70,6 +70,7 @@ protected
   import NFFunction.Function;
   import NFFlatten.FunctionTree;
   import NFInstNode.InstNode;
+  import Statement = NFStatement;
   import Type = NFType;
 
   // Old Backend imports
@@ -86,6 +87,7 @@ protected
   import NBInitialization;
   import NBVariable.{VariablePointers, VarData};
   import BVariable = NBVariable;
+  import DataReconciliation = NBDataReconciliation;
   import Partition = NBPartition;
   import NBResizable;
 
@@ -376,6 +378,7 @@ public
             // create sim vars before everything else
             residual_vars                       := BackendDAE.getLoopResiduals(bdae);
             (vars, simCodeIndices)              := SimVars.create(varData, residual_vars, simCodeIndices);
+            vars                                := SimVars.addDataReconciliation(vars, bdae.dataReconciliation);
             (extObjInfo, vars, simCodeIndices)  := ExtObjInfo.create(varData.external_objects, vars, simCodeIndices);
             simcode_map                         := SimCodeUtil.createSimCodeMap(vars, extObjInfo);
 
@@ -472,7 +475,7 @@ public
             (jacB, simCodeIndices) := SimJacobian.empty("B", simCodeIndices);
             (jacC, simCodeIndices) := SimJacobian.empty("C", simCodeIndices);
             (jacD, simCodeIndices) := SimJacobian.empty("D", simCodeIndices);
-            (jacF, simCodeIndices) := SimJacobian.empty("F", simCodeIndices);
+            (jacF, simCodeIndices) := SimJacobian.createDataReconciliationJacobian(bdae.dataReconciliation, simCodeIndices, simcode_map);
             (jacH, simCodeIndices) := SimJacobian.empty("H", simCodeIndices);
 
             (jacLfg, jacMrf, jacR0, simCodeIndices) := SimJacobian.createOptimizationJacobian(listAppend(bdae.ode, bdae.ode_event), simCodeIndices, simcode_map);
@@ -498,24 +501,24 @@ public
             generic_loop_calls  := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(simCodeIndices.generic_call_map));
 
             // number the delay() calls, equal calls share one buffer
-            index_delays        := function Expression.map(func = function indexDelay(map = delay_map, size = delay_size, iters = {}));
+            index_delays        := function indexDelays(map = delay_map, size = delay_size, iters = {});
             generic_loop_calls  := list(indexDelaysCall(call, delay_map, delay_size) for call in generic_loop_calls);
             jacobians           := list(SimJacobian.mapGenericCalls(jac, function indexDelaysCall(map = delay_map, size = delay_size)) for jac in jacobians);
             jacobians           := list(SimJacobian.mapExp(jac, index_delays) for jac in jacobians);
-            independent         := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in independent);
-            allSim              := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in allSim);
-            ode                 := list(list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in lst) for lst in ode);
-            algebraic           := list(list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in lst) for lst in algebraic);
+            independent         := list(indexDelaysBlock(blck, delay_map, delay_size) for blck in independent);
+            allSim              := list(indexDelaysBlock(blck, delay_map, delay_size) for blck in allSim);
+            ode                 := list(list(indexDelaysBlock(blck, delay_map, delay_size) for blck in lst) for lst in ode);
+            algebraic           := list(list(indexDelaysBlock(blck, delay_map, delay_size) for blck in lst) for lst in algebraic);
             clockedPartitions   := list(SimPartition.mapShallow(part, index_delays) for part in clockedPartitions);
-            no_ret              := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in no_ret);
-            algorithms          := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in algorithms);
-            event_blocks        := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in event_blocks);
-            jac_blocks          := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in jac_blocks);
-            init                := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in init);
-            init_0              := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in init_0);
-            init_no_ret         := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in init_no_ret);
-            linearLoops         := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in linearLoops);
-            nonlinearLoops      := list(SimStrongComponent.Block.mapShallow(blck, index_delays) for blck in nonlinearLoops);
+            no_ret              := list(indexDelaysBlock(blck, delay_map, delay_size) for blck in no_ret);
+            algorithms          := list(indexDelaysBlock(blck, delay_map, delay_size) for blck in algorithms);
+            event_blocks        := list(indexDelaysBlock(blck, delay_map, delay_size) for blck in event_blocks);
+            jac_blocks          := list(indexDelaysBlock(blck, delay_map, delay_size) for blck in jac_blocks);
+            init                := list(indexDelaysBlock(blck, delay_map, delay_size) for blck in init);
+            init_0              := list(indexDelaysBlock(blck, delay_map, delay_size) for blck in init_0);
+            init_no_ret         := list(indexDelaysBlock(blck, delay_map, delay_size) for blck in init_no_ret);
+            linearLoops         := list(indexDelaysBlock(blck, delay_map, delay_size) for blck in linearLoops);
+            nonlinearLoops      := list(indexDelaysBlock(blck, delay_map, delay_size) for blck in nonlinearLoops);
             daeModeData         := Util.applyOption(daeModeData, function DaeModeData.mapShallow(func = index_delays));
             eventInfo           := EventInfo.mapExp(bdae.eventInfo, function indexDelaysIter(map = delay_map, size = delay_size));
             delayedExps         := list((indexDelay(Util.tuple21(tpl), delay_map, delay_size, Util.tuple22(Util.tuple22(tpl))), Util.tuple22(Util.tuple22(tpl))) for tpl in UnorderedMap.toList(delay_map));
@@ -548,6 +551,7 @@ public
 
             (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, fileName, directory, functions, linearLoops, nonlinearLoops, eventInfo, bdae.clockedInfo,
               List.sort(program.classes, AbsynUtil.classNameGreater), simCodeIndices);
+            modelInfo := ModelInfo.setRelatedBoundaryConditions(modelInfo, bdae.dataReconciliation);
 
             simCode := SIM_CODE(
               modelInfo                 = modelInfo,
@@ -727,6 +731,109 @@ public
         else exp;
       end match;
     end indexDelay;
+
+    function indexDelays
+      "Numbers the delay() calls in exp like indexDelay, also inside array
+      constructors and reductions."
+      input output Expression exp;
+      input UnorderedMap<Expression, DelayBuffers> map;
+      input Pointer<Integer> size;
+      input list<SimIterator> iters;
+    algorithm
+      exp := match exp
+        local
+          Call call;
+
+        case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR())
+          algorithm
+            call.exp := indexDelays(call.exp, map, size, listAppend(callIterators(call.iters), iters));
+            exp.call := call;
+          then exp;
+
+        case Expression.CALL(call = call as Call.TYPED_REDUCTION())
+          algorithm
+            call.exp := indexDelays(call.exp, map, size, listAppend(callIterators(call.iters), iters));
+            exp.call := call;
+          then exp;
+
+        else indexDelay(Expression.mapShallow(exp, function indexDelays(map = map, size = size, iters = iters)), map, size, iters);
+      end match;
+    end indexDelays;
+
+    function indexDelaysBlock
+      input output SimStrongComponent.Block blck;
+      input UnorderedMap<Expression, DelayBuffers> map;
+      input Pointer<Integer> size;
+    algorithm
+      blck := match blck
+        case SimStrongComponent.Block.ALGORITHM()
+          algorithm
+            blck.stmts := list(indexDelaysStmt(stmt, map, size, {}) for stmt in blck.stmts);
+          then blck;
+        else SimStrongComponent.Block.mapShallow(blck, function indexDelays(map = map, size = size, iters = {}));
+      end match;
+    end indexDelaysBlock;
+
+    function indexDelaysStmt
+      input output Statement stmt;
+      input UnorderedMap<Expression, DelayBuffers> map;
+      input Pointer<Integer> size;
+      input list<SimIterator> iters;
+    protected
+      list<SimIterator> body_iters;
+    algorithm
+      stmt := Statement.mapExpShallow(stmt, function indexDelays(map = map, size = size, iters = iters));
+      () := match stmt
+        case Statement.FOR()
+          algorithm
+            body_iters := match stmt.range
+              local
+                Expression range;
+              case SOME(range) then listAppend(callIterators({(stmt.iterator, range)}), iters);
+              else iters;
+            end match;
+            stmt.body := list(indexDelaysStmt(s, map, size, body_iters) for s in stmt.body);
+          then ();
+
+        case Statement.IF()
+          algorithm
+            stmt.branches := list((Util.tuple21(b), list(indexDelaysStmt(s, map, size, iters) for s in Util.tuple22(b))) for b in stmt.branches);
+          then ();
+
+        case Statement.WHEN()
+          algorithm
+            stmt.branches := list((Util.tuple21(b), list(indexDelaysStmt(s, map, size, iters) for s in Util.tuple22(b))) for b in stmt.branches);
+          then ();
+
+        case Statement.WHILE()
+          algorithm
+            stmt.body := list(indexDelaysStmt(s, map, size, iters) for s in stmt.body);
+          then ();
+
+        else ();
+      end match;
+    end indexDelaysStmt;
+
+    function callIterators
+      "Iterators that delay() can depend on. indexDelay reports a delay() that
+      depends on one of the others."
+      input list<tuple<InstNode, Expression>> iters;
+      output list<SimIterator> sim_iters;
+    algorithm
+      sim_iters := SimIterator.fromIterator(Iterator.fromFrames(list(
+        (ComponentRef.makeIterator(Util.tuple21(it), Type.INTEGER()), Util.tuple22(it), NONE()) for it guard isSupportedRange(Util.tuple22(it)) in iters)));
+    end callIterators;
+
+    function isSupportedRange
+      input Expression range;
+      output Boolean b;
+    algorithm
+      b := match range
+        case Expression.RANGE() then true;
+        case Expression.ARRAY() then range.literal;
+        else false;
+      end match;
+    end isSupportedRange;
 
     function indexDelaysCall
       input output SimGenericCall call;
@@ -944,6 +1051,22 @@ public
         then fail();
       end match;
     end setSeedVars;
+
+    function setRelatedBoundaryConditions
+      input output ModelInfo modelInfo;
+      input Option<DataReconciliation.ReconciliationData> data_opt;
+    algorithm
+      modelInfo := match (modelInfo, data_opt)
+        local
+          VarInfo varInfo;
+          DataReconciliation.ReconciliationData data;
+        case (MODEL_INFO(varInfo = varInfo as VarInfo.VAR_INFO()), SOME(data as DataReconciliation.RECONCILIATION_DATA())) algorithm
+          varInfo.numRelatedBoundaryConditions := data.relatedBoundaryConditions;
+          modelInfo.varInfo := varInfo;
+        then modelInfo;
+        else modelInfo;
+      end match;
+    end setRelatedBoundaryConditions;
 
     function convert
       input ModelInfo modelInfo;

@@ -13,6 +13,5 @@ simulate(Buildings.HeatTransfer.Examples.ConductorMultiLayer);getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[simulation/libraries/3rdParty/Buildings/Buildings.HeatTransfer.Examples.ConductorMultiLayer.mo:262:86-262:161:writable] Warning: In relation con.lay.material.R == 0.0, == on Real operands is deprecated in non-function contexts.
-// "
+// ""
 // endResult

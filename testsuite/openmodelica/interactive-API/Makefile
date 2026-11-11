@@ -23,6 +23,9 @@ checkAllModelsRecursive1.mos \
 CheckModel1.mos \
 CheckModel2.mos \
 CheckModel3.mos \
+CheckModel4.mos \
+CheckModel5.mos \
+CheckModel6.mos \
 CheckModelNonexistentClass1.mos \
 CheckModelExtObj1.mos \
 choicesAllMatching.mos \
@@ -148,11 +151,13 @@ Modelica.Media.Examples.getComponents.mos \
 MoveClass2.mos \
 MoveClass.mos \
 ModelicaError.mos \
+ModelicaPathReset.mos \
 Obfuscation1.mos \
 Obfuscation2.mos \
 Obfuscation3.mos \
 Obfuscation4.mos \
 Obfuscation5.mos \
+Obfuscation6.mos \
 Promote1.mos \
 ProtectedHandlingBug2917.mos \
 ReadOnlyPkg.mos \

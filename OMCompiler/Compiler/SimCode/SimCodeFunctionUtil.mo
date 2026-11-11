@@ -2412,6 +2412,12 @@ algorithm
         libPaths := List.appendElt(installationDir + "/bin/", libPaths);
       end if;
 
+      // The static ModelicaExternalC libraries are for FMUs and have no HDF5.
+      // For MAT v7.3, an executable links the shared ones in ffi/, ahead of them.
+      if Autoconf.hdf5Libs <> "" and not isWasmSimCodeTarget() then
+        libPaths := List.appendElt(installationDir + "/lib/" + Autoconf.triple + "/omc/ffi", libPaths);
+      end if;
+
     then ();
   end match;
 end getLinkerLibraryPaths;
@@ -2729,9 +2735,8 @@ algorithm
         Error.addCompilerNotification("X11 library is not needed under Windows. It is not linked from the external library resource directory.\n");
       then  ({},{});
 
-    // The installed archive carries the MAT v7.3 paths, so a link line naming
-    // it needs HDF5 too, ahead of the zlib that follows in the expansion below:
-    // HDF5's deflate filter calls compress2.
+    // With HDF5, this is the shared library in ffi/ (see getLinkerLibraryPaths).
+    // HDF5 is named too, so that ld finds the library it needs.
     case Absyn.STRING("ModelicaMatIO") guard Autoconf.hdf5Libs <> ""
       then ({"-lModelicaMatIO", Autoconf.hdf5Libs},{});
 

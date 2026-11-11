@@ -3401,7 +3401,7 @@ bool OMCProxy::ngspicetoModelica(QString fileName)
  */
 QString OMCProxy::checkAllModelsRecursive(QString className)
 {
-  QString result = mpOMCInterface->checkAllModelsRecursive(className, false);
+  QString result = mpOMCInterface->checkAllModelsRecursive(className, false, true);
   printMessagesStringInternal();
   return result;
 }
@@ -4269,6 +4269,19 @@ bool OMCProxy::generateVerificationScenarios(QString className)
 QList<QList<QString > > OMCProxy::getUses(QString className)
 {
   QList<QList<QString > > result = mpOMCInterface->getUses(className);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
+ * \brief OMCProxy::getUsedClassNames
+ * Returns the classes used by the total program of the class.
+ * \param className
+ * \return
+ */
+QList<QString> OMCProxy::getUsedClassNames(QString className)
+{
+  QList<QString> result = mpOMCInterface->getUsedClassNames(className);
   printMessagesStringInternal();
   return result;
 }

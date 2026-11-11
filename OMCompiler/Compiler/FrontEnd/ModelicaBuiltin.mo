@@ -1100,21 +1100,45 @@ package Internal
   "Internal definitions."
 
 partial function simulationArguments
-  "The arguments of simulate, buildModel and the other simulation calls.
-   An argument that is not given is taken from the experiment annotation."
-  input TypeName className "the class that should simulated";
-  input Real startTime = nan() "the start time of the simulation. <default> = 0.0";
-  input Real stopTime = nan() "the stop time of the simulation. <default> = 1.0";
-  input Integer numberOfIntervals = -1 "number of intervals in the result file. <default> = 500";
-  input Real stepSize = nan() "step size that is used for the result file; overrides numberOfIntervals. <default> = 0.002";
-  input Real tolerance = nan() "tolerance used by the integration method. <default> = 1e-6";
-  input String method = "<default>" "integration method used for simulation. <default> = dassl";
-  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
-  input String options = "<default>" "options. <default> = \"\"";
-  input String outputFormat = "<default>" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = "<default>" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
-  input String cflags = "<default>" "cflags. <default> = \"\"";
-  input String simflags = "<default>" "simflags. <default> = \"\"";
+  "The arguments of simulate, buildModel and the other simulation calls."
+  input TypeName className "The model";
+  input Real startTime = nan() "Start time";
+  input Real stopTime = nan() "Stop time";
+  input Integer numberOfIntervals = -1 "Number of intervals";
+  input Real stepSize = nan() "Interval of the result file";
+  input Real tolerance = nan() "Integration tolerance";
+  input String method = "<default>" "Integration method";
+  input String fileNamePrefix = "<default>" "File name prefix";
+  input String options = "<default>" "Not used";
+  input String outputFormat = "<default>" "Result file format";
+  input String variableFilter = "<default>" "Variables to store";
+  input String cflags = "<default>" "Flags for the C compiler";
+  input String simflags = "<default>" "Flags for the simulation";
+annotation(Documentation(info="<html>
+<p>Only <code>className</code> is necessary. An argument that is not given gets its value from the
+<code>experiment</code> annotation of the class, or of a class that it extends, or else from the default below.
+The declared values <code>nan()</code>, <code>-1</code> and <code>\"&lt;default&gt;\"</code> only mark an argument that is not given.</p>
+<table>
+<tr><th>Argument</th><th>Value if not given</th></tr>
+<tr><td><code>startTime</code></td><td><code>StartTime</code> of the experiment annotation, else 0.</td></tr>
+<tr><td><code>stopTime</code></td><td><code>StopTime</code>, else 1.</td></tr>
+<tr><td><code>numberOfIntervals</code></td><td>(<code>StopTime</code> - <code>StartTime</code>) / <code>Interval</code>, rounded to the nearest integer,
+or <code>NumberOfIntervals</code>, else 500. For optimize(), 50.</td></tr>
+<tr><td><code>stepSize</code></td><td>Not used. If it is given, numberOfIntervals is (stopTime - startTime) / stepSize, rounded down.</td></tr>
+<tr><td><code>tolerance</code></td><td><code>Tolerance</code>, else 1e-6.</td></tr>
+<tr><td><code>method</code></td><td>\"dassl\". With <code>--daeMode</code>, \"ida\". For optimize(), \"optimization\".</td></tr>
+<tr><td><code>fileNamePrefix</code></td><td>The name of the class. The result file is <code>&lt;fileNamePrefix&gt;_res.&lt;outputFormat&gt;</code>.</td></tr>
+<tr><td><code>options</code></td><td>Not used.</td></tr>
+<tr><td><code>outputFormat</code></td><td>\"mat\". The other formats are \"csv\", \"plt\", \"arrow\" and \"empty\", which writes no result file.</td></tr>
+<tr><td><code>variableFilter</code></td><td>\".*\". Only the variables whose full name matches this regular expression go into the result file.</td></tr>
+<tr><td><code>cflags</code></td><td>\"\". Extra flags for the C compiler.</td></tr>
+<tr><td><code>simflags</code></td><td>The <code>__OpenModelica_simulationFlags</code> annotation of the class, else \"\".
+With <code>--ignoreSimulationFlagsAnnotation</code>, omc does not use the annotation.</td></tr>
+</table>
+<p>The flags in <code>simflags</code> apply when the simulation executable runs, and they replace the values above:
+for example, <code>-s=euler</code> replaces <code>method</code>.</p>
+</html>"),
+  preferredView="text");
 end simulationArguments;
 
 function nan
@@ -1627,7 +1651,7 @@ impure function getInstallationDirectoryPath
   output String installationDirectoryPath;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>This returns OPENMODELICAHOME if it is set; on some platforms the default path is returned if it is not set.</p>
+<p>Returns the directory OpenModelica is installed in. omc finds it from the location of its own files and sets the environment variable OPENMODELICAHOME to it.</p>
 </html>"),
   preferredView="text");
 end getInstallationDirectoryPath;
@@ -1638,8 +1662,8 @@ impure function setModelicaPath
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Sets the OPENMODELICALIBRARY (MODELICAPATH in the language specification) environment variable in OpenModelica. See <a href=\"modelica://OpenModelica.Scripting.loadModel\">loadModel()</a> for a description of what OPENMODELICALIBRARY is used for.</p>
-<p>Set it to empty string to clear it: setModelicaPath(\"\");</p>
+<p>Sets the OPENMODELICALIBRARY (MODELICAPATH in the language specification) in OpenModelica and the environment variable with the same name. See <a href=\"modelica://OpenModelica.Scripting.loadModel\">loadModel()</a> for a description of what OPENMODELICALIBRARY is used for.</p>
+<p>Set it to the empty string to reset it to the default: setModelicaPath(\"\"); <a href=\"modelica://OpenModelica.Scripting.getModelicaPath\">getModelicaPath()</a> tells what the default is.</p>
 </html>"),
   preferredView="text");
 end setModelicaPath;
@@ -1650,8 +1674,9 @@ impure function getModelicaPath
 external "builtin";
 annotation(Documentation(info="<html>
 <p>The OPENMODELICALIBRARY (MODELICAPATH in the language specification) is a list of paths to search when trying to  <a href=\"modelica://OpenModelica.Scripting.loadModel\">load a library</a>. It is a string separated by colon (:) on all OSes except Windows, which uses semicolon (;).</p>
-<p>To override the default path (<a href=\"modelica://OpenModelica.Scripting.getInstallationDirectoryPath\">OPENMODELICAHOME</a>/lib/omlibrary/:~/.openmodelica/libraries/), set the environment variable OPENMODELICALIBRARY=...</p>
-<p>On Windows the HOME directory '~' is replaced by %APPDATA%</p>
+<p>The default is the value of the environment variable OPENMODELICALIBRARY when omc starts, or ~/.openmodelica/libraries/ if it is not set. The environment variable MODELICAPATH is not used. To change the path while omc runs, use <a href=\"modelica://OpenModelica.Scripting.setModelicaPath\">setModelicaPath()</a>.</p>
+<p>The <a href=\"modelica://OpenModelica.Scripting.installPackage\">package manager</a> installs libraries into ~/.openmodelica/libraries/. It can only be used if this directory is in the OPENMODELICALIBRARY as the same text, with or without the last '/'.</p>
+<p>'~' is the directory that <a href=\"modelica://OpenModelica.Scripting.getHomeDirectoryPath\">getHomeDirectoryPath()</a> returns. On Windows it is %APPDATA%.</p>
 </html>"),
   preferredView="text");
 end getModelicaPath;
@@ -2266,6 +2291,7 @@ impure function checkAllModelsRecursive
   "Checks all models recursively and returns number of variables and equations."
   input TypeName className;
   input Boolean checkProtected = false "Checks also protected classes if true";
+  input Boolean reportTimes = true "Reports time elapsed for every checked model if true";
   output String result;
 external "builtin";
 annotation(preferredView="text");
@@ -2884,7 +2910,7 @@ end buildEncryptedPackage;
 impure function simulate
   "Simulates a model."
   extends Internal.simulationArguments;
-  input String resimulateExecutable = "" "If non-empty, skip translation and build and simulate this already-built executable directly.";
+  input String resimulateExecutable = "" "Executable to run";
   output SimulationResult simulationResults;
   record SimulationResult
     String resultFile;
@@ -2900,12 +2926,14 @@ impure function simulate
   end SimulationResult;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Simulates a Modelica model by generating C code, building it and running the simulation executable.
- The only required argument is the className, while all others have some default values.</p>
-<p><code>simulate(className, [startTime], [stopTime], [numberOfIntervals], [tolerance], [method], [fileNamePrefix], [options], [outputFormat], [variableFilter], [cflags], [simflags])</code></p>
+<p>Simulates a Modelica model by generating C code, building it and running the simulation executable.</p>
+<p><code>simulate(className, [startTime], [stopTime], [numberOfIntervals], [stepSize], [tolerance], [method], [fileNamePrefix], [options], [outputFormat], [variableFilter], [cflags], [simflags], [resimulateExecutable])</code></p>
 <p>Example command:
 <pre>simulate(A);</pre>
 </p>
+<p>If <code>resimulateExecutable</code> is given, simulate() does not translate and build the model.
+It runs that executable, which an earlier <a href=\"modelica://OpenModelica.Scripting.buildModel\">buildModel()</a> made in the current directory,
+with only the flags in <code>simflags</code>. To change the run, give simulation flags, for example <code>simflags=\"-stopTime=2\"</code>.</p>
 </html>"),
   preferredView="text");
 end simulate;
@@ -2937,10 +2965,9 @@ impure function buildModel
   output String[2] buildModelResults;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Note that unlike <a href=\"modelica://OpenModelica.Scripting.simulate\">simulate()</a> this function only builds a simulation executable, it does not run it.
- The only required argument is the className, while all others have some default values.</p
+<p>Note that unlike <a href=\"modelica://OpenModelica.Scripting.simulate\">simulate()</a> this function only builds a simulation executable, it does not run it.</p>
 <p>Returns the filenames for the generated simulation executable and the initialization file.</p>
-<p><code>buildModel(className, [startTime], [stopTime], [numberOfIntervals], [tolerance], [method], [fileNamePrefix], [options], [outputFormat], [variableFilter], [cflags], [simflags])</code></p>
+<p><code>buildModel(className, [startTime], [stopTime], [numberOfIntervals], [stepSize], [tolerance], [method], [fileNamePrefix], [options], [outputFormat], [variableFilter], [cflags], [simflags])</code></p>
 <p>Example command:
 <pre>buildModel(A);</pre>
 </p>
@@ -3050,7 +3077,7 @@ impure function simulateAcausalDAE
 external "builtin";
 annotation(Documentation(info="<html>
 <p>Simulates a flowsheet model whose top-level components are acausal DAE blocks, by separately compiling each top-level component (see <code>translateResidualsDAE</code>), stitching them together with the connection equations, and building/running the combined DAE system. Returns the same <code>SimulationResult</code> record as <code>simulate</code>.</p>
-<p><code>simulateAcausalDAE(className, [startTime], [stopTime], [numberOfIntervals], [tolerance], [method], [fileNamePrefix], [options], [outputFormat], [variableFilter], [cflags], [simflags])</code></p>
+<p><code>simulateAcausalDAE(className, [startTime], [stopTime], [numberOfIntervals], [stepSize], [tolerance], [method], [fileNamePrefix], [options], [outputFormat], [variableFilter], [cflags], [simflags])</code></p>
 </html>"),
   preferredView="text");
 end simulateAcausalDAE;
@@ -3161,7 +3188,6 @@ external "builtin";
 annotation(Documentation(info="<html>
 <p>Creates a model with symbolic linearization matrices.</p>
 <p>At stopTime the linearization matrices are evaluated and a modelica model is created.</p>
-<p>The only required argument is the className, while all others have some default values.</p>
 <h2>Usage:</h2>
 <p><b>linearize</b>(<em>A</em>, stopTime=0.0);</p>
 <p>Creates the file in the selected linearization output language (modelica by default) that contains the linearized matrices at stopTime.</p>
@@ -3180,8 +3206,7 @@ impure function optimize
   output String optimizationResults;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Optimizes a Modelica/Optimica model by generating C code, building it and running the optimization executable.
- The only required argument is the className, while all others have some default values.</p>
+<p>Optimizes a Modelica/Optimica model by generating C code, building it and running the optimization executable.</p>
 <p>Example command:
 <pre>optimize(A);</pre>
 </p>
@@ -5167,6 +5192,7 @@ external "builtin";
 annotation(
   Documentation(info="<html>
   Installs the package with the best matching version (or only the specified version if exactMatch is given).
+  The package is installed into ~/.openmodelica/libraries/, which must be in the <a href=\"modelica://OpenModelica.Scripting.getModelicaPath\">OPENMODELICALIBRARY</a>.
   To update the index, call <code>updatePackageIndex()</code>.
 </html>"),
   preferredView="text");

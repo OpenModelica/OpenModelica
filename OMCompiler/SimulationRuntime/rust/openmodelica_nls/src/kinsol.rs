@@ -332,6 +332,11 @@ pub mod sun {
     }
 
     impl Solver {
+        /// Whether this solver was set up for `n` unknowns and `nnz` nonzeros.
+        pub fn fits(&self, n: usize, nnz: usize) -> bool {
+            self.n == n && self.nnz == nnz
+        }
+
         pub fn new(n: usize, nnz: usize) -> Option<Solver> {
             let ctx = context();
             if ctx.is_null() {
@@ -580,7 +585,7 @@ pub mod sun {
                 time,
             };
             unsafe { KINSetUserData(self.kin, &mut ud as *mut Ud as *mut c_void) };
-            let mut success = false;
+            let mut success;
             let mut reset_tol = false;
             let mut retries = 0;
             let mut passes = 0;
@@ -1214,7 +1219,7 @@ pub mod sun {
                     openmodelica_solvers::format_g(time, 6),
                 );
             }
-            let mut success = false;
+            let mut success;
             let mut retries = 0;
             let mut passes = 0;
             self.reset_tol = false;
@@ -1584,7 +1589,17 @@ pub fn solve(
     KIN_CACHE.with(
         handle,
         || sun::Solver::new(n, pat.nnz),
-        |solver| solver.solve(guess, nominal, pat, x, eq_index, time, has_jacobian, eval, assemble),
+        |solver| {
+            // A handle another system of a different size used before, e.g. in
+            // another FMU instance in the same process.
+            if !solver.fits(n, pat.nnz) {
+                match sun::Solver::new(n, pat.nnz) {
+                    Some(s) => *solver = s,
+                    None => return false,
+                }
+            }
+            solver.solve(guess, nominal, pat, x, eq_index, time, has_jacobian, eval, assemble)
+        },
     )
 }
 

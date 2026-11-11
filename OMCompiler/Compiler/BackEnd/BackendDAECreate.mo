@@ -1032,61 +1032,146 @@ protected function processBuiltinExpressions "author: lochel
   output list<BackendDAE.TimeEvent> outTimeEvents;
 protected
   UnorderedMap<DAE.Exp, Integer> ht;
+  list<DAE.Element> elements;
+  BuiltinArg arg;
 algorithm
   ht := UnorderedMap.new<Integer>(ExpressionBasics.hashExp, ExpressionBasics.expEqual);
-  (outDAE, outTree, (_, (_, _, _, _, outTimeEvents))) := DAEUtil.traverseDAE(inDAE, functionTree, Expression.traverseSubexpressionsHelper, (transformBuiltinExpression, (ht, 0, 0, 0, {})));
+  (elements, arg) := List.mapFold(inDAE.elementLst, processBuiltinElement, (ht, 0, 0, 0, {}));
+  outDAE := DAE.DAE(elements);
+  (_, outTree, (_, _, _, _, outTimeEvents)) := DAEUtil.traverseDAE(DAE.emptyDae, functionTree,
+    function BackendDAEUtil.traverseExpWithIterators(iters = {}, func = transformBuiltinExpression), arg);
 end processBuiltinExpressions;
 
-protected function transformBuiltinExpression "author: lochel
-  Helper for transformBuiltinExpressions"
-  input DAE.Exp inExp;
-  input tuple<UnorderedMap<DAE.Exp, Integer>, Integer /*iDelay*/, Integer /*iSample*/,  Integer /*iSpatial*/, list<BackendDAE.TimeEvent>> inTuple;
-  output DAE.Exp outExp;
-  output tuple<UnorderedMap<DAE.Exp, Integer>, Integer /*iDelay*/, Integer /*iSample*/,  Integer /*iSpatial*/, list<BackendDAE.TimeEvent>> outTuple;
+protected type BuiltinArg = tuple<UnorderedMap<DAE.Exp, Integer>, Integer /*iDelay*/, Integer /*iSample*/, Integer /*iSpatial*/, list<BackendDAE.TimeEvent>>;
+
+protected function processBuiltinElement
+  input output DAE.Element element;
+  input output BuiltinArg arg;
+protected
+  list<DAE.Element> elements;
+  list<DAE.Statement> stmts;
 algorithm
-  (outExp,outTuple) := match (inExp, inTuple)
-    local
-      DAE.Exp start, interval;
-      list<DAE.Exp> es;
-      UnorderedMap<DAE.Exp, Integer> ht;
-      Integer iDelay, iSample, iSpatial;
-      list<BackendDAE.TimeEvent> timeEvents;
-      DAE.CallAttributes attr;
+  element := match element
+    case DAE.COMP()
+      algorithm
+        (elements, arg) := List.mapFold(element.dAElist, processBuiltinElement, arg);
+        element.dAElist := elements;
+      then element;
 
-    // delay [already in ht]
-    case (DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, _, _, _, _)) guard(UnorderedMap.contains(inExp, ht))
-    then (DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(UnorderedMap.getOrFail(inExp, ht))::es, attr), inTuple);
+    case DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(stmts))
+      algorithm
+        (stmts, arg) := BackendDAEUtil.traverseStmtsWithIterators(stmts, {}, transformBuiltinExpression, arg);
+        element.algorithm_ := DAE.ALGORITHM_STMTS(stmts);
+      then element;
 
-    // delay [not yet in ht]
-    case (DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, iDelay, iSample, iSpatial, timeEvents)) algorithm
-      UnorderedMap.add(inExp, iDelay+1, ht);
-    then (DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(iDelay)::es, attr), (ht, iDelay+1, iSample, iSpatial, timeEvents));
+    case DAE.INITIALALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(stmts))
+      algorithm
+        (stmts, arg) := BackendDAEUtil.traverseStmtsWithIterators(stmts, {}, transformBuiltinExpression, arg);
+        element.algorithm_ := DAE.ALGORITHM_STMTS(stmts);
+      then element;
 
-    // spatialDistribution [already in ht]
-    case (DAE.CALL(Absyn.IDENT("spatialDistribution"), es, attr), (ht, _, _, _, _)) guard(UnorderedMap.contains(inExp, ht))
-    then (DAE.CALL(Absyn.IDENT("spatialDistribution"), DAE.ICONST(UnorderedMap.getOrFail(inExp, ht))::es, attr), inTuple);
+    else
+      algorithm
+        ({element}, arg) := DAEUtil.traverseDAEElementList({element},
+          function BackendDAEUtil.traverseExpWithIterators(iters = {}, func = transformBuiltinExpression), arg);
+      then element;
+  end match;
+end processBuiltinElement;
 
-    // spatialDistribution [not yet in ht]
-    case (DAE.CALL(Absyn.IDENT("spatialDistribution"), es, attr), (ht, iDelay, iSample, iSpatial, timeEvents)) algorithm
-      UnorderedMap.add(inExp, iSpatial+1, ht);
-    then (DAE.CALL(Absyn.IDENT("spatialDistribution"), DAE.ICONST(iSpatial)::es, attr), (ht, iDelay, iSample, iSpatial+1, timeEvents));
+protected function transformBuiltinExpression "author: lochel
+  Helper for processBuiltinExpressions. A delay call that depends on the
+  iterators of enclosing reductions or for-loops gets one buffer per iteration."
+  input output DAE.Exp exp;
+  input list<DAE.ReductionIterator> iters;
+  output Boolean cont = false;
+  input output BuiltinArg arg;
+protected
+  Absyn.Path path;
+  list<DAE.Exp> es;
+  DAE.CallAttributes attr;
+  UnorderedMap<DAE.Exp, Integer> ht;
+  Integer iDelay, iSample, iSpatial, index, n;
+  list<BackendDAE.TimeEvent> timeEvents;
+  DAE.Exp start, interval, index_exp;
+algorithm
+  (exp, cont, arg) := match exp
+    case DAE.CALL(path = path as Absyn.IDENT("delay"), expLst = es, attr = attr)
+      algorithm
+        (es, arg) := List.mapFold(es, function BackendDAEUtil.traverseExpWithIterators(iters = iters, func = transformBuiltinExpression), arg);
+        exp := DAE.CALL(path, es, attr);
+        (ht, iDelay, iSample, iSpatial, timeEvents) := arg;
+        (index_exp, n) := delayIndex(exp, iters, iDelay);
+        if n == 1 and Expression.isConst(index_exp) then
+          if UnorderedMap.contains(exp, ht) then
+            index_exp := DAE.ICONST(UnorderedMap.getOrFail(exp, ht));
+            n := 0;
+          else
+            UnorderedMap.add(exp, iDelay, ht);
+          end if;
+        end if;
+      then
+        (DAE.CALL(path, index_exp :: es, attr), false, (ht, iDelay + n, iSample, iSpatial, timeEvents));
 
-    // sample [already in ht]
-    case (DAE.CALL(Absyn.IDENT("sample"), es as {_, interval}, attr), (ht, _, _, _, _))
-      guard (not Types.isClockOrSubTypeClock(Expression.typeof(interval)) and UnorderedMap.contains(inExp, ht)) algorithm
-    then (DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(UnorderedMap.getOrFail(inExp, ht))::es, attr), inTuple);
+    case DAE.CALL(path = path as Absyn.IDENT("spatialDistribution"), expLst = es, attr = attr)
+      algorithm
+        (es, arg) := List.mapFold(es, function BackendDAEUtil.traverseExpWithIterators(iters = iters, func = transformBuiltinExpression), arg);
+        exp := DAE.CALL(path, es, attr);
+        (ht, iDelay, iSample, iSpatial, timeEvents) := arg;
+      then
+        (DAE.CALL(path, DAE.ICONST(iSpatial) :: es, attr), false, (ht, iDelay, iSample, iSpatial + 1, timeEvents));
 
-    // sample [not yet in ht]
-    case (DAE.CALL(Absyn.IDENT("sample"), es as {start, interval}, attr), (ht, iDelay, iSample, iSpatial, timeEvents))
-    guard (not Types.isClockOrSubTypeClock(Expression.typeof(interval))) algorithm
-      iSample := iSample+1;
-      timeEvents := List.appendElt(BackendDAE.SAMPLE_TIME_EVENT(iSample, start, interval, NONE()), timeEvents);
-      UnorderedMap.add(inExp, iSample, ht);
-    then (DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(iSample)::es, attr), (ht, iDelay, iSample, iSpatial, timeEvents));
+    case DAE.CALL(path = path as Absyn.IDENT("sample"), expLst = es as {_, interval}, attr = attr)
+      guard not Types.isClockOrSubTypeClock(Expression.typeof(interval))
+      algorithm
+        (es, arg) := List.mapFold(es, function BackendDAEUtil.traverseExpWithIterators(iters = iters, func = transformBuiltinExpression), arg);
+        exp := DAE.CALL(path, es, attr);
+        (ht, iDelay, iSample, iSpatial, timeEvents) := arg;
+        if UnorderedMap.contains(exp, ht) then
+          index := UnorderedMap.getOrFail(exp, ht);
+        else
+          iSample := iSample + 1;
+          index := iSample;
+          {start, interval} := es;
+          timeEvents := List.appendElt(BackendDAE.SAMPLE_TIME_EVENT(iSample, start, interval, NONE()), timeEvents);
+          UnorderedMap.add(exp, iSample, ht);
+        end if;
+      then
+        (DAE.CALL(path, DAE.ICONST(index) :: es, attr), false, (ht, iDelay, iSample, iSpatial, timeEvents));
 
-    else (inExp,inTuple);
+    else (exp, true, arg);
   end match;
 end transformBuiltinExpression;
+
+protected function delayIndex
+  "Returns first + the zero based flat index of the iterators the delay call
+   depends on, and the number of buffers it needs."
+  input DAE.Exp call;
+  input list<DAE.ReductionIterator> iters;
+  input Integer first;
+  output DAE.Exp index = DAE.ICONST(first);
+  output Integer size = 1;
+protected
+  list<String> names = {};
+  Integer start, stop;
+algorithm
+  for it in iters loop
+    if not listMember(it.id, names) and Expression.expHasCrefName(call, it.id) then
+      names := it.id :: names;
+      (start, stop) := match it.exp
+        case DAE.RANGE(start = DAE.ICONST(start), step = NONE(), stop = DAE.ICONST(stop)) then (start, stop);
+        case DAE.RANGE(start = DAE.ICONST(start), step = SOME(DAE.ICONST(1)), stop = DAE.ICONST(stop)) then (start, stop);
+        else algorithm
+          Error.addInternalError(getInstanceName() + " failed because delay() is not supported in this for-loop: " +
+            ExpressionBasics.printExpStr(call), sourceInfo());
+        then fail();
+      end match;
+      index := DAE.BINARY(index, DAE.ADD(DAE.T_INTEGER_DEFAULT), DAE.BINARY(DAE.ICONST(size), DAE.MUL(DAE.T_INTEGER_DEFAULT),
+        DAE.BINARY(Expression.crefExp(ComponentReferenceBasics.makeCrefIdent(it.id, DAE.T_INTEGER_DEFAULT, {})), DAE.SUB(DAE.T_INTEGER_DEFAULT), DAE.ICONST(start))));
+      size := size * max(stop - start + 1, 0);
+    end if;
+  end for;
+  index := ExpressionSimplify.simplify(index);
+end delayIndex;
 
 /*
  *  lower all variables

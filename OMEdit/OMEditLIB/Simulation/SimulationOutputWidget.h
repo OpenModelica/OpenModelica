@@ -172,7 +172,8 @@ private:
   void postCompilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
   void compilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
 #endif
-  void deleteIntermediateCompilationFiles();
+  bool usesEncryptedLibrary() const;
+  void deleteIntermediateCompilationFiles(bool force = false);
   void writeSimulationOutput(QString output, StringHandler::SimulationMessageType type, bool textFormat);
   void simulationProcessFinishedHelper();
 private slots:

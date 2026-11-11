@@ -947,8 +947,8 @@ public constant ErrorTypes.Message SETTING_FIXED_ATTRIBUTE = ErrorTypes.MESSAGE(
   "Using over-determined solver for initialization. Setting fixed=false to the following variables: %s.");
 public constant ErrorTypes.Message FAILED_TO_EVALUATE_FUNCTION = ErrorTypes.MESSAGE(506, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Failed to evaluate function: %s.");
-public constant ErrorTypes.Message WARNING_RELATION_ON_REAL = ErrorTypes.MESSAGE(509, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
-  "In relation %s, %s on Real operands is deprecated in non-function contexts.");
+public constant ErrorTypes.Message REAL_EQUALITY_RELATION_ERROR = ErrorTypes.MESSAGE(509, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "In relation %s, %s on Real operands is not allowed in non-function contexts. Use --allowNonStandardModelica=realEquality to ignore this error.");
 public constant ErrorTypes.Message OUTER_MODIFICATION = ErrorTypes.MESSAGE(512, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   "Ignoring the modification on outer element: %s.");
 public constant ErrorTypes.Message DERIVATIVE_NON_REAL = ErrorTypes.MESSAGE(514, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -1102,7 +1102,7 @@ public constant ErrorTypes.Message UNITFUL_LITERAL_ABSOLUTE_VALUE = ErrorTypes.M
   "The unitful literal %s can only be converted to the unit \"%s\" of %s if it has an absoluteValue annotation.");
 public constant ErrorTypes.Message EVALUATED_ZERO_COEFFICIENT = ErrorTypes.MESSAGE(632, ErrorTypes.SYMBOLIC(), ErrorTypes.NOTIFICATION(),
   "Evaluated the parameters %s, since an equation would be solved by dividing by zero otherwise. Changing them requires recompiling the model.");
-public constant ErrorTypes.Message NON_CAUSAL_BLOCK_CONNECTOR = ErrorTypes.MESSAGE(633, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+public constant ErrorTypes.Message NON_CAUSAL_BLOCK_CONNECTOR = ErrorTypes.MESSAGE(633, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Public connector %s in a block may only have variables that are input or output, but the following are neither: %s.");
 public constant ErrorTypes.Message OLD_FRONTEND_DEPRECATED = ErrorTypes.MESSAGE(634, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   "The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.");
@@ -1356,17 +1356,17 @@ public constant ErrorTypes.Message DUPLICATE_VARIABLE_ERROR = ErrorTypes.MESSAGE
 public constant ErrorTypes.Message ENCRYPTION_NOT_SUPPORTED = ErrorTypes.MESSAGE(7026, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "File not Found: %s. Compile OpenModelica with Encryption support.");
 public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_ME = ErrorTypes.MESSAGE(7027, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
-  "DAE mode (--daeMode) is not supported by the C simulation runtime for a Model Exchange FMU (fmuType=\"%s\"). Export a Co-Simulation FMU (fmuType=\"cs\"), export with platforms={\"wasm\"}, whose runtime serves the residual form (as fmi-ls-dae for Model Exchange), with --simCodeTarget=C+Rust for an FMI 3.0 Model Exchange FMU (as fmi-ls-dae), or remove the --daeMode flag.");
+  "DAE mode (--daeMode) for a Model Exchange FMU (fmuType=\"%s\") needs FMI 3.0 (as fmi-ls-dae) and the C code generator, or platforms={\"wasm\"}. Export FMI 3.0, a Co-Simulation FMU (fmuType=\"cs\"), or remove the --daeMode flag.");
 public constant ErrorTypes.Message USER_CANCELLED = ErrorTypes.MESSAGE(7028, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "Operation cancelled by user.");
-public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_CS = ErrorTypes.MESSAGE(7030, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
-  "DAE mode (--daeMode) is not supported for a Co-Simulation FMU with --simCodeTarget=C+Rust. Export with --simCodeTarget=C, with platforms={\"wasm\"}, or remove the --daeMode flag.");
 public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_ME_DROPPED = ErrorTypes.MESSAGE(7036, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
-  "DAE mode (--daeMode) is not supported by the C simulation runtime for Model Exchange. Exporting Co-Simulation only.");
+  "DAE mode (--daeMode) for Model Exchange needs FMI 3.0 or platforms={\"wasm\"}. Exporting Co-Simulation only.");
 public constant ErrorTypes.Message ERROR_PKG_CONFLICT = ErrorTypes.MESSAGE(7037, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "No versions of %s %s and the libraries it uses can be used together:\n%s");
 public constant ErrorTypes.Message LOAD_MODEL_CONFLICT = ErrorTypes.MESSAGE(7038, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "No versions of the libraries that %s uses can be loaded together:\n%s");
+public constant ErrorTypes.Message NOTIFY_LOAD_MODEL_CONVERSION = ErrorTypes.MESSAGE(7039, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
+  "%1 uses %2 %3, which is not available, but %2 %4 has a conversion from it. Use convertPackageToLibrary(%1, %2, \"%4\") to convert %1.");
 public constant ErrorTypes.Message ALARM_EXPIRED = ErrorTypes.MESSAGE(7031, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "Operation aborted: the time limit set by the alarm ran out.");
 public constant ErrorTypes.Message FMU_EXPORT_FMI_LS_DAE_DRAFT = ErrorTypes.MESSAGE(7032, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),

@@ -123,14 +123,50 @@ int omc_result_write(omc_result *r, const char *path, const char *const *vars, s
                      unsigned intervals, int single, char **error);
 
 omc_result_tolerances omc_result_default_tolerances(void);
-/* diffSimulationResults: the differing variables among n vars (the reference's
- * compared variables when 0). tol NULL selects the defaults. Free the result
+/* diffSimulationResults: the variables among n vars (the reference's compared
+ * variables when 0) that differ or are missing in either file. tol NULL
+ * selects the defaults. Free the result
  * with omc_result_free_strings(result, *n_out). */
 char **omc_result_diff(omc_result *actual, omc_result *reference, const char *const *vars, size_t n,
                        const omc_result_tolerances *tol, size_t *n_out, char **error);
 omc_result_tube *omc_result_diff_variable(omc_result *actual, omc_result *reference, const char *var,
                                           const omc_result_tolerances *tol, char **error);
 void omc_result_tube_free(omc_result_tube *t);
+
+/* ---- The scripting API's result-file functions, for omc. ---- */
+
+/* Receives the messages: format has a %s per token, filled in order;
+ * severity is 0 error, 1 warning, 2 notification. */
+typedef struct omc_result_messages {
+  void (*add)(void *data, int severity, const char *format, const char *const *tokens, size_t n);
+  void *data;
+} omc_result_messages;
+
+void omc_result_script_close(void);
+double omc_result_script_val(const omc_result_messages *m, const char *filename, const char *var, double time);
+char **omc_result_script_variables(const omc_result_messages *m, const char *filename, int parameters,
+                                   int omc_style, size_t *n_out);
+int omc_result_script_size(const omc_result_messages *m, const char *filename);
+/* n rows of *n_rows values, for omc_result_free_doubles; NULL on failure. */
+double *omc_result_script_dataset(const omc_result_messages *m, const char *filename, const char *const *vars,
+                                  size_t n, int dimsize, size_t *n_rows);
+/* NULL when the files cannot be compared. */
+char **omc_result_script_compare(const omc_result_messages *m, int running_testsuite, const char *filename,
+                                 const char *reffilename, const char *logfile, double reltol, double abstol,
+                                 const char *const *vars, size_t n, size_t *n_out);
+double omc_result_script_delta(const omc_result_messages *m, const char *filename, const char *reffilename,
+                               const char *method, const char *const *vars, size_t n);
+char **omc_result_script_diff(const omc_result_messages *m, int running_testsuite, const char *filename,
+                              const char *reffilename, const char *prefix, double reltol,
+                              double reltol_diff_max_min, double range_delta, const char *const *vars, size_t n,
+                              int keep_equal_results, int *success, size_t *n_out);
+/* NULL when the files cannot be compared. */
+char *omc_result_script_diff_html(const omc_result_messages *m, int running_testsuite, const char *var,
+                                  const char *filename, const char *reffilename, double reltol,
+                                  double reltol_diff_max_min, double range_delta);
+int omc_result_script_filter(const omc_result_messages *m, const char *in_file, const char *out_file,
+                             const char *const *vars, size_t n, int intervals, int remove_description);
+void omc_result_free_doubles(double *p);
 
 /* ---- Writers, for the C simulation runtime (simulation_result_rust.cpp). ---- */
 

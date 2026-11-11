@@ -2278,7 +2278,7 @@ protected
       eqn := Equation.map(eqn, function expandArraySumExp(arrayCref = var_cref));
       (eqn, solve_status, implicit_index, _) := solveEquation(eqn, cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
       if solve_status < Status.UNSOLVABLE then
-        eqn_slice := Slice.SLICE(Pointer.create(eqn), {});
+        eqn_slice := Slice.SLICE(Pointer.create(eqn), eqn_slice.indices);
       else
         // all expansion tactics failed; allow implicit solution as last resort
         solve_status := Status.IMPLICIT;

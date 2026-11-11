@@ -6,7 +6,10 @@ ExportCvodeFmu_dynamic.mos \
 ExportCvodeFmu_static.mos \
 fmi_interpolation_01.mos \
 FmuAssertSolverRetry.mos \
+FmuEquationAssertLog.mos \
+FmuExitInitAssert.mos \
 FmuMatV7Table.mos \
+FmuZlibLinkOrder.mos \
 FmuNlsSameTime.mos \
 FmuUnknownDependencies.mos \
 FmuUnknownsWithoutFmiIndex.mos \
@@ -17,6 +20,7 @@ issue10523.mos \
 Issue14456.mos \
 CvodeStepTooClose.mos \
 Issue17436.mos \
+FmuStartEventError.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -28,7 +32,11 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 FmuAssertSolverRetry.py \
+FmuEquationAssertLog.py \
+FmuExitInitAssert.py \
 FmuNlsSameTime.py \
+FmuStartEventError.py \
+FmuZlibLinkOrder-f.c \
 Makefile \
 
 CLEAN = `ls | grep -w -v -f deps.tmp`

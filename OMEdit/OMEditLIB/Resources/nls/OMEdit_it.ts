@@ -5,7 +5,7 @@
     <name>AboutOMEditDialog</name>
     <message>
         <source>About %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Informazioni su %1</translation>
     </message>
     <message>
         <source>&lt;h2&gt;%1 - %2&lt;/h2&gt;&lt;b&gt;Connected to %3 %4 encryption support&lt;/b&gt;&lt;br /&gt;%5&lt;br /&gt;Compiled with &lt;b&gt;Qt %7&lt;/b&gt;, running with &lt;b&gt;Qt %8&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Installation path &lt;b&gt;%6&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Copyright &lt;b&gt;Open Source Modelica Consortium (OSMC)&lt;/b&gt;.&lt;br /&gt;Distributed under OSMC-PL and AGPL3, see &lt;u&gt;&lt;a href=&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;.&lt;br /&gt;&lt;em&gt;Compiled without 3D animation support&lt;/em&gt;.</source>
@@ -16,100 +16,101 @@
     <name>AbstractAnimationWindow</name>
     <message>
         <source>Time [s]:</source>
-        <translation type="unfinished"></translation>
+        <translation>Tempo [s]:</translation>
     </message>
     <message>
         <source>Speed:</source>
-        <translation type="unfinished"></translation>
+        <translation>Velocità:</translation>
     </message>
     <message>
         <source>Rotate Left</source>
-        <translation type="unfinished"></translation>
+        <translation>Ruota a sinistra</translation>
     </message>
     <message>
         <source>Rotate Right</source>
-        <translation type="unfinished"></translation>
+        <translation>Ruota a destra</translation>
     </message>
     <message>
         <source>Rotate the camera left</source>
-        <translation type="unfinished"></translation>
+        <translation>Ruota la telecamera a sinistra</translation>
     </message>
     <message>
         <source>Rotate the camera right</source>
-        <translation type="unfinished"></translation>
+        <translation>Ruota la telecamera a destra</translation>
     </message>
     <message>
         <source>Interactive Control</source>
-        <translation type="unfinished"></translation>
+        <translation>Controllo interattivo</translation>
     </message>
     <message>
         <source>Open the interactive control panel</source>
-        <translation type="unfinished"></translation>
+        <translation>Apre il pannello di controllo interattivo</translation>
     </message>
     <message>
         <source>Information about states could not be determined.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile determinare le informazioni sugli stati.</translation>
     </message>
     <message>
         <source>Interactive Control needs an FMU ME 2.0</source>
-        <translation type="unfinished"></translation>
+        <translation>Il controllo interattivo richiede una FMU ME 2.0</translation>
     </message>
     <message>
         <source>Unknown visualization type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipo di visualizzazione sconosciuto.</translation>
     </message>
     <message>
         <source>Could not find the visual XML file %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile trovare il file XML visuale %1.</translation>
     </message>
     <message>
         <source>Could not init %1 %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile inizializzare %1 %2.</translation>
     </message>
     <message>
         <source>Could not initialize the 3D scene for %1:
 %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile inizializzare la scena 3D per %1:
+%2</translation>
     </message>
 </context>
 <context>
     <name>AddConnectorDialog</name>
     <message>
         <source>Connector</source>
-        <translation type="unfinished"></translation>
+        <translation>Connettore</translation>
     </message>
 </context>
 <context>
     <name>AddSubModelDialog</name>
     <message>
         <source>SubModel</source>
-        <translation type="unfinished"></translation>
+        <translation>Sottomodello</translation>
     </message>
     <message>
         <source>Unable to find the SubModel file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile trovare il file del sottomodello.</translation>
     </message>
     <message>
         <source>Failed to add submodel. %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aggiungere il sottomodello. %1</translation>
     </message>
 </context>
 <context>
     <name>AddSystemDialog</name>
     <message>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistema</translation>
     </message>
     <message>
         <source>A model already have a system. Only one system is allowed inside a model.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il modello ha già un sistema. In un modello è consentito un solo sistema.</translation>
     </message>
 </context>
 <context>
     <name>AddSystemLibraryDialog</name>
     <message>
         <source>Edit System Library</source>
-        <translation>Edita la Libreria di Sistema</translation>
+        <translation>Modifica libreria di sistema</translation>
     </message>
     <message>
         <source>Add System Library</source>
@@ -120,64 +121,64 @@
     <name>AddUserLibraryDialog</name>
     <message>
         <source>Add User Library</source>
-        <translation>Aggiungi Libreria di Utente</translation>
+        <translation>Aggiungi libreria utente</translation>
     </message>
     <message>
         <source>Please enter the file path.</source>
-        <translation>Introdurre il percorso del file.</translation>
+        <translation>Inserire il percorso del file.</translation>
     </message>
 </context>
 <context>
     <name>ArchivedSimulationsWidget</name>
     <message>
         <source>Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Modello</translation>
     </message>
 </context>
 <context>
     <name>ArrayParameterEditorDialog</name>
     <message>
         <source>%1 - %2 %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - %2 %3</translation>
     </message>
     <message>
         <source>Rows:</source>
-        <translation type="unfinished"></translation>
+        <translation>Righe:</translation>
     </message>
     <message>
         <source>Columns:</source>
-        <translation type="unfinished"></translation>
+        <translation>Colonne:</translation>
     </message>
     <message>
         <source>Expression:</source>
-        <translation type="unfinished"></translation>
+        <translation>Espressione:</translation>
     </message>
     <message>
         <source>Delete 1 row</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina 1 riga</translation>
     </message>
     <message>
         <source>Delete %1 rows</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina %1 righe</translation>
     </message>
     <message>
         <source>Delete 1 column</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina 1 colonna</translation>
     </message>
     <message>
         <source>Delete %1 columns</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina %1 colonne</translation>
     </message>
 </context>
 <context>
     <name>AttachToProcessDialog</name>
     <message>
         <source>Attach to Process ID:</source>
-        <translation type="unfinished"></translation>
+        <translation>Collega al processo con ID:</translation>
     </message>
     <message>
         <source>Filter Processes</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtra processi</translation>
     </message>
 </context>
 <context>
@@ -188,7 +189,7 @@
     </message>
     <message>
         <source>Clear Find/Replace Texts</source>
-        <translation>Cancella il testo di Cerca/Sostituisci</translation>
+        <translation>Cancella i testi di Cerca/Sostituisci</translation>
     </message>
     <message>
         <source>Clears the Find/Replace text items</source>
@@ -204,47 +205,47 @@
     </message>
     <message>
         <source>Show Tabs and Spaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra tabulazioni e spazi</translation>
     </message>
     <message>
         <source>Shows the Tabs and Spaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra le tabulazioni e gli spazi</translation>
     </message>
     <message>
         <source>Toggle Breakpoint</source>
-        <translation type="unfinished"></translation>
+        <translation>Attiva/disattiva punto di interruzione</translation>
     </message>
     <message>
         <source>Toggle Comment Selection</source>
-        <translation>attiva/disattiva selezione commenti</translation>
+        <translation>Attiva/disattiva commento sulla selezione</translation>
     </message>
     <message>
         <source>Fold All</source>
-        <translation type="unfinished"></translation>
+        <translation>Comprimi tutto</translation>
     </message>
     <message>
         <source>Unfold All</source>
-        <translation type="unfinished"></translation>
+        <translation>Espandi tutto</translation>
     </message>
     <message>
         <source>Undo</source>
-        <translation type="unfinished"></translation>
+        <translation>Annulla</translation>
     </message>
     <message>
         <source>Redo</source>
-        <translation type="unfinished"></translation>
+        <translation>Ripeti</translation>
     </message>
     <message>
         <source>Cu&amp;t</source>
-        <translation type="unfinished"></translation>
+        <translation>T&amp;aglia</translation>
     </message>
     <message>
         <source>&amp;Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Copia</translation>
     </message>
     <message>
         <source>&amp;Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>I&amp;ncolla</translation>
     </message>
     <message>
         <source>Select All</source>
@@ -255,263 +256,265 @@
     <name>BreakpointDialog</name>
     <message>
         <source>%1 Breakpoint</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 punto di interruzione</translation>
     </message>
     <message>
         <source>File Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Nome file:</translation>
     </message>
     <message>
         <source>Browse Classes</source>
-        <translation type="unfinished"></translation>
+        <translation>Sfoglia classi</translation>
     </message>
     <message>
         <source>File System</source>
-        <translation type="unfinished"></translation>
+        <translation>File system</translation>
     </message>
     <message>
         <source>Line Number:</source>
-        <translation type="unfinished"></translation>
+        <translation>Numero di riga:</translation>
     </message>
     <message>
         <source>Enabled:</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilitato:</translation>
     </message>
     <message>
         <source>Ignore Count:</source>
-        <translation type="unfinished"></translation>
+        <translation>Passaggi da ignorare:</translation>
     </message>
     <message>
         <source>* Use &quot;%1&quot; to set condition on simulation time.</source>
-        <translation type="unfinished"></translation>
+        <translation>* Usare &quot;%1&quot; per impostare una condizione sul tempo di simulazione.</translation>
     </message>
     <message>
         <source>Select Class</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona classe</translation>
     </message>
 </context>
 <context>
     <name>BreakpointsTreeView</name>
     <message>
         <source>Go to File</source>
-        <translation type="unfinished"></translation>
+        <translation>Vai al file</translation>
     </message>
     <message>
         <source>Goto file location</source>
-        <translation type="unfinished"></translation>
+        <translation>Vai alla posizione nel file</translation>
     </message>
     <message>
         <source>Adds a breakpoint</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiunge un punto di interruzione</translation>
     </message>
     <message>
         <source>Edits a breakpoint</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica un punto di interruzione</translation>
     </message>
     <message>
         <source>Deletes a breakpoint</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina un punto di interruzione</translation>
     </message>
     <message>
         <source>Delete All</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina tutti</translation>
     </message>
     <message>
         <source>Deletes all the breakpoints</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina tutti i punti di interruzione</translation>
     </message>
 </context>
 <context>
     <name>CRMLPage</name>
     <message>
         <source>Compiler Jar:</source>
-        <translation type="unfinished"></translation>
+        <translation>Jar del compilatore:</translation>
     </message>
     <message>
         <source>Compiler Arguments:</source>
-        <translation type="unfinished"></translation>
+        <translation>Argomenti del compilatore:</translation>
     </message>
     <message>
         <source>Processor:</source>
-        <translation type="unfinished"></translation>
+        <translation>Processore:</translation>
     </message>
     <message>
         <source>Resets to default Processor path</source>
-        <translation type="unfinished"></translation>
+        <translation>Ripristina il percorso predefinito del processore</translation>
     </message>
     <message>
         <source>Modelica Library Paths:</source>
-        <translation type="unfinished"></translation>
+        <translation>Percorsi delle librerie Modelica:</translation>
     </message>
 </context>
 <context>
     <name>CRMLTranslateAsDialog</name>
     <message>
         <source>Select the output directory:</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona la directory di output:</translation>
     </message>
     <message>
         <source>Insert in class - within (optional):</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserisci nella classe - within (opzionale):</translation>
     </message>
     <message>
         <source>Output directory does not exist.</source>
-        <translation type="unfinished"></translation>
+        <translation>La directory di output non esiste.</translation>
     </message>
 </context>
 <context>
     <name>CRMLTranslatorOutputWidget</name>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Annulla</translation>
+        <translation>Annulla</translation>
     </message>
     <message>
         <source>Translation of the CRML file %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>La traduzione del file CRML %1 è stata annullata.</translation>
     </message>
     <message>
         <source>Testsuite run in directory %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;esecuzione della testsuite nella directory %1 è stata annullata.</translation>
     </message>
     <message>
         <source>Translation of the CRML file %1 with output directory %2 and within %3 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>La traduzione del file CRML %1 con directory di output %2 e within %3 è stata annullata.</translation>
     </message>
     <message>
         <source>Translation of the CRML file %1 with output directory %2 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>La traduzione del file CRML %1 con directory di output %2 è stata annullata.</translation>
     </message>
     <message>
         <source>Translation of the CRML file %1 with within %2 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>La traduzione del file CRML %1 con within %2 è stata annullata.</translation>
     </message>
     <message>
         <source>CRML translator is running. Please wait for a while.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il traduttore CRML è in esecuzione. Attendere.</translation>
     </message>
     <message>
         <source>Translation of the CRML file %1 failed. Exit code %2</source>
-        <translation type="unfinished"></translation>
+        <translation>La traduzione del file CRML %1 non è riuscita. Codice di uscita %2</translation>
     </message>
     <message>
         <source>Translation of CRML file %1 finished. Now loading specified CRML Modelica libraries...</source>
-        <translation type="unfinished"></translation>
+        <translation>Traduzione del file CRML %1 completata. Caricamento delle librerie Modelica CRML specificate...</translation>
     </message>
     <message>
         <source>Testsuite run in directory %1 failed. Exit code %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;esecuzione della testsuite nella directory %1 non è riuscita. Codice di uscita %2.</translation>
     </message>
     <message>
         <source>Testsuite run in directory %1 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>Esecuzione della testsuite nella directory %1 completata.</translation>
     </message>
     <message>
         <source>Translation of the CRML file %1 with output directory %2 and within %3 failed. Exit code %4.</source>
-        <translation type="unfinished"></translation>
+        <translation>La traduzione del file CRML %1 con directory di output %2 e within %3 non è riuscita. Codice di uscita %4.</translation>
     </message>
     <message>
         <source>Translation of CRML file %1 with output directory %2 and within %3 finished. Now loading specified CRML Modelica libraries...</source>
-        <translation type="unfinished"></translation>
+        <translation>Traduzione del file CRML %1 con directory di output %2 e within %3 completata. Caricamento delle librerie Modelica CRML specificate...</translation>
     </message>
     <message>
         <source>Translation of the CRML file %1 with output directory %2 failed. Exit code %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>La traduzione del file CRML %1 con directory di output %2 non è riuscita. Codice di uscita %3.</translation>
     </message>
     <message>
         <source>Translation of CRML file %1 with output directory %2 finished. Now loading specified CRML Modelica libraries...</source>
-        <translation type="unfinished"></translation>
+        <translation>Traduzione del file CRML %1 con directory di output %2 completata. Caricamento delle librerie Modelica CRML specificate...</translation>
     </message>
     <message>
         <source>Translation of the CRML file %1 with within %2 failed. Exit code %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>La traduzione del file CRML %1 con within %2 non è riuscita. Codice di uscita %3.</translation>
     </message>
     <message>
         <source>Translation of CRML file %1 with within %2 finished. Now loading specified CRML Modelica libraries...</source>
-        <translation type="unfinished"></translation>
+        <translation>Traduzione del file CRML %1 con within %2 completata. Caricamento delle librerie Modelica CRML specificate...</translation>
     </message>
     <message>
         <source>The CRML testsuite needs the CRML compiler, which needs Java, so it does not run in the web version.</source>
-        <translation type="unfinished"></translation>
+        <translation>La testsuite CRML richiede il compilatore CRML, che richiede Java, quindi non può essere eseguita nella versione web.</translation>
     </message>
     <message>
         <source>Translating %1 with crml.js
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Traduzione di %1 con crml.js
+</translation>
     </message>
     <message>
         <source>Output Modelica file: %1
 </source>
-        <translation type="unfinished"></translation>
+        <translation>File Modelica di output: %1
+</translation>
     </message>
     <message>
         <source>Could not write %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile scrivere %1: %2</translation>
     </message>
     <message>
         <source>Translation of the CRML file %1 failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>La traduzione del file CRML %1 non è riuscita.</translation>
     </message>
 </context>
 <context>
     <name>ClassDiagramWidget</name>
     <message>
         <source>Depth:</source>
-        <translation type="unfinished"></translation>
+        <translation>Profondità:</translation>
     </message>
     <message>
         <source>How many levels of used classes to show</source>
-        <translation type="unfinished"></translation>
+        <translation>Quanti livelli di classi usate mostrare</translation>
     </message>
     <message>
         <source>Show modifiers</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra i modificatori</translation>
     </message>
     <message>
         <source>Save the diagram as a draw.io file</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva il diagramma come file draw.io</translation>
     </message>
     <message>
         <source>Instances below classes</source>
-        <translation type="unfinished"></translation>
+        <translation>Istanze sotto le classi</translation>
     </message>
     <message>
         <source>Hierarchical</source>
-        <translation type="unfinished"></translation>
+        <translation>Gerarchico</translation>
     </message>
     <message>
         <source>Class on top</source>
-        <translation type="unfinished"></translation>
+        <translation>Classe in alto</translation>
     </message>
     <message>
         <source>Base classes on top</source>
-        <translation type="unfinished"></translation>
+        <translation>Classi base in alto</translation>
     </message>
     <message>
         <source>Rows by inheritance</source>
-        <translation type="unfinished"></translation>
+        <translation>Righe per ereditarietà</translation>
     </message>
     <message>
         <source>How the classes are laid out</source>
-        <translation type="unfinished"></translation>
+        <translation>Come vengono disposte le classi</translation>
     </message>
     <message>
         <source>Layout:</source>
-        <translation type="unfinished"></translation>
+        <translation>Layout:</translation>
     </message>
     <message>
         <source>The CRML file &lt;b&gt;%1&lt;/b&gt; is empty or can&apos;t be read.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il file CRML &lt;b&gt;%1&lt;/b&gt; è vuoto o non può essere letto.</translation>
     </message>
     <message>
         <source>No class diagram of &lt;b&gt;%1&lt;/b&gt;, see the Messages Browser.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessun diagramma delle classi per &lt;b&gt;%1&lt;/b&gt;, vedere la finestra Messaggi.</translation>
     </message>
 </context>
 <context>
     <name>CleanDialog</name>
     <message>
         <source>Clean Repository</source>
-        <translation type="unfinished"></translation>
+        <translation>Pulisci repository</translation>
     </message>
     <message>
         <source>Select All</source>
@@ -523,321 +526,323 @@
     </message>
     <message>
         <source>Clean</source>
-        <translation type="unfinished"></translation>
+        <translation>Pulisci</translation>
     </message>
 </context>
 <context>
     <name>Cloud</name>
     <message>
         <source>Google Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Google Drive</translation>
     </message>
     <message>
         <source>OneDrive</source>
-        <translation type="unfinished"></translation>
+        <translation>OneDrive</translation>
     </message>
 </context>
 <context>
     <name>CloudAccountManager</name>
     <message>
         <source>%1 has not been set up for this installation. Add a client ID on the Cloud Storage page of the options dialog.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 non è stato configurato per questa installazione. Aggiungere un client ID nella pagina Archiviazione cloud della finestra delle opzioni.</translation>
     </message>
     <message>
         <source>The service did not say which account signed in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il servizio non ha indicato quale account ha effettuato l&apos;accesso.</translation>
     </message>
 </context>
 <context>
     <name>CloudBrowserDialog</name>
     <message>
         <source>%1 - Open from Cloud Storage</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Apri da archiviazione cloud</translation>
     </message>
     <message>
         <source>%1 - Save to Cloud Storage</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Salva in archiviazione cloud</translation>
     </message>
     <message>
         <source>Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Cartella</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri</translation>
     </message>
     <message>
         <source>Account:</source>
-        <translation type="unfinished"></translation>
+        <translation>Account:</translation>
     </message>
     <message>
         <source>Choose a folder or a file to open:</source>
-        <translation type="unfinished"></translation>
+        <translation>Scegliere una cartella o un file da aprire:</translation>
     </message>
     <message>
         <source>Choose the folder to save into (right-click for a new folder):</source>
-        <translation type="unfinished"></translation>
+        <translation>Scegliere la cartella in cui salvare (clic destro per una nuova cartella):</translation>
     </message>
     <message>
         <source>No cloud accounts yet. Add one on the Cloud Storage page of the options dialog.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessun account cloud. Aggiungerne uno nella pagina Archiviazione cloud della finestra delle opzioni.</translation>
     </message>
     <message>
         <source>Opening %1...</source>
-        <translation type="unfinished"></translation>
+        <translation>Apertura di %1...</translation>
     </message>
     <message>
         <source>Could not open the cloud folder: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aprire la cartella cloud: %1</translation>
     </message>
     <message>
         <source>Listing %1...</source>
-        <translation type="unfinished"></translation>
+        <translation>Elenco di %1...</translation>
     </message>
     <message>
         <source>Could not list the folder: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile elencare la cartella: %1</translation>
     </message>
     <message>
         <source>New Folder...</source>
-        <translation type="unfinished"></translation>
+        <translation>Nuova cartella...</translation>
     </message>
     <message>
         <source>New Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Nuova cartella</translation>
     </message>
     <message>
         <source>Folder name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Nome della cartella:</translation>
     </message>
     <message>
         <source>Creating %1...</source>
-        <translation type="unfinished"></translation>
+        <translation>Creazione di %1...</translation>
     </message>
     <message>
         <source>Could not create the folder: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile creare la cartella: %1</translation>
     </message>
 </context>
 <context>
     <name>CloudConflictDialog</name>
     <message>
         <source>Changed here and in the cloud</source>
-        <translation type="unfinished"></translation>
+        <translation>Modificato qui e nel cloud</translation>
     </message>
     <message>
         <source>Created here and in the cloud</source>
-        <translation type="unfinished"></translation>
+        <translation>Creato qui e nel cloud</translation>
     </message>
     <message>
         <source>Deleted here, changed in the cloud</source>
-        <translation type="unfinished"></translation>
+        <translation>Eliminato qui, modificato nel cloud</translation>
     </message>
     <message>
         <source>Changed here, deleted in the cloud</source>
-        <translation type="unfinished"></translation>
+        <translation>Modificato qui, eliminato nel cloud</translation>
     </message>
     <message>
         <source>Delete it in the cloud too</source>
-        <translation type="unfinished"></translation>
+        <translation>Eliminalo anche nel cloud</translation>
     </message>
     <message>
         <source>Keep my version</source>
-        <translation type="unfinished"></translation>
+        <translation>Mantieni la mia versione</translation>
     </message>
     <message>
         <source>Delete my copy too</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina anche la mia copia</translation>
     </message>
     <message>
         <source>Take the cloud version</source>
-        <translation type="unfinished"></translation>
+        <translation>Usa la versione del cloud</translation>
     </message>
     <message>
         <source>Keep both</source>
-        <translation type="unfinished"></translation>
+        <translation>Mantieni entrambi</translation>
     </message>
     <message>
         <source>Synchronisation Conflicts</source>
-        <translation type="unfinished"></translation>
+        <translation>Conflitti di sincronizzazione</translation>
     </message>
     <message>
         <source>These files in &lt;b&gt;%1&lt;/b&gt; changed both here and in the cloud since the last synchronisation. Keeping both writes the cloud version to the original name and yours beside it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Questi file in &lt;b&gt;%1&lt;/b&gt; sono stati modificati sia qui sia nel cloud dall&apos;ultima sincronizzazione. Mantenendo entrambi, la versione del cloud viene scritta con il nome originale e la tua accanto.</translation>
     </message>
     <message>
         <source>File</source>
-        <translation type="unfinished"></translation>
+        <translation>File</translation>
     </message>
     <message>
         <source>What happened</source>
-        <translation type="unfinished"></translation>
+        <translation>Cosa è successo</translation>
     </message>
     <message>
         <source>What to do</source>
-        <translation type="unfinished"></translation>
+        <translation>Cosa fare</translation>
     </message>
     <message>
         <source>Keep Mine For All</source>
-        <translation type="unfinished"></translation>
+        <translation>Mantieni la mia per tutti</translation>
     </message>
     <message>
         <source>Take Cloud For All</source>
-        <translation type="unfinished"></translation>
+        <translation>Usa il cloud per tutti</translation>
     </message>
     <message>
         <source>Keep Both For All</source>
-        <translation type="unfinished"></translation>
+        <translation>Mantieni entrambi per tutti</translation>
     </message>
     <message>
         <source>Synchronise</source>
-        <translation type="unfinished"></translation>
+        <translation>Sincronizza</translation>
     </message>
 </context>
 <context>
     <name>CloudProvider</name>
     <message>
         <source>Cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Annullato.</translation>
     </message>
 </context>
 <context>
     <name>CloudReply</name>
     <message>
         <source>Cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Annullato.</translation>
     </message>
 </context>
 <context>
     <name>CloudStoragePage</name>
     <message>
         <source>Accounts</source>
-        <translation type="unfinished"></translation>
+        <translation>Account</translation>
     </message>
     <message>
         <source>Add Google Drive Account</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi account Google Drive</translation>
     </message>
     <message>
         <source>Add OneDrive Account</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi account OneDrive</translation>
     </message>
     <message>
         <source>Sign Out</source>
-        <translation type="unfinished"></translation>
+        <translation>Disconnetti</translation>
     </message>
     <message>
         <source>&lt;b&gt;Google Drive&lt;/b&gt; shows only folders OMEdit created itself, inside an OpenModelica folder in your Drive. To use a library that is already in your Drive, download it as a .zip, open it in OMEdit, and save it to a cloud folder from there.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Google Drive&lt;/b&gt; mostra solo le cartelle create da OMEdit, all&apos;interno di una cartella OpenModelica nel Drive. Per usare una libreria che si trova già nel Drive, scaricarla come .zip, aprirla in OMEdit e salvarla da lì in una cartella cloud.</translation>
     </message>
     <message>
         <source>&lt;b&gt;OneDrive&lt;/b&gt; can open any folder, including one you uploaded or that the OneDrive desktop client synchronised.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;OneDrive&lt;/b&gt; può aprire qualsiasi cartella, anche una caricata manualmente o sincronizzata dal client desktop di OneDrive.</translation>
     </message>
     <message>
         <source>Advanced: OAuth Applications</source>
-        <translation type="unfinished"></translation>
+        <translation>Avanzate: applicazioni OAuth</translation>
     </message>
     <message>
         <source>Normally supplied by the deployment in cloud_config.json. Fill these in to use your own registered applications instead.</source>
-        <translation type="unfinished"></translation>
+        <translation>Normalmente forniti dalla distribuzione in cloud_config.json. Compilare questi campi per usare le proprie applicazioni registrate.</translation>
     </message>
     <message>
         <source>Required by Google even though this is a public client: its token endpoint rejects a PKCE exchange without one. It is not confidential - the web build serves it to every visitor. The registered redirect URI and origin are what protect the application.</source>
-        <translation type="unfinished"></translation>
+        <translation>Richiesto da Google anche se questo è un client pubblico: il suo endpoint del token rifiuta uno scambio PKCE senza di esso. Non è riservato - la versione web lo invia a ogni visitatore. Sono l&apos;URI di reindirizzamento e l&apos;origine registrati a proteggere l&apos;applicazione.</translation>
     </message>
     <message>
         <source>Request access to the whole Google Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Richiedi l&apos;accesso all&apos;intero Google Drive</translation>
     </message>
     <message>
         <source>Off, OMEdit sees only what it created. On, it asks for the whole Drive - a restricted scope, which requires your own client to pass Google&apos;s app verification.</source>
-        <translation type="unfinished"></translation>
+        <translation>Disattivato: OMEdit vede solo ciò che ha creato. Attivato: chiede l&apos;intero Drive - un ambito con restrizioni, che richiede che il proprio client superi la verifica delle app di Google.</translation>
     </message>
     <message>
         <source>Google Drive client ID:</source>
-        <translation type="unfinished"></translation>
+        <translation>Client ID di Google Drive:</translation>
     </message>
     <message>
         <source>Google Drive client secret:</source>
-        <translation type="unfinished"></translation>
+        <translation>Client secret di Google Drive:</translation>
     </message>
     <message>
         <source>OneDrive client ID:</source>
-        <translation type="unfinished"></translation>
+        <translation>Client ID di OneDrive:</translation>
     </message>
     <message>
         <source>Mounted Folders</source>
-        <translation type="unfinished"></translation>
+        <translation>Cartelle montate</translation>
     </message>
     <message>
         <source>A ticked folder is brought up to date after every save. Untick it to synchronise only when asked.</source>
-        <translation type="unfinished"></translation>
+        <translation>Una cartella selezionata viene aggiornata dopo ogni salvataggio. Deselezionarla per sincronizzare solo su richiesta.</translation>
     </message>
     <message>
         <source>Forget Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Dimentica cartella</translation>
     </message>
     <message>
         <source>Forget %1?
 
 The local copy and its synchronisation state are removed. Nothing in the cloud is touched, and the folder can be opened again at any time.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dimenticare %1?
+
+La copia locale e il suo stato di sincronizzazione vengono rimossi. Nel cloud non viene modificato nulla e la cartella può essere riaperta in qualsiasi momento.</translation>
     </message>
     <message>
         <source> (signed out)</source>
-        <translation type="unfinished"></translation>
+        <translation> (disconnesso)</translation>
     </message>
     <message>
         <source>Signing in to Google Drive...</source>
-        <translation type="unfinished"></translation>
+        <translation>Accesso a Google Drive...</translation>
     </message>
     <message>
         <source>Signing in to OneDrive...</source>
-        <translation type="unfinished"></translation>
+        <translation>Accesso a OneDrive...</translation>
     </message>
     <message>
         <source>Signed out.</source>
-        <translation type="unfinished"></translation>
+        <translation>Disconnesso.</translation>
     </message>
     <message>
         <source>Signed in as %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Accesso effettuato come %1.</translation>
     </message>
     <message>
         <source>Signed in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Accesso effettuato.</translation>
     </message>
     <message>
         <source>Sign-in failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Accesso non riuscito: %1</translation>
     </message>
 </context>
 <context>
     <name>CloudSyncEngine</name>
     <message>
         <source>Looking at %1...</source>
-        <translation type="unfinished"></translation>
+        <translation>Analisi di %1...</translation>
     </message>
     <message>
         <source>%1: the folder holds more than one entry with this name</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: la cartella contiene più di una voce con questo nome</translation>
     </message>
     <message>
         <source>%1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: %2</translation>
     </message>
     <message>
         <source>Cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Annullato.</translation>
     </message>
     <message>
         <source>Synchronisation cancelled; nothing was changed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sincronizzazione annullata; non è stato modificato nulla.</translation>
     </message>
     <message>
         <source>Could not write %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile scrivere %1.</translation>
     </message>
 </context>
 <context>
@@ -859,35 +864,35 @@ The local copy and its synchronisation state are removed. Nothing in the cloud i
     <name>CommitChangesDialog</name>
     <message>
         <source>Commit</source>
-        <translation type="unfinished"></translation>
+        <translation>Commit</translation>
     </message>
     <message>
         <source>Repository:</source>
-        <translation type="unfinished"></translation>
+        <translation>Repository:</translation>
     </message>
     <message>
         <source>Branch:</source>
-        <translation type="unfinished"></translation>
+        <translation>Branch:</translation>
     </message>
     <message>
         <source>Repository Information:</source>
-        <translation type="unfinished"></translation>
+        <translation>Informazioni sul repository:</translation>
     </message>
     <message>
         <source>Commit Information:</source>
-        <translation type="unfinished"></translation>
+        <translation>Informazioni sul commit:</translation>
     </message>
     <message>
         <source>Author:</source>
-        <translation type="unfinished"></translation>
+        <translation>Autore:</translation>
     </message>
     <message>
         <source>Email:</source>
-        <translation type="unfinished"></translation>
+        <translation>Email:</translation>
     </message>
     <message>
         <source>Description:</source>
-        <translation type="unfinished"></translation>
+        <translation>Descrizione:</translation>
     </message>
     <message>
         <source>Select All</source>
@@ -895,267 +900,269 @@ The local copy and its synchronisation state are removed. Nothing in the cloud i
     </message>
     <message>
         <source>Status</source>
-        <translation type="unfinished"></translation>
+        <translation>Stato</translation>
     </message>
     <message>
         <source>File</source>
-        <translation type="unfinished"></translation>
+        <translation>File</translation>
     </message>
     <message>
         <source>Files:</source>
-        <translation type="unfinished"></translation>
+        <translation>File:</translation>
     </message>
     <message>
         <source>commit</source>
-        <translation type="unfinished"></translation>
+        <translation>Esegui commit</translation>
     </message>
     <message>
         <source>Commit Message </source>
-        <translation type="unfinished"></translation>
+        <translation>Messaggio di commit </translation>
     </message>
 </context>
 <context>
     <name>ComponentNameDialog</name>
     <message>
         <source>%1 - Enter Component Name</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Inserire il nome del componente</translation>
     </message>
     <message>
         <source>Please choose a meaningful name for this component, to improve the readability of simulation results.</source>
-        <translation type="unfinished"></translation>
+        <translation>Scegliere un nome significativo per questo componente, per migliorare la leggibilità dei risultati della simulazione.</translation>
     </message>
 </context>
 <context>
     <name>ConvertClassUsesAnnotationDialog</name>
     <message>
         <source>To</source>
-        <translation type="unfinished"></translation>
+        <translation>A</translation>
     </message>
     <message>
         <source>From</source>
-        <translation type="unfinished"></translation>
+        <translation>Da</translation>
     </message>
     <message>
         <source>&lt;b&gt;Running conversion(s). Please wait.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Conversione in corso. Attendere.&lt;/b&gt;</translation>
     </message>
     <message>
         <source>No new versions of the used libraries are found or there is no uses annotation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non sono state trovate nuove versioni delle librerie usate, oppure non c&apos;è un&apos;annotazione uses.</translation>
     </message>
     <message>
         <source>Following libraries from the uses annotation have new versions available.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le seguenti librerie dell&apos;annotazione uses hanno nuove versioni disponibili.</translation>
     </message>
     <message>
         <source>Note: If the library that you want to convert to is missing then please install it using File-&gt;Manage Libraries-&gt;Install Library.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nota: se manca la libreria in cui si vuole convertire, installarla con File-&gt;Gestisci librerie-&gt;Installa libreria.</translation>
     </message>
     <message>
         <source>The converted class and used library might be reloaded.</source>
-        <translation type="unfinished"></translation>
+        <translation>La classe convertita e la libreria usata potrebbero essere ricaricate.</translation>
     </message>
     <message>
         <source>This operation can take sometime depending on the conversions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Questa operazione può richiedere del tempo, a seconda delle conversioni.</translation>
     </message>
     <message>
         <source>Backup your work before starting the conversion.</source>
-        <translation type="unfinished"></translation>
+        <translation>Eseguire un backup del lavoro prima di avviare la conversione.</translation>
     </message>
 </context>
 <context>
     <name>CrashReportDialog</name>
     <message>
         <source>Send Report</source>
-        <translation type="unfinished"></translation>
+        <translation>Invia rapporto</translation>
     </message>
     <message>
         <source>Your Email (in case you want us to contact you regarding this issue):</source>
-        <translation type="unfinished"></translation>
+        <translation>La tua email (se vuoi che ti contattiamo riguardo a questo problema):</translation>
     </message>
     <message>
         <source>Describe the issue in few words:</source>
-        <translation type="unfinished"></translation>
+        <translation>Descrivi il problema in poche parole:</translation>
     </message>
     <message>
         <source>Following selected files will be sent along with the report,</source>
-        <translation type="unfinished"></translation>
+        <translation>I seguenti file selezionati verranno inviati con il rapporto:</translation>
     </message>
     <message>
         <source>&lt;b&gt;Sending crash report. Please wait.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Invio del rapporto di crash. Attendere.&lt;/b&gt;</translation>
     </message>
     <message>
         <source>The program crashed unexpectedly. Please report the issue.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il programma si è chiuso inaspettatamente. Segnalare il problema.</translation>
     </message>
     <message>
         <source>Following error has occurred while retrieving detailed gdb backtrace,
 
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Si è verificato il seguente errore durante il recupero del backtrace dettagliato di gdb:
+
+%1</translation>
     </message>
     <message>
         <source>Try again</source>
-        <translation type="unfinished"></translation>
+        <translation>Riprova</translation>
     </message>
     <message>
         <source>Send brief backtrace</source>
-        <translation type="unfinished"></translation>
+        <translation>Invia backtrace breve</translation>
     </message>
     <message>
         <source>We can&apos;t contact you with a possible solution if you don&apos;t provide a valid e-mail address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non possiamo contattarti con una possibile soluzione se non fornisci un indirizzo email valido.</translation>
     </message>
     <message>
         <source>Send without e-mail</source>
-        <translation type="unfinished"></translation>
+        <translation>Invia senza email</translation>
     </message>
     <message>
         <source>Let me enter e-mail</source>
-        <translation type="unfinished"></translation>
+        <translation>Fammi inserire l&apos;email</translation>
     </message>
 </context>
 <context>
     <name>CreateConnectionDialog</name>
     <message>
         <source>Specify the indexes below to connect to the parts of the connectors.</source>
-        <translation type="unfinished"></translation>
+        <translation>Specificare gli indici qui sotto per connettersi alle parti dei connettori.</translation>
     </message>
 </context>
 <context>
     <name>CreateModelDialog</name>
     <message>
         <source>Root System</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistema radice</translation>
     </message>
     <message>
         <source>Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Modello</translation>
     </message>
     <message>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistema</translation>
     </message>
 </context>
 <context>
     <name>CreateNewItemDialog</name>
     <message>
         <source>Please enter path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserire il percorso.</translation>
     </message>
     <message>
         <source>Path &lt;b&gt;%1&lt;/b&gt; does not exist.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il percorso &lt;b&gt;%1&lt;/b&gt; non esiste.</translation>
     </message>
 </context>
 <context>
     <name>DataReconciliationDialog</name>
     <message>
         <source>Algorithm:</source>
-        <translation type="unfinished"></translation>
+        <translation>Algoritmo:</translation>
     </message>
     <message>
         <source>Data Reconciliation</source>
-        <translation type="unfinished"></translation>
+        <translation>Riconciliazione dei dati</translation>
     </message>
     <message>
         <source>Boundary Conditions</source>
-        <translation type="unfinished"></translation>
+        <translation>Condizioni al contorno</translation>
     </message>
     <message>
         <source>Measurement Input File:</source>
-        <translation type="unfinished"></translation>
+        <translation>File di input delle misure:</translation>
     </message>
     <message>
         <source>Correlation Matrix Input File:</source>
-        <translation type="unfinished"></translation>
+        <translation>File di input della matrice di correlazione:</translation>
     </message>
     <message>
         <source>Epsilon:</source>
-        <translation type="unfinished"></translation>
+        <translation>Epsilon:</translation>
     </message>
     <message>
         <source>Reconciled Measurement File:</source>
-        <translation type="unfinished"></translation>
+        <translation>File delle misure riconciliate:</translation>
     </message>
     <message>
         <source>Reconciled Correlation Matrix File:</source>
-        <translation type="unfinished"></translation>
+        <translation>File della matrice di correlazione riconciliata:</translation>
     </message>
     <message>
         <source>Save Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva impostazioni</translation>
     </message>
     <message>
         <source>Calculate</source>
-        <translation type="unfinished"></translation>
+        <translation>Calcola</translation>
     </message>
     <message>
         <source>Generate FMU</source>
-        <translation type="unfinished"></translation>
+        <translation>Genera FMU</translation>
     </message>
 </context>
 <context>
     <name>DebuggerConfigurationPage</name>
     <message>
         <source>Program:</source>
-        <translation type="unfinished"></translation>
+        <translation>Programma:</translation>
     </message>
     <message>
         <source>GDB Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>Percorso di GDB:</translation>
     </message>
     <message>
         <source>Arguments:</source>
-        <translation type="unfinished"></translation>
+        <translation>Argomenti:</translation>
     </message>
     <message>
         <source>Saves the debug configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva la configurazione di debug</translation>
     </message>
     <message>
         <source>GDB path defined in %1-&gt;Debugger is used if above field is empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se il campo sopra è vuoto, viene usato il percorso di GDB definito in %1-&gt;Debugger.</translation>
     </message>
     <message>
         <source>Resets the debug configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Ripristina la configurazione di debug</translation>
     </message>
 </context>
 <context>
     <name>DebuggerConfigurationsDialog</name>
     <message>
         <source>New Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Nuova configurazione</translation>
     </message>
     <message>
         <source>Delete Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina configurazione</translation>
     </message>
     <message>
         <source>Saves all the debug configurations</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva tutte le configurazioni di debug</translation>
     </message>
     <message>
         <source>Save &amp;&amp; Debug</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva &amp;&amp; esegui debug</translation>
     </message>
     <message>
         <source>Saves all the debug configurations and starts debugging the active debug configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva tutte le configurazioni di debug e avvia il debug della configurazione attiva</translation>
     </message>
 </context>
 <context>
     <name>DebuggerPage</name>
     <message>
         <source>GDB Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>Percorso di GDB:</translation>
     </message>
     <message>
         <source>GDB Command Timeout:</source>
-        <translation type="unfinished"></translation>
+        <translation>Timeout dei comandi GDB:</translation>
     </message>
     <message>
         <source> seconds</source>
@@ -1163,53 +1170,53 @@ The local copy and its synchronisation state are removed. Nothing in the cloud i
     </message>
     <message>
         <source>GDB Output Limit:</source>
-        <translation type="unfinished"></translation>
+        <translation>Limite dell&apos;output di GDB:</translation>
     </message>
     <message>
         <source> characters</source>
-        <translation type="unfinished"></translation>
+        <translation> caratteri</translation>
     </message>
     <message>
         <source>Display C frames</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra i frame C</translation>
     </message>
     <message>
         <source>Display unknown frames</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra i frame sconosciuti</translation>
     </message>
     <message>
         <source>Clear old output on a new run</source>
-        <translation type="unfinished"></translation>
+        <translation>Cancella l&apos;output precedente a ogni nuova esecuzione</translation>
     </message>
     <message>
         <source>Clear old log on a new run</source>
-        <translation type="unfinished"></translation>
+        <translation>Cancella il log precedente a ogni nuova esecuzione</translation>
     </message>
     <message>
         <source>Default GDB path is used if above field is empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se il campo sopra è vuoto, viene usato il percorso predefinito di GDB.</translation>
     </message>
     <message>
         <source>Always show %1 after compilation</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra sempre %1 dopo la compilazione</translation>
     </message>
     <message>
         <source>Generate Operations</source>
-        <translation type="unfinished"></translation>
+        <translation>Genera operazioni</translation>
     </message>
 </context>
 <context>
     <name>DirectoryOrFileSelector</name>
     <message>
         <source>List</source>
-        <translation type="unfinished"></translation>
+        <translation>Elenco</translation>
     </message>
 </context>
 <context>
     <name>DiscardLocalTranslationFlagsDialog</name>
     <message>
         <source>Discard Local Translation Flags</source>
-        <translation type="unfinished"></translation>
+        <translation>Scarta i flag di traduzione locali</translation>
     </message>
     <message>
         <source>You just changed some global translation flags.
@@ -1218,16 +1225,22 @@ The models listed below are currently open and have different local translation 
 
 Select the models for which you want to discard the local translation flag and apply the new global flags (*).All other models will retain the current local settings until you close OMEdit.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Hai appena modificato alcuni flag di traduzione globali.
+
+I modelli elencati sotto sono aperti e hanno flag di traduzione locali diversi, selezionati con la finestra Impostazioni di simulazione.
+
+Selezionare i modelli per cui scartare i flag di traduzione locali e applicare i nuovi flag globali (*). Tutti gli altri modelli mantengono le impostazioni locali attuali fino alla chiusura di OMEdit.
+</translation>
     </message>
     <message>
         <source>(*) If you discard local settings, the new global settings will first be applied, and then any further settingssaved in the model annotations will be applied. This is the same behaviour you would get if you closed OMEdit,restarted it and reopened all models.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>(*) Se si scartano le impostazioni locali, vengono applicate prima le nuove impostazioni globali e poi le ulteriori impostazioni salvate nelle annotazioni dei modelli. È lo stesso comportamento che si avrebbe chiudendo OMEdit, riavviandolo e riaprendo tutti i modelli.
+</translation>
     </message>
     <message>
         <source>Select/Unselect All</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona/deseleziona tutti</translation>
     </message>
     <message>
         <source>Yes</source>
@@ -1242,326 +1255,326 @@ Select the models for which you want to discard the local translation flag and a
     <name>DocumentationWidget</name>
     <message>
         <source>Previous (backspace)</source>
-        <translation type="unfinished"></translation>
+        <translation>Precedente (Backspace)</translation>
     </message>
     <message>
         <source>Moves to previous documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Passa alla documentazione precedente</translation>
     </message>
     <message>
         <source>Next (shift+backspace)</source>
-        <translation type="unfinished"></translation>
+        <translation>Successivo (Maiusc+Backspace)</translation>
     </message>
     <message>
         <source>Moves to next documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Passa alla documentazione successiva</translation>
     </message>
     <message>
         <source>Edit Info Documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica documentazione info</translation>
     </message>
     <message>
         <source>Starts editing info documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Avvia la modifica della documentazione info</translation>
     </message>
     <message>
         <source>Edit Revisions Documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica documentazione revisions</translation>
     </message>
     <message>
         <source>Starts editing revisions documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Avvia la modifica della documentazione revisions</translation>
     </message>
     <message>
         <source>Edit __OpenModelica_infoHeader Documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica documentazione __OpenModelica_infoHeader</translation>
     </message>
     <message>
         <source>Starts editing __OpenModelica_infoHeader documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Avvia la modifica della documentazione __OpenModelica_infoHeader</translation>
     </message>
     <message>
         <source>Saves the edited documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva la documentazione modificata</translation>
     </message>
     <message>
         <source>Cancels the documentation editing</source>
-        <translation type="unfinished"></translation>
+        <translation>Annulla la modifica della documentazione</translation>
     </message>
     <message>
         <source>Style</source>
-        <translation type="unfinished"></translation>
+        <translation>Stile</translation>
     </message>
     <message>
         <source>Sets the text style</source>
-        <translation type="unfinished"></translation>
+        <translation>Imposta lo stile del testo</translation>
     </message>
     <message>
         <source>Normal</source>
-        <translation type="unfinished"></translation>
+        <translation>Normale</translation>
     </message>
     <message>
         <source>Heading 1</source>
-        <translation type="unfinished"></translation>
+        <translation>Titolo 1</translation>
     </message>
     <message>
         <source>Heading 2</source>
-        <translation type="unfinished"></translation>
+        <translation>Titolo 2</translation>
     </message>
     <message>
         <source>Heading 3</source>
-        <translation type="unfinished"></translation>
+        <translation>Titolo 3</translation>
     </message>
     <message>
         <source>Heading 4</source>
-        <translation type="unfinished"></translation>
+        <translation>Titolo 4</translation>
     </message>
     <message>
         <source>Heading 5</source>
-        <translation type="unfinished"></translation>
+        <translation>Titolo 5</translation>
     </message>
     <message>
         <source>Heading 6</source>
-        <translation type="unfinished"></translation>
+        <translation>Titolo 6</translation>
     </message>
     <message>
         <source>Preformatted</source>
-        <translation type="unfinished"></translation>
+        <translation>Preformattato</translation>
     </message>
     <message>
         <source>Font</source>
-        <translation type="unfinished"></translation>
+        <translation>Carattere</translation>
     </message>
     <message>
         <source>Sets the text font</source>
-        <translation type="unfinished"></translation>
+        <translation>Imposta il tipo di carattere del testo</translation>
     </message>
     <message>
         <source>Font Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Dimensione carattere</translation>
     </message>
     <message>
         <source>Sets the text font size</source>
-        <translation type="unfinished"></translation>
+        <translation>Imposta la dimensione del carattere del testo</translation>
     </message>
     <message>
         <source>Make your text bold</source>
-        <translation type="unfinished"></translation>
+        <translation>Applica il grassetto al testo</translation>
     </message>
     <message>
         <source>Italicize your text</source>
-        <translation type="unfinished"></translation>
+        <translation>Applica il corsivo al testo</translation>
     </message>
     <message>
         <source>Underline your text</source>
-        <translation type="unfinished"></translation>
+        <translation>Sottolinea il testo</translation>
     </message>
     <message>
         <source>Strikethrough</source>
-        <translation type="unfinished"></translation>
+        <translation>Barrato</translation>
     </message>
     <message>
         <source>Cross something out by drawing a line through it</source>
-        <translation type="unfinished"></translation>
+        <translation>Barra il testo con una linea</translation>
     </message>
     <message>
         <source>Subscript</source>
-        <translation type="unfinished"></translation>
+        <translation>Pedice</translation>
     </message>
     <message>
         <source>Type very small letters just below the line of text</source>
-        <translation type="unfinished"></translation>
+        <translation>Scrive lettere molto piccole appena sotto la riga di testo</translation>
     </message>
     <message>
         <source>Superscript</source>
-        <translation type="unfinished"></translation>
+        <translation>Apice</translation>
     </message>
     <message>
         <source>Type very small letters just above the line of text</source>
-        <translation type="unfinished"></translation>
+        <translation>Scrive lettere molto piccole appena sopra la riga di testo</translation>
     </message>
     <message>
         <source>Text Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Colore testo</translation>
     </message>
     <message>
         <source>Change the color of your text</source>
-        <translation type="unfinished"></translation>
+        <translation>Cambia il colore del testo</translation>
     </message>
     <message>
         <source>Background Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Colore di sfondo</translation>
     </message>
     <message>
         <source>Align Left</source>
-        <translation type="unfinished"></translation>
+        <translation>Allinea a sinistra</translation>
     </message>
     <message>
         <source>Aligns the text to the left</source>
-        <translation type="unfinished"></translation>
+        <translation>Allinea il testo a sinistra</translation>
     </message>
     <message>
         <source>Align Center</source>
-        <translation type="unfinished"></translation>
+        <translation>Centra</translation>
     </message>
     <message>
         <source>Aligns the text to the center</source>
-        <translation type="unfinished"></translation>
+        <translation>Centra il testo</translation>
     </message>
     <message>
         <source>Align Right</source>
-        <translation type="unfinished"></translation>
+        <translation>Allinea a destra</translation>
     </message>
     <message>
         <source>Aligns the text to the right</source>
-        <translation type="unfinished"></translation>
+        <translation>Allinea il testo a destra</translation>
     </message>
     <message>
         <source>Justify</source>
-        <translation type="unfinished"></translation>
+        <translation>Giustifica</translation>
     </message>
     <message>
         <source>Justifies the text evenly</source>
-        <translation type="unfinished"></translation>
+        <translation>Giustifica il testo</translation>
     </message>
     <message>
         <source>Decrease Indent</source>
-        <translation type="unfinished"></translation>
+        <translation>Riduci rientro</translation>
     </message>
     <message>
         <source>Decreases the indent by moving left</source>
-        <translation type="unfinished"></translation>
+        <translation>Riduce il rientro spostando il testo a sinistra</translation>
     </message>
     <message>
         <source>Increase Indent</source>
-        <translation type="unfinished"></translation>
+        <translation>Aumenta rientro</translation>
     </message>
     <message>
         <source>Increases the indent by moving right</source>
-        <translation type="unfinished"></translation>
+        <translation>Aumenta il rientro spostando il testo a destra</translation>
     </message>
     <message>
         <source>Bullet List</source>
-        <translation type="unfinished"></translation>
+        <translation>Elenco puntato</translation>
     </message>
     <message>
         <source>Creates a bulleted list</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea un elenco puntato</translation>
     </message>
     <message>
         <source>Numbered List</source>
-        <translation type="unfinished"></translation>
+        <translation>Elenco numerato</translation>
     </message>
     <message>
         <source>Creates a numbered list</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea un elenco numerato</translation>
     </message>
     <message>
         <source>Create Link</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea collegamento</translation>
     </message>
     <message>
         <source>Creates a link</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea un collegamento</translation>
     </message>
     <message>
         <source>Remove Link</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi collegamento</translation>
     </message>
     <message>
         <source>Removes a link</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuove un collegamento</translation>
     </message>
     <message>
         <source>Info Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Editor info</translation>
     </message>
     <message>
         <source>Info Source</source>
-        <translation type="unfinished"></translation>
+        <translation>Sorgente info</translation>
     </message>
     <message>
         <source>Revisions Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Editor revisions</translation>
     </message>
     <message>
         <source>Revisions Source</source>
-        <translation type="unfinished"></translation>
+        <translation>Sorgente revisions</translation>
     </message>
     <message>
         <source>__OpenModelica_infoHeader Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Editor __OpenModelica_infoHeader</translation>
     </message>
     <message>
         <source>__OpenModelica_infoHeader Source</source>
-        <translation type="unfinished"></translation>
+        <translation>Sorgente __OpenModelica_infoHeader</translation>
     </message>
     <message>
         <source>Warning</source>
-        <translation type="unfinished">Avvertimento</translation>
+        <translation>Avvertimento</translation>
     </message>
     <message>
         <source>The model instance for %1 is not available; the documentation changes were not saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;istanza del modello per %1 non è disponibile; le modifiche alla documentazione non sono state salvate.</translation>
     </message>
 </context>
 <context>
     <name>DuplicateClassDialog</name>
     <message>
         <source>* Note: This operation can take sometime to finish depending on the size of your library.</source>
-        <translation type="unfinished"></translation>
+        <translation>* Nota: questa operazione può richiedere del tempo, a seconda delle dimensioni della libreria.</translation>
     </message>
     <message>
         <source>Select file type for &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Selezionare il tipo di file per &lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Keep Structure</source>
-        <translation type="unfinished"></translation>
+        <translation>Mantieni la struttura</translation>
     </message>
     <message>
         <source>Keeps the same file type structure for the package and its contents recursively.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mantiene ricorsivamente la stessa struttura di tipi di file per il pacchetto e il suo contenuto.</translation>
     </message>
     <message>
         <source>One File</source>
-        <translation type="unfinished"></translation>
+        <translation>Un unico file</translation>
     </message>
     <message>
         <source>Stores the package and all its contents in one file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva il pacchetto e tutto il suo contenuto in un unico file.</translation>
     </message>
     <message>
         <source>Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Directory</translation>
     </message>
     <message>
         <source>Creates a directory for the package.</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea una directory per il pacchetto.</translation>
     </message>
     <message>
         <source>Directories For All</source>
-        <translation type="unfinished"></translation>
+        <translation>Directory per tutti</translation>
     </message>
     <message>
         <source>Creates the directories for the package and its contents recursively.</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea ricorsivamente le directory per il pacchetto e il suo contenuto.</translation>
     </message>
     <message>
         <source>Select Path</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona percorso</translation>
     </message>
     <message>
         <source>class</source>
-        <translation type="unfinished"></translation>
+        <translation>classe</translation>
     </message>
     <message>
         <source>Cannot duplicate inside system library.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile duplicare in una libreria di sistema.</translation>
     </message>
     <message>
         <source>Can only duplicate inside a package. &lt;b&gt;%1&lt;/b&gt; is not a package.</source>
-        <translation type="unfinished"></translation>
+        <translation>È possibile duplicare solo in un pacchetto. &lt;b&gt;%1&lt;/b&gt; non è un pacchetto.</translation>
     </message>
 </context>
 <context>
@@ -1572,81 +1585,81 @@ Select the models for which you want to discard the local translation flag and a
     </message>
     <message>
         <source>Shows the Properties dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra la finestra Proprietà</translation>
     </message>
     <message>
         <source>Shows the element</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra l&apos;elemento</translation>
     </message>
     <message>
         <source>Replaces the SubModel, but retains the connections and parameters if valid</source>
-        <translation type="unfinished"></translation>
+        <translation>Sostituisce il sottomodello, mantenendo le connessioni e i parametri se validi</translation>
     </message>
     <message>
         <source>&lt;b&gt;%1&lt;/b&gt; %2&lt;br/&gt;%3&lt;br /&gt;&lt;br /&gt;Element declared in %4</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; %2&lt;br/&gt;%3&lt;br /&gt;&lt;br /&gt;Elemento dichiarato in %4</translation>
     </message>
     <message>
         <source>&lt;b&gt;%1&lt;/b&gt; %2&lt;br/&gt;%3</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; %2&lt;br/&gt;%3</translation>
     </message>
     <message>
         <source>Opening %1 %2 parameters window</source>
-        <translation type="unfinished"></translation>
+        <translation>Apertura della finestra dei parametri di %1 %2</translation>
     </message>
     <message>
         <source>Opening %1 %2 attributes window</source>
-        <translation type="unfinished"></translation>
+        <translation>Apertura della finestra degli attributi di %1 %2</translation>
     </message>
 </context>
 <context>
     <name>ElementAttributes</name>
     <message>
         <source>%1 - %2 - %3 in %4</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - %2 - %3 in %4</translation>
     </message>
     <message>
         <source>Element Attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>Attributi dell&apos;elemento</translation>
     </message>
     <message>
         <source>Dimensions:</source>
-        <translation type="unfinished"></translation>
+        <translation>Dimensioni:</translation>
     </message>
     <message>
         <source>Array of dimensions e.g [1, 5, 2]</source>
-        <translation type="unfinished"></translation>
+        <translation>Array di dimensioni, ad es. [1, 5, 2]</translation>
     </message>
     <message>
         <source>Conditional Component</source>
-        <translation type="unfinished"></translation>
+        <translation>Componente condizionale</translation>
     </message>
     <message>
         <source>Boolean expression e.g. useSensor</source>
-        <translation type="unfinished"></translation>
+        <translation>Espressione booleana, ad es. useSensor</translation>
     </message>
     <message>
         <source>A conditional component requires a condition expression.</source>
-        <translation type="unfinished"></translation>
+        <translation>Un componente condizionale richiede un&apos;espressione di condizione.</translation>
     </message>
     <message>
         <source>Invalid condition expression: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Espressione di condizione non valida: %1</translation>
     </message>
 </context>
 <context>
     <name>ElementParameters</name>
     <message>
         <source>%1 - %2 - %3 in %4</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - %2 - %3 in %4</translation>
     </message>
     <message>
         <source>Element Parameters</source>
-        <translation type="unfinished"></translation>
+        <translation>Parametri dell&apos;elemento</translation>
     </message>
     <message>
         <source>%1 - %2 - %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - %2 - %3</translation>
     </message>
     <message>
         <source>Component</source>
@@ -1654,206 +1667,212 @@ Select the models for which you want to discard the local translation flag and a
     </message>
     <message>
         <source>Class</source>
-        <translation type="unfinished"></translation>
+        <translation>Classe</translation>
     </message>
 </context>
 <context>
     <name>ElementPropertiesDialog</name>
     <message>
         <source>FMU Kind:</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipo di FMU:</translation>
     </message>
     <message>
         <source>FMI Version:</source>
-        <translation type="unfinished"></translation>
+        <translation>Versione FMI:</translation>
     </message>
     <message>
         <source>Generation Tool:</source>
-        <translation type="unfinished"></translation>
+        <translation>Strumento di generazione:</translation>
     </message>
     <message>
         <source>Guid:</source>
-        <translation type="unfinished"></translation>
+        <translation>Guid:</translation>
     </message>
     <message>
         <source>Generation Time:</source>
-        <translation type="unfinished"></translation>
+        <translation>Data di generazione:</translation>
     </message>
     <message>
         <source>Model Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Nome del modello:</translation>
     </message>
     <message>
         <source>Capabilities</source>
-        <translation type="unfinished"></translation>
+        <translation>Capacità</translation>
     </message>
 </context>
 <context>
     <name>ElementTreeView</name>
     <message>
         <source>Opening %1 %2 parameters window</source>
-        <translation type="unfinished"></translation>
+        <translation>Apertura della finestra dei parametri di %1 %2</translation>
     </message>
 </context>
 <context>
     <name>ExpandableConnectorTreeModel</name>
     <message>
         <source>Connector</source>
-        <translation type="unfinished"></translation>
+        <translation>Connettore</translation>
     </message>
 </context>
 <context>
     <name>ExportFigaroDialog</name>
     <message>
         <source>Figaro Mode:</source>
-        <translation type="unfinished"></translation>
+        <translation>Modalità Figaro:</translation>
     </message>
     <message>
         <source>Exporting model as Figaro</source>
-        <translation type="unfinished"></translation>
+        <translation>Esportazione del modello come Figaro</translation>
     </message>
 </context>
 <context>
     <name>FMIPage</name>
     <message>
         <source>Model Exchange</source>
-        <translation type="unfinished"></translation>
+        <translation>Model Exchange</translation>
     </message>
     <message>
         <source>Co-Simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Co-Simulation</translation>
     </message>
     <message>
         <source>Model Exchange and Co-Simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Model Exchange e Co-Simulation</translation>
     </message>
     <message>
         <source>FMU Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Nome della FMU:</translation>
     </message>
     <message>
         <source>Move FMU:</source>
-        <translation type="unfinished"></translation>
+        <translation>Sposta la FMU in:</translation>
     </message>
     <message>
         <source>&lt;directory name or full file name with placeholders&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nome della directory o nome completo del file con segnaposto&gt;</translation>
     </message>
     <message>
         <source>Placeholders:
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Segnaposto:
+</translation>
     </message>
     <message>
         <source> i.e.,</source>
-        <translation type="unfinished"></translation>
+        <translation> ad es.</translation>
     </message>
     <message>
         <source>Platforms</source>
-        <translation type="unfinished"></translation>
+        <translation>Piattaforme</translation>
     </message>
     <message>
         <source>Note: The list of platforms is created by searching for programs in the PATH matching pattern &quot;*-*-*-*cc&quot;.
 In order to run docker platforms add docker to PATH.
 A source-code only FMU is generated if no platform is selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nota: l&apos;elenco delle piattaforme viene creato cercando nel PATH i programmi che corrispondono al modello &quot;*-*-*-*cc&quot;.
+Per eseguire le piattaforme docker, aggiungere docker al PATH.
+Se non è selezionata alcuna piattaforma, viene generata una FMU con il solo codice sorgente.</translation>
     </message>
     <message>
         <source>Comma separated list of additional platforms</source>
-        <translation type="unfinished"></translation>
+        <translation>Elenco di piattaforme aggiuntive separate da virgola</translation>
     </message>
     <message>
         <source>Explicit Euler</source>
-        <translation type="unfinished"></translation>
+        <translation>Eulero esplicito</translation>
     </message>
     <message>
         <source>CVODE</source>
-        <translation type="unfinished"></translation>
+        <translation>CVODE</translation>
     </message>
     <message>
         <source>Include Modelica based resources via loadResource</source>
-        <translation type="unfinished"></translation>
+        <translation>Includi le risorse Modelica tramite loadResource</translation>
     </message>
     <message>
         <source>Include Source Code (model description filter &quot;blackBox&quot; will override this, because black box FMUs do never contain their source code.)</source>
-        <translation type="unfinished"></translation>
+        <translation>Includi il codice sorgente (il filtro della descrizione del modello &quot;blackBox&quot; ha la precedenza, perché le FMU black box non contengono mai il proprio codice sorgente.)</translation>
     </message>
     <message>
         <source>Generate Debug Symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>Genera simboli di debug</translation>
     </message>
     <message>
         <source>Solver for Co-Simulation:</source>
-        <translation type="unfinished"></translation>
+        <translation>Solutore per Co-Simulation:</translation>
     </message>
     <message>
         <source>Model Description Filters:</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtri della descrizione del modello:</translation>
     </message>
     <message>
         <source>Import</source>
-        <translation type="unfinished"></translation>
+        <translation>Importazione</translation>
     </message>
     <message>
         <source>Delete FMU directory and generated model when OMEdit is closed</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina la directory della FMU e il modello generato alla chiusura di OMEdit</translation>
     </message>
     <message>
         <source>1.0 (deprecated)</source>
-        <translation type="unfinished"></translation>
+        <translation>1.0 (deprecata)</translation>
     </message>
     <message>
         <source>Note: No native platform is available here, the FMU only contains the WebAssembly binary
 and is exported as FMI 3.0 (fmi-ls-wasm).</source>
-        <translation type="unfinished"></translation>
+        <translation>Nota: qui non è disponibile alcuna piattaforma nativa; la FMU contiene solo il binario WebAssembly
+e viene esportata come FMI 3.0 (fmi-ls-wasm).</translation>
     </message>
     <message>
         <source>Note: The FMU always contains the WebAssembly binary.
 The listed platforms have a precompiled FMU driver and are added as native binaries.
 With no platform selected, the FMU is exported as FMI 3.0 (fmi-ls-wasm).</source>
-        <translation type="unfinished"></translation>
+        <translation>Nota: la FMU contiene sempre il binario WebAssembly.
+Le piattaforme elencate hanno un driver FMU precompilato e vengono aggiunte come binari nativi.
+Se non è selezionata alcuna piattaforma, la FMU viene esportata come FMI 3.0 (fmi-ls-wasm).</translation>
     </message>
     <message>
         <source>Default (the model&apos;s method, else DASSL)</source>
-        <translation type="unfinished"></translation>
+        <translation>Predefinito (il metodo del modello, altrimenti DASSL)</translation>
     </message>
 </context>
 <context>
     <name>FMUSettingsDialog</name>
     <message>
         <source>FMU-Simulation Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Impostazioni di simulazione della FMU</translation>
     </message>
     <message>
         <source>Solver</source>
-        <translation type="unfinished"></translation>
+        <translation>Solutore</translation>
     </message>
     <message>
         <source>Step Size [s]</source>
-        <translation type="unfinished"></translation>
+        <translation>Passo [s]</translation>
     </message>
     <message>
         <source>Process Events in FMU</source>
-        <translation type="unfinished"></translation>
+        <translation>Gestisci gli eventi nella FMU</translation>
     </message>
 </context>
 <context>
     <name>FigaroPage</name>
     <message>
         <source>Figaro Library:</source>
-        <translation type="unfinished"></translation>
+        <translation>Libreria Figaro:</translation>
     </message>
     <message>
         <source>Tree generation options:</source>
-        <translation type="unfinished"></translation>
+        <translation>Opzioni di generazione dell&apos;albero:</translation>
     </message>
     <message>
         <source>Figaro Processor:</source>
-        <translation type="unfinished"></translation>
+        <translation>Processore Figaro:</translation>
     </message>
     <message>
         <source>Resets to default Figaro Processor path</source>
-        <translation type="unfinished"></translation>
+        <translation>Ripristina il percorso predefinito del processore Figaro</translation>
     </message>
 </context>
 <context>
@@ -1868,15 +1887,15 @@ With no platform selected, the FMU is exported as FMI 3.0 (fmi-ls-wasm).</source
     </message>
     <message>
         <source>Case Sensitive</source>
-        <translation>maiuscolo/minuscolo</translation>
+        <translation>Maiuscole/minuscole</translation>
     </message>
     <message>
         <source>Whole Words</source>
-        <translation>solo parole intere</translation>
+        <translation>Solo parole intere</translation>
     </message>
     <message>
         <source>Regular Expressions</source>
-        <translation>Espressioni regolari (regular expressions)</translation>
+        <translation>Espressioni regolari</translation>
     </message>
     <message>
         <source>Replace</source>
@@ -1884,146 +1903,150 @@ With no platform selected, the FMU is exported as FMI 3.0 (fmi-ls-wasm).</source
     </message>
     <message>
         <source>Replace All</source>
-        <translation>Sostitutisci tutto</translation>
+        <translation>Sostituisci tutto</translation>
     </message>
 </context>
 <context>
     <name>FindUsageWidget</name>
     <message>
         <source>Enter class name to find its usage</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserire il nome della classe per trovarne gli utilizzi</translation>
     </message>
     <message>
         <source>Enter scope or browse (optional)</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserire l&apos;ambito o sfogliare (opzionale)</translation>
     </message>
     <message>
         <source>Select Scope</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona ambito</translation>
     </message>
     <message>
         <source>Exact Match</source>
-        <translation type="unfinished"></translation>
+        <translation>Corrispondenza esatta</translation>
     </message>
     <message>
         <source>Find Usage</source>
-        <translation type="unfinished"></translation>
+        <translation>Trova utilizzi</translation>
     </message>
     <message>
         <source>Filter Matches</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtra corrispondenze</translation>
     </message>
     <message>
         <source>%1 matches found for &lt;b&gt;%2&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 corrispondenze trovate per &lt;b&gt;%2&lt;/b&gt;</translation>
     </message>
 </context>
 <context>
     <name>FmuExportOutputWidget</name>
     <message>
         <source>Cancel Compilation</source>
-        <translation type="unfinished"></translation>
+        <translation>Annulla compilazione</translation>
     </message>
     <message>
         <source>Configure</source>
-        <translation type="unfinished"></translation>
+        <translation>Configura</translation>
     </message>
     <message>
         <source>Build</source>
-        <translation type="unfinished"></translation>
+        <translation>Build</translation>
     </message>
     <message>
         <source>Generating cmake target files of %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>La generazione dei file target cmake di %1 è stata annullata.</translation>
     </message>
     <message>
         <source>Building of %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>La build di %1 è stata annullata.</translation>
     </message>
     <message>
         <source>Generating cmake target files of %1. Please wait for a while.</source>
-        <translation type="unfinished"></translation>
+        <translation>Generazione dei file target cmake di %1. Attendere.</translation>
     </message>
     <message>
         <source>Generated cmake target files failed. Exited with code %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>La generazione dei file target cmake non è riuscita. Terminata con codice %1.</translation>
     </message>
     <message>
         <source>Generated cmake target files successfully.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>File target cmake generati correttamente.
+</translation>
     </message>
     <message>
         <source>Generating cmake target files of %1 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>Generazione dei file target cmake di %1 completata.</translation>
     </message>
     <message>
         <source>Generating cmake target files of %1 failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>La generazione dei file target cmake di %1 non è riuscita.</translation>
     </message>
     <message>
         <source>Building %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Build di %1</translation>
     </message>
     <message>
         <source>Post compilation process failed. Exited with code %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il processo di post-compilazione non è riuscito. Terminato con codice %1.</translation>
     </message>
     <message>
         <source>Build finished successfully.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Build completata correttamente.
+</translation>
     </message>
     <message>
         <source>Build of %1 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>Build di %1 completata.</translation>
     </message>
     <message>
         <source>Build of %1 failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>La build di %1 non è riuscita.</translation>
     </message>
     <message>
         <source>Zipping of %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Compressione zip di %1</translation>
     </message>
     <message>
         <source>The FMU is generated at: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>La FMU è stata generata in: %1</translation>
     </message>
     <message>
         <source>Export of FMU %1 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>Esportazione della FMU %1 completata.</translation>
     </message>
     <message>
         <source>Export of FMU %1 failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;esportazione della FMU %1 non è riuscita.</translation>
     </message>
 </context>
 <context>
     <name>GDBAdapter</name>
     <message>
         <source>The executable to debug does not exist: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;eseguibile da sottoporre a debug non esiste: %1</translation>
     </message>
     <message numerus="yes">
         <source>The gdb process has not responded to a command within %n second(s). This could mean it is stuck in an endless loop or taking longer than expected to perform the operation.
 You can choose between waiting longer or abort debugging.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Il processo gdb non ha risposto a un comando entro %n secondo. Potrebbe essere bloccato in un ciclo infinito oppure impiegare più tempo del previsto per eseguire l&apos;operazione.
+È possibile attendere ancora o interrompere il debug.</numerusform>
+            <numerusform>Il processo gdb non ha risposto a un comando entro %n secondi. Potrebbe essere bloccato in un ciclo infinito oppure impiegare più tempo del previsto per eseguire l&apos;operazione.
+È possibile attendere ancora o interrompere il debug.</numerusform>
         </translation>
     </message>
     <message>
         <source>Debugger not responding</source>
-        <translation type="unfinished"></translation>
+        <translation>Il debugger non risponde</translation>
     </message>
     <message>
         <source>Give GDB more time</source>
-        <translation type="unfinished"></translation>
+        <translation>Concedi più tempo a GDB</translation>
     </message>
     <message>
         <source>Stop debugging</source>
-        <translation type="unfinished"></translation>
+        <translation>Interrompi il debug</translation>
     </message>
 </context>
 <context>
@@ -2034,15 +2057,15 @@ You can choose between waiting longer or abort debugging.</source>
     </message>
     <message>
         <source>There is no Modelica Class opened for %1.</source>
-        <translation>Non vi sono classe di Modelica aperte per %1.</translation>
+        <translation>Nessuna classe Modelica aperta per %1.</translation>
     </message>
     <message>
         <source>Simulation Start Time should be less than or equal to Stop Time.</source>
-        <translation>L&apos;istante iniziale non può essere successivo all&apos;instante finale.</translation>
+        <translation>L&apos;istante iniziale della simulazione non può essere successivo all&apos;istante finale.</translation>
     </message>
     <message>
         <source>Please enter &lt;b&gt;%1&lt;/b&gt; Name.</source>
-        <translation>Introdurre il nome &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Inserire un nome per &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;b&gt;%1&lt;/b&gt; &lt;i&gt;%2&lt;/i&gt; already exists in &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -2058,231 +2081,231 @@ You can choose between waiting longer or abort debugging.</source>
     </message>
     <message>
         <source>Extends class &lt;b&gt;%1&lt;/b&gt; does not exist.</source>
-        <translation>&apos;Extends class&apos; &lt;b&gt;%1&lt;/b&gt; non esiste.</translation>
+        <translation>La classe base &lt;b&gt;%1&lt;/b&gt; non esiste.</translation>
     </message>
     <message>
         <source>Insert in class &lt;b&gt;%1&lt;/b&gt; does not exist.</source>
-        <translation>&apos;insert in class&apos; &lt;b&gt;%1&lt;/b&gt; non esiste.</translation>
+        <translation>La classe in cui inserire &lt;b&gt;%1&lt;/b&gt; non esiste.</translation>
     </message>
     <message>
         <source>Insert in class &lt;b&gt;%1&lt;/b&gt; is a system library. System libraries are read-only.</source>
-        <translation>&apos;Insert in class &apos; &lt;b&gt;%1&lt;/b&gt; è una libreria di sistema. Le librerie di sistema sono read-only.</translation>
+        <translation>La classe in cui inserire &lt;b&gt;%1&lt;/b&gt; è una libreria di sistema. Le librerie di sistema sono di sola lettura.</translation>
     </message>
     <message>
         <source>&lt;br /&gt;&lt;br /&gt;If you cannot find the source of the error, you can always &lt;b&gt;revert to the last correct version&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br /&gt;&lt;br /&gt;Se non si trova la causa dell&apos;errore, è sempre possibile &lt;b&gt;tornare all&apos;ultima versione corretta&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Unable to open file &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aprire il file &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Error opening the file &lt;b&gt;%1&lt;/b&gt;. %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore durante l&apos;apertura del file &lt;b&gt;%1&lt;/b&gt;. %2</translation>
     </message>
     <message>
         <source>Delete the existing class(es) before loading the file/library &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Cancellare la/le classi esistenti prima di caricare il file/libreria &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Eliminare le classi esistenti prima di caricare il file/libreria &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>You cannot insert &lt;b&gt;%1&lt;/b&gt;, it is a &lt;b&gt;%2&lt;/b&gt;. Only &lt;b&gt;model&lt;/b&gt;, &lt;b&gt;class&lt;/b&gt;, &lt;b&gt;connector&lt;/b&gt;, &lt;b&gt;record&lt;/b&gt; or &lt;b&gt;block&lt;/b&gt; is allowed on the diagram layer.</source>
-        <translation>Impossibile inserire  &lt;b&gt;%1&lt;/b&gt;, è un  &lt;b&gt;%2&lt;/b&gt;. Sono consentiti soltanto &lt;b&gt;model&lt;/b&gt;, &lt;b&gt;class&lt;/b&gt;, &lt;b&gt;connector&lt;/b&gt;, &lt;b&gt;record&lt;/b&gt; or &lt;b&gt;block&lt;/b&gt; in questa vista.</translation>
+        <translation>Impossibile inserire &lt;b&gt;%1&lt;/b&gt;, è un &lt;b&gt;%2&lt;/b&gt;. Nel livello diagramma sono consentiti solo &lt;b&gt;model&lt;/b&gt;, &lt;b&gt;class&lt;/b&gt;, &lt;b&gt;connector&lt;/b&gt;, &lt;b&gt;record&lt;/b&gt; o &lt;b&gt;block&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>You cannot insert &lt;b&gt;%1&lt;/b&gt;, it is a &lt;b&gt;%2&lt;/b&gt;. Only &lt;b&gt;connector&lt;/b&gt; is allowed on the icon layer.</source>
-        <translation>Impossibile inserire  &lt;b&gt;%1&lt;/b&gt;, è un  &lt;b&gt;%2&lt;/b&gt;. Sono consentiti soltanto &lt;b&gt;connector&lt;/b&gt; in questa vista.</translation>
+        <translation>Impossibile inserire &lt;b&gt;%1&lt;/b&gt;, è un &lt;b&gt;%2&lt;/b&gt;. Nel livello icona è consentito solo &lt;b&gt;connector&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Enter a valid number value for &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Introdurre un valore numerico valido per &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Inserire un valore numerico valido per &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>A component with the name &lt;b&gt;%1&lt;/b&gt; already exists. The name is changed from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;This is probably wrong because the component is declared as &lt;b&gt;inner&lt;/b&gt;.</source>
-        <translation>Esiste già un componente con il nome  &lt;b&gt;%1&lt;/b&gt;. Il nome verrà cambiato da &lt;b&gt;%1&lt;/b&gt; in &lt;b&gt;%2&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;. Questo è probabilmente errato in quanto il componente è dichiarato come  &lt;b&gt;inner&lt;/b&gt;.</translation>
+        <translation>Esiste già un componente con il nome &lt;b&gt;%1&lt;/b&gt;. Il nome viene cambiato da &lt;b&gt;%1&lt;/b&gt; in &lt;b&gt;%2&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Probabilmente è un errore, perché il componente è dichiarato come &lt;b&gt;inner&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>The encrypted package is generated at &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il pacchetto cifrato è stato generato in &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Unable to find component %1 while parsing %2 in %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile trovare il componente %1 durante l&apos;analisi di %2 in %3.</translation>
     </message>
     <message>
         <source>Unable to find component %1 while parsing transition(%2).</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile trovare il componente %1 durante l&apos;analisi di transition(%2).</translation>
     </message>
     <message>
         <source>Unable to find component %1 while parsing initialState(%2).</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile trovare il componente %1 durante l&apos;analisi di initialState(%2).</translation>
     </message>
     <message>
         <source>Select at least one of the following options, &lt;br /&gt;&lt;br /&gt;* %1&lt;br /&gt;* %2&lt;br /&gt;* %3&lt;br /&gt;* %4</source>
-        <translation type="unfinished"></translation>
+        <translation>Selezionare almeno una delle seguenti opzioni, &lt;br /&gt;&lt;br /&gt;* %1&lt;br /&gt;* %2&lt;br /&gt;* %3&lt;br /&gt;* %4</translation>
     </message>
     <message>
         <source>Please enter a valid condition e.g., x &gt;=0.</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserire una condizione valida, ad es. x &gt;=0.</translation>
     </message>
     <message>
         <source>Name &lt;b&gt;%1&lt;/b&gt; is not a valid identifier.&lt;br /&gt;A name must start with a letter, and all characters must be letters or digits. It may not be a reserved word.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il nome &lt;b&gt;%1&lt;/b&gt; non è un identificatore valido.&lt;br /&gt;Un nome deve iniziare con una lettera e può contenere solo lettere e cifre. Non può essere una parola riservata.</translation>
     </message>
     <message>
         <source>Library index file &lt;b&gt;%1&lt;/b&gt; doesn&apos;t exist.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il file di indice delle librerie &lt;b&gt;%1&lt;/b&gt; non esiste.</translation>
     </message>
     <message>
         <source>The FIGARO is generated.</source>
-        <translation type="unfinished"></translation>
+        <translation>FIGARO è stato generato.</translation>
     </message>
     <message>
         <source>Are you sure you want to unload &lt;b&gt;%1&lt;/b&gt;? Everything contained inside this class will also be unloaded.</source>
-        <translation>Sicuro di voler scaricare &lt;b&gt;%1&lt;/b&gt;? Tutto il contenuto della classe verrà parimenti scaricato.</translation>
+        <translation>Sei sicuro di voler rimuovere &lt;b&gt;%1&lt;/b&gt;? Verrà rimosso anche tutto il contenuto della classe.</translation>
     </message>
     <message>
         <source>Are you sure you want to delete &lt;b&gt;%1&lt;/b&gt;? Everything contained inside this class will also be deleted.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sei sicuro di voler eliminare &lt;b&gt;%1&lt;/b&gt;? Verrà eliminato anche tutto il contenuto della classe.</translation>
     </message>
     <message>
         <source>Are you sure you want to unload &lt;b&gt;%1&lt;/b&gt;?</source>
-        <translation type="unfinished"></translation>
+        <translation>Sei sicuro di voler rimuovere &lt;b&gt;%1&lt;/b&gt;?</translation>
     </message>
     <message>
         <source>The Modifier &lt;b&gt;%1&lt;/b&gt; format is invalid. The correct format is &lt;b&gt;phi(start=1)&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Il formato del modificatore &lt;b&gt;%1&lt;/b&gt; non è valido. Il formato corretto è &lt;b&gt;phi(start=1)&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Terminal command is not set. You can define a new terminal command in &lt;b&gt;%1-&gt;General-&gt;Terminal Command&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il comando del terminale non è impostato. È possibile definire un nuovo comando del terminale in &lt;b&gt;%1-&gt;Generale-&gt;Comando del terminale&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>A debug configuration with name &lt;b&gt;%1&lt;/b&gt; already exists. Error occurred while saving the debug configuration &lt;b&gt;%2&lt;b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Esiste già una configurazione di debug con il nome &lt;b&gt;%1&lt;/b&gt;. Si è verificato un errore durante il salvataggio della configurazione di debug &lt;b&gt;%2&lt;b&gt;.</translation>
     </message>
     <message>
         <source>Please check the message browser for more error specific details.</source>
-        <translation type="unfinished"></translation>
+        <translation>Consultare la finestra Messaggi per maggiori dettagli sull&apos;errore.</translation>
     </message>
     <message>
         <source>A component with the name &lt;b&gt;%1&lt;/b&gt; already exists or is a Modelica keyword. Please choose another name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Esiste già un componente con il nome &lt;b&gt;%1&lt;/b&gt; oppure il nome è una parola chiave di Modelica. Scegliere un altro nome.</translation>
     </message>
     <message>
         <source>Connectors &lt;b&gt;%1&lt;/b&gt; and &lt;b&gt;%2&lt;/b&gt; are not compatible.</source>
-        <translation type="unfinished"></translation>
+        <translation>I connettori &lt;b&gt;%1&lt;/b&gt; e &lt;b&gt;%2&lt;/b&gt; non sono compatibili.</translation>
     </message>
     <message>
         <source>Could not find installation directory path. Please make sure OpenModelica is installed properly.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile trovare il percorso della directory di installazione. Verificare che OpenModelica sia installato correttamente.</translation>
     </message>
     <message>
         <source>Following error has occurred.&lt;br /&gt;%1</source>
-        <translation type="unfinished"></translation>
+        <translation>Si è verificato il seguente errore.&lt;br /&gt;%1</translation>
     </message>
     <message>
         <source>Problems are found in %1 Text. &lt;br /&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Sono stati trovati problemi nel testo %1. &lt;br /&gt;</translation>
     </message>
     <message>
         <source>Please make sure you are not using any OpenModelica/Modelica Keywords like model, package, record, class etc.</source>
-        <translation type="unfinished"></translation>
+        <translation>Assicurarsi di non usare parole chiave di OpenModelica/Modelica come model, package, record, class ecc.</translation>
     </message>
     <message>
         <source>Unable to create class &lt;b&gt;%1&lt;/b&gt;. Invalid name.&lt;br /&gt;&lt;br /&gt;%2</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile creare la classe &lt;b&gt;%1&lt;/b&gt;. Nome non valido.&lt;br /&gt;&lt;br /&gt;%2</translation>
     </message>
     <message>
         <source>Unable to save the file &lt;b&gt;%1&lt;/b&gt;. %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile salvare il file &lt;b&gt;%1&lt;/b&gt;. %2</translation>
     </message>
     <message>
         <source>Unable to delete &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile eliminare &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Only single nonstructured entity is allowed to be stored in the file.&lt;br /&gt;If the file was generated by the API function &lt;b&gt;saveTotalModel()&lt;/b&gt;, you can only load it with the API function &lt;b&gt;loadFile()&lt;/b&gt; in a script or in the interactive environment, not in OMEdit.&lt;br /&gt;&lt;br /&gt;&lt;b&gt;%1&lt;/b&gt; contains following classes &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nel file è consentito memorizzare una sola entità non strutturata.&lt;br /&gt;Se il file è stato generato con la funzione API &lt;b&gt;saveTotalModel()&lt;/b&gt;, può essere caricato solo con la funzione API &lt;b&gt;loadFile()&lt;/b&gt; in uno script o nell&apos;ambiente interattivo, non in OMEdit.&lt;br /&gt;&lt;br /&gt;&lt;b&gt;%1&lt;/b&gt; contiene le seguenti classi &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Enter a value for &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserire un valore per &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;b&gt;%1&lt;/b&gt; is defined as &lt;b&gt;partial&lt;/b&gt;.&lt;br /&gt;The component will be added as a &lt;b&gt;replaceable&lt;/b&gt; component.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; è definito come &lt;b&gt;partial&lt;/b&gt;.&lt;br /&gt;Il componente verrà aggiunto come componente &lt;b&gt;replaceable&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>The FMU is generated at &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>La FMU è stata generata in &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Cannot move FMU to &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile spostare la FMU in &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>A source-only FMU will be generated because an empty list of platforms is selected. If this is not intended, check settings in &lt;b&gt;%1-&gt;FMI-&gt;Platforms&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verrà generata una FMU con il solo codice sorgente perché non è selezionata alcuna piattaforma. Se non è voluto, controllare le impostazioni in &lt;b&gt;%1-&gt;FMI-&gt;Piattaforme&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>The XML is generated at &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;XML è stato generato in &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>The read-only package is generated at &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il pacchetto di sola lettura è stato generato in &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Are you sure you want to delete &lt;b&gt;%1&lt;/b&gt;?&lt;br /&gt;&lt;br /&gt;This will also delete from file system.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sei sicuro di voler eliminare &lt;b&gt;%1&lt;/b&gt;?&lt;br /&gt;&lt;br /&gt;Verrà eliminato anche dal file system.</translation>
     </message>
     <message>
         <source>Maximum &lt;b&gt;%1&lt;/b&gt; debug configurations are allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sono consentite al massimo &lt;b&gt;%1&lt;/b&gt; configurazioni di debug.</translation>
     </message>
     <message>
         <source>Are you sure you want to delete &lt;b&gt;%1&lt;/b&gt; debug configuration?</source>
-        <translation type="unfinished"></translation>
+        <translation>Sei sicuro di voler eliminare la configurazione di debug &lt;b&gt;%1&lt;/b&gt;?</translation>
     </message>
     <message>
         <source>A debugging session is already running. Only one debugging session is allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>È già in corso una sessione di debug. È consentita una sola sessione di debug.</translation>
     </message>
     <message>
         <source>Unable to find the class &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile trovare la classe &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>The class &lt;b&gt;%1&lt;/b&gt; is not saved. Breakpoints are only allowed on saved classes.</source>
-        <translation type="unfinished"></translation>
+        <translation>La classe &lt;b&gt;%1&lt;/b&gt; non è salvata. I punti di interruzione sono consentiti solo nelle classi salvate.</translation>
     </message>
     <message>
         <source>The class &lt;b&gt;%1&lt;/b&gt; is not a modelica class. Breakpoints are only allowed on modelica classes.</source>
-        <translation type="unfinished"></translation>
+        <translation>La classe &lt;b&gt;%1&lt;/b&gt; non è una classe Modelica. I punti di interruzione sono consentiti solo nelle classi Modelica.</translation>
     </message>
     <message>
         <source>Automatically-adjusted vector length scales zoomed out the scene too much. Home position will be reset as if adjustable-length vectors were not drawn.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le scale della lunghezza dei vettori regolate automaticamente hanno ridotto troppo lo zoom della scena. La posizione iniziale verrà ripristinata come se i vettori a lunghezza regolabile non fossero disegnati.</translation>
     </message>
     <message>
         <source>CRML support is not enabled. Please enable it in &lt;b&gt;%1-&gt;General-&gt;Enable CRML Support&lt;/b&gt; and restart OMEdit.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il supporto CRML non è abilitato. Abilitarlo in &lt;b&gt;%1-&gt;Generale-&gt;Abilita supporto CRML&lt;/b&gt; e riavviare OMEdit.</translation>
     </message>
     <message>
         <source>Unable to find component %1 while parsing connection %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile trovare il componente %1 durante l&apos;analisi della connessione %2.</translation>
     </message>
     <message>
         <source>Multiple declarations of component &lt;b&gt;%1&lt;/b&gt; are found.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sono state trovate più dichiarazioni del componente &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Following error has occurred &lt;b&gt;%1&lt;/b&gt; GDB arguments are &lt;b&gt;&quot;%2&quot;&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Si è verificato il seguente errore &lt;b&gt;%1&lt;/b&gt; Gli argomenti di GDB sono &lt;b&gt;&quot;%2&quot;&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Please enter a script file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserire un file di script.</translation>
     </message>
     <message>
         <source>An item with the same name already exists. Please try some other name.</source>
@@ -2290,95 +2313,96 @@ You can choose between waiting longer or abort debugging.</source>
     </message>
     <message>
         <source>Redefining class(es) &lt;b&gt;%1&lt;/b&gt; which already exist(s).</source>
-        <translation type="unfinished"></translation>
+        <translation>Ridefinizione delle classi &lt;b&gt;%1&lt;/b&gt; già esistenti.</translation>
     </message>
     <message>
         <source>You cannot do a plot parametric between two different simulation result files. Make sure you select two variables from the same simulation result file.</source>
-        <translation>Non è possibile efettuare un grafico parametrico fra diversi files di risultato di simulazione. Assicurarsi di selezionare le variabili dallo stesso file.</translation>
+        <translation>Non è possibile creare un grafico parametrico tra due file di risultati di simulazione diversi. Selezionare due variabili dallo stesso file di risultati.</translation>
     </message>
     <message>
         <source>You cannot drop an item on itself.</source>
-        <translation>Non è ammesso copiare una voce su se stessa.</translation>
+        <translation>Non è possibile rilasciare una voce su se stessa.</translation>
     </message>
     <message>
         <source>Error has occurred while loading the model : 
 %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Si è verificato un errore durante il caricamento del modello:
+%1.</translation>
     </message>
     <message>
         <source>Are you sure you want to reload &lt;b&gt;%1&lt;/b&gt;? Any unsaved changes will be lost.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sei sicuro di voler ricaricare &lt;b&gt;%1&lt;/b&gt;? Le modifiche non salvate andranno perse.</translation>
     </message>
     <message>
         <source>The operations were not generated. Check Generate Operations in &lt;b&gt;%1-&gt;Debugger-&gt;Transformational Debugger&lt;/b&gt; OR you must set the -d=infoXmlOperations flag via &lt;b&gt;Simulation Setup-&gt;Translation Flags-&gt;Additional Translation Flags&lt;/b&gt; and simulate again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le operazioni non sono state generate. Selezionare Genera operazioni in &lt;b&gt;%1-&gt;Debugger-&gt;Debugger trasformazionale&lt;/b&gt; OPPURE impostare il flag -d=infoXmlOperations tramite &lt;b&gt;Impostazioni di simulazione-&gt;Flag di traduzione-&gt;Flag di traduzione aggiuntivi&lt;/b&gt; e simulare di nuovo.</translation>
     </message>
 </context>
 <context>
     <name>GeneralSettingsPage</name>
     <message>
         <source>Auto Detected</source>
-        <translation>Selezione Automatica</translation>
+        <translation>Rilevamento automatico</translation>
     </message>
     <message>
         <source>Toolbar Icon Size: *</source>
-        <translation type="unfinished"></translation>
+        <translation>Dimensione delle icone della barra degli strumenti: *</translation>
     </message>
     <message>
         <source>Preserve User&apos;s GUI Customizations</source>
-        <translation>Preserva la personalizzazione di utente</translation>
+        <translation>Mantieni le personalizzazioni dell&apos;interfaccia utente</translation>
     </message>
     <message>
         <source>Terminal Command:</source>
-        <translation type="unfinished"></translation>
+        <translation>Comando del terminale:</translation>
     </message>
     <message>
         <source>Terminal Command Arguments:</source>
-        <translation type="unfinished"></translation>
+        <translation>Argomenti del comando del terminale:</translation>
     </message>
     <message>
         <source>Activate Access Annotations *</source>
-        <translation type="unfinished"></translation>
+        <translation>Attiva le annotazioni di accesso *</translation>
     </message>
     <message>
         <source>Activates the access annotations even for the non-encrypted libraries.</source>
-        <translation type="unfinished"></translation>
+        <translation>Attiva le annotazioni di accesso anche per le librerie non cifrate.</translation>
     </message>
     <message>
         <source>Activates the access annotations even if the .mol contains a non-encrypted library.</source>
-        <translation type="unfinished"></translation>
+        <translation>Attiva le annotazioni di accesso anche se il file .mol contiene una libreria non cifrata.</translation>
     </message>
     <message>
         <source>Deactivates access annotations except for encrypted libraries.</source>
-        <translation type="unfinished"></translation>
+        <translation>Disattiva le annotazioni di accesso tranne che per le librerie cifrate.</translation>
     </message>
     <message>
         <source>Always</source>
-        <translation type="unfinished"></translation>
+        <translation>Sempre</translation>
     </message>
     <message>
         <source>When loading .mol file(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Al caricamento di file .mol</translation>
     </message>
     <message>
         <source>Never</source>
-        <translation type="unfinished"></translation>
+        <translation>Mai</translation>
     </message>
     <message>
         <source>Enable CRML Support *</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita supporto CRML *</translation>
     </message>
     <message>
         <source>Library Browser</source>
-        <translation type="unfinished"></translation>
+        <translation>Finestra Librerie</translation>
     </message>
     <message>
         <source>Show Hidden Classes if not encrypted</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra le classi nascoste se non cifrate</translation>
     </message>
     <message>
         <source>Synchronize with Model Widget</source>
-        <translation type="unfinished"></translation>
+        <translation>Sincronizza con la finestra del modello</translation>
     </message>
     <message>
         <source>Show Latest News &amp;&amp; Events</source>
@@ -2386,19 +2410,19 @@ You can choose between waiting longer or abort debugging.</source>
     </message>
     <message>
         <source>Recent Files and Latest News &amp; Events Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Numero di file recenti e di notizie ed eventi:</translation>
     </message>
     <message>
         <source>Create a model.bak-mo backup file when deleting a model.</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea un file di backup model.bak-mo quando si elimina un modello.</translation>
     </message>
     <message>
         <source>Display errors/warnings when instantiating the graphical annotations</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra errori/avvertimenti durante l&apos;istanziazione delle annotazioni grafiche</translation>
     </message>
     <message>
         <source>Max. Library Icon Text Length to Show: *</source>
-        <translation type="unfinished"></translation>
+        <translation>Lunghezza massima del testo delle icone della libreria: *</translation>
     </message>
     <message>
         <source>Show Protected Classes</source>
@@ -2406,11 +2430,11 @@ You can choose between waiting longer or abort debugging.</source>
     </message>
     <message>
         <source>Enable Auto Save</source>
-        <translation>Attiva Auto Save</translation>
+        <translation>Abilita salvataggio automatico</translation>
     </message>
     <message>
         <source>Auto Save Interval:</source>
-        <translation>Intervalllo di Auto Save:</translation>
+        <translation>Intervallo di salvataggio automatico:</translation>
     </message>
     <message>
         <source> seconds</source>
@@ -2434,79 +2458,79 @@ You can choose between waiting longer or abort debugging.</source>
     </message>
     <message>
         <source>Language: *</source>
-        <translation type="unfinished"></translation>
+        <translation>Lingua: *</translation>
     </message>
     <message>
         <source>Autohide Variable Browser</source>
-        <translation type="unfinished"></translation>
+        <translation>Nascondi automaticamente la finestra Variabili</translation>
     </message>
     <message>
         <source>Automatically hide the variable browser when switching away from plotting perspective.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nasconde automaticamente la finestra Variabili quando si lascia la prospettiva Grafici.</translation>
     </message>
     <message>
         <source>Options for handling of access annotations</source>
-        <translation type="unfinished"></translation>
+        <translation>Opzioni per la gestione delle annotazioni di accesso</translation>
     </message>
     <message>
         <source>Library Icon Size: *</source>
-        <translation type="unfinished"></translation>
+        <translation>Dimensione delle icone della libreria: *</translation>
     </message>
     <message>
         <source>Read the model instance directly from memory instead of JSON (faster for large models)</source>
-        <translation type="unfinished"></translation>
+        <translation>Leggi l&apos;istanza del modello direttamente dalla memoria invece che da JSON (più veloce per modelli grandi)</translation>
     </message>
     <message>
         <source>Color Scheme: *</source>
-        <translation type="unfinished"></translation>
+        <translation>Schema di colori: *</translation>
     </message>
     <message>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistema</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation type="unfinished"></translation>
+        <translation>Chiaro</translation>
     </message>
     <message>
         <source>Dark</source>
-        <translation type="unfinished"></translation>
+        <translation>Scuro</translation>
     </message>
     <message>
         <source>System follows the operating system color scheme. The --DarkMode command line option overrides this setting.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistema segue lo schema di colori del sistema operativo. L&apos;opzione da riga di comando --DarkMode ha la precedenza su questa impostazione.</translation>
     </message>
 </context>
 <context>
     <name>GitCommands</name>
     <message>
         <source>Repository Creation Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Creazione del repository non riuscita</translation>
     </message>
 </context>
 <context>
     <name>GoogleDriveProvider</name>
     <message>
         <source>The file changed in Google Drive since it was last synchronised.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il file è stato modificato in Google Drive dall&apos;ultima sincronizzazione.</translation>
     </message>
 </context>
 <context>
     <name>GotoLineDialog</name>
     <message>
         <source>Enter line number (%1 to %2):</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserire il numero di riga (da %1 a %2):</translation>
     </message>
     <message>
         <source>Enter line number (1 to %1):</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserire il numero di riga (da 1 a %1):</translation>
     </message>
 </context>
 <context>
     <name>GraphicalViewsPage</name>
     <message>
         <source>Default Modeling View Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Modalità di visualizzazione predefinita della modellazione</translation>
     </message>
     <message>
         <source>Tabbed View</source>
@@ -2522,54 +2546,54 @@ You can choose between waiting longer or abort debugging.</source>
     </message>
     <message>
         <source>This settings will be used when no preferredView annotation is defined.</source>
-        <translation>Questi settaggi saranno usati quando non sono definite annotazioni di &quot;preferredView&quot;.</translation>
+        <translation>Questa impostazione viene usata quando non è definita alcuna annotazione preferredView.</translation>
     </message>
     <message>
         <source>Move connectors together on both icon and diagram layers</source>
-        <translation type="unfinished"></translation>
+        <translation>Sposta i connettori insieme nei livelli icona e diagramma</translation>
     </message>
 </context>
 <context>
     <name>GraphicsView</name>
     <message>
         <source>Deletes the item</source>
-        <translation>Cancella la voce</translation>
+        <translation>Elimina la voce</translation>
     </message>
     <message>
         <source>You can only drag &amp; drop Modelica models.</source>
-        <translation type="unfinished"></translation>
+        <translation>È possibile trascinare e rilasciare solo modelli Modelica.</translation>
     </message>
     <message>
         <source>Failed to add component &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aggiungere il componente &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to add connection &lt;b&gt;connect(%1, %2)&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aggiungere la connessione &lt;b&gt;connect(%1, %2)&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Connection connect(%1, %2) already exists.</source>
-        <translation type="unfinished"></translation>
+        <translation>La connessione connect(%1, %2) esiste già.</translation>
     </message>
     <message>
         <source>Failed to add transition &lt;b&gt;transition(%1, %2)&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aggiungere la transizione &lt;b&gt;transition(%1, %2)&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to update transition &lt;b&gt;transition(%1, %2)&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aggiornare la transizione &lt;b&gt;transition(%1, %2)&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Shows the class parameters</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra i parametri della classe</translation>
     </message>
     <message>
         <source>Manhattanize</source>
-        <translation type="unfinished"></translation>
+        <translation>Raddrizza le linee</translation>
     </message>
     <message>
         <source>Manhattanize the lines</source>
-        <translation type="unfinished"></translation>
+        <translation>Ridisegna le linee con segmenti orizzontali e verticali</translation>
     </message>
     <message>
         <source>Cut</source>
@@ -2581,35 +2605,35 @@ You can choose between waiting longer or abort debugging.</source>
     </message>
     <message>
         <source>Bring to Front</source>
-        <translation type="unfinished"></translation>
+        <translation>Porta in primo piano</translation>
     </message>
     <message>
         <source>Brings the item to front</source>
-        <translation type="unfinished"></translation>
+        <translation>Porta la voce in primo piano</translation>
     </message>
     <message>
         <source>Bring Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>Porta avanti</translation>
     </message>
     <message>
         <source>Brings the item one level forward</source>
-        <translation type="unfinished"></translation>
+        <translation>Porta la voce avanti di un livello</translation>
     </message>
     <message>
         <source>Send to Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Porta in secondo piano</translation>
     </message>
     <message>
         <source>Sends the item to back</source>
-        <translation type="unfinished"></translation>
+        <translation>Porta la voce in secondo piano</translation>
     </message>
     <message>
         <source>Send Backward</source>
-        <translation type="unfinished"></translation>
+        <translation>Porta indietro</translation>
     </message>
     <message>
         <source>Sends the item one level backward</source>
-        <translation type="unfinished"></translation>
+        <translation>Porta la voce indietro di un livello</translation>
     </message>
     <message>
         <source>Rotate Clockwise</source>
@@ -2617,11 +2641,11 @@ You can choose between waiting longer or abort debugging.</source>
     </message>
     <message>
         <source>Rotates the item clockwise</source>
-        <translation>Rota in senso orario</translation>
+        <translation>Ruota la voce in senso orario</translation>
     </message>
     <message>
         <source>Rotates the item anticlockwise</source>
-        <translation>Ruota in senso antiorario</translation>
+        <translation>Ruota la voce in senso antiorario</translation>
     </message>
     <message>
         <source>Flip Horizontal</source>
@@ -2637,7 +2661,7 @@ You can choose between waiting longer or abort debugging.</source>
     </message>
     <message>
         <source>Flips the item vertically</source>
-        <translation>ribalta la voce verticalmente</translation>
+        <translation>Ribalta la voce verticalmente</translation>
     </message>
     <message>
         <source>Error in class annotation %1</source>
@@ -2645,82 +2669,83 @@ You can choose between waiting longer or abort debugging.</source>
     </message>
     <message>
         <source>Opening %1 parameters window</source>
-        <translation type="unfinished"></translation>
+        <translation>Apertura della finestra dei parametri di %1</translation>
     </message>
     <message>
         <source>The Modelica code of this model is invalid, so the graphics cannot be displayed.
 Please check the Messages browser for error messages and possibly undo the latest changes with ctrl-z.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il codice Modelica di questo modello non è valido, quindi la grafica non può essere visualizzata.
+Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annullare le ultime modifiche con Ctrl+Z.</translation>
     </message>
     <message>
         <source>Rotate Anticlockwise</source>
-        <translation>Ruota insenso antiorario</translation>
+        <translation>Ruota in senso antiorario</translation>
     </message>
     <message>
         <source>Create Connector</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea connettore</translation>
     </message>
     <message>
         <source>Creates a connector</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea un connettore</translation>
     </message>
     <message>
         <source>Cancel Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Annulla connessione</translation>
     </message>
     <message>
         <source>Cancels the current connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Annulla la connessione in corso</translation>
     </message>
     <message>
         <source>Set Initial State</source>
-        <translation type="unfinished"></translation>
+        <translation>Imposta stato iniziale</translation>
     </message>
     <message>
         <source>Sets the state as initial state</source>
-        <translation type="unfinished"></translation>
+        <translation>Imposta lo stato come stato iniziale</translation>
     </message>
     <message>
         <source>Cancel Transition</source>
-        <translation type="unfinished"></translation>
+        <translation>Annulla transizione</translation>
     </message>
     <message>
         <source>Cancels the current transition</source>
-        <translation type="unfinished"></translation>
+        <translation>Annulla la transizione in corso</translation>
     </message>
 </context>
 <context>
     <name>GraphicsViewProperties</name>
     <message>
         <source>Copy properties to Diagram layer</source>
-        <translation>Copia le proprietà nella vista Diagramma</translation>
+        <translation>Copia le proprietà nel livello diagramma</translation>
     </message>
     <message>
         <source>Copy properties to Icon layer</source>
-        <translation>Copia le proprietà nella vista Icona</translation>
+        <translation>Copia le proprietà nel livello icona</translation>
     </message>
     <message>
         <source>Graphics</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafica</translation>
     </message>
     <message>
         <source>Uses</source>
-        <translation type="unfinished"></translation>
+        <translation>Uses</translation>
     </message>
     <message>
         <source>Add new uses annotation</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi una nuova annotazione uses</translation>
     </message>
     <message>
         <source>Remove uses annotation</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi l&apos;annotazione uses</translation>
     </message>
 </context>
 <context>
     <name>Helper</name>
     <message>
         <source>Browse...</source>
-        <translation>Naviga...</translation>
+        <translation>Sfoglia...</translation>
     </message>
     <message>
         <source>OK</source>
@@ -2756,11 +2781,11 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Choose Directory</source>
-        <translation>Scegli la Directory</translation>
+        <translation>Scegli la directory</translation>
     </message>
     <message>
         <source>General</source>
-        <translation>Generalità</translation>
+        <translation>Generale</translation>
     </message>
     <message>
         <source>Parameters</source>
@@ -2784,11 +2809,11 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Check Model</source>
-        <translation>Verifica il Modello</translation>
+        <translation>Verifica modello</translation>
     </message>
     <message>
         <source>Instantiate Model</source>
-        <translation>Istanzia il Modello</translation>
+        <translation>Istanzia modello</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -2820,23 +2845,23 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Simulates the Modelica class</source>
-        <translation type="unfinished"></translation>
+        <translation>Simula la classe Modelica</translation>
     </message>
     <message>
         <source>Re-simulates the Modelica class</source>
-        <translation type="unfinished"></translation>
+        <translation>Simula di nuovo la classe Modelica</translation>
     </message>
     <message>
         <source>Simulate with Transformational Debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Simula con il debugger trasformazionale</translation>
     </message>
     <message>
         <source>Simulates the Modelica class with Transformational Debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Simula la classe Modelica con il debugger trasformazionale</translation>
     </message>
     <message>
         <source>Simulates the Modelica class with Algorithmic Debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Simula la classe Modelica con il debugger algoritmico</translation>
     </message>
     <message>
         <source>Simulation</source>
@@ -2848,19 +2873,19 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Export to OMNotebook</source>
-        <translation>Esporta verso OMNotebook</translation>
+        <translation>Esporta in OMNotebook</translation>
     </message>
     <message>
         <source>OMEdit-&gt;Preferences</source>
-        <translation type="unfinished"></translation>
+        <translation>OMEdit-&gt;Preferenze</translation>
     </message>
     <message>
         <source>Tools-&gt;Options</source>
-        <translation type="unfinished"></translation>
+        <translation>Strumenti-&gt;Opzioni</translation>
     </message>
     <message>
         <source>Modelica Class</source>
-        <translation type="unfinished"></translation>
+        <translation>Classe Modelica</translation>
     </message>
     <message>
         <source>New Modelica Class</source>
@@ -2868,31 +2893,31 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Create New Modelica Class</source>
-        <translation>Crea nuova classe modelica</translation>
+        <translation>Crea una nuova classe Modelica</translation>
     </message>
     <message>
         <source>Open/Convert Modelica File(s) With Encoding</source>
-        <translation>Apri/Converti file Modelica con Codifica</translation>
+        <translation>Apri/converti file Modelica con codifica</translation>
     </message>
     <message>
         <source>CRML Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Modello CRML</translation>
     </message>
     <message>
         <source>Creates a new CRML Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea un nuovo modello CRML</translation>
     </message>
     <message>
         <source>Modelica Script</source>
-        <translation type="unfinished"></translation>
+        <translation>Script Modelica</translation>
     </message>
     <message>
         <source>Elements</source>
-        <translation type="unfinished"></translation>
+        <translation>Elementi</translation>
     </message>
     <message>
         <source>Clear Recent Files</source>
-        <translation>Cancella files recenti</translation>
+        <translation>Cancella i file recenti</translation>
     </message>
     <message>
         <source>Encoding:</source>
@@ -2904,15 +2929,15 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>File</source>
-        <translation type="unfinished"></translation>
+        <translation>File</translation>
     </message>
     <message>
         <source>Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Cartella</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Ripristina</translation>
     </message>
     <message>
         <source>Close</source>
@@ -2920,11 +2945,11 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Choose File(s)</source>
-        <translation>Scegli il/i files</translation>
+        <translation>Scegli i file</translation>
     </message>
     <message>
         <source>Save File</source>
-        <translation>Salva il File</translation>
+        <translation>Salva il file</translation>
     </message>
     <message>
         <source>Add</source>
@@ -2932,7 +2957,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Edit Array</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica array</translation>
     </message>
     <message>
         <source>Save a file</source>
@@ -2944,15 +2969,15 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Save a copy of the class in a new file</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva una copia della classe in un nuovo file</translation>
     </message>
     <message>
         <source>Save Total</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva completo</translation>
     </message>
     <message>
         <source>Save class with all used classes</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva la classe con tutte le classi usate</translation>
     </message>
     <message>
         <source>Apply</source>
@@ -2976,7 +3001,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Renames an item</source>
-        <translation type="unfinished"></translation>
+        <translation>Rinomina una voce</translation>
     </message>
     <message>
         <source>Check the Modelica class</source>
@@ -2984,15 +3009,15 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Check All Models</source>
-        <translation type="unfinished"></translation>
+        <translation>Verifica tutti i modelli</translation>
     </message>
     <message>
         <source>Checks all nested modelica classes</source>
-        <translation type="unfinished"></translation>
+        <translation>Verifica tutte le classi Modelica annidate</translation>
     </message>
     <message>
         <source>Instantiate/Flatten the Modelica class</source>
-        <translation>Istanzia/&quot;Flatten&quot; la classe Modelica</translation>
+        <translation>Istanzia e appiattisce la classe Modelica</translation>
     </message>
     <message>
         <source>Exports the model as Functional Mockup Unit (FMU)</source>
@@ -3016,7 +3041,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Import ngspice netlist</source>
-        <translation type="unfinished"></translation>
+        <translation>Importa netlist ngspice</translation>
     </message>
     <message>
         <source>Imports the model(s) from OMNotebook</source>
@@ -3024,7 +3049,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Converts ngspice netlist(s) to Modelica code</source>
-        <translation type="unfinished"></translation>
+        <translation>Converte le netlist ngspice in codice Modelica</translation>
     </message>
     <message>
         <source>Line</source>
@@ -3032,27 +3057,27 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Export as an Image</source>
-        <translation>Esporta come Immagine</translation>
+        <translation>Esporta come immagine</translation>
     </message>
     <message>
         <source>Exports the current model to Image</source>
-        <translation>Esporta il modello corrente come Immagine</translation>
+        <translation>Esporta il modello corrente come immagine</translation>
     </message>
     <message>
         <source>Export Figaro</source>
-        <translation type="unfinished"></translation>
+        <translation>Esporta in Figaro</translation>
     </message>
     <message>
         <source>Exports the current model to Figaro</source>
-        <translation type="unfinished"></translation>
+        <translation>Esporta il modello corrente in Figaro</translation>
     </message>
     <message>
         <source>OpenModelica Compiler CLI</source>
-        <translation type="unfinished"></translation>
+        <translation>OpenModelica Compiler CLI</translation>
     </message>
     <message>
         <source>Fit to Diagram</source>
-        <translation type="unfinished"></translation>
+        <translation>Adatta al diagramma</translation>
     </message>
     <message>
         <source>Duplicate</source>
@@ -3072,79 +3097,79 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Reload the Modelica class</source>
-        <translation type="unfinished"></translation>
+        <translation>Ricarica la classe Modelica</translation>
     </message>
     <message>
         <source>Unloads the file without deleting it from the file system</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuove il file senza eliminarlo dal file system</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation>Rinfresca</translation>
+        <translation>Aggiorna</translation>
     </message>
     <message>
         <source>Re-simulate</source>
-        <translation type="unfinished"></translation>
+        <translation>Simula di nuovo</translation>
     </message>
     <message>
         <source>Re-simulate Setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Impostazioni della nuova simulazione</translation>
     </message>
     <message>
         <source>Setup re-simulation settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Configura la nuova simulazione</translation>
     </message>
     <message>
         <source>Export Variables</source>
-        <translation type="unfinished"></translation>
+        <translation>Esporta variabili</translation>
     </message>
     <message>
         <source>Simulate with Algorithmic Debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Simula con il debugger algoritmico</translation>
     </message>
     <message>
         <source>Simulate with Animation</source>
-        <translation type="unfinished"></translation>
+        <translation>Simula con animazione</translation>
     </message>
     <message>
         <source>Simulates the Modelica class with Animation</source>
-        <translation type="unfinished"></translation>
+        <translation>Simula la classe Modelica con animazione</translation>
     </message>
     <message>
         <source>Simulation Setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Impostazioni di simulazione</translation>
     </message>
     <message>
         <source>Setup simulation settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Configura la simulazione</translation>
     </message>
     <message>
         <source>Re-simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Nuova simulazione</translation>
     </message>
     <message>
         <source>Translate</source>
-        <translation type="unfinished"></translation>
+        <translation>Traduci</translation>
     </message>
     <message>
         <source>Translates the CRML model to Modelica</source>
-        <translation type="unfinished"></translation>
+        <translation>Traduce il modello CRML in Modelica</translation>
     </message>
     <message>
         <source>Translate As</source>
-        <translation type="unfinished"></translation>
+        <translation>Traduci come</translation>
     </message>
     <message>
         <source>Translates As the CRML model to Modelica</source>
-        <translation type="unfinished"></translation>
+        <translation>Traduce il modello CRML in una nuova classe Modelica</translation>
     </message>
     <message>
         <source>Run</source>
-        <translation type="unfinished"></translation>
+        <translation>Esegui</translation>
     </message>
     <message>
         <source>Runs the Modelica Script</source>
-        <translation type="unfinished"></translation>
+        <translation>Esegue lo script Modelica</translation>
     </message>
     <message>
         <source>Options</source>
@@ -3160,7 +3185,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Top:</source>
-        <translation>top:</translation>
+        <translation>Sopra:</translation>
     </message>
     <message>
         <source>Grid</source>
@@ -3176,7 +3201,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Preserve aspect ratio</source>
-        <translation>Preserva il rapporto di aspetto</translation>
+        <translation>Mantieni le proporzioni</translation>
     </message>
     <message>
         <source>OriginX:</source>
@@ -3200,7 +3225,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>End Arrow:</source>
-        <translation>freccia di fine:</translation>
+        <translation>Freccia di fine:</translation>
     </message>
     <message>
         <source>Arrow Size:</source>
@@ -3216,67 +3241,67 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>CRML</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML</translation>
     </message>
     <message>
         <source>Filter Elements</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtra elementi</translation>
     </message>
     <message>
         <source>Report Issue</source>
-        <translation type="unfinished"></translation>
+        <translation>Segnala un problema</translation>
     </message>
     <message>
         <source>Crash Test</source>
-        <translation type="unfinished"></translation>
+        <translation>Test di crash</translation>
     </message>
     <message>
         <source>Version:</source>
-        <translation type="unfinished"></translation>
+        <translation>Versione:</translation>
     </message>
     <message>
         <source>Replace SubModel</source>
-        <translation type="unfinished"></translation>
+        <translation>Sostituisci sottomodello</translation>
     </message>
     <message>
         <source>List of paths searched while loading a library. Paths are separated by ; on Windows and : on Linux and macOS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Elenco dei percorsi in cui cercare durante il caricamento di una libreria. I percorsi sono separati da ; in Windows e da : in Linux e macOS.</translation>
     </message>
     <message>
         <source>Select Parent Class</source>
-        <translation type="unfinished">Seleziona &quot;Parent Class&quot;</translation>
+        <translation>Seleziona la classe in cui inserire</translation>
     </message>
     <message>
         <source>Creates a new SSP Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea un nuovo modello SSP</translation>
     </message>
     <message>
         <source>&lt;New Variable&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;Nuova variabile&gt;</translation>
     </message>
     <message>
         <source>Library</source>
-        <translation type="unfinished"></translation>
+        <translation>Libreria</translation>
     </message>
     <message>
         <source>Move Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Sposta su</translation>
     </message>
     <message>
         <source>Move Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Sposta giù</translation>
     </message>
     <message>
         <source>Fix error(s) manually</source>
-        <translation type="unfinished"></translation>
+        <translation>Correggi gli errori manualmente</translation>
     </message>
     <message>
         <source>Revert to last correct version</source>
-        <translation type="unfinished"></translation>
+        <translation>Torna all&apos;ultima versione corretta</translation>
     </message>
     <message>
         <source>item</source>
-        <translation type="unfinished"></translation>
+        <translation>voce</translation>
     </message>
     <message>
         <source>Bold</source>
@@ -3292,91 +3317,91 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Install Library</source>
-        <translation type="unfinished"></translation>
+        <translation>Installa libreria</translation>
     </message>
     <message>
         <source>Upgrade Installed Libraries</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiorna le librerie installate</translation>
     </message>
     <message>
         <source>Update Library Index</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiorna l&apos;indice delle librerie</translation>
     </message>
     <message>
         <source>Data Reconciliation</source>
-        <translation type="unfinished"></translation>
+        <translation>Riconciliazione dei dati</translation>
     </message>
     <message>
         <source>Font Family:</source>
-        <translation>Famiglia di Font:</translation>
+        <translation>Famiglia di caratteri:</translation>
     </message>
     <message>
         <source>Inputs</source>
-        <translation type="unfinished"></translation>
+        <translation>Input</translation>
     </message>
     <message>
         <source>Start Script:</source>
-        <translation type="unfinished"></translation>
+        <translation>Script iniziale:</translation>
     </message>
     <message>
         <source>OMSimulator rename</source>
-        <translation type="unfinished"></translation>
+        <translation>Rinomina in OMSimulator</translation>
     </message>
     <message>
         <source>FMU</source>
-        <translation type="unfinished"></translation>
+        <translation>FMU</translation>
     </message>
     <message>
         <source>Export</source>
-        <translation type="unfinished"></translation>
+        <translation>Esporta</translation>
     </message>
     <message>
         <source>Read-only Package</source>
-        <translation type="unfinished"></translation>
+        <translation>Pacchetto di sola lettura</translation>
     </message>
     <message>
         <source>Exports the package as read-only package</source>
-        <translation type="unfinished"></translation>
+        <translation>Esporta il pacchetto come pacchetto di sola lettura</translation>
     </message>
     <message>
         <source>Encrypted Package</source>
-        <translation type="unfinished"></translation>
+        <translation>Pacchetto cifrato</translation>
     </message>
     <message>
         <source>Exports the package as Encrytped package</source>
-        <translation type="unfinished"></translation>
+        <translation>Esporta il pacchetto come pacchetto cifrato</translation>
     </message>
     <message>
         <source>XML</source>
-        <translation type="unfinished"></translation>
+        <translation>XML</translation>
     </message>
     <message>
         <source>Reset Zoom</source>
-        <translation>Resetta lo Zoom</translation>
+        <translation>Reimposta zoom</translation>
     </message>
     <message>
         <source>Zoom In</source>
-        <translation>Zooma dentro</translation>
+        <translation>Ingrandisci</translation>
     </message>
     <message>
         <source>Zoom Out</source>
-        <translation>Zooma fuori</translation>
+        <translation>Riduci</translation>
     </message>
     <message>
         <source>Unloads the model</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuove il modello</translation>
     </message>
     <message>
         <source>Call function</source>
-        <translation type="unfinished"></translation>
+        <translation>Chiama funzione</translation>
     </message>
     <message>
         <source>Calls the Modelica function</source>
-        <translation type="unfinished"></translation>
+        <translation>Chiama la funzione Modelica</translation>
     </message>
     <message>
         <source>Font Size:</source>
-        <translation>Dimensione del Font:</translation>
+        <translation>Dimensione carattere:</translation>
     </message>
     <message>
         <source>Fill Style</source>
@@ -3412,15 +3437,15 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>End Angle:</source>
-        <translation>Angolo Finale:</translation>
+        <translation>Angolo finale:</translation>
     </message>
     <message>
         <source>Curve Style</source>
-        <translation>Stile Curva</translation>
+        <translation>Stile curva</translation>
     </message>
     <message>
         <source>Figaro</source>
-        <translation type="unfinished"></translation>
+        <translation>Figaro</translation>
     </message>
     <message>
         <source>Working Directory:</source>
@@ -3428,27 +3453,27 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Text View</source>
-        <translation type="unfinished"></translation>
+        <translation>Vista testo</translation>
     </message>
     <message>
         <source>Create Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea connessione</translation>
     </message>
     <message>
         <source>Create Transition</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea transizione</translation>
     </message>
     <message>
         <source>Edit Transition</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica transizione</translation>
     </message>
     <message>
         <source>Filter Variables</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtra variabili</translation>
     </message>
     <message>
         <source>Open Class</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri classe</translation>
     </message>
     <message>
         <source>Opens the class documentation</source>
@@ -3460,7 +3485,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Click and drag to resize</source>
-        <translation>Clicca e trascina per ridimensionare</translation>
+        <translation>Fai clic e trascina per ridimensionare</translation>
     </message>
     <message>
         <source>Variables</source>
@@ -3484,23 +3509,23 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Index</source>
-        <translation type="unfinished"></translation>
+        <translation>Indice</translation>
     </message>
     <message>
         <source>Equation</source>
-        <translation type="unfinished"></translation>
+        <translation>Equazione</translation>
     </message>
     <message>
         <source>Transformational Debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Debugger trasformazionale</translation>
     </message>
     <message>
         <source>Executions</source>
-        <translation type="unfinished"></translation>
+        <translation>Esecuzioni</translation>
     </message>
     <message>
         <source>Max time</source>
-        <translation type="unfinished"></translation>
+        <translation>Tempo massimo</translation>
     </message>
     <message>
         <source>Time</source>
@@ -3508,235 +3533,235 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Fraction</source>
-        <translation type="unfinished"></translation>
+        <translation>Frazione</translation>
     </message>
     <message>
         <source>&lt;b&gt;Info: &lt;/b&gt;Update the actual model in &lt;b&gt;Modeling&lt;/b&gt; perspective and simulate again. This is only shown for debugging purpose. Your changes will not be saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Info: &lt;/b&gt;Aggiornare il modello effettivo nella prospettiva &lt;b&gt;Modellazione&lt;/b&gt; e simulare di nuovo. Questo messaggio viene mostrato solo a scopo di debug. Le modifiche non verranno salvate.</translation>
     </message>
     <message>
         <source>Algorithmic Debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Debugger algoritmico</translation>
     </message>
     <message>
         <source>Debug Configurations</source>
-        <translation type="unfinished"></translation>
+        <translation>Configurazioni di debug</translation>
     </message>
     <message>
         <source>Manage debug configurations</source>
-        <translation type="unfinished"></translation>
+        <translation>Gestisce le configurazioni di debug</translation>
     </message>
     <message>
         <source>Create Repository</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea repository</translation>
     </message>
     <message>
         <source>Create a Git repository</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea un repository Git</translation>
     </message>
     <message>
         <source>Log Current File</source>
-        <translation type="unfinished"></translation>
+        <translation>Log del file corrente</translation>
     </message>
     <message>
         <source>Logging current file</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra il log Git del file corrente</translation>
     </message>
     <message>
         <source>Stage Current File</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi il file corrente all&apos;area di stage</translation>
     </message>
     <message>
         <source>Staging current file for next commit</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiunge il file corrente all&apos;area di stage per il prossimo commit</translation>
     </message>
     <message>
         <source>Unstage Current File</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi il file corrente dall&apos;area di stage</translation>
     </message>
     <message>
         <source>Unstaging current file from next commit</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuove il file corrente dal prossimo commit</translation>
     </message>
     <message>
         <source>Commit</source>
-        <translation type="unfinished"></translation>
+        <translation>Esegui commit</translation>
     </message>
     <message>
         <source>Commiting modified files to the repository</source>
-        <translation type="unfinished"></translation>
+        <translation>Esegue il commit dei file modificati nel repository</translation>
     </message>
     <message>
         <source>Resume</source>
-        <translation type="unfinished"></translation>
+        <translation>Riprendi</translation>
     </message>
     <message>
         <source>Interrupt</source>
-        <translation type="unfinished"></translation>
+        <translation>Interrompi</translation>
     </message>
     <message>
         <source>Exit</source>
-        <translation type="unfinished"></translation>
+        <translation>Termina</translation>
     </message>
     <message>
         <source>Step Over</source>
-        <translation type="unfinished"></translation>
+        <translation>Passa oltre</translation>
     </message>
     <message>
         <source>Step Into</source>
-        <translation type="unfinished"></translation>
+        <translation>Passa all&apos;interno</translation>
     </message>
     <message>
         <source>Step Return</source>
-        <translation type="unfinished"></translation>
+        <translation>Passa al ritorno</translation>
     </message>
     <message>
         <source>Attach to Running Process</source>
-        <translation type="unfinished"></translation>
+        <translation>Collega a un processo in esecuzione</translation>
     </message>
     <message>
         <source>Attach the debugger to running process</source>
-        <translation type="unfinished"></translation>
+        <translation>Collega il debugger a un processo in esecuzione</translation>
     </message>
     <message>
         <source>Parsing of JSON file failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Analisi del file JSON non riuscita</translation>
     </message>
     <message>
         <source>Expand All</source>
-        <translation type="unfinished"></translation>
+        <translation>Espandi tutto</translation>
     </message>
     <message>
         <source>Collapse All</source>
-        <translation type="unfinished"></translation>
+        <translation>Comprimi tutto</translation>
     </message>
     <message>
         <source>Version</source>
-        <translation type="unfinished"></translation>
+        <translation>Versione</translation>
     </message>
     <message>
         <source>unlimited</source>
-        <translation type="unfinished"></translation>
+        <translation>illimitato</translation>
     </message>
     <message>
         <source>Simulation Output</source>
-        <translation>Risultato della simulazione</translation>
+        <translation>Output della simulazione</translation>
     </message>
     <message>
         <source>Cancel Simulation</source>
-        <translation>Annulla la Simulazione</translation>
+        <translation>Annulla la simulazione</translation>
     </message>
     <message>
         <source>Animation File</source>
-        <translation type="unfinished"></translation>
+        <translation>File di animazione</translation>
     </message>
     <message>
         <source>Open an animation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Apre un&apos;animazione.</translation>
     </message>
     <message>
         <source>Initialize</source>
-        <translation type="unfinished"></translation>
+        <translation>Inizializza</translation>
     </message>
     <message>
         <source>Initialize the animation scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Inizializza la scena dell&apos;animazione</translation>
     </message>
     <message>
         <source>Play</source>
-        <translation type="unfinished"></translation>
+        <translation>Riproduci</translation>
     </message>
     <message>
         <source>Play the animation</source>
-        <translation type="unfinished"></translation>
+        <translation>Riproduce l&apos;animazione</translation>
     </message>
     <message>
         <source>Repeat</source>
-        <translation type="unfinished"></translation>
+        <translation>Ripeti</translation>
     </message>
     <message>
         <source>Repeat the animation</source>
-        <translation type="unfinished"></translation>
+        <translation>Ripete l&apos;animazione</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Pausa</translation>
     </message>
     <message>
         <source>Pause the animation</source>
-        <translation type="unfinished"></translation>
+        <translation>Mette in pausa l&apos;animazione</translation>
     </message>
     <message>
         <source>Send</source>
-        <translation>INVIA</translation>
+        <translation>Invia</translation>
     </message>
     <message>
         <source>Add System</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi sistema</translation>
     </message>
     <message>
         <source>SSP Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Modello SSP</translation>
     </message>
     <message>
         <source>Adds the System i.e., FMI or TLM</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiunge un sistema, ovvero FMI o TLM</translation>
     </message>
     <message>
         <source>Add SubModel</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi sottomodello</translation>
     </message>
     <message>
         <source>Adds the SubModel i.e., FMU or Table</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiunge un sottomodello, ovvero FMU o tabella</translation>
     </message>
     <message>
         <source>Add Connector</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi connettore</translation>
     </message>
     <message>
         <source>Adds the connector</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiunge un connettore</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>In esecuzione</translation>
     </message>
     <message>
         <source>Finished</source>
-        <translation type="unfinished"></translation>
+        <translation>Completata</translation>
     </message>
     <message>
         <source>Space separated list of OMC command line options e.g., -d=initialization --cheapmatchingAlgorithm=3</source>
-        <translation type="unfinished"></translation>
+        <translation>Elenco di opzioni da riga di comando di OMC separate da spazi, ad es. -d=initialization --cheapmatchingAlgorithm=3</translation>
     </message>
     <message>
         <source>Save experiment annotation inside model i.e., experiment annotation</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva l&apos;annotazione dell&apos;esperimento nel modello, ovvero l&apos;annotazione experiment</translation>
     </message>
     <message>
         <source>Save simulation flags inside model i.e., __OpenModelica_simulationFlags annotation</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva i flag di simulazione nel modello, ovvero l&apos;annotazione __OpenModelica_simulationFlags</translation>
     </message>
     <message>
         <source>Save translation flags inside model i.e., __OpenModelica_commandLineOptions annotation</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva i flag di traduzione nel modello, ovvero l&apos;annotazione __OpenModelica_commandLineOptions</translation>
     </message>
     <message>
         <source>Condition:</source>
-        <translation type="unfinished"></translation>
+        <translation>Condizione:</translation>
     </message>
     <message>
         <source>Immediate</source>
-        <translation type="unfinished"></translation>
+        <translation>Immediate</translation>
     </message>
     <message>
         <source>Synchronize</source>
-        <translation type="unfinished"></translation>
+        <translation>Synchronize</translation>
     </message>
     <message>
         <source>Priority:</source>
-        <translation type="unfinished"></translation>
+        <translation>Priority:</translation>
     </message>
     <message>
         <source>Save contents in one file</source>
@@ -3744,39 +3769,39 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>DateTime</source>
-        <translation type="unfinished"></translation>
+        <translation>Data e ora</translation>
     </message>
     <message>
         <source>Start Time</source>
-        <translation type="unfinished"></translation>
+        <translation>Istante iniziale</translation>
     </message>
     <message>
         <source>Stop Time</source>
-        <translation type="unfinished"></translation>
+        <translation>Istante finale</translation>
     </message>
     <message>
         <source>Status</source>
-        <translation type="unfinished"></translation>
+        <translation>Stato</translation>
     </message>
     <message>
         <source>Speed:</source>
-        <translation type="unfinished"></translation>
+        <translation>Velocità:</translation>
     </message>
     <message>
         <source>Archived Simulations</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulazioni archiviate</translation>
     </message>
     <message>
         <source>System Simulation Information</source>
-        <translation type="unfinished"></translation>
+        <translation>Informazioni sulla simulazione del sistema</translation>
     </message>
     <message>
         <source>Translation Flags</source>
-        <translation type="unfinished"></translation>
+        <translation>Flag di traduzione</translation>
     </message>
     <message>
         <source>Libraries</source>
-        <translation>librerieLibrerie</translation>
+        <translation>Librerie</translation>
     </message>
     <message>
         <source>Color:</source>
@@ -3784,7 +3809,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Pick Color</source>
-        <translation>Scegli un Colore</translation>
+        <translation>Scegli un colore</translation>
     </message>
     <message>
         <source>Thickness:</source>
@@ -3800,7 +3825,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Open Model/Library File(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri file di modello/libreria</translation>
     </message>
     <message>
         <source>Vertical</source>
@@ -3808,7 +3833,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Colors</source>
-        <translation type="unfinished"></translation>
+        <translation>Colori</translation>
     </message>
     <message>
         <source>Remove</source>
@@ -3817,16 +3842,16 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <source>Location</source>
         <comment>For files</comment>
-        <translation>Luogo</translation>
+        <translation>Percorso</translation>
     </message>
     <message>
         <source>Location</source>
         <comment>For errors</comment>
-        <translation>Luogo</translation>
+        <translation>Posizione</translation>
     </message>
     <message>
         <source>Read-Only</source>
-        <translation>Solo Lettura</translation>
+        <translation>Sola lettura</translation>
     </message>
     <message>
         <source>Writable</source>
@@ -3846,7 +3871,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Filter Classes</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtra classi</translation>
     </message>
     <message>
         <source>Find/Replace...</source>
@@ -3874,63 +3899,63 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Create a new Modelica Class</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea una nuova classe Modelica</translation>
     </message>
     <message>
         <source>Load Compiled Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Carica modello compilato</translation>
     </message>
     <message>
         <source>Creates a new Modelica Script</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea un nuovo script Modelica</translation>
     </message>
     <message>
         <source>Clear Recent Models</source>
-        <translation type="unfinished"></translation>
+        <translation>Cancella i modelli recenti</translation>
     </message>
     <message>
         <source>Shows the component parameters</source>
-        <translation type="unfinished">Mostra i parametri del componente</translation>
+        <translation>Mostra i parametri del componente</translation>
     </message>
     <message>
         <source>Sensitivity Optimization</source>
-        <translation type="unfinished"></translation>
+        <translation>Ottimizzazione della sensibilità</translation>
     </message>
     <message>
         <source>Find Usage</source>
-        <translation type="unfinished"></translation>
+        <translation>Trova utilizzi</translation>
     </message>
     <message>
         <source>Finds the usage of class</source>
-        <translation type="unfinished"></translation>
+        <translation>Trova gli utilizzi della classe</translation>
     </message>
     <message>
         <source>Save with Errors</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva con errori</translation>
     </message>
     <message>
         <source>s</source>
-        <translation type="unfinished"></translation>
+        <translation>s</translation>
     </message>
     <message>
         <source>Switch Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Cambia modello</translation>
     </message>
     <message>
         <source>Class Diagram</source>
-        <translation type="unfinished"></translation>
+        <translation>Diagramma delle classi</translation>
     </message>
     <message>
         <source>Shows the UML class diagram of the class</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra il diagramma delle classi UML della classe</translation>
     </message>
     <message>
         <source>CRML Diagram</source>
-        <translation type="unfinished"></translation>
+        <translation>Diagramma CRML</translation>
     </message>
     <message>
         <source>Shows the class-object diagram of the CRML model</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra il diagramma classi-oggetti del modello CRML</translation>
     </message>
 </context>
 <context>
@@ -3941,19 +3966,19 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Model Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Nome del modello:</translation>
     </message>
     <message>
         <source>Name of the generated model. If empty then the name is auto generated using FMU information.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nome del modello generato. Se vuoto, il nome viene generato automaticamente dalle informazioni della FMU.</translation>
     </message>
     <message>
         <source>Output Directory (Optional):</source>
-        <translation>Diectory di output (opzionale):</translation>
+        <translation>Directory di output (opzionale):</translation>
     </message>
     <message>
         <source>If no Output Directory specified then the FMU files are generated in the current working directory.</source>
-        <translation>Se non è specificata la directory di output i files FMU sono generati nella directory corrente.</translation>
+        <translation>Se non viene specificata una directory di output, i file della FMU vengono generati nella directory di lavoro corrente.</translation>
     </message>
     <message>
         <source>Log Level:</source>
@@ -3961,7 +3986,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Nothing</source>
-        <translation>Nulla</translation>
+        <translation>Nessuno</translation>
     </message>
     <message>
         <source>Fatal</source>
@@ -3985,15 +4010,15 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Debug Logging</source>
-        <translation>Registrazione Debug</translation>
+        <translation>Registrazione di debug</translation>
     </message>
     <message>
         <source>Generate input connector pins</source>
-        <translation>Genera i pin del connettore di ingresso</translation>
+        <translation>Genera i connettori di ingresso</translation>
     </message>
     <message>
         <source>Generate output connector pins</source>
-        <translation>Genera i pin del connettore di uscita</translation>
+        <translation>Genera i connettori di uscita</translation>
     </message>
     <message>
         <source>* This feature is experimental. Most models are not yet handled by it.</source>
@@ -4008,65 +4033,96 @@ Please check the Messages browser for error messages and possibly undo the lates
     <name>ImportFMUModelDescriptionDialog</name>
     <message>
         <source>Import FMU Model Description</source>
-        <translation type="unfinished"></translation>
+        <translation>Importa descrizione del modello FMU</translation>
     </message>
     <message>
         <source>FMU Model Description:</source>
-        <translation type="unfinished"></translation>
+        <translation>Descrizione del modello FMU:</translation>
     </message>
     <message>
         <source>Output Directory (Optional):</source>
-        <translation>Diectory di output (opzionale):</translation>
+        <translation>Directory di output (opzionale):</translation>
     </message>
     <message>
         <source>* If no Output Directory specified then the Modelica model will be generated in the current working directory.</source>
-        <translation type="unfinished"></translation>
+        <translation>* Se non viene specificata una directory di output, il modello Modelica viene generato nella directory di lavoro corrente.</translation>
     </message>
     <message>
         <source>FMU Model Description XML file</source>
-        <translation type="unfinished"></translation>
+        <translation>File XML della descrizione del modello FMU</translation>
     </message>
 </context>
 <context>
     <name>InstallLibraryDialog</name>
     <message>
         <source>The library will be installed using the &lt;u&gt;&lt;a href=&quot;https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/packagemanager.html#the-package-manager&quot;&gt;package manager&lt;/a&gt;&lt;/u&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>La libreria verrà installata tramite il &lt;u&gt;&lt;a href=&quot;https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/packagemanager.html#the-package-manager&quot;&gt;gestore di pacchetti&lt;/a&gt;&lt;/u&gt;.</translation>
     </message>
     <message>
         <source>Full</source>
-        <translation type="unfinished"></translation>
+        <translation>Completo</translation>
     </message>
     <message>
         <source>Partial</source>
-        <translation>&quot;Partial&quot;</translation>
+        <translation>Parziale</translation>
     </message>
     <message>
         <source>Experimental</source>
-        <translation type="unfinished"></translation>
+        <translation>Sperimentale</translation>
     </message>
     <message>
         <source>Obsolete</source>
-        <translation type="unfinished"></translation>
+        <translation>Obsoleto</translation>
     </message>
     <message>
         <source>None</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessuno</translation>
     </message>
     <message>
         <source>Level of support by OpenModelica</source>
-        <translation type="unfinished"></translation>
+        <translation>Livello di supporto in OpenModelica</translation>
     </message>
     <message>
         <source>Exact Match (Install only the specified version of dependencies)</source>
-        <translation type="unfinished"></translation>
+        <translation>Corrispondenza esatta (installa solo la versione specificata delle dipendenze)</translation>
     </message>
     <message>
         <source>&lt;b&gt;Installing library. Please wait.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Installazione della libreria in corso. Attendere.&lt;/b&gt;</translation>
     </message>
     <message>
         <source>The library &lt;b&gt;%1&lt;/b&gt; is not installed. See message browser for any possible messages.</source>
+        <translation>La libreria &lt;b&gt;%1&lt;/b&gt; non è stata installata. Consultare la finestra Messaggi per eventuali messaggi.</translation>
+    </message>
+</context>
+<context>
+    <name>InstallLibraryFromPathDialog</name>
+    <message>
+        <source>Install these packages of &lt;b&gt;%1&lt;/b&gt;:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An installed library is read-only. To change a library, open it with %1 instead.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Installing the packages. Please wait.&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 does not contain exactly one top-level class, so it is not a package to install.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 (replaces the installed %1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not install %1. See message browser for any possible messages.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4074,143 +4130,156 @@ Please check the Messages browser for error messages and possibly undo the lates
     <name>LSPClient</name>
     <message>
         <source>Failed to start language server: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile avviare il server di linguaggio: %1</translation>
     </message>
     <message>
         <source>Watching more than %1 library files. Files added, removed or replaced are still reported to the language server, but a file rewritten in place beyond this limit is not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sono monitorati più di %1 file di libreria. I file aggiunti, rimossi o sostituiti vengono comunque segnalati al server di linguaggio, ma un file riscritto sul posto oltre questo limite no.</translation>
     </message>
     <message>
         <source>Language server process error: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore del processo del server di linguaggio: %1</translation>
     </message>
     <message>
         <source>Language server %1 (exit code %2).</source>
-        <translation type="unfinished"></translation>
+        <translation>Server di linguaggio: %1 (codice di uscita %2).</translation>
     </message>
     <message>
         <source>Language server crashed %1 times in the last %2 minute(s). It will not be restarted. See the language server log for details.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il server di linguaggio si è arrestato in modo anomalo %1 volte negli ultimi %2 minuti. Non verrà riavviato. Consultare il log del server di linguaggio per i dettagli.</translation>
     </message>
     <message>
         <source>Language server %1, restarting (attempt %2 of %3)...</source>
-        <translation type="unfinished"></translation>
+        <translation>Server di linguaggio: %1, riavvio in corso (tentativo %2 di %3)...</translation>
     </message>
     <message>
         <source>Language server request &apos;%1&apos; failed: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Richiesta &apos;%1&apos; al server di linguaggio non riuscita: %2</translation>
     </message>
 </context>
 <context>
     <name>LanguageServerPage</name>
     <message>
         <source>Language Server Protocol (LSP)</source>
-        <translation type="unfinished"></translation>
+        <translation>Language Server Protocol (LSP)</translation>
     </message>
     <message>
         <source>When enabled, OMEdit uses an external language server for hover information and go-to-definition.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se abilitato, OMEdit usa un server di linguaggio esterno per le informazioni al passaggio del mouse e per andare alla definizione.</translation>
     </message>
     <message>
         <source>Log language server messages to the Messages Browser</source>
-        <translation type="unfinished"></translation>
+        <translation>Registra i messaggi del server di linguaggio nella finestra Messaggi</translation>
     </message>
     <message>
         <source>When enabled, messages from the language server are shown in the Messages Browser, prefixed with &quot;LSP&quot;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se abilitato, i messaggi del server di linguaggio vengono mostrati nella finestra Messaggi con il prefisso &quot;LSP&quot;.</translation>
     </message>
     <message>
         <source>Server Executable:</source>
-        <translation type="unfinished"></translation>
+        <translation>Eseguibile del server:</translation>
     </message>
     <message>
         <source>No language server is installed with OMEdit - use Download... or set a path</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessun server di linguaggio è installato con OMEdit - usare Scarica... o impostare un percorso</translation>
     </message>
     <message>
         <source>%1 (installed with OMEdit)</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 (installato con OMEdit)</translation>
     </message>
     <message>
         <source>Path to the language server to run. Leave empty to use the one installed with OMEdit.
 
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Percorso del server di linguaggio da eseguire. Lasciare vuoto per usare quello installato con OMEdit.
+
+%1</translation>
     </message>
     <message>
         <source>Auto Detect</source>
-        <translation type="unfinished"></translation>
+        <translation>Rileva automaticamente</translation>
     </message>
     <message>
         <source>Restart Server</source>
-        <translation type="unfinished"></translation>
+        <translation>Riavvia server</translation>
     </message>
     <message>
         <source>Stops the language server and starts it again with the saved settings. Takes effect immediately; settings edited above apply when you click OK.</source>
-        <translation type="unfinished"></translation>
+        <translation>Arresta il server di linguaggio e lo riavvia con le impostazioni salvate. Ha effetto immediato; le impostazioni modificate sopra vengono applicate quando si fa clic su OK.</translation>
     </message>
     <message>
         <source>%1 (recommended)</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 (consigliata)</translation>
     </message>
     <message>
         <source>Latest release</source>
-        <translation type="unfinished"></translation>
+        <translation>Versione più recente</translation>
     </message>
     <message>
         <source>Which modelica-language-server release to download. %1 is the version installed with OMEdit.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quale versione di modelica-language-server scaricare. %1 è la versione installata con OMEdit.</translation>
     </message>
     <message>
         <source>Download...</source>
-        <translation type="unfinished"></translation>
+        <translation>Scarica...</translation>
     </message>
     <message>
         <source>Downloads the standalone Modelica language server for this platform from the selected GitHub release.</source>
-        <translation type="unfinished"></translation>
+        <translation>Scarica il server di linguaggio Modelica autonomo per questa piattaforma dalla versione GitHub selezionata.</translation>
     </message>
     <message>
         <source>The language server could not be started.
 
 Check the server executable above, and the Messages Browser for details.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile avviare il server di linguaggio.
+
+Controllare l&apos;eseguibile del server qui sopra e la finestra Messaggi per i dettagli.</translation>
     </message>
     <message>
         <source>Checking the release contents...</source>
-        <translation type="unfinished"></translation>
+        <translation>Verifica del contenuto della versione...</translation>
     </message>
     <message>
         <source>Failed to read release %1 of the Modelica language server:
 %2
 
 The checksums it publishes could not be fetched, so nothing was downloaded.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile leggere la versione %1 del server di linguaggio Modelica:
+%2
+
+Non è stato possibile recuperare i checksum pubblicati, quindi non è stato scaricato nulla.</translation>
     </message>
     <message>
         <source>latest</source>
-        <translation type="unfinished"></translation>
+        <translation>più recente</translation>
     </message>
     <message>
         <source>Downloading %1 (%2 MB)...</source>
-        <translation type="unfinished"></translation>
+        <translation>Download di %1 (%2 MB)...</translation>
     </message>
     <message>
         <source>Release %1 does not provide %2.
 
 A standalone server is not published for this platform in that release. Try another version, or point Server Executable at a server you built yourself.</source>
-        <translation type="unfinished"></translation>
+        <translation>La versione %1 non fornisce %2.
+
+In quella versione non è pubblicato alcun server autonomo per questa piattaforma. Provare un&apos;altra versione oppure impostare Eseguibile del server su un server compilato in proprio.</translation>
     </message>
     <message>
         <source>Failed to download %1 securely:
 %2
 
 The connection to github.com could not be verified. The download was not used.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile scaricare %1 in modo sicuro:
+%2
+
+Non è stato possibile verificare la connessione a github.com. Il download non è stato usato.</translation>
     </message>
     <message>
         <source>Failed to download %1:
 %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile scaricare %1:
+%2</translation>
     </message>
     <message>
         <source>Checksum mismatch for %1.
@@ -4222,69 +4291,88 @@ Got:
 %3
 
 The download was discarded and nothing was installed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Checksum non corrispondente per %1.
+
+SHA256 previsto:
+%2
+
+Ottenuto:
+%3
+
+Il download è stato scartato e non è stato installato nulla.</translation>
     </message>
     <message>
         <source>Failed to write %1:
 %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile scrivere %1:
+%2</translation>
     </message>
     <message>
         <source>No standalone language server is published for this platform.
 
 Build a server yourself and point Server Executable at it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Per questa piattaforma non è pubblicato alcun server di linguaggio autonomo.
+
+Compilare un server in proprio e impostare Eseguibile del server su di esso.</translation>
     </message>
     <message>
         <source>Failed to create directory %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile creare la directory %1.</translation>
     </message>
     <message>
         <source>Downloading the Modelica language server...</source>
-        <translation type="unfinished"></translation>
+        <translation>Download del server di linguaggio Modelica...</translation>
     </message>
     <message>
         <source>Release %1 publishes no checksum for:
 %2
 
 What is downloaded cannot be verified. Download it anyway?</source>
-        <translation type="unfinished"></translation>
+        <translation>La versione %1 non pubblica alcun checksum per:
+%2
+
+Ciò che viene scaricato non può essere verificato. Scaricarlo comunque?</translation>
     </message>
     <message>
         <source>Failed to install %1 into %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile installare %1 in %2.</translation>
     </message>
     <message>
         <source>The Modelica language server (%1) was downloaded to:
 %2
 
 Click OK to start using it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il server di linguaggio Modelica (%1) è stato scaricato in:
+%2
+
+Fare clic su OK per iniziare a usarlo.</translation>
     </message>
     <message>
         <source>latest release</source>
-        <translation type="unfinished"></translation>
+        <translation>versione più recente</translation>
     </message>
     <message>
         <source>No language server found.
 
 Use Download... to fetch one, or point Server Executable at a server you already have.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessun server di linguaggio trovato.
+
+Usare Scarica... per ottenerne uno, oppure impostare Eseguibile del server su un server già disponibile.</translation>
     </message>
 </context>
 <context>
     <name>LibrariesPage</name>
     <message>
         <source>System libraries loaded automatically on startup *</source>
-        <translation type="unfinished"></translation>
+        <translation>Librerie di sistema caricate automaticamente all&apos;avvio *</translation>
     </message>
     <message>
         <source>The system libraries are read from OPENMODELICALIBRARY (MODELICAPATH in the language specification) and are always read-only.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le librerie di sistema vengono lette da OPENMODELICALIBRARY (MODELICAPATH nella specifica del linguaggio) e sono sempre di sola lettura.</translation>
     </message>
     <message>
         <source>Load latest Modelica version on startup</source>
-        <translation type="unfinished"></translation>
+        <translation>Carica l&apos;ultima versione di Modelica all&apos;avvio</translation>
     </message>
     <message>
         <source>Name</source>
@@ -4292,7 +4380,7 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>User libraries loaded automatically on startup *</source>
-        <translation type="unfinished"></translation>
+        <translation>Librerie utente caricate automaticamente all&apos;avvio *</translation>
     </message>
     <message>
         <source>Path</source>
@@ -4304,218 +4392,218 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>Edit User Library</source>
-        <translation>Edita la Libreria di Utente</translation>
+        <translation>Modifica libreria utente</translation>
     </message>
 </context>
 <context>
     <name>LibraryTreeModel</name>
     <message>
         <source> while deleting </source>
-        <translation type="unfinished"></translation>
+        <translation> durante l&apos;eliminazione di </translation>
     </message>
     <message>
         <source>Loading system libraries</source>
-        <translation type="unfinished"></translation>
+        <translation>Caricamento delle librerie di sistema</translation>
     </message>
 </context>
 <context>
     <name>LibraryTreeView</name>
     <message>
         <source>Opens the class information dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Apre la finestra delle informazioni sulla classe</translation>
     </message>
     <message>
         <source>Copy Path</source>
-        <translation type="unfinished"></translation>
+        <translation>Copia percorso</translation>
     </message>
     <message>
         <source>Copy the class path</source>
-        <translation type="unfinished"></translation>
+        <translation>Copia il percorso della classe</translation>
     </message>
     <message>
         <source>Moves the class one level up</source>
-        <translation type="unfinished"></translation>
+        <translation>Sposta la classe in su di un livello</translation>
     </message>
     <message>
         <source>Moves the class one level down</source>
-        <translation type="unfinished"></translation>
+        <translation>Sposta la classe in giù di un livello</translation>
     </message>
     <message>
         <source>Move to Top</source>
-        <translation type="unfinished"></translation>
+        <translation>Sposta in cima</translation>
     </message>
     <message>
         <source>Moves the class to top</source>
-        <translation type="unfinished"></translation>
+        <translation>Sposta la classe in cima</translation>
     </message>
     <message>
         <source>Move to Bottom</source>
-        <translation type="unfinished"></translation>
+        <translation>Sposta in fondo</translation>
     </message>
     <message>
         <source>Moves the class to bottom</source>
-        <translation type="unfinished"></translation>
+        <translation>Sposta la classe in fondo</translation>
     </message>
     <message>
         <source>Order</source>
-        <translation type="unfinished"></translation>
+        <translation>Ordine</translation>
     </message>
     <message>
         <source>New File</source>
-        <translation type="unfinished"></translation>
+        <translation>Nuovo file</translation>
     </message>
     <message>
         <source>Creates a new file</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea un nuovo file</translation>
     </message>
     <message>
         <source>New Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Nuova cartella</translation>
     </message>
     <message>
         <source>Creates a new folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea una nuova cartella</translation>
     </message>
     <message>
         <source>Deletes the file</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina il file</translation>
     </message>
     <message>
         <source>Convert to newer versions of used libraries</source>
-        <translation type="unfinished"></translation>
+        <translation>Converti alle versioni più recenti delle librerie usate</translation>
     </message>
     <message>
         <source>Updates the class to use the newer versions of the uses annotation libraries</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiorna la classe per usare le versioni più recenti delle librerie dell&apos;annotazione uses</translation>
     </message>
     <message>
         <source>Figaro</source>
-        <translation type="unfinished"></translation>
+        <translation>Figaro</translation>
     </message>
     <message>
         <source>Update Bindings</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiorna i binding</translation>
     </message>
     <message>
         <source>updates the bindings</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiorna i binding</translation>
     </message>
     <message>
         <source>Generate Verification Scenarios</source>
-        <translation type="unfinished"></translation>
+        <translation>Genera scenari di verifica</translation>
     </message>
     <message>
         <source>Generates the verification scenarios</source>
-        <translation type="unfinished"></translation>
+        <translation>Genera gli scenari di verifica</translation>
     </message>
     <message>
         <source>UQ Activities...</source>
-        <translation type="unfinished"></translation>
+        <translation>Attività UQ...</translation>
     </message>
     <message>
         <source>Runs the uncertainty quantification activities attached to the SSP model with omuq</source>
-        <translation type="unfinished"></translation>
+        <translation>Esegue con omuq le attività di quantificazione dell&apos;incertezza associate al modello SSP</translation>
     </message>
     <message>
         <source>Deletes the Modelica class</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina la classe Modelica</translation>
     </message>
     <message>
         <source>Version : %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Versione: %1</translation>
     </message>
     <message>
         <source>Version Date : %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Data della versione: %1</translation>
     </message>
     <message>
         <source>Version Build : %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Build della versione: %1</translation>
     </message>
     <message>
         <source>Date Modified : %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Data di modifica: %1</translation>
     </message>
     <message>
         <source>RevisionId : %1</source>
-        <translation type="unfinished"></translation>
+        <translation>RevisionId: %1</translation>
     </message>
     <message>
         <source>Calibrate...</source>
-        <translation type="unfinished"></translation>
+        <translation>Calibra...</translation>
     </message>
     <message>
         <source>Calibrates the parameters of the model against reference data</source>
-        <translation type="unfinished"></translation>
+        <translation>Calibra i parametri del modello rispetto ai dati di riferimento</translation>
     </message>
 </context>
 <context>
     <name>LibraryWidget</name>
     <message>
         <source>Unable to load %1. See messages above for more details.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile caricare %1. Vedere i messaggi sopra per maggiori dettagli.</translation>
     </message>
     <message>
         <source>Saving %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvataggio di %1</translation>
     </message>
     <message>
         <source>Unable to save the file, unknown library type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile salvare il file, tipo di libreria sconosciuto.</translation>
     </message>
     <message>
         <source>It is not possible to save as a Modelica package saved in a directory hierarchy Mapping.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non è possibile usare Salva come per un pacchetto Modelica salvato in una gerarchia di directory.</translation>
     </message>
     <message>
         <source>Failed to find the class &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile trovare la classe &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>%1 - Save %2 %3 as Modelica File</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Salva %2 %3 come file Modelica</translation>
     </message>
     <message>
         <source>%1 - Save %2 %3 as Modelica Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Salva %2 %3 come directory Modelica</translation>
     </message>
     <message>
         <source>The loaded class(es) &lt;b&gt;%1&lt;/b&gt; uses versions of already loaded libraries which are not compatible with the required ones.&lt;br /&gt;&lt;br /&gt;&lt;b&gt;Cancel Operation&lt;/b&gt; does not load class &lt;b&gt;%1&lt;/b&gt; and its dependencies.&lt;br /&gt;&lt;b&gt;Unload All &amp; Reload %1&lt;/b&gt; unloads all previously loaded classes and loads &lt;b&gt;%1&lt;/b&gt; starting from a clean environment. Make sure to save your work.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le classi caricate &lt;b&gt;%1&lt;/b&gt; usano versioni di librerie già caricate che non sono compatibili con quelle richieste.&lt;br /&gt;&lt;br /&gt;&lt;b&gt;Annulla operazione&lt;/b&gt; non carica la classe &lt;b&gt;%1&lt;/b&gt; e le sue dipendenze.&lt;br /&gt;&lt;b&gt;Rimuovi tutto &amp; ricarica %1&lt;/b&gt; rimuove tutte le classi caricate in precedenza e carica &lt;b&gt;%1&lt;/b&gt; partendo da un ambiente pulito. Assicurarsi di salvare il lavoro.</translation>
     </message>
     <message>
         <source>Cancel Operation</source>
-        <translation type="unfinished"></translation>
+        <translation>Annulla operazione</translation>
     </message>
     <message>
         <source>Unload all &amp;&amp; Reload %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi tutto &amp;&amp; ricarica %1</translation>
     </message>
     <message>
         <source>Opening SSP files is not yet supported in the web version of OMEdit. Use the desktop version of OMEdit to open %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;apertura di file SSP non è ancora supportata nella versione web di OMEdit. Usare la versione desktop di OMEdit per aprire %1.</translation>
     </message>
 </context>
 <context>
     <name>LoadCompiledModelDialog</name>
     <message>
         <source>Executable</source>
-        <translation type="unfinished"></translation>
+        <translation>Eseguibile</translation>
     </message>
     <message>
         <source>Model init file</source>
-        <translation type="unfinished"></translation>
+        <translation>File di inizializzazione del modello</translation>
     </message>
     <message>
         <source>Result file</source>
-        <translation type="unfinished"></translation>
+        <translation>File dei risultati</translation>
     </message>
 </context>
 <context>
     <name>LocalsTreeItem</name>
     <message>
         <source>&lt;uninitialized variable&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;variabile non inizializzata&gt;</translation>
     </message>
 </context>
 <context>
@@ -4537,69 +4625,69 @@ Use Download... to fetch one, or point Server Executable at a server you already
     <name>LogCommitDialog</name>
     <message>
         <source>Select Commit</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona commit</translation>
     </message>
     <message>
         <source>Sha1</source>
-        <translation type="unfinished"></translation>
+        <translation>Sha1</translation>
     </message>
     <message>
         <source>Subject</source>
-        <translation type="unfinished"></translation>
+        <translation>Oggetto</translation>
     </message>
     <message>
         <source>Ok</source>
-        <translation type="unfinished"></translation>
+        <translation>OK</translation>
     </message>
 </context>
 <context>
     <name>LoopbackRedirect</name>
     <message>
         <source>Timed out waiting for the sign-in to finish.</source>
-        <translation type="unfinished"></translation>
+        <translation>Timeout in attesa del completamento dell&apos;accesso.</translation>
     </message>
     <message>
         <source>Could not open a web browser for signing in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aprire un browser web per l&apos;accesso.</translation>
     </message>
     <message>
         <source>Sign-in was cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;accesso è stato annullato.</translation>
     </message>
     <message>
         <source>The sign-in redirect could not be read.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile leggere il reindirizzamento dell&apos;accesso.</translation>
     </message>
     <message>
         <source>The service refused the sign-in: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Il servizio ha rifiutato l&apos;accesso: %1</translation>
     </message>
     <message>
         <source>No authorization code was returned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non è stato restituito alcun codice di autorizzazione.</translation>
     </message>
 </context>
 <context>
     <name>MainWindow</name>
     <message>
         <source>Reading Settings</source>
-        <translation>Lettura dei settaggi</translation>
+        <translation>Lettura delle impostazioni</translation>
     </message>
     <message>
         <source>Loading Widgets</source>
-        <translation>Caricamento dei Widgets</translation>
+        <translation>Caricamento dei componenti dell&apos;interfaccia</translation>
     </message>
     <message>
         <source>Opens and converts the Modelica file(s) with encoding</source>
-        <translation>Apre e converte i files Modelica con codifica</translation>
+        <translation>Apre e converte i file Modelica con codifica</translation>
     </message>
     <message>
         <source>Load Library</source>
-        <translation>Carica la Libreria</translation>
+        <translation>Carica libreria</translation>
     </message>
     <message>
         <source>Loads the Modelica library</source>
-        <translation>Carica la Libreria Modelica</translation>
+        <translation>Carica la libreria Modelica</translation>
     </message>
     <message>
         <source>Save All</source>
@@ -4619,11 +4707,11 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>Failed to load OMSens plugin. %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile caricare il plugin OMSens. %1</translation>
     </message>
     <message>
         <source>Please open a model before starting the OMSens plugin.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aprire un modello prima di avviare il plugin OMSens.</translation>
     </message>
     <message>
         <source>Grid Lines</source>
@@ -4631,47 +4719,47 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>Show/Hide the grid lines</source>
-        <translation>Mostra/Nascondi le linee di griglia</translation>
+        <translation>Mostra/nascondi le linee di griglia</translation>
     </message>
     <message>
         <source>Close Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Chiudi finestra</translation>
     </message>
     <message>
         <source>Closes the active window</source>
-        <translation type="unfinished"></translation>
+        <translation>Chiude la finestra attiva</translation>
     </message>
     <message>
         <source>Close All Windows</source>
-        <translation type="unfinished"></translation>
+        <translation>Chiudi tutte le finestre</translation>
     </message>
     <message>
         <source>Closes all windows</source>
-        <translation type="unfinished"></translation>
+        <translation>Chiude tutte le finestre</translation>
     </message>
     <message>
         <source>Close All Windows But This</source>
-        <translation type="unfinished"></translation>
+        <translation>Chiudi tutte le altre finestre</translation>
     </message>
     <message>
         <source>Closes all windows except active window</source>
-        <translation type="unfinished"></translation>
+        <translation>Chiude tutte le finestre tranne quella attiva</translation>
     </message>
     <message>
         <source>Tile Windows Horizontally</source>
-        <translation type="unfinished"></translation>
+        <translation>Affianca le finestre orizzontalmente</translation>
     </message>
     <message>
         <source>Arranges all child windows in a horizontally tiled pattern</source>
-        <translation type="unfinished"></translation>
+        <translation>Dispone tutte le finestre figlie affiancate orizzontalmente</translation>
     </message>
     <message>
         <source>Tile Windows Vertically</source>
-        <translation type="unfinished"></translation>
+        <translation>Affianca le finestre verticalmente</translation>
     </message>
     <message>
         <source>Arranges all child windows in a vertically tiled pattern</source>
-        <translation type="unfinished"></translation>
+        <translation>Dispone tutte le finestre figlie affiancate verticalmente</translation>
     </message>
     <message>
         <source>Shows the options window</source>
@@ -4679,43 +4767,43 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>OpenModelica User&apos;s Guide</source>
-        <translation type="unfinished"></translation>
+        <translation>Guida dell&apos;utente di OpenModelica</translation>
     </message>
     <message>
         <source>Opens the OpenModelica User&apos;s Guide</source>
-        <translation type="unfinished"></translation>
+        <translation>Apre la guida dell&apos;utente di OpenModelica</translation>
     </message>
     <message>
         <source>OpenModelica User&apos;s Guide (PDF)</source>
-        <translation type="unfinished"></translation>
+        <translation>Guida dell&apos;utente di OpenModelica (PDF)</translation>
     </message>
     <message>
         <source>Opens the OpenModelica User&apos;s Guide (PDF)</source>
-        <translation type="unfinished"></translation>
+        <translation>Apre la guida dell&apos;utente di OpenModelica (PDF)</translation>
     </message>
     <message>
         <source>OpenModelica Scripting Documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Documentazione degli script di OpenModelica</translation>
     </message>
     <message>
         <source>Opens the OpenModelica Scripting Documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Apre la documentazione degli script di OpenModelica</translation>
     </message>
     <message>
         <source>Modelica Documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Documentazione Modelica</translation>
     </message>
     <message>
         <source>Opens the Modelica Documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Apre la documentazione Modelica</translation>
     </message>
     <message>
         <source>OMSimulator User&apos;s Guide</source>
-        <translation type="unfinished"></translation>
+        <translation>Guida dell&apos;utente di OMSimulator</translation>
     </message>
     <message>
         <source>Opens the OMSimulator User&apos;s Guide</source>
-        <translation type="unfinished"></translation>
+        <translation>Apre la guida dell&apos;utente di OMSimulator</translation>
     </message>
     <message>
         <source>About OMEdit</source>
@@ -4743,31 +4831,31 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>Changes to/from connect mode</source>
-        <translation>Camba da/verso modo colletamento</translation>
+        <translation>Attiva/disattiva la modalità di connessione</translation>
     </message>
     <message>
         <source>New Plot Window</source>
-        <translation>Nuova finestra Plot</translation>
+        <translation>Nuova finestra del grafico</translation>
     </message>
     <message>
         <source>Inserts new plot window</source>
-        <translation>Inserisce una nuova finestra Plot</translation>
+        <translation>Inserisce una nuova finestra del grafico</translation>
     </message>
     <message>
         <source>Add/Edit Icon</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi/modifica icona</translation>
     </message>
     <message>
         <source>Adds/Edits an icon</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiunge/modifica un&apos;icona</translation>
     </message>
     <message>
         <source>Delete Icon</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina icona</translation>
     </message>
     <message>
         <source>Deletes an icon</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina un&apos;icona</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -4775,7 +4863,7 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>Creating Widgets</source>
-        <translation>Creazione di Widgets</translation>
+        <translation>Creazione dei componenti dell&apos;interfaccia</translation>
     </message>
     <message>
         <source>Welcome</source>
@@ -4783,91 +4871,91 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>Exporting model as XML</source>
-        <translation>Esportazione modello come XML</translation>
+        <translation>Esportazione del modello come XML</translation>
     </message>
     <message>
         <source>instantiating</source>
-        <translation>Instanziazione</translation>
+        <translation>l&apos;istanziazione</translation>
     </message>
     <message>
         <source>checking</source>
-        <translation>Verifica</translation>
+        <translation>la verifica</translation>
     </message>
     <message>
         <source>Are you sure you want to clear recent files?</source>
-        <translation type="unfinished"></translation>
+        <translation>Sei sicuro di voler cancellare l&apos;elenco dei file recenti?</translation>
     </message>
     <message>
         <source>making FMU</source>
-        <translation>Creazione FMU</translation>
+        <translation>creare una FMU</translation>
     </message>
     <message>
         <source>making XML</source>
-        <translation>Creazione XML</translation>
+        <translation>creare un XML</translation>
     </message>
     <message>
         <source>exporting to Figaro</source>
-        <translation type="unfinished"></translation>
+        <translation>l&apos;esportazione in Figaro</translation>
     </message>
     <message>
         <source>Unable to run command &lt;b&gt;%1&lt;/b&gt; with arguments &lt;b&gt;%2&lt;/b&gt;. Process failed with error &lt;b&gt;%3&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile eseguire il comando &lt;b&gt;%1&lt;/b&gt; con gli argomenti &lt;b&gt;%2&lt;/b&gt;. Il processo non è riuscito con errore &lt;b&gt;%3&lt;/b&gt;</translation>
     </message>
     <message>
         <source>exporting to OMNotebook</source>
-        <translation>Esportazione verso OMNotebook</translation>
+        <translation>l&apos;esportazione in OMNotebook</translation>
     </message>
     <message>
         <source>Updating library index</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiornamento dell&apos;indice delle librerie</translation>
     </message>
     <message>
         <source>Failed to update the library index. This could be because of bad internet connection.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aggiornare l&apos;indice delle librerie. Potrebbe dipendere da una connessione Internet scadente.</translation>
     </message>
     <message>
         <source>Importing model(s) from OMNotebook</source>
-        <translation>Importazione modello/i da OMNotebook</translation>
+        <translation>Importazione dei modelli da OMNotebook</translation>
     </message>
     <message>
         <source>Importing ngspice netlist and converting to Modelica code</source>
-        <translation type="unfinished"></translation>
+        <translation>Importazione della netlist ngspice e conversione in codice Modelica</translation>
     </message>
     <message>
         <source>exporting to Image</source>
-        <translation>Esportazione in Immagine</translation>
+        <translation>l&apos;esportazione come immagine</translation>
     </message>
     <message>
         <source>Unable to run terminal command &lt;b&gt;%1&lt;/b&gt; with arguments &lt;b&gt;%2&lt;/b&gt;. Process failed with error &lt;b&gt;%3&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile eseguire il comando del terminale &lt;b&gt;%1&lt;/b&gt; con gli argomenti &lt;b&gt;%2&lt;/b&gt;. Il processo non è riuscito con errore &lt;b&gt;%3&lt;/b&gt;</translation>
     </message>
     <message>
         <source>OMSens is not supported on MacOS</source>
-        <translation type="unfinished"></translation>
+        <translation>OMSens non è supportato su macOS</translation>
     </message>
     <message>
         <source>Opens the Modelica file(s)</source>
-        <translation>Apre il/i file Modelica</translation>
+        <translation>Apre i file Modelica</translation>
     </message>
     <message>
         <source>Open Result File(s)</source>
-        <translation>Apre il/i file di risultato</translation>
+        <translation>Apri file di risultati</translation>
     </message>
     <message>
         <source>Opens the OpenModelica Result file</source>
-        <translation>Apre il/i file risultati Modelica</translation>
+        <translation>Apre il file di risultati di OpenModelica</translation>
     </message>
     <message>
         <source>Open Transformations File</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri file delle trasformazioni</translation>
     </message>
     <message>
         <source>Opens the class transformations file</source>
-        <translation type="unfinished"></translation>
+        <translation>Apre il file delle trasformazioni della classe</translation>
     </message>
     <message>
         <source>Clears the recent files list</source>
-        <translation>Cancella la lista dei file recenti</translation>
+        <translation>Cancella l&apos;elenco dei file recenti</translation>
     </message>
     <message>
         <source>Print...</source>
@@ -4879,11 +4967,11 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>Quit the </source>
-        <translation>Abbandona il </translation>
+        <translation>Esci da </translation>
     </message>
     <message>
         <source>Instantiate Model</source>
-        <translation>Istanzia il Modello</translation>
+        <translation>Istanzia modello</translation>
     </message>
     <message>
         <source>Instantiates the modelica model</source>
@@ -4891,11 +4979,11 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>New Parametric Plot Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Nuova finestra del grafico parametrico</translation>
     </message>
     <message>
         <source>Inserts new parametric plot window</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserisce una nuova finestra del grafico parametrico</translation>
     </message>
     <message>
         <source>Options</source>
@@ -4903,135 +4991,143 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>Initializing</source>
-        <translation type="unfinished"></translation>
+        <translation>Inizializzazione</translation>
     </message>
     <message>
         <source>Changes to welcome perspective (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Passa alla prospettiva Benvenuto (%1)</translation>
     </message>
     <message>
         <source>Changes to modeling perspective (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Passa alla prospettiva Modellazione (%1)</translation>
     </message>
     <message>
         <source>Changes to plotting perspective (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Passa alla prospettiva Grafici (%1)</translation>
     </message>
     <message>
         <source>Debugging</source>
-        <translation type="unfinished"></translation>
+        <translation>Debug</translation>
     </message>
     <message>
         <source>Changes to debugging perspective (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Passa alla prospettiva Debug (%1)</translation>
     </message>
     <message>
         <source>Debugger CLI</source>
-        <translation type="unfinished"></translation>
+        <translation>Debugger CLI</translation>
     </message>
     <message>
         <source>Exporting the package as encrypted package</source>
-        <translation type="unfinished"></translation>
+        <translation>Esportazione del pacchetto come pacchetto cifrato</translation>
     </message>
     <message>
         <source>Exporting the package as read-only package</source>
-        <translation type="unfinished"></translation>
+        <translation>Esportazione del pacchetto come pacchetto di sola lettura</translation>
     </message>
     <message>
         <source>Unable to find the file &lt;b&gt;%1&lt;/b&gt; with line number &lt;b&gt;%2&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile trovare il file &lt;b&gt;%1&lt;/b&gt; con numero di riga &lt;b&gt;%2&lt;/b&gt;</translation>
     </message>
     <message>
         <source>making encrypted package</source>
-        <translation type="unfinished"></translation>
+        <translation>creare un pacchetto cifrato</translation>
     </message>
     <message>
         <source>Messages</source>
-        <translation type="unfinished">Messaggi</translation>
+        <translation>Messaggi</translation>
     </message>
     <message>
         <source>Search</source>
-        <translation type="unfinished">Cerca</translation>
+        <translation>Cerca</translation>
     </message>
     <message>
         <source>Stack Frames</source>
-        <translation type="unfinished"></translation>
+        <translation>Stack frame</translation>
     </message>
     <message>
         <source>Breakpoints</source>
-        <translation type="unfinished"></translation>
+        <translation>Punti di interruzione</translation>
     </message>
     <message>
         <source>Locals</source>
-        <translation type="unfinished"></translation>
+        <translation>Variabili locali</translation>
     </message>
     <message>
         <source>Console Output</source>
-        <translation type="unfinished"></translation>
+        <translation>Output della console</translation>
     </message>
     <message>
         <source>Documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Documentazione</translation>
     </message>
     <message>
         <source>FMU_EXPORT Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Esportazione FMU non riuscita</translation>
     </message>
     <message>
         <source>Translating model %1 as FMU</source>
-        <translation type="unfinished"></translation>
+        <translation>Traduzione del modello %1 come FMU</translation>
     </message>
     <message>
         <source>making read-only package</source>
+        <translation>creare un pacchetto di sola lettura</translation>
+    </message>
+    <message>
+        <source>There is no package to install in &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Modelica Packages (*.mo *.zip)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>CRML Testsuite</source>
-        <translation type="unfinished"></translation>
+        <translation>Testsuite CRML</translation>
     </message>
     <message>
         <source>Load Encrypted Library</source>
-        <translation type="unfinished"></translation>
+        <translation>Carica libreria cifrata</translation>
     </message>
     <message>
         <source>Loads the encrypted Modelica library</source>
-        <translation type="unfinished"></translation>
+        <translation>Carica la libreria Modelica cifrata</translation>
     </message>
     <message>
         <source>Unload All</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi tutto</translation>
     </message>
     <message>
         <source>Unloads all loaded classes</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuove tutte le classi caricate</translation>
     </message>
     <message>
         <source>Open Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri directory</translation>
     </message>
     <message>
         <source>Opens the directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Apre la directory</translation>
     </message>
     <message>
         <source>FMU Model Description</source>
-        <translation type="unfinished"></translation>
+        <translation>Descrizione del modello FMU</translation>
     </message>
     <message>
         <source>Imports the model from Functional Mockup Interface (FMU) model description</source>
-        <translation type="unfinished"></translation>
+        <translation>Importa il modello da una descrizione del modello FMU</translation>
     </message>
     <message>
         <source>From OMNotebook</source>
-        <translation type="unfinished"></translation>
+        <translation>Da OMNotebook</translation>
     </message>
     <message>
         <source>Ngspice netlist</source>
-        <translation type="unfinished"></translation>
+        <translation>Netlist ngspice</translation>
     </message>
     <message>
         <source>To Clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>Negli appunti</translation>
     </message>
     <message>
         <source>Image</source>
@@ -5039,143 +5135,159 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>Figaro</source>
-        <translation type="unfinished"></translation>
+        <translation>Figaro</translation>
     </message>
     <message>
         <source>To OMNotebook</source>
-        <translation type="unfinished"></translation>
+        <translation>In OMNotebook</translation>
     </message>
     <message>
         <source>Opens the install library window</source>
+        <translation>Apre la finestra di installazione delle librerie</translation>
+    </message>
+    <message>
+        <source>Install Library From File...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Installs the libraries of a .mo or .zip file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install Library From Directory...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Installs the libraries of a directory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Upgrades the installed libraries</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiorna le librerie installate</translation>
     </message>
     <message>
         <source>Updates the library index</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiorna l&apos;indice delle librerie</translation>
     </message>
     <message>
         <source>Undo</source>
-        <translation type="unfinished"></translation>
+        <translation>Annulla</translation>
     </message>
     <message>
         <source>Redo</source>
-        <translation type="unfinished"></translation>
+        <translation>Ripeti</translation>
     </message>
     <message>
         <source>Cascade Windows</source>
-        <translation type="unfinished"></translation>
+        <translation>Disponi le finestre a cascata</translation>
     </message>
     <message>
         <source>Arranges all the child windows in a cascade pattern</source>
-        <translation type="unfinished"></translation>
+        <translation>Dispone tutte le finestre figlie a cascata</translation>
     </message>
     <message>
         <source>Tile Windows Matrix</source>
-        <translation type="unfinished"></translation>
+        <translation>Affianca le finestre a griglia</translation>
     </message>
     <message>
         <source>Arranges all child windows in a matrix pattern</source>
-        <translation type="unfinished"></translation>
+        <translation>Dispone tutte le finestre figlie a griglia</translation>
     </message>
     <message>
         <source>Equate &amp;&amp; Tile Windows Matrix</source>
-        <translation type="unfinished"></translation>
+        <translation>Uniforma &amp;&amp; affianca le finestre a griglia</translation>
     </message>
     <message>
         <source>Equates the size of all child windows to the size of active window and arranges them in a matrix pattern</source>
-        <translation type="unfinished"></translation>
+        <translation>Rende tutte le finestre figlie delle dimensioni della finestra attiva e le dispone a griglia</translation>
     </message>
     <message>
         <source>Toggle Tab/Sub-window View</source>
-        <translation type="unfinished"></translation>
+        <translation>Alterna vista a schede/finestre</translation>
     </message>
     <message>
         <source>Toggle between tab or sub-window view mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Alterna tra la modalità di visualizzazione a schede e a finestre</translation>
     </message>
     <message>
         <source>Shows the list of archived simulations</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra l&apos;elenco delle simulazioni archiviate</translation>
     </message>
     <message>
         <source>Calculate Data Reconciliation</source>
-        <translation type="unfinished"></translation>
+        <translation>Calcola riconciliazione dei dati</translation>
     </message>
     <message>
         <source>Calculates the data reconciliation</source>
-        <translation type="unfinished"></translation>
+        <translation>Calcola la riconciliazione dei dati</translation>
     </message>
     <message>
         <source>Run CRML Testsuite</source>
-        <translation type="unfinished"></translation>
+        <translation>Esegui testsuite CRML</translation>
     </message>
     <message>
         <source>Runs the CRML Testsuite and display report</source>
-        <translation type="unfinished"></translation>
+        <translation>Esegue la testsuite CRML e mostra un rapporto</translation>
     </message>
     <message>
         <source>Shows OpenModelica Compiler CLI</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra OpenModelica Compiler CLI</translation>
     </message>
     <message>
         <source>OpenModelica Command Prompt</source>
-        <translation type="unfinished"></translation>
+        <translation>Prompt dei comandi di OpenModelica</translation>
     </message>
     <message>
         <source>Open OpenModelica command prompt</source>
-        <translation type="unfinished"></translation>
+        <translation>Apre il prompt dei comandi di OpenModelica</translation>
     </message>
     <message>
         <source>OpenModelica Compiler Diff</source>
-        <translation type="unfinished"></translation>
+        <translation>OpenModelica Compiler Diff</translation>
     </message>
     <message>
         <source>Shows OpenModelica Compiler Diff</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra OpenModelica Compiler Diff</translation>
     </message>
     <message>
         <source>Open Temporary Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri directory temporanea</translation>
     </message>
     <message>
         <source>Opens the temporary directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Apre la directory temporanea</translation>
     </message>
     <message>
         <source>Open Working Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri directory di lavoro</translation>
     </message>
     <message>
         <source>Opens the current working directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Apre la directory di lavoro corrente</translation>
     </message>
     <message>
         <source>Open Terminal</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri terminale</translation>
     </message>
     <message>
         <source>Opens the terminal</source>
-        <translation type="unfinished"></translation>
+        <translation>Apre il terminale</translation>
     </message>
     <message>
         <source>Run Sensitivity Analysis and Optimization</source>
-        <translation type="unfinished"></translation>
+        <translation>Esegui analisi di sensibilità e ottimizzazione</translation>
     </message>
     <message>
         <source>Runs the sensitivity analysis and optimization</source>
-        <translation type="unfinished"></translation>
+        <translation>Esegue l&apos;analisi di sensibilità e l&apos;ottimizzazione</translation>
     </message>
     <message>
         <source>OpenModelica System Documentation</source>
-        <translation>Documentazione di sistema OpenModelica</translation>
+        <translation>Documentazione di sistema di OpenModelica</translation>
     </message>
     <message>
         <source>Opens the OpenModelica System Documentation</source>
-        <translation>Apre la documentazione di sistema OpenModelica</translation>
+        <translation>Apre la documentazione di sistema di OpenModelica</translation>
     </message>
     <message>
         <source>Draws a line shape</source>
@@ -5199,7 +5311,7 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>Draws a text shape</source>
-        <translation>Traccia del testo</translation>
+        <translation>Traccia un testo</translation>
     </message>
     <message>
         <source>Inserts a bitmap</source>
@@ -5207,71 +5319,71 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>Connect/Unconnect Mode</source>
-        <translation>Modo Connetti/Sconnetti</translation>
+        <translation>Modalità connessione</translation>
     </message>
     <message>
         <source>Transition Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Modalità transizione</translation>
     </message>
     <message>
         <source>Changes to/from transition mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Attiva/disattiva la modalità transizione</translation>
     </message>
     <message>
         <source>New Array Plot Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Nuova finestra del grafico di array</translation>
     </message>
     <message>
         <source>Inserts new array plot window</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserisce una nuova finestra del grafico di array</translation>
     </message>
     <message>
         <source>New Array Parametric Plot Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Nuova finestra del grafico parametrico di array</translation>
     </message>
     <message>
         <source>Inserts new array parametric plot window</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserisce una nuova finestra del grafico parametrico di array</translation>
     </message>
     <message>
         <source>New Animation Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Nuova finestra di animazione</translation>
     </message>
     <message>
         <source>Inserts new animation window</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserisce una nuova finestra di animazione</translation>
     </message>
     <message>
         <source>Diagram Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Finestra del diagramma del modello</translation>
     </message>
     <message>
         <source>Inserts a diagram window</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserisce una finestra con il diagramma del modello</translation>
     </message>
     <message>
         <source>Exports the plotted variables to a CSV file</source>
-        <translation type="unfinished"></translation>
+        <translation>Esporta le variabili tracciate in un file CSV</translation>
     </message>
     <message>
         <source>Clear Plot Window</source>
-        <translation>Cancella la finestra di Plot</translation>
+        <translation>Cancella la finestra del grafico</translation>
     </message>
     <message>
         <source>Clears all the curves from the plot window</source>
-        <translation>Cancella tutte le curve dalla finestra di Plot</translation>
+        <translation>Cancella tutte le curve dalla finestra del grafico</translation>
     </message>
     <message>
         <source>&amp;System Libraries</source>
-        <translation>&amp;Librerie di Sistema</translation>
+        <translation>&amp;Librerie di sistema</translation>
     </message>
     <message>
         <source>&amp;Manage Libraries</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Gestisci librerie</translation>
     </message>
     <message>
         <source>Recent &amp;Files</source>
-        <translation>&amp;Files recenti</translation>
+        <translation>File &amp;recenti</translation>
     </message>
     <message>
         <source>&amp;Edit</source>
@@ -5295,27 +5407,27 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>&amp;Data Reconciliation</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Riconciliazione dei dati</translation>
     </message>
     <message>
         <source>&amp;CRML</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;CRML</translation>
     </message>
     <message>
         <source>&amp;Debug</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Debug</translation>
     </message>
     <message>
         <source>&amp;SSP</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;SSP</translation>
     </message>
     <message>
         <source>SSP Toolbar</source>
-        <translation type="unfinished"></translation>
+        <translation>Barra degli strumenti SSP</translation>
     </message>
     <message>
         <source>&amp;Git</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Git</translation>
     </message>
     <message>
         <source>TraceabilityMenu</source>
@@ -5323,7 +5435,7 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>Traceability</source>
-        <translation type="unfinished"></translation>
+        <translation>Tracciabilità</translation>
     </message>
     <message>
         <source>&amp;Tools</source>
@@ -5335,67 +5447,67 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>File Toolbar</source>
-        <translation>Barra Strumenti File</translation>
+        <translation>Barra degli strumenti File</translation>
     </message>
     <message>
         <source>&amp;New</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nuovo</translation>
     </message>
     <message>
         <source>Edit Toolbar</source>
-        <translation>Edita Barra Strumenti</translation>
+        <translation>Barra degli strumenti Modifica</translation>
     </message>
     <message>
         <source>View Toolbar</source>
-        <translation>Visualizza Barra Strumenti</translation>
+        <translation>Barra degli strumenti Visualizza</translation>
     </message>
     <message>
         <source>Shapes Toolbar</source>
-        <translation>Barra Strumenti Forme</translation>
+        <translation>Barra degli strumenti Forme</translation>
     </message>
     <message>
         <source>Check Toolbar</source>
-        <translation type="unfinished"></translation>
+        <translation>Barra degli strumenti Verifica</translation>
     </message>
     <message>
         <source>Simulation Toolbar</source>
-        <translation>Barra Strumenti Simulazione</translation>
+        <translation>Barra degli strumenti Simulazione</translation>
     </message>
     <message>
         <source>ModelSwitcher Toolbar</source>
-        <translation>Barra strumenti Commutatore di Modelli</translation>
+        <translation>Barra degli strumenti Cambio modello</translation>
     </message>
     <message>
         <source>Import</source>
-        <translation type="unfinished"></translation>
+        <translation>Importa</translation>
     </message>
     <message>
         <source>Re-simulation Toolbar</source>
-        <translation type="unfinished"></translation>
+        <translation>Barra degli strumenti Nuova simulazione</translation>
     </message>
     <message>
         <source>Plot Toolbar</source>
-        <translation>Barra Strumenti Plot</translation>
+        <translation>Barra degli strumenti Grafico</translation>
     </message>
     <message>
         <source>Debugger Toolbar</source>
-        <translation type="unfinished"></translation>
+        <translation>Barra degli strumenti Debugger</translation>
     </message>
     <message>
         <source>Run the debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Avvia il debugger</translation>
     </message>
     <message>
         <source>Exporting model to OMNotebook</source>
-        <translation>Esportazione modello in OMNotebook</translation>
+        <translation>Esportazione del modello in OMNotebook</translation>
     </message>
     <message>
         <source>Error reading the xml file</source>
-        <translation>Errore leggendo il file xml</translation>
+        <translation>Errore durante la lettura del file XML</translation>
     </message>
     <message>
         <source>Exporting model as an Image</source>
-        <translation>Esporta il modello come Immagine</translation>
+        <translation>Esportazione del modello come immagine</translation>
     </message>
     <message>
         <source>Error saving the image file</source>
@@ -5403,127 +5515,127 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>Language server is missing %1 in %2. It will start but is likely to report no hover or go to definition results.</source>
-        <translation type="unfinished"></translation>
+        <translation>Al server di linguaggio manca %1 in %2. Verrà avviato, ma probabilmente non mostrerà informazioni al passaggio del mouse né troverà definizioni.</translation>
     </message>
     <message>
         <source>Cancel the running operation</source>
-        <translation type="unfinished"></translation>
+        <translation>Annulla l&apos;operazione in corso</translation>
     </message>
     <message>
         <source>Find Usage</source>
-        <translation type="unfinished"></translation>
+        <translation>Trova utilizzi</translation>
     </message>
     <message>
         <source>Navigation Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Gestore della navigazione</translation>
     </message>
     <message>
         <source>Creating widgets</source>
-        <translation type="unfinished"></translation>
+        <translation>Creazione dei componenti dell&apos;interfaccia</translation>
     </message>
     <message>
         <source>All files must be in the same directory.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tutti i file devono trovarsi nella stessa directory.</translation>
     </message>
     <message>
         <source>Target Language &lt;b&gt;%1&lt;/b&gt; is not supported for FMU Export. Only &lt;b&gt;C&lt;/b&gt;, &lt;b&gt;Cpp&lt;/b&gt;, &lt;b&gt;wasm&lt;/b&gt; and &lt;b&gt;wasm-jit&lt;/b&gt; are supported</source>
-        <translation type="unfinished"></translation>
+        <translation>Il linguaggio di destinazione &lt;b&gt;%1&lt;/b&gt; non è supportato per l&apos;esportazione FMU. Sono supportati solo &lt;b&gt;C&lt;/b&gt;, &lt;b&gt;Cpp&lt;/b&gt;, &lt;b&gt;wasm&lt;/b&gt; e &lt;b&gt;wasm-jit&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Exporting model %1 as FMU</source>
-        <translation type="unfinished"></translation>
+        <translation>Esportazione del modello %1 come FMU</translation>
     </message>
     <message>
         <source>Exported &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Esportato &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Could not read the exported FMU &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile leggere la FMU esportata &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Unable to open %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aprire %1</translation>
     </message>
     <message>
         <source>Unable to find the class &lt;b&gt;%1&lt;/b&gt;. It might not be loaded.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile trovare la classe &lt;b&gt;%1&lt;/b&gt;. Potrebbe non essere caricata.</translation>
     </message>
     <message>
         <source>%1 is in the cloud folder %2. Sign in to that account to open it.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 si trova nella cartella cloud %2. Accedere a quell&apos;account per aprirlo.</translation>
     </message>
     <message>
         <source>Fetching %1...</source>
-        <translation type="unfinished"></translation>
+        <translation>Recupero di %1...</translation>
     </message>
     <message>
         <source>%1 is no longer in the cloud folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 non è più nella cartella cloud.</translation>
     </message>
     <message>
         <source>Are you sure you want to clear recent models?</source>
-        <translation type="unfinished"></translation>
+        <translation>Sei sicuro di voler cancellare l&apos;elenco dei modelli recenti?</translation>
     </message>
     <message>
         <source>Loads the compiled model</source>
-        <translation type="unfinished"></translation>
+        <translation>Carica il modello compilato</translation>
     </message>
     <message>
         <source>Open from Cloud Storage...</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri da archiviazione cloud...</translation>
     </message>
     <message>
         <source>Opens a package stored in Google Drive or OneDrive</source>
-        <translation type="unfinished"></translation>
+        <translation>Apre un pacchetto archiviato in Google Drive o OneDrive</translation>
     </message>
     <message>
         <source>Save to Cloud Storage...</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva in archiviazione cloud...</translation>
     </message>
     <message>
         <source>Saves the active class to Google Drive or OneDrive</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva la classe attiva in Google Drive o OneDrive</translation>
     </message>
     <message>
         <source>Clears the recent models list</source>
-        <translation type="unfinished"></translation>
+        <translation>Cancella l&apos;elenco dei modelli recenti</translation>
     </message>
     <message>
         <source>Recent &amp;Models</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Modelli recenti</translation>
     </message>
     <message>
         <source>No active simulation output window. Please select a simulation output window for re-simulate.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessuna finestra di output della simulazione attiva. Selezionare una finestra di output della simulazione per la nuova simulazione.</translation>
     </message>
     <message>
         <source>Open a Modelica class first; it is the active class that gets saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aprire prima una classe Modelica; viene salvata la classe attiva.</translation>
     </message>
     <message>
         <source>Could not write %1 to the working copy.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile scrivere %1 nella copia di lavoro.</translation>
     </message>
     <message>
         <source>%1 was not written to the cloud folder; nothing was uploaded.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 non è stato scritto nella cartella cloud; non è stato caricato nulla.</translation>
     </message>
     <message>
         <source>Uploading %1...</source>
-        <translation type="unfinished"></translation>
+        <translation>Caricamento di %1...</translation>
     </message>
     <message>
         <source>%1 holds no Modelica classes.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 non contiene classi Modelica.</translation>
     </message>
     <message>
         <source>Saving %1 to the cloud...</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvataggio di %1 nel cloud...</translation>
     </message>
     <message>
         <source>Confirm Deletions</source>
-        <translation type="unfinished"></translation>
+        <translation>Conferma eliminazioni</translation>
     </message>
     <message numerus="yes">
         <source>This will move %n file(s) to the cloud service&apos;s trash:
@@ -5531,37 +5643,45 @@ Use Download... to fetch one, or point Server Executable at a server you already
 %1
 
 Continue?</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Questa operazione sposterà %n file nel cestino del servizio cloud:
+
+%1
+
+Continuare?</numerusform>
+            <numerusform>Questa operazione sposterà %n file nel cestino del servizio cloud:
+
+%1
+
+Continuare?</numerusform>
         </translation>
     </message>
     <message>
         <source>Could not synchronise %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile sincronizzare %1: %2</translation>
     </message>
     <message>
         <source>Synchronisation of %1 was cancelled</source>
-        <translation type="unfinished"></translation>
+        <translation>La sincronizzazione di %1 è stata annullata</translation>
     </message>
     <message>
         <source>%1 is up to date</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 è aggiornato</translation>
     </message>
     <message>
         <source>Save Figure in Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva figura nel modello</translation>
     </message>
     <message>
         <source>Saves the current plot as a figure in the model annotation</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva il grafico corrente come figura nell&apos;annotazione del modello</translation>
     </message>
 </context>
 <context>
     <name>MessageTab</name>
     <message>
         <source>Click to open message browser.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fare clic per aprire la finestra Messaggi.</translation>
     </message>
 </context>
 <context>
@@ -5572,69 +5692,69 @@ Continue?</source>
     </message>
     <message>
         <source>Selects all the Messages</source>
-        <translation>Selezione tutti i Messaggi</translation>
+        <translation>Seleziona tutti i messaggi</translation>
     </message>
     <message>
         <source>Copy the Message</source>
-        <translation>Copia il Messaggio</translation>
+        <translation>Copia il messaggio</translation>
     </message>
     <message>
         <source>Clear This Tab</source>
-        <translation type="unfinished"></translation>
+        <translation>Cancella questa scheda</translation>
     </message>
     <message>
         <source>clears the messages from this tab</source>
-        <translation type="unfinished"></translation>
+        <translation>Cancella i messaggi di questa scheda</translation>
     </message>
     <message>
         <source>Clear All Tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>Cancella tutte le schede</translation>
     </message>
     <message>
         <source>clears the messages from all tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>Cancella i messaggi di tutte le schede</translation>
     </message>
 </context>
 <context>
     <name>MessagesPage</name>
     <message>
         <source>Output size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Dimensione dell&apos;output:</translation>
     </message>
     <message>
         <source>Specifies the maximum number of rows the message browser may have. If there are more rows then the rows are removed from the beginning.</source>
-        <translation type="unfinished"></translation>
+        <translation>Specifica il numero massimo di righe della finestra Messaggi. Se ci sono più righe, vengono rimosse quelle iniziali.</translation>
     </message>
     <message>
         <source>Reset messages number before checking, instantiation, and simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Azzera la numerazione dei messaggi prima di verifica, istanziazione e simulazione</translation>
     </message>
     <message>
         <source>Clear message browser before checking, instantiation, and simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Cancella la finestra Messaggi prima di verifica, istanziazione e simulazione</translation>
     </message>
     <message>
         <source>Do not automatically enlarge message browser when a new message is available</source>
-        <translation type="unfinished"></translation>
+        <translation>Non ingrandire automaticamente la finestra Messaggi quando è disponibile un nuovo messaggio</translation>
     </message>
     <message>
         <source>Notification Color:</source>
-        <translation type="unfinished"></translation>
+        <translation>Colore delle notifiche:</translation>
     </message>
     <message>
         <source>Warning Color:</source>
-        <translation type="unfinished"></translation>
+        <translation>Colore degli avvertimenti:</translation>
     </message>
     <message>
         <source>Error Color:</source>
-        <translation type="unfinished"></translation>
+        <translation>Colore degli errori:</translation>
     </message>
 </context>
 <context>
     <name>MessagesWidget</name>
     <message>
         <source>All</source>
-        <translation type="unfinished"></translation>
+        <translation>Tutti</translation>
     </message>
     <message>
         <source>Notifications</source>
@@ -5642,30 +5762,30 @@ Continue?</source>
     </message>
     <message>
         <source>Warnings</source>
-        <translation type="unfinished"></translation>
+        <translation>Avvertimenti</translation>
     </message>
     <message>
         <source>Errors</source>
-        <translation type="unfinished"></translation>
+        <translation>Errori</translation>
     </message>
 </context>
 <context>
     <name>ModelWidget</name>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Indietro</translation>
     </message>
     <message>
         <source>Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>Avanti</translation>
     </message>
     <message>
         <source>Exit</source>
-        <translation type="unfinished"></translation>
+        <translation>Esci</translation>
     </message>
     <message>
         <source>Exit Element</source>
-        <translation type="unfinished"></translation>
+        <translation>Esci dall&apos;elemento</translation>
     </message>
     <message>
         <source>Writable</source>
@@ -5677,38 +5797,38 @@ Continue?</source>
     </message>
     <message>
         <source>File is writable</source>
-        <translation>Il file è Scrivibile</translation>
+        <translation>Il file è scrivibile</translation>
     </message>
     <message>
         <source>Showing element &lt;b&gt;%1&lt;/b&gt; in &lt;b&gt;%2&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizzazione dell&apos;elemento &lt;b&gt;%1&lt;/b&gt; in &lt;b&gt;%2&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Cannot Set Permissions</source>
-        <translation>Impossibile impostare i Permessi</translation>
+        <translation>Impossibile impostare i permessi</translation>
     </message>
     <message>
         <source>Cannot set permissions to writable.</source>
-        <translation>Impossibile impostare i permessi in Scrivibile.</translation>
+        <translation>Impossibile rendere scrivibile il file.</translation>
     </message>
 </context>
 <context>
     <name>ModelWidgetContainer</name>
     <message>
         <source>save as</source>
-        <translation>Salva come</translation>
+        <translation>salvare con nome</translation>
     </message>
     <message>
         <source>Adapting extent to diagram</source>
-        <translation type="unfinished"></translation>
+        <translation>Adattamento dell&apos;estensione al diagramma</translation>
     </message>
     <message>
         <source>adapting extent to diagram</source>
-        <translation type="unfinished"></translation>
+        <translation>adattare l&apos;estensione al diagramma</translation>
     </message>
     <message>
         <source>saving</source>
-        <translation>Salvo</translation>
+        <translation>il salvataggio</translation>
     </message>
 </context>
 <context>
@@ -5719,42 +5839,42 @@ Continue?</source>
     </message>
     <message>
         <source>Extends (optional):</source>
-        <translation>&quot;Estends&quot; (opzionale):</translation>
+        <translation>Classe base (opzionale):</translation>
     </message>
     <message>
         <source>Insert in class (optional):</source>
-        <translation>&quot;Insert in class&quot; (opzionale):</translation>
+        <translation>Inserisci nella classe (opzionale):</translation>
     </message>
     <message>
         <source>Partial</source>
-        <translation>&quot;Partial&quot;</translation>
+        <translation>Partial</translation>
     </message>
     <message>
         <source>Encapsulated</source>
-        <translation>&quot;Encapsulated&quot;</translation>
+        <translation>Encapsulated</translation>
     </message>
     <message>
         <source>State</source>
-        <translation type="unfinished"></translation>
+        <translation>Stato</translation>
     </message>
     <message>
         <source>Select Extends Class</source>
-        <translation>Seleziona &quot;Extends Class&quot;</translation>
+        <translation>Seleziona la classe base</translation>
     </message>
 </context>
 <context>
     <name>ModelicaEditor</name>
     <message>
         <source>Start and End modifiers are different</source>
-        <translation>Differenti modificatori iniziale e finale</translation>
+        <translation>I modificatori iniziale e finale sono diversi</translation>
     </message>
     <message>
         <source>&lt;b&gt;Warning: &lt;/b&gt;You are changing a system library class. System libraries are always read-only. Your changes will not be saved.</source>
-        <translation>&lt;b&gt;Avvertimento: &lt;/b&gt; Stai cambiando una lbreria di classi di sistema. Le librerie di sistema sono sempre di sola lettura. I cambiamenti non saranno salvati.</translation>
+        <translation>&lt;b&gt;Avvertimento: &lt;/b&gt;Stai modificando una classe di una libreria di sistema. Le librerie di sistema sono sempre di sola lettura. Le modifiche non verranno salvate.</translation>
     </message>
     <message>
         <source>&lt;b&gt;Warning: &lt;/b&gt;Cannot modify the text in the element mode. Your changes will not be saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Avvertimento: &lt;/b&gt;Non è possibile modificare il testo in modalità elemento. Le modifiche non verranno salvate.</translation>
     </message>
     <message>
         <source>&lt;b&gt;Warning: &lt;/b&gt;You are changing a read-only class.</source>
@@ -5762,22 +5882,22 @@ Continue?</source>
     </message>
     <message>
         <source>You can save to file with errors, it will reopen class in text mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>È possibile salvare nel file anche con errori; la classe verrà riaperta in modalità testo.</translation>
     </message>
     <message>
         <source>Go to Definition</source>
-        <translation type="unfinished"></translation>
+        <translation>Vai alla definizione</translation>
     </message>
     <message>
         <source>Go to the definition of the class under the cursor</source>
-        <translation type="unfinished"></translation>
+        <translation>Va alla definizione della classe sotto il cursore</translation>
     </message>
 </context>
 <context>
     <name>ModelicaEditorPage</name>
     <message>
         <source>Preserve Text Indentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Mantieni l&apos;indentazione del testo</translation>
     </message>
 </context>
 <context>
@@ -5788,19 +5908,19 @@ Continue?</source>
     </message>
     <message>
         <source>Are you sure you want to quit?</source>
-        <translation>Sei sicuro che vuoi uscire?</translation>
+        <translation>Sei sicuro di voler uscire?</translation>
     </message>
     <message>
         <source>You must save the class before referencing a bitmap from local directory.</source>
-        <translation>Devi salvare la classe prima di referenziare una bitmap dalla directory locale.</translation>
+        <translation>Salvare la classe prima di fare riferimento a una bitmap della directory locale.</translation>
     </message>
     <message>
         <source>Always quit without prompt</source>
-        <translation>Abbandona sempre senza richiesta di conferma</translation>
+        <translation>Esci sempre senza chiedere conferma</translation>
     </message>
     <message>
         <source>Remember my decision and do not ask again</source>
-        <translation type="unfinished"></translation>
+        <translation>Ricorda la mia decisione e non chiedere più</translation>
     </message>
 </context>
 <context>
@@ -5811,167 +5931,171 @@ Continue?</source>
     </message>
     <message>
         <source>Always quit without prompt</source>
-        <translation>Abbandona sempre senza richiesta di conferma</translation>
+        <translation>Esci sempre senza chiedere conferma</translation>
     </message>
     <message>
         <source>Show item dropped on itself message</source>
-        <translation>Mostra la voce eliminata nel proprio messaggio</translation>
+        <translation>Mostra il messaggio quando una voce viene rilasciata su se stessa</translation>
     </message>
     <message>
         <source>Show model is partial and component is added as replaceable message</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra il messaggio quando il modello è partial e il componente viene aggiunto come replaceable</translation>
     </message>
     <message>
         <source>Show component is declared as inner message</source>
-        <translation></translation>
+        <translation>Mostra il messaggio quando un componente è dichiarato come inner</translation>
     </message>
     <message>
         <source>Show save model for bitmap insertion message</source>
-        <translation></translation>
+        <translation>Mostra il messaggio sul salvataggio del modello prima di inserire una bitmap</translation>
     </message>
     <message>
         <source>Always ask for the dragged/duplicated component name</source>
-        <translation type="unfinished"></translation>
+        <translation>Chiedi sempre il nome del componente trascinato/duplicato</translation>
     </message>
     <message>
         <source>Always ask for what to do with the text editor error</source>
-        <translation type="unfinished"></translation>
+        <translation>Chiedi sempre cosa fare in caso di errore nell&apos;editor di testo</translation>
     </message>
 </context>
 <context>
     <name>OAuth2Client</name>
     <message>
         <source>Not signed in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Accesso non effettuato.</translation>
     </message>
     <message>
         <source>Could not set up the sign-in redirect.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile configurare il reindirizzamento per l&apos;accesso.</translation>
     </message>
     <message>
         <source>Waiting for you to sign in with the browser...</source>
-        <translation type="unfinished"></translation>
+        <translation>In attesa dell&apos;accesso tramite il browser...</translation>
     </message>
     <message>
         <source>The sign-in response did not match the request.</source>
-        <translation type="unfinished"></translation>
+        <translation>La risposta dell&apos;accesso non corrisponde alla richiesta.</translation>
     </message>
     <message>
         <source>Exchanging the authorization code...</source>
-        <translation type="unfinished"></translation>
+        <translation>Scambio del codice di autorizzazione...</translation>
     </message>
     <message>
         <source>The saved sign-in is no longer valid. Sign in again.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;accesso salvato non è più valido. Accedere di nuovo.</translation>
     </message>
     <message>
         <source>The service returned no access token.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il servizio non ha restituito alcun token di accesso.</translation>
     </message>
 </context>
 <context>
     <name>OMCProxy</name>
     <message>
         <source>OMC Diff</source>
-        <translation type="unfinished"></translation>
+        <translation>OMC Diff</translation>
     </message>
     <message>
         <source>Before</source>
-        <translation type="unfinished"></translation>
+        <translation>Prima</translation>
     </message>
     <message>
         <source>After</source>
-        <translation type="unfinished"></translation>
+        <translation>Dopo</translation>
     </message>
     <message>
         <source>Merged</source>
-        <translation type="unfinished"></translation>
+        <translation>Unito</translation>
     </message>
     <message>
         <source>Connection with the OpenModelica Compiler has been lost.</source>
-        <translation>Il collegamento con il compilatore OpenModelica è stato perso.</translation>
+        <translation>La connessione con il compilatore OpenModelica è stata persa.</translation>
     </message>
     <message>
         <source>Skip loading &lt;b&gt;%1&lt;/b&gt; version &lt;b&gt;%2&lt;/b&gt; since latest version is already loaded because of the setting &lt;b&gt;Load latest Modelica version on startup&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Caricamento di &lt;b&gt;%1&lt;/b&gt; versione &lt;b&gt;%2&lt;/b&gt; saltato perché l&apos;ultima versione è già caricata a causa dell&apos;impostazione &lt;b&gt;Carica l&apos;ultima versione di Modelica all&apos;avvio&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Unable to set the parameter value using command &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile impostare il valore del parametro con il comando &lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Unable to set the element modifier value using command &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile impostare il valore del modificatore dell&apos;elemento con il comando &lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Unable to set the extends modifier value using command &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile impostare il valore del modificatore di extends con il comando &lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Could not preserve the formatting of the model instead internal pretty-printing algorithm is used.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non è stato possibile mantenere la formattazione del modello, quindi viene usato l&apos;algoritmo di formattazione interno.</translation>
     </message>
 </context>
 <context>
     <name>OMEditApplication</name>
     <message>
         <source>You have enabled the old frontend for code generation. It is deprecated and will be removed after OpenModelica 1.28.0 is released. Do you want to switch to the new frontend?</source>
-        <translation type="unfinished"></translation>
+        <translation>Hai abilitato il vecchio frontend per la generazione del codice. È deprecato e verrà rimosso dopo il rilascio di OpenModelica 1.28.0. Vuoi passare al nuovo frontend?</translation>
     </message>
     <message>
         <source>Switch to new frontend</source>
-        <translation type="unfinished"></translation>
+        <translation>Passa al nuovo frontend</translation>
     </message>
     <message>
         <source>Keep using old frontend</source>
-        <translation type="unfinished"></translation>
+        <translation>Continua a usare il vecchio frontend</translation>
     </message>
 </context>
 <context>
     <name>OMSCalibrationDialog</name>
     <message>
         <source>Calibrate</source>
-        <translation type="unfinished"></translation>
+        <translation>Calibra</translation>
     </message>
     <message>
         <source>Calibration Activity:</source>
-        <translation type="unfinished"></translation>
+        <translation>Attività di calibrazione:</translation>
     </message>
     <message>
         <source>the only Calibration activity of the UQ file</source>
-        <translation type="unfinished"></translation>
+        <translation>l&apos;unica attività di calibrazione del file UQ</translation>
     </message>
     <message>
         <source>UQ File:</source>
-        <translation type="unfinished"></translation>
+        <translation>File UQ:</translation>
     </message>
     <message>
         <source>the UQ file referenced by the SSP, e.g. extra/uq.xml</source>
-        <translation type="unfinished"></translation>
+        <translation>il file UQ a cui fa riferimento l&apos;SSP, ad es. extra/uq.xml</translation>
     </message>
     <message>
         <source>Calibrated Model:</source>
-        <translation type="unfinished"></translation>
+        <translation>Modello calibrato:</translation>
     </message>
     <message>
         <source>Select the file to write the calibrated model to.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Selezionare il file in cui scrivere il modello calibrato.
+</translation>
     </message>
     <message>
         <source>Failed to export %1 to %2.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile esportare %1 in %2.
+</translation>
     </message>
     <message>
         <source>The calibrated model is written to %1.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Il modello calibrato è stato scritto in %1.
+</translation>
     </message>
     <message>
         <source>The calibration failed with exit code %1.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>La calibrazione non è riuscita con codice di uscita %1.
+</translation>
     </message>
 </context>
 <context>
@@ -5980,93 +6104,95 @@ Continue?</source>
         <source>OMSimulator Python GUI server started.
 Script: %1
 Endpoint: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Server GUI Python di OMSimulator avviato.
+Script: %1
+Endpoint: %2</translation>
     </message>
     <message>
         <source>OMSimulator Python server failed to start. Check the Python executable and script paths.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile avviare il server Python di OMSimulator. Controllare i percorsi dell&apos;eseguibile Python e dello script.</translation>
     </message>
     <message>
         <source>OMSimulator Python server crashed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il server Python di OMSimulator si è arrestato in modo anomalo.</translation>
     </message>
     <message>
         <source>OMSimulator Python server timed out.</source>
-        <translation type="unfinished"></translation>
+        <translation>Timeout del server Python di OMSimulator.</translation>
     </message>
     <message>
         <source>OMSimulator Python server process error (%1).</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore del processo del server Python di OMSimulator (%1).</translation>
     </message>
     <message>
         <source>OMSimulator Python server exited unexpectedly (exit code %1).</source>
-        <translation type="unfinished"></translation>
+        <translation>Il server Python di OMSimulator è terminato inaspettatamente (codice di uscita %1).</translation>
     </message>
     <message>
         <source>OMSimulator Python server is not running. Cannot execute &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il server Python di OMSimulator non è in esecuzione. Impossibile eseguire &apos;%1&apos;.</translation>
     </message>
     <message>
         <source>OMSimulator server did not respond to &apos;%1&apos; (timeout or crash). Check the Messages window for Python errors.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il server OMSimulator non ha risposto a &apos;%1&apos; (timeout o arresto anomalo). Controllare gli errori Python nella finestra Messaggi.</translation>
     </message>
     <message>
         <source>&apos;%1&apos; failed (no details from server).</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%1&apos; non riuscito (nessun dettaglio dal server).</translation>
     </message>
     <message>
         <source>&apos;%1&apos; failed: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%1&apos; non riuscito: %2</translation>
     </message>
 </context>
 <context>
     <name>OMSSimulationDialog</name>
     <message>
         <source>Result File:</source>
-        <translation type="unfinished"></translation>
+        <translation>File dei risultati:</translation>
     </message>
     <message>
         <source>Result File Buffer Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Dimensione del buffer del file dei risultati:</translation>
     </message>
     <message>
         <source>Logging Interval:</source>
-        <translation type="unfinished"></translation>
+        <translation>Intervallo di registrazione:</translation>
     </message>
     <message>
         <source>Solver Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Impostazioni del solutore</translation>
     </message>
 </context>
 <context>
     <name>OMSSimulationOutputWidget</name>
     <message>
         <source>Running simulation of &lt;b&gt;%1&lt;/b&gt;. Please wait for a while.</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulazione di &lt;b&gt;%1&lt;/b&gt; in corso. Attendere.</translation>
     </message>
     <message>
         <source>Running simulation of %1. Please wait for a while.</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulazione di %1 in corso. Attendere.</translation>
     </message>
     <message>
         <source>Simulation process failed. Exited with code %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il processo di simulazione non è riuscito. Terminato con codice %1.</translation>
     </message>
     <message>
         <source>Simulation process finished successfully.</source>
-        <translation type="unfinished"></translation>
+        <translation>Processo di simulazione completato correttamente.</translation>
     </message>
     <message>
         <source>Simulation of %1 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulazione di %1 completata.</translation>
     </message>
     <message>
         <source>Simulation of %1 failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>La simulazione di %1 non è riuscita.</translation>
     </message>
     <message>
         <source>Simulation of %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>La simulazione di %1 è stata annullata.</translation>
     </message>
 </context>
 <context>
@@ -6080,315 +6206,324 @@ Endpoint: %2</source>
     <name>OMSimulatorPage</name>
     <message>
         <source>Command Line Options:</source>
-        <translation type="unfinished"></translation>
+        <translation>Opzioni da riga di comando:</translation>
     </message>
     <message>
         <source>Space separated list of command line options e.g., --suppressPath=true --ignoreInitialUnknowns=true</source>
-        <translation type="unfinished"></translation>
+        <translation>Elenco di opzioni da riga di comando separate da spazi, ad es. --suppressPath=true --ignoreInitialUnknowns=true</translation>
     </message>
     <message>
         <source>Logging Level:</source>
-        <translation type="unfinished"></translation>
+        <translation>Livello di registrazione:</translation>
     </message>
     <message>
         <source>Uncertainty Quantification (omuq)</source>
-        <translation type="unfinished"></translation>
+        <translation>Quantificazione dell&apos;incertezza (omuq)</translation>
     </message>
     <message>
         <source>UQ activities run the omuq Python package, see the &lt;a href=&quot;https://github.com/adrpo/omuq&quot;&gt;omuq GitHub page&lt;/a&gt;. Specify a Python executable that has omuq and OMSimulator installed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le attività UQ eseguono il pacchetto Python omuq, vedere la &lt;a href=&quot;https://github.com/adrpo/omuq&quot;&gt;pagina GitHub di omuq&lt;/a&gt;. Specificare un eseguibile Python in cui siano installati omuq e OMSimulator.</translation>
     </message>
     <message>
         <source>Python:</source>
-        <translation type="unfinished"></translation>
+        <translation>Python:</translation>
     </message>
 </context>
 <context>
     <name>OMUQDialog</name>
     <message>
         <source>UQ Activities</source>
-        <translation type="unfinished"></translation>
+        <translation>Attività UQ</translation>
     </message>
     <message>
         <source>Study:</source>
-        <translation type="unfinished"></translation>
+        <translation>Studio:</translation>
     </message>
     <message>
         <source>Activity:</source>
-        <translation type="unfinished"></translation>
+        <translation>Attività:</translation>
     </message>
     <message>
         <source>Domain</source>
-        <translation type="unfinished"></translation>
+        <translation>Dominio</translation>
     </message>
     <message>
         <source>Kind</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipo</translation>
     </message>
     <message>
         <source>Boundary</source>
-        <translation type="unfinished"></translation>
+        <translation>Contorno</translation>
     </message>
     <message>
         <source>Variables</source>
-        <translation type="unfinished">Variabili</translation>
+        <translation>Variabili</translation>
     </message>
     <message>
         <source>Study</source>
-        <translation type="unfinished"></translation>
+        <translation>Studio</translation>
     </message>
     <message>
         <source>Domains:</source>
-        <translation type="unfinished"></translation>
+        <translation>Domini:</translation>
     </message>
     <message>
         <source>Step Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Passo:</translation>
     </message>
     <message>
         <source>Show Progress Every:</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra avanzamento ogni:</translation>
     </message>
     <message>
         <source> samples</source>
-        <translation type="unfinished"></translation>
+        <translation> campioni</translation>
     </message>
     <message>
         <source>The result file always has every sample.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il file dei risultati contiene sempre tutti i campioni.</translation>
     </message>
     <message>
         <source>Simulator:</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulatore:</translation>
     </message>
     <message>
         <source>Automatic</source>
-        <translation type="unfinished"></translation>
+        <translation>Automatico</translation>
     </message>
     <message>
         <source>Local OMSimulator</source>
-        <translation type="unfinished"></translation>
+        <translation>OMSimulator locale</translation>
     </message>
     <message>
         <source>Docker</source>
-        <translation type="unfinished"></translation>
+        <translation>Docker</translation>
     </message>
     <message>
         <source>Record the run in the study and save the package as:</source>
-        <translation type="unfinished"></translation>
+        <translation>Registra l&apos;esecuzione nello studio e salva il pacchetto come:</translation>
     </message>
     <message>
         <source>Live View:</source>
-        <translation type="unfinished"></translation>
+        <translation>Vista dal vivo:</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>Disattivata</translation>
     </message>
     <message>
         <source>In OMEdit</source>
-        <translation type="unfinished"></translation>
+        <translation>In OMEdit</translation>
     </message>
     <message>
         <source>In the web browser</source>
-        <translation type="unfinished"></translation>
+        <translation>Nel browser web</translation>
     </message>
     <message>
         <source>omuq serves the live view until it is stopped from the output tab.</source>
-        <translation type="unfinished"></translation>
+        <translation>omuq mantiene attiva la vista dal vivo finché non viene interrotta dalla scheda di output.</translation>
     </message>
     <message>
         <source>Run</source>
-        <translation type="unfinished"></translation>
+        <translation>Esegui</translation>
     </message>
     <message>
         <source>Unable to create the directory %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile creare la directory %1.</translation>
     </message>
     <message>
         <source>Failed to start %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile avviare %1: %2</translation>
     </message>
     <message>
         <source>omuq is not installed for %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>omuq non è installato per %1.</translation>
     </message>
     <message>
         <source>omuq failed to read the model:
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>omuq non è riuscito a leggere il modello:
+%1</translation>
     </message>
     <message>
         <source>Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMSimulator/SSP.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impostare l&apos;eseguibile Python in cui è installato omuq in Strumenti &gt; Opzioni &gt; OMSimulator/SSP.</translation>
     </message>
     <message>
         <source>Unable to read the output of omuq: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile leggere l&apos;output di omuq: %1</translation>
     </message>
     <message>
         <source>No omuq study is attached to %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessuno studio omuq è associato a %1.</translation>
     </message>
     <message>
         <source>%1 activity %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Attività %2 (%1)</translation>
     </message>
     <message>
         <source>none</source>
-        <translation type="unfinished"></translation>
+        <translation>nessuno</translation>
     </message>
     <message>
         <source>Observes: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Osserva: %1</translation>
     </message>
     <message>
         <source>nothing</source>
-        <translation type="unfinished"></translation>
+        <translation>niente</translation>
     </message>
     <message>
         <source>Recorded results: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Risultati registrati: %1</translation>
     </message>
     <message>
         <source>from the model</source>
-        <translation type="unfinished"></translation>
+        <translation>dal modello</translation>
     </message>
     <message>
         <source>System Structure and Parameterization Files (*.ssp)</source>
-        <translation type="unfinished"></translation>
+        <translation>File System Structure and Parameterization (*.ssp)</translation>
     </message>
     <message>
         <source>Enter the file the recorded run is saved to.</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserire il file in cui salvare l&apos;esecuzione registrata.</translation>
     </message>
 </context>
 <context>
     <name>OMUQOutputWidget</name>
     <message>
         <source>Starting omuq for %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Avvio di omuq per %1.</translation>
     </message>
     <message>
         <source>Live view: %1
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Vista dal vivo: %1
+</translation>
     </message>
     <message>
         <source>%1 (not monitored: %2)</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 (non monitorato: %2)</translation>
     </message>
     <message>
         <source>Study %1, %2 from %3 to %4 with step %5, driver %6
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Studio %1, %2 da %3 a %4 con passo %5, simulatore %6
+</translation>
     </message>
     <message>
         <source>Observed variables: %1
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Variabili osservate: %1
+</translation>
     </message>
     <message>
         <source>Monitored domains: %1
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Domini monitorati: %1
+</translation>
     </message>
     <message>
         <source>none</source>
-        <translation type="unfinished"></translation>
+        <translation>nessuno</translation>
     </message>
     <message>
         <source>Running %1 of %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Esecuzione di %1 per %2.</translation>
     </message>
     <message>
         <source>t = %1: left the domain %2 (%3) at (%4)
 </source>
-        <translation type="unfinished"></translation>
+        <translation>t = %1: uscito dal dominio %2 (%3) in (%4)
+</translation>
     </message>
     <message>
         <source>%1 - %2 - Live View</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - %2 - Vista dal vivo</translation>
     </message>
     <message>
         <source>The run is recorded in %1
 </source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;esecuzione è registrata in %1
+</translation>
     </message>
     <message>
         <source>Stop Live View</source>
-        <translation type="unfinished"></translation>
+        <translation>Interrompi vista dal vivo</translation>
     </message>
     <message>
         <source>%1 of %2 finished, the live view is still served.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 di %2 completata, la vista dal vivo è ancora attiva.</translation>
     </message>
     <message>
         <source>%1 of %2 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 di %2 completata.</translation>
     </message>
     <message>
         <source>%1 of %2 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 di %2 annullata.</translation>
     </message>
     <message>
         <source>Failed to start %1: %2
 Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMSimulator/SSP.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile avviare %1: %2
+Impostare l&apos;eseguibile Python in cui è installato omuq in Strumenti &gt; Opzioni &gt; OMSimulator/SSP.
+</translation>
     </message>
     <message>
         <source>%1 of %2 failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 di %2 non riuscita.</translation>
     </message>
     <message>
         <source>omuq finished without results for %1 of %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>omuq è terminato senza risultati per %1 di %2.</translation>
     </message>
     <message>
         <source>%1 of %2 failed. Exit code %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 di %2 non riuscita. Codice di uscita %3.</translation>
     </message>
     <message>
         <source>Is omuq installed for %1?</source>
-        <translation type="unfinished"></translation>
+        <translation>omuq è installato per %1?</translation>
     </message>
 </context>
 <context>
     <name>OneDriveProvider</name>
     <message>
         <source>%1 is a folder, not a file.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 è una cartella, non un file.</translation>
     </message>
     <message>
         <source>Cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Annullato.</translation>
     </message>
     <message>
         <source>The file changed in OneDrive since it was last synchronised.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il file è stato modificato in OneDrive dall&apos;ultima sincronizzazione.</translation>
     </message>
     <message>
         <source>OneDrive returned no upload URL.</source>
-        <translation type="unfinished"></translation>
+        <translation>OneDrive non ha restituito alcun URL di caricamento.</translation>
     </message>
 </context>
 <context>
     <name>OpcUaClient</name>
     <message>
         <source>Could not connect to the embedded server. Status code %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile connettersi al server integrato. Codice di stato %1.</translation>
     </message>
 </context>
 <context>
     <name>OpenModelicaFile</name>
     <message>
         <source>Convert all files within the selected directory and sub-directories</source>
-        <translation>Converti tutti i files della directory selezionata e di tutte le sottodirectories</translation>
+        <translation>Converti tutti i file della directory selezionata e delle sottodirectory</translation>
     </message>
     <message>
         <source>Open with selected encoding</source>
-        <translation>Apri con la condifica selezionata</translation>
+        <translation>Apri con la codifica selezionata</translation>
     </message>
     <message>
         <source>Open and convert to UTF-8</source>
@@ -6396,50 +6531,50 @@ Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMS
     </message>
     <message>
         <source>Converting files to UTF-8</source>
-        <translation>conversione files in UTF-8</translation>
+        <translation>Conversione dei file in UTF-8</translation>
     </message>
 </context>
 <context>
     <name>OptionsDialog</name>
     <message>
         <source>* The changes will take effect after restart.</source>
-        <translation type="unfinished"></translation>
+        <translation>* Le modifiche avranno effetto dopo il riavvio.</translation>
     </message>
     <message>
         <source>General</source>
-        <translation>Generalità</translation>
+        <translation>Generale</translation>
     </message>
     <message>
         <source>Text Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Editor di testo</translation>
     </message>
     <message>
         <source>Modelica Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Editor Modelica</translation>
     </message>
     <message>
         <source>Modelica Script Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Editor di script Modelica</translation>
     </message>
     <message>
         <source>MetaModelica Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Editor MetaModelica</translation>
     </message>
     <message>
         <source>SSP Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Editor SSP</translation>
     </message>
     <message>
         <source>CRML Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Editor CRML</translation>
     </message>
     <message>
         <source>C/C++ Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Editor C/C++</translation>
     </message>
     <message>
         <source>HTML Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Editor HTML</translation>
     </message>
     <message>
         <source>Graphical Views</source>
@@ -6459,35 +6594,35 @@ Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMS
     </message>
     <message>
         <source>Debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Debugger</translation>
     </message>
     <message>
         <source>FMI</source>
-        <translation type="unfinished"></translation>
+        <translation>FMI</translation>
     </message>
     <message>
         <source>OMSimulator/SSP</source>
-        <translation type="unfinished"></translation>
+        <translation>OMSimulator/SSP</translation>
     </message>
     <message>
         <source>Reset to default</source>
-        <translation type="unfinished"></translation>
+        <translation>Ripristina predefiniti</translation>
     </message>
     <message>
         <source>Are you sure that you want to reset OMEdit? This operation cannot be undone. </source>
-        <translation type="unfinished"></translation>
+        <translation>Sei sicuro di voler ripristinare OMEdit? Questa operazione non può essere annullata. </translation>
     </message>
     <message>
         <source>Traceability</source>
-        <translation type="unfinished"></translation>
+        <translation>Tracciabilità</translation>
     </message>
     <message>
         <source>Language Server</source>
-        <translation type="unfinished"></translation>
+        <translation>Server di linguaggio</translation>
     </message>
     <message>
         <source>Cloud Storage</source>
-        <translation type="unfinished"></translation>
+        <translation>Archiviazione cloud</translation>
     </message>
 </context>
 <context>
@@ -6498,11 +6633,11 @@ Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMS
     </message>
     <message>
         <source>Edit array</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica array</translation>
     </message>
     <message>
         <source>Unable to find the redeclare class.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile trovare la classe ridichiarata.</translation>
     </message>
     <message>
         <source>Save</source>
@@ -6510,37 +6645,37 @@ Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMS
     </message>
     <message>
         <source>Load</source>
-        <translation type="unfinished"></translation>
+        <translation>Carica</translation>
     </message>
     <message>
         <source>true: start-value is used to initialize</source>
-        <translation type="unfinished"></translation>
+        <translation>true: il valore start viene usato per inizializzare</translation>
     </message>
     <message>
         <source>false: start-value is only a guess-value</source>
-        <translation type="unfinished"></translation>
+        <translation>false: il valore start è solo un valore di tentativo</translation>
     </message>
     <message>
         <source>inherited: (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>ereditato: (%1)</translation>
     </message>
 </context>
 <context>
     <name>PlainTextEdit</name>
     <message>
         <source>&lt;b&gt;Information: &lt;/b&gt;Breakpoints are only allowed on saved classes.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Informazioni: &lt;/b&gt;I punti di interruzione sono consentiti solo nelle classi salvate.</translation>
     </message>
 </context>
 <context>
     <name>PlotWindowContainer</name>
     <message>
         <source>Interactive Plot : %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafico interattivo: %1</translation>
     </message>
     <message>
         <source>Name Plot Tab</source>
-        <translation type="unfinished"></translation>
+        <translation>Assegna nome alla scheda del grafico</translation>
     </message>
     <message>
         <source>Name:</source>
@@ -6548,27 +6683,27 @@ Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMS
     </message>
     <message>
         <source>No plot window is active for clearing curves.</source>
-        <translation>Non vi sono finestre di plot attive per poter cancellare curve.</translation>
+        <translation>Nessuna finestra del grafico attiva per cancellare le curve.</translation>
     </message>
     <message>
         <source>No plot window is active for exporting variables.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessuna finestra del grafico attiva per l&apos;esportazione delle variabili.</translation>
     </message>
     <message>
         <source>Cannot export parametric plot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile esportare un grafico parametrico.</translation>
     </message>
     <message>
         <source>No variables are selected for exporting.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessuna variabile selezionata per l&apos;esportazione.</translation>
     </message>
     <message>
         <source>Not possible to export variables from different result files.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non è possibile esportare variabili da file di risultati diversi.</translation>
     </message>
     <message>
         <source>Exported variables in %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Variabili esportate in %1</translation>
     </message>
     <message>
         <source>Rename</source>
@@ -6576,70 +6711,70 @@ Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMS
     </message>
     <message>
         <source>Renames the plot tab</source>
-        <translation type="unfinished"></translation>
+        <translation>Rinomina la scheda del grafico</translation>
     </message>
     <message>
         <source>Select a plot window before saving a figure in a model.</source>
-        <translation type="unfinished"></translation>
+        <translation>Selezionare una finestra del grafico prima di salvare una figura in un modello.</translation>
     </message>
     <message>
         <source>There are no curves to save in the model annotation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non ci sono curve da salvare nell&apos;annotazione del modello.</translation>
     </message>
     <message>
         <source>Could not find the simulation result associated with curve %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile trovare il risultato della simulazione associato alla curva %1.</translation>
     </message>
     <message>
         <source>There are no valid curves to save in the model annotation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non ci sono curve valide da salvare nell&apos;annotazione del modello.</translation>
     </message>
     <message>
         <source>Cannot save figure %1 in model %2 because the model cannot be annotated.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile salvare la figura %1 nel modello %2 perché il modello non può essere annotato.</translation>
     </message>
     <message>
         <source>The model %1 is not open; the figure was not saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il modello %1 non è aperto; la figura non è stata salvata.</translation>
     </message>
     <message>
         <source>The model instance for %1 is not available; the figure was not saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;istanza del modello per %1 non è disponibile; la figura non è stata salvata.</translation>
     </message>
     <message>
         <source>Save Figure in model %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva figura nel modello %1</translation>
     </message>
     <message>
         <source>Saved figure %1 in model %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Figura %1 salvata nel modello %2.</translation>
     </message>
     <message>
         <source>Could not save the figure in any model.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile salvare la figura in un modello.</translation>
     </message>
 </context>
 <context>
     <name>PlottingPage</name>
     <message>
         <source>Auto Scale</source>
-        <translation type="unfinished"></translation>
+        <translation>Scala automatica</translation>
     </message>
     <message>
         <source>Auto scale the plot to fit in view when variable is plotted.</source>
-        <translation type="unfinished"></translation>
+        <translation>Scala automaticamente il grafico per adattarlo alla vista quando viene tracciata una variabile.</translation>
     </message>
     <message>
         <source>Prefix Units</source>
-        <translation type="unfinished"></translation>
+        <translation>Prefissi delle unità</translation>
     </message>
     <message>
         <source>Automatically pick the right prefix for units.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sceglie automaticamente il prefisso corretto per le unità.</translation>
     </message>
     <message>
         <source>Default Plotting View Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Modalità di visualizzazione predefinita dei grafici</translation>
     </message>
     <message>
         <source>Tabbed View</source>
@@ -6651,20 +6786,21 @@ Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMS
     </message>
     <message>
         <source>Curve styles are used for new curves. Use plot setup window to update the existing curves.</source>
-        <translation type="unfinished"></translation>
+        <translation>Gli stili delle curve vengono usati per le nuove curve. Usare la finestra di impostazione del grafico per aggiornare le curve esistenti.</translation>
     </message>
     <message>
         <source>Variable Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtro delle variabili</translation>
     </message>
     <message>
         <source>Adds a delay, specified as Filter Interval, in filtering the variables.
 Set the value to 0 if you don&apos;t want any delay.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiunge un ritardo, specificato come intervallo del filtro, nel filtraggio delle variabili.
+Impostare il valore a 0 per non avere alcun ritardo.</translation>
     </message>
     <message>
         <source>Filter Interval:</source>
-        <translation type="unfinished"></translation>
+        <translation>Intervallo del filtro:</translation>
     </message>
     <message>
         <source> seconds</source>
@@ -6672,57 +6808,57 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     </message>
     <message>
         <source>Font Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Dimensione carattere</translation>
     </message>
     <message>
         <source>Title:</source>
-        <translation type="unfinished"></translation>
+        <translation>Titolo:</translation>
     </message>
     <message>
         <source>Vertical Axis Title:</source>
-        <translation type="unfinished"></translation>
+        <translation>Titolo dell&apos;asse verticale:</translation>
     </message>
     <message>
         <source>Vertical Axis Numbers:</source>
-        <translation type="unfinished"></translation>
+        <translation>Numeri dell&apos;asse verticale:</translation>
     </message>
     <message>
         <source>Horizontal Axis Title:</source>
-        <translation type="unfinished"></translation>
+        <translation>Titolo dell&apos;asse orizzontale:</translation>
     </message>
     <message>
         <source>Horizontal Axis Numbers:</source>
-        <translation type="unfinished"></translation>
+        <translation>Numeri dell&apos;asse orizzontale:</translation>
     </message>
     <message>
         <source>Footer:</source>
-        <translation type="unfinished"></translation>
+        <translation>Piè di pagina:</translation>
     </message>
     <message>
         <source>Legend:</source>
-        <translation type="unfinished"></translation>
+        <translation>Legenda:</translation>
     </message>
     <message>
         <source>Font sizes are used for new plot windows. Use plot setup window to update the existing plots.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le dimensioni dei caratteri vengono usate per le nuove finestre dei grafici. Usare la finestra di impostazione del grafico per aggiornare i grafici esistenti.</translation>
     </message>
 </context>
 <context>
     <name>PopupRedirect</name>
     <message>
         <source>Sign-in was cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;accesso è stato annullato.</translation>
     </message>
     <message>
         <source>No authorization code was returned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non è stato restituito alcun codice di autorizzazione.</translation>
     </message>
 </context>
 <context>
     <name>ProcessListModel</name>
     <message>
         <source>Process ID</source>
-        <translation type="unfinished"></translation>
+        <translation>ID processo</translation>
     </message>
     <message>
         <source>Name</source>
@@ -6733,30 +6869,30 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <name>ProxyCredentialsDialog</name>
     <message>
         <source>Proxy Authentication</source>
-        <translation type="unfinished"></translation>
+        <translation>Autenticazione proxy</translation>
     </message>
     <message>
         <source>Save Credentials</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva credenziali</translation>
     </message>
     <message>
         <source>The proxy %1 requires a username and password.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il proxy %1 richiede nome utente e password.</translation>
     </message>
     <message>
         <source>Username:</source>
-        <translation type="unfinished"></translation>
+        <translation>Nome utente:</translation>
     </message>
     <message>
         <source>Password:</source>
-        <translation type="unfinished"></translation>
+        <translation>Password:</translation>
     </message>
 </context>
 <context>
     <name>QDetachableProcess</name>
     <message>
         <source>Process exited with code %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Processo terminato con codice %1</translation>
     </message>
 </context>
 <context>
@@ -6767,263 +6903,265 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     </message>
     <message>
         <source>FMU Kind</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipo di FMU</translation>
     </message>
     <message>
         <source>FMI Version</source>
-        <translation type="unfinished"></translation>
+        <translation>Versione FMI</translation>
     </message>
     <message>
         <source>Causality</source>
-        <translation type="unfinished"></translation>
+        <translation>Causalità</translation>
     </message>
     <message>
         <source>Error parsing XML.</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore durante l&apos;analisi dell&apos;XML.</translation>
     </message>
     <message>
         <source>Only Model-Exchange FMUs are supported right now.</source>
-        <translation type="unfinished"></translation>
+        <translation>Al momento sono supportate solo le FMU Model Exchange.</translation>
     </message>
     <message>
         <source>Could not create the DLL loading mechanism(C-API test).</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile creare il meccanismo di caricamento delle DLL (test C-API).</translation>
     </message>
     <message>
         <source>fmi1_import_get_state_value_references returned failure code %1</source>
-        <translation type="unfinished"></translation>
+        <translation>fmi1_import_get_state_value_references ha restituito il codice di errore %1</translation>
     </message>
     <message>
         <source>fmi1_import_instantiate_model failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>fmi1_import_instantiate_model non riuscito.</translation>
     </message>
     <message>
         <source>fmi2_import_instantiate_model failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>fmi2_import_instantiate_model non riuscito.</translation>
     </message>
     <message>
         <source>This file extension is not supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Questa estensione di file non è supportata.</translation>
     </message>
     <message>
         <source>Could not find the visual XML file %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile trovare il file XML visuale %1.</translation>
     </message>
     <message>
         <source>Could not open the visual XML file %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aprire il file XML visuale %1.</translation>
     </message>
     <message>
         <source>The type of %1 is not supported right in the visxml file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il tipo di %1 nel file visxml non è supportato.</translation>
     </message>
     <message>
         <source>Could not find the file %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile trovare il file %1.</translation>
     </message>
     <message>
         <source>Something went wrong in OMVisualBase::setFmuVarRefInVisObjects:
 %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Si è verificato un problema in OMVisualBase::setFmuVarRefInVisObjects:
+%1.</translation>
     </message>
     <message>
         <source>Error in OMVisualBase::updateVisObjects at time point %1
 %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore in OMVisualBase::updateVisObjects all&apos;istante %1
+%2.</translation>
     </message>
     <message>
         <source>There is nothing left to visualize. Initialize the model first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non resta nulla da visualizzare. Inizializzare prima il modello.</translation>
     </message>
     <message>
         <source>Cannot load visualization attributes for time point &lt; 0.0.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile caricare gli attributi di visualizzazione per istanti &lt; 0.0.</translation>
     </message>
     <message>
         <source>Could not find CSV file %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile trovare il file CSV %1.</translation>
     </message>
     <message>
         <source>Could not read CSV file %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile leggere il file CSV %1.</translation>
     </message>
     <message>
         <source>Did not get variable from result file. Variable name is %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile leggere la variabile %1 dal file dei risultati.</translation>
     </message>
     <message>
         <source>Unknown FMU version.</source>
-        <translation type="unfinished"></translation>
+        <translation>Versione FMU sconosciuta.</translation>
     </message>
     <message>
         <source>Could not find MAT file %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile trovare il file MAT %1.</translation>
     </message>
     <message>
         <source>Chinese</source>
-        <translation type="unfinished">Cinese</translation>
+        <translation>Cinese</translation>
     </message>
     <message>
         <source>English</source>
-        <translation type="unfinished">Inglese</translation>
+        <translation>Inglese</translation>
     </message>
     <message>
         <source>French</source>
-        <translation type="unfinished">Francese</translation>
+        <translation>Francese</translation>
     </message>
     <message>
         <source>German</source>
-        <translation type="unfinished">Tedesco</translation>
+        <translation>Tedesco</translation>
     </message>
     <message>
         <source>Italian</source>
-        <translation type="unfinished">Italiano</translation>
+        <translation>Italiano</translation>
     </message>
     <message>
         <source>Japanese</source>
-        <translation type="unfinished">Giapponese</translation>
+        <translation>Giapponese</translation>
     </message>
     <message>
         <source>Romanian</source>
-        <translation type="unfinished">Rumeno</translation>
+        <translation>Rumeno</translation>
     </message>
     <message>
         <source>Russian</source>
-        <translation type="unfinished">Russo</translation>
+        <translation>Russo</translation>
     </message>
     <message>
         <source>Spanish</source>
-        <translation type="unfinished">Spagnolo</translation>
+        <translation>Spagnolo</translation>
     </message>
     <message>
         <source>Swedish</source>
-        <translation type="unfinished">Svedese</translation>
+        <translation>Svedese</translation>
     </message>
     <message>
         <source>Downloading…</source>
-        <translation type="unfinished"></translation>
+        <translation>Download in corso…</translation>
     </message>
     <message>
         <source>Parsing…</source>
-        <translation type="unfinished"></translation>
+        <translation>Analisi in corso…</translation>
     </message>
     <message>
         <source>Instantiating…</source>
-        <translation type="unfinished"></translation>
+        <translation>Istanziazione in corso…</translation>
     </message>
     <message>
         <source>Compiling model…</source>
-        <translation type="unfinished"></translation>
+        <translation>Compilazione del modello in corso…</translation>
     </message>
     <message>
         <source>Simulating…</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulazione in corso…</translation>
     </message>
 </context>
 <context>
     <name>Quick3DViewerWidget</name>
     <message>
         <source>Change Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Cambia colore</translation>
     </message>
     <message>
         <source>Change Transparency</source>
-        <translation type="unfinished"></translation>
+        <translation>Cambia trasparenza</translation>
     </message>
     <message>
         <source>Transparency [%]:</source>
-        <translation type="unfinished"></translation>
+        <translation>Trasparenza [%]:</translation>
     </message>
     <message>
         <source>Make Invisible</source>
-        <translation type="unfinished"></translation>
+        <translation>Rendi invisibile</translation>
     </message>
     <message>
         <source>Change Specularity</source>
-        <translation type="unfinished"></translation>
+        <translation>Cambia specularità</translation>
     </message>
     <message>
         <source>Specularity [%]:</source>
-        <translation type="unfinished"></translation>
+        <translation>Specularità [%]:</translation>
     </message>
     <message>
         <source>Reset Visual Properties</source>
-        <translation type="unfinished"></translation>
+        <translation>Ripristina proprietà visive</translation>
     </message>
 </context>
 <context>
     <name>QuickInsertWidget</name>
     <message>
         <source>Search models...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cerca modelli...</translation>
     </message>
 </context>
 <context>
     <name>ReloadAsModelicaInfoBar</name>
     <message>
         <source>Once they have all been fixed, you can save and reload it in Modelica mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Dopo averli corretti tutti, è possibile salvare e ricaricare in modalità Modelica</translation>
     </message>
     <message>
         <source>The Modelica package %1 is open in text mode because of syntax errors in the code. %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il pacchetto Modelica %1 è aperto in modalità testo a causa di errori di sintassi nel codice. %2.</translation>
     </message>
     <message>
         <source>This Modelica file is open in text mode because of syntax errors in the code. %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Questo file Modelica è aperto in modalità testo a causa di errori di sintassi nel codice. %1.</translation>
     </message>
     <message>
         <source>Save &amp;&amp; Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva &amp;&amp; ricarica</translation>
     </message>
 </context>
 <context>
     <name>RenameClassDialog</name>
     <message>
         <source>New Name:</source>
-        <translation>Nuovo Nome:</translation>
+        <translation>Nuovo nome:</translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation>&amp;Cancella</translation>
+        <translation>&amp;Annulla</translation>
     </message>
 </context>
 <context>
     <name>ReplaceSubModelDialog</name>
     <message>
         <source>dryRun = true will not replace the subModel, you can see the list of warnings and dryRun = false will replace the SubModel</source>
-        <translation type="unfinished"></translation>
+        <translation>dryRun = true non sostituisce il sottomodello ma mostra l&apos;elenco degli avvertimenti; dryRun = false sostituisce il sottomodello</translation>
     </message>
     <message>
         <source>ReplaceSubModel</source>
-        <translation type="unfinished"></translation>
+        <translation>ReplaceSubModel</translation>
     </message>
     <message>
         <source>Unable to find the SubModel file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile trovare il file del sottomodello.</translation>
     </message>
     <message>
         <source>Failed to replace submodel. %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile sostituire il sottomodello. %1</translation>
     </message>
     <message>
         <source>The submodel was not replaced (dryRun = true). The following changes were detected in the replacing submodel. See the Messages Browser for details.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il sottomodello non è stato sostituito (dryRun = true). Nel sottomodello sostitutivo sono state rilevate le seguenti modifiche. Consultare la finestra Messaggi per i dettagli.</translation>
     </message>
     <message>
         <source>The submodel was replaced (dryRun =false). The following changes were detected and applied. See the Messages Browser for details.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il sottomodello è stato sostituito (dryRun = false). Sono state rilevate e applicate le seguenti modifiche. Consultare la finestra Messaggi per i dettagli.</translation>
     </message>
     <message>
         <source>Warning</source>
-        <translation type="unfinished">Avvertimento</translation>
+        <translation>Avvertimento</translation>
     </message>
 </context>
 <context>
     <name>RevertCommitsDialog</name>
     <message>
         <source>Revert Commit</source>
-        <translation type="unfinished"></translation>
+        <translation>Revert del commit</translation>
     </message>
     <message>
         <source>Working Directory:</source>
@@ -7031,19 +7169,19 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     </message>
     <message>
         <source>Browse Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Sfoglia directory</translation>
     </message>
     <message>
         <source>Commit:</source>
-        <translation type="unfinished"></translation>
+        <translation>Commit:</translation>
     </message>
     <message>
         <source>Browse Commit</source>
-        <translation type="unfinished"></translation>
+        <translation>Sfoglia commit</translation>
     </message>
     <message>
         <source>Revert</source>
-        <translation type="unfinished"></translation>
+        <translation>Esegui revert</translation>
     </message>
 </context>
 <context>
@@ -7061,11 +7199,11 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <name>SaveChangesDialog</name>
     <message>
         <source>Save Changes</source>
-        <translation>Salva i cambiamenti</translation>
+        <translation>Salva le modifiche</translation>
     </message>
     <message>
         <source>Save changes to the following items?</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvare le modifiche ai seguenti elementi?</translation>
     </message>
     <message>
         <source>Yes</source>
@@ -7080,92 +7218,92 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <name>SaveTotalFileDialog</name>
     <message>
         <source>Obfuscate output</source>
-        <translation type="unfinished"></translation>
+        <translation>Offusca l&apos;output</translation>
     </message>
     <message>
         <source>Strip annotations</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi le annotazioni</translation>
     </message>
     <message>
         <source>Strip comments</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi i commenti</translation>
     </message>
     <message>
         <source>Use simplified heuristic</source>
-        <translation type="unfinished"></translation>
+        <translation>Usa euristica semplificata</translation>
     </message>
     <message>
         <source>Use a simplified identifier-based heuristic that results in larger models but can succeed when the normal method fails.</source>
-        <translation type="unfinished"></translation>
+        <translation>Usa un&apos;euristica semplificata basata sugli identificatori, che produce modelli più grandi ma può riuscire quando il metodo normale fallisce.</translation>
     </message>
     <message>
         <source>%1 - Save %2 %3 as Total File</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Salva %2 %3 come file completo</translation>
     </message>
 </context>
 <context>
     <name>SearchResultWidget</name>
     <message>
         <source>Searching &lt;b&gt;%1&lt;/b&gt; of &lt;b&gt;%2&lt;/b&gt; files. Please wait for a while.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ricerca in &lt;b&gt;%1&lt;/b&gt; di &lt;b&gt;%2&lt;/b&gt; file. Attendere.</translation>
     </message>
     <message>
         <source>Searched &lt;b&gt;%1&lt;/b&gt; of &lt;b&gt;%2&lt;/b&gt; files. Search Cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Cercato in &lt;b&gt;%1&lt;/b&gt; di &lt;b&gt;%2&lt;/b&gt; file. Ricerca annullata.</translation>
     </message>
     <message>
         <source>Searched &lt;b&gt;%1&lt;/b&gt; of &lt;b&gt;%2&lt;/b&gt; files. Search Completed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Cercato in &lt;b&gt;%1&lt;/b&gt; di &lt;b&gt;%2&lt;/b&gt; file. Ricerca completata.</translation>
     </message>
     <message>
         <source>&lt;b&gt;%1&lt;/b&gt; FOUND</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; TROVATI</translation>
     </message>
 </context>
 <context>
     <name>SearchWidget</name>
     <message>
         <source>Scope:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ambito:</translation>
     </message>
     <message>
         <source>Search for:</source>
-        <translation type="unfinished"></translation>
+        <translation>Cerca:</translation>
     </message>
     <message>
         <source>File Pattern:</source>
-        <translation type="unfinished"></translation>
+        <translation>Modello di file:</translation>
     </message>
     <message>
         <source>Clear All</source>
-        <translation type="unfinished"></translation>
+        <translation>Cancella tutto</translation>
     </message>
     <message>
         <source>clears all the result</source>
-        <translation type="unfinished"></translation>
+        <translation>Cancella tutti i risultati</translation>
     </message>
     <message>
         <source>History:</source>
-        <translation type="unfinished"></translation>
+        <translation>Cronologia:</translation>
     </message>
     <message>
         <source>Project</source>
-        <translation type="unfinished"></translation>
+        <translation>Progetto</translation>
     </message>
 </context>
 <context>
     <name>SensitivityOptimizationPage</name>
     <message>
         <source>Sensitivity Optimization relies on the OMSens Python package. Follow the installation instructions on the &lt;a href=&quot;https://github.com/OpenModelica/OMSens&quot;&gt;OMSens GitHub page&lt;/a&gt;.&lt;br /&gt;&lt;br /&gt;Set the OMSens backend to the directory where the OMSens Python package is installed.&lt;br /&gt;Specify the Python executable you want to use for running OMSens scripts.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;ottimizzazione della sensibilità si basa sul pacchetto Python OMSens. Seguire le istruzioni di installazione nella &lt;a href=&quot;https://github.com/OpenModelica/OMSens&quot;&gt;pagina GitHub di OMSens&lt;/a&gt;.&lt;br /&gt;&lt;br /&gt;Impostare il backend di OMSens sulla directory in cui è installato il pacchetto Python OMSens.&lt;br /&gt;Specificare l&apos;eseguibile Python da usare per eseguire gli script OMSens.</translation>
     </message>
     <message>
         <source>OMSens Backend Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>Percorso del backend di OMSens:</translation>
     </message>
     <message>
         <source>Python:</source>
-        <translation type="unfinished"></translation>
+        <translation>Python:</translation>
     </message>
 </context>
 <context>
@@ -7176,7 +7314,7 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     </message>
     <message>
         <source>Edits the transition</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica la transizione</translation>
     </message>
 </context>
 <context>
@@ -7187,7 +7325,7 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     </message>
     <message>
         <source>Border Style</source>
-        <translation>Stile Bordo</translation>
+        <translation>Stile bordo</translation>
     </message>
     <message>
         <source>Angle</source>
@@ -7195,7 +7333,7 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     </message>
     <message>
         <source>Closure:</source>
-        <translation type="unfinished"></translation>
+        <translation>Chiusura:</translation>
     </message>
     <message>
         <source>Text</source>
@@ -7203,7 +7341,7 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     </message>
     <message>
         <source>Font &amp;&amp; Text Style</source>
-        <translation>Font &amp;&amp; Stile testo</translation>
+        <translation>Carattere &amp;&amp; stile testo</translation>
     </message>
     <message>
         <source>Style:</source>
@@ -7215,7 +7353,7 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     </message>
     <message>
         <source>Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Colore</translation>
     </message>
     <message>
         <source>Arrow Style</source>
@@ -7235,19 +7373,19 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     </message>
     <message>
         <source>Move point up</source>
-        <translation type="unfinished"></translation>
+        <translation>Sposta il punto in su</translation>
     </message>
     <message>
         <source>Move point down</source>
-        <translation type="unfinished"></translation>
+        <translation>Sposta il punto in giù</translation>
     </message>
     <message>
         <source>Add new point</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi un nuovo punto</translation>
     </message>
     <message>
         <source>Remove point</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi il punto</translation>
     </message>
 </context>
 <context>
@@ -7266,7 +7404,7 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     </message>
     <message>
         <source>Integration help</source>
-        <translation type="unfinished"></translation>
+        <translation>Guida all&apos;integrazione</translation>
     </message>
     <message>
         <source>Tolerance:</source>
@@ -7274,55 +7412,55 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     </message>
     <message>
         <source>Jacobian:</source>
-        <translation type="unfinished"></translation>
+        <translation>Jacobiano:</translation>
     </message>
     <message>
         <source>Root Finding</source>
-        <translation type="unfinished"></translation>
+        <translation>Ricerca degli zeri</translation>
     </message>
     <message>
         <source>Restart After Event</source>
-        <translation type="unfinished"></translation>
+        <translation>Riavvio dopo un evento</translation>
     </message>
     <message>
         <source>Initial Step Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Passo iniziale:</translation>
     </message>
     <message>
         <source>Maximum Step Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Passo massimo:</translation>
     </message>
     <message>
         <source>Maximum Integration Order:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ordine massimo d&apos;integrazione:</translation>
     </message>
     <message>
         <source>Number of Processors:</source>
-        <translation type="unfinished"></translation>
+        <translation>Numero di processori:</translation>
     </message>
     <message>
         <source>Build Only</source>
-        <translation type="unfinished"></translation>
+        <translation>Solo compilazione</translation>
     </message>
     <message>
         <source>Number of Intervals:</source>
-        <translation>Numero di Intervalli:</translation>
+        <translation>Numero di intervalli:</translation>
     </message>
     <message>
         <source>Interval:</source>
-        <translation type="unfinished"></translation>
+        <translation>Intervallo:</translation>
     </message>
     <message>
         <source>C/C++ Compiler Flags (Optional):</source>
-        <translation type="unfinished"></translation>
+        <translation>Flag del compilatore C/C++ (opzionale):</translation>
     </message>
     <message>
         <source>Space separated list of C/C++ compiler flags</source>
-        <translation type="unfinished"></translation>
+        <translation>Elenco di flag del compilatore C/C++ separati da spazi</translation>
     </message>
     <message>
         <source>Launch Animation</source>
-        <translation type="unfinished"></translation>
+        <translation>Avvia animazione</translation>
     </message>
     <message>
         <source>Output Format:</source>
@@ -7331,31 +7469,32 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <message>
         <source>The name is used as a prefix for the output files. This is just a name not the path.
 If you want to change the output path then update the working directory in Options/Preferences.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il nome viene usato come prefisso per i file di output. È solo un nome, non il percorso.
+Per cambiare il percorso di output, aggiornare la directory di lavoro in Opzioni/Preferenze.</translation>
     </message>
     <message>
         <source>Variable Filter (Optional):</source>
-        <translation>Filtro della variabile (Opzionale):</translation>
+        <translation>Filtro delle variabili (opzionale):</translation>
     </message>
     <message>
         <source>Variable Filter help</source>
-        <translation type="unfinished"></translation>
+        <translation>Guida al filtro delle variabili</translation>
     </message>
     <message>
         <source>Ignore HideResult</source>
-        <translation type="unfinished"></translation>
+        <translation>Ignora HideResult</translation>
     </message>
     <message>
         <source>Equidistant Time Grid</source>
-        <translation type="unfinished"></translation>
+        <translation>Griglia temporale equidistante</translation>
     </message>
     <message>
         <source>Store Variables at Events</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva le variabili agli eventi</translation>
     </message>
     <message>
         <source>Model Setup File (Optional):</source>
-        <translation>File di Setup del Modello (Opzionale):</translation>
+        <translation>File di setup del modello (opzionale):</translation>
     </message>
     <message>
         <source>Interactive Simulation</source>
@@ -7363,44 +7502,45 @@ If you want to change the output path then update the working directory in Optio
     </message>
     <message>
         <source>Simulate with steps</source>
-        <translation type="unfinished"></translation>
+        <translation>Simula a passi</translation>
     </message>
     <message>
         <source>Activates communication with the simulation remote every time step.
 Can cause high overhead but values will not be missed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Attiva la comunicazione con la simulazione remota a ogni passo temporale.
+Può causare un elevato overhead, ma nessun valore viene perso.</translation>
     </message>
     <message>
         <source>Simulation server port: </source>
-        <translation type="unfinished"></translation>
+        <translation>Porta del server di simulazione: </translation>
     </message>
     <message>
         <source>Specifies the embedded server port.</source>
-        <translation type="unfinished"></translation>
+        <translation>Specifica la porta del server integrato.</translation>
     </message>
     <message>
         <source>Activates the internal root finding procedure of methods: dassl and ida.</source>
-        <translation type="unfinished"></translation>
+        <translation>Attiva la procedura interna di ricerca degli zeri dei metodi: dassl e ida.</translation>
     </message>
     <message>
         <source>Activates the restart of the integration method after an event is performed, used by the methods: dassl, ida</source>
-        <translation type="unfinished"></translation>
+        <translation>Attiva il riavvio del metodo di integrazione dopo un evento, usato dai metodi: dassl, ida</translation>
     </message>
     <message>
         <source>Specifies a new setup XML file to the generated simulation code.</source>
-        <translation>Specifica un nuovo XML file di setup.</translation>
+        <translation>Specifica un nuovo file XML di setup per il codice di simulazione generato.</translation>
     </message>
     <message>
         <source>Initialization Method (Optional):</source>
-        <translation>Metodo di inizializzazione (Opzionale):</translation>
+        <translation>Metodo di inizializzazione (opzionale):</translation>
     </message>
     <message>
         <source>Specifies the initialization method.</source>
-        <translation>Specifica il Metodo di inizializzazione.</translation>
+        <translation>Specifica il metodo di inizializzazione.</translation>
     </message>
     <message>
         <source>Equation System Initialization File (Optional):</source>
-        <translation>File di inizializzazione del sistema di Equazioni (Opzionale):</translation>
+        <translation>File di inizializzazione del sistema di equazioni (opzionale):</translation>
     </message>
     <message>
         <source>Specifies an external file for the initialization of the model.</source>
@@ -7408,31 +7548,31 @@ Can cause high overhead but values will not be missed.</source>
     </message>
     <message>
         <source>Equation System Initialization Time (Optional):</source>
-        <translation>Istante di inizializzazione del sistema di equazioni (Opzionale):</translation>
+        <translation>Istante di inizializzazione del sistema di equazioni (opzionale):</translation>
     </message>
     <message>
         <source>Specifies a time for the initialization of the model.</source>
-        <translation>Specifica l&apos;Istante di inizializzazione del sistema di equazioni.</translation>
+        <translation>Specifica un istante per l&apos;inizializzazione del modello.</translation>
     </message>
     <message>
         <source>Clock (Optional):</source>
-        <translation>Clock (Opzionale):</translation>
+        <translation>Clock (opzionale):</translation>
     </message>
     <message>
         <source>Linear Solver (Optional):</source>
-        <translation>Solutore lineare (Opzionale):</translation>
+        <translation>Solutore lineare (opzionale):</translation>
     </message>
     <message>
         <source>Non Linear Solver (Optional):</source>
-        <translation>Solutore non lineare (Opzionale):</translation>
+        <translation>Solutore non lineare (opzionale):</translation>
     </message>
     <message>
         <source>Output Variables (Optional):</source>
-        <translation>Variabili di Uscita (Opzionale):</translation>
+        <translation>Variabili di output (opzionale):</translation>
     </message>
     <message>
         <source>Comma separated list of variables. Output the variables at the end of the simulation to the standard output.</source>
-        <translation>Lista di variabili separate da virgola. Scrive le variabili alla fine della simulazione sull&apos;output standard.</translation>
+        <translation>Elenco di variabili separate da virgola. Scrive le variabili sull&apos;output standard alla fine della simulazione.</translation>
     </message>
     <message>
         <source>Enable All Warnings</source>
@@ -7440,75 +7580,75 @@ Can cause high overhead but values will not be missed.</source>
     </message>
     <message>
         <source>Single Precision</source>
-        <translation type="unfinished"></translation>
+        <translation>Precisione singola</translation>
     </message>
     <message>
         <source>Protected Variables if not encrypted</source>
-        <translation type="unfinished"></translation>
+        <translation>Variabili protette se non cifrate</translation>
     </message>
     <message>
         <source>Simulation of model &lt;b&gt;%1&lt;/b&gt; is already running. Please wait for it to finish or cancel it before running another simulation of the same model.</source>
-        <translation type="unfinished"></translation>
+        <translation>La simulazione del modello &lt;b&gt;%1&lt;/b&gt; è già in corso. Attendere che termini o annullarla prima di avviare un&apos;altra simulazione dello stesso modello.</translation>
     </message>
     <message>
         <source>Ignoring unknown simulation flag: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Flag di simulazione sconosciuto ignorato: %1</translation>
     </message>
     <message>
         <source>Port &lt;b&gt;%1&lt;/b&gt; is already in use for interactive simulation of &lt;b&gt;%2&lt;/b&gt;. Cannot run the interactive simulation.</source>
-        <translation type="unfinished"></translation>
+        <translation>La porta &lt;b&gt;%1&lt;/b&gt; è già in uso per la simulazione interattiva di &lt;b&gt;%2&lt;/b&gt;. Impossibile eseguire la simulazione interattiva.</translation>
     </message>
     <message>
         <source>Generated code for the target build &lt;b&gt;%1&lt;/b&gt; at %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Codice generato per la build di destinazione &lt;b&gt;%1&lt;/b&gt; in %2.</translation>
     </message>
     <message>
         <source>Translation of &lt;b&gt;%1&lt;/b&gt; failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>La traduzione di &lt;b&gt;%1&lt;/b&gt; non è riuscita.</translation>
     </message>
     <message>
         <source>Animation is only supported with mat result files.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;animazione è supportata solo con file di risultati mat.</translation>
     </message>
     <message>
         <source>Logging (Optional)</source>
-        <translation>Registrazione (Opzionale)</translation>
+        <translation>Registrazione (opzionale)</translation>
     </message>
     <message>
         <source>Space separated list of simulation flags e.g., -abortSlowSimulation -alarm=0</source>
-        <translation type="unfinished"></translation>
+        <translation>Elenco di flag di simulazione separati da spazi, ad es. -abortSlowSimulation -alarm=0</translation>
     </message>
     <message>
         <source>Simulation flags help</source>
-        <translation type="unfinished"></translation>
+        <translation>Guida ai flag di simulazione</translation>
     </message>
     <message>
         <source>Translating %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Traduzione di %1.</translation>
     </message>
     <message>
         <source>Generated code for the target language &lt;b&gt;%1&lt;/b&gt; at %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Codice generato per il linguaggio di destinazione &lt;b&gt;%1&lt;/b&gt; in %2.</translation>
     </message>
     <message>
         <source>Use 1 processor if you encounter problems during compilation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Usare 1 processore in caso di problemi durante la compilazione.</translation>
     </message>
     <message>
         <source>Launch Transformational Debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Avvia il debugger trasformazionale</translation>
     </message>
     <message>
         <source>Launch Algorithmic Debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Avvia il debugger algoritmico</translation>
     </message>
     <message>
         <source>File Name Prefix (Optional):</source>
-        <translation type="unfinished"></translation>
+        <translation>Prefisso del nome file (opzionale):</translation>
     </message>
     <message>
         <source>Result File (Optional):</source>
-        <translation type="unfinished"></translation>
+        <translation>File dei risultati (opzionale):</translation>
     </message>
     <message>
         <source>Show Generated Files</source>
@@ -7516,35 +7656,35 @@ Can cause high overhead but values will not be missed.</source>
     </message>
     <message>
         <source>CPU Time</source>
-        <translation></translation>
+        <translation>Tempo CPU</translation>
     </message>
     <message>
         <source>Additional Simulation Flags (Optional):</source>
-        <translation>Flag di simulazione aggiuntivi (Opzionale):</translation>
+        <translation>Flag di simulazione aggiuntivi (opzionale):</translation>
     </message>
     <message>
         <source>Simulation Flags</source>
-        <translation>Flag della Simulazione</translation>
+        <translation>Flag di simulazione</translation>
     </message>
     <message>
         <source>Linearize model at time = StopTime</source>
-        <translation type="unfinished"></translation>
+        <translation>Linearizza il modello all&apos;istante = StopTime</translation>
     </message>
     <message>
         <source>Target language for linearized model:</source>
-        <translation type="unfinished"></translation>
+        <translation>Linguaggio di destinazione per il modello linearizzato:</translation>
     </message>
     <message>
         <source>Linearize</source>
-        <translation type="unfinished"></translation>
+        <translation>Linearizza</translation>
     </message>
     <message>
         <source>Cannot plot annotated curve because result variable %1 was not found.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile tracciare la curva annotata perché la variabile di risultato %1 non è stata trovata.</translation>
     </message>
     <message>
         <source>Cannot plot annotated curve because x-axis result variable %1 was not found.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile tracciare la curva annotata perché la variabile di risultato %1 dell&apos;asse x non è stata trovata.</translation>
     </message>
 </context>
 <context>
@@ -7555,287 +7695,289 @@ Can cause high overhead but values will not be missed.</source>
     </message>
     <message>
         <source>Selects all the Messages</source>
-        <translation>Selezione tutti i Messaggi</translation>
+        <translation>Seleziona tutti i messaggi</translation>
     </message>
     <message>
         <source>Copy the Message</source>
-        <translation>Copia il Messaggio</translation>
+        <translation>Copia il messaggio</translation>
     </message>
 </context>
 <context>
     <name>SimulationOutputWidget</name>
     <message>
         <source>Cancel Compilation</source>
-        <translation type="unfinished"></translation>
+        <translation>Annulla compilazione</translation>
     </message>
     <message>
         <source>Open Transformational Debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri il debugger trasformazionale</translation>
     </message>
     <message>
         <source>Open Output File</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri il file di output</translation>
     </message>
     <message>
         <source>Compilation</source>
-        <translation type="unfinished"></translation>
+        <translation>Compilazione</translation>
     </message>
     <message>
         <source>Post compiling %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Post-compilazione di %1.</translation>
     </message>
     <message>
         <source>Post compilation process failed. Exited with code %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il processo di post-compilazione non è riuscito. Terminato con codice %1.</translation>
     </message>
     <message>
         <source>Post compilation process finished successfully.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Processo di post-compilazione completato correttamente.
+</translation>
     </message>
     <message>
         <source>Post compilation of %1 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>Post-compilazione di %1 completata.</translation>
     </message>
     <message>
         <source>Post compilation of %1 failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>La post-compilazione di %1 non è riuscita.</translation>
     </message>
     <message>
         <source>Compilation of %1 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>Compilazione di %1 completata.</translation>
     </message>
     <message>
         <source>Compilation of %1 failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>La compilazione di %1 non è riuscita.</translation>
     </message>
     <message>
         <source>Simulation process failed. Exited with code %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il processo di simulazione non è riuscito. Terminato con codice %1.</translation>
     </message>
     <message>
         <source>Simulation of %1 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulazione di %1 completata.</translation>
     </message>
     <message>
         <source>Simulation of %1 failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>La simulazione di %1 non è riuscita.</translation>
     </message>
     <message>
         <source>Post compilation of %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>La post-compilazione di %1 è stata annullata.</translation>
     </message>
     <message>
         <source>Compiling %1. Please wait for a while.</source>
-        <translation type="unfinished"></translation>
+        <translation>Compilazione di %1 in corso. Attendere.</translation>
     </message>
     <message>
         <source>Running interactive simulation of %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulazione interattiva di %1 in corso.</translation>
     </message>
     <message>
         <source>Running simulation of %1. Please wait for a while.</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulazione di %1 in corso. Attendere.</translation>
     </message>
     <message>
         <source>Compilation of %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>La compilazione di %1 è stata annullata.</translation>
     </message>
     <message>
         <source>Simulation of %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>La simulazione di %1 è stata annullata.</translation>
     </message>
     <message>
         <source>Compilation process failed. Exited with code %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il processo di compilazione non è riuscito. Terminato con codice %1.</translation>
     </message>
     <message>
         <source>Compilation process finished successfully.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Processo di compilazione completato correttamente.
+</translation>
     </message>
     <message>
         <source>Url is &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>URL: &lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Running simulation of %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulazione di %1 in corso.</translation>
     </message>
     <message>
         <source>Model translated to the wasm-jit target; running in-process (no external compilation).</source>
-        <translation type="unfinished"></translation>
+        <translation>Modello tradotto per la destinazione wasm-jit; esecuzione nello stesso processo (nessuna compilazione esterna).</translation>
     </message>
     <message>
         <source>Simulation flags: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Flag di simulazione: %1</translation>
     </message>
     <message>
         <source>(none)</source>
-        <translation type="unfinished"></translation>
+        <translation>(nessuno)</translation>
     </message>
     <message>
         <source>Cancel Simulation</source>
-        <translation type="unfinished">Annulla la Simulazione</translation>
+        <translation>Annulla la simulazione</translation>
     </message>
     <message>
         <source>Simulation of %1 cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulazione di %1 annullata.</translation>
     </message>
     <message>
         <source>Cancelling simulation of %1…</source>
-        <translation type="unfinished"></translation>
+        <translation>Annullamento della simulazione di %1…</translation>
     </message>
 </context>
 <context>
     <name>SimulationPage</name>
     <message>
         <source>Target Language:</source>
-        <translation type="unfinished"></translation>
+        <translation>Linguaggio di destinazione:</translation>
     </message>
     <message>
         <source>Target Build:</source>
-        <translation type="unfinished"></translation>
+        <translation>Build di destinazione:</translation>
     </message>
     <message>
         <source>C Compiler:</source>
-        <translation type="unfinished"></translation>
+        <translation>Compilatore C:</translation>
     </message>
     <message>
         <source>CXX Compiler:</source>
-        <translation type="unfinished"></translation>
+        <translation>Compilatore CXX:</translation>
     </message>
     <message>
         <source>Use static Linking</source>
-        <translation type="unfinished"></translation>
+        <translation>Usa il collegamento statico</translation>
     </message>
     <message>
         <source>Enables static linking for the simulation executable. Default is dynamic linking.</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita il collegamento statico per l&apos;eseguibile di simulazione. L&apos;impostazione predefinita è il collegamento dinamico.</translation>
     </message>
     <message>
         <source>Post compilation command:</source>
-        <translation type="unfinished"></translation>
+        <translation>Comando di post-compilazione:</translation>
     </message>
     <message>
         <source>Ignore __OpenModelica_commandLineOptions annotation</source>
-        <translation type="unfinished"></translation>
+        <translation>Ignora l&apos;annotazione __OpenModelica_commandLineOptions</translation>
     </message>
     <message>
         <source>Ignore __OpenModelica_simulationFlags annotation</source>
-        <translation type="unfinished"></translation>
+        <translation>Ignora l&apos;annotazione __OpenModelica_simulationFlags</translation>
     </message>
     <message>
         <source>Save class before simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva la classe prima della simulazione</translation>
     </message>
     <message>
         <source>Disabling this will effect the debugger functionality.</source>
-        <translation type="unfinished"></translation>
+        <translation>Disattivando questa opzione si influisce sul funzionamento del debugger.</translation>
     </message>
     <message>
         <source>Switch to plotting perspective after simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Passa alla prospettiva Grafici dopo la simulazione</translation>
     </message>
     <message>
         <source>Close completed simulation output windows before simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Chiudi le finestre di output delle simulazioni completate prima della simulazione</translation>
     </message>
     <message>
         <source>Delete intermediate compilation files</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina i file intermedi di compilazione</translation>
     </message>
     <message>
         <source>Delete entire simulation directory of the model when OMEdit is closed</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina l&apos;intera directory di simulazione del modello alla chiusura di OMEdit</translation>
     </message>
     <message>
         <source>Structured</source>
-        <translation type="unfinished"></translation>
+        <translation>Strutturato</translation>
     </message>
     <message>
         <source>Shows the simulation output in the form of tree structure.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra l&apos;output della simulazione come struttura ad albero.</translation>
     </message>
     <message>
         <source>Formatted Text</source>
-        <translation type="unfinished"></translation>
+        <translation>Testo formattato</translation>
     </message>
     <message>
         <source>Shows the simulation output in the form of formatted text.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra l&apos;output della simulazione come testo formattato.</translation>
     </message>
     <message>
         <source>Display Limit:</source>
-        <translation type="unfinished"></translation>
+        <translation>Limite di visualizzazione:</translation>
     </message>
 </context>
 <context>
     <name>SolverSettingsDialog</name>
     <message>
         <source>SolverSettings - %1 (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>Impostazioni del solutore - %1 (%2)</translation>
     </message>
     <message>
         <source>Fixed Step Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Passo fisso:</translation>
     </message>
     <message>
         <source>Initial Step Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Passo iniziale:</translation>
     </message>
     <message>
         <source>Minimum Step Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Passo minimo:</translation>
     </message>
     <message>
         <source>Maximum Step Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Passo massimo:</translation>
     </message>
 </context>
 <context>
     <name>StackFramesTreeWidget</name>
     <message>
         <source>Function</source>
-        <translation type="unfinished"></translation>
+        <translation>Funzione</translation>
     </message>
     <message>
         <source>Create Full Backtrace</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea backtrace completo</translation>
     </message>
     <message>
         <source>Creates a full backtrace of the program</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea un backtrace completo del programma</translation>
     </message>
 </context>
 <context>
     <name>StackFramesWidget</name>
     <message>
         <source>Threads:</source>
-        <translation type="unfinished"></translation>
+        <translation>Thread:</translation>
     </message>
     <message>
         <source>Not yet supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non ancora supportato.</translation>
     </message>
 </context>
 <context>
     <name>StringHandler</name>
     <message>
         <source>Syntax</source>
-        <translation type="unfinished"></translation>
+        <translation>Sintassi</translation>
     </message>
     <message>
         <source>Grammar</source>
-        <translation type="unfinished"></translation>
+        <translation>Grammatica</translation>
     </message>
     <message>
         <source>Translation</source>
-        <translation type="unfinished"></translation>
+        <translation>Traduzione</translation>
     </message>
     <message>
         <source>Symbolic</source>
-        <translation type="unfinished"></translation>
+        <translation>Simbolico</translation>
     </message>
     <message>
         <source>Simulation</source>
@@ -7843,15 +7985,15 @@ Can cause high overhead but values will not be missed.</source>
     </message>
     <message>
         <source>Scripting</source>
-        <translation type="unfinished"></translation>
+        <translation>Script</translation>
     </message>
     <message>
         <source>Internal Error</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore interno</translation>
     </message>
     <message>
         <source>Notification</source>
-        <translation type="unfinished"></translation>
+        <translation>Notifica</translation>
     </message>
     <message>
         <source>Warning</source>
@@ -7863,276 +8005,276 @@ Can cause high overhead but values will not be missed.</source>
     </message>
     <message>
         <source>Unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>Sconosciuto</translation>
     </message>
 </context>
 <context>
     <name>SystemSimulationInformationWidget</name>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Nome</translation>
+        <translation>Nome</translation>
     </message>
     <message>
         <source>Method</source>
-        <translation type="unfinished"></translation>
+        <translation>Metodo</translation>
     </message>
     <message>
         <source>Solver Configurations</source>
-        <translation type="unfinished"></translation>
+        <translation>Configurazioni dei solutori</translation>
     </message>
     <message>
         <source>Component</source>
-        <translation type="unfinished">Componente</translation>
+        <translation>Componente</translation>
     </message>
     <message>
         <source>Solver</source>
-        <translation type="unfinished"></translation>
+        <translation>Solutore</translation>
     </message>
     <message>
         <source>Component Assignments</source>
-        <translation type="unfinished"></translation>
+        <translation>Assegnazioni dei componenti</translation>
     </message>
     <message>
         <source>(none)</source>
-        <translation type="unfinished"></translation>
+        <translation>(nessuno)</translation>
     </message>
     <message>
         <source>Not available for co-simulation FMUs</source>
-        <translation type="unfinished"></translation>
+        <translation>Non disponibile per le FMU Co-Simulation</translation>
     </message>
     <message>
         <source>Not available for model-exchange FMUs</source>
-        <translation type="unfinished"></translation>
+        <translation>Non disponibile per le FMU Model Exchange</translation>
     </message>
     <message>
         <source>Solver name in row %1 is empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il nome del solutore nella riga %1 è vuoto.</translation>
     </message>
 </context>
 <context>
     <name>TVariablesTreeModel</name>
     <message>
         <source>Comment</source>
-        <translation type="unfinished"></translation>
+        <translation>Commento</translation>
     </message>
     <message>
         <source>Line</source>
-        <translation>Linea</translation>
+        <translation>Riga</translation>
     </message>
     <message>
         <source>Alias</source>
-        <translation type="unfinished"></translation>
+        <translation>Alias</translation>
     </message>
 </context>
 <context>
     <name>TextEditorPage</name>
     <message>
         <source>Format</source>
-        <translation type="unfinished"></translation>
+        <translation>Formato</translation>
     </message>
     <message>
         <source>Line Ending:</source>
-        <translation type="unfinished"></translation>
+        <translation>Fine riga:</translation>
     </message>
     <message>
         <source>Windows (CRLF)</source>
-        <translation type="unfinished"></translation>
+        <translation>Windows (CRLF)</translation>
     </message>
     <message>
         <source>Unix (LF)</source>
-        <translation type="unfinished"></translation>
+        <translation>Unix (LF)</translation>
     </message>
     <message>
         <source>Byte Order Mark (BOM):</source>
-        <translation type="unfinished"></translation>
+        <translation>Byte Order Mark (BOM):</translation>
     </message>
     <message>
         <source>Always add a BOM when saving a file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi sempre un BOM quando si salva un file.</translation>
     </message>
     <message>
         <source>Save the file with a BOM if it already had one when it was loaded.</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva il file con un BOM se ne aveva già uno quando è stato caricato.</translation>
     </message>
     <message>
         <source>Never write a BOM, possibly deleting a pre-existing one.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non scrivere mai un BOM, eliminando eventualmente quello esistente.</translation>
     </message>
     <message>
         <source>Always Add</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi sempre</translation>
     </message>
     <message>
         <source>Keep If Already Present</source>
-        <translation type="unfinished"></translation>
+        <translation>Mantieni se presente</translation>
     </message>
     <message>
         <source>Always Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina sempre</translation>
     </message>
     <message>
         <source>Note that BOMs are uncommon and treated incorrectly by some editors, so it usually makes little sense to add any</source>
-        <translation type="unfinished"></translation>
+        <translation>Nota: i BOM sono poco comuni e alcuni editor li gestiscono in modo errato, quindi in genere non ha senso aggiungerli</translation>
     </message>
     <message>
         <source>Tabs and Indentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Tabulazioni e rientri</translation>
     </message>
     <message>
         <source>Tab Policy:</source>
-        <translation type="unfinished"></translation>
+        <translation>Rientro con:</translation>
     </message>
     <message>
         <source>Spaces Only</source>
-        <translation type="unfinished"></translation>
+        <translation>Solo spazi</translation>
     </message>
     <message>
         <source>Tabs Only</source>
-        <translation type="unfinished"></translation>
+        <translation>Solo tabulazioni</translation>
     </message>
     <message>
         <source>Tab Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Dimensione tabulazione:</translation>
     </message>
     <message>
         <source>Indent Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Dimensione rientro:</translation>
     </message>
     <message>
         <source>Syntax Highlight and Text Wrapping</source>
-        <translation type="unfinished"></translation>
+        <translation>Evidenziazione della sintassi e a capo automatico</translation>
     </message>
     <message>
         <source>Enable Syntax Highlighting</source>
-        <translation>Attiva evidenziazione della sintassi</translation>
+        <translation>Abilita evidenziazione della sintassi</translation>
     </message>
     <message>
         <source>Enable Code Folding</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita la compressione del codice</translation>
     </message>
     <message>
         <source>Match Parentheses within Comments and Quotes</source>
-        <translation type="unfinished"></translation>
+        <translation>Evidenzia le parentesi corrispondenti in commenti e virgolette</translation>
     </message>
     <message>
         <source>Enable Line Wrapping</source>
-        <translation>Attiva testo a capo</translation>
+        <translation>Abilita a capo automatico</translation>
     </message>
     <message>
         <source>Autocomplete</source>
-        <translation type="unfinished"></translation>
+        <translation>Completamento automatico</translation>
     </message>
     <message>
         <source>Enable Autocomplete</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita il completamento automatico</translation>
     </message>
     <message>
         <source>Font</source>
-        <translation type="unfinished"></translation>
+        <translation>Carattere</translation>
     </message>
 </context>
 <context>
     <name>TraceabilityGraphViewWidget</name>
     <message>
         <source>Traceability Graph View</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafo di tracciabilità</translation>
     </message>
 </context>
 <context>
     <name>TraceabilityPage</name>
     <message>
         <source>Traceability</source>
-        <translation type="unfinished"></translation>
+        <translation>Tracciabilità</translation>
     </message>
     <message>
         <source>User Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Nome utente:</translation>
     </message>
     <message>
         <source>Email:</source>
-        <translation type="unfinished"></translation>
+        <translation>Email:</translation>
     </message>
     <message>
         <source>Git Repository:</source>
-        <translation type="unfinished"></translation>
+        <translation>Repository Git:</translation>
     </message>
     <message>
         <source>Traceability Daemon IP Adress:</source>
-        <translation type="unfinished"></translation>
+        <translation>Indirizzo IP del demone di tracciabilità:</translation>
     </message>
     <message>
         <source>Traceability Daemon Port:</source>
-        <translation type="unfinished"></translation>
+        <translation>Porta del demone di tracciabilità:</translation>
     </message>
 </context>
 <context>
     <name>TransformationsWidget</name>
     <message>
         <source>Defined In Equations</source>
-        <translation type="unfinished"></translation>
+        <translation>Definita nelle equazioni</translation>
     </message>
     <message>
         <source>Used In Equations</source>
-        <translation type="unfinished"></translation>
+        <translation>Usata nelle equazioni</translation>
     </message>
     <message>
         <source>Variable Operations</source>
-        <translation type="unfinished"></translation>
+        <translation>Operazioni sulle variabili</translation>
     </message>
     <message>
         <source>Operations</source>
-        <translation type="unfinished"></translation>
+        <translation>Operazioni</translation>
     </message>
     <message>
         <source>Defines</source>
-        <translation type="unfinished"></translation>
+        <translation>Definizioni</translation>
     </message>
     <message>
         <source>Variable</source>
-        <translation type="unfinished"></translation>
+        <translation>Variabile</translation>
     </message>
     <message>
         <source>Depends</source>
-        <translation type="unfinished"></translation>
+        <translation>Dipendenze</translation>
     </message>
     <message>
         <source>Equation Operations</source>
-        <translation type="unfinished"></translation>
+        <translation>Operazioni sulle equazioni</translation>
     </message>
     <message>
         <source>Diff</source>
-        <translation type="unfinished"></translation>
+        <translation>Diff</translation>
     </message>
     <message>
         <source>After</source>
-        <translation type="unfinished"></translation>
+        <translation>Dopo</translation>
     </message>
     <message>
         <source>Before</source>
-        <translation type="unfinished"></translation>
+        <translation>Prima</translation>
     </message>
     <message>
         <source>Transformation:</source>
-        <translation type="unfinished"></translation>
+        <translation>Trasformazione:</translation>
     </message>
     <message>
         <source>Source Browser</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizzatore del sorgente</translation>
     </message>
     <message>
         <source>Equations</source>
-        <translation type="unfinished"></translation>
+        <translation>Equazioni</translation>
     </message>
     <message>
         <source>Filter Equations</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtra equazioni</translation>
     </message>
 </context>
 <context>
     <name>TranslationFlagsWidget</name>
     <message>
         <source>Matching Algorithm:</source>
-        <translation>Algoritmo:</translation>
+        <translation>Algoritmo di matching:</translation>
     </message>
     <message>
         <source>Index Reduction Method:</source>
@@ -8140,109 +8282,109 @@ Can cause high overhead but values will not be missed.</source>
     </message>
     <message>
         <source>Show additional information from the initialization process</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra informazioni aggiuntive dal processo di inizializzazione</translation>
     </message>
     <message>
         <source>Enable old frontend for code generation (deprecated)</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita il vecchio frontend per la generazione del codice (deprecato)</translation>
     </message>
     <message>
         <source>The old frontend is deprecated and will be removed after OpenModelica 1.28.0 is released.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il vecchio frontend è deprecato e verrà rimosso dopo il rilascio di OpenModelica 1.28.0.</translation>
     </message>
     <message>
         <source>Enable FMU Import</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita l&apos;importazione FMU</translation>
     </message>
     <message>
         <source>Enable analytical jacobian for non-linear strong components</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita lo jacobiano analitico per le componenti fortemente connesse non lineari</translation>
     </message>
     <message>
         <source>Enable parallelization of independent systems of equations (Experimental)</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita la parallelizzazione dei sistemi di equazioni indipendenti (sperimentale)</translation>
     </message>
     <message>
         <source>Additional Translation Flags:</source>
-        <translation type="unfinished"></translation>
+        <translation>Flag di traduzione aggiuntivi:</translation>
     </message>
     <message>
         <source>Translation flags help</source>
-        <translation type="unfinished"></translation>
+        <translation>Guida ai flag di traduzione</translation>
     </message>
     <message>
         <source>Evaluate all parameters (faster simulation, cannot change them at runtime)</source>
-        <translation type="unfinished"></translation>
+        <translation>Valuta tutti i parametri (simulazione più veloce, non possono essere modificati durante l&apos;esecuzione)</translation>
     </message>
     <message>
         <source>Profiling (enable performance measurements)</source>
-        <translation type="unfinished"></translation>
+        <translation>Profilazione (abilita le misure delle prestazioni)</translation>
     </message>
 </context>
 <context>
     <name>TreeSearchFilters</name>
     <message>
         <source>Case Sensitive</source>
-        <translation>maiuscolo/minuscolo</translation>
+        <translation>Maiuscole/minuscole</translation>
     </message>
     <message>
         <source>Regular Expression</source>
-        <translation type="unfinished"></translation>
+        <translation>Espressione regolare</translation>
     </message>
     <message>
         <source>A rich Perl-like pattern matching syntax.</source>
-        <translation type="unfinished"></translation>
+        <translation>Una sintassi di pattern matching ricca, simile a quella di Perl.</translation>
     </message>
     <message>
         <source>Scroll to Active</source>
-        <translation type="unfinished"></translation>
+        <translation>Scorri all&apos;elemento attivo</translation>
     </message>
     <message>
         <source>Wildcard</source>
-        <translation type="unfinished"></translation>
+        <translation>Caratteri jolly</translation>
     </message>
     <message>
         <source>A simple pattern matching syntax similar to that used by shells (command interpreters) for &quot;file globbing&quot;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Una semplice sintassi di pattern matching simile a quella usata dalle shell (interpreti dei comandi) per il &quot;file globbing&quot;.</translation>
     </message>
     <message>
         <source>Fixed String</source>
-        <translation type="unfinished"></translation>
+        <translation>Stringa fissa</translation>
     </message>
     <message>
         <source>Fixed string matching.</source>
-        <translation type="unfinished"></translation>
+        <translation>Corrispondenza di una stringa fissa.</translation>
     </message>
     <message>
         <source>Filters help</source>
-        <translation type="unfinished"></translation>
+        <translation>Guida ai filtri</translation>
     </message>
     <message>
         <source>Filter Setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Impostazione dei filtri</translation>
     </message>
 </context>
 <context>
     <name>UpgradeInstalledLibrariesDialog</name>
     <message>
         <source>Upgrade the installed libraries that have been registered by the package manager.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiorna le librerie installate che sono state registrate dal gestore di pacchetti.</translation>
     </message>
     <message>
         <source>Install Newest Versions (may install the latest non-compatible versions)</source>
-        <translation type="unfinished"></translation>
+        <translation>Installa le versioni più recenti (può installare le versioni più recenti non compatibili)</translation>
     </message>
     <message>
         <source>&lt;b&gt;Upgrading installed libraries. Please wait.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Aggiornamento delle librerie installate in corso. Attendere.&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Upgrade</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiorna</translation>
     </message>
     <message>
         <source>Failed to upgrade libraries. See message browser for any possible messages.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aggiornare le librerie. Consultare la finestra Messaggi per eventuali messaggi.</translation>
     </message>
 </context>
 <context>
@@ -8253,169 +8395,174 @@ Can cause high overhead but values will not be missed.</source>
     </message>
     <message>
         <source>Unit</source>
-        <translation type="unfinished"></translation>
+        <translation>Unità</translation>
     </message>
     <message>
         <source>Display Unit</source>
-        <translation type="unfinished"></translation>
+        <translation>Unità di visualizzazione</translation>
     </message>
     <message>
         <source>Interactive Simulation
 Port: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulazione interattiva
+Porta: %1</translation>
     </message>
     <message>
         <source>Simulation Result File: %1
 %2: %3/%4</source>
-        <translation type="unfinished"></translation>
+        <translation>File dei risultati della simulazione: %1
+%2: %3/%4</translation>
     </message>
     <message>
         <source>Variable: %1
 Variability: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Variabile: %1
+Variabilità: %2</translation>
     </message>
     <message>
         <source>File: %1/%2
 Variable: %3
 Variability: %4</source>
-        <translation type="unfinished"></translation>
+        <translation>File: %1/%2
+Variabile: %3
+Variabilità: %4</translation>
     </message>
     <message>
         <source>Failed to parse %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile analizzare %1: %2</translation>
     </message>
     <message>
         <source>The initialization file %1 was not found; the Variable Browser may be incomplete.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il file di inizializzazione %1 non è stato trovato; la finestra Variabili potrebbe essere incompleta.</translation>
     </message>
 </context>
 <context>
     <name>VariablesWidget</name>
     <message>
         <source>Delete Result</source>
-        <translation>Cancella il Risultato</translation>
+        <translation>Elimina il risultato</translation>
     </message>
     <message>
         <source>Delete the result</source>
-        <translation>Cancella il Risultato</translation>
+        <translation>Elimina il risultato</translation>
     </message>
     <message>
         <source>You must select a class to re-simulate.</source>
-        <translation type="unfinished"></translation>
+        <translation>Selezionare una classe da simulare di nuovo.</translation>
     </message>
     <message>
         <source>Simulation Time Unit</source>
-        <translation type="unfinished"></translation>
+        <translation>Unità di tempo della simulazione</translation>
     </message>
     <message>
         <source>Rewind</source>
-        <translation type="unfinished"></translation>
+        <translation>Riavvolgi</translation>
     </message>
     <message>
         <source>Rewind the visualization to the start</source>
-        <translation type="unfinished"></translation>
+        <translation>Riavvolge la visualizzazione all&apos;inizio</translation>
     </message>
     <message>
         <source>Play the visualization</source>
-        <translation type="unfinished"></translation>
+        <translation>Riproduce la visualizzazione</translation>
     </message>
     <message>
         <source>Pause the visualization</source>
-        <translation type="unfinished"></translation>
+        <translation>Mette in pausa la visualizzazione</translation>
     </message>
     <message>
         <source>Time:</source>
-        <translation type="unfinished"></translation>
+        <translation>Tempo:</translation>
     </message>
     <message>
         <source>Loading simulation result variables</source>
-        <translation type="unfinished"></translation>
+        <translation>Caricamento delle variabili del risultato della simulazione</translation>
     </message>
     <message>
         <source>You cannot re-simulate this class.&lt;br /&gt;This is just a result file loaded via menu &lt;b&gt;File-&gt;Open Result File(s)&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non è possibile simulare di nuovo questa classe.&lt;br /&gt;È solo un file di risultati caricato tramite il menu &lt;b&gt;File-&gt;Apri file di risultati&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Unable to set the content of QDomDocument from file %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile impostare il contenuto di QDomDocument dal file %1</translation>
     </message>
     <message>
         <source>Enabled for %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilitato per %1</translation>
     </message>
     <message>
         <source>Cannot be attached to a plot window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non può essere associato a una finestra del grafico.</translation>
     </message>
     <message>
         <source>Cannot be attached to a parametric plot window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non può essere associato a una finestra del grafico parametrico.</translation>
     </message>
     <message>
         <source>Cannot select two consecutive x-axis variables. &lt;b&gt;%1&lt;/b&gt; is already selected as x-axis variable.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile selezionare due variabili consecutive per l&apos;asse x. &lt;b&gt;%1&lt;/b&gt; è già selezionata come variabile dell&apos;asse x.</translation>
     </message>
     <message>
         <source>Select the x-axis variable first. Press and hold the shift key and then check the variable.</source>
-        <translation type="unfinished"></translation>
+        <translation>Selezionare prima la variabile dell&apos;asse x. Tenere premuto il tasto Maiusc e poi selezionare la variabile.</translation>
     </message>
     <message>
         <source>Cannot be attached to an interactive plot window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non può essere associato a una finestra del grafico interattivo.</translation>
     </message>
     <message>
         <source>Enable Time Controls</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita i controlli temporali</translation>
     </message>
     <message>
         <source>Enables the time controls</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita i controlli temporali</translation>
     </message>
     <message>
         <source>Show only direct dependencies</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra solo le dipendenze dirette</translation>
     </message>
     <message>
         <source>Show only variables that depend on this variable</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra solo le variabili che dipendono da questa variabile</translation>
     </message>
     <message>
         <source>Show only direct dependencies (initial)</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra solo le dipendenze dirette (inizializzazione)</translation>
     </message>
     <message>
         <source>Show only variables that depend on this variable in the initial system of equations</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra solo le variabili che dipendono da questa variabile nel sistema di equazioni di inizializzazione</translation>
     </message>
     <message>
         <source>Open debugger (equation %1 - %2)</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri il debugger (equazione %1 - %2)</translation>
     </message>
     <message>
         <source>Open debugger for the equation</source>
-        <translation type="unfinished"></translation>
+        <translation>Apre il debugger per l&apos;equazione</translation>
     </message>
     <message>
         <source>No plot window is active for plotting. Please select a plot window or open a new one.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessuna finestra del grafico attiva. Selezionare una finestra del grafico o aprirne una nuova.</translation>
     </message>
     <message>
         <source>%1 not found in result file. Protected variables are only stored with &lt;b&gt;Simulation Setup-&gt;Output-&gt;Protected Variables if not encrypted&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 non trovata nel file dei risultati. Le variabili protette vengono salvate solo con &lt;b&gt;Impostazioni di simulazione-&gt;Output-&gt;Variabili protette se non cifrate&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
     <name>WasmLocalFiles</name>
     <message>
         <source>File name (downloaded once saved):</source>
-        <translation type="unfinished"></translation>
+        <translation>Nome del file (scaricato dopo il salvataggio):</translation>
     </message>
 </context>
 <context>
     <name>WelcomePageWidget</name>
     <message>
         <source>Recent Files</source>
-        <translation>File Recenti</translation>
+        <translation>File recenti</translation>
     </message>
     <message>
         <source>No recent files found.</source>
@@ -8423,11 +8570,11 @@ Variability: %4</source>
     </message>
     <message>
         <source>Clear Recent Files</source>
-        <translation>Cancella files recenti</translation>
+        <translation>Cancella i file recenti</translation>
     </message>
     <message>
         <source>Latest News &amp; Events</source>
-        <translation type="unfinished"></translation>
+        <translation>Ultime notizie ed eventi</translation>
     </message>
     <message>
         <source>For more details visit our website &lt;u&gt;&lt;a href=&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;</source>
@@ -8435,23 +8582,23 @@ Variability: %4</source>
     </message>
     <message>
         <source>System Libraries</source>
-        <translation type="unfinished"></translation>
+        <translation>Librerie di sistema</translation>
     </message>
     <message>
         <source>Sorry, no internet no news items.</source>
-        <translation>Spiacente non vi sono news.</translation>
+        <translation>Nessuna connessione a Internet, quindi non è possibile mostrare notizie.</translation>
     </message>
     <message>
         <source>Recent Models</source>
-        <translation type="unfinished"></translation>
+        <translation>Modelli recenti</translation>
     </message>
     <message>
         <source>No recent models found.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessun modello recente trovato.</translation>
     </message>
     <message>
         <source>Latest news is unavailable in the web version.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le ultime notizie non sono disponibili nella versione web.</translation>
     </message>
 </context>
 </TS>

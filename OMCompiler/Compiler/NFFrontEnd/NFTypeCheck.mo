@@ -1515,11 +1515,17 @@ algorithm
     case Type.INTEGER() then valid;
     case Type.REAL()
       algorithm
-        // Print a warning for == or <> with Real operands in a model.
+        // == or <> is not allowed for Real operands outside of functions.
         o := operator.op;
-        if not InstContext.inFunction(context) and (o == Op.EQUAL or o == Op.NEQUAL) then
-          Error.addStrictMessage(Error.WARNING_RELATION_ON_REAL,
+        if not InstContext.inFunction(context) and (o == Op.EQUAL or o == Op.NEQUAL) and
+           not InstContext.inScripting(context) and
+           not Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "realEquality") then
+          Error.addSourceMessage(Error.REAL_EQUALITY_RELATION_ERROR,
             {Expression.toString(outExp), Operator.symbol(operator, "")}, info);
+
+          if not InstContext.inInstanceAPI(context) then
+            fail();
+          end if;
         end if;
       then
         valid;

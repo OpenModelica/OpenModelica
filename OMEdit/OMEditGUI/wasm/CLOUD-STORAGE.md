@@ -119,12 +119,13 @@ into `cloud_config.json`.
   `cloud_config.json` for the *Web application* registration as-is.
   `.CI/common.groovy`'s `withOmeditCloudConfig` binds it around the
   `buildRustWebQt` configure/build/install and passes `-DOMEDIT_CLOUD_CONFIG`.
-  Master only: the registration names playground.openmodelica.org, and a PR
-  build has no business spending its quota. Other branches build without it and
-  report cloud storage as not set up. The desktop registration would be a
-  separate `OMEDIT_CLOUD_API_KEYS_DESKTOP`; nothing consumes it yet, since the
-  desktop build reads the file from the user's config directory at runtime and
-  no packaging step puts one there.
+  Only for master, the maintenance branches and the release tags: the
+  registration names playground.openmodelica.org, where these builds are
+  published, and a PR build has no business spending its quota. Other builds go
+  without it and report cloud storage as not set up. The desktop
+  registration would be a separate `OMEDIT_CLOUD_API_KEYS_DESKTOP`; nothing
+  consumes it yet, since the desktop build reads the file from the user's config
+  directory at runtime and no packaging step puts one there.
 
 The callback page's channel name (`omedit-oauth`) and its `{code, state, error}`
 payload are a contract with every still-deployed version, since they all share

@@ -155,6 +155,9 @@ pub(crate) const HANDWRITTEN_TOP_PACKAGES: &[&str] = &[
     // `external "C"` wrappers over `runtime/SemanticVersion_omc.c`; hand-written
     // over `openmodelica_version` in `openmodelica_util/src/SemanticVersion.rs`.
     "SemanticVersion",
+    // `external "C"` wrappers over `runtime/ModelicaDiff_omc.c`; hand-written
+    // over `openmodelica_modelica_diff` in `openmodelica_util/src/ModelicaDiff.rs`.
+    "ModelicaDiff",
     // `external "C"` wrapper over `runtime/PackageManagerExt_omc.c`; hand-written
     // over `openmodelica_package_manager` in `openmodelica_script_util/src/PackageManagerExt.rs`.
     "PackageManagerExt",
@@ -2976,7 +2979,17 @@ fn emit_node<'a>(
             } else {
                 format!("{}.{}", ctx.top_name, ctx.current_path.join("."))
             };
+            let window = typedexp::CommentWindow::open();
+            if node.override_default_exp.is_none()
+                && let Some(m) = &m.modification
+                && let Absyn::EqMod::EQMOD { exp: raw, .. } = m.eqMod.as_ref()
+            {
+                typedexp::note_exp_comments(raw);
+            }
             let typed = typedexp::infer_exp(exp, &HashMap::new(), top_level, &pkg_prefix, &[]);
+            for text in window.take() {
+                emit_lexer_comment(out, indent, &text);
+            }
             let ename = escape_ident(name);
             // Visibility keyword for this constant: full `pub` only when the
             // visibility analysis found it referenced from another crate
@@ -3286,6 +3299,11 @@ fn emit_node<'a>(
 /// verbatim so the reader still sees the original wording.
 fn emit_lexer_comment(out: &mut String, indent: &str, text: &str) {
     let normalised = neutralise_doc_comment(text);
+    // Modelica block comments do not nest, Rust ones do.
+    let normalised = match normalised.strip_prefix("/*") {
+        Some(rest) => format!("/*{}", rest.replace("/*", "/ *")),
+        None => normalised,
+    };
     for line in normalised.lines() {
         writeln!(out, "{indent}{line}").unwrap();
     }
@@ -3312,6 +3330,38 @@ fn neutralise_doc_comment(text: &str) -> String {
         return format!("/* !{rest}");
     }
     text.to_owned()
+}
+
+/// The `//` and `/* */` comments before each member of `c`, by member name,
+/// and the comments after the last member.
+fn member_comments(c: &MM::Class) -> (HashMap<&str, Vec<&str>>, Vec<&str>) {
+    let members: &[MM::ClassMember] = match &c.body {
+        MM::ClassDef::Parts { members, .. } | MM::ClassDef::ClassExtends { members, .. } => members,
+        _ => &[],
+    };
+    let mut before: HashMap<&str, Vec<&str>> = HashMap::new();
+    let mut pending = Vec::new();
+    for m in members {
+        let name = match m {
+            MM::ClassMember::LexerComment(text) => {
+                pending.push(text.as_str());
+                continue;
+            }
+            MM::ClassMember::Component(cm) => cm.name.as_str(),
+            MM::ClassMember::ClassDef(cdm) => cdm.class_def.name.as_str(),
+            MM::ClassMember::Extends(_) | MM::ClassMember::Import(_) => continue,
+        };
+        if !pending.is_empty() {
+            before.entry(name).or_default().append(&mut pending);
+        }
+    }
+    (before, pending)
+}
+
+fn emit_lexer_comments(out: &mut String, indent: &str, comments: Option<Vec<&str>>) {
+    for text in comments.unwrap_or_default() {
+        emit_lexer_comment(out, indent, text);
+    }
 }
 
 /// Return the MetaModelica "string comment" attached to a class, if any.
@@ -3726,6 +3776,7 @@ fn emit_uniontype<'a>(
     // members to access via `TypeName::member`. The mod is only needed when non-record
     // children (functions, nested packages, …) must be reachable as `TypeName::fn_name`.
     let wrap_in_mod = name != ctx.top_name && uniontype_needs_mod(node);
+    let (mut ut_comments, ut_trailing) = member_comments(c);
     let inner;
     let ename = escape_ident(name);
     if wrap_in_mod {
@@ -3764,8 +3815,11 @@ fn emit_uniontype<'a>(
                     continue;
                 };
                 let NodeKind::Class(rc) = &rec_node.kind else { continue };
+                emit_lexer_comments(out, &variant_indent, ut_comments.remove(rec_name.as_str()));
+                let (mut field_comments, field_trailing) = member_comments(rc);
                 match &rec_node.ty {
                     Ty::RustUnitVariant => {
+                        emit_lexer_comments(out, &variant_indent, Some(field_trailing));
                         emit_doc_comment(out, &variant_indent, class_doc(rc));
                         writeln!(out, "{inner}    {rec_name},").unwrap();
                         emitted_variants.push(rec_name.clone());
@@ -3780,6 +3834,7 @@ fn emit_uniontype<'a>(
                             fields.iter().map(|(fname, _, _)| escape_ident(fname)).collect(),
                         ));
                         if fields.is_empty() {
+                            emit_lexer_comments(out, &variant_indent, Some(field_trailing));
                             writeln!(out, "{inner}    {rec_name},").unwrap();
                             fieldless_variants.push(rec_name.clone());
                         } else {
@@ -3796,14 +3851,17 @@ fn emit_uniontype<'a>(
                                 let ty_str = scope
                                     .and_then(|sc| field_type_alias_name(fspec, sc))
                                     .unwrap_or_else(|| fmt_ty(fty, &mut *ctx));
+                                emit_lexer_comments(out, &field_indent, field_comments.remove(&**fname));
                                 emit_doc_comment(out, &field_indent, component_field_doc(rc, fname));
                                 writeln!(out, "{inner}        {}: {},", escape_ident(fname), ty_str).unwrap();
                             }
+                            emit_lexer_comments(out, &field_indent, Some(field_trailing));
                             writeln!(out, "{inner}    }},").unwrap();
                         }
                         emitted_variants.push(rec_name.clone());
                     }
                     _ => {
+                        emit_lexer_comments(out, &variant_indent, Some(field_trailing));
                         writeln!(out, "{inner}    {rec_name}, // unresolved").unwrap();
                         emitted_variants.push(rec_name.clone());
                         mm_variants.push((rec_name.clone(), Vec::new()));
@@ -3996,6 +4054,7 @@ fn emit_uniontype<'a>(
             let recs = records_in_order(c);
             let rec_name = recs.into_iter().next().unwrap_or_default();
             emit_doc_comment(out, &inner, class_doc(c));
+            emit_lexer_comments(out, &inner, ut_comments.remove(rec_name.as_str()));
             if let Some(rec_node) = node.children.get(&rec_name)
                 && let NodeKind::Class(rc) = &rec_node.kind
             {
@@ -4076,6 +4135,12 @@ fn emit_uniontype<'a>(
                 if let Some(child_node) = node.children.get(&cdm.class_def.name)
                     && let NodeKind::Class(child_class) = &child_node.kind
                 {
+                    if !matches!(
+                        cdm.class_def.restriction,
+                        Absyn::Restriction::R_RECORD | Absyn::Restriction::R_METARECORD { .. }
+                    ) {
+                        emit_lexer_comments(out, &inner, ut_comments.remove(cdm.class_def.name.as_str()));
+                    }
                     match &cdm.class_def.restriction {
                         Absyn::Restriction::R_FUNCTION { .. } => {
                             emit_function(
@@ -4114,12 +4179,23 @@ fn emit_uniontype<'a>(
             // silently dropped and every use site failed with E0425.
             MM::ClassMember::Component(comp) => {
                 if let Some(child_node) = node.children.get(&comp.name) {
+                    emit_lexer_comments(out, &inner, ut_comments.remove(comp.name.as_str()));
                     emit_node(out, &comp.name, child_node, &inner, &mut *ctx, top_level);
                 }
             }
             MM::ClassMember::Extends(_) | MM::ClassMember::Import(_) | MM::ClassMember::LexerComment(_) => {}
         }
     }
+    // The comments of members that are not generated, and after the last one.
+    for member in members {
+        let name = match member {
+            MM::ClassMember::ClassDef(cdm) => cdm.class_def.name.as_str(),
+            MM::ClassMember::Component(comp) => comp.name.as_str(),
+            _ => continue,
+        };
+        emit_lexer_comments(out, &inner, ut_comments.remove(name));
+    }
+    emit_lexer_comments(out, &inner, Some(ut_trailing));
 
     if wrap_in_mod {
         ctx.current_path.pop();
@@ -4178,14 +4254,17 @@ fn emit_struct<'a>(
         writeln!(out, "{indent}{vis}struct {ename}{type_params};").unwrap();
     } else {
         let scope = current_scope_children(ctx, top_level);
+        let (mut field_comments, field_trailing) = member_comments(c);
         writeln!(out, "{indent}{vis}struct {ename}{type_params} {{").unwrap();
         for (fname, fty, fspec) in &fields {
             let ty_str = scope
                 .and_then(|sc| field_type_alias_name(fspec, sc))
                 .unwrap_or_else(|| fmt_ty(fty, &mut *ctx));
+            emit_lexer_comments(out, &format!("{indent}    "), field_comments.remove(&**fname));
             emit_doc_comment(out, &format!("{indent}    "), component_field_doc(c, fname));
             writeln!(out, "{indent}    pub {}: {},", escape_ident(fname), ty_str).unwrap();
         }
+        emit_lexer_comments(out, &format!("{indent}    "), Some(field_trailing));
         writeln!(out, "{indent}}}").unwrap();
     }
     writeln!(out).unwrap();
@@ -5682,7 +5761,7 @@ fn stmt_has_nonexhaustive_match(stmt: &typedexp::TypedStmt, top_level: &BTreeMap
                 || else_body.iter().any(|s| stmt_has_nonexhaustive_match(s, top_level))
         }
         S::Failure { body } => body.iter().any(|s| stmt_has_nonexhaustive_match(s, top_level)),
-        S::Return | S::Break | S::Continue | S::Todo(_) => false,
+        S::Return | S::Break | S::Continue | S::Todo(_) | S::Comment(_) => false,
     }
 }
 
@@ -5858,7 +5937,7 @@ fn stmt_reads_name(stmt: &typedexp::TypedStmt, name: &str) -> bool {
         S::While { cond, body } => exp_reads_name(cond, name) || stmts_read_name(body, name),
         S::Try { body, else_body, .. } => stmts_read_name(body, name) || stmts_read_name(else_body, name),
         S::Failure { body } => stmts_read_name(body, name),
-        S::Return | S::Break | S::Continue | S::Todo(_) => false,
+        S::Return | S::Break | S::Continue | S::Todo(_) | S::Comment(_) => false,
     }
 }
 
@@ -5902,7 +5981,7 @@ fn stmts_break_under_try(stmts: &[typedexp::TypedStmt], in_try: bool) -> bool {
         // expressions are still in the current loop's scope.
         S::For { range, .. } => exp_break_under_try(range, in_try),
         S::While { cond, .. } => exp_break_under_try(cond, in_try),
-        S::Return | S::Todo(_) => false,
+        S::Return | S::Todo(_) | S::Comment(_) => false,
     })
 }
 
@@ -6151,7 +6230,7 @@ fn hoist_scan_stmt(stmt: &typedexp::TypedStmt, name: &str, scan: &mut HoistScan)
             hoist_scan_stmts(else_body, name, scan);
         }
         S::Failure { body } => hoist_scan_stmts(body, name, scan),
-        S::Return | S::Break | S::Continue | S::Todo(_) => {}
+        S::Return | S::Break | S::Continue | S::Todo(_) | S::Comment(_) => {}
     }
 }
 
@@ -6598,7 +6677,7 @@ fn body_has_return(stmts: &[typedexp::TypedStmt]) -> bool {
         S::While { cond, body } => exp_has_return(cond) || body_has_return(body),
         S::Try { body, else_body, .. } => body_has_return(body) || body_has_return(else_body),
         S::Failure { body } => body_has_return(body),
-        S::Break | S::Continue | S::Todo(_) => false,
+        S::Break | S::Continue | S::Todo(_) | S::Comment(_) => false,
     })
 }
 
@@ -7180,7 +7259,7 @@ fn live_stmt(stmt: &mut TypedStmt, live: &mut HashSet<String>, cx: &mut LiveCx) 
                 *live = next.clone();
             }
         }
-        TypedStmt::Todo(_) => {}
+        TypedStmt::Todo(_) | TypedStmt::Comment(_) => {}
     }
 }
 
@@ -7641,7 +7720,7 @@ fn collect_moved_names_stmt(stmt: &TypedStmt, out: &mut HashSet<String>) {
                 collect_moved_names_stmt(st, out);
             }
         }
-        TypedStmt::Return | TypedStmt::Break | TypedStmt::Continue | TypedStmt::Todo(_) => {}
+        TypedStmt::Return | TypedStmt::Break | TypedStmt::Continue | TypedStmt::Todo(_) | TypedStmt::Comment(_) => {}
     }
 }
 
@@ -7694,7 +7773,7 @@ fn clear_last_use_stmt(stmt: &mut TypedStmt) {
                 clear_last_use_stmt(s);
             }
         }
-        TypedStmt::Return | TypedStmt::Break | TypedStmt::Continue | TypedStmt::Todo(_) => {}
+        TypedStmt::Return | TypedStmt::Break | TypedStmt::Continue | TypedStmt::Todo(_) | TypedStmt::Comment(_) => {}
     }
 }
 
@@ -7889,7 +7968,7 @@ fn collect_stmt_names(stmt: &TypedStmt, out: &mut HashSet<String>) {
             collect_stmts_names(else_body, out);
         }
         TypedStmt::Failure { body } => collect_stmts_names(body, out),
-        TypedStmt::Return | TypedStmt::Break | TypedStmt::Continue | TypedStmt::Todo(_) => {}
+        TypedStmt::Return | TypedStmt::Break | TypedStmt::Continue | TypedStmt::Todo(_) | TypedStmt::Comment(_) => {}
     }
 }
 
@@ -8230,7 +8309,7 @@ fn walk_stmt_mut(st: &mut TypedStmt, f: &mut dyn FnMut(&mut TypedExp)) {
             else_body.iter_mut().for_each(|s| walk_stmt_mut(s, f));
         }
         TypedStmt::Failure { body } => body.iter_mut().for_each(|s| walk_stmt_mut(s, f)),
-        TypedStmt::Return | TypedStmt::Break | TypedStmt::Continue | TypedStmt::Todo(_) => {}
+        TypedStmt::Return | TypedStmt::Break | TypedStmt::Continue | TypedStmt::Todo(_) | TypedStmt::Comment(_) => {}
     }
 }
 
@@ -9435,6 +9514,13 @@ fn emit_function<'a>(
             ""
         };
         let ename = escape_ident(name);
+        if let MM::ClassDef::Parts { members, .. } = &c.body {
+            for m in members {
+                if let MM::ClassMember::LexerComment(text) = m {
+                    emit_lexer_comment(out, indent, text);
+                }
+            }
+        }
         emit_doc_comment(out, indent, class_doc(c));
         writeln!(out, "{indent}{pub_kw}type {ename}{type_params} = std::sync::Arc<dyn ::std::ops::Fn({ins}) -> Result<{out_ty}> + 'static>;").unwrap();
         writeln!(out).unwrap();
@@ -10329,7 +10415,29 @@ fn emit_function<'a>(
                 && !stmts_read_name(&typed_stmts, v)
         })
         .collect();
+    // Comments between the declarations go before the local that follows
+    // them; those of inputs and of locals without a `let` go first.
+    let (mut decl_comments, trailing_decl_comments) = member_comments(c);
+    let let_names: HashSet<&str> = outputs
+        .iter()
+        .chain(protected.iter())
+        .map(|(n, ..)| n.as_str())
+        .collect();
+    if let MM::ClassDef::Parts { members, .. } = &c.body {
+        for m in members {
+            match m {
+                MM::ClassMember::Component(cm) if !let_names.contains(cm.name.as_str()) => {
+                    emit_lexer_comments(out, &body_indent, decl_comments.remove(cm.name.as_str()));
+                }
+                MM::ClassMember::ClassDef(cdm) => {
+                    emit_lexer_comments(out, &body_indent, decl_comments.remove(cdm.class_def.name.as_str()));
+                }
+                _ => {}
+            }
+        }
+    }
     for (n, t, modif, is_const_local) in outputs.iter().chain(protected.iter()) {
+        emit_lexer_comments(out, &body_indent, decl_comments.remove(n.as_str()));
         // The output `n` is consumed by the tail-call lowering: its declaration
         // would otherwise force `let mut <n>: …;`, but `<n>` never appears in
         // the rewritten body — the RHS of `<n> := <tail-expr>;` becomes the
@@ -10357,11 +10465,20 @@ fn emit_function<'a>(
         // multi-output call assigned into a single-valued local. MetaModelica
         // silently drops the extra outputs in that case; we model it as a
         // tuple destructure (`let (mut x, _, _): (T1, T2, T3) = call;`).
+        let window = typedexp::CommentWindow::open();
+        if let Some(m) = &modif_opt
+            && let Absyn::EqMod::EQMOD { exp: raw, .. } = m.eqMod.as_ref()
+        {
+            typedexp::note_exp_comments(raw);
+        }
         let init_raw: Option<(String, Ty)> = extract_default_exp(&modif_opt).map(|exp| {
             let typed = typedexp::infer_exp(exp, &infer_env, top_level, &pkg_prefix, &all_type_vars);
             let init_ty = typed.ty();
             (emit_exp(&typed, false, ctx, top_level), init_ty)
         });
+        for text in window.take() {
+            emit_lexer_comment(out, &body_indent, &text);
+        }
         let init: Option<(String, Ty)> = if input_names.contains(n) {
             Some((escape_ident(n).to_string(), t.clone()))
         } else if let Some(v) = init_var(modif).filter(|v| movable_init.contains(v)) {
@@ -10434,6 +10551,7 @@ fn emit_function<'a>(
             }
         }
     }
+    emit_lexer_comments(out, &body_indent, Some(trailing_decl_comments));
 
     let mut fresh: u32 = 0;
     // `function F extends G(...) end F;` with no local algorithm section: the
@@ -18107,6 +18225,8 @@ fn append_access_segments(base: &TypedExp, tail_segs: &[CrefSegment], ty: &Ty) -
                     locals: c.locals.clone(),
                     stmts: c.stmts.clone(),
                     result: append_access_segments(&c.result, tail_segs, ty)?,
+                    comments: c.comments.clone(),
+                    end_comments: c.end_comments.clone(),
                     live_in: c.live_in.clone(),
                     live_out: c.live_out.clone(),
                 });
@@ -18298,6 +18418,8 @@ fn substitute_formal_refs(exp: &TypedExp, bindings: &HashMap<String, TypedExp>) 
                     locals: c.locals.clone(),
                     stmts: c.stmts.clone(),
                     result: substitute_formal_refs(&c.result, bindings),
+                    comments: c.comments.clone(),
+                    end_comments: c.end_comments.clone(),
                     live_in: c.live_in.clone(),
                     live_out: None,
                 })
@@ -18942,6 +19064,8 @@ fn emit_match<'a>(
             // on the Absyn side; the two must agree).
             let exhaustive = cases_exhaustive(kind, cases, &input_ty, top_level);
             let outer_param_tails = ctx.param_tails.clone();
+            // Arms without a body, with the comments to put above them.
+            let mut bare_arms: HashMap<usize, Vec<&str>> = HashMap::new();
             let arms: Vec<String> = cases
                 .iter()
                 .enumerate()
@@ -19362,10 +19486,37 @@ fn emit_match<'a>(
                     } else {
                         &case.stmts[..]
                     };
-                    let bare_arm = stmts_for_arm.is_empty() && case.locals.is_empty() && escaping_outputs.is_empty();
+                    let body_comments: Vec<&str> = stmts_for_arm
+                        .iter()
+                        .map_while(|s| match s {
+                            typedexp::TypedStmt::Comment(c) => Some(c.as_str()),
+                            _ => None,
+                        })
+                        .collect();
+                    let bare_arm = body_comments.len() == stmts_for_arm.len()
+                        && case.locals.is_empty()
+                        && escaping_outputs.is_empty();
+                    let bare_comments = || {
+                        body_comments
+                            .iter()
+                            .copied()
+                            .chain(case.end_comments.iter().map(String::as_str))
+                            .collect::<Vec<_>>()
+                    };
+                    // A comment keeps rustfmt from unwrapping `{ e }`, so the
+                    // comments of an arm without a body go above it.
+                    let with_end_comments = |result: String| {
+                        let mut c = String::new();
+                        for t in &case.end_comments {
+                            emit_lexer_comment(&mut c, "            ", t);
+                        }
+                        format!("{}            {result}", c.trim_start())
+                    };
                     let arm_str = if bare_arm && col_prologue.is_empty() {
+                        bare_arms.insert(case_idx, bare_comments());
                         format!("        {pat}{guard} => {result}")
                     } else if bare_arm {
+                        bare_arms.insert(case_idx, bare_comments());
                         format!("        {pat}{guard} => {{\n{col_prologue}            {result}\n        }}")
                     } else {
                         // Seed the arm's local env from the enclosing function scope:
@@ -19634,6 +19785,14 @@ fn emit_match<'a>(
                             top_level,
                             &mut fresh_local,
                         );
+                        let result = if body.trim().is_empty() {
+                            bare_arms.insert(case_idx, bare_comments());
+                            result
+                        } else if case.end_comments.is_empty() {
+                            result
+                        } else {
+                            with_end_comments(result)
+                        };
                         format!("        {pat}{guard} => {{\n{body}            {result}\n        }}")
                     };
                     ctx.fn_env_vars = saved_fn_env_vars;
@@ -19677,8 +19836,19 @@ fn emit_match<'a>(
             let force_fallback = md_macro;
             let mut arms = arms;
             let catch_all = arms.iter().position(|a| rust_pat_irrefutable(arm_head(a)));
+            // The comments of the arms after a catch-all go at the end.
+            let mut unreachable_arm_comments = String::new();
             if let Some(i) = catch_all {
                 arms.truncate(i + 1);
+                for case in &cases[i + 1..] {
+                    let stmt_comments = case.stmts.iter().filter_map(|s| match s {
+                        typedexp::TypedStmt::Comment(c) => Some(c),
+                        _ => None,
+                    });
+                    for t in case.comments.iter().chain(stmt_comments).chain(&case.end_comments) {
+                        emit_lexer_comment(&mut unreachable_arm_comments, "        ", t);
+                    }
+                }
             }
             // Rustc ignores `Deref @` arms and guarded arms when checking
             // exhaustiveness, so proven coverage holds for it only without them.
@@ -19735,10 +19905,33 @@ fn emit_match<'a>(
             // wrapping is at the *outermost* level of this match expression —
             // nested matches inside arm bodies decide independently whether
             // they need their own wrapping.
+            let arms: Vec<String> = arms
+                .into_iter()
+                .zip(cases)
+                .enumerate()
+                .map(|(i, (arm, case))| {
+                    let mut out = String::new();
+                    for t in case
+                        .comments
+                        .iter()
+                        .map(String::as_str)
+                        .chain(bare_arms.remove(&i).unwrap_or_default())
+                    {
+                        emit_lexer_comment(&mut out, "        ", t);
+                    }
+                    out + &arm
+                })
+                .collect();
             let raw = if active_tail.is_some() {
-                format!("match {match_subject} {{\n{}{fallback},\n    }}", arms.join(",\n"),)
+                format!(
+                    "match {match_subject} {{\n{}{fallback},\n{unreachable_arm_comments}    }}",
+                    arms.join(",\n"),
+                )
             } else {
-                format!("(match {match_subject} {{\n{}{fallback},\n    }})", arms.join(",\n"),)
+                format!(
+                    "(match {match_subject} {{\n{}{fallback},\n{unreachable_arm_comments}    }})",
+                    arms.join(",\n"),
+                )
             };
             if md_macro {
                 // The macro tokenises the entire `match { … }` block, so the
@@ -20370,6 +20563,9 @@ fn emit_match<'a>(
                         .collect::<String>();
                     (pat, assigns)
                 };
+                for t in &case.comments {
+                    emit_lexer_comment(&mut s, "        ", t);
+                }
                 s.push_str(&format!("        if let Ok({ok_pat}) = (|| -> Result<_> {{\n"));
                 // Whole-input Var binding under an Arc-wrapped scrutinee: bind
                 // directly to the Arc instead of going through `.as_ref()`.
@@ -20399,6 +20595,9 @@ fn emit_match<'a>(
                     s.push_str(&format!("                {pat} => {{\n"));
                     s.push_str(&guard_check.replace("            ", "                    "));
                     s.push_str(&body.replace("            ", "                    "));
+                    for t in &case.end_comments {
+                        emit_lexer_comment(&mut s, "                    ", t);
+                    }
                     s.push_str(&format!("                    Ok({result})\n"));
                     s.push_str("                }\n");
                     if !rust_pat_irrefutable(&pat) {
@@ -20430,6 +20629,9 @@ fn emit_match<'a>(
                     }
                     s.push_str(&guard_check);
                     s.push_str(&body);
+                    for t in &case.end_comments {
+                        emit_lexer_comment(&mut s, "            ", t);
+                    }
                     s.push_str(&format!("            Ok({result})\n"));
                 }
                 s.push_str(&format!("        }})() {{ {writeback_assigns}break 'mc __v; }}\n"));
@@ -20896,7 +21098,7 @@ fn stmts_need_match_deref(
             stmts_need_match_deref(body, ctx, top_level) || stmts_need_match_deref(else_body, ctx, top_level)
         }
         S::Failure { body } => stmts_need_match_deref(body, ctx, top_level),
-        S::Return | S::Break | S::Continue | S::Todo(_) => false,
+        S::Return | S::Break | S::Continue | S::Todo(_) | S::Comment(_) => false,
     })
 }
 
@@ -24280,9 +24482,14 @@ fn emit_stmts<'a>(
             && plan.is_macro(ctx)
         {
             let mut plans: Vec<FieldAssignPlan> = vec![plan];
+            let mut comments: Vec<&str> = Vec::new();
             let mut j = i + 1;
             while j < stmts.len() {
-                let Some(next) = plan_field_assign(&stmts[j], env, top_level) else {
+                let k = j + stmts[j..]
+                    .iter()
+                    .take_while(|s| matches!(s, typedexp::TypedStmt::Comment(_)))
+                    .count();
+                let Some(next) = stmts.get(k).and_then(|s| plan_field_assign(s, env, top_level)) else {
                     break;
                 };
                 if !next.same_batch_as(&plans[0]) {
@@ -24303,8 +24510,15 @@ fn emit_stmts<'a>(
                 {
                     break;
                 }
+                comments.extend(stmts[j..k].iter().filter_map(|s| match s {
+                    typedexp::TypedStmt::Comment(c) => Some(c.as_str()),
+                    _ => None,
+                }));
                 plans.push(next);
-                j += 1;
+                j = k + 1;
+            }
+            for c in comments {
+                emit_lexer_comment(out, indent, c);
             }
             let kinds: Vec<FieldAssignKind> = plans.into_iter().map(|p| p.render(ctx, top_level)).collect();
             let clauses: Vec<String> = kinds.iter().map(|k| k.clause()).collect();
@@ -24557,7 +24771,7 @@ fn collect_reassigned_vars(stmts: &[typedexp::TypedStmt], out: &mut HashSet<Stri
                 collect_reassigned_vars(else_body, out);
             }
             S::Failure { body } => collect_reassigned_vars(body, out),
-            S::NoRetCall { .. } | S::Return | S::Break | S::Continue | S::Todo(_) => {}
+            S::NoRetCall { .. } | S::Return | S::Break | S::Continue | S::Todo(_) | S::Comment(_) => {}
         }
     }
 }
@@ -25451,7 +25665,9 @@ fn stmt_flow(s: &typedexp::TypedStmt) -> FlowResult {
             merge_branch_flows(&branches)
         }
         S::Try { body, else_body, .. } => merge_branch_flows(&[stmts_flow(body), stmts_flow(else_body)]),
-        S::For { .. } | S::While { .. } | S::Failure { .. } | S::Todo(_) => FlowResult::FallsThrough(HashSet::new()),
+        S::For { .. } | S::While { .. } | S::Failure { .. } | S::Todo(_) | S::Comment(_) => {
+            FlowResult::FallsThrough(HashSet::new())
+        }
     }
 }
 
@@ -25805,7 +26021,7 @@ impl<'a> UseBeforeDef<'a> {
             // An untranslated statement lowers to `todo!()`, but treat it as
             // falling through with no assignments so any later reads are still
             // conservatively flagged.
-            S::Todo(_) => UbdFlow::Falls,
+            S::Todo(_) | S::Comment(_) => UbdFlow::Falls,
         }
     }
 
@@ -27057,11 +27273,13 @@ fn emit_stmt<'a>(
             // For a plain `PAT := var` (a refutable pattern destructure on an
             // already-typed value) this would wrap a non-Result in `Ok(..)`
             // and type-error. Restrict to fallible Call RHS only.
-            let rhs_is_fallible_call = if body.len() == 1 {
+            let (body_code, body_comments): (Vec<_>, Vec<_>) =
+                body.iter().partition(|s| !matches!(s, typedexp::TypedStmt::Comment(_)));
+            let rhs_is_fallible_call = if body_code.len() == 1 {
                 if let typedexp::TypedStmt::Assign {
                     rhs: typedexp::TypedExp::Call { func, .. },
                     ..
-                } = &body[0]
+                } = body_code[0]
                 {
                     match resolve_call_qname(func, ctx, top_level) {
                         Some(q) => !ctx.is_known_infallible_user_fn(&q, top_level),
@@ -27075,8 +27293,11 @@ fn emit_stmt<'a>(
             };
             if rhs_is_fallible_call
                 && matches!(stmts_flow(else_body), FlowResult::Diverges)
-                && let typedexp::TypedStmt::Assign { lhs, rhs, .. } = &body[0]
+                && let typedexp::TypedStmt::Assign { lhs, rhs, .. } = body_code[0]
             {
+                for c in body_comments {
+                    emit_stmt(out, indent, c, fail_mode.clone(), ctx, env, top_level, fresh);
+                }
                 let scrut_ty = rhs.ty();
                 let scrut_expr = ctx.with_qmode(QMode::Bare, |ctx| {
                     emit_exp(rhs, /*is_const=*/ false, ctx, top_level)
@@ -27448,6 +27669,7 @@ fn emit_stmt<'a>(
             Some(Some(lbl)) => writeln!(out, "{indent}continue {lbl};").unwrap(),
             _ => writeln!(out, "{indent}continue;").unwrap(),
         },
+        S::Comment(text) => emit_lexer_comment(out, indent, text),
         S::Todo(s) => writeln!(
             out,
             "{indent}/* todo stmt: {} */",
@@ -27892,7 +28114,7 @@ fn visit_stmt_for_refeq(stmt: &typedexp::TypedStmt, out: &mut std::collections::
                 visit_stmt_for_refeq(st, out);
             }
         }
-        S::Return | S::Break | S::Continue | S::Todo(_) => {}
+        S::Return | S::Break | S::Continue | S::Todo(_) | S::Comment(_) => {}
     }
 }
 
@@ -28345,7 +28567,7 @@ fn propagate_stmt_partial_eq<'a>(
                 propagate_stmt_partial_eq(s, required, top_level, pkg_prefix, out);
             }
         }
-        S::Return | S::Break | S::Continue | S::Todo(_) => {}
+        S::Return | S::Break | S::Continue | S::Todo(_) | S::Comment(_) => {}
     }
 }
 
@@ -28798,7 +29020,7 @@ fn visit_stmt_for_static(stmt: &typedexp::TypedStmt, out: &mut std::collections:
                 visit_stmt_for_static(s, out);
             }
         }
-        S::Return | S::Break | S::Continue | S::Todo(_) => {}
+        S::Return | S::Break | S::Continue | S::Todo(_) | S::Comment(_) => {}
     }
 }
 
@@ -28993,7 +29215,7 @@ fn visit_stmt_for_eq(stmt: &typedexp::TypedStmt, out: &mut std::collections::Has
                 visit_stmt_for_eq(s, out);
             }
         }
-        S::Return | S::Break | S::Continue | S::Todo(_) => {}
+        S::Return | S::Break | S::Continue | S::Todo(_) | S::Comment(_) => {}
     }
 }
 
@@ -29772,7 +29994,7 @@ fn collect_concrete_default_uses_in_stmt<'a>(
                 collect_concrete_default_uses_in_stmt(s, ever_assigned, default_required, top_level, pkg_prefix, out);
             }
         }
-        S::Return | S::Break | S::Continue | S::Todo(_) => {}
+        S::Return | S::Break | S::Continue | S::Todo(_) | S::Comment(_) => {}
     }
 }
 
@@ -30139,7 +30361,7 @@ fn collect_assigned_vars_in_stmts(stmts: &[typedexp::TypedStmt], out: &mut std::
                 collect_assigned_vars_in_stmts(else_body, out);
             }
             S::Failure { body } => collect_assigned_vars_in_stmts(body, out),
-            S::NoRetCall { .. } | S::Return | S::Break | S::Continue | S::Todo(_) => {}
+            S::NoRetCall { .. } | S::Return | S::Break | S::Continue | S::Todo(_) | S::Comment(_) => {}
         }
     }
 }
@@ -30181,7 +30403,7 @@ fn collect_default_needs_in_stmts(
                 collect_default_needs_in_stmts(else_body, ever_assigned, out);
             }
             S::Failure { body } => collect_default_needs_in_stmts(body, ever_assigned, out),
-            S::Return | S::Break | S::Continue | S::Todo(_) => {}
+            S::Return | S::Break | S::Continue | S::Todo(_) | S::Comment(_) => {}
         }
     }
 }

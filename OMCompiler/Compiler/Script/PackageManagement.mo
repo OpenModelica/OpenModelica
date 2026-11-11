@@ -95,23 +95,27 @@ algorithm
 end versionsThatProvideTheWanted;
 
 function versionsThatConvertFromTheWanted
-  "The versions of the index that can convert from the given version."
+  "The versions in the index or installed that can convert from the given
+   version."
   input String id;
   input String version;
   input Boolean printError;
+  input ReadLibraryMetadata readMetadata;
   output list<String> result;
 algorithm
-  result := versionsResponse("convertFrom", id, version, printError);
+  result := conversionsResponse("convertFrom", id, version, printError, readMetadata);
 end versionsThatConvertFromTheWanted;
 
 function versionsThatConvertToTheWanted
-  "The versions that the given version of the index can convert from."
+  "The versions that the given version in the index or installed can convert
+   from."
   input String id;
   input String version;
   input Boolean printError;
+  input ReadLibraryMetadata readMetadata;
   output list<String> result;
 algorithm
-  result := versionsResponse("convertTo", id, version, printError);
+  result := conversionsResponse("convertTo", id, version, printError, readMetadata);
 end versionsThatConvertToTheWanted;
 
 uniontype Requirement
@@ -133,6 +137,15 @@ uniontype Selection
   end SELECTION;
 end Selection;
 
+uniontype ConversionHint
+  record CONVERSION_HINT
+    String name;
+    String version "Requested";
+    String to "A version with a conversion from the requested one";
+    String origin;
+  end CONVERSION_HINT;
+end ConversionHint;
+
 uniontype ResolveMessage
   record RESOLVE_MESSAGE
     String kind "missing, incompatible, unknownVersion or branchFallback";
@@ -144,8 +157,9 @@ uniontype ResolveMessage
 end ResolveMessage;
 
 partial function ReadLibraryMetadata
-  "The version, uses and noneFromVersion conversions of a library's top-level
-   file, or null; see Interactive.libraryMetadata."
+  "The version, uses, noneFromVersion versions and versions with conversion
+   scripts of a library's top-level file, or null; see
+   Interactive.libraryMetadata."
   input String fileName;
   output JSON json;
 end ReadLibraryMetadata;
@@ -165,9 +179,10 @@ function resolve
   output list<Selection> selected = {};
   output list<ResolveMessage> messages = {};
   output String error = "";
+  output list<ConversionHint> conversions = {} "For requirements that are not satisfied";
 protected
-  JSON solution = JSON.makeNull(), entries, metadata = JSON.emptyArray();
-  list<String> mps, need;
+  JSON solution, entries;
+  list<String> mps;
   list<tuple<String, JSON>> problem;
 algorithm
   problem := {
@@ -182,19 +197,10 @@ algorithm
     ("loaded", JSON.makeList(list(JSON.LIST_OBJECT({
       ("version", JSON.makeString(Util.tuple22(l))),
       ("name", JSON.makeString(Util.tuple21(l)))}) for l in loaded)))};
-  // Each round answers new files; files that keep changing are left out.
-  for round in 1:100 loop
-    solution := call("resolve", ("metadata", metadata) :: problem);
-    need := JSON.getStringList(JSON.getOrDefault(solution, "needMetadata", JSON.emptyArray()));
-    if listEmpty(need) then
-      break;
-    elseif round == 100 then
-      solution := call("resolve", ("withoutMetadata", JSON.makeBoolean(true)) :: problem);
-      break;
-    end if;
-    metadata := JSON.makeList(list(JSON.LIST_OBJECT({
-      ("file", JSON.makeString(f)),
-      ("metadata", readMetadata(f))}) for f in need));
+  solution := callWithMetadata("resolve", problem, readMetadata);
+  entries := JSON.getOrDefault(solution, "conversions", JSON.emptyArray());
+  for i in JSON.size(entries):-1:1 loop
+    conversions := conversionFromJSON(JSON.at(entries, i)) :: conversions;
   end for;
   ok := succeeded(solution);
   if not ok then
@@ -289,6 +295,47 @@ algorithm
 end installWasmToolchain;
 
 protected
+
+function callWithMetadata
+  "call, answering the package manager's requests for the metadata of
+   libraries it has not cached with readMetadata."
+  input String op;
+  input list<tuple<String, JSON>> args;
+  input ReadLibraryMetadata readMetadata;
+  output JSON response = JSON.makeNull();
+protected
+  JSON metadata = JSON.emptyArray();
+  list<String> need;
+algorithm
+  // Each round answers new files; files that keep changing are left out.
+  for round in 1:100 loop
+    response := call(op, ("metadata", metadata) :: args);
+    need := JSON.getStringList(JSON.getOrDefault(response, "needMetadata", JSON.emptyArray()));
+    if listEmpty(need) then
+      break;
+    elseif round == 100 then
+      response := call(op, ("withoutMetadata", JSON.makeBoolean(true)) :: args);
+      break;
+    end if;
+    metadata := JSON.makeList(list(JSON.LIST_OBJECT({
+      ("file", JSON.makeString(f)),
+      ("metadata", readMetadata(f))}) for f in need));
+  end for;
+end callWithMetadata;
+
+function conversionsResponse
+  input String op;
+  input String id;
+  input String version;
+  input Boolean printError;
+  input ReadLibraryMetadata readMetadata;
+  output list<String> result;
+algorithm
+  result := JSON.getStringList(JSON.getOrDefault(callWithMetadata(op, {
+    ("name", JSON.makeString(id)),
+    ("version", JSON.makeString(version)),
+    ("printError", JSON.makeBoolean(printError))}, readMetadata), "versions", JSON.emptyArray()));
+end conversionsResponse;
 
 function call
   "Runs a package manager operation and reports its messages. Without
@@ -421,6 +468,17 @@ algorithm
     JSON.getBoolean(JSON.get(obj, "loaded")),
     JSON.getString(JSON.get(obj, "origin")));
 end selectionFromJSON;
+
+function conversionFromJSON
+  input JSON obj;
+  output ConversionHint conversion;
+algorithm
+  conversion := CONVERSION_HINT(
+    JSON.getString(JSON.get(obj, "name")),
+    JSON.getString(JSON.get(obj, "version")),
+    JSON.getString(JSON.get(obj, "to")),
+    JSON.getString(JSON.get(obj, "origin")));
+end conversionFromJSON;
 
 function messageFromJSON
   input JSON obj;

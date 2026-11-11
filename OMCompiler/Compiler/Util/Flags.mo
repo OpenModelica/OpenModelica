@@ -847,7 +847,7 @@ constant ConfigFlag LOCALE_FLAG = CONFIG_FLAG(35, "locale",
   "Deprecated and ignored.");
 constant ConfigFlag DEFAULT_OPENCL_DEVICE = CONFIG_FLAG(36, "defaultOCLDevice",
   SOME("o"), EXTERNAL(), INT_FLAG(0), NONE(),
-  "Sets the default OpenCL device to be used for parallel execution. 0 (the\n   default) picks a suitable device automatically.");
+  "Sets the default OpenCL device to be used for parallel execution. 0 (the default) picks a suitable device automatically.");
 constant ConfigFlag MAXTRAVERSALS = CONFIG_FLAG(37, "maxTraversals",
   NONE(), EXTERNAL(), INT_FLAG(2),NONE(),
   "Maximal traversals to find simple equations in the acausal system.");
@@ -922,7 +922,7 @@ constant ConfigFlag GENERATE_SYMBOLIC_LINEARIZATION = CONFIG_FLAG(50, "generateS
   "Generates symbolic linearization matrices A,B,C,D for linear model:\n\t\t:math:`\\dot{x} = Ax + Bu`\n\t\t:math:`y = Cx + Du`");
 constant ConfigFlag RESIZABLE_MAX_PIECES = CONFIG_FLAG(51, "resizableMaxPieces",
   NONE(), EXTERNAL(), INT_FLAG(300), NONE(),
-  "The number of pieces a connector array may be split into by the connections\nwith --resizableArrays before it is given up on (default 300).");
+  "The number of pieces a connector array may be split into by the connections with --resizableArrays before it is given up on (default 300).");
 constant ConfigFlag PROFILING_LEVEL = CONFIG_FLAG(52, "profiling",
   NONE(), EXTERNAL(), STRING_FLAG("none"), SOME(STRING_DESC_OPTION({
     ("none","Generate code without profiling"),
@@ -967,7 +967,7 @@ constant ConfigFlag DYNAMIC_TEARING = CONFIG_FLAG(58, "dynamicTearing",
   "Activates dynamic tearing (TearingSet can be changed automatically during runtime, strict set vs. casual set.)");
 constant ConfigFlag TPL_INTERFACE_DIR = CONFIG_FLAG(59, "tplInterfaceDir",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
-  "Directory searched before the current one for the interface files a Susan\n.tpl imports with 'import interface'.");
+  "Directory searched before the current one for the interface files a Susan .tpl imports with 'import interface'.");
 constant ConfigFlag LOOP2CON = CONFIG_FLAG(60, "loop2con",
   NONE(), EXTERNAL(), STRING_FLAG("none"),
   SOME(STRING_DESC_OPTION({
@@ -1093,10 +1093,12 @@ constant ConfigFlag DAE_MODE = CONFIG_FLAG(85, "daeMode",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Generates code to simulate models in DAE mode. The whole system is passed directly to the DAE solver SUNDIALS/IDA and no algebraic solver is involved in the simulation process.");
 constant ConfigFlag INLINE_METHOD = CONFIG_FLAG(86, "inlineMethod",
-  NONE(), EXTERNAL(), ENUM_FLAG(1, {("replace",1), ("append",2)}), NONE(),
-  "Sets the inline method to use.\n"+
-               "replace : This method inlines by replacing in place all expressions. Might lead to very long expression.\n"+
-               "append  : This method inlines by adding additional variables to the whole system. Might lead to much bigger system.");
+  NONE(), EXTERNAL(), ENUM_FLAG(1, {("replace",1), ("append",2)}),
+  SOME(STRING_DESC_OPTION({
+    ("replace", "This method inlines by replacing in place all expressions. Might lead to very long expression."),
+    ("append", "This method inlines by adding additional variables to the whole system. Might lead to much bigger system.")
+    })),
+  "Sets the inline method to use.");
 constant ConfigFlag SET_TEARING_VARS = CONFIG_FLAG(87, "setTearingVars",
   NONE(), EXTERNAL(), INT_LIST_FLAG({}), NONE(),
   "Sets the tearing variables by its strong component indexes. Use '-d=tearingdump' to find out the relevant indexes.\nUse following format: '--setTearingVars=(sci,n,t1,...,tn)*', with sci = strong component index, n = number of tearing variables, t1,...tn = tearing variables.\nE.g.: '--setTearingVars=4,2,3,5' would select variables 3 and 5 in strong component 4.");
@@ -1201,6 +1203,7 @@ constant ConfigFlag POST_OPT_MODULES_DAE = CONFIG_FLAG(114, "postOptModulesDAE",
     //"replaceDerCalls",
     "simplifysemiLinear",
     "simplifyComplexFunction",
+    "inputDerivativesUsed",
     "removeConstants",
     "simplifyTimeIndepFuncCalls",
     "simplifyAllExpressions",
@@ -1321,17 +1324,20 @@ constant ConfigFlag ALLOW_NON_STANDARD_MODELICA = CONFIG_FLAG(141, "allowNonStan
     ("unbalancedModel", "Allow models to be locally unbalanced and to have unbalanced connectors"),
     ("implicitParameterStartAttribute", "Allow fixed parameters with no binding or start attribute"),
     ("initialSimplified", "Allow use of experimental operator `initialSimplified()`"),
-    ("illegalConditionalContext", "Allow use of components with false conditions in illegal contexts")
+    ("illegalConditionalContext", "Allow use of components with false conditions in illegal contexts"),
+    ("realEquality", "Allow == and <> with Real operands")
     })),
   "Flags to allow non-standard Modelica.");
 constant ConfigFlag EXPORT_CLOCKS_IN_MODELDESCRIPTION = CONFIG_FLAG(142, "exportClocksInModelDescription",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "exports clocks in modeldescription.xml for fmus, The default is false.");
 constant ConfigFlag LINK_TYPE = CONFIG_FLAG(143, "linkType",
-  NONE(), EXTERNAL(), ENUM_FLAG(1, {("dynamic",1), ("static",2)}), NONE(),
-  "Sets the link type for the simulation executable.\n"+
-               "dynamic: libraries are dynamically linked; the executable is built very fast but is not portable because of DLL dependencies.\n"+
-               "static: libraries are statically linked; the executable is built more slowly but it is portable and dependency-free.\n");
+  NONE(), EXTERNAL(), ENUM_FLAG(1, {("dynamic",1), ("static",2)}),
+  SOME(STRING_DESC_OPTION({
+    ("dynamic", "Libraries are dynamically linked; the executable is built very fast but is not portable because of DLL dependencies."),
+    ("static", "Libraries are statically linked; the executable is built more slowly but it is portable and dependency-free.")
+    })),
+  "Sets the link type for the simulation executable.");
 constant ConfigFlag TEARING_ALWAYS_DERIVATIVES = CONFIG_FLAG(144, "tearingAlwaysDer",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Always choose state derivatives as iteration variables in strong components.");
@@ -1434,10 +1440,12 @@ constant ConfigFlag FMI_EXTRA_ANNOTATIONS = CONFIG_FLAG(162, "fmiExtraAnnotation
 constant Integer IDUMP_DEFAULT = 0;
 constant Integer IDUMP_JSON = 1;
 constant ConfigFlag INTERACTIVE_DUMP_FORMAT = CONFIG_FLAG(163, "interactiveDumpFormat",
-  NONE(), EXTERNAL(), ENUM_FLAG(IDUMP_DEFAULT, {("default", IDUMP_DEFAULT), ("json", IDUMP_JSON)}), NONE(),
-  "Selects the format interactive API calls use to print result values.\n"+
-  "default : The OpenModelica textual value format.\n"+
-  "json    : JSON, for programmatic consumers such as the web clients.");
+  NONE(), EXTERNAL(), ENUM_FLAG(IDUMP_DEFAULT, {("default", IDUMP_DEFAULT), ("json", IDUMP_JSON)}),
+  SOME(STRING_DESC_OPTION({
+    ("default", "The OpenModelica textual value format."),
+    ("json", "JSON, for programmatic consumers such as the web clients.")
+    })),
+  "Selects the format interactive API calls use to print result values.");
 constant ConfigFlag EXPORT_FMU = CONFIG_FLAG(164, "export-fmu",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Export the model as an FMU after loading. Combine with --fmuType and --fmuPlatforms to configure the export.");
@@ -1453,17 +1461,17 @@ constant ConfigFlag FMU_VERSION = CONFIG_FLAG(167, "fmiVersion",
   "FMI version for FMU export: 1.0 (deprecated), 2.0, 3.0.");
 constant ConfigFlag TEARING_COST_MARGIN = CONFIG_FLAG(168, "tearingCostMargin",
   NONE(), EXTERNAL(), REAL_FLAG(2.0), NONE(),
-  "How much cheaper solving a linear system untorn has to be estimated before its\ntearing set is dropped. Raise it to keep tearing systems the estimate would give\nup on, lower it towards 0 to tear less (default 2).");
+  "How much cheaper solving a linear system untorn has to be estimated before its tearing set is dropped. Raise it to keep tearing systems the estimate would give up on, lower it towards 0 to tear less (default 2).");
 constant ConfigFlag FMU_NATIVE_PLATFORMS = CONFIG_FLAG(169,
   "", NONE(), INTERNAL(), STRING_FLAG(""), NONE(),
   "buildModelFMU's non-wasm platforms, comma separated: the wasm FMU also carries
    a precompiled artifact and a loader library for each of them.");
 constant ConfigFlag TPL_OUTPUT_DIR = CONFIG_FLAG(170, "tplOutputDir",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
-  "Directory the .mo generated from a Susan .tpl is written to. Empty (the\ndefault) writes it next to the .tpl, which is how the templates used to be\ngenerated into the source tree.");
+  "Directory the .mo generated from a Susan .tpl is written to. Empty (the default) writes it next to the .tpl, which is how the templates used to be generated into the source tree.");
 constant ConfigFlag FMU_DIRECTORY = CONFIG_FLAG(171, "fmuDirectory",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  "Write an exported FMU as an unzipped directory named <prefix>.fmu rather than\na zip file. An importer that reads a directory (OpenModelica's own does) then\npays neither the compression nor the extraction, which for a wasm FMU carrying a\nprecompiled artifact is most of what packing it costs. wasm FMUs only.");
+  "Write an exported FMU as an unzipped directory named <prefix>.fmu rather than a zip file. An importer that reads a directory (OpenModelica's own does) then pays neither the compression nor the extraction, which for a wasm FMU carrying a precompiled artifact is most of what packing it costs. wasm FMUs only.");
 constant ConfigFlag FMI_TUNABLE_PARAMETERS = CONFIG_FLAG(172, "fmiTunableParameters",
   NONE(), EXTERNAL(), ENUM_FLAG(FMI_TUNABLE_LITERAL, {("none", FMI_TUNABLE_NONE), ("literal", FMI_TUNABLE_LITERAL)}),
   SOME(STRING_DESC_OPTION({
