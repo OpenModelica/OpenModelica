@@ -54,15 +54,52 @@ fn select_path(names: &[String], path: &str) -> Vec<Option<String>> {
         .collect()
 }
 
-fn extract(zip_file: &str, dest: &str, select: impl FnOnce(&[String]) -> Vec<Option<String>>) -> Result<()> {
-    #[allow(unused_mut)]
-    let mut archive = open(zip_file)?;
-    let names = (0..archive.len())
+fn names<R: Read + Seek>(archive: &zip::ZipArchive<R>, zip_file: &str) -> Result<Vec<String>> {
+    (0..archive.len())
         .map(|i| match archive.name_for_index(i) {
             Some(name) => name.map(|n| n.into_owned()).map_err(|e| open_failed(zip_file, e)),
             None => Ok(String::new()),
         })
-        .collect::<Result<Vec<String>>>()?;
+        .collect()
+}
+
+/// The files of `zip_file`, named as [`unzip_path`] takes them: without the
+/// directory that all entries share.
+pub fn entries(zip_file: &str) -> Result<Vec<String>> {
+    let archive = open(zip_file)?;
+    let names = names(&archive, zip_file)?;
+    Ok(names
+        .iter()
+        .zip(select_path(&names, ""))
+        .filter(|(name, _)| !name.ends_with('/'))
+        .filter_map(|(_, rel)| rel)
+        .collect())
+}
+
+/// The contents of the file `path` of `zip_file`, named as [`entries`] names it.
+pub fn read(zip_file: &str, path: &str) -> Result<Vec<u8>> {
+    #[allow(unused_mut)]
+    let mut archive = open(zip_file)?;
+    let names = names(&archive, zip_file)?;
+    let index = select_path(&names, "")
+        .iter()
+        .zip(&names)
+        .position(|(rel, name)| !name.ends_with('/') && rel.as_deref() == Some(path))
+        .ok_or_else(|| format!("{path} is not in {zip_file}"))?;
+    let mut entry = archive
+        .by_index(index)
+        .map_err(|e| format!("Failed to read {zip_file}: {e}"))?;
+    let mut bytes = Vec::new();
+    entry
+        .read_to_end(&mut bytes)
+        .map_err(|e| format!("Failed to read {path} in {zip_file}: {e}"))?;
+    Ok(bytes)
+}
+
+fn extract(zip_file: &str, dest: &str, select: impl FnOnce(&[String]) -> Vec<Option<String>>) -> Result<()> {
+    #[allow(unused_mut)]
+    let mut archive = open(zip_file)?;
+    let names = names(&archive, zip_file)?;
     let mut dirs = BTreeSet::new();
     let mut files = Vec::new();
     for (i, (name, rel)) in names.iter().zip(select(&names)).enumerate() {
@@ -402,6 +439,10 @@ mod tests {
         unzip_path(&s(&zip), "", &s(&all)).unwrap();
         assert!(all.join("Modelica/package.mo").exists());
         assert!(all.join("README.md").exists());
+
+        assert_eq!(entries(&s(&zip)).unwrap(), ["Modelica/package.mo", "README.md"]);
+        assert_eq!(read(&s(&zip), "README.md").unwrap(), b"readme");
+        assert!(read(&s(&zip), "Modelica").is_err());
         let _ = std::fs::remove_dir_all(&dir);
     }
 

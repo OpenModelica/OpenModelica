@@ -4086,6 +4086,37 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
 </context>
 <context>
+    <name>InstallLibraryFromPathDialog</name>
+    <message>
+        <source>Install these packages of &lt;b&gt;%1&lt;/b&gt;:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An installed library is read-only. To change a library, open it with %1 instead.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Installing the packages. Please wait.&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 does not contain exactly one top-level class, so it is not a package to install.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 (replaces the installed %1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not install %1. See message browser for any possible messages.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>LSPClient</name>
     <message>
         <source>Failed to start language server: %1</source>
@@ -4857,6 +4888,14 @@ Use Download... to fetch one, or point Server Executable at a server you already
         <translation>экспорта в OMNotebook</translation>
     </message>
     <message>
+        <source>There is no package to install in &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Modelica Packages (*.mo *.zip)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Importing model(s) from OMNotebook</source>
         <translation>Импорт модели (моделей) из OMNotebook</translation>
     </message>
@@ -4959,6 +4998,22 @@ Use Download... to fetch one, or point Server Executable at a server you already
     <message>
         <source>Opens the install library window</source>
         <translation>Открывает окно установки библиотеки</translation>
+    </message>
+    <message>
+        <source>Install Library From File...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Installs the libraries of a .mo or .zip file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install Library From Directory...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Installs the libraries of a directory</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Upgrades the installed libraries</source>

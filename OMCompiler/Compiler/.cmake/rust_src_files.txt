@@ -798,6 +798,7 @@ wasm/simulator/examples/DistrictHeating.mo
 wasm/simulator/index.html
 wasm/simulator/omc-worker.js
 wasm/storage/index.html
+wasm/storage/upload.js
 wasm/storage/worker.js
 wasm/symbolize.html
 wasm/theme.css

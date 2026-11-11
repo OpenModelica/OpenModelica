@@ -3579,6 +3579,52 @@ bool MainWindow::openInstallLibraryDialog()
 }
 
 /*!
+ * \brief installLibraryFromPath
+ * Asks which packages of a .mo file, a .zip file or a directory to install, and installs them.
+ */
+static void installLibraryFromPath(QWidget *pParent, const QString &path)
+{
+  const QString librariesDirectory = QFileInfo(MainWindow::instance()->getLibraryIndexFilePath()).absolutePath();
+  InstallLibraryFromPathDialog *pDialog = new InstallLibraryFromPathDialog(path, librariesDirectory, pParent);
+  if (pDialog->hasPackages()) {
+    pDialog->exec();
+  } else {
+    delete pDialog;
+    QMessageBox::information(pParent, QString("%1 - %2").arg(Helper::applicationName, Helper::installLibrary),
+                             MainWindow::tr("There is no package to install in <b>%1</b>.").arg(path.toHtmlEscaped()), QMessageBox::Ok);
+  }
+}
+
+/*!
+ * \brief MainWindow::installLibraryFromFile
+ * Installs the packages of a .mo or .zip file.
+ */
+void MainWindow::installLibraryFromFile()
+{
+  const QString fileName = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL,
+                                                          tr("Modelica Packages (*.mo *.zip)"), NULL);
+  if (!fileName.isEmpty()) {
+    installLibraryFromPath(this, fileName);
+  }
+}
+
+/*!
+ * \brief MainWindow::installLibraryFromDirectory
+ * Installs the packages of a directory.
+ */
+void MainWindow::installLibraryFromDirectory()
+{
+#if defined(__EMSCRIPTEN__)
+  const QString dir = WasmLocalFiles::openFolder();
+#else
+  const QString dir = StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseDirectory), NULL);
+#endif
+  if (!dir.isEmpty()) {
+    installLibraryFromPath(this, dir);
+  }
+}
+
+/*!
  * \brief MainWindow::updateInstalledLibraries
  * Opens the upgrade installed libraries dialog.
  */
@@ -4821,6 +4867,12 @@ void MainWindow::createActions()
   mpInstallLibraryAction = new QAction(Helper::installLibrary, this);
   mpInstallLibraryAction->setStatusTip(tr("Opens the install library window"));
   connect(mpInstallLibraryAction, SIGNAL(triggered()), SLOT(openInstallLibraryDialog()));
+  mpInstallLibraryFromFileAction = new QAction(tr("Install Library From File..."), this);
+  mpInstallLibraryFromFileAction->setStatusTip(tr("Installs the libraries of a .mo or .zip file"));
+  connect(mpInstallLibraryFromFileAction, SIGNAL(triggered()), SLOT(installLibraryFromFile()));
+  mpInstallLibraryFromDirectoryAction = new QAction(tr("Install Library From Directory..."), this);
+  mpInstallLibraryFromDirectoryAction->setStatusTip(tr("Installs the libraries of a directory"));
+  connect(mpInstallLibraryFromDirectoryAction, SIGNAL(triggered()), SLOT(installLibraryFromDirectory()));
   // upgrade installed libraries action
   mpUpgradeInstalledLibrariesAction = new QAction(Helper::upgradeInstalledLibraries, this);
   mpUpgradeInstalledLibrariesAction->setStatusTip(tr("Upgrades the installed libraries"));
@@ -5283,6 +5335,8 @@ void MainWindow::createMenus()
   pManageLibrariesMenu->setTitle(tr("&Manage Libraries"));
   // add actions to manage libraries
   pManageLibrariesMenu->addAction(mpInstallLibraryAction);
+  pManageLibrariesMenu->addAction(mpInstallLibraryFromFileAction);
+  pManageLibrariesMenu->addAction(mpInstallLibraryFromDirectoryAction);
   pManageLibrariesMenu->addAction(mpUpgradeInstalledLibrariesAction);
   pManageLibrariesMenu->addAction(mpUpdateLibraryIndexAction);
   mpFileMenu->addMenu(pManageLibrariesMenu);

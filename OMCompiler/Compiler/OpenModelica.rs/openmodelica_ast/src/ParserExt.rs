@@ -248,12 +248,16 @@ mod parse_cache {
     #[cfg(target_arch = "wasm32")]
     fn flush() {
         let Some(Some(cache)) = CACHE.get() else { return };
+        let jobs = JOBS.take();
+        if jobs.is_empty() {
+            return;
+        }
         if !SWEPT.replace(true)
             && let Some(base) = cache.dir.parent()
         {
             maintain(base, &cache.dir);
         }
-        for (entry, program, messages) in JOBS.take() {
+        for (entry, program, messages) in jobs {
             write(&entry, &program, &messages);
         }
     }
