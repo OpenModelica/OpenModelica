@@ -20,6 +20,7 @@ issue10523.mos \
 Issue14456.mos \
 CvodeStepTooClose.mos \
 Issue17436.mos \
+FmuStartEventError.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -34,6 +35,7 @@ FmuAssertSolverRetry.py \
 FmuEquationAssertLog.py \
 FmuExitInitAssert.py \
 FmuNlsSameTime.py \
+FmuStartEventError.py \
 FmuZlibLinkOrder-f.c \
 Makefile \
 

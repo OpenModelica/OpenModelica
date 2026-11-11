@@ -1781,15 +1781,15 @@ fmiXStatus FMIX(ExitInitializationMode)(fmiXComponent c)
   {
     comp->eventInfo.nextEventTimeDefined = fmiXTrue;
     comp->eventInfo.nextEventTime = nextSampleEvent;
-    internalEventUpdate(comp, &(comp->eventInfo));
+    res = internalEventUpdate(comp, &(comp->eventInfo));
   }
   else
   {
     comp->eventInfo.nextEventTimeDefined = fmiXFalse;
+    res = fmiXOK;
   }
-  res = fmiXOK;
 
-  done = 1;
+  done = res == fmiXOK;
   /* catch */
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
   if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); done = 0; }
