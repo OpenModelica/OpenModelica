@@ -1159,7 +1159,7 @@ pub fn readdir(dir: &str) -> Vec<DirEntry> {
 /// Size in bytes of the file at absolute key `path`, or `None` if absent —
 /// preview1 `path_filestat_get`'s `size` field, by path.
 pub fn stat_size(path: &str) -> Option<u64> {
-    crate::read(path).map(|b| b.len() as u64)
+    crate::size(path)
 }
 
 #[cfg(test)]

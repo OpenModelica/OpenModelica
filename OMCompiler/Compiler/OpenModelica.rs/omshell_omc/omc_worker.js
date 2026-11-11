@@ -45,6 +45,7 @@ import * as OmcModule from "./omc/OpenModelicaCompiler.js";
 import { installWasmBlobs } from "./wasm-blobs.js";
 import { installFmuAot } from "./fmu-aot.js";
 import { describeError } from "./wasm-stack.js";
+import { openStore } from "./omc-store.js";
 
 // Self-ID so a page console shows which omc_worker.js loaded (cache diagnosis).
 console.log("omc_worker.js loaded (WASI file surface)");
@@ -98,6 +99,12 @@ const ready = (async () => {
   await init();
   omc_set_env("OPENMODELICAHOME", "/usr");
 })();
+
+// <home>/.openmodelica in browser storage (omc-store.js), saved after each command
+// that can change it. The next command waits for the save.
+let store = null;
+let saving = Promise.resolve();
+const SAVES = new Set(["init", "eval", "abi", "vfsPut", "vfsPutMany", "vfsLoadZip", "vfsRemove", "vfsRename"]);
 
 const trim = (s) => (s ?? "").trim();
 const unquote = (s) => s.replace(/^"+|"+$/g, "");
@@ -186,6 +193,7 @@ async function abiWithDownloads(request) {
 }
 
 async function doInit(installMsl) {
+  store = await openStore(OmcModule);
   if (!omc_init()) {
     return { kind: "ready", ok: false, error: "omc_init() failed" };
   }
@@ -269,6 +277,7 @@ self.onmessage = async (e) => {
     return;
   }
   await ready;
+  await saving;
   try {
     if (msg.cmd === "init") {
       self.postMessage(await doInit(msg.installMsl !== false));
@@ -349,4 +358,5 @@ self.onmessage = async (e) => {
       self.postMessage({ kind: "done", result: "", error: describeError(err), keep: true });
     }
   }
+  if (store && SAVES.has(msg.cmd)) saving = saving.then(() => store.flush());
 };

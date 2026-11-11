@@ -117,6 +117,7 @@ openmodelica_ast/src/parser/mod.rs
 openmodelica_ast/src/parser/token_input.rs
 openmodelica_ast/tests/data/Absyn.mo
 openmodelica_ast/tests/data/CodegenC.mo
+openmodelica_ast/tests/parse_cache.rs
 openmodelica_ast_collections/Cargo.toml
 openmodelica_backend/Cargo.toml
 openmodelica_backend/src/Globals.rs
@@ -780,8 +781,10 @@ wasm/icons/omplot.svg
 wasm/icons/omshell.svg
 wasm/icons/openmodelica-logo.svg
 wasm/icons/simulator.svg
+wasm/icons/storage.svg
 wasm/index.html
 wasm/omc-cli.js
+wasm/omc-store.js
 wasm/omc-terminal/index.html
 wasm/omplot/README.md
 wasm/omplot/index.html
@@ -794,6 +797,8 @@ wasm/simulator/examples/BouncingBall.mo
 wasm/simulator/examples/DistrictHeating.mo
 wasm/simulator/index.html
 wasm/simulator/omc-worker.js
+wasm/storage/index.html
+wasm/storage/worker.js
 wasm/symbolize.html
 wasm/theme.css
 wasm/units.js
