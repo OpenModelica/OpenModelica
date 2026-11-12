@@ -5803,6 +5803,14 @@ Continue?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Partial</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Encapsulated</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>State</source>
         <translation type="unfinished"></translation>
     </message>

@@ -5866,6 +5866,14 @@ Continuare?</numerusform>
         <translation>Inserisci nella classe (opzionale):</translation>
     </message>
     <message>
+        <source>Partial</source>
+        <translation>Partial</translation>
+    </message>
+    <message>
+        <source>Encapsulated</source>
+        <translation>Encapsulated</translation>
+    </message>
+    <message>
         <source>State</source>
         <translation>Stato</translation>
     </message>

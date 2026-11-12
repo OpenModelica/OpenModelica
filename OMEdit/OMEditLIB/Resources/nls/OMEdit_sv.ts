@@ -5867,6 +5867,14 @@ Vill du fortsätta?</numerusform>
         <translation>Infoga i klass (frivillig):</translation>
     </message>
     <message>
+        <source>Partial</source>
+        <translation>Partial</translation>
+    </message>
+    <message>
+        <source>Encapsulated</source>
+        <translation>Encapsulated</translation>
+    </message>
+    <message>
         <source>State</source>
         <translation>Tillstånd</translation>
     </message>

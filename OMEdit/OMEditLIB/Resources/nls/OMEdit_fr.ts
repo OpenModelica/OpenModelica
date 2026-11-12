@@ -5835,6 +5835,14 @@ Continue?</source>
         <translation>Insérer dans la classe (optionnel):</translation>
     </message>
     <message>
+        <source>Partial</source>
+        <translation>Partial</translation>
+    </message>
+    <message>
+        <source>Encapsulated</source>
+        <translation>Encapsulé</translation>
+    </message>
+    <message>
         <source>State</source>
         <translatorcomment>État?</translatorcomment>
         <translation type="unfinished"></translation>

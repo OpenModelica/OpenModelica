@@ -5816,6 +5816,14 @@ Continue?</source>
         <translation>插入到类（可选）：</translation>
     </message>
     <message>
+        <source>Partial</source>
+        <translation>部分</translation>
+    </message>
+    <message>
+        <source>Encapsulated</source>
+        <translation>封装</translation>
+    </message>
+    <message>
         <source>State</source>
         <translation>状态</translation>
     </message>
