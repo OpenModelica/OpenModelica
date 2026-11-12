@@ -3633,7 +3633,7 @@ template generateStaticSparseData(String indexName, String systemType, SparsityP
     let sizeleadindex = listLength(sparsepattern)
     let colPtr = genSPCRSPtr(listLength(sparsepattern), sparsepattern, "colPtrIndex")
     let rowIndex = genSPCRSRows(lengthListElements(unzipSecond(sparsepattern)), sparsepattern, "rowIndex")
-    let colorString = genSPColors(colorList, "inSysData->sparsePattern->colorCols")
+    let colorString = genSPColors(colorList, "inSysData->sparsePattern")
     <<
 
     OMC_DISABLE_OPT
@@ -5398,7 +5398,7 @@ template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer n
   let sizeNNZ = lengthListElements(unzipSecond(sparsepattern))
   let colPtr = genSPCRSPtr(listLength(sparsepattern), sparsepattern, "colPtrIndex")
   let rowIndex = genSPCRSRows(lengthListElements(unzipSecond(sparsepattern)), sparsepattern, "rowIndex")
-  let colorString = genSPColors(colorList, "daeModeData->sparsePattern->colorCols")
+  let colorString = genSPColors(colorList, "daeModeData->sparsePattern")
   let algIndexes = genVarIndexes(algVars, "algIndexes")
   <<
   /* initialize the daeMode variables */
@@ -7223,7 +7223,7 @@ match sparsepattern
       }
 
       /* write color array */
-      <%readSPColors(colorList, "jacobian->sparsePattern->colorCols", sizeleadindex)%>
+      <%readSPColors(colorList, "jacobian->sparsePattern", sizeleadindex)%>
 
       omc_fclose(pFile);
 
@@ -7376,26 +7376,32 @@ template genSPCRSRows(Integer nonZeroElems, SparsityPattern sparsepattern, Strin
   >>
 end genSPCRSRows;
 
-template genSPColors(list<list<Integer>> colorList, String arrayName)
-"This template generates row of the CRS format"
+template genSPColors(list<list<Integer>> colorList, String patternName)
+"This template generates coloring in CRS format"
 ::=
-  let colorArray = (colorList |> (indices) hasindex index0 =>
-    let length = '<%listLength(indices)%>'
-    let index = '<%intAdd(index0,1)%>'
-    let ind_name = 'indices_<%index%>'
+  let nColors = listLength(colorList)
+  let nElements = lengthListElements(colorList)
   <<
-  /* color <%index%> with <%length%> columns */
-  const int <%ind_name%>[<%length%>] = {<%(indices |> i_index =>
-    '<%i_index%>' ;separator=", ")%>};
-  for(i=0; i<<%length%>; i++)
-    <%arrayName%>[<%ind_name%>[i]] = <%index%>;
-  >>;separator="\n\n")
-  <<
-  <%colorArray%>
+  const unsigned int colorSizes[<%nColors%> + 1] = {0,<%colorList |> color => listLength(color); separator=","%>};
+  <%patternName%>->color_leadindex[0] = 0;
+  for (size_t i = 0; i < <%nColors%>; ++i) {
+    <%patternName%>->color_leadindex[i+1] = <%patternName%>->color_leadindex[i] + colorSizes[i];
+  }
+
+  const unsigned int index[<%nElements%>] = {<%colorList |> color => (color |> i => i; separator=","); separator=","%>};
+  memcpy(<%patternName%>->color_index, index, <%nElements%> * sizeof(unsigned int));
+
+  // Convert to colorCols
+  for (unsigned int color = 0; color < <%patternName%>->maxColors; ++color) {
+    for (unsigned int ci = <%patternName%>->color_leadindex[color]; ci < <%patternName%>->color_leadindex[color+1]; ++ci) {
+      unsigned int column = <%patternName%>->color_index[ci];
+      <%patternName%>->colorCols[column] = color;
+    }
+  }
   >>
 end genSPColors;
 
-template readSPColors(list<list<Integer>> colorList, String arrayName, String maxIndex)
+template readSPColors(list<list<Integer>> colorList, String patternName, String maxIndex)
 "This template generates row of the CRS format"
 ::=
   let colorArray = (colorList |> (indices) hasindex index0 =>
@@ -7403,10 +7409,13 @@ template readSPColors(list<list<Integer>> colorList, String arrayName, String ma
     let index = '<%intAdd(index0,1)%>'
   <<
   /* color <%index%> with <%length%> columns */
-  readSparsePatternColor(threadData, pFile, <%arrayName%>, <%index%>, <%length%>, <%maxIndex%>);
+  readSparsePatternColor(threadData, pFile, <%patternName%>->colorCols, <%index%>, <%length%>, <%maxIndex%>);
   >>;separator="\n")
   <<
   <%colorArray%>
+
+  // Convert to coloring storage
+  convertColoringFormat(<%patternName%>);
   >>
 end readSPColors;
 

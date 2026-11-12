@@ -166,6 +166,8 @@ typedef struct SPARSE_PATTERN
                                    * Length of array is sizeCols/nRows */
   unsigned int maxColors;         /* Number of colors */
   unsigned int sizeCols;          /* Allocated number of columns (= n_leadIndex passed to allocSparsePattern) */
+  unsigned int* color_leadindex;  /* Array with start indices for color, size: nColors+1 */
+  unsigned int* color_index;      /* Array with column/row indices, size: nCols/nRows */
 } SPARSE_PATTERN;
 
 /* (column, row) entries of a sparsity pattern in any order, see sparsePatternFromPairs */
