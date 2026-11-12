@@ -2511,14 +2511,12 @@ CreateOrEditTransitionDialog::CreateOrEditTransitionDialog(GraphicsView *pGraphi
   // condition
   mpConditionLabel = new Label(Helper::condition);
   mpConditionTextBox = new QLineEdit(mpTransitionLineAnnotation->getCondition());
-  // immediate
-  mpImmediateCheckBox = new QCheckBox(Helper::immediate);
+  // the argument names of transition(), not translated
+  mpImmediateCheckBox = new QCheckBox("immediate");
   mpImmediateCheckBox->setChecked(mpTransitionLineAnnotation->getImmediate());
-  // reset
-  mpResetCheckBox = new QCheckBox(Helper::reset);
+  mpResetCheckBox = new QCheckBox("reset");
   mpResetCheckBox->setChecked(mpTransitionLineAnnotation->getReset());
-  // synchronize
-  mpSynchronizeCheckBox = new QCheckBox(Helper::synchronize);
+  mpSynchronizeCheckBox = new QCheckBox("synchronize");
   mpSynchronizeCheckBox->setChecked(mpTransitionLineAnnotation->getSynchronize());
   // priority
   mpPriorityLabel = new Label(Helper::priority);

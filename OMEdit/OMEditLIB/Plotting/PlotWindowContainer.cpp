@@ -453,7 +453,7 @@ PlotWindow* PlotWindowContainer::addInteractivePlotWindow(QString owner, int por
     pPlotWindow->setInteractiveOwner(owner);
     pPlotWindow->setInteractivePort(port);
     connect(pPlotWindow, SIGNAL(closingDown()), SLOT(removeInteractivePlotWindow()));
-    pPlotWindow->setWindowTitle(tr("Interactive Plot : %1").arg(owner));
+    pPlotWindow->setWindowTitle(tr("Interactive Plot: %1").arg(owner));
     pPlotWindow->setTitle("");
     pPlotWindow->setLegendPosition("top");
     pPlotWindow->setAutoScale(OptionsDialog::instance()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());

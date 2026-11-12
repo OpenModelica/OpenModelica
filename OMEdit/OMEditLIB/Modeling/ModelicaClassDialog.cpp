@@ -216,10 +216,9 @@ ModelicaClassDialog::ModelicaClassDialog(QWidget *pParent)
   mpParentClassBrowseButton = new QPushButton(Helper::browse);
   mpParentClassBrowseButton->setAutoDefault(false);
   connect(mpParentClassBrowseButton, SIGNAL(clicked()), SLOT(browseParentClass()));
-  // create partial checkbox
-  mpPartialCheckBox = new QCheckBox(tr("Partial"));
-  // create encapsulated checkbox
-  mpEncapsulatedCheckBox = new QCheckBox(tr("Encapsulated"));
+  // the Modelica class prefixes, not translated
+  mpPartialCheckBox = new QCheckBox("partial");
+  mpEncapsulatedCheckBox = new QCheckBox("encapsulated");
   // create state checkbox
   mpStateCheckBox = new QCheckBox(tr("State"));
   // create save contents of package in one file checkbox

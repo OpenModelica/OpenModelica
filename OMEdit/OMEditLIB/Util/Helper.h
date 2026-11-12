@@ -432,8 +432,6 @@ public:
   static QString italic;
   static QString underline;
   static QString condition;
-  static QString immediate;
-  static QString synchronize;
   static QString priority;
   static QString secs;
   static QString saveContentsInOneFile;

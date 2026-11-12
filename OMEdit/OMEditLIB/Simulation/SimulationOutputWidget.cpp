@@ -1443,7 +1443,7 @@ void SimulationOutputWidget::openTransformationBrowser(QUrl url)
     } else {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), QString("%1<br />%2")
                             .arg(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName))
-                            .arg(tr("Url is <b>%1</b>").arg(url.toString())), QMessageBox::Ok);
+                            .arg(tr("URL is <b>%1</b>").arg(url.toString())), QMessageBox::Ok);
     }
   } else if (url.scheme().compare("file") == 0) {
     // we know that file link is always simulation log file.

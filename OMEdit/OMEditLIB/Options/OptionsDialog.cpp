@@ -5261,7 +5261,7 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)
   pModelingViewModeGroupBox->setLayout(modelingViewModeLayout);
   // Default View
   QGroupBox *pDefaultViewGroupBox = new QGroupBox(tr("Default View"));
-  pDefaultViewGroupBox->setToolTip(tr("This settings will be used when no preferredView annotation is defined."));
+  pDefaultViewGroupBox->setToolTip(tr("This setting is used when no preferredView annotation is defined."));
   mpIconViewRadioButton = new QRadioButton(Helper::iconView);
   mpDiagramViewRadioButton = new QRadioButton(Helper::diagramView);
   mpDiagramViewRadioButton->setChecked(true);
@@ -5451,7 +5451,7 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpIgnoreSimulationFlagsAnnotationCheckBox = new QCheckBox(tr("Ignore __OpenModelica_simulationFlags annotation"));
   /* save class before simulation checkbox */
   mpSaveClassBeforeSimulationCheckBox = new QCheckBox(tr("Save class before simulation"));
-  mpSaveClassBeforeSimulationCheckBox->setToolTip(tr("Disabling this will effect the debugger functionality."));
+  mpSaveClassBeforeSimulationCheckBox->setToolTip(tr("Disabling this will affect the debugger functionality."));
   mpSaveClassBeforeSimulationCheckBox->setChecked(OptionsDefaults::Simulation::saveClassBeforeSimulation);
   /* switch to plotting perspective after simulation checkbox */
   mpSwitchToPlottingPerspectiveCheckBox = new QCheckBox(tr("Switch to plotting perspective after simulation"));
@@ -6948,7 +6948,7 @@ TraceabilityPage::TraceabilityPage(OptionsDialog *pOptionsDialog)
   mpBrowseGitRepositoryButton->setAutoDefault(false);
   connect(mpBrowseGitRepositoryButton, SIGNAL(clicked()), SLOT(browseGitRepository()));
   // Traceability Daemon Ip Adress
-  mpTraceabilityDaemonIpAdressLabel = new Label(tr("Traceability Daemon IP Adress:"));
+  mpTraceabilityDaemonIpAdressLabel = new Label(tr("Traceability Daemon IP Address:"));
   mpTraceabilityDaemonIpAdressTextBox = new QLineEdit;
   // Traceability Daemon Port
   mpTraceabilityDaemonPortLabel = new Label(tr("Traceability Daemon Port:"));
@@ -7158,13 +7158,13 @@ CRMLPage::CRMLPage(OptionsDialog *pOptionsDialog)
   mpCompilerCommandLineOptionsLabel = new Label(tr("Compiler Arguments:"));
   mpCompilerCommandLineOptionsTextBox = new QLineEdit;
   // CRML Process
-  mpCompilerProcessLabel = new Label(tr("Processor:"));
+  mpCompilerProcessLabel = new Label(tr("Java Executable:"));
   mpCompilerProcessTextBox = new QLineEdit(OptionsDefaults::CRML::process);
   mpBrowseCompilerProcessButton = new QPushButton(Helper::browse);
   mpBrowseCompilerProcessButton->setAutoDefault(false);
   connect(mpBrowseCompilerProcessButton, SIGNAL(clicked()), SLOT(browseCompilerProcessFile()));
   mpResetCompilerProcessButton = new QPushButton(Helper::reset);
-  mpResetCompilerProcessButton->setToolTip(tr("Resets to default Processor path"));
+  mpResetCompilerProcessButton->setToolTip(tr("Resets to the default Java executable"));
   mpResetCompilerProcessButton->setAutoDefault(false);
   connect(mpResetCompilerProcessButton, SIGNAL(clicked()), SLOT(resetCompilerProcessPath()));
   mpModelicaLibraries = new DirectoryOrFileSelector(false, tr("Modelica Library Paths:"), pOptionsDialog);

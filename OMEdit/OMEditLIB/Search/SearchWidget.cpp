@@ -87,7 +87,7 @@ SearchWidget::SearchWidget(QWidget *pParent)
   pSearchBrowserToolBar->setIconSize(QSize(toolbarIconSize, toolbarIconSize));
   // clear action
   mpClearAction = new QAction(QIcon(":/Resources/icons/clear.svg"), tr("Clear All"), this);
-  mpClearAction->setStatusTip(tr("clears all the result"));
+  mpClearAction->setStatusTip(tr("Clears all the results"));
   mpClearAction->setDisabled(false);
   connect(mpClearAction, SIGNAL(triggered()), SLOT(clearAll()));
   // expand action

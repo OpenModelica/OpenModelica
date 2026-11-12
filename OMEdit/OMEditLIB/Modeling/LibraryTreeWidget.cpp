@@ -2929,7 +2929,7 @@ void LibraryTreeView::createActions()
   connect(mpExportFigaroAction, SIGNAL(triggered()), SLOT(exportModelFigaro()));
   // Update Bindings Action
   mpUpdateBindingsAction = new QAction(tr("Update Bindings"), this);
-  mpUpdateBindingsAction->setStatusTip(tr("updates the bindings"));
+  mpUpdateBindingsAction->setStatusTip(tr("Updates the bindings"));
   connect(mpUpdateBindingsAction, SIGNAL(triggered()), SLOT(updateBindings()));
   // Generate Verification Scenarios Action
   mpGenerateVerificationScenariosAction = new QAction(tr("Generate Verification Scenarios"), this);
@@ -3302,11 +3302,11 @@ void LibraryTreeView::openInformationDialog()
     QVBoxLayout *pLayout = new QVBoxLayout;
     pLayout->setAlignment(Qt::AlignTop);
     pLayout->addWidget(pHeadingLabel);
-    pLayout->addWidget(new Label(tr("Version : %1").arg(pLibraryTreeItem->getVersion())));
-    pLayout->addWidget(new Label(tr("Version Date : %1").arg(pLibraryTreeItem->getVersionDate())));
-    pLayout->addWidget(new Label(tr("Version Build : %1").arg(pLibraryTreeItem->getVersionBuild())));
-    pLayout->addWidget(new Label(tr("Date Modified : %1").arg(pLibraryTreeItem->getDateModified())));
-    pLayout->addWidget(new Label(tr("RevisionId : %1").arg(pLibraryTreeItem->getRevisionId())));
+    pLayout->addWidget(new Label(tr("Version: %1").arg(pLibraryTreeItem->getVersion())));
+    pLayout->addWidget(new Label(tr("Version Date: %1").arg(pLibraryTreeItem->getVersionDate())));
+    pLayout->addWidget(new Label(tr("Version Build: %1").arg(pLibraryTreeItem->getVersionBuild())));
+    pLayout->addWidget(new Label(tr("Date Modified: %1").arg(pLibraryTreeItem->getDateModified())));
+    pLayout->addWidget(new Label(tr("Revision ID: %1").arg(pLibraryTreeItem->getRevisionId())));
     pInformationDialog->setLayout(pLayout);
     pInformationDialog->exec();
   }
@@ -4622,7 +4622,7 @@ void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
   }
   if (pLibraryTreeItem->isModelica()) {
     if (pLibraryTreeItem->isSaveFolderStructure()) {
-      QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("It is not possible to save as a Modelica package saved in a directory hierarchy Mapping."), QMessageBox::Ok);
+      QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Save As is not possible for a Modelica package that is saved as a directory hierarchy."), QMessageBox::Ok);
     } else {
       saveModelicaLibraryTreeItem(pLibraryTreeItem, true);
     }

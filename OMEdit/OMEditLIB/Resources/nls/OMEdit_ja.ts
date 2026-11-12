@@ -8,7 +8,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;h2&gt;%1 - %2&lt;/h2&gt;&lt;b&gt;Connected to %3 %4 encryption support&lt;/b&gt;&lt;br /&gt;%5&lt;br /&gt;Compiled with &lt;b&gt;Qt %7&lt;/b&gt;, running with &lt;b&gt;Qt %8&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Installation path &lt;b&gt;%6&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Copyright &lt;b&gt;Open Source Modelica Consortium (OSMC)&lt;/b&gt;.&lt;br /&gt;Distributed under OSMC-PL and AGPL3, see &lt;u&gt;&lt;a href=&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;.&lt;br /&gt;&lt;em&gt;Compiled without 3D animation support&lt;/em&gt;.</source>
+        <source>Connected to %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connected to %1 with encryption support</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connected to %1 without encryption support</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Compiled without 3D animation support</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;h2&gt;%1 - %2&lt;/h2&gt;&lt;b&gt;%3&lt;/b&gt;&lt;br /&gt;%4&lt;br /&gt;Compiled with &lt;b&gt;Qt %5&lt;/b&gt;, running with &lt;b&gt;Qt %6&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Installation path &lt;b&gt;%7&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Copyright &lt;b&gt;Open Source Modelica Consortium (OSMC)&lt;/b&gt;.&lt;br /&gt;Distributed under OSMC-PL and AGPL3, see &lt;u&gt;&lt;a href=&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -101,7 +117,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>A model already have a system. Only one system is allowed inside a model.</source>
+        <source>The model already has a root system. An SSP model can have only one root system.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -254,8 +270,12 @@
 <context>
     <name>BreakpointDialog</name>
     <message>
-        <source>%1 Breakpoint</source>
-        <translation>%1 ブレークポイント</translation>
+        <source>Edit Breakpoint</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Breakpoint</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>File Name:</source>
@@ -282,8 +302,8 @@
         <translation>無視する数:</translation>
     </message>
     <message>
-        <source>* Use &quot;%1&quot; to set condition on simulation time.</source>
-        <translation>* &quot;%1&quot; を使ってシミュレーション時間に条件を設定する .</translation>
+        <source>* In a condition, &quot;%1&quot; is the simulation time.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Select Class</source>
@@ -332,11 +352,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Processor:</source>
+        <source>Java Executable:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Resets to default Processor path</source>
+        <source>Resets to the default Java executable</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -913,6 +933,10 @@ The local copy and its synchronisation state are removed. Nothing in the cloud i
         <source>Commit Message </source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Commit description:</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ComponentNameDialog</name>
@@ -971,9 +995,8 @@ The local copy and its synchronisation state are removed. Nothing in the cloud i
         <translation>レポートを送付する</translation>
     </message>
     <message>
-        <source>Your Email (in case you want us to contact you regarding this issue):</source>
-        <translatorcomment>あなたのメールアドレス (この問題に関して当社から連絡を希望する場合に使用します):</translatorcomment>
-        <translation></translation>
+        <source>Your email (if we may contact you with questions about this issue):</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Describe the issue in few words:</source>
@@ -1037,6 +1060,10 @@ The local copy and its synchronisation state are removed. Nothing in the cloud i
     </message>
     <message>
         <source>System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A top-level class named &lt;b&gt;%1&lt;/b&gt; already exists.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1394,6 +1421,10 @@ Select the models for which you want to discard the local translation flag and a
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Change the background color of your text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Align Left</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1503,6 +1534,10 @@ Select the models for which you want to discard the local translation flag and a
     </message>
     <message>
         <source>The model instance for %1 is not available; the documentation changes were not saved.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>URL:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1946,7 +1981,7 @@ With no platform selected, the FMU is exported as FMI 3.0 (fmi-ls-wasm).</source
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Generated cmake target files failed. Exited with code %1.</source>
+        <source>Generating the cmake target files failed. Exited with code %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2052,10 +2087,6 @@ You can choose between waiting longer or abort debugging.</source>
         <translation>&lt;b&gt;%3&lt;/b&gt;.の中にすでに&lt;b&gt;%1&lt;/b&gt; &lt;i&gt;%2&lt;/i&gt;があります.</translation>
     </message>
     <message>
-        <source>The file &lt;b&gt;%1&lt;/b&gt; not found.</source>
-        <translation>ファイル &lt;b&gt;%1&lt;/b&gt;が見つかりません.</translation>
-    </message>
-    <message>
         <source>Error has occurred while loading the file/library &lt;b&gt;%1&lt;/b&gt;. Unable to load the file/library.</source>
         <translation>ライブラリy &lt;b&gt;%1&lt;/b&gt;のローディング中にエラーが発生しました.&#x3000;ライブラリをロードできません.</translation>
     </message>
@@ -2093,6 +2124,10 @@ You can choose between waiting longer or abort debugging.</source>
         <translation>ファイル &lt;b&gt; %1 &lt;/b&gt;を開くことができません.</translation>
     </message>
     <message>
+        <source>The file &lt;b&gt;%1&lt;/b&gt; was not found.</source>
+        <translation>ファイル &lt;b&gt;%1&lt;/b&gt;が見つかりません.</translation>
+    </message>
+    <message>
         <source>Error opening the file &lt;b&gt;%1&lt;/b&gt;. %2</source>
         <translation>ファイル&lt;b&gt;%1&lt;/b&gt; の読込みでエラーが起きました. %2</translation>
     </message>
@@ -2121,8 +2156,16 @@ You can choose between waiting longer or abort debugging.</source>
         <translation>&lt;b&gt;%1&lt;/b&gt;の名前のコンポーネントが存在しています. 名前は &lt;b&gt;%1&lt;/b&gt; から &lt;b&gt;%2&lt;/b&gt;へ変更されます. .&lt;br /&gt;&lt;br /&gt; コンポーネントは &lt;b&gt;inner&lt;/b&gt;として宣言されているため誤っていると思われます.</translation>
     </message>
     <message>
+        <source>The Figaro file is generated.</source>
+        <translation>FIGAROが生成されます.</translation>
+    </message>
+    <message>
         <source>The encrypted package is generated at &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A debug configuration with name &lt;b&gt;%1&lt;/b&gt; already exists. Error occurred while saving the debug configuration &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>デバグ設定名&lt;b&gt; %1 &lt;/b&gt; がすでに存在しています.  エラーがデバグ設定 &lt;b&gt;%2&lt;/b&gt;を保存している間に発生しました.</translation>
     </message>
     <message>
         <source>Unable to find component %1 while parsing %2 in %3.</source>
@@ -2157,10 +2200,6 @@ You can choose between waiting longer or abort debugging.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The FIGARO is generated.</source>
-        <translation>FIGAROが生成されます.</translation>
-    </message>
-    <message>
         <source>A component with the name &lt;b&gt;%1&lt;/b&gt; already exists or is a Modelica keyword. Please choose another name.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2191,10 +2230,6 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <source>Terminal command is not set. You can define a new terminal command in &lt;b&gt;%1-&gt;General-&gt;Terminal Command&lt;/b&gt;.</source>
         <translation>最終コマンドがセットされていません. 新たな最終コマンドを&lt;b&gt;%1-&gt;General-&gt;Terminal Command&lt;/b&gt;.の中で定義することができます.</translation>
-    </message>
-    <message>
-        <source>A debug configuration with name &lt;b&gt;%1&lt;/b&gt; already exists. Error occurred while saving the debug configuration &lt;b&gt;%2&lt;b&gt;.</source>
-        <translation>デバグ設定名&lt;b&gt; %1 &lt;/b&gt; がすでに存在しています.  エラーがデバグ設定 &lt;b&gt;%2&lt;b&gt;を保存している間に発生しました.</translation>
     </message>
     <message>
         <source>The FMU is generated at &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -2525,7 +2560,7 @@ You can choose between waiting longer or abort debugging.</source>
         <translation>デフォルトビュー</translation>
     </message>
     <message>
-        <source>This settings will be used when no preferredView annotation is defined.</source>
+        <source>This setting is used when no preferredView annotation is defined.</source>
         <translation>preferredViewの注記が無い場合この設定が使用されます.</translation>
     </message>
     <message>
@@ -3001,14 +3036,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>Modelicaクラスのインスタンス化/フラット化</translation>
     </message>
     <message>
-        <source>Exports the model as Functional Mockup Unit (FMU)</source>
-        <translation>モデルをFMUとして書き出し</translation>
-    </message>
-    <message>
-        <source>Imports the model from Functional Mockup Interface (FMU)</source>
-        <translation>FMUからモデルを読込み</translation>
-    </message>
-    <message>
         <source>Exports the model as XML</source>
         <translation>XMLとしてモデルを書き出し</translation>
     </message>
@@ -3141,10 +3168,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Translates As the CRML model to Modelica</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Run</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3197,10 +3220,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>回転:</translation>
     </message>
     <message>
-        <source>Bezier</source>
-        <translation>ベジエ</translation>
-    </message>
-    <message>
         <source>Start Arrow:</source>
         <translation>始点側矢印:</translation>
     </message>
@@ -3229,6 +3248,10 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Committing modified files to the repository</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Report Issue</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3238,6 +3261,14 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Version:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adds the system, e.g. FMI or TLM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adds the submodel, e.g. FMU or table</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3342,10 +3373,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Encrypted Package</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Exports the package as Encrytped package</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3485,6 +3512,26 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>再ロード</translation>
     </message>
     <message>
+        <source>Exports the model as Functional Mock-up Unit (FMU)</source>
+        <translation>モデルをFMUとして書き出し</translation>
+    </message>
+    <message>
+        <source>Exports the package as encrypted package</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Imports the model from a Functional Mock-up Unit (FMU)</source>
+        <translation>FMUからモデルを読込み</translation>
+    </message>
+    <message>
+        <source>Translates the CRML model to Modelica with options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bézier</source>
+        <translation>ベジエ</translation>
+    </message>
+    <message>
         <source>Index</source>
         <translation>インデックス</translation>
     </message>
@@ -3562,10 +3609,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Commit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Commiting modified files to the repository</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3681,15 +3724,7 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Adds the System i.e., FMI or TLM</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Add SubModel</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Adds the SubModel i.e., FMU or Table</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3731,14 +3766,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <source>Condition:</source>
         <translation>条件:</translation>
-    </message>
-    <message>
-        <source>Immediate</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Synchronize</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Priority:</source>
@@ -4434,8 +4461,28 @@ Use Download... to fetch one, or point Server Executable at a server you already
         <translation>バインディングを更新</translation>
     </message>
     <message>
-        <source>updates the bindings</source>
+        <source>Updates the bindings</source>
         <translation>バインディングを更新</translation>
+    </message>
+    <message>
+        <source>Version: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Version Date: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Version Build: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Date Modified: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Revision ID: %1</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Generate Verification Scenarios</source>
@@ -4456,26 +4503,6 @@ Use Download... to fetch one, or point Server Executable at a server you already
     <message>
         <source>Deletes the Modelica class</source>
         <translation>Modlicaクラスを削除</translation>
-    </message>
-    <message>
-        <source>Version : %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Version Date : %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Version Build : %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Date Modified : %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>RevisionId : %1</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Calibrate...</source>
@@ -4501,7 +4528,7 @@ Use Download... to fetch one, or point Server Executable at a server you already
         <translation>ファイルをセーブできあません.未知のライブラリタイプです.</translation>
     </message>
     <message>
-        <source>It is not possible to save as a Modelica package saved in a directory hierarchy Mapping.</source>
+        <source>Save As is not possible for a Modelica package that is saved as a directory hierarchy.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4577,11 +4604,11 @@ Use Download... to fetch one, or point Server Executable at a server you already
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Sha1</source>
+        <source>Subject</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Subject</source>
+        <source>SHA-1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4660,6 +4687,10 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>Please open a model before starting the OMSens plugin.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Imports the model from the model description of a Functional Mock-up Unit (FMU)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4880,10 +4911,6 @@ Use Download... to fetch one, or point Server Executable at a server you already
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>OMSens is not supported on MacOS</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Opens the Modelica file(s)</source>
         <translation>Modelicaファイルを開く</translation>
     </message>
@@ -4922,10 +4949,6 @@ Use Download... to fetch one, or point Server Executable at a server you already
     <message>
         <source>Instantiate Model</source>
         <translation>モデルのインスタンス化</translation>
-    </message>
-    <message>
-        <source>Instantiates the modelica model</source>
-        <translation>Modelicaモデルのインスタンス化</translation>
     </message>
     <message>
         <source>New Parametric Plot Window</source>
@@ -5012,10 +5035,6 @@ Use Download... to fetch one, or point Server Executable at a server you already
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>FMU_EXPORT Failed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Translating model %1 as FMU</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5029,6 +5048,10 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>Modelica Packages (*.mo *.zip)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OMSens is not supported on macOS</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5061,10 +5084,6 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>FMU Model Description</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Imports the model from Functional Mockup Interface (FMU) model description</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5158,6 +5177,10 @@ Use Download... to fetch one, or point Server Executable at a server you already
     <message>
         <source>Toggle between tab or sub-window view mode</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Instantiates the Modelica model</source>
+        <translation>Modelicaモデルのインスタンス化</translation>
     </message>
     <message>
         <source>Shows the list of archived simulations</source>
@@ -5369,6 +5392,10 @@ Use Download... to fetch one, or point Server Executable at a server you already
         <translation>デバグ（&amp;D）</translation>
     </message>
     <message>
+        <source>No active simulation output window. Please select a simulation output window for the re-simulation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&amp;SSP</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5378,10 +5405,6 @@ Use Download... to fetch one, or point Server Executable at a server you already
     </message>
     <message>
         <source>&amp;Git</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TraceabilityMenu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5557,10 +5580,6 @@ Use Download... to fetch one, or point Server Executable at a server you already
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>No active simulation output window. Please select a simulation output window for re-simulate.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Open a Modelica class first; it is the active class that gets saved.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5645,15 +5664,15 @@ Continue?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>clears the messages from this tab</source>
+        <source>Clears the messages from this tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clears the messages from all tabs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Clear All Tabs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>clears the messages from all tabs</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5786,14 +5805,6 @@ Continue?</source>
     <message>
         <source>Insert in class (optional):</source>
         <translation>挿入するクラス（オプション）:</translation>
-    </message>
-    <message>
-        <source>Partial</source>
-        <translation>Partial</translation>
-    </message>
-    <message>
-        <source>Encapsulated</source>
-        <translation>Encapsulated</translation>
     </message>
     <message>
         <source>State</source>
@@ -6597,10 +6608,6 @@ Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMS
 <context>
     <name>PlotWindowContainer</name>
     <message>
-        <source>Interactive Plot : %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Name Plot Tab</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6642,6 +6649,10 @@ Set the Python executable that has omuq installed in Tools &gt; Options &gt; OMS
     </message>
     <message>
         <source>Select a plot window before saving a figure in a model.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Interactive Plot: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7057,10 +7068,6 @@ Set the value to 0 if you don&apos;t want any delay.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>ReplaceSubModel</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Unable to find the SubModel file.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7070,6 +7077,10 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     </message>
     <message>
         <source>The submodel was not replaced (dryRun = true). The following changes were detected in the replacing submodel. See the Messages Browser for details.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SubModel file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7203,7 +7214,7 @@ Set the value to 0 if you don&apos;t want any delay.</source>
         <translation>すべてクリア</translation>
     </message>
     <message>
-        <source>clears all the result</source>
+        <source>Clears all the results</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7678,6 +7689,10 @@ Can cause high overhead but values will not be missed.</source>
         <translation>シミュレーションプロセスが失敗. コード %1で終了.</translation>
     </message>
     <message>
+        <source>URL is &lt;b&gt;%1&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Simulation of %1 finished.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7716,10 +7731,6 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <source>Compilation process finished successfully.
 </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Url is &lt;b&gt;%1&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7794,7 +7805,7 @@ Can cause high overhead but values will not be missed.</source>
         <translation>シミュレーション前にクラスを保存</translation>
     </message>
     <message>
-        <source>Disabling this will effect the debugger functionality.</source>
+        <source>Disabling this will affect the debugger functionality.</source>
         <translation>このスイッチをオフにするとデバグ機能に影響が出ます.</translation>
     </message>
     <message>
@@ -7837,7 +7848,7 @@ Can cause high overhead but values will not be missed.</source>
 <context>
     <name>SolverSettingsDialog</name>
     <message>
-        <source>SolverSettings - %1 (%2)</source>
+        <source>Solver Settings - %1 (%2)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8122,7 +8133,7 @@ Can cause high overhead but values will not be missed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Traceability Daemon IP Adress:</source>
+        <source>Traceability Daemon IP Address:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8504,7 +8515,7 @@ Variability: %4</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Sorry, no internet no news items.</source>
+        <source>No news without an internet connection.</source>
         <translation>インターネット未接続では新しいニュース項目が取得できません.</translation>
     </message>
     <message>

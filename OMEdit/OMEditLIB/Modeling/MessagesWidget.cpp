@@ -169,10 +169,10 @@ MessageWidget::MessageWidget(QWidget *pParent)
   mpCopyAction->setStatusTip(tr("Copy the Message"));
   connect(mpCopyAction, SIGNAL(triggered()), mpMessagesTextBrowser, SLOT(copy()));
   mpClearThisTabAction = new QAction(tr("Clear This Tab"), this);
-  mpClearThisTabAction->setStatusTip(tr("clears the messages from this tab"));
+  mpClearThisTabAction->setStatusTip(tr("Clears the messages from this tab"));
   connect(mpClearThisTabAction, SIGNAL(triggered()), SLOT(clearThisTabMessages()));
   mpClearAllTabsAction = new QAction(tr("Clear All Tabs"), this);
-  mpClearAllTabsAction->setStatusTip(tr("clears the messages from all tabs"));
+  mpClearAllTabsAction->setStatusTip(tr("Clears the messages from all tabs"));
   connect(mpClearAllTabsAction, SIGNAL(triggered()), SLOT(clearAllTabsMessages()));
   // Main Layout
   QHBoxLayout *pMainLayout = new QHBoxLayout;
