@@ -248,8 +248,20 @@ Agents add far too many comments. Keep them few and brief.
 
 ## Git
 
-- Work on a topic branch, never on `master`. Rebase on `master` instead of
-  merging it.
+- Work on a topic branch, never on `master`.
+- Never merge `master` or another branch into a topic branch, also not with
+  the "Update branch" button on GitHub. Rebase on `master` of
+  OpenModelica/OpenModelica instead. A merge puts upstream commits into the
+  branch; a later rebase makes copies of them, and each push of a copy adds
+  a note to every issue the commit mentions. Before you push, make sure that
+  the branch has only your commits:
+
+  ```sh
+  git fetch upstream                      # upstream: OpenModelica/OpenModelica
+  git rebase upstream/master
+  git log --oneline upstream/master..HEAD # must show only your commits
+  ```
+
 - Stage files explicitly. Do not use `git add -A`, `git add .`,
   `git commit -a`, `git reset --hard`, `git clean` or `git checkout .`: the
   working tree may contain someone else's work and untracked build output.
