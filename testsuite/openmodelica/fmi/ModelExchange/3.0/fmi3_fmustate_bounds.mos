@@ -1,0 +1,61 @@
+// name:     fmi3_fmustate_bounds
+// keywords: FMI 3.0 export FMU state serialization NULL
+// status:   correct
+// teardown_command: rm -rf fmi3_fmustate_bounds.fmu fmi3_fmustate_bounds.fmutmp/ fmi3_fmustate_bounds.log fmi3_fmustate_bounds_out.txt
+//
+// fmi3SerializeFMUState must refuse a size other than the one from
+// fmi3SerializedFMUStateSize, and fmi3DeserializeFMUState must refuse a byte
+// vector that does not fit size or this model. After such an error, the FMU
+// state calls are allowed (FMI 3.0.2, 2.3.1) and a stored state restored with
+// fmi3SetFMUState continues the simulation. The FMU state calls must return
+// fmi3Error for a NULL argument, and fmi3FreeFMUState must ignore a NULL
+// pointer. This tests the C runtime.
+
+setCommandLineOptions("--simCodeTarget=C"); getErrorString();
+loadString("
+model fmi3_fmustate_bounds
+  parameter String s = \"abc\";
+  parameter Real k = 2;
+  Real x(start = 1, fixed = true);
+  Real y = delay(x, 0.1);
+equation
+  der(x) = -k*x;
+end fmi3_fmustate_bounds;
+"); getErrorString();
+buildModelFMU(fmi3_fmustate_bounds, version = "3.0", fmuType = "me"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi3_fmustate_bounds.py fmi3_fmustate_bounds.fmu fmi3_fmustate_bounds_out.txt > fmi3_fmustate_bounds.log 2>&1"); getErrorString();
+readFile("fmi3_fmustate_bounds_out.txt"); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3_fmustate_bounds.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "serialize, size half of the state: fmi3Error
+// serialize, size 0: fmi3Error
+// serialize, size one byte too many: fmi3Error
+// deserialize, exact size, then set: fmi3OK, fmi3SetFMUState: fmi3OK
+// deserialize, one byte short: fmi3Error
+// deserialize, one byte too many: fmi3Error
+// deserialize, all bytes 0xFF: fmi3Error
+// deserialize, delay() buffer longer than the state: fmi3Error
+// serialize with a wrong size, then fmi3FreeFMUState, fmi3SetFMUState, fmi3EnterContinuousTimeMode: fmi3Error, fmi3OK, fmi3OK, fmi3OK
+// deserialize a damaged state, then fmi3FreeFMUState, fmi3SetFMUState, fmi3EnterContinuousTimeMode: fmi3Error, fmi3OK, fmi3OK, fmi3OK
+// fmi3FreeFMUState(c, NULL): fmi3OK
+// fmi3FreeFMUState(c, &NULL): fmi3OK
+// fmi3GetFMUState(c, NULL): fmi3Error
+// fmi3SetFMUState(c, NULL): fmi3Error
+// fmi3SerializedFMUStateSize(c, NULL, &size): fmi3Error
+// fmi3SerializedFMUStateSize(c, s, NULL): fmi3Error
+// fmi3SerializeFMUState(c, NULL, buffer, size): fmi3Error
+// fmi3SerializeFMUState(c, s, NULL, size): fmi3Error
+// fmi3DeserializeFMUState(c, NULL, size, &s): fmi3Error
+// fmi3DeserializeFMUState(c, buffer, size, NULL): fmi3Error
+// "
+// ""
+// endResult

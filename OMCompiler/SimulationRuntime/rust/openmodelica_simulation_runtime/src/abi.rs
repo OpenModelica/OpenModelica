@@ -1036,7 +1036,7 @@ pub const LSS_KLU: c_int = 3;
 pub const MIXED_SEARCH: c_int = 1;
 pub const NEWTON_DAMPED2: c_int = 2;
 /// The `*_MAX` sizes of the name/description tables `-help` prints.
-pub const S_MAX: c_int = 14;
+pub const S_MAX: c_int = 15;
 pub const IIM_MAX: c_int = 3;
 pub const LS_MAX: c_int = 6;
 pub const LSS_MAX: c_int = 4;

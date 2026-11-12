@@ -1115,7 +1115,7 @@ fn layout_for(
         (0..md.nNonLinearSystems as usize).any(|i| unsafe { (*_si.nonlinearSystemData.add(i)).homotopySupport != 0 });
     let n_states = md.nStates as u32;
     let n_real_alg = (md.nVariablesReal - 2 * md.nStates).max(0) as u32;
-    let dae = unsafe { md.nStateSets >= 0 && !_si.daeModeData.is_null() }.then(|| unsafe { &*_si.daeModeData });
+    let dae = { md.nStateSets >= 0 && !_si.daeModeData.is_null() }.then(|| unsafe { &*_si.daeModeData });
     let compiled_dae_mode =
         dae.is_some_and(|d| d.evaluateDAEResiduals.is_some()) && unsafe { crate::support::compiledInDAEMode } != 0;
     let (n_dae_res, n_dae_aux, n_dae_alg) = match dae {
@@ -1242,7 +1242,7 @@ pub fn build_regions(rt: &mut RtData) {
     direct(l.relations_pre_off, l.n_rel * 4, si.relationsPre as *mut c_void);
     direct(l.mathevents_off, l.n_math * 8, si.mathEventsValuePre as *mut c_void);
     direct(l.zctol_off, 8, &raw mut crate::support::tolZC as *mut c_void);
-    direct(l.nls_fail_off, 4, &raw mut crate::nls::nls_fail_slot as *mut c_void);
+    direct(l.nls_fail_off, 4, &raw mut crate::nls::NLS_FAIL_SLOT as *mut c_void);
     // Past the layout: C's `currentContext`, which the driver's `setContext`
     // writes and both `solve_linear_system` (`reuseMatrixJac`) and the nonlinear
     // solver's `updateInitialGuessDB` read.

@@ -1622,7 +1622,8 @@ pub struct SimMeta {
     /// Integration method (`"dassl"`, `"euler"`, …; empty = the dassl default).
     pub method: String,
     /// What a Co-Simulation `do-step` integrates with (C's
-    /// `FMI2CS_initializeSolverData`: `-s` from `_flags.json`, else euler).
+    /// `FMI2CS_initializeSolverData`: `-s` from `_flags.json`, else cvode if
+    /// available, else euler).
     /// Empty except for a CS export.
     pub cs_method: String,
     /// The nonlinear/linear solver selection an FMU export hard-codes, as a simflags
@@ -3243,7 +3244,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
                     });
                 }
             }
-            let mut jac = |r: &mut Reader| -> core::result::Result<Option<ReconJac>, &'static str> {
+            let jac = |r: &mut Reader| -> core::result::Result<Option<ReconJac>, &'static str> {
                 Ok(match r.u8()? {
                     0 => None,
                     _ => Some(ReconJac {
@@ -3268,7 +3269,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
             })
         }
     };
-    let mut info = |r: &mut Reader| -> core::result::Result<SrcInfo, &'static str> {
+    let info = |r: &mut Reader| -> core::result::Result<SrcInfo, &'static str> {
         Ok(SrcInfo {
             file: r.string()?,
             line_start: r.u32()? as i32,

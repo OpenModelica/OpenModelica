@@ -989,6 +989,8 @@ OperationPow2.mo \
 OperationPow3.mo \
 OperationPowEW1.mo \
 OperationRelational1.mo \
+OperationRelational2.mo \
+OperationRelational3.mo \
 OperationSub1.mo \
 OperationSubEW1.mo \
 OperationSubEW2.mo \

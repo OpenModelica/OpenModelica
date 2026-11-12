@@ -10676,5 +10676,250 @@ algorithm
   end if;
 end markNonlinearIterationVariable;
 
+public function traverseExpWithIterators<T>
+  "Traverses an expression top-down like Expression.traverseExpTopDown, and
+   passes the iterators of the enclosing reductions to func, innermost first."
+  input output DAE.Exp exp;
+  input list<DAE.ReductionIterator> iters;
+  input FuncType func;
+  input output T arg;
+
+  partial function FuncType
+    input output DAE.Exp exp;
+    input list<DAE.ReductionIterator> iters;
+    output Boolean cont;
+    input output T arg;
+  end FuncType;
+algorithm
+  (exp, arg) := Expression.traverseExpTopDown(exp, function traverseExpWithIteratorsHelper(iters = iters, func = func), arg);
+end traverseExpWithIterators;
+
+protected function traverseExpWithIteratorsHelper<T>
+  input output DAE.Exp exp;
+  input list<DAE.ReductionIterator> iters;
+  input FuncType func;
+  output Boolean cont;
+  input output T arg;
+
+  partial function FuncType
+    input output DAE.Exp exp;
+    input list<DAE.ReductionIterator> iters;
+    output Boolean cont;
+    input output T arg;
+  end FuncType;
+protected
+  DAE.Exp e;
+  list<DAE.ReductionIterator> new_iters = {};
+algorithm
+  if not Expression.isReduction(exp) then
+    (exp, cont, arg) := func(exp, iters, arg);
+    return;
+  end if;
+
+  () := match exp
+    case DAE.REDUCTION()
+      algorithm
+        for it in exp.iterators loop
+          (e, arg) := traverseExpWithIterators(it.exp, iters, func, arg);
+          it.exp := e;
+          new_iters := it :: new_iters;
+        end for;
+        (e, arg) := traverseExpWithIterators(exp.expr, listAppend(new_iters, iters), func, arg);
+        exp.expr := e;
+        exp.iterators := listReverse(new_iters);
+      then ();
+  end match;
+  cont := false;
+end traverseExpWithIteratorsHelper;
+
+public function traverseStmtsWithIterators<T>
+  "Traverses the expressions of statements like traverseExpWithIterators, and
+   also passes the iterators of the enclosing for-loops to func."
+  input output list<DAE.Statement> stmts;
+  input list<DAE.ReductionIterator> iters;
+  input FuncType func;
+  input output T arg;
+
+  partial function FuncType
+    input output DAE.Exp exp;
+    input list<DAE.ReductionIterator> iters;
+    output Boolean cont;
+    input output T arg;
+  end FuncType;
+algorithm
+  (stmts, arg) := List.mapFold(stmts, function traverseStmtWithIterators(iters = iters, func = func), arg);
+end traverseStmtsWithIterators;
+
+protected function traverseStmtWithIterators<T>
+  input output DAE.Statement stmt;
+  input list<DAE.ReductionIterator> iters;
+  input FuncType func;
+  input output T arg;
+
+  partial function FuncType
+    input output DAE.Exp exp;
+    input list<DAE.ReductionIterator> iters;
+    output Boolean cont;
+    input output T arg;
+  end FuncType;
+protected
+  DAE.Statement s;
+  DAE.Exp e;
+  list<DAE.Statement> stmts;
+  DAE.Else else_;
+algorithm
+  () := match stmt
+    case DAE.STMT_FOR()
+      algorithm
+        (e, arg) := traverseExpWithIterators(stmt.range, iters, func, arg);
+        stmt.range := e;
+        (stmts, arg) := traverseStmtsWithIterators(stmt.statementLst,
+          DAE.REDUCTIONITER(stmt.iter, stmt.range, NONE(), stmt.type_) :: iters, func, arg);
+        stmt.statementLst := stmts;
+      then ();
+
+    case DAE.STMT_PARFOR()
+      algorithm
+        (e, arg) := traverseExpWithIterators(stmt.range, iters, func, arg);
+        stmt.range := e;
+        (stmts, arg) := traverseStmtsWithIterators(stmt.statementLst,
+          DAE.REDUCTIONITER(stmt.iter, stmt.range, NONE(), stmt.type_) :: iters, func, arg);
+        stmt.statementLst := stmts;
+      then ();
+
+    case DAE.STMT_IF()
+      algorithm
+        (e, arg) := traverseExpWithIterators(stmt.exp, iters, func, arg);
+        stmt.exp := e;
+        (stmts, arg) := traverseStmtsWithIterators(stmt.statementLst, iters, func, arg);
+        stmt.statementLst := stmts;
+        (else_, arg) := traverseElseWithIterators(stmt.else_, iters, func, arg);
+        stmt.else_ := else_;
+      then ();
+
+    case DAE.STMT_WHILE()
+      algorithm
+        (e, arg) := traverseExpWithIterators(stmt.exp, iters, func, arg);
+        stmt.exp := e;
+        (stmts, arg) := traverseStmtsWithIterators(stmt.statementLst, iters, func, arg);
+        stmt.statementLst := stmts;
+      then ();
+
+    case DAE.STMT_WHEN()
+      algorithm
+        (e, arg) := traverseExpWithIterators(stmt.exp, iters, func, arg);
+        stmt.exp := e;
+        (stmts, arg) := traverseStmtsWithIterators(stmt.statementLst, iters, func, arg);
+        stmt.statementLst := stmts;
+        if isSome(stmt.elseWhen) then
+          (s, arg) := traverseStmtWithIterators(Util.getOption(stmt.elseWhen), iters, func, arg);
+          stmt.elseWhen := SOME(s);
+        end if;
+      then ();
+
+    case DAE.STMT_FAILURE()
+      algorithm
+        (stmts, arg) := traverseStmtsWithIterators(stmt.body, iters, func, arg);
+        stmt.body := stmts;
+      then ();
+
+    else
+      algorithm
+        ({stmt}, arg) := DAEUtil.traverseDAEEquationsStmts({stmt}, function traverseExpWithIterators(iters = iters, func = func), arg);
+      then ();
+  end match;
+end traverseStmtWithIterators;
+
+protected function traverseElseWithIterators<T>
+  input output DAE.Else else_;
+  input list<DAE.ReductionIterator> iters;
+  input FuncType func;
+  input output T arg;
+
+  partial function FuncType
+    input output DAE.Exp exp;
+    input list<DAE.ReductionIterator> iters;
+    output Boolean cont;
+    input output T arg;
+  end FuncType;
+protected
+  DAE.Exp e;
+  list<DAE.Statement> stmts;
+  DAE.Else el;
+algorithm
+  () := match else_
+    case DAE.ELSEIF()
+      algorithm
+        (e, arg) := traverseExpWithIterators(else_.exp, iters, func, arg);
+        else_.exp := e;
+        (stmts, arg) := traverseStmtsWithIterators(else_.statementLst, iters, func, arg);
+        else_.statementLst := stmts;
+        (el, arg) := traverseElseWithIterators(else_.else_, iters, func, arg);
+        else_.else_ := el;
+      then ();
+
+    case DAE.ELSE()
+      algorithm
+        (stmts, arg) := traverseStmtsWithIterators(else_.statementLst, iters, func, arg);
+        else_.statementLst := stmts;
+      then ();
+
+    else ();
+  end match;
+end traverseElseWithIterators;
+
+public function traverseBackendDAEExpsWithIterators<T>
+  "Like traverseBackendDAEExps, but passes the iterators of the enclosing
+   reductions and for-loops to func."
+  input BackendDAE.BackendDAE dae;
+  input FuncType func;
+  input output T arg;
+
+  partial function FuncType
+    input output DAE.Exp exp;
+    input list<DAE.ReductionIterator> iters;
+    output Boolean cont;
+    input output T arg;
+  end FuncType;
+algorithm
+  for syst in dae.eqs loop
+    arg := traverseBackendDAEExpsVars(syst.orderedVars, function traverseExpWithIterators(iters = {}, func = func), arg);
+    arg := traverseEquationsWithIterators(syst.orderedEqs, func, arg);
+    arg := traverseEquationsWithIterators(syst.removedEqs, func, arg);
+  end for;
+  arg := traverseBackendDAEExpsVars(dae.shared.globalKnownVars, function traverseExpWithIterators(iters = {}, func = func), arg);
+  arg := traverseEquationsWithIterators(dae.shared.initialEqs, func, arg);
+  arg := traverseEquationsWithIterators(dae.shared.removedEqs, func, arg);
+end traverseBackendDAEExpsWithIterators;
+
+protected function traverseEquationsWithIterators<T>
+  input BackendDAE.EquationArray eqns;
+  input FuncType func;
+  input output T arg;
+
+  partial function FuncType
+    input output DAE.Exp exp;
+    input list<DAE.ReductionIterator> iters;
+    output Boolean cont;
+    input output T arg;
+  end FuncType;
+protected
+  list<DAE.Statement> stmts;
+algorithm
+  for eqn in BackendEquation.equationList(eqns) loop
+    arg := match eqn
+      case BackendDAE.ALGORITHM(alg = DAE.ALGORITHM_STMTS(stmts))
+        algorithm
+          (_, arg) := traverseStmtsWithIterators(stmts, {}, func, arg);
+        then arg;
+
+      else
+        algorithm
+          (_, arg) := BackendEquation.traverseExpsOfEquation(eqn, function traverseExpWithIterators(iters = {}, func = func), arg);
+        then arg;
+    end match;
+  end for;
+end traverseEquationsWithIterators;
+
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEUtil;

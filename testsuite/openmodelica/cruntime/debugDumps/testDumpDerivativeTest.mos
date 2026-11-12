@@ -31,7 +31,7 @@ simulate(derDebugTest,
 // ""
 // record SimulationResult
 //     resultFile = "derDebugTest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'derDebugTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_NLS_DERIVATIVE_TEST -nls=kinsol'",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'derDebugTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_NLS_DERIVATIVE_TEST -nls=kinsol'",
 //     messages = "LOG_NLS_DERIVATIVE_TEST | info    | kinsol: Derivative test (atol=2.22045e-14, rtol=1.00000e-04, scaled = false, Caller: kinsol: Jacobian eval):
 // |                 | |       | | Matrix Info
 // |                 | |       | | | NLS index = 8

@@ -65,11 +65,14 @@ protected
   import NFComponentRef.ComponentRef;
   import NFFunction.Function;
   import NFInstNode.InstNode;
+  import NFPrefixes.AccessLevel;
+  import NFPrefixes.Variability;
   import NFPrefixes.Visibility;
   import NFSubscript.Subscript;
   import Prefixes = NFPrefixes;
   import Scalarize = NFScalarize;
   import SCode;
+  import SCodeUtil;
   import Statement = NFStatement;
   import StringUtil;
   import Type = NFType;
@@ -836,24 +839,94 @@ public
     input ObfuscationMap obfuscationMap;
   protected
     list<InstNode> nodes;
+    Boolean hide_protected;
   algorithm
-    if Variable.isProtected(var) and (not onlyEncrypted or Variable.isEncrypted(var)) then
-      nodes := ComponentRef.nodes(var.name);
-      nodes := List.trim(nodes, InstNode.isPublic);
+    hide_protected := Variable.isProtected(var) and (not onlyEncrypted or Variable.isEncrypted(var));
+    nodes := ComponentRef.nodes(var.name);
+    // Everything below the first hidden node is hidden too.
+    while not listEmpty(nodes) and isVisibleNode(listHead(nodes), hide_protected) loop
+      nodes := listRest(nodes);
+    end while;
 
-      for node in nodes loop
-        UnorderedMap.tryAdd(node, "n" + String(UnorderedMap.size(obfuscationMap) + 1), obfuscationMap);
-      end for;
-    end if;
+    for node in nodes loop
+      UnorderedMap.tryAdd(node, "n" + String(UnorderedMap.size(obfuscationMap) + 1), obfuscationMap);
+    end for;
   end addObfuscatedVariable;
+
+  function isVisibleNode
+    input InstNode node;
+    input Boolean hideProtected;
+    output Boolean visible;
+  algorithm
+    if hideProtected and InstNode.isProtected(node) then
+      visible := false;
+    elseif Variable.isEncryptedNode(node) then
+      visible := isAccessibleEncryptedNode(node);
+    else
+      visible := true;
+    end if;
+  end isVisibleNode;
+
+  function isAccessibleEncryptedNode
+    "Whether the access level of the class a component of an encrypted class is
+     declared in lets the user see that component, see Modelica Specification
+     section 18.9 (Protection)."
+    input InstNode node;
+    output Boolean accessible;
+  protected
+    AccessLevel access;
+    Component comp;
+    Boolean is_interface;
+  algorithm
+    if not InstNode.isComponent(node) then
+      accessible := true;
+      return;
+    end if;
+
+    access := Util.getOptionOrDefault(InstNode.getAccessLevel(node), AccessLevel.DOCUMENTATION);
+
+    if access >= AccessLevel.NON_PACKAGE_TEXT then
+      accessible := true;
+    elseif access < AccessLevel.ICON or InstNode.isProtected(node) then
+      accessible := false;
+    else
+      comp := InstNode.component(node);
+      is_interface := Component.variability(comp) <= Variability.NON_STRUCTURAL_PARAMETER or
+                      Component.isInput(comp) or Component.isOutput(comp) or
+                      Component.isConnector(comp);
+
+      if access >= AccessLevel.DIAGRAM then
+        accessible := is_interface or hasPlacement(comp);
+      else
+        accessible := is_interface;
+      end if;
+    end if;
+  end isAccessibleEncryptedNode;
+
+  function hasPlacement
+    input Component comp;
+    output Boolean res;
+  protected
+    SCode.Annotation ann;
+  algorithm
+    res := match Component.comment(comp)
+      case SCode.COMMENT(annotation_ = SOME(ann))
+        then not SCodeUtil.isEmptyMod(SCodeUtil.lookupAnnotation(ann, "Placement"));
+      else false;
+    end match;
+  end hasPlacement;
 
   function obfuscateVariable
     input output Variable var;
     input ObfuscationMap obfuscationMap;
+  protected
+    Boolean renamed;
   algorithm
+    renamed := List.any(ComponentRef.nodes(var.name),
+      function UnorderedMap.contains(map = obfuscationMap));
     var.name := obfuscateCref(var.name, obfuscationMap);
     var.comment := obfuscateComment(var.comment, ComponentRef.node(var.name),
-      obfuscationMap, stripComment = not Variable.isAccessible(var));
+      obfuscationMap, stripComment = (renamed and Variable.isEncrypted(var)) or not Variable.isAccessible(var));
     var := Variable.mapExpShallow(var, function obfuscateExp(obfuscationMap = obfuscationMap));
   end obfuscateVariable;
 

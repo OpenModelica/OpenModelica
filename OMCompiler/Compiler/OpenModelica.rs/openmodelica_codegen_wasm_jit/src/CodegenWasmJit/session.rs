@@ -118,12 +118,13 @@ pub fn sim_start(prefix: &str, result_file: &str, simflags: &str) -> Result<()> 
     openmodelica_wasi::wasi::start_stdout_capture();
     let (param_ov, start_ov, string_ov) = resolve_overrides(&model, &meta, &flags);
     sim_driver::set_param_overrides(param_ov, start_ov, string_ov);
-    sim_driver::set_start_imports(resolve_start_imports(&meta, &flags));
+    let imports = resolve_start_imports(&meta, &flags);
     // Build the backend (instantiate, init, emit row 0). An init trap is usually
     // a failed `assert()`; the host driver routes it via `enrich_trap`.
     let inwasm = inwasm_driver_enabled();
     let (path, keep) = (target.path.clone(), target.keep.clone());
     let built = (|| -> std::result::Result<SessionBackend, String> {
+        sim_driver::set_start_imports(imports?);
         if inwasm {
             Ok(SessionBackend::InWasm(sim_runtime::build_inwasm_session(
                 &model,

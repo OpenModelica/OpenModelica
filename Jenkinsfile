@@ -6,6 +6,7 @@ def shouldWeBuildFedora
 def shouldWeEnableMacOSCMakeBuild
 def shouldWeBuildWindows
 def shouldWeRunTests
+def isPublishedBranch
 
 pipeline {
   agent none
@@ -64,6 +65,7 @@ pipeline {
             checkout(scm).each { k, v -> env.setProperty(k, v) }
           }
           common = load("${env.workspace}/.CI/common.groovy")
+          common.checkBranch()
           def buildFlags = common.evaluateBuildFlags()
           isPR = buildFlags.isPR
           shouldWeBuildAlpine = buildFlags.shouldWeBuildAlpine
@@ -72,6 +74,7 @@ pipeline {
           shouldWeEnableMacOSCMakeBuild = buildFlags.shouldWeEnableMacOSCMakeBuild
           shouldWeBuildWindows = buildFlags.shouldWeBuildWindows
           shouldWeRunTests = buildFlags.shouldWeRunTests
+          isPublishedBranch = buildFlags.isPublishedBranch
         }
       }
     }
@@ -911,8 +914,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            branch 'master'
-            expression { shouldWeRunTests }
+            expression { isPublishedBranch }
           }
           steps {
             script { common.checkoutSCM() }

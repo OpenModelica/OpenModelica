@@ -347,6 +347,12 @@ File Menu
   -  *Install Library* - Opens a dialog to select and install a new library,
      see :ref:`omedit-install-library-label`
 
+  -  *Install Library From File* - Installs the libraries of a .mo or .zip file,
+     see :ref:`omedit-install-library-label`
+
+  -  *Install Library From Directory* - Installs the libraries of a directory,
+     see :ref:`omedit-install-library-label`
+
   -  *Upgrade Installed Libraries* - Opens a dialog to upgrade the installed libraries.
 
   -  *Update Library Index* - Updates the library index.
@@ -2302,6 +2308,11 @@ that are available for installation through the package manager.
   :name: omedit-install-library
 
   Install Library.
+
+A library that is not in the package index can be installed from a .mo file, a .zip file or a directory
+with `File->Manage Libraries->Install Library From File` or `Install Library From Directory`. OMEdit lists
+the packages that it finds and copies the ones you select into the same directory as the package manager.
+An installed library is read-only. To change a library, open it with `File->Open Model/Library File(s)` instead.
 
 .. _omedit-convert-library-label :
 

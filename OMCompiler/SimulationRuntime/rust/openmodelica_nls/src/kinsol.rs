@@ -585,7 +585,7 @@ pub mod sun {
                 time,
             };
             unsafe { KINSetUserData(self.kin, &mut ud as *mut Ud as *mut c_void) };
-            let mut success = false;
+            let mut success;
             let mut reset_tol = false;
             let mut retries = 0;
             let mut passes = 0;
@@ -1219,7 +1219,7 @@ pub mod sun {
                     openmodelica_solvers::format_g(time, 6),
                 );
             }
-            let mut success = false;
+            let mut success;
             let mut retries = 0;
             let mut passes = 0;
             self.reset_tol = false;

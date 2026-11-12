@@ -31,7 +31,7 @@ val(J, 0.0);getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "ref_overrideParamWithIif.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'overrideParamWithIif_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-r=ref_overrideParamWithIif.mat'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'overrideParamWithIif_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-r=ref_overrideParamWithIif.mat'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -39,7 +39,7 @@ val(J, 0.0);getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "res_overrideParamWithIif.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'overrideParamWithIif_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-iif=ref_overrideParamWithIif.mat -override=J=10 -r=res_overrideParamWithIif.mat'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'overrideParamWithIif_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-iif=ref_overrideParamWithIif.mat -override=J=10 -r=res_overrideParamWithIif.mat'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

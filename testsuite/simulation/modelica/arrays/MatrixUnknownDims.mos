@@ -72,7 +72,7 @@ simulate(MatrixUnknownDims.Invalid, stopTime = 1); getErrorString();
 // "
 // record SimulationResult
 //     resultFile = "MatrixUnknownDims.Valid_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'MatrixUnknownDims.Valid', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'MatrixUnknownDims.Valid', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -81,7 +81,7 @@ simulate(MatrixUnknownDims.Invalid, stopTime = 1); getErrorString();
 // 3.0
 // record SimulationResult
 //     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'MatrixUnknownDims.Invalid', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'MatrixUnknownDims.Invalid', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: MatrixUnknownDims.Invalid
 // LOG_ASSERT        | debug   | Invalid dimension 4 of argument to matrix, expected dimension size 1 but got 3.
 // LOG_ASSERT        | info    | simulation terminated by an assertion at initialization

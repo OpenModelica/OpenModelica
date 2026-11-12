@@ -83,23 +83,14 @@ getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "burgerEq_ref.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'burgerEq', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=dassl -r burgerEq_ref.mat'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'burgerEq', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=dassl -r burgerEq_ref.mat'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // record SimulationResult
 //     resultFile = "burgerEq_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'burgerEq', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=gbode -gbm=esdirk3 -gbnls=kinsol -tolerance=1e-6'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
-// (true, {})
-// ""
-// record SimulationResult
-//     resultFile = "burgerEq_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'burgerEq', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=gbode -gbm=esdirk4 -gbnls=internal -gberr=embedded -tolerance=1e-6'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'burgerEq', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=gbode -gbm=esdirk3 -gbnls=kinsol -tolerance=1e-6'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -108,7 +99,7 @@ getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "burgerEq_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'burgerEq', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=gbode -gbm=radauIIA3 -gbnls=internal -gberr=embedded -tolerance=1e-6'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'burgerEq', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=gbode -gbm=esdirk4 -gbnls=internal -gberr=embedded -tolerance=1e-6'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -117,7 +108,7 @@ getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "burgerEq_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'burgerEq', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=gbode -gbm=expl_euler -gbnls=kinsol -gbratio=0.05 -tolerance=1e-6'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'burgerEq', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=gbode -gbm=radauIIA3 -gbnls=internal -gberr=embedded -tolerance=1e-6'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -126,7 +117,16 @@ getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "burgerEq_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'burgerEq', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=gbode -gbm=fehlberg78 -gbnls=kinsol -gbratio=0 -tolerance=1e-8'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'burgerEq', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=gbode -gbm=expl_euler -gbnls=kinsol -gbratio=0.05 -tolerance=1e-6'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// (true, {})
+// ""
+// record SimulationResult
+//     resultFile = "burgerEq_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'burgerEq', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=gbode -gbm=fehlberg78 -gbnls=kinsol -gbratio=0 -tolerance=1e-8'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

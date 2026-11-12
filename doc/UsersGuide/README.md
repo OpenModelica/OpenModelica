@@ -14,7 +14,8 @@ Getting all dependencies right is a nightmare. Just use the dev container
 [.devcontainer/README.md](./../../.devcontainer/README.md) and set
 `GITHUB_AUTH`.
 
-- an installed OpenModelica (omc and OMSimulator)
+- an installed OpenModelica (omc, OMSimulator and omgendoc, which only the
+  Rust port builds: `-DOM_OMC_ENABLE_RUST=ON -DRUST_OMC_OMGENDOC=ON`)
 - Inkscape > v1.0
 - [Sphinx](http://sphinx-doc.org/)
 - pandoc
@@ -49,7 +50,7 @@ hour.
 As part of an OpenModelica build, after installing it:
 
 ```bash
-cmake -S . -B build_cmake -DOM_ENABLE_DOCS=ON
+cmake -S . -B build_cmake -DOM_ENABLE_DOCS=ON -DOM_OMC_ENABLE_RUST=ON -DRUST_OMC_OMGENDOC=ON
 cmake --build build_cmake
 cmake --install build_cmake
 cmake --build build_cmake --target usersguide
@@ -61,6 +62,10 @@ Or on its own, against an OpenModelica installed anywhere:
 cmake -S doc/UsersGuide -B build-doc -DOM_USERSGUIDE_OMHOME=/usr/local
 cmake --build build-doc --target usersguide
 ```
+
+The scripting API chapter is written by `omgendoc --scripting-api`. To use the
+output of an `omgendoc` run elsewhere, for instance on another machine, pass
+its directory as `-DOM_USERSGUIDE_SCRIPTING_API=<dir>`.
 
 Nothing is generated into the source tree; the guide ends up in
 `<build dir>/doc/UsersGuide/build/html` (or `build-doc/build/html`).

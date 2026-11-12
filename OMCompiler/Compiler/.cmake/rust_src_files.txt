@@ -82,10 +82,6 @@ omshell_core/src/completion.rs
 omshell_core/src/driver.rs
 omshell_core/src/lib.rs
 omshell_core/src/shell.rs
-omshell_dioxus/Cargo.toml
-omshell_dioxus/src/blitz_demo.rs
-omshell_dioxus/src/main.rs
-omshell_dioxus/web/index.html
 omshell_egui/Cargo.toml
 omshell_egui/index.html
 omshell_egui/src/app.rs
@@ -121,6 +117,7 @@ openmodelica_ast/src/parser/mod.rs
 openmodelica_ast/src/parser/token_input.rs
 openmodelica_ast/tests/data/Absyn.mo
 openmodelica_ast/tests/data/CodegenC.mo
+openmodelica_ast/tests/parse_cache.rs
 openmodelica_ast_collections/Cargo.toml
 openmodelica_backend/Cargo.toml
 openmodelica_backend/src/Globals.rs
@@ -361,6 +358,7 @@ openmodelica_gendoc/src/index.rs
 openmodelica_gendoc/src/links.rs
 openmodelica_gendoc/src/main.rs
 openmodelica_gendoc/src/packages.rs
+openmodelica_gendoc/src/rst.rs
 openmodelica_gendoc/src/style.css
 openmodelica_frontend/Cargo.toml
 openmodelica_frontend/src/Globals.rs
@@ -756,10 +754,12 @@ openmodelica_zip/src/lib.rs
 rust-toolchain.toml
 rustfmt.toml
 susanSources.txt
+wasm/README.md
 wasm/anim/OrbitControls.js
 wasm/anim/anim-core.js
 wasm/anim/anim-view.js
 wasm/anim/animation.js
+wasm/coi_server.py
 wasm/fmi-simulator/.gitignore
 wasm/fmi-simulator/README.md
 wasm/fmi-simulator/driver.js
@@ -781,12 +781,15 @@ wasm/icons/omplot.svg
 wasm/icons/omshell.svg
 wasm/icons/openmodelica-logo.svg
 wasm/icons/simulator.svg
+wasm/icons/storage.svg
 wasm/index.html
 wasm/omc-cli.js
+wasm/omc-store.js
 wasm/omc-terminal/index.html
 wasm/omplot/README.md
 wasm/omplot/index.html
 wasm/omplot/omplot-cli.js
+wasm/playground/README.html
 wasm/plot.js
 wasm/simulator/.gitignore
 wasm/simulator/config.json
@@ -794,6 +797,9 @@ wasm/simulator/examples/BouncingBall.mo
 wasm/simulator/examples/DistrictHeating.mo
 wasm/simulator/index.html
 wasm/simulator/omc-worker.js
+wasm/storage/index.html
+wasm/storage/upload.js
+wasm/storage/worker.js
 wasm/symbolize.html
 wasm/theme.css
 wasm/units.js

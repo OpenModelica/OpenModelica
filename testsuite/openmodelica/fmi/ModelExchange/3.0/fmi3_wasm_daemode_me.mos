@@ -44,7 +44,7 @@ simulate(DaeModeMe, simflags="-s fmi3:me:dassl -daeMode", resimulateExecutable="
 // ""
 // record SimulationResult
 //     resultFile = "plain_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'plain', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'plain', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_STDOUT        | warning | Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU. Colored numerical Jacobian will be used.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
@@ -58,7 +58,7 @@ simulate(DaeModeMe, simflags="-s fmi3:me:dassl -daeMode", resimulateExecutable="
 // "
 // record SimulationResult
 //     resultFile = "me_dae_zip.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DaeModeMe', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:me -daeMode -r=me_dae_zip.mat'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'DaeModeMe', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:me -daeMode -r=me_dae_zip.mat'",
 //     messages = "LOG_STDOUT        | info    | wasm artifact loaded (compiled from the component)
 // LOG_STDOUT        | info    | ModelExchange instantiated
 // LOG_STDOUT        | info    | ModelExchange run: 67 steps, 190 evaluations, 34 Jacobians, 1 state events, 0 time events, 503 samples
@@ -97,7 +97,7 @@ simulate(DaeModeMe, simflags="-s fmi3:me:dassl -daeMode", resimulateExecutable="
 // true
 // record SimulationResult
 //     resultFile = "me_ode.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DaeModeMe', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:me -r=me_ode.mat'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'DaeModeMe', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:me -r=me_ode.mat'",
 //     messages = "LOG_STDOUT        | info    | wasm artifact loaded (model kernel linked against the cached adapter)
 // LOG_STDOUT        | info    | ModelExchange instantiated
 // LOG_STDOUT        | info    | ModelExchange run: 67 steps, 115 evaluations, 33 Jacobians, 1 state events, 0 time events, 503 samples
@@ -107,7 +107,7 @@ simulate(DaeModeMe, simflags="-s fmi3:me:dassl -daeMode", resimulateExecutable="
 // ""
 // record SimulationResult
 //     resultFile = "me_dae.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DaeModeMe', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:me -daeMode -r=me_dae.mat'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'DaeModeMe', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:me -daeMode -r=me_dae.mat'",
 //     messages = "LOG_STDOUT        | info    | wasm artifact loaded (model kernel linked against the cached adapter)
 // LOG_STDOUT        | info    | ModelExchange instantiated
 // LOG_STDOUT        | info    | ModelExchange run: 67 steps, 190 evaluations, 34 Jacobians, 1 state events, 0 time events, 503 samples
@@ -119,7 +119,7 @@ simulate(DaeModeMe, simflags="-s fmi3:me:dassl -daeMode", resimulateExecutable="
 // (true, {})
 // record SimulationResult
 //     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DaeModeMe', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:me:dassl -daeMode'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'DaeModeMe', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:me:dassl -daeMode'",
 //     messages = "Simulation execution failed for model: DaeModeMe
 // LOG_STDOUT        | info    | wasm artifact loaded (model kernel linked against the cached adapter)
 // LOG_ERROR         | error   | wasm artifact: -daeMode integrates with IDA; `-s fmi3:me:dassl` cannot serve a residual form

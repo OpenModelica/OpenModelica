@@ -55,9 +55,9 @@ unsafe extern "C" {
     fn omc_clear_last_suppressed_error();
 }
 
-/// `util/rtclock.c`, which `+profiling` reports from. An FMU has none: under
-/// `OMC_MINIMAL_RUNTIME` `rtclock.h` is no-op `static inline`s and the .c does not
-/// compile, so the FMU flavour answers with an unarmed clock's zeros.
+// `util/rtclock.c`, which `+profiling` reports from. An FMU has none: under
+// `OMC_MINIMAL_RUNTIME` `rtclock.h` is no-op `static inline`s and the .c does not
+// compile, so the FMU flavour answers with an unarmed clock's zeros.
 #[cfg(not(omc_fmi_runtime))]
 unsafe extern "C" {
     fn rt_init(numTimer: c_int);

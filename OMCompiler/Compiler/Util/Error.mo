@@ -947,8 +947,8 @@ public constant ErrorTypes.Message SETTING_FIXED_ATTRIBUTE = ErrorTypes.MESSAGE(
   "Using over-determined solver for initialization. Setting fixed=false to the following variables: %s.");
 public constant ErrorTypes.Message FAILED_TO_EVALUATE_FUNCTION = ErrorTypes.MESSAGE(506, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Failed to evaluate function: %s.");
-public constant ErrorTypes.Message WARNING_RELATION_ON_REAL = ErrorTypes.MESSAGE(509, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
-  "In relation %s, %s on Real operands is deprecated in non-function contexts.");
+public constant ErrorTypes.Message REAL_EQUALITY_RELATION_ERROR = ErrorTypes.MESSAGE(509, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "In relation %s, %s on Real operands is not allowed in non-function contexts. Use --allowNonStandardModelica=realEquality to ignore this error.");
 public constant ErrorTypes.Message OUTER_MODIFICATION = ErrorTypes.MESSAGE(512, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   "Ignoring the modification on outer element: %s.");
 public constant ErrorTypes.Message DERIVATIVE_NON_REAL = ErrorTypes.MESSAGE(514, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),

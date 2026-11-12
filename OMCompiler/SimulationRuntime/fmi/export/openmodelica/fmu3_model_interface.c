@@ -41,7 +41,7 @@
 #include "../simulation/solver/initialization/initialization.h"
 #include "../simulation/solver/stateset.h"
 #include "../simulation/solver/model_help.h"
-#ifdef OMC_FMI_HAVE_CVODE
+#ifdef OMC_FMI_CO_SIMULATION
 #include "../simulation/solver/cvode_solver.h"
 #endif
 #ifdef OMC_FMI_DAE_MODE
@@ -867,7 +867,6 @@ fmi3Status fmi3GetFMUState(fmi3Instance instance, fmi3FMUState* FMUState)
 {
   ModelInstance* c = fmu3InnerComp(instance);
   if (!c) return fmi3Error;
-  if (nullPointer(c, "fmi3GetFMUState", "FMUState", FMUState)) return fmi3Error;
   return omcGetFMUstate(c, FMUState);
 }
 
@@ -875,7 +874,6 @@ fmi3Status fmi3SetFMUState(fmi3Instance instance, fmi3FMUState FMUState)
 {
   ModelInstance* c = fmu3InnerComp(instance);
   if (!c) return fmi3Error;
-  if (nullPointer(c, "fmi3SetFMUState", "FMUState", FMUState)) return fmi3Error;
   return omcSetFMUstate(c, FMUState);
 }
 
@@ -883,8 +881,6 @@ fmi3Status fmi3FreeFMUState(fmi3Instance instance, fmi3FMUState* FMUState)
 {
   ModelInstance* c = fmu3InnerComp(instance);
   if (!c) return fmi3Error;
-  /* per the FMI spec freeing a NULL state (or *FMUState == NULL) is a no-op */
-  if (FMUState == NULL || *FMUState == NULL) return fmi3OK;
   return omcFreeFMUstate(c, FMUState);
 }
 
@@ -892,8 +888,6 @@ fmi3Status fmi3SerializedFMUStateSize(fmi3Instance instance, fmi3FMUState FMUSta
 {
   ModelInstance* c = fmu3InnerComp(instance);
   if (!c) return fmi3Error;
-  if (nullPointer(c, "fmi3SerializedFMUStateSize", "FMUState", FMUState) ||
-      nullPointer(c, "fmi3SerializedFMUStateSize", "size", size)) return fmi3Error;
   return omcSerializedFMUstateSize(c, FMUState, size);
 }
 
@@ -901,8 +895,6 @@ fmi3Status fmi3SerializeFMUState(fmi3Instance instance, fmi3FMUState FMUState, f
 {
   ModelInstance* c = fmu3InnerComp(instance);
   if (!c) return fmi3Error;
-  if (nullPointer(c, "fmi3SerializeFMUState", "FMUState", FMUState) ||
-      nullPointer(c, "fmi3SerializeFMUState", "serializedState", serializedState)) return fmi3Error;
   return omcSerializeFMUstate(c, FMUState, serializedState, size);
 }
 
@@ -910,8 +902,6 @@ fmi3Status fmi3DeserializeFMUState(fmi3Instance instance, const fmi3Byte seriali
 {
   ModelInstance* c = fmu3InnerComp(instance);
   if (!c) return fmi3Error;
-  if (nullPointer(c, "fmi3DeserializeFMUState", "serializedState", serializedState) ||
-      nullPointer(c, "fmi3DeserializeFMUState", "FMUState", FMUState)) return fmi3Error;
   return omcDeSerializeFMUstate(c, serializedState, size, FMUState);
 }
 
@@ -1273,6 +1263,11 @@ fmi3Status fmi3DoStep(fmi3Instance instance, fmi3Float64 currentCommunicationPoi
     fmi3Boolean* eventHandlingNeeded, fmi3Boolean* terminateSimulation, fmi3Boolean* earlyReturn,
     fmi3Float64* lastSuccessfulTime)
 {
+#ifndef OMC_FMI_CO_SIMULATION
+  ModelInstance* comp = fmu3InnerComp(instance);
+  if (!comp) return fmi3Error;
+  return unsupportedFunction(comp, "fmi3DoStep");
+#else
   ModelInstance3 *inst = (ModelInstance3 *)instance;
   ModelInstance* c = fmu3InnerComp(instance);
   fmi3Boolean eventEncountered = fmi3False;
@@ -1291,6 +1286,7 @@ fmi3Status fmi3DoStep(fmi3Instance instance, fmi3Float64 currentCommunicationPoi
   if (earlyReturn)          *earlyReturn = early2 ? fmi3True : fmi3False;
   if (lastSuccessfulTime)   *lastSuccessfulTime = (fmi3Float64)lastTime;
   return (fmi3Status)status;
+#endif
 }
 
 /* ---------------------------------------------------------------------------

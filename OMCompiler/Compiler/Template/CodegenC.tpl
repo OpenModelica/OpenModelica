@@ -7059,6 +7059,24 @@ template resizableColFillBase(ComponentRef seed, String nCols, String rowExpr, C
               }
             }
             >>
+          case SLICE(exp=sliceExp) :: {WHOLEDIM()} then
+            // reversed [SLICE, WHOLEDIM] = original [WHOLEDIM, SLICE]: outer WHOLE, inner SLICE
+            let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &varFrees, &auxFunction)
+            let nSlice = tempDecl("modelica_integer", &varDecls, &varFrees)
+            let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
+            let szOuter = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
+            let szInner = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
+            <<
+            <%seedComment%>
+            {
+              unsigned int _wo<%v.index%>, _sc<%v.index%>;
+              for (_wo<%v.index%> = 0; _wo<%v.index%> < (unsigned int)(<%szOuter%>); _wo<%v.index%>++) {
+                for (_sc<%v.index%> = 0; _sc<%v.index%> < (unsigned int)(<%nSlice%>); _sc<%v.index%>++) {
+                  addSparsePair(&_sp_pairs, <%jacobianVarOffset(v, context)%> + _wo<%v.index%> * (unsigned int)(<%szInner%>) + (((modelica_integer*)<%sliceArr%>.data)[_sc<%v.index%>] - 1), <%rowExpr%>);
+                }
+              }
+            }
+            >>
           case SLICE(exp=sliceExp) :: outer_rev_subs then
             // inner SLICE (e.g. module[i].T[1:9]) - outer dims are INDEX subs
             let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &varFrees, &auxFunction)
@@ -8539,23 +8557,16 @@ match ty
     <%assign%>
     >>
   case T_COMPLEX(varLst = varLst, complexClassType=RECORD(__)) then
-    error(sourceInfo(), 'No runtime support for this record assignment: <%dumpExp(left,"\"")%> = <%dumpExp(right,"\"")%>')
-    // let &preExp = buffer ""
-    // let exp = daeExp(right, context, &preExp, &varDecls, &auxFunction)
-    // let tmp = tempDecl(expTypeModelica(ty),&varDecls)
-    // <<
-    // <%preExp%>
-    // <%tmp%> = <%exp%>;
-    // <% varLst |> var as TYPES_VAR(__) =>
-    //   match var.ty
-    //   case T_ARRAY(__) then
-    //     copyArrayData(var.ty, '<%tmp%>._<%var.name%>', appendStringCref(var.name,left), context, &preExp, &varDecls, &auxFunction)
-    //   else
-    //     let varPart = contextCref(appendStringCref(var.name,left), context, &preExp, &varDecls, &auxFunction)
-    //     '<%varPart%> = <%tmp%>._<%var.name%>;'
-    // ; separator="\n"
-    // %>
-    // >>
+    match left
+      case CREF(componentRef=cr) then
+        let &preExp = buffer ""
+        let assign = assignRhsExpToRecordCref(cr, right, ty, context, &preExp, &varDecls, &varFrees, &auxFunction)
+        <<
+        <%preExp%>
+        <%assign%>
+        >>
+      else
+        error(sourceInfo(), 'No runtime support for this record assignment: <%dumpExp(left,"\"")%> = <%dumpExp(right,"\"")%>')
   else
     let &preExp = buffer ""
     let varPart = daeExp(left, context, &preExp, &varDecls, &varFrees, &auxFunction)

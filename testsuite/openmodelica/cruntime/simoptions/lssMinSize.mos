@@ -22,7 +22,7 @@ simulate(M, simflags="-ls=lapack -lssMinSize=0"); getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "M_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lssMinSize=0'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lssMinSize=0'",
 //     messages = "LOG_STDOUT        | info    | Minimum system size for using linear sparse solver changed to 0
 // LOG_STDOUT        | info    | Using sparse solver for linear system 0 (9),
 // |                 | |       | because density of 1.000 is under threshold of 0.200 or size of 2 exceeds threshold of 0.
@@ -38,7 +38,7 @@ simulate(M, simflags="-ls=lapack -lssMinSize=0"); getErrorString();
 // 0.48376760240875194
 // record SimulationResult
 //     resultFile = "M_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls=lapack -lssMinSize=0'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls=lapack -lssMinSize=0'",
 //     messages = "LOG_STDOUT        | info    | Minimum system size for using linear sparse solver changed to 0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

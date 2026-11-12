@@ -14,6 +14,11 @@ methods. This section contains additional information about the different
 integration methods in OpenModelica. They can be selected by the method
 parameter of the :ref:`simulate` command or the :ref:`-s simflag <simflag-s>`.
 
+The default method ``auto`` chooses a solver from the model: `IDA`_ for a
+model compiled with ``--daeMode``, otherwise `DASSL`_. A method that is
+given explicitly is always used. If it cannot simulate the model, the
+simulation stops with an error.
+
 The different methods are also called solver and can be distinguished by
 their characteristic:
 
@@ -59,7 +64,7 @@ and a more mathematical approach can be found in :cite:`Hairer:1993`.
 DASSL
 ~~~~~
 
-DASSL is the default solver in OpenModelica, because of a severals reasons. It
+DASSL is the solver that ``auto`` chooses for most models, because of several reasons. It
 is an implicit, higher order, multi-step solver with a step-size control and
 with these properties it is quite stable for a wide range of models. Furthermore
 it has a mature source code, which was originally developed in the eighties an
@@ -318,7 +323,10 @@ system.
 Importing initial values from previous simulations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 In many use cases it is useful to import initial values from previous simulations, possibly obtained with
-another Modelica tool, which are saved in a .mat file. There are two different options to do that.
+another Modelica tool. The values are read from a simulation result file in any of the formats OpenModelica
+writes: .mat (MATLAB v4), .csv, .plt or .arrow. The format is selected by the suffix of the file name.
+Result files of other Modelica tools can be imported if they are .mat files with the same layout.
+There are two different options to import the values.
 
 Using previous simulation results as start values for the initial equations
 ***************************************************************************
@@ -333,22 +341,24 @@ unknowns of the iterative solvers, thus achieving convergence with a few iterati
 are solved in the process, the values of all variables and derivatives, as well as of all parameters with `fixed = false` attribute,
 are re-computed and fully consistent with the selected initial conditions, even in case the previously saved simulation results
 refer to a slightly different model configuration. Note that parameters with `fixed = true` will also get their values from the
-imported .mat file, so if you want to change them you need to edit the .mat file accordingly.
+imported file, so if you want to change them you need to edit the file accordingly, or set them with
+:ref:`-override <simflag-override>`, which takes precedence over the imported values.
 
 This option is activated by selecting the simulation result file name in the OMEdit
-*Simulation Setup | Simulation Flag | Equation System Initialization File* input field, or by setting the additional simulation flag
-:ref:`-iif=resultfile.mat <simflag-iif>`. By activating the checkbox *Save simulation flags inside the model i.e., __OpenModelica_simulationFlags annotation*,
+*Simulation Setup | Simulation Flags | Equation System Initialization File* input field, or by setting the additional simulation flag
+:ref:`-iif=resultfile.mat <simflag-iif>`. By activating the checkbox *Save simulation flags inside model i.e., __OpenModelica_simulationFlags annotation*,
 a custom annotation *__OpenModelica_simulationFlags(iif="filename.mat")* is added to the model, so this setting is saved with the model and is reused
 when loading the model again later on. It is also possible to specify at which point in time of the saved simulation results the initial values
 should be picked, by means of the *Simulation Setup | Simulation Flags | Equation System Initialization Time* input field, or by setting
-the simulation flag :ref:`-iit=initialTimeValue <simflag-iit>`.
+the simulation flag :ref:`-iit=initialTimeValue <simflag-iit>`. Between two output points the values are interpolated linearly.
+If the time is outside of the time range of the file, a warning is issued and only parameters are imported.
 
 Using previous simulation results to directly initialize a simulation
 *********************************************************************
 
 The second option is to skip the solution of the initial equations entirely, directly starting the simulation
 with the imported start values. In this case, the initial equations of the model are ignored, and the initial values of
-all parameters and state variables are directly set to the values loaded from the .mat file. This option is useful
+all parameters and state variables are directly set to the values loaded from the file. This option is useful
 to restart a simulation from the final state of a previous one, ignoring whatever initial conditions are declared in the
 Modelica model by either fixed = true attributes or initial equations.
 
@@ -356,24 +366,39 @@ Note that state variables and parameters will be directly initialized to the imp
 will be recomputed with the regular simulation equations, on the basis of the imported initial state and parameter values.
 The values of algebraic variables in the imported file will only be used to initialize iteration variables, in case this
 computation involves nonlinear implicit equations and iterative solvers, otherwise they will be ignored.
+An exception are variables that only depend on parameters, e.g. `final Real p3 = 3*p1`: they are computed once during
+initialization, so with this option they keep their imported values, even if the parameters they depend on are changed.
 
-To activate this second option, set *Simulation Setup | Simulation Flag | Initialization Method* to *none* in OMEdit,
+To activate this second option, set *Simulation Setup | Simulation Flags | Initialization Method* to *none* in OMEdit,
 or set the simulation flag :ref:`-iim=none <simflag-iim>`. Also in this case, activating the checkbox *Save simulation
-flags inside model, i.e. __OpenModelica_simulationFlags annotation* saves this option in an
+flags inside model i.e., __OpenModelica_simulationFlags annotation* saves this option in an
 *__OpenModelica_simulationFlags(iim=none)* annotation, so it is retained for future simulations of the same model.
+
+Writing the result file in a different format
+*********************************************
+
+The result file to import does not need to be a .mat file. To write it in another format, select it in the
+*Simulation Setup | Output | Output Format* field of OMEdit, or set the simulation flag
+:ref:`-outputFormat <simflag-outputformat>`, e.g. `-outputFormat=csv`. Choosing a file name with another suffix
+with :ref:`-r <simflag-r>` does not change the format of the written file, so for a .csv file set both flags,
+e.g. `-outputFormat=csv -r=initial.csv`.
 
 Beware of missing variables in the simulation result file
 *********************************************************
 
 When importing simulation results to initialize a new simulation, bear in mind that, by default, protected and hidden variables
-are *not saved* to the .mat file, so they will be missing when importing the simulation results for initialization. This is
+are *not saved* to the result file, so they will be missing when importing the simulation results for initialization. This is
 particularly dangerous when the imported values are used directly, as unsaved protected or hidden variables will not be
-initialized and will retain their default zero value, which is likely to cause numerical problems such as division by zero
-when the simulation is started.
+initialized from the file and will keep the start value given in the model, or zero if there is none, which is likely to
+cause numerical problems such as division by zero when the simulation is started. A warning is issued for each
+variable that could not be imported.
 
 To avoid this problem, make sure you also save protected and hidden variables in the simulation result file, by setting the
 corresponding checkboxes in the *Simulation Setup | Output* tab of OMEdit, or by setting the simulation flags
 :ref:`-emit_protected <simflag-emit_protected>` and :ref:`-ignoreHideResult <simflag-ignorehideresult>`.
+
+Also note that .csv result files contain no parameters at all. When importing from a .csv file, parameters keep the
+values given in the model; only variables are imported.
 
 Example of use
 **************
@@ -446,6 +471,12 @@ which is explicit and thus ignores the imported guess value `x = 4`.
 
 Finally, when running model `M3`, parameters are handled like in the previous case, as well as the algebraic variables `v1` and `v2`. However,
 in this case the solution of the initial equations is skipped, so the state variable gets its initial value `x = 4` straight from the imported `initial.mat` file.
+
+To import from a .csv file instead, write it with `__OpenModelica_simulationFlags(r = "../initial.csv", outputFormat = "csv")` in
+`ResultFileGenerator` and use `iif = "../initial.csv"` in `M2` and `M3`. Since .csv files contain no parameters, the parameters keep
+the values of the model, `p1 = 1` and `p2 = 1`, while `v1 = 3` and the initial value of `x` are the same as with the .mat file.
+In `M2` the variable `p3 = 3*p1 = 3` is computed from them, whereas in `M3` it keeps the imported value `p3 = 21`, since the
+initialization is skipped.
 
 
 Homotopy Method

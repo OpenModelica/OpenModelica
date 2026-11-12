@@ -678,6 +678,8 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
 
      double tolerance = vm.real("tolerance");
      string solver = vm.str("solver");
+     if (solver == "auto")
+         solver = "dassl";
      std::vector<string> nonLinSolvers;
      nonLinSolvers.push_back(vm.str("non-lin-solver"));
      nonLinSolvers.push_back(nonLinSolvers[0] != _defaultNonLinSolvers[1]? _defaultNonLinSolvers[1]: _defaultNonLinSolvers[0]);

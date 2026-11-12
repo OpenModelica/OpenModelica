@@ -3462,7 +3462,10 @@ algorithm
     vars.boolAlgVars, vars.boolParamVars, vars.stringAlgVars, vars.stringParamVars,
     vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars});
   for v in allVars loop
-    om := connectorMemberOf(v);
+    om := match v.name
+      case DAE.CREF_QUAL(ident = DAE.derivativeNamePrefix) then NONE();
+      else connectorMemberOf(v);
+    end match;
     if isSome(om) then
       flat := Util.getOption(om) :: flat;
     end if;

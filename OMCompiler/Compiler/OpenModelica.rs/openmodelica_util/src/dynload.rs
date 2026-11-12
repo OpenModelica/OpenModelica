@@ -102,6 +102,11 @@ pub(crate) mod dl {
         Ok(h as usize)
     }
 
+    /// Where an external library finds the runtime's symbols: the global scope.
+    pub fn runtime_scope() -> Option<usize> {
+        open_self().ok()
+    }
+
     /// Preload a library into the global scope so later loads resolve its
     /// symbols. Returns true on success.
     pub fn open_global(name: &str) -> bool {
@@ -204,6 +209,14 @@ pub(crate) mod dl {
             return Err("GetModuleHandle(process): {}");
         }
         Ok(h as usize)
+    }
+
+    /// Where an external library finds the runtime's symbols: the runtime DLL
+    /// it imports them from.
+    pub fn runtime_scope() -> Option<usize> {
+        let c = CString::new(RUNTIME_LIBS[0]).ok()?;
+        let h = unsafe { GetModuleHandleA(c.as_ptr()) };
+        if h.is_null() { None } else { Some(h as usize) }
     }
 
     pub fn open_global(name: &str) -> bool {
@@ -500,6 +513,23 @@ pub fn runtime_symbol(name: &str) -> Option<usize> {
     let reg = REGISTRY.lock().unwrap();
     let handle = *reg.libs.values().next()?;
     dlsym_addr(handle, name)
+}
+
+/// The runtime's `OpenModelica_ModelicaError` and
+/// `OpenModelica_ModelicaVFormatError` slots that a `ModelicaError` in an
+/// external library goes through, or zeros if the runtime is not loaded.
+pub fn modelica_error_slots() -> (usize, usize) {
+    ensure_runtime_solibs();
+    let Some(scope) = dl::runtime_scope() else {
+        return (0, 0);
+    };
+    match (
+        dlsym_addr(scope, "OpenModelica_ModelicaError"),
+        dlsym_addr(scope, "OpenModelica_ModelicaVFormatError"),
+    ) {
+        (Some(err), Some(verr)) => (err, verr),
+        _ => (0, 0),
+    }
 }
 
 /// Resolve an external "C" function for the wasm-jit simulation host. Ensures the

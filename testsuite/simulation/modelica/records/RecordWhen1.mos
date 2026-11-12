@@ -1,0 +1,31 @@
+// name:     RecordWhen1
+// keywords: record codegen
+// status: correct
+// teardown_command: rm -rf RecordWhen1.Test* output.log
+//
+//
+
+loadFile("RecordWhen1.mo"); getErrorString();
+simulate(RecordWhen1.Test); getErrorString();
+val(extractor.y.im, 0);
+val(extractor.y.re, 0);
+val(extractor.y.im, 1);
+val(extractor.y.re, 1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "RecordWhen1.Test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'RecordWhen1.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0.0
+// 1.0
+// 1.0
+// 0.0
+// endResult

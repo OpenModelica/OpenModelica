@@ -40,7 +40,7 @@ runScript(modelTesting);getErrorString();
 // \"PowerSystems\"
 // "
 // ""
-// Simulation options: startTime = 0.0, stopTime = 4.0, numberOfIntervals = 4000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC1ph_DC.Transformation.TapChanger', options = '', outputFormat = 'mat', variableFilter = 'time|meter1.p|meter1.v|meter1.i|meter12.p|meter12.v|meter12.i|meter22.p|meter22.v|meter22.i', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 4.0, numberOfIntervals = 4000, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'PowerSystems.Examples.AC1ph_DC.Transformation.TapChanger', options = '', outputFormat = 'mat', variableFilter = 'time|meter1.p|meter1.v|meter1.i|meter12.p|meter12.v|meter12.i|meter22.p|meter22.v|meter22.i', cflags = '', simflags = ' -emit_protected'
 // Result file: PowerSystems.Examples.AC1ph_DC.Transformation.TapChanger_res.mat
 // Files Equal!
 // "true

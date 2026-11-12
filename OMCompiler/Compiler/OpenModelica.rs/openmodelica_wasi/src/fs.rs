@@ -325,7 +325,7 @@ pub fn read_dir(dir: &str) -> io::Result<Vec<DirEntry>> {
 
 pub fn len(path: &str) -> io::Result<u64> {
     if IN_MEMORY {
-        crate::read(path).map(|b| b.len() as u64).ok_or_else(|| not_found(path))
+        crate::size(path).ok_or_else(|| not_found(path))
     } else {
         std::fs::metadata(path).map(|m| m.len())
     }
