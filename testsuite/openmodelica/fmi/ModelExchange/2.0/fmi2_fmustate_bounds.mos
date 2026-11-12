@@ -3,10 +3,12 @@
 // status:   correct
 // teardown_command: rm -rf fmi2_fmustate_bounds*.fmu fmi2_fmustate_bounds*.fmutmp/ fmi2_fmustate_bounds*.log fmi2_fmustate_bounds*_out.txt
 //
-// fmi2SerializeFMUstate must not write more than size bytes, and
-// fmi2DeSerializeFMUstate must refuse a byte vector that does not fit size.
-// The FMU state calls must return fmi2Error for a NULL argument, and
-// fmi2FreeFMUstate must ignore a NULL pointer.
+// fmi2SerializeFMUstate must refuse a size other than the one from
+// fmi2SerializedFMUstateSize, and fmi2DeSerializeFMUstate must refuse a byte
+// vector that does not fit size or this model. After such an error, a stored
+// state restored with fmi2SetFMUstate continues the simulation. The FMU state
+// calls must return fmi2Error for a NULL argument, and fmi2FreeFMUstate must
+// ignore a NULL pointer.
 // This tests the C runtime. The C+Rust runtime is in
 // fmi2_fmustate_free_null_c_rust.mos.
 
@@ -16,6 +18,7 @@ model fmi2_fmustate_bounds
   parameter String s = \"abc\";
   parameter Real k = 2;
   Real x(start = 1, fixed = true);
+  Real y = delay(x, 0.1);
 equation
   der(x) = -k*x;
 end fmi2_fmustate_bounds;
@@ -36,10 +39,14 @@ readFile("fmi2_fmustate_bounds_out.txt"); getErrorString();
 // ""
 // "serialize, size half of the state: fmi2Error
 // serialize, size 0: fmi2Error
+// serialize, size one byte too many: fmi2Error
 // deserialize, exact size, then set: fmi2OK, fmi2SetFMUstate: fmi2OK
 // deserialize, one byte short: fmi2Error
 // deserialize, one byte too many: fmi2Error
 // deserialize, all bytes 0xFF: fmi2Error
+// deserialize, delay() buffer longer than the state: fmi2Error
+// serialize with a wrong size, then fmi2FreeFMUstate, fmi2SetFMUstate, fmi2EnterContinuousTimeMode: fmi2Error, fmi2OK, fmi2OK, fmi2OK
+// deserialize a damaged state, then fmi2FreeFMUstate, fmi2SetFMUstate, fmi2EnterContinuousTimeMode: fmi2Error, fmi2OK, fmi2OK, fmi2OK
 // fmi2FreeFMUstate(c, NULL): fmi2OK
 // fmi2FreeFMUstate(c, &NULL): fmi2OK
 // fmi2GetFMUstate(c, NULL): fmi2Error
