@@ -105,6 +105,10 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       Simulation/SimulationOutputHandler.cpp
                       Simulation/OpcUaClient.cpp
                       Simulation/ArchivedSimulationsWidget.cpp
+                      FMI/FMIGuide.cpp
+                      FMI/FMIGuideDialog.cpp
+                      FMI/FMIGuideTexts.cpp
+                      FMI/FMUExportDialog.cpp
                       FMI/ImportFMUDialog.cpp
                       FMI/ImportFMUModelDescriptionDialog.cpp
                       FMI/FMUExportOutputWidget.cpp
@@ -268,6 +272,9 @@ set(OMEDITLIB_HEADERS LSP/LSPClient.h
                       Simulation/SimulationOutputHandler.h
                       Simulation/OpcUaClient.h
                       Simulation/ArchivedSimulationsWidget.h
+                      FMI/FMIGuide.h
+                      FMI/FMIGuideDialog.h
+                      FMI/FMUExportDialog.h
                       FMI/ImportFMUDialog.h
                       FMI/ImportFMUModelDescriptionDialog.h
                       FMI/FMUExportOutputWidget.h

@@ -8470,6 +8470,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getExportToClipboardAction()->setEnabled(enabled && (modelica || oms));
   MainWindow::instance()->getExportAsImageAction()->setEnabled(enabled && (modelica || oms));
   MainWindow::instance()->getExportFMUAction()->setEnabled(enabled && modelica);
+  MainWindow::instance()->getExportFMUWithSetupAction()->setEnabled(enabled && modelica);
   bool packageSaveAsFolder = (enabled && pLibraryTreeItem && pLibraryTreeItem->isTopLevel()
                               && pLibraryTreeItem->getRestriction() == StringHandler::Package
                               && pLibraryTreeItem->isSaveFolderStructure());

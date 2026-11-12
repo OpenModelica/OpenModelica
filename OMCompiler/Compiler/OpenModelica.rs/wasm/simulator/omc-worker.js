@@ -8,7 +8,7 @@ import init, {
   omc_set_env, omc_init, omc_eval, omc_simulate, omc_set_inwasm_driver,
   omc_enable_cancel_poll, omc_enable_fmu_aot, omc_fmu_platforms,
   omc_sim_start, omc_sim_advance, omc_sim_free, omc_sim_solver_options, omc_sim_log,
-  omc_fmu_cs_solvers,
+  omc_fmu_cs_solvers, omc_fmi_guide,
   omc_enable_wasm_blobs,
   omc_take_pending_downloads, wasi_write_file,
   wasi_path_open, wasi_fd_read, wasi_fd_close,
@@ -553,6 +553,9 @@ self.onmessage = async (ev) => {
       }
       case 'eval':
         reply(await evalWithDownloads(a.src, status));
+        break;
+      case 'fmiGuide':
+        reply({ ok: true, reply: omc_fmi_guide(a.request) });
         break;
       default:
         throw new Error('unknown command: ' + cmd);

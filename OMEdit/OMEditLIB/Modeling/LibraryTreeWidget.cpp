@@ -43,6 +43,7 @@
 #include "ModelWidgetContainer.h"
 #include "FunctionArgumentDialog.h"
 #include "Options/OptionsDialog.h"
+#include "FMI/FMUExportDialog.h"
 #include "MessagesWidget.h"
 #include "DocumentationWidget.h"
 #include "Plotting/PlotWindowContainer.h"
@@ -2911,6 +2912,9 @@ void LibraryTreeView::createActions()
   mpExportFMUAction = new QAction(QIcon(":/Resources/icons/export-fmu.svg"), Helper::FMU, this);
   mpExportFMUAction->setStatusTip(Helper::exportFMUTip);
   connect(mpExportFMUAction, SIGNAL(triggered()), SLOT(exportModelFMU()));
+  mpExportFMUWithSetupAction = new QAction(QIcon(":/Resources/icons/export-fmu.svg"), Helper::FMUWithSetup, this);
+  mpExportFMUWithSetupAction->setStatusTip(Helper::exportFMUWithSetupTip);
+  connect(mpExportFMUWithSetupAction, SIGNAL(triggered()), SLOT(exportModelFMUWithSetup()));
   // Export encrypted package Action
   mpExportEncryptedPackageAction = new QAction(Helper::exportEncryptedPackage, this);
   mpExportEncryptedPackageAction->setStatusTip(Helper::exportEncryptedPackageTip);
@@ -3182,6 +3186,7 @@ void LibraryTreeView::showContextMenu(QPoint point)
           menu.addSeparator();
           // add actions to Export menu
           exportMenu.addAction(mpExportFMUAction);
+          exportMenu.addAction(mpExportFMUWithSetupAction);
           if (pLibraryTreeItem->isTopLevel() && pLibraryTreeItem->getRestriction() == StringHandler::Package
               && pLibraryTreeItem->isSaveFolderStructure()) {
             exportMenu.addAction(mpExportReadonlyPackageAction);
@@ -3771,6 +3776,19 @@ void LibraryTreeView::exportModelFMU()
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     MainWindow::instance()->exportModelFMU(pLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::exportModelFMUWithSetup
+ * Shows the settings of the FMU export for the selected LibraryTreeItem.
+ */
+void LibraryTreeView::exportModelFMUWithSetup()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    FMUExportDialog *pFMUExportDialog = new FMUExportDialog(pLibraryTreeItem, MainWindow::instance());
+    pFMUExportDialog->exec();
   }
 }
 

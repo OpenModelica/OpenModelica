@@ -57,6 +57,9 @@
   .settings label .flag { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11.5px; opacity:.65; white-space:nowrap; }
   .settings select { padding:6px 8px; font-size:15px; }
 
+  #fmuGuide { grid-column:1 / -1; justify-self:start; }
+  #exportBackdrop .modal-foot .chk { margin-right:auto; }
+
   #icPanel { max-height:34%; overflow-y:auto; }
   /* Auto-fill into as many columns as fit (PID has many parameters to tune). */
   /* Enum: name dropdown, no unit column. */
@@ -235,6 +238,7 @@
       <button class="icon-btn" data-close title="Close" aria-label="Close">✕</button>
     </div>
     <div class="modal-body">
+      <button class="ghost" id="fmuGuide" type="button" title="Answer questions about how the FMU is used and get the settings below">Recommend settings…</button>
       <label>Interfaces</label>
       <div class="chk-group">
         <label class="chk"><input type="checkbox" id="fmiMe" checked /> Model Exchange</label>
@@ -253,6 +257,7 @@
       <p class="modal-hint" id="csOnlyHint" hidden>Co-Simulation on its own is translated separately, so that export takes as long as a compile: it needs the output derivatives <code>fmi3GetOutputDerivatives</code> answers from, which only a pure Co-Simulation translation carries.</p>
     </div>
     <div class="modal-foot">
+      <label class="chk" title="Keep the interfaces, the solver and the platforms for the next visit"><input type="checkbox" id="fmuSaveDefault" /> Save as default</label>
       <button class="ghost" data-close>Cancel</button>
       <button id="exportGo">Export</button>
     </div>
@@ -1311,8 +1316,53 @@ el('exportGo').addEventListener('click', () => {
   const fmuType = fmiMe.checked && fmiCs.checked ? 'me_cs' : (fmiCs.checked ? 'cs' : 'me');
   const method = fmiCs.checked ? csSolver.value : undefined;
   const platforms = [...el('fmuPlatforms').querySelectorAll('input:checked')].map((c) => c.value);
+  if (el('fmuSaveDefault').checked) saveFmuDefaults({ fmuType, method: csSolver.value, platforms });
   exportDialog.close();
   exportFmu({ fmuType, method, platforms, daeMode: daeEl.checked });
+});
+
+// "Save as default" keeps the choices of the dialog in the browser. DAE mode is
+// not one of them: it belongs to the model.
+const FMU_DEFAULTS_KEY = 'openmodelica.simulator.fmuExport';
+function saveFmuDefaults(choices) {
+  try { localStorage.setItem(FMU_DEFAULTS_KEY, JSON.stringify(choices)); }
+  catch (e) { log('FMU export defaults not saved', e); }
+}
+function restoreFmuDefaults() {
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(FMU_DEFAULTS_KEY)); } catch (e) { return; }
+  if (!d) return;
+  fmiMe.checked = d.fmuType !== 'cs';
+  fmiCs.checked = d.fmuType !== 'me';
+  if ([...csSolver.options].some((o) => o.value === d.method)) csSolver.value = d.method;
+  for (const box of el('fmuPlatforms').querySelectorAll('input')) box.checked = (d.platforms || []).includes(box.value);
+}
+
+// The settings guide sets the controls of the dialog. omc answers its questions
+// (`ask`); `offers` is what this page can export, so it recommends nothing else.
+el('fmuGuide').addEventListener('click', async () => {
+  try {
+    const { openFmiGuide } = await import('../fmi-guide/dialog.js');
+    await openFmiGuide({
+      ask: async (request) => JSON.parse((await call(primaryWorker, 'fmiGuide', { request: JSON.stringify(request) })).reply),
+      host: {
+        name: 'the Simulator',
+        offers: {
+          interface: ['me', 'cs'], fmiVersion: ['3.0'], fmiType: ['me', 'cs', 'me_cs'], platforms: ['wasm'],
+          daeMode: daeFmuEl.disabled ? ['off'] : ['off', 'on'],
+          csSolver: [...csSolver.options].map((o) => o.value), csStepping: ['substep'],
+        },
+        applies: ['fmiType', 'daeMode', 'csSolver'],
+      },
+      onApply(v) {
+        fmiMe.checked = v.fmiType !== 'cs';
+        fmiCs.checked = v.fmiType !== 'me';
+        if (v.csSolver) csSolver.value = v.csSolver;
+        daeEl.checked = v.daeMode === 'on';
+        syncDaeMode();
+      },
+    });
+  } catch (e) { setStatus('The settings guide did not load: ' + e, 'err'); }
 });
 toggleBtn.addEventListener('click', () => { viewMode = (viewMode === 'all') ? 'auto' : 'all'; renderCharts();
   if (snap) setStatus(`${snap.info.model} — ${snap.info.rows} points, t ∈ [${snap.info.start}, ${snap.info.stop}]` + ((modelFigures && modelFigures.length && viewMode !== 'all') ? ' · figures' : '')); });
@@ -1387,6 +1437,7 @@ window.addEventListener('message', (event) => {
     fillSolverMenus(v.solverOptions);
     fillCsSolvers(v.fmuCsSolvers);
     fillPlatforms(v.fmuPlatforms);
+    restoreFmuDefaults();
     runBtn.disabled = false;
     el('exportFmu').disabled = false;
     setStatus('Ready. ' + v.version);

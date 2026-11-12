@@ -214,6 +214,7 @@ public:
   QAction* getInstantiateModelAction() {return mpInstantiateModelAction;}
   QAction* getCalculateDataReconciliationAction() {return mpCalculateDataReconciliationAction;}
   QAction* getExportFMUAction() {return mpExportFMUAction;}
+  QAction* getExportFMUWithSetupAction() {return mpExportFMUWithSetupAction;}
   QAction* getExportReadonlyPackageAction() {return mpExportReadonlyPackageAction;}
   QAction* getExportEncryptedPackageAction() {return mpExportEncryptedPackageAction;}
   QAction* getExportXMLAction() {return mpExportXMLAction;}
@@ -392,6 +393,7 @@ private:
   QAction *mpExportToClipboardAction;
   QAction *mpExportAsImageAction;
   QAction *mpExportFMUAction;
+  QAction *mpExportFMUWithSetupAction;
   QAction *mpExportReadonlyPackageAction;
   QAction *mpExportEncryptedPackageAction;
   QAction *mpExportXMLAction;
@@ -601,6 +603,7 @@ public slots:
   void simulateModelWithAnimation();
   void simulateModelInteractive();
   void exportModelFMU();
+  void exportModelFMUWithSetup();
   void importModelFMU();
   void importFMUModelDescription();
   void exportEncryptedPackage();
