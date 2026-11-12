@@ -49,21 +49,23 @@ pub fn to_words(data: *mut DATA, out: &mut Vec<f64>) {
 }
 
 #[cfg(feature = "fmi")]
-/// [`to_words`]' inverse; `false` for words it did not write.
-pub fn set_from_words(data: *mut DATA, w: &mut dyn Iterator<Item = f64>) -> bool {
-    let state = match w.next() {
-        Some(0.0) => None,
-        Some(_) => match DelayState::from_words(w) {
-            Some(s) => Some(s),
-            None => return false,
-        },
-        None => return false,
-    };
+/// [`to_words`]' inverse, not applied yet: `None` for words it did not write or
+/// that do not fit this model.
+pub fn from_words(data: *mut DATA, w: &mut dyn Iterator<Item = f64>) -> Option<Option<DelayState>> {
+    if w.next()? == 0.0 {
+        return Some(None);
+    }
+    let s = DelayState::from_words(w)?;
+    (s.count() == unsafe { (*(*data).modelData).nDelayExpressions } as usize).then_some(Some(s))
+}
+
+#[cfg(feature = "fmi")]
+/// Puts in place what [`from_words`] read.
+pub fn restore(data: *mut DATA, state: Option<DelayState>) {
     free(data);
     if let Some(s) = state {
         unsafe { (*(*data).simulationInfo).delayStructure = Box::into_raw(Box::new(s)) as *mut *mut core::ffi::c_void };
     }
-    true
 }
 
 /// The buffers' `raiseStreamPrint`, on the `threadData` the entry point below

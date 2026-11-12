@@ -4,15 +4,12 @@
 // teardown_command: rm -rf fmi2_fmustate_bounds*.fmu fmi2_fmustate_bounds*.fmutmp/ fmi2_fmustate_bounds*.log fmi2_fmustate_bounds*_out.txt
 //
 // fmi2SerializeFMUstate must refuse a size other than the one from
-// fmi2SerializedFMUstateSize, and fmi2DeSerializeFMUstate must refuse a byte
-// vector that does not fit size or this model. After such an error, a stored
-// state restored with fmi2SetFMUstate continues the simulation. The FMU state
-// calls must return fmi2Error for a NULL argument, and fmi2FreeFMUstate must
-// ignore a NULL pointer.
-// This tests the C runtime. The C+Rust runtime is in
-// fmi2_fmustate_free_null_c_rust.mos.
+// fmi2SerializedFMUstateSize, and fmi2DeSerializeFMUstate or the fmi2SetFMUstate
+// after it must refuse a byte vector that does not fit size or this model. After
+// such an error, a stored state restored with fmi2SetFMUstate continues the
+// simulation. The FMU state calls must return fmi2Error for a NULL argument, and
+// fmi2FreeFMUstate must ignore a NULL pointer.
 
-setCommandLineOptions("--simCodeTarget=C"); getErrorString();
 loadString("
 model fmi2_fmustate_bounds
   parameter String s = \"abc\";
@@ -29,8 +26,6 @@ readFile("fmi2_fmustate_bounds_out.txt"); getErrorString();
 // Result:
 // true
 // ""
-// true
-// ""
 // "fmi2_fmustate_bounds.fmu"
 // "Notification: Building FMU for platform 'static' (1/1).
 // Notification: Finished FMU for platform 'static' (1/1).
@@ -41,12 +36,12 @@ readFile("fmi2_fmustate_bounds_out.txt"); getErrorString();
 // serialize, size 0: fmi2Error
 // serialize, size one byte too many: fmi2Error
 // deserialize, exact size, then set: fmi2OK, fmi2SetFMUstate: fmi2OK
-// deserialize, one byte short: fmi2Error
-// deserialize, one byte too many: fmi2Error
-// deserialize, all bytes 0xFF: fmi2Error
-// deserialize, delay() buffer longer than the state: fmi2Error
+// deserialize and set, one byte short: fmi2Error
+// deserialize and set, one byte too many: fmi2Error
+// deserialize and set, all bytes 0xFF: fmi2Error
+// deserialize and set, delay() buffer longer than the state: fmi2Error
 // serialize with a wrong size, then fmi2FreeFMUstate, fmi2SetFMUstate, fmi2EnterContinuousTimeMode: fmi2Error, fmi2OK, fmi2OK, fmi2OK
-// deserialize a damaged state, then fmi2FreeFMUstate, fmi2SetFMUstate, fmi2EnterContinuousTimeMode: fmi2Error, fmi2OK, fmi2OK, fmi2OK
+// deserialize and set a damaged state, then fmi2FreeFMUstate, fmi2SetFMUstate, fmi2EnterContinuousTimeMode: fmi2Error, fmi2OK, fmi2OK, fmi2OK
 // fmi2FreeFMUstate(c, NULL): fmi2OK
 // fmi2FreeFMUstate(c, &NULL): fmi2OK
 // fmi2GetFMUstate(c, NULL): fmi2Error

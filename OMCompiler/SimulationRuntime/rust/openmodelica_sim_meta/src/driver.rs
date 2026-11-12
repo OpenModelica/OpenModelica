@@ -9987,6 +9987,18 @@ pub fn set_schedule_words(samp: Option<&mut Samples>, sync: Option<&mut crate::s
     true
 }
 
+/// Whether [`set_schedule_words`] takes `w`; changes nothing. Without the clocks
+/// (before initialization) only the layout is checked.
+pub fn schedule_words_fit(sync: Option<&crate::sync::Sync>, w: &[f64]) -> bool {
+    let Some((&n, rest)) = w.split_first() else {
+        return false;
+    };
+    let Some((&m, timers)) = rest.get(n as usize..).and_then(|r| r.split_first()) else {
+        return false;
+    };
+    m as usize == timers.len() && sync.map_or(timers.len() % 3 == 0, |s| s.timer_words_fit(timers))
+}
+
 /// Co-Simulation: the FMU owns the integration, the importer picks the
 /// communication points. Unlike [`EventsDriver`] there is no output grid and no
 /// rows. [`step_to`](CsDriver::step_to) takes a [`CsDefer`] saying which events it
@@ -10146,6 +10158,10 @@ impl CsDriver {
 
     pub fn set_schedule_words(&mut self, w: &[f64]) -> bool {
         set_schedule_words(Some(&mut self.samp), Some(&mut self.sync), w)
+    }
+
+    pub fn schedule_words_fit(&self, w: &[f64]) -> bool {
+        schedule_words_fit(Some(&self.sync), w)
     }
 
     /// A sample or clock is due at `time`: the event the master stopped on is a time event.

@@ -40,7 +40,6 @@ pub extern "C" fn rt_delay_zc(idx: u32, time: f64, delay_time: f64, zc_pre: f64)
     state().zc(idx as usize, time, delay_time, zc_pre)
 }
 
-
 /// The state as flat words for an FMU state, led by whether there is one.
 pub fn to_words(out: &mut alloc::vec::Vec<f64>) {
     match unsafe { (*DELAY.0.get()).as_ref() } {
@@ -52,16 +51,18 @@ pub fn to_words(out: &mut alloc::vec::Vec<f64>) {
     }
 }
 
-/// [`to_words`]' inverse; `false` for words it did not write.
-pub fn set_from_words(w: &mut dyn Iterator<Item = f64>) -> bool {
-    let state = match w.next() {
-        Some(0.0) => None,
-        Some(_) => match DelayState::from_words(w) {
-            Some(s) => Some(s),
-            None => return false,
-        },
-        None => return false,
-    };
+/// [`to_words`]' inverse, not applied yet: `None` for words it did not write or
+/// whose count differs from the current state's.
+pub fn from_words(w: &mut dyn Iterator<Item = f64>) -> Option<Option<DelayState>> {
+    if w.next()? == 0.0 {
+        return Some(None);
+    }
+    let s = DelayState::from_words(w)?;
+    let n = unsafe { (*DELAY.0.get()).as_ref() }.map_or(s.count(), DelayState::count);
+    (s.count() == n).then_some(Some(s))
+}
+
+/// Puts in place what [`from_words`] read.
+pub fn restore(state: Option<DelayState>) {
     unsafe { *DELAY.0.get() = state };
-    true
 }

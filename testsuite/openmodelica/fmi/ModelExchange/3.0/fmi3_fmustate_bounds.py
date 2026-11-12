@@ -55,14 +55,17 @@ def serialize_into(size):
     return r + (", bytes written past size" if past else "")
 
 
-def deserialize(f, data):
+def set_deserialized(f, data):
+    """fmi3Error if fmi3DeserializeFMUState or the fmi3SetFMUState after it refuses data."""
     buf = create_string_buffer(data, len(data))
-    return status(f.fmi3DeserializeFMUState, f.component, cast(buf, POINTER(fmi3Byte)), len(data), byref(fmi3FMUState()))
+    s = fmi3FMUState()
+    r = status(f.fmi3DeserializeFMUState, f.component, cast(buf, POINTER(fmi3Byte)), len(data), byref(s))
+    return r if r != NAMES[0] else status(f.fmi3SetFMUState, f.component, s)
 
 
 def deserialize_changed(change):
     f = model()
-    return deserialize(f, change(serialized(f)[1]))
+    return set_deserialized(f, change(serialized(f)[1]))
 
 
 def deserialize_and_set():
@@ -75,7 +78,15 @@ def deserialize_and_set():
 
 
 def long_delay_buffer(data):
-    """Set the length of the delay() buffer, the first history word, past the end."""
+    """Set the length of the delay() buffer past the end of the state."""
+    # C+Rust and wasm: mode, SimData, the String variables (none here), the
+    # delay() words (has, start, count, length, ...), the schedule, then the
+    # lengths of the last two parts and of SimData.
+    n_opaque, n_schedule, flat = struct.unpack("<3Q", data[-24:])
+    if 4 + flat + n_opaque + n_schedule + 24 == len(data):
+        k = 4 + flat + 24
+        return data[:k] + struct.pack("<d", 1e9) + data[k + 8:]
+    # C: the history words come last, after their number.
     w = sizeof(c_size_t)
     for n in range(1, len(data) // 8):
         k = len(data) - 8 * n - w
@@ -105,15 +116,15 @@ CHECKS = [
     ("serialize, size 0", lambda: serialize_into(0)),
     ("serialize, size one byte too many", lambda: serialize_into(len(serialized(model())[1]) + 1)),
     ("deserialize, exact size, then set", deserialize_and_set),
-    ("deserialize, one byte short", lambda: deserialize_changed(lambda d: d[:-1])),
-    ("deserialize, one byte too many", lambda: deserialize_changed(lambda d: d + b"\x00")),
-    ("deserialize, all bytes 0xFF", lambda: deserialize_changed(lambda d: b"\xff" * len(d))),
-    ("deserialize, delay() buffer longer than the state", lambda: deserialize_changed(long_delay_buffer)),
+    ("deserialize and set, one byte short", lambda: deserialize_changed(lambda d: d[:-1])),
+    ("deserialize and set, one byte too many", lambda: deserialize_changed(lambda d: d + b"\x00")),
+    ("deserialize and set, all bytes 0xFF", lambda: deserialize_changed(lambda d: b"\xff" * len(d))),
+    ("deserialize and set, delay() buffer longer than the state", lambda: deserialize_changed(long_delay_buffer)),
     ("serialize with a wrong size, then fmi3FreeFMUState, fmi3SetFMUState, fmi3EnterContinuousTimeMode",
      lambda: recover(lambda f, s, d: status(f.fmi3SerializeFMUState, f.component, s,
                                             cast(create_string_buffer(len(d)), POINTER(fmi3Byte)), len(d) // 2))),
-    ("deserialize a damaged state, then fmi3FreeFMUState, fmi3SetFMUState, fmi3EnterContinuousTimeMode",
-     lambda: recover(lambda f, s, d: deserialize(f, b"\xff" * len(d)))),
+    ("deserialize and set a damaged state, then fmi3FreeFMUState, fmi3SetFMUState, fmi3EnterContinuousTimeMode",
+     lambda: recover(lambda f, s, d: set_deserialized(f, b"\xff" * len(d)))),
     ("fmi3FreeFMUState(c, NULL)", lambda: with_state(lambda f, s, b, n: (f.fmi3FreeFMUState, f.component, None))),
     ("fmi3FreeFMUState(c, &NULL)", lambda: with_state(lambda f, s, b, n: (f.fmi3FreeFMUState, f.component, byref(fmi3FMUState())))),
     ("fmi3GetFMUState(c, NULL)", lambda: with_state(lambda f, s, b, n: (f.fmi3GetFMUState, f.component, None))),

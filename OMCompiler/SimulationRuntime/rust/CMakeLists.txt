@@ -285,7 +285,7 @@ foreach(_simrt_fmu_crate src daskr minpack openmodelica_arrow_writer openmodelic
           PATTERN "CMakeLists.txt" EXCLUDE
           PATTERN "*.cmake" EXCLUDE)
 endforeach()
-foreach(_simrt_fmu_crate openmodelica_lapack openmodelica_fmi3_wasm)
+foreach(_simrt_fmu_crate openmodelica_lapack openmodelica_fmi3_wasm openmodelica_fmi_state_machine)
   install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../Compiler/OpenModelica.rs/${_simrt_fmu_crate}/
           DESTINATION ${_simrt_fmu_sources}/Compiler/OpenModelica.rs/${_simrt_fmu_crate}
           COMPONENT fmu

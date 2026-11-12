@@ -344,6 +344,8 @@ openmodelica_fmi_ls_wasm_to_native/Cargo.lock
 openmodelica_fmi_ls_wasm_to_native/Cargo.toml
 openmodelica_fmi_ls_wasm_to_native/src/fmi2.rs
 openmodelica_fmi_ls_wasm_to_native/src/lib.rs
+openmodelica_fmi_state_machine/Cargo.toml
+openmodelica_fmi_state_machine/src/lib.rs
 openmodelica_fmi_web/Cargo.lock
 openmodelica_fmi_web/Cargo.toml
 openmodelica_fmi_web/build.rs

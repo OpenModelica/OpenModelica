@@ -38,7 +38,6 @@ fmi_attributes_24.mos \
 fmi_attributes_25.mos \
 fmi2_array_attributes_nb.mos \
 fmi2_array_attributes.mos \
-fmi2_fmustate_free_null_c_rust.mos \
 Issue13905.mos \
 Issue13905_pool_expand.mos \
 Issue16354.mos \
@@ -47,6 +46,7 @@ fmi_import_enum_names.mos \
 fmi2_array_nonscalarized.mos \
 fmi2_arrays_initial_unknowns.mos \
 fmi2_fmustate_bounds.mos \
+fmi2_fmustate_recover.mos \
 fmi2_string_variability.mos \
 fmi_export_derivative_annotation.mos \
 fmi_export_derivative_annotation_buildings.mos \

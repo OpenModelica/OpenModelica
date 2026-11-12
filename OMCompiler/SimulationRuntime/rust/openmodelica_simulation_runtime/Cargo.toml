@@ -42,7 +42,7 @@ fmu-lapack = ["openmodelica_lapack/fortran-abi"]
 # wasm FMU with, driven here over `CEngine`. It replaces the C
 # `fmi-export/fmu2_model_interface.c`, whose Co-Simulation offers only Euler and
 # CVODE where this one has the whole solver set.
-fmi = ["dep:openmodelica_fmi3_wasm"]
+fmi = ["dep:openmodelica_fmi3_wasm", "dep:openmodelica_fmi_state_machine"]
 # The FMU flavour of the archive (`cfg(omc_fmi_runtime)`), as `OMC_SIMRT_FMI=1`
 # does: a source-code FMU's own manifest names it, so its build needs no
 # environment.
@@ -100,6 +100,7 @@ openmodelica_fmi3_wasm = { path = "../../../Compiler/OpenModelica.rs/openmodelic
   "me",
   "cs",
 ], optional = true }
+openmodelica_fmi_state_machine = { path = "../../../Compiler/OpenModelica.rs/openmodelica_fmi_state_machine", optional = true }
 
 [build-dependencies]
 # Compiles src/shim.c -- the setjmp/longjmp and printf-varargs half of the ABI.
