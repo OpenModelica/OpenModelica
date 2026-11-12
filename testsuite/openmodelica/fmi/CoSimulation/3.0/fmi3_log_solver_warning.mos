@@ -1,0 +1,40 @@
+// name:     fmi3_log_solver_warning
+// keywords: FMI 3.0 export logging logMessage singular linear system
+// status:   correct
+// teardown_command: rm -rf fmi3_log_solver_warning.fmu fmi3_log_solver_warning.fmutmp/ fmi3_log_solver_warning_info.json fmi3_log_solver_warning.log fmi3_log_solver_warning.txt
+//
+// A solver warning that a simulation shows in LOG_STDOUT goes to the FMI
+// category of its solver (#11500): here the fallback for a singular linear
+// system, in logSingularLinearSystems and not in logStatusWarning.
+
+setCommandLineOptions("--tearingMethod=minimalTearing"); getErrorString();
+loadString("
+model fmi3_log_solver_warning
+  Real a = noEvent(if time > 0.45 then 1 else 2);
+  Real x, y;
+equation
+  a*x + y = 1;
+  x + y = 1;
+end fmi3_log_solver_warning;
+"); getErrorString();
+buildModelFMU(fmi3_log_solver_warning, version="3.0", fmuType="cs"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi3_log_solver_warning.py fmi3_log_solver_warning.fmu fmi3_log_solver_warning.txt", "fmi3_log_solver_warning.log"); getErrorString();
+readFile("fmi3_log_solver_warning.txt");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3_log_solver_warning.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "logStatusWarning logStatusError:
+// logSingularLinearSystems:
+//   logSingularLinearSystems, status 1: Failed to solve linear system of equations (no. 13) at time 0.500000, system is singular for U[3, 3].
+//   logSingularLinearSystems, status 1: The default linear solver fails, the fallback solver with total pivoting is started at time 0.500000. That might raise performance issues, for more information use -lv LOG_LS.
+// "
+// endResult

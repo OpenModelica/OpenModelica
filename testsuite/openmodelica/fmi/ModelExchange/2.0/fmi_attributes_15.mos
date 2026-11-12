@@ -452,6 +452,10 @@ readFile("fmi_attributes_15_tmp.xml")
 //     <Category name=\"logStatusPending\" description=\"logStatusPending\" />
 //     <Category name=\"logAll\" description=\"logAll\" />
 //     <Category name=\"logFmi2Call\" description=\"logFmi2Call\" />
+//     <Category name=\"LOG_STDOUT\" description=\"Output of the model and the runtime\" />
+//     <Category name=\"LOG_ASSERT\" description=\"Messages of assert()\" />
+//     <Category name=\"LOG_INIT\" description=\"Initialization\" />
+//     <Category name=\"LOG_SOLVER\" description=\"Integration in Co-Simulation\" />
 //   </LogCategories>
 //   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-6\" stepSize=\"0.002\"/>
 //   <ModelVariables>

@@ -17,7 +17,7 @@ use openmodelica_sim_meta::simflags;
 use openmodelica_sim_meta::{self as meta, MetaKind};
 
 use crate::exports::om::sim::simulation::{Guest as SimGuest, RunResult};
-use crate::{Engine, Fmu, log_sink, read_meta};
+use crate::{Engine, Fmu, read_meta, stdout_sink};
 
 impl SimGuest for Fmu {
     fn run(args: Vec<String>) -> Result<RunResult, String> {
@@ -127,7 +127,7 @@ pub(crate) fn run(args: Vec<String>) -> Result<RunResult, String> {
     // Installs the `-lv` log mask too, so the notices below are already filtered.
     simflags::set_flags(flags);
 
-    driver::set_log_sink(log_sink);
+    driver::set_log_sink(stdout_sink);
     // What `OpenModelica_fmuLoadResource` resolves against, as at instantiation:
     // the host preopens the artifact's resources as this component's root.
     openmodelica_codegen_wasm_jit_runtime::set_resources_dir("/");

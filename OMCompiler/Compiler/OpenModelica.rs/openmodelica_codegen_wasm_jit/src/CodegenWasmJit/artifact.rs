@@ -24,7 +24,7 @@ use std::sync::{Arc, LazyLock, Mutex};
 use std::time::Instant;
 
 use openmodelica_fmi::{Fmu, InterfaceKind};
-use openmodelica_fmi_driver::api::Fmi3;
+use openmodelica_fmi_driver::api::{Fmi3, Status};
 use openmodelica_fmi_driver::component::WasmArtifact;
 use openmodelica_fmi_driver::{Options, Solver, cs, me};
 use openmodelica_sim_meta::omclog;
@@ -736,10 +736,6 @@ fn run_fmi(
     if let Some(v) = flags.step_size.filter(|h| *h > 0.0) {
         opts.step_size = v;
     }
-    // The FMU's own `FILTERED_LOG` categories, which are not the `-lv` streams:
-    // `-lv=LOG_STATS` asks the *runtime* for a block, not the FMU for a trace of
-    // every event, so it alone leaves the FMI logger off.
-    opts.logging_on = flags.has_log("LOG_EVENTS") || flags.has_log("LOG_NLS") || flags.has_log("LOG_DSS");
     opts.log_streams = flags.log.clone();
     opts.alarm = flags.alarm;
     // A run wedged inside one call into wasm never reaches the master's deadline;
@@ -799,11 +795,15 @@ fn run_fmi(
     let t = Instant::now();
     let (mut recorder, summary, elapsed) = match &loaded.form {
         Form::Component(a) => {
+            // loggingOn for what the instantiation logs; `initialize` then keeps
+            // the categories a simulation shows.
             let mut inst = match kind {
-                InterfaceKind::ModelExchange => a.model_exchange(&instance_name(md), opts.logging_on),
-                _ => a.co_simulation(&instance_name(md), opts.logging_on, opts.event_mode),
+                InterfaceKind::ModelExchange => a.model_exchange(&instance_name(md), true),
+                _ => a.co_simulation(&instance_name(md), true, opts.event_mode),
             }
             .map_err(|e| e.to_string())?;
+            let shown = openmodelica_fmi_driver::shown_log_categories(md, &opts);
+            push_fmu_log(log, inst.take_log(), &shown);
             log.push_str(&format!(
                 "LOG_STDOUT        | info    | {} instantiated{}\n",
                 kind.as_str(),
@@ -815,9 +815,7 @@ fn run_fmi(
             let driven = drive(&mut inst, kind, md, &opts);
             let elapsed = ms(t);
             log.push_str(&inst.output());
-            for (_, category, message) in inst.take_log() {
-                log.push_str(&format!("LOG_STDOUT        | info    | {category}: {message}\n"));
-            }
+            push_fmu_log(log, inst.take_log(), &shown);
             let (r, s, events) = driven?;
             log.push_str(&events);
             (r, s, elapsed)
@@ -827,8 +825,8 @@ fn run_fmi(
             openmodelica_wasi::wasi::start_stdout_capture();
             let driven = loaded.with_dylink(|inst| {
                 match kind {
-                    InterfaceKind::ModelExchange => inst.instantiate_me(&instance_name(md), opts.logging_on),
-                    _ => inst.instantiate_cs(&instance_name(md), opts.logging_on, opts.event_mode),
+                    InterfaceKind::ModelExchange => inst.instantiate_me(&instance_name(md), true),
+                    _ => inst.instantiate_cs(&instance_name(md), true, opts.event_mode),
                 }
                 .map_err(|e| e.to_string())?;
                 linked_ms = ms(t);
@@ -854,6 +852,27 @@ fn run_fmi(
         took(elapsed)
     ));
     recorder.finish().map_err(|e| format!("cannot write {out}: {e}"))
+}
+
+/// The FMU's warnings and errors, and its messages in the `shown` categories, as
+/// a simulation's log lines: in the stream of their category, or `LOG_STDOUT` for
+/// a status category. The instantiation logs in every category.
+fn push_fmu_log(log: &mut String, messages: Vec<(Status, String, String)>, shown: &[&str]) {
+    for (status, category, message) in messages {
+        if matches!(status, Status::Ok) && !shown.contains(&category.as_str()) {
+            continue;
+        }
+        let stream = omclog::FMI_CATEGORIES
+            .iter()
+            .find(|(_, cat)| *cat == category)
+            .map_or(omclog::STDOUT, |(stream, _)| *stream);
+        let ty = match status {
+            Status::Ok => omclog::INFO,
+            Status::Warning => omclog::WARNING,
+            _ => omclog::ERROR,
+        };
+        log.push_str(&omclog::fmi_stream_lines(stream, ty, &message));
+    }
 }
 
 /// Run one of the two FMI interfaces to the end, whichever backend serves it.

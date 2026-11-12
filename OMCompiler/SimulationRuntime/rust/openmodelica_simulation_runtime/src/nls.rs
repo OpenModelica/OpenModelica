@@ -313,7 +313,7 @@ impl nls::NlsModel for CModel {
                 out.fill(0.0);
             }
             Err(e) => {
-                omclog::warning(omclog::STDOUT, false, e);
+                omclog::warning(omclog::stdout_of(omclog::NLS), false, e);
                 out.fill(0.0);
             }
         }
@@ -538,7 +538,7 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
             if failed || j.sizeRows != rows || j.sizeCols != size {
                 if !failed {
                     omclog::warning!(
-                        omclog::STDOUT,
+                        omclog::stdout_of(omclog::NLS),
                         false,
                         "Analytic Jacobian of non-linear system {i} is {}x{}, but the system has {size} iteration variables. This indicates that something went wrong during Jacobian generation. Using a numeric Jacobian instead.",
                         j.sizeRows,
@@ -565,7 +565,7 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
         // scaling with it.
         if !sys.sparsePattern.is_null() && !sparsity_is_regular(unsafe { &*sys.sparsePattern }, size) {
             omclog::warning!(
-                omclog::STDOUT,
+                omclog::stdout_of(omclog::NLS),
                 false,
                 "Sparsity pattern for non-linear system {i} is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.",
             );
@@ -589,7 +589,7 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
             if sparse && solverflags::nlss_given() {
                 let t = solverflags::sparse_thresholds();
                 omclog::info!(
-                    omclog::STDOUT,
+                    omclog::stdout_of(omclog::NLS),
                     false,
                     "Using sparse solver kinsol for nonlinear system {i} ({}),\nbecause density of {:.2} is under threshold of {:.2} or size of {size} exceeds threshold of {}.",
                     sys.equationIndex,
@@ -980,7 +980,7 @@ pub fn install_hooks(data: *mut DATA, thread_data: *mut threadData_t, prefix: &s
     nls::host::set_file_prefix(|| unsafe { &*PREFIX.0.get() });
     nls::host::set_write_file(|name, data| {
         if let Err(e) = std::fs::write(name, data) {
-            omclog::warning!(omclog::STDOUT, false, "could not write {name}: {e}");
+            omclog::warning!(omclog::stdout_of(omclog::NLS), false, "could not write {name}: {e}");
         }
     });
     nls::host::set_note_runtime_error(|msg| omclog::debug(omclog::ASSERT, false, msg));
@@ -1106,7 +1106,7 @@ pub fn warn_once_unsupported_nls() {
         && !WARNED.swap(true, Ordering::Relaxed)
     {
         omclog::warning(
-            omclog::STDOUT,
+            omclog::stdout_of(omclog::NLS),
             false,
             "-nls: this runtime was built without SUNDIALS; using the dense solver ladder.",
         );

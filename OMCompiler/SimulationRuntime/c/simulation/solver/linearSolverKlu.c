@@ -319,7 +319,7 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
   }
   else
   {
-    warningStreamPrintWithLimit(OMC_LOG_STDOUT, 0, ++(systemData->numberOfFailures) /* Update counter */, data->simulationInfo->maxWarnDisplays,
+    warningStreamPrintWithLimit(OMC_LOG_STDOUT_OF(OMC_LOG_LS), 0, ++(systemData->numberOfFailures) /* Update counter */, data->simulationInfo->maxWarnDisplays,
                                 "Failed to solve linear system of equations (no. %d) at time %f, system status %d.",
                                 (int)systemData->equationIndex, data->localData[0]->timeValue, status);
   }

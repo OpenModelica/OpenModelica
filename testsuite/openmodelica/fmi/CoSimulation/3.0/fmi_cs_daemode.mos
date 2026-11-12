@@ -51,12 +51,10 @@ system("unzip -cqq DaeModeWhenLoop_both.fmu modelDescription.xml | grep -cE \"<(
 // "Notification: Building FMU for platform 'static' (1/1).
 // Notification: Finished FMU for platform 'static' (1/1).
 // "
-// LOG_STDOUT        | warning | Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU. Colored numerical Jacobian will be used.
 // 0
 // ""
 // (true, {})
 // ""
-// LOG_STDOUT        | warning | Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU. Colored numerical Jacobian will be used.
 // 0
 // ""
 // (true, {})

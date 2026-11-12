@@ -484,7 +484,7 @@ static void finishSparseColPtr(SUNMatrix A, int nnz) {
   /* Check for empty rows */
   for (i = 1; i < SM_COLUMNS_S(A) + 1; ++i) {
     if (SM_INDEXPTRS_S(A)[i] == SM_INDEXPTRS_S(A)[i - 1]) {
-      warningStreamPrint(OMC_LOG_STDOUT, 0,
+      warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_NLS), 0,
                          "KINSOL: Jacobian row %d singular. See OMC_LOG_NLS for "
                          "more information.",
                          i);

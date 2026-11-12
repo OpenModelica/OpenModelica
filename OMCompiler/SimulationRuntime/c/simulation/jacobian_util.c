@@ -1138,16 +1138,16 @@ JACOBIAN_METHOD checkJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABIL
   {
   case JACOBIAN_NOT_AVAILABLE:
     if (jacobianMethod != INTERNALNUMJAC && jacobianMethod != JAC_UNKNOWN) {
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "Jacobian not available, switching to internal numerical Jacobian.");
+      warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "Jacobian not available, switching to internal numerical Jacobian.");
     }
     jacobianMethod = INTERNALNUMJAC;
     break;
   case JACOBIAN_ONLY_SPARSITY:
     if (jacobianMethod == COLOREDSYMJAC || jacobianMethod == COLOREDSYMJACADJ || jacobianMethod == BICOLOREDSYMJAC) {
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "Symbolic Jacobian not available, only sparsity pattern. Switching to colored numerical Jacobian.");
+      warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "Symbolic Jacobian not available, only sparsity pattern. Switching to colored numerical Jacobian.");
       jacobianMethod = COLOREDNUMJAC;
     } else if(jacobianMethod == SYMJAC) {
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "Symbolic Jacobian not available, only sparsity pattern. Switching to uncolored numerical Jacobian.");
+      warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "Symbolic Jacobian not available, only sparsity pattern. Switching to uncolored numerical Jacobian.");
       jacobianMethod = NUMJAC;
     } else if(jacobianMethod == JAC_UNKNOWN) {
       jacobianMethod = COLOREDNUMJAC;
@@ -1231,7 +1231,7 @@ JACOBIAN* initSymbolicOdeJacobian(DATA* data, threadData_t* threadData, JACOBIAN
     if (adjointJacobian->availability == JACOBIAN_AVAILABLE) {
       jacobian = adjointJacobian;
     } else {
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "No adjoint symbolic Jacobian was generated "
+      warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "No adjoint symbolic Jacobian was generated "
                                             "(compile with --generateDynamicJacobian=symbolicAdjoint or =bidirectional). "
                                             "Switching to the forward symbolic Jacobian.");
       *jacobianMethod = JAC_UNKNOWN;
@@ -1245,7 +1245,7 @@ JACOBIAN* initSymbolicOdeJacobian(DATA* data, threadData_t* threadData, JACOBIAN
     jacobian = forwardJacobian;
     if (*jacobianMethod == BICOLOREDSYMJAC
         && !(forwardJacobian->adjointJacobian != NULL && forwardJacobian->availability == JACOBIAN_AVAILABLE)) {
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "No bidirectional symbolic Jacobian was generated "
+      warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "No bidirectional symbolic Jacobian was generated "
                                             "(compile with --generateDynamicJacobian=bidirectional). "
                                             "Switching to the forward symbolic Jacobian.");
       *jacobianMethod = JAC_UNKNOWN;

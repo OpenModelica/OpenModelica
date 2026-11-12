@@ -418,7 +418,7 @@ static void retrySimulationStep(DATA* data, threadData_t *threadData, SOLVER_INF
   overwriteOldSimulationData(data);
   updateDiscreteSystem(data, threadData);
   if (0 == retry) {
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "Integrator attempt to handle a problem with a called assert.");
+    warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "Integrator attempt to handle a problem with a called assert.");
   }
   solverInfo->didEventStep = 1;
 }

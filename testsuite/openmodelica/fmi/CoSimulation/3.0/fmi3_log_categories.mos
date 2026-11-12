@@ -1,0 +1,45 @@
+// name:     fmi3_log_categories
+// keywords: FMI 3.0 export logging logMessage SetDebugLogging
+// status:   correct
+// teardown_command: rm -rf fmi3_log_categories.fmu fmi3_log_categories.fmutmp/ fmi3_log_categories_info.json fmi3_log_categories.log fmi3_log_categories.txt
+//
+// The runtime's messages go to logMessage in the category of their stream
+// (#11500), and fmi3SetDebugLogging changes only the named categories.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+model fmi3_log_categories
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = -x;
+  when time > 0.5 then
+    Modelica.Utilities.Streams.print(\"event at \" + String(time));
+  end when;
+end fmi3_log_categories;
+"); getErrorString();
+buildModelFMU(fmi3_log_categories, version="3.0", fmuType="cs"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi3_log_categories.py fmi3_log_categories.fmu fmi3_log_categories.txt", "fmi3_log_categories.log"); getErrorString();
+readFile("fmi3_log_categories.txt");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3_log_categories.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "declared: logEvents logSingularLinearSystems logNonlinearSystems logDynamicStateSelection logStatusWarning logStatusDiscard logStatusError logStatusFatal logFmi3Call LOG_STDOUT LOG_ASSERT LOG_INIT LOG_SOLVER
+// logging off:
+// logging on: LOG_STDOUT=True LOG_INIT=True LOG_SOLVER=True logEvents=True
+//   LOG_STDOUT: event at 0.5
+// LOG_STDOUT, then logEvents: LOG_STDOUT logEvents
+//   LOG_STDOUT: event at 0.5
+// unknown category, warnings off:
+// unknown category, warnings on: logStatusWarning
+//   logStatusWarning: logging category 'noSuchCategory' is not supported by model
+// "
+// endResult

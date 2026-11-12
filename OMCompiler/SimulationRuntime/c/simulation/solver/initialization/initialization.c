@@ -364,7 +364,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
       data->callback->homotopyMethod = GLOBAL_ADAPTIVE_HOMOTOPY; /* new global homotopy approach (adaptive lambda) */
     if(solveWithGlobalHomotopy) {
       if (!kinsol)
-        warningStreamPrint(OMC_LOG_ASSERT, 0, "Failed to solve the initialization problem without homotopy method. If homotopy is available the homotopy method is used now.");
+        warningStreamPrint(OMC_LOG_ASSERT_OF(OMC_LOG_INIT), 0, "Failed to solve the initialization problem without homotopy method. If homotopy is available the homotopy method is used now.");
       omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY] = 1;
       setAllParamsToStart(data->simulationInfo, data->modelData);
       setAllVarsToStart(data->localData[0], data->simulationInfo, data->modelData);
@@ -843,10 +843,10 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
     }
 
     if(initMethod == IIM_UNKNOWN) {
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "unrecognized option -iim %s", pInitMethod);
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "current options are:");
+      warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_INIT), 0, "unrecognized option -iim %s", pInitMethod);
+      warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_INIT), 0, "current options are:");
       for (i=1; i<IIM_MAX; ++i) {
-        warningStreamPrint(OMC_LOG_STDOUT, 0, "| %-15s [%s]", INIT_METHOD_NAME[i], INIT_METHOD_DESC[i]);
+        warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_INIT), 0, "| %-15s [%s]", INIT_METHOD_NAME[i], INIT_METHOD_DESC[i]);
       }
       throwStreamPrint(threadData, "see last warning");
     }
@@ -922,7 +922,7 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   if(stateSelection(data, threadData, 0, 1) == 1) {
     if(stateSelection(data, threadData, 1, 1) == 1) {
       /* report a warning about strange start values */
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "Cannot initialize the dynamic state selection in an unique way. Use -lv LOG_DSS to see the switching state set.");
+      warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_DSS), 0, "Cannot initialize the dynamic state selection in an unique way. Use -lv LOG_DSS to see the switching state set.");
     }
   }
 #endif

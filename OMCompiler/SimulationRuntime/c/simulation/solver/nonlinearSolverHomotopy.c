@@ -1824,9 +1824,9 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
     {
       if (solverData->initHomotopy) {
         if (preTau == tau)
-          warningStreamPrint(OMC_LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nNo solution for current step size tau found and tau cannot be decreased any further.\nYou can set the minimum step size tau with:\n\t-homTauMin=<value>\nYou can also try to allow more newton steps in the corrector step with:\n\t-homMaxNewtonSteps=<value>\nor change the tolerance for the solution with:\n\t-homHEps=<value>\nYou can also try to use another backtrace stategy in the corrector step with:\n\t-homBacktraceStrategy=<fix|orthogonal>\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.");
+          warningStreamPrint(OMC_LOG_ASSERT_OF(OMC_LOG_NLS), 0, "Homotopy algorithm did not converge.\nNo solution for current step size tau found and tau cannot be decreased any further.\nYou can set the minimum step size tau with:\n\t-homTauMin=<value>\nYou can also try to allow more newton steps in the corrector step with:\n\t-homMaxNewtonSteps=<value>\nor change the tolerance for the solution with:\n\t-homHEps=<value>\nYou can also try to use another backtrace stategy in the corrector step with:\n\t-homBacktraceStrategy=<fix|orthogonal>\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.");
         else
-          warningStreamPrint(OMC_LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nThe maximum number of tries for one lambda is reached (%d).\nYou can change the number of tries with:\n\t-homMaxTries=<value>\nYou can also try to allow more newton steps in the corrector step with:\n\t-homMaxNewtonSteps=<value>\nor change the tolerance for the solution with:\n\t-homHEps=<value>\nYou can also try to use another backtrace stategy in the corrector step with:\n\t-homBacktraceStrategy=<fix|orthogonal>\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.", iter);
+          warningStreamPrint(OMC_LOG_ASSERT_OF(OMC_LOG_NLS), 0, "Homotopy algorithm did not converge.\nThe maximum number of tries for one lambda is reached (%d).\nYou can change the number of tries with:\n\t-homMaxTries=<value>\nYou can also try to allow more newton steps in the corrector step with:\n\t-homMaxNewtonSteps=<value>\nor change the tolerance for the solution with:\n\t-homHEps=<value>\nYou can also try to use another backtrace stategy in the corrector step with:\n\t-homBacktraceStrategy=<fix|orthogonal>\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.", iter);
       }
       else
         debugInt(OMC_LOG_NLS_HOMOTOPY, "Homotopy algorithm did not converge: iter = ", iter);
@@ -1836,7 +1836,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
     if (solverData->y0[solverData->n]<(-1))
     {
       if (solverData->initHomotopy)
-        warningStreamPrint(OMC_LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nlambda is smaller than -1: lambda=%g\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.", solverData->y0[solverData->n]);
+        warningStreamPrint(OMC_LOG_ASSERT_OF(OMC_LOG_NLS), 0, "Homotopy algorithm did not converge.\nlambda is smaller than -1: lambda=%g\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.", solverData->y0[solverData->n]);
       else
         debugDouble(OMC_LOG_NLS_HOMOTOPY, "Homotopy algorithm did not converge: lambda = ", solverData->y0[solverData->n]);
       debugString(OMC_LOG_NLS_HOMOTOPY, "======================================================");
@@ -1845,7 +1845,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
     if (numSteps >= maxLambdaSteps)
     {
       if (solverData->initHomotopy)
-        warningStreamPrint(OMC_LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nThe maximum number of lambda steps is reached (%d).\nYou can change the maximum number of lambda steps with:\n\t-homMaxLambdaSteps=<value>\nYou can also try to influence the step size tau with the following flags:\n\t-homTauDecFac=<value>\n\t-homTauDecFacPredictor=<value>\n\t-homTauIncFac=<value>\n\t-homTauIncThreshold=<value>\n\t-homTauMax=<value>\n\t-homTauMin=<value>\n\t-homTauStart=<value>\nor you can also set the threshold for accepting the current bending with:\n\t-homAdaptBend=<value>\nYou can also try to use another backtrace stategy in the corrector step with:\n\t-homBacktraceStrategy=<fix|orthogonal>\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.", maxLambdaSteps);
+        warningStreamPrint(OMC_LOG_ASSERT_OF(OMC_LOG_NLS), 0, "Homotopy algorithm did not converge.\nThe maximum number of lambda steps is reached (%d).\nYou can change the maximum number of lambda steps with:\n\t-homMaxLambdaSteps=<value>\nYou can also try to influence the step size tau with the following flags:\n\t-homTauDecFac=<value>\n\t-homTauDecFacPredictor=<value>\n\t-homTauIncFac=<value>\n\t-homTauIncThreshold=<value>\n\t-homTauMax=<value>\n\t-homTauMin=<value>\n\t-homTauStart=<value>\nor you can also set the threshold for accepting the current bending with:\n\t-homAdaptBend=<value>\nYou can also try to use another backtrace stategy in the corrector step with:\n\t-homBacktraceStrategy=<fix|orthogonal>\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.", maxLambdaSteps);
       else
         debugInt(OMC_LOG_NLS_HOMOTOPY, "Homotopy algorithm did not converge: numSteps = ", numSteps);
       debugString(OMC_LOG_NLS_HOMOTOPY, "======================================================");
@@ -1879,14 +1879,14 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
         /* debug information */
         if (assert) {
           if (solverData->initHomotopy)
-            warningStreamPrint(OMC_LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nIt was not possible to calculate the jacobian.\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.");
+            warningStreamPrint(OMC_LOG_ASSERT_OF(OMC_LOG_NLS), 0, "Homotopy algorithm did not converge.\nIt was not possible to calculate the jacobian.\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.");
           else {
             debugString(OMC_LOG_NLS_HOMOTOPY, "Assert, when calculating Jacobian!");
             debugString(OMC_LOG_NLS_HOMOTOPY, "Homotopy algorithm did not converge");
           }
         } else {
           if (solverData->initHomotopy)
-            warningStreamPrint(OMC_LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nThe system is singular and not solvable.\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.");
+            warningStreamPrint(OMC_LOG_ASSERT_OF(OMC_LOG_NLS), 0, "Homotopy algorithm did not converge.\nThe system is singular and not solvable.\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.");
           else {
             debugString(OMC_LOG_NLS_HOMOTOPY, "System singular and not solvable!");
             debugString(OMC_LOG_NLS_HOMOTOPY, "Homotopy algorithm did not converge");
@@ -1949,7 +1949,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
         solverData->info=-1;
         /* debug information */
         if (solverData->initHomotopy)
-            warningStreamPrint(OMC_LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nThe step size tau cannot be decreased anymore and current tau=%g already failed.\nYou can influence the calculation of tau with the following flags:\n\t-homTauDecFac=<value>\n\t-homTauDecFacPredictor=<value>\n\t-homTauIncFac=<value>\n\t-homTauIncThreshold=<value>\n\t-homTauMax=<value>\n\t-homTauMin=<value>\n\t-homTauStart=<value>\nYou can also set the threshold for accepting the current bending with:\n\t-homAdaptBend=<value>\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.", tau);
+            warningStreamPrint(OMC_LOG_ASSERT_OF(OMC_LOG_NLS), 0, "Homotopy algorithm did not converge.\nThe step size tau cannot be decreased anymore and current tau=%g already failed.\nYou can influence the calculation of tau with the following flags:\n\t-homTauDecFac=<value>\n\t-homTauDecFacPredictor=<value>\n\t-homTauIncFac=<value>\n\t-homTauIncThreshold=<value>\n\t-homTauMax=<value>\n\t-homTauMin=<value>\n\t-homTauStart=<value>\nYou can also set the threshold for accepting the current bending with:\n\t-homAdaptBend=<value>\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.", tau);
         else {
           debugString(OMC_LOG_NLS_HOMOTOPY, "Assert, because tau cannot be decreased anymore and current tau already failed!");
           debugString(OMC_LOG_NLS_HOMOTOPY, "Homotopy algorithm did not converge");
@@ -2108,7 +2108,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       {
         /* debug information */
         if (solverData->initHomotopy)
-          warningStreamPrint(OMC_LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nThe value specifying the bending of the homotopy curve is smaller than DBL_EPSILON (increment zero).\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.");
+          warningStreamPrint(OMC_LOG_ASSERT_OF(OMC_LOG_NLS), 0, "Homotopy algorithm did not converge.\nThe value specifying the bending of the homotopy curve is smaller than DBL_EPSILON (increment zero).\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.");
         else
           debugString(OMC_LOG_NLS_HOMOTOPY, "\nINCREMENT ZERO: Homotopy algorithm did not converge\n");
         debugString(OMC_LOG_NLS_HOMOTOPY, "======================================================");
@@ -2477,7 +2477,7 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
         homotopyData->h_function = wrapper_fvec;
         homotopyData->hJac_dh = wrapper_fvec_der;
         homotopyData->startDirection = omc_flag[FLAG_HOMOTOPY_NEG_START_DIR] ? 1.0 : -1.0;
-        infoStreamPrint(OMC_LOG_ASSERT, 0, "The homotopy algorithm is started again with opposing start direction.");
+        infoStreamPrint(OMC_LOG_ASSERT_OF(OMC_LOG_NLS), 0, "The homotopy algorithm is started again with opposing start direction.");
         debugInt(OMC_LOG_INIT_HOMOTOPY, "Homotopy run: ", runHomotopy);
         debugDouble(OMC_LOG_INIT_HOMOTOPY,"Try again with startDirection = ", homotopyData->startDirection);
       }

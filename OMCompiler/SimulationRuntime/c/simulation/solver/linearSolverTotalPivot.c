@@ -423,7 +423,7 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber, double*
   infoStreamPrint(OMC_LOG_LS_V, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
 
   if (status != 0) {
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "Error solving linear system of equations (no. %d) at time %f.", (int)systemData->equationIndex, data->localData[0]->timeValue);
+    warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_LS), 0, "Error solving linear system of equations (no. %d) at time %f.", (int)systemData->equationIndex, data->localData[0]->timeValue);
     success = 0;
   } else {
     debugVectorDoubleLS(OMC_LOG_LS_V, "SOLUTION:", solverData->x, n+1);

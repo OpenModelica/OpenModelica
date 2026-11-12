@@ -13,6 +13,7 @@
 
 pub mod api;
 pub(crate) mod common;
+pub use common::shown_log_categories;
 pub mod cs;
 pub mod expr;
 pub mod me;

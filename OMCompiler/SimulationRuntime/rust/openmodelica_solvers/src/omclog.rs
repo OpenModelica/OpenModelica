@@ -127,6 +127,64 @@ pub const SUCCESS: Stream = 54;
 pub const SYNCHRONOUS: Stream = 55;
 pub const ZEROCROSSINGS: Stream = 56;
 
+/// C's `OMC_LOG_STDOUT_OF`: a message that `LOG_STDOUT` shows, but which belongs
+/// to `s`, e.g. the warning of a solver. An FMU logs it in the category of `s`.
+pub const fn stdout_of(s: Stream) -> Stream {
+    64 + s
+}
+
+/// C's `OMC_LOG_ASSERT_OF`: [`stdout_of`] for `LOG_ASSERT`.
+pub const fn assert_of(s: Stream) -> Stream {
+    128 + s
+}
+
+/// C's `OMC_LOG_SHOWN`: the stream that shows and gates a message.
+pub const fn shown(s: Stream) -> Stream {
+    match s >> 6 {
+        0 => s,
+        1 => STDOUT,
+        _ => ASSERT,
+    }
+}
+
+/// C's `OMC_LOG_OWNER`: the stream a message belongs to.
+pub const fn owner(s: Stream) -> Stream {
+    s & 63
+}
+
+const _: () = assert!(N_STREAMS <= 64);
+
+/// The streams whose messages an FMU logs, with the log category of each: the
+/// FMI 3.0 category of their messages (2.4.5), or an FMU specific one of the same
+/// name. A mixed system has discrete unknowns, which make it nonlinear. C's
+/// `fmuStreamCategories`.
+pub const FMI_CATEGORIES: [(Stream, &str); 9] = [
+    (EVENTS, "logEvents"),
+    (LS, "logSingularLinearSystems"),
+    (NLS, "logNonlinearSystems"),
+    (MIXED, "logNonlinearSystems"),
+    (DSS, "logDynamicStateSelection"),
+    (STDOUT, "LOG_STDOUT"),
+    (ASSERT, "LOG_ASSERT"),
+    (INIT, "LOG_INIT"),
+    (SOLVER, "LOG_SOLVER"),
+];
+
+/// A message that an FMU logged in the category of `stream`, as the lines a
+/// simulation prints for the stream. `##` is the FMI escape of `#`.
+pub fn fmi_stream_lines(stream: Stream, ty: LogType, msg: &str) -> String {
+    let mut out = String::new();
+    for (n, line) in msg.replace("##", "#").split('\n').enumerate() {
+        let (name, ty) = if n == 0 {
+            (STREAM_NAME[stream as usize], TYPE_DESC[ty as usize])
+        } else {
+            ("|", "|")
+        };
+        out.push_str(&format!("{name:<17} | {ty:<7} | {line}\n"));
+    }
+    out
+}
+
 /// C's `OMC_LOG_TYPE_*` / `OMC_LOG_TYPE_DESC`.
 pub type LogType = u8;
 pub const INFO: LogType = 1;
@@ -365,7 +423,7 @@ pub fn mask() -> Mask {
 
 /// C's `OMC_ACTIVE_STREAM`.
 pub fn active(stream: Stream) -> bool {
-    store::with(|s| mask_has(s.use_stream, stream))
+    store::with(|s| mask_has(s.use_stream, shown(stream)))
 }
 
 /// C's `deactivateLogging`: everything but stdout/assert/success off until
@@ -516,6 +574,7 @@ pub fn error_fmt(stream: Stream, indent_next: bool, args: core::fmt::Arguments<'
 
 /// C's `messageClose`: end a block opened with `indent_next`.
 pub fn close(stream: Stream) {
+    let stream = shown(stream);
     let end = store::with(|s| {
         if !mask_has(s.use_stream, stream) {
             return false;
@@ -535,6 +594,7 @@ pub fn close(stream: Stream) {
 /// C's `messageCloseWarning`: [`close`] for a block [`warning`] opened, so `-w`
 /// keeps the level balanced on an inactive stream.
 pub fn close_warning(stream: Stream) {
+    let stream = shown(stream);
     let end = store::with(|s| {
         if !(mask_has(s.use_stream, stream) || s.use_stream & SHOW_ALL_WARNINGS != 0) {
             return false;
@@ -560,19 +620,26 @@ pub fn message_text(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
 /// [`message_text`] with the equation indexes C's `messageXML` lists as
 /// `<used index=…>`; the text layout does not show them.
 pub fn message_text_used(ty: LogType, stream: Stream, indent_next: bool, msg: &str, used: &[i32]) {
+    if let Some(f) = crate::message_sink() {
+        if indent_next && !msg.contains('\n') {
+            store::with(|s| s.level[shown(stream) as usize] += 1);
+        }
+        return f(stream, ty, msg.strip_suffix('\n').unwrap_or(msg));
+    }
     if store::with(|s| s.xml) {
         return message_xml(ty, stream, indent_next, msg, used);
     }
     let mut out = String::new();
     // C prints a message that ends in `\n` as it is: no empty sub-line after it.
     let body = msg.strip_suffix('\n').unwrap_or(msg);
+    let shown = shown(stream);
     store::with(|s| {
-        let i = stream as usize;
+        let i = shown as usize;
         for (n, line) in body.split('\n').enumerate() {
             let subline = n > 0;
-            let collapse = subline || (s.last_stream == stream && s.level[i] > 0);
+            let collapse = subline || (s.last_stream == shown && s.level[i] > 0);
             let name = if collapse { "|" } else { STREAM_NAME[i] };
-            let ty_col = if subline || (s.last_stream == stream && s.last_type[i] == ty && s.level[i] > 0) {
+            let ty_col = if subline || (s.last_stream == shown && s.last_type[i] == ty && s.level[i] > 0) {
                 "|"
             } else {
                 TYPE_DESC[ty as usize]
@@ -584,7 +651,7 @@ pub fn message_text_used(ty: LogType, stream: Stream, indent_next: bool, msg: &s
             out.push_str(line);
             out.push('\n');
             s.last_type[i] = ty;
-            s.last_stream = stream;
+            s.last_stream = shown;
         }
         // C's `messageText` returns at the first `\n` -- after recursing for the
         // rest -- so a message with one never opens a block however `indentNext`
@@ -610,7 +677,8 @@ fn message_xml(ty: LogType, stream: Stream, indent_next: bool, msg: &str, used: 
 pub fn xml_element(ty: LogType, stream: Stream, indent_next: bool, msg: &str, used: &[i32]) -> String {
     let mut out = format!(
         "<message stream=\"{}\" type=\"{}\" text=\"",
-        STREAM_NAME[stream as usize], TYPE_DESC[ty as usize]
+        STREAM_NAME[shown(stream) as usize],
+        TYPE_DESC[ty as usize]
     );
     for c in msg.chars() {
         match c {

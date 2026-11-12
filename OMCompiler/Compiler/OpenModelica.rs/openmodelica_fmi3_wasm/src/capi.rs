@@ -99,7 +99,7 @@ pub extern "C" fn om_fmi3InstantiateModelExchange(name: u32, name_len: u32, logg
     // resource, which would drag the resource intrinsics into a module nothing
     // instantiates as a component. Same steps, no wrapper.
     let name = read_str(name, name_len);
-    crate::init_logging(name, logging_on != 0);
+    crate::init_logging(name, logging_on != 0, false);
     openmodelica_codegen_wasm_jit_runtime::set_resources_dir("/");
     match crate::new_state() {
         Some(st) => {
@@ -119,7 +119,7 @@ pub extern "C" fn om_fmi3InstantiateModelExchange(name: u32, name_len: u32, logg
 #[unsafe(no_mangle)]
 pub extern "C" fn om_fmi3InstantiateCoSimulation(name: u32, name_len: u32, logging_on: i32, event_mode: i32) -> u32 {
     let name = read_str(name, name_len);
-    crate::init_logging(name, logging_on != 0);
+    crate::init_logging(name, logging_on != 0, false);
     openmodelica_codegen_wasm_jit_runtime::set_resources_dir("/");
     match crate::new_state() {
         Some(mut st) => {

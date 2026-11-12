@@ -124,7 +124,7 @@ static void checkReturnFlag_CV(int flag, const char *functionName) {
     case CV_ROOT_RETURN:
       break;
     case CV_WARNING:
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "##CVODE## %s In function %s: Got some warning.", flagName, functionName);
+      warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0, "##CVODE## %s In function %s: Got some warning.", flagName, functionName);
       break;
     case CV_TOO_MUCH_WORK:
       throwStreamPrint(NULL, "##CVODE## %s In function %s: The solver took maximum number of internal steps but could not reach tout.", flagName, functionName);
@@ -330,7 +330,7 @@ static void checkReturnFlag_KIN(int flag, const char *functionName) {
   case KIN_STEP_LT_STPTOL:
     break;
   case KIN_WARNING:
-    warningStreamPrint(OMC_LOG_STDOUT, 0,
+    warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_NLS), 0,
                        "##KINSOL## %s In function %s: Got some warning.", flagName, functionName);
     break;
   case KIN_MEM_NULL:
@@ -492,7 +492,7 @@ static void checkReturnFlag_IDA(int flag, const char *functionName) {
   case IDA_ROOT_RETURN:   /* IDASolve succeeded and found one or more roots. */
     break;
   case IDA_WARNING:
-    warningStreamPrint(OMC_LOG_STDOUT, 0,
+    warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_SOLVER), 0,
                        "##IDA## In function %s: Got some warning.",
                        functionName);
     break;

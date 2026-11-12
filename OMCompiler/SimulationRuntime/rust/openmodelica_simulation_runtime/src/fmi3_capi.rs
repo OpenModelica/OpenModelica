@@ -71,7 +71,7 @@ fn state_name(state: u32) -> &'static str {
 /// `invalidState` does.
 fn refuse<'a>(c: &mut Component, func: &str, place: &str) -> Option<&'a mut Component> {
     let msg = format!("{func}: Illegal call sequence. {func} is not allowed in {place}.");
-    c.n.logger.log(ERROR, "logStatusError", &msg);
+    openmodelica_fmi3_wasm::log_status_error(&msg);
     c.state = st::ERROR;
     None
 }
@@ -631,7 +631,7 @@ pub unsafe extern "C" fn omc_fmi3GetBinary(
     }
     for (i, vr) in unsafe { vrs(vr, nvr) }.into_iter().enumerate() {
         let Some(slot) = c.n.ext_obj_slot(vr) else {
-            return bad_binary(c, "fmi3GetBinary", vr);
+            return bad_binary("fmi3GetBinary", vr);
         };
         unsafe {
             *value_sizes.add(i) = core::mem::size_of::<*mut c_void>();
@@ -661,22 +661,18 @@ pub unsafe extern "C" fn omc_fmi3SetBinary(
     }
     for (i, vr) in unsafe { vrs(vr, nvr) }.into_iter().enumerate() {
         let Some(slot) = c.n.ext_obj_slot(vr) else {
-            return bad_binary(c, "fmi3SetBinary", vr);
+            return bad_binary("fmi3SetBinary", vr);
         };
         if sizes[i] != core::mem::size_of::<*mut c_void>() || ptrs[i].is_null() {
-            return bad_binary(c, "fmi3SetBinary", vr);
+            return bad_binary("fmi3SetBinary", vr);
         }
         unsafe { core::ptr::copy_nonoverlapping(ptrs[i], slot as *mut u8, sizes[i]) };
     }
     OK
 }
 
-fn bad_binary(c: &Component, call: &str, vr: u32) -> c_int {
-    c.n.logger.log(
-        ERROR,
-        "logStatusError",
-        &format!("{call}: illegal value reference {vr}."),
-    );
+fn bad_binary(call: &str, vr: u32) -> c_int {
+    openmodelica_fmi3_wasm::log_status_error(&format!("{call}: illegal value reference {vr}."));
     ERROR
 }
 

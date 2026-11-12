@@ -204,9 +204,9 @@ mod stdio {
     }
 }
 
-/// C's `logCategoriesNames`, which is also what `CodegenFMU3` declares in
-/// `modelDescription.xml`. `logFmi3Call` is unused: the adapter logs no call trace.
-const CATEGORIES: [&str; 11] = [
+/// C's `logCategoriesNames` of FMI 2.0. FMI 3.0 has no `logStatusPending` and
+/// no `logAll`. `logFmi3Call` is unused: the adapter logs no call trace.
+const CATEGORIES: [&str; 15] = [
     "logEvents",
     "logSingularLinearSystems",
     "logNonlinearSystems",
@@ -218,24 +218,96 @@ const CATEGORIES: [&str; 11] = [
     "logStatusPending",
     "logAll",
     "logFmi3Call",
+    "LOG_STDOUT",
+    "LOG_ASSERT",
+    "LOG_INIT",
+    "LOG_SOLVER",
 ];
 const CAT_EVENTS: u32 = 0;
 const CAT_NONLINEAR: u32 = 2;
 const CAT_WARNING: u32 = 4;
+const CAT_DISCARD: u32 = 5;
 const CAT_ERROR: u32 = 6;
+const CAT_PENDING: u32 = 8;
 const CAT_ALL: u32 = 9;
+const CAT_SOLVER: u32 = 14;
+
+fn category_index(name: &str, fmi2: bool) -> Option<u32> {
+    let i = CATEGORIES.iter().position(|n| *n == name)? as u32;
+    (fmi2 || (i != CAT_PENDING && i != CAT_ALL)).then_some(i)
+}
+
+fn all_categories(fmi2: bool) -> u32 {
+    let all = (1u32 << CATEGORIES.len()) - 1;
+    if fmi2 {
+        all
+    } else {
+        all & !(1 << CAT_PENDING) & !(1 << CAT_ALL)
+    }
+}
+
+fn stream_category(stream: omclog::Stream) -> Option<u32> {
+    let (_, name) = omclog::FMI_CATEGORIES.iter().find(|(s, _)| *s == stream)?;
+    category_index(name, true)
+}
 
 struct Logger {
     /// `instanceName`, which the callback reports alongside the message.
     name: String,
     /// Bit per [`CATEGORIES`] index; empty until `loggingOn`.
     cats: u32,
+    /// The streams that `-lv` of the exported simulation flags turns on.
+    lv: omclog::Mask,
+    /// FMI 2.0, whose `SetDebugLogging` and `logAll` differ from FMI 3.0.
+    fmi2: bool,
 }
 
 static mut LOGGER: Logger = Logger {
     name: String::new(),
     cats: 0,
+    lv: 0,
+    fmi2: false,
 };
+
+/// Whether an error goes back to a nonlinear solve (`Some(true)`) or to the
+/// integrator (`Some(false)`), for a host whose runtime has error stages.
+static mut SOLVER_STAGE: Option<fn() -> Option<bool>> = None;
+
+pub fn set_solver_stage(f: fn() -> Option<bool>) {
+    unsafe { SOLVER_STAGE = Some(f) };
+}
+
+fn solver_stage() -> Option<bool> {
+    match unsafe { SOLVER_STAGE } {
+        Some(f) => f(),
+        None => runtime_solver_stage(),
+    }
+}
+
+/// The error stage of the in-wasm runtime, which shares this module's memory.
+#[cfg(feature = "wasm")]
+fn runtime_solver_stage() -> Option<bool> {
+    let addr = openmodelica_codegen_wasm_jit_runtime::rt_error_stage_addr() as usize;
+    let stage = unsafe { &*(addr as *const core::sync::atomic::AtomicI32) };
+    match stage.load(core::sync::atomic::Ordering::Relaxed) {
+        driver::ERROR_NONLINEARSOLVER => Some(true),
+        driver::ERROR_INTEGRATOR => Some(false),
+        _ => None,
+    }
+}
+
+#[cfg(not(feature = "wasm"))]
+fn runtime_solver_stage() -> Option<bool> {
+    None
+}
+
+/// No event settled a held `assert()` since the last [`step_failed`].
+static mut HELD_ASSERT_THROWN: bool = false;
+
+fn report_held_assert(msg: &str) {
+    log_status_error(msg);
+    unsafe { HELD_ASSERT_THROWN = true };
+}
 
 /// The sink is a bare `fn(&str)`, so its context is a static (wasm, single-threaded).
 fn logger() -> &'static mut Logger {
@@ -269,20 +341,20 @@ fn log_raw(status: Status, cat: u32, msg: &str) {
 
 /// Linked as a core module there is no importer to call back into, so what the
 /// component sends through `fmi3LogMessage` goes where its `-lv` streams already
-/// go: the FMU's stdout, which the host captures.
+/// go: the FMU's stdout, which the host captures, as a simulation's log lines.
 #[cfg(all(feature = "wasm", feature = "capi"))]
 fn log_raw(status: Status, cat: u32, msg: &str) {
-    let _ = status;
-    let l = logger();
-    stdio::print(
-        alloc::format!(
-            "{}: {}: {}\n",
-            l.name,
-            CATEGORIES[cat as usize],
-            msg.trim_end_matches('\n')
-        )
-        .as_bytes(),
-    );
+    let category = CATEGORIES[cat as usize];
+    let stream = omclog::FMI_CATEGORIES
+        .iter()
+        .find(|(_, c)| *c == category)
+        .map_or(omclog::STDOUT, |(stream, _)| *stream);
+    let ty = match status {
+        Status::Ok => omclog::INFO,
+        Status::Warning => omclog::WARNING,
+        _ => omclog::ERROR,
+    };
+    stdio::print(omclog::fmi_stream_lines(stream, ty, msg.trim_end_matches('\n')).as_bytes());
 }
 
 /// [`Engine::call1`] was asked for a model function this adapter does not import.
@@ -324,6 +396,15 @@ fn failed<E: SimEngine>(e: &mut E, sim_data: u32, err: &'static str) -> Status {
     err_status(driver::enrich_trap(e, err))
 }
 
+/// [`failed`] in a step, whose event update C's `internalEventUpdate` reports.
+fn step_failed<E: SimEngine>(e: &mut E, sim_data: u32, err: &'static str) -> Status {
+    let s = failed(e, sim_data, err);
+    if core::mem::take(unsafe { &mut *core::ptr::addr_of_mut!(HELD_ASSERT_THROWN) }) {
+        log_status_error("internalEventUpdate: terminated by an assertion.");
+    }
+    s
+}
+
 /// C's "Invalid value reference": the reason a getter or setter refuses `vr`.
 fn bad_vr(call: &str, vr: u32, what: &str) -> Status {
     err_status(&alloc::format!(
@@ -338,14 +419,23 @@ fn err_status(msg: &str) -> Status {
     Status::Error
 }
 
-/// C's `omc_assert_fmi` for a `ModelicaError`: the logger, at error level.
+/// C's `omc_assert_fmi` for a `ModelicaError`: debug output if a solver gets
+/// it back, otherwise an error.
 fn report_ext_error(msg: &str) {
-    fmi_log(Status::Error, CAT_ERROR, msg);
+    match solver_stage() {
+        Some(nonlinear) => log_solver_assert(nonlinear, msg),
+        None => fmi_log(Status::Error, CAT_ERROR, msg),
+    }
 }
 
 /// C's `omc_assert_fmi`, for a native host whose runtime raises the assert.
 pub fn log_status_error(msg: &str) {
     fmi_log(Status::Error, CAT_ERROR, msg);
+}
+
+/// The reason for an `fmiDiscard`.
+pub fn log_status_discard(msg: &str) {
+    fmi_log(Status::Discard, CAT_DISCARD, msg);
 }
 
 /// C's `omc_assert_fmi_warning`.
@@ -355,22 +445,74 @@ pub fn log_status_warning(msg: &str) {
 
 /// C's `omc_assert_fmi` for an assert a solver gets back: debug output.
 pub fn log_solver_assert(nonlinear: bool, msg: &str) {
-    fmi_log(Status::Ok, if nonlinear { CAT_NONLINEAR } else { CAT_ALL }, msg);
+    fmi_log(Status::Ok, if nonlinear { CAT_NONLINEAR } else { CAT_SOLVER }, msg);
 }
 
-/// C's `FILTERED_LOG` / `isCategoryLogged`. FMI 3.0 forbids a call of
-/// `logMessage` for a category that is not enabled, also for an error.
+/// C's `isCategoryLogged`. Only FMI 2.0 sets `logAll`.
+fn category_logged(cats: u32, cat: u32) -> bool {
+    cats & (1 << cat) != 0 || cats & (1 << CAT_ALL) != 0
+}
+
+/// C's `FILTERED_LOG` over `logRuntimeMessage`: `#` marks a value reference
+/// (FMI 2.0 2.1.5, FMI 3.0 2.3.1), so a message escapes it. FMI 3.0 forbids a
+/// call of `logMessage` for a category that is not enabled, also for an error.
 fn fmi_log(status: Status, cat: u32, msg: &str) {
-    let cats = logger().cats;
-    if cats & (1 << cat) != 0 || cats & (1 << CAT_ALL) != 0 {
-        log_raw(status, cat, msg);
+    if category_logged(logger().cats, cat) {
+        if msg.contains('#') {
+            log_raw(status, cat, &msg.replace('#', "##"));
+        } else {
+            log_raw(status, cat, msg);
+        }
     }
 }
 
-/// The runtime's and driver's log lines. C's `messageText` prints every type with
-/// `printf`, so they go to stdout with the stream and type in the header, not to
-/// the logger.
-fn log_sink(_stream: omclog::Stream, _ty: omclog::LogType, s: &str) {
+/// C's `setThreadData`: the streams of the enabled categories are on.
+fn stream_mask(cats: u32) -> omclog::Mask {
+    omclog::FMI_CATEGORIES
+        .iter()
+        .filter(|(stream, _)| stream_category(*stream).is_some_and(|cat| category_logged(cats, cat)))
+        .fold(omclog::FMU_STREAMS, |m, (stream, _)| m | (1 << stream))
+}
+
+/// C's `messageFunctionFMI`: the runtime's and driver's messages go to the
+/// logger in the category of the stream they belong to ([`omclog::owner`]).
+/// Errors go to `logStatusError`, and the warnings of `LOG_STDOUT` and
+/// `LOG_ASSERT` themselves to `logStatusWarning`. The information of `LOG_LS`
+/// is not about singular systems.
+fn message_sink(stream: omclog::Stream, ty: omclog::LogType, msg: &str) {
+    let (shown, owner) = (omclog::shown(stream), omclog::owner(stream));
+    let (status, cat) = match ty {
+        // An assert or `throw_stream`'s reason, which a solver may still recover
+        // from, as in `log_solver_assert`.
+        omclog::ERROR | omclog::DEBUG_TYPE if shown == omclog::ASSERT => match solver_stage() {
+            Some(nonlinear) => (Status::Ok, Some(if nonlinear { CAT_NONLINEAR } else { CAT_SOLVER })),
+            None => (Status::Error, Some(CAT_ERROR)),
+        },
+        omclog::ERROR => (Status::Error, Some(CAT_ERROR)),
+        omclog::WARNING => (
+            Status::Warning,
+            Some(match owner {
+                omclog::STDOUT | omclog::ASSERT => CAT_WARNING,
+                _ => stream_category(owner).unwrap_or(CAT_WARNING),
+            }),
+        ),
+        _ if owner == omclog::LS => (Status::Ok, None),
+        _ => (Status::Ok, stream_category(owner)),
+    };
+    let Some(cat) = cat else { return };
+    fmi_log(status, cat, msg);
+}
+
+/// [`message_sink`] for a line the driver formatted itself, without its stream
+/// and type columns.
+fn log_sink(stream: omclog::Stream, ty: omclog::LogType, s: &str) {
+    let msg: Vec<&str> = s.lines().map(|l| l.splitn(3, " | ").nth(2).unwrap_or(l)).collect();
+    message_sink(stream, ty, &msg.join("\n"));
+}
+
+/// The artifact's simulation face: its log lines go to stdout, as a
+/// simulation's do.
+pub(crate) fn stdout_sink(_stream: omclog::Stream, _ty: omclog::LogType, s: &str) {
     stdio::print(s.as_bytes());
 }
 
@@ -381,6 +523,8 @@ fn log_sink(_stream: omclog::Stream, _ty: omclog::LogType, s: &str) {
 pub struct LogState {
     name: String,
     cats: u32,
+    lv: omclog::Mask,
+    fmi2: bool,
     mask: omclog::Mask,
 }
 
@@ -389,6 +533,8 @@ pub fn save_logging() -> LogState {
     LogState {
         name: l.name.clone(),
         cats: l.cats,
+        lv: l.lv,
+        fmi2: l.fmi2,
         mask: omclog::mask(),
     }
 }
@@ -399,6 +545,8 @@ pub fn restore_logging(s: &LogState) {
         l.name.clone_from(&s.name);
     }
     l.cats = s.cats;
+    l.lv = s.lv;
+    l.fmi2 = s.fmi2;
     if omclog::mask() != s.mask {
         omclog::set_mask(s.mask);
     }
@@ -406,15 +554,50 @@ pub fn restore_logging(s: &LogState) {
 
 /// C's `omcInstantiate`: every category follows `loggingOn` until
 /// `set-debug-logging` picks specific ones.
-pub fn init_logging(name: String, logging_on: bool) {
+pub fn init_logging(name: String, logging_on: bool, fmi2: bool) {
     let l = logger();
     l.name = name;
-    l.cats = if logging_on { !0 } else { 0 };
+    l.cats = if logging_on { all_categories(fmi2) } else { 0 };
+    l.lv = 0;
+    l.fmi2 = fmi2;
     driver::set_log_sink(log_sink);
+    driver::set_message_sink(message_sink);
     driver::set_ext_error_reporter(report_ext_error);
-    driver::set_held_assert_reporter(log_status_error);
+    driver::set_held_assert_reporter(report_held_assert);
     driver::set_terminate_reporter(terminate_fmi);
-    omclog::set_mask(omclog::FMU_STREAMS);
+    omclog::set_mask(stream_mask(l.cats));
+}
+
+/// C's `omcSetDebugLogging`. An unknown name is reported as a warning.
+pub fn debug_logging(logging_on: bool, categories: Vec<String>) -> Status {
+    let mut unknown: Vec<String> = Vec::new();
+    {
+        let l = logger();
+        let all = all_categories(l.fmi2);
+        if l.fmi2 {
+            // FMI 2.0: only the named categories, all of them without names.
+            l.cats = if logging_on && categories.is_empty() { all } else { 0 };
+        } else if categories.is_empty() {
+            // FMI 3.0: the named categories change, all of them without names.
+            l.cats = if logging_on { all } else { 0 };
+        }
+        for c in categories {
+            match category_index(&c, l.fmi2) {
+                Some(i) if logging_on => l.cats |= 1 << i,
+                Some(i) => l.cats &= !(1 << i),
+                None => unknown.push(c),
+            }
+        }
+        omclog::set_mask(stream_mask(l.cats) | l.lv);
+    }
+    for c in unknown {
+        fmi_log(
+            Status::Warning,
+            CAT_WARNING,
+            &alloc::format!("logging category '{c}' is not supported by model"),
+        );
+    }
+    Status::Ok
 }
 
 /// C's `omc_terminate_fmi`, which `fmi2Instantiate` installs: the logger, not the
@@ -1238,7 +1421,13 @@ impl<E: FmiHost + 'static> MeState<E> {
         let unsolved = driver::take_nls_failure(&mut self.engine, self.sim_data, &self.layout);
         run.map_err(|err| failed(&mut self.engine, self.sim_data, err))?;
         if absorbed || unsolved {
+            let reason = if unsolved {
+                "a nonlinear system was not solved"
+            } else {
+                "an assertion was violated"
+            };
             return Err(if self.continuous_time {
+                log_status_discard(reason);
                 Status::Discard
             } else {
                 Status::Error
@@ -1627,7 +1816,9 @@ fn apply_baked_solver_flags<H: FmiHost>(host: &mut H, flags: &str) -> Option<()>
     simflags::print_notices(&parsed);
     let streams = parsed.log_mask & !omclog::ALWAYS_ON;
     simflags::set_flags(parsed);
-    omclog::set_mask(omclog::FMU_STREAMS | streams);
+    let l = logger();
+    l.lv = streams;
+    omclog::set_mask(stream_mask(l.cats) | streams);
     Some(())
 }
 
@@ -1837,6 +2028,7 @@ macro_rules! cs_instance_methods {
     ) -> Result<DoStepResult, Status> {
         let mut st = self.st.borrow_mut();
         st.refuse_failed("DoStep")?;
+        unsafe { HELD_ASSERT_THROWN = false };
         if st.mode != Mode::Ready {
             return Err(err_status("DoStep: only allowed after Initialization Mode"));
         }
@@ -1855,11 +2047,11 @@ macro_rules! cs_instance_methods {
         // A tunable parameter changed at the communication point: an event there,
         // which also restarts the integrator.
         if let Err(err) = st.apply_tunable() {
-            return Err(failed(&mut st.engine, sim_data, err));
+            return Err(step_failed(&mut st.engine, sim_data, err));
         }
         if st.tunable.applied {
             if let Err(err) = st.run_event_update(t) {
-                return Err(failed(&mut st.engine, sim_data, err));
+                return Err(step_failed(&mut st.engine, sim_data, err));
             }
         }
         let inputs: Vec<(u32, f64, f64)> = st.input_ders.iter().map(|&(off, d)| (off, st.read_f64(off), d)).collect();
@@ -1907,7 +2099,7 @@ macro_rules! cs_instance_methods {
                 early_return: true,
                 discarded: true,
             }),
-            Err(err) => Err(failed(&mut st.engine, sim_data, err)),
+            Err(err) => Err(step_failed(&mut st.engine, sim_data, err)),
         }
     }
 
@@ -1942,43 +2134,9 @@ macro_rules! shared_instance_methods {
     (pub) => { shared_instance_methods!(@vis pub); };
     (@vis $($vis:tt)?) => {
 
-    /// C's `omcSetDebugLogging`: every category off, then the named ones follow
-    /// `logging_on`; an unknown name is reported unfiltered, as in C. A category
-    /// named like a runtime stream (`LOG_EVENTS`; the export declares them all)
-    /// switches that stream instead.
+    /// C's `omcSetDebugLogging` of FMI 3.0.
     $($vis)? fn set_debug_logging(&self, logging_on: bool, categories: Vec<String>) -> Status {
-        let mut cats = 0u32;
-        let mut unknown: Vec<String> = Vec::new();
-        let mut streams: Vec<String> = Vec::new();
-        let mut fmi_categories = false;
-        for c in categories {
-            match CATEGORIES.iter().position(|n| *n == c) {
-                Some(i) => {
-                    fmi_categories = true;
-                    if logging_on {
-                        cats |= 1 << i;
-                    }
-                }
-                None if omclog::STREAM_NAME.contains(&c.as_str()) => streams.push(c),
-                None => unknown.push(c),
-            }
-        }
-        if fmi_categories || streams.is_empty() {
-            logger().cats = cats;
-        }
-        if let Ok(m) = omclog::mask_from_streams(&streams) {
-            let m = m & !omclog::ALWAYS_ON;
-            let cur = omclog::mask();
-            omclog::set_mask(if logging_on { cur | m } else { cur & !m });
-        }
-        for c in unknown {
-            log_raw(
-                Status::Warning,
-                CAT_ERROR,
-                &alloc::format!("logging category '{c}' is not supported by model"),
-            );
-        }
-        Status::Ok
+        debug_logging(logging_on, categories)
     }
 
     $($vis)? fn enter_initialization_mode(
@@ -2748,7 +2906,7 @@ impl GuestModelExchangeInstance for Instance<Engine> {
         _visible: bool,
         logging_on: bool,
     ) -> Option<ModelExchangeInstance> {
-        init_logging(instance_name, logging_on);
+        init_logging(instance_name, logging_on, false);
         // What `OpenModelica_fmuLoadResource` resolves against: the loader preopens
         // the FMU's `resources/` as this component's root, not the host path.
         openmodelica_codegen_wasm_jit_runtime::set_resources_dir("/");
@@ -2788,7 +2946,7 @@ impl GuestCoSimulationInstance for Instance<Engine> {
         early_return_allowed: bool,
         _required_intermediate_variables: Vec<u32>,
     ) -> Option<CoSimulationInstance> {
-        init_logging(instance_name, logging_on);
+        init_logging(instance_name, logging_on, false);
         // What `OpenModelica_fmuLoadResource` resolves against: the loader preopens
         // the FMU's `resources/` as this component's root, not the host path.
         openmodelica_codegen_wasm_jit_runtime::set_resources_dir("/");

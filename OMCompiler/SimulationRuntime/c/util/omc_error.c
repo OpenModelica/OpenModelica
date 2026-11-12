@@ -67,6 +67,8 @@ threadData_t* omc_thread_data(threadData_t *threadData, const char *pendingMessa
 
 
 const int firstOMCErrorStream = 1;
+/* OMC_LOG_STDOUT_OF and OMC_LOG_ASSERT_OF need a stream to fit in 6 bits. */
+typedef char omc_log_streams_fit_in_6_bits[OMC_SIM_LOG_MAX <= 64 ? 1 : -1];
 
 const char *OMC_LOG_STREAM_NAME[OMC_SIM_LOG_MAX] = {
   "LOG_UNKNOWN",
@@ -357,6 +359,7 @@ void messageText(int type, int stream, FILE_INFO info, int indentNext, char *msg
   int i;
   int len;
 
+  stream = OMC_LOG_SHOWN(stream);
   printf("%-17s | ", (subline || (omc_lastStream == stream && omc_level[stream] > 0)) ? "|" : OMC_LOG_STREAM_NAME[stream]);
   printf("%-7s | ", (subline || (omc_lastStream == stream && omc_lastType[stream] == type && omc_level[stream] > 0)) ? "|" : OMC_LOG_TYPE_DESC[type]);
   omc_lastType[stream] = type;
@@ -407,7 +410,7 @@ void messageText(int type, int stream, FILE_INFO info, int indentNext, char *msg
 static void messageCloseText(int stream)
 {
   if(OMC_ACTIVE_STREAM(stream)) {
-    omc_level[stream]--;
+    omc_level[OMC_LOG_SHOWN(stream)]--;
   }
 }
 
@@ -422,7 +425,7 @@ static void messageCloseText(int stream)
 static void messageCloseTextWarning(int stream)
 {
   if (OMC_ACTIVE_WARNING_STREAM(stream)) {
-    omc_level[stream]--;
+    omc_level[OMC_LOG_SHOWN(stream)]--;
   }
 }
 
@@ -443,7 +446,7 @@ void (*messageCloseWarning)(int stream) = messageCloseTextWarning;
 #if !defined(OMC_MINIMAL_LOGGING)
 void va_infoStreamPrint(int stream, int indentNext, const char *format, va_list args)
 {
-  if (omc_useStream[stream]) {
+  if (OMC_ACTIVE_STREAM(stream)) {
     char logBuffer[SIZE_LOG_BUFFER];
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     messageFunction(OMC_LOG_TYPE_INFO, stream, omc_dummyFileInfo, indentNext, logBuffer, 0, NULL);
@@ -452,7 +455,7 @@ void va_infoStreamPrint(int stream, int indentNext, const char *format, va_list 
 
 void infoStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format, ...)
 {
-  if (omc_useStream[stream]) {
+  if (OMC_ACTIVE_STREAM(stream)) {
     char logBuffer[SIZE_LOG_BUFFER];
     va_list args;
     va_start(args, format);
@@ -464,7 +467,7 @@ void infoStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNe
 
 void infoStreamPrint(int stream, int indentNext, const char *format, ...)
 {
-  if (omc_useStream[stream]) {
+  if (OMC_ACTIVE_STREAM(stream)) {
     char logBuffer[SIZE_LOG_BUFFER];
     va_list args;
     va_start(args, format);

@@ -52,8 +52,6 @@ enum Base {
 
 struct Component {
     n: Box<Native>,
-    /// C's `logCategories[LOG_FMI2CALL]`.
-    call_log: bool,
     /// The FMI 3.0 value reference of each base type's first FMI 2.0 one.
     offsets: [u32; 4],
     tolerance: Option<f64>,
@@ -120,7 +118,7 @@ fn in_state<'a>(c: *mut c_void, func: &str, me: u32, cs: u32) -> Option<&'a mut 
             "{func}: Illegal {kind} call sequence. {func} is not allowed in {} state.",
             state_name(c.state)
         );
-        c.n.logger.log(ERROR, "logStatusError", &msg);
+        openmodelica_fmi3_wasm::log_status_error(&msg);
         c.state = st::ERROR;
         return None;
     }
@@ -139,10 +137,8 @@ impl Component {
     /// An `Error` from a call that only fails on an assertion, reported as C's
     /// `longjmp` catch reports it.
     fn asserted(&self, call: &str, s: Status) -> c_int {
-        if s == Status::Error && self.call_log {
-            self.n
-                .logger
-                .log(ERROR, "logFmi2Call", &format!("{call}: terminated by an assertion."));
+        if s == Status::Error {
+            openmodelica_fmi3_wasm::log_status_error(&format!("{call}: terminated by an assertion."));
         }
         code(s)
     }
@@ -200,7 +196,7 @@ pub unsafe extern "C" fn omc_fmi2Instantiate(
     };
     let kind = match fmu_type {
         _ if name.is_empty() => {
-            logger.log(ERROR, "error", "fmi2Instantiate: Missing instance name.");
+            logger.log(ERROR, "logStatusError", "fmi2Instantiate: Missing instance name.");
             return core::ptr::null_mut();
         }
         MODEL_EXCHANGE => Kind::ModelExchange,
@@ -211,7 +207,7 @@ pub unsafe extern "C" fn omc_fmi2Instantiate(
         },
         _ => {
             let msg = format!("fmi2Instantiate: fmuType {fmu_type} is neither Model Exchange nor Co-Simulation.");
-            logger.log(ERROR, "error", &msg);
+            logger.log(ERROR, "logStatusError", &msg);
             return core::ptr::null_mut();
         }
     };
@@ -235,7 +231,6 @@ pub unsafe extern "C" fn omc_fmi2Instantiate(
     let offsets = offsets(unsafe { &*n.model_data() });
     Box::into_raw(Box::new(Component {
         n,
-        call_log: b(logging_on),
         offsets,
         tolerance: None,
         start_time: 0.0,
@@ -272,7 +267,6 @@ pub unsafe extern "C" fn omc_fmi2SetDebugLogging(
     } else {
         (0..n_categories).map(|i| cstr(unsafe { *categories.add(i) })).collect()
     };
-    c.call_log = b(logging_on) && raw.iter().any(|c| c == "logFmi2Call" || c == "logAll");
     let cats = raw
         .into_iter()
         .map(|s| {
@@ -834,6 +828,14 @@ pub unsafe extern "C" fn omc_fmi2DoStep(
         }
         Err(s) => (code(s), target, false),
     };
+    if c.step_status == DISCARD {
+        let t = openmodelica_solvers::format_g(c.last_successful_time, 15);
+        openmodelica_fmi3_wasm::log_status_discard(&if c.terminated {
+            format!("fmi2DoStep: the model terminated the simulation at time {t}.")
+        } else {
+            format!("fmi2DoStep: the step ended at time {t}.")
+        });
+    }
     c.step_status
 }
 

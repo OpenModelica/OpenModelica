@@ -5,6 +5,7 @@ CvodeDefault.mos \
 ExportCvodeFmu_cmake.mos \
 ExportCvodeFmu_dynamic.mos \
 ExportCvodeFmu_static.mos \
+fmi2_log_categories.mos \
 fmi_interpolation_01.mos \
 FmuAssertSolverRetry.mos \
 FmuEquationAssertLog.mos \
@@ -32,6 +33,7 @@ FAILINGTESTFILES = \
 DEPENDENCIES = \
 *.mo \
 *.mos \
+fmi2_log_categories.py \
 FmuAssertSolverRetry.py \
 FmuEquationAssertLog.py \
 FmuExitInitAssert.py \

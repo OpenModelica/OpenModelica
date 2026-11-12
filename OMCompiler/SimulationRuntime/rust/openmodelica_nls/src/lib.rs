@@ -917,6 +917,42 @@ pub fn lu_solve_singular_pivot(a: &[f64], b: &mut [f64], n: usize) -> Option<usi
 /// consistent system, picking the same particular solution C does; `false` only
 /// when the system is inconsistent. `A` is column-major `n`×`n`.
 pub fn total_pivot_solve(a: &[f64], b: &mut [f64], n: usize) -> bool {
+    total_pivot_rank(a, b, n).1
+}
+
+/// [`total_pivot_solve`] for a linear system of the model, with C's `LOG_LS`
+/// warnings for a singular matrix. `time` is `None` at initialization.
+pub fn total_pivot_solve_ls(a: &[f64], b: &mut [f64], n: usize, time: Option<f64>) -> bool {
+    let (rank, solved) = total_pivot_rank(a, b, n);
+    if rank < n {
+        match time {
+            None => omclog::warning(
+                omclog::LS,
+                true,
+                "Total Pivot: Matrix (nearly) singular at initialization.",
+            ),
+            Some(t) => omclog::warning!(
+                omclog::LS,
+                true,
+                "Total Pivot: Matrix (nearly) singular at time {t:.6}."
+            ),
+        }
+        omclog::warning(
+            omclog::LS,
+            false,
+            "Continuing anyway. For more information please use -lv LOG_LS.",
+        );
+        omclog::close_warning(omclog::LS);
+        omclog::info!(omclog::LS, false, "rank =  {rank}");
+    }
+    if !solved {
+        omclog::warning(omclog::LS, false, "under-determined linear system not solvable!");
+    }
+    solved
+}
+
+/// The rank of `A`, and whether the system was solved.
+fn total_pivot_rank(a: &[f64], b: &mut [f64], n: usize) -> (usize, bool) {
     let m = n + 1;
     // Ab: n×(n+1) column-major; first n columns are A, the last is -b.
     let mut ab = vec![0.0f64; n * m];
@@ -961,7 +997,7 @@ pub fn total_pivot_solve(a: &[f64], b: &mut [f64], n: usize) -> bool {
     for i in (0..n).rev() {
         if i >= rank {
             if ab[ind_row[i] + n * n].abs() > 1e-12 {
-                return false;
+                return (rank, false);
             }
             x[ind_col[i]] = 0.0;
         } else {
@@ -973,7 +1009,7 @@ pub fn total_pivot_solve(a: &[f64], b: &mut [f64], n: usize) -> bool {
         }
     }
     b.copy_from_slice(&x[..n]);
-    true
+    (rank, true)
 }
 
 /// Over-determined total-pivot linear solver, C's `solveSystemWithTotalPivotSearch`
@@ -1746,7 +1782,7 @@ fn init_homotopy_solve<'e>(
         let dir = if (run == 1) != neg { 1.0 } else { -1.0 };
         if run == 2 {
             omclog::info(
-                omclog::ASSERT,
+                omclog::assert_of(omclog::NLS),
                 false,
                 "The homotopy algorithm is started again with opposing start direction.",
             );
@@ -1793,7 +1829,7 @@ fn init_homotopy_solve<'e>(
                 );
                 return Some(steps);
             }
-            Err(e) => omclog::warning(omclog::ASSERT, false, &e.message()),
+            Err(e) => omclog::warning(omclog::assert_of(omclog::NLS), false, &e.message()),
         }
     }
     None
@@ -2094,17 +2130,17 @@ fn log_hybrd_assert(t: &HomotopyTrace) {
             format_g(t.time, 6)
         )
     };
-    omclog::warning(omclog::STDOUT, true, &head);
+    omclog::warning(omclog::stdout_of(omclog::NLS), true, &head);
     let tail = [
         "The non-linear solver tries to solve the problem that could take some time.",
         "It could help to provide better start-values for the iteration variables.",
     ];
     for line in tail {
-        omclog::warning(omclog::STDOUT, false, line);
+        omclog::warning(omclog::stdout_of(omclog::NLS), false, line);
     }
     if !omclog::active(omclog::NLS_V) {
         omclog::warning(
-            omclog::STDOUT,
+            omclog::stdout_of(omclog::NLS),
             false,
             "For more information simulate with -lv LOG_NLS_V",
         );
@@ -2116,7 +2152,7 @@ fn log_hybrd_assert(t: &HomotopyTrace) {
 /// attempt rather than in one: `solveHybrd`'s two and `updateInnerEquation`'s.
 fn log_assert_handled() {
     omclog::warning(
-        omclog::STDOUT,
+        omclog::stdout_of(omclog::NLS),
         false,
         "Non-Linear Solver try to handle a problem with a called assert.",
     );
@@ -2614,7 +2650,7 @@ fn log_local_homotopy_start(sys_num: u32, wanted: bool) {
     if wanted {
         omclog::info(omclog::INIT_HOMOTOPY, false, &msg);
     } else {
-        omclog::warning(omclog::ASSERT, false, &msg);
+        omclog::warning(omclog::assert_of(omclog::NLS), false, &msg);
     }
 }
 
@@ -4856,7 +4892,7 @@ pub fn solve_nls(
                 }
                 if adaptive_homotopy {
                     omclog::warning!(
-                        omclog::ASSERT,
+                        omclog::assert_of(omclog::NLS),
                         false,
                         "Failed to solve the initial system {sys_num} without homotopy method.",
                     );

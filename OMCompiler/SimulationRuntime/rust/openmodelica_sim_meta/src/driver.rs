@@ -36,6 +36,7 @@ pub type Result<T> = core::result::Result<T, &'static str>;
 pub(crate) use openmodelica_solvers::bisection_iterations;
 pub use openmodelica_solvers::{
     LogSink, MINIMAL_STEP_SIZE, format_e, format_g, log_line, log_sink_is_stdout, set_log_sink, set_log_sink_is_stdout,
+    set_message_sink,
 };
 
 /// The driver reads a model purely through its shared metadata blob, so the host
@@ -291,7 +292,7 @@ impl StateSelection {
         if sel.run(e, sim_data, model, false, true)? {
             if sel.reselect(e, sim_data, model)? {
                 omclog::warning(
-                    omclog::STDOUT,
+                    omclog::stdout_of(omclog::DSS),
                     false,
                     "Cannot initialize the dynamic state selection in an unique way. Use -lv LOG_DSS to see the switching state set.",
                 );
@@ -713,6 +714,7 @@ fn set_context(e: &mut dyn SimEngine, addr: u32, ctx: i32) {
 /// C's `threadData->currentErrorStage`, mirrored from the runtime's `nls.rs`.
 pub const ERROR_SIMULATION: i32 = 0;
 pub const ERROR_INTEGRATOR: i32 = 1;
+pub const ERROR_NONLINEARSOLVER: i32 = 2;
 /// C's outer `MMC_TRY_INTERNAL(simulationJumpBuffer)`, held by [`StepRetry`].
 pub const ERROR_SIMULATION_STEP: i32 = 3;
 /// C's `handleEvents` stage: `getBestJumpBuffer` sends a model error raised here
@@ -961,7 +963,7 @@ impl StepRetry {
         update_discrete_system(e, sim_data, layout)?;
         if first {
             omclog::warning(
-                omclog::STDOUT,
+                omclog::stdout_of(omclog::SOLVER),
                 false,
                 "Integrator attempt to handle a problem with a called assert.",
             );
@@ -2868,7 +2870,7 @@ fn init_model(
     // C's `initializeNonlinearSystems`, which reports its dropped patterns here.
     if let Some(m) = model {
         for w in &m.nls_warnings {
-            omclog::warning(omclog::STDOUT, false, w);
+            omclog::warning(omclog::stdout_of(omclog::NLS), false, w);
         }
     }
     rtclock::enter_init();
@@ -3035,7 +3037,7 @@ fn solve_initial_system(
             solve_with_global = false;
         } else {
             omclog::warning(
-                omclog::ASSERT,
+                omclog::assert_of(omclog::INIT),
                 false,
                 "Failed to solve the initialization problem without homotopy method. \
                  If homotopy is available the homotopy method is used now.",
@@ -3140,7 +3142,7 @@ fn check_removed_initial_equations(
 /// C's `solver_main` reaction to a failed `initialization()`.
 fn report_init_failure() -> &'static str {
     omclog::warning(
-        omclog::STDOUT,
+        omclog::stdout_of(omclog::INIT),
         false,
         "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT -w for more information.",
     );
@@ -5426,7 +5428,7 @@ fn solver_setup(e: &mut dyn SimEngine, model: &SimModel, sim_data: u32) -> Resul
     let (freq, out_time) = crate::simflags::with_flags(|f| (f.no_equidistant_freq, f.no_equidistant_time));
     if freq.is_some() && out_time.is_some() && no_equidistant_grid() {
         omclog::warning(
-            omclog::STDOUT,
+            omclog::stdout_of(omclog::SOLVER),
             false,
             "The flags are  \"noEquidistantOutputFrequency\" and \"noEquidistantOutputTime\" \
              are in opposition to each other. The flag \"noEquidistantOutputFrequency\" superiors.",
@@ -5680,7 +5682,7 @@ pub fn drive(
                 if let Some(msg) = setup_error {
                     omclog::debug(omclog::ASSERT, false, msg);
                     omclog::warning(
-                        omclog::STDOUT,
+                        omclog::stdout_of(omclog::SOLVER),
                         false,
                         "Integrator attempt to handle a problem with a called assert.",
                     );
@@ -6300,7 +6302,7 @@ impl TinySteps {
         );
         if let Some(msg) = engine.and_then(|e| e.last_suppressed_error()).filter(|m| !m.is_empty()) {
             omclog::info!(
-                omclog::STDOUT,
+                omclog::stdout_of(omclog::SOLVER),
                 false,
                 "The last error a nonlinear solver recovered from: {msg}"
             );
@@ -6400,7 +6402,7 @@ fn set_jacobian_method(jac: Option<&JacAInfo>, log: bool) -> JacobianMethod {
     let requested = crate::simflags::with_flags(|f| f.jacobian);
     let warn = |m: &str| {
         if log {
-            omclog::warning(omclog::STDOUT, false, m);
+            omclog::warning(omclog::stdout_of(omclog::SOLVER), false, m);
         }
     };
     // C's `initSymbolicOdeJacobian`: either direction the adjoint takes part in
@@ -7058,9 +7060,13 @@ fn report_dassl_failure(idid: i32, t: f64) -> &'static str {
         _ => "",
     };
     if !msg.is_empty() {
-        omclog::warning(omclog::STDOUT, false, msg);
+        omclog::warning(omclog::stdout_of(omclog::SOLVER), false, msg);
     }
-    omclog::warning!(omclog::STDOUT, false, "can't continue. time = {t:.6}");
+    omclog::warning!(
+        omclog::stdout_of(omclog::SOLVER),
+        false,
+        "can't continue. time = {t:.6}"
+    );
     solver_fail_store::set(t);
     SOLVER_FAILED_ERR
 }
@@ -9083,7 +9089,7 @@ impl SolverCore {
         let (t0, t1, limit) = (format_g(t0, 12), format_g(t1, 12), format_g(limit, 12));
         let fraction = format_g(fraction, 6);
         omclog::info_used(
-            omclog::STDOUT,
+            omclog::stdout_of(omclog::EVENTS),
             false,
             &format!(
                 "Chattering detected around time {t0}..{t1} ({events} state events in a row \
@@ -11836,7 +11842,7 @@ fn ida_jacobian_method(jac: Option<&JacAInfo>, ls: crate::sundials::IdaLs, log: 
         m => (m, None),
     };
     if log && let Some(msg) = msg {
-        omclog::warning(omclog::STDOUT, false, msg);
+        omclog::warning(omclog::stdout_of(omclog::SOLVER), false, msg);
     }
     match ls.matrix_free() {
         true => M::InternalNumJac,
@@ -12016,7 +12022,7 @@ const IDA_NO_SPARSE_PATTERN: &str = "##IDA## Internal Numerical Jacobians requir
 #[cfg(sundials)]
 fn sundials_step_failed(solver: &str, flag: i32, t: f64) -> &'static str {
     omclog::info!(
-        omclog::STDOUT,
+        omclog::stdout_of(omclog::SOLVER),
         false,
         "##{solver}## {flag} error occurred at time = {}",
         format_g(t, 15)

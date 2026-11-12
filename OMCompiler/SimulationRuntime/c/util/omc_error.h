@@ -165,8 +165,16 @@ DLLDataDirection extern const char *OMC_LOG_TYPE_DESC[OMC_LOG_TYPE_MAX];
 DLLDataDirection extern int omc_useStream[OMC_SIM_LOG_MAX];
 DLLDataDirection extern int omc_showAllWarnings;
 
-#define OMC_ACTIVE_STREAM(stream)    (omc_useStream[stream])
-#define OMC_ACTIVE_WARNING_STREAM(stream)    (omc_showAllWarnings || omc_useStream[stream])
+/* A message that is shown in LOG_STDOUT or LOG_ASSERT, but belongs to `stream`,
+ * e.g. the warning of a solver. An FMU logs it in the category of `stream`. */
+#define OMC_LOG_STDOUT_OF(stream)    (64 + (stream))
+#define OMC_LOG_ASSERT_OF(stream)    (128 + (stream))
+/* The stream that shows a message, and the stream it belongs to. */
+#define OMC_LOG_SHOWN(stream)        ((stream) < 64 ? (stream) : (stream) < 128 ? OMC_LOG_STDOUT : OMC_LOG_ASSERT)
+#define OMC_LOG_OWNER(stream)        ((stream) & 63)
+
+#define OMC_ACTIVE_STREAM(stream)    (omc_useStream[OMC_LOG_SHOWN(stream)])
+#define OMC_ACTIVE_WARNING_STREAM(stream)    (omc_showAllWarnings || OMC_ACTIVE_STREAM(stream))
 
 extern void (*messageFunction)(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes);
 DLLDataDirection extern void (*messageClose)(int stream);

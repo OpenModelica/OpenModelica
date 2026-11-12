@@ -340,7 +340,7 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
     /* A raised error is reported by the catch below. */
     if (initialization(data, threadData, init_initMethod, init_file, init_time) && !OMC_ERROR_RAISED())
     {
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT -w for more information.");
+      warningStreamPrint(OMC_LOG_STDOUT_OF(OMC_LOG_INIT), 0, "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT -w for more information.");
       simInfo->stopTime = simInfo->startTime;
       retValue = -1;
     }

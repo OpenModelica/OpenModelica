@@ -95,6 +95,15 @@ static void omc_fmi1_logger(fmi2ComponentEnvironment env, fmi2String instanceNam
 const char* fmiGetModelTypesPlatform() { return fmiModelTypesPlatform; }
 const char* fmiGetVersion() { return fmiVersion; }
 
+/* FMI 1.0 has no log categories. As the C FMU, it logs the status messages,
+ * the output of the model and its asserts; the other runtime streams stay off. */
+static fmi2Status fmi1DebugLogging(fmi2Component inner, fmiBoolean loggingOn)
+{
+  static const fmi2String categories[] = {"logStatusWarning", "logStatusDiscard", "logStatusError", "logStatusFatal",
+                                          "logStatusPending", "LOG_STDOUT", "LOG_ASSERT"};
+  return omc_fmi2SetDebugLogging(inner, loggingOn, sizeof(categories) / sizeof(categories[0]), categories);
+}
+
 fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCallbackFunctions functions, fmiBoolean loggingOn)
 {
   omc_fmi1_component *w;
@@ -117,10 +126,13 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCall
   cb.stepFinished = NULL;
   cb.componentEnvironment = w;
   /* No resource location: the runtime finds the FMU's resources next to this binary. */
-  w->inner = omc_fmi2Instantiate(instanceName, fmi2ModelExchange, GUID, NULL, &cb, fmi2False, loggingOn);
+  w->inner = omc_fmi2Instantiate(instanceName, fmi2ModelExchange, GUID, NULL, &cb, fmi2False, fmi2False);
   if (!w->inner) {
     functions.freeMemory(w);
     return NULL;
+  }
+  if (loggingOn) {
+    fmi1DebugLogging(w->inner, loggingOn);
   }
   return w;
 }
@@ -136,7 +148,7 @@ void fmiFreeModelInstance(fmiComponent c)
 }
 
 fmiStatus fmiSetDebugLogging(fmiComponent c, fmiBoolean loggingOn)
-{ return (fmiStatus) omc_fmi2SetDebugLogging(OMC_FMI1_INNER(c), loggingOn, 0, NULL); }
+{ return (fmiStatus) fmi1DebugLogging(OMC_FMI1_INNER(c), loggingOn); }
 
 /* Before fmiInitialize FMI 1.0 sets the start time here, which FMI 2.0 takes
  * from fmi2SetupExperiment. */

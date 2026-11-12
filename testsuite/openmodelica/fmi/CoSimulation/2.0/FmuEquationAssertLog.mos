@@ -41,8 +41,10 @@ readFile("FmuEquationAssertLogInit_out.txt"); getErrorString();
 // 0
 // ""
 // "stopped at t = 1
+// status 3: No event found, but assert was triggered. Throwing now!
 // status 3: <interactive>:6: The following assertion has been violated at time 1.100000
 // ((x > 0.0), x=-0.04999999999999982) --> \"x must be positive\"
+// status 3: internalEventUpdate: terminated by an assertion.
 // "
 // ""
 // "FmuEquationAssertLogInit.fmu"
@@ -54,6 +56,7 @@ readFile("FmuEquationAssertLogInit_out.txt"); getErrorString();
 // "stopped at t = 0
 // status 3: <interactive>:13: The following assertion has been violated during initialization at time 0.000000
 // ((x > 0.0), x=-1) --> \"x must be positive at start\"
+// status 3: fmi2ExitInitializationMode: terminated by an assertion.
 // "
 // ""
 // endResult
