@@ -20,6 +20,16 @@ set(OMC_MMC_HEADERS
   "meta_modelica.h"
 )
 
+# The counted runtime's headers include meta_modelica_string.h.
+install(
+  FILES ${OMC_MMC_HEADERS}
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c/meta)
+
+# The Rust omc has no MetaModelica runtime.
+if(OM_OMC_ENABLE_RUST)
+  return()
+endif()
+
 # Shared, so a MetaModelica function library dlopened into omc uses omc's
 # globals (the error buffer, the assert handlers).
 add_library(OpenModelicaRuntimeMMC SHARED ${OMC_MMC_SOURCES}
@@ -64,8 +74,3 @@ endif()
 
 install(TARGETS OpenModelicaRuntimeMMC
   COMPONENT omc)
-
-# Install headers
-install(
-  FILES ${OMC_MMC_HEADERS}
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c/meta)
