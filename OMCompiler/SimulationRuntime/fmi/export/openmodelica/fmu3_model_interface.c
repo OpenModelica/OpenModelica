@@ -867,7 +867,6 @@ fmi3Status fmi3GetFMUState(fmi3Instance instance, fmi3FMUState* FMUState)
 {
   ModelInstance* c = fmu3InnerComp(instance);
   if (!c) return fmi3Error;
-  if (nullPointer(c, "fmi3GetFMUState", "FMUState", FMUState)) return fmi3Error;
   return omcGetFMUstate(c, FMUState);
 }
 
@@ -875,7 +874,6 @@ fmi3Status fmi3SetFMUState(fmi3Instance instance, fmi3FMUState FMUState)
 {
   ModelInstance* c = fmu3InnerComp(instance);
   if (!c) return fmi3Error;
-  if (nullPointer(c, "fmi3SetFMUState", "FMUState", FMUState)) return fmi3Error;
   return omcSetFMUstate(c, FMUState);
 }
 
@@ -883,8 +881,6 @@ fmi3Status fmi3FreeFMUState(fmi3Instance instance, fmi3FMUState* FMUState)
 {
   ModelInstance* c = fmu3InnerComp(instance);
   if (!c) return fmi3Error;
-  /* per the FMI spec freeing a NULL state (or *FMUState == NULL) is a no-op */
-  if (FMUState == NULL || *FMUState == NULL) return fmi3OK;
   return omcFreeFMUstate(c, FMUState);
 }
 
@@ -892,8 +888,6 @@ fmi3Status fmi3SerializedFMUStateSize(fmi3Instance instance, fmi3FMUState FMUSta
 {
   ModelInstance* c = fmu3InnerComp(instance);
   if (!c) return fmi3Error;
-  if (nullPointer(c, "fmi3SerializedFMUStateSize", "FMUState", FMUState) ||
-      nullPointer(c, "fmi3SerializedFMUStateSize", "size", size)) return fmi3Error;
   return omcSerializedFMUstateSize(c, FMUState, size);
 }
 
@@ -901,8 +895,6 @@ fmi3Status fmi3SerializeFMUState(fmi3Instance instance, fmi3FMUState FMUState, f
 {
   ModelInstance* c = fmu3InnerComp(instance);
   if (!c) return fmi3Error;
-  if (nullPointer(c, "fmi3SerializeFMUState", "FMUState", FMUState) ||
-      nullPointer(c, "fmi3SerializeFMUState", "serializedState", serializedState)) return fmi3Error;
   return omcSerializeFMUstate(c, FMUState, serializedState, size);
 }
 
@@ -910,8 +902,6 @@ fmi3Status fmi3DeserializeFMUState(fmi3Instance instance, const fmi3Byte seriali
 {
   ModelInstance* c = fmu3InnerComp(instance);
   if (!c) return fmi3Error;
-  if (nullPointer(c, "fmi3DeserializeFMUState", "serializedState", serializedState) ||
-      nullPointer(c, "fmi3DeserializeFMUState", "FMUState", FMUState)) return fmi3Error;
   return omcDeSerializeFMUstate(c, serializedState, size, FMUState);
 }
 

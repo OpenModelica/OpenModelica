@@ -1239,9 +1239,10 @@ size_t spatialDistributionStateWords(DATA* data, double* out)
  * @param data    Runtime data struct.
  * @param w       Words spatialDistributionStateWords wrote.
  * @param len     Number of words available.
+ * @param apply   0 to only check the words.
  * @return        Number of words read, or -1 if they are not what it wrote.
  */
-long setSpatialDistributionStateWords(DATA* data, const double* w, size_t len)
+long setSpatialDistributionStateWords(DATA* data, const double* w, size_t len, int apply)
 {
   size_t k = 0;
   unsigned int i;
@@ -1252,35 +1253,37 @@ long setSpatialDistributionStateWords(DATA* data, const double* w, size_t len)
   }
   for (i = 0; i < data->modelData->nSpatialDistributions; i++) {
     SPATIAL_DISTRIBUTION_DATA* s = &data->simulationInfo->spatialDistributionData[i];
-    if (k + 8 > len) return -1;
-    s->isInitialized = w[k] != 0;
-    s->oldPosX = w[k+1];
-    s->startPosXSet = w[k+2] != 0;
-    s->startPosX = w[k+3];
-    s->lastStoredEventValue = (int) w[k+4];
-    s->nWarningsRemovedEvents = (unsigned long) w[k+5];
-    s->nWarningsOutputEvents = (unsigned long) w[k+6];
+    if (k + 9 > len || !(w[k+7] >= 0 && w[k+7] <= (len - k - 9) / 2)) return -1;
     n = (int) w[k+7];
-    k += 8;
-    if (n < 0 || k + 2 * (size_t) n + 1 > len) return -1;
-    clearDoubleEndedList(s->transportedQuantity);
-    for (j = 0; j < n; j++) {
-      TRANSPORTED_QUANTITY_DATA q;
-      q.position = w[k];
-      q.value = w[k+1];
-      k += 2;
-      pushBackDoubleEndedList(s->transportedQuantity, &q);
+    if (apply) {
+      s->isInitialized = w[k] != 0;
+      s->oldPosX = w[k+1];
+      s->startPosXSet = w[k+2] != 0;
+      s->startPosX = w[k+3];
+      s->lastStoredEventValue = (int) w[k+4];
+      s->nWarningsRemovedEvents = (unsigned long) w[k+5];
+      s->nWarningsOutputEvents = (unsigned long) w[k+6];
+      clearDoubleEndedList(s->transportedQuantity);
+      for (j = 0; j < n; j++) {
+        TRANSPORTED_QUANTITY_DATA q;
+        q.position = w[k + 8 + 2 * j];
+        q.value = w[k + 9 + 2 * j];
+        pushBackDoubleEndedList(s->transportedQuantity, &q);
+      }
     }
+    k += 8 + 2 * (size_t) n;
+    if (!(w[k] >= 0 && w[k] <= (len - k - 1) / 2)) return -1;
     n = (int) w[k++];
-    if (n < 0 || k + 2 * (size_t) n > len) return -1;
-    clearDoubleEndedList(s->storedEvents);
-    for (j = 0; j < n; j++) {
-      TRANSPORTED_EVENT_DATA e;
-      e.position = w[k];
-      e.zeroCrossValue = w[k+1];
-      k += 2;
-      pushBackDoubleEndedList(s->storedEvents, &e);
+    if (apply) {
+      clearDoubleEndedList(s->storedEvents);
+      for (j = 0; j < n; j++) {
+        TRANSPORTED_EVENT_DATA e;
+        e.position = w[k + 2 * j];
+        e.zeroCrossValue = w[k + 2 * j + 1];
+        pushBackDoubleEndedList(s->storedEvents, &e);
+      }
     }
+    k += 2 * (size_t) n;
   }
   return (long) k;
 }
