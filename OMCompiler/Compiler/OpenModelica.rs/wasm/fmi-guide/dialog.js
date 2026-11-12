@@ -39,6 +39,7 @@ const STYLE = `
 .fg-value { font-weight:650; }
 .fg-msg { font-size:12.5px; margin-top:10px; padding:7px 9px; border:1px solid var(--border); border-radius:6px; }
 .fg-msg.warn { border-color:var(--err); }
+.fg-wait { opacity:.5; }
 `;
 
 function h(tag, attrs, ...kids) {
@@ -120,8 +121,12 @@ function answer(input, value, checked) {
 async function refresh() {
   const { host } = dialog;
   const round = ++dialog.round;
+  // omc can be busy: no Apply until the advice for this answer is there.
+  dialog.applyBtn.disabled = true;
+  dialog.result.classList.add('fg-wait');
   const advice = await dialog.ask({ op: 'advise', answers, host });
   if (round !== dialog.round) return;
+  dialog.result.classList.remove('fg-wait');
   if (!advice.ok) throw new Error(advice.error);
   const { today } = advice;
   if (dialog.questions.childElementCount === 0) renderQuestions(advice.asked);

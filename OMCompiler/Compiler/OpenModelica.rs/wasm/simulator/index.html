@@ -1344,7 +1344,7 @@ el('fmuGuide').addEventListener('click', async () => {
   try {
     const { openFmiGuide } = await import('../fmi-guide/dialog.js');
     await openFmiGuide({
-      ask: async (request) => JSON.parse((await call(primaryWorker, 'fmiGuide', { request: JSON.stringify(request) })).reply),
+      ask: async (request) => JSON.parse((await call(worker, 'fmiGuide', { request: JSON.stringify(request) })).reply),
       host: {
         name: 'the Simulator',
         offers: {
