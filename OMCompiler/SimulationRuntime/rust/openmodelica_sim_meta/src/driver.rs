@@ -6303,7 +6303,7 @@ unsafe fn dassl_res(
     }
 }
 
-/// C's `JACOBIAN_AVAILABILITY` (`jacobian_util.h`).
+/// C's `JACOBIAN_AVAILABILITY` (`jacobian_util.h`, outdated).
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum JacAvail {
     NotAvailable,
@@ -10642,8 +10642,6 @@ impl Driver for EventsDriver {
             emit_row(e, &mut self.rows, sim_data, layout, self.core.t, stop)?;
         }
         let tout_of = |row: u32| if no_grid { stop } else { grid(row) };
-        // C ends on `currentTime >= stopTime`, not on a row count, so a last grid
-        // point left short of `stop` gets one more step at `grid(n_steps + 1)`.
         let more = |row: u32, t: f64| {
             if no_grid || n_steps == 0 {
                 row < n_rows

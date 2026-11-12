@@ -1,0 +1,89 @@
+// name: adjoint_jacobian4_evaluation
+// keywords: NewBackend, differentiation, jacobian, adjoint
+// status: correct
+// teardown_command: rm -f adjoint_jacobian4_*_jac.log adjoint_jacobian4_check.log
+
+loadString("
+model AdjointJacobian4Evaluation
+  parameter Integer N = 3;
+  parameter Real v0 = 1;
+  Real v(start=v0, fixed=true), w, y, z, a, b, c;
+  Real x[N](each start=1, each fixed=true);
+equation
+  if v > 1.5 then
+    w = v^2;
+  else
+    w = 0.5;
+  end if;
+  y + 3*z + cos(time) = 0;
+  z + y/4 + v = 0;
+  der(v) = y - 0.1*v + w + c;
+  der(x[1]) = 1.0;
+  for i in 2:N loop
+    der(x[i]) = i*x[i-1];
+  end for;
+algorithm
+  a := v*2.0;
+  b := y + z;
+  c := x[N] + a;
+end AdjointJacobian4Evaluation;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --generateDynamicJacobian=bidirectional"); getErrorString();
+buildModel(AdjointJacobian4Evaluation, stopTime=0.01); getErrorString();
+
+// LOG_JAC compares every analytical DASSL Jacobian with an uncolored numerical Jacobian.
+echo(false);
+fwdLow := simulate(AdjointJacobian4Evaluation, stopTime=0.01, simflags="-s=dassl -jacobian=coloredSymbolical -lv=LOG_JAC -override=v0=1", resimulateExecutable="AdjointJacobian4Evaluation");
+fwdHigh := simulate(AdjointJacobian4Evaluation, stopTime=0.01, simflags="-s=dassl -jacobian=coloredSymbolical -lv=LOG_JAC -override=v0=2", resimulateExecutable="AdjointJacobian4Evaluation");
+adjLow := simulate(AdjointJacobian4Evaluation, stopTime=0.01, simflags="-s=dassl -jacobian=coloredSymbolicalAdjoint -lv=LOG_JAC -override=v0=1", resimulateExecutable="AdjointJacobian4Evaluation");
+adjHigh := simulate(AdjointJacobian4Evaluation, stopTime=0.01, simflags="-s=dassl -jacobian=coloredSymbolicalAdjoint -lv=LOG_JAC -override=v0=2", resimulateExecutable="AdjointJacobian4Evaluation");
+fwdLowMessages := fwdLow.messages;
+fwdHighMessages := fwdHigh.messages;
+adjLowMessages := adjLow.messages;
+adjHighMessages := adjHigh.messages;
+writeFile("adjoint_jacobian4_fwd_low_jac.log", fwdLowMessages);
+writeFile("adjoint_jacobian4_fwd_high_jac.log", fwdHighMessages);
+writeFile("adjoint_jacobian4_adj_low_jac.log", adjLowMessages);
+writeFile("adjoint_jacobian4_adj_high_jac.log", adjHighMessages);
+fwdLowFile := fwdLow.resultFile;
+fwdHighFile := fwdHigh.resultFile;
+adjLowFile := adjLow.resultFile;
+adjHighFile := adjHigh.resultFile;
+echo(true);
+
+fwdLowFile <> "" and fwdHighFile <> "" and adjLowFile <> "" and adjHighFile <> "";
+getErrorString();
+regexBool(fwdLowMessages, "Using Jacobian method: coloredSymbolical\\.");
+regexBool(fwdHighMessages, "Using Jacobian method: coloredSymbolical\\.");
+regexBool(adjLowMessages, "Using Jacobian method: coloredSymbolicalAdjoint\\.");
+regexBool(adjHighMessages, "Using Jacobian method: coloredSymbolicalAdjoint\\.");
+// Counts lines containing "J(row=", the printed Jacobian entries,
+// and marks the check as failed if an entry contains nan or inf.
+// Finds each Max absolute difference: line, extracts the number,
+// and marks the check as failed if it isn’t in the expected numeric format or exceeds 1e-4.
+// At the end, requires at least one difference report and at least 16 entry lines (4x4 Jacobian) in each log.
+echo(false);
+writeFile("adjoint_jacobian4_check.log", "");
+echo(true);
+system("awk '/J\\(row=/ { entries[FILENAME]++; if (tolower($0) ~ /= [-+]?(nan|inf)/) bad=1 } /Max absolute difference:/ { sub(/^.*difference: /, \"\"); split($0, a); n[FILENAME]++; if (a[1] !~ /^[0-9.]+([eE][-+]?[0-9]+)?$/ || a[1]+0 > 1e-4) bad=1 } END { for (i=1; i<ARGC; i++) if (!n[ARGV[i]] || entries[ARGV[i]] < 16) bad=1; print (bad ? \"false\" : \"true\") }' adjoint_jacobian4_fwd_low_jac.log adjoint_jacobian4_fwd_high_jac.log adjoint_jacobian4_adj_low_jac.log adjoint_jacobian4_adj_high_jac.log", "adjoint_jacobian4_check.log");
+regexBool(readFile("adjoint_jacobian4_check.log"), "^true");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"AdjointJacobian4Evaluation", "AdjointJacobian4Evaluation_init.xml"}
+// ""
+// true
+// true
+// ""
+// true
+// true
+// true
+// true
+// true
+// 0
+// true
+// endResult

@@ -258,7 +258,7 @@ void gbodeMapSparsePattern(const SPARSE_PATTERN *source, const SPARSE_PATTERN *t
 // Create the struct(I + J) pattern used by block solves
 static SPARSE_PATTERN* initializeSparsePatternBlock(DATA* data, modelica_boolean colorPattern)
 {
-  JACOBIAN *jacobian = &data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A];
+  JACOBIAN *jacobian = &data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]; // here we probably want getSymbolicODEJacobian()
   return sparsePatternWithDiagonal(jacobian->sparsePattern, jacobian->sizeRows, NULL, NULL, colorPattern, TRUE);
 }
 

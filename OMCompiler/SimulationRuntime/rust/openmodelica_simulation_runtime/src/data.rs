@@ -10,7 +10,7 @@
 //! is 4 bytes in wasm and 8 here) the map converts, and the regions C has no
 //! home for (the driver's own scratch) fall through to a buffer this module owns.
 
-use core::ffi::{c_int, c_long, c_ulong, c_void};
+use core::ffi::{c_int, c_long, c_uint, c_ulong, c_void};
 
 use openmodelica_sim_meta::{Layout, REAL_OFF};
 
@@ -810,8 +810,6 @@ fn free_jacobian(j: &mut JACOBIAN) {
     free(&mut j.tmpVars);
     free(&mut j.resultVars);
     crate::support::freeSparsePattern(core::mem::replace(&mut j.sparsePattern, core::ptr::null_mut()));
-    j.adjointJacobian = core::ptr::null_mut();
-    j.availability = JACOBIAN_UNKNOWN;
 }
 
 #[cfg(feature = "fmi")]
@@ -1024,22 +1022,11 @@ pub fn jac_a(data: *mut DATA) -> Option<&'static JACOBIAN> {
     unsafe { jac_a_ptr(data).as_ref() }
 }
 
-/// The adjoint Jacobian: the one a bidirectionally compiled JAC_A links, else
 /// `analyticJacobians[INDEX_JAC_ADJ]` once [`init_jac_a`] initialized it.
 pub fn jac_adj_ptr(data: *mut DATA) -> *mut JACOBIAN {
-    let a = match jac_a(data) {
-        Some(j) if !j.adjointJacobian.is_null() => j.adjointJacobian,
-        _ => jac_ptr(data, unsafe { (*(*data).callback).INDEX_JAC_ADJ }),
-    };
+    let a = jac_ptr(data, unsafe { (*(*data).callback).INDEX_JAC_ADJ });
     match unsafe { a.as_ref() } {
-        Some(j)
-            if j.availability == JACOBIAN_AVAILABLE
-                && !j.seedVars.is_null()
-                && !j.resultVars.is_null()
-                && j.evalColumn.is_some() =>
-        {
-            a
-        }
+        Some(j) if !j.seedVarsAdj.is_null() && !j.resultVarsAdj.is_null() && j.evalRow.is_some() => a,
         _ => core::ptr::null_mut(),
     }
 }
@@ -1065,27 +1052,30 @@ fn init_jac_a(data: *mut DATA, thread_data: *mut threadData_t) {
         Some(f) => (unsafe { f(data, thread_data, j) }) == 0,
         None => false,
     };
-    if !ok {
-        unsafe { (*j).availability = JACOBIAN_NOT_AVAILABLE };
-    }
-    // C's `initSymbolicOdeJacobian`: a model compiled bidirectionally initialized its
-    // adjoint along with A; one compiled with the adjoint alone only on request.
     let cb = unsafe { &*(*data).callback };
-    let adjoint_only = openmodelica_sim_meta::simflags::with_flags(|f| {
-        f.jacobian == Some(openmodelica_sim_meta::simflags::JacobianMethod::ColoredSymJacAdj)
+    let needs_adjoint = openmodelica_sim_meta::simflags::with_flags(|f| {
+        use openmodelica_sim_meta::simflags::JacobianMethod;
+        matches!(
+            f.jacobian,
+            Some(JacobianMethod::ColoredSymJacAdj | JacobianMethod::BicoloredSymJac)
+        )
     });
     let adj = jac_ptr(data, cb.INDEX_JAC_ADJ);
-    if adjoint_only && unsafe { (*j).adjointJacobian.is_null() } && !adj.is_null() {
+    if needs_adjoint && !adj.is_null() {
         let ok = match cb.initialAnalyticJacobianADJ {
             Some(f) => (unsafe { f(data, thread_data, adj) }) == 0,
             None => false,
         };
-        if !ok {
-            unsafe { (*adj).availability = JACOBIAN_NOT_AVAILABLE };
+        if ok {
+            let a = unsafe { &*adj };
+            // Coloring columns of J^T colors rows of J.
+            crate::support::computeColumnColoring(a.sparsePatternT, a.sizeCols as c_uint, a.sizeRows as c_uint);
+        } else {
+            unsafe { (*adj).evalRow = None };
         }
     }
     let words = match unsafe { jac_adj_ptr(data).as_ref() } {
-        Some(a) => (a.sizeCols + a.sizeRows + a.sizeTmpVars) as u32,
+        Some(a) => (a.sizeCols + a.sizeRows + a.sizeTmpVarsAdj) as u32,
         None => 0,
     };
     JAC_ADJ_WORDS.store(words, core::sync::atomic::Ordering::Relaxed);
@@ -1094,9 +1084,7 @@ fn init_jac_a(data: *mut DATA, thread_data: *mut threadData_t) {
 /// The flat words the Jacobian window holds: its seeds then its results.
 fn jac_a_words(data: *mut DATA) -> u32 {
     match jac_a(data) {
-        Some(j) if j.availability == JACOBIAN_AVAILABLE && !j.seedVars.is_null() && !j.resultVars.is_null() => {
-            (j.sizeCols + j.sizeRows) as u32
-        }
+        Some(j) if !j.seedVars.is_null() && !j.resultVars.is_null() => (j.sizeCols + j.sizeRows) as u32,
         _ => 0,
     }
 }
@@ -1278,7 +1266,6 @@ pub fn build_regions(rt: &mut RtData) {
         crate::sync::fire_flags(rt.data) as *mut c_void,
     );
     if let Some(j) = jac_a(rt.data)
-        && j.availability == JACOBIAN_AVAILABLE
         && !j.seedVars.is_null()
         && !j.resultVars.is_null()
     {
@@ -1291,10 +1278,14 @@ pub fn build_regions(rt: &mut RtData) {
     }
     if let Some(a) = unsafe { jac_adj_ptr(rt.data).as_ref() } {
         let (cols, rows) = ((a.sizeCols * 8) as u32, (a.sizeRows * 8) as u32);
-        direct(x.jac_adj, cols, a.seedVars.cast());
-        direct(x.jac_adj + cols, rows, a.resultVars.cast());
-        if !a.tmpVars.is_null() {
-            direct(x.jac_adj + cols + rows, (a.sizeTmpVars * 8) as u32, a.tmpVars.cast());
+        direct(x.jac_adj, rows, a.seedVarsAdj.cast());
+        direct(x.jac_adj + rows, cols, a.resultVarsAdj.cast());
+        if !a.tmpVarsAdj.is_null() {
+            direct(
+                x.jac_adj + cols + rows,
+                (a.sizeTmpVarsAdj * 8) as u32,
+                a.tmpVarsAdj.cast(),
+            );
         }
     }
     if l.n_dae_res > 0 {

@@ -294,9 +294,7 @@ impl SimEngine for CEngine {
         let Some(jr) = (unsafe { j.as_mut() }) else {
             return Some(false);
         };
-        if jr.availability == JACOBIAN_AVAILABLE
-            && let Some(f) = cb.getDAG_JacA
-        {
+        if let Some(f) = cb.getDAG_JacA {
             unsafe { f(data, td, j) };
         }
         Some(!jr.dag.is_null())
@@ -522,17 +520,19 @@ impl SimEngine for CEngine {
             | "functionJacA_constantEqns"
             | "functionJacADJ_column"
             | "functionJacADJ_constantEqns" => {
-                let jac = match name.starts_with("functionJacADJ") {
+                let is_adjoint = name.starts_with("functionJacADJ");
+                let jac = match is_adjoint {
                     true => crate::data::jac_adj_ptr(self.rt.data),
                     false => crate::data::jac_a_ptr(self.rt.data),
                 };
                 let Some(j) = (unsafe { jac.as_ref() }) else {
                     return Ok(());
                 };
-                let f = if name.ends_with("_column") {
-                    j.evalColumn
-                } else {
-                    j.constantEqns
+                let f = match (is_adjoint, name.ends_with("_column")) {
+                    (true, true) => j.evalRow,
+                    (true, false) => j.constRowEqns,
+                    (false, true) => j.evalColumn,
+                    (false, false) => j.constColEqns,
                 };
                 let Some(f) = f else { return Ok(()) };
                 self.publish();
