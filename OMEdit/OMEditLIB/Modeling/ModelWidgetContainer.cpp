@@ -1359,9 +1359,8 @@ bool GraphicsView::addConnectionHelper(LineAnnotation *pConnectionLineAnnotation
   if (mpModelWidget->getModelInstance()->isValidConnection(startElementName, endElementName)) {
     ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
     ModelInstance::Connection *pConnection = GraphicsView::createModelInstanceConnection(mpModelWidget->getModelInstance(), pConnectionLineAnnotation);
-    if (pConnection) {
+    if (pConnection && addConnectionToClass(pConnectionLineAnnotation)) {
       addConnectionToView(pConnectionLineAnnotation, false);
-      addConnectionToClass(pConnectionLineAnnotation);
       ModelInfo newModelInfo = mpModelWidget->createModelInfo();
       mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add Connection", true));
       mpModelWidget->updateModelText();
@@ -1540,10 +1539,16 @@ bool GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotatio
         }
       }
     }
-    // add connection
-    pMainWindow->getOMCProxy()->addConnection(pConnectionLineAnnotation->getStartElementName(), pConnectionLineAnnotation->getEndElementName(),
-                                              mpModelWidget->getLibraryTreeItem()->getNameStructure(),
-                                              QString("annotate=").append(pConnectionLineAnnotation->getShapeAnnotation()));
+    // add connection. show error if add connection fails. See #15288
+    if (!pMainWindow->getOMCProxy()->addConnection(pConnectionLineAnnotation->getStartElementName(), pConnectionLineAnnotation->getEndElementName(),
+                                                   mpModelWidget->getLibraryTreeItem()->getNameStructure(),
+                                                   QString("annotate=").append(pConnectionLineAnnotation->getShapeAnnotation()))) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(
+                                                              GUIMessages::ERROR_OCCURRED).arg(MainWindow::instance()->getOMCProxy()->getResult()).append("<br />").
+                                                            append(GUIMessages::getMessage(GUIMessages::NO_OPENMODELICA_KEYWORDS)),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+      return false;
+    }
   }
   return true;
 }
