@@ -111,6 +111,14 @@ thread_local! {
     /// The last panic message the hook saw, so [`omc_eval`] can report the real
     /// reason (location + message) instead of a bare "evaluation panicked".
     static LAST_PANIC: RefCell<Option<String>> = const { RefCell::new(None) };
+    static LOADED_MODELS: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
+}
+
+unsafe extern "C" fn load_model_callback(_class: *mut std::ffi::c_void, name: *const std::ffi::c_char) {
+    if !name.is_null() {
+        let name = unsafe { std::ffi::CStr::from_ptr(name) }.to_string_lossy().into_owned();
+        LOADED_MODELS.with(|l| l.borrow_mut().push(name));
+    }
 }
 
 fn buffer_lines(buf: &'static std::thread::LocalKey<RefCell<String>>, s: &str, emit: fn(&str)) {
@@ -165,6 +173,7 @@ pub fn omc_init() -> bool {
     // Route `plot(...)` through the in-page charton renderer instead of spawning
     // the external OMPlot process (which does not exist on wasm).
     crate::wasm_plot::register();
+    openmodelica_util::System::omc_set_loadmodel_callback(std::ptr::null_mut(), Some(load_model_callback));
 
     // wasm has no `Instant`; give the sim driver a wall-clock for the chunk budget.
     openmodelica_codegen_wasm_jit::CodegenWasmJit::set_clock(wall_ms);
@@ -388,6 +397,13 @@ pub fn omc_take_pending_downloads() -> JsValue {
         arr.push(&item);
     }
     arr.into()
+}
+
+/// Drain the top-level classes that omc loaded on its own (a `uses` annotation, a
+/// name lookup) since the last call: the native host's loadModel callback.
+#[wasm_bindgen]
+pub fn omc_take_loaded_models() -> Vec<String> {
+    LOADED_MODELS.with(|l| std::mem::take(&mut *l.borrow_mut()))
 }
 
 /// Drain the plot commands the last `omc_eval` recorded, as an array of string

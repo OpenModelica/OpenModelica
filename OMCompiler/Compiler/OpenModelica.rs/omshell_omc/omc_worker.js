@@ -247,6 +247,12 @@ function collectPlots() {
   return { plots, transfer };
 }
 
+// Top-level classes omc loaded on its own during the call (OMEdit adds them to
+// its library tree, as the native loadModel callback does).
+function takeLoadedModels() {
+  return typeof OmcModule.omc_take_loaded_models === "function" ? OmcModule.omc_take_loaded_models() : [];
+}
+
 // `keepErrors` (OMEdit): leave omc's Error buffer intact instead of draining it
 // into `error`. OMEdit reads diagnostics itself via the typed
 // getMessagesStringInternal ABI (OMCProxy::printMessagesStringInternal), exactly
@@ -257,7 +263,7 @@ async function doEval(src, keepErrors) {
   const error = keepErrors ? "" : cleanError(omc_eval("getErrorString()"));
   const { plots, transfer } = collectPlots();
   return {
-    msg: { kind: "done", result, error, plots, keep: src.trim() !== "quit()" },
+    msg: { kind: "done", result, error, plots, loaded: takeLoadedModels(), keep: src.trim() !== "quit()" },
     transfer,
   };
 }
@@ -294,7 +300,7 @@ self.onmessage = async (e) => {
           ? await abiWithDownloads(msg.request)
           : JSON.stringify({ error: "omc_abi unavailable (omc built without the scripting_api feature)" });
       resetControl();
-      self.postMessage({ kind: "abiResult", id: msg.id, response });
+      self.postMessage({ kind: "abiResult", id: msg.id, response, loaded: takeLoadedModels() });
     } else if (msg.cmd === "vfsGet") {
       // OMEdit reads some files (library index, install manifests, visual.xml)
       // on the main thread; omc wrote them into this worker's store, so read them
