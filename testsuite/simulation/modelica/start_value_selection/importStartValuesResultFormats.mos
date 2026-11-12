@@ -31,8 +31,10 @@ getErrorString();
 writeFile("init_importStartValuesResultFormats.txt", "");
 echo(false);
 res := simulate(importStartValuesResultFormats_model, simflags="-iif=init_importStartValuesResultFormats.txt");
+msg := res.messages;
+err := getErrorString();
 echo(true);
-regexBool(res.messages + getErrorString(), "Unknown result-file suffix of file 'init_importStartValuesResultFormats.txt'");
+regexBool(msg + err, "Unknown result-file suffix of file 'init_importStartValuesResultFormats.txt'");
 
 // Result:
 // true
