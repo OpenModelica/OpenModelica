@@ -466,7 +466,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_IGNORE_HIDERESULT */
   "  Emits also variables with HideResult=true annotation.",
   /* FLAG_IIF */
-  "  Value specifies an external file for the initialization of the model.",
+  "  Value specifies an external file for the initialization of the model.\n  It can be a result file in any format the simulation writes (.mat, .csv, .plt or .arrow), selected by its suffix.",
   /* FLAG_IIM */
   "  Value specifies the initialization method.\n  Following options are available: 'symbolic' (default) and 'none'.",
   /* FLAG_IIT */

@@ -2425,7 +2425,7 @@ void SimulationDialog::browseModelSetupFile()
  */
 void SimulationDialog::browseEquationSystemInitializationFile()
 {
-  mpEquationSystemInitializationFileTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::matFileTypes, NULL));
+  mpEquationSystemInitializationFileTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::omResultFileTypes, NULL));
 }
 
 /*!

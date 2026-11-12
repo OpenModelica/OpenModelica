@@ -223,7 +223,7 @@ pub static FLAG_DETAILED_DESC: CStrTable<159> = CStrTable([
     c"  Enable scaling of the IDA solver.".as_ptr(),
     c"  Enables sensitivity analysis with respect to parameters if the model is compiled with omc flag --calculateSensitivities.".as_ptr(),
     c"  Emits also variables with HideResult=true annotation.".as_ptr(),
-    c"  Value specifies an external file for the initialization of the model.".as_ptr(),
+    c"  Value specifies an external file for the initialization of the model.\x0a  It can be a result file in any format the simulation writes (.mat, .csv, .plt or .arrow), selected by its suffix.".as_ptr(),
     c"  Value specifies the initialization method.\x0a  Following options are available: 'symbolic' (default) and 'none'.".as_ptr(),
     c"  Value [Real] specifies a time for the initialization of the model.".as_ptr(),
     c"  Value specifies the number of steps for homotopy method (required: -iim=symbolic).\x0a  The value is an Integer with default value 3.".as_ptr(),
