@@ -302,6 +302,10 @@ package FFITest
       constant Integer lines = countLines("ModelicaInternal_countLines.mos");
     end ModelicaInternal_countLines;
 
+    model ModelicaError1
+      constant Integer lines = countLines("ModelicaError1.missing");
+    end ModelicaError1;
+
     function scanReal
       input String string;
       input Integer startIndex = 1;
