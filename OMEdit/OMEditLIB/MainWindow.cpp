@@ -1685,7 +1685,7 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   const bool wasmTarget = targetLanguage.compare("wasm") == 0 || targetLanguage.compare("wasm-jit") == 0;
   if (!wasmTarget && targetLanguage.compare("C") != 0 && targetLanguage.compare("Cpp") != 0) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Target Language <b>%1</b> is not supported for FMU Export. Only <b>C</b>, <b>Cpp</b>, <b>wasm</b> and <b>wasm-jit</b> are supported").arg(targetLanguage),
-                                                                  tr("FMU_EXPORT Failed"), Helper::errorLevel));
+                                                                  Helper::scriptingKind, Helper::errorLevel));
     return;
   }
 
@@ -3938,7 +3938,7 @@ void MainWindow::runOMSensPlugin()
   if (!mpOMSensPlugin) {
     // load OMSens plugin
 #ifdef Q_OS_MAC
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("OMSens is not supported on MacOS"), Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("OMSens is not supported on macOS"), Helper::scriptingKind, Helper::errorLevel));
     return;
   }
 #else
@@ -4817,7 +4817,7 @@ void MainWindow::createActions()
   connect(mpImportFMUAction, SIGNAL(triggered()), SLOT(importModelFMU()));
   // import FMU model description action
   mpImportFMUModelDescriptionAction = new QAction(tr("FMU Model Description"), this);
-  mpImportFMUModelDescriptionAction->setStatusTip(tr("Imports the model from Functional Mockup Interface (FMU) model description"));
+  mpImportFMUModelDescriptionAction->setStatusTip(tr("Imports the model from the model description of a Functional Mock-up Unit (FMU)"));
   connect(mpImportFMUModelDescriptionAction, SIGNAL(triggered()), SLOT(importFMUModelDescription()));
   // import from OMNotebook action
   mpImportFromOMNotebookAction = new QAction(QIcon(":/Resources/icons/import-omnotebook.svg"), tr("From OMNotebook"), this);
@@ -4842,7 +4842,7 @@ void MainWindow::createActions()
   connect(mpExportFMUAction, SIGNAL(triggered()), SLOT(exportModelFMU()));
   // export read-only package action
   mpExportReadonlyPackageAction = new QAction(Helper::exportReadonlyPackage, this);
-  mpExportReadonlyPackageAction->setStatusTip(Helper::exportRealonlyPackageTip);
+  mpExportReadonlyPackageAction->setStatusTip(Helper::exportReadonlyPackageTip);
   connect(mpExportReadonlyPackageAction, SIGNAL(triggered()), SLOT(exportReadonlyPackage()));
   // export encrypted package action
   mpExportEncryptedPackageAction = new QAction(Helper::exportEncryptedPackage, this);
@@ -4993,7 +4993,7 @@ void MainWindow::createActions()
   connect(mpCheckAllModelsAction, SIGNAL(triggered()), SLOT(checkAllModels()));
   // instantiate model action
   mpInstantiateModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.svg"), tr("Instantiate Model"), this);
-  mpInstantiateModelAction->setStatusTip(tr("Instantiates the modelica model"));
+  mpInstantiateModelAction->setStatusTip(tr("Instantiates the Modelica model"));
   mpInstantiateModelAction->setEnabled(false);
   connect(mpInstantiateModelAction, SIGNAL(triggered()), SLOT(instantiateModel()));
   // simulation setup action
@@ -5498,7 +5498,7 @@ void MainWindow::createMenus()
   pGitMenu->setTitle(tr("&Git"));
   // Traceability actions
   QMenu *pTraceabilityMenu = new QMenu(menuBar());
-  pTraceabilityMenu->setObjectName(tr("TraceabilityMenu"));
+  pTraceabilityMenu->setObjectName("TraceabilityMenu");
   pTraceabilityMenu->setTitle(tr("Traceability"));
   // add actions to Git menu
   pGitMenu->addAction(mpCreateGitRepositoryAction);
@@ -6142,7 +6142,7 @@ void MainWindow::reSimulate(bool showSetup)
     pSimulationOutputWidget->reSimulate(showSetup);
   } else {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          tr("No active simulation output window. Please select a simulation output window for re-simulate."), QMessageBox::Ok);
+                          tr("No active simulation output window. Please select a simulation output window for the re-simulation."), QMessageBox::Ok);
   }
 }
 
@@ -6198,33 +6198,34 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
   setAttribute(Qt::WA_DeleteOnClose);
 
   const QString omsVersionLine = OMSProxy::isCreated()
-      ? QString("<b>Connected to %1</b><br />").arg(OMSProxy::instance()->getVersion())
+      ? QString("<b>%1</b><br />").arg(tr("Connected to %1").arg(OMSProxy::instance()->getVersion()))
       : QString();
+#ifdef OM_ENABLE_ENCRYPTION
+  const QString omcVersionLine = tr("Connected to %1 with encryption support").arg(Helper::OpenModelicaVersion);
+#else
+  const QString omcVersionLine = tr("Connected to %1 without encryption support").arg(Helper::OpenModelicaVersion);
+#endif
+#if defined(WITHOUT_ANIMATION)
+  const QString animationLine = QString("<br /><em>%1</em>.").arg(tr("Compiled without 3D animation support"));
+#else
+  const QString animationLine;
+#endif
   const QString aboutText = tr(
      "<h2>%1 - %2</h2>"
-     "<b>Connected to %3 %4 encryption support</b><br />"
-     "%5"
+     "<b>%3</b><br />"
+     "%4"
      "<br />"
-     "Compiled with <b>Qt %7</b>, running with <b>Qt %8</b>.<br /><br />"
-     "Installation path <b>%6</b><br /><br />"
+     "Compiled with <b>Qt %5</b>, running with <b>Qt %6</b>.<br /><br />"
+     "Installation path <b>%7</b><br /><br />"
      "Copyright <b>Open Source Modelica Consortium (OSMC)</b>.<br />"
-     "Distributed under OSMC-PL and AGPL3, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>."
-#if defined(WITHOUT_ANIMATION)
-     "<br /><em>Compiled without 3D animation support</em>."
-#endif
-     "")
+     "Distributed under OSMC-PL and AGPL3, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>.")
      .arg(Helper::applicationName,
           Helper::applicationIntroText,
-          Helper::OpenModelicaVersion,
-#ifdef OM_ENABLE_ENCRYPTION
-          "with",
-#else
-          "without",
-#endif
+          omcVersionLine,
           omsVersionLine,
-          Helper::OpenModelicaHome,
           QStringLiteral(QT_VERSION_STR),
-          QString::fromLatin1(qVersion()));
+          QString::fromLatin1(qVersion()),
+          Helper::OpenModelicaHome) + animationLine;
   // about text label
   Label *pAboutTextLabel = new Label(aboutText);
   pAboutTextLabel->setWordWrap(true);

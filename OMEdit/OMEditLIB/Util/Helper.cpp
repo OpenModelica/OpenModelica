@@ -114,11 +114,7 @@ QString Helper::utf8 = "UTF-8";
 const char * const Helper::fmuPlatformNamePropertyId = "fmu-platform-name";
 QFontInfo Helper::systemFontInfo = QFontInfo(QFont());
 QFontInfo Helper::monospacedFontInfo = QFontInfo(QFont());
-#ifdef Q_OS_MAC
-QString Helper::toolsOptionsPath = tr("OMEdit->Preferences");
-#else
-QString Helper::toolsOptionsPath = tr("Tools->Options");
-#endif
+QString Helper::toolsOptionsPath;
 QString Helper::speedOptions = "10,5,2,1,0.5,0.2,0.1";
 QStringList Helper::timeDisplayUnits = QStringList() << "min" << "h" << "d";
 /* Meta Modelica Types */
@@ -218,7 +214,7 @@ QString Helper::sensitivityOptimization;
 QString Helper::exportEncryptedPackage;
 QString Helper::exportEncryptedPackageTip;
 QString Helper::exportReadonlyPackage;
-QString Helper::exportRealonlyPackageTip;
+QString Helper::exportReadonlyPackageTip;
 QString Helper::importFMU;
 QString Helper::importFMUTip;
 QString Helper::exportXML;
@@ -431,8 +427,6 @@ QString Helper::bold;
 QString Helper::italic;
 QString Helper::underline;
 QString Helper::condition;
-QString Helper::immediate;
-QString Helper::synchronize;
 QString Helper::priority;
 QString Helper::secs;
 QString Helper::saveContentsInOneFile;
@@ -457,6 +451,11 @@ QString Helper::switchModel;
 void Helper::initHelperVariables()
 {
   /* Global translated variables */
+#ifdef Q_OS_MAC
+  Helper::toolsOptionsPath = tr("OMEdit->Preferences");
+#else
+  Helper::toolsOptionsPath = tr("Tools->Options");
+#endif
   Helper::newModelicaClass = tr("Modelica Class");
   Helper::newModelicaClassTip = tr("Create New Modelica Class");
   Helper::newModelicaClassLibraryBrowser = tr("New Modelica Class");
@@ -523,14 +522,14 @@ void Helper::initHelperVariables()
   Helper::instantiateModelTip = tr("Instantiate/Flatten the Modelica class");
   Helper::FMU = tr("FMU");
   Helper::exportt = tr("Export");
-  Helper::exportFMUTip = tr("Exports the model as Functional Mockup Unit (FMU)");
+  Helper::exportFMUTip = tr("Exports the model as Functional Mock-up Unit (FMU)");
   Helper::sensitivityOptimization = tr("Sensitivity Optimization");
   Helper::exportReadonlyPackage = tr("Read-only Package");
-  Helper::exportRealonlyPackageTip = tr("Exports the package as read-only package");
+  Helper::exportReadonlyPackageTip = tr("Exports the package as a read-only package");
   Helper::exportEncryptedPackage = tr("Encrypted Package");
-  Helper::exportEncryptedPackageTip = tr("Exports the package as Encrytped package");
+  Helper::exportEncryptedPackageTip = tr("Exports the package as an encrypted package");
   Helper::importFMU = tr("Import FMU");
-  Helper::importFMUTip = tr("Imports the model from Functional Mockup Interface (FMU)");
+  Helper::importFMUTip = tr("Imports the model from a Functional Mock-up Unit (FMU)");
   Helper::exportXML = tr("XML");
   Helper::exportXMLTip = tr("Exports the model as XML");
   Helper::exportToOMNotebook = tr("Export to OMNotebook");
@@ -593,7 +592,7 @@ void Helper::initHelperVariables()
   Helper::translateCRML = tr("Translate");
   Helper::translateCRMLTip = tr("Translates the CRML model to Modelica");
   Helper::translateAsCRML = tr("Translate As");
-  Helper::translateAsCRMLTip = tr("Translates As the CRML model to Modelica");
+  Helper::translateAsCRMLTip = tr("Translates the CRML model to Modelica with options");
   Helper::runScript = tr("Run");
   Helper::runScriptTip = tr("Runs the Modelica Script");
   Helper::options = tr("Options");
@@ -611,7 +610,7 @@ void Helper::initHelperVariables()
   Helper::rotation = tr("Rotation:");
   Helper::thickness = tr("Thickness:");
   Helper::smooth = tr("Smooth:");
-  Helper::bezier = tr("Bezier");
+  Helper::bezier = tr("Bézier");
   Helper::startArrow = tr("Start Arrow:");
   Helper::endArrow = tr("End Arrow:");
   Helper::arrowSize = tr("Arrow Size:");
@@ -686,7 +685,7 @@ void Helper::initHelperVariables()
   Helper::unstageCurrentFileFromCommit = tr("Unstage Current File");
   Helper::unstageCurrentFileFromCommitTip = tr("Unstaging current file from next commit");
   Helper::commitFiles = tr("Commit");
-  Helper::commitFilesTip = tr("Commiting modified files to the repository");
+  Helper::commitFilesTip = tr("Committing modified files to the repository");
   Helper::resume = tr("Resume");
   Helper::interrupt = tr("Interrupt");
   Helper::exit = tr("Exit");
@@ -718,9 +717,9 @@ void Helper::initHelperVariables()
   Helper::newOMSimulatorModel = tr("SSP Model");
   Helper::newOMSimulatorModelTip = tr("Creates a new SSP Model");
   Helper::addSystem = tr("Add System");
-  Helper::addSystemTip = tr("Adds the System i.e., FMI or TLM");
+  Helper::addSystemTip = tr("Adds the system, e.g. FMI or TLM");
   Helper::addSubModel = tr("Add SubModel");
-  Helper::addSubModelTip = tr("Adds the SubModel i.e., FMU or Table");
+  Helper::addSubModelTip = tr("Adds the submodel, e.g. FMU or table");
   Helper::addConnector = tr("Add Connector");
   Helper::addConnectorTip = tr("Adds the connector");
   Helper::running = tr("Running");
@@ -741,8 +740,6 @@ void Helper::initHelperVariables()
   Helper::italic = tr("Italic");
   Helper::underline = tr("Underline");
   Helper::condition = tr("Condition:");
-  Helper::immediate = tr("Immediate");
-  Helper::synchronize = tr("Synchronize");
   Helper::priority = tr("Priority:");
   Helper::secs = tr("s");
   Helper::saveContentsInOneFile = tr("Save contents in one file");
@@ -814,7 +811,7 @@ QString GUIMessages::getMessage(int type)
     case UNABLE_TO_DELETE_FILE:
       return tr("Unable to delete <b>%1</b>.");
     case FILE_NOT_FOUND:
-      return tr("The file <b>%1</b> not found.");
+      return tr("The file <b>%1</b> was not found.");
     case ERROR_OPENING_FILE:
       return tr("Error opening the file <b>%1</b>. %2");
     case UNABLE_TO_LOAD_MODEL:
@@ -852,7 +849,7 @@ QString GUIMessages::getMessage(int type)
     case XML_GENERATED:
       return tr("The XML is generated at <b>%1</b>.");
     case FIGARO_GENERATED:
-      return tr("The FIGARO is generated.");
+      return tr("The Figaro file is generated.");
     case ENCRYPTED_PACKAGE_GENERATED:
       return tr("The encrypted package is generated at <b>%1</b>.");
     case READONLY_PACKAGE_GENERATED:
@@ -872,7 +869,7 @@ QString GUIMessages::getMessage(int type)
     case SET_INFO_XML_FLAG:
       return tr("The operations were not generated. Check Generate Operations in <b>%1->Debugger->Transformational Debugger</b> OR you must set the -d=infoXmlOperations flag via <b>Simulation Setup->Translation Flags->Additional Translation Flags</b> and simulate again.");
     case DEBUG_CONFIGURATION_EXISTS_MSG:
-      return tr("A debug configuration with name <b>%1</b> already exists. Error occurred while saving the debug configuration <b>%2<b>.");
+      return tr("A debug configuration with name <b>%1</b> already exists. Error occurred while saving the debug configuration <b>%2</b>.");
     case DEBUG_CONFIGURATION_SIZE_EXCEED:
       return tr("Maximum <b>%1</b> debug configurations are allowed.");
     case DELETE_DEBUG_CONFIGURATION_MSG:

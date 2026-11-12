@@ -5627,7 +5627,7 @@ void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
   int maxNewsSize = OptionsDialog::instance()->getGeneralSettingsPage()->getRecentFilesAndLatestNewsSizeSpinBox()->value();
   if (pNetworkReply->error() == QNetworkReply::HostNotFoundError) {
     mpNoLatestNewsLabel->setVisible(true);
-    mpNoLatestNewsLabel->setText(tr("Sorry, no internet no news items."));
+    mpNoLatestNewsLabel->setText(tr("No news without an internet connection."));
   } else if (pNetworkReply->error() == QNetworkReply::NoError) {
     QByteArray response(pNetworkReply->readAll());
     QXmlStreamReader xml(response);
