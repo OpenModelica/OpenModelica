@@ -48,7 +48,7 @@ val(f[3], 9.5); val(h[2], 9.5); val(k[3], 9.5); val(g[2, 2], 9.5); val(a[2], 9.5
 // true
 // record SimulationResult
 //     resultFile = "mathEventsFor_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 9.5, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'mathEventsFor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 9.5, numberOfIntervals = 10, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'mathEventsFor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -63,7 +63,7 @@ val(f[3], 9.5); val(h[2], 9.5); val(k[3], 9.5); val(g[2, 2], 9.5); val(a[2], 9.5
 // true
 // record SimulationResult
 //     resultFile = "mathEventsFor_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 9.5, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'mathEventsFor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 9.5, numberOfIntervals = 10, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'mathEventsFor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

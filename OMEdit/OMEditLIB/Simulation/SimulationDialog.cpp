@@ -2351,7 +2351,7 @@ void SimulationDialog::intervalRadioToggled(bool toggle)
 void SimulationDialog::enableDisableOptions(int index)
 {
   const QString method = mpMethodComboBox->itemText(index);
-  if (method.compare(QStringLiteral("dassl")) == 0 || method.compare(QStringLiteral("ida")) == 0 || method.compare(QStringLiteral("gbode")) == 0) {
+  if (method.compare(QStringLiteral("auto")) == 0 || method.compare(QStringLiteral("dassl")) == 0 || method.compare(QStringLiteral("ida")) == 0 || method.compare(QStringLiteral("gbode")) == 0) {
     mpOptionsGroupBox->setEnabled(true);
     mpEquidistantTimeGridCheckBox->setEnabled(true);
     // gbode doesn't handle following options yet

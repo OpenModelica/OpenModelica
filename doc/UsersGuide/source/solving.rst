@@ -14,6 +14,11 @@ methods. This section contains additional information about the different
 integration methods in OpenModelica. They can be selected by the method
 parameter of the :ref:`simulate` command or the :ref:`-s simflag <simflag-s>`.
 
+The default method ``auto`` chooses a solver from the model: `IDA`_ for a
+model compiled with ``--daeMode``, otherwise `DASSL`_. A method that is
+given explicitly is always used. If it cannot simulate the model, the
+simulation stops with an error.
+
 The different methods are also called solver and can be distinguished by
 their characteristic:
 
@@ -59,7 +64,7 @@ and a more mathematical approach can be found in :cite:`Hairer:1993`.
 DASSL
 ~~~~~
 
-DASSL is the default solver in OpenModelica, because of a severals reasons. It
+DASSL is the solver that ``auto`` chooses for most models, because of several reasons. It
 is an implicit, higher order, multi-step solver with a step-size control and
 with these properties it is quite stable for a wide range of models. Furthermore
 it has a mature source code, which was originally developed in the eighties an

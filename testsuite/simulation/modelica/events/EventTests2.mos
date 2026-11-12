@@ -21,7 +21,7 @@ simulate(testEvents2, numberOfIntervals=19, simflags="-lv=LOG_EVENTS"); getError
 // ""
 // record SimulationResult
 //     resultFile = "testEvents2_res.mat",
-//     simulationOptions = "startTime = -1.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'testEvents2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
+//     simulationOptions = "startTime = -1.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'testEvents2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
 //     messages = "LOG_EVENTS        | info    | status of relations at time=-1
 // |                 | |       | | [1] (pre:  true)  true = time < -0.2
 // |                 | |       | | [2] (pre:  true)  true = time <= -0.1
@@ -45,7 +45,7 @@ simulate(testEvents2, numberOfIntervals=19, simflags="-lv=LOG_EVENTS"); getError
 // ""
 // record SimulationResult
 //     resultFile = "testEvents2_res.mat",
-//     simulationOptions = "startTime = -1.0, stopTime = 1.0, numberOfIntervals = 19, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'testEvents2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
+//     simulationOptions = "startTime = -1.0, stopTime = 1.0, numberOfIntervals = 19, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'testEvents2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
 //     messages = "LOG_EVENTS        | info    | status of relations at time=-1
 // |                 | |       | | [1] (pre:  true)  true = time < -0.2
 // |                 | |       | | [2] (pre:  true)  true = time <= -0.1

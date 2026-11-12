@@ -34,7 +34,7 @@ runScript(modelTesting);getErrorString();
 // \"PowerSystems\"
 // "
 // ""
-// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.Introductory.Tables', options = '', outputFormat = 'mat', variableFilter = 'time|table.u|table.y.1.|table.y.2.', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'auto', fileNamePrefix = 'PowerSystems.Examples.Introductory.Tables', options = '', outputFormat = 'mat', variableFilter = 'time|table.u|table.y.1.|table.y.2.', cflags = '', simflags = ' -emit_protected'
 // Result file: PowerSystems.Examples.Introductory.Tables_res.mat
 // Files Equal!
 // "true

@@ -5264,6 +5264,7 @@ pub fn set_zc_tolerance(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout
 /// startup rather than let them silently run as DASSL.
 pub(crate) fn effective_method<'a>(method: &'a str) -> &'a str {
     match crate::simflags::with_flags(|f| f.solver) {
+        Some(crate::simflags::Solver::Auto) => "auto",
         Some(crate::simflags::Solver::Euler) => "euler",
         Some(crate::simflags::Solver::Dassl) => "dassl",
         Some(crate::simflags::Solver::Cvode) => "cvode",
@@ -5309,21 +5310,20 @@ fn check_method(method: &str) -> bool {
         || method == "optimization"
 }
 
-/// Resolve the solver method: apply `-s=`, then default DAE-mode models to IDA
-/// (matching C's `simulation_runtime.cpp` solver override), then validate.
-fn resolve_solver_method<'a>(method: &'a str, dae_mode: bool) -> Result<&'a str> {
-    let method = effective_method(method);
-    // C: if the model is compiled in daeMode, overwrite the solver to IDA
-    let method = if dae_mode && method != "ida" {
-        omclog::info(
-            omclog::SIMULATION,
-            false,
-            "overwrite solver method: ida [DAEmode works only with IDA solver]",
-        );
-        "ida"
-    } else {
-        method
-    };
+/// Apply `-s=` and choose a method for `auto` (C's `resolveAutoSolver`). An
+/// explicit method is never replaced.
+fn choose_solver_method(method: &str, dae_mode: bool) -> &str {
+    match effective_method(method) {
+        "" | "auto" => {
+            let chosen = if dae_mode { "ida" } else { "dassl" };
+            omclog::info!(omclog::SOLVER, false, "-s=auto chooses solver method {chosen}");
+            chosen
+        }
+        m => m,
+    }
+}
+
+fn validate_solver_method(method: &str) -> Result<&str> {
     if method == "gbode" {
         return Err(crate::simflags::GBODE_DISABLED);
     }
@@ -5336,11 +5336,21 @@ fn resolve_solver_method<'a>(method: &'a str, dae_mode: bool) -> Result<&'a str>
     Ok(method)
 }
 
-/// [`resolve_solver_method`] plus C's "no states present" swap, which lives in
-/// `startNonInteractiveSimulation` — an FMU steps with the method it was exported
-/// with, so only a standalone run applies it.
+/// The Co-Simulation method. As C's `fmu_model_interface.c.inc`, a --daeMode FMU
+/// integrates with IDA whatever its `s` says.
+fn resolve_solver_method(method: &str, dae_mode: bool) -> Result<&str> {
+    validate_solver_method(if dae_mode {
+        "ida"
+    } else {
+        choose_solver_method(method, false)
+    })
+}
+
+/// The method of a standalone run: an explicit method is never replaced, and
+/// C's "no states present" swap from `startNonInteractiveSimulation` applies. As
+/// in C, a model with nothing to integrate accepts any method.
 fn resolve_sim_solver_method<'a>(method: &'a str, layout: &SimLayout) -> Result<&'a str> {
-    let method = resolve_solver_method(method, layout.compiled_dae_mode)?;
+    let method = choose_solver_method(method, layout.compiled_dae_mode);
     // C exempts `optimization` in ODE mode only.
     let nothing_to_solve = match layout.compiled_dae_mode {
         true => layout.n_dae_res + layout.n_dae_alg < 1,
@@ -5354,7 +5364,10 @@ fn resolve_sim_solver_method<'a>(method: &'a str, layout: &SimLayout) -> Result<
         );
         return Ok("euler");
     }
-    Ok(method)
+    if layout.compiled_dae_mode && method != "ida" {
+        return Err(dae_mode_needs_ida());
+    }
+    validate_solver_method(method)
 }
 
 /// C allocates the solver before initializing the model, and gbode logs its setup
@@ -5502,6 +5515,14 @@ fn csv_input_given() -> bool {
     return crate::simflags::with_flags(|f| f.csv_input.is_some());
     #[cfg(not(feature = "std"))]
     false
+}
+
+/// Reported by the driver, as C's `throwStreamPrint`.
+pub const DAE_MODE_NEEDS_IDA: &str = "The model was compiled with --daeMode, which works only with -s=ida or -s=auto.";
+
+fn dae_mode_needs_ida() -> &'static str {
+    omclog::debug(omclog::ASSERT, false, DAE_MODE_NEEDS_IDA);
+    DAE_MODE_NEEDS_IDA
 }
 
 /// Listing what `make_driver` accepts; `simflags::check` rejects the rest earlier,

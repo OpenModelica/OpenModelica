@@ -15,7 +15,7 @@ diffSimulationResults("ModelicaTest.Utilities.TestInternal_res.mat", "ReferenceF
 // ""
 // record SimulationResult
 //     resultFile = "ModelicaTest.Utilities.TestInternal_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaTest.Utilities.TestInternal', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'ModelicaTest.Utilities.TestInternal', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_STDOUT        | info    | ... Test of Modelica.Utilities.Internal.FileSystem and .System
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

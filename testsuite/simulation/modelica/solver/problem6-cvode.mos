@@ -64,7 +64,7 @@ if res2[1,s] > -1e-2 then 1 else 0;
 // "
 // record SimulationResult
 //     resultFile = "testSolver.problem6_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'testSolver.problem6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=cvode -stopTime=3.0 -stepSize=0.006'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'testSolver.problem6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=cvode -stopTime=3.0 -stepSize=0.006'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -76,7 +76,7 @@ if res2[1,s] > -1e-2 then 1 else 0;
 // 1
 // record SimulationResult
 //     resultFile = "testSolver.problem6_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'testSolver.problem6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=cvode -cvodeLinearMultistepMethod=CV_BDF -cvodeNonlinearSolverIteration=CV_ITER_NEWTON -stopTime=3.0 -stepSize=0.006 '",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'testSolver.problem6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=cvode -cvodeLinearMultistepMethod=CV_BDF -cvodeNonlinearSolverIteration=CV_ITER_NEWTON -stopTime=3.0 -stepSize=0.006 '",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -88,7 +88,7 @@ if res2[1,s] > -1e-2 then 1 else 0;
 // 1
 // record SimulationResult
 //     resultFile = "testSolver.problem6_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'testSolver.problem6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=cvode -cvodeLinearMultistepMethod=CV_ADAMS -cvodeNonlinearSolverIteration=CV_ITER_FIXED_POINT -stopTime=3.0 -stepSize=0.006 '",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'testSolver.problem6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=cvode -cvodeLinearMultistepMethod=CV_ADAMS -cvodeNonlinearSolverIteration=CV_ITER_FIXED_POINT -stopTime=3.0 -stepSize=0.006 '",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
