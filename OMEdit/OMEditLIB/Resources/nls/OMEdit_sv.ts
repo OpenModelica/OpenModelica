@@ -2000,7 +2000,7 @@ Om ingen plattform är vald exporteras FMU:n som FMI 3.0 (fmi-ls-wasm).</transla
         <translation>Genererar cmake-målfiler för %1. Vänta en stund.</translation>
     </message>
     <message>
-        <source>Generating the cmake target files failed. Exited with code %1.</source>
+        <source>Generating the cmake target files failed with exit code %1.</source>
         <translation>Genereringen av cmake-målfiler misslyckades. Avslutades med koden %1.</translation>
     </message>
     <message>
@@ -3089,6 +3089,14 @@ Se fönstret Meddelanden för felmeddelanden och ångra eventuellt de senaste ä
         <translation>Instansiera/platta ut Modelicaklassen</translation>
     </message>
     <message>
+        <source>Exports the package as a read-only package</source>
+        <translation>Exporterar paketet som ett skrivskyddat paket</translation>
+    </message>
+    <message>
+        <source>Exports the package as an encrypted package</source>
+        <translation>Exporterar paketet som ett krypterat paket</translation>
+    </message>
+    <message>
         <source>Exports the model as XML</source>
         <translation>Exporterar modellen som XML</translation>
     </message>
@@ -3417,10 +3425,6 @@ Se fönstret Meddelanden för felmeddelanden och ångra eventuellt de senaste ä
         <translation>Skrivskyddat paket</translation>
     </message>
     <message>
-        <source>Exports the package as read-only package</source>
-        <translation>Exporterar paketet som ett skrivskyddat paket</translation>
-    </message>
-    <message>
         <source>Encrypted Package</source>
         <translation>Krypterat paket</translation>
     </message>
@@ -3563,10 +3567,6 @@ Se fönstret Meddelanden för felmeddelanden och ångra eventuellt de senaste ä
     <message>
         <source>Exports the model as Functional Mock-up Unit (FMU)</source>
         <translation>Exporterar modellen som en Functional Mock-up Unit (FMU)</translation>
-    </message>
-    <message>
-        <source>Exports the package as encrypted package</source>
-        <translation>Exporterar paketet som ett krypterat paket</translation>
     </message>
     <message>
         <source>Imports the model from a Functional Mock-up Unit (FMU)</source>

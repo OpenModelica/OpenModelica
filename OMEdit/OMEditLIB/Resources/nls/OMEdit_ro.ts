@@ -1981,7 +1981,7 @@ With no platform selected, the FMU is exported as FMI 3.0 (fmi-ls-wasm).</source
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Generating the cmake target files failed. Exited with code %1.</source>
+        <source>Generating the cmake target files failed with exit code %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3032,6 +3032,14 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Exports the package as a read-only package</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exports the package as an encrypted package</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Exports the model as XML</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3368,10 +3376,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Exports the package as read-only package</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Encrypted Package</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3513,10 +3517,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <source>Exports the model as Functional Mock-up Unit (FMU)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Exports the package as encrypted package</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

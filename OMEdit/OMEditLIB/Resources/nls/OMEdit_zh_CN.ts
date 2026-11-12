@@ -1992,7 +1992,7 @@ With no platform selected, the FMU is exported as FMI 3.0 (fmi-ls-wasm).</source
         <translation>正在生成 %1 的cmake目标文件，请稍候。</translation>
     </message>
     <message>
-        <source>Generating the cmake target files failed. Exited with code %1.</source>
+        <source>Generating the cmake target files failed with exit code %1.</source>
         <translation>生成cmake目标文件失败，退出代码：%1。</translation>
     </message>
     <message>
@@ -3049,6 +3049,14 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>实例化/平坦化Modelica类</translation>
     </message>
     <message>
+        <source>Exports the package as a read-only package</source>
+        <translation>导出包为只读包</translation>
+    </message>
+    <message>
+        <source>Exports the package as an encrypted package</source>
+        <translation>导出包为加密包</translation>
+    </message>
+    <message>
         <source>Exports the model as XML</source>
         <translation>导出模型为XML</translation>
     </message>
@@ -3381,10 +3389,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>只读包</translation>
     </message>
     <message>
-        <source>Exports the package as read-only package</source>
-        <translation>导出包为只读包</translation>
-    </message>
-    <message>
         <source>Encrypted Package</source>
         <translation>加密包</translation>
     </message>
@@ -3527,10 +3531,6 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <source>Exports the model as Functional Mock-up Unit (FMU)</source>
         <translation>导出为FMU</translation>
-    </message>
-    <message>
-        <source>Exports the package as encrypted package</source>
-        <translation>导出包为加密包</translation>
     </message>
     <message>
         <source>Imports the model from a Functional Mock-up Unit (FMU)</source>

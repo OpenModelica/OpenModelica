@@ -2000,7 +2000,7 @@ Se non è selezionata alcuna piattaforma, la FMU viene esportata come FMI 3.0 (f
         <translation>Generazione dei file target cmake di %1. Attendere.</translation>
     </message>
     <message>
-        <source>Generating the cmake target files failed. Exited with code %1.</source>
+        <source>Generating the cmake target files failed with exit code %1.</source>
         <translation>La generazione dei file target cmake non è riuscita. Terminata con codice %1.</translation>
     </message>
     <message>
@@ -3056,6 +3056,14 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
         <translation>Istanzia e appiattisce la classe Modelica</translation>
     </message>
     <message>
+        <source>Exports the package as a read-only package</source>
+        <translation>Esporta il pacchetto come pacchetto di sola lettura</translation>
+    </message>
+    <message>
+        <source>Exports the package as an encrypted package</source>
+        <translation>Esporta il pacchetto come pacchetto cifrato</translation>
+    </message>
+    <message>
         <source>Exports the model as XML</source>
         <translation>Esporta il modello come XML</translation>
     </message>
@@ -3392,10 +3400,6 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
         <translation>Pacchetto di sola lettura</translation>
     </message>
     <message>
-        <source>Exports the package as read-only package</source>
-        <translation>Esporta il pacchetto come pacchetto di sola lettura</translation>
-    </message>
-    <message>
         <source>Encrypted Package</source>
         <translation>Pacchetto cifrato</translation>
     </message>
@@ -3538,10 +3542,6 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
     <message>
         <source>Exports the model as Functional Mock-up Unit (FMU)</source>
         <translation>Esporta il modello come Functional Mock-up Unit (FMU)</translation>
-    </message>
-    <message>
-        <source>Exports the package as encrypted package</source>
-        <translation>Esporta il pacchetto come pacchetto cifrato</translation>
     </message>
     <message>
         <source>Imports the model from a Functional Mock-up Unit (FMU)</source>

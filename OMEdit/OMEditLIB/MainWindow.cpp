@@ -4842,7 +4842,7 @@ void MainWindow::createActions()
   connect(mpExportFMUAction, SIGNAL(triggered()), SLOT(exportModelFMU()));
   // export read-only package action
   mpExportReadonlyPackageAction = new QAction(Helper::exportReadonlyPackage, this);
-  mpExportReadonlyPackageAction->setStatusTip(Helper::exportRealonlyPackageTip);
+  mpExportReadonlyPackageAction->setStatusTip(Helper::exportReadonlyPackageTip);
   connect(mpExportReadonlyPackageAction, SIGNAL(triggered()), SLOT(exportReadonlyPackage()));
   // export encrypted package action
   mpExportEncryptedPackageAction = new QAction(Helper::exportEncryptedPackage, this);

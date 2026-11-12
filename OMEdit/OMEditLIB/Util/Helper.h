@@ -216,7 +216,7 @@ public:
   static QString exportFMUTip;
   static QString sensitivityOptimization;
   static QString exportReadonlyPackage;
-  static QString exportRealonlyPackageTip;
+  static QString exportReadonlyPackageTip;
   static QString exportEncryptedPackage;
   static QString exportEncryptedPackageTip;
   static QString importFMU;

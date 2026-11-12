@@ -2917,7 +2917,7 @@ void LibraryTreeView::createActions()
   connect(mpExportEncryptedPackageAction, SIGNAL(triggered()), SLOT(exportEncryptedPackage()));
   // Export read-only package action
   mpExportReadonlyPackageAction = new QAction(Helper::exportReadonlyPackage, this);
-  mpExportReadonlyPackageAction->setStatusTip(Helper::exportRealonlyPackageTip);
+  mpExportReadonlyPackageAction->setStatusTip(Helper::exportReadonlyPackageTip);
   connect(mpExportReadonlyPackageAction, SIGNAL(triggered()), SLOT(exportReadonlyPackage()));
   // Export XML Action
   mpExportXMLAction = new QAction(QIcon(":/Resources/icons/export-xml.svg"), Helper::exportXML, this);

@@ -291,7 +291,7 @@ void FmuExportOutputWidget::compilationProcessStarted()
 void FmuExportOutputWidget::compilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
   mIsCompilationProcessRunning = false;
-  QString exitCodeStr = tr("Generating the cmake target files failed. Exited with code %1.").arg(Utilities::formatExitCode(exitCode));
+  QString exitCodeStr = tr("Generating the cmake target files failed with exit code %1.").arg(Utilities::formatExitCode(exitCode));
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     writeCompilationOutput(tr("Generated cmake target files successfully.\n"), Style::messagesCommandColor());
     compilationProcessFinishedHelper(exitCode, exitStatus);
