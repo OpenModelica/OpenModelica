@@ -1905,24 +1905,31 @@ modelica_boolean GreaterEqZC(double a, double b, double a_nominal, double b_nomi
  * away from zero instead of at zero. They are never 0, also not for a band of
  * width zero.
  */
-static modelica_real hysteresisZCValue(double d, double eps, modelica_boolean direction)
+static modelica_real hysteresisZCValue(double d, double nominal, double eps, modelica_boolean direction)
 {
-  if (d == 0.0) return direction ? eps : -eps;
-  if (d > 0 && d < eps) return eps;
-  if (d < 0 && d > -eps) return -eps;
-  return d;
+  // shift zc in direction (hysteresis?)
+  double zc = direction ? d/nominal + eps : d/nominal - eps;
+
+  // move away from zero
+  if (zc == 0.0) return direction ? eps : -eps;
+  if (zc > 0 && zc < eps) return eps;
+  if (zc < 0 && zc > -eps) return -eps;
+
+  return zc;
 }
 
 modelica_real LessZCValue(double a, double b, double a_nominal, double b_nominal, modelica_boolean direction)
 {
-  double eps = 2 * tolZC * (fmax(fabs(a), fabs(b)) + fmax(fabs(a_nominal), fabs(b_nominal)));
-  return hysteresisZCValue(b - a, eps, direction);
+  const double nominal = (fmax(fabs(a), fabs(b)) + fmax(fabs(a_nominal), fabs(b_nominal)));
+  const double eps = 2 * tolZC;
+  return hysteresisZCValue(b - a, nominal, eps, direction) > 0 ? 1 : -1;
 }
 
 modelica_real GreaterZCValue(double a, double b, double a_nominal, double b_nominal, modelica_boolean direction)
 {
-  double eps = 2 * tolZC * (fmax(fabs(a), fabs(b)) + fmax(fabs(a_nominal), fabs(b_nominal)));
-  return hysteresisZCValue(a - b, eps, direction);
+  const double nominal = (fmax(fabs(a), fabs(b)) + fmax(fabs(a_nominal), fabs(b_nominal)));
+  const double eps = 2 * tolZC;
+  return hysteresisZCValue(a - b, nominal, eps, direction) > 0 ? 1 : -1;
 }
 
 
