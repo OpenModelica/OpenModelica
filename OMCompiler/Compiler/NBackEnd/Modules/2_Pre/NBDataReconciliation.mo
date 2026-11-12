@@ -50,6 +50,7 @@ protected
   import Causalize = NBCausalize;
   import Jacobian = NBJacobian;
   import StrongComponent = NBStrongComponent;
+  import Tearing = NBTearing;
   import ComponentRef = NFComponentRef;
   import NBEquation.{Equation, EqData, EquationAttributes, EquationKind, EquationPointers, Iterator};
   import Expression = NFExpression;
@@ -379,11 +380,54 @@ algorithm
         funcMap             = bdae.funcMap,
         name                = "F");
       bdae.dataReconciliation := SOME(data);
+
+      writeIterationVars(bdae);
     then bdae;
 
     else bdae;
   end match;
 end createJacobian;
+
+protected function writeIterationVars
+  "writes the iteration variables of the initialization and the simulation for the
+  report, same as SimCodeUtil in the old backend"
+  input BackendDAE bdae;
+protected
+  ExtraInfo info = BackendDAE.getExtraInfo(bdae);
+  list<String> names = {};
+  list<Pointer<Variable>> vars;
+  String str;
+algorithm
+  () := match bdae
+    case BackendDAE.MAIN() algorithm
+      for p in List.flatten({bdae.init, bdae.ode, bdae.algebraic, bdae.ode_event, bdae.alg_event, bdae.clocked}) loop
+        if isSome(p.strongComponents) then
+          for comp in Util.getOption(p.strongComponents) loop
+            vars := match comp
+              local
+                Tearing casual;
+              case StrongComponent.ALGEBRAIC_LOOP(casual = SOME(casual))
+                then listAppend(Tearing.getIterationVars(comp.strict), Tearing.getIterationVars(casual));
+              case StrongComponent.ALGEBRAIC_LOOP() then Tearing.getIterationVars(comp.strict);
+              else {};
+            end match;
+            names := List.append_reverse(list(ComponentRef.toString(BVariable.getVarName(v)) for v in vars), names);
+          end for;
+        end if;
+      end for;
+    then ();
+    else ();
+  end match;
+  names := List.unique(listReverse(names));
+
+  str := "List of iteration variables(" + intString(listLength(names)) + "):" + "\n=============================\n";
+  if listEmpty(names) then
+    str := str + "No iteration variables found.\n";
+  else
+    str := str + stringAppendList(list(name + "\n" for name in names));
+  end if;
+  System.writeFile(info.fileNamePrefix + "_iterationVars.txt", str);
+end writeIterationVars;
 
 public function isVariableOfInterest
   "true for the variables of interest after the model has been replaced by the reconciled
