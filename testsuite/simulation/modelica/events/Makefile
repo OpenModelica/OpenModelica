@@ -20,6 +20,7 @@ cseOutsideNoEvent.mos \
 DelayZeroCrossing.mos \
 derInWhenCondition.mos \
 discreteRelations.mos \
+EndAtStopTime.mos \
 EventDelay.mos \
 EventIteration.mos \
 EventLoop.mos \

@@ -771,7 +771,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
 {
   double tout = 0;
   int i = 0, flag;
-  int retVal = 0, finished = 0 /* FALSE */;
+  int retVal = 0, finished = 0 /* FALSE */, rootFailed = 0 /* FALSE */;
   int saveJumpState;
   long int tmp;
   static unsigned int stepsOutputCounter = 1;
@@ -964,6 +964,12 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     {
       infoStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## continue integration time = %.15g", solverInfo->currentTime);
     }
+    else if (flag == IDA_RTFUNC_FAIL)
+    {
+      /* the root function raised an error, which fails the step */
+      rootFailed = 1 /* TRUE */;
+      finished = 1 /* TRUE */;
+    }
     else if (flag == IDA_TOO_MUCH_WORK && workRetries++ < SOLVER_WORK_RETRIES)
     {
       warningStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## has done too much work with small steps at time = %.15g. Continuing to solve anyway.", solverInfo->currentTime);
@@ -1012,7 +1018,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     }
 
   } while(!finished && !OMC_ERROR_RAISED());
-  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
+  if (OMC_ERROR_RAISED() && !rootFailed) { OMC_ERROR_CLEAR(); }
 
   OMC_CATCH_INTERNAL(simulationJumpBuffer)
   threadData->currentErrorStage = saveJumpState;
@@ -1328,7 +1334,7 @@ static int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout,
   messageClose(OMC_LOG_SOLVER_V);
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);   // TODO: Why do we have two rt_tick calls? Keep only this one?
 
-  return 0;
+  return OMC_ERROR_RAISED() ? -1 : 0;
 }
 
 /**
