@@ -347,7 +347,8 @@ algorithm
   is_modelica_file := isModelicaFile(inLib);
   () := matchcontinue is_modelica_file
     local
-      String mp;
+      String mp, name;
+      list<String> versions;
       Absyn.Program pnew, p;
       Absyn.Path path;
 
@@ -362,10 +363,12 @@ algorithm
     // some libs present
     case false
       algorithm
-        path := AbsynUtil.stringPath(inLib);
+        name :: versions := System.strtok(inLib, " ");
+        path := AbsynUtil.stringPath(name);
+        versions := if listEmpty(versions) then {"default"} else {stringDelimitList(versions, " ")};
         mp := Settings.getModelicaPath(Testsuite.isRunning());
         p := SymbolTable.getAbsyn();
-        (pnew, true) := CevalScript.loadModel({(path, "command-line argument", {"default"}, false)}, mp, p, true, true, true, false);
+        (pnew, true) := CevalScript.loadModel({(path, "command-line argument", versions, false)}, mp, p, true, true, true, false);
         SymbolTable.setAbsyn(pnew);
       then ();
 

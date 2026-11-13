@@ -203,6 +203,18 @@ notifications and error messages.
   backwards-compatible versions available, *and all its dependencies*;
 - :ref:`upgradeInstalledPackages(installNewestVersions = true) <upgradeInstalledPackages>` - installs the latest available version of all installed packages.
 
+Using the Package Manager from the omc command line
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+omc loads the libraries that follow the model or script on the command line. A version can follow
+the name of a library after a space; it is used as in :ref:`loadModel <loadModel>`.
+With ``--installMissingPackages``, omc installs the libraries that it must load but that are not installed,
+also the libraries in uses-annotations, instead of only telling how to install them:
+
+.. code-block:: sh
+
+  omc --installMissingPackages Model.mo "Modelica 4.0.0" "Buildings 9.1.1"
+
 How the package index works
 ---------------------------
 
