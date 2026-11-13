@@ -4,6 +4,7 @@ TESTFILES = \
 BuiltinMath.mos \
 Compare.mos \
 Delta.mos \
+EmptyArrayMinMax.mos \
 DerInvalid.mos \
 dertest.mos \
 DerValid.mos \

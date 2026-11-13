@@ -1,0 +1,52 @@
+// name:     EmptyArrayMinMax
+// keywords: min max empty array
+// status: correct
+// teardown_command: rm -rf EmptyArrayMinMax_* EmptyArrayMinMax EmptyArrayMinMax.exe EmptyArrayMinMax.c EmptyArrayMinMax.libs EmptyArrayMinMax.log output.log
+//
+// max of an empty Real array is the least finite Real and min the greatest.
+//
+
+loadString("
+function extremes
+  input Integer n;
+  output Real mx;
+  output Real mn;
+protected
+  Real x[n] = fill(1.0, n);
+algorithm
+  mx := max(x);
+  mn := min(x);
+end extremes;
+
+model EmptyArrayMinMax
+  discrete Integer n(start = 0, fixed = true);
+  Real mx, mn;
+equation
+  when time > 0.5 then
+    n = 2;
+  end when;
+  (mx, mn) = extremes(n);
+end EmptyArrayMinMax;
+"); getErrorString();
+simulate(EmptyArrayMinMax, stopTime = 1); getErrorString();
+val(mx, 0);
+val(mn, 0);
+val(mx, 1);
+val(mn, 1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "EmptyArrayMinMax_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'auto', fileNamePrefix = 'EmptyArrayMinMax', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -1.7976931348623157e308
+// 1.7976931348623157e308
+// 1.0
+// 1.0
+// endResult
