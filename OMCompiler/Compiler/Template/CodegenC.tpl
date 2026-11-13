@@ -8539,7 +8539,7 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
       <<
       <%preExp%>
       FILE_INFO info = {<%infoArgs(ElementSource.getElementSourceFileInfo(source))%>};
-      omc_terminate(info, omc_string_data(<%msgVar%>));
+      omc_terminate(info, "%s", omc_string_data(<%msgVar%>));
       >>
     case ASSERT(source=SOURCE(info=info)) then
       assertCommon(condition, List.fill(message,1), level, contextSimulationWhenBody, &varDecls, &varFrees, &auxFunction, info)
