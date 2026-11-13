@@ -701,6 +701,13 @@ pub fn omc_fmu_cs_solvers() -> JsValue {
     arr.into()
 }
 
+/// The JSON reply of the FMI settings guide to a JSON request, see
+/// `openmodelica_fmi_guide::call`. For the clients of omc; not a scripting function.
+#[wasm_bindgen]
+pub fn omc_fmi_guide(request: &str) -> String {
+    openmodelica_fmi_guide::call(request)
+}
+
 /// The native platforms an exported FMU can serve. Needs [`omc_enable_fmu_aot`].
 #[wasm_bindgen]
 pub fn omc_fmu_platforms() -> JsValue {

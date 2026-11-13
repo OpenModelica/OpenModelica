@@ -110,6 +110,16 @@ pub unsafe extern "C" fn omcrs_package_manager(request: *const c_char) -> *mut c
     CString::new(response.replace('\0', " ")).unwrap_or_default().into_raw()
 }
 
+/// The JSON response of `openmodelica_fmi_guide::call`.
+///
+/// # Safety
+/// `request` is a NUL-terminated string.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn omcrs_fmi_guide(request: *const c_char) -> *mut c_char {
+    let response = openmodelica_fmi_guide::call(&unsafe { arg(request) });
+    CString::new(response.replace('\0', " ")).unwrap_or_default().into_raw()
+}
+
 /// `openmodelica_version::compare_parts` as -1, 0 or 1.
 ///
 /// # Safety

@@ -1,0 +1,1038 @@
+{
+  "$schema": "./fmi-settings.schema.json",
+  "formatVersion": 1,
+  "title": "FMI export settings",
+  "tool": "OpenModelica",
+  "description": "Questions about how an FMU will be used, the export settings that follow from the answers, and the rules that connect them.",
+  "headline": ["fmiVersion", "fmiType", "csSolver"],
+
+  "supportLevels": [
+    { "id": "yes",          "label": "Supported",    "available": true },
+    { "id": "experimental", "label": "Experimental", "available": true },
+    { "id": "partial",      "label": "Limited",      "available": true },
+    { "id": "planned",      "label": "Planned",      "available": false },
+    { "id": "no",           "label": "Missing",      "available": false }
+  ],
+
+  "inputGroups": [
+    { "id": "importer", "label": "The importing tool" },
+    { "id": "system",   "label": "The system" },
+    { "id": "model",    "label": "The model" },
+    { "id": "use",      "label": "The use case" },
+    { "id": "accuracy", "label": "Accuracy" }
+  ],
+
+  "inputs": [
+    {
+      "id": "importerVersions", "group": "importer", "type": "multi",
+      "label": "Which FMI versions can the importing tool read?",
+      "help": "Select none if you do not know.",
+      "default": [],
+      "options": [
+        { "value": "1.0", "label": "FMI 1.0" },
+        { "value": "2.0", "label": "FMI 2.0" },
+        { "value": "3.0", "label": "FMI 3.0" }
+      ]
+    },
+    {
+      "id": "importerKinds", "group": "importer", "type": "multi",
+      "label": "Which interface types can it run?",
+      "help": "Select none if you do not know.",
+      "default": [],
+      "options": [
+        { "value": "me", "label": "Model Exchange" },
+        { "value": "cs", "label": "Co-Simulation" },
+        { "value": "se", "label": "Scheduled Execution",
+          "enabledWhen": { "not": { "importerVersions": { "lacks": "3.0" } } },
+          "disabledNote": "Scheduled Execution exists only in FMI 3.0." }
+      ]
+    },
+    {
+      "id": "importerSolver", "group": "importer", "type": "choice",
+      "label": "How capable is the importing tool's own solver?",
+      "help": "With Model Exchange the importing tool integrates the model, so the result is only as good as its solver.",
+      "enabledWhen": { "not": { "importerKinds": { "lacks": "me" } } },
+      "disabledNote": "Only matters when the importing tool can run Model Exchange.",
+      "default": "unknown",
+      "options": [
+        { "value": "strong",  "label": "Variable step, implicit, locates events", "help": "For example CVODE, DASSL, Radau, ode15s." },
+        { "value": "basic",   "label": "Fixed step or explicit only", "help": "For example Euler or Runge-Kutta 4." },
+        { "value": "unknown", "label": "Do not know" }
+      ]
+    },
+
+    {
+      "id": "topology", "group": "system", "type": "choice",
+      "label": "How is the FMU used?",
+      "default": "single",
+      "options": [
+        { "value": "single",    "label": "One FMU on its own" },
+        { "value": "component", "label": "One FMU inside a larger model", "help": "The rest of the model is native to the importing tool." },
+        { "value": "multi",     "label": "Several connected FMUs" }
+      ]
+    },
+    {
+      "id": "coupling", "group": "system", "type": "choice",
+      "label": "How tightly is it coupled to the rest?",
+      "help": "Tight: fast feedback, rigid mechanical or hydraulic connections, algebraic loops across the connection. Loose: signal flow, slow physical coupling.",
+      "enabledWhen": { "topology": ["component", "multi"] },
+      "disabledNote": "A single FMU has nothing to couple to.",
+      "default": "unknown",
+      "options": [
+        { "value": "loose",   "label": "Loosely" },
+        { "value": "tight",   "label": "Tightly" },
+        { "value": "unknown", "label": "Do not know" }
+      ]
+    },
+    {
+      "id": "stiffSystem", "group": "system", "type": "choice",
+      "label": "Is the whole coupled system stiff?",
+      "help": "Stiff: time constants that differ by orders of magnitude, where the fast ones decay quickly.",
+      "enabledWhen": { "topology": ["component", "multi"] },
+      "disabledNote": "For a single FMU, the question below about the model covers this.",
+      "default": "unknown",
+      "options": [
+        { "value": "no",      "label": "No" },
+        { "value": "yes",     "label": "Yes" },
+        { "value": "unknown", "label": "Do not know" }
+      ]
+    },
+
+    {
+      "id": "master", "group": "system", "type": "choice",
+      "label": "What does the co-simulation algorithm of the importing tool do?",
+      "enabledWhen": { "topology": ["component", "multi"], "not": { "importerKinds": { "lacks": "cs" } } },
+      "disabledNote": "Only matters for Co-Simulation of a coupled system.",
+      "default": "unknown",
+      "options": [
+        { "value": "naive",    "label": "Holds the inputs, never repeats a step" },
+        { "value": "advanced", "label": "Extrapolates inputs or repeats steps", "help": "Higher order or iterative co-simulation." },
+        { "value": "unknown",  "label": "Do not know" }
+      ]
+    },
+    {
+      "id": "commStep", "group": "system", "type": "choice",
+      "label": "How long is a communication step compared with the dynamics of the model?",
+      "help": "The communication step is the interval at which the importing tool exchanges values with a Co-Simulation FMU. Between two of them the FMU is on its own.",
+      "default": "unknown",
+      "options": [
+        { "value": "long",    "label": "Much longer" },
+        { "value": "short",   "label": "About as long, or shorter" },
+        { "value": "unknown", "label": "Do not know" }
+      ]
+    },
+
+    {
+      "id": "stiffModel", "group": "model", "type": "choice",
+      "label": "Is this model stiff?",
+      "help": "Typical causes: electrical with thermal parts, hydraulics, fast controllers, chemical reactions.",
+      "default": "unknown",
+      "options": [
+        { "value": "no",      "label": "No" },
+        { "value": "yes",     "label": "Yes" },
+        { "value": "unknown", "label": "Do not know" }
+      ]
+    },
+    {
+      "id": "oscillatory", "group": "model", "type": "choice",
+      "label": "Does the model oscillate with little damping?",
+      "help": "Mechanics and electric circuits often do.",
+      "default": "unknown",
+      "options": [
+        { "value": "no",      "label": "No" },
+        { "value": "yes",     "label": "Yes" },
+        { "value": "unknown", "label": "Do not know" }
+      ]
+    },
+    {
+      "id": "events", "group": "model", "type": "choice",
+      "label": "Which events does the model have?",
+      "default": "unknown",
+      "options": [
+        { "value": "none",    "label": "None", "help": "Purely continuous." },
+        { "value": "time",    "label": "Time events only", "help": "sample(), clocks, tables." },
+        { "value": "state",   "label": "State events", "help": "Switches, friction, impacts, limiters." },
+        { "value": "unknown", "label": "Do not know" }
+      ]
+    },
+    {
+      "id": "modelSize", "group": "model", "type": "choice",
+      "label": "How large is the model?",
+      "default": "small",
+      "options": [
+        { "value": "small", "label": "Up to some hundred states" },
+        { "value": "large", "label": "Thousands of states" }
+      ]
+    },
+    {
+      "id": "algebraicLoops", "group": "model", "type": "choice",
+      "label": "Does the model have large systems of algebraic equations?",
+      "help": "Nonlinear loops with many unknowns, for example in power grids and fluid networks.",
+      "default": "unknown",
+      "options": [
+        { "value": "no",      "label": "No" },
+        { "value": "yes",     "label": "Yes" },
+        { "value": "unknown", "label": "Do not know" }
+      ]
+    },
+
+    {
+      "id": "realtime", "group": "use", "type": "choice",
+      "label": "Does it run against the clock?",
+      "default": "offline",
+      "options": [
+        { "value": "offline",     "label": "No, as fast as possible" },
+        { "value": "interactive", "label": "Interactive", "help": "An operator or a 3D view follows the simulation. A late step is not a failure." },
+        { "value": "hard",        "label": "Hard real time", "help": "Hardware in the loop. Every step has a deadline." }
+      ]
+    },
+    {
+      "id": "tuneParameters", "group": "use", "type": "choice",
+      "label": "Must parameters change after export?",
+      "default": "no",
+      "options": [
+        { "value": "no",        "label": "No" },
+        { "value": "values",    "label": "Values, while it runs" },
+        { "value": "structure", "label": "Also array sizes" }
+      ]
+    },
+    {
+      "id": "gradients", "group": "use", "type": "choice",
+      "label": "Does the importing tool need derivatives of the model?",
+      "default": "none",
+      "options": [
+        { "value": "none",    "label": "No" },
+        { "value": "forward", "label": "Jacobians", "help": "Linearisation, an implicit solver, algebraic loops between FMUs." },
+        { "value": "adjoint", "label": "Gradients for many parameters", "help": "Optimisation, parameter estimation, machine learning." }
+      ]
+    },
+    {
+      "id": "target", "group": "use", "type": "choice",
+      "label": "Where does the FMU run?",
+      "default": "same",
+      "options": [
+        { "value": "same",     "label": "On this kind of computer" },
+        { "value": "other",    "label": "Another operating system or CPU" },
+        { "value": "embedded", "label": "A target that compiles the FMU itself", "help": "Real-time and embedded platforms." },
+        { "value": "browser",  "label": "A web browser or sandbox" }
+      ]
+    },
+    {
+      "id": "ip", "group": "use", "type": "choice",
+      "label": "Must the inside of the model stay hidden?",
+      "default": "no",
+      "options": [
+        { "value": "no",  "label": "No" },
+        { "value": "yes", "label": "Yes" }
+      ]
+    },
+
+    {
+      "id": "solverPrecision", "group": "accuracy", "type": "choice",
+      "label": "How accurate must the solution be?",
+      "default": "medium",
+      "options": [
+        { "value": "low",    "label": "Trends", "help": "About 1e-3 relative error." },
+        { "value": "medium", "label": "Engineering", "help": "About 1e-6." },
+        { "value": "high",   "label": "Reference", "help": "1e-8 or better." }
+      ]
+    },
+    {
+      "id": "eventPrecision", "group": "accuracy", "type": "choice",
+      "label": "How accurate must events be?",
+      "enabledWhen": { "events": ["time", "state", "unknown"] },
+      "disabledNote": "The model has no events.",
+      "default": "located",
+      "options": [
+        { "value": "step",    "label": "The next communication point is enough" },
+        { "value": "located", "label": "The FMU must find the event time" },
+        { "value": "sync",    "label": "Everything must stop at the event",
+          "help": "The other parts of the system react at the event time, not one step later.",
+          "enabledWhen": { "topology": ["component", "multi"] },
+          "disabledNote": "Only for a coupled system." }
+      ]
+    }
+  ],
+
+  "presets": [
+    {
+      "id": "omsimulator", "label": "OMSimulator",
+      "set": { "importerVersions": ["2.0", "3.0"], "importerKinds": ["me", "cs"], "importerSolver": "strong" }
+    },
+    {
+      "id": "fmpy", "label": "FMPy",
+      "set": { "importerVersions": ["1.0", "2.0", "3.0"], "importerKinds": ["me", "cs"], "importerSolver": "strong" }
+    },
+    {
+      "id": "simulink", "label": "Simulink FMU block",
+      "set": { "importerVersions": ["1.0", "2.0", "3.0"], "importerKinds": ["me", "cs"], "importerSolver": "strong" }
+    },
+    {
+      "id": "omc-import", "label": "OpenModelica importFMU",
+      "set": { "importerVersions": ["2.0"], "importerKinds": ["me"], "importerSolver": "strong" }
+    },
+    {
+      "id": "hil", "label": "Typical real-time target",
+      "set": { "importerVersions": ["2.0"], "importerKinds": ["cs"], "realtime": "hard", "target": "embedded" }
+    }
+  ],
+
+  "settingGroups": [
+    { "id": "interface", "label": "Interface" },
+    { "id": "solver",    "label": "Solver inside the FMU" },
+    { "id": "coupling",  "label": "Coupling and events" },
+    { "id": "packaging", "label": "Packaging" },
+    { "id": "features",  "label": "FMI 3.0 features" }
+  ],
+
+  "settings": [
+    {
+      "id": "interface", "group": "interface",
+      "label": "Interface to use",
+      "help": "Who integrates: the importing tool (Model Exchange) or the FMU (Co-Simulation).",
+      "options": [
+        { "value": "cs", "label": "Co-Simulation", "default": true },
+        { "value": "me", "label": "Model Exchange" },
+        { "value": "se", "label": "Scheduled Execution", "support": "experimental" }
+      ]
+    },
+    {
+      "id": "fmiVersion", "group": "interface", "explicit": true,
+      "label": "FMI version",
+      "options": [
+        { "value": "2.0", "label": "FMI 2.0", "default": true,
+          "omc": { "args": { "version": "\"2.0\"" } } },
+        { "value": "3.0", "label": "FMI 3.0", "support": "experimental",
+          "omc": { "args": { "version": "\"3.0\"" } } },
+        { "value": "1.0", "label": "FMI 1.0", "support": "partial",
+          "supportNote": "Deprecated. Model Exchange only.",
+          "omc": { "args": { "version": "\"1.0\"" } } }
+      ]
+    },
+    {
+      "id": "fmiType", "group": "interface", "explicit": true,
+      "label": "Interfaces in the FMU",
+      "options": [
+        { "value": "me_cs", "label": "Model Exchange and Co-Simulation", "default": true,
+          "requires": { "fmiVersion": ["2.0", "3.0"] },
+          "requiresNote": "OpenModelica exports FMI 1.0 as Model Exchange only.",
+          "omc": { "args": { "fmuType": "\"me_cs\"" } } },
+        { "value": "me", "label": "Model Exchange",
+          "omc": { "args": { "fmuType": "\"me\"" } } },
+        { "value": "cs", "label": "Co-Simulation",
+          "requires": { "fmiVersion": ["2.0", "3.0"] },
+          "requiresNote": "OpenModelica exports FMI 1.0 as Model Exchange only.",
+          "omc": { "args": { "fmuType": "\"cs\"" } } },
+        { "value": "se", "label": "Scheduled Execution", "support": "experimental",
+          "requires": { "fmiVersion": "3.0" },
+          "requiresNote": "FMI 3.0 only.",
+          "omc": { "args": { "fmuType": "\"se\"" } } }
+      ]
+    },
+
+    {
+      "id": "daeMode", "group": "solver",
+      "label": "DAE mode",
+      "options": [
+        { "value": "off", "label": "Off: explicit ODE", "default": true,
+          "help": "The FMU solves the algebraic equations each time it calculates the derivatives." },
+        { "value": "on", "label": "On: residual form",
+          "help": "The integrator solves the algebraic equations together with the states.",
+          "requires": { "any": [ { "fmiVersion": "3.0" }, { "fmiVersion": "2.0", "fmiType": ["cs", "me_cs"] } ] },
+          "requiresNote": "Needs Co-Simulation, or Model Exchange with FMI 3.0.",
+          "support": [
+            { "when": { "fmiType": "cs" }, "level": "yes" },
+            { "when": { "fmiVersion": "3.0" }, "level": "experimental",
+              "note": "Model Exchange uses the draft of the FMI-LS-DAE layered standard." },
+            { "level": "partial", "note": "With FMI 2.0 only the Co-Simulation part is exported." }
+          ],
+          "omc": { "flags": ["--daeMode"] } }
+      ]
+    },
+    {
+      "id": "csSolver", "group": "solver",
+      "label": "Solver",
+      "relevantWhen": { "fmiType": ["cs", "me_cs"] },
+      "options": [
+        { "value": "cvode", "label": "CVODE", "default": true,
+          "help": "Implicit, variable step and order (BDF), with root finding for state events.",
+          "omc": { "fmiFlags": ["s:cvode"] } },
+        { "value": "euler", "label": "Explicit Euler",
+          "omc": { "fmiFlags": ["s:euler"] } },
+        { "value": "dassl", "label": "DASSL", "support": "partial",
+          "supportNote": "WebAssembly FMUs only.",
+          "omc": { "fmiFlags": ["s:dassl"] } },
+        { "value": "ida", "label": "IDA",
+          "help": "Implicit, variable step and order (BDF) for the residual form.",
+          "requires": { "daeMode": "on" },
+          "requiresNote": "Only for DAE mode.",
+          "how": "Nothing to set. DAE mode selects it." },
+        { "value": "heun", "label": "Heun, fixed step", "support": "no",
+          "help": "Explicit, second order.",
+          "supportNote": "Available for simulations (-s=heun), not inside FMUs." },
+        { "value": "rk4", "label": "Explicit Runge-Kutta, fixed step", "support": "no",
+          "supportNote": "Available for simulations (-s=rungekutta), not inside FMUs." },
+        { "value": "impeuler", "label": "Implicit Euler, fixed step", "support": "no",
+          "supportNote": "Available for simulations (-s=impeuler), not inside FMUs." },
+        { "value": "rosenbrock", "label": "Linearly implicit (Rosenbrock), fixed step", "support": "no",
+          "help": "One Jacobian factorisation per step and no Newton iteration, so the cost of a step is known in advance.",
+          "supportNote": "Not in OpenModelica." },
+        { "value": "esdirk", "label": "ESDIRK, variable step (gbode)", "support": "no",
+          "help": "An implicit one-step method. It keeps its order across restarts.",
+          "supportNote": "Available for simulations (-s=gbode), not inside FMUs." }
+      ]
+    },
+    {
+      "id": "csStepping", "group": "solver",
+      "label": "Internal step",
+      "relevantWhen": { "csSolver": ["euler", "heun", "rk4", "impeuler", "rosenbrock"] },
+      "options": [
+        { "value": "comm", "label": "One solver step per communication step", "default": true },
+        { "value": "substep", "label": "Several solver steps per communication step", "support": "partial",
+          "supportNote": "WebAssembly FMUs step on the output interval of the model. FMUs built from C code take one Euler step per communication step." }
+      ]
+    },
+    {
+      "id": "tolerance", "group": "solver",
+      "label": "Solver tolerance",
+      "relevantWhen": { "csSolver": ["cvode", "dassl", "ida", "esdirk"] },
+      "options": [
+        { "value": "1e-6", "label": "1e-6", "default": true,
+          "how": "The importing tool can override it." },
+        { "value": "1e-4", "label": "1e-4",
+          "how": "Set annotation(experiment(Tolerance = 1e-4)) in the model. The importing tool can override it." },
+        { "value": "1e-8", "label": "1e-8",
+          "how": "Set annotation(experiment(Tolerance = 1e-8)) in the model. The importing tool can override it." }
+      ]
+    },
+
+    {
+      "id": "eventHandling", "group": "coupling",
+      "label": "Events during a step",
+      "relevantWhen": { "fmiType": ["cs", "me_cs"], "events": ["time", "state", "unknown"] },
+      "options": [
+        { "value": "internal", "label": "Handled inside the FMU", "default": true,
+          "help": "The FMU finds the event, handles it and continues to the end of the step. The rest of the system sees the result at the next communication point.",
+          "how": "Nothing to set." },
+        { "value": "eventMode", "label": "Event Mode with early return", "support": "experimental",
+          "help": "The step returns at the event time, so that the importing tool can update every part.",
+          "requires": { "fmiVersion": "3.0" },
+          "requiresNote": "FMI 3.0 only.",
+          "how": "Nothing to set at export. The importing tool turns it on with eventModeUsed and earlyReturnAllowed." }
+      ]
+    },
+    {
+      "id": "eventIterations", "group": "coupling",
+      "label": "Limit of event iterations",
+      "relevantWhen": { "fmiType": ["cs", "me_cs"], "events": ["time", "state", "unknown"], "realtime": "hard" },
+      "options": [
+        { "value": "default", "label": "At most 20 per event", "default": true,
+          "help": "The FMU stops with an error when an event needs more.",
+          "how": "Nothing to set." },
+        { "value": "limited", "label": "A lower limit, set at export", "support": "no",
+          "supportNote": "The simulation flag -mei sets the limit. An FMU does not read it." }
+      ]
+    },
+    {
+      "id": "inputHandling", "group": "coupling",
+      "label": "Inputs between communication points",
+      "relevantWhen": { "fmiType": ["cs", "me_cs"], "topology": ["component", "multi"] },
+      "options": [
+        { "value": "hold", "label": "Held constant", "default": true, "how": "Nothing to set." },
+        { "value": "smooth", "label": "Smoothed inside the FMU", "support": "no",
+          "help": "The FMU spreads a change of an input over the step, so that its solver sees no jump.",
+          "supportNote": "Not in OpenModelica." },
+        { "value": "interpolate", "label": "Input derivatives",
+          "requires": { "fmiVersion": "2.0" },
+          "requiresNote": "FMI 2.0 only. FMI 3.0 uses Intermediate Update for this.",
+          "how": "Nothing to set at export. The importing tool must call fmi2SetRealInputDerivatives." },
+        { "value": "intermediate", "label": "Intermediate Update", "support": "no",
+          "help": "The importing tool reads outputs and sets inputs at the internal steps of the solver.",
+          "requires": { "fmiVersion": "3.0" },
+          "requiresNote": "FMI 3.0 only." }
+      ]
+    },
+    {
+      "id": "fmuState", "group": "coupling",
+      "label": "Saving the FMU state",
+      "options": [
+        { "value": "none", "label": "Not needed", "default": true },
+        { "value": "getset", "label": "Get and set",
+          "requires": { "fmiVersion": ["2.0", "3.0"] },
+          "requiresNote": "Not in FMI 1.0.",
+          "how": "Always exported. Nothing to set." },
+        { "value": "serialize", "label": "Serialize",
+          "requires": { "fmiVersion": ["2.0", "3.0"] },
+          "requiresNote": "Not in FMI 1.0.",
+          "support": [
+            { "when": { "fmiVersion": "3.0" }, "level": "yes" },
+            { "level": "no", "note": "OpenModelica serializes the state only for FMI 3.0." }
+          ],
+          "how": "Always exported for FMI 3.0. Nothing to set." }
+      ]
+    },
+    {
+      "id": "derivatives", "group": "coupling",
+      "label": "Partial derivatives",
+      "options": [
+        { "value": "none", "label": "None", "default": true },
+        { "value": "directional", "label": "Directional derivatives",
+          "requires": { "fmiVersion": ["2.0", "3.0"] },
+          "requiresNote": "Not in FMI 1.0.",
+          "support": [
+            { "when": { "fmiVersion": "2.0", "fmiType": ["cs", "me_cs"] }, "level": "experimental",
+              "note": "The Co-Simulation part of an FMI 2.0 FMU also needs -d=fmuExperimental." },
+            { "level": "yes" }
+          ],
+          "omc": { "flags": ["-d=-disableDirectionalDerivatives"] } },
+        { "value": "adjoint", "label": "Adjoint derivatives", "support": "planned",
+          "requires": { "fmiVersion": "3.0" },
+          "requiresNote": "FMI 3.0 only.",
+          "supportNote": "In development." }
+      ]
+    },
+
+    {
+      "id": "platforms", "group": "packaging",
+      "label": "Binaries",
+      "options": [
+        { "value": "static", "label": "This platform, statically linked", "default": true,
+          "omc": { "args": { "platforms": "{\"static\"}" } } },
+        { "value": "dynamic", "label": "This platform, dynamically linked",
+          "omc": { "args": { "platforms": "{\"dynamic\"}" } } },
+        { "value": "cross", "label": "Cross-compiled with Docker",
+          "how": "Replace the host triple by the one of the target.",
+          "omc": { "args": { "platforms": "{\"x86_64-w64-mingw32 docker run ghcr.io/openmodelica/crossbuild:v1.28.0\"}" } } },
+        { "value": "source", "label": "No binaries, source code only",
+          "how": "OpenModelica does not zip the FMU in this case. Pack it with the create_fmu target of the CMake project in sources/.",
+          "omc": { "args": { "platforms": "{\"\"}" } } },
+        { "value": "wasm", "label": "WebAssembly", "support": "experimental",
+          "requires": { "fmiVersion": ["2.0", "3.0"] },
+          "requiresNote": "Not for FMI 1.0.",
+          "supportNote": "Needs the omc built from the Rust port.",
+          "omc": { "args": { "platforms": "{\"wasm\"}" } } }
+      ]
+    },
+    {
+      "id": "fmiSources", "group": "packaging",
+      "label": "Source code in the FMU",
+      "options": [
+        { "value": "false", "label": "None", "default": true,
+          "omc": { "flags": ["--fmiSources=false"] } },
+        { "value": "slim", "label": "The sources it was built from",
+          "omc": { "flags": ["--fmiSources=slim"] } },
+        { "value": "full", "label": "Sources and all their dependencies",
+          "supportNote": "Differs from slim only with --simCodeTarget=C+Rust.",
+          "omc": { "flags": ["--fmiSources=full"] } }
+      ]
+    },
+    {
+      "id": "fmiFilter", "group": "packaging",
+      "label": "Variables in modelDescription.xml",
+      "options": [
+        { "value": "protected", "label": "Public variables", "default": true,
+          "omc": { "flags": ["--fmiFilter=protected"] } },
+        { "value": "internal", "label": "Public and protected variables",
+          "omc": { "flags": ["--fmiFilter=internal"] } },
+        { "value": "none", "label": "Everything, also generated variables",
+          "omc": { "flags": ["--fmiFilter=none"] } },
+        { "value": "blackBox", "label": "Only the interface",
+          "omc": { "flags": ["--fmiFilter=blackBox"] } }
+      ]
+    },
+    {
+      "id": "runtimeDepends", "group": "packaging",
+      "label": "Libraries copied into the FMU",
+      "relevantWhen": { "platforms": ["static", "dynamic", "cross"] },
+      "options": [
+        { "value": "modelica", "label": "Libraries the model uses", "default": true,
+          "omc": { "flags": ["--fmuRuntimeDepends=modelica"] } },
+        { "value": "all", "label": "Also system libraries",
+          "omc": { "flags": ["--fmuRuntimeDepends=all"] } },
+        { "value": "none", "label": "None",
+          "omc": { "flags": ["--fmuRuntimeDepends=none"] } }
+      ]
+    },
+    {
+      "id": "tunable", "group": "packaging",
+      "label": "Parameters after export",
+      "options": [
+        { "value": "literal", "label": "Parameters with a literal value are tunable", "default": true,
+          "omc": { "flags": ["--fmiTunableParameters=literal"] } },
+        { "value": "none", "label": "All parameters fixed",
+          "omc": { "flags": ["--fmiTunableParameters=none"] } },
+        { "value": "structural", "label": "Structural parameters", "support": "no",
+          "help": "The importing tool changes array sizes in Configuration Mode.",
+          "requires": { "fmiVersion": "3.0" },
+          "requiresNote": "FMI 3.0 only.",
+          "supportNote": "Array sizes are fixed at export." }
+      ]
+    },
+
+    {
+      "id": "clocks", "group": "features",
+      "label": "Clocks",
+      "relevantWhen": { "fmiVersion": "3.0" },
+      "options": [
+        { "value": "off", "label": "Not exported", "default": true },
+        { "value": "on", "label": "Exported", "support": "experimental",
+          "omc": { "flags": ["--exportClocksInModelDescription"] } }
+      ]
+    },
+    {
+      "id": "terminals", "group": "features",
+      "label": "Terminals",
+      "relevantWhen": { "fmiVersion": "3.0", "topology": ["component", "multi"] },
+      "options": [
+        { "value": "off", "label": "Not needed", "default": true },
+        { "value": "on", "label": "Terminals from the connectors of the model", "support": "experimental",
+          "how": "Nothing to set. Written to terminalsAndIcons.xml when the model has connectors at the top level." }
+      ]
+    },
+    {
+      "id": "xcp", "group": "features",
+      "label": "Calibration on the target (FMI-LS-XCP)",
+      "relevantWhen": { "realtime": "hard" },
+      "options": [
+        { "value": "off", "label": "Not needed", "default": true },
+        { "value": "on", "label": "XCP description in the FMU", "support": "no",
+          "requires": { "fmiVersion": "3.0" },
+          "requiresNote": "A layered standard on FMI 3.0.",
+          "supportNote": "Not planned." }
+      ]
+    }
+  ],
+
+  "rules": [
+    { "id": "importer-lacks-me",
+      "when": { "importerKinds": { "lacks": "me" } },
+      "because": "The importing tool cannot run Model Exchange.",
+      "exclude": { "interface": ["me"] } },
+    { "id": "importer-lacks-cs",
+      "when": { "importerKinds": { "lacks": "cs" } },
+      "because": "The importing tool cannot run Co-Simulation.",
+      "exclude": { "interface": ["cs"] } },
+    { "id": "se-only-when-supported",
+      "when": { "not": { "importerKinds": "se" } },
+      "because": "Few tools run Scheduled Execution. Use it only when the importing tool is known to.",
+      "exclude": { "interface": ["se"] } },
+    { "id": "single-fmu-self-contained",
+      "when": { "topology": "single" },
+      "because": "An FMU with its own solver gives the same result in every tool.",
+      "score": { "interface": { "cs": 1 } } },
+    { "id": "strong-importer-solver",
+      "when": { "importerSolver": "strong" },
+      "because": "The solver of the importing tool controls the error of the whole model and locates the events itself.",
+      "score": { "interface": { "me": 2 } } },
+    { "id": "basic-importer-solver",
+      "when": { "importerSolver": "basic" },
+      "because": "A solver inside the FMU is better than a fixed-step or explicit solver in the importing tool.",
+      "score": { "interface": { "cs": 2 } } },
+    { "id": "stiff-model-basic-importer",
+      "when": { "importerSolver": "basic", "stiffModel": "yes" },
+      "because": "A stiff model needs an implicit solver, which the importing tool does not have.",
+      "score": { "interface": { "cs": 2 } } },
+    { "id": "tight-coupling-one-solver",
+      "when": { "coupling": "tight" },
+      "because": "Tightly coupled parts need one solver for the whole system. Co-Simulation exchanges values only at communication points, which limits stability and accuracy.",
+      "score": { "interface": { "me": 3, "cs": -1 } } },
+    { "id": "stiff-system-one-solver",
+      "when": { "stiffSystem": "yes" },
+      "because": "With Model Exchange one implicit solver sees the stiffness of the whole system. Co-Simulation needs very small communication steps instead.",
+      "score": { "interface": { "me": 2 } } },
+    { "id": "loose-coupling-own-solvers",
+      "when": { "coupling": "loose" },
+      "because": "Loosely coupled parts can each run their own solver and step size.",
+      "score": { "interface": { "cs": 1 } } },
+    { "id": "fast-dynamics-stay-inside",
+      "when": { "coupling": "loose", "stiffModel": "yes" },
+      "because": "Co-Simulation keeps the fast dynamics inside this FMU, so the rest of the system can take large steps.",
+      "score": { "interface": { "cs": 2 } } },
+    { "id": "synchronised-events-need-importer",
+      "when": { "eventPrecision": "sync" },
+      "because": "With Model Exchange the importing tool locates every event and updates all parts at that time.",
+      "score": { "interface": { "me": 3 } } },
+    { "id": "system-wide-error-control",
+      "when": { "solverPrecision": "high", "topology": ["component", "multi"] },
+      "because": "Error control over a coupled system needs one solver.",
+      "score": { "interface": { "me": 1 } } },
+    { "id": "hard-realtime-own-solver",
+      "when": { "realtime": "hard" },
+      "because": "A real-time target calls one function per sample. The FMU must bring a solver with a known cost per step.",
+      "score": { "interface": { "cs": 3, "me": -2 } } },
+    { "id": "interactive-even-step-cost",
+      "when": { "realtime": "interactive" },
+      "because": "A solver inside the FMU gives an even cost per step, which keeps an interactive simulation smooth.",
+      "score": { "interface": { "cs": 1 } } },
+    { "id": "scheduled-execution-for-rtos",
+      "when": { "realtime": "hard", "importerKinds": "se", "events": "time" },
+      "because": "With Scheduled Execution the real-time scheduler runs each clocked part of the model as its own task.",
+      "score": { "interface": { "se": 5 } } },
+    { "id": "derivative-tools-use-me",
+      "when": { "gradients": ["forward", "adjoint"] },
+      "because": "Tools that linearise or optimise work on the state derivatives, which only Model Exchange exposes.",
+      "score": { "interface": { "me": 2 } } },
+
+    { "id": "importer-lacks-fmi1",
+      "when": { "importerVersions": { "lacks": "1.0" } },
+      "because": "The importing tool does not read FMI 1.0.",
+      "exclude": { "fmiVersion": ["1.0"] } },
+    { "id": "importer-lacks-fmi2",
+      "when": { "importerVersions": { "lacks": "2.0" } },
+      "because": "The importing tool does not read FMI 2.0.",
+      "exclude": { "fmiVersion": ["2.0"] } },
+    { "id": "importer-lacks-fmi3",
+      "when": { "importerVersions": { "lacks": "3.0" } },
+      "because": "The importing tool does not read FMI 3.0.",
+      "exclude": { "fmiVersion": ["3.0"] } },
+    { "id": "fmi1-deprecated",
+      "when": {},
+      "because": "FMI 1.0 export is deprecated in OpenModelica.",
+      "score": { "fmiVersion": { "1.0": -3 } } },
+    { "id": "fmi3-experimental",
+      "when": {},
+      "because": "FMI 3.0 export is experimental in OpenModelica.",
+      "score": { "fmiVersion": { "3.0": -1 } } },
+    { "id": "cs-needs-fmi2",
+      "when": { "interface": "cs" },
+      "because": "OpenModelica exports FMI 1.0 as Model Exchange only.",
+      "exclude": { "fmiVersion": ["1.0"] } },
+    { "id": "se-needs-fmi3",
+      "when": { "interface": "se" },
+      "because": "Scheduled Execution exists only in FMI 3.0.",
+      "exclude": { "fmiVersion": ["1.0", "2.0"] } },
+    { "id": "synchronised-events-in-cs-need-fmi3",
+      "when": { "eventPrecision": "sync", "interface": "cs" },
+      "enables": { "eventHandling": "eventMode" },
+      "because": "Only FMI 3.0 Co-Simulation can stop a step at an event and tell the importing tool.",
+      "score": { "fmiVersion": { "3.0": 3 } } },
+    { "id": "adjoint-needs-fmi3",
+      "when": { "gradients": "adjoint" },
+      "enables": { "derivatives": "adjoint" },
+      "because": "Adjoint derivatives are defined only in FMI 3.0.",
+      "score": { "fmiVersion": { "3.0": 2 } } },
+    { "id": "array-sizes-need-fmi3",
+      "when": { "tuneParameters": "structure" },
+      "enables": { "tunable": "structural" },
+      "because": "Structural parameters are defined only in FMI 3.0.",
+      "score": { "fmiVersion": { "3.0": 2 } } },
+    { "id": "tight-cs-better-in-fmi3",
+      "when": { "coupling": "tight", "interface": "cs" },
+      "enables": { "inputHandling": "intermediate" },
+      "because": "With FMI 3.0 Intermediate Update the master exchanges values inside a communication step.",
+      "score": { "fmiVersion": { "3.0": 1 } } },
+    { "id": "coupled-samplers-fmi3",
+      "when": { "events": "time", "topology": ["component", "multi"] },
+      "enables": { "clocks": "on" },
+      "because": "FMI 3.0 clocks let the importing tool keep sampled parts in step.",
+      "score": { "fmiVersion": { "3.0": 1 } } },
+    { "id": "wasm-not-fmi1",
+      "when": { "target": "browser" },
+      "because": "A WebAssembly FMU cannot be FMI 1.0.",
+      "exclude": { "fmiVersion": ["1.0"] } },
+
+    { "id": "type-follows-me",
+      "when": { "interface": "me" },
+      "because": "The importing tool uses the Model Exchange part.",
+      "score": { "fmiType": { "me": 2 } },
+      "exclude": { "fmiType": ["cs"] } },
+    { "id": "type-follows-cs",
+      "when": { "interface": "cs" },
+      "because": "The importing tool uses the Co-Simulation part.",
+      "score": { "fmiType": { "cs": 2 } },
+      "exclude": { "fmiType": ["me"] } },
+    { "id": "type-follows-se",
+      "when": { "interface": "se" },
+      "because": "The importing tool uses Scheduled Execution.",
+      "exclude": { "fmiType": ["me", "cs", "me_cs"] } },
+    { "id": "type-not-se",
+      "when": { "not": { "interface": "se" } },
+      "because": "Scheduled Execution was not selected as the interface.",
+      "exclude": { "fmiType": ["se"] } },
+    { "id": "unknown-importer-both-interfaces",
+      "when": { "importerKinds": { "unknown": true } },
+      "because": "With both interfaces the FMU works whichever one the importing tool supports.",
+      "score": { "fmiType": { "me_cs": 3 } } },
+
+    { "id": "algebraic-loops-dae-mode",
+      "when": { "algebraicLoops": "yes" },
+      "because": "In DAE mode the integrator solves the algebraic equations together with the states. Otherwise a nonlinear solver runs inside every calculation of the derivatives.",
+      "score": { "daeMode": { "on": 2 } } },
+    { "id": "large-loops-dae-mode",
+      "when": { "algebraicLoops": "yes", "modelSize": "large" },
+      "because": "The integrator uses one sparse Jacobian for the whole model, which scales to large models.",
+      "score": { "daeMode": { "on": 1 } } },
+    { "id": "hard-realtime-no-dae-mode",
+      "when": { "realtime": "hard" },
+      "because": "DAE mode integrates with IDA, a variable-step method with no upper limit for the time of a step.",
+      "score": { "daeMode": { "on": -3 } } },
+    { "id": "me-dae-mode-needs-importer",
+      "when": { "interface": "me" },
+      "because": "Only an importing tool that knows the FMI-LS-DAE draft can integrate the residual form of a Model Exchange FMU.",
+      "score": { "daeMode": { "on": -2 } } },
+
+    { "id": "stiff-needs-implicit",
+      "when": { "stiffModel": "yes" },
+      "because": "An explicit method is stable only with steps below the fastest time constant of a stiff model.",
+      "score": { "csSolver": { "euler": -3, "heun": -3, "rk4": -3, "cvode": 3, "dassl": 2, "impeuler": 2, "rosenbrock": 2, "esdirk": 2 } } },
+    { "id": "nonstiff-explicit-is-cheaper",
+      "when": { "stiffModel": "no" },
+      "because": "A model that is not stiff does not need the cost of an implicit method.",
+      "score": { "csSolver": { "euler": 1, "heun": 1, "rk4": 1 } } },
+    { "id": "unknown-stiffness-robust",
+      "when": { "stiffModel": "unknown" },
+      "because": "An implicit variable-step method works whether the model is stiff or not.",
+      "score": { "csSolver": { "cvode": 2, "dassl": 2, "esdirk": 1, "euler": -1 } } },
+    { "id": "offline-error-control",
+      "when": { "realtime": "offline" },
+      "because": "Without a deadline, a variable-step method chooses the step that the tolerance needs.",
+      "score": { "csSolver": { "cvode": 1, "dassl": 1, "esdirk": 1 } } },
+    { "id": "low-precision-first-order",
+      "when": { "solverPrecision": "low" },
+      "because": "A first-order method is enough to see trends.",
+      "score": { "csSolver": { "euler": 1, "impeuler": 1 } } },
+    { "id": "medium-precision-higher-order",
+      "when": { "solverPrecision": "medium" },
+      "because": "A method of higher order reaches engineering accuracy with fewer steps.",
+      "score": { "csSolver": { "cvode": 1, "dassl": 1, "esdirk": 1, "rk4": 1, "rosenbrock": 1 } } },
+    { "id": "high-precision-error-control",
+      "when": { "solverPrecision": "high" },
+      "because": "Only a variable-step method with error control can keep a tight tolerance.",
+      "score": { "csSolver": { "cvode": 2, "dassl": 2, "esdirk": 2, "euler": -2, "impeuler": -2 } } },
+    { "id": "hard-realtime-bounded-step",
+      "when": { "realtime": "hard" },
+      "because": "A real-time step must end within a known time. Step-size control and Newton iterations have no upper limit.",
+      "score": { "csSolver": { "euler": 2, "heun": 2, "rk4": 2, "impeuler": 2, "rosenbrock": 3, "cvode": -2, "dassl": -2, "esdirk": -2 } } },
+    { "id": "interactive-fixed-step",
+      "when": { "realtime": "interactive" },
+      "because": "A fixed step gives an even cost per step.",
+      "score": { "csSolver": { "euler": 1, "heun": 1, "rk4": 1, "impeuler": 1, "rosenbrock": 1 } } },
+    { "id": "events-restart-multistep",
+      "when": { "events": "state" },
+      "because": "A multistep method such as BDF restarts at order one after every event. A one-step method keeps its order.",
+      "score": { "csSolver": { "esdirk": 1 } } },
+    { "id": "oscillations-need-higher-order",
+      "when": { "oscillatory": "yes" },
+      "because": "Explicit Euler adds energy to an oscillation with little damping at every step, and implicit Euler removes it. A method of second or higher order keeps the energy much better.",
+      "score": { "csSolver": { "euler": -2, "impeuler": -1, "heun": 2, "rk4": 2 } } },
+    { "id": "long-steps-need-step-control",
+      "when": { "commStep": "long" },
+      "because": "Between two communication points the FMU is on its own. With long steps it needs a solver that chooses its own step.",
+      "score": { "csSolver": { "cvode": 2, "dassl": 2, "esdirk": 2, "euler": -2 } } },
+    { "id": "short-steps-restart-bdf",
+      "when": { "commStep": "short" },
+      "because": "With short communication steps a BDF solver starts again at low order at every step. A one-step method does not pay for the restart.",
+      "score": { "csSolver": { "cvode": -1, "dassl": -1, "esdirk": 1, "euler": 1, "heun": 1, "rk4": 1, "impeuler": 1, "rosenbrock": 1 } } },
+    { "id": "inputs-restart-multistep",
+      "when": { "topology": ["component", "multi"], "not": { "commStep": "long" } },
+      "because": "Inputs change at every communication point, which makes a multistep method restart often.",
+      "score": { "csSolver": { "esdirk": 1 } } },
+    { "id": "dae-mode-uses-ida",
+      "when": { "daeMode": "on" },
+      "because": "Only IDA integrates the residual form.",
+      "exclude": { "csSolver": ["cvode", "euler", "dassl", "heun", "rk4", "impeuler", "rosenbrock", "esdirk"] } },
+
+    { "id": "substeps-for-accuracy",
+      "when": { "solverPrecision": ["medium", "high"] },
+      "because": "A smaller internal step lowers the error without a smaller communication step.",
+      "score": { "csStepping": { "substep": 2 } } },
+    { "id": "long-steps-substeps",
+      "when": { "commStep": "long" },
+      "because": "One solver step per long communication step is too coarse.",
+      "score": { "csStepping": { "substep": 3 } } },
+    { "id": "substeps-for-stability",
+      "when": { "stiffModel": "yes", "csSolver": ["euler", "heun", "rk4"] },
+      "because": "An explicit method needs steps below the fastest time constant to stay stable.",
+      "score": { "csStepping": { "substep": 3 } } },
+
+    { "id": "tolerance-for-trends",
+      "when": { "solverPrecision": "low" },
+      "because": "A coarse tolerance is enough to see trends and takes fewer steps.",
+      "score": { "tolerance": { "1e-4": 2 } } },
+    { "id": "tolerance-for-reference",
+      "when": { "solverPrecision": "high" },
+      "because": "Reference results need a tight tolerance.",
+      "score": { "tolerance": { "1e-8": 2 } } },
+
+    { "id": "synchronised-events-event-mode",
+      "when": { "eventPrecision": "sync" },
+      "because": "Event Mode stops the step at the event, so that the other parts react at the event time.",
+      "score": { "eventHandling": { "eventMode": 3 } } },
+
+    { "id": "realtime-limit-event-iterations",
+      "when": { "realtime": "hard", "events": ["state", "unknown"] },
+      "because": "Each event iteration calculates the whole model again. A lower limit shortens the longest step.",
+      "score": { "eventIterations": { "limited": 2 } } },
+
+    { "id": "tight-coupling-input-extrapolation",
+      "when": { "coupling": "tight" },
+      "because": "Held inputs are up to one communication step old, which makes tight coupling unstable.",
+      "score": { "inputHandling": { "interpolate": 2, "intermediate": 3 } } },
+    { "id": "naive-master-smooth-inputs",
+      "when": { "master": "naive" },
+      "because": "A master that holds the inputs gives the FMU a jump at every communication point. Smoothing inside the FMU hides the jump from the solver.",
+      "score": { "inputHandling": { "smooth": 2, "interpolate": -2, "intermediate": -2 } } },
+    { "id": "advanced-master-needs-support",
+      "when": { "master": "advanced" },
+      "because": "A master can extrapolate inputs or repeat a step only when the FMU offers it.",
+      "score": { "inputHandling": { "interpolate": 2, "intermediate": 2 }, "fmuState": { "getset": 2 } } },
+    { "id": "precision-input-extrapolation",
+      "when": { "solverPrecision": "high" },
+      "because": "Held inputs add an error of first order in the communication step.",
+      "score": { "inputHandling": { "interpolate": 1, "intermediate": 1 } } },
+    { "id": "stiff-system-input-extrapolation",
+      "when": { "stiffSystem": "yes" },
+      "because": "A stiff coupled system reacts strongly to input values that are out of date.",
+      "score": { "inputHandling": { "interpolate": 1, "intermediate": 1 } } },
+
+    { "id": "rollback-for-repeated-steps",
+      "when": { "coupling": "tight", "fmiType": ["cs", "me_cs"] },
+      "because": "A master that repeats a step, to iterate or to change the step size, must reset the FMU to the start of the step.",
+      "score": { "fmuState": { "getset": 2 } } },
+    { "id": "snapshots-for-operator",
+      "when": { "realtime": "interactive" },
+      "because": "A saved state lets an operator go back, or continue in a later session.",
+      "score": { "fmuState": { "getset": 1, "serialize": 2 } } },
+
+    { "id": "jacobians-requested",
+      "when": { "gradients": "forward" },
+      "because": "Directional derivatives give the importing tool exact Jacobians.",
+      "score": { "derivatives": { "directional": 3 } } },
+    { "id": "gradients-requested",
+      "when": { "gradients": "adjoint" },
+      "because": "Adjoint derivatives give the gradient for all parameters in one pass. Directional derivatives need one pass per parameter.",
+      "score": { "derivatives": { "adjoint": 3, "directional": 1 } } },
+    { "id": "implicit-importer-solver-needs-jacobian",
+      "when": { "fmiType": ["me", "me_cs"], "importerSolver": "strong",
+                "any": [ { "stiffModel": "yes" }, { "stiffSystem": "yes" } ] },
+      "because": "An implicit solver in the importing tool needs the Jacobian. Without directional derivatives it estimates it by finite differences.",
+      "score": { "derivatives": { "directional": 2 } } },
+    { "id": "master-needs-interface-jacobian",
+      "when": { "coupling": "tight", "interface": "cs" },
+      "because": "Interface Jacobians let the master solve algebraic loops between FMUs.",
+      "score": { "derivatives": { "directional": 1 } } },
+    { "id": "large-me-needs-jacobian",
+      "when": { "modelSize": "large", "interface": "me" },
+      "because": "Finite differences cost one model evaluation per state, which is slow for a large model.",
+      "score": { "derivatives": { "directional": 1 } } },
+
+    { "id": "other-platform-cross-compile",
+      "when": { "target": "other" },
+      "because": "A binary for this computer does not run on the target.",
+      "score": { "platforms": { "cross": 3 }, "fmiSources": { "slim": 1 } } },
+    { "id": "target-compiles-sources",
+      "when": { "target": "embedded" },
+      "because": "The target platform compiles the FMU from source code with its own toolchain.",
+      "score": { "platforms": { "source": 3 }, "fmiSources": { "slim": 3 } } },
+    { "id": "browser-needs-wasm",
+      "when": { "target": "browser" },
+      "because": "A browser or sandbox cannot load native code.",
+      "score": { "platforms": { "wasm": 3 } } },
+    { "id": "hidden-model-no-sources",
+      "when": { "ip": "yes" },
+      "because": "Source code shows the equations of the model.",
+      "exclude": { "platforms": ["source"], "fmiSources": ["slim", "full"] } },
+    { "id": "hidden-model-on-target",
+      "when": { "ip": "yes", "target": "embedded" },
+      "because": "Without source code, the FMU must carry a binary built for the target.",
+      "score": { "platforms": { "cross": 3 } } },
+    { "id": "source-only-needs-sources",
+      "when": { "platforms": "source" },
+      "because": "An FMU without binaries and without sources is empty.",
+      "exclude": { "fmiSources": ["false"] } },
+    { "id": "hidden-model-black-box",
+      "when": { "ip": "yes" },
+      "because": "The names and values of internal variables show how the model is built.",
+      "score": { "fmiFilter": { "blackBox": 3 } },
+      "exclude": { "fmiFilter": ["none", "internal"] } },
+    { "id": "cross-compile-all-libraries",
+      "when": { "platforms": "cross" },
+      "because": "System libraries differ between versions of an operating system.",
+      "score": { "runtimeDepends": { "all": 2 } } },
+
+    { "id": "tune-values",
+      "when": { "tuneParameters": "values" },
+      "because": "The importing tool can set a tunable parameter between steps. The FMU calculates the dependent parameters again.",
+      "score": { "tunable": { "literal": 2 } } },
+    { "id": "tune-array-sizes",
+      "when": { "tuneParameters": "structure" },
+      "because": "Only structural parameters can change array sizes after export.",
+      "score": { "tunable": { "structural": 3, "literal": 1 } } },
+    { "id": "fixed-when-hidden",
+      "when": { "tuneParameters": "no", "ip": "yes" },
+      "because": "The receiver of the FMU cannot change a fixed parameter after initialization.",
+      "score": { "tunable": { "none": 2 } } },
+
+    { "id": "se-needs-clocks",
+      "when": { "fmiType": "se" },
+      "because": "Scheduled Execution is driven by clocks.",
+      "score": { "clocks": { "on": 3 } } },
+    { "id": "clocks-for-coupled-samplers",
+      "when": { "events": "time", "topology": ["component", "multi"] },
+      "because": "With exported clocks the importing tool activates the sampled parts of all FMUs at the same instant.",
+      "score": { "clocks": { "on": 2 } } },
+    { "id": "clocks-for-realtime",
+      "when": { "events": "time", "realtime": "hard" },
+      "because": "A real-time scheduler can tick the clocks of the model directly.",
+      "score": { "clocks": { "on": 1 } } },
+
+    { "id": "terminals-for-many-fmus",
+      "when": { "topology": "multi" },
+      "because": "Terminals group the signals of a connector, so that FMUs are connected connector by connector and not signal by signal.",
+      "score": { "terminals": { "on": 2 } } },
+
+    { "id": "calibrate-on-target",
+      "when": { "realtime": "hard", "tuneParameters": "values" },
+      "because": "XCP lets standard calibration tools measure and tune the model while it runs on the target.",
+      "score": { "xcp": { "on": 2 } } },
+
+    { "id": "advice-use-me-part",
+      "when": { "interface": "me", "fmiType": "me_cs" },
+      "advice": "The FMU carries both interfaces. Select Model Exchange in the importing tool if it has it." },
+    { "id": "advice-coupling-unknown",
+      "when": { "coupling": "unknown" },
+      "advice": "Find out how tightly the parts are coupled. It is the main reason to choose Model Exchange over Co-Simulation." },
+    { "id": "advice-stiffness-unknown",
+      "when": { "stiffModel": "unknown" },
+      "advice": "To find out if the model is stiff, simulate it in OpenModelica with -s=euler or -s=rungekutta. If it needs a much smaller step than the accuracy asks for, it is stiff." },
+    { "id": "advice-omsimulator",
+      "when": { "topology": "multi" },
+      "advice": "OMSimulator connects and simulates several FMUs. Model Exchange FMUs go into a strongly coupled system, Co-Simulation FMUs into a weakly coupled one." },
+    { "id": "advice-cut-at-decoupling",
+      "when": { "topology": "multi" },
+      "advice": "Cut the system where the physics decouples it, and use as few FMUs as the task allows." },
+    { "id": "advice-energy-at-the-cut",
+      "when": { "interface": "cs", "coupling": "tight" },
+      "advice": "A cut through a stiff connection adds or removes energy at every communication step. A transmission line (TLM) connection, or a master that corrects the energy error, keeps it stable." },
+    { "id": "warn-euler-oscillation",
+      "when": { "csSolver": "euler", "oscillatory": "yes" },
+      "warn": "Explicit Euler makes an oscillation with little damping grow. Use a step much shorter than its period, and check the amplitude over a long run." },
+    { "id": "advice-euler-step",
+      "when": { "csSolver": "euler", "csStepping": "comm" },
+      "advice": "Explicit Euler takes one step per communication step. Choose the communication step from the fastest dynamics of the model, not from how often you need output." },
+    { "id": "advice-fmi3-test",
+      "when": { "fmiVersion": "3.0" },
+      "advice": "FMI 3.0 export is experimental. Test the FMU in the importing tool before you rely on it." },
+    { "id": "warn-tight-cs",
+      "when": { "interface": "cs", "coupling": "tight" },
+      "warn": "Tight coupling through Co-Simulation: use a communication step well below the fastest coupled time constant, and a master that can repeat steps." },
+    { "id": "warn-stiff-system-cs",
+      "when": { "interface": "cs", "stiffSystem": "yes" },
+      "warn": "A stiff coupled system in Co-Simulation is stable only with small communication steps, however good the solvers inside the FMUs are." },
+    { "id": "warn-fmi2-cs-events",
+      "when": { "interface": "cs", "fmiVersion": "2.0", "eventPrecision": "sync" },
+      "warn": "FMI 2.0 Co-Simulation cannot report an event to the importing tool. The other parts see it at the next communication point. Choose a communication step as small as the event accuracy needs." },
+    { "id": "warn-me-stiff-basic-solver",
+      "when": { "interface": "me", "importerSolver": "basic", "any": [ { "stiffModel": "yes" }, { "stiffSystem": "yes" } ] },
+      "warn": "Model Exchange with a stiff model needs an implicit solver in the importing tool." },
+    { "id": "warn-realtime-variable-step",
+      "when": { "realtime": "hard", "csSolver": ["cvode", "dassl", "ida", "esdirk"] },
+      "warn": "A variable-step solver has no upper limit for the time of a step. Measure the longest step on the target and leave a margin." },
+    { "id": "warn-realtime-events",
+      "when": { "realtime": "hard", "events": ["state", "unknown"] },
+      "warn": "A step with an event takes longer: the FMU finds the time of the event and then iterates, up to 20 times. Measure the longest step on the target with all events active." },
+    { "id": "warn-realtime-me",
+      "when": { "realtime": "hard", "interface": "me" },
+      "warn": "With Model Exchange the real-time behaviour depends on the fixed-step solver of the importing tool. Check how it handles events." }
+  ]
+}

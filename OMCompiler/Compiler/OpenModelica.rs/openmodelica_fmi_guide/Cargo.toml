@@ -1,0 +1,12 @@
+[package]
+name = "openmodelica_fmi_guide"
+version = "0.1.0"
+edition = "2024"
+workspace = ".."
+
+# The FMI settings guide: which export settings fit a use case. For both omcs
+# and their clients; the C omc links it through runtime/rust. Plain versions,
+# no workspace inheritance: that crate builds it from its own root.
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

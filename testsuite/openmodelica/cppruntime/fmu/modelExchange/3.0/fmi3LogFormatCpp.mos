@@ -1,0 +1,41 @@
+// name:     fmi3LogFormatCpp
+// keywords: FMI 3.0 export Cpp logger format assert
+// status:   correct
+// teardown_command: rm -rf fmi3LogFormatCpp.fmu fmi3LogFormatCpp.so fmi3LogFormatCpp.fmutmp/ fmi3LogFormatCpp.log fmi3LogFormatCpp_out.txt
+//
+// The message argument of the FMI 3.0 logMessage callback is plain
+// text. Model texts that contain "%" must come through without change
+// and must not crash the FMU.
+
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+
+loadString("
+model fmi3LogFormatCpp
+  Real x(start = 0, fixed = true);
+equation
+  der(x) = 1;
+  assert(x < 0.5, \"x exceeded 50%s of the %s limit\", AssertionLevel.warning);
+  assert(x < 0.8, \"x exceeded 80%s of the %s limit\");
+end fmi3LogFormatCpp;
+"); getErrorString();
+
+buildModelFMU(fmi3LogFormatCpp, version = "3.0", fmuType = "me"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi3LogFormatCpp.py fmi3LogFormatCpp.fmu fmi3LogFormatCpp_out.txt > fmi3LogFormatCpp.log 2>&1"); getErrorString();
+readFile("fmi3LogFormatCpp_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3LogFormatCpp.fmu"
+// ""
+// 0
+// ""
+// "x = 0.6: fmi3GetContinuousStateDerivatives status 0
+// status 1: x exceeded 50%s of the %s limit
+// x = 0.9: fmi3GetContinuousStateDerivatives status 3
+// status 3: x exceeded 80%s of the %s limit
+// "
+// ""
+// endResult

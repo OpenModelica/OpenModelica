@@ -372,6 +372,7 @@ private:
   QAction *mpDeleteAction;
   QAction *mpConvertClassUsesLibrariesAction;
   QAction *mpExportFMUAction;
+  QAction *mpExportFMUWithSetupAction;
   QAction *mpExportReadonlyPackageAction;
   QAction *mpExportEncryptedPackageAction;
   QAction *mpExportXMLAction;
@@ -428,6 +429,7 @@ public slots:
   void deleteTextFile();
   void convertClassUsesLibraries();
   void exportModelFMU();
+  void exportModelFMUWithSetup();
   void exportEncryptedPackage();
   void exportReadonlyPackage();
   void exportModelXML();

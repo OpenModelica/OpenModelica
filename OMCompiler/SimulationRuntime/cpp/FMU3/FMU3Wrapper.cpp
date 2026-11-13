@@ -114,8 +114,8 @@ void FMU3Logger::writeInternal(string msg, LogCategory cat, LogLevel lvl,
     break;
   }
 
-  // call FMU log function
-  FMU3_LOG(_wrapper, status, category, msg.c_str());
+  // call FMU log function; msg is not a format string
+  FMU3_LOG(_wrapper, status, category, "%s", msg.c_str());
 }
 
 FMU3Wrapper::FMU3Wrapper(fmi3String instanceName, fmi3String instantiationToken,

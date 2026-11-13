@@ -337,6 +337,13 @@ openmodelica_fmi_driver/src/me.rs
 openmodelica_fmi_driver/src/record.rs
 openmodelica_fmi_driver/src/wasm_host.rs
 openmodelica_fmi_driver/tests/reference_fmus.rs
+openmodelica_fmi_guide/Cargo.toml
+openmodelica_fmi_guide/README.md
+openmodelica_fmi_guide/fmi-settings.json
+openmodelica_fmi_guide/fmi-settings.schema.json
+openmodelica_fmi_guide/src/eval.rs
+openmodelica_fmi_guide/src/lib.rs
+openmodelica_fmi_guide/src/model.rs
 openmodelica_fmi_ls_wasm_aot/Cargo.lock
 openmodelica_fmi_ls_wasm_aot/Cargo.toml
 openmodelica_fmi_ls_wasm_aot/src/lib.rs
@@ -762,6 +769,7 @@ wasm/anim/anim-core.js
 wasm/anim/anim-view.js
 wasm/anim/animation.js
 wasm/coi_server.py
+wasm/fmi-guide/dialog.js
 wasm/fmi-simulator/.gitignore
 wasm/fmi-simulator/README.md
 wasm/fmi-simulator/driver.js

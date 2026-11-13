@@ -595,6 +595,21 @@ static char *omedit_worker_eval(const char *src) {
   return omedit_take_eval_result(id);
 }
 
+EM_JS(int, omedit_post_fmi_guide, (const char *req), {
+  return Module.__omcPostCall({ cmd: "fmiGuide", request: UTF8ToString(req), id: ++Module.__omcMsgId });
+});
+
+// The reply of the FMI settings guide of omc to a JSON request.
+QString omcWorkerFmiGuide(const QString &request)
+{
+  int id = omedit_post_fmi_guide(request.toUtf8().constData());
+  omcWorkerWaitReply(id);
+  char *pReply = omedit_take_abi_result(id);
+  const QString reply = QString::fromUtf8(pReply);
+  free(pReply);
+  return reply;
+}
+
 // Worker-VFS file read, backing the QAbstractFileEngine (wasm/worker_vfs_engine.cpp).
 EM_JS(int, omedit_worker_ready, (), {
   return (Module.__omcWorker && Module.__omcSend) ? 1 : 0;

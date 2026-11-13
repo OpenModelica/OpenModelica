@@ -2085,9 +2085,11 @@ algorithm
 
     case DAE.INITIAL_IF_EQUATION(condition1=explst,equations2=eqnslstlst,equations3=eqnslst,source = source)
       algorithm
-        eqns := lowerIfEquation(explst,eqnslstlst,eqnslst,{},{},source,functionTree,inIEquations);
+        (eqnslstlst,eqnslst,daeElts) := lowerIfEquationAsserts(explst,eqnslstlst,eqnslst,{},{},{});
+        (eqns,reqns,ieqns) := lowerEqns(daeElts,functionTree,inEquations,inREquations,inIEquations,true);
+        ieqns := lowerIfEquation(explst,eqnslstlst,eqnslst,{},{},source,functionTree,ieqns);
       then
-       (inEquations,inREquations,eqns);
+       (eqns,reqns,ieqns);
 
     // algorithm
     case DAE.ALGORITHM()
@@ -2372,6 +2374,19 @@ algorithm
         e := DAE.IFEXP(e, cond, DAE.BCONST(true));
         e := List.fold(conditions, makeIfExp, e);
         (beqns, eqns) := lowerIfEquationAsserts1(eqns, condition, conditions, brancheqns1, DAE.ASSERT(e, msg, level, source)::inEqns);
+      then
+        (beqns, eqns);
+    case (DAE.INITIAL_ASSERT(condition=cond, message=msg, level=level, source=source)::eqns, NONE())
+      algorithm
+        e := List.fold(conditions, makeIfExp, cond);
+        (beqns, eqns) := lowerIfEquationAsserts1(eqns, condition, conditions, brancheqns1, DAE.INITIAL_ASSERT(e, msg, level, source)::inEqns);
+      then
+        (beqns, eqns);
+    case (DAE.INITIAL_ASSERT(condition=cond, message=msg, level=level, source=source)::eqns, SOME(e))
+      algorithm
+        e := DAE.IFEXP(e, cond, DAE.BCONST(true));
+        e := List.fold(conditions, makeIfExp, e);
+        (beqns, eqns) := lowerIfEquationAsserts1(eqns, condition, conditions, brancheqns1, DAE.INITIAL_ASSERT(e, msg, level, source)::inEqns);
       then
         (beqns, eqns);
     case (DAE.TERMINATE(message=msg, source=source)::eqns, NONE())

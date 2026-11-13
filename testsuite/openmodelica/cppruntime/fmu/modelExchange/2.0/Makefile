@@ -17,6 +17,7 @@ testDrumBoiler.mos \
 ticket6296.mos \
 testCombiTable2D.mos \
 fmi2FreeInstanceNull.mos \
+fmi2LogFormatCpp.mos \
 fmi2TimeEventsCpp.mos
 
 FAILINGTESTFILES = \
@@ -28,6 +29,7 @@ DEPENDENCIES = \
 *.mos \
 Makefile \
 fmi2FreeInstanceNull.py \
+fmi2LogFormatCpp.py \
 fmi2TimeEventsCpp.py
 
 
