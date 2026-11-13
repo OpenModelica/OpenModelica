@@ -2914,7 +2914,7 @@ void LibraryTreeView::createActions()
   connect(mpExportFMUAction, SIGNAL(triggered()), SLOT(exportModelFMU()));
   mpExportFMUWithSetupAction = new QAction(QIcon(":/Resources/icons/export-fmu.svg"), Helper::FMUWithSetup, this);
   mpExportFMUWithSetupAction->setStatusTip(Helper::exportFMUWithSetupTip);
-  connect(mpExportFMUWithSetupAction, SIGNAL(triggered()), SLOT(exportModelFMUWithSetup()));
+  connect(mpExportFMUWithSetupAction, &QAction::triggered, this, &LibraryTreeView::exportModelFMUWithSetup);
   // Export encrypted package Action
   mpExportEncryptedPackageAction = new QAction(Helper::exportEncryptedPackage, this);
   mpExportEncryptedPackageAction->setStatusTip(Helper::exportEncryptedPackageTip);

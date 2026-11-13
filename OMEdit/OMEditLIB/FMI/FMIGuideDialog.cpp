@@ -91,8 +91,8 @@ FMIGuideDialog::FMIGuideDialog(const QJsonObject &host, QWidget *pParent)
   QDialogButtonBox *pButtonBox = new QDialogButtonBox;
   pButtonBox->addButton(mpApplyButton, QDialogButtonBox::AcceptRole);
   pButtonBox->addButton(new QPushButton(Helper::cancel), QDialogButtonBox::RejectRole);
-  connect(pButtonBox, SIGNAL(accepted()), SLOT(accept()));
-  connect(pButtonBox, SIGNAL(rejected()), SLOT(reject()));
+  connect(pButtonBox, &QDialogButtonBox::accepted, this, &FMIGuideDialog::accept);
+  connect(pButtonBox, &QDialogButtonBox::rejected, this, &FMIGuideDialog::reject);
   // layout
   QHBoxLayout *pColumnsLayout = new QHBoxLayout;
   pColumnsLayout->addWidget(pQuestionsScrollArea, 1);
@@ -143,7 +143,7 @@ void FMIGuideDialog::createQuestions(const QJsonArray &asked)
         pButton->setProperty("value", option.toObject().value("value").toString());
         question.pButtonGroup->addButton(pButton);
         question.buttons.append(pButton);
-        connect(pButton, SIGNAL(clicked()), SLOT(answerChanged()));
+        connect(pButton, &QAbstractButton::clicked, this, &FMIGuideDialog::answerChanged);
         mpQuestionsLayout->addWidget(pButton);
       }
       question.pNoteLabel = new QLabel;

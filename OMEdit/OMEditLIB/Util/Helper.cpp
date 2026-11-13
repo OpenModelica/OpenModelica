@@ -525,7 +525,7 @@ void Helper::initHelperVariables()
   Helper::FMU = tr("FMU");
   Helper::exportt = tr("Export");
   Helper::exportFMUTip = tr("Exports the model as Functional Mock-up Unit (FMU)");
-  Helper::FMUWithSetup = tr("FMU with Setup...");
+  Helper::FMUWithSetup = tr("FMU with Setup");
   Helper::exportFMUWithSetupTip = tr("Exports the model as Functional Mock-up Unit (FMU) with settings for this export");
   Helper::sensitivityOptimization = tr("Sensitivity Optimization");
   Helper::exportReadonlyPackage = tr("Read-only Package");

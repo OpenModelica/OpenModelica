@@ -4868,10 +4868,6 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>Instantier/Mettre à plat la classe Modelica</translation>
     </message>
     <message>
-        <source>FMU with Setup...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Exports the model as Functional Mock-up Unit (FMU) with settings for this export</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5362,6 +5358,10 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <source>Exports the model as Functional Mock-up Unit (FMU)</source>
         <translation>Exporte le modèle sous une Functional Mock-up Unit (FMU)</translation>
+    </message>
+    <message>
+        <source>FMU with Setup</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Imports the model from a Functional Mock-up Unit (FMU)</source>

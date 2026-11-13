@@ -4863,10 +4863,6 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
         <translation>Istanzia e appiattisce la classe Modelica</translation>
     </message>
     <message>
-        <source>FMU with Setup...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Exports the model as Functional Mock-up Unit (FMU) with settings for this export</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5357,6 +5353,10 @@ Controllare i messaggi di errore nella finestra Messaggi ed eventualmente annull
     <message>
         <source>Exports the model as Functional Mock-up Unit (FMU)</source>
         <translation>Esporta il modello come Functional Mock-up Unit (FMU)</translation>
+    </message>
+    <message>
+        <source>FMU with Setup</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Imports the model from a Functional Mock-up Unit (FMU)</source>

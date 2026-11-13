@@ -90,7 +90,7 @@ FMUExportDialog::FMUExportDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pPa
   QPushButton *pRecommendButton = new QPushButton(tr("Recommend Settings..."));
   pRecommendButton->setAutoDefault(false);
   pRecommendButton->setToolTip(tr("Answer questions about how the FMU is used and get the settings below"));
-  connect(pRecommendButton, SIGNAL(clicked()), SLOT(recommendSettings()));
+  connect(pRecommendButton, &QPushButton::clicked, this, &FMUExportDialog::recommendSettings);
   // version
   mpVersionComboBox = new QComboBox;
   if (!mWasmTarget) {
@@ -99,15 +99,15 @@ FMUExportDialog::FMUExportDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pPa
   mpVersionComboBox->addItem("2.0");
   mpVersionComboBox->addItem("3.0");
   mpVersionComboBox->setCurrentText(pFMIPage->getFMIExportVersion());
-  connect(mpVersionComboBox, SIGNAL(currentIndexChanged(int)), SLOT(updateControls()));
+  connect(mpVersionComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &FMUExportDialog::updateControls);
   // interfaces
   const QString type = pFMIPage->getFMIExportType();
   mpModelExchangeCheckBox = new QCheckBox(tr("Model Exchange"));
   mpModelExchangeCheckBox->setChecked(type != "cs");
-  connect(mpModelExchangeCheckBox, SIGNAL(toggled(bool)), SLOT(updateControls()));
+  connect(mpModelExchangeCheckBox, &QCheckBox::toggled, this, &FMUExportDialog::updateControls);
   mpCoSimulationCheckBox = new QCheckBox(tr("Co-Simulation"));
   mpCoSimulationCheckBox->setChecked(type != "me");
-  connect(mpCoSimulationCheckBox, SIGNAL(toggled(bool)), SLOT(updateControls()));
+  connect(mpCoSimulationCheckBox, &QCheckBox::toggled, this, &FMUExportDialog::updateControls);
   // solver and filter, with the choices of the options page
   mpSolverComboBox = new QComboBox;
   ComboBox *pSolverComboBox = pFMIPage->getSolverForCoSimulationComboBox();
@@ -121,7 +121,7 @@ FMUExportDialog::FMUExportDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pPa
     mpFilterComboBox->addItem(pFilterComboBox->itemText(i));
   }
   mpFilterComboBox->setCurrentIndex(pFilterComboBox->currentIndex());
-  connect(mpFilterComboBox, SIGNAL(currentIndexChanged(int)), SLOT(updateControls()));
+  connect(mpFilterComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &FMUExportDialog::updateControls);
   mpIncludeSourceCodeCheckBox = new QCheckBox(tr("Include Source Code"));
   mpIncludeSourceCodeCheckBox->setChecked(pFMIPage->getIncludeSourceCodeCheckBox()->isChecked());
   // DAE mode
@@ -133,7 +133,7 @@ FMUExportDialog::FMUExportDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pPa
   }
   mpDaeModeCheckBox = new QCheckBox(tr("Export the residual form (--daeMode)"));
   mpDaeModeCheckBox->setChecked(mDaeModeBefore);
-  connect(mpDaeModeCheckBox, SIGNAL(toggled(bool)), SLOT(updateControls()));
+  connect(mpDaeModeCheckBox, &QCheckBox::toggled, this, &FMUExportDialog::updateControls);
   // platforms
   QSettings *pSettings = Utilities::getApplicationSettings();
   QStringList platforms = pSettings->contains("FMIExport/Platforms") ? pSettings->value("FMIExport/Platforms").toStringList()
@@ -189,11 +189,11 @@ FMUExportDialog::FMUExportDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pPa
   QDialogButtonBox *pButtonBox = new QDialogButtonBox;
   pButtonBox->addButton(mpExportButton, QDialogButtonBox::AcceptRole);
   pButtonBox->addButton(new QPushButton(Helper::cancel), QDialogButtonBox::RejectRole);
-  connect(pButtonBox, SIGNAL(accepted()), SLOT(exportFMU()));
-  connect(pButtonBox, SIGNAL(rejected()), SLOT(reject()));
+  connect(pButtonBox, &QDialogButtonBox::accepted, this, &FMUExportDialog::exportFMU);
+  connect(pButtonBox, &QDialogButtonBox::rejected, this, &FMUExportDialog::reject);
   // layout
   QGridLayout *pMainLayout = new QGridLayout;
-  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->setAlignment(Qt::AlignTop);
   int row = 0;
   pMainLayout->addWidget(Utilities::getHeadingLabel(heading), row++, 0, 1, 2);
   pMainLayout->addWidget(Utilities::getHeadingLine(), row++, 0, 1, 2);

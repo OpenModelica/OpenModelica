@@ -4732,6 +4732,10 @@ Fehlermeldungen stehen im Meldungsbrowser; eventuell die letzten Änderungen mit
         <translation>Exportiert das Modell als Functional Mock-up Unit (FMU)</translation>
     </message>
     <message>
+        <source>FMU with Setup</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Imports the model from a Functional Mock-up Unit (FMU)</source>
         <translation>Importiert das Modell aus einer Functional Mock-up Unit (FMU)</translation>
     </message>
@@ -4902,10 +4906,6 @@ Fehlermeldungen stehen im Meldungsbrowser; eventuell die letzten Änderungen mit
     <message>
         <source>Instantiate/Flatten the Modelica class</source>
         <translation>Instanziiert die Modelica-Klasse (flaches Modell)</translation>
-    </message>
-    <message>
-        <source>FMU with Setup...</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Exports the model as Functional Mock-up Unit (FMU) with settings for this export</source>

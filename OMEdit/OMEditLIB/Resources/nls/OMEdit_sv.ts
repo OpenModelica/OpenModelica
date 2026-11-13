@@ -4896,10 +4896,6 @@ Se fönstret Meddelanden för felmeddelanden och ångra eventuellt de senaste ä
         <translation>Instansiera/platta ut Modelicaklassen</translation>
     </message>
     <message>
-        <source>FMU with Setup...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Exports the model as Functional Mock-up Unit (FMU) with settings for this export</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5382,6 +5378,10 @@ Se fönstret Meddelanden för felmeddelanden och ångra eventuellt de senaste ä
     <message>
         <source>Exports the model as Functional Mock-up Unit (FMU)</source>
         <translation>Exporterar modellen som en Functional Mock-up Unit (FMU)</translation>
+    </message>
+    <message>
+        <source>FMU with Setup</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Imports the model from a Functional Mock-up Unit (FMU)</source>

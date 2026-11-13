@@ -4858,7 +4858,7 @@ void MainWindow::createActions()
   mpExportFMUWithSetupAction = new QAction(QIcon(":/Resources/icons/export-fmu.svg"), Helper::FMUWithSetup, this);
   mpExportFMUWithSetupAction->setStatusTip(Helper::exportFMUWithSetupTip);
   mpExportFMUWithSetupAction->setEnabled(false);
-  connect(mpExportFMUWithSetupAction, SIGNAL(triggered()), SLOT(exportModelFMUWithSetup()));
+  connect(mpExportFMUWithSetupAction, &QAction::triggered, this, &MainWindow::exportModelFMUWithSetup);
   // export read-only package action
   mpExportReadonlyPackageAction = new QAction(Helper::exportReadonlyPackage, this);
   mpExportReadonlyPackageAction->setStatusTip(Helper::exportReadonlyPackageTip);
