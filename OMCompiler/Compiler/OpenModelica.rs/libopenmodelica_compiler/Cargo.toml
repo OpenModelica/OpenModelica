@@ -58,6 +58,8 @@ openmodelica_codegen_wasm_jit.workspace = true
 # The wasm side-module loader `System.loadLibrary` routes to here, for
 # compile-time `external "C"` evaluation (src/wasm_api.rs omc_init).
 openmodelica_wasm_jit.workspace = true
+# The FMI settings guide for the web clients (src/wasm_api.rs omc_fmi_guide).
+openmodelica_fmi_guide.workspace = true
 # Result values (Values.ARRAY/REAL) decoded when rendering plots (src/wasm_plot.rs).
 openmodelica_frontend_types.workspace = true
 # Unzip a library archive in-wasm and populate the VFS (pure-Rust deflate, no C

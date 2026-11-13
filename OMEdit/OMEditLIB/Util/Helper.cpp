@@ -210,6 +210,8 @@ QString Helper::instantiateModelTip;
 QString Helper::FMU;
 QString Helper::exportt;
 QString Helper::exportFMUTip;
+QString Helper::FMUWithSetup;
+QString Helper::exportFMUWithSetupTip;
 QString Helper::sensitivityOptimization;
 QString Helper::exportEncryptedPackage;
 QString Helper::exportEncryptedPackageTip;
@@ -523,6 +525,8 @@ void Helper::initHelperVariables()
   Helper::FMU = tr("FMU");
   Helper::exportt = tr("Export");
   Helper::exportFMUTip = tr("Exports the model as Functional Mock-up Unit (FMU)");
+  Helper::FMUWithSetup = tr("FMU with Setup");
+  Helper::exportFMUWithSetupTip = tr("Exports the model as Functional Mock-up Unit (FMU) with settings for this export");
   Helper::sensitivityOptimization = tr("Sensitivity Optimization");
   Helper::exportReadonlyPackage = tr("Read-only Package");
   Helper::exportReadonlyPackageTip = tr("Exports the package as a read-only package");

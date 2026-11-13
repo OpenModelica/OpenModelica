@@ -301,6 +301,10 @@ self.onmessage = async (e) => {
           : JSON.stringify({ error: "omc_abi unavailable (omc built without the scripting_api feature)" });
       resetControl();
       self.postMessage({ kind: "abiResult", id: msg.id, response, loaded: takeLoadedModels() });
+    } else if (msg.cmd === "fmiGuide") {
+      // The FMI settings guide: JSON in, JSON out. The reply goes the way of an
+      // "abi" reply, so the page collects it by `id`.
+      self.postMessage({ kind: "abiResult", id: msg.id, response: OmcModule.omc_fmi_guide(msg.request) });
     } else if (msg.cmd === "vfsGet") {
       // OMEdit reads some files (library index, install manifests, visual.xml)
       // on the main thread; omc wrote them into this worker's store, so read them
@@ -358,7 +362,7 @@ self.onmessage = async (e) => {
     // channel the GUI is waiting on so it clears `busy`.
     if (msg.cmd === "init") {
       self.postMessage({ kind: "ready", ok: false, error: describeError(err) });
-    } else if (msg.cmd === "abi") {
+    } else if (msg.cmd === "abi" || msg.cmd === "fmiGuide") {
       self.postMessage({ kind: "abiResult", id: msg.id, response: JSON.stringify({ error: describeError(err) }) });
     } else {
       self.postMessage({ kind: "done", result: "", error: describeError(err), keep: true });

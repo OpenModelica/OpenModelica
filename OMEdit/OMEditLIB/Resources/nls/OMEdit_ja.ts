@@ -1750,6 +1750,1722 @@ Select the models for which you want to discard the local translation flag and a
     </message>
 </context>
 <context>
+    <name>FMIGuide</name>
+    <message>
+        <source>Supported</source>
+        <extracomment>support level yes</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Experimental</source>
+        <extracomment>support level experimental</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Limited</source>
+        <extracomment>support level partial</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Planned</source>
+        <extracomment>support level planned</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Missing</source>
+        <extracomment>support level no</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The importing tool</source>
+        <extracomment>question group importer</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The system</source>
+        <extracomment>question group system</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The model</source>
+        <extracomment>question group model</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The use case</source>
+        <extracomment>question group use</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Accuracy</source>
+        <extracomment>question group accuracy</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Interface</source>
+        <extracomment>setting group interface</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Solver inside the FMU</source>
+        <extracomment>setting group solver</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Coupling and events</source>
+        <extracomment>setting group coupling</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Packaging</source>
+        <extracomment>setting group packaging</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>FMI 3.0 features</source>
+        <extracomment>setting group features</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Which FMI versions can the importing tool read?</source>
+        <extracomment>question importerVersions</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select none if you do not know.</source>
+        <extracomment>question importerVersions, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>FMI 1.0</source>
+        <extracomment>question importerVersions, answer 1.0</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>FMI 2.0</source>
+        <extracomment>question importerVersions, answer 2.0</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>FMI 3.0</source>
+        <extracomment>question importerVersions, answer 3.0</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Which interface types can it run?</source>
+        <extracomment>question importerKinds</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Model Exchange</source>
+        <extracomment>question importerKinds, answer me</extracomment>
+        <translation type="unfinished">Model Exchange</translation>
+    </message>
+    <message>
+        <source>Co-Simulation</source>
+        <extracomment>question importerKinds, answer cs</extracomment>
+        <translation type="unfinished">Co-Simulation</translation>
+    </message>
+    <message>
+        <source>Scheduled Execution</source>
+        <extracomment>question importerKinds, answer se</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scheduled Execution exists only in FMI 3.0.</source>
+        <extracomment>question importerKinds, answer se, why it is off</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>How capable is the importing tool&apos;s own solver?</source>
+        <extracomment>question importerSolver</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>With Model Exchange the importing tool integrates the model, so the result is only as good as its solver.</source>
+        <extracomment>question importerSolver, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Only matters when the importing tool can run Model Exchange.</source>
+        <extracomment>question importerSolver, why it is off</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Variable step, implicit, locates events</source>
+        <extracomment>question importerSolver, answer strong</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>For example CVODE, DASSL, Radau, ode15s.</source>
+        <extracomment>question importerSolver, answer strong, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Fixed step or explicit only</source>
+        <extracomment>question importerSolver, answer basic</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>For example Euler or Runge-Kutta 4.</source>
+        <extracomment>question importerSolver, answer basic, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do not know</source>
+        <extracomment>question importerSolver, answer unknown</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>How is the FMU used?</source>
+        <extracomment>question topology</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>One FMU on its own</source>
+        <extracomment>question topology, answer single</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>One FMU inside a larger model</source>
+        <extracomment>question topology, answer component</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The rest of the model is native to the importing tool.</source>
+        <extracomment>question topology, answer component, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Several connected FMUs</source>
+        <extracomment>question topology, answer multi</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>How tightly is it coupled to the rest?</source>
+        <extracomment>question coupling</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tight: fast feedback, rigid mechanical or hydraulic connections, algebraic loops across the connection. Loose: signal flow, slow physical coupling.</source>
+        <extracomment>question coupling, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A single FMU has nothing to couple to.</source>
+        <extracomment>question coupling, why it is off</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Loosely</source>
+        <extracomment>question coupling, answer loose</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tightly</source>
+        <extracomment>question coupling, answer tight</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Is the whole coupled system stiff?</source>
+        <extracomment>question stiffSystem</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stiff: time constants that differ by orders of magnitude, where the fast ones decay quickly.</source>
+        <extracomment>question stiffSystem, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>For a single FMU, the question below about the model covers this.</source>
+        <extracomment>question stiffSystem, why it is off</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No</source>
+        <extracomment>question stiffSystem, answer no</extracomment>
+        <translation type="unfinished">いいえ</translation>
+    </message>
+    <message>
+        <source>Yes</source>
+        <extracomment>question stiffSystem, answer yes</extracomment>
+        <translation type="unfinished">はい</translation>
+    </message>
+    <message>
+        <source>What does the co-simulation algorithm of the importing tool do?</source>
+        <extracomment>question master</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Only matters for Co-Simulation of a coupled system.</source>
+        <extracomment>question master, why it is off</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the inputs, never repeats a step</source>
+        <extracomment>question master, answer naive</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Extrapolates inputs or repeats steps</source>
+        <extracomment>question master, answer advanced</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Higher order or iterative co-simulation.</source>
+        <extracomment>question master, answer advanced, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>How long is a communication step compared with the dynamics of the model?</source>
+        <extracomment>question commStep</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The communication step is the interval at which the importing tool exchanges values with a Co-Simulation FMU. Between two of them the FMU is on its own.</source>
+        <extracomment>question commStep, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Much longer</source>
+        <extracomment>question commStep, answer long</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>About as long, or shorter</source>
+        <extracomment>question commStep, answer short</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Is this model stiff?</source>
+        <extracomment>question stiffModel</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Typical causes: electrical with thermal parts, hydraulics, fast controllers, chemical reactions.</source>
+        <extracomment>question stiffModel, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Does the model oscillate with little damping?</source>
+        <extracomment>question oscillatory</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mechanics and electric circuits often do.</source>
+        <extracomment>question oscillatory, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Which events does the model have?</source>
+        <extracomment>question events</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>None</source>
+        <extracomment>question events, answer none</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Purely continuous.</source>
+        <extracomment>question events, answer none, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Time events only</source>
+        <extracomment>question events, answer time</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>sample(), clocks, tables.</source>
+        <extracomment>question events, answer time, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>State events</source>
+        <extracomment>question events, answer state</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switches, friction, impacts, limiters.</source>
+        <extracomment>question events, answer state, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>How large is the model?</source>
+        <extracomment>question modelSize</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Up to some hundred states</source>
+        <extracomment>question modelSize, answer small</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Thousands of states</source>
+        <extracomment>question modelSize, answer large</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Does the model have large systems of algebraic equations?</source>
+        <extracomment>question algebraicLoops</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nonlinear loops with many unknowns, for example in power grids and fluid networks.</source>
+        <extracomment>question algebraicLoops, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Does it run against the clock?</source>
+        <extracomment>question realtime</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No, as fast as possible</source>
+        <extracomment>question realtime, answer offline</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Interactive</source>
+        <extracomment>question realtime, answer interactive</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An operator or a 3D view follows the simulation. A late step is not a failure.</source>
+        <extracomment>question realtime, answer interactive, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard real time</source>
+        <extracomment>question realtime, answer hard</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hardware in the loop. Every step has a deadline.</source>
+        <extracomment>question realtime, answer hard, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Must parameters change after export?</source>
+        <extracomment>question tuneParameters</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Values, while it runs</source>
+        <extracomment>question tuneParameters, answer values</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Also array sizes</source>
+        <extracomment>question tuneParameters, answer structure</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Does the importing tool need derivatives of the model?</source>
+        <extracomment>question gradients</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Jacobians</source>
+        <extracomment>question gradients, answer forward</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Linearisation, an implicit solver, algebraic loops between FMUs.</source>
+        <extracomment>question gradients, answer forward, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Gradients for many parameters</source>
+        <extracomment>question gradients, answer adjoint</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Optimisation, parameter estimation, machine learning.</source>
+        <extracomment>question gradients, answer adjoint, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Where does the FMU run?</source>
+        <extracomment>question target</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>On this kind of computer</source>
+        <extracomment>question target, answer same</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Another operating system or CPU</source>
+        <extracomment>question target, answer other</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A target that compiles the FMU itself</source>
+        <extracomment>question target, answer embedded</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Real-time and embedded platforms.</source>
+        <extracomment>question target, answer embedded, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A web browser or sandbox</source>
+        <extracomment>question target, answer browser</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Must the inside of the model stay hidden?</source>
+        <extracomment>question ip</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>How accurate must the solution be?</source>
+        <extracomment>question solverPrecision</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Trends</source>
+        <extracomment>question solverPrecision, answer low</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>About 1e-3 relative error.</source>
+        <extracomment>question solverPrecision, answer low, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Engineering</source>
+        <extracomment>question solverPrecision, answer medium</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>About 1e-6.</source>
+        <extracomment>question solverPrecision, answer medium, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reference</source>
+        <extracomment>question solverPrecision, answer high</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1e-8 or better.</source>
+        <extracomment>question solverPrecision, answer high, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>How accurate must events be?</source>
+        <extracomment>question eventPrecision</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The model has no events.</source>
+        <extracomment>question eventPrecision, why it is off</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The next communication point is enough</source>
+        <extracomment>question eventPrecision, answer step</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The FMU must find the event time</source>
+        <extracomment>question eventPrecision, answer located</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Everything must stop at the event</source>
+        <extracomment>question eventPrecision, answer sync</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The other parts of the system react at the event time, not one step later.</source>
+        <extracomment>question eventPrecision, answer sync, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Only for a coupled system.</source>
+        <extracomment>question eventPrecision, answer sync, why it is off</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OMSimulator</source>
+        <extracomment>preset omsimulator</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>FMPy</source>
+        <extracomment>preset fmpy</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Simulink FMU block</source>
+        <extracomment>preset simulink</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OpenModelica importFMU</source>
+        <extracomment>preset omc-import</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Typical real-time target</source>
+        <extracomment>preset hil</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Interface to use</source>
+        <extracomment>setting interface</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Who integrates: the importing tool (Model Exchange) or the FMU (Co-Simulation).</source>
+        <extracomment>setting interface, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>FMI version</source>
+        <extracomment>setting fmiVersion</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Deprecated. Model Exchange only.</source>
+        <extracomment>setting fmiVersion, option 1.0, support</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Interfaces in the FMU</source>
+        <extracomment>setting fmiType</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Model Exchange and Co-Simulation</source>
+        <extracomment>setting fmiType, option me_cs</extracomment>
+        <translation type="unfinished">Model ExchangeとCo-Simulation</translation>
+    </message>
+    <message>
+        <source>OpenModelica exports FMI 1.0 as Model Exchange only.</source>
+        <extracomment>setting fmiType, option me_cs, why it is impossible</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>FMI 3.0 only.</source>
+        <extracomment>setting fmiType, option se, why it is impossible</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DAE mode</source>
+        <extracomment>setting daeMode</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off: explicit ODE</source>
+        <extracomment>setting daeMode, option off</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The FMU solves the algebraic equations each time it calculates the derivatives.</source>
+        <extracomment>setting daeMode, option off, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>On: residual form</source>
+        <extracomment>setting daeMode, option on</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The integrator solves the algebraic equations together with the states.</source>
+        <extracomment>setting daeMode, option on, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Needs Co-Simulation, or Model Exchange with FMI 3.0.</source>
+        <extracomment>setting daeMode, option on, why it is impossible</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Model Exchange uses the draft of the FMI-LS-DAE layered standard.</source>
+        <extracomment>setting daeMode, option on, support</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>With FMI 2.0 only the Co-Simulation part is exported.</source>
+        <extracomment>setting daeMode, option on, support</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Solver</source>
+        <extracomment>setting csSolver</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CVODE</source>
+        <extracomment>setting csSolver, option cvode</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Implicit, variable step and order (BDF), with root finding for state events.</source>
+        <extracomment>setting csSolver, option cvode, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Explicit Euler</source>
+        <extracomment>setting csSolver, option euler</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DASSL</source>
+        <extracomment>setting csSolver, option dassl</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>WebAssembly FMUs only.</source>
+        <extracomment>setting csSolver, option dassl, support</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IDA</source>
+        <extracomment>setting csSolver, option ida</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Implicit, variable step and order (BDF) for the residual form.</source>
+        <extracomment>setting csSolver, option ida, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Only for DAE mode.</source>
+        <extracomment>setting csSolver, option ida, why it is impossible</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nothing to set. DAE mode selects it.</source>
+        <extracomment>setting csSolver, option ida, how to select it</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Heun, fixed step</source>
+        <extracomment>setting csSolver, option heun</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Explicit, second order.</source>
+        <extracomment>setting csSolver, option heun, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Available for simulations (-s=heun), not inside FMUs.</source>
+        <extracomment>setting csSolver, option heun, support</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Explicit Runge-Kutta, fixed step</source>
+        <extracomment>setting csSolver, option rk4</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Available for simulations (-s=rungekutta), not inside FMUs.</source>
+        <extracomment>setting csSolver, option rk4, support</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Implicit Euler, fixed step</source>
+        <extracomment>setting csSolver, option impeuler</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Available for simulations (-s=impeuler), not inside FMUs.</source>
+        <extracomment>setting csSolver, option impeuler, support</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Linearly implicit (Rosenbrock), fixed step</source>
+        <extracomment>setting csSolver, option rosenbrock</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>One Jacobian factorisation per step and no Newton iteration, so the cost of a step is known in advance.</source>
+        <extracomment>setting csSolver, option rosenbrock, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not in OpenModelica.</source>
+        <extracomment>setting csSolver, option rosenbrock, support</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ESDIRK, variable step (gbode)</source>
+        <extracomment>setting csSolver, option esdirk</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An implicit one-step method. It keeps its order across restarts.</source>
+        <extracomment>setting csSolver, option esdirk, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Available for simulations (-s=gbode), not inside FMUs.</source>
+        <extracomment>setting csSolver, option esdirk, support</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Internal step</source>
+        <extracomment>setting csStepping</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>One solver step per communication step</source>
+        <extracomment>setting csStepping, option comm</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Several solver steps per communication step</source>
+        <extracomment>setting csStepping, option substep</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>WebAssembly FMUs step on the output interval of the model. FMUs built from C code take one Euler step per communication step.</source>
+        <extracomment>setting csStepping, option substep, support</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Solver tolerance</source>
+        <extracomment>setting tolerance</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1e-6</source>
+        <extracomment>setting tolerance, option 1e-6</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The importing tool can override it.</source>
+        <extracomment>setting tolerance, option 1e-6, how to select it</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1e-4</source>
+        <extracomment>setting tolerance, option 1e-4</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set annotation(experiment(Tolerance = 1e-4)) in the model. The importing tool can override it.</source>
+        <extracomment>setting tolerance, option 1e-4, how to select it</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1e-8</source>
+        <extracomment>setting tolerance, option 1e-8</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set annotation(experiment(Tolerance = 1e-8)) in the model. The importing tool can override it.</source>
+        <extracomment>setting tolerance, option 1e-8, how to select it</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Events during a step</source>
+        <extracomment>setting eventHandling</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Handled inside the FMU</source>
+        <extracomment>setting eventHandling, option internal</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The FMU finds the event, handles it and continues to the end of the step. The rest of the system sees the result at the next communication point.</source>
+        <extracomment>setting eventHandling, option internal, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nothing to set.</source>
+        <extracomment>setting eventHandling, option internal, how to select it</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Event Mode with early return</source>
+        <extracomment>setting eventHandling, option eventMode</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The step returns at the event time, so that the importing tool can update every part.</source>
+        <extracomment>setting eventHandling, option eventMode, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nothing to set at export. The importing tool turns it on with eventModeUsed and earlyReturnAllowed.</source>
+        <extracomment>setting eventHandling, option eventMode, how to select it</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Limit of event iterations</source>
+        <extracomment>setting eventIterations</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>At most 20 per event</source>
+        <extracomment>setting eventIterations, option default</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The FMU stops with an error when an event needs more.</source>
+        <extracomment>setting eventIterations, option default, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A lower limit, set at export</source>
+        <extracomment>setting eventIterations, option limited</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The simulation flag -mei sets the limit. An FMU does not read it.</source>
+        <extracomment>setting eventIterations, option limited, support</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Inputs between communication points</source>
+        <extracomment>setting inputHandling</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Held constant</source>
+        <extracomment>setting inputHandling, option hold</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Smoothed inside the FMU</source>
+        <extracomment>setting inputHandling, option smooth</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The FMU spreads a change of an input over the step, so that its solver sees no jump.</source>
+        <extracomment>setting inputHandling, option smooth, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Input derivatives</source>
+        <extracomment>setting inputHandling, option interpolate</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>FMI 2.0 only. FMI 3.0 uses Intermediate Update for this.</source>
+        <extracomment>setting inputHandling, option interpolate, why it is impossible</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nothing to set at export. The importing tool must call fmi2SetRealInputDerivatives.</source>
+        <extracomment>setting inputHandling, option interpolate, how to select it</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Intermediate Update</source>
+        <extracomment>setting inputHandling, option intermediate</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The importing tool reads outputs and sets inputs at the internal steps of the solver.</source>
+        <extracomment>setting inputHandling, option intermediate, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Saving the FMU state</source>
+        <extracomment>setting fmuState</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not needed</source>
+        <extracomment>setting fmuState, option none</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Get and set</source>
+        <extracomment>setting fmuState, option getset</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not in FMI 1.0.</source>
+        <extracomment>setting fmuState, option getset, why it is impossible</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Always exported. Nothing to set.</source>
+        <extracomment>setting fmuState, option getset, how to select it</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Serialize</source>
+        <extracomment>setting fmuState, option serialize</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Always exported for FMI 3.0. Nothing to set.</source>
+        <extracomment>setting fmuState, option serialize, how to select it</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OpenModelica serializes the state only for FMI 3.0.</source>
+        <extracomment>setting fmuState, option serialize, support</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Partial derivatives</source>
+        <extracomment>setting derivatives</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Directional derivatives</source>
+        <extracomment>setting derivatives, option directional</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The Co-Simulation part of an FMI 2.0 FMU also needs -d=fmuExperimental.</source>
+        <extracomment>setting derivatives, option directional, support</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adjoint derivatives</source>
+        <extracomment>setting derivatives, option adjoint</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>In development.</source>
+        <extracomment>setting derivatives, option adjoint, support</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Binaries</source>
+        <extracomment>setting platforms</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This platform, statically linked</source>
+        <extracomment>setting platforms, option static</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This platform, dynamically linked</source>
+        <extracomment>setting platforms, option dynamic</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cross-compiled with Docker</source>
+        <extracomment>setting platforms, option cross</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Replace the host triple by the one of the target.</source>
+        <extracomment>setting platforms, option cross, how to select it</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No binaries, source code only</source>
+        <extracomment>setting platforms, option source</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OpenModelica does not zip the FMU in this case. Pack it with the create_fmu target of the CMake project in sources/.</source>
+        <extracomment>setting platforms, option source, how to select it</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>WebAssembly</source>
+        <extracomment>setting platforms, option wasm</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not for FMI 1.0.</source>
+        <extracomment>setting platforms, option wasm, why it is impossible</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Needs the omc built from the Rust port.</source>
+        <extracomment>setting platforms, option wasm, support</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Source code in the FMU</source>
+        <extracomment>setting fmiSources</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The sources it was built from</source>
+        <extracomment>setting fmiSources, option slim</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sources and all their dependencies</source>
+        <extracomment>setting fmiSources, option full</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Differs from slim only with --simCodeTarget=C+Rust.</source>
+        <extracomment>setting fmiSources, option full, support</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Variables in modelDescription.xml</source>
+        <extracomment>setting fmiFilter</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Public variables</source>
+        <extracomment>setting fmiFilter, option protected</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Public and protected variables</source>
+        <extracomment>setting fmiFilter, option internal</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Everything, also generated variables</source>
+        <extracomment>setting fmiFilter, option none</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Only the interface</source>
+        <extracomment>setting fmiFilter, option blackBox</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Libraries copied into the FMU</source>
+        <extracomment>setting runtimeDepends</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Libraries the model uses</source>
+        <extracomment>setting runtimeDepends, option modelica</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Also system libraries</source>
+        <extracomment>setting runtimeDepends, option all</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Parameters after export</source>
+        <extracomment>setting tunable</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Parameters with a literal value are tunable</source>
+        <extracomment>setting tunable, option literal</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All parameters fixed</source>
+        <extracomment>setting tunable, option none</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Structural parameters</source>
+        <extracomment>setting tunable, option structural</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The importing tool changes array sizes in Configuration Mode.</source>
+        <extracomment>setting tunable, option structural, help</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Array sizes are fixed at export.</source>
+        <extracomment>setting tunable, option structural, support</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clocks</source>
+        <extracomment>setting clocks</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not exported</source>
+        <extracomment>setting clocks, option off</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exported</source>
+        <extracomment>setting clocks, option on</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminals</source>
+        <extracomment>setting terminals</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminals from the connectors of the model</source>
+        <extracomment>setting terminals, option on</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nothing to set. Written to terminalsAndIcons.xml when the model has connectors at the top level.</source>
+        <extracomment>setting terminals, option on, how to select it</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Calibration on the target (FMI-LS-XCP)</source>
+        <extracomment>setting xcp</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>XCP description in the FMU</source>
+        <extracomment>setting xcp, option on</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A layered standard on FMI 3.0.</source>
+        <extracomment>setting xcp, option on, why it is impossible</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not planned.</source>
+        <extracomment>setting xcp, option on, support</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The importing tool cannot run Model Exchange.</source>
+        <extracomment>rule importer-lacks-me, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The importing tool cannot run Co-Simulation.</source>
+        <extracomment>rule importer-lacks-cs, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Few tools run Scheduled Execution. Use it only when the importing tool is known to.</source>
+        <extracomment>rule se-only-when-supported, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An FMU with its own solver gives the same result in every tool.</source>
+        <extracomment>rule single-fmu-self-contained, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The solver of the importing tool controls the error of the whole model and locates the events itself.</source>
+        <extracomment>rule strong-importer-solver, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A solver inside the FMU is better than a fixed-step or explicit solver in the importing tool.</source>
+        <extracomment>rule basic-importer-solver, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A stiff model needs an implicit solver, which the importing tool does not have.</source>
+        <extracomment>rule stiff-model-basic-importer, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tightly coupled parts need one solver for the whole system. Co-Simulation exchanges values only at communication points, which limits stability and accuracy.</source>
+        <extracomment>rule tight-coupling-one-solver, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>With Model Exchange one implicit solver sees the stiffness of the whole system. Co-Simulation needs very small communication steps instead.</source>
+        <extracomment>rule stiff-system-one-solver, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Loosely coupled parts can each run their own solver and step size.</source>
+        <extracomment>rule loose-coupling-own-solvers, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Co-Simulation keeps the fast dynamics inside this FMU, so the rest of the system can take large steps.</source>
+        <extracomment>rule fast-dynamics-stay-inside, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>With Model Exchange the importing tool locates every event and updates all parts at that time.</source>
+        <extracomment>rule synchronised-events-need-importer, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error control over a coupled system needs one solver.</source>
+        <extracomment>rule system-wide-error-control, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A real-time target calls one function per sample. The FMU must bring a solver with a known cost per step.</source>
+        <extracomment>rule hard-realtime-own-solver, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A solver inside the FMU gives an even cost per step, which keeps an interactive simulation smooth.</source>
+        <extracomment>rule interactive-even-step-cost, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>With Scheduled Execution the real-time scheduler runs each clocked part of the model as its own task.</source>
+        <extracomment>rule scheduled-execution-for-rtos, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tools that linearise or optimise work on the state derivatives, which only Model Exchange exposes.</source>
+        <extracomment>rule derivative-tools-use-me, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The importing tool does not read FMI 1.0.</source>
+        <extracomment>rule importer-lacks-fmi1, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The importing tool does not read FMI 2.0.</source>
+        <extracomment>rule importer-lacks-fmi2, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The importing tool does not read FMI 3.0.</source>
+        <extracomment>rule importer-lacks-fmi3, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>FMI 1.0 export is deprecated in OpenModelica.</source>
+        <extracomment>rule fmi1-deprecated, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>FMI 3.0 export is experimental in OpenModelica.</source>
+        <extracomment>rule fmi3-experimental, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Only FMI 3.0 Co-Simulation can stop a step at an event and tell the importing tool.</source>
+        <extracomment>rule synchronised-events-in-cs-need-fmi3, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adjoint derivatives are defined only in FMI 3.0.</source>
+        <extracomment>rule adjoint-needs-fmi3, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Structural parameters are defined only in FMI 3.0.</source>
+        <extracomment>rule array-sizes-need-fmi3, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>With FMI 3.0 Intermediate Update the master exchanges values inside a communication step.</source>
+        <extracomment>rule tight-cs-better-in-fmi3, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>FMI 3.0 clocks let the importing tool keep sampled parts in step.</source>
+        <extracomment>rule coupled-samplers-fmi3, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A WebAssembly FMU cannot be FMI 1.0.</source>
+        <extracomment>rule wasm-not-fmi1, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The importing tool uses the Model Exchange part.</source>
+        <extracomment>rule type-follows-me, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The importing tool uses the Co-Simulation part.</source>
+        <extracomment>rule type-follows-cs, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The importing tool uses Scheduled Execution.</source>
+        <extracomment>rule type-follows-se, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scheduled Execution was not selected as the interface.</source>
+        <extracomment>rule type-not-se, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>With both interfaces the FMU works whichever one the importing tool supports.</source>
+        <extracomment>rule unknown-importer-both-interfaces, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>In DAE mode the integrator solves the algebraic equations together with the states. Otherwise a nonlinear solver runs inside every calculation of the derivatives.</source>
+        <extracomment>rule algebraic-loops-dae-mode, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The integrator uses one sparse Jacobian for the whole model, which scales to large models.</source>
+        <extracomment>rule large-loops-dae-mode, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DAE mode integrates with IDA, a variable-step method with no upper limit for the time of a step.</source>
+        <extracomment>rule hard-realtime-no-dae-mode, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Only an importing tool that knows the FMI-LS-DAE draft can integrate the residual form of a Model Exchange FMU.</source>
+        <extracomment>rule me-dae-mode-needs-importer, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An explicit method is stable only with steps below the fastest time constant of a stiff model.</source>
+        <extracomment>rule stiff-needs-implicit, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A model that is not stiff does not need the cost of an implicit method.</source>
+        <extracomment>rule nonstiff-explicit-is-cheaper, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An implicit variable-step method works whether the model is stiff or not.</source>
+        <extracomment>rule unknown-stiffness-robust, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Without a deadline, a variable-step method chooses the step that the tolerance needs.</source>
+        <extracomment>rule offline-error-control, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A first-order method is enough to see trends.</source>
+        <extracomment>rule low-precision-first-order, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A method of higher order reaches engineering accuracy with fewer steps.</source>
+        <extracomment>rule medium-precision-higher-order, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Only a variable-step method with error control can keep a tight tolerance.</source>
+        <extracomment>rule high-precision-error-control, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A real-time step must end within a known time. Step-size control and Newton iterations have no upper limit.</source>
+        <extracomment>rule hard-realtime-bounded-step, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A fixed step gives an even cost per step.</source>
+        <extracomment>rule interactive-fixed-step, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A multistep method such as BDF restarts at order one after every event. A one-step method keeps its order.</source>
+        <extracomment>rule events-restart-multistep, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Explicit Euler adds energy to an oscillation with little damping at every step, and implicit Euler removes it. A method of second or higher order keeps the energy much better.</source>
+        <extracomment>rule oscillations-need-higher-order, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Between two communication points the FMU is on its own. With long steps it needs a solver that chooses its own step.</source>
+        <extracomment>rule long-steps-need-step-control, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>With short communication steps a BDF solver starts again at low order at every step. A one-step method does not pay for the restart.</source>
+        <extracomment>rule short-steps-restart-bdf, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Inputs change at every communication point, which makes a multistep method restart often.</source>
+        <extracomment>rule inputs-restart-multistep, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Only IDA integrates the residual form.</source>
+        <extracomment>rule dae-mode-uses-ida, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A smaller internal step lowers the error without a smaller communication step.</source>
+        <extracomment>rule substeps-for-accuracy, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>One solver step per long communication step is too coarse.</source>
+        <extracomment>rule long-steps-substeps, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An explicit method needs steps below the fastest time constant to stay stable.</source>
+        <extracomment>rule substeps-for-stability, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A coarse tolerance is enough to see trends and takes fewer steps.</source>
+        <extracomment>rule tolerance-for-trends, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reference results need a tight tolerance.</source>
+        <extracomment>rule tolerance-for-reference, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Event Mode stops the step at the event, so that the other parts react at the event time.</source>
+        <extracomment>rule synchronised-events-event-mode, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Each event iteration calculates the whole model again. A lower limit shortens the longest step.</source>
+        <extracomment>rule realtime-limit-event-iterations, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Held inputs are up to one communication step old, which makes tight coupling unstable.</source>
+        <extracomment>rule tight-coupling-input-extrapolation, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A master that holds the inputs gives the FMU a jump at every communication point. Smoothing inside the FMU hides the jump from the solver.</source>
+        <extracomment>rule naive-master-smooth-inputs, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A master can extrapolate inputs or repeat a step only when the FMU offers it.</source>
+        <extracomment>rule advanced-master-needs-support, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Held inputs add an error of first order in the communication step.</source>
+        <extracomment>rule precision-input-extrapolation, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A stiff coupled system reacts strongly to input values that are out of date.</source>
+        <extracomment>rule stiff-system-input-extrapolation, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A master that repeats a step, to iterate or to change the step size, must reset the FMU to the start of the step.</source>
+        <extracomment>rule rollback-for-repeated-steps, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A saved state lets an operator go back, or continue in a later session.</source>
+        <extracomment>rule snapshots-for-operator, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Directional derivatives give the importing tool exact Jacobians.</source>
+        <extracomment>rule jacobians-requested, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adjoint derivatives give the gradient for all parameters in one pass. Directional derivatives need one pass per parameter.</source>
+        <extracomment>rule gradients-requested, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An implicit solver in the importing tool needs the Jacobian. Without directional derivatives it estimates it by finite differences.</source>
+        <extracomment>rule implicit-importer-solver-needs-jacobian, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Interface Jacobians let the master solve algebraic loops between FMUs.</source>
+        <extracomment>rule master-needs-interface-jacobian, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Finite differences cost one model evaluation per state, which is slow for a large model.</source>
+        <extracomment>rule large-me-needs-jacobian, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A binary for this computer does not run on the target.</source>
+        <extracomment>rule other-platform-cross-compile, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The target platform compiles the FMU from source code with its own toolchain.</source>
+        <extracomment>rule target-compiles-sources, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A browser or sandbox cannot load native code.</source>
+        <extracomment>rule browser-needs-wasm, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Source code shows the equations of the model.</source>
+        <extracomment>rule hidden-model-no-sources, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Without source code, the FMU must carry a binary built for the target.</source>
+        <extracomment>rule hidden-model-on-target, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An FMU without binaries and without sources is empty.</source>
+        <extracomment>rule source-only-needs-sources, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The names and values of internal variables show how the model is built.</source>
+        <extracomment>rule hidden-model-black-box, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>System libraries differ between versions of an operating system.</source>
+        <extracomment>rule cross-compile-all-libraries, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The importing tool can set a tunable parameter between steps. The FMU calculates the dependent parameters again.</source>
+        <extracomment>rule tune-values, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Only structural parameters can change array sizes after export.</source>
+        <extracomment>rule tune-array-sizes, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The receiver of the FMU cannot change a fixed parameter after initialization.</source>
+        <extracomment>rule fixed-when-hidden, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scheduled Execution is driven by clocks.</source>
+        <extracomment>rule se-needs-clocks, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>With exported clocks the importing tool activates the sampled parts of all FMUs at the same instant.</source>
+        <extracomment>rule clocks-for-coupled-samplers, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A real-time scheduler can tick the clocks of the model directly.</source>
+        <extracomment>rule clocks-for-realtime, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminals group the signals of a connector, so that FMUs are connected connector by connector and not signal by signal.</source>
+        <extracomment>rule terminals-for-many-fmus, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>XCP lets standard calibration tools measure and tune the model while it runs on the target.</source>
+        <extracomment>rule calibrate-on-target, reason</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The FMU carries both interfaces. Select Model Exchange in the importing tool if it has it.</source>
+        <extracomment>rule advice-use-me-part, tip</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Find out how tightly the parts are coupled. It is the main reason to choose Model Exchange over Co-Simulation.</source>
+        <extracomment>rule advice-coupling-unknown, tip</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>To find out if the model is stiff, simulate it in OpenModelica with -s=euler or -s=rungekutta. If it needs a much smaller step than the accuracy asks for, it is stiff.</source>
+        <extracomment>rule advice-stiffness-unknown, tip</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OMSimulator connects and simulates several FMUs. Model Exchange FMUs go into a strongly coupled system, Co-Simulation FMUs into a weakly coupled one.</source>
+        <extracomment>rule advice-omsimulator, tip</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut the system where the physics decouples it, and use as few FMUs as the task allows.</source>
+        <extracomment>rule advice-cut-at-decoupling, tip</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A cut through a stiff connection adds or removes energy at every communication step. A transmission line (TLM) connection, or a master that corrects the energy error, keeps it stable.</source>
+        <extracomment>rule advice-energy-at-the-cut, tip</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Explicit Euler makes an oscillation with little damping grow. Use a step much shorter than its period, and check the amplitude over a long run.</source>
+        <extracomment>rule warn-euler-oscillation, warning</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Explicit Euler takes one step per communication step. Choose the communication step from the fastest dynamics of the model, not from how often you need output.</source>
+        <extracomment>rule advice-euler-step, tip</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>FMI 3.0 export is experimental. Test the FMU in the importing tool before you rely on it.</source>
+        <extracomment>rule advice-fmi3-test, tip</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tight coupling through Co-Simulation: use a communication step well below the fastest coupled time constant, and a master that can repeat steps.</source>
+        <extracomment>rule warn-tight-cs, warning</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A stiff coupled system in Co-Simulation is stable only with small communication steps, however good the solvers inside the FMUs are.</source>
+        <extracomment>rule warn-stiff-system-cs, warning</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>FMI 2.0 Co-Simulation cannot report an event to the importing tool. The other parts see it at the next communication point. Choose a communication step as small as the event accuracy needs.</source>
+        <extracomment>rule warn-fmi2-cs-events, warning</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Model Exchange with a stiff model needs an implicit solver in the importing tool.</source>
+        <extracomment>rule warn-me-stiff-basic-solver, warning</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A variable-step solver has no upper limit for the time of a step. Measure the longest step on the target and leave a margin.</source>
+        <extracomment>rule warn-realtime-variable-step, warning</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A step with an event takes longer: the FMU finds the time of the event and then iterates, up to 20 times. Measure the longest step on the target with all events active.</source>
+        <extracomment>rule warn-realtime-events, warning</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>With Model Exchange the real-time behaviour depends on the fixed-step solver of the importing tool. Check how it handles events.</source>
+        <extracomment>rule warn-realtime-me, warning</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>FMIGuideDialog</name>
+    <message>
+        <source>Recommend FMU Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not available in %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Would fit better: %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No FMU from %1 fits these answers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Check:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>FMIPage</name>
     <message>
         <source>Model Exchange</source>
@@ -1851,6 +3567,97 @@ With no platform selected, the FMU is exported as FMI 3.0 (fmi-ls-wasm).</source
     </message>
     <message>
         <source>Default (the model&apos;s method, else DASSL)</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>FMUExportDialog</name>
+    <message>
+        <source>Export FMU</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recommend Settings...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Answer questions about how the FMU is used and get the settings below</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Model Exchange</source>
+        <translation type="unfinished">Model Exchange</translation>
+    </message>
+    <message>
+        <source>Co-Simulation</source>
+        <translation type="unfinished">Co-Simulation</translation>
+    </message>
+    <message>
+        <source>Include Source Code</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Export the residual form (--daeMode)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Platforms</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The FMU contains the WebAssembly binary. This installation has no native FMU loader to add.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The FMU always contains the WebAssembly binary. A selected platform adds a native binary.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A source-code only FMU is generated if no platform is selected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save as default</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keep these settings, except the DAE mode, for the next export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>FMI Version:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Interfaces:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Solver for Co-Simulation:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DAE Mode:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Model Description Filters:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Source Code:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 in the web browser</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 with the target language %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>this build of %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3036,6 +4843,10 @@ Please check the Messages browser for error messages and possibly undo the lates
         <translation>Modelicaクラスのインスタンス化/フラット化</translation>
     </message>
     <message>
+        <source>Exports the model as Functional Mock-up Unit (FMU) with settings for this export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Exports the package as a read-only package</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3518,6 +5329,10 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <source>Exports the model as Functional Mock-up Unit (FMU)</source>
         <translation>モデルをFMUとして書き出し</translation>
+    </message>
+    <message>
+        <source>FMU with Setup</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Imports the model from a Functional Mock-up Unit (FMU)</source>
