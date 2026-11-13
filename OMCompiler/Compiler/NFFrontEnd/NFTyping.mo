@@ -1944,6 +1944,7 @@ algorithm
     case Expression.IF() guard Type.isConditionalArray(exp.ty)
       algorithm
         cond := Ceval.evalExp(exp.condition, target);
+        cond := simplifyDimExp(cond);
 
         if Expression.isTrue(cond) then
           outExp := exp.trueBranch;
