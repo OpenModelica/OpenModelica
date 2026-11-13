@@ -9,6 +9,7 @@ ExternalRHSFlag.mos \
 ExternalUncaughtException.mos \
 extObj_ticket3446.mos \
 ExtObj.mos \
+ExtObjNotConstructed.mos \
 ExtObjStringParam.mos \
 GetExternalFunctions.mos \
 ImplicitArray.mos \
@@ -49,6 +50,7 @@ ExternalRHSFlag.c \
 ExternalUncaughtException.c \
 ExtObj.c \
 ExtObj.h \
+ExtObjNotConstructed.ext.c \
 ExtObjOrder.h \
 ExtObjStringParam.ext.c \
 ExtObjStringParam.ext.h \

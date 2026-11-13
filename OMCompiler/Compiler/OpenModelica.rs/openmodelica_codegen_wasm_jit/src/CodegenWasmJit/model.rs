@@ -1431,10 +1431,15 @@ pub(super) fn build_sim_model(
     let destructors_idx = {
         use we::Instruction as I;
         let mut ctx = FnCtx::new_sim_params(sim_ctx(&var_map), &by_name, &mut literals, 1);
+        // A handle is 0 if initialization failed before its constructor ran.
         for &(didx, slot) in &destruct_calls {
+            let rel = ctx.emit_sim_base(slot)?;
+            ctx.emit(I::I32Load(crate::CodegenWasmJitFunctions::mem_arg(rel, 2)));
+            ctx.emit(I::If(we::BlockType::Empty));
             let rel = ctx.emit_sim_base(slot)?;
             ctx.emit(I::I32Load(crate::CodegenWasmJitFunctions::mem_arg(rel, 2))); // handle
             ctx.emit(I::Call(didx));
+            ctx.emit(I::End);
         }
         let (locals, instrs) = ctx.finish_sim();
         let mut f = we::Function::new(locals.into_iter().map(|t| (1u32, t)));

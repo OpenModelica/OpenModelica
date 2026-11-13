@@ -6665,7 +6665,7 @@ protected
   list<SimCode.SimEqSystem> simvarasserts;
   list<DAE.Algorithm> varasserts;
 algorithm
-  (outUniqueEqIndex, outParameterEquations, varasserts, nFixedParameters, _) := BackendVariable.traverseBackendDAEVars(globalKnownVars, createSimEqsForGlobalKnownVars, (outUniqueEqIndex, outParameterEquations, {}, 0, HashSetExp.emptyHashSetSized(Util.nextPrime(globalKnownVars.numberOfVars))));
+  (outUniqueEqIndex, outParameterEquations, varasserts, nFixedParameters, _) := BackendVariable.traverseBackendDAEVars(globalKnownVars, function createSimEqsForGlobalKnownVars(globalKnownVars = globalKnownVars), (outUniqueEqIndex, outParameterEquations, {}, 0, HashSetExp.emptyHashSetSized(Util.nextPrime(globalKnownVars.numberOfVars))));
 
   if Flags.isSet(Flags.PARAM_DLOW_DUMP) then
     print("\nparameters in order (" + intString(listLength(outParameterEquations)) + ")\n" + UNDERLINE + "\n");
@@ -6688,6 +6688,7 @@ protected function createSimEqsForGlobalKnownVars
  author: ptaeuber"
   input output BackendDAE.Var globalKnownVar;
   input tuple<Integer, list<SimCode.SimEqSystem>, list<DAE.Algorithm>, Integer, HashSetExp.HashSet> inTuple;
+  input BackendDAE.Variables globalKnownVars;
   output tuple<Integer, list<SimCode.SimEqSystem>, list<DAE.Algorithm>, Integer, HashSetExp.HashSet> outTuple;
 protected
   Integer uniqueEqIndex, nFixedParameters;
@@ -6708,7 +6709,8 @@ algorithm
   // Create SimCode Equation for special globalKnownVars
   if (BackendVariable.isParam(globalKnownVar) and
          ((BackendVariable.varFixed(globalKnownVar) and (BackendVariable.isFinalOrProtectedVar(globalKnownVar) or BackendVariable.varHasNonConstantBindExpOrStartValue(globalKnownVar)))
-      or (BackendVariable.varHasStartValue(globalKnownVar) and not BackendVariable.varHasConstantStartExp(globalKnownVar))))
+      or (BackendVariable.varHasStartValue(globalKnownVar) and not BackendVariable.varHasConstantStartExp(globalKnownVar)
+          and not isStartSolvedInInitialization(globalKnownVar, globalKnownVars))))
     or (BackendVariable.isVarAlg(globalKnownVar) and not BackendVariable.isInput(globalKnownVar)) and BackendVariable.varFixed(globalKnownVar)
     or (BackendVariable.isExtObj(globalKnownVar) and BackendVariable.varHasBindExp(globalKnownVar) and BackendVariable.varFixed(globalKnownVar))
    then
@@ -6764,6 +6766,17 @@ algorithm
 
   outTuple := (uniqueEqIndex, parameterEquations, varasserts, nFixedParameters, tplExpHT);
 end createSimEqsForGlobalKnownVars;
+
+protected function isStartSolvedInInitialization
+  "The guess of an unfixed parameter is computed in the initial system if it
+   depends on parameters computed there, see Initialization.collectInitialVars."
+  input BackendDAE.Var var;
+  input BackendDAE.Variables globalKnownVars;
+  output Boolean b;
+algorithm
+  b := not (BackendVariable.varFixed(var) or BackendVariable.varHasBindExp(var) or
+            BackendVariable.areAllCrefsPrimaryParameters(Expression.getAllCrefs(BackendVariable.varStartValue(var)), globalKnownVars));
+end isStartSolvedInInitialization;
 
 
 protected function createInitialAssignmentsFromStart
