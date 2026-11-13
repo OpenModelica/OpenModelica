@@ -1145,6 +1145,15 @@ protected
         //   variable array even if they are of size 0
         case _ guard(Variable.size(lowVar) == 0) then ();
 
+        // always consider records known since their attributes are in the unknown section (if they are unknown)
+        case VariableKind.RECORD() algorithm
+          if Variable.isTopLevelInput(lowVar) then
+            inputs_lst := lowVar_ptr :: inputs_lst;
+          end if;
+          records_lst := lowVar_ptr :: records_lst;
+          knowns_lst := lowVar_ptr :: knowns_lst;
+        then ();
+
         case _ guard(Variable.isTopLevelInput(lowVar)) algorithm
           inputs_lst := lowVar_ptr :: inputs_lst;
           knowns_lst := lowVar_ptr :: knowns_lst;
@@ -1213,12 +1222,6 @@ protected
 
         case VariableKind.CONSTANT() algorithm
           constants_lst := lowVar_ptr :: constants_lst;
-          knowns_lst := lowVar_ptr :: knowns_lst;
-        then ();
-
-        // always consider records known since their attributes are in the unknown section (if they are unknown)
-        case VariableKind.RECORD() algorithm
-          records_lst := lowVar_ptr :: records_lst;
           knowns_lst := lowVar_ptr :: knowns_lst;
         then ();
 
