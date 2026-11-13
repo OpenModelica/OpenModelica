@@ -72,38 +72,38 @@ simulate(simple_tuple); getErrorString();
 //
 // Alias Set 1:
 // **************
-// 	<No Constant/Parameter Binding>
+// 	<No Constant/Parameter/Input Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) z3 = $FUN_6; ($RES_SIM_13)
 //
 // Alias Set 2:
 // **************
-// 	<No Constant/Parameter Binding>
+// 	<No Constant/Parameter/Input Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) y = $FUN_4; ($RES_SIM_11)
 //
 // Alias Set 3:
 // **************
-// 	<No Constant/Parameter Binding>
+// 	<No Constant/Parameter/Input Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) x = $FUN_3; ($RES_SIM_10)
 //
 // Alias Set 4:
 // **************
-// 	<No Constant/Parameter Binding>
+// 	<No Constant/Parameter/Input Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) z2 = $FUN_5; ($RES_SIM_12)
 // 	[SCAL] (1) z1 = $FUN_5; ($RES_SIM_2)
 //
 // Alias Set 5:
 // **************
-// 	<No Constant/Parameter Binding>
+// 	<No Constant/Parameter/Input Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) b = $FUN_2; ($RES_SIM_4)
 //
 // Alias Set 6:
 // **************
-// 	<No Constant/Parameter Binding>
+// 	<No Constant/Parameter/Input Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) a = $FUN_1; ($RES_SIM_5)
 //
@@ -140,6 +140,19 @@ simulate(simple_tuple); getErrorString();
 //
 // [dumpBackendInline] Inlining operatations for: {AFTER_INDEX_RED}
 // ******************************************************************
+//
+// =============================================
+//   [dumprepl] Post Causalization Alias Sets:
+// =============================================
+//
+// <No Post Causalization Alias Sets>
+//
+// [dumprepl] Constant Replacements:
+// ***********************************
+// [dumprepl] Trivial Alias Replacements:
+// ****************************************
+// [dumprepl] Nontrivial Alias Replacements:
+// *******************************************
 //
 // [dumpBackendInline] Inlining operatations for: {NORMAL, BUILTIN_EARLY, EARLY, DEFAULT}
 // ****************************************************************************************

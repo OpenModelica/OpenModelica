@@ -28,12 +28,12 @@ simulate(Test1); getErrorString();
 //
 // Alias Set 1:
 // **************
-// 	Constant/Parameter Binding: [SCAL] (1) y = 3.0 + time; ($RES_SIM_1)
+// 	Constant/Parameter/Input Binding: [SCAL] (1) y = 3.0 + time; ($RES_SIM_1)
 // 	###<No Set Equations>
 //
 // Alias Set 2:
 // **************
-// 	<No Constant/Parameter Binding>
+// 	<No Constant/Parameter/Input Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) z = $FUN_1; ($RES_SIM_0)
 // 	[SCAL] (1) x = -2.0*z; ($RES_SIM_2)
@@ -44,7 +44,7 @@ simulate(Test1); getErrorString();
 //     messages = "Failed to build model: Test1"
 // end SimulationResult;
 // "Notification: There are different TearingSelect values.
-// 	<No Constant/Parameter Binding>
+// 	<No Constant/Parameter/Input Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) z = $FUN_1; ($RES_SIM_0)
 // 	[SCAL] (1) x = -2.0*z; ($RES_SIM_2)
@@ -53,7 +53,7 @@ simulate(Test1); getErrorString();
 // 	(x, TearingSelect = avoid)
 // 	(z, TearingSelect = never)
 // Error: Internal error NBAlias.setStartFixed failed because multiple variables are fixed with different start values!
-// 	<No Constant/Parameter Binding>
+// 	<No Constant/Parameter/Input Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) z = $FUN_1; ($RES_SIM_0)
 // 	[SCAL] (1) x = -2.0*z; ($RES_SIM_2)

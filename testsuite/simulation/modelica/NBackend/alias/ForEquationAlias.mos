@@ -48,7 +48,7 @@ val(c[2].y[2], 1);
 //
 // Alias Set 1:
 // **************
-// 	<No Constant/Parameter Binding>
+// 	<No Constant/Parameter/Input Binding>
 // 	### Set Equations:
 // 	[ARRY] (6) c.rates.pX = c.pX; ($RES_BND_8)
 //
@@ -66,6 +66,19 @@ val(c[2].y[2], 1);
 // ==================================
 //
 // <No Clocked Alias Sets>
+//
+// [dumprepl] Constant Replacements:
+// ***********************************
+// [dumprepl] Trivial Alias Replacements:
+// ****************************************
+// [dumprepl] Nontrivial Alias Replacements:
+// *******************************************
+//
+// =============================================
+//   [dumprepl] Post Causalization Alias Sets:
+// =============================================
+//
+// <No Post Causalization Alias Sets>
 //
 // [dumprepl] Constant Replacements:
 // ***********************************

@@ -741,7 +741,7 @@ public
       (function FunctionAlias.main(kind = kind), "FunctionAlias"),
       (function Inline.main(inline_types = inline_types, init = false), "Early Inline"),
       (function simplify(init = false), "Simplify"),
-      (function Alias.main(kind = kind),  "Alias"),
+      (function Alias.pre(kind = kind), "Pre Causalization Alias"),
       (removeStream,       "Remove Stream"),
       (detectAlgorithmLocals, "Algorithm Locals"),
       (DetectStates.main,  "Detect States"),
@@ -763,6 +763,7 @@ public
       (function Tearing.main(kind = kind),    "Tearing"),
       (Partitioning.categorize,               "Categorize"),
       (Solve.main,                            "Solve"),
+      (Alias.post,                            "Post Causalization Alias"),
       (function Jacobian.main(kind = kind),   "Jacobian"),
       (Initialization.minimizeHomotopySystem, "Minimize Homotopy System"),
       (DataReconciliation.createJacobian,     "Data Reconciliation Jacobian")
@@ -1189,6 +1190,15 @@ protected
         //   variable array even if they are of size 0
         case _ guard(Variable.size(lowVar) == 0) then ();
 
+        // always consider records known since their attributes are in the unknown section (if they are unknown)
+        case VariableKind.RECORD() algorithm
+          if Variable.isTopLevelInput(lowVar) then
+            inputs_lst := lowVar_ptr :: inputs_lst;
+          end if;
+          records_lst := lowVar_ptr :: records_lst;
+          knowns_lst := lowVar_ptr :: knowns_lst;
+        then ();
+
         case _ guard(Variable.isTopLevelInput(lowVar)) algorithm
           inputs_lst := lowVar_ptr :: inputs_lst;
           knowns_lst := lowVar_ptr :: knowns_lst;
@@ -1257,12 +1267,6 @@ protected
 
         case VariableKind.CONSTANT() algorithm
           constants_lst := lowVar_ptr :: constants_lst;
-          knowns_lst := lowVar_ptr :: knowns_lst;
-        then ();
-
-        // always consider records known since their attributes are in the unknown section (if they are unknown)
-        case VariableKind.RECORD() algorithm
-          records_lst := lowVar_ptr :: records_lst;
           knowns_lst := lowVar_ptr :: knowns_lst;
         then ();
 
