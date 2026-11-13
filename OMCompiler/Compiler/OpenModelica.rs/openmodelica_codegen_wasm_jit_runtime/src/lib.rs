@@ -2694,13 +2694,47 @@ pub extern "C" fn rt_bool_string(b: i32) -> u32 {
 /// C target (`ryu_to_hr` below is the same algorithm).
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_real_string(r: f64) -> u32 {
+    new_str_from(&real_text(r))
+}
+
+fn real_text(r: f64) -> String {
     if r.is_infinite() {
-        return new_str_from(if r < 0.0 { "-inf" } else { "inf" });
+        return (if r < 0.0 { "-inf" } else { "inf" }).to_string();
     }
     if r.is_nan() {
-        return new_str_from("NaN");
+        return "NaN".to_string();
     }
-    new_str_from(&ryu_to_hr(&format!("{r:e}"), true))
+    ryu_to_hr(&format!("{r:e}"), true)
+}
+
+/// The owned String `s` with `text` inserted at byte `at`; consumes `s`.
+fn str_insert(s: u32, at: u32, text: &str) -> u32 {
+    let old = unsafe { str_bytes(s) };
+    let at = (at as usize).min(old.len());
+    let obj = rt_str_new((old.len() + text.len()) as u32);
+    unsafe {
+        let dst = rt_str_data(obj) as *mut u8;
+        core::ptr::copy_nonoverlapping(old.as_ptr(), dst, at);
+        core::ptr::copy_nonoverlapping(text.as_ptr(), dst.add(at), text.len());
+        core::ptr::copy_nonoverlapping(old.as_ptr().add(at), dst.add(at + text.len()), old.len() - at);
+    }
+    rt_release(s);
+    obj
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_str_insert_real(s: u32, at: u32, r: f64) -> u32 {
+    str_insert(s, at, &real_text(r))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_str_insert_int(s: u32, at: u32, i: i32) -> u32 {
+    str_insert(s, at, &format!("{i}"))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_str_insert_bool(s: u32, at: u32, b: i32) -> u32 {
+    str_insert(s, at, if b != 0 { "true" } else { "false" })
 }
 
 /// `String(r, significantDigits, minimumLength, leftJustified)` for a Real.
