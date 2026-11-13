@@ -188,7 +188,15 @@ static fmi3Instance fmu3InstantiateCommon(int interfaceType, fmi3String instance
     fmi3LogMessageCallback logMessage, fmi3IntermediateUpdateCallback intermediateUpdate)
 {
   OMC_FmuType fmuType;
-  ModelInstance3 *inst = (ModelInstance3 *)calloc(1, sizeof(ModelInstance3));
+  ModelInstance3 *inst;
+  /* FMI 3.0 allows resourcePath = NULL, but this FMU reads its start values
+     from the resources directory. */
+  if (!resourcePath) {
+    omc_fmi3_logCallback(logMessage, instanceEnvironment, fmi3Error, "logStatusError",
+        "fmi3Instantiate: resourcePath = NULL. The FMU needs its resources directory.");
+    return NULL;
+  }
+  inst = (ModelInstance3 *)calloc(1, sizeof(ModelInstance3));
   if (!inst) {
     if (logMessage) {
       logMessage(instanceEnvironment, fmi3Fatal, "logStatusFatal", "fmi3Instantiate: out of memory.");
