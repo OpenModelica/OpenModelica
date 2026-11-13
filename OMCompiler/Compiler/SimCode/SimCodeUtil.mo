@@ -1164,6 +1164,10 @@ algorithm
         Option<SimCode.LinearSystem> optLinearSyst;
         SimCode.SimEqSystem system;
         BackendDAE.EquationAttributes eqAttr;
+        DAE.Exp cond;
+        list<SimCode.SimEqSystem> branchEqns;
+        list<tuple<DAE.Exp, list<SimCode.SimEqSystem>>> branches;
+        list<SimCode.JacobianMatrix> branchSymJacs;
 
       // nonlinear case
       case SimCode.SES_NONLINEAR(nlSystem=nlSyst as SimCode.NONLINEARSYSTEM(), alternativeTearing=optNlSyst, eqAttr=eqAttr) algorithm
@@ -1198,6 +1202,21 @@ algorithm
         end if;
         system := SimCode.SES_LINEAR(linearSyst, optLinearSyst, eqAttr);
         modelInfo.linearSystems := system::modelInfo.linearSystems;
+      then system;
+
+      // The templates do not look for systems inside an if-equation, so these are always added to modelInfo.
+      case system as SimCode.SES_IFEQUATION() algorithm
+        branches := {};
+        for branch in system.ifbranches loop
+          (cond, branchEqns) := branch;
+          (branchEqns, modelInfo, branchSymJacs) := addAlgebraicLoopsModelInfo(branchEqns, modelInfo);
+          symJacs := listAppend(branchSymJacs, symJacs);
+          branches := (cond, branchEqns) :: branches;
+        end for;
+        system.ifbranches := listReverse(branches);
+        (branchEqns, modelInfo, branchSymJacs) := addAlgebraicLoopsModelInfo(system.elsebranch, modelInfo);
+        system.elsebranch := branchEqns;
+        symJacs := listAppend(branchSymJacs, symJacs);
       then system;
 
       else eqn;
