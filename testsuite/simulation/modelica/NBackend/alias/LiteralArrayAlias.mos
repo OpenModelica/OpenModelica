@@ -44,8 +44,6 @@ val(x[3], 1);
 // 	Constant/Parameter Binding: [ARRY] (3) b = -c; ($RES_SIM_2)
 // 	###<No Set Equations>
 //
-// [dumprepl] Constant Replacements:
-// ***********************************
 // [dumprepl] Trivial Alias Replacements:
 // ****************************************
 // 	b	 ==> 	-c
@@ -59,12 +57,6 @@ val(x[3], 1);
 //
 // <No Clocked Alias Sets>
 //
-// [dumprepl] Constant Replacements:
-// ***********************************
-// [dumprepl] Trivial Alias Replacements:
-// ****************************************
-// [dumprepl] Nontrivial Alias Replacements:
-// *******************************************
 //
 // record SimulationResult
 //     resultFile = "LiteralArrayAlias_res.mat",

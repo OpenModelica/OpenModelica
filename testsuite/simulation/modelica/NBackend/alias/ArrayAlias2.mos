@@ -29,13 +29,9 @@ simulate(ArrayAlias2); getErrorString();
 // 	### Set Equations:
 // 	[ARRY] (2) a = b; ($RES_SIM_1)
 //
-// [dumprepl] Constant Replacements:
-// ***********************************
 // [dumprepl] Trivial Alias Replacements:
 // ****************************************
 // 	b	 ==> 	a
-// [dumprepl] Nontrivial Alias Replacements:
-// *******************************************
 //
 // ==================================
 //   [dumprepl] Clocked Alias Sets:
@@ -43,12 +39,6 @@ simulate(ArrayAlias2); getErrorString();
 //
 // <No Clocked Alias Sets>
 //
-// [dumprepl] Constant Replacements:
-// ***********************************
-// [dumprepl] Trivial Alias Replacements:
-// ****************************************
-// [dumprepl] Nontrivial Alias Replacements:
-// *******************************************
 //
 // record SimulationResult
 //     resultFile = "ArrayAlias2_res.mat",
