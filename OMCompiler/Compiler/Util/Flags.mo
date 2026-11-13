@@ -583,15 +583,15 @@ constant DebugFlag TEARING_COST = DEBUG_FLAG(200, "tearingCost", EXTERNAL(), fal
   "Dumps the estimated cost of every torn system against solving it untorn.");
 constant DebugFlag OMEDIT = DEBUG_FLAG(201, "omedit", EXTERNAL(), false,
   "Set by OMEdit, so the compiler can emit output only a GUI consumes.");
-constant DebugFlag FMI_ADJOINT_PARAMETERS = DEBUG_FLAG(202, "fmiAdjointParameters", false,
+constant DebugFlag FMI_ADJOINT_PARAMETERS = DEBUG_FLAG(202, "fmiAdjointParameters", EXTERNAL(), false,
   "Includes retained Real parameters among the independent variables of FMI 3.0 adjoint derivatives in the new backend. Evaluated and structural parameters are not included.");
-constant DebugFlag FMI_DIRECTIONAL_PARAMETERS = DEBUG_FLAG(203, "fmiDirectionalParameters", false,
+constant DebugFlag FMI_DIRECTIONAL_PARAMETERS = DEBUG_FLAG(203, "fmiDirectionalParameters", EXTERNAL(), false,
   "Includes retained Real parameters among the independent variables of FMI 3.0 directional derivatives in the new backend. Evaluated and structural parameters are not included.");
-constant DebugFlag CHECK_USED_ELEMENTS_LOOKUP = DEBUG_FLAG(202, "checkUsedElementsLookup", EXTERNAL(), false,
+constant DebugFlag CHECK_USED_ELEMENTS_LOOKUP = DEBUG_FLAG(204, "checkUsedElementsLookup", EXTERNAL(), false,
   "Checks the classes found by the lookup of getDefUseChains and getClassDiagram against the new frontend's lookup.");
-constant DebugFlag NF_SCRIPTING = DEBUG_FLAG(203, "nfScripting", EXTERNAL(), true,
+constant DebugFlag NF_SCRIPTING = DEBUG_FLAG(205, "nfScripting", EXTERNAL(), true,
   "Evaluates scripts with the new frontend.");
-constant DebugFlag HOMOTOPY_IN_RESIDUALS = DEBUG_FLAG(204, "homotopyInResiduals", EXTERNAL(), false,
+constant DebugFlag HOMOTOPY_IN_RESIDUALS = DEBUG_FLAG(206, "homotopyInResiduals", EXTERNAL(), false,
   "Keeps homotopy() in the DAE residuals, the generated code evaluates the branches that lambda selects.");
 
 public
