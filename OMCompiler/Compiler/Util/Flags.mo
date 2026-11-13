@@ -1309,7 +1309,7 @@ constant ConfigFlag PARMODAUTO = CONFIG_FLAG(139, "parmodauto",
   "Experimental: Enable parallelization of independent systems of equations in the translated model. Only works on Linux systems.");
 constant ConfigFlag INTERACTIVE_PORT = CONFIG_FLAG(140, "interactivePort",
   NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
-  "Sets the port used by the interactive server.");
+  "Sets the port used by the interactive server. 0 lets the operating system choose a free port.");
 constant ConfigFlag ALLOW_NON_STANDARD_MODELICA = CONFIG_FLAG(141, "allowNonStandardModelica",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     }),

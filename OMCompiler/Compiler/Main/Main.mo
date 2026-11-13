@@ -531,7 +531,7 @@ protected
   Boolean b;
   String str,replystr;
 algorithm
-  shandle := Socket.waitforconnect(29500);
+  shandle := Socket.waitforconnect(Flags.getConfigInt(Flags.INTERACTIVE_PORT));
   if shandle == -1 then
     fail();
   end if;
