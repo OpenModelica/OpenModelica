@@ -201,6 +201,46 @@ algorithm
   setGlobalRoot(Global.timeIndependentVars, SOME(vars));
 end setTimeIndependentVars;
 
+protected function setTimeAliasVars
+  "Records the right-hand side of each equation `v = time` or `v = x + c`
+   (or `x - c`), from which SimCodeCodegenUtil.timeEventForm finds the
+   variables that are `time + c`."
+  input BackendDAE.EqSystems systems;
+protected
+  UnorderedMap<DAE.ComponentRef, DAE.Exp> defs = UnorderedMap.new<DAE.Exp>(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
+  DAE.ComponentRef cr;
+  DAE.Exp rhs;
+algorithm
+  for syst in systems loop
+    if not BackendDAEUtil.isClockedSyst(syst) then
+      for eq in BackendEquation.equationList(syst.orderedEqs) loop
+        () := match eq
+          case BackendDAE.EQUATION(exp = DAE.CREF(componentRef = cr), scalar = rhs) guard isTimeShift(rhs)
+            algorithm UnorderedMap.add(cr, rhs, defs); then ();
+          case BackendDAE.EQUATION(exp = rhs, scalar = DAE.CREF(componentRef = cr)) guard isTimeShift(rhs)
+            algorithm UnorderedMap.add(cr, rhs, defs); then ();
+          case BackendDAE.SOLVED_EQUATION(componentRef = cr, exp = rhs) guard isTimeShift(rhs)
+            algorithm UnorderedMap.add(cr, rhs, defs); then ();
+          else ();
+        end match;
+      end for;
+    end if;
+  end for;
+  setGlobalRoot(Global.timeAliasVars, SOME(defs));
+end setTimeAliasVars;
+
+protected function isTimeShift
+  input DAE.Exp exp;
+  output Boolean b;
+algorithm
+  b := match exp
+    case DAE.CREF(componentRef = DAE.CREF_IDENT(ident = "time")) then true;
+    case DAE.BINARY(operator = DAE.ADD(ty = DAE.T_REAL())) then true;
+    case DAE.BINARY(operator = DAE.SUB(ty = DAE.T_REAL())) then true;
+    else false;
+  end match;
+end isTimeShift;
+
 public function createSimCode "entry point to create SimCode from BackendDAE."
   input BackendDAE.BackendDAE inBackendDAE;
   input BackendDAE.BackendDAE inInitDAE;
@@ -350,6 +390,7 @@ algorithm
                                 symjacs=symJacs,
                                 eventInfo=eventInfo) := dlow.shared;
     setTimeIndependentVars(globalKnownVars);
+    setTimeAliasVars(dlow.eqs);
 
     removedEqs := BackendDAEUtil.collapseRemovedEqs(dlow);
 

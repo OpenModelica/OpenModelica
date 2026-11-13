@@ -45,4 +45,19 @@ thread_local! {
             )>,
         )>,
     > = RefCell::new(metamodelica::nil());
+
+    // Index 46 — timeAliasVars
+    //
+    // The right-hand side of each equation `v = time` or `v = x + c`; source:
+    // SimCodeUtil.setTimeAliasVars, read by SimCodeCodegenUtil.timeEventForm.
+    pub static timeAliasVars: RefCell<
+        Option<
+            metamodelica::Ref<
+                openmodelica_util::UnorderedMap::UnorderedMap<
+                    metamodelica::Ref<openmodelica_frontend_types::DAE::ComponentRef>,
+                    metamodelica::Ref<openmodelica_frontend_types::DAE::Exp>,
+                >,
+            >,
+        >,
+    > = const { RefCell::new(None) };
 }

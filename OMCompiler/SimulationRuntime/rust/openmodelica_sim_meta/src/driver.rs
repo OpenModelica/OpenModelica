@@ -9817,7 +9817,6 @@ impl SolverCore {
     ) -> Result<Step> {
         let layout = &model.layout;
         let sim_data = self.sim_data;
-        let n_states = self.n_states;
         let span = model.stop_time - model.start_time;
         let eps = reached_eps(tout, span);
         let step_eps = small_step_eps(span);
@@ -10037,11 +10036,12 @@ impl SolverCore {
                     }
                     continue;
                 }
-            } else if target > self.t && !self.dae {
-                // `dassl.c`'s "Desired step size too small": one Euler step instead.
+            } else if target > self.t {
+                // `dassl.c`'s "Desired step size too small": one Euler step instead,
+                // which `ida_solver.c` takes over the DAE-mode algebraic unknowns too.
                 let h = target - self.t;
-                for i in 0..n_states {
-                    self.y[i] += self.yp[i] * h;
+                for (y, yp) in self.y.iter_mut().zip(&self.yp) {
+                    *y += yp * h;
                 }
                 self.t = target;
                 self.write_states(e)?;
@@ -10495,11 +10495,19 @@ impl CsDriver {
                 self.samp.refresh(e, sim_data, self.core.t)?;
                 let te = self.samp.next_time();
                 let tc = self.sync.next_time();
-                let mut subtarget = t_target;
+                // A sample pulled in just past the target has carried `t` beyond it.
+                let mut subtarget = t_target.max(self.core.t);
                 if tc >= self.core.t && tc <= subtarget + SYNC_EPS {
                     subtarget = tc;
                 }
-                if te >= self.core.t && te <= subtarget + sample_pull_eps(model) {
+                // A relation that switches after the communication point belongs to
+                // the next step: this one ends at `t_target`.
+                let pull_eps = if self.samp.next_is_relation() {
+                    0.0
+                } else {
+                    sample_pull_eps(model)
+                };
+                if te >= self.core.t && te <= subtarget + pull_eps {
                     subtarget = te;
                 }
                 let mut troot = None;
@@ -10561,7 +10569,7 @@ impl CsDriver {
                         self.after_walk_event(e, layout)?;
                     }
                 }
-                if te <= subtarget + sample_pull_eps(model) {
+                if te <= subtarget + pull_eps {
                     self.core.t = te;
                     log_time_event(e, te, &self.samp, model);
                     if defers(te) {
@@ -10999,7 +11007,8 @@ impl Driver for EventsDriver {
                     self.samp.refresh(e, sim_data, self.core.t)?;
                     let te = self.samp.next_time();
                     let tc = self.sync.next_time();
-                    let mut subtarget = tout;
+                    // A time event pulled in just past `tout` has carried `t` beyond it.
+                    let mut subtarget = tout.max(self.core.t);
                     if tc >= self.core.t && tc <= subtarget + SYNC_EPS {
                         subtarget = tc;
                     }
