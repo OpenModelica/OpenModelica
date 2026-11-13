@@ -1694,6 +1694,83 @@ algorithm
   end match;
 end getFMIArrayStartValues;
 
+public function fmi3StateInitial
+  "The FMI 3.0 initial attribute of a continuous-time state: calculated for a
+   start expression, else exact for a fixed and approx for an unfixed start."
+  input SimCodeVar.SimVar var;
+  output SimCodeVar.Initial initial_;
+algorithm
+  initial_ := match var
+    case SimCodeVar.SIMVAR(varKind = BackendDAE.STATE())
+      then if not hasFMIStartLiteral(var) then SimCodeVar.CALCULATED()
+           elseif var.isFixed then SimCodeVar.EXACT()
+           else SimCodeVar.APPROX();
+    else Util.getOptionOrDefault(var.initial_, SimCodeVar.NONE_INITIAL());
+  end match;
+end fmi3StateInitial;
+
+protected function hasFMIStartLiteral
+  "Whether the start is a literal, or missing so that the default applies."
+  input SimCodeVar.SimVar var;
+  output Boolean b;
+algorithm
+  b := match var.initialValue
+    local DAE.Exp e;
+    case SOME(e) then isFMIStartLiteral(e);
+    else true;
+  end match;
+end hasFMIStartLiteral;
+
+protected function isFMIStartLiteral
+  "Whether getFMIArrayStartValues gives a value for each element of the start."
+  input DAE.Exp e;
+  output Boolean b;
+algorithm
+  b := match e
+    case DAE.RCONST() then true;
+    case DAE.ICONST() then true;
+    case DAE.BCONST() then true;
+    case DAE.SCONST() then true;
+    case DAE.ARRAY() then List.all(e.array, isFMIStartLiteral);
+    case DAE.REDUCTION() then isFMIStartLiteral(e.expr);
+    else false;
+  end match;
+end isFMIStartLiteral;
+
+public function getFMI3StateInitialStr
+  "The FMI 3.0 initial attribute of a state, empty for the default calculated."
+  input SimCodeVar.SimVar var;
+  output String str;
+algorithm
+  str := match fmi3StateInitial(var)
+    case SimCodeVar.EXACT() then "exact";
+    case SimCodeVar.APPROX() then "approx";
+    else "";
+  end match;
+end getFMI3StateInitialStr;
+
+public function getFMI3StateStart
+  "The FMI 3.0 start attribute of a state: the literal or the default for
+   initial=exact and approx, empty for calculated."
+  input SimCodeVar.SimVar var;
+  output String out;
+algorithm
+  out := match fmi3StateInitial(var)
+    case SimCodeVar.EXACT() then fmi3StartOrDefault(var);
+    case SimCodeVar.APPROX() then fmi3StartOrDefault(var);
+    else "";
+  end match;
+end getFMI3StateStart;
+
+protected function fmi3StartOrDefault
+  input SimCodeVar.SimVar var;
+  output String out = getFMI3ArrayStart(var);
+algorithm
+  if stringEmpty(out) then
+    out := stringDelimitList(List.fill("0.0", SimCodeUtilShared.getNumElems(var)), " ");
+  end if;
+end fmi3StartOrDefault;
+
 public function getFMIScalarVRs
   "Comma separated list of the scalar value references occupied by a (possibly
    array) FMI variable: base, base+1, ..., base+getNumElems-1. For a scalar this

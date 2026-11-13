@@ -673,7 +673,7 @@ case SIMVAR(__) then
   else
   match type_
     case T_REAL(__) then
-      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, numScalarStates)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString3(simVar, simCode)%><%relativeQuantity(simVar)%><%CloseWithAliases3("Float64", simVar, simCode)%>'
+      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, numScalarStates)%><%StartString3(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString3(simVar, simCode)%><%relativeQuantity(simVar)%><%CloseWithAliases3("Float64", simVar, simCode)%>'
     case T_INTEGER(__) then
       '<Int32 <%VariableCommonAttributes3(simVar, simCode)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%CloseWithAliases3("Int32", simVar, simCode)%>'
     case T_BOOL(__) then
@@ -734,6 +734,19 @@ case FMI_CLOCK(__) then
   '<Clock name="<%nm%>" valueReference="<%valueReference%>" causality="<%causality%>" intervalVariability="<%intervalVariability%>"<%intervalDec%><%fraction%><%counter%><%res%>/>'
 end Clock3;
 
+template StartString3(SimVar simVar)
+ "Generates the start attribute of a scalar FMI 3.0 Float64 variable."
+::=
+match simVar
+case SIMVAR(aliasvar = SimCodeVar.ALIAS(__)) then ''
+case SIMVAR(varKind = STATE(__)) then
+  if stringEq(getFMI3StateInitialStr(simVar), "") then ''
+  else
+    let s = startString3(simVar)
+    if stringEq(s, "") then ' start="0.0"' else s
+else StartString2(simVar)
+end StartString3;
+
 template ArrayStartString3(SimVar simVar)
  "Generates the start attribute (a space separated list of the scalar element
   start values) for an FMI 3.0 array variable. Emitted only where a scalar would
@@ -741,7 +754,9 @@ template ArrayStartString3(SimVar simVar)
 ::=
 match simVar
 case SIMVAR(aliasvar = SimCodeVar.ALIAS(__)) then ''
-case SIMVAR(varKind = STATE(__)) then arrayStartAttr(simVar)
+case SIMVAR(varKind = STATE(__)) then
+  let s = getFMI3StateStart(simVar)
+  if stringEq(s, "") then '' else ' start="<%s%>"'
 case SIMVAR(initial_ = SOME(SimCodeVar.EXACT())) then arrayStartAttr(simVar)
 case SIMVAR(initial_ = SOME(SimCodeVar.APPROX())) then arrayStartAttr(simVar)
 case SIMVAR(causality = SOME(SimCodeVar.INPUT())) then arrayStartAttr(simVar)
@@ -764,15 +779,10 @@ case SIMVAR(numArrayElement = dims) then
 end Dimensions3;
 
 template FmiInitialAttribute3(SimVar simVar)
- "Generates the FMI 3.0 initial attribute. Continuous-time states are special:
-  the non-scalarized array backend does not populate their initial_ field, so we
-  derive it from the variable's fixed attribute here. A fixed start is an exact
-  initial value (initial=\"exact\"), an unfixed start is a guess (initial=\"approx\").
-  All other variables fall back to the generic SimCode-derived attribute."
+ "Generates the FMI 3.0 initial attribute."
 ::=
 match simVar
-case SIMVAR(varKind = STATE(__), isFixed = true) then "exact"
-case SIMVAR(varKind = STATE(__)) then "approx"
+case SIMVAR(varKind = STATE(__)) then getFMI3StateInitialStr(simVar)
 else getFmiInitialAttributeStr(simVar)
 end FmiInitialAttribute3;
 
