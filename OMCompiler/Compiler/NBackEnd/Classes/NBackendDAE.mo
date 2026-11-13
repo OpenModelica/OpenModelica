@@ -710,7 +710,6 @@ public
       (function Partitioning.main(kind = NBPartition.Kind.ODE),             "Partitioning"),
       (function Causalize.main(kind = NBPartition.Kind.ODE),                "Causalize"),
       (function Inline.main(inline_types = {DAE.AFTER_INDEX_RED_INLINE()}, init = false), "After Index Reduction Inline"),
-      (Alias.post,                                                          "Post Causalization Alias"),
       (Initialization.main,                                                 "Initialization")
     }, mainModules);
 
@@ -720,6 +719,7 @@ public
       (function Tearing.main(kind = kind),    "Tearing"),
       (Partitioning.categorize,               "Categorize"),
       (Solve.main,                            "Solve"),
+      (Alias.post,                            "Post Causalization Alias"),
       (function Jacobian.main(kind = kind),   "Jacobian"),
       (Initialization.minimizeHomotopySystem, "Minimize Homotopy System")
     };

@@ -275,6 +275,10 @@ public
 
         case comp as StrongComponent.SINGLE_COMPONENT()
           algorithm
+
+            // apply replacements on comp.eqn
+            // if it is an alias equation, add it to replacements (and mark as removable component)
+
             varName := BVariable.getVarName(comp.var);
 
             if UnorderedMap.contains(varName, replacements) then

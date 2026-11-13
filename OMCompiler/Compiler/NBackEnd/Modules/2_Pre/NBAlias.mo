@@ -197,11 +197,16 @@ public
 
 protected
   uniontype AliasSet "gets accumulated to find sets of alias equations and solve them"
-    record ALIAS_SET
+    record PRE_SET
       list<ComponentRef> simple_variables         "list of all variables in this set";
       list<Pointer<Equation>> simple_equations    "list of all equations in this set";
       Option<Pointer<Equation>> const_opt         "optional constant binding of one variable";
-    end ALIAS_SET;
+    end PRE_SET;
+
+    // record POST_SET
+    //   list<ComponentRef> simple_variables         "list of all variables in this set";
+    //   Option<Pointer<Equation>> const_opt         "optional constant binding of one variable";
+    // end POST_SET;
 
     function toString
       input AliasSet set;
@@ -224,7 +229,7 @@ protected
     end toString;
   end AliasSet;
 
-  constant AliasSet EMPTY_ALIAS_SET = ALIAS_SET({}, {}, NONE());
+  constant AliasSet EMPTY_PRE_SET = PRE_SET({}, {}, NONE());
 
   // needed for unordered map
   type SetPtr = Pointer<AliasSet>;
@@ -288,6 +293,21 @@ protected
       3. match/sort set (linear w.r.t. unknowns since all equations contain two crefs at max and are simple/linear)
       4. apply replacements
       5. save replacements in bindings of alias variables
+
+    OR:
+      for each comp:
+        1. apply replacements to component equations
+        2. if new equation is alias equation:
+          2.1 add to replacements
+          2.2 check if valid, else mark comp for removal
+          2.3 merge LHS-cref into alias-set of RHS-cref or create new set
+          2.4 rateVar to check if LHS-cref is 'better' than set varToKeep
+
+      for each comp:
+        3. replace again with final alias choices
+        4. resolve occurrences that defy sorting (der(), pre(), delay(), ...)
+
+      5. resolve attributes for all alias sets
     "
     extends Module.aliasPostInterface;
   protected
@@ -1261,7 +1281,7 @@ protected
       case CREF_TPL(cr_lst = {cr1}) algorithm
         if not UnorderedMap.contains(cr1, map) then
           // the variable does not belong to a set -> create new one
-          set := EMPTY_ALIAS_SET;
+          set := EMPTY_PRE_SET;
           set.simple_variables := {cr1};
           set.const_opt := SOME(Pointer.create(eq));
           UnorderedMap.add(cr1, Pointer.create(set), map);
@@ -1306,7 +1326,7 @@ protected
 
           else
             set2 := Pointer.access(set2_ptr);
-            set := EMPTY_ALIAS_SET;
+            set := EMPTY_PRE_SET;
             if (isSome(set1.const_opt) and isSome(set2.const_opt)) then
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets " +
                   "because both have a constant binding. This would create an overdetermined Set!:\n\n" +
@@ -1362,7 +1382,7 @@ protected
           UnorderedMap.add(cr1, set_ptr, map);
         else
           // create new set
-          set := EMPTY_ALIAS_SET;
+          set := EMPTY_PRE_SET;
           // add both variables and add new equation pointer
           set.simple_variables := {cr1, cr2};
           set.simple_equations := {Pointer.create(eq)};
@@ -1914,8 +1934,7 @@ protected
     replacements := match set.const_opt
       local
         Expression rhs;
-        Equation solved_eq;
-        Pointer<Equation> const_eq, eq;
+        Pointer<Equation> const_eq;
         list<Pointer<Variable>> alias_vars;
         VariablePointers vars;
         list<Pointer<Variable>> var_lst;
@@ -1924,7 +1943,6 @@ protected
         list<StrongComponent> comps;
         AttributeCollector collector;
         Pointer<Pointer<Variable>> var_to_keep = Pointer.create(Pointer.create(NBVariable.DUMMY_VARIABLE));
-        Status status;
         Expression res, expr;
         DifferentiationArguments args;
         array<Real> lhs;
@@ -1972,27 +1990,48 @@ protected
           print(StringUtil.headline_4("Attribute collector (before replacements): ") + collector.toString(collector) + "\n");
         end if;
 
-        // solve equations for vars to have attribute conversion rules
-        for var in var_lst loop
-          rhs := UnorderedMap.getSafe(BVariable.getVarName(var), replacements, sourceInfo());
-          eq := Equation.makeAssignment(BVariable.toExpression(var), rhs, index, NBEquation.TMP_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false));
-          (solved_eq, status, _) := Solve.solveBody(Pointer.access(eq), BVariable.getVarName(Pointer.access(var_to_keep)), UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual));
-          collector := AttributeCollector.fixValues(collector, BVariable.getVarName(var), solved_eq);
-        end for;
+        _ := resolveAttributeIrgendwas(set, var_lst, replacements, var_to_keep, collector, index);
 
-        if Flags.isSet(Flags.DEBUG_ALIAS) then
-          print(StringUtil.headline_4("Attribute collector (after replacements): ") + collector.toString(collector) + "\n");
-        end if;
-        diffTearingSelect(collector.tearingSelect_map, set);
-        stateSelectAlways(collector.stateSelect_map, set);
-        checkNominalThreshold(collector.nominal_map, set);
-        setNewAttributes(var_to_keep, collector, set);
-        if Flags.isSet(Flags.DEBUG_ALIAS) then
-          print(StringUtil.headline_3("Variable to keep (values of attributes after replacements):") + BVariable.pointerToString(Pointer.access(var_to_keep))+"\n");
-        end if;
       then replacements;
     end match;
   end createReplacementRules;
+
+  function resolveAttributeIrgendwas
+    input AliasSet set;
+    input list<Pointer<Variable>> var_lst;
+    input UnorderedMap<ComponentRef, Expression> replacements;
+    input Pointer<Pointer<Variable>> var_to_keep;
+    input output AttributeCollector collector;
+    input Pointer<Integer> index;
+  protected
+    Expression rhs;
+    Pointer<Equation> eq;
+    Equation solved_eq;
+    Status status;
+  algorithm
+    // solve equations for vars to have attribute conversion rules
+    for var in var_lst loop
+      rhs := UnorderedMap.getSafe(BVariable.getVarName(var), replacements, sourceInfo());
+      eq := Equation.makeAssignment(BVariable.toExpression(var), rhs, index, NBEquation.TMP_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false));
+      (solved_eq, status, _) := Solve.solveBody(Pointer.access(eq), BVariable.getVarName(Pointer.access(var_to_keep)), UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual));
+      if status <> NBSolve.Status.EXPLICIT then
+        // TODO proper error message: must be solvable
+        fail();
+      end if;
+      collector := AttributeCollector.fixValues(collector, BVariable.getVarName(var), solved_eq);
+    end for;
+
+    if Flags.isSet(Flags.DEBUG_ALIAS) then
+      print(StringUtil.headline_4("Attribute collector (after replacements): ") + collector.toString(collector) + "\n");
+    end if;
+    diffTearingSelect(collector.tearingSelect_map, set);
+    stateSelectAlways(collector.stateSelect_map, set);
+    checkNominalThreshold(collector.nominal_map, set);
+    setNewAttributes(var_to_keep, collector, set);
+    if Flags.isSet(Flags.DEBUG_ALIAS) then
+      print(StringUtil.headline_3("Variable to keep (values of attributes after replacements):") + BVariable.pointerToString(Pointer.access(var_to_keep))+"\n");
+    end if;
+  end resolveAttributeIrgendwas;
 
   function setNewAttributes
     "Sets new values for each attribute of kept variable, if possible. "
@@ -2595,7 +2634,7 @@ protected
       UnorderedMap<ComponentRef,Expression> min_val_map             "set containing all minimum values";
       UnorderedMap<ComponentRef,Expression> max_val_map             "set containing all maximum values";
       UnorderedMap<ComponentRef,Expression> start_map               "set containing all start values";
-      UnorderedMap<ComponentRef,Binding> start_binding_map         "start bindings, for their confidence";
+      UnorderedMap<ComponentRef,Binding> start_binding_map          "start bindings, for their confidence";
       UnorderedMap<ComponentRef,Expression> fixed_map               "set containing all fixed values";
       UnorderedMap<ComponentRef,Expression> nominal_map             "set containing all nominal values";
       UnorderedMap<ComponentRef,StateSelect> stateSelect_map        "set containing all stateSelect values";
