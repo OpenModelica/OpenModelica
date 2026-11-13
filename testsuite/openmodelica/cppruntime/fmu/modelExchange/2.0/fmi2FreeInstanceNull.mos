@@ -1,0 +1,35 @@
+// name:     fmi2FreeInstanceNull
+// keywords: FMI 2.0 export Cpp fmi2FreeInstance
+// status:   correct
+// teardown_command: rm -rf fmi2FreeInstanceNull.fmu fmi2FreeInstanceNull.so fmi2FreeInstanceNull.fmutmp/ fmi2FreeInstanceNull.log fmi2FreeInstanceNull_out.txt
+//
+// fmi2FreeInstance(NULL) of a Cpp FMU must be ignored and must not crash
+// (FMI 2.0.5, section 2.1.5).
+
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+
+loadString("
+model fmi2FreeInstanceNull
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = -x;
+end fmi2FreeInstanceNull;
+"); getErrorString();
+
+buildModelFMU(fmi2FreeInstanceNull, version = "2.0", fmuType = "me"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi2FreeInstanceNull.py fmi2FreeInstanceNull.fmu fmi2FreeInstanceNull_out.txt > fmi2FreeInstanceNull.log 2>&1"); getErrorString();
+readFile("fmi2FreeInstanceNull_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi2FreeInstanceNull.fmu"
+// ""
+// 0
+// ""
+// "fmi2FreeInstance(NULL) returned
+// "
+// ""
+// endResult

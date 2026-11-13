@@ -15,7 +15,8 @@ testClockDescription.mos \
 testCSTR.mos \
 testDrumBoiler.mos \
 ticket6296.mos \
-testCombiTable2D.mos
+testCombiTable2D.mos \
+fmi2FreeInstanceNull.mos
 
 FAILINGTESTFILES = \
 Crane_FMU2_CPP.mos \
@@ -24,7 +25,8 @@ CoupledClutches_FMU2_CPP.mos
 DEPENDENCIES = \
 *.mo \
 *.mos \
-Makefile
+Makefile \
+fmi2FreeInstanceNull.py
 
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
