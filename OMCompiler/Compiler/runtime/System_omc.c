@@ -51,6 +51,7 @@ extern "C"
 #include <stdlib.h>
 #include "util/omc_msvc.h"
 #include "util/omc_file.h"
+#include "util/omc_error.h"
 #include "openmodelica.h"
 #include "meta/meta_modelica.h"
 #include "ModelicaUtilities.h"
@@ -630,6 +631,8 @@ extern void System_freeFunction(int _inFuncHandle, int printDebug)
 
 extern void System_freeLibrary(int _inLibHandle, int printDebug)
 {
+  /* A library loaded later can put a warning assert at the same address. */
+  omc_assert_warnings_free((threadData_t*)pthread_getspecific(mmc_thread_data_key));
   if (SystemImpl__freeLibrary(_inLibHandle, printDebug)) MMC_THROW();
 }
 

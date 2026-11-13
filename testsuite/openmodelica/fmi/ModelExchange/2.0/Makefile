@@ -44,6 +44,7 @@ Issue16354.mos \
 fmi_import_boolean.mos \
 fmi_import_enum_names.mos \
 fmi2_array_nonscalarized.mos \
+fmi2_assert_warning_instances.mos \
 fmi2_arrays_initial_unknowns.mos \
 fmi2_fmustate_bounds.mos \
 fmi2_fmustate_recover.mos \

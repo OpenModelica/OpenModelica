@@ -28,6 +28,7 @@
 #include "setjmp.h"
 #include <stdio.h>
 #include "omc_error.h"
+#include <stdlib.h>
 #include <string.h>
 #include "omc_init.h"
 #include "simulation_options.h"
@@ -313,6 +314,64 @@ void omc_assert_function(threadData_t* threadData, FILE_INFO info, const char *m
   fflush(NULL);
   threadData = omc_thread_data(threadData, NULL);
   OMC_ERROR_RAISE();
+}
+
+typedef struct {
+  size_t n;
+  size_t size;
+  const void **sites;
+} omc_assert_warnings;
+
+int omc_assert_warning_done(threadData_t *threadData, const void *site)
+{
+  omc_assert_warnings *w = threadData ? (omc_assert_warnings*) threadData->localRoots[LOCAL_ROOT_ASSERT_WARNINGS] : NULL;
+  size_t i;
+  if (!w) {
+    return 0;
+  }
+  for (i = 0; i < w->n; i++) {
+    if (w->sites[i] == site) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+void omc_assert_warning_set_done(threadData_t *threadData, const void *site)
+{
+  omc_assert_warnings *w;
+  if (!threadData) {
+    return;
+  }
+  w = (omc_assert_warnings*) threadData->localRoots[LOCAL_ROOT_ASSERT_WARNINGS];
+  if (!w) {
+    w = (omc_assert_warnings*) calloc(1, sizeof(omc_assert_warnings));
+    if (!w) {
+      return;
+    }
+    threadData->localRoots[LOCAL_ROOT_ASSERT_WARNINGS] = w;
+  }
+  if (w->n == w->size) {
+    size_t size = w->size ? 2 * w->size : 8;
+    const void **sites = (const void**) realloc((void*) w->sites, size * sizeof(*sites));
+    if (!sites) {
+      return;
+    }
+    w->sites = sites;
+    w->size = size;
+  }
+  w->sites[w->n++] = site;
+}
+
+void omc_assert_warnings_free(threadData_t *threadData)
+{
+  omc_assert_warnings *w = threadData ? (omc_assert_warnings*) threadData->localRoots[LOCAL_ROOT_ASSERT_WARNINGS] : NULL;
+  if (!w) {
+    return;
+  }
+  free((void*) w->sites);
+  free(w);
+  threadData->localRoots[LOCAL_ROOT_ASSERT_WARNINGS] = NULL;
 }
 
 void omc_assert_warning_function(FILE_INFO info, const char *msg, ...)
