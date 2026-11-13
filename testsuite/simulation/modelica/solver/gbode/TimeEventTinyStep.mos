@@ -1,0 +1,64 @@
+// name:     TimeEventTinyStep
+// keywords: gbode, time events
+// status:   correct
+// suite:    gbode
+// teardown_command: rm -rf tinyStep* output.log
+//
+// gbode extrapolates a step too short to take after a restart. `time > 0` has
+// its time event at nextafter(0) = 4.9e-324. The accumulated tNext lands a few
+// ulp before many output points, and the reinit at that event must survive the
+// short step to the output point.
+
+loadString("
+model tinyStepStart
+  Real x(start = 0, fixed = true);
+  Boolean b = time > 0;
+equation
+  der(x) = if b then 1 else 0;
+end tinyStepStart;
+
+model tinyStepReinit
+  Real x(start = 1, fixed = true);
+  discrete Real tNext(start = 0.1, fixed = true);
+equation
+  der(x) = -x;
+  when time >= pre(tNext) then
+    tNext = pre(tNext) + 0.1;
+    reinit(x, 1);
+  end when;
+end tinyStepReinit;
+"); getErrorString();
+
+simulate(tinyStepStart, stopTime = 1, method = "gbode"); getErrorString();
+val(x, 1.0);
+simulate(tinyStepReinit, stopTime = 100, numberOfIntervals = 1000, method = "gbode"); getErrorString();
+echo(false);
+x := readSimulationResult("tinyStepReinit_res.mat", {x});
+echo(true);
+min(x[1, i] for i in 20:size(x, 2)) > 0.9;
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "tinyStepStart_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'gbode', fileNamePrefix = 'tinyStepStart', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_STDOUT        | warning | Numerical Jacobians without coloring are currently not supported by GBODE. Colored numerical Jacobian will be used.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.9999999999999987
+// record SimulationResult
+//     resultFile = "tinyStepReinit_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 100.0, numberOfIntervals = 1000, tolerance = 1e-6, method = 'gbode', fileNamePrefix = 'tinyStepReinit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_STDOUT        | warning | Numerical Jacobians without coloring are currently not supported by GBODE. Colored numerical Jacobian will be used.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// true
+// endResult

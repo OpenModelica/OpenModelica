@@ -1660,7 +1660,7 @@ pub(super) fn build_sim_model(
     };
     let next_time_event_idx = {
         let idx = import_base + bodies.len() as u32;
-        let triggers: Vec<metamodelica::Ref<DAE::Exp>> = lst(&sim_code.relations)
+        let triggers: Vec<(metamodelica::Ref<DAE::Exp>, bool)> = lst(&sim_code.relations)
             .filter(|zc| zc.iter.is_none())
             .filter_map(|zc| match &*zc.relation_ {
                 DAE::Exp::RELATION {

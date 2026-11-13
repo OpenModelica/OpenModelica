@@ -10302,11 +10302,19 @@ impl CsDriver {
                 self.samp.refresh(e, sim_data, self.core.t)?;
                 let te = self.samp.next_time();
                 let tc = self.sync.next_time();
-                let mut subtarget = t_target;
+                // A sample pulled in just past the target has carried `t` beyond it.
+                let mut subtarget = t_target.max(self.core.t);
                 if tc >= self.core.t && tc <= subtarget + SYNC_EPS {
                     subtarget = tc;
                 }
-                if te >= self.core.t && te <= subtarget + sample_pull_eps(model) {
+                // A relation that switches after the communication point belongs to
+                // the next step: this one ends at `t_target`.
+                let pull_eps = if self.samp.next_is_relation() {
+                    0.0
+                } else {
+                    sample_pull_eps(model)
+                };
+                if te >= self.core.t && te <= subtarget + pull_eps {
                     subtarget = te;
                 }
                 let mut troot = None;
@@ -10368,7 +10376,7 @@ impl CsDriver {
                         self.after_walk_event(e, layout)?;
                     }
                 }
-                if te <= subtarget + sample_pull_eps(model) {
+                if te <= subtarget + pull_eps {
                     self.core.t = te;
                     log_time_event(e, te, &self.samp, model);
                     if defers(te) {
@@ -10806,7 +10814,8 @@ impl Driver for EventsDriver {
                     self.samp.refresh(e, sim_data, self.core.t)?;
                     let te = self.samp.next_time();
                     let tc = self.sync.next_time();
-                    let mut subtarget = tout;
+                    // A time event pulled in just past `tout` has carried `t` beyond it.
+                    let mut subtarget = tout.max(self.core.t);
                     if tc >= self.core.t && tc <= subtarget + SYNC_EPS {
                         subtarget = tc;
                     }

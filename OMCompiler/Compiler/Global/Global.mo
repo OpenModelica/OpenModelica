@@ -128,6 +128,10 @@ constant Integer structuralParameters = 44;
 // The positions of the variables of the last few Jacobians, see
 // SimCodeCodegenUtil.jacobianIndexExp: list<tuple<HashTable, offsets>>.
 constant Integer jacobianOffsets = 45;
+// The right-hand side of each equation `v = time` or `v = x + c`, from which
+// SimCodeCodegenUtil.timeEventForm finds the variables that are `time + c`:
+// SOME(UnorderedMap<DAE.ComponentRef, DAE.Exp>). Set by SimCodeUtil.createSimCode.
+constant Integer timeAliasVars = 46;
 
 // indexes in System.tick
 // ----------------------
@@ -175,6 +179,7 @@ algorithm
   setGlobalRoot(uncertaintyExtraction, NONE());
   setGlobalRoot(trivialRecords, {});
   setGlobalRoot(timeIndependentVars, NONE());
+  setGlobalRoot(timeAliasVars, NONE());
   setGlobalRoot(structuralParameters, {});
   setGlobalRoot(jacobianOffsets, {});
 end initialize;

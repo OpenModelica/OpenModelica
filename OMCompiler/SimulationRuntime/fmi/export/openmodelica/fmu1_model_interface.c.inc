@@ -812,9 +812,7 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
        uses pre() would only fire on every other sample. See #15838. */
     comp->fmuData->callback->functionDAE(comp->fmuData, threadData);
 
-    for(i=0; i<comp->fmuData->modelData->nSamples; ++i)
-      if((i == 0) || (comp->fmuData->simulationInfo->nextSampleTimes[i] < comp->fmuData->simulationInfo->nextSampleEvent))
-        comp->fmuData->simulationInfo->nextSampleEvent = comp->fmuData->simulationInfo->nextSampleTimes[i];
+    updateNextSampleEvent(comp->fmuData, threadData);
 
     if (checkForDiscreteChanges(comp->fmuData, threadData) || comp->fmuData->simulationInfo->needToIterate || checkRelations(comp->fmuData) || eventInfo->stateValuesChanged)
     {

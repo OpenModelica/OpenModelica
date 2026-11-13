@@ -1383,6 +1383,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   int gb_step_info;
   int i, retries = 0;
   modelica_boolean foundEvent;
+  modelica_boolean restarted;
 
   double err_states; // error of the (slow, if multirate) states
 
@@ -1422,6 +1423,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   }
 
   gbData->eventHappened = solverInfo->didEventStep || gbData->isFirstStep;
+  restarted = gbData->eventHappened;
 
  /*
   * Handle step initialization after an event step or at the very first solver step.
@@ -1461,6 +1463,22 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     if (gbData->multi_rate) {
       gbData->gbfData->didEventStep = TRUE;
     }
+  }
+
+  /* As DASSL, CVODE and IDA: a step too short to take after a restart, e.g. onto
+     the time event of `time > 0` at nextafter(0), is extrapolated linearly. */
+  if (restarted &&
+      ((solverInfo->currentStepSize < DASSL_STEP_EPS) ||
+       (solverInfo->currentStepSize < DASSL_STEP_EPS*(stopTime - data->simulationInfo->startTime))))
+  {
+    for (i = 0; i < nStates; i++) {
+      sData->realVars[i] += fODE[i] * solverInfo->currentStepSize;
+    }
+    sData->timeValue = solverInfo->currentTime + solverInfo->currentStepSize;
+    data->callback->functionODE(data, threadData);
+    solverInfo->currentTime = sData->timeValue;
+    messageClose(OMC_LOG_SOLVER);
+    return 0;
   }
 
   debugRingBufferSteps_gb(OMC_LOG_GBODE, gbData->yv, gbData->kv, gbData->tv, nStates, gbData->ringBufferSize);

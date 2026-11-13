@@ -1796,13 +1796,18 @@ package SimCodeCodegenUtil
 
   function timeEventTrigger
     input DAE.Exp rel;
-    output Option<DAE.Exp> trigger;
+    output Option<tuple<DAE.Exp, Boolean>> trigger;
   end timeEventTrigger;
 
   function isTimeEventRelation
     input DAE.Exp rel;
     output Boolean b;
   end isTimeEventRelation;
+
+  function timeEventRelation
+    input DAE.Exp rel;
+    output DAE.Exp outRel;
+  end timeEventRelation;
 
   function cref2simvar
     input DAE.ComponentRef cref;
