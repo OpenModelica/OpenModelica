@@ -15,6 +15,7 @@ openmodelica_zip = { path = "../../OpenModelica.rs/openmodelica_zip" }
 openmodelica_package_manager = { path = "../../OpenModelica.rs/openmodelica_package_manager" }
 openmodelica_version = { path = "../../OpenModelica.rs/openmodelica_version" }
 openmodelica_modelica_diff = { path = "../../OpenModelica.rs/openmodelica_modelica_diff" }
+openmodelica_fmi_guide = { path = "../../OpenModelica.rs/openmodelica_fmi_guide" }
 
 [workspace]
 

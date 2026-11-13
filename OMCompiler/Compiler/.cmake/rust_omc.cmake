@@ -2094,6 +2094,7 @@ function(omc_rust_setup_wasm)
         ${RUST_OMC_DIR}/wasm/simulator/config.json
         ${RUST_OMC_DIR}/wasm/simulator/examples/BouncingBall.mo
         ${RUST_OMC_DIR}/wasm/simulator/examples/DistrictHeating.mo
+        ${RUST_OMC_DIR}/wasm/fmi-guide/dialog.js
         ${RUST_OMC_DIR}/wasm/plot.js
         ${RUST_OMC_DIR}/wasm/units.js
         ${RUST_OMC_DIR}/wasm/theme.css
@@ -2181,6 +2182,10 @@ function(omc_rust_setup_wasm)
                 ${_web_dir}/simulator/
         COMMAND ${CMAKE_COMMAND} -E copy_directory
                 ${RUST_OMC_DIR}/wasm/simulator/examples ${_web_dir}/simulator/examples
+        # The dialog of the FMI settings guide, which the simulator opens.
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/fmi-guide
+        COMMAND ${CMAKE_COMMAND} -E copy
+                ${RUST_OMC_DIR}/wasm/fmi-guide/dialog.js ${_web_dir}/fmi-guide/
         # Shared anim/ module: the wasm-bindgen'd anim wasm plus the renderer/panel
         # JS and three.js, imported by both simulator pages as ../anim/*.
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/anim

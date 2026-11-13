@@ -78,6 +78,7 @@
 #include "TransformationalDebugger/TransformationsWidget.h"
 #include "Options/NotificationsDialog.h"
 #include "Simulation/SimulationDialog.h"
+#include "FMI/FMUExportDialog.h"
 #include "FMI/ImportFMUDialog.h"
 #include "FMI/ImportFMUModelDescriptionDialog.h"
 #include "Git/CommitChangesDialog.h"
@@ -3439,6 +3440,19 @@ void MainWindow::showArchivedSimulations()
 }
 
 /*!
+ * \brief MainWindow::exportModelFMUWithSetup
+ * Shows the settings of the FMU export for the current model.
+ */
+void MainWindow::exportModelFMUWithSetup()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget) {
+    FMUExportDialog *pFMUExportDialog = new FMUExportDialog(pModelWidget->getLibraryTreeItem(), this);
+    pFMUExportDialog->exec();
+  }
+}
+
+/*!
  * \brief MainWindow::exportModelFMU
  * Exports the current model to FMU
  */
@@ -4840,6 +4854,11 @@ void MainWindow::createActions()
   mpExportFMUAction->setStatusTip(Helper::exportFMUTip);
   mpExportFMUAction->setEnabled(false);
   connect(mpExportFMUAction, SIGNAL(triggered()), SLOT(exportModelFMU()));
+  // export FMU with setup action
+  mpExportFMUWithSetupAction = new QAction(QIcon(":/Resources/icons/export-fmu.svg"), Helper::FMUWithSetup, this);
+  mpExportFMUWithSetupAction->setStatusTip(Helper::exportFMUWithSetupTip);
+  mpExportFMUWithSetupAction->setEnabled(false);
+  connect(mpExportFMUWithSetupAction, &QAction::triggered, this, &MainWindow::exportModelFMUWithSetup);
   // export read-only package action
   mpExportReadonlyPackageAction = new QAction(Helper::exportReadonlyPackage, this);
   mpExportReadonlyPackageAction->setStatusTip(Helper::exportReadonlyPackageTip);
@@ -5316,6 +5335,7 @@ void MainWindow::createMenus()
   pExportMenu->addAction(mpExportToClipboardAction);
   pExportMenu->addAction(mpExportAsImageAction);
   pExportMenu->addAction(mpExportFMUAction);
+  pExportMenu->addAction(mpExportFMUWithSetupAction);
   pExportMenu->addAction(mpExportReadonlyPackageAction);
   pExportMenu->addAction(mpExportEncryptedPackageAction);
   pExportMenu->addAction(mpExportXMLAction);

@@ -2906,6 +2906,7 @@ dependencies = [
  "metamodelica",
  "openmodelica_backend_main",
  "openmodelica_codegen_wasm_jit",
+ "openmodelica_fmi_guide",
  "openmodelica_frontend_types",
  "openmodelica_modelica_utilities",
  "openmodelica_result_files",
@@ -4486,6 +4487,14 @@ dependencies = [
  "openmodelica_solvers",
  "wasmtime",
  "wasmtime-wasi",
+]
+
+[[package]]
+name = "openmodelica_fmi_guide"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

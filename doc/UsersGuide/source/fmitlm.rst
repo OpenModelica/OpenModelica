@@ -156,6 +156,14 @@ command line.
 You can set which version of FMI to export through OMEdit settings, see section
 :ref:`omedit-options-fmi`.
 
+`File > Export > FMU` exports with these settings. `File > Export > FMU with Setup`
+shows the settings first: the FMI version, the interfaces, the solver for
+Co-Simulation, DAE mode, the model description filter, the source code and the
+platforms. They apply to this export only, unless `Save as default` is selected.
+`Recommend Settings` asks how the FMU will be used and proposes values for the
+settings. The export dialog of the simulator in the web browser has the same
+function, see :ref:`webbrowser`.
+
 .. figure :: media/fmiExport.png
 
   FMI Export.

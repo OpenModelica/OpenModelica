@@ -386,6 +386,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "openmodelica_fmi_guide"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "openmodelica_modelica_diff"
 version = "0.1.0"
 
@@ -393,6 +401,7 @@ version = "0.1.0"
 name = "openmodelica_omcruntime"
 version = "0.1.0"
 dependencies = [
+ "openmodelica_fmi_guide",
  "openmodelica_modelica_diff",
  "openmodelica_package_manager",
  "openmodelica_version",
