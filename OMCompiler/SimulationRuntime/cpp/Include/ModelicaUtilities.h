@@ -144,8 +144,25 @@ BOOST_EXTENSION_EXPORT_DECL  char* ModelicaAllocateString(size_t len);
 BOOST_EXTENSION_EXPORT_DECL char* ModelicaAllocateStringWithErrorReturn(size_t len);
 
 /**
- * \brief Free memory allocated by ModelicaAllocateString or
- * ModelicaAllocateStringWithErrorReturn.
+ * \brief Duplicate (= allocate memory and deep copy) a Modelica string which
+ * is used as return argument of an external Modelica function. If an error
+ * occurs, this function does not return, but calls "ModelicaError".
+ *
+ * @param str C string to copy.
+ */
+BOOST_EXTENSION_EXPORT_DECL char* ModelicaDuplicateString(const char* str);
+
+/**
+ * \brief Same as ModelicaDuplicateString, except that in case of error, the
+ * function returns 0.
+ *
+ * @param str C string to copy.
+ */
+BOOST_EXTENSION_EXPORT_DECL char* ModelicaDuplicateStringWithErrorReturn(const char* str);
+
+/**
+ * \brief Free memory allocated by the ModelicaAllocateString and
+ * ModelicaDuplicateString functions.
  * This function is intended for internal use by the Cpp runtime.
  *
  * @param str C string
