@@ -400,12 +400,11 @@ algorithm
   for b in branches loop
     Equation.Branch.BRANCH(cond, var, body) := b;
     body := scalarizeEquations(body);
-
-    // Remove branches with no equations after scalarization.
-    if not listEmpty(body) then
-      bl := Equation.makeBranch(cond, body, var) :: bl;
-    end if;
+    bl := Equation.makeBranch(cond, body, var) :: bl;
   end for;
+
+  // An empty branch still blocks the branches after it, only trailing ones can go.
+  bl := List.trim(bl, Equation.Branch.isEmpty);
 
   // Add the scalarized if equation to the list of equations unless we don't
   // have any branches left.
@@ -488,13 +487,17 @@ protected
 algorithm
   for b in branches loop
     (cond, body) := b;
-    body := scalarizeStatements(body);
-
-    // Remove branches with no statements after scalarization.
-    if not listEmpty(body) then
-      bl := (cond, body) :: bl;
-    end if;
+    bl := (cond, scalarizeStatements(body)) :: bl;
   end for;
+
+  // An empty branch still blocks the branches after it, only trailing ones can go.
+  while not listEmpty(bl) loop
+    (_, body) := listHead(bl);
+    if not listEmpty(body) then
+      break;
+    end if;
+    bl := listRest(bl);
+  end while;
 
   // Add the scalarized if statement to the list of statements unless we don't
   // have any branches left.
