@@ -1,0 +1,39 @@
+// name:     fmi3LoggerInstancesCpp
+// keywords: FMI 3.0 export Cpp logger instances
+// status:   correct
+// teardown_command: rm -rf fmi3LoggerInstancesCpp.fmu fmi3LoggerInstancesCpp.so fmi3LoggerInstancesCpp.fmutmp/ fmi3LoggerInstancesCpp.log fmi3LoggerInstancesCpp_out.txt
+//
+// Two instances of one FMU in one process. The messages of an instance
+// must go to the logMessage callback of that instance, also after the
+// other instance is freed (FMI 3.0.2, section 2.3.1).
+
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+
+loadString("
+model fmi3LoggerInstancesCpp
+  Real x(start = 0, fixed = true);
+equation
+  der(x) = 1;
+  assert(x < 0.5, \"x is above 0.5\", AssertionLevel.warning);
+end fmi3LoggerInstancesCpp;
+"); getErrorString();
+
+buildModelFMU(fmi3LoggerInstancesCpp, version = "3.0", fmuType = "me"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" fmi3LoggerInstancesCpp.py fmi3LoggerInstancesCpp.fmu fmi3LoggerInstancesCpp_out.txt > fmi3LoggerInstancesCpp.log 2>&1"); getErrorString();
+readFile("fmi3LoggerInstancesCpp_out.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3LoggerInstancesCpp.fmu"
+// ""
+// 0
+// ""
+// "a: warning received for a
+// b: warning received for b
+// a after b was freed: warning received for a
+// "
+// ""
+// endResult

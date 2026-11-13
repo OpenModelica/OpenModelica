@@ -100,11 +100,14 @@ class FMU3Wrapper;
 class FMU3Logger: public Logger
 {
  public:
-  static void initialize(FMU3Wrapper *wrapper, LogSettings &logSettings, bool enabled);
-
- protected:
   FMU3Logger(FMU3Wrapper *wrapper, LogSettings &logSettings, bool enabled);
 
+  // Logger is a process-global singleton. Each FMU instance has its own
+  // logger and makes it the active one when it is called.
+  void activate() { _instance = this; }
+  void deactivate() { if (_instance == this) _instance = NULL; }
+
+ protected:
   virtual void writeInternal(string msg, LogCategory cat, LogLevel lvl,
                              LogStructure ls);
   FMU3Wrapper *_wrapper;
@@ -121,6 +124,11 @@ class FMU3Wrapper
               fmi3InstanceEnvironment instanceEnvironment,
               fmi3LogMessageCallback logMessage, fmi3Boolean loggingOn);
   virtual ~FMU3Wrapper();
+
+  // make the logger of this instance receive the model messages
+  void activateLogger() {
+    _logger->activate();
+  }
 
   // Debug logging
   virtual fmi3Status setDebugLogging(fmi3Boolean loggingOn,
@@ -210,7 +218,7 @@ class FMU3Wrapper
 
  private:
   FMU3GlobalSettings _globalSettings;
-  Logger *_logger;
+  FMU3Logger *_logger;
   MODEL_CLASS *_model;
   std::vector<string> _stringBuffer;
   bool *_clockTick;

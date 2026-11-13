@@ -58,11 +58,6 @@ FMU2Logger::FMU2Logger(FMU2Wrapper *wrapper,
 {
 }
 
-void FMU2Logger::initialize(FMU2Wrapper *wrapper, LogSettings &logSettings, bool enabled)
-{
-  _instance = new FMU2Logger(wrapper, logSettings, enabled);
-}
-
 void FMU2Logger::writeInternal(string msg, LogCategory cat, LogLevel lvl,
                                LogStructure ls)
 {
@@ -112,17 +107,24 @@ FMU2Wrapper::FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
   _GUID = GUID;
 
   // setup logger
-  _logger = NULL;
+  LogSettings logSettings = _globalSettings.getLogSettings();
+  _logger = new FMU2Logger(this, logSettings, loggingOn);
+  _logger->activate();
   _logCategories = 0x0000;
-  if (loggingOn) {
-    // only instantiate logger if requested as it is not thread save
+  if (loggingOn)
     setDebugLogging(loggingOn, 0, NULL);
-  }
 
   // setup model
-  _model = createSystemFMU(&_globalSettings);
-  _model->initializeMemory();
-  _model->initializeFreeVariables();
+  try {
+    _model = createSystemFMU(&_globalSettings);
+    _model->initializeMemory();
+    _model->initializeFreeVariables();
+  }
+  catch (...) {
+    _logger->deactivate();
+    delete _logger;
+    throw;
+  }
   _needUpdate = true;
   _stringBuffer.resize(_model->getDimString());
   _clockTick = new bool[_model->getDimClock()];
@@ -134,9 +136,12 @@ FMU2Wrapper::FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
 
 FMU2Wrapper::~FMU2Wrapper()
 {
+  _logger->activate();
   delete [] _clockSubactive;
   delete [] _clockTick;
   delete _model;
+  _logger->deactivate();
+  delete _logger;
 }
 
 fmi2Status FMU2Wrapper::setDebugLogging(fmi2Boolean loggingOn,
@@ -145,14 +150,7 @@ fmi2Status FMU2Wrapper::setDebugLogging(fmi2Boolean loggingOn,
 {
   fmi2Status ret = fmi2OK;
 
-  if (_logger == NULL) {
-    LogSettings logSettings = _globalSettings.getLogSettings();
-    FMU2Logger::initialize(this, logSettings, loggingOn);
-    _logger = Logger::getInstance();
-  }
-  else {
-    _logger->setEnabled(loggingOn);
-  }
+  _logger->setEnabled(loggingOn);
   if (nCategories == 0) {
     _logCategories = loggingOn? 0xFFFF: 0x0000;
     _logger->setAll(loggingOn? LL_DEBUG: LL_ERROR);

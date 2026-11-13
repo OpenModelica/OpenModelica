@@ -90,6 +90,7 @@ class LoggerXMLTCP: public LoggerXML
 
   static void initialize(int port, LogSettings &logSettings)
   {
+    finalize();
     _instance = new LoggerXMLTCP(port, logSettings);
   }
 

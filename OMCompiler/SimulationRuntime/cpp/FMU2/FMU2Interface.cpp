@@ -55,7 +55,9 @@ extern "C"
 }
 
 /* Common definitions */
+// each function starts with LOG_CALL: activate the logger of w, log the call
 #define LOG_CALL(w, ...) \
+  (w)->activateLogger(); \
   FMU2_LOG(w, fmi2OK, logFmi2Call, __VA_ARGS__)
 
 #define CATCH_EXCEPTION(w) \
