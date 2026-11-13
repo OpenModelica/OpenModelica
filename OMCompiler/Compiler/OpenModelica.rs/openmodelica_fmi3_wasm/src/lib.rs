@@ -56,6 +56,8 @@ unsafe extern "C" {
     fn functionEquationsSynchronous(sim_data: u32, idx: u32);
     // `--daeMode`'s residual, exported (empty) by every model so this resolves.
     fn evaluateDAEResiduals(sim_data: u32, eval_stage: u32);
+    // The warning-assert flags back to 0; exported by every model.
+    fn resetAssertWarnings(sim_data: u32);
     fn om_meta_ptr() -> u32;
     fn om_meta_len() -> u32;
 }
@@ -759,6 +761,10 @@ impl SimEngine for Engine {
                 "functionInitSynchronous" => functionInitSynchronous_guard(arg),
                 "callExternalObjectDestructors" => callExternalObjectDestructors_guard(arg),
                 "functionDAE" => functionDAE_guard(arg),
+                "resetAssertWarnings" => {
+                    resetAssertWarnings(arg);
+                    0
+                }
                 #[cfg(all(feature = "me", feature = "cs"))]
                 "linearJacA" => linearJacA_guard(arg),
                 #[cfg(all(feature = "me", feature = "cs"))]
@@ -2222,6 +2228,9 @@ macro_rules! shared_instance_methods {
             st.cs = None;
             st.input_ders.clear();
         }
+        // A warning assert warns again after Reset, as after instantiation.
+        let sim_data = st.sim_data;
+        let _ = st.engine.call1_if_present("resetAssertWarnings", sim_data);
         st.seed_start_state();
         Status::Ok
     }
